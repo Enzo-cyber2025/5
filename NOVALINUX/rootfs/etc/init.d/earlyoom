@@ -1,0 +1,19 @@
+#!/sbin/openrc-run
+# OpenRC service: earlyoom (OOM killer antecipado) para Intel N5030
+depend() {
+    need localmount
+    after bootmisc
+}
+
+start() {
+    ebegin "Iniciando earlyoom"
+    # matar processos quando a memória livre ficar abaixo de 60 MB (10% de swap restante)
+    /usr/bin/earlyoom -m 60 -M 65 -r 10 &
+    eend $?
+}
+
+stop() {
+    ebegin "Parando earlyoom"
+    killall earlyoom 2>/dev/null
+    eend 0
+}

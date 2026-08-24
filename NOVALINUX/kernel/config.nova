@@ -1,0 +1,131 @@
+# =============================================================================
+# config.nova — configuração de referência do kernel NovaLinux 6.6.x (N5030)
+#
+# Este arquivo é uma fração consolidada/legível das opções aplicadas por
+# build_kernel.sh (que parte de x86_64_defconfig e usa scripts/config). A
+# fonte da verdade é o build_kernel.sh; aqui documentamos as opções-chave.
+#
+# Perfil: Intel Pentium N5030 (Goldmont Plus), boot rápido, desktop leve,
+#         swap comprimido zstd, schedulador schedutil, kernel LTS.
+# =============================================================================
+
+# --- Arquitetura / EFI ---
+CONFIG_64BIT=y
+CONFIG_X86_64=y
+CONFIG_X86_INTEL_CPU=y
+CONFIG_EFI=y
+CONFIG_EFI_STUB=y
+CONFIG_EFI_VARS=y
+CONFIG_EFI_VARS_PSTORE=y
+
+# --- Compilação / tamanho / otimização de instrução ---
+# KCFLAGS: "-O3 -pipe -fno-semantic-interposition -march=goldmont-plus -mtune=goldmont-plus"
+CONFIG_LOCALVERSION="-novav6"
+CONFIG_DEFAULT_HOSTNAME="novastation"
+CONFIG_IKCONFIG=y
+CONFIG_IKCONFIG_PROC=y
+CONFIG_KALLSYMS=y
+CONFIG_MODULES=y
+CONFIG_MODULE_UNLOAD=y
+CONFIG_MODULE_FORCE_UNLOAD=y
+
+# --- Inicialização / initramfs / boot rápido ---
+CONFIG_BLK_DEV_INITRD=y
+CONFIG_RD_GZIP=y
+CONFIG_RD_BZIP2=y
+CONFIG_RD_XZ=y
+CONFIG_RD_ZSTD=y
+CONFIG_INIT_ENV_ARG_LIMIT=32
+CONFIG_HZ_1000=y
+CONFIG_HZ=1000
+CONFIG_PREEMPT=y
+
+# --- Schedulador de frequência de CPU (resposta rápida) ---
+CONFIG_CPU_FREQ=y
+CONFIG_CPU_FREQ_GOV_SCHEDUTIL=y
+CONFIG_CPU_FREQ_DEFAULT_GOV_SCHEDUTIL=y
+CONFIG_CPU_FREQ_GOV_PERFORMANCE=y
+CONFIG_CPU_FREQ_GOV_POWERSAVE=y
+CONFIG_X86_INTEL_PSTATE=y
+CONFIG_ACPI_CPUFREQ=y
+CONFIG_ACPI_CPUFREQ_PSS=y
+CONFIG_CPU_IDLE=y
+CONFIG_INTEL_IDLE=y
+
+# --- Video / framebuffer / GPU para desktop ---
+CONFIG_DRM=y
+CONFIG_DRM_SIMPLEDRM=y
+CONFIG_FB=y
+CONFIG_FB_EFI=y
+CONFIG_FB_SIMPLE=y
+CONFIG_FRAMEBUFFER_CONSOLE=y
+CONFIG_FRAMEBUFFER_CONSOLE_DETECT_PRIMARY=y
+CONFIG_DRM_I915=y            # Intel iGPU (para N5030, usar modo de reserva se preciso)
+
+# --- Input (libinput / gestos / teclado / mouse / touchpad) ---
+CONFIG_INPUT=y
+CONFIG_INPUT_EVDEV=y
+CONFIG_INPUT_KEYBOARD=y
+CONFIG_INPUT_MOUSE=y
+CONFIG_INPUT_TOUCHSCREEN=y
+CONFIG_INPUT_TOUCHPAD=y
+CONFIG_HID=y
+CONFIG_HID_GENERIC=y
+CONFIG_USB_HID=y
+CONFIG_I2C=y
+CONFIG_I2C_HID=y
+
+# --- Áudio ---
+CONFIG_SOUND=y
+CONFIG_SND=y
+CONFIG_SND_HDA_INTEL=y
+CONFIG_SND_PCI=y
+
+# --- Armazenamento / rede / USB ---
+CONFIG_EXT4_FS=y
+CONFIG_EXT4_FS_POSIX_ACL=y
+CONFIG_EXT4_FS_SECURITY=y
+CONFIG_FS_ENCRYPTION=y
+CONFIG_SATA_AHCI=y
+CONFIG_USB=y
+CONFIG_USB_XHCI_HCD=y
+CONFIG_USB_EHCI_HCD=y
+CONFIG_USB_STORAGE=y
+CONFIG_MMC=y
+CONFIG_MMC_SDHCI=y
+CONFIG_MMC_SDHCI_PCI=y
+CONFIG_NET=y
+CONFIG_INET=y
+CONFIG_WIRELESS=y
+CONFIG_CFG80211=y
+CONFIG_MAC80211=y
+CONFIG_WLAN=y
+CONFIG_RFKILL=y
+CONFIG_NETDEVICES=y
+CONFIG_TUN=y
+CONFIG_BRIDGE=y
+CONFIG_VETH=y
+
+# --- Swap comprimido com zstd / zram / zswap ---
+CONFIG_ZRAM=y
+CONFIG_ZSWAP=y
+CONFIG_ZSCHEME_ZSTD=y
+CONFIG_ZRAM_DEF_COMP_ZSTD=y
+CONFIG_ZRAM_DEF_COMP="zstd"
+CONFIG_ZSTD_COMPRESS=y
+CONFIG_ZSTD_DECOMPRESS=y
+
+# --- Rede virtual (para QEMU/crosta) ---
+CONFIG_VIRTIO_PCI=y
+CONFIG_VIRTIO_BLK=y
+CONFIG_VIRTIO_NET=y
+CONFIG_VIRTIO_BALLOON=y
+CONFIG_NET_9P=y
+
+# --- Saneamento / watchdogs (debug fora do kernel de produção) ---
+CONFIG_DEBUG_KERNEL=n
+CONFIG_DEBUG_INFO=n
+CONFIG_MAGIC_SYSRQ=y
+
+# --- Fuso/ida de debug e perf: manter enxuto ---
+CONFIG_FTRACE=y
