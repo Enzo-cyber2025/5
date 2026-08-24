@@ -4,7 +4,7 @@ Aplicativo Android experimental para estimativa de distância com duas câmeras 
 
 ## Download
 
-[**Baixar Stereo-Alerta-IA-SM-A556E-v1.0.0.apk**](./Stereo-Alerta-IA-SM-A556E-v1.0.0.apk)
+[**⬇️ DOWNLOAD DIRETO DO APK**](https://github.com/Enzo-cyber2025/5/raw/refs/heads/arena/01a034a7-5/Stereo-Alerta-IA-SM-A556E-v1.0.0.apk)
 
 - Versão: `1.0.0`
 - Arquitetura: `ARM64-v8a`
