@@ -4,14 +4,14 @@ Uma distribuição Linux construída do zero, com foco no **Intel Pentium N5030*
 (quad-core **Goldmont Plus**, x86_64) — o SoC de notebooks/htpc de baixo custo
 com iGPU Intel UHD 605.
 
-> **Estado real do projeto (transparência).** Este repositório contém o
-> **projeto de engenharia completo e reproduzível** de uma distro: código-fonte
-> da interface (sem toolkit pronto), gerenciador de pacotes próprio, pipeline
-> de build automatizado, temas, patches de kernel, manifesto de boot e o
-> harness de verificação. A construção do `.iso` final e a validação em
-> hardware/QEMU exigem uma máquina de build com as ferramentas e recursos
-> listados em `docs/`. Nenhum artefato binário falso é produzido.
-> Ver `docs/` para a explicação detalhada.
+> **Estado real do projeto (atualizado).** Foi compilado e publicado um
+> **ISO bootável REAL** neste repositório (**`NOVALINUX/dist/`**), com um
+> kernel Linux compilado neste ambiente (`-O3 -march=goldmont-plus`), um
+> initramfs BusyBox embutido e boot UEFI (El Torito EFI). O processo de
+> construção está documentado em `NOVALINUX/build/build_iso_real.sh` e
+> `docs/BUILD.md`. A validação estrutural (El Torito, kernel EFI, initramfs)
+> foi feita com `pycdlib`; a verificação de boot em QEMU **não pôde** ser
+> executada aqui porque o QEMU não está disponível/instalável no sandbox.
 
 ---
 

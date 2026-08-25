@@ -1,66 +1,66 @@
-# Guia de build
+# Guia de build do ISO real (validado neste ambiente)
 
-## Pré-requisitos (máquina de build adequada)
+Esta é a via que **funcionou** para compilar e empacotar um ISO bootável
+dentro de um sandbox com rede restrita (apenas GitHub/PyPI, sem `apt`,
+sem `xorriso`, sem `qemu`).
 
-Sistema: Debian/Ubuntu amd64 (ou compatível). Recomendado: 16 GB RAM, 8+ vCPUs.
+## Restrições do ambiente (verificadas)
 
-```sh
-sudo apt update && sudo apt install --yes \
-  build-essential bc flex bison libssl-dev libelf-dev libncurses-dev \
-  xorriso grub-pc-bin grub-efi-amd64-bin grub-common mtools dracut \
-  qemu-system-x86 qemu-utils debootstrap busybox-static openrc zstd \
-  xz-utils curl wget autoconf automake libtool pkg-config \
-  libx11-dev libxext-dev libxrender-dev libcairo2-dev libpangocairo-1.0-0 \
-  libfreetype6-dev libfontconfig1-dev libinput-dev \
-  libasound2-dev libdbus-1-dev libglib2.0-dev libpixman-1-dev
-```
+| Recurso | Disponível |
+|---------|-----------|
+| rede | `github.com` + `PyPI` apenas. `ftp.gnu.org`/`kernel.org`/Debian **bloqueados**; downloads de release do GitHub **bloqueados** (Git-LFS). |
+| toolchain | `gcc`, `make`, `binutils`, `perl`, `python3` presentes. |
+| ausentes | `flex`, `bison`, `bc`, `m4`, `autoconf`, `automake`, `xorriso`, `grub`, `qemu`, `mkfs.vfat`, `mcopy`. Não instaláveis (sem apt). |
 
-## Build completo
+## Estratégia usada
 
-```sh
-cd NOVALINUX/build
-./build_all.sh
-```
+1. **Kernel com kconfig pré-gerado** — usa um LTS que embarca
+   `scripts/kconfig/*_shipped` (Flex/Bison não são chamados).
+2. **`bc` substituído por um wrapper Python** — o kernel pede `bc` apenas para
+   gerar `include/generated/timeconst.h`; emulamos o `kernel/time/timeconst.bc`.
+3. **`R_X86_64_PLT32` resolvido** — binutils 2.40 emite essa relocação;
+   o `arch/x86/tools/relocs.c` de kernels antigos não a conhecia (patch).
+4. **Initramfs embutido** — `CONFIG_INITRAMFS_SOURCE=usr/initramfs` com BusyBox
+   estático → o kernel já vira o `/init`; não precisa de módulos nem de outro
+   initramfs.
+5. **ISO UEFI sem GRUB/SYSLINUX** — o kernel é construído com `CONFIG_EFI_STUB`
+   (vira um binário `pei-x86-64`). Empacotamos o kernel como `\EFI\BOOT\BOOTX64.EFI`
+   numa imagem FAT12 e geramos um ISO **El Torito EFI** com `pycdlib`.
 
-Etapas executadas por `build_all.sh`:
-
-1. `build_toolchain.sh` — bootstrap GCC 13.2 / glibc 2.38 / binutils 2.41
-   (Goldmont Plus). Requer 8–16 GB RAM e horas.
-2. `build_kernel.sh` — kernel 6.6.x LTS + patches + `-march=goldmont-plus`.
-3. `build_rootfs.sh` — sistema base + OpenRC + usuário `nova` + locales + otimizações.
-4. `build_iso.sh` — initramfs dracut + ISO híbrido + SHA256.
-5. `verify.sh` — testes QEMU (boot, RAM, VLC, Firefox, NovaPKG, suspend, offline).
-
-### Flags úteis
-
-```sh
-./build_all.sh --skip-verify        # não roda a verificação QEMU
-./build_all.sh --skip-toolchain     # usa toolchain do host
-./build_all.sh --only kernel        # executa apenas uma etapa
-```
-
-## Build de aplicativos (.nvpkg)
+## Como reproduzir
 
 ```sh
 cd NOVALINUX/build
-./build_apps.sh             # apps leves (htop, neofetch, condas, etc.)
-./build_apps.sh --full      # inclui LibreOffice, Firefox ESR, GIMP, VLC
+./build_iso_real.sh
+# → gera NOVALINUX/dist/navelinux-1.0-x86_64-4.14-uefi.iso + .sha256
 ```
 
-## Testes isolados
+O script `build_iso_real.sh` faz o clone, os patches, o initramfs, a configuração
+do kernel, o `make bzImage` e o empacotamento do ISO.
+
+## Arquivos de apoio
+
+- `build/tools/mkfat.py` — gera a imagem FAT12 (com `BOOTX64.EFI`) usada como
+  imagem de boot EFI do ISO.
+- `build/tools/mkisouefi.py` — monta o ISO El Torito EFI com `pycdlib`.
+- `build/tools/kernel-4.14.novaconfig` — `.config` usado no kernel compilado.
+- `build/build_iso_real.sh` — orquestra tudo.
+
+## Validação feita
+
+- Kernel: produz um `bzImage` `pei-x86-64` (EFI stub) — verificado com `objdump`.
+- Initramfs embutido confirmado (`/init`, `bin/busybox`, `etc/hostname`).
+- ISO: `pycdlib` lê o volume `NOVALINUX`, El Torito presente com
+  `platform_id=0xef` (UEFI), `boot_media_type=0` (no-emul), kernel como
+  `BOOTX64.EFI` na imagem FAT.
+
+### Limite
+**Não foi possível executar o boot em QEMU** porque o QEMU não está disponível
+nem instalável no sandbox. A verificação de boot ("acha o firmware UEFI e chega
+ao prompt do BusyBox") deve ser feita numa máquina com QEMU ou hardware UEFI:
 
 ```sh
-# initramfs de teste
-./make_novatest_initrd.sh
-# verificação (precisa do ISO e do initrd de teste)
-./verify.sh
+qemu-system-x86_64 -m 1024 -smp 2 \
+  -drive file=NOVALINUX/dist/navelinux-1.0-x86_64-4.14-uefi.iso,media=cdrom \
+  -bios OVMF.fd -nographic
 ```
-
-## Publicação (branch `release`)
-
-```sh
-NOVALINUX_REPO=<usuario>/NovaLinux-ISO ./upload.sh
-```
-
-Publica **apenas** `*.iso` e `*.sha256` na branch `release` de um repositório
-GitHub público. Nenhum código-fonte vai para lá.
