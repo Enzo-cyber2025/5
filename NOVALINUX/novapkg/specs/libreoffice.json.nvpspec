@@ -1,0 +1,21 @@
+{
+  "arch": "x86_64",
+  "build_deps": [
+    "autoconf",
+    "automake",
+    "make",
+    "gcc",
+    "pkg-config"
+  ],
+  "configure": "./configure --prefix=/usr --sysconfdir=/etc",
+  "depends": [
+    "glibc"
+  ],
+  "description": "Su\u00edte de escrit\u00f3rio Writer/Calc/Impress",
+  "install_staging": "make install DESTDIR=$STAGE",
+  "make": "make -j$(nproc)",
+  "name": "libreoffice",
+  "optimization": "-O3 -pipe -flto=auto -march=goldmont-plus -mtune=goldmont-plus",
+  "source": "https://download.documentfoundation.org/libreoffice/src/7.6.4/libreoffice-7.6.4.1.tar.xz",
+  "version": "7.6.4"
+}

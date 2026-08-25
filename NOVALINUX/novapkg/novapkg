@@ -1,0 +1,519 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+NovaPKG — gerenciador de pacotes do NovaLinux.
+
+Implementa o comando único `nova-pkg` com os subcomandos:
+
+    install   Instala um pacote .nvpkg (por arquivo ou por nome, vindo de um repositório)
+    remove    Remove um pacote instalado
+    update    Atualiza a lista de pacotes de um repositório (download do índice)
+    search    Procura um pacote localmente (nome, versão, descrição)
+    info      Mostra metadados de um pacote (instalado ou .nvpkg local)
+    list      Lista pacotes instalados
+    build     Monta um .nvpkg a partir de um diretório de staging
+
+Formato de pacote: tar.xz contendo `.novapkg/metadata.json` + payload.
+Ver `format.md` para a especificação completa.
+
+Variáveis de ambiente reconhecidas:
+    NOVAPKG_ROOT   raiz do sistema de arquivos (default: /)
+    NOVAPKG_REPO   URL ou diretório do repositório de pacotes
+"""
+
+import argparse
+import hashlib
+import json
+import os
+import shutil
+import subprocess
+import sys
+import tarfile
+import tempfile
+
+PKG_NAME = "nova-pkg"
+VERSION = "1.0.0"
+
+# Caminhos padrão relativos à raiz
+DB_DIR = "var/lib/novapkg/db"          # var/lib/novapkg/db/<name>/...
+DB_INDEX = "var/lib/novapkg/index.json"  # índice do repositório
+CACHE_DIR = "var/cache/novapkg"        # .nvpkg baixados para instalação
+
+
+def root():
+    env = os.getenv("NOVAPKG_ROOT")
+    if env:
+        return os.path.abspath(env)
+    return "/"
+
+
+def repo_dir():
+    env = os.getenv("NOVAPKG_REPO")
+    if env:
+        return env
+    # repositório padrão embutido no projeto
+    here = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(here, "repo")
+
+
+# ---------------------------------------------------------------------------
+# Utilidades
+# ---------------------------------------------------------------------------
+
+def db_path(name):
+    return os.path.join(root(), DB_DIR, name)
+
+
+def safe_join(root_dir, relpath):
+    """Garante que `relpath` esteja contido em `root_dir` (proteção contra .. e absoluto)."""
+    if relpath.startswith("/"):
+        raise ValueError(f"caminho absoluto não permitido no payload: {relpath}")
+    parts = relpath.split("/")
+    if ".." in parts:
+        raise ValueError(f"'..' não permitido no payload: {relpath}")
+    return os.path.join(root_dir, relpath)
+
+
+def read_json(path):
+    with open(path, "r", encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def write_json(path, data):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump(data, fh, indent=2, sort_keys=True)
+
+
+def sha256_file(path, chunk=1 << 20):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        while True:
+            b = f.read(chunk)
+            if not b:
+                break
+            h.update(b)
+    return h.hexdigest()
+
+
+def run_script(root_dir, script_rel, env=None):
+    """Executa um script de ciclo de vida do pacote."""
+    if not script_rel:
+        return 0
+    script_path = os.path.join(root_dir, script_rel)
+    if not os.path.exists(script_path):
+        # script declarado mas não presente no archive: ignora silenciosamente
+        return 0
+    env_all = {"PATH": "/usr/bin:/bin:/usr/sbin:/sbin", "ROOT": root_dir}
+    if env:
+        env_all.update(env)
+    print(f"  * executando script de ciclo de vida: {script_rel}")
+    return subprocess.call(["sh", "-e", script_path], env=env_all)
+
+
+# ---------------------------------------------------------------------------
+# Onde guardamos a lista de arquivos instalados
+# ---------------------------------------------------------------------------
+
+def installed_files_path(name):
+    return os.path.join(db_path(name), "installed_files")
+
+# ---------------------------------------------------------------------------
+# Install
+# ---------------------------------------------------------------------------
+
+def extract_to(nvpk_path, root_dir):
+    """Extrai o payload (tudo menos .novapkg/) para root_dir, o mais seguro possível."""
+    installed = []
+    scripts = {}
+    meta = None
+    with tarfile.open(nvpk_path, "r:xz") as tar:
+        for member in tar.getmembers():
+            if member.name == ".novapkg/metadata.json":
+                # metadados
+                f = tar.extractfile(member)
+                meta = json.loads(f.read().decode("utf-8"))
+                continue
+            if member.name.startswith(".novapkg/"):
+                scripts[member.name.split("/")[-1]] = ".novapkg/" + member.name.split("/", 1)[1]
+                continue
+            # payload: valida o caminho
+            rp = member.name
+            dest = safe_join(root_dir, rp)
+            if member.isdir():
+                os.makedirs(dest, exist_ok=True)
+            elif member.issym():
+                os.makedirs(os.path.dirname(dest), exist_ok=True)
+                if os.path.lexists(dest):
+                    os.unlink(dest)
+                os.symlink(member.linkname, dest)
+                installed.append(rp)
+            elif member.isfile():
+                if os.path.isdir(dest):
+                    os.rmdir(dest)
+                os.makedirs(os.path.dirname(dest), exist_ok=True)
+                src = tar.extractfile(member)
+                with open(dest, "wb") as out:
+                    shutil.copyfileobj(src, out)
+                # preserva permissões (executável bits, setgid, etc.)
+                os.chmod(dest, member.mode & 0o7777)
+                installed.append(rp)
+            else:
+                raise ValueError(f"tipo de arquivo não suportado no payload: {member.name} "
+                                 f"(tipo={member.type})")
+    if meta is None:
+        raise ValueError("pacote inválido: .novapkg/metadata.json ausente")
+    return meta, installed, scripts
+
+
+def cmd_install(args):
+    root_dir = args.root if args.root else root()
+    real_root = os.path.abspath(root_dir)
+    os.makedirs(real_root, exist_ok=True)
+
+    target = args.package
+    nvpk_path = None
+    name = None
+
+    if os.path.exists(target) and (target.endswith(".nvpkg") or os.path.isfile(target)):
+        nvpk_path = target
+    else:
+        # procura no índice do repositório
+        idx_path = os.path.join(repo_dir(), "index.json")
+        if not os.path.exists(idx_path):
+            sys.exit(f"erro: pacote '{target}' não encontrado e nenhum índice de "
+                     f"repositório em {idx_path}. Use 'nova-pkg update' ou informe um .nvpkg.")
+        index = read_json(idx_path)
+        entry = None
+        raw = target.lower()
+        for pkg in index.get("packages", []):
+            if pkg["name"].lower() == raw:
+                entry = pkg
+                break
+        if entry is None:
+            sys.exit(f"erro: pacote '{target}' não encontrado no repositório.")
+        nvpk_path = os.path.join(repo_dir(), "packages", entry["filename"])
+        if not os.path.exists(nvpk_path):
+            sys.exit(f"erro: arquivo do repositório ausente: {nvpk_path}")
+
+    print(f"instalando: {os.path.basename(nvpk_path)}")
+    meta, installed, scripts = extract_to(nvpk_path, real_root)
+    name = meta["name"]
+
+    # assegura que o arquivo pacote fica no cache
+    pkg_dir = db_path(name)
+    os.makedirs(pkg_dir, exist_ok=True)
+    cache_pkg = os.path.join(CACHE_DIR, os.path.basename(nvpk_path))
+    os.makedirs(os.path.dirname(os.path.join(real_root, CACHE_DIR)), exist_ok=True)
+    cache_dest = os.path.join(real_root, cache_pkg)
+    os.makedirs(os.path.dirname(cache_dest), exist_ok=True)
+    shutil.copy2(nvpk_path, cache_dest)
+
+    # scripts de ciclo de vida
+    run_script(real_root, scripts.get("pre_install"))
+
+    # grava arquivos instalados
+    with open(installed_files_path(name), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(installed) + "\n")
+
+    # grava metadados (com o cache do pacote referenciado)
+    meta = dict(meta)
+    meta["source_file"] = cache_pkg
+    meta["installed_files"] = installed
+    write_json(os.path.join(db_path(name), "metadata.json"), meta)
+
+    run_script(real_root, scripts.get("post_install"))
+
+    print(f"ok: '{name}' {meta.get('version')} instalado ({len(installed)} arquivos).")
+    return 0
+
+
+# ---------------------------------------------------------------------------
+# Remove
+# ---------------------------------------------------------------------------
+
+def cmd_remove(args):
+    root_dir = os.path.abspath(args.root if args.root else root())
+    name = args.package
+    meta_path = os.path.join(db_path(name), "metadata.json")
+    if not os.path.exists(meta_path):
+        sys.exit(f"erro: pacote '{name}' não está instalado.")
+
+    meta = read_json(meta_path)
+    scripts = meta.get("scripts", {})
+    run_script(root_dir, scripts.get("pre_remove"))
+    with open(os.path.join(db_path(name), "installed_files")) as fh:
+        installed = [l.strip() for l in fh if l.strip()]
+
+    # remove apenas arquivos que ainda estão intactos e pertencem a este pacote
+    removed = 0
+    for rel in reversed(installed):
+        dest = safe_join(root_dir, rel)
+        if os.path.lexists(dest):
+            if os.path.islink(dest) or os.path.isfile(dest):
+                os.unlink(dest)
+                removed += 1
+            elif os.path.isdir(dest):
+                # só remove diretório se vazio
+                try:
+                    os.rmdir(dest)
+                except OSError:
+                    pass
+
+    run_script(root_dir, scripts.get("post_remove"))
+
+    # remove o registro e o cache
+    shutil.rmtree(db_path(name), ignore_errors=True)
+    src_file = meta.get("source_file")
+    if src_file:
+        cache_dest = os.path.join(root_dir, src_file)
+        if os.path.exists(cache_dest):
+            os.unlink(cache_dest)
+
+    print(f"ok: '{name}' removido ({removed} arquivos).")
+    return 0
+
+
+# ---------------------------------------------------------------------------
+# Update (índice do repositório)
+# ---------------------------------------------------------------------------
+
+def cmd_update(args):
+    src = args.repository if args.repository else repo_dir()
+    dest_index = os.path.join(root(), DB_INDEX)
+    os.makedirs(os.path.dirname(dest_index), exist_ok=True)
+    print(f"atualizando índice de pacotes: {src}")
+
+    # Se for um caminho local com index.json, copia.
+    if os.path.isdir(src) and os.path.exists(os.path.join(src, "index.json")):
+        shutil.copy2(os.path.join(src, "index.json"), dest_index)
+        index = read_json(dest_index)
+        print(f"ok: índice atualizado — {len(index.get('packages', []))} pacote(s).")
+        return 0
+
+    if src.startswith("http://") or src.startswith("https://"):
+        import urllib.request
+        tmp = os.path.join(tempfile.mkdtemp(), "index.json")
+        try:
+            urllib.request.urlretrieve(src.rstrip("/") + "/index.json", tmp)
+            shutil.copy2(tmp, dest_index)
+        except Exception as exc:  # noqa: BLE001
+            sys.exit(f"erro: falha ao baixar índice de {src}: {exc}")
+        index = read_json(dest_index)
+        print(f"ok: índice atualizado — {len(index.get('packages', []))} pacote(s).")
+        return 0
+
+    sys.exit(f"erro: fonte de repositório inválida: {src}")
+
+
+# ---------------------------------------------------------------------------
+# Search
+# ---------------------------------------------------------------------------
+
+def cmd_search(args):
+    term = args.pattern.lower()
+    db_base = os.path.join(root(), DB_DIR)
+    found = 0
+    if os.path.isdir(db_base):
+        for name in sorted(os.listdir(db_base)):
+            mp = os.path.join(db_base, name, "metadata.json")
+            if not os.path.exists(mp):
+                continue
+            meta = read_json(mp)
+            hay = " ".join(str(meta.get(k, "")) for k in ("name", "version", "description"))
+            if term in hay.lower():
+                found += 1
+                print(f"{meta.get('name')} {meta.get('version')} — {meta.get('description')}")
+    idx_path = os.path.join(repo_dir(), "index.json")
+    if os.path.exists(idx_path):
+        index = read_json(idx_path)
+        for pkg in index.get("packages", []):
+            hay = " ".join(str(pkg.get(k, "")) for k in ("name", "version", "description"))
+            if term in hay.lower():
+                found += 1
+                print(f"{pkg.get('name')} {pkg.get('version')} — {pkg.get('description')} "
+                      f"(repo: {pkg.get('filename')})")
+    if not found:
+        print("nenhum pacote encontrado.")
+    return 0
+
+
+# ---------------------------------------------------------------------------
+# Info
+# ---------------------------------------------------------------------------
+
+def cmd_info(args):
+    target = args.package
+    if os.path.exists(target):
+        meta, _installed, _scripts = extract_to_info(target)
+    else:
+        mp = os.path.join(db_path(target), "metadata.json")
+        if not os.path.exists(mp):
+            sys.exit(f"erro: pacote '{target}' não encontrado (não instalado e não é .nvpkg).")
+        meta = read_json(mp)
+    print(json.dumps(meta, indent=2, sort_keys=True))
+    return 0
+
+
+def extract_to_info(nvpk_path):
+    with tarfile.open(nvpk_path, "r:xz") as tar:
+        for member in tar.getmembers():
+            if member.name == ".novapkg/metadata.json":
+                f = tar.extractfile(member)
+                meta = json.loads(f.read().decode("utf-8"))
+                return meta, [], {}
+    raise ValueError("metadados ausentes")
+
+
+# ---------------------------------------------------------------------------
+# List
+# ---------------------------------------------------------------------------
+
+def cmd_list(args):
+    db_base = os.path.join(root(), DB_DIR)
+    if not os.path.isdir(db_base):
+        print("nenhum pacote instalado.")
+        return 0
+    for name in sorted(os.listdir(db_base)):
+        mp = os.path.join(db_base, name, "metadata.json")
+        if os.path.exists(mp):
+            meta = read_json(mp)
+            print(f"{meta.get('name')} {meta.get('version')} — {meta.get('description')}")
+    return 0
+
+
+# ---------------------------------------------------------------------------
+# Build (montar .nvpkg a partir de um arvore de staging)
+# ---------------------------------------------------------------------------
+
+def cmd_build(args):
+    # staging é um diretório com .novapkg/metadata.json + payload
+    staging = args.staging
+    meta_path = os.path.join(staging, ".novapkg", "metadata.json")
+    if not os.path.exists(meta_path):
+        sys.exit(f"erro: staging inválido (falta .novapkg/metadata.json): {staging}")
+    meta = read_json(meta_path)
+    name = meta.get("name") or args.name
+    version = meta.get("version") or args.version
+    if not name or not version:
+        sys.exit("erro: informe --name e --version (ou defina-os em metadata.json).")
+    out = args.output or f"{name}-{version}.nvpkg"
+
+    # calcula o tamanho instalado e o hash
+    total = 0
+    for base_dirs in (staging,):
+        for srcdir, _dirs, files in os.walk(staging):
+            for fn in files:
+                fp = os.path.join(srcdir, fn)
+                # não conta os metadados
+                if os.path.relpath(fp, staging).startswith(".novapkg"):
+                    continue
+                total += os.path.getsize(fp)
+    meta["installed_size"] = total
+    meta["arch"] = meta.get("arch") or "x86_64"
+
+    tmp_meta = os.path.join(tempfile.mkdtemp(), "metadata.json")
+    write_json(tmp_meta, meta)
+
+    # coleta uma única lista ordenada de entradas (arquivos, symlinks, diretórios)
+    entries = []
+    for srcdir, dirs, files in os.walk(staging):
+        for d in dirs:
+            dp = os.path.join(srcdir, d)
+            rp = os.path.relpath(dp, staging)
+            if rp == ".novapkg":
+                continue
+            if os.path.islink(dp):
+                entries.append((dp, rp, "symlink"))
+            else:
+                entries.append((dp, rp, "dir"))
+        for fn in files:
+            fp = os.path.join(srcdir, fn)
+            rp = os.path.relpath(fp, staging)
+            if rp == ".novapkg/metadata.json":
+                continue
+            if os.path.islink(fp):
+                entries.append((fp, rp, "symlink"))
+            else:
+                entries.append((fp, rp, "file"))
+    entries.sort(key=lambda e: e[1])
+
+    # escreve o archive (uma única passada)
+    with tarfile.open(out, "w:xz", preset=9) as tar:
+        tar.add(tmp_meta, arcname=".novapkg/metadata.json")
+        for fp, rp, kind in entries:
+            if kind == "dir":
+                tarinfo = tarfile.TarInfo(rp)
+                tarinfo.type = tarfile.DIRTYPE
+                tarinfo.mode = os.stat(fp).st_mode & 0o7777
+                tar.addfile(tarinfo)
+            elif kind == "symlink":
+                tarinfo = tarfile.TarInfo(rp)
+                tarinfo.type = tarfile.SYMTYPE
+                tarinfo.linkname = os.readlink(fp)
+                tar.addfile(tarinfo)
+            else:
+                tar.add(fp, arcname=rp)
+
+    sha = sha256_file(out)
+    print(f"ok: {out}")
+    print(f"    pacote: {name}-{version}")
+    print(f"    tamanho instalado: {total} bytes")
+    print(f"    sha256: {sha}")
+    return 0
+
+
+# ---------------------------------------------------------------------------
+# main
+# ---------------------------------------------------------------------------
+
+def main(argv=None):
+    p = argparse.ArgumentParser(
+        prog=PKG_NAME,
+        description=f"{PKG_NAME} {VERSION} — gerenciador de pacotes do NovaLinux")
+    p.add_argument("-V", "--version", action="version", version=f"{PKG_NAME} {VERSION}")
+    p.add_argument("--root", help="raiz do sistema de arquivos (default: /)")
+
+    sub = p.add_subparsers(dest="cmd", required=True)
+
+    sp = sub.add_parser("install", help="instala um pacote .nvpkg")
+    sp.add_argument("package", help="arquivo .nvpkg ou nome de pacote do repositório")
+    sp.set_defaults(func=cmd_install)
+
+    sp = sub.add_parser("remove", help="remove um pacote instalado")
+    sp.add_argument("package", help="nome do pacote")
+    sp.set_defaults(func=cmd_remove)
+
+    sp = sub.add_parser("update", help="atualiza o índice do repositório")
+    sp.add_argument("--repository", help="URL ou diretório do repositório")
+    sp.set_defaults(func=cmd_update)
+
+    sp = sub.add_parser("search", help="procura pacotes")
+    sp.add_argument("pattern", help="termo de busca")
+    sp.set_defaults(func=cmd_search)
+
+    sp = sub.add_parser("info", help="mostra metadados de um pacote")
+    sp.add_argument("package", help="nome (instalado) ou caminho para .nvpkg")
+    sp.set_defaults(func=cmd_info)
+
+    sp = sub.add_parser("list", help="lista pacotes instalados")
+    sp.set_defaults(func=cmd_list)
+
+    sp = sub.add_parser("build", help="monta um .nvpkg a partir de um staging")
+    sp.add_argument("--staging", required=True, help="diretório de staging")
+    sp.add_argument("--name", help="nome do pacote")
+    sp.add_argument("--version", help="versão do pacote")
+    sp.add_argument("--output", help="arquivo .nvpkg de saída")
+    sp.set_defaults(func=cmd_build)
+
+    args = p.parse_args(argv)
+    for action in ("install", "remove", "update", "search", "info", "list"):
+        pass
+    # repassa --root para o handler quando aplicável
+    if not hasattr(args, "root"):
+        args.root = None
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

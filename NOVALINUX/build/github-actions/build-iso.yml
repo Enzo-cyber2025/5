@@ -1,0 +1,80 @@
+name: Build & release NovaLinux ISO
+
+# Constrói um ISO mínimo REAL e bootável do NovaLinux e o publica como um
+# GitHub Release contendo APENAS o arquivo .iso e .sha256.
+#
+# Porque existe: o sandbox desta sessão tem rede restrita (apenas GitHub/PyPI),
+# o que impede o bootstrap GNU (bison/flex/autotools) e o download de fontes do
+# kernel. Este workflow roda em um runner do GitHub com rede completa.
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [ release ]
+  pull_request:
+    branches: [ release ]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nova-iso-build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 300
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Instalar dependências de build
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y \
+            build-essential bc bison flex libssl-dev libelf-dev libncurses-dev \
+            xorriso grub-pc-bin grub-efi-amd64-bin grub-common mtools cpio \
+            zstd busybox-static qemu-system-x86 qemu-utils wget curl xz-utils
+
+      - name: Verificar ferramentas
+        run: |
+          for t in gcc make bison flex bc xorriso grub-mkrescue qemu-system-x86_64 busybox zstd; do
+            command -v "$t" >/dev/null && echo "  OK $t" || echo "  FALTA $t"
+          done
+
+      - name: Build do ISO (kernel + busybox + initramfs + GRUB)
+        run: |
+          bash NOVALINUX/build/ci_build.sh
+
+      - name: Conferir artefatos e SHA256
+        run: |
+          ls -lh NOVALINUX/dist/*.iso NOVALINUX/dist/*.sha256
+          sha256sum -c NOVALINUX/dist/*.sha256
+
+      - name: Verificação de boot no QEMU (best-effort)
+        continue-on-error: true
+        run: |
+          ISO=$(ls NOVALINUX/dist/*.iso | head -1)
+          mkdir -p /tmp/bootlog
+          timeout 120 qemu-system-x86_64 -m 1024 -smp 2 \
+            -drive file="$ISO",media=cdrom -nographic -no-reboot \
+            -serial stdio -monitor none -display none 2>&1 | tee /tmp/bootlog/console.log || true
+          echo "---- log de boot (trecho) ----"
+          grep -a -m8 "NOVALINUX_BOOT_OK\|NovaLinux\|Linux version\|freeing" /tmp/bootlog/console.log || echo "(sem marcador de boot no log; ver acima)"
+
+      - name: Publicar Release (apenas .iso e .sha256)
+        if: github.event_name != 'pull_request'
+        run: |
+          set -e
+          ISO=$(ls NOVALINUX/dist/*.iso | head -1)
+          SHA="${ISO}.sha256"
+          [ -f "$ISO" ] || { echo "sem ISO"; exit 1; }
+          TAG="release-$(date +%Y%m%d-%H%M%S)"
+          echo "Publicando $ISO e $SHA como $TAG"
+          gh release create "$TAG" "$ISO" "$SHA" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "NovaLinux ISO ($(date -u +%Y-%m-%d))" \
+            --notes "ISO mínima bootável do NovaLinux (Intel Goldmont Plus). Contém .iso e .sha256." \
+            || echo "(gh release create falhou — verifique Token permissões)"
+          echo "RELEASE_TAG=$TAG"

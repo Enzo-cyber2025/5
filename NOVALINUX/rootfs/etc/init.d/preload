@@ -1,0 +1,22 @@
+#!/sbin/openrc-run
+# OpenRC service: preload (pré-carregamento de binários) — acelera apps no N5030
+depend() {
+    need localmount
+    after bootmisc
+}
+
+start() {
+    ebegin "Iniciando preload"
+    if [ -x /usr/sbin/preload ]; then
+        /usr/sbin/preload &
+    elif [ -x /usr/bin/preload ]; then
+        /usr/bin/preload &
+    fi
+    eend $?
+}
+
+stop() {
+    ebegin "Parando preload"
+    killall preload 2>/dev/null
+    eend 0
+}
