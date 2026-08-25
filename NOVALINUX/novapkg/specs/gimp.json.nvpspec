@@ -1,0 +1,21 @@
+{
+  "arch": "x86_64",
+  "build_deps": [
+    "autoconf",
+    "automake",
+    "make",
+    "gcc",
+    "pkg-config"
+  ],
+  "configure": "./configure --prefix=/usr --sysconfdir=/etc",
+  "depends": [
+    "glibc"
+  ],
+  "description": "Editor de imagens",
+  "install_staging": "make install DESTDIR=$STAGE",
+  "make": "make -j$(nproc)",
+  "name": "gimp",
+  "optimization": "-O3 -pipe -flto=auto -march=goldmont-plus -mtune=goldmont-plus",
+  "source": "https://github.com/GNOME/gimp/archive/refs/tags/GIMP_2_10_36.tar.gz",
+  "version": "2.10.36"
+}

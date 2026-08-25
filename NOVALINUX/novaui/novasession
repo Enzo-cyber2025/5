@@ -1,0 +1,56 @@
+#!/usr/bin/env sh
+# =============================================================================
+# novasession — inicia a sessão gráfica da NovaUI
+#
+# Orquestra o ambiente:
+#   - define os caminhos do usuário/ambiente
+#   - aplica layout de teclado e características de exibição
+#   - inicia o gerenciador de janelas NovaWM
+#   - inicia o painel NovaPanel, o lançador e a configuração
+#
+# Este script é chamado pelo gerenciador de login (ou manualmente a partir do
+# console com `startx`/`novasession`). Nenhuma referência a GNOME/KDE/XFCE/
+# LXDE/MATE/etc. em nenhum lugar.
+# =============================================================================
+
+export XDG_CURRENT_DESKTOP="NovaUI"
+export XDG_SESSION_DESKTOP="nova"
+export XDG_SESSION_TYPE="x11"
+export DESKTOP_SESSION="nova"
+export BROWSER="${BROWSER:-firefox}"
+export TERMINAL="${TERMINAL:-nova-terminal}"
+export EDITOR="${EDITOR:-nano}"
+
+# se não houver display, usa o X server local
+if [ -z "$DISPLAY" ]; then
+    export DISPLAY=:0
+fi
+
+echo "NovaUI: iniciando sessão..."
+
+# layout de teclado padrão (en_US) com suporte a pt_BR/es_ES/fr_FR
+setxkbmap -layout us -variant intl 2>/dev/null || true
+
+# configurações de energia (OOM killer e pré-carga) se disponíveis
+[ -x /usr/bin/earlyoom ] && /usr/bin/earlyoom -m 60 -M 70 &
+[ -x /usr/bin/preload ]  && /usr/bin/preload 2>/dev/null || true
+
+# inicia o gerenciador de janelas em segundo plano
+/usr/bin/novawm &
+NOVAWM_PID=$!
+
+# aguarda o gerenciador prontificar para mapear o painel
+sleep 1
+
+# painel inferior
+/usr/bin/nova-panel &
+/usr/bin/nova-launcher &
+/usr/bin/nova-files &
+
+# terminal default aberto
+/usr/bin/nova-terminal &
+
+# oferece a central de configurações com Alt+Space; o lançador é chamado
+# pelo WM quando Alt+Espaço é pressionado (via atom "novalaunch").
+
+wait "${NOVAWM_PID}"

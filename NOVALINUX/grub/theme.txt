@@ -1,0 +1,52 @@
+# =============================================================================
+# theme.txt — Tema gráfico "NovaTheme" do GRUB 2.12
+# Estilo: limpo, com fundo azul/roxo e acentos ciano.
+# Formatos válidos deste arquivo: theme.txt do gfxmenu (Starfield-like).
+# =============================================================================
+
+# --- Fundo ---
+# Logos do tema (fundos PNG) são referenciados:
+desktop-image: "background.png"
+# Cor de fundo sólida (fallback caso falte a imagem)
+desktop-color: "#1a1b3a"
+
+# --- Títulos / textos ---
+title-text: "NOVA"
+title-color: "#eaeaf2"
+title-font: "DejaVu Sans Bold 24"
+
+# --- Itens do menu ---
+item-color: "#c8c8d8"
+item-font: "DejaVu Sans Regular 16"
+item-spacing: 8
+item-pixmap-style: "item_*.png"
+
+# Item selecionado
+selected-item-color: "#ffffff"
+selected-item-font: "DejaVu Sans Bold 18"
+selected-item-pixmap-style: "select_*.png"
+selected-item-pixmap-x: 40
+
+# --- Rodapé do menu ---
+terminal-font: "DejaVu Sans Regular 14"
+terminal-box: "menu_*.png"
+terminal-left: 30
+terminal-top: 200
+terminal-width: 80%
+terminal-height: 60%
+
+# --- Tela de boot / barra de progresso ---
+boot-desktop-image: "background.png"
+boot-title-color: "#eaeaf2"
+boot-menu-color: "#c8c8d8"
+# Mensagem de timeout
+hidden-timeout: 3
+timeout: 3
+# Barra de progresso
+progress-bar-color: "#3a0ca3"
+progress-bar-height: 4
+progress-bar-width: 60%
+
+# --- Cor da fonte no texto do menu quando inativo ---
+scrollbar-color: "#3a0ca3"
+scrollbar-thumb: "#7209b7"

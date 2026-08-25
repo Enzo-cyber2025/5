@@ -1,0 +1,27 @@
+#!/sbin/openrc-run
+# OpenRC service: swap comprimido com zram/zstd (otimização para N5030)
+depend() {
+    need localmount
+    after modules
+}
+
+start() {
+    ebegin "Configurando swap comprimido (zram + zstd)"
+    if [ -e /dev/zram0 ]; then
+        modprobe zram zram_num_devices=1 2>/dev/null || true
+        # 1/2 da RAM como swap comprimido (Zstd)
+        mem=$(awk '/MemTotal/{print $2}' /proc/meminfo)
+        size=$((mem / 2))
+        echo "${size}" > /sys/block/zram0/disksize
+        echo zstd > /sys/block/zram0/comp_algorithm 2>/dev/null || true
+        mkswap /dev/zram0 2>/dev/null
+        swapon -p 100 /dev/zram0 2>/dev/null
+    fi
+    eend 0
+}
+
+stop() {
+    ebegin "Desativando swap zram"
+    swapoff /dev/zram0 2>/dev/null || true
+    eend 0
+}

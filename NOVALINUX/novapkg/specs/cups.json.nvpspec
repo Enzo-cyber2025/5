@@ -1,0 +1,21 @@
+{
+  "arch": "x86_64",
+  "build_deps": [
+    "autoconf",
+    "automake",
+    "make",
+    "gcc",
+    "pkg-config"
+  ],
+  "configure": "./configure --prefix=/usr --sysconfdir=/etc",
+  "depends": [
+    "glibc"
+  ],
+  "description": "Servi\u00e7o de impress\u00e3o comum",
+  "install_staging": "make install DESTDIR=$STAGE",
+  "make": "make -j$(nproc)",
+  "name": "cups",
+  "optimization": "-O3 -pipe -flto=auto -march=goldmont-plus -mtune=goldmont-plus",
+  "source": "https://github.com/OpenPrinting/cups/archive/refs/tags/v2.4.7.tar.gz",
+  "version": "2.4.7"
+}

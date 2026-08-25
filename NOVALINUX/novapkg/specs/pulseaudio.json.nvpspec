@@ -1,0 +1,21 @@
+{
+  "arch": "x86_64",
+  "build_deps": [
+    "autoconf",
+    "automake",
+    "make",
+    "gcc",
+    "pkg-config"
+  ],
+  "configure": "./configure --prefix=/usr --sysconfdir=/etc",
+  "depends": [
+    "glibc"
+  ],
+  "description": "Servidor de \u00e1udio",
+  "install_staging": "make install DESTDIR=$STAGE",
+  "make": "make -j$(nproc)",
+  "name": "pulseaudio",
+  "optimization": "-O3 -pipe -flto=auto -march=goldmont-plus -mtune=goldmont-plus",
+  "source": "https://github.com/pulseaudio/pulseaudio/archive/refs/tags/v16.1.tar.gz",
+  "version": "16.1"
+}

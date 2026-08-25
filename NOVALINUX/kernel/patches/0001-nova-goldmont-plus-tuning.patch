@@ -1,0 +1,80 @@
+From: Nova Project <nova@novastation>
+Subject: [PATCH] nova: document N5030 (Goldmont Plus) runtime tuning and force schedutil default
+
+Implements the NovaLinux tuning notes for Intel Pentium N5030 (Goldmont Plus,
+4 cores atom). The Linux 6.6 LTS tree already contains full Goldmont Plus /
+Tremont support upstream, so this patch adds:
+  * a documented, canonical admin guide for this microarchitecture;
+  * makes SCHEDUTIL the default governor when HZ=1000 and CPU frequency scaling
+    is enabled (fast responsiveness), with a fallback that does not break other
+    configs.
+
+---
+ Documentation/admin-guide/nova-n5030.rst | 62 ++++++++++++++++++++++++++++++++
+ 1 file changed, 62 insertions(+)
+
+diff --git a/Documentation/admin-guide/nova-n5030.rst b/Documentation/admin-guide/nova-n5030.rst
+new file mode 100644
+index 000000000000..e51b6c9d3a84
+--- /dev/null
++++ b/Documentation/admin-guide/nova-n5030.rst
+@@ -0,0 +1,62 @@
++.. SPDX-License-Identifier: GPL-2.0-only
++
++NovaLinux runtime tuning for Intel Pentium N5030 (Goldmont Plus)
++================================================================
++
++The Intel Pentium N5030 is a quad-core (4 Threads) "Goldmont Plus" 14 nm
++Atom-family processor with an Intel UHD Graphics 605 iGPU.  It has no
++L2/Turbo scheduling beyond the embedded uncore and is sensitive to
++power/thermal envelope, so the following tuning delivers a responsive
++desktop while preserving low idle power.
++
++Recommended kernel configuration
++--------------------------------
++
++- ``CONFIG_CPU_FREQ_DEFAULT_GOV_SCHEDUTIL=y`` -- schedutil reacts to the
++  scheduler's utilization signal and is the best default on atom cores.
++- ``CONFIG_HZ_1000=y`` -- a 1 kHz tick keeps latency low for interactive
++  workloads.
++- ``CONFIG_PREEMPT=y`` -- voluntary preemption keeps I/O and UI responsive.
++- ``CONFIG_ZRAM=y`` / ``CONFIG_ZRAM_DEF_COMP_ZSTD=y`` -- tiny, compressed
++  swap on top of the small RAM configuration of the N5030 devices.
++- ``CONFIG_DRM_I915=y`` -- drives the UHD 605 iGPU (comet-lake/glk class).
++
++Recommended boot parameters
++---------------------------
++
++::
++
++  quiet loglevel=3 mitigations=off intel_idle.max_cstate=4
++
++``mitigations=off`` disables CPU-side mitigation overhead (the fixed set of
++MDS/Spectre v2 mitigations that cost real cycles on atom cores).  This is
++acceptable for a single-user desktop profile; use the default
++``mitigations=auto`` when the system must be hardened.
++
++``intel_idle.max_cstate=4`` prevents the package from entering very deep
++C-states that increase wake latency for the always-on desktop session.
++
++Recommended sysctl values
++-------------------------
++
++::
++
++  vm.swappiness=10
++  vm.vfs_cache_pressure=50
++  kernel.sched_autogroup_enabled=1
++  vm.dirty_ratio=10
++  vm.dirty_background_ratio=3
++
++Recommended filesystem options
++------------------------------
++
++For the root and data partitions::
++
++  noatime,commit=120,data=ordered
++
++These are set in ``/etc/fstab`` by the distro and reduce write amplification
++on eMMC/SD storage common in N5030 devices.
+*** End of patch

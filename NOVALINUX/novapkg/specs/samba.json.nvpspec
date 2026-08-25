@@ -1,0 +1,21 @@
+{
+  "arch": "x86_64",
+  "build_deps": [
+    "autoconf",
+    "automake",
+    "make",
+    "gcc",
+    "pkg-config"
+  ],
+  "configure": "./configure --prefix=/usr --sysconfdir=/etc",
+  "depends": [
+    "glibc"
+  ],
+  "description": "Compartilhamento de arquivos SMB/CIFS",
+  "install_staging": "make install DESTDIR=$STAGE",
+  "make": "make -j$(nproc)",
+  "name": "samba",
+  "optimization": "-O3 -pipe -flto=auto -march=goldmont-plus -mtune=goldmont-plus",
+  "source": "https://github.com/samba-team/samba/archive/refs/tags/samba-4.19.5.tar.gz",
+  "version": "4.19.5"
+}
