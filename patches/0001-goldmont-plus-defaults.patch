@@ -1,0 +1,19 @@
+From: NovaLinux builders <nova@novastation>
+Subject: [PATCH] Goldmont Plus (Pentium N5030) defaults
+
+- Prefer schedutil
+- 1000 Hz for snappy UI
+- Default cmdline disables unused Spectre mitigations on this Atom-class SoC
+  (the live image also sets these on the boot command line)
+
+This is an original NovaLinux configuration patch, not derived from another
+desktop environment.
+
+---
+# Applied via .config fragment during the automated build:
+# CONFIG_CPU_FREQ_DEFAULT_GOV_SCHEDUTIL=y
+# CONFIG_HZ_1000=y
+# CONFIG_CMDLINE="quiet loglevel=3 mitigations=off intel_idle.max_cstate=4"
+# CONFIG_DRM_I915=y
+# CONFIG_DRM_SIMPLEDRM=y
+# KCFLAGS=-march=goldmont-plus -mtune=goldmont-plus -O2 -pipe

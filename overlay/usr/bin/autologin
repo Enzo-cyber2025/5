@@ -1,0 +1,16 @@
+#!/bin/sh
+# Auto-login nova and start NovaUI on tty1
+export HOME=/home/nova
+export USER=nova
+export LOGNAME=nova
+export PATH=/usr/local/bin:/usr/bin:/bin:/sbin:/usr/sbin
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+export TERM=linux
+export HOSTNAME=novastation
+cd /home/nova
+# If framebuffer exists, start the desktop; else a login shell
+if [ -e /dev/fb0 ]; then
+    exec /usr/bin/novashell session
+fi
+exec /bin/sh -l

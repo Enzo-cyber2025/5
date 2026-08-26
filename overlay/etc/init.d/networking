@@ -1,0 +1,18 @@
+#!/bin/sh
+case "$1" in
+  start)
+    ip link set lo up 2>/dev/null || ifconfig lo 127.0.0.1 up
+    for i in /sys/class/net/*; do
+        n=$(basename "$i")
+        [ "$n" = "lo" ] && continue
+        ip link set "$n" up 2>/dev/null || ifconfig "$n" up 2>/dev/null
+        if [ -x /sbin/udhcpc ]; then
+            udhcpc -i "$n" -q -n -t 2 -T 1 >/dev/null 2>&1 &
+        fi
+    done
+    ;;
+  stop)
+    ip link set lo down 2>/dev/null
+    ;;
+  *) exit 1 ;;
+esac

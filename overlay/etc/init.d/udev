@@ -1,0 +1,15 @@
+#!/bin/sh
+case "$1" in
+  start)
+    mount -t devtmpfs devtmpfs /dev 2>/dev/null
+    mkdir -p /dev/pts /dev/shm /dev/input
+    mount -t devpts devpts /dev/pts 2>/dev/null
+    mount -t tmpfs -o mode=1777 shm /dev/shm 2>/dev/null
+    if [ -x /sbin/mdev ]; then
+        echo /sbin/mdev > /proc/sys/kernel/hotplug 2>/dev/null
+        mdev -s
+    fi
+    ;;
+  stop) ;;
+  *) exit 1 ;;
+esac

@@ -1,0 +1,8 @@
+#!/bin/sh
+case "$1" in
+  start)
+    hostname novastation 2>/dev/null || hostname -F /etc/hostname
+    ;;
+  stop) ;;
+  *) echo "usage: $0 start"; exit 1 ;;
+esac

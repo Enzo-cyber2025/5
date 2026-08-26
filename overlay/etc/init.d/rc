@@ -1,0 +1,30 @@
+#!/bin/sh
+# OpenRC-compatible runlevel dispatcher
+LEVEL="${1:-default}"
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+RL="/etc/runlevels/$LEVEL"
+
+echo "NovaLinux OpenRC: entering runlevel $LEVEL"
+
+if [ "$LEVEL" = "shutdown" ]; then
+    if [ -d /etc/runlevels/shutdown ]; then
+        for s in /etc/runlevels/shutdown/*; do
+            [ -x "$s" ] && "$s" stop
+        done
+    fi
+    exit 0
+fi
+
+# dependency-ordered: start every service in the runlevel
+if [ -d "$RL" ]; then
+    for s in "$RL"/*; do
+        [ -e "$s" ] || continue
+        name=$(basename "$s")
+        echo " * Starting $name ..."
+        if [ -x "$s" ]; then
+            "$s" start && echo "   [ ok ]" || echo "   [fail]"
+        elif [ -x "/etc/init.d/$name" ]; then
+            "/etc/init.d/$name" start && echo "   [ ok ]" || echo "   [fail]"
+        fi
+    done
+fi

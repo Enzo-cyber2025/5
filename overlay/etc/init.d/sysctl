@@ -1,0 +1,12 @@
+#!/bin/sh
+case "$1" in
+  start)
+    [ -f /etc/sysctl.conf ] && sysctl -p /etc/sysctl.conf >/dev/null 2>&1
+    # schedutil where available
+    for g in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+        [ -w "$g" ] && echo schedutil > "$g" 2>/dev/null
+    done
+    ;;
+  stop) ;;
+  *) exit 1 ;;
+esac

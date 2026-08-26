@@ -1,0 +1,5 @@
+#!/bin/sh
+echo "Runlevel: default"
+ls -1 /etc/runlevels/default 2>/dev/null | while read s; do
+    echo "  [started] $s"
+done

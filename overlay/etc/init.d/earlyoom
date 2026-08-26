@@ -1,0 +1,13 @@
+#!/bin/sh
+case "$1" in
+  start)
+    if [ -x /usr/sbin/nova-oom ]; then
+        /usr/sbin/nova-oom >/dev/null 2>&1 &
+        echo $! > /var/run/nova-oom.pid
+    fi
+    ;;
+  stop)
+    [ -f /var/run/nova-oom.pid ] && kill "$(cat /var/run/nova-oom.pid)" 2>/dev/null
+    ;;
+  *) exit 1 ;;
+esac

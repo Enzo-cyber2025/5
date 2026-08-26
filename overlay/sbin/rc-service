@@ -1,0 +1,13 @@
+#!/bin/sh
+# OpenRC rc-service
+SVC="$1"
+ACT="${2:-status}"
+if [ -z "$SVC" ]; then
+    echo "usage: rc-service <service> <start|stop|restart|status>"
+    exit 1
+fi
+if [ -x "/etc/init.d/$SVC" ]; then
+    exec "/etc/init.d/$SVC" "$ACT"
+fi
+echo "rc-service: $SVC not found"
+exit 1

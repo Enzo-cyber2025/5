@@ -1,0 +1,39 @@
+#!/bin/sh
+# Download Mozilla Firefox (linux64) into /opt/firefox
+# Needs network. Running the UI still needs X11/GTK.
+set -e
+URL="${1:-https://download.mozilla.org/?product=firefox-latest&os=linux64&lang=pt-BR}"
+DEST="${2:-/opt/firefox}"
+TMP="/tmp/firefox-dl.tar.bz2"
+
+echo "NovaLinux: downloading Firefox..."
+echo "URL: $URL"
+mkdir -p /opt /tmp
+if ! wget -O "$TMP" "$URL"; then
+    echo "wget failed. Check network (cable/Wi-Fi) and try again."
+    exit 1
+fi
+
+echo "Extracting..."
+rm -rf "$DEST"
+mkdir -p "$(dirname "$DEST")"
+if tar -xjf "$TMP" -C /opt; then
+    :
+else
+    echo "tar/bzip2 extract failed. File may be xz; trying tar -xJf..."
+    tar -xJf "$TMP" -C /opt || {
+        echo "Could not extract archive."
+        exit 1
+    }
+fi
+rm -f "$TMP"
+
+# official tarball unpacks to /opt/firefox
+if [ -x /opt/firefox/firefox ]; then
+    ln -sf /opt/firefox/firefox /usr/bin/firefox
+    echo "Installed. Run: firefox"
+    echo "If it says display/GTK error, this live image has no Xorg — only download worked."
+else
+    echo "Archive extracted under /opt. Look for the firefox binary there."
+    ls -la /opt
+fi

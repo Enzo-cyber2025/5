@@ -1,0 +1,27 @@
+#!/bin/sh
+# OpenRC rc-update
+CMD="$1"
+SVC="$2"
+RL="${3:-default}"
+case "$CMD" in
+    add)
+        mkdir -p "/etc/runlevels/$RL"
+        ln -sf "/etc/init.d/$SVC" "/etc/runlevels/$RL/$SVC"
+        echo " * $SVC added to $RL"
+        ;;
+    del)
+        rm -f "/etc/runlevels/$RL/$SVC"
+        echo " * $SVC removed from $RL"
+        ;;
+    show)
+        for d in /etc/runlevels/*; do
+            [ -d "$d" ] || continue
+            echo "$(basename "$d"):"
+            ls -1 "$d" 2>/dev/null | sed 's/^/  /'
+        done
+        ;;
+    *)
+        echo "usage: rc-update add|del|show [service] [runlevel]"
+        exit 1
+        ;;
+esac

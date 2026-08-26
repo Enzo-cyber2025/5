@@ -1,0 +1,21 @@
+#!/bin/sh
+# Compressed swap with zstd (falls back to lzo)
+case "$1" in
+  start)
+    if [ -d /sys/class/zram-control ] || [ -e /dev/zram0 ]; then
+        modprobe zram 2>/dev/null
+        [ -e /dev/zram0 ] || echo 1 > /sys/class/zram-control/hot_add 2>/dev/null
+        if [ -e /sys/block/zram0/comp_algorithm ]; then
+            echo zstd > /sys/block/zram0/comp_algorithm 2>/dev/null \
+                || echo lzo > /sys/block/zram0/comp_algorithm 2>/dev/null
+        fi
+        echo 512M > /sys/block/zram0/disksize 2>/dev/null
+        mkswap /dev/zram0 >/dev/null 2>&1
+        swapon /dev/zram0 2>/dev/null
+    fi
+    ;;
+  stop)
+    swapoff /dev/zram0 2>/dev/null
+    ;;
+  *) exit 1 ;;
+esac

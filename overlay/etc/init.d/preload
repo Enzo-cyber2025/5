@@ -1,0 +1,13 @@
+#!/bin/sh
+case "$1" in
+  start)
+    if [ -x /usr/sbin/nova-preload ]; then
+        /usr/sbin/nova-preload >/dev/null 2>&1 &
+        echo $! > /var/run/nova-preload.pid
+    fi
+    ;;
+  stop)
+    [ -f /var/run/nova-preload.pid ] && kill "$(cat /var/run/nova-preload.pid)" 2>/dev/null
+    ;;
+  *) exit 1 ;;
+esac
