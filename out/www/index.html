@@ -6,22 +6,29 @@
 <title>NovaLinux 1.0 — download</title>
 <style>
   html,body{margin:0;min-height:100%;background:#161428;color:#f4f0ff;font-family:Arial,sans-serif}
-  main{max-width:640px;margin:12vh auto;padding:32px;background:#2a2848;border-radius:16px}
+  main{max-width:640px;margin:10vh auto;padding:32px;background:#2a2848;border-radius:16px}
   h1{margin:0 0 8px;font-size:32px}
   p{line-height:1.5;color:#d4d0e8}
-  a.btn{display:block;text-align:center;background:#7c5ce4;color:#fff;text-decoration:none;font-size:22px;font-weight:700;padding:20px;border-radius:12px;margin:24px 0}
+  a.btn{display:block;text-align:center;background:#7c5ce4;color:#fff;text-decoration:none;font-size:22px;font-weight:700;padding:20px;border-radius:12px;margin:20px 0}
   a.btn:hover{background:#9378f0}
+  a.sec{display:block;text-align:center;color:#c8c0ff;margin-top:8px}
   code{display:block;word-break:break-all;background:#161428;padding:12px;border-radius:8px;font-size:13px}
+  ol{color:#d4d0e8;line-height:1.6}
 </style>
 </head>
 <body>
 <main>
   <h1>NovaLinux 1.0</h1>
-  <p>ISO com NovaUI compilada. Clique e o arquivo baixa direto.</p>
-  <a class="btn" href="/NovaLinux-1.0-n5030.iso" download="NovaLinux-1.0-n5030.iso">Baixar ISO (68 MB)</a>
+  <p>Disco do VirtualBox. Sem DVD.</p>
+  <a class="btn" href="/NovaLinux-1.0-n5030.vhd" download="NovaLinux-1.0-n5030.vhd">Baixar disco VHD</a>
+  <ol>
+    <li>VirtualBox → Nova → Linux 64-bit</li>
+    <li>Usar disco existente → este VHD</li>
+    <li>Iniciar</li>
+  </ol>
   <p>SHA256</p>
-  <code>0bcfea29109795b886af97f91d642839e93888ece26fbfe1bd05adb62a24fdf4</code>
-  <p>VirtualBox padrão: anexa o ISO no DVD e inicia. Login <b>nova</b> / <b>nova123</b>.</p>
+  <code id="hash">78b2c0f1894633061042555ac2e0683dbcfe18bc3330587d492449334e934977</code>
+  <a class="sec" href="/NovaLinux-1.0-n5030.iso" download>ISO (opcional)</a>
 </main>
 </body>
 </html>
