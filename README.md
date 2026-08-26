@@ -4,7 +4,7 @@ Launcher Android para executar ambientes Windows ARM64 com **Box64 / Box86**, **
 
 ## APK
 
-O APK instalável está no GitHub como [`Xclipse64-v0.1.0.apk`](https://github.com/Enzo-cyber2025/5/raw/349a7c07f9fc25413d8b4a89500342d33302d67f/Xclipse64-v0.1.0.apk) e também é referenciado pelo release [v0.1.0](https://github.com/Enzo-cyber2025/5/releases/tag/v0.1.0). O checksum está em `SHA256SUMS.txt`. O release não inclui runtimes, jogos, Wine, tradutores gráficos ou drivers proprietários.
+O APK instalável está no GitHub como [`Xclipse64-v0.1.0.apk`](https://github.com/Enzo-cyber2025/5/raw/c1f88e65c4a271ce3e1e98950f7ff141e4af8727/Xclipse64-v0.1.0.apk) e também é referenciado pelo release [v0.1.0](https://github.com/Enzo-cyber2025/5/releases/tag/v0.1.0). O checksum está em `SHA256SUMS.txt`. O release não inclui runtimes, jogos, Wine, tradutores gráficos ou drivers proprietários.
 
 ## O que o aplicativo faz
 
