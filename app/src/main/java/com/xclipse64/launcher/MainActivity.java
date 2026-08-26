@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
@@ -87,11 +88,14 @@ public final class MainActivity extends Activity {
     private TextView launchButton;
     private TextView outputValue;
     private Process currentProcess;
+    private boolean bundledCoreReady;
+    private String bundledCoreError = "";
 
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         preferences = getSharedPreferences(PREFS, MODE_PRIVATE);
+        bootstrapBundledComponents();
         configureWindow();
         buildUi();
     }
@@ -140,7 +144,7 @@ public final class MainActivity extends Activity {
         brand.addView(brandSub, wrap());
         topBar.addView(brand, new LinearLayout.LayoutParams(0, -2, 1));
 
-        TextView version = pill("v0.1.0", MUTED, Color.TRANSPARENT);
+        TextView version = pill("v0.2.0", MUTED, Color.TRANSPARENT);
         topBar.addView(version, wrap());
 
         ScrollView scroll = new ScrollView(this);
@@ -169,7 +173,7 @@ public final class MainActivity extends Activity {
         TextView headline = text("Seu Windows.\nNo seu Android.", 31, TEXT, Typeface.BOLD);
         headline.setLineSpacing(0, 1.02f);
         body.addView(headline, withBottom(wrap(), 10));
-        TextView copy = text("Um launcher leve para Box64 e Box86, com DXVK / VKD3D e caminho Vulkan otimizado para GPUs Xclipse.", 14, MUTED, Typeface.NORMAL);
+        TextView copy = text("Um runtime ARM64 para Windows x86, com Box64 embutido, DXVK / VKD3D e uma camada Vulkan de compatibilidade para GPUs Xclipse.", 14, MUTED, Typeface.NORMAL);
         copy.setLineSpacing(0, 1.2f);
         body.addView(copy, withBottom(wrap(), 22));
     }
@@ -223,7 +227,7 @@ public final class MainActivity extends Activity {
         LinearLayout.LayoutParams second = new LinearLayout.LayoutParams(0, dp(94), 1);
         second.setMargins(dp(10), 0, 0, 0);
         profiles.addView(profileCard(
-                "x86", "Box86 + Box64\n32-bit", PROFILE_X86.equals(selected),
+                "x86", "Box32 / Box86\n32-bit", PROFILE_X86.equals(selected),
                 v -> selectProfile(PROFILE_X86)), second);
     }
 
@@ -305,12 +309,12 @@ public final class MainActivity extends Activity {
         LinearLayout labels = vertical(0);
         driverValue = text("Driver Vulkan do sistema", 14, TEXT, Typeface.BOLD);
         labels.addView(driverValue, wrap());
-        TextView hint = text("Pass-through seguro para o Xclipse", 11, MUTED, Typeface.NORMAL);
+        TextView hint = text("BCn embutida • pass-through com o driver do sistema", 11, MUTED, Typeface.NORMAL);
         labels.addView(hint, withTop(wrap(), 3));
         row.addView(labels, new LinearLayout.LayoutParams(0, -2, 1));
         card.addView(row, wrap());
 
-        TextView explanation = text("O Android mantém o driver Samsung. Uma camada de compatibilidade Xclipse opcional pode ser importada abaixo; ela não substitui o driver do kernel.", 11, MUTED, Typeface.NORMAL);
+        TextView explanation = text("O APK inclui uma camada BCn de compatibilidade e um perfil para Exynos 1480 / Xclipse 530. O Android mantém o driver Samsung como backend; a camada não substitui driver de kernel ou firmware.", 11, MUTED, Typeface.NORMAL);
         explanation.setLineSpacing(0, 1.2f);
         card.addView(explanation, withTop(wrap(), 12));
         LinearLayout actions = horizontal();
@@ -342,8 +346,11 @@ public final class MainActivity extends Activity {
         TextView install = linkButton("Instalar ZIP", v -> chooseRuntime());
         runtimeRow.addView(install, wrap());
         card.addView(runtimeRow, wrap());
-        runtimeValue = text("Box64 / Box86 não instalado", 14, MUTED, Typeface.NORMAL);
+        runtimeValue = text("Núcleo Box64 + tradutores embutidos", 14, ACCENT, Typeface.NORMAL);
         card.addView(runtimeValue, withTop(wrap(), 7));
+        TextView included = text("EMBUTIDO NO APK  •  Box64 0.4.2 Bionic  •  DXVK 2.3.1  •  VKD3D 2.14.1  •  D8VK 1.0  •  camada BCn para Vulkan/Xclipse 530\n\nWine/Proton e jogos continuam sendo importados separadamente por serem runtimes independentes.", 10, MUTED, Typeface.NORMAL);
+        included.setLineSpacing(0, 1.2f);
+        card.addView(included, withTop(wrap(), 9));
 
         outputValue = text("Pronto para configurar", 11, MUTED, Typeface.NORMAL);
         outputValue.setMaxLines(3);
@@ -354,11 +361,16 @@ public final class MainActivity extends Activity {
         card.addView(launchButton, withTop(wrap(), 16));
         body.addView(card, withBottom(wrap(), 22));
         refreshSelections();
+        if (!bundledCoreError.isEmpty()) {
+            appendOutput("Núcleo embutido: " + bundledCoreError);
+        } else if (bundledCoreReady) {
+            appendOutput("Núcleo Box64 + tradutores + camada BCn carregado do APK.");
+        }
     }
 
     private void addFooter() {
         LinearLayout footer = vertical(0);
-        TextView note = text("Feito para ARM64 + Vulkan  •  Box64 traduz x86_64  •  Box86 cobre x86-32", 11, MUTED, Typeface.NORMAL);
+        TextView note = text("ARM64 + Vulkan  •  Box64 Bionic embutido  •  Box32/WOWBox64 e Box86 podem ser adicionados pelo runtime", 11, MUTED, Typeface.NORMAL);
         note.setGravity(Gravity.CENTER);
         footer.addView(note, wrap());
         TextView settings = linkButton("Opções avançadas e diagnóstico", v -> showSettings());
@@ -374,12 +386,22 @@ public final class MainActivity extends Activity {
             gameValue.setTextColor(name.isEmpty() ? MUTED : TEXT);
         }
         if (runtimeValue != null) {
-            boolean ready = isRuntimeReady();
-            runtimeValue.setText(ready ? "Runtime instalado • pronto para executar" : "Box64 / Box86 não instalado");
-            runtimeValue.setTextColor(ready ? ACCENT : MUTED);
+            boolean coreReady = isRuntimeReady();
+            boolean wineReady = isWineReady();
+            if (coreReady && wineReady) {
+                runtimeValue.setText("Box64 + Wine/Proton prontos para executar");
+                runtimeValue.setTextColor(ACCENT);
+            } else if (coreReady) {
+                runtimeValue.setText("Box64 + tradutores embutidos • Wine/Proton pendente");
+                runtimeValue.setTextColor(WARNING);
+            } else {
+                runtimeValue.setText("Núcleo Box64 não encontrado");
+                runtimeValue.setTextColor(MUTED);
+            }
         }
         if (launchButton != null) {
-            boolean canLaunch = !preferences.getString("gameUri", "").isEmpty() && isRuntimeReady();
+            boolean canLaunch = !preferences.getString("gameUri", "").isEmpty()
+                    && isRuntimeReady() && isWineReady();
             launchButton.setAlpha(canLaunch ? 1f : .65f);
         }
     }
@@ -387,8 +409,8 @@ public final class MainActivity extends Activity {
     private void refreshDriverLabel() {
         if (driverValue == null) return;
         boolean imported = preferences.getBoolean("driverReady", false);
-        driverValue.setText(imported ? "Camada Xclipse importada" : "Driver Vulkan do sistema");
-        driverValue.setTextColor(imported ? ACCENT : TEXT);
+        driverValue.setText(imported ? "Camada Xclipse adicional importada" : "BCn embutida • driver Vulkan do sistema");
+        driverValue.setTextColor(imported || bundledCoreReady ? ACCENT : TEXT);
     }
 
     private void refreshGpuStatus() {
@@ -460,8 +482,82 @@ public final class MainActivity extends Activity {
         }
     }
 
+    /**
+     * Copies the redistributable ARM64 core from APK assets into the app's
+     * private executable directory.  Keeping the copy private lets Android
+     * execute the Bionic ELF and keeps the document picker isolated from the
+     * compatibility layer.
+     */
+    private void bootstrapBundledComponents() {
+        File runtimeRoot = new File(getFilesDir(), "runtime");
+        File bundled = new File(runtimeRoot, "bundled");
+        File marker = new File(bundled, ".xclipse64-bundled-0.4.2-full-graphics");
+        try {
+            if (marker.isFile() && findFile(bundled, "box64", 12) != null) {
+                bundledCoreReady = true;
+                return;
+            }
+            if (!runtimeRoot.exists() && !runtimeRoot.mkdirs()) {
+                throw new IOException("não foi possível criar o diretório privado");
+            }
+            File staging = new File(runtimeRoot, ".bundled-staging");
+            deleteRecursive(staging);
+            if (!staging.mkdirs() && !staging.isDirectory()) {
+                throw new IOException("não foi possível criar o staging");
+            }
+            copyAssetTree("bundled", staging);
+            File box64 = findFile(staging, "box64", 12);
+            File bcnLayer = findFileContaining(staging, "libbcn_layer.so", 12);
+            if (box64 == null || bcnLayer == null) {
+                throw new IOException("o APK não contém o núcleo ou a camada Vulkan");
+            }
+            box64.setExecutable(true, false);
+            bcnLayer.setExecutable(true, false);
+            deleteRecursive(bundled);
+            if (!staging.renameTo(bundled)) {
+                throw new IOException("não foi possível ativar o núcleo embutido");
+            }
+            if (!marker.createNewFile() && !marker.isFile()) {
+                throw new IOException("não foi possível gravar o marcador");
+            }
+            bundledCoreReady = true;
+        } catch (Exception error) {
+            bundledCoreReady = false;
+            bundledCoreError = safeMessage(error);
+            deleteRecursive(new File(runtimeRoot, ".bundled-staging"));
+        }
+    }
+
+    private void copyAssetTree(String assetPath, File destination) throws IOException {
+        AssetManager assets = getAssets();
+        String[] children = assets.list(assetPath);
+        if (children != null && children.length > 0) {
+            if (!destination.exists() && !destination.mkdirs()) {
+                throw new IOException("não foi possível criar " + destination.getName());
+            }
+            for (String child : children) {
+                copyAssetTree(assetPath + "/" + child, new File(destination, child));
+            }
+            return;
+        }
+        File parent = destination.getParentFile();
+        if (parent != null && !parent.exists() && !parent.mkdirs()) {
+            throw new IOException("não foi possível criar a pasta do componente");
+        }
+        try (InputStream input = assets.open(assetPath);
+             OutputStream output = new BufferedOutputStream(new FileOutputStream(destination))) {
+            byte[] buffer = new byte[64 * 1024];
+            int count;
+            while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count);
+        }
+        if (destination.getName().equalsIgnoreCase("box64")
+                || destination.getName().toLowerCase(Locale.US).endsWith(".so")) {
+            destination.setExecutable(true, false);
+        }
+    }
+
     private void installRuntime(final Uri uri) {
-        appendOutput("Instalando runtime…");
+        appendOutput("Instalando runtime Wine/Proton…");
         new Thread(() -> {
             try {
                 File staging = new File(getFilesDir(), "runtime_staging");
@@ -470,14 +566,18 @@ public final class MainActivity extends Activity {
                 unzipSafely(uri, staging, 512L * 1024L * 1024L);
                 File box64 = findFile(staging, "box64", 10);
                 File box86 = findFile(staging, "box86", 10);
-                if (box64 == null && box86 == null) {
-                    throw new IOException("ZIP sem box64 ou box86");
+                File wine = findPreferredWine(staging, false);
+                if (box64 == null && box86 == null && wine == null) {
+                    throw new IOException("ZIP sem box64, box86 ou wine/wine64");
                 }
                 if (box64 != null) box64.setExecutable(true, false);
                 if (box86 != null) box86.setExecutable(true, false);
+                if (wine != null) wine.setExecutable(true, false);
                 File runtime = new File(getFilesDir(), "runtime");
-                deleteRecursive(runtime);
-                if (!staging.renameTo(runtime)) throw new IOException("Não foi possível finalizar a instalação");
+                if (!runtime.exists() && !runtime.mkdirs()) throw new IOException("Não foi possível criar o runtime");
+                File userRuntime = new File(runtime, "user");
+                deleteRecursive(userRuntime);
+                if (!staging.renameTo(userRuntime)) throw new IOException("Não foi possível finalizar a instalação");
                 preferences.edit().putBoolean("runtimeReady", true).putString("runtimeName", fileName(uri)).apply();
                 mainHandler.post(() -> {
                     refreshSelections();
@@ -529,7 +629,12 @@ public final class MainActivity extends Activity {
             return;
         }
         if (!isRuntimeReady()) {
-            toast("Instale um runtime Box64/Box86 primeiro");
+            toast("O núcleo Box64 embutido não está disponível");
+            chooseRuntime();
+            return;
+        }
+        if (!isWineReady()) {
+            toast("Importe um runtime Wine/Proton para abrir o .EXE");
             chooseRuntime();
             return;
         }
@@ -578,6 +683,27 @@ public final class MainActivity extends Activity {
         env.put("BOX64_DYNAREC", "1");
         env.put("BOX64_LOG", preferences.getBoolean("debugLogs", false) ? "1" : "0");
         env.put("BOX86_DYNAREC", "1");
+        File bundledGraphics = new File(runtime, "bundled/graphics");
+        File userGraphics = new File(runtime, "user/graphics");
+        String dllPath = pathList(
+                new File(bundledGraphics, "dxvk/system32"),
+                new File(bundledGraphics, "vkd3d/system32"),
+                new File(bundledGraphics, "d8vk/system32"),
+                new File(userGraphics, "dxvk/system32"),
+                new File(userGraphics, "vkd3d/system32"));
+        if (!dllPath.isEmpty()) {
+            env.put("WINEDLLPATH", dllPath);
+            env.put("DXVK_PATH", new File(bundledGraphics, "dxvk").getAbsolutePath());
+            env.put("VKD3D_PATH", new File(bundledGraphics, "vkd3d").getAbsolutePath());
+        }
+        File bundledXclipse = new File(runtime, "bundled/xclipse");
+        String layerPath = pathList(bundledXclipse,
+                preferences.getBoolean("driverReady", false) ? new File(getFilesDir(), "xclipse-driver") : null);
+        if (!layerPath.isEmpty()) {
+            env.put("VK_LAYER_PATH", layerPath);
+            env.put("VK_INSTANCE_LAYERS", "VK_LAYER_BCN_BCnLayer");
+            env.put("ENABLE_BCN_COMPUTE", "1");
+        }
         String translator = preferences.getString("translator", TRANSLATOR_DXVK);
         if (TRANSLATOR_DXVK.equals(translator)) {
             env.put("WINEDLLOVERRIDES", "d3d9,d3d10core,d3d11,dxgi=n,b");
@@ -587,9 +713,6 @@ public final class MainActivity extends Activity {
             env.put("VKD3D_DEBUG", "none");
         } else {
             env.put("WINEDLLOVERRIDES", "");
-        }
-        if (preferences.getBoolean("driverReady", false)) {
-            env.put("VK_LAYER_PATH", new File(getFilesDir(), "xclipse-driver").getAbsolutePath());
         }
         new File(env.get("HOME")).mkdirs();
         new File(env.get("TMPDIR")).mkdirs();
@@ -637,6 +760,17 @@ public final class MainActivity extends Activity {
         return target;
     }
 
+    private String pathList(File... paths) {
+        StringBuilder result = new StringBuilder();
+        if (paths == null) return "";
+        for (File path : paths) {
+            if (path == null || !path.exists()) continue;
+            if (result.length() > 0) result.append(File.pathSeparator);
+            result.append(path.getAbsolutePath());
+        }
+        return result.toString();
+    }
+
     private void showSettings() {
         LinearLayout settings = vertical(0);
         settings.setPadding(dp(6), dp(6), dp(6), 0);
@@ -647,7 +781,7 @@ public final class MainActivity extends Activity {
         debug.setChecked(preferences.getBoolean("debugLogs", false));
         debug.setButtonTintList(android.content.res.ColorStateList.valueOf(ACCENT));
         settings.addView(debug, wrap());
-        TextView about = text("Xclipse64 não inclui Box64, Box86, Wine, DXVK, VKD3D-Proton ou drivers proprietários. Importe pacotes que você tenha direito de usar. A compatibilidade da camada Xclipse depende do Android e do driver Samsung do aparelho.", 12, MUTED, Typeface.NORMAL);
+        TextView about = text("Este APK já inclui o núcleo Box64 Bionic, DXVK, VKD3D, D8VK e a camada BCn. Wine/Proton e componentes x86 de 32 bits podem ser importados como conteúdo separado. O Android mantém o driver Vulkan Samsung/Xclipse do aparelho; a camada incluída não substitui firmware ou kernel.", 12, MUTED, Typeface.NORMAL);
         about.setLineSpacing(0, 1.2f);
         settings.addView(about, withTop(wrap(), 12));
         AlertDialog dialog = new AlertDialog.Builder(this)
@@ -679,9 +813,15 @@ public final class MainActivity extends Activity {
     }
 
     private boolean isRuntimeReady() {
-        if (!preferences.getBoolean("runtimeReady", false)) return false;
         File runtime = new File(getFilesDir(), "runtime");
-        return findFile(runtime, "box64", 10) != null || findFile(runtime, "box86", 10) != null;
+        boolean translatorFound = findFile(runtime, "box64", 12) != null
+                || findFile(runtime, "box86", 12) != null;
+        return translatorFound && (bundledCoreReady || preferences.getBoolean("runtimeReady", false));
+    }
+
+    private boolean isWineReady() {
+        File runtime = new File(getFilesDir(), "runtime");
+        return findPreferredWine(runtime, false) != null;
     }
 
     private File findPreferredWine(File root, boolean x86) {

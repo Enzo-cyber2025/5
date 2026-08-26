@@ -1,0 +1,35 @@
+XCLIPSE64 BUNDLED COMPONENT NOTICES
+
+The APK embeds binary components so the first launch does not require an
+additional runtime download. The Windows Wine/Proton executable is not
+embedded because it is a separate distribution and is imported by the user.
+
+Box64
+  Project: https://github.com/ptitSeb/box64
+  License: GNU General Public License version 3 or later.
+  The bundled Android/Bionic build is distributed by the Winlator component
+  ecosystem and is used as an ARM64 host translator.
+
+DXVK
+  Project: https://github.com/doitsujin/dxvk
+  License: zlib license.
+  The bundled DLLs translate DirectX 9/10/11 to Vulkan.
+
+VKD3D-Proton-compatible DLLs
+  Project: https://gitlab.winehq.org/wine/vkd3d
+  License: GNU LGPL version 2.1 or later.
+  The bundled DLLs provide the DirectX 12 to Vulkan path.
+
+D8VK
+  Project: https://github.com/AlpyneDreams/d8vk
+  License: GNU LGPL version 2.1 or later.
+  The bundled DLLs provide the DirectX 8 compatibility path.
+
+BCn Vulkan layer
+  Component metadata: https://github.com/TripleJ160/Winlator-Ludashi-Plus
+  The layer is an optional compatibility layer and does not replace the
+  Samsung/Xclipse Vulkan driver. Keep the upstream license with any
+  redistribution of this binary.
+
+Wine/Proton and Windows software are not included. Use only binaries and
+software that you are licensed to use.
