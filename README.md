@@ -5,7 +5,7 @@ Bootable custom Linux image built in this tree.
 ## Download
 
 - ISO: [`out/NovaLinux-1.0-n5030.iso`](out/NovaLinux-1.0-n5030.iso)
-- SHA256: `c93c53dd625d1cc6b933e0b1a42f8022de76e92ccebcad012f01149f7bd4d24b`
+- SHA256: `92c847746722690eff2398ef9763960da5e2b85ba91e59d7002a4bb24e024556`
 
 ```
 sha256sum -c out/NovaLinux-1.0-n5030.iso.sha256

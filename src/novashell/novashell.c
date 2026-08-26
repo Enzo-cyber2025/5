@@ -1456,9 +1456,31 @@ int main(int argc, char **argv)
 
 	if (fb_open() < 0)
 		return text_session();
-	/* Keep the VT in text mode so a failed FB still shows the console. */
+	/* Immediate test bars so VirtualBox is never a black box. */
+	{
+		int x, y;
+		for (y = 0; y < fbh; y++) {
+			uint32_t c = (y < fbh / 3) ? 0xffffffff : (y < 2 * fbh / 3) ? 0xff7c5ce4 : 0xff1e90ff;
+			for (x = 0; x < fbw; x++)
+				back[y * fbw + x] = c;
+		}
+		text_scaled(24, 24, "NOVALINUX", 0xff101018, 5);
+		text(28, 120, "NovaUI carregando...", 0xff101018);
+		present();
+	}
+	{
+		int cfd = open("/dev/tty1", O_WRONLY);
+		if (cfd < 0) cfd = open("/dev/console", O_WRONLY);
+		if (cfd >= 0) {
+			const char *m = "\nNOVALINUX: framebuffer OK, desenhando NovaUI\n";
+			if (write(cfd, m, strlen(m)) < 0) {}
+			close(cfd);
+		}
+	}
+	/* Keep the VT in text mode so a failed FB still shows the console.
+	 * Never cfmakeraw: that hides typed digits on the VGA console. */
 	ttyfd = -1;
-	tty_raw();
+	fcntl(0, F_SETFL, O_NONBLOCK);
 	evdev_open();
 	signal(SIGINT, on_sig);
 	signal(SIGTERM, on_sig);

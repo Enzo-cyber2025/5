@@ -1,7 +1,7 @@
 ::sysinit:/etc/init.d/rc sysinit
 ::wait:/etc/init.d/rc boot
 ::wait:/etc/init.d/rc default
-tty1::respawn:/usr/bin/autologin
+tty1::respawn:/sbin/getty -n -l /usr/bin/autologin 38400 tty1
 tty2::respawn:/sbin/getty 38400 tty2
 ::ctrlaltdel:/sbin/reboot
 ::shutdown:/etc/init.d/rc shutdown
