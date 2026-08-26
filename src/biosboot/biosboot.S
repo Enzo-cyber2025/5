@@ -1,11 +1,13 @@
-/* NovaLinux El Torito BIOS loader — load bzImage via unreal mode. */
+/* NovaLinux El Torito BIOS loader.
+ * Loads bzImage from the ISO and jumps to the real-mode setup.
+ * Linked at 0x7C00. */
 .code16
 .global _start
 
-.set BUF,     0x7000
-.set SETUP,   0x90000
-.set PMKERN,  0x100000
-.set CMDLINE, 0x93000
+.set BUF,      0x7000
+.set SETUP,    0x90000
+.set PMKERN,   0x100000
+.set CMDLINE,  0x9E000
 
 _start:
     cli
@@ -15,24 +17,25 @@ _start:
     mov     %ax, %ss
     mov     $0x6FFE, %sp
     mov     %dl, boot_drive
+    cld
     sti
 
     mov     $msg, %si
     call    puts
 
-    /* A20 */
+    /* A20 via fast gate */
     in      $0x92, %al
     or      $2, %al
     out     %al, $0x92
 
     call    unreal
 
-    /* first 2048 bytes of kernel */
+    /* First 2048-byte CD sector of the kernel */
     movl    kernel_lba, %eax
-    mov     $BUF, %di
     call    read_cd
     jc      fail
 
+    /* setup_sects at +0x1F1; real-mode blob is (sects+1)*512 */
     movb    BUF + 0x1F1, %al
     test    %al, %al
     jnz     1f
@@ -58,9 +61,16 @@ load_loop:
 
     movl    kernel_lba, %eax
     addl    file_sec, %eax
-    mov     $BUF, %di
     call    read_cd
     jc      fail
+
+    /* progress every 64 CD sectors */
+    movl    file_sec, %eax
+    andl    $63, %eax
+    jnz     8f
+    mov     $dot, %si
+    call    puts
+8:
 
     movl    copied, %eax
     movl    setup_bytes, %ebx
@@ -82,6 +92,7 @@ load_loop:
     incl    file_sec
     cmpl    $2048, %ecx
     je      load_loop
+    /* remainder of this CD sector belongs to the PM kernel */
     movl    $BUF, %esi
     addl    %ecx, %esi
     movl    $PMKERN, %edi
@@ -112,12 +123,18 @@ to_high:
 
 loaded:
     movl    $SETUP, %edi
+    /* heap_end_ptr @ 0x224 — keep heap below the command line */
     addr32 movw $0x8E00, 0x224(%edi)
+    /* loadflags |= CAN_USE_HEAP */
     addr32 movb 0x211(%edi), %al
     orb     $0x80, %al
     addr32 movb %al, 0x211(%edi)
+    /* cmd_line_ptr @ 0x228 — MUST be outside the setup blob */
     addr32 movl $CMDLINE, 0x228(%edi)
+    /* type_of_loader */
     addr32 movb $0xFF, 0x210(%edi)
+    /* vid_mode @ 0x1FA = VESA 1024x768x32 so VirtualBox BIOS gets a FB */
+    addr32 movw $0x0318, 0x1FA(%edi)
 
     mov     $cmdline, %si
     movl    $CMDLINE, %edi
@@ -139,23 +156,21 @@ hang:
     hlt
     jmp     hang
 
-/* EAX = ISO LBA (2048), ES:DI = dest */
+/* EAX = ISO 2048-byte LBA. Reads one CD sector into BUF.
+ * SeaBIOS CD int 13h AH=42 uses 2048-byte sectors for the boot CD. */
 read_cd:
     pushal
     movl    %eax, dap_lba
-    movw    %di, dap_off
+    movw    $BUF, dap_off
     movw    $0, dap_seg
     mov     boot_drive, %dl
-    xor     %ah, %ah
-    int     $0x13
     mov     $dap, %si
-    mov     boot_drive, %dl
     mov     $0x42, %ah
     int     $0x13
     popal
     ret
 
-/* ECX bytes ESI -> EDI (unreal, 32-bit addresses) */
+/* ECX bytes from linear ESI to linear EDI. Needs unreal DS/ES. */
 copy32:
     pushal
     pushf
@@ -174,6 +189,9 @@ copy32:
     popal
     ret
 
+/* Enter big-real (unreal) mode and KEEP the 4GB DS/ES limits.
+ * Reloading DS/ES after clearing PE would collapse the limit to 64K
+ * and every copy to 0x100000 would wrap — black screen. */
 unreal:
     cli
     lgdt    gdt_desc
@@ -186,9 +204,12 @@ unreal:
     movl    %cr0, %eax
     andb    $0xFE, %al
     movl    %eax, %cr0
+    ljmp    $0, $unreal_rm
+unreal_rm:
     xor     %ax, %ax
-    mov     %ax, %ds
-    mov     %ax, %es
+    mov     %ax, %ss
+    mov     $0x6FFE, %sp
+    /* DS/ES still cached with 4GB limits — do not reload them. */
     sti
     ret
 
@@ -207,10 +228,10 @@ gdt:
     .quad   0
     .word   0xFFFF, 0x0000
     .byte   0x00, 0x92, 0xCF, 0x00
+gdt_end:
 gdt_desc:
     .word   gdt_end - gdt - 1
     .long   gdt
-gdt_end:
 
 dap:
     .byte   16, 0
@@ -229,9 +250,10 @@ file_sec:    .long 0
 copied:      .long 0
 
 msg:      .asciz "NovaLinux BIOS loader...\r\n"
-msg_ok:   .asciz "Starting kernel.\r\n"
-msg_fail: .asciz "Read failed. VirtualBox: System > Motherboard > Enable EFI\r\n"
-cmdline:  .asciz "console=tty0 earlyprintk=vga loglevel=7 mitigations=off intel_idle.max_cstate=4"
+dot:      .asciz "."
+msg_ok:   .asciz "\r\nStarting kernel.\r\n"
+msg_fail: .asciz "\r\nDisk read failed.\r\n"
+cmdline:  .asciz "console=tty0 earlyprintk=vga loglevel=7 vga=791 mitigations=off intel_idle.max_cstate=4"
 
     .align  4
     /* file offset of these two dwords is patched by mkiso */
