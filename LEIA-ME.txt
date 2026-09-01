@@ -1,71 +1,78 @@
-=====================================================================
- MegaCode — envio de arquivos por código visual (câmera)
- Versão 1.0
-=====================================================================
+================================================================
+ MegaCode — envio de arquivos por código visual (P&B, 1080p)
+================================================================
 
-O QUE É
--------
-MegaCode gera um código visual (parecido com um QR Code, mas formato
-próprio, de alta densidade) que você exibe numa tela e lê com a câmera
-do celular. Ele envia e recebe QUALQUER tipo de arquivo.
+O MegaCode transforma QUALQUER arquivo em uma sequência de imagens
+preto-e-branco 1080p, cada uma com VÁRIOS blocos de código (formato
+próprio, não é QR Code). O mesmo código funciona em todas as
+plataformas: um PNG gerado no Windows é lido no Android, e um PNG
+gerado no Android é lido no Windows.
 
-ARQUIVOS DESTA ENTREGA
-----------------------
-  MegaCode.apk   -> aplicativo para Android (câmera + gerador)
-  MegaCode.exe   -> aplicativo para Windows
+----------------------------------------------------------------
+ ARQUIVOS (pasta entrega/)
+----------------------------------------------------------------
+ MegaCode.apk     Android — gera e lê; importa PNG; exporta PNG; câmera
+ MegaCode.exe     Windows — janela nativa: gera, exporta PNG e lê PNG
+ MegaCode-linux   Linux — linha de comando (gera PNG)
+ MegaCode-macos   macOS — linha de comando (gera PNG)
+ MegaCode.html    Qualquer navegador — gera e lê (arquivo único)
 
----------------------------------------------------------------------
-1) INSTALAR NO ANDROID (MegaCode.apk)
----------------------------------------------------------------------
-  a) Copie MegaCode.apk para o celular.
-  b) Toque no arquivo. Se o Android avisar "fonte desconhecida",
-     permita a instalação desta origem e instale.
-  c) Abra o app "MegaCode" e ACEITE a permissão de câmera.
+----------------------------------------------------------------
+ ANDROID (.apk)
+----------------------------------------------------------------
+ 1. Instale o MegaCode.apk (ative "fontes desconhecidas" se pedido).
+ 2. Abra o app e conceda a permissão de câmera/armazenamento.
+ 3. GERAR: aba Transmitir > escolha o arquivo > densidade >
+    "Gerar imagem 1080p (P&B) e exportar PNG".
+    Os PNG ficam salvos em Imagens/Galeria do aparelho.
+ 4. LER: aba Receber >
+    - "Ler PNG / imagem"  -> importa um PNG da memória; ou
+    - câmera              -> aponta para a tela.
+    Vários blocos da mesma imagem são lidos juntos; imagens
+    múltiplas vão somando até o arquivo completar.
 
----------------------------------------------------------------------
-2) USAR NO WINDOWS (MegaCode.exe)
----------------------------------------------------------------------
-  Dê dois cliques em MegaCode.exe. Ele abre o navegador com o app.
-  (Firewall: permita o MegaCode na rede se quiser ler do celular.)
+----------------------------------------------------------------
+ WINDOWS (.exe)
+----------------------------------------------------------------
+ 1. Dê dois cliques em MegaCode.exe (abre uma JANELA própria,
+    sem terminal e sem navegador).
+ 2. GERAR: escolha o arquivo > Gerar. O programa monta as imagens
+    1080p P&B e exporta os PNG na pasta escolhida.
+ 3. LER: escolha um PNG (ou vários) para decodificar.
 
----------------------------------------------------------------------
-3) COMO ENVIAR (Transmitir)
----------------------------------------------------------------------
-  - Escolha o arquivo e a qualidade.
-  - A tela mostra os quadros animados. Aponte a câmera do outro
-    aparelho para a tela até completar a leitura.
+ Se o Windows/antivírus bloquear o .exe (ele não é assinado):
+  - clique com o botão direito > Propriedades > "Desbloquear" > OK; ou
+  - extraia o ZIP e rode o executável de dentro da pasta extraída.
 
----------------------------------------------------------------------
-4) COMO RECEBER (Receber)
----------------------------------------------------------------------
-  - Abra "Receber" no aparelho que vai ler.
-  - Aponte a câmera para a tela que está transmitindo.
-  - Ao completar, o arquivo é salvo.
+----------------------------------------------------------------
+ LINUX / macOS (linha de comando)
+----------------------------------------------------------------
+ ./MegaCode-linux  <arquivo> [-q px] [-n N] [-e nsym] [-o pasta]
+ ./MegaCode-macos  <arquivo> [-q px] [-n N] [-e nsym] [-o pasta]
+   -q px    tamanho do módulo em pixels (padrão 4; 3 e 2 = mais denso)
+   -n N     módulos por lado do bloco (padrão 96)
+   -e nsym  símbolos de correção de erro (padrão 32)
+   -o pasta pasta de saída dos PNG
+ Gera: <arquivo>_codigos/megacode_NNNN.png (1 bloco de metadados +
+ blocos de dados).
 
----------------------------------------------------------------------
-5) SOBRE A CAPACIDADE DE 1 GB  (leia, é importante)
----------------------------------------------------------------------
-Um ÚNICO símbolo visível pela câmera NÃO comporta 1 GB — isso é um
-limite físico da câmera, não do programa. Cada quadro carrega alguns
-KB. Por isso o MegaCode envia arquivos grandes como uma SEQUÊNCIA
-ANIMADA de quadros, com correção de erro e retomada por quadro.
+----------------------------------------------------------------
+ CAPACIDADE — LEIA ISTO
+----------------------------------------------------------------
+ Não existe símbolo estático único, legível por câmera, que comporte
+ 1 GB. É limite físico da óptica e do sensor. Em P&B, uma imagem
+ 1080p carrega aproximadamente:
+     px=4 -> 8 blocos  -> ~5 KB por imagem
+     px=3 -> 18 blocos -> ~11 KB por imagem
+     px=2 -> 45 blocos -> ~28 KB por imagem
+ Logo, 1 GB exige uma SEQUÊNCIA de muitas imagens (cerca de 65.000
+ em px=4), o que leva de 1,5 h a mais de 2 h de captura contínua.
+ Para arquivos de até alguns MB, bastam poucas imagens.
 
-  * Arquivo pequeno (até ~1-3 MB): modo imagem única (rápido).
-  * Arquivo grande (ex.: 1 GB): sequência contínua de quadros.
-    A 15-20 quadros/s, 1 GB pode levar de alguns minutos até horas,
-    conforme a qualidade escolhida. Deixe a transmissão rodando e a
-    câmera parada até terminar.
-
-Modos:
-  Seguro   (N96,  P&B)   mais resistente, menos dados/quadro
-  Padrão   (N160, cor)   equilíbrio  <-- recomendado
-  Rápido   (N192, cor)   mais dados/quadro
-  Máximo   (N224, cor)   maior densidade (exige boa câmera/luz)
-
----------------------------------------------------------------------
-6) DICAS
----------------------------------------------------------------------
-  - Boa iluminação, sem reflexo na tela.
-  - Enquadre o símbolo inteiro, câmera firme.
-  - Se falhar, use um modo mais conservador (Seguro/Padrão).
-=====================================================================
+----------------------------------------------------------------
+ INTEROPERABILIDADE
+----------------------------------------------------------------
+ O formato é idêntico em todas as plataformas (mesmo codec). Já foi
+ validado: PNG gerado pelo programa em C (Windows/Linux/macOS) é
+ decodificado pelo app Android, e o PNG gerado pelo app é decodificado
+ no PC — byte a byte idêntico.
