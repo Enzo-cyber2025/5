@@ -11,17 +11,43 @@ no Windows é lido no Android e vice-versa.
 
 | Arquivo | Plataforma | O que faz |
 |---------|-----------|-----------|
-| [`entrega/MegaCode.apk`](entrega/MegaCode.apk) | Android | **Gera** e **lê** códigos; importa PNG da memória; exporta PNG na galeria; leitura pela câmera |
-| [`entrega/MegaCode.exe`](entrega/MegaCode.exe) | Windows | Janela nativa (sem terminal/navegador): **gera** e **exporta** PNG, e **lê** PNG |
-| [`entrega/MegaCode-linux`](entrega/MegaCode-linux) | Linux | Linha de comando: gera PNG |
-| [`entrega/MegaCode-macos`](entrega/MegaCode-macos) | macOS | Linha de comando: gera PNG |
-| [`entrega/MegaCode.html`](entrega/MegaCode.html) | Qualquer navegador | Gera e lê (arquivo único, sem instalação) |
+| [`entrega/MegaCode.apk`](entrega/MegaCode.apk) | Android | **Gera** e **lê**; resolução (1080p…16384²), densidade e **imagem única**; importa/exporta PNG; câmera |
+| [`entrega/MegaCode.exe`](entrega/MegaCode.exe) | Windows | Janela nativa: **gera** PNG 1080p, **exporta** e **lê** PNG |
+| [`entrega/MegaCode-linux`](entrega/MegaCode-linux) | Linux | CLI: gera PNG em qualquer resolução (`-W -H -q -m`) |
+| [`entrega/MegaCode-macos`](entrega/MegaCode-macos) | macOS | CLI: gera PNG em qualquer resolução (`-W -H -q -m`) |
+| [`entrega/MegaCode.html`](entrega/MegaCode.html) | Qualquer navegador | Gera e lê; resolução (1080p…16384²), densidade e **imagem única** |
 
 > Apenas os **binários compilados** são publicados neste repositório.
 > O código-fonte não é distribuído.
 
 Links diretos (branch `arena/01a0588f-5`):
 `https://github.com/Enzo-cyber2025/5/raw/arena/01a0588f-5/entrega/<arquivo>`
+
+## Resolução e imagem única
+
+No app (Android) e no HTML você escolhe:
+
+- **Resolução:** `1080p` (para capturar com a **câmera**) ou `4K / 8K / 16K /
+  16384×16384` (para **escanear o PNG direto**, sem câmera — quanto maior,
+  mais dados cabem numa imagem só).
+- **Densidade:** 4 px (legível por câmera) até 1 px (máximo de dados, só para
+  PNG escaneado).
+- **Modo imagem única:** força **1 só PNG**; se o arquivo não couber, o app
+  avisa o tamanho máximo e quantas imagens seriam necessárias.
+
+Capacidade por imagem (1 bloco de metadados + o resto em dados, 641 B/bloco):
+
+| Resolução | px | Blocos | Úteis/imagem |
+|---|---|---|---|
+| 1080p | 4 | 8 | ~4,4 KB |
+| 4K | 2 | 180 | ~112 KB |
+| 8K | 2 | 720 | ~450 KB |
+| 16K | 2 | 2993 | ~1,8 MB |
+| 16384² | 2 | 6084 | ~3,7 MB |
+| 16384² | 1 | 24649 | ~15 MB |
+
+No Linux/macOS, o mesmo vale via flags:
+`./MegaCode-linux arquivo -W 16384 -H 16384 -q 2 -m 1` (imagem única 16384²).
 
 ## Uso rápido
 

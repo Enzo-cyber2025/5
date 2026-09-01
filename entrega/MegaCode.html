@@ -44,14 +44,26 @@ video{width:100%;border-radius:8px;background:#000;display:block}
       <input type="file" id="folder" webkitdirectory directory multiple>
       <label>Qualidade</label>
       <select id="preset"></select>
-      <label>Densidade do PNG (P&B, 1080p, vários blocos)</label>
-      <select id="dens">
-        <option value="4">Normal (4 px/módulo) — legível por câmera</option>
-        <option value="3">Alta (3 px/módulo)</option>
-        <option value="2">Máxima (2 px/módulo) — mais dados</option>
+      <label>Resolução da imagem</label>
+      <select id="res">
+        <option value="1920x1080">1080p (1920×1080) — capturar com a câmera</option>
+        <option value="3840x2160">4K (3840×2160) — escanear o PNG direto</option>
+        <option value="7680x4320">8K (7680×4320) — escanear o PNG direto</option>
+        <option value="15360x8640">16K (15360×8640) — escanear o PNG direto</option>
+        <option value="16384x16384">16384×16384 — máximo (limite PNG/navegador)</option>
       </select>
+      <label>Densidade (px por módulo)</label>
+      <select id="dens">
+        <option value="4">Normal (4 px) — legível por câmera</option>
+        <option value="3">Alta (3 px)</option>
+        <option value="2">Máxima (2 px) — mais dados</option>
+        <option value="1">Extrema (1 px) — só para PNG escaneado</option>
+      </select>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:12px;cursor:pointer">
+        <input type="checkbox" id="single" style="width:auto"> Modo imagem única (gerar 1 só PNG)
+      </label>
       <div class="stat" id="txinfo">Escolha um arquivo ou pasta para começar.</div>
-      <button id="genpng">Gerar imagem 1080p (P&B) e exportar PNG</button>
+      <button id="genpng">Gerar PNG (P&amp;B, vários blocos) e exportar</button>
       <button id="dlpng" class="sec hide">Baixar PNG novamente</button>
       <button id="start" class="sec">Transmitir (animado)</button>
       <button id="stop" class="sec hide">Parar</button>
@@ -413,7 +425,7 @@ function collectFiles(){
   if(df&&df.length)for(const f of df)out.push({name:f.name,path:f.webkitRelativePath||f.name,file:f});
   return out;
 }
-$('file').onchange=()=>{$('folder').value='';updateTxInfo();};
+$('file').onchange=()=>{$('folder').value='';updateTxInfo();capInfo();};
 $('folder').onchange=()=>{$('file').value='';updateTxInfo();};
 $('preset').onchange=updateTxInfo;
 
@@ -462,10 +474,11 @@ $('start').onclick=async()=>{
 };
 $('stop').onclick=()=>{txRun=false;$('start').classList.remove('hide');$('stop').classList.add('hide');};
 
-/* ---------- Gerar PNG 1080p (P&B, varios blocos) ---------- */
+/* ---------- Gerar PNG (P&B, varios blocos; resolucao configuravel) ---------- */
 const sleep0=ms=>new Promise(r=>setTimeout(r,ms));
-function sheetLayout(px){const n=96,quiet=4,bp=(n+2*quiet)*px;
-  return {n,cm:0,nsym:32,quiet,bp,cols:Math.max(1,Math.floor(1920/bp)),rows:Math.max(1,Math.floor(1080/bp)),
+function fmtKB(b){return b<1048576?(b/1024).toFixed(1)+' KB':(b/1048576).toFixed(2)+' MB';}
+function sheetLayout(px,W,H){const n=96,quiet=4,bp=(n+2*quiet)*px;
+  return {n,cm:0,nsym:32,quiet,bp,W,H,cols:Math.max(1,Math.floor(W/bp)),rows:Math.max(1,Math.floor(H/bp)),
     get bpi(){return this.cols*this.rows;},cap:MC.dataMax(n,0,32)};}
 function drawBlockTo(ctx,R,ox,oy){const s=R.side,tmp=document.createElement('canvas');tmp.width=s;tmp.height=s;
   const t=tmp.getContext('2d'),id=t.createImageData(s,s);
@@ -474,16 +487,27 @@ function drawBlockTo(ctx,R,ox,oy){const s=R.side,tmp=document.createElement('can
 function exportSheet(cv,name){const url=cv.toDataURL('image/png');
   if(window.MegaCodeNative&&window.MegaCodeNative.saveFile){window.MegaCodeNative.saveFile(name,url);return 'salvo';}
   const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();return 'baixado';}
-async function gerarPNG(f,px){
-  const L=sheetLayout(px),fid=MC.fileId(f.name,f.size);
-  const dataFrames=Math.max(1,Math.ceil(f.size/L.cap)),totalBlocks=1+dataFrames,images=Math.ceil(totalBlocks/L.bpi);
+function readGenOpts(){const v=($('res')&&$('res').value)||'1920x1080';const p=v.split('x');
+  return {px:+((($('dens')&&$('dens').value)||4)),W:+p[0],H:+p[1],single:!(!$('single')&&$('single').checked)};}
+function capInfo(){if(!$('res'))return;const o=readGenOpts(),L=sheetLayout(o.px,o.W,o.H);
+  const perImg=(L.bpi-1)*L.cap,f=$('file').files[0];let need='';
+  if(f){const imgs=Math.ceil((1+Math.max(1,Math.ceil(f.size/L.cap)))/L.bpi);
+    need=` · seu arquivo: <b>${imgs}</b> imagem(ns)`;}
+  $('txinfo').innerHTML=`${o.W}×${o.H} · ${L.cols}×${L.rows} = <b>${L.bpi}</b> blocos/imagem · ~<b>${fmtKB(perImg)}</b> úteis por imagem${need}`;}
+async function gerarPNG(f,px,W,H,single){
+  const L=sheetLayout(px,W,H),fid=MC.fileId(f.name,f.size);
+  const dataFrames=Math.max(1,Math.ceil(f.size/L.cap)),totalBlocks=1+dataFrames;
+  const images=Math.ceil(totalBlocks/L.bpi);
+  if(single&&images>1)return {tooBig:true,maxBytes:(L.bpi-1)*L.cap,images};
   const enc=new TextEncoder();
   const meta=JSON.stringify({v:1,name:f.name,path:f.name,size:f.size,fi:0,tf:1});
   const base=(f.name.replace(/\.[^.]+$/,'')||'arquivo');
   let first=null,modo='';
   for(let img=0;img<images;img++){
-    const cv=document.createElement('canvas');cv.width=1920;cv.height=1080;
-    const ctx=cv.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,1920,1080);
+    const cv=document.createElement('canvas');cv.width=W;cv.height=H;
+    const ctx=cv.getContext('2d');
+    if(!ctx)throw new Error('resolução grande demais para o canvas deste dispositivo');
+    ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
     for(let b=0;b<L.bpi;b++){
       const gi=img*L.bpi+b;if(gi>=totalBlocks)break;
       const r=Math.floor(b/L.cols),c=b%L.cols,ox=c*L.bp,oy=r*L.bp;let R;
@@ -498,22 +522,26 @@ async function gerarPNG(f,px){
     $('txinfo').textContent='Gerando… '+(img+1)+'/'+images;
     await sleep0(30);
   }
-  return {first,images,dataFrames,bpi:L.bpi,modo};
+  return {first,images,dataFrames,bpi:L.bpi,modo,W,H};
 }
-let lastGenFile=null,lastGenPx=4;
+let lastGen=null;
 $('genpng').onclick=async()=>{
   const f=$('file').files[0];
   if(!f){alert('Escolha um arquivo primeiro.');return;}
-  lastGenFile=f;lastGenPx=+($('dens').value||4);
-  $('txinfo').textContent='Gerando imagem 1080p…';
+  const o=readGenOpts();lastGen={f,px:o.px,W:o.W,H:o.H,single:o.single};
+  $('txinfo').textContent='Gerando '+o.W+'×'+o.H+'…';
   try{
-    const r=await gerarPNG(f,lastGenPx);
-    if(r.first){const pv=$('cv');pv.width=1920;pv.height=1080;pv.getContext('2d').drawImage(r.first,0,0);$('txview').classList.remove('hide');}
+    const r=await gerarPNG(f,o.px,o.W,o.H,o.single);
+    if(r.tooBig){$('txinfo').innerHTML=`<b>Não cabe em 1 imagem</b> aqui: cabem ~${fmtKB(r.maxBytes)}, mas o arquivo precisa de ${r.images} imagens.<br>Desmarque “imagem única”, ou aumente a resolução/densidade.`;return;}
+    if(r.first){const pv=$('cv');const sc=Math.min(1,1280/r.W);pv.width=Math.max(1,Math.round(r.W*sc));pv.height=Math.max(1,Math.round(r.H*sc));pv.getContext('2d').drawImage(r.first,0,0,pv.width,pv.height);$('txview').classList.remove('hide');}
     $('dlpng').classList.remove('hide');
-    $('txinfo').innerHTML=`<b>${r.images}</b> imagem(ns) 1080p P&B (${r.bpi} blocos/imagem, ${r.dataFrames} quadro(s) de dados). PNG ${r.modo}.<br>Para ler: aba Receber > Ler PNG/imagem.`;
+    $('txinfo').innerHTML=`<b>${r.images}</b> imagem(ns) ${r.W}×${r.H} P&B (${r.bpi} blocos/imagem, ${r.dataFrames} quadro(s) de dados). PNG ${r.modo}.<br>Para ler: aba Receber > Ler PNG/imagem.`;
   }catch(e){$('txinfo').textContent='Erro: '+e.message;}
 };
-$('dlpng').onclick=()=>{if(lastGenFile)gerarPNG(lastGenFile,lastGenPx);};
+$('dlpng').onclick=()=>{if(lastGen)gerarPNG(lastGen.f,lastGen.px,lastGen.W,lastGen.H,lastGen.single);};
+if($('res'))$('res').onchange=capInfo;
+if($('dens'))$('dens').onchange=capInfo;
+if($('single'))$('single').onchange=capInfo;
 
 /* ---------- RX ---------- */
 let stream=null,rxLoop=null;

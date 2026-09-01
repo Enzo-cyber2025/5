@@ -22,9 +22,14 @@ gerado no Android é lido no Windows.
 ----------------------------------------------------------------
  1. Instale o MegaCode.apk (ative "fontes desconhecidas" se pedido).
  2. Abra o app e conceda a permissão de câmera/armazenamento.
- 3. GERAR: aba Transmitir > escolha o arquivo > densidade >
-    "Gerar imagem 1080p (P&B) e exportar PNG".
+ 3. GERAR: aba Transmitir > escolha o arquivo >
+    - Resolucao: 1080p (camera) ou 4K/8K/16K/16384x16384 (escanear o PNG);
+    - Densidade: 4 px (camera) ate 1 px (maximo de dados, so PNG escaneado);
+    - marque "Modo imagem unica" para gerar 1 so PNG;
+    > "Gerar PNG (P&B, varios blocos) e exportar".
     Os PNG ficam salvos em Imagens/Galeria do aparelho.
+    Se o arquivo nao couber em 1 imagem, o app avisa o maximo e
+    quantas imagens seriam necessarias.
  4. LER: aba Receber >
     - "Ler PNG / imagem"  -> importa um PNG da memória; ou
     - câmera              -> aponta para a tela.
@@ -47,14 +52,22 @@ gerado no Android é lido no Windows.
 ----------------------------------------------------------------
  LINUX / macOS (linha de comando)
 ----------------------------------------------------------------
- ./MegaCode-linux  <arquivo> [-q px] [-n N] [-e nsym] [-o pasta]
- ./MegaCode-macos  <arquivo> [-q px] [-n N] [-e nsym] [-o pasta]
-   -q px    tamanho do módulo em pixels (padrão 4; 3 e 2 = mais denso)
+ ./MegaCode-linux  <arquivo> [-q px] [-n N] [-e nsym] [-W larg] [-H alt] [-m max] [-o pasta]
+ ./MegaCode-macos  <arquivo> [-q px] [-n N] [-e nsym] [-W larg] [-H alt] [-m max] [-o pasta]
+   -q px    tamanho do módulo em pixels (padrão 4; 3/2/1 = mais denso)
    -n N     módulos por lado do bloco (padrão 96)
    -e nsym  símbolos de correção de erro (padrão 32)
+   -W,-H    largura/altura da imagem (padrão 1920x1080; ex.: 16384 16384)
+   -m max   máx. de imagens (use -m 1 para IMAGEM ÚNICA)
    -o pasta pasta de saída dos PNG
+ Exemplo (imagem única 16384², densa):
+   ./MegaCode-linux arquivo -W 16384 -H 16384 -q 2 -m 1
  Gera: <arquivo>_codigos/megacode_NNNN.png (1 bloco de metadados +
  blocos de dados).
+
+ No Windows, o MegaCode.exe (janela) gera em 1080p. Para escolher
+ resolução/densidade/imagem única no PC, use o MegaCode.html (mesmo
+ codec, 100% compatível) ou a linha de comando acima.
 
 ----------------------------------------------------------------
  CAPACIDADE — LEIA ISTO
