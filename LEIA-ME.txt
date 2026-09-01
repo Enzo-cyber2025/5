@@ -41,9 +41,13 @@ gerado no Android é lido no Windows.
 ----------------------------------------------------------------
  1. Dê dois cliques em MegaCode.exe (abre uma JANELA própria,
     sem terminal e sem navegador).
- 2. GERAR: escolha o arquivo > Gerar. O programa monta as imagens
-    1080p P&B e exporta os PNG na pasta escolhida.
- 3. LER: escolha um PNG (ou vários) para decodificar.
+ 2. GERAR: "Escolher arquivo" > escolha Resolucao (1080p camera,
+    ou 4K/8K/16K/16384² para escanear o PNG), Densidade (4..1 px),
+    marque "Modo imagem unica" se quiser 1 so PNG > "Gerar PNG e
+    exportar". Os PNG sao salvos na pasta <arquivo>_codigos.
+    Se nao couber em 1 imagem, o programa avisa o maximo.
+ 3. LER: "Ler PNG (recuperar arquivo)" > escolha um ou varios PNG;
+    o programa reconstitui o arquivo original.
 
  Se o Windows/antivírus bloquear o .exe (ele não é assinado):
   - clique com o botão direito > Propriedades > "Desbloquear" > OK; ou
@@ -65,9 +69,9 @@ gerado no Android é lido no Windows.
  Gera: <arquivo>_codigos/megacode_NNNN.png (1 bloco de metadados +
  blocos de dados).
 
- No Windows, o MegaCode.exe (janela) gera em 1080p. Para escolher
- resolução/densidade/imagem única no PC, use o MegaCode.html (mesmo
- codec, 100% compatível) ou a linha de comando acima.
+ No Windows, o MegaCode.exe (janela) tem as mesmas opcoes de
+ resolucao/densidade/imagem unica. O MegaCode.html e o app Android
+ usam o mesmo codec (100% compativel).
 
 ----------------------------------------------------------------
  CAPACIDADE — LEIA ISTO

@@ -12,7 +12,7 @@ no Windows é lido no Android e vice-versa.
 | Arquivo | Plataforma | O que faz |
 |---------|-----------|-----------|
 | [`entrega/MegaCode.apk`](entrega/MegaCode.apk) | Android | **Gera** e **lê**; resolução (1080p…16384²), densidade e **imagem única**; importa/exporta PNG; câmera |
-| [`entrega/MegaCode.exe`](entrega/MegaCode.exe) | Windows | Janela nativa: **gera** PNG 1080p, **exporta** e **lê** PNG |
+| [`entrega/MegaCode.exe`](entrega/MegaCode.exe) | Windows | Janela nativa: **gera** PNG (1080p…16384², densidade, **imagem única**), **exporta** e **lê** PNG |
 | [`entrega/MegaCode-linux`](entrega/MegaCode-linux) | Linux | CLI: gera PNG em qualquer resolução (`-W -H -q -m`) |
 | [`entrega/MegaCode-macos`](entrega/MegaCode-macos) | macOS | CLI: gera PNG em qualquer resolução (`-W -H -q -m`) |
 | [`entrega/MegaCode.html`](entrega/MegaCode.html) | Qualquer navegador | Gera e lê; resolução (1080p…16384²), densidade e **imagem única** |
@@ -25,7 +25,7 @@ Links diretos (branch `arena/01a0588f-5`):
 
 ## Resolução e imagem única
 
-No app (Android) e no HTML você escolhe:
+No app (Android), no `MegaCode.exe` (Windows) e no HTML você escolhe:
 
 - **Resolução:** `1080p` (para capturar com a **câmera**) ou `4K / 8K / 16K /
   16384×16384` (para **escanear o PNG direto**, sem câmera — quanto maior,
