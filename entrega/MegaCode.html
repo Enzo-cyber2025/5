@@ -245,13 +245,39 @@ function readFmt(row,W,b){const maxs=(1<<b)-1;
   if(words[0]!==words[1]||words[1]!==words[2])return null;
   return words[0];}
 
+function grayThr(rgba,w,h){const g=new Uint8Array(w*h);
+  for(let i=0;i<w*h;i++)g[i]=lumOf(rgba[i*4],rgba[i*4+1],rgba[i*4+2]);return {g,thr:otsu(g,w,h)};}
 function decode(rgba,w,h){
-  const g=new Uint8Array(w*h);
-  for(let i=0;i<w*h;i++)g[i]=lumOf(rgba[i*4],rgba[i*4+1],rgba[i*4+2]);
-  const thr=otsu(g,w,h);
+  const {g,thr}=grayThr(rgba,w,h);
   let x0=w,y0=h,x1=-1,y1=-1;
   for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(g[y*w+x]<=thr){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}
   if(x1<0)return {ok:false};
+  return decodeBBox(rgba,w,h,x0,y0,x1,y1);
+}
+/* encontra TODOS os blocos (componentes conexos escuros) e decodifica cada um */
+function decodeMulti(rgba,w,h){
+  const {g,thr}=grayThr(rgba,w,h);
+  const seen=new Uint8Array(w*h),stack=new Int32Array(w*h),frames=[];
+  for(let s=0;s<w*h;s++){
+    if(seen[s]||g[s]>thr)continue;
+    let sp=0;stack[sp++]=s;seen[s]=1;
+    let x0=w,y0=h,x1=-1,y1=-1,cnt=0;
+    while(sp>0){const p=stack[--sp],px=p%w,py=(p/w)|0;cnt++;
+      if(px<x0)x0=px;if(px>x1)x1=px;if(py<y0)y0=py;if(py>y1)y1=py;
+      let q;
+      if(px>0){q=p-1;if(!seen[q]&&g[q]<=thr){seen[q]=1;stack[sp++]=q;}}
+      if(px<w-1){q=p+1;if(!seen[q]&&g[q]<=thr){seen[q]=1;stack[sp++]=q;}}
+      if(py>0){q=p-w;if(!seen[q]&&g[q]<=thr){seen[q]=1;stack[sp++]=q;}}
+      if(py<h-1){q=p+w;if(!seen[q]&&g[q]<=thr){seen[q]=1;stack[sp++]=q;}}
+    }
+    const bw=x1-x0+1,bh=y1-y0+1;
+    if(cnt<150||bw<40||bh<40)continue;
+    const r=decodeBBox(rgba,w,h,x0,y0,x1,y1);
+    if(r&&r.ok)frames.push(r);
+  }
+  return {ok:frames.length>0,frames};
+}
+function decodeBBox(rgba,w,h,x0,y0,x1,y1){
   const bw=x1-x0+1,bh=y1-y0+1;
   let found=null;
   for(const n of SIZES){
@@ -321,7 +347,7 @@ const PRESETS=[
 ];
 for(const p of PRESETS)p.bytes=dataMax(p.n,p.cm,p.nsym);
 
-const MC={SIZES,NSYM,META,bps,dataMax,nblocksFor,framesFor,fileId,render,decode,PRESETS,
+const MC={SIZES,NSYM,META,bps,dataMax,nblocksFor,framesFor,fileId,render,decode,decodeMulti,decodeBBox,PRESETS,
   interior,FMTS:b=>Math.ceil(16/b)};
 if(typeof module!=='undefined'&&module.exports)module.exports=MC;
 else root.MC=MC;
@@ -481,8 +507,8 @@ $('cam').onclick=async()=>{
         const w=v.videoWidth,h=v.videoWidth? v.videoHeight:1;
         const sc=Math.min(1,720/Math.max(w,h)),cw=Math.round(w*sc),ch=Math.round(h*sc);
         rc.width=cw;rc.height=ch;ctx.drawImage(v,0,0,cw,ch);
-        const D=MC.decode(ctx.getImageData(0,0,cw,ch).data,cw,ch);
-        if(D&&D.ok)onFrame(D);
+        const R=MC.decodeMulti(ctx.getImageData(0,0,cw,ch).data,cw,ch);
+        if(R&&R.ok)for(const D of R.frames)onFrame(D);
       }
       rxLoop=requestAnimationFrame(tick);
     };
@@ -501,8 +527,8 @@ $('impfile').onchange=async ev=>{
       const cv=$('rcv');cv.width=img.width;cv.height=img.height;
       const ctx=cv.getContext('2d',{willReadFrequently:true});
       ctx.drawImage(img,0,0);
-      let D=null;try{D=MC.decode(ctx.getImageData(0,0,img.width,img.height).data,img.width,img.height);}catch(e){}
-      if(D&&D.ok){onFrame(D);$('rxstat').innerHTML='Imagem decodificada. Importe mais quadros se precisar.';}
+      let R=null;try{R=MC.decodeMulti(ctx.getImageData(0,0,img.width,img.height).data,img.width,img.height);}catch(e){}
+      if(R&&R.ok){for(const D of R.frames)onFrame(D);$('rxstat').innerHTML='Imagem decodificada: '+R.frames.length+' bloco(s). Importe mais se precisar.';}
       else $('rxstat').innerHTML='Não encontrei um código MegaCode nessa imagem.';
     };
     img.onerror=()=>{$('rxstat').innerHTML='Falha ao carregar a imagem.';};
