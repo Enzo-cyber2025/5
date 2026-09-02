@@ -39,7 +39,7 @@ video{width:100%;border-radius:8px;background:#000;display:block}
   <section id="tx">
     <div class="card">
       <label>Arquivo (qualquer tipo)</label>
-      <input type="file" id="file">
+      <input type="file" id="file" multiple>
       <label>…ou pasta inteira</label>
       <input type="file" id="folder" webkitdirectory directory multiple>
       <label>Qualidade</label>
@@ -382,6 +382,7 @@ if(typeof module!=='undefined'&&module.exports)module.exports=MC;
 else root.MC=MC;
 })(typeof self!=='undefined'?self:this);
 
+
 </script>
 <script>
 (function(){
@@ -429,7 +430,7 @@ function updateTxInfo(){
 }
 function collectFiles(){
   const out=[];
-  const ff=$('file').files; if(ff&&ff[0])out.push({name:ff[0].name,path:ff[0].name,file:ff[0]});
+  const ff=$('file').files; for(const f of ff)out.push({name:f.name,path:f.name,file:f});
   const df=$('folder').files;
   if(df&&df.length)for(const f of df)out.push({name:f.name,path:f.webkitRelativePath||f.name,file:f});
   return out;
@@ -561,19 +562,26 @@ async function gerarPNG(f,px,W,H,single){
 }
 let lastGen=null;
 $('genpng').onclick=async()=>{
-  const f=$('file').files[0];
-  if(!f){alert('Escolha um arquivo primeiro.');return;}
-  const o=readGenOpts();lastGen={f,px:o.px,W:o.W,H:o.H,single:o.single,grid:o.grid};
-  $('txinfo').textContent='Gerando '+o.W+'×'+o.H+(o.grid?' (grade)':' (1 código grande)')+'…';
-  try{
-    const r=o.grid?await gerarPNG(f,o.px,o.W,o.H,o.single):await gerarBig(f,o.W,o.H,o.single);
-    if(r.tooBig){$('txinfo').innerHTML=`<b>Não cabe em 1 imagem</b> aqui: cabem ~${fmtKB(r.maxBytes)}, mas o arquivo precisa de ${r.images} imagens.<br>Desmarque “imagem única”, ou aumente a resolução/densidade.`;return;}
-    if(r.first){const pv=$('cv');const sc=Math.min(1,1280/r.W);pv.width=Math.max(1,Math.round(r.W*sc));pv.height=Math.max(1,Math.round(r.H*sc));pv.getContext('2d').drawImage(r.first,0,0,pv.width,pv.height);$('txview').classList.remove('hide');}
-    $('dlpng').classList.remove('hide');
-    $('txinfo').innerHTML=`<b>${r.images}</b> imagem(ns) ${r.W}×${r.H} P&B (${r.bpi} blocos/imagem, ${r.dataFrames} quadro(s) de dados). PNG ${r.modo}.<br>Para ler: aba Receber > Ler PNG/imagem.`;
-  }catch(e){$('txinfo').textContent='Erro: '+e.message;}
+  const items=collectFiles();
+  if(!items.length){alert('Escolha um arquivo ou uma pasta.');return;}
+  const o=readGenOpts();lastGen={items,o};
+  let totImg=0,firstCv=null,tooBig=null,err=null;
+  for(let idx=0;idx<items.length;idx++){
+    const f=items[idx].file;
+    $('txinfo').textContent='Gerando '+(idx+1)+'/'+items.length+': '+items[idx].name+' ('+o.W+'\u00d7'+o.H+(o.grid?' grade':' 1 c\u00f3digo')+')\u2026';
+    try{
+      const r=o.grid?await gerarPNG(f,o.px,o.W,o.H,o.single):await gerarBig(f,o.W,o.H,o.single);
+      if(r.tooBig){tooBig=r;continue;}
+      totImg+=r.images; if(!firstCv&&r.first)firstCv=r.first;
+    }catch(e){err=e;}
+  }
+  if(err){$('txinfo').textContent='Erro: '+err.message;return;}
+  if(!totImg&&tooBig){$('txinfo').innerHTML=`<b>N\u00e3o cabe em 1 imagem</b>: cabem ~${fmtKB(tooBig.maxBytes)}, mas precisa de ${tooBig.images} imagens.<br>Desmarque \u201cimagem \u00fanica\u201d, ou aumente a resolu\u00e7\u00e3o/densidade.`;return;}
+  if(firstCv){const pv=$('cv');const sc=Math.min(1,1280/o.W);pv.width=Math.max(1,Math.round(o.W*sc));pv.height=Math.max(1,Math.round(o.H*sc));pv.getContext('2d').drawImage(firstCv,0,0,pv.width,pv.height);$('txview').classList.remove('hide');}
+  $('dlpng').classList.remove('hide');
+  $('txinfo').innerHTML=`<b>${items.length}</b> arquivo(s) \u00b7 <b>${totImg}</b> imagem(ns) P&B geradas (${o.grid?'grade':'1 c\u00f3digo grande'}).<br>Para ler: aba Receber > Ler PNG/imagem (ou c\u00e2mera).`;
 };
-$('dlpng').onclick=()=>{if(lastGen){lastGen.grid?gerarPNG(lastGen.f,lastGen.px,lastGen.W,lastGen.H,lastGen.single):gerarBig(lastGen.f,lastGen.W,lastGen.H,lastGen.single);}};
+$('dlpng').onclick=()=>{if(lastGen){const{items,o}=lastGen;for(const it of items){o.grid?gerarPNG(it.file,o.px,o.W,o.H,o.single):gerarBig(it.file,o.W,o.H,o.single);}}};
 if($('res'))$('res').onchange=capInfo;
 if($('dens'))$('dens').onchange=capInfo;
 if($('single'))$('single').onchange=capInfo;
@@ -689,6 +697,7 @@ $('save').onclick=()=>{
   $('rxstat').innerHTML=n?`Salvo ${n} arquivo(s).`:'Nada completo para salvar.';
 };
 })();
+
 
 </script>
 </body>
