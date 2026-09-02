@@ -500,7 +500,7 @@ async function gerarBig(f,W,H,single){
   const dataFrames=Math.max(1,Math.ceil(f.size/cap)),images=1+dataFrames;
   if(single&&dataFrames>1)return {tooBig:true,maxBytes:cap,images};
   const fid=MC.fileId(f.name,f.size),enc=new TextEncoder();
-  const meta=JSON.stringify({v:1,name:f.name,path:f.name,size:f.size,fi:0,tf:1});
+  const _ext=(n=>{const i=n.lastIndexOf('.');return i>0?n.slice(i+1):'';})(f.name);const meta=JSON.stringify({v:1,name:f.name,path:f.name,size:f.size,ext:_ext,fi:0,tf:1});
   const base=(f.name.replace(/\.[^.]+$/,'')||'arquivo');
   let first=null,modo='';
   const ox=Math.max(0,Math.floor((W-side)/2)),oy=Math.max(0,Math.floor((H-side)/2));
@@ -531,7 +531,7 @@ async function gerarPNG(f,px,W,H,single){
   const images=Math.ceil(totalBlocks/L.bpi);
   if(single&&images>1)return {tooBig:true,maxBytes:(L.bpi-1)*L.cap,images};
   const enc=new TextEncoder();
-  const meta=JSON.stringify({v:1,name:f.name,path:f.name,size:f.size,fi:0,tf:1});
+  const _ext=(n=>{const i=n.lastIndexOf('.');return i>0?n.slice(i+1):'';})(f.name);const meta=JSON.stringify({v:1,name:f.name,path:f.name,size:f.size,ext:_ext,fi:0,tf:1});
   const base=(f.name.replace(/\.[^.]+$/,'')||'arquivo');
   let first=null,modo='';
   for(let img=0;img<images;img++){
