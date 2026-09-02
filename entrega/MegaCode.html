@@ -502,7 +502,7 @@ function readGenOpts(){const v=($('res')&&$('res').value)||'1920x1080';const p=v
 async function gerarBig(f,W,H,single){
   const n=224,nsym=32,quiet=4,px=Math.max(1,Math.floor(Math.min(W,H)/(n+2*quiet)));
   const side=(n+2*quiet)*px,cap=MC.dataMax(n,0,nsym);
-  const dataFrames=Math.max(1,Math.ceil(f.size/cap)),images=1+dataFrames;
+  const dataFrames=Math.max(1,Math.ceil(f.size/cap)),images=dataFrames;
   if(single&&dataFrames>1)return {tooBig:true,maxBytes:cap,images};
   const fid=MC.fileId(f.name,f.size),enc=new TextEncoder();
   const _ext=(n=>{const i=n.lastIndexOf('.');return i>0?n.slice(i+1):'';})(f.name);const meta=JSON.stringify({v:1,name:f.name,path:f.name,size:f.size,ext:_ext,fi:0,tf:1});
@@ -513,8 +513,7 @@ async function gerarBig(f,W,H,single){
     const cv=document.createElement('canvas');cv.width=W;cv.height=H;
     const ctx=cv.getContext('2d');if(!ctx)throw new Error('resolução grande demais para o canvas');
     ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);let R;
-    if(img===0)R=MC.render({n,cm:0,nsym},fid,MC.META,dataFrames,enc.encode(meta),px,quiet,f.name);
-    else{const di=img-1,off=di*cap,end=Math.min(f.size,off+cap);
+    {const di=img,off=di*cap,end=Math.min(f.size,off+cap);
       const chunk=new Uint8Array(await f.slice(off,end).arrayBuffer());
       R=MC.render({n,cm:0,nsym},fid,di,dataFrames,chunk,px,quiet,f.name);}
     if(R)drawBlockTo(ctx,R,ox,oy);
