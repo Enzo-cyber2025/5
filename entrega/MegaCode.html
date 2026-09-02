@@ -42,6 +42,7 @@ video{width:100%;border-radius:8px;background:#000;display:block}
       <input type="file" id="file" multiple>
       <label>…ou pasta inteira</label>
       <input type="file" id="folder" webkitdirectory directory multiple>
+      <div id="drop" style="border:2px dashed #98a6b8;padding:16px;text-align:center;border-radius:10px;color:#98a6b8;margin-top:12px;cursor:pointer">…ou <b>arraste e solte</b> vários arquivos aqui</div>
       <label>Qualidade</label>
       <select id="preset"></select>
       <label>Resolução da imagem</label>
@@ -383,6 +384,7 @@ else root.MC=MC;
 })(typeof self!=='undefined'?self:this);
 
 
+
 </script>
 <script>
 (function(){
@@ -428,8 +430,10 @@ function updateTxInfo(){
   for(const f of files){size+=f.file.size;total+=MC.framesFor(f.file.size,p.n,p.cm,p.nsym);}
   $('txinfo').innerHTML=`<span class="big">${files.length} arquivo(s)</span> · ${fmtMB(size)}<br>${total} quadro(s) no total · ~${p.bytes} B/quadro`;
 }
+let dropped=[];
 function collectFiles(){
   const out=[];
+  for(const f of dropped)out.push({name:f.name,path:f.webkitRelativePath||f.name,file:f});
   const ff=$('file').files; for(const f of ff)out.push({name:f.name,path:f.name,file:f});
   const df=$('folder').files;
   if(df&&df.length)for(const f of df)out.push({name:f.name,path:f.webkitRelativePath||f.name,file:f});
@@ -586,6 +590,16 @@ if($('res'))$('res').onchange=capInfo;
 if($('dens'))$('dens').onchange=capInfo;
 if($('single'))$('single').onchange=capInfo;
 
+/* ---------- Drag & drop (varios arquivos) ---------- */
+function wireDrop(){
+  const el=$('drop'); if(!el)return;
+  const act=e=>{e.preventDefault();e.stopPropagation();};
+  ['dragover','dragenter'].forEach(ev=>el.addEventListener(ev,e=>{act(e);el.style.background='#24405f';el.style.color='#fff';}));
+  ['dragleave','dragend'].forEach(ev=>el.addEventListener(ev,e=>{act(e);el.style.background='';el.style.color='';}));
+  el.addEventListener('drop',e=>{act(e);el.style.background='';el.style.color='';
+    dropped=Array.from(e.dataTransfer.files);
+    if(dropped.length){if($('file'))$('file').value='';if($('folder'))$('folder').value='';updateTxInfo();if(typeof capInfo==='function')capInfo();}});
+}
 /* ---------- RX ---------- */
 let stream=null,rxLoop=null;
 const rx=new Map(); // fileIdHex -> {meta,parts,total,got,done,out}
@@ -696,7 +710,9 @@ $('save').onclick=()=>{
   }
   $('rxstat').innerHTML=n?`Salvo ${n} arquivo(s).`:'Nada completo para salvar.';
 };
+wireDrop();
 })();
+
 
 
 </script>
