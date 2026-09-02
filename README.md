@@ -65,9 +65,10 @@ e toque em *Gerar imagem 1080p (P&B) e exportar PNG*. Os PNG são salvos na
 galeria/imagens do aparelho.
 
 **Ler (PC e Android):** em *Receber*, use **Ler PNG / imagem** para importar
-um PNG da memória, ou a **câmera** para ler da tela. Vários blocos de uma
-mesma imagem são reconhecidos de uma vez; imagens múltiplas são somadas até
-completar o arquivo.
+**um ou vários PNG** da memória de uma vez, ou a **câmera** para ler da tela.
+Vários blocos de uma mesma imagem são reconhecidos de uma vez; **imagens
+múltiplas são somadas** até completar o arquivo. O arquivo recuperado é salvo
+com o **nome e tipo originais** (um `.exe` volta como `.exe`).
 
 ## Capacidade (importante)
 

@@ -83,7 +83,7 @@ video{width:100%;border-radius:8px;background:#000;display:block}
         <button id="cam">Ligar câmera</button>
         <button id="imp" class="sec">Ler PNG / imagem</button>
       </div>
-      <input type="file" id="impfile" accept="image/*" class="hide">
+      <input type="file" id="impfile" accept="image/*" multiple class="hide">
       <video id="vid" playsinline muted class="hide"></video>
       <canvas id="rcv" class="hide"></canvas>
       <div class="bar"><i id="rxbar"></i></div>
@@ -638,23 +638,32 @@ $('cam').onclick=async()=>{
 function stopCam(){if(rxLoop){cancelAnimationFrame(rxLoop);rxLoop=null;}
   if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}$('vid').classList.add('hide');}
 $('imp').onclick=()=>$('impfile').click();
-$('impfile').onchange=async ev=>{
-  const f=ev.target.files[0];if(!f)return;
-  const fr=new FileReader();
-  fr.onload=()=>{
-    const img=new Image();
-    img.onload=()=>{
-      const cv=$('rcv');cv.width=img.width;cv.height=img.height;
-      const ctx=cv.getContext('2d',{willReadFrequently:true});
-      ctx.drawImage(img,0,0);
-      let R=null;try{R=MC.decodeMulti(ctx.getImageData(0,0,img.width,img.height).data,img.width,img.height);}catch(e){}
-      if(R&&R.ok){for(const D of R.frames)onFrame(D);$('rxstat').innerHTML='Imagem decodificada: '+R.frames.length+' bloco(s). Importe mais se precisar.';}
-      else $('rxstat').innerHTML='Não encontrei um código MegaCode nessa imagem.';
+$('impfile').onchange=ev=>{
+  const files=Array.from(ev.target.files); if(!files.length)return;
+  let done=0,totBlocks=0;
+  const finish=()=>{done++;
+    if(done===files.length){
+      const {pct}=rxProgress();
+      $('rxstat').innerHTML=`${files.length} imagem(ns) lida(s): ${totBlocks} bloco(s) novos · progresso total ${pct}%.`+
+        (pct<100?' Importe as próximas imagens (ou use a câmera).':'');
+    }};
+  for(const f of files){
+    const fr=new FileReader();
+    fr.onload=()=>{
+      const img=new Image();
+      img.onload=()=>{
+        const cv=$('rcv');cv.width=img.width;cv.height=img.height;
+        const ctx=cv.getContext('2d',{willReadFrequently:true});
+        ctx.drawImage(img,0,0);
+        let R=null;try{R=MC.decodeMulti(ctx.getImageData(0,0,img.width,img.height).data,img.width,img.height);}catch(e){}
+        if(R&&R.ok){for(const D of R.frames)onFrame(D);totBlocks+=R.frames.length;}
+        finish();
+      };
+      img.onerror=finish;
+      img.src=fr.result; // data: URL nao contamina o canvas (funciona em file://)
     };
-    img.onerror=()=>{$('rxstat').innerHTML='Falha ao carregar a imagem.';};
-    img.src=fr.result; // data: URL nao contamina o canvas (funciona em file://)
-  };
-  fr.readAsDataURL(f);
+    fr.readAsDataURL(f);
+  }
   ev.target.value='';
 };
 $('save').onclick=()=>{
