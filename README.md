@@ -35,6 +35,9 @@ No app (Android), no `MegaCode.exe` (Windows) e no HTML você escolhe:
   PNG escaneado).
 - **Modo imagem única:** força **1 só PNG**; se o arquivo não couber, o app
   avisa o tamanho máximo e quantas imagens seriam necessárias.
+- **Layout do código:** por padrão cada imagem traz **UM código grande**
+  preenchendo o quadro (sem sub-blocos). Opcionalmente, marque *grade de
+  blocos* para vários códigos por imagem (mais dados por imagem).
 
 Capacidade por imagem (1 bloco de metadados + o resto em dados, 641 B/bloco):
 
