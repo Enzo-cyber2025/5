@@ -49,9 +49,31 @@ gerado no Android é lido no Windows.
  3. LER: "Ler PNG (recuperar arquivo)" > escolha um ou varios PNG;
     o programa reconstitui o arquivo original.
 
- Se o Windows/antivírus bloquear o .exe (ele não é assinado):
-  - clique com o botão direito > Propriedades > "Desbloquear" > OK; ou
-  - extraia o ZIP e rode o executável de dentro da pasta extraída.
+ SE O WINDOWS BLOQUEAR O .EXE (ele nao tem assinatura digital)
+----------------------------------------------------------------
+ Isso e politica do Windows (SmartScreen/Defender), nao um defeito.
+ Qualquer .exe novo e sem certificado e barrado. Opcoes, da mais
+ facil p/ a mais tecnica:
+
+ 1) USE O MegaCode.html (recomendado no Windows): abra no navegador
+    (Chrome/Edge). Nao e bloqueado e tem TUDO: gerar, ler PNG/camera,
+    320p..16384², imagem unica, 1 codigo grande, varias imagens e
+    recuperacao com o tipo original. Nenhum bloqueio.
+
+ 2) Desbloquear o .exe (PowerShell como Administrador):
+       Unblock-File -Path "C:\pasta\MegaCode.exe"
+       Add-MpPreference -ExclusionPath "C:\pasta"
+    Depois rode o .exe. (A exclusao diz ao Defender para confiar na
+    pasta.)
+
+ 3) Via interface: Seguranca do Windows > Protecao contra virus e
+    ameacas > "Adicionar ou remover exclusoes" > adicione a pasta do
+    .exe. Se ele foi quarantenado, restaure em "Historico de protecao".
+
+ 4) Desligar o SmartScreen temporariamente: Seguranca do Windows >
+    Controle de aplicativos e navegador > Reputacao baseada em
+    Inteligencia > desative "Verificar aplicativos e arquivos".
+    (Religue depois, por seguranca.)
 
 ----------------------------------------------------------------
  LINUX / macOS (linha de comando)
