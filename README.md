@@ -1,8 +1,9 @@
 # MegaCode
 
 Envio de arquivos por **código visual próprio** (não é QR Code), de alta
-densidade, em **preto e branco**, com **vários blocos por imagem 1080p**.
-Suporta **qualquer tipo de arquivo** (inclusive pastas e `.gguf` grandes).
+densidade, em **preto e branco** — cada módulo é um bit: **preto = 0,
+branco = 1** — com **vários blocos por imagem**. Suporta **qualquer tipo de
+arquivo** (inclusive pastas e `.gguf` grandes).
 
 O **mesmo código é interoperável** entre todas as plataformas: um PNG gerado
 no Windows é lido no Android e vice-versa.
@@ -27,9 +28,9 @@ Links diretos (branch `arena/01a0588f-5`):
 
 No app (Android), no `MegaCode.exe` (Windows) e no HTML você escolhe:
 
-- **Resolução:** `1080p` (para capturar com a **câmera**) ou `4K / 8K / 16K /
-  16384×16384` (para **escanear o PNG direto**, sem câmera — quanto maior,
-  mais dados cabem numa imagem só).
+- **Resolução:** `320p` (tela pequena), `1080p` (para capturar com a
+  **câmera**) ou `4K / 8K / 16K / 16384×16384` (para **escanear o PNG
+  direto**, sem câmera — quanto maior, mais dados cabem numa imagem só).
 - **Densidade:** 4 px (legível por câmera) até 1 px (máximo de dados, só para
   PNG escaneado).
 - **Modo imagem única:** força **1 só PNG**; se o arquivo não couber, o app
@@ -39,6 +40,7 @@ Capacidade por imagem (1 bloco de metadados + o resto em dados, 641 B/bloco):
 
 | Resolução | px | Blocos | Úteis/imagem |
 |---|---|---|---|
+| 320p | 1 | 15 | ~8,8 KB |
 | 1080p | 4 | 8 | ~4,4 KB |
 | 4K | 2 | 180 | ~112 KB |
 | 8K | 2 | 720 | ~450 KB |
