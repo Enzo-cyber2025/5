@@ -110,7 +110,7 @@ const PAL=[
 const bps=cm=>cm+1; // cm0->1bit(2 cores), cm1->2bits(4), cm2->3bits(8)
 const interior=n=>n-2*BORDER;
 function nblocksFor(n,cm){const W=interior(n),b=bps(cm);return Math.max(1,Math.floor(W*(W-2)*b/8/255));}
-function dataMax(n,cm,nsym){const nb=nblocksFor(n,cm);return Math.min(65535,Math.max(0,nb*(255-nsym)-HDR-4));}
+function dataMax(n,cm,nsym){const nb=nblocksFor(n,cm);return Math.min(65535,Math.max(0,nb*(255-nsym)-HDR-4-256));}
 const FMTS=b=>Math.ceil(16/b);
 
 /* ---- GF(256), poli 0x11d ---- */
@@ -201,10 +201,12 @@ function fileId(name,size){let h=1469598103934665607n;const F=1099511628211n;
   const out=new Uint8Array(8);for(let i=0;i<8;i++)out[i]=Number((h>>BigInt(i*8))&255n);return out;}
 
 /* ---- render ---- */
-function render(p,fid,frameIndex,totalFrames,data,px,quiet){
+function render(p,fid,frameIndex,totalFrames,data,px,quiet,name){
   const n=p.n,cm=p.cm,nsym=p.nsym,W=interior(n),b=bps(cm),K=1<<b;
   const nb=nblocksFor(n,cm),k=255-nsym;
-  if(data.length>nb*k-HDR-4)return null;
+  const nmb=name?new TextEncoder().encode(name):new Uint8Array(0);
+  const nameLen=Math.min(nmb.length,255),extra=1+nameLen;
+  if(data.length>nb*k-HDR-extra-4)return null;
   const msg=new Uint8Array(nb*k);
   msg[0]=MAGIC0;msg[1]=MAGIC1;msg[2]=VERSION;msg[3]=cm;
   msg.set(fid,4);
@@ -212,8 +214,9 @@ function render(p,fid,frameIndex,totalFrames,data,px,quiet){
   msg[16]=totalFrames>>>24;msg[17]=totalFrames>>>16;msg[18]=totalFrames>>>8;msg[19]=totalFrames&255;
   msg[20]=data.length>>>8;msg[21]=data.length&255;
   const hc=crc16(msg.subarray(0,22));msg[22]=hc>>>8;msg[23]=hc&255;
-  msg.set(data,HDR);
-  const cpos=HDR+data.length,crc=crc32(msg.subarray(0,cpos));
+  msg[HDR]=nameLen; if(nameLen)msg.set(nmb.subarray(0,nameLen),HDR+1);
+  msg.set(data,HDR+extra);
+  const cpos=HDR+extra+data.length,crc=crc32(msg.subarray(0,cpos));
   msg[cpos]=crc>>>24;msg[cpos+1]=crc>>>16;msg[cpos+2]=crc>>>8;msg[cpos+3]=crc&255;
   const gen=rsGen(nsym);
   const cw=new Uint8Array(nb*255);
@@ -354,14 +357,16 @@ function decodeBBox(rgba,w,h,x0,y0,x1,y1){
   if(msg[0]!==MAGIC0||msg[1]!==MAGIC1||msg[2]!==VERSION)return {ok:false};
   const hc=(msg[22]<<8)|msg[23];if(crc16(msg.subarray(0,22))!==hc)return {ok:false};
   const dl=(msg[20]<<8)|msg[21];
-  if(dl>nb*k-HDR-4)return {ok:false};
-  const cpos=HDR+dl;
+  const nameLen=msg[HDR],extra=1+nameLen;
+  if(dl>nb*k-HDR-extra-4)return {ok:false};
+  const cpos=HDR+extra+dl;
   const crc=((msg[cpos]<<24)|(msg[cpos+1]<<16)|(msg[cpos+2]<<8)|msg[cpos+3])>>>0;
   if(crc32(msg.subarray(0,cpos))!==crc)return {ok:false};
   const frameIndex=((msg[12]<<24)|(msg[13]<<16)|(msg[14]<<8)|msg[15])>>>0;
   const totalFrames=((msg[16]<<24)|(msg[17]<<16)|(msg[18]<<8)|msg[19])>>>0;
-  return {ok:true,info:{fileId:msg.slice(4,12),frameIndex,totalFrames,n,cm,nsym},
-    data:msg.slice(HDR,HDR+dl),corrected:corr};
+  let nm='';try{nm=new TextDecoder().decode(msg.slice(HDR+1,HDR+1+nameLen));}catch(_){}
+  return {ok:true,info:{fileId:msg.slice(4,12),frameIndex,totalFrames,n,cm,nsym,name:nm},
+    data:msg.slice(HDR+extra,HDR+extra+dl),corrected:corr};
 }
 
 function framesFor(size,n,cm,nsym){const m=dataMax(n,cm,nsym);return m<=0?0:Math.ceil(size/m);}
@@ -464,12 +469,12 @@ $('start').onclick=async()=>{
     const t=tasks[k%tasks.length];
     let R;
     if(t.kind==='meta'){
-      R=MC.render(p,t.it.fileId,META,t.it.total,enc.encode(t.meta),6,4);
+      R=MC.render(p,t.it.fileId,META,t.it.total,enc.encode(t.meta),6,4,t.it.name);
       $('txstat').innerHTML=`<b>${t.it.path}</b> · metadados`;
     }else{
       const off=t.idx*p.bytes,end=Math.min(t.it.file.size,off+p.bytes);
       const chunk=new Uint8Array(await t.it.file.slice(off,end).arrayBuffer());
-      R=MC.render(p,t.it.fileId,t.idx,t.it.total,chunk,6,4);
+      R=MC.render(p,t.it.fileId,t.idx,t.it.total,chunk,6,4,t.it.name);
       $('txstat').innerHTML=`<b>${t.it.path}</b> · quadro ${t.idx+1}/${t.it.total}`;
     }
     if(R)drawFrame(R);
@@ -508,10 +513,10 @@ async function gerarBig(f,W,H,single){
     const cv=document.createElement('canvas');cv.width=W;cv.height=H;
     const ctx=cv.getContext('2d');if(!ctx)throw new Error('resolução grande demais para o canvas');
     ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);let R;
-    if(img===0)R=MC.render({n,cm:0,nsym},fid,MC.META,dataFrames,enc.encode(meta),px,quiet);
+    if(img===0)R=MC.render({n,cm:0,nsym},fid,MC.META,dataFrames,enc.encode(meta),px,quiet,f.name);
     else{const di=img-1,off=di*cap,end=Math.min(f.size,off+cap);
       const chunk=new Uint8Array(await f.slice(off,end).arrayBuffer());
-      R=MC.render({n,cm:0,nsym},fid,di,dataFrames,chunk,px,quiet);}
+      R=MC.render({n,cm:0,nsym},fid,di,dataFrames,chunk,px,quiet,f.name);}
     if(R)drawBlockTo(ctx,R,ox,oy);
     modo=exportSheet(cv,base+'_megacode_'+String(img).padStart(4,'0')+'.png');
     if(img===0)first=cv;
@@ -542,10 +547,10 @@ async function gerarPNG(f,px,W,H,single){
     for(let b=0;b<L.bpi;b++){
       const gi=img*L.bpi+b;if(gi>=totalBlocks)break;
       const r=Math.floor(b/L.cols),c=b%L.cols,ox=c*L.bp,oy=r*L.bp;let R;
-      if(gi===0)R=MC.render({n:L.n,cm:0,nsym:L.nsym},fid,MC.META,dataFrames,enc.encode(meta),px,L.quiet);
+      if(gi===0)R=MC.render({n:L.n,cm:0,nsym:L.nsym},fid,MC.META,dataFrames,enc.encode(meta),px,L.quiet,f.name);
       else{const di=gi-1,off=di*L.cap,end=Math.min(f.size,off+L.cap);
         const chunk=new Uint8Array(await f.slice(off,end).arrayBuffer());
-        R=MC.render({n:L.n,cm:0,nsym:L.nsym},fid,di,dataFrames,chunk,px,L.quiet);}
+        R=MC.render({n:L.n,cm:0,nsym:L.nsym},fid,di,dataFrames,chunk,px,L.quiet,f.name);}
       if(R)drawBlockTo(ctx,R,ox,oy);
     }
     modo=exportSheet(cv,base+'_megacode_'+String(img).padStart(4,'0')+'.png');
@@ -591,7 +596,7 @@ function onFrame(D){
     let meta=null;try{meta=JSON.parse(new TextDecoder().decode(D.data));}catch(_){}
     if(!meta)return;
     if(!e){e={meta,parts:[],total:Math.max(1,Math.ceil(meta.size/1)),got:0,done:false};rx.set(key,e);}
-    e.meta=meta;
+    e.meta=meta; if(inf.name)e.hname=inf.name;
     const p=PRESETS.find(x=>x.n===inf.n&&x.cm===inf.cm&&x.nsym===inf.nsym)||PRESETS[1];
     e.total=Math.max(1,Math.ceil(meta.size/p.bytes));
     if(e.parts.length<e.total){const np=new Array(e.total).fill(null);for(let i=0;i<e.parts.length;i++)np[i]=e.parts[i];e.parts=np;}
@@ -599,6 +604,7 @@ function onFrame(D){
     refresh();return;
   }
   if(!e){e={meta:null,parts:[],total:inf.totalFrames,got:0,done:false};rx.set(key,e);}
+  if(inf.name&&!e.hname)e.hname=inf.name;
   if(inf.totalFrames>e.total)e.total=inf.totalFrames;
   if(e.parts.length<e.total){const np=new Array(e.total).fill(null);for(let i=0;i<e.parts.length;i++)np[i]=e.parts[i];e.parts=np;}
   if(e.parts[inf.frameIndex]===null){e.parts[inf.frameIndex]=D.data;e.got++;}
@@ -670,7 +676,7 @@ $('save').onclick=()=>{
   let n=0;
   for(const e of rx.values()){
     if(!e.done||!e.out)continue;
-    const name=(e.meta&&(e.meta.name||e.meta.path))||('megacode'+n+'.bin');
+    const name=(e.meta&&(e.meta.name||e.meta.path))||e.hname||('megacode'+n+'.bin');
     if(window.MegaCodeNative&&window.MegaCodeNative.saveFile){
       let bin='';const CH=0x8000;
       for(let i=0;i<e.out.length;i+=CH)bin+=String.fromCharCode.apply(null,e.out.subarray(i,i+CH));
