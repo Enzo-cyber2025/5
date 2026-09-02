@@ -1,0 +1,290 @@
+/* MegaCode codec (JS) - render + decode. Auto-consistente. */
+(function (root) {
+'use strict';
+const SIZES=[64,80,96,112,128,160,192,224];
+const NSYM=[8,16,24,32,40];
+const BORDER=3;
+const SYNC=[0,1,0,1,0,1,1,0];
+const HDR=24, MAGIC0=0x4D, MAGIC1=0x43, VERSION=1, META=0xFFFFFFFF;
+// paletas: index0=preto (borda), index1=branco
+const PAL=[
+  [[0,0,0],[255,255,255]],
+  [[0,0,0],[255,255,255],[255,32,32],[40,80,255]],
+  [[0,0,0],[255,255,255],[255,32,32],[40,80,255],[32,200,64],[255,220,0],[0,220,220],[255,0,200]]
+];
+const bps=cm=>cm+1; // cm0->1bit(2 cores), cm1->2bits(4), cm2->3bits(8)
+const interior=n=>n-2*BORDER;
+function nblocksFor(n,cm){const W=interior(n),b=bps(cm);return Math.max(1,Math.floor(W*(W-2)*b/8/255));}
+function dataMax(n,cm,nsym){const nb=nblocksFor(n,cm);return Math.min(65535,Math.max(0,nb*(255-nsym)-HDR-4-256));}
+const FMTS=b=>Math.ceil(16/b);
+
+/* ---- GF(256), poli 0x11d ---- */
+const EXP=new Uint8Array(512),LOG=new Uint8Array(256);
+(function(){let x=1;for(let i=0;i<255;i++){EXP[i]=x;LOG[x]=i;x<<=1;if(x&0x100)x^=0x11d;}for(let i=255;i<512;i++)EXP[i]=EXP[i-255];})();
+const gmul=(a,b)=>(a===0||b===0)?0:EXP[LOG[a]+LOG[b]];
+const ginv=a=>EXP[(255-LOG[a])%255];
+// gerador: g(x)=prod_{i=0..nsym-1}(x-alpha^i), highest-first, g[0]=1
+function rsGen(nsym){let g=[1];
+  for(let i=0;i<nsym;i++){const d=g.length-1,ng=new Array(g.length+1).fill(0);
+    ng[0]=g[0];
+    for(let j=1;j<=d;j++)ng[j]=g[j]^gmul(g[j-1],EXP[i]);
+    ng[d+1]=gmul(g[d],EXP[i]);
+    g=ng;}
+  return g;}
+// paridade sistematica: parity = (msg*x^nsym) mod g
+function rsEncodeParity(msg,gen,nsym){const k=msg.length,res=new Uint8Array(k+nsym);
+  res.set(msg,0);
+  for(let i=0;i<k;i++){const coef=res[i];
+    if(coef!==0)for(let j=1;j<gen.length;j++)res[i+j]^=gmul(gen[j],coef);}
+  return res.slice(k);}
+function rsSyndromes(cw,nsym){const S=new Uint8Array(nsym);
+  for(let i=0;i<nsym;i++){let v=0;for(let j=0;j<cw.length;j++)v=gmul(v,EXP[i])^cw[j];S[i]=v;}
+  return S;}
+// corrige codeword (msg+paridade, highest-first). retorna {ok, data, corr}
+function rsCorrect(cw,nsym,k){const n=cw.length;
+  let S=rsSyndromes(cw,nsym);let nz=false;for(let i=0;i<nsym;i++)if(S[i])nz=true;
+  if(!nz)return {ok:true,data:cw.slice(0,k),corr:0};
+  // Berlekamp-Massey (C lowest-first, C[0]=1)
+  const C=new Array(nsym+1).fill(0),B=new Array(nsym+1).fill(0);
+  C[0]=1;B[0]=1;let L=0,m=1,b=1;
+  for(let nn=0;nn<nsym;nn++){
+    let d=S[nn];for(let i=1;i<=L;i++)d^=gmul(C[i],S[nn-i]);
+    if(d===0){m++;continue;}
+    const coef=gmul(d,ginv(b));
+    const T=C.slice();                       // guarda C antigo
+    for(let i=m;i<=nsym;i++)C[i]^=gmul(coef,B[i-m]);
+    if(2*L<=nn){for(let i=0;i<=nsym;i++)B[i]=T[i];L=nn+1-L;b=d;m=1;}
+    else m++;
+  }
+  if(L===0)return {ok:false};
+  // Chien: raizes de Lambda; posicao j (cw index) com X=alpha^(n-1-j)
+  const errPos=[];
+  for(let j=0;j<n;j++){const t=(255-((n-1-j)%255))%255;
+    let v=0;for(let i=0;i<=L;i++)v^=gmul(C[i],EXP[(i*t)%255]);
+    if(v===0)errPos.push(j);}
+  if(errPos.length!==L)return {ok:false};
+  // Omega = S*Lambda mod x^nsym (lowest-first)
+  const Om=new Array(nsym).fill(0);
+  for(let i=0;i<nsym;i++){let v=0;for(let j=0;j<=Math.min(i,L);j++)v^=gmul(C[j],S[i-j]);Om[i]=v;}
+  const out=Uint8Array.from(cw);
+  for(const j of errPos){
+    const Xe=(n-1-j)%255,t=(255-Xe)%255;
+    let num=0;for(let i=0;i<nsym;i++)num^=gmul(Om[i],EXP[(i*t)%255]);
+    let der=0;for(let i=1;i<=L;i+=2)der^=gmul(C[i],EXP[((i-1)*t)%255]);
+    if(der===0)continue;
+    let e=gmul(num,ginv(der));e=gmul(e,EXP[Xe]);
+    out[j]^=e;
+  }
+  S=rsSyndromes(out,nsym);for(let i=0;i<nsym;i++)if(S[i])return {ok:false};
+  let corr=0;for(let i=0;i<n;i++)if(out[i]!==cw[i])corr++;
+  return {ok:true,data:out.slice(0,k),corr};
+}
+
+/* ---- CRC ---- */
+function crc16(buf){let crc=0xFFFF;for(let i=0;i<buf.length;i++){crc^=buf[i]<<8;
+  for(let j=0;j<8;j++)crc=(crc&0x8000)?((crc<<1)^0x1021)&0xFFFF:(crc<<1)&0xFFFF;}return crc&0xFFFF;}
+const CRC32T=(function(){const t=new Uint32Array(256);for(let i=0;i<256;i++){let c=i;
+  for(let j=0;j<8;j++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);t[i]=c>>>0;}return t;})();
+function crc32(buf){let c=0xFFFFFFFF;for(let i=0;i<buf.length;i++)c=CRC32T[(c^buf[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0;}
+
+/* ---- formato ---- */
+function fmtWord(n,cm,nsym,nb){const ni=SIZES.indexOf(n),si=NSYM.indexOf(nsym);
+  return ((ni&15)|((cm&3)<<4)|((si&7)<<6)|(((nb-1)&127)<<9))&0xFFFF;}
+function fmtUnpack(w){return {n:SIZES[w&15],cm:(w>>4)&3,nsym:NSYM[(w>>6)&7],nb:((w>>9)&127)+1};}
+function fmtRowSymbol(col,b,fw){const maxs=(1<<b)-1;
+  if(col<8)return SYNC[col]?maxs:0;
+  const idx=col-8,fs=FMTS(b),rep=Math.floor(idx/fs);
+  if(rep>=3)return (col&1)?maxs:0;
+  const bit=(idx%fs)*b;let v=0;
+  for(let i=0;i<b;i++){const bb=(bit+i<16)?((fw>>(15-(bit+i)))&1):0;v=(v<<1)|bb;}
+  return v;}
+const calRowSymbol=(col,b)=>b===1?(col&1):(col%(1<<b));
+
+function fileId(name,size){let h=1469598103934665607n;const F=1099511628211n;
+  for(let i=0;i<name.length;i++){h^=BigInt(name.charCodeAt(i));h=(h*F)%(1n<<64n);}
+  const sz=BigInt(size);for(let i=0;i<8;i++){h^=(sz>>BigInt(i*8))&255n;h=(h*F)%(1n<<64n);}
+  const out=new Uint8Array(8);for(let i=0;i<8;i++)out[i]=Number((h>>BigInt(i*8))&255n);return out;}
+
+/* ---- render ---- */
+function render(p,fid,frameIndex,totalFrames,data,px,quiet,name){
+  const n=p.n,cm=p.cm,nsym=p.nsym,W=interior(n),b=bps(cm),K=1<<b;
+  const nb=nblocksFor(n,cm),k=255-nsym;
+  const nmb=name?new TextEncoder().encode(name):new Uint8Array(0);
+  const nameLen=Math.min(nmb.length,255),extra=1+nameLen;
+  if(data.length>nb*k-HDR-extra-4)return null;
+  const msg=new Uint8Array(nb*k);
+  msg[0]=MAGIC0;msg[1]=MAGIC1;msg[2]=VERSION;msg[3]=cm;
+  msg.set(fid,4);
+  msg[12]=frameIndex>>>24;msg[13]=frameIndex>>>16;msg[14]=frameIndex>>>8;msg[15]=frameIndex&255;
+  msg[16]=totalFrames>>>24;msg[17]=totalFrames>>>16;msg[18]=totalFrames>>>8;msg[19]=totalFrames&255;
+  msg[20]=data.length>>>8;msg[21]=data.length&255;
+  const hc=crc16(msg.subarray(0,22));msg[22]=hc>>>8;msg[23]=hc&255;
+  msg[HDR]=nameLen; if(nameLen)msg.set(nmb.subarray(0,nameLen),HDR+1);
+  msg.set(data,HDR+extra);
+  const cpos=HDR+extra+data.length,crc=crc32(msg.subarray(0,cpos));
+  msg[cpos]=crc>>>24;msg[cpos+1]=crc>>>16;msg[cpos+2]=crc>>>8;msg[cpos+3]=crc&255;
+  const gen=rsGen(nsym);
+  const cw=new Uint8Array(nb*255);
+  for(let bl=0;bl<nb;bl++){
+    const par=rsEncodeParity(msg.subarray(bl*k,bl*k+k),gen,nsym);
+    for(let i=0;i<k;i++)cw[i*nb+bl]=msg[bl*k+i];
+    for(let i=0;i<nsym;i++)cw[k*nb+i*nb+bl]=par[i];
+  }
+  const cwLen=nb*255,totalBits=(W-2)*W*b,bits=new Uint8Array(totalBits);
+  for(let i=0;i<cwLen&&i*8<totalBits;i++)for(let bb=0;bb<8;bb++){const t=i*8+bb;if(t<totalBits)bits[t]=(cw[i]>>(7-bb))&1;}
+  const sym=new Uint8Array(W*W),fw=fmtWord(n,cm,nsym,nb);
+  for(let c=0;c<W;c++){sym[c]=fmtRowSymbol(c,b,fw);sym[W+c]=calRowSymbol(c,b);}
+  let bi=0;for(let r=2;r<W;r++)for(let c=0;c<W;c++){let v=0;
+    for(let bb=0;bb<b;bb++)v=(v<<1)|(bi<totalBits?bits[bi++]:0);sym[r*W+c]=v;}
+  const side=(n+2*quiet)*px,img=new Uint8ClampedArray(side*side*3).fill(255);
+  for(let gr=0;gr<n;gr++)for(let gc=0;gc<n;gc++){
+    let col;
+    if(gr<BORDER||gr>=n-BORDER||gc<BORDER||gc>=n-BORDER)col=PAL[0][0];
+    else col=PAL[cm][sym[(gr-BORDER)*W+(gc-BORDER)]&(K-1)];
+    const ox=(gc+quiet)*px,oy=(gr+quiet)*px;
+    for(let y=0;y<px;y++){const o=((oy+y)*side+ox)*3;
+      for(let x=0;x<px;x++){img[o+x*3]=col[0];img[o+x*3+1]=col[1];img[o+x*3+2]=col[2];}}}
+  return {img,side};
+}
+
+/* ---- decode ---- */
+const lumOf=(r,g,b)=>(r*77+g*151+b*28)>>8;
+function otsu(g,w,h){const hist=new Float64Array(256);let total=0;
+  for(let i=0;i<w*h;i++){hist[g[i]]++;total++;}
+  let sum=0;for(let i=0;i<256;i++)sum+=i*hist[i];
+  let sumB=0,wB=0,maxv=-1;const bet=new Float64Array(256).fill(-1);
+  for(let i=0;i<256;i++){wB+=hist[i];if(!wB)continue;const wF=total-wB;if(!wF)break;
+    sumB+=i*hist[i];const mB=sumB/wB,mF=(sum-sumB)/wF;bet[i]=wB*wF*(mB-mF)*(mB-mF);if(bet[i]>maxv)maxv=bet[i];}
+  if(maxv<=0)return 128;let lo=-1,hi=-1;
+  for(let i=0;i<256;i++)if(bet[i]>=maxv*0.999){if(lo<0)lo=i;hi=i;}
+  return lo<0?128:((lo+hi)>>1);}
+function classify(rgb,pal){let best=0,bd=1e9;
+  for(let i=0;i<pal.length;i++){const dr=rgb[0]-pal[i][0],dg=rgb[1]-pal[i][1],db=rgb[2]-pal[i][2];
+    const d=dr*dr+dg*dg+db*db;if(d<bd){bd=d;best=i;}}
+  return best;}
+function rotGrid(g,n,o){if(o===0)return g;const out=new Uint8Array(n*n);
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++){let nr,nc;
+    if(o===1){nr=c;nc=n-1-r;}else if(o===2){nr=n-1-r;nc=n-1-c;}else{nr=n-1-c;nc=r;}
+    out[nr*n+nc]=g[r*n+c];}
+  return out;}
+function readFmt(row,W,b){const maxs=(1<<b)-1;
+  for(let c=0;c<8;c++)if(row[c]!==(SYNC[c]?maxs:0))return null;
+  const fs=FMTS(b);const words=[];
+  for(let rep=0;rep<3;rep++){let fw=0;
+    for(let j=0;j<fs;j++){const col=8+rep*fs+j;if(col>=W)return null;const s=row[col]&maxs;
+      for(let i=0;i<b;i++){const bp=15-(j*b+i);if(bp>=0)fw|=((s>>(b-1-i))&1)<<bp;}}
+    words.push(fw);}
+  if(words[0]!==words[1]||words[1]!==words[2])return null;
+  return words[0];}
+
+function grayThr(rgba,w,h){const g=new Uint8Array(w*h);
+  for(let i=0;i<w*h;i++)g[i]=lumOf(rgba[i*4],rgba[i*4+1],rgba[i*4+2]);return {g,thr:otsu(g,w,h)};}
+function decode(rgba,w,h){
+  const {g,thr}=grayThr(rgba,w,h);
+  let x0=w,y0=h,x1=-1,y1=-1;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(g[y*w+x]<=thr){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}
+  if(x1<0)return {ok:false};
+  return decodeBBox(rgba,w,h,x0,y0,x1,y1);
+}
+/* encontra TODOS os blocos (componentes conexos escuros) e decodifica cada um */
+function decodeMulti(rgba,w,h){
+  const {g,thr}=grayThr(rgba,w,h);
+  const seen=new Uint8Array(w*h),stack=new Int32Array(w*h),frames=[];
+  for(let s=0;s<w*h;s++){
+    if(seen[s]||g[s]>thr)continue;
+    let sp=0;stack[sp++]=s;seen[s]=1;
+    let x0=w,y0=h,x1=-1,y1=-1,cnt=0;
+    while(sp>0){const p=stack[--sp],px=p%w,py=(p/w)|0;cnt++;
+      if(px<x0)x0=px;if(px>x1)x1=px;if(py<y0)y0=py;if(py>y1)y1=py;
+      let q;
+      if(px>0){q=p-1;if(!seen[q]&&g[q]<=thr){seen[q]=1;stack[sp++]=q;}}
+      if(px<w-1){q=p+1;if(!seen[q]&&g[q]<=thr){seen[q]=1;stack[sp++]=q;}}
+      if(py>0){q=p-w;if(!seen[q]&&g[q]<=thr){seen[q]=1;stack[sp++]=q;}}
+      if(py<h-1){q=p+w;if(!seen[q]&&g[q]<=thr){seen[q]=1;stack[sp++]=q;}}
+    }
+    const bw=x1-x0+1,bh=y1-y0+1;
+    if(cnt<150||bw<40||bh<40)continue;
+    const r=decodeBBox(rgba,w,h,x0,y0,x1,y1);
+    if(r&&r.ok)frames.push(r);
+  }
+  return {ok:frames.length>0,frames};
+}
+function decodeBBox(rgba,w,h,x0,y0,x1,y1){
+  const bw=x1-x0+1,bh=y1-y0+1;
+  let found=null;
+  for(const n of SIZES){
+    const pxX=bw/n,pxY=bh/n;
+    // amostra cores da grade n x n
+    const cols=new Uint8Array(n*n*3);
+    for(let r=0;r<n;r++){const cy=Math.min(h-1,Math.max(0,Math.floor(y0+(r+0.5)*pxY)));
+      for(let c=0;c<n;c++){const cx=Math.min(w-1,Math.max(0,Math.floor(x0+(c+0.5)*pxX)));
+        const o=(cy*w+cx)*4,d=(r*n+c)*3;cols[d]=rgba[o];cols[d+1]=rgba[o+1];cols[d+2]=rgba[o+2];}}
+    for(const cm of [0,1,2]){
+      const b=bps(cm),pal=PAL[cm];
+      const sym0=new Uint8Array(n*n);
+      for(let i=0;i<n*n;i++)sym0[i]=classify([cols[i*3],cols[i*3+1],cols[i*3+2]],pal);
+      const W=interior(n);
+      for(let o=0;o<4;o++){
+        const sym=rotGrid(sym0,n,o);
+        // linha de formato = linha 0 do interior (descontando borda)
+        const row=new Uint8Array(W);
+        for(let c=0;c<W;c++)row[c]=sym[(BORDER)*n+(BORDER+c)];
+        const fw=readFmt(row,W,b);
+        if(fw===null)continue;
+        const u=fmtUnpack(fw);
+        if(u.n!==n||u.cm!==cm)continue;
+        found={n,cm,o,nsym:u.nsym,nb:u.nb,sym,W,b};break;
+      }
+      if(found)break;
+    }
+    if(found)break;
+  }
+  if(!found)return {ok:false};
+  const {n,cm,nsym,nb,sym,W,b}=found,k=255-nsym;
+  // le bits do payload (linhas 2..W-1 do interior)
+  const totalBits=(W-2)*W*b,bits=new Uint8Array(totalBits);let bi=0;
+  for(let r=2;r<W;r++)for(let c=0;c<W;c++){const v=sym[(BORDER+r)*n+(BORDER+c)]&((1<<b)-1);
+    for(let bb=0;bb<b;bb++)if(bi<totalBits)bits[bi++]=(v>>(b-1-bb))&1;}
+  const cw=new Uint8Array(nb*255);
+  for(let i=0;i<nb*255;i++){let byte=0;for(let bb=0;bb<8;bb++){const t=i*8+bb;if(t<totalBits)byte=(byte<<1)|bits[t];else byte<<=1;}cw[i]=byte&255;}
+  // des-interleava + RS por bloco
+  const msg=new Uint8Array(nb*k);let corr=0;
+  for(let bl=0;bl<nb;bl++){
+    const block=new Uint8Array(255);
+    for(let i=0;i<k;i++)block[i]=cw[i*nb+bl];
+    for(let i=0;i<nsym;i++)block[k+i]=cw[k*nb+i*nb+bl];
+    const r=rsCorrect(block,nsym,k);
+    if(!r.ok)return {ok:false};
+    corr=Math.max(corr,r.corr);
+    msg.set(r.data,bl*k);
+  }
+  // valida cabecalho
+  if(msg[0]!==MAGIC0||msg[1]!==MAGIC1||msg[2]!==VERSION)return {ok:false};
+  const hc=(msg[22]<<8)|msg[23];if(crc16(msg.subarray(0,22))!==hc)return {ok:false};
+  const dl=(msg[20]<<8)|msg[21];
+  const nameLen=msg[HDR],extra=1+nameLen;
+  if(dl>nb*k-HDR-extra-4)return {ok:false};
+  const cpos=HDR+extra+dl;
+  const crc=((msg[cpos]<<24)|(msg[cpos+1]<<16)|(msg[cpos+2]<<8)|msg[cpos+3])>>>0;
+  if(crc32(msg.subarray(0,cpos))!==crc)return {ok:false};
+  const frameIndex=((msg[12]<<24)|(msg[13]<<16)|(msg[14]<<8)|msg[15])>>>0;
+  const totalFrames=((msg[16]<<24)|(msg[17]<<16)|(msg[18]<<8)|msg[19])>>>0;
+  let nm='';try{nm=new TextDecoder().decode(msg.slice(HDR+1,HDR+1+nameLen));}catch(_){}
+  return {ok:true,info:{fileId:msg.slice(4,12),frameIndex,totalFrames,n,cm,nsym,name:nm},
+    data:msg.slice(HDR+extra,HDR+extra+dl),corrected:corr};
+}
+
+function framesFor(size,n,cm,nsym){const m=dataMax(n,cm,nsym);return m<=0?0:Math.ceil(size/m);}
+const PRESETS=[
+  {name:'Seguro',n:96,cm:0,nsym:32},{name:'Padrão',n:160,cm:1,nsym:32},
+  {name:'Rápido',n:192,cm:1,nsym:24},{name:'Máximo',n:224,cm:2,nsym:16}
+];
+for(const p of PRESETS)p.bytes=dataMax(p.n,p.cm,p.nsym);
+
+const MC={SIZES,NSYM,META,bps,dataMax,nblocksFor,framesFor,fileId,render,decode,decodeMulti,decodeBBox,PRESETS,
+  interior,FMTS:b=>Math.ceil(16/b)};
+if(typeof module!=='undefined'&&module.exports)module.exports=MC;
+else root.MC=MC;
+})(typeof self!=='undefined'?self:this);
+
+

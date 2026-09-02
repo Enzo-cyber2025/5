@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>MegaCode</title>
+<style>
+:root{--bg:#0d1117;--card:#161b22;--fg:#e6edf3;--mut:#8b949e;--acc:#2f81f7;--ok:#238636;--brd:#30363d}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--fg)}
+header{padding:14px 16px;border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:10px}
+header h1{font-size:18px;margin:0;font-weight:600}
+.tabs{display:flex;border-bottom:1px solid var(--brd)}
+.tab{flex:1;padding:12px;text-align:center;cursor:pointer;color:var(--mut);border-bottom:2px solid transparent}
+.tab.on{color:var(--fg);border-color:var(--acc)}
+main{padding:16px;max-width:760px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--brd);border-radius:10px;padding:16px;margin-bottom:14px}
+label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
+select,input[type=file],button{width:100%;padding:11px;border-radius:8px;border:1px solid var(--brd);background:#0d1117;color:var(--fg);font-size:15px}
+button{background:var(--acc);border:none;cursor:pointer;font-weight:600;margin-top:10px}
+button.sec{background:#21262d}
+button:disabled{opacity:.5;cursor:default}
+canvas{width:100%;image-rendering:pixelated;background:#fff;border-radius:8px;display:block}
+video{width:100%;border-radius:8px;background:#000;display:block}
+.bar{height:8px;background:#21262d;border-radius:4px;overflow:hidden;margin-top:10px}
+.bar>i{display:block;height:100%;background:var(--ok);width:0;transition:width .2s}
+.stat{font-size:13px;color:var(--mut);margin-top:8px;line-height:1.5;word-break:break-word}
+.hide{display:none}.big{font-size:15px;color:var(--fg)}
+.row{display:flex;gap:8px}.row>*{flex:1}
+</style>
+</head>
+<body>
+<header><div style="width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,#2f81f7,#a371f7)"></div><h1>MegaCode</h1></header>
+<div class="tabs">
+  <div class="tab on" id="t-tx">Transmitir</div>
+  <div class="tab" id="t-rx">Receber</div>
+</div>
+<main>
+  <section id="tx">
+    <div class="card">
+      <label>Arquivo (qualquer tipo)</label>
+      <input type="file" id="file" multiple>
+      <label>…ou pasta inteira</label>
+      <input type="file" id="folder" webkitdirectory directory multiple>
+      <div id="drop" style="border:2px dashed #98a6b8;padding:16px;text-align:center;border-radius:10px;color:#98a6b8;margin-top:12px;cursor:pointer">…ou <b>arraste e solte</b> vários arquivos aqui</div>
+      <label>Qualidade</label>
+      <select id="preset"></select>
+      <label>Resolução da imagem</label>
+      <select id="res">
+        <option value="568x320">320p (568×320) — tela pequena / baixa resolução</option>
+        <option value="1920x1080">1080p (1920×1080) — capturar com a câmera</option>
+        <option value="3840x2160">4K (3840×2160) — escanear o PNG direto</option>
+        <option value="7680x4320">8K (7680×4320) — escanear o PNG direto</option>
+        <option value="15360x8640">16K (15360×8640) — escanear o PNG direto</option>
+        <option value="16384x16384">16384×16384 — máximo (limite PNG/navegador)</option>
+      </select>
+      <label>Densidade (px por módulo)</label>
+      <select id="dens">
+        <option value="4">Normal (4 px) — legível por câmera</option>
+        <option value="3">Alta (3 px)</option>
+        <option value="2">Máxima (2 px) — mais dados</option>
+        <option value="1">Extrema (1 px) — só para PNG escaneado</option>
+      </select>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:12px;cursor:pointer">
+        <input type="checkbox" id="single" style="width:auto"> Modo imagem única (gerar 1 só PNG)
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:8px;cursor:pointer">
+        <input type="checkbox" id="grid" style="width:auto"> Grade de vários blocos (mais dados/imagem) — desmarcado = 1 código grande
+      </label>
+      <div class="stat" id="txinfo">Escolha um arquivo ou pasta para começar.</div>
+      <button id="genpng">Gerar PNG (P&amp;B, vários blocos) e exportar</button>
+      <button id="dlpng" class="sec hide">Baixar PNG novamente</button>
+      <button id="start" class="sec">Transmitir (animado)</button>
+      <button id="stop" class="sec hide">Parar</button>
+    </div>
+    <div class="card hide" id="txview">
+      <canvas id="cv"></canvas>
+      <div class="stat" id="txstat"></div>
+    </div>
+  </section>
+  <section id="rx" class="hide">
+    <div class="card">
+      <div class="row">
+        <button id="cam">Ligar câmera</button>
+        <button id="imp" class="sec">Ler PNG / imagem</button>
+      </div>
+      <input type="file" id="impfile" accept="image/*" multiple class="hide">
+      <video id="vid" playsinline muted class="hide"></video>
+      <canvas id="rcv" class="hide"></canvas>
+      <div class="bar"><i id="rxbar"></i></div>
+      <div class="stat" id="rxstat">Aponte a câmera para a tela, ou importe uma imagem com o código.</div>
+      <button id="save" class="sec hide">Salvar arquivo(s)</button>
+    </div>
+  </section>
+</main>
+<script src="mc.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
