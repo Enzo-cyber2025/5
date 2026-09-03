@@ -4,9 +4,9 @@ Aplicativo nativo para **Windows x64** que cria quadros intermediários entre du
 
 ## Download direto
 
-`https://github.com/Enzo-cyber2025/5/releases/download/v0.1.0/FrameNova.exe`
+`https://github.com/Enzo-cyber2025/5/raw/arena/01a0698e-5/FrameNova.exe?download=1`
 
-O repositório é privado, portanto a conta usada para baixar precisa ter acesso ao repositório.
+O repositório é privado, portanto a conta usada para baixar precisa ter acesso ao repositório. O link aponta diretamente para o executável publicado nesta branch.
 
 O pacote distribuído contém somente `FrameNova.exe`, sem instalador e sem dependências adicionais. Ele é um binário x64 para Windows 10/11.
 
