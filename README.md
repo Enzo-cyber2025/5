@@ -8,10 +8,12 @@ O arquivo volta sempre com o **mesmo nome e extensão** original (`.exe`, `.obj`
 
 | Plataforma | Arquivo | Link |
 |---|---|---|
-| Windows (10/11 64-bit) | `SoundTransfer-Windows.exe` | `https://github.com/Enzo-cyber2025/5/raw/v1.0.3/SoundTransfer-Windows.exe` |
-| Android | `SoundTransfer-Android.apk` | `https://github.com/Enzo-cyber2025/5/raw/v1.0.3/SoundTransfer-Android.apk` |
+| Windows (10/11 64-bit) | `SoundTransfer-Windows.exe` | `https://github.com/Enzo-cyber2025/5/raw/v1.0.4/SoundTransfer-Windows.exe` |
+| Android | `SoundTransfer-Android.apk` | `https://github.com/Enzo-cyber2025/5/raw/v1.0.4/SoundTransfer-Android.apk` |
 
-> **v1.0.3:** Frequências alteradas para **12.000 Hz / 15.000 Hz** (era 400/800 Hz).
+> **v1.0.4:** corrigido o seletor de velocidade que mostrava só 1 opção — agora o dropdown
+> expande com **todas as 4 velocidades**. Mantém o FSK **12.000 Hz / 15.000 Hz** e o Windows
+> tocando o som direto da memória (sem arquivo temporário).
 > Isso permite símbolos mais curtos → **transferência mais rápida** (~3× mais que antes).
 > O Windows foi corrigido para tocar o som **direto da memória** (sem arquivo temporário,
 > eliminando a mensagem "Falha ao gravar o WAV temporário").
