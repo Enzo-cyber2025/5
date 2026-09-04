@@ -40,3 +40,19 @@ Razão profundidade/largura de 0,166 camadas por unidade de largura — para com
 `--verify` relê o arquivo com um parser independente do escritor e confere magic, versão, contagem de tensores, soma de parâmetros, vocabulário e truncamento.
 
 Saída validada também pela biblioteca oficial `gguf`: 768 tensores, 300.242.432 parâmetros, shapes e tipos corretos, `attn_q.std = 0.02790` (esperado 0.02795) e `attn_output.std = 0.00214` (esperado 0.00214, escalado pela profundidade).
+
+---
+
+# make_gguf.nr — a mesma coisa, escrita em NEURA
+
+Versão do gerador escrita **na própria linguagem NEURA**, rodando dentro do `NeuraStudio.exe`.
+Para isso a NEURA 1.1 ganhou E/S binária: `abrir`, `esc_u8/u16/u32/u64/f32`, `esc_bytes`, `esc_texto`, `esc_zeros`, `esc_tensor` (f32/f16/bf16), mais `preenche`, `constante`, `gauss` e `desvio` para os pesos.
+
+```
+NeuraStudio.exe  ->  Abrir  ->  make_gguf.nr  ->  F5
+```
+
+Produz o mesmo modelo: **768 tensores, 300.242.432 parâmetros, 574 MiB, em ~19 s**.
+O arquivo resultante é lido sem erros pela biblioteca oficial `gguf`, com `attn_output.std = 0.002140` (esperado 0.002144, escalado por `sqrt(2·85)`).
+
+O programa calcula o tamanho exato do cabeçalho antes de escrever qualquer byte — e confere o próprio cálculo em tempo de execução, comparando `posicao(f)` com o valor previsto.
