@@ -8,12 +8,13 @@ O arquivo volta sempre com o **mesmo nome e extensão** original (`.exe`, `.obj`
 
 | Plataforma | Arquivo | Link |
 |---|---|---|
-| Windows (10/11 64-bit) | `SoundTransfer-Windows.exe` | `https://github.com/Enzo-cyber2025/5/raw/v1.0.5/SoundTransfer-Windows.exe` |
-| Android | `SoundTransfer-Android.apk` | `https://github.com/Enzo-cyber2025/5/raw/v1.0.5/SoundTransfer-Android.apk` |
+| Windows (10/11 64-bit) | `SoundTransfer-Windows.exe` | `https://github.com/Enzo-cyber2025/5/raw/v1.0.6/SoundTransfer-Windows.exe` |
+| Android | `SoundTransfer-Android.apk` | `https://github.com/Enzo-cyber2025/5/raw/v1.0.6/SoundTransfer-Android.apk` |
 
-> **v1.0.5:** seletor de velocidade com **espaçamento reduzido** — agora são **9 opções**
-> em passos menores (48→16 amostras/símbolo), em vez de 4 opções fixas. Mantém o FSK
-> **12.000 Hz / 15.000 Hz** e o Windows tocando o som direto da memória (sem arquivo temporário).
+> **v1.0.6:** **encurtado ao máximo o intervalo de leitura** — o receptor agora **para sozinho
+> ~1&nbsp;s depois que o som termina** (detecção de silêncio), sem ficar gravando silêncio. E ganhou um
+> **botão "⏹ Parar"** bem visível que interrompe na hora. Mantém as **9 velocidades** (48→16 amostras/
+> símbolo) e o FSK **12.000 Hz / 15.000 Hz**.
 > Isso permite símbolos mais curtos → **transferência mais rápida** (~3× mais que antes).
 > O Windows foi corrigido para tocar o som **direto da memória** (sem arquivo temporário,
 > eliminando a mensagem "Falha ao gravar o WAV temporário").
