@@ -1,0 +1,43 @@
+# ---------------------------------------------------------------------------
+# Build outputs (rebuilt by build_native.sh / build_windows.sh)
+# ---------------------------------------------------------------------------
+build/
+
+# ---------------------------------------------------------------------------
+# Training and test artefacts: checkpoints, logs, generated sequences, the
+# test ffmpeg binary (~29 MB) and parity blobs.  These are reproducible from
+# src/train and tools/, and must stay out of Git.
+# ---------------------------------------------------------------------------
+artifacts/
+
+# Debug symbol file emitted alongside the .exe by the cross toolchain.  It is a
+# build artefact, ~1.4 MB, and not needed by anyone running the program.
+*.pdb
+
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.npz
+*.npy
+
+# ---------------------------------------------------------------------------
+# DELIVERY REQUIREMENT: "sem codigo fonte, so o .exe".
+# Everything below was used to build and verify the binary but must NOT be
+# published.  The files stay on disk; they are simply untracked.
+# ---------------------------------------------------------------------------
+src/
+tools/
+build_native.sh
+build_windows.sh
+verify_all.sh
+
+# ---------------------------------------------------------------------------
+# The shipped binary IS committed on purpose: this sandbox cannot upload
+# GitHub Release assets (uploads.github.com is unreachable from here), so the
+# direct download link has to point at a file tracked in the repository.
+# If you would rather keep binaries out of Git, delete dist/ from the index
+# and publish the .exe through a Release from a machine that can upload assets.
+# ---------------------------------------------------------------------------
+# dist/
