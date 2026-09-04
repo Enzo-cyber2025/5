@@ -8,12 +8,12 @@ O arquivo volta sempre com o **mesmo nome e extensão** original (`.exe`, `.obj`
 
 | Plataforma | Arquivo | Link |
 |---|---|---|
-| Windows (10/11 64-bit) | `SoundTransfer-Windows.exe` | `https://github.com/Enzo-cyber2025/5/raw/v1.0.4/SoundTransfer-Windows.exe` |
-| Android | `SoundTransfer-Android.apk` | `https://github.com/Enzo-cyber2025/5/raw/v1.0.4/SoundTransfer-Android.apk` |
+| Windows (10/11 64-bit) | `SoundTransfer-Windows.exe` | `https://github.com/Enzo-cyber2025/5/raw/v1.0.5/SoundTransfer-Windows.exe` |
+| Android | `SoundTransfer-Android.apk` | `https://github.com/Enzo-cyber2025/5/raw/v1.0.5/SoundTransfer-Android.apk` |
 
-> **v1.0.4:** corrigido o seletor de velocidade que mostrava só 1 opção — agora o dropdown
-> expande com **todas as 4 velocidades**. Mantém o FSK **12.000 Hz / 15.000 Hz** e o Windows
-> tocando o som direto da memória (sem arquivo temporário).
+> **v1.0.5:** seletor de velocidade com **espaçamento reduzido** — agora são **9 opções**
+> em passos menores (48→16 amostras/símbolo), em vez de 4 opções fixas. Mantém o FSK
+> **12.000 Hz / 15.000 Hz** e o Windows tocando o som direto da memória (sem arquivo temporário).
 > Isso permite símbolos mais curtos → **transferência mais rápida** (~3× mais que antes).
 > O Windows foi corrigido para tocar o som **direto da memória** (sem arquivo temporário,
 > eliminando a mensagem "Falha ao gravar o WAV temporário").
@@ -50,17 +50,26 @@ FSK com **12.000 Hz / 15.000 Hz**: a taxa de bytes é `44100 / (8·N)` bytes/s, 
 número de amostras por símbolo. Como a separação entre os tons é de 3 kHz, dá para usar
 símbolos mais curtos (N menor) → mais rápido.
 
-Velocidades no seletor (valores reais):
-- **0,00011 MB/s** (48 amostras/símbolo) — mais lenta e *mais confiável* no microfone.
-- **0,00017 MB/s** (32)
-- **0,00023 MB/s** (24)
-- **0,00034 MB/s** (16) — mais rápida e *menos confiável* no ar.
+Velocidades no seletor (valores reais, passos menores para maior controle):
+| Opção | Fator (amostras/símbolo) |
+|---|---|
+| 0,00011 MB/s | 48 — mais lenta e *mais confiável* no microfone |
+| 0,00012 MB/s | 44 |
+| 0,00014 MB/s | 40 |
+| 0,00015 MB/s | 36 |
+| 0,00017 MB/s | 32 |
+| 0,00020 MB/s | 28 |
+| 0,00023 MB/s | 24 |
+| 0,00028 MB/s | 20 |
+| 0,00034 MB/s | 16 — mais rápida e *menos confiável* no ar |
 
-> **Limite físico:** embora mais rápido que a versão anterior, a transferência **acústica** continua
-> sendo da ordem de **dezenas de KB/s**. A faixa **1 MB/s → 10 GB/s** continua impossível por
-> **áudio** (é limitação do meio). Para máxima confiabilidade, use a opção mais lenta e aproxime
-> os aparelhos. **Dica extra:** 12–15 kHz é pouco audível / mais agudo — reduz o incômodo, mas
-> exige aparelhos que reproduzam bem essas frequências (nem todo alto-falante pequeno toca 15 kHz).
+> **Limite físico:** o teto real dessa técnica por **som** é **0,00034 MB/s** (16 amostras/símbolo).
+> É fisicamente **impossível** chegar a **1 MB/s ou 1 GB/s** por áudio a 12–15 kHz — não existe
+> software que contorne isso (é limitação do meio acústico, não do app). Por isso **não** foi
+> adicionada uma opção "1 GB/s" que não transferiria de verdade. Para máxima confiabilidade, use
+> a opção mais lenta e aproxime os aparelhos. **Dica extra:** 12–15 kHz é pouco audível / mais
+> agudo — reduz o incômodo, mas exige aparelhos que reproduzam bem essas frequências (nem todo
+> alto-falante pequeno toca 15 kHz).
 
 ## Build / origem
 - **Windows**: compilado em C (Win32) com prefixador **Zig**, sem dependências externas.
