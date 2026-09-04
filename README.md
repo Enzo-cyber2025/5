@@ -33,8 +33,12 @@ Saída: `tensor(4x1)[0.0124; 0.9811; 0.9814; 0.0224]`
 | Matemática | `raiz abs exp log sin cos piso teto arred pot min max aleatorio semente` |
 | Tensores | `tensor zeros aleatorios transposta multiplica argmax soma media linhas colunas`, indexação `t[i, j]` |
 | Redes neurais | `modelo camada taxa perda treina prever resumo` |
+| **E/S binária** | `abrir fechar posicao`, `esc_u8 esc_u16 esc_u32 esc_u64 esc_f32`, `esc_bytes esc_texto esc_zeros esc_tensor` (little-endian) |
+| **Pesos** | `gauss preenche constante desvio` |
 | Ativações | `relu`, `sigmoide`, `tanh`, `softmax` |
 | Perdas | `eqm` (erro quadrático médio), `entropia` (entropia cruzada) |
+
+A E/S binária permite escrever formatos de arquivo reais na própria linguagem — veja [`gguf_gen/make_gguf.nr`](./gguf_gen/make_gguf.nr), um gerador de GGUF de 300M de parâmetros escrito em NEURA.
 
 Treinamento usa retropropagação completa com gradiente descendente; softmax + entropia cruzada têm gradiente otimizado.
 
