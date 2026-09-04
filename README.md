@@ -8,13 +8,15 @@ O arquivo volta sempre com o **mesmo nome e extensão** original (`.exe`, `.obj`
 
 | Plataforma | Arquivo | Link |
 |---|---|---|
-| Windows (10/11 64-bit) | `SoundTransfer-Windows.exe` | `https://github.com/Enzo-cyber2025/5/raw/v1.0.6/SoundTransfer-Windows.exe` |
-| Android | `SoundTransfer-Android.apk` | `https://github.com/Enzo-cyber2025/5/raw/v1.0.6/SoundTransfer-Android.apk` |
+| Windows (10/11 64-bit) | `SoundTransfer-Windows.exe` | `https://github.com/Enzo-cyber2025/5/raw/v1.0.7/SoundTransfer-Windows.exe` |
+| Android | `SoundTransfer-Android.apk` | `https://github.com/Enzo-cyber2025/5/raw/v1.0.7/SoundTransfer-Android.apk` |
 
-> **v1.0.6:** **encurtado ao máximo o intervalo de leitura** — o receptor agora **para sozinho
-> ~1&nbsp;s depois que o som termina** (detecção de silêncio), sem ficar gravando silêncio. E ganhou um
-> **botão "⏹ Parar"** bem visível que interrompe na hora. Mantém as **9 velocidades** (48→16 amostras/
-> símbolo) e o FSK **12.000 Hz / 15.000 Hz**.
+> **v1.0.7:** **Android com as APIs de captura mais rápidas** — a recepção agora usa
+> **amostras cruas em tempo real** (`ScriptProcessorNode`, com fallback `MediaRecorder`), o que
+> elimina a reamostragem/atraso do gravador. O detector ficou **ciente da taxa de amostragem**
+> (44,1 kHz e **48 kHz** — comum no Android), reamostrando para 44,1 kHz antes de decodificar.
+> Isso permitiu **baixar o espaçamento**: novas velocidades **12 / 10 / 8 amostras por símbolo**
+> (0,00046 / 0,00055 / 0,00069 MB/s) para som limpo / MP4.
 > Isso permite símbolos mais curtos → **transferência mais rápida** (~3× mais que antes).
 > O Windows foi corrigido para tocar o som **direto da memória** (sem arquivo temporário,
 > eliminando a mensagem "Falha ao gravar o WAV temporário").
@@ -51,7 +53,7 @@ FSK com **12.000 Hz / 15.000 Hz**: a taxa de bytes é `44100 / (8·N)` bytes/s, 
 número de amostras por símbolo. Como a separação entre os tons é de 3 kHz, dá para usar
 símbolos mais curtos (N menor) → mais rápido.
 
-Velocidades no seletor (valores reais, passos menores para maior controle):
+Velocidades no seletor (valores reais, passos menores; as últimas 3 são só para som limpo/MP4):
 | Opção | Fator (amostras/símbolo) |
 |---|---|
 | 0,00011 MB/s | 48 — mais lenta e *mais confiável* no microfone |
@@ -62,9 +64,12 @@ Velocidades no seletor (valores reais, passos menores para maior controle):
 | 0,00020 MB/s | 28 |
 | 0,00023 MB/s | 24 |
 | 0,00028 MB/s | 20 |
-| 0,00034 MB/s | 16 — mais rápida e *menos confiável* no ar |
+| 0,00034 MB/s | 16 — mais rápida confiável no ar |
+| 0,00046 MB/s | 12 — extra rápida (só som limpo / MP4) |
+| 0,00055 MB/s | 10 (só som limpo / MP4) |
+| 0,00069 MB/s | 8 — ultra rápida (só som limpo / MP4) |
 
-> **Limite físico:** o teto real dessa técnica por **som** é **0,00034 MB/s** (16 amostras/símbolo).
+> **Limite físico:** o teto confiável por **ar** é 0,00034 MB/s (16 spp). As opções 0,00046–0,00069 MB/s exigem som limpo/MP4 (o teto por ar continua ~0,00034 MB/s).
 > É fisicamente **impossível** chegar a **1 MB/s ou 1 GB/s** por áudio a 12–15 kHz — não existe
 > software que contorne isso (é limitação do meio acústico, não do app). Por isso **não** foi
 > adicionada uma opção "1 GB/s" que não transferiria de verdade. Para máxima confiabilidade, use
