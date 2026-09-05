@@ -1,0 +1,201 @@
+name: GGUF Studio APK
+
+# Runs only when CI-recipe files change, so artifact-only commits (and the
+# final README) never relaunch the multi-hour native build.
+on:
+  push:
+    paths:
+      - ".github/workflows/**"
+      - "patches/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gguf-studio-apk
+  cancel-in-progress: true
+
+env:
+  # Upstream LMPlayground commit this build is pinned to (main @ cfb38bb).
+  UPSTREAM_PIN: cfb38bb24308d6b38ba9da41a247ac5435e435b0
+  NDK_PIN: 27.2.12479018
+  # Git-commit fallback budget per file (GitHub hard limit is 100 MB).
+  COMMIT_BUDGET: 85000000
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - name: Checkout recipe
+        uses: actions/checkout@v4
+
+      - name: Post "build started" marker commit
+        run: |
+          set -eu
+          git config user.name "GGUF Studio CI"
+          git config user.email "gguf-studio-ci@users.noreply.github.com"
+          mkdir -p ci
+          {
+            echo "run_id=$GITHUB_RUN_ID"
+            echo "run_number=$GITHUB_RUN_NUMBER"
+            echo "commit=$GITHUB_SHA"
+            date -u +"started=%Y-%m-%dT%H:%M:%SZ"
+          } > ci/BUILD_STARTED.txt
+          git add -f ci || true
+          git commit -m "GGUF Studio CI started (run $GITHUB_RUN_NUMBER)" || true
+          git push origin "HEAD:${GITHUB_REF_NAME}" || echo "MARKER_PUSH_FAILED"
+
+      - name: Fetch upstream source at pinned commit (with llama.cpp submodule)
+        run: |
+          set -eux
+          git clone --quiet --no-checkout \
+            https://github.com/andriydruk/LMPlayground.git src
+          git -C src checkout --quiet "$UPSTREAM_PIN"
+          git -C src submodule update --init --recursive
+
+      - name: Apply GGUF Studio customizations
+        run: |
+          set -eux
+          git -C src apply --verbose --whitespace=nowarn "$GITHUB_WORKSPACE"/patches/*.patch
+          echo "---- patched files ----"
+          git -C src status --short
+          echo "---- app label ----"
+          grep -m1 'name="app_name"' src/app/src/main/res/values/strings.xml
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Vulkan toolchain for the native build
+        run: |
+          set -eu
+          SDKMANAGER="$(command -v sdkmanager || echo "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager")"
+          printf 'y\n' | "$SDKMANAGER" --install "ndk;$NDK_PIN" >/dev/null
+          GLSLC="$ANDROID_HOME/ndk/$NDK_PIN/shader-tools/linux-x86_64/glslc"
+          test -x "$GLSLC"
+          echo "VULKAN_GLSLC=$GLSLC" >> "$GITHUB_ENV"
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libvulkan-dev spirv-headers
+          # apt places these under /usr/include, which the NDK cross compiler
+          # treats as a standard dir and omits from -I. Stage them under a
+          # non-standard prefix so the -I is actually emitted.
+          VKINC="$RUNNER_TEMP/vk-headers/include"
+          mkdir -p "$VKINC"
+          for d in vulkan vk_video spirv; do
+            [ -d "/usr/include/$d" ] && cp -r "/usr/include/$d" "$VKINC/"
+          done
+          test -f "$VKINC/vulkan/vulkan.hpp"
+          test -f "$VKINC/spirv/unified1/spirv.hpp"
+          SPIRV_CFG="$(find /usr -name SPIRV-HeadersConfig.cmake 2>/dev/null | head -1)"
+          test -n "$SPIRV_CFG"
+          echo "VULKAN_HEADERS_DIR=$VKINC" >> "$GITHUB_ENV"
+          echo "SPIRV_HEADERS_INCLUDE_DIR=$VKINC" >> "$GITHUB_ENV"
+          echo "SPIRV_HEADERS_DIR=$(dirname "$SPIRV_CFG")" >> "$GITHUB_ENV"
+
+      - name: Build release APKs (llama.cpp + mtmd, Vulkan, arm64-v8a + x86_64)
+        working-directory: src
+        run: |
+          set -eux
+          sed -i 's/org.gradle.jvmargs=-Xmx2048m/org.gradle.jvmargs=-Xmx6144m -XX:MaxMetaspaceSize=2g/' gradle.properties
+          ./gradlew :app:assembleRelease --no-daemon --stacktrace
+
+      - name: Collect artifacts and checksums
+        id: collect
+        run: |
+          set -eu
+          cd src/app/build/outputs/apk/release
+          ls -la
+          for f in *.apk; do
+            sha256sum "$f" > "$f.sha256"
+          done
+          ls -la
+
+      - name: Upload APKs as workflow artifacts (backup channel)
+        uses: actions/upload-artifact@v4
+        with:
+          name: gguf-studio-apk
+          path: |
+            src/app/build/outputs/apk/release/*.apk
+            src/app/build/outputs/apk/release/*.sha256
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Publish GitHub Release with APKs
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          cd src/app/build/outputs/apk/release
+          SHA_SUM="$(awk '{print $1}' app-universal-release.apk.sha256)"
+          TAG="gguf-studio-v1.9.1-r${GITHUB_RUN_NUMBER}"
+          NOTES="$RUNNER_TEMP/notes.md"
+          {
+            echo "**GGUF Studio v1.9.1** — APK Android (release, assinado, compilado por CI)."
+            echo ""
+            echo "> Baixe o **app-universal-release.apk** (roda em celular e emulador, arm64 + x86_64) ou o **app-arm64-v8a-release.apk** (só celulares)."
+            echo ""
+            echo "SHA-256 (universal): \`$SHA_SUM\`"
+            echo ""
+            echo "Recursos: 100% offline · importa qualquer GGUF da memória do aparelho · Vulkan (GPU) com fallback CPU · conversas organizadas por chat · modelos multimodais (visão, mmproj) · exibição de *thinking* · ferramentas opcionais de busca na web e leitura de páginas · continua gerando com a tela bloqueada."
+            echo ""
+            echo "Créditos: baseado em LM Playground (Andriy Druk, MIT) e llama.cpp (MIT)."
+          } > "$NOTES"
+          gh release create "$TAG" \
+            app-universal-release.apk \
+            app-arm64-v8a-release.apk \
+            app-x86_64-release.apk \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "GGUF Studio v1.9.1 — APK Android" \
+            --notes-file "$NOTES"
+          echo "release_tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Commit APKs back to the branch (retrieval fallback)
+        if: always()
+        run: |
+          set -eu
+          cd "$GITHUB_WORKSPACE"
+          git config user.name "GGUF Studio CI"
+          git config user.email "gguf-studio-ci@users.noreply.github.com"
+          rm -rf apk ci
+          mkdir -p apk
+          for f in src/app/build/outputs/apk/release/*.apk src/app/build/outputs/apk/release/*.sha256; do
+            [ -f "$f" ] || continue
+            SIZE="$(stat -c %s "$f")"
+            if [ "$SIZE" -gt "$COMMIT_BUDGET" ]; then
+              echo "chunking $f (${SIZE} bytes > budget)"
+              split -b 70000000 -d -a 2 "$f" "apk/$(basename "$f").part"
+            else
+              cp "$f" "apk/$(basename "$f")"
+            fi
+          done
+          {
+            echo "run_id=$GITHUB_RUN_ID"
+            echo "run_number=$GITHUB_RUN_NUMBER"
+            echo "commit=$GITHUB_SHA"
+            date -u +"built=%Y-%m-%dT%H:%M:%SZ"
+            echo "release_tag=${{ steps.release.outputs.release_tag }}"
+          } > apk/BUILD_INFO.txt
+          git add -f apk || true
+          git status --short | head -30
+          if git diff --cached --quiet; then
+            echo "nothing new to commit"
+          else
+            git commit -m "GGUF Studio APK artifacts (run $GITHUB_RUN_NUMBER)" || true
+            git push origin "HEAD:${GITHUB_REF_NAME}" || echo "PUSH_FAILED"
+          fi
+
+      - name: Log release result
+        if: always()
+        run: |
+          echo "release_tag=${{ steps.release.outputs.release_tag }}"
+          find src/app/build/outputs/apk/release -name "*.apk" -exec ls -la {} \; 2>/dev/null || true
