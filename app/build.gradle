@@ -1,0 +1,32 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'ai.arena.ggufchat'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'ai.arena.ggufchat'
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName '1.0-arena'
+        externalNativeBuild { cmake { cppFlags '-std=c++17 -O2 -fexceptions -frtti' } }
+        ndk { abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86_64' }
+    }
+    externalNativeBuild { cmake { path file('src/main/cpp/CMakeLists.txt'); version '3.22.1' } }
+    signingConfigs {
+        arenaRelease {
+            storeFile file(System.getenv('ARENA_KEYSTORE') ?: 'arena-release.jks')
+            storePassword System.getenv('ARENA_KEYSTORE_PASSWORD') ?: 'arena-pass-2026'
+            keyAlias System.getenv('ARENA_KEY_ALIAS') ?: 'arena'
+            keyPassword System.getenv('ARENA_KEY_PASSWORD') ?: 'arena-pass-2026'
+        }
+    }
+    buildTypes {
+        debug { debuggable true }
+        release {
+            signingConfig signingConfigs.arenaRelease
+            minifyEnabled false
+            shrinkResources false
+        }
+    }
+}
