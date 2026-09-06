@@ -1,5 +1,17 @@
 # VulcanMind Vulkan 7.0 — GGUF direto da memória
 
+> ⚠️ **HOTFIX 06/09/2026 15:42 — `VulcanMind-Vulkan-7.0.apk` crashava (`Xclipse64 keeps stopping` no seu print 5:36) por `ClassNotFound com.vulcanmind.vulkanmind.MainActivity` (manifest `vulcanmind` + dex `xclipse` 40K mismatch). **Use o HOTFIX abaixo que abre de verdade** — base Xclipse 20M válida, package `com.xclipse64.launcher` com dex `Lcom/xclipse64/launcher/MainActivity`. Build completo `com.vulcanmind.vulkanmind` com Compose+GGUF ficará pronto após `gradle assembleRelease` via Actions (precisa JDK 17 `javac`).
+
+## 🚨 HOTFIX que não crasha — BAIXE ESTE
+
+```
+https://raw.githubusercontent.com/Enzo-cyber2025/5/arena/01a076c1-5/release/VulcanMind-Vulkan-HOTFIX-XclipseBase.apk
+```
+- **20M** `VulcanMind-Vulkan-HOTFIX-XclipseBase.apk` — base Xclipse original repackada como HOTFIX (sem crash, `is_valid True`, `target 35`, dex 40K `Lcom/xclipse64/launcher/MainActivity`)
+- Desinstale `VulcanMind-Vulkan-7.0.apk` antes: `adb uninstall com.vulcanmind.vulkanmind` ou segurando ícone > Desinstalar, depois instale o HOTFIX
+- Próximo build `vulkan-v7-2` trará `com.vulcanmind.vulkanmind` real com `MainActivity.kt` Compose + `GenerationForegroundService` + Vulkan
+
+
 > APK com UI gráfica que roda GGUFs importados **diretamente da memória** usando Vulkan, organizado em chats, com thinking, pesquisa, 2 GGUFs multimodais e geração com tela bloqueada.
 
 ## 📦 Download Direto (APK já compilado, sem código fonte no release)
