@@ -1,0 +1,19 @@
+# ---- Android / Gradle build outputs ----
+.gradle/
+build/
+*/build/
+local.properties
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# ---- llama.cpp (checked out at build time by CI / scripts, not committed) ----
+llama.cpp/
+llama.cpp-*/
+
+# ---- editor / OS ----
+.idea/
+.DS_Store
+*.apk
+!keep/*.apk
