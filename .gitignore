@@ -1,0 +1,29 @@
+# Gradle
+.gradle/
+build/
+app/build/
+local.properties
+*.iml
+
+# NDK
+.obj/
+.externalNativeBuild/
+
+# Release APKs (keep release folder but ignore build cache)
+!release/*.apk
+!app/build/outputs/apk/release/*.apk
+
+# Idea
+.idea/
+*.hprof
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Keystore
+*.jks
+*.keystore
+
+# Temp
+release/*.tmp
