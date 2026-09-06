@@ -1,0 +1,19 @@
+{
+  "name": "GGUF Studio - Build do APK",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "features": {
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "21",
+      "jdkDistro": "temurin",
+      "installMaven": false,
+      "installGradle": false,
+      "installAnt": false
+    }
+  },
+  "postCreateCommand": "bash .devcontainer/build-in-codespace.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": []
+    }
+  }
+}
