@@ -7,7 +7,6 @@ import com.arm.aichat.InferenceEngine
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.runBlocking
 
 /**
  * Process-wide façade over the native llama.cpp inference engine (lib module).
@@ -20,7 +19,6 @@ import kotlinx.coroutines.runBlocking
 object Engine {
 
     private var engine: InferenceEngine? = null
-    private var contextRef: Context? = null
 
     /** Slot id of the model currently resident in the native context (null = none). */
     @Volatile var loadedSlotId: String? = null
@@ -36,7 +34,6 @@ object Engine {
     @Synchronized
     fun ensure(context: Context) {
         if (engine == null) {
-            contextRef = context.applicationContext
             engine = AiChat.getInferenceEngine(context.applicationContext)
         }
     }

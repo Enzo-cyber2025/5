@@ -177,6 +177,8 @@ class GenerationService : Service() {
         const val EXTRA_THINKING = "thinking"
 
         fun start(context: Context, chatId: String, research: Boolean, thinking: Boolean) {
+            // Ensure the native engine exists no matter which path is used.
+            Engine.ensure(context)
             if (Prefs.instance.generateWithScreenLocked) {
                 val i = Intent(context, GenerationService::class.java).apply {
                     action = ACTION_GENERATE
