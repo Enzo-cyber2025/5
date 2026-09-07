@@ -32,7 +32,7 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
 - Certificado: `CN = GGUF Chat, OU = Mobile, O = GGUF Chat, L = Barbacena,
   ST = Minas Gerais, C = BR`
 - SHA-256 do certificado: `221e922ad2d01ef7e59f311afaf1a9ebd9860d962a0b36c598e8de31ac813703`
-- SHA-256 do APK: `bbb9ae6fa084d9a04b647fc895699f7ca6fd4d831869e364702daf0404786acc`
+- SHA-256 do APK: `617ff8bc39be2e3007c2522dd9bbe374bced66a2141d762ad254da7b0326829e`
 
 ## Funcionalidades
 - Tema escuro estilo “Off Grid AI”: fundo quase preto com toque de verde,
