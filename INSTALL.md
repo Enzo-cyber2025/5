@@ -32,7 +32,7 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
 - Certificado: `CN = GGUF Chat, OU = Mobile, O = GGUF Chat, L = Barbacena,
   ST = Minas Gerais, C = BR`
 - SHA-256 do certificado: `221e922ad2d01ef7e59f311afaf1a9ebd9860d962a0b36c598e8de31ac813703`
-- SHA-256 do APK: `29d8652bc449ab01aa761bcc2cbc31ddefa68ea078dcc71dc4610235e35c96f0`
+- SHA-256 do APK: `a5b971d70e9e6e98f8f2970dc2349b6bbfed18a1e131c1acec3b2cadb8c13b1d`
 
 ## Funcionalidades
 - Tema escuro estilo “Off Grid AI”: fundo quase preto com toque de verde,
@@ -51,8 +51,9 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
   quando termina, fica visível **apenas o nome do modelo**
 - Inferência acelerada por **GPU Vulkan** (todas as camadas; ajustável em Ajustes)
 - Importação de modelos GGUF direto do armazenamento do aparelho (sem permissões)
-- Importação de **2 GGUFs** (modelo de texto + projetor multimodal/mmproj) com
-  **vinculação automática** do mmproj ao modelo principal
+- Botão único **Importar .gguf** com **seleção múltipla** no seletor de arquivos:
+  selecione o modelo de texto e o projetor (mmproj) de uma vez; o mmproj é
+  **vinculado automaticamente** ao modelo de visão
 - **Associação automática** do mmproj: ao criar uma conversa, o app localiza o
   projetor correspondente pelo nome/arquitetura e o usa sem perguntar
 - **Nova conversa** simplificada: escolha o modelo e a conversa é criada na
