@@ -28,11 +28,21 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
 - APK **zipalignado** (todas as entradas STORED alinhadas a 4 bytes, incluindo
   `resources.arsc`, exigência do Android 11+/targetSdk 30+).
 - Certificado: `CN = GGUF Chat, O = GGUF Chat, C = BR`
-- SHA-256 do certificado: `41:FC:35:A2:3F:E4:79:B9:D1:75:B0:1E:7E:03:1B:C6:62:91:88:41:81:D7:9B:BC:80:1B:7A:88:D5:B6:6B:AB`
-- SHA-256 do APK: `9453b16da97535b3a63ec9324d4b527abcd695e9dce9a1a4d40bbd45e7e34103`
+- SHA-256 do certificado: `f76f46999e5a370e81f2b99018566d60d2f66431bb944ec6a0faf693ebd72a0e`
+- SHA-256 do APK: `20a4504dcfa4919d261794f8598e1d4662933263e2aea39db8239a930e27359a`
 
 ## Funcionalidades
-- UI gráfica em português
+- UI gráfica em português, reorganizada em **3 abas inferiores** (gavetas):
+  **💬 Chat** (lista de conversas), **📁 Importar** (escolher o modelo) e
+  **AI Modelos** (gerenciar modelos)
+- Na aba **AI Modelos**, o nome do modelo selecionado aparece no topo com uma
+  **seta para baixo (▼)**; tocar na seta lista todos os modelos importados para
+  seleção rápida
+- Modelos **multimodais** (visão) exibem um **ícone de olho (👁)** ao lado do
+  nome na lista de modelos
+- Ao abrir uma conversa, o modelo selecionado **carrega automaticamente na
+  memória** mostrando o **nome do modelo + porcentagem de carregamento**;
+  quando termina, fica visível **apenas o nome do modelo**
 - Inferência acelerada por **GPU Vulkan** (todas as camadas; ajustável em Ajustes)
 - Importação de modelos GGUF direto do armazenamento do aparelho (sem permissões)
 - Importação de **2 GGUFs** (modelo de texto + projetor multimodal/mmproj)
