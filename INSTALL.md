@@ -29,7 +29,7 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
   `resources.arsc`, exigência do Android 11+/targetSdk 30+).
 - Certificado: `CN = GGUF Chat, O = GGUF Chat, C = BR`
 - SHA-256 do certificado: `41:FC:35:A2:3F:E4:79:B9:D1:75:B0:1E:7E:03:1B:C6:62:91:88:41:81:D7:9B:BC:80:1B:7A:88:D5:B6:6B:AB`
-- SHA-256 do APK: `9e6f0bba2fea02a9be81a754ab31dcfa4b052f7f35fb1d2f7a5000d246baeb0d`
+- SHA-256 do APK: `dbb4a9042eb6c81dc3169003d477f6fb5d9c3499ed20ee5229033b963461323a`
 
 ## Funcionalidades
 - UI gráfica em português
@@ -39,11 +39,14 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
 - Organização em múltiplas conversas (multi-chat)
 - Ferramenta **Thinking** (raciocínio estendido)
 - Ferramenta **Busca** (pesquisa na web)
-- Anexar **qualquer arquivo** à conversa (botão **Anexar** na barra de envio:
-  abre o seletor de documentos com `*/*`; arquivos de texto/código têm o
-  conteúdo lido e enviado junto com a mensagem; binários são anexados pelo
-  nome para o modelo responder sobre eles)
-- **Ajustes** agora inclui os padrões das ferramentas (`Thinking` / `Busca`),
+- Barra de anexos com **botões dedicados**: **Foto**, **Vídeo**, **Áudio**,
+  **Arquivo** e **Ferramentas** (abre o diálogo de ferramentas Thinking/Busca)
+- Anexar **qualquer arquivo de qualquer tamanho**: fotos/vídeos/áudios e
+  binários são anexados com tipo e tamanho (o motor não tem visão/áudio, então
+  entram como metadados para o modelo responder sobre eles); arquivos de
+  texto/código têm o conteúdo lido por inteiro (teto de segurança de 32 MB só
+  para evitar travamento em arquivos extremos) e enviado junto com a mensagem
+- **Ajustes** inclui os padrões das ferramentas (`Thinking` / `Busca`),
   aplicados a toda nova conversa criada
 - Geração com a **tela bloqueada** (serviço em primeiro plano + wakelock)
 
