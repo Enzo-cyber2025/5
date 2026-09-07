@@ -1,8 +1,7 @@
 # GGUF Chat — APK de instalação direta
 
 Aplicativo Android para conversar com modelos **GGUF** locais, com inferência via
-**llama.cpp** (engine **llamarn 0.10.5**) e aceleração por **GPU Vulkan**
-(com fallback automático para CPU nos aparelhos sem driver Vulkan).
+**llama.cpp** (engine **llamarn 0.10.5**) e aceleração por **GPU Vulkan**.
 
 ## Requisitos
 - Android **7.0 (API 24)** ou superior
@@ -16,37 +15,50 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
 1. Baixe o arquivo **`GGUF-Chat.apk`** (link direto abaixo).
 2. No celular, toque no arquivo baixado e autorize a instalação de
    "fontes desconhecidas" quando solicitado.
-3. Abra o app, importe seus modelos GGUF em **Modelos** e crie conversas.
+3. Abra o app, importe seus modelos GGUF em **Importar** / **AI Modelos** e
+   crie conversas.
 
-> **Atenção:** esta versão é assinada com uma chave nova (v2). Se você tinha a
-> versão anterior instalada e a instalação acusar conflito de assinatura,
-> desinstale a versão antiga e instale esta.
+> **Atenção (assinatura nova):** esta compilação é assinada com uma **chave
+> nova**, pois a keystore da compilação anterior não existe mais. Se o aparelho
+> já tem uma versão antiga do app instalada, **desinstale a versão antiga antes
+> de instalar esta** (o Android bloqueia atualização com assinatura diferente).
 
 ## Assinatura
 - Assinado com o **apksigner oficial** em **APK Signature Scheme v2 + v3**
   (RSA-2048 + SHA-256), válido para Android 7.0 (API 24) em diante.
-- APK **zipalignado** (todas as entradas STORED alinhadas a 4 bytes, incluindo
-  `resources.arsc`, exigência do Android 11+/targetSdk 30+).
-- Certificado: `CN = GGUF Chat, O = GGUF Chat, C = BR`
-- SHA-256 do certificado: `f76f46999e5a370e81f2b99018566d60d2f66431bb944ec6a0faf693ebd72a0e`
-- SHA-256 do APK: `185feb7f5c78ef5eb40a057c8e1429719c81d112c1f0d40926a22e680e4a136e`
+- APK **zipalignado**: todas as entradas STORED alinhadas a 4 bytes (incluindo
+  `resources.arsc`) e bibliotecas `lib/*.so` alinhadas à página (4096), como
+  exige o Android 11+/targetSdk 30+.
+- Certificado: `CN = GGUF Chat, OU = Mobile, O = GGUF Chat, L = Barbacena,
+  ST = Minas Gerais, C = BR`
+- SHA-256 do certificado: `221e922ad2d01ef7e59f311afaf1a9ebd9860d962a0b36c598e8de31ac813703`
+- SHA-256 do APK: `d4dafb1ceffbeafd9569568d885c9e94509aa9ee9aa1d6fed4cdb2b647f32b17`
 
 ## Funcionalidades
-- Tema escuro estilo “Off Grid AI”: fundo quase preto com toque de verde, superfícies verdes-escuras e acento **verde-esmeralda**
-- UI gráfica em português, reorganizada em **3 abas inferiores** (gavetas):
-  **💬 Chat** (lista de conversas), **📁 Importar** (escolher o modelo) e
+- Tema escuro estilo “Off Grid AI”: fundo quase preto com toque de verde,
+  superfícies verdes-escuras e acento **verde-esmeralda**
+- UI gráfica em português, reorganizada em **3 abas inferiores**:
+  **💬 Chat** (lista de conversas), **📁 Importar** (importar GGUFs) e
   **AI Modelos** (gerenciar modelos)
 - Na aba **AI Modelos**, o nome do modelo selecionado aparece no topo com uma
-  **seta para baixo (▼)**; tocar na seta lista todos os modelos importados para
-  seleção rápida
+  **seta (▼)**; tocar na seta **expande/recolhe** a lista — recolhida, mostra
+  **apenas o modelo em uso**
 - Modelos **multimodais** (visão) exibem um **ícone de olho (👁)** ao lado do
   nome na lista de modelos
+- Ícones menores e mais discretos (olho, marca de seleção e seta)
 - Ao abrir uma conversa, o modelo selecionado **carrega automaticamente na
   memória** mostrando o **nome do modelo + porcentagem de carregamento**;
   quando termina, fica visível **apenas o nome do modelo**
 - Inferência acelerada por **GPU Vulkan** (todas as camadas; ajustável em Ajustes)
 - Importação de modelos GGUF direto do armazenamento do aparelho (sem permissões)
-- Importação de **2 GGUFs** (modelo de texto + projetor multimodal/mmproj)
+- Importação de **2 GGUFs** (modelo de texto + projetor multimodal/mmproj) com
+  **vinculação automática** do mmproj ao modelo principal
+- **Associação automática** do mmproj: ao criar uma conversa, o app localiza o
+  projetor correspondente pelo nome/arquitetura e o usa sem perguntar
+- **Nova conversa** simplificada: escolha o modelo e a conversa é criada na
+  hora (sem diálogo extra de multimodal), com o mmproj associado automaticamente
+- Importação **mais estável e mais rápida** (buffer de 1 MB, tratamento de
+  erros: arquivos inválidos não travam mais o app)
 - Organização em múltiplas conversas (multi-chat)
 - Ferramenta **Thinking** (raciocínio estendido)
 - Ferramenta **Busca** (pesquisa na web)
