@@ -23,13 +23,13 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
 > desinstale a versão antiga e instale esta.
 
 ## Assinatura
-- Assinado com **APK Signature Scheme v2** (RSA-2048 + SHA-256, conforme o
-  formato AOSP), válido para Android 7.0 (API 24) em diante.
+- Assinado com o **apksigner oficial** em **APK Signature Scheme v2 + v3**
+  (RSA-2048 + SHA-256), válido para Android 7.0 (API 24) em diante.
 - APK **zipalignado** (todas as entradas STORED alinhadas a 4 bytes, incluindo
   `resources.arsc`, exigência do Android 11+/targetSdk 30+).
 - Certificado: `CN = GGUF Chat, O = GGUF Chat, C = BR`
-- SHA-256 do certificado: `5F:2F:08:C4:26:C8:3B:28:8A:E4:FD:36:6A:30:5E:78:01:94:A7:5A:0B:7A:FA:AB:AD:74:84:05:81:8A:77:E3`
-- SHA-256 do APK: `7311297508270e5006a3d79ca60df781fa651679934474918b47dcf782fbd3a0`
+- SHA-256 do certificado: `41:FC:35:A2:3F:E4:79:B9:D1:75:B0:1E:7E:03:1B:C6:62:91:88:41:81:D7:9B:BC:80:1B:7A:88:D5:B6:6B:AB`
+- SHA-256 do APK: `9e6f0bba2fea02a9be81a754ab31dcfa4b052f7f35fb1d2f7a5000d246baeb0d`
 
 ## Funcionalidades
 - UI gráfica em português
@@ -39,6 +39,12 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
 - Organização em múltiplas conversas (multi-chat)
 - Ferramenta **Thinking** (raciocínio estendido)
 - Ferramenta **Busca** (pesquisa na web)
+- Anexar **qualquer arquivo** à conversa (botão **Anexar** na barra de envio:
+  abre o seletor de documentos com `*/*`; arquivos de texto/código têm o
+  conteúdo lido e enviado junto com a mensagem; binários são anexados pelo
+  nome para o modelo responder sobre eles)
+- **Ajustes** agora inclui os padrões das ferramentas (`Thinking` / `Busca`),
+  aplicados a toda nova conversa criada
 - Geração com a **tela bloqueada** (serviço em primeiro plano + wakelock)
 
 ## Download direto
