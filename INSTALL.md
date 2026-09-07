@@ -25,9 +25,11 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
 ## Assinatura
 - Assinado com **APK Signature Scheme v2** (RSA-2048 + SHA-256, conforme o
   formato AOSP), válido para Android 7.0 (API 24) em diante.
+- APK **zipalignado** (todas as entradas STORED alinhadas a 4 bytes, incluindo
+  `resources.arsc`, exigência do Android 11+/targetSdk 30+).
 - Certificado: `CN = GGUF Chat, O = GGUF Chat, C = BR`
 - SHA-256 do certificado: `5F:2F:08:C4:26:C8:3B:28:8A:E4:FD:36:6A:30:5E:78:01:94:A7:5A:0B:7A:FA:AB:AD:74:84:05:81:8A:77:E3`
-- SHA-256 do APK: `bb079bb8f7cba03660338eb5bc246812b77bc759aac1d8c0a0ea6913ebeb3e9a`
+- SHA-256 do APK: `7311297508270e5006a3d79ca60df781fa651679934474918b47dcf782fbd3a0`
 
 ## Funcionalidades
 - UI gráfica em português
