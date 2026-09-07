@@ -29,9 +29,10 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
   `resources.arsc`, exigência do Android 11+/targetSdk 30+).
 - Certificado: `CN = GGUF Chat, O = GGUF Chat, C = BR`
 - SHA-256 do certificado: `f76f46999e5a370e81f2b99018566d60d2f66431bb944ec6a0faf693ebd72a0e`
-- SHA-256 do APK: `20a4504dcfa4919d261794f8598e1d4662933263e2aea39db8239a930e27359a`
+- SHA-256 do APK: `185feb7f5c78ef5eb40a057c8e1429719c81d112c1f0d40926a22e680e4a136e`
 
 ## Funcionalidades
+- Tema escuro estilo “Off Grid AI”: fundo quase preto com toque de verde, superfícies verdes-escuras e acento **verde-esmeralda**
 - UI gráfica em português, reorganizada em **3 abas inferiores** (gavetas):
   **💬 Chat** (lista de conversas), **📁 Importar** (escolher o modelo) e
   **AI Modelos** (gerenciar modelos)
