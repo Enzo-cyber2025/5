@@ -6,7 +6,9 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
 
 ## Requisitos
 - Android **7.0 (API 24)** ou superior
-- Arquitetura **arm64-v8a** ou **x86_64**
+- Arquitetura **arm64-v8a** (todos os celulares reais) — suportado desde API 24
+- Arquitetura **x86_64** (emuladores/ChromeOS) — recomendado API 29+ para o
+  motor nativo; use um emulador com Android 10 (API 29) ou mais recente
 - Pelo menos ~4 GB de RAM para modelos de 3B–7B (varia com o modelo)
 - Para acelerar na GPU: aparelho com suporte a **Vulkan**
 
@@ -16,8 +18,15 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
    "fontes desconhecidas" quando solicitado.
 3. Abra o app, importe seus modelos GGUF em **Modelos** e crie conversas.
 
-> Se você tinha a versão anterior instalada e a instalação acusar conflito de
-> assinatura, desinstale a versão antiga e instale esta.
+> **Atenção:** esta versão é assinada com uma chave nova (v2). Se você tinha a
+> versão anterior instalada e a instalação acusar conflito de assinatura,
+> desinstale a versão antiga e instale esta.
+
+## Assinatura
+- Assinado com **APK Signature Scheme v2** (RSA-2048 + SHA-256, conforme o
+  formato AOSP), válido para Android 7.0 (API 24) em diante.
+- Certificado: `CN = GGUF Chat, O = GGUF Chat, C = BR`
+- SHA-256 do APK: `947d21a208342ad2eb8199e6eb9611e810608b540ae5616e6b64479fda447e80`
 
 ## Funcionalidades
 - UI gráfica em português
