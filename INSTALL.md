@@ -32,9 +32,28 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
 - Certificado: `CN = GGUF Chat, OU = Mobile, O = GGUF Chat, L = Barbacena,
   ST = Minas Gerais, C = BR`
 - SHA-256 do certificado: `05072d71b73fd609a7fdf04e127863b8a4db8ef240aea35492ffbe3e1b9f1d07`
-- SHA-256 do APK: `ee36124de9a537fd28b5bb10269b3b3f919b0f050cba25d33eca8462f4d730b4`
+- SHA-256 do APK: `d0b6400a3beb9ee3ecc7a4b5d7a7a48b17e3f62428aaf23e291d75fc9672b7a6`
 
 ## Correções desta compilação
+- **Crash ao abrir conversa — correção definitiva do cache do motor**: a
+  comparação do projetor no cache do motor estava **invertida** para conversas
+  **sem projetor**. Com isso, o app **recriava o motor nativo a cada abertura
+  de conversa** (e chegava a reutilizar um motor sem projetor quando o projetor
+  era necessário), o que podia travar o processo nativo (Vulkan) ao abrir a
+  conversa. Agora o motor é **reutilizado** quando modelo e projetor batem
+  exatamente (inclusive o caso "sem projetor") e recarregado **apenas** quando
+  mudam.
+- **Abertura de conversa nunca mais derruba o app por erro nativo**: o
+  pré-carregamento do modelo em segundo plano agora captura **qualquer erro**
+  (`Throwable`, inclusive `UnsatisfiedLinkError` e falhas do motor nativo) e
+  mostra uma mensagem amigável em vez de fechar o app.
+- **Dois modelos selecionados viram um só (unificação automática)**: ao criar
+  uma conversa com um modelo de visão, o app abre o seletor de **projetor
+  (mmproj)** para você escolher o segundo arquivo. Ao escolher, os dois são
+  **fundidos em um único modelo multimodal** — o caminho do projetor é gravado
+  no modelo e ele é marcado como multimodal — e a conversa passa a usar os dois
+  **juntos** em uma única carga. Se o modelo já tem projetor vinculado, a
+  união é feita automaticamente, sem diálogo extra.
 - **Projetor (mmproj) nunca vira o modelo principal**: o projetor de visão
   (mmproj) não é mais selecionável nem aparece na lista de modelos da aba
   **AI Modelos** — ele só aparece na aba **Importar → Downloads** (onde pode
@@ -139,8 +158,10 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
   **vinculado automaticamente** ao modelo de visão
 - **Associação automática** do mmproj: ao criar uma conversa, o app localiza o
   projetor correspondente pelo nome/arquitetura e o usa sem perguntar
-- **Nova conversa** simplificada: escolha o modelo e a conversa é criada na
-  hora (sem diálogo extra de multimodal), com o mmproj associado automaticamente
+- **Nova conversa** simplificada: escolha o modelo de texto e a conversa é
+  criada na hora. Para modelos de **visão**, um segundo passo opcional deixa
+  você escolher o **projetor (mmproj)**; os dois são **fundidos em um único
+  modelo multimodal** (com opção "Sem projetor" para usar só texto)
 - Importação **mais estável e mais rápida** (buffer de 1 MB, tratamento de
   erros: arquivos inválidos não travam mais o app)
 - Organização em múltiplas conversas (multi-chat)
