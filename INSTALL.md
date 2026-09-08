@@ -32,7 +32,7 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
 - Certificado: `CN = GGUF Chat, OU = Mobile, O = GGUF Chat, L = Barbacena,
   ST = Minas Gerais, C = BR`
 - SHA-256 do certificado: `e4ceceb8f234691a5884bbe4bd696f3f1da0f8ddf9d5f496867f39cb1750c5b5`
-- SHA-256 do APK: `80d0eaecf3b27c6b853c74ef87d58721a6f964075497364b582c4c04a4d0687b`
+- SHA-256 do APK: `4f9ea51ea1d298f118d3ac39a804fdf69b0760e96df908dd2fe6db28eafca6aa`
 
 ## Correções desta compilação
 - **Importação corrigida**: a guarda `isEmpty()` do seletor múltiplo estava
@@ -79,6 +79,14 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
 - **Projetor (mmproj) não fica mais “preso” no cache**: ao abrir uma conversa
   do mesmo modelo com projetor diferente (ou sem projetor), o motor agora
   recarrega o modelo corretamente em vez de reutilizar o projetor antigo.
+- **Carregamento do modelo + projetor juntos e cache corrigido (crash ao abrir
+  conversa)**: a comparação do projetor no cache do motor estava com a lógica
+  invertida para modelos sem projetor — isso fazia o app **recriar o motor a
+  cada abertura de conversa** (e reutilizar um motor sem projetor quando o
+  projetor era necessário), podendo travar o processo. Agora o cache só reusa o
+  motor quando **modelo e projetor batem exatamente** (incluindo o caso
+  "sem projetor"); caso contrário, o GGUF principal e o mmproj são carregados
+  **juntos** em uma única carga.
 - **Importação não falha em silêncio**: a renomeação final do arquivo copiado
   agora tem fallback (apagar destino + renomear) e, se ainda falhar, a
   importação é reportada como erro em vez de deixar um modelo quebrado.
