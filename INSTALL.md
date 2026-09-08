@@ -26,13 +26,26 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
 ## Assinatura
 - Assinado com o **apksigner oficial** em **APK Signature Scheme v2 + v3**
   (RSA-2048 + SHA-256), válido para Android 7.0 (API 24) em diante.
-- APK **zipalignado**: todas as entradas STORED alinhadas a 4 bytes (incluindo
-  `resources.arsc`) e bibliotecas `lib/*.so` alinhadas à página (4096), como
-  exige o Android 11+/targetSdk 30+.
+- APK **zipalignado**: `resources.arsc` alinhado a 4 KB e todas as bibliotecas
+  `lib/*.so` alinhadas a **16 KB** (compatível com os aparelhos de página de
+  16 KB do Android 15+), demais entradas alinhadas a 4 bytes.
 - Certificado: `CN = GGUF Chat, OU = Mobile, O = GGUF Chat, L = Barbacena,
   ST = Minas Gerais, C = BR`
-- SHA-256 do certificado: `221e922ad2d01ef7e59f311afaf1a9ebd9860d962a0b36c598e8de31ac813703`
-- SHA-256 do APK: `b8c850a4425c27280011758bda5455ddf621f3006557a9da59218f24f140d932`
+- SHA-256 do certificado: `e4ceceb8f234691a5884bbe4bd696f3f1da0f8ddf9d5f496867f39cb1750c5b5`
+- SHA-256 do APK: `9f1ba319e2779478c6a64157a385fbdc8b604ec4420b8b62ab2143d36cdf58ab`
+
+## Correções desta compilação
+- **Importação corrigida**: a guarda `isEmpty()` do seletor múltiplo estava
+  invertida — importar 1 ou vários `.gguf` não fazia nada (ou podia travar).
+  Agora a importação de um ou vários arquivos funciona de verdade.
+- **Envio com anexo corrigido**: mensagem com texto + anexo não era enviada, e
+  enviar sem texto criava mensagem vazia. Corrigido.
+- **Vínculo automático do mmproj corrigido**: a comparação de id estava
+  invertida e o projetor não era encontrado ao criar conversa nova.
+- **Sem travamento ao abrir conversa inexistente**: agora a tela fecha em vez
+  de lançar `NullPointerException`.
+- **Permissão de notificações** solicitada em tempo de execução (Android 13+),
+  para a notificação da geração em segundo plano aparecer.
 
 ## Funcionalidades
 - Tema escuro estilo “Off Grid AI”: fundo quase preto com toque de verde,
