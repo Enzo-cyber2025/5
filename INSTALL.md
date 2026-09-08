@@ -32,7 +32,7 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
 - Certificado: `CN = GGUF Chat, OU = Mobile, O = GGUF Chat, L = Barbacena,
   ST = Minas Gerais, C = BR`
 - SHA-256 do certificado: `e4ceceb8f234691a5884bbe4bd696f3f1da0f8ddf9d5f496867f39cb1750c5b5`
-- SHA-256 do APK: `ad729f421f213579392e7341e847563954bc9822c7cc5aaf635ef9e39dbdd580`
+- SHA-256 do APK: `80d0eaecf3b27c6b853c74ef87d58721a6f964075497364b582c4c04a4d0687b`
 
 ## Correções desta compilação
 - **Importação corrigida**: a guarda `isEmpty()` do seletor múltiplo estava
@@ -76,6 +76,16 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
 - **Mensagem de erro ao carregar modelo**: se um arquivo GGUF estiver
   corrompido/incompleto, o app avisa em vez de girar eternamente na tela de
   carregamento.
+- **Projetor (mmproj) não fica mais “preso” no cache**: ao abrir uma conversa
+  do mesmo modelo com projetor diferente (ou sem projetor), o motor agora
+  recarrega o modelo corretamente em vez de reutilizar o projetor antigo.
+- **Importação não falha em silêncio**: a renomeação final do arquivo copiado
+  agora tem fallback (apagar destino + renomear) e, se ainda falhar, a
+  importação é reportada como erro em vez de deixar um modelo quebrado.
+- **Lista de modelos mais fluida**: a checagem de “modelo de visão” não
+  reabre/reparseia o GGUF na thread de interface a cada card; agora usa os
+  dados já salvos (multimodal/mmproj/arquitetura), evitando travamentos na
+  rolagem.
 
 ## Funcionalidades
 - Tema escuro estilo “Off Grid AI”: fundo quase preto com toque de verde,
