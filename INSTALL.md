@@ -32,7 +32,7 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
 - Certificado: `CN = GGUF Chat, OU = Mobile, O = GGUF Chat, L = Barbacena,
   ST = Minas Gerais, C = BR`
 - SHA-256 do certificado: `e4ceceb8f234691a5884bbe4bd696f3f1da0f8ddf9d5f496867f39cb1750c5b5`
-- SHA-256 do APK: `d2096bd0665b8ab2436913e5dab07deca4fca594e40c15e4dfd3e3ed74c6b9da`
+- SHA-256 do APK: `ad729f421f213579392e7341e847563954bc9822c7cc5aaf635ef9e39dbdd580`
 
 ## Correções desta compilação
 - **Importação corrigida**: a guarda `isEmpty()` do seletor múltiplo estava
@@ -55,6 +55,27 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
 - **Proteção extra**: nome de arquivo nulo e resumo de conversa com conteúdo
   nulo não causam mais travamento; entidades HTML (`&#36;`, `&#92;`) em
   resultados de busca não derrubam mais o app.
+- **Seleção do modelo tocando no card**: na aba **AI Modelos** os botões
+  "Usar"/"Excluir" foram removidos; agora basta **tocar no card do modelo**
+  para selecioná-lo (fica marcado com ✓). A lista recolhida continua mostrando
+  só o modelo em uso.
+- **Exclusão na aba Importar (Downloads)**: a aba **Importar** agora tem a
+  seção **Downloads** listando todos os modelos baixados, cada um com o botão
+  **Excluir**; a lista é atualizada automaticamente ao importar/excluir.
+- **Ícones ainda menores**: olho (👁) e marca de seleção (✓) nos cards de
+  modelo e a seta (▼) de recolher agora são bem discretos — os botões de
+  **criar conversa** ("+ Nova conversa", anexos etc.) **não** foram reduzidos.
+- **Travamento ao excluir modelo corrigido**: ao apagar um modelo que estava
+  selecionado/em uso, o app podia fechar por referência inválida. Corrigido.
+- **Travamento ao renomear/gravar arquivos corrigido**: a gravação atômica de
+  `chats.json`/`models.json` usava `File.renameTo` (que falha silenciosamente
+  em alguns aparelhos/volumes); agora há fallback que garante a persistência.
+- **Leitura de metadados GGUF robusta**: o leitor de metadados encerrava na
+  primeira leitura curta (0 bytes), causando malformação; agora só para em EOF
+  real, evitando nomes/metadados corrompidos em modelos válidos.
+- **Mensagem de erro ao carregar modelo**: se um arquivo GGUF estiver
+  corrompido/incompleto, o app avisa em vez de girar eternamente na tela de
+  carregamento.
 
 ## Funcionalidades
 - Tema escuro estilo “Off Grid AI”: fundo quase preto com toque de verde,
@@ -65,9 +86,13 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
 - Na aba **AI Modelos**, o nome do modelo selecionado aparece no topo com uma
   **seta (▼)**; tocar na seta **expande/recolhe** a lista — recolhida, mostra
   **apenas o modelo em uso**
+- **Seleção por toque**: tocar em qualquer card de modelo (na aba AI Modelos)
+  seleciona o modelo; a marca ✓ indica o modelo em uso
 - Modelos **multimodais** (visão) exibem um **ícone de olho (👁)** ao lado do
   nome na lista de modelos
 - Ícones menores e mais discretos (olho, marca de seleção e seta)
+- Aba **Importar** com seção **Downloads**: lista todos os modelos baixados e
+  permite **excluir** cada um diretamente ali
 - Ao abrir uma conversa, o modelo selecionado **carrega automaticamente na
   memória** mostrando o **nome do modelo + porcentagem de carregamento**;
   quando termina, fica visível **apenas o nome do modelo**
