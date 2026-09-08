@@ -31,10 +31,28 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
   16 KB do Android 15+), demais entradas alinhadas a 4 bytes.
 - Certificado: `CN = GGUF Chat, OU = Mobile, O = GGUF Chat, L = Barbacena,
   ST = Minas Gerais, C = BR`
-- SHA-256 do certificado: `e4ceceb8f234691a5884bbe4bd696f3f1da0f8ddf9d5f496867f39cb1750c5b5`
-- SHA-256 do APK: `4f9ea51ea1d298f118d3ac39a804fdf69b0760e96df908dd2fe6db28eafca6aa`
+- SHA-256 do certificado: `05072d71b73fd609a7fdf04e127863b8a4db8ef240aea35492ffbe3e1b9f1d07`
+- SHA-256 do APK: `ee36124de9a537fd28b5bb10269b3b3f919b0f050cba25d33eca8462f4d730b4`
 
 ## Correções desta compilação
+- **Projetor (mmproj) nunca vira o modelo principal**: o projetor de visão
+  (mmproj) não é mais selecionável nem aparece na lista de modelos da aba
+  **AI Modelos** — ele só aparece na aba **Importar → Downloads** (onde pode
+  ser excluído). Tocar no card de um mmproj, tentar criar conversa com ele ou
+  a seleção automática de modelo agora é bloqueada com um aviso, impedindo que
+  o app tente carregar o projetor como modelo de texto (o que travava o app).
+- **Travamento ao abrir conversa corrigido (caminho "null")**: ao salvar uma
+  conversa sem projetor, o campo era gravado como `null` do JSON e, ao reler,
+  virava a **string** `"null"` — o motor tentava carregar um arquivo chamado
+  "null" como projetor e a conversa não abria/travava. Agora `modelPath` e
+  `mmprojPath` são normalizados para `null` de verdade ao carregar conversas e
+  modelos (e também dentro do motor), evitando o erro.
+- **Vínculo do projetor mais seguro**: a associação automática do mmproj agora
+  só é feita para modelos que são realmente de visão (nunca para o próprio
+  projetor ou para modelos só de texto).
+- **Ícone de olho corrigido**: o 👁 (multimodal/visão) aparecia em todos os
+  modelos, inclusive nos de texto; agora só aparece nos modelos de visão com
+  projetor vinculado.
 - **Importação corrigida**: a guarda `isEmpty()` do seletor múltiplo estava
   invertida — importar 1 ou vários `.gguf` não fazia nada (ou podia travar).
   Agora a importação de um ou vários arquivos funciona de verdade.
