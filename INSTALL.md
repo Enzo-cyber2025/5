@@ -32,7 +32,7 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
 - Certificado: `CN = GGUF Chat, OU = Mobile, O = GGUF Chat, L = Barbacena,
   ST = Minas Gerais, C = BR`
 - SHA-256 do certificado: `e4ceceb8f234691a5884bbe4bd696f3f1da0f8ddf9d5f496867f39cb1750c5b5`
-- SHA-256 do APK: `9f1ba319e2779478c6a64157a385fbdc8b604ec4420b8b62ab2143d36cdf58ab`
+- SHA-256 do APK: `d2096bd0665b8ab2436913e5dab07deca4fca594e40c15e4dfd3e3ed74c6b9da`
 
 ## Correções desta compilação
 - **Importação corrigida**: a guarda `isEmpty()` do seletor múltiplo estava
@@ -46,6 +46,15 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
   de lançar `NullPointerException`.
 - **Permissão de notificações** solicitada em tempo de execução (Android 13+),
   para a notificação da geração em segundo plano aparecer.
+- **Crash no Android 14 corrigido**: o receiver da tela de conversa agora é
+  registrado com `RECEIVER_NOT_EXPORTED` (obrigatório a partir do Android 14);
+  antes o app podia fechar com `SecurityException` ao abrir uma conversa.
+- **Anexos de texto lidos como UTF-8**: textos/códigos anexados eram decodificados
+  com o charset padrão do aparelho; agora sempre em UTF-8 (acentos e emojis
+  corretos).
+- **Proteção extra**: nome de arquivo nulo e resumo de conversa com conteúdo
+  nulo não causam mais travamento; entidades HTML (`&#36;`, `&#92;`) em
+  resultados de busca não derrubam mais o app.
 
 ## Funcionalidades
 - Tema escuro estilo “Off Grid AI”: fundo quase preto com toque de verde,
