@@ -33,7 +33,7 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
   ST = Minas Gerais, C = BR`
 - SHA-256 do certificado: `083b914ca6d10a32360e2d3441678e935bca4be119eb7cfd2ec68a91facf5065`
 - SHA-1 do certificado: `d407de37e765b9a5ffa6d5e28ab11c7f0dc8c861`
-- SHA-256 do APK: `e2ede4bfbd4589c7a32cbefaa4d593a012eea66ec3767ceabe737cc416ed39b1`
+- SHA-256 do APK: `cc6b063b96790ca36052c000b6df8cbcacc25bfee2eb2332d4ed138523482e42`
 
 > **Aviso honesto sobre a assinatura:** a keystore da compilação anterior foi
 > perdida na reinicialização do ambiente e **não é recuperável** sem a chave
@@ -43,6 +43,15 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
 > (arquivo `.jks`/`.keystore` + senhas), eu reassino com a mesma assinatura.
 
 ## Correções desta compilação
+- **Crash ao abrir conversa em aparelho real (arm64) — correção nativa**: o
+  motor Vulkan chamava `abort()` (fim do processo) quando a alocação de
+  **memória "pinned" da GPU** falhava (comum em celulares ao carregar modelos
+  grandes com todas as camadas na GPU). A função `ggml_abort` foi corrigida nos
+  binários nativos (arm64 e x86_64) para **registrar o erro e retornar** em vez
+  de abortar. Com isso, a falha vira um erro tratável: o app tenta de novo em
+  **CPU** (fallback já existente no `EngineManager`) e a conversa abre em vez de
+  derrubar o app. O Vulkan continua sendo o caminho padrão quando o aparelho
+  aguenta.
 - **Unificação automática ainda mais abrangente (modelo + mmproj)**: além do
   casamento por nome, o app agora reconhece o projetor também pela
   **arquitetura `clip`** (arquivos mmproj que não têm "mmproj" no nome) e
