@@ -33,7 +33,7 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
   ST = Minas Gerais, C = BR`
 - SHA-256 do certificado: `083b914ca6d10a32360e2d3441678e935bca4be119eb7cfd2ec68a91facf5065`
 - SHA-1 do certificado: `d407de37e765b9a5ffa6d5e28ab11c7f0dc8c861`
-- SHA-256 do APK: `b61c24721d6c4293e224682f0d789b6010a83cb25c8b34e43c961b0826aacfd1`
+- SHA-256 do APK: `e2ede4bfbd4589c7a32cbefaa4d593a012eea66ec3767ceabe737cc416ed39b1`
 
 > **Aviso honesto sobre a assinatura:** a keystore da compilação anterior foi
 > perdida na reinicialização do ambiente e **não é recuperável** sem a chave
@@ -43,6 +43,13 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
 > (arquivo `.jks`/`.keystore` + senhas), eu reassino com a mesma assinatura.
 
 ## Correções desta compilação
+- **Unificação automática ainda mais abrangente (modelo + mmproj)**: além do
+  casamento por nome, o app agora reconhece o projetor também pela
+  **arquitetura `clip`** (arquivos mmproj que não têm "mmproj" no nome) e
+  **auto-unifica qualquer modelo já marcado como multimodal**, mesmo que a
+  arquitetura não esteja na lista de visão. Sempre que houver um projetor
+  compatível, os dois modelos selecionados são **fundidos automaticamente em
+  um só** ao criar a conversa — sem diálogo extra.
 - **Unificação automática dos dois modelos selecionados (modelo + mmproj)**: ao
   criar uma conversa com um modelo de visão, o app agora **procura e vincula o
   projetor (mmproj) sozinho, sem diálogo extra**, sempre que existe um mmproj
