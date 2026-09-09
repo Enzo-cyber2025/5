@@ -29,12 +29,32 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
 - APK **zipalignado**: `resources.arsc` alinhado a 4 KB e todas as bibliotecas
   `lib/*.so` alinhadas a **16 KB** (compatível com os aparelhos de página de
   16 KB do Android 15+), demais entradas alinhadas a 4 bytes.
-- Certificado: `CN = GGUF Chat, OU = Mobile, O = GGUF Chat, L = Barbacena,
+- Certificado: `CN = GGUFChat, OU = Dev, O = GGUFChat, L = Barbacena,
   ST = Minas Gerais, C = BR`
-- SHA-256 do certificado: `05072d71b73fd609a7fdf04e127863b8a4db8ef240aea35492ffbe3e1b9f1d07`
-- SHA-256 do APK: `d0b6400a3beb9ee3ecc7a4b5d7a7a48b17e3f62428aaf23e291d75fc9672b7a6`
+- SHA-256 do certificado: `083b914ca6d10a32360e2d3441678e935bca4be119eb7cfd2ec68a91facf5065`
+- SHA-1 do certificado: `d407de37e765b9a5ffa6d5e28ab11c7f0dc8c861`
+- SHA-256 do APK: `b61c24721d6c4293e224682f0d789b6010a83cb25c8b34e43c961b0826aacfd1`
+
+> **Aviso honesto sobre a assinatura:** a keystore da compilação anterior foi
+> perdida na reinicialização do ambiente e **não é recuperável** sem a chave
+> original. Esta compilação usa uma **keystore nova** — portanto a assinatura
+> **NÃO é a mesma** da versão anterior. Instalações antigas precisam ser
+> desinstaladas antes de instalar esta. Se você fornecer a keystore original
+> (arquivo `.jks`/`.keystore` + senhas), eu reassino com a mesma assinatura.
 
 ## Correções desta compilação
+- **Unificação automática dos dois modelos selecionados (modelo + mmproj)**: ao
+  criar uma conversa com um modelo de visão, o app agora **procura e vincula o
+  projetor (mmproj) sozinho, sem diálogo extra**, sempre que existe um mmproj
+  correspondente — os dois são **fundidos em um único modelo multimodal** e
+  carregados **juntos**. O seletor manual de mmproj só aparece quando há mmproj
+  importado mas nenhum corresponde ao modelo escolhido. Além disso, a
+  comparação de `id` durante a fusão ganhou **proteção contra `null`** (evita
+  `NullPointerException` ao trocar o modelo vinculado na lista).
+- **Fallback defensivo de GPU → CPU ao carregar**: se a criação do motor com
+  offload Vulkan falhar (aparelho sem Vulkan utilizável), o app tenta recriar o
+  motor com **0 camadas na GPU (CPU)** antes de mostrar erro — em vez de
+  fechar/derrubar o app na abertura da conversa.
 - **Crash ao abrir conversa — correção definitiva do cache do motor**: a
   comparação do projetor no cache do motor estava **invertida** para conversas
   **sem projetor**. Com isso, o app **recriava o motor nativo a cada abertura
