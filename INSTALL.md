@@ -35,9 +35,17 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
 - APK **zipalignado**: entradas `STORE` alinhadas e bloco de assinatura múltiplo
   de 4096 bytes, preservando o layout de memória das bibliotecas nativas.
 - Certificado: `CN = GGUF Chat, O = ggufchat, C = BR`
-- SHA-256 do certificado: `3fd4108984da475f0d66ad0c98a4a4a2176c823d73a6a0712642b3748686ad72`
-- SHA-1 do certificado: `de45a81e517c08cc6a5e9f2e356d011ef242656e`
-- SHA-256 do APK: `585b70536e0c6d3335d40e6145fd82d7af208854a6e72b0345985c84c1a91a7e`
+- SHA-256 do certificado: `47fb4107ed9069d840da269d720f9bc2340186274227fe1b0eeedcd527c1251f`
+- SHA-1 do certificado: `a7ac8a4ae4cdf32416206917fa210847c1acf62f`
+- SHA-256 do APK: `7c64d6223ee5259274f9061184069c1e3488d5dc86e79c10deb16b41c74e4a72`
+
+> **Correção da instalação ("App não instalado"):** a compilação anterior falhava na
+> instalação porque o digest de conteúdo da assinatura v2 era calculado com o campo
+> de offset do EOCD errado (o verificador do Android usa `block_start`, não
+> `block_end`). A assinatura foi refeita com o algoritmo exato do AOSP `apksig`
+> (verificado bit a bit contra uma assinatura real do `apksigner`) e confirmada de
+> forma independente: digest de conteúdo idêntico, assinatura RSA verificada e
+> estrutura do bloco validada.
 
 > **Aviso honesto sobre a assinatura:** a keystore das compilações anteriores
 > foi perdida na reinicialização do ambiente e **não é recuperável** sem a
