@@ -22,6 +22,9 @@ https://github.com/Enzo-cyber2025/5/raw/arena/01a077ef-5/GGUF-Chat.apk
   **nulo** quando a alocação de memória "pinned" da GPU falhava sem exceção. O
   binário nativo (`libggml-vulkan.so`, arm64) foi corrigido por patch binário
   para cair no fallback de **CPU** nesse caso.
+  O crash foi **reproduzido e a correção validada executando o ggml no host**
+  (mesmo commit do APK): ver **[VERIFICACAO.md](VERIFICACAO.md)** e
+  **[host-repro/](host-repro/)**.
 - Assinado em **APK Signature Scheme v2** (RSA-2048 + SHA-256). A assinatura usa o
   algoritmo exato do AOSP `apksig` (digest de conteúdo em 3 segmentos + EOCD com
   offset apontando para o início do bloco de assinatura), validado bit a bit contra

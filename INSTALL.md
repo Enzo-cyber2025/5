@@ -228,5 +228,26 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
   aplicados a toda nova conversa criada
 - Geração com a **tela bloqueada** (serviço em primeiro plano + wakelock)
 
+## Verificação do crash (reproduzida em host)
+
+A causa raiz do crash ao abrir conversa foi **reproduzida e a correção
+validada** executando o próprio código nativo (ggml, no **mesmo commit** usado
+no APK) fora do Android — já que este ambiente não tem emulador Android (sem
+SDK, sem KVM, sem Java e com `dl.google.com` bloqueado). Resumo:
+
+- **Crash**: com a memória "pinned" da GPU falhando sem exceção, a função nativa
+  seguia com ponteiro nulo → `GGML_ASSERT(base != NULL)` → **SIGABRT** (exit 134).
+- **Correção**: ao detectar ponteiro nulo, cai no fallback de buffer **CPU** e a
+  carga prossegue (exit 0).
+- **Engine**: `llama.cpp` @ `50f068f` compilado (CPU **e** Vulkan) e um GGUF
+  mínimo válido gerado + inferência executada com sucesso.
+- **Vulkan neste host**: stack completa compilada do zero (loader + SwiftShader +
+  glslc), mas o SwiftShader não implementa 16-bit storage/Float16 (limitação
+  hardcoded do driver), então o backend não roda aqui — nos celulares reais isso
+  existe e o caminho é o corrigido.
+
+Detalhes, comandos e saídas reais: **[VERIFICACAO.md](VERIFICACAO.md)** e a
+pasta **[host-repro/](host-repro/)** (`bash host-repro/run.sh` reproduz tudo).
+
 ## Download direto
 https://github.com/Enzo-cyber2025/5/raw/arena/01a077ef-5/GGUF-Chat.apk
