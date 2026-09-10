@@ -24,34 +24,40 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
 > de instalar esta** (o Android bloqueia atualização com assinatura diferente).
 
 ## Assinatura
-- Assinado com o **apksigner oficial** em **APK Signature Scheme v2 + v3**
-  (RSA-2048 + SHA-256), válido para Android 7.0 (API 24) em diante.
-- APK **zipalignado**: `resources.arsc` alinhado a 4 KB e todas as bibliotecas
-  `lib/*.so` alinhadas a **16 KB** (compatível com os aparelhos de página de
-  16 KB do Android 15+), demais entradas alinhadas a 4 bytes.
-- Certificado: `CN = GGUFChat, OU = Dev, O = GGUFChat, L = Barbacena,
-  ST = Minas Gerais, C = BR`
-- SHA-256 do certificado: `083b914ca6d10a32360e2d3441678e935bca4be119eb7cfd2ec68a91facf5065`
-- SHA-1 do certificado: `d407de37e765b9a5ffa6d5e28ab11c7f0dc8c861`
-- SHA-256 do APK: `cc6b063b96790ca36052c000b6df8cbcacc25bfee2eb2332d4ed138523482e42`
+- Assinado em **APK Signature Scheme v2** (RSA-2048 + SHA-256, algoritmo
+  `0x0103` = RSASSA-PKCS1-v1_5 com SHA-256), válido para Android 7.0 (API 24)
+  em diante — exatamente o `minSdkVersion` deste APK.
+- A assinatura foi gerada com um **assinador v2 escrito em Python puro**
+  (implementação fiel da especificação AOSP `apksig`: bloco "APK Sig Block 42",
+  digestão SHA-256 em blocos de 1 MiB com os prefixos `0xa5`/`0x5a` e
+  assinatura RSA sobre o `signed data`) e verificada de forma independente
+  (recomputação do digest + verificação RSA + parser v2 do androguard).
+- APK **zipalignado**: entradas `STORE` alinhadas e bloco de assinatura múltiplo
+  de 4096 bytes, preservando o layout de memória das bibliotecas nativas.
+- Certificado: `CN = GGUF Chat, O = ggufchat, C = BR`
+- SHA-256 do certificado: `3fd4108984da475f0d66ad0c98a4a4a2176c823d73a6a0712642b3748686ad72`
+- SHA-1 do certificado: `de45a81e517c08cc6a5e9f2e356d011ef242656e`
+- SHA-256 do APK: `585b70536e0c6d3335d40e6145fd82d7af208854a6e72b0345985c84c1a91a7e`
 
-> **Aviso honesto sobre a assinatura:** a keystore da compilação anterior foi
-> perdida na reinicialização do ambiente e **não é recuperável** sem a chave
-> original. Esta compilação usa uma **keystore nova** — portanto a assinatura
-> **NÃO é a mesma** da versão anterior. Instalações antigas precisam ser
-> desinstaladas antes de instalar esta. Se você fornecer a keystore original
-> (arquivo `.jks`/`.keystore` + senhas), eu reassino com a mesma assinatura.
+> **Aviso honesto sobre a assinatura:** a keystore das compilações anteriores
+> foi perdida na reinicialização do ambiente e **não é recuperável** sem a
+> chave original. Esta compilação usa uma **keystore nova (RSA-2048)** e é
+> assinada **somente em v2** (sem v3), portanto a assinatura **NÃO é a mesma**
+> da versão anterior. Instalações antigas precisam ser **desinstaladas** antes
+> de instalar esta. Se você fornecer a keystore original (`.jks`/`.keystore` +
+> senhas), eu reassino com a mesma assinatura.
 
 ## Correções desta compilação
-- **Crash ao abrir conversa em aparelho real (arm64) — correção nativa**: o
-  motor Vulkan chamava `abort()` (fim do processo) quando a alocação de
-  **memória "pinned" da GPU** falhava (comum em celulares ao carregar modelos
-  grandes com todas as camadas na GPU). A função `ggml_abort` foi corrigida nos
-  binários nativos (arm64 e x86_64) para **registrar o erro e retornar** em vez
-  de abortar. Com isso, a falha vira um erro tratável: o app tenta de novo em
-  **CPU** (fallback já existente no `EngineManager`) e a conversa abre em vez de
-  derrubar o app. O Vulkan continua sendo o caminho padrão quando o aparelho
-  aguenta.
+- **Crash ao abrir conversa em aparelho real (arm64) — correção nativa da causa
+  raiz**: a função `ggml_backend_vk_host_buffer_type_alloc_buffer` seguia
+  adiante com um **ponteiro nulo** quando a alocação de **memória "pinned" da
+  GPU** falhava sem lançar exceção (comum em celulares ao carregar modelos
+  grandes com todas as camadas na GPU). O binário `libggml-vulkan.so` (arm64)
+  foi corrigido por **patch binário** para, nesse caso, cair no fallback de
+  **CPU** (`ggml_backend_cpu_buffer_type` / `ggml_backend_buft_alloc_buffer`)
+  em vez de usar o ponteiro nulo. Com isso a falha vira um caminho tratável:
+  o carregamento prossegue em **CPU** e a conversa abre em vez de derrubar o
+  app. O Vulkan continua sendo o caminho padrão quando o aparelho aguenta.
 - **Unificação automática ainda mais abrangente (modelo + mmproj)**: além do
   casamento por nome, o app agora reconhece o projetor também pela
   **arquitetura `clip`** (arquivos mmproj que não têm "mmproj" no nome) e
