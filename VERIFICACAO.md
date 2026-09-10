@@ -11,6 +11,8 @@ possível** executar neste ambiente (e por quê).
 | Causa raiz identificada | ✅ `ggml_backend_vk_host_buffer_type_alloc_buffer` segue com ponteiro `nullptr` quando a memória "pinned" (host-visible) da GPU falha sem exceção |
 | Crash reproduzido (nível ggml) | ✅ `GGML_ASSERT(base != NULL)` → `SIGABRT` (exit 134), o mesmo caminho do app |
 | Correção validada (fallback CPU) | ✅ versão corrigida aloca buffer CPU e segue (exit 0) |
+| Patch aplicado e auditado (arm64) | ✅ `libggml-vulkan.so` arm64 usa `ggml_backend_cpu_buffer_type` + `ggml_backend_buft_alloc_buffer` via PLT (verificado por `.rela.plt` + disassembly) |
+| Patch aplicado e auditado (x86_64) | ✅ `libggml-vulkan.so` x86_64 (antes **idêntico ao original**) agora usa o mesmo fallback (trampoline, 80 bytes em 3 pontos) |
 | Engine compilado no commit exato do APK | ✅ `llama.cpp` @ `50f068f` — build CPU **e** build Vulkan |
 | GGUF mínimo válido + inferência | ✅ modelo gerado carrega e gera tokens no `llama cli` |
 | Stack Vulkan compilada do zero | ✅ Vulkan-Headers + Vulkan-Loader + SwiftShader (ICD) + glslc |
@@ -83,15 +85,55 @@ GGML_ASSERT(base != NULL && "backend buffer base cannot be NULL") failed
 ggml_abort  ->  SIGABRT  ->  o processo nativo morre  ->  "crashou na hora de abrir"
 ```
 
-A correção aplicada (patch binário no `libggml-vulkan.so` arm64, semânticamente
-idêntica ao fallback que o próprio upstream adotou depois) é checar `ptr == nullptr`
-e cair no buffer CPU:
+A correção aplicada (patch binário no `libggml-vulkan.so` **arm64-v8a e x86_64**,
+semânticamente idêntica ao fallback que o próprio upstream adotou depois) é checar
+`ptr == nullptr` e cair no buffer CPU:
 
 ```cpp
 if (ptr == nullptr) {
     return ggml_backend_buft_alloc_buffer(ggml_backend_cpu_buffer_type(), size);
 }
 ```
+
+### 2.1 Patch binário nas duas arquiteturas (auditoria byte a byte)
+
+O patch foi **descoberto e auditado por engenharia reversa** (sem símbolos de
+debug no `.so`): resolução completa dos stubs PLT via `.rela.plt` + disassembly
+Capstone, comparando o `.so` original com o patchado.
+
+**arm64-v8a** (`lib/arm64-v8a/libggml-vulkan.so`, sha256 `2e16a543df23df96`):
+
+* Função `ggml_backend_vk_host_buffer_type_alloc_buffer` em `.text` VA
+  `0x21a5740..0x21a5978`.
+* PLT: `0x22d3eb0 = ggml_backend_cpu_buffer_type`, `0x22d3f10 =
+  ggml_backend_cpu_buffer_from_ptr`, `0x22d3f40 = ggml_backend_buft_alloc_buffer`,
+  `0x22d3f20 = fprintf`.
+* Diferença de 56 bytes: `cbz x21,#0x21a58c8` (se `base == NULL` → fallback)
+  inserido antes do `bl cpu_buffer_from_ptr`, e o bloco do `fprintf` substituído
+  por `bl cpu_buffer_type; mov x1,x19; bl buft_alloc_buffer; b epílogo`.
+
+**x86_64** (`lib/x86_64/libggml-vulkan.so`, sha256 `36c14b1549d17f12`):
+
+* No APK anterior este `.so` estava **byte a byte idêntico ao original**
+  (sha256 `8799494e...`), ou seja, **o x86_64 nunca tinha sido patchado**.
+* A string `"WARNING: failed to allocate..."` em `.rodata` `0x52dc6` é referenciada
+  pelo `lea rsi,[rip-0x2166bc1]` em `0x21b9980`, dentro da função em
+  `0x21b97a0..0x21b9ac4`.
+* PLT: `0x2323c10 = ggml_backend_cpu_buffer_type`, `0x2323c70 =
+  ggml_backend_cpu_buffer_from_ptr`, `0x2323ca0 = ggml_backend_buft_alloc_buffer`,
+  `0x2323c80 = fprintf`.
+* Patch (80 bytes em 3 pontos): (1) o bloco `fprintf` `0x21b9945..0x21b998d`
+  (73 bytes, única referência: o `je` em `0x21b981a`) foi substituído por um
+  trampoline `test r12,r12; je fallback; ... call cpu_buffer_from_ptr ...` e o
+  fallback `call cpu_buffer_type; mov rdi,rax; mov rsi,rbx; call buft_alloc_buffer`;
+  (2) `je 0x21b9945` → `je 0x21b998e` (caminho não-host vai direto ao log);
+  (3) `mov rdi,r12; mov rsi,rbx` em `0x21b990a` → `jmp 0x21b9945` + nop.
+* ELF estruturalmente íntegro: seções/relocações idênticas, alvos de PLT
+  re-resolvidos após o patch.
+
+Após o patch, o APK foi re-assinado em v2 e a assinatura verificada de forma
+independente (digest de conteúdo + RSA OK). SHA-256 do APK final:
+`02f97871a28936b4374001e0df7352461821181957a5f740207fa5eea4117281`.
 
 ## 3. Crash reproduzido no host (nível ggml, mesmo commit)
 
@@ -184,6 +226,10 @@ crash original ocorria, e que a correção do §3 cobre.
 O fluxo de emulador (x86_64) já está pronto em
 [`emu-test.workflow.yml`](emu-test.workflow.yml) (copiar para
 `.github/workflows/emu-test.yml` e disparar em **Actions**). Ele:
+
+> **Atualização:** como o `libggml-vulkan.so` **x86_64** agora também está
+> patchado (antes estava idêntico ao original), este fluxo de emulador passa a
+> exercitar de fato a correção — não só no arm64.
 
 1. instala o APK (`adb install -r -g`),
 2. baixa e injeta um GGUF real (`stories15M-q4_0.gguf`) + `models.json` + `chats.json`,

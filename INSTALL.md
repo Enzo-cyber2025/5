@@ -37,7 +37,7 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
 - Certificado: `CN = GGUF Chat, O = ggufchat, C = BR`
 - SHA-256 do certificado: `5218e60ba4aed14ced57d33a54897dbfbaf5785238579294a6df4bf5d4378484`
 - SHA-1 do certificado: `30b3f3912f3fd1e1e14e6095bb50e67ae1dcf6bf`
-- SHA-256 do APK: `59128d0dba0bed14a225c4d384a53df3fe0903851c80d5ce1357cc30fbb74cb7`
+- SHA-256 do APK: `02f97871a28936b4374001e0df7352461821181957a5f740207fa5eea4117281`
 
 > **Correção da instalação ("App não instalado"):** a compilação anterior falhava na
 > instalação porque o digest de conteúdo da assinatura v2 era calculado com o campo
@@ -54,17 +54,25 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
 > da versão anterior. Instalações antigas precisam ser **desinstaladas** antes
 > de instalar esta. Se você fornecer a keystore original (`.jks`/`.keystore` +
 > senhas), eu reassino com a mesma assinatura.
+>
+> **Nota (v1 obsoleta):** como o patch binário alterou um arquivo interno
+> (`lib/x86_64/libggml-vulkan.so`), a assinatura **v1/JAR** (arquivos
+> `META-INF/*.SF`/`*.RSA`) ficou obsoleta (os digests dela não batem mais com o
+> conteúdo). Isso **não afeta a instalação**: o APK é `minSdkVersion 24`
+> (Android 7.0+), e nesses aparelhos o Android usa a assinatura **v2** — que
+> está **válida e verificada de forma independente**. A v1 obsoleta é ignorada.
 
 ## Correções desta compilação
 - **Crash ao abrir conversa em aparelho real (arm64) — correção nativa da causa
   raiz**: a função `ggml_backend_vk_host_buffer_type_alloc_buffer` seguia
   adiante com um **ponteiro nulo** quando a alocação de **memória "pinned" da
   GPU** falhava sem lançar exceção (comum em celulares ao carregar modelos
-  grandes com todas as camadas na GPU). O binário `libggml-vulkan.so` (arm64)
-  foi corrigido por **patch binário** para, nesse caso, cair no fallback de
-  **CPU** (`ggml_backend_cpu_buffer_type` / `ggml_backend_buft_alloc_buffer`)
-  em vez de usar o ponteiro nulo. Com isso a falha vira um caminho tratável:
-  o carregamento prossegue em **CPU** e a conversa abre em vez de derrubar o
+  grandes com todas as camadas na GPU). Os binários `libggml-vulkan.so`
+  (**arm64-v8a e x86_64**) foram corrigidos por **patch binário** para, nesse
+  caso, cair no fallback de **CPU**
+  (`ggml_backend_cpu_buffer_type` / `ggml_backend_buft_alloc_buffer`) em vez de
+  usar o ponteiro nulo. Com isso a falha vira um caminho tratável: o
+  carregamento prossegue em **CPU** e a conversa abre em vez de derrubar o
   app. O Vulkan continua sendo o caminho padrão quando o aparelho aguenta.
 - **Unificação automática ainda mais abrangente (modelo + mmproj)**: além do
   casamento por nome, o app agora reconhece o projetor também pela
@@ -239,6 +247,11 @@ SDK, sem KVM, sem Java e com `dl.google.com` bloqueado). Resumo:
   seguia com ponteiro nulo → `GGML_ASSERT(base != NULL)` → **SIGABRT** (exit 134).
 - **Correção**: ao detectar ponteiro nulo, cai no fallback de buffer **CPU** e a
   carga prossegue (exit 0).
+- **Patch verificado byte a byte em ambas as arquiteturas**: o `libggml-vulkan.so`
+  arm64 (chamadas `ggml_backend_cpu_buffer_type` / `ggml_backend_buft_alloc_buffer`
+  via PLT) e o x86_64 (trampoline no bloco do `fprintf`, com os mesmos três
+  símbolos via PLT) foram auditados por disassembly completo e re-assinados em
+  v2 (assinatura validada de forma independente).
 - **Engine**: `llama.cpp` @ `50f068f` compilado (CPU **e** Vulkan) e um GGUF
   mínimo válido gerado + inferência executada com sucesso.
 - **Vulkan neste host**: stack completa compilada do zero (loader + SwiftShader +

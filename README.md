@@ -17,11 +17,12 @@ https://github.com/Enzo-cyber2025/5/raw/arena/01a077ef-5/GGUF-Chat.apk
 
 ## Sobre esta compilação
 
-- **Correção da causa raiz do crash ao abrir conversa (Vulkan/arm64)**: a função
-  `ggml_backend_vk_host_buffer_type_alloc_buffer` seguia adiante com um ponteiro
-  **nulo** quando a alocação de memória "pinned" da GPU falhava sem exceção. O
-  binário nativo (`libggml-vulkan.so`, arm64) foi corrigido por patch binário
-  para cair no fallback de **CPU** nesse caso.
+- **Correção da causa raiz do crash ao abrir conversa (Vulkan, arm64 + x86_64)**:
+  a função `ggml_backend_vk_host_buffer_type_alloc_buffer` seguia adiante com um
+  ponteiro **nulo** quando a alocação de memória "pinned" da GPU falhava sem
+  exceção. Os binários nativos (`libggml-vulkan.so`, **arm64-v8a e x86_64**)
+  foram corrigidos por patch binário para cair no fallback de **CPU** nesse caso
+  (o patch x86_64 foi verificado byte a byte, com os mesmos símbolos do arm64).
   O crash foi **reproduzido e a correção validada executando o ggml no host**
   (mesmo commit do APK): ver **[VERIFICACAO.md](VERIFICACAO.md)** e
   **[host-repro/](host-repro/)**.
@@ -32,7 +33,7 @@ https://github.com/Enzo-cyber2025/5/raw/arena/01a077ef-5/GGUF-Chat.apk
 - **Correção da instalação**: a compilação anterior falhava na instalação
   ("App não instalado") por digest v2 inválido; corrigido nesta compilação.
   Certificado `CA:FALSE` + `digitalSignature` (compatível com Play/instalador).
-  SHA-256 do APK: `59128d0dba0bed14a225c4d384a53df3fe0903851c80d5ce1357cc30fbb74cb7`
+  SHA-256 do APK: `02f97871a28936b4374001e0df7352461821181957a5f740207fa5eea4117281`
 
 > **Atenção:** esta compilação usa uma **keystore nova** (a anterior foi
 > perdida). Se já houver uma versão antiga instalada, **desinstale antes de
