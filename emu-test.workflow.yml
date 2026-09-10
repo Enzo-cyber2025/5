@@ -1,13 +1,15 @@
 # =============================================================================
-#  Teste do APK em emulador Android (GitHub Actions)
+#  Teste do APK GGUF-Chat em emulador Android (GitHub Actions)
 # -----------------------------------------------------------------------------
-#  COMO USAR:
-#  1. No repositório, crie o arquivo em:  .github/workflows/emu-test.yml
-#     (conteúdo = este arquivo, SEM esta linha de comentário inicial se quiser)
-#  2. Vá em "Actions" -> workflow "emu-test" -> "Run workflow" -> test="full".
-#  3. O emulador (Android 11 x86_64, API 30) instala o APK, abre a MainActivity
-#     e abre conversas (CPU e Vulkan), capturando crashes no logcat.
-# -----------------------------------------------------------------------------
+#  COMO EXECUTAR (2 passos):
+#  1) No repo, crie este arquivo em:  .github/workflows/emu-test.yml
+#     (use o conteúdo deste arquivo; NÃO altere nada)
+#  2) Aba "Actions" -> workflow "emu-test" -> "Run workflow" -> branch
+#     "arena/01a077ef-5" -> test="full" -> "Run workflow".
+#
+#  O checkout usa ref: arena/01a077ef-5 (onde está o GGUF-Chat.apk),
+#  então funciona mesmo se o workflow for criado na branch main.
+# =============================================================================
 name: emu-test
 
 on:
@@ -23,7 +25,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout (APK na branch arena/01a077ef-5)
+        uses: actions/checkout@v4
+        with:
+          ref: arena/01a077ef-5
 
       - name: Enable KVM
         run: |
@@ -40,7 +45,8 @@ jobs:
           target: default
           profile: pixel_5
           disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none -memory 2048
+          ram-size: 2048M
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none
           script: |
             set +e
             adb wait-for-device
@@ -54,7 +60,9 @@ jobs:
             adb shell id
 
             echo "=== Instalar APK ==="
-            adb install -r GGUF-Chat.apk
+            adb install -r -g GGUF-Chat.apk
+            echo "install_rc=$?"
+            adb shell pm path com.ggufchat.app
 
             echo "=== TEST 1: launch MainActivity ==="
             adb logcat -c
@@ -73,8 +81,11 @@ jobs:
             adb shell am force-stop com.ggufchat.app
 
             echo "=== Preparar dados (modelo + JSONs) ==="
-            curl -sL -o /tmp/stories15M-q4_0.gguf https://raw.githubusercontent.com/luxferum/ia/main/tinyllamas/stories15M-q4_0.gguf
-            ls -la /tmp/stories15M-q4_0.gguf
+            curl -fsSL --retry 3 -o /tmp/stories15M-q4_0.gguf https://raw.githubusercontent.com/luxferum/ia/main/tinyllamas/stories15M-q4_0.gguf
+            MODEL_SIZE=$(stat -c%s /tmp/stories15M-q4_0.gguf 2>/dev/null || echo 0)
+            echo "MODEL_SIZE=$MODEL_SIZE (esperado 19077344)"
+            if [ "$MODEL_SIZE" -lt 1000000 ]; then echo "!!! FALHA: download do modelo GGUF !!!"; exit 1; fi
+
             UID_APP=$(adb shell dumpsys package com.ggufchat.app | grep -oP 'userId=\K[0-9]+' | head -1)
             echo "APP_UID=[$UID_APP]"
             adb shell mkdir -p /data/data/com.ggufchat.app/files/models
@@ -103,6 +114,9 @@ jobs:
             if [ -n "$UID_APP" ]; then
               adb shell chown $UID_APP:$UID_APP /data/data/com.ggufchat.app/files/models.json /data/data/com.ggufchat.app/files/chats.json 2>/dev/null || true
             fi
+            # corrige contextos SELinux dos arquivos copiados (necessário para o app conseguir ler)
+            adb shell restorecon -RF /data/data/com.ggufchat.app/ 2>/dev/null || true
+
             echo "=== arquivos seedados ==="
             adb shell ls -la /data/data/com.ggufchat.app/files/ /data/data/com.ggufchat.app/files/models/
 
