@@ -28,7 +28,8 @@ https://github.com/Enzo-cyber2025/5/raw/arena/01a077ef-5/GGUF-Chat.apk
   uma assinatura real do `apksigner` e verificado de forma independente.
 - **Correção da instalação**: a compilação anterior falhava na instalação
   ("App não instalado") por digest v2 inválido; corrigido nesta compilação.
-  SHA-256 do APK: `7c64d6223ee5259274f9061184069c1e3488d5dc86e79c10deb16b41c74e4a72`
+  Certificado `CA:FALSE` + `digitalSignature` (compatível com Play/instalador).
+  SHA-256 do APK: `59128d0dba0bed14a225c4d384a53df3fe0903851c80d5ce1357cc30fbb74cb7`
 
 > **Atenção:** esta compilação usa uma **keystore nova** (a anterior foi
 > perdida). Se já houver uma versão antiga instalada, **desinstale antes de

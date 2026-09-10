@@ -102,11 +102,13 @@ jobs:
             adb shell chmod 644 /data/data/com.ggufchat.app/files/models.json
 
             # chat1: Vulkan (gpuLayers=-1) | chat2: CPU (gpuLayers=0) | chat3: caminho inexistente
+            # chat4: modelo + mmproj vinculados (caminho de carga multimodal/unificado)
             cat > /tmp/chats.json <<'JSON'
             [
               {"id":"chat1","title":"t1","modelPath":"/data/data/com.ggufchat.app/files/models/stories15M-q4_0.gguf","mmprojPath":null,"createdAt":1700000000000,"updatedAt":1700000000000,"messages":[],"nPredict":128,"temperature":0.8,"topP":0.95,"topK":40,"minP":0.05,"repeatPenalty":1.1,"repeatLastN":64,"contextSize":2048,"nThreads":4,"gpuLayers":-1,"useMmap":true,"thinking":false,"webSearch":false},
               {"id":"chat2","title":"t2","modelPath":"/data/data/com.ggufchat.app/files/models/stories15M-q4_0.gguf","mmprojPath":null,"createdAt":1700000000000,"updatedAt":1700000000000,"messages":[],"nPredict":128,"temperature":0.8,"topP":0.95,"topK":40,"minP":0.05,"repeatPenalty":1.1,"repeatLastN":64,"contextSize":2048,"nThreads":4,"gpuLayers":0,"useMmap":true,"thinking":false,"webSearch":false},
-              {"id":"chat3","title":"t3","modelPath":"/data/data/com.ggufchat.app/files/models/nao_existe.gguf","mmprojPath":null,"createdAt":1700000000000,"updatedAt":1700000000000,"messages":[{"role":"user","content":"oi"}],"nPredict":128,"temperature":0.8,"topP":0.95,"topK":40,"minP":0.05,"repeatPenalty":1.1,"repeatLastN":64,"contextSize":2048,"nThreads":4,"gpuLayers":0,"useMmap":true,"thinking":false,"webSearch":false}
+              {"id":"chat3","title":"t3","modelPath":"/data/data/com.ggufchat.app/files/models/nao_existe.gguf","mmprojPath":null,"createdAt":1700000000000,"updatedAt":1700000000000,"messages":[{"role":"user","content":"oi"}],"nPredict":128,"temperature":0.8,"topP":0.95,"topK":40,"minP":0.05,"repeatPenalty":1.1,"repeatLastN":64,"contextSize":2048,"nThreads":4,"gpuLayers":0,"useMmap":true,"thinking":false,"webSearch":false},
+              {"id":"chat4","title":"t4 (modelo+mmproj)","modelPath":"/data/data/com.ggufchat.app/files/models/stories15M-q4_0.gguf","mmprojPath":"/data/data/com.ggufchat.app/files/models/stories15M-q4_0.gguf","createdAt":1700000000000,"updatedAt":1700000000000,"messages":[{"role":"user","content":"oi"}],"nPredict":128,"temperature":0.8,"topP":0.95,"topK":40,"minP":0.05,"repeatPenalty":1.1,"repeatLastN":64,"contextSize":2048,"nThreads":4,"gpuLayers":0,"useMmap":true,"thinking":false,"webSearch":false}
             ]
             JSON
             adb push /tmp/chats.json /data/data/com.ggufchat.app/files/chats.json
@@ -145,5 +147,14 @@ jobs:
             PID=$(adb shell pidof com.ggufchat.app)
             echo "CHAT1_PID=[$PID]"
             adb logcat -d -v threadtime | grep -E "FATAL|AndroidRuntime|SIGSEGV|SIGABRT|F DEBUG|DEBUG|llama|ggml|vulkan|Vulkan" -A 40 | head -200
+            adb shell am force-stop com.ggufchat.app
+
+            echo "=== TEST 5: abrir chat4 (modelo + mmproj vinculados) ==="
+            adb logcat -c
+            adb shell am start -W -n com.ggufchat.app/.ChatActivity --es chatId chat4
+            sleep 25
+            PID=$(adb shell pidof com.ggufchat.app)
+            echo "CHAT4_PID=[$PID]"
+            adb logcat -d -v threadtime | grep -E "FATAL|AndroidRuntime|SIGSEGV|SIGABRT|F DEBUG|DEBUG|llama|ggml|mmproj|vulkan|Vulkan" -A 40 | head -200
 
             echo "=== DONE ==="

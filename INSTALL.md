@@ -35,9 +35,9 @@ Aplicativo Android para conversar com modelos **GGUF** locais, com inferência v
 - APK **zipalignado**: entradas `STORE` alinhadas e bloco de assinatura múltiplo
   de 4096 bytes, preservando o layout de memória das bibliotecas nativas.
 - Certificado: `CN = GGUF Chat, O = ggufchat, C = BR`
-- SHA-256 do certificado: `47fb4107ed9069d840da269d720f9bc2340186274227fe1b0eeedcd527c1251f`
-- SHA-1 do certificado: `a7ac8a4ae4cdf32416206917fa210847c1acf62f`
-- SHA-256 do APK: `7c64d6223ee5259274f9061184069c1e3488d5dc86e79c10deb16b41c74e4a72`
+- SHA-256 do certificado: `5218e60ba4aed14ced57d33a54897dbfbaf5785238579294a6df4bf5d4378484`
+- SHA-1 do certificado: `30b3f3912f3fd1e1e14e6095bb50e67ae1dcf6bf`
+- SHA-256 do APK: `59128d0dba0bed14a225c4d384a53df3fe0903851c80d5ce1357cc30fbb74cb7`
 
 > **Correção da instalação ("App não instalado"):** a compilação anterior falhava na
 > instalação porque o digest de conteúdo da assinatura v2 era calculado com o campo
