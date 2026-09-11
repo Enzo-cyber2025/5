@@ -4,6 +4,7 @@
 #include <dlfcn.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdarg.h>
 
 /* --- bionic-only symbols --- */
 int * __errno(void) { return &errno; }
@@ -30,3 +31,16 @@ int _Unwind_RaiseException(void *e){ int(*f)(void*)=(int(*)(void*))dlsym(gcc_han
 void _Unwind_Resume(void *e){ void(*f)(void*)=(void(*)(void*))dlsym(gcc_handle(),"_Unwind_Resume"); f(e); __builtin_unreachable(); }
 void _Unwind_SetGR(void *c, int i, unsigned long v){ void(*f)(void*,int,unsigned long)=(void(*)(void*,int,unsigned long))dlsym(gcc_handle(),"_Unwind_SetGR"); f(c,i,v); }
 void _Unwind_SetIP(void *c, unsigned long v){ void(*f)(void*,unsigned long)=(void(*)(void*,unsigned long))dlsym(gcc_handle(),"_Unwind_SetIP"); f(c,v); }
+
+#include <stdarg.h>
+
+/* --- bionic __android_log_print (usado pelo libaijni.so real) --- */
+int __android_log_print(int prio, const char *tag, const char *fmt, ...){
+    (void)prio;
+    va_list ap; va_start(ap, fmt);
+    fprintf(stderr, "[android:%s] ", tag ? tag : "?");
+    vfprintf(stderr, fmt, ap);
+    fprintf(stderr, "\n");
+    va_end(ap);
+    return 0;
+}
