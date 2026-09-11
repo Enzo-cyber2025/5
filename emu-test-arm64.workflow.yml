@@ -1,33 +1,40 @@
 # =============================================================================
 #  Teste do APK GGUF-Chat num emulador Android ARM64 (Apple Silicon)
 # -----------------------------------------------------------------------------
-#  ⚠️  COMO ATIVAR (o bot do Arena não tem permissão p/ criar workflow):
-#  1) Crie este ARQUIVO (mesmo conteúdo) em:  .github/workflows/emu-test-arm64.yml
-#     (no GitHub: Add file → Create new file → cola este conteúdo).
-#  2) Aba "Actions" → workflow "emu-test-arm64" → "Run workflow" →
-#     branch "arena/01a077ef-5" → Run workflow.
+#  COMO USAR (o bot do Arena não tem a permissão "workflows", então este arquivo
+#  precisa ser criado por você, 1 vez, colando o conteúdo abaixo em:
+#     .github/workflows/emu-test-arm64.yml   (mesmo conteúdo deste arquivo)
 #
-#  POR QUE arm64 e POR QUE macos-14:
-#   - O celular onde o app crasha é arm64; o emulador oficial NÃO roda guest
-#     arm64 em host x86_64. Host arm64 de verdade = runners Apple Silicon.
-#   - macos-14 (M1) é o runner ARM64 hospedado do GitHub.
-#   - Se HVF (aceleração) não estiver disponível no runner, o script cai para
-#     emulação por software automaticamente (mais lenta).
+#  Passo a passo (30 segundos, SEM upload de arquivo grande):
+#   1) Abra https://github.com/Enzo-cyber2025/5
+#   2) Botão "Add file" -> "Create new file"
+#   3) No campo de nome do arquivo digite:  .github/workflows/emu-test-arm64.yml
+#   4) Cole o conteúdo deste arquivo.
+#   5) Em "Commit changes", marque "Commit directly to the arena/01a077ef-5 branch".
+#   6) Aba "Actions" -> "emu-test-arm64" -> "Run workflow" -> Run workflow.
 #
-#  O script .github/emu-test-arm64.sh também roda LOCAL num Mac M1/M2/M3 com
-#  aceleração total (o caminho mais rápido e fiel).
+#  O runner (macos-14, Apple Silicon arm64) baixa o emulador SOZINHO (tem internet
+#  plena) e roda .github/emu-test-arm64.sh + .github/emu-test.sh:
+#  instala o APK real -> importa GGUF+mmproj -> CPU/Vulkan/multimodal/inexistente
+#  -> logcat + screenshots. As evidências voltam para o repo (branch evidence-arm64)
+#  e para o artefato "emu-arm64-evidence".
 # =============================================================================
 name: emu-test-arm64
 
 on:
   workflow_dispatch:
+  push:
+    branches: [arena/01a077ef-5]
+
+permissions:
+  contents: write
 
 jobs:
   arm64:
     runs-on: macos-14          # Apple Silicon (arm64)
-    timeout-minutes: 90
+    timeout-minutes: 120
     steps:
-      - name: Checkout (APK + modelos tiny na branch arena/01a077ef-5)
+      - name: Checkout (APK + modelos tiny + scripts)
         uses: actions/checkout@v4
         with:
           ref: arena/01a077ef-5
@@ -41,10 +48,19 @@ jobs:
       - name: Emulador ARM64 + testes do APK real
         run: bash .github/emu-test-arm64.sh
 
-      - name: Upload evidências (logcat + screenshots + resumo)
+      - name: Upload evidencias (logcat + screenshots)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: emu-arm64-evidence
           path: evidence/
           if-no-files-found: ignore
+
+      - name: Publicar evidencias no repo (branch evidence-arm64)
+        if: always()
+        run: |
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -f evidence 2>/dev/null || true
+          git commit -m "evidence arm64 $(date -u +%Y%m%d%H%M%S)" 2>/dev/null || true
+          git push origin HEAD:evidence-arm64 --force 2>/dev/null || true
