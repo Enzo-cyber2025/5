@@ -68,6 +68,28 @@ de `llama_mmap`, ambos no contexto bionic×glibc) e os bugs Java do app
 (`Native.create` ignora o mmproj; `models.json`/`chats.json` sem try/catch →
 crash de abertura se o JSON ficar corrompido).
 
+## Reproduzir o emulador (QEMU) do zero neste ambiente
+
+```bash
+# 1) QEMU de sistema via npm (binário musl)
+cd /tmp && npm pack qemu-portable-linux-x64-musl && tar xzf qemu-portable-linux-x64-musl-*.tgz
+
+# 2) libc musl (o binário pede libc.musl + ld-musl) — compilar do fonte
+git clone --depth 1 https://github.com/ifduyue/musl /tmp/musl
+cd /tmp/musl && ./configure --prefix=/tmp/musl-install && make -j2 && make install
+cp /tmp/musl-install/lib/libc.so /tmp/npmqemu/package/lib/libc.musl-x86_64.so.1
+cp /tmp/musl-install/lib/libc.so /tmp/ld-musl-x86_64.so.1
+
+# 3) rodar
+LD_LIBRARY_PATH=/tmp/npmqemu/package/lib \
+  /tmp/ld-musl-x86_64.so.1 /tmp/npmqemu/package/bin/qemu-system-x86_64 --version
+# → QEMU emulator version 11.0.2
+```
+
+O `adb` real (Linux/x86_64) está em
+`aosp-mirror-neo/platform_prebuilts_android-emulator-build_system-images` →
+`linux/platform-tools/adb` (+ `lib64/`).
+
 ## Arquivos
 - `.github/emu-test.sh` — teste de emulador completo (pronto para rodar).
 - `emu-test.workflow.yml` — workflow pronto; copie para `.github/workflows/emu-test.yml`.
