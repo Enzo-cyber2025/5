@@ -1,14 +1,18 @@
 # =============================================================================
-#  Teste do APK GGUF-Chat em emulador Android (GitHub Actions)
+#  Teste do APK GGUF-Chat em emulador Android REAL (GitHub Actions)
 # -----------------------------------------------------------------------------
-#  COMO EXECUTAR (2 passos):
-#  1) No repo, crie este arquivo em:  .github/workflows/emu-test.yml
-#     (use o conteúdo deste arquivo; NÃO altere nada)
-#  2) Aba "Actions" -> workflow "emu-test" -> "Run workflow" -> branch
-#     "arena/01a077ef-5" -> test="full" -> "Run workflow".
+#  ⚠️  COMO ATIVAR (o bot do Arena não tem permissão p/ criar workflow):
+#  1) Crie este ARQUIVO (mesmo conteúdo) em:  .github/workflows/emu-test.yml
+#     (no GitHub: Add file → Create new file → cola este conteúdo).
+#  2) Aba "Actions" → workflow "emu-test" → "Run workflow" → branch
+#     "arena/01a077ef-5" → Run workflow.
+#  O checkout usa ref: arena/01a077ef-5 (onde está o GGUF-Chat.apk).
 #
-#  O checkout usa ref: arena/01a077ef-5 (onde está o GGUF-Chat.apk),
-#  então funciona mesmo se o workflow for criado na branch main.
+#  O que ele faz:
+#   - Sobe emulador Android x86_64 (API 30) com KVM no runner do GitHub.
+#   - Instala o GGUF-Chat.apk REAL e importa GGUF + mmproj (via UI e via seed).
+#   - Abre conversas (CPU / Vulkan / modelo+mmproj / caminho inválido) e coleta
+#     o logcat de crash (FATAL / SIGSEGV / tombstone).
 # =============================================================================
 name: emu-test
 
@@ -16,7 +20,7 @@ on:
   workflow_dispatch:
     inputs:
       test:
-        description: 'Testes (launch | chat | full)'
+        description: 'Testes (launch | import | chat | full)'
         required: false
         default: 'full'
 
@@ -25,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - name: Checkout (APK na branch arena/01a077ef-5)
+      - name: Checkout (APK + modelos tiny na branch arena/01a077ef-5)
         uses: actions/checkout@v4
         with:
           ref: arena/01a077ef-5
@@ -48,113 +52,109 @@ jobs:
           ram-size: 2048M
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none
           script: |
-            set +e
+            set -u
             adb wait-for-device
-            echo "=== ABI ==="
+            echo "=== ABI / SDK ==="
             adb shell getprop ro.product.cpu.abi
             adb shell getprop ro.build.version.sdk
-            echo "=== root? ==="
-            adb root || true
-            sleep 2
-            adb wait-for-device
-            adb shell id
+            adb shell settings put global window_animation_scale 0
+            adb shell settings put global transition_animation_scale 0
+            adb shell settings put global animator_duration_scale 0
 
-            echo "=== Instalar APK ==="
+            echo "=== Instalar APK (real, extraído do repo) ==="
             adb install -r -g GGUF-Chat.apk
             echo "install_rc=$?"
             adb shell pm path com.ggufchat.app
 
-            echo "=== TEST 1: launch MainActivity ==="
+            echo "=== LANÇAR MainActivity ==="
             adb logcat -c
             adb shell am force-stop com.ggufchat.app
             adb shell am start -W -n com.ggufchat.app/.MainActivity
-            sleep 15
+            sleep 12
             PID=$(adb shell pidof com.ggufchat.app)
             echo "MAIN_PID=[$PID]"
             if [ -z "$PID" ]; then
-              echo "!!! LAUNCH: PROCESSO MORREU !!!"
+              echo "!!! LAUNCH: processo morreu !!!"
               adb logcat -d -v threadtime | grep -E "FATAL|AndroidRuntime|SIGSEGV|SIGABRT|F DEBUG|DEBUG" -A 40 | head -200
             else
               echo "LAUNCH: OK"
               adb logcat -d -v threadtime | grep -E "FATAL|AndroidRuntime|UnsatisfiedLink" | head -40
             fi
-            adb shell am force-stop com.ggufchat.app
 
-            echo "=== Preparar dados (modelo + JSONs) ==="
-            curl -fsSL --retry 3 -o /tmp/stories15M-q4_0.gguf https://raw.githubusercontent.com/luxferum/ia/main/tinyllamas/stories15M-q4_0.gguf
-            MODEL_SIZE=$(stat -c%s /tmp/stories15M-q4_0.gguf 2>/dev/null || echo 0)
-            echo "MODEL_SIZE=$MODEL_SIZE (esperado 19077344)"
-            if [ "$MODEL_SIZE" -lt 1000000 ]; then echo "!!! FALHA: download do modelo GGUF !!!"; exit 1; fi
+            echo "=== Preparar GGUF + mmproj no armazenamento compartilhado ==="
+            adb shell mkdir -p /sdcard/Download
+            adb push apk-real-host-run/models/tiny-llama-022.gguf /sdcard/Download/tiny-llama-022.gguf
+            adb push apk-real-host-run/models/tiny-mmproj-022.gguf /sdcard/Download/tiny-mmproj-022.gguf
+            adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file:///sdcard/Download/tiny-llama-022.gguf 2>/dev/null || true
+            adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file:///sdcard/Download/tiny-mmproj-022.gguf 2>/dev/null || true
 
+            echo "=== SEED determinístico (arquivos internos do app) ==="
             UID_APP=$(adb shell dumpsys package com.ggufchat.app | grep -oP 'userId=\K[0-9]+' | head -1)
             echo "APP_UID=[$UID_APP]"
             adb shell mkdir -p /data/data/com.ggufchat.app/files/models
-            adb push /tmp/stories15M-q4_0.gguf /data/data/com.ggufchat.app/files/models/stories15M-q4_0.gguf
-            adb shell chmod 644 /data/data/com.ggufchat.app/files/models/stories15M-q4_0.gguf
+            adb push apk-real-host-run/models/tiny-llama-022.gguf  /data/data/com.ggufchat.app/files/models/tiny-llama-022.gguf
+            adb push apk-real-host-run/models/tiny-mmproj-022.gguf /data/data/com.ggufchat.app/files/models/tiny-mmproj-022.gguf
             if [ -n "$UID_APP" ]; then
               adb shell chown -R $UID_APP:$UID_APP /data/data/com.ggufchat.app/files 2>/dev/null || true
             fi
+            adb shell restorecon -RF /data/data/com.ggufchat.app/ 2>/dev/null || true
 
             cat > /tmp/models.json <<'JSON'
-            [{"id":"m1","name":"stories15M-q4_0","architecture":"llama","path":"/data/data/com.ggufchat.app/files/models/stories15M-q4_0.gguf","size":19077344,"importedAt":1700000000000,"fileName":"stories15M-q4_0.gguf","mmprojPath":null,"multimodal":false}]
+            [
+              {"id":"m1","name":"tiny-llama","architecture":"llama","path":"/data/data/com.ggufchat.app/files/models/tiny-llama-022.gguf","size":117152,"importedAt":1700000000000,"fileName":"tiny-llama-022.gguf","mmprojPath":null,"multimodal":false},
+              {"id":"m2","name":"tiny-mmproj","architecture":"clip","path":"/data/data/com.ggufchat.app/files/models/tiny-mmproj-022.gguf","size":320,"importedAt":1700000000000,"fileName":"tiny-mmproj-022.gguf","mmprojPath":null,"multimodal":false}
+            ]
             JSON
             adb push /tmp/models.json /data/data/com.ggufchat.app/files/models.json
             adb shell chmod 644 /data/data/com.ggufchat.app/files/models.json
+            if [ -n "$UID_APP" ]; then adb shell chown $UID_APP:$UID_APP /data/data/com.ggufchat.app/files/models.json 2>/dev/null || true; fi
 
-            # chat1: Vulkan (gpuLayers=-1) | chat2: CPU (gpuLayers=0) | chat3: caminho inexistente
-            # chat4: modelo + mmproj vinculados (caminho de carga multimodal/unificado)
             cat > /tmp/chats.json <<'JSON'
             [
-              {"id":"chat1","title":"t1","modelPath":"/data/data/com.ggufchat.app/files/models/stories15M-q4_0.gguf","mmprojPath":null,"createdAt":1700000000000,"updatedAt":1700000000000,"messages":[],"nPredict":128,"temperature":0.8,"topP":0.95,"topK":40,"minP":0.05,"repeatPenalty":1.1,"repeatLastN":64,"contextSize":2048,"nThreads":4,"gpuLayers":-1,"useMmap":true,"thinking":false,"webSearch":false},
-              {"id":"chat2","title":"t2","modelPath":"/data/data/com.ggufchat.app/files/models/stories15M-q4_0.gguf","mmprojPath":null,"createdAt":1700000000000,"updatedAt":1700000000000,"messages":[],"nPredict":128,"temperature":0.8,"topP":0.95,"topK":40,"minP":0.05,"repeatPenalty":1.1,"repeatLastN":64,"contextSize":2048,"nThreads":4,"gpuLayers":0,"useMmap":true,"thinking":false,"webSearch":false},
-              {"id":"chat3","title":"t3","modelPath":"/data/data/com.ggufchat.app/files/models/nao_existe.gguf","mmprojPath":null,"createdAt":1700000000000,"updatedAt":1700000000000,"messages":[{"role":"user","content":"oi"}],"nPredict":128,"temperature":0.8,"topP":0.95,"topK":40,"minP":0.05,"repeatPenalty":1.1,"repeatLastN":64,"contextSize":2048,"nThreads":4,"gpuLayers":0,"useMmap":true,"thinking":false,"webSearch":false},
-              {"id":"chat4","title":"t4 (modelo+mmproj)","modelPath":"/data/data/com.ggufchat.app/files/models/stories15M-q4_0.gguf","mmprojPath":"/data/data/com.ggufchat.app/files/models/stories15M-q4_0.gguf","createdAt":1700000000000,"updatedAt":1700000000000,"messages":[{"role":"user","content":"oi"}],"nPredict":128,"temperature":0.8,"topP":0.95,"topK":40,"minP":0.05,"repeatPenalty":1.1,"repeatLastN":64,"contextSize":2048,"nThreads":4,"gpuLayers":0,"useMmap":true,"thinking":false,"webSearch":false}
+              {"id":"chat2","title":"CPU","modelPath":"/data/data/com.ggufchat.app/files/models/tiny-llama-022.gguf","mmprojPath":null,"createdAt":1700000000000,"updatedAt":1700000000000,"messages":[{"role":"user","content":"oi"}],"nPredict":64,"temperature":0.8,"topP":0.95,"topK":40,"minP":0.05,"repeatPenalty":1.1,"repeatLastN":64,"contextSize":256,"nThreads":4,"gpuLayers":0,"useMmap":false,"thinking":false,"webSearch":false},
+              {"id":"chat1","title":"Vulkan","modelPath":"/data/data/com.ggufchat.app/files/models/tiny-llama-022.gguf","mmprojPath":null,"createdAt":1700000000000,"updatedAt":1700000000000,"messages":[{"role":"user","content":"oi"}],"nPredict":64,"temperature":0.8,"topP":0.95,"topK":40,"minP":0.05,"repeatPenalty":1.1,"repeatLastN":64,"contextSize":256,"nThreads":4,"gpuLayers":-1,"useMmap":false,"thinking":false,"webSearch":false},
+              {"id":"chat4","title":"mmproj","modelPath":"/data/data/com.ggufchat.app/files/models/tiny-llama-022.gguf","mmprojPath":"/data/data/com.ggufchat.app/files/models/tiny-mmproj-022.gguf","createdAt":1700000000000,"updatedAt":1700000000000,"messages":[{"role":"user","content":"oi"}],"nPredict":64,"temperature":0.8,"topP":0.95,"topK":40,"minP":0.05,"repeatPenalty":1.1,"repeatLastN":64,"contextSize":256,"nThreads":4,"gpuLayers":0,"useMmap":false,"thinking":false,"webSearch":false},
+              {"id":"chat3","title":"inv","modelPath":"/data/data/com.ggufchat.app/files/models/nao_existe.gguf","mmprojPath":null,"createdAt":1700000000000,"updatedAt":1700000000000,"messages":[{"role":"user","content":"oi"}],"nPredict":64,"temperature":0.8,"topP":0.95,"topK":40,"minP":0.05,"repeatPenalty":1.1,"repeatLastN":64,"contextSize":256,"nThreads":4,"gpuLayers":0,"useMmap":false,"thinking":false,"webSearch":false}
             ]
             JSON
             adb push /tmp/chats.json /data/data/com.ggufchat.app/files/chats.json
             adb shell chmod 644 /data/data/com.ggufchat.app/files/chats.json
-            if [ -n "$UID_APP" ]; then
-              adb shell chown $UID_APP:$UID_APP /data/data/com.ggufchat.app/files/models.json /data/data/com.ggufchat.app/files/chats.json 2>/dev/null || true
-            fi
-            # corrige contextos SELinux dos arquivos copiados (necessário para o app conseguir ler)
+            if [ -n "$UID_APP" ]; then adb shell chown $UID_APP:$UID_APP /data/data/com.ggufchat.app/files/chats.json 2>/dev/null || true; fi
             adb shell restorecon -RF /data/data/com.ggufchat.app/ 2>/dev/null || true
 
             echo "=== arquivos seedados ==="
             adb shell ls -la /data/data/com.ggufchat.app/files/ /data/data/com.ggufchat.app/files/models/
 
-            echo "=== TEST 2: abrir chat3 (modelo inexistente) ==="
+            echo "=== TESTE 2: chat3 (modelo inexistente) ==="
             adb logcat -c
+            adb shell am force-stop com.ggufchat.app
             adb shell am start -W -n com.ggufchat.app/.ChatActivity --es chatId chat3
             sleep 12
-            PID=$(adb shell pidof com.ggufchat.app)
-            echo "CHAT3_PID=[$PID]"
-            adb logcat -d -v threadtime | grep -E "FATAL|AndroidRuntime|SIGSEGV|SIGABRT|F DEBUG|DEBUG" -A 30 | head -120
+            PID=$(adb shell pidof com.ggufchat.app); echo "CHAT3_PID=[$PID]"
+            adb logcat -d -v threadtime | grep -E "FATAL|AndroidRuntime|SIGSEGV|SIGABRT|F DEBUG|DEBUG|llama|ggml" -A 30 | head -140
             adb shell am force-stop com.ggufchat.app
 
-            echo "=== TEST 3: abrir chat2 (CPU) ==="
+            echo "=== TESTE 3: chat2 (CPU, gpuLayers=0) ==="
             adb logcat -c
             adb shell am start -W -n com.ggufchat.app/.ChatActivity --es chatId chat2
             sleep 25
-            PID=$(adb shell pidof com.ggufchat.app)
-            echo "CHAT2_PID=[$PID]"
-            adb logcat -d -v threadtime | grep -E "FATAL|AndroidRuntime|SIGSEGV|SIGABRT|F DEBUG|DEBUG|llama|ggml|vulkan|Vulkan" -A 30 | head -160
+            PID=$(adb shell pidof com.ggufchat.app); echo "CHAT2_PID=[$PID]"
+            adb logcat -d -v threadtime | grep -E "FATAL|AndroidRuntime|SIGSEGV|SIGABRT|F DEBUG|DEBUG|llama|ggml|vulkan|Vulkan|aijni" -A 30 | head -180
             adb shell am force-stop com.ggufchat.app
 
-            echo "=== TEST 4: abrir chat1 (Vulkan gpuLayers=-1) ==="
+            echo "=== TESTE 4: chat1 (Vulkan, gpuLayers=-1) ==="
             adb logcat -c
             adb shell am start -W -n com.ggufchat.app/.ChatActivity --es chatId chat1
             sleep 30
-            PID=$(adb shell pidof com.ggufchat.app)
-            echo "CHAT1_PID=[$PID]"
-            adb logcat -d -v threadtime | grep -E "FATAL|AndroidRuntime|SIGSEGV|SIGABRT|F DEBUG|DEBUG|llama|ggml|vulkan|Vulkan" -A 40 | head -200
+            PID=$(adb shell pidof com.ggufchat.app); echo "CHAT1_PID=[$PID]"
+            adb logcat -d -v threadtime | grep -E "FATAL|AndroidRuntime|SIGSEGV|SIGABRT|F DEBUG|DEBUG|llama|ggml|vulkan|Vulkan|aijni" -A 40 | head -220
             adb shell am force-stop com.ggufchat.app
 
-            echo "=== TEST 5: abrir chat4 (modelo + mmproj vinculados) ==="
+            echo "=== TESTE 5: chat4 (modelo + mmproj vinculados) ==="
             adb logcat -c
             adb shell am start -W -n com.ggufchat.app/.ChatActivity --es chatId chat4
             sleep 25
-            PID=$(adb shell pidof com.ggufchat.app)
-            echo "CHAT4_PID=[$PID]"
-            adb logcat -d -v threadtime | grep -E "FATAL|AndroidRuntime|SIGSEGV|SIGABRT|F DEBUG|DEBUG|llama|ggml|mmproj|vulkan|Vulkan" -A 40 | head -200
+            PID=$(adb shell pidof com.ggufchat.app); echo "CHAT4_PID=[$PID]"
+            adb logcat -d -v threadtime | grep -E "FATAL|AndroidRuntime|SIGSEGV|SIGABRT|F DEBUG|DEBUG|llama|ggml|mmproj|clip|vulkan|Vulkan|aijni" -A 40 | head -220
 
             echo "=== DONE ==="
