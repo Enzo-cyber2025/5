@@ -179,6 +179,34 @@ modalities : text
 [ Prompt: 21353.6 t/s | Generation: 1531.4 t/s ]
 ```
 
+### 4.1 Execução desta rodada (reconstrução do zero, ambiente resetado)
+
+O ambiente foi reiniciado (perdeu `/tmp/llamacpp`, keystore, venv, cmake/clang),
+então **tudo foi refeito do zero e executado de verdade** — com o motor
+compilado do **commit exato do APK** (`50f068fff`), pois a rede mudou (pip e
+GitHub funcionam; `dl.google.com`, `huggingface.co`, `deb.debian.org`,
+`conda.anaconda.org`, `gitlab.freedesktop.org` e os hosts de assets do GitHub
+continuam bloqueados):
+
+* **Ferramentas**: `cmake 4.4.3` + `ninja` instalados via pip; 4 GiB de swap.
+* **Build CPU**: 419/419 passos; todos os binários linkados
+  (`llama-completion`, `llama-mtmd-cli`, `llama-tokenize`, …). Só o binário
+  unificado `llama` falhou (faltam `-lllama-server-impl`/`-lllama-cli-impl`).
+* **Inferência de texto (executada)**: GGUF mínimo válido
+  [`host-repro/gen_tiny_llama.py`](host-repro/gen_tiny_llama.py) carrega e gera:
+  `load time = 1.91 ms`, `eval time = 0.72 ms / 23 runs` (exit 0).
+* **Caminho multimodal gguf+mmproj (executado)**: gerado um projetor LLaVA
+  mínimo [`host-repro/gen_mmproj.py`](host-repro/gen_mmproj.py) e rodado
+  `llama-mtmd-cli -m tiny-llama.gguf --mmproj tiny-mmproj.gguf --image ...` —
+  os 16 tensores do encoder de visão + projetor carregam, a imagem é codificada
+  e a saída final é `mtmd batch encoding done` com **exit 0**. Isso é o
+  equivalente, no nível do motor, de "importar um GGUF e um mmproj e rodar".
+* **Crash reproduzido com a lib exata**: [`host-repro/repro_v2.cpp`](host-repro/repro_v2.cpp)
+  linkado contra a `libggml-base.so` recém-compilada do commit do APK —
+  caminho original → `GGML_ASSERT(base != NULL ...) failed` → **SIGABRT**
+  (exit 134); caminho corrigido → buffer CPU alocado, `get_base()=0x7f...`
+  (exit 0).
+
 ## 5. Stack Vulkan compilada do zero (e por que não roda neste host)
 
 Compilados a partir do código-fonte (GitHub, que é acessível):
