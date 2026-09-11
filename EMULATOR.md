@@ -95,3 +95,20 @@ O `adb` real (Linux/x86_64) está em
 - `emu-test.workflow.yml` — workflow pronto; copie para `.github/workflows/emu-test.yml`.
 - `apk-real-host-run/RUN.md` — execução real da camada nativa do APK.
 - `apk-real-host-run/REVIEW.md` — revisão linha a linha do caminho de crash.
+
+## ARM64 (requisito do usuário: o celular é arm64)
+
+O emulador oficial **não** roda guest arm64 em host x86_64 ("PANIC: arm64 not
+supported on x86_64 host"); o QEMU upstream aqui também não tem a máquina
+ranchu/goldfish (só `virt`/`sbsa-ref`). Logo, ARM64 de verdade exige **host
+ARM64** — os runners Apple Silicon do GitHub (`macos-14`) ou um Mac M1/M2/M3 local.
+
+- `.github/emu-test-arm64.sh` — sobe o emulador arm64-v8a (API 30 google_apis),
+  com fallback automático HVF → `-no-accel`, e roda a suite completa
+  (instala APK real, importa GGUF+mmproj, CPU/Vulkan/mmproj/inexistente,
+  logcat + screenshots). Roda local (Mac M-series, rápido) ou no runner.
+- `emu-test-arm64.workflow.yml` — workflow pronto; copie para
+  `.github/workflows/emu-test-arm64.yml` (mesmo bloqueio: permissão `workflows`).
+
+Caminho mais rápido e fiel: rodar `bash .github/emu-test-arm64.sh` num Mac
+Apple Silicon com aceleração HVF.

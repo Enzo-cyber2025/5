@@ -1,0 +1,50 @@
+# =============================================================================
+#  Teste do APK GGUF-Chat num emulador Android ARM64 (Apple Silicon)
+# -----------------------------------------------------------------------------
+#  ⚠️  COMO ATIVAR (o bot do Arena não tem permissão p/ criar workflow):
+#  1) Crie este ARQUIVO (mesmo conteúdo) em:  .github/workflows/emu-test-arm64.yml
+#     (no GitHub: Add file → Create new file → cola este conteúdo).
+#  2) Aba "Actions" → workflow "emu-test-arm64" → "Run workflow" →
+#     branch "arena/01a077ef-5" → Run workflow.
+#
+#  POR QUE arm64 e POR QUE macos-14:
+#   - O celular onde o app crasha é arm64; o emulador oficial NÃO roda guest
+#     arm64 em host x86_64. Host arm64 de verdade = runners Apple Silicon.
+#   - macos-14 (M1) é o runner ARM64 hospedado do GitHub.
+#   - Se HVF (aceleração) não estiver disponível no runner, o script cai para
+#     emulação por software automaticamente (mais lenta).
+#
+#  O script .github/emu-test-arm64.sh também roda LOCAL num Mac M1/M2/M3 com
+#  aceleração total (o caminho mais rápido e fiel).
+# =============================================================================
+name: emu-test-arm64
+
+on:
+  workflow_dispatch:
+
+jobs:
+  arm64:
+    runs-on: macos-14          # Apple Silicon (arm64)
+    timeout-minutes: 90
+    steps:
+      - name: Checkout (APK + modelos tiny na branch arena/01a077ef-5)
+        uses: actions/checkout@v4
+        with:
+          ref: arena/01a077ef-5
+
+      - name: JDK 17 (sdkmanager precisa)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Emulador ARM64 + testes do APK real
+        run: bash .github/emu-test-arm64.sh
+
+      - name: Upload evidências (logcat + screenshots + resumo)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: emu-arm64-evidence
+          path: evidence/
+          if-no-files-found: ignore
