@@ -52,13 +52,15 @@ A tabela de exceção REAL do DEX mostra que ambos capturam `org.json.JSONExcept
 derruba a abertura (vira lista vazia). A hipótese anterior de "crash por JSON sem
 try/catch" estava **errada**.
 
-### 4. `Native.create` IGNORA o mmproj e fixa n_ctx=4096  (bug real de funcionalidade)
+### 4. `Native.create` IGNORA o mmproj; contexto/threads são usados (bug real de funcionalidade)
 Disassembly de `Java_com_ggufchat_app_Native_create`:
 - Chama `g_llama_model_load_from_file(model)`; o `mmprojPath` **não é usado**.
   `libllama.so` do APK não exporta símbolos mtmd/clip (string interna "CLIP is a
   quant-only stub"). → o "multimodal" desta compilação é só de UI; visão não funciona.
-- `llama_new_context_with_model` com n_ctx **fixo 0x1000 (4096)** e n_batch 0x200 (512):
-  o `contextSize` da conversa é ignorado; gpuLayers→n_gpu_layers; threads=4 do arg.
+- Contexto: `n_ctx = (contextSize > 0) ? contextSize : 4096` (o argumento **é**
+  respeitado, com piso de 4096 — `cmovg` no disasm). `n_batch`/`n_ubatch` fixos em
+  512 (0x200). `n_threads = (threads > 0) ? threads : 4` (respeitado, piso 4).
+  gpuLayers → `n_gpu_layers`.
 - `create` **checa NULL** após `llama_model_load_from_file` e retorna 0 com `set_err`:
   modelo inexistente NÃO é SIGSEGV (o EXIT=139 do host run era artefato glibc de
   desenrolar exceção, não do app).
