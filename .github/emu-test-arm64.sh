@@ -42,7 +42,7 @@ fi
 # ---------- 1) SDK + imagem arm64-v8a (pula se já existir) ----------
 if [ ! -x "$SDK_ROOT/emulator/emulator" ] || [ ! -d "$SDK_ROOT/system-images/android-${API}/google_apis/arm64-v8a" ]; then
   log "baixando cmdline-tools..."
-  CTZIP="https://dl.google.com/android/repository/commandlinetools-mac-11076708_latest.zip"
+  CTZIP="https://dl.google.com/android/repository/commandlinetools-mac-8512546_latest.zip"
   curl -sSLo /tmp/ct.zip "$CTZIP" || { log "falha ao baixar cmdline-tools de $CTZIP"; exit 3; }
   unzip -qo /tmp/ct.zip -d /tmp/ct
   mkdir -p "$SDK_ROOT/cmdline-tools/latest"
