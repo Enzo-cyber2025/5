@@ -1,114 +1,86 @@
-# EMULATOR.md — status da execução por emulador (2026-09-11)
+# EMULATOR.md — status da execução por emulador (2026-09-11, atualizado)
 
 ## O que o usuário pediu
-Rodar o **GGUF-Chat.apk real num emulador Android**, importar um GGUF e um
-mmproj, testar tudo e corrigir os bugs. "Roda aonde você quiser, mas TEM QUE
-RODAR."
+Rodar o **GGUF-Chat.apk real** num emulador Android, importar um GGUF + mmproj, testar
+tudo e corrigir os bugs. "Roda aonde você quiser, mas TEM QUE RODAR."
 
-## O que foi feito nesta rodada (real, não análise)
+## Estado ATUAL: emulador ARM64 real está a 1 download de distância
 
-1. **Montei um emulador do zero neste sandbox.** O sandbox não tem KVM, Java,
-   QEMU, Docker nem adb, e só alcança GitHub + PyPI + npm na rede. Então:
-   - peguei o QEMU de sistema empacotado em npm (`qemu-portable-linux-x64-musl`);
-   - o binário pede `libc.musl` + `ld-musl`; **compilei o musl do zero** (clone
-     de um mirror no GitHub, `make` sem dependências);
-   - resultado: `qemu-system-x86_64 --version` → **`QEMU emulator version 11.0.2`** ✔
-     (emulador de máquina completo, com TCG/software, funcionando).
-2. **Encontrei o `adb` real do Android SDK num repo git**
-   (`aosp-mirror-neo/platform_prebuilts_android-emulator-build_system-images`,
-   arquivo `linux/platform-tools/adb` + libs) — dá para extrair o cliente adb
-   sem Google.
-3. **Preparei o teste de emulador completo** em `.github/emu-test.sh`
-   (boot → instala o APK REAL → importa `tiny-llama-022.gguf` + `tiny-mmproj-022.gguf`
-   → abre conversa → gera via `Native.create/tokenize/generate` → coleta
-   logcat + screenshots). E o workflow correspondente está no repo como
-   `emu-test.workflow.yml`.
+Nesta rodada, o que mudou:
 
-## Por que ainda não rodou DENTRO do Android (bloqueio exato)
+1. **QEMU 11.0.2 funcionando** (`qemu-portable-linux-x64-musl` via npm). Executar com o
+   loader musl do próprio pacote (sem precisar recompilar):
+   ```bash
+   Q=/tmp/npmqemu/package
+   LD_LIBRARY_PATH=$Q/lib $Q/lib/libc.musl-x86_64.so.1 $Q/bin/qemu-system-aarch64 --version
+   # → QEMU emulator version 11.0.2   (accel disponível: tcg)
+   ```
+   O firmware UEFI **já vem no pacote**: `$Q/share/qemu/edk2-aarch64-code.fd`.
 
-Falta **uma única peça**: uma imagem Android bootável (kernel + ramdisk +
-system.img). Ela é distribuída **só** em hosts que este sandbox NÃO alcança:
+2. **Imagem ARM64 compatível com este QEMU encontrada**: o projeto
+   `jqssun/android-lineage-qemu` publica **LineageOS 23.2 (Android 15) arm64 que roda
+   com `qemu-system-aarch64 -machine virt`** (não precisa da máquina ranchu do emulador
+   oficial). O comando de boot TCG está no README do projeto:
+   ```bash
+   qemu-system-aarch64 -machine virt -cpu max,pauth-impdef=on \
+     -accel tcg,tb-size=1024,thread=multi -m 2048 \
+     -device virtio-blk-pci,drive=vda,bootindex=0 \
+     -device virtio-blk-pci,drive=vdb,bootindex=1 \
+     -drive if=pflash,unit=1,file=<utm>/Data/efi_vars.fd \
+     -drive if=pflash,unit=0,file=$Q/share/qemu/edk2-aarch64-code.fd,format=raw,readonly=on \
+     -drive file=<utm>/Data/vda.qcow2,if=none,id=vda \
+     -drive file=<utm>/Data/vdb.qcow2,if=none,id=vdb \
+     -device virtio-gpu-pci -display none \
+     -device virtio-net-pci,netdev=net0 -netdev user,id=net0,hostfwd=tcp:0.0.0.0:5555-:5555 \
+     -device virtio-serial -device virtio-rng-pci
+   ```
+   ADB depois do boot: `adb connect 127.0.0.1:5555`.
 
-| fonte da imagem | resultado |
-|---|---|
-| `dl.google.com` (system-images do SDK) | `000` (bloqueado) |
-| `sourceforge.net` / `osdn.net` (android-x86 ISO) | `000` |
-| `android-x86.org` / `storage.googleapis.com` | `000` |
-| GitHub Releases / LFS (`objects.githubusercontent.com`, `media.githubusercontent.com`) | `000` |
-| apt (debian/ubuntu), ghcr.io, musl.libc.org, jsdelivr, crates.io… | `000` |
+3. **O único bloqueio é o download da imagem** (1,1 GB). A imagem está em **release
+   asset** do GitHub, servida por `objects.githubusercontent.com`. Mapa de rede deste
+   sandbox (verificado por curl):
 
-A rede só deixa passar **git do github.com, PyPI e npm** — e não existe imagem
-Android bootável dentro desses três (confirmei por busca na API do GitHub, no
-npm e no PyPI).
+   | host | resultado |
+   |---|---|
+   | `github.com` (git), `api.github.com`, `codeload.github.com` | ✅ 200 |
+   | `registry.npmjs.org`, `pypi.org` | ✅ 200 |
+   | `objects.githubusercontent.com` / `media.githubusercontent.com` (release/LFS) | ❌ 000 (TCP bloqueado por IP, não por DNS) |
+   | `dl.google.com`, `google.com`, `maven.google.com`, `repo1.maven.org`, `huggingface.co`, `gitlab.com`, `archive.ubuntu.com`, `deb.debian.org`, `hub.docker.com`, `ghcr.io`, `gcr.io`, `raw.githubusercontent.com`, `jsdelivr`, `unpkg` | ❌ 000 |
 
-E o caminho óbvio — **GitHub Actions** (que baixa a imagem com internet plena e
-roda o emulador com KVM no runner) — está bloqueado porque a conexão GitHub
-deste ambiente **não tem a permissão `workflows`**:
+   **Não existe imagem Android bootável em git/npm/PyPI** (verificado: o mirror
+   `aosp-mirror-neo/platform_prebuilts_android-emulator-build_system-images` só tem
+   SDK tools — adb, android.jar, cmdline-tools — sem `system.img`/kernel/ramdisk).
 
+## Bloqueio do GitHub Actions (não muda)
+
+O push de `.github/workflows/*.yml` é **rejeitado pelo GitHub**:
 ```
-! [remote rejected] arena/01a077ef-5 -> arena/01a077ef-5
-(refusing to allow a GitHub App to create or update workflow
+! [remote rejected] ... (refusing to allow a GitHub App to create or update workflow
  `.github/workflows/emu-test.yml` without `workflows` permission)
 ```
+O token desta sessão não tem escopo `workflows` nem `actions` (403 na API). Por isso
+o caminho "runner com internet plena + KVM" não dispara sozinho.
 
-## O que destrava AGORA (1 passo, com você)
+## O que destrava AGORA (qualquer uma)
 
-**Reconecte o GitHub aqui no Arena concedendo a permissão `workflows`**
-(ou, no repo, crie o arquivo `.github/workflows/emu-test.yml` colando o
-conteúdo de `emu-test.workflow.yml`). Com isso o workflow `emu-test` roda
-sozinho: sobe o emulador Android x86_64 (API 30) com KVM, instala o APK real,
-importa GGUF+mmproj, testa (launch / CPU / Vulkan / multimodal / caminho
-inválido) e anexa o logcat + screenshots como artefato.
+1. **Reconectar o GitHub no Arena concedendo a permissão `workflows`** → o workflow
+   `emu-test-arm64` roda no runner `macos-14` (host ARM64, HVF) e faz tudo sozinho.
+2. **Liberar `objects.githubusercontent.com` na rede** → rodo aqui mesmo: baixo o
+   `UTM-VM-lineage-*.zip` (arm64), extraio `vda/vdb.qcow2` e booto com o QEMU local
+   (comando acima), conecto adb e executo a suite completa.
+3. Qualquer dispositivo/emulador Android que o usuário conecte (adb) — eu assumo o
+   resto (instala APK, importa GGUF+mmproj, testa CPU/Vulkan/multimodal/inexistente,
+   coleta logcat + screenshots e corrijo).
 
-Enquanto isso, a execução REAL que foi possível fazer aqui — a camada nativa
-**do APK real** rodando por completo no host (`JNI_OnLoad → create → tokenize →
-generate → destroy`, `EXIT=0`) — está documentada em `apk-real-host-run/RUN.md`,
-com os dois bugs de execução já identificados (backend Vulkan e o caminho mmap
-de `llama_mmap`, ambos no contexto bionic×glibc) e os bugs Java do app
-(`Native.create` ignora o mmproj; `models.json`/`chats.json` sem try/catch →
-crash de abertura se o JSON ficar corrompido).
+## Scripts prontos
+- `.github/emu-qemu-arm64.sh` — boot do LineageOS arm64 no QEMU local (TCG) + suite.
+- `.github/emu-test-arm64.sh` — emulador oficial arm64-v8a (runner macOS-14, HVF).
+- `.github/emu-test.sh` — emulador oficial x86_64 (KVM).
+- `emu-test-arm64.workflow.yml` / `emu-test.workflow.yml` — workflows prontos (bloqueio:
+  permissão `workflows`).
 
-## Reproduzir o emulador (QEMU) do zero neste ambiente
-
-```bash
-# 1) QEMU de sistema via npm (binário musl)
-cd /tmp && npm pack qemu-portable-linux-x64-musl && tar xzf qemu-portable-linux-x64-musl-*.tgz
-
-# 2) libc musl (o binário pede libc.musl + ld-musl) — compilar do fonte
-git clone --depth 1 https://github.com/ifduyue/musl /tmp/musl
-cd /tmp/musl && ./configure --prefix=/tmp/musl-install && make -j2 && make install
-cp /tmp/musl-install/lib/libc.so /tmp/npmqemu/package/lib/libc.musl-x86_64.so.1
-cp /tmp/musl-install/lib/libc.so /tmp/ld-musl-x86_64.so.1
-
-# 3) rodar
-LD_LIBRARY_PATH=/tmp/npmqemu/package/lib \
-  /tmp/ld-musl-x86_64.so.1 /tmp/npmqemu/package/bin/qemu-system-x86_64 --version
-# → QEMU emulator version 11.0.2
-```
-
-O `adb` real (Linux/x86_64) está em
-`aosp-mirror-neo/platform_prebuilts_android-emulator-build_system-images` →
-`linux/platform-tools/adb` (+ `lib64/`).
-
-## Arquivos
-- `.github/emu-test.sh` — teste de emulador completo (pronto para rodar).
-- `emu-test.workflow.yml` — workflow pronto; copie para `.github/workflows/emu-test.yml`.
-- `apk-real-host-run/RUN.md` — execução real da camada nativa do APK.
-- `apk-real-host-run/REVIEW.md` — revisão linha a linha do caminho de crash.
-
-## ARM64 (requisito do usuário: o celular é arm64)
-
-O emulador oficial **não** roda guest arm64 em host x86_64 ("PANIC: arm64 not
-supported on x86_64 host"); o QEMU upstream aqui também não tem a máquina
-ranchu/goldfish (só `virt`/`sbsa-ref`). Logo, ARM64 de verdade exige **host
-ARM64** — os runners Apple Silicon do GitHub (`macos-14`) ou um Mac M1/M2/M3 local.
-
-- `.github/emu-test-arm64.sh` — sobe o emulador arm64-v8a (API 30 google_apis),
-  com fallback automático HVF → `-no-accel`, e roda a suite completa
-  (instala APK real, importa GGUF+mmproj, CPU/Vulkan/mmproj/inexistente,
-  logcat + screenshots). Roda local (Mac M-series, rápido) ou no runner.
-- `emu-test-arm64.workflow.yml` — workflow pronto; copie para
-  `.github/workflows/emu-test-arm64.yml` (mesmo bloqueio: permissão `workflows`).
-
-Caminho mais rápido e fiel: rodar `bash .github/emu-test-arm64.sh` num Mac
-Apple Silicon com aceleração HVF.
+## Execução REAL já concluída (enquanto o emulador não sai)
+- `apk-real-host-run/RUN.md` — camada nativa REAL do APK (JNI_OnLoad → create → tokenize
+  → generate → destroy) rodando no host, `EXIT=0` (CPU e fallback Vulkan→CPU).
+- `apk-real-host-run/REVIEW.md` — revisão do caminho de abertura/crash (bytecode real):
+  o Java de abertura não crasha; o único ponto de morte é o load nativo do modelo.
