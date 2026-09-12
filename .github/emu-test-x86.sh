@@ -65,6 +65,7 @@ export PATH="$SDK_ROOT/emulator:$SDK_ROOT/platform-tools:$SDK_ROOT/cmdline-tools
 # que realmente será instalado e testado pela UI.
 # =============================================================================
 log "reconstruindo GGUF-Chat-fixed.apk com todas as correções..."
+set -o pipefail
 if bash apk-fix/rebuild_on_runner.sh 2>&1 | tee -a evidence/00_boot.log; then
   log "rebuild OK"; ls -l GGUF-Chat-fixed.apk | tee -a evidence/00_boot.log
 else

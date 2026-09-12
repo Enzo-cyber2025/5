@@ -18,11 +18,22 @@
 # =============================================================================
 set -euo pipefail
 
-export ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}"
-BT="$(ls -d "$ANDROID_SDK_ROOT"/build-tools/* 2>/dev/null | sort -V | tail -1)"
+# Localiza build-tools (apksigner/zipalign). O passo "Build APK corrigido" do
+# workflow usa o SDK pré-instalado do runner (/usr/local/lib/android/sdk);
+# este script pode rodar com ANDROID_SDK_ROOT apontando para outro SDK (ex.:
+# $HOME/android-sdk baixado pelo emu-test-x86.sh), então procuramos em vários.
+BT=""
+for s in /usr/local/lib/android/sdk "${ANDROID_HOME:-}" "${ANDROID_SDK_ROOT:-}" "$HOME/android-sdk"; do
+  [ -n "$s" ] || continue
+  c="$(ls -d "$s"/build-tools/* 2>/dev/null | sort -V | tail -1)" || c=""
+  if [ -n "$c" ] && [ -x "$c/apksigner" ]; then
+    BT="$c"
+    break
+  fi
+done
 if [ -z "$BT" ] || [ ! -x "$BT/apksigner" ]; then
-  yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" "build-tools;34.0.0" >/dev/null 2>&1 || true
-  BT="$(ls -d "$ANDROID_SDK_ROOT"/build-tools/* 2>/dev/null | sort -V | tail -1)"
+  echo "ERRO: apksigner/zipalign não encontrados em nenhum SDK" >&2
+  exit 1
 fi
 echo "build-tools: $BT"
 
