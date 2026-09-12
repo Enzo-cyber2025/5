@@ -86,6 +86,22 @@ adb shell settings put global window_animation_scale 0 || true
 adb shell settings put global transition_animation_scale 0 || true
 adb shell settings put global animator_duration_scale 0 || true
 
+# ---------- SWAP (pedido: "usa swap") ----------
+# Habilita/expande zram e, se falhar, cria um swapfile, para a importação/carga
+# de modelos grandes não esbarrar em memória.
+log "configurando swap"
+adb shell 'if [ -e /sys/block/zram0/disksize ]; then
+    swapoff /dev/block/zram0 2>/dev/null
+    echo 2G > /sys/block/zram0/disksize 2>/dev/null
+    mkswap /dev/block/zram0 2>/dev/null && swapon /dev/block/zram0 2>/dev/null
+  fi
+  if ! grep -q swap /proc/swaps 2>/dev/null; then
+    dd if=/dev/zero of=/data/local/tmp/swapfile bs=1M count=1024 2>/dev/null
+    mkswap /data/local/tmp/swapfile 2>/dev/null && swapon /data/local/tmp/swapfile 2>/dev/null
+  fi'
+adb shell 'cat /proc/swaps; echo "--- mem ---"; cat /proc/meminfo | head -3' > evidence/00_swap.txt 2>&1 || true
+log "swap: $(tr '\n' ' ' < evidence/00_swap.txt 2>/dev/null | head -c 200)"
+
 # ---------- instala o APK REAL ----------
 log "instalando APK"
 adb install -r -g GGUF-Chat.apk || adb install -r GGUF-Chat.apk
@@ -148,10 +164,12 @@ adb shell cp /data/local/tmp/tiny-llama-022.gguf  /data/data/com.ggufchat.app/fi
 adb shell cp /data/local/tmp/tiny-mmproj-022.gguf /data/data/com.ggufchat.app/files/models/ || true
 cat > /tmp/models.json <<'JSON'
 [
- {"id":"a1","name":"tiny-llama-022","architecture":"llama","path":"/data/user/0/com.ggufchat.app/files/models/tiny-llama-022.gguf","size":117152,"importedAt":1750000000000,"fileName":"tiny-llama-022.gguf","mmprojPath":null,"multimodal":false},
- {"id":"a2","name":"tiny-mmproj-022","architecture":"clip","path":"/data/user/0/com.ggufchat.app/files/models/tiny-mmproj-022.gguf","size":320,"importedAt":1750000000001,"fileName":"tiny-mmproj-022.gguf","mmprojPath":null,"multimodal":false}
+ {"id":"a1","name":"tiny-llama-022","architecture":"llava","path":"/data/user/0/com.ggufchat.app/files/models/tiny-llama-022.gguf","size":114976,"importedAt":1750000000000,"fileName":"tiny-llama-022.gguf","mmprojPath":null,"multimodal":false},
+ {"id":"a2","name":"tiny-mmproj-022","architecture":"clip","path":"/data/user/0/com.ggufchat.app/files/models/tiny-mmproj-022.gguf","size":64608,"importedAt":1750000000001,"fileName":"tiny-mmproj-022.gguf","mmprojPath":null,"multimodal":false}
 ]
 JSON
+# nota: architecture "llava" (só no metadata p/ a UI) faz isVisionModel()=true e
+# dispara a FUSÃO real (findMmprojFor -> mergeAndCreate) ao abrir a conversa.
 adb push /tmp/models.json /data/local/tmp/ >/dev/null
 adb shell cp /data/local/tmp/models.json /data/data/com.ggufchat.app/files/models.json || true
 if [ -n "$APPUID" ]; then
@@ -183,10 +201,31 @@ cat evidence/12_list.txt
 # ---------- abrir conversa e GERAR ----------
 tap_text "Chat" || true
 sleep 2
-tap_text "Nova conversa" || log "botão Nova conversa não encontrado"
+tap_text "+ Nova conversa" || log "botão + Nova conversa não encontrado"
 sleep 3; shot 13_picker.png
 tap_text "tiny-llama-022" || log "modelo no picker não encontrado"
 sleep 5; shot 14_chat.png
+
+# ---------- verificação da FUSÃO (mmproj vinculado ao modelo principal) ----------
+# Ao escolher o modelo (finishNewChat), o app deve ter rodado findMmprojFor ->
+# mergeAndCreate: ModelInfo.mmprojPath aponta para o mmproj e multimodal=true.
+log "verificando fusão modelo+mmproj"
+adb shell cat /data/data/com.ggufchat.app/files/models.json > evidence/20_fusion.json 2>/dev/null || true
+python3 - evidence/20_fusion.json <<'PY'
+import sys, json
+try:
+    d = json.load(open(sys.argv[1]))
+except Exception as e:
+    print("FUSION_JSON_ERR", e); raise SystemExit(0)
+for m in d:
+    if m.get("architecture","").lower() == "llava":
+        mm = m.get("mmprojPath")
+        multi = m.get("multimodal")
+        if mm and multi:
+            print("FUSION_OK mmprojPath=%s multimodal=%s" % (mm, multi))
+        else:
+            print("FUSION_FAIL mmprojPath=%r multimodal=%r" % (mm, multi))
+PY
 adb logcat -d > evidence/15_logcat_open.txt
 grep -E "GGUFChatNative|llama_model_loader|model loaded|llama_context|backend" evidence/15_logcat_open.txt > evidence/16_native_create.txt || true
 head -40 evidence/16_native_create.txt
@@ -224,8 +263,10 @@ log "linhas nativas:"; cat evidence/19_native_lines.txt | head -60
 {
   echo "boot=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')"
   echo "pid=$(adb shell pidof com.ggufchat.app | tr -d '\r')"
+  echo "--- swap ---"; cat evidence/00_swap.txt 2>/dev/null
   echo "--- launch ---"; cat evidence/01_launch.txt 2>/dev/null
   echo "--- lista ---"; cat evidence/12_list.txt 2>/dev/null
+  echo "--- fusao ---"; cat evidence/20_fusion.json 2>/dev/null
   echo "--- native ---"; cat evidence/19_native_lines.txt 2>/dev/null | head -60
 } | tee evidence/99_summary.txt
 

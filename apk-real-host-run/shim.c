@@ -34,6 +34,28 @@ void _Unwind_SetIP(void *c, unsigned long v){ void(*f)(void*,unsigned long)=(voi
 
 #include <stdarg.h>
 
+/* --- sysconf: remapeia constantes _SC_ do bionic para glibc ---
+ *
+ * O APK é compilado para Android/bionic (bionic: _SC_PAGESIZE=39,
+ * _SC_PAGE_SIZE=40; glibc/musl: 30). Sem isso, sysconf(39) retorna lixo e o
+ * llama.cpp falha GGML_ASSERT(last % page_size == 0) em
+ * llama_mmap::unmap_fragment -> abort(). Correção da causa-raiz do crash. */
+long sysconf(int name){
+    static long (*real_sysconf)(int) = NULL;
+    if (!real_sysconf) real_sysconf = (long (*)(int))dlsym(RTLD_NEXT, "sysconf");
+    switch (name) {
+        case 39: case 40:                 /* bionic _SC_PAGESIZE / _SC_PAGE_SIZE */
+            return real_sysconf ? real_sysconf(30) : 4096;
+        case 37: return real_sysconf ? real_sysconf(87) : -1; /* _SC_ATEXIT_MAX */
+        case 38: return real_sysconf ? real_sysconf(60) : -1; /* _SC_IOV_MAX    */
+        case 96: return real_sysconf ? real_sysconf(83) : -1; /* _SC_NPROC_CONF */
+        case 97: return real_sysconf ? real_sysconf(84) : -1; /* _SC_NPROC_ONLN */
+        case 98: return real_sysconf ? real_sysconf(85) : -1; /* _SC_PHYS_PAGES */
+        case 99: return real_sysconf ? real_sysconf(86) : -1; /* _SC_AVPHYS_PAG */
+        default: return real_sysconf ? real_sysconf(name) : -1;
+    }
+}
+
 /* --- bionic __android_log_print (usado pelo libaijni.so real) --- */
 int __android_log_print(int prio, const char *tag, const char *fmt, ...){
     (void)prio;

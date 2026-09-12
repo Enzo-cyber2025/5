@@ -68,9 +68,9 @@ else
 fi
 
 # ---------- 4) boot em background ----------
-log "iniciando emulador arm64..."
+log "iniciando emulador arm64... (RAM 4G + cores 4; swap/zram configurado dentro do guest)"
 nohup emulator -avd "$AVD" -no-window -gpu swiftshader_indirect -no-snapshot \
-  -noaudio -no-boot-anim $ACCEL >/tmp/emu-arm64.log 2>&1 &
+  -noaudio -no-boot-anim -memory 4096 -cores 4 $ACCEL >/tmp/emu-arm64.log 2>&1 &
 
 adb wait-for-device
 log "device conectado; esperando boot_completed (pode demorar em software)..."
