@@ -1,49 +1,59 @@
-# Correção do bug de persistência da fusão (ModelInfo.fromJson)
+# Correções de bytecode do GGUF-Chat.apk
 
-## O bug
-`ModelInfo.fromJson()` tinha o desvio do `mmprojPath` **invertido**
-(`if-nez` no lugar de `if-eqz`), então qualquer path válido virava `null` ao
-recarregar `models.json` — a fusão modelo+mmproj não sobrevivia ao reload.
+Dois bugs no `classes.dex` do APK original, corrigidos por patch de bytes
+(offsets absolutos, verificados com asserção de bytes antes de gravar):
+
+## 1) Fusão não persistia — `ModelInfo.fromJson`
+O desvio do campo `mmprojPath` estava **invertido** (`if-nez` no lugar de
+`if-eqz`), então qualquer path válido virava `null` ao recarregar `models.json`
+— a fusão modelo+mmproj não sobrevivia ao reload.
 Detalhes: [`../BUG-FUSAO-MODELINFO-FROMJSON.md`](../BUG-FUSAO-MODELINFO-FROMJSON.md).
 
-## A correção
-Troca de **1 byte** no `classes.dex` (opcode `0x39` → `0x38` no offset `0x11C28`),
-sem alterar assinaturas de métodos nem recursos.
+```
+offset 0x11C28:  0x39 (if-nez)  →  0x38 (if-eqz)
+```
+
+## 2) Crash no launch — `MainActivity.showMmprojPicker` (VerifyError)
+O ART rejeitava a classe na inicialização:
 
 ```
-ModelInfo.fromJson:  if-nez v2, +004h  →  if-eqz v2, +004h
+java.lang.VerifyError: Verifier rejected class com.ggufchat.app.MainActivity:
+void ...showMmprojPicker(ModelInfo, ArrayList) failed to verify:
+[0x58] register v1 has type Integer but expected Float
 ```
+
+Causa: `Ui.dp(Context;F)I` era chamado com registrador **int** — o compilador
+reusou `v1`/`v6` depois de `move-result` (que passa a guardar int). Os dois
+`invoke-static` redundantes foram substituídos por `move`, mantendo exatamente
+os mesmos valores de padding:
+
+```java
+row.setPadding(dp(14), dp(10), dp(14), dp(10));
+```
+
+```
+offset 0x11190 (16 bytes):
+  71 20 42 02 1b 00 0a 07   invoke-static {v1,v11}, Ui.dp ; move-result v7
+  71 20 42 02 6b 00 0a 08   invoke-static {v6,v11}, Ui.dp ; move-result v8
+  ↓
+  01 17 00 00 00 00         move v7, v1   ; right = left  (dp(14))
+  01 68 00 00 00 00         move v8, v6   ; bottom = top (dp(10))
+  00 00 00 00               nop (mantém o tamanho do método intacto)
+```
+
+O tamanho do método não muda, então os desvios de `goto`/`if` continuam válidos.
 
 ## Arquivos
-- `patch_fusion_bug.py` — aplica o patch no `classes.dex` (idempotente, recalcula
-  checksum/signature do header dex).
-- `rebuild_and_sign.py` — reconstrói o APK (troca `classes.dex`, remove assinatura
-  antiga) e assina **v1 (JAR, via `jarsigner`) + v2 (APK Signature Scheme v2,
-  implementado em Python)**.
-- `key.p12` / `key.pem` / `cert.pem` — chave de teste RSA-2048 auto-assinada
-  (CN=GGUF-Chat Fix). **É uma chave descartável de teste**, sem identidade real.
-  Gerada por `keytool`; o script regenera se ausente.
+- `patch_dex.py` — aplica **os dois patches** no `classes.dex` (com asserção dos
+  bytes originais; recalcula checksum/signature do header dex). É o que o CI usa
+  (embutido no workflow `emu-test-arm64.yml`).
+- `patch_fusion_bug.py` — versão antiga, só o patch 1 (mantida por histórico).
+- `rebuild_and_sign.py` — reconstrói o APK e assina v1+v2 em Python. **Não é mais
+  usado pelo CI** (o runner usa o `apksigner` oficial do SDK, mais confiável).
 
-## Como usar
-```bash
-# 1) corrige o dex
-python3 apk-fix/patch_fusion_bug.py GGUF-Chat.apk /tmp/classes-fixed.dex
-
-# 2) reconstrói + assina v1/v2
-python3 apk-fix/rebuild_and_sign.py GGUF-Chat.apk /tmp/classes-fixed.dex GGUF-Chat-fixed.apk
-```
-
-## Validação feita
-1. **Round-trip** (bytecode real em JDK 8): `toJson()` grava
-   `"mmprojPath":"/.../tiny-mmproj.gguf"` e `fromJson()` devolve o **mesmo path**
-   (antes devolvia `null`).
-2. **Fluxo completo** (import→fuse→save→reload): a fusão **persiste**
-   (`FUSAO: tiny-llama mmprojPath=/tmp/appdata/models/tiny-mmproj.gguf multimodal=true`).
-3. **Formato v2**: o parser/escritor foi validado byte a byte contra o bloco v2 do
-   APK original (assinatura RSA verificada com o certificado embutido
-   `CN=GGUF Chat,O=ggufchat,C=BR`).
-
-## Ainda pendente
-- Teste **pela UI num emulador** (o sandbox não tem imagem Android 7+ acessível e
-  o token do GitHub App não tem permissão `workflows` para disparar o runner arm64).
-  No runner, re-assinar com o `apksigner` oficial do SDK é trivial se necessário.
+## Validação do patch 2 (showMmprojPicker)
+- Verificador de tipos local (dataflow int/float/ref estilo ART) sobre o
+  `classes.dex` original: reporta **exatamente** os 2 erros em code-unit `0x58`
+  e `0x5c` — idêntico à mensagem do ART — e nada mais no dex inteiro.
+- Sobre o dex corrigido: **0 erros** e 0 registradores indefinidos.
+- A validação de verdade é o emulador no CI (launch + importação via UI).

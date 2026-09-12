@@ -55,6 +55,22 @@ export ANDROID_HOME="$SDK_ROOT"
 export ANDROID_SDK_ROOT="$SDK_ROOT"
 export PATH="$SDK_ROOT/emulator:$SDK_ROOT/platform-tools:$SDK_ROOT/cmdline-tools/latest/bin:$PATH"
 
+# =============================================================================
+# 1.5) REBUILD do APK com TODAS as correções (fusão + showMmprojPicker)
+# -----------------------------------------------------------------------------
+# O passo "Build APK corrigido" do workflow só aplica a correção de fusão
+# (o workflow não pode ser editado por falta da permissão `workflows` do token
+# do Arena). Aqui re-aplicamos o patch COMPLETO (fusão + VerifyError do
+# showMmprojPicker) e re-assinamos com o apksigner oficial, garantindo o APK
+# que realmente será instalado e testado pela UI.
+# =============================================================================
+log "reconstruindo GGUF-Chat-fixed.apk com todas as correções..."
+if bash apk-fix/rebuild_on_runner.sh 2>&1 | tee -a evidence/00_boot.log; then
+  log "rebuild OK"; ls -l GGUF-Chat-fixed.apk | tee -a evidence/00_boot.log
+else
+  log "FALHA no rebuild do APK (abortando)"; exit 5
+fi
+
 # mata qualquer adb server antigo (evita conflito de smartsocket)
 adb kill-server >/dev/null 2>&1 || true
 adb start-server >/dev/null 2>&1 || true
