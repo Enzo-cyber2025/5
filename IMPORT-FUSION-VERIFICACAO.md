@@ -68,6 +68,13 @@ handle por (path, mmproj) e recarrega/destrói quando muda.
   + múltiplos mmprojs pode parear errado (é o fluxo automático; o seletor
   manual `showMmprojPicker` cobre o caso).
 
+> ⚠️ **ATUALIZAÇÃO (execução real do bytecode + nativo, 2026-09-12):**
+> encontrado **bug real de persistência** em `ModelInfo.fromJson()` — o guard do
+> `mmprojPath` está **invertido**, então a fusão é gravada em `models.json`
+> (`toJson`) mas **anulada ao recarregar** (`fromJson` devolve `null` para
+> qualquer path válido). Detalhes, prova empírica e bytecode:
+> ver [`BUG-FUSAO-MODELINFO-FROMJSON.md`](BUG-FUSAO-MODELINFO-FROMJSON.md).
+
 ## Bloqueio do teste PELA UI (emulador) — estado em 2026-09-12
 1. **Host x86_64 sem KVM** + imagem Android **arm64** só existe nos hosts
    bloqueados pela rede (`dl.google.com`, `ci.android.com`,
