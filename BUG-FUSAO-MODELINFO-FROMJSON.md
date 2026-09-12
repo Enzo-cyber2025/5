@@ -145,7 +145,7 @@ no disassembly do `libaijni.so`/`libllama.so` mostrou que **não é bug do APK**
 
 ---
 
-## 6. Correção sugerida
+## 6. Correção
 
 Trocar, no `ModelInfo.fromJson`, o desvio `if-nez` pelo `if-eqz` (ou seja,
 só anular quando `equals("null")` for verdadeiro), ficando:
@@ -157,3 +157,8 @@ info.mmprojPath = p;
 ```
 
 Isso faz o `mmprojPath` persistir e a fusão sobreviver ao reload.
+
+> ✅ **APLICADA.** A correção foi feita direto no `classes.dex` (1 byte:
+> opcode `0x39`→`0x38` em `0x11C28`), validada com round-trip e fluxo completo
+> (a fusão agora persiste), e o APK foi reconstruído e re-assinado (v1+v2) em
+> `GGUF-Chat-fixed.apk`. Scripts em [`apk-fix/`](apk-fix/README.md).
