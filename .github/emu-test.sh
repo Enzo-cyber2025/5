@@ -1,7 +1,18 @@
 #!/usr/bin/env bash
-# Testa o APK REAL (GGUF-Chat.apk) num emulador Android x86_64 (API 30, google_apis).
-# Fluxo: boot -> instala -> importa um GGUF + um mmproj -> abre o app -> cria
-# conversa -> gera (Native.create/tokenize/generate reais) -> coleta evidência.
+# =============================================================================
+#  Suite completa do APK REAL GGUF-Chat-fixed.apk num emulador Android ARM64.
+#  Executado por .github/emu-test-arm64.sh (runner macos-14, Apple Silicon).
+#
+#  Fluxo verificado contra o bytecode REAL do APK:
+#   1) boot + swap + instala o APK CORRIGIDO (GGUF-Chat-fixed.apk)
+#   2) importa pela UI gráfica (SAF) um modelo de visão (llava) + um mmproj (clip)
+#      -> linkMmprojs() funde automaticamente: mmprojPath + multimodal=true
+#   3) verifica a FUSÃO em models.json E que ela PERSISTE após force-stop+relaunch
+#      (regressão do bug ModelInfo.fromJson mmprojPath, corrigido no dex)
+#   4) gera texto com um LM real (SmolLM2-135M baixado, senão fallback tiny)
+#      nos backends CPU e Vulkan (SwiftShader) -> evidência em logcat
+#   5) modelo inexistente -> erro tratado, sem crash
+# =============================================================================
 set -u
 mkdir -p evidence
 
@@ -10,7 +21,6 @@ log() { echo "[emu-test] $*"; }
 # ---------- helpers de UI ----------
 dump_ui() { adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1; adb pull /sdcard/ui.xml /tmp/ui.xml >/dev/null 2>&1; }
 
-# centro do nó cujo text CONTÉM $1 (case-insensitive)
 find_text() {
   python3 - "$1" <<'PY'
 import sys, re, xml.etree.ElementTree as ET
@@ -30,7 +40,6 @@ sys.exit(1)
 PY
 }
 
-# centro do nó cujo content-desc CONTÉM $1
 find_desc() {
   python3 - "$1" <<'PY'
 import sys, re, xml.etree.ElementTree as ET
@@ -51,26 +60,44 @@ PY
 }
 
 tap_text() {
-  local tries
-  for tries in 1 2 3 4 5; do
+  local tries c
+  for tries in 1 2 3 4 5 6; do
     dump_ui
-    local c; c=$(find_text "$1") && { adb shell input tap $c; return 0; }
+    c=$(find_text "$1") && { adb shell input tap $c; return 0; }
     sleep 2
   done
   return 1
 }
 
 tap_desc() {
-  local tries
-  for tries in 1 2 3 4 5; do
+  local tries c
+  for tries in 1 2 3 4 5 6; do
     dump_ui
-    local c; c=$(find_desc "$1") && { adb shell input tap $c; return 0; }
+    c=$(find_desc "$1") && { adb shell input tap $c; return 0; }
     sleep 2
   done
   return 1
 }
 
 shot() { adb exec-out screencap -p > "evidence/$1" 2>/dev/null || true; }
+
+# seleciona um arquivo no SAF picker (OpenDocument). O picker do DocumentsUI
+# mostra "Recent" no topo; usa "Show roots" -> "Downloads" quando preciso.
+pick_file() {
+  local name="$1" tries
+  for tries in 1 2 3 4 5; do
+    dump_ui
+    if find_text "$name" >/dev/null 2>&1; then
+      tap_text "$name" && return 0
+    fi
+    tap_desc "Show roots" && sleep 2 && tap_text "Downloads" && sleep 2
+    if find_text "$name" >/dev/null 2>&1; then
+      tap_text "$name" && return 0
+    fi
+    sleep 3
+  done
+  return 1
+}
 
 # ---------- boot ----------
 adb wait-for-device
@@ -80,15 +107,15 @@ for i in $(seq 1 120); do
   sleep 5
 done
 log "boot_completed=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')"
+adb shell getprop ro.product.cpu.abi  > evidence/00_abi.txt 2>/dev/null || true
+adb shell getprop ro.build.version.sdk > evidence/00_sdk.txt 2>/dev/null || true
 
 adb root >/dev/null 2>&1; sleep 2; adb wait-for-device
 adb shell settings put global window_animation_scale 0 || true
 adb shell settings put global transition_animation_scale 0 || true
 adb shell settings put global animator_duration_scale 0 || true
 
-# ---------- SWAP (pedido: "usa swap") ----------
-# Habilita/expande zram e, se falhar, cria um swapfile, para a importação/carga
-# de modelos grandes não esbarrar em memória.
+# ---------- SWAP ----------
 log "configurando swap"
 adb shell 'if [ -e /sys/block/zram0/disksize ]; then
     swapoff /dev/block/zram0 2>/dev/null
@@ -99,117 +126,81 @@ adb shell 'if [ -e /sys/block/zram0/disksize ]; then
     dd if=/dev/zero of=/data/local/tmp/swapfile bs=1M count=1024 2>/dev/null
     mkswap /data/local/tmp/swapfile 2>/dev/null && swapon /data/local/tmp/swapfile 2>/dev/null
   fi'
-adb shell 'cat /proc/swaps; echo "--- mem ---"; cat /proc/meminfo | head -3' > evidence/00_swap.txt 2>&1 || true
-log "swap: $(tr '\n' ' ' < evidence/00_swap.txt 2>/dev/null | head -c 200)"
+adb shell 'cat /proc/swaps; echo "--- mem ---"; head -3 /proc/meminfo' > evidence/00_swap.txt 2>&1 || true
 
-# ---------- instala o APK REAL ----------
-log "instalando APK"
-adb install -r -g GGUF-Chat.apk || adb install -r GGUF-Chat.apk
+# ---------- modelo real (best-effort) ----------
+GEN_MODEL="tiny-llama-022.gguf"; GEN_SRC="apk-real-host-run/models/tiny-llama-022.gguf"
+log "tentando baixar SmolLM2-135M-Instruct Q4_K_M (~105MB, modelo REAL)..."
+if curl -fsSL --retry 2 --connect-timeout 30 --max-time 240 \
+     -o /tmp/smollm.gguf \
+     "https://huggingface.co/bartowski/SmolLM2-135M-Instruct-GGUF/resolve/main/SmolLM2-135M-Instruct-Q4_K_M.gguf"; then
+  SZ=$(wc -c < /tmp/smollm.gguf)
+  if [ "$SZ" -gt 50000000 ]; then
+    GEN_MODEL="smollm2-135m.gguf"; GEN_SRC="/tmp/smollm.gguf"; REAL_MODEL=1
+    log "SmolLM2 baixado: $SZ bytes (modelo REAL)"
+  fi
+fi
+[ "${REAL_MODEL:-0}" = "1" ] || log "sem modelo real (fallback para fixture tiny). REAL_MODEL=${REAL_MODEL:-0}"
+
+# ---------- instala o APK CORRIGIDO ----------
+log "instalando GGUF-Chat-fixed.apk"
+adb install -r -g GGUF-Chat-fixed.apk || adb install -r GGUF-Chat-fixed.apk
 adb shell dumpsys package com.ggufchat.app | grep -E "versionName|primaryCpuAbi|userId" | tee evidence/00_pkg.txt || true
-
 APPUID=$(adb shell dumpsys package com.ggufchat.app | grep -E 'userId=' | head -1 | sed -E 's/.*userId=([0-9]+).*/\1/' | tr -d '\r')
 log "APPUID=$APPUID"
 
-# arquivos para a importação via SAF (Download) e para o seed (root)
-adb push apk-real-host-run/models/tiny-llama-022.gguf  /sdcard/Download/ >/dev/null
+# ---------- arquivos para a importação via UI (SAF) ----------
+adb push apk-real-host-run/models/tiny-llava.gguf    /sdcard/Download/ >/dev/null
 adb push apk-real-host-run/models/tiny-mmproj-022.gguf /sdcard/Download/ >/dev/null
+adb push "$GEN_SRC" /sdcard/Download/"$GEN_MODEL" >/dev/null
 adb shell ls -l /sdcard/Download/ | tee evidence/00_download.txt || true
 
-# ---------- LAUNCH: o app crasha antes de abrir? ----------
+# ---------- LAUNCH ----------
 adb logcat -c
 log "launch MainActivity"
 adb shell am start -n com.ggufchat.app/.MainActivity || true
 sleep 12
 PID=$(adb shell pidof com.ggufchat.app | tr -d '\r')
-if [ -n "$PID" ]; then
-  echo "LAUNCH_OK pid=$PID" > evidence/01_launch.txt
-  log "LAUNCH_OK pid=$PID"
-else
-  echo "LAUNCH_CRASH" > evidence/01_launch.txt
-  log "LAUNCH_CRASH (processo morto)"
-fi
-adb shell dumpsys activity activities 2>/dev/null | grep -iE "ggufchat|Resumed" > evidence/02_resumed.txt || true
+if [ -n "$PID" ]; then echo "LAUNCH_OK pid=$PID" > evidence/01_launch.txt; else echo "LAUNCH_CRASH" > evidence/01_launch.txt; fi
+log "$(cat evidence/01_launch.txt)"
 shot 03_launch.png
 adb logcat -d > evidence/04_logcat_launch.txt
 grep -E "FATAL EXCEPTION|AndroidRuntime|SIGSEGV|Fatal signal" evidence/04_logcat_launch.txt > evidence/05_launch_errors.txt || true
-if [ -s evidence/05_launch_errors.txt ]; then log "ERROS DE LAUNCH ENCONTRADOS:"; cat evidence/05_launch_errors.txt; fi
+if [ -s evidence/05_launch_errors.txt ]; then log "ERROS DE LAUNCH:"; cat evidence/05_launch_errors.txt; fi
 
-# ---------- importação via UI (SAF) — fluxo real ----------
-log "tentando importar via UI"
-tap_text "Importar" || log "aba Importar não encontrada"
-sleep 2; shot 06_import_tab.png
+# ---------- importação via UI (fluxo REAL) ----------
+import_via_ui() {
+  local name="$1"
+  tap_text "Importar" || { tap_text "Importar .gguf"; }
+  sleep 2
+  tap_text "Importar .gguf" || log "botão Importar .gguf não encontrado"
+  sleep 4
+  if ! pick_file "$name"; then
+    log "falha ao selecionar $name no picker"
+    return 1
+  fi
+  sleep 6
+  return 0
+}
 
-tap_text "Importar .gguf" || log "botão Importar .gguf não encontrado"
-sleep 4; shot 07_picker.png
-if ! tap_text "tiny-llama-022.gguf"; then
-  tap_desc "Show roots" && sleep 2 && tap_text "Downloads" && sleep 2
-  tap_text "tiny-llama-022.gguf"
-fi
-sleep 6; shot 08_after_import1.png
+log "importando modelo de visão (llava) via UI"
+import_via_ui "tiny-llava.gguf"
+sleep 4; shot 06_after_import1.png
 
-tap_text "Importar .gguf" || true
-sleep 4
-if ! tap_text "tiny-mmproj-022.gguf"; then
-  tap_desc "Show roots" && sleep 2 && tap_text "Downloads" && sleep 2
-  tap_text "tiny-mmproj-022.gguf"
-fi
-sleep 6; shot 09_after_import2.png
+log "importando mmproj (clip) via UI"
+import_via_ui "tiny-mmproj-022.gguf"
+sleep 8; shot 07_after_import2.png
 
-# ---------- seed via root (garantia) ----------
-log "seed via root"
-adb shell mkdir -p /data/data/com.ggufchat.app/files/models
-adb push apk-real-host-run/models/tiny-llama-022.gguf  /data/local/tmp/ >/dev/null
-adb push apk-real-host-run/models/tiny-mmproj-022.gguf /data/local/tmp/ >/dev/null
-adb shell cp /data/local/tmp/tiny-llama-022.gguf  /data/data/com.ggufchat.app/files/models/ || true
-adb shell cp /data/local/tmp/tiny-mmproj-022.gguf /data/data/com.ggufchat.app/files/models/ || true
-cat > /tmp/models.json <<'JSON'
-[
- {"id":"a1","name":"tiny-llama-022","architecture":"llava","path":"/data/user/0/com.ggufchat.app/files/models/tiny-llama-022.gguf","size":114976,"importedAt":1750000000000,"fileName":"tiny-llama-022.gguf","mmprojPath":null,"multimodal":false},
- {"id":"a2","name":"tiny-mmproj-022","architecture":"clip","path":"/data/user/0/com.ggufchat.app/files/models/tiny-mmproj-022.gguf","size":64608,"importedAt":1750000000001,"fileName":"tiny-mmproj-022.gguf","mmprojPath":null,"multimodal":false}
-]
-JSON
-# nota: architecture "llava" (só no metadata p/ a UI) faz isVisionModel()=true e
-# dispara a FUSÃO real (findMmprojFor -> mergeAndCreate) ao abrir a conversa.
-adb push /tmp/models.json /data/local/tmp/ >/dev/null
-adb shell cp /data/local/tmp/models.json /data/data/com.ggufchat.app/files/models.json || true
-if [ -n "$APPUID" ]; then
-  adb shell chown -R "$APPUID:$APPUID" /data/data/com.ggufchat.app/files || true
-fi
-adb shell chmod 644 /data/data/com.ggufchat.app/files/models.json || true
+log "importando modelo de geração via UI: $GEN_MODEL"
+import_via_ui "$GEN_MODEL"
+sleep 8; shot 08_after_import3.png
 
-# verifica models.json final (via root)
-adb shell cat /data/data/com.ggufchat.app/files/models.json > evidence/10_models.json || true
-log "models.json: $(cat evidence/10_models.json 2>/dev/null | head -c 300)"
+# dá tempo para linkMmprojs() rodar (roda após o último import, na thread de UI)
+sleep 6
+shot 09_after_link.png
 
-# ---------- relaunch para carregar os modelos ----------
-adb shell am force-stop com.ggufchat.app || true
-sleep 2
-adb logcat -c
-adb shell am start -n com.ggufchat.app/.MainActivity || true
-sleep 12
-PID=$(adb shell pidof com.ggufchat.app | tr -d '\r')
-echo "RELAUNCH pid=$PID" >> evidence/01_launch.txt
-
-# ---------- abrir aba AI Modelos e conferir a lista ----------
-tap_text "AI Modelos" || log "aba AI Modelos não encontrada"
-sleep 2; shot 11_models_tab.png
-dump_ui
-grep -o "tiny-llama-022" /tmp/ui.xml >/dev/null 2>&1 && echo "MODEL_LISTED" >> evidence/12_list.txt || echo "MODEL_NOT_LISTED" >> evidence/12_list.txt
-grep -o "tiny-mmproj-022" /tmp/ui.xml >/dev/null 2>&1 && echo "MMPROJ_LISTED" >> evidence/12_list.txt || echo "MMPROJ_NOT_LISTED" >> evidence/12_list.txt
-cat evidence/12_list.txt
-
-# ---------- abrir conversa e GERAR ----------
-tap_text "Chat" || true
-sleep 2
-tap_text "+ Nova conversa" || log "botão + Nova conversa não encontrado"
-sleep 3; shot 13_picker.png
-tap_text "tiny-llama-022" || log "modelo no picker não encontrado"
-sleep 5; shot 14_chat.png
-
-# ---------- verificação da FUSÃO (mmproj vinculado ao modelo principal) ----------
-# Ao escolher o modelo (finishNewChat), o app deve ter rodado findMmprojFor ->
-# mergeAndCreate: ModelInfo.mmprojPath aponta para o mmproj e multimodal=true.
-log "verificando fusão modelo+mmproj"
+# ---------- verificação da FUSÃO ----------
+log "verificando fusão modelo+mmproj em models.json"
 adb shell cat /data/data/com.ggufchat.app/files/models.json > evidence/20_fusion.json 2>/dev/null || true
 python3 - evidence/20_fusion.json <<'PY'
 import sys, json
@@ -217,21 +208,84 @@ try:
     d = json.load(open(sys.argv[1]))
 except Exception as e:
     print("FUSION_JSON_ERR", e); raise SystemExit(0)
-for m in d:
-    if m.get("architecture","").lower() == "llava":
-        mm = m.get("mmprojPath")
-        multi = m.get("multimodal")
-        if mm and multi:
-            print("FUSION_OK mmprojPath=%s multimodal=%s" % (mm, multi))
-        else:
-            print("FUSION_FAIL mmprojPath=%r multimodal=%r" % (mm, multi))
+if not isinstance(d, list):
+    print("FUSION_JSON_NOT_LIST"); raise SystemExit(0)
+vision = [m for m in d if (m.get("architecture") or "").lower() == "llava"]
+mmproj = [m for m in d if "mmproj" in (m.get("fileName") or "").lower() or (m.get("architecture") or "").lower() == "clip"]
+print("MODELS=%d VISION=%d MMPROJ=%d" % (len(d), len(vision), len(mmproj)))
+for m in vision:
+    print("VISION id=%s name=%s mmprojPath=%s multimodal=%s arch=%s" % (
+        m.get("id"), m.get("name"), m.get("mmprojPath"), m.get("multimodal"), m.get("architecture")))
+if vision and mmproj:
+    v = vision[0]; p = mmproj[0].get("path")
+    if v.get("mmprojPath") == p and v.get("multimodal"):
+        print("FUSION_OK mmprojPath=%s multimodal=true" % v.get("mmprojPath"))
+    else:
+        print("FUSION_FAIL mmprojPath=%r (esperado %r) multimodal=%r" % (v.get("mmprojPath"), p, v.get("multimodal")))
 PY
-adb logcat -d > evidence/15_logcat_open.txt
-grep -E "GGUFChatNative|llama_model_loader|model loaded|llama_context|backend" evidence/15_logcat_open.txt > evidence/16_native_create.txt || true
-head -40 evidence/16_native_create.txt
+tee evidence/21_fusion_summary.txt
 
-# digita e envia
-tap_text "Enviar" && sleep 1   # foca/rola; o clique real é após digitar
+# ---------- PERSISTÊNCIA (regressão do bug fromJson) ----------
+log "forçando stop + relaunch para testar persistência da fusão"
+adb shell am force-stop com.ggufchat.app || true
+sleep 3
+adb logcat -c
+adb shell am start -n com.ggufchat.app/.MainActivity || true
+sleep 12
+PID=$(adb shell pidof com.ggufchat.app | tr -d '\r')
+echo "RELAUNCH pid=$PID" >> evidence/01_launch.txt
+adb shell cat /data/data/com.ggufchat.app/files/models.json > evidence/22_fusion_after_relaunch.json 2>/dev/null || true
+python3 - evidence/22_fusion_after_relaunch.json <<'PY'
+import sys, json
+try:
+    d = json.load(open(sys.argv[1]))
+except Exception as e:
+    print("PERSIST_JSON_ERR", e); raise SystemExit(0)
+vision = [m for m in d if (m.get("architecture") or "").lower() == "llava"]
+if not vision:
+    print("PERSIST_NO_VISION"); raise SystemExit(0)
+v = vision[0]
+if v.get("mmprojPath") and v.get("multimodal"):
+    print("PERSIST_OK mmprojPath=%s multimodal=true" % v.get("mmprojPath"))
+else:
+    print("PERSIST_FAIL mmprojPath=%r multimodal=%r" % (v.get("mmprojPath"), v.get("multimodal")))
+PY
+tee evidence/23_persist_summary.txt
+
+# ---------- geração CPU ----------
+log "definindo backend CPU (gpuLayers=0) via shared_prefs"
+adb shell am force-stop com.ggufchat.app || true
+adb shell mkdir -p /data/data/com.ggufchat.app/shared_prefs
+adb shell 'cat > /data/data/com.ggufchat.app/shared_prefs/ggufchat_settings.xml <<EOF
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<map>
+    <int name="gpuLayers" value="0" />
+    <int name="contextSize" value="2048" />
+    <int name="nThreads" value="4" />
+    <boolean name="useMmap" value="true" />
+</map>
+EOF'
+if [ -n "$APPUID" ]; then adb shell chown "$APPUID:$APPUID" /data/data/com.ggufchat.app/shared_prefs/ggufchat_settings.xml || true; fi
+adb shell chmod 600 /data/data/com.ggufchat.app/shared_prefs/ggufchat_settings.xml || true
+adb logcat -c
+adb shell am start -n com.ggufchat.app/.MainActivity || true
+sleep 12
+
+log "abrindo nova conversa com $GEN_MODEL"
+tap_text "Chat" || true
+sleep 2
+tap_text "+ Nova conversa" || tap_text "Nova conversa" || log "botão nova conversa não encontrado"
+sleep 3; shot 10_picker.png
+if ! tap_text "$GEN_MODEL"; then
+  # fallback: escolhe o primeiro modelo da lista
+  tap_text "tiny" || log "modelo não encontrado no picker"
+fi
+sleep 10; shot 11_chat_cpu.png
+adb logcat -d > evidence/30_logcat_cpu_create.txt
+grep -E "GGUFChatNative|llama_model_loader|model loaded|engine loaded|backend" evidence/30_logcat_cpu_create.txt > evidence/31_cpu_create_lines.txt || true
+log "linhas nativas (CPU):"; cat evidence/31_cpu_create_lines.txt | head -40
+
+# envia mensagem e espera geração
 dump_ui
 C=$(python3 - <<'PY'
 import re, xml.etree.ElementTree as ET
@@ -252,22 +306,125 @@ sleep 1
 adb shell input text "Ola"
 sleep 1
 tap_text "Enviar" || log "botão Enviar não encontrado"
-log "aguardando geração..."
-for i in $(seq 1 12); do sleep 5; done
-shot 17_after_generate.png
-adb logcat -d > evidence/18_logcat_final.txt
-grep -E "GGUFChatNative|model loaded|llama_model_loader|onToken|FATAL|AndroidRuntime|SIGSEGV|Fatal signal|generate" evidence/18_logcat_final.txt > evidence/19_native_lines.txt || true
-log "linhas nativas:"; cat evidence/19_native_lines.txt | head -60
+log "aguardando geração (CPU)..."
+for i in $(seq 1 24); do sleep 5; done
+shot 12_after_generate_cpu.png
+adb logcat -d > evidence/32_logcat_cpu_gen.txt
+grep -E "GGUFChatNative|model loaded|onToken|FATAL|AndroidRuntime|SIGSEGV|Fatal signal|generate|error" evidence/32_logcat_cpu_gen.txt > evidence/33_cpu_gen_lines.txt || true
+log "linhas geração (CPU):"; cat evidence/33_cpu_gen_lines.txt | head -60
+dump_ui
+python3 - <<'PY' > evidence/34_cpu_reply.txt 2>/dev/null || true
+import xml.etree.ElementTree as ET
+try:
+    root = ET.parse('/tmp/ui.xml').getroot()
+except Exception:
+    print("UI_DUMP_ERR"); raise SystemExit(0)
+texts = [n.get('text') for n in root.iter('node') if n.get('text')]
+reply = [t for t in texts if t and len(t) > 2 and t != "Ola"]
+print("TEXT_NODES=%d REPLY_CANDIDATES=%d" % (len(texts), len(reply)))
+for t in reply[:5]:
+    print("REPLY:", t[:200])
+PY
+cat evidence/34_cpu_reply.txt
+
+# ---------- geração Vulkan ----------
+log "definindo backend Vulkan (gpuLayers=-1) via shared_prefs"
+adb shell am force-stop com.ggufchat.app || true
+adb shell 'cat > /data/data/com.ggufchat.app/shared_prefs/ggufchat_settings.xml <<EOF
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<map>
+    <int name="gpuLayers" value="-1" />
+    <int name="contextSize" value="2048" />
+    <int name="nThreads" value="4" />
+    <boolean name="useMmap" value="true" />
+</map>
+EOF'
+if [ -n "$APPUID" ]; then adb shell chown "$APPUID:$APPUID" /data/data/com.ggufchat.app/shared_prefs/ggufchat_settings.xml || true; fi
+adb shell chmod 600 /data/data/com.ggufchat.app/shared_prefs/ggufchat_settings.xml || true
+adb logcat -c
+adb shell am start -n com.ggufchat.app/.MainActivity || true
+sleep 12
+log "nova conversa com backend Vulkan"
+tap_text "Chat" || true
+sleep 2
+tap_text "+ Nova conversa" || tap_text "Nova conversa" || log "botão nova conversa não encontrado"
+sleep 3
+if ! tap_text "$GEN_MODEL"; then tap_text "tiny" || log "modelo não encontrado"; fi
+sleep 12; shot 13_chat_vulkan.png
+adb logcat -d > evidence/40_logcat_vulkan_create.txt
+grep -E "GGUFChatNative|engine loaded|registered backend|backend library|model loaded|Vulkan|gpu_offload" evidence/40_logcat_vulkan_create.txt > evidence/41_vulkan_lines.txt || true
+log "linhas Vulkan:"; cat evidence/41_vulkan_lines.txt | head -60
+
+dump_ui
+C=$(python3 - <<'PY'
+import re, xml.etree.ElementTree as ET
+try:
+    root = ET.parse('/tmp/ui.xml').getroot()
+except Exception:
+    raise SystemExit(1)
+for n in root.iter('node'):
+    if (n.get('class') or '').endswith('EditText'):
+        m = re.match(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', n.get('bounds') or '')
+        if m:
+            print((int(m.group(1))+int(m.group(3)))//2, (int(m.group(2))+int(m.group(4)))//2)
+            raise SystemExit(0)
+raise SystemExit(1)
+PY
+) && adb shell input tap $C
+sleep 1
+adb shell input text "Teste vulkan"
+sleep 1
+tap_text "Enviar" || log "botão Enviar não encontrado"
+log "aguardando geração (Vulkan)..."
+for i in $(seq 1 24); do sleep 5; done
+shot 14_after_generate_vulkan.png
+adb logcat -d > evidence/42_logcat_vulkan_gen.txt
+grep -E "GGUFChatNative|model loaded|FATAL|AndroidRuntime|SIGSEGV|Fatal signal|error" evidence/42_logcat_vulkan_gen.txt > evidence/43_vulkan_gen_lines.txt || true
+log "linhas geração (Vulkan):"; cat evidence/43_vulkan_gen_lines.txt | head -60
+
+# ---------- modelo inexistente ----------
+log "teste de modelo inexistente (não deve crashar)"
+adb shell am force-stop com.ggufchat.app || true
+adb shell mkdir -p /data/data/com.ggufchat.app/files
+cat > /tmp/models_bad.json <<'JSON'
+[
+ {"id":"bad1","name":"modelo-inexistente","architecture":"llama","path":"/data/user/0/com.ggufchat.app/files/models/nao-existe.gguf","size":1,"importedAt":1750000000000,"fileName":"nao-existe.gguf","mmprojPath":null,"multimodal":false}
+]
+JSON
+adb push /tmp/models_bad.json /data/local/tmp/ >/dev/null
+adb shell cp /data/local/tmp/models_bad.json /data/data/com.ggufchat.app/files/models.json || true
+if [ -n "$APPUID" ]; then adb shell chown "$APPUID:$APPUID" /data/data/com.ggufchat.app/files/models.json || true; fi
+adb shell chmod 644 /data/data/com.ggufchat.app/files/models.json || true
+adb logcat -c
+adb shell am start -n com.ggufchat.app/.MainActivity || true
+sleep 10
+tap_text "Chat" || true
+sleep 2
+tap_text "+ Nova conversa" || tap_text "Nova conversa" || log "sem botão nova conversa"
+sleep 3
+tap_text "modelo-inexistente" || tap_text "nao-existe" || log "modelo inexistente não listado"
+sleep 8; shot 15_nonexistent.png
+PID=$(adb shell pidof com.ggufchat.app | tr -d '\r')
+if [ -n "$PID" ]; then echo "NONEXISTENT_NO_CRASH pid=$PID" > evidence/50_nonexistent.txt; else echo "NONEXISTENT_CRASH" > evidence/50_nonexistent.txt; fi
+adb logcat -d > evidence/51_logcat_nonexistent.txt
+grep -E "FATAL|AndroidRuntime|SIGSEGV|Fatal signal|GGUFChatNative|Não foi possível carregar|modelo" evidence/51_logcat_nonexistent.txt > evidence/52_nonexistent_lines.txt || true
+log "modelo inexistente:"; cat evidence/50_nonexistent.txt; cat evidence/52_nonexistent_lines.txt | head -30
 
 # ---------- resumo ----------
 {
   echo "boot=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')"
-  echo "pid=$(adb shell pidof com.ggufchat.app | tr -d '\r')"
-  echo "--- swap ---"; cat evidence/00_swap.txt 2>/dev/null
+  echo "abi=$(cat evidence/00_abi.txt 2>/dev/null)"
+  echo "sdk=$(cat evidence/00_sdk.txt 2>/dev/null)"
+  echo "REAL_MODEL=${REAL_MODEL:-0}"
   echo "--- launch ---"; cat evidence/01_launch.txt 2>/dev/null
-  echo "--- lista ---"; cat evidence/12_list.txt 2>/dev/null
+  echo "--- swap ---"; cat evidence/00_swap.txt 2>/dev/null
   echo "--- fusao ---"; cat evidence/20_fusion.json 2>/dev/null
-  echo "--- native ---"; cat evidence/19_native_lines.txt 2>/dev/null | head -60
+  echo "--- fusao summary ---"; cat evidence/21_fusion_summary.txt 2>/dev/null
+  echo "--- persistencia ---"; cat evidence/23_persist_summary.txt 2>/dev/null
+  echo "--- CPU create ---"; cat evidence/31_cpu_create_lines.txt 2>/dev/null | head -30
+  echo "--- CPU reply ---"; cat evidence/34_cpu_reply.txt 2>/dev/null
+  echo "--- Vulkan ---"; cat evidence/41_vulkan_lines.txt 2>/dev/null | head -40
+  echo "--- inexistente ---"; cat evidence/50_nonexistent.txt 2>/dev/null
 } | tee evidence/99_summary.txt
 
-echo "FIM"
+log "FIM"
