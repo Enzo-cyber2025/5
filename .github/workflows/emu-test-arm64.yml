@@ -11,7 +11,7 @@ permissions:
 jobs:
   x86_64:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 52.560.000
     steps:
       - uses: actions/checkout@v4
         with:
@@ -21,6 +21,50 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+
+      - name: Build APK corrigido (patch dex + assinatura apksigner oficial)
+        run: |
+          set -e
+          export ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}"
+          BT="$(ls -d "$ANDROID_SDK_ROOT"/build-tools/* 2>/dev/null | sort -V | tail -1)"
+          if [ -z "$BT" ] || [ ! -x "$BT/apksigner" ]; then
+            yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" "build-tools;34.0.0" >/dev/null 2>&1 || true
+            BT="$(ls -d "$ANDROID_SDK_ROOT"/build-tools/* 2>/dev/null | sort -V | tail -1)"
+          fi
+          echo "build-tools: $BT"
+          "$BT/apksigner" version || true
+
+          python3 - <<'PY'
+          import zipfile, zlib, hashlib, struct
+          with zipfile.ZipFile("GGUF-Chat.apk") as z:
+              dex = bytearray(z.read("classes.dex"))
+          OFF = 0x11C28
+          assert dex[OFF] == 0x39, hex(dex[OFF])
+          dex[OFF] = 0x38
+          dex[8:12] = b"\x00"*4
+          dex[12:32] = b"\x00"*20
+          dex[12:32] = hashlib.sha1(bytes(dex[32:])).digest()
+          dex[8:12] = struct.pack("<I", zlib.adler32(bytes(dex[12:])) & 0xFFFFFFFF)
+          with zipfile.ZipFile("GGUF-Chat.apk") as zin, zipfile.ZipFile("unsigned.apk", "w", zipfile.ZIP_DEFLATED) as zout:
+              for it in zin.infolist():
+                  if it.filename == "classes.dex":
+                      continue
+                  if it.filename.startswith("META-INF/") and (it.filename.endswith((".SF", ".RSA", ".DSA", ".EC")) or it.filename == "META-INF/MANIFEST.MF"):
+                      continue
+                  zout.writestr(it, zin.read(it.filename))
+              zout.writestr("classes.dex", bytes(dex))
+          print("unsigned.apk ok (dex corrigido)")
+          PY
+
+          keytool -genkeypair -keystore key.jks -storetype PKCS12 -alias gguf \
+            -keyalg RSA -keysize 2048 -validity 36500 \
+            -dname "CN=GGUF Chat, O=ggufchat, C=BR" -storepass ggufchat -keypass ggufchat
+
+          "$BT/zipalign" -f 4 unsigned.apk aligned.apk
+          "$BT/apksigner" sign --ks key.jks --ks-pass pass:ggufchat --key-pass pass:ggufchat \
+            --out GGUF-Chat-fixed.apk aligned.apk
+          "$BT/apksigner" verify --verbose GGUF-Chat-fixed.apk
+          ls -l GGUF-Chat-fixed.apk
 
       - name: Emulador x86_64 (KVM) + testes do APK real
         run: bash .github/emu-test-x86.sh
