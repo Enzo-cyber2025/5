@@ -81,20 +81,77 @@ tap_desc() {
 
 shot() { adb exec-out screencap -p > "evidence/$1" 2>/dev/null || true; }
 
-# seleciona um arquivo no SAF picker (OpenDocument). O picker do DocumentsUI
-# mostra "Recent" no topo; usa "Show roots" -> "Downloads" quando preciso.
-pick_file() {
-  local name="$1" tries
-  for tries in 1 2 3 4 5; do
+# salva o dump da hierarquia de UI (texto) em evidence/ para diagnóstico
+dump_ui_ev() { dump_ui; cp /tmp/ui.xml "evidence/$1" 2>/dev/null || true; }
+
+# tenta confirmar a seleção no picker multi-seleção do DocumentsUI.
+# O app abre ACTION_OPEN_DOCUMENT com EXTRA_ALLOW_MULTIPLE=true, então tocar no
+# arquivo só marca a seleção — é preciso tocar no botão "Open"/"Select".
+confirm_picker() {
+  local tries c
+  for tries in 1 2 3 4; do
     dump_ui
-    if find_text "$name" >/dev/null 2>&1; then
-      tap_text "$name" && return 0
+    for t in "open" "select" "done" "confirm" "ok" "abrir" "selecionar"; do
+      c=$(find_text "$t" 2>/dev/null) && { adb shell input tap $c; sleep 2; return 0; }
+    done
+    for d in "Open" "Select" "Done" "Select all"; do
+      c=$(find_desc "$d" 2>/dev/null) && { adb shell input tap $c; sleep 2; return 0; }
+    done
+    sleep 2
+  done
+  return 1
+}
+
+# o picker (DocumentsUI) está aberto?
+in_picker() {
+  dump_ui
+  find_desc "Show roots" >/dev/null 2>&1 && return 0
+  find_text "Recent" >/dev/null 2>&1
+}
+
+# raiz do armazenamento interno no DocumentsUI (lê o filesystem real)
+tap_storage_root() {
+  local l
+  for l in "Internal storage" "internal storage" "sdcard" "SD card" "sd card" "emulator" "Pixel"; do
+    c=$(find_text "$l" 2>/dev/null) && { adb shell input tap $c; return 0; }
+  done
+  return 1
+}
+
+# seleciona um arquivo no SAF picker (OpenDocument) e confirma a seleção.
+# $1 = nome exibido; $2 = trecho de busca (stem) opcional
+pick_file() {
+  local name="$1" stem="${2:-$1}" tries
+  for tries in 1 2 3 4 5 6 7 8; do
+    dump_ui
+    # 1) o arquivo já aparece na tela atual (Recent/Downloads)?
+    if find_text "$stem" >/dev/null 2>&1; then
+      tap_text "$stem"; sleep 1
+      if confirm_picker && ! in_picker; then return 0; fi
+      confirm_picker; sleep 2
+      if ! in_picker; then return 0; fi
     fi
-    tap_desc "Show roots" && sleep 2 && tap_text "Downloads" && sleep 2
-    if find_text "$name" >/dev/null 2>&1; then
-      tap_text "$name" && return 0
+    # 2) abre a gaveta -> Downloads (MediaStore)
+    tap_desc "Show roots"; sleep 2
+    tap_text "Downloads"; sleep 3
+    if find_text "$stem" >/dev/null 2>&1; then
+      tap_text "$stem"; sleep 1
+      if confirm_picker && ! in_picker; then return 0; fi
+      confirm_picker; sleep 2
+      if ! in_picker; then return 0; fi
     fi
-    sleep 3
+    # 3) fallback: raiz do armazenamento interno -> pasta Download
+    tap_desc "Show roots"; sleep 2
+    tap_storage_root; sleep 2
+    tap_text "Download"; sleep 3
+    if find_text "$stem" >/dev/null 2>&1; then
+      tap_text "$stem"; sleep 1
+      if confirm_picker && ! in_picker; then return 0; fi
+      confirm_picker; sleep 2
+      if ! in_picker; then return 0; fi
+    fi
+    dump_ui_ev "ui_picker_retry_${stem}_${tries}.xml"
+    sleep 2
   done
   return 1
 }
@@ -153,6 +210,14 @@ log "APPUID=$APPUID"
 adb push apk-real-host-run/models/tiny-llava.gguf    /sdcard/Download/ >/dev/null
 adb push apk-real-host-run/models/tiny-mmproj-022.gguf /sdcard/Download/ >/dev/null
 adb push "$GEN_SRC" /sdcard/Download/"$GEN_MODEL" >/dev/null
+# força a indexação pelo MediaProvider (best-effort; o FUSE normalmente indexa
+# sozinho, mas alguns runners demoram) para o picker do DocumentsUI listar.
+for f in tiny-llava.gguf tiny-mmproj-022.gguf "$GEN_MODEL"; do
+  adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE \
+    -d "file:///storage/emulated/0/Download/$f" >/dev/null 2>&1 || true
+done
+adb shell 'content call --uri content://media/none/media_scanner --method scan_volume --arg external_primary' >/dev/null 2>&1 || true
+sleep 5
 adb shell ls -l /sdcard/Download/ | tee evidence/00_download.txt || true
 
 # ---------- LAUNCH ----------
@@ -170,34 +235,48 @@ if [ -s evidence/05_launch_errors.txt ]; then log "ERROS DE LAUNCH:"; cat eviden
 
 # ---------- importação via UI (fluxo REAL) ----------
 import_via_ui() {
-  local name="$1"
+  local name="$1" stem="$2"
   tap_text "Importar" || { tap_text "Importar .gguf"; }
   sleep 2
   tap_text "Importar .gguf" || log "botão Importar .gguf não encontrado"
   sleep 4
-  if ! pick_file "$name"; then
+  dump_ui_ev "ui_picker_open_${stem}.xml"
+  if ! pick_file "$name" "$stem"; then
+    dump_ui_ev "ui_picker_fail_${stem}.xml"
     log "falha ao selecionar $name no picker"
     return 1
   fi
-  sleep 6
+  sleep 4
+  dump_ui_ev "ui_after_import_${stem}.xml"
   return 0
 }
 
 log "importando modelo de visão (llava) via UI"
-import_via_ui "tiny-llava.gguf"
+import_via_ui "tiny-llava.gguf" "tiny-llava"
 sleep 4; shot 06_after_import1.png
 
 log "importando mmproj (clip) via UI"
-import_via_ui "tiny-mmproj-022.gguf"
+import_via_ui "tiny-mmproj-022.gguf" "tiny-mmproj"
 sleep 8; shot 07_after_import2.png
 
 log "importando modelo de geração via UI: $GEN_MODEL"
-import_via_ui "$GEN_MODEL"
+import_via_ui "$GEN_MODEL" "${GEN_MODEL%.gguf}"
 sleep 8; shot 08_after_import3.png
 
 # dá tempo para linkMmprojs() rodar (roda após o último import, na thread de UI)
 sleep 6
 shot 09_after_link.png
+
+# espera a cópia dos arquivos terminar: models.json deve listar 3 modelos
+for i in $(seq 1 30); do
+  N=$(adb shell cat /data/data/com.ggufchat.app/files/models.json 2>/dev/null | \
+      python3 -c 'import sys,json
+try: print(len(json.load(sys.stdin)))
+except Exception: print(0)' 2>/dev/null | tr -d '\r')
+  [ -n "$N" ] && [ "$N" -ge 3 ] && break
+  sleep 4
+done
+log "modelos em models.json após import: N=${N:-0}"
 
 # ---------- verificação da FUSÃO ----------
 log "verificando fusão modelo+mmproj em models.json"
