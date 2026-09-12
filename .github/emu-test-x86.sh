@@ -2,35 +2,45 @@
 # =============================================================================
 #  Emulador Android x86_64 (KVM) + testes do APK REAL GGUF-Chat-fixed.apk
 # -----------------------------------------------------------------------------
-#  Roda no runner ubuntu-latest (x86_64) do GitHub Actions, que TEM /dev/kvm
-#  (virtualização aninhada habilitada). O emulador x86_64 boota em ~2-5 min.
-#  O APK traz libs nativas x86_64 (além de arm64-v8a), então roda nativamente.
-#  Chama .github/emu-test.sh (mesma suite: importa llava+mmproj pela UI,
-#  verifica fusão+persistência, gera CPU/Vulkan, testa modelo inexistente).
+#  Roda no runner ubuntu-latest (x86_64) do GitHub Actions. O /dev/kvm EXISTE
+#  mas vem com permissão root:kvm 660 sem o runner no grupo -> corrigimos aqui
+#  (chmod + udev + gpasswd). Com KVM o emulador boota em ~2-4 min e fica estável.
+#  O APK traz libs nativas x86_64 (além de arm64-v8a), então roda igual.
+#  Depois chama .github/emu-test.sh (importa llava+mmproj pela UI, verifica
+#  fusão+persistência, gera CPU/Vulkan, testa modelo inexistente).
 # =============================================================================
 set -u
 
 API=30
 IMG="system-images;android-${API};google_apis;x86_64"
 AVD="x86avd"
-SDK_ROOT="${ANDROID_HOME:-$HOME/android-sdk}"
-export ANDROID_HOME="$SDK_ROOT"
-export ANDROID_SDK_ROOT="$SDK_ROOT"
-CT="$SDK_ROOT/cmdline-tools/latest/bin"
-mkdir -p "$SDK_ROOT" evidence
+mkdir -p evidence
 
 log() { echo "[emu-x86 $(date -u +%H:%M:%S)] $*" | tee -a evidence/00_boot.log; }
 
-# KVM é o ponto-chave: sem ele, o x86_64 também fica lento.
-if [ -e /dev/kvm ] && [ -r /dev/kvm ] && [ -w /dev/kvm ]; then
-  log "/dev/kvm disponível (aceleração KVM ativa)"
-else
+# =============================================================================
+# 0) CORREÇÃO CRÍTICA: liberar /dev/kvm para o runner
+# =============================================================================
+if [ -e /dev/kvm ]; then
   ls -l /dev/kvm 2>&1 | tee -a evidence/00_boot.log || true
-  log "AVISO: /dev/kvm indisponível; boot será lento."
+  echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules >/dev/null 2>&1 || true
+  sudo udevadm control --reload-rules 2>/dev/null || true
+  sudo udevadm trigger --name-match=kvm 2>/dev/null || true
+  sudo chmod 666 /dev/kvm 2>/dev/null || true
+  (sudo gpasswd -a "$USER" kvm 2>/dev/null || true)
+  ls -l /dev/kvm 2>&1 | tee -a evidence/00_boot.log || true
+else
+  log "AVISO: /dev/kvm não existe neste runner"
 fi
 
-# ---------- 1) SDK ----------
-if [ ! -x "$SDK_ROOT/emulator/emulator" ] || [ ! -d "$SDK_ROOT/system-images/android-${API}/google_apis/x86_64" ]; then
+# =============================================================================
+# 1) SDK — reutiliza o pré-instalado do runner se existir; senão baixa
+# =============================================================================
+SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-$HOME/android-sdk}}"
+if [ -x "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" ] && [ -x "$SDK_ROOT/emulator/emulator" ]; then
+  log "reutilizando SDK pré-instalado em $SDK_ROOT"
+else
+  SDK_ROOT="$HOME/android-sdk"
   log "baixando cmdline-tools (linux)..."
   CTZIP="https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip"
   curl -sSLo /tmp/ct.zip "$CTZIP" || { log "falha ao baixar cmdline-tools"; exit 3; }
@@ -38,45 +48,74 @@ if [ ! -x "$SDK_ROOT/emulator/emulator" ] || [ ! -d "$SDK_ROOT/system-images/and
   mkdir -p "$SDK_ROOT/cmdline-tools/latest"
   rm -rf "$SDK_ROOT/cmdline-tools/latest"/* 2>/dev/null || true
   mv /tmp/ct/cmdline-tools/* "$SDK_ROOT/cmdline-tools/latest/"
-  log "aceitando licenças + instalando emulator / platform-tools / $IMG"
-  yes | "$CT/sdkmanager" --licenses >/dev/null 2>&1 || true
-  "$CT/sdkmanager" "platform-tools" "emulator" "$IMG" 2>&1 | tail -20 | tee -a evidence/00_boot.log || { log "sdkmanager falhou"; exit 4; }
+  yes | "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1 || true
+  "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" "platform-tools" "emulator" 2>&1 | tail -5 | tee -a evidence/00_boot.log || true
+fi
+export ANDROID_HOME="$SDK_ROOT"
+export ANDROID_SDK_ROOT="$SDK_ROOT"
+export PATH="$SDK_ROOT/emulator:$SDK_ROOT/platform-tools:$SDK_ROOT/cmdline-tools/latest/bin:$PATH"
+
+# mata qualquer adb server antigo (evita conflito de smartsocket)
+adb kill-server >/dev/null 2>&1 || true
+adb start-server >/dev/null 2>&1 || true
+
+# =============================================================================
+# 2) system image (única parte grande)
+# =============================================================================
+if [ ! -d "$SDK_ROOT/system-images/android-${API}/google_apis/x86_64" ]; then
+  log "baixando $IMG ..."
+  yes | sdkmanager --licenses >/dev/null 2>&1 || true
+  sdkmanager "$IMG" 2>&1 | tr '\r' '\n' | grep -aE "100%|Installing|Downloading" | tail -8 | tee -a evidence/00_boot.log || { log "sdkmanager falhou"; exit 4; }
 fi
 log "SDK pronto."
-export PATH="$SDK_ROOT/emulator:$SDK_ROOT/platform-tools:$PATH"
 
-# ---------- 2) AVD ----------
-if ! "$CT/avdmanager" list avd 2>/dev/null | grep -q "$AVD"; then
+# =============================================================================
+# 3) AVD
+# =============================================================================
+if ! avdmanager list avd 2>/dev/null | grep -q "$AVD"; then
   log "criando AVD $AVD ($IMG)"
-  echo no | "$CT/avdmanager" create avd -n "$AVD" -k "$IMG" -d pixel_5 --force || true
+  echo no | avdmanager create avd -n "$AVD" -k "$IMG" -d pixel_5 --force || true
 fi
 
-# ---------- 3) aceleração ----------
-"$SDK_ROOT/emulator/emulator" -accel-check 2>&1 | tee -a evidence/00_boot.log || true
+# =============================================================================
+# 4) aceleração
+# =============================================================================
+emulator -accel-check 2>&1 | tr '\r' '\n' | tail -6 | tee -a evidence/00_boot.log || true
 ACCEL=""
-"$SDK_ROOT/emulator/emulator" -accel-check 2>&1 | grep -qi "usable" || ACCEL="-no-accel"
-[ -n "$ACCEL" ] && log "SEM KVM -> software (lento)" || log "KVM ativo"
+emulator -accel-check 2>&1 | grep -qi "is installed and usable" && ACCEL=""
+if emulator -accel-check 2>&1 | grep -qi "not usable\|not installed\|permissions"; then ACCEL="-no-accel"; fi
+[ -n "$ACCEL" ] && log "SEM KVM -> software (lento)" || log "KVM ATIVO"
 
-# ---------- 4) boot ----------
-log "iniciando emulador x86_64 (RAM 3G, cores 2)..."
-nohup "$SDK_ROOT/emulator/emulator" -avd "$AVD" -no-window -gpu swiftshader_indirect -no-snapshot \
-  -noaudio -no-boot-anim -memory 3072 -cores 2 $ACCEL > /tmp/emu-x86.log 2>&1 &
+# =============================================================================
+# 5) boot
+# =============================================================================
+log "iniciando emulador x86_64 (RAM 4G, cores 2)..."
+nohup emulator -avd "$AVD" -no-window -gpu swiftshader_indirect -no-snapshot \
+  -noaudio -no-boot-anim -memory 4096 -cores 2 $ACCEL > /tmp/emu-x86.log 2>&1 &
 
-adb wait-for-device 2>&1 | tee -a evidence/00_boot.log &
+adb wait-for-device >/dev/null 2>&1 &
 ADBW=$!
+BOOTED=0
 for i in $(seq 1 60); do
   if ! kill -0 $ADBW 2>/dev/null; then break; fi
   BOOT=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
   log "aguardando boot: boot_completed=${BOOT:-'?'} (iter $i/60)"
-  [ "$BOOT" = "1" ] && break
+  if [ "$BOOT" = "1" ]; then BOOTED=1; break; fi
   sleep 10
 done
+# margem para o launcher assentar (evita DeadSystemException de sistema recém-bootado)
+if [ "$BOOTED" = "1" ]; then
+  log "boot concluído; aguardando sistema assentar (45s)..."
+  sleep 45
+fi
 echo "boot_completed=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" | tee -a evidence/00_boot.log
 echo "abi=$(adb shell getprop ro.product.cpu.abi 2>/dev/null | tr -d '\r')" | tee -a evidence/00_boot.log
 echo "sdk=$(adb shell getprop ro.build.version.sdk 2>/dev/null | tr -d '\r')" | tee -a evidence/00_boot.log
-tail -20 /tmp/emu-x86.log 2>/dev/null | tee -a evidence/00_boot.log
+tail -20 /tmp/emu-x86.log 2>/dev/null | tr '\r' '\n' | tee -a evidence/00_boot.log
 
-# ---------- 5) testes do APK real ----------
+# =============================================================================
+# 6) suite do APK real
+# =============================================================================
 log "rodando suite de testes do APK real (.github/emu-test.sh)"
 bash .github/emu-test.sh
 echo "FIM X86" | tee -a evidence/00_boot.log
