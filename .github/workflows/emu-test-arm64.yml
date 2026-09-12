@@ -1,0 +1,45 @@
+name: emu-test-arm64
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [arena/01a077ef-5]
+
+permissions:
+  contents: write
+
+jobs:
+  arm64:
+    runs-on: macos-14          # Apple Silicon (arm64)
+    timeout-minutes: 120
+    steps:
+      - name: Checkout (APK + modelos tiny + scripts)
+        uses: actions/checkout@v4
+        with:
+          ref: arena/01a077ef-5
+
+      - name: JDK 17 (sdkmanager precisa)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Emulador ARM64 + testes do APK real
+        run: bash .github/emu-test-arm64.sh
+
+      - name: Upload evidencias (logcat + screenshots)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: emu-arm64-evidence
+          path: evidence/
+          if-no-files-found: ignore
+
+      - name: Publicar evidencias no repo (branch evidence-arm64)
+        if: always()
+        run: |
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -f evidence 2>/dev/null || true
+          git commit -m "evidence arm64 $(date -u +%Y%m%d%H%M%S)" 2>/dev/null || true
+          git push origin HEAD:evidence-arm64 --force 2>/dev/null || true
