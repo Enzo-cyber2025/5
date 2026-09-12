@@ -427,4 +427,13 @@ log "modelo inexistente:"; cat evidence/50_nonexistent.txt; cat evidence/52_none
   echo "--- inexistente ---"; cat evidence/50_nonexistent.txt 2>/dev/null
 } | tee evidence/99_summary.txt
 
+# ---------- APK corrigido (publicado para download) ----------
+if [ -f GGUF-Chat-fixed.apk ]; then
+  cp -f GGUF-Chat-fixed.apk evidence/GGUF-Chat-fixed.apk
+  ls -l GGUF-Chat-fixed.apk | tee evidence/60_apk.txt
+  echo "APK_SHA256=$(sha256sum GGUF-Chat-fixed.apk | cut -d' ' -f1)" | tee -a evidence/60_apk.txt
+else
+  echo "APK ausente" | tee evidence/60_apk.txt
+fi
+
 log "FIM"
