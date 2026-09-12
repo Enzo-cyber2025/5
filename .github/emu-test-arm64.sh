@@ -1,57 +1,46 @@
 #!/usr/bin/env bash
 # =============================================================================
-#  Emulador Android ARM64 (arm64-v8a) + testes do APK REAL GGUF-Chat.apk
+#  Emulador Android ARM64 (arm64-v8a) + testes do APK REAL GGUF-Chat-fixed.apk
 # -----------------------------------------------------------------------------
-#  Roda EM DOIS LUGARES:
-#   1) Local, num Mac Apple Silicon (M1/M2/M3):  bash .github/emu-test-arm64.sh
-#      -> usa aceleração HVF (rápido). É o jeito MAIS fiel de reproduzir o crash
-#         (o celular do usuário é arm64).
-#   2) No runner macos-14 do GitHub Actions (Apple Silicon arm64).
-#      -> se HVF não estiver disponível, cai automaticamente para emulação por
-#         software (-no-accel), mais lenta mas funcional.
-#
-#  POR QUE ARM64: o APK traz libs nativas em arm64-v8a E x86_64. O celular real
-#  (onde o app "crasha antes de abrir") é arm64; se o crash estiver na lib nativa
-#  arm64, só um host arm64 reproduz. O emulador oficial NÃO roda guest arm64 em
-#  host x86_64 ("PANIC: arm64 not supported on x86_64 host") — por isso isto roda
-#  num host ARM64 de verdade.
-#
-#  Depois de bootar, chama .github/emu-test.sh, que faz o teste completo:
-#  instala o APK real -> importa GGUF+mmproj -> abre MainActivity/ChatActivity ->
-#  CPU / Vulkan / modelo+mmproj / modelo inexistente -> logcat + screenshots.
+#  Roda no runner macos-14 (Apple Silicon arm64) do GitHub Actions.
+#  Se HVF não estiver disponível (VM sem virtualização aninhada), cai para
+#  emulação por software (-no-accel), que é muito lenta — por isso TODO o
+#  progresso é registrado em evidence/ (vai para a branch evidence-arm64),
+#  para diagnóstico mesmo quando o job estoura o timeout.
 # =============================================================================
 set -u
 
-API=30                      # minSdk do APK é 24; 30 é o arm64-v8a "canônico".
+API="${API_LEVEL:-30}"
 IMG="system-images;android-${API};google_apis;arm64-v8a"
 AVD="arm64avd"
 SDK_ROOT="${ANDROID_HOME:-$HOME/android-sdk}"
 export ANDROID_HOME="$SDK_ROOT"
 export ANDROID_SDK_ROOT="$SDK_ROOT"
 CT="$SDK_ROOT/cmdline-tools/latest/bin"
-mkdir -p "$SDK_ROOT"
+mkdir -p "$SDK_ROOT" evidence
 
-log() { echo "[emu-arm64] $*"; }
+log() { echo "[emu-arm64 $(date -u +%H:%M:%S)] $*" | tee -a evidence/00_boot.log; }
 
-# ---------- Java (sdkmanager é um programa Java) ----------
+# ---------- Java ----------
 if ! command -v java >/dev/null 2>&1; then
-  log "Java não encontrado — instale um JDK (ex.: temurin 17) e rode de novo."
-  exit 2
+  log "Java não encontrado"; exit 2
 fi
+java -version 2>&1 | tee -a evidence/00_boot.log
 
-# ---------- 1) SDK + imagem arm64-v8a (pula se já existir) ----------
+# ---------- 1) SDK + imagem arm64-v8a ----------
 if [ ! -x "$SDK_ROOT/emulator/emulator" ] || [ ! -d "$SDK_ROOT/system-images/android-${API}/google_apis/arm64-v8a" ]; then
   log "baixando cmdline-tools..."
   CTZIP="https://dl.google.com/android/repository/commandlinetools-mac-8512546_latest.zip"
-  curl -sSLo /tmp/ct.zip "$CTZIP" || { log "falha ao baixar cmdline-tools de $CTZIP"; exit 3; }
+  curl -sSLo /tmp/ct.zip "$CTZIP" || { log "falha ao baixar cmdline-tools"; exit 3; }
   unzip -qo /tmp/ct.zip -d /tmp/ct
   mkdir -p "$SDK_ROOT/cmdline-tools/latest"
   rm -rf "$SDK_ROOT/cmdline-tools/latest"/* 2>/dev/null || true
   mv /tmp/ct/cmdline-tools/* "$SDK_ROOT/cmdline-tools/latest/"
   log "aceitando licenças + instalando emulator / platform-tools / $IMG"
   yes | "$CT/sdkmanager" --licenses >/dev/null 2>&1 || true
-  "$CT/sdkmanager" "platform-tools" "emulator" "$IMG" || { log "sdkmanager falhou"; exit 4; }
+  "$CT/sdkmanager" "platform-tools" "emulator" "$IMG" 2>&1 | tail -20 | tee -a evidence/00_boot.log || { log "sdkmanager falhou"; exit 4; }
 fi
+log "SDK pronto."
 export PATH="$SDK_ROOT/emulator:$SDK_ROOT/platform-tools:$PATH"
 
 # ---------- 2) AVD ----------
@@ -60,30 +49,38 @@ if ! "$CT/avdmanager" list avd 2>/dev/null | grep -q "$AVD"; then
   echo no | "$CT/avdmanager" create avd -n "$AVD" -k "$IMG" -d pixel_5 --force || true
 fi
 
-# ---------- 3) aceleração: tenta HVF, senão software ----------
-if emulator -accel-check 2>&1 | grep -qi "usable"; then
+# ---------- 3) aceleração ----------
+"$SDK_ROOT/emulator/emulator" -accel-check 2>&1 | tee -a evidence/00_boot.log || true
+if "$SDK_ROOT/emulator/emulator" -accel-check 2>&1 | grep -qi "usable"; then
   ACCEL=""; log "aceleração HVF ativa"
 else
-  ACCEL="-no-accel"; log "SEM aceleração -> emulação por software (lenta)"
+  ACCEL="-no-accel"; log "SEM aceleração -> emulação por software (muito lenta)"
 fi
 
-# ---------- 4) boot em background ----------
-log "iniciando emulador arm64... (RAM 4G + cores 4; swap/zram configurado dentro do guest)"
-nohup emulator -avd "$AVD" -no-window -gpu swiftshader_indirect -no-snapshot \
-  -noaudio -no-boot-anim -memory 4096 -cores 4 $ACCEL >/tmp/emu-arm64.log 2>&1 &
+# ---------- 4) boot ----------
+log "iniciando emulador arm64 (RAM 3G, cores 3)..."
+nohup "$SDK_ROOT/emulator/emulator" -avd "$AVD" -no-window -gpu swiftshader_indirect -no-snapshot \
+  -noaudio -no-boot-anim -memory 3072 -cores 3 $ACCEL > /tmp/emu-arm64.log 2>&1 &
+echo $! > /tmp/emu.pid
 
-adb wait-for-device
-log "device conectado; esperando boot_completed (pode demorar em software)..."
-for i in $(seq 1 240); do
-  B=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
-  [ "$B" = "1" ] && break
-  sleep 10
+"$SDK_ROOT/platform-tools/adb" wait-for-device 2>&1 | tee -a evidence/00_boot.log &
+ADBW=$!
+for i in $(seq 1 90); do
+  if ! kill -0 $ADBW 2>/dev/null; then break; fi
+  DEV=$("$SDK_ROOT/platform-tools/adb" devices 2>/dev/null | grep -c "device$" || true)
+  BOOT=$("$SDK_ROOT/platform-tools/adb" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
+  log "aguardando boot: devices=$DEV boot_completed=${BOOT:-'?'} (iter $i/90)"
+  [ "$BOOT" = "1" ] && break
+  sleep 20
 done
-echo "boot_completed=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')"
-echo "abi=$(adb shell getprop ro.product.cpu.abi 2>/dev/null | tr -d '\r')"
-echo "sdk=$(adb shell getprop ro.build.version.sdk 2>/dev/null | tr -d '\r')"
+
+echo "boot_completed=$("$SDK_ROOT/platform-tools/adb" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" | tee -a evidence/00_boot.log
+echo "abi=$("$SDK_ROOT/platform-tools/adb" shell getprop ro.product.cpu.abi 2>/dev/null | tr -d '\r')" | tee -a evidence/00_boot.log
+echo "sdk=$("$SDK_ROOT/platform-tools/adb" shell getprop ro.build.version.sdk 2>/dev/null | tr -d '\r')" | tee -a evidence/00_boot.log
+echo "--- /tmp/emu-arm64.log (tail) ---" | tee -a evidence/00_boot.log
+tail -40 /tmp/emu-arm64.log 2>/dev/null | tee -a evidence/00_boot.log
 
 # ---------- 5) testes do APK real ----------
 log "rodando suite de testes do APK real (.github/emu-test.sh)"
 bash .github/emu-test.sh
-echo "FIM ARM64"
+echo "FIM ARM64" | tee -a evidence/00_boot.log
