@@ -34,13 +34,22 @@ jobs:
           GH_REPO: Enzo-cyber2025/5
         run: |
           set -euo pipefail
+          exec > >(tee /tmp/apk-delivery.log) 2>&1
           APK=tested/GGUF-Chat-repaired.apk
           echo "b3ae6a0df9c9cd38f947f67df6c19fe01ea6dfd39eb4f39979cd13009c62a0f6  $APK" | sha256sum -c -
           TAG=gguf-apk-f6dc954
-          if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" --target f6dc9542a835481a5e54448b186be739947f806a \
-              --prerelease --latest=false --title "GGUF Chat — tested Vulkan APK" \
-              --notes "Exact signed APK from successful run 34778868262. Android API 35 x86_64: 31/31 layers on software Vulkan, native generation completed and reply persisted. 94 tooling and 33 JVM tests passed. Physical GPU/ARM64, answer quality, UTF-8, SAF and vision are NOT approved. Test signing key differs from existing installations; back up important data before uninstalling. SHA-256: b3ae6a0df9c9cd38f947f67df6c19fe01ea6dfd39eb4f39979cd13009c62a0f6."
-          fi
+          gh release view "$TAG" >/dev/null
           gh release upload "$TAG" "$APK" --clobber
           gh release view "$TAG" --json assets --jq '.assets[] | select(.name == "GGUF-Chat-repaired.apk") | .url'
+      - name: Delivery diagnostics
+        if: always()
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('/tmp/apk-delivery.log')
+          if p.exists():
+              text = p.read_text()[-8000:]
+              for i in range(0, len(text), 2800):
+                  chunk = text[i:i+2800].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+                  print('::notice title=APK delivery::' + chunk)
+          PY
