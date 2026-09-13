@@ -2,7 +2,7 @@
 """Build a coherent native stack and an UNSIGNED APK, for local persistent signing.
 No signing key or password is placed in CI, artifacts, logs or Git.
 """
-import copy, hashlib, json, os, re, shutil, struct, subprocess, sys, zipfile
+import copy, hashlib, json, os, re, shutil, struct, subprocess, sys, textwrap, zipfile
 from mobile_manifest import enforce_min_sdk
 from pathlib import Path
 from build_apk import ORIGINAL_APK_SHA256, signature_entry, verify_alignment
@@ -30,12 +30,14 @@ def ui_patches(app):
     # Link precisely the selection and remove the old global guesser.
     p=app/'MainActivity$26.smali';s=p.read_text();marker='    invoke-static {v0}, Lcom/ggufchat/app/MainActivity;->access$1900(Lcom/ggufchat/app/MainActivity;)V'
     assert s.count(marker)==1
-    begin='    invoke-virtual {v1}, Ljava/util/ArrayList;->size()I'
-    assert s.count(begin)==1
-    s=s.replace(begin,'    if-nez v2, :mobile_pair_started\n    invoke-static {v0, v1}, Lcom/ggufchat/app/Pairing;->begin(Landroid/content/Context;Ljava/util/ArrayList;)V\n    :mobile_pair_started\n'+begin)
     s=s.replace(marker,'    invoke-static {v0, v1}, Lcom/ggufchat/app/Pairing;->linkSelected(Landroid/content/Context;Ljava/util/ArrayList;)V\n\n'+marker);p.write_text(s)
     p=app/'MainActivity.smali';s=p.read_text();a=s.index('.method private navButton(');b=s.index('.end method',a);s=s[:a]+s[a:b].replace('    return-object v0','    invoke-static {v0}, Lcom/ggufchat/app/CompactUi;->style(Landroid/widget/Button;)V\n    return-object v0')+s[b:];s=method_replace(s,'.method private linkMmprojs()V','.method private linkMmprojs()V\n    .locals 0\n    invoke-direct {p0}, Lcom/ggufchat/app/MainActivity;->refreshModels()V\n    return-void\n.end method');p.write_text(s)
     p=app/'MainActivity.smali';s=p.read_text()
+    a=s.index('.method protected onActivityResult(');b=s.index('.end method',a)
+    part=s[a:b];marker='    invoke-direct {p0, v1, v2}, Lcom/ggufchat/app/MainActivity;->importModel(Landroid/net/Uri;Ljava/lang/Runnable;)V'
+    assert part.count(marker)==1
+    part=part.replace(marker,'    invoke-static {p0, v0}, Lcom/ggufchat/app/Pairing;->begin(Landroid/content/Context;Ljava/util/ArrayList;)V\n'+marker)
+    s=s[:a]+part+s[b:]
     a=s.index('.method private refreshImportList()V');b=s.index('.end method',a)
     part=s[a:b];marker='    move-result-object v1'
     assert part.count(marker)==2
@@ -88,6 +90,11 @@ def main():
     if os.environ.get('GGUF_REUSE_TESTED_NATIVE')=='1':
         base=json.loads((ROOT/'ci/mobile-native-base.json').read_text())
         assert base['llama_commit']==SOURCE_SHA
+        recipe=Path(__file__).read_text()
+        vk_recipe=re.search(r'(?ms)^    vk=source/.*?(?=^    native_origin=)',recipe).group()
+        compile_recipe=re.search(r'(?ms)^        libs=build_diagnostics\(WORK\).*?(?=^    intermediate=)',recipe).group()
+        digest=hashlib.sha256((vk_recipe+textwrap.dedent(compile_recipe)).encode()).hexdigest()
+        assert digest==base['native_recipe_sha256'],'Native recipe changed: disable cache and rebuild'
         for name,digest in base['source_inputs'].items():
             assert hashlib.sha256((ROOT/name).read_bytes()).hexdigest()==digest, 'Native source changed: disable GGUF_REUSE_TESTED_NATIVE and rebuild'
         libs={}
