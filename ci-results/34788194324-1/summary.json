@@ -1,0 +1,28 @@
+{
+  "status": "PASS",
+  "scope": "single-stored-unit-SAF-eye-Vulkan-projector-text",
+  "checks": {
+    "saf_multiselect_pair": "PASS",
+    "imported_sha256": "PASS",
+    "single_stored_unit_and_eye": "PASS",
+    "pair_survives_restart": "PASS",
+    "native_model_and_projector_load": "PASS",
+    "vulkan_language_and_projector_weights": "PASS",
+    "compact_single_row_10px_toggle": "PASS",
+    "native_generation_and_persistence": "PASS",
+    "second_vulkan_generation": "PASS",
+    "basic_response_quality": "PASS",
+    "repeat_saf_import_keeps_pairs_separate": "PASS",
+    "normal_model_without_eye": "PASS",
+    "delete_unit_removes_both_preserves_others": "PASS",
+    "physical_A55": "NOT_TESTED: emulator x86_64 is not Samsung ARM64 hardware",
+    "image_inference": "NOT_TESTED: model/projector load and text message only"
+  },
+  "apk_sha256": "ab30020d22076701d68db939c8c1a33ca10e50e6f7f598ae1e7a9d59665ecc03",
+  "backend_requested": "Vulkan, 99 language layers requested; projector weights also Vulkan",
+  "environment": "Android Vulkan through Mesa software driver, not physical GPU",
+  "generation_pid": "4851",
+  "offload_records": [
+    "offloaded 31/31 layers to GPU"
+  ]
+}
