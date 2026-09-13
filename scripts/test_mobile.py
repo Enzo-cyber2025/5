@@ -119,6 +119,8 @@ def main():
         summary['status']='PASS'
     except Exception as e:
         summary['error']=str(e);traceback.print_exc()
+        commands=EVIDENCE/'commands.log'
+        (EVIDENCE/'failure-context.txt').write_text(traceback.format_exc()+'\n'+(commands.read_text()[-20000:] if commands.exists() else ''))
     finally:
         try:
             (EVIDENCE/'final-logcat.txt').write_text(d.adb('logcat','-d'))

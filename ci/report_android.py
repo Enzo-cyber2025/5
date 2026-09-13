@@ -45,7 +45,7 @@ def main():
     log = root / 'final-logcat.txt'
     if log.exists():
         lines = [line for line in log.read_text(errors='replace').splitlines()
-                 if re.search(r'GGUFChatNative|GGUFNativeStderr|GGUF_REPAIR|FATAL EXCEPTION|Fatal signal|Abort message:|F DEBUG', line)]
+                 if re.search(r'GGUFPairing|AndroidRuntime|GGUFChatNative|GGUFNativeStderr|GGUF_REPAIR|FATAL EXCEPTION|Fatal signal|Abort message:|F DEBUG', line)]
         emit('app logcat', '\n'.join(lines[-45:])[-8000:])
 
 
