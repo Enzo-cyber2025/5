@@ -8,9 +8,15 @@
 3. `patch_smali.py`: substitui `EngineManager` pela versão com cache completo e
    validação básica de arquivos; adiciona `GenerationResult` e sua chamada dentro
    do `try/catch` existente de `GenerationService`.
-4. Recompila, copia o novo DEX para o ZIP original, preserva recursos/libs byte a byte,
+4. Corrige o filtro de modelos, o guarda de envio e os acessos privados dos workers.
+5. Acrescenta `libdl.so` ao DT_NEEDED da ponte JNI ARM64/x86_64 com patchelf 0.17.2.4;
+   verifica SONAME, arquitetura e igualdade das seções de código/dados protegidas.
+6. Recompila, copia o novo DEX para o ZIP original e as duas pontes JNI corrigidas,
    remove assinaturas antigas, alinha dados não comprimidos e assina com apksigner 0.9.
-5. Verifica assinatura v2/v3, alinhamento e igualdade dos payloads não DEX.
+7. Verifica assinatura v2/v3, alinhamento e igualdade dos demais payloads.
+
+A geração nativa foi executada no emulador, mas a qualidade das respostas não passou.
+Veja [o relatório](../docs/GERACAO.md). O erro de UTF-8 da ponte nativa continua pendente.
 
 Não execute patches em APKs de procedência/versão diferente. A checagem de hash usa
 `ValueError`, não `assert`, e continua ativa com `python -O`.

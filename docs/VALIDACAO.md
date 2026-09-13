@@ -1,13 +1,20 @@
 # GGUF Chat — validação de 13/09/2026
 
+## Estado atual
+
+**Geração técnica PASS; pertinência FAIL; validação integral NÃO aprovada.**
+Veja [GERACAO.md](GERACAO.md) para a execução real mais recente, as respostas, os
+novos reparos e as limitações. O histórico de falhas SAF abaixo continua relevante,
+mas já houve inferência nativa posterior com preparação direta do modelo.
+
 ## Artefato
 
 - Original: `GGUF-Chat.apk`, commit `90b737409db091ca8c4d75a33b9d5d27748dbacb` da
   branch `arena/01a077ef-5` de `Enzo-cyber2025/5`.
 - SHA-256 original: `02f97871a28936b4374001e0df7352461821181957a5f740207fa5eea4117281`.
 - SHA-256 do DEX original: `2ef843184d5ae3b65e7fd79ea06b29cacd0249d6738c353e5d332b9b334e6f2c`.
-- Entrega: `GGUF-Chat-repaired.apk`, **90.118.427 bytes** (aprox. 85,9 MiB).
-- SHA-256 da entrega: `8cdb56563e820fff109f76b104ba82010577dc79f29439abefabbd84a99fd528`.
+- Entrega: `GGUF-Chat-repaired.apk`, **90.175.777 bytes**.
+- SHA-256 da entrega: `113ecfb6aefa08450cc5a65b00ec4c13dc3550e72a3386a45f2cbbc5116e1c2e`.
 - Package: `com.ggufchat.app`; versão 2.0; minSdk 24; targetSdk 34, preservados.
 - Certificado de teste SHA-256:
   `4826e7eca2928a404e027a75f3e69e2aa077a49d5b566609104a667519b0e5f1`.
@@ -33,8 +40,9 @@ A verificação não reportou uso do esquema v1. Não é necessário para minSdk
 v2 está válido. Nenhum targetSdk foi reduzido para contornar assinatura.
 
 A rotina de build conferiu o alinhamento de 4 bytes dos dados ZIP não comprimidos e
-comparou todos os recursos e bibliotecas nativas com o APK original. Somente o DEX
-(e as assinaturas) mudou. As classes de teste não entram na entrega.
+comparou os recursos e bibliotecas com o APK original. Além do DEX e assinatura,
+foram corrigidos metadados ELF de dependência nas duas pontes `libaijni.so`, sem
+alterar suas seções de código executável. As demais libs permanecem byte a byte iguais. As classes de teste não entram na entrega.
 
 ### 2. Regressões das classes reais no host — 33 PASS
 
@@ -77,10 +85,10 @@ As falhas reproduzem os caminhos válidos virando null, perda do mmproj no carre
 cache ignorando configurações e ausência das novas proteções de arquivos. Não se
 trata de 21 bugs independentes: há múltiplos casos para cada defeito.
 
-### 4. Ferramentas e automação — 27 PASS locais e no CI
+### 4. Ferramentas e automação — 40 PASS locais; 37 na última execução CI
 
 ```text
-27 passed
+40 passed
 ```
 
 Cobertura inclui rejeição de DEX desconhecido/já alterado, checksums, alinhamento ZIP,
@@ -122,7 +130,9 @@ Uma tentativa intermediária (`34767418982`) também registrou desconexão trans
 em `adb root`, antes da instalação. Isso é uma falha da execução do teste, não prova
 de falha do APK. Não há execução completa aprovada nesta sessão.
 
-**Não há aprovação de geração CPU, GPU/Vulkan, visão ou fluxos completos até aqui.**
+O histórico acima antecede a execução posterior de geração técnica CPU, que passou
+no run `34769745227`. A pertinência das respostas reprovou a avaliação; GPU/Vulkan,
+visão e fluxos completos continuam sem aprovação. Veja [GERACAO.md](GERACAO.md).
 Os APKs do CI usam chaves descartáveis e hashes próprios, registrados nos resumos;
 não são o mesmo binário assinado localmente descrito no início deste documento.
 
@@ -151,7 +161,8 @@ Não foi tratado como bug pendente e o workflow antigo não foi modificado.
 
 1. Completar os fluxos de importação/geração no emulador e testar no aparelho alvo.
    Instalação e abertura já passaram no emulador x86_64.
-2. Validar inferência com modelos GGUF reais e um par de visão/projetor compatível.
+2. Corrigir/investigar a pertinência das respostas e a conversão UTF-8. A inferência
+   CPU com modelo real já produziu e salvou respostas; visão continua sem validação.
 3. A validação de cabeçalho não detecta todos os tensores corrompidos/incompatíveis;
    falhas internas das bibliotecas nativas existentes ainda são possíveis.
 4. Conversas já salvas com caminhos nulos não têm recuperação automática neste reparo.

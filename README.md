@@ -21,24 +21,35 @@ O trabalho desta sessão fica em **`arena/01a09b42-5`**; nenhuma outra branch é
   booleano de `Native.generate()` e encaminha falhas ao tratamento de erro existente.
 - **VerifyError ao abrir:** preservado o patch int/float de `showMmprojPicker()`.
 
-As bibliotecas nativas, recursos, permissões, package name e SDKs do APK original
-**não foram trocados**. Apenas `classes.dex` e a assinatura foram alterados.
-Este repositório contém o código de reparo; não substitui o APK por uma interface
-simulada, nem reimplementa o motor nativo.
+- **Modelos ocultos ao criar conversa:** corrigido filtro invertido de `mmproj`.
+- **Crash na tela da conversa:** oito acessos privados ilegais em workers foram
+  substituídos por accessors sintéticos, preservando os membros privados.
+- **Enviar não fazia nada:** corrigido guarda que rejeitava conversas não nulas.
+- **Motor não carregava:** adicionada dependência ELF `libdl.so` à ponte JNI nas
+  duas arquiteturas. Código executável, `.rodata`, `.data` e SONAME são conferidos.
+
+Recursos, permissões, package name e SDKs não foram trocados. As bibliotecas do motor
+llama/ggml permanecem iguais; somente o DEX, os metadados de dependência das duas
+`libaijni.so` e a assinatura mudaram. Não há interface nem inferência simulada.
 
 ## Estado da validação
 
-**APK reconstruído, assinatura v2/v3 verificada. O emulador Android 11 x86_64
-já iniciou, instalou e abriu o aplicativo. A validação completa ainda está pendente.**
+**Geração nativa comprovada; qualidade das respostas REPROVADA.**
 
-A execução [34767511976](https://github.com/Enzo-cyber2025/5/actions/runs/34767511976)
-aprovou **33 regressões JVM + 27 testes de ferramentas = 60 testes**.
-No Android, instalação e abertura passaram, mas a seleção do arquivo GGUF pelo SAF
-continuou falhando após os ajustes. **O teste completo está FAIL; a importação e a
-geração nativa não foram aprovadas.**
+A execução [34769745227](https://github.com/Enzo-cyber2025/5/actions/runs/34769745227)
+aprovou build, assinatura, **37 testes de ferramentas + 33 JVM**, instalação e duas
+respostas reais em CPU no Android 11 x86_64, incluindo reinício do processo.
+Cada resposta exigiu `Native.generate()` concluído e mensagem de assistant persistida.
 
-[Captura real do app aberto no emulador](ci-results/34767511976-1/launch.png) ·
-[Resumo da execução](ci-results/34767511976-1/summary.json)
+**Isso não aprovou a pertinência:** a pergunta “2 + 2” recebeu uma frase sem relação
+com a pergunta. Também foi observado erro UTF-8 com acentos numa tentativa anterior.
+Importação SAF, português, Vulkan, visão e aparelho ARM64 continuam sem aprovação.
+O modelo real foi preparado diretamente no emulador, não importado pelo seletor.
+
+Veja [o relatório de geração e as respostas reais](docs/GERACAO.md).
+A automação agora também exige uma verificação básica de pertinência. Essa nova
+verificação foi testada localmente e reprovou as saídas gravadas; ainda não houve
+novo run remoto após adicioná-la. **Não interprete o run verde anterior como aprovação completa.**
 
 Os testes de host executam classes reais do APK, traduzidas de DEX para JVM, com
 substitutos explícitos de `Native` e `org.json`. Isso permite verificar controle de
@@ -85,7 +96,7 @@ seus artefatos são builds de teste, **não uma sequência de updates assinados 
 
 O build rejeita APK/DEX desconhecidos por SHA-256, usa ferramentas fixadas por hash,
 recalcula os checksums DEX, recompila o smali, alinha entradas ZIP não comprimidas,
-assina com `apksigner` e compara todos os recursos/libs com o original.
+assina com `apksigner` e compara os recursos/libs com o original, exceto a alteração verificada de dependência JNI.
 Não há assinatura APK implementada à mão em Python.
 
 ## Testes locais
@@ -102,7 +113,7 @@ Os quatro testes da nova classe `GenerationResult` só existem na versão corrig
 ## Testes reais no Android
 
 Use **somente emulador descartável**, Google APIs com `adb root` (não Play Store).
-O teste limpa os dados de `com.ggufchat.app`, importa via SAF, exige uma resposta
+O modo completo limpa os dados de `com.ggufchat.app`, importa via SAF e exige uma resposta
 persistida de `assistant` e o resultado positivo real de `Native.generate()`, tenta
 GPU e testa erro de arquivo ausente. Nunca usa textos do seletor como respostas.
 
@@ -124,7 +135,9 @@ O workflow está **ativo** em [`.github/workflows/gguf-repair.yml`](.github/work
 com cópia em [`ci/gguf-repair.yml`](ci/gguf-repair.yml). A autorização para publicá-lo
 foi resolvida; não é necessário criar arquivos manualmente.
 
-O evento `push` nesta branch inicia build e emulador com um modelo real.
+O evento `push` nesta branch inicia build e teste de geração com um modelo real,
+preparado diretamente (`GGUF_MODEL_SETUP=provisioned`, `GGUF_GENERATION_ONLY=1`).
+Esse teste não executa o fluxo completo SAF/GPU/arquivo ausente.
 Na execução manual, marque `run_android` para executar o emulador.
 Isso consome minutos do GitHub Actions.
 

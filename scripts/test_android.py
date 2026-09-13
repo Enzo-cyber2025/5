@@ -16,7 +16,7 @@ import zipfile
 import xml.etree.ElementTree as ET
 
 from android_checks import (PACKAGE, PICKERS, assistant_reply, fusion, generation_completed,
-                            gpu_offloaded, has_package, imported, position)
+                            gpu_offloaded, has_package, imported, position, basic_response_quality)
 
 
 class Android:
@@ -367,6 +367,13 @@ def main():
             device.generate(model, 0, "cpu-second", prompt="Reply in English: What is two plus two?")
             result["checks"]["cpu_second_generation"] = "PASS: novo processo e nova conversa"
             device.capture("cpu-second-reply.png")
+            try:
+                basic_response_quality((args.evidence / "cpu-reply.txt").read_text(),
+                                       (args.evidence / "cpu-second-reply.txt").read_text())
+            except AssertionError as exc:
+                result["checks"]["basic_relevance"] = "FAIL: " + str(exc)
+                raise
+            result["checks"]["basic_relevance"] = "PASS: verificação básica, não benchmark"
             result["status"] = "PASS"
             return
         vk_log = device.generate(model, -1, "vulkan")

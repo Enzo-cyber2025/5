@@ -83,3 +83,16 @@ def generation_completed(log):
 def gpu_offloaded(log):
     # Merely loading libggml-vulkan.so/SwiftShader is NOT proof of GPU inference.
     return bool(re.search(r"offloaded\s+[1-9]\d*(?:/\d+)?\s+layers?\s+to\s+GPU", log, re.I))
+
+
+def basic_response_quality(greeting, arithmetic):
+    """Conservative sanity check for the suite's two fixed prompts, not a benchmark."""
+    if not re.search(r'\b(hello|hi|hey|greetings|good morning|good afternoon|good evening)\b', greeting, re.I):
+        raise AssertionError('Resposta não contém uma saudação pertinente ao primeiro pedido')
+    answer = arithmetic.casefold().replace('*', '').replace('`', '').strip(' \n.!')
+    accepted = {'4', 'four', '2+2=4', '2 + 2 = 4', 'two plus two is four',
+                'two plus two equals four', 'two plus two is 4', 'two plus two equals 4',
+                'the answer is 4', 'the answer is four'}
+    if answer not in accepted:
+        raise AssertionError('Resposta à pergunta 2 + 2 não corresponde à resposta simples esperada: 4')
+    return True

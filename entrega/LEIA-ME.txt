@@ -1,15 +1,18 @@
-GGUF-Chat-repaired.apk — build local de teste, 13/09/2026
+GGUF-Chat-repaired.apk — build local de teste atualizado, 13/09/2026
 
-Assinatura v2/v3 verificada pelo apksigner oficial. 54 testes locais passaram.
-Esse é o APK local originalmente validado com 54 testes. A suíte foi ampliada depois.
-Builds do CI já instalaram e abriram no emulador Android 11 x86_64, mas ainda NÃO
-passaram no fluxo completo de importação/geração. O CI usa outra chave de teste.
-Veja ../docs/VALIDACAO.md para correções, evidências e limitações.
+Assinatura v2/v3 verificada. Novos reparos: seletor interno de modelos, guarda de
+Enviar, acesso privado dos workers e dependência libdl da ponte JNI.
 
-ATENÇÃO: usa nova chave de teste; pode não atualizar por cima do APK anterior.
-Não desinstale sua versão sem antes salvar conversas/modelos importantes:
-a desinstalação apaga dados privados. Se não conseguir fazer backup, use outro
-aparelho/emulador para testar.
+A execução CI 34769745227 comprovou duas gerações nativas em Android 11 x86_64.
+Porém, as respostas foram inadequadas aos pedidos. Português/UTF-8, importação SAF,
+GPU, visão e funcionamento no aparelho alvo NÃO estão aprovados.
+Veja ../docs/GERACAO.md e ../docs/VALIDACAO.md.
 
-As bibliotecas nativas e os recursos originais foram preservados.
-Não há garantia de funcionamento integral de Vulkan/visão no aparelho alvo.
+Este APK foi reconstruído localmente, com a mesma chave local da entrega anterior.
+NÃO é o binário exato executado no CI: o CI usa assinatura descartável e o DEX dos
+builds local/remoto tem hashes diferentes; essa diferença ainda não foi investigada.
+As bibliotecas nativas locais correspondem byte a byte às do último teste CI.
+
+A chave continua diferente da assinatura do aplicativo original. Não desinstale
+sua versão sem salvar conversas/modelos importantes: desinstalar apaga dados.
+Use um aparelho/emulador separado se não conseguir fazer backup.

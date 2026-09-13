@@ -334,3 +334,17 @@ def test_jni_libdl_fix_preserves_executable_code(tmp_path, abi):
     assert result != data
     with pytest.raises(ValueError, match='dependencies differ'):
         patch_jni(result, tmp_path / 'already-patched.so')
+
+
+@pytest.mark.parametrize('greeting,answer,valid', [
+    ('Hello! How can I help?', 'Two plus two is four.', True),
+    ('Houston, I am writing about a conference.', '4', False),
+    ('Hi there!', 'O que é um idioma?', False),
+])
+def test_basic_generation_quality_rejects_irrelevant_answers(greeting, answer, valid):
+    from android_checks import basic_response_quality
+    if valid:
+        assert basic_response_quality(greeting, answer)
+    else:
+        with pytest.raises(AssertionError):
+            basic_response_quality(greeting, answer)
