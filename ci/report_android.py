@@ -35,12 +35,12 @@ def main():
         if p.exists():
             text = p.read_text(errors='replace')
             if 'logcat' in name:
-                text = '\n'.join(x for x in text.splitlines() if re.search(r'GGUFChatNative|ggml_vulkan|offload|GGUF_REPAIR|FATAL|UnsatisfiedLink', x))
+                text = '\n'.join(x for x in text.splitlines() if re.search(r'GGUFChatNative|GGUFNativeStderr|ggml_vulkan|offload|GGUF_REPAIR|FATAL|UnsatisfiedLink', x))
             emit(name, text[:8000])
     log = root / 'final-logcat.txt'
     if log.exists():
         lines = [line for line in log.read_text(errors='replace').splitlines()
-                 if re.search(r'GGUFChatNative|GGUF_REPAIR|FATAL EXCEPTION|Fatal signal|com\.ggufchat|llama_|ggml_', line)]
+                 if re.search(r'GGUFChatNative|GGUFNativeStderr|GGUF_REPAIR|FATAL EXCEPTION|Fatal signal|com\.ggufchat|llama_|ggml_', line)]
         emit('app logcat', '\n'.join(lines[-45:])[-8000:])
 
 

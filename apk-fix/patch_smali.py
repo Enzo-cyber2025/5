@@ -44,8 +44,17 @@ def patch_send_guard(source):
     return source[:start] + method + source[end:]
 
 
+def patch_native_logging(source):
+    marker = '    const-string v0, "aijni"'
+    if source.count(marker) != 1 or '"ggufdiagnostics"' in source:
+        raise ValueError("Unexpected Native library initializer or already patched")
+    return source.replace(marker, '    const-string v0, "ggufdiagnostics"\n\n    invoke-static {v0}, Ljava/lang/System;->loadLibrary(Ljava/lang/String;)V\n\n' + marker)
+
+
 def apply(decoded: Path):
     app = decoded / "smali/com/ggufchat/app"
+    native = app / "Native.smali"
+    native_source = patch_native_logging(native.read_text())
     activity = app / "MainActivity.smali"
     activity_source = patch_model_picker(activity.read_text())
     service = app / "GenerationService.smali"
@@ -64,6 +73,7 @@ def apply(decoded: Path):
     # Accessors are appended by the preceding patch; preserve them when replacing
     # the guard in the now-updated class.
     chat_activity.write_text(patch_send_guard(chat_activity.read_text()))
+    native.write_text(native_source)
     service.write_text(source)
     activity.write_text(activity_source)
     for name in ("EngineManager", "GenerationResult"):

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Repair GGUF Chat 2.0, preserving resources and native inference code; sign with apksigner.
 
-No Android SDK is needed when the pinned APKTOOL_JAR/APKSIGNER_JAR are provided.
+Requires the pinned APK tools and NDK for the native diagnostic helper.
 The DEX and the JNI bridge ELF dependency metadata are repaired. No handwritten APK signature implementation is used.
 """
 import argparse
@@ -17,6 +17,7 @@ import zipfile
 
 from patch_dex import patch_bytes
 from patch_native import patch_archive_jni, JNI_ENTRIES
+from build_diagnostics import build_diagnostics, DIAGNOSTIC_ENTRIES
 from patch_smali import apply as apply_smali
 
 HERE = Path(__file__).resolve().parent
@@ -47,8 +48,8 @@ def rebuild_zip(original, dex, output, native_replacements=None):
     is not signing; apksigner below is the sole signature implementation.
     """
     native_replacements = native_replacements or {}
-    if not set(native_replacements) <= JNI_ENTRIES:
-        raise ValueError("Only JNI bridge dependencies may be repaired")
+    if not set(native_replacements) <= JNI_ENTRIES | DIAGNOSTIC_ENTRIES:
+        raise ValueError("Only pinned JNI repairs and the diagnostic helper are allowed")
     with zipfile.ZipFile(original) as src, zipfile.ZipFile(output, "w") as dst:
         for entry in src.infolist():
             if signature_entry(entry.filename):
@@ -66,6 +67,12 @@ def rebuild_zip(original, dex, output, native_replacements=None):
                     padding = (-offset) % 4
                     info.extra += struct.pack("<HH", 0xD935, padding) + bytes(padding)
             dst.writestr(info, data)
+        for name in sorted(set(native_replacements) - set(src.namelist())):
+            if name not in DIAGNOSTIC_ENTRIES:
+                raise ValueError("Unexpected added native library")
+            info = zipfile.ZipInfo(name, date_time=(2026, 1, 1, 0, 0, 0))
+            info.compress_type = zipfile.ZIP_DEFLATED
+            dst.writestr(info, native_replacements[name])
     verify_alignment(output)
 
 
@@ -83,15 +90,15 @@ def verify_alignment(path):
 
 def verify_payload(original, repaired, native_replacements=None):
     native_replacements = native_replacements or {}
-    if not set(native_replacements) <= JNI_ENTRIES:
+    if not set(native_replacements) <= JNI_ENTRIES | DIAGNOSTIC_ENTRIES:
         raise ValueError("Unexpected native replacement")
     with zipfile.ZipFile(original) as a, zipfile.ZipFile(repaired) as b:
-        expected = {n for n in a.namelist() if not signature_entry(n)}
+        expected = {n for n in a.namelist() if not signature_entry(n)} | set(native_replacements)
         actual = {n for n in b.namelist() if not signature_entry(n)}
         if expected != actual:
             raise ValueError("O conjunto de arquivos do APK mudou inesperadamente.")
         for name in expected - {"classes.dex"}:
-            if native_replacements.get(name, a.read(name)) != b.read(name):
+            if (native_replacements[name] if name in native_replacements else a.read(name)) != b.read(name):
                 raise ValueError(f"Recurso/biblioteca alterado inesperadamente: {name}")
 
 
@@ -141,6 +148,7 @@ def main():
         with zipfile.ZipFile(original) as archive:
             dex = patch_bytes(archive.read("classes.dex"))
             native_replacements = patch_archive_jni(archive, work)
+            native_replacements.update(build_diagnostics(work))
         intermediate = work / "patched.apk"
         rebuild_zip(original, dex, intermediate)
         decoded = work / "decoded"

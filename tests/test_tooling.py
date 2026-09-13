@@ -139,6 +139,7 @@ def test_service_check_inserted_inside_original_exception_handler(tmp_path):
     app.mkdir(parents=True)
     (app / 'MainActivity.smali').write_text(MODEL_PICKER_METHOD + '\n' + MODEL_PICKER_FILTER + '\n.end method')
     write_chat_access_fixture(app)
+    (app / "Native.smali").write_text('    const-string v0, "aijni"')
     service = app / "GenerationService.smali"
     service.write_text(":try_start_0\n" + GENERATE + ":try_end_0\n.catch Ljava/lang/Exception;\n")
     apply(tmp_path)
@@ -380,3 +381,46 @@ def test_send_can_preserve_backend_preload_logs(tmp_path, monkeypatch):
     assert not commands
     d.send('Hello')
     assert commands == [('logcat', '-c')]
+
+
+def test_native_diagnostics_load_before_jni_and_reject_double_patch():
+    from patch_smali import patch_native_logging
+    original = '    const-string v0, "aijni"\n    invoke-static {v0}, Ljava/lang/System;->loadLibrary(Ljava/lang/String;)V'
+    fixed = patch_native_logging(original)
+    assert fixed.index('"ggufdiagnostics"') < fixed.index('"aijni"')
+    assert fixed.count('->loadLibrary') == 2
+    with pytest.raises(ValueError):
+        patch_native_logging(fixed)
+
+
+def test_diagnostic_library_is_explicit_and_payload_checked(tmp_path):
+    from build_diagnostics import DIAGNOSTIC_ENTRIES
+    original, rebuilt = tmp_path / 'orig.apk', tmp_path / 'fixed.apk'
+    with zipfile.ZipFile(original, 'w') as z:
+        z.writestr('classes.dex', b'dex')
+        z.writestr('lib/x86_64/libggml-vulkan.so', b'unchanged real backend')
+    additions = {name: b'compiled diagnostic helper fixture' for name in DIAGNOSTIC_ENTRIES}
+    rebuild_zip(original, b'dex2', rebuilt, additions)
+    verify_payload(original, rebuilt, additions)
+    with pytest.raises(ValueError):
+        verify_payload(original, rebuilt, {name: b'wrong' for name in additions})
+    with pytest.raises(ValueError):
+        rebuild_zip(original, b'dex2', rebuilt, {'lib/x86_64/unapproved.so': b'bad'})
+
+
+def test_diagnostics_requires_pinned_ndk(tmp_path, monkeypatch):
+    from build_diagnostics import build_diagnostics
+    monkeypatch.setenv('ANDROID_NDK_HOME', str(tmp_path))
+    (tmp_path / 'source.properties').write_text('Pkg.Revision = 0.0.0')
+    with pytest.raises(ValueError, match='27.2.12479018'):
+        build_diagnostics(tmp_path)
+
+
+def test_native_stderr_forwarding_preserves_fragments_and_long_lines(tmp_path):
+    exe = tmp_path / 'diagnostics-test'
+    subprocess.run(['gcc', '-D_GNU_SOURCE', '-Wall', '-Wextra', '-Werror',
+                    '-Itests/native', 'tests/native/diagnostics_test.c', '-pthread', '-ldl',
+                    '-o', str(exe)], cwd=ROOT, check=True)
+    result = subprocess.run([str(exe)], capture_output=True, text=True, timeout=5, check=True)
+    assert result.stdout.splitlines() == ['fragment continued', '100% literal',
+                                          'x' * 3000, 'x' * 3000, 'x' * 1000, 'EOF tail']

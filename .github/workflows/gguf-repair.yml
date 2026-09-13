@@ -42,6 +42,10 @@ jobs:
         run: |
           bash ci/log_step.sh tools bash scripts/fetch_tools.sh
           bash ci/log_step.sh original python3 scripts/fetch_original.py
+      - name: NDK fixado para diagnósticos nativos (não recompila llama/ggml)
+        run: |
+          sdkmanager --install "ndk;27.2.12479018"
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.2.12479018" >> "$GITHUB_ENV"
       - name: Reconstruir e verificar assinatura
         run: |
           export JAVA_HOME=$(.venv/bin/python -c 'import jdk4py; print(jdk4py.JAVA_HOME)')
@@ -102,7 +106,7 @@ jobs:
           GGUF_VULKAN_ONLY: ${{ inputs.android_mode != 'cpu' && '1' || '0' }}
           GGUF_REQUIRE_VULKAN: ${{ inputs.android_mode != 'cpu' && '1' || '0' }}
         with:
-          api-level: 30
+          api-level: ${{ inputs.android_mode == 'cpu' && 30 || 35 }}
           target: google_apis
           arch: x86_64
           profile: pixel_5
