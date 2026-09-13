@@ -1,6 +1,7 @@
 """Apply structural changes after size-preserving patches and APK decoding."""
 from pathlib import Path
 import shutil
+from patch_chat_access import patch_chat_access
 
 HERE = Path(__file__).resolve().parent
 GENERATE = "    invoke-static/range {v4 .. v15}, Lcom/ggufchat/app/Native;->generate(JLjava/lang/String;IFFFFFIILcom/ggufchat/app/Native$GenerateCallback;)Z\n"
@@ -42,6 +43,7 @@ def apply(decoded: Path):
     move-result v6
     invoke-static {v6, v4, v5}, Lcom/ggufchat/app/GenerationResult;->check(ZJ)V
 """)
+    patch_chat_access(app)
     service.write_text(source)
     activity.write_text(activity_source)
     for name in ("EngineManager", "GenerationResult"):

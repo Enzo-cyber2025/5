@@ -138,6 +138,7 @@ def test_service_check_inserted_inside_original_exception_handler(tmp_path):
     app = tmp_path / "smali/com/ggufchat/app"
     app.mkdir(parents=True)
     (app / 'MainActivity.smali').write_text(MODEL_PICKER_METHOD + '\n' + MODEL_PICKER_FILTER + '\n.end method')
+    write_chat_access_fixture(app)
     service = app / "GenerationService.smali"
     service.write_text(":try_start_0\n" + GENERATE + ":try_end_0\n.catch Ljava/lang/Exception;\n")
     apply(tmp_path)
@@ -279,3 +280,30 @@ def test_model_picker_filter_shows_non_projectors_and_is_guarded():
         patch_model_picker(fixed)
     with pytest.raises(ValueError):
         patch_model_picker(original.replace('"mmproj"', '"other"'))
+
+
+def write_chat_access_fixture(app):
+    from patch_chat_access import OWNER, REPAIRS
+    (app / 'ChatActivity.smali').write_text(
+        '.field private loading:Z\n.field private loadPct:I\n'
+        '.field private statusLine:Landroid/widget/TextView;\n'
+        '.method private updateModelStatus()V\n.end method\n'
+        f'.method static synthetic access$400({OWNER})Lcom/ggufchat/app/Chat;\n.end method\n')
+    for name, replacements in REPAIRS.items():
+        (app / (name + '.smali')).write_text('\n'.join(replacements))
+
+
+def test_chat_workers_use_accessors_without_exposing_private_members(tmp_path):
+    from patch_chat_access import patch_chat_access, REPAIRS
+    write_chat_access_fixture(tmp_path)
+    patch_chat_access(tmp_path)
+    owner = (tmp_path / 'ChatActivity.smali').read_text()
+    assert '.field private loading:Z' in owner
+    assert '.method private updateModelStatus()V' in owner
+    for name, replacements in REPAIRS.items():
+        fixed = (tmp_path / (name + '.smali')).read_text()
+        for old, new in replacements.items():
+            assert old not in fixed
+            assert new in fixed
+    with pytest.raises(ValueError):
+        patch_chat_access(tmp_path)
