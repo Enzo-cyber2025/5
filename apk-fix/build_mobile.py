@@ -2,7 +2,7 @@
 """Build a coherent native stack and an UNSIGNED APK, for local persistent signing.
 No signing key or password is placed in CI, artifacts, logs or Git.
 """
-import copy, hashlib, json, os, shutil, struct, subprocess, sys, zipfile
+import copy, hashlib, json, os, re, shutil, struct, subprocess, sys, zipfile
 from mobile_manifest import enforce_min_sdk
 from pathlib import Path
 from build_apk import ORIGINAL_APK_SHA256, signature_entry, verify_alignment
@@ -30,8 +30,28 @@ def ui_patches(app):
     # Link precisely the selection and remove the old global guesser.
     p=app/'MainActivity$26.smali';s=p.read_text();marker='    invoke-static {v0}, Lcom/ggufchat/app/MainActivity;->access$1900(Lcom/ggufchat/app/MainActivity;)V'
     assert s.count(marker)==1
+    begin='    invoke-virtual {v1}, Ljava/util/ArrayList;->size()I'
+    assert s.count(begin)==1
+    s=s.replace(begin,'    if-nez v2, :mobile_pair_started\n    invoke-static {v0, v1}, Lcom/ggufchat/app/Pairing;->begin(Landroid/content/Context;Ljava/util/ArrayList;)V\n    :mobile_pair_started\n'+begin)
     s=s.replace(marker,'    invoke-static {v0, v1}, Lcom/ggufchat/app/Pairing;->linkSelected(Landroid/content/Context;Ljava/util/ArrayList;)V\n\n'+marker);p.write_text(s)
     p=app/'MainActivity.smali';s=p.read_text();a=s.index('.method private navButton(');b=s.index('.end method',a);s=s[:a]+s[a:b].replace('    return-object v0','    invoke-static {v0}, Lcom/ggufchat/app/CompactUi;->style(Landroid/widget/Button;)V\n    return-object v0')+s[b:];s=method_replace(s,'.method private linkMmprojs()V','.method private linkMmprojs()V\n    .locals 0\n    invoke-direct {p0}, Lcom/ggufchat/app/MainActivity;->refreshModels()V\n    return-void\n.end method');p.write_text(s)
+    p=app/'MainActivity.smali';s=p.read_text()
+    a=s.index('.method private refreshImportList()V');b=s.index('.end method',a)
+    part=s[a:b];marker='    move-result-object v1'
+    assert part.count(marker)==1
+    part=part.replace(marker,marker+'\n    invoke-static {v1}, Lcom/ggufchat/app/Pairing;->visibleModels(Ljava/util/ArrayList;)Ljava/util/ArrayList;\n    move-result-object v1')
+    s=s[:a]+part+s[b:]
+    a=s.index('.method private buildImportRow(');b=s.index('.end method',a)
+    part=s[a:b];marker='    iget-object v1, p1, Lcom/ggufchat/app/ModelInfo;->name:Ljava/lang/String;'
+    assert part.count(marker)==1
+    part=part.replace(marker,'    invoke-static {p1}, Lcom/ggufchat/app/Pairing;->displayName(Ljava/lang/Object;)Ljava/lang/String;\n    move-result-object v1')
+    s=s[:a]+part+s[b:];p.write_text(s)
+    # Some callers replace Ui.btn's LayoutParams afterwards. Restyle at those
+    # actual call sites too, so WRAP_CONTENT cannot collapse the import button.
+    for p in app.glob('*.smali'):
+        s=p.read_text()
+        s=re.sub(r'(    invoke-virtual \{([vp]\d+), [vp]\d+\}, Landroid/widget/Button;->setLayoutParams\(Landroid/view/ViewGroup\$LayoutParams;\)V)',r'\1\n    invoke-static {\2}, Lcom/ggufchat/app/CompactUi;->style(Landroid/widget/Button;)V',s)
+        p.write_text(s)
     p=app/'MainActivity$25.smali';s=p.read_text().replace('if-nez v1, :cond_0','if-eqz v1, :cond_0').replace('if-nez v2, :cond_0','if-eqz v2, :cond_0');p.write_text(s)
     # Safer defaults for a mobile memory budget; user can deliberately change them.
     p=app/'Settings.smali';s=p.read_text();a=s.index('.method public static gpuLayers(');b=s.index('.end method',a);s=s[:a]+s[a:b].replace('const/4 v2, -0x1','const/4 v2, 0x0')+s[b:]
