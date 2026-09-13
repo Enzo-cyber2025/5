@@ -43,11 +43,16 @@ def select_pair(d):
         if not any(position(xml,text=t,package=PICKERS) for t in ('Open from','Abrir de')):
             d.tap(desc='Show roots',package=PICKERS,optional=True)
         d.select_downloads();time.sleep(1)
-    xml=d.ui();p=position(xml,text=MODEL.name,package=PICKERS)
-    assert p,'Modelo real não visível no seletor'
-    d.shell(f'input touchscreen swipe {p[0]} {p[1]} {p[0]} {p[1]} 1000')
-    d.tap(text=PROJ.name,package=PICKERS)
-    assert d.confirm_picker(d.ui()),'Botão de confirmar seleção múltipla não encontrado'
+    # Use the provider's list layout and explicit Select all command. The
+    # disposable Downloads folder contains exactly the two checked GGUF files.
+    d.tap(desc='List view',package=PICKERS,optional=True)
+    d.tap(desc='More options',package=PICKERS)
+    d.tap(text='Select all',package=PICKERS)
+    xml=d.ui()
+    assert position(xml,text='2 selected',package=PICKERS),'O SAF não confirmou exatamente dois selecionados'
+    for name in (MODEL.name,PROJ.name):assert position(xml,text=name,package=PICKERS)
+    d.capture('saf-two-selected.png')
+    assert d.confirm_picker(xml),'Botão de confirmar seleção múltipla não encontrado'
     d.wait(lambda:not has_package(d.ui(),PICKERS),'retorno da seleção SAF')
 
 
