@@ -136,7 +136,7 @@ def main():
     classes=WORK/'classes';classes.mkdir(exist_ok=True)
     android=sdk/'platforms/android-35/android.jar'
     sources=list((ROOT/'apk-fix/java').rglob('*.java'))
-    run(Path(os.environ['JAVA_HOME'])/'bin/javac','-source','8','-target','8','-bootclasspath',android,'-d',classes,*sources)
+    run(Path(os.environ['JAVA_HOME'])/'bin/javac','--release','8','-classpath',android,'-d',classes,*sources)
     dexdir=WORK/'helpers';dexdir.mkdir(exist_ok=True)
     run(sdk/'build-tools/35.0.0/d8','--min-api','28','--lib',android,'--output',dexdir,*classes.rglob('*.class'))
     # Decode the helper dex into smali; no handwritten bytecode or compile-only stubs.

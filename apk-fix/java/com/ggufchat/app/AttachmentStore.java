@@ -62,6 +62,7 @@ public final class AttachmentStore {
         return total;
     }
     static JSONObject importUri(Context c,String chat,Uri uri,AtomicBoolean cancelled) throws Exception {
+        if(uri==null || !"content".equals(uri.getScheme()))throw new IOException("O seletor deve fornecer uma URI de documento, não um caminho privado");
         initialize(c,chat);
         String name="arquivo",type=null;
         try {type=c.getContentResolver().getType(uri);}catch(Exception ignored){}
