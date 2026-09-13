@@ -1,0 +1,168 @@
+import hashlib
+import importlib.util
+from pathlib import Path
+import struct
+import subprocess
+import sys
+import zipfile
+import zlib
+
+import pytest
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "apk-fix"))
+sys.path.insert(0, str(ROOT / "scripts"))
+from build_apk import rebuild_zip, verify_alignment, verify_payload
+from patch_dex import PATCHES, patch_bytes
+from patch_smali import GENERATE, apply
+from android_checks import (PACKAGE, PICKERS, assistant_reply, fusion, generation_completed,
+                            gpu_offloaded, has_package, imported, position)
+
+PICKER = '''<hierarchy><node package="com.google.android.documentsui" text="Images" enabled="true" bounds="[0,0][30,30]"/>
+<node package="com.google.android.documentsui" text="RECENT FILES" enabled="true" bounds="[0,30][90,60]"/>
+<node package="com.google.android.documentsui" text="tiny-llava.gguf" enabled="true" bounds="[20,100][100,140]"/>
+<node package="com.google.android.documentsui" text="Select all" enabled="true" bounds="[0,160][90,190]"/>
+</hierarchy>'''
+
+
+def test_saf_never_counts_as_app_or_chat_reply():
+    assert has_package(PICKER, PICKERS)
+    assert not has_package(PICKER, {PACKAGE})
+    assert position(PICKER, text="Images", package={PACKAGE}) is None
+    with pytest.raises(AssertionError):
+        assistant_reply([{"id": "1", "modelPath": "m", "messages": []}], "1", "Ola")
+    assert not generation_completed("REPLY: Images\nREPLY: Audio\nRECENT FILES")
+
+
+def test_picker_selection_is_exact_not_select_all():
+    assert position(PICKER, text="Select", package=PICKERS) is None
+    assert position(PICKER, text="tiny-llava.gguf", package=PICKERS) == (60, 120)
+    assert position(PICKER, text="tiny", package=PICKERS, contains=True) == (60, 120)
+
+
+def test_disabled_or_invisible_control_not_tapped():
+    assert position('<hierarchy><node text="Open" enabled="false" bounds="[0,0][30,30]"/></hierarchy>', text="Open") is None
+    assert position('<hierarchy><node text="Open" enabled="true" bounds="[0,0][0,0]"/></hierarchy>', text="Open") is None
+
+
+def models():
+    # Real vision models commonly have architecture=llama, NOT llava.
+    return [{"id": "v", "fileName": "vision.gguf", "path": "/v", "architecture": "llama",
+             "mmprojPath": "/p", "multimodal": True},
+            {"id": "p", "fileName": "mmproj.gguf", "path": "/p", "architecture": "clip"}]
+
+
+def test_fusion_uses_imported_paths_not_architecture_guess():
+    assert fusion(models(), "vision.gguf", "mmproj.gguf") == ("v", "/v", "/p")
+
+
+@pytest.mark.parametrize("value", [None, "", "null", "/wrong"])
+def test_fusion_missing_wrong_projector_fails(value):
+    data = models()
+    data[0]["mmprojPath"] = value
+    with pytest.raises(AssertionError):
+        fusion(data, "vision.gguf", "mmproj.gguf")
+
+
+@pytest.mark.parametrize("data", [[], {}, [{"fileName": "vision.gguf"}], models() + [models()[0]]])
+def test_import_missing_or_duplicate_does_not_pass(data):
+    with pytest.raises(AssertionError):
+        imported(data, "vision.gguf")
+
+
+def test_reply_requires_correct_chat_prompt_role_and_order():
+    data = [{"id": "c", "modelPath": "/model", "messages": [
+        {"role": "assistant", "content": "Old reply"},
+        {"role": "user", "content": "Ola"}]}]
+    with pytest.raises(AssertionError):
+        assistant_reply(data, "c", "Ola")
+    data[0]["messages"].append({"role": "assistant", "content": "Olá!"})
+    assert assistant_reply(data, "c", "Ola") == "Olá!"
+    with pytest.raises(AssertionError):
+        assistant_reply(data, "other", "Ola")
+
+
+def test_generation_failure_overrides_success_marker():
+    assert generation_completed("GGUF_REPAIR_GENERATION_OK")
+    for failure in ["GGUF_REPAIR_GENERATION_FAILED", "FATAL EXCEPTION", "Fatal signal 11"]:
+        with pytest.raises(AssertionError):
+            generation_completed("GGUF_REPAIR_GENERATION_OK\n" + failure)
+
+
+def test_vulkan_library_loading_is_not_gpu_inference():
+    assert not gpu_offloaded("loaded libggml-vulkan.so; SwiftShader; offloaded 0/24 layers to GPU")
+    assert gpu_offloaded("llama_model_load: offloaded 12/24 layers to GPU")
+
+
+def test_zip_rebuild_strips_signatures_preserves_resources_and_alignment(tmp_path):
+    orig, fixed = tmp_path / "original.apk", tmp_path / "fixed.apk"
+    with zipfile.ZipFile(orig, "w") as z:
+        z.writestr("classes.dex", b"original dex")
+        z.writestr("resources.arsc", b"binary resources")
+        info = zipfile.ZipInfo("assets/a")
+        info.extra = b"\0\0"  # zipalign-style old padding must not corrupt new extra fields
+        z.writestr(info, b"12345")
+        z.writestr("lib/arm64-v8a/libaijni.so", b"unchanged library", zipfile.ZIP_DEFLATED)
+        z.writestr("META-INF/CERT.RSA", b"obsolete signature")
+    rebuild_zip(orig, b"new dex", fixed)
+    verify_alignment(fixed)
+    verify_payload(orig, fixed)
+    with zipfile.ZipFile(fixed) as z:
+        assert z.read("classes.dex") == b"new dex"
+        assert "META-INF/CERT.RSA" not in z.namelist()
+
+
+def test_unknown_dex_fails_even_without_assert_statements():
+    with pytest.raises(ValueError, match="DEX desconhecido"):
+        patch_bytes(bytes(90000))
+
+
+def test_original_dex_patches_and_checksums():
+    path = ROOT / ".cache/gguf/GGUF-Chat.apk"
+    if not path.exists():
+        pytest.skip("Original APK fixture not downloaded")
+    with zipfile.ZipFile(path) as z:
+        original = z.read("classes.dex")
+    repaired = patch_bytes(original)
+    assert len(repaired) == len(original)
+    assert repaired[12:32] == hashlib.sha1(repaired[32:]).digest()
+    assert struct.unpack_from("<I", repaired, 8)[0] == zlib.adler32(repaired[12:]) & 0xFFFFFFFF
+    for offset, old, new, _ in PATCHES:
+        assert repaired[offset:offset + len(bytes.fromhex(new))] == bytes.fromhex(new)
+    with pytest.raises(ValueError):
+        patch_bytes(repaired)
+
+
+def test_service_check_inserted_inside_original_exception_handler(tmp_path):
+    app = tmp_path / "smali/com/ggufchat/app"
+    app.mkdir(parents=True)
+    service = app / "GenerationService.smali"
+    service.write_text(":try_start_0\n" + GENERATE + ":try_end_0\n.catch Ljava/lang/Exception;\n")
+    apply(tmp_path)
+    text = service.read_text()
+    assert text.index("move-result v6") < text.index(":try_end_0")
+    assert "GenerationResult;->check(ZJ)V" in text
+    with pytest.raises(ValueError):
+        apply(tmp_path)
+
+
+def test_runner_propagates_suite_failure(tmp_path):
+    adb = tmp_path / "adb"
+    adb.write_text('#!/bin/sh\ncase "$*" in *sys.boot_completed*) echo 1;; *ro.product.cpu.abi*) echo x86_64;; esac\n')
+    python = tmp_path / "python3"
+    python.write_text("#!/bin/sh\nexit 17\n")
+    adb.chmod(0o755)
+    python.chmod(0o755)
+    import os
+    env = dict(os.environ, PATH=str(tmp_path) + ":" + os.environ["PATH"],
+               ANDROID_SERIAL="emulator-5554", GGUF_TEST_MODEL="real.gguf")
+    result = subprocess.run(["bash", ".github/emu-test-x86.sh"], cwd=ROOT, env=env)
+    assert result.returncode == 17
+
+
+def test_android_suite_rejects_physical_device_before_adb():
+    result = subprocess.run([sys.executable, "scripts/test_android.py", "--serial", "phone",
+                             "--apk", "a.apk", "--model", "m.gguf", "--allow-data-reset"],
+                            cwd=ROOT, capture_output=True, text=True)
+    assert result.returncode != 0
+    assert "emulador descartável" in result.stderr
