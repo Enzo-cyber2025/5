@@ -101,4 +101,9 @@ def basic_response_quality(greeting, arithmetic):
 def vulkan_offloaded(log):
     """Require initialized Vulkan plus actual positive layer offload, not availability."""
     initialized = re.search(r'registered backend Vulkan|ggml_vulkan: Found [1-9]', log, re.I)
-    return bool(initialized) and gpu_offloaded(log)
+    # A GPU load may fail during context creation, then EngineManager retries CPU.
+    # Evidence from that abandoned attempt must not approve the CPU generation.
+    loads = list(re.finditer(r'llama_model_loader: loaded meta data', log))
+    current = log[loads[-1].start():] if loads else log
+    counts = re.findall(r'offloaded\s+(\d+)(?:/\d+)?\s+layers?\s+to\s+GPU', current, re.I)
+    return bool(initialized and counts and int(counts[-1]) > 0)

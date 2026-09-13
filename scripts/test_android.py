@@ -261,9 +261,24 @@ class Android:
                 chat = c
         self.write_private("files/chats.json", json.dumps(chats))
         self.launch()
-        self.tap(text=chat["title"], package={PACKAGE}, contains=True)
-        self.wait(lambda: position(self.ui(), class_name="android.widget.EditText", package={PACKAGE}), "tela da conversa")
+        self.open_existing_chat(chat["title"])
         return chat
+
+    def open_existing_chat(self, title):
+        # After a cold activity launch, the first input can arrive before the
+        # window accepts touch. Retry ONLY the same persisted row, never create
+        # another chat or send a prompt twice. A native crash is not retried.
+        for attempt in range(3):
+            self.tap(text=title, package={PACKAGE})
+            try:
+                self.wait(lambda: position(self.ui(), class_name="android.widget.EditText", package={PACKAGE}),
+                          "tela da conversa", timeout=15)
+                return
+            except AssertionError:
+                self.alive()
+                xml = self.ui()
+                if attempt == 2 or not position(xml, text=title, package={PACKAGE}):
+                    raise
 
     def send(self, prompt, clear_log=True):
         if clear_log:
@@ -346,6 +361,7 @@ def main():
         device.adb("wait-for-device", timeout=60)
         if device.shell("id -u") != "0":
             raise AssertionError("É necessário emulador com adb root, não imagem Play Store")
+        device.adb("logcat", "-G", "16M")  # retain native preload logs during cold shader compilation
         result["checks"]["emulator"] = "BOOTED: " + device.shell("getprop ro.product.cpu.abi")
         device.adb("install", "-r", "-g", args.apk, timeout=120)
         result["checks"]["installation"] = "PASS"

@@ -440,3 +440,49 @@ def test_notification_grant_after_reset_is_api_scoped(tmp_path, monkeypatch, sdk
     assert device.grant_test_notifications() == sdk
     assert calls == ['getprop ro.build.version.sdk'] + (
         [f'pm grant {PACKAGE} android.permission.POST_NOTIFICATIONS'] if granted else [])
+
+
+@pytest.mark.parametrize('tail,expected', [
+    ('llama_model_loader: loaded meta data\nCPU model loaded', False),
+    ('llama_model_loader: loaded meta data\noffloaded 0/31 layers to GPU', False),
+    ('llama_model_loader: loaded meta data\noffloaded 31/31 layers to GPU', True),
+    ('offloaded 0/31 layers to GPU', False),
+])
+def test_abandoned_vulkan_attempt_does_not_approve_cpu_fallback(tail, expected):
+    from android_checks import vulkan_offloaded
+    log = ('registered backend Vulkan\nllama_model_loader: loaded meta data\n'
+           'offloaded 31/31 layers to GPU\ncontext failed\n' + tail)
+    assert vulkan_offloaded(log) is expected
+
+
+def test_chat_navigation_retries_same_row_not_creation(tmp_path, monkeypatch):
+    from test_android import Android
+    device = Android('emulator-5554', tmp_path)
+    clicks = []
+    attempts = []
+    monkeypatch.setattr(device, 'tap', lambda **kw: clicks.append(kw))
+    monkeypatch.setattr(device, 'alive', lambda: '123')
+    monkeypatch.setattr(device, 'ui', lambda: '<hierarchy><node package="com.ggufchat.app" '
+                        'text="existing" enabled="true" bounds="[0,0][100,100]"/></hierarchy>')
+    def wait(*args, **kwargs):
+        attempts.append(1)
+        if len(attempts) == 1:
+            raise AssertionError('input not ready')
+        return (10, 20)
+    monkeypatch.setattr(device, 'wait', wait)
+    device.open_existing_chat('existing')
+    assert clicks == [dict(text='existing', package={PACKAGE})] * 2
+
+
+def test_chat_navigation_does_not_retry_native_crash(tmp_path, monkeypatch):
+    from test_android import Android
+    device = Android('emulator-5554', tmp_path)
+    clicks = []
+    monkeypatch.setattr(device, 'tap', lambda **kw: clicks.append(kw))
+    def failed(*args, **kwargs):
+        raise AssertionError('crash or navigation failure')
+    monkeypatch.setattr(device, 'wait', failed)
+    monkeypatch.setattr(device, 'alive', failed)
+    with pytest.raises(AssertionError):
+        device.open_existing_chat('existing')
+    assert len(clicks) == 1
