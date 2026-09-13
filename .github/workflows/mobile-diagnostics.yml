@@ -20,7 +20,7 @@ jobs:
           from pathlib import Path
           import re
           text='\n'.join(p.read_text(errors='replace') for p in Path('logs').rglob('final-logcat.txt'))
-          text='\n'.join(line for line in text.splitlines() if re.search(r'DocumentsUI|ActionHandler|PickActivity|select|Select|SecurityException|Permission|GGUF|[EWFA] AndroidRuntime',line))
+          text='\n'.join(line for line in text.splitlines() if 'AccessibilityNodeInfoDumper' not in line and re.search(r'DocumentsUI|ActionHandler|PickActivity|select|Select|SecurityException|Permission|GGUF|[EWFA] AndroidRuntime',line))
           import xml.etree.ElementTree as ET, json
           for p in sorted(Path('logs').rglob('ui-*.xml')):
               nodes=list(ET.parse(p).iter('node'))
