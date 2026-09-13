@@ -96,7 +96,7 @@ class Android:
         self.shell(f"chmod 755 {target}/runtime-probe")
         reports = {}
         try:
-            for kind, expected_exit, expected_preserved in (("original", 1, False), ("fixed", 0, True)):
+            for kind, expected_exit, expected_preserved in (("fixed", 0, True), ("original", 1, False)):
                 result = self.adb("shell", f"{target}/runtime-probe {target}/{kind}-libc++_shared.so",
                                   check=False, with_status=True)
                 report = {"exit_code": result.returncode,

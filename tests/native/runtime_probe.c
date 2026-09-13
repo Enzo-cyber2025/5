@@ -25,6 +25,9 @@ int main(int argc, char **argv) {
            sizeof(pthread_mutexattr_t), preserved ? "true" : "false", result);
     dtor(object);
     free(object);
-    dlclose(library);
-    return preserved ? 0 : 1;
+    // Scope is the constructor ABI, not this malformed runtime's global
+    // destructor registration/unload behavior. Keep it mapped, flush the result,
+    // and terminate without running unrelated C++ atexit callbacks.
+    fflush(stdout);
+    _Exit(preserved ? 0 : 1);
 }
