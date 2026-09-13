@@ -28,8 +28,17 @@ simulada, nem reimplementa o motor nativo.
 
 ## Estado da validação
 
-**APK reconstruído, assinatura v2/v3 verificada pelo `apksigner` oficial e 54 testes
-locais aprovados. Ainda não validado de ponta a ponta em Android nesta sessão.**
+**APK reconstruído, assinatura v2/v3 verificada. O emulador Android 11 x86_64
+já iniciou, instalou e abriu o aplicativo. A validação completa ainda está pendente.**
+
+A execução [34767511976](https://github.com/Enzo-cyber2025/5/actions/runs/34767511976)
+aprovou **33 regressões JVM + 27 testes de ferramentas = 60 testes**.
+No Android, instalação e abertura passaram, mas a seleção do arquivo GGUF pelo SAF
+continuou falhando após os ajustes. **O teste completo está FAIL; a importação e a
+geração nativa não foram aprovadas.**
+
+[Captura real do app aberto no emulador](ci-results/34767511976-1/launch.png) ·
+[Resumo da execução](ci-results/34767511976-1/summary.json)
 
 Os testes de host executam classes reais do APK, traduzidas de DEX para JVM, com
 substitutos explícitos de `Native` e `org.json`. Isso permite verificar controle de
@@ -111,16 +120,16 @@ bash .github/emu-test-x86.sh
 - Evidências em `evidence/summary.json`, comandos, dumps de UI e logs.
 - Qualquer falha obrigatória retorna código diferente de zero, propagado pelos wrappers.
 
-O modelo de workflow está em [`ci/gguf-repair.yml`](ci/gguf-repair.yml).
-**Ainda não está ativo:** o GitHub recusou a publicação em `.github/workflows/`
-porque a conexão do Arena não possui a permissão `workflows`.
+O workflow está **ativo** em [`.github/workflows/gguf-repair.yml`](.github/workflows/gguf-repair.yml),
+com cópia em [`ci/gguf-repair.yml`](ci/gguf-repair.yml). A autorização para publicá-lo
+foi resolvida; não é necessário criar arquivos manualmente.
 
-Para executar, no próprio GitHub e na branch `arena/01a09b42-5`, copie esse arquivo
-para `.github/workflows/gguf-repair.yml` e salve o commit **nesta mesma branch**.
-O evento `push` iniciará o build e o emulador, com download de um modelo real.
-Em uma execução manual posterior, marque `run_android` para repetir o emulador.
-Isso consome minutos do GitHub Actions. Não há execução em emulador concluída ainda.
+O evento `push` nesta branch inicia build e emulador com um modelo real.
+Na execução manual, marque `run_android` para executar o emulador.
+Isso consome minutos do GitHub Actions.
 
-O workflow publica **artefatos de Actions**, sem force-push e sem escrever em outras branches.
+Os artefatos de Actions contêm o APK e as evidências, inclusive em falha. O workflow
+também publica apenas resumos/capturas limitados em `ci-results/` **nesta mesma branch**,
+com `[skip ci]` para evitar repetição automática. Sem force-push nem outras branches.
 O workflow antigo do repositório não foi alterado; o erro histórico dos pontos em
 `timeout-minutes` já estava resolvido.

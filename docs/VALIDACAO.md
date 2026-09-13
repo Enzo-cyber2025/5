@@ -77,10 +77,10 @@ As falhas reproduzem os caminhos válidos virando null, perda do mmproj no carre
 cache ignorando configurações e ausência das novas proteções de arquivos. Não se
 trata de 21 bugs independentes: há múltiplos casos para cada defeito.
 
-### 4. Ferramentas e automação — 21 PASS
+### 4. Ferramentas e automação — 27 PASS locais e no CI
 
 ```text
-21 passed
+27 passed
 ```
 
 Cobertura inclui rejeição de DEX desconhecido/já alterado, checksums, alinhamento ZIP,
@@ -90,15 +90,41 @@ por conversa/prompt/role, vínculos por caminho (sem presumir architecture=llava
 rejeição de modelos duplicados e propagação do exit code de falhas do runner.
 O teste destrutivo também recusa um serial de aparelho físico antes de chamar ADB.
 
-### 5. Android/emulador, GPU e multimodal — NÃO EXECUTADOS nesta sessão
+### 5. Android/emulador — EXECUTADO, aprovação parcial
 
-Não há `/dev/kvm` nem SDK/emulador Android instalado neste ambiente. O acesso direto
-aos repositórios oficiais Android também falhou. Foi possível reconstruir usando
-ferramentas fixadas obtidas de um pacote npm, mas isso não fornece um emulador.
+A autorização do workflow foi resolvida e houve execuções reais no GitHub Actions,
+com Android 11/API 30, Google APIs, x86_64 e modelo SmolLM2-135M-Instruct Q4_K_M.
+O ambiente local permanece sem SDK/KVM; os testes Android foram executados no runner.
 
-Foram preparados testes reais e um workflow opcional, mas **nenhuma execução remota
-foi disparada nesta sessão**. Não foi afirmado que a Xclipse 530 está usando Vulkan,
-que visão/imagens estão funcionando ou que todos os problemas do app acabaram.
+Execução [34766875032](https://github.com/Enzo-cyber2025/5/actions/runs/34766875032):
+
+- Build e assinatura: **PASS**; 26 testes de ferramentas e 33 JVM: **PASS**.
+- Emulador: **BOOTED x86_64**; instalação: **PASS**; abertura do aplicativo: **PASS**.
+- Seleção SAF: **FAIL**, sem presumir importação ou resposta.
+
+A tentativa [34767096056](https://github.com/Enzo-cyber2025/5/actions/runs/34767096056)
+confirmou esses resultados. O diagnóstico mostrou que o XML do DocumentsUI inclui
+controles atrás do menu lateral: “Downloads” podia selecionar o breadcrumb encoberto,
+não a raiz do menu. A automação passou a diferenciar os controles pelo resource-id e
+não tocar em arquivos atrás do menu, mas esse ajuste **não resolveu a seleção completa**.
+
+Resultado mais recente, [34767511976](https://github.com/Enzo-cyber2025/5/actions/runs/34767511976),
+commit de origem `c827d23`: **33 JVM + 27 ferramentas PASS**; Android **FAIL**.
+Emulador/instalação/abertura passaram; seleção SAF falhou novamente. O arquivo real
+aparece no seletor, mas a importação não foi confirmada no aplicativo.
+
+- [App aberto: captura real](../ci-results/34767511976-1/launch.png).
+- [Tela do seletor ao encerrar](../ci-results/34767511976-1/final-screen.png).
+- [Resumo efetivo](../ci-results/34767511976-1/summary.json).
+- SHA-256 desse APK CI: `318c562de2babbbb7051a01682a36485b85e5f5aec40ce39839f6b1300a8c934`.
+
+Uma tentativa intermediária (`34767418982`) também registrou desconexão transitória
+em `adb root`, antes da instalação. Isso é uma falha da execução do teste, não prova
+de falha do APK. Não há execução completa aprovada nesta sessão.
+
+**Não há aprovação de geração CPU, GPU/Vulkan, visão ou fluxos completos até aqui.**
+Os APKs do CI usam chaves descartáveis e hashes próprios, registrados nos resumos;
+não são o mesmo binário assinado localmente descrito no início deste documento.
 
 ## Correção da automação antiga
 
@@ -123,28 +149,24 @@ Não foi tratado como bug pendente e o workflow antigo não foi modificado.
 
 ## Pendências / limites da correção
 
-1. Testar instalação e fluxos completos em Android real/emulador, especialmente no aparelho alvo.
+1. Completar os fluxos de importação/geração no emulador e testar no aparelho alvo.
+   Instalação e abertura já passaram no emulador x86_64.
 2. Validar inferência com modelos GGUF reais e um par de visão/projetor compatível.
 3. A validação de cabeçalho não detecta todos os tensores corrompidos/incompatíveis;
    falhas internas das bibliotecas nativas existentes ainda são possíveis.
 4. Conversas já salvas com caminhos nulos não têm recuperação automática neste reparo.
 5. A nova assinatura pode impedir atualização por cima do APK anterior. Preservar dados
    antes de qualquer desinstalação, ou testar em dispositivo separado.
-6. A suíte Android reescrita ainda precisa da primeira execução real para validar seus
-   seletores nas versões específicas de DocumentsUI do emulador/aparelho.
+6. Resolver a seleção SAF que continuou falhando no teste completo; testes JVM não substituem
+   inferência real, e abertura da tela inicial não aprova todas as Activities.
 
+## Infraestrutura e evidências
 
-## Tentativa de iniciar emulador após solicitação do usuário
+O bloqueio anterior de permissão `workflows` foi resolvido após a autorização do usuário.
+O workflow já foi publicado e executado, sem precisar de token colado no chat.
+O download binário do APK original foi corrigido mantendo a validação SHA-256.
+A chamada de abertura usa flags numéricas aceitas no Android 11.
 
-A publicação do workflow nesta sessão foi recusada pelo GitHub:
-
-```text
-refusing to allow a GitHub App to create or update workflow
-`.github/workflows/gguf-repair.yml` without `workflows` permission
-```
-
-Não foi um erro de compilação nem de teste do app: o workflow não chegou a executar.
-O arquivo foi movido para `ci/gguf-repair.yml`, como modelo inativo, para permitir
-publicar as correções na branch da sessão sem exigir essa permissão. A ativação
-requer ação do usuário no GitHub ou atualização das permissões da conexão do Arena.
-O ambiente local continua sem SDK/emulador instalado e sem `/dev/kvm`.
+`ci-results/<run-id>-<attempt>/` recebe resumos e capturas limitadas das execuções novas,
+na branch da sessão, sem APKs, modelos ou chaves. Artefatos completos permanecem no
+GitHub Actions por 7 dias. Avisos curtos no Checks API evitam truncar o diagnóstico.
