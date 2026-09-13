@@ -1,0 +1,120 @@
+Traceback (most recent call last):
+  File "/home/runner/work/5/5/scripts/test_mobile.py", line 58, in main
+    select_pair(d)
+  File "/home/runner/work/5/5/scripts/test_mobile.py", line 25, in select_pair
+    d.wait(lambda:has_package(d.ui(),PICKERS),'SAF aberto')
+  File "/home/runner/work/5/5/scripts/test_android.py", line 70, in wait
+    result = fn()
+             ^^^^
+  File "/home/runner/work/5/5/scripts/test_mobile.py", line 25, in <lambda>
+    d.wait(lambda:has_package(d.ui(),PICKERS),'SAF aberto')
+                              ^^^^^^
+  File "/home/runner/work/5/5/scripts/test_android.py", line 54, in ui
+    root = ET.fromstring(xml)
+           ^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/xml/etree/ElementTree.py", line 1350, in XML
+    parser.feed(text)
+xml.etree.ElementTree.ParseError: syntax error: line 1, column 0
+
+$ adb shell getprop ro.kernel.qemu
+exit=0
+1
+$ adb root
+exit=0
+restarting adbd as root
+$ adb wait-for-device
+exit=0
+$ adb shell id -u
+exit=0
+0
+$ adb shell wm size 720x1280
+exit=0
+$ adb shell wm density 240
+exit=0
+$ adb shell pm disable-user --user 0 com.google.android.apps.nexuslauncher
+exit=0
+Package com.google.android.apps.nexuslauncher new state: disabled-user
+$ adb logcat -G 16M
+exit=0
+$ adb install -r -g .delivery/GGUF-Chat-mobile.apk
+exit=0
+Performing Streamed Install
+Success
+$ adb shell pm clear com.ggufchat.app
+exit=0
+Success
+$ adb shell getprop ro.build.version.sdk
+exit=0
+35
+$ adb shell pm grant com.ggufchat.app android.permission.POST_NOTIFICATIONS
+exit=0
+$ adb shell am start -W -S -f 0x10008000 -n com.ggufchat.app/.MainActivity
+exit=0
+Stopping: com.ggufchat.app
+Starting: Intent { flg=0x10008000 cmp=com.ggufchat.app/.MainActivity }
+Status: ok
+LaunchState: COLD
+Activity: com.ggufchat.app/.MainActivity
+TotalTime: 1986
+WaitTime: 2006
+Complete
+$ adb shell rm -f /sdcard/gguf-test-ui.xml
+exit=0
+$ adb shell uiautomator dump /sdcard/gguf-test-ui.xml
+exit=0
+UI hierchary dumped to: /sdcard/gguf-test-ui.xml
+$ adb exec-out cat /sdcard/gguf-test-ui.xml
+exit=0
+<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><hierarchy rotation="0"><node index="0" text="" resource-id="" class="android.widget.FrameLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[0,0][720,1280]"><node index="0" text="" resource-id="" class="android.widget.LinearLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[0,0][720,1280]"><node index="0" text="" resource-id="android:id/content" class="android.widget.FrameLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[0,74][720,1280]"><node index="0" text="" resource-id="" class="android.widget.LinearLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[0,74][720,1280]"><node index="0" text="" resource-id="" class="android.widget.LinearLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,104][696,158]"><node index="0" text="GGUF Chat" resource-id="" class="android.widget.TextView" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,106][605,155]" /><node index="1" text="Ajustes" resource-id="" class="android.widget.Button" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[605,104][696,158]" /></node><node index="1" text="" resource-id="" class="android.widget.FrameLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,170][696,1202]"><node index="0" text="" resource-id="" class="android.widget.LinearLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,170][696,1202]"><node index="0" text="0 modelo(s) importado(s) • 0 conversa(s)" resource-id="" class="android.widget.TextView" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,170][696,197]" /><node index="1" text="+ Nova conversa" resource-id="" class="android.widget.Button" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,215][696,269]" /><node index="2" text="" resource-id="" class="android.widget.ScrollView" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,269][696,1202]"><node index="0" text="" resource-id="" class="android.widget.LinearLayout" packa
+[output truncated]
+$ adb shell pidof com.ggufchat.app
+exit=0
+2653
+$ adb exec-out screencap -p
+exit=0
+$ adb shell mkdir -p /sdcard/Download
+exit=0
+$ adb push .cache/mobile-models/SmolVLM-256M-Instruct-Q8_0.gguf /sdcard/Download/SmolVLM-256M-Instruct-Q8_0.gguf
+exit=0
+.cache/mobile-models/SmolVLM-256M-Instruct-Q8_0.gguf: 1 file pushed, 0 skipped. 163.8 MB/s (175054528 bytes in 1.019s)
+$ adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file:///sdcard/Download/SmolVLM-256M-Instruct-Q8_0.gguf
+exit=0
+Broadcasting: Intent { act=android.intent.action.MEDIA_SCANNER_SCAN_FILE dat=file:///... flg=0x400000 }
+Broadcast completed: result=0
+$ adb push .cache/mobile-models/mmproj-SmolVLM-256M-Instruct-Q8_0.gguf /sdcard/Download/mmproj-SmolVLM-256M-Instruct-Q8_0.gguf
+exit=0
+.cache/mobile-models/mmproj-SmolVLM-256M-Instruct-Q8_0.gguf: 1 file pushed, 0 skipped. 188.6 MB/s (103769856 bytes in 0.525s)
+$ adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file:///sdcard/Download/mmproj-SmolVLM-256M-Instruct-Q8_0.gguf
+exit=0
+Broadcasting: Intent { act=android.intent.action.MEDIA_SCANNER_SCAN_FILE dat=file:///... flg=0x400000 }
+Broadcast completed: result=0
+$ adb shell rm -f /sdcard/gguf-test-ui.xml
+exit=0
+$ adb shell uiautomator dump /sdcard/gguf-test-ui.xml
+exit=0
+UI hierchary dumped to: /sdcard/gguf-test-ui.xml
+$ adb exec-out cat /sdcard/gguf-test-ui.xml
+exit=0
+<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><hierarchy rotation="0"><node index="0" text="" resource-id="" class="android.widget.FrameLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[0,0][720,1280]"><node index="0" text="" resource-id="" class="android.widget.LinearLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[0,0][720,1280]"><node index="0" text="" resource-id="android:id/content" class="android.widget.FrameLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[0,74][720,1280]"><node index="0" text="" resource-id="" class="android.widget.LinearLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[0,74][720,1280]"><node index="0" text="" resource-id="" class="android.widget.LinearLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,104][696,158]"><node index="0" text="GGUF Chat" resource-id="" class="android.widget.TextView" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,106][605,155]" /><node index="1" text="Ajustes" resource-id="" class="android.widget.Button" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[605,104][696,158]" /></node><node index="1" text="" resource-id="" class="android.widget.FrameLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,170][696,1202]"><node index="0" text="" resource-id="" class="android.widget.LinearLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,170][696,1202]"><node index="0" text="0 modelo(s) importado(s) • 0 conversa(s)" resource-id="" class="android.widget.TextView" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,170][696,197]" /><node index="1" text="+ Nova conversa" resource-id="" class="android.widget.Button" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,215][696,269]" /><node index="2" text="" resource-id="" class="android.widget.ScrollView" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,269][696,1202]"><node index="0" text="" resource-id="" class="android.widget.LinearLayout" packa
+[output truncated]
+$ adb shell input tap 360 1229
+exit=0
+$ adb shell rm -f /sdcard/gguf-test-ui.xml
+exit=0
+$ adb shell uiautomator dump /sdcard/gguf-test-ui.xml
+exit=0
+UI hierchary dumped to: /sdcard/gguf-test-ui.xml
+$ adb exec-out cat /sdcard/gguf-test-ui.xml
+exit=0
+<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><hierarchy rotation="0"><node index="0" text="" resource-id="" class="android.widget.FrameLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[0,0][720,1280]"><node index="0" text="" resource-id="" class="android.widget.LinearLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[0,0][720,1280]"><node index="0" text="" resource-id="android:id/content" class="android.widget.FrameLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[0,74][720,1280]"><node index="0" text="" resource-id="" class="android.widget.LinearLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[0,74][720,1280]"><node index="0" text="" resource-id="" class="android.widget.LinearLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,104][696,158]"><node index="0" text="GGUF Chat" resource-id="" class="android.widget.TextView" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,106][605,155]" /><node index="1" text="Ajustes" resource-id="" class="android.widget.Button" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[605,104][696,158]" /></node><node index="1" text="" resource-id="" class="android.widget.FrameLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,170][696,1202]"><node index="0" text="" resource-id="" class="android.widget.LinearLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,170][696,1202]"><node index="0" text="Importar .gguf" resource-id="" class="android.widget.Button" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,170][696,224]" /><node index="1" text="Selecione um ou mais arquivos .gguf. O projetor multimodal (mmproj) é detectado e vinculado automaticamente ao modelo de visão." resource-id="" class="android.widget.TextView" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,248][696,294]" /><node index="2" text="Downloads" resource-id="" class="android.widget.TextView" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,32
+[output truncated]
+$ adb shell input tap 360 197
+exit=0
+$ adb shell rm -f /sdcard/gguf-test-ui.xml
+exit=0
+$ adb shell uiautomator dump /sdcard/gguf-test-ui.xml
+exit=0
+ERROR: null root node returned by UiTestAutomationBridge.
+$ adb exec-out cat /sdcard/gguf-test-ui.xml
+exit=0
+cat: /sdcard/gguf-test-ui.xml: No such file or directory
