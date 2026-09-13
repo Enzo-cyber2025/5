@@ -2,6 +2,8 @@
 from pathlib import Path
 import subprocess
 import sys
+import shutil
+import pytest
 import jdk4py
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -10,6 +12,8 @@ from unified_mobile import patch_clip_gpu
 
 
 def test_pairing_single_record_migration_selection_delete_and_eye(tmp_path):
+    javac=shutil.which("javac")
+    if not javac: pytest.skip("JDK compiler required; CI installs Temurin 17 (jdk4py is runtime-only)")
     sources={
         'android/content/Context.java': '''package android.content; import java.io.File;
 public class Context { public File root; public Context(File r){root=r;} public File getFilesDir(){return root;}
@@ -67,7 +71,7 @@ System.out.println("Single unit, eye, legacy migration, fresh selection, total s
     pair=tmp_path/'com/ggufchat/app/Pairing.java'
     pair.write_text((ROOT/'apk-fix/java/com/ggufchat/app/Pairing.java').read_text())
     java=jdk4py.JAVA_HOME/'bin'
-    subprocess.run([str(java/'javac'),'-d',str(tmp_path),*[str(p) for p in tmp_path.rglob('*.java')]],check=True)
+    subprocess.run([javac,'-d',str(tmp_path),*[str(p) for p in tmp_path.rglob('*.java')]],check=True)
     subprocess.run([str(java/'java'),'-ea','-cp',str(tmp_path),'UnitTest',str(tmp_path/'private')],check=True)
 
 

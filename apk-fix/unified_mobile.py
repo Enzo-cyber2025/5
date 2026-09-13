@@ -60,7 +60,13 @@ def patch_clip_gpu(s):
     end=s.index('\n        if (backend) {',start)
     s=s[:start]+'''        if (ctx_params.use_gpu) {
             // Match the language model's explicitly selected Vulkan device.
-            backend = ggml_backend_init_by_name("Vulkan0", nullptr);
+            try {
+                backend = ggml_backend_init_by_name("Vulkan0", nullptr);
+            } catch (...) {
+                ggml_backend_free(backend_cpu);
+                backend_cpu = nullptr;
+                throw;
+            }
             if (!backend) {
                 ggml_backend_free(backend_cpu);
                 backend_cpu = nullptr;
