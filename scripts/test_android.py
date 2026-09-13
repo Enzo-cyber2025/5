@@ -12,6 +12,7 @@ from pathlib import Path
 import shlex
 import subprocess
 import time
+import zipfile
 import xml.etree.ElementTree as ET
 
 from android_checks import (PACKAGE, PICKERS, assistant_reply, fusion, generation_completed,
@@ -315,6 +316,10 @@ def main():
     if len({p.name for p in [args.model, args.vision, args.mmproj] if p}) != len([p for p in [args.model, args.vision, args.mmproj] if p]):
         parser.error("Os modelos devem ter nomes de arquivo distintos.")
     device = Android(args.serial, args.evidence)
+    with zipfile.ZipFile(args.apk) as archive:
+        fingerprints = {n: hashlib.sha256(archive.read(n)).hexdigest() for n in archive.namelist()
+                        if n == "classes.dex" or n.startswith("lib/") and n.endswith(".so")}
+    (args.evidence / "apk-payload.json").write_text(json.dumps(fingerprints, indent=2))
     result = {"status": "FAIL", "checks": {}, "apk_sha256": hashlib.sha256(args.apk.read_bytes()).hexdigest(),
               "scope": "native-response-generation" if args.generation_only else "android-integration",
               "model_setup": args.model_setup, "model_sha256": hashlib.sha256(args.model.read_bytes()).hexdigest()}

@@ -319,3 +319,18 @@ def test_send_guard_rejects_null_chat_not_valid_chat():
     assert 'if-nez v0, :cond_8' not in fixed
     with pytest.raises(ValueError):
         patch_send_guard(fixed)
+
+
+@pytest.mark.parametrize('abi', ['arm64-v8a', 'x86_64'])
+def test_jni_libdl_fix_preserves_executable_code(tmp_path, abi):
+    from patch_native import patch_jni, executable_sections
+    original = ROOT / '.cache/gguf/GGUF-Chat.apk'
+    if not original.exists() or not (ROOT / '.venv/bin/patchelf').exists():
+        pytest.skip('Pinned original APK and patchelf needed for ELF integration test')
+    with zipfile.ZipFile(original) as z:
+        data = z.read(f'lib/{abi}/libaijni.so')
+    result = patch_jni(data, tmp_path / 'jni.so')
+    assert executable_sections(result) == executable_sections(data)
+    assert result != data
+    with pytest.raises(ValueError, match='dependencies differ'):
+        patch_jni(result, tmp_path / 'already-patched.so')

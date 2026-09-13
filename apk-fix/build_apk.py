@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Repair GGUF Chat 2.0, preserving resources/native libraries; sign with apksigner.
+"""Repair GGUF Chat 2.0, preserving resources and native inference code; sign with apksigner.
 
 No Android SDK is needed when the pinned APKTOOL_JAR/APKSIGNER_JAR are provided.
-Only the DEX is changed. No handwritten APK signature implementation is used.
+The DEX and the JNI bridge ELF dependency metadata are repaired. No handwritten APK signature implementation is used.
 """
 import argparse
 import copy
@@ -16,6 +16,7 @@ import tempfile
 import zipfile
 
 from patch_dex import patch_bytes
+from patch_native import patch_archive_jni, JNI_ENTRIES
 from patch_smali import apply as apply_smali
 
 HERE = Path(__file__).resolve().parent
@@ -38,13 +39,16 @@ def signature_entry(name):
     )
 
 
-def rebuild_zip(original, dex, output):
+def rebuild_zip(original, dex, output, native_replacements=None):
     """Copy original entries, strip obsolete signatures, align STORED data to 4 bytes.
 
     Native libraries retain their original compression (extractNativeLibs=true
     by default in this pinned APK). Resources are copied verbatim. ZIP padding
     is not signing; apksigner below is the sole signature implementation.
     """
+    native_replacements = native_replacements or {}
+    if not set(native_replacements) <= JNI_ENTRIES:
+        raise ValueError("Only JNI bridge dependencies may be repaired")
     with zipfile.ZipFile(original) as src, zipfile.ZipFile(output, "w") as dst:
         for entry in src.infolist():
             if signature_entry(entry.filename):
@@ -53,7 +57,7 @@ def rebuild_zip(original, dex, output):
             # Drop old ZIP padding; appending after zipalign's trailing zero bytes
             # would turn those bytes into a malformed extra-field header.
             info.extra = b""
-            data = dex if info.filename == "classes.dex" else src.read(entry.filename)
+            data = dex if info.filename == "classes.dex" else native_replacements.get(entry.filename, src.read(entry.filename))
             if info.compress_type == zipfile.ZIP_STORED:
                 # All names in this pinned APK are ASCII. Fail rather than guess encoding.
                 name_size = len(info.filename.encode("ascii"))
@@ -77,14 +81,17 @@ def verify_alignment(path):
                 raise ValueError(f"Entrada ZIP desalinhada: {info.filename}")
 
 
-def verify_payload(original, repaired):
+def verify_payload(original, repaired, native_replacements=None):
+    native_replacements = native_replacements or {}
+    if not set(native_replacements) <= JNI_ENTRIES:
+        raise ValueError("Unexpected native replacement")
     with zipfile.ZipFile(original) as a, zipfile.ZipFile(repaired) as b:
         expected = {n for n in a.namelist() if not signature_entry(n)}
         actual = {n for n in b.namelist() if not signature_entry(n)}
         if expected != actual:
             raise ValueError("O conjunto de arquivos do APK mudou inesperadamente.")
         for name in expected - {"classes.dex"}:
-            if a.read(name) != b.read(name):
+            if native_replacements.get(name, a.read(name)) != b.read(name):
                 raise ValueError(f"Recurso/biblioteca alterado inesperadamente: {name}")
 
 
@@ -133,6 +140,7 @@ def main():
         work = Path(tmp)
         with zipfile.ZipFile(original) as archive:
             dex = patch_bytes(archive.read("classes.dex"))
+            native_replacements = patch_archive_jni(archive, work)
         intermediate = work / "patched.apk"
         rebuild_zip(original, dex, intermediate)
         decoded = work / "decoded"
@@ -143,13 +151,13 @@ def main():
         with zipfile.ZipFile(compiled) as archive:
             dex = archive.read("classes.dex")
         unsigned, signed = work / "unsigned.apk", work / "signed.apk"
-        rebuild_zip(original, dex, unsigned)
+        rebuild_zip(original, dex, unsigned, native_replacements)
         run(java, "-jar", apksigner, "sign", "--ks", keystore, "--ks-key-alias", args.alias,
             "--ks-pass", "env:GGUF_KEYSTORE_PASSWORD", "--v1-signing-enabled", "true",
             "--v2-signing-enabled", "true", "--v4-signing-enabled", "false", "--out", signed, unsigned)
         run(java, "-jar", apksigner, "verify", "--verbose", "--print-certs", signed)
         verify_alignment(signed)
-        verify_payload(original, signed)
+        verify_payload(original, signed, native_replacements)
         shutil.copyfile(signed, output)
     output.with_suffix(".apk.sha256").write_text(f"{sha256(output)}  {output.name}\n")
     print(f"APK reconstruído e assinatura verificada: {output}\n"
