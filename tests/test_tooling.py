@@ -412,7 +412,7 @@ def test_diagnostics_requires_pinned_ndk(tmp_path, monkeypatch):
     from build_diagnostics import build_diagnostics
     monkeypatch.setenv('ANDROID_NDK_HOME', str(tmp_path))
     (tmp_path / 'source.properties').write_text('Pkg.Revision = 0.0.0')
-    with pytest.raises(ValueError, match='27.2.12479018'):
+    with pytest.raises(ValueError, match='28.2.13676358'):
         build_diagnostics(tmp_path)
 
 
@@ -498,3 +498,43 @@ def test_chat_navigation_rejects_automatic_process_restart(tmp_path, monkeypatch
     with pytest.raises(RuntimeError, match='reiniciou'):
         device.open_existing_chat('existing')
     assert device.generation_pid == '123'
+
+
+@pytest.mark.parametrize('original_exit,original_preserved,valid', [(1, False, True), (0, True, False), (139, False, False)])
+def test_runtime_probe_requires_specific_negative_and_positive_controls(tmp_path, monkeypatch,
+                                                                       original_exit, original_preserved, valid):
+    from test_android import Android
+    device = Android('emulator-5554', tmp_path / 'evidence')
+    (tmp_path / 'runtime-provenance.json').write_text('{}')
+    monkeypatch.setattr(device, 'shell', lambda *a, **kw: '')
+    def adb(*args, **kwargs):
+        if not kwargs.get('with_status'):
+            return ''
+        old = 'original-' in args[-1]
+        return subprocess.CompletedProcess(args, original_exit if old else 0,
+            stdout=json.dumps({'pthread_mutexattr_size': 8,
+                'callee_saved_preserved': original_preserved if old else True}).encode(), stderr=b'')
+    monkeypatch.setattr(device, 'adb', adb)
+    if valid:
+        device.check_cpp_runtime(tmp_path)
+    else:
+        with pytest.raises(AssertionError):
+            device.check_cpp_runtime(tmp_path)
+    assert (device.evidence / 'runtime-regression.json').exists()
+
+
+def test_runtime_replacement_cannot_change_vulkan_code(tmp_path):
+    from replace_cpp_runtime import RUNTIME_ENTRIES
+    original, fixed = tmp_path / 'original.apk', tmp_path / 'fixed.apk'
+    with zipfile.ZipFile(original, 'w') as z:
+        z.writestr('classes.dex', b'dex')
+        for entry in RUNTIME_ENTRIES:
+            z.writestr(entry, b'old runtime')
+        z.writestr('lib/x86_64/libggml-vulkan.so', b'original vulkan')
+    runtimes = {name: b'official runtime fixture' for name in RUNTIME_ENTRIES}
+    rebuild_zip(original, b'dex2', fixed, runtimes)
+    verify_payload(original, fixed, runtimes)
+    with zipfile.ZipFile(fixed) as z:
+        assert z.read('lib/x86_64/libggml-vulkan.so') == b'original vulkan'
+    with pytest.raises(ValueError):
+        rebuild_zip(original, b'dex2', fixed, {'lib/x86_64/libggml-vulkan.so': b'not allowed'})

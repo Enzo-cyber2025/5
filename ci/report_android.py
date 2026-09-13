@@ -32,7 +32,7 @@ def main():
         emit('input commands', '\n'.join(inputs)[-5600:])
     # Keep the real abort + native stack before verbose capability JSON/system
     # task logs consume GitHub's per-step annotation quota.
-    for name in ('vulkan-crash-diagnostic.txt', 'vulkan-backend.txt', 'vulkan-capabilities.json'):
+    for name in ('runtime-regression.json', 'vulkan-crash-diagnostic.txt', 'vulkan-backend.txt', 'vulkan-capabilities.json'):
         p = root / name
         if p.exists():
             text = p.read_text(errors='replace')

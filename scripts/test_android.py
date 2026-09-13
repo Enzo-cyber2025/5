@@ -27,7 +27,7 @@ class Android:
         self.generation_pid = None
         self.last_ui_summary = None
 
-    def adb(self, *args, check=True, timeout=45, binary=False):
+    def adb(self, *args, check=True, timeout=45, binary=False, with_status=False):
         result = subprocess.run(["adb", "-s", self.serial, *map(str, args)], capture_output=True, timeout=timeout)
         with (self.evidence / "commands.log").open("a") as f:
             f.write(f"$ adb {' '.join(map(str, args))}\nexit={result.returncode}\n")
@@ -39,6 +39,8 @@ class Android:
         if check and result.returncode:
             detail = (result.stdout + result.stderr).decode(errors="replace")[-3000:]
             raise RuntimeError(f"ADB falhou ({result.returncode}): {args}\n{detail}")
+        if with_status:
+            return result
         return result.stdout if binary else result.stdout.decode(errors="replace").strip()
 
     def shell(self, command, **kwargs):
@@ -85,6 +87,30 @@ class Android:
         if not pid:
             raise AssertionError("Processo do app ausente; isso não prova sozinho um crash nativo")
         return pid.split()[0]
+
+    def check_cpp_runtime(self, directory):
+        target = "/data/local/tmp/gguf-native-regression"
+        self.shell(f"mkdir -p {target}")
+        for name in ("runtime-probe", "original-libc++_shared.so", "fixed-libc++_shared.so"):
+            self.adb("push", directory / name, target + "/" + name)
+        self.shell(f"chmod 755 {target}/runtime-probe")
+        reports = {}
+        try:
+            for kind, expected_exit, expected_preserved in (("original", 1, False), ("fixed", 0, True)):
+                result = self.adb("shell", f"{target}/runtime-probe {target}/{kind}-libc++_shared.so",
+                                  check=False, with_status=True)
+                report = {"exit_code": result.returncode,
+                          "stdout": result.stdout.decode(errors="replace"),
+                          "stderr": result.stderr.decode(errors="replace")}
+                reports[kind] = report
+                report["result"] = json.loads(report["stdout"])
+                if result.returncode != expected_exit or report["result"].get("callee_saved_preserved") is not expected_preserved:
+                    raise AssertionError(f"Controle de ABI C++ inesperado: {kind}: {report}")
+                if report["result"].get("pthread_mutexattr_size") != 8:
+                    raise AssertionError("Probe não está usando a ABI Bionic LP64 esperada")
+        finally:
+            (self.evidence / "runtime-regression.json").write_text(json.dumps(reports, indent=2))
+            (self.evidence / "runtime-provenance.json").write_bytes((directory / "runtime-provenance.json").read_bytes())
 
     def grant_test_notifications(self):
         # pm clear resets the -g install grant. Only the disposable test app's
@@ -332,6 +358,7 @@ def main():
     parser.add_argument("--serial", required=True)
     parser.add_argument("--apk", type=Path, required=True)
     parser.add_argument("--model", type=Path, required=True)
+    parser.add_argument("--runtime-regression", type=Path, help="Native C++ ABI probe and original/fixed libraries (x86_64)")
     parser.add_argument("--model-setup", choices=("saf", "provisioned"), default="saf")
     modes = parser.add_mutually_exclusive_group()
     modes.add_argument("--vulkan-only", action="store_true", help="Require actual Vulkan offload and native completion")
@@ -368,6 +395,11 @@ def main():
         device.adb("wait-for-device", timeout=60)
         if device.shell("id -u") != "0":
             raise AssertionError("É necessário emulador com adb root, não imagem Play Store")
+        if args.runtime_regression:
+            if device.shell("getprop ro.product.cpu.abi") != "x86_64":
+                raise AssertionError("O controle de ABI exige o emulador x86_64")
+            device.check_cpp_runtime(args.runtime_regression)
+            result["checks"]["cpp_runtime_abi"] = "PASS: original corrupts RBX, official runtime preserves it"
         device.adb("logcat", "-G", "16M")  # retain native preload logs during cold shader compilation
         if args.vulkan_only:
             # Pixel Launcher ANRs in this software-rendered disposable image can

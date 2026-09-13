@@ -43,10 +43,10 @@ jobs:
           bash ci/log_step.sh tools bash scripts/fetch_tools.sh
           bash ci/log_step.sh original python3 scripts/fetch_original.py
       - uses: android-actions/setup-android@v3
-      - name: NDK fixado para diagnósticos nativos (não recompila llama/ggml)
+      - name: NDK fixado para runtime C++ oficial e diagnósticos (llama/ggml preservados)
         run: |
-          sdkmanager --install "ndk;27.2.12479018"
-          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.2.12479018" >> "$GITHUB_ENV"
+          sdkmanager --install "ndk;28.2.13676358"
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/28.2.13676358" >> "$GITHUB_ENV"
       - name: Reconstruir e verificar assinatura
         run: |
           export JAVA_HOME=$(.venv/bin/python -c 'import jdk4py; print(jdk4py.JAVA_HOME)')
@@ -67,6 +67,7 @@ jobs:
           path: |
             dist/GGUF-Chat-repaired.apk
             dist/GGUF-Chat-repaired.apk.sha256
+            dist/native-regression/
           retention-days: 7
           if-no-files-found: error
 
@@ -106,6 +107,7 @@ jobs:
           ANDROID_SERIAL: emulator-5554
           GGUF_EMULATOR_VK_DEVICE: ${{ inputs.android_mode != 'cpu' && '0' || '' }}
           GGUF_TEST_MODEL: .cache/models/smollm2.gguf
+          GGUF_RUNTIME_REGRESSION: dist/native-regression
           GGUF_MODEL_SETUP: provisioned
           GGUF_GENERATION_ONLY: ${{ inputs.android_mode == 'cpu' && '1' || '0' }}
           GGUF_VULKAN_ONLY: ${{ inputs.android_mode != 'cpu' && '1' || '0' }}

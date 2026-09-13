@@ -7,6 +7,7 @@ cd "$(dirname "$0")/.."
 : "${GGUF_TEST_MODEL:?Set a REAL text GGUF path; there is no tiny/fake fallback}"
 args=(--serial "$ANDROID_SERIAL" --apk "${GGUF_OUTPUT_APK:-dist/GGUF-Chat-repaired.apk}"
       --model "$GGUF_TEST_MODEL" --allow-data-reset --evidence "${GGUF_EVIDENCE:-evidence}")
+[[ -z "${GGUF_RUNTIME_REGRESSION:-}" ]] || args+=(--runtime-regression "$GGUF_RUNTIME_REGRESSION")
 args+=(--model-setup "${GGUF_MODEL_SETUP:-saf}")
 [[ "${GGUF_GENERATION_ONLY:-0}" != 1 ]] || args+=(--generation-only)
 [[ "${GGUF_VULKAN_ONLY:-0}" != 1 ]] || args+=(--vulkan-only)

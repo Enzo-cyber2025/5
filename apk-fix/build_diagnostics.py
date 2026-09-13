@@ -3,16 +3,21 @@ import os
 from pathlib import Path
 import subprocess
 
-NDK_VERSION = '27.2.12479018'
+NDK_VERSION = '28.2.13676358'
 DIAGNOSTIC_ENTRIES = {f'lib/{abi}/libggufdiagnostics.so' for abi in ('arm64-v8a', 'x86_64')}
 
 
-def build_diagnostics(work):
+def ndk_root():
     ndk = Path(os.environ.get('ANDROID_NDK_HOME',
         str(Path(os.environ.get('ANDROID_HOME', '.cache/android-sdk')) / 'ndk' / NDK_VERSION)))
     properties = ndk / 'source.properties'
     if not properties.is_file() or f'Pkg.Revision = {NDK_VERSION}' not in properties.read_text():
         raise ValueError(f'Android NDK {NDK_VERSION} required via ANDROID_NDK_HOME')
+    return ndk
+
+
+def build_diagnostics(work):
+    ndk = ndk_root()
     tools = ndk / 'toolchains/llvm/prebuilt/linux-x86_64/bin'
     source = Path(__file__).resolve().parent / 'native/diagnostics.c'
     result = {}

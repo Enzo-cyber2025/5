@@ -18,6 +18,7 @@ import zipfile
 from patch_dex import patch_bytes
 from patch_native import patch_archive_jni, JNI_ENTRIES
 from build_diagnostics import build_diagnostics, DIAGNOSTIC_ENTRIES
+from replace_cpp_runtime import replace_cpp_runtime, RUNTIME_ENTRIES
 from patch_smali import apply as apply_smali
 
 HERE = Path(__file__).resolve().parent
@@ -48,8 +49,8 @@ def rebuild_zip(original, dex, output, native_replacements=None):
     is not signing; apksigner below is the sole signature implementation.
     """
     native_replacements = native_replacements or {}
-    if not set(native_replacements) <= JNI_ENTRIES | DIAGNOSTIC_ENTRIES:
-        raise ValueError("Only pinned JNI repairs and the diagnostic helper are allowed")
+    if not set(native_replacements) <= JNI_ENTRIES | DIAGNOSTIC_ENTRIES | RUNTIME_ENTRIES:
+        raise ValueError("Only pinned JNI repairs, official C++ runtimes and diagnostic helpers are allowed")
     with zipfile.ZipFile(original) as src, zipfile.ZipFile(output, "w") as dst:
         for entry in src.infolist():
             if signature_entry(entry.filename):
@@ -90,7 +91,7 @@ def verify_alignment(path):
 
 def verify_payload(original, repaired, native_replacements=None):
     native_replacements = native_replacements or {}
-    if not set(native_replacements) <= JNI_ENTRIES | DIAGNOSTIC_ENTRIES:
+    if not set(native_replacements) <= JNI_ENTRIES | DIAGNOSTIC_ENTRIES | RUNTIME_ENTRIES:
         raise ValueError("Unexpected native replacement")
     with zipfile.ZipFile(original) as a, zipfile.ZipFile(repaired) as b:
         expected = {n for n in a.namelist() if not signature_entry(n)} | set(native_replacements)
@@ -149,6 +150,7 @@ def main():
             dex = patch_bytes(archive.read("classes.dex"))
             native_replacements = patch_archive_jni(archive, work)
             native_replacements.update(build_diagnostics(work))
+            native_replacements.update(replace_cpp_runtime(archive, output.parent / "native-regression"))
         intermediate = work / "patched.apk"
         rebuild_zip(original, dex, intermediate)
         decoded = work / "decoded"
