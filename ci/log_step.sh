@@ -20,8 +20,9 @@ if label == 'emulator':
     if commands.exists():
         text += '\n--- Last ADB commands ---\n' + commands.read_text(errors='replace')[-10000:]
 text = f'exit={status}\n' + text[-20000:]
-text = text.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
 level = 'notice' if status == '0' else 'error'
-print(f'::{level} title=GGUF {label}::{text}')
+for i in range(0,len(text),2500):
+    chunk=text[i:i+2500].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+    print(f'::{level} title=GGUF {label} {i//2500:02d}::{chunk}')
 PY
 exit "$status"

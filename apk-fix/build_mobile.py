@@ -2,7 +2,8 @@
 """Build a coherent native stack and an UNSIGNED APK, for local persistent signing.
 No signing key or password is placed in CI, artifacts, logs or Git.
 """
-import hashlib, json, os, shutil, subprocess, sys, zipfile
+import copy, hashlib, json, os, shutil, struct, subprocess, sys, zipfile
+from mobile_manifest import enforce_min_sdk
 from pathlib import Path
 from build_apk import ORIGINAL_APK_SHA256, signature_entry, verify_alignment
 from build_diagnostics import ndk_root, build_diagnostics
@@ -96,14 +97,22 @@ def main():
     with zipfile.ZipFile(original) as a,zipfile.ZipFile(compiled) as c,zipfile.ZipFile(out,'w',compression=zipfile.ZIP_DEFLATED) as b:
         for n in a.namelist():
             if signature_entry(n) or n.startswith('lib/'):continue
-            b.writestr(n,c.read('classes.dex') if n=='classes.dex' else a.read(n))
+            data=c.read('classes.dex') if n=='classes.dex' else a.read(n)
+            if n=='AndroidManifest.xml':data=enforce_min_sdk(data)
+            info=copy.copy(a.getinfo(n));info.extra=b''
+            if info.compress_type==zipfile.ZIP_STORED:
+                offset=b.fp.tell()+30+len(n.encode('ascii'))
+                if offset%4:
+                    padding=(-offset)%4;info.extra=struct.pack('<HH',0xD935,padding)+bytes(padding)
+            b.writestr(info,data)
         for n,data in libs.items():b.writestr(n,data)
     verify_alignment(out)
     with zipfile.ZipFile(original) as a,zipfile.ZipFile(out) as b:
         for n in a.namelist():
-            if n!='classes.dex' and not signature_entry(n) and not n.startswith('lib/'):assert a.read(n)==b.read(n)
+            if n not in ('classes.dex','AndroidManifest.xml') and not signature_entry(n) and not n.startswith('lib/'):assert a.read(n)==b.read(n)
+        assert b.read('AndroidManifest.xml')==enforce_min_sdk(a.read('AndroidManifest.xml'))
         assert {n for n in b.namelist() if n.startswith('lib/')}==set(libs)
-    metadata={'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'llama_commit':SOURCE_SHA,'sha256':hashlib.sha256(out.read_bytes()).hexdigest(),'status':'UNSIGNED_NOT_APPROVED','native':{n:hashlib.sha256(v).hexdigest() for n,v in libs.items()}}
+    metadata={'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'llama_commit':SOURCE_SHA,'min_sdk':28,'sha256':hashlib.sha256(out.read_bytes()).hexdigest(),'status':'UNSIGNED_NOT_APPROVED','native':{n:hashlib.sha256(v).hexdigest() for n,v in libs.items()}}
     (out.parent/'mobile-build.json').write_text(json.dumps(metadata,indent=2))
     print(json.dumps(metadata))
 if __name__=='__main__':main()

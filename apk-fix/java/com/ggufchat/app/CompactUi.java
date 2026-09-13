@@ -60,10 +60,12 @@ public final class CompactUi {
         LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(toggle,36),dp(toggle,36));
         lp.setMargins(10,0,10,0);
         compose.addView(toggle,1,lp);
-        toggle.setOnClickListener(v -> {
+        toggle.setOnClickListener(new View.OnClickListener() {
+          @Override public void onClick(View v) {
             boolean open=drawer.getVisibility()!=View.VISIBLE;
             drawer.setVisibility(open?View.VISIBLE:View.GONE);
             toggle.setSelected(open);
+          }
         });
         for(int i=0;i<compose.getChildCount();i++) {
             View v=compose.getChildAt(i);

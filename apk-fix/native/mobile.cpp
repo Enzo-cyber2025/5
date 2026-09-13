@@ -102,6 +102,8 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
         });
         auto e=std::make_shared<Engine>();
         auto mp=llama_model_default_params(); mp.n_gpu_layers=layers; mp.use_mmap=mmap; mp.use_mlock=false;
+        ggml_backend_dev_t no_accelerators[] = {nullptr};
+        if(layers==0) mp.devices=no_accelerators; // CPU mode must not create a Vulkan device.
         e->model=llama_model_load_from_file(model_path.c_str(),mp);
         if(!e->model) throw std::runtime_error("Falha ao carregar GGUF: formato, arquitetura ou backend incompatível");
         auto cp=llama_context_default_params(); cp.n_ctx=context; cp.n_batch=128; cp.n_ubatch=64;
