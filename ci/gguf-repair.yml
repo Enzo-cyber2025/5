@@ -30,8 +30,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          bash scripts/fetch_tools.sh
-          python3 scripts/fetch_original.py
+          bash ci/log_step.sh tools bash scripts/fetch_tools.sh
+          bash ci/log_step.sh original python3 scripts/fetch_original.py
       - name: Reconstruir e verificar assinatura
         run: |
           export JAVA_HOME=$(.venv/bin/python -c 'import jdk4py; print(jdk4py.JAVA_HOME)')
@@ -39,12 +39,12 @@ jobs:
           export APKSIGNER_JAR="$PWD/.cache/tools/package/lib/apksigner.jar"
           export GGUF_KEYSTORE_PASSWORD=$(openssl rand -hex 32)
           echo "::add-mask::$GGUF_KEYSTORE_PASSWORD"
-          bash apk-fix/rebuild_on_runner.sh
+          bash ci/log_step.sh build bash apk-fix/rebuild_on_runner.sh
       - name: Regressões de ferramentas e bytecode real no host
         run: |
-          .venv/bin/python -m pytest -q tests/test_tooling.py
+          bash ci/log_step.sh tooling .venv/bin/python -m pytest -q tests/test_tooling.py
           export APKTOOL_JAR="$PWD/.cache/tools/package/lib/apktool.jar"
-          bash scripts/test_host.sh
+          bash ci/log_step.sh host bash scripts/test_host.sh
       - name: APK de teste (NÃO é aprovação no Android)
         uses: actions/upload-artifact@v4
         with:
@@ -88,7 +88,7 @@ jobs:
           ram-size: 4096M
           disable-animations: true
           emulator-options: -no-window -no-snapshot -gpu swiftshader_indirect -noaudio -no-boot-anim
-          script: bash .github/emu-test-x86.sh
+          script: bash ci/log_step.sh emulator bash .github/emu-test-x86.sh
       - name: Evidências, inclusive em falha
         if: always()
         uses: actions/upload-artifact@v4
