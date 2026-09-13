@@ -384,6 +384,20 @@ def main():
                                   ("vulkan-features.txt", "pm list features"),
                                   ("graphics-properties.txt", "getprop")):
                 (args.evidence / name).write_text(device.shell(command, check=False))
+            # Bounded device facts remain legible when the full vkjson is large.
+            raw_vk = (args.evidence / "vulkan-device.json").read_text()
+            try:
+                vk = json.loads(raw_vk)
+                capabilities = {"loader_api_version": vk.get("apiVersion"), "devices": [
+                    {"properties": {k: d.get("properties", {}).get(k) for k in
+                        ("deviceName", "deviceType", "apiVersion", "driverVersion")},
+                     "storage_16bit": d.get("16bitStorageFeatures"),
+                     "core12_features": {k: d.get("core12", {}).get("features", {}).get(k)
+                        for k in ("shaderFloat16", "shaderInt8", "storageBuffer8BitAccess")}}
+                    for d in vk.get("devices", [])]}
+            except (ValueError, TypeError, AttributeError) as exc:
+                capabilities = {"diagnostic_error": str(exc)}
+            (args.evidence / "vulkan-capabilities.json").write_text(json.dumps(capabilities, indent=2))
             try:
                 vk_log = device.generate(model, 99, "vulkan")
                 result["checks"]["native_generation"] = "PASS"

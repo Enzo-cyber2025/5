@@ -7,6 +7,9 @@
 #include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/system_properties.h>
 #include <unistd.h>
 
 #define TAG "GGUFNativeStderr"
@@ -34,6 +37,20 @@ static void *forward_stderr(void *arg) {
     }
     close(fd);
     return NULL;
+}
+
+// The backend intentionally ignores CPU-type Vulkan implementations by default.
+// Opt in ONLY on an emulator, ONLY when the test runner explicitly requests 0.
+// Do not force a device on phones or fake its reported type/features.
+static void configure_emulator_vulkan(void) {
+    char emulator[PROP_VALUE_MAX] = {0}, device[PROP_VALUE_MAX] = {0};
+    __system_property_get("ro.kernel.qemu", emulator);
+    __system_property_get("debug.gguf.vulkan_device", device);
+    if (strcmp(emulator, "1") == 0 && strcmp(device, "0") == 0) {
+        if (setenv("GGML_VK_VISIBLE_DEVICES", "0", 1) == 0)
+            __android_log_write(ANDROID_LOG_INFO, TAG,
+                "Emulator-only GGML_VK_VISIBLE_DEVICES=0; software Vulkan is not hardware acceleration");
+    }
 }
 
 // The Vulkan entry point uses opaque VkInstance (pointer), returns function
@@ -87,5 +104,6 @@ void gguf_install_native_diagnostics(void) {
     if (dup2(descriptors[1], STDERR_FILENO) < 0)
         __android_log_write(ANDROID_LOG_WARN, TAG, "Cannot redirect native stderr");
     close(descriptors[1]);
+    configure_emulator_vulkan();
     report_loader_version();
 }

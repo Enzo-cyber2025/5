@@ -30,7 +30,7 @@ def main():
     if commands.exists():
         inputs = [x for x in commands.read_text(errors='replace').splitlines() if x.startswith('$ adb shell input')]
         emit('input commands', '\n'.join(inputs)[-5600:])
-    for name in ('vulkan-backend.txt', 'vulkan-device.json', 'vulkan-final-logcat.txt'):
+    for name in ('host-vulkan.txt', 'vulkan-capabilities.json', 'vulkan-backend.txt', 'vulkan-device.json', 'vulkan-final-logcat.txt'):
         p = root / name
         if p.exists():
             text = p.read_text(errors='replace')

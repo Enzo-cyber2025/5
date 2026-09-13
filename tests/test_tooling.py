@@ -422,7 +422,9 @@ def test_native_stderr_forwarding_preserves_fragments_and_long_lines(tmp_path):
                     '-Itests/native', 'tests/native/diagnostics_test.c', '-pthread', '-ldl',
                     '-o', str(exe)], cwd=ROOT, check=True)
     result = subprocess.run([str(exe)], capture_output=True, text=True, timeout=5, check=True)
-    assert result.stdout.splitlines() == ['fragment continued', '100% literal',
+    assert result.stdout.splitlines() == [
+        'Emulator-only GGML_VK_VISIBLE_DEVICES=0; software Vulkan is not hardware acceleration',
+        'fragment continued', '100% literal',
                                           'x' * 3000, 'x' * 3000, 'x' * 1000, 'EOF tail']
 
 

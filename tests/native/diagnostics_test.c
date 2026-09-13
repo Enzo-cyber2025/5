@@ -20,7 +20,24 @@ int __android_log_print(int priority, const char *tag, const char *format, ...) 
     puts("");
     return n;
 }
+static const char *qemu = "0", *selection = "0";
+int __system_property_get(const char *name, char *value) {
+    const char *source = strcmp(name, "ro.kernel.qemu") == 0 ? qemu : selection;
+    strcpy(value, source);
+    return (int)strlen(value);
+}
 int main(void) {
+    unsetenv("GGML_VK_VISIBLE_DEVICES");
+    configure_emulator_vulkan();
+    assert(getenv("GGML_VK_VISIBLE_DEVICES") == NULL); // Never override a phone.
+    qemu = "1";
+    selection = "2";
+    configure_emulator_vulkan();
+    assert(getenv("GGML_VK_VISIBLE_DEVICES") == NULL);
+    selection = "0";
+    configure_emulator_vulkan();
+    assert(strcmp(getenv("GGML_VK_VISIBLE_DEVICES"), "0") == 0);
+
     int fd[2];
     assert(pipe(fd) == 0);
     const char *first = "fragment ", *second = "continued\n\n100% literal\n";

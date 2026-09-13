@@ -16,4 +16,11 @@ if [[ -n "${GGUF_TEST_VISION:-}" || -n "${GGUF_TEST_MMPROJ:-}" ]]; then
   args+=(--vision "$GGUF_TEST_VISION" --mmproj "$GGUF_TEST_MMPROJ")
 fi
 [[ "${GGUF_REQUIRE_VULKAN:-0}" != 1 ]] || args+=(--require-vulkan)
+# Host environment variables are not inherited by the Android app process.
+# The native helper reads this opt-in only when ro.kernel.qemu=1.
+if [[ "${GGUF_EMULATOR_VK_DEVICE:-}" == 0 ]]; then
+  [[ "$ANDROID_SERIAL" == emulator-* ]]
+  [[ "$(adb -s "$ANDROID_SERIAL" shell getprop ro.kernel.qemu | tr -d '\r')" == 1 ]]
+  adb -s "$ANDROID_SERIAL" shell setprop debug.gguf.vulkan_device 0
+fi
 exec python3 scripts/test_android.py "${args[@]}"
