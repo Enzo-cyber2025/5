@@ -1,3 +1,5 @@
+> Histórico da revisão `120e7dc` (SHA `409985de…`). A revisão atual tem registro único, olho e projetor Vulkan: [UNIFIED.md](UNIFIED.md).
+
 # Revisão mobile — GGUF + mmproj
 
 ## Artefato

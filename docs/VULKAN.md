@@ -1,3 +1,5 @@
+> Histórico da revisão `120e7dc` (SHA `409985de…`). A revisão atual tem registro único, olho e projetor Vulkan: [UNIFIED.md](UNIFIED.md).
+
 # Vulkan no APK já entregue — execução real
 
 **Execução de backend: PASS. Qualidade das respostas: resultado misto, não aprovação geral.**

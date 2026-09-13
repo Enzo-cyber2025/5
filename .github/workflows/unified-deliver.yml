@@ -1,0 +1,46 @@
+name: Deliver tested unified-model APK
+on:
+  push:
+    branches: [arena/01a09b42-5]
+    paths: [.github/workflows/unified-deliver.yml]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  deliver:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: Verify tested bytes, create separate release and publish only APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: Enzo-cyber2025/5
+        run: |
+          set -euo pipefail
+          gh api repos/Enzo-cyber2025/5/actions/runs/34788194324 > /tmp/unified-test.json
+          python3 - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          assert json.loads(Path('/tmp/unified-test.json').read_text())['conclusion']=='success'
+          summary=json.loads(Path('ci-results/34788194324-1/summary.json').read_text())
+          expected='ab30020d22076701d68db939c8c1a33ca10e50e6f7f598ae1e7a9d59665ecc03'
+          assert summary['status']=='PASS' and summary['apk_sha256']==expected
+          for name in ('single_stored_unit_and_eye','vulkan_language_and_projector_weights','normal_model_without_eye','delete_unit_removes_both_preserves_others'):
+              assert summary['checks'][name]=='PASS'
+          assert hashlib.sha256(Path('.delivery/GGUF-Chat-mobile.apk').read_bytes()).hexdigest()==expected
+          PY
+          if ! gh release view gguf-unified-72d4429 >/dev/null 2>&1; then
+            gh release create gguf-unified-72d4429 --target 72d4429fceb22f15353a5fddd634d1a9ac8bf0bf --prerelease --latest=false --title 'GGUF Chat — modelo único, olho e projetor Vulkan' --notes-file docs/UNIFIED.md
+          fi
+          gh release upload gguf-unified-72d4429 .delivery/GGUF-Chat-mobile.apk --clobber
+          gh api repos/Enzo-cyber2025/5/releases/tags/gguf-unified-72d4429 > /tmp/unified-release.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          release=json.loads(Path('/tmp/unified-release.json').read_text())
+          asset=next(a for a in release['assets'] if a['name']=='GGUF-Chat-mobile.apk')
+          assert asset['size']==16745526
+          assert asset['digest']=='sha256:ab30020d22076701d68db939c8c1a33ca10e50e6f7f598ae1e7a9d59665ecc03'
+          print('::notice title=Tested standalone APK::'+asset['browser_download_url'])
+          PY

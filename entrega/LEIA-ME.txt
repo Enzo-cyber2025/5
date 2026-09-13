@@ -1,15 +1,19 @@
-APK MOBILE COMPILADO — DOWNLOAD DIRETO (SEM ZIP)
-https://github.com/Enzo-cyber2025/5/releases/download/gguf-mobile-120e7dc/GGUF-Chat-mobile.apk
+APK — MODELO ÚNICO, OLHO E VULKAN (SEM ZIP)
+https://github.com/Enzo-cyber2025/5/releases/download/gguf-unified-72d4429/GGUF-Chat-mobile.apk
 
-SHA-256: 409985de54388cbcb1429a8db4cd26139cc47a5764864c6cd4b408c75f07099f
+SHA-256: ab30020d22076701d68db939c8c1a33ca10e50e6f7f598ae1e7a9d59665ecc03
+16.745.526 bytes. Android 9+; ARM64 e x86_64.
 Certificado SHA-256: 68f248a224075d66df9ff97ba336556b0a84b724112e644c28e607612da633f5
-Android 9/API28 ou superior; ARM64 e x86_64.
 
-Teste real aprovado: https://github.com/Enzo-cyber2025/5/actions/runs/34785696254
-Importação conjunta GGUF + mmproj, cartão único, carregamento nativo,
-mensagem persistida sem queda do processo, barra compacta e reimportação.
+Seleção conjunta GGUF + mmproj salva uma entrada privada com olho.
+Modelo sem projetor fica sem olho. Os arquivos não são concatenados.
+Vulkan solicitado para os dois componentes, sem fallback automático CPU.
+Teste real: https://github.com/Enzo-cyber2025/5/actions/runs/34788194324
+31/31 camadas e 198 tensores de projetor em Vulkan; duas respostas salvas.
+Também validados SAF, reimportação, barra compacta e exclusão conjunta.
 
-NOVA CHAVE FIXA autorizada: não instala sobre a assinatura antiga.
-Exporte seus dados antes de desinstalar a versão antiga.
-Não houve teste em A55 físico nem avaliação de imagens/anexos.
-Detalhes: docs/MOBILE.md. O arquivo .sha256 antigo refere-se à build anterior.
+Mesma assinatura da versão gguf-mobile-120e7dc: pode atualizar sem trocar chave.
+A versão antiga gguf-apk-f6dc954 usa outra chave: exporte antes de desinstalar.
+Teste em Vulkan POR SOFTWARE no emulador. GPU física não testada.
+Não foi implementada/validada avaliação de imagens/anexos; o olho identifica o par.
+Detalhes: docs/UNIFIED.md.

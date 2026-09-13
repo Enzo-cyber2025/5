@@ -1,21 +1,22 @@
-# GGUF Chat — APK mobile compilado
+# GGUF Chat — modelo único, olho e Vulkan
 
-## [Baixar APK diretamente — sem ZIP](https://github.com/Enzo-cyber2025/5/releases/download/gguf-mobile-120e7dc/GGUF-Chat-mobile.apk)
+## [Baixar APK diretamente — sem ZIP](https://github.com/Enzo-cyber2025/5/releases/download/gguf-unified-72d4429/GGUF-Chat-mobile.apk)
 
-**16,7 MB · Android 9+ · ARM64 e x86_64.** Nova chave fixa autorizada pelo usuário.
+**16,7 MB · Android 9+ · ARM64 e x86_64 · mesma assinatura fixa da revisão mobile anterior.**
 
-- GGUF + mmproj selecionados juntos, associados e exibidos em um único cartão.
-- Projetor carregado realmente pelo mtmd; componentes nativos recompilados juntos.
-- Ferramentas recolhidas, abertas pela chave inglesa ao lado de Enviar; uma linha rolável, 10 px entre blocos e botões menores.
-- CPU/contexto 1024 por padrão e verificação conservadora de memória.
+- GGUF + mmproj selecionados juntos viram **um único registro no armazenamento privado**, com tamanho total e ícone de olho.
+- GGUF importado sozinho fica **sem olho**. Os arquivos permanecem GGUFs válidos; não são concatenados.
+- Carregamento Vulkan para linguagem **e projetor**, sem fallback automático para CPU. CPU continua como escolha explícita.
+- Exclusão conjunta dos componentes, reimportação independente e migração dos pares antigos sem mudar caminhos.
+- Barra compacta preservada: chave inglesa ao lado de Enviar, ferramentas inicialmente recolhidas, uma linha e 10 px de intervalo.
 
-**Teste real aprovado:** [Android API 35 — 34785696254](https://github.com/Enzo-cyber2025/5/actions/runs/34785696254). Importação SAF do SmolVLM-256M Q8 + mmproj Q8, carga dos dois, mensagem com conclusão nativa e persistência, PID preservado durante geração e reimportação sem trocar os pares anteriores. Também passaram 97 testes de ferramentas e 33 JVM.
+**Teste Android aprovado:** [34788194324](https://github.com/Enzo-cyber2025/5/actions/runs/34788194324). SAF real, registro único, olho/sem olho, 31/31 camadas de linguagem e 198 tensores de projetor no Vulkan, duas respostas salvas com PID preservado, reimportação e exclusão.
 
-**Atenção:** a nova assinatura não instala sobre o APK antigo. Exporte seus dados antes de desinstalá-lo. A chave privada foi preservada nesta sessão para futuras atualizações.
+**Limites:** Vulkan por software Mesa/Lavapipe em emulador x86_64, não GPU física. Carregamento do projetor e geração de texto não comprovam reconhecimento de imagens; não foi acrescentada avaliação de anexos. O olho identifica a união com projetor, não valida essa função de imagem.
 
-O A55 físico não foi testado. O teste é de **texto com projetor carregado**, não de reconhecimento de imagens; esta revisão não acrescenta avaliação de anexos pelo mtmd. Qualidade das respostas não foi aprovada por esse teste.
+**Atualização:** usa o mesmo certificado da versão `gguf-mobile-120e7dc`; não é necessário desinstalá-la por mudança de assinatura. A versão mais antiga `gguf-apk-f6dc954` tem outro certificado: exporte seus dados antes de desinstalá-la.
 
-[Relatório, hashes, limites e reprodução](docs/MOBILE.md) · [Evidências](ci-results/34785696254-1/summary.json)
+[Relatório e hashes](docs/UNIFIED.md) · [Evidências originais](ci-results/34788194324-1/summary.json) · [Relatório da revisão mobile anterior](docs/MOBILE.md)
 
 <details>
 <summary>Histórico das builds anteriores (não descreve o APK mobile acima)</summary>
