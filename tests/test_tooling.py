@@ -252,3 +252,18 @@ def test_provision_real_file_requires_matching_device_hash(tmp_path, monkeypatch
         assert model['fileName'] == source.name
         assert model['path'].endswith('/files/models/model.gguf')
         assert any('restorecon' in c for c in commands)
+
+
+@pytest.mark.parametrize('output,valid', [('[]', True), ('', False), ('cat: No such file', False)])
+def test_optional_android_store_only_allows_explicit_absence(tmp_path, monkeypatch, output, valid):
+    from test_android import Android
+    device = Android('emulator-5554', tmp_path)
+    calls = []
+    monkeypatch.setattr(device, 'shell', lambda c: calls.append(c) or output)
+    if valid:
+        assert device.read_json('chats.json', optional=True) == []
+    else:
+        with pytest.raises(AssertionError, match='JSON inválido'):
+            device.read_json('chats.json', optional=True)
+    assert "if [ -e " in calls[0]
+    assert "else printf '[]'" in calls[0]

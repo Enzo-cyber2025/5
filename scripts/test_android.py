@@ -95,10 +95,17 @@ class Android:
         self.alive()
 
     def read_json(self, name, optional=False):
-        output = self.adb("exec-out", "cat", f"/data/user/0/{PACKAGE}/files/{name}", check=not optional)
-        if optional and not output:
-            return []
-        return json.loads(output)
+        path = shlex.quote(f"/data/user/0/{PACKAGE}/files/{name}")
+        # exec-out can merge cat's stderr into stdout. A missing optional store
+        # is [], but malformed JSON and permission errors must still fail.
+        command = f"cat {path}"
+        if optional:
+            command = f"if [ -e {path} ]; then cat {path}; else printf '[]'; fi"
+        output = self.shell(command)
+        try:
+            return json.loads(output)
+        except json.JSONDecodeError as exc:
+            raise AssertionError(f"JSON inválido em {name}: {output[:250]!r}") from exc
 
     def write_private(self, relative, data):
         uid = self.shell(f"stat -c %u /data/user/0/{PACKAGE}")
