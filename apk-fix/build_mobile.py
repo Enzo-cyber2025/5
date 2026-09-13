@@ -4,6 +4,8 @@ No signing key or password is placed in CI, artifacts, logs or Git.
 """
 import copy, hashlib, json, os, re, shutil, struct, subprocess, sys, textwrap, zipfile
 from mobile_manifest import enforce_min_sdk
+from attachment_manifest import attachment_manifest
+from attachment_patches import patch_attachments
 from unified_mobile import patch_unified_ui, patch_clip_gpu
 from pathlib import Path
 from build_apk import ORIGINAL_APK_SHA256, signature_entry, verify_alignment
@@ -66,6 +68,7 @@ def ui_patches(app):
     p=app/'ChatActivity$16.smali';s=p.read_text();marker='    const-string v3, "N\\u00e3o foi poss\\u00edvel carregar o modelo. Verifique se o arquivo GGUF est\\u00e1 \\u00edntegro."'
     assert marker in s;s=s.replace(marker,'    invoke-virtual {v0}, Ljava/lang/Throwable;->getMessage()Ljava/lang/String;\n    move-result-object v3');p.write_text(s)
     patch_unified_ui(app)
+    patch_attachments(app)
 
 def main():
     WORK.mkdir(parents=True,exist_ok=True)
@@ -149,7 +152,7 @@ def main():
         for n in a.namelist():
             if signature_entry(n) or n.startswith('lib/'):continue
             data=c.read('classes.dex') if n=='classes.dex' else a.read(n)
-            if n=='AndroidManifest.xml':data=enforce_min_sdk(data)
+            if n=='AndroidManifest.xml':data=attachment_manifest(data)
             info=copy.copy(a.getinfo(n));info.extra=b''
             if info.compress_type==zipfile.ZIP_STORED:
                 offset=b.fp.tell()+30+len(n.encode('ascii'))
@@ -161,7 +164,7 @@ def main():
     with zipfile.ZipFile(original) as a,zipfile.ZipFile(out) as b:
         for n in a.namelist():
             if n not in ('classes.dex','AndroidManifest.xml') and not signature_entry(n) and not n.startswith('lib/'):assert a.read(n)==b.read(n)
-        assert b.read('AndroidManifest.xml')==enforce_min_sdk(a.read('AndroidManifest.xml'))
+        assert b.read('AndroidManifest.xml')==attachment_manifest(a.read('AndroidManifest.xml'))
         assert {n for n in b.namelist() if n.startswith('lib/')}==set(libs)
     metadata={'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'llama_commit':SOURCE_SHA,'min_sdk':28,'native_source_commit':native_origin or subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'sha256':hashlib.sha256(out.read_bytes()).hexdigest(),'status':'UNSIGNED_NOT_APPROVED','native':{n:hashlib.sha256(v).hexdigest() for n,v in libs.items()}}
     (out.parent/'mobile-build.json').write_text(json.dumps(metadata,indent=2))

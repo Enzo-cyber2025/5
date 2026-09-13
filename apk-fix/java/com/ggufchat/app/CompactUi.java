@@ -67,6 +67,7 @@ public final class CompactUi {
             toggle.setSelected(open);
           }
         });
+        Attachments.install(activity,root,compose);
         for(int i=0;i<compose.getChildCount();i++) {
             View v=compose.getChildAt(i);
             if(v instanceof EditText) ((EditText)v).setMaxLines(4);
