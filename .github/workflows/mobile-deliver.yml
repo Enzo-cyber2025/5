@@ -18,6 +18,7 @@ jobs:
           GH_REPO: Enzo-cyber2025/5
         run: |
           set -euo pipefail
+          exec > >(tee /tmp/mobile-delivery.log) 2>&1
           gh api repos/Enzo-cyber2025/5/actions/runs/34785696254 > /tmp/mobile-test-run.json
           python3 - <<'PY'
           import hashlib,json
@@ -40,4 +41,16 @@ jobs:
           assert a['size']==16741431
           assert a['digest']=='sha256:409985de54388cbcb1429a8db4cd26139cc47a5764864c6cd4b408c75f07099f'
           print('::notice title=Standalone APK verified::'+a['browser_download_url']+' | '+a['digest'])
+          PY
+      - name: Delivery diagnostics
+        if: always()
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('/tmp/mobile-delivery.log')
+          if p.exists():
+              text=p.read_text()[-8000:]
+              for i in range(0,len(text),2500):
+                  chunk=text[i:i+2500].replace('%','%25').replace('\n','%0A').replace('\r','%0D')
+                  print('::notice title=Mobile APK delivery::'+chunk)
           PY
