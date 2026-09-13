@@ -42,6 +42,7 @@ jobs:
         run: |
           bash ci/log_step.sh tools bash scripts/fetch_tools.sh
           bash ci/log_step.sh original python3 scripts/fetch_original.py
+      - uses: android-actions/setup-android@v3
       - name: NDK fixado para diagnósticos nativos (não recompila llama/ggml)
         run: |
           sdkmanager --install "ndk;27.2.12479018"
