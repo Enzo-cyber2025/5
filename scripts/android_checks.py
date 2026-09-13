@@ -14,13 +14,15 @@ def has_package(xml, packages):
     return any(n.get("package") in packages for n in nodes(xml))
 
 
-def position(xml, *, text=None, desc=None, package=None, contains=False, class_name=None):
+def position(xml, *, text=None, desc=None, package=None, contains=False, class_name=None, resource_id=None):
     for node in nodes(xml):
         if node.get("enabled") != "true":
             continue
         if package and node.get("package") not in package:
             continue
         if class_name and node.get("class") != class_name:
+            continue
+        if resource_id and node.get("resource-id") != resource_id:
             continue
         if text is not None:
             value = node.get("text", "").casefold()

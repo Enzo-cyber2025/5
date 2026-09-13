@@ -116,6 +116,12 @@ class Android:
                    f"&& restorecon -R {shlex.quote(parent)}")
         temp.unlink()
 
+    def select_downloads(self):
+        for label in ("Downloads", "Download"):
+            if self.tap(text=label, resource_id="android:id/title", package=PICKERS, optional=True):
+                return
+        raise AssertionError("Raiz Downloads ausente no menu SAF")
+
     def confirm_picker(self, xml):
         for label in ("Open", "Abrir", "Select", "Selecionar", "Done", "Concluído"):
             point = position(xml, text=label, package=PICKERS) or position(xml, desc=label, package=PICKERS)
@@ -129,6 +135,12 @@ class Android:
             xml = self.ui()
             if not has_package(xml, PICKERS):
                 return
+            # DocumentsUI also dumps the obscured page behind its root drawer.
+            # Never tap a filename or breadcrumb through that drawer.
+            if any(position(xml, text=t, package=PICKERS) for t in ("Open from", "Abrir de")):
+                self.select_downloads()
+                time.sleep(2)
+                continue
             point = position(xml, text=filename, package=PICKERS)
             if point:
                 self.shell(f"input tap {point[0]} {point[1]}")
@@ -151,9 +163,7 @@ class Android:
             for desc in ("Show roots", "Mostrar raízes"):
                 if self.tap(desc=desc, package=PICKERS, optional=True):
                     break
-            for label in ("Downloads", "Download"):
-                if self.tap(text=label, package=PICKERS, optional=True):
-                    break
+            self.select_downloads()
             time.sleep(2)
         raise AssertionError(f"Falha ao selecionar {filename}; nenhuma importação será presumida")
 

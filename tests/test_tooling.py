@@ -211,3 +211,14 @@ def test_launch_uses_android_11_compatible_intent_flags(tmp_path, monkeypatch):
     device.launch()
     assert '-f 0x10008000' in commands[0]
     assert '--activity-new-task' not in commands[0]
+
+
+def test_saf_downloads_selector_ignores_obscured_breadcrumb():
+    from android_checks import position
+    xml = '''<hierarchy><node package="com.google.android.documentsui"
+        text="Downloads" resource-id="com.google.android.documentsui:id/breadcrumb_text"
+        enabled="true" bounds="[0,321][303,453]"/>
+        <node package="com.google.android.documentsui" text="Downloads"
+        resource-id="android:id/title" enabled="true" bounds="[176,657][748,710]"/>
+        </hierarchy>'''
+    assert position(xml, text="Downloads", resource_id="android:id/title") == (462, 683)
