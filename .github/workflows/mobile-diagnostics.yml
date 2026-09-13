@@ -1,0 +1,26 @@
+name: Mobile build diagnostics relay
+on:
+  push:
+    branches: [arena/01a09b42-5]
+    paths: [.github/workflows/mobile-diagnostics.yml]
+permissions:
+  actions: read
+jobs:
+  diagnostics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: mobile-build-diagnostics
+          path: logs
+          run-id: 34782769854
+          github-token: ${{ github.token }}
+      - run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          text='\n'.join(p.read_text(errors='replace') for p in Path('logs').rglob('*.log'))
+          text=text[-14000:]
+          for i in range(0,len(text),2500):
+              chunk=text[i:i+2500].replace('%','%25').replace('\r','%0D').replace('\n','%0A')
+              print(f'::notice title=Build diagnostic {i//2500}::{chunk}')
+          PY
