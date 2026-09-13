@@ -1,0 +1,13 @@
+--------- beginning of main
+09-13 16:47:47.408  5947  6078 I GGUFChatNative: libunwind.so preloaded (global)
+09-13 16:47:47.441  5947  6078 W GGUFChatNative: libggml-vulkan.so backend init returned NULL (unsupported device?)
+09-13 16:47:47.455  5947  6078 I GGUFChatNative: registered CPU backend (best score 1)
+09-13 16:47:47.485  5947  6078 I GGUFChatNative: engine loaded: libllama.so (Vulkan-ready)
+09-13 16:47:47.452  5947  5947 W model-preload: type=1400 audit(0.0:67): avc: denied { read } for name="/" dev="dm-4" ino=2 scontext=u:r:untrusted_app:s0:c167,c256,c512,c768 tcontext=u:object_r:rootfs:s0 tclass=dir permissive=0 app=com.ggufchat.app
+09-13 16:47:47.476  5947  5947 I chatty  : uid=10167(com.ggufchat.app) identical 3 lines
+09-13 16:47:47.476  5947  5947 W model-preload: type=1400 audit(0.0:71): avc: denied { read } for name="/" dev="dm-4" ino=2 scontext=u:r:untrusted_app:s0:c167,c256,c512,c768 tcontext=u:object_r:rootfs:s0 tclass=dir permissive=0 app=com.ggufchat.app
+09-13 16:47:47.752  5947  6078 I GGUFChatNative: model loaded: n_ctx=1024 n_params=134515008 gpu_offload=0
+09-13 16:47:51.145  5947  5947 I AssistStructure: Flattened final assist data: 1744 bytes, containing 1 windows, 15 views
+09-13 16:48:03.653  5947  6223 E om.ggufchat.ap: Invalid UTF-8 input to JNI::NewStringUTF()
+09-13 16:48:07.608  5947  6223 I System.out: GGUF_REPAIR_GENERATION_FAILED
+09-13 16:48:07.616  5947  5947 D CompatibilityChangeReporter: Compat change id reported: 147798919; UID 10167; state: ENABLED
