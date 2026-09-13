@@ -82,7 +82,12 @@ jobs:
         run: bash ci/mobile-models.sh
       - name: KVM
         run: sudo chmod a+rw /dev/kvm
+      - name: Software Vulkan environment
+        if: ${{ contains(github.event.head_commit.message, '[vulkan test]') }}
+        run: bash ci/prepare_vulkan.sh
       - uses: reactivecircus/android-emulator-runner@v2
+        env:
+          GGUF_MOBILE_VULKAN: ${{ contains(github.event.head_commit.message, '[vulkan test]') && '1' || '0' }}
         with:
           api-level: 35
           arch: x86_64
@@ -92,7 +97,7 @@ jobs:
           heap-size: 1024M
           disk-size: 8192M
           disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          emulator-options: -no-window -no-snapshot -gpu ${{ contains(github.event.head_commit.message, '[vulkan test]') && 'host' || 'swiftshader_indirect' }} -feature Vulkan -noaudio -no-boot-anim -camera-back none
           script: python3 scripts/test_mobile.py
       - name: Report
         if: always()

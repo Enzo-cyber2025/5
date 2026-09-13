@@ -2,16 +2,17 @@
 """Real SAF multi-selection, persisted pair, compact tools and native generation.
 Requires a disposable emulator. No injected model database or simulated inference.
 """
-import hashlib,json,shlex,time,traceback
+import hashlib,json,os,re,shlex,time,traceback
 from pathlib import Path
 import xml.etree.ElementTree as ET
 from test_android import Android
-from android_checks import PACKAGE,PICKERS,position,has_package,fusion,assistant_reply,generation_completed
+from android_checks import PACKAGE,PICKERS,position,has_package,fusion,assistant_reply,generation_completed,vulkan_offloaded,basic_response_quality
 
 EVIDENCE=Path('evidence')
 MODEL=Path('.cache/mobile-models/SmolVLM-256M-Instruct-Q8_0.gguf')
 PROJ=Path('.cache/mobile-models/mmproj-SmolVLM-256M-Instruct-Q8_0.gguf')
 APK=Path('.delivery/GGUF-Chat-mobile.apk')
+VULKAN=os.environ.get('GGUF_MOBILE_VULKAN')=='1'
 
 
 class MobileAndroid(Android):
@@ -66,6 +67,14 @@ def main():
         d.shell('wm size 720x1280');d.shell('wm density 240')
         d.shell('pm disable-user --user 0 com.google.android.apps.nexuslauncher',check=False)
         d.adb('logcat','-G','16M')
+        if VULKAN:
+            d.shell('setprop debug.gguf.vulkan_device 0')
+            for name,command in (('vulkan-device.json','cmd gpu vkjson'),('vulkan-features.txt','pm list features')):
+                (EVIDENCE/name).write_text(d.shell(command,check=False))
+            summary['backend_requested']='Vulkan, 99 layers; projector on CPU'
+            summary['environment']='Android Vulkan through Mesa software driver, not physical GPU'
+            assert summary['apk_sha256']=='409985de54388cbcb1429a8db4cd26139cc47a5764864c6cd4b408c75f07099f','APK differs from delivered version'
+
         d.adb('install','-r','-g',APK,timeout=180)
         assert d.shell(f'pm clear {PACKAGE}')=='Success'
         d.grant_test_notifications();d.launch();d.capture('launch.png')
@@ -96,7 +105,7 @@ def main():
         assert linked()==pair
         summary['checks']['pair_survives_restart']='PASS'
         d.adb('logcat','-c')
-        chat=d.new_chat(model,0);pid=d.alive()
+        chat=d.new_chat(model,99 if VULKAN else 0);pid=d.alive()
         assert chat.get('mmprojPath')==model['mmprojPath'],'Conversa perdeu o projetor associado'
         def loaded():
             assert d.alive()==pid,'Processo substituído durante carregamento'
@@ -106,6 +115,11 @@ def main():
             return 'GGUF_PROJECTOR_LOADED vision=1' in log and 'projector=loaded' in log
         d.wait(loaded,'GGUF e mmproj carregados pelo mtmd real',timeout=300)
         summary['checks']['native_model_and_projector_load']='PASS'
+        if VULKAN:
+            log=(EVIDENCE/'mobile-logcat.txt').read_text()
+            assert vulkan_offloaded(log),'Latest model load did not offload layers to Vulkan; CPU fallback is not success'
+            summary['checks']['vulkan_offload']='PASS'
+
         xml=d.ui()
         assert position(xml,desc='Alternar ferramentas',package={PACKAGE})
         for label in ('Thinking','Foto','Vídeo','Áudio','Arquivo','Ferramentas'):
@@ -142,6 +156,35 @@ def main():
         (EVIDENCE/'mobile-reply.txt').write_text(reply);d.capture('mobile-reply.png')
         summary['checks']['native_generation_and_persistence']='PASS'
         summary['generation_pid']=pid
+        if VULKAN:
+            log=(EVIDENCE/'mobile-logcat.txt').read_text()
+            assert vulkan_offloaded(log),'Generation used a CPU fallback load'
+            (EVIDENCE/'vulkan-backend.txt').write_text('\n'.join(line for line in log.splitlines() if re.search(r'vulkan|offload|GGUF_NATIVE_COMPLETE|GGUF_PROJECTOR',line,re.I)))
+            summary['offload_records']=re.findall(r'offloaded\s+\d+(?:/\d+)?\s+layers?\s+to\s+GPU',log,re.I)
+            # A second actual send must produce a NEW native completion and a
+            # persisted response after its own exact prompt, not a stale marker.
+            previous_completions=log.count('GGUF_NATIVE_COMPLETE')
+            question='Reply in English: What is two plus two?'
+            d.send(question,clear_log=False)
+            def second_done():
+                assert d.alive()==pid,'Process died or restarted during second generation'
+                current=d.adb('logcat','-d',f'--pid={pid}')
+                (EVIDENCE/'vulkan-final-logcat.txt').write_text(current)
+                if not generation_completed(current) or current.count('GGUF_NATIVE_COMPLETE')<=previous_completions:return None
+                assert vulkan_offloaded(current)
+                chats=d.read_json('chats.json')
+                (EVIDENCE/'vulkan-chats.json').write_text(json.dumps(chats,ensure_ascii=False))
+                try:return assistant_reply(chats,chat['id'],question)
+                except AssertionError:return None
+            second=d.wait(second_done,'second Vulkan response persisted with new native completion',timeout=600)
+            (EVIDENCE/'vulkan-reply.txt').write_text(second);d.capture('vulkan-reply.png')
+            summary['checks']['second_vulkan_generation']='PASS'
+            try:
+                basic_response_quality(reply,second)
+                summary['checks']['basic_response_quality']='PASS'
+            except AssertionError as e:
+                summary['checks']['basic_response_quality']='FAIL: '+str(e)
+
         # Reimport through SAF with older same-named records present. Only the
         # current selection may be associated; existing pairs must not change.
         previous={m['id']:m for m in d.read_json('models.json')}
