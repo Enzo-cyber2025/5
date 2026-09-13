@@ -90,7 +90,7 @@ def basic_response_quality(greeting, arithmetic):
     if not re.search(r'\b(hello|hi|hey|greetings|good morning|good afternoon|good evening)\b', greeting, re.I):
         raise AssertionError('Resposta não contém uma saudação pertinente ao primeiro pedido')
     answer = arithmetic.casefold().replace('*', '').replace('`', '').strip(' \n.!')
-    accepted = {'4', 'four', '2+2=4', '2 + 2 = 4', 'two plus two is four',
+    accepted = {'4', 'four', '2+2=4', '2 + 2 = 4', 'two + two = four', 'two plus two is four',
                 'two plus two equals four', 'two plus two is 4', 'two plus two equals 4',
                 'the answer is 4', 'the answer is four'}
     if answer not in accepted:

@@ -339,6 +339,9 @@ def test_jni_libdl_fix_preserves_executable_code(tmp_path, abi):
 
 @pytest.mark.parametrize('greeting,answer,valid', [
     ('Hello! How can I help?', 'Two plus two is four.', True),
+    ('Hello!', 'Two + two = four.', True),
+    ('Hello!', 'Two + two = five.', False),
+    ('Hi!', 'Two plus two is a number multiplied by itself.', False),
     ('Houston, I am writing about a conference.', '4', False),
     ('Hi there!', 'O que é um idioma?', False),
 ])

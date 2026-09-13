@@ -21,7 +21,7 @@ O motor usa componentes compilados juntos, sem misturar ABIs de versões diferen
 
 O padrão passa a ser **CPU, contexto 1024**, com batches limitados. CPU usa uma lista vazia de aceleradores, evitando criar um dispositivo Vulkan nesse modo. A verificação conservadora de memória considera os dois arquivos, o contexto e uma reserva; recusa a carga quando a estimativa supera 70% de `MemAvailable`. Isso não é garantia contra o low-memory killer ou defeitos de drivers e pode recusar modelos grandes.
 
-No Vulkan, o dispositivo só entra no cache após inicialização completa; a destruição também protege o caso de `VkDevice` nulo. A consulta da capacidade de armazenamento de 16 bits permanece: não são fabricados recursos suportados. Vulkan continua opcional; esta revisão é validada em **CPU**, não em GPU física.
+No Vulkan, o dispositivo só entra no cache após inicialização completa; a destruição também protege o caso de `VkDevice` nulo. A consulta da capacidade de armazenamento de 16 bits permanece: não são fabricados recursos suportados. Vulkan continua opcional; esta revisão foi executada em **CPU e Vulkan por software (Mesa/Lavapipe)**, não em GPU física. Veja os [resultados e limites do teste Vulkan](VULKAN.md).
 
 ### Associação e apresentação
 
