@@ -1,5 +1,65 @@
 # Correção Vulkan — 13/09/2026
 
+## Resultado atual: PASS — geração Vulkan por software
+
+[Execução 34778868262](https://github.com/Enzo-cyber2025/5/actions/runs/34778868262),
+commit `f6dc954`, Android 15/API 35 x86_64 com llvmpipe:
+
+| Verificação | Resultado |
+|---|---|
+| Build e assinatura v2/v3 | PASS |
+| Ferramentas / classes reais DEX→JVM | **94 / 33 PASS** |
+| Controle C++ original vs runtime oficial | PASS |
+| Instalar, abrir, conferir SHA do modelo real | PASS |
+| Criação do dispositivo Vulkan | VK_SUCCESS |
+| Offload no último carregamento | **31/31 camadas, gpu_offload=1** |
+| Conclusão nativa | **GGUF_REPAIR_GENERATION_OK** |
+| Assistant persistido após o prompt exato | PASS |
+| Resultado integrado Vulkan | **PASS** |
+
+- [Resumo](../ci-results/34778868262-1/summary.json).
+- [Backend e conclusão](../ci-results/34778868262-1/vulkan-backend.txt).
+- [Conversa](../ci-results/34778868262-1/vulkan-chats.json) e [resposta](../ci-results/34778868262-1/vulkan-reply.txt).
+- [APK testado, em ZIP](https://github.com/Enzo-cyber2025/5/actions/runs/34778868262/artifacts/10324333917), retenção de 7 dias.
+- SHA-256: `b3ae6a0df9c9cd38f947f67df6c19fe01ea6dfd39eb4f39979cd13009c62a0f6`.
+- Certificado SHA-256: `ab4e33215e2987d859101c714a0f8692f1afcc3f32cf88a02e3bb6c365abd876`.
+
+### Terceira causa corrigida: limite de tokens não é erro
+
+A inspeção do JNI original identificou que apenas EOG marcava sucesso. Quando todos
+os tokens solicitados eram produzidos/decodificados sem erro, o retorno e `onDone`
+ainda recebiam false. Por isso os runs anteriores salvavam texto e reprovavam.
+
+`patch_generation.py` corrige somente as saídas normais por limite de tokens:
+41 bytes alterados no x86_64 e 3 no ARM64, dentro de faixas de instruções verificadas.
+O hash integral das bibliotecas originais é obrigatório, e o tamanho é preservado.
+Erros na decodificação (inclusive no último token), cancelamento antes do fim,
+handle inválido e limites não positivos continuam retornando falha. EOG continua
+sendo término normal. O Java e o teste integrado continuam exigindo retorno true;
+não houve alteração para aceitar uma resposta salva como substituto de sucesso.
+
+Os novos testes executam as instruções reais de ambas as ABIs sob Unicorn, com
+**doubles explícitos nas chamadas externas**, para comparar original/corrigido em
+limites 1, 2, 3 e 128 e em erros em cada decode gerado. Eles são regressões de fluxo,
+não inferência nem aprovação de aparelho ARM64. Nada disso entra no APK.
+A aprovação de inferência veio separadamente do APK real no emulador Android.
+
+### Limites da aprovação
+
+Vulkan é software, não GPU física. O modelo foi provisionado, não importado via SAF.
+Qualidade das respostas não foi aprovada: a saída ainda é longa/inadequada ao pedido
+de uma saudação curta. UTF-8, visão e aparelho ARM64 seguem sem correção/validação
+completa. O APK é assinado com chave de teste diferente da original; preserve dados
+antes de qualquer desinstalação. O download local do artefato falhou (EOF); o link
+acima identifica o binário exato testado, não um APK antigo do workspace.
+
+---
+
+# Histórico anterior à correção de conclusão por tokens
+
+As reprovações abaixo foram preservadas como controles/histórico e não representam
+o estado atual do teste Vulkan. Seus hashes e limites são específicos daqueles runs.
+
 ## Repetição solicitada — resultado final: FAIL
 
 [Run 34776335305](https://github.com/Enzo-cyber2025/5/actions/runs/34776335305),

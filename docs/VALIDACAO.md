@@ -2,13 +2,15 @@
 
 ## Estado atual
 
-**Geração técnica PASS; pertinência FAIL; validação integral NÃO aprovada.**
-O teste Vulkan posterior também **reprovou**, com fallback CPU confirmado; veja
-[VULKAN.md](VULKAN.md). Veja [GERACAO.md](GERACAO.md) para a validação CPU, as respostas, os
-novos reparos e as limitações. O histórico de falhas SAF abaixo continua relevante,
-mas já houve inferência nativa posterior com preparação direta do modelo.
+**Inferência Vulkan PASS no emulador; validação integral NÃO aprovada.**
+O [run 34778868262](https://github.com/Enzo-cyber2025/5/actions/runs/34778868262)
+comprovou 31/31 camadas Vulkan, conclusão nativa e resposta persistida, após a
+correção do limite de tokens. Passaram 94 testes de ferramentas e 33 JVM.
+Veja [VULKAN.md](VULKAN.md) para APK/hashes atuais, diagnóstico e controles.
+Qualidade/UTF-8, SAF, visão, ARM64 físico e aceleração por GPU física continuam
+sem aprovação. Os resultados antigos abaixo são históricos, não o artefato atual.
 
-## Artefato
+## Artefato histórico anterior às correções Vulkan
 
 - Original: `GGUF-Chat.apk`, commit `90b737409db091ca8c4d75a33b9d5d27748dbacb` da
   branch `arena/01a077ef-5` de `Enzo-cyber2025/5`.
@@ -20,7 +22,7 @@ mas já houve inferência nativa posterior com preparação direta do modelo.
 - Certificado de teste SHA-256:
   `4826e7eca2928a404e027a75f3e69e2aa077a49d5b566609104a667519b0e5f1`.
 
-Esse hash identifica o artefato desta sessão. Novos builds com outra chave ou
+Esse hash identifica a entrega local antiga, não o APK Vulkan atual. Novos builds com outra chave ou
 metadados ZIP diferentes podem ter outro hash. Chaves de teste não são publicadas.
 
 ## Resultado efetivamente observado

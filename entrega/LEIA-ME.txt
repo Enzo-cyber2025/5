@@ -1,26 +1,24 @@
-GGUF-Chat-repaired.apk — build local ANTERIOR às correções Vulkan
+GGUF Chat — APK testado em Vulkan, 13/09/2026
 
-ATENÇÃO: este arquivo não contém a substituição do runtime C++ nem o adaptador
-Vulkan enviados em 69f6178/6a26ba7. Não é uma nova entrega Vulkan validada.
-O resultado do run 34774462755 foi recuperado: criação Vulkan e offload 31/31
-passaram, mas a geração nativa informou falha. A repetição 34776335305 reproduziu
-esse resultado; não há APK aprovado para Vulkan. Veja ../docs/VULKAN.md.
+DOWNLOAD DO APK EXATO (artefato ZIP do GitHub, retenção 7 dias):
+https://github.com/Enzo-cyber2025/5/actions/runs/34778868262/artifacts/10324333917
+Arquivo dentro do ZIP: GGUF-Chat-repaired.apk
+SHA-256: b3ae6a0df9c9cd38f947f67df6c19fe01ea6dfd39eb4f39979cd13009c62a0f6
 
-Assinatura v2/v3 verificada. Novos reparos: seletor interno de modelos, guarda de
-Enviar, acesso privado dos workers e dependência libdl da ponte JNI.
+Run 34778868262 / revisão f6dc954: PASS.
+94 testes de ferramentas + 33 JVM; controle de ABI; Vulkan 31/31 camadas;
+conclusão nativa com retorno verdadeiro e assistant persistido após o prompt.
+O defeito de conclusão por limite de tokens foi corrigido nas duas ABIs.
+Erros de decode/cancelamento continuam falhando. Veja ../docs/VULKAN.md.
 
-A execução CI 34769745227 comprovou duas gerações nativas em Android 11 x86_64.
-Porém, as respostas foram inadequadas aos pedidos. Português/UTF-8, importação SAF,
-GPU, visão e funcionamento no aparelho alvo NÃO estão aprovados.
-O teste Vulkan 34771124245 reprovou: backend retornou NULL e usou CPU (offload=0).
-O emulador usa SwiftShader por software, não GPU física.
-Veja ../docs/VULKAN.md, ../docs/GERACAO.md e ../docs/VALIDACAO.md.
+Este é um teste x86_64 Android API 35 com Vulkan por software (llvmpipe).
+Não aprova qualidade das respostas, UTF-8, importação SAF, visão ou GPU/ARM64 físico.
 
-Este APK foi reconstruído localmente, com a mesma chave local da entrega anterior.
-NÃO é o binário exato executado no CI: o CI usa assinatura descartável e o DEX dos
-builds local/remoto tem hashes diferentes; essa diferença ainda não foi investigada.
-As bibliotecas nativas locais NÃO correspondem às dos novos testes Vulkan.
+O sandbox não conseguiu baixar o artefato (EOF no armazenamento do Actions).
+Não há cópia local confirmada desse APK. Qualquer APK antigo neste diretório não
+é o binário acima. O checksum acompanha o identificador do build CI atual.
 
-A chave continua diferente da assinatura do aplicativo original. Não desinstale
-sua versão sem salvar conversas/modelos importantes: desinstalar apaga dados.
-Use um aparelho/emulador separado se não conseguir fazer backup.
+Certificado SHA-256: ab4e33215e2987d859101c714a0f8692f1afcc3f32cf88a02e3bb6c365abd876
+Chave descartável de teste, diferente da original e das outras execuções CI.
+NÃO desinstale uma versão com dados importantes sem salvar conversas/modelos:
+desinstalar apaga os dados privados. Prefira um aparelho/emulador separado.

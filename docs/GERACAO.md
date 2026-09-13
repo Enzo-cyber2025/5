@@ -1,5 +1,11 @@
 # Validação da geração — 13/09/2026
 
+> Atualização: o [run 34778868262](https://github.com/Enzo-cyber2025/5/actions/runs/34778868262)
+> aprovou geração nativa + persistência com 31/31 camadas no Vulkan de software,
+> após corrigir o retorno falso ao atingir o limite de tokens. Isso não aprova
+> qualidade nem resolve o erro UTF-8 descrito abaixo. Veja [VULKAN.md](VULKAN.md).
+
+
 > Teste posterior: [Vulkan reprovado, com fallback CPU confirmado](VULKAN.md).
 > Este relatório abaixo preserva o resultado da validação CPU.
 

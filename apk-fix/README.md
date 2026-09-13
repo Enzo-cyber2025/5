@@ -9,7 +9,9 @@
    validação básica de arquivos; adiciona `GenerationResult` e sua chamada dentro
    do `try/catch` existente de `GenerationService`.
 4. Corrige o filtro de modelos, o guarda de envio e os acessos privados dos workers.
-5. Acrescenta `libdl.so` ao DT_NEEDED da ponte JNI ARM64/x86_64 com patchelf 0.17.2.4;
+5. `patch_generation.py` valida o SHA integral do JNI e corrige apenas as saídas
+   normais por limite de tokens nas duas ABIs, preservando erros/cancelamento.
+   Depois acrescenta `libdl.so` ao DT_NEEDED da ponte JNI ARM64/x86_64 com patchelf 0.17.2.4;
    verifica SONAME, arquitetura e igualdade das seções de código/dados protegidas.
 6. Substitui `libc++_shared.so` nas duas ABIs pelo runtime oficial do NDK
    **28.2.13676358**. Compila o helper de diagnóstico nativo e um probe de ABI
