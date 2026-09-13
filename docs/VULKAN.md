@@ -45,3 +45,7 @@ for model in ('smolvlm', 'smollm2'):
         print(model, 'FAIL', e)
 PY
 ```
+
+## Histórico de outra versão
+
+O relatório extenso do APK anterior está preservado em [VULKAN-LEGACY.md](VULKAN-LEGACY.md). Seus hashes e resultados não validam o APK mobile atual.
