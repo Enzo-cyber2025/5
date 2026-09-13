@@ -11,9 +11,16 @@
 4. Corrige o filtro de modelos, o guarda de envio e os acessos privados dos workers.
 5. Acrescenta `libdl.so` ao DT_NEEDED da ponte JNI ARM64/x86_64 com patchelf 0.17.2.4;
    verifica SONAME, arquitetura e igualdade das seções de código/dados protegidas.
-6. Recompila, copia o novo DEX para o ZIP original e as duas pontes JNI corrigidas,
+6. Substitui `libc++_shared.so` nas duas ABIs pelo runtime oficial do NDK
+   **28.2.13676358**. Compila o helper de diagnóstico nativo e um probe de ABI
+   separado para testar corrupção de RBX no construtor de `std::recursive_mutex`.
+   O probe e o runtime antigo são fixtures externas ao APK, não motores substitutos.
+7. `patch_vulkan.py` direciona quatro imports a `libggufvk.so` (14 bytes ELF por
+   ABI), sem mudar código/shaders/dados. O adaptador só omite o alias de extensão
+   16-bit quando o suporte real pelo Vulkan 1.1+ foi conferido; nunca simula Vulkan.
+8. Recompila, copia o novo DEX para o ZIP original e os componentes nativos explicitamente autorizados,
    remove assinaturas antigas, alinha dados não comprimidos e assina com apksigner 0.9.
-7. Verifica assinatura v2/v3, alinhamento e igualdade dos demais payloads.
+9. Verifica assinatura v2/v3, alinhamento e igualdade dos demais payloads.
 
 A geração nativa foi executada no emulador, mas a qualidade das respostas não passou.
 Veja [o relatório](../docs/GERACAO.md). O erro de UTF-8 da ponte nativa continua pendente.

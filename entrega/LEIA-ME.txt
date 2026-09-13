@@ -1,4 +1,9 @@
-GGUF-Chat-repaired.apk — build local de teste atualizado, 13/09/2026
+GGUF-Chat-repaired.apk — build local ANTERIOR às correções Vulkan
+
+ATENÇÃO: este arquivo não contém a substituição do runtime C++ nem o adaptador
+Vulkan enviados em 69f6178/6a26ba7. Não é uma nova entrega Vulkan validada.
+O resultado do run 34774462755 foi recuperado: criação Vulkan e offload 31/31
+passaram, mas a geração nativa informou falha. Veja ../docs/VULKAN.md.
 
 Assinatura v2/v3 verificada. Novos reparos: seletor interno de modelos, guarda de
 Enviar, acesso privado dos workers e dependência libdl da ponte JNI.
@@ -13,7 +18,7 @@ Veja ../docs/VULKAN.md, ../docs/GERACAO.md e ../docs/VALIDACAO.md.
 Este APK foi reconstruído localmente, com a mesma chave local da entrega anterior.
 NÃO é o binário exato executado no CI: o CI usa assinatura descartável e o DEX dos
 builds local/remoto tem hashes diferentes; essa diferença ainda não foi investigada.
-As bibliotecas nativas locais correspondem byte a byte às do último teste CI.
+As bibliotecas nativas locais NÃO correspondem às dos novos testes Vulkan.
 
 A chave continua diferente da assinatura do aplicativo original. Não desinstale
 sua versão sem salvar conversas/modelos importantes: desinstalar apaga dados.

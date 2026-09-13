@@ -28,9 +28,13 @@ O trabalho desta sessão fica em **`arena/01a09b42-5`**; nenhuma outra branch é
 - **Motor não carregava:** adicionada dependência ELF `libdl.so` à ponte JNI nas
   duas arquiteturas. Código executável, `.rodata`, `.data` e SONAME são conferidos.
 
-Recursos, permissões, package name e SDKs não foram trocados. As bibliotecas do motor
-llama/ggml permanecem iguais; somente o DEX, os metadados de dependência das duas
-`libaijni.so` e a assinatura mudaram. Não há interface nem inferência simulada.
+Recursos, permissões, package name e SDKs não foram trocados. Os reparos anteriores
+alteraram DEX, dependências da ponte JNI e assinatura. A etapa Vulkan substitui
+`libc++_shared.so` pelo runtime oficial NDK r28c, acrescenta diagnóstico nativo e
+um adaptador para a extensão de armazenamento de 16 bits promovida ao Vulkan 1.1.
+Nas duas `libggml-vulkan.so`, só 14 bytes de imports/dependência mudam por ABI;
+código, shaders e dados protegidos são conferidos. As demais bibliotecas llama/ggml
+permanecem iguais. Não há interface nem inferência simulada.
 
 ## Estado da validação
 
@@ -51,17 +55,21 @@ A automação agora também exige uma verificação básica de pertinência. Ess
 verificação foi testada localmente e reprovou as saídas gravadas; ainda não houve
 novo teste Android em modo CPU após adicioná-la. **Não interprete o run verde anterior como aprovação completa.**
 
-**Teste Vulkan executado e reprovado:** no run [34771124245](https://github.com/Enzo-cyber2025/5/actions/runs/34771124245),
-a inicialização Vulkan retornou NULL e a geração usou CPU (`gpu_offload=0`), apesar
-de solicitar 99 camadas GPU. SwiftShader é software, não GPU física.
-Veja [o relatório Vulkan e os logs](docs/VULKAN.md).
+**Teste Vulkan: avanço parcial, geração ainda reprovada.** O resultado do
+[run 34774462755](https://github.com/Enzo-cyber2025/5/actions/runs/34774462755)
+foi recuperado: o runtime oficial passou no controle de ABI; o adaptador criou o
+dispositivo real e houve offload de **31/31 camadas**. Porém a chamada nativa de
+geração retornou falha, mesmo com texto persistido. Isso não aprova o teste completo.
+Uma repetição foi solicitada, mantendo os critérios estritos e o mesmo código nativo.
+Veja [diagnóstico, controles e limites](docs/VULKAN.md).
 
 Os testes de host executam classes reais do APK, traduzidas de DEX para JVM, com
 substitutos explícitos de `Native` e `org.json`. Isso permite verificar controle de
 fluxo, persistência e cache, mas **não comprova inferência nativa, Vulkan ou câmera**.
 Veja [docs/VALIDACAO.md](docs/VALIDACAO.md) para evidências e limites.
 
-O APK gerado é `entrega/GGUF-Chat-repaired.apk` no workspace da sessão, acompanhado
+**Atenção:** `entrega/GGUF-Chat-repaired.apk` ainda é o build local anterior às
+correções Vulkan; não é o artefato do novo teste. Está acompanhado
 pelo SHA-256. Binários, modelos, dependências e chaves **não são versionados no Git**.
 Em uma cópia limpa, gere o APK pelos comandos abaixo ou pelo workflow.
 
@@ -76,13 +84,18 @@ caminhos nulos; pode ser necessário criar novamente a conversa/importar os mode
 
 ## Reproduzir o build
 
-Requisitos: Python 3.11+, Node/npm e `gh` conectado ao GitHub para obter o APK original.
+Requisitos: Python 3.11+, Node/npm, Android NDK **28.2.13676358** (Linux x86_64)
+e `gh` conectado ao GitHub para obter o APK original.
 
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install -r requirements-test.txt
 bash scripts/fetch_tools.sh
 python3 scripts/fetch_original.py
+
+# Android SDK command-line tools precisam estar no PATH.
+sdkmanager --install "ndk;28.2.13676358"
+export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/28.2.13676358"
 
 export JAVA_HOME=$(.venv/bin/python -c 'import jdk4py; print(jdk4py.JAVA_HOME)')
 export APKTOOL_JAR="$PWD/.cache/tools/package/lib/apktool.jar"

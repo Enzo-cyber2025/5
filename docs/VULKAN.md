@@ -1,76 +1,113 @@
-# Execução Vulkan — 13/09/2026
+# Correção Vulkan — 13/09/2026
 
-## Resultado: REPROVADO — fallback CPU confirmado
+## Estado: inicialização/offload confirmados; geração completa reprovada
 
-O teste real foi executado exigindo Vulkan, mas **não houve geração via Vulkan**.
-A biblioteca falhou na inicialização; o motor registrou CPU e carregou o modelo com
-`gpu_offload=0`. A resposta terminou e foi salva, porém pela CPU.
-
-[Execução 34771124245](https://github.com/Enzo-cyber2025/5/actions/runs/34771124245),
-revisão `e075cb0`; evidências publicadas na mesma branch em `1d427f7`.
-
-| Verificação | Resultado |
-|---|---|
-| Build, assinatura e regressões host | PASS: 46 ferramentas + 33 JVM |
-| Instalar e abrir no Android | PASS |
-| Preparar modelo real e conferir SHA-256 no emulador | PASS |
-| Solicitar 99 camadas GPU | Executado |
-| Inicializar backend Vulkan | **FAIL: retornou NULL** |
-| Offload Vulkan positivo | **FAIL: CPU selecionada, gpu_offload=0** |
-| Concluir geração nativa e persistir assistant após o prompt | PASS, em CPU |
-| Resultado global do teste Vulkan | **FAIL**, sem aceitar fallback como sucesso |
-
-## Ambiente e parâmetros
-
-- Android 11/API 30, Google APIs, x86_64, perfil Pixel 5, 4 GB de RAM.
-- Emulador configurado com `-gpu swiftshader -feature Vulkan`.
-- **SwiftShader é Vulkan por software, não uma GPU física.** Mesmo que o backend
-  tivesse funcionado, isso não comprovaria aceleração em hardware nem suporte no celular.
-- SmolLM2-135M-Instruct Q4_K_M, contexto 1024, 2 threads, 128 tokens, temperatura 0.
-- Modelo preparado diretamente: este teste não valida importação SAF.
-- SHA-256 do modelo: `2e8040ceae7815abe0dcb3540b9995eaa1fa0d2ca9e797d0a635ae4433c68c2d`.
-- SHA-256 do APK CI executado: `0a82302f6286b21ba9082f0e73ffb9858fb2dd97632a256fea6f088e1b4e8ead`.
-  É um build CI com chave descartável, não o binário local em `entrega/`.
-
-## Evidência decisiva
-
-Trechos do log do processo do aplicativo, PID 5687:
+A conexão GitHub voltou e o resultado do
+[run 34774462755](https://github.com/Enzo-cyber2025/5/actions/runs/34774462755)
+foi recuperado. Build/assinatura e testes host passaram. No Android API 35:
 
 ```text
-libggml-vulkan.so backend init returned NULL (unsupported device?)
-registered CPU backend (best score 1)
-engine loaded: libllama.so (Vulkan-ready)
-model loaded: n_ctx=1024 n_params=134515008 gpu_offload=0
-GGUF_REPAIR_GENERATION_OK
+GGUFVulkanCompat: Core 1.1 16-bit storage verified; omitted unadvertised KHR alias; vkCreateDevice=0
+load_tensors: offloaded 31/31 layers to GPU
+model loaded: n_ctx=1024 n_params=134515008 gpu_offload=1
+GGUF_REPAIR_GENERATION_FAILED
 ```
 
-A expressão `Vulkan-ready` **não prova uso do backend**. As linhas anteriores e o
-`gpu_offload=0` demonstram fallback. O teste exige backend Vulkan inicializado,
-camadas efetivamente offloaded > 0 e geração nativa concluída com resposta persistida.
-Os logs de preload agora são preservados para não perder a seleção do backend.
+O dispositivo foi criado e houve offload real, mas `Native.generate()` informou
+falha. Há texto de assistant persistido, sem a confirmação nativa obrigatória.
+Portanto o teste integrado continua **FAIL**, não aprovação Vulkan completa.
+Não houve o crash anterior nesses logs. A causa do retorno falso ainda não foi isolada.
+A resposta salva também não atende à saudação curta solicitada.
 
-- [Resumo do teste](../ci-results/34771124245-1/summary.json).
-- [Backend](../ci-results/34771124245-1/vulkan-backend.txt) e [log do processo](../ci-results/34771124245-1/vulkan-final-logcat.txt).
-- [Diagnóstico Vulkan do Android](../ci-results/34771124245-1/vulkan-device.json), [features](../ci-results/34771124245-1/vulkan-features.txt) e [propriedades gráficas](../ci-results/34771124245-1/graphics-properties.txt).
-- [Resposta salva](../ci-results/34771124245-1/vulkan-reply.txt) e [conversas](../ci-results/34771124245-1/vulkan-chats.json).
+- [Resumo](../ci-results/34774462755-1/summary.json).
+- [Log completo](../ci-results/34774462755-1/vulkan-final-logcat.txt).
+- [Conversa persistida](../ci-results/34774462755-1/vulkan-chats.json).
+- APK testado: `80c256ed2f0c66c38b6182f69ee71e8204c070d6e50e32f4ca8f7b65a3a01cca`.
 
-O Android anuncia features Vulkan, mas o diagnóstico devolveu `devices: [{}]`, sem
-propriedades úteis do dispositivo. Isso não identifica qual recurso ou extensão fez
-o backend falhar. A causa exata da inicialização NULL ainda não foi isolada; não é
-possível concluir, a partir deste emulador, que todo aparelho será incompatível.
+O usuário solicitou novo teste. A repetição será disparada pelo push nesta mesma
+branch, pois a API recusou rerun e workflow_dispatch. Nenhum critério de aprovação
+foi relaxado e nenhum código de inferência foi alterado para essa repetição.
 
-## Limites e próximo passo
+## 1. Runtime C++ incompatível — correção comprovada
 
-A resposta novamente foi uma carta sobre Houston, não a saudação curta solicitada.
-O modo Vulkan não avalia qualidade: os problemas de pertinência/UTF-8 descritos em
-[GERACAO.md](GERACAO.md) permanecem, assim como os limites de SAF, visão e ARM64 físico.
+O `libc++_shared.so` x86_64 original reservava quatro bytes para
+`pthread_mutexattr_t`, mas Bionic LP64 usa oito. O construtor de
+`std::recursive_mutex` sobrescrevia parte do registrador RBX salvo na pilha.
+O construtor do dispositivo Vulkan usava esse registrador como ponteiro e sofria
+SIGSEGV no construtor de `shared_mutex`.
 
-Para obter aprovação Vulkan, ainda é necessário diagnosticar a compatibilidade entre
-biblioteca e driver e repetir a inferência com offload positivo. Para aprovar aceleração
-real, será necessário executar em dispositivo/runner com GPU física compatível.
-Nenhuma biblioteca Vulkan foi alterada nesta etapa e nenhum APK foi declarado aprovado.
+Substituição: runtime oficial **Android NDK r28c / 28.2.13676358**, nas duas ABIs.
+O teste de ABI foi executado em Android x86_64, não em aparelho ARM64:
 
-O workflow agora usa Vulkan obrigatório por padrão nesta branch. Na execução manual,
-marque `run_android=true`; `android_mode=vulkan` exige offload, enquanto `android_mode=cpu`
-executa o teste CPU com as duas respostas e sua verificação básica de pertinência.
-Não houve novo teste Android em modo CPU desde a adição desse verificador.
+| Controle | RBX observado | Saída |
+|---|---|---|
+| Biblioteca original | `11223344ffffffff` | 1: corrupção reproduzida |
+| Runtime oficial | `1122334455667788` | 0: registrador preservado |
+
+O probe chama o construtor real da biblioteca via assembly; não simula inferência.
+Ele mantém o runtime mapeado, descarrega stdout e usa `_Exit` para isolar o teste
+do comportamento de descarregamento/destrutores globais da biblioteca original.
+Um SIGSEGV arbitrário não é aceito como controle negativo válido.
+
+- [Resultado dos controles](../ci-results/34773992015-1/runtime-regression.json).
+- [Proveniência e hashes por ABI](../ci-results/34773992015-1/runtime-provenance.json).
+- [Execução 34773992015](https://github.com/Enzo-cyber2025/5/actions/runs/34773992015):
+  build/assinatura e 64 testes de ferramentas + 33 JVM passaram. Android confirmou
+  a correção do runtime, mas a inferência Vulkan falhou pelo segundo problema.
+
+## 2. Extensão promovida ao Vulkan principal — criação/offload confirmados
+
+Depois de corrigir o runtime, o backend chegou à criação do dispositivo:
+
+```text
+vk::PhysicalDevice::createDevice: ErrorExtensionNotPresent
+```
+
+O driver Android anuncia Vulkan 1.3 e suporte real a `storageBuffer16BitAccess`,
+mas não anuncia o alias `VK_KHR_16bit_storage`. O backend exige esse nome de extensão,
+embora seu recurso já tenha sido promovido ao Vulkan 1.1. Após a falha, uma tentativa
+subsequente reutilizou estado incompleto e chamou `vkCreateFence` com dispositivo
+nulo, encerrando o processo. Não foi contado como offload nem como geração.
+
+A correção adiciona `libggufvk.so`, um adaptador pequeno que:
+
+1. Usa exclusivamente o loader e o driver Vulkan reais do Android.
+2. Verifica a versão **do dispositivo físico**, o recurso real e as extensões anunciadas.
+3. Remove somente o nome `VK_KHR_16bit_storage` de `vkCreateDevice` quando a versão
+   é pelo menos 1.1, o recurso existe e esse alias não é anunciado.
+4. Preserva os bits de features, a cadeia `pNext`, filas, demais extensões e o
+   resultado real do driver. Não inventa capacidades nem transforma erro em sucesso.
+
+`patch_vulkan.py` altera somente **14 bytes de metadados ELF por ABI**: quatro nomes
+de imports e o nome da dependência. Imports próprios evitam colisão com o loader do
+sistema. Código executável, shaders/`.rodata`, `.data`, tamanhos e endereços do backend
+permanecem intactos. O build rejeita mudanças diferentes desse patch exato.
+
+Validação local: **66 testes de ferramentas passaram**, incluindo política de
+compatibilidade e integridade das duas bibliotecas do APK original. O run 34774462755 confirmou criação do dispositivo e offload,
+mas não conclusão nativa bem-sucedida da inferência.
+
+## Critérios que continuam obrigatórios
+
+- Backend Vulkan selecionado, offload real de mais de zero camadas no último carregamento.
+- Conclusão nativa e assistant persistido depois do prompt exato.
+- Mesmo processo: reinício após crash reprova, sem repetir silenciosamente.
+- `Vulkan-ready`, disponibilidade de biblioteca ou fallback CPU não aprovam Vulkan.
+
+## Ambiente e limites
+
+Os testes recentes usam Android 15/API 35 x86_64 e llvmpipe/Mesa do emulador.
+**É Vulkan por software, não aprovação de GPU física nem de celular ARM64.**
+A exposição do dispositivo CPU número 0 é opt-in exclusivo do emulador.
+
+Modelo: SmolLM2-135M-Instruct Q4_K_M, SHA-256
+`2e8040ceae7815abe0dcb3540b9995eaa1fa0d2ca9e797d0a635ae4433c68c2d`.
+Foi provisionado diretamente; não valida SAF. Os problemas anteriores de pertinência
+e UTF-8 continuam sem correção comprovada. Visão e execução ARM64 também não foram aprovadas.
+
+O APK local em `entrega/` **é anterior a estas correções Vulkan**. Não o confunda com
+o artefato da execução mais recente. Ainda não há nova entrega Vulkan validada.
+
+Histórico: o [run 34771124245](https://github.com/Enzo-cyber2025/5/actions/runs/34771124245)
+usou API 30/SwiftShader, retornou backend NULL e gerou pela CPU. Suas evidências
+permanecem em `ci-results/34771124245-1/`; aquele teste continua reprovado para Vulkan.
