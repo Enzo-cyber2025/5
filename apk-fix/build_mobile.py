@@ -30,7 +30,7 @@ def ui_patches(app):
     p=app/'MainActivity$26.smali';s=p.read_text();marker='    invoke-static {v0}, Lcom/ggufchat/app/MainActivity;->access$1900(Lcom/ggufchat/app/MainActivity;)V'
     assert s.count(marker)==1
     s=s.replace(marker,'    invoke-static {v0, v1}, Lcom/ggufchat/app/Pairing;->linkSelected(Landroid/content/Context;Ljava/util/ArrayList;)V\n\n'+marker);p.write_text(s)
-    p=app/'MainActivity.smali';s=p.read_text();s=method_replace(s,'.method private linkMmprojs()V','.method private linkMmprojs()V\n    .locals 0\n    invoke-direct {p0}, Lcom/ggufchat/app/MainActivity;->refreshModels()V\n    return-void\n.end method');p.write_text(s)
+    p=app/'MainActivity.smali';s=p.read_text();a=s.index('.method private navButton(');b=s.index('.end method',a);s=s[:a]+s[a:b].replace('    return-object v0','    invoke-static {v0}, Lcom/ggufchat/app/CompactUi;->style(Landroid/widget/Button;)V\n    return-object v0')+s[b:];s=method_replace(s,'.method private linkMmprojs()V','.method private linkMmprojs()V\n    .locals 0\n    invoke-direct {p0}, Lcom/ggufchat/app/MainActivity;->refreshModels()V\n    return-void\n.end method');p.write_text(s)
     p=app/'MainActivity$25.smali';s=p.read_text().replace('if-nez v1, :cond_0','if-eqz v1, :cond_0').replace('if-nez v2, :cond_0','if-eqz v2, :cond_0');p.write_text(s)
     # Safer defaults for a mobile memory budget; user can deliberately change them.
     p=app/'Settings.smali';s=p.read_text();a=s.index('.method public static gpuLayers(');b=s.index('.end method',a);s=s[:a]+s[a:b].replace('const/4 v2, -0x1','const/4 v2, 0x0')+s[b:]
@@ -51,7 +51,18 @@ def main():
     if not source.exists(): run('git','clone','--depth','1','--branch','b6500','https://github.com/ggml-org/llama.cpp',source)
     assert subprocess.check_output(['git','-C',str(source),'rev-parse','HEAD'],text=True).strip()==SOURCE_SHA
     vk=source/'ggml/src/ggml-vulkan/ggml-vulkan.cpp';s=vk.read_text();old='device_extensions.push_back("VK_KHR_16bit_storage");'
-    if old in s: vk.write_text(s.replace(old,'// Core Vulkan 1.2 already requires the queried 16-bit storage feature; no extension alias required.'))
+    if old in s:
+        s=s.replace(old,'// Core Vulkan 1.2 already requires the queried 16-bit storage feature; no extension alias required.')
+    # Never publish a half-created device: a failed initialization used to leave
+    # a cached object with a null VkDevice, crashing the next loading attempt.
+    start=s.index('static vk_device ggml_vk_get_device(size_t idx) {')
+    end=s.index('\nstatic ',start+10)
+    part=s[start:end]
+    early='        vk_instance.devices[idx] = device;'
+    if early in part:
+        part=part.replace(early,'',1).replace('        return device;','        vk_instance.devices[idx] = device;\n        return device;')
+        s=s[:start]+part+s[end:]
+    vk.write_text(s)
     libs=build_diagnostics(WORK)
     prebuilt=ndk/'toolchains/llvm/prebuilt/linux-x86_64'
     for abi,triple in [('arm64-v8a','aarch64-linux-android'),('x86_64','x86_64-linux-android')]:
