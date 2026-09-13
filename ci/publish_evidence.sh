@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Publish only bounded reports/screenshots to THIS session branch. No other branch,
+# no model, APK, private key or token. This runs only on a disposable CI emulator.
+set -euo pipefail
+BRANCH=arena/01a09b42-5
+[[ "${GITHUB_REF:-}" == "refs/heads/$BRANCH" ]]
+[[ "$(git branch --show-current)" == "$BRANCH" ]]
+DEST="ci-results/${GITHUB_RUN_ID:?}-${GITHUB_RUN_ATTEMPT:?}"
+mkdir -p "$DEST"
+python3 - "$DEST" <<'PY'
+import os
+from pathlib import Path
+import shutil
+import sys
+source, dest = Path('evidence'), Path(sys.argv[1])
+for name in ('summary.json', 'launch.png', 'import.png', 'cpu-reply.png', 'final-screen.png'):
+    p = source / name
+    if p.is_file() and p.stat().st_size < 2_000_000:
+        shutil.copyfile(p, dest / name)
+(dest / 'run.txt').write_text('https://github.com/Enzo-cyber2025/5/actions/runs/' + os.environ['GITHUB_RUN_ID'] + '\n')
+PY
+git config user.name 'GGUF CI evidence'
+git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+git add -- "$DEST"
+if ! git diff --cached --quiet; then
+  git commit -m "Record Android emulator evidence ${GITHUB_RUN_ID} [skip ci]"
+  # Rebase this evidence-only commit if another repair advanced the SAME branch.
+  git pull --rebase origin "$BRANCH"
+  git push origin "$BRANCH"
+fi

@@ -22,6 +22,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Recuperar diagnóstico da tentativa anterior
+        uses: actions/download-artifact@v4
+        with:
+          name: gguf-chat-android-evidence
+          run-id: 34767096056
+          github-token: ${{ github.token }}
+          path: .cache/previous-evidence
+      - name: Mostrar diagnóstico anterior
+        run: python3 ci/report_android.py .cache/previous-evidence
       - name: Dependências de teste
         run: |
           python3 -m venv .venv
@@ -60,8 +69,13 @@ jobs:
     needs: build-and-host-regressions
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    permissions:
+      contents: write
+      actions: read
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: arena/01a09b42-5
       - uses: actions/download-artifact@v4
         with:
           name: gguf-chat-host-tested
@@ -89,6 +103,12 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -no-snapshot -gpu swiftshader_indirect -noaudio -no-boot-anim
           script: bash ci/log_step.sh emulator bash .github/emu-test-x86.sh
+      - name: Diagnóstico Android legível pela API
+        if: always()
+        run: python3 ci/report_android.py evidence
+      - name: Publicar capturas e resumo nesta branch
+        if: always()
+        run: bash ci/publish_evidence.sh
       - name: Evidências, inclusive em falha
         if: always()
         uses: actions/upload-artifact@v4
