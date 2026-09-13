@@ -72,10 +72,10 @@ substitutos explícitos de `Native` e `org.json`. Isso permite verificar control
 fluxo, persistência e cache, mas **não comprova inferência nativa, Vulkan ou câmera**.
 Veja [docs/VALIDACAO.md](docs/VALIDACAO.md) para evidências e limites.
 
-**[Baixar o APK testado (artefato ZIP)](https://github.com/Enzo-cyber2025/5/actions/runs/34778868262/artifacts/10324333917)** — arquivo
+**[Baixar o APK testado diretamente, sem ZIP](https://github.com/Enzo-cyber2025/5/releases/download/gguf-apk-f6dc954/GGUF-Chat-repaired.apk)** — arquivo
 `GGUF-Chat-repaired.apk`, SHA-256
 `b3ae6a0df9c9cd38f947f67df6c19fe01ea6dfd39eb4f39979cd13009c62a0f6`.
-O artefato tem retenção de 7 dias no CI. O download para este sandbox falhou no
+O link direto usa o APK exato publicado como anexo da pré-release de teste. O download para este sandbox falhou no
 armazenamento do Actions (EOF), portanto não há cópia local deste APK confirmada.
 Não use um APK antigo de `entrega/` como se fosse o binário aprovado nesta execução.
 Binários, modelos, dependências e chaves não são versionados no Git.
