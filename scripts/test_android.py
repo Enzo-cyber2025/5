@@ -247,7 +247,8 @@ class Android:
         chats = self.read_json("chats.json")
         for c in chats:
             if c["id"] == chat["id"]:
-                c.update(nPredict=16, contextSize=1024, gpuLayers=gpu_layers, webSearch=False)
+                c.update(nPredict=128, temperature=0.0, contextSize=1024,
+                         gpuLayers=gpu_layers, webSearch=False, thinking=False)
                 c["title"] = "GGUF regression " + chat["id"]
                 chat = c
         self.write_private("files/chats.json", json.dumps(chats))
@@ -262,7 +263,7 @@ class Android:
         self.shell("input text " + shlex.quote(prompt.replace(" ", "%s")))
         self.tap(text="Enviar", package={PACKAGE}, contains=True)
 
-    def generate(self, model, gpu_layers, stage, prompt="Write a short greeting."):
+    def generate(self, model, gpu_layers, stage, prompt="Reply in English with a short greeting."):
         chat = self.new_chat(model, gpu_layers)
         pid = self.alive()
         self.send(prompt)
@@ -322,6 +323,7 @@ def main():
     (args.evidence / "apk-payload.json").write_text(json.dumps(fingerprints, indent=2))
     result = {"status": "FAIL", "checks": {}, "apk_sha256": hashlib.sha256(args.apk.read_bytes()).hexdigest(),
               "scope": "native-response-generation" if args.generation_only else "android-integration",
+              "generation_parameters": {"max_tokens": 128, "temperature": 0.0, "language_requested": "English"},
               "model_setup": args.model_setup, "model_sha256": hashlib.sha256(args.model.read_bytes()).hexdigest()}
     try:
         if device.shell("getprop ro.kernel.qemu") != "1":
@@ -362,7 +364,7 @@ def main():
         result["checks"]["cpu_generation"] = "PASS"
         device.capture("cpu-reply.png")
         if args.generation_only:
-            device.generate(model, 0, "cpu-second", prompt="What is two plus two?")
+            device.generate(model, 0, "cpu-second", prompt="Reply in English: What is two plus two?")
             result["checks"]["cpu_second_generation"] = "PASS: novo processo e nova conversa"
             device.capture("cpu-second-reply.png")
             result["status"] = "PASS"
