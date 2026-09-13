@@ -85,6 +85,12 @@ def main():
     if early in part:
         part=part.replace(early,'',1).replace('        return device;','        vk_instance.devices[idx] = device;\n        return device;')
         s=s[:start]+part+s[end:]
+    # A thrown vkCreateDevice leaves the local shared_ptr destructing a null
+    # device. Guard cleanup too, not just publication into the global cache.
+    destructor='        VK_LOG_DEBUG("destroy device " << name);'
+    assert s.count(destructor)==1
+    if destructor+'\n        if (!device) return;' not in s:
+        s=s.replace(destructor,destructor+'\n        if (!device) return; // failed initialization owns no Vulkan resources')
     vk.write_text(s)
     native_origin=None
     if os.environ.get('GGUF_REUSE_TESTED_NATIVE')=='1':

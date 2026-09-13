@@ -47,7 +47,7 @@ jobs:
       - name: Compile real native stack and compact UI
         env:
           APKTOOL_JAR: .cache/tools/package/lib/apktool.jar
-          GGUF_REUSE_TESTED_NATIVE: '1'
+          GGUF_REUSE_TESTED_NATIVE: '0'
         run: bash ci/log_step.sh mobile-build python3 apk-fix/build_mobile.py
       - name: Existing regressions
         run: bash ci/log_step.sh tooling .venv/bin/python -m pytest -q tests/test_tooling.py tests/test_mobile_build.py

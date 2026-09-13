@@ -14,6 +14,19 @@ PROJ=Path('.cache/mobile-models/mmproj-SmolVLM-256M-Instruct-Q8_0.gguf')
 APK=Path('.delivery/GGUF-Chat-mobile.apk')
 
 
+class MobileAndroid(Android):
+    def ui(self):
+        # DocumentsUI sometimes returns success without producing a dump while
+        # its window is transitioning. Retry collection, never a native crash,
+        # never a send action, and never reuse a previous XML file.
+        for attempt in range(3):
+            try:return super().ui()
+            except ET.ParseError:
+                if attempt==2:raise
+                self.alive()
+                time.sleep(0.5)
+
+
 def bounds(n):
     import re
     return list(map(int,re.findall(r'\d+',n.get('bounds',''))))
@@ -39,7 +52,7 @@ def select_pair(d):
 
 
 def main():
-    d=Android('emulator-5554',EVIDENCE)
+    d=MobileAndroid('emulator-5554',EVIDENCE)
     summary={'status':'FAIL','scope':'saf-pair-load-text-generation','checks':{},'apk_sha256':hashlib.sha256(APK.read_bytes()).hexdigest()}
     try:
         assert d.shell('getprop ro.kernel.qemu')=='1'
