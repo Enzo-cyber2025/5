@@ -284,11 +284,13 @@ def test_model_picker_filter_shows_non_projectors_and_is_guarded():
 
 def write_chat_access_fixture(app):
     from patch_chat_access import OWNER, REPAIRS
+    from patch_smali import SEND_GUARD
     (app / 'ChatActivity.smali').write_text(
         '.field private loading:Z\n.field private loadPct:I\n'
         '.field private statusLine:Landroid/widget/TextView;\n'
         '.method private updateModelStatus()V\n.end method\n'
-        f'.method static synthetic access$400({OWNER})Lcom/ggufchat/app/Chat;\n.end method\n')
+        f'.method static synthetic access$400({OWNER})Lcom/ggufchat/app/Chat;\n.end method\n'
+        + '.method private onSend()V\n' + SEND_GUARD + '\n.end method\n')
     for name, replacements in REPAIRS.items():
         (app / (name + '.smali')).write_text('\n'.join(replacements))
 
@@ -307,3 +309,13 @@ def test_chat_workers_use_accessors_without_exposing_private_members(tmp_path):
             assert new in fixed
     with pytest.raises(ValueError):
         patch_chat_access(tmp_path)
+
+
+def test_send_guard_rejects_null_chat_not_valid_chat():
+    from patch_smali import SEND_GUARD, patch_send_guard
+    original = '.method private onSend()V\n' + SEND_GUARD + '\n.end method'
+    fixed = patch_send_guard(original)
+    assert 'if-eqz v0, :cond_8' in fixed
+    assert 'if-nez v0, :cond_8' not in fixed
+    with pytest.raises(ValueError):
+        patch_send_guard(fixed)

@@ -29,6 +29,21 @@ def patch_model_picker(source):
     return source[:start] + method + source[end:]
 
 
+SEND_GUARD = """    iget-object v0, p0, Lcom/ggufchat/app/ChatActivity;->chat:Lcom/ggufchat/app/Chat;
+
+    if-nez v0, :cond_8"""
+
+
+def patch_send_guard(source):
+    start = source.index(".method private onSend()V")
+    end = source.index(".end method", start)
+    method = source[start:end]
+    if method.count(SEND_GUARD) != 1:
+        raise ValueError("Guarda de onSend inesperado ou já corrigido")
+    method = method.replace(SEND_GUARD, SEND_GUARD.replace("if-nez", "if-eqz"))
+    return source[:start] + method + source[end:]
+
+
 def apply(decoded: Path):
     app = decoded / "smali/com/ggufchat/app"
     activity = app / "MainActivity.smali"
@@ -43,7 +58,12 @@ def apply(decoded: Path):
     move-result v6
     invoke-static {v6, v4, v5}, Lcom/ggufchat/app/GenerationResult;->check(ZJ)V
 """)
+    chat_activity = app / "ChatActivity.smali"
+    patch_send_guard(chat_activity.read_text())  # validate before mutating accessors
     patch_chat_access(app)
+    # Accessors are appended by the preceding patch; preserve them when replacing
+    # the guard in the now-updated class.
+    chat_activity.write_text(patch_send_guard(chat_activity.read_text()))
     service.write_text(source)
     activity.write_text(activity_source)
     for name in ("EngineManager", "GenerationResult"):

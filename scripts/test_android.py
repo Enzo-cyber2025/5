@@ -265,14 +265,22 @@ class Android:
         chat = self.new_chat(model, gpu_layers)
         pid = self.alive()
         self.send(prompt)
+        def submitted():
+            chats = self.read_json("chats.json")
+            (self.evidence / f"{stage}-chats.json").write_text(json.dumps(chats, ensure_ascii=False))
+            current = next(c for c in chats if c["id"] == chat["id"])
+            return any(m.get("role") == "user" and m.get("content") == prompt
+                       for m in current.get("messages", []))
+        self.wait(submitted, "prompt enviado e persistido pelo aplicativo", timeout=30)
 
         def completed():
             self.alive()
             log = self.adb("logcat", "-d", f"--pid={pid}")
             (self.evidence / f"{stage}-logcat.txt").write_text(log)
+            chats = self.read_json("chats.json")
+            (self.evidence / f"{stage}-chats.json").write_text(json.dumps(chats, ensure_ascii=False))
             if not generation_completed(log):
                 return None
-            chats = self.read_json("chats.json")
             try:
                 reply = assistant_reply(chats, chat["id"], prompt)
             except AssertionError:
