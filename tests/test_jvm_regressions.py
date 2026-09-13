@@ -119,6 +119,15 @@ def test_changing_projector_reloads(classes, files):
 def test_cpu_fallback_preserves_requested_cache_key(classes, files):
     engine, native = classes["EngineManager"], classes["Native"]
     native.failGpu = True
+    if os.environ.get("GGUF_TEST_STRICT_GPU") == "1":
+        with pytest.raises(Exception):
+            engine.load(files[0], files[1], 1024, 2, -1, True)
+        assert native.calls == 1 and native.gpu == -1
+        assert engine.currentHandle() == 0
+        # An explicit CPU choice remains possible, but never automatic.
+        engine.load(files[0], files[1], 1024, 2, 0, True)
+        assert native.calls == 2 and native.gpu == 0
+        return
     first = engine.load(files[0], files[1], 1024, 2, -1, True)
     assert native.calls == 2 and native.gpu == 0
     assert native.mmproj == files[1]

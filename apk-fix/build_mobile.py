@@ -4,6 +4,7 @@ No signing key or password is placed in CI, artifacts, logs or Git.
 """
 import copy, hashlib, json, os, re, shutil, struct, subprocess, sys, textwrap, zipfile
 from mobile_manifest import enforce_min_sdk
+from unified_mobile import patch_unified_ui, patch_clip_gpu
 from pathlib import Path
 from build_apk import ORIGINAL_APK_SHA256, signature_entry, verify_alignment
 from build_diagnostics import ndk_root, build_diagnostics
@@ -64,6 +65,7 @@ def ui_patches(app):
     s=s.replace(marker,'    invoke-static {v4, v5}, Lcom/ggufchat/app/Native;->lastError(J)Ljava/lang/String;\n    move-result-object v1');p.write_text(s)
     p=app/'ChatActivity$16.smali';s=p.read_text();marker='    const-string v3, "N\\u00e3o foi poss\\u00edvel carregar o modelo. Verifique se o arquivo GGUF est\\u00e1 \\u00edntegro."'
     assert marker in s;s=s.replace(marker,'    invoke-virtual {v0}, Ljava/lang/Throwable;->getMessage()Ljava/lang/String;\n    move-result-object v3');p.write_text(s)
+    patch_unified_ui(app)
 
 def main():
     WORK.mkdir(parents=True,exist_ok=True)
@@ -92,6 +94,7 @@ def main():
     if destructor+'\n        if (!device) return;' not in s:
         s=s.replace(destructor,destructor+'\n        if (!device) return; // failed initialization owns no Vulkan resources')
     vk.write_text(s)
+    clip=source/'tools/mtmd/clip.cpp';clip.write_text(patch_clip_gpu(clip.read_text()))
     native_origin=None
     if os.environ.get('GGUF_REUSE_TESTED_NATIVE')=='1':
         base=json.loads((ROOT/'ci/mobile-native-base.json').read_text())
