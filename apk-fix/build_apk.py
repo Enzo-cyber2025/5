@@ -18,6 +18,7 @@ import zipfile
 from patch_dex import patch_bytes
 from patch_native import patch_archive_jni, JNI_ENTRIES
 from build_diagnostics import build_diagnostics, DIAGNOSTIC_ENTRIES
+from patch_vulkan import build_vulkan_compat, patch_imports, VULKAN_ENTRIES, COMPAT_ENTRIES
 from replace_cpp_runtime import replace_cpp_runtime, RUNTIME_ENTRIES
 from patch_smali import apply as apply_smali
 
@@ -49,9 +50,12 @@ def rebuild_zip(original, dex, output, native_replacements=None):
     is not signing; apksigner below is the sole signature implementation.
     """
     native_replacements = native_replacements or {}
-    if not set(native_replacements) <= JNI_ENTRIES | DIAGNOSTIC_ENTRIES | RUNTIME_ENTRIES:
+    if not set(native_replacements) <= JNI_ENTRIES | DIAGNOSTIC_ENTRIES | RUNTIME_ENTRIES | VULKAN_ENTRIES | COMPAT_ENTRIES:
         raise ValueError("Only pinned JNI repairs, official C++ runtimes and diagnostic helpers are allowed")
     with zipfile.ZipFile(original) as src, zipfile.ZipFile(output, "w") as dst:
+        for name in set(native_replacements) & VULKAN_ENTRIES:
+            if native_replacements[name] != patch_imports(src.read(name)):
+                raise ValueError("Only the exact Vulkan import adapter is authorized")
         for entry in src.infolist():
             if signature_entry(entry.filename):
                 continue
@@ -69,7 +73,7 @@ def rebuild_zip(original, dex, output, native_replacements=None):
                     info.extra += struct.pack("<HH", 0xD935, padding) + bytes(padding)
             dst.writestr(info, data)
         for name in sorted(set(native_replacements) - set(src.namelist())):
-            if name not in DIAGNOSTIC_ENTRIES:
+            if name not in DIAGNOSTIC_ENTRIES | COMPAT_ENTRIES:
                 raise ValueError("Unexpected added native library")
             info = zipfile.ZipInfo(name, date_time=(2026, 1, 1, 0, 0, 0))
             info.compress_type = zipfile.ZIP_DEFLATED
@@ -91,9 +95,12 @@ def verify_alignment(path):
 
 def verify_payload(original, repaired, native_replacements=None):
     native_replacements = native_replacements or {}
-    if not set(native_replacements) <= JNI_ENTRIES | DIAGNOSTIC_ENTRIES | RUNTIME_ENTRIES:
+    if not set(native_replacements) <= JNI_ENTRIES | DIAGNOSTIC_ENTRIES | RUNTIME_ENTRIES | VULKAN_ENTRIES | COMPAT_ENTRIES:
         raise ValueError("Unexpected native replacement")
     with zipfile.ZipFile(original) as a, zipfile.ZipFile(repaired) as b:
+        for name in set(native_replacements) & VULKAN_ENTRIES:
+            if native_replacements[name] != patch_imports(a.read(name)):
+                raise ValueError("Unexpected Vulkan machine code or imports")
         expected = {n for n in a.namelist() if not signature_entry(n)} | set(native_replacements)
         actual = {n for n in b.namelist() if not signature_entry(n)}
         if expected != actual:
@@ -150,6 +157,7 @@ def main():
             dex = patch_bytes(archive.read("classes.dex"))
             native_replacements = patch_archive_jni(archive, work)
             native_replacements.update(build_diagnostics(work))
+            native_replacements.update(build_vulkan_compat(archive, work))
             native_replacements.update(replace_cpp_runtime(archive, output.parent / "native-regression"))
         intermediate = work / "patched.apk"
         rebuild_zip(original, dex, intermediate)

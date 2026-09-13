@@ -538,3 +538,41 @@ def test_runtime_replacement_cannot_change_vulkan_code(tmp_path):
         assert z.read('lib/x86_64/libggml-vulkan.so') == b'original vulkan'
     with pytest.raises(ValueError):
         rebuild_zip(original, b'dex2', fixed, {'lib/x86_64/libggml-vulkan.so': b'not allowed'})
+
+
+def test_promoted_vulkan_alias_never_invents_feature_support(tmp_path):
+    source = tmp_path / 'policy.c'
+    source.write_text('''#include <assert.h>
+#include "vulkan_compat_policy.h"
+int main(void) {
+    const unsigned v10 = 1u << 22, v11 = v10 | (1u << 12), v13 = v10 | (3u << 12);
+    assert(gguf_core_16bit_alias(v11, 1, 0));
+    assert(gguf_core_16bit_alias(v13, 1, 0));
+    assert(!gguf_core_16bit_alias(v10, 1, 0));
+    assert(!gguf_core_16bit_alias(v13, 0, 0));
+    assert(!gguf_core_16bit_alias(v13, 1, 1));
+    assert(!gguf_core_16bit_alias(v10, 0, 1));
+    return 0;
+}
+''')
+    binary = tmp_path / 'policy'
+    subprocess.run(['cc', '-std=c11', '-Wall', '-Wextra', '-Werror',
+                    '-I', str(ROOT / 'apk-fix/native'), str(source), '-o', str(binary)], check=True)
+    subprocess.run([str(binary)], check=True)
+
+
+def test_vulkan_import_adapter_preserves_pinned_native_code():
+    from patch_vulkan import patch_imports, VULKAN_ENTRIES
+    from patch_native import executable_sections
+    original = ROOT / '.cache/gguf/GGUF-Chat.apk'
+    if not original.exists():
+        pytest.skip('pinned original APK not fetched')
+    with zipfile.ZipFile(original) as z:
+        for name in VULKAN_ENTRIES:
+            old = z.read(name)
+            fixed = patch_imports(old)
+            assert executable_sections(old) == executable_sections(fixed)
+            assert len(old) == len(fixed)
+            assert sum(a != b for a, b in zip(old, fixed)) == 14
+            with pytest.raises(ValueError):
+                patch_imports(fixed)
