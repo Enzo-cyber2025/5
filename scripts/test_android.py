@@ -23,6 +23,7 @@ class Android:
         self.serial, self.evidence = serial, evidence
         evidence.mkdir(parents=True, exist_ok=True)
         self.counter = 0
+        self.last_ui_summary = None
 
     def adb(self, *args, check=True, timeout=45, binary=False):
         result = subprocess.run(["adb", "-s", self.serial, *map(str, args)], capture_output=True, timeout=timeout)
@@ -46,7 +47,12 @@ class Android:
         self.shell("rm -f /sdcard/gguf-test-ui.xml")
         self.shell("uiautomator dump /sdcard/gguf-test-ui.xml")
         xml = self.adb("exec-out", "cat", "/sdcard/gguf-test-ui.xml")
-        ET.fromstring(xml)
+        root = ET.fromstring(xml)
+        summary = [{k: n.get(k) for k in ("text", "content-desc", "resource-id", "bounds", "enabled", "selected")}
+                   for n in root.iter("node") if n.get("text") or n.get("content-desc")]
+        if summary != self.last_ui_summary:
+            print("UI " + json.dumps(summary, ensure_ascii=False), flush=True)
+            self.last_ui_summary = summary
         self.counter += 1
         (self.evidence / f"ui-{self.counter:04d}.xml").write_text(xml)
         return xml
@@ -110,38 +116,52 @@ class Android:
                    f"&& restorecon -R {shlex.quote(parent)}")
         temp.unlink()
 
+    def confirm_picker(self, xml):
+        for label in ("Open", "Abrir", "Select", "Selecionar", "Done", "Concluído"):
+            point = position(xml, text=label, package=PICKERS) or position(xml, desc=label, package=PICKERS)
+            if point:
+                self.shell(f"input tap {point[0]} {point[1]}")
+                return True
+        return False
+
     def choose_file(self, filename):
-        # Recent may omit .gguf files. Navigate to Downloads by exact labels.
-        for attempt in range(3):
+        for attempt in range(4):
             xml = self.ui()
             if not has_package(xml, PICKERS):
                 return
             point = position(xml, text=filename, package=PICKERS)
             if point:
                 self.shell(f"input tap {point[0]} {point[1]}")
-                time.sleep(1)
+                time.sleep(2)
                 xml = self.ui()
                 if not has_package(xml, PICKERS):
                     return
-                # A single tap can select rather than return a document.
-                for label in ("Open", "Abrir", "Select", "Selecionar", "Done", "Concluído"):
-                    point = position(xml, text=label, package=PICKERS) or position(xml, desc=label, package=PICKERS)
-                    if point:
-                        self.shell(f"input tap {point[0]} {point[1]}")
-                        self.wait(lambda: not has_package(self.ui(), PICKERS), "retorno do SAF")
+                if self.confirm_picker(xml):
+                    self.wait(lambda: not has_package(self.ui(), PICKERS), "retorno do SAF")
+                    return
+                # Multi-select DocumentsUI may require long-press before Open appears.
+                point = position(xml, text=filename, package=PICKERS)
+                if point:
+                    x, y = point
+                    self.shell(f"input touchscreen swipe {x} {y} {x} {y} 1000")
+                    time.sleep(1)
+                    if self.confirm_picker(self.ui()):
+                        self.wait(lambda: not has_package(self.ui(), PICKERS), "confirmação SAF")
                         return
-                # Do not click 'Select all' or an unrelated button/preview.
             for desc in ("Show roots", "Mostrar raízes"):
                 if self.tap(desc=desc, package=PICKERS, optional=True):
                     break
             for label in ("Downloads", "Download"):
                 if self.tap(text=label, package=PICKERS, optional=True):
                     break
+            time.sleep(2)
         raise AssertionError(f"Falha ao selecionar {filename}; nenhuma importação será presumida")
 
     def import_model(self, source):
         self.launch()
         self.adb("push", source, f"/sdcard/Download/{source.name}", timeout=300)
+        self.shell("am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d " +
+                   shlex.quote(f"file:///storage/emulated/0/Download/{source.name}"), check=False)
         self.tap(text="Importar", package={PACKAGE}, contains=True)
         self.tap(text="Importar .gguf", package={PACKAGE}, contains=True)
         self.wait(lambda: has_package(self.ui(), PICKERS), "seletor de arquivos")
