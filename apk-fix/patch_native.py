@@ -1,4 +1,5 @@
 """Add the missing libdl dependency to the original JNI bridge, not its machine code."""
+from patch_generation import patch_generation
 import os
 from pathlib import Path
 import struct
@@ -48,4 +49,4 @@ def patch_archive_jni(archive, work):
     names = {n for n in archive.namelist() if n.endswith('/libaijni.so')}
     if names != JNI_ENTRIES:
         raise ValueError('Unexpected JNI architecture set')
-    return {name: patch_jni(archive.read(name), work / (name.split('/')[1] + '.so')) for name in sorted(names)}
+    return {name: patch_jni(patch_generation(archive.read(name)), work / (name.split('/')[1] + '.so')) for name in sorted(names)}

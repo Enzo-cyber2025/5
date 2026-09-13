@@ -576,3 +576,68 @@ def test_vulkan_import_adapter_preserves_pinned_native_code():
             assert sum(a != b for a, b in zip(old, fixed)) == 14
             with pytest.raises(ValueError):
                 patch_imports(fixed)
+
+
+@pytest.mark.parametrize('abi', ['x86_64', 'arm64-v8a'])
+@pytest.mark.parametrize('budget', [1, 2, 3, 128])
+def test_native_token_budget_is_success_only_after_all_decodes(abi, budget):
+    sys.path.insert(0, str(ROOT / 'tests/native'))
+    from emulate_generation import execute
+    from patch_generation import patch_generation
+    original = ROOT / '.cache/gguf/GGUF-Chat.apk'
+    if not original.exists():
+        pytest.skip('pinned APK not fetched')
+    with zipfile.ZipFile(original) as z:
+        data = z.read(f'lib/{abi}/libaijni.so')
+    old = execute(data, budget=budget)
+    new = execute(patch_generation(data), budget=budget)
+    assert old == dict(sampled=budget, tokens=budget, decodes=budget + 1,
+                       done=0, done_calls=1, result=0)
+    assert new == dict(sampled=budget, tokens=budget, decodes=budget + 1,
+                       done=1, done_calls=1, result=1)
+    # Especially important: error on the final decode must never be converted
+    # to success merely because the token budget has also been exhausted.
+    for failure in range(2, budget + 2):
+        failed = execute(patch_generation(data), budget=budget, fail_decode_at=failure)
+        assert failed['result'] == failed['done'] == 0
+        assert failed['decodes'] == failure
+        assert failed['tokens'] == failure - 1
+
+
+@pytest.mark.parametrize('abi', ['x86_64', 'arm64-v8a'])
+@pytest.mark.parametrize('scenario,expected', [
+    ({'eos_at': 1}, 1), ({'eos_at': 2}, 1), ({'eos_at': 3}, 1),
+    ({'cancel_at': 1}, 0), ({'cancel_at': 2}, 0),
+    ({'fail_decode_at': 1}, 0), ({'invalid_handle': True}, 0),
+    ({'budget': 0}, 0), ({'budget': -1}, 0),
+])
+def test_native_completion_keeps_eog_errors_and_cancellation(abi, scenario, expected):
+    sys.path.insert(0, str(ROOT / 'tests/native'))
+    from emulate_generation import execute
+    from patch_generation import patch_generation
+    original = ROOT / '.cache/gguf/GGUF-Chat.apk'
+    if not original.exists():
+        pytest.skip('pinned APK not fetched')
+    with zipfile.ZipFile(original) as z:
+        data = z.read(f'lib/{abi}/libaijni.so')
+    old, new = execute(data, **scenario), execute(patch_generation(data), **scenario)
+    assert old == new
+    assert new['result'] == expected
+
+
+@pytest.mark.parametrize('abi', ['x86_64', 'arm64-v8a'])
+def test_generation_patch_is_pinned_and_bounded(abi):
+    from patch_generation import patch_generation, PATCHES
+    original = ROOT / '.cache/gguf/GGUF-Chat.apk'
+    if not original.exists():
+        pytest.skip('pinned APK not fetched')
+    with zipfile.ZipFile(original) as z:
+        data = z.read(f'lib/{abi}/libaijni.so')
+    patched = patch_generation(data)
+    machine = struct.unpack_from('<H', data, 18)[0]
+    allowed = {i for offset, old, new in PATCHES[machine] for i in range(offset, offset + len(old))}
+    assert len(patched) == len(data)
+    assert all(a == b or i in allowed for i, (a, b) in enumerate(zip(data, patched)))
+    for bad in (patched, data[:-1], data + b'changed'):
+        with pytest.raises(ValueError):
+            patch_generation(bad)
