@@ -6,7 +6,9 @@ Enviar, acesso privado dos workers e dependência libdl da ponte JNI.
 A execução CI 34769745227 comprovou duas gerações nativas em Android 11 x86_64.
 Porém, as respostas foram inadequadas aos pedidos. Português/UTF-8, importação SAF,
 GPU, visão e funcionamento no aparelho alvo NÃO estão aprovados.
-Veja ../docs/GERACAO.md e ../docs/VALIDACAO.md.
+O teste Vulkan 34771124245 reprovou: backend retornou NULL e usou CPU (offload=0).
+O emulador usa SwiftShader por software, não GPU física.
+Veja ../docs/VULKAN.md, ../docs/GERACAO.md e ../docs/VALIDACAO.md.
 
 Este APK foi reconstruído localmente, com a mesma chave local da entrega anterior.
 NÃO é o binário exato executado no CI: o CI usa assinatura descartável e o DEX dos

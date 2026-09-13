@@ -49,7 +49,12 @@ O modelo real foi preparado diretamente no emulador, não importado pelo seletor
 Veja [o relatório de geração e as respostas reais](docs/GERACAO.md).
 A automação agora também exige uma verificação básica de pertinência. Essa nova
 verificação foi testada localmente e reprovou as saídas gravadas; ainda não houve
-novo run remoto após adicioná-la. **Não interprete o run verde anterior como aprovação completa.**
+novo teste Android em modo CPU após adicioná-la. **Não interprete o run verde anterior como aprovação completa.**
+
+**Teste Vulkan executado e reprovado:** no run [34771124245](https://github.com/Enzo-cyber2025/5/actions/runs/34771124245),
+a inicialização Vulkan retornou NULL e a geração usou CPU (`gpu_offload=0`), apesar
+de solicitar 99 camadas GPU. SwiftShader é software, não GPU física.
+Veja [o relatório Vulkan e os logs](docs/VULKAN.md).
 
 Os testes de host executam classes reais do APK, traduzidas de DEX para JVM, com
 substitutos explícitos de `Native` e `org.json`. Isso permite verificar controle de
@@ -136,9 +141,11 @@ com cópia em [`ci/gguf-repair.yml`](ci/gguf-repair.yml). A autorização para p
 foi resolvida; não é necessário criar arquivos manualmente.
 
 O evento `push` nesta branch inicia build e teste de geração com um modelo real,
-preparado diretamente (`GGUF_MODEL_SETUP=provisioned`, `GGUF_GENERATION_ONLY=1`).
-Esse teste não executa o fluxo completo SAF/GPU/arquivo ausente.
-Na execução manual, marque `run_android` para executar o emulador.
+preparado diretamente (`GGUF_MODEL_SETUP=provisioned`). Agora o padrão exige Vulkan
+(`GGUF_VULKAN_ONLY=1`, `GGUF_REQUIRE_VULKAN=1`): fallback CPU reprova o teste.
+Esse modo não executa SAF, arquivo ausente nem avaliação de pertinência.
+Na execução manual, marque `run_android` e escolha `android_mode=vulkan` ou `cpu`.
+O modo CPU exige duas gerações e a verificação básica de pertinência.
 Isso consome minutos do GitHub Actions.
 
 Os artefatos de Actions contêm o APK e as evidências, inclusive em falha. O workflow

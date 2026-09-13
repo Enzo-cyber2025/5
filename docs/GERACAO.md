@@ -1,5 +1,8 @@
 # Validação da geração — 13/09/2026
 
+> Teste posterior: [Vulkan reprovado, com fallback CPU confirmado](VULKAN.md).
+> Este relatório abaixo preserva o resultado da validação CPU.
+
 ## Conclusão
 
 **A inferência nativa funciona, mas as respostas ainda não estão aprovadas para uso.**
@@ -55,7 +58,7 @@ retornou true, no PID da execução. Textos do seletor de arquivos não contam c
 A automação passou a exigir também uma verificação básica das duas respostas. Foram
 acrescentados três testes unitários, totalizando **40 de ferramentas locais + 33 JVM**.
 O novo verificador foi executado localmente sobre as respostas reais salvas e as
-reprovou. **Ainda não houve novo run remoto após acrescentar esse critério**; o run
+reprovou. **Ainda não houve novo teste Android em modo CPU após acrescentar esse critério**; o run
 verde anterior não foi reclassificado nem suas evidências históricas alteradas.
 
 ## Reparos encontrados durante a validação

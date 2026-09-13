@@ -3,7 +3,8 @@
 ## Estado atual
 
 **Geração técnica PASS; pertinência FAIL; validação integral NÃO aprovada.**
-Veja [GERACAO.md](GERACAO.md) para a execução real mais recente, as respostas, os
+O teste Vulkan posterior também **reprovou**, com fallback CPU confirmado; veja
+[VULKAN.md](VULKAN.md). Veja [GERACAO.md](GERACAO.md) para a validação CPU, as respostas, os
 novos reparos e as limitações. O histórico de falhas SAF abaixo continua relevante,
 mas já houve inferência nativa posterior com preparação direta do modelo.
 
@@ -85,10 +86,10 @@ As falhas reproduzem os caminhos válidos virando null, perda do mmproj no carre
 cache ignorando configurações e ausência das novas proteções de arquivos. Não se
 trata de 21 bugs independentes: há múltiplos casos para cada defeito.
 
-### 4. Ferramentas e automação — 40 PASS locais; 37 na última execução CI
+### 4. Ferramentas e automação — 46 PASS locais e no CI 34771124245
 
 ```text
-40 passed
+46 passed
 ```
 
 Cobertura inclui rejeição de DEX desconhecido/já alterado, checksums, alinhamento ZIP,
@@ -116,7 +117,7 @@ controles atrás do menu lateral: “Downloads” podia selecionar o breadcrumb 
 não a raiz do menu. A automação passou a diferenciar os controles pelo resource-id e
 não tocar em arquivos atrás do menu, mas esse ajuste **não resolveu a seleção completa**.
 
-Resultado mais recente, [34767511976](https://github.com/Enzo-cyber2025/5/actions/runs/34767511976),
+Resultado histórico do fluxo SAF, [34767511976](https://github.com/Enzo-cyber2025/5/actions/runs/34767511976),
 commit de origem `c827d23`: **33 JVM + 27 ferramentas PASS**; Android **FAIL**.
 Emulador/instalação/abertura passaram; seleção SAF falhou novamente. O arquivo real
 aparece no seletor, mas a importação não foi confirmada no aplicativo.
