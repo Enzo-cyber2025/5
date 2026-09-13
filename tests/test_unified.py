@@ -87,3 +87,15 @@ def test_projector_patch_checks_allocation_and_refuses_cpu_fallback():
     assert 'if (!ctx_clip.buf)' in out
     assert 'GGUF_PROJECTOR_WEIGHTS' in out
     assert patch_clip_gpu(out)==out
+
+
+def test_android_single_unit_assertion_rejects_two_records_and_wrong_size(tmp_path, monkeypatch):
+    sys.path.insert(0,str(ROOT/'scripts'))
+    import test_mobile
+    model=tmp_path/'model.gguf';proj=tmp_path/'mmproj.gguf'
+    model.write_bytes(b'1234');proj.write_bytes(b'56')
+    monkeypatch.setattr(test_mobile,'MODEL',model);monkeypatch.setattr(test_mobile,'PROJ',proj)
+    unit=dict(id='one',fileName=model.name,path=str(model),mmprojPath=str(proj),multimodal=True,size=6)
+    assert test_mobile.unified_pair([unit],model.name,proj.name)==('one',str(model),str(proj))
+    for bad in ([unit,dict(id='projector',path=str(proj))],[dict(unit,size=4)],[dict(unit,multimodal=False)]):
+        with pytest.raises(AssertionError):test_mobile.unified_pair(bad,model.name,proj.name)

@@ -28,6 +28,16 @@ class MobileAndroid(Android):
                 time.sleep(0.5)
 
 
+def unified_pair(models, vision_name, projector_name):
+    assert len(models)==1,'A seleção ainda está armazenada como mais de um modelo'
+    m=models[0]
+    assert m.get('fileName')==vision_name and m.get('id') and m.get('path')
+    assert m.get('multimodal') is True and m.get('mmprojPath')
+    assert m['mmprojPath'].endswith(projector_name) and m['path']!=m['mmprojPath']
+    assert m['size']==MODEL.stat().st_size+PROJ.stat().st_size,'Tamanho não soma os componentes'
+    return m['id'],m['path'],m['mmprojPath']
+
+
 def bounds(n):
     import re
     return list(map(int,re.findall(r'\d+',n.get('bounds',''))))
@@ -53,13 +63,14 @@ def select_pair(d):
     assert position(xml,text='2 selected',package=PICKERS),'O SAF não confirmou exatamente dois selecionados'
     for name in (MODEL.name,PROJ.name):assert position(xml,text=name,package=PICKERS)
     d.capture('saf-two-selected.png')
-    assert d.confirm_picker(xml),'Botão de confirmar seleção múltipla não encontrado'
+    # Select is the toolbar action. Do not hit a row's accessibility Open icon.
+    d.tap(text='Select',package=PICKERS)
     d.wait(lambda:not has_package(d.ui(),PICKERS),'retorno da seleção SAF')
 
 
 def main():
     d=MobileAndroid('emulator-5554',EVIDENCE)
-    summary={'status':'FAIL','scope':'saf-pair-load-text-generation','checks':{},'apk_sha256':hashlib.sha256(APK.read_bytes()).hexdigest()}
+    summary={'status':'FAIL','scope':'single-stored-unit-SAF-eye-Vulkan-projector-text','checks':{},'apk_sha256':hashlib.sha256(APK.read_bytes()).hexdigest()}
     try:
         assert d.shell('getprop ro.kernel.qemu')=='1'
         d.adb('root',check=False);d.adb('wait-for-device',timeout=60)
@@ -71,9 +82,9 @@ def main():
             d.shell('setprop debug.gguf.vulkan_device 0')
             for name,command in (('vulkan-device.json','cmd gpu vkjson'),('vulkan-features.txt','pm list features')):
                 (EVIDENCE/name).write_text(d.shell(command,check=False))
-            summary['backend_requested']='Vulkan, 99 layers; projector on CPU'
+            summary['backend_requested']='Vulkan, 99 language layers requested; projector weights also Vulkan'
             summary['environment']='Android Vulkan through Mesa software driver, not physical GPU'
-            assert summary['apk_sha256']=='409985de54388cbcb1429a8db4cd26139cc47a5764864c6cd4b408c75f07099f','APK differs from delivered version'
+            assert summary['apk_sha256']==json.loads(Path('.delivery/mobile-signed.json').read_text())['apk_sha256'],'APK differs from signed build provenance'
 
         d.adb('install','-r','-g',APK,timeout=180)
         assert d.shell(f'pm clear {PACKAGE}')=='Success'
@@ -87,7 +98,7 @@ def main():
             d.alive()
             models=d.read_json('models.json',optional=True)
             (EVIDENCE/'mobile-models.json').write_text(json.dumps(models,ensure_ascii=False))
-            try:return fusion(models,MODEL.name,PROJ.name)
+            try:return unified_pair(models,MODEL.name,PROJ.name)
             except AssertionError:return None
         pair=d.wait(linked,'par GGUF/mmproj associado após importação real',timeout=600)
         summary['checks']['saf_multiselect_pair']='PASS'
@@ -100,7 +111,8 @@ def main():
         deletes=[n for n in ET.fromstring(xml).iter('node') if n.get('text')=='Excluir']
         assert len(deletes)==1,'Par associado ainda aparece como dois cartões'
         assert position(xml,text='GGUF + mmproj',contains=True,package={PACKAGE})
-        summary['checks']['unified_model_card']='PASS'
+        assert position(xml,text='👁',contains=True,package={PACKAGE}),'Unidade multimodal sem olho'
+        summary['checks']['single_stored_unit_and_eye']='PASS'
         d.capture('import.png');d.launch()
         assert linked()==pair
         summary['checks']['pair_survives_restart']='PASS'
@@ -118,7 +130,9 @@ def main():
         if VULKAN:
             log=(EVIDENCE/'mobile-logcat.txt').read_text()
             assert vulkan_offloaded(log),'Latest model load did not offload layers to Vulkan; CPU fallback is not success'
-            summary['checks']['vulkan_offload']='PASS'
+            assert re.search(r'GGUF_PROJECTOR_WEIGHTS backend=Vulkan\w* bytes=[1-9]\d* tensors=[1-9]\d*',log),'Pesos do projetor não carregados no Vulkan'
+            assert 'GGUF_UNIT_LOADED language=Vulkan' in log and 'projector=Vulkan' in log
+            summary['checks']['vulkan_language_and_projector_weights']='PASS'
 
         xml=d.ui()
         assert position(xml,desc='Alternar ferramentas',package={PACKAGE})
@@ -192,7 +206,7 @@ def main():
         def relinked():
             models=d.read_json('models.json')
             fresh=[m for m in models if m['id'] not in previous]
-            try: result=fusion(fresh,MODEL.name,PROJ.name)
+            try: result=unified_pair(fresh,MODEL.name,PROJ.name)
             except AssertionError:return None
             for m in models:
                 if m['id'] in previous:assert m==previous[m['id']],'Reimportação alterou um registro anterior'
@@ -202,6 +216,33 @@ def main():
         xml=d.ui();assert sum(n.get('text')=='Excluir' for n in ET.fromstring(xml).iter('node'))==2
         d.capture('reimport.png')
         summary['checks']['repeat_saf_import_keeps_pairs_separate']='PASS'
+        # A standalone language import must remain a distinct normal model,
+        # even if the GGUF metadata happens to mention a vision architecture.
+        normal_source=Path('.cache/mobile-models/SmolLM2-135M-Instruct-Q4_K_M.gguf')
+        normal=d.import_model(normal_source)
+        assert not normal.get('mmprojPath') and not normal.get('multimodal')
+        assert normal['size']==normal_source.stat().st_size
+        xml=d.ui()
+        labels=[n.get('text','') for n in ET.fromstring(xml).iter('node') if normal['name'] in n.get('text','')]
+        assert labels and all('👁' not in label for label in labels),'Modelo normal recebeu olho'
+        d.capture('normal-no-eye.png')
+        summary['checks']['normal_model_without_eye']='PASS'
+        # Delete one unit through the actual dialog; both files disappear, while
+        # the reimported unit and standalone model remain intact.
+        before_delete=d.read_json('models.json')
+        d.tap(text='Excluir',package={PACKAGE})
+        d.tap(resource_id='android:id/button1',package={PACKAGE})
+        remaining=d.wait(lambda: (lambda rows: rows if len(rows)==len(before_delete)-1 else None)(d.read_json('models.json')),'exclusão da unidade persistida')
+        removed=next(m for m in before_delete if m['id'] not in {r['id'] for r in remaining})
+        assert removed.get('mmprojPath'),'Excluiu modelo errado, não a unidade multimodal'
+        for path in (removed['path'],removed['mmprojPath']):
+            assert d.shell('test -e '+shlex.quote(path)+'; echo $?')=='1','Componente órfão após exclusão'
+        for m in remaining:
+            for path in (m['path'],m.get('mmprojPath')):
+                if path:assert d.shell('test -f '+shlex.quote(path)+'; echo $?')=='0','Exclusão atingiu outro modelo'
+        (EVIDENCE/'unified-after-delete.json').write_text(json.dumps(remaining,ensure_ascii=False))
+        d.capture('unified-after-delete.png')
+        summary['checks']['delete_unit_removes_both_preserves_others']='PASS'
         summary['checks']['physical_A55']='NOT_TESTED: emulator x86_64 is not Samsung ARM64 hardware'
         summary['checks']['image_inference']='NOT_TESTED: model/projector load and text message only'
         summary['status']='PASS'
