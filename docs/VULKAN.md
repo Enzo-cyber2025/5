@@ -1,5 +1,37 @@
 # Correção Vulkan — 13/09/2026
 
+## Repetição solicitada — resultado final: FAIL
+
+[Run 34776335305](https://github.com/Enzo-cyber2025/5/actions/runs/34776335305),
+revisão `47fad43`, executado novamente em Android API 35 x86_64:
+
+| Verificação | Resultado |
+|---|---|
+| Build e assinatura v2/v3 | PASS |
+| Regressões de ferramentas / JVM | 66 / 33 PASS |
+| Controle C++ original vs oficial | PASS: defeito reproduzido e correção confirmada |
+| Instalação, abertura, SHA-256 do modelo no emulador | PASS |
+| `vkCreateDevice` | `VK_SUCCESS` (0) |
+| Camadas no Vulkan | **31/31**, `gpu_offload=1` |
+| Texto de assistant persistido | Sim, 619 caracteres após o prompt exato |
+| Conclusão nativa bem-sucedida | **FAIL: GGUF_REPAIR_GENERATION_FAILED** |
+| Resultado integrado | **FAIL** |
+
+A falha se reproduziu sem alterar o código de inferência ou os critérios. Os logs
+não mostram o SIGSEGV dos testes anteriores, mas o retorno falso de geração ainda
+impede aprovação. Texto salvo sozinho não equivale a conclusão nativa bem-sucedida.
+Não foi um timeout do teste. A causa desse retorno falso continua por diagnosticar.
+
+- [Resumo](../ci-results/34776335305-1/summary.json).
+- [Log](../ci-results/34776335305-1/vulkan-final-logcat.txt).
+- [Conversa](../ci-results/34776335305-1/vulkan-chats.json).
+- [Controle ABI](../ci-results/34776335305-1/runtime-regression.json).
+- SHA-256 do APK: `4c1f3aebfea4667a0baee55ef7356f71907a1579ad2f907e25301a95faebed58`.
+
+Vulkan aqui é **software (llvmpipe)**. Não houve validação de GPU física, ARM64,
+SAF ou visão. A qualidade não foi aprovada; a resposta segue excessivamente longa
+para a saudação curta solicitada. Nenhuma nova entrega foi rotulada como aprovada.
+
 ## Estado: inicialização/offload confirmados; geração completa reprovada
 
 A conexão GitHub voltou e o resultado do
@@ -24,9 +56,9 @@ A resposta salva também não atende à saudação curta solicitada.
 - [Conversa persistida](../ci-results/34774462755-1/vulkan-chats.json).
 - APK testado: `80c256ed2f0c66c38b6182f69ee71e8204c070d6e50e32f4ca8f7b65a3a01cca`.
 
-O usuário solicitou novo teste. A repetição será disparada pelo push nesta mesma
-branch, pois a API recusou rerun e workflow_dispatch. Nenhum critério de aprovação
-foi relaxado e nenhum código de inferência foi alterado para essa repetição.
+A repetição acima foi disparada pelo push nesta mesma branch, pois a API recusou
+rerun e workflow_dispatch. Nenhum critério de aprovação foi relaxado e nenhum
+código de inferência foi alterado para essa repetição.
 
 ## 1. Runtime C++ incompatível — correção comprovada
 

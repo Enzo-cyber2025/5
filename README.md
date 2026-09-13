@@ -60,7 +60,9 @@ novo teste Android em modo CPU após adicioná-la. **Não interprete o run verde
 foi recuperado: o runtime oficial passou no controle de ABI; o adaptador criou o
 dispositivo real e houve offload de **31/31 camadas**. Porém a chamada nativa de
 geração retornou falha, mesmo com texto persistido. Isso não aprova o teste completo.
-Uma repetição foi solicitada, mantendo os critérios estritos e o mesmo código nativo.
+**A repetição [34776335305](https://github.com/Enzo-cyber2025/5/actions/runs/34776335305)
+confirmou o mesmo resultado:** 66 testes de ferramentas + 33 JVM passaram, Vulkan
+carregou 31/31 camadas, mas a geração informou falha. Os critérios não foram relaxados.
 Veja [diagnóstico, controles e limites](docs/VULKAN.md).
 
 Os testes de host executam classes reais do APK, traduzidas de DEX para JVM, com
