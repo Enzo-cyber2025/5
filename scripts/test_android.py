@@ -29,9 +29,13 @@ class Android:
         with (self.evidence / "commands.log").open("a") as f:
             f.write(f"$ adb {' '.join(map(str, args))}\nexit={result.returncode}\n")
             if not binary:
-                f.write(result.stdout.decode(errors="replace") + result.stderr.decode(errors="replace"))
+                output = result.stdout.decode(errors="replace") + result.stderr.decode(errors="replace")
+                # Keep diagnostics useful: final dumpsys/logcat must not bury the
+                # command which actually failed in a multi-megabyte log tail.
+                f.write(output[:4096] + ("\n[output truncated]\n" if len(output) > 4096 else ""))
         if check and result.returncode:
-            raise RuntimeError(f"ADB falhou ({result.returncode}): {args}; veja commands.log")
+            detail = (result.stdout + result.stderr).decode(errors="replace")[-3000:]
+            raise RuntimeError(f"ADB falhou ({result.returncode}): {args}\n{detail}")
         return result.stdout if binary else result.stdout.decode(errors="replace").strip()
 
     def shell(self, command, **kwargs):
@@ -46,6 +50,9 @@ class Android:
         self.counter += 1
         (self.evidence / f"ui-{self.counter:04d}.xml").write_text(xml)
         return xml
+
+    def capture(self, name):
+        (self.evidence / name).write_bytes(self.adb("exec-out", "screencap", "-p", binary=True))
 
     def wait(self, fn, description, timeout=45):
         deadline = time.monotonic() + timeout
@@ -73,7 +80,9 @@ class Android:
 
     def launch(self):
         # Clear the task too: a stale DocumentsUI must not remain over the app.
-        out = self.shell(f"am start -W -S --activity-clear-task --activity-new-task -n {PACKAGE}/.MainActivity")
+        # Android 11's am parser does not support --activity-new-task.
+        # Use the documented numeric Intent flags: NEW_TASK | CLEAR_TASK.
+        out = self.shell(f"am start -W -S -f 0x10008000 -n {PACKAGE}/.MainActivity")
         if "Status: ok" not in out:
             raise AssertionError(f"Activity não iniciou: {out}")
         self.wait(lambda: has_package(self.ui(), {PACKAGE}), "MainActivity em primeiro plano")
@@ -238,14 +247,18 @@ def main():
         device.adb("wait-for-device", timeout=60)
         if device.shell("id -u") != "0":
             raise AssertionError("É necessário emulador com adb root, não imagem Play Store")
+        result["checks"]["emulator"] = "BOOTED: " + device.shell("getprop ro.product.cpu.abi")
         device.adb("install", "-r", "-g", args.apk, timeout=120)
+        result["checks"]["installation"] = "PASS"
         if device.shell(f"pm clear {PACKAGE}") != "Success":
             raise AssertionError("Falha ao limpar dados do emulador")
         device.shell("mkdir -p /sdcard/Download")
         device.launch()
         result["checks"]["launch"] = "PASS"
+        device.capture("launch.png")
         model = device.import_model(args.model)
         result["checks"]["text_import"] = "PASS"
+        device.capture("import.png")
         if args.vision:
             device.import_model(args.vision)
             device.import_model(args.mmproj)
@@ -259,6 +272,7 @@ def main():
             result["checks"]["fusion_persistence"] = "SKIP: par visão/mmproj não fornecido"
         device.generate(model, 0, "cpu")
         result["checks"]["cpu_generation"] = "PASS"
+        device.capture("cpu-reply.png")
         vk_log = device.generate(model, -1, "vulkan")
         offloaded = gpu_offloaded(vk_log)
         result["checks"]["vulkan"] = "PASS: GPU offload confirmado" if offloaded else "CPU_FALLBACK: GPU não comprovada"
@@ -284,6 +298,10 @@ def main():
                 (args.evidence / name).write_text(device.adb(*command, check=False))
             except Exception as exc:
                 result.setdefault("diagnostic_errors", []).append(str(exc))
+        try:
+            device.capture("final-screen.png")
+        except Exception as exc:
+            result.setdefault("diagnostic_errors", []).append(str(exc))
         (args.evidence / "summary.json").write_text(json.dumps(result, ensure_ascii=False, indent=2))
         print(json.dumps(result, ensure_ascii=False, indent=2))
 

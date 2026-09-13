@@ -189,3 +189,25 @@ def test_original_download_is_binary_and_verified(tmp_path, monkeypatch, first_r
     assert fetch_original.DEST.read_bytes() == payload
     assert len(calls) == (1 if first_result == 'ok' else 2)
     assert not fetch_original.DEST.with_suffix('.part').exists()
+
+
+def test_adb_error_includes_original_command_diagnostics(tmp_path, monkeypatch):
+    from test_android import Android
+    def run(*args, **kwargs):
+        return subprocess.CompletedProcess(args[0], 255, stdout=b'', stderr=b'Unknown option: --activity-new-task')
+    monkeypatch.setattr(subprocess, 'run', run)
+    device = Android('emulator-5554', tmp_path)
+    with pytest.raises(RuntimeError, match='Unknown option'):
+        device.shell('am start --activity-new-task')
+
+
+def test_launch_uses_android_11_compatible_intent_flags(tmp_path, monkeypatch):
+    from test_android import Android
+    device = Android('emulator-5554', tmp_path)
+    commands = []
+    monkeypatch.setattr(device, 'shell', lambda command: commands.append(command) or 'Status: ok')
+    monkeypatch.setattr(device, 'wait', lambda *args: True)
+    monkeypatch.setattr(device, 'alive', lambda: '123')
+    device.launch()
+    assert '-f 0x10008000' in commands[0]
+    assert '--activity-new-task' not in commands[0]
