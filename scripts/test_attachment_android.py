@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Real DocumentsUI and external camera, after the signed APK's model/Vulkan suite."""
-import base64,hashlib,json,re,shlex,struct,traceback
+import base64,hashlib,json,re,shlex,struct,traceback,zipfile
 from pathlib import Path
 import xml.etree.ElementTree as ET
 from test_mobile import MobileAndroid,APK
@@ -124,7 +124,7 @@ def main():
         for name in ('photo-a.png','photo-b.png'):(fixture/name).write_bytes(png)
         (fixture/'note.txt').write_text('attachment contents are stored, not injected into the model\n')
         (fixture/'zero.custom').write_bytes(b'')
-        (fixture/'archive.zip').write_bytes(b'PK\x03\x04test-any-format')
+        with zipfile.ZipFile(fixture/'archive.zip','w') as archive:archive.writestr('note.txt','Real ZIP fixture')
         with (fixture/'large.unknown').open('wb') as out:
             for _ in range(128):out.write(bytes(range(256))*256) # 8 MiB; not a size ceiling
         d.shell('mkdir -p /sdcard/Download/attachment-tests')
