@@ -231,6 +231,9 @@ class Android:
         before = {c["id"] for c in self.read_json("chats.json", optional=True)}
         self.launch()
         self.tap(text="Nova conversa", package={PACKAGE}, contains=True)
+        self.wait(lambda: position(self.ui(), text=model["name"], package={PACKAGE}),
+                  "modelo visível na seleção de nova conversa")
+        self.tap(text=model["name"], package={PACKAGE})
 
         def created():
             chats = self.read_json("chats.json", optional=True)

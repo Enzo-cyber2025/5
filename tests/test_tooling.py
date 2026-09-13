@@ -15,7 +15,7 @@ sys.path.insert(0, str(ROOT / "apk-fix"))
 sys.path.insert(0, str(ROOT / "scripts"))
 from build_apk import rebuild_zip, verify_alignment, verify_payload
 from patch_dex import PATCHES, patch_bytes
-from patch_smali import GENERATE, apply
+from patch_smali import GENERATE, MODEL_PICKER_METHOD, MODEL_PICKER_FILTER, patch_model_picker, apply
 from android_checks import (PACKAGE, PICKERS, assistant_reply, fusion, generation_completed,
                             gpu_offloaded, has_package, imported, position)
 
@@ -137,6 +137,7 @@ def test_original_dex_patches_and_checksums():
 def test_service_check_inserted_inside_original_exception_handler(tmp_path):
     app = tmp_path / "smali/com/ggufchat/app"
     app.mkdir(parents=True)
+    (app / 'MainActivity.smali').write_text(MODEL_PICKER_METHOD + '\n' + MODEL_PICKER_FILTER + '\n.end method')
     service = app / "GenerationService.smali"
     service.write_text(":try_start_0\n" + GENERATE + ":try_end_0\n.catch Ljava/lang/Exception;\n")
     apply(tmp_path)
@@ -267,3 +268,14 @@ def test_optional_android_store_only_allows_explicit_absence(tmp_path, monkeypat
             device.read_json('chats.json', optional=True)
     assert "if [ -e " in calls[0]
     assert "else printf '[]'" in calls[0]
+
+
+def test_model_picker_filter_shows_non_projectors_and_is_guarded():
+    original = MODEL_PICKER_METHOD + "\n" + MODEL_PICKER_FILTER + "\n.end method"
+    fixed = patch_model_picker(original)
+    assert 'if-eqz v1, :cond_0' in fixed  # false contains(mmproj) -> render model
+    assert 'if-nez v1, :cond_0' not in fixed
+    with pytest.raises(ValueError):
+        patch_model_picker(fixed)
+    with pytest.raises(ValueError):
+        patch_model_picker(original.replace('"mmproj"', '"other"'))
