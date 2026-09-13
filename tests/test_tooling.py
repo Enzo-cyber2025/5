@@ -166,3 +166,26 @@ def test_android_suite_rejects_physical_device_before_adb():
                             cwd=ROOT, capture_output=True, text=True)
     assert result.returncode != 0
     assert "emulador descartável" in result.stderr
+
+
+@pytest.mark.parametrize('first_result', ['ok', 'command-failure', 'wrong-hash'])
+def test_original_download_is_binary_and_verified(tmp_path, monkeypatch, first_result):
+    import fetch_original
+    payload = b'original APK fixture'
+    monkeypatch.setattr(fetch_original, 'DEST', tmp_path / 'original.apk')
+    monkeypatch.setattr(fetch_original, 'SHA256', hashlib.sha256(payload).hexdigest())
+    calls = []
+    def run(command, **kwargs):
+        calls.append(command)
+        if command[0] == 'curl':
+            if first_result == 'command-failure':
+                raise subprocess.CalledProcessError(1, command)
+            Path(command[-1]).write_bytes(payload if first_result == 'ok' else b'bad data')
+        else:
+            assert 'Accept: application/vnd.github.raw' in command
+            kwargs['stdout'].write(payload)
+    monkeypatch.setattr(fetch_original.subprocess, 'run', run)
+    fetch_original.main()
+    assert fetch_original.DEST.read_bytes() == payload
+    assert len(calls) == (1 if first_result == 'ok' else 2)
+    assert not fetch_original.DEST.with_suffix('.part').exists()
