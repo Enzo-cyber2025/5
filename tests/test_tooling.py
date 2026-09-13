@@ -424,3 +424,17 @@ def test_native_stderr_forwarding_preserves_fragments_and_long_lines(tmp_path):
     result = subprocess.run([str(exe)], capture_output=True, text=True, timeout=5, check=True)
     assert result.stdout.splitlines() == ['fragment continued', '100% literal',
                                           'x' * 3000, 'x' * 3000, 'x' * 1000, 'EOF tail']
+
+
+@pytest.mark.parametrize('sdk,granted', [(30, False), (33, True), (35, True)])
+def test_notification_grant_after_reset_is_api_scoped(tmp_path, monkeypatch, sdk, granted):
+    from test_android import Android
+    device = Android('emulator-5554', tmp_path)
+    calls = []
+    def shell(command):
+        calls.append(command)
+        return str(sdk) if command.startswith('getprop') else ''
+    monkeypatch.setattr(device, 'shell', shell)
+    assert device.grant_test_notifications() == sdk
+    assert calls == ['getprop ro.build.version.sdk'] + (
+        [f'pm grant {PACKAGE} android.permission.POST_NOTIFICATIONS'] if granted else [])

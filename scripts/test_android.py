@@ -85,6 +85,14 @@ class Android:
             raise AssertionError("Processo do app ausente; isso não prova sozinho um crash nativo")
         return pid.split()[0]
 
+    def grant_test_notifications(self):
+        # pm clear resets the -g install grant. Only the disposable test app's
+        # notification permission is needed; this is not permission-dialog validation.
+        sdk = int(self.shell("getprop ro.build.version.sdk"))
+        if sdk >= 33:
+            self.shell(f"pm grant {PACKAGE} android.permission.POST_NOTIFICATIONS")
+        return sdk
+
     def launch(self):
         # Clear the task too: a stale DocumentsUI must not remain over the app.
         # Android 11's am parser does not support --activity-new-task.
@@ -343,6 +351,9 @@ def main():
         result["checks"]["installation"] = "PASS"
         if device.shell(f"pm clear {PACKAGE}") != "Success":
             raise AssertionError("Falha ao limpar dados do emulador")
+        sdk = device.grant_test_notifications()
+        result["android_api"] = sdk
+        result["checks"]["notification_setup"] = "GRANTED_FOR_TEST" if sdk >= 33 else "NOT_REQUIRED"
         device.shell("mkdir -p /sdcard/Download")
         device.launch()
         result["checks"]["launch"] = "PASS"
