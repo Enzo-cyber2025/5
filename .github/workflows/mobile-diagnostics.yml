@@ -11,14 +11,16 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: mobile-build-diagnostics
+          name: mobile-pair-evidence
           path: logs
-          run-id: 34782769854
+          run-id: 34785228538
           github-token: ${{ github.token }}
       - run: |
           python3 - <<'PY'
           from pathlib import Path
-          text='\n'.join(p.read_text(errors='replace') for p in Path('logs').rglob('*.log'))
+          import re
+          text='\n'.join(p.read_text(errors='replace') for p in Path('logs').rglob('final-logcat.txt'))
+          text='\n'.join(line for line in text.splitlines() if re.search(r'GGUF|[EWFA] AndroidRuntime|Force finishing|START u0|Displayed|RESULT',line))
           text=text[-14000:]
           for i in range(0,len(text),2500):
               chunk=text[i:i+2500].replace('%','%25').replace('\r','%0D').replace('\n','%0A')
