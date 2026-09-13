@@ -36,9 +36,16 @@ def main():
                 case['projector_sha256']=hashlib.sha256(projector.read_bytes()).hexdigest()
                 assert d.shell('sha256sum '+shlex.quote(dest)).split()[0]==case['projector_sha256']
                 model.update(mmprojPath=dest,multimodal=True)
-                d.write_private('files/models.json',json.dumps([model]))
+                # Match ModelStore's real two-record representation. The model
+                # picker resolves mmprojPath through byPath(), so the projector
+                # needs its own record as it does after a genuine SAF import.
+                projector_record=dict(id='ci-'+case['projector_sha256'][:16],name=projector.stem,
+                    fileName=projector.name,path=dest,size=projector.stat().st_size,
+                    architecture='clip',multimodal=False,importedAt=model['importedAt'])
+                d.write_private('files/models.json',json.dumps([model,projector_record]))
             d.adb('logcat','-c')
             chat=d.new_chat(model,99);pid=d.alive();case['pid']=pid
+            if projector:assert chat.get('mmprojPath')==model['mmprojPath'],'Test setup lost projector in conversation'
             def log():
                 assert d.alive()==pid,'Application died or restarted'
                 text=d.adb('logcat','-d',f'--pid={pid}')
@@ -50,7 +57,7 @@ def main():
                 if 'Create failed:' in text:raise AssertionError('Native load failed; CPU fallback is not Vulkan success')
                 if 'model loaded:' not in text:return False
                 assert vulkan_offloaded(text),'Latest successful model load did not offload layers to Vulkan'
-                if projector:assert 'GGUF_PROJECTOR_LOADED vision=1' in text
+                if projector:assert 'GGUF_PROJECTOR_LOADED vision=1' in text,'Projector not loaded by native mtmd'
                 case['offload_records']=re.findall(r'offloaded\s+\d+(?:/\d+)?\s+layers?\s+to\s+GPU',text,re.I)
                 return True
             d.wait(loaded,'actual Vulkan model load',timeout=300)
