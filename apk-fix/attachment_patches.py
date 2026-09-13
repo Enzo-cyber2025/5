@@ -16,6 +16,12 @@ def patch_attachments(app):
     return-void''')
     start=s.index('.method private onSend()V');end=s.index('.end method',start)
     part=s[start:end]
+    # Original formatter inverted both isEmpty branches, losing non-empty text
+    # whenever a pending attachment was present.
+    for label in ('cond_3','cond_5'):
+        old='    if-eqz v4, :'+label
+        assert part.count(old)==1
+        part=part.replace(old,'    if-nez v4, :'+label)
     part=part.replace('    .prologue','''    .prologue
     invoke-static {p0}, Lcom/ggufchat/app/Attachments;->prepareSend(Landroid/app/Activity;)Z
     move-result v0
@@ -28,4 +34,11 @@ def patch_attachments(app):
     s=s[:start]+part+s[end:]
     start=s.index('.method protected onResume()V');end=s.index('.end method',start)
     part=s[start:end].replace('    return-void','    invoke-static {p0}, Lcom/ggufchat/app/Attachments;->resume(Landroid/app/Activity;)V\n    return-void')
+    p.write_text(s[:start]+part+s[end:])
+    p=app/'ChatStore.smali';s=p.read_text()
+    start=s.index('.method public static delete(');end=s.index('.end method',start)
+    part=s[start:end];marker='    .line 88\n    return-void'
+    assert part.count(marker)==1
+    part=part.replace(marker,'    .line 88\n    goto/16 :attachments_deleted')
+    part+='\n    :attachments_deleted\n    invoke-static {p0, p1}, Lcom/ggufchat/app/Attachments;->deleteChat(Landroid/content/Context;Ljava/lang/String;)V\n    return-void\n'
     p.write_text(s[:start]+part+s[end:])

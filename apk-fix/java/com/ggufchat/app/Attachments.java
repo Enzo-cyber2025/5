@@ -148,10 +148,23 @@ public final class Attachments {
             finally {
                 for(Uri uri:persisted)try{c.getContentResolver().releasePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION);}catch(Exception ignored){}
                 // Camera bytes move atomically on success; preserve the original on failure.
+                if(captured!=null&&cancelled.get())captured.delete();
                 synchronized(jobs){ArrayList<AtomicBoolean> list=jobs.get(owner);if(list!=null){list.remove(cancelled);if(list.isEmpty())jobs.remove(owner);}}
                 notifyScreens(owner);
             }
         });
+    }
+    public static void deleteChat(Context c,String id) {
+        try {
+            // The old ChatStore writer can report an I/O failure only in logs.
+            // Never delete files if the conversation itself still exists.
+            ArrayList<?> chats=(ArrayList<?>)Class.forName("com.ggufchat.app.ChatStore").getMethod("load",Context.class).invoke(null,c);
+            for(Object chat:chats)if(id.equals(get(chat,"id")))return;
+            AttachmentStore.markDeleted(id);
+            synchronized(jobs){ArrayList<AtomicBoolean> tokens=jobs.get(id);if(tokens!=null)for(AtomicBoolean token:tokens)token.set(true);}
+            final Context app=c.getApplicationContext();
+            IO.execute(()->{try{AttachmentStore.deleteFiles(app,id);}catch(Exception e){android.util.Log.e("GGUFAttachments","Attachment cleanup failed",e);}});
+        } catch(Exception e){android.util.Log.e("GGUFAttachments","Could not delete conversation attachments",e);}
     }
     public static void resume(Activity a){find(a).refresh();}
     private void refresh() {

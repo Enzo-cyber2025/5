@@ -174,6 +174,7 @@ def main():
             log=d.adb('logcat','-d',f'--pid={pid}');(E/'attachments-logcat.txt').write_text(log)
             if not generation_completed(log):return None
             rows=item_state(d,chat)['items'];chats=d.read_json('chats.json');saved=next(c for c in chats if c['id']==chat['id'])
+            (E/'attachments-sent.json').write_text(json.dumps({'items':rows,'chat':saved},ensure_ascii=False))
             if not rows or any(m['message']<0 for m in rows):return None
             for row in rows:
                 msg=saved['messages'][row['message']];assert msg['role']=='user' and 'Reply with hello.' in msg['content']
@@ -188,6 +189,16 @@ def main():
         assert len(item_state(d,chat)['items'])==9,'Anexos vazaram entre conversas'
         (E/'attachments-normal.json').write_text(json.dumps(normal_state,ensure_ascii=False))
         d.capture('attachments-normal-files.png');checks['normal_model_multi_file_import']='PASS'
+        d.launch()
+        point=position(d.ui(),text=normal_chat['title'],package={PACKAGE});assert point
+        x,y=point;d.shell(f'input touchscreen swipe {x} {y} {x} {y} 1000')
+        d.tap(resource_id='android:id/button1',package={PACKAGE})
+        deleted_key=hashlib.sha256(normal_chat['id'].encode()).hexdigest()
+        directory=f'/data/user/0/{PACKAGE}/files/attachments/{deleted_key}'
+        d.wait(lambda:d.shell('test -e '+shlex.quote(directory)+'; echo $?')=='1','arquivos removidos ao excluir a conversa')
+        assert not any(c['id']==normal_chat['id'] for c in d.read_json('chats.json'))
+        assert len(item_state(d,chat)['items'])==9
+        checks['delete_conversation_cleans_only_its_files']='PASS'
         summary['status']='PASS'
     except Exception as e:
         summary['error']='Attachment test: '+str(e);traceback.print_exc()

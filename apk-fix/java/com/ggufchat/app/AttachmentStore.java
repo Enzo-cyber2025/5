@@ -15,12 +15,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class AttachmentStore {
     static final Object LOCK=new Object();
     private static final Set<String> initialized=new HashSet<>();
+    private static final Set<String> deleted=new HashSet<>();
     static String key(String chat) throws Exception {
         if(chat==null || chat.isEmpty()) throw new IOException("Conversa ausente");
         byte[] hash=MessageDigest.getInstance("SHA-256").digest(chat.getBytes("UTF-8"));
         StringBuilder s=new StringBuilder();for(byte b:hash)s.append(String.format(java.util.Locale.ROOT,"%02x",b&255));return s.toString();
     }
     static File directory(Context c,String chat) throws Exception {
+        synchronized(LOCK){if(deleted.contains(key(chat)))throw new IOException("Conversa excluída; importação interrompida");}
         File dir=new File(c.getFilesDir(),"attachments/"+key(chat));
         if(!dir.isDirectory() && !dir.mkdirs()) throw new IOException("Sem acesso ao armazenamento de anexos");
         return dir;
@@ -99,6 +101,14 @@ public final class AttachmentStore {
             try {state.getJSONArray("items").put(item);write(c,chat,state);}
             catch(Exception e){dest.renameTo(source);throw e;}
             return item;
+        }
+    }
+    static void markDeleted(String chat) throws Exception {synchronized(LOCK){deleted.add(key(chat));}}
+    static void deleteFiles(Context c,String chat) throws Exception {
+        synchronized(LOCK) {
+            File dir=new File(c.getFilesDir(),"attachments/"+key(chat));File[] files=dir.listFiles();
+            if(files!=null)for(File f:files)if(!f.delete())throw new IOException("Não foi possível liberar um anexo da conversa excluída");
+            if(dir.exists()&&!dir.delete())throw new IOException("Não foi possível remover a pasta de anexos");
         }
     }
     static void error(Context c,String chat,String error) throws Exception {
