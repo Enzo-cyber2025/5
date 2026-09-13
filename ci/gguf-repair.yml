@@ -5,6 +5,11 @@ on:
     branches: [arena/01a09b42-5]
   workflow_dispatch:
     inputs:
+      android_mode:
+        description: 'Backend a testar (Vulkan exige offload, não aceita fallback CPU)'
+        type: choice
+        options: [vulkan, cpu]
+        default: vulkan
       run_android:
         description: 'Executar emulador descartável e modelo real (consome minutos adicionais)'
         type: boolean
@@ -87,13 +92,15 @@ jobs:
           sha256sum .cache/models/smollm2.gguf
       - name: Permissão KVM
         run: sudo chmod a+rw /dev/kvm
-      - name: Geração nativa CPU com modelo real (SAF fora deste teste)
+      - name: Geração nativa e verificação do backend solicitado (SAF fora deste teste)
         uses: reactivecircus/android-emulator-runner@v2
         env:
           ANDROID_SERIAL: emulator-5554
           GGUF_TEST_MODEL: .cache/models/smollm2.gguf
           GGUF_MODEL_SETUP: provisioned
-          GGUF_GENERATION_ONLY: '1'
+          GGUF_GENERATION_ONLY: ${{ inputs.android_mode == 'cpu' && '1' || '0' }}
+          GGUF_VULKAN_ONLY: ${{ inputs.android_mode != 'cpu' && '1' || '0' }}
+          GGUF_REQUIRE_VULKAN: ${{ inputs.android_mode != 'cpu' && '1' || '0' }}
         with:
           api-level: 30
           target: google_apis
@@ -101,7 +108,7 @@ jobs:
           profile: pixel_5
           ram-size: 4096M
           disable-animations: true
-          emulator-options: -no-window -no-snapshot -gpu swiftshader_indirect -noaudio -no-boot-anim
+          emulator-options: -no-window -no-snapshot -gpu swiftshader -feature Vulkan -noaudio -no-boot-anim
           script: bash ci/log_step.sh emulator bash .github/emu-test-x86.sh
       - name: Diagnóstico Android legível pela API
         if: always()

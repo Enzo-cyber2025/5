@@ -13,7 +13,7 @@ from pathlib import Path
 import shutil
 import sys
 source, dest = Path('evidence'), Path(sys.argv[1])
-for name in ('apk-payload.json', 'cpu-logcat.txt', 'cpu-second-logcat.txt', 'summary.json', 'launch.png', 'import.png', 'cpu-reply.png', 'cpu-second-reply.png', 'cpu-reply.txt', 'cpu-second-reply.txt', 'cpu-chats.json', 'cpu-second-chats.json', 'final-screen.png'):
+for name in ('vulkan-device.json', 'vulkan-features.txt', 'graphics-properties.txt', 'vulkan-backend.txt', 'vulkan-logcat.txt', 'vulkan-final-logcat.txt', 'vulkan-chats.json', 'vulkan-reply.txt', 'vulkan-reply.png', 'apk-payload.json', 'cpu-logcat.txt', 'cpu-second-logcat.txt', 'summary.json', 'launch.png', 'import.png', 'cpu-reply.png', 'cpu-second-reply.png', 'cpu-reply.txt', 'cpu-second-reply.txt', 'cpu-chats.json', 'cpu-second-chats.json', 'final-screen.png'):
     p = source / name
     if p.is_file() and p.stat().st_size < 2_000_000:
         shutil.copyfile(p, dest / name)

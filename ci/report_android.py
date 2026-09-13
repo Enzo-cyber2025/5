@@ -30,6 +30,13 @@ def main():
     if commands.exists():
         inputs = [x for x in commands.read_text(errors='replace').splitlines() if x.startswith('$ adb shell input')]
         emit('input commands', '\n'.join(inputs)[-5600:])
+    for name in ('vulkan-backend.txt', 'vulkan-device.json', 'vulkan-final-logcat.txt'):
+        p = root / name
+        if p.exists():
+            text = p.read_text(errors='replace')
+            if 'logcat' in name:
+                text = '\n'.join(x for x in text.splitlines() if re.search(r'GGUFChatNative|ggml_vulkan|offload|GGUF_REPAIR|FATAL|UnsatisfiedLink', x))
+            emit(name, text[:8000])
     log = root / 'final-logcat.txt'
     if log.exists():
         lines = [line for line in log.read_text(errors='replace').splitlines()

@@ -348,3 +348,35 @@ def test_basic_generation_quality_rejects_irrelevant_answers(greeting, answer, v
     else:
         with pytest.raises(AssertionError):
             basic_response_quality(greeting, answer)
+
+
+@pytest.mark.parametrize('log,expected', [
+    ('engine loaded: libllama.so (Vulkan-ready); gpu_offload=0', False),
+    ('registered backend Vulkan from libggml-vulkan.so; offloaded 0/30 layers to GPU', False),
+    ('offloaded 30/30 layers to GPU', False),
+    ('registered backend Vulkan from libggml-vulkan.so; offloaded 30/30 layers to GPU', True),
+])
+def test_vulkan_requires_initialized_backend_and_positive_offload(log, expected):
+    from android_checks import vulkan_offloaded
+    assert vulkan_offloaded(log) is expected
+
+
+def test_vulkan_mode_cannot_be_hidden_by_cpu_generation_only():
+    result = subprocess.run([sys.executable, 'scripts/test_android.py', '--serial', 'emulator-5554',
+                             '--apk', 'a.apk', '--model', 'm.gguf', '--generation-only', '--vulkan-only'],
+                            cwd=ROOT, capture_output=True, text=True)
+    assert result.returncode != 0
+    assert 'not allowed with argument' in result.stderr
+
+
+def test_send_can_preserve_backend_preload_logs(tmp_path, monkeypatch):
+    from test_android import Android
+    d = Android('emulator-5554', tmp_path)
+    commands = []
+    monkeypatch.setattr(d, 'adb', lambda *a: commands.append(a))
+    monkeypatch.setattr(d, 'shell', lambda c: None)
+    monkeypatch.setattr(d, 'tap', lambda **k: None)
+    d.send('Hello', clear_log=False)
+    assert not commands
+    d.send('Hello')
+    assert commands == [('logcat', '-c')]

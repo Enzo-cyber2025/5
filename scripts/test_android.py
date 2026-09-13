@@ -16,7 +16,7 @@ import zipfile
 import xml.etree.ElementTree as ET
 
 from android_checks import (PACKAGE, PICKERS, assistant_reply, fusion, generation_completed,
-                            gpu_offloaded, has_package, imported, position, basic_response_quality)
+                            gpu_offloaded, has_package, imported, position, basic_response_quality, vulkan_offloaded)
 
 
 class Android:
@@ -257,16 +257,20 @@ class Android:
         self.wait(lambda: position(self.ui(), class_name="android.widget.EditText", package={PACKAGE}), "tela da conversa")
         return chat
 
-    def send(self, prompt):
-        self.adb("logcat", "-c")
+    def send(self, prompt, clear_log=True):
+        if clear_log:
+            self.adb("logcat", "-c")
         self.tap(class_name="android.widget.EditText", package={PACKAGE})
         self.shell("input text " + shlex.quote(prompt.replace(" ", "%s")))
         self.tap(text="Enviar", package={PACKAGE}, contains=True)
 
     def generate(self, model, gpu_layers, stage, prompt="Reply in English with a short greeting."):
+        # Keep model-loading/offload evidence: clearing at send loses the backend
+        # selected by the preload worker. A new chat restarts the app; filter its PID.
+        self.adb("logcat", "-c")
         chat = self.new_chat(model, gpu_layers)
         pid = self.alive()
-        self.send(prompt)
+        self.send(prompt, clear_log=False)
         def submitted():
             chats = self.read_json("chats.json")
             (self.evidence / f"{stage}-chats.json").write_text(json.dumps(chats, ensure_ascii=False))
@@ -299,7 +303,9 @@ def main():
     parser.add_argument("--apk", type=Path, required=True)
     parser.add_argument("--model", type=Path, required=True)
     parser.add_argument("--model-setup", choices=("saf", "provisioned"), default="saf")
-    parser.add_argument("--generation-only", action="store_true",
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument("--vulkan-only", action="store_true", help="Require actual Vulkan offload and native completion")
+    modes.add_argument("--generation-only", action="store_true",
                         help="Scope: two native CPU replies; not SAF, Vulkan or missing-model tests")
     parser.add_argument("--vision", type=Path)
     parser.add_argument("--mmproj", type=Path)
@@ -322,7 +328,7 @@ def main():
                         if n == "classes.dex" or n.startswith("lib/") and n.endswith(".so")}
     (args.evidence / "apk-payload.json").write_text(json.dumps(fingerprints, indent=2))
     result = {"status": "FAIL", "checks": {}, "apk_sha256": hashlib.sha256(args.apk.read_bytes()).hexdigest(),
-              "scope": "native-response-generation" if args.generation_only else "android-integration",
+              "scope": "vulkan-offload-generation" if args.vulkan_only else ("native-response-generation" if args.generation_only else "android-integration"),
               "generation_parameters": {"max_tokens": 128, "temperature": 0.0, "language_requested": "English"},
               "model_setup": args.model_setup, "model_sha256": hashlib.sha256(args.model.read_bytes()).hexdigest()}
     try:
@@ -360,6 +366,31 @@ def main():
             result["checks"]["fusion_persistence"] = "PASS (não testa inferência de imagem)"
         else:
             result["checks"]["fusion_persistence"] = "SKIP: par visão/mmproj não fornecido"
+        if args.vulkan_only:
+            result["generation_parameters"]["gpu_layers_requested"] = 99
+            result["checks"]["answer_quality"] = "NOT_ASSESSED: teste de backend; falhas anteriores permanecem"
+            for name, command in (("vulkan-device.json", "cmd gpu vkjson"),
+                                  ("vulkan-features.txt", "pm list features"),
+                                  ("graphics-properties.txt", "getprop")):
+                (args.evidence / name).write_text(device.shell(command, check=False))
+            try:
+                vk_log = device.generate(model, 99, "vulkan")
+                result["checks"]["native_generation"] = "PASS"
+            finally:
+                # Also retain backend details when generation/crash checks fail.
+                pid = device.shell(f"pidof {PACKAGE}", check=False).split()
+                if pid:
+                    latest = device.adb("logcat", "-d", f"--pid={pid[0]}", check=False)
+                    (args.evidence / "vulkan-final-logcat.txt").write_text(latest)
+            device.capture("vulkan-reply.png")
+            offloaded = vulkan_offloaded(vk_log)
+            result["checks"]["vulkan_offload"] = "PASS" if offloaded else "NOT_CONFIRMED: CPU fallback or unavailable Vulkan"
+            (args.evidence / "vulkan-backend.txt").write_text("\n".join(
+                line for line in vk_log.splitlines() if any(t in line.lower() for t in ("vulkan", "offload", "backend", "gguf_repair"))))
+            if not offloaded:
+                raise AssertionError("Vulkan não comprovado: requer backend Vulkan inicializado e camadas offloaded > 0; fallback CPU não passa")
+            result["status"] = "PASS"
+            return
         device.generate(model, 0, "cpu")
         result["checks"]["cpu_generation"] = "PASS"
         device.capture("cpu-reply.png")

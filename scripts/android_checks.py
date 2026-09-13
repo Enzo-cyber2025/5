@@ -96,3 +96,9 @@ def basic_response_quality(greeting, arithmetic):
     if answer not in accepted:
         raise AssertionError('Resposta à pergunta 2 + 2 não corresponde à resposta simples esperada: 4')
     return True
+
+
+def vulkan_offloaded(log):
+    """Require initialized Vulkan plus actual positive layer offload, not availability."""
+    initialized = re.search(r'registered backend Vulkan|ggml_vulkan: Found [1-9]', log, re.I)
+    return bool(initialized) and gpu_offloaded(log)

@@ -9,6 +9,7 @@ args=(--serial "$ANDROID_SERIAL" --apk "${GGUF_OUTPUT_APK:-dist/GGUF-Chat-repair
       --model "$GGUF_TEST_MODEL" --allow-data-reset --evidence "${GGUF_EVIDENCE:-evidence}")
 args+=(--model-setup "${GGUF_MODEL_SETUP:-saf}")
 [[ "${GGUF_GENERATION_ONLY:-0}" != 1 ]] || args+=(--generation-only)
+[[ "${GGUF_VULKAN_ONLY:-0}" != 1 ]] || args+=(--vulkan-only)
 if [[ -n "${GGUF_TEST_VISION:-}" || -n "${GGUF_TEST_MMPROJ:-}" ]]; then
   : "${GGUF_TEST_VISION:?Both vision and mmproj paths are required}"
   : "${GGUF_TEST_MMPROJ:?Both vision and mmproj paths are required}"
