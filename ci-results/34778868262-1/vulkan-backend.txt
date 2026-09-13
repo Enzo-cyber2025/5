@@ -1,0 +1,85 @@
+09-13 19:53:30.924  4153  4325 I GGUFNativeStderr: Emulator-only GGML_VK_VISIBLE_DEVICES=0; software Vulkan is not hardware acceleration
+09-13 19:53:30.983  4153  4325 D vulkan  : searching for layers in '/data/app/~~1u1nZFENicpLd76B76lFwg==/com.ggufchat.app-pk9_qrCM_BCQW-mLyW_XHA==/lib/x86_64'
+09-13 19:53:30.983  4153  4325 D vulkan  : searching for layers in '/data/app/~~1u1nZFENicpLd76B76lFwg==/com.ggufchat.app-pk9_qrCM_BCQW-mLyW_XHA==/base.apk!/lib/x86_64'
+09-13 19:53:30.983  4153  4325 I GGUFNativeStderr: Vulkan loader API 1.3.0; bundled ggml Vulkan requires >= 1.2
+09-13 19:53:31.322  4153  4327 I GGUFNativeStderr: ggml_vulkan: Found 1 Vulkan devices:
+09-13 19:53:31.330  4153  4327 I GGUFNativeStderr: ggml_vulkan: 0 = llvmpipe (LLVM 21.0.0, 256 bits) (llvmpipe) | uma: 0 | fp16: 0 | bf16: 0 | fp4: 0 | warp size: 8 | shared memory: 32768 | int dot: 0 | matrix cores: none
+09-13 19:53:31.331  4153  4327 I GGUFNativeStderr: ggml_vulkan: Warning: Device type is CPU. This is probably not the device you want.
+09-13 19:53:31.340  4153  4325 I GGUFChatNative: registered backend Vulkan from libggml-vulkan.so
+09-13 19:53:31.373  4153  4325 I GGUFChatNative: registered CPU backend (best score 1)
+09-13 19:53:31.531  4153  4325 I GGUFChatNative: engine loaded: libllama.so (Vulkan-ready)
+09-13 19:53:31.716  4153  4327 I GGUFNativeStderr: llama_prepare_model_devices: using device Vulkan0 (llvmpipe (LLVM 21.0.0, 256 bits)) (unknown id) - 15989 MiB free
+09-13 19:53:31.864  4153  4325 I GGUFVulkanCompat: Core 1.1 16-bit storage verified; omitted unadvertised KHR alias; vkCreateDevice=0
+09-13 19:53:31.896  4153  4327 I GGUFNativeStderr: load_tensors: layer   0 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:31.896  4153  4327 I GGUFNativeStderr: load_tensors: layer   1 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:31.896  4153  4327 I GGUFNativeStderr: load_tensors: layer   2 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:31.896  4153  4327 I GGUFNativeStderr: load_tensors: layer   3 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:31.896  4153  4327 I GGUFNativeStderr: load_tensors: layer   4 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:31.896  4153  4327 I GGUFNativeStderr: load_tensors: layer   5 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:31.896  4153  4327 I GGUFNativeStderr: load_tensors: layer   6 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:31.896  4153  4327 I GGUFNativeStderr: load_tensors: layer   7 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:31.896  4153  4327 I GGUFNativeStderr: load_tensors: layer   8 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:31.896  4153  4327 I GGUFNativeStderr: load_tensors: layer   9 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:31.896  4153  4327 I GGUFNativeStderr: load_tensors: layer  10 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:31.896  4153  4327 I GGUFNativeStderr: load_tensors: layer  11 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:31.896  4153  4327 I GGUFNativeStderr: load_tensors: layer  12 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:31.896  4153  4327 I GGUFNativeStderr: load_tensors: layer  13 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:31.896  4153  4327 I GGUFNativeStderr: load_tensors: layer  14 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:31.896  4153  4327 I GGUFNativeStderr: load_tensors: layer  15 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:31.896  4153  4327 I GGUFNativeStderr: load_tensors: layer  16 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:31.896  4153  4327 I GGUFNativeStderr: load_tensors: layer  17 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:31.896  4153  4327 I GGUFNativeStderr: load_tensors: layer  18 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:31.896  4153  4327 I GGUFNativeStderr: load_tensors: layer  19 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:31.896  4153  4327 I GGUFNativeStderr: load_tensors: layer  20 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:31.897  4153  4327 I GGUFNativeStderr: load_tensors: layer  21 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:31.897  4153  4327 I GGUFNativeStderr: load_tensors: layer  22 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:31.897  4153  4327 I GGUFNativeStderr: load_tensors: layer  23 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:31.897  4153  4327 I GGUFNativeStderr: load_tensors: layer  24 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:31.897  4153  4327 I GGUFNativeStderr: load_tensors: layer  25 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:31.897  4153  4327 I GGUFNativeStderr: load_tensors: layer  26 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:31.897  4153  4327 I GGUFNativeStderr: load_tensors: layer  27 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:31.897  4153  4327 I GGUFNativeStderr: load_tensors: layer  28 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:31.897  4153  4327 I GGUFNativeStderr: load_tensors: layer  29 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:31.897  4153  4327 I GGUFNativeStderr: load_tensors: layer  30 assigned to device Vulkan0, is_swa = 0
+09-13 19:53:32.154  4153  4327 I GGUFNativeStderr: load_tensors: offloading output layer to GPU
+09-13 19:53:32.154  4153  4327 I GGUFNativeStderr: load_tensors: offloading 29 repeating layers to GPU
+09-13 19:53:32.154  4153  4327 I GGUFNativeStderr: load_tensors: offloaded 31/31 layers to GPU
+09-13 19:53:32.154  4153  4327 I GGUFNativeStderr: load_tensors:      Vulkan0 model buffer size =    98.87 MiB
+09-13 19:53:34.138  4153  4327 I GGUFNativeStderr: llama_context: Vulkan_Host  output buffer size =     0.19 MiB
+09-13 19:53:34.139  4153  4327 I GGUFNativeStderr: llama_kv_cache: layer   0: dev = Vulkan0
+09-13 19:53:34.142  4153  4327 I GGUFNativeStderr: llama_kv_cache: layer   1: dev = Vulkan0
+09-13 19:53:34.142  4153  4327 I GGUFNativeStderr: llama_kv_cache: layer   2: dev = Vulkan0
+09-13 19:53:34.142  4153  4327 I GGUFNativeStderr: llama_kv_cache: layer   3: dev = Vulkan0
+09-13 19:53:34.142  4153  4327 I GGUFNativeStderr: llama_kv_cache: layer   4: dev = Vulkan0
+09-13 19:53:34.142  4153  4327 I GGUFNativeStderr: llama_kv_cache: layer   5: dev = Vulkan0
+09-13 19:53:34.142  4153  4327 I GGUFNativeStderr: llama_kv_cache: layer   6: dev = Vulkan0
+09-13 19:53:34.142  4153  4327 I GGUFNativeStderr: llama_kv_cache: layer   7: dev = Vulkan0
+09-13 19:53:34.142  4153  4327 I GGUFNativeStderr: llama_kv_cache: layer   8: dev = Vulkan0
+09-13 19:53:34.142  4153  4327 I GGUFNativeStderr: llama_kv_cache: layer   9: dev = Vulkan0
+09-13 19:53:34.142  4153  4327 I GGUFNativeStderr: llama_kv_cache: layer  10: dev = Vulkan0
+09-13 19:53:34.142  4153  4327 I GGUFNativeStderr: llama_kv_cache: layer  11: dev = Vulkan0
+09-13 19:53:34.142  4153  4327 I GGUFNativeStderr: llama_kv_cache: layer  12: dev = Vulkan0
+09-13 19:53:34.142  4153  4327 I GGUFNativeStderr: llama_kv_cache: layer  13: dev = Vulkan0
+09-13 19:53:34.142  4153  4327 I GGUFNativeStderr: llama_kv_cache: layer  14: dev = Vulkan0
+09-13 19:53:34.142  4153  4327 I GGUFNativeStderr: llama_kv_cache: layer  15: dev = Vulkan0
+09-13 19:53:34.142  4153  4327 I GGUFNativeStderr: llama_kv_cache: layer  16: dev = Vulkan0
+09-13 19:53:34.142  4153  4327 I GGUFNativeStderr: llama_kv_cache: layer  17: dev = Vulkan0
+09-13 19:53:34.142  4153  4327 I GGUFNativeStderr: llama_kv_cache: layer  18: dev = Vulkan0
+09-13 19:53:34.142  4153  4327 I GGUFNativeStderr: llama_kv_cache: layer  19: dev = Vulkan0
+09-13 19:53:34.142  4153  4327 I GGUFNativeStderr: llama_kv_cache: layer  20: dev = Vulkan0
+09-13 19:53:34.142  4153  4327 I GGUFNativeStderr: llama_kv_cache: layer  21: dev = Vulkan0
+09-13 19:53:34.142  4153  4327 I GGUFNativeStderr: llama_kv_cache: layer  22: dev = Vulkan0
+09-13 19:53:34.143  4153  4327 I GGUFNativeStderr: llama_kv_cache: layer  23: dev = Vulkan0
+09-13 19:53:34.143  4153  4327 I GGUFNativeStderr: llama_kv_cache: layer  24: dev = Vulkan0
+09-13 19:53:34.143  4153  4327 I GGUFNativeStderr: llama_kv_cache: layer  25: dev = Vulkan0
+09-13 19:53:34.143  4153  4327 I GGUFNativeStderr: llama_kv_cache: layer  26: dev = Vulkan0
+09-13 19:53:34.143  4153  4327 I GGUFNativeStderr: llama_kv_cache: layer  27: dev = Vulkan0
+09-13 19:53:34.143  4153  4327 I GGUFNativeStderr: llama_kv_cache: layer  28: dev = Vulkan0
+09-13 19:53:34.143  4153  4327 I GGUFNativeStderr: llama_kv_cache: layer  29: dev = Vulkan0
+09-13 19:53:34.146  4153  4327 I GGUFNativeStderr: llama_kv_cache:    Vulkan0 KV buffer size =    22.50 MiB
+09-13 19:53:34.191  4153  4327 I GGUFNativeStderr: llama_context: enumerating backends
+09-13 19:53:34.191  4153  4327 I GGUFNativeStderr: llama_context: backend_ptrs.size() = 2
+09-13 19:53:34.243  4153  4327 I GGUFNativeStderr: sched_reserve:    Vulkan0 compute buffer size =   101.51 MiB
+09-13 19:53:34.243  4153  4327 I GGUFNativeStderr: sched_reserve: Vulkan_Host compute buffer size =     3.26 MiB
+09-13 19:53:34.243  4153  4325 I GGUFChatNative: model loaded: n_ctx=1024 n_params=134515008 gpu_offload=1
+09-13 19:55:21.730  4153  4560 I System.out: GGUF_REPAIR_GENERATION_OK
