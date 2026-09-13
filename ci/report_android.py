@@ -24,6 +24,12 @@ def main():
         data = [{k: n.get(k) for k in ('text', 'content-desc', 'bounds', 'enabled')}
                 for n in nodes if n.get('text') or n.get('content-desc')]
         emit('last UI', json.dumps(data, ensure_ascii=False))
+    for p in sorted(root.glob('*-reply.txt')):
+        emit(p.name, p.read_text()[:2800])
+    commands = root / 'commands.log'
+    if commands.exists():
+        inputs = [x for x in commands.read_text(errors='replace').splitlines() if x.startswith('$ adb shell input')]
+        emit('input commands', '\n'.join(inputs)[-5600:])
     log = root / 'final-logcat.txt'
     if log.exists():
         lines = [line for line in log.read_text(errors='replace').splitlines()

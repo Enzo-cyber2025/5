@@ -13,7 +13,7 @@ from pathlib import Path
 import shutil
 import sys
 source, dest = Path('evidence'), Path(sys.argv[1])
-for name in ('summary.json', 'launch.png', 'import.png', 'cpu-reply.png', 'final-screen.png'):
+for name in ('summary.json', 'launch.png', 'import.png', 'cpu-reply.png', 'cpu-second-reply.png', 'cpu-reply.txt', 'cpu-second-reply.txt', 'cpu-chats.json', 'cpu-second-chats.json', 'final-screen.png'):
     p = source / name
     if p.is_file() and p.stat().st_size < 2_000_000:
         shutil.copyfile(p, dest / name)

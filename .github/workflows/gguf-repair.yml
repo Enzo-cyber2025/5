@@ -72,6 +72,8 @@ jobs:
       - uses: actions/checkout@v5
         with:
           ref: arena/01a09b42-5
+      - name: Fixar código na revisão que produziu o APK
+        run: git reset --hard "$GITHUB_SHA"
       - uses: actions/download-artifact@v4
         with:
           name: gguf-chat-host-tested
@@ -85,11 +87,13 @@ jobs:
           sha256sum .cache/models/smollm2.gguf
       - name: Permissão KVM
         run: sudo chmod a+rw /dev/kvm
-      - name: Importação SAF, geração CPU, tentativa Vulkan, modelo ausente
+      - name: Geração nativa CPU com modelo real (SAF fora deste teste)
         uses: reactivecircus/android-emulator-runner@v2
         env:
           ANDROID_SERIAL: emulator-5554
           GGUF_TEST_MODEL: .cache/models/smollm2.gguf
+          GGUF_MODEL_SETUP: provisioned
+          GGUF_GENERATION_ONLY: '1'
         with:
           api-level: 30
           target: google_apis

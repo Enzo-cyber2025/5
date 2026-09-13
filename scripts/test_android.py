@@ -116,6 +116,32 @@ class Android:
                    f"&& restorecon -R {shlex.quote(parent)}")
         temp.unlink()
 
+    def provision_model(self, source):
+        """Real GGUF, test setup only. Explicitly does NOT validate the SAF importer."""
+        self.shell(f"am force-stop {PACKAGE}")
+        digest = hashlib.sha256(source.read_bytes()).hexdigest()
+        dest = f"/data/user/0/{PACKAGE}/files/models/{source.name}"
+        uid = self.shell(f"stat -c %u /data/user/0/{PACKAGE}")
+        if not uid.isdigit():
+            raise AssertionError("UID do aplicativo inválido")
+        parent = str(Path(dest).parent)
+        self.shell("mkdir -p " + shlex.quote(parent))
+        self.adb("push", source, dest, timeout=300)
+        actual = self.shell("sha256sum " + shlex.quote(dest)).split()[0]
+        if actual != digest:
+            raise AssertionError("GGUF transferido difere do arquivo real de entrada")
+        self.shell(f"chown -R {uid}:{uid} {shlex.quote(parent)} && chmod 700 {shlex.quote(parent)} "
+                   f"&& chmod 600 {shlex.quote(dest)} && restorecon -R {shlex.quote(parent)}")
+        model = dict(id="ci-" + digest[:16], name=source.stem, fileName=source.name,
+                     path=dest, size=source.stat().st_size, importedAt=int(time.time() * 1000),
+                     multimodal=False, mmprojPath=None)
+        self.write_private("files/models.json", json.dumps([model]))
+        self.launch()
+        saved = imported(self.read_json("models.json"), source.name)
+        if saved["path"] != dest:
+            raise AssertionError("Modelo preparado não foi preservado pelo app")
+        return saved
+
     def select_downloads(self):
         for label in ("Downloads", "Download"):
             if self.tap(text=label, resource_id="android:id/title", package=PICKERS, optional=True):
@@ -225,10 +251,9 @@ class Android:
         self.shell("input text " + shlex.quote(prompt.replace(" ", "%s")))
         self.tap(text="Enviar", package={PACKAGE}, contains=True)
 
-    def generate(self, model, gpu_layers, stage):
+    def generate(self, model, gpu_layers, stage, prompt="Write a short greeting."):
         chat = self.new_chat(model, gpu_layers)
         pid = self.alive()
-        prompt = "Ola"
         self.send(prompt)
 
         def completed():
@@ -253,6 +278,9 @@ def main():
     parser.add_argument("--serial", required=True)
     parser.add_argument("--apk", type=Path, required=True)
     parser.add_argument("--model", type=Path, required=True)
+    parser.add_argument("--model-setup", choices=("saf", "provisioned"), default="saf")
+    parser.add_argument("--generation-only", action="store_true",
+                        help="Scope: two native CPU replies; not SAF, Vulkan or missing-model tests")
     parser.add_argument("--vision", type=Path)
     parser.add_argument("--mmproj", type=Path)
     parser.add_argument("--require-vulkan", action="store_true")
@@ -269,11 +297,13 @@ def main():
     if len({p.name for p in [args.model, args.vision, args.mmproj] if p}) != len([p for p in [args.model, args.vision, args.mmproj] if p]):
         parser.error("Os modelos devem ter nomes de arquivo distintos.")
     device = Android(args.serial, args.evidence)
-    result = {"status": "FAIL", "checks": {}, "apk_sha256": hashlib.sha256(args.apk.read_bytes()).hexdigest()}
+    result = {"status": "FAIL", "checks": {}, "apk_sha256": hashlib.sha256(args.apk.read_bytes()).hexdigest(),
+              "scope": "native-response-generation" if args.generation_only else "android-integration",
+              "model_setup": args.model_setup, "model_sha256": hashlib.sha256(args.model.read_bytes()).hexdigest()}
     try:
         if device.shell("getprop ro.kernel.qemu") != "1":
             raise AssertionError("O dispositivo não é um emulador")
-        device.adb("root")
+        device.adb("root", check=False)  # adbd may close the transport while restarting; verify UID below
         device.adb("wait-for-device", timeout=60)
         if device.shell("id -u") != "0":
             raise AssertionError("É necessário emulador com adb root, não imagem Play Store")
@@ -286,8 +316,13 @@ def main():
         device.launch()
         result["checks"]["launch"] = "PASS"
         device.capture("launch.png")
-        model = device.import_model(args.model)
-        result["checks"]["text_import"] = "PASS"
+        if args.model_setup == "provisioned":
+            model = device.provision_model(args.model)
+            result["checks"]["text_import"] = "SKIP: modelo real preparado diretamente; SAF não validado"
+            result["checks"]["model_provisioning"] = "PASS: SHA-256 no emulador confere"
+        else:
+            model = device.import_model(args.model)
+            result["checks"]["text_import"] = "PASS"
         device.capture("import.png")
         if args.vision:
             device.import_model(args.vision)
@@ -303,6 +338,12 @@ def main():
         device.generate(model, 0, "cpu")
         result["checks"]["cpu_generation"] = "PASS"
         device.capture("cpu-reply.png")
+        if args.generation_only:
+            device.generate(model, 0, "cpu-second", prompt="What is two plus two?")
+            result["checks"]["cpu_second_generation"] = "PASS: novo processo e nova conversa"
+            device.capture("cpu-second-reply.png")
+            result["status"] = "PASS"
+            return
         vk_log = device.generate(model, -1, "vulkan")
         offloaded = gpu_offloaded(vk_log)
         result["checks"]["vulkan"] = "PASS: GPU offload confirmado" if offloaded else "CPU_FALLBACK: GPU não comprovada"

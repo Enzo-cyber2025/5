@@ -1,3 +1,4 @@
+import json
 import hashlib
 import importlib.util
 from pathlib import Path
@@ -222,3 +223,32 @@ def test_saf_downloads_selector_ignores_obscured_breadcrumb():
         resource-id="android:id/title" enabled="true" bounds="[176,657][748,710]"/>
         </hierarchy>'''
     assert position(xml, text="Downloads", resource_id="android:id/title") == (462, 683)
+
+
+@pytest.mark.parametrize('correct_hash', [True, False])
+def test_provision_real_file_requires_matching_device_hash(tmp_path, monkeypatch, correct_hash):
+    from test_android import Android
+    source = tmp_path / 'model.gguf'
+    source.write_bytes(b'unit test transfer payload, not an inference model')
+    device = Android('emulator-5554', tmp_path / 'evidence')
+    records, commands = {}, []
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    def shell(command):
+        commands.append(command)
+        if command.startswith('stat '): return '10167'
+        if command.startswith('sha256sum '): return (digest if correct_hash else 'wrong') + '  model.gguf'
+        return ''
+    monkeypatch.setattr(device, 'shell', shell)
+    monkeypatch.setattr(device, 'adb', lambda *args, **kwargs: None)
+    monkeypatch.setattr(device, 'launch', lambda: None)
+    monkeypatch.setattr(device, 'write_private', lambda name, text: records.update({name: json.loads(text)}))
+    monkeypatch.setattr(device, 'read_json', lambda name: records['files/' + name])
+    if not correct_hash:
+        with pytest.raises(AssertionError, match='difere'):
+            device.provision_model(source)
+        assert not records
+    else:
+        model = device.provision_model(source)
+        assert model['fileName'] == source.name
+        assert model['path'].endswith('/files/models/model.gguf')
+        assert any('restorecon' in c for c in commands)
