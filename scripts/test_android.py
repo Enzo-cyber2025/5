@@ -24,6 +24,7 @@ class Android:
         self.serial, self.evidence = serial, evidence
         evidence.mkdir(parents=True, exist_ok=True)
         self.counter = 0
+        self.generation_pid = None
         self.last_ui_summary = None
 
     def adb(self, *args, check=True, timeout=45, binary=False):
@@ -268,14 +269,20 @@ class Android:
         # After a cold activity launch, the first input can arrive before the
         # window accepts touch. Retry ONLY the same persisted row, never create
         # another chat or send a prompt twice. A native crash is not retried.
+        expected_pid = self.alive()
+        self.generation_pid = expected_pid
+        def ready():
+            if self.alive() != expected_pid:
+                raise RuntimeError(f"Processo reiniciou durante abertura da conversa (PID esperado {expected_pid}); não repetir após crash")
+            return position(self.ui(), class_name="android.widget.EditText", package={PACKAGE})
         for attempt in range(3):
             self.tap(text=title, package={PACKAGE})
             try:
-                self.wait(lambda: position(self.ui(), class_name="android.widget.EditText", package={PACKAGE}),
-                          "tela da conversa", timeout=15)
+                self.wait(ready, "tela da conversa", timeout=15)
                 return
             except AssertionError:
-                self.alive()
+                if self.alive() != expected_pid:
+                    raise RuntimeError("Processo reiniciou; não repetir após crash")
                 xml = self.ui()
                 if attempt == 2 or not position(xml, text=title, package={PACKAGE}):
                     raise
@@ -428,10 +435,15 @@ def main():
                 result["checks"]["native_generation"] = "PASS"
             finally:
                 # Also retain backend details when generation/crash checks fail.
-                pid = device.shell(f"pidof {PACKAGE}", check=False).split()
+                pid = device.generation_pid
                 if pid:
-                    latest = device.adb("logcat", "-d", f"--pid={pid[0]}", check=False)
+                    latest = device.adb("logcat", "-d", f"--pid={pid}", check=False)
                     (args.evidence / "vulkan-final-logcat.txt").write_text(latest)
+                all_logs = device.adb("logcat", "-d", check=False)
+                import re
+                diagnostic = "\n".join(line for line in all_logs.splitlines() if re.search(
+                    r'GGUFChatNative|GGUFNativeStderr|GGUF_REPAIR|Fatal signal|FATAL EXCEPTION|Abort message:|F DEBUG|Process com\.ggufchat\.app.*has died', line))
+                (args.evidence / "vulkan-crash-diagnostic.txt").write_text(diagnostic)
             device.capture("vulkan-reply.png")
             offloaded = vulkan_offloaded(vk_log)
             result["checks"]["vulkan_offload"] = "PASS" if offloaded else "NOT_CONFIRMED: CPU fallback or unavailable Vulkan"

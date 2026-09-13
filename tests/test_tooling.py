@@ -485,4 +485,16 @@ def test_chat_navigation_does_not_retry_native_crash(tmp_path, monkeypatch):
     monkeypatch.setattr(device, 'alive', failed)
     with pytest.raises(AssertionError):
         device.open_existing_chat('existing')
-    assert len(clicks) == 1
+    assert len(clicks) == 0  # fail before tapping if the process is already absent
+
+
+def test_chat_navigation_rejects_automatic_process_restart(tmp_path, monkeypatch):
+    from test_android import Android
+    device = Android('emulator-5554', tmp_path)
+    pids = iter(['123', '456'])
+    monkeypatch.setattr(device, 'alive', lambda: next(pids))
+    monkeypatch.setattr(device, 'tap', lambda **kwargs: None)
+    monkeypatch.setattr(device, 'wait', lambda fn, *args, **kwargs: fn())
+    with pytest.raises(RuntimeError, match='reiniciou'):
+        device.open_existing_chat('existing')
+    assert device.generation_pid == '123'

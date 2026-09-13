@@ -30,17 +30,22 @@ def main():
     if commands.exists():
         inputs = [x for x in commands.read_text(errors='replace').splitlines() if x.startswith('$ adb shell input')]
         emit('input commands', '\n'.join(inputs)[-5600:])
-    for name in ('host-vulkan.txt', 'vulkan-capabilities.json', 'vulkan-backend.txt', 'vulkan-device.json', 'vulkan-final-logcat.txt'):
+    # Keep the real abort + native stack before verbose capability JSON/system
+    # task logs consume GitHub's per-step annotation quota.
+    for name in ('vulkan-crash-diagnostic.txt', 'vulkan-backend.txt', 'vulkan-capabilities.json'):
         p = root / name
         if p.exists():
             text = p.read_text(errors='replace')
-            if 'logcat' in name:
-                text = '\n'.join(x for x in text.splitlines() if re.search(r'GGUFChatNative|GGUFNativeStderr|ggml_vulkan|offload|GGUF_REPAIR|FATAL|UnsatisfiedLink', x))
-            emit(name, text[:8000])
+            if 'crash' in name:
+                text = '\n'.join(x for x in text.splitlines() if re.search(
+                    r'Vulkan|vulkan|Fatal signal|Abort message:|F DEBUG|GGUF_REPAIR|GGUFChatNative', x))
+                text = text[-8400:]
+            if text.strip():
+                emit(name, text[:8400])
     log = root / 'final-logcat.txt'
     if log.exists():
         lines = [line for line in log.read_text(errors='replace').splitlines()
-                 if re.search(r'GGUFChatNative|GGUFNativeStderr|GGUF_REPAIR|FATAL EXCEPTION|Fatal signal|com\.ggufchat|llama_|ggml_', line)]
+                 if re.search(r'GGUFChatNative|GGUFNativeStderr|GGUF_REPAIR|FATAL EXCEPTION|Fatal signal|Abort message:|F DEBUG', line)]
         emit('app logcat', '\n'.join(lines[-45:])[-8000:])
 
 
