@@ -1,24 +1,15 @@
-GGUF Chat — APK testado em Vulkan, 13/09/2026
+APK MOBILE COMPILADO — DOWNLOAD DIRETO (SEM ZIP)
+https://github.com/Enzo-cyber2025/5/releases/download/gguf-mobile-120e7dc/GGUF-Chat-mobile.apk
 
-DOWNLOAD DIRETO DO APK EXATO (sem ZIP):
-https://github.com/Enzo-cyber2025/5/releases/download/gguf-apk-f6dc954/GGUF-Chat-repaired.apk
-Arquivo: GGUF-Chat-repaired.apk
-SHA-256: b3ae6a0df9c9cd38f947f67df6c19fe01ea6dfd39eb4f39979cd13009c62a0f6
+SHA-256: 409985de54388cbcb1429a8db4cd26139cc47a5764864c6cd4b408c75f07099f
+Certificado SHA-256: 68f248a224075d66df9ff97ba336556b0a84b724112e644c28e607612da633f5
+Android 9/API28 ou superior; ARM64 e x86_64.
 
-Run 34778868262 / revisão f6dc954: PASS.
-94 testes de ferramentas + 33 JVM; controle de ABI; Vulkan 31/31 camadas;
-conclusão nativa com retorno verdadeiro e assistant persistido após o prompt.
-O defeito de conclusão por limite de tokens foi corrigido nas duas ABIs.
-Erros de decode/cancelamento continuam falhando. Veja ../docs/VULKAN.md.
+Teste real aprovado: https://github.com/Enzo-cyber2025/5/actions/runs/34785696254
+Importação conjunta GGUF + mmproj, cartão único, carregamento nativo,
+mensagem persistida sem queda do processo, barra compacta e reimportação.
 
-Este é um teste x86_64 Android API 35 com Vulkan por software (llvmpipe).
-Não aprova qualidade das respostas, UTF-8, importação SAF, visão ou GPU/ARM64 físico.
-
-O sandbox não conseguiu baixar o artefato (EOF no armazenamento do Actions).
-Não há cópia local confirmada desse APK. Qualquer APK antigo neste diretório não
-é o binário acima. O checksum acompanha o identificador do build CI atual.
-
-Certificado SHA-256: ab4e33215e2987d859101c714a0f8692f1afcc3f32cf88a02e3bb6c365abd876
-Chave descartável de teste, diferente da original e das outras execuções CI.
-NÃO desinstale uma versão com dados importantes sem salvar conversas/modelos:
-desinstalar apaga os dados privados. Prefira um aparelho/emulador separado.
+NOVA CHAVE FIXA autorizada: não instala sobre a assinatura antiga.
+Exporte seus dados antes de desinstalar a versão antiga.
+Não houve teste em A55 físico nem avaliação de imagens/anexos.
+Detalhes: docs/MOBILE.md. O arquivo .sha256 antigo refere-se à build anterior.

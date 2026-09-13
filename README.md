@@ -1,3 +1,25 @@
+# GGUF Chat — APK mobile compilado
+
+## [Baixar APK diretamente — sem ZIP](https://github.com/Enzo-cyber2025/5/releases/download/gguf-mobile-120e7dc/GGUF-Chat-mobile.apk)
+
+**16,7 MB · Android 9+ · ARM64 e x86_64.** Nova chave fixa autorizada pelo usuário.
+
+- GGUF + mmproj selecionados juntos, associados e exibidos em um único cartão.
+- Projetor carregado realmente pelo mtmd; componentes nativos recompilados juntos.
+- Ferramentas recolhidas, abertas pela chave inglesa ao lado de Enviar; uma linha rolável, 10 px entre blocos e botões menores.
+- CPU/contexto 1024 por padrão e verificação conservadora de memória.
+
+**Teste real aprovado:** [Android API 35 — 34785696254](https://github.com/Enzo-cyber2025/5/actions/runs/34785696254). Importação SAF do SmolVLM-256M Q8 + mmproj Q8, carga dos dois, mensagem com conclusão nativa e persistência, PID preservado durante geração e reimportação sem trocar os pares anteriores. Também passaram 97 testes de ferramentas e 33 JVM.
+
+**Atenção:** a nova assinatura não instala sobre o APK antigo. Exporte seus dados antes de desinstalá-lo. A chave privada foi preservada nesta sessão para futuras atualizações.
+
+O A55 físico não foi testado. O teste é de **texto com projetor carregado**, não de reconhecimento de imagens; esta revisão não acrescenta avaliação de anexos pelo mtmd. Qualidade das respostas não foi aprovada por esse teste.
+
+[Relatório, hashes, limites e reprodução](docs/MOBILE.md) · [Evidências](ci-results/34785696254-1/summary.json)
+
+<details>
+<summary>Histórico das builds anteriores (não descreve o APK mobile acima)</summary>
+
 # GGUF Chat — correções verificáveis
 
 Correções para o **GGUF Chat 2.0 (`com.ggufchat.app`)**, baseadas no APK original da
@@ -173,3 +195,5 @@ também publica apenas resumos/capturas limitados em `ci-results/` **nesta mesma
 com `[skip ci]` para evitar repetição automática. Sem force-push nem outras branches.
 O workflow antigo do repositório não foi alterado; o erro histórico dos pontos em
 `timeout-minutes` já estava resolvido.
+
+</details>
