@@ -38,8 +38,8 @@ def ui_patches(app):
     p=app/'MainActivity.smali';s=p.read_text()
     a=s.index('.method private refreshImportList()V');b=s.index('.end method',a)
     part=s[a:b];marker='    move-result-object v1'
-    assert part.count(marker)==1
-    part=part.replace(marker,marker+'\n    invoke-static {v1}, Lcom/ggufchat/app/Pairing;->visibleModels(Ljava/util/ArrayList;)Ljava/util/ArrayList;\n    move-result-object v1')
+    assert part.count(marker)==2
+    part=part.replace(marker,marker+'\n    invoke-static {v1}, Lcom/ggufchat/app/Pairing;->visibleModels(Ljava/util/ArrayList;)Ljava/util/ArrayList;\n    move-result-object v1',1)
     s=s[:a]+part+s[b:]
     a=s.index('.method private buildImportRow(');b=s.index('.end method',a)
     part=s[a:b];marker='    iget-object v1, p1, Lcom/ggufchat/app/ModelInfo;->name:Ljava/lang/String;'
@@ -84,15 +84,30 @@ def main():
         part=part.replace(early,'',1).replace('        return device;','        vk_instance.devices[idx] = device;\n        return device;')
         s=s[:start]+part+s[end:]
     vk.write_text(s)
-    libs=build_diagnostics(WORK)
-    prebuilt=ndk/'toolchains/llvm/prebuilt/linux-x86_64'
-    for abi,triple in [('arm64-v8a','aarch64-linux-android'),('x86_64','x86_64-linux-android')]:
-        build=WORK/abi
-        run('cmake','-S',ROOT/'apk-fix/native','-B',build,'-G','Ninja',f'-DLLAMA_SOURCE={source}',f'-DCMAKE_TOOLCHAIN_FILE={ndk}/build/cmake/android.toolchain.cmake',f'-DANDROID_ABI={abi}','-DANDROID_PLATFORM=android-28','-DCMAKE_BUILD_TYPE=Release',f'-DVulkan_INCLUDE_DIR={ROOT}/.cache/vulkan-headers',f'-DVulkan_LIBRARY={prebuilt}/sysroot/usr/lib/{triple}/28/libvulkan.so','-DVulkan_GLSLC_EXECUTABLE=/usr/bin/glslc')
-        run('cmake','--build',build,'--target','aijni','--parallel','2')
-        for name,src in [('libaijni.so',build/'libaijni.so'),('libc++_shared.so',prebuilt/f'sysroot/usr/lib/{triple}/libc++_shared.so')]:
-            dest=WORK/f'{abi}-{name}';shutil.copyfile(src,dest);run(prebuilt/'bin/llvm-strip','--strip-debug',dest)
-            libs[f'lib/{abi}/{name}']=dest.read_bytes()
+    native_origin=None
+    if os.environ.get('GGUF_REUSE_TESTED_NATIVE')=='1':
+        base=json.loads((ROOT/'ci/mobile-native-base.json').read_text())
+        assert base['llama_commit']==SOURCE_SHA
+        for name,digest in base['source_inputs'].items():
+            assert hashlib.sha256((ROOT/name).read_bytes()).hexdigest()==digest, 'Native source changed: disable GGUF_REUSE_TESTED_NATIVE and rebuild'
+        libs={}
+        with zipfile.ZipFile(ROOT/'.delivery/GGUF-Chat-mobile.apk') as cached:
+            for name,digest in base['native'].items():
+                data=cached.read(name)
+                assert hashlib.sha256(data).hexdigest()==digest, 'Tested native cache mismatch'
+                libs[name]=data
+        native_origin=base['source_commit']
+        print('Reusing exact native payload from verified Android run',base['verified_android_run'])
+    else:
+        libs=build_diagnostics(WORK)
+        prebuilt=ndk/'toolchains/llvm/prebuilt/linux-x86_64'
+        for abi,triple in [('arm64-v8a','aarch64-linux-android'),('x86_64','x86_64-linux-android')]:
+            build=WORK/abi
+            run('cmake','-S',ROOT/'apk-fix/native','-B',build,'-G','Ninja',f'-DLLAMA_SOURCE={source}',f'-DCMAKE_TOOLCHAIN_FILE={ndk}/build/cmake/android.toolchain.cmake',f'-DANDROID_ABI={abi}','-DANDROID_PLATFORM=android-28','-DCMAKE_BUILD_TYPE=Release',f'-DVulkan_INCLUDE_DIR={ROOT}/.cache/vulkan-headers',f'-DVulkan_LIBRARY={prebuilt}/sysroot/usr/lib/{triple}/28/libvulkan.so','-DVulkan_GLSLC_EXECUTABLE=/usr/bin/glslc')
+            run('cmake','--build',build,'--target','aijni','--parallel','2')
+            for name,src in [('libaijni.so',build/'libaijni.so'),('libc++_shared.so',prebuilt/f'sysroot/usr/lib/{triple}/libc++_shared.so')]:
+                dest=WORK/f'{abi}-{name}';shutil.copyfile(src,dest);run(prebuilt/'bin/llvm-strip','--strip-debug',dest)
+                libs[f'lib/{abi}/{name}']=dest.read_bytes()
     intermediate=WORK/'intermediate.apk'
     with zipfile.ZipFile(original) as a,zipfile.ZipFile(intermediate,'w') as b:
         for n in a.namelist():
@@ -132,7 +147,7 @@ def main():
             if n not in ('classes.dex','AndroidManifest.xml') and not signature_entry(n) and not n.startswith('lib/'):assert a.read(n)==b.read(n)
         assert b.read('AndroidManifest.xml')==enforce_min_sdk(a.read('AndroidManifest.xml'))
         assert {n for n in b.namelist() if n.startswith('lib/')}==set(libs)
-    metadata={'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'llama_commit':SOURCE_SHA,'min_sdk':28,'sha256':hashlib.sha256(out.read_bytes()).hexdigest(),'status':'UNSIGNED_NOT_APPROVED','native':{n:hashlib.sha256(v).hexdigest() for n,v in libs.items()}}
+    metadata={'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'llama_commit':SOURCE_SHA,'min_sdk':28,'native_source_commit':native_origin or subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'sha256':hashlib.sha256(out.read_bytes()).hexdigest(),'status':'UNSIGNED_NOT_APPROVED','native':{n:hashlib.sha256(v).hexdigest() for n,v in libs.items()}}
     (out.parent/'mobile-build.json').write_text(json.dumps(metadata,indent=2))
     print(json.dumps(metadata))
 if __name__=='__main__':main()
