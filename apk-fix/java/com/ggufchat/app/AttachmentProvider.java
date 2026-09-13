@@ -33,7 +33,8 @@ public final class AttachmentProvider extends ContentProvider {
         try {
             File file=resolve(uri);
             if(uri.getPathSegments().get(0).equals("camera"))return new JSONObject().put("name","Foto-"+uri.getLastPathSegment()+".jpg").put("mime","image/jpeg").put("size",file.length());
-            JSONObject state=new JSONObject(new String(new AtomicFile(new File(file.getParentFile(),"index.json")).readFully(),"UTF-8"));
+            JSONObject state;
+            synchronized(AttachmentStore.LOCK) {state=new JSONObject(new String(new AtomicFile(new File(file.getParentFile(),"index.json")).readFully(),"UTF-8"));}
             JSONArray items=state.getJSONArray("items");
             for(int i=0;i<items.length();i++)if(items.getJSONObject(i).getString("id").equals(uri.getLastPathSegment()))return items.getJSONObject(i);
         } catch(Exception ignored) {}

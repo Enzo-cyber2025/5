@@ -36,7 +36,8 @@ public final class AttachmentStore {
     static void write(Context c,String chat,JSONObject value) throws Exception {
         synchronized(LOCK) {
             AtomicFile file=index(c,chat);FileOutputStream out=null;
-            try {out=file.startWrite();out.write(value.toString().getBytes("UTF-8"));file.finishWrite(out);}
+            try {byte[] encoded=value.toString().getBytes("UTF-8");out=file.startWrite();out.write(encoded);file.finishWrite(out);out=null;
+                if(!Arrays.equals(encoded,file.readFully()))throw new IOException("Índice de anexos não foi persistido");}
             catch(Exception e) {if(out!=null)file.failWrite(out);throw e;}
         }
     }

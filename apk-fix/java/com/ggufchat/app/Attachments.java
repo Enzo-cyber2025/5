@@ -92,7 +92,8 @@ public final class Attachments {
             if(!file.createNewFile())throw new IOException("Não foi possível criar destino da foto");
             if(!cameraState().edit().putString("id",id).putString("chat",chatId).commit())throw new IOException("Não foi possível guardar a captura pendente");
             Intent i=new Intent(MediaStore.ACTION_IMAGE_CAPTURE).putExtra(MediaStore.EXTRA_OUTPUT,uri)
-                .setClipData(ClipData.newRawUri("Foto",uri)).addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION|Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION|Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            i.setClipData(ClipData.newRawUri("Foto",uri));
             activity.startActivityForResult(i,CAMERA);
         } catch(Exception e){file.delete();cameraState().edit().clear().commit();toast("Câmera indisponível: "+e.getMessage());}
     }
