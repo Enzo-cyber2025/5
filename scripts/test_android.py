@@ -362,6 +362,15 @@ def main():
         if device.shell("id -u") != "0":
             raise AssertionError("É necessário emulador com adb root, não imagem Play Store")
         device.adb("logcat", "-G", "16M")  # retain native preload logs during cold shader compilation
+        if args.vulkan_only:
+            # Pixel Launcher ANRs in this software-rendered disposable image can
+            # cover the app with a system dialog before Native is even loaded.
+            # Isolate this background component; never dismiss an app ANR/crash.
+            device.shell("pm disable-user --user 0 com.google.android.apps.nexuslauncher")
+            device.shell("am force-stop com.google.android.apps.nexuslauncher")
+            device.shell("wm size 720x1280")
+            device.shell("wm density 240")
+            result["checks"]["emulator_isolation"] = "Pixel Launcher disabled; 720x1280 at 240 dpi; disposable emulator only"
         result["checks"]["emulator"] = "BOOTED: " + device.shell("getprop ro.product.cpu.abi")
         device.adb("install", "-r", "-g", args.apk, timeout=120)
         result["checks"]["installation"] = "PASS"
