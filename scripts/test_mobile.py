@@ -54,14 +54,10 @@ def select_pair(d):
         if not any(position(xml,text=t,package=PICKERS) for t in ('Open from','Abrir de')):
             d.tap(desc='Show roots',package=PICKERS,optional=True)
         d.select_downloads();time.sleep(1)
-    # Use the provider's list layout and explicit Select all command. The
-    # disposable Downloads folder contains exactly the two checked GGUF files.
+    # Recent can include UI-dump XML, so select only the two actual GGUFs.
+    from android_checks import select_exact_documents
     d.tap(desc='List view',package=PICKERS,optional=True)
-    d.tap(desc='More options',package=PICKERS)
-    d.tap(text='Select all',package=PICKERS)
-    xml=d.ui()
-    assert position(xml,text='2 selected',package=PICKERS),'O SAF não confirmou exatamente dois selecionados'
-    for name in (MODEL.name,PROJ.name):assert position(xml,text=name,package=PICKERS)
+    select_exact_documents(d,[MODEL.name,PROJ.name])
     d.capture('saf-two-selected.png')
     # Select is the toolbar action. Do not hit a row's accessibility Open icon.
     d.tap(text='Select',package=PICKERS)

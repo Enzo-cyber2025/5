@@ -2,7 +2,7 @@ name: Signed Gemma 4 and regression acceptance
 on:
   push:
     branches: [arena/01a09b42-5]
-    paths: ['ci/gemma4-candidate.json', '.github/workflows/gemma4-android.yml']
+    paths: ['ci/gemma4-candidate.json', '.github/workflows/gemma4-android.yml', 'scripts/test_gemma4_android.py', 'scripts/test_physical_android.py', 'scripts/test_mobile.py', 'scripts/test_inference_android.py', 'scripts/test_attachment_android.py', 'scripts/android_checks.py']
 permissions:
   contents: write
   actions: read

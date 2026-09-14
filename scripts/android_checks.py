@@ -107,3 +107,28 @@ def vulkan_offloaded(log):
     current = log[loads[-1].start():] if loads else log
     counts = re.findall(r'offloaded\s+(\d+)(?:/\d+)?\s+layers?\s+to\s+GPU', current, re.I)
     return bool(initialized and counts and int(counts[-1]) > 0)
+
+
+def image_prefill_records(log, images):
+    """A source image can become several native vision crops/chunks.
+    Keep the exact source-image count AND require positive evaluated tokens.
+    """
+    records = re.findall(r'GGUF_IMAGE_EVALUATED tokens=([1-9]\d*) backend=(\w+)', log)
+    assert images > 0 and len(records) >= images, records
+    counts = re.findall(r'GGUF_MEDIA_PREFILL images=(\d+) tokens=([1-9]\d*) positions=([1-9]\d*)', log)
+    assert len(counts) == 1 and int(counts[0][0]) == images, counts
+    return records
+
+
+def select_exact_documents(d, names):
+    """Select named rows, not Select all (Recent may contain diagnostic XML)."""
+    assert names and len(set(names)) == len(names)
+    xml = d.ui()
+    point = position(xml, text=names[0], package=PICKERS)
+    assert point, names[0]
+    x, y = point
+    d.shell(f'input touchscreen swipe {x} {y} {x} {y} 1000')
+    d.wait(lambda: position(d.ui(), text='1 selected', package=PICKERS), 'primeiro arquivo selecionado')
+    for name in names[1:]:
+        d.tap(text=name, package=PICKERS)
+    d.wait(lambda: position(d.ui(), text=f'{len(names)} selected', package=PICKERS), 'contagem exata de arquivos selecionados')

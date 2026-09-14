@@ -644,3 +644,17 @@ def test_generation_patch_is_pinned_and_bounded(abi):
     for bad in (patched, data[:-1], data + b'changed'):
         with pytest.raises(ValueError):
             patch_generation(bad)
+
+
+def test_image_crops_are_not_source_image_count():
+    from android_checks import image_prefill_records
+    crop = 'GGUF_IMAGE_EVALUATED tokens=64 backend=Vulkan\n'
+    one = 'GGUF_MEDIA_PREFILL images=1 tokens=380 positions=380\n'
+    two = 'GGUF_MEDIA_PREFILL images=2 tokens=760 positions=760\n'
+    assert len(image_prefill_records(crop * 3 + one, 1)) == 3
+    assert len(image_prefill_records(crop * 6 + two, 2)) == 6
+    for log, count in [(crop * 3 + one, 2), (crop * 3 + two, 1),
+                       (one, 1), (crop, 1), (crop + two, 2),
+                       (crop + one + one, 1), (crop.replace('64', '0') + one, 1)]:
+        with pytest.raises(AssertionError):
+            image_prefill_records(log, count)

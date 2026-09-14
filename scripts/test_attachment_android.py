@@ -50,9 +50,8 @@ def select_all(d,names):
     xml=d.ui()
     assert all(position(xml,text=name,package=PICKERS) for name in names),'Arquivos de teste não apareceram no seletor'
     d.tap(desc='List view',package=PICKERS,optional=True)
-    d.tap(desc='More options',package=PICKERS)
-    d.tap(text='Select all',package=PICKERS)
-    xml=d.ui();assert position(xml,text=str(len(names))+' selected',package=PICKERS)
+    from android_checks import select_exact_documents
+    select_exact_documents(d,names)
     d.capture('attachments-saf-selected.png')
     d.tap(text='Select',package=PICKERS)
     d.wait(lambda:not has_package(d.ui(),PICKERS),'resultado de seleção múltipla')
