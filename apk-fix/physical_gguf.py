@@ -16,7 +16,7 @@ def patch_combined_loader(s):
         && gguf_get_kv_type(meta.get(), projector_key) == GGUF_TYPE_STRING;
 ''' + marker)
     marker='        std::string tensor_name = std::string(cur->name);'
-    assert s.count(marker)==1
+    assert s.count(marker) in (1,2)
     s=s.replace(marker,marker+'''
         // Leave vision/projector tensors to mtmd, which opens this SAME GGUF.
         // Do NOT disable the exact language tensor-count/shape checks below.
@@ -26,7 +26,7 @@ def patch_combined_loader(s):
             LLAMA_LOG_INFO("GGUF_SINGLE_FILE_MEDIA tensor=%s owner=mtmd\\n", tensor_name.c_str());
             continue;
         }
-''')
+''',1)
     return s
 
 

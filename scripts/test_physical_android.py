@@ -29,7 +29,7 @@ def independent_single():
             w.add_key_value(key,field.contents(),field.types[0],field.types[-1] if field.types[0]==GGUFValueType.ARRAY else None)
     w.add_name('Independent single-file vision fixture')
     for r in (a,b):
-        for t in r.tensors:w.add_tensor(t.name,t.data,raw_shape=list(reversed(t.shape.tolist())),raw_dtype=t.tensor_type)
+        for t in r.tensors:w.add_tensor(t.name,t.data,raw_dtype=t.tensor_type)
     w.write_header_to_file();w.write_kv_data_to_file();w.write_tensors_to_file();w.close()
     return path
 
