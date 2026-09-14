@@ -98,6 +98,17 @@ def main():
         s=s.replace(destructor,destructor+'\n        if (!device) return; // failed initialization owns no Vulkan resources')
     vk.write_text(s)
     clip=source/'tools/mtmd/clip.cpp';clip.write_text(patch_clip_gpu(clip.read_text()))
+    classes=WORK/'classes';classes.mkdir(exist_ok=True)
+    android=sdk/'platforms/android-35/android.jar'
+    sys.path.insert(0,str(ROOT/'scripts'))
+    from fetch_document_libraries import fetch as fetch_documents
+    document_jars,document_assets=fetch_documents()
+    sources=list((ROOT/'apk-fix/java').rglob('*.java'))
+    run(Path(os.environ['JAVA_HOME'])/'bin/javac','--release','8','-classpath',os.pathsep.join(map(str,[android]+document_jars)),'-d',classes,*sources)
+    dexdir=WORK/'helpers';dexdir.mkdir(exist_ok=True)
+    run(sdk/'build-tools/35.0.0/d8','--min-api','28','--lib',android,'--output',dexdir,*classes.rglob('*.class'))
+    documents_dex=WORK/'documents-dex';documents_dex.mkdir(exist_ok=True)
+    run(sdk/'build-tools/35.0.0/d8','--min-api','28','--lib',android,'--output',documents_dex,*document_jars)
     native_origin=None
     if os.environ.get('GGUF_REUSE_TESTED_NATIVE')=='1':
         base=json.loads((ROOT/'ci/mobile-native-base.json').read_text())
@@ -133,12 +144,6 @@ def main():
             if not signature_entry(n): b.writestr(n,patch_bytes(a.read(n)) if n=='classes.dex' else a.read(n),compress_type=zipfile.ZIP_DEFLATED)
     decoded=WORK/'decoded';run(java,'-jar',apktool,'d','-f','-r','-o',decoded,intermediate)
     apply(decoded);app=decoded/'smali/com/ggufchat/app';ui_patches(app)
-    classes=WORK/'classes';classes.mkdir(exist_ok=True)
-    android=sdk/'platforms/android-35/android.jar'
-    sources=list((ROOT/'apk-fix/java').rglob('*.java'))
-    run(Path(os.environ['JAVA_HOME'])/'bin/javac','--release','8','-classpath',android,'-d',classes,*sources)
-    dexdir=WORK/'helpers';dexdir.mkdir(exist_ok=True)
-    run(sdk/'build-tools/35.0.0/d8','--min-api','28','--lib',android,'--output',dexdir,*classes.rglob('*.class'))
     # Decode the helper dex into smali; no handwritten bytecode or compile-only stubs.
     jar=WORK/'helper.apk'
     with zipfile.ZipFile(jar,'w') as z:
@@ -159,6 +164,11 @@ def main():
                 if offset%4:
                     padding=(-offset)%4;info.extra=struct.pack('<HH',0xD935,padding)+bytes(padding)
             b.writestr(info,data)
+        for i,p in enumerate(sorted(documents_dex.glob('classes*.dex')),2):b.writestr(f'classes{i}.dex',p.read_bytes())
+        for n,data in document_assets.items():
+            assert n not in a.namelist(),n
+            b.writestr(n,data)
+        b.writestr('assets/document-libraries-sha256.json',(ROOT/'.cache/document-libs/sha256.json').read_bytes())
         for n,data in libs.items():b.writestr(n,data)
     verify_alignment(out)
     with zipfile.ZipFile(original) as a,zipfile.ZipFile(out) as b:

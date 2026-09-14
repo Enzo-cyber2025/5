@@ -42,3 +42,20 @@ def patch_attachments(app):
     part=part.replace(marker,'    .line 88\n    goto/16 :attachments_deleted')
     part+='\n    :attachments_deleted\n    invoke-static {p0, p1}, Lcom/ggufchat/app/Attachments;->deleteChat(Landroid/content/Context;Ljava/lang/String;)V\n    return-void\n'
     p.write_text(s[:start]+part+s[end:])
+
+    p=app/'GenerationService.smali';s=p.read_text()
+    marker='    invoke-static {v4, v5, v6}, Lcom/ggufchat/app/PromptBuilder;->renderPrompt(JLjava/util/List;)Ljava/lang/String;'
+    assert s.count(marker)==1
+    s=s.replace(marker,'''    move-object/from16 v0, p0
+    move-object/from16 v1, v18
+    move-wide v2, v4
+    move-object v4, v6
+    invoke-static {v0, v1, v2, v3, v4}, Lcom/ggufchat/app/AttachmentInference;->prepare(Landroid/content/Context;Ljava/lang/Object;JLjava/util/List;)Ljava/lang/String;
+    move-result-object v6
+    move-wide v4, v2
+    # Original move-result below must remain directly after a result-producing invocation.
+    invoke-static {v6}, Lcom/ggufchat/app/AttachmentInference;->identity(Ljava/lang/String;)Ljava/lang/String;''')
+    old='Lcom/ggufchat/app/Native;->generate(JLjava/lang/String;IFFFFFIILcom/ggufchat/app/Native$GenerateCallback;)Z'
+    assert s.count(old)==1
+    s=s.replace(old,'Lcom/ggufchat/app/AttachmentInference;->generate(JLjava/lang/String;IFFFFFIILjava/lang/Object;)Z')
+    p.write_text(s)

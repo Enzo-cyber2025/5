@@ -17,7 +17,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/** Selection/storage UI, intentionally separate from native format interpretation. */
+/** Selection/storage UI; GenerationService reads these files through AttachmentInference. */
 public final class Attachments {
     private static final int FILES=6101,PHOTOS=6102,CAMERA=6103;
     private static final ExecutorService IO=Executors.newSingleThreadExecutor();
@@ -27,7 +27,7 @@ public final class Attachments {
     private final Context context;
     private final String chatId;
     private Button camera,status;
-    private static final String NOTICE="Anexos guardados nesta conversa. O conteúdo dos arquivos não é interpretado pelo modelo nesta versão.";
+    private static final String NOTICE="Leitura local: imagens com modelo de visão; texto UTF-8/UTF-16, PDF (camada de texto), DOCX/ODT (texto principal). PDF sem texto precisa de visão. Áudio, vídeo e formatos binários não suportados geram aviso. Imagens são reduzidas para até 1024 px; documentos e imagens precisam caber no contexto. Não há corte silencioso de texto. Você pode desativar a leitura de um anexo nesta lista.";
     private Attachments(Activity a) {
         activity=a;context=a.getApplicationContext();chatId=a.getIntent().getStringExtra("chatId");
     }
@@ -184,7 +184,7 @@ public final class Attachments {
             String error=state.optString("error","");
             String[] rows=new String[items.length()];for(int i=0;i<items.length();i++){JSONObject item=items.getJSONObject(i);
                 rows[i]=item.getString("name")+" · "+android.text.format.Formatter.formatFileSize(activity,item.getLong("size"))
-                    +(item.optInt("message",-1)<0?" · pendente":" · mensagem "+(item.getInt("message")+1));}
+                    +(item.optInt("message",-1)<0?" · pendente":" · mensagem "+(item.getInt("message")+1))+(item.optBoolean("excluded",false)?" · leitura desativada":"");}
             AlertDialog.Builder dialog=new AlertDialog.Builder(activity).setTitle("Anexos desta conversa")
                 .setItems(rows,(d,which)->{try{itemMenu(items.getJSONObject(which));}catch(Exception e){toast(e.getMessage());}})
                 .setNegativeButton("Fechar",null).setNeutralButton("Informações",(d,w)->new AlertDialog.Builder(activity).setMessage(NOTICE+(error.isEmpty()?"":"\n\n"+error)).setPositiveButton("OK",null).show());
@@ -200,7 +200,11 @@ public final class Attachments {
                     Intent i=new Intent(Intent.ACTION_VIEW).setDataAndType(uri,item.optString("mime","application/octet-stream")).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                     activity.startActivity(Intent.createChooser(i,"Abrir anexo"));
                 }catch(Exception e){toast("Nenhum aplicativo conseguiu abrir este formato: "+e.getMessage());}
-            }).setNegativeButton("Voltar",null);
+            });
+        dialog.setNegativeButton(item.optBoolean("excluded",false)?"Ativar leitura":"Desativar leitura",(d,w)->{
+            try{synchronized(AttachmentStore.LOCK){JSONObject state=AttachmentStore.read(context,chatId);JSONArray items=state.getJSONArray("items");for(int i=0;i<items.length();i++){JSONObject entry=items.getJSONObject(i);if(id.equals(entry.getString("id")))entry.put("excluded",!entry.optBoolean("excluded",false));}AttachmentStore.write(context,chatId,state);}refresh();}
+            catch(Exception e){toast("Não foi possível alterar a leitura: "+e.getMessage());}
+        });
         if(pending)dialog.setNeutralButton("Remover",(d,w)->{try{AttachmentStore.remove(context,chatId,id);refresh();}catch(Exception e){toast(e.getMessage());}});
         dialog.show();
     }
@@ -211,7 +215,7 @@ public final class Attachments {
             JSONArray items=AttachmentStore.read(s.context,s.chatId).getJSONArray("items");int count=0;
             for(int i=0;i<items.length();i++)if(items.getJSONObject(i).optInt("message",-1)<0)count++;
             set(a,"pendingName",count>0?count+" arquivo(s)":null);
-            set(a,"pendingContent",count>0?NOTICE:null);
+            set(a,"pendingContent",count>0?"Anexos vinculados a esta mensagem para leitura.":null);
             return true;
         }catch(Exception e){s.toast("Não foi possível preparar os anexos: "+e.getMessage());return false;}
     }

@@ -61,4 +61,5 @@ def test_pickers_and_storage_have_no_file_type_size_or_count_quota():
     assert 's.camera.setEnabled(s.multimodal())' in ui
     assert 'ByteArrayOutputStream' not in store and 'Bitmap' not in store
     assert 'long total=0' in store and 'new byte[128*1024]' in store
-    assert 'Native;' not in ui and 'conteúdo dos arquivos não é interpretado' in ui
+    assert 'Native;' not in ui and 'Leitura local:' in ui
+    assert 'Anexos vinculados a esta mensagem para leitura.' in ui

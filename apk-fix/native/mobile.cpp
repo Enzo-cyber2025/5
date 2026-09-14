@@ -4,6 +4,7 @@
 #include "llama.h"
 #include "ggml-backend.h"
 #include "mtmd.h"
+#include "mtmd-helper.h"
 #include <atomic>
 #include <algorithm>
 #include <fstream>
@@ -185,7 +186,7 @@ extern "C" JNIEXPORT jstring JNICALL Java_com_ggufchat_app_Native_detokenize(JNI
     auto e=get(h);if(!e || !ids)return nullptr;
     try {std::vector<jint> t(env->GetArrayLength(ids));env->GetIntArrayRegion(ids,0,t.size(),t.data());std::string s;for(auto id:t)s+=piece(llama_model_get_vocab(e->model),id);return java_string(env,s);}catch(...){return nullptr;}
 }
-extern "C" JNIEXPORT jboolean JNICALL Java_com_ggufchat_app_Native_generate(JNIEnv *env,jclass,jlong h,jstring prompt,jint predict,jfloat temp,jfloat top_p,jfloat top_k,jfloat min_p,jfloat repeat,jint last_n,jint seed,jobject callback) {
+static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat temp,jfloat top_p,jfloat top_k,jfloat min_p,jfloat repeat,jint last_n,jint seed,jobject callback,jobjectArray images) {
     auto e=get(h);if(!e)return false; std::lock_guard<std::mutex> lock(e->mutex); e->cancel=false;e->error.clear();
     jmethodID on_token=nullptr,on_done=nullptr; jclass clazz=nullptr;
     bool ok=false;
@@ -193,15 +194,50 @@ extern "C" JNIEXPORT jboolean JNICALL Java_com_ggufchat_app_Native_generate(JNIE
         if(!callback || predict<=0) throw std::runtime_error("Callback ou limite de tokens inválido");
         clazz=env->GetObjectClass(callback);on_token=env->GetMethodID(clazz,"onToken","(Ljava/lang/String;)V");on_done=env->GetMethodID(clazz,"onDone","(Z)V");
         if(!on_token || !on_done || env->ExceptionCheck()) throw std::runtime_error("Callback inválido");
-        auto vocab=llama_model_get_vocab(e->model);auto input=tokens(vocab,utf8(env,prompt));
-        if(input.empty() || input.size()>=(size_t)llama_n_ctx(e->ctx)) throw std::runtime_error("Conversa excede o contexto. Inicie outra conversa ou aumente o contexto.");
-        int limit=std::min<int>(predict,llama_n_ctx(e->ctx)-input.size());
+        auto vocab=llama_model_get_vocab(e->model);
+        const auto text=utf8(env,prompt);
+        const int n_images=images?env->GetArrayLength(images):0;
+        size_t input_size=0;
         llama_memory_clear(llama_get_memory(e->ctx),true);
-        for(size_t at=0;at<input.size();at+=128) {
-            if(e->cancel) throw std::runtime_error("Geração cancelada");
-            auto batch=llama_batch_get_one(input.data()+at,std::min<size_t>(128,input.size()-at));
-            if(llama_decode(e->ctx,batch)!=0) throw std::runtime_error("Falha de decode no prompt");
+        if(n_images) {
+            if(!e->projector || !mtmd_support_vision(e->projector))
+                throw std::runtime_error("Este modelo/projetor não aceita imagens. Use um par com visão.");
+            mtmd::bitmaps bitmaps;
+            for(int i=0;i<n_images;i++) {
+                if(e->cancel)throw std::runtime_error("Geração cancelada");
+                auto path=(jstring)env->GetObjectArrayElement(images,i);
+                auto filename=utf8(env,path);env->DeleteLocalRef(path);
+                mtmd::bitmap bitmap(mtmd_helper_bitmap_init_from_file(e->projector,filename.c_str()));
+                if(!bitmap.ptr || mtmd_bitmap_is_audio(bitmap.ptr.get()))throw std::runtime_error("Não foi possível decodificar uma imagem preparada");
+                bitmaps.entries.push_back(std::move(bitmap));
+            }
+            mtmd::input_chunks chunks(mtmd_input_chunks_init());
+            auto ptrs=bitmaps.c_ptr();mtmd_input_text input{text.c_str(),true,true};
+            if(mtmd_tokenize(e->projector,chunks.ptr.get(),&input,ptrs.data(),ptrs.size())!=0)
+                throw std::runtime_error("Falha ao preparar pixels e texto para o projetor");
+            input_size=mtmd_helper_get_n_tokens(chunks.ptr.get());
+            if(input_size+1>=(size_t)llama_n_ctx(e->ctx))
+                throw std::runtime_error("Texto e imagens excedem o contexto. Desative anexos na lista, use outra conversa ou aumente o contexto. Nenhum conteúdo foi cortado silenciosamente.");
+            llama_pos past=0;
+            for(size_t i=0;i<chunks.size();i++) {
+                if(e->cancel)throw std::runtime_error("Geração cancelada");
+                const auto *chunk=chunks[i];
+                if(mtmd_helper_eval_chunk_single(e->projector,e->ctx,chunk,past,0,128,i+1==chunks.size(),&past)!=0)
+                    throw std::runtime_error("Falha ao avaliar texto/imagem no modelo");
+                if(mtmd_input_chunk_get_type(chunk)==MTMD_INPUT_CHUNK_TYPE_IMAGE)
+                    LOG("GGUF_IMAGE_EVALUATED tokens=%zu backend=%s",mtmd_input_chunk_get_n_tokens(chunk),e->layers>0?"Vulkan":"CPU");
+            }
+            LOG("GGUF_MEDIA_PREFILL images=%d tokens=%zu positions=%d",n_images,input_size,past);
+        } else {
+            auto input=tokens(vocab,text);input_size=input.size();
+            if(input.empty() || input_size>=(size_t)llama_n_ctx(e->ctx))throw std::runtime_error("Conversa e documentos excedem o contexto. Desative anexos na lista, inicie outra conversa ou aumente o contexto. Nenhum texto foi cortado silenciosamente.");
+            for(size_t at=0;at<input.size();at+=128) {
+                if(e->cancel)throw std::runtime_error("Geração cancelada");
+                auto batch=llama_batch_get_one(input.data()+at,std::min<size_t>(128,input.size()-at));
+                if(llama_decode(e->ctx,batch)!=0)throw std::runtime_error("Falha de decode no prompt");
+            }
         }
+        int limit=std::min<int>(predict,llama_n_ctx(e->ctx)-input_size);
         std::unique_ptr<llama_sampler,decltype(&llama_sampler_free)> sampler(llama_sampler_chain_init(llama_sampler_chain_default_params()),llama_sampler_free);
         if(!sampler) throw std::runtime_error("Sem memória para amostrador");
         if(last_n!=0) llama_sampler_chain_add(sampler.get(),llama_sampler_init_penalties(last_n,repeat,0,0));
@@ -225,5 +261,11 @@ extern "C" JNIEXPORT jboolean JNICALL Java_com_ggufchat_app_Native_generate(JNIE
     if(on_done && !env->ExceptionCheck()) env->CallVoidMethod(callback,on_done,(jboolean)ok);
     if(clazz)env->DeleteLocalRef(clazz);
     return ok && !env->ExceptionCheck();
+}
+extern "C" JNIEXPORT jboolean JNICALL Java_com_ggufchat_app_Native_generate(JNIEnv *env,jclass,jlong h,jstring prompt,jint predict,jfloat temp,jfloat top_p,jfloat top_k,jfloat min_p,jfloat repeat,jint last_n,jint seed,jobject callback) {
+    return generate(env,h,prompt,predict,temp,top_p,top_k,min_p,repeat,last_n,seed,callback,nullptr);
+}
+extern "C" JNIEXPORT jboolean JNICALL Java_com_ggufchat_app_AttachmentInference_nativeGenerate(JNIEnv *env,jclass,jlong h,jstring prompt,jint predict,jfloat temp,jfloat top_p,jfloat top_k,jfloat min_p,jfloat repeat,jint last_n,jint seed,jobject callback,jobjectArray images) {
+    return generate(env,h,prompt,predict,temp,top_p,top_k,min_p,repeat,last_n,seed,callback,images);
 }
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM*,void*) {return JNI_VERSION_1_6;}
