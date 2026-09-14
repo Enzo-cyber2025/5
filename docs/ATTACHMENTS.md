@@ -14,11 +14,11 @@
 
 Os arquivos são copiados para `files/attachments/<hash-da-conversa>/<id>.data`; nome original, MIME, tamanho real e índice da mensagem ficam no `index.json` dessa conversa. O conteúdo de um arquivo não é convertido inteiro em `String`, `Bitmap` ou `byte[]`: a cópia usa **128 KiB de buffer** e contador `long`.
 
-Arquivos temporários só viram anexos após a cópia e a gravação do índice. Cancelamento/erro remove a cópia incompleta, sem descartar os anexos concluídos. A escrita do índice usa `AtomicFile`; temporários órfãos são limpos ao reabrir a conversa. Importações em curso não são retomadas automaticamente após encerramento forçado do processo; mantenha o app aberto durante cópias longas ou de provedores de nuvem.
+Arquivos temporários só viram anexos após a cópia e a gravação do índice. Cancelamento/erro remove a cópia incompleta, sem descartar os anexos concluídos. A escrita do índice usa `AtomicFile`; temporários `.part` incompletos na pasta da conversa são limpos ao reabrir. Importações em curso não são retomadas automaticamente após encerramento forçado do processo; mantenha o app aberto durante cópias longas ou de provedores de nuvem.
 
 A câmera recebe uma URI `content://` privada pelo `EXTRA_OUTPUT`, não se usa a miniatura retornada em extras. O provider não é exportado: concede acesso temporário somente à URI específica. Arquivos já anexados são expostos para leitura apenas quando o usuário escolhe abri-los. Não foi adicionada permissão de acesso irrestrito ao armazenamento ou de câmera interna; a captura é delegada ao app de câmera do Android.
 
-**“Sem limite fixo no app” não significa armazenamento infinito.** Espaço disponível, memória para os metadados/lista, limites de transporte do Android, permissões, arquivos remotos e comportamento do gerenciador/câmera continuam aplicáveis. Seleções maiores podem ser feitas em vários lotes. Falhas de leitura ou espaço são informadas na lista de anexos.
+**“Sem limite fixo no app” não significa armazenamento infinito.** Espaço disponível, memória para os metadados/lista, limites de transporte do Android, permissões, arquivos remotos e comportamento do gerenciador/câmera continuam aplicáveis. Seleções maiores podem ser feitas em vários lotes. Falhas recuperáveis são registradas na lista de anexos; falta extrema de espaço pode impedir também a gravação desse estado. Uma captura cuja gravação do índice falhe pode deixar o original na pasta privada da câmera, sem recuperação automática pela lista. O histórico de mensagens e o índice dos anexos são gravações separadas, não uma transação atômica entre os dois arquivos.
 
 ## Importante: anexar não é interpretar
 
@@ -55,3 +55,5 @@ A tentativa Android anterior `34790084230` validou múltiplas fotos, arquivos mi
 - As regressões anteriores de unificação, olho, barra compacta e Vulkan dos dois componentes também passaram no mesmo APK. Vulkan testado por software (Mesa/Lavapipe), não em GPU física.
 
 [Captura: câmera cinza e seis anexos no modelo normal](../ci-results/34790832355-1/attachments-normal-files.png) · [Menu da câmera](../ci-results/34790832355-1/attachments-camera-menu.png) · [Mensagem e anexos persistidos](../ci-results/34790832355-1/attachments-sent.json).
+
+Publicação e download verificados: [34791386109 — PASS](https://github.com/Enzo-cyber2025/5/actions/runs/34791386109). O runner baixou o APK publicado, comparou byte a byte com o APK aprovado e conferiu o SHA-256 acima. [Saída original da verificação](../ci-results/34791386109-1/publication-checks.json).
