@@ -1,0 +1,28 @@
+{
+  "status": "PASS",
+  "checks": {
+    "cpp_runtime_abi": "PASS: original corrupts RBX, official runtime preserves it",
+    "emulator_isolation": "Pixel Launcher disabled; 720x1280 at 240 dpi; disposable emulator only",
+    "emulator": "BOOTED: x86_64",
+    "installation": "PASS",
+    "notification_setup": "GRANTED_FOR_TEST",
+    "launch": "PASS",
+    "text_import": "SKIP: modelo real preparado diretamente; SAF não validado",
+    "model_provisioning": "PASS: SHA-256 no emulador confere",
+    "fusion_persistence": "SKIP: par visão/mmproj não fornecido",
+    "answer_quality": "NOT_ASSESSED: teste de backend; falhas anteriores permanecem",
+    "native_generation": "PASS",
+    "vulkan_offload": "PASS"
+  },
+  "apk_sha256": "28a1884298a6e3a4f46703aab89471d3f80586c24444645df0443a693931be57",
+  "scope": "vulkan-offload-generation",
+  "generation_parameters": {
+    "max_tokens": 128,
+    "temperature": 0.0,
+    "language_requested": "English",
+    "gpu_layers_requested": 99
+  },
+  "model_setup": "provisioned",
+  "model_sha256": "2e8040ceae7815abe0dcb3540b9995eaa1fa0d2ca9e797d0a635ae4433c68c2d",
+  "android_api": 35
+}
