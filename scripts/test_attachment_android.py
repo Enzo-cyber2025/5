@@ -115,12 +115,12 @@ def main():
     d=MobileAndroid('emulator-5554',E)
     summary=json.loads((E/'summary.json').read_text())
     summary['status']='FAIL';summary['attachment_checks']={};checks=summary['attachment_checks']
-    summary['attachment_scope']='real SAF multi-file/photo selection, external camera, persistence, removal and message binding; NOT content inference'
+    summary['attachment_scope']='real SAF multi-file/photo selection, external camera, persistence, removal and message binding; storage regression plus explicit unsupported-format failure; content inference tested separately'
     try:
         assert hashlib.sha256(APK.read_bytes()).hexdigest()==summary['apk_sha256']
         models=d.read_json('models.json');paired=next(m for m in models if m.get('mmprojPath'));normal=next(m for m in models if not m.get('mmprojPath'))
         fixture=E/'attachment-fixtures';fixture.mkdir(exist_ok=True)
-        png=base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jp1sAAAAASUVORK5CYII=')
+        png=base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=')
         for name in ('photo-a.png','photo-b.png'):(fixture/name).write_bytes(png)
         (fixture/'note.txt').write_text('attachment contents are stored, not injected into the model\n')
         (fixture/'zero.custom').write_bytes(b'')
@@ -172,17 +172,21 @@ def main():
         def sent():
             assert d.alive()==pid
             log=d.adb('logcat','-d',f'--pid={pid}');(E/'attachments-logcat.txt').write_text(log)
-            if not generation_completed(log):return None
+            error=item_state(d,chat).get('error','')
+            if not error:return None
+            assert 'não tem leitor' in error,error
+            assert 'GGUF_NATIVE_COMPLETE' not in log,'Unsupported archive was silently treated as read'
             rows=item_state(d,chat)['items'];chats=d.read_json('chats.json');saved=next(c for c in chats if c['id']==chat['id'])
             (E/'attachments-sent.json').write_text(json.dumps({'items':rows,'chat':saved},ensure_ascii=False))
             if not rows or any(m['message']<0 for m in rows):return None
             for row in rows:
                 msg=saved['messages'][row['message']];assert msg['role']=='user' and 'Reply with hello.' in msg['content']
-                assert 'não é interpretado' in msg['content']
+                assert 'para leitura' in msg['content']
             return {'items':rows,'chat':saved}
         sent_state=d.wait(sent,'nove anexos vinculados à mensagem persistida',timeout=300)
         (E/'attachments-sent.json').write_text(json.dumps(sent_state,ensure_ascii=False));d.capture('attachments-sent.png')
         checks['multiple_attachments_bound_to_message']='PASS'
+        checks['unsupported_archive_explicit_error']='PASS'
         # Normal model still offers *all* file formats through the paperclip.
         normal_chat=d.new_chat(normal,0);checks['normal_controls']=controls(d,False);d.capture('attachments-normal.png')
         d.tap(desc='Anexar arquivos',package={PACKAGE});select_all(d,sorted(hashes));normal_state=wait_items(d,normal_chat,6)

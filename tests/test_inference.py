@@ -1,0 +1,50 @@
+"""Content bridge regressions; real format/model execution is in test_inference_android.py."""
+from pathlib import Path
+import shutil,subprocess,re
+import pytest,jdk4py
+ROOT=Path(__file__).resolve().parents[1]
+JAVA=ROOT/'apk-fix/java/com/ggufchat/app/AttachmentInference.java'
+
+def test_actual_multimodal_bridge_is_not_a_filename_notice():
+    s=JAVA.read_text();native=(ROOT/'apk-fix/native/mobile.cpp').read_text();hooks=(ROOT/'apk-fix/attachment_patches.py').read_text()
+    assert 'contents.toString()+rows.get(row)[1]' in s
+    assert 'AttachmentStore.directory(c,chatId)' in s and 'f.length()!=item.getLong("size")' in s
+    assert 'mtmd_tokenize(e->projector' in native and 'mtmd_helper_eval_chunk_single(e->projector,e->ctx' in native
+    assert 'input_size=mtmd_helper_get_n_tokens' in native
+    assert native.index('mtmd_helper_eval_chunk_single(e->projector')<native.index('GGUF_IMAGE_EVALUATED')
+    assert 'AttachmentInference;->prepare' in hooks and 'AttachmentInference;->generate' in hooks
+    assert 'finally{release();}' in s and 'if(!images)e->cancel=false' in native
+    assert 'FEATURE_PROCESS_DOCDECL,false' in s and 'XmlPullParser.DOCDECL' in s
+    assert 'for(int i=0;i<doc.getNumberOfPages();i++)' in s
+    assert 'getInputStream(e)' in s and 'count+=k' in s
+    assert 'Desativar leitura' in (JAVA.parent/'Attachments.java').read_text()
+
+def test_real_bounded_text_reader_and_cancellation(tmp_path):
+    javac=shutil.which('javac')
+    if not javac:pytest.skip('CI supplies the JDK compiler')
+    s=JAVA.read_text()
+    body=s[s.index('    static final class Budget'):s.index('    private static String office')]
+    get=re.search(r'    private static Object get\(.*?\n    }',s,re.S).group()
+    cancel=s[s.index('    private static void checkCancelled'):s.index('    private static native void begin')]
+    source='import java.io.*;import java.nio.charset.*;import java.lang.reflect.*;\npublic class ReaderTest {\n'+get+cancel+body+'''
+    static String clean(String s){return s;}
+    static String read(byte[] b,int cap) throws Exception {return readText(new ByteArrayInputStream(b),new Budget(cap));}
+    private boolean abortRequested=true;
+    public static void main(String[] args)throws Exception {
+        assert read("ação 🌍".getBytes("UTF-8"),20).equals("ação 🌍");
+        assert read(new byte[]{(byte)255,(byte)254,65,0},2).equals("A");
+        assert read(new byte[]{(byte)254,(byte)255,0,65},2).equals("A");
+        assert read(new byte[0],0).equals("");
+        assert read("abc".getBytes("UTF-8"),3).equals("abc");
+        try{read("abcd".getBytes("UTF-8"),3);throw new AssertionError();}catch(IOException expected){}
+        try{read(new byte[]{65,0,66},9);throw new AssertionError();}catch(IOException expected){}
+        try{read(new byte[]{(byte)0xff,65},9);throw new AssertionError();}catch(IOException expected){}
+        Budget budget=new Budget(20);budget.owner=new ReaderTest();
+        try{readText(new ByteArrayInputStream("abc".getBytes("UTF-8")),budget);throw new AssertionError();}catch(InterruptedIOException expected){}
+        InputStream endless=new InputStream(){public int read(){return 'x';}public int read(byte[] b,int o,int n){java.util.Arrays.fill(b,o,o+n,(byte)'x');return n;}};
+        try{readText(endless,new Budget(131072));throw new AssertionError();}catch(IOException expected){}
+    }
+}'''
+    p=tmp_path/'ReaderTest.java';p.write_text(source)
+    subprocess.run([javac,'-encoding','UTF-8','-d',str(tmp_path),str(p)],check=True)
+    subprocess.run([str(jdk4py.JAVA_HOME/'bin/java'),'-Xmx32m','-ea','-cp',str(tmp_path),'ReaderTest'],check=True)

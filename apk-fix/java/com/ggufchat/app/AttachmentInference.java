@@ -24,34 +24,50 @@ import java.util.zip.*;
 public final class AttachmentInference {
     private static final String MARKER="<__media__>";
     private static final ThreadLocal<Plan> CURRENT=new ThreadLocal<>();
+    private static boolean cacheCleaned;
+    private static synchronized void cleanCache(Context c){
+        if(cacheCleaned)return;
+        File[] files=new File(c.getCacheDir(),"attachment-inference").listFiles();
+        if(files!=null)for(File f:files)if(f.getName().startsWith("media-")&&f.getName().endsWith(".png"))f.delete();
+        cacheCleaned=true;
+    }
     private static final class Plan {
         final ArrayList<String> images=new ArrayList<>();
         final ArrayList<File> temporary=new ArrayList<>();
-        long pixels;
+        long pixels;Object owner;
+        void check() throws IOException {checkCancelled(owner);}
         void close(){for(File f:temporary)f.delete();}
     }
     private static Object get(Object o,String field) throws Exception {
         Field f=o.getClass().getDeclaredField(field);f.setAccessible(true);return f.get(o);
     }
-    private static String clean(String s){return s==null?"":s.replace(MARKER,"< __media__ >");}
+    private static String clean(String s){return s==null?"":s.replace(MARKER,"< __media__ >").replace("<__image__>","< __image__ >");}
+    private static void checkCancelled(Object owner) throws IOException {
+        if(owner==null)return;
+        try{if(Boolean.TRUE.equals(get(owner,"abortRequested")))throw new InterruptedIOException("Leitura/geração cancelada");}
+        catch(ReflectiveOperationException ex){throw new IOException("Não foi possível verificar cancelamento",ex);}
+        catch(IOException ex){throw ex;}catch(Exception ex){throw new IOException(ex);}
+    }
+    private static native void begin(long handle);
     private static void release(){Plan old=CURRENT.get();CURRENT.remove();if(old!=null)old.close();}
     public static native boolean nativeGenerate(long h,String prompt,int predict,float temp,float topP,float topK,float minP,float repeat,int lastN,int seed,Object callback,String[] images);
-    public static boolean generate(long h,String prompt,int predict,float temp,float topP,float topK,float minP,float repeat,int lastN,int seed,Object callback) {
+    public static boolean generate(long h,String prompt,int predict,float temp,float topP,float topK,float minP,float repeat,int lastN,int seed,Object callback) throws IOException {
         Plan p=CURRENT.get();
-        try{return nativeGenerate(h,prompt,predict,temp,topP,topK,minP,repeat,lastN,seed,callback,p==null?new String[0]:p.images.toArray(new String[0]));}
+        try{if(p!=null)p.check();return nativeGenerate(h,prompt,predict,temp,topP,topK,minP,repeat,lastN,seed,callback,p==null?new String[0]:p.images.toArray(new String[0]));}
         finally{release();}
     }
     public static String identity(String s){return s;}
     public static String prepare(Context c,Object chat,long handle,List<String[]> original) throws Exception {
-        release();Plan p=new Plan();String chatId=(String)get(chat,"id");
+        release();cleanCache(c);Plan p=new Plan();p.owner=c;String chatId=(String)get(chat,"id");
         try {
+            begin(handle);p.check();
             ArrayList<String[]> rows=new ArrayList<>();
             for(String[] row:original)rows.add(new String[]{row[0],clean(row[1])});
             List<?> messages=(List<?>)get(chat,"messages");
             JSONArray items=AttachmentStore.read(c,chatId).getJSONArray("items");
             String projector=(String)get(chat,"mmprojPath");boolean vision=projector!=null&&!projector.isEmpty()&&!"null".equals(projector);
             int row=1; // PromptBuilder always begins with one system message.
-            Budget budget=new Budget(131072); // Processing safety budget, NOT an import limit. Overflow is an explicit error.
+            Budget budget=new Budget(131072);budget.owner=c; // Processing safety budget, NOT an import limit. Overflow is an explicit error.
             int read=0;
             for(int m=0;m<messages.size();m++) {
                 String role=(String)get(messages.get(m),"role");
@@ -83,14 +99,14 @@ public final class AttachmentInference {
             if(prompt==null)throw new IOException("Não foi possível formatar o conteúdo dos anexos");
             if(items.length()>0)AttachmentStore.error(c,chatId,"");
             android.util.Log.i("GGUFInference","GGUF_CONTENT_PREPARED files="+read+" images="+p.images.size()+" text_chars="+budget.used);
-            CURRENT.set(p);return prompt;
+            p.check();CURRENT.set(p);return prompt;
         }catch(Exception ex){p.close();try{AttachmentStore.error(c,chatId,ex.getMessage());}catch(Exception ignored){}throw ex;}
         catch(OutOfMemoryError ex){p.close();throw new IOException("Memória insuficiente para interpretar os anexos. Desative arquivos na lista; os originais permanecem guardados.");}
     }
     static final class Budget {
-        final int max;int used;
+        final int max;int used;Object owner;
         Budget(int max){this.max=max;}
-        void add(int n) throws IOException {if(n>max-used)throw new IOException("Documentos excedem o orçamento de leitura. Divida o conteúdo ou desative anexos; não houve corte silencioso");used+=n;}
+        void add(int n) throws IOException {checkCancelled(owner);if(n>max-used)throw new IOException("Documentos excedem o orçamento de leitura. Divida o conteúdo ou desative anexos; não houve corte silencioso");used+=n;}
     }
     static final class LimitedWriter extends Writer {
         final StringBuilder text=new StringBuilder();final Budget budget;
@@ -134,41 +150,46 @@ public final class AttachmentInference {
     }
     private static String pdf(Context c,File f,boolean vision,Plan plan,Budget budget) throws Exception {
         PDFBoxResourceLoader.init(c.getApplicationContext());
+        StringBuilder result=new StringBuilder();
         try(PDDocument doc=PDDocument.load(f,MemoryUsageSetting.setupTempFileOnly().setTempDir(c.getCacheDir()))) {
             if(doc.isEncrypted())throw new IOException("PDF protegido não suportado");
-            PDFTextStripper stripper=new PDFTextStripper();LimitedWriter text=new LimitedWriter(budget);
-            stripper.writeText(doc,text);
-            if(!text.toString().trim().isEmpty())return clean(text.toString());
-        }
-        if(!vision)throw new IOException("PDF sem camada de texto precisa de modelo com visão (páginas como imagens)");
-        StringBuilder result=new StringBuilder();
-        try(ParcelFileDescriptor fd=ParcelFileDescriptor.open(f,ParcelFileDescriptor.MODE_READ_ONLY);PdfRenderer renderer=new PdfRenderer(fd)) {
-            for(int i=0;i<renderer.getPageCount();i++)try(PdfRenderer.Page page=renderer.openPage(i)) {
-                double scale=Math.min(1.0,1024.0/Math.max(page.getWidth(),page.getHeight()));
-                int w=Math.max(1,(int)(page.getWidth()*scale)),h=Math.max(1,(int)(page.getHeight()*scale));
-                reserve(plan,w,h);Bitmap bitmap=Bitmap.createBitmap(w,h,Bitmap.Config.ARGB_8888);
-                try{bitmap.eraseColor(Color.WHITE);page.render(bitmap,null,null,PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);save(c,bitmap,plan);}
-                finally{bitmap.recycle();}
-                result.append("Página ").append(i+1).append(": ").append(MARKER).append('\n');
+            PDFTextStripper stripper=new PDFTextStripper();
+            for(int i=0;i<doc.getNumberOfPages();i++) {
+                plan.check();stripper.setStartPage(i+1);stripper.setEndPage(i+1);
+                LimitedWriter text=new LimitedWriter(budget);stripper.writeText(doc,text);
+                result.append("Página ").append(i+1).append(":\n");
+                if(!text.toString().trim().isEmpty())result.append(clean(text.toString()));
+                else {
+                    if(!vision)throw new IOException("Página "+(i+1)+" sem texto extraível: precisa de modelo com visão");
+                    try(ParcelFileDescriptor fd=ParcelFileDescriptor.open(f,ParcelFileDescriptor.MODE_READ_ONLY);PdfRenderer renderer=new PdfRenderer(fd);PdfRenderer.Page page=renderer.openPage(i)) {
+                        double scale=Math.min(1.0,1024.0/Math.max(page.getWidth(),page.getHeight()));
+                        int w=Math.max(1,(int)(page.getWidth()*scale)),h=Math.max(1,(int)(page.getHeight()*scale));
+                        reserve(plan,w,h);Bitmap bitmap=Bitmap.createBitmap(w,h,Bitmap.Config.ARGB_8888);
+                        try{bitmap.eraseColor(Color.WHITE);page.render(bitmap,null,null,PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);save(c,bitmap,plan);}
+                        finally{bitmap.recycle();}
+                        result.append(MARKER);
+                    }
+                }
+                result.append('\n');
             }
         }
         return result.toString();
     }
     private static void reserve(Plan p,int w,int h) throws IOException {
-        if(w<=0 || h<=0 || (p.pixels+=(long)w*h)>8L*1024*1024)throw new IOException("Imagens/páginas excedem o orçamento de pixels da inferência. Divida a análise ou desative anexos");
+        p.check();if(w<=0 || h<=0 || (p.pixels+=(long)w*h)>8L*1024*1024)throw new IOException("Imagens/páginas excedem o orçamento de pixels da inferência. Divida a análise ou desative anexos");
     }
     private static void save(Context c,Bitmap bitmap,Plan p) throws Exception {
         File dir=new File(c.getCacheDir(),"attachment-inference");if(!dir.isDirectory()&&!dir.mkdirs())throw new IOException("Sem espaço para preparar imagem");
         File f=File.createTempFile("media-",".png",dir);p.temporary.add(f);
         try(FileOutputStream out=new FileOutputStream(f)){if(!bitmap.compress(Bitmap.CompressFormat.PNG,100,out))throw new IOException("Falha ao preparar pixels");}
-        p.images.add(f.getAbsolutePath());
+        p.check();p.images.add(f.getAbsolutePath());
     }
     private static String image(Context c,File f,Plan p) throws Exception {
         BitmapFactory.Options opts=new BitmapFactory.Options();opts.inJustDecodeBounds=true;BitmapFactory.decodeFile(f.getAbsolutePath(),opts);
         if(opts.outWidth<=0||opts.outHeight<=0)throw new IOException("Imagem inválida ou formato não decodificável no Android");
         int originalWidth=opts.outWidth,originalHeight=opts.outHeight;opts.inSampleSize=1;
         while(Math.max(originalWidth,originalHeight)/opts.inSampleSize>1024)opts.inSampleSize*=2;
-        reserve(p,Math.max(1,originalWidth/opts.inSampleSize),Math.max(1,originalHeight/opts.inSampleSize));
+        reserve(p,Math.max(1,(originalWidth+opts.inSampleSize-1)/opts.inSampleSize),Math.max(1,(originalHeight+opts.inSampleSize-1)/opts.inSampleSize));
         opts.inJustDecodeBounds=false;opts.inPreferredConfig=Bitmap.Config.ARGB_8888;
         Bitmap bitmap=BitmapFactory.decodeFile(f.getAbsolutePath(),opts);if(bitmap==null)throw new IOException("Não foi possível decodificar a imagem");
         try {

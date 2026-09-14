@@ -46,13 +46,21 @@ jobs:
           mkdir -p .cache/vulkan-headers
           cp -r /usr/include/vulkan .cache/vulkan-headers/
           if [ -d /usr/include/vk_video ]; then cp -r /usr/include/vk_video .cache/vulkan-headers/; fi
+      - uses: actions/cache@v4
+        with:
+          path: |
+            .cache/llama-mobile
+            .cache/mobile/arm64-v8a
+            .cache/mobile/x86_64
+          key: native-b6500-ndk28-v2-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: native-b6500-ndk28-v2-${{ runner.os }}-
       - name: Compile real native stack and compact UI
         env:
           APKTOOL_JAR: .cache/tools/package/lib/apktool.jar
           GGUF_REUSE_TESTED_NATIVE: '0'
         run: bash ci/log_step.sh mobile-build python3 apk-fix/build_mobile.py
       - name: Existing regressions
-        run: bash ci/log_step.sh tooling .venv/bin/python -m pytest -q tests/test_tooling.py tests/test_mobile_build.py tests/test_unified.py tests/test_attachments.py
+        run: bash ci/log_step.sh tooling .venv/bin/python -m pytest -q tests/test_tooling.py tests/test_mobile_build.py tests/test_unified.py tests/test_attachments.py tests/test_inference.py
       - name: Relay unsigned build for private local signing
         run: |
           mkdir -p .delivery
@@ -89,6 +97,7 @@ jobs:
         run: bash ci/prepare_vulkan.sh
       - uses: reactivecircus/android-emulator-runner@v2
         env:
+          GH_TOKEN: ${{ github.token }}
           GGUF_MOBILE_VULKAN: ${{ contains(github.event.head_commit.message, '[vulkan test]') && '1' || '0' }}
         with:
           api-level: 35
@@ -100,7 +109,7 @@ jobs:
           disk-size: 8192M
           disable-animations: true
           emulator-options: -no-window -no-snapshot -gpu ${{ contains(github.event.head_commit.message, '[vulkan test]') && 'host' || 'swiftshader_indirect' }} -feature Vulkan -noaudio -no-boot-anim -camera-back emulated -camera-front emulated
-          script: python3 scripts/test_mobile.py && python3 scripts/test_attachment_android.py
+          script: python3 scripts/test_mobile.py && python3 scripts/test_attachment_android.py && python3 scripts/test_inference_android.py
       - name: Report
         if: always()
         run: python3 ci/report_android.py evidence

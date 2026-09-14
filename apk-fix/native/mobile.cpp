@@ -187,7 +187,7 @@ extern "C" JNIEXPORT jstring JNICALL Java_com_ggufchat_app_Native_detokenize(JNI
     try {std::vector<jint> t(env->GetArrayLength(ids));env->GetIntArrayRegion(ids,0,t.size(),t.data());std::string s;for(auto id:t)s+=piece(llama_model_get_vocab(e->model),id);return java_string(env,s);}catch(...){return nullptr;}
 }
 static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat temp,jfloat top_p,jfloat top_k,jfloat min_p,jfloat repeat,jint last_n,jint seed,jobject callback,jobjectArray images) {
-    auto e=get(h);if(!e)return false; std::lock_guard<std::mutex> lock(e->mutex); e->cancel=false;e->error.clear();
+    auto e=get(h);if(!e)return false; std::lock_guard<std::mutex> lock(e->mutex); if(!images)e->cancel=false;e->error.clear();
     jmethodID on_token=nullptr,on_done=nullptr; jclass clazz=nullptr;
     bool ok=false;
     try {
@@ -264,6 +264,9 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
 }
 extern "C" JNIEXPORT jboolean JNICALL Java_com_ggufchat_app_Native_generate(JNIEnv *env,jclass,jlong h,jstring prompt,jint predict,jfloat temp,jfloat top_p,jfloat top_k,jfloat min_p,jfloat repeat,jint last_n,jint seed,jobject callback) {
     return generate(env,h,prompt,predict,temp,top_p,top_k,min_p,repeat,last_n,seed,callback,nullptr);
+}
+extern "C" JNIEXPORT void JNICALL Java_com_ggufchat_app_AttachmentInference_begin(JNIEnv*,jclass,jlong h) {
+    auto e=get(h);if(e)e->cancel=false;
 }
 extern "C" JNIEXPORT jboolean JNICALL Java_com_ggufchat_app_AttachmentInference_nativeGenerate(JNIEnv *env,jclass,jlong h,jstring prompt,jint predict,jfloat temp,jfloat top_p,jfloat top_k,jfloat min_p,jfloat repeat,jint last_n,jint seed,jobject callback,jobjectArray images) {
     return generate(env,h,prompt,predict,temp,top_p,top_k,min_p,repeat,last_n,seed,callback,images);
