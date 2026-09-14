@@ -1,3 +1,25 @@
+# GGUF Chat — GGUF físico único e prompts de sistema
+
+**Nova revisão: aceitação funcional Android PASS; assinatura de atualização pendente, conforme autorizado.**
+
+- Selecionar linguagem + projetor compatível agora produz **um único arquivo GGUF**, não dois arquivos sob um cartão. Metadados e offsets são reescritos e os tensores preservados.
+- Multimodalidade identificada por parâmetros e tensores; tokens de imagem e nomes como `mmproj` não bastam para habilitar visão.
+- Importação de **GGUF único completo** no layout de visão suportado pelo motor. Testada com pesos reais em arquivo escrito independentemente do app; não foi encontrado um exemplo público pronto/unificado verificável entre os examinados.
+- **Prompts de sistema:** padrão global, substituição por conversa, edição, presets e persistência. Tela principal → “Prompt de sistema global”; ferramentas da conversa → “Sistema”.
+
+**Testes:** [34871626419 — PASS funcional](https://github.com/Enzo-cyber2025/5/actions/runs/34871626419). 471 tensores comparados, um arquivo privado, reinício, visão com linguagem/projetor no mesmo GGUF, importação única, nome enganoso, prompts e regressões de anexos. Vulkan por software no emulador, não GPU física. Também passaram 122 testes de ferramentas/Java, 39 regressões DEX→JVM e 14 verificações do leitor/unificador a partir do APK.
+
+**Limitação real:** a nova instrução por conversa foi persistida e aplicada, mas o modelo pequeno repetiu o código antigo. Esse teste semântico ficou **FAIL**. Há também respostas longas com detalhes inventados; não se aprova qualidade geral pelo PASS funcional.
+
+**Arquivo compilado:** `.delivery/GGUF-Chat-mobile-unsigned.apk` (21.724.952 bytes), sem assinatura. **Ainda não instala. Não desinstale o app atual.** Não foi gerada outra chave fixa; recuperar a chave anterior é necessário para assinar a atualização.
+
+SHA-256 unsigned: `93ddb8a94c35bebce45db4c0bfcc2517895f4573701c363c30f402427151111c`.
+
+[Relatório, limitações e capturas](docs/PHYSICAL_GGUF.md) · [Resumo integral](ci-results/34871626419-1/summary.json) · [Proveniência do APK](.delivery/mobile-physical-validation.json)
+
+<details>
+<summary>Última versão assinada anterior — NÃO contém GGUF físico único nem prompts editáveis</summary>
+
 # GGUF Chat — leitura real de documentos e imagens
 
 ## [Baixar APK diretamente — sem ZIP](https://github.com/Enzo-cyber2025/5/releases/download/gguf-inference-e37df03/GGUF-Chat-mobile.apk)
@@ -200,5 +222,7 @@ também publica apenas resumos/capturas limitados em `ci-results/` **nesta mesma
 com `[skip ci]` para evitar repetição automática. Sem force-push nem outras branches.
 O workflow antigo do repositório não foi alterado; o erro histórico dos pontos em
 `timeout-minutes` já estava resolvido.
+
+</details>
 
 </details>

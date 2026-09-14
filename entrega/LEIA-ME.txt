@@ -1,28 +1,25 @@
-APK — LEITURA REAL DE DOCUMENTOS E IMAGENS (SEM ZIP)
-https://github.com/Enzo-cyber2025/5/releases/download/gguf-inference-e37df03/GGUF-Chat-mobile.apk
+NOVA REVISÃO — GGUF FÍSICO ÚNICO E PROMPTS DE SISTEMA
 
-SHA-256: 3d17116aac387bbda402ddad2f7dc19b42115eec33d7ec89f7c20dde9a87f2c9
-21.717.999 bytes. Android 9+; ARM64 e x86_64. Modelos não incluídos.
-Certificado SHA-256: 35a93f1428120a740adbe95be2621ee9b03fe4342aa363814bdfea0acb2cf7cf
+Arquivo: .delivery/GGUF-Chat-mobile-unsigned.apk
+21.724.952 bytes; Android 9+, ARM64 e x86_64. Modelos não incluídos.
+SHA-256: 93ddb8a94c35bebce45db4c0bfcc2517895f4573701c363c30f402427151111c
 
-Pixels das fotos chegam ao projetor e ao modelo de visão, não só seus nomes.
-TXT/outros textos válidos, PDF e texto principal DOCX/ODT entram na geração.
-PDF sem texto precisa de visão. Fotos precisam de GGUF + mmproj compatíveis.
-Câmera/clipe, múltiplos anexos, persistência, par único e Vulkan preservados.
-Desativar leitura permite recuperar conversas após erro sem apagar o arquivo.
+SEM ASSINATURA: NÃO INSTALA AINDA. Não desinstale a versão atual.
+O usuário escolheu avançar sem criar outra chave fixa. A assinatura da atualização
+aguarda recuperar o backup privado da chave anterior. A CI utilizou uma cópia
+assinada com chave descartável apenas para testar no emulador.
 
-Aceitação FUNCIONAL PASS: https://github.com/Enzo-cyber2025/5/actions/runs/34848915081
-Vulkan/câmera por emulador, não GPU/sensor físico. ODT sem teste semântico dedicado.
-Qualidade geral NÃO aprovada: modelos pequenos inventaram detalhes e repetiram
-instruções. Saudação falhou; outra só passou no regex por repetir a pergunta.
+Linguagem + projetor selecionados juntos viram um único GGUF físico.
+Metadados/tensores analisados; nome e tokens de imagem não bastam para visão.
+GGUF único completo no layout suportado também pode ser importado sozinho.
+Prompts: botão global na tela principal; ferramentas -> Sistema na conversa.
 
-Importação sem cota artificial; sujeita ao Android/provedor/espaço.
-Inferência: 131.072 caracteres, 8 MP preparados, contexto até 8.192 tokens.
-Imagens até 1.024px no maior lado. Excesso dá erro, não truncamento silencioso.
-Sem interpretação de áudio/vídeo, compactados genéricos, Office antigo,
-planilhas/apresentações e outros binários. Limitações PDF/Office no relatório.
+Aceitação FUNCIONAL PASS: https://github.com/Enzo-cyber2025/5/actions/runs/34871626419
+471 tensores preservados, um arquivo privado, inferência visual, persistência,
+identificação, edição dos prompts e regressões de anexos.
+Vulkan por software, não GPU física. Qualidade geral NÃO aprovada: modelo pequeno
+repetiu o código antigo após mudar o prompt da conversa, apesar de receber a nova
+instrução. Respostas longas também podem inventar detalhes.
 
-NOVA CHAVE AUTORIZADA: não instala sobre as versões anteriores.
-Salve conversas/anexos e originais dos modelos FORA do app antes de desinstalar.
-O backup privado da chave já apresentado NÃO salva os dados do aplicativo.
-Detalhes, respostas reais e capturas: docs/INFERENCE.md.
+A release assinada anterior gguf-inference-e37df03 NÃO contém estas novidades.
+Detalhes e capturas: docs/PHYSICAL_GGUF.md.

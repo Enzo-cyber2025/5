@@ -1,0 +1,26 @@
+{
+  "status": "FUNCTIONAL_PASS_UPDATE_SIGNING_PENDING",
+  "source_commit": "4fa8dbca578a70df91798c3b80b24d66f6c485f0",
+  "unsigned_apk_sha256": "93ddb8a94c35bebce45db4c0bfcc2517895f4573701c363c30f402427151111c",
+  "unsigned_apk_size": 21724952,
+  "emulator_test_apk_sha256": "09c48dba831f613554a1bb101bc62bf41c346d748c61a7cb59c7f6e2a741b1ca",
+  "test_signature": "Ephemeral emulator-only key, not an update key and not delivered",
+  "android_run": 34871626419,
+  "evidence": "ci-results/34871626419-1/summary.json",
+  "tooling_java_tests_passed": 122,
+  "apk_jvm_classes": 6792,
+  "apk_jvm_translation_errors": 0,
+  "apk_jvm_regressions_passed": 39,
+  "apk_gguf_reader_checks_passed": 14,
+  "system_response_quality": {
+    "system-global": {
+      "status": "PASS",
+      "response": "The reference code is \"ORCHID-5291\"."
+    },
+    "system-chat": {
+      "status": "FAIL",
+      "response": "The reference code is \"ORCHID-5291\"."
+    }
+  },
+  "quality_limitations": "Chat override was persisted and applied but the 135M model repeated the old code: FAIL. Document and multi-image replies can invent details. Functional PASS is not general response-quality approval."
+}
