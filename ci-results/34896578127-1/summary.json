@@ -1,0 +1,42 @@
+{
+  "status": "PASS",
+  "scope": "standalone-500m-clean-install-no-sidecar",
+  "apk_sha256": "4d1697c2ee9b80ba38a03ee78ab0241dc8aa3d5464c956707e2412be70b11ce6",
+  "environment": "Android emulator, Mesa software Vulkan; exact delivery signature",
+  "checks": {
+    "single_SAF_import_intrinsic_vision_no_pair_no_sidecar": "PASS",
+    "standalone-animal_native_inference": "PASS",
+    "standalone-vehicle_native_inference": "PASS",
+    "standalone-restart_native_inference": "PASS",
+    "restart_same_single_file_and_image_history": "PASS",
+    "standalone-text_native_inference": "PASS",
+    "image_inference": "PASS"
+  },
+  "response_quality": {
+    "standalone-animal": {
+      "status": "PASS",
+      "criterion": "Expected object/answer match, not general accuracy",
+      "response": " Dog."
+    },
+    "standalone-vehicle": {
+      "status": "PASS",
+      "criterion": "Expected object/answer match, not general accuracy",
+      "response": " Bus."
+    },
+    "standalone-restart": {
+      "status": "PASS",
+      "criterion": "Expected object/answer match, not general accuracy",
+      "response": " Bus."
+    },
+    "standalone-text": {
+      "status": "PASS",
+      "criterion": "Expected object/answer match, not general accuracy",
+      "response": " 4."
+    }
+  },
+  "fixture_origin": "Real SmolVLM-500M weights packaged by upstream GGUFWriter outside the app; not a public pre-unified download",
+  "single_gguf_sha256": "23180f3b1854828fcf8e89acd8660045d0841163b08abdd17c216c05e648080c",
+  "single_gguf_size": 545588736,
+  "tensor_count": 489,
+  "quality_limitations": "Object/answer matches are recorded separately. Read unedited replies; no general response-quality approval."
+}
