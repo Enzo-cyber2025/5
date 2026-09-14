@@ -1,21 +1,23 @@
-# GGUF Chat — GGUF físico único e prompts de sistema
+# GGUF Chat — APK assinado, GGUF físico único e prompts
 
-**Nova revisão: aceitação funcional Android PASS; assinatura de atualização pendente, conforme autorizado.**
+## [Baixar APK diretamente — sem ZIP](https://github.com/Enzo-cyber2025/5/releases/download/gguf-physical-4fa8dbc/GGUF-Chat-mobile.apk)
 
-- Selecionar linguagem + projetor compatível agora produz **um único arquivo GGUF**, não dois arquivos sob um cartão. Metadados e offsets são reescritos e os tensores preservados.
-- Multimodalidade identificada por parâmetros e tensores; tokens de imagem e nomes como `mmproj` não bastam para habilitar visão.
-- Importação de **GGUF único completo** no layout de visão suportado pelo motor. Testada com pesos reais em arquivo escrito independentemente do app; não foi encontrado um exemplo público pronto/unificado verificável entre os examinados.
-- **Prompts de sistema:** padrão global, substituição por conversa, edição, presets e persistência. Tela principal → “Prompt de sistema global”; ferramentas da conversa → “Sistema”.
+**21.730.287 bytes · Android 9+ · ARM64 e x86_64 · modelos não incluídos.**
 
-**Testes:** [34871626419 — PASS funcional](https://github.com/Enzo-cyber2025/5/actions/runs/34871626419). 471 tensores comparados, um arquivo privado, reinício, visão com linguagem/projetor no mesmo GGUF, importação única, nome enganoso, prompts e regressões de anexos. Vulkan por software no emulador, não GPU física. Também passaram 122 testes de ferramentas/Java, 39 regressões DEX→JVM e 14 verificações do leitor/unificador a partir do APK.
+**Assinado com nova chave autorizada e executado no Android: PASS funcional.** O teste utilizou exatamente os bytes assinados desta entrega, sem chave descartável intermediária.
 
-**Limitação real:** a nova instrução por conversa foi persistida e aplicada, mas o modelo pequeno repetiu o código antigo. Esse teste semântico ficou **FAIL**. Há também respostas longas com detalhes inventados; não se aprova qualidade geral pelo PASS funcional.
+- Linguagem + projetor compatível → **um único GGUF físico**, não dois arquivos sob um cartão. Auditoria independente dos **471 tensores: PASS**.
+- Identificação por parâmetros/tensores, não por nome ou apenas tokens de imagem. GGUF completo no layout suportado também pode ser importado sozinho.
+- Visão real: reconheceu cão e ônibus. TXT/PDF/DOCX: leu os códigos presentes nos arquivos. Fotos múltiplas, duas capturas pela câmera do emulador, reinício, remoção e erros explícitos passaram.
+- Prompts globais e por conversa: editar, cancelar/restaurar, persistir e aplicar na geração. Tela principal → “Prompt de sistema global”; ferramentas da conversa → “Sistema”.
 
-**Arquivo compilado:** `.delivery/GGUF-Chat-mobile-unsigned.apk` (21.724.952 bytes), sem assinatura. **Ainda não instala. Não desinstale o app atual.** Não foi gerada outra chave fixa; recuperar a chave anterior é necessário para assinar a atualização.
+**Limitações reais:** o modelo pequeno repetiu o código antigo mesmo recebendo a nova instrução por conversa (**FAIL semântico**); inventou páginas/detalhes/anexo em respostas longas e falhou uma saudação. Não se aprova qualidade geral pelo PASS funcional. Vulkan por software no emulador, não GPU física. Importação externa foi testada com GGUFWriter upstream e pesos reais, não com um download público já unificado encontrado pronto. Leitura não interpreta qualquer formato; limites e formatos não suportados estão no relatório.
 
-SHA-256 unsigned: `93ddb8a94c35bebce45db4c0bfcc2517895f4573701c363c30f402427151111c`.
+**Assinatura diferente da versão anterior:** salve conversas, anexos e originais dos modelos **fora do app antes de desinstalar** a versão antiga. Desinstalar apaga os dados privados. O backup da nova chave, fornecido separadamente, não é backup dos dados do app; guarde-o para futuras atualizações com a mesma assinatura.
 
-[Relatório, limitações e capturas](docs/PHYSICAL_GGUF.md) · [Resumo integral](ci-results/34871626419-1/summary.json) · [Proveniência do APK](.delivery/mobile-physical-validation.json)
+SHA-256: `4d1697c2ee9b80ba38a03ee78ab0241dc8aa3d5464c956707e2412be70b11ce6`.
+
+[Teste Android 34892580054 — concluído](https://github.com/Enzo-cyber2025/5/actions/runs/34892580054) · [Relatório da entrega assinada e capturas](docs/SIGNED_PHYSICAL.md) · [Implementação e histórico](docs/PHYSICAL_GGUF.md) · [Resumo integral](ci-results/34892580054-1/summary.json) · [Proveniência](.delivery/mobile-physical-validation.json)
 
 <details>
 <summary>Última versão assinada anterior — NÃO contém GGUF físico único nem prompts editáveis</summary>

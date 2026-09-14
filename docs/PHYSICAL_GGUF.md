@@ -2,9 +2,9 @@
 
 ## Estado
 
-**Implementado e aceitação funcional Android PASS. Qualidade geral das respostas não aprovada. Não há nova assinatura de atualização**. O usuário escolheu avançar com compilação/testes e deixar essa assinatura pendente até recuperar o backup privado já fornecido. Não foi criada outra chave fixa. Android exige assinatura para instalar: a CI usa uma chave descartável exclusivamente no emulador, nunca publicada como chave de atualização.
+**Revalidação do APK assinado: PASS funcional na execução 34892580054. Qualidade geral das respostas não aprovada.** Após a entrega unsigned anterior, o usuário autorizou qualquer assinatura; foi criada uma nova chave persistente, cujo backup privado foi fornecido separadamente. O Android desta rodada executou os bytes exatos do APK assinado de entrega, não uma assinatura descartável. [Relatório atual, arquivo instalável e capturas](SIGNED_PHYSICAL.md).
 
-O APK da release `gguf-inference-e37df03` é a versão anterior, não contém estas alterações.
+A nova release é `gguf-physical-4fa8dbc`. A release `gguf-inference-e37df03` é anterior e não contém estas alterações. Os resultados abaixo documentam a implementação e as rodadas históricas; os da assinatura atual estão no relatório acima.
 
 ## Unificação física
 
@@ -75,10 +75,10 @@ Execução [34870246962](https://github.com/Enzo-cyber2025/5/actions/runs/348702
 
 [Auditoria dos 471 tensores](../ci-results/34870246962-1/physical-tensor-proof.json) · [Resumo original](../ci-results/34870246962-1/summary.json).
 
-Rodada final: [34871626419 — PASS funcional](https://github.com/Enzo-cyber2025/5/actions/runs/34871626419). O APK mudou após a evidência anterior e foi novamente compilado e testado. Resultados abaixo.
+Rodada anterior com assinatura descartável: [34871626419 — PASS funcional](https://github.com/Enzo-cyber2025/5/actions/runs/34871626419). O APK mudou após a evidência anterior e foi novamente compilado e testado. Resultados abaixo.
 
 
-### Regressões do APK final já concluídas
+### Regressões da compilação original
 
 Revisão `4fa8dbca578a70df91798c3b80b24d66f6c485f0`, APK sem assinatura **21.724.952 bytes**, SHA-256 `93ddb8a94c35bebce45db4c0bfcc2517895f4573701c363c30f402427151111c`:
 
@@ -88,7 +88,7 @@ Revisão `4fa8dbca578a70df91798c3b80b24d66f6c485f0`, APK sem assinatura **21.724
 - Os mesmos 39 + 14 testes passaram também localmente. O primeiro ensaio JVM do candidato anterior encontrou limitações dos doubles Android/JSON e do tradutor com método estático de interface; a serialização foi isolada da UI, o double JSON ganhou os métodos padrão e o comparador passou a ser explícito. Não se tratou esses erros de infraestrutura como sucesso.
 
 
-## Resultado Android final
+## Resultado Android anterior (assinatura descartável)
 
 Todas as oito verificações funcionais de unificação/parâmetros/prompts passaram, além das regressões de câmera/SAF/anexos e leitura real de documentos/imagens:
 
@@ -108,8 +108,8 @@ Continuam as limitações de qualidade vistas antes: documentos com códigos cor
 
 **Capturas reais:** [um GGUF na biblioteca](../ci-results/34871626419-1/physical-one-file.png), [modelo normal sem olho](../ci-results/34871626419-1/physical-normal-no-eye.png), [prompt da conversa](../ci-results/34871626419-1/system-chat-editor.png), [prompt global](../ci-results/34871626419-1/system-global-editor.png), [visão com arquivo único externo](../ci-results/34871626419-1/inference-external-single-file.png).
 
-## Arquivo compilado entregue
+## Entrega anterior sem assinatura (histórico)
 
-`.delivery/GGUF-Chat-mobile-unsigned.apk` — **sem assinatura, não instalável ainda**. Não desinstale a versão atual para tentar instalá-lo. Nenhuma chave fixa foi trocada e nenhuma release assinada nova foi publicada.
+A entrega anterior foi `.delivery/GGUF-Chat-mobile-unsigned.apk`, sem assinatura e não instalável. Naquela etapa o usuário havia escolhido aguardar a chave anterior, e não foi criada outra chave fixa.
 
-O Android foi exercitado com uma cópia assinada apenas para o emulador, SHA-256 `09c48dba831f613554a1bb101bc62bf41c346d748c61a7cb59c7f6e2a741b1ca`. Esse não é o hash do arquivo unsigned entregue. [Proveniência e estado da assinatura](../.delivery/mobile-physical-validation.json). A próxima assinatura de atualização depende de recuperar a chave anterior; a aprovação aqui não inclui uma atualização assinada instalável.
+A cópia testada apenas no emulador tinha SHA-256 `09c48dba831f613554a1bb101bc62bf41c346d748c61a7cb59c7f6e2a741b1ca`; não era o arquivo unsigned entregue. **Essa pendência foi superada pela autorização posterior de uma nova assinatura**, seguida da execução completa 34892580054 nos bytes assinados de entrega. Não confunda esses hashes/rodadas. A nova chave não permite atualizar por cima de um APK com certificado diferente. [Entrega assinada atual](SIGNED_PHYSICAL.md).
