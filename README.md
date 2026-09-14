@@ -11,6 +11,8 @@
 - Visão real: reconheceu cão e ônibus. TXT/PDF/DOCX: leu os códigos presentes nos arquivos. Fotos múltiplas, duas capturas pela câmera do emulador, reinício, remoção e erros explícitos passaram.
 - Prompts globais e por conversa: editar, cancelar/restaurar, persistir e aplicar na geração. Tela principal → “Prompt de sistema global”; ferramentas da conversa → “Sistema”.
 
+**Teste isolado adicional:** SmolVLM-500M em um único GGUF completo, preparado fora do app; Android limpo, sem importação de par e sem projetor externo. 489 tensores, cão/ônibus, texto e reinício passaram. Não é um download originalmente publicado já unificado. [Resultado e capturas](docs/STANDALONE_500M.md).
+
 **Limitações reais:** o modelo pequeno repetiu o código antigo mesmo recebendo a nova instrução por conversa (**FAIL semântico**); inventou páginas/detalhes/anexo em respostas longas e falhou uma saudação. Não se aprova qualidade geral pelo PASS funcional. Vulkan por software no emulador, não GPU física. Importação externa foi testada com GGUFWriter upstream e pesos reais, não com um download público já unificado encontrado pronto. Leitura não interpreta qualquer formato; limites e formatos não suportados estão no relatório.
 
 **Assinatura diferente da versão anterior:** salve conversas, anexos e originais dos modelos **fora do app antes de desinstalar** a versão antiga. Desinstalar apaga os dados privados. O backup da nova chave, fornecido separadamente, não é backup dos dados do app; guarde-o para futuras atualizações com a mesma assinatura.

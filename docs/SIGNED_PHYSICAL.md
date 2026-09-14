@@ -77,3 +77,7 @@ Detalhes de implementação e resultados anteriores: `docs/PHYSICAL_GGUF.md`. A 
 A primeira publicação (34895466180) foi bloqueada com HTTP 403 ao criar a release apontando ao commit antigo de compilação. O publicador passou a marcar o commit atual de publicação; fonte compilada, hash do APK, assinatura e teste aceito continuaram fixados e inalterados. A nova execução 34895580156 publicou e verificou o download com sucesso.
 
 Um fluxo legado de reparo (34895466148), disparado pelo commit de documentação sem o marcador de entrega, falhou na preparação `android-actions/setup-android@v3`, antes de recompilar. Ele não forneceu nem substituiu este APK. Os commits seguintes usam `[apk delivery]` e dispensam esse fluxo legado; a aceitação válida é a execução assinada 34892580054.
+
+## Teste posterior de outro modelo, sem projetor externo
+
+O mesmo APK passou no teste isolado [34896578127](https://github.com/Enzo-cyber2025/5/actions/runs/34896578127) com SmolVLM-500M em um único GGUF completo preparado fora do app. Android limpo, 489 tensores, nenhum par importado, nenhuma dependência de mmproj separado: cão, ônibus, reinício e texto passaram. Não é um download originalmente distribuído unificado; não altera as falhas semânticas dos modelos/testes anteriores. [Relatório e capturas](STANDALONE_500M.md).
