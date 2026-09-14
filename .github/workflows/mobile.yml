@@ -34,7 +34,16 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
+      - name: Use the Android SDK already installed on the hosted runner
+        run: |
+          test -d "$ANDROID_HOME"
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
+          # Avoid the failing setup action; accept licenses on the existing SDK.
+          set +o pipefail
+          yes | "$SDKMANAGER" --licenses > /tmp/android-licenses.log
+          set -o pipefail
       - name: Pinned tools and source APK
         env:
           GH_TOKEN: ${{ github.token }}
