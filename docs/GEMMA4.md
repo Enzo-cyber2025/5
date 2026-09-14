@@ -4,6 +4,8 @@
 
 ## [Baixar APK diretamente — sem ZIP](https://github.com/Enzo-cyber2025/5/releases/download/gguf-gemma4-ca7d8f1/GGUF-Chat-mobile.apk)
 
+**Publicação verificada:** [execução 34909764328](https://github.com/Enzo-cyber2025/5/actions/runs/34909764328), PASS. Assinatura criptográfica conferida novamente; a CI baixou o APK público sem autenticação e confirmou bytes idênticos ao APK testado. O tamanho e o hash do asset também foram conferidos pela API do GitHub.
+
 ## Correção
 
 - Motor nativo atualizado para llama.cpp **v0.4.1**, commit `b29c606e28a01b1bc8c1351026a0fa6e616bf6c4`, com suporte de linguagem/visão Gemma 4 e aplicação do template Jinja. O b6500 anterior não foi presumido compatível.
