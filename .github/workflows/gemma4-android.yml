@@ -1,0 +1,84 @@
+name: Signed Gemma 4 and regression acceptance
+on:
+  push:
+    branches: [arena/01a09b42-5]
+    paths: ['ci/gemma4-candidate.json', '.github/workflows/gemma4-android.yml']
+permissions:
+  contents: write
+  actions: read
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [gemma4, regression]
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify signed candidate and prepare independent reader
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install numpy==2.2.6 tqdm==4.67.1 pyyaml==6.0.2
+          git clone --depth 1 --branch v0.4.1 https://github.com/ggml-org/llama.cpp .cache/llama-mobile
+          test "$(git -C .cache/llama-mobile rev-parse HEAD)" = b29c606e28a01b1bc8c1351026a0fa6e616bf6c4
+          python3 ci/verify_gemma4_candidate.py
+      - name: Download real fixture weights
+        env:
+          SUITE: ${{ matrix.suite }}
+        run: |
+          if [ "$SUITE" = gemma4 ]; then
+            bash ci/log_step.sh gemma4-download bash ci/gemma4-models.sh
+            curl --fail --location --retry 3 --max-time 300 'https://github.com/Enzo-cyber2025/5/releases/download/gguf-physical-4fa8dbc/GGUF-Chat-mobile.apk' -o .cache/previous-physical.apk
+          else
+            bash ci/mobile-models.sh
+          fi
+      - name: KVM and software Vulkan
+        run: |
+          sudo chmod a+rw /dev/kvm
+          bash ci/prepare_vulkan.sh
+      - name: Disposable host swap for the larger Gemma guest, not a physical-device claim
+        if: matrix.suite == 'gemma4'
+        run: |
+          sudo fallocate -l 8G /mnt/gguf-gemma-swap
+          sudo chmod 600 /mnt/gguf-gemma-swap
+          sudo mkswap /mnt/gguf-gemma-swap
+          sudo swapon /mnt/gguf-gemma-swap
+          free -h
+      - uses: reactivecircus/android-emulator-runner@v2
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GGUF_MOBILE_VULKAN: '1'
+          GGUF_SIGNATURE_SCOPE: 'same delivery certificate; exact Gemma4 signed candidate'
+          GGUF_TEST_APK: .delivery/GGUF-Chat-mobile.apk
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_5
+          ram-size: ${{ matrix.suite == 'gemma4' && '12288M' || '6144M' }}
+          heap-size: 1024M
+          disk-size: ${{ matrix.suite == 'gemma4' && '16384M' || '8192M' }}
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -gpu host -feature Vulkan -noaudio -no-boot-anim -camera-back emulated -camera-front emulated
+          script: ${{ matrix.suite == 'gemma4' && '.venv/bin/python scripts/test_gemma4_android.py' || '.venv/bin/python scripts/test_physical_android.py && .venv/bin/python scripts/test_attachment_android.py && .venv/bin/python scripts/test_inference_android.py' }}
+      - name: Report
+        if: always()
+        run: python3 ci/report_android.py evidence
+      - name: Publish bounded evidence under suite-specific path
+        if: always()
+        env:
+          SUITE: ${{ matrix.suite }}
+        run: |
+          # Separate matrix reports while preserving the run URL and original report format.
+          GITHUB_RUN_ATTEMPT="${GITHUB_RUN_ATTEMPT}-${SUITE}" bash ci/publish_evidence.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gemma4-${{ matrix.suite }}-evidence
+          path: |
+            evidence/
+            .cache/ci-logs/

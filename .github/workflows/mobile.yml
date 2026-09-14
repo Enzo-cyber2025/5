@@ -141,7 +141,7 @@ jobs:
             .cache/ci-logs/
             evidence/
   test:
-    if: ${{ contains(github.event.head_commit.message, '[signed mobile]') }}
+    if: ${{ contains(github.event.head_commit.message, '[signed mobile]') && !contains(github.event.head_commit.message, '[gemma4 delivery]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
