@@ -54,7 +54,7 @@ def main():
     summary={'status':'FAIL','scope':'physical-GGUF-parameters-system-prompts','apk_sha256':hashlib.sha256(APK.read_bytes()).hexdigest(),'checks':{},'physical_checks':{},'environment':'Android emulator, Mesa software Vulkan; '+os.environ.get('GGUF_SIGNATURE_SCOPE','test-only ephemeral signature')};checks=summary['physical_checks']
     try:
         assert d.shell('getprop ro.kernel.qemu')=='1';d.adb('root',check=False);d.adb('wait-for-device',timeout=60)
-        d.shell('wm size 720x1280');d.shell('wm density 240');d.adb('logcat','-G','16M');d.shell('setprop debug.gguf.vulkan_device 0')
+        d.shell('pm disable-user --user 0 com.google.android.apps.nexuslauncher',check=False);d.shell('wm size 720x1280');d.shell('wm density 240');d.adb('logcat','-G','16M');d.shell('setprop debug.gguf.vulkan_device 0')
         d.adb('install','-r','-g',APK,timeout=180);assert d.shell('pm clear '+PACKAGE)=='Success'
         d.grant_test_notifications();d.launch()
         d.shell('mkdir -p /sdcard/Download')

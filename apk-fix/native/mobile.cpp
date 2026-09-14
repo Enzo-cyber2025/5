@@ -213,6 +213,14 @@ extern "C" JNIEXPORT jstring JNICALL Java_com_ggufchat_app_Native_detokenize(JNI
     auto e=get(h);if(!e || !ids)return nullptr;
     try {std::vector<jint> t(env->GetArrayLength(ids));env->GetIntArrayRegion(ids,0,t.size(),t.data());std::string s;for(auto id:t)s+=piece(llama_model_get_vocab(e->model),id);return java_string(env,s);}catch(...){return nullptr;}
 }
+// Explicit field assignment: mtmd v0.4 adds text_len before the boolean flags.
+// Positional {text.c_str(), true, true} would silently send only ONE byte.
+static mtmd_input_text media_input(const std::string &text) {
+    mtmd_input_text input{};
+    input.text=text.c_str(); input.text_len=text.size();
+    input.add_special=true; input.parse_special=true;
+    return input;
+}
 static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat temp,jfloat top_p,jfloat top_k,jfloat min_p,jfloat repeat,jint last_n,jint seed,jobject callback,jobjectArray images) {
     auto e=get(h);if(!e)return false; std::lock_guard<std::mutex> lock(e->mutex); if(!images)e->cancel=false;e->error.clear();
     jmethodID on_token=nullptr,on_done=nullptr; jclass clazz=nullptr;
@@ -240,7 +248,7 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
                 bitmaps.entries.push_back(std::move(bitmap));
             }
             mtmd::input_chunks chunks(mtmd_input_chunks_init());
-            auto ptrs=bitmaps.c_ptr();mtmd_input_text input{text.c_str(),true,true};
+            auto ptrs=bitmaps.c_ptr();auto input=media_input(text);
             if(mtmd_tokenize(e->projector,chunks.ptr.get(),&input,ptrs.data(),ptrs.size())!=0)
                 throw std::runtime_error("Falha ao preparar pixels e texto para o projetor");
             input_size=mtmd_helper_get_n_tokens(chunks.ptr.get());

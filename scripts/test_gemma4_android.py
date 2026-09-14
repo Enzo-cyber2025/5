@@ -32,7 +32,7 @@ def main():
         assert hashlib.sha256(OLD.read_bytes()).hexdigest()==OLD_SHA
         assert d.shell('getprop ro.kernel.qemu')=='1'
         d.adb('root',check=False);d.adb('wait-for-device',timeout=60)
-        d.shell('wm size 720x1280');d.shell('wm density 240')
+        d.shell('pm disable-user --user 0 com.google.android.apps.nexuslauncher',check=False);d.shell('wm size 720x1280');d.shell('wm density 240')
         d.adb('logcat','-G','16M');d.shell('setprop debug.gguf.vulkan_device 0')
         # Real in-place update: same package and certificate, with private data retained.
         d.adb('install','-r','-g',OLD,timeout=180);assert d.shell('pm clear '+PACKAGE)=='Success'

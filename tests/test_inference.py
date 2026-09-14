@@ -48,3 +48,20 @@ def test_real_bounded_text_reader_and_cancellation(tmp_path):
     p=tmp_path/'ReaderTest.java';p.write_text(source)
     subprocess.run([javac,'-encoding','UTF-8','-d',str(tmp_path),str(p)],check=True)
     subprocess.run([str(jdk4py.JAVA_HOME/'bin/java'),'-Xmx32m','-ea','-cp',str(tmp_path),'ReaderTest'],check=True)
+
+
+def test_current_mtmd_input_uses_full_byte_length(tmp_path):
+    # Compile the actual adapter helper against pinned upstream headers. A bool
+    # positional initializer compiles too, but sends only one byte on v0.4.
+    import re,subprocess,shutil
+    from pathlib import Path
+    import pytest
+    root=Path(__file__).resolve().parents[1]
+    source=(root/'apk-fix/native/mobile.cpp').read_text()
+    helper=re.search(r'static mtmd_input_text media_input\(.*?\n}',source,re.S).group()
+    upstream=next((p for p in (root/'.cache/llama-mobile',root/'.cache/llama-gemma4') if (p/'tools/mtmd/mtmd.h').exists() and 'size_t text_len;' in (p/'tools/mtmd/mtmd.h').read_text()),None)
+    if upstream is None:pytest.skip('Pinned current mtmd headers required')
+    cpp=tmp_path/'media.cpp';exe=tmp_path/'media'
+    cpp.write_text('#include <string>\n#include <cassert>\n#include "mtmd.h"\n'+helper+'\nint main(){std::string s=u8"Olá <__media__> ônibus"; auto t=media_input(s); assert(t.text_len==s.size()); assert(std::string(t.text,t.text_len)==s); assert(t.add_special && t.parse_special); assert(media_input(std::string()).text_len==0); }')
+    subprocess.run(['g++','-std=c++17','-I'+str(upstream/'tools/mtmd'),'-I'+str(upstream/'include'),'-I'+str(upstream/'ggml/include'),str(cpp),'-o',str(exe)],check=True)
+    subprocess.run([str(exe)],check=True)
