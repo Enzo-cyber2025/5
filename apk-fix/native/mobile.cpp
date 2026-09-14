@@ -102,6 +102,7 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
             if(meta) {
                 auto key=gguf_find_key(meta,"clip.has_vision_encoder");
                 auto project=gguf_find_key(meta,"clip.projector_type");
+                if(project<0) project=gguf_find_key(meta,"clip.vision.projector_type");
                 if(key>=0 && project>=0 && gguf_get_kv_type(meta,key)==GGUF_TYPE_BOOL
                         && gguf_get_val_bool(meta,key) && gguf_get_kv_type(meta,project)==GGUF_TYPE_STRING
                         && gguf_find_tensor(meta,"token_embd.weight")>=0) projector_path=model_path;

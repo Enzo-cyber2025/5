@@ -136,7 +136,7 @@ def main():
         prebuilt=ndk/'toolchains/llvm/prebuilt/linux-x86_64'
         for abi,triple in [('arm64-v8a','aarch64-linux-android'),('x86_64','x86_64-linux-android')]:
             build=WORK/abi
-            run('cmake','-S',ROOT/'apk-fix/native','-B',build,'-G','Ninja',f'-DLLAMA_SOURCE={source}',f'-DSPIRV-Headers_DIR={ROOT}/.cache/spirv-install/share/cmake/SPIRV-Headers',f'-DCMAKE_TOOLCHAIN_FILE={ndk}/build/cmake/android.toolchain.cmake',f'-DANDROID_ABI={abi}','-DANDROID_PLATFORM=android-28','-DCMAKE_BUILD_TYPE=Release',f'-DVulkan_INCLUDE_DIR={ROOT}/.cache/vulkan-headers',f'-DVulkan_LIBRARY={prebuilt}/sysroot/usr/lib/{triple}/28/libvulkan.so','-DVulkan_GLSLC_EXECUTABLE=/usr/bin/glslc')
+            run('cmake','-S',ROOT/'apk-fix/native','-B',build,'-G','Ninja',f'-DLLAMA_SOURCE={source}',f'-DGGUF_SPIRV_INCLUDE_DIR={ROOT}/.cache/spirv-install/include',f'-DSPIRV-Headers_DIR={ROOT}/.cache/spirv-install/share/cmake/SPIRV-Headers',f'-DCMAKE_TOOLCHAIN_FILE={ndk}/build/cmake/android.toolchain.cmake',f'-DANDROID_ABI={abi}','-DANDROID_PLATFORM=android-28','-DCMAKE_BUILD_TYPE=Release',f'-DVulkan_INCLUDE_DIR={ROOT}/.cache/vulkan-headers',f'-DVulkan_LIBRARY={prebuilt}/sysroot/usr/lib/{triple}/28/libvulkan.so','-DVulkan_GLSLC_EXECUTABLE=/usr/bin/glslc')
             run('cmake','--build',build,'--target','aijni','--parallel','2')
             for name,src in [('libaijni.so',build/'libaijni.so'),('libc++_shared.so',prebuilt/f'sysroot/usr/lib/{triple}/libc++_shared.so')]:
                 dest=WORK/f'{abi}-{name}';shutil.copyfile(src,dest);run(prebuilt/'bin/llvm-strip','--strip-debug',dest)
