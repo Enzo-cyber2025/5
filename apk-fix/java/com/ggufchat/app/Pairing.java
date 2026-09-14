@@ -45,7 +45,7 @@ public final class Pairing {
     }
     public static String displayName(Object model) {
         try { return (isUnified(model)?"\uD83D\uDC41 ":"")+field(model,"name")
-                    +(isUnified(model)?(field(model,"path").equals(field(model,"mmprojPath"))?" · GGUF único · visão":" · par legado (2 arquivos)"):" · "+field(model,"capability")); }
+                    +(isUnified(model)?(field(model,"path").equals(field(model,"mmprojPath"))?" · GGUF único · visão":" · par legado (2 arquivos)"):" · "+description(field(model,"capability"))); }
         catch(Exception e) { return "Modelo"; }
     }
     private static Class<?> store() throws Exception { return Class.forName("com.ggufchat.app.ModelStore"); }
@@ -117,10 +117,18 @@ public final class Pairing {
         model.getClass().getField("mmprojPath").set(model,g.singleVision()?field(model,"path"):null);
         Log.i("GGUFInspect","GGUF_INSPECT capability="+g.capability()+" tensors="+g.tensors.size()+" architecture="+g.text("general.architecture"));
     }
-    public static void readInfo(Object m,org.json.JSONObject j) throws Exception {
-        m.getClass().getField("capability").set(m,j.optString("capability","NOT_INSPECTED"));
+    public static boolean isProjector(Object model) {
+        try{return "VISION_PROJECTOR".equals(field(model,"capability"))||("NOT_INSPECTED".equals(field(model,"capability"))&&"clip".equals(field(model,"architecture")));}
+        catch(Exception e){throw new IllegalStateException("Não foi possível ler os parâmetros do modelo",e);}
     }
-    public static void writeInfo(Object m,org.json.JSONObject j) throws Exception {j.put("capability",field(m,"capability"));}
+    private static String description(String cap) {
+        if(cap.equals("TEXT_ONLY"))return "texto";
+        if(cap.equals("IMAGE_TOKENS_ONLY"))return "tokens de imagem, sem pesos de visão";
+        if(cap.equals("MULTIMODAL_DECLARED_INCOMPLETE"))return "parâmetros multimodais incompletos";
+        if(cap.equals("VISION_PROJECTOR"))return "projetor de visão, sem linguagem";
+        if(cap.equals("NOT_INSPECTED"))return "não analisado; reimporte";
+        return "layout multimodal não suportado";
+    }
     private static void notify(Context c,String message) {
         Runnable r=()->{Toast.makeText(c,message,Toast.LENGTH_LONG).show();try{
             java.lang.reflect.Method refresh=c.getClass().getDeclaredMethod("refreshModels");refresh.setAccessible(true);refresh.invoke(c);

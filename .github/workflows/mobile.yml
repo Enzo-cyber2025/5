@@ -65,6 +65,13 @@ jobs:
         run: bash ci/log_step.sh mobile-build python3 apk-fix/build_mobile.py
       - name: Existing regressions
         run: bash ci/log_step.sh tooling .venv/bin/python -m pytest -q tests/test_tooling.py tests/test_mobile_build.py tests/test_unified.py tests/test_attachments.py tests/test_inference.py tests/test_physical_gguf.py
+      - name: Real APK serialization and GGUF reader through DEX to JVM
+        env:
+          APKTOOL_JAR: .cache/tools/package/lib/apktool.jar
+          GGUF_TEST_STRICT_GPU: '1'
+        run: |
+          bash ci/log_step.sh physical-jvm bash scripts/test_host.sh dist/GGUF-Chat-mobile-unsigned.apk
+          GGUF_READER_JAR="$PWD/.cache/host-tests/application.jar" bash ci/log_step.sh physical-reader-apk .venv/bin/python -m pytest -q tests/test_physical_gguf.py
       - name: Relay unsigned build for private local signing
         run: |
           mkdir -p .delivery

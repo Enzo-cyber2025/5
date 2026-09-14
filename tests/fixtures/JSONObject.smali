@@ -133,3 +133,30 @@
     invoke-virtual {p0, p1, v0}, Lorg/json/JSONObject;->put(Ljava/lang/String;Ljava/lang/Object;)Lorg/json/JSONObject;
     return-object p0
 .end method
+
+.method public has(Ljava/lang/String;)Z
+    .locals 1
+    invoke-virtual {p0, p1}, Ljava/util/HashMap;->containsKey(Ljava/lang/Object;)Z
+    move-result v0
+    return v0
+.end method
+.method public isNull(Ljava/lang/String;)Z
+    .locals 2
+    invoke-virtual {p0, p1}, Ljava/util/HashMap;->get(Ljava/lang/Object;)Ljava/lang/Object;
+    move-result-object v0
+    if-eqz v0, :yes
+    sget-object v1, Lorg/json/JSONObject;->NULL:Ljava/lang/Object;
+    if-eq v0, v1, :yes
+    const/4 v0, 0x0
+    return v0
+    :yes
+    const/4 v0, 0x1
+    return v0
+.end method
+.method public getString(Ljava/lang/String;)Ljava/lang/String;
+    .locals 1
+    invoke-virtual {p0, p1}, Ljava/util/HashMap;->get(Ljava/lang/Object;)Ljava/lang/Object;
+    move-result-object v0
+    check-cast v0, Ljava/lang/String;
+    return-object v0
+.end method

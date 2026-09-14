@@ -19,12 +19,6 @@ public final class SystemPrompts {
     private static final String[] PRESETS={"",DEFAULT,"Você é um assistente de programação. Explique as alterações e forneça código verificável. Não diga que executou testes que não executou.","Analise apenas o conteúdo fornecido. Diferencie fatos, inferências e conteúdo ilegível. Não invente páginas, anexos ou citações. Responda em português."};
     private static Object get(Object o,String n) throws Exception{Field f=o.getClass().getDeclaredField(n);f.setAccessible(true);return f.get(o);}
     private static SharedPreferences prefs(Context c){return c.getSharedPreferences("gguf-system-prompts",Context.MODE_PRIVATE);}
-    public static void readInfo(Object chat,JSONObject j) throws Exception {
-        chat.getClass().getField("systemPrompt").set(chat,j.has("systemPrompt")&&!j.isNull("systemPrompt")?j.getString("systemPrompt"):null);
-    }
-    public static void writeInfo(Object chat,JSONObject j) throws Exception {
-        Object s=get(chat,"systemPrompt");j.put("systemPrompt",s==null?JSONObject.NULL:s);
-    }
     public static String resolve(Context c,Object chat) throws Exception {
         String s=(String)get(chat,"systemPrompt");return s!=null?s:prefs(c).getString("global",DEFAULT);
     }

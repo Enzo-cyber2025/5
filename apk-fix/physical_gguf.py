@@ -30,28 +30,49 @@ def patch_combined_loader(s):
     return s
 
 
-def extra_field(app,cls,name,helper):
+def extra_field(app,cls,name,kind):
     p=app/(cls+'.smali');s=p.read_text();idx=s.index('# direct methods')
     s=s[:idx]+f'.field public {name}:Ljava/lang/String;\n\n'+s[idx:]
     start=s.index('.method public static fromJson(');end=s.index('.end method',start)
     section=s[start:end];reg='v0' if cls=='ModelInfo' else 'v1'
     marker=f'    return-object {reg}'
     assert section.count(marker)==1
-    section=section.replace(marker,f'    invoke-static {{{reg}, p0}}, Lcom/ggufchat/app/{helper};->readInfo(Ljava/lang/Object;Lorg/json/JSONObject;)V\n'+marker)
+    section=section.replace(marker,f'    invoke-static {{{reg}, p0}}, Lcom/ggufchat/app/RecordFields;->read{kind}(Ljava/lang/Object;Lorg/json/JSONObject;)V\n'+marker)
     s=s[:start]+section+s[end:]
     start=s.index('.method public toJson(');end=s.index('.end method',start)
     section=s[start:end];marker='    return-object v1';assert section.count(marker)==1
-    section=section.replace(marker,f'    invoke-static {{p0, v1}}, Lcom/ggufchat/app/{helper};->writeInfo(Ljava/lang/Object;Lorg/json/JSONObject;)V\n'+marker)
+    section=section.replace(marker,f'    invoke-static {{p0, v1}}, Lcom/ggufchat/app/RecordFields;->write{kind}(Ljava/lang/Object;Lorg/json/JSONObject;)V\n'+marker)
     s=s[:start]+section+s[end:];p.write_text(s)
 
 
 def patch_physical_ui(app):
-    extra_field(app,'ModelInfo','capability','Pairing')
-    extra_field(app,'Chat','systemPrompt','SystemPrompts')
+    extra_field(app,'ModelInfo','capability','Model')
+    extra_field(app,'Chat','systemPrompt','Chat')
     p=app/'MainActivity$14.smali';s=p.read_text();marker='    invoke-static {v0, v4}, Lcom/ggufchat/app/ModelStore;->add(Landroid/content/Context;Lcom/ggufchat/app/ModelInfo;)V';assert s.count(marker)==1
     s=s.replace(marker,'    invoke-static {v4}, Lcom/ggufchat/app/Pairing;->inspect(Ljava/lang/Object;)V\n'+marker);p.write_text(s)
+    for cls in ('ModelStore','ChatStore'):
+        p=app/(cls+'.smali');s=p.read_text()
+        s=replace_method(s,'.method private static writeAtomic(Ljava/io/File;Ljava/lang/String;)V','''    .locals 0
+    invoke-static {p0, p1}, Lcom/ggufchat/app/RecordFields;->writeAtomic(Ljava/io/File;Ljava/lang/String;)V
+    return-void''');p.write_text(s)
     p=app/'MainActivity.smali';s=p.read_text();marker='    invoke-virtual {p0, v0}, Lcom/ggufchat/app/MainActivity;->setContentView(Landroid/view/View;)V';assert s.count(marker)==1
     s=s.replace(marker,'    invoke-static {p0, v0}, Lcom/ggufchat/app/SystemPrompts;->installGlobal(Landroid/app/Activity;Landroid/widget/LinearLayout;)V\n'+marker)
+    s=replace_method(s,'.method private isMmproj(Lcom/ggufchat/app/ModelInfo;)Z','''    .locals 1
+    invoke-static {p1}, Lcom/ggufchat/app/Pairing;->isProjector(Ljava/lang/Object;)Z
+    move-result v0
+    return v0''')
+    for name in ('isMultimodal','isVisionModel'):
+        s=replace_method(s,'.method private '+name+'(Lcom/ggufchat/app/ModelInfo;)Z','''    .locals 1
+    invoke-static {p1}, Lcom/ggufchat/app/Pairing;->isUnified(Ljava/lang/Object;)Z
+    move-result v0
+    return v0''')
+    start=s.index('.method private showModelPicker(');end=s.index('.end method',start)
+    part=s[start:end];a=part.index('    iget-object v1, v0, Lcom/ggufchat/app/ModelInfo;->fileName:');b=part.index('    .line 252',a)
+    part=part[:a]+'''    invoke-static {v0}, Lcom/ggufchat/app/Pairing;->isProjector(Ljava/lang/Object;)Z
+    move-result v1
+    if-nez v1, :goto_0
+
+'''+part[b:];s=s[:start]+part+s[end:]
     start=s.index('.method private finishNewChat(');end=s.index('.end method',start)
     part=s[start:end].replace('    .locals 1','''    .locals 1
     invoke-static {}, Lcom/ggufchat/app/Pairing;->merging()Z

@@ -16,8 +16,8 @@ public final class GgufFile {
     public final LinkedHashMap<String,Tensor> tensors=new LinkedHashMap<>();
     public long dataOffset; public int alignment=32; public boolean imageTokens;
     public static final class KV {
-        final File file; final long start,length; public final int type; public final Object value;
-        KV(File f,long s,long n,int t,Object v){file=f;start=s;length=n;type=t;value=v;}
+        final File file; final String key; final long start,length; public final int type; public final Object value;
+        KV(File f,String k,long s,long n,int t,Object v){file=f;key=k;start=s;length=n;type=t;value=v;}
     }
     public static final class Tensor {
         public final String name; public final long[] dims; public final int type;
@@ -67,7 +67,7 @@ public final class GgufFile {
             for(long i=0;i<nk;i++) {
                 long start=f.getFilePointer();String key=string(f);int type=u32(f);
                 Object v=value(f,type,0,g,key.equals("tokenizer.ggml.tokens"));
-                if(g.metadata.put(key,new KV(file,start,f.getFilePointer()-start,type,v))!=null)throw bad("chave duplicada: "+key);
+                if(g.metadata.put(key,new KV(file,key,start,f.getFilePointer()-start,type,v))!=null)throw bad("chave duplicada: "+key);
                 if(f.getFilePointer()>HEADER_LIMIT)throw bad("metadados excessivos");
             }
             KV a=g.metadata.get("general.alignment");if(a!=null){if(a.type!=4)throw bad("alignment deve ser uint32");long n=(Long)a.value;if(n<1||n>65536||(n&(n-1))!=0)throw bad("alignment inválido");g.alignment=(int)n;}
@@ -85,7 +85,7 @@ public final class GgufFile {
                 if(f.getFilePointer()>HEADER_LIMIT)throw bad("tabela excessiva");
             }
             g.dataOffset=align(f.getFilePointer(),g.alignment);
-            ArrayList<Tensor> sorted=new ArrayList<>(g.tensors.values());Collections.sort(sorted,Comparator.comparingLong(t->t.offset));
+            ArrayList<Tensor> sorted=new ArrayList<>(g.tensors.values());Collections.sort(sorted,new Comparator<Tensor>(){public int compare(Tensor a,Tensor b){return Long.compare(a.offset,b.offset);}});
             long end=0;for(Tensor t:sorted){if(t.offset<end)throw bad("tensores sobrepostos");end=add(t.offset,t.bytes);if(add(g.dataOffset,end)>f.length())throw bad("dados truncados: "+t.name);}
             if(g.dataOffset>f.length())throw bad("cabeçalho truncado");
         }
@@ -125,7 +125,8 @@ public final class GgufFile {
         for(String n:b.tensors.keySet())if(!mediaTensor(n)||a.tensors.containsKey(n))throw bad("tensor do projetor incompatível/duplicado: "+n);
         LinkedHashMap<String,KV> kv=new LinkedHashMap<>(a.metadata);kv.remove("general.alignment");
         for(Map.Entry<String,KV> e:b.metadata.entrySet()) {
-            String key=e.getKey();if(key.startsWith("general.")||key.startsWith("split."))continue;
+            String key=e.getKey();if(key.startsWith("split."))continue;
+            if(key.startsWith("general."))key="ggufchat.projector."+key;
             if(kv.containsKey(key))throw bad("metadado conflitante: "+key);
             kv.put(key,e.getValue());
         }
@@ -134,7 +135,11 @@ public final class GgufFile {
         boolean complete=false;
         try(RandomAccessFile out=new RandomAccessFile(output,"rw");RandomAccessFile fa=new RandomAccessFile(language,"r");RandomAccessFile fb=new RandomAccessFile(projector,"r")) {
             byte[] buffer=new byte[128*1024];u32(out,0x46554747);u32(out,3);u64(out,a.tensors.size()+b.tensors.size());u64(out,kv.size()+1);
-            for(KV entry:kv.values())copy(entry.file.equals(language)?fa:fb,out,entry.start,entry.length,buffer);
+            for(Map.Entry<String,KV> item:kv.entrySet()) {
+                KV entry=item.getValue();string(out,item.getKey());
+                long prefix=8+entry.key.getBytes(StandardCharsets.UTF_8).length;
+                copy(entry.file.equals(language)?fa:fb,out,entry.start+prefix,entry.length-prefix,buffer);
+            }
             string(out,"general.alignment");u32(out,4);u32(out,alignment);
             long offset=0;ArrayList<Tensor> all=new ArrayList<>(a.tensors.values());all.addAll(b.tensors.values());
             for(Tensor t:all){string(out,t.name);u32(out,t.dims.length);for(long d:t.dims)u64(out,d);u32(out,t.type);u64(out,offset);offset=align(add(offset,t.bytes),alignment);}

@@ -183,3 +183,39 @@ def test_generation_false_is_error_not_success(classes, message):
     checker = jpype.JClass("com.ggufchat.app.GenerationResult")
     with pytest.raises(Exception, match=message or "Geração interrompida"):
         checker.check(False, 1)
+
+
+@pytest.mark.parametrize("value", [None, "", "null", "Responda em português — referência CEDAR-8624."])
+def test_chat_system_prompt_real_json_roundtrip(classes, value):
+    chat=classes["Chat"]("/models/one.gguf","/models/one.gguf")
+    if not hasattr(chat,"systemPrompt"):
+        pytest.skip("Legacy APK before editable system prompts")
+    chat.systemPrompt=value
+    for _ in range(3):
+        chat=classes["Chat"].fromJson(chat.toJson())
+        assert chat.systemPrompt==value
+        assert chat.modelPath==chat.mmprojPath=="/models/one.gguf"
+
+
+def test_intrinsic_capability_real_json_roundtrip(classes):
+    model=classes["ModelInfo"]()
+    if not hasattr(model,"capability"):
+        pytest.skip("Legacy APK before intrinsic parameter inspection")
+    model.capability="VISION_SINGLE_GGUF";model.path=model.mmprojPath="/models/one.gguf";model.multimodal=True
+    saved=classes["ModelInfo"].fromJson(model.toJson())
+    assert saved.capability==model.capability and saved.path==saved.mmprojPath and saved.multimodal
+
+
+def test_atomic_index_replace_preserves_previous_on_failed_move(classes, tmp_path):
+    import jpype
+    try: records=jpype.JClass("com.ggufchat.app.RecordFields")
+    except Exception: pytest.skip("Legacy APK without new record persistence")
+    file=jpype.JClass("java.io.File")
+    dest=tmp_path/"models.json"
+    records.writeAtomic(file(str(dest)),"old")
+    records.writeAtomic(file(str(dest)),"new")
+    assert dest.read_text()=="new"
+    folder=tmp_path/"occupied";folder.mkdir();(folder/"keep").write_text("preserve")
+    with pytest.raises(Exception):records.writeAtomic(file(str(folder)),"replacement")
+    assert (folder/"keep").read_text()=="preserve"
+    assert not list(tmp_path.glob("*.new"))

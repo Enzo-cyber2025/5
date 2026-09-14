@@ -37,6 +37,9 @@ def fixture(path,kind='language',alignment=32,extra=()):
 
 @pytest.fixture(scope='module')
 def java(tmp_path_factory):
+    if os.environ.get('GGUF_READER_JAR'):
+        import jdk4py
+        return [str(jdk4py.JAVA_HOME/'bin/java'),'-cp',os.environ['GGUF_READER_JAR'],'com.ggufchat.app.GgufFile']
     javac=shutil.which('javac')
     if not javac:pytest.skip('Real JDK compiler required; Android build CI installs JDK 17')
     tmp=tmp_path_factory.mktemp('gguf-java')
