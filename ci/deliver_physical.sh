@@ -53,7 +53,9 @@ notes=Path('docs/SIGNED_PHYSICAL.md').read_text().replace('(../ci-results/', '(h
 Path('/tmp/physical-notes.md').write_text(notes)
 PY
 if ! gh release view "$TAG" >/dev/null 2>&1; then
-  gh release create "$TAG" --target 4fa8dbca578a70df91798c3b80b24d66f6c485f0 --prerelease --latest=false --title 'GGUF Chat — GGUF físico único, visão e prompts' --notes-file /tmp/physical-notes.md
+  # Tag this publication commit; compiled source stays separately hash-pinned above.
+  # GITHUB_TOKEN may not tag an older commit with intervening workflow changes.
+  gh release create "$TAG" --target "${GITHUB_SHA:-$(git rev-parse HEAD)}" --prerelease --latest=false --title 'GGUF Chat — GGUF físico único, visão e prompts' --notes-file /tmp/physical-notes.md
 fi
 gh release edit "$TAG" --notes-file /tmp/physical-notes.md
 # Never replace an existing different binary, even on this new release tag.
