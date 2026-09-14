@@ -1,22 +1,26 @@
-# GGUF Chat — câmera, clipe e múltiplos anexos
+# GGUF Chat — leitura real de documentos e imagens
 
-## [Baixar APK diretamente — sem ZIP](https://github.com/Enzo-cyber2025/5/releases/download/gguf-attachments-f129e2c/GGUF-Chat-mobile.apk)
+## [Baixar APK diretamente — sem ZIP](https://github.com/Enzo-cyber2025/5/releases/download/gguf-inference-e37df03/GGUF-Chat-mobile.apk)
 
-**16,75 MB · Android 9+ · ARM64 e x86_64 · mesma assinatura fixa das revisões mobile anteriores.**
+**21,72 MB · Android 9+ · ARM64 e x86_64 · modelos não incluídos.**
 
-- **Câmera à esquerda:** “Importar foto” com seleção múltipla, ou “Tirar foto” com opção de tirar outras fotos e enviar juntas.
-- **Modelo normal:** câmera cinza/desativada. **Clipe sempre disponível**, com seleção múltipla de qualquer tipo de arquivo.
-- Sem limite fixo de tamanho/quantidade imposto pelo app; cópia em blocos, armazenamento privado e preservação dos anexos concluídos.
-- Lista de anexos, remoção dos pendentes, vínculo à mensagem sem perder o texto digitado e limpeza dos arquivos ao excluir a conversa.
-- Preservados modelo único GGUF + mmproj com olho, Vulkan para os dois componentes sem fallback automático e barra compacta de ferramentas.
+- **Fotos:** pixels processados pelo projetor multimodal e avaliados pelo modelo, não apenas nomes/contagem dos anexos. Exige GGUF + mmproj compatíveis com visão.
+- **Documentos:** texto de TXT e outros textos válidos, PDF e texto principal de DOCX/ODT entram na geração. Páginas de PDF sem texto são enviadas como imagens quando há visão.
+- Formatos não suportados e excesso de contexto produzem erro explícito. **Desativar leitura / Ativar leitura** permite manter o arquivo e retomar a conversa.
+- Preservados câmera/clipe à esquerda, fotos múltiplas, câmera desativada no modelo normal, clipe para qualquer tipo, cópia em blocos e anexos privados persistentes.
+- Preservados par único GGUF + mmproj com olho, pesos no Vulkan sem retry silencioso da unidade em CPU e ferramentas compactas numa linha com 10px de intervalo.
 
-**Teste Android aprovado:** [34790832355](https://github.com/Enzo-cyber2025/5/actions/runs/34790832355). SAF real, arquivos mistos com hashes conferidos, duas capturas de 1392 × 1856 pela câmera do emulador, nove anexos com texto preservado, câmera desativada no modelo normal e exclusão isolada por conversa. Regressões Vulkan/unificação também passaram.
+**Aceitação funcional Android PASS:** [34848915081](https://github.com/Enzo-cyber2025/5/actions/runs/34848915081). Conteúdo de TXT/PDF/DOCX, cão/ônibus, duas fotos, PDF visual, reinício, falhas explícitas e recuperação pela interface. SAF/câmera/armazenamento/unificação também passaram. Vulkan e câmera testados no emulador, não em hardware físico.
 
-**Limites:** tamanho/quantidade ainda dependem de espaço, Android e provedor de arquivos. Captura usa a câmera externa do Android; teste com sensor emulado, não câmera física. **Anexar e guardar arquivos não significa interpretá-los:** esta etapa não acrescenta análise de imagens/PDF/áudio/vídeo nem extração de conteúdo para o modelo. O motor recebe o texto e um aviso de anexos, não seus bytes. Vulkan validado por software, não GPU física.
+**Não é aprovação da qualidade geral:** modelos pequenos acertaram códigos/objetos, mas inventaram detalhes e repetiram instruções. Uma saudação falhou no teste; outra passou apenas pela presença da palavra “hello”, apesar de repetir a pergunta. Os resultados completos estão preservados no [relatório](docs/INFERENCE.md).
 
-**Atualização:** mesma chave das versões `gguf-mobile-120e7dc` e `gguf-unified-72d4429`; não é preciso desinstalá-las por troca de assinatura. A versão antiga `gguf-apk-f6dc954` tem outra chave: exporte seus dados antes de desinstalá-la.
+**Limites:** importação sem cota artificial, sujeita ao Android/provedor/espaço. Leitura limitada a 131.072 caracteres, imagens preparadas a 8 MP e contexto do motor a 8.192 tokens, com erros em vez de truncamento silencioso. Imagens reduzidas até 1.024px no maior lado. Áudio/vídeo, arquivos compactados genéricos, planilhas, apresentações, Office antigo e outros binários não têm interpretação nesta etapa. Veja particularidades de PDF/Office no relatório.
 
-[Relatório e hashes](docs/ATTACHMENTS.md) · [Evidências](ci-results/34790832355-1/summary.json) · [Unificação/Vulkan](docs/UNIFIED.md)
+**Instalação: nova chave autorizada.** Esta assinatura não atualiza por cima das versões anteriores. **Salve conversas/anexos e originais dos modelos fora do app antes de desinstalá-lo.** O backup privado da chave já fornecido não é um backup dos dados do aplicativo.
+
+SHA-256: `3d17116aac387bbda402ddad2f7dc19b42115eec33d7ec89f7c20dde9a87f2c9`.
+
+[Relatório, limites e capturas](docs/INFERENCE.md) · [Evidências](ci-results/34848915081-1/summary.json) · [Histórico de armazenamento](docs/ATTACHMENTS.md)
 
 <details>
 <summary>Histórico das builds anteriores (não descreve o APK mobile acima)</summary>

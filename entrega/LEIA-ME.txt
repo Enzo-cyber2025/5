@@ -1,23 +1,28 @@
-APK — CÂMERA, CLIPE E MÚLTIPLOS ANEXOS (SEM ZIP)
-https://github.com/Enzo-cyber2025/5/releases/download/gguf-attachments-f129e2c/GGUF-Chat-mobile.apk
+APK — LEITURA REAL DE DOCUMENTOS E IMAGENS (SEM ZIP)
+https://github.com/Enzo-cyber2025/5/releases/download/gguf-inference-e37df03/GGUF-Chat-mobile.apk
 
-SHA-256: 5b40c17d4fcb256bd9bcae2c1149028f8ca442c7230323970e6f91df6c56e63c
-16.753.713 bytes. Android 9+; ARM64 e x86_64.
-Certificado SHA-256: 68f248a224075d66df9ff97ba336556b0a84b724112e644c28e607612da633f5
+SHA-256: 3d17116aac387bbda402ddad2f7dc19b42115eec33d7ec89f7c20dde9a87f2c9
+21.717.999 bytes. Android 9+; ARM64 e x86_64. Modelos não incluídos.
+Certificado SHA-256: 35a93f1428120a740adbe95be2621ee9b03fe4342aa363814bdfea0acb2cf7cf
 
-Câmera à esquerda: importar várias fotos ou tirar várias fotos consecutivas.
-Câmera cinza no modelo normal; clipe sempre disponível, qualquer tipo de arquivo.
-Sem limite fixo de tamanho/quantidade no app; sujeito a espaço, Android e provedor.
-Anexos privados, lista, remoção, preservação após reabrir e vínculo à mensagem.
-Texto digitado junto dos anexos preservado. Excluir conversa libera seus arquivos.
+Pixels das fotos chegam ao projetor e ao modelo de visão, não só seus nomes.
+TXT/outros textos válidos, PDF e texto principal DOCX/ODT entram na geração.
+PDF sem texto precisa de visão. Fotos precisam de GGUF + mmproj compatíveis.
+Câmera/clipe, múltiplos anexos, persistência, par único e Vulkan preservados.
+Desativar leitura permite recuperar conversas após erro sem apagar o arquivo.
 
-Teste PASS: https://github.com/Enzo-cyber2025/5/actions/runs/34790832355
-Câmera externa real do emulador: duas fotos 1392 x 1856, não sensor físico.
-Arquivos mistos, vazio, 8 MiB, hashes e nove anexos vinculados com texto testados.
-Vulkan/unificação continuam testados por software, não em GPU física.
+Aceitação FUNCIONAL PASS: https://github.com/Enzo-cyber2025/5/actions/runs/34848915081
+Vulkan/câmera por emulador, não GPU/sensor físico. ODT sem teste semântico dedicado.
+Qualidade geral NÃO aprovada: modelos pequenos inventaram detalhes e repetiram
+instruções. Saudação falhou; outra só passou no regex por repetir a pergunta.
 
-IMPORTANTE: seleção/armazenamento não acrescentam interpretação do conteúdo dos
-arquivos pelo modelo. Fotos, PDFs etc. não são avaliados pelo motor nesta etapa.
-Mesmo certificado das duas últimas versões mobile; pode atualizar sem trocar chave.
-A versão antiga gguf-apk-f6dc954 usa outra chave: exporte antes de desinstalar.
-Detalhes: docs/ATTACHMENTS.md.
+Importação sem cota artificial; sujeita ao Android/provedor/espaço.
+Inferência: 131.072 caracteres, 8 MP preparados, contexto até 8.192 tokens.
+Imagens até 1.024px no maior lado. Excesso dá erro, não truncamento silencioso.
+Sem interpretação de áudio/vídeo, compactados genéricos, Office antigo,
+planilhas/apresentações e outros binários. Limitações PDF/Office no relatório.
+
+NOVA CHAVE AUTORIZADA: não instala sobre as versões anteriores.
+Salve conversas/anexos e originais dos modelos FORA do app antes de desinstalar.
+O backup privado da chave já apresentado NÃO salva os dados do aplicativo.
+Detalhes, respostas reais e capturas: docs/INFERENCE.md.

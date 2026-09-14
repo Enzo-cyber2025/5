@@ -1,3 +1,5 @@
+> **Relatório histórico da versão de armazenamento.** A entrega atual acrescenta leitura real e usa outra assinatura autorizada: veja [INFERENCE.md](INFERENCE.md). As limitações de interpretação e compatibilidade de assinatura abaixo referem-se à versão antiga.
+
 # Câmera, clipe e múltiplos anexos
 
 ## Comportamento
