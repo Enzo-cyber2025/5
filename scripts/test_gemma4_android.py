@@ -90,7 +90,13 @@ def main():
         checks['native_image_history_after_restart']='PASS'
         s['response_quality']['gemma4-restart']={'status':'PASS' if 'dog' in answer.lower() else 'FAIL','response':answer}
         assert d.shell('find /data/user/0/'+PACKAGE+'/files/models -type f').splitlines()==[unit['path']]
-        checks['image_inference']='PASS';s['status']='PASS'
+        checks['image_inference']='PASS';save()
+        text_chat=d.new_chat(unit,99,context_size=1024)
+        answer=reply(d,text_chat,'What is 2 + 2? Reply with only the number.','gemma4-text')
+        checks['native_Gemma4_text_only']='PASS'
+        s['response_quality']['gemma4-text']={'status':'PASS' if answer.strip(' \n.!*`')=='4' else 'FAIL','response':answer}
+        assert all(r['status']=='PASS' for r in s['response_quality'].values()),'Gemma4 reference image/text quality did not pass; preserve actual replies'
+        s['status']='PASS'
         s['limits']='Vision/text tested; audio weights preserved, but no audio-input UI/transcription acceptance. Reference pair is not asserted to match user files. No physical GPU/RAM approval.'
     except Exception as ex:
         s['error']=str(ex);traceback.print_exc();(E/'physical-gemma4-failure.txt').write_text(traceback.format_exc())
