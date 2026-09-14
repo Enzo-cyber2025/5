@@ -1,0 +1,68 @@
+--------- beginning of main
+09-14 17:19:27.664 15859 15859 I ImeTracker: com.ggufchat.app:8c9d8529: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser true
+09-14 17:19:27.665 15859 15859 D InputMethodManager: showSoftInput() view=android.widget.EditText{6915863 VFED..CL. .F.P..ID 128,0-517,67 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+09-14 17:19:27.689 15859 15859 I AssistStructure: Flattened final assist data: 1960 bytes, containing 1 windows, 13 views
+09-14 17:19:27.695 15859 15874 D EGL_emulation: app_time_stats: avg=3314.02ms min=3314.02ms max=3314.02ms count=1
+09-14 17:19:28.085 15859 15859 D InsetsController: show(ime(), fromIme=true)
+09-14 17:19:28.218 15859 16419 W InteractionJankMonitor: Initializing without READ_DEVICE_CONFIG permission. enabled=true, interval=1, missedFrameThreshold=3, frameTimeThreshold=64, package=com.ggufchat.app
+09-14 17:19:28.218 15859 16419 D InteractionJankMonitor: Build configuration failed!
+09-14 17:19:28.218 15859 16419 D InteractionJankMonitor: java.lang.IllegalArgumentException: Must pass in a valid surface control if only instrument surface; 
+09-14 17:19:28.218 15859 16419 D InteractionJankMonitor: 	at com.android.internal.jank.InteractionJankMonitor$Configuration.validate(InteractionJankMonitor.java:833)
+09-14 17:19:28.218 15859 16419 D InteractionJankMonitor: 	at com.android.internal.jank.InteractionJankMonitor$Configuration.<init>(InteractionJankMonitor.java:774)
+09-14 17:19:28.218 15859 16419 D InteractionJankMonitor: 	at com.android.internal.jank.InteractionJankMonitor$Configuration.<init>(Unknown Source:0)
+09-14 17:19:28.218 15859 16419 D InteractionJankMonitor: 	at com.android.internal.jank.InteractionJankMonitor$Configuration$Builder.build(InteractionJankMonitor.java:753)
+09-14 17:19:28.218 15859 16419 D InteractionJankMonitor: 	at com.android.internal.jank.InteractionJankMonitor.begin(InteractionJankMonitor.java:333)
+09-14 17:19:28.218 15859 16419 D InteractionJankMonitor: 	at android.view.inputmethod.ImeTracker$ImeJankTracker.onRequestAnimation(ImeTracker.java:852)
+09-14 17:19:28.218 15859 16419 D InteractionJankMonitor: 	at android.view.InsetsController$InternalAnimationControlListener$1.onAnimationStart(InsetsController.java:442)
+09-14 17:19:28.218 15859 16419 D InteractionJankMonitor: 	at android.animation.Animator$AnimatorListener.onAnimationStart(Animator.java:692)
+09-14 17:19:28.218 15859 16419 D InteractionJankMonitor: 	at android.animation.Animator$AnimatorCaller$$ExternalSyntheticLambda0.call(D8$$SyntheticClass:0)
+09-14 17:19:28.218 15859 16419 D InteractionJankMonitor: 	at android.animation.Animator.callOnList(Animator.java:666)
+09-14 17:19:28.218 15859 16419 D InteractionJankMonitor: 	at android.animation.Animator.notifyListeners(Animator.java:609)
+09-14 17:19:28.218 15859 16419 D InteractionJankMonitor: 	at android.animation.Animator.notifyStartListeners(Animator.java:626)
+09-14 17:19:28.218 15859 16419 D InteractionJankMonitor: 	at android.animation.ValueAnimator.startAnimation(ValueAnimator.java:1334)
+09-14 17:19:28.218 15859 16419 D InteractionJankMonitor: 	at android.animation.ValueAnimator.start(ValueAnimator.java:1149)
+09-14 17:19:28.218 15859 16419 D InteractionJankMonitor: 	at android.animation.ValueAnimator.start(ValueAnimator.java:1173)
+09-14 17:19:28.218 15859 16419 D InteractionJankMonitor: 	at android.view.InsetsController$InternalAnimationControlListener.onReady(InsetsController.java:461)
+09-14 17:19:28.218 15859 16419 D InteractionJankMonitor: 	at android.view.InsetsAnimationThreadControlRunner.lambda$new$0(InsetsAnimationThreadControlRunner.java:129)
+09-14 17:19:28.218 15859 16419 D InteractionJankMonitor: 	at android.view.InsetsAnimationThreadControlRunner.$r8$lambda$DLuG7Ht_vy5T5uYr29Rzhu2CZeY(Unknown Source:0)
+09-14 17:19:28.218 15859 16419 D InteractionJankMonitor: 	at android.view.InsetsAnimationThreadControlRunner$$ExternalSyntheticLambda2.run(D8$$SyntheticClass:0)
+09-14 17:19:28.218 15859 16419 D InteractionJankMonitor: 	at android.os.Handler.handleCallback(Handler.java:959)
+09-14 17:19:28.218 15859 16419 D InteractionJankMonitor: 	at android.os.Handler.dispatchMessage(Handler.java:100)
+09-14 17:19:28.218 15859 16419 D InteractionJankMonitor: 	at android.os.Looper.loopOnce(Looper.java:232)
+09-14 17:19:28.218 15859 16419 D InteractionJankMonitor: 	at android.os.Looper.loop(Looper.java:317)
+09-14 17:19:28.218 15859 16419 D InteractionJankMonitor: 	at android.os.HandlerThread.run(HandlerThread.java:85)
+09-14 17:19:28.265 15859 15859 I ImeTracker: com.ggufchat.app:8c9d8529: onShown
+09-14 17:19:28.757 15859 15874 D EGL_emulation: app_time_stats: avg=92.95ms min=11.51ms max=310.64ms count=11
+09-14 17:19:29.803 15859 15874 D EGL_emulation: app_time_stats: avg=38.77ms min=7.26ms max=79.35ms count=23
+09-14 17:19:30.805 15859 15874 D EGL_emulation: app_time_stats: avg=47.84ms min=6.99ms max=91.87ms count=18
+09-14 17:19:31.809 15859 15874 D EGL_emulation: app_time_stats: avg=55.31ms min=7.11ms max=440.53ms count=15
+09-14 17:19:32.809 15859 15874 D EGL_emulation: app_time_stats: avg=500.03ms min=499.90ms max=500.16ms count=2
+09-14 17:19:33.500 15859 15859 I ImeTracker: com.ggufchat.app:b0437494: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+09-14 17:19:33.548 15859 15859 D InsetsController: hide(ime(), fromIme=true)
+09-14 17:19:33.573 15859 16454 I GGUFSystem: GGUF_SYSTEM_PROMPT_APPLIED scope=global chars=107 sha256=dde45e87ea07db0b49bcddd022d4f41a452610560d9af636571c26d16a4bcd04
+09-14 17:19:33.677 15859 16454 I GGUFInference: GGUF_CONTENT_PREPARED files=1 images=0 text_chars=31
+09-14 17:19:33.696 15859 15859 I ImeTracker: com.ggufchat.app:8f2e6200: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_ON_ANIMATION_STATE_CHANGED fromUser false
+09-14 17:19:33.705 15859 15859 I ImeTracker: com.ggufchat.app:b0437494: onHidden
+09-14 17:19:33.834 15859 15874 D EGL_emulation: app_time_stats: avg=95.23ms min=7.52ms max=500.49ms count=10
+09-14 17:19:35.045 15859 15874 D EGL_emulation: app_time_stats: avg=60.64ms min=7.44ms max=459.06ms count=18
+09-14 17:19:36.062 15859 15874 D EGL_emulation: app_time_stats: avg=508.21ms min=499.74ms max=516.67ms count=2
+09-14 17:19:37.068 15859 15874 D EGL_emulation: app_time_stats: avg=503.28ms min=499.62ms max=506.93ms count=2
+09-14 17:19:38.565 15859 15874 D EGL_emulation: app_time_stats: avg=498.72ms min=493.32ms max=506.15ms count=3
+09-14 17:19:39.576 15859 15874 D EGL_emulation: app_time_stats: avg=76.62ms min=6.52ms max=499.40ms count=12
+09-14 17:19:40.600 15859 15874 D EGL_emulation: app_time_stats: avg=22.79ms min=7.05ms max=62.45ms count=34
+09-14 17:19:41.614 15859 15874 D EGL_emulation: app_time_stats: avg=21.54ms min=7.07ms max=63.59ms count=34
+09-14 17:19:42.657 15859 15874 D EGL_emulation: app_time_stats: avg=23.74ms min=7.38ms max=88.77ms count=34
+09-14 17:19:43.677 15859 15874 D EGL_emulation: app_time_stats: avg=26.44ms min=6.97ms max=85.95ms count=31
+09-14 17:19:44.076 15859 15859 E FrameTracker: force finish cuj, time out: J<IME_INSETS_HIDE_ANIMATION::1@0@com.ggufchat.app>
+09-14 17:19:44.681 15859 15874 D EGL_emulation: app_time_stats: avg=27.51ms min=7.38ms max=127.57ms count=30
+09-14 17:19:45.686 15859 15874 D EGL_emulation: app_time_stats: avg=21.33ms min=6.99ms max=53.09ms count=36
+09-14 17:19:46.712 15859 15874 D EGL_emulation: app_time_stats: avg=24.76ms min=7.94ms max=72.88ms count=32
+09-14 17:19:47.751 15859 15874 D EGL_emulation: app_time_stats: avg=21.45ms min=6.97ms max=62.09ms count=34
+09-14 17:19:48.753 15859 15874 D EGL_emulation: app_time_stats: avg=24.39ms min=7.36ms max=60.88ms count=31
+09-14 17:19:49.760 15859 15874 D EGL_emulation: app_time_stats: avg=21.07ms min=6.58ms max=56.46ms count=34
+09-14 17:19:50.768 15859 15874 D EGL_emulation: app_time_stats: avg=24.86ms min=7.69ms max=69.26ms count=32
+09-14 17:19:51.770 15859 15874 D EGL_emulation: app_time_stats: avg=23.90ms min=8.31ms max=51.17ms count=32
+09-14 17:19:52.779 15859 15874 D EGL_emulation: app_time_stats: avg=24.47ms min=7.71ms max=85.50ms count=30
+09-14 17:19:53.822 15859 15874 D EGL_emulation: app_time_stats: avg=23.88ms min=7.21ms max=64.15ms count=32
+09-14 17:19:53.885 15859 16454 I GGUFChatNative: GGUF_NATIVE_COMPLETE tokens=36 reason=eog projector=0
+09-14 17:19:53.886 15859 16454 I System.out: GGUF_REPAIR_GENERATION_OK
