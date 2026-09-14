@@ -168,6 +168,8 @@ def main():
         for n,data in document_assets.items():
             assert n not in a.namelist(),n
             b.writestr(n,data)
+        for license in (ROOT/'docs/licenses').iterdir():
+            if license.is_file():b.writestr('assets/third-party/'+license.name,license.read_bytes())
         b.writestr('assets/document-libraries-sha256.json',(ROOT/'.cache/document-libs/sha256.json').read_bytes())
         for n,data in libs.items():b.writestr(n,data)
     verify_alignment(out)

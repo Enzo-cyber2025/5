@@ -16,7 +16,7 @@ permissions:
   contents: write
   actions: read
 concurrency:
-  group: mobile-${{ github.ref }}
+  group: mobile-${{ github.ref }}-${{ contains(github.event.head_commit.message, '[signed mobile]') && 'test' || 'build' }}
   cancel-in-progress: true
 jobs:
   build:
