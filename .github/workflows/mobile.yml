@@ -8,6 +8,8 @@ on:
       - 'ci/prepare_vulkan.sh'
       - 'ci/vulkan_features.cpp'
       - 'scripts/test_mobile.py'
+      - 'scripts/test_attachment_android.py'
+      - 'scripts/test_inference_android.py'
       - '.github/workflows/mobile.yml'
       - '.delivery/GGUF-Chat-mobile.apk'
 permissions:

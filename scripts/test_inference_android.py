@@ -6,7 +6,7 @@ import base64,hashlib,json,re,shlex,subprocess,traceback,zipfile,zlib
 from pathlib import Path
 from test_mobile import MobileAndroid,APK,VULKAN
 from test_attachment_android import item_state,wait_items,select_all
-from android_checks import PACKAGE,generation_completed
+from android_checks import PACKAGE,PICKERS,position,has_package,generation_completed
 E=Path('evidence')
 F=Path('.cache/inference-fixtures')
 SOURCES=[('frame-a.jpg','pytorch/hub','12f0e0dd1162b94a5b0919ce8b91821450965985','f3f87bb8ab3c26c7ecfd3ac60421d7f32b0503d1d6c5baf8bac42ed93d86351a'),('frame-b.jpg','ultralytics/yolov5','b43e311165c785f000eb7493ff8fb662d06a3f83','33b198a1d2839bb9ac4c65d61f9e852196793cae9a0781360859425f6022b69c')]
@@ -48,12 +48,20 @@ def fixtures():
     (F/'broken.jpg').write_bytes(b'Not a JPEG image')
 
 def attach(d,chat,names):
-    d.shell('mkdir -p /sdcard/Download/attachment-tests; rm -f /sdcard/Download/attachment-tests/*')
+    # Fresh real folder: deleting files with shell does not remove DownloadsProvider's MediaStore rows.
+    folder=f'000-read-{999999-d.counter:06d}'
+    d.shell('mkdir -p /sdcard/Download/'+folder)
     before=len(item_state(d,chat)['items'])
     for name in names:
-        dest='/sdcard/Download/attachment-tests/'+name;d.adb('push',F/name,dest)
+        dest='/sdcard/Download/'+folder+'/'+name;d.adb('push',F/name,dest)
         d.shell('am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d '+shlex.quote('file://'+dest),check=False)
-    d.tap(desc='Anexar arquivos',package={PACKAGE});select_all(d,names)
+    d.tap(desc='Anexar arquivos',package={PACKAGE})
+    d.wait(lambda:has_package(d.ui(),PICKERS),'SAF de anexos')
+    d.tap(desc='Show roots',package=PICKERS);d.select_downloads()
+    d.wait(lambda:position(d.ui(),text=folder,package=PICKERS),'pasta nova no gerenciador')
+    d.tap(text=folder,package=PICKERS)
+    d.wait(lambda:all(position(d.ui(),text=n,package=PICKERS) for n in names),'arquivos na pasta isolada')
+    select_all(d,names)
     state=wait_items(d,chat,before+len(names))
     key=hashlib.sha256(chat['id'].encode()).hexdigest()
     for item in state['items'][before:]:
@@ -66,6 +74,8 @@ def reply(d,chat,prompt,stage,images=0):
         assert d.alive()==pid,'Native process died'
         log=d.adb('logcat','-d',f'--pid={pid}');(E/f'inference-{stage}-logcat.txt').write_text(log)
         if 'Generation failed:' in log:raise AssertionError(log[-8000:])
+        error=item_state(d,chat).get('error','')
+        if error and not stage.endswith('-recovery'):raise AssertionError(error)
         if not generation_completed(log):return None
         saved=next(c for c in d.read_json('chats.json') if c['id']==chat['id'])
         (E/f'inference-{stage}-chat.json').write_text(json.dumps(saved,ensure_ascii=False))
