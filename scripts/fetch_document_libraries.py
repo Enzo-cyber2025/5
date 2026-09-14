@@ -8,17 +8,18 @@ def fetch():
     artifacts=['com/tom-roush/pdfbox-android/2.0.27.0/pdfbox-android-2.0.27.0.aar']
     artifacts += ['org/bouncycastle/'+a+'/1.78.1/'+a+'-1.78.1.jar' for a in ('bcprov-jdk18on','bcpkix-jdk18on','bcutil-jdk18on')]
     jars=[];assets={};hashes={}
+    pins=json.loads((ROOT/'ci/document-libraries.json').read_text())
     for artifact in artifacts:
         url='https://repo.maven.apache.org/maven2/'+artifact
         p=out/Path(artifact).name
-        expected=urllib.request.urlopen(url+'.sha1',timeout=60).read().decode().strip().split()[0]
-        if not p.exists() or hashlib.sha1(p.read_bytes()).hexdigest()!=expected:
+        expected=pins[p.name]
+        if not p.exists() or hashlib.sha256(p.read_bytes()).hexdigest()!=expected:
             with urllib.request.urlopen(url,timeout=120) as src,p.open('wb') as dst:
                 while True:
                     b=src.read(131072)
                     if not b:break
                     dst.write(b)
-        assert hashlib.sha1(p.read_bytes()).hexdigest()==expected,artifact
+        assert hashlib.sha256(p.read_bytes()).hexdigest()==expected,artifact
         hashes[p.name]=hashlib.sha256(p.read_bytes()).hexdigest()
         if p.suffix=='.aar':
             with zipfile.ZipFile(p) as z:
