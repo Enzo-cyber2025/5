@@ -39,3 +39,9 @@ assert asset['size']==16753713
 assert asset['digest']=='sha256:5b40c17d4fcb256bd9bcae2c1149028f8ca442c7230323970e6f91df6c56e63c'
 print('::notice title=Tested standalone APK::'+asset['browser_download_url'])
 PY
+# Verify the publicly distributed asset, not only local bytes/API metadata.
+mkdir -p /tmp/attachments-downloaded
+gh release download gguf-attachments-f129e2c -p GGUF-Chat-mobile.apk -D /tmp/attachments-downloaded
+cmp .delivery/GGUF-Chat-mobile.apk /tmp/attachments-downloaded/GGUF-Chat-mobile.apk
+sha256sum /tmp/attachments-downloaded/GGUF-Chat-mobile.apk
+echo 'PUBLIC_DOWNLOAD_BYTE_EXACT_PASS'

@@ -12,7 +12,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
-      - name: Verify tested bytes, create separate release and publish only APK
+      - name: Verify tested bytes, publish only APK and compare public download
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: Enzo-cyber2025/5
