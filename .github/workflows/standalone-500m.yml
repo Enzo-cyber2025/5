@@ -1,0 +1,65 @@
+name: Clean Android single-GGUF multimodal 500M
+on:
+  push:
+    branches: [arena/01a09b42-5]
+    paths:
+      - '.github/workflows/standalone-500m.yml'
+      - 'scripts/prepare_standalone_500m.py'
+      - 'scripts/test_standalone_500m_android.py'
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: standalone-500m-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Exact delivery APK and pinned independent GGUF writer
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install 'numpy==2.2.6' 'tqdm==4.67.1' 'pyyaml==6.0.2'
+          git clone --depth 1 --branch b6500 https://github.com/ggml-org/llama.cpp .cache/llama-mobile
+          test "$(git -C .cache/llama-mobile rev-parse HEAD)" = a7a98e0fffed794396b3fbad4dcdbbc184963645
+          python3 ci/verify_physical_signed.py
+      - name: Prepare real-weight complete GGUF outside app and remove source pair
+        run: bash ci/log_step.sh standalone-fixture .venv/bin/python scripts/prepare_standalone_500m.py
+      - name: KVM
+        run: sudo chmod a+rw /dev/kvm
+      - name: Software Vulkan environment
+        run: bash ci/prepare_vulkan.sh
+      - uses: reactivecircus/android-emulator-runner@v2
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GGUF_MOBILE_VULKAN: '1'
+          GGUF_TEST_APK: .delivery/GGUF-Chat-mobile.apk
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_5
+          ram-size: 6144M
+          heap-size: 1024M
+          disk-size: 8192M
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -gpu host -feature Vulkan -noaudio -no-boot-anim -camera-back emulated -camera-front emulated
+          script: .venv/bin/python scripts/test_standalone_500m_android.py
+      - name: Report actual results and unedited responses
+        if: always()
+        run: python3 ci/report_android.py evidence
+      - name: Publish bounded evidence only, never model weights or private keys
+        if: always()
+        run: bash ci/publish_evidence.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: standalone-500m-evidence
+          path: |
+            evidence/
+            .cache/ci-logs/
