@@ -1,3 +1,5 @@
+> **Histórico:** este relatório corresponde ao APK anterior `4d1697…`. A atualização Gemma 4, com a mesma assinatura, está em [GEMMA4.md](GEMMA4.md).
+
 # APK assinado — GGUF físico único, identificação e leitura real
 
 **Estado: APK assinado e instalável; aceitação Android PASS funcional em 26min55s. Qualidade geral das respostas NÃO aprovada.**

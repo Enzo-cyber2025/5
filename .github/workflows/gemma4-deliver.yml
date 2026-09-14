@@ -1,0 +1,32 @@
+name: Deliver tested signed Gemma 4 APK
+on:
+  push:
+    branches: [arena/01a09b42-5]
+    paths: [.github/workflows/gemma4-deliver.yml, .delivery/gemma4-acceptance.json]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  deliver:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: Verify actual APK signature and unchanged compiled payload
+        run: |
+          mkdir -p .cache/ci-logs
+          SIGNER=$(find "$ANDROID_HOME/build-tools" -path '*/apksigner' -type f | sort -V | tail -1)
+          test -n "$SIGNER"
+          "$SIGNER" verify --verbose --print-certs .delivery/GGUF-Chat-mobile.apk | tee .cache/ci-logs/gemma4-signature.txt
+          grep -F 'certificate SHA-256 digest: 9a368c9a1e4f3b3b0b6ecfb86aa3768d633a925855afba27eab3b9189177955a' .cache/ci-logs/gemma4-signature.txt
+          python3 ci/verify_gemma4_candidate.py
+      - name: Require exact-signed Android acceptance and compare public APK bytes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: Enzo-cyber2025/5
+        run: bash ci/log_step.sh gemma4-delivery bash ci/deliver_gemma4.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gemma4-delivery-verification
+          path: .cache/ci-logs/

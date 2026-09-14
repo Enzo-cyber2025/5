@@ -1,3 +1,25 @@
+# GGUF Chat — Gemma 4, arquivo único e assinatura preservada
+
+## [Baixar APK — sem ZIP](https://github.com/Enzo-cyber2025/5/releases/download/gguf-gemma4-ca7d8f1/GGUF-Chat-mobile.apk)
+
+**28.341.709 bytes · Android 9+ · ARM64 e x86_64 · modelos não incluídos.**
+
+- **Gemma-4-E2B-it corrigido:** motor nativo atualizado, identificação por parâmetros/tensores e unificação de linguagem + projetor em **um único GGUF físico**.
+- Par público autorizado Q3_K_S + mmproj-F16: **2.012 tensores preservados**, saída de 3.431.306.464 bytes. Pode diferir dos arquivos exatos do usuário.
+- **Mesmo APK assinado executado no Android:** Gemma respondeu `Dog`, `Dog` após reiniciar e `4` em texto sem anexos. Regressões de documentos, imagens, câmera emulada, prompts e persistência passaram funcionalmente.
+- **Mesma assinatura da entrega `gguf-physical-4fa8dbc`**, com atualização mantendo dado privado de teste. Não é necessário desinstalar uma instalação dessa mesma assinatura. Não apague dados para contornar incompatibilidade com outra assinatura sem antes salvá-los fora do app.
+
+**Reimporte o par que falhou anteriormente** em Importar → Importar .gguf. Registros antigos não são automaticamente reunificados; não exclua indiscriminadamente modelos/conversas.
+
+**Limites honestos:** emulador com Vulkan por software, não GPU física; sem homologação de RAM/desempenho de aparelho real. Áudio preservado não significa transcrição testada. Modelos pequenos ainda podem desobedecer à troca de prompt e repetir instruções: PASS funcional não aprova qualidade geral.
+
+[Relatório, arquivos de referência, hashes e capturas reais](docs/GEMMA4.md) · [Proveniência da aceitação](.delivery/gemma4-acceptance.json)
+
+SHA-256 do APK: `f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc`.
+
+<details>
+<summary>Entrega anterior e histórico — não são as instruções da atualização atual</summary>
+
 # GGUF Chat — APK assinado, GGUF físico único e prompts
 
 ## [Baixar APK diretamente — sem ZIP](https://github.com/Enzo-cyber2025/5/releases/download/gguf-physical-4fa8dbc/GGUF-Chat-mobile.apk)
@@ -226,6 +248,8 @@ também publica apenas resumos/capturas limitados em `ci-results/` **nesta mesma
 com `[skip ci]` para evitar repetição automática. Sem force-push nem outras branches.
 O workflow antigo do repositório não foi alterado; o erro histórico dos pontos em
 `timeout-minutes` já estava resolvido.
+
+</details>
 
 </details>
 
