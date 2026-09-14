@@ -1,22 +1,26 @@
-"""Pinned b6500: separate tensor ownership within ONE ordinary GGUF file."""
+"""Pinned llama.cpp (legacy and v0.4.1): separate tensor ownership within ONE ordinary GGUF file."""
 from unified_mobile import replace_method
 
 
 def patch_combined_loader(s):
     if 'GGUF_SINGLE_FILE_MEDIA' in s:
         return s
+    # Current loader uses a borrowed metadata pointer; old regression fixtures use meta.get().
+    current='metadata_ptr.reset' in s
     marker='    // Save tensors data offset of the main file.'
     assert s.count(marker)==1
     s=s.replace(marker,'''    // GGUF_SINGLE_FILE_MEDIA: clip metadata + language architecture, not filename.
     const int64_t vision_key = gguf_find_key(meta.get(), "clip.has_vision_encoder");
     const int64_t projector_key = gguf_find_key(meta.get(), "clip.projector_type");
-    const bool combined_media = arch_name != "clip" && vision_key >= 0 && projector_key >= 0
+    const int64_t vision_projector_key = gguf_find_key(meta.get(), "clip.vision.projector_type");
+    const int64_t effective_projector_key = projector_key >= 0 ? projector_key : vision_projector_key;
+    const bool combined_media = arch_name != "clip" && vision_key >= 0 && effective_projector_key >= 0
         && gguf_get_kv_type(meta.get(), vision_key) == GGUF_TYPE_BOOL
         && gguf_get_val_bool(meta.get(), vision_key)
-        && gguf_get_kv_type(meta.get(), projector_key) == GGUF_TYPE_STRING;
+        && gguf_get_kv_type(meta.get(), effective_projector_key) == GGUF_TYPE_STRING;
 ''' + marker)
     marker='        std::string tensor_name = std::string(cur->name);'
-    assert s.count(marker) in (1,2)
+    assert s.count(marker) in (1,2,3)
     s=s.replace(marker,marker+'''
         // Leave vision/projector tensors to mtmd, which opens this SAME GGUF.
         // Do NOT disable the exact language tensor-count/shape checks below.
@@ -27,6 +31,8 @@ def patch_combined_loader(s):
             continue;
         }
 ''',1)
+    if current:
+        s=s.replace('gguf_find_key(meta.get(),', 'gguf_find_key(metadata,').replace('gguf_get_kv_type(meta.get(),', 'gguf_get_kv_type(metadata,').replace('gguf_get_val_bool(meta.get(),', 'gguf_get_val_bool(metadata,')
     return s
 
 

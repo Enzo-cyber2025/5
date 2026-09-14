@@ -16,7 +16,7 @@ from patch_smali import apply
 
 ROOT=Path(__file__).resolve().parents[1]
 WORK=ROOT/'.cache/mobile'
-SOURCE_SHA='a7a98e0fffed794396b3fbad4dcdbbc184963645'
+SOURCE_SHA='b29c606e28a01b1bc8c1351026a0fa6e616bf6c4'
 
 def run(*args): subprocess.run([str(a) for a in args],check=True)
 def method_replace(s, signature, replacement):
@@ -78,7 +78,7 @@ def main():
     assert hashlib.sha256(original.read_bytes()).hexdigest()==ORIGINAL_APK_SHA256
     ndk=ndk_root(); sdk=Path(os.environ['ANDROID_HOME']); java=Path(os.environ['JAVA_HOME'])/'bin/java'
     apktool=Path(os.environ['APKTOOL_JAR']);source=ROOT/'.cache/llama-mobile'
-    if not source.exists(): run('git','clone','--depth','1','--branch','b6500','https://github.com/ggml-org/llama.cpp',source)
+    if not source.exists(): run('git','clone','--depth','1','--branch','v0.4.1','https://github.com/ggml-org/llama.cpp',source)
     assert subprocess.check_output(['git','-C',str(source),'rev-parse','HEAD'],text=True).strip()==SOURCE_SHA
     vk=source/'ggml/src/ggml-vulkan/ggml-vulkan.cpp';s=vk.read_text();old='device_extensions.push_back("VK_KHR_16bit_storage");'
     if old in s:
@@ -136,7 +136,7 @@ def main():
         prebuilt=ndk/'toolchains/llvm/prebuilt/linux-x86_64'
         for abi,triple in [('arm64-v8a','aarch64-linux-android'),('x86_64','x86_64-linux-android')]:
             build=WORK/abi
-            run('cmake','-S',ROOT/'apk-fix/native','-B',build,'-G','Ninja',f'-DLLAMA_SOURCE={source}',f'-DCMAKE_TOOLCHAIN_FILE={ndk}/build/cmake/android.toolchain.cmake',f'-DANDROID_ABI={abi}','-DANDROID_PLATFORM=android-28','-DCMAKE_BUILD_TYPE=Release',f'-DVulkan_INCLUDE_DIR={ROOT}/.cache/vulkan-headers',f'-DVulkan_LIBRARY={prebuilt}/sysroot/usr/lib/{triple}/28/libvulkan.so','-DVulkan_GLSLC_EXECUTABLE=/usr/bin/glslc')
+            run('cmake','-S',ROOT/'apk-fix/native','-B',build,'-G','Ninja',f'-DLLAMA_SOURCE={source}',f'-DSPIRV-Headers_DIR={ROOT}/.cache/spirv-install/share/cmake/SPIRV-Headers',f'-DCMAKE_TOOLCHAIN_FILE={ndk}/build/cmake/android.toolchain.cmake',f'-DANDROID_ABI={abi}','-DANDROID_PLATFORM=android-28','-DCMAKE_BUILD_TYPE=Release',f'-DVulkan_INCLUDE_DIR={ROOT}/.cache/vulkan-headers',f'-DVulkan_LIBRARY={prebuilt}/sysroot/usr/lib/{triple}/28/libvulkan.so','-DVulkan_GLSLC_EXECUTABLE=/usr/bin/glslc')
             run('cmake','--build',build,'--target','aijni','--parallel','2')
             for name,src in [('libaijni.so',build/'libaijni.so'),('libc++_shared.so',prebuilt/f'sysroot/usr/lib/{triple}/libc++_shared.so')]:
                 dest=WORK/f'{abi}-{name}';shutil.copyfile(src,dest);run(prebuilt/'bin/llvm-strip','--strip-debug',dest)

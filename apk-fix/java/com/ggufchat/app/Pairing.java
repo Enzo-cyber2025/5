@@ -154,7 +154,8 @@ public final class Pairing {
                 synchronized(lock()) {
                     for(Object item:raw(context)) {
                         if(previous.contains(field(item,"id"))||!names.contains(field(item,"fileName")))continue;
-                        if("VISION_PROJECTOR".equals(field(item,"capability"))){if(projector!=null)throw new IllegalArgumentException("Dois projetores selecionados");projector=item;}
+                        String role=GgufFile.read(new File(field(item,"path"))).pairingRole();
+                        if("projector".equals(role)){if(projector!=null)throw new IllegalArgumentException("Dois projetores selecionados");projector=item;}
                         else {if(model!=null)throw new IllegalArgumentException("Dois modelos de linguagem selecionados");model=item;}
                     }
                 }

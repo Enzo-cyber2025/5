@@ -14,15 +14,18 @@ JAVA=ROOT/'apk-fix/java/com/ggufchat/app/GgufFile.java'
 def string(s):
     b=s.encode();return struct.pack('<Q',len(b))+b
 
-def fixture(path,kind='language',alignment=32,extra=()):
+def fixture(path,kind='language',alignment=32,extra=(),dual=False):
     metadata=[('general.architecture',8,'clip' if kind=='projector' else 'llama'),('general.alignment',4,alignment)]
     tensors=[]
     if kind!='projector':
         metadata += [('llama.embedding_length',4,4),('tokenizer.ggml.tokens',9,['test','<image>'] if kind=='tokens' else ['test'])]
         tensors += [('token_embd.weight',[4,8],bytes(range(128))),('blk.0.attn_q.weight',[4,4],bytes(range(64)))]
     if kind in ('projector','complete','declaration'):
-        metadata += [('clip.has_vision_encoder',7,True),('clip.projector_type',8,'idefics3'),('clip.vision.block_count',4,1),('clip.vision.projection_dim',4,4)]
+        metadata += [('clip.has_vision_encoder',7,True),('clip.vision.projector_type' if dual else 'clip.projector_type',8,'gemma4v' if dual else 'idefics3'),('clip.vision.block_count',4,1),('clip.vision.projection_dim',4,4)]
         if kind!='declaration':tensors += [('v.blk.0.attn_q.weight',[2,2],b'V'*16),('mm.model.fc.weight',[4,4],b'M'*64)]
+    if dual:
+        metadata += [('clip.has_audio_encoder',7,True),('clip.audio.projector_type',8,'gemma4a')]
+        tensors += [('a.blk.0.attn_q.weight',[2,2],b'A'*16)]
     metadata+=list(extra)
     header=b'GGUF'+struct.pack('<IQQ',3,len(tensors),len(metadata))
     for k,t,v in metadata:
@@ -119,3 +122,20 @@ def test_native_keeps_tensor_count_validation_and_single_file_memory_accounting(
     source=(ROOT/'apk-fix/native/mobile.cpp').read_text()
     assert 'projector_path==model_path?0:bytes(projector_path)' in source
     assert 'GGUF_SINGLE_FILE_LOADED same_path=1' in source
+
+
+def test_dual_vision_audio_projector_and_complete_gguf(java,tmp_path):
+    language,projector,out=[tmp_path/n for n in ('language.gguf','neutral.gguf','single.gguf')]
+    tensors=fixture(language);tensors.update(fixture(projector,'projector',dual=True))
+    assert 'VISION_PROJECTOR' in run(java,projector)
+    assert 'VISION_SINGLE_GGUF' in run(java,language,projector,out)
+    assert read_tensors(out)==tensors
+    assert 'VISION_SINGLE_GGUF' in run(java,out)
+
+
+def test_unknown_layout_is_not_assumed_to_be_a_second_language():
+    source=(ROOT/'apk-fix/java/com/ggufchat/app/Pairing.java').read_text()
+    assert 'GgufFile.read(new File(field(item,"path"))).pairingRole()' in source
+    parser=JAVA.read_text()
+    assert 'if(language()&&!visionWeights())return "language";' in parser
+    assert 'componente não reconhecido como linguagem ou projetor compatível' in parser

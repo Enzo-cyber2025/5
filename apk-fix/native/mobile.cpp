@@ -2,6 +2,7 @@
 #include <jni.h>
 #include <android/log.h>
 #include "llama.h"
+#include "chat.h"
 #include "gguf.h"
 #include "ggml-backend.h"
 #include "mtmd.h"
@@ -125,7 +126,7 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
             llama_backend_init();
         });
         auto e=std::make_shared<Engine>();
-        auto mp=llama_model_default_params(); mp.n_gpu_layers=layers; mp.use_mmap=mmap; mp.use_mlock=false;
+        auto mp=llama_model_default_params(); mp.n_gpu_layers=layers; mp.load_mode=mmap?LLAMA_LOAD_MODE_MMAP:LLAMA_LOAD_MODE_NONE;
         ggml_backend_dev_t no_accelerators[] = {nullptr};
         ggml_backend_dev_t vulkan_devices[] = {nullptr,nullptr};
         if(layers==0) mp.devices=no_accelerators; // Explicit CPU mode only.
@@ -145,7 +146,7 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
         e->ctx=llama_init_from_model(e->model,cp);
         if(!e->ctx) throw std::runtime_error("Não foi possível criar contexto: reduza o contexto/modelo");
         if(!projector_path.empty()) {
-            auto vp=mtmd_context_params_default(); vp.use_gpu=layers!=0; vp.n_threads=cp.n_threads; vp.print_timings=false;
+            auto vp=mtmd_context_params_default(); vp.use_gpu=layers!=0; vp.n_threads=cp.n_threads; vp.print_timings=false; vp.warmup=false; vp.device=layers!=0?vulkan_devices[0]:nullptr;
             e->projector=mtmd_init_from_file(projector_path.c_str(),e->model,vp);
             if(!e->projector) throw std::runtime_error("mmproj incompatível com o GGUF ou memória insuficiente");
             if(projector_path==model_path) LOG("GGUF_SINGLE_FILE_LOADED same_path=1");
@@ -188,6 +189,16 @@ extern "C" JNIEXPORT jstring JNICALL Java_com_ggufchat_app_Native_applyTemplate(
             r.push_back(utf8(env,a));c.push_back(utf8(env,b));env->DeleteLocalRef(a);env->DeleteLocalRef(b);}
         std::vector<llama_chat_message> messages; for(int i=0;i<count;i++) messages.push_back({r[i].c_str(),c[i].c_str()});
         auto t=utf8(env,templ); if(t.empty()) {const char *p=llama_model_chat_template(e->model,nullptr);if(p)t=p;}
+        // Gemma 4 needs its actual Jinja template/new turn tokens, not the old Gemma formatter.
+        if(t.find("<|turn>")!=std::string::npos) {
+            auto templates=common_chat_templates_init(e->model,t);
+            common_chat_templates_inputs input;
+            input.enable_thinking=false; input.add_generation_prompt=true;
+            for(int i=0;i<count;i++){common_chat_msg msg;msg.role=r[i];msg.content=c[i];input.messages.push_back(std::move(msg));}
+            auto rendered=common_chat_templates_apply(templates.get(),input);
+            LOG("GGUF_JINJA_TEMPLATE_APPLIED messages=%d",count);
+            return java_string(env,rendered.prompt);
+        }
         std::vector<char> b(8192); int n=llama_chat_apply_template(t.empty()?"chatml":t.c_str(),messages.data(),messages.size(),true,b.data(),b.size());
         if(n<0) return nullptr; if(n>=(int)b.size()) {b.resize(n+1);n=llama_chat_apply_template(t.empty()?"chatml":t.c_str(),messages.data(),messages.size(),true,b.data(),b.size());}
         return n>=0?java_string(env,std::string(b.data(),n)):nullptr;
@@ -222,7 +233,8 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
                 if(e->cancel)throw std::runtime_error("Geração cancelada");
                 auto path=(jstring)env->GetObjectArrayElement(images,i);
                 auto filename=utf8(env,path);env->DeleteLocalRef(path);
-                mtmd::bitmap bitmap(mtmd_helper_bitmap_init_from_file(e->projector,filename.c_str()));
+                auto decoded=mtmd_helper_bitmap_init_from_file(e->projector,filename.c_str(),false,mtmd_helper_init_opt_default());
+                mtmd::bitmap bitmap(decoded.bitmap);
                 if(!bitmap.ptr || mtmd_bitmap_is_audio(bitmap.ptr.get()))throw std::runtime_error("Não foi possível decodificar uma imagem preparada");
                 bitmaps.entries.push_back(std::move(bitmap));
             }
@@ -255,7 +267,7 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
         int limit=std::min<int>(predict,llama_n_ctx(e->ctx)-input_size);
         std::unique_ptr<llama_sampler,decltype(&llama_sampler_free)> sampler(llama_sampler_chain_init(llama_sampler_chain_default_params()),llama_sampler_free);
         if(!sampler) throw std::runtime_error("Sem memória para amostrador");
-        if(last_n!=0) llama_sampler_chain_add(sampler.get(),llama_sampler_init_penalties(last_n,repeat,0,0));
+        if(last_n!=0) llama_sampler_chain_add(sampler.get(),llama_sampler_init_penalties(llama_vocab_n_tokens(vocab),last_n,repeat,0,0));
         if(temp<=0) llama_sampler_chain_add(sampler.get(),llama_sampler_init_greedy());
         else {llama_sampler_chain_add(sampler.get(),llama_sampler_init_top_k((int)top_k));llama_sampler_chain_add(sampler.get(),llama_sampler_init_top_p(top_p,1));llama_sampler_chain_add(sampler.get(),llama_sampler_init_min_p(min_p,1));llama_sampler_chain_add(sampler.get(),llama_sampler_init_temp(temp));llama_sampler_chain_add(sampler.get(),llama_sampler_init_dist(seed));}
         std::string pending;int emitted=0;const char *reason="length";

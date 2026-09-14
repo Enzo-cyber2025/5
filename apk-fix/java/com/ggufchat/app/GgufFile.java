@@ -96,10 +96,18 @@ public final class GgufFile {
     public boolean flag(String key){KV k=metadata.get(key);return k!=null&&Boolean.TRUE.equals(k.value);}
     public static boolean mediaTensor(String name){return name.startsWith("v.")||name.startsWith("a.")||name.startsWith("mm.")||name.startsWith("resampler.")||name.startsWith("adapter.")||name.equals("model.image_newline");}
     public boolean language(){return !text("general.architecture").isEmpty()&&!text("general.architecture").equals("clip")&&tensors.containsKey("token_embd.weight")&&metadata.containsKey("tokenizer.ggml.tokens");}
+    public String visionProjectorType(){String type=text("clip.projector_type");return type.isEmpty()?text("clip.vision.projector_type"):type;}
     public boolean visionWeights(){
         boolean encoder=false,projector=false;
         for(String n:tensors.keySet()){encoder|=n.startsWith("v.blk.");projector|=n.startsWith("mm.")||n.startsWith("resampler.")||n.startsWith("adapter.");}
-        return flag("clip.has_vision_encoder")&&!text("clip.projector_type").isEmpty()&&number("clip.vision.block_count")>0&&encoder&&projector;
+        return flag("clip.has_vision_encoder")&&!visionProjectorType().isEmpty()&&number("clip.vision.block_count")>0&&encoder&&projector;
+    }
+    /** Only intrinsically verified language may enter the language side of a pair. */
+    public String pairingRole() throws IOException {
+        if(projector())return "projector";
+        if(language()&&!visionWeights())return "language";
+        if(singleVision())throw bad("este arquivo já contém linguagem e visão; importe-o sozinho");
+        throw bad("componente não reconhecido como linguagem ou projetor compatível: "+capability()+" (arquitetura="+text("general.architecture")+")");
     }
     public boolean singleVision(){return language()&&visionWeights();}
     public boolean projector(){return !language()&&visionWeights();}
