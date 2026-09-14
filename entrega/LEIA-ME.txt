@@ -1,19 +1,23 @@
-APK — MODELO ÚNICO, OLHO E VULKAN (SEM ZIP)
-https://github.com/Enzo-cyber2025/5/releases/download/gguf-unified-72d4429/GGUF-Chat-mobile.apk
+APK — CÂMERA, CLIPE E MÚLTIPLOS ANEXOS (SEM ZIP)
+https://github.com/Enzo-cyber2025/5/releases/download/gguf-attachments-f129e2c/GGUF-Chat-mobile.apk
 
-SHA-256: ab30020d22076701d68db939c8c1a33ca10e50e6f7f598ae1e7a9d59665ecc03
-16.745.526 bytes. Android 9+; ARM64 e x86_64.
+SHA-256: 5b40c17d4fcb256bd9bcae2c1149028f8ca442c7230323970e6f91df6c56e63c
+16.753.713 bytes. Android 9+; ARM64 e x86_64.
 Certificado SHA-256: 68f248a224075d66df9ff97ba336556b0a84b724112e644c28e607612da633f5
 
-Seleção conjunta GGUF + mmproj salva uma entrada privada com olho.
-Modelo sem projetor fica sem olho. Os arquivos não são concatenados.
-Vulkan solicitado para os dois componentes, sem fallback automático CPU.
-Teste real: https://github.com/Enzo-cyber2025/5/actions/runs/34788194324
-31/31 camadas e 198 tensores de projetor em Vulkan; duas respostas salvas.
-Também validados SAF, reimportação, barra compacta e exclusão conjunta.
+Câmera à esquerda: importar várias fotos ou tirar várias fotos consecutivas.
+Câmera cinza no modelo normal; clipe sempre disponível, qualquer tipo de arquivo.
+Sem limite fixo de tamanho/quantidade no app; sujeito a espaço, Android e provedor.
+Anexos privados, lista, remoção, preservação após reabrir e vínculo à mensagem.
+Texto digitado junto dos anexos preservado. Excluir conversa libera seus arquivos.
 
-Mesma assinatura da versão gguf-mobile-120e7dc: pode atualizar sem trocar chave.
+Teste PASS: https://github.com/Enzo-cyber2025/5/actions/runs/34790832355
+Câmera externa real do emulador: duas fotos 1392 x 1856, não sensor físico.
+Arquivos mistos, vazio, 8 MiB, hashes e nove anexos vinculados com texto testados.
+Vulkan/unificação continuam testados por software, não em GPU física.
+
+IMPORTANTE: seleção/armazenamento não acrescentam interpretação do conteúdo dos
+arquivos pelo modelo. Fotos, PDFs etc. não são avaliados pelo motor nesta etapa.
+Mesmo certificado das duas últimas versões mobile; pode atualizar sem trocar chave.
 A versão antiga gguf-apk-f6dc954 usa outra chave: exporte antes de desinstalar.
-Teste em Vulkan POR SOFTWARE no emulador. GPU física não testada.
-Não foi implementada/validada avaliação de imagens/anexos; o olho identifica o par.
-Detalhes: docs/UNIFIED.md.
+Detalhes: docs/ATTACHMENTS.md.

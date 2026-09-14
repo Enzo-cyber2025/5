@@ -1,22 +1,22 @@
-# GGUF Chat — modelo único, olho e Vulkan
+# GGUF Chat — câmera, clipe e múltiplos anexos
 
-## [Baixar APK diretamente — sem ZIP](https://github.com/Enzo-cyber2025/5/releases/download/gguf-unified-72d4429/GGUF-Chat-mobile.apk)
+## [Baixar APK diretamente — sem ZIP](https://github.com/Enzo-cyber2025/5/releases/download/gguf-attachments-f129e2c/GGUF-Chat-mobile.apk)
 
-**16,7 MB · Android 9+ · ARM64 e x86_64 · mesma assinatura fixa da revisão mobile anterior.**
+**16,75 MB · Android 9+ · ARM64 e x86_64 · mesma assinatura fixa das revisões mobile anteriores.**
 
-- GGUF + mmproj selecionados juntos viram **um único registro no armazenamento privado**, com tamanho total e ícone de olho.
-- GGUF importado sozinho fica **sem olho**. Os arquivos permanecem GGUFs válidos; não são concatenados.
-- Carregamento Vulkan para linguagem **e projetor**, sem fallback automático para CPU. CPU continua como escolha explícita.
-- Exclusão conjunta dos componentes, reimportação independente e migração dos pares antigos sem mudar caminhos.
-- Barra compacta preservada: chave inglesa ao lado de Enviar, ferramentas inicialmente recolhidas, uma linha e 10 px de intervalo.
+- **Câmera à esquerda:** “Importar foto” com seleção múltipla, ou “Tirar foto” com opção de tirar outras fotos e enviar juntas.
+- **Modelo normal:** câmera cinza/desativada. **Clipe sempre disponível**, com seleção múltipla de qualquer tipo de arquivo.
+- Sem limite fixo de tamanho/quantidade imposto pelo app; cópia em blocos, armazenamento privado e preservação dos anexos concluídos.
+- Lista de anexos, remoção dos pendentes, vínculo à mensagem sem perder o texto digitado e limpeza dos arquivos ao excluir a conversa.
+- Preservados modelo único GGUF + mmproj com olho, Vulkan para os dois componentes sem fallback automático e barra compacta de ferramentas.
 
-**Teste Android aprovado:** [34788194324](https://github.com/Enzo-cyber2025/5/actions/runs/34788194324). SAF real, registro único, olho/sem olho, 31/31 camadas de linguagem e 198 tensores de projetor no Vulkan, duas respostas salvas com PID preservado, reimportação e exclusão.
+**Teste Android aprovado:** [34790832355](https://github.com/Enzo-cyber2025/5/actions/runs/34790832355). SAF real, arquivos mistos com hashes conferidos, duas capturas de 1392 × 1856 pela câmera do emulador, nove anexos com texto preservado, câmera desativada no modelo normal e exclusão isolada por conversa. Regressões Vulkan/unificação também passaram.
 
-**Limites:** Vulkan por software Mesa/Lavapipe em emulador x86_64, não GPU física. Carregamento do projetor e geração de texto não comprovam reconhecimento de imagens; não foi acrescentada avaliação de anexos. O olho identifica a união com projetor, não valida essa função de imagem.
+**Limites:** tamanho/quantidade ainda dependem de espaço, Android e provedor de arquivos. Captura usa a câmera externa do Android; teste com sensor emulado, não câmera física. **Anexar e guardar arquivos não significa interpretá-los:** esta etapa não acrescenta análise de imagens/PDF/áudio/vídeo nem extração de conteúdo para o modelo. O motor recebe o texto e um aviso de anexos, não seus bytes. Vulkan validado por software, não GPU física.
 
-**Atualização:** usa o mesmo certificado da versão `gguf-mobile-120e7dc`; não é necessário desinstalá-la por mudança de assinatura. A versão mais antiga `gguf-apk-f6dc954` tem outro certificado: exporte seus dados antes de desinstalá-la.
+**Atualização:** mesma chave das versões `gguf-mobile-120e7dc` e `gguf-unified-72d4429`; não é preciso desinstalá-las por troca de assinatura. A versão antiga `gguf-apk-f6dc954` tem outra chave: exporte seus dados antes de desinstalá-la.
 
-[Relatório e hashes](docs/UNIFIED.md) · [Evidências originais](ci-results/34788194324-1/summary.json) · [Relatório da revisão mobile anterior](docs/MOBILE.md)
+[Relatório e hashes](docs/ATTACHMENTS.md) · [Evidências](ci-results/34790832355-1/summary.json) · [Unificação/Vulkan](docs/UNIFIED.md)
 
 <details>
 <summary>Histórico das builds anteriores (não descreve o APK mobile acima)</summary>
