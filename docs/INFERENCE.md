@@ -98,3 +98,7 @@ O teste final mantém os controles de erro, persistência da exclusão, ausênci
 **Capturas reais do emulador:** [foto de cão](../ci-results/34848915081-1/inference-frame-a.jpg.png), [ônibus](../ci-results/34848915081-1/inference-frame-b.jpg.png), [PDF](../ci-results/34848915081-1/inference-record-pdf.png), [duas imagens](../ci-results/34848915081-1/inference-two-images.png), [câmera](../ci-results/34848915081-1/attachments-camera-added.png).
 
 Regressões locais finais: **105 PASS, 3 SKIP** (testes Java que precisam de compilador local). A compilação CI com JDK passou; o APK assinado passou também pelas 33 regressões DEX→JVM. ODT tem implementação, mas não teve teste semântico Android dedicado nesta rodada. Nenhuma alegação de sensor/GPU física ou precisão geral dos modelos.
+
+## Publicação verificada
+
+[34852125361 — PASS](https://github.com/Enzo-cyber2025/5/actions/runs/34852125361): APK publicado como arquivo independente, download público sem autenticação realizado no runner e comparado byte a byte com o APK assinado testado. Tamanho e digest da release também conferidos. [Registro](../ci-results/34852125361-1/delivery-verification.json).
