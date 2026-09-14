@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -euo pipefail
+gh api repos/Enzo-cyber2025/5/actions/runs/34790832355 > /tmp/unified-test.json
+python3 - <<'PY'
+import hashlib,json
+from pathlib import Path
+assert json.loads(Path('/tmp/unified-test.json').read_text())['conclusion']=='success'
+summary=json.loads(Path('ci-results/34790832355-1/summary.json').read_text())
+expected='5b40c17d4fcb256bd9bcae2c1149028f8ca442c7230323970e6f91df6c56e63c'
+assert summary['status']=='PASS' and summary['apk_sha256']==expected
+for name in ('single_stored_unit_and_eye','vulkan_language_and_projector_weights','normal_model_without_eye','delete_unit_removes_both_preserves_others'):
+    assert summary['checks'][name]=='PASS'
+checks=summary['attachment_checks']
+for name in ('multiple_photos_from_files','mixed_types_empty_large_and_exact_bytes','draft_survives_restart','remove_one_preserves_others','multiple_attachments_bound_to_message','normal_model_multi_file_import','delete_conversation_cleans_only_its_files'):
+    assert checks[name]=='PASS',name
+assert checks['multimodal_controls']['camera_enabled'] is True
+assert checks['normal_controls']['camera_enabled'] is False
+assert len(checks['two_real_camera_photos'])==2
+assert all(p['width']>1000 and p['height']>1000 for p in checks['two_real_camera_photos'])
+assert hashlib.sha256(Path('.delivery/GGUF-Chat-mobile.apk').read_bytes()).hexdigest()==expected
+PY
+python3 - <<'PYNOTES'
+from pathlib import Path
+s=Path('docs/ATTACHMENTS.md').read_text().replace('(../ci-results/', '(https://github.com/Enzo-cyber2025/5/blob/arena/01a09b42-5/ci-results/')
+Path('/tmp/attachments-notes.md').write_text(s)
+PYNOTES
+if ! gh release view gguf-attachments-f129e2c >/dev/null 2>&1; then
+  gh release create gguf-attachments-f129e2c --target f129e2c88a5c8957355e520543817b5de3d525d7 --prerelease --latest=false --title 'GGUF Chat — câmera, clipe e múltiplos anexos' --notes-file /tmp/attachments-notes.md
+fi
+gh release edit gguf-attachments-f129e2c --notes-file /tmp/attachments-notes.md
+gh release upload gguf-attachments-f129e2c .delivery/GGUF-Chat-mobile.apk --clobber
+gh api repos/Enzo-cyber2025/5/releases/tags/gguf-attachments-f129e2c > /tmp/unified-release.json
+python3 - <<'PY'
+import json
+from pathlib import Path
+release=json.loads(Path('/tmp/unified-release.json').read_text())
+asset=next(a for a in release['assets'] if a['name']=='GGUF-Chat-mobile.apk')
+assert asset['size']==16753713
+assert asset['digest']=='sha256:5b40c17d4fcb256bd9bcae2c1149028f8ca442c7230323970e6f91df6c56e63c'
+print('::notice title=Tested standalone APK::'+asset['browser_download_url'])
+PY
