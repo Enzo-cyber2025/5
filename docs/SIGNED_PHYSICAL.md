@@ -4,6 +4,10 @@
 
 O usuário autorizou uma nova assinatura. Foi criada uma chave persistente local; seu backup privado foi fornecido separadamente e não foi publicado no GitHub. Não é a chave descartável dos testes anteriores.
 
+## [Baixar o APK diretamente — sem ZIP](https://github.com/Enzo-cyber2025/5/releases/download/gguf-physical-4fa8dbc/GGUF-Chat-mobile.apk)
+
+Publicação [34895580156 — PASS](https://github.com/Enzo-cyber2025/5/actions/runs/34895580156): download público sem autenticação comparado byte a byte com o APK testado; tamanho e digest do asset GitHub conferidos. [Comprovante](../ci-results/34895580156-1/publication.json).
+
 ## Arquivo e instalação
 
 - APK standalone: `.delivery/GGUF-Chat-mobile.apk`, **21.730.287 bytes**; não é ZIP de distribuição.
@@ -67,3 +71,9 @@ SHA-256 do GGUF físico produzido: `6ba9ca75ac0a80adcc380220252ef1d016153149521b
 - Modelos pequenos podem inventar conteúdo e desobedecer instruções apesar de receberem corretamente documentos e prompts. PASS funcional não é aprovação geral da qualidade.
 
 Detalhes de implementação e resultados anteriores: `docs/PHYSICAL_GGUF.md`. A release anterior `gguf-inference-e37df03` permanece histórica e não contém unificação física nem prompts editáveis.
+
+## Ocorrências de infraestrutura da publicação
+
+A primeira publicação (34895466180) foi bloqueada com HTTP 403 ao criar a release apontando ao commit antigo de compilação. O publicador passou a marcar o commit atual de publicação; fonte compilada, hash do APK, assinatura e teste aceito continuaram fixados e inalterados. A nova execução 34895580156 publicou e verificou o download com sucesso.
+
+Um fluxo legado de reparo (34895466148), disparado pelo commit de documentação sem o marcador de entrega, falhou na preparação `android-actions/setup-android@v3`, antes de recompilar. Ele não forneceu nem substituiu este APK. Os commits seguintes usam `[apk delivery]` e dispensam esse fluxo legado; a aceitação válida é a execução assinada 34892580054.
