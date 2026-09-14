@@ -68,7 +68,7 @@ def attach(d,chat,names):
         actual=d.shell('sha256sum '+shlex.quote(f'/data/user/0/{PACKAGE}/files/attachments/{key}/{item["id"]}.data')).split()[0]
         assert actual==hashlib.sha256((F/item['name']).read_bytes()).hexdigest()
 
-def reply(d,chat,prompt,stage,images=0):
+def reply(d,chat,prompt,stage,images=0,timeout=600):
     d.send(prompt);pid=d.alive()
     def check():
         assert d.alive()==pid,'Native process died'
@@ -88,7 +88,7 @@ def reply(d,chat,prompt,stage,images=0):
             if VULKAN:assert all(backend=='Vulkan' for _,backend in records)
         else:assert 'GGUF_IMAGE_EVALUATED' not in log
         return answers[-1]
-    text=d.wait(check,'resposta baseada no conteúdo real: '+stage,timeout=600)
+    text=d.wait(check,'resposta baseada no conteúdo real: '+stage,timeout=timeout)
     (E/f'inference-{stage}-reply.txt').write_text(text);d.capture(f'inference-{stage}.png')
     assert not d.shell(f'find /data/user/0/{PACKAGE}/cache/attachment-inference -type f 2>/dev/null',check=False),'Prepared images leaked'
     return text

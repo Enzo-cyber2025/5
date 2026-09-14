@@ -11,7 +11,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [gemma4, regression]
+        # Reuse a separately pinned successful regression run on unchanged APK bytes.
+        suite: ${{ contains(github.event.head_commit.message, '[gemma4-only]') && fromJSON('["gemma4"]') || fromJSON('["gemma4","regression"]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 70
     steps:

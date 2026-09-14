@@ -658,3 +658,34 @@ def test_image_crops_are_not_source_image_count():
                        (crop + one + one, 1), (crop.replace('64', '0') + one, 1)]:
         with pytest.raises(AssertionError):
             image_prefill_records(log, count)
+
+
+def test_exact_saf_selection_ignores_recent_diagnostic_xml():
+    from android_checks import select_exact_documents
+
+    class Picker:
+        def __init__(self):
+            self.selected = []
+
+        def ui(self):
+            names = ['gguf-test-ui.xml', 'model.gguf', 'projector.gguf']
+            names.append(f'{len(self.selected)} selected')
+            return '<hierarchy>' + ''.join(
+                f'<node text="{name}" package="com.android.documentsui" enabled="true" '
+                f'bounds="[0,{i * 10}][10,{i * 10 + 10}]"/>'
+                for i, name in enumerate(names)) + '</hierarchy>'
+
+        def shell(self, command):
+            assert command == 'input touchscreen swipe 5 15 5 15 1000'
+            self.selected.append('model.gguf')
+
+        def tap(self, *, text, package):
+            assert text == 'projector.gguf' and package == PICKERS
+            self.selected.append(text)
+
+        def wait(self, predicate, description):
+            assert predicate(), description
+
+    picker = Picker()
+    select_exact_documents(picker, ['model.gguf', 'projector.gguf'])
+    assert picker.selected == ['model.gguf', 'projector.gguf']

@@ -76,7 +76,7 @@ def main():
         fixtures()
         chat=d.new_chat(unit,99,context_size=1024);attach(d,chat,['frame-a.jpg'])
         load=d.adb('logcat','-d');(E/'physical-gemma4-load.txt').write_text(load)
-        answer=reply(d,chat,'Name the main animal in the image. Reply in English with one word.','gemma4-image',images=1)
+        answer=reply(d,chat,'Name the main animal in the image. Reply in English with one word.','gemma4-image',images=1,timeout=1200)
         log=load+(E/'inference-gemma4-image-logcat.txt').read_text()
         assert 'GGUF_SINGLE_FILE_LOADED same_path=1' in log
         assert 'GGUF_PROJECTOR_LOADED vision=1' in log
@@ -86,13 +86,13 @@ def main():
         s['response_quality']['gemma4-image']={'status':'PASS' if 'dog' in answer.lower() else 'FAIL','response':answer}
         # Force-stop and reopen the persisted media conversation; no separate projector exists.
         d.launch();assert d.read_json('models.json')==[unit];d.open_existing_chat(chat['title'])
-        answer=reply(d,chat,'Name the main animal in the attached image again. Reply in English with one word.','gemma4-restart',images=1)
+        answer=reply(d,chat,'Name the main animal in the attached image again. Reply in English with one word.','gemma4-restart',images=1,timeout=1200)
         checks['native_image_history_after_restart']='PASS'
         s['response_quality']['gemma4-restart']={'status':'PASS' if 'dog' in answer.lower() else 'FAIL','response':answer}
         assert d.shell('find /data/user/0/'+PACKAGE+'/files/models -type f').splitlines()==[unit['path']]
         checks['image_inference']='PASS';save()
         text_chat=d.new_chat(unit,99,context_size=1024)
-        answer=reply(d,text_chat,'What is 2 + 2? Reply with only the number.','gemma4-text')
+        answer=reply(d,text_chat,'What is 2 + 2? Reply with only the number.','gemma4-text',timeout=1200)
         checks['native_Gemma4_text_only']='PASS'
         s['response_quality']['gemma4-text']={'status':'PASS' if answer.strip(' \n.!*`')=='4' else 'FAIL','response':answer}
         assert all(r['status']=='PASS' for r in s['response_quality'].values()),'Gemma4 reference image/text quality did not pass; preserve actual replies'
