@@ -1,0 +1,43 @@
+name: Gemma 4 real-weight merger inspection
+on:
+  push:
+    branches: [arena/01a09b42-5]
+    paths:
+      - '.github/workflows/gemma4-inspect.yml'
+      - 'ci/gemma4-models.sh'
+      - 'scripts/inspect_gemma4.py'
+permissions:
+  contents: write
+  actions: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Pinned reader and actual Gemma 4 reference files
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install numpy==2.2.6 tqdm==4.67.1 pyyaml==6.0.2
+          git clone --depth 1 --branch v0.4.1 https://github.com/ggml-org/llama.cpp .cache/llama-mobile
+          test "$(git -C .cache/llama-mobile rev-parse HEAD)" = b29c606e28a01b1bc8c1351026a0fa6e616bf6c4
+          bash ci/log_step.sh gemma4-download bash ci/gemma4-models.sh
+      - name: Real Java parser and merger against actual language and dual-modality weights
+        run: |
+          mkdir -p .cache/gemma4-classes
+          javac --release 8 -d .cache/gemma4-classes apk-fix/java/com/ggufchat/app/GgufFile.java
+          bash ci/log_step.sh gemma4-host .venv/bin/python scripts/inspect_gemma4.py
+      - name: Publish bounded reports only
+        if: always()
+        run: bash ci/publish_evidence.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gemma4-host-inspection
+          path: |
+            evidence/
+            .cache/ci-logs/
