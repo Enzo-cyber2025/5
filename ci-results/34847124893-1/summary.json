@@ -1,0 +1,100 @@
+{
+  "status": "FAIL",
+  "scope": "single-stored-unit-SAF-eye-Vulkan-projector-text",
+  "checks": {
+    "saf_multiselect_pair": "PASS",
+    "imported_sha256": "PASS",
+    "single_stored_unit_and_eye": "PASS",
+    "pair_survives_restart": "PASS",
+    "native_model_and_projector_load": "PASS",
+    "vulkan_language_and_projector_weights": "PASS",
+    "compact_single_row_10px_toggle": "PASS",
+    "native_generation_and_persistence": "PASS",
+    "second_vulkan_generation": "PASS",
+    "basic_response_quality": "PASS",
+    "repeat_saf_import_keeps_pairs_separate": "PASS",
+    "normal_model_without_eye": "PASS",
+    "delete_unit_removes_both_preserves_others": "PASS",
+    "physical_A55": "NOT_TESTED: emulator x86_64 is not Samsung ARM64 hardware",
+    "image_inference": "NOT_TESTED: model/projector load and text message only"
+  },
+  "apk_sha256": "3d17116aac387bbda402ddad2f7dc19b42115eec33d7ec89f7c20dde9a87f2c9",
+  "backend_requested": "Vulkan, 99 language layers requested; projector weights also Vulkan",
+  "environment": "Android Vulkan through Mesa software driver, not physical GPU",
+  "generation_pid": "4959",
+  "offload_records": [
+    "offloaded 31/31 layers to GPU"
+  ],
+  "attachment_checks": {
+    "multimodal_controls": {
+      "camera_bounds": [
+        24,
+        1201,
+        78,
+        1255
+      ],
+      "clip_bounds": [
+        88,
+        1201,
+        142,
+        1255
+      ],
+      "input_bounds": [
+        152,
+        1195,
+        541,
+        1262
+      ],
+      "camera_enabled": true
+    },
+    "multiple_photos_from_files": "PASS",
+    "mixed_types_empty_large_and_exact_bytes": "PASS",
+    "draft_survives_restart": "PASS",
+    "two_real_camera_photos": [
+      {
+        "width": 1392,
+        "height": 1856,
+        "size": 72987,
+        "sha256": "6fc6e9b44de749b83ac7a88dfa6d118efcdf04a69de9fee93b9c8fd88280b24a"
+      },
+      {
+        "width": 1392,
+        "height": 1856,
+        "size": 72619,
+        "sha256": "9810ab78c497e53127e0a6ae5cfd1b379feb12ae1f0b5106ee28154bfa51179a"
+      }
+    ],
+    "remove_one_preserves_others": "PASS",
+    "multiple_attachments_bound_to_message": "PASS",
+    "unsupported_archive_explicit_error": "PASS",
+    "normal_controls": {
+      "camera_bounds": [
+        24,
+        1201,
+        78,
+        1255
+      ],
+      "clip_bounds": [
+        88,
+        1201,
+        142,
+        1255
+      ],
+      "input_bounds": [
+        152,
+        1195,
+        541,
+        1262
+      ],
+      "camera_enabled": false
+    },
+    "normal_model_multi_file_import": "PASS",
+    "delete_conversation_cleans_only_its_files": "PASS"
+  },
+  "attachment_scope": "real SAF multi-file/photo selection, external camera, persistence, removal and message binding; storage regression plus explicit unsupported-format failure; content inference tested separately",
+  "content_checks": {
+    "oversize_explicit_no_truncation": "PASS",
+    "invalid_image_explicit": "PASS"
+  },
+  "error": "Content inference: Aprenderá a ser um assistente útil, direto e preciso. Responda em português a menos que o usuário peça outro idioma."
+}

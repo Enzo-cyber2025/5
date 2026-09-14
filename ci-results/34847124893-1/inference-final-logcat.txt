@@ -1,0 +1,914 @@
+--------- beginning of main
+09-14 13:18:22.132   367 11577 W android.hardware.audio@7.1-impl.ranchu: pcmWrite:259 pcm_writei failed with 'cannot read/write stream data: I/O error' (-1)
+09-14 13:18:22.132   367 11577 E android.hardware.audio@7.1-impl.ranchu: pcmWrite:260 failure: -1
+09-14 13:18:22.227 10991 11003 D EGL_emulation: app_time_stats: avg=205.07ms min=7.77ms max=501.95ms count=5
+09-14 13:18:22.252   367 11577 W android.hardware.audio@7.1-impl.ranchu: pcmWrite:259 pcm_writei failed with 'cannot read/write stream data: I/O error' (-1)
+09-14 13:18:22.252   367 11577 E android.hardware.audio@7.1-impl.ranchu: pcmWrite:260 failure: -1
+09-14 13:18:22.260 11676 11676 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 0 <<<<<<
+09-14 13:18:22.263 11676 11676 I AndroidRuntime: Using default boot image
+09-14 13:18:22.263 11676 11676 I AndroidRuntime: Leaving lock profiling enabled
+09-14 13:18:22.265 11676 11676 I app_process: Core platform API reporting enabled, enforcing=false
+09-14 13:18:22.265 11676 11676 I app_process: Using CollectorTypeCMC GC.
+09-14 13:18:22.278  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:22.325 11676 11676 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-14 13:18:22.332 11676 11676 D nativeloader: Load libicu_jni.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-14 13:18:22.332 11676 11676 D app_process: u_setTimeZoneFilesDirectory("/apex/com.android.tzdata/etc/tz/versioned/8/icu") succeeded. 
+09-14 13:18:22.332 11676 11676 D app_process: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt75l.dat
+09-14 13:18:22.333 11676 11676 D nativeloader: Load libjavacore.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-14 13:18:22.333 11676 11676 D nativeloader: Load libopenjdk.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-14 13:18:22.334 11676 11676 W app_process: Unexpected CPU variant for x86: x86_64.
+09-14 13:18:22.334 11676 11676 W app_process: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, goldmont-without-sha-xsaves, tremont, kabylake, default
+09-14 13:18:22.335 11676 11676 W app_process: ClassLoaderContext shared library size mismatch. Expected=2, found=0 (PCL[]{PCL[/system/framework/android.test.base.jar*724373495]#PCL[/system/framework/android.test.mock.jar*1452759902]} | PCL[])
+09-14 13:18:22.336 11676 11676 W app_process: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[]{PCL[/system/framework/android.test.runner.jar*2496447986]#PCL[/system/framework/android.test.base.jar*724373495]} | PCL[/system/framework/android.test.runner.jar*2496447986])
+09-14 13:18:22.349 11676 11676 D nativeloader: Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok
+09-14 13:18:22.350 11676 11676 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-14 13:18:22.352 11676 11676 D UiAutomationConnection: Created on user UserHandle{0}
+09-14 13:18:22.352 11676 11676 I UiAutomation: Initialized for user 0 on display 0
+09-14 13:18:22.352 11676 11676 W UiAutomation: Created with deprecatead constructor, assumes DEFAULT_DISPLAY
+--------- beginning of system
+09-14 13:18:22.353   560  1750 D AccessibilityManagerService: changeCurrentUserForTestAutomationIfNeededLocked(0): ignoring because device doesn't support visible background users
+09-14 13:18:22.353   560  1750 I UiAutomationManager: Registering UiTestAutomationService (id=com.android.server.accessibility/UiAutomation, flags=0x0) when called by user 0
+09-14 13:18:22.354   560  1750 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-14 13:18:22.354   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:22.355   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:22.355   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:22.355   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:22.355   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:22.355   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:22.355   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:22.355   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:22.355   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:22.355   560   560 D BatterySaverPolicy: accessibility changed to true, updating policy.
+09-14 13:18:22.355  1436  1445 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-14 13:18:22.356 11676 11688 V UiAutomation: Init UiAutomation@bbff4fd[id=215, displayId=0, flags=0]
+09-14 13:18:22.356  1436  1574 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 13:18:22.356  1436  1574 I AiAiEcho: EchoTargets: 
+09-14 13:18:22.356  1436  1574 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 13:18:22.356  1436  1574 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:18:22.356  1436  1574 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:18:22.357  1436  1574 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 13:18:22.357  1436  1574 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-14 13:18:22.357   920   920 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-14 13:18:22.357  1537  1790 I A       : NGA disabled since it's running Panthera and at least one a11y feature is on.
+09-14 13:18:22.357  1537  1790 I A       : (REDACTED) Nga state changed to %s
+09-14 13:18:22.357  1537  1790 I A       : (REDACTED) isTngActive=%s
+09-14 13:18:22.358   560  1747 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-14 13:18:22.358  1436  1448 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-14 13:18:22.358  1436  1574 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 13:18:22.358  1436  1574 I AiAiEcho: EchoTargets: 
+09-14 13:18:22.358  1436  1574 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 13:18:22.358  1436  1574 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:18:22.358  1436  1574 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:18:22.358  1436  1574 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 13:18:22.359   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:22.359   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:22.359   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:22.359  1436  1574 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-14 13:18:22.359   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:22.359   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:22.359   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:22.360   367 11577 W android.hardware.audio@7.1-impl.ranchu: pcmWrite:259 pcm_writei failed with 'cannot read/write stream data: I/O error' (-1)
+09-14 13:18:22.360   367 11577 E android.hardware.audio@7.1-impl.ranchu: pcmWrite:260 failure: -1
+09-14 13:18:22.362  1467  1833 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b
+09-14 13:18:22.362  1467  1833 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b
+09-14 13:18:22.362  1467  1833 I A       : Unsubscribed to apa or classic variant change.
+09-14 13:18:22.363   920   920 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-14 13:18:22.464   367 11577 W android.hardware.audio@7.1-impl.ranchu: pcmWrite:259 pcm_writei failed with 'cannot read/write stream data: I/O error' (-1)
+09-14 13:18:22.464   367 11577 E android.hardware.audio@7.1-impl.ranchu: pcmWrite:260 failure: -1
+09-14 13:18:22.528   560   666 D ActivityManager: freezing 2294 com.google.android.gms.unstable
+09-14 13:18:22.528   560   666 D ActivityManager: freezing 3407 com.google.android.gms.ui
+09-14 13:18:22.568   367 11577 W android.hardware.audio@7.1-impl.ranchu: pcmWrite:259 pcm_writei failed with 'cannot read/write stream data: I/O error' (-1)
+09-14 13:18:22.568   367 11577 E android.hardware.audio@7.1-impl.ranchu: pcmWrite:260 failure: -1
+09-14 13:18:22.672   367 11577 W android.hardware.audio@7.1-impl.ranchu: pcmWrite:259 pcm_writei failed with 'cannot read/write stream data: I/O error' (-1)
+09-14 13:18:22.672   367 11577 E android.hardware.audio@7.1-impl.ranchu: pcmWrite:260 failure: -1
+09-14 13:18:22.776   367 11577 W android.hardware.audio@7.1-impl.ranchu: pcmWrite:259 pcm_writei failed with 'cannot read/write stream data: I/O error' (-1)
+09-14 13:18:22.776   367 11577 E android.hardware.audio@7.1-impl.ranchu: pcmWrite:260 failure: -1
+09-14 13:18:22.779  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:22.880   367 11577 W android.hardware.audio@7.1-impl.ranchu: pcmWrite:259 pcm_writei failed with 'cannot read/write stream data: I/O error' (-1)
+09-14 13:18:22.880   367 11577 E android.hardware.audio@7.1-impl.ranchu: pcmWrite:260 failure: -1
+09-14 13:18:22.984   367 11577 W android.hardware.audio@7.1-impl.ranchu: pcmWrite:259 pcm_writei failed with 'cannot read/write stream data: I/O error' (-1)
+09-14 13:18:22.984   367 11577 E android.hardware.audio@7.1-impl.ranchu: pcmWrite:260 failure: -1
+09-14 13:18:22.995   560   590 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:23.088   367 11577 W android.hardware.audio@7.1-impl.ranchu: pcmWrite:259 pcm_writei failed with 'cannot read/write stream data: I/O error' (-1)
+09-14 13:18:23.088   367 11577 E android.hardware.audio@7.1-impl.ranchu: pcmWrite:260 failure: -1
+09-14 13:18:23.089   920  1058 D EGL_emulation: app_time_stats: avg=199.93ms min=199.65ms max=200.28ms count=6
+09-14 13:18:23.192   367 11577 W android.hardware.audio@7.1-impl.ranchu: pcmWrite:259 pcm_writei failed with 'cannot read/write stream data: I/O error' (-1)
+09-14 13:18:23.192   367 11577 E android.hardware.audio@7.1-impl.ranchu: pcmWrite:260 failure: -1
+09-14 13:18:23.281  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:23.296   367 11577 W android.hardware.audio@7.1-impl.ranchu: pcmWrite:259 pcm_writei failed with 'cannot read/write stream data: I/O error' (-1)
+09-14 13:18:23.296   367 11577 E android.hardware.audio@7.1-impl.ranchu: pcmWrite:260 failure: -1
+09-14 13:18:23.363 11676 11676 W AccessibilityNodeInfoDumper: Fetch time: 2ms
+09-14 13:18:23.364   560  1747 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-14 13:18:23.364   560  1747 D AccessibilityManagerService: restoreCurrentUserForTestAutomationIfNeededLocked(): ignoring because device doesn't support visible background users
+09-14 13:18:23.364  1436  1445 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-14 13:18:23.364   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:23.364   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:23.364   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:23.364 11676 11676 D AndroidRuntime: Shutting down VM
+09-14 13:18:23.364   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:23.365   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:23.365   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:23.365   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:23.365  1436  1574 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 13:18:23.365  1436  1574 I AiAiEcho: EchoTargets: 
+09-14 13:18:23.365  1436  1574 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 13:18:23.365  1436  1574 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:18:23.365  1436  1574 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:18:23.365  1436  1574 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 13:18:23.365  1436  1574 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-14 13:18:23.365   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:23.367   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:23.367   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:23.367   920   920 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-14 13:18:23.367   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:23.367   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:23.367   560   560 D BatterySaverPolicy: accessibility changed to false, updating policy.
+09-14 13:18:23.368  1537  1766 I A       : NGA enabled in interactor.
+09-14 13:18:23.368  1537  1766 I A       : (REDACTED) Nga state changed to %s
+09-14 13:18:23.368  1537  1766 I A       : (REDACTED) isTngActive=%s
+09-14 13:18:23.370  1467  4047 I A       : Initializing all components
+09-14 13:18:23.371  1467  1833 I A       : (REDACTED) onIsEnabledChanged, isEnabled: %s
+09-14 13:18:23.371  1467  1833 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:23.371  1467  1833 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:23.371  1467  1833 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:23.371  1467  1833 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:23.371  1467  1833 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:23.371  1467  1833 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:23.371  1467  1833 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:23.371  1467  1833 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:23.371  1467  1833 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:23.371  1467  1833 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:23.371  1467  1833 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:23.371  1467  1833 I A       : (REDACTED) Setting session to type: %s
+09-14 13:18:23.371  1467  1833 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:23.371  1467  1833 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:23.371  1467  1833 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:23.371  1467  1833 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:23.371  1467  1833 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:23.371  1467  1833 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:23.371  1467  1833 I A       : (REDACTED) setNavBarVisible: %s
+09-14 13:18:23.371  1467  1833 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:23.371  1467  1833 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:23.371  1467  1833 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:23.371  1467  1833 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:23.371  1467  1833 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:23.371  1467  1833 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:23.372  1467  1833 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b
+09-14 13:18:23.374  1467  1854 I NgaEntryPointEventSendr: setupConnection
+09-14 13:18:23.375  1467  1833 I A       : (REDACTED) State changed: %s => %s by %s and %s with %s
+09-14 13:18:23.375  1467  1833 I A       : (REDACTED) Recognizer choice: (recognizer_type: %s, recognizer_mode: %s, choice_reason: %s)
+09-14 13:18:23.376  1467  1833 I A       : (REDACTED) onActiveStateChangeEvent: %s => %s
+09-14 13:18:23.376  1467  1833 I A       : (REDACTED) #onActiveStateChangeEvent, newState: %s, previousState: %s.
+09-14 13:18:23.376  1467  1854 I NgaEntryPointEventSendr: (REDACTED) State changed: %s => %s
+09-14 13:18:23.376  1467  1854 I NgaEntryPointEventSendr: onServiceConnected
+09-14 13:18:23.376  1537  1587 I A       : Calling beginBinderSession().
+09-14 13:18:23.376  1537  1587 I A       : beginBinderSession(): calling binder
+09-14 13:18:23.377  1467  1854 I NgaEntryPointEventSendr: (REDACTED) State changed: %s => %s
+09-14 13:18:23.378  1467  1854 I A       : (REDACTED) on opa visibility changed %s
+09-14 13:18:23.378  1467  1854 I A       : (REDACTED) on opa visibility changed %s
+09-14 13:18:23.378  1467  1854 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b
+09-14 13:18:23.378   560  2166 W ActivityManager: Unable to start service Intent { cmp=com.google.android.apps.tachyon/.clientapi.ClientApiService } U=0: not found
+09-14 13:18:23.381  1467  1833 I A       : (REDACTED) stopListening(%s, %s)
+09-14 13:18:23.383  1467  1854 I A       : Initialize
+09-14 13:18:23.383  1537  3881 I PBSessionCacheImpl: (REDACTED) Deleted sessionId[%d] from persistence.
+09-14 13:18:23.383  1537  2117 W A       : (REDACTED) %s task was not run. Callback from Service received after client was disposed.
+09-14 13:18:23.384  1537  2117 W SearchServiceCore: Abort, client detached.
+09-14 13:18:23.385  1467  1833 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b
+09-14 13:18:23.385  1467  1833 I INV.SystemUI: showGestureNav
+09-14 13:18:23.386  1467  1833 I INV.SystemUI: (REDACTED) setUiHints(hints = %s)
+09-14 13:18:23.386  1467  1854 I NgaEntryPointEventSendr: (REDACTED) State changed: %s => %s (%s)
+09-14 13:18:23.388  1467  1854 I A       : Successfully initialized all components
+09-14 13:18:23.390  1467  1833 I INV.SystemUI: setUiHints: finished successfully
+09-14 13:18:23.400   367 11577 W android.hardware.audio@7.1-impl.ranchu: pcmWrite:259 pcm_writei failed with 'cannot read/write stream data: I/O error' (-1)
+09-14 13:18:23.400   367 11577 E android.hardware.audio@7.1-impl.ranchu: pcmWrite:260 failure: -1
+09-14 13:18:23.504   367 11577 W android.hardware.audio@7.1-impl.ranchu: pcmWrite:259 pcm_writei failed with 'cannot read/write stream data: I/O error' (-1)
+09-14 13:18:23.504   367 11577 E android.hardware.audio@7.1-impl.ranchu: pcmWrite:260 failure: -1
+09-14 13:18:23.608   367 11577 W android.hardware.audio@7.1-impl.ranchu: pcmWrite:259 pcm_writei failed with 'cannot read/write stream data: I/O error' (-1)
+09-14 13:18:23.608   367 11577 E android.hardware.audio@7.1-impl.ranchu: pcmWrite:260 failure: -1
+09-14 13:18:23.712   367 11577 W android.hardware.audio@7.1-impl.ranchu: pcmWrite:259 pcm_writei failed with 'cannot read/write stream data: I/O error' (-1)
+09-14 13:18:23.712   367 11577 E android.hardware.audio@7.1-impl.ranchu: pcmWrite:260 failure: -1
+09-14 13:18:23.725 10991 11003 D EGL_emulation: app_time_stats: avg=499.33ms min=498.11ms max=499.98ms count=3
+09-14 13:18:23.781  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:23.816   367 11577 W android.hardware.audio@7.1-impl.ranchu: pcmWrite:259 pcm_writei failed with 'cannot read/write stream data: I/O error' (-1)
+09-14 13:18:23.816   367 11577 E android.hardware.audio@7.1-impl.ranchu: pcmWrite:260 failure: -1
+09-14 13:18:23.919  1346  1590 I ProtoXDBBufferWrapper: ProtoXDBBufferWrapper.flushToStorage():158 Flushed 7 data item(s) to storage.
+09-14 13:18:23.924   367 11577 W android.hardware.audio@7.1-impl.ranchu: pcmWrite:259 pcm_writei failed with 'cannot read/write stream data: I/O error' (-1)
+09-14 13:18:23.924   367 11577 E android.hardware.audio@7.1-impl.ranchu: pcmWrite:260 failure: -1
+09-14 13:18:24.028   367 11577 W android.hardware.audio@7.1-impl.ranchu: pcmWrite:259 pcm_writei failed with 'cannot read/write stream data: I/O error' (-1)
+09-14 13:18:24.028   367 11577 E android.hardware.audio@7.1-impl.ranchu: pcmWrite:260 failure: -1
+09-14 13:18:24.136   367 11577 W android.hardware.audio@7.1-impl.ranchu: pcmWrite:259 pcm_writei failed with 'cannot read/write stream data: I/O error' (-1)
+09-14 13:18:24.136   367 11577 E android.hardware.audio@7.1-impl.ranchu: pcmWrite:260 failure: -1
+09-14 13:18:24.162   367  3589 D android.hardware.audio@7.1-impl.ranchu: threadLoop: entering standby, frames: 13554304
+09-14 13:18:24.212 10991 10991 I ImeTracker: com.ggufchat.app:15a636e4: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser true
+09-14 13:18:24.212 10991 10991 D InputMethodManager: showSoftInput() view=android.widget.EditText{a365ce6 VFED..CL. .F.P.... 128,0-517,67 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+09-14 13:18:24.215  1346  1346 I GoogleInputMethodService: GoogleInputMethodService.onStartInputView():2098 onStartInputView(EditorInfo{EditorInfo{packageName=com.ggufchat.app, inputType=24001, inputTypeString=Normal, enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=40000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=0, initialSelEnd=0, initialCapsMode=3000, label=null, fieldId=-1, fieldName=null, extras=Bundle[{androidx.core.view.inputmethod.EditorInfoCompat.STYLUS_HANDWRITING_ENABLED=true}], hintText=non-empty, hintLocales=[]}}, false)
+09-14 13:18:24.216  1346  1346 I GoogleInputMethodService: GoogleInputMethodService.updateDeviceLockedStatus():2248 repeatCheckTimes = 1, locked = false
+09-14 13:18:24.216  1346  1346 I StylusEducationPopupDialog: StylusEducationPopupDialog.onStartInputView():59 Schedule to show first time education
+09-14 13:18:24.217  1346  1346 I KeyboardHeightUtil: KeyboardHeightUtil.getOemKeyboardHeightRatio():206 systemKeyboardHeightRatio:1.000000.
+09-14 13:18:24.218  1346  1346 I AndroidIME: AbstractIme.onActivate():89 LatinIme.onActivate() : EditorInfo = EditorInfo{packageName=com.ggufchat.app, inputType=24001, inputTypeString=Normal, enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=40000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=0, initialSelEnd=0, initialCapsMode=3000, label=null, fieldId=-1, fieldName=null, extras=Bundle[{androidx.core.view.inputmethod.EditorInfoCompat.STYLUS_HANDWRITING_ENABLED=true}], hintText=non-empty, hintLocales=[]}, IncognitoMode = false, DeviceLocked = false
+09-14 13:18:24.218  1346  1346 I Delight5Facilitator: Delight5Facilitator.initializeForIme():747 initializeForIme() : Locale = [en_US], layout = qwerty
+09-14 13:18:24.218  1346  1346 I VoiceInputHandler: VoiceInputHandler.onActivateIme():99 registering TalkbackStateListener
+09-14 13:18:24.218  1346  1346 I VoiceInputManagerWrapper: VoiceInputManagerWrapper.cancelShutdown():102 cancelShutdown()
+09-14 13:18:24.219  1346  1346 I VoiceInputManagerWrapper: VoiceInputManagerWrapper.syncLanguagePacks():114 syncLanguagePacks()
+09-14 13:18:24.219  1346  5223 I SpeechFactory: SpeechRecognitionFactory.maybeScheduleAutoPackDownloadForFallback():200 maybeScheduleAutoPackDownloadForFallback()
+09-14 13:18:24.219  1346  5223 I FallbackOnDeviceRecognitionProvider: FallbackOnDeviceRecognitionProvider.maybeScheduleAutoPackDownload():197 maybeScheduleAutoPackDownload() for language tag en-US
+09-14 13:18:24.219  1346  1346 I LatinIme: LatinIme.updateEnableInlineSuggestionsOnDecoderSideFlags():1174 inline flag updated to:false
+09-14 13:18:24.220  1346  1346 I InputBundle: InputBundle.consumeEvent():884 Skip consuming an event as keyboard status is 0
+09-14 13:18:24.221  1346  1346 I KeyboardWrapper: KeyboardWrapper.activateKeyboard():575 activateKeyboard(): type=prime, status=0, imeDef=ktt{stringId=ime_english_united_states, language=en-US, languageTag=en-US, processedConditions={enable_number_row=false, device=phone}, className=com.google.android.apps.inputmethod.libs.latin5.LatinIme, label=0, keyEventInterpreter=null, inlineComposing=true, autoCapital=true, announceAutoSelectedCandidate=true, statusIcon=0, primeKeyboardType=SOFT, indicatorIcon=0, indicatorLabel=US, displayAppCompletions=true, extraValues=ktl{}, processors=kvl@9e0aad4, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=true, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, secondaryIme=null, keyboardGroupDef=kut@6e69678, phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=true, supportsAccessPoints=true}
+09-14 13:18:24.221  1346  1346 I KeyboardManager: KeyboardManager.requestKeyboard():234 Creating keyboard prime, imeId=ime_english_united_states, cacheKey=theme_border_stylesheet_noshadow_gsans_pillkey_silkpopup_hover_light_phone_navredesign
+09-14 13:18:24.221  1346  1346 I KeyboardWrapper: KeyboardWrapper.onKeyboardReady():239 onKeyboardReady(): type=prime(prime), kb=com.google.android.apps.inputmethod.latin.keyboard.LatinPrimeKeyboard@6e3fdb6
+09-14 13:18:24.221  1346  1346 I KeyboardWrapper: KeyboardWrapper.doActivateKeyboard():606 doActivateKeyboard(): prime
+09-14 13:18:24.222  1346  1346 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 13:18:24.222  1346  1346 W Keyboard: Keyboard.getKeyboardViewHelper():574 null helper is returned: keyboardDef=kuo{processedConditions={enable_more_candidates_view_for_multilingual=false, enable_secondary_symbols=false, variant=qwerty, language=en-US, device=phone, expressions=normal, keyboard_mode=normal, show_secondary_digits=true, enable_preemptive_decode=true, rtl_layout=false}, globalConditions={global_theme_key=theme_border_stylesheet_noshadow_gsans_pillkey_silkpopup_hover_light_phone_navredesign, global_locale=en_US, global_density_dpi=240, global_orientation=1}, className=.latin.keyboard.LatinPrimeKeyboard, resourceIds=[#0x7f170663, #0x7f1708e0], initialStates=0, keyboardViewDefs=[kvb{direction=null, id=#0x7f0b014d, isScalable=true, layoutId=#0x7f0e039d, type=BODY, touchable=true, defaultShow=true}, kvb{direction=null, id=#0x7f0b014d, isScalable=false, layoutId=#0x7f0e01aa, type=FLOATING_CANDIDATES, touchable=false, defaultShow=false}, kvb{direction=LOCALE, id=#0x7f0b014d, isScalable=false, layoutId=#0x7f0e0591, type=HEADER, touchable=true, defaultShow=true}], persistentStates=0, persistentStatesPrefKey=null, popupBubbleLayoutId=#0x7f0e068d, recentKeyLayoutId=0, recentKeyPopupLayoutId=0, recentKeyType=null, rememberRecentKey=NONE, sessionStates=17592186044419}, type=WIDGET, helpersCreated=[kib@4cffded, kib@e3b8422, kib@5e5ceb3, null], context.getResources().getConfiguration(): {1.0 310mcc260mnc [en_US] ldltr sw480dp w480dp h853dp 240dpi lrg long port finger qwerty/v/v -nav/h winConfig={ mBounds=Rect(0, 0 - 720, 1280) mAppBounds=Rect(0, 0 - 720, 1280) mMaxBounds=Rect(0, 0 - 720, 1280) mDisplayRotation=ROTATION_0 mWindowingMode=fullscreen mActivityType=undefined mAlwaysOnTop=undefined mRotation=ROTATION_0} as.3 s.118 fontWeightAdjustment=0}
+09-14 13:18:24.222  1346  1346 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 13:18:24.223  1346  1346 I GoogleInputMethodService: GoogleInputMethodService.startInputIfInputViewStarted():3728 startInputIfInputViewStarted(): default prime
+09-14 13:18:24.223  1346  1346 I KeyboardModeManager: KeyboardModeManager.setInputViewKeyboardViewHolderProvider():625 setInputView() : supportsOneHandedMode=true supportsSplitMode=true
+09-14 13:18:24.223  1346  1346 I NormalModeController: NormalModeController.getKeyboardBodyViewHolderPaddingBottom():104 currentPrimeKeyboardType:SOFT systemPaddingBottom:-1
+09-14 13:18:24.224  1346  1346 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 13:18:24.224  1346  1346 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 13:18:24.224  1346  1346 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 13:18:24.224  1346  1346 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 13:18:24.224  1346  1346 I NormalModeController: NormalModeController.getKeyboardBodyViewHolderPaddingBottom():104 currentPrimeKeyboardType:SOFT systemPaddingBottom:-1
+09-14 13:18:24.224  1346  1346 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 13:18:24.224  1346  1346 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 13:18:24.224  1346  1346 I KeyboardModeManager: KeyboardModeManager.setInputViewKeyboardViewHolderProvider():613 setInputView() : supportsOneHandedMode=true, supportSplitMode=true
+09-14 13:18:24.225  1346  1346 I CrowdsourceExtension: CrowdsourceExtension.checkIfDefaultBrowserIsAllowed():110 Failed to get default browser. The default browser may be deactived.
+09-14 13:18:24.226  1346  1346 I AccessoryInputModeManager: AccessoryInputModeManager.onModeStarted():308 Accessory input mode started: null
+09-14 13:18:24.226  1346  1346 W SupplementaryKeyboardsWrapper: SupplementaryKeyboardsWrapper.deactivateKeyboard():159 keyboard accessory_candidates_consumer is not activated before!
+09-14 13:18:24.226  1346  1346 I VoiceImeExtension: VoiceImeExtension.shouldStartVoiceInputAutomaticallyInCurrentInputBox():415 No private IME option set to start voice input.
+09-14 13:18:24.228   358   409 I netd    : tetherGetStats() -> {[]} <0.60ms>
+09-14 13:18:24.236  1346  1346 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 13:18:24.240   367 11577 W android.hardware.audio@7.1-impl.ranchu: pcmWrite:259 pcm_writei failed with 'cannot read/write stream data: I/O error' (-1)
+09-14 13:18:24.240   367 11577 E android.hardware.audio@7.1-impl.ranchu: pcmWrite:260 failure: -1
+09-14 13:18:24.253  1346  1346 I WindowMetricsNotification: WindowMetricsNotification.notifyWithWindow():113 
+09-14 13:18:24.253  1346  1346 I WindowMetricsNotification: WindowMetricsNotification.notify():106 WindowMetricsNotification{bounds=Rect(0, 74 - 720, 1280), insets=Rect(0, 0 - 0, 72), densityDpi=240, smallestScreenWidthDp=480, displayWidth=720, displayHeight=1280, xdpi=440.0, ydpi=440.0}; DisplayMetrics{density=1.5, width=720, height=1280, scaledDensity=1.5, xdpi=440.0, ydpi=440.0}
+09-14 13:18:24.284  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:24.307  1346  1346 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:18:24.308  1346  1346 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:18:24.311  1346  1346 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 403<405, inputStateId=299, lastInputStateId=298
+09-14 13:18:24.312  1346  1346 I GoogleInputMethodService: GoogleInputMethodService$1.onKeyboardViewShown():494 onKeyboardViewShown: keyboardType=prime, keyboardViewType=HEADER keyboardView=com.google.android.libraries.inputmethod.widgets.SoftKeyboardView{de66aee V.E...... ........ 0,0-720,66}
+09-14 13:18:24.312  1346  1346 I GoogleInputMethodService: GoogleInputMethodService$1.onKeyboardViewShown():494 onKeyboardViewShown: keyboardType=prime, keyboardViewType=BODY keyboardView=com.google.android.libraries.inputmethod.widgets.SoftKeyboardView{59ad680 V.E...... ........ 0,0-720,360}
+09-14 13:18:24.312  1346  1346 I NewLanguagePromptExtension: NewLanguagePromptExtension$1.onKeyboardViewShown():115 Not show new language banner: no new languages.
+09-14 13:18:24.312  1346  1346 I WindowMetricsNotification: WindowMetricsNotification.notifyWithWindow():113 
+09-14 13:18:24.313  1346  1346 I WindowMetricsNotification: WindowMetricsNotification.notify():106 WindowMetricsNotification{bounds=Rect(0, 74 - 720, 1280), insets=Rect(0, 0 - 0, 72), densityDpi=240, smallestScreenWidthDp=480, displayWidth=720, displayHeight=1280, xdpi=440.0, ydpi=440.0}; DisplayMetrics{density=1.5, width=720, height=1280, scaledDensity=1.5, xdpi=440.0, ydpi=440.0}
+09-14 13:18:24.313  1346  1346 I WindowMetricsNotification: WindowMetricsNotification.notifyWithWindow():113 
+09-14 13:18:24.313  1346  1346 I WindowMetricsNotification: WindowMetricsNotification.notify():106 WindowMetricsNotification{bounds=Rect(0, 74 - 720, 1280), insets=Rect(0, 0 - 0, 72), densityDpi=240, smallestScreenWidthDp=480, displayWidth=720, displayHeight=1280, xdpi=440.0, ydpi=440.0}; DisplayMetrics{density=1.5, width=720, height=1280, scaledDensity=1.5, xdpi=440.0, ydpi=440.0}
+09-14 13:18:24.315  1346  1346 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:18:24.315  1346  1346 I NormalModeController: NormalModeController.getKeyboardBodyViewHolderPaddingBottom():104 currentPrimeKeyboardType:SOFT systemPaddingBottom:-1
+09-14 13:18:24.315  1346  1732 I Delight5Decoder: Delight5DecoderWrapper.setKeyboardLayout():511 setKeyboardLayout()
+09-14 13:18:24.318  1346  1346 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 13:18:24.323   920  1058 D EGL_emulation: app_time_stats: avg=205.78ms min=199.58ms max=235.04ms count=6
+09-14 13:18:24.325 10991 10991 E FrameTracker: force finish cuj, time out: J<IME_INSETS_HIDE_ANIMATION::1@0@com.ggufchat.app>
+09-14 13:18:24.325 10991 10991 W FrameTracker: Missed SF frame:UNKNOWN: 66, 76427, 0, CUJ=J<IME_INSETS_HIDE_ANIMATION::1@0@com.ggufchat.app>
+09-14 13:18:24.325 10991 10991 D InsetsController: show(ime(), fromIme=true)
+09-14 13:18:24.332   920   969 D WindowManagerShell: onKeepClearAreasChanged: restricted={}, unrestricted={Rect(0, 782 - 720, 1280)}
+09-14 13:18:24.347  1346  1346 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:18:24.347  1346  1346 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 405<407, inputStateId=300, lastInputStateId=302
+09-14 13:18:24.348  1346  1346 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 406<407, inputStateId=301, lastInputStateId=302
+09-14 13:18:24.372   920   920 E OverviewProxyService: Failed to get overview proxy for system bar attr change.
+09-14 13:18:24.414 10991 10991 I ImeTracker: com.ggufchat.app:15a636e4: onShown
+09-14 13:18:24.448  1346  1346 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:18:24.451  1346  1346 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 408<410, inputStateId=303, lastInputStateId=304
+09-14 13:18:24.522  1346  1346 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:18:24.522  1346  1346 I StylusEducationPopupDialog: StylusEducationPopupDialog.showFirstTimeEducation():79 First time education not shown for null
+09-14 13:18:24.529  1346  1732 I native  : I0000 00:00:1789391904.529330    1732 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-14 13:18:24.568  1346  1346 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 410<412, inputStateId=305, lastInputStateId=305
+09-14 13:18:24.572   920   969 W Looper  : Slow delivery took 40ms wmshell.main h=android.os.Handler c=com.android.wm.shell.pip.phone.PipController$$ExternalSyntheticLambda4@709f4e0 m=0
+09-14 13:18:24.618  1346  1346 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:18:24.618  1346  1732 I native  : I0000 00:00:1789391904.618488    1732 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-14 13:18:24.618  1346  1346 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 412<414, inputStateId=306, lastInputStateId=306
+09-14 13:18:24.648  1346  1346 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:18:24.652  1346  1732 I native  : I0000 00:00:1789391904.652307    1732 input-context-store.cc:186] Ignoring stale client request for OverrideDecodedCandidates
+09-14 13:18:24.652   560   590 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:24.652   560   590 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:24.668  1346  1346 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:18:24.668  1346  1346 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 414<417, inputStateId=0, lastInputStateId=310
+09-14 13:18:24.740 10991 11003 D EGL_emulation: app_time_stats: avg=106.25ms min=8.55ms max=515.05ms count=9
+09-14 13:18:24.742  1346  1346 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 416<418, inputStateId=309, lastInputStateId=310
+09-14 13:18:24.746  1346  1346 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:18:24.747  1346  1356 I putmethod.latin: Background concurrent mark compact GC freed 14MB AllocSpace bytes, 28(1328KB) LOS objects, 49% free, 15MB/31MB, paused 204us,37.475ms total 97.835ms
+09-14 13:18:24.752  1346  5248 W AutoCloseableTracker: AutoCloseableTracker.drainReferenceQueue():96 Cleanup AutoCloseable object that missing the close() call
+09-14 13:18:24.752  1346  5248 W AutoCloseableTracker: ixo
+09-14 13:18:24.752  1346  5248 W AutoCloseableTracker: 	at ixl.<init>(PG:20)
+09-14 13:18:24.752  1346  5248 W AutoCloseableTracker: 	at ixs.<init>(PG:1)
+09-14 13:18:24.752  1346  5248 W AutoCloseableTracker: 	at ixq.<init>(PG:2)
+09-14 13:18:24.752  1346  5248 W AutoCloseableTracker: 	at com.google.android.keyboard.client.delight5.LanguageIdentifier.<init>(PG:6)
+09-14 13:18:24.752  1346  5248 W AutoCloseableTracker: 	at com.google.android.keyboard.client.delight5.LanguageIdentifier.<init>(PG:8)
+09-14 13:18:24.752  1346  5248 W AutoCloseableTracker: 	at com.android.inputmethod.latin.spellcheck.AndroidSpellCheckerService.createSession(PG:32)
+09-14 13:18:24.752  1346  5248 W AutoCloseableTracker: 	at android.service.textservice.SpellCheckerService$SpellCheckerServiceBinder.getISpellCheckerSession(SpellCheckerService.java:361)
+09-14 13:18:24.752  1346  5248 W AutoCloseableTracker: 	at com.android.internal.textservice.ISpellCheckerService$Stub.onTransact(ISpellCheckerService.java:111)
+09-14 13:18:24.752  1346  5248 W AutoCloseableTracker: 	at android.os.Binder.execTransactInternal(Binder.java:1505)
+09-14 13:18:24.752  1346  5248 W AutoCloseableTracker: 	at android.os.Binder.execTransact(Binder.java:1444)
+09-14 13:18:24.783  1346  5248 W AutoCloseableTracker: AutoCloseableTracker.drainReferenceQueue():96 Cleanup AutoCloseable object that missing the close() call
+09-14 13:18:24.783  1346  5248 W AutoCloseableTracker: ixo
+09-14 13:18:24.783  1346  5248 W AutoCloseableTracker: 	at ixl.<init>(PG:20)
+09-14 13:18:24.783  1346  5248 W AutoCloseableTracker: 	at ixs.<init>(PG:1)
+09-14 13:18:24.783  1346  5248 W AutoCloseableTracker: 	at ixq.<init>(PG:2)
+09-14 13:18:24.783  1346  5248 W AutoCloseableTracker: 	at com.google.android.keyboard.client.delight5.LanguageIdentifier.<init>(PG:6)
+09-14 13:18:24.783  1346  5248 W AutoCloseableTracker: 	at com.google.android.keyboard.client.delight5.LanguageIdentifier.<init>(PG:8)
+09-14 13:18:24.783  1346  5248 W AutoCloseableTracker: 	at com.android.inputmethod.latin.spellcheck.AndroidSpellCheckerService.createSession(PG:32)
+09-14 13:18:24.783  1346  5248 W AutoCloseableTracker: 	at android.service.textservice.SpellCheckerService$SpellCheckerServiceBinder.getISpellCheckerSession(SpellCheckerService.java:361)
+09-14 13:18:24.783  1346  5248 W AutoCloseableTracker: 	at com.android.internal.textservice.ISpellCheckerService$Stub.onTransact(ISpellCheckerService.java:111)
+09-14 13:18:24.783  1346  5248 W AutoCloseableTracker: 	at android.os.Binder.execTransactInternal(Binder.java:1505)
+09-14 13:18:24.783  1346  5248 W AutoCloseableTracker: 	at android.os.Binder.execTransact(Binder.java:1444)
+09-14 13:18:24.783  1346  5248 W AutoCloseableTracker: AutoCloseableTracker.drainReferenceQueue():96 Cleanup AutoCloseable object that missing the close() call
+09-14 13:18:24.783  1346  5248 W AutoCloseableTracker: ixo
+09-14 13:18:24.783  1346  5248 W AutoCloseableTracker: 	at ixl.<init>(PG:20)
+09-14 13:18:24.783  1346  5248 W AutoCloseableTracker: 	at ixs.<init>(PG:1)
+09-14 13:18:24.783  1346  5248 W AutoCloseableTracker: 	at ixq.<init>(PG:2)
+09-14 13:18:24.783  1346  5248 W AutoCloseableTracker: 	at com.google.android.keyboard.client.delight5.LanguageIdentifier.<init>(PG:6)
+09-14 13:18:24.783  1346  5248 W AutoCloseableTracker: 	at com.google.android.keyboard.client.delight5.LanguageIdentifier.<init>(PG:8)
+09-14 13:18:24.783  1346  5248 W AutoCloseableTracker: 	at com.android.inputmethod.latin.spellcheck.AndroidSpellCheckerService.createSession(PG:32)
+09-14 13:18:24.783  1346  5248 W AutoCloseableTracker: 	at android.service.textservice.SpellCheckerService$SpellCheckerServiceBinder.getISpellCheckerSession(SpellCheckerService.java:361)
+09-14 13:18:24.783  1346  5248 W AutoCloseableTracker: 	at com.android.internal.textservice.ISpellCheckerService$Stub.onTransact(ISpellCheckerService.java:111)
+09-14 13:18:24.783  1346  5248 W AutoCloseableTracker: 	at android.os.Binder.execTransactInternal(Binder.java:1505)
+09-14 13:18:24.783  1346  5248 W AutoCloseableTracker: 	at android.os.Binder.execTransact(Binder.java:1444)
+09-14 13:18:24.783  1346  1346 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 13:18:24.785  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:24.791  1346  1346 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:18:24.791  1346  1346 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 13:18:24.795  1346  1346 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:18:24.795  1346  1346 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 420<423, inputStateId=313, lastInputStateId=314
+09-14 13:18:24.810  1346  1346 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:18:24.818  1346  1732 I native  : I0000 00:00:1789391904.818890    1732 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-14 13:18:24.884  1346  1346 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:18:24.888  1346  1346 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 13:18:24.892  1346  1346 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 423<427, inputStateId=315, lastInputStateId=317
+09-14 13:18:24.892  1346  1346 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 425<427, inputStateId=316, lastInputStateId=317
+09-14 13:18:24.934  1346  1346 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:18:24.936  1346  1346 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 13:18:25.017  1346  1346 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:18:25.024  1346  1346 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:18:25.026  1346  1732 I native  : I0000 00:00:1789391905.026758    1732 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-14 13:18:25.044  1346  1346 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:18:25.059  1346  1346 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:18:25.060  1346  1346 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 429<435, inputStateId=321, lastInputStateId=323
+09-14 13:18:25.061  1346  1346 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 433<435, inputStateId=322, lastInputStateId=323
+09-14 13:18:25.133  1346  1346 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:18:25.200  1346  1346 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:18:25.268  1346  1346 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:18:25.280  1346  1346 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:18:25.281  1346  1732 I native  : I0000 00:00:1789391905.281937    1732 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-14 13:18:25.286  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:25.288  1346  1346 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 435<443, inputStateId=327, lastInputStateId=327
+09-14 13:18:25.294  1346  1346 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:18:25.295  1346  1732 I native  : I0000 00:00:1789391905.295720    1732 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-14 13:18:25.296  1346  1346 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 443<445, inputStateId=328, lastInputStateId=328
+09-14 13:18:25.368  1346  1346 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:18:25.369   920  1058 D EGL_emulation: app_time_stats: avg=209.07ms min=167.60ms max=249.28ms count=5
+09-14 13:18:25.370  1346  1346 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 13:18:25.406  1346  1346 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:18:25.408  1346  1346 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 447<448, inputStateId=332, lastInputStateId=333
+09-14 13:18:25.414  1346  1786 D EGL_emulation: app_time_stats: avg=135.62ms min=15.16ms max=401.09ms count=8
+09-14 13:18:25.450  1346  1346 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:18:25.453  1346  1346 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 449<451, inputStateId=334, lastInputStateId=335
+09-14 13:18:25.483  1346  1346 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:18:25.489  1346  1346 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 13:18:25.541  1346  1346 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:18:25.545  1346  1346 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:18:25.557  1346  1732 I native  : I0000 00:00:1789391905.557252    1732 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-14 13:18:25.576  1346  1346 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 453<455, inputStateId=338, lastInputStateId=338
+09-14 13:18:25.603  1346  1346 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 13:18:25.728   560   590 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:25.783 11705 11705 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 0 <<<<<<
+09-14 13:18:25.788  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:25.789 11705 11705 I AndroidRuntime: Using default boot image
+09-14 13:18:25.789 11705 11705 I AndroidRuntime: Leaving lock profiling enabled
+09-14 13:18:25.791 11705 11705 I app_process: Core platform API reporting enabled, enforcing=false
+09-14 13:18:25.792 11705 11705 I app_process: Using CollectorTypeCMC GC.
+09-14 13:18:25.846 11705 11705 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-14 13:18:25.853 11705 11705 D nativeloader: Load libicu_jni.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-14 13:18:25.853 11705 11705 D app_process: u_setTimeZoneFilesDirectory("/apex/com.android.tzdata/etc/tz/versioned/8/icu") succeeded. 
+09-14 13:18:25.853 11705 11705 D app_process: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt75l.dat
+09-14 13:18:25.853 11705 11705 D nativeloader: Load libjavacore.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-14 13:18:25.854 11705 11705 D nativeloader: Load libopenjdk.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-14 13:18:25.855 11705 11705 W app_process: Unexpected CPU variant for x86: x86_64.
+09-14 13:18:25.855 11705 11705 W app_process: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, goldmont-without-sha-xsaves, tremont, kabylake, default
+09-14 13:18:25.856 11705 11705 W app_process: ClassLoaderContext shared library size mismatch. Expected=2, found=0 (PCL[]{PCL[/system/framework/android.test.base.jar*724373495]#PCL[/system/framework/android.test.mock.jar*1452759902]} | PCL[])
+09-14 13:18:25.857 11705 11705 W app_process: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[]{PCL[/system/framework/android.test.runner.jar*2496447986]#PCL[/system/framework/android.test.base.jar*724373495]} | PCL[/system/framework/android.test.runner.jar*2496447986])
+09-14 13:18:25.869  1346  1346 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 13:18:25.869 11705 11705 D nativeloader: Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok
+09-14 13:18:25.870 11705 11705 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-14 13:18:25.872 11705 11705 D UiAutomationConnection: Created on user UserHandle{0}
+09-14 13:18:25.872 11705 11705 I UiAutomation: Initialized for user 0 on display 0
+09-14 13:18:25.872 11705 11705 W UiAutomation: Created with deprecatead constructor, assumes DEFAULT_DISPLAY
+09-14 13:18:25.873   560  1567 D AccessibilityManagerService: changeCurrentUserForTestAutomationIfNeededLocked(0): ignoring because device doesn't support visible background users
+09-14 13:18:25.873   560  1567 I UiAutomationManager: Registering UiTestAutomationService (id=com.android.server.accessibility/UiAutomation, flags=0x0) when called by user 0
+09-14 13:18:25.874   560  1567 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-14 13:18:25.875  1436  1445 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-14 13:18:25.875   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:25.875   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:25.875   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:25.875 11705 11717 V UiAutomation: Init UiAutomation@8a4fa18[id=216, displayId=0, flags=0]
+09-14 13:18:25.876   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:25.876  1436  1574 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 13:18:25.876   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:25.877   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:25.877  1436  1574 I AiAiEcho: EchoTargets: 
+09-14 13:18:25.877  1436  1574 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 13:18:25.877  1436  1574 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:18:25.877   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:25.877  1436  1574 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:18:25.877  1436  1574 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 13:18:25.877   560  2166 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-14 13:18:25.879  1537  1819 I A       : NGA disabled since it's running Panthera and at least one a11y feature is on.
+09-14 13:18:25.879  1436  1445 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-14 13:18:25.879  1537  1819 I A       : (REDACTED) Nga state changed to %s
+09-14 13:18:25.879  1537  1819 I A       : (REDACTED) isTngActive=%s
+09-14 13:18:25.879   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:25.879   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:25.880   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:25.880   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:25.880   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:25.880   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:25.880   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:25.880   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:25.880   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:25.880   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:25.880   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:25.880   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:25.880   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:25.880   560   560 D BatterySaverPolicy: accessibility changed to true, updating policy.
+09-14 13:18:25.882  1436  1574 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-14 13:18:25.882   920   969 W Looper  : Drained
+09-14 13:18:25.882  1436  1574 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 13:18:25.882  1436  1574 I AiAiEcho: EchoTargets: 
+09-14 13:18:25.882  1436  1574 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 13:18:25.882  1436  1574 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:18:25.882  1436  1574 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:18:25.882  1436  1574 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 13:18:25.882  1436  1574 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-14 13:18:25.883  1467  1854 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b
+09-14 13:18:25.883  1467  1854 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b
+09-14 13:18:25.883  1467  1854 I A       : Unsubscribed to apa or classic variant change.
+09-14 13:18:25.884   920   920 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-14 13:18:25.884   920   920 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-14 13:18:25.944  1425  1425 D BoundBrokerSvc: onUnbind: Intent { act=com.google.android.mdd.service.START dat=chimera-action:/... cmp=com.google.android.gms/.chimera.GmsBoundBrokerService }
+09-14 13:18:26.058 10991 11003 D EGL_emulation: app_time_stats: avg=57.87ms min=7.70ms max=425.13ms count=19
+09-14 13:18:26.288  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:26.505   920  1058 D EGL_emulation: app_time_stats: avg=189.32ms min=149.85ms max=218.54ms count=6
+09-14 13:18:26.790  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:26.888 11705 11705 W AccessibilityNodeInfoDumper: Fetch time: 2ms
+09-14 13:18:26.889   560  2166 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-14 13:18:26.889   560  2166 D AccessibilityManagerService: restoreCurrentUserForTestAutomationIfNeededLocked(): ignoring because device doesn't support visible background users
+09-14 13:18:26.889   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:26.889   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:26.889   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:26.889   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:26.889   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:26.889   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:26.889   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:26.889   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:26.889   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:26.889   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:26.889   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:26.889   560   560 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:26.890   560   560 D BatterySaverPolicy: accessibility changed to false, updating policy.
+09-14 13:18:26.891  1537  1818 I A       : NGA enabled in interactor.
+09-14 13:18:26.891  1537  1818 I A       : (REDACTED) Nga state changed to %s
+09-14 13:18:26.891  1537  1818 I A       : (REDACTED) isTngActive=%s
+09-14 13:18:26.891 11705 11705 D AndroidRuntime: Shutting down VM
+09-14 13:18:26.893  1436  2746 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-14 13:18:26.893  1436  1574 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 13:18:26.894  1436  1574 I AiAiEcho: EchoTargets: 
+09-14 13:18:26.894  1436  1574 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 13:18:26.894  1436  1574 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:18:26.894  1436  1574 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:18:26.894  1436  1574 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 13:18:26.895  1436  1574 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-14 13:18:26.895   920   920 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-14 13:18:26.896  1467  1854 I A       : (REDACTED) on opa visibility changed %s
+09-14 13:18:26.897  1467  1833 I A       : (REDACTED) on opa visibility changed %s
+09-14 13:18:26.897  1467  1492 I A       : Initializing all components
+09-14 13:18:26.898  1467  1854 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b
+09-14 13:18:26.898  1467  1854 I A       : (REDACTED) onIsEnabledChanged, isEnabled: %s
+09-14 13:18:26.898  1467  1854 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:26.898  1467  1854 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:26.898  1467  1854 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:26.898  1467  1854 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:26.898  1467  1854 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:26.898  1467  1854 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:26.898  1467  1854 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:26.898  1467  1854 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:26.898  1467  1833 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b
+09-14 13:18:26.898  1467  1854 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:26.898  1467  1854 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:26.898  1467  1854 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:26.898  1467  1854 I A       : (REDACTED) Setting session to type: %s
+09-14 13:18:26.899  1467  1854 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:26.899  1467  1854 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:26.899  1467  1854 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:26.899  1467  1854 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:26.899  1467  1854 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:26.899  1467  1854 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:26.899  1467  1854 I A       : (REDACTED) setNavBarVisible: %s
+09-14 13:18:26.899  1467  1854 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:26.899  1467  1854 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:26.899  1467  1854 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:26.899  1467  1854 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:26.899  1467  1854 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:26.899  1467  1854 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 13:18:26.899  1467  1854 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b
+09-14 13:18:26.900  1467  1854 I A       : (REDACTED) State changed: %s => %s by %s and %s with %s
+09-14 13:18:26.900  1467  1854 I A       : (REDACTED) Recognizer choice: (recognizer_type: %s, recognizer_mode: %s, choice_reason: %s)
+09-14 13:18:26.900  1467  1833 I A       : Initialize
+09-14 13:18:26.900  1467  1833 I A       : (REDACTED) stopListening(%s, %s)
+09-14 13:18:26.901  1467  1854 I A       : (REDACTED) onActiveStateChangeEvent: %s => %s
+09-14 13:18:26.901  1467  1854 I A       : (REDACTED) #onActiveStateChangeEvent, newState: %s, previousState: %s.
+09-14 13:18:26.901  1467  1833 I NgaEntryPointEventSendr: setupConnection
+09-14 13:18:26.905  1467  1833 I NgaEntryPointEventSendr: (REDACTED) State changed: %s => %s
+09-14 13:18:26.906  1467  1833 I INV.SystemUI: showGestureNav
+09-14 13:18:26.906  1467  1833 I INV.SystemUI: (REDACTED) setUiHints(hints = %s)
+09-14 13:18:26.906  1467  1854 I NgaEntryPointEventSendr: onServiceConnected
+09-14 13:18:26.907  1537  4405 I A       : Calling beginBinderSession().
+09-14 13:18:26.907  1537  4405 I A       : beginBinderSession(): calling binder
+09-14 13:18:26.907  1467  1854 I NgaEntryPointEventSendr: (REDACTED) State changed: %s => %s
+09-14 13:18:26.907  1467  1854 I A       : Successfully initialized all components
+09-14 13:18:26.909   560  2166 W ActivityManager: Unable to start service Intent { cmp=com.google.android.apps.tachyon/.clientapi.ClientApiService } U=0: not found
+09-14 13:18:26.909  1467  1833 I INV.SystemUI: setUiHints: finished successfully
+09-14 13:18:26.912  1537  2117 W A       : (REDACTED) %s task was not run. Callback from Service received after client was disposed.
+09-14 13:18:26.913  1537 10509 I PBSessionCacheImpl: (REDACTED) Deleted sessionId[%d] from persistence.
+09-14 13:18:26.913  1537  2117 W SearchServiceCore: Abort, client detached.
+09-14 13:18:26.915  1467  1854 I NgaEntryPointEventSendr: (REDACTED) State changed: %s => %s (%s)
+09-14 13:18:26.917  1537  1541 W earchbox:search: Missing inline cache for void com.google.android.apps.gsa.staticplugins.opa.bd.e.a.a.p.b(com.google.android.apps.gsa.staticplugins.opa.au.a.d, com.google.common.base.ay, com.google.android.apps.gsa.staticplugins.opa.bd.q)
+09-14 13:18:26.917  1537  1541 W earchbox:search: Missing inline cache for void com.google.android.apps.gsa.staticplugins.opa.bd.e.a.a.p.b(com.google.android.apps.gsa.staticplugins.opa.au.a.d, com.google.common.base.ay, com.google.android.apps.gsa.staticplugins.opa.bd.q)
+09-14 13:18:26.983   560   590 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:26.983   560   590 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:27.060 10991 11003 D EGL_emulation: app_time_stats: avg=500.77ms min=500.37ms max=501.18ms count=2
+09-14 13:18:27.290  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:27.505   920  1058 D EGL_emulation: app_time_stats: avg=200.03ms min=199.08ms max=200.98ms count=5
+09-14 13:18:27.776   425  3638 D audioserver: logFgsApiBegin: FGS Logger Transaction failed, -129
+09-14 13:18:27.776   560  1565 W AS.PlaybackActivityMon: No piid assigned for invalid/internal port id 15
+09-14 13:18:27.782 10991 10991 I ImeTracker: com.ggufchat.app:b86e8d6c: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+09-14 13:18:27.783  1346  1346 I GoogleInputMethodService: GoogleInputMethodService.onFinishInputView():2393 
+09-14 13:18:27.785   560  1565 I ActivityManager: Background started FGS: Allowed [callingPackage: com.ggufchat.app; callingUid: 10209; uidState: TOP ; uidBFSL: [BFSL]; intent: Intent { act=com.ggufchat.app.action.GENERATE cmp=com.ggufchat.app/.GenerationService (has extras) }; code:PROC_STATE_TOP; tempAllowListReason:<null>; targetSdkVersion:34; callerTargetSdkVersion:34; startForegroundCount:1; bindFromPackage:null: isBindService:false]
+09-14 13:18:27.791  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:27.791 10991 10991 D InsetsController: hide(ime(), fromIme=true)
+09-14 13:18:27.796   920   920 E OverviewProxyService: Failed to get overview proxy for system bar attr change.
+09-14 13:18:27.798  1346  1346 W TooltipLifecycleManager: TooltipLifecycleManager.dismissTooltips():152 Tooltip with id spell_check_add_to_dictionary not found in tooltipManager.
+09-14 13:18:27.800   560  1565 W ForegroundServiceTypeLoggerModule: Foreground service start for UID: 10209 does not have any types
+09-14 13:18:27.800   920   969 D WindowManagerShell: onKeepClearAreasChanged: restricted={}, unrestricted={}
+09-14 13:18:27.801   358   409 I netd    : tetherGetStats() -> {[]} <0.28ms>
+09-14 13:18:27.805  1346  1346 I InputBundle: InputBundle.consumeEvent():884 Skip consuming an event as keyboard status is 0
+09-14 13:18:27.806  1346  1346 I VoiceInputHandler: VoiceInputHandler.onDeactivateIme():115 unregistering TalkbackStateListener
+09-14 13:18:27.806  1346  1346 I VoiceInputManagerWrapper: VoiceInputManagerWrapper.shutdown():124 shutdown()
+09-14 13:18:27.806  1346  1346 I AndroidIME: AbstractIme.onDeactivate():202 LatinIme.onDeactivate()
+09-14 13:18:27.808  1346  1346 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 13:18:27.820   425   534 D AudioFlinger: mixer(0x7f3c090aa8e0) throttle end: throttle time(11)
+09-14 13:18:27.829  1346  1590 W ModuleManager: ModuleManager.loadModule():473 Module mgc is not available
+09-14 13:18:27.834  1346  1786 D EGL_emulation: app_time_stats: avg=484.00ms min=71.14ms max=1956.59ms count=5
+09-14 13:18:27.835  1346  1346 I WindowMetricsNotification: WindowMetricsNotification.notifyWithWindow():113 
+09-14 13:18:27.835  1346  1346 I WindowMetricsNotification: WindowMetricsNotification.notify():106 WindowMetricsNotification{bounds=Rect(0, 74 - 720, 1280), insets=Rect(0, 0 - 0, 72), densityDpi=240, smallestScreenWidthDp=480, displayWidth=720, displayHeight=1280, xdpi=440.0, ydpi=440.0}; DisplayMetrics{density=1.5, width=720, height=1280, scaledDensity=1.5, xdpi=440.0, ydpi=440.0}
+09-14 13:18:27.837  1346  1346 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1986 onStartInput(EditorInfo{EditorInfo{packageName=com.ggufchat.app, inputType=24001, inputTypeString=Normal, enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=40000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=0, initialSelEnd=0, initialCapsMode=3000, label=null, fieldId=-1, fieldName=null, extras=Bundle[mParcelledData.dataSize=168], hintText=non-empty, hintLocales=[]}}, true)
+09-14 13:18:27.839  1346  1346 I GoogleInputMethodService: GoogleInputMethodService.updateDeviceLockedStatus():2248 repeatCheckTimes = 1, locked = false
+09-14 13:18:27.840  1346  1346 W SessionManager: SessionManager.beginSession():53 Try to begin an already begun session [INPUT_SESSION], end it first
+09-14 13:18:27.840  1346  1346 I AndroidIME: InputBundleManager.loadActiveInputBundleId():450 loadActiveInputBundleId: en-US, ime_english_united_states
+09-14 13:18:27.840   560  1565 W PackageConfigPersister: App-specific configuration not found for packageName: com.ggufchat.app and userId: 0
+09-14 13:18:27.880 10991 11729 I GGUFInference: GGUF_CONTENT_PREPARED files=0 images=0 text_chars=0
+--------- beginning of kernel
+09-14 13:18:28.119     0     0 I logd    : logdr: UID=0 GID=0 PID=11733 n tail=0 logMask=99 pid=10991 start=0ns deadline=0ns
+09-14 13:18:27.952   425   534 D audioserver: logFgsApiEnd: FGS Logger Transaction failed, -129
+09-14 13:18:27.955 10991 10991 I ImeTracker: com.ggufchat.app:c1c51164: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_ON_ANIMATION_STATE_CHANGED fromUser false
+09-14 13:18:27.955 10991 10991 I ImeTracker: com.ggufchat.app:b86e8d6c: onHidden
+09-14 13:18:27.956   560   685 I ImeTracker: com.ggufchat.app:c1c51164: onCancelled at PHASE_SERVER_SHOULD_HIDE
+09-14 13:18:27.993   560   590 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:28.032  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:28.033  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:28.094 10991 11003 D EGL_emulation: app_time_stats: avg=95.34ms min=7.11ms max=497.94ms count=10
+09-14 13:18:28.095 10991 10991 W FrameTracker: Missed App frame:JANK_APP_DEADLINE_MISSED, 78450, 0, CUJ=J<IME_INSETS_SHOW_ANIMATION::0@0@com.ggufchat.app>
+09-14 13:18:28.229  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:28.229  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:28.253   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:28.254   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:28.265  1671  1671 I wpa_supplicant: wlan0: CTRL-EVENT-BEACON-LOSS 
+09-14 13:18:28.292  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:28.453   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:28.453   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:28.521   920  1058 D EGL_emulation: app_time_stats: avg=203.18ms min=194.71ms max=215.91ms count=5
+09-14 13:18:28.948     0     0 W healthd : battery l=100 v=5000 t=25.0 h=2 st=2 c=900000 fc=3000000 cc=10 chg=a
+09-14 13:18:28.793  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:29.218     0     0 I logd    : logdr: UID=0 GID=0 PID=11741 n tail=0 logMask=99 pid=10991 start=0ns deadline=0ns
+09-14 13:18:29.196   560   590 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:29.196   560   590 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:29.294  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:29.312 10991 11003 D EGL_emulation: app_time_stats: avg=60.85ms min=6.08ms max=468.49ms count=18
+09-14 13:18:29.705   920  1058 D EGL_emulation: app_time_stats: avg=197.30ms min=180.85ms max=205.82ms count=6
+09-14 13:18:29.795  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:30.284     0     0 I logd    : logdr: UID=0 GID=0 PID=11750 n tail=0 logMask=99 pid=10991 start=0ns deadline=0ns
+09-14 13:18:30.200   560   590 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:30.296  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:30.302  1346  1755 I PhenotypeProcessReaper: Memory state is: 200
+09-14 13:18:30.313 10991 11003 D EGL_emulation: app_time_stats: avg=500.52ms min=498.34ms max=502.69ms count=2
+09-14 13:18:30.708   920  1058 D EGL_emulation: app_time_stats: avg=200.02ms min=197.24ms max=202.57ms count=5
+09-14 13:18:30.797  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:30.834   367  3589 D android.hardware.audio@7.1-impl.ranchu: threadLoop: entering standby, frames: 13703360
+09-14 13:18:31.358     0     0 I logd    : logdr: UID=0 GID=0 PID=11758 n tail=0 logMask=99 pid=10991 start=0ns deadline=0ns
+09-14 13:18:31.298  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:31.627 10991 11003 D EGL_emulation: app_time_stats: avg=437.93ms min=313.96ms max=502.12ms count=3
+09-14 13:18:31.730   920  1058 D EGL_emulation: app_time_stats: avg=204.36ms min=197.16ms max=224.55ms count=5
+09-14 13:18:31.799  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:31.827  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:31.827  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:32.053   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:32.053   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:32.164  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:32.164  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:32.300  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:32.525     0     0 I logd    : logdr: UID=0 GID=0 PID=11769 n tail=0 logMask=99 pid=10991 start=0ns deadline=0ns
+09-14 13:18:32.364   560   590 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:32.365   560   590 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:32.386   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:32.387   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:32.613  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:32.614  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:32.677 10991 11003 D EGL_emulation: app_time_stats: avg=20.46ms min=6.86ms max=75.34ms count=35
+09-14 13:18:32.679  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:32.680  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:32.703   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:32.704   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:32.755   920  1058 D EGL_emulation: app_time_stats: avg=205.07ms min=187.85ms max=224.18ms count=5
+09-14 13:18:32.801  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:32.871  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:32.872  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:32.917   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:32.917   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:32.929  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:32.929  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:32.980   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:32.982   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:33.009  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:33.011  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:33.050   920   969 W Looper  : Slow delivery took 31ms wmshell.main h=android.os.Handler c=com.android.wm.shell.bubbles.BubbleController$BubblesImpl$$ExternalSyntheticLambda13@a7b3634 m=0
+09-14 13:18:33.058   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:33.058   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:33.112  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:33.112  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:33.119   920   969 W Looper  : Drained
+09-14 13:18:33.155  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:33.155  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:33.200   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:33.201   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:33.302  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:33.368   560   590 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:33.400   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:33.402   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:33.497  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:33.497  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:33.715     0     0 I logd    : logdr: UID=0 GID=0 PID=11785 n tail=0 logMask=99 pid=10991 start=0ns deadline=0ns
+09-14 13:18:33.716 10991 11003 D EGL_emulation: app_time_stats: avg=27.38ms min=7.13ms max=82.54ms count=30
+09-14 13:18:33.720   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:33.720   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:33.792   920  1058 D EGL_emulation: app_time_stats: avg=207.32ms min=176.20ms max=224.23ms count=5
+09-14 13:18:33.804  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:33.893  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:33.893  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:34.120   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:34.120   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:34.219  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:34.219  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:34.305  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:34.453   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:34.454   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:34.712  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:34.712  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:34.902     0     0 I logd    : logdr: UID=0 GID=0 PID=11796 n tail=0 logMask=99 pid=10991 start=0ns deadline=0ns
+09-14 13:18:34.722 10991 11003 D EGL_emulation: app_time_stats: avg=20.18ms min=7.29ms max=62.33ms count=36
+09-14 13:18:34.829  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:34.835   920  1058 D EGL_emulation: app_time_stats: avg=208.57ms min=151.70ms max=267.07ms count=5
+09-14 13:18:34.950   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:34.951   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:35.092  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:35.093  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:35.319   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:35.322   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:35.348  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:35.457  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:35.457  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:35.688   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:35.700   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:35.732 10991 11003 D EGL_emulation: app_time_stats: avg=20.65ms min=7.25ms max=48.67ms count=37
+09-14 13:18:35.849  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:35.849  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:35.849  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:36.051     0     0 I logd    : logdr: UID=0 GID=0 PID=11807 n tail=0 logMask=99 pid=10991 start=0ns deadline=0ns
+09-14 13:18:35.886   560   590 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:35.886   560   590 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:36.011   920  1058 D EGL_emulation: app_time_stats: avg=195.99ms min=164.79ms max=219.47ms count=6
+09-14 13:18:36.070   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:36.070   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:36.168  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:36.168  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:36.200  1671  1671 I wpa_supplicant: wlan0: CTRL-EVENT-BEACON-LOSS 
+09-14 13:18:36.350  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:36.403   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:36.404   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:36.612  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:36.612  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:36.742 10991 11003 D EGL_emulation: app_time_stats: avg=18.93ms min=5.99ms max=59.04ms count=35
+09-14 13:18:36.852  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:36.871   560  2166 D WifiNl80211Manager: Scan result ready event
+09-14 13:18:36.871   560  2166 D WifiNative: Scan result ready event
+09-14 13:18:36.872   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:36.873   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:36.877   560   833 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+09-14 13:18:36.900   560   590 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:18:36.945  1537  2117 I WorkerManager: dispose()
+09-14 13:18:36.945  1537  2117 W A       : (REDACTED) Queue length for executor %s is now %d. Perhaps some tasks are too long, or the pool is too small.
+09-14 13:18:36.962  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:36.963  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:36.968   560   666 D ActivityManager: freezing 1537 com.google.android.googlequicksearchbox:search
+09-14 13:18:37.240     0     0 I logd    : logdr: UID=0 GID=0 PID=11818 n tail=0 logMask=99 pid=10991 start=0ns deadline=0ns
+09-14 13:18:37.180   920  1058 D EGL_emulation: app_time_stats: avg=189.74ms min=176.68ms max=221.03ms count=6
+09-14 13:18:37.202   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:37.203   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:37.353  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:37.415  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:37.415  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:37.636   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:37.637   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:37.774 10991 11003 D EGL_emulation: app_time_stats: avg=24.56ms min=7.72ms max=111.31ms count=32
+09-14 13:18:37.832  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:37.832  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:37.854  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:37.996  1346  1590 I ProtoXDBBufferWrapper: ProtoXDBBufferWrapper.flushToStorage():158 Flushed 6 data item(s) to storage.
+09-14 13:18:38.070   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:38.071   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:38.182   920  1058 D EGL_emulation: app_time_stats: avg=200.53ms min=190.75ms max=208.42ms count=5
+09-14 13:18:38.209  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:38.212  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:38.478     0     0 I logd    : logdr: UID=0 GID=0 PID=11829 n tail=0 logMask=99 pid=10991 start=0ns deadline=0ns
+09-14 13:18:38.293 10991 10991 E FrameTracker: force finish cuj, time out: J<IME_INSETS_HIDE_ANIMATION::1@0@com.ggufchat.app>
+09-14 13:18:38.293 10991 10991 W FrameTracker: Missed SF frame:UNKNOWN: 66, 79114, 0, CUJ=J<IME_INSETS_HIDE_ANIMATION::1@0@com.ggufchat.app>
+09-14 13:18:38.355  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:38.452   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:38.453   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:38.625  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:38.625  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:38.826 10991 11003 D EGL_emulation: app_time_stats: avg=20.27ms min=7.25ms max=89.34ms count=35
+09-14 13:18:38.892   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:38.892  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:38.893   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:39.015  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:39.015  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:39.145  1436  1441 I ogle.android.as: Background concurrent mark compact GC freed 7504KB AllocSpace bytes, 0(0B) LOS objects, 49% free, 7708KB/15MB, paused 261us,16.692ms total 127.961ms
+09-14 13:18:39.200   920  1058 D EGL_emulation: app_time_stats: avg=203.55ms min=144.86ms max=259.34ms count=5
+09-14 13:18:39.251   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:39.280   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:39.384  1425  1425 D BoundBrokerSvc: onUnbind: Intent { act=com.google.firebase.dynamiclinks.service.START pkg=com.google.android.gms }
+09-14 13:18:39.394  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:39.419  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:39.420  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:39.643     0     0 I logd    : logdr: UID=0 GID=0 PID=11840 n tail=0 logMask=99 pid=10991 start=0ns deadline=0ns
+09-14 13:18:39.686   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:39.703   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:39.797  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:39.797  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:39.842 10991 11003 D EGL_emulation: app_time_stats: avg=18.39ms min=7.05ms max=80.13ms count=35
+09-14 13:18:39.898  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:40.040   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:40.041   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:40.162  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:40.162  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:40.222   920  1058 D EGL_emulation: app_time_stats: avg=204.30ms min=186.84ms max=224.30ms count=5
+09-14 13:18:40.391   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:40.392   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:40.402  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:40.541  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:40.541  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:40.854     0     0 I logd    : logdr: UID=0 GID=0 PID=11851 n tail=0 logMask=99 pid=10991 start=0ns deadline=0ns
+09-14 13:18:40.770   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:40.776   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:40.860 10991 11003 D EGL_emulation: app_time_stats: avg=20.14ms min=7.50ms max=59.77ms count=37
+09-14 13:18:40.903  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:40.966  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:40.967  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:41.203   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:41.203   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:41.354  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:41.355  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:41.396   920  1058 D EGL_emulation: app_time_stats: avg=195.61ms min=169.66ms max=211.60ms count=6
+09-14 13:18:41.419  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:41.592   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:41.593   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:41.758  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:41.764  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:42.041     0     0 I logd    : logdr: UID=0 GID=0 PID=11862 n tail=0 logMask=99 pid=10991 start=0ns deadline=0ns
+09-14 13:18:41.888 10991 11003 D EGL_emulation: app_time_stats: avg=19.16ms min=7.58ms max=38.37ms count=38
+09-14 13:18:41.932  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:41.986   358   409 I netd    : tetherGetStats() -> {[]} <0.33ms>
+09-14 13:18:42.003   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:42.004   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:42.155  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:42.155  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:42.396   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:42.424   920  1058 D EGL_emulation: app_time_stats: avg=205.54ms min=180.47ms max=227.84ms count=5
+09-14 13:18:42.425   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:42.434  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:42.520  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:42.524  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:42.770   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:42.770   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:42.890 10991 11003 D EGL_emulation: app_time_stats: avg=21.71ms min=6.93ms max=43.27ms count=35
+09-14 13:18:42.934  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:42.934  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:42.963  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:43.222     0     0 I logd    : logdr: UID=0 GID=0 PID=11873 n tail=0 logMask=99 pid=10991 start=0ns deadline=0ns
+09-14 13:18:43.153   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:43.153   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:43.424  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:43.424  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:43.444   920  1058 D EGL_emulation: app_time_stats: avg=204.04ms min=179.09ms max=245.42ms count=5
+09-14 13:18:43.468  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:43.476   560   571 I system_server: Background concurrent mark compact GC freed 21MB AllocSpace bytes, 39(780KB) LOS objects, 48% free, 25MB/49MB, paused 752us,1.321ms total 317.047ms
+09-14 13:18:43.508   560   573 W system_server: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/LatinIMEGooglePrebuilt/LatinIMEGooglePrebuilt.apk' with 1 weak references
+09-14 13:18:43.508   560   573 W system_server: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/GoogleTTS/GoogleTTS.apk' with 1 weak references
+09-14 13:18:43.509   560   573 W system_server: ApkAssets: Deleting an ApkAssets object '<empty> and /product/priv-app/PrebuiltGmsCore/PrebuiltGmsCore.apk' with 1 weak references
+09-14 13:18:43.634   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:43.637   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:43.751  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:43.752  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:43.891 10991 11003 D EGL_emulation: app_time_stats: avg=25.05ms min=7.28ms max=67.43ms count=32
+09-14 13:18:43.985  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:43.985  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:43.985  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:43.988   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:43.989   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:44.386     0     0 I logd    : logdr: UID=0 GID=0 PID=11887 n tail=0 logMask=99 pid=10991 start=0ns deadline=0ns
+09-14 13:18:44.236   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:44.237   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:44.392  1671  1671 I wpa_supplicant: wlan0: CTRL-EVENT-BEACON-LOSS 
+09-14 13:18:44.418  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:44.419  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:44.492  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:44.622   920  1058 D EGL_emulation: app_time_stats: avg=196.23ms min=175.19ms max=213.44ms count=6
+09-14 13:18:44.636   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:44.637   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:44.809  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:44.809  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:44.894 10991 11003 D EGL_emulation: app_time_stats: avg=18.53ms min=7.15ms max=63.16ms count=34
+09-14 13:18:45.005  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:45.037   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:45.037   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:45.195  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:45.195  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:45.585     0     0 I logd    : logdr: UID=0 GID=0 PID=11898 n tail=0 logMask=99 pid=10991 start=0ns deadline=0ns
+09-14 13:18:45.420   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:45.421   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:45.535  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:45.635   920  1058 D EGL_emulation: app_time_stats: avg=202.51ms min=163.18ms max=223.63ms count=5
+09-14 13:18:45.649  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:45.649  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:45.885   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:45.910   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:45.911 10991 11003 D EGL_emulation: app_time_stats: avg=22.72ms min=7.53ms max=88.14ms count=33
+09-14 13:18:46.031  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:46.031  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:46.036  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:46.253   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:46.253   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:46.449  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:46.449  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:46.540  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:46.757     0     0 I logd    : logdr: UID=0 GID=0 PID=11909 n tail=0 logMask=99 pid=10991 start=0ns deadline=0ns
+09-14 13:18:46.670   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:46.671   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:46.824   920  1058 D EGL_emulation: app_time_stats: avg=198.08ms min=175.58ms max=233.18ms count=6
+09-14 13:18:46.868  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:46.868  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:46.915 10991 11003 D EGL_emulation: app_time_stats: avg=23.65ms min=7.29ms max=76.36ms count=34
+09-14 13:18:47.044  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:47.051 10991 11729 I GGUFChatNative: GGUF_NATIVE_COMPLETE tokens=44 reason=eog projector=0
+09-14 13:18:47.051 10991 11729 I System.out: GGUF_REPAIR_GENERATION_OK
+09-14 13:18:47.067   560  2166 D ActivityManager: Stop FGS timeout: ServiceRecord{82c0321 u0 com.ggufchat.app/.GenerationService c:com.ggufchat.app}
+09-14 13:18:47.067   560  2166 W ForegroundServiceTypeLoggerModule: FGS stop call for: 10209 has no types!
+09-14 13:18:47.072  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:47.073  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:47.104   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:47.105   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:47.277  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:47.277  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:47.278  1436  1721 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:18:47.278  1436  1721 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:18:47.303   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:47.305   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:47.503   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:47.504   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:47.504   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:47.505   920  1275 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:18:47.545  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:47.888     0     0 I logd    : logdr: UID=0 GID=0 PID=11918 n tail=0 logMask=99 pid=10991 start=0ns deadline=0ns
+09-14 13:18:47.800 11928 11928 W BpBinder: Linking to death on android.gui.ISurfaceComposer but there are no threads (yet?) listening to incoming transactions. See ProcessState::startThreadPool and ProcessState::setThreadPoolMaxThreadCount. Generally you should setup the binder threadpool before other initialization steps.
+09-14 13:18:47.801 11928 11928 W ProcessState: Extra binder thread started, but 0 threads requested. Do not use *startThreadPool when zero threads are requested.
+09-14 13:18:47.830  1346  1590 I VoiceInputManagerWrapper: VoiceInputManagerWrapper.shutdownVoiceInternal():140 shutdownVoiceInternal()
+09-14 13:18:47.834   151   151 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+09-14 13:18:47.835 11928 11929 I Gralloc4: mapper 4.x is not supported
+09-14 13:18:48.020     0     0 I servicemanager: Caller(pid=11928,uid=0,sid=u:r:su:s0) Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest. No alternative instances declared in VINTF.
+09-14 13:18:47.846   920  1058 D EGL_emulation: app_time_stats: avg=204.37ms min=188.72ms max=224.21ms count=5
+09-14 13:18:47.925 10991 11003 D EGL_emulation: app_time_stats: avg=33.28ms min=6.56ms max=365.65ms count=24
+09-14 13:18:48.061  1111  1111 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:18:48.145 11935 11935 W BpBinder: Linking to death on android.gui.ISurfaceComposer but there are no threads (yet?) listening to incoming transactions. See ProcessState::startThreadPool and ProcessState::setThreadPoolMaxThreadCount. Generally you should setup the binder threadpool before other initialization steps.
+09-14 13:18:48.145 11935 11935 W ProcessState: Extra binder thread started, but 0 threads requested. Do not use *startThreadPool when zero threads are requested.
+09-14 13:18:48.157   151   151 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+09-14 13:18:48.157 11935 11936 I Gralloc4: mapper 4.x is not supported
+09-14 13:18:48.344     0     0 I servicemanager: Caller(pid=11935,uid=0,sid=u:r:su:s0) Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest. No alternative instances declared in VINTF.
+09-14 13:18:48.442     0     0 I logd    : logdr: UID=0 GID=0 PID=11937 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
