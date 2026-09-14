@@ -107,7 +107,8 @@ def error_case(d,model,name,expected,stage):
     assert len(state['items'])==1 and state['items'][0]['size']==(F/name).stat().st_size
     # Recovery is a real UI action, including already-bound attachments.
     d.tap(desc='Lista de anexos',package={PACKAGE});d.tap(text=name,contains=True,package={PACKAGE});d.tap(text='Desativar leitura',package={PACKAGE})
-    assert item_state(d,chat)['items'][0]['excluded'] is True
+    d.wait(lambda:item_state(d,chat)['items'][0].get('excluded') is True,
+           'desativação da leitura gravada após o callback do botão')
     text=reply(d,chat,'Reply in English with hello.',stage+'-recovery')
     assert re.search(r'\b(hello|hi|hey)\b',text,re.I),text
     return 'PASS'
@@ -118,6 +119,9 @@ def main():
         fixtures();assert hashlib.sha256(APK.read_bytes()).hexdigest()==summary['apk_sha256']
         models=d.read_json('models.json');pair=next(m for m in models if m.get('mmprojPath'));normal=next(m for m in models if not m.get('mmprojPath'))
         layers=99 if VULKAN else 0
+        checks['oversize_explicit_no_truncation']=error_case(d,normal,'oversize.txt','orçamento de leitura','oversize')
+        checks['invalid_image_explicit']=error_case(d,pair,'broken.jpg','Imagem inválida','broken-image')
+        checks['normal_model_image_rejected']=error_case(d,normal,'frame-a.jpg','precisa de modelo','normal-image')
         for name,word in [('record.txt','6419'),('record.pdf','7382'),('record.docx','2857')]:
             chat=d.new_chat(normal,0);attach(d,chat,[name]);text=reply(d,chat,'What is the verification code in the attached document? Reply with the code.',name.replace('.','-'))
             assert word in text,(name,text);checks[name]='PASS: '+text
@@ -136,9 +140,8 @@ def main():
         chat=d.new_chat(pair,layers,context_size=4096);attach(d,chat,['scan.pdf'])
         text=reply(d,chat,prompt,'scanned-pdf',images=1);assert re.search(r'\b(dog|samoyed|puppy)\b',text,re.I),text
         checks['scanned_pdf_visual']='PASS: '+text
-        checks['oversize_explicit_no_truncation']=error_case(d,normal,'oversize.txt','orçamento de leitura','oversize')
-        checks['invalid_image_explicit']=error_case(d,pair,'broken.jpg','Imagem inválida','broken-image')
-        checks['normal_model_image_rejected']=error_case(d,normal,'frame-a.jpg','precisa de modelo','normal-image')
+        summary['checks']['image_inference']='PASS'
+        summary['quality_limitations']='Code/object matches only. Small test models can invent extra details in long replies; no general accuracy approval.'
         summary['status']='PASS';summary['content_scope']='Actual TXT/PDF/DOCX contents and actual images evaluated; software Vulkan, not physical GPU. No audio/video transcription.'
     except Exception as ex:
         summary['error']='Content inference: '+str(ex);traceback.print_exc();(E/'inference-failure.txt').write_text(traceback.format_exc()+'\n'+(E/'commands.log').read_text()[-16000:])
