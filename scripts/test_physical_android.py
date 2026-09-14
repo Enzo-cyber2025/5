@@ -51,7 +51,7 @@ def edit_prompt(d,text,global_prompt=False,reset=False):
 
 def main():
     E.mkdir(exist_ok=True);C.mkdir(parents=True,exist_ok=True);d=MobileAndroid('emulator-5554',E)
-    summary={'status':'FAIL','scope':'physical-GGUF-parameters-system-prompts','apk_sha256':hashlib.sha256(APK.read_bytes()).hexdigest(),'checks':{},'physical_checks':{},'environment':'Android emulator, Mesa software Vulkan; test-only ephemeral signature'};checks=summary['physical_checks']
+    summary={'status':'FAIL','scope':'physical-GGUF-parameters-system-prompts','apk_sha256':hashlib.sha256(APK.read_bytes()).hexdigest(),'checks':{},'physical_checks':{},'environment':'Android emulator, Mesa software Vulkan; '+os.environ.get('GGUF_SIGNATURE_SCOPE','test-only ephemeral signature')};checks=summary['physical_checks']
     try:
         assert d.shell('getprop ro.kernel.qemu')=='1';d.adb('root',check=False);d.adb('wait-for-device',timeout=60)
         d.shell('wm size 720x1280');d.shell('wm density 240');d.adb('logcat','-G','16M');d.shell('setprop debug.gguf.vulkan_device 0')

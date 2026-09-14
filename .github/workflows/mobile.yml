@@ -129,12 +129,19 @@ jobs:
   test:
     if: ${{ contains(github.event.head_commit.message, '[signed mobile]') }}
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Exact signed APK and pinned independent GGUF reader
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install 'numpy==2.2.6' 'tqdm==4.67.1' 'pyyaml==6.0.2'
+          git clone --depth 1 --branch b6500 https://github.com/ggml-org/llama.cpp .cache/llama-mobile
+          test "$(git -C .cache/llama-mobile rev-parse HEAD)" = a7a98e0fffed794396b3fbad4dcdbbc184963645
+          python3 ci/verify_physical_signed.py
       - name: Real compatible GGUF and mmproj
         run: bash ci/mobile-models.sh
       - name: KVM
@@ -145,6 +152,7 @@ jobs:
       - uses: reactivecircus/android-emulator-runner@v2
         env:
           GH_TOKEN: ${{ github.token }}
+          GGUF_SIGNATURE_SCOPE: 'delivery signature; exact signed APK, not emulator-only signing'
           GGUF_MOBILE_VULKAN: ${{ contains(github.event.head_commit.message, '[vulkan test]') && '1' || '0' }}
         with:
           api-level: 35
@@ -156,7 +164,7 @@ jobs:
           disk-size: 8192M
           disable-animations: true
           emulator-options: -no-window -no-snapshot -gpu ${{ contains(github.event.head_commit.message, '[vulkan test]') && 'host' || 'swiftshader_indirect' }} -feature Vulkan -noaudio -no-boot-anim -camera-back emulated -camera-front emulated
-          script: python3 scripts/test_mobile.py && python3 scripts/test_attachment_android.py && python3 scripts/test_inference_android.py
+          script: .venv/bin/python scripts/test_physical_android.py && .venv/bin/python scripts/test_attachment_android.py && .venv/bin/python scripts/test_inference_android.py
       - name: Report
         if: always()
         run: python3 ci/report_android.py evidence
