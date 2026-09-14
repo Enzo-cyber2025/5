@@ -11,7 +11,7 @@ from android_checks import PACKAGE,PICKERS,position,has_package,fusion,assistant
 EVIDENCE=Path('evidence')
 MODEL=Path('.cache/mobile-models/SmolVLM-256M-Instruct-Q8_0.gguf')
 PROJ=Path('.cache/mobile-models/mmproj-SmolVLM-256M-Instruct-Q8_0.gguf')
-APK=Path('.delivery/GGUF-Chat-mobile.apk')
+APK=Path(os.environ.get('GGUF_TEST_APK','.delivery/GGUF-Chat-mobile.apk'))
 VULKAN=os.environ.get('GGUF_MOBILE_VULKAN')=='1'
 
 

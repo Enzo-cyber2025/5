@@ -7,6 +7,7 @@ from mobile_manifest import enforce_min_sdk
 from attachment_manifest import attachment_manifest
 from attachment_patches import patch_attachments
 from unified_mobile import patch_unified_ui, patch_clip_gpu
+from physical_gguf import patch_physical_ui, patch_combined_loader
 from pathlib import Path
 from build_apk import ORIGINAL_APK_SHA256, signature_entry, verify_alignment
 from build_diagnostics import ndk_root, build_diagnostics
@@ -69,6 +70,7 @@ def ui_patches(app):
     assert marker in s;s=s.replace(marker,'    invoke-virtual {v0}, Ljava/lang/Throwable;->getMessage()Ljava/lang/String;\n    move-result-object v3');p.write_text(s)
     patch_unified_ui(app)
     patch_attachments(app)
+    patch_physical_ui(app)
 
 def main():
     WORK.mkdir(parents=True,exist_ok=True)
@@ -98,6 +100,7 @@ def main():
         s=s.replace(destructor,destructor+'\n        if (!device) return; // failed initialization owns no Vulkan resources')
     vk.write_text(s)
     clip=source/'tools/mtmd/clip.cpp';clip.write_text(patch_clip_gpu(clip.read_text()))
+    loader=source/'src/llama-model-loader.cpp';loader.write_text(patch_combined_loader(loader.read_text()))
     classes=WORK/'classes';classes.mkdir(exist_ok=True)
     android=sdk/'platforms/android-35/android.jar'
     sys.path.insert(0,str(ROOT/'scripts'))

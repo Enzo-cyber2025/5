@@ -18,7 +18,7 @@ for name in ('normal-no-eye.png', 'unified-after-delete.json', 'unified-after-de
     if p.is_file() and p.stat().st_size < 2_000_000:
         shutil.copyfile(p, dest / name)
 # Bounded attachment UI/reports only; never copy fixture bytes or private files.
-for p in list(source.glob('attachments-*'))+list(source.glob('inference-*')):
+for p in list(source.glob('attachments-*'))+list(source.glob('inference-*'))+list(source.glob('physical-*'))+list(source.glob('system-*')):
     if p.suffix in ('.png', '.json', '.txt') and p.is_file() and p.stat().st_size < 2_000_000:
         shutil.copyfile(p, dest / p.name)
 (dest / 'run.txt').write_text('https://github.com/Enzo-cyber2025/5/actions/runs/' + os.environ['GITHUB_RUN_ID'] + '\n')

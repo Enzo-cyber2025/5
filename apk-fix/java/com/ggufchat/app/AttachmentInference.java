@@ -63,6 +63,7 @@ public final class AttachmentInference {
             begin(handle);p.check();
             ArrayList<String[]> rows=new ArrayList<>();
             for(String[] row:original)rows.add(new String[]{row[0],clean(row[1])});
+            SystemPrompts.apply(c,chat,rows);
             List<?> messages=(List<?>)get(chat,"messages");
             JSONArray items=AttachmentStore.read(c,chatId).getJSONArray("items");
             String projector=(String)get(chat,"mmprojPath");boolean vision=projector!=null&&!projector.isEmpty()&&!"null".equals(projector);

@@ -32,6 +32,7 @@ public final class CompactUi {
             throw new IllegalStateException("Unexpected chat toolbar layout");
         LinearLayout row = (LinearLayout)tools.getChildAt(0);
         ArrayList<Button> buttons = new ArrayList<>();
+        buttons.add(SystemPrompts.chatButton(activity));
         buttons.add(thinking); buttons.add(search);
         for (int i=0; i<row.getChildCount(); i++)
             if (row.getChildAt(i) instanceof Button) buttons.add((Button)row.getChildAt(i));

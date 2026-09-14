@@ -36,43 +36,46 @@ public class ModelStore {private static final Object LOCK=new Object();public st
 public static ArrayList<ModelInfo> loadRecords(Context c){ArrayList<ModelInfo> copy=new ArrayList<>();for(ModelInfo m:data)copy.add(m.copy());return copy;}
 public static ArrayList<?> load(Context c){return Pairing.loadUnified(c);}
 public static void save(Context c,ArrayList<ModelInfo> m){data=new ArrayList<>();for(ModelInfo n:m)data.add(n.copy());}}''',
+        'android/app/Activity.java': 'package android.app;import android.content.Context;public class Activity extends Context {public Activity(){super(null);}public void runOnUiThread(Runnable r){r.run();}}',
+        'org/json/JSONObject.java': 'package org.json;public class JSONObject {public String optString(String k,String d){return d;}public JSONObject put(String k,Object v){return this;}}',
         'UnitTest.java': r'''import com.ggufchat.app.*;import android.content.Context;import android.net.Uri;import java.io.*;import java.nio.file.*;import java.util.*;
 public class UnitTest {
-static ModelInfo model(Context c,String id,String filename) throws Exception {ModelInfo m=new ModelInfo();m.id=id;m.name="Llama vision";m.fileName=filename;m.architecture=filename.contains("mmproj")?"clip":"llama";m.path=new File(c.getFilesDir(),"models/"+id+"_"+filename).getPath();Files.write(Paths.get(m.path),new byte[16]);m.size=16;return m;}
+static File fixtures;
+static ModelInfo model(Context c,String id,String filename,boolean projector) throws Exception {ModelInfo m=new ModelInfo();m.id=id;m.name="Test";m.fileName=filename;m.path=new File(c.getFilesDir(),"models/"+id+"_"+filename).getPath();Files.copy(new File(fixtures,projector?"vision.gguf":"language.gguf").toPath(),Paths.get(m.path));m.size=new File(m.path).length();Pairing.inspect(m);return m;}
 static ArrayList<Uri> uris(String a,String b){return new ArrayList<>(Arrays.asList(new Uri(a),new Uri(b)));}
+static void waitMerge() throws Exception {long end=System.currentTimeMillis()+10000;while(Pairing.merging()&&System.currentTimeMillis()<end)Thread.sleep(10);assert !Pairing.merging();}
 public static void main(String[] args) throws Exception {
-Context c=new Context(new File(args[0]));new File(c.getFilesDir(),"models").mkdirs();
-ModelInfo original=model(c,"old","language.gguf"),oldProj=model(c,"old-p","mmproj.gguf");original.mmprojPath=oldProj.path;original.multimodal=true;
+fixtures=new File(args[1]);Context c=new Context(new File(args[0]));new File(c.getFilesDir(),"models").mkdirs();
+ModelInfo original=model(c,"old","language.gguf",false),oldProj=model(c,"old-p","vision.gguf",true);original.mmprojPath=oldProj.path;original.multimodal=true;
 ModelStore.save(c,new ArrayList<>(Arrays.asList(original,oldProj)));
 ArrayList<?> list=Pairing.loadUnified(c);assert list.size()==1;assert ModelStore.data.size()==1;
-ModelInfo restored=(ModelInfo)list.get(0);assert restored.size==32;assert restored.path.equals(original.path);assert restored.mmprojPath.equals(oldProj.path);
-assert Pairing.isUnified(restored);assert Pairing.displayName(restored).contains("\uD83D\uDC41");
-Pairing.loadUnified(c);assert ModelStore.data.get(0).size==32; // idempotent, no double counting
-ModelInfo text=model(c,"text","text.gguf");text.multimodal=true;
-ModelStore.data.add(text);Pairing.loadUnified(c);assert !ModelStore.data.get(1).multimodal;assert !Pairing.displayName(text).contains("\uD83D\uDC41");
-ArrayList<Uri> selection=uris("language.gguf","mmproj.gguf");Pairing.begin(c,selection);
-ModelInfo newer=model(c,"new","language.gguf"),proj=model(c,"new-p","mmproj.gguf");ModelStore.data.add(newer);ModelStore.data.add(proj);
-Pairing.linkSelected(c,selection);assert ModelStore.data.size()==3;
-ModelInfo unit=ModelStore.data.get(2);assert unit.mmprojPath.equals(proj.path);assert unit.size==32;assert unit.multimodal;
-assert ModelStore.data.get(0).mmprojPath.equals(oldProj.path); // reimport doesn't steal old pair
-Pairing.linkSelected(c,selection);assert ModelStore.data.size()==3; // no fresh transaction, no mutation
-Pairing.removeUnified(c,"new");assert ModelStore.data.size()==2;assert !new File(newer.path).exists();assert !new File(proj.path).exists();
-assert new File(original.path).isFile() && new File(oldProj.path).isFile();
-ModelInfo shared=model(c,"shared","shared.gguf");shared.mmprojPath=oldProj.path;shared.multimodal=true;ModelStore.data.add(shared);
-Pairing.removeUnified(c,"old");assert new File(oldProj.path).isFile(); // still referenced
-Pairing.removeUnified(c,"shared");assert !new File(oldProj.path).exists();assert !new File(shared.path).exists();
-ArrayList<Uri> invalid=uris("a.gguf","b.gguf");Pairing.begin(c,invalid);ModelInfo a=model(c,"a","a.gguf"),b=model(c,"b","b.gguf");ModelStore.data.add(a);ModelStore.data.add(b);Pairing.linkSelected(c,invalid);assert ModelStore.data.size()==3;assert ModelStore.data.get(1).mmprojPath==null;
-ModelInfo nullPath=model(c,"null","normal.gguf");nullPath.mmprojPath="null";assert !Pairing.isUnified(nullPath);
-System.out.println("Single unit, eye, legacy migration, fresh selection, total size, reimport and component deletion: PASS");
+assert ((ModelInfo)list.get(0)).size==original.size+oldProj.size;
+ModelInfo text=model(c,"text","mmproj-misleading.gguf",false);ModelStore.data.add(text);
+assert !text.multimodal;assert !Pairing.displayName(text).contains("\uD83D\uDC41");
+ArrayList<Uri> selection=uris("mmproj-language.gguf","ordinary.gguf");Pairing.begin(c,selection);
+ModelInfo newer=model(c,"new","mmproj-language.gguf",false),proj=model(c,"new-p","ordinary.gguf",true);ModelStore.data.add(newer);ModelStore.data.add(proj);
+Pairing.linkSelected(c,selection);waitMerge();assert ModelStore.data.size()==3;
+ModelInfo unit=ModelStore.data.get(2);assert unit.path.equals(unit.mmprojPath);assert unit.size==new File(unit.path).length();assert unit.multimodal;
+assert GgufFile.read(new File(unit.path)).singleVision();assert Pairing.displayName(unit).contains("\uD83D\uDC41");
+assert !new File(newer.path).exists()&&!new File(proj.path).exists();
+assert ModelStore.data.get(0).mmprojPath.equals(oldProj.path);
+Pairing.loadUnified(c);assert ModelStore.data.get(2).size==unit.size; // self path counted once
+Pairing.removeUnified(c,"new");assert !new File(unit.path).exists();assert new File(original.path).exists()&&new File(oldProj.path).exists();
+ArrayList<Uri> invalid=uris("a.gguf","b.gguf");Pairing.begin(c,invalid);ModelStore.data.add(model(c,"a","a.gguf",false));ModelStore.data.add(model(c,"b","b.gguf",false));Pairing.linkSelected(c,invalid);waitMerge();assert ModelStore.data.size()==4;
+System.out.println("Physical single file, parameter detection, misleading filenames, persistence, legacy preservation, deletion and invalid selection: PASS");
 }}'''
     }
+    sources['com/ggufchat/app/ModelInfo.java']=sources['com/ggufchat/app/ModelInfo.java'].replace('public String id,','public String capability,id,').replace('n.id=id;','n.capability=capability;n.id=id;')
+    from test_physical_gguf import fixture
+    fixture(tmp_path/'language.gguf');fixture(tmp_path/'vision.gguf','projector')
     for name,source in sources.items():
         p=tmp_path/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_text(source)
     pair=tmp_path/'com/ggufchat/app/Pairing.java'
     pair.write_text((ROOT/'apk-fix/java/com/ggufchat/app/Pairing.java').read_text())
+    (tmp_path/'com/ggufchat/app/GgufFile.java').write_text((ROOT/'apk-fix/java/com/ggufchat/app/GgufFile.java').read_text())
     java=jdk4py.JAVA_HOME/'bin'
     subprocess.run([javac,'-d',str(tmp_path),*[str(p) for p in tmp_path.rglob('*.java')]],check=True)
-    subprocess.run([str(java/'java'),'-ea','-cp',str(tmp_path),'UnitTest',str(tmp_path/'private')],check=True)
+    subprocess.run([str(java/'java'),'-ea','-cp',str(tmp_path),'UnitTest',str(tmp_path/'private'),str(tmp_path)],check=True)
 
 
 def test_projector_patch_checks_allocation_and_refuses_cpu_fallback():

@@ -2,6 +2,7 @@
 #include <jni.h>
 #include <android/log.h>
 #include "llama.h"
+#include "gguf.h"
 #include "ggml-backend.h"
 #include "mtmd.h"
 #include "mtmd-helper.h"
@@ -94,8 +95,21 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
         if(layers<0) layers=INT_MAX;
         auto model_path=utf8(env,path), projector_path=utf8(env,proj);
         if(projector_path=="null") projector_path.clear();
+        if(projector_path.empty()) {
+            gguf_init_params gp{}; gp.no_alloc=true; gp.ctx=nullptr;
+            auto *meta=gguf_init_from_file(model_path.c_str(),gp);
+            if(meta) {
+                auto key=gguf_find_key(meta,"clip.has_vision_encoder");
+                auto project=gguf_find_key(meta,"clip.projector_type");
+                if(key>=0 && project>=0 && gguf_get_kv_type(meta,key)==GGUF_TYPE_BOOL
+                        && gguf_get_val_bool(meta,key) && gguf_get_kv_type(meta,project)==GGUF_TYPE_STRING
+                        && gguf_find_tensor(meta,"token_embd.weight")>=0) projector_path=model_path;
+                gguf_free(meta);
+            }
+        }
+
         if(context<256 || context>8192) throw std::runtime_error("Contexto deve ficar entre 256 e 8192 para limitar memória");
-        uint64_t size=bytes(model_path)+(projector_path.empty()?0:bytes(projector_path));
+        uint64_t size=bytes(model_path)+(projector_path.empty()||projector_path==model_path?0:bytes(projector_path));
         uint64_t estimate=size+size/2+(uint64_t)context*262144+268435456;
         uint64_t available=available_memory();
         LOG("Memory guard: estimated=%llu available=%llu",(unsigned long long)estimate,(unsigned long long)available);
@@ -134,6 +148,7 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
             auto vp=mtmd_context_params_default(); vp.use_gpu=layers!=0; vp.n_threads=cp.n_threads; vp.print_timings=false;
             e->projector=mtmd_init_from_file(projector_path.c_str(),e->model,vp);
             if(!e->projector) throw std::runtime_error("mmproj incompatível com o GGUF ou memória insuficiente");
+            if(projector_path==model_path) LOG("GGUF_SINGLE_FILE_LOADED same_path=1");
             LOG("GGUF_PROJECTOR_LOADED vision=%d audio=%d",mtmd_support_vision(e->projector),mtmd_support_audio(e->projector));
         }
         LOG("GGUF_UNIT_LOADED language=%s layers=%d projector=%s",e->layers>0?"Vulkan":"CPU",e->layers,
