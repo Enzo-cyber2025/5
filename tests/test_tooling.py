@@ -676,12 +676,12 @@ def test_exact_saf_selection_ignores_recent_diagnostic_xml():
                 for i, name in enumerate(names)) + '</hierarchy>'
 
         def shell(self, command):
-            assert command == 'input touchscreen swipe 5 15 5 15 1000'
-            self.selected.append('model.gguf')
+            expected = 'input touchscreen swipe 5 15 5 15 1000' if not self.selected else 'input touchscreen swipe 5 25 5 25 1000'
+            assert command == expected
+            self.selected.append('model.gguf' if not self.selected else 'projector.gguf')
 
         def tap(self, *, text, package):
-            assert text == 'projector.gguf' and package == PICKERS
-            self.selected.append(text)
+            raise AssertionError('A selection gesture must not open a document')
 
         def wait(self, predicate, description):
             assert predicate(), description

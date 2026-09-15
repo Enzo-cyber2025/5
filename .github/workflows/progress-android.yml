@@ -2,7 +2,7 @@ name: Signed progress UI, same-key update and multimodal acceptance
 on:
   push:
     branches: [arena/01a09b42-5]
-    paths: ['ci/progress-candidate.json', '.github/workflows/progress-android.yml', 'scripts/test_atomic_android.py', 'scripts/test_gemma4_android.py']
+    paths: ['ci/progress-candidate.json', '.github/workflows/progress-android.yml', 'scripts/test_atomic_android.py', 'scripts/test_gemma4_android.py', 'scripts/test_mobile.py', 'scripts/android_checks.py', 'scripts/import_progress_checks.py', 'scripts/test_physical_android.py']
 permissions:
   contents: write
   actions: read
