@@ -44,8 +44,9 @@ def main():
             checks['same_signature_update_retains_private_data']='PASS'
         else:
             assert candidate.get('replacement_signature_authorized') is True
-            result=d.adb('install','-r','-g',APK,timeout=180,check=False)
-            assert 'INSTALL_FAILED_UPDATE_INCOMPATIBLE' in result,result
+            result=d.adb('install','-r','-g',APK,timeout=180,check=False,with_status=True)
+            detail=(result.stdout+result.stderr).decode(errors='replace')
+            assert result.returncode!=0 and 'INSTALL_FAILED_UPDATE_INCOMPATIBLE' in detail,detail
             assert d.shell('cat /data/user/0/'+PACKAGE+'/files/signature-update-probe.txt')=='Gemma4 in-place update probe'
             checks['different_signature_update_blocked_without_losing_old_private_data']='PASS'
             # Explicitly disposable emulator only; NEVER advise blind uninstall on a user's phone.
