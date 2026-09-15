@@ -130,5 +130,10 @@ def select_exact_documents(d, names):
     d.shell(f'input touchscreen swipe {x} {y} {x} {y} 1000')
     d.wait(lambda: position(d.ui(), text='1 selected', package=PICKERS), 'primeiro arquivo selecionado')
     for name in names[1:]:
-        d.tap(text=name, package=PICKERS)
+        # A provider refresh can exit selection mode between dumps. A tap would
+        # then OPEN one file; long-press only selects and cannot import it alone.
+        point = position(d.ui(), text=name, package=PICKERS)
+        assert point, name
+        x, y = point
+        d.shell(f'input touchscreen swipe {x} {y} {x} {y} 1000')
     d.wait(lambda: position(d.ui(), text=f'{len(names)} selected', package=PICKERS), 'contagem exata de arquivos selecionados')
