@@ -92,6 +92,8 @@ public final class ImportProgress {
             try {
                 if(dialog==null){dialog=new ProgressDialog(a);dialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);dialog.setCancelable(false);dialog.setTitle("Progresso da importação");owned=true;dialog.show();}
                 StringBuilder message=new StringBuilder();
+                Row activeRow=rows.get(current);
+                if(!terminal&&activeRow!=null)message.append("Etapa atual: ").append(activeRow.label).append("\n\n");
                 for(Row row:rows.values()) {
                     message.append(row.label).append(": ");
                     if(row.skip)message.append("não necessária");
@@ -128,6 +130,10 @@ public final class ImportProgress {
         synchronized(SESSIONS){SESSIONS.put(c,session);active=session;}
         // Query and byte updates are performed on the existing import worker, not UI.
         session.update("copy0",0,-1,false);
+    }
+    public static void syncCopied(java.io.OutputStream stream) throws java.io.IOException {
+        if(!(stream instanceof java.io.FileOutputStream))throw new java.io.IOException("Destino de importação inválido");
+        ((java.io.FileOutputStream)stream).getFD().sync();
     }
     public static Session get(Context c){synchronized(SESSIONS){return SESSIONS.get(c);}}
     public static void singleCopy(Context c,long done,long total){Session s=get(c);if(s!=null)s.update("copy0",done,total,false);}

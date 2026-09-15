@@ -47,7 +47,7 @@ System.out.println("PROGRESS_COUNTERS_PASS");
 
 def test_single_progress_wiring_covers_copy_identification_success_failure():
     s=(ROOT/'apk-fix/import_progress.py').read_text()
-    for method in ('beginSingle','singleSource','singleCopy','identificationStart','inspectWithProgress','singleFinished','attach'):
+    for method in ('beginSingle','singleSource','singleCopy','identificationStart','inspectWithProgress','singleFinished','attach','syncCopied'):
         assert '->'+method in s
     assert "[('2',False),('3',True)]" in s
     assert 'patch_import_progress(app)' in (ROOT/'apk-fix/build_mobile.py').read_text()

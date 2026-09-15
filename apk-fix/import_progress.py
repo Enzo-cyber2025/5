@@ -49,3 +49,11 @@ def patch_import_progress(app):
         # Insert after dismissal: subsequent original instructions reinitialize
         # v0/v1. The asynchronous progress renderer never re-shows this dialog.
         s=s.replace(marker,marker+'\n'+extra);p.write_text(s)
+
+    # Complete copy only after durable flush; IOException follows the importer's
+    # existing cleanup/failure path, rather than displaying successful 100%.
+    p=app/'GGUFImport.smali';s=p.read_text()
+    marker='    invoke-virtual {v2}, Ljava/io/OutputStream;->flush()V'
+    assert s.count(marker)==1
+    s=s.replace(marker,marker+'\n    invoke-static {v2}, Lcom/ggufchat/app/ImportProgress;->syncCopied(Ljava/io/OutputStream;)V')
+    p.write_text(s)
