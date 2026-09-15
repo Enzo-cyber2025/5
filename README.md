@@ -1,3 +1,26 @@
+# GGUF Chat — resposta pronta com a tela apagada
+
+## [Baixar APK — sem ZIP](https://raw.githubusercontent.com/Enzo-cyber2025/5/f189650ded443bfcdf9f3438c188e1bfde2d9fe9/.delivery/GGUF-Chat-mobile.apk)
+
+**Mesma assinatura do último APK entregue (`eabd0169…`). Atualização por cima dele testada, preservando modelos e conversas.** Não é a mesma assinatura de versões antigas `3dd…`/`9b…`; não desinstale essas versões sem proteger os dados.
+
+28.370.381 bytes · Android 9+ · ARM64/x86_64 · modelos não incluídos.
+
+- **Resposta pronta** quando o modelo termina e salva a resposta com a tela apagada ou bloqueada.
+- Toque abre a conversa correta; o aviso permanece após encerrar o serviço e some ao ser tocado.
+- Menos trabalho de notificação em segundo plano e uma cópia redundante da resposta eliminada. Motor, caches, conteúdo e tokens/s preservados; nenhum novo percentual de aceleração da inferência alegado.
+- Cancelamento não produz falso aviso de sucesso. Permissão do Android, canal e Não Perturbe são respeitados.
+
+**8/8 testes reais no emulador passaram no APK assinado**, incluindo atualização, texto idêntico, notificação real/toque, imagem real durante sono, cache, cancelamento e permissão negada. Não é certificação de todos os celulares ou som físico.
+
+[Relatório e capturas reais](docs/REPLY_NOTIFICATIONS.md) · [Aprovação](.delivery/reply-notification-acceptance.json)
+
+SHA-256: `3baa171c78eb5ee7f6f5c3c212904f53547a13184b9c01ea1d6ec565e2f5152e`.
+
+---
+<details>
+<summary>Entregas anteriores — avisos de assinatura e medições se referem a cada versão histórica</summary>
+
 # GGUF Chat — menos espera nas continuações
 
 **Assinatura diferente da versão anterior. O Android não permite atualizar por cima dela. Não desinstale o app sem proteger seus dados.**
@@ -347,6 +370,8 @@ também publica apenas resumos/capturas limitados em `ci-results/` **nesta mesma
 com `[skip ci]` para evitar repetição automática. Sem force-push nem outras branches.
 O workflow antigo do repositório não foi alterado; o erro histórico dos pontos em
 `timeout-minutes` já estava resolvido.
+
+</details>
 
 </details>
 
