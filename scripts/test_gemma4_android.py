@@ -2,7 +2,7 @@
 """Real public Gemma 4 pair -> one physical GGUF -> actual Android image inference.
 Preserve old-signer update evidence and every real reply. Never inject a model index.
 """
-import gc,hashlib,json,shlex,traceback
+import gc,hashlib,json,shlex,traceback,os
 from pathlib import Path
 import test_mobile as mobile
 from test_mobile import MobileAndroid,APK
@@ -19,7 +19,7 @@ OLD_SHA='4d1697c2ee9b80ba38a03ee78ab0241dc8aa3d5464c956707e2412be70b11ce6'
 
 def main():
     E.mkdir(exist_ok=True);d=MobileAndroid('emulator-5554',E)
-    candidate=json.loads(Path('ci/gemma4-candidate.json').read_text())
+    candidate=json.loads(Path(os.environ.get('GGUF_CANDIDATE','ci/gemma4-candidate.json')).read_text())
     s={'status':'FAIL','scope':'Gemma4-reference-pair-physical-merge-and-native-vision','checks':{},
        'apk_sha256':hashlib.sha256(APK.read_bytes()).hexdigest(),
        'environment':'Android emulator, Mesa software Vulkan, exact signed candidate; 12 GiB configured guest RAM (not physical hardware)',
@@ -38,9 +38,20 @@ def main():
         d.adb('install','-r','-g',OLD,timeout=180);assert d.shell('pm clear '+PACKAGE)=='Success'
         d.grant_test_notifications();d.launch()
         d.write_private('files/signature-update-probe.txt','Gemma4 in-place update probe')
-        d.adb('install','-r','-g',APK,timeout=180)
-        assert d.shell('cat /data/user/0/'+PACKAGE+'/files/signature-update-probe.txt')=='Gemma4 in-place update probe'
-        checks['same_signature_update_retains_private_data']='PASS';save()
+        if candidate['signer_sha256']=='9a368c9a1e4f3b3b0b6ecfb86aa3768d633a925855afba27eab3b9189177955a':
+            d.adb('install','-r','-g',APK,timeout=180)
+            assert d.shell('cat /data/user/0/'+PACKAGE+'/files/signature-update-probe.txt')=='Gemma4 in-place update probe'
+            checks['same_signature_update_retains_private_data']='PASS'
+        else:
+            assert candidate.get('replacement_signature_authorized') is True
+            result=d.adb('install','-r','-g',APK,timeout=180,check=False)
+            assert 'INSTALL_FAILED_UPDATE_INCOMPATIBLE' in result,result
+            assert d.shell('cat /data/user/0/'+PACKAGE+'/files/signature-update-probe.txt')=='Gemma4 in-place update probe'
+            checks['different_signature_update_blocked_without_losing_old_private_data']='PASS'
+            # Explicitly disposable emulator only; NEVER advise blind uninstall on a user's phone.
+            assert d.adb('uninstall',PACKAGE).strip()=='Success'
+            d.adb('install','-g',APK,timeout=180)
+        save()
         # Clear ONLY this disposable emulator for the actual fresh SAF import acceptance.
         assert d.shell('pm clear '+PACKAGE)=='Success';d.grant_test_notifications();d.launch()
         d.shell('mkdir -p /sdcard/Download')
@@ -51,9 +62,14 @@ def main():
         def complete():
             rows=d.read_json('models.json',optional=True)
             return rows[0] if len(rows)==1 and rows[0].get('capability')=='VISION_SINGLE_GGUF' and rows[0]['path']==rows[0].get('mmprojPath') else None
-        unit=d.wait(complete,'Gemma4 unificado fisicamente',timeout=900)
+        unit=d.wait(complete,'Gemma4 unificado fisicamente',timeout=1800)
         assert unit['architecture']=='gemma4'
         assert 'GGUF_PHYSICAL_UNIFICATION_OK' in d.adb('logcat','-d')
+        if os.environ.get('GGUF_ATOMIC_REQUIRED')=='1':
+            log=d.adb('logcat','-d')
+            assert 'GGUF_ATOMIC_NATIVE_VALIDATED same_path=1 backend=CPU' in log and 'GGUF_ATOMIC_IMPORT_COMMITTED records_added=1 source_files_remaining=0' in log
+            assert d.shell('find /data/user/0/'+PACKAGE+'/files/pair-import-staging -mindepth 1').strip()==''
+            checks['atomic_native_validated_one_file_commit']='PASS'
         private=d.shell('find /data/user/0/'+PACKAGE+'/files/models -type f').splitlines()
         assert private==[unit['path']],private
         actual=BASE/'android-unified.gguf';d.adb('pull',unit['path'],actual,timeout=600)

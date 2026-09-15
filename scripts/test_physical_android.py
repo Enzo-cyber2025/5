@@ -67,6 +67,11 @@ def main():
             return rows[0] if len(rows)==1 and rows[0].get('capability')=='VISION_SINGLE_GGUF' and rows[0]['path']==rows[0].get('mmprojPath') else None
         unit=d.wait(merged,'unificação física persistida',timeout=600)
         assert 'GGUF_PHYSICAL_UNIFICATION_OK' in d.adb('logcat','-d')
+        if os.environ.get('GGUF_ATOMIC_REQUIRED')=='1':
+            log=d.adb('logcat','-d')
+            assert 'GGUF_ATOMIC_NATIVE_VALIDATED same_path=1 backend=CPU' in log and 'GGUF_ATOMIC_IMPORT_COMMITTED records_added=1 source_files_remaining=0' in log
+            assert d.shell('find /data/user/0/'+PACKAGE+'/files/pair-import-staging -mindepth 1').strip()==''
+            checks['atomic_native_validated_one_file_commit']='PASS'
         actual=C/'app-unified.gguf';d.adb('pull',unit['path'],actual,timeout=300)
         expected=tensor_hashes(MODEL);projector=tensor_hashes(PROJ);assert not set(expected)&set(projector);expected.update(projector)
         assert tensor_hashes(actual)==expected
