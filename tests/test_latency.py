@@ -75,3 +75,10 @@ def test_new_signature_never_silently_claims_in_place_update():
     assert 'signature_change_blocks_update_without_data_loss' in s
     assert 'no data migration claim' in s
     assert s.index("assert d.shell('getprop ro.kernel.qemu')=='1'",s.index('Destructive cleanup')) < s.index("d.adb('uninstall',PACKAGE)")
+
+
+def test_ime_registration_is_observed_after_real_unlock():
+    s=(ROOT/'scripts/test_latency_android.py').read_text()
+    assert 'ime list -a -s' in s and 'ime=d.wait(registered_ime' in s
+    assert s.index("d.shell('wm dismiss-keyguard')") < s.index('ime=d.wait(registered_ime')
+    assert "d.shell('ime enable '+shlex.quote(ime))" in s

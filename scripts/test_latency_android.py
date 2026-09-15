@@ -72,9 +72,16 @@ def main():
         assert s['apk_sha256']==c['apk_sha256'] and d.shell('getprop ro.kernel.qemu')=='1'
         d.adb('root',check=False);d.adb('wait-for-device');d.shell('wm size 720x1280');d.shell('wm density 240')
         d.shell('pm disable-user --user 0 com.google.android.apps.nexuslauncher',check=False);d.adb('logcat','-G','16M')
+        d.shell('input keyevent 224');d.shell('wm dismiss-keyguard')
         d.adb('install','-r',Path('.cache/test-input/input.apk'))
-        d.shell('ime enable com.ggufchat.testinput/.InputBridge')
-        d.shell('ime set com.ggufchat.testinput/.InputBridge')
+        # Package install and InputMethodManager's post-user-unlock scan are
+        # asynchronous on a cold API-35 emulator. Use its actual published ID.
+        def registered_ime():
+            listing=d.shell('ime list -a -s')
+            (E/'physical-latency-ime-registration.txt').write_text(listing)
+            return next((x.strip() for x in listing.splitlines() if x.strip().startswith('com.ggufchat.testinput/')),None)
+        ime=d.wait(registered_ime,'test IME registered after real user unlock',timeout=60)
+        d.shell('ime enable '+shlex.quote(ime));d.shell('ime set '+shlex.quote(ime))
         baseline=Path('.cache/latency-baseline.apk');assert sha(baseline)==c['baseline_sha256']
         d.adb('install','-r','-g',baseline,timeout=180);assert d.shell('pm clear '+PACKAGE)=='Success'
         d.grant_test_notifications();model=d.import_model(TEXT)
