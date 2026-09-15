@@ -1,0 +1,31 @@
+--------- beginning of main
+09-15 21:19:46.666  5432  5445 D EGL_emulation: app_time_stats: avg=506.49ms min=496.46ms max=516.51ms count=2
+09-15 21:19:47.666  5432  5445 D EGL_emulation: app_time_stats: avg=500.03ms min=494.01ms max=506.04ms count=2
+09-15 21:19:47.736  5432  5432 I ImeTracker: com.ggufchat.app:2e55d790: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser true
+09-15 21:19:47.736  5432  5432 D InputMethodManager: showSoftInput() view=android.widget.EditText{2298ccb VFED..CL. .F.P.... 128,0-493,67 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+09-15 21:19:48.783  5432  5445 D EGL_emulation: app_time_stats: avg=272.97ms min=4.87ms max=497.24ms count=4
+09-15 21:19:49.785  5432  5445 D EGL_emulation: app_time_stats: avg=500.97ms min=495.78ms max=506.15ms count=2
+09-15 21:19:50.787  5432  5445 D EGL_emulation: app_time_stats: avg=500.83ms min=497.94ms max=503.72ms count=2
+09-15 21:19:51.909  5432  5445 D EGL_emulation: app_time_stats: avg=374.13ms min=126.04ms max=501.84ms count=3
+09-15 21:19:51.928  5432  5432 I ImeTracker: com.ggufchat.app:97c7833: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+09-15 21:19:51.935  5432  5432 D InsetsController: hide(ime(), fromIme=true)
+09-15 21:19:51.935  5432  5432 I ImeTracker: com.ggufchat.app:97c7833: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+09-15 21:19:51.943  5432  6785 I GGUFSystem: GGUF_SYSTEM_PROMPT_APPLIED scope=global chars=107 sha256=dde45e87ea07db0b49bcddd022d4f41a452610560d9af636571c26d16a4bcd04
+09-15 21:19:51.943  5432  6785 I GGUFInference: GGUF_CONTENT_PREPARED files=0 images=0 text_chars=0
+09-15 21:19:52.918  5432  5445 D EGL_emulation: app_time_stats: avg=30.10ms min=11.20ms max=204.28ms count=31
+09-15 21:19:53.209  5432  6785 I GGUFChatNative: GGUF_PROMPT_CACHE input_tokens=349 reused_tokens=323 evaluated_tokens=26 media=0
+09-15 21:19:53.932  5432  5445 D EGL_emulation: app_time_stats: avg=63.14ms min=20.08ms max=245.19ms count=16
+09-15 21:19:54.966  5432  5445 D EGL_emulation: app_time_stats: avg=32.14ms min=6.16ms max=187.71ms count=30
+09-15 21:19:55.971  5432  5445 D EGL_emulation: app_time_stats: avg=30.83ms min=6.41ms max=83.04ms count=31
+09-15 21:19:56.809  5432  6785 E GGUFNativeStderr: graph_compute: ggml_backend_sched_graph_compute_async failed with error 1
+09-15 21:19:56.809  5432  6785 E GGUFNativeStderr: process_ubatch: failed to compute graph, compute status: 1
+09-15 21:19:56.809  5432  6785 I GGUFNativeStderr: decode: removing memory module entries for seq_id = 0, pos = [386, +inf)
+09-15 21:19:56.809  5432  6785 E GGUFNativeStderr: llama_decode: failed to decode, ret = 2
+09-15 21:19:56.809  5432  6785 I GGUFChatNative: Generation failed: Falha de decode durante resposta
+09-15 21:19:56.809  5432  6785 I GGUFChatNative: GGUF_RESPONSE_LATENCY first_token_ns=1267529466 prompt_tokens=349 reused_tokens=323
+09-15 21:19:56.809  5432  6785 I GGUFChatNative: GGUF_GENERATION_STATS tokens=38 decode_ns=3600479380 prefill_ns=1265362283 callbacks=27 success=0
+09-15 21:19:56.809  5432  6785 I System.out: GGUF_REPAIR_GENERATION_FAILED
+09-15 21:19:56.824  5432  6785 I GGUFReplyNotice: GGUF_NOTICE_STATS progress_updates=4 skipped_screen_off=0
+09-15 21:19:56.824  5432  6785 I GGUFReplyNotice: GGUF_REPLY_NOTICE suppressed=not_saved_success
+09-15 21:19:56.881  5432  5432 I GGUFReplyNotice: GGUF_REPLY_SERVICE_DESTROYED
+09-15 21:19:56.991  5432  5445 D EGL_emulation: app_time_stats: avg=31.60ms min=6.77ms max=83.64ms count=31
