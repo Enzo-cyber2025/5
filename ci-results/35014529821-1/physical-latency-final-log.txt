@@ -1,0 +1,966 @@
+rwardingOs.open(ForwardingOs.java:563)
+09-15 19:38:00.190   923  2777 E BackupHelper: 	at android.app.ActivityThread$AndroidOs.open(ActivityThread.java:8591)
+09-15 19:38:00.190   923  2777 E BackupHelper: 	at libcore.io.IoBridge.open(IoBridge.java:560)
+09-15 19:38:00.190   923  2777 E BackupHelper: 	... 11 more
+09-15 19:38:00.194  1366  1668 I SP      : Requesting download of URL https://www.gstatic.com/android/keyboard/dictionarypack/prod/en-us_d3_2024051500_hev6cwnmin6m2bgfmain.dict to main_en_us_2024051500_1.fst-decompress.fetched (constraints: m:b:u:l)
+09-15 19:38:00.197   357   357 I netd    : tetherGetStats() -> {[]} <0.25ms>
+09-15 19:38:00.198  1474  2341 I GnpSdk  : (REDACTED) Executing action in BroadcastReceiver [%s].
+09-15 19:38:00.199  1545  2778 W ChimeraUtils: Module com.google.android.gms.auth_authzen__phone missing resource null(0)
+09-15 19:38:00.207   559   615 W PackageManager: Default package for ROLE_HOME is not set in RoleManager
+09-15 19:38:00.208  1545  1917 I RecoverableKeyStoreGms: [RecoverableKeyStoreGmsInitOperation] Initializing auth_folsom
+09-15 19:38:00.208  1545  1917 W RecoverableKeyStoreGms: [RecoverableKeyStoreGmsInitOperation] Cannot initialize the RecoverableKeyStoreGms module - Android ID has not yet been set! [CONTEXT service_id=172 ]
+09-15 19:38:00.214  1545  2778 I Authzen : [AuthZenEventHandler] Handling event: com.google.android.chimera.IntentOperation.NEW_MODULE
+09-15 19:38:00.214  1545  2778 E Authzen : [AuthZenEventHandler] unknown action: com.google.android.chimera.IntentOperation.NEW_MODULE
+09-15 19:38:00.223  1545  2585 I Icing   : Using regular flags by method 2
+09-15 19:38:00.230  1088  1088 I Telephony: TelecomAccountRegistry$AccountEntry: registerPstnPhoneAccount: Registering account=[[ ] PhoneAccount: ComponentInfo{com.android.phone/com.android.services.telephony.TelephonyConnectionService}, 1, UserHandle{0} Capabilities: CallProvider MultiUser PlaceEmerg SimSub  Audio Routes: BESW Schemes: tel voicemail  Extras: Bundle[{android.telecom.extra.SUPPORTS_VIDEO_CALLING_FALLBACK=true}] GroupId: *** SC Restrictions: [ ]] with Telecom. subId=1
+09-15 19:38:00.230   357  2787 I resolv  : GetAddrInfoHandler::run: {100 100 100 983140 10152 0}
+09-15 19:38:00.231   357  2788 I resolv  : res_nmkquery: (QUERY, IN, AAAA)
+09-15 19:38:00.231   357  2788 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x7fadb302de10
+09-15 19:38:00.231   357  2788 I resolv  : doQuery: rcode=0, ancount=1, return value=61
+09-15 19:38:00.231   559  1877 I Telecom : TelecomServiceImpl$1: registerPhoneAccount: account=[[ ] PhoneAccount: ComponentInfo{com.android.phone/com.android.services.telephony.TelephonyConnectionService}, 1, UserHandle{0} Capabilities: CallProvider MultiUser PlaceEmerg SimSub  Audio Routes: BESW Schemes: tel voicemail  Extras: Bundle[{android.telecom.extra.SUPPORTS_VIDEO_CALLING_FALLBACK=true}] GroupId: *** SC Restrictions: [ ]]: TSI.rPA(cap)@AIk🔒
+09-15 19:38:00.232   559  1877 I Telecom : PhoneAccountRegistrar: Modify account: [ComponentInfo{com.android.phone/com.android.services.telephony.TelephonyConnectionService}, 1, UserHandle{0}]: TSI.rPA(cap)@AIk🔒
+09-15 19:38:00.232   357  2789 I resolv  : res_nmkquery: (QUERY, IN, A)
+09-15 19:38:00.232   357  2789 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x7fadb302cd90
+09-15 19:38:00.232   357  2789 I resolv  : doQuery: rcode=0, ancount=1, return value=49
+09-15 19:38:00.233  1366  2786 D TrafficStats: tagSocket(148) with statsTag=0xffffffff, statsUid=-1
+09-15 19:38:00.235  1474  2192 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+09-15 19:38:00.243  1545  1917 I Auth    : [AuthManaged, AuthManagedModuleInitIntentOperation] enabling com.google.android.gms.auth.managed.ui.EmmActivity
+09-15 19:38:00.245  1231  1231 I NearbyDiscovery: DiscoveryService created [CONTEXT service_id=265 ]
+09-15 19:38:00.246   559  1175 D PackageManager: Instant App installer not found with android.intent.action.INSTALL_INSTANT_APP_PACKAGE
+09-15 19:38:00.246   559  1175 D PackageManager: Clear ephemeral installer activity
+09-15 19:38:00.247  1545  2629 I ebvk$a  : Unable to retrieve flag snapshot for com.google.android.gms.auth_folsom, using defaults.
+09-15 19:38:00.247  1545  2629 I ebvk$a  : Unable to retrieve flag snapshot for com.google.android.gms.auth_authzen, using defaults.
+09-15 19:38:00.247  1545  2629 I ebvk$a  : Unable to retrieve flag snapshot for com.google.android.gms.ipa, using defaults.
+09-15 19:38:00.258  1231  1231 W ChimeraUtils: Module com.google.android.gms.nearby missing resource null(0)
+09-15 19:38:00.258  1231  1231 W ChimeraUtils: Module com.google.android.gms.nearby missing resource null(0)
+09-15 19:38:00.262  1366  1744 I ManagedDeviceCheckModule: ManagedDeviceCheckModule$1.onSuccess():106 checkManagedAccountPresence() result=isi{hasDasherAccount=false, hasEduAccount=false, hasUnicornOrGriffinAccount=false}, hasManagedAccount=false, hasSupervisedAccount=false
+09-15 19:38:00.270   559  1872 D ShortcutService: Getting shortcuts for launcher= com.google.android.asuser=0 pkg=com.google.android.apps.messaging
+09-15 19:38:00.271  1545  2574 W constellation: [event_manager] Event manager is not initialized
+09-15 19:38:00.271  1231  1242 I ChimeraSrvcProxy: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl
+09-15 19:38:00.271  1231  1242 W .gms.persistent: Large reply transaction of 1056768 bytes, interface descriptor , code 1
+09-15 19:38:00.273   559   686 I incfs-mounts: [incfs] Loaded incremental-fs mount info: 1 instances, 2 mount points
+09-15 19:38:00.277   559  2002 E InputMethodManagerService: "ime enable com.ggufchat.testinput/.InputBridge" for user #0 failed due to its unrecognized IME ID.
+09-15 19:38:00.284   559  1877 I Telecom : CallsManager: handlePhoneAccountChanged: phoneAccount=[[X] PhoneAccount: ComponentInfo{com.android.phone/com.android.services.telephony.TelephonyConnectionService}, 1, UserHandle{0} Capabilities: CallProvider MultiUser PlaceEmerg SimSub  Audio Routes: BESW Schemes: tel voicemail  Extras: Bundle[{android.telecom.extra.SUPPORTS_VIDEO_CALLING_FALLBACK=true}] GroupId: *** SC Restrictions: [ ]]: TSI.rPA(cap)@AIk🔒
+09-15 19:38:00.290  1421  2683 I AiAiEcho: Settings changed for uri: content://settings/secure/enabled_notification_listeners
+09-15 19:38:00.290  1545  1917 I Auth    : [AuthManaged, AuthManagedModuleInitIntentOperation] enabling com.google.android.gms.auth.managed.ui.PhoneskyDpcInstallActivity
+09-15 19:38:00.290   559  1535 D PackageManager: Instant App installer not found with android.intent.action.INSTALL_INSTANT_APP_PACKAGE
+09-15 19:38:00.290   559  1535 D PackageManager: Clear ephemeral installer activity
+09-15 19:38:00.297  1421  1576 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-15 19:38:00.297  1421  1576 I AiAiEcho: EchoTargets: 
+09-15 19:38:00.297  1421  1576 I AiAiEcho: Filtered by AiAi flag check: 
+09-15 19:38:00.297  1421  1576 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 19:38:00.297  1421  1576 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 19:38:00.298  1421  1576 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-15 19:38:00.298  1421  1576 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-15 19:38:00.321  1474  2192 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+09-15 19:38:00.322  1545  1917 W Auth    : [AuthManaged, SettingsSecurityDeviceOwnerChimeraActivity] device owner: n/a
+09-15 19:38:00.325  1474  2192 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+09-15 19:38:00.329   559  1993 W PackageManager: Cannot suspend package "com.android.dynsystem": has OP_SYSTEM_EXEMPT_FROM_SUSPENSION set
+09-15 19:38:00.333  1545  2756 E constellation: [periodic_consent_checker] Couldn't sync with the server due to 
+09-15 19:38:00.333  1545  2756 E constellation: aoew
+09-15 19:38:00.333  1545  2756 E constellation: 	at com.google.android.gms.constellation.EventManager.onHandleIntent(:com.google.android.gms@242335041@24.23.35 (190800-646585959):310)
+09-15 19:38:00.333  1545  2756 E constellation: 	at com.google.android.chimera.IntentOperation.onHandleIntent(:com.google.android.gms@242335041@24.23.35 (190800-646585959):2)
+09-15 19:38:00.333  1545  2756 E constellation: 	at ajom.onHandleIntent(:com.google.android.gms@242335041@24.23.35 (190800-646585959):8)
+09-15 19:38:00.333  1545  2756 E constellation: 	at pkf.run(:com.google.android.gms@242335041@24.23.35 (190800-646585959):70)
+09-15 19:38:00.333  1545  2756 E constellation: 	at pke.run(:com.google.android.gms@242335041@24.23.35 (190800-646585959):152)
+09-15 19:38:00.333  1545  2756 E constellation: 	at emsz.run(:com.google.android.gms@242335041@24.23.35 (190800-646585959):21)
+09-15 19:38:00.333  1545  2756 E constellation: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+09-15 19:38:00.333  1545  2756 E constellation: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+09-15 19:38:00.333  1545  2756 E constellation: 	at java.lang.Thread.run(Thread.java:1012)
+09-15 19:38:00.334  1231  1238 W .gms.persistent: ApkAssets: Deleting an ApkAssets object '<empty> and /product/priv-app/Velvet/Velvet.apk' with 1 weak references
+09-15 19:38:00.334  1231  1238 W .gms.persistent: ApkAssets: Deleting an ApkAssets object '<empty> and /product/priv-app/WellbeingPrebuilt/WellbeingPrebuilt.apk' with 1 weak references
+09-15 19:38:00.334  1231  1238 W .gms.persistent: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/GoogleTTS/GoogleTTS.apk' with 1 weak references
+09-15 19:38:00.340  1545  1917 I Auth    : [AuthManaged, AuthManagedModuleInitIntentOperation] disabling com.google.android.gms.auth.managed.ui.SettingsSecurityDeviceOwnerActivity
+09-15 19:38:00.341   559   887 D PackageManager: Instant App installer not found with android.intent.action.INSTALL_INSTANT_APP_PACKAGE
+09-15 19:38:00.348  1231  1692 W GoogleHttpServiceClient: Timeout on service connection
+09-15 19:38:00.348  1231  1692 W GoogleHttpServiceClient: java.lang.Throwable
+09-15 19:38:00.348  1231  1692 W GoogleHttpServiceClient: 	at bewl.a(:com.google.android.gms@242335041@24.23.35 (190800-646585959):44)
+09-15 19:38:00.348  1231  1692 W GoogleHttpServiceClient: 	at anbi.e(:com.google.android.gms@242335041@24.23.35 (190800-646585959):126)
+09-15 19:38:00.348  1231  1692 W GoogleHttpServiceClient: 	at anbi.g(:com.google.android.gms@242335041@24.23.35 (190800-646585959):5)
+09-15 19:38:00.348  1231  1692 W GoogleHttpServiceClient: 	at efkz.b(:com.google.android.gms@242335041@24.23.35 (190800-646585959):39)
+09-15 19:38:00.348  1231  1692 W GoogleHttpServiceClient: 	at efkr.a(:com.google.android.gms@242335041@24.23.35 (190800-646585959):274)
+09-15 19:38:00.348  1231  1692 W GoogleHttpServiceClient: 	at ehaz.call(:com.google.android.gms@242335041@24.23.35 (190800-646585959):1026)
+09-15 19:38:00.348  1231  1692 W GoogleHttpServiceClient: 	at java.util.concurrent.FutureTask.run(FutureTask.java:264)
+09-15 19:38:00.348  1231  1692 W GoogleHttpServiceClient: 	at angs.c(:com.google.android.gms@242335041@24.23.35 (190800-646585959):50)
+09-15 19:38:00.348  1231  1692 W GoogleHttpServiceClient: 	at angs.run(:com.google.android.gms@242335041@24.23.35 (190800-646585959):76)
+09-15 19:38:00.348  1231  1692 W GoogleHttpServiceClient: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+09-15 19:38:00.348  1231  1692 W GoogleHttpServiceClient: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+09-15 19:38:00.348  1231  1692 W GoogleHttpServiceClient: 	at anmg.run(:com.google.android.gms@242335041@24.23.35 (190800-646585959):8)
+09-15 19:38:00.348  1231  1692 W GoogleHttpServiceClient: 	at java.lang.Thread.run(Thread.java:1012)
+09-15 19:38:00.349   559   887 D PackageManager: Clear ephemeral installer activity
+09-15 19:38:00.352   914   914 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-15 19:38:00.352   914   914 E OverviewProxyService: Failed to get overview proxy for system bar attr change.
+09-15 19:38:00.365   559   838 D ConnectivityService: NetReassign [no changes] [c 0] [a 0] [i 0]
+09-15 19:38:00.387   914   914 E OverviewProxyService: Failed to get overview proxy for system bar attr change.
+09-15 19:38:00.393   559  1877 I Telecom : PhoneAccountRegistrar: getSimCallManager: SimCallManager for subId 1 queried, returning: null: TSI.rPA(cap)@AIk🔒
+09-15 19:38:00.397  1545  2629 I ebvk$a  : Unable to retrieve flag snapshot for com.google.android.gms.auth_managed, using defaults.
+09-15 19:38:00.401   559  1877 I Telecom : PhoneAccountRegistrar: Notifying telephony of voice service override change for 1 SIMs, hasService = false: TSI.rPA(cap)@AIk🔒
+09-15 19:38:00.402  1042  2761 D NetworkMonitor/100: PROBE_HTTP http://connectivitycheck.gstatic.com/generate_204 time=337ms ret=204 request={Connection=[close], User-Agent=[Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.32 Safari/537.36]} headers={null=[HTTP/1.1 204 No Content], Connection=[close], Content-Length=[0], Cross-Origin-Resource-Policy=[cross-origin], Date=[Tue, 15 Sep 2026 19:38:01 GMT], X-Android-Received-Millis=[1789501080402], X-Android-Response-Source=[NETWORK 204], X-Android-Selected-Protocol=[http/1.1], X-Android-Sent-Millis=[1789501080130]}
+09-15 19:38:00.404   559  1993 W PackageManager: Cannot suspend package "android": has OP_SYSTEM_EXEMPT_FROM_SUSPENSION set
+09-15 19:38:00.404   559  1993 W PackageManager: Cannot suspend package "com.google.android.permissioncontroller": required for permissions management
+09-15 19:38:00.405   914   914 E OverviewProxyService: Failed to get overview proxy for system bar attr change.
+09-15 19:38:00.405   914   914 D DisplayRepository: combining enabled=[0], connectedExternalDisplayIds=[], ignored=[]
+09-15 19:38:00.407  1231  1231 D BluetoothAdapter: registerBluetoothConnectionCallback()
+09-15 19:38:00.408  1231  1231 I NearbyShared: BTConnStateMgr: BluetoothConnectionCallback registered.
+09-15 19:38:00.419  1474  1612 W A       : Couldn't calculate ClientInstanceId, no account name
+09-15 19:38:00.420  1474  1612 W A       : Couldn't calculate ClientInstanceId, no AndroidId
+09-15 19:38:00.422   559  1535 D ShortcutService: Getting shortcuts for launcher= com.google.android.asuser=0 pkg=com.google.android.gm
+09-15 19:38:00.433  1088  1088 I PhoneInterfaceManager: setVoiceServiceStateOverride: subId=1, phone=Handler (com.android.internal.telephony.GsmCdmaPhone) {68a5fdd}, hasService=false, callingPackage=com.android.server.telecom
+09-15 19:38:00.433   559   649 D PackageManager: Instant App installer not found with android.intent.action.INSTALL_INSTANT_APP_PACKAGE
+09-15 19:38:00.433   559   649 D PackageManager: Clear ephemeral installer activity
+09-15 19:38:00.434  1231  1231 I NearbyFastPair: NearbyAppHelper: Check Mainline Tethering module version code. [CONTEXT service_id=265 ]
+09-15 19:38:00.436  1088  1088 I Telephony: TelecomAccountRegistry$AccountEntry: Registered phoneAccount: [[ ] PhoneAccount: ComponentInfo{com.android.phone/com.android.services.telephony.TelephonyConnectionService}, 1, UserHandle{0} Capabilities: CallProvider MultiUser PlaceEmerg SimSub  Audio Routes: BESW Schemes: tel voicemail  Extras: Bundle[{android.telecom.extra.SUPPORTS_VIDEO_CALLING_FALLBACK=true}] GroupId: *** SC Restrictions: [ ]] with handle: ComponentInfo{com.android.phone/com.android.services.telephony.TelephonyConnectionService}, 1, UserHandle{0}
+09-15 19:38:00.437   559  1535 W UserManagerService: Requested status bar icon for non-badged user 0
+09-15 19:38:00.439   559  1993 W PackageManager: Cannot suspend package "com.android.providers.settings": has OP_SYSTEM_EXEMPT_FROM_SUSPENSION set
+09-15 19:38:00.441  2798  2798 W BpBinder: Linking to death on android.gui.ISurfaceComposer but there are no threads (yet?) listening to incoming transactions. See ProcessState::startThreadPool and ProcessState::setThreadPoolMaxThreadCount. Generally you should setup the binder threadpool before other initialization steps.
+09-15 19:38:00.441  2798  2798 W ProcessState: Extra binder thread started, but 0 threads requested. Do not use *startThreadPool when zero threads are requested.
+09-15 19:38:00.442  1088  1088 I Telephony: PstnIncomingCallNotifier: Registering: [0]
+09-15 19:38:00.442  1088  1088 D Telephony: Registering: Handler (com.android.internal.telephony.GsmCdmaPhone) {68a5fdd}
+09-15 19:38:00.445   914   914 D ControlsListingControllerImpl: ServiceConfig reloaded, count: 0
+09-15 19:38:00.446  1088  1088 W Telephony: registerMmTelCapabilityCallback: registration failed, no ImsService available. Exception: code: 1
+09-15 19:38:00.450  1088  1088 W Telephony: registerImsRegistrationCallback: registration failed, no ImsService available. Exception: code: 1
+09-15 19:38:00.450  1088  1088 D Telephony: Finished registering mSimultaneousCallingTrackerListener for phoneId = 0; subId = 1
+09-15 19:38:00.451  1545  1917 I Auth    : [AuthManaged, PasswordComplexityHelperImpl] Updating password complexity components state.
+09-15 19:38:00.451  1545  1917 I Auth    : [AuthManaged, PasswordComplexityHelperImpl] Disabling com.google.android.gms.auth.managed.admin.DeviceAdminReceiver
+09-15 19:38:00.452   559  1872 D PackageManager: Instant App installer not found with android.intent.action.INSTALL_INSTANT_APP_PACKAGE
+09-15 19:38:00.457  1545  2170 I GmscoreIpa: Using regular flags by method 2 [CONTEXT service_id=255 ]
+09-15 19:38:00.633     0     0 I servicemanager: Caller(pid=2798,uid=0,sid=u:r:su:s0) Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest. No alternative instances declared in VINTF.
+09-15 19:38:00.457   559  1872 D PackageManager: Clear ephemeral installer activity
+09-15 19:38:00.459   152   152 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+09-15 19:38:00.459  2798  2800 I Gralloc4: mapper 4.x is not supported
+09-15 19:38:00.461  1042  2760 D NetworkMonitor/100: PROBE_HTTPS https://www.google.com/generate_204 time=338ms ret=204 request={Connection=[close], User-Agent=[Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.32 Safari/537.36]} headers={null=[HTTP/1.1 204 No Content], Alt-Svc=[h3=":443"; ma=2592000,h3-29=":443"; ma=2592000], Connection=[close], Content-Length=[0], Cross-Origin-Resource-Policy=[cross-origin], Date=[Tue, 15 Sep 2026 19:38:01 GMT], X-Android-Received-Millis=[1789501080459], X-Android-Response-Source=[NETWORK 204], X-Android-Selected-Protocol=[http/1.1], X-Android-Sent-Millis=[1789501080431]}
+09-15 19:38:00.462   559  1175 D FileUtils: Rounded bytes from 6218375168 to 8000000000
+09-15 19:38:00.465  1231  1231 I NearbyFastPair: NearbyAppHelper: Tethering package version code: 350820300 [CONTEXT service_id=265 ]
+09-15 19:38:00.466  1545  2250 I Icing   : Storage manager: low false usage 0 Bytes avail 6.93GB capacity 7.73GB
+09-15 19:38:00.479  1042  1048 I rkstack.process: Background concurrent mark compact GC freed 4795KB AllocSpace bytes, 4(64KB) LOS objects, 49% free, 3000KB/6000KB, paused 70us,405us total 404.790ms
+09-15 19:38:00.490  1545  1917 I Auth    : [AuthManaged, PasswordComplexityHelperImpl] Disabling com.google.android.gms.auth.managed.ui.SetNewPasswordActivity
+09-15 19:38:00.501   914   914 D ControlsListingControllerImpl: ServiceConfig reloaded, count: 0
+09-15 19:38:00.505   559  1993 W PackageManager: Cannot suspend package "com.android.inputdevices": has OP_SYSTEM_EXEMPT_FROM_SUSPENSION set
+09-15 19:38:00.510  1098  1098 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 19:38:00.510  1123  1129 W droid.bluetooth: ApkAssets: Deleting an ApkAssets object '/data/resource-cache/com.android.systemui-neutral-Kqqt.frro' with 1 weak references
+09-15 19:38:00.510  1123  1129 W droid.bluetooth: ApkAssets: Deleting an ApkAssets object '/data/resource-cache/com.android.systemui-accent-ofIQ.frro' with 1 weak references
+09-15 19:38:00.510  1123  1129 W droid.bluetooth: ApkAssets: Deleting an ApkAssets object '/data/resource-cache/com.android.systemui-dynamic-OmZG.frro' with 1 weak references
+09-15 19:38:00.515  2348  2374 D DefaultGoogleWallpaperPreferences: Defaults initialized
+09-15 19:38:00.518   559  1993 W PackageManager: Cannot suspend package "com.google.android.devicelockcontroller": protected package
+09-15 19:38:00.520  1474  1610 D nativeloader: Load libgeller_jni_lib_split.so using ns product-clns-7 from class loader (caller=/product/priv-app/Velvet/Velvet.apk!classes6.dex): dlopen failed: library "libgeller_jni_lib_split.so" not found
+09-15 19:38:00.532  1474  1610 D nativeloader: Load /product/priv-app/Velvet/Velvet.apk!/lib/x86_64/libgeller_jni_lib.so using ns product-clns-7 from class loader (caller=/product/priv-app/Velvet/Velvet.apk!classes6.dex): ok
+09-15 19:38:00.533   559  1993 W PackageManager: Cannot suspend package "com.google.android.dialer": is the default dialer
+09-15 19:38:00.536  1042  2759 D NetworkMonitor/100: isCaptivePortal: isSuccessful()=true isPortal()=false RedirectUrl=null isPartialConnectivity()=false Time=627ms
+09-15 19:38:00.541  1474  1610 E A       : (REDACTED) Failed to recover geofences for LBT Routines using Geller data
+09-15 19:38:00.541  1474  1610 E A       : com.google.android.libraries.geller.portable.GellerException: Code: INVALID_ARGUMENT, Message: Account name is null.
+09-15 19:38:00.541  1474  1610 E A       : 	at com.google.android.libraries.search.l.t.a(PG:25)
+09-15 19:38:00.541  1474  1610 E A       : 	at com.google.apps.tiktok.tracing.fe.a(PG:13)
+09-15 19:38:00.541  1474  1610 E A       : 	at com.google.common.util.concurrent.ba.a(PG:3)
+09-15 19:38:00.541  1474  1610 E A       : 	at com.google.common.util.concurrent.cu.run(PG:21)
+09-15 19:38:00.541  1474  1610 E A       : 	at com.google.android.libraries.k.x.run(PG:3)
+09-15 19:38:00.541  1474  1610 E A       : 	at com.google.common.n.c.c.run(PG:50)
+09-15 19:38:00.541  1474  1610 E A       : 	at com.google.android.libraries.k.e.run(PG:8)
+09-15 19:38:00.541  1474  1610 E A       : 	at java.lang.Thread.run(Thread.java:1012)
+09-15 19:38:00.541  1474  1610 E A       : 	at com.google.android.libraries.k.d.b.run(PG:74)
+09-15 19:38:00.544  1474  1809 W A       : No value provided for the places model index flag.
+09-15 19:38:00.544  1474  1809 W A       : No value provided for the places model index flag.
+09-15 19:38:00.545  1474  1809 W A       : No value provided for the places model index flag.
+09-15 19:38:00.554   559  1993 W PackageManager: Cannot suspend package "com.android.server.telecom": has OP_SYSTEM_EXEMPT_FROM_SUSPENSION set
+09-15 19:38:00.554   559  1993 W PackageManager: Cannot suspend package "com.android.keychain": has OP_SYSTEM_EXEMPT_FROM_SUSPENSION set
+09-15 19:38:00.554   559  1993 W PackageManager: Cannot suspend package "com.google.android.packageinstaller": required for package installation
+09-15 19:38:00.554   559  1993 W PackageManager: Cannot suspend package "com.android.localtransport": has OP_SYSTEM_EXEMPT_FROM_SUSPENSION set
+09-15 19:38:00.554   559  1993 W PackageManager: Cannot suspend package "com.android.DeviceAsWebcam": has OP_SYSTEM_EXEMPT_FROM_SUSPENSION set
+09-15 19:38:00.555   559  1993 W PackageManager: Cannot suspend package "com.android.emulator.multidisplay": has OP_SYSTEM_EXEMPT_FROM_SUSPENSION set
+09-15 19:38:00.556   559  2002 W UserManagerService: Requested status bar icon for non-badged user 0
+09-15 19:38:00.560   559  1538 D ShortcutService: Getting shortcuts for launcher= com.google.android.asuser=0 pkg=com.google.android.dialer
+09-15 19:38:00.561  1042  1050 W rkstack.process: ApkAssets: Deleting an ApkAssets object '/data/resource-cache/com.android.systemui-neutral-Kqqt.frro' with 4 weak references
+09-15 19:38:00.561  1042  1050 W rkstack.process: ApkAssets: Deleting an ApkAssets object '/data/resource-cache/com.android.systemui-accent-ofIQ.frro' with 4 weak references
+09-15 19:38:00.562  1042  1050 W rkstack.process: ApkAssets: Deleting an ApkAssets object '/data/resource-cache/com.android.systemui-dynamic-OmZG.frro' with 4 weak references
+09-15 19:38:00.566  1474  1809 I SRMClientSgtnModule: SRMc: Instantiating SodaResourceManagerClient with non-account-scope.
+09-15 19:38:00.569   559   576 D PackageManager: Instant App installer not found with android.intent.action.INSTALL_INSTANT_APP_PACKAGE
+09-15 19:38:00.569   559   576 D PackageManager: Clear ephemeral installer activity
+09-15 19:38:00.569  1474  1809 I SRMClientSgtnModule: SRMc: Instantiating SodaResourceManagerClient with non-account-scope.
+09-15 19:38:00.570   559   838 D ConnectivityService: [100 WIFI] validation passed
+09-15 19:38:00.573  1066  1079 I droid.bluetooth: Background concurrent mark compact GC freed 2859KB AllocSpace bytes, 8(416KB) LOS objects, 49% free, 2611KB/5223KB, paused 80us,293us total 281.983ms
+09-15 19:38:00.575   559   649 W UserManagerService: Requested status bar icon for non-badged user 0
+09-15 19:38:00.575  1545  1917 I Auth    : [AuthManaged, AuthManagedModuleInitIntentOperation] enabling com.google.android.gms.auth.managed.ui.EmmActivity
+09-15 19:38:00.576  1545  1917 I Auth    : [AuthManaged, AuthManagedModuleInitIntentOperation] enabling com.google.android.gms.auth.managed.ui.PhoneskyDpcInstallActivity
+09-15 19:38:00.576  1545  1917 W Auth    : [AuthManaged, SettingsSecurityDeviceOwnerChimeraActivity] device owner: n/a
+09-15 19:38:00.576  1545  1917 I Auth    : [AuthManaged, AuthManagedModuleInitIntentOperation] disabling com.google.android.gms.auth.managed.ui.SettingsSecurityDeviceOwnerActivity
+09-15 19:38:00.576  1545  1917 I Auth    : [AuthManaged, PasswordComplexityHelperImpl] Updating password complexity components state.
+09-15 19:38:00.576  1545  1917 I Auth    : [AuthManaged, PasswordComplexityHelperImpl] Disabling com.google.android.gms.auth.managed.admin.DeviceAdminReceiver
+09-15 19:38:00.580  1545  1917 I Auth    : [AuthManaged, PasswordComplexityHelperImpl] Disabling com.google.android.gms.auth.managed.ui.SetNewPasswordActivity
+09-15 19:38:00.536  1042  1042 W NetworkMonitor/: type=1400 audit(0.0:24): avc:  granted  { read } for  name="psched" dev="proc" ino=4026532021 scontext=u:r:network_stack:s0 tcontext=u:object_r:proc_net:s0 tclass=file
+09-15 19:38:00.584  1231  1811 W Nearby  : Failed to open content://com.android.contacts/profile because the Cursor was empty [CONTEXT service_id=49 ]
+09-15 19:38:00.585   503   503 W libgoldfish-rild: Multi-element reporting criteria are not supported with HIDL HAL
+09-15 19:38:00.594   559   576 D PackageManager: Instant App installer not found with android.intent.action.INSTALL_INSTANT_APP_PACKAGE
+09-15 19:38:00.597   559   576 D PackageManager: Clear ephemeral installer activity
+09-15 19:38:00.607  1066  1081 W System  : A resource failed to call close. 
+09-15 19:38:00.610   559  1175 D PackageManager: Instant App installer not found with android.intent.action.INSTALL_INSTANT_APP_PACKAGE
+09-15 19:38:00.610  1066  1081 W droid.bluetooth: ApkAssets: Deleting an ApkAssets object '/data/resource-cache/com.android.systemui-neutral-Kqqt.frro' with 1 weak references
+09-15 19:38:00.610  1066  1081 W droid.bluetooth: ApkAssets: Deleting an ApkAssets object '/data/resource-cache/com.android.systemui-accent-ofIQ.frro' with 1 weak references
+09-15 19:38:00.610  1066  1081 W droid.bluetooth: ApkAssets: Deleting an ApkAssets object '/data/resource-cache/com.android.systemui-dynamic-OmZG.frro' with 1 weak references
+09-15 19:38:00.611  1545  2629 I ebvk$a  : Unable to retrieve flag snapshot for com.google.android.gms.auth.proximity, using defaults.
+09-15 19:38:00.612   559  1175 D PackageManager: Clear ephemeral installer activity
+09-15 19:38:00.618  1042  2193 D nativeloader: Load libandroid_net_connectivity_com_android_net_module_util_jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity.jar: ok
+09-15 19:38:00.612  1042  1042 W NetworkMonitor/: type=1400 audit(0.0:25): avc:  granted  { read open } for  path="/proc/1042/net/psched" dev="proc" ino=4026532021 scontext=u:r:network_stack:s0 tcontext=u:object_r:proc_net:s0 tclass=file
+09-15 19:38:00.620   559  1993 W PackageManager: Cannot suspend package "com.android.settings": has OP_SYSTEM_EXEMPT_FROM_SUSPENSION set
+09-15 19:38:00.620   559  1993 W PackageManager: Cannot suspend package "com.android.location.fused": has OP_SYSTEM_EXEMPT_FROM_SUSPENSION set
+09-15 19:38:00.616  1042  1042 W NetworkMonitor/: type=1400 audit(0.0:26): avc:  granted  { getattr } for  path="/proc/1042/net/psched" dev="proc" ino=4026532021 scontext=u:r:network_stack:s0 tcontext=u:object_r:proc_net:s0 tclass=file
+09-15 19:38:00.671   559  1891 D PackageManager: Instant App installer not found with android.intent.action.INSTALL_INSTANT_APP_PACKAGE
+09-15 19:38:00.677   559   590 I StatsPullAtomService: subId 1 added into historical sub list
+09-15 19:38:00.684   559  1891 D PackageManager: Clear ephemeral installer activity
+09-15 19:38:00.863   914   914 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-15 19:38:00.863   914   914 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-15 19:38:00.864   914   914 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-15 19:38:00.878  2745  2745 W BatterySettingsContentProvider: create content provider from null
+09-15 19:38:00.893   914   914 I Choreographer: Skipped 74 frames!  The application may be doing too much work on its main thread.
+09-15 19:38:00.900  1545  2573 I AutofillModuleInitInten: AutofillModuleInitIntentOperation onInitRuntimeState(12) [CONTEXT service_id=177 ]
+09-15 19:38:00.921   559  1992 D PackageManager: Instant App installer not found with android.intent.action.INSTALL_INSTANT_APP_PACKAGE
+09-15 19:38:00.925   559  1992 D PackageManager: Clear ephemeral installer activity
+09-15 19:38:00.933  1231  1231 I NearbyDiscovery: DiscoveryService onStartCommand action: com.google.android.gms.nearby.discovery:ACTION_INIT_RUNTIME_STATE [CONTEXT service_id=265 ]
+09-15 19:38:00.941   559   649 I DefaultPermGrantPolicy: Revoking permissions from disabled data services for user:0
+09-15 19:38:00.945   559   887 D PackageManager: Instant App installer not found with android.intent.action.INSTALL_INSTANT_APP_PACKAGE
+09-15 19:38:00.945   559   887 D PackageManager: Clear ephemeral installer activity
+09-15 19:38:00.954  1231  2295 I NearbyFastPair: DynamicSupportModule: onSupportStateUpdate start [CONTEXT service_id=265 ]
+09-15 19:38:00.956   559  1011 D PackageManager: Instant App installer not found with android.intent.action.INSTALL_INSTANT_APP_PACKAGE
+09-15 19:38:00.956   559  1011 D PackageManager: Clear ephemeral installer activity
+09-15 19:38:00.960  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/TelephonyProvider/TelephonyProvider.apk' with 1 weak references
+09-15 19:38:00.960  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/product/overlay/TelephonyProvider__sdk_gphone64_x86_64__auto_generated_rro_product.apk' with 1 weak references
+09-15 19:38:00.960  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/DynamicSystemInstallationService/DynamicSystemInstallationService.apk' with 1 weak references
+09-15 19:38:00.960  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/priv-app/Velvet/Velvet.apk' with 1 weak references
+09-15 19:38:00.961  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/CalendarProvider/CalendarProvider.apk' with 1 weak references
+09-15 19:38:00.961  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/priv-app/GoogleOneTimeInitializer/GoogleOneTimeInitializer.apk' with 1 weak references
+09-15 19:38:00.961  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/GoogleExtShared/GoogleExtShared.apk' with 1 weak references
+09-15 19:38:00.961  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/ExternalStorageProvider/ExternalStorageProvider.apk' with 1 weak references
+09-15 19:38:00.961  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/HTMLViewer/HTMLViewer.apk' with 1 weak references
+09-15 19:38:00.961  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/CompanionDeviceManager/CompanionDeviceManager.apk' with 1 weak references
+09-15 19:38:00.961  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/DownloadProvider/DownloadProvider.apk' with 1 weak references
+09-15 19:38:00.961  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/priv-app/PrebuiltBugle/PrebuiltBugle.apk' with 1 weak references
+09-15 19:38:00.961  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/SoundPickerPrebuilt/SoundPickerPrebuilt.apk' with 1 weak references
+09-15 19:38:00.962  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /apex/com.android.mediaprovider/priv-app/MediaProviderGoogle@350820300/MediaProviderGoogle.apk' with 1 weak references
+09-15 19:38:00.962  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/priv-app/SafetyHubPrebuilt/SafetyHubPrebuilt.apk' with 1 weak references
+09-15 19:38:00.962  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/DownloadProviderUi/DownloadProviderUi.apk' with 1 weak references
+09-15 19:38:00.962  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /apex/com.android.wifi/app/OsuLoginGoogle@350820300/OsuLoginGoogle.apk' with 1 weak references
+09-15 19:38:00.962  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/PacProcessor/PacProcessor.apk' with 1 weak references
+09-15 19:38:00.962  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/SimAppDialog/SimAppDialog.apk' with 1 weak references
+09-15 19:38:00.962  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/product/overlay/SimAppDialog__sdk_gphone64_x86_64__auto_generated_rro_product.apk' with 1 weak references
+09-15 19:38:00.962  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /apex/com.android.adservices/priv-app/AdServicesApkGoogle@350820260/AdServicesApkGoogle.apk' with 1 weak references
+09-15 19:38:00.962  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/overlay/DisplayCutoutEmulationHole/DisplayCutoutEmulationHoleOverlay.apk' with 1 weak references
+09-15 19:38:00.962  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/overlay/DisplayCutoutEmulationTall/DisplayCutoutEmulationTallOverlay.apk' with 1 weak references
+09-15 19:38:00.962  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/CertInstaller/CertInstaller.apk' with 1 weak references
+09-15 19:38:00.963  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/talkback/talkback.apk' with 1 weak references
+09-15 19:38:00.963  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/vendor/overlay/EmulatorTalkBackOverlay/EmulatorTalkBackOverlay.apk' with 1 weak references
+09-15 19:38:00.963  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/overlay/NavigationBarMode3Button/NavigationBarMode3ButtonOverlay.apk' with 1 weak references
+09-15 19:38:00.963  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/Camera2/Camera2.apk' with 1 weak references
+09-15 19:38:00.963  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/EasterEgg/EasterEgg.apk' with 1 weak references
+09-15 19:38:00.963  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/MtpService/MtpService.apk' with 1 weak references
+09-15 19:38:00.963  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /apex/com.android.nfcservices/priv-app/NfcNciApexGoogle@AE3A.240806.043/NfcNciApexGoogle.apk' with 1 weak references
+09-15 19:38:00.963  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/Stk/Stk.apk' with 1 weak references
+09-15 19:38:00.963  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/PrebuiltDeskClockGoogle/PrebuiltDeskClockGoogle.apk' with 1 weak references
+09-15 19:38:00.963  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/overlay/NavigationBarMode2Button/NavigationBarMode2ButtonOverlay.apk' with 1 weak references
+09-15 19:38:00.963  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/priv-app/DevicePersonalizationPrebuiltPixel2021-aiai_20240329.00_RC16/DevicePersonalizationPrebuiltPixel2021-aiai_20240329.00_RC16.apk' with 1 weak references
+09-15 19:38:00.963  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/PrebuiltGmail/PrebuiltGmail.apk' with 1 weak references
+09-15 19:38:00.964  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /apex/com.android.permission/priv-app/GooglePermissionController@350820360/GooglePermissionController.apk' with 1 weak references
+09-15 19:38:00.964  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/product/overlay/GooglePermissionControllerOverlay.apk' with 1 weak references
+09-15 19:38:00.964  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /apex/com.android.btservices/app/BluetoothGoogle@342010060/BluetoothGoogle.apk' with 1 weak references
+09-15 19:38:00.964  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/SettingsProvider/SettingsProvider.apk' with 1 weak references
+09-15 19:38:00.964  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/product/overlay/LargeScreenSettingsProviderOverlay.apk' with 1 weak references
+09-15 19:38:00.964  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/product/overlay/SettingsProvider__sdk_gphone64_x86_64__auto_generated_rro_product.apk' with 1 weak references
+09-15 19:38:00.964  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/PrintSpooler/PrintSpooler.apk' with 1 weak references
+09-15 19:38:00.964  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/BasicDreams/BasicDreams.apk' with 1 weak references
+09-15 19:38:00.973   559  1175 D PackageManager: Instant App installer not found with android.intent.action.INSTALL_INSTANT_APP_PACKAGE
+09-15 19:38:00.973   559  1175 D PackageManager: Clear ephemeral installer activity
+09-15 19:38:00.982   559  2001 D PackageManager: Instant App installer not found with android.intent.action.INSTALL_INSTANT_APP_PACKAGE
+09-15 19:38:00.982   559  2001 D PackageManager: Clear ephemeral installer activity
+09-15 19:38:00.986  2745  2745 W PrimesLoggerHolder: Primes not initialized, returning default (no-op) Primes instance which will ignore all calls. Please call Primes.initialize(...) before using any Primes API.
+09-15 19:38:00.999   559  1011 D PackageManager: Instant App installer not found with android.intent.action.INSTALL_INSTANT_APP_PACKAGE
+09-15 19:38:00.999   559  1011 D PackageManager: Clear ephemeral installer activity
+09-15 19:38:01.005  1098  1098 D CompatChangeReporter: Compat change id reported: 63938206; UID 1000; state: ENABLED
+09-15 19:38:01.008  1474  1490 W earchbox:search: Missing inline cache for java.util.Set com.google.bq.d.a.a.f.d.g.a(java.lang.Object, n.h.a.l)
+09-15 19:38:01.009  1231  1828 W .gms.persistent: Long monitor contention with owner lowpool[1] (1955) at android.database.sqlite.SQLiteDatabase czub.k()(:com.google.android.gms@242335041@24.23.35 (190800-646585959):362) waiters=1 in android.database.sqlite.SQLiteDatabase czub.k() for 268ms
+09-15 19:38:01.024   559  1992 D PackageManager: Instant App installer not found with android.intent.action.INSTALL_INSTANT_APP_PACKAGE
+09-15 19:38:01.024   559  1992 D PackageManager: Clear ephemeral installer activity
+09-15 19:38:01.030  1231  2135 I Nearby  : is blocked device type false, isAuto=false, isIot=false, isLatchsky=false, isChinaWearable=false, isTv=false, isWearable=false (supportWearOs=false), isChromeOsDevice=false (supportChromeOs=false) [CONTEXT service_id=49 ]
+09-15 19:38:01.035  1098  1098 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 19:38:01.049  1066  1272 I AdapterProperties: getBondedDevices: length=0
+09-15 19:38:01.053  1231  2792 I NearbyDiscovery: FastPair: HeadsetPieceImage, grant permission files:0 [CONTEXT service_id=265 ]
+09-15 19:38:01.058  1231  2792 I NearbyDiscovery: FastPairController: initializeProfileConnectionState: skip due to fast pair is disabled [CONTEXT service_id=265 ]
+09-15 19:38:01.072  1231  2295 I NearbyFastPair: DynamicSupportModule: onSupportStateUpdate end [CONTEXT service_id=265 ]
+09-15 19:38:01.072  1231  2295 I NearbyFastPair: DynamicSupportModule: onSupportStateUpdate start [CONTEXT service_id=265 ]
+09-15 19:38:01.072  1231  2295 I NearbyFastPair: DynamicSupportModule: onSupportStateUpdate end [CONTEXT service_id=265 ]
+09-15 19:38:01.082  1066  1272 I AdapterProperties: getBondedDevices: length=0
+09-15 19:38:01.096  1231  2268 I NearbyDiscovery: FastPair: backfillHasWatchPaired, set to false [CONTEXT service_id=265 ]
+09-15 19:38:01.107  1231  1231 I NearbySharing: ReceiveSurfaceService created with vendorMetadata null [CONTEXT service_id=194 ]
+09-15 19:38:01.107  1231  1231 I NearbySharing: ReceiveSurfaceService started [CONTEXT service_id=194 ]
+09-15 19:38:01.109  2745  2806 D CompatChangeReporter: Compat change id reported: 312399441; UID 10140; state: ENABLED
+09-15 19:38:01.110   559  1011 D ShortcutService: rescanPackageIfNeeded 0@com.google.android.gms, forceRescan=false , isNewApp=false
+09-15 19:38:01.112   559  1011 D ShortcutService: Package com.google.android.gms has 0 manifest shortcut(s), and 0 share target(s)
+09-15 19:38:01.113   559  1011 D ShortcutService: Package com.google.android.gms updated, version -1 -> 242335041
+09-15 19:38:01.115   559  1011 D ShortcutService: Package com.google.android.gms: publishing manifest shortcuts
+09-15 19:38:01.116  1231  2792 I Nearby  : is blocked device type false, isAuto=false, isIot=false, isLatchsky=false, isChinaWearable=false, isTv=false, isWearable=false (supportWearOs=false), isChromeOsDevice=false (supportChromeOs=false) [CONTEXT service_id=49 ]
+09-15 19:38:01.119   559  1011 D ShortcutService: rescanPackageIfNeeded 0@com.google.android.gms, forceRescan=false , isNewApp=false
+09-15 19:38:01.121  1231  1231 I NearbySharing: ShortcutInfoManager removed all published shortcuts [CONTEXT service_id=194 ]
+09-15 19:38:01.121   559  1535 D PackageManager: Instant App installer not found with android.intent.action.INSTALL_INSTANT_APP_PACKAGE
+09-15 19:38:01.121   559  1535 D PackageManager: Clear ephemeral installer activity
+09-15 19:38:01.123  1231  1231 I NearbySharing: SendSurfaceService started [CONTEXT service_id=194 ]
+09-15 19:38:01.124  1231  1231 D BoundBrokerSvc: onBind: Intent { act=com.google.android.gms.nearby.connection.service.START pkg=com.google.android.gms }
+09-15 19:38:01.125  1231  1231 D BoundBrokerSvc: Loading bound service for intent: Intent { act=com.google.android.gms.nearby.connection.service.START pkg=com.google.android.gms }
+09-15 19:38:01.131  1231  1231 I NearbySharing: ReceiveSurfaceService started [CONTEXT service_id=194 ]
+09-15 19:38:01.131  1231  1231 I NearbySharing: SendSurfaceService started [CONTEXT service_id=194 ]
+09-15 19:38:01.134  1231  1231 W ActivityThread: getPackageInfo() called with an older ApplicationInfo than the cached version for package com.google.android.gms
+09-15 19:38:01.172  1231  2792 I NearbyDiscovery: DiscoveryController, showNotification, itemSize=0 [CONTEXT service_id=265 ]
+09-15 19:38:01.173  1231  2792 I NearbyDiscovery: Show notifications: 0 total, no changes since last shown, no-op. [CONTEXT service_id=265 ]
+09-15 19:38:01.173  1545  2574 I constellation: [sim_state_checker] Handling intent Intent { act=android.intent.action.SIM_STATE_CHANGED flg=0x15000010 pkg=com.google.android.gms cmp=com.google.android.gms/.chimera.GmsIntentOperationService (has extras) }
+09-15 19:38:01.186  1231  2546 I Fitness : OnPackageChangedOperation got intent: Intent { act=android.intent.action.PACKAGE_CHANGED dat=package: flg=0x5000010 pkg=com.google.android.gms cmp=com.google.android.gms/.chimera.PersistentIntentOperationService (has extras) } [CONTEXT service_id=17 ]
+09-15 19:38:01.191  1545  1545 D BoundBrokerSvc: onBind: Intent { act=com.google.android.gms.findmydevice.spot.service.locationreport.START dat=chimera-action:/... cmp=com.google.android.gms/.chimera.GmsApiService }
+09-15 19:38:01.202  2745  2745 D CompatChangeReporter: Compat change id reported: 311402873; UID 10140; state: ENABLED
+09-15 19:38:01.208  2745  2745 D CompatChangeReporter: Compat change id reported: 323349338; UID 10140; state: ENABLED
+09-15 19:38:01.209  1545  1545 D BoundBrokerSvc: Loading bound service for intent: Intent { act=com.google.android.gms.findmydevice.spot.service.locationreport.START dat=chimera-action:/... cmp=com.google.android.gms/.chimera.GmsApiService }
+09-15 19:38:01.214  2745  2745 W JobInfo : Job 'com.google.android.settings.intelligence/.modules.routines.impl.RoutinesJobIntentService#1728' has a deadline with no functional constraints. The deadline won't improve job execution latency. Consider removing the deadline.
+09-15 19:38:01.217   559  1175 D CompatChangeReporter: Compat change id reported: 311402873; UID 10140; state: ENABLED
+09-15 19:38:01.218   559  1175 D CompatChangeReporter: Compat change id reported: 323349338; UID 10140; state: ENABLED
+09-15 19:38:01.218   559  1175 W JobInfo : Job 'com.google.android.settings.intelligence/.modules.routines.impl.RoutinesJobIntentService#1728' has a deadline with no functional constraints. The deadline won't improve job execution latency. Consider removing the deadline.
+09-15 19:38:01.227  1088  1093 I m.android.phone: Background concurrent mark compact GC freed 3681KB AllocSpace bytes, 13(544KB) LOS objects, 49% free, 3924KB/7849KB, paused 206us,847us total 668.930ms
+09-15 19:38:01.244  1545  2629 I ebvk$a  : Unable to retrieve flag snapshot for com.google.android.gms.mdisync, using defaults.
+09-15 19:38:01.289  1231  1811 I NearbySharing: Broadcasting NearbySharing state change. [CONTEXT service_id=194 ]
+09-15 19:38:01.299  1231  2555 W ChimeraUtils: Module com.google.android.gms.backup_base missing resource null(0)
+09-15 19:38:01.325   559  2001 D PackageManager: Instant App installer not found with android.intent.action.INSTALL_INSTANT_APP_PACKAGE
+09-15 19:38:01.325   559  2001 D PackageManager: Clear ephemeral installer activity
+09-15 19:38:01.325  1545  2250 D nativeloader: Load /product/priv-app/PrebuiltGmsCore/PrebuiltGmsCore.apk!/lib/x86_64/libAppDataSearch.so using ns product-clns-9 from class loader (caller=/product/priv-app/PrebuiltGmsCore/PrebuiltGmsCore.apk!classes4.dex): ok
+09-15 19:38:01.325  1231  2763 V Backup  : [BackupAccountNotifier] Handling new intent. Show notification: true
+09-15 19:38:01.334  1545  2250 E native  : E0000 00:00:1789501081.334152    2250 filesystem.cc:100] Opening file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/compact_status for read failed: No such file or directory
+09-15 19:38:01.335   559  2001 D PackageManager: Instant App installer not found with android.intent.action.INSTALL_INSTANT_APP_PACKAGE
+09-15 19:38:01.335   559  2001 D PackageManager: Clear ephemeral installer activity
+09-15 19:38:01.348  1545  1947 W Conscrypt: Could not set socket write timeout: java.net.SocketException: Socket closed
+09-15 19:38:01.351  1231  2696 W ProximityAuth: [GetMyPublicKey] Failed to fetch public key.
+09-15 19:38:01.352  1231  2696 E etxo    : RuntimeException while executing runnable etyd{aasn@f2bc4f7} with executor MoreExecutors.directExecutor()
+09-15 19:38:01.352  1231  2696 E etxo    : java.lang.NullPointerException: Attempt to get length of null array
+09-15 19:38:01.352  1231  2696 E etxo    : 	at android.util.Base64.encode(Base64.java:497)
+09-15 19:38:01.352  1231  2696 E etxo    : 	at android.util.Base64.encodeToString(Base64.java:459)
+09-15 19:38:01.352  1231  2696 E etxo    : 	at com.google.android.gms.auth.proximity.RemoteDevice.a(:com.google.android.gms@242335041@24.23.35 (190800-646585959):3)
+09-15 19:38:01.352  1231  2696 E etxo    : 	at aasn.b(:com.google.android.gms@242335041@24.23.35 (190800-646585959):3)
+09-15 19:38:01.352  1231  2696 E etxo    : 	at etyd.run(:com.google.android.gms@242335041@24.23.35 (190800-646585959):30)
+09-15 19:38:01.352  1231  2696 E etxo    : 	at etxk.execute(:com.google.android.gms@242335041@24.23.35 (190800-646585959):1)
+09-15 19:38:01.352  1231  2696 E etxo    : 	at etxo.c(:com.google.android.gms@242335041@24.23.35 (190800-646585959):1)
+09-15 19:38:01.352  1231  2696 E etxo    : 	at etxo.b(:com.google.android.gms@242335041@24.23.35 (190800-646585959):32)
+09-15 19:38:01.352  1231  2696 E etxo    : 	at angx.done(:com.google.android.gms@242335041@24.23.35 (190800-646585959):6)
+09-15 19:38:01.352  1231  2696 E etxo    : 	at java.util.concurrent.FutureTask.finishCompletion(FutureTask.java:381)
+09-15 19:38:01.352  1231  2696 E etxo    : 	at java.util.concurrent.FutureTask.set(FutureTask.java:232)
+09-15 19:38:01.352  1231  2696 E etxo    : 	at java.util.concurrent.FutureTask.run(FutureTask.java:272)
+09-15 19:38:01.352  1231  2696 E etxo    : 	at angs.c(:com.google.android.gms@242335041@24.23.35 (190800-646585959):50)
+09-15 19:38:01.352  1231  2696 E etxo    : 	at angs.run(:com.google.android.gms@242335041@24.23.35 (190800-646585959):76)
+09-15 19:38:01.352  1231  2696 E etxo    : 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+09-15 19:38:01.352  1231  2696 E etxo    : 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+09-15 19:38:01.352  1231  2696 E etxo    : 	at anmg.run(:com.google.android.gms@242335041@24.23.35 (190800-646585959):8)
+09-15 19:38:01.352  1231  2696 E etxo    : 	at java.lang.Thread.run(Thread.java:1012)
+09-15 19:38:01.353   559  1538 D PackageManager: Instant App installer not found with android.intent.action.INSTALL_INSTANT_APP_PACKAGE
+09-15 19:38:01.353   559  1538 D PackageManager: Clear ephemeral installer activity
+09-15 19:38:01.353  1231  2697 W EasyUnlock: [HostValidator] Invalid account list. [CONTEXT service_id=234 ]
+09-15 19:38:01.354  1545  1947 W Conscrypt: 	at com.google.android.gms.org.conscrypt.Platform.setSocketWriteTimeout(:com.google.android.gms@242335041@24.23.35 (190800-646585959):204)
+09-15 19:38:01.370  1231  1231 I AlarmManager: set [name: SystemMemoryCache type: 2 triggerAtMillis: 315360053078 windowMillis: -1 intervalMillis: 0]
+09-15 19:38:01.383  1545  1947 W Conscrypt: 	at com.google.android.gms.org.conscrypt.ConscryptFileDescriptorSocket.setSoWriteTimeout(:com.google.android.gms@242335041@24.23.35 (190800-646585959):4)
+09-15 19:38:01.389  1231  2295 I ebvk$a  : Unable to retrieve flag snapshot for com.google.android.gms.auth.easyunlock, using defaults.
+09-15 19:38:01.402  1231  1811 W NearbySharing: Cannot set visibility on DisabledNearbySharingProvider. [CONTEXT service_id=194 ]
+09-15 19:38:01.444  1545  2573 I GmsCoreXrpcWrapper: Returning a channel provider with trafficStatsTag=18692 trafficStatsUid=-1
+09-15 19:38:01.457  1545  1545 D BoundBrokerSvc: onBind: Intent { act=com.google.android.gms.auth.cryptauth.cryptauthservice.START dat=chimera-action:/... cmp=com.google.android.gms/.chimera.GmsBoundBrokerService }
+09-15 19:38:01.457  1545  1545 D BoundBrokerSvc: Loading bound service for intent: Intent { act=com.google.android.gms.auth.cryptauth.cryptauthservice.START dat=chimera-action:/... cmp=com.google.android.gms/.chimera.GmsBoundBrokerService }
+09-15 19:38:01.490   559   649 W JobInfo : Job 'com.google.android.settings.intelligence/.modules.routines.impl.RoutinesJobIntentService#1728' has a deadline with no functional constraints. The deadline won't improve job execution latency. Consider removing the deadline.
+09-15 19:38:01.541  1098  1098 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 19:38:01.546   559   649 W JobInfo : Job 'com.google.android.settings.intelligence/.modules.routines.impl.RoutinesJobIntentService#1728' has a deadline with no functional constraints. The deadline won't improve job execution latency. Consider removing the deadline.
+09-15 19:38:01.557  1474  1672 W NamedFutures: (REDACTED) Timeout future task has been cancelled: %d milliseconds
+09-15 19:38:01.570  1474  1672 I CPController: register the profile change listener
+09-15 19:38:01.574   559   878 D ShortcutService: Saving package item com.google.android.gms to /data/system_ce/0/shortcut_service/packages/com.google.android.gms.xml
+09-15 19:38:01.577  1421  1621 I SP.AiAi : Scheduling: job start ({W:b:u:l, bg}), 1 started, 0 paused, 0 scheduled, 6 pending: manifests:kg_collections_table-21051103 {W:C:I:l, bg}, manifests:text-classifier-annotator-272525175 {W:C:I:l, bg}, manifests:text-classifier-actions-1140547708 {W:C:I:l, bg}, manifests:text-classifier-langid-1941001461 {W:C:I:l, bg}, manifests:spelling_correction-22110320 {W:C:I:l, bg}, manifests:captions_i18n_v0_background-20210623 @ * {W:b:u:l, bg}
+09-15 19:38:01.577  1421  1621 I SP.AiAi : Requesting download of URL https://storage.googleapis.com/captions/captions_i18n_v0_20210623_manifest.json to captions_i18n_v0_background-20210623.fetched (constraints: W:b:u:l)
+09-15 19:38:01.587  1366  1668 I SP      : Sync for bundled_delight succeeded in 3402 ms: {added: [main_en_us_2024022600_2], metadata: false
+09-15 19:38:01.594  1805  2122 W System.err: Seeding context with ref: 56280636
+09-15 19:38:01.608  1366  1668 I SP      : GC for 'bundled_delight' (10) with ttl of 0 ms took 0 ms (0/0/0)
+09-15 19:38:01.613  1366  1668 I LmManager: LmManager$1.onSuccess():82 Bundled delight sync success
+09-15 19:38:01.616  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/priv-app/DeviceIntelligenceNetworkPrebuilt-astrea_20240329.00_RC02/DeviceIntelligenceNetworkPrebuilt-astrea_20240329.00_RC02.apk' with 1 weak references
+09-15 19:38:01.616  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/InputDevices/InputDevices.apk' with 1 weak references
+09-15 19:38:01.616  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /apex/com.android.devicelock/priv-app/DeviceLockControllerGoogle@AE3A.240806.043/DeviceLockControllerGoogle.apk' with 1 weak references
+09-15 19:38:01.616  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/priv-app/GoogleDialer/GoogleDialer.apk' with 1 weak references
+09-15 19:38:01.616  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/BuiltInPrintService/BuiltInPrintService.apk' with 1 weak references
+09-15 19:38:01.616  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/product/overlay/BuiltInPrintService__sdk_gphone64_x86_64__auto_generated_rro_product.apk' with 1 weak references
+09-15 19:38:01.616  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/CaptivePortalLoginGoogle/CaptivePortalLoginGoogle.apk' with 1 weak references
+09-15 19:38:01.616  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/MusicFX/MusicFX.apk' with 1 weak references
+09-15 19:38:01.616  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/Drive/Drive.apk' with 1 weak references
+09-15 19:38:01.616  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/Maps/Maps.apk' with 1 weak references
+09-15 19:38:01.617  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/ModuleMetadataGoogle/ModuleMetadataGoogle.apk' with 1 weak references
+09-15 19:38:01.617  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/overlay/DisplayCutoutEmulationEmu01/DisplayCutoutEmulationEmu01Overlay.apk' with 1 weak references
+09-15 19:38:01.617  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system_ext/priv-app/AvatarPickerGoogle/AvatarPickerGoogle.apk' with 1 weak references
+09-15 19:38:01.617  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/MarkupGoogle_v2/MarkupGoogle_v2.apk' with 1 weak references
+09-15 19:38:01.617  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/NetworkStackGoogle/NetworkStackGoogle.apk' with 1 weak references
+09-15 19:38:01.617  1366  1707 I SuperDelight: SuperDelightManager$2.onSuccess():631 bundled_delight sync success, adding to data file manager
+09-15 19:38:01.617  1366  1707 I DataFileManager: DataFileManager.addDataWithoutNotify():185 adding data en-US bundled_delight
+09-15 19:38:01.619  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /apex/com.android.rkpd/priv-app/rkpdapp.google@350820300/rkpdapp.google.apk' with 1 weak references
+09-15 19:38:01.620  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/GoogleContacts/GoogleContacts.apk' with 1 weak references
+09-15 19:38:01.621  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/Telecom/Telecom.apk' with 1 weak references
+09-15 19:38:01.621  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/product/overlay/Telecom__sdk_gphone64_x86_64__auto_generated_rro_product.apk' with 1 weak references
+09-15 19:38:01.621  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/KeyChain/KeyChain.apk' with 1 weak references
+09-15 19:38:01.622  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~8gl74a3wLRjNtB4ZrdjB-Q==/com.android.chrome-cx0HBf99ScidnXOUUnyvsg==/Chrome.apk' with 1 weak references
+09-15 19:38:01.623  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~WmTJUtNL3HF8L701H85s5w==/com.google.android.trichromelibrary_636771938-BHAgq9450MKnU1pHFuNRmw==/TrichromeLibrary.apk' with 1 weak references
+09-15 19:38:01.624  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/GooglePackageInstaller/GooglePackageInstaller.apk' with 1 weak references
+09-15 19:38:01.624  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/PixelThemesStub/PixelThemesStub.apk' with 1 weak references
+09-15 19:38:01.624  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system_ext/priv-app/GoogleServicesFramework/GoogleServicesFramework.apk' with 1 weak references
+09-15 19:38:01.625   914  1028 D EGL_emulation: app_time_stats: avg=1610.24ms min=1547.29ms max=1673.19ms count=2
+09-15 19:38:01.627   914  2450 I HWUI    : Davey! duration=1954ms; Flags=0, FrameTimelineVsyncId=6307, IntendedVsync=51373437801, Vsync=52606771085, InputEventId=0, HandleInputStart=52612647670, AnimationStart=52612648632, PerformTraversalsStart=52612885934, DrawStart=52928879791, FrameDeadline=51690104455, FrameInterval=52608475196, FrameStartTime=16666666, SyncQueued=52929318038, SyncStart=52941584689, IssueDrawCommandsStart=52941703822, SwapBuffers=53210186186, FrameCompleted=53340080672, DequeueBufferDuration=3958, QueueBufferDuration=3827260, GpuCompleted=53337877201, SwapBuffersCompleted=53340080672, DisplayPresentTime=0, CommandSubmissionCompleted=53210186186, 
+09-15 19:38:01.628   914   914 D DefaultDeviceEntrySection: isUdfpsSupported=false
+09-15 19:38:01.630  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/TagGoogle/TagGoogle.apk' with 1 weak references
+09-15 19:38:01.630  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/GoogleTTS/GoogleTTS.apk' with 1 weak references
+09-15 19:38:01.637  1805  2122 I HttpGrpcBindableService: Downloading requested for URL 'https://storage.googleapis.com/captions/captions_i18n_v0_20210623_manifest.json'
+09-15 19:38:01.637   559   576 W ActivityManager: Slow operation: 86ms so far, now at finishAttachApplicationInner: after dispatching broadcasts
+09-15 19:38:01.646   914   914 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-15 19:38:01.646   914   914 D DisplayRepository: combining enabled=[0], connectedExternalDisplayIds=[], ignored=[]
+09-15 19:38:01.652  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/CallLogBackup/CallLogBackup.apk' with 1 weak references
+09-15 19:38:01.652  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/priv-app/PartnerSetupPrebuilt/PartnerSetupPrebuilt.apk' with 1 weak references
+09-15 19:38:01.652  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/CameraExtensionsProxy/CameraExtensionsProxy.apk' with 1 weak references
+09-15 19:38:01.652  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/NexusWallpapersStubPrebuilt2018/NexusWallpapersStubPrebuilt2018.apk' with 1 weak references
+09-15 19:38:01.652  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system_ext/priv-app/NexusLauncherRelease/NexusLauncherRelease.apk' with 1 weak references
+09-15 19:38:01.653  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/CarrierDefaultApp/CarrierDefaultApp.apk' with 1 weak references
+09-15 19:38:01.653  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/CredentialManager/CredentialManager.apk' with 1 weak references
+09-15 19:38:01.653  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/overlay/FontNotoSerifSource/FontNotoSerifSourceOverlay.apk' with 1 weak references
+09-15 19:38:01.653  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/DeviceAsWebcam/DeviceAsWebcam.apk' with 1 weak references
+09-15 19:38:01.653  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/ProxyHandler/ProxyHandler.apk' with 1 weak references
+09-15 19:38:01.653  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /apex/com.android.permission/priv-app/GoogleSafetyCenterResources@350820360/GoogleSafetyCenterResources.apk' with 1 weak references
+09-15 19:38:01.653  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/overlay/DisplayCutoutEmulationWaterfall/DisplayCutoutEmulationWaterfallOverlay.apk' with 1 weak references
+09-15 19:38:01.653  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/IntentResolver/IntentResolver.apk' with 1 weak references
+09-15 19:38:01.653  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/overlay/TransparentNavigationBar/TransparentNavigationBarOverlay.apk' with 1 weak references
+09-15 19:38:01.653  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/E2eeContactKeysProvider/E2eeContactKeysProvider.apk' with 1 weak references
+09-15 19:38:01.653  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /apex/com.android.tethering/priv-app/ServiceConnectivityResourcesGoogle@350820300/ServiceConnectivityResourcesGoogle.apk' with 1 weak references
+09-15 19:38:01.653  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/vendor/overlay/goldfish_overlay_connectivity_google.apk' with 1 weak references
+09-15 19:38:01.653  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system_ext/priv-app/GoogleFeedback/GoogleFeedback.apk' with 1 weak references
+09-15 19:38:01.653  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/GooglePrintRecommendationService/GooglePrintRecommendationService.apk' with 1 weak references
+09-15 19:38:01.653  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/Photos/Photos.apk' with 1 weak references
+09-15 19:38:01.653  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/CalendarGooglePrebuilt/CalendarGooglePrebuilt.apk' with 1 weak references
+09-15 19:38:01.654  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/ManagedProvisioning/ManagedProvisioning.apk' with 1 weak references
+09-15 19:38:01.654  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/SoundPicker/SoundPicker.apk' with 1 weak references
+09-15 19:38:01.654  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/DocumentsUIGoogle/DocumentsUIGoogle.apk' with 1 weak references
+09-15 19:38:01.654  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/PrebuiltGoogleTelemetryTvp/PrebuiltGoogleTelemetryTvp.apk' with 1 weak references
+09-15 19:38:01.654  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system_ext/priv-app/MultiDisplayProvider/MultiDisplayProvider.apk' with 1 weak references
+09-15 19:38:01.654  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/DeviceDiagnostics/DeviceDiagnostics.apk' with 1 weak references
+09-15 19:38:01.654  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/product/overlay/DeviceDiagnostics__sdk_gphone64_x86_64__auto_generated_rro_product.apk' with 1 weak references
+09-15 19:38:01.654  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/overlay/NotesRoleEnabled/NotesRoleEnabledOverlay.apk' with 1 weak references
+09-15 19:38:01.657  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/LiveWallpapersPicker/LiveWallpapersPicker.apk' with 1 weak references
+09-15 19:38:01.658  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/PrebuiltGoogleAdservicesTvp/PrebuiltGoogleAdservicesTvp.apk' with 1 weak references
+09-15 19:38:01.658  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /apex/com.android.healthfitness/priv-app/HealthConnectControllerGoogle@350820300/HealthConnectControllerGoogle.apk' with 1 weak references
+09-15 19:38:01.660  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/priv-app/KidsSupervisionStub/KidsSupervisionStub.apk' with 1 weak references
+09-15 19:38:01.660  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system_ext/priv-app/StorageManager/StorageManager.apk' with 1 weak references
+09-15 19:38:01.660  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/product/overlay/StorageManager__sdk_gphone64_x86_64__auto_generated_rro_product.apk' with 1 weak references
+09-15 19:38:01.662  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/BookmarkProvider/BookmarkProvider.apk' with 1 weak references
+09-15 19:38:01.662  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system_ext/priv-app/SettingsGoogle/SettingsGoogle.apk' with 1 weak references
+09-15 19:38:01.662  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/product/overlay/SettingsGoogle__sdk_gphone64_x86_64__auto_generated_rro_product.apk' with 1 weak references
+09-15 19:38:01.662  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/priv-app/SettingsIntelligenceGooglePrebuilt/SettingsIntelligenceGooglePrebuilt.apk' with 1 weak references
+09-15 19:38:01.663  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /apex/com.android.uwb/priv-app/ServiceUwbResourcesGoogle@350820300/ServiceUwbResourcesGoogle.apk' with 1 weak references
+09-15 19:38:01.663  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /apex/com.android.wifi/priv-app/ServiceWifiResourcesGoogle@350820300/ServiceWifiResourcesGoogle.apk' with 1 weak references
+09-15 19:38:01.663  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system_ext/priv-app/ThemePicker/ThemePicker.apk' with 1 weak references
+09-15 19:38:01.663  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system_ext/priv-app/WallpaperPickerGoogleRelease/WallpaperPickerGoogleRelease.apk' with 1 weak references
+09-15 19:38:01.663  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/priv-app/OdadPrebuilt/OdadPrebuilt.apk' with 1 weak references
+09-15 19:38:01.663  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/TeleService/TeleService.apk' with 1 weak references
+09-15 19:38:01.663  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/vendor/overlay/TeleService__sdk_gphone64_x86_64__auto_generated_rro_vendor.apk' with 1 weak references
+09-15 19:38:01.663  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/product/overlay/TeleService__sdk_gphone64_x86_64__auto_generated_rro_product.apk' with 1 weak references
+09-15 19:38:01.663  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/Shell/Shell.apk' with 1 weak references
+09-15 19:38:01.663  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/BlockedNumberProvider/BlockedNumberProvider.apk' with 1 weak references
+09-15 19:38:01.663  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/UserDictionaryProvider/UserDictionaryProvider.apk' with 1 weak references
+09-15 19:38:01.663  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system_ext/app/EmergencyInfoGoogleNoUi/EmergencyInfoGoogleNoUi.apk' with 1 weak references
+09-15 19:38:01.663  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/overlay/NavigationBarModeGestural/NavigationBarModeGesturalOverlay.apk' with 1 weak references
+09-15 19:38:01.663  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/FusedLocation/FusedLocation.apk' with 1 weak references
+09-15 19:38:01.663  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system_ext/priv-app/SystemUIGoogle/SystemUIGoogle.apk' with 1 weak references
+09-15 19:38:01.664  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/vendor/overlay/SystemUIGoogle__sdk_gphone64_x86_64__auto_generated_rro_vendor.apk' with 1 weak references
+09-15 19:38:01.664  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/product/overlay/SystemUIGoogle__sdk_gphone64_x86_64__auto_generated_rro_product.apk' with 1 weak references
+09-15 19:38:01.664  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/product/overlay/SystemUIEmulationPixel5/SystemUIEmulationPixel5Overlay.apk' with 1 weak references
+09-15 19:38:01.664  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/YouTubeMusicPrebuilt/YouTubeMusicPrebuilt.apk' with 1 weak references
+09-15 19:38:01.664  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/BluetoothMidiService/BluetoothMidiService.apk' with 1 weak references
+09-15 19:38:01.664  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/Traceur/Traceur.apk' with 1 weak references
+09-15 19:38:01.664  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /apex/com.android.cellbroadcast/priv-app/GoogleCellBroadcastApp@350820300/GoogleCellBroadcastApp.apk' with 1 weak references
+09-15 19:38:01.666  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/ContactsProvider/ContactsProvider.apk' with 1 weak references
+09-15 19:38:01.667  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/product/overlay/ContactsProvider__sdk_gphone64_x86_64__auto_generated_rro_product.apk' with 1 weak references
+09-15 19:38:01.667  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/LatinIMEGooglePrebuilt/LatinIMEGooglePrebuilt.apk' with 1 weak references
+09-15 19:38:01.667  1350  1368 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/priv-app/GoogleRestorePrebuilt-v526684/GoogleRestorePrebuilt-v526684.apk' with 1 weak references
+09-15 19:38:01.670  1474  1612 I GsaConfigFlagsSyncer: Flag sync cancelled.
+09-15 19:38:01.670  1545  2250 I native  : I0000 00:00:1789501081.670615    2250 permission-checker.cc:81] Creating PermissionChecker based on ACL with config_version 1 having 10 permissions defined.
+09-15 19:38:01.671  1545  2250 W native  : W0000 00:00:1789501081.671358    2250 words-map.cc:34] INVALID_ARGUMENT: Empty URI
+09-15 19:38:01.671  1545  2250 W native  : W0000 00:00:1789501081.671406    2250 words-map.cc:38] WordsMap was not properly initialized
+09-15 19:38:01.689  1231  1811 I NearbySharing: Not qualified for default opt-in. Multiple accounts are found. [CONTEXT service_id=194 ]
+09-15 19:38:01.715  1474  1809 I A       : (REDACTED) Updating user context. Event: %s
+09-15 19:38:01.716   559  1872 D PackageManager: Instant App installer not found with android.intent.action.INSTALL_INSTANT_APP_PACKAGE
+09-15 19:38:01.717   559  1872 D PackageManager: Clear ephemeral installer activity
+09-15 19:38:01.728   559  2004 D PackageManager: Instant App installer not found with android.intent.action.INSTALL_INSTANT_APP_PACKAGE
+09-15 19:38:01.729   559  2004 D PackageManager: Clear ephemeral installer activity
+09-15 19:38:01.737   559  1011 D PackageManager: Instant App installer not found with android.intent.action.INSTALL_INSTANT_APP_PACKAGE
+09-15 19:38:01.737   559  1011 D PackageManager: Clear ephemeral installer activity
+09-15 19:38:01.737   559   838 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+09-15 19:38:01.738   559   838 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+09-15 19:38:01.746   559   838 D InetDiagMessage: Destroyed live tcp sockets for uids={10202} in 16ms
+09-15 19:38:01.747   559   838 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+09-15 19:38:01.749  1231  1231 I ProximityAuth: [PhoneHubService] Handling intent for PhoneHubChimeraService.
+09-15 19:38:01.760   559  2001 D PackageManager: Instant App installer not found with android.intent.action.INSTALL_INSTANT_APP_PACKAGE
+09-15 19:38:01.760   559  2001 D PackageManager: Clear ephemeral installer activity
+09-15 19:38:01.761   357  2817 I resolv  : GetAddrInfoHandler::run: {100 100 100 983140 10131 0}
+09-15 19:38:01.761   357  2818 I resolv  : res_nmkquery: (QUERY, IN, AAAA)
+09-15 19:38:01.762   357  2819 I resolv  : res_nmkquery: (QUERY, IN, A)
+09-15 19:38:01.763   559   838 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+09-15 19:38:01.763   559   838 D InetDiagMessage: Destroyed live tcp sockets for uids={20202} in 17ms
+09-15 19:38:01.764   559  2001 I AppsFilter: interaction: PackageSetting{26d60b3 com.android.microdroid.empty_payload/10186} -> PackageSetting{97ae670 com.google.android.settings.intelligence/10140} BLOCKED
+09-15 19:38:01.768   559   615 E ActivityManager: Unable to freeze binder for 2745: -11
+09-15 19:38:01.952     0     0 I binder  : 559:615 ioctl 400c620e 75c0ac238284 returned -11
+09-15 19:38:01.953     0     0 I binder  : 559:615 ioctl 400c620e 75c0ac238284 returned -11
+09-15 19:38:01.772   559  2004 D PackageManager: Instant App installer not found with android.intent.action.INSTALL_INSTANT_APP_PACKAGE
+09-15 19:38:01.772   559  2004 D PackageManager: Clear ephemeral installer activity
+09-15 19:38:01.774   559  2004 I AppsFilter: interaction: PackageSetting{26d60b3 com.android.microdroid.empty_payload/10186} -> PackageSetting{62a6de9 com.google.android.settings.intelligence/10140} BLOCKED
+09-15 19:38:01.775  2745  2745 W DatabaseUtils: clear database since fail to delete the database
+09-15 19:38:01.775  1231  2546 I TetheringManager: registerTetheringEventCallback:com.google.android.gms
+09-15 19:38:01.778  1231  2135 I ProximityAuth: [AccountEligibilityMediator] checkEligibleAccountsCrossProfile not enabled, checking accounts in current profile.
+09-15 19:38:01.779  1231  2135 I ProximityAuth: [PhoneHubService] No enabled account, stopping service
+09-15 19:38:01.785  1231  2268 I ebvk$a  : Unable to retrieve flag snapshot for com.google.android.gms.magictether, using defaults.
+09-15 19:38:01.793  1231  1828 I HeterodyneSyncScheduler: Scheduling Phenotype for a PhenotypeSyncImmediately(6, com.google.android.libraries.consentverifier#com.google.android.googlequicksearchbox) one off with window [1, 2] in seconds [CONTEXT service_id=51 ]
+09-15 19:38:01.795  1366  1668 I SP      : <==== Finishing job {m:b:u:l, fg}, 1940 ms. elapsed since start
+09-15 19:38:01.795  1366  1668 I SuperpacksForegroundTaskService: SuperpacksForegroundTaskService.finishJob():56 SuperpacksForegroundTaskService.finishJob()
+09-15 19:38:01.809  1366  1380 I putmethod.latin: Background concurrent mark compact GC freed 10MB AllocSpace bytes, 2(104KB) LOS objects, 49% free, 10MB/21MB, paused 350us,513us total 175.244ms
+09-15 19:38:01.810  1366  1382 W SP      : File ref is being finalized but wasn't closed, file: main_en_us_2024022600_2[2]
+09-15 19:38:01.811   914   914 I Choreographer: Skipped 48 frames!  The application may be doing too much work on its main thread.
+09-15 19:38:01.842  1231  1808 W .gms.persistent: Long monitor contention with owner lowpool[1] (1955) at void angp.execute(java.lang.Runnable)(:com.google.android.gms@242335041@24.23.35 (190800-646585959):12) waiters=0 in void angp.execute(java.lang.Runnable) for 591ms
+09-15 19:38:01.848   914   914 D OverviewProxyService: disconnectFromLauncherService bound?: false currentProxy: null disconnectReason: runnable: startConnectionToCurrentUser
+09-15 19:38:01.848   914   914 D OverviewProxyService: java.lang.Throwable
+09-15 19:38:01.848   914   914 D OverviewProxyService: 	at com.android.systemui.recents.OverviewProxyService.disconnectFromLauncherService(go/retraceme 2affaa3798c2c8bbee3b481cb73ba41bdb6ef6846da601c9baa6a3ad5af735e3:37)
+09-15 19:38:01.848   914   914 D OverviewProxyService: 	at com.android.systemui.recents.OverviewProxyService.internalConnectToCurrentUser(go/retraceme 2affaa3798c2c8bbee3b481cb73ba41bdb6ef6846da601c9baa6a3ad5af735e3:13)
+09-15 19:38:01.848   914   914 D OverviewProxyService: 	at com.android.systemui.recents.OverviewProxyService$$ExternalSyntheticLambda0.run(go/retraceme 2affaa3798c2c8bbee3b481cb73ba41bdb6ef6846da601c9baa6a3ad5af735e3:39)
+09-15 19:38:01.848   914   914 D OverviewProxyService: 	at android.os.Handler.handleCallback(Handler.java:959)
+09-15 19:38:01.848   914   914 D OverviewProxyService: 	at android.os.Handler.dispatchMessage(Handler.java:100)
+09-15 19:38:01.848   914   914 D OverviewProxyService: 	at android.os.Looper.loopOnce(Looper.java:232)
+09-15 19:38:01.848   914   914 D OverviewProxyService: 	at android.os.Looper.loop(Looper.java:317)
+09-15 19:38:01.848   914   914 D OverviewProxyService: 	at android.app.ActivityThread.main(ActivityThread.java:8705)
+09-15 19:38:01.848   914   914 D OverviewProxyService: 	at java.lang.reflect.Method.invoke(Native Method)
+09-15 19:38:01.848   914   914 D OverviewProxyService: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:580)
+09-15 19:38:01.848   914   914 D OverviewProxyService: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:886)
+09-15 19:38:01.861  1088  1088 D ImsNrSaModeHandler: setNrSaDisablePolicy : NrSaDisablePolicy = 0, IsNrSaSupported = true
+09-15 19:38:01.861  1088  1088 D MultiSimSettingController: onCarrierConfigChanged phoneId 0 subId 1
+09-15 19:38:01.861  1088  1088 D MultiSimSettingController: isReadyToReevaluate: subInfoInitialized=true, carrierConfigsLoaded=true, satelliteEnabledOrBeingEnabled=false
+09-15 19:38:01.861  1088  1088 D MultiSimSettingController: updateDefaults
+09-15 19:38:01.861  1088  1088 D MultiSimSettingController: isReadyToReevaluate: subInfoInitialized=true, carrierConfigsLoaded=true, satelliteEnabledOrBeingEnabled=false
+09-15 19:38:01.865  1088  1088 D MultiSimSettingController: updateDefaultValues: change: 6
+09-15 19:38:01.865  1088  1088 D MultiSimSettingController: updateDefaultValues: to only primary sub 1
+09-15 19:38:01.880  1231  2636 W WearableService: onGetService: Wear is not available on this device.
+09-15 19:38:01.897  1545  2802 I GmsSyncPolicyEngine: Periodic sync 4 disabled by policy, cancelled.
+09-15 19:38:01.902  1545  2250 I Icing   : Version not set, assuming clear data.
+09-15 19:38:01.902  1545  2250 I Icing   : Clearing storage
+09-15 19:38:01.905  1545  2250 I Icing   : Clearing CorpusMap, ClientRegistry, Setting
+09-15 19:38:01.908   559  1011 I AppWidgetServiceImpl: getAppWidgetIds() 0
+09-15 19:38:01.908  1474  1809 I SS3PSurfacesSuggestAggr: Neither TNG Smartspace widget nor OEM is enabled.
+09-15 19:38:01.909  1474  1809 I BcSsSuggestionAgg: TNG Bluechip smartspace not enabled.
+09-15 19:38:01.909  1474  1809 W t       : Triggering event does not contain a headphone connection.
+09-15 19:38:02.093     0     0 I logd    : logdr: UID=0 GID=0 PID=2824 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
+09-15 19:38:01.922   357  2819 I resolv  : res_nsend: used send_dg 296 terrno: 0
+09-15 19:38:01.922   357  2818 I resolv  : res_nsend: used send_dg 152 terrno: 0
+09-15 19:38:01.922   357  2818 I resolv  : doQuery: rcode=0, ancount=4, return value=152
+09-15 19:38:01.922   357  2819 I resolv  : doQuery: rcode=0, ancount=16, return value=296
+09-15 19:38:01.927  1805  2122 D TrafficStats: tagSocket(90) with statsTag=0xffffffff, statsUid=-1
+09-15 19:38:01.934   914  1008 W Looper  : Drained
+09-15 19:38:01.941  2208  2232 I id.gms.unstable: Background concurrent mark compact GC freed 3495KB AllocSpace bytes, 9(236KB) LOS objects, 49% free, 3951KB/7903KB, paused 61.529ms,502us total 143.108ms
+09-15 19:38:01.951  1231  1828 I HeterodyneSyncScheduler: Scheduling Phenotype for a PhenotypeSyncImmediately(6, com.google.android.libraries.search.device#com.google.android.tts) one off with window [1, 2] in seconds [CONTEXT service_id=51 ]
+09-15 19:38:01.959  1231  1828 W GetConfigSnapshotOp: Succeeded but not registered: com.google.android.location [CONTEXT service_id=51 ]
+09-15 19:38:01.960  1231  1828 W GetConfigSnapshotOp: Succeeded but not registered: com.google.android.gms.geotimezone [CONTEXT service_id=51 ]
+09-15 19:38:01.962  1231  1828 W GetConfigSnapshotOp: Succeeded but not registered: com.google.android.gms.gmscompliance.gservices [CONTEXT service_id=51 ]
+09-15 19:38:01.964  1231  1828 W GetConfigSnapshotOp: Succeeded but not registered: com.google.android.gms.fonts [CONTEXT service_id=51 ]
+09-15 19:38:01.964  1231  1828 W GetConfigSnapshotOp: Succeeded but not registered: com.google.android.libraries.consentverifier#com.google.android.gms [CONTEXT service_id=51 ]
+09-15 19:38:01.965  1231  1828 W GetConfigSnapshotOp: Succeeded but not registered: com.google.android.apps.search.transcription.device#com.google.android.tts [CONTEXT service_id=51 ]
+09-15 19:38:01.967  1231  1828 W GetConfigSnapshotOp: Succeeded but not registered: com.google.android.apps.search.transcription.uidevice#com.google.android.tts [CONTEXT service_id=51 ]
+09-15 19:38:01.967  1431  1518 W FuseDaemon: Long monitor contention with owner AsyncTask #1 (1837) at boolean android.os.MessageQueue.enqueueMessage(android.os.Message, long)(MessageQueue.java:695) waiters=0 in android.os.Message android.os.MessageQueue.next() for 208ms
+09-15 19:38:01.984  1474  1490 I earchbox:search: JIT allocated 53KB for compiled code of java.lang.Object com.google.android.apps.gsa.binaries.velvet.app.arq.n()
+09-15 19:38:02.008   559   831 W FileUtils: Failed to chmod(/data/misc_ce/0/apexdata/com.android.wifi/WifiConfigStoreNetworkSuggestions.xml, 384): 
+09-15 19:38:02.008   559   831 W FileUtils: android.system.ErrnoException: chmod failed: ENOENT (No such file or directory)
+09-15 19:38:02.008   559   831 W FileUtils: 	at libcore.io.Linux.chmod(Native Method)
+09-15 19:38:02.008   559   831 W FileUtils: 	at libcore.io.ForwardingOs.chmod(ForwardingOs.java:165)
+09-15 19:38:02.008   559   831 W FileUtils: 	at libcore.io.BlockGuardOs.chmod(BlockGuardOs.java:83)
+09-15 19:38:02.008   559   831 W FileUtils: 	at android.system.Os.chmod(Os.java:119)
+09-15 19:38:02.008   559   831 W FileUtils: 	at com.android.server.wifi.util.FileUtils.chmod(FileUtils.java:44)
+09-15 19:38:02.008   559   831 W FileUtils: 	at com.android.server.wifi.WifiConfigStore$StoreFile.writeBufferedRawData(WifiConfigStore.java:864)
+09-15 19:38:02.008   559   831 W FileUtils: 	at com.android.server.wifi.WifiConfigStore.writeBufferedData(WifiConfigStore.java:435)
+09-15 19:38:02.008   559   831 W FileUtils: 	at com.android.server.wifi.WifiConfigStore.write(WifiConfigStore.java:386)
+09-15 19:38:02.008   559   831 W FileUtils: 	at com.android.server.wifi.WifiConfigManager.writeBufferedData(WifiConfigManager.java:3866)
+09-15 19:38:02.008   559   831 W FileUtils: 	at com.android.server.wifi.WifiConfigManager.-$$Nest$mwriteBufferedData(WifiConfigManager.java:0)
+09-15 19:38:02.008   559   831 W FileUtils: 	at com.android.server.wifi.WifiConfigManager$1.onAlarm(WifiConfigManager.java:136)
+09-15 19:38:02.008   559   831 W FileUtils: 	at android.app.AlarmManager$ListenerWrapper.run(AlarmManager.java:375)
+09-15 19:38:02.008   559   831 W FileUtils: 	at android.os.Handler.handleCallback(Handler.java:959)
+09-15 19:38:02.008   559   831 W FileUtils: 	at android.os.Handler.dispatchMessage(Handler.java:100)
+09-15 19:38:02.008   559   831 W FileUtils: 	at com.android.server.wifi.RunnerHandler.dispatchMessage(RunnerHandler.java:124)
+09-15 19:38:02.008   559   831 W FileUtils: 	at android.os.Looper.loopOnce(Looper.java:232)
+09-15 19:38:02.008   559   831 W FileUtils: 	at android.os.Looper.loop(Looper.java:317)
+09-15 19:38:02.008   559   831 W FileUtils: 	at android.os.HandlerThread.run(HandlerThread.java:85)
+09-15 19:38:02.009   559   831 D WifiConfigStore: Writing to stores completed in 56 ms.
+09-15 19:38:02.027   559   581 D DisplayManagerService: Drop pending events for gone uid 10140
+09-15 19:38:02.030   559   615 I ActivityManager: Killing 2745:com.google.android.settings.intelligence/u0a140 (adj 0): change com.google.android.settings.intelligence
+09-15 19:38:02.030   357   357 I netd    : tetherGetStats() -> {[]} <0.43ms>
+09-15 19:38:02.041   559   591 I ActivityManager: reportOnUserCompletedEvent(0): stored=10, eligible=111
+09-15 19:38:02.042   559   591 D SystemServerTimingAsync: ssm.CompletedEventUser-0
+09-15 19:38:02.043  1098  1098 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 19:38:02.043   559   591 I SystemServiceManager: Calling onCompletedEventUser 0
+09-15 19:38:02.044   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.pm.Installer
+09-15 19:38:02.044   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.pm.Installer took to complete: 0ms
+09-15 19:38:02.044   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.os.DeviceIdentifiersPolicyService
+09-15 19:38:02.044   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.os.DeviceIdentifiersPolicyService took to complete: 0ms
+09-15 19:38:02.044   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.flags.FeatureFlagsService
+09-15 19:38:02.044   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.flags.FeatureFlagsService took to complete: 0ms
+09-15 19:38:02.044   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.security.FileIntegrityService
+09-15 19:38:02.044   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.security.FileIntegrityService took to complete: 0ms
+09-15 19:38:02.044   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.uri.UriGrantsManagerService$Lifecycle
+09-15 19:38:02.044   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.uri.UriGrantsManagerService$Lifecycle took to complete: 0ms
+09-15 19:38:02.044   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.powerstats.PowerStatsService
+09-15 19:38:02.044   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.powerstats.PowerStatsService took to complete: 0ms
+09-15 19:38:02.044   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.wm.ActivityTaskManagerService$Lifecycle
+09-15 19:38:02.045   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.wm.ActivityTaskManagerService$Lifecycle took to complete: 0ms
+09-15 19:38:02.045   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.am.ActivityManagerService$Lifecycle
+09-15 19:38:02.045   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.am.ActivityManagerService$Lifecycle took to complete: 0ms
+09-15 19:38:02.045   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.pm.DataLoaderManagerService
+09-15 19:38:02.045   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.pm.DataLoaderManagerService took to complete: 0ms
+09-15 19:38:02.045   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.permission.access.AccessCheckingService
+09-15 19:38:02.045   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.permission.access.AccessCheckingService took to complete: 0ms
+09-15 19:38:02.224     0     0 I init    : Sending signal 9 to service 'idmap2d' (pid 1143) process group...
+09-15 19:38:02.045   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.power.ThermalManagerService
+09-15 19:38:02.045   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.power.ThermalManagerService took to complete: 0ms
+09-15 19:38:02.045   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.recoverysystem.RecoverySystemService$Lifecycle
+09-15 19:38:02.045   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.recoverysystem.RecoverySystemService$Lifecycle took to complete: 0ms
+09-15 19:38:02.045   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.lights.LightsService
+09-15 19:38:02.045   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.lights.LightsService took to complete: 0ms
+09-15 19:38:02.045   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.display.DisplayManagerService
+09-15 19:38:02.045   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.display.DisplayManagerService took to complete: 0ms
+09-15 19:38:02.045   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.pm.verify.domain.DomainVerificationService
+09-15 19:38:02.046   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.pm.verify.domain.DomainVerificationService took to complete: 0ms
+09-15 19:38:02.046   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.pm.PackageInstallerService$Lifecycle
+09-15 19:38:02.046   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.pm.PackageInstallerService$Lifecycle took to complete: 0ms
+09-15 19:38:02.046   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.pm.UserManagerService$LifeCycle
+09-15 19:38:02.047   914  1241 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-15 19:38:02.232     0     0 I libprocessgroup: Removed cgroup /sys/fs/cgroup/uid_1000/pid_1143
+09-15 19:38:02.235     0     0 I init    : Control message: Processed ctl.stop for 'idmap2d' from pid: 559 (system_server)
+09-15 19:38:02.049   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.pm.UserManagerService$LifeCycle took to complete: 0ms
+09-15 19:38:02.049   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.om.OverlayManagerService
+09-15 19:38:02.049   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.om.OverlayManagerService took to complete: 0ms
+09-15 19:38:02.049   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.resources.ResourcesManagerService
+09-15 19:38:02.049   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.resources.ResourcesManagerService took to complete: 0ms
+09-15 19:38:02.049   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.sensorprivacy.SensorPrivacyService
+09-15 19:38:02.049   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.sensorprivacy.SensorPrivacyService took to complete: 0ms
+09-15 19:38:02.049   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.sensors.SensorService
+09-15 19:38:02.049   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.sensors.SensorService took to complete: 0ms
+09-15 19:38:02.049   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.SystemConfigService
+09-15 19:38:02.049   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.SystemConfigService took to complete: 0ms
+09-15 19:38:02.049   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.BatteryService
+09-15 19:38:02.049   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.BatteryService took to complete: 0ms
+09-15 19:38:02.049   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.usage.UsageStatsService
+09-15 19:38:02.049   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.usage.UsageStatsService took to complete: 0ms
+09-15 19:38:02.049   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.webkit.WebViewUpdateService
+09-15 19:38:02.049   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.webkit.WebViewUpdateService took to complete: 0ms
+09-15 19:38:02.049   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.CachedDeviceStateService
+09-15 19:38:02.049   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.CachedDeviceStateService took to complete: 0ms
+09-15 19:38:02.049   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.BinderCallsStatsService$LifeCycle
+09-15 19:38:02.049   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.BinderCallsStatsService$LifeCycle took to complete: 0ms
+09-15 19:38:02.049   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.LooperStatsService$Lifecycle
+09-15 19:38:02.049   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.LooperStatsService$Lifecycle took to complete: 0ms
+09-15 19:38:02.049   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.rollback.RollbackManagerService
+09-15 19:38:02.049   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.rollback.RollbackManagerService took to complete: 0ms
+09-15 19:38:02.049   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.os.NativeTombstoneManagerService
+09-15 19:38:02.049   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.os.NativeTombstoneManagerService took to complete: 0ms
+09-15 19:38:02.049   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.os.BugreportManagerService
+09-15 19:38:02.049   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.os.BugreportManagerService took to complete: 0ms
+09-15 19:38:02.049   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.gpu.GpuService
+09-15 19:38:02.049   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.gpu.GpuService took to complete: 0ms
+09-15 19:38:02.049   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.security.rkp.RemoteProvisioningService
+09-15 19:38:02.049   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.security.rkp.RemoteProvisioningService took to complete: 0ms
+09-15 19:38:02.049   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.cpu.CpuMonitorService
+09-15 19:38:02.049   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.cpu.CpuMonitorService took to complete: 0ms
+09-15 19:38:02.049   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.security.KeyChainSystemService
+09-15 19:38:02.049   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.security.KeyChainSystemService took to complete: 0ms
+09-15 19:38:02.049   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.BinaryTransparencyService
+09-15 19:38:02.049   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.BinaryTransparencyService took to complete: 0ms
+09-15 19:38:02.049   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.telecom.TelecomLoaderService
+09-15 19:38:02.049   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.telecom.TelecomLoaderService took to complete: 0ms
+09-15 19:38:02.049   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.accounts.AccountManagerService$Lifecycle
+09-15 19:38:02.052   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.accounts.AccountManagerService$Lifecycle took to complete: 0ms
+09-15 19:38:02.052   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.content.ContentService$Lifecycle
+09-15 19:38:02.052   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.content.ContentService$Lifecycle took to complete: 0ms
+09-15 19:38:02.053   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.deviceconfig.DeviceConfigInit$Lifecycle
+09-15 19:38:02.053   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.deviceconfig.DeviceConfigInit$Lifecycle took to complete: 0ms
+09-15 19:38:02.053   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.DropBoxManagerService
+09-15 19:38:02.053   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.DropBoxManagerService took to complete: 0ms
+09-15 19:38:02.053   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.ecm.EnhancedConfirmationService
+09-15 19:38:02.053   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.ecm.EnhancedConfirmationService took to complete: 0ms
+09-15 19:38:02.053   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.power.hint.HintManagerService
+09-15 19:38:02.053   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.power.hint.HintManagerService took to complete: 0ms
+09-15 19:38:02.053   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.role.RoleService
+09-15 19:38:02.053   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.role.RoleService took to complete: 0ms
+09-15 19:38:02.053   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.vibrator.VibratorManagerService$Lifecycle
+09-15 19:38:02.053   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.vibrator.VibratorManagerService$Lifecycle took to complete: 0ms
+09-15 19:38:02.053   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.alarm.AlarmManagerService
+09-15 19:38:02.053   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.alarm.AlarmManagerService took to complete: 0ms
+09-15 19:38:02.053   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.devicestate.DeviceStateManagerService
+09-15 19:38:02.053   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.devicestate.DeviceStateManagerService took to complete: 0ms
+09-15 19:38:02.053   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.camera.CameraServiceProxy
+09-15 19:38:02.053   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.camera.CameraServiceProxy took to complete: 0ms
+09-15 19:38:02.053   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.bluetooth.BluetoothService
+09-15 19:38:02.053   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.bluetooth.BluetoothService took to complete: 0ms
+09-15 19:38:02.053   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.connectivity.IpConnectivityMetrics
+09-15 19:38:02.053   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.connectivity.IpConnectivityMetrics took to complete: 0ms
+09-15 19:38:02.053   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.net.watchlist.NetworkWatchlistService$Lifecycle
+09-15 19:38:02.053   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.net.watchlist.NetworkWatchlistService$Lifecycle took to complete: 0ms
+09-15 19:38:02.053   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.PinnerService
+09-15 19:38:02.053   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.PinnerService took to complete: 0ms
+09-15 19:38:02.053   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.integrity.AppIntegrityManagerService
+09-15 19:38:02.053   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.integrity.AppIntegrityManagerService took to complete: 0ms
+09-15 19:38:02.053   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.logcat.LogcatManagerService
+09-15 19:38:02.053   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.logcat.LogcatManagerService took to complete: 0ms
+09-15 19:38:02.053   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.inputmethod.InputMethodManagerService$Lifecycle
+09-15 19:38:02.053   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.inputmethod.InputMethodManagerService$Lifecycle took to complete: 0ms
+09-15 19:38:02.053   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.accessibility.AccessibilityManagerService$Lifecycle
+09-15 19:38:02.053   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.accessibility.AccessibilityManagerService$Lifecycle took to complete: 0ms
+09-15 19:38:02.053   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.StorageManagerService$Lifecycle
+09-15 19:38:02.053   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.StorageManagerService$Lifecycle took to complete: 0ms
+09-15 19:38:02.053   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.usage.StorageStatsService$Lifecycle
+09-15 19:38:02.053   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.usage.StorageStatsService$Lifecycle took to complete: 0ms
+09-15 19:38:02.053   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.UiModeManagerService
+09-15 19:38:02.053   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.UiModeManagerService took to complete: 0ms
+09-15 19:38:02.053   559  1535 W OverlayManager: service 'idmap' died
+09-15 19:38:02.054   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.power.PowerManagerService
+09-15 19:38:02.054   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.power.PowerManagerService took to complete: 0ms
+09-15 19:38:02.054   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.grammaticalinflection.GrammaticalInflectionService
+09-15 19:38:02.054   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.grammaticalinflection.GrammaticalInflectionService took to complete: 0ms
+09-15 19:38:02.054   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.apphibernation.AppHibernationService
+09-15 19:38:02.054   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.apphibernation.AppHibernationService took to complete: 0ms
+09-15 19:38:02.054   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.locksettings.LockSettingsService$Lifecycle
+09-15 19:38:02.054   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.locksettings.LockSettingsService$Lifecycle took to complete: 0ms
+09-15 19:38:02.054   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.testharness.TestHarnessModeService
+09-15 19:38:02.054   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.testharness.TestHarnessModeService took to complete: 0ms
+09-15 19:38:02.054   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.DeviceIdleController
+09-15 19:38:02.054   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.DeviceIdleController took to complete: 0ms
+09-15 19:38:02.054   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.devicepolicy.DevicePolicyManagerService$Lifecycle
+09-15 19:38:02.054   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.devicepolicy.DevicePolicyManagerService$Lifecycle took to complete: 0ms
+09-15 19:38:02.054   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.musicrecognition.MusicRecognitionManagerService
+09-15 19:38:02.054   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.musicrecognition.MusicRecognitionManagerService took to complete: 0ms
+09-15 19:38:02.054   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.contentcapture.ContentCaptureManagerService
+09-15 19:38:02.054   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.contentcapture.ContentCaptureManagerService took to complete: 0ms
+09-15 19:38:02.054   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.systemcaptions.SystemCaptionsManagerService
+09-15 19:38:02.054   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.systemcaptions.SystemCaptionsManagerService took to complete: 0ms
+09-15 19:38:02.054   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.texttospeech.TextToSpeechManagerService
+09-15 19:38:02.054   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.texttospeech.TextToSpeechManagerService took to complete: 0ms
+09-15 19:38:02.054   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.wearable.WearableSensingManagerService
+09-15 19:38:02.054   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.wearable.WearableSensingManagerService took to complete: 0ms
+09-15 19:38:02.054   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.ondeviceintelligence.OnDeviceIntelligenceManagerService
+09-15 19:38:02.054   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.ondeviceintelligence.OnDeviceIntelligenceManagerService took to complete: 0ms
+09-15 19:38:02.054   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.ambientcontext.AmbientContextManagerService
+09-15 19:38:02.054   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.ambientcontext.AmbientContextManagerService took to complete: 0ms
+09-15 19:38:02.054   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.speech.SpeechRecognitionManagerService
+09-15 19:38:02.054   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.speech.SpeechRecognitionManagerService took to complete: 0ms
+09-15 19:38:02.054   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.appprediction.AppPredictionManagerService
+09-15 19:38:02.054   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.appprediction.AppPredictionManagerService took to complete: 0ms
+09-15 19:38:02.054   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.contentsuggestions.ContentSuggestionsManagerService
+09-15 19:38:02.054   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.contentsuggestions.ContentSuggestionsManagerService took to complete: 0ms
+09-15 19:38:02.054   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.searchui.SearchUiManagerService
+09-15 19:38:02.054   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.searchui.SearchUiManagerService took to complete: 0ms
+09-15 19:38:02.054   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.smartspace.SmartspaceManagerService
+09-15 19:38:02.054   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.smartspace.SmartspaceManagerService took to complete: 0ms
+09-15 19:38:02.054   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.contextualsearch.ContextualSearchManagerService
+09-15 19:38:02.054   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.contextualsearch.ContextualSearchManagerService took to complete: 0ms
+09-15 19:38:02.054   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.graphics.fonts.FontManagerService$Lifecycle
+09-15 19:38:02.054   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.graphics.fonts.FontManagerService$Lifecycle took to complete: 0ms
+09-15 19:38:02.054   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.textservices.TextServicesManagerService$Lifecycle
+09-15 19:38:02.054   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.textservices.TextServicesManagerService$Lifecycle took to complete: 0ms
+09-15 19:38:02.054   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.textclassifier.TextClassificationManagerService$Lifecycle
+09-15 19:38:02.054   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.textclassifier.TextClassificationManagerService$Lifecycle took to complete: 0ms
+09-15 19:38:02.054   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.NetworkScoreService$Lifecycle
+09-15 19:38:02.054   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.NetworkScoreService$Lifecycle took to complete: 0ms
+09-15 19:38:02.054   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.NetworkStatsServiceInitializer
+09-15 19:38:02.054   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.NetworkStatsServiceInitializer took to complete: 0ms
+09-15 19:38:02.054   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.wifi.WifiService
+09-15 19:38:02.054   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.wifi.WifiService took to complete: 0ms
+09-15 19:38:02.054   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.wifi.scanner.WifiScanningService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.wifi.scanner.WifiScanningService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.wifi.p2p.WifiP2pService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.wifi.p2p.WifiP2pService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.ConnectivityServiceInitializer
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.ConnectivityServiceInitializer took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.notification.NotificationManagerService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.notification.NotificationManagerService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.storage.DeviceStorageMonitorService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.storage.DeviceStorageMonitorService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.timedetector.TimeDetectorService$Lifecycle
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.timedetector.TimeDetectorService$Lifecycle took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.location.LocationManagerService$Lifecycle
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.location.LocationManagerService$Lifecycle took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.timezonedetector.TimeZoneDetectorService$Lifecycle
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.timezonedetector.TimeZoneDetectorService$Lifecycle took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.location.altitude.AltitudeService$Lifecycle
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.location.altitude.AltitudeService$Lifecycle took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.timezonedetector.location.LocationTimeZoneManagerService$Lifecycle
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.timezonedetector.location.LocationTimeZoneManagerService$Lifecycle took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.search.SearchManagerService$Lifecycle
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.search.SearchManagerService$Lifecycle took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.wallpaper.WallpaperManagerService$Lifecycle
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.wallpaper.WallpaperManagerService$Lifecycle took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.wallpapereffectsgeneration.WallpaperEffectsGenerationManagerService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.wallpapereffectsgeneration.WallpaperEffectsGenerationManagerService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.audio.AudioService$Lifecycle
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.audio.AudioService$Lifecycle took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.soundtrigger_middleware.SoundTriggerMiddlewareService$Lifecycle
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.soundtrigger_middleware.SoundTriggerMiddlewareService$Lifecycle took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.DockObserver
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.DockObserver took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.midi.MidiService$Lifecycle
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.midi.MidiService$Lifecycle took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.adb.AdbService$Lifecycle
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.adb.AdbService$Lifecycle took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.usb.UsbService$Lifecycle
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.usb.UsbService$Lifecycle took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.SerialService$Lifecycle
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.SerialService$Lifecycle took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.twilight.TwilightService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.twilight.TwilightService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.display.color.ColorDisplayService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.display.color.ColorDisplayService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.job.JobSchedulerService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.job.JobSchedulerService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.soundtrigger.SoundTriggerService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.soundtrigger.SoundTriggerService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.trust.TrustManagerService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.trust.TrustManagerService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.backup.BackupManagerService$Lifecycle
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.backup.BackupManagerService$Lifecycle took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.appwidget.AppWidgetService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.appwidget.AppWidgetService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.voiceinteraction.VoiceInteractionManagerService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.voiceinteraction.VoiceInteractionManagerService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.GestureLauncherService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.GestureLauncherService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.SensorNotificationService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.SensorNotificationService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.emergency.EmergencyAffordanceService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.emergency.EmergencyAffordanceService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.blob.BlobStoreManagerService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.blob.BlobStoreManagerService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.dreams.DreamManagerService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.dreams.DreamManagerService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.print.PrintManagerService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.print.PrintManagerService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.security.AttestationVerificationManagerService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.security.AttestationVerificationManagerService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.companion.CompanionDeviceManagerService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.companion.CompanionDeviceManagerService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.companion.virtual.VirtualDeviceManagerService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.companion.virtual.VirtualDeviceManagerService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.restrictions.RestrictionsManagerService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.restrictions.RestrictionsManagerService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.media.MediaSessionService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.media.MediaSessionService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.media.MediaResourceMonitorService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.media.MediaResourceMonitorService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.biometrics.sensors.face.FaceService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.biometrics.sensors.face.FaceService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.biometrics.sensors.fingerprint.FingerprintService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.biometrics.sensors.fingerprint.FingerprintService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.biometrics.BiometricService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.biometrics.BiometricService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.biometrics.AuthService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.biometrics.AuthService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.adaptiveauth.AdaptiveAuthService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.adaptiveauth.AdaptiveAuthService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.pm.ShortcutService$Lifecycle
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.pm.ShortcutService$Lifecycle took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.pm.LauncherAppsService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.pm.LauncherAppsService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.pm.CrossProfileAppsService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.pm.CrossProfileAppsService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.people.PeopleService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.people.PeopleService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.media.metrics.MediaMetricsManagerService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.media.metrics.MediaMetricsManagerService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.pm.BackgroundInstallControlService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.pm.BackgroundInstallControlService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.media.projection.MediaProjectionManagerService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.media.projection.MediaProjectionManagerService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.slice.SliceManagerService$Lifecycle
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.slice.SliceManagerService$Lifecycle took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.stats.StatsCompanion$Lifecycle
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.stats.StatsCompanion$Lifecycle took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.scheduling.RebootReadinessManagerService$Lifecycle
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.scheduling.RebootReadinessManagerService$Lifecycle took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.stats.pull.StatsPullAtomService
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.stats.pull.StatsPullAtomService took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.stats.bootstrap.StatsBootstrapAtomService$Lifecycle
+09-15 19:38:02.055   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.stats.bootstrap.StatsBootstrapAtomService$Lifecycle took to complete: 0ms
+09-15 19:38:02.055   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.incident.IncidentCompanionService
+09-15 19:38:02.056   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.incident.IncidentCompanionService took to complete: 0ms
+09-15 19:38:02.056   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.sdksandbox.SdkSandboxManagerService$Lifecycle
+09-15 19:38:02.056   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.sdksandbox.SdkSandboxManagerService$Lifecycle took to complete: 0ms
+09-15 19:38:02.056   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.adservices.AdServicesManagerService$Lifecycle
+09-15 19:38:02.056   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.adservices.AdServicesManagerService$Lifecycle took to complete: 0ms
+09-15 19:38:02.056   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.ondevicepersonalization.OnDevicePersonalizationSystemService$Lifecycle
+09-15 19:38:02.056   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.ondevicepersonalization.OnDevicePersonalizationSystemService$Lifecycle took to complete: 0ms
+09-15 19:38:02.056   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_android.os.profiling.ProfilingService$Lifecycle
+09-15 19:38:02.056   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_android.os.profiling.ProfilingService$Lifecycle took to complete: 0ms
+09-15 19:38:02.056   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.MmsServiceBroker
+09-15 19:38:02.056   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.MmsServiceBroker took to complete: 0ms
+09-15 19:38:02.056   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.autofill.AutofillManagerService
+09-15 19:38:02.056   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.autofill.AutofillManagerService took to complete: 0ms
+09-15 19:38:02.056   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.credentials.CredentialManagerService
+09-15 19:38:02.056   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.credentials.CredentialManagerService took to complete: 0ms
+09-15 19:38:02.056   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.translation.TranslationManagerService
+09-15 19:38:02.056   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.translation.TranslationManagerService took to complete: 0ms
+09-15 19:38:02.056   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.clipboard.ClipboardService
+09-15 19:38:02.056   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.clipboard.ClipboardService took to complete: 0ms
+09-15 19:38:02.056   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.appbinding.AppBindingService$Lifecycle
+09-15 19:38:02.056   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.appbinding.AppBindingService$Lifecycle took to complete: 0ms
+09-15 19:38:02.056   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.tracing.TracingServiceProxy
+09-15 19:38:02.056   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.tracing.TracingServiceProxy took to complete: 0ms
+09-15 19:38:02.056   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.policy.PermissionPolicyService
+09-15 19:38:02.056   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.policy.PermissionPolicyService took to complete: 0ms
+09-15 19:38:02.056   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.pm.StagingManager$Lifecycle
+09-15 19:38:02.056   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.pm.StagingManager$Lifecycle took to complete: 0ms
+09-15 19:38:02.056   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.app.GameManagerService$Lifecycle
+09-15 19:38:02.056   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.app.GameManagerService$Lifecycle took to complete: 0ms
+09-15 19:38:02.056   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.safetycenter.SafetyCenterService
+09-15 19:38:02.056   559  2827 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.safetycenter.SafetyCenterService took to complete: 0ms
+09-15 19:38:02.056   559  2827 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.appsearch.AppSearchModule$Lifecycle
+09-15 19:38:02.057   559  2828 D SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.locales.LocaleManagerService
+09-15 19:38:02.057   559  2828 V SystemServerTimingAsync: ssm.onCompletedEventUser-0_{|Unlocked|}_com.android.server.locales.LocaleManagerService took to complete: 0ms
+09-15 19:38:02.057   559   591 V SystemServerTimingAsync: ssm.CompletedEventUser-0 took to complete: 14ms
+09-15 19:38:02.240     0     0 I init    : Service 'idmap2d' (pid 1143) received signal 9
+09-15 19:38:02.060   358   358 I Zygote  : Process 2745 exited due to signal 9 (Killed)
+09-15 19:38:02.064   559   615 W ActivityManager: Scheduling restart of crashed service com.google.android.settings.intelligence/.modules.routines.impl.RoutinesJobIntentService in 1000ms for connection
+09-15 19:38:02.250     0     0 I init    : Sending signal 9 to service 'idmap2d' (pid 1143) process group...
+09-15 19:38:02.072   559  1538 W system_server: Long monitor contention with owner PackageManager (615) at int com.android.server.am.ActivityManagerService$LocalService.broadcastIntent(android.content.Intent, android.content.IIntentReceiver, java.lang.String[], boolean, int, int[], java.util.function.BiFunction, android.os.Bundle)(ActivityManagerService.java:19191) waiters=0 in int com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(android.app.IApplicationThread, java.lang.String, android.content.Intent, java.lang.String, android.content.IIntentReceiver, int, java.lang.String, android.os.Bundle, java.lang.String[], java.lang.String[], java.lang.String[], int, android.os.Bundle, boolean, boolean, int) for 303ms
+09-15 19:38:02.073   559  1175 W system_server: Long monitor contention with owner PackageManager (615) at int com.android.server.am.ActivityManagerService$LocalService.broadcastIntent(android.content.Intent, android.content.IIntentReceiver, java.lang.String[], boolean, int, int[], java.util.function.BiFunction, android.os.Bundle)(ActivityManagerService.java:19191) waiters=1 in void com.android.server.am.ActivityManagerService.publishService(android.os.IBinder, android.content.Intent, android.os.IBinder) for 302ms
+09-15 19:38:02.073   559  1278 W system_server: Long monitor contention with owner PackageManager (615) at int com.android.server.am.ActivityManagerService$LocalService.broadcastIntent(android.content.Intent, android.content.IIntentReceiver, java.lang.String[], boolean, int, int[], java.util.function.BiFunction, android.os.Bundle)(ActivityManagerService.java:19191) waiters=2 in void com.android.server.am.ActivityManagerService.finishReceiver(android.os.IBinder, int, java.lang.String, android.os.Bundle, boolean, int) for 295ms
+09-15 19:38:02.073   559  1278 W ActivityManager: finishReceiver: no app for android.os.BinderProxy@d51240f
+09-15 19:38:02.073   559  1993 W system_server: Long monitor contention with owner PackageManager (615) at int com.android.server.am.ActivityManagerService$LocalService.broadcastIntent(android.content.Intent, android.content.IIntentReceiver, java.lang.String[], boolean, int, int[], java.util.function.BiFunction, android.os.Bundle)(ActivityManagerService.java:19191) waiters=3 in boolean com.android.server.am.ActivityManagerService.stopServiceToken(android.content.ComponentName, android.os.IBinder, int) for 294ms
+09-15 19:38:02.256     0     0 E libprocessgroup: Failed to write 1 to /sys/fs/cgroup/uid_1000/pid_1143/cgroup.kill: No such file or directory
+09-15 19:38:02.074   559   576 W ForegroundServiceTypeLoggerModule: FGS stop call for: 10152 has no types!
+09-15 19:38:02.078   559   559 D CompatChangeReporter: Compat change id reported: 311208629; UID 10140; state: ENABLED
+09-15 19:38:02.078   559  1992 W ActivityManager: Unable to start service Intent { act=android.intent.action.QUICKSTEP_SERVICE pkg=com.google.android.apps.nexuslauncher } U=0: not found
+09-15 19:38:02.078   559   663 D ActivityManager: freezing 1472 com.google.android.googlesdksetup
+09-15 19:38:02.079   559  1891 V ActivityManager: Got obituary of 2745:com.google.android.settings.intelligence
+09-15 19:38:02.266     0     0 E libprocessgroup: Failed to open /sys/fs/cgroup/uid_1000/pid_1143/cgroup.procs: No such file or directory
+09-15 19:38:02.081   559   615 I AppsFilter: interaction: PackageSetting{26d60b3 com.android.microdroid.empty_payload/10186} -> PackageSetting{e936688 com.google.android.googlequicksearchbox/10144} BLOCKED
+09-15 19:38:02.081   559   615 I AppsFilter: interaction: PackageSetting{26d60b3 com.android.microdroid.empty_payload/10186} -> PackageSetting{3304821 com.google.android.partnersetup/10133} BLOCKED
+09-15 19:38:02.081   559   615 I AppsFilter: interaction: PackageSetting{26d60b3 com.android.microdroid.empty_payload/10186} -> PackageSetting{c0ef446 com.google.android.cellbroadcastreceiver/10194} BLOCKED
+09-15 19:38:02.083  1366  1668 I SP      : Download stopped: delight:main_en_us_2024051500_1, succeeded foreground, size: 7317032
+09-15 19:38:02.083   559   559 D CompatChangeReporter: Compat change id reported: 151861875; UID 10140; state: ENABLED
+09-15 19:38:02.083   559   559 V GrammaticalInflectionUtils: AttributionSource: AttributionSource { uid = 10140, packageName = null, attributionTag = null, token = android.os.Binder@c2cb0e0, deviceId = 0, next = null } does not have READ_SYSTEM_GRAMMATICAL_GENDER permission.
+09-15 19:38:02.090   559   838 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+09-15 19:38:02.091  1366  1668 I SP      : Scheduling job with delay of 0s for {W:b:u:l, bg}, 1 candidates
+09-15 19:38:02.093   559   838 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+09-15 19:38:02.094   559   838 D InetDiagMessage: Destroyed live tcp sockets for uids={10171} in 5ms
+09-15 19:38:02.094  1231  1811 I NearbySharing: Broadcasting NearbySharing state change. [CONTEXT service_id=194 ]
+09-15 19:38:02.098  1545  1923 I Icing   : IndexChimeraService.getServiceInterface callingPackage=com.google.android.gms componentName=AppsCorpus serviceId=32
+09-15 19:38:02.098  1545  2629 I Icing   : IndexChimeraService.getServiceInterface callingPackage=com.google.android.gms componentName=AppsCorpus serviceId=36
+09-15 19:38:02.105   559   593 I libprocessgroup: Removed cgroup /sys/fs/cgroup/uid_10140/pid_2745
+09-15 19:38:02.109   358   358 D Zygote  : Forked child process 2830
+09-15 19:38:02.111   559   592 I ActivityManager: Start proc 2830:com.google.android.settings.intelligence/u0a140 for service {com.google.android.settings.intelligence/com.google.android.settings.intelligence.modules.routines.impl.PruneDatabaseJobService}
+09-15 19:38:02.118  1098  1098 D BootBroadcastReceiver: refresh periodic job from action=android.intent.action.BOOT_COMPLETED
+09-15 19:38:02.122  1231  1811 I NearbySharing: Screen is unlocked [CONTEXT service_id=194 ]
+09-15 19:38:02.122  1231  1811 I NearbySharing: Location is enabled [CONTEXT service_id=194 ]
+09-15 19:38:02.127  2830  2830 I gs.intelligence: Using CollectorTypeCMC GC.
+09-15 19:38:02.127  2830  2830 W gs.intelligence: Unexpected CPU variant for x86: x86_64.
+09-15 19:38:02.127  2830  2830 W gs.intelligence: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, goldmont-without-sha-xsaves, tremont, kabylake, default
+09-15 19:38:02.136  1098  1098 D PeriodicJobManager: schedule next alarm job at Sep 15, 2026, 20:00:00
+09-15 19:38:02.136  2830  2830 E gs.intelligence: Not starting debugger since process cannot load the jdwp agent.
+09-15 19:38:02.136  2830  2830 D nativeloader: Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok
+09-15 19:38:02.141  1098  1098 D BatterySettingsMigrateChecker: onReceive: Intent { act=android.intent.action.BOOT_COMPLETED flg=0x89000010 cmp=com.android.settings/.fuelgauge.BatterySettingsMigrateChecker (has extras) } owner: true
+09-15 19:38:02.141  1098  1098 D BatterySettingsMigrateChecker: invoke verifySaverConfiguration()
+09-15 19:38:02.144  1098  1098 D BatterySettingsMigrateChecker: invoke verifyOptimizationModes()
+09-15 19:38:02.159  1098  1098 E SmsApplication: com.google.android.apps.messaging lost android:read_cell_broadcasts:  (fixing)
+09-15 19:38:02.159   559  1872 W AppOpService: Ignored setUidMode call for runtime permission app op: uid = 10134, code = READ_CELL_BROADCASTS, mode = allow, callingUid = 1000, oldMode = allow
+09-15 19:38:02.160   559  1992 I Telecom : PhoneAccountRegistrar: setUserSelectedOutgoingPhoneAccount: ComponentInfo{com.android.phone/com.android.services.telephony.TelephonyConnectionService}, 1, UserHandle{0}: TSI.sUSOPA@AIs🔒
+09-15 19:38:02.160   559  1992 I Telecom : PhoneAccountRegistrar: setUserSelectedOutgoingPhoneAccount: no change to voice sub: TSI.sUSOPA@AIs🔒
