@@ -1,3 +1,22 @@
+# GGUF Chat — um botão de importação, seleção múltipla
+
+## [Baixar APK — sem ZIP](https://github.com/Enzo-cyber2025/5/releases/download/gguf-import-ui-368f85e/GGUF-Chat-mobile.apk)
+
+**28.345.800 bytes · Android 9+ · ARM64/x86_64 · modelos não incluídos.**
+
+- Biblioteca vazia → Nova conversa → Importar: apenas **Importar GGUF**.
+- **Seleção múltipla habilitada**, sem o botão separado “Importar 2 GGUFs”. A entrada pela tela antiga também usa a tela única.
+- Seleções de **dois e três arquivos testadas no Android**; preservadas a unificação dos pares compatíveis e a importação sequencial de lotes maiores.
+- **Mesma assinatura do último APK de progresso**; atualização por cima dele testada, preservando dado privado. Sem necessidade de desinstalar essa última versão.
+- Percentuais e motor preservados; somente duas classes de navegação mudaram.
+
+[Relatório e capturas reais](docs/SINGLE_IMPORT_UI.md) · [Aprovação](.delivery/import-ui-acceptance.json)
+
+SHA-256: `086a125ae5e503718b3999bff1d2ad98b06498e0edf770471c7db07e8afaa813`.
+
+<details>
+<summary>Entrega anterior e histórico</summary>
+
 # GGUF Chat — porcentagens por arquivo e etapa
 
 ## [Baixar APK — sem ZIP](https://github.com/Enzo-cyber2025/5/releases/download/gguf-progress-dba56b2/GGUF-Chat-mobile.apk)
@@ -295,6 +314,8 @@ também publica apenas resumos/capturas limitados em `ci-results/` **nesta mesma
 com `[skip ci]` para evitar repetição automática. Sem force-push nem outras branches.
 O workflow antigo do repositório não foi alterado; o erro histórico dos pontos em
 `timeout-minutes` já estava resolvido.
+
+</details>
 
 </details>
 

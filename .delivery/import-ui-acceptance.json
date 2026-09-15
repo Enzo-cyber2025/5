@@ -1,0 +1,35 @@
+{
+  "status": "SIGNED_IMPORT_UI_ANDROID_PASS",
+  "apk_sha256": "086a125ae5e503718b3999bff1d2ad98b06498e0edf770471c7db07e8afaa813",
+  "source_commit": "368f85e8888c0eae9070324e6891e15cb9b97d0e",
+  "run": 34978739703,
+  "attempt": 1,
+  "job": 104413168346,
+  "commit": "c1cf3088df9b090834d83ff4babf768f3a9677e0",
+  "release_tag": "gguf-import-ui-368f85e",
+  "ui_review": {
+    "status": "PASS",
+    "images": [
+      {
+        "path": "ci-results/34978739703-1/physical-import-ui-empty-library.png",
+        "sha256": "a1d8b41c2ce88fd73749d392f22995200315ecdc301c341e00fb6f0c5978f6e1",
+        "observed": "Only Importar GGUF after empty-library chat prompt"
+      },
+      {
+        "path": "ci-results/34978739703-1/physical-import-ui-legacy-cold.png",
+        "sha256": "7c183c6d29cf8f201d252787f9b866b46146ac3e133a379fabd7c5a4fc02aafc",
+        "observed": "Legacy Activity redirects to the same single-button screen"
+      },
+      {
+        "path": "ci-results/34978739703-1/physical-import-ui-three-selected.png",
+        "sha256": "473e50e59df9b4690b488e05b7c3ecac1078543f6eb379e5ade24ffc7912237e",
+        "observed": "Actual SAF shows three named GGUF files selected"
+      },
+      {
+        "path": "ci-results/34978739703-1/physical-import-ui-pair-imported.png",
+        "sha256": "9a8f6c17ad19ace718c377fa9851f1d6aa69c04bbec1d239044828e5cf065f80",
+        "observed": "One vision GGUF record after the real pair import"
+      }
+    ]
+  }
+}
