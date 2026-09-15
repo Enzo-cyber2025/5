@@ -51,3 +51,8 @@ def test_single_progress_wiring_covers_copy_identification_success_failure():
         assert '->'+method in s
     assert "[('2',False),('3',True)]" in s
     assert 'patch_import_progress(app)' in (ROOT/'apk-fix/build_mobile.py').read_text()
+
+
+def test_old_import_shortcuts_use_canonical_progress_screen():
+    s=(ROOT/'apk-fix/import_progress.py').read_text()
+    assert 'access$600' in s and "[('2','.method public onClick" in s

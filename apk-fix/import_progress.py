@@ -57,3 +57,14 @@ def patch_import_progress(app):
     assert s.count(marker)==1
     s=s.replace(marker,marker+'\n    invoke-static {v2}, Lcom/ggufchat/app/ImportProgress;->syncCopied(Ljava/io/OutputStream;)V')
     p.write_text(s)
+    # Empty-library "Importar" used to launch an undeclared legacy Activity.
+    # Both old callbacks now lead to the canonical import UI (same atomic rules
+    # and measured progress) rather than a second, uninstrumented importer.
+    for suffix,signature in [('2','.method public onClick(Landroid/view/View;)V'),('7','.method public onClick(Landroid/content/DialogInterface;I)V')]:
+        p=app/('MainActivity$'+suffix+'.smali');s=p.read_text()
+        body='''    .locals 2
+    iget-object v0, p0, Lcom/ggufchat/app/MainActivity$SUFFIX;->this$0:Lcom/ggufchat/app/MainActivity;
+    const/4 v1, 0x1
+    invoke-static {v0, v1}, Lcom/ggufchat/app/MainActivity;->access$600(Lcom/ggufchat/app/MainActivity;I)V
+    return-void'''.replace('SUFFIX',suffix)
+        p.write_text(replace_method(s,signature,body))
