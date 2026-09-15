@@ -6,6 +6,8 @@
 
 **Atenção: nova assinatura autorizada. Não atualiza por cima da assinatura anterior. Guarde seus dados fora do app antes de desinstalar qualquer versão.**
 
+**Publicação conferida:** [execução 34967499166](https://github.com/Enzo-cyber2025/5/actions/runs/34967499166), PASS. A CI verificou a assinatura, os dois jobs aprovados e baixou o APK público sem autenticação, comparando seus bytes ao arquivo testado. Tamanho e SHA-256 do asset também foram conferidos pela API do GitHub.
+
 ## A regra agora é uma transação, não uma tentativa posterior
 
 Ao selecionar **exatamente dois arquivos juntos** no importador de modelos:
