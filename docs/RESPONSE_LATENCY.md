@@ -57,3 +57,18 @@ desinstale o app do celular sem proteger os dados. O teste mantém o APK baselin
 original intacto, verifica a recusa de atualização pelo Android e a preservação
 dos arquivos após a recusa, e só então reinstala no emulador descartável.
 Não equivale a migração ou atualização preservando dados no aparelho real.
+
+## Compilação corrigida e teste atual
+
+- Código: `ce0118db8646f1523d11725a8c5c29b6e88230f2`.
+- APK candidato: `eabd016935ac51cdd89063a97fbc1b562f7f9261981f54b5191d37734e7922eb`.
+- Compilação `35013826315`, job `104532130205`: compilação das duas ISAs,
+  regressões e DEX/JVM passaram; testes Android amplos ainda em andamento.
+- Comparação `35014529821` falhou ANTES da inferência: o InputMethodManager ainda
+  não havia registrado o IME de teste durante o desbloqueio inicial do emulador.
+  O teste agora acorda/desbloqueia e espera o ID efetivamente publicado pelo sistema.
+- Nova comparação `35015163610`, job `104536648582`, em andamento. **Sem ganho aprovado.**
+- Testes locais direcionados: 19 passaram, 1 depende de javac local indisponível.
+  O IME separado compilou no CI; não integra o APK distribuído.
+- Os 1.158 arquivos arquivados antes de restaurar o checkout foram conferidos:
+  todos os blobs já existiam no histórico Git, sem alteração local inédita perdida.

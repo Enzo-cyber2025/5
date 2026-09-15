@@ -1,3 +1,21 @@
+# Otimização de latência — em validação
+
+O candidato atual com cache de texto/imagens ainda **não está aprovado para entrega**.
+O experimento anterior de lotes maiores foi rejeitado por alterar a resposta;
+o código voltou aos lotes 128/32, sem reduzir pesos, quantização ou limites escolhidos.
+
+**Assinatura:** a restauração do ambiente não recuperou a chave privada anterior.
+A substituição previamente autorizada usa outro certificado: não permite atualizar
+por cima dos APKs anteriores. Não desinstale o aplicativo sem proteger seus dados.
+
+[Estado e limites dos testes](docs/RESPONSE_LATENCY.md).
+Último APK entregue (b814, antes deste trabalho):
+[APK com tokens/s](https://raw.githubusercontent.com/Enzo-cyber2025/5/9a5e656031aa413fb661c16c975cea42d3e49cc0/.delivery/GGUF-Chat-mobile.apk).
+Naquela medição não houve ganho de velocidade comprovado.
+
+---
+## Histórico de entregas (assinaturas e instruções abaixo pertencem à respectiva versão)
+
 # GGUF Chat — um botão de importação, seleção múltipla
 
 ## [Baixar APK — sem ZIP](https://github.com/Enzo-cyber2025/5/releases/download/gguf-import-ui-368f85e/GGUF-Chat-mobile.apk)
