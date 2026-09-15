@@ -150,6 +150,7 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
             auto vp=mtmd_context_params_default(); vp.use_gpu=layers!=0; vp.n_threads=cp.n_threads; vp.print_timings=false; vp.warmup=false; vp.device=layers!=0?vulkan_devices[0]:nullptr;
             e->projector=mtmd_init_from_file(projector_path.c_str(),e->model,vp);
             if(!e->projector) throw std::runtime_error("mmproj incompatível com o GGUF ou memória insuficiente");
+            if(!mtmd_support_vision(e->projector)) throw std::runtime_error("O projetor carregado não oferece visão; modelo não aprovado como multimodal visual");
             if(projector_path==model_path) LOG("GGUF_SINGLE_FILE_LOADED same_path=1");
             LOG("GGUF_PROJECTOR_LOADED vision=%d audio=%d",mtmd_support_vision(e->projector),mtmd_support_audio(e->projector));
         }

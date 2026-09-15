@@ -117,6 +117,7 @@ public final class GgufFile {
         if(flag("clip.has_audio_encoder"))return "AUDIO_DECLARED_UNSUPPORTED";
         for(String k:metadata.keySet())if(k.contains("vision")||k.contains("image_token")||k.contains("projector"))return "MULTIMODAL_DECLARED_INCOMPLETE";
         for(String n:tensors.keySet())if(mediaTensor(n)||n.contains("vision")||n.contains("visual"))return "MULTIMODAL_LAYOUT_UNSUPPORTED";
+        if(!language())return "UNKNOWN_MODEL";
         return imageTokens?"IMAGE_TOKENS_ONLY":"TEXT_ONLY";
     }
     private static void u32(DataOutput out,int n) throws IOException{out.writeInt(Integer.reverseBytes(n));}
@@ -129,7 +130,7 @@ public final class GgufFile {
     public static GgufFile merge(File language,File projector,File output) throws IOException {
         GgufFile a=read(language),b=read(projector);
         if(!a.language()||a.visionWeights()||!b.projector())throw bad("selecione linguagem + projetor de visão com parâmetros e tensores reais");
-        if(a.number(a.text("general.architecture")+".embedding_length")!=b.number("clip.vision.projection_dim"))throw bad("dimensão do projetor incompatível com o modelo");
+        if(a.number(a.text("general.architecture")+".embedding_length")<=0||b.number("clip.vision.projection_dim")<=0||a.number(a.text("general.architecture")+".embedding_length")!=b.number("clip.vision.projection_dim"))throw bad("dimensão do projetor incompatível com o modelo");
         for(String n:b.tensors.keySet())if(!mediaTensor(n)||a.tensors.containsKey(n))throw bad("tensor do projetor incompatível/duplicado: "+n);
         LinkedHashMap<String,KV> kv=new LinkedHashMap<>(a.metadata);kv.remove("general.alignment");
         for(Map.Entry<String,KV> e:b.metadata.entrySet()) {
@@ -153,8 +154,28 @@ public final class GgufFile {
             for(Tensor t:all){string(out,t.name);u32(out,t.dims.length);for(long d:t.dims)u64(out,d);u32(out,t.type);u64(out,offset);offset=align(add(offset,t.bytes),alignment);}
             long data=align(out.getFilePointer(),alignment);out.setLength(add(data,offset));out.seek(data);offset=0;
             for(Tensor t:all){boolean fromA=a.tensors.containsKey(t.name);out.seek(add(data,offset));copy(fromA?fa:fb,out,add(fromA?a.dataOffset:b.dataOffset,t.offset),t.bytes,buffer);offset=align(add(offset,t.bytes),alignment);}
-            out.getFD().sync();GgufFile merged=read(output);if(!merged.singleVision())throw bad("unificação não contém visão + linguagem");complete=true;return merged;
+            out.getFD().sync();GgufFile merged=read(output);if(!merged.singleVision())throw bad("unificação não contém visão + linguagem");verifyPayload(a,b,merged);complete=true;return merged;
         } finally {if(!complete)output.delete();}
+    }
+    /** Independent reread: exact tensor types, shapes AND every payload byte. */
+    public static void verifyPayload(GgufFile a,GgufFile b,GgufFile output) throws IOException {
+        if(output.tensors.size()!=a.tensors.size()+b.tensors.size())throw bad("contagem de tensores alterada");
+        byte[] x=new byte[128*1024],y=new byte[x.length];
+        try(RandomAccessFile result=new RandomAccessFile(output.file,"r")) {
+            for(GgufFile source:Arrays.asList(a,b))try(RandomAccessFile input=new RandomAccessFile(source.file,"r")) {
+                for(Tensor t:source.tensors.values()) {
+                    Tensor v=output.tensors.get(t.name);
+                    if(v==null||v.type!=t.type||v.bytes!=t.bytes||!Arrays.equals(v.dims,t.dims))throw bad("tensor alterado: "+t.name);
+                    input.seek(add(source.dataOffset,t.offset));result.seek(add(output.dataOffset,v.offset));
+                    for(long left=t.bytes;left>0;) {
+                        if(Thread.currentThread().isInterrupted())throw new InterruptedIOException("Validação cancelada");
+                        int n=(int)Math.min(left,x.length);input.readFully(x,0,n);result.readFully(y,0,n);
+                        for(int i=0;i<n;i++)if(x[i]!=y[i])throw bad("bytes alterados: "+t.name);
+                        left-=n;
+                    }
+                }
+            }
+        }
     }
     public static void main(String[] args) throws Exception {
         GgufFile g=args.length==3?merge(new File(args[0]),new File(args[1]),new File(args[2])):read(new File(args[0]));

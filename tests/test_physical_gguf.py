@@ -134,8 +134,8 @@ def test_dual_vision_audio_projector_and_complete_gguf(java,tmp_path):
 
 
 def test_unknown_layout_is_not_assumed_to_be_a_second_language():
-    source=(ROOT/'apk-fix/java/com/ggufchat/app/Pairing.java').read_text()
-    assert 'GgufFile.read(new File(field(item,"path"))).pairingRole()' in source
+    source=(ROOT/'apk-fix/java/com/ggufchat/app/AtomicPairImport.java').read_text()
+    assert 'a.pairingRole(),br=b.pairingRole()' in source
     parser=JAVA.read_text()
     assert 'if(language()&&!visionWeights())return "language";' in parser
     assert 'componente não reconhecido como linguagem ou projetor compatível' in parser

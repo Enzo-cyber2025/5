@@ -19,7 +19,7 @@ def test_pairing_single_record_migration_selection_delete_and_eye(tmp_path):
 public class Context { public File root; public Context(File r){root=r;} public File getFilesDir(){return root;}
 public ContentResolver getContentResolver(){return new ContentResolver();} }''',
         'android/content/ContentResolver.java': '''package android.content; import android.net.Uri; import android.database.Cursor;
-public class ContentResolver { public Cursor query(Uri u,String[] p,String a,String[] b,String c){return new Cursor(u.name);} }''',
+public class ContentResolver { public java.io.InputStream openInputStream(Uri u) throws java.io.IOException {return new java.io.FileInputStream(u.name);} public Cursor query(Uri u,String[] p,String a,String[] b,String c){return new Cursor(u.name);} }''',
         'android/net/Uri.java': '''package android.net; public class Uri {public String name;public Uri(String n){name=n;}}''',
         'android/database/Cursor.java': '''package android.database; public class Cursor implements AutoCloseable {
 String name;public Cursor(String n){name=n;}public boolean moveToFirst(){return true;}public String getString(int n){return name;}public void close(){}}''',
@@ -32,10 +32,10 @@ public static int e(String a,String b,Throwable t){return 0;} public static int 
 public String id,name,fileName,path,mmprojPath,architecture;public long size,importedAt;public boolean multimodal;
 public ModelInfo copy() {ModelInfo n=new ModelInfo();n.id=id;n.name=name;n.fileName=fileName;n.path=path;n.mmprojPath=mmprojPath;n.architecture=architecture;n.size=size;n.importedAt=importedAt;n.multimodal=multimodal;return n;}}''',
         'com/ggufchat/app/ModelStore.java': '''package com.ggufchat.app;import android.content.Context;import java.util.*;
-public class ModelStore {private static final Object LOCK=new Object();public static ArrayList<ModelInfo> data=new ArrayList<>();
+public class ModelStore {private static final Object LOCK=new Object();public static boolean failSave=false;public static ArrayList<ModelInfo> data=new ArrayList<>();
 public static ArrayList<ModelInfo> loadRecords(Context c){ArrayList<ModelInfo> copy=new ArrayList<>();for(ModelInfo m:data)copy.add(m.copy());return copy;}
 public static ArrayList<?> load(Context c){return Pairing.loadUnified(c);}
-public static void save(Context c,ArrayList<ModelInfo> m){data=new ArrayList<>();for(ModelInfo n:m)data.add(n.copy());}}''',
+public static void save(Context c,ArrayList<ModelInfo> m){if(failSave)throw new IllegalStateException("disk failure");data=new ArrayList<>();for(ModelInfo n:m)data.add(n.copy());}}''',
         'android/app/Activity.java': 'package android.app;import android.content.Context;public class Activity extends Context {public Activity(){super(null);}public void runOnUiThread(Runnable r){r.run();}}',
         'org/json/JSONObject.java': 'package org.json;public class JSONObject {public String optString(String k,String d){return d;}public JSONObject put(String k,Object v){return this;}}',
         'UnitTest.java': r'''import com.ggufchat.app.*;import android.content.Context;import android.net.Uri;import java.io.*;import java.nio.file.*;import java.util.*;
@@ -52,22 +52,43 @@ ArrayList<?> list=Pairing.loadUnified(c);assert list.size()==1;assert ModelStore
 assert ((ModelInfo)list.get(0)).size==original.size+oldProj.size;
 ModelInfo text=model(c,"text","mmproj-misleading.gguf",false);ModelStore.data.add(text);
 assert !text.multimodal;assert !Pairing.displayName(text).contains("\uD83D\uDC41");
-ArrayList<Uri> selection=uris("mmproj-language.gguf","ordinary.gguf");Pairing.begin(c,selection);
-ModelInfo newer=model(c,"new","mmproj-language.gguf",false),proj=model(c,"new-p","ordinary.gguf",true);ModelStore.data.add(newer);ModelStore.data.add(proj);
-Pairing.linkSelected(c,selection);waitMerge();assert ModelStore.data.size()==3;
-ModelInfo unit=ModelStore.data.get(2);assert unit.path.equals(unit.mmprojPath);assert unit.size==new File(unit.path).length();assert unit.multimodal;
+int before=ModelStore.data.size();
+ArrayList<Uri> selection=uris(new File(fixtures,"vision.gguf").getPath(),new File(fixtures,"language.gguf").getPath());
+assert AtomicPairImport.start(c,selection);waitMerge();assert ModelStore.data.size()==before+1;
+ModelInfo unit=ModelStore.data.get(before);assert unit.path.equals(unit.mmprojPath);assert unit.size==new File(unit.path).length();assert unit.multimodal;
 assert GgufFile.read(new File(unit.path)).singleVision();assert Pairing.displayName(unit).contains("\uD83D\uDC41");
-assert !new File(newer.path).exists()&&!new File(proj.path).exists();
-assert ModelStore.data.get(0).mmprojPath.equals(oldProj.path);
-Pairing.loadUnified(c);assert ModelStore.data.get(2).size==unit.size; // self path counted once
-Pairing.removeUnified(c,"new");assert !new File(unit.path).exists();assert new File(original.path).exists()&&new File(oldProj.path).exists();
-ArrayList<Uri> invalid=uris("a.gguf","b.gguf");Pairing.begin(c,invalid);ModelStore.data.add(model(c,"a","a.gguf",false));ModelStore.data.add(model(c,"b","b.gguf",false));Pairing.linkSelected(c,invalid);waitMerge();assert ModelStore.data.size()==4;
-System.out.println("Physical single file, parameter detection, misleading filenames, persistence, legacy preservation, deletion and invalid selection: PASS");
-}}'''
+assert new File(c.getFilesDir(),"pair-import-staging").list().length==0;
+assert Native.loads==1&&Native.destroys==1;
+Pairing.loadUnified(c);assert ModelStore.data.get(before).size==unit.size;
+Pairing.removeUnified(c,unit.id);assert !new File(unit.path).exists();assert new File(original.path).exists()&&new File(oldProj.path).exists();
+assert ModelStore.data.size()==before;
+// No partial index entries: bad role, missing second input, native rejection, disk failure.
+ArrayList<Uri> invalid=uris(new File(fixtures,"language.gguf").getPath(),new File(fixtures,"language.gguf").getPath());
+AtomicPairImport.start(c,invalid);waitMerge();assert ModelStore.data.size()==before;
+AtomicPairImport.start(c,uris(new File(fixtures,"language.gguf").getPath(),"/nonexistent-second-input"));waitMerge();assert ModelStore.data.size()==before;
+Native.reject=true;AtomicPairImport.start(c,selection);waitMerge();Native.reject=false;assert ModelStore.data.size()==before;
+ModelStore.failSave=true;AtomicPairImport.start(c,selection);waitMerge();ModelStore.failSave=false;assert ModelStore.data.size()==before;
+assert new File(c.getFilesDir(),"pair-import-staging").list().length==0;
+assert new File(c.getFilesDir(),"models").list().length==3; // unrelated legacy pair + text, no rejected output
+// Single, external, already unified GGUF is inspected intrinsically.
+ModelInfo complete=model(c,"complete","external.gguf",false);
+Files.copy(new File(fixtures,"complete.gguf").toPath(),Paths.get(complete.path),StandardCopyOption.REPLACE_EXISTING);
+Pairing.inspect(complete);assert complete.multimodal&&complete.path.equals(complete.mmprojPath);
+text.mmprojPath=text.path;text.multimodal=true;assert !Pairing.isUnified(text);Pairing.inspect(text);assert !text.multimodal&&text.mmprojPath==null;
+// Simulated process death between file rename and durable index publication.
+String orphan=UUID.randomUUID().toString();File stage=new File(c.getFilesDir(),"pair-import-staging/"+orphan);stage.mkdirs();
+File orphanOutput=new File(c.getFilesDir(),"models/"+orphan+"-unified.gguf");Files.write(orphanOutput.toPath(),new byte[]{1});
+Pairing.loadUnified(c);assert !stage.exists()&&!orphanOutput.exists();assert new File(original.path).exists();
+System.out.println("ATOMIC_PAIR_HOST_PASS: exact one output, rejected pairs rollback, native gate, save failure, intrinsic recognition, crash recovery");
+}}
+'''
     }
+    sources['android/app/AlertDialog.java']='package android.app;import android.content.Context;public class AlertDialog {public static class Builder {public Builder(Context c){}public Builder setTitle(String x){return this;}public Builder setMessage(String x){return this;}public Builder setPositiveButton(String x,Object y){return this;}public void show(){}}}'
+    sources['com/ggufchat/app/Native.java']='package com.ggufchat.app;public class Native {public static boolean reject=false;public static int loads=0,destroys=0;public static long create(String a,String b,int c,int d,int e,boolean f){assert a.equals(b)&&e==0;loads++;return reject?0:1;}public static void destroy(long h){destroys++;}public static String lastError(long h){return "deliberate native test rejection";}}'
+    sources['com/ggufchat/app/AtomicPairImport.java']=(ROOT/'apk-fix/java/com/ggufchat/app/AtomicPairImport.java').read_text()
     sources['com/ggufchat/app/ModelInfo.java']=sources['com/ggufchat/app/ModelInfo.java'].replace('public String id,','public String capability,id,').replace('n.id=id;','n.capability=capability;n.id=id;')
     from test_physical_gguf import fixture
-    fixture(tmp_path/'language.gguf');fixture(tmp_path/'vision.gguf','projector')
+    fixture(tmp_path/'language.gguf');fixture(tmp_path/'vision.gguf','projector');fixture(tmp_path/'complete.gguf','complete')
     for name,source in sources.items():
         p=tmp_path/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_text(source)
     pair=tmp_path/'com/ggufchat/app/Pairing.java'

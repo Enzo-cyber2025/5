@@ -31,16 +31,12 @@ def ui_patches(app):
     assert s.count(marker)==1
     s=s.replace(marker,'    invoke-static {p0, v2, v1, v4, v0}, Lcom/ggufchat/app/CompactUi;->install(Landroid/app/Activity;Landroid/widget/LinearLayout;Landroid/widget/LinearLayout;Landroid/widget/Button;Landroid/widget/Button;)V\n\n'+marker)
     p.write_text(s)
-    # Link precisely the selection and remove the old global guesser.
-    p=app/'MainActivity$26.smali';s=p.read_text();marker='    invoke-static {v0}, Lcom/ggufchat/app/MainActivity;->access$1900(Lcom/ggufchat/app/MainActivity;)V'
-    assert s.count(marker)==1
-    s=s.replace(marker,'    invoke-static {v0, v1}, Lcom/ggufchat/app/Pairing;->linkSelected(Landroid/content/Context;Ljava/util/ArrayList;)V\n\n'+marker);p.write_text(s)
     p=app/'MainActivity.smali';s=p.read_text();a=s.index('.method private navButton(');b=s.index('.end method',a);s=s[:a]+s[a:b].replace('    return-object v0','    invoke-static {v0}, Lcom/ggufchat/app/CompactUi;->style(Landroid/widget/Button;)V\n    return-object v0')+s[b:];s=method_replace(s,'.method private linkMmprojs()V','.method private linkMmprojs()V\n    .locals 0\n    invoke-direct {p0}, Lcom/ggufchat/app/MainActivity;->refreshModels()V\n    return-void\n.end method');p.write_text(s)
     p=app/'MainActivity.smali';s=p.read_text()
     a=s.index('.method protected onActivityResult(');b=s.index('.end method',a)
     part=s[a:b];marker='    invoke-direct {p0, v1, v2}, Lcom/ggufchat/app/MainActivity;->importModel(Landroid/net/Uri;Ljava/lang/Runnable;)V'
     assert part.count(marker)==1
-    part=part.replace(marker,'    invoke-static {p0, v0}, Lcom/ggufchat/app/Pairing;->begin(Landroid/content/Context;Ljava/util/ArrayList;)V\n'+marker)
+    part=part.replace(marker,'    invoke-static {p0, v0}, Lcom/ggufchat/app/AtomicPairImport;->start(Landroid/content/Context;Ljava/util/ArrayList;)Z\n    move-result v3\n    if-eqz v3, :not_atomic_pair\n    return-void\n    :not_atomic_pair\n'+marker)
     s=s[:a]+part+s[b:]
     a=s.index('.method private refreshImportList()V');b=s.index('.end method',a)
     part=s[a:b];marker='    move-result-object v1'

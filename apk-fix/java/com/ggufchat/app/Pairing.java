@@ -14,24 +14,16 @@ import java.util.*;
 /** Selected-pair transaction: rewrite metadata/tensor tables into one physical GGUF.
  * Legacy pairs remain readable; new imports are inspected on their worker. */
 public final class Pairing {
-    private static volatile boolean active;
-    public static boolean merging(){return active;}
-    private static final Map<Context,Set<String>> beforeImport = new WeakHashMap<>();
-    public static void begin(Context context,ArrayList<Uri> uris) {
-        synchronized(beforeImport) { beforeImport.remove(context); }
-        if(uris.size()!=2) return;
-        active=true;
-        try {
-            Class<?> store=Class.forName("com.ggufchat.app.ModelStore");
-            ArrayList<?> models=(ArrayList<?>)store.getMethod("load",Context.class).invoke(null,context);
-            Set<String> ids=new HashSet<>();
-            for(Object model:models) ids.add(field(model,"id"));
-            synchronized(beforeImport) { beforeImport.put(context,ids); }
-        } catch(Exception e) { active=false;Log.e("GGUFPairing","Cannot start selected-pair transaction",e); }
-    }
+    public static boolean merging(){return AtomicPairImport.active();}
     /** One library record owns both private files; no standalone projector entry. */
     public static boolean isUnified(Object model) {
-        try { return !field(model,"mmprojPath").isEmpty(); }
+        try {
+            String path=field(model,"path"),proj=field(model,"mmprojPath");
+            if(path.isEmpty()||proj.isEmpty())return false;
+            if(path.equals(proj))return "VISION_SINGLE_GGUF".equals(field(model,"capability"));
+            // Preserve explicitly labelled legacy pairs; never call them one physical file.
+            return new File(path).isFile()&&new File(proj).isFile();
+        }
         catch(Exception e) { return false; }
     }
     public static ArrayList<Object> visibleModels(ArrayList<?> models) {
@@ -48,20 +40,21 @@ public final class Pairing {
                     +(isUnified(model)?(field(model,"path").equals(field(model,"mmprojPath"))?" · GGUF único · visão":" · par legado (2 arquivos)"):" · "+description(field(model,"capability"))); }
         catch(Exception e) { return "Modelo"; }
     }
-    private static Class<?> store() throws Exception { return Class.forName("com.ggufchat.app.ModelStore"); }
-    private static Object lock() throws Exception {
+    static Class<?> store() throws Exception { return Class.forName("com.ggufchat.app.ModelStore"); }
+    static Object lock() throws Exception {
         Field f=store().getDeclaredField("LOCK");f.setAccessible(true);return f.get(null);
     }
-    private static ArrayList<?> raw(Context c) throws Exception {
+    static ArrayList<?> raw(Context c) throws Exception {
         return (ArrayList<?>)store().getMethod("loadRecords",Context.class).invoke(null,c);
     }
-    private static void save(Context c,ArrayList<?> models) throws Exception {
+    static void save(Context c,ArrayList<?> models) throws Exception {
         store().getMethod("save",Context.class,ArrayList.class).invoke(null,c,models);
     }
     /** Upgrade old paired records without moving bytes or breaking existing chats. */
     public static ArrayList<?> loadUnified(Context c) {
         try { synchronized(lock()) {
             ArrayList<?> all=raw(c);
+            AtomicPairImport.recover(c,all);
             ArrayList<Object> units=visibleModels(all);
             boolean changed=units.size()!=all.size();
             for(Object m:units) {
@@ -105,12 +98,13 @@ public final class Pairing {
             }
         }} catch(Exception e) { throw new IllegalStateException("Falha ao excluir modelo unificado",e); }
     }
-    private static String field(Object o,String n) throws Exception {
+    static String field(Object o,String n) throws Exception {
         Object v=o.getClass().getField(n).get(o); return v==null || "null".equals(v.toString())?"":v.toString();
     }
     /** Invoked on the import worker BEFORE ModelStore.add. */
     public static void inspect(Object model) throws Exception {
         GgufFile g=GgufFile.read(new File(field(model,"path")));
+        if(g.singleVision())AtomicPairImport.validate(g.file);
         model.getClass().getField("architecture").set(model,g.text("general.architecture"));
         model.getClass().getField("capability").set(model,g.capability());
         model.getClass().getField("multimodal").setBoolean(model,g.singleVision());
@@ -126,66 +120,15 @@ public final class Pairing {
         if(cap.equals("IMAGE_TOKENS_ONLY"))return "tokens de imagem, sem pesos de visão";
         if(cap.equals("MULTIMODAL_DECLARED_INCOMPLETE"))return "parâmetros multimodais incompletos";
         if(cap.equals("VISION_PROJECTOR"))return "projetor de visão, sem linguagem";
+        if(cap.equals("UNKNOWN_MODEL"))return "estrutura de linguagem não reconhecida";
         if(cap.equals("NOT_INSPECTED"))return "não analisado; reimporte";
         return "layout multimodal não suportado";
     }
-    private static void notify(Context c,String message) {
+    static void notify(Context c,String message) {
         Runnable r=()->{Toast.makeText(c,message,Toast.LENGTH_LONG).show();try{
             java.lang.reflect.Method refresh=c.getClass().getDeclaredMethod("refreshModels");refresh.setAccessible(true);refresh.invoke(c);
             refresh=c.getClass().getDeclaredMethod("refreshImportList");refresh.setAccessible(true);refresh.invoke(c);
         }catch(Exception e){Log.e("GGUFPairing","UI refresh",e);}};
         if(c instanceof Activity)((Activity)c).runOnUiThread(r);else r.run();
-    }
-    public static void linkSelected(Context context,ArrayList<Uri> uris) {
-        Set<String> previous;
-        synchronized(beforeImport){previous=beforeImport.remove(context);}
-        if(uris.size()!=2)return;
-        if(previous==null){active=false;notify(context,"Seleção inicial indisponível; arquivos não foram unificados.");return;}
-        notify(context,"Unificando metadados e tensores em um único GGUF. Aguarde.");
-        new Thread(()->{
-            File merged=null; boolean saved=false;
-            try {
-                Set<String> names=new HashSet<>();
-                for(Uri uri:uris)try(Cursor c=context.getContentResolver().query(uri,new String[]{OpenableColumns.DISPLAY_NAME},null,null,null)){
-                    if(c!=null&&c.moveToFirst())names.add(c.getString(0));
-                }
-                if(names.size()!=2)throw new IllegalArgumentException("Seleção deve conter dois arquivos identificáveis");
-                Object model=null,projector=null;
-                synchronized(lock()) {
-                    for(Object item:raw(context)) {
-                        if(previous.contains(field(item,"id"))||!names.contains(field(item,"fileName")))continue;
-                        String role=GgufFile.read(new File(field(item,"path"))).pairingRole();
-                        if("projector".equals(role)){if(projector!=null)throw new IllegalArgumentException("Dois projetores selecionados");projector=item;}
-                        else {if(model!=null)throw new IllegalArgumentException("Dois modelos de linguagem selecionados");model=item;}
-                    }
-                }
-                if(model==null||projector==null)throw new IllegalArgumentException("Selecione linguagem + projetor de visão; identificação por parâmetros/tensores, não nome");
-                File languageFile=new File(field(model,"path")),projectorFile=new File(field(projector,"path"));
-                String root=new File(context.getFilesDir(),"models").getCanonicalPath()+File.separator;
-                if(!languageFile.getCanonicalPath().startsWith(root)||!projectorFile.getCanonicalPath().startsWith(root))throw new IllegalArgumentException("Componentes fora da pasta privada");
-                merged=new File(context.getFilesDir(),"models/"+UUID.randomUUID()+"-unified.gguf");
-                GgufFile g=GgufFile.merge(languageFile,projectorFile,merged); // streaming, NOT holding store/UI lock
-                synchronized(lock()) {
-                    ArrayList<Object> units=new ArrayList<Object>(raw(context));Object live=null,liveProj=null;
-                    for(Object item:units){if(field(item,"id").equals(field(model,"id"))&&field(item,"path").equals(languageFile.getPath()))live=item;
-                        if(field(item,"id").equals(field(projector,"id"))&&field(item,"path").equals(projectorFile.getPath()))liveProj=item;}
-                    if(live==null||liveProj==null)throw new IllegalStateException("Modelos removidos/alterados durante unificação; resultado descartado");
-                    live.getClass().getField("path").set(live,merged.getAbsolutePath());
-                    live.getClass().getField("mmprojPath").set(live,merged.getAbsolutePath());
-                    live.getClass().getField("size").setLong(live,merged.length());
-                    live.getClass().getField("multimodal").setBoolean(live,true);
-                    live.getClass().getField("capability").set(live,g.capability());
-                    units.remove(liveProj);save(context,units);
-                    for(Object item:raw(context))if(field(item,"id").equals(field(live,"id"))&&field(item,"path").equals(merged.getAbsolutePath()))saved=true;
-                    if(!saved)throw new IllegalStateException("Falha ao persistir unificação; originais preservados");
-                    // Delete originals only after the new record is durable, and only if unreferenced.
-                    Set<String> keep=new HashSet<>();for(Object item:units){keep.add(field(item,"path"));keep.add(field(item,"mmprojPath"));}
-                    for(File f:Arrays.asList(languageFile,projectorFile))if(!keep.contains(f.getPath())&&!f.delete())Log.e("GGUFPairing","Original privado não removido após unificação");
-                }
-                Log.i("GGUFPairing","GGUF_PHYSICAL_UNIFICATION_OK tensors="+g.tensors.size()+" bytes="+merged.length());
-                notify(context,"Salvo: um único arquivo GGUF com linguagem e visão. Compatibilidade final verificada pelo motor.");
-            }catch(Exception e){Log.e("GGUFPairing","Physical merge failed",e);notify(context,"Não foi possível unificar: "+e.getMessage()+". Originais preservados.");}
-            finally{active=false;if(merged!=null&&!saved)merged.delete();}
-        },"GGUF-physical-unification").start();
     }
 }
