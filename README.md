@@ -2,7 +2,7 @@
 
 **Assinatura diferente da versão anterior. O Android não permite atualizar por cima dela. Não desinstale o app sem proteger seus dados.**
 
-## [Baixar APK — sem ZIP](https://raw.githubusercontent.com/Enzo-cyber2025/5/ad36ee46aebc13cdccc01777f6fd8d4cf9a27023/.delivery/GGUF-Chat-mobile.apk)
+## [Baixar APK — sem ZIP](https://raw.githubusercontent.com/Enzo-cyber2025/5/c5035bafcee844337dcedb033ae8671a813f5b91/.delivery/GGUF-Chat-mobile.apk)
 
 28.370.376 bytes · Android 9+ · ARM64/x86_64 · modelos não incluídos.
 
