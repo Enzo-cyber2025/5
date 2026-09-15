@@ -1,0 +1,14 @@
+09-15 17:23:47.451   570   596 W system_server: Long monitor contention with owner ActivityManager (605) at void com.android.server.power.PowerManagerService.acquireWakeLockInternal(android.os.IBinder, int, int, java.lang.String, java.lang.String, android.os.WorkSource, java.lang.String, int, int, android.os.IWakeLockCallback)(PowerManagerService.java:1681) waiters=1 in void com.android.server.power.PowerManagerService.setScreenBrightnessOverrideFromWindowManagerInternal(float) for 173ms
+09-15 17:23:47.451   570  1978 W system_server: Long monitor contention with owner ActivityManager (605) at void com.android.server.power.PowerManagerService.acquireWakeLockInternal(android.os.IBinder, int, int, java.lang.String, java.lang.String, android.os.WorkSource, java.lang.String, int, int, android.os.IWakeLockCallback)(PowerManagerService.java:1681) waiters=2 in void com.android.server.power.PowerManagerService.acquireWakeLockInternal(android.os.IBinder, int, int, java.lang.String, java.lang.String, android.os.WorkSource, java.lang.String, int, int, android.os.IWakeLockCallback) for 170ms
+09-15 17:23:47.468 10550 11207 I GGUFSystem: GGUF_SYSTEM_PROMPT_APPLIED scope=global chars=107 sha256=dde45e87ea07db0b49bcddd022d4f41a452610560d9af636571c26d16a4bcd04
+09-15 17:23:47.816 10550 11207 I GGUFInference: GGUF_CONTENT_PREPARED files=1 images=1 text_chars=0
+09-15 17:23:48.848   570  1043 I PowerManagerService: Going to sleep due to sleep_button (uid 1000, screenOffTimeout=2147483647, activityTimeoutWM=-1, maxDimRatio=0.20000005, maxDimDur=7000)...
+09-15 17:23:49.217   570   624 I PowerManagerService: Sleeping (uid 1000)...
+09-15 17:23:49.228   570   570 I PowerManagerService: onFlip(): Face up.
+09-15 17:23:55.488 10550 11207 I GGUFChatNative: GGUF_IMAGE_EVALUATED tokens=64 backend=CPU
+09-15 17:24:01.615 10550 11207 I GGUFChatNative: GGUF_IMAGE_EVALUATED tokens=64 backend=CPU
+09-15 17:24:07.385 10550 11207 I GGUFChatNative: GGUF_IMAGE_EVALUATED tokens=64 backend=CPU
+09-15 17:24:08.192 10550 11207 I GGUFChatNative: GGUF_MEDIA_PREFILL images=1 tokens=380 positions=380
+09-15 17:24:08.245 10550 11207 I GGUFChatNative: GGUF_NATIVE_COMPLETE tokens=2 reason=eog projector=1
+09-15 17:24:08.245 10550 11207 I GGUFChatNative: GGUF_GENERATION_STATS tokens=2 decode_ns=52124955 prefill_ns=20376454892 callbacks=2 success=1
+09-15 17:24:08.245 10550 11207 I System.out: GGUF_REPAIR_GENERATION_OK
