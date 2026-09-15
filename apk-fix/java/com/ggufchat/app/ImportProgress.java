@@ -63,6 +63,7 @@ public final class ImportProgress {
                 int bucket=pct<0?-1:pct/5;
                 if(bucket!=row.logged||complete&&!row.loggedComplete) {
                     Log.i("GGUFProgress","GGUF_IMPORT_PROGRESS stage="+key+" percent="+pct+" done="+done+" total="+total+" complete="+complete);
+                    ComputeService.progress(row.label,pct);
                     row.logged=bucket;row.loggedComplete=complete;
                 }
                 schedule();

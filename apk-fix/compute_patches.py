@@ -19,3 +19,8 @@ def patch_compute(app):
     p.write_text(s)
     p=app/'App.smali';s=p.read_text();old='    invoke-super {p0}, Landroid/app/Application;->onCreate()V';assert s.count(old)==1
     p.write_text(s.replace(old,old+'\n    invoke-static {p0}, Lcom/ggufchat/app/UiLifecycle;->install(Landroid/app/Application;)V'))
+
+    p=app/'Ui.smali';s=p.read_text();a=s.index('.method public static tv(');b=s.index('.end method',a)
+    part=s[a:b];old='    return-object v0';assert part.count(old)==1
+    part=part.replace(old,'    invoke-static {v0}, Lcom/ggufchat/app/LineIcon;->label(Landroid/widget/TextView;)V\n'+old)
+    p.write_text(s[:a]+part+s[b:])

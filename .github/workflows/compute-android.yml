@@ -1,0 +1,82 @@
+name: Signed screen-off AI and actual memory regression
+on:
+  push:
+    branches: [arena/01a09b42-5]
+    paths: [ci/compute-candidate.json, .github/workflows/compute-android.yml, scripts/test_compute_android.py]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  test:
+    if: ${{ contains(github.event.head_commit.message, '[compute candidate]') }}
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [small, gemma]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Exact signed candidate and upstream tensor reader
+        run: |
+          python3 - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          c=json.load(open('ci/compute-candidate.json'));m=json.load(open('.delivery/mobile-signed.json'))
+          assert c['apk_sha256']==m['apk_sha256']==hashlib.sha256(Path('.delivery/GGUF-Chat-mobile.apk').read_bytes()).hexdigest()
+          assert c['signer_sha256']==m['signer_sha256'] and c['source_commit']==m['source_commit']
+          PY
+          mkdir -p evidence
+          SIGNER=$(find "$ANDROID_HOME/build-tools" -path '*/apksigner' -type f | sort -V | tail -1)
+          "$SIGNER" verify --verbose --print-certs .delivery/GGUF-Chat-mobile.apk | tee evidence/physical-compute-signature.txt
+          CERT=$(python3 -c 'import json;print(json.load(open("ci/compute-candidate.json"))["signer_sha256"])')
+          grep "certificate SHA-256 digest: $CERT" evidence/physical-compute-signature.txt
+          python3 -m venv .venv
+          .venv/bin/pip install numpy==2.2.6 tqdm==4.67.1 pyyaml==6.0.2
+          git clone --depth 1 --branch v0.4.1 https://github.com/ggml-org/llama.cpp .cache/llama-mobile
+          test "$(git -C .cache/llama-mobile rev-parse HEAD)" = b29c606e28a01b1bc8c1351026a0fa6e616bf6c4
+      - name: Real public weights
+        env:
+          SUITE: ${{ matrix.suite }}
+        run: |
+          if [ "$SUITE" = gemma ]; then bash ci/gemma4-models.sh; else bash ci/mobile-models.sh; fi
+          sudo chmod a+rw /dev/kvm
+      - name: Disposable host swap for Gemma guest (not physical-phone RAM proof)
+        if: matrix.suite == 'gemma'
+        run: |
+          sudo fallocate -l 8G /mnt/gguf-compute-swap
+          sudo chmod 600 /mnt/gguf-compute-swap
+          sudo mkswap /mnt/gguf-compute-swap
+          sudo swapon /mnt/gguf-compute-swap
+      - uses: reactivecircus/android-emulator-runner@v2
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GGUF_TEST_APK: .delivery/GGUF-Chat-mobile.apk
+          GGUF_COMPUTE_GEMMA: ${{ matrix.suite == 'gemma' && '1' || '0' }}
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_5
+          ram-size: ${{ matrix.suite == 'gemma' && '8192M' || '4096M' }}
+          heap-size: 1024M
+          disk-size: ${{ matrix.suite == 'gemma' && '16384M' || '8192M' }}
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: .venv/bin/python scripts/test_compute_android.py
+      - name: Report
+        if: always()
+        run: python3 ci/report_android.py evidence
+      - name: Save real bounded evidence
+        if: always()
+        env:
+          SUITE: ${{ matrix.suite }}
+        run: GITHUB_RUN_ATTEMPT="${GITHUB_RUN_ATTEMPT}-${SUITE}" bash ci/publish_evidence.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screen-off-${{ matrix.suite }}
+          path: evidence/

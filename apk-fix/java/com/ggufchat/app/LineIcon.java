@@ -12,6 +12,9 @@ public final class LineIcon extends Drawable {
     private void line(Canvas c,float... xy){Path p=new Path();p.moveTo(xy[0],xy[1]);for(int i=2;i<xy.length;i+=2)p.lineTo(xy[i],xy[i+1]);c.drawPath(p,paint);}
     @Override public void draw(Canvas c){int save=c.save();Rect b=getBounds();c.translate(b.left,b.top);c.scale(b.width()/24f,b.height()/24f);
         switch(kind){
+            case "eye": {
+                Path eye=new Path();eye.moveTo(2,12);eye.cubicTo(7,3,17,3,22,12);eye.cubicTo(17,21,7,21,2,12);c.drawPath(eye,paint);c.drawCircle(12,12,3,paint);break;
+            }
             case "folder":line(c,3,7,3,20,21,20,21,7,12,7,10,4,3,4,3,7);break;
             case "chat":line(c,4,4,20,4,20,17,10,17,4,21,4,4);line(c,8,9,16,9);line(c,8,13,14,13);break;
             case "camera":line(c,3,7,7,7,9,4,15,4,17,7,21,7,21,20,3,20,3,7);c.drawCircle(12,13,4,paint);break;
@@ -28,6 +31,12 @@ public final class LineIcon extends Drawable {
     @Override public void setAlpha(int a){paint.setAlpha(a);invalidateSelf();}
     @Override public void setColorFilter(ColorFilter f){paint.setColorFilter(f);invalidateSelf();}
     @Override public int getOpacity(){return PixelFormat.TRANSLUCENT;}
+    public static void label(android.widget.TextView label){
+        String text=label.getText().toString();if(!(text.equals("Visão")||text.startsWith("Visão · ")))return;
+        int size=Math.round(17*label.getResources().getDisplayMetrics().density);
+        LineIcon icon=new LineIcon("eye");icon.setBounds(0,0,size,size);
+        label.setCompoundDrawablesRelative(icon,null,null,null);label.setCompoundDrawablePadding(size/3);
+    }
     public static void apply(Button b){
         String original=b.getText().toString();String desc=b.getContentDescription()==null?"":b.getContentDescription().toString();
         String hint=(original+" "+desc).toLowerCase(Locale.ROOT);String kind=null;

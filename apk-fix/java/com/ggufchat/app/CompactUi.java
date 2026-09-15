@@ -11,6 +11,8 @@ public final class CompactUi {
     private static int dp(View v, int n) { return Math.round(n * v.getResources().getDisplayMetrics().density); }
     public static void style(Button button) {
         button.setSingleLine(true);
+        button.setAllCaps(false);
+        button.setTypeface(android.graphics.Typeface.create("sans-serif-medium",android.graphics.Typeface.NORMAL));
         button.setMaxLines(1);
         button.setEllipsize(TextUtils.TruncateAt.END);
         button.setTextSize(11.5f);
@@ -24,6 +26,7 @@ public final class CompactUi {
         old.height = dp(button, 36);
         button.setLayoutParams(old);
         android.graphics.drawable.Drawable background=button.getBackground();
+        if(background instanceof android.graphics.drawable.GradientDrawable)((android.graphics.drawable.GradientDrawable)background.mutate()).setCornerRadius(dp(button,10));
         if(background!=null&&!(background instanceof android.graphics.drawable.InsetDrawable))
             button.setBackground(new android.graphics.drawable.InsetDrawable(background,0,dp(button,2),0,dp(button,2)));
         LineIcon.apply(button);

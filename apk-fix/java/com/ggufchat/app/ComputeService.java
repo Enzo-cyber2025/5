@@ -14,6 +14,8 @@ public final class ComputeService extends Service {
     private static final String CANCEL="com.ggufchat.app.CANCEL_IMPORT";
     private static final int ID=2002;
     private Thread worker;
+    private static volatile ComputeService current;
+    private long lastUpdate;
     private final Handler main=new Handler(Looper.getMainLooper());
     public static void submit(Context c,Runnable task) {
         synchronized(QUEUE){
@@ -22,7 +24,19 @@ public final class ComputeService extends Service {
             catch(RuntimeException e){QUEUE.remove(task);throw e;}
         }
     }
-    public static void startThread(Context c,Thread task){submit(c,task);}
+    public static void startThread(Context c,Thread task){
+        try{submit(c,task);}catch(RuntimeException e){
+            ImportProgress.singleFinished(c,false);
+            try{java.lang.reflect.Field f=c.getClass().getDeclaredField("progress");f.setAccessible(true);((android.app.Dialog)f.get(c)).dismiss();}catch(Exception ignored){}
+            Pairing.notify(c,"O Android não permitiu iniciar a importação: "+e.getMessage());
+        }
+    }
+    public static void progress(String message,int percent){
+        ComputeService service=current;if(service==null)return;
+        synchronized(service){long now=SystemClock.elapsedRealtime();if(now-service.lastUpdate<1000)return;service.lastUpdate=now;
+            try{service.getSystemService(NotificationManager.class).notify(ID,service.notification(message+(percent>=0?" · "+percent+"%":" · em andamento")));}
+            catch(RuntimeException e){Log.w("GGUFCompute","Notification update unavailable",e);}}
+    }
     public static void promote(Service service,int id,Notification notification) {
         if(Build.VERSION.SDK_INT>=34)service.startForeground(id,notification,ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
         else service.startForeground(id,notification);
@@ -39,7 +53,7 @@ public final class ComputeService extends Service {
             .addAction(new Notification.Action.Builder(null,"Cancelar",cancel).build()).build();
     }
     @Override public int onStartCommand(Intent intent,int flags,int startId) {
-        promote(this,ID,notification("Importando e validando GGUF. Pode bloquear a tela."));
+        current=this;promote(this,ID,notification("Importando e validando GGUF. Pode bloquear a tela."));
         if(intent!=null&&CANCEL.equals(intent.getAction())) {
             // Do not drop queued transactions: each must run its cleanup/failure path.
             if(worker!=null)worker.interrupt();else drain();
@@ -58,12 +72,12 @@ public final class ComputeService extends Service {
             } finally {main.post(()->{
                 worker=null;
                 synchronized(QUEUE){if(!QUEUE.isEmpty()){drain();return;}}
-                WorkWakeLocks.release(this);stopForeground(true);stopSelf();
+                current=null;WorkWakeLocks.release(this);stopForeground(true);stopSelf();
                 Log.i("GGUFCompute","GGUF_COMPUTE_FINISHED wakelock_released=1");
             });}
         },"gguf-import-service");
         worker.start();Log.i("GGUFCompute","GGUF_COMPUTE_STARTED foreground=1");
     }
-    @Override public void onDestroy(){if(worker!=null)worker.interrupt();WorkWakeLocks.release(this);super.onDestroy();}
+    @Override public void onDestroy(){if(current==this)current=null;if(worker!=null)worker.interrupt();WorkWakeLocks.release(this);super.onDestroy();}
     @Override public IBinder onBind(Intent intent){return null;}
 }
