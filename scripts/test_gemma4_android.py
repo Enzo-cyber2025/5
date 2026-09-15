@@ -71,7 +71,7 @@ def main():
             rows=d.read_json('models.json',optional=True)
             return rows[0] if len(rows)==1 and rows[0].get('capability')=='VISION_SINGLE_GGUF' and rows[0]['path']==rows[0].get('mmprojPath') else None
         unit=d.wait(complete,'Gemma4 unificado fisicamente',timeout=1800)
-        if observer:checks['measured_per_file_identification_merge_verify_progress']=observer.finish([mobile.MODEL.stat().st_size,mobile.PROJ.stat().st_size],pair=True)
+        if observer:checks['measured_per_file_identification_merge_verify_progress']=observer.finish([mobile.MODEL.stat().st_size,mobile.PROJ.stat().st_size],pair=True);d.progress_observer=None
         assert unit['architecture']=='gemma4'
         assert 'GGUF_PHYSICAL_UNIFICATION_OK' in d.adb('logcat','-d')
         if os.environ.get('GGUF_ATOMIC_REQUIRED')=='1':

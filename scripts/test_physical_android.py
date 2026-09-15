@@ -79,7 +79,7 @@ def main():
             rows=d.read_json('models.json',optional=True)
             return rows[0] if len(rows)==1 and rows[0].get('capability')=='VISION_SINGLE_GGUF' and rows[0]['path']==rows[0].get('mmprojPath') else None
         unit=d.wait(merged,'unificação física persistida',timeout=600)
-        if observer:checks['measured_pair_progress']=observer.finish([MODEL.stat().st_size,PROJ.stat().st_size],pair=True)
+        if observer:checks['measured_pair_progress']=observer.finish([MODEL.stat().st_size,PROJ.stat().st_size],pair=True);d.progress_observer=None
         assert 'GGUF_PHYSICAL_UNIFICATION_OK' in d.adb('logcat','-d')
         if os.environ.get('GGUF_ATOMIC_REQUIRED')=='1':
             log=d.adb('logcat','-d')
