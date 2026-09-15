@@ -80,6 +80,7 @@ jobs:
           sudo chmod a+rw /dev/kvm
       - uses: reactivecircus/android-emulator-runner@v2
         env:
+          GH_TOKEN: ${{ github.token }}
           GGUF_TEST_APK: .delivery/GGUF-Chat-mobile.apk
         with:
           api-level: 35
