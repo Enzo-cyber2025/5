@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/home/runner/work/5/5/scripts/test_latency_android.py", line 101, in main
+    d.grant_test_notifications();model=d.import_model(TEXT)
+                                       ^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_android.py", line 248, in import_model
+    self.choose_file(source.name)
+  File "/home/runner/work/5/5/scripts/test_android.py", line 236, in choose_file
+    self.select_downloads()
+  File "/home/runner/work/5/5/scripts/test_android.py", line 192, in select_downloads
+    raise AssertionError("Raiz Downloads ausente no menu SAF")
+AssertionError: Raiz Downloads ausente no menu SAF
