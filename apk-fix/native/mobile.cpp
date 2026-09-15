@@ -2,6 +2,7 @@
 #include <jni.h>
 #include <android/log.h>
 #include "llama.h"
+#include "prompt_cache.h"
 #include "chat.h"
 #include "gguf.h"
 #include "ggml-backend.h"
@@ -33,6 +34,8 @@ struct Engine {
     std::mutex mutex;
     std::string error;
     int layers=0;
+    std::vector<llama_token> cached_tokens; // exact tokens whose KV is present
+    bool cache_supported=false;
     ~Engine() { if(projector) mtmd_free(projector); if(ctx) llama_free(ctx); if(model) llama_model_free(model); }
 };
 static std::mutex registry_mutex;
@@ -85,11 +88,13 @@ static std::vector<llama_token> tokens(const llama_vocab *v,const std::string &s
     t.resize(n); return t;
 }
 static std::string piece(const llama_vocab *v,llama_token t) {
-    std::vector<char> b(128);
-    int n=llama_token_to_piece(v,t,b.data(),b.size(),0,false);
-    if(n<0) { b.resize(-n); n=llama_token_to_piece(v,t,b.data(),b.size(),0,false); }
+    char small[256];
+    int n=llama_token_to_piece(v,t,small,sizeof(small),0,false);
+    if(n>=0) return std::string(small,n);
+    std::vector<char> large(-n);
+    n=llama_token_to_piece(v,t,large.data(),large.size(),0,false);
     if(n<0) throw std::runtime_error("Falha ao decodificar token");
-    return std::string(b.data(),n);
+    return std::string(large.data(),n);
 }
 extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *env,jclass,jstring path,jstring proj,jint context,jint threads,jint layers,jboolean mmap) {
     try {
@@ -144,11 +149,21 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
         if(layers!=0 && loaded_gpu_layers<=0)
             throw std::runtime_error("O GGUF não carregou camadas no Vulkan. Escolha CPU explicitamente ou outro modelo/dispositivo.");
         e->layers=loaded_gpu_layers;
-        auto cp=llama_context_default_params(); cp.n_ctx=context; cp.n_batch=128; cp.n_ubatch=32;
+        auto cp=llama_context_default_params(); cp.n_ctx=context; cp.n_batch=512; cp.n_ubatch=128;
         cp.n_threads=cp.n_threads_batch=std::max(1,std::min(threads,8));
         cp.abort_callback=[](void *p){return static_cast<Engine*>(p)->cancel.load();}; cp.abort_callback_data=e.get();
         e->ctx=llama_init_from_model(e->model,cp);
+        if(!e->ctx) {
+            // Actual allocation failure, not a speculative RAM/file-size gate.
+            LOG("GGUF_PREFILL_ALLOCATION_RETRY batch=128 ubatch=32");
+            cp.n_batch=128;cp.n_ubatch=32;
+            e->ctx=llama_init_from_model(e->model,cp);
+        }
         if(!e->ctx) throw std::runtime_error("Não foi possível criar contexto: reduza o contexto/modelo");
+        e->cache_supported=!llama_model_is_recurrent(e->model) && !llama_model_is_hybrid(e->model)
+            && !llama_model_has_encoder(e->model) && !llama_model_is_diffusion(e->model);
+        LOG("GGUF_CONTEXT_TUNING batch=%u ubatch=%u threads=%d prefix_cache_supported=%d",
+            llama_n_batch(e->ctx),llama_n_ubatch(e->ctx),cp.n_threads,(int)e->cache_supported);
         if(!projector_path.empty()) {
             auto vp=mtmd_context_params_default(); vp.use_gpu=layers!=0; vp.n_threads=cp.n_threads; vp.print_timings=false; vp.warmup=false; vp.device=layers!=0?vulkan_devices[0]:nullptr;
             e->projector=mtmd_init_from_file(projector_path.c_str(),e->model,vp);
@@ -231,7 +246,8 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
     using Clock=std::chrono::steady_clock;
     auto started=Clock::now(),decode_started=started,last_flush=started;
     bool ok=false,decoding=false;int emitted=0,callbacks=0;
-    std::string pending;
+    std::string pending;pending.reserve(4096);
+    int64_t first_token_ns=-1;size_t prompt_tokens=0,reused_tokens=0;bool text_cache=false;
     auto flush=[&] {
         size_t complete=complete_utf8(pending);if(!complete)return;
         auto text=java_string(env,pending.substr(0,complete));
@@ -239,6 +255,7 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
         env->CallVoidMethod(callback,on_token,text);env->DeleteLocalRef(text);
         if(env->ExceptionCheck())throw std::runtime_error("Callback de texto falhou");
         pending.erase(0,complete);callbacks++;last_flush=Clock::now();
+        if(first_token_ns<0) first_token_ns=std::chrono::duration_cast<std::chrono::nanoseconds>(last_flush-started).count();
     };
     try {
         if(!callback || predict<=0) throw std::runtime_error("Callback ou limite de tokens inválido");
@@ -248,8 +265,10 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
         const auto text=utf8(env,prompt);
         const int n_images=images?env->GetArrayLength(images):0;
         size_t input_size=0;
-        llama_memory_clear(llama_get_memory(e->ctx),true);
+        auto memory=llama_get_memory(e->ctx);
         if(n_images) {
+            // Image identity/embedding positions are not inferred from text IDs.
+            e->cached_tokens.clear();llama_memory_clear(memory,true);
             if(!e->projector || !mtmd_support_vision(e->projector))
                 throw std::runtime_error("Este modelo/projetor não aceita imagens. Use um par com visão.");
             mtmd::bitmaps bitmaps;
@@ -273,7 +292,7 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
             for(size_t i=0;i<chunks.size();i++) {
                 if(e->cancel)throw std::runtime_error("Geração cancelada");
                 const auto *chunk=chunks[i];
-                if(mtmd_helper_eval_chunk_single(e->projector,e->ctx,chunk,past,0,128,i+1==chunks.size(),&past)!=0)
+                if(mtmd_helper_eval_chunk_single(e->projector,e->ctx,chunk,past,0,llama_n_batch(e->ctx),i+1==chunks.size(),&past)!=0)
                     throw std::runtime_error("Falha ao avaliar texto/imagem no modelo");
                 if(mtmd_input_chunk_get_type(chunk)==MTMD_INPUT_CHUNK_TYPE_IMAGE)
                     LOG("GGUF_IMAGE_EVALUATED tokens=%zu backend=%s",mtmd_input_chunk_get_n_tokens(chunk),e->layers>0?"Vulkan":"CPU");
@@ -282,12 +301,24 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
         } else {
             auto input=tokens(vocab,text);input_size=input.size();
             if(input.empty() || input_size>=(size_t)llama_n_ctx(e->ctx))throw std::runtime_error("Conversa e documentos excedem o contexto. Desative anexos na lista, inicie outra conversa ou aumente o contexto. Nenhum texto foi cortado silenciosamente.");
-            for(size_t at=0;at<input.size();at+=128) {
+            text_cache=e->cache_supported;
+            reused_tokens=reusable_prefix(e->cached_tokens,input,text_cache,
+                llama_memory_seq_pos_min(memory,0),llama_memory_seq_pos_max(memory,0));
+            if(reused_tokens && !llama_memory_seq_rm(memory,0,reused_tokens,-1)) reused_tokens=0;
+            if(!reused_tokens) {llama_memory_clear(memory,true);e->cached_tokens.clear();}
+            else e->cached_tokens.resize(reused_tokens);
+            for(size_t at=reused_tokens;at<input.size();at+=llama_n_batch(e->ctx)) {
                 if(e->cancel)throw std::runtime_error("Geração cancelada");
-                auto batch=llama_batch_get_one(input.data()+at,std::min<size_t>(128,input.size()-at));
+                auto count=std::min<size_t>(llama_n_batch(e->ctx),input.size()-at);
+                auto batch=llama_batch_get_one(input.data()+at,count);
                 if(llama_decode(e->ctx,batch)!=0)throw std::runtime_error("Falha de decode no prompt");
+                if(text_cache)e->cached_tokens.insert(e->cached_tokens.end(),input.begin()+at,input.begin()+at+count);
             }
         }
+        prompt_tokens=input_size;
+        LOG("GGUF_PROMPT_CACHE input_tokens=%zu reused_tokens=%zu evaluated_tokens=%zu media=%d",
+            prompt_tokens,reused_tokens,prompt_tokens-reused_tokens,n_images);
+
         decode_started=Clock::now();decoding=true;
         int limit=std::min<int>(predict,llama_n_ctx(e->ctx)-input_size);
         std::unique_ptr<llama_sampler,decltype(&llama_sampler_free)> sampler(llama_sampler_chain_init(llama_sampler_chain_default_params()),llama_sampler_free);
@@ -304,15 +335,20 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
             // Preserve immediate first-token feedback, then send complete UTF-8
             // chunks at <=20 Hz (or 4 KiB). Never truncate the answer.
             if(emitted==1 || pending.size()>=4096 || Clock::now()-last_flush>=std::chrono::milliseconds(50))flush();
-            // No next sample needs this final decode; KV is cleared each request.
-            if(i+1<limit && llama_decode(e->ctx,llama_batch_get_one(&t,1))!=0)
-                throw std::runtime_error("Falha de decode durante resposta");
+            // Track only successfully decoded tokens, never the final sampled
+            // token that has no KV. A future prompt evaluates that suffix itself.
+            if(i+1<limit) {
+                if(llama_decode(e->ctx,llama_batch_get_one(&t,1))!=0)
+                    throw std::runtime_error("Falha de decode durante resposta");
+                if(text_cache)e->cached_tokens.push_back(t);
+            }
         }
         flush();
         if(!pending.empty()) {auto text=java_string(env,"\xef\xbf\xbd");env->CallVoidMethod(callback,on_token,text);env->DeleteLocalRef(text);}
         if(e->cancel || env->ExceptionCheck()) throw std::runtime_error("Geração cancelada ou callback falhou");
         ok=true;LOG("GGUF_NATIVE_COMPLETE tokens=%d reason=%s projector=%d",emitted,reason,e->projector!=nullptr);
     } catch(const std::exception &ex) {
+        e->cached_tokens.clear(); // failed/partial work is never reused
         e->error=ex.what();LOG("Generation failed: %s",ex.what());
         // Cancellation still preserves already produced complete text.
         if(on_token&&!env->ExceptionCheck())try{flush();}catch(...){}
@@ -320,10 +356,13 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
     auto finished=Clock::now();
     jlong decode_ns=decoding?std::chrono::duration_cast<std::chrono::nanoseconds>(finished-decode_started).count():0;
     jlong prefill_ns=std::chrono::duration_cast<std::chrono::nanoseconds>((decoding?decode_started:finished)-started).count();
+    LOG("GGUF_RESPONSE_LATENCY first_token_ns=%lld prompt_tokens=%zu reused_tokens=%zu",(long long)first_token_ns,prompt_tokens,reused_tokens);
     LOG("GGUF_GENERATION_STATS tokens=%d decode_ns=%lld prefill_ns=%lld callbacks=%d success=%d",emitted,(long long)decode_ns,(long long)prefill_ns,callbacks,(int)ok);
     if(!env->ExceptionCheck()) {
         jclass stats=env->FindClass("com/ggufchat/app/GenerationStats");
         if(stats) {
+            auto latency=env->GetStaticMethodID(stats,"latency","(JJJ)V");
+            if(latency)env->CallStaticVoidMethod(stats,latency,(jlong)first_token_ns,(jlong)prompt_tokens,(jlong)reused_tokens);
             auto measured=env->GetStaticMethodID(stats,"measured","(JJJZ)V");
             if(measured)env->CallStaticVoidMethod(stats,measured,(jlong)emitted,decode_ns,prefill_ns,(jboolean)ok);
             env->DeleteLocalRef(stats);

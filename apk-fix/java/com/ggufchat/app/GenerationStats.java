@@ -9,11 +9,18 @@ import java.util.Locale;
 public final class GenerationStats {
     private static final ThreadLocal<String> RESULT=new ThreadLocal<>();
     private static final ThreadLocal<Long> NOTICE=new ThreadLocal<>();
-    public static void begin(){RESULT.remove();NOTICE.remove();}
+    private static final ThreadLocal<long[]> LATENCY=new ThreadLocal<>();
+    public static void begin(){RESULT.remove();NOTICE.remove();LATENCY.remove();}
+    public static void latency(long firstTokenNs,long promptTokens,long reusedTokens){
+        LATENCY.set(new long[]{firstTokenNs,promptTokens,reusedTokens});
+    }
     public static void measured(long tokens,long decodeNs,long prefillNs,boolean completed){
         try {
             JSONObject j=new JSONObject();j.put("tokens",tokens);j.put("decodeNs",decodeNs);
-            j.put("prefillNs",prefillNs);j.put("completed",completed);j.put("version",1);
+            j.put("prefillNs",prefillNs);j.put("completed",completed);j.put("version",2);
+            long[] latency=LATENCY.get();
+            if(latency!=null){j.put("firstTokenNs",latency[0]);j.put("promptTokens",latency[1]);j.put("reusedPromptTokens",latency[2]);}
+            LATENCY.remove();
             RESULT.set(j.toString());
         } catch(Exception e){RESULT.remove();}
     }
@@ -24,7 +31,7 @@ public final class GenerationStats {
     }
     public static String preview(StringBuilder text){return text.substring(0,Math.min(80,text.length()));}
     public static void attach(Object message){
-        String value=RESULT.get();RESULT.remove();NOTICE.remove();
+        String value=RESULT.get();RESULT.remove();NOTICE.remove();LATENCY.remove();
         try{message.getClass().getField("generationMetrics").set(message,value);}
         catch(Exception e){throw new IllegalStateException("Campo de medição ausente",e);}
     }

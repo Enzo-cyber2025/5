@@ -7,7 +7,7 @@ def test_native_rate_uses_actual_sampler_count_and_monotonic_decode_interval():
     assert 'std::chrono::steady_clock' in s and 'decode_started=Clock::now();decoding=true' in s
     assert s.index('if(llama_vocab_is_eog(vocab,t))') < s.index('emitted++;pending+=piece(vocab,t)')
     assert 'finished-decode_started' in s and 'GGUF_GENERATION_STATS' in s
-    assert 'if(i+1<limit && llama_decode' in s
+    assert 'if(i+1<limit)' in s and 'if(text_cache)e->cached_tokens.push_back(t)' in s
     assert 'std::chrono::milliseconds(50)' in s and 'pending.size()>=4096' in s
     assert 'if(emitted==1' in s and '\n        flush();' in s
 
