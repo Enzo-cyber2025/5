@@ -20,4 +20,26 @@ def test_metric_is_per_message_and_footer_outside_bubble():
     assert 'ThreadLocal<String>' in s and 'RESULT.remove();NOTICE.remove()' in s
     assert 'tokens*1e9/(double)ns' in s and 'sem medição' in s
     assert '1000000000L' in s and 'Math.min(80,text.length())' in s
-    assert 'column.addView(view)' in s and 'tokens/s' in s
+    assert 'tokens/s' in s
+    ui=(ROOT/'apk-fix/java/com/ggufchat/app/GenerationStatsUi.java').read_text()
+    assert 'column.addView(view)' in ui
+    assert 'import android' not in s
+
+
+def test_rate_arithmetic_in_real_java(tmp_path):
+    import shutil,subprocess,re,pytest
+    if not shutil.which('javac'):pytest.skip('JDK supplied in CI')
+    source=(ROOT/'apk-fix/java/com/ggufchat/app/GenerationStats.java').read_text()
+    method=re.search(r'    public static double rate\(.*?}',source).group()
+    p=tmp_path/'RateTest.java'
+    p.write_text('public class RateTest { '+method+'''
+    public static void main(String[] args){
+        assert rate(100,2000000000L)==50.0;
+        assert rate(1,1000000000L)==1.0;
+        assert Double.isNaN(rate(0,1));assert Double.isNaN(rate(1,0));
+        assert Double.isNaN(rate(-1,1));assert Double.isNaN(rate(1,-1));
+        assert Double.isFinite(rate(Long.MAX_VALUE,Long.MAX_VALUE));
+        assert rate(Long.MAX_VALUE,Long.MAX_VALUE)==1e9;
+    }}''')
+    subprocess.run(['javac','--release','8',str(p)],check=True)
+    subprocess.run(['java','-ea','-cp',str(tmp_path),'RateTest'],check=True)

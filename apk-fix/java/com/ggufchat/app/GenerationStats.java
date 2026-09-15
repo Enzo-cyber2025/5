@@ -1,8 +1,5 @@
 package com.ggufchat.app;
 
-import android.content.Context;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 import org.json.JSONObject;
 import java.util.Locale;
 
@@ -39,25 +36,15 @@ public final class GenerationStats {
         String value=(String)message.getClass().getField("generationMetrics").get(message);
         if(value!=null)json.put("generationMetrics",new JSONObject(value));
     }
+    public static double rate(long tokens,long ns){return tokens>0&&ns>0?tokens*1e9/(double)ns:Double.NaN;}
     public static String label(String value){
         if(value==null)return "— tokens/s · sem medição";
         try {
             JSONObject j=new JSONObject(value);long tokens=j.getLong("tokens"),ns=j.getLong("decodeNs");
             if(tokens<=0||ns<=0)return "— tokens/s · sem amostra";
-            double rate=tokens*1e9/(double)ns;
+            double rate=rate(tokens,ns);
             if(Double.isNaN(rate)||Double.isInfinite(rate))return "— tokens/s · sem medição";
             return String.format(Locale.getDefault(),"%.1f tokens/s · %d tokens%s",rate,tokens,j.optBoolean("completed",false)?"":" · interrompida");
         }catch(Exception e){return "— tokens/s · sem medição";}
-    }
-    public static void caption(Context c,LinearLayout column,Object message){
-        if(message==null)return;
-        try {
-            if(!"assistant".equals(message.getClass().getField("role").get(message)))return;
-            String value=(String)message.getClass().getField("generationMetrics").get(message);
-            TextView view=new TextView(c);view.setText(label(value));view.setTextSize(11);
-            view.setTextColor(0xff9cafa6);view.setContentDescription("Velocidade da resposta");
-            int pad=Math.round(4*c.getResources().getDisplayMetrics().density);
-            view.setPadding(pad,pad,pad,pad);column.addView(view);
-        }catch(Exception e){throw new IllegalStateException("Não foi possível exibir a medição",e);}
     }
 }

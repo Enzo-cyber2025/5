@@ -30,5 +30,5 @@ def patch_generation_stats(app):
     a=s.index('.method private addMessageView(');b=s.index('.end method',a);part=s[a:b]
     marker='    :goto_2';assert part.count(marker)==1
     part=part.replace(marker,marker+'''\n    iget-object v0, p0, Lcom/ggufchat/app/ChatActivity;->renderedMessage:Ljava/lang/Object;
-    invoke-static {p0, v4, v0}, Lcom/ggufchat/app/GenerationStats;->caption(Landroid/content/Context;Landroid/widget/LinearLayout;Ljava/lang/Object;)V''')
+    invoke-static {p0, v4, v0}, Lcom/ggufchat/app/GenerationStatsUi;->caption(Landroid/content/Context;Landroid/widget/LinearLayout;Ljava/lang/Object;)V''')
     p.write_text(s[:a]+part+s[b:])
