@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/home/runner/work/5/5/scripts/test_gemma4_android.py", line 73, in main
+    if observer:checks['measured_per_file_identification_merge_verify_progress']=observer.finish([mobile.MODEL.stat().st_size,mobile.PROJ.stat().st_size],pair=True)
+                                                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/import_progress_checks.py", line 50, in finish
+    assert self.captured,'No real progress UI screenshot captured'
+           ^^^^^^^^^^^^^
+AssertionError: No real progress UI screenshot captured
