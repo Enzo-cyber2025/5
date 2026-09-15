@@ -1,0 +1,41 @@
+--------- beginning of main
+09-15 17:02:23.549  8080  8080 I ImeTracker: com.ggufchat.app:ad4e98ea: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser true
+09-15 17:02:23.550  8080  8080 D InputMethodManager: showSoftInput() view=android.widget.EditText{9451328 VFED..CL. .F.P..ID 128,0-493,67 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+09-15 17:02:23.558  8080  8080 I AssistStructure: Flattened final assist data: 1964 bytes, containing 1 windows, 13 views
+09-15 17:02:23.562  8080  8093 D EGL_emulation: app_time_stats: avg=185.11ms min=9.73ms max=2754.20ms count=16
+09-15 17:02:23.645  8080  8080 D InsetsController: show(ime(), fromIme=true)
+09-15 17:02:23.651  8080  8210 W InteractionJankMonitor: Initializing without READ_DEVICE_CONFIG permission. enabled=true, interval=1, missedFrameThreshold=3, frameTimeThreshold=64, package=com.ggufchat.app
+09-15 17:02:23.682  8080  8080 I ImeTracker: com.ggufchat.app:ad4e98ea: onShown
+09-15 17:02:24.066  8080  8085 I om.ggufchat.app: NativeAlloc concurrent mark compact GC freed 2480KB AllocSpace bytes, 5(100KB) LOS objects, 49% free, 2646KB/5293KB, paused 173us,351us total 103.721ms
+09-15 17:02:24.565  8080  8093 D EGL_emulation: app_time_stats: avg=40.19ms min=9.73ms max=108.32ms count=24
+09-15 17:02:25.589  8080  8093 D EGL_emulation: app_time_stats: avg=38.37ms min=17.59ms max=76.14ms count=24
+09-15 17:02:26.599  8080  8093 D EGL_emulation: app_time_stats: avg=39.16ms min=10.67ms max=94.83ms count=24
+09-15 17:02:27.654  8080  8093 D EGL_emulation: app_time_stats: avg=263.70ms min=31.17ms max=499.69ms count=4
+09-15 17:02:28.654  8080  8093 D EGL_emulation: app_time_stats: avg=500.08ms min=496.13ms max=504.03ms count=2
+09-15 17:02:28.793  8080  8080 I ImeTracker: com.ggufchat.app:d8d24f95: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+09-15 17:02:28.820  8080  8080 D InsetsController: hide(ime(), fromIme=true)
+09-15 17:02:28.903  8080  8250 I GGUFSystem: GGUF_SYSTEM_PROMPT_APPLIED scope=global chars=107 sha256=dde45e87ea07db0b49bcddd022d4f41a452610560d9af636571c26d16a4bcd04
+09-15 17:02:28.904  8080  8250 I GGUFInference: GGUF_CONTENT_PREPARED files=0 images=0 text_chars=0
+09-15 17:02:28.916  8080  8080 I ImeTracker: com.ggufchat.app:82a0482b: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_ON_ANIMATION_STATE_CHANGED fromUser false
+09-15 17:02:28.917  8080  8080 I ImeTracker: com.ggufchat.app:d8d24f95: onHidden
+09-15 17:02:29.028  8080  8080 W FrameTracker: Missed App frame:JANK_APP_DEADLINE_MISSED, 84864, 0, CUJ=J<IME_INSETS_SHOW_ANIMATION::0@0@com.ggufchat.app>
+09-15 17:02:29.664  8080  8093 D EGL_emulation: app_time_stats: avg=39.38ms min=5.33ms max=200.42ms count=24
+09-15 17:02:30.805  8080  8093 D EGL_emulation: app_time_stats: avg=113.28ms min=11.06ms max=500.69ms count=10
+09-15 17:02:31.838  8080  8093 D EGL_emulation: app_time_stats: avg=32.11ms min=7.76ms max=283.09ms count=31
+09-15 17:02:32.844  8080  8093 D EGL_emulation: app_time_stats: avg=24.66ms min=8.35ms max=80.45ms count=39
+09-15 17:02:33.854  8080  8093 D EGL_emulation: app_time_stats: avg=23.50ms min=13.37ms max=39.48ms count=41
+09-15 17:02:34.878  8080  8093 D EGL_emulation: app_time_stats: avg=20.65ms min=4.73ms max=83.10ms count=44
+09-15 17:02:35.879  8080  8093 D EGL_emulation: app_time_stats: avg=25.47ms min=6.89ms max=91.05ms count=36
+09-15 17:02:36.889  8080  8093 D EGL_emulation: app_time_stats: avg=22.98ms min=9.64ms max=42.08ms count=41
+09-15 17:02:37.929  8080  8093 D EGL_emulation: app_time_stats: avg=20.24ms min=5.73ms max=77.65ms count=43
+09-15 17:02:38.974  8080  8093 D EGL_emulation: app_time_stats: avg=32.40ms min=3.08ms max=84.04ms count=30
+09-15 17:02:39.199  8080  8080 E FrameTracker: force finish cuj, time out: J<IME_INSETS_HIDE_ANIMATION::1@0@com.ggufchat.app>
+09-15 17:02:39.199  8080  8080 W FrameTracker: Missed App frame:UNKNOWN: 88, 85796, 0, CUJ=J<IME_INSETS_HIDE_ANIMATION::1@0@com.ggufchat.app>
+09-15 17:02:39.199  8080  8080 W FrameTracker: Missed SF frame:UNKNOWN: 88, 85796, 0, CUJ=J<IME_INSETS_HIDE_ANIMATION::1@0@com.ggufchat.app>
+09-15 17:02:39.990  8080  8093 D EGL_emulation: app_time_stats: avg=53.47ms min=17.20ms max=84.21ms count=19
+09-15 17:02:41.022  8080  8093 D EGL_emulation: app_time_stats: avg=54.30ms min=20.30ms max=104.82ms count=19
+09-15 17:02:42.051  8080  8093 D EGL_emulation: app_time_stats: avg=54.09ms min=21.53ms max=86.76ms count=19
+09-15 17:02:43.067  8080  8093 D EGL_emulation: app_time_stats: avg=53.47ms min=11.96ms max=110.42ms count=19
+09-15 17:02:43.144  8080  8250 I GGUFChatNative: GGUF_NATIVE_COMPLETE tokens=128 reason=length projector=0
+09-15 17:02:43.145  8080  8250 I GGUFChatNative: GGUF_GENERATION_STATS tokens=128 decode_ns=12073303999 prefill_ns=2167824083 callbacks=103 success=1
+09-15 17:02:43.145  8080  8250 I System.out: GGUF_REPAIR_GENERATION_OK
