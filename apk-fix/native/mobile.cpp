@@ -8,6 +8,7 @@
 #include "mtmd.h"
 #include "mtmd-helper.h"
 #include <atomic>
+#include <chrono>
 #include <algorithm>
 #include <fstream>
 #include <memory>
@@ -227,7 +228,18 @@ static mtmd_input_text media_input(const std::string &text) {
 static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat temp,jfloat top_p,jfloat top_k,jfloat min_p,jfloat repeat,jint last_n,jint seed,jobject callback,jobjectArray images) {
     auto e=get(h);if(!e)return false; std::lock_guard<std::mutex> lock(e->mutex); if(!images)e->cancel=false;e->error.clear();
     jmethodID on_token=nullptr,on_done=nullptr; jclass clazz=nullptr;
-    bool ok=false;
+    using Clock=std::chrono::steady_clock;
+    auto started=Clock::now(),decode_started=started,last_flush=started;
+    bool ok=false,decoding=false;int emitted=0,callbacks=0;
+    std::string pending;
+    auto flush=[&] {
+        size_t complete=complete_utf8(pending);if(!complete)return;
+        auto text=java_string(env,pending.substr(0,complete));
+        if(!text)throw std::runtime_error("Sem memória para resposta");
+        env->CallVoidMethod(callback,on_token,text);env->DeleteLocalRef(text);
+        if(env->ExceptionCheck())throw std::runtime_error("Callback de texto falhou");
+        pending.erase(0,complete);callbacks++;last_flush=Clock::now();
+    };
     try {
         if(!callback || predict<=0) throw std::runtime_error("Callback ou limite de tokens inválido");
         clazz=env->GetObjectClass(callback);on_token=env->GetMethodID(clazz,"onToken","(Ljava/lang/String;)V");on_done=env->GetMethodID(clazz,"onDone","(Z)V");
@@ -276,27 +288,47 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
                 if(llama_decode(e->ctx,batch)!=0)throw std::runtime_error("Falha de decode no prompt");
             }
         }
+        decode_started=Clock::now();decoding=true;
         int limit=std::min<int>(predict,llama_n_ctx(e->ctx)-input_size);
         std::unique_ptr<llama_sampler,decltype(&llama_sampler_free)> sampler(llama_sampler_chain_init(llama_sampler_chain_default_params()),llama_sampler_free);
         if(!sampler) throw std::runtime_error("Sem memória para amostrador");
         if(last_n!=0) llama_sampler_chain_add(sampler.get(),llama_sampler_init_penalties(llama_vocab_n_tokens(vocab),last_n,repeat,0,0));
         if(temp<=0) llama_sampler_chain_add(sampler.get(),llama_sampler_init_greedy());
         else {llama_sampler_chain_add(sampler.get(),llama_sampler_init_top_k((int)top_k));llama_sampler_chain_add(sampler.get(),llama_sampler_init_top_p(top_p,1));llama_sampler_chain_add(sampler.get(),llama_sampler_init_min_p(min_p,1));llama_sampler_chain_add(sampler.get(),llama_sampler_init_temp(temp));llama_sampler_chain_add(sampler.get(),llama_sampler_init_dist(seed));}
-        std::string pending;int emitted=0;const char *reason="length";
+        const char *reason="length";
         for(int i=0;i<limit;i++) {
             if(e->cancel) throw std::runtime_error("Geração cancelada");
             auto t=llama_sampler_sample(sampler.get(),e->ctx,-1);
             if(llama_vocab_is_eog(vocab,t)) {reason="eog";break;}
-            pending+=piece(vocab,t);size_t complete=complete_utf8(pending);
-            if(complete) {auto text=java_string(env,pending.substr(0,complete));if(!text)throw std::runtime_error("Sem memória para resposta");env->CallVoidMethod(callback,on_token,text);env->DeleteLocalRef(text);pending.erase(0,complete);}
-            if(env->ExceptionCheck()) throw std::runtime_error("Callback de texto falhou");
-            if(llama_decode(e->ctx,llama_batch_get_one(&t,1))!=0) throw std::runtime_error("Falha de decode durante resposta");
-            emitted++;
+            emitted++;pending+=piece(vocab,t);
+            // Preserve immediate first-token feedback, then send complete UTF-8
+            // chunks at <=20 Hz (or 4 KiB). Never truncate the answer.
+            if(emitted==1 || pending.size()>=4096 || Clock::now()-last_flush>=std::chrono::milliseconds(50))flush();
+            // No next sample needs this final decode; KV is cleared each request.
+            if(i+1<limit && llama_decode(e->ctx,llama_batch_get_one(&t,1))!=0)
+                throw std::runtime_error("Falha de decode durante resposta");
         }
+        flush();
         if(!pending.empty()) {auto text=java_string(env,"\xef\xbf\xbd");env->CallVoidMethod(callback,on_token,text);env->DeleteLocalRef(text);}
         if(e->cancel || env->ExceptionCheck()) throw std::runtime_error("Geração cancelada ou callback falhou");
         ok=true;LOG("GGUF_NATIVE_COMPLETE tokens=%d reason=%s projector=%d",emitted,reason,e->projector!=nullptr);
-    } catch(const std::exception &ex) {e->error=ex.what();LOG("Generation failed: %s",ex.what());}
+    } catch(const std::exception &ex) {
+        e->error=ex.what();LOG("Generation failed: %s",ex.what());
+        // Cancellation still preserves already produced complete text.
+        if(on_token&&!env->ExceptionCheck())try{flush();}catch(...){}
+    }
+    auto finished=Clock::now();
+    jlong decode_ns=decoding?std::chrono::duration_cast<std::chrono::nanoseconds>(finished-decode_started).count():0;
+    jlong prefill_ns=std::chrono::duration_cast<std::chrono::nanoseconds>((decoding?decode_started:finished)-started).count();
+    LOG("GGUF_GENERATION_STATS tokens=%d decode_ns=%lld prefill_ns=%lld callbacks=%d success=%d",emitted,(long long)decode_ns,(long long)prefill_ns,callbacks,(int)ok);
+    if(!env->ExceptionCheck()) {
+        jclass stats=env->FindClass("com/ggufchat/app/GenerationStats");
+        if(stats) {
+            auto measured=env->GetStaticMethodID(stats,"measured","(JJJZ)V");
+            if(measured)env->CallStaticVoidMethod(stats,measured,(jlong)emitted,decode_ns,prefill_ns,(jboolean)ok);
+            env->DeleteLocalRef(stats);
+        }
+    }
     if(on_done && !env->ExceptionCheck()) env->CallVoidMethod(callback,on_done,(jboolean)ok);
     if(clazz)env->DeleteLocalRef(clazz);
     return ok && !env->ExceptionCheck();

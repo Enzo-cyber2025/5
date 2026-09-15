@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from compute_patches import patch_compute
+from generation_stats import patch_generation_stats
 """Build a coherent native stack and an UNSIGNED APK, for local persistent signing.
 No signing key or password is placed in CI, artifacts, logs or Git.
 """
@@ -73,6 +74,7 @@ def ui_patches(app):
     patch_import_progress(app)
     patch_single_import_ui(app)
     patch_compute(app)
+    patch_generation_stats(app)
 
 def main():
     WORK.mkdir(parents=True,exist_ok=True)
