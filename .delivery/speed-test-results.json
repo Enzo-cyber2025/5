@@ -1,0 +1,59 @@
+{
+  "status": "FUNCTIONAL_ANDROID_PASS_SPEEDUP_NOT_PROVEN",
+  "apk_sha256": "b8145469da04884849b17cd99aff69fbea07f0bb24723ed1611373c7fce1743f",
+  "source_commit": "abb4fe8ceb6f4785165700a64d448e7e16539004",
+  "run": 34999699148,
+  "job": 104484742958,
+  "attempt": 1,
+  "commit": "e0bd60d374bd69d945aaac6ff7287d865e958ae1",
+  "checks": {
+    "same_certificate_update_preserves_models_chats": "PASS",
+    "real_before_after_benchmark_identical_outputs": "PASS",
+    "native_counters_persistence_footer_geometry": "PASS",
+    "old_messages_not_fabricated": "PASS",
+    "metrics_and_real_vision_generation_screen_off": "PASS",
+    "real_image_inference_metrics": "PASS"
+  },
+  "asleep_pre_restart_lease_release": "PASS",
+  "vision_native_json_metrics": "PASS",
+  "ui_review": {
+    "status": "PASS",
+    "apk_sha256": "b8145469da04884849b17cd99aff69fbea07f0bb24723ed1611373c7fce1743f",
+    "images": [
+      {
+        "path": "ci-results/34999699148-1/physical-speed-footer.png",
+        "sha256": "8f4d2d00eefe0efbbcfc43aa4da0d931cb458aa43f344ba1d38f49a284873565"
+      },
+      {
+        "path": "ci-results/34999699148-1/physical-speed-reopened-footer.png",
+        "sha256": "cdfe7deadbd4f9ff0f79d23920f3221c6166790b65b4aa89f4e217ade9a2f8a0"
+      },
+      {
+        "path": "ci-results/34999699148-1/physical-speed-old-response.png",
+        "sha256": "936c1e3672e08be58c4e45b174af171835b42d5f86dde9d9c7beb6e342dc099f"
+      },
+      {
+        "path": "ci-results/34999699148-1/physical-speed-vision-footer.png",
+        "sha256": "7c57811d669b5ca7e311c4e38e8e8f29c376bb5c4419274e3ef77e01d7ccd71d"
+      }
+    ],
+    "findings": "Text footer below bubble shows 5.2 tokens/s and 128 tokens before/after restart; old response explicitly unmeasured; real dog reply shows 38.4 tokens/s and 2 tokens. Image prefill is excluded from that rate; a two-token sample is not a useful performance benchmark."
+  },
+  "performance": {
+    "median_before": 4.811487426230935,
+    "median_after": 4.754475893320398,
+    "relative_change_percent": -1.1849045390771473,
+    "verdict": "No demonstrated end-to-end speed increase; large emulator variability. Do not publish as speed-approved.",
+    "callbacks_after": 321,
+    "generated_tokens_after": 384
+  },
+  "broad_regression_run": 34997035140,
+  "broad_regression_status": "IN_PROGRESS_AT_RECORD_TIME",
+  "delivery_scope": "Test APK with verified tokens/s, not an approved speed release.",
+  "github_download_verification": {
+    "status": "BYTE_EXACT_PASS",
+    "method": "GitHub contents API, raw media",
+    "commit": "9a5e656031aa413fb661c16c975cea42d3e49cc0",
+    "apk_sha256": "b8145469da04884849b17cd99aff69fbea07f0bb24723ed1611373c7fce1743f"
+  }
+}
