@@ -7,7 +7,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 import test_mobile as mobile
 from test_mobile import MobileAndroid,APK
-from android_checks import PACKAGE,position,generation_completed,assistant_reply
+from android_checks import PACKAGE,position,generation_completed,assistant_reply,active_wake_locks
 from test_single_import_ui_android import select,push
 from test_physical_android import tensor_hashes
 E=Path('evidence');GEMMA=os.environ.get('GGUF_COMPUTE_GEMMA')=='1'
@@ -48,8 +48,8 @@ def main():
         services=d.shell('dumpsys activity services '+PACKAGE)
         power=d.shell('dumpsys power')
         assert 'ComputeService' in services and 'isForeground=true' in services
-        assert 'GGUFChat:LocalCompute' in power
-        (E/'physical-compute-screen-off-start.txt').write_text(services+'\n'+power+'\n'+before)
+        assert 'GGUFChat:LocalCompute' in active_wake_locks(power)
+        (E/'physical-compute-screen-off-start.txt').write_text(services+'\n'+power)
         def done():
             assert d.alive()==pid
             rows=d.read_json('models.json',optional=True)
@@ -61,12 +61,15 @@ def main():
         assert 'GGUF_MEMORY_TELEMETRY' in log and 'policy=actual_allocator' in log
         events=re.findall(r'GGUF_IMPORT_PROGRESS stage=(\w+) percent=(-?\d+)',log[len(before):])
         assert events,'Nenhum progresso novo durante bloqueio'
-        (E/'physical-compute-screen-off-complete.txt').write_text(power+'\n'+log)
-        d.wait(lambda:'GGUFChat:LocalCompute' not in d.shell('dumpsys power'),'wakelock liberado após importar')
+        (E/'physical-compute-screen-off-complete.txt').write_text(power+'\n'+log[-150000:])
+        c['real_pair_import_and_native_validation_screen_off']='PASS'
+        d.wait(lambda:'GGUFChat:LocalCompute' not in active_wake_locks(d.shell('dumpsys power')),'wakelock liberado após importar')
+        (E/'physical-compute-import-released.txt').write_text(d.shell('dumpsys power')+'\n'+d.shell('dumpsys activity services '+PACKAGE))
         d.wait(lambda:'isForeground=true' not in d.shell('dumpsys activity services '+PACKAGE),'serviço encerrado após importar')
         c['real_pair_import_and_native_validation_screen_off']='PASS'
         if GEMMA:
             size,available=map(int,re.findall(r'file_bytes=(\d+) available=(\d+)',log)[-1])
+            assert size>0 and available>0
             estimate=size+size//2+512*262144+268435456
             assert estimate>available*7//10,(estimate,available)
             c['real_gemma_load_succeeds_where_old_memory_formula_rejected']='PASS'
@@ -81,8 +84,8 @@ def main():
         d.send(prompt);pid=d.alive();off(d)
         before=d.adb('logcat','-d');assert not generation_completed(before),'Generation finished before screen-off'
         power=d.shell('dumpsys power');services=d.shell('dumpsys activity services '+PACKAGE)
-        assert 'GenerationService' in services and 'isForeground=true' in services and 'GGUFChat:LocalCompute' in power
-        (E/'physical-compute-generation-start.txt').write_text(power+'\n'+services+'\n'+before)
+        assert 'GenerationService' in services and 'isForeground=true' in services and 'GGUFChat:LocalCompute' in active_wake_locks(power)
+        (E/'physical-compute-generation-start.txt').write_text(power+'\n'+services+'\n'+before[-150000:])
         def reply():
             assert d.alive()==pid
             if not generation_completed(d.adb('logcat','-d')):return None
@@ -92,8 +95,8 @@ def main():
         answer=d.wait(reply,'resposta real gravada com tela apagada',timeout=1200)
         power=d.shell('dumpsys power');assert 'mWakefulness=Asleep' in power
         (E/'physical-compute-response.txt').write_text(answer)
-        (E/'physical-compute-generation-complete.txt').write_text(power+'\n'+d.adb('logcat','-d'))
-        d.wait(lambda:'GGUFChat:LocalCompute' not in d.shell('dumpsys power'),'wakelock liberado após geração')
+        (E/'physical-compute-generation-complete.txt').write_text(power+'\n'+d.adb('logcat','-d')[-150000:])
+        d.wait(lambda:'GGUFChat:LocalCompute' not in active_wake_locks(d.shell('dumpsys power')),'wakelock liberado após geração')
         c['real_native_generation_and_saved_response_screen_off']='PASS'
         on(d);d.launch();d.open_existing_chat(chat['title']);d.capture('physical-compute-reopened-response.png')
         assert assistant_reply(d.read_json('chats.json'),chat['id'],prompt)==answer
@@ -102,7 +105,7 @@ def main():
         s['error']=str(e);(E/'physical-compute-failure.txt').write_text(traceback.format_exc());traceback.print_exc()
     finally:
         (E/'summary.json').write_text(json.dumps(s,indent=2,ensure_ascii=False))
-        try:on(d);d.capture('physical-compute-final.png');(E/'physical-compute-final-log.txt').write_text(d.adb('logcat','-d'))
+        try:(E/'physical-compute-power-final.txt').write_text(d.shell('dumpsys power')+'\n'+d.shell('dumpsys activity services '+PACKAGE));on(d);d.capture('physical-compute-final.png');(E/'physical-compute-final-log.txt').write_text(d.adb('logcat','-d')[-150000:])
         except Exception:pass
         print(json.dumps(s,indent=2,ensure_ascii=False))
     return 0 if s['status']=='PASS' else 1

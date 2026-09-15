@@ -137,3 +137,14 @@ def select_exact_documents(d, names):
         x, y = point
         d.shell(f'input touchscreen swipe {x} {y} {x} {y} 1000')
     d.wait(lambda: position(d.ui(), text=f'{len(names)} selected', package=PICKERS), 'contagem exata de arquivos selecionados')
+
+
+def active_wake_locks(power_dump):
+    """Read only currently held locks, NOT Android's retained Wake Lock Log.
+    A missing section is an error, never evidence that a lease was released.
+    """
+    match=re.search(r'(?m)^[ \t]*Wake Locks: size=(\d+)[ \t]*\r?$',power_dump)
+    if not match:raise AssertionError('Active Wake Locks section missing from dumpsys power')
+    if int(match.group(1))==0:return ''
+    body=power_dump[match.end():].lstrip('\r\n')
+    return re.split(r'\n[ \t]*\n',body,maxsplit=1)[0]

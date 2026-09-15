@@ -41,3 +41,13 @@ def test_compute_binary_manifest_of_actual_last_release():
         assert s.get(ns+'foregroundServiceType') in ('1073741824','0x40000000')
         assert s.find('property').get(ns+'name')=='android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE'
     assert any(x.get(ns+'name')=='android.permission.FOREGROUND_SERVICE_SPECIAL_USE' for x in after.findall('uses-permission'))
+
+
+def test_power_audit_does_not_confuse_history_with_held_locks():
+    sys.path.insert(0,str(ROOT/'scripts'))
+    from android_checks import active_wake_locks
+    history="\n\nWake Lock Log\n  ACQ GGUFChat:LocalCompute\n  REL GGUFChat:LocalCompute\n"
+    assert not active_wake_locks('Wake Locks: size=0\n'+history)
+    held="Wake Locks: size=1\n  PARTIAL_WAKE_LOCK 'GGUFChat:LocalCompute' ACQ=2s (uid=123)\n"
+    assert 'GGUFChat:LocalCompute' in active_wake_locks(held+history)
+    with pytest.raises(AssertionError):active_wake_locks(history)
