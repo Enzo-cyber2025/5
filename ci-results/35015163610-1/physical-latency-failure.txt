@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "/home/runner/work/5/5/scripts/test_latency_android.py", line 126, in main
+    wait_ready(d);edit_prompt(d,'Respond in English. Use concise sentences. The reference code is CEDAR-8624.')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_physical_android.py", line 48, in edit_prompt
+    d.tap(text=('Restaurar padrão' if global_prompt else 'Usar padrão global') if reset else 'Salvar',package={PACKAGE})
+  File "/home/runner/work/5/5/scripts/test_android.py", line 81, in tap
+    raise AssertionError(f"Controle não encontrado: {selector}")
+AssertionError: Controle não encontrado: {'text': 'Salvar', 'package': {'com.ggufchat.app'}}
