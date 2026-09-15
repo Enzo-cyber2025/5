@@ -3,7 +3,7 @@
 process restart, cancellation recovery and real image generation while asleep.
 No injected assistant replies, no manufactured tokens or timing values.
 """
-import hashlib,json,re,statistics,traceback
+import hashlib,json,re,statistics,traceback,shlex
 from pathlib import Path
 import xml.etree.ElementTree as ET
 from test_mobile import MobileAndroid,APK,MODEL,PROJ,select_pair,bounds
@@ -15,6 +15,21 @@ E=Path('evidence')
 BACKGROUND=('A student practices reading and writing every day. The teacher recommends short lessons, regular breaks, careful notes and useful examples. ')*12
 FIRST=BACKGROUND+'Explain three useful ways to learn a language. Reply in English.'
 FOLLOW='Give one more practical recommendation, with a short explanation in English.'
+
+class LatencyAndroid(MobileAndroid):
+    def send(self,prompt,clear_log=True):
+        if clear_log:self.adb('logcat','-c')
+        self.tap(class_name='android.widget.EditText',package={PACKAGE})
+        # Android's `input text` uses synthetic key events. A single long burst
+        # can drop stale events under emulator load. Fresh bounded bursts plus
+        # exact field verification prevent benchmarking a truncated prompt.
+        for at in range(0,len(prompt),64):
+            self.shell('input text '+shlex.quote(prompt[at:at+64].replace(' ','%s')))
+        def exact():
+            fields=[n.get('text','') for n in ET.fromstring(self.ui()).iter('node') if n.get('class')=='android.widget.EditText' and n.get('package')==PACKAGE]
+            return prompt in fields
+        self.wait(exact,'entire input reached the EditText before sending',timeout=30)
+        self.tap(text='Enviar',package={PACKAGE},contains=True)
 
 def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 
@@ -49,7 +64,7 @@ def run_reply(d,chat,prompt,phase,new):
     return r
 
 def main():
-    E.mkdir(exist_ok=True);d=MobileAndroid('emulator-5554',E)
+    E.mkdir(exist_ok=True);d=LatencyAndroid('emulator-5554',E)
     c=json.load(open('ci/latency-candidate.json'));s=dict(status='FAIL',apk_sha256=sha(APK),checks={},benchmark={});checks=s['checks']
     try:
         assert s['apk_sha256']==c['apk_sha256'] and d.shell('getprop ro.kernel.qemu')=='1'
