@@ -72,6 +72,7 @@ def main():
         if os.environ.get('GGUF_PROGRESS_REQUIRED')=='1':
             from import_progress_checks import ProgressObserver
             observer=ProgressObserver(d,'small-pair')
+        d.progress_observer=observer
         select_pair(d)
         def merged():
             if observer:observer.poll()

@@ -1,7 +1,6 @@
 """Observe actual counters and UI during real SAF imports. No injected progress."""
 import json,re
 from pathlib import Path
-import xml.etree.ElementTree as ET
 
 PATTERN=re.compile(r'GGUF_IMPORT_PROGRESS stage=(\w+) percent=(-?\d+) done=(\d+) total=(-?\d+) complete=(true|false)')
 
@@ -16,13 +15,14 @@ class ProgressObserver:
         self.finished='GGUF_IMPORT_PROGRESS_FINISHED success=true' in log
         (self.d.evidence/f'physical-progress-{self.label}-log.txt').write_text(log)
         if self.events and not self.finished:
-            stage=self.events[-1]['stage']
-            if stage not in self.captured:
-                xml=self.d.ui();text='\n'.join(n.get('text','') for n in ET.fromstring(xml).iter('node'))
-                if 'Importação 1' in text and '%' in text:
-                    self.d.capture(f'physical-progress-{self.label}-{stage}.png')
-                    (self.d.evidence/f'physical-progress-{self.label}-{stage}.json').write_text(json.dumps({'latest_logged_stage':stage,'visible_text':text},ensure_ascii=False,indent=2))
-                    self.captured.add(stage)
+            event=self.events[-1];stage=event['stage']
+            frame=stage+'-'+str(max(0,event['percent'])//20)
+            if frame not in self.captured:
+                # screencap does not wait for accessibility idle. Hierarchy dumps
+                # can wait until a short, continuously updating import is over.
+                self.d.capture(f'physical-progress-{self.label}-{frame}.png')
+                (self.d.evidence/f'physical-progress-{self.label}-{frame}.json').write_text(json.dumps({'latest_logged_event':event,'capture':'real adb screencap during unfinished work; review pixels, not reconstructed UI'},ensure_ascii=False,indent=2))
+                self.captured.add(frame)
         return self.finished
 
     def finish(self,source_sizes,vision=False,pair=False):

@@ -61,7 +61,12 @@ def select_pair(d):
     d.capture('saf-two-selected.png')
     # Select is the toolbar action. Do not hit a row's accessibility Open icon.
     d.tap(text='Select',package=PICKERS)
-    d.wait(lambda:not has_package(d.ui(),PICKERS),'retorno da seleção SAF')
+    observer=getattr(d,'progress_observer',None)
+    if observer:
+        # Actual worker events prove the SAF result reached the app; do not block
+        # the first screenshot on uiautomator's accessibility-idle wait.
+        d.wait(lambda:observer.poll() or bool(observer.events),'progresso real após seleção SAF')
+    else:d.wait(lambda:not has_package(d.ui(),PICKERS),'retorno da seleção SAF')
 
 
 def main():

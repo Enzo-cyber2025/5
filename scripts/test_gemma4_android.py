@@ -64,6 +64,7 @@ def main():
         if os.environ.get('GGUF_PROGRESS_REQUIRED')=='1':
             from import_progress_checks import ProgressObserver
             observer=ProgressObserver(d,'gemma4-pair')
+        d.progress_observer=observer
         mobile.select_pair(d)
         def complete():
             if observer:observer.poll()

@@ -12,6 +12,7 @@ import json,hashlib
 from pathlib import Path
 v=json.loads(Path('.delivery/progress-acceptance.json').read_text());e=json.loads(Path('ci/progress-candidate.json').read_text())
 assert v['status']=='SIGNED_PROGRESS_ANDROID_PASS' and v['apk_sha256']==e['apk_sha256']
+assert v['ui_review']['status']=='PASS' and v['ui_review']['genuine_screenshots']
 reports={}
 for suite in ('gemma4','regression'):
     ref=v[suite];run=json.loads(Path(f'/tmp/atomic-{suite}-run.json').read_text())

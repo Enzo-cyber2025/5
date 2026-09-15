@@ -213,6 +213,7 @@ class Android:
             point = position(xml, text=filename, package=PICKERS)
             if point:
                 self.shell(f"input tap {point[0]} {point[1]}")
+                if getattr(self,'progress_observer',None):self.progress_observer.poll()
                 time.sleep(2)
                 xml = self.ui()
                 if not has_package(xml, PICKERS):
