@@ -1,3 +1,5 @@
+> **Histórico:** relatório do APK anterior `f228a5…`, com certificado `9a368c…`. A nova transação obrigatória e a mudança de assinatura estão em [ATOMIC_IMPORT.md](ATOMIC_IMPORT.md).
+
 # Gemma 4 — unificação física e assinatura preservada
 
 **PASS funcional no APK efetivamente assinado. Gemma 4: imagem, reinício e texto sem anexos passaram. Qualidade geral de modelos pequenos não aprovada.**

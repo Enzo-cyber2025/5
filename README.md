@@ -1,3 +1,25 @@
+# GGUF Chat — unificação obrigatória e reconhecimento real
+
+## [Baixar APK — sem ZIP](https://github.com/Enzo-cyber2025/5/releases/download/gguf-atomic-5cf14ef/GGUF-Chat-mobile.apk)
+
+**28.341.710 bytes · Android 9+ · ARM64 e x86_64 · modelos não incluídos.**
+
+**NOVA ASSINATURA, conforme alternativa autorizada:** a chave privada anterior não pôde ser recuperada. Este APK não atualiza por cima da versão anterior. Guarde conversas, anexos e modelos fora do app antes de desinstalar qualquer versão.
+
+- **Dois arquivos juntos: um GGUF validado ou rejeição.** Nenhum componente é publicado na biblioteca antes de concluir unificação, conferir todos os bytes dos tensores e carregar linguagem/visão no motor nativo.
+- **Um GGUF visual já unificado:** reconhecido como visual pelo conteúdo real, com olho/câmera. **Modelo textual:** sem olho/câmera, independentemente do nome.
+- **Testes Android do mesmo APK assinado:** Gemma 4 com 2.012 tensores em um arquivo; `Dog` / `Dog` após reiniciar / `4` sem imagem. GGUF externo independente e texto não visual passaram.
+- Dois modelos textuais, dois projetores, arquivo truncado e pesos recusados pelo motor: rejeitados sem novos registros/arquivos e sem modificar originais, biblioteca ou conversas preexistentes.
+
+Isso não torna qualquer par incompatível combinável. Reimporte os dois originais para aplicar a transação a um par antigo; pares legados não são apagados/convertidos silenciosamente. Vulkan foi testado por software no emulador, não em GPU física. Qualidade geral de respostas e transcrição de áudio não são aprovadas.
+
+[Relatório e capturas reais](docs/ATOMIC_IMPORT.md) · [Proveniência dos jobs aprovados](.delivery/atomic-acceptance.json)
+
+SHA-256: `5f7247a5ffe663a583ccf46adf161f2e8f27e64780f3aa3a39f070c8259bd840`.
+
+<details>
+<summary>Versões anteriores e histórico — não são as instruções da assinatura atual</summary>
+
 # GGUF Chat — Gemma 4, arquivo único e assinatura preservada
 
 ## [Baixar APK — sem ZIP](https://github.com/Enzo-cyber2025/5/releases/download/gguf-gemma4-ca7d8f1/GGUF-Chat-mobile.apk)
@@ -248,6 +270,8 @@ também publica apenas resumos/capturas limitados em `ci-results/` **nesta mesma
 com `[skip ci]` para evitar repetição automática. Sem force-push nem outras branches.
 O workflow antigo do repositório não foi alterado; o erro histórico dos pontos em
 `timeout-minutes` já estava resolvido.
+
+</details>
 
 </details>
 

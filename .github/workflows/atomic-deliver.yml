@@ -1,0 +1,25 @@
+name: Deliver verified atomic import APK
+on:
+  push:
+    branches: [arena/01a09b42-5]
+    paths: [.github/workflows/atomic-deliver.yml, .delivery/atomic-acceptance.json]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  deliver:
+    if: ${{ contains(github.event.head_commit.message, '[atomic publish]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: Verify both signed Android suites, signature and public download bytes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: Enzo-cyber2025/5
+        run: bash ci/log_step.sh atomic-delivery bash ci/deliver_atomic.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: atomic-delivery-verification
+          path: .cache/ci-logs/
