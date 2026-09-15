@@ -89,3 +89,22 @@ def test_system_edit_uses_verified_input_and_save_not_back():
     editor=s[s.index('def edit_system_prompt'):s.index('def sha(p)')]
     assert 'd.enter_text(text)' in editor and "d.tap(text='Salvar'" in editor
     assert 'keyevent' not in editor and 'input text' not in editor
+
+
+def test_downloads_waits_for_visible_drawer_and_provider_title():
+    sys.path.insert(0,str(ROOT/'scripts'))
+    from test_android import Android
+    class Fake:
+        count=0
+        commands=[]
+        def ui(self):
+            self.count+=1
+            root='<node enabled="true" text="Open from" package="com.google.android.documentsui" bounds="[0,0][400,70]"/>'
+            download='<node enabled="true" text="Downloads" package="com.google.android.documentsui" resource-id="com.google.android.documentsui:id/title" bounds="[20,100][220,160]"/>'
+            return '<hierarchy>'+root+(download if self.count>1 else '')+'</hierarchy>'
+        def wait(self,fn,*args,**kwargs):
+            assert fn() is None
+            result=fn();assert result is not None;return result
+        def shell(self,command):self.commands.append(command)
+    d=Fake();Android.select_downloads(d)
+    assert d.commands==['input tap 120 130'] and d.count==2

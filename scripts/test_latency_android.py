@@ -231,7 +231,7 @@ def main():
         s['error']=str(ex);(E/'physical-latency-failure.txt').write_text(traceback.format_exc());traceback.print_exc()
     finally:
         (E/'summary.json').write_text(json.dumps(s,indent=2,ensure_ascii=False))
-        try:d.capture('physical-latency-final.png');(E/'physical-latency-final-log.txt').write_text(d.adb('logcat','-d')[-150000:])
+        try:(E/'physical-latency-final-ui.txt').write_text(d.ui());d.capture('physical-latency-final.png');(E/'physical-latency-final-log.txt').write_text(d.adb('logcat','-d')[-150000:])
         except Exception:pass
         print(json.dumps(s,indent=2,ensure_ascii=False))
     return 0 if s['status']=='PASS' else 1

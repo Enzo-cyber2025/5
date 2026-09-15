@@ -186,10 +186,22 @@ class Android:
         return saved
 
     def select_downloads(self):
-        for label in ("Downloads", "Download"):
-            if self.tap(text=label, resource_id="android:id/title", package=PICKERS, optional=True):
-                return
-        raise AssertionError("Raiz Downloads ausente no menu SAF")
+        # The drawer animates/populates asynchronously. A single lookup for each
+        # spelling can miss Downloads just as it appears on the second lookup.
+        # Use one observed snapshot and accept both framework/provider title IDs.
+        def ready():
+            xml = self.ui()
+            if not any(position(xml, text=t, package=PICKERS) for t in ("Open from", "Abrir de")):
+                return None
+            for n in ET.fromstring(xml).iter("node"):
+                rid = n.get("resource-id", "")
+                if n.get("text", "").casefold() in ("downloads", "download") and rid.endswith("/title"):
+                    point = position(xml, text=n.get("text"), resource_id=rid, package=PICKERS)
+                    if point:
+                        return point
+            return None
+        x, y = self.wait(ready, "Raiz Downloads visível no menu SAF", timeout=30)
+        self.shell(f"input tap {x} {y}")
 
     def confirm_picker(self, xml):
         for label in ("Open", "Abrir", "Select", "Selecionar", "Done", "Concluído"):
