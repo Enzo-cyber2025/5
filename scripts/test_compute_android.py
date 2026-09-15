@@ -7,7 +7,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 import test_mobile as mobile
 from test_mobile import MobileAndroid,APK
-from android_checks import PACKAGE,position,generation_completed,assistant_reply,active_wake_locks
+from android_checks import PACKAGE,position,generation_completed,assistant_reply,active_wake_locks,completed_after_actual_sleep
 from test_single_import_ui_android import select,push
 from test_physical_android import tensor_hashes
 E=Path('evidence');GEMMA=os.environ.get('GGUF_COMPUTE_GEMMA')=='1'
@@ -75,20 +75,23 @@ def main():
             assert size>0 and available>0
             estimate=size+size//2+512*262144+268435456
             assert estimate>available*7//10,(estimate,available)
+            (E/'physical-compute-memory.json').write_text(json.dumps(dict(file_bytes=size,available_bytes=available,old_estimate=estimate,old_limit=available*7//10,old_would_reject=True,actual_native_load='PASS'),indent=2))
             c['real_gemma_load_succeeds_where_old_memory_formula_rejected']='PASS'
         output=Path('.cache/compute-unified.gguf');d.adb('pull',model['path'],output,timeout=600)
         expected=tensor_hashes(mobile.MODEL);expected.update(tensor_hashes(mobile.PROJ));assert tensor_hashes(output)==expected
+        (E/'physical-compute-tensors.json').write_text(json.dumps(dict(apk_sha256=s['apk_sha256'],tensor_count=len(expected),size=output.stat().st_size,tensors=expected),indent=2))
         assert model['path']==model['mmprojPath'];c['independent_tensor_and_same_file_audit']='PASS'
         on(d);d.launch();d.tap(text='Importar',package={PACKAGE});no_emoji(d);d.capture('physical-compute-library.png')
         chat=d.new_chat(model,0,context_size=1024)
         no_emoji(d);d.capture('physical-compute-chat.png')
         d.tap(desc='Alternar ferramentas',package={PACKAGE});no_emoji(d);d.capture('physical-compute-tools.png');d.tap(desc='Alternar ferramentas',package={PACKAGE})
         prompt='Write a detailed explanation of how rain forms, in English.'
-        d.send(prompt);pid=d.alive();off(d)
-        before=d.adb('logcat','-d');assert not generation_completed(before),'Generation finished before screen-off'
+        d.send(prompt);pid=d.alive()
         power=d.shell('dumpsys power');services=d.shell('dumpsys activity services '+PACKAGE)
+        before=d.adb('logcat','-d')
         assert 'GenerationService' in services and 'isForeground=true' in services and 'GGUFChat:LocalCompute' in active_wake_locks(power)
         (E/'physical-compute-generation-start.txt').write_text(power+'\n'+services+'\n'+before[-150000:])
+        off(d)
         def reply():
             assert d.alive()==pid
             if not generation_completed(d.adb('logcat','-d')):return None
@@ -97,6 +100,7 @@ def main():
         time.sleep(12) # No synthetic worker or fabricated progress.
         answer=d.wait(reply,'resposta real gravada com tela apagada',timeout=1200)
         power=d.shell('dumpsys power');assert 'mWakefulness=Asleep' in power
+        log=d.adb('logcat','-d');assert completed_after_actual_sleep(log),'Native completion did not occur after actual system sleep'
         (E/'physical-compute-response.txt').write_text(answer)
         (E/'physical-compute-generation-complete.txt').write_text(power+'\n'+d.adb('logcat','-d')[-150000:])
         d.wait(lambda:'GGUFChat:LocalCompute' not in active_wake_locks(d.shell('dumpsys power')),'wakelock liberado após geração')

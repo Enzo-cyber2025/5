@@ -51,3 +51,13 @@ def test_power_audit_does_not_confuse_history_with_held_locks():
     held="Wake Locks: size=1\n  PARTIAL_WAKE_LOCK 'GGUFChat:LocalCompute' ACQ=2s (uid=123)\n"
     assert 'GGUFChat:LocalCompute' in active_wake_locks(held+history)
     with pytest.raises(AssertionError):active_wake_locks(history)
+
+
+def test_fast_completion_after_sleep_is_not_mislabeled_before_sleep():
+    sys.path.insert(0,str(ROOT/'scripts'))
+    from android_checks import completed_after_actual_sleep
+    sleep='09-15 15:44:54.424 552 609 I PowerManagerService: Sleeping (uid 1000)...\n'
+    done='09-15 15:44:55.297 5100 5408 I GGUFChatNative: GGUF_NATIVE_COMPLETE tokens=40 reason=eog projector=1\n'
+    assert completed_after_actual_sleep(sleep+done)
+    assert not completed_after_actual_sleep(sleep+done.replace('55.297','53.297'))
+    assert not completed_after_actual_sleep(done)

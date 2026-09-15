@@ -148,3 +148,12 @@ def active_wake_locks(power_dump):
     if int(match.group(1))==0:return ''
     body=power_dump[match.end():].lstrip('\r\n')
     return re.split(r'\n[ \t]*\n',body,maxsplit=1)[0]
+
+
+def completed_after_actual_sleep(log):
+    """A fast model can finish AFTER screen-off but BEFORE the observer polls.
+    Compare the system's actual Sleeping event with the native completion instead.
+    """
+    sleep=re.search(r'(?m)^(\d\d-\d\d \d\d:\d\d:\d\d\.\d+) .*PowerManagerService: Sleeping \(',log)
+    done=re.search(r'(?m)^(\d\d-\d\d \d\d:\d\d:\d\d\.\d+) .*GGUF_NATIVE_COMPLETE',log)
+    return bool(sleep and done and done.group(1)>sleep.group(1))
