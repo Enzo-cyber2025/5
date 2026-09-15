@@ -31,7 +31,10 @@ def test_compute_binary_manifest_of_actual_last_release():
     from androguard.core.axml import AXMLPrinter
     from compute_manifest import compute_manifest
     with zipfile.ZipFile(ROOT/'.delivery/GGUF-Chat-mobile.apk') as z:data=z.read('AndroidManifest.xml')
-    after=AXMLPrinter(compute_manifest(data)).get_xml_obj();ns='{http://schemas.android.com/apk/res/android}'
+    ns='{http://schemas.android.com/apk/res/android}'
+    before=AXMLPrinter(data).get_xml_obj()
+    patched=any(x.get(ns+'name')=='com.ggufchat.app.ComputeService' for x in before.findall('application/service'))
+    after=before if patched else AXMLPrinter(compute_manifest(data)).get_xml_obj()
     services=after.findall('application/service');assert len(services)==2
     for s in services:
         assert s.get(ns+'exported')=='false'

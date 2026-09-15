@@ -54,6 +54,7 @@ def main():
             assert d.alive()==pid
             rows=d.read_json('models.json',optional=True)
             return rows[0] if len(rows)==1 and rows[0].get('capability')=='VISION_SINGLE_GGUF' else None
+        time.sleep(12) # No ADB polling: real work proceeds with the display off.
         model=d.wait(done,'unificação persistida enquanto tela permanece apagada',timeout=1800)
         power=d.shell('dumpsys power');assert 'mWakefulness=Asleep' in power
         log=d.adb('logcat','-d');assert 'GGUF_ATOMIC_NATIVE_VALIDATED same_path=1' in log
@@ -87,6 +88,7 @@ def main():
             if not generation_completed(d.adb('logcat','-d')):return None
             try:return assistant_reply(d.read_json('chats.json'),chat['id'],prompt)
             except AssertionError:return None
+        time.sleep(12) # No synthetic worker or fabricated progress.
         answer=d.wait(reply,'resposta real gravada com tela apagada',timeout=1200)
         power=d.shell('dumpsys power');assert 'mWakefulness=Asleep' in power
         (E/'physical-compute-response.txt').write_text(answer)
