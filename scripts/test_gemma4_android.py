@@ -14,7 +14,8 @@ E=Path('evidence');BASE=Path('.cache/gemma4-models')
 mobile.MODEL=BASE/'gemma-4-E2B-it-Q3_K_S.gguf'
 mobile.PROJ=BASE/'mmproj-F16.gguf'
 OLD=Path('.cache/previous-physical.apk')
-OLD_SHA='4d1697c2ee9b80ba38a03ee78ab0241dc8aa3d5464c956707e2412be70b11ce6'
+OLD_SHA=os.environ.get('GGUF_PREVIOUS_APK_SHA','4d1697c2ee9b80ba38a03ee78ab0241dc8aa3d5464c956707e2412be70b11ce6')
+OLD_CERT=os.environ.get('GGUF_PREVIOUS_CERT_SHA','9a368c9a1e4f3b3b0b6ecfb86aa3768d633a925855afba27eab3b9189177955a')
 
 
 def main():
@@ -38,7 +39,7 @@ def main():
         d.adb('install','-r','-g',OLD,timeout=180);assert d.shell('pm clear '+PACKAGE)=='Success'
         d.grant_test_notifications();d.launch()
         d.write_private('files/signature-update-probe.txt','Gemma4 in-place update probe')
-        if candidate['signer_sha256']=='9a368c9a1e4f3b3b0b6ecfb86aa3768d633a925855afba27eab3b9189177955a':
+        if candidate['signer_sha256']==OLD_CERT:
             d.adb('install','-r','-g',APK,timeout=180)
             assert d.shell('cat /data/user/0/'+PACKAGE+'/files/signature-update-probe.txt')=='Gemma4 in-place update probe'
             checks['same_signature_update_retains_private_data']='PASS'
@@ -59,11 +60,17 @@ def main():
         for path in (mobile.MODEL,mobile.PROJ):
             d.adb('push',path,'/sdcard/Download/'+path.name,timeout=600)
             d.shell('am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d '+shlex.quote('file:///sdcard/Download/'+path.name),check=False)
+        observer=None
+        if os.environ.get('GGUF_PROGRESS_REQUIRED')=='1':
+            from import_progress_checks import ProgressObserver
+            observer=ProgressObserver(d,'gemma4-pair')
         mobile.select_pair(d)
         def complete():
+            if observer:observer.poll()
             rows=d.read_json('models.json',optional=True)
             return rows[0] if len(rows)==1 and rows[0].get('capability')=='VISION_SINGLE_GGUF' and rows[0]['path']==rows[0].get('mmprojPath') else None
         unit=d.wait(complete,'Gemma4 unificado fisicamente',timeout=1800)
+        if observer:checks['measured_per_file_identification_merge_verify_progress']=observer.finish([mobile.MODEL.stat().st_size,mobile.PROJ.stat().st_size],pair=True)
         assert unit['architecture']=='gemma4'
         assert 'GGUF_PHYSICAL_UNIFICATION_OK' in d.adb('logcat','-d')
         if os.environ.get('GGUF_ATOMIC_REQUIRED')=='1':

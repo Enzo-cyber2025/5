@@ -61,11 +61,17 @@ def main():
         for f in (MODEL,PROJ):
             d.adb('push',f,'/sdcard/Download/'+f.name,timeout=300)
             d.shell('am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d '+shlex.quote('file:///sdcard/Download/'+f.name),check=False)
+        observer=None
+        if os.environ.get('GGUF_PROGRESS_REQUIRED')=='1':
+            from import_progress_checks import ProgressObserver
+            observer=ProgressObserver(d,'small-pair')
         select_pair(d)
         def merged():
+            if observer:observer.poll()
             rows=d.read_json('models.json',optional=True)
             return rows[0] if len(rows)==1 and rows[0].get('capability')=='VISION_SINGLE_GGUF' and rows[0]['path']==rows[0].get('mmprojPath') else None
         unit=d.wait(merged,'unificação física persistida',timeout=600)
+        if observer:checks['measured_pair_progress']=observer.finish([MODEL.stat().st_size,PROJ.stat().st_size],pair=True)
         assert 'GGUF_PHYSICAL_UNIFICATION_OK' in d.adb('logcat','-d')
         if os.environ.get('GGUF_ATOMIC_REQUIRED')=='1':
             log=d.adb('logcat','-d')
@@ -88,14 +94,18 @@ def main():
         log=before_load+(E/'inference-physical-one-file-logcat.txt').read_text();(E/'physical-native-load.txt').write_text(log);assert 'GGUF_SINGLE_FILE_LOADED same_path=1' in log and 'GGUF_PROJECTOR_WEIGHTS backend=Vulkan' in log
         checks['same_file_language_projector_visual_inference_vulkan']='PASS'
         external=independent_single();assert tensor_hashes(external)==expected
+        if observer:d.progress_observer=ProgressObserver(d,'single-vision')
         foreign=d.import_model(external);assert foreign['path']==foreign.get('mmprojPath') and foreign['multimodal'] and foreign['capability']=='VISION_SINGLE_GGUF'
+        if observer:checks['measured_single_vision_progress']=d.progress_observer.finish([external.stat().st_size],vision=True);d.progress_observer=None
         assert d.shell('sha256sum '+shlex.quote(foreign['path'])).split()[0]==hashlib.sha256(external.read_bytes()).hexdigest()
         chat=d.new_chat(foreign,99,context_size=4096);attach(d,chat,['frame-b.jpg'])
         answer=reply(d,chat,'Name the main vehicle in the image. Reply in English.','external-single-file',images=1);assert 'bus' in answer.lower(),answer
         checks['independent_external_format_single_file_import_and_inference']='PASS'
         # Actual language weights under a misleading filename do not acquire an eye.
         normal_file=C/'mmproj-fake-vision-name.gguf';shutil.copyfile('.cache/mobile-models/SmolLM2-135M-Instruct-Q4_K_M.gguf',normal_file)
+        if observer:d.progress_observer=ProgressObserver(d,'single-text')
         normal=d.import_model(normal_file);assert not normal.get('mmprojPath') and not normal['multimodal'] and normal['capability']=='TEXT_ONLY'
+        if observer:checks['measured_single_text_progress']=d.progress_observer.finish([normal_file.stat().st_size]);d.progress_observer=None
         d.capture('physical-normal-no-eye.png');checks['parameter_detection_not_filename']='PASS'
         global_text='You are a helpful assistant. Reply in English. Reference code: ORCHID-5291.'
         custom='You are a helpful assistant. Reply in English. Reference code: CEDAR-8624.'

@@ -247,6 +247,7 @@ class Android:
         self.choose_file(source.name)
 
         def completed():
+            if getattr(self,'progress_observer',None):self.progress_observer.poll()
             self.alive()
             models = self.read_json("models.json", optional=True)
             try:
@@ -336,6 +337,7 @@ class Android:
         self.wait(submitted, "prompt enviado e persistido pelo aplicativo", timeout=30)
 
         def completed():
+            if getattr(self,'progress_observer',None):self.progress_observer.poll()
             self.alive()
             log = self.adb("logcat", "-d", f"--pid={pid}")
             (self.evidence / f"{stage}-logcat.txt").write_text(log)

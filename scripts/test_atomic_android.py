@@ -2,7 +2,7 @@
 """Actual SAF negative transactions on the exact APK; no model/index injection.
 Run after physical acceptance. Preserve existing models/chats across every rejection.
 """
-import hashlib,json,shlex,sys,traceback
+import hashlib,json,shlex,sys,traceback,os
 from pathlib import Path
 import test_mobile as mobile
 from test_mobile import MobileAndroid,APK
@@ -42,6 +42,11 @@ def main():
             d.capture('physical-atomic-'+name+'.png')
             log=d.adb('logcat','-d');(E/('physical-atomic-'+name+'.txt')).write_text(log)
             assert 'GGUF_ATOMIC_IMPORT_REJECTED' in log and 'GGUF_ATOMIC_IMPORT_COMMITTED' not in log
+            if os.environ.get('GGUF_PROGRESS_REQUIRED')=='1':
+                assert 'GGUF_IMPORT_PROGRESS_FINISHED success=false' in log
+                assert 'GGUF_IMPORT_PROGRESS_FINISHED success=true' not in log
+                assert 'GGUF_IMPORT_PROGRESS stage=save percent=100' not in log
+                summary.setdefault('progress_failure_checks',{})[name]='PASS: rejected transaction never reports whole-import success or save 100%'
             if name.startswith('native_loader'):
                 assert 'Create failed:' in log or 'Failed to load model' in log,'A rejeição deve chegar ao motor real'
             d.tap(text='OK',package={PACKAGE})
