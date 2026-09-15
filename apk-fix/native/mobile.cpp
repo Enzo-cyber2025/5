@@ -26,6 +26,7 @@
 #include <climits>
 
 #define LOG(...) __android_log_print(ANDROID_LOG_INFO,"GGUFChatNative",__VA_ARGS__)
+struct ImageEmbedding {std::string metadata;std::vector<float> values;};
 struct Engine {
     llama_model *model=nullptr;
     llama_context *ctx=nullptr;
@@ -36,6 +37,9 @@ struct Engine {
     int layers=0;
     std::vector<llama_token> cached_tokens; // exact tokens whose KV is present
     bool cache_supported=false;
+    std::string image_set_id;
+    std::vector<ImageEmbedding> image_cache;
+    size_t image_cache_bytes=0;
     ~Engine() { if(projector) mtmd_free(projector); if(ctx) llama_free(ctx); if(model) llama_model_free(model); }
 };
 static std::mutex registry_mutex;
@@ -272,6 +276,8 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
             if(!e->projector || !mtmd_support_vision(e->projector))
                 throw std::runtime_error("Este modelo/projetor não aceita imagens. Use um par com visão.");
             mtmd::bitmaps bitmaps;
+            std::string image_set_id;
+            bool image_ids_valid=true;
             for(int i=0;i<n_images;i++) {
                 if(e->cancel)throw std::runtime_error("Geração cancelada");
                 auto path=(jstring)env->GetObjectArrayElement(images,i);
@@ -279,7 +285,16 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
                 auto decoded=mtmd_helper_bitmap_init_from_file(e->projector,filename.c_str(),false,mtmd_helper_init_opt_default());
                 mtmd::bitmap bitmap(decoded.bitmap);
                 if(!bitmap.ptr || mtmd_bitmap_is_audio(bitmap.ptr.get()))throw std::runtime_error("Não foi possível decodificar uma imagem preparada");
+                // The pinned helper hashes the ACTUAL encoded bytes with SHA-256.
+                // Paths, filenames, conversation IDs and user labels are not keys.
+                const char *id=mtmd_bitmap_get_id(bitmap.ptr.get());
+                if(!id || std::strlen(id)!=64)image_ids_valid=false;
+                else {image_set_id+=id;image_set_id+=';';}
                 bitmaps.entries.push_back(std::move(bitmap));
+            }
+            if(!image_ids_valid || e->image_set_id!=image_set_id) {
+                e->image_cache.clear();e->image_cache_bytes=0;
+                e->image_set_id=image_ids_valid?image_set_id:std::string();
             }
             mtmd::input_chunks chunks(mtmd_input_chunks_init());
             auto ptrs=bitmaps.c_ptr();auto input=media_input(text);
@@ -288,15 +303,55 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
             input_size=mtmd_helper_get_n_tokens(chunks.ptr.get());
             if(input_size+1>=(size_t)llama_n_ctx(e->ctx))
                 throw std::runtime_error("Texto e imagens excedem o contexto. Desative anexos na lista, use outra conversa ou aumente o contexto. Nenhum conteúdo foi cortado silenciosamente.");
-            llama_pos past=0;
+            llama_pos past=0;size_t image_ordinal=0,image_hits=0,image_misses=0;
             for(size_t i=0;i<chunks.size();i++) {
                 if(e->cancel)throw std::runtime_error("Geração cancelada");
                 const auto *chunk=chunks[i];
-                if(mtmd_helper_eval_chunk_single(e->projector,e->ctx,chunk,past,0,llama_n_batch(e->ctx),i+1==chunks.size(),&past)!=0)
-                    throw std::runtime_error("Falha ao avaliar texto/imagem no modelo");
-                if(mtmd_input_chunk_get_type(chunk)==MTMD_INPUT_CHUNK_TYPE_IMAGE)
-                    LOG("GGUF_IMAGE_EVALUATED tokens=%zu backend=%s",mtmd_input_chunk_get_n_tokens(chunk),e->layers>0?"Vulkan":"CPU");
+                const bool is_image=mtmd_input_chunk_get_type(chunk)==MTMD_INPUT_CHUNK_TYPE_IMAGE;
+                int result;
+                if(is_image) {
+                    // Per-request image order + per-slice ordinal + full geometry
+                    // distinguish different crops even when their source hash matches.
+                    std::string metadata;
+                    size_t meta_size=0;
+                    if(image_ids_valid && mtmd_input_chunk_save(chunk,nullptr,0,&meta_size)==0 && meta_size>0 && meta_size<65536) {
+                        metadata.resize(meta_size);
+                        if(mtmd_input_chunk_save(chunk,&metadata[0],metadata.size(),&meta_size)!=0)metadata.clear();
+                    }
+                    float *embd=nullptr;
+                    const size_t count=mtmd_input_chunk_get_n_tokens(chunk)*(size_t)llama_model_n_embd_inp(e->model);
+                    if(!metadata.empty() && image_ordinal<e->image_cache.size()) {
+                        auto &cached=e->image_cache[image_ordinal];
+                        if(cached.metadata==metadata && cached.values.size()==count)embd=cached.values.data();
+                    }
+                    if(embd) image_hits++;
+                    else {
+                        image_misses++;
+                        if(mtmd_encode_chunk(e->projector,chunk)!=0)throw std::runtime_error("Falha ao codificar pixels no projetor");
+                        embd=mtmd_get_output_embd(e->projector);
+                        if(!embd)throw std::runtime_error("Projetor não devolveu embeddings visuais");
+                        // Optional RAM cache, NOT an attachment/input quota. Larger
+                        // inputs still run normally; OOM in this copy drops the cache.
+                        constexpr size_t cache_limit=16*1024*1024;
+                        if(!metadata.empty() && count<=cache_limit/sizeof(float) && e->image_cache_bytes+count*sizeof(float)<=cache_limit) {
+                            try {
+                                if(e->image_cache.size()<=image_ordinal)e->image_cache.resize(image_ordinal+1);
+                                auto &cached=e->image_cache[image_ordinal];
+                                e->image_cache_bytes-=cached.values.size()*sizeof(float);
+                                cached.metadata=metadata;cached.values.assign(embd,embd+count);
+                                e->image_cache_bytes+=count*sizeof(float);
+                            } catch(const std::bad_alloc &) {e->image_cache.clear();e->image_cache_bytes=0;}
+                        }
+                    }
+                    // Keep upstream non-causal attention, M-RoPE and batching logic.
+                    // Only the pure vision encoder is skipped on an exact cache hit.
+                    result=mtmd_helper_decode_image_chunk(e->projector,e->ctx,chunk,embd,past,0,llama_n_batch(e->ctx),&past,nullptr,nullptr);
+                    image_ordinal++;
+                } else result=mtmd_helper_eval_chunk_single(e->projector,e->ctx,chunk,past,0,llama_n_batch(e->ctx),i+1==chunks.size(),&past);
+                if(result!=0)throw std::runtime_error("Falha ao avaliar texto/imagem no modelo");
+                if(is_image)LOG("GGUF_IMAGE_EVALUATED tokens=%zu backend=%s",mtmd_input_chunk_get_n_tokens(chunk),e->layers>0?"Vulkan":"CPU");
             }
+            LOG("GGUF_IMAGE_EMBED_CACHE hits=%zu misses=%zu bytes=%zu",image_hits,image_misses,e->image_cache_bytes);
             LOG("GGUF_MEDIA_PREFILL images=%d tokens=%zu positions=%d",n_images,input_size,past);
         } else {
             auto input=tokens(vocab,text);input_size=input.size();
@@ -349,6 +404,7 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
         ok=true;LOG("GGUF_NATIVE_COMPLETE tokens=%d reason=%s projector=%d",emitted,reason,e->projector!=nullptr);
     } catch(const std::exception &ex) {
         e->cached_tokens.clear(); // failed/partial work is never reused
+        e->image_cache.clear();e->image_cache_bytes=0;e->image_set_id.clear();
         e->error=ex.what();LOG("Generation failed: %s",ex.what());
         // Cancellation still preserves already produced complete text.
         if(on_token&&!env->ExceptionCheck())try{flush();}catch(...){}

@@ -44,3 +44,14 @@ def test_incremental_stream_has_no_full_copy_or_live_truncation(tmp_path):
     patch_latency_ui(tmp_path);s=file.read_text()
     assert 'TextView;->append(Ljava/lang/CharSequence;)V' in s
     assert 'toString' not in s and 'substring' not in s and 'replace(' not in s
+
+def test_image_cache_is_bounded_content_keyed_and_keeps_upstream_positions():
+    s=(ROOT/'apk-fix/native/mobile.cpp').read_text()
+    assert 'mtmd_bitmap_get_id(bitmap.ptr.get())' in s
+    assert 'e->image_set_id!=image_set_id' in s
+    assert 'mtmd_input_chunk_save(chunk' in s and 'image_ordinal' in s
+    assert 'cached.metadata==metadata && cached.values.size()==count' in s
+    assert 'constexpr size_t cache_limit=16*1024*1024' in s
+    assert 'catch(const std::bad_alloc &)' in s
+    assert 'mtmd_helper_decode_image_chunk(e->projector,e->ctx,chunk,embd,past,0' in s
+    assert 'GGUF_IMAGE_EMBED_CACHE hits=' in s

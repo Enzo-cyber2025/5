@@ -32,7 +32,7 @@ def latest_footer(d,r,name):
     nodes,caption=d.wait(find,'latest measured footer')
     rate=float(re.search(r'([\d.,]+) tokens/s',caption.get('text',''))[1].replace(',','.'))
     assert abs(rate-r['native_decode_tokens_s'])<=0.051
-    body=next(n for n in reversed(nodes) if n.get('text')==r['response'])
+    body=next(n for n in reversed(nodes) if n.get('text','').strip()==r['response'].strip())
     assert bounds(caption)[1]>=bounds(body)[3]
     d.capture('physical-latency-'+name+'.png')
 
@@ -138,6 +138,34 @@ def main():
         d.shell('input keyevent 224');d.shell('wm dismiss-keyguard');d.launch();d.open_existing_chat(chat['title'])
         j=msg['generationMetrics'];latest_footer(d,dict(response=answer,native_decode_tokens_s=j['tokens']*1e9/j['decodeNs']),'vision-footer')
         checks['real_image_no_text_cache_screen_off_and_lease_release']='PASS'
+        # Re-opening above deliberately discards all native state. Establish an
+        # image cache in this process, then ask again without restarting it.
+        warmup=reply(d,chat,'What animal is shown? Reply in English.','image-cache-fill',images=1)
+        fill_log=d.adb('logcat','-d',f'--pid={d.alive()}')
+        hit=re.search(r'GGUF_IMAGE_EMBED_CACHE hits=(\d+) misses=(\d+) bytes=(\d+)',fill_log);assert hit
+        assert int(hit[1])==0 and int(hit[2])>0 and 0<int(hit[3])<=16*1024*1024
+        fill=next(x for x in d.read_json('chats.json') if x['id']==chat['id'])['messages'][-1]['generationMetrics']
+        wait_ready(d);pid=d.alive()
+        warm=reply(d,chat,'Name that animal again. Reply in English.','image-cache-hit',images=1)
+        assert d.alive()==pid and 'dog' in warmup.lower() and 'dog' in warm.lower()
+        hit_log=d.adb('logcat','-d',f'--pid={pid}')
+        hit=re.search(r'GGUF_IMAGE_EMBED_CACHE hits=(\d+) misses=(\d+) bytes=(\d+)',hit_log);assert hit
+        assert int(hit[1])>0 and int(hit[2])==0 and 0<int(hit[3])<=16*1024*1024
+        warm_stats=next(x for x in d.read_json('chats.json') if x['id']==chat['id'])['messages'][-1]['generationMetrics']
+        s['image_prefill_ms']=dict(cold=fill['prefillNs']/1e6,warm=warm_stats['prefillNs']/1e6,scope='Same image and native process, different follow-up questions. One observation, not a statistical speed guarantee.')
+        (E/'physical-latency-image-cache-fill-log.txt').write_text(fill_log[-150000:])
+        (E/'physical-latency-image-cache-hit-log.txt').write_text(hit_log[-150000:])
+        latest_footer(d,dict(response=warm,native_decode_tokens_s=warm_stats['tokens']*1e9/warm_stats['decodeNs']),'cached-image-footer')
+        # A changed ordered set of real image bytes must not reuse the dog-only
+        # cache. All pixels still reach the existing decoder/positioning helper.
+        attach(d,chat,['frame-b.jpg']);wait_ready(d)
+        changed_image=reply(d,chat,'What vehicle is shown in the second image? Reply in English.','image-cache-changed',images=2)
+        assert 'bus' in changed_image.lower(),changed_image
+        changed_log=d.adb('logcat','-d',f'--pid={d.alive()}')
+        hit=re.search(r'GGUF_IMAGE_EMBED_CACHE hits=(\d+) misses=(\d+) bytes=(\d+)',changed_log);assert hit
+        assert int(hit[1])==0 and int(hit[2])>0
+        (E/'physical-latency-image-cache-changed-log.txt').write_text(changed_log[-150000:])
+        checks['same_image_embeddings_reused_and_changed_images_reencoded']='PASS'
         s['status']='PASS'
     except Exception as ex:
         s['error']=str(ex);(E/'physical-latency-failure.txt').write_text(traceback.format_exc());traceback.print_exc()
