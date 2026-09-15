@@ -82,3 +82,10 @@ def test_ime_registration_is_observed_after_real_unlock():
     assert 'ime list -a -s' in s and 'ime=d.wait(registered_ime' in s
     assert s.index("d.shell('wm dismiss-keyguard')") < s.index('ime=d.wait(registered_ime')
     assert "d.shell('ime enable '+shlex.quote(ime))" in s
+
+
+def test_system_edit_uses_verified_input_and_save_not_back():
+    s=(ROOT/'scripts/test_latency_android.py').read_text()
+    editor=s[s.index('def edit_system_prompt'):s.index('def sha(p)')]
+    assert 'd.enter_text(text)' in editor and "d.tap(text='Salvar'" in editor
+    assert 'keyevent' not in editor and 'input text' not in editor

@@ -8,7 +8,6 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 from test_mobile import MobileAndroid,APK,MODEL,PROJ,select_pair,bounds
 from test_generation_stats_android import measured_reply,TEXT
-from test_physical_android import edit_prompt
 from test_inference_android import fixtures,attach,reply
 from android_checks import PACKAGE,position,active_wake_locks,completed_after_actual_sleep
 E=Path('evidence')
@@ -20,6 +19,10 @@ class LatencyAndroid(MobileAndroid):
     def send(self,prompt,clear_log=True):
         if clear_log:self.adb('logcat','-c')
         self.tap(class_name='android.widget.EditText',package={PACKAGE})
+        self.enter_text(prompt)
+        self.tap(text='Enviar',package={PACKAGE},contains=True)
+
+    def enter_text(self,prompt):
         # Actual InputConnection, not slow/droppable synthetic key bursts.
         # The entire focused EditText is still independently verified below.
         dready=lambda: 'data="ready"' in self.shell('am broadcast -a com.ggufchat.testinput.READY -p com.ggufchat.testinput')
@@ -31,7 +34,18 @@ class LatencyAndroid(MobileAndroid):
             fields=[n.get('text','') for n in ET.fromstring(self.ui()).iter('node') if n.get('class')=='android.widget.EditText' and n.get('package')==PACKAGE]
             return prompt in fields
         self.wait(exact,'entire input reached the EditText before sending',timeout=30)
-        self.tap(text='Enviar',package={PACKAGE},contains=True)
+
+def edit_system_prompt(d,text):
+    # This test IME deliberately has no keyboard panel. Sending Back would
+    # dismiss the dialog itself, not a keyboard. Edit the actual dialog field
+    # through the same verified InputConnection and explicitly tap Save.
+    d.tap(desc='Alternar ferramentas',package={PACKAGE})
+    d.tap(desc='Prompt de sistema da conversa',package={PACKAGE})
+    d.wait(lambda:position(d.ui(),desc='Texto do prompt de sistema',package={PACKAGE}),'system editor')
+    d.tap(desc='Texto do prompt de sistema',package={PACKAGE});d.enter_text(text)
+    d.capture('system-chat-editor.png');d.tap(text='Salvar',package={PACKAGE})
+    d.wait(lambda:not position(d.ui(),desc='Texto do prompt de sistema',package={PACKAGE}),'saved system editor closed')
+    d.tap(desc='Alternar ferramentas',package={PACKAGE})
 
 def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 
@@ -123,7 +137,7 @@ def main():
                 pair=dict(cold=first,follow=follow)
                 if i:series[phase].append(pair)
             if new:latest_footer(d,follow,'follow-footer')
-            wait_ready(d);edit_prompt(d,'Respond in English. Use concise sentences. The reference code is CEDAR-8624.')
+            wait_ready(d);edit_system_prompt(d,'Respond in English. Use concise sentences. The reference code is CEDAR-8624.')
             changed[phase]=run_reply(d,chat,'What is the reference code?',phase+'-changed-system',new)
             assert d.alive()==pid,'Editing system prompt must not hide cache bugs by restarting'
             if new:
