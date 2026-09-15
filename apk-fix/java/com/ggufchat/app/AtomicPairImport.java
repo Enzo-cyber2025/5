@@ -25,15 +25,17 @@ public final class AtomicPairImport {
         if(alreadyBusy){Pairing.notify(c,"Aguarde a unificação atual terminar.");return true;}
         ArrayList<Uri> input=new ArrayList<>(selected);
         Pairing.notify(c,"Validando e unificando os dois arquivos. Só um GGUF válido será salvo. Aguarde.");
-        new Thread(()->execute(c,input),"GGUF-atomic-pair-import").start();
+        ImportProgress.Session progress=ImportProgress.beginPair(c);
+        new Thread(()->execute(c,input,progress),"GGUF-atomic-pair-import").start();
         return true;
     }
-    private static void copy(Context c,Uri uri,File dest) throws IOException {
+    private static void copy(Context c,Uri uri,File dest,ImportProgress.Session progress,int index) throws IOException {
+        long total=progress.source(c,uri,index),done=0;
         try(InputStream in=c.getContentResolver().openInputStream(uri);FileOutputStream out=new FileOutputStream(dest)) {
             if(in==null)throw new IOException("O provedor não abriu um dos arquivos selecionados");
             byte[] b=new byte[128*1024];int n;
-            while((n=in.read(b))!=-1){if(Thread.currentThread().isInterrupted())throw new InterruptedIOException("Importação cancelada");out.write(b,0,n);}
-            out.getFD().sync();
+            while((n=in.read(b))!=-1){if(Thread.currentThread().isInterrupted())throw new InterruptedIOException("Importação cancelada");out.write(b,0,n);done=Math.addExact(done,n);progress.update("copy"+index,done,total,false);}
+            out.getFD().sync();progress.update("copy"+index,done,done,true);
         }
     }
     /** Real JNI loaders, explicitly CPU for validation, not a GPU-performance claim. */
@@ -72,20 +74,22 @@ public final class AtomicPairImport {
             }
         }
     }
-    private static void execute(Context c,ArrayList<Uri> uris) {
+    private static void execute(Context c,ArrayList<Uri> uris,ImportProgress.Session progress) {
         File stage=null,target=null;boolean committed=false;
         try {
             String id=UUID.randomUUID().toString();
             stage=new File(c.getFilesDir(),"pair-import-staging/"+id);
             if(!stage.mkdirs())throw new IOException("Sem acesso/espaço para a pasta temporária");
             File first=new File(stage,"first.gguf"),second=new File(stage,"second.gguf"),output=new File(stage,"result.gguf");
-            copy(c,uris.get(0),first);copy(c,uris.get(1),second);
-            GgufFile a=GgufFile.read(first),b=GgufFile.read(second);
+            copy(c,uris.get(0),first,progress,0);
+            GgufFile a=GgufFile.read(first,progress.reader(0));
+            copy(c,uris.get(1),second,progress,1);
+            GgufFile b=GgufFile.read(second,progress.reader(1));
             String ar=a.pairingRole(),br=b.pairingRole();
             if(ar.equals(br))throw new IOException("O par precisa de linguagem + projetor compatível; foram selecionados dois componentes do tipo "+ar);
             GgufFile language=ar.equals("language")?a:b,projector=ar.equals("projector")?a:b;
-            GgufFile merged=GgufFile.merge(language.file,projector.file,output);
-            validate(output);
+            GgufFile merged=GgufFile.merge(language.file,projector.file,output,progress.merger());
+            progress.nativeStart();validate(output);progress.nativeDone();
             String name=language.text("general.name");if(name.isEmpty())name=language.text("general.architecture")+" · unificado";
             // No two private component files may remain when the library commits.
             removeTree(first);removeTree(second);
@@ -121,6 +125,7 @@ public final class AtomicPairImport {
                     if(stage!=null)removeTree(stage);
                 }
             } catch(Exception e){Log.e("GGUFPairing","Pending private staging recovery; source files untouched",e);}
+            progress.finish(committed);
             busy=false;
         }
     }

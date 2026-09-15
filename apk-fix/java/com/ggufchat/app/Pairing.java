@@ -102,9 +102,15 @@ public final class Pairing {
         Object v=o.getClass().getField(n).get(o); return v==null || "null".equals(v.toString())?"":v.toString();
     }
     /** Invoked on the import worker BEFORE ModelStore.add. */
-    public static void inspect(Object model) throws Exception {
-        GgufFile g=GgufFile.read(new File(field(model,"path")));
-        if(g.singleVision())AtomicPairImport.validate(g.file);
+    public static void inspect(Object model) throws Exception {inspectWithProgress(null,model);}
+    public static void inspectWithProgress(Context c,Object model) throws Exception {
+        ImportProgress.Session progress=ImportProgress.get(c);
+        GgufFile g=GgufFile.read(new File(field(model,"path")),progress==null?GgufFile.Progress.NONE:progress.reader(0));
+        if(g.singleVision()) {
+            if(progress!=null)progress.nativeStart();
+            AtomicPairImport.validate(g.file);
+            if(progress!=null)progress.nativeDone();
+        }else if(progress!=null)progress.noNative();
         model.getClass().getField("architecture").set(model,g.text("general.architecture"));
         model.getClass().getField("capability").set(model,g.capability());
         model.getClass().getField("multimodal").setBoolean(model,g.singleVision());

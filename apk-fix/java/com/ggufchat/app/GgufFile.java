@@ -24,6 +24,10 @@ public final class GgufFile {
         public final long offset,bytes;
         Tensor(String n,long[] d,int t,long o,long b){name=n;dims=d;type=t;offset=o;bytes=b;}
     }
+    public interface Progress {
+        void update(String stage,long done,long total,boolean complete);
+        Progress NONE=(stage,done,total,complete)->{};
+    }
     private GgufFile(File f){file=f;}
     private static IOException bad(String s){return new IOException("GGUF: "+s);}
     private static long add(long a,long b) throws IOException {if(a<0||b<0||a>Long.MAX_VALUE-b)throw bad("overflow de tamanho");return a+b;}
@@ -58,17 +62,21 @@ public final class GgufFile {
     }
     // block elements / stored bytes, pinned to llama.cpp b6500 GGML_QUANT_SIZES.
     private static final int[][] QUANT={{1,4},{1,2},{32,18},{32,20},{0,0},{0,0},{32,22},{32,24},{32,34},{32,40},{256,84},{256,110},{256,144},{256,176},{256,210},{256,292},{256,66},{256,74},{256,98},{256,50},{32,18},{256,110},{256,82},{256,136},{1,1},{1,2},{1,4},{1,8},{1,8},{256,56},{1,2},{0,0},{0,0},{0,0},{256,54},{256,66},{0,0},{0,0},{0,0},{32,17}};
-    public static GgufFile read(File file) throws IOException {
+    public static GgufFile read(File file) throws IOException {return read(file,Progress.NONE);}
+    public static GgufFile read(File file,Progress progress) throws IOException {
+        progress.update("identify",0,-1,false);
         GgufFile g=new GgufFile(file);
         try(RandomAccessFile f=new RandomAccessFile(file,"r")) {
             if(u32(f)!=0x46554747)throw bad("magic inválido (não é GGUF little-endian)");
             int version=u32(f);if(version!=2&&version!=3)throw bad("versão não suportada: "+version);
             long nt=u64(f),nk=u64(f);if(nt>200000||nk>200000)throw bad("tabela excessiva");
+            long units=nk+2*nt;progress.update("identify",0,units,false);
             for(long i=0;i<nk;i++) {
                 long start=f.getFilePointer();String key=string(f);int type=u32(f);
                 Object v=value(f,type,0,g,key.equals("tokenizer.ggml.tokens"));
                 if(g.metadata.put(key,new KV(file,key,start,f.getFilePointer()-start,type,v))!=null)throw bad("chave duplicada: "+key);
                 if(f.getFilePointer()>HEADER_LIMIT)throw bad("metadados excessivos");
+                progress.update("identify",i+1,units,false);
             }
             KV a=g.metadata.get("general.alignment");if(a!=null){if(a.type!=4)throw bad("alignment deve ser uint32");long n=(Long)a.value;if(n<1||n>65536||(n&(n-1))!=0)throw bad("alignment inválido");g.alignment=(int)n;}
             if(g.number("split.count")>1)throw bad("GGUF dividido em shards: reúna os shards antes de importar/unificar");
@@ -83,11 +91,13 @@ public final class GgufFile {
                 if(offset%g.alignment!=0)throw bad("tensor desalinhado");
                 if(g.tensors.put(name,new Tensor(name,dims,type,offset,bytes))!=null)throw bad("tensor duplicado: "+name);
                 if(f.getFilePointer()>HEADER_LIMIT)throw bad("tabela excessiva");
+                progress.update("identify",nk+i+1,units,false);
             }
             g.dataOffset=align(f.getFilePointer(),g.alignment);
             ArrayList<Tensor> sorted=new ArrayList<>(g.tensors.values());Collections.sort(sorted,new Comparator<Tensor>(){public int compare(Tensor a,Tensor b){return Long.compare(a.offset,b.offset);}});
-            long end=0;for(Tensor t:sorted){if(t.offset<end)throw bad("tensores sobrepostos");end=add(t.offset,t.bytes);if(add(g.dataOffset,end)>f.length())throw bad("dados truncados: "+t.name);}
+            long end=0,checked=nk+nt;for(Tensor t:sorted){if(t.offset<end)throw bad("tensores sobrepostos");end=add(t.offset,t.bytes);if(add(g.dataOffset,end)>f.length())throw bad("dados truncados: "+t.name);progress.update("identify",++checked,units,false);}
             if(g.dataOffset>f.length())throw bad("cabeçalho truncado");
+            progress.update("identify",units,units,true);
         }
         return g;
     }
@@ -127,7 +137,9 @@ public final class GgufFile {
         in.seek(start);while(n>0){if(Thread.currentThread().isInterrupted())throw new InterruptedIOException("Unificação cancelada");int k=(int)Math.min(n,buffer.length);in.readFully(buffer,0,k);out.write(buffer,0,k);n-=k;}
     }
     /** Caller owns the transaction: output must be new; originals are never modified here. */
-    public static GgufFile merge(File language,File projector,File output) throws IOException {
+    public static GgufFile merge(File language,File projector,File output) throws IOException {return merge(language,projector,output,Progress.NONE);}
+    public static GgufFile merge(File language,File projector,File output,Progress progress) throws IOException {
+        progress.update("merge",0,-1,false);
         GgufFile a=read(language),b=read(projector);
         if(!a.language()||a.visionWeights()||!b.projector())throw bad("selecione linguagem + projetor de visão com parâmetros e tensores reais");
         if(a.number(a.text("general.architecture")+".embedding_length")<=0||b.number("clip.vision.projection_dim")<=0||a.number(a.text("general.architecture")+".embedding_length")!=b.number("clip.vision.projection_dim"))throw bad("dimensão do projetor incompatível com o modelo");
@@ -153,12 +165,27 @@ public final class GgufFile {
             long offset=0;ArrayList<Tensor> all=new ArrayList<>(a.tensors.values());all.addAll(b.tensors.values());
             for(Tensor t:all){string(out,t.name);u32(out,t.dims.length);for(long d:t.dims)u64(out,d);u32(out,t.type);u64(out,offset);offset=align(add(offset,t.bytes),alignment);}
             long data=align(out.getFilePointer(),alignment);out.setLength(add(data,offset));out.seek(data);offset=0;
-            for(Tensor t:all){boolean fromA=a.tensors.containsKey(t.name);out.seek(add(data,offset));copy(fromA?fa:fb,out,add(fromA?a.dataOffset:b.dataOffset,t.offset),t.bytes,buffer);offset=align(add(offset,t.bytes),alignment);}
-            out.getFD().sync();GgufFile merged=read(output);if(!merged.singleVision())throw bad("unificação não contém visão + linguagem");verifyPayload(a,b,merged);complete=true;return merged;
+            long total=0,done=0;for(Tensor t:all)total=add(total,t.bytes);
+            progress.update("merge",0,total,false);
+            for(Tensor t:all){boolean fromA=a.tensors.containsKey(t.name);out.seek(add(data,offset));
+                RandomAccessFile input=fromA?fa:fb;input.seek(add(fromA?a.dataOffset:b.dataOffset,t.offset));
+                for(long left=t.bytes;left>0;){
+                    if(Thread.currentThread().isInterrupted())throw new InterruptedIOException("Unificação cancelada");
+                    int n=(int)Math.min(left,buffer.length);input.readFully(buffer,0,n);out.write(buffer,0,n);
+                    left-=n;done=add(done,n);progress.update("merge",done,total,false);
+                }
+                offset=align(add(offset,t.bytes),alignment);
+            }
+            out.getFD().sync();GgufFile merged=read(output);if(!merged.singleVision())throw bad("unificação não contém visão + linguagem");
+            progress.update("merge",done,total,true);
+            verifyPayload(a,b,merged,progress);complete=true;return merged;
         } finally {if(!complete)output.delete();}
     }
     /** Independent reread: exact tensor types, shapes AND every payload byte. */
-    public static void verifyPayload(GgufFile a,GgufFile b,GgufFile output) throws IOException {
+    public static void verifyPayload(GgufFile a,GgufFile b,GgufFile output) throws IOException {verifyPayload(a,b,output,Progress.NONE);}
+    public static void verifyPayload(GgufFile a,GgufFile b,GgufFile output,Progress progress) throws IOException {
+        long total=0,done=0;for(GgufFile g:Arrays.asList(a,b))for(Tensor t:g.tensors.values())total=add(total,t.bytes);
+        progress.update("verify",0,total,false);
         if(output.tensors.size()!=a.tensors.size()+b.tensors.size())throw bad("contagem de tensores alterada");
         byte[] x=new byte[128*1024],y=new byte[x.length];
         try(RandomAccessFile result=new RandomAccessFile(output.file,"r")) {
@@ -171,11 +198,12 @@ public final class GgufFile {
                         if(Thread.currentThread().isInterrupted())throw new InterruptedIOException("Validação cancelada");
                         int n=(int)Math.min(left,x.length);input.readFully(x,0,n);result.readFully(y,0,n);
                         for(int i=0;i<n;i++)if(x[i]!=y[i])throw bad("bytes alterados: "+t.name);
-                        left-=n;
+                        left-=n;done=add(done,n);progress.update("verify",done,total,false);
                     }
                 }
             }
         }
+        progress.update("verify",done,total,true);
     }
     public static void main(String[] args) throws Exception {
         GgufFile g=args.length==3?merge(new File(args[0]),new File(args[1]),new File(args[2])):read(new File(args[0]));

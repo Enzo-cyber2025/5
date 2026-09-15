@@ -85,6 +85,15 @@ System.out.println("ATOMIC_PAIR_HOST_PASS: exact one output, rejected pairs roll
     }
     sources['android/app/AlertDialog.java']='package android.app;import android.content.Context;public class AlertDialog {public static class Builder {public Builder(Context c){}public Builder setTitle(String x){return this;}public Builder setMessage(String x){return this;}public Builder setPositiveButton(String x,Object y){return this;}public void show(){}}}'
     sources['com/ggufchat/app/Native.java']='package com.ggufchat.app;public class Native {public static boolean reject=false;public static int loads=0,destroys=0;public static long create(String a,String b,int c,int d,int e,boolean f){assert a.equals(b)&&e==0;loads++;return reject?0:1;}public static void destroy(long h){destroys++;}public static String lastError(long h){return "deliberate native test rejection";}}'
+    # Android progress rendering is tested on-device; keep store/transaction doubles explicit.
+    sources['com/ggufchat/app/ImportProgress.java']="""package com.ggufchat.app;import android.content.Context;import android.net.Uri;
+public class ImportProgress {
+public static Session beginPair(Context c){return new Session();}public static Session get(Context c){return null;}
+public static class Session {
+public long source(Context c,Uri u,int i){return -1;} public void update(String k,long d,long t,boolean b){}
+public GgufFile.Progress reader(int i){return GgufFile.Progress.NONE;} public GgufFile.Progress merger(){return GgufFile.Progress.NONE;}
+public void nativeStart(){} public void nativeDone(){} public void noNative(){} public void finish(boolean s){}
+}}"""
     sources['com/ggufchat/app/AtomicPairImport.java']=(ROOT/'apk-fix/java/com/ggufchat/app/AtomicPairImport.java').read_text()
     sources['com/ggufchat/app/ModelInfo.java']=sources['com/ggufchat/app/ModelInfo.java'].replace('public String id,','public String capability,id,').replace('n.id=id;','n.capability=capability;n.id=id;')
     from test_physical_gguf import fixture
