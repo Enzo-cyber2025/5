@@ -39,6 +39,7 @@ assert e['signer_sha256']==e['previous_signer_sha256']=='9b658c30f602e0f2ff65c17
 assert g['checks']['measured_per_file_identification_merge_verify_progress']=='PASS'
 for key in ('measured_pair_progress','measured_single_vision_progress','measured_single_text_progress','empty_library_shortcut_uses_canonical_import'):
     assert r['physical_checks'][key]=='PASS',key
+assert r['progress_single_failure_check'].startswith('PASS:')
 assert len(r['progress_failure_checks'])==4 and all(x.startswith('PASS') for x in r['progress_failure_checks'].values())
 assert set(g['response_quality'])=={'gemma4-image','gemma4-restart','gemma4-text'}
 assert all(x['status']=='PASS' and x['response'].strip() for x in g['response_quality'].values())

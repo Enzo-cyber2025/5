@@ -57,6 +57,22 @@ def main():
                 assert d.shell('sha256sum /sdcard/Download/'+dest).split()[0]==hashlib.sha256(source.read_bytes()).hexdigest()
             d.launch();assert d.read_json('models.json')==baseline
             checks[name]='PASS: no new records/files, previous library and chats unchanged, originals byte-identical, restart unchanged'
+        if os.environ.get('GGUF_PROGRESS_REQUIRED')=='1':
+            # Original single-file worker must also terminate and dismiss on error.
+            single_name='progress-truncated-single.gguf'
+            d.adb('push',broken,'/sdcard/Download/'+single_name)
+            d.launch();d.adb('logcat','-c')
+            d.tap(text='Importar',contains=True,package={PACKAGE})
+            d.tap(text='Importar .gguf',contains=True,package={PACKAGE})
+            d.choose_file(single_name)
+            d.wait(lambda:'GGUF_IMPORT_PROGRESS_FINISHED success=false' in d.adb('logcat','-d'),'fim explícito da importação individual inválida')
+            log=d.adb('logcat','-d');(E/'physical-progress-single-rejected.txt').write_text(log)
+            assert 'GGUF_IMPORT_PROGRESS_FINISHED success=true' not in log and 'stage=save percent=100' not in log
+            assert not position(d.ui(),text='Importando modelo',package={PACKAGE})
+            assert d.read_json('models.json')==baseline and d.read_json('chats.json')==chats
+            assert d.shell(f'find /data/user/0/{PACKAGE}/files/models -type f | sort')==files
+            d.capture('physical-progress-single-rejected.png')
+            summary['progress_single_failure_check']='PASS: failed single import dismisses progress, does not save and preserves existing data'
         summary['status']='PASS'
     except Exception as ex:
         summary['status']='FAIL';summary['error']='Atomic import: '+str(ex)
