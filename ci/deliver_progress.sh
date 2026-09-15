@@ -12,7 +12,12 @@ import json,hashlib
 from pathlib import Path
 v=json.loads(Path('.delivery/progress-acceptance.json').read_text());e=json.loads(Path('ci/progress-candidate.json').read_text())
 assert v['status']=='SIGNED_PROGRESS_ANDROID_PASS' and v['apk_sha256']==e['apk_sha256']
-assert v['ui_review']['status']=='PASS' and v['ui_review']['genuine_screenshots']
+assert v['ui_review']['status']=='PASS' and v['ui_review']['apk_sha256']==e['apk_sha256']
+assert len(v['ui_review']['genuine_screenshots'])>=8
+for image in v['ui_review']['genuine_screenshots']:
+    assert hashlib.sha256(Path(image['path']).read_bytes()).hexdigest()==image['sha256']
+local=json.loads(Path('.delivery/progress-local-validation.json').read_text())
+assert local['status']=='PASS' and local['apk_sha256']==e['apk_sha256']
 reports={}
 for suite in ('gemma4','regression'):
     ref=v[suite];run=json.loads(Path(f'/tmp/atomic-{suite}-run.json').read_text())
@@ -60,6 +65,7 @@ for results in (r['system_response_quality'],r['recovery_response_quality']):
         assert x['status'] in ('PASS','FAIL') and 'response' in x
         if x['status']=='FAIL':print('::warning title=Model quality::'+stage+' failed; raw evidence and limitations preserved.')
 notes=notes.replace('(../ci-results/','(https://github.com/Enzo-cyber2025/5/blob/arena/01a09b42-5/ci-results/')
+notes=notes.replace('(../.delivery/','(https://github.com/Enzo-cyber2025/5/blob/arena/01a09b42-5/.delivery/').replace('(ATOMIC_IMPORT.md)','(https://github.com/Enzo-cyber2025/5/blob/arena/01a09b42-5/docs/ATOMIC_IMPORT.md)')
 Path('/tmp/atomic-notes.md').write_text(notes);Path('/tmp/atomic-tag').write_text(v['release_tag'])
 PY
 SIGNER=$(find "$ANDROID_HOME/build-tools" -path '*/apksigner' -type f | sort -V | tail -1)

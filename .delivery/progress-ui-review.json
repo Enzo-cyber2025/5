@@ -1,7 +1,7 @@
 {
   "status": "PASS",
   "apk_sha256": "afaf22c63022b44320604407246abe47a921c4e4d1fe55694ce7428abb047e86",
-  "scope": "Actual adb screencap images opened and inspected; no reconstructed or generated UI. Pair panel and all named phases visibly present.",
+  "scope": "Actual adb screencap images opened and inspected: paired and single imports, visible named percentages, explicit native indeterminacy, and dismissal after rejection. No reconstructed or generated UI.",
   "genuine_screenshots": [
     {
       "path": "ci-results/34973247833-1-gemma4/physical-progress-gemma4-pair-copy0-2.png",
@@ -32,6 +32,21 @@
       "path": "ci-results/34973247833-1-gemma4/physical-progress-gemma4-pair-native-0.png",
       "sha256": "a59beb21edd500dad02721ff26ce10241ff0e21233d34620965cb640a87dfc90",
       "observed": "Validação no motor explicitamente sem percentual; etapas anteriores 100%; salvamento aguardando; sem rodapé 0/100"
+    },
+    {
+      "path": "ci-results/34973247833-1-regression/physical-progress-single-text-identify0-0.png",
+      "sha256": "ddcbcdbdae6ac46d1fd193d88b40b5bc72c917ac4d4c75b870e285a5cf6f5ede",
+      "observed": "Importação individual textual: cópia 100%, identificação 4%, nome visível"
+    },
+    {
+      "path": "ci-results/34973247833-1-regression/physical-progress-single-vision-native-0.png",
+      "sha256": "6a530f616201f8316129df369550cc806d975204a0129b654529342d22778513",
+      "observed": "GGUF visual externo: cópia/identificação 100%, validação nativa explicitamente indeterminada"
+    },
+    {
+      "path": "ci-results/34973247833-1-regression/physical-progress-single-rejected.png",
+      "sha256": "c711db74ef61fab59337308f64d01b561557c94df34c664c4a92d9ab99d16930",
+      "observed": "Diálogo fechado depois da rejeição; biblioteca anterior visível, sem novo registro"
     }
   ]
 }

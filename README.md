@@ -1,3 +1,28 @@
+# GGUF Chat — porcentagens por arquivo e etapa
+
+## [Baixar APK — sem ZIP](https://github.com/Enzo-cyber2025/5/releases/download/gguf-progress-dba56b2/GGUF-Chat-mobile.apk)
+
+**28.349.896 bytes · Android 9+ · ARM64/x86_64 · modelos não incluídos.**
+
+**Mesma assinatura do último APK (`gguf-atomic-5cf14ef`).** Atualização por cima dele testada no Android, mantendo dado privado de teste. Não é necessário desinstalar essa última versão.
+
+- Porcentagem da **importação de cada arquivo**, com seu nome.
+- Porcentagens separadas de **identificação, unificação dos pesos e conferência dos tensores**.
+- Contadores reais; 100% somente quando a etapa termina. Tamanho desconhecido e carregamento nativo ficam explicitamente indeterminados, sem porcentagens inventadas.
+- Progresso também na importação individual, com fechamento correto em caso de erro.
+- Mantidos o GGUF físico único, validação nativa e recusa atômica de pares inválidos, sem dois sucessos parciais.
+
+**APK assinado executado no emulador: dois jobs aprovados.** Gemma: todos os 2.012 tensores preservados e respostas Dog / Dog / 4; importação individual visual/textual, negativas, anexos e conteúdo também verificados. Capturas reais do painel foram conferidas.
+
+Vulkan por software no emulador não comprova GPU física. Persistem limitações de qualidade dos modelos pequenos, inclusive eco de instruções e desobediência ao prompt por conversa. Não há aprovação universal de arquiteturas nem transcrição de áudio.
+
+[Relatório e capturas](docs/IMPORT_PROGRESS.md) · [Aprovação](.delivery/progress-acceptance.json)
+
+SHA-256: `afaf22c63022b44320604407246abe47a921c4e4d1fe55694ce7428abb047e86`.
+
+<details>
+<summary>Entrega anterior e histórico — as instruções de troca de assinatura abaixo são históricas</summary>
+
 # GGUF Chat — unificação obrigatória e reconhecimento real
 
 ## [Baixar APK — sem ZIP](https://github.com/Enzo-cyber2025/5/releases/download/gguf-atomic-5cf14ef/GGUF-Chat-mobile.apk)
@@ -270,6 +295,8 @@ também publica apenas resumos/capturas limitados em `ci-results/` **nesta mesma
 com `[skip ci]` para evitar repetição automática. Sem force-push nem outras branches.
 O workflow antigo do repositório não foi alterado; o erro histórico dos pontos em
 `timeout-minutes` já estava resolvido.
+
+</details>
 
 </details>
 
