@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/home/runner/work/5/5/scripts/test_compute_android.py", line 65, in main
+    d.wait(lambda:'GGUFChat:LocalCompute' not in d.shell('dumpsys power'),'wakelock liberado após importar')
+  File "/home/runner/work/5/5/scripts/test_android.py", line 74, in wait
+    raise AssertionError(f"Timeout: {description}")
+AssertionError: Timeout: wakelock liberado após importar
