@@ -30,7 +30,7 @@ def measured_reply(d,chat,prompt,phase,stats):
         hit=re.search(r'GGUF_NATIVE_COMPLETE tokens=(\d+)',log);assert hit
         elapsed=stamp(log,'GGUF_NATIVE_COMPLETE')-stamp(log,'GGUF_CONTENT_PREPARED')
         if elapsed<0:elapsed+=86400
-        assert elapsed>0
+        assert 0<elapsed<600, 'Invalid benchmark clock interval'
         record=dict(tokens=int(hit[1]),prefill_and_generation_seconds=elapsed,prefill_and_generation_tokens_s=int(hit[1])/elapsed,response=answer)
         saved=next(c for c in chats if c['id']==chat['id'])
         message=next(m for m in reversed(saved['messages']) if m['role']=='assistant')
@@ -54,7 +54,7 @@ def footer(d,record,stage):
         return (nodes,captions) if captions else None
     nodes,captions=d.wait(ready,'footer below the response')
     assert len(captions)==1
-    label=captions[0]['text'];rate=float(re.search(r'([\d.,]+) tokens/s',label)[1].replace(',','.'))
+    label=captions[0].get('text','');rate=float(re.search(r'([\d.,]+) tokens/s',label)[1].replace(',','.'))
     expected=record['native_decode_tokens_s'];assert abs(rate-expected)<=0.051,(rate,expected)
     body=next(n for n in nodes if n.get('text')==record['response'])
     assert bounds(captions[0])[1]>=bounds(body)[3],(body.attrib,captions[0].attrib)
@@ -98,7 +98,7 @@ def main():
         checks['real_before_after_benchmark_identical_outputs']='PASS'
         checks['native_counters_persistence_footer_geometry']='PASS'
         # Old responses get no invented metric.
-        old=next(x for x in d.read_json('chats.json') if x['messages'] and any(m['role']=='assistant' and 'generationMetrics' not in m for m in x['messages']))
+        old=next(x for x in reversed(d.read_json('chats.json')) if x['messages'] and any(m['role']=='assistant' and 'generationMetrics' not in m for m in x['messages']))
         d.launch();d.open_existing_chat(old['title']);d.wait(lambda:position(d.ui(),text='sem medição',contains=True,package={PACKAGE}),'old answer explicitly unmeasured')
         d.capture('physical-speed-old-response.png');checks['old_messages_not_fabricated']='PASS'
         # Real vision path uses the same counter and optimized stream.
@@ -110,13 +110,19 @@ def main():
         original_send=d.send
         def screen_off_send(prompt,clear_log=True):
             original_send(prompt,clear_log=clear_log)
-            assert 'GGUFChat:LocalCompute' in active_wake_locks(d.shell('dumpsys power'))
+            power=d.shell('dumpsys power')
+            (E/'physical-speed-vision-active-power.txt').write_text(power)
+            (E/'physical-speed-vision-active-services.txt').write_text(d.shell('dumpsys activity services '+PACKAGE))
+            assert 'GGUFChat:LocalCompute' in active_wake_locks(power)
             d.shell('input keyevent 223')
         d.send=screen_off_send
         answer=reply(d,chat,'Name the main animal in the image. Reply in English.','speed-vision',images=1)
         d.send=original_send
-        assert 'mWakefulness=Asleep' in d.shell('dumpsys power')
-        assert completed_after_actual_sleep(d.adb('logcat','-d'))
+        power=d.shell('dumpsys power');log=d.adb('logcat','-d')
+        (E/'physical-speed-vision-asleep-power.txt').write_text(power)
+        (E/'physical-speed-vision-sleep-log.txt').write_text('\n'.join(line for line in log.splitlines() if any(x in line for x in ('GGUF_', 'PowerManagerService'))))
+        assert 'mWakefulness=Asleep' in power
+        assert completed_after_actual_sleep(log)
         checks['metrics_and_real_vision_generation_screen_off']='PASS'
         d.shell('input keyevent 224');d.shell('wm dismiss-keyguard');d.launch();d.open_existing_chat(chat['title'])
         assert 'dog' in answer.lower(),answer
