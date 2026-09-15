@@ -26,7 +26,7 @@ concurrency:
 jobs:
   build-and-host-regressions:
     # Delivery reuses the exact signed APK from a completed successful test.
-    if: ${{ !contains(github.event.head_commit.message, '[apk delivery]') && !contains(github.event.head_commit.message, '[mobile]') && !contains(github.event.head_commit.message, '[signed mobile]') }}
+    if: ${{ !contains(github.event.head_commit.message, '[apk delivery]') && !contains(github.event.head_commit.message, '[mobile]') && !contains(github.event.head_commit.message, '[signed mobile]') && !contains(github.event.head_commit.message, '[latency candidate]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

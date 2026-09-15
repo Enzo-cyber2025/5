@@ -2,7 +2,7 @@ name: Signed latency and prefix-cache comparison
 on:
   push:
     branches: [arena/01a09b42-5]
-    paths: [ci/latency-candidate.json, scripts/test_latency_android.py, .github/workflows/latency-android.yml]
+    paths: [ci/latency-candidate.json, scripts/test_latency_android.py, scripts/build_test_input.sh, tests/android-input/**, .github/workflows/latency-android.yml]
 permissions:
   contents: write
   actions: read
