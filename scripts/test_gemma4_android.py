@@ -93,7 +93,7 @@ def main():
         # No originals remain inside app or Downloads during inference.
         for path in (mobile.MODEL,mobile.PROJ):d.shell('rm -- '+shlex.quote('/sdcard/Download/'+path.name))
         assert d.shell("find /sdcard/Download -type f -name '*.gguf'")==''
-        assert position(d.ui(),text='👁',contains=True,package={PACKAGE})
+        assert position(d.ui(),text='Visão',contains=True,package={PACKAGE})
         d.capture('physical-gemma4-one-file.png')
         checks['real_SAF_pair_to_one_GGUF_all_2012_tensors']='PASS';save()
         d.launch();assert d.read_json('models.json')==[unit]

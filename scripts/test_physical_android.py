@@ -94,7 +94,7 @@ def main():
         d.capture('physical-one-file.png');(E/'physical-tensor-proof.json').write_text(json.dumps({'status':'PASS','tensor_count':len(expected),'apk_sha256':summary['apk_sha256'],'unified_sha256':hashlib.sha256(actual.read_bytes()).hexdigest(),'size':unit['size'],'tensors':expected},indent=2))
         checks['one_physical_file_and_all_tensor_hashes']='PASS'
         d.launch();assert d.read_json('models.json')==[unit];checks['restart_persistence']='PASS'
-        d.tap(text='Importar',contains=True,package={PACKAGE});assert position(d.ui(),text='👁',contains=True,package={PACKAGE})
+        d.tap(text='Importar',contains=True,package={PACKAGE});assert position(d.ui(),text='Visão',contains=True,package={PACKAGE})
         fixtures();chat=d.new_chat(unit,99,context_size=4096);attach(d,chat,['frame-a.jpg'])
         before_load=d.adb('logcat','-d')
         answer=reply(d,chat,'Name the main animal in the image. Reply in English.','physical-one-file',images=1)

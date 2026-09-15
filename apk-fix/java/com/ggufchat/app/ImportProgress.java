@@ -139,7 +139,7 @@ public final class ImportProgress {
         ((java.io.FileOutputStream)stream).getFD().sync();
     }
     public static Session get(Context c){synchronized(SESSIONS){return SESSIONS.get(c);}}
-    public static void singleCopy(Context c,long done,long total){Session s=get(c);if(s!=null)s.update("copy0",done,total,false);}
+    public static void singleCopy(Context c,long done,long total){if(Thread.currentThread().isInterrupted())throw new java.util.concurrent.CancellationException("Importação cancelada");Session s=get(c);if(s!=null)s.update("copy0",done,total,false);}
     public static void singleSource(Context c,Uri uri){Session s=get(c);if(s!=null)s.source(c,uri,0);}
     public static void identificationStart(Context c) {
         Session s=get(c);if(s==null)return;

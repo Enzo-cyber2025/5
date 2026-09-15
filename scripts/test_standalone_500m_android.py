@@ -93,7 +93,7 @@ def main():
         # Remove the SAF source after the private byte-exact import is complete.
         d.shell('rm -- ' + shlex.quote('/sdcard/Download/' + MODEL.name))
         inventory(unit, 'import')
-        assert position(d.ui(), text='👁', contains=True, package={PACKAGE})
+        assert position(d.ui(), text='Visão', contains=True, package={PACKAGE})
         d.capture('physical-standalone-library.png')
         checks['single_SAF_import_intrinsic_vision_no_pair_no_sidecar'] = 'PASS'; save()
         fixtures()

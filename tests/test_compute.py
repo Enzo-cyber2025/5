@@ -1,0 +1,40 @@
+"""Source/manifest contracts; actual screen-off progress requires Android tests."""
+from pathlib import Path
+import sys,zipfile
+import pytest
+ROOT=Path(__file__).resolve().parents[1]
+sys.path.insert(0,str(ROOT/'apk-fix'))
+
+def test_memory_telemetry_is_not_a_size_heuristic_gate():
+    s=(ROOT/'apk-fix/native/mobile.cpp').read_text()
+    assert 'estimate>available' not in s and 'size+size/2' not in s
+    assert 'policy=actual_allocator' in s and 'mp.load_mode=mmap?LLAMA_LOAD_MODE_MMAP:LLAMA_LOAD_MODE_NONE' in s
+    assert 'if(!e->model) throw' in s and 'if(!e->ctx) throw' in s
+
+def test_foreground_is_service_owned_non_exported_and_not_sticky():
+    s=(ROOT/'apk-fix/java/com/ggufchat/app/ComputeService.java').read_text()
+    assert 'startForegroundService' in s and 'FOREGROUND_SERVICE_TYPE_SPECIAL_USE' in s
+    assert 'START_NOT_STICKY' in s and 'task.run()' in s and 'finally' in s
+    assert 'WorkWakeLocks.release(this);stopForeground(true);stopSelf();' in s
+    locks=(ROOT/'apk-fix/java/com/ggufchat/app/WorkWakeLocks.java').read_text()
+    assert 'PARTIAL_WAKE_LOCK' in locks and 'lock.acquire(10*60*1000L)' in locks
+    assert 'removeCallbacks(this)' in locks and 'lock.release()' in locks
+
+def test_transfer_retains_independent_byte_verification():
+    s=(ROOT/'apk-fix/java/com/ggufchat/app/GgufFile.java').read_text()
+    assert '.transferTo(' in s and 'if(n==0)' in s
+    assert 'verifyPayload(a,b,merged,progress)' in s
+    assert 'if(x[i]!=y[i])' in s and 'out.getFD().sync()' in s
+    assert 'encoderMatrix&&projectionMatrix' in s
+
+def test_compute_binary_manifest_of_actual_last_release():
+    from androguard.core.axml import AXMLPrinter
+    from compute_manifest import compute_manifest
+    with zipfile.ZipFile(ROOT/'.delivery/GGUF-Chat-mobile.apk') as z:data=z.read('AndroidManifest.xml')
+    after=AXMLPrinter(compute_manifest(data)).get_xml_obj();ns='{http://schemas.android.com/apk/res/android}'
+    services=after.findall('application/service');assert len(services)==2
+    for s in services:
+        assert s.get(ns+'exported')=='false'
+        assert s.get(ns+'foregroundServiceType') in ('1073741824','0x40000000')
+        assert s.find('property').get(ns+'name')=='android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE'
+    assert any(x.get(ns+'name')=='android.permission.FOREGROUND_SERVICE_SPECIAL_USE' for x in after.findall('uses-permission'))

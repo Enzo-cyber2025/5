@@ -60,8 +60,8 @@ public final class GgufFile {
             default:throw bad("tipo de metadado desconhecido: "+type);
         }
     }
-    // block elements / stored bytes, pinned to llama.cpp b6500 GGML_QUANT_SIZES.
-    private static final int[][] QUANT={{1,4},{1,2},{32,18},{32,20},{0,0},{0,0},{32,22},{32,24},{32,34},{32,40},{256,84},{256,110},{256,144},{256,176},{256,210},{256,292},{256,66},{256,74},{256,98},{256,50},{32,18},{256,110},{256,82},{256,136},{1,1},{1,2},{1,4},{1,8},{1,8},{256,56},{1,2},{0,0},{0,0},{0,0},{256,54},{256,66},{0,0},{0,0},{0,0},{32,17}};
+    // block elements / stored bytes, pinned to llama.cpp v0.4.1 (b29c606e) GGML_QUANT_SIZES.
+    private static final int[][] QUANT={{1,4},{1,2},{32,18},{32,20},{0,0},{0,0},{32,22},{32,24},{32,34},{32,40},{256,84},{256,110},{256,144},{256,176},{256,210},{256,292},{256,66},{256,74},{256,98},{256,50},{32,18},{256,110},{256,82},{256,136},{1,1},{1,2},{1,4},{1,8},{1,8},{256,56},{1,2},{0,0},{0,0},{0,0},{256,54},{256,66},{0,0},{0,0},{0,0},{32,17},{64,36},{128,18},{64,18}};
     public static GgufFile read(File file) throws IOException {return read(file,Progress.NONE);}
     public static GgufFile read(File file,Progress progress) throws IOException {
         progress.update("identify",0,-1,false);
@@ -105,12 +105,24 @@ public final class GgufFile {
     public long number(String key){KV k=metadata.get(key);return k!=null&&k.value instanceof Number?((Number)k.value).longValue():0;}
     public boolean flag(String key){KV k=metadata.get(key);return k!=null&&Boolean.TRUE.equals(k.value);}
     public static boolean mediaTensor(String name){return name.startsWith("v.")||name.startsWith("a.")||name.startsWith("mm.")||name.startsWith("resampler.")||name.startsWith("adapter.")||name.equals("model.image_newline");}
-    public boolean language(){return !text("general.architecture").isEmpty()&&!text("general.architecture").equals("clip")&&tensors.containsKey("token_embd.weight")&&metadata.containsKey("tokenizer.ggml.tokens");}
+    public boolean language(){
+        String arch=text("general.architecture");Tensor embedding=tensors.get("token_embd.weight");KV tokenizer=metadata.get("tokenizer.ggml.tokens");
+        return !arch.isEmpty()&&!arch.equals("clip")&&embedding!=null&&embedding.dims.length==2
+            &&embedding.dims[0]==number(arch+".embedding_length")&&embedding.bytes>0&&tokenizer!=null&&tokenizer.type==9;
+    }
     public String visionProjectorType(){String type=text("clip.projector_type");return type.isEmpty()?text("clip.vision.projector_type"):type;}
     public boolean visionWeights(){
         boolean encoder=false,projector=false;
         for(String n:tensors.keySet()){encoder|=n.startsWith("v.blk.");projector|=n.startsWith("mm.")||n.startsWith("resampler.")||n.startsWith("adapter.");}
-        return flag("clip.has_vision_encoder")&&!visionProjectorType().isEmpty()&&number("clip.vision.block_count")>0&&encoder&&projector;
+        // Presence of a marker or one vector is not a vision encoder/projector.
+        // Require actual matrix ranks, non-empty payloads and declared blocks.
+        boolean encoderMatrix=false,projectionMatrix=false;
+        for(Tensor t:tensors.values()) {
+            if(t.dims.length<2||t.bytes<=0)continue;
+            encoderMatrix|=t.name.startsWith("v.blk.");
+            projectionMatrix|=t.name.startsWith("mm.")||t.name.startsWith("resampler.")||t.name.startsWith("adapter.");
+        }
+        return encoderMatrix&&projectionMatrix&&flag("clip.has_vision_encoder")&&!visionProjectorType().isEmpty()&&number("clip.vision.block_count")>0&&encoder&&projector;
     }
     /** Only intrinsically verified language may enter the language side of a pair. */
     public String pairingRole() throws IOException {
@@ -140,7 +152,11 @@ public final class GgufFile {
     public static GgufFile merge(File language,File projector,File output) throws IOException {return merge(language,projector,output,Progress.NONE);}
     public static GgufFile merge(File language,File projector,File output,Progress progress) throws IOException {
         progress.update("merge",0,-1,false);
-        GgufFile a=read(language),b=read(projector);
+        return merge(read(language),read(projector),output,progress);
+    }
+    /** Reuse the already inspected immutable private staging headers. */
+    public static GgufFile merge(GgufFile a,GgufFile b,File output,Progress progress) throws IOException {
+        File language=a.file,projector=b.file;
         if(!a.language()||a.visionWeights()||!b.projector())throw bad("selecione linguagem + projetor de visão com parâmetros e tensores reais");
         if(a.number(a.text("general.architecture")+".embedding_length")<=0||b.number("clip.vision.projection_dim")<=0||a.number(a.text("general.architecture")+".embedding_length")!=b.number("clip.vision.projection_dim"))throw bad("dimensão do projetor incompatível com o modelo");
         for(String n:b.tensors.keySet())if(!mediaTensor(n)||a.tensors.containsKey(n))throw bad("tensor do projetor incompatível/duplicado: "+n);
@@ -155,7 +171,7 @@ public final class GgufFile {
         if(!output.createNewFile())throw bad("arquivo de saída já existe");
         boolean complete=false;
         try(RandomAccessFile out=new RandomAccessFile(output,"rw");RandomAccessFile fa=new RandomAccessFile(language,"r");RandomAccessFile fb=new RandomAccessFile(projector,"r")) {
-            byte[] buffer=new byte[128*1024];u32(out,0x46554747);u32(out,3);u64(out,a.tensors.size()+b.tensors.size());u64(out,kv.size()+1);
+            byte[] buffer=new byte[1024*1024];u32(out,0x46554747);u32(out,3);u64(out,a.tensors.size()+b.tensors.size());u64(out,kv.size()+1);
             for(Map.Entry<String,KV> item:kv.entrySet()) {
                 KV entry=item.getValue();string(out,item.getKey());
                 long prefix=8+entry.key.getBytes(StandardCharsets.UTF_8).length;
@@ -171,7 +187,12 @@ public final class GgufFile {
                 RandomAccessFile input=fromA?fa:fb;input.seek(add(fromA?a.dataOffset:b.dataOffset,t.offset));
                 for(long left=t.bytes;left>0;){
                     if(Thread.currentThread().isInterrupted())throw new InterruptedIOException("Unificação cancelada");
-                    int n=(int)Math.min(left,buffer.length);input.readFully(buffer,0,n);out.write(buffer,0,n);
+                    // Bounded kernel transfer when supported, buffered fallback on a
+                    // zero-length transfer (some Android filesystems/providers).
+                    long position=input.getFilePointer();
+                    long n=input.getChannel().transferTo(position,Math.min(left,4L*1024*1024),out.getChannel());
+                    if(n==0){int k=(int)Math.min(left,buffer.length);input.readFully(buffer,0,k);out.write(buffer,0,k);n=k;}
+                    else input.seek(add(position,n));
                     left-=n;done=add(done,n);progress.update("merge",done,total,false);
                 }
                 offset=align(add(offset,t.bytes),alignment);
@@ -187,7 +208,7 @@ public final class GgufFile {
         long total=0,done=0;for(GgufFile g:Arrays.asList(a,b))for(Tensor t:g.tensors.values())total=add(total,t.bytes);
         progress.update("verify",0,total,false);
         if(output.tensors.size()!=a.tensors.size()+b.tensors.size())throw bad("contagem de tensores alterada");
-        byte[] x=new byte[128*1024],y=new byte[x.length];
+        byte[] x=new byte[1024*1024],y=new byte[x.length];
         try(RandomAccessFile result=new RandomAccessFile(output.file,"r")) {
             for(GgufFile source:Arrays.asList(a,b))try(RandomAccessFile input=new RandomAccessFile(source.file,"r")) {
                 for(Tensor t:source.tensors.values()) {

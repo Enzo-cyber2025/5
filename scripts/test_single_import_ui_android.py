@@ -85,7 +85,7 @@ def main():
         assert d.shell(f'find /data/user/0/{PACKAGE}/files/pair-import-staging -mindepth 1').strip()==''
         checks['real_multi_select_pair_one_file_native_validation_exact_tensors']='PASS'
         (E/'physical-import-ui-pair-proof.json').write_text(json.dumps(dict(tensor_count=len(tensors),size=result.stat().st_size,sha256=hashlib.sha256(result.read_bytes()).hexdigest(),model=unit),indent=2))
-        d.launch();d.tap(text='📁 Importar',package={PACKAGE});one_button(d,'pair-imported')
+        d.launch();d.tap(text='Importar',package={PACKAGE});one_button(d,'pair-imported')
         text=Path('.cache/mobile-models/SmolLM2-135M-Instruct-Q4_K_M.gguf');names=['batch-a.gguf','batch-b.gguf','batch-c.gguf']
         for name in names:push(d,text,name)
         select(d,names,'three')
@@ -94,7 +94,7 @@ def main():
             row=next(r for r in rows if r['fileName']==name);assert row['capability']=='TEXT_ONLY' and not row['multimodal']
             assert d.shell('sha256sum '+shlex.quote(row['path'])).split()[0]==hashlib.sha256(text.read_bytes()).hexdigest()
         d.launch();assert len(d.read_json('models.json'))==4
-        d.tap(text='📁 Importar',package={PACKAGE});one_button(d,'three-imported')
+        d.tap(text='Importar',package={PACKAGE});one_button(d,'three-imported')
         checks['three_file_selection_imports_all_and_survives_restart']='PASS'
         s['status']='PASS'
     except Exception as e:

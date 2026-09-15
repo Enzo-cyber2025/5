@@ -1,6 +1,7 @@
 """Append one private URI-grant provider to pinned binary AXML; preserve existing indices."""
 import struct
 from mobile_manifest import enforce_min_sdk
+from compute_manifest import compute_manifest
 
 
 def attachment_manifest(data):
@@ -49,4 +50,4 @@ def attachment_manifest(data):
             result.append(chunk)
     if added!=1:raise ValueError('Expected one application element')
     body=b''.join(result)
-    return struct.pack('<HHI',3,8,8+len(body))+body
+    return compute_manifest(struct.pack('<HHI',3,8,8+len(body))+body)

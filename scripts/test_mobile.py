@@ -44,7 +44,7 @@ def bounds(n):
 
 
 def select_pair(d):
-    d.tap(text='📁 Importar',package={PACKAGE})
+    d.tap(text='Importar',package={PACKAGE})
     d.tap(text='Importar GGUF',contains=True,package={PACKAGE})
     d.wait(lambda:has_package(d.ui(),PICKERS),'SAF aberto')
     # Navigate the actual document provider, never inject an import intent.
@@ -112,7 +112,7 @@ def main():
         deletes=[n for n in ET.fromstring(xml).iter('node') if n.get('text')=='Excluir']
         assert len(deletes)==1,'Par associado ainda aparece como dois cartões'
         assert position(xml,text='GGUF + mmproj',contains=True,package={PACKAGE})
-        assert position(xml,text='👁',contains=True,package={PACKAGE}),'Unidade multimodal sem olho'
+        assert position(xml,text='Visão',contains=True,package={PACKAGE}),'Unidade multimodal sem olho'
         summary['checks']['single_stored_unit_and_eye']='PASS'
         d.capture('import.png');d.launch()
         assert linked()==pair
@@ -225,7 +225,7 @@ def main():
         assert normal['size']==normal_source.stat().st_size
         xml=d.ui()
         labels=[n.get('text','') for n in ET.fromstring(xml).iter('node') if normal['name'] in n.get('text','')]
-        assert labels and all('👁' not in label for label in labels),'Modelo normal recebeu olho'
+        assert labels and all('Visão' not in label for label in labels),'Modelo normal recebeu olho'
         d.capture('normal-no-eye.png')
         summary['checks']['normal_model_without_eye']='PASS'
         # Delete one unit through the actual dialog; both files disappear, while

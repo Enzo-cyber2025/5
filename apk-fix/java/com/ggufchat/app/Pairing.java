@@ -36,7 +36,7 @@ public final class Pairing {
         return visible;
     }
     public static String displayName(Object model) {
-        try { return (isUnified(model)?"\uD83D\uDC41 ":"")+field(model,"name")
+        try { return (isUnified(model)?"Visão · ":"")+field(model,"name")
                     +(isUnified(model)?(field(model,"path").equals(field(model,"mmprojPath"))?" · GGUF único · visão":" · par legado (2 arquivos)"):" · "+description(field(model,"capability"))); }
         catch(Exception e) { return "Modelo"; }
     }

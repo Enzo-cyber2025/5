@@ -73,7 +73,7 @@ static uint64_t bytes(const std::string &p) {
 static uint64_t available_memory() {
     std::ifstream f("/proc/meminfo"); std::string line;
     while(std::getline(f,line)) if(line.rfind("MemAvailable:",0)==0) return std::stoull(line.substr(13))*1024;
-    throw std::runtime_error("Não foi possível verificar a memória disponível");
+    return 0; // Telemetry unavailable is not evidence of allocation failure.
 }
 static std::vector<llama_token> tokens(const llama_vocab *v,const std::string &s) {
     int n=llama_tokenize(v,s.data(),s.size(),nullptr,0,true,true);
@@ -112,10 +112,12 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
 
         if(context<256 || context>8192) throw std::runtime_error("Contexto deve ficar entre 256 e 8192 para limitar memória");
         uint64_t size=bytes(model_path)+(projector_path.empty()||projector_path==model_path?0:bytes(projector_path));
-        uint64_t estimate=size+size/2+(uint64_t)context*262144+268435456;
+        // File-backed mmap pages are reclaimable and GGUF bytes are not an RSS
+        // prediction. KV/cache sizes depend on architecture, not a fixed token
+        // multiplier. Never reject a valid model using this telemetry alone.
         uint64_t available=available_memory();
-        LOG("Memory guard: estimated=%llu available=%llu",(unsigned long long)estimate,(unsigned long long)available);
-        if(estimate>available*7/10) throw std::runtime_error("Memória disponível insuficiente. Use um modelo/contexto menor ou feche outros aplicativos.");
+        LOG("GGUF_MEMORY_TELEMETRY file_bytes=%llu available=%llu mmap=%d policy=actual_allocator",
+            (unsigned long long)size,(unsigned long long)available,(int)mmap);
         std::call_once(initialized,[]{
             llama_log_set([](ggml_log_level level,const char *text,void*) {
                 const char *offload=std::strstr(text,"offloaded ");
@@ -137,11 +139,11 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
             mp.devices=vulkan_devices;
         }
         e->model=llama_model_load_from_file(model_path.c_str(),mp);
-        if(!e->model) throw std::runtime_error("Falha ao carregar GGUF: formato, arquitetura ou backend incompatível");
+        if(!e->model) throw std::runtime_error("O carregador não conseguiu abrir os pesos. Consulte o diagnóstico nativo: arquivo/arquitetura/backend ou alocação podem causar esta falha");
         if(layers!=0 && loaded_gpu_layers<=0)
             throw std::runtime_error("O GGUF não carregou camadas no Vulkan. Escolha CPU explicitamente ou outro modelo/dispositivo.");
         e->layers=loaded_gpu_layers;
-        auto cp=llama_context_default_params(); cp.n_ctx=context; cp.n_batch=128; cp.n_ubatch=64;
+        auto cp=llama_context_default_params(); cp.n_ctx=context; cp.n_batch=128; cp.n_ubatch=32;
         cp.n_threads=cp.n_threads_batch=std::max(1,std::min(threads,8));
         cp.abort_callback=[](void *p){return static_cast<Engine*>(p)->cancel.load();}; cp.abort_callback_data=e.get();
         e->ctx=llama_init_from_model(e->model,cp);

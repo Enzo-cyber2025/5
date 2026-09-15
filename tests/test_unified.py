@@ -51,12 +51,12 @@ ModelStore.save(c,new ArrayList<>(Arrays.asList(original,oldProj)));
 ArrayList<?> list=Pairing.loadUnified(c);assert list.size()==1;assert ModelStore.data.size()==1;
 assert ((ModelInfo)list.get(0)).size==original.size+oldProj.size;
 ModelInfo text=model(c,"text","mmproj-misleading.gguf",false);ModelStore.data.add(text);
-assert !text.multimodal;assert !Pairing.displayName(text).contains("\uD83D\uDC41");
+assert !text.multimodal;assert !Pairing.displayName(text).contains("Visão");
 int before=ModelStore.data.size();
 ArrayList<Uri> selection=uris(new File(fixtures,"vision.gguf").getPath(),new File(fixtures,"language.gguf").getPath());
 assert AtomicPairImport.start(c,selection);waitMerge();assert ModelStore.data.size()==before+1;
 ModelInfo unit=ModelStore.data.get(before);assert unit.path.equals(unit.mmprojPath);assert unit.size==new File(unit.path).length();assert unit.multimodal;
-assert GgufFile.read(new File(unit.path)).singleVision();assert Pairing.displayName(unit).contains("\uD83D\uDC41");
+assert GgufFile.read(new File(unit.path)).singleVision();assert Pairing.displayName(unit).contains("Visão");
 assert new File(c.getFilesDir(),"pair-import-staging").list().length==0;
 assert Native.loads==1&&Native.destroys==1;
 Pairing.loadUnified(c);assert ModelStore.data.get(before).size==unit.size;
@@ -94,6 +94,9 @@ public long source(Context c,Uri u,int i){return -1;} public void update(String 
 public GgufFile.Progress reader(int i){return GgufFile.Progress.NONE;} public GgufFile.Progress merger(){return GgufFile.Progress.NONE;}
 public void nativeStart(){} public void nativeDone(){} public void noNative(){} public void finish(boolean s){}
 }}"""
+    sources['com/ggufchat/app/ComputeService.java']='package com.ggufchat.app;import android.content.Context;public class ComputeService {public static void submit(Context c,Runnable r){new Thread(r).start();}}'
+    sources['android/app/Activity.java']=sources['android/app/Activity.java'].replace('public void runOnUiThread','public boolean isFinishing(){return false;}public boolean isDestroyed(){return false;}public void runOnUiThread')
+    sources['android/util/Log.java']=sources['android/util/Log.java'].replace('public class Log {','public class Log {public static int w(String t,String m,Throwable e){return 0;}')
     sources['com/ggufchat/app/AtomicPairImport.java']=(ROOT/'apk-fix/java/com/ggufchat/app/AtomicPairImport.java').read_text()
     sources['com/ggufchat/app/ModelInfo.java']=sources['com/ggufchat/app/ModelInfo.java'].replace('public String id,','public String capability,id,').replace('n.id=id;','n.capability=capability;n.id=id;')
     from test_physical_gguf import fixture

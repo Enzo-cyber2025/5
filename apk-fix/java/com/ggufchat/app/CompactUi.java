@@ -13,16 +13,20 @@ public final class CompactUi {
         button.setSingleLine(true);
         button.setMaxLines(1);
         button.setEllipsize(TextUtils.TruncateAt.END);
-        button.setTextSize(12);
+        button.setTextSize(11.5f);
         button.setMinWidth(0); button.setMinimumWidth(0);
         button.setMinHeight(0); button.setMinimumHeight(0);
         button.setIncludeFontPadding(false);
-        button.setPadding(dp(button, 10), 0, dp(button, 10), 0);
+        button.setPadding(dp(button, 8), 0, dp(button, 8), 0);
         button.setMaxWidth(dp(button, 200));
         ViewGroup.LayoutParams old = button.getLayoutParams();
         if (old == null) old = new LinearLayout.LayoutParams(-2, dp(button, 36));
         old.height = dp(button, 36);
         button.setLayoutParams(old);
+        android.graphics.drawable.Drawable background=button.getBackground();
+        if(background!=null&&!(background instanceof android.graphics.drawable.InsetDrawable))
+            button.setBackground(new android.graphics.drawable.InsetDrawable(background,0,dp(button,2),0,dp(button,2)));
+        LineIcon.apply(button);
     }
     public static void install(Activity activity, LinearLayout root, LinearLayout compose, Button thinking, Button search) {
         HorizontalScrollView tools = null;

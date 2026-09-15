@@ -14,7 +14,7 @@ from attachment_manifest import attachment_manifest
 from mobile_manifest import enforce_min_sdk
 
 
-def test_private_provider_is_only_manifest_change_besides_minimum():
+def test_private_provider_and_honest_foreground_compute_manifest():
     from androguard.core.axml import AXMLPrinter
     from lxml import etree
     with zipfile.ZipFile(ROOT/'.cache/gguf/GGUF-Chat.apk') as z:original=z.read('AndroidManifest.xml')
@@ -25,6 +25,16 @@ def test_private_provider_is_only_manifest_change_besides_minimum():
     p=providers[0]
     assert p.attrib=={ns+'name':'com.ggufchat.app.AttachmentProvider',ns+'exported':'false',ns+'authorities':'com.ggufchat.app.attachments',ns+'grantUriPermissions':'true'}
     after.find('application').remove(p)
+    app=after.find('application')
+    service=next(x for x in app.findall('service') if x.get(ns+'name')=='com.ggufchat.app.ComputeService')
+    assert service.get(ns+'exported')=='false' and service.get(ns+'foregroundServiceType') in ('0x40000000','1073741824')
+    assert service.find('property').get(ns+'name')=='android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE'
+    app.remove(service)
+    generation=app.find('service');original_generation=before.find('application/service')
+    assert generation.get(ns+'foregroundServiceType') in ('0x40000000','1073741824')
+    generation.set(ns+'foregroundServiceType',original_generation.get(ns+'foregroundServiceType'));generation.remove(generation.find('property'))
+    permission=next(x for x in after.findall('uses-permission') if x.get(ns+'name')=='android.permission.FOREGROUND_SERVICE_SPECIAL_USE')
+    after.remove(permission)
     assert etree.tostring(before)==etree.tostring(after)
     with pytest.raises(ValueError,match='already present'):attachment_manifest(attachment_manifest(original))
 

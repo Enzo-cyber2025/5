@@ -139,3 +139,14 @@ def test_unknown_layout_is_not_assumed_to_be_a_second_language():
     parser=JAVA.read_text()
     assert 'if(language()&&!visionWeights())return "language";' in parser
     assert 'componente não reconhecido como linguagem ou projetor compatível' in parser
+
+
+@pytest.mark.parametrize('typ,block,size',[(40,64,36),(41,128,18),(42,64,18)])
+def test_pinned_v041_quantized_payload_bounds(java,tmp_path,typ,block,size):
+    f=tmp_path/'new-quant.gguf'
+    header=b'GGUF'+struct.pack('<IQQ',3,1,0)+string('weight')+struct.pack('<IQQIQ',2,block,2,typ,0)
+    header+=b'\0'*(-len(header)%32)
+    f.write_bytes(header+b'X'*(size*2))
+    assert 'tensors=1' in run(java,f)
+    f.write_bytes(f.read_bytes()[:-1])
+    assert 'truncados' in run(java,f,ok=False)

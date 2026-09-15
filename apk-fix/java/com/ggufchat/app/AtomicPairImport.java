@@ -26,7 +26,8 @@ public final class AtomicPairImport {
         ArrayList<Uri> input=new ArrayList<>(selected);
         Pairing.notify(c,"Validando e unificando os dois arquivos. Só um GGUF válido será salvo. Aguarde.");
         ImportProgress.Session progress=ImportProgress.beginPair(c);
-        new Thread(()->execute(c,input,progress),"GGUF-atomic-pair-import").start();
+        try { ComputeService.submit(c,()->execute(c,input,progress)); }
+        catch(RuntimeException e){busy=false;progress.finish(false);Pairing.notify(c,"Não foi possível iniciar o serviço de importação: "+e.getMessage());}
         return true;
     }
     private static void copy(Context c,Uri uri,File dest,ImportProgress.Session progress,int index) throws IOException {
@@ -43,8 +44,8 @@ public final class AtomicPairImport {
         Class<?> nativeApi=Class.forName("com.ggufchat.app.Native");
         long handle=(Long)nativeApi.getMethod("create",String.class,String.class,int.class,int.class,int.class,boolean.class)
                 .invoke(null,gguf.getAbsolutePath(),gguf.getAbsolutePath(),512,2,0,true);
-        if(handle==0)throw new IOException("Motor não validou linguagem + visão (incompatibilidade ou memória insuficiente): "+nativeApi.getMethod("lastError",long.class).invoke(null,0L));
-        try {Log.i("GGUFPairing","GGUF_ATOMIC_NATIVE_VALIDATED same_path=1 backend=CPU");}
+        if(handle==0)throw new IOException("Validação de linguagem + visão não concluída: "+nativeApi.getMethod("lastError",long.class).invoke(null,0L));
+        try {if(Thread.currentThread().isInterrupted())throw new InterruptedIOException("Validação cancelada");Log.i("GGUFPairing","GGUF_ATOMIC_NATIVE_VALIDATED same_path=1 backend=CPU");}
         finally {nativeApi.getMethod("destroy",long.class).invoke(null,handle);}
     }
     private static void set(Object model,String field,Object value) throws Exception {model.getClass().getField(field).set(model,value);}
@@ -88,7 +89,7 @@ public final class AtomicPairImport {
             String ar=a.pairingRole(),br=b.pairingRole();
             if(ar.equals(br))throw new IOException("O par precisa de linguagem + projetor compatível; foram selecionados dois componentes do tipo "+ar);
             GgufFile language=ar.equals("language")?a:b,projector=ar.equals("projector")?a:b;
-            GgufFile merged=GgufFile.merge(language.file,projector.file,output,progress.merger());
+            GgufFile merged=GgufFile.merge(language,projector,output,progress.merger());
             progress.nativeStart();validate(output);progress.nativeDone();
             String name=language.text("general.name");if(name.isEmpty())name=language.text("general.architecture")+" · unificado";
             // No two private component files may remain when the library commits.
@@ -115,7 +116,11 @@ public final class AtomicPairImport {
             Throwable reason=e;while(reason.getCause()!=null&&reason.getCause()!=reason)reason=reason.getCause();
             String message="Nenhum par foi importado como dois modelos. Seus arquivos de origem não foram alterados.\n\n"+reason.toString();
             Pairing.notify(c,"Importação recusada: "+reason.getMessage());
-            if(c instanceof Activity)((Activity)c).runOnUiThread(()->new AlertDialog.Builder(c).setTitle("Importação recusada").setMessage(message).setPositiveButton("OK",null).show());
+            if(c instanceof Activity)((Activity)c).runOnUiThread(()->{
+                Activity a=(Activity)c;if(a.isFinishing()||a.isDestroyed())return;
+                try{new AlertDialog.Builder(c).setTitle("Importação recusada").setMessage(message).setPositiveButton("OK",null).show();}
+                catch(RuntimeException window){Log.w("GGUFPairing","Import error available in notification/log; Activity no longer visible",window);}
+            });
         } finally {
             try {
                 synchronized(Pairing.lock()) {
