@@ -110,7 +110,14 @@ def main():
         original_send=d.send
         def screen_off_send(prompt,clear_log=True):
             original_send(prompt,clear_log=clear_log)
-            power=d.shell('dumpsys power')
+            # input tap returns before Android dispatches startForegroundService.
+            # Wait for the CURRENT lease, never historical Wake Lock Log entries.
+            def acquired():
+                power=d.shell('dumpsys power')
+                log=d.adb('logcat','-d',f'--pid={d.alive()}')
+                assert not generation_completed(log), 'Generation ended before screen-off test could start'
+                return power if 'GGUFChat:LocalCompute' in active_wake_locks(power) else None
+            power=d.wait(acquired,'generation service acquired CPU lease',timeout=30)
             (E/'physical-speed-vision-active-power.txt').write_text(power)
             (E/'physical-speed-vision-active-services.txt').write_text(d.shell('dumpsys activity services '+PACKAGE))
             assert 'GGUFChat:LocalCompute' in active_wake_locks(power)
