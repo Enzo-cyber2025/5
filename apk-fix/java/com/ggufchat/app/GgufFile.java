@@ -26,7 +26,7 @@ public final class GgufFile {
     }
     public interface Progress {
         void update(String stage,long done,long total,boolean complete);
-        Progress NONE=(stage,done,total,complete)->{};
+        Progress NONE=new Progress(){public void update(String stage,long done,long total,boolean complete){}};
     }
     private GgufFile(File f){file=f;}
     private static IOException bad(String s){return new IOException("GGUF: "+s);}

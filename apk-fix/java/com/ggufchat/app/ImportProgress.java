@@ -109,7 +109,7 @@ public final class ImportProgress {
                 if(terminal)message.append(result);
                 dialog.setMessage(message.toString());dialog.setMax(100);
                 Row row=rows.get(current);int pct=row==null?-1:ProgressMeter.percent(row.done,row.total,row.complete);
-                dialog.setIndeterminate(!terminal&&pct<0);dialog.setProgress(terminal&&result.startsWith("Concluído")?100:Math.max(0,pct));
+                dialog.setIndeterminate(!terminal&&pct<0);dialog.setProgress(terminal?(result.startsWith("Concluído")?100:0):Math.max(0,pct));
                 if(terminal&&owned){ProgressDialog closing=dialog;MAIN.postDelayed(()->{try{closing.dismiss();}catch(Exception ignored){}},result.startsWith("Concluído")?700:0);}
             }catch(Exception e){Log.e("GGUFProgress","Progress window unavailable; import continues",e);}
         }
