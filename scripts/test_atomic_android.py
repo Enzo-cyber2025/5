@@ -6,7 +6,7 @@ import hashlib,json,shlex,sys,traceback,os
 from pathlib import Path
 import test_mobile as mobile
 from test_mobile import MobileAndroid,APK
-from android_checks import PACKAGE,position
+from android_checks import PACKAGE,position,has_package,PICKERS
 
 E=Path('evidence');F=Path('.cache/atomic-negative')
 
@@ -61,9 +61,11 @@ def main():
             # Original single-file worker must also terminate and dismiss on error.
             single_name='progress-truncated-single.gguf'
             d.adb('push',broken,'/sdcard/Download/'+single_name)
+            d.shell('am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d '+shlex.quote('file:///sdcard/Download/'+single_name),check=False)
             d.launch();d.adb('logcat','-c')
             d.tap(text='Importar',contains=True,package={PACKAGE})
             d.tap(text='Importar .gguf',contains=True,package={PACKAGE})
+            d.wait(lambda:has_package(d.ui(),PICKERS),'SAF individual aberto')
             d.choose_file(single_name)
             d.wait(lambda:'GGUF_IMPORT_PROGRESS_FINISHED success=false' in d.adb('logcat','-d'),'fim explícito da importação individual inválida')
             log=d.adb('logcat','-d');(E/'physical-progress-single-rejected.txt').write_text(log)
