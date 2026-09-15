@@ -45,7 +45,7 @@ def bounds(n):
 
 def select_pair(d):
     d.tap(text='📁 Importar',package={PACKAGE})
-    d.tap(text='Importar .gguf',contains=True,package={PACKAGE})
+    d.tap(text='Importar GGUF',contains=True,package={PACKAGE})
     d.wait(lambda:has_package(d.ui(),PICKERS),'SAF aberto')
     # Navigate the actual document provider, never inject an import intent.
     for _ in range(6):

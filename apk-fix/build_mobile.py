@@ -9,6 +9,7 @@ from attachment_patches import patch_attachments
 from unified_mobile import patch_unified_ui, patch_clip_gpu
 from physical_gguf import patch_physical_ui, patch_combined_loader
 from import_progress import patch_import_progress
+from single_import_ui import patch_single_import_ui
 from pathlib import Path
 from build_apk import ORIGINAL_APK_SHA256, signature_entry, verify_alignment
 from build_diagnostics import ndk_root, build_diagnostics
@@ -69,6 +70,7 @@ def ui_patches(app):
     patch_attachments(app)
     patch_physical_ui(app)
     patch_import_progress(app)
+    patch_single_import_ui(app)
 
 def main():
     WORK.mkdir(parents=True,exist_ok=True)

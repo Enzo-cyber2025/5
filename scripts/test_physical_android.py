@@ -61,7 +61,7 @@ def main():
             d.tap(text='Nova conversa',contains=True,package={PACKAGE})
             d.wait(lambda:position(d.ui(),text='Nenhum modelo',package={PACKAGE}),'atalho com biblioteca vazia')
             d.tap(text='Importar',package={PACKAGE})
-            d.wait(lambda:position(d.ui(),text='Importar .gguf',contains=True,package={PACKAGE}),'mesma tela de importação com progresso')
+            d.wait(lambda:position(d.ui(),text='Importar GGUF',contains=True,package={PACKAGE}),'mesma tela de importação com progresso')
             d.capture('physical-progress-empty-library-shortcut.png')
             checks['empty_library_shortcut_uses_canonical_import']='PASS'
         d.shell('mkdir -p /sdcard/Download')

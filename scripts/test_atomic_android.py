@@ -64,7 +64,7 @@ def main():
             d.shell('am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d '+shlex.quote('file:///sdcard/Download/'+single_name),check=False)
             d.launch();d.adb('logcat','-c')
             d.tap(text='Importar',contains=True,package={PACKAGE})
-            d.tap(text='Importar .gguf',contains=True,package={PACKAGE})
+            d.tap(text='Importar GGUF',contains=True,package={PACKAGE})
             d.wait(lambda:has_package(d.ui(),PICKERS),'SAF individual aberto')
             d.choose_file(single_name)
             d.wait(lambda:'GGUF_IMPORT_PROGRESS_FINISHED success=false' in d.adb('logcat','-d'),'fim explícito da importação individual inválida')

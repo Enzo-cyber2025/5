@@ -243,7 +243,7 @@ class Android:
         self.shell("am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d " +
                    shlex.quote(f"file:///storage/emulated/0/Download/{source.name}"), check=False)
         self.tap(text="Importar", package={PACKAGE}, contains=True)
-        self.tap(text="Importar .gguf", package={PACKAGE}, contains=True)
+        self.tap(text="Importar GGUF", package={PACKAGE}, contains=True)
         self.wait(lambda: has_package(self.ui(), PICKERS), "seletor de arquivos")
         self.choose_file(source.name)
 
