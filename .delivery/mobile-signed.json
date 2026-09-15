@@ -1,9 +1,9 @@
 {
-  "source_commit": "dba56b23dc490b360dc927f1fc82994e8c336e8d",
+  "source_commit": "368f85e8888c0eae9070324e6891e15cb9b97d0e",
   "llama_commit": "b29c606e28a01b1bc8c1351026a0fa6e616bf6c4",
   "min_sdk": 28,
   "native_source_commit": "dba56b23dc490b360dc927f1fc82994e8c336e8d",
-  "status": "SIGNED_PROGRESS_ANDROID_PASS",
+  "status": "SIGNED_PENDING_ANDROID_TEST",
   "native": {
     "lib/arm64-v8a/libggufdiagnostics.so": "255e52f814d968e8dd008e8cea12c522aad06d943dffe8a30fe095485058b26c",
     "lib/x86_64/libggufdiagnostics.so": "dd07c5a6aef3d75a7aec0325c20dddd6b58a313085254927291dc07dcf3c0139",
@@ -12,7 +12,12 @@
     "lib/x86_64/libaijni.so": "820a06d93e6fd06a337bd64bd3554185db2e3e55e26bb0093b24c2626bf740d9",
     "lib/x86_64/libc++_shared.so": "0e8aaa2ef7f9abbe54ad76dab5162f3b7bf1a92ba1b3c63221443ecb87c1b568"
   },
-  "unsigned_sha256": "3812c7a9a2639bbb23d9cfc6f572c30318446b8c04281a080ed59ced8d803308",
-  "apk_sha256": "afaf22c63022b44320604407246abe47a921c4e4d1fe55694ce7428abb047e86",
+  "ui_base_apk_sha256": "afaf22c63022b44320604407246abe47a921c4e4d1fe55694ce7428abb047e86",
+  "changed_classes": [
+    "smali/com/ggufchat/app/MainActivity.smali",
+    "smali/com/ggufchat/app/ModelsActivity.smali"
+  ],
+  "unsigned_sha256": "ab2fdf8b1dc954bfe60c5043c6b41a20f43d3b574cb2abc1c13a709636e2ec06",
+  "apk_sha256": "086a125ae5e503718b3999bff1d2ad98b06498e0edf770471c7db07e8afaa813",
   "signer_sha256": "9b658c30f602e0f2ff65c176423cb95bea8fbdeb660c306ab908862f90d9bc3c"
 }
