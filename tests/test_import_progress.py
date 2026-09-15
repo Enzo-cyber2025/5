@@ -56,3 +56,9 @@ def test_single_progress_wiring_covers_copy_identification_success_failure():
 def test_old_import_shortcuts_use_canonical_progress_screen():
     s=(ROOT/'apk-fix/import_progress.py').read_text()
     assert 'access$600' in s and "[('2','.method public onClick" in s
+
+
+def test_owned_progress_dialog_has_message_before_show():
+    # AlertDialog removes its message panel if first shown without a message.
+    s=(ROOT/'apk-fix/java/com/ggufchat/app/ImportProgress.java').read_text()
+    assert s.index('dialog.setMessage("Preparando importação') < s.index('dialog.show()')

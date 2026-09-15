@@ -90,7 +90,7 @@ public final class ImportProgress {
             queued=false;lastPaint=android.os.SystemClock.uptimeMillis();
             Activity a=activity.get();if(a==null||a.isFinishing()||a.isDestroyed())return;
             try {
-                if(dialog==null){dialog=new ProgressDialog(a);dialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);dialog.setCancelable(false);dialog.setTitle("Progresso da importação");owned=true;dialog.show();}
+                if(dialog==null){dialog=new ProgressDialog(a);dialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);dialog.setCancelable(false);dialog.setTitle("Progresso da importação");dialog.setMessage("Preparando importação…");owned=true;dialog.show();}
                 StringBuilder message=new StringBuilder();
                 Row activeRow=rows.get(current);
                 if(!terminal&&activeRow!=null)message.append("Etapa atual: ").append(activeRow.label).append("\n\n");
