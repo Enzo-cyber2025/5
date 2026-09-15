@@ -35,6 +35,9 @@ def main():
     try:
         candidate=json.load(open('ci/compute-candidate.json'));assert s['apk_sha256']==candidate['apk_sha256']
         assert d.shell('getprop ro.kernel.qemu')=='1';d.adb('root',check=False);d.adb('wait-for-device')
+        # Disposable emulator fixture: Pixel Launcher can ANR over another app.
+        d.shell('pm disable-user --user 0 com.google.android.apps.nexuslauncher',check=False)
+        d.shell('am force-stop com.google.android.apps.nexuslauncher',check=False)
         d.shell('wm size 720x1280');d.shell('wm density 240');d.adb('logcat','-G','16M')
         d.adb('install','-r','-g',APK,timeout=180);assert d.shell('pm clear '+PACKAGE)=='Success'
         d.grant_test_notifications();d.launch();d.shell('mkdir -p /sdcard/Download');no_emoji(d)
