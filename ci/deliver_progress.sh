@@ -37,7 +37,7 @@ if e['signer_sha256']!=e['previous_signer_sha256']:
 else:assert g['checks']['same_signature_update_retains_private_data']=='PASS'
 assert e['signer_sha256']==e['previous_signer_sha256']=='9b658c30f602e0f2ff65c176423cb95bea8fbdeb660c306ab908862f90d9bc3c'
 assert g['checks']['measured_per_file_identification_merge_verify_progress']=='PASS'
-for key in ('measured_pair_progress','measured_single_vision_progress','measured_single_text_progress'):
+for key in ('measured_pair_progress','measured_single_vision_progress','measured_single_text_progress','empty_library_shortcut_uses_canonical_import'):
     assert r['physical_checks'][key]=='PASS',key
 assert len(r['progress_failure_checks'])==4 and all(x.startswith('PASS') for x in r['progress_failure_checks'].values())
 assert set(g['response_quality'])=={'gemma4-image','gemma4-restart','gemma4-text'}
