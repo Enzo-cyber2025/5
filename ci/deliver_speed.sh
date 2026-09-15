@@ -3,7 +3,7 @@
 set -euo pipefail
 mkdir -p .cache/ci-logs
 python3 - <<'PY'
-import hashlib,json,math,statistics,subprocess,zipfile
+import hashlib,json,math,re,statistics,subprocess,sys,zipfile
 from pathlib import Path
 c=json.load(open('ci/speed-candidate.json'));v=json.load(open('.delivery/speed-acceptance.json'))
 m=json.load(open('.delivery/mobile-signed.json'));u=json.load(open('.delivery/mobile-build.json'))
@@ -26,6 +26,21 @@ assert next(j for j in jobs if j['id']==v['job'])['conclusion']=='success'
 s=json.load(open(f"ci-results/{v['run']}-{v['attempt']}/summary.json"))
 assert s['status']=='PASS' and s['apk_sha256']==c['apk_sha256']
 for k in ('same_certificate_update_preserves_models_chats','real_before_after_benchmark_identical_outputs','native_counters_persistence_footer_geometry','old_messages_not_fabricated','metrics_and_real_vision_generation_screen_off','real_image_inference_metrics'):assert s['checks'][k]=='PASS',k
+# This snapshot is taken while asleep, BEFORE launch() force-stops/reopens.
+sys.path.insert(0,'scripts')
+from android_checks import active_wake_locks,completed_after_actual_sleep
+root=Path(f"ci-results/{v['run']}-{v['attempt']}")
+power=(root/'physical-speed-vision-asleep-power.txt').read_text()
+assert 'mWakefulness=Asleep' in power and 'GGUFChat:LocalCompute' not in active_wake_locks(power)
+log=(root/'physical-speed-vision-sleep-log.txt').read_text()
+assert completed_after_actual_sleep(log)
+metrics=re.search(r'GGUF_GENERATION_STATS tokens=(\d+) decode_ns=(\d+) prefill_ns=(\d+) callbacks=(\d+) success=1',log)
+assert metrics
+chat=json.load(open(root/'inference-speed-vision-chat.json'))
+message=chat['messages'][-1];native=tuple(map(int,metrics.groups()))
+assert message['role']=='assistant' and 'dog' in message['content'].lower()
+j=message['generationMetrics']
+assert (j['tokens'],j['decodeNs'],j['prefillNs'])==native[:3] and j['completed'] is True
 bench=s['benchmark'];assert bench['repetitions']==3 and bench['warmup_excluded']==1
 assert len(bench['before'])==len(bench['after'])==3
 assert len({x['response'] for x in bench['before']+bench['after']})==1
