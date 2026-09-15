@@ -1,0 +1,25 @@
+name: Deliver verified single import button APK
+on:
+  push:
+    branches: [arena/01a09b42-5]
+    paths: [.github/workflows/import-ui-deliver.yml, .delivery/import-ui-acceptance.json]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  deliver:
+    if: ${{ contains(github.event.head_commit.message, '[import-ui publish]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: Verify targeted Android acceptance, same signature and exact public bytes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: Enzo-cyber2025/5
+        run: bash ci/log_step.sh import-ui-delivery bash ci/deliver_import_ui.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: import-ui-delivery-verification
+          path: .cache/ci-logs/
