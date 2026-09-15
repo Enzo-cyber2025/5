@@ -1,98 +1,70 @@
-# Menor espera: cache de histórico e de visão
+# Otimização de latência — resultado aprovado nos testes
 
-## Mudanças no motor e na interface
+## APK e instalação
 
-- **KV do texto:** reaproveita somente o prefixo de tokens exatamente igual, no mesmo motor/contexto. Confere as posições realmente presentes na memória e remove o sufixo antigo. Reavalia pelo menos o último token do prompt para obter logits atuais.
-- Modelos recorrentes, híbridos, encoder-decoder e de difusão não usam esse reaproveitamento. Prefixos já expulsos pela janela de atenção também não. Se a remoção parcial não for suportada, faz o processamento completo.
-- **Prompt:** mantém o lote lógico de 128 e microlote de 32 do APK anterior. O experimento 512/128 foi rejeitado por alterar a saída determinística no teste real.
-- **Visão:** cache opcional dos embeddings do projetor, separado do KV textual. A identidade vem do SHA-256 dos bytes efetivamente decodificados, gerado pelo helper oficial fixado. A lista ordenada de imagens, ordinal do recorte e geometria serializada precisam coincidir. Não usa nome de arquivo como identidade.
-- O cache visual guarda até 16 MiB de vetores em RAM, não arquivos. Isso **não limita anexos ou leitura**: imagens que não caibam no cache continuam sendo processadas normalmente. Falha na cópia opcional por falta de memória descarta o cache.
-- Em imagens, o KV do modelo de linguagem continua sendo reconstruído. O helper oficial preserva posicionamento, M-RoPE e atenção não causal. Só a codificação visual pura é evitada quando o resultado exato já existe.
-- Erro/cancelamento invalida os caches; fechar o processo ou trocar o motor também. Nada é persistido em disco como cache de estado nativo.
-- **Texto na tela:** `TextView.append` incremental em vez de copiar/substituir/reduzir toda a resposta a cada bloco. Quebras de linha e todo o texto continuam disponíveis, inclusive durante a geração.
-- Conversão de tokens usa buffer pequeno na pilha, com alocação dinâmica somente quando o token não cabe. Preserva envio inicial imediato, agrupamento UTF-8 e gravação integral da resposta.
-- Pesos, quantização, temperatura, amostragem e limites escolhidos pelo usuário não são reduzidos para conseguir velocidade.
+- APK: `eabd016935ac51cdd89063a97fbc1b562f7f9261981f54b5191d37734e7922eb` — 28.370.376 bytes, Android 9+, ARM64/x86_64; modelos não incluídos.
+- Código compilado: `ce0118db8646f1523d11725a8c5c29b6e88230f2`.
+- Motor fixado: llama.cpp `b29c606e28a01b1bc8c1351026a0fa6e616bf6c4`.
+- [Aprovação verificável](../.delivery/latency-acceptance.json). Verificador: `python ci/verify_latency_acceptance.py`.
 
-## Medição
+**Assinatura diferente:** a restauração do ambiente não recuperou a chave privada anterior. Conforme a autorização prévia do usuário, foi criada outra chave local, com backup privado. Certificado atual: `4f75afe8637f28ccb167db407e3b2bc9b260e1cfe6059b7377ea20b0b4dc2ac3`.
 
-Os tokens/s continuam abaixo de cada resposta. O JSON da mensagem registra também `firstTokenNs`, `promptTokens` e `reusedPromptTokens`.
+O Android **não permite atualizar diretamente** o APK anterior de certificado `3dd851d4…`. A tentativa real foi recusada com `INSTALL_FAILED_UPDATE_INCOMPATIBLE`, preservando os arquivos existentes após a recusa. A reinstalação seguinte foi feita **somente no emulador descartável**. Não constitui migração de dados. **Não desinstale o aplicativo do celular sem proteger seus dados.** Chave e senha não foram enviadas ao Git ou CI.
 
-`firstTokenNs` mede desde a entrada na geração nativa até a primeira entrega de texto completo ao callback. **Não é tempo desde o toque até o desenho na tela**, nem inclui um carregamento de modelo anterior à entrada nativa. Prefill, geração e espera da interface não devem ser misturados como se fossem a mesma medição.
+## Resultado medido, sem reduzir o modelo
 
-## Validação em andamento
+Comparação com o último APK entregue, `b8145469da04884849b17cd99aff69fbea07f0bb24723ed1611373c7fce1743f`. Mesmo emulador Android 35 x86_64, CPU, duas threads, contexto 2048, mesmos pesos SmolLM2-135M-Instruct-Q4_K_M e amostragem gulosa. Quatro pares por versão: um aquecimento excluído e três pares medidos. **Respostas comparadas integralmente e iguais**, inclusive após mudança do prompt de sistema.
 
-Candidato **REJEITADO**: `43c802e7244d3a9ea09dd91821353a2be4ce7943148e34900463bfb449d3de82`, código `59faf72ce32092163950288662fc06f2f00135c7`.
+| Mediana | Antes | Depois |
+|---|---:|---:|
+| Preparação do primeiro prompt, sem cache | 9,81 s | 9,88 s |
+| Preparação da continuação com histórico | 14,64 s | 1,47 s |
+| Tempo nativo total da continuação, preparação + geração | 31,56 s | 18,21 s |
+| Geração da continuação, sem preparação | 7,57 tokens/s | 7,65 tokens/s |
 
-- Compilação ARM64/x86_64, regressões de código e DEX/JVM concluídas.
-- Comparação Android assinada com o APK anterior `b8145469…` falhou na igualdade da resposta: quatro pares de perguntas por versão (um par de aquecimento excluído), três medições de prompt frio e de continuação. Mesmo emulador, modelo, contexto 2048, duas threads e amostragem gulosa.
-- Verificações de mudança de sistema, reabertura, cancelamento, imagem real com tela apagada, reutilização da mesma imagem e recodificação quando outra imagem é anexada.
-- A primeira tentativa com APK intermediário falhou no observador: o envio de uma longa rajada de teclas sintéticas perdeu parte do prompt antes de chegar ao app. A correção usa um IME descartável de teste com InputConnection e verifica independentemente o conteúdo integral do EditText antes de enviar. O IME não faz parte do app distribuído. O relatório anterior permanece como falha.
+- **89,99% menos tempo preparando a continuação**, aproximadamente 10× mais rápido nessa etapa.
+- **42,31% menos tempo nativo total** na continuação medida.
+- Não há ganho relevante comprovado no primeiro prompt nem na geração token a token. O ganho principal vem de evitar reprocessar o histórico.
+- Primeira entrega de texto na versão nova: mediana de 9,881 s no prompt frio e 1,470 s na continuação. Essa métrica começa na entrada da geração nativa, **não no toque e não no carregamento do modelo**.
 
-**Nenhum número de aceleração aprovado neste documento até concluir as medições.** Resultados em emulador não certificam velocidade em celular físico, qualquer arquitetura/modelo ou precisão semântica geral. Vulkan em software não é GPU física.
+### Imagem repetida
 
-Assinatura do candidato rejeitado: `3dd851d414caaa20d06ea22391e75b752aab0d26c749168b3353dd389b1332da`, igual aos dois últimos APKs de teste. Continua incompatível com os APKs antigos assinados com `9b658c…`; não desinstale uma versão antiga sem proteger seus dados.
+Na mesma execução e processo, a preparação com imagem passou de **21,75 s sem cache para 4,78 s com cache**. É **uma observação com perguntas diferentes**, não uma garantia estatística. Os logs mostram três recortes reutilizados, zero recodificações no acerto; ao acrescentar a imagem de um ônibus, zero acertos e cinco recodificações. A resposta à nova imagem foi `Bus.`. A identidade dos pixels e o posicionamento continuam sendo conferidos.
 
-## Rejected numerical batching experiment; corrected rebuild
+Resultados de emulador não certificam esses tempos no celular físico, em qualquer modelo ou GPU. Respostas de dois a quatro tokens não são benchmarks de velocidade, mesmo que o rodapé mostre uma taxa alta.
 
-The signed 43c802 candidate failed deterministic cold-output equality in real
-Android run 35005228698, despite identical 1744-character input, sampling settings
-and system SHA. Thus the observed follow-up prefill decrease is provisional and
-NOT an accepted speed/quality comparison. Cancellation/image cache gates were
-not reached. The 512/128 batching experiment is removed; baseline 128/32 is
-restored while guarded caches and incremental rendering remain.
+## Mudanças implementadas
 
-After reconnection the workspace was restored to an older checkout. Remote
-786c46a (including all published evidence) was recovered on the same branch,
-with the previous worktree archived locally before restoration. The unpushed
-correction is reapplied here. Signing key and private backup are not present
-in this restored environment: no same-certificate update can be promised.
-No corrected APK has been accepted yet.
+- **Cache KV textual:** reutiliza somente o prefixo de tokens exatamente igual no mesmo motor/contexto. Confere as posições realmente disponíveis e exige remoção bem-sucedida do sufixo antigo. Reavalia pelo menos o último token da entrada para obter logits atuais.
+- Recorrentes, híbridos, encoder-decoder e difusão não usam esse reaproveitamento. Prefixos expulsos pela janela de atenção também não. Se não for seguro reutilizar, o processamento é completo.
+- **Lotes mantidos em 128/32**, iguais aos do baseline. O experimento 512/128 foi rejeitado por mudar a saída determinística.
+- **Cache visual opcional de até 16 MiB de vetores em RAM:** chave baseada em SHA-256 dos bytes efetivamente decodificados, lista ordenada de imagens, ordinal do recorte e geometria serializada. Não usa nomes de arquivo. Não é limite de anexos: imagens maiores continuam sendo processadas sem cache.
+- Em mensagens com imagens, o KV textual é reconstruído. O helper oficial preserva M-RoPE, posições e atenção não causal; somente a codificação visual pura é evitada em um acerto exato.
+- Falhas/cancelamento invalidam caches. Trocar o motor ou encerrar o processo também. Não há cache de estado nativo persistido em disco.
+- **Interface incremental:** `TextView.append`, sem copiar/substituir toda a resposta a cada bloco e sem truncar o texto ao vivo. Mantidas as quebras de linha, o primeiro envio imediato e o agrupamento UTF-8.
+- Conversão de tokens usa buffer pequeno na pilha e aloca dinamicamente apenas quando necessário.
+- Preservados os tokens/s reais abaixo das respostas e sua persistência. Acrescentados `firstTokenNs`, `promptTokens` e `reusedPromptTokens` ao JSON.
+- Pesos, quantização, amostragem e limites escolhidos pelo usuário não foram reduzidos para obter os números acima.
 
-## Assinatura após restauração do ambiente
+## Testes reais e capturas
 
-A chave anterior não foi restaurada. Usando a autorização prévia do usuário para
-outra assinatura se necessário, foi preparada a chave local `4f75afe8637f28ccb167db407e3b2bc9b260e1cfe6059b7377ea20b0b4dc2ac3`.
-O novo APK será **incompatível com atualização direta** dos anteriores. Não
-desinstale o app do celular sem proteger os dados. O teste mantém o APK baseline
-original intacto, verifica a recusa de atualização pelo Android e a preservação
-dos arquivos após a recusa, e só então reinstala no emulador descartável.
-Não equivale a migração ou atualização preservando dados no aparelho real.
+**APK da assinatura distribuída:** execução [35017084063](https://github.com/Enzo-cyber2025/5/actions/runs/35017084063), job `104543107009`, commit de teste `4266f9b948292dc1feb111962a4d18e2894e4fd9`: **SUCCESS**.
 
-## Compilação corrigida e teste atual
+Passaram a igualdade das respostas, reutilização real de prefixo, mudança de sistema, reabertura, persistência e posição do rodapé, cancelamento com recuperação, imagem real com a tela efetivamente apagada, liberação do bloqueio de CPU antes de reiniciar, acerto do cache visual e recodificação de imagens diferentes. O APK assinado foi conferido byte a byte contra o conteúdo ZIP compilado, incluindo hashes das bibliotecas nativas.
 
-- Código: `ce0118db8646f1523d11725a8c5c29b6e88230f2`.
-- APK candidato: `eabd016935ac51cdd89063a97fbc1b562f7f9261981f54b5191d37734e7922eb`.
-- Compilação `35013826315`, job `104532130205`: compilação das duas ISAs,
-  regressões e DEX/JVM passaram; testes Android amplos ainda em andamento.
-- Comparação `35014529821` falhou ANTES da inferência: o InputMethodManager ainda
-  não havia registrado o IME de teste durante o desbloqueio inicial do emulador.
-  O teste agora acorda/desbloqueia e espera o ID efetivamente publicado pelo sistema.
-- Nova comparação `35015163610`, job `104536648582`, em andamento. **Sem ganho aprovado.**
-- Testes locais direcionados: 19 passaram, 1 depende de javac local indisponível.
-  O IME separado compilou no CI; não integra o APK distribuído.
-- Os 1.158 arquivos arquivados antes de restaurar o checkout foram conferidos:
-  todos os blobs já existiam no histórico Git, sem alteração local inédita perdida.
+Cinco capturas reais foram abertas e inspecionadas: [continuação](../ci-results/35017084063-1/physical-latency-follow-footer.png), [mudança de sistema](../ci-results/35017084063-1/physical-latency-changed-system-footer.png), [reabertura](../ci-results/35017084063-1/physical-latency-reopened-footer.png), [visão](../ci-results/35017084063-1/physical-latency-vision-footer.png) e [imagem em cache](../ci-results/35017084063-1/physical-latency-cached-image-footer.png). Não são imagens geradas ou telas simuladas.
 
-## Estado após a rodada completa de regressão
+**Suíte ampla da compilação:** [35013826315](https://github.com/Enzo-cyber2025/5/actions/runs/35013826315), job `104532130205`: **SUCCESS**, incluindo compilação das duas ISAs, regressões, DEX/JVM, oito verificações físicas do GGUF, anexos e leitura/inferência real. Essa suíte ampla usa uma assinatura descartável e Vulkan por software, não GPU física. Testes locais direcionados: **21 passaram, 1 depende de javac local indisponível**. O código Java e o IME auxiliar foram compilados no CI.
 
-A compilação `35013826315` terminou com **SUCCESS**, incluindo as oito verificações
-físicas do GGUF, anexos e inferência real. As capturas de cachorro e cachorro/ônibus
-foram inspecionadas. Esse teste usa Vulkan por software e assinatura descartável,
-não a assinatura distribuída. A limitação semântica já conhecida do modelo pequeno
-continua: a resposta ao prompt por conversa reteve ORCHID em vez de CEDAR.
+**Limites de qualidade:** as respostas iguais do modelo pequeno continuam podendo ser repetitivas ou desobedecer instruções. Na suíte ampla, a resposta por conversa reteve ORCHID em vez de CEDAR; no comparativo, a resposta sobre o código também foi inadequada em ambas as versões. Aprovação de latência/funcionamento não é certificação universal de precisão, áudio, suspensão extrema de fabricantes ou imunidade a force-stop.
 
-As tentativas assinadas seguintes tiveram falhas do roteiro, não aprovação do APK:
-`35015163610` concluiu oito gerações reais do baseline, mas Back fechou o editor
-porque o IME de teste não tem painel. A edição agora verifica o InputConnection e
-toca explicitamente Salvar. `35016320164` falhou antes da inferência na navegação
-SAF; a captura mostra Downloads. A escolha agora observa a gaveta preenchida e
-aceita o ID de título do framework ou do provedor, sem repetir importação/inferência.
+## Experimentos e falhas anteriores preservados
 
-A rodada assinada atual é `35017084063`, job `104543107009`, script `4266f9b`.
-Foi vista em andamento por cerca de 20 minutos, mas a credencial GitHub expirou
-novamente. **Resultado final ainda desconhecido.** A saída do monitor não vale
-como aprovação: é necessário consultar a conclusão real, baixar as evidências,
-comparar respostas/tempos e inspecionar as capturas da assinatura exata.
-
-21 testes locais direcionados passaram; 1 exige javac local. Nenhuma aceleração
-nova está aprovada. O APK e a nova chave não foram alterados nessas correções do roteiro.
+- APK `43c802…`, código `59faf72…`, execução `35005228698`: **rejeitado**. Os lotes 512/128 mudaram a resposta apesar de entrada completa de 1744 caracteres, configurações e sistema iguais. Seus números provisórios não são usados como aprovação.
+- `35003361411`: uma rajada longa de teclas sintéticas perdeu caracteres antes de chegar ao app. A entrada passou a ser verificada integralmente.
+- `35014529821`: o IME auxiliar ainda não havia sido registrado durante o desbloqueio inicial do emulador. Agora o teste observa o ID publicado pelo sistema.
+- `35015163610`: oito gerações reais do baseline concluídas, mas Back fechou o editor porque o IME não tem painel. Agora a edição usa InputConnection verificado e toca Salvar explicitamente.
+- `35016320164`: corrida de inicialização da gaveta SAF; a captura real mostrava Downloads. A seleção agora espera a gaveta e o título visíveis, com ID do framework ou provedor.
+- O IME é um APK **separado, descartável e exclusivo do emulador**, sem acesso a rede/armazenamento. Escreve no EditText real; não injeta respostas, modelos ou métricas e não integra o APK entregue.
+- As duas interrupções de autenticação foram resolvidas por reconexão. O estado final foi consultado pela API; saída do monitor isoladamente não foi tratada como aprovação.
+- Antes de recuperar o checkout, seus 1.158 arquivos antigos foram arquivados e comparados: todos os blobs já estavam preservados no histórico Git.

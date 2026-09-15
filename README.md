@@ -1,17 +1,32 @@
-# Otimização de latência — em validação
+# GGUF Chat — menos espera nas continuações
 
-O candidato atual com cache de texto/imagens ainda **não está aprovado para entrega**.
-O experimento anterior de lotes maiores foi rejeitado por alterar a resposta;
-o código voltou aos lotes 128/32, sem reduzir pesos, quantização ou limites escolhidos.
+**Assinatura diferente da versão anterior. O Android não permite atualizar por cima dela. Não desinstale o app sem proteger seus dados.**
 
-**Assinatura:** a restauração do ambiente não recuperou a chave privada anterior.
-A substituição previamente autorizada usa outro certificado: não permite atualizar
-por cima dos APKs anteriores. Não desinstale o aplicativo sem proteger seus dados.
+## [Baixar APK — sem ZIP](https://raw.githubusercontent.com/Enzo-cyber2025/5/ad36ee46aebc13cdccc01777f6fd8d4cf9a27023/.delivery/GGUF-Chat-mobile.apk)
 
-[Estado e limites dos testes](docs/RESPONSE_LATENCY.md).
-Último APK entregue (b814, antes deste trabalho):
-[APK com tokens/s](https://raw.githubusercontent.com/Enzo-cyber2025/5/9a5e656031aa413fb661c16c975cea42d3e49cc0/.delivery/GGUF-Chat-mobile.apk).
-Naquela medição não houve ganho de velocidade comprovado.
+28.370.376 bytes · Android 9+ · ARM64/x86_64 · modelos não incluídos.
+
+Comparativo real em emulador, mesmas respostas e três pares medidos por versão:
+
+| Etapa da continuação | Antes | Depois |
+|---|---:|---:|
+| Preparação do histórico | 14,64 s | 1,47 s |
+| Preparação + geração no motor | 31,56 s | 18,21 s |
+
+**90% menos preparação e 42% menos tempo nativo total nas continuações medidas.**
+Não há ganho relevante comprovado no primeiro prompt nem na geração token a token;
+o principal ganho vem de reutilizar o histórico. Não é garantia desses tempos no celular.
+
+Cache de texto e embeddings de imagens; renderização incremental; tokens/s reais
+preservados abaixo das respostas. Cancelamento/recuperação, persistência, mudança
+de sistema, imagem com tela apagada e invalidação de imagens diferentes testados.
+Pesos, quantização e limites escolhidos pelo usuário não foram reduzidos.
+
+[Relatório, limites e capturas reais](docs/RESPONSE_LATENCY.md) ·
+[Aprovação verificada](.delivery/latency-acceptance.json).
+
+SHA-256: `eabd016935ac51cdd89063a97fbc1b562f7f9261981f54b5191d37734e7922eb`.
+Certificado: `4f75afe8637f28ccb167db407e3b2bc9b260e1cfe6059b7377ea20b0b4dc2ac3`.
 
 ---
 ## Histórico de entregas (assinaturas e instruções abaixo pertencem à respectiva versão)
