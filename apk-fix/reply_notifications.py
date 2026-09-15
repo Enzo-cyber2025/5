@@ -20,10 +20,13 @@ def patch_reply_notifications(app):
     import re
     pattern=r'    invoke-virtual/range \{v19 \.\. v19\}, Ljava/lang/StringBuilder;->toString\(\)Ljava/lang/String;\s+move-result-object v4\s+(?=invoke-static \{v4\}, Lcom/ggufchat/app/PromptBuilder;->splitThinking)'
     part,n=re.subn(pattern,'    move-object v4, v8\n\n    ',part);assert n==1
-    # The separate completion notification must outlive removal of the ongoing
-    # foreground notice. Never leave "generating" posted after completion.
-    pattern=r'const/4 v4, 0x0(\s+move-object/from16 v0, p0\s+invoke-virtual \{v0, v4\}, Lcom/ggufchat/app/GenerationService;->stopForeground\(Z\)V)'
-    part,n=re.subn(pattern,r'const/4 v4, 0x1\1',part);assert n==1
+    # Keep CPU/foreground ownership until AFTER the saved-reply notification
+    # is handed to Android. Releasing before notify can suspend a sleeping phone
+    # in the gap. The worker's finally cleanup releases on success AND failure.
+    marker='    invoke-direct/range {p0 .. p0}, Lcom/ggufchat/app/GenerationService;->releaseWakeLock()V'
+    assert part.count(marker)==1;part=part.replace(marker,'    # Released by workerFinished after final delivery.')
+    pattern=r'const/4 v4, 0x0\s+move-object/from16 v0, p0\s+invoke-virtual \{v0, v4\}, Lcom/ggufchat/app/GenerationService;->stopForeground\(Z\)V'
+    part,n=re.subn(pattern,'# Foreground removal is in the worker finally cleanup.',part);assert n==1
     s=s[:a]+part+s[b:]
     s=replace_method(s,'.method private notifyFinished(Ljava/lang/String;Ljava/lang/String;Z)V','''    .locals 1
     iget-boolean v0, p0, Lcom/ggufchat/app/GenerationService;->abortRequested:Z

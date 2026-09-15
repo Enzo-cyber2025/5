@@ -46,6 +46,7 @@ def test_patch_runs_on_exact_previous_dex_when_available(tmp_path):
  assert s.index('ChatStore;->upsert') < s.index('ReplyNotifications;->persisted')
  assert 'move-object v4, v8' in s
  assert 'abortRequested:Z' in s and 'ReplyNotifications;->finished' in s
- assert 'stopForeground(Z)V' in s
+ run=s[s.index('.method private runGeneration('):s.index('.method private updateNotification(')]
+ assert '->releaseWakeLock()V' not in run and '->stopForeground(Z)V' not in run
  worker=(tmp_path/'GenerationService$1.smali').read_text()
  assert '.catchall' in worker and worker.count('ReplyNotifications;->workerFinished')==2

@@ -32,7 +32,7 @@ jobs:
           .venv/bin/pip install -r requirements-test.txt
           bash scripts/fetch_tools.sh
           mkdir -p .cache
-          cp .delivery/GGUF-Chat-mobile.apk .cache/reply-base.apk
+          curl -fL --retry 3 'https://raw.githubusercontent.com/Enzo-cyber2025/5/c5035bafcee844337dcedb033ae8671a813f5b91/.delivery/GGUF-Chat-mobile.apk' -o .cache/reply-base.apk
           .venv/bin/python scripts/build_reply_notifications.py
           .venv/bin/python -m pytest tests/test_reply_notifications.py tests/test_latency.py tests/test_generation_stats.py tests/test_compute.py -q
       - name: Relay unsigned APK, no private key in CI
