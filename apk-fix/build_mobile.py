@@ -2,6 +2,7 @@
 from compute_patches import patch_compute
 from generation_stats import patch_generation_stats
 from latency_patches import patch_latency_ui
+from reply_notifications import patch_reply_notifications
 """Build a coherent native stack and an UNSIGNED APK, for local persistent signing.
 No signing key or password is placed in CI, artifacts, logs or Git.
 """
@@ -77,6 +78,7 @@ def ui_patches(app):
     patch_compute(app)
     patch_generation_stats(app)
     patch_latency_ui(app)
+    patch_reply_notifications(app)
 
 def main():
     WORK.mkdir(parents=True,exist_ok=True)
