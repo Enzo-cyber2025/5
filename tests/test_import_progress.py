@@ -62,3 +62,4 @@ def test_owned_progress_dialog_has_message_before_show():
     # AlertDialog removes its message panel if first shown without a message.
     s=(ROOT/'apk-fix/java/com/ggufchat/app/ImportProgress.java').read_text()
     assert s.index('dialog.setMessage("Preparando importação') < s.index('dialog.show()')
+    assert 'setProgressNumberFormat(null)' in s and 'setProgressPercentFormat(null)' in s

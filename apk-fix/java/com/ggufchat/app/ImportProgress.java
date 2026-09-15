@@ -107,6 +107,9 @@ public final class ImportProgress {
                     message.append('\n');
                 }
                 if(terminal)message.append(result);
+                // Percentages belong to their named rows. The default numeric
+                // footer would display a fabricated 0/100 during native/unknown work.
+                dialog.setProgressNumberFormat(null);dialog.setProgressPercentFormat(null);
                 dialog.setMessage(message.toString());dialog.setMax(100);
                 Row row=rows.get(current);int pct=row==null?-1:ProgressMeter.percent(row.done,row.total,row.complete);
                 dialog.setIndeterminate(!terminal&&pct<0);dialog.setProgress(terminal?(result.startsWith("Concluído")?100:0):Math.max(0,pct));
