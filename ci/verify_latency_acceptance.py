@@ -11,7 +11,7 @@ def verify():
     assert v['status']=='SIGNED_LATENCY_ANDROID_PASS'
     assert c['apk_sha256']==v['apk_sha256']==m['apk_sha256']==hashlib.sha256(Path('.delivery/GGUF-Chat-mobile.apk').read_bytes()).hexdigest()
     assert c['source_commit']==m['source_commit']==u['source_commit']==u['native_source_commit']
-    assert c['signer_sha256']==m['signer_sha256']=='3dd851d414caaa20d06ea22391e75b752aab0d26c749168b3353dd389b1332da'
+    assert c['signer_sha256']==m['signer_sha256']=='4f75afe8637f28ccb167db407e3b2bc9b260e1cfe6059b7377ea20b0b4dc2ac3'
     assert m['unsigned_sha256']==u['sha256']==hashlib.sha256(Path('.delivery/GGUF-Chat-mobile-unsigned.apk').read_bytes()).hexdigest()
     with zipfile.ZipFile('.delivery/GGUF-Chat-mobile.apk') as a,zipfile.ZipFile('.delivery/GGUF-Chat-mobile-unsigned.apk') as b:
         assert a.namelist()==b.namelist()
@@ -24,8 +24,13 @@ def verify():
     assert next(j for j in jobs if j['id']==v['job'])['conclusion']=='success'
     root=Path(f"ci-results/{v['run']}-{v['attempt']}");s=json.load(open(root/'summary.json'))
     assert s['status']=='PASS' and s['apk_sha256']==c['apk_sha256']
-    for check in ('same_key_update_preserves_data','prefix_reuse_system_edit_restart_and_footer','identical_outputs_with_real_prefix_reuse','cancel_invalidates_partial_cache','real_image_no_text_cache_screen_off_and_lease_release','same_image_embeddings_reused_and_changed_images_reencoded'):
+    for check in ('installation_policy_verified','prefix_reuse_system_edit_restart_and_footer','identical_outputs_with_real_prefix_reuse','cancel_invalidates_partial_cache','real_image_no_text_cache_screen_off_and_lease_release','same_image_embeddings_reused_and_changed_images_reencoded'):
         assert s['checks'][check]=='PASS',check
+    rotation=json.load(open('.delivery/signing-rotation.json'))
+    assert rotation['new_certificate_sha256']==c['signer_sha256']
+    assert rotation['compatibility']=='INCOMPATIBLE_WITH_PREVIOUS_APK'
+    assert s['checks']['signature_change_blocks_update_without_data_loss']=='PASS'
+    assert 'no data migration claim' in s['installation_scope']
     b=s['benchmark'];assert b['repetitions']==3 and b['warmup_pairs_excluded']==1
     for phase in ('before','after'):
         assert len(b['series'][phase])==3

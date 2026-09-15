@@ -83,9 +83,28 @@ def main():
             new=phase=='after'
             if new:
                 models=d.read_json('models.json');chats=d.read_json('chats.json')
-                d.adb('install','-r','-g',APK,timeout=180)
-                assert d.read_json('models.json')==models and d.read_json('chats.json')==chats
-                checks['same_key_update_preserves_data']='PASS'
+                if c['signer_sha256']=='3dd851d414caaa20d06ea22391e75b752aab0d26c749168b3353dd389b1332da':
+                    d.adb('install','-r','-g',APK,timeout=180)
+                    assert d.read_json('models.json')==models and d.read_json('chats.json')==chats
+                    checks['same_key_update_preserves_data']='PASS'
+                    s['installation_scope']='same-certificate in-place update'
+                else:
+                    # Test the real, unmodified baseline APK. A new certificate
+                    # MUST be refused without destroying the installed app data.
+                    result=d.adb('install','-r','-g',APK,timeout=180,check=False,with_status=True)
+                    error=(result.stdout+result.stderr).decode(errors='replace')
+                    assert result.returncode!=0 and 'INSTALL_FAILED_UPDATE_INCOMPATIBLE' in error,error
+                    assert d.read_json('models.json')==models and d.read_json('chats.json')==chats
+                    (E/'physical-latency-signature-incompatible.txt').write_text(error)
+                    checks['signature_change_blocks_update_without_data_loss']='PASS'
+                    # Destructive cleanup is ONLY on this disposable emulator,
+                    # never a migration instruction for the user's phone.
+                    assert d.shell('getprop ro.kernel.qemu')=='1'
+                    d.adb('uninstall',PACKAGE)
+                    d.adb('install','-g',APK,timeout=180)
+                    d.grant_test_notifications();model=d.import_model(TEXT)
+                    s['installation_scope']='different certificate: refused update; fresh install on disposable emulator ONLY, no data migration claim'
+                checks['installation_policy_verified']='PASS'
             for i in range(4):
                 chat=d.new_chat(model,0,context_size=2048);pid=d.alive()
                 first=run_reply(d,chat,FIRST,f'{phase}-{i}-cold',new)

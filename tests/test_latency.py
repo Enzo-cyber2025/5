@@ -67,3 +67,11 @@ def test_input_bridge_is_separate_and_verifies_actual_edit_text():
     assert 'com.ggufchat.app' in bridge
     assert 'uses-permission' not in manifest
     assert 'testinput' not in (ROOT/'apk-fix/build_mobile.py').read_text()
+
+
+def test_new_signature_never_silently_claims_in_place_update():
+    s=(ROOT/'scripts/test_latency_android.py').read_text()
+    assert 'INSTALL_FAILED_UPDATE_INCOMPATIBLE' in s
+    assert 'signature_change_blocks_update_without_data_loss' in s
+    assert 'no data migration claim' in s
+    assert s.index("assert d.shell('getprop ro.kernel.qemu')=='1'",s.index('Destructive cleanup')) < s.index("d.adb('uninstall',PACKAGE)")
