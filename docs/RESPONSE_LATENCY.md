@@ -31,3 +31,19 @@ Candidato: `43c802e7244d3a9ea09dd91821353a2be4ce7943148e34900463bfb449d3de82`, c
 **Nenhum número de aceleração aprovado neste documento até concluir as medições.** Resultados em emulador não certificam velocidade em celular físico, qualquer arquitetura/modelo ou precisão semântica geral. Vulkan em software não é GPU física.
 
 Assinatura preservada: `3dd851d414caaa20d06ea22391e75b752aab0d26c749168b3353dd389b1332da`, igual aos dois últimos APKs de teste. Continua incompatível com os APKs antigos assinados com `9b658c…`; não desinstale uma versão antiga sem proteger seus dados.
+
+## Rejected numerical batching experiment; corrected rebuild
+
+The signed 43c802 candidate failed deterministic cold-output equality in real
+Android run 35005228698, despite identical 1744-character input, sampling settings
+and system SHA. Thus the observed follow-up prefill decrease is provisional and
+NOT an accepted speed/quality comparison. Cancellation/image cache gates were
+not reached. The 512/128 batching experiment is removed; baseline 128/32 is
+restored while guarded caches and incremental rendering remain.
+
+After reconnection the workspace was restored to an older checkout. Remote
+786c46a (including all published evidence) was recovered on the same branch,
+with the previous worktree archived locally before restoration. The unpushed
+correction is reapplied here. Signing key and private backup are not present
+in this restored environment: no same-certificate update can be promised.
+No corrected APK has been accepted yet.

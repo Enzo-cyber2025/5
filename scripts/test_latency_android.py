@@ -3,7 +3,7 @@
 process restart, cancellation recovery and real image generation while asleep.
 No injected assistant replies, no manufactured tokens or timing values.
 """
-import hashlib,json,re,statistics,traceback,shlex
+import hashlib,json,re,statistics,traceback,shlex,base64
 from pathlib import Path
 import xml.etree.ElementTree as ET
 from test_mobile import MobileAndroid,APK,MODEL,PROJ,select_pair,bounds
@@ -20,11 +20,13 @@ class LatencyAndroid(MobileAndroid):
     def send(self,prompt,clear_log=True):
         if clear_log:self.adb('logcat','-c')
         self.tap(class_name='android.widget.EditText',package={PACKAGE})
-        # Android's `input text` uses synthetic key events. A single long burst
-        # can drop stale events under emulator load. Fresh bounded bursts plus
-        # exact field verification prevent benchmarking a truncated prompt.
-        for at in range(0,len(prompt),64):
-            self.shell('input text '+shlex.quote(prompt[at:at+64].replace(' ','%s')))
+        # Actual InputConnection, not slow/droppable synthetic key bursts.
+        # The entire focused EditText is still independently verified below.
+        dready=lambda: 'data="ready"' in self.shell('am broadcast -a com.ggufchat.testinput.READY -p com.ggufchat.testinput')
+        self.wait(dready,'test IME bound to real app input',timeout=30)
+        encoded=base64.b64encode(prompt.encode('utf-8')).decode('ascii')
+        result=self.shell('am broadcast -a com.ggufchat.testinput.TEXT -p com.ggufchat.testinput --es text_b64 '+shlex.quote(encoded))
+        assert 'data="committed"' in result,result
         def exact():
             fields=[n.get('text','') for n in ET.fromstring(self.ui()).iter('node') if n.get('class')=='android.widget.EditText' and n.get('package')==PACKAGE]
             return prompt in fields
@@ -70,6 +72,9 @@ def main():
         assert s['apk_sha256']==c['apk_sha256'] and d.shell('getprop ro.kernel.qemu')=='1'
         d.adb('root',check=False);d.adb('wait-for-device');d.shell('wm size 720x1280');d.shell('wm density 240')
         d.shell('pm disable-user --user 0 com.google.android.apps.nexuslauncher',check=False);d.adb('logcat','-G','16M')
+        d.adb('install','-r',Path('.cache/test-input/input.apk'))
+        d.shell('ime enable com.ggufchat.testinput/.InputBridge')
+        d.shell('ime set com.ggufchat.testinput/.InputBridge')
         baseline=Path('.cache/latency-baseline.apk');assert sha(baseline)==c['baseline_sha256']
         d.adb('install','-r','-g',baseline,timeout=180);assert d.shell('pm clear '+PACKAGE)=='Success'
         d.grant_test_notifications();model=d.import_model(TEXT)

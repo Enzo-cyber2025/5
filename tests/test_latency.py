@@ -34,7 +34,8 @@ def test_real_memory_operations_and_invalidation_are_guarded():
     assert 'e->cached_tokens.clear(); // failed/partial work is never reused' in s
     assert s.index('if(llama_decode(e->ctx,llama_batch_get_one(&t,1))!=0)')<s.index('if(text_cache)e->cached_tokens.push_back(t)')
     assert 'GGUF_RESPONSE_LATENCY' in s and 'GGUF_PROMPT_CACHE' in s
-    assert 'cp.n_batch=512; cp.n_ubatch=128;' in s and 'GGUF_PREFILL_ALLOCATION_RETRY' in s
+    assert 'cp.n_batch=128; cp.n_ubatch=32;' in s
+    assert 'cp.n_batch=512' not in s and 'GGUF_PREFILL_ALLOCATION_RETRY' not in s
 
 def test_incremental_stream_has_no_full_copy_or_live_truncation(tmp_path):
     sys.path.insert(0,str(ROOT/'apk-fix'))
@@ -55,3 +56,14 @@ def test_image_cache_is_bounded_content_keyed_and_keeps_upstream_positions():
     assert 'catch(const std::bad_alloc &)' in s
     assert 'mtmd_helper_decode_image_chunk(e->projector,e->ctx,chunk,embd,past,0' in s
     assert 'GGUF_IMAGE_EMBED_CACHE hits=' in s
+
+
+def test_input_bridge_is_separate_and_verifies_actual_edit_text():
+    test=(ROOT/'scripts/test_latency_android.py').read_text()
+    bridge=(ROOT/'tests/android-input/src/com/ggufchat/testinput/InputBridge.java').read_text()
+    manifest=(ROOT/'tests/android-input/AndroidManifest.xml').read_text()
+    assert 'return prompt in fields' in test and 'input text ' not in test
+    assert 'commitText(text, 1)' in bridge and 'getCurrentInputConnection()' in bridge
+    assert 'com.ggufchat.app' in bridge
+    assert 'uses-permission' not in manifest
+    assert 'testinput' not in (ROOT/'apk-fix/build_mobile.py').read_text()

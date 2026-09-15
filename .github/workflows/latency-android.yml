@@ -16,6 +16,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
       - name: Exact signed payload and baseline
         run: |
           mkdir -p .cache evidence
@@ -41,6 +45,7 @@ jobs:
           git clone --depth 1 --branch v0.4.1 https://github.com/ggml-org/llama.cpp .cache/llama-mobile
           test "$(git -C .cache/llama-mobile rev-parse HEAD)" = b29c606e28a01b1bc8c1351026a0fa6e616bf6c4
           bash ci/mobile-models.sh
+          bash scripts/build_test_input.sh
           sudo chmod a+rw /dev/kvm
       - uses: reactivecircus/android-emulator-runner@v2
         env:

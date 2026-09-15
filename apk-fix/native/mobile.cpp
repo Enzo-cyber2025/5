@@ -153,16 +153,10 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
         if(layers!=0 && loaded_gpu_layers<=0)
             throw std::runtime_error("O GGUF não carregou camadas no Vulkan. Escolha CPU explicitamente ou outro modelo/dispositivo.");
         e->layers=loaded_gpu_layers;
-        auto cp=llama_context_default_params(); cp.n_ctx=context; cp.n_batch=512; cp.n_ubatch=128;
+        auto cp=llama_context_default_params(); cp.n_ctx=context; cp.n_batch=128; cp.n_ubatch=32;
         cp.n_threads=cp.n_threads_batch=std::max(1,std::min(threads,8));
         cp.abort_callback=[](void *p){return static_cast<Engine*>(p)->cancel.load();}; cp.abort_callback_data=e.get();
         e->ctx=llama_init_from_model(e->model,cp);
-        if(!e->ctx) {
-            // Actual allocation failure, not a speculative RAM/file-size gate.
-            LOG("GGUF_PREFILL_ALLOCATION_RETRY batch=128 ubatch=32");
-            cp.n_batch=128;cp.n_ubatch=32;
-            e->ctx=llama_init_from_model(e->model,cp);
-        }
         if(!e->ctx) throw std::runtime_error("Não foi possível criar contexto: reduza o contexto/modelo");
         e->cache_supported=!llama_model_is_recurrent(e->model) && !llama_model_is_hybrid(e->model)
             && !llama_model_has_encoder(e->model) && !llama_model_is_diffusion(e->model);

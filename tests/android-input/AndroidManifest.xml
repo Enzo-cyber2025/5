@@ -1,0 +1,9 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.ggufchat.testinput">
+    <uses-sdk android:minSdkVersion="28" android:targetSdkVersion="35"/>
+    <application android:label="Disposable test input" android:allowBackup="false">
+        <service android:name=".InputBridge" android:permission="android.permission.BIND_INPUT_METHOD" android:exported="true">
+            <intent-filter><action android:name="android.view.InputMethod"/></intent-filter>
+            <meta-data android:name="android.view.im" android:resource="@xml/method"/>
+        </service>
+    </application>
+</manifest>
