@@ -57,7 +57,7 @@ def patch_import_progress(app):
     assert s.count(marker)==1
     s=s.replace(marker,marker+'\n    invoke-static {v2}, Lcom/ggufchat/app/ImportProgress;->syncCopied(Ljava/io/OutputStream;)V')
     p.write_text(s)
-    # Empty-library "Importar" used to launch an undeclared legacy Activity.
+    # Empty-library "Importar" used to launch the separate legacy Activity.
     # Both old callbacks now lead to the canonical import UI (same atomic rules
     # and measured progress) rather than a second, uninstrumented importer.
     for suffix,signature in [('2','.method public onClick(Landroid/view/View;)V'),('7','.method public onClick(Landroid/content/DialogInterface;I)V')]:
