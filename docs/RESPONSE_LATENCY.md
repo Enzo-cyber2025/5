@@ -72,3 +72,27 @@ Não equivale a migração ou atualização preservando dados no aparelho real.
   O IME separado compilou no CI; não integra o APK distribuído.
 - Os 1.158 arquivos arquivados antes de restaurar o checkout foram conferidos:
   todos os blobs já existiam no histórico Git, sem alteração local inédita perdida.
+
+## Estado após a rodada completa de regressão
+
+A compilação `35013826315` terminou com **SUCCESS**, incluindo as oito verificações
+físicas do GGUF, anexos e inferência real. As capturas de cachorro e cachorro/ônibus
+foram inspecionadas. Esse teste usa Vulkan por software e assinatura descartável,
+não a assinatura distribuída. A limitação semântica já conhecida do modelo pequeno
+continua: a resposta ao prompt por conversa reteve ORCHID em vez de CEDAR.
+
+As tentativas assinadas seguintes tiveram falhas do roteiro, não aprovação do APK:
+`35015163610` concluiu oito gerações reais do baseline, mas Back fechou o editor
+porque o IME de teste não tem painel. A edição agora verifica o InputConnection e
+toca explicitamente Salvar. `35016320164` falhou antes da inferência na navegação
+SAF; a captura mostra Downloads. A escolha agora observa a gaveta preenchida e
+aceita o ID de título do framework ou do provedor, sem repetir importação/inferência.
+
+A rodada assinada atual é `35017084063`, job `104543107009`, script `4266f9b`.
+Foi vista em andamento por cerca de 20 minutos, mas a credencial GitHub expirou
+novamente. **Resultado final ainda desconhecido.** A saída do monitor não vale
+como aprovação: é necessário consultar a conclusão real, baixar as evidências,
+comparar respostas/tempos e inspecionar as capturas da assinatura exata.
+
+21 testes locais direcionados passaram; 1 exige javac local. Nenhuma aceleração
+nova está aprovada. O APK e a nova chave não foram alterados nessas correções do roteiro.
