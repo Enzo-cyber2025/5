@@ -1,0 +1,27 @@
+{
+  "status": "PASS",
+  "scope": "physical-GGUF-parameters-system-prompts",
+  "apk_sha256": "e22bb5457f5a14612ce009911577ee10630aa4ce35bf0f36b247e526aa1c11e6",
+  "checks": {},
+  "physical_checks": {
+    "one_physical_file_and_all_tensor_hashes": "PASS",
+    "restart_persistence": "PASS",
+    "same_file_language_projector_visual_inference_vulkan": "PASS",
+    "independent_external_format_single_file_import_and_inference": "PASS",
+    "parameter_detection_not_filename": "PASS",
+    "system_global_override_json_restart_and_generation": "PASS",
+    "system_reset_to_global_and_default": "PASS",
+    "single_file_scoped_delete": "PASS"
+  },
+  "environment": "Android emulator, Mesa software Vulkan; test-only ephemeral signature",
+  "system_response_quality": {
+    "system-global": {
+      "status": "PASS",
+      "response": "The reference code is \"ORCHID-5291\"."
+    },
+    "system-chat": {
+      "status": "FAIL",
+      "response": "The reference code is \"ORCHID-5291\"."
+    }
+  }
+}
