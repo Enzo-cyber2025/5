@@ -1,0 +1,54 @@
+{
+  "status": "FAIL",
+  "apk_sha256": "ade73aec498bbe0b541170372ba4d5d9a7508cb862583d81e716c40da0dfa1f5",
+  "checks": {
+    "same_signature_update_preserves_models_and_chats": "PASS",
+    "same_output_screen_off_saved_reply_alert_survives_service_stop": "PASS",
+    "screen_off_progress_notifications_suppressed_without_changing_tokens": "PASS",
+    "notification_tap_opens_correct_chat_and_auto_cancels": "PASS",
+    "foreground_no_unnecessary_alert_and_native_cache_preserved": "PASS",
+    "cancel_does_not_notify_success": "PASS"
+  },
+  "observations": {
+    "before": {
+      "tokens": 128,
+      "prefill_and_generation_seconds": 6.240000000005239,
+      "prefill_and_generation_tokens_s": 20.51282051280329,
+      "response": "1. **Learn the Alphabet**: Start with the alphabet and gradually move to numbers, as it helps you remember words by sight rather than sound.\n\n2. **Practice Speaking**: Engage in conversations regularly with native speakers or language exchange partners who can provide feedback on your pronunciation and grammar.\n\n3. **Read at a Level Appropriate for Your Age**: Begin with simple texts like books, articles, and news stories to improve comprehension and vocabulary retention.\n\n4. **Use Apps and Websites**: Utilize apps like Duolingo, Babbel, and Rosetta Stone to enhance language learning skills and practice speaking. Websites like language exchange platforms and language learning",
+      "metrics": {
+        "tokens": 128,
+        "decodeNs": 3827670920,
+        "prefillNs": 2412605089,
+        "completed": true,
+        "version": 2,
+        "firstTokenNs": 2414439677,
+        "promptTokens": 73,
+        "reusedPromptTokens": 0
+      },
+      "callbacks": 66,
+      "native_decode_tokens_s": 33.44070132340426
+    },
+    "after": {
+      "tokens": 128,
+      "prefill_and_generation_seconds": 6.048000000009779,
+      "prefill_and_generation_tokens_s": 21.164021163986945,
+      "response": "1. **Learn the Alphabet**: Start with the alphabet and gradually move to numbers, as it helps you remember words by sight rather than sound.\n\n2. **Practice Speaking**: Engage in conversations regularly with native speakers or language exchange partners who can provide feedback on your pronunciation and grammar.\n\n3. **Read at a Level Appropriate for Your Age**: Begin with simple texts like books, articles, and news stories to improve comprehension and vocabulary retention.\n\n4. **Use Apps and Websites**: Utilize apps like Duolingo, Babbel, and Rosetta Stone to enhance language learning skills and practice speaking. Websites like language exchange platforms and language learning",
+      "metrics": {
+        "tokens": 128,
+        "decodeNs": 3713887456,
+        "prefillNs": 2334634853,
+        "completed": true,
+        "version": 2,
+        "firstTokenNs": 2335449291,
+        "promptTokens": 73,
+        "reusedPromptTokens": 0
+      },
+      "callbacks": 66,
+      "native_decode_tokens_s": 34.46523394057313
+    },
+    "progress_updates": 0,
+    "screen_off_updates_skipped": 66,
+    "scope": "One genuine same-prompt comparison, NOT a statistical speed benchmark. Native bytes unchanged. Counts concern progress notifications, not token generation."
+  },
+  "error": "Command '['gh', 'api', 'repos/pytorch/hub/git/blobs/12f0e0dd1162b94a5b0919ce8b91821450965985']' returned non-zero exit status 4."
+}
