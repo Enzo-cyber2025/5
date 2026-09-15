@@ -1,0 +1,25 @@
+name: Deliver verified screen-off compute APK
+on:
+  push:
+    branches: [arena/01a09b42-5]
+    paths: [.github/workflows/compute-deliver.yml, .delivery/compute-acceptance.json]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  deliver:
+    if: ${{ contains(github.event.head_commit.message, '[compute publish]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: Verify targeted Android acceptance, declared replacement signature and exact public bytes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: Enzo-cyber2025/5
+        run: bash ci/log_step.sh compute-delivery bash ci/deliver_compute.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: compute-delivery-verification
+          path: .cache/ci-logs/
