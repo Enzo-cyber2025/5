@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/home/runner/work/5/5/scripts/test_performance_android.py", line 74, in main
+    first=run_reply(d,chat,FIRST,f'{phase}-{screen}-{i}-cold',screen=='asleep',new)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_performance_android.py", line 20, in run_reply
+    assert 'mWakefulness=Asleep' in d.shell('dumpsys power') and completed_after_actual_sleep(log)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
