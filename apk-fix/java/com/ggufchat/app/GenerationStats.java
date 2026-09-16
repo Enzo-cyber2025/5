@@ -17,7 +17,7 @@ public final class GenerationStats {
     public static void measured(long tokens,long decodeNs,long prefillNs,boolean completed){
         try {
             JSONObject j=new JSONObject();j.put("tokens",tokens);j.put("decodeNs",decodeNs);
-            j.put("prefillNs",prefillNs);j.put("completed",completed);j.put("version",2);
+            j.put("prefillNs",prefillNs);j.put("completed",completed);j.put("version",3);j.put("timingScope","prefill_synchronized_before_decode");
             long[] latency=LATENCY.get();
             if(latency!=null){j.put("firstTokenNs",latency[0]);j.put("promptTokens",latency[1]);j.put("reusedPromptTokens",latency[2]);}
             LATENCY.remove();

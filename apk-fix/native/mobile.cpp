@@ -418,6 +418,11 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
         LOG("GGUF_PROMPT_CACHE input_tokens=%zu reused_tokens=%zu evaluated_tokens=%zu media=%d",
             prompt_tokens,reused_tokens,prompt_tokens-reused_tokens,n_images);
 
+        // llama_decode queues Vulkan work and async output copies. Its return
+        // does NOT mean prefill is finished. Drain once at the phase boundary
+        // (sampling would wait for the same work anyway), so the decode-only
+        // footer never charges prompt GPU work to response-token throughput.
+        llama_synchronize(e->ctx);
         decode_started=Clock::now();decoding=true;
         int limit=std::min<int>(predict,llama_n_ctx(e->ctx)-input_size);
         const char *reason="length";

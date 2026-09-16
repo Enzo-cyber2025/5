@@ -84,3 +84,11 @@ def test_gpu_sampler_lifetime_and_original_parameters():
     assert s.index('std::unique_ptr<llama_sampler')<s.index('BackendSamplerBinding binding')<s.index('if(n_images)')
     assert 'llama_sampler_init_dist(seed)' in s and 'llama_sampler_init_penalties' in s
     assert 'GGUF_GPU_SAMPLING_RESULT backend_selected=' in s
+
+
+def test_gpu_prefill_is_completed_before_decode_clock_starts():
+    s=(ROOT/'apk-fix/native/mobile.cpp').read_text()
+    boundary=s[s.index('prompt_tokens=input_size;'):s.index('int limit=std::min<int>')]
+    assert boundary.index('llama_synchronize(e->ctx)')<boundary.index('decode_started=Clock::now()')
+    j=(ROOT/'apk-fix/java/com/ggufchat/app/GenerationStats.java').read_text()
+    assert 'prefill_synchronized_before_decode' in j and 'j.put("version",3)' in j
