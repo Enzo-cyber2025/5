@@ -1,0 +1,19 @@
+{
+  "status": "SOURCE_IMPLEMENTED_ANDROID_BUILD_PENDING",
+  "baseline_apk_sha256": "8a994b58efc0a65a0851534402eacb5f0c305ff534a100075a88e5c5dbf95399",
+  "baseline_commit": "53dd3487bab82b313289faeb37d42135e6bc838a",
+  "changes": [
+    "Vulkan mode requests every layer and Vulkan buffer placement for ALL language weights, including token embeddings",
+    "Scheduler prioritizes selected Vulkan device for supported small math operations instead of CPU placement heuristics",
+    "Whole scheduled graph preflight rejects non-Vulkan tensor math before any split submits; direct backend graph dispatch also guarded",
+    "Scoped thread-local policy covers language, mtmd and KV schedulers without silently changing an explicit CPU engine",
+    "Require complete backend sampler chain and selected token; unsupported configurations fail clearly without changing sampling parameters"
+  ],
+  "local_results": "145 passed, 28 skipped regression selection; full patched host llama compiled; real patched ggml CPU graph and scheduler rejected ADD before execution, explicit CPU scope still works",
+  "android_candidate_approved": false,
+  "physical_gpu_speed_certified": false,
+  "five_second_goal_certified": false,
+  "all_application_on_gpu": false,
+  "scope": "Strict tensor-compute routing in Vulkan mode. Android/UI/files/tokenization/image preprocessing/RNG and sampler state bookkeeping remain host CPU work. Software Vulkan itself runs on CPU in emulators. CPU mode remains explicit, never automatic fallback.",
+  "delivery": "Existing delivered APK is still baseline 8a994; it does NOT contain these new source changes. No new APK or speed claim until build and actual signed Android tests."
+}

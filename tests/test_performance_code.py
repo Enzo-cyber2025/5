@@ -79,7 +79,9 @@ def test_real_bytecode_wiring(tmp_path):
 
 def test_gpu_sampler_lifetime_and_original_parameters():
     s=(ROOT/'apk-fix/native/mobile.cpp').read_text()
-    assert 'if(e->layers>0)binding.attached=llama_set_sampler(e->ctx,0,sampler.get())' in s
+    binding=s[s.index('        // Full backend chain required'):s.index('        LOG("GGUF_GPU_SAMPLING')]
+    assert 'if(e->layers>0)' in binding and 'binding.attached=llama_set_sampler(e->ctx,0,sampler.get())' in binding
+    assert 'if(!binding.attached)throw std::runtime_error' in binding
     assert 'llama_synchronize(ctx);' in s and 'llama_set_sampler(ctx,0,nullptr)' in s
     assert s.index('std::unique_ptr<llama_sampler')<s.index('BackendSamplerBinding binding')<s.index('if(n_images)')
     assert 'llama_sampler_init_dist(seed)' in s and 'llama_sampler_init_penalties' in s

@@ -5,6 +5,7 @@
 #include "prompt_cache.h"
 #include "cpu_threads.h"
 #include "decode_delivery.h"
+#include "strict_vulkan.h"
 #include <sched.h>
 #include <unistd.h>
 #include "chat.h"
@@ -39,6 +40,7 @@ struct Engine {
     std::mutex mutex;
     std::string error;
     int layers=0;
+    ggml_backend_dev_t strict_device=nullptr;
     std::vector<llama_token> cached_tokens; // exact tokens whose KV is present
     bool cache_supported=false;
     std::string image_set_id;
@@ -121,8 +123,9 @@ static int generation_threads(int requested) {
 }
 extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *env,jclass,jstring path,jstring proj,jint context,jint threads,jint layers,jboolean mmap) {
     try {
-        create_error.clear();loaded_gpu_layers=0;
-        if(layers<0) layers=INT_MAX;
+        create_error.clear();loaded_gpu_layers=0;ggml_backend_gguf_strict_reset();
+        const int requested_layers=layers;
+        if(layers!=0) layers=INT_MAX; // Vulkan mode is all layers, never partial CPU inference.
         auto model_path=utf8(env,path), projector_path=utf8(env,proj);
         if(projector_path=="null") projector_path.clear();
         if(projector_path.empty()) {
@@ -161,12 +164,20 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
         auto mp=llama_model_default_params(); mp.n_gpu_layers=layers; mp.load_mode=mmap?LLAMA_LOAD_MODE_MMAP:LLAMA_LOAD_MODE_NONE;
         ggml_backend_dev_t no_accelerators[] = {nullptr};
         ggml_backend_dev_t vulkan_devices[] = {nullptr,nullptr};
+        llama_model_tensor_buft_override gpu_weights[] = {{".*",nullptr},{nullptr,nullptr}};
         if(layers==0) mp.devices=no_accelerators; // Explicit CPU mode only.
         else {
             vulkan_devices[0]=ggml_backend_dev_by_name("Vulkan0");
             if(!vulkan_devices[0]) throw std::runtime_error("Vulkan indisponível. Nenhum fallback automático para CPU foi feito.");
             mp.devices=vulkan_devices;
+            e->strict_device=vulkan_devices[0];
+            // Include token embeddings and other weights normally left on CPU.
+            gpu_weights[0].buft=ggml_backend_dev_buffer_type(e->strict_device);
+            mp.tensor_buft_overrides=gpu_weights;
+            mp.split_mode=LLAMA_SPLIT_MODE_NONE;
+            LOG("GGUF_STRICT_VULKAN requested_layers=%d effective_layers=all weights=all tensor_cpu_fallback=blocked host_orchestration=CPU",requested_layers);
         }
+        StrictVulkanScope strict(e->strict_device);
         e->model=llama_model_load_from_file(model_path.c_str(),mp);
         if(!e->model) throw std::runtime_error("O carregador não conseguiu abrir os pesos. Consulte o diagnóstico nativo: arquivo/arquitetura/backend ou alocação podem causar esta falha");
         if(layers!=0 && loaded_gpu_layers<=0)
@@ -193,7 +204,7 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
             e->projector?(e->layers>0?"Vulkan":"CPU"):"none");
         LOG("model loaded: n_ctx=%u projector=%s",llama_n_ctx(e->ctx),e->projector?"loaded":"none");
         std::lock_guard<std::mutex> guard(registry_mutex); auto id=next_handle++; engines[id]=e; return id;
-    } catch(const std::exception &ex) { create_error=ex.what(); LOG("Create failed: %s",ex.what()); return 0; }
+    } catch(const std::exception &ex) { create_error=ex.what(); if(*ggml_backend_gguf_strict_error())create_error=ggml_backend_gguf_strict_error(); LOG("Create failed: %s",create_error.c_str()); return 0; }
 }
 extern "C" JNIEXPORT void JNICALL Java_com_ggufchat_app_Native_destroy(JNIEnv*,jclass,jlong h) {
     std::shared_ptr<Engine> old;
@@ -210,7 +221,7 @@ extern "C" JNIEXPORT jboolean JNICALL Java_com_ggufchat_app_AttachmentInference_
     return e && e->projector && mtmd_support_vision(e->projector);
 }
 extern "C" JNIEXPORT jstring JNICALL Java_com_ggufchat_app_Native_backendName(JNIEnv *env,jclass,jlong h) {
-    auto e=get(h); return java_string(env,e?(std::string(e->layers==0?"CPU":"Vulkan")+(e->projector?" · GGUF + mmproj carregados":"")):"Não carregado");
+    auto e=get(h); return java_string(env,e?(std::string(e->layers==0?"CPU":"Vulkan estrito (cálculo do modelo)")+(e->projector?" · GGUF + mmproj carregados":"")):"Não carregado");
 }
 extern "C" JNIEXPORT jstring JNICALL Java_com_ggufchat_app_Native_getTemplate(JNIEnv *env,jclass,jlong h) {
     auto e=get(h); const char *t=e?llama_model_chat_template(e->model,nullptr):nullptr; return t?java_string(env,t):nullptr;
@@ -273,6 +284,7 @@ struct BackendSamplerBinding {
 };
 static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat temp,jfloat top_p,jfloat top_k,jfloat min_p,jfloat repeat,jint last_n,jint seed,jobject callback,jobjectArray images) {
     auto e=get(h);if(!e)return false; std::lock_guard<std::mutex> lock(e->mutex); if(!images)e->cancel=false;e->error.clear();
+    StrictVulkanScope strict(e->strict_device);
     jmethodID on_token=nullptr,on_done=nullptr; jclass clazz=nullptr;
     using Clock=std::chrono::steady_clock;
     auto started=Clock::now(),decode_started=started,last_flush=started;
@@ -299,11 +311,12 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
         if(temp<=0) llama_sampler_chain_add(sampler.get(),llama_sampler_init_greedy());
         else {llama_sampler_chain_add(sampler.get(),llama_sampler_init_top_k((int)top_k));llama_sampler_chain_add(sampler.get(),llama_sampler_init_top_p(top_p,1));llama_sampler_chain_add(sampler.get(),llama_sampler_init_min_p(min_p,1));llama_sampler_chain_add(sampler.get(),llama_sampler_init_temp(temp));llama_sampler_chain_add(sampler.get(),llama_sampler_init_dist(seed));}
         BackendSamplerBinding binding{e->ctx};
-        // Let the pinned backend execute the supported sampler prefix next to
-        // the logits. Unsupported operations remain on CPU through llama.cpp's
-        // own fallback, with the same chain, seed and user-selected parameters.
-        // No forced greedy mode, precision reduction or layer-count change.
-        if(e->layers>0)binding.attached=llama_set_sampler(e->ctx,0,sampler.get());
+        // Full backend chain required in Vulkan mode; never change temperature,
+        // penalties, filters or RNG seed to manufacture backend support.
+        if(e->layers>0) {
+            binding.attached=llama_set_sampler(e->ctx,0,sampler.get());
+            if(!binding.attached)throw std::runtime_error("Vulkan estrito: GPU não suporta a cadeia de amostragem configurada. Fallback CPU bloqueado; parâmetros não foram alterados.");
+        }
         LOG("GGUF_GPU_SAMPLING requested=%d attached=%d",e->layers>0,(int)binding.attached);
         const auto text=utf8(env,prompt);
         const int n_images=images?env->GetArrayLength(images):0;
@@ -435,6 +448,8 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
             auto t=binding.attached?llama_get_sampled_token_ith(e->ctx,-1):LLAMA_TOKEN_NULL;
             if(t!=LLAMA_TOKEN_NULL) {
                 llama_sampler_accept(sampler.get(),t);backend_sampled++;
+            } else if(e->strict_device) {
+                throw std::runtime_error("Vulkan estrito: backend não selecionou o token. Amostragem CPU bloqueada.");
             } else t=llama_sampler_sample(sampler.get(),e->ctx,-1);
             if(llama_vocab_is_eog(vocab,t)) {reason="eog";break;}
             emitted++;pending+=piece(vocab,t);
@@ -461,13 +476,16 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
     } catch(const std::exception &ex) {
         e->cached_tokens.clear(); // failed/partial work is never reused
         e->image_cache.clear();e->image_cache_bytes=0;e->image_set_id.clear();
-        e->error=ex.what();LOG("Generation failed: %s",ex.what());
+        e->error=ex.what();if(*ggml_backend_gguf_strict_error())e->error=ggml_backend_gguf_strict_error();LOG("Generation failed: %s",e->error.c_str());
         // Cancellation still preserves already produced complete text.
         if(on_token&&!env->ExceptionCheck())try{flush();}catch(...){}
     }
     auto finished=Clock::now();
     jlong decode_ns=decoding?std::chrono::duration_cast<std::chrono::nanoseconds>(finished-decode_started).count():0;
     jlong prefill_ns=std::chrono::duration_cast<std::chrono::nanoseconds>((decoding?decode_started:finished)-started).count();
+    LOG("GGUF_STRICT_VULKAN_RESULT enabled=%d submitted_graphs=%llu submitted_math_nodes=%llu blocked=%d host_orchestration=CPU",
+        e->strict_device!=nullptr,(unsigned long long)ggml_backend_gguf_strict_graphs(),
+        (unsigned long long)ggml_backend_gguf_strict_nodes(),*ggml_backend_gguf_strict_error()!=0);
     LOG("GGUF_GPU_SAMPLING_RESULT backend_selected=%d emitted=%d",backend_sampled,emitted);
     LOG("GGUF_VULKAN_DELIVERY token_only_export=1 overlap_submissions=%d first_text_immediate=1",overlap_submissions);
     LOG("GGUF_RESPONSE_LATENCY first_token_ns=%lld prompt_tokens=%zu reused_tokens=%zu",(long long)first_token_ns,prompt_tokens,reused_tokens);

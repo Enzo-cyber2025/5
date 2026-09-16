@@ -13,6 +13,9 @@ on:
       - 'scripts/test_physical_android.py'
       - 'tests/test_physical_gguf.py'
       - 'tests/test_vulkan_pipeline.py'
+      - 'tests/test_strict_vulkan.py'
+      - 'tests/native_strict_vulkan.cpp'
+      - 'scripts/test_strict_vulkan_host.sh'
       - 'tests/test_generation_stats.py'
       - 'tests/test_tooling.py'
       - '.github/workflows/mobile.yml'
@@ -91,7 +94,9 @@ jobs:
             .cache/mobile/x86_64
           key: native-v041-ndk28-v1-${{ runner.os }}-${{ github.run_id }}
       - name: Existing regressions
-        run: bash ci/log_step.sh tooling .venv/bin/python -m pytest -q tests/test_tooling.py tests/test_mobile_build.py tests/test_unified.py tests/test_attachments.py tests/test_inference.py tests/test_physical_gguf.py tests/test_import_progress.py tests/test_compute.py tests/test_single_import_ui.py tests/test_generation_stats.py tests/test_latency.py tests/test_reply_notifications.py tests/test_performance_code.py tests/test_image_import.py tests/test_vulkan_pipeline.py
+        run: bash ci/log_step.sh tooling .venv/bin/python -m pytest -q tests/test_tooling.py tests/test_mobile_build.py tests/test_unified.py tests/test_attachments.py tests/test_inference.py tests/test_physical_gguf.py tests/test_import_progress.py tests/test_compute.py tests/test_single_import_ui.py tests/test_generation_stats.py tests/test_latency.py tests/test_reply_notifications.py tests/test_performance_code.py tests/test_image_import.py tests/test_vulkan_pipeline.py tests/test_strict_vulkan.py
+      - name: Real ggml CPU tensor dispatch blocked before math
+        run: bash ci/log_step.sh strict-vulkan-host bash scripts/test_strict_vulkan_host.sh
       - name: Real APK serialization and GGUF reader through DEX to JVM
         env:
           APKTOOL_JAR: .cache/tools/package/lib/apktool.jar
