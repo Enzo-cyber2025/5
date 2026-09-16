@@ -68,5 +68,5 @@ def test_native_fallback_sampler_and_measurement_contract_preserved():
     assert 'else t=llama_sampler_sample(sampler.get(),e->ctx,-1)' in s
     assert 'llama_sampler_init_dist(seed)' in s
     assert 'cp.n_batch=128; cp.n_ubatch=32;' in s
-    assert 'decode_and_deliver(e->layers>0,emitted==1,has_next' in s
+    assert s.index('emitted++;pending+=piece(vocab,t);') < s.index('decode_and_deliver(e->layers>0,emitted==1,has_next')
     assert 'llama_synchronize(e->ctx);\n        decode_started=Clock::now();' in s

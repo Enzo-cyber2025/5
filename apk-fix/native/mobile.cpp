@@ -437,10 +437,12 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
                 llama_sampler_accept(sampler.get(),t);backend_sampled++;
             } else t=llama_sampler_sample(sampler.get(),e->ctx,-1);
             if(llama_vocab_is_eog(vocab,t)) {reason="eog";break;}
-            emitted++;
+            emitted++;pending+=piece(vocab,t);
+            // Retain the already sampled text even if queuing the next decode
+            // fails or is cancelled; the failure path flushes this exact prefix.
             const bool has_next=i+1<limit;
             // Vulkan queues work asynchronously. Let it execute while the CPU
-            // converts the CURRENT token and calls Java. First text is never
+            // delivers the CURRENT text through Java. First text is never
             // delayed behind the next decode. CPU ordering remains unchanged.
             decode_and_deliver(e->layers>0,emitted==1,has_next,[&] {
                 if(e->cancel)throw std::runtime_error("Geração cancelada");
@@ -449,7 +451,6 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
                 if(text_cache)e->cached_tokens.push_back(t);
                 if(e->layers>0 && emitted>1)overlap_submissions++;
             },[&] {
-                pending+=piece(vocab,t);
                 if(emitted==1 || pending.size()>=4096 || Clock::now()-last_flush>=std::chrono::milliseconds(50))flush();
             });
         }
