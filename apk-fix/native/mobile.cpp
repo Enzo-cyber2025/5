@@ -41,6 +41,7 @@ struct Engine {
     std::string error;
     int layers=0;
     ggml_backend_dev_t strict_device=nullptr;
+    llama_model_tensor_buft_override gpu_weights[2]={{".*",nullptr},{nullptr,nullptr}};
     std::vector<llama_token> cached_tokens; // exact tokens whose KV is present
     bool cache_supported=false;
     std::string image_set_id;
@@ -164,7 +165,6 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
         auto mp=llama_model_default_params(); mp.n_gpu_layers=layers; mp.load_mode=mmap?LLAMA_LOAD_MODE_MMAP:LLAMA_LOAD_MODE_NONE;
         ggml_backend_dev_t no_accelerators[] = {nullptr};
         ggml_backend_dev_t vulkan_devices[] = {nullptr,nullptr};
-        llama_model_tensor_buft_override gpu_weights[] = {{".*",nullptr},{nullptr,nullptr}};
         if(layers==0) mp.devices=no_accelerators; // Explicit CPU mode only.
         else {
             vulkan_devices[0]=ggml_backend_dev_by_name("Vulkan0");
@@ -172,8 +172,8 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
             mp.devices=vulkan_devices;
             e->strict_device=vulkan_devices[0];
             // Include token embeddings and other weights normally left on CPU.
-            gpu_weights[0].buft=ggml_backend_dev_buffer_type(e->strict_device);
-            mp.tensor_buft_overrides=gpu_weights;
+            e->gpu_weights[0].buft=ggml_backend_dev_buffer_type(e->strict_device);
+            mp.tensor_buft_overrides=e->gpu_weights;
             mp.split_mode=LLAMA_SPLIT_MODE_NONE;
             LOG("GGUF_STRICT_VULKAN requested_layers=%d effective_layers=all weights=all tensor_cpu_fallback=blocked host_orchestration=CPU",requested_layers);
         }
@@ -184,6 +184,10 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
             throw std::runtime_error("O GGUF não carregou camadas no Vulkan. Escolha CPU explicitamente ou outro modelo/dispositivo.");
         e->layers=loaded_gpu_layers;
         auto cp=llama_context_default_params(); cp.n_ctx=context; cp.n_batch=128; cp.n_ubatch=32;
+        // This JNI emits one sequence and requests logits ONLY for its final
+        // token. Reserve one output row, not n_batch unused vocabulary rows.
+        // Encoder/diffusion architectures keep upstream output requirements.
+        if(e->strict_device && !llama_model_has_encoder(e->model) && !llama_model_is_diffusion(e->model))cp.n_outputs_max=1;
         cp.n_threads=cp.n_threads_batch=generation_threads(threads);
         cp.abort_callback=[](void *p){return static_cast<Engine*>(p)->cancel.load();}; cp.abort_callback_data=e.get();
         e->ctx=llama_init_from_model(e->model,cp);

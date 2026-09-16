@@ -92,14 +92,16 @@ def test_idempotent_pinned_source_and_order():
 def test_native_all_weights_full_sampling_and_preserved_parameters():
     s=(ROOT/'apk-fix/native/mobile.cpp').read_text()
     assert 'if(layers!=0) layers=INT_MAX;' in s
-    assert 'gpu_weights[] = {{".*",nullptr},{nullptr,nullptr}}' in s
-    assert 'mp.tensor_buft_overrides=gpu_weights;' in s
+    assert 'gpu_weights[2]={{".*",nullptr},{nullptr,nullptr}}' in s
+    assert 'mp.tensor_buft_overrides=e->gpu_weights;' in s
     assert s.index('StrictVulkanScope strict(e->strict_device);') < s.index('e->model=llama_model_load_from_file')
     assert s.count('StrictVulkanScope strict(e->strict_device);')==2
     assert 'if(!binding.attached)throw std::runtime_error' in s
     assert s.index('else if(e->strict_device)') < s.index('else t=llama_sampler_sample')
     assert 'llama_sampler_init_dist(seed)' in s and 'llama_sampler_init_penalties' in s
     assert 'cp.n_batch=128; cp.n_ubatch=32;' in s
+    assert '!llama_model_has_encoder(e->model) && !llama_model_is_diffusion(e->model))cp.n_outputs_max=1;' in s
+    assert 'output_mask.back()=1' in s and 'batch.logits=output_mask.data()' in s
     assert 'GGUF_STRICT_VULKAN_RESULT' in s
     scope=(ROOT/'apk-fix/native/strict_vulkan.h').read_text()
     assert '~StrictVulkanScope() { ggml_backend_gguf_set_strict_device(previous); }' in scope
