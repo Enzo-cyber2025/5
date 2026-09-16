@@ -1,0 +1,95 @@
+{
+  "status": "SIGNED_PERFORMANCE_CODE_IMAGES_ANDROID_PASS",
+  "apk_sha256": "e7ee730c5c8bc2c774375ded631fb4725bb364d09d05ea2e857cb9e38f8f69d9",
+  "run": 35127872319,
+  "attempt": 1,
+  "job": 104901287470,
+  "commit": "8306a951f28580a485deddf5dfa65295bb664024",
+  "phone_15_20_tokens_s_certified": false,
+  "performance_goal_status": "NOT_ACHIEVED_OR_CERTIFIED",
+  "awake_cpu_auto_cold_regression_observed": true,
+  "scope": "Bounded functional Android acceptance, not universal speed improvement. CPU awake/asleep, software Vulkan asleep, synthetic production-renderer code fixtures, real SAF/vision with deliberately omitted metadata.",
+  "ui_review": [
+    {
+      "path": "ci-results/35127872319-1/physical-code-stream.png",
+      "sha256": "2bc2ca919198fe1e4bcdc912591e41290b952368d34c27bafeb6f7b891e2a21d"
+    },
+    {
+      "path": "ci-results/35127872319-1/physical-code-history.png",
+      "sha256": "84fae8a4b9f2a66ebf289ed0f4568033c7b7bfba1e9476ca7acb2c4a86356b7f"
+    },
+    {
+      "path": "ci-results/35127872319-1/inference-unknown-image-metadata.png",
+      "sha256": "72b28264b16040384375b62dee210f713ae5b5452a9b179f90a698a9256013f3"
+    },
+    {
+      "path": "ci-results/35127872319-1/physical-latency-performance-follow.png",
+      "sha256": "aa60ad555c65676a6b508cfdc5ae2a9d64053a4bd295b25fe335f85e3439917f"
+    }
+  ],
+  "benchmark": {
+    "awake": {
+      "before": {
+        "cold": {
+          "decode_tokens_s": 9.980434614848575,
+          "first_native_text_ms": 17084.728979,
+          "content_ready_to_complete_s": 29.906000000002678
+        },
+        "follow": {
+          "decode_tokens_s": 8.585626831794965,
+          "first_native_text_ms": 1922.879054,
+          "content_ready_to_complete_s": 16.789000000004307
+        }
+      },
+      "after": {
+        "cold": {
+          "decode_tokens_s": 4.494611883678185,
+          "first_native_text_ms": 10226.682875,
+          "content_ready_to_complete_s": 38.7300000000032
+        },
+        "follow": {
+          "decode_tokens_s": 8.277467511440385,
+          "first_native_text_ms": 1631.072437,
+          "content_ready_to_complete_s": 17.093000000000757
+        }
+      }
+    },
+    "asleep": {
+      "before": {
+        "cold": {
+          "decode_tokens_s": 16.45125340619089,
+          "first_native_text_ms": 16108.482041,
+          "content_ready_to_complete_s": 23.88799999999901
+        },
+        "follow": {
+          "decode_tokens_s": 14.445618306673683,
+          "first_native_text_ms": 2015.904405,
+          "content_ready_to_complete_s": 10.846000000005006
+        }
+      },
+      "after": {
+        "cold": {
+          "decode_tokens_s": 27.394108391825856,
+          "first_native_text_ms": 8709.440092,
+          "content_ready_to_complete_s": 13.41700000000128
+        },
+        "follow": {
+          "decode_tokens_s": 23.14669153408325,
+          "first_native_text_ms": 1363.402312,
+          "content_ready_to_complete_s": 7.027000000001863
+        }
+      }
+    }
+  },
+  "software_vulkan_single_observation": {
+    "before": {
+      "content_ready_to_complete_s": 54.04899999999907,
+      "first_native_text_ms": 21557.355621
+    },
+    "after": {
+      "content_ready_to_complete_s": 36.057999999997264,
+      "first_native_text_ms": 4709.119091
+    }
+  },
+  "signature_warning": "Certificate differs from delivered 3baa. Android rejected in-place update and preserved the old data in the test. Uninstalling on a real device deletes private chats/models: back up first. The test uninstalled only inside a disposable emulator."
+}

@@ -3,7 +3,7 @@
   "llama_commit": "b29c606e28a01b1bc8c1351026a0fa6e616bf6c4",
   "min_sdk": 28,
   "native_source_commit": "06c46f76329ed4cb0e93e03cd857910d391d33a3",
-  "status": "SIGNED_PENDING_ANDROID_TEST",
+  "status": "SIGNED_ANDROID_FUNCTIONAL_PASS_PERFORMANCE_GOAL_UNMET",
   "native": {
     "lib/arm64-v8a/libggufdiagnostics.so": "255e52f814d968e8dd008e8cea12c522aad06d943dffe8a30fe095485058b26c",
     "lib/x86_64/libggufdiagnostics.so": "dd07c5a6aef3d75a7aec0325c20dddd6b58a313085254927291dc07dcf3c0139",
@@ -18,5 +18,8 @@
   },
   "unsigned_sha256": "acc391748c74e302fc1f25bbc394e7bc9f4540f0409b4a482ea837de4582c089",
   "apk_sha256": "e7ee730c5c8bc2c774375ded631fb4725bb364d09d05ea2e857cb9e38f8f69d9",
-  "signer_sha256": "7295130ab387cd5123c1faab79c96f3ca8d8eb694ae7b15c611086d48b5898a0"
+  "signer_sha256": "7295130ab387cd5123c1faab79c96f3ca8d8eb694ae7b15c611086d48b5898a0",
+  "acceptance_run": 35127872319,
+  "acceptance_report": ".delivery/performance-acceptance.json",
+  "performance_warning": "15\u201320 tokens/s phone/GPU goal not certified; CPU-auto awake cold regression observed in emulator."
 }
