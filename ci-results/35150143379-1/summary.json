@@ -1,0 +1,517 @@
+{
+  "status": "PASS",
+  "apk_sha256": "323fd5a33667c6cab278699e97c89fe253e1bb7acead45b869729bf022eb9f5c",
+  "baseline_sha256": "8a994b58efc0a65a0851534402eacb5f0c305ff534a100075a88e5c5dbf95399",
+  "checks": {
+    "same_key_update_preserves_data": "PASS",
+    "code_clipboard": {
+      "stream": "PASS",
+      "history": "PASS"
+    },
+    "plain_original_view": "PASS",
+    "android_image_decoder": "PASS",
+    "actual_visual_inference": {
+      "status": "PASS",
+      "source_sha256": "f3f87bb8ab3c26c7ecfd3ac60421d7f32b0503d1d6c5baf8bac42ed93d86351a",
+      "response": " Dog.",
+      "scope": "Real SAF bytes, explicit missing-MIME/legacy-chat metadata simulation, actual pixel encoding and model inference; no response/metric injection."
+    },
+    "visual_strict_tensor_routing": {
+      "status": "PASS",
+      "submitted_graphs": 28,
+      "submitted_math_nodes": 15139,
+      "tensor_cpu_fallback": "blocked_by_native_policy",
+      "host_orchestration": "CPU",
+      "physical_gpu_certified": false
+    },
+    "non_greedy_completed_original_sampling": "PASS (different runtime-generated seeds; not output-equality proof)",
+    "identical_greedy_outputs_both_screen_states": "PASS",
+    "strict_tensor_routing_both_screen_states_and_non_greedy": "PASS",
+    "host_orchestration": "CPU: Android, files, tokenization, image preprocessing, RNG/state; NOT an all-application-on-GPU claim",
+    "actual_vulkan_sleep_notice_and_cleanup": "PASS"
+  },
+  "series": {
+    "before": {
+      "awake": [
+        {
+          "tokens": 128,
+          "prefill_and_generation_seconds": 66.96299999998882,
+          "prefill_and_generation_tokens_s": 1.9115033675316422,
+          "response": "Tenho uma própria estrutura de suas informações para ajudar um peso mais diverte.\n\n1. **Pronunciation**: Aprendi o pronunciam em inglês, como \"ponte\" e \"perduve\".\n\n2. **Reading**: Aprendi o que você precisamos de acorda para ajudar uma peso mais diverte.\n\n3. **Practice**: Aprendi o que você preciso do-it-além, como \"p",
+          "metrics": {
+            "tokens": 128,
+            "decodeNs": 62201393515,
+            "prefillNs": 4762344679,
+            "completed": true,
+            "version": 3,
+            "timingScope": "prefill_synchronized_before_decode",
+            "firstTokenNs": 4765639954,
+            "promptTokens": 62,
+            "reusedPromptTokens": 0
+          },
+          "callbacks": 128,
+          "native_decode_tokens_s": 2.0578317102997463,
+          "send_to_first_ui_ns": 4831661197
+        },
+        {
+          "tokens": 128,
+          "prefill_and_generation_seconds": 66.93700000000536,
+          "prefill_and_generation_tokens_s": 1.9122458431060514,
+          "response": "Tenho uma própria estrutura de suas informações para ajudar um peso mais diverte.\n\n1. **Pronunciation**: Aprendi o pronunciam em inglês, como \"ponte\" e \"perduve\".\n\n2. **Reading**: Aprendi o que você precisamos de acorda para ajudar uma peso mais diverte.\n\n3. **Practice**: Aprendi o que você preciso do-it-além, como \"p",
+          "metrics": {
+            "tokens": 128,
+            "decodeNs": 62102216693,
+            "prefillNs": 4835442730,
+            "completed": true,
+            "version": 3,
+            "timingScope": "prefill_synchronized_before_decode",
+            "firstTokenNs": 4839029597,
+            "promptTokens": 62,
+            "reusedPromptTokens": 0
+          },
+          "callbacks": 128,
+          "native_decode_tokens_s": 2.061118053688216,
+          "send_to_first_ui_ns": 4878854953
+        },
+        {
+          "tokens": 128,
+          "prefill_and_generation_seconds": 67.24700000000303,
+          "prefill_and_generation_tokens_s": 1.9034306363108278,
+          "response": "Tenho uma própria estrutura de suas informações para ajudar um peso mais diverte.\n\n1. **Pronunciation**: Aprendi o pronunciam em inglês, como \"ponte\" e \"perduve\".\n\n2. **Reading**: Aprendi o que você precisamos de acorda para ajudar uma peso mais diverte.\n\n3. **Practice**: Aprendi o que você preciso do-it-além, como \"p",
+          "metrics": {
+            "tokens": 128,
+            "decodeNs": 62401721285,
+            "prefillNs": 4845339008,
+            "completed": true,
+            "version": 3,
+            "timingScope": "prefill_synchronized_before_decode",
+            "firstTokenNs": 4847798974,
+            "promptTokens": 62,
+            "reusedPromptTokens": 0
+          },
+          "callbacks": 128,
+          "native_decode_tokens_s": 2.051225468852065,
+          "send_to_first_ui_ns": 4889928019
+        }
+      ],
+      "awake_follow": {
+        "tokens": 128,
+        "prefill_and_generation_seconds": 74.44999999999709,
+        "prefill_and_generation_tokens_s": 1.719274680994023,
+        "response": "Tenho uma própria estrutura de suas informações para ajudar um peso mais diverte.\n\n1. **Practice**: Aprendi o que você precisamos de acorda para ajudar uma peso mais diverte.\n\n2. **Reading**: Aprendi o que você preciso do-it-além, como \"ponte\" e \"perduve\".\n\nPara isso, você pode escrever algumas coletivas de acorda",
+        "metrics": {
+          "tokens": 128,
+          "decodeNs": 65405530053,
+          "prefillNs": 9045544089,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 9048111865,
+          "promptTokens": 209,
+          "reusedPromptTokens": 62
+        },
+        "callbacks": 128,
+        "native_decode_tokens_s": 1.9570210637583378,
+        "send_to_first_ui_ns": 9109714843
+      },
+      "asleep": [
+        {
+          "tokens": 128,
+          "prefill_and_generation_seconds": 36.54799999999523,
+          "prefill_and_generation_tokens_s": 3.502243624822609,
+          "response": "Tenho uma própria estrutura de suas informações para ajudar um peso mais diverte.\n\n1. **Pronunciation**: Aprendi o pronunciam em inglês, como \"ponte\" e \"perduve\".\n\n2. **Reading**: Aprendi o que você precisamos de acorda para ajudar uma peso mais diverte.\n\n3. **Practice**: Aprendi o que você preciso do-it-além, como \"p",
+          "metrics": {
+            "tokens": 128,
+            "decodeNs": 31891621843,
+            "prefillNs": 4655602196,
+            "completed": true,
+            "version": 3,
+            "timingScope": "prefill_synchronized_before_decode",
+            "firstTokenNs": 4656812006,
+            "promptTokens": 62,
+            "reusedPromptTokens": 0
+          },
+          "callbacks": 128,
+          "native_decode_tokens_s": 4.013593307676046
+        },
+        {
+          "tokens": 128,
+          "prefill_and_generation_seconds": 36.90200000000186,
+          "prefill_and_generation_tokens_s": 3.468646685816312,
+          "response": "Tenho uma própria estrutura de suas informações para ajudar um peso mais diverte.\n\n1. **Pronunciation**: Aprendi o pronunciam em inglês, como \"ponte\" e \"perduve\".\n\n2. **Reading**: Aprendi o que você precisamos de acorda para ajudar uma peso mais diverte.\n\n3. **Practice**: Aprendi o que você preciso do-it-além, como \"p",
+          "metrics": {
+            "tokens": 128,
+            "decodeNs": 32168160064,
+            "prefillNs": 4732524688,
+            "completed": true,
+            "version": 3,
+            "timingScope": "prefill_synchronized_before_decode",
+            "firstTokenNs": 4733208585,
+            "promptTokens": 62,
+            "reusedPromptTokens": 0
+          },
+          "callbacks": 128,
+          "native_decode_tokens_s": 3.979089874750009
+        },
+        {
+          "tokens": 128,
+          "prefill_and_generation_seconds": 36.47500000000582,
+          "prefill_and_generation_tokens_s": 3.509252912953518,
+          "response": "Tenho uma própria estrutura de suas informações para ajudar um peso mais diverte.\n\n1. **Pronunciation**: Aprendi o pronunciam em inglês, como \"ponte\" e \"perduve\".\n\n2. **Reading**: Aprendi o que você precisamos de acorda para ajudar uma peso mais diverte.\n\n3. **Practice**: Aprendi o que você preciso do-it-além, como \"p",
+          "metrics": {
+            "tokens": 128,
+            "decodeNs": 31916205590,
+            "prefillNs": 4559228218,
+            "completed": true,
+            "version": 3,
+            "timingScope": "prefill_synchronized_before_decode",
+            "firstTokenNs": 4559841574,
+            "promptTokens": 62,
+            "reusedPromptTokens": 0
+          },
+          "callbacks": 128,
+          "native_decode_tokens_s": 4.010501801006853
+        }
+      ],
+      "asleep_follow": {
+        "tokens": 128,
+        "prefill_and_generation_seconds": 40.494000000006054,
+        "prefill_and_generation_tokens_s": 3.1609621178441465,
+        "response": "Tenho uma própria estrutura de suas informações para ajudar um peso mais diverte.\n\n1. **Practice**: Aprendi o que você precisamos de acorda para ajudar uma peso mais diverte.\n\n2. **Reading**: Aprendi o que você preciso do-it-além, como \"ponte\" e \"perduve\".\n\nPara isso, você pode escrever algumas coletivas de acorda",
+        "metrics": {
+          "tokens": 128,
+          "decodeNs": 32295987689,
+          "prefillNs": 8198012625,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 8199367676,
+          "promptTokens": 209,
+          "reusedPromptTokens": 62
+        },
+        "callbacks": 128,
+        "native_decode_tokens_s": 3.9633406239994557
+      },
+      "non_greedy": {
+        "tokens": 128,
+        "prefill_and_generation_seconds": 76.11200000000827,
+        "prefill_and_generation_tokens_s": 1.6817321841494914,
+        "response": "Sin embargo, você estou completamente informado.\n\nA: Deixar a experiência no espaço e encontrar algoritmos de acorda entre suas propriedos que ficam não ter as conhecimentos do seu sistema, com exemplos para cada controle atenha-se.\nB: Deixar a experiência no espaço e encontrar algoritmos de acorda entre suas propriedos que ficam não ter os conhe",
+        "metrics": {
+          "tokens": 128,
+          "decodeNs": 65603458743,
+          "prefillNs": 10509544312,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 10511557061,
+          "promptTokens": 62,
+          "reusedPromptTokens": 0
+        },
+        "callbacks": 128,
+        "native_decode_tokens_s": 1.9511166400758986,
+        "send_to_first_ui_ns": 10583669630
+      }
+    },
+    "after": {
+      "awake": [
+        {
+          "tokens": 128,
+          "prefill_and_generation_seconds": 67.26900000000023,
+          "prefill_and_generation_tokens_s": 1.9028081285584677,
+          "response": "Tenho uma própria estrutura de suas informações para ajudar um peso mais diverte.\n\n1. **Pronunciation**: Aprendi o pronunciam em inglês, como \"ponte\" e \"perduve\".\n\n2. **Reading**: Aprendi o que você precisamos de acorda para ajudar uma peso mais diverte.\n\n3. **Practice**: Aprendi o que você preciso do-it-além, como \"p",
+          "metrics": {
+            "tokens": 128,
+            "decodeNs": 62394693269,
+            "prefillNs": 4875458178,
+            "completed": true,
+            "version": 3,
+            "timingScope": "prefill_synchronized_before_decode",
+            "firstTokenNs": 4877765164,
+            "promptTokens": 62,
+            "reusedPromptTokens": 0
+          },
+          "callbacks": 128,
+          "native_decode_tokens_s": 2.0514565148699138,
+          "send_to_first_ui_ns": 4948459762,
+          "overlap_submissions": 126,
+          "backend_selected": 128,
+          "strict_tensor_routing": {
+            "status": "PASS",
+            "submitted_graphs": 129,
+            "submitted_math_nodes": 76497,
+            "tensor_cpu_fallback": "blocked_by_native_policy",
+            "host_orchestration": "CPU",
+            "physical_gpu_certified": false
+          }
+        },
+        {
+          "tokens": 128,
+          "prefill_and_generation_seconds": 67.0570000000007,
+          "prefill_and_generation_tokens_s": 1.9088238364376375,
+          "response": "Tenho uma própria estrutura de suas informações para ajudar um peso mais diverte.\n\n1. **Pronunciation**: Aprendi o pronunciam em inglês, como \"ponte\" e \"perduve\".\n\n2. **Reading**: Aprendi o que você precisamos de acorda para ajudar uma peso mais diverte.\n\n3. **Practice**: Aprendi o que você preciso do-it-além, como \"p",
+          "metrics": {
+            "tokens": 128,
+            "decodeNs": 62215312092,
+            "prefillNs": 4833042856,
+            "completed": true,
+            "version": 3,
+            "timingScope": "prefill_synchronized_before_decode",
+            "firstTokenNs": 4835357402,
+            "promptTokens": 62,
+            "reusedPromptTokens": 0
+          },
+          "callbacks": 128,
+          "native_decode_tokens_s": 2.0573713398836904,
+          "send_to_first_ui_ns": 4903650368,
+          "overlap_submissions": 126,
+          "backend_selected": 128,
+          "strict_tensor_routing": {
+            "status": "PASS",
+            "submitted_graphs": 129,
+            "submitted_math_nodes": 76497,
+            "tensor_cpu_fallback": "blocked_by_native_policy",
+            "host_orchestration": "CPU",
+            "physical_gpu_certified": false
+          }
+        },
+        {
+          "tokens": 128,
+          "prefill_and_generation_seconds": 67.11000000000058,
+          "prefill_and_generation_tokens_s": 1.9073163462971077,
+          "response": "Tenho uma própria estrutura de suas informações para ajudar um peso mais diverte.\n\n1. **Pronunciation**: Aprendi o pronunciam em inglês, como \"ponte\" e \"perduve\".\n\n2. **Reading**: Aprendi o que você precisamos de acorda para ajudar uma peso mais diverte.\n\n3. **Practice**: Aprendi o que você preciso do-it-além, como \"p",
+          "metrics": {
+            "tokens": 128,
+            "decodeNs": 62619311627,
+            "prefillNs": 4491052667,
+            "completed": true,
+            "version": 3,
+            "timingScope": "prefill_synchronized_before_decode",
+            "firstTokenNs": 4492927078,
+            "promptTokens": 62,
+            "reusedPromptTokens": 0
+          },
+          "callbacks": 128,
+          "native_decode_tokens_s": 2.0440978457643943,
+          "send_to_first_ui_ns": 4546531133,
+          "overlap_submissions": 126,
+          "backend_selected": 128,
+          "strict_tensor_routing": {
+            "status": "PASS",
+            "submitted_graphs": 129,
+            "submitted_math_nodes": 76497,
+            "tensor_cpu_fallback": "blocked_by_native_policy",
+            "host_orchestration": "CPU",
+            "physical_gpu_certified": false
+          }
+        }
+      ],
+      "awake_follow": {
+        "tokens": 128,
+        "prefill_and_generation_seconds": 74.60000000000582,
+        "prefill_and_generation_tokens_s": 1.7158176943698393,
+        "response": "Tenho uma própria estrutura de suas informações para ajudar um peso mais diverte.\n\n1. **Practice**: Aprendi o que você precisamos de acorda para ajudar uma peso mais diverte.\n\n2. **Reading**: Aprendi o que você preciso do-it-além, como \"ponte\" e \"perduve\".\n\nPara isso, você pode escrever algumas coletivas de acorda",
+        "metrics": {
+          "tokens": 128,
+          "decodeNs": 65881078765,
+          "prefillNs": 8718862756,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 8721808107,
+          "promptTokens": 209,
+          "reusedPromptTokens": 62
+        },
+        "callbacks": 128,
+        "native_decode_tokens_s": 1.942894718779276,
+        "send_to_first_ui_ns": 8794318704,
+        "overlap_submissions": 126,
+        "backend_selected": 128,
+        "strict_tensor_routing": {
+          "status": "PASS",
+          "submitted_graphs": 132,
+          "submitted_math_nodes": 78276,
+          "tensor_cpu_fallback": "blocked_by_native_policy",
+          "host_orchestration": "CPU",
+          "physical_gpu_certified": false
+        }
+      },
+      "asleep": [
+        {
+          "tokens": 128,
+          "prefill_and_generation_seconds": 36.137000000002445,
+          "prefill_and_generation_tokens_s": 3.5420759885987034,
+          "response": "Tenho uma própria estrutura de suas informações para ajudar um peso mais diverte.\n\n1. **Pronunciation**: Aprendi o pronunciam em inglês, como \"ponte\" e \"perduve\".\n\n2. **Reading**: Aprendi o que você precisamos de acorda para ajudar uma peso mais diverte.\n\n3. **Practice**: Aprendi o que você preciso do-it-além, como \"p",
+          "metrics": {
+            "tokens": 128,
+            "decodeNs": 31634395978,
+            "prefillNs": 4502608596,
+            "completed": true,
+            "version": 3,
+            "timingScope": "prefill_synchronized_before_decode",
+            "firstTokenNs": 4503206776,
+            "promptTokens": 62,
+            "reusedPromptTokens": 0
+          },
+          "callbacks": 128,
+          "native_decode_tokens_s": 4.046228671128003,
+          "overlap_submissions": 126,
+          "backend_selected": 128,
+          "strict_tensor_routing": {
+            "status": "PASS",
+            "submitted_graphs": 129,
+            "submitted_math_nodes": 76497,
+            "tensor_cpu_fallback": "blocked_by_native_policy",
+            "host_orchestration": "CPU",
+            "physical_gpu_certified": false
+          }
+        },
+        {
+          "tokens": 128,
+          "prefill_and_generation_seconds": 36.10800000000745,
+          "prefill_and_generation_tokens_s": 3.544920793175296,
+          "response": "Tenho uma própria estrutura de suas informações para ajudar um peso mais diverte.\n\n1. **Pronunciation**: Aprendi o pronunciam em inglês, como \"ponte\" e \"perduve\".\n\n2. **Reading**: Aprendi o que você precisamos de acorda para ajudar uma peso mais diverte.\n\n3. **Practice**: Aprendi o que você preciso do-it-além, como \"p",
+          "metrics": {
+            "tokens": 128,
+            "decodeNs": 31516327664,
+            "prefillNs": 4590247391,
+            "completed": true,
+            "version": 3,
+            "timingScope": "prefill_synchronized_before_decode",
+            "firstTokenNs": 4590831623,
+            "promptTokens": 62,
+            "reusedPromptTokens": 0
+          },
+          "callbacks": 128,
+          "native_decode_tokens_s": 4.061386890142341,
+          "overlap_submissions": 126,
+          "backend_selected": 128,
+          "strict_tensor_routing": {
+            "status": "PASS",
+            "submitted_graphs": 129,
+            "submitted_math_nodes": 76497,
+            "tensor_cpu_fallback": "blocked_by_native_policy",
+            "host_orchestration": "CPU",
+            "physical_gpu_certified": false
+          }
+        },
+        {
+          "tokens": 128,
+          "prefill_and_generation_seconds": 35.49100000000908,
+          "prefill_and_generation_tokens_s": 3.6065481389638854,
+          "response": "Tenho uma própria estrutura de suas informações para ajudar um peso mais diverte.\n\n1. **Pronunciation**: Aprendi o pronunciam em inglês, como \"ponte\" e \"perduve\".\n\n2. **Reading**: Aprendi o que você precisamos de acorda para ajudar uma peso mais diverte.\n\n3. **Practice**: Aprendi o que você preciso do-it-além, como \"p",
+          "metrics": {
+            "tokens": 128,
+            "decodeNs": 31088664465,
+            "prefillNs": 4402052235,
+            "completed": true,
+            "version": 3,
+            "timingScope": "prefill_synchronized_before_decode",
+            "firstTokenNs": 4402697369,
+            "promptTokens": 62,
+            "reusedPromptTokens": 0
+          },
+          "callbacks": 128,
+          "native_decode_tokens_s": 4.117256311994488,
+          "overlap_submissions": 126,
+          "backend_selected": 128,
+          "strict_tensor_routing": {
+            "status": "PASS",
+            "submitted_graphs": 129,
+            "submitted_math_nodes": 76497,
+            "tensor_cpu_fallback": "blocked_by_native_policy",
+            "host_orchestration": "CPU",
+            "physical_gpu_certified": false
+          }
+        }
+      ],
+      "asleep_follow": {
+        "tokens": 128,
+        "prefill_and_generation_seconds": 40.15200000000186,
+        "prefill_and_generation_tokens_s": 3.18788603307417,
+        "response": "Tenho uma própria estrutura de suas informações para ajudar um peso mais diverte.\n\n1. **Practice**: Aprendi o que você precisamos de acorda para ajudar uma peso mais diverte.\n\n2. **Reading**: Aprendi o que você preciso do-it-além, como \"ponte\" e \"perduve\".\n\nPara isso, você pode escrever algumas coletivas de acorda",
+        "metrics": {
+          "tokens": 128,
+          "decodeNs": 32128062876,
+          "prefillNs": 8023723258,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 8024953966,
+          "promptTokens": 209,
+          "reusedPromptTokens": 62
+        },
+        "callbacks": 128,
+        "native_decode_tokens_s": 3.9840559480359254,
+        "overlap_submissions": 126,
+        "backend_selected": 128,
+        "strict_tensor_routing": {
+          "status": "PASS",
+          "submitted_graphs": 132,
+          "submitted_math_nodes": 78276,
+          "tensor_cpu_fallback": "blocked_by_native_policy",
+          "host_orchestration": "CPU",
+          "physical_gpu_certified": false
+        }
+      },
+      "non_greedy": {
+        "tokens": 128,
+        "prefill_and_generation_seconds": 69.12600000000384,
+        "prefill_and_generation_tokens_s": 1.8516911147758135,
+        "response": "Todos como estándose, em português apenas.\n\n1) \"Preencha tarde\" - A maior número de diferencias, é o que mostrou um valor apropriado através do seu pesquilho.\n\n2) \"O mesmo nome desta cadeia\" - Os nomes da cabeca mais sim timocarmente estão como tamanhos de suas entidões.\n\n3) \"Esse é o país que pode ser usado",
+        "metrics": {
+          "tokens": 128,
+          "decodeNs": 64257436990,
+          "prefillNs": 4867773780,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 4869939877,
+          "promptTokens": 62,
+          "reusedPromptTokens": 0
+        },
+        "callbacks": 128,
+        "native_decode_tokens_s": 1.99198732467216,
+        "send_to_first_ui_ns": 4913919709,
+        "overlap_submissions": 126,
+        "backend_selected": 128,
+        "strict_tensor_routing": {
+          "status": "PASS",
+          "submitted_graphs": 129,
+          "submitted_math_nodes": 80625,
+          "tensor_cpu_fallback": "blocked_by_native_policy",
+          "host_orchestration": "CPU",
+          "physical_gpu_certified": false
+        }
+      }
+    }
+  },
+  "medians": {
+    "awake": {
+      "before": {
+        "total_s": 66.96299999998882,
+        "first_native_text_s": 4.839029597,
+        "decode_tokens_s": 2.0578317102997463
+      },
+      "after": {
+        "total_s": 67.11000000000058,
+        "first_native_text_s": 4.835357402,
+        "decode_tokens_s": 2.0514565148699138
+      }
+    },
+    "asleep": {
+      "before": {
+        "total_s": 36.54799999999523,
+        "first_native_text_s": 4.656812006,
+        "decode_tokens_s": 4.010501801006853
+      },
+      "after": {
+        "total_s": 36.10800000000745,
+        "first_native_text_s": 4.503206776,
+        "decode_tokens_s": 4.061386890142341
+      }
+    }
+  },
+  "scope": "Same Android 35 x86_64 emulator, software Vulkan, SmolLM2-135M Q4_K_M, context 2048, GPU 99, Auto threads, 128-token limit. 1 warmup+3 measured per screen state; follow and non-greedy are single observations with no fixed stochastic seed. No phone/physical-GPU 5-second or 20-T/s certification.",
+  "model_sha256": "2e8040ceae7815abe0dcb3540b9995eaa1fa0d2ca9e797d0a635ae4433c68c2d"
+}
