@@ -25,7 +25,7 @@
   "unsigned_sha256": "01c86072a860c293ec5d68317eb4dd5e40d6fc37dcff6ed10b5617c4e12c7036",
   "signer_sha256": "7295130ab387cd5123c1faab79c96f3ca8d8eb694ae7b15c611086d48b5898a0",
   "build_job": 104969880647,
-  "build_steps": "Native/UI compile, regressions, real ggml rejection, DEX and relay PASS; broad Android still running",
+  "build_steps": "Native/UI compile, 171 regressions PASS / 2 SKIP, real ggml rejection, DEX and relay PASS",
   "vision_comparison_run": 35149450717,
   "vision_comparison_commit": "92e1e7436cb3329630a1914113487fb4039e92ae",
   "vision_comparison_job": 104973741503,
@@ -33,5 +33,13 @@
     "run": 35149450810,
     "job": 104973742107,
     "reason": "No Android summary produced; emulator shell exit1. Exact signed payload PASS. Original log fetch EOF in client; runner diagnostic relay and wrapped retry prepared. No speed result."
-  }
+  },
+  "benchmark_run": 35150143379,
+  "benchmark_job": 104976090371,
+  "benchmark_commit": "7a5299617182866ad5812501d0f9c249748cf54d",
+  "benchmark_status": "in_progress",
+  "build_overall_status": "FAIL: external bus response CERO EMIOFSELLA.; separate exact signed comparison returned the identical incorrect answer before/after, not an introduced difference in that case",
+  "vision_comparison_status": "PASS_EQUALITY_ONLY",
+  "vision_semantic_result": "FAIL in both; CERO EMIOFSELLA.",
+  "strict_visual_tensor_routing": "PASS: 35 graphs, 19290 math nodes, no non-Vulkan math dispatched under guard; host orchestration CPU; software Vulkan is not physical GPU proof"
 }

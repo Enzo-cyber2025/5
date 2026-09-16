@@ -27,6 +27,9 @@ def verify():
     bj=next(j for j in api('actions/runs/'+str(c['build_run'])+'/jobs')['jobs'] if j['id']==c['build_job'])
     for name in ('Compile real native stack and compact UI','Existing regressions','Real APK serialization and GGUF reader through DEX to JVM','Relay unsigned build for private local signing'):
         assert next(x for x in bj['steps'] if x['name']==name)['conclusion']=='success',name
+    if c.get('strict_tensor_routing'):
+        assert p.get('strict_tensor_routing') is True
+        assert next(x for x in bj['steps'] if x['name']=='Real ggml CPU tensor dispatch blocked before math')['conclusion']=='success'
     root=Path(f"ci-results/{v['run']}-{v['attempt']}")
     s=json.load(open(root/'summary.json'))
     assert s['status']=='PASS' and s['apk_sha256']==c['apk_sha256'] and s['baseline_sha256']==c['baseline_sha256']
