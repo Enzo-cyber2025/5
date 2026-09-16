@@ -27,7 +27,7 @@ public final class Attachments {
     private final Context context;
     private final String chatId;
     private Button camera,status;
-    private static final String NOTICE="Leitura local: imagens com modelo de visão; texto UTF-8/UTF-16, PDF (camada de texto), DOCX/ODT (texto principal). PDF sem texto precisa de visão. Áudio, vídeo e formatos binários não suportados geram aviso. Imagens são reduzidas para até 1024 px; documentos e imagens precisam caber no contexto. Não há corte silencioso de texto. Você pode desativar a leitura de um anexo nesta lista.";
+    private static final String NOTICE="Leitura local: imagens com modelo de visão; texto UTF-8/UTF-16, PDF (camada de texto), DOCX/ODT (texto principal). PDF sem texto precisa de visão. Áudio, vídeo e formatos binários não suportados geram aviso. Imagens são ajustadas para até 1024 px, com orientação automática e transparência sobre branco. Imagens animadas usam o primeiro quadro; HEIF/AVIF dependem do suporte do Android; documentos e imagens precisam caber no contexto. Não há corte silencioso de texto. Você pode desativar a leitura de um anexo nesta lista.";
     private Attachments(Activity a) {
         activity=a;context=a.getApplicationContext();chatId=a.getIntent().getStringExtra("chatId");
     }
@@ -42,7 +42,15 @@ public final class Attachments {
     }
     private void toast(String s){Toast.makeText(activity,s,Toast.LENGTH_LONG).show();}
     private boolean multimodal() {
-        try {Object chat=get(activity,"chat");Object path=get(chat,"mmprojPath");return path!=null&&!path.toString().isEmpty()&&!"null".equals(path.toString());}
+        try {
+            Object chat=get(activity,"chat");Object path=get(chat,"mmprojPath");
+            if(path!=null&&!path.toString().isEmpty()&&!"null".equals(path.toString()))return true;
+            // Existing chats can lack the redundant projector path even when
+            // the imported, inspected GGUF already contains the vision encoder.
+            String modelPath=String.valueOf(get(chat,"modelPath"));
+            Object model=Pairing.store().getMethod("byPath",Context.class,String.class).invoke(null,context,modelPath);
+            return model!=null&&"VISION_SINGLE_GGUF".equals(Pairing.field(model,"capability"));
+        }
         catch(Exception e){return false;}
     }
     private static int dp(Activity a,int value){return Math.round(value*a.getResources().getDisplayMetrics().density);}

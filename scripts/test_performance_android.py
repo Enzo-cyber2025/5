@@ -49,6 +49,9 @@ def main():
         # so UI defects are not hidden behind a long inference benchmark.
         d.adb('install','-g',apk,timeout=180)
         checks['code_boxes_exact_android_clipboard']=code_ui(d)
+        if c.get('image_import'):
+            from test_image_android import pixels
+            pixels(d);checks['actual_android_image_decoder']='PASS'
         assert d.shell('getprop ro.kernel.qemu')=='1'
         d.adb('uninstall',PACKAGE) # fresh disposable emulator, no user data
         base=Path('.cache/performance-base.apk');assert sha(base)==c['baseline_sha256']
@@ -118,6 +121,9 @@ def main():
         checks['automatic_threads_and_manual_override']='PASS'
         checks['real_send_to_first_ui_timing']='PASS'
         result['medians']={screen:{phase:{kind:{'decode_tokens_s':statistics.median(x[kind]['native_decode_tokens_s'] for x in result['series'][phase][screen]),'prefill_ms':statistics.median(x[kind]['metrics']['prefillNs']/1e6 for x in result['series'][phase][screen]),'first_native_text_ms':statistics.median(x[kind]['metrics']['firstTokenNs']/1e6 for x in result['series'][phase][screen])} for kind in ('cold','follow')} for phase in ('before','after')} for screen in ('awake','asleep')}
+        if c.get('image_import'):
+            from test_image_android import inference
+            checks['real_image_missing_metadata']=inference(d)
         result['status']='PASS'
     except Exception as ex:
         result['error']=str(ex);(E/'physical-performance-failure.txt').write_text(traceback.format_exc());traceback.print_exc()

@@ -204,6 +204,10 @@ extern "C" JNIEXPORT jstring JNICALL Java_com_ggufchat_app_Native_lastError(JNIE
     auto e=get(h); if(!e) return java_string(env,create_error);
     std::lock_guard<std::mutex> g(e->mutex); return java_string(env,e->error);
 }
+extern "C" JNIEXPORT jboolean JNICALL Java_com_ggufchat_app_AttachmentInference_supportsVision(JNIEnv*,jclass,jlong h) {
+    auto e=get(h);
+    return e && e->projector && mtmd_support_vision(e->projector);
+}
 extern "C" JNIEXPORT jstring JNICALL Java_com_ggufchat_app_Native_backendName(JNIEnv *env,jclass,jlong h) {
     auto e=get(h); return java_string(env,e?(std::string(e->layers==0?"CPU":"Vulkan")+(e->projector?" · GGUF + mmproj carregados":"")):"Não carregado");
 }

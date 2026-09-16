@@ -3,7 +3,6 @@ package com.ggufchat.app;
 import android.content.Context;
 import android.graphics.*;
 import android.graphics.pdf.PdfRenderer;
-import android.media.ExifInterface;
 import android.os.ParcelFileDescriptor;
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader;
 import com.tom_roush.pdfbox.io.MemoryUsageSetting;
@@ -49,6 +48,7 @@ public final class AttachmentInference {
         catch(IOException ex){throw ex;}catch(Exception ex){throw new IOException(ex);}
     }
     private static native void begin(long handle);
+    private static native boolean supportsVision(long handle);
     private static void release(){Plan old=CURRENT.get();CURRENT.remove();if(old!=null)old.close();}
     public static native boolean nativeGenerate(long h,String prompt,int predict,float temp,float topP,float topK,float minP,float repeat,int lastN,int seed,Object callback,String[] images);
     public static boolean generate(long h,String prompt,int predict,float temp,float topP,float topK,float minP,float repeat,int lastN,int seed,Object callback) throws IOException {
@@ -66,7 +66,7 @@ public final class AttachmentInference {
             SystemPrompts.apply(c,chat,rows);
             List<?> messages=(List<?>)get(chat,"messages");
             JSONArray items=AttachmentStore.read(c,chatId).getJSONArray("items");
-            String projector=(String)get(chat,"mmprojPath");boolean vision=projector!=null&&!projector.isEmpty()&&!"null".equals(projector);
+            boolean vision=supportsVision(handle); // actual loaded encoder, including intrinsic single-file GGUFs
             int row=1; // PromptBuilder always begins with one system message.
             Budget budget=new Budget(131072);budget.owner=c; // Processing safety budget, NOT an import limit. Overflow is an explicit error.
             int read=0;
@@ -186,26 +186,20 @@ public final class AttachmentInference {
         p.check();p.images.add(f.getAbsolutePath());
     }
     private static String image(Context c,File f,Plan p) throws Exception {
-        BitmapFactory.Options opts=new BitmapFactory.Options();opts.inJustDecodeBounds=true;BitmapFactory.decodeFile(f.getAbsolutePath(),opts);
-        if(opts.outWidth<=0||opts.outHeight<=0)throw new IOException("Imagem inválida ou formato não decodificável no Android");
-        int originalWidth=opts.outWidth,originalHeight=opts.outHeight;opts.inSampleSize=1;
-        while(Math.max(originalWidth,originalHeight)/opts.inSampleSize>1024)opts.inSampleSize*=2;
-        reserve(p,Math.max(1,(originalWidth+opts.inSampleSize-1)/opts.inSampleSize),Math.max(1,(originalHeight+opts.inSampleSize-1)/opts.inSampleSize));
-        opts.inJustDecodeBounds=false;opts.inPreferredConfig=Bitmap.Config.ARGB_8888;
-        Bitmap bitmap=BitmapFactory.decodeFile(f.getAbsolutePath(),opts);if(bitmap==null)throw new IOException("Não foi possível decodificar a imagem");
+        p.check();
+        Bitmap bitmap;
+        try{bitmap=ImagePixels.decode(f);}
+        catch(IOException|IllegalArgumentException ex){throw new IOException("Imagem inválida ou não suportada: não foi possível decodificar a foto. O formato pode não ser suportado nesta versão do Android ou o arquivo está incompleto. Tente PNG/JPEG. "+ex.getMessage(),ex);}
         try {
-            int orientation=ExifInterface.ORIENTATION_NORMAL;
-            try{orientation=new ExifInterface(f.getAbsolutePath()).getAttributeInt(ExifInterface.TAG_ORIENTATION,ExifInterface.ORIENTATION_NORMAL);}catch(IOException ignored){}
-            Matrix matrix=new Matrix();
-            switch(orientation){case 2:matrix.setScale(-1,1);break;case 3:matrix.setRotate(180);break;case 4:matrix.setScale(1,-1);break;case 5:matrix.setRotate(90);matrix.postScale(-1,1);break;case 6:matrix.setRotate(90);break;case 7:matrix.setRotate(270);matrix.postScale(-1,1);break;case 8:matrix.setRotate(270);break;default:break;}
-            if(!matrix.isIdentity()){Bitmap rotated=Bitmap.createBitmap(bitmap,0,0,bitmap.getWidth(),bitmap.getHeight(),matrix,true);if(rotated!=bitmap){bitmap.recycle();bitmap=rotated;}}
+            reserve(p,bitmap.getWidth(),bitmap.getHeight());
             save(c,bitmap,p);
+            android.util.Log.i("GGUFInference","GGUF_IMAGE_PREPARED width="+bitmap.getWidth()+" height="+bitmap.getHeight()+" decoder=ImageDecoder orientation=automatic color=sRGB");
         }finally{bitmap.recycle();}
         return MARKER;
     }
     private static String extract(Context c,File f,String name,String mime,boolean vision,Plan p,Budget budget) throws Exception {
         String lower=name.toLowerCase(Locale.ROOT);
-        if(mime.startsWith("image/") || lower.matches(".*\\.(png|jpe?g|webp|bmp|gif|heic|heif)$")) {
+        if(ImageFormats.isImage(f) || mime.toLowerCase(Locale.ROOT).startsWith("image/") || lower.matches(".*\\.(png|jpe?g|webp|bmp|gif|heic|heif|avif|tiff?|jxl)$")) {
             if(!vision)throw new IOException("Imagem precisa de modelo GGUF + projetor com visão");return image(c,f,p);
         }
         if(lower.endsWith(".pdf") || mime.equals("application/pdf"))return pdf(c,f,vision,p,budget);
