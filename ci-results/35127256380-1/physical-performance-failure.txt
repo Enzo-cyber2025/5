@@ -1,0 +1,24 @@
+Traceback (most recent call last):
+  File "/home/runner/work/5/5/scripts/test_performance_android.py", line 60, in main
+    checks['real_image_missing_metadata']=inference(d)
+                                          ^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_image_android.py", line 20, in inference
+    model=d.wait(lambda:next((m for m in d.read_json('models.json') if m.get('capability')=='VISION_SINGLE_GGUF'),None),'physical unified visual model',timeout=600)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_android.py", line 70, in wait
+    result = fn()
+             ^^^^
+  File "/home/runner/work/5/5/scripts/test_image_android.py", line 20, in <lambda>
+    model=d.wait(lambda:next((m for m in d.read_json('models.json') if m.get('capability')=='VISION_SINGLE_GGUF'),None),'physical unified visual model',timeout=600)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_android.py", line 140, in read_json
+    output = self.shell(command)
+             ^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_android.py", line 47, in shell
+    return self.adb("shell", command, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_android.py", line 41, in adb
+    raise RuntimeError(f"ADB falhou ({result.returncode}): {args}\n{detail}")
+RuntimeError: ADB falhou (1): ('shell', 'cat /data/user/0/com.ggufchat.app/files/models.json')
+cat: /data/user/0/com.ggufchat.app/files/models.json: No such file or directory
+
