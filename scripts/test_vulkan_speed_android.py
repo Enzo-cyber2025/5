@@ -6,6 +6,7 @@ import hashlib
 import json
 import re
 import statistics
+import shlex
 import traceback
 from pathlib import Path
 
@@ -89,7 +90,14 @@ def main():
                 s['checks']['plain_original_view'] = 'PASS'
                 pixels(d); s['checks']['android_image_decoder'] = 'PASS'
                 s['checks']['actual_visual_inference'] = inference(d)
-            model = d.import_model(TEXT)
+            if new:
+                # Reuse the model whose preservation was just verified. A second
+                # asynchronous import could race the next force-stop or create a
+                # duplicate filename, invalidating the before/after comparison.
+                model = next(x for x in d.read_json('models.json') if x['id']==model['id'])
+            else:
+                model = d.import_model(TEXT)
+            assert d.shell('sha256sum '+shlex.quote(model['path'])).split()[0] == sha(TEXT)
             s['series'][phase] = {}
             for screen in ('awake', 'asleep'):
                 runs = []; s['series'][phase][screen] = runs
