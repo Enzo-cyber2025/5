@@ -1,0 +1,13 @@
+{
+  "status": "SIGNED_CANDIDATE_NOT_YET_ACCEPTED",
+  "apk_sha256": "8f54d7d3e9556771d7824fa2b7ff55295639ebe34421073ab51e15dde69e7eaf",
+  "source_commit": "4bef75be76eeb19e28dbaa6c4b36ef9ec662ccfd",
+  "build_run": 35118262487,
+  "signed_test_run": 35119337753,
+  "target": "Improve CPU and GPU throughput and send-to-first-token latency, awake and asleep; add native copyable code blocks.",
+  "performance_claim": "No 15 or 20 tokens/s guarantee. User phone and exact GGUF/configuration have not been supplied. Emulator CPU/GPU results are not phone certification.",
+  "signature": "bf9c75ad550a7bafd20a99ceffbb5a58d064322f245b1bf1786504ceb7700aa7",
+  "signature_change": "Previous 4f75 private key and private backup absent after workspace restoration. User explicitly authorized any signature; new private key generated with local backup. Android in-place update compatibility must not be claimed. Protect existing data before any uninstall.",
+  "observed_static_gates": "ARM executable disassembly confirms baseline/probe have no sdot/smmla; dotprod library has 1038 sdot instructions; i8mm library has 894 sdot and 244 smmla instructions. Not a physical ARM benchmark.",
+  "local_tests": "25 passed, 3 skipped (local javac/decoded fixture dependencies). Hosted compile/regression stages passed; real Android jobs still running at creation."
+}
