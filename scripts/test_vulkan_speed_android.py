@@ -103,16 +103,18 @@ def main():
                         assert follow['metrics']['reusedPromptTokens'] > 0
                         s['series'][phase][screen+'_follow'] = follow
                         d.capture('physical-vulkan-'+label+'-follow.png')
-            # Seeded non-greedy chain must also retain its parameters/output.
-            chat = gpu_chat(d, model, phase+'-seeded')
+            # The released UI derives seed from nanoTime; Chat has NO seed field.
+            # Exercise real non-greedy fallback, without pretending two random
+            # runs have the same seed or requiring identical stochastic text.
+            chat = gpu_chat(d, model, phase+'-non-greedy')
             d.shell('am force-stop '+PACKAGE)
             chats = d.read_json('chats.json')
             for row in chats:
                 if row['id'] == chat['id']:
-                    row.update(temperature=0.7, seed=12345); chat=row
+                    row.update(temperature=0.7); chat=row
             d.write_private('files/chats.json', json.dumps(chats))
             d.launch(); d.open_existing_chat(chat['title']); wait_ready(d)
-            s['series'][phase]['seeded'] = measured(d, chat, PROMPT, phase+'-seeded', False, new)
+            s['series'][phase]['non_greedy'] = measured(d, chat, PROMPT, phase+'-non-greedy', False, new)
         for screen in ('awake', 'asleep'):
             before, after = s['series']['before'][screen], s['series']['after'][screen]
             assert len(before) == len(after) == 3
@@ -120,8 +122,9 @@ def main():
                 assert a['response'] == b['response'] and a['tokens'] == b['tokens'], 'Changed output: '+screen
             a, b = s['series']['before'][screen+'_follow'], s['series']['after'][screen+'_follow']
             assert a['response'] == b['response'] and a['tokens'] == b['tokens'], 'Changed continuation'
-        assert s['series']['before']['seeded']['response'] == s['series']['after']['seeded']['response'], 'Changed seeded output'
-        s['checks']['identical_outputs_both_screen_states_and_seeded'] = 'PASS'
+        assert all(s['series'][phase]['non_greedy']['response'].strip() for phase in ('before','after'))
+        s['checks']['non_greedy_completed_original_sampling'] = 'PASS (different runtime-generated seeds; not output-equality proof)'
+        s['checks']['identical_greedy_outputs_both_screen_states'] = 'PASS'
         s['checks']['actual_vulkan_sleep_notice_and_cleanup'] = 'PASS'
         s['medians'] = {screen: {phase: {
             'total_s': statistics.median(x['prefill_and_generation_seconds'] for x in s['series'][phase][screen]),
@@ -133,7 +136,7 @@ def main():
         s['error'] = str(ex)
         (E/'physical-vulkan-failure.txt').write_text(traceback.format_exc()); traceback.print_exc()
     finally:
-        s['scope'] = 'Same Android 35 x86_64 emulator, software Vulkan, SmolLM2-135M Q4_K_M, context 2048, GPU 99, Auto threads, 128-token limit. 1 warmup+3 measured per screen state; follow and seeded are single observations. No phone/physical-GPU 5-second or 20-T/s certification.'
+        s['scope'] = 'Same Android 35 x86_64 emulator, software Vulkan, SmolLM2-135M Q4_K_M, context 2048, GPU 99, Auto threads, 128-token limit. 1 warmup+3 measured per screen state; follow and non-greedy are single observations with no fixed stochastic seed. No phone/physical-GPU 5-second or 20-T/s certification.'
         s['model_sha256'] = sha(TEXT)
         (E/'summary.json').write_text(json.dumps(s, indent=2, ensure_ascii=False))
         try:
