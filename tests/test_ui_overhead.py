@@ -79,3 +79,40 @@ def test_renderer_flushes_synchronously_at_boundaries():
     assert 'if(pendingFirst==null)pendingFirst=text;' in s
     assert 'pendingTarget.append(' in s
     assert 'postDelayed' not in s and 'Thread.sleep' not in s
+
+
+def test_unused_buffer_removal_in_reassembled_real_dex(tmp_path):
+    """Bytecode test only: deliberately omit libraries/secondary DEX, not an APK delivery."""
+    import zipfile
+    base=ROOT/'.cache/ui-baseline'
+    tool=ROOT/'.cache/tools/package/lib/apktool.jar'
+    if not (base/'smali/com/ggufchat/app/ChatActivity.smali').exists() or not tool.exists():
+        pytest.skip('Decoded released APK and apktool required')
+    java=shutil.which('java')
+    if not java:
+        jdk=pytest.importorskip('jdk4py');java=str(jdk.JAVA_HOME/'bin/java')
+    sys.path.insert(0,str(ROOT/'apk-fix'))
+    from ui_overhead import discard_unused_stream_buffer
+    decoded=tmp_path/'decoded'
+    shutil.copytree(base,decoded,ignore=shutil.ignore_patterns('lib','smali_classes2','build','original'))
+    app=decoded/'smali/com/ggufchat/app/ChatActivity.smali'
+    app.write_text(discard_unused_stream_buffer(app.read_text()))
+    output=tmp_path/'bytecode-only.apk'
+    subprocess.run([java,'-jar',str(tool),'b',str(decoded),'-o',str(output)],check=True,capture_output=True)
+    from androguard.core.dex import DEX
+    from loguru import logger
+    logger.disable('androguard')
+    def activity(apk):
+        with zipfile.ZipFile(apk) as z:d=DEX(z.read('classes.dex'))
+        return next(c for c in d.get_classes() if c.get_name()=='Lcom/ggufchat/app/ChatActivity;')
+    before=activity(ROOT/'.delivery/GGUF-Chat-mobile.apk');after=activity(output)
+    def methods(c):
+        return {m.get_name()+m.get_descriptor():[(i.get_name(),i.get_output()) for i in m.get_instructions()] for m in c.get_methods()}
+    a,b=methods(before),methods(after)
+    assert a.keys()==b.keys()
+    changed={name for name in a if a[name]!=b[name]}
+    assert changed=={'onToken(Ljava/lang/String;)V','onSend()V','onDone()V','onError(Ljava/lang/String;)V'}
+    def fields(c):return {(f.get_name(),f.get_descriptor(),f.get_access_flags()) for f in c.get_fields()}
+    removed=fields(before)-fields(after)
+    assert len(removed)==1 and next(iter(removed))[0]=='streamingBuf'
+    assert fields(after)-fields(before)==set()
