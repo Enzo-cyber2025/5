@@ -1,0 +1,16 @@
+09-16 19:35:20.407  9597  9907 I GGUFSystem: GGUF_SYSTEM_PROMPT_APPLIED scope=global chars=107 sha256=dde45e87ea07db0b49bcddd022d4f41a452610560d9af636571c26d16a4bcd04
+09-16 19:35:20.411  9597  9907 I GGUFInference: GGUF_CONTENT_PREPARED files=0 images=0 text_chars=0
+09-16 19:35:20.413  9597  9907 I GGUFChatNative: GGUF_GPU_SAMPLING requested=1 attached=1
+09-16 19:35:20.631   563   620 W system_server: Long monitor contention with owner NetworkStats (839) at void com.android.server.power.PowerManagerService.acquireWakeLockInternal(android.os.IBinder, int, int, java.lang.String, java.lang.String, android.os.WorkSource, java.lang.String, int, int, android.os.IWakeLockCallback)(PowerManagerService.java:1681) waiters=0 in void com.android.server.power.PowerManagerService.handleSandman(int) for 118ms
+09-16 19:35:20.771   563  1760 I PowerManagerService: Going to sleep due to sleep_button (uid 1000, screenOffTimeout=2147483647, activityTimeoutWM=-1, maxDimRatio=0.20000005, maxDimDur=7000)...
+09-16 19:35:21.373   563   620 I PowerManagerService: Sleeping (uid 1000)...
+09-16 19:35:21.415   563   563 I PowerManagerService: onFlip(): Face up.
+09-16 19:35:26.228  9597  9907 I GGUFChatNative: GGUF_PROMPT_CACHE input_tokens=62 reused_tokens=0 evaluated_tokens=62 media=0
+09-16 19:36:04.403  9597  9907 I GGUFChatNative: GGUF_NATIVE_COMPLETE tokens=128 reason=length projector=0
+09-16 19:36:04.403  9597  9907 I GGUFChatNative: GGUF_GPU_SAMPLING_RESULT backend_selected=128 emitted=128
+09-16 19:36:04.403  9597  9907 I GGUFChatNative: GGUF_RESPONSE_LATENCY first_token_ns=5820252097 prompt_tokens=62 reused_tokens=0
+09-16 19:36:04.403  9597  9907 I GGUFChatNative: GGUF_GENERATION_STATS tokens=128 decode_ns=38172649853 prefill_ns=5819305069 callbacks=128 success=1
+09-16 19:36:04.404  9597  9907 I System.out: GGUF_REPAIR_GENERATION_OK
+09-16 19:36:04.407  9597  9907 I GGUFReplyNotice: GGUF_NOTICE_STATS progress_updates=0 skipped_screen_off=128
+09-16 19:36:04.410  9597  9907 I GGUFReplyNotice: GGUF_REPLY_NOTICE posted=1 saved=1 screen_off=1 locked=0
+09-16 19:36:04.416  9597  9597 I GGUFReplyNotice: GGUF_REPLY_SERVICE_DESTROYED
