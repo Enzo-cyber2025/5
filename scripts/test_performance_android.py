@@ -43,6 +43,7 @@ def main():
     try:
         assert result['apk_sha256']==c['apk_sha256'];assert d.shell('getprop ro.kernel.qemu')=='1'
         d.adb('root',check=False);d.adb('wait-for-device');d.shell('wm size 720x1280');d.shell('wm density 240');d.adb('logcat','-G','16M')
+        d.shell('pm disable-user --user 0 com.google.android.apps.nexuslauncher',check=False)
         init_ime(d)
         # Test the installed candidate's actual code renderer/clipboard first,
         # so UI defects are not hidden behind a long inference benchmark.
@@ -124,7 +125,10 @@ def main():
         result['scope']='SmolLM2-135M Q4_K_M, same Android 35 x86_64 emulator, CPU auto, 1 warmup and 3 measured pairs per screen state; Vulkan is software, not a physical GPU. No 15/20 tokens/s phone certification.'
         result['model_sha256']=sha(TEXT)
         (E/'summary.json').write_text(json.dumps(result,indent=2,ensure_ascii=False))
-        try:(E/'physical-performance-final-log.txt').write_text(d.adb('logcat','-d')[-150000:]);d.capture('physical-performance-final.png')
+        try:
+            log=d.adb('logcat','-d')
+            (E/'physical-performance-final-log.txt').write_text('\n'.join(x for x in log.splitlines() if any(t in x for t in ('GGUF','ggufchat','AndroidRuntime','FATAL','ANR in')))[-150000:])
+            d.capture('physical-performance-final.png')
         except Exception:pass
     return 0 if result['status']=='PASS' else 1
 if __name__=='__main__':raise SystemExit(main())

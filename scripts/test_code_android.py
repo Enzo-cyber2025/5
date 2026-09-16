@@ -10,7 +10,9 @@ def run(d):
     results={}
     for mode in ('stream','history'):
         d.shell('am force-stop '+PKG)
-        d.shell('am start -n '+PKG+'/.CodeActivity --es mode '+mode)
+        started=d.shell('am start -W -n '+PKG+'/.CodeActivity --es mode '+mode)
+        Path('evidence/physical-code-'+mode+'-start.txt').write_text(started)
+        assert 'Status: ok' in started,started
         d.wait(lambda:position(d.ui(),text='Streaming pronto' if mode=='stream' else 'Histórico pronto',package={PKG}),'production renderer '+mode)
         for index,label in enumerate(('Python','JSON')):
             def copies():
