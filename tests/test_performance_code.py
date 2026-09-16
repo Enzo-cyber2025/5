@@ -75,3 +75,12 @@ def test_real_bytecode_wiring(tmp_path):
     assert s.count('CodeBlocks;->append(')==1 and s.count('CodeBlocks;->decorate(')==1
     assert s.count('ResponseTiming;->sent(')==1 and s.count('ResponseTiming;->first(')==1
     assert 'NativeDispatch;->load()' in (tmp_path/'Native.smali').read_text()
+
+
+def test_gpu_sampler_lifetime_and_original_parameters():
+    s=(ROOT/'apk-fix/native/mobile.cpp').read_text()
+    assert 'if(e->layers>0)binding.attached=llama_set_sampler(e->ctx,0,sampler.get())' in s
+    assert 'llama_synchronize(ctx);' in s and 'llama_set_sampler(ctx,0,nullptr)' in s
+    assert s.index('std::unique_ptr<llama_sampler')<s.index('BackendSamplerBinding binding')<s.index('if(n_images)')
+    assert 'llama_sampler_init_dist(seed)' in s and 'llama_sampler_init_penalties' in s
+    assert 'GGUF_GPU_SAMPLING_RESULT backend_selected=' in s

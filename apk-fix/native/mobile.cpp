@@ -256,12 +256,22 @@ static mtmd_input_text media_input(const std::string &text) {
     input.add_special=true; input.parse_special=true;
     return input;
 }
+struct BackendSamplerBinding {
+    llama_context *ctx;
+    bool attached=false;
+    ~BackendSamplerBinding() {
+        if(attached) {
+            llama_synchronize(ctx); // no outstanding graph may refer to the freed chain
+            llama_set_sampler(ctx,0,nullptr);
+        }
+    }
+};
 static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat temp,jfloat top_p,jfloat top_k,jfloat min_p,jfloat repeat,jint last_n,jint seed,jobject callback,jobjectArray images) {
     auto e=get(h);if(!e)return false; std::lock_guard<std::mutex> lock(e->mutex); if(!images)e->cancel=false;e->error.clear();
     jmethodID on_token=nullptr,on_done=nullptr; jclass clazz=nullptr;
     using Clock=std::chrono::steady_clock;
     auto started=Clock::now(),decode_started=started,last_flush=started;
-    bool ok=false,decoding=false;int emitted=0,callbacks=0;
+    bool ok=false,decoding=false;int emitted=0,callbacks=0,backend_sampled=0;
     std::string pending;pending.reserve(4096);
     int64_t first_token_ns=-1;size_t prompt_tokens=0,reused_tokens=0;bool text_cache=false;
     auto flush=[&] {
@@ -278,6 +288,18 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
         clazz=env->GetObjectClass(callback);on_token=env->GetMethodID(clazz,"onToken","(Ljava/lang/String;)V");on_done=env->GetMethodID(clazz,"onDone","(Z)V");
         if(!on_token || !on_done || env->ExceptionCheck()) throw std::runtime_error("Callback inválido");
         auto vocab=llama_model_get_vocab(e->model);
+        std::unique_ptr<llama_sampler,decltype(&llama_sampler_free)> sampler(llama_sampler_chain_init(llama_sampler_chain_default_params()),llama_sampler_free);
+        if(!sampler) throw std::runtime_error("Sem memória para amostrador");
+        if(last_n!=0) llama_sampler_chain_add(sampler.get(),llama_sampler_init_penalties(llama_vocab_n_tokens(vocab),last_n,repeat,0,0));
+        if(temp<=0) llama_sampler_chain_add(sampler.get(),llama_sampler_init_greedy());
+        else {llama_sampler_chain_add(sampler.get(),llama_sampler_init_top_k((int)top_k));llama_sampler_chain_add(sampler.get(),llama_sampler_init_top_p(top_p,1));llama_sampler_chain_add(sampler.get(),llama_sampler_init_min_p(min_p,1));llama_sampler_chain_add(sampler.get(),llama_sampler_init_temp(temp));llama_sampler_chain_add(sampler.get(),llama_sampler_init_dist(seed));}
+        BackendSamplerBinding binding{e->ctx};
+        // Let the pinned backend execute the supported sampler prefix next to
+        // the logits. Unsupported operations remain on CPU through llama.cpp's
+        // own fallback, with the same chain, seed and user-selected parameters.
+        // No forced greedy mode, precision reduction or layer-count change.
+        if(e->layers>0)binding.attached=llama_set_sampler(e->ctx,0,sampler.get());
+        LOG("GGUF_GPU_SAMPLING requested=%d attached=%d",e->layers>0,(int)binding.attached);
         const auto text=utf8(env,prompt);
         const int n_images=images?env->GetArrayLength(images):0;
         size_t input_size=0;
@@ -394,15 +416,11 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
 
         decode_started=Clock::now();decoding=true;
         int limit=std::min<int>(predict,llama_n_ctx(e->ctx)-input_size);
-        std::unique_ptr<llama_sampler,decltype(&llama_sampler_free)> sampler(llama_sampler_chain_init(llama_sampler_chain_default_params()),llama_sampler_free);
-        if(!sampler) throw std::runtime_error("Sem memória para amostrador");
-        if(last_n!=0) llama_sampler_chain_add(sampler.get(),llama_sampler_init_penalties(llama_vocab_n_tokens(vocab),last_n,repeat,0,0));
-        if(temp<=0) llama_sampler_chain_add(sampler.get(),llama_sampler_init_greedy());
-        else {llama_sampler_chain_add(sampler.get(),llama_sampler_init_top_k((int)top_k));llama_sampler_chain_add(sampler.get(),llama_sampler_init_top_p(top_p,1));llama_sampler_chain_add(sampler.get(),llama_sampler_init_min_p(min_p,1));llama_sampler_chain_add(sampler.get(),llama_sampler_init_temp(temp));llama_sampler_chain_add(sampler.get(),llama_sampler_init_dist(seed));}
         const char *reason="length";
         for(int i=0;i<limit;i++) {
             if(e->cancel) throw std::runtime_error("Geração cancelada");
             auto t=llama_sampler_sample(sampler.get(),e->ctx,-1);
+            if(binding.attached && llama_get_sampled_token_ith(e->ctx,-1)!=LLAMA_TOKEN_NULL)backend_sampled++;
             if(llama_vocab_is_eog(vocab,t)) {reason="eog";break;}
             emitted++;pending+=piece(vocab,t);
             // Preserve immediate first-token feedback, then send complete UTF-8
@@ -430,6 +448,7 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
     auto finished=Clock::now();
     jlong decode_ns=decoding?std::chrono::duration_cast<std::chrono::nanoseconds>(finished-decode_started).count():0;
     jlong prefill_ns=std::chrono::duration_cast<std::chrono::nanoseconds>((decoding?decode_started:finished)-started).count();
+    LOG("GGUF_GPU_SAMPLING_RESULT backend_selected=%d emitted=%d",backend_sampled,emitted);
     LOG("GGUF_RESPONSE_LATENCY first_token_ns=%lld prompt_tokens=%zu reused_tokens=%zu",(long long)first_token_ns,prompt_tokens,reused_tokens);
     LOG("GGUF_GENERATION_STATS tokens=%d decode_ns=%lld prefill_ns=%lld callbacks=%d success=%d",emitted,(long long)decode_ns,(long long)prefill_ns,callbacks,(int)ok);
     if(!env->ExceptionCheck()) {

@@ -269,13 +269,13 @@ class Android:
                 return None
         return self.wait(completed, f"importação persistida de {source.name}", timeout=300)
 
-    def new_chat(self, model, gpu_layers, context_size=1024):
+    def new_chat(self, model, gpu_layers, context_size=1024, threads=2):
         self.shell(f"am force-stop {PACKAGE}")
         prefs = ET.Element("map")
         for name, value in (("selectedModelId", model["id"]), ("selectedModelName", model["name"]),
                             ("selectedModelPath", model["path"])):
             ET.SubElement(prefs, "string", name=name).text = value
-        for name, value in (("gpuLayers", gpu_layers), ("contextSize", context_size), ("nThreads", 2)):
+        for name, value in (("gpuLayers", gpu_layers), ("contextSize", context_size), ("nThreads", threads)):
             ET.SubElement(prefs, "int", name=name, value=str(value))
         self.write_private("shared_prefs/ggufchat_settings.xml", ET.tostring(prefs, encoding="unicode"))
         before = {c["id"] for c in self.read_json("chats.json", optional=True)}
