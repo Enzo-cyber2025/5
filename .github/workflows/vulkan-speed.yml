@@ -46,6 +46,10 @@ jobs:
           bash scripts/build_code_test.sh
           sudo chmod a+rw /dev/kvm
           bash ci/prepare_vulkan.sh
+      - name: Inspect prior bootstrap failure
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 ci/previous_vulkan_failure.py
       - uses: reactivecircus/android-emulator-runner@v2
         env:
           GH_TOKEN: ${{ github.token }}
@@ -60,7 +64,7 @@ jobs:
           disk-size: 8192M
           disable-animations: true
           emulator-options: -no-window -no-snapshot -gpu host -feature Vulkan -noaudio -no-boot-anim
-          script: .venv/bin/python scripts/test_vulkan_speed_android.py
+          script: bash ci/log_step.sh emulator .venv/bin/python scripts/test_vulkan_speed_android.py
       - name: Report
         if: always()
         run: python3 ci/report_android.py evidence
@@ -71,4 +75,6 @@ jobs:
         if: always()
         with:
           name: vulkan-awake-asleep-evidence
-          path: evidence/
+          path: |
+            evidence/
+            .cache/ci-logs/
