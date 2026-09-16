@@ -76,3 +76,20 @@ A meta de +150% exigiria pelo menos **5,1446 tokens/s acesa e 10,0263 tokens/s a
 ### Próxima investigação, sem nova promessa de ganho
 
 Execução exploratória `35156484592` usa o mesmo APK assinado, sem alterar seu payload: políticas upstream de submissão 100/32/512 nós, conferindo o ambiente efetivo do processo e a saída determinística. Uma observação por configuração/estado serve apenas como triagem. Uma execução separada habilita timestamps Vulkan; o profiler adiciona esperas e seus tempos NÃO contam como throughput normal nem como ganho de 150%. Não houve seleção cega dessas opções como novo padrão no APK.
+
+
+### Resultado da investigação adicional
+
+[35156484592](https://github.com/Enzo-cyber2025/5/actions/runs/35156484592), job 104997041756, concluiu **PASS_EXPLORATORY_ONLY**. Wrapper Android aplicado e variáveis efetivas conferidas no processo real; mesmo APK e respostas idênticas de 128 tokens em todas as configurações. Nada foi recompilado, reassinado ou adotado como novo padrão.
+
+| Política de submissão | Decode acesa | Decode apagada |
+|---|---:|---:|
+| Padrão 100 nós | 1,9941 tokens/s | 4,0522 tokens/s |
+| 32 nós | 2,0272 tokens/s | 4,0811 tokens/s |
+| 512 nós | 2,0516 tokens/s | **3,5276 tokens/s (regressão observada)** |
+
+São observações únicas, sem controle de aquecimento. O primeiro caso aceso teve primeiro texto em 24,291 s, contra cerca de 4,6 s nos posteriores; não atribuir essa diferença de ordem/aquecimento à política de submissão nem anunciar 88,478 → 66,963 s como ganho causal. Nenhuma dessas taxas mostrou 2,5×. O parâmetro padrão 100 permaneceu no APK.
+
+O profiler separado produziu timestamps Vulkan reais: grupos que contêm MUL_MAT somaram aproximadamente **82,75% dos 37,369 s registrados**. Grupos podem incluir operações fundidas vizinhas; não é custo isolado de cada multiplicação nem taxa do app sem instrumentação. A execução instrumentada teve esperas extras, portanto seus 3,669 tokens/s não entram na comparação de velocidade.
+
+Relatório resumido: `.delivery/vulkan-profile-screening.json`; dados brutos e logs: `ci-results/35156484592-1/`. Resultado final desta rodada: roteamento tensorial estrito e funcionalidade aprovados; **meta de desempenho de +150% reprovada**.

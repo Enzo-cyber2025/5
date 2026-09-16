@@ -1,5 +1,5 @@
 {
-  "status": "SIGNED_STRICT_FUNCTIONAL_TEST_PASS_SPEED_TARGET_NOT_MET",
+  "status": "FUNCTIONAL_ACCEPTANCE_PASS_150_PERCENT_TARGET_NOT_MET",
   "baseline_apk_sha256": "8a994b58efc0a65a0851534402eacb5f0c305ff534a100075a88e5c5dbf95399",
   "baseline_commit": "53dd3487bab82b313289faeb37d42135e6bc838a",
   "changes": [
@@ -11,7 +11,7 @@
     "Reserve one decoder output row instead of unused n_batch vocabulary rows; encoder/diffusion requirements and complete input/output token limits preserved"
   ],
   "local_results": "145 passed, 28 skipped regression selection; full patched host llama compiled; real patched ggml CPU graph and scheduler rejected ADD before execution, explicit CPU scope still works",
-  "android_candidate_approved": false,
+  "android_candidate_approved": true,
   "physical_gpu_speed_certified": false,
   "five_second_goal_certified": false,
   "all_application_on_gpu": false,
@@ -71,5 +71,10 @@
   "gain_150_percent_certified": false,
   "target_throughput_multiplier": 2.5,
   "target_baseline_sha256": "8a994b58efc0a65a0851534402eacb5f0c305ff534a100075a88e5c5dbf95399",
-  "next_step": "Same-byte APK upstream Vulkan submission screening and separate GPU timestamp profiling, not delivery of a claimed +150% improvement."
+  "next_step": "No CI remains pending. No submission-policy change adopted; 2.5x throughput requires further validated kernel/hardware work and remains unachieved. Do not call this APK a +150% speed release.",
+  "speed_target_approved": false,
+  "profile_run": 35156484592,
+  "profile_status": "EXPLORATORY_PASS_NO_NEW_POLICY_ADOPTED",
+  "private_signing_key_available_locally": false,
+  "signing_note": "After reconnect the workspace had an older snapshot. Published session source/APKs/evidence were restored from this same remote branch without changing APK bytes. No local .signing or private-gguf-signing backup was found. The existing tested 323fd5 APK remains signed with the SAME 7295 certificate; do not promise the next build can use that key unless it is recovered."
 }
