@@ -1,5 +1,5 @@
 {
-  "status": "SOURCE_IMPLEMENTED_ANDROID_BUILD_PENDING",
+  "status": "SIGNED_STRICT_VULKAN_PENDING_ANDROID_TEST",
   "baseline_apk_sha256": "8a994b58efc0a65a0851534402eacb5f0c305ff534a100075a88e5c5dbf95399",
   "baseline_commit": "53dd3487bab82b313289faeb37d42135e6bc838a",
   "changes": [
@@ -16,9 +16,14 @@
   "five_second_goal_certified": false,
   "all_application_on_gpu": false,
   "scope": "Strict tensor-compute routing in Vulkan mode. Android/UI/files/tokenization/image preprocessing/RNG and sampler state bookkeeping remain host CPU work. Software Vulkan itself runs on CPU in emulators. CPU mode remains explicit, never automatic fallback.",
-  "delivery": "Existing delivered APK is still baseline 8a994; it does NOT contain these new source changes. No new APK or speed claim until build and actual signed Android tests.",
+  "delivery": "New signed candidate 323fd5 is not approved/delivered. Last delivered 8a994 remains pinned at commit 53dd3487bab82b313289faeb37d42135e6bc838a.",
   "source_commit": "d3a16d7677be07ca61898fa31907b9ed95b4e198",
   "build_run": 35148206020,
   "superseded_build_run": 35148018242,
-  "android_visual_test_scope": "New strict harness explicitly selects GPU 99 for real dog-image inference. Historical test_image_android default is CPU; do not retrospectively call that old helper a Vulkan test."
+  "android_visual_test_scope": "New strict harness explicitly selects GPU 99 for real dog-image inference. Historical test_image_android default is CPU; do not retrospectively call that old helper a Vulkan test.",
+  "apk_sha256": "323fd5a33667c6cab278699e97c89fe253e1bb7acead45b869729bf022eb9f5c",
+  "unsigned_sha256": "01c86072a860c293ec5d68317eb4dd5e40d6fc37dcff6ed10b5617c4e12c7036",
+  "signer_sha256": "7295130ab387cd5123c1faab79c96f3ca8d8eb694ae7b15c611086d48b5898a0",
+  "build_job": 104969880647,
+  "build_steps": "Native/UI compile, regressions, real ggml rejection, DEX and relay PASS; broad Android still running"
 }
