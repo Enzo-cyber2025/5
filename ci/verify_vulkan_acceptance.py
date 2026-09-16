@@ -50,6 +50,17 @@ def verify():
     for phase in ('before','after'):
         x=s['series'][phase]['non_greedy']
         assert x['metrics']['completed'] and x['tokens']>0 and x['response'].strip()
+    # The broad build found an incorrect vehicle answer. Do not ignore it:
+    # require an independent SAME-byte before/after run for that exact case.
+    vision=v['vision_comparison']
+    vr=api('actions/runs/'+str(vision['run']))
+    assert vr['status']=='completed' and vr['conclusion']=='success'
+    assert vr['head_sha']==vision['commit'] and vr['run_attempt']==vision['attempt']
+    assert vr['head_branch']=='arena/01a09b42-5' and vr['path']=='.github/workflows/vulkan-vision-compare.yml'
+    vs=json.load(open(f"ci-results/{vision['run']}-{vision['attempt']}/summary.json"))
+    assert vs['apk_sha256']==c['apk_sha256'] and vs['baseline_sha256']==c['baseline_sha256']
+    assert vs['status']=='PASS_EQUALITY_ONLY' and vs['responses']['before']==vs['responses']['after']
+    assert vs['semantic_vehicle']['before']==vs['semantic_vehicle']['after']
     assert v['physical_gpu_speed_certified'] is False and v['five_second_goal_certified'] is False
     assert len(v['ui_review'])>=3
     for image in v['ui_review']:
