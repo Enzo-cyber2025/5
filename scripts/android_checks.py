@@ -121,21 +121,41 @@ def image_prefill_records(log, images):
 
 
 def select_exact_documents(d, names):
-    """Select named rows, not Select all (Recent may contain diagnostic XML)."""
+    """Use document selection icons, not long-press range/exclusive selection."""
+    import xml.etree.ElementTree as ET
     assert names and len(set(names)) == len(names)
-    xml = d.ui()
-    point = position(xml, text=names[0], package=PICKERS)
-    assert point, names[0]
-    x, y = point
-    d.shell(f'input touchscreen swipe {x} {y} {x} {y} 1000')
-    d.wait(lambda: position(d.ui(), text='1 selected', package=PICKERS), 'primeiro arquivo selecionado')
-    for name in names[1:]:
-        # A provider refresh can exit selection mode between dumps. A tap would
-        # then OPEN one file; long-press only selects and cannot import it alone.
-        point = position(d.ui(), text=name, package=PICKERS)
-        assert point, name
-        x, y = point
-        d.shell(f'input touchscreen swipe {x} {y} {x} {y} 1000')
+    def rows():
+        xml=d.ui();root=ET.fromstring(xml)
+        parents={child:parent for parent in root.iter() for child in parent}
+        found={}
+        for node in root.iter('node'):
+            name=node.get('text')
+            if name not in names or node.get('package') not in PICKERS:continue
+            row=node
+            while row in parents:
+                if row.get('resource-id','').endswith('/item_root'):break
+                row=parents[row]
+            if not row.get('resource-id','').endswith('/item_root'):
+                # Current Android DocumentsUI exposes document selection on the
+                # thumbnail at the left of the named row, not its Open action.
+                row=parents.get(node,node)
+            found[name]=row
+        return xml,found
+    for name in names:
+        for attempt in range(3):
+            xml,found=rows();assert name in found,name
+            row=found[name]
+            if row.get('selected')=='true' or any(n.get('checked')=='true' for n in row.iter()):break
+            # Use the current title Y (list headers move when selection starts).
+            x,y=position(xml,text=name,package=PICKERS)
+            left=int(re.findall(r'\d+',row.get('bounds','[0,0][720,1280]'))[0])
+            d.shell(f'input tap {left+48} {y}')
+            def selected():
+                _,current=rows();r=current.get(name)
+                return r is not None and (r.get('selected')=='true' or any(n.get('checked')=='true' for n in r.iter()))
+            try:d.wait(selected,'named document selected: '+name,timeout=8);break
+            except AssertionError:
+                if attempt==2:raise
     d.wait(lambda: position(d.ui(), text=f'{len(names)} selected', package=PICKERS), 'contagem exata de arquivos selecionados')
 
 
