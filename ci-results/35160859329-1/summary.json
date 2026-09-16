@@ -1,0 +1,12 @@
+{
+  "status": "NOT_APPLICABLE_ALREADY_FP32",
+  "apk_sha256": "323fd5a33667c6cab278699e97c89fe253e1bb7acead45b869729bf022eb9f5c",
+  "series": {
+    "default": {
+      "awake": [],
+      "asleep": []
+    }
+  },
+  "medians": {},
+  "scope": "Software Vulkan only; FP32 instead of optional FP16 arithmetic, unchanged weights/KV format/parameters. One excluded warmup +3 per state/policy. Fixed policy order remains a source of bias. No production default changed; not phone speed certification or a 21x/26x claim."
+}
