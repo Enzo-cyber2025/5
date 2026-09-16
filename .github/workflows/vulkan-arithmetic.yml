@@ -1,0 +1,76 @@
+name: Same APK Vulkan arithmetic investigation
+on:
+  push:
+    branches: [arena/01a09b42-5]
+    paths: [scripts/test_vulkan_arithmetic_android.py, .github/workflows/vulkan-arithmetic.yml]
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: vulkan-arithmetic-${{ github.ref }}-${{ contains(github.event.head_commit.message, '[vulkan arithmetic]') && 'test' || github.run_id }}
+  cancel-in-progress: true
+jobs:
+  test:
+    if: ${{ contains(github.event.head_commit.message, '[vulkan arithmetic]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 85
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Exact signed payload
+        run: |
+          mkdir -p .cache evidence
+          python3 ci/verify_performance_candidate.py
+          SIGNER=$(find "$ANDROID_HOME/build-tools" -path '*/apksigner' -type f | sort -V | tail -1)
+          "$SIGNER" verify --verbose --print-certs .delivery/GGUF-Chat-mobile.apk | tee evidence/physical-performance-signature.txt
+          python3 - <<'PY'
+          import json
+          c=json.load(open('ci/vulkan-candidate.json'))
+          p=json.load(open('ci/performance-candidate.json'))
+          for key in ('apk_sha256','source_commit','signer_sha256','baseline_sha256','baseline_signer_sha256'): assert c[key]==p[key]
+          assert 'certificate SHA-256 digest: '+c['signer_sha256'] in open('evidence/physical-performance-signature.txt').read()
+          PY
+          echo "Comparing arithmetic policies in the exact current APK; no alternate APK injected"
+          python3 -m venv .venv
+          .venv/bin/pip install numpy==2.2.6 tqdm==4.67.1 pyyaml==6.0.2
+          git clone --depth 1 --branch v0.4.1 https://github.com/ggml-org/llama.cpp .cache/llama-mobile
+          test "$(git -C .cache/llama-mobile rev-parse HEAD)" = b29c606e28a01b1bc8c1351026a0fa6e616bf6c4
+          bash ci/mobile-models.sh
+          bash scripts/build_test_input.sh
+          bash scripts/build_code_test.sh
+          sudo chmod a+rw /dev/kvm
+          bash ci/prepare_vulkan.sh
+      - uses: reactivecircus/android-emulator-runner@v2
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GGUF_TEST_APK: .delivery/GGUF-Chat-mobile.apk
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_5
+          ram-size: 6144M
+          heap-size: 1024M
+          disk-size: 8192M
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -gpu host -feature Vulkan -noaudio -no-boot-anim
+          script: bash ci/log_step.sh emulator .venv/bin/python scripts/test_vulkan_arithmetic_android.py
+      - name: Report
+        if: always()
+        run: python3 ci/report_android.py evidence
+      - name: Publish real bounded evidence
+        if: always()
+        run: bash ci/publish_evidence.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vulkan-arithmetic-evidence
+          path: |
+            evidence/
+            .cache/ci-logs/

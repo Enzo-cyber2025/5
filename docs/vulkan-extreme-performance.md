@@ -27,7 +27,24 @@ Run [35159076182](https://github.com/Enzo-cyber2025/5/actions/runs/35159076182),
 
 Metodologia: mesmo SmolLM2-135M Q4_K_M, contexto 2048, GPU99, threads auto, 128 tokens; um aquecimento excluído e três medições por estado/versão, alternando a ordem dos estados. A ordem fixa das versões ainda permite viés térmico/cache. Verificam-se igualdade de resposta, contadores nativos, roteamento estrito, conclusão real com tela apagada, notificações, limpeza do serviço, footer, código/Copy e geometria de rolagem no Android. Contagens de quadros incluem navegação do harness e não são apresentadas como custo puro do renderer.
 
-Status inicial: compilação e etapa de regressões hospedadas aprovadas; teste Android em andamento. Resultado pendente não significa ganho aprovado.
+### Resultado da rodada UI
+
+Concluiu **PASS_UI_EXPERIMENT_ONLY** em 2026-09-16 23:04:17 UTC. Candidato descartável SHA `215fa7447a021e6ecd08c625a8bdfecce67604952840c0e096786c59884899a3`. Testes hospedados: 32 passaram, 3 pulados; regressões locais disponíveis: 183 passaram, 66 puladas (dependências/fixtures/plataforma indisponíveis, não certificação Android).
+
+| Mediana na mesma execução | Antes 323fd5 | Experimento UI | Variação |
+|---|---:|---:|---:|
+| Decode acesa | 6,74397 tokens/s | 7,13399 tokens/s | +5,78% |
+| Decode apagada | 9,13914 tokens/s | 9,17089 tokens/s | +0,35% |
+| Enviar → primeiro texto acesa | 2,09045 s | 1,79276 s | −14,24% no tempo |
+| Atualizações de notificação acesa | 18 | 5 | −72,22% |
+
+O mesmo APK 323fd5 produziu taxas absolutas diferentes da execução anterior: **não comparar 2–4 tokens/s daquele runner com 6–9 deste para anunciar ganho**. A comparação válida é pareada nesta tabela. A taxa acesa ficou em 77,79% da apagada; paridade **não** alcançada. O gate `evaluate_extreme_vulkan.py` retorna exit 1: metas 21×/26× e paridade **não atingidas**; medição completa de Enviar → primeiro token apagada ainda ausente.
+
+Respostas determinísticas idênticas de 128 tokens, roteamento estrito, notificações reais/limpeza, footer, código/Copy e teste de crescimento/rolagem passaram. Evidência: `ci-results/35159076182-1/`. O APK de entrega anterior não foi substituído.
+
+### Investigação nativa adicional
+
+Testar, sem alterar o APK, se `GGML_VK_DISABLE_F16=1` evita custo de aritmética FP16 **emulada**, utilizando FP32 no backend. Não reduz quantização/precisão de pesos nem troca formato KV. Confere capability efetiva, ambiente real, igualdade de resposta e roteamento; qualquer divergência rejeita a política. Se a capacidade já era FP32, o experimento é explicitamente não aplicável. Nenhum padrão de celular é alterado e nada é antecipadamente anunciado como ganho. Resultado pendente.
 
 ## Gate separado
 
