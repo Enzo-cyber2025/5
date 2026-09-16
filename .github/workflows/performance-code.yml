@@ -7,7 +7,7 @@ permissions:
   contents: write
   actions: read
 concurrency:
-  group: performance-code-${{ github.ref }}
+  group: performance-code-${{ github.ref }}-${{ contains(github.event.head_commit.message, '[performance candidate]') && 'test' || github.run_id }}
   cancel-in-progress: true
 jobs:
   test:
