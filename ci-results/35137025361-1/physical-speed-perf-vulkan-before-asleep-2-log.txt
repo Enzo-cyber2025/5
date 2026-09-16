@@ -1,0 +1,176 @@
+--------- beginning of main
+09-16 19:06:08.712 10569 10569 I ImeTracker: com.ggufchat.app:c16b0eb3: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser true
+09-16 19:06:08.712 10569 10569 D InputMethodManager: showSoftInput() view=android.widget.EditText{23fd3cf VFED..CL. .F.P..ID 128,0-493,67 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+09-16 19:06:08.722 10569 10569 I AssistStructure: Flattened final assist data: 1964 bytes, containing 1 windows, 13 views
+09-16 19:06:08.725 10569 10582 D EGL_emulation: app_time_stats: avg=568.16ms min=4.75ms max=7232.92ms count=13
+09-16 19:06:09.791 10569 10582 D EGL_emulation: app_time_stats: avg=354.98ms min=70.69ms max=499.76ms count=3
+09-16 19:06:11.291 10569 10582 D EGL_emulation: app_time_stats: avg=499.95ms min=499.66ms max=500.28ms count=3
+09-16 19:06:12.291 10569 10582 D EGL_emulation: app_time_stats: avg=500.11ms min=500.01ms max=500.22ms count=2
+09-16 19:06:12.904 10569 10569 I ImeTracker: com.ggufchat.app:4d249158: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+09-16 19:06:12.935 10569 10569 D InsetsController: hide(ime(), fromIme=true)
+09-16 19:06:12.935 10569 10569 I ImeTracker: com.ggufchat.app:4d249158: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+09-16 19:06:12.946 10569 10796 I GGUFSystem: GGUF_SYSTEM_PROMPT_APPLIED scope=global chars=107 sha256=dde45e87ea07db0b49bcddd022d4f41a452610560d9af636571c26d16a4bcd04
+09-16 19:06:12.950 10569 10796 I GGUFInference: GGUF_CONTENT_PREPARED files=0 images=0 text_chars=0
+09-16 19:06:12.958 10569 10796 I GGUFNativeStderr: set_sampler: seq_id = 0, sampler = 0x7526d5a401b0
+09-16 19:06:12.962 10569 10796 I GGUFChatNative: GGUF_GPU_SAMPLING requested=1 attached=1
+09-16 19:06:13.041 10569 10796 I GGUFNativeStderr: sched_reserve: reserving ...
+09-16 19:06:13.041 10569 10796 I GGUFNativeStderr: sched_reserve: max_nodes = 2210
+09-16 19:06:13.051 10569 10796 I GGUFNativeStderr: sched_reserve: reserving full memory module
+09-16 19:06:13.051 10569 10796 I GGUFNativeStderr: sched_reserve: worst-case: n_tokens = 32, n_seqs = 1, n_outputs = 1
+09-16 19:06:13.052 10569 10796 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =   32, n_seqs =  1, n_outputs =   32
+09-16 19:06:13.063 10569 10796 I MESA    : on_vkAllocateMemory: has alloc flags
+09-16 19:06:13.063 10569 10796 I MESA    : allocateCoherentMemory: has alloc flags
+09-16 19:06:13.064 10569 10796 I MESA    : on_vkAllocateMemory: has alloc flags
+09-16 19:06:13.064 10569 10796 I MESA    : allocateCoherentMemory: has alloc flags
+09-16 19:06:13.065 10569 10796 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =    1, n_seqs =  1, n_outputs =    1
+09-16 19:06:13.068 10569 10796 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =   32, n_seqs =  1, n_outputs =   32
+09-16 19:06:13.120 10569 10796 I GGUFNativeStderr: sched_reserve:    Vulkan0 compute buffer size =    12.38 MiB
+09-16 19:06:13.120 10569 10796 I GGUFNativeStderr: sched_reserve: Vulkan_Host compute buffer size =     0.27 MiB
+09-16 19:06:13.120 10569 10796 I GGUFNativeStderr: sched_reserve: graph nodes  = 961
+09-16 19:06:13.120 10569 10796 I GGUFNativeStderr: sched_reserve: graph splits = 2
+09-16 19:06:13.120 10569 10796 I GGUFNativeStderr: sched_reserve: reserve took 78.77 ms, sched copies = 1
+09-16 19:06:13.124 10569 10796 I MESA    : on_vkAllocateMemory: has alloc flags
+09-16 19:06:13.125 10569 10796 I MESA    : allocateCoherentMemory: has alloc flags
+09-16 19:06:13.282 10569 10796 I MESA    : on_vkAllocateMemory: has alloc flags
+09-16 19:06:13.282 10569 10796 I MESA    : allocateCoherentMemory: has alloc flags
+09-16 19:06:13.469 10569 10582 D EGL_emulation: app_time_stats: avg=77.47ms min=10.38ms max=517.11ms count=14
+09-16 19:06:17.474 10569 10796 I GGUFChatNative: GGUF_PROMPT_CACHE input_tokens=62 reused_tokens=0 evaluated_tokens=62 media=0
+09-16 19:06:17.476 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:17.481 10569 10796 I MESA    : on_vkAllocateMemory: has alloc flags
+09-16 19:06:17.481 10569 10796 I MESA    : allocateCoherentMemory: has alloc flags
+09-16 19:06:17.772 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:18.016 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:18.241 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:18.477 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:18.716 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:18.958 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:19.204 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:19.430 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:19.652 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:19.883 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:20.129 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:20.363 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:20.590 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:20.819 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:21.060 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:21.294 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:21.524 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:21.760 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:21.990 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:22.257 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:22.493 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:22.725 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:22.956 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:23.191 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:23.435 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:23.664 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:23.910 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:24.141 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:24.387 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:24.617 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:24.847 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:25.086 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:25.321 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:25.567 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:25.804 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:26.047 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:26.296 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:26.551 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:26.793 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:27.030 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:27.270 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:27.520 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:27.753 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:27.984 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:28.218 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:28.454 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:28.699 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:28.934 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:29.163 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:29.397 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:29.653 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:29.885 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:30.127 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:30.358 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:30.592 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:30.835 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:31.077 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:31.307 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:31.537 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:31.789 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:32.021 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:32.250 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:32.487 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:32.723 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:32.966 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:33.200 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:33.430 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:33.659 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:33.917 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:34.155 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:34.388 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:34.627 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:34.888 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:35.116 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:35.351 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:35.585 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:35.816 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:36.065 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:36.299 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:36.532 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:36.763 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:37.005 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:37.242 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:37.470 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:37.698 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:37.952 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:38.204 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:38.436 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:38.668 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:38.908 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:39.158 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:39.396 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:39.625 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:39.865 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:40.095 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:40.335 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:40.566 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:40.804 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:41.037 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:41.274 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:41.507 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:41.740 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:41.967 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:42.215 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:42.459 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:42.690 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:42.926 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:43.175 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:43.420 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:43.660 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:43.911 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:44.152 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:44.408 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:44.655 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:44.885 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:45.115 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:45.350 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:45.591 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:45.837 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:46.066 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:46.301 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:46.546 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:46.783 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:47.017 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:47.250 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:47.487 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:47.731 10569 10796 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:06:47.732 10569 10796 I GGUFChatNative: GGUF_NATIVE_COMPLETE tokens=128 reason=length projector=0
+09-16 19:06:47.732 10569 10796 I GGUFNativeStderr: set_sampler: seq_id = 0, sampler = 0x0
+09-16 19:06:47.732 10569 10796 I GGUFChatNative: GGUF_GPU_SAMPLING_RESULT backend_selected=128 emitted=128
+09-16 19:06:47.732 10569 10796 I GGUFChatNative: GGUF_RESPONSE_LATENCY first_token_ns=4519024345 prompt_tokens=62 reused_tokens=0
+09-16 19:06:47.732 10569 10796 I GGUFChatNative: GGUF_GENERATION_STATS tokens=128 decode_ns=30256337268 prefill_ns=4518061448 callbacks=128 success=1
+09-16 19:06:47.732 10569 10796 I System.out: GGUF_REPAIR_GENERATION_OK
+09-16 19:06:47.735 10569 10796 I GGUFReplyNotice: GGUF_NOTICE_STATS progress_updates=0 skipped_screen_off=128
+09-16 19:06:47.737 10569 10796 I GGUFReplyNotice: GGUF_REPLY_NOTICE posted=1 saved=1 screen_off=1 locked=0
+09-16 19:06:47.741 10569 10569 I GGUFReplyNotice: GGUF_REPLY_SERVICE_DESTROYED
