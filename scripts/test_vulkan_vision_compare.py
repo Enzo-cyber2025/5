@@ -9,6 +9,7 @@ from test_reply_notifications_android import init_ime
 from test_inference_android import fixtures,attach,reply
 from test_physical_android import independent_single,tensor_hashes,C,MODEL,PROJ
 from android_checks import PACKAGE,vulkan_offloaded
+from vulkan_strict_checks import strict_audit
 E=Path('evidence')
 def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 
@@ -41,6 +42,8 @@ def main():
    (E/f'physical-vision-{phase}-load.txt').write_text(load[-100000:])
    attach(d,chat,['frame-b.jpg'])
    answer=reply(d,chat,'Name the main vehicle in the image. Reply in English.','vision-compare-'+phase,images=1)
+   if phase=='after' and c.get('strict_tensor_routing'):
+    s['checks']['strict_visual_tensor_routing']=strict_audit(d.adb('logcat','-d',f'--pid={d.alive()}'))
    s['responses'][phase]=answer;s['semantic_vehicle'][phase]='PASS' if 'bus' in answer.lower() else 'FAIL'
   assert s['responses']['before']==s['responses']['after'],'Visual output differs from baseline'
   s['checks']['same_external_bytes_real_vulkan_and_equal_response']='PASS'

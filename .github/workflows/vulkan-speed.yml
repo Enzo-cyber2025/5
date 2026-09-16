@@ -2,7 +2,7 @@ name: Signed Vulkan awake and asleep benchmark
 on:
   push:
     branches: [arena/01a09b42-5]
-    paths: [ci/vulkan-candidate.json, scripts/test_vulkan_speed_android.py, tests/android-code/**, .github/workflows/vulkan-speed.yml]
+    paths: [ci/fetch_vulkan_baseline.py, scripts/vulkan_strict_checks.py, scripts/test_image_android.py, ci/vulkan-candidate.json, scripts/test_vulkan_speed_android.py, tests/android-code/**, .github/workflows/vulkan-speed.yml]
 permissions:
   contents: write
   actions: read
@@ -36,8 +36,7 @@ jobs:
           for key in ('apk_sha256','source_commit','signer_sha256','baseline_sha256','baseline_signer_sha256'): assert c[key]==p[key]
           assert 'certificate SHA-256 digest: '+c['signer_sha256'] in open('evidence/physical-performance-signature.txt').read()
           PY
-          curl -fL --retry 3 https://raw.githubusercontent.com/Enzo-cyber2025/5/0b448fe59427ff9dd018d1799741a0b8a41f50f5/.delivery/GGUF-Chat-mobile.apk -o .cache/vulkan-baseline.apk
-          echo 'e7ee730c5c8bc2c774375ded631fb4725bb364d09d05ea2e857cb9e38f8f69d9  .cache/vulkan-baseline.apk' | sha256sum -c -
+          python3 ci/fetch_vulkan_baseline.py
           python3 -m venv .venv
           .venv/bin/pip install numpy==2.2.6 tqdm==4.67.1 pyyaml==6.0.2
           git clone --depth 1 --branch v0.4.1 https://github.com/ggml-org/llama.cpp .cache/llama-mobile

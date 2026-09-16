@@ -13,7 +13,7 @@ def pixels(d):
     log=d.adb('logcat','-d');assert 'IMAGE_DECODER_PASS' in log
     (E/'physical-image-decoder-log.txt').write_text('\n'.join(x for x in log.splitlines() if 'GGUFImageTest' in x))
     d.capture('physical-image-decoder.png');d.shell('am force-stop '+pkg)
-def inference(d):
+def inference(d,gpu_layers=0):
     d.launch();d.shell('mkdir -p /sdcard/Download')
     for f in (MODEL,PROJ):d.adb('push',f,'/sdcard/Download/'+f.name,timeout=300)
     select_pair(d)
@@ -21,7 +21,7 @@ def inference(d):
     # Only absent storage is temporarily empty; malformed JSON/ADB errors still fail.
     model=d.wait(lambda:next((m for m in d.read_json('models.json',optional=True) if m.get('capability')=='VISION_SINGLE_GGUF'),None),'physical unified visual model',timeout=600)
     fixtures();source=F/'frame-a.jpg';alias=F/'foto-sem-extensao';alias.write_bytes(source.read_bytes())
-    chat=d.new_chat(model,0,context_size=4096)
+    chat=d.new_chat(model,gpu_layers,context_size=4096)
     # Simulate an existing chat missing its redundant mmprojPath; actual physical
     # encoder tensors remain in the real GGUF. No generated answer is injected.
     d.shell('am force-stop '+PACKAGE);chats=d.read_json('chats.json')

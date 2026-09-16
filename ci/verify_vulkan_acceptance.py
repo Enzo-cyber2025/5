@@ -47,6 +47,18 @@ def verify():
                 assert m['tokens']==x['tokens'] and m['decodeNs']>0 and m['firstTokenNs']>0
                 if screen=='awake': assert x['send_to_first_ui_ns']>0
             assert new['backend_selected']>0 and 0<new['overlap_submissions']<new['tokens']
+    if c.get('strict_tensor_routing'):
+        assert s['checks']['strict_tensor_routing_both_screen_states_and_non_greedy']=='PASS'
+        assert s['checks']['visual_strict_tensor_routing']['status']=='PASS'
+        rows=[]
+        for screen in ('awake','asleep'):
+            rows.extend(s['series']['after'][screen])
+            rows.append(s['series']['after'][screen+'_follow'])
+        rows.append(s['series']['after']['non_greedy'])
+        for row in rows:
+            audit=row['strict_tensor_routing']
+            assert audit['status']=='PASS' and audit['submitted_math_nodes']>0 and audit['submitted_graphs']>0
+            assert audit['host_orchestration']=='CPU' and audit['physical_gpu_certified'] is False
     # Functional acceptance must not silently become a speed-improvement claim.
     computed = {screen: {phase: {
         'total_s': statistics.median(x['prefill_and_generation_seconds'] for x in s['series'][phase][screen]),
@@ -74,6 +86,9 @@ def verify():
     assert vs['apk_sha256']==c['apk_sha256'] and vs['baseline_sha256']==c['baseline_sha256']
     assert vs['status']=='PASS_EQUALITY_ONLY' and vs['responses']['before']==vs['responses']['after']
     assert vs['semantic_vehicle']['before']==vs['semantic_vehicle']['after']
+    if c.get('strict_tensor_routing'):
+        assert vs['checks']['strict_visual_tensor_routing']['status']=='PASS'
+        assert v['all_application_on_gpu'] is False
     assert v['physical_gpu_speed_certified'] is False and v['five_second_goal_certified'] is False
     assert len(v['ui_review'])>=3
     for image in v['ui_review']:

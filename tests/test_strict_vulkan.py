@@ -105,3 +105,13 @@ def test_native_all_weights_full_sampling_and_preserved_parameters():
     assert 'GGUF_STRICT_VULKAN_RESULT' in s
     scope=(ROOT/'apk-fix/native/strict_vulkan.h').read_text()
     assert '~StrictVulkanScope() { ggml_backend_gguf_set_strict_device(previous); }' in scope
+
+
+def test_android_audit_requires_completed_math_and_no_block():
+    sys.path.insert(0, str(ROOT/'scripts'))
+    from vulkan_strict_checks import strict_audit
+    import pytest
+    log='GGUF_STRICT_VULKAN_RESULT enabled=1 submitted_graphs=129 submitted_math_nodes=1000 blocked=0 host_orchestration=CPU\nGGUF_GPU_SAMPLING_RESULT backend_selected=129 emitted=128\nGGUF_NATIVE_COMPLETE'
+    assert strict_audit(log)['submitted_math_nodes']==1000
+    for bad in [log.replace('enabled=1','enabled=0'),log.replace('math_nodes=1000','math_nodes=0'),log.replace('blocked=0','blocked=1'),log.replace('selected=129','selected=0'),log.replace('GGUF_NATIVE_COMPLETE',''),log+'\nGGUF_STRICT_VULKAN_BLOCKED',log+'\n'+log]:
+        with pytest.raises(AssertionError):strict_audit(bad)

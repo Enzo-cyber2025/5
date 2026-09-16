@@ -17,6 +17,7 @@ from test_generation_stats_android import TEXT
 from test_code_android import run as code_ui
 from test_image_android import pixels, inference
 from android_checks import PACKAGE, position, vulkan_offloaded
+from vulkan_strict_checks import strict_audit
 
 E = Path('evidence')
 PROMPT = 'Give three useful study tips.'
@@ -37,7 +38,7 @@ def gpu_chat(d, model, label):
     return chat
 
 
-def measured(d, chat, prompt, label, asleep, new):
+def measured(d, chat, prompt, label, asleep, new, strict=False):
     # Both signed versions already have UI timing/completion notices.
     r = run_reply(d, chat, prompt, 'vulkan-'+label, asleep, True)
     log = d.adb('logcat', '-d', f'--pid={d.alive()}')
@@ -54,6 +55,8 @@ def measured(d, chat, prompt, label, asleep, new):
         # Its original CPU fallback is valid and must not be relabelled all-GPU.
         r['overlap_submissions'] = int(hit[1])
         r['backend_selected'] = int(sampled[1])
+    if strict:
+        r['strict_tensor_routing'] = strict_audit(log)
     return r
 
 
@@ -77,6 +80,7 @@ def main():
         d.grant_test_notifications()
         for phase in ('before', 'after'):
             new = phase == 'after'
+            strict = new and c.get('strict_tensor_routing', False)
             if new:
                 old_models, old_chats = d.read_json('models.json'), d.read_json('chats.json')
                 assert c['signer_sha256'] == c['baseline_signer_sha256']
@@ -89,7 +93,10 @@ def main():
                 d.capture('physical-vulkan-plain-view.png')
                 s['checks']['plain_original_view'] = 'PASS'
                 pixels(d); s['checks']['android_image_decoder'] = 'PASS'
-                s['checks']['actual_visual_inference'] = inference(d)
+                s['checks']['actual_visual_inference'] = inference(d, gpu_layers=99 if strict else 0)
+                if strict:
+                    log = d.adb('logcat', '-d', f'--pid={d.alive()}')
+                    s['checks']['visual_strict_tensor_routing'] = strict_audit(log)
             if new:
                 # Reuse the model whose preservation was just verified. A second
                 # asynchronous import could race the next force-stop or create a
@@ -104,10 +111,10 @@ def main():
                 for i in range(4):
                     label = f'{phase}-{screen}-{i}'
                     chat = gpu_chat(d, model, label)
-                    r = measured(d, chat, PROMPT, label, screen=='asleep', new)
+                    r = measured(d, chat, PROMPT, label, screen=='asleep', new, strict)
                     if i: runs.append(r)  # one warm-up, three measured runs
                     if i == 3:
-                        follow = measured(d, chat, FOLLOW, label+'-follow', screen=='asleep', new)
+                        follow = measured(d, chat, FOLLOW, label+'-follow', screen=='asleep', new, strict)
                         assert follow['metrics']['reusedPromptTokens'] > 0
                         s['series'][phase][screen+'_follow'] = follow
                         d.capture('physical-vulkan-'+label+'-follow.png')
@@ -122,7 +129,7 @@ def main():
                     row.update(temperature=0.7); chat=row
             d.write_private('files/chats.json', json.dumps(chats))
             d.launch(); d.open_existing_chat(chat['title']); wait_ready(d)
-            s['series'][phase]['non_greedy'] = measured(d, chat, PROMPT, phase+'-non-greedy', False, new)
+            s['series'][phase]['non_greedy'] = measured(d, chat, PROMPT, phase+'-non-greedy', False, new, strict)
         for screen in ('awake', 'asleep'):
             before, after = s['series']['before'][screen], s['series']['after'][screen]
             assert len(before) == len(after) == 3
@@ -133,6 +140,9 @@ def main():
         assert all(s['series'][phase]['non_greedy']['response'].strip() for phase in ('before','after'))
         s['checks']['non_greedy_completed_original_sampling'] = 'PASS (different runtime-generated seeds; not output-equality proof)'
         s['checks']['identical_greedy_outputs_both_screen_states'] = 'PASS'
+        if c.get('strict_tensor_routing'):
+            s['checks']['strict_tensor_routing_both_screen_states_and_non_greedy'] = 'PASS'
+            s['checks']['host_orchestration'] = 'CPU: Android, files, tokenization, image preprocessing, RNG/state; NOT an all-application-on-GPU claim'
         s['checks']['actual_vulkan_sleep_notice_and_cleanup'] = 'PASS'
         s['medians'] = {screen: {phase: {
             'total_s': statistics.median(x['prefill_and_generation_seconds'] for x in s['series'][phase][screen]),
