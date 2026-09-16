@@ -21,4 +21,20 @@ O baseline é o **código do candidato UI anterior**, fixado em `63913d1f5e60b1d
 
 Um aquecimento excluído + três observações por estado/versão, mesmo GGUF, contexto 2048, GPU99, threads auto e orçamento 128. A ordem das telas é alternada; a ordem das versões é fixa e ainda pode introduzir viés de cache/temperatura. Não multiplicar os ganhos desta execução pelos de outro runner nem apresentar taxas absolutas entre runners como aceleração.
 
-**Status:** compilação aprovada; comparação Android em andamento. Nenhum ganho de velocidade desta rodada foi certificado. Metas anteriores de 21×/26× e paridade entre telas continuam sem aprovação. APK de entrega 323fd5 permanece intacto; os APKs de teste não são atualizações para o usuário.
+## Resultado medido
+
+Run concluído **PASS_UI_EXPERIMENT_ONLY**, em 2026-09-16 23:56:17 UTC. APK de baseline reconstruído: `e1af272c1d58611588030db5b0237fc35afeacc0238bc1052b1d2094beda8ef7`; candidato novo: `fc19462bf94448b266924ba7489d2d8f3b2781eade22e92ccef52f81be8717f5`.
+
+| Mediana na mesma execução | UI anterior reconstruída | UI nova | Variação |
+|---|---:|---:|---:|
+| Decode acesa | 3,27780 tokens/s | 3,32316 tokens/s | +1,38% |
+| Decode apagada | 4,06075 tokens/s | 4,05538 tokens/s | −0,13% |
+| Enviar → primeiro texto acesa | 4,58998 s | 4,51553 s | −1,62% no tempo |
+
+**São diferenças pequenas e podem incluir variação do emulador. Não configuram grande ganho de throughput.** Não usar os 7–9 tokens/s de outro runner como comparação. A taxa acesa ficou em 81,94% da apagada: paridade não alcançada. Não houve limitação deliberada da tela apagada para igualar resultados.
+
+Validação Android aprovou as respostas determinísticas idênticas de 128 tokens, código/Copy em streaming e histórico, inserções agrupadas síncronas com conteúdo exato, rolagem e notificação/encerramento com tela apagada. As cinco capturas listadas no relatório foram revisadas; fixture de inserção não é resposta do modelo. As 12 taxas medidas foram recalculadas a partir de contagem e `decodeNs` nativos.
+
+Regressões locais: **186 aprovadas, 66 puladas** por disponibilidade de ferramentas/fixtures/plataforma. Etapa hospedada focada: **34 aprovadas, 3 puladas**. O teste adicional local de reconstrução DEX, criado após o início do job, é contado apenas no conjunto local.
+
+Relatório consolidado: `.delivery/ui-overhead-round2.json`; evidência bruta: `ci-results/35162496639-1/`. Metas anteriores 21×/26× não foram certificadas. O APK entregue 323fd5 continua intacto: candidatos com assinatura descartável **não são atualizações compatíveis para o usuário**. Nenhuma execução permanece pendente.

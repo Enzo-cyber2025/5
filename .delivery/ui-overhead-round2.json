@@ -1,0 +1,100 @@
+{
+  "status": "FUNCTIONAL_EXPERIMENT_PASS_SMALL_OBSERVED_CHANGES",
+  "run": 35162496639,
+  "attempt": 1,
+  "job": 105016205960,
+  "source_commit": "57c19136d4cdeee5562fe2e363ed6ee2e75b6b2d",
+  "build": {
+    "baseline_kind": "reconstructed_previous_ui",
+    "ui_recipe_source_commit": "57c19136d4cdeee5562fe2e363ed6ee2e75b6b2d",
+    "status": "BUILT_NOT_ANDROID_ACCEPTED",
+    "baseline_sha256": "e1af272c1d58611588030db5b0237fc35afeacc0238bc1052b1d2094beda8ef7",
+    "candidate_sha256": "fc19462bf94448b266924ba7489d2d8f3b2781eade22e92ccef52f81be8717f5",
+    "changed_payload_entries": [
+      "classes.dex"
+    ],
+    "native_hashes": {
+      "lib/arm64-v8a/libaijni.so": "c54b1ea1a53bd3d5362c423796e03e30ecd31a42f78ff90289bd1c97e982eae1",
+      "lib/arm64-v8a/libaijni_dotprod.so": "f0442e2b1c3c5597fbd4ed664e7dc0d2c73b01b1e4b01f6a8fd69546b0774b6e",
+      "lib/arm64-v8a/libaijni_i8mm.so": "3e4ca246e6e1f4afec25ca210878e92eb8d85a39a133ff6c96e9245f718404df",
+      "lib/arm64-v8a/libc++_shared.so": "cb304e649e49cb65766da9d20a2d8bb8bd0c7cfd383e1f73838f838d1263c548",
+      "lib/arm64-v8a/libggufcpu.so": "961aedde471f8a87ef305cfe2ec496beb11046fe198893a701ac994962343061",
+      "lib/arm64-v8a/libggufdiagnostics.so": "255e52f814d968e8dd008e8cea12c522aad06d943dffe8a30fe095485058b26c",
+      "lib/x86_64/libaijni.so": "f479b2a33d9348c5f622e0c0d4edc77ae1be577b96f00dcf96ce66e2946047d3",
+      "lib/x86_64/libc++_shared.so": "0e8aaa2ef7f9abbe54ad76dab5162f3b7bf1a92ba1b3c63221443ecb87c1b568",
+      "lib/x86_64/libggufcpu.so": "9a9605bb5b5853888abf070555b45e37530b9c2ee979ae356537305d5c315b7b",
+      "lib/x86_64/libggufdiagnostics.so": "dd07c5a6aef3d75a7aec0325c20dddd6b58a313085254927291dc07dcf3c0139"
+    },
+    "scope": "Same native binaries, resources, manifest, models/settings unchanged. Fresh disposable emulator signing only. NOT a release or same-key update test.",
+    "source_commit": "57c19136d4cdeee5562fe2e363ed6ee2e75b6b2d",
+    "payload_origin_sha256": "323fd5a33667c6cab278699e97c89fe253e1bb7acead45b869729bf022eb9f5c",
+    "baseline_ui_source_commit": "63913d1f5e60b1d912eae085c49bc237a30711d5"
+  },
+  "checks": {
+    "code_stream_history_copy": {
+      "stream": "PASS",
+      "history": "PASS"
+    },
+    "synchronous_exact_batched_inserts": "PASS",
+    "direct_scroll_after_layout": "PASS",
+    "same_128_token_outputs_and_strict_routing": "PASS",
+    "real_sleep_notice_and_service_cleanup": "PASS"
+  },
+  "medians": {
+    "awake": {
+      "before": {
+        "decode_tokens_s": 3.2777957869338965,
+        "native_first_token_ns": 4517927178,
+        "notification_updates": 9,
+        "send_to_first_ui_ns": 4589983631
+      },
+      "after": {
+        "decode_tokens_s": 3.3231627860974413,
+        "native_first_token_ns": 4482097633,
+        "notification_updates": 9,
+        "send_to_first_ui_ns": 4515533733
+      }
+    },
+    "asleep": {
+      "before": {
+        "decode_tokens_s": 4.060747545127806,
+        "native_first_token_ns": 4394413835,
+        "notification_updates": 0
+      },
+      "after": {
+        "decode_tokens_s": 4.055380938433304,
+        "native_first_token_ns": 4308720109,
+        "notification_updates": 0
+      }
+    }
+  },
+  "incremental_decode_change_percent": {
+    "awake": 1.384070336059029,
+    "asleep": -0.1321580973666081
+  },
+  "awake_send_to_first_text_time_reduction_percent": 1.6220079195310766,
+  "same_model_outputs": true,
+  "model_and_native_payload_unchanged": true,
+  "recomputed_native_rates": 12,
+  "local_tests": {
+    "passed": 186,
+    "skipped": 66
+  },
+  "hosted_tests": {
+    "passed": 34,
+    "skipped": 3
+  },
+  "reviewed_png_sha256": {
+    "physical-ui-batch.png": "4d4fdf4ca4c004fac51c52884221f2c588168e4d718e04f1e027e8733d3b2692",
+    "physical-code-stream.png": "2560dc61bf8dcd9402e4a23863343481a3ea121bc2e625ba9ebec9f2d6b95432",
+    "physical-code-history.png": "2560dc61bf8dcd9402e4a23863343481a3ea121bc2e625ba9ebec9f2d6b95432",
+    "physical-latency-ui-after-awake-3.png": "1b55ef7dbef526d586edece9b55f5d34966be27a6ae1beed626d6b3ed1cb17ff",
+    "physical-latency-ui-after-asleep-3.png": "f7d1864bf6981b3f560861cc7873c3d285931e0f0bbc62cca57ee0f5ea006169"
+  },
+  "release_approved": false,
+  "production_apk_replaced": false,
+  "physical_gpu_certified": false,
+  "extreme_targets_certified": false,
+  "active_runs": [],
+  "limits": "Three measured repetitions/state/version after excluded warmup. Changes of approximately 1% may include run variability; not a large or universal speed claim. Baseline is reconstructed previous UI, not exact original signature. Do not compound ratios from different runners. CPU-host work remains; strict model tensor routing unchanged."
+}
