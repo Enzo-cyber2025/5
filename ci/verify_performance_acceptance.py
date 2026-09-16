@@ -35,8 +35,11 @@ def verify():
     assert old[kind]['response']==new[kind]['response']
     m=new[kind]['metrics'];assert m['completed'] and m['tokens']>0 and m['version']==3
     assert m['timingScope']=='prefill_synchronized_before_decode'
- for phase in ('before','after'):assert s['series'][phase]['gpu']['metrics']['completed']
- assert s['series']['before']['gpu']['response']==s['series']['after']['gpu']['response']
+ for backend in ('manual','gpu'):
+  assert s['series']['before'][backend]['response']==s['series']['after'][backend]['response']
+  for phase in ('before','after'):assert s['series'][phase][backend]['metrics']['completed']
+  m=s['series']['after'][backend]['metrics']
+  assert m['tokens']>0 and m['version']==3 and m['timingScope']=='prefill_synchronized_before_decode'
  assert v['phone_15_20_tokens_s_certified'] is False
  assert len(v['ui_review'])>=3
  for img in v['ui_review']:
