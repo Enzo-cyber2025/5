@@ -669,21 +669,26 @@ def test_exact_saf_selection_ignores_recent_diagnostic_xml():
 
         def ui(self):
             names = ['gguf-test-ui.xml', 'model.gguf', 'projector.gguf']
-            names.append(f'{len(self.selected)} selected')
-            return '<hierarchy>' + ''.join(
-                f'<node text="{name}" package="com.android.documentsui" enabled="true" '
-                f'bounds="[0,{i * 10}][10,{i * 10 + 10}]"/>'
-                for i, name in enumerate(names)) + '</hierarchy>'
+            # Match named item_root/selected accessibility state. Selection
+            # changes the toolbar height: subsequent taps need fresh row Y.
+            rows = []
+            for i, name in enumerate(names):
+                top = i * 100 + (12 if self.selected else 0)
+                rows.append(
+                    f'<node resource-id="com.android.documentsui:id/item_root" selected="{str(name in self.selected).lower()}" '
+                    f'bounds="[0,{top}][720,{top+40}]">'
+                    f'<node text="{name}" enabled="true" package="com.android.documentsui" bounds="[80,{top}][600,{top+40}]"/></node>')
+            return '<hierarchy>' + ''.join(rows) + f'<node text="{len(self.selected)} selected" enabled="true" package="com.android.documentsui" bounds="[0,0][100,40]"/></hierarchy>'
 
         def shell(self, command):
-            expected = 'input touchscreen swipe 5 15 5 15 1000' if not self.selected else 'input touchscreen swipe 5 25 5 25 1000'
+            expected = 'input tap 48 120' if not self.selected else 'input tap 48 232'
             assert command == expected
             self.selected.append('model.gguf' if not self.selected else 'projector.gguf')
 
         def tap(self, *, text, package):
             raise AssertionError('A selection gesture must not open a document')
 
-        def wait(self, predicate, description):
+        def wait(self, predicate, description, timeout=None):
             assert predicate(), description
 
     picker = Picker()

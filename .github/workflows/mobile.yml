@@ -12,6 +12,9 @@ on:
       - 'scripts/test_inference_android.py'
       - 'scripts/test_physical_android.py'
       - 'tests/test_physical_gguf.py'
+      - 'tests/test_vulkan_pipeline.py'
+      - 'tests/test_generation_stats.py'
+      - 'tests/test_tooling.py'
       - '.github/workflows/mobile.yml'
       - '.delivery/GGUF-Chat-mobile.apk'
 permissions:

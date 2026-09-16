@@ -5,9 +5,9 @@ ROOT=Path(__file__).resolve().parents[1]
 def test_native_rate_uses_actual_sampler_count_and_monotonic_decode_interval():
     s=(ROOT/'apk-fix/native/mobile.cpp').read_text()
     assert 'std::chrono::steady_clock' in s and 'decode_started=Clock::now();decoding=true' in s
-    assert s.index('if(llama_vocab_is_eog(vocab,t))') < s.index('emitted++;pending+=piece(vocab,t)')
+    assert s.index('if(llama_vocab_is_eog(vocab,t))') < s.index('emitted++;') < s.index('pending+=piece(vocab,t)')
     assert 'finished-decode_started' in s and 'GGUF_GENERATION_STATS' in s
-    assert 'if(i+1<limit)' in s and 'if(text_cache)e->cached_tokens.push_back(t)' in s
+    assert 'const bool has_next=i+1<limit;' in s and 'if(text_cache)e->cached_tokens.push_back(t)' in s
     assert 'std::chrono::milliseconds(50)' in s and 'pending.size()>=4096' in s
     assert 'if(emitted==1' in s and '\n        flush();' in s
 
