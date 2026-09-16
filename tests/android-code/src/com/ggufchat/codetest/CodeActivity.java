@@ -32,7 +32,13 @@ public final class CodeActivity extends Activity {
    Button js=new Button(this);js.setText("Conferir JSON");root.addView(js);js.setOnClickListener(v->check(JSON,"JSON"));
    ScrollView scroll=new ScrollView(this);column=new LinearLayout(this);column.setOrientation(1);scroll.addView(column);root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
    anchor=new TextView(this);anchor.setTextColor(Color.WHITE);anchor.setTextSize(14);anchor.setPadding(10,10,10,10);column.addView(anchor,new LinearLayout.LayoutParams(-1,-2));setContentView(root);
-   if("history".equals(getIntent().getStringExtra("mode"))){anchor.setText(FIXTURE);decorate.invoke(null,column,false);status.setText("Histórico pronto");}
+   if("plain".equals(getIntent().getStringExtra("mode"))){
+    String part="Texto comum com ação, espaços e `literal`. ";StringBuilder expected=new StringBuilder();
+    for(int i=0;i<256;i++){append.invoke(null,anchor,part);expected.append(part);}
+    if(column.getChildCount()!=1 || column.getChildAt(0)!=anchor || !expected.toString().contentEquals(anchor.getText()))throw new AssertionError("Plain streaming changed view or text");
+    status.setText("Texto simples OK");Log.i("GGUFCodeTest","PLAIN_ORIGINAL_VIEW_EXACT_PASS");
+   }
+   else if("history".equals(getIntent().getStringExtra("mode"))){anchor.setText(FIXTURE);decorate.invoke(null,column,false);status.setText("Histórico pronto");}
    else new Handler().post(new Runnable(){public void run(){try{
     int end=Math.min(FIXTURE.length(),offset+7);append.invoke(null,anchor,FIXTURE.substring(offset,end));offset=end;
     if(offset<FIXTURE.length())new Handler().postDelayed(this,16);else status.setText("Streaming pronto");
