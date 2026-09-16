@@ -17,7 +17,13 @@ def run_reply(d,chat,prompt,label,asleep,new):
     finally:d.send=original
     log=d.adb('logcat','-d',f'--pid={d.alive()}')
     if asleep:
-        assert 'mWakefulness=Asleep' in d.shell('dumpsys power') and completed_after_actual_sleep(log)
+        power=d.shell('dumpsys power')
+        # PowerManagerService belongs to system_server, not the app PID.
+        # Keep its real sleep event in the chronology used by this assertion.
+        system_log=d.adb('logcat','-d')
+        (E/f'physical-performance-{label}-power.txt').write_text(power)
+        (E/f'physical-performance-{label}-sleep-log.txt').write_text('\n'.join(x for x in system_log.splitlines() if 'GGUF_' in x or 'PowerManagerService' in x))
+        assert 'mWakefulness=Asleep' in power and completed_after_actual_sleep(system_log)
         if new:check_notice(d,chat,'perf-'+label)
     elif new:
         m=re.search(r'GGUF_UI_FIRST_TEXT send_to_first_ui_ns=(\d+)',log);assert m,'No actual Send->UI timing'
