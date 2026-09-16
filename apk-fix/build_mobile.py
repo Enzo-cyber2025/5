@@ -109,6 +109,8 @@ def main():
     if destructor+'\n        if (!device) return;' not in s:
         s=s.replace(destructor,destructor+'\n        if (!device) return; // failed initialization owns no Vulkan resources')
     vk.write_text(s)
+    from vulkan_patches import patch_token_readback
+    graph=source/'src/llama-graph.cpp';graph.write_text(patch_token_readback(graph.read_text()))
     clip=source/'tools/mtmd/clip.cpp';clip.write_text(patch_clip_gpu(clip.read_text()))
     loader=source/'src/llama-model-loader.cpp';loader.write_text(patch_combined_loader(loader.read_text()))
     classes=WORK/'classes';classes.mkdir(exist_ok=True)

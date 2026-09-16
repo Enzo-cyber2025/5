@@ -16,6 +16,9 @@ set(LLAMA_SUBPROCESS OFF CACHE BOOL "" FORCE)
 set(LLAMA_BUILD_APP OFF CACHE BOOL "" FORCE)
 set(MTMD_VIDEO OFF CACHE BOOL "" FORCE)
 add_subdirectory(${LLAMA_SOURCE} llama-build)
+# App consumes selected tokens, not backend logprob/candidate export APIs.
+# Partial backend samplers retain their full CPU fallback outputs.
+target_compile_definitions(llama PRIVATE GGUF_TOKEN_ONLY_SAMPLING=1)
 # v0.4.1 also includes SPIR-V headers from ggml-vulkan.cpp, not only its shader tool.
 if(NOT EXISTS "${GGUF_SPIRV_INCLUDE_DIR}/spirv/unified1/spirv.hpp")
     message(FATAL_ERROR "Pinned SPIR-V headers missing")

@@ -25,9 +25,21 @@ public final class CodeBlocks {
     private static final class Stream implements CodeFenceParser.Sink {
         final Context c;final TextView style;final LinearLayout root;final CodeFenceParser parser;
         TextView plain,code;
-        Stream(TextView source){
-            style=source;c=source.getContext();root=new LinearLayout(c);root.setOrientation(LinearLayout.VERTICAL);
+        final boolean live;boolean mounted;
+        Stream(TextView source){this(source,false);}
+        Stream(TextView source,boolean live){
+            this.live=live;style=source;c=source.getContext();root=new LinearLayout(c);root.setOrientation(LinearLayout.VERTICAL);
             parser=new CodeFenceParser(this);
+            if(live)plain=source;
+        }
+        void mount(){
+            if(!live || mounted)return;
+            ViewGroup parent=(ViewGroup)style.getParent();
+            int index=parent.indexOfChild(style);
+            ViewGroup.LayoutParams params=style.getLayoutParams();
+            parent.removeViewAt(index);parent.addView(root,index,params);
+            if(style.length()>0)root.addView(style,new LinearLayout.LayoutParams(-1,-2));
+            mounted=true;
         }
         TextView plain(){
             if(plain==null){
@@ -41,7 +53,7 @@ public final class CodeBlocks {
         }
         public void text(String text){plain().append(text);}
         public void open(String language){
-            plain=null;
+            mount();plain=null;
             LinearLayout panel=new LinearLayout(c);panel.setOrientation(LinearLayout.VERTICAL);panel.setBackground(box(c,0xff101b23));
             panel.setContentDescription("Bloco de código");
             LinearLayout.LayoutParams pp=new LinearLayout.LayoutParams(-1,-2);pp.setMargins(0,dp(c,6),0,dp(c,6));root.addView(panel,pp);
@@ -79,10 +91,11 @@ public final class CodeBlocks {
         if(tag instanceof Stream)stream=(Stream)tag;
         else {
             if(!(anchor.getParent() instanceof ViewGroup)){anchor.append(chunk);return;}
-            ViewGroup parent=(ViewGroup)anchor.getParent();int index=parent.indexOfChild(anchor);
-            stream=new Stream(anchor);anchor.setTag(stream);
-            ViewGroup.LayoutParams params=anchor.getLayoutParams();parent.removeViewAt(index);parent.addView(stream.root,index,params);
-            if(anchor.length()>0)stream.parser.feed(anchor.getText().toString());
+            // Plain replies stay on the original TextView: no extra hierarchy,
+            // no replacement selectable view, and no full-response reparsing.
+            String initial=anchor.getText().toString();
+            stream=new Stream(anchor,true);anchor.setTag(stream);
+            if(initial.length()>0){anchor.setText("");stream.parser.feed(initial);}
         }
         stream.parser.feed(chunk);
     }

@@ -4,6 +4,7 @@
 #include "llama.h"
 #include "prompt_cache.h"
 #include "cpu_threads.h"
+#include "decode_delivery.h"
 #include <sched.h>
 #include <unistd.h>
 #include "chat.h"
@@ -275,7 +276,7 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
     jmethodID on_token=nullptr,on_done=nullptr; jclass clazz=nullptr;
     using Clock=std::chrono::steady_clock;
     auto started=Clock::now(),decode_started=started,last_flush=started;
-    bool ok=false,decoding=false;int emitted=0,callbacks=0,backend_sampled=0;
+    bool ok=false,decoding=false;int emitted=0,callbacks=0,backend_sampled=0,overlap_submissions=0;
     std::string pending;pending.reserve(4096);
     int64_t first_token_ns=-1;size_t prompt_tokens=0,reused_tokens=0;bool text_cache=false;
     auto flush=[&] {
@@ -428,20 +429,29 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
         const char *reason="length";
         for(int i=0;i<limit;i++) {
             if(e->cancel) throw std::runtime_error("Geração cancelada");
-            auto t=llama_sampler_sample(sampler.get(),e->ctx,-1);
-            if(binding.attached && llama_get_sampled_token_ith(e->ctx,-1)!=LLAMA_TOKEN_NULL)backend_sampled++;
+            // Upstream sample() fetches token, probs, logits and candidates via
+            // four synchronizing getters even when the token is already selected.
+            // Consume that token once and accept ONCE, preserving sampler state/RNG.
+            auto t=binding.attached?llama_get_sampled_token_ith(e->ctx,-1):LLAMA_TOKEN_NULL;
+            if(t!=LLAMA_TOKEN_NULL) {
+                llama_sampler_accept(sampler.get(),t);backend_sampled++;
+            } else t=llama_sampler_sample(sampler.get(),e->ctx,-1);
             if(llama_vocab_is_eog(vocab,t)) {reason="eog";break;}
-            emitted++;pending+=piece(vocab,t);
-            // Preserve immediate first-token feedback, then send complete UTF-8
-            // chunks at <=20 Hz (or 4 KiB). Never truncate the answer.
-            if(emitted==1 || pending.size()>=4096 || Clock::now()-last_flush>=std::chrono::milliseconds(50))flush();
-            // Track only successfully decoded tokens, never the final sampled
-            // token that has no KV. A future prompt evaluates that suffix itself.
-            if(i+1<limit) {
+            emitted++;
+            const bool has_next=i+1<limit;
+            // Vulkan queues work asynchronously. Let it execute while the CPU
+            // converts the CURRENT token and calls Java. First text is never
+            // delayed behind the next decode. CPU ordering remains unchanged.
+            decode_and_deliver(e->layers>0,emitted==1,has_next,[&] {
+                if(e->cancel)throw std::runtime_error("Geração cancelada");
                 if(llama_decode(e->ctx,llama_batch_get_one(&t,1))!=0)
                     throw std::runtime_error("Falha de decode durante resposta");
                 if(text_cache)e->cached_tokens.push_back(t);
-            }
+                if(e->layers>0 && emitted>1)overlap_submissions++;
+            },[&] {
+                pending+=piece(vocab,t);
+                if(emitted==1 || pending.size()>=4096 || Clock::now()-last_flush>=std::chrono::milliseconds(50))flush();
+            });
         }
         flush();
         if(!pending.empty()) {auto text=java_string(env,"\xef\xbf\xbd");env->CallVoidMethod(callback,on_token,text);env->DeleteLocalRef(text);}
@@ -458,6 +468,7 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
     jlong decode_ns=decoding?std::chrono::duration_cast<std::chrono::nanoseconds>(finished-decode_started).count():0;
     jlong prefill_ns=std::chrono::duration_cast<std::chrono::nanoseconds>((decoding?decode_started:finished)-started).count();
     LOG("GGUF_GPU_SAMPLING_RESULT backend_selected=%d emitted=%d",backend_sampled,emitted);
+    LOG("GGUF_VULKAN_DELIVERY token_only_export=1 overlap_submissions=%d first_text_immediate=1",overlap_submissions);
     LOG("GGUF_RESPONSE_LATENCY first_token_ns=%lld prompt_tokens=%zu reused_tokens=%zu",(long long)first_token_ns,prompt_tokens,reused_tokens);
     LOG("GGUF_GENERATION_STATS tokens=%d decode_ns=%lld prefill_ns=%lld callbacks=%d success=%d",emitted,(long long)decode_ns,(long long)prefill_ns,callbacks,(int)ok);
     if(!env->ExceptionCheck()) {
