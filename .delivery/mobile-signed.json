@@ -3,7 +3,7 @@
   "llama_commit": "b29c606e28a01b1bc8c1351026a0fa6e616bf6c4",
   "min_sdk": 28,
   "native_source_commit": "d3a16d7677be07ca61898fa31907b9ed95b4e198",
-  "status": "SIGNED_PENDING_ANDROID_TEST",
+  "status": "SIGNED_VULKAN_AWAKE_ASLEEP_FUNCTIONAL_PASS",
   "native": {
     "lib/arm64-v8a/libggufdiagnostics.so": "255e52f814d968e8dd008e8cea12c522aad06d943dffe8a30fe095485058b26c",
     "lib/x86_64/libggufdiagnostics.so": "dd07c5a6aef3d75a7aec0325c20dddd6b58a313085254927291dc07dcf3c0139",
@@ -18,5 +18,8 @@
   },
   "unsigned_sha256": "01c86072a860c293ec5d68317eb4dd5e40d6fc37dcff6ed10b5617c4e12c7036",
   "apk_sha256": "323fd5a33667c6cab278699e97c89fe253e1bb7acead45b869729bf022eb9f5c",
-  "signer_sha256": "7295130ab387cd5123c1faab79c96f3ca8d8eb694ae7b15c611086d48b5898a0"
+  "signer_sha256": "7295130ab387cd5123c1faab79c96f3ca8d8eb694ae7b15c611086d48b5898a0",
+  "acceptance_file": ".delivery/vulkan-acceptance.json",
+  "gain_150_percent_certified": false,
+  "performance_conclusion": "150% target NOT met: awake decode -0.31%, asleep +1.27% in this software Vulkan comparison. Small mixed changes, not physical GPU certification."
 }

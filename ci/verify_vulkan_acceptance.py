@@ -2,6 +2,7 @@
 import hashlib
 import json
 import statistics
+import math
 from pathlib import Path
 from verify_performance_candidate import verify as candidate
 from verify_performance_acceptance import api
@@ -48,6 +49,7 @@ def verify():
                 m=x['metrics']
                 assert m['completed'] and m['version']==3 and m['timingScope']=='prefill_synchronized_before_decode'
                 assert m['tokens']==x['tokens'] and m['decodeNs']>0 and m['firstTokenNs']>0
+                assert math.isclose(x['native_decode_tokens_s'], x['tokens']*1e9/m['decodeNs'], rel_tol=1e-12), 'Rate must come from real token count and native duration'
                 if screen=='awake': assert x['send_to_first_ui_ns']>0
             assert new['backend_selected']>0 and 0<new['overlap_submissions']<new['tokens']
     if c.get('strict_tensor_routing'):

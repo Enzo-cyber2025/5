@@ -1,0 +1,90 @@
+{
+  "status": "SIGNED_VULKAN_AWAKE_ASLEEP_FUNCTIONAL_PASS",
+  "apk_sha256": "323fd5a33667c6cab278699e97c89fe253e1bb7acead45b869729bf022eb9f5c",
+  "run": 35150143379,
+  "attempt": 1,
+  "job": 104976090371,
+  "commit": "7a5299617182866ad5812501d0f9c249748cf54d",
+  "vision_comparison": {
+    "run": 35149450717,
+    "attempt": 1,
+    "job": 104973741503,
+    "commit": "92e1e7436cb3329630a1914113487fb4039e92ae",
+    "status": "PASS_EQUALITY_ONLY",
+    "semantic_vehicle": "FAIL in both"
+  },
+  "physical_gpu_speed_certified": false,
+  "five_second_goal_certified": false,
+  "all_application_on_gpu": false,
+  "strict_tensor_routing": true,
+  "both_screen_states_total_speed_improved": false,
+  "gain_150_percent_certified": false,
+  "target_throughput_multiplier": 2.5,
+  "medians": {
+    "awake": {
+      "before": {
+        "total_s": 66.96299999998882,
+        "first_native_text_s": 4.839029597,
+        "decode_tokens_s": 2.0578317102997463
+      },
+      "after": {
+        "total_s": 67.11000000000058,
+        "first_native_text_s": 4.835357402,
+        "decode_tokens_s": 2.0514565148699138
+      }
+    },
+    "asleep": {
+      "before": {
+        "total_s": 36.54799999999523,
+        "first_native_text_s": 4.656812006,
+        "decode_tokens_s": 4.010501801006853
+      },
+      "after": {
+        "total_s": 36.10800000000745,
+        "first_native_text_s": 4.503206776,
+        "decode_tokens_s": 4.061386890142341
+      }
+    }
+  },
+  "awake_send_to_first_ui_median_s": {
+    "before": 4.878854953,
+    "after": 4.903650368
+  },
+  "ui_review": [
+    {
+      "path": "ci-results/35150143379-1/physical-code-stream.png",
+      "sha256": "28ea0eb4b9386013aa64e73537206b757d9c1b00da01d081ffe1ce3e86b5e7d0",
+      "review": "Real renderer with labelled synthetic Python/JSON fixture; Copy and language controls intact."
+    },
+    {
+      "path": "ci-results/35150143379-1/physical-code-history.png",
+      "sha256": "28ea0eb4b9386013aa64e73537206b757d9c1b00da01d081ffe1ce3e86b5e7d0",
+      "review": "Same production renderer/history panels; exact clipboard checks pass."
+    },
+    {
+      "path": "ci-results/35150143379-1/physical-vulkan-plain-view.png",
+      "sha256": "f1c67ad700add1a1cdb91fe5c7d7e1aaf5bea9eff2009ca4152309636d96a85b",
+      "review": "Texto simples OK; fixture checks 256 exact appends on original view."
+    },
+    {
+      "path": "ci-results/35150143379-1/inference-unknown-image-metadata.png",
+      "sha256": "0d8c1826e50214ae7acb808239202a9eccdeb375fcc4f0f15aeb93941ffecf3d",
+      "review": "Real image answered Dog.; actual strict Vulkan route audited separately, footer visible."
+    },
+    {
+      "path": "ci-results/35150143379-1/physical-vulkan-after-awake-3-follow.png",
+      "sha256": "f9c57e890b16628cf3037e460c63204901c306a207adf7e8c6b36e4afc024ad0",
+      "review": "Actual 128-token responses, footers visible; linguistic quality is not a semantic pass."
+    },
+    {
+      "path": "ci-results/35150143379-1/physical-vulkan-after-asleep-3-follow.png",
+      "sha256": "82c695d2704d9bba25baf8a2d30f4ab85171cb42d79aec3491ea74f8c8ca7c11",
+      "review": "Saved replies after waking, 128-token footers; chronology/notifications independently checked."
+    }
+  ],
+  "decode_gain_percent": {
+    "awake": -0.30980159348910075,
+    "asleep": 1.268796067432576
+  },
+  "performance_conclusion": "150% target NOT met: awake decode -0.31%, asleep +1.27% in this software Vulkan comparison. Small mixed changes, not physical GPU certification."
+}

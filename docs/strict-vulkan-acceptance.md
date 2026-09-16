@@ -1,6 +1,6 @@
-# Vulkan estrito — candidato em validação
+# Vulkan estrito — aprovado funcionalmente, meta de +150% não atingida
 
-**Estado: ainda não aprovado para entrega.** O comparativo de velocidade com tela acesa/apagada precisa terminar. Não há nova meta de velocidade certificada.
+**Estado: testes funcionais do APK assinado passaram; desempenho solicitado não aprovado.** O ganho de +150% (2,5 vezes o throughput) não foi atingido. Não há certificação de GPU física ou de uso zero de CPU pelo aplicativo inteiro.
 
 APK candidato SHA-256: `323fd5a33667c6cab278699e97c89fe253e1bb7acead45b869729bf022eb9f5c`.
 Fonte/native: `d3a16d7677be07ca61898fa31907b9ed95b4e198`.
@@ -47,12 +47,32 @@ São dados reais de colocação/reserva, não uma redução universal de RAM tot
 
 A resposta ao ônibus foi **` CERO EMIOFSELLA.` nas duas versões**, semanticamente incorreta em ambas. Igualdade não é acerto semântico. O encoder e a geração realmente executaram; não houve resposta artificial. A falha conhecida não deve ser convertida em aprovação universal de visão.
 
-## Validação de velocidade ainda pendente
+## Validação de velocidade concluída — meta reprovada
 
 A execução 35149450810 passou na identidade/assinatura do APK, mas falhou na etapa de emulador, sem produzir `summary.json`. Download de logs pelo cliente retornou EOF; o retry inclui relay diagnóstico pelo runner e captura limitada de stdout/stderr, mantendo o código de saída real.
 
-Retry: [35150143379](https://github.com/Enzo-cyber2025/5/actions/runs/35150143379), job 104976090371, commit `7a5299617182866ad5812501d0f9c249748cf54d`. Mesmo APK, sem recompilar ou reassinar. Comparação planeja uma resposta de aquecimento e três respostas medidas por estado/versão, continuação, amostragem não greedy, inferência de cachorro explicitamente configurada em Vulkan, código/Copiar, atualização e avisos com tela apagada.
+Retry: [35150143379](https://github.com/Enzo-cyber2025/5/actions/runs/35150143379), job 104976090371, commit `7a5299617182866ad5812501d0f9c249748cf54d`. Mesmo APK, sem recompilar ou reassinar. Execução completou **success** em 21:43:45 UTC. Uma resposta de aquecimento excluída e três respostas medidas por estado/versão; continuação, amostragem não greedy, inferência de cachorro explicitamente em Vulkan, código/Copiar, atualização preservando dados e avisos com tela apagada passaram. Screenshot/revisão e hashes em `.delivery/vulkan-acceptance.json`; `ci/verify_vulkan_acceptance.py` passou. O relay do log antigo também não conseguiu baixar o log: a causa exata do bootstrap anterior permanece não determinada.
 
 ## Assinatura
 
-Certificado `7295130ab387cd5123c1faab79c96f3ca8d8eb694ae7b15c611086d48b5898a0`, igual ao último APK 8a994 entregue. A chave privada foi preservada e não publicada. O APK candidato não foi apresentado como nova entrega aprovada.
+Certificado `7295130ab387cd5123c1faab79c96f3ca8d8eb694ae7b15c611086d48b5898a0`, igual ao último APK 8a994 entregue. A chave privada foi preservada e não publicada. A atualização assinada sobre o APK anterior passou nos testes. Isso aprova a funcionalidade do candidato, não a meta de velocidade.
+
+
+### Medianas, APK 8a994 → 323fd5, mesmo software Vulkan
+
+| Medida | Tela acesa | Tela apagada |
+|---|---:|---:|
+| Decode tokens/s | **2,0578 → 2,0515 (−0,31%)** | **4,0105 → 4,0614 (+1,27%)** |
+| Total nativo | 66,963 → 67,110 s | 36,548 → 36,108 s |
+| Primeiro texto nativo | 4,839 → 4,835 s | 4,657 → 4,503 s |
+| Enviar → primeiro texto na UI | 4,879 → 4,904 s | Não aplicável à renderização com tela apagada |
+
+Todos os casos determinísticos comparados emitiram os mesmos 128 tokens e texto exato. SmolLM2-135M Q4_K_M, contexto 2048, Auto threads, GPU 99, mesmo GGUF/quantização/parâmetros. As diferenças são pequenas e não estabelecem significância estatística. Total não inclui importação/carregamento inicial; primeiro texto não é conclusão em 5 segundos.
+
+Continuações (uma observação, não mediana): total acesa 74,450 → 74,600 s; apagada 40,494 → 40,152 s. Não greedy conserva filtros e penalidades, mas seeds derivadas de nanoTime não são iguais: teste de conclusão, não prova de igualdade estocástica.
+
+A meta de +150% exigiria pelo menos **5,1446 tokens/s acesa e 10,0263 tokens/s apagada** nesse par de testes. O gate separado `ci/verify_vulkan_target.py` deve falhar enquanto ambos não atingirem 2,5×. A aprovação funcional não contorna esse gate.
+
+### Próxima investigação, sem nova promessa de ganho
+
+Execução exploratória `35156484592` usa o mesmo APK assinado, sem alterar seu payload: políticas upstream de submissão 100/32/512 nós, conferindo o ambiente efetivo do processo e a saída determinística. Uma observação por configuração/estado serve apenas como triagem. Uma execução separada habilita timestamps Vulkan; o profiler adiciona esperas e seus tempos NÃO contam como throughput normal nem como ganho de 150%. Não houve seleção cega dessas opções como novo padrão no APK.
