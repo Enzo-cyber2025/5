@@ -1,0 +1,72 @@
+--------- beginning of main
+09-16 22:53:02.047  7642  7642 I ImeTracker: com.ggufchat.app:518ff71e: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser true
+09-16 22:53:02.047  7642  7642 D InputMethodManager: showSoftInput() view=android.widget.EditText{441a50f VFED..CL. .F.P..ID 128,0-493,67 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+09-16 22:53:02.052  7642  7642 I AssistStructure: Flattened final assist data: 1964 bytes, containing 1 windows, 13 views
+09-16 22:53:02.056  7642  7655 D EGL_emulation: app_time_stats: avg=541.95ms min=3.24ms max=9038.91ms count=17
+09-16 22:53:03.117  7642  7655 D EGL_emulation: app_time_stats: avg=353.34ms min=64.17ms max=498.11ms count=3
+09-16 22:53:04.120  7642  7655 D EGL_emulation: app_time_stats: avg=501.65ms min=499.80ms max=503.49ms count=2
+09-16 22:53:05.617  7642  7655 D EGL_emulation: app_time_stats: avg=498.91ms min=495.95ms max=500.49ms count=3
+09-16 22:53:06.227  7642  7642 I ImeTracker: com.ggufchat.app:3c27b7b3: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+09-16 22:53:06.246  7642  7642 D InsetsController: hide(ime(), fromIme=true)
+09-16 22:53:06.247  7642  7642 I ImeTracker: com.ggufchat.app:3c27b7b3: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+09-16 22:53:06.254  7642  7935 I GGUFSystem: GGUF_SYSTEM_PROMPT_APPLIED scope=global chars=107 sha256=dde45e87ea07db0b49bcddd022d4f41a452610560d9af636571c26d16a4bcd04
+09-16 22:53:06.255  7642  7935 I GGUFInference: GGUF_CONTENT_PREPARED files=0 images=0 text_chars=0
+09-16 22:53:06.255  7642  7935 I GGUFNativeStderr: set_sampler: seq_id = 0, sampler = 0x7487a6905cf0
+09-16 22:53:06.255  7642  7935 I GGUFChatNative: GGUF_GPU_SAMPLING requested=1 attached=1
+09-16 22:53:06.274  7642  7935 I GGUFNativeStderr: sched_reserve: reserving ...
+09-16 22:53:06.274  7642  7935 I GGUFNativeStderr: sched_reserve: max_nodes = 2202
+09-16 22:53:06.292  7642  7935 I GGUFNativeStderr: sched_reserve: reserving full memory module
+09-16 22:53:06.293  7642  7935 I GGUFNativeStderr: sched_reserve: worst-case: n_tokens = 32, n_seqs = 1, n_outputs = 1
+09-16 22:53:06.293  7642  7935 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =   32, n_seqs =  1, n_outputs =    1
+09-16 22:53:06.304  7642  7935 I MESA    : on_vkAllocateMemory: has alloc flags
+09-16 22:53:06.304  7642  7935 I MESA    : allocateCoherentMemory: has alloc flags
+09-16 22:53:06.309  7642  7935 I MESA    : on_vkAllocateMemory: has alloc flags
+09-16 22:53:06.309  7642  7935 I MESA    : allocateCoherentMemory: has alloc flags
+09-16 22:53:06.310  7642  7935 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =    1, n_seqs =  1, n_outputs =    1
+09-16 22:53:06.312  7642  7935 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =   32, n_seqs =  1, n_outputs =    1
+09-16 22:53:06.318  7642  7935 I GGUFNativeStderr: sched_reserve:    Vulkan0 compute buffer size =     0.83 MiB
+09-16 22:53:06.318  7642  7935 I GGUFNativeStderr: sched_reserve: Vulkan_Host compute buffer size =     0.20 MiB
+09-16 22:53:06.318  7642  7935 I GGUFNativeStderr: sched_reserve: graph nodes  = 961
+09-16 22:53:06.318  7642  7935 I GGUFNativeStderr: sched_reserve: graph splits = 1
+09-16 22:53:06.318  7642  7935 I GGUFNativeStderr: sched_reserve: reserve took 43.55 ms, sched copies = 1
+09-16 22:53:06.327  7642  7935 I MESA    : on_vkAllocateMemory: has alloc flags
+09-16 22:53:06.329  7642  7935 I MESA    : allocateCoherentMemory: has alloc flags
+09-16 22:53:06.348  7642  7935 I MESA    : on_vkAllocateMemory: has alloc flags
+09-16 22:53:06.348  7642  7935 I MESA    : allocateCoherentMemory: has alloc flags
+09-16 22:53:06.736  7642  7655 D EGL_emulation: app_time_stats: avg=53.81ms min=3.68ms max=515.91ms count=18
+09-16 22:53:07.773  7642  7655 D EGL_emulation: app_time_stats: avg=55.09ms min=5.96ms max=473.88ms count=16
+09-16 22:53:08.331  7642  7935 I GGUFChatNative: GGUF_PROMPT_CACHE input_tokens=62 reused_tokens=0 evaluated_tokens=62 media=0
+09-16 22:53:08.337  7642  7642 I GGUFUiTiming: GGUF_UI_FIRST_TEXT send_to_first_ui_ns=2122578365
+09-16 22:53:08.344  7642  7935 I MESA    : on_vkAllocateMemory: has alloc flags
+09-16 22:53:08.344  7642  7935 I MESA    : allocateCoherentMemory: has alloc flags
+09-16 22:53:08.826  7642  7655 D EGL_emulation: app_time_stats: avg=43.32ms min=3.87ms max=484.88ms count=20
+09-16 22:53:09.838  7642  7655 D EGL_emulation: app_time_stats: avg=23.33ms min=4.93ms max=128.83ms count=30
+09-16 22:53:10.868  7642  7655 D EGL_emulation: app_time_stats: avg=16.47ms min=4.99ms max=45.23ms count=41
+09-16 22:53:11.878  7642  7655 D EGL_emulation: app_time_stats: avg=24.05ms min=4.46ms max=135.92ms count=31
+09-16 22:53:12.882  7642  7655 D EGL_emulation: app_time_stats: avg=24.79ms min=6.31ms max=143.02ms count=28
+09-16 22:53:13.914  7642  7655 D EGL_emulation: app_time_stats: avg=26.59ms min=5.52ms max=137.55ms count=31
+09-16 22:53:14.970  7642  7655 D EGL_emulation: app_time_stats: avg=21.68ms min=5.68ms max=133.51ms count=35
+09-16 22:53:16.026  7642  7655 D EGL_emulation: app_time_stats: avg=47.63ms min=5.65ms max=187.07ms count=20
+09-16 22:53:17.123  7642  7655 D EGL_emulation: app_time_stats: avg=109.70ms min=35.66ms max=154.25ms count=10
+09-16 22:53:18.136  7642  7655 D EGL_emulation: app_time_stats: avg=112.48ms min=28.12ms max=169.44ms count=9
+09-16 22:53:19.159  7642  7655 D EGL_emulation: app_time_stats: avg=102.31ms min=33.42ms max=148.29ms count=10
+09-16 22:53:20.208  7642  7655 D EGL_emulation: app_time_stats: avg=116.47ms min=48.31ms max=155.44ms count=9
+09-16 22:53:21.270  7642  7655 D EGL_emulation: app_time_stats: avg=105.74ms min=25.27ms max=156.27ms count=10
+09-16 22:53:22.275  7642  7655 D EGL_emulation: app_time_stats: avg=111.68ms min=29.37ms max=171.68ms count=9
+09-16 22:53:23.278  7642  7655 D EGL_emulation: app_time_stats: avg=111.38ms min=53.39ms max=149.74ms count=9
+09-16 22:53:24.325  7642  7655 D EGL_emulation: app_time_stats: avg=103.52ms min=8.74ms max=158.66ms count=10
+09-16 22:53:25.331  7642  7655 D EGL_emulation: app_time_stats: avg=100.56ms min=9.74ms max=149.96ms count=10
+09-16 22:53:26.339  7642  7655 D EGL_emulation: app_time_stats: avg=110.44ms min=27.39ms max=151.89ms count=9
+09-16 22:53:27.459  7642  7655 D EGL_emulation: app_time_stats: avg=111.95ms min=30.82ms max=156.57ms count=10
+09-16 22:53:28.594  7642  7655 D EGL_emulation: app_time_stats: avg=113.44ms min=33.44ms max=150.07ms count=10
+09-16 22:53:29.145  7642  7935 I GGUFChatNative: GGUF_NATIVE_COMPLETE tokens=128 reason=length projector=0
+09-16 22:53:29.145  7642  7935 I GGUFNativeStderr: set_sampler: seq_id = 0, sampler = 0x0
+09-16 22:53:29.145  7642  7935 I GGUFChatNative: GGUF_STRICT_VULKAN_RESULT enabled=1 submitted_graphs=129 submitted_math_nodes=76497 blocked=0 host_orchestration=CPU
+09-16 22:53:29.145  7642  7935 I GGUFChatNative: GGUF_GPU_SAMPLING_RESULT backend_selected=128 emitted=128
+09-16 22:53:29.145  7642  7935 I GGUFChatNative: GGUF_VULKAN_DELIVERY token_only_export=1 overlap_submissions=126 first_text_immediate=1
+09-16 22:53:29.145  7642  7935 I GGUFChatNative: GGUF_RESPONSE_LATENCY first_token_ns=2084494422 prompt_tokens=62 reused_tokens=0
+09-16 22:53:29.145  7642  7935 I GGUFChatNative: GGUF_GENERATION_STATS tokens=128 decode_ns=20812214433 prefill_ns=2078074243 callbacks=128 success=1
+09-16 22:53:29.146  7642  7935 I System.out: GGUF_REPAIR_GENERATION_OK
+09-16 22:53:29.148  7642  7935 I GGUFReplyNotice: GGUF_NOTICE_STATS progress_updates=20 skipped_screen_off=0
+09-16 22:53:29.149  7642  7935 I GGUFReplyNotice: GGUF_REPLY_NOTICE suppressed=screen_active
+09-16 22:53:29.183  7642  7642 I GGUFReplyNotice: GGUF_REPLY_SERVICE_DESTROYED
