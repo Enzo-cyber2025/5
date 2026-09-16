@@ -1,0 +1,26 @@
+{
+  "status": "PASS_EQUALITY_ONLY",
+  "apk_sha256": "323fd5a33667c6cab278699e97c89fe253e1bb7acead45b869729bf022eb9f5c",
+  "baseline_sha256": "8a994b58efc0a65a0851534402eacb5f0c305ff534a100075a88e5c5dbf95399",
+  "responses": {
+    "before": " CERO EMIOFSELLA.",
+    "after": " CERO EMIOFSELLA."
+  },
+  "semantic_vehicle": {
+    "before": "FAIL",
+    "after": "FAIL"
+  },
+  "checks": {
+    "strict_visual_tensor_routing": {
+      "status": "PASS",
+      "submitted_graphs": 35,
+      "submitted_math_nodes": 19290,
+      "tensor_cpu_fallback": "blocked_by_native_policy",
+      "host_orchestration": "CPU",
+      "physical_gpu_certified": false
+    },
+    "same_external_bytes_real_vulkan_and_equal_response": "PASS"
+  },
+  "external_gguf_sha256": "650283ee95856be73ff45fa277ac6a4238b4d1bb52a670983c2e1690fd352a12",
+  "scope": "One real external-format GGUF/bus observation per exact signed APK, same software Vulkan and image/settings. Equality is NOT semantic success; inspect semantic_vehicle separately."
+}
