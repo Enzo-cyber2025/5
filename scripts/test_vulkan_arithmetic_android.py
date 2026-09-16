@@ -66,7 +66,7 @@ def main():
     except Exception as ex:
         s['error']=str(ex);(E/'physical-arithmetic-failure.txt').write_text(traceback.format_exc());traceback.print_exc()
     finally:
-        s['scope']='Software Vulkan only; FP32 instead of optional FP16 arithmetic, unchanged weights/KV format/parameters. One excluded warmup +3 per state/policy. Fixed policy order remains a source of bias. No production default changed; not phone speed certification or a 21x/26x claim.'
+        s['scope']='Software Vulkan only; FP32 instead of optional FP16 arithmetic, unchanged weights/KV format/parameters. Planned only if applicable: one excluded warmup +3 per state/policy. NOT_APPLICABLE means zero generation observations. Fixed policy order remains a source of bias. No production default changed; not phone speed certification or a 21x/26x claim.'
         (E/'summary.json').write_text(json.dumps(s,indent=2,ensure_ascii=False))
         try:
             log=d.adb('logcat','-d')

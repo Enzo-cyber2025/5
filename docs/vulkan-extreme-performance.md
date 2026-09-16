@@ -44,7 +44,11 @@ Respostas determinísticas idênticas de 128 tokens, roteamento estrito, notific
 
 ### Investigação nativa adicional
 
-Testar, sem alterar o APK, se `GGML_VK_DISABLE_F16=1` evita custo de aritmética FP16 **emulada**, utilizando FP32 no backend. Não reduz quantização/precisão de pesos nem troca formato KV. Confere capability efetiva, ambiente real, igualdade de resposta e roteamento; qualquer divergência rejeita a política. Se a capacidade já era FP32, o experimento é explicitamente não aplicável. Nenhum padrão de celular é alterado e nada é antecipadamente anunciado como ganho. Resultado pendente.
+Testar, sem alterar o APK, se `GGML_VK_DISABLE_F16=1` evita custo de aritmética FP16 **emulada**, utilizando FP32 no backend. Não reduz quantização/precisão de pesos nem troca formato KV. Confere capability efetiva, ambiente real, igualdade de resposta e roteamento; qualquer divergência rejeita a política. Se a capacidade já era FP32, o experimento é explicitamente não aplicável. Nenhum padrão de celular é alterado e nada é antecipadamente anunciado como ganho. A investigação [35160859329](https://github.com/Enzo-cyber2025/5/actions/runs/35160859329), job 105011021071, concluiu em 23:10:34 UTC como **NOT_APPLICABLE_ALREADY_FP32**. O log real do dispositivo selecionado informa `llvmpipe (LLVM 21.0.0, 256 bits)`, `fp16: 0`, `int dot: 0`, `matrix cores: none`. A via opcional FP16 já estava desativada. Por isso **não houve rodada de geração ou comparação FP16/FP32**: seria medir um ajuste sem efeito. O procedimento de aquecimento/repetições era condicional e não foi executado nesse diagnóstico. Nenhuma política foi adotada.
+
+As cinco capturas do novo candidato foram revisadas: código em streaming/histórico e Copy, respostas reais com footer após ambos os estados e o fixture explícito de rolagem de 200 linhas. A igualdade da resposta do modelo pequeno não certifica correção semântica universal. Registro consolidado: `.delivery/ui-overhead-investigation.json`.
+
+**Encerramento desta rodada:** duas otimizações UI implementadas e testadas; ganho mediano observado de 5,78% acesa, 0,35% apagada e redução de 14,24% na espera Enviar → primeiro texto acesa. Nenhuma meta extrema/paridade foi atingida; nenhum APK experimental foi promovido a atualização. Não há execução CI pendente. GitHub permaneceu acessível; nenhum 401 bloqueou estes testes.
 
 ## Gate separado
 

@@ -1,0 +1,93 @@
+{
+  "status": "UI_FUNCTIONAL_EXPERIMENT_PASS_EXTREME_TARGETS_NOT_MET",
+  "run": 35159076182,
+  "attempt": 1,
+  "job": 105005355177,
+  "source_commit": "63913d1f5e60b1d912eae085c49bc237a30711d5",
+  "baseline_apk_sha256": "323fd5a33667c6cab278699e97c89fe253e1bb7acead45b869729bf022eb9f5c",
+  "experimental_apk_sha256": "215fa7447a021e6ecd08c625a8bdfecce67604952840c0e096786c59884899a3",
+  "release_approved": false,
+  "production_apk_replaced": false,
+  "same_key_update_tested": false,
+  "medians": {
+    "awake": {
+      "before": {
+        "decode_tokens_s": 6.743970310797793,
+        "native_first_token_ns": 2044050001,
+        "notification_updates": 18,
+        "send_to_first_ui_ns": 2090446855
+      },
+      "after": {
+        "decode_tokens_s": 7.133989953229593,
+        "native_first_token_ns": 1733381807,
+        "notification_updates": 5,
+        "send_to_first_ui_ns": 1792755875
+      }
+    },
+    "asleep": {
+      "before": {
+        "decode_tokens_s": 9.139144680631128,
+        "native_first_token_ns": 1954969155,
+        "notification_updates": 0
+      },
+      "after": {
+        "decode_tokens_s": 9.170889324679774,
+        "native_first_token_ns": 1784731059,
+        "notification_updates": 0
+      }
+    }
+  },
+  "target_result": {
+    "status": "REQUESTED_TARGETS_NOT_MET",
+    "required_throughput_multiplier": 21,
+    "required_first_token_speedup": 26,
+    "throughput_multipliers": {
+      "awake": 1.0578323486696461,
+      "asleep": 1.0034734808516514
+    },
+    "end_to_end_first_token_speedups": {
+      "awake": 1.1660521569898634,
+      "asleep": null
+    },
+    "awake_asleep_throughput_ratio": 0.7778951092596132,
+    "checks": {
+      "throughput_21x_both_states": false,
+      "first_token_wait_26x_both_states": false,
+      "awake_at_least_as_fast_as_asleep": false,
+      "asleep_not_slowed": true
+    },
+    "physical_gpu_certified": false,
+    "release_approved": false,
+    "note": "Missing screen-off Send->first-token measurements cannot be replaced with native firstTokenNs. Equality here is of observed medians, not a universal timing guarantee."
+  },
+  "visual_review": {
+    "physical-code-history.png": "f9883bcb839974e9b3aa5cfa9bea1a6b658473db693bc4b9c18230755a5cb453",
+    "physical-code-stream.png": "05aa75ce11547e850591da5baf97b90902ce129beb510380a2ce8fc914d29fb9",
+    "physical-latency-ui-after-awake-3.png": "6a2a1a22e3e278d196a4cecdbf05960feffb698ef49e8d623a215c5cb50a9b12",
+    "physical-latency-ui-after-asleep-3.png": "8f9b08cc173a6b2656baa84b9d179c27c98cb1a142f16819287c3a80fca1ca4a",
+    "physical-ui-tail.png": "65a2f3fce35a75634110aed79ce3cf97bb060ca4f175fe17a10ffa246917bc24"
+  },
+  "review_scope": "Actual Android code/Copy fixture, real deterministic inference footer after awake/asleep runs, and explicit 200-line scroll fixture reviewed. Not a semantic-quality or universal-device certificate.",
+  "arithmetic_investigation": {
+    "run": 35160859329,
+    "attempt": 1,
+    "job": 105011021071,
+    "status": "NOT_APPLICABLE_ALREADY_FP32",
+    "generation_observations": 0,
+    "driver": "llvmpipe (LLVM 21.0.0, 256 bits)",
+    "fp16": false,
+    "integer_dot_product": false,
+    "matrix_cores": "none",
+    "policy_adopted": false
+  },
+  "local_regressions": {
+    "passed": 183,
+    "skipped": 66
+  },
+  "hosted_focused_regressions": {
+    "passed": 32,
+    "skipped": 3
+  },
+  "active_runs": [],
+  "limits": "Only software Vulkan. Requested 21x throughput, 26x shorter first-token wait and awake parity not achieved. Sleeping end-to-end first-token latency not measured. Private release signing key unavailable locally; test key is not a release replacement."
+}
