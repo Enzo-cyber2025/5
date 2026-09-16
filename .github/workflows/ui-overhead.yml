@@ -1,0 +1,75 @@
+name: UI-only Vulkan awake asleep comparison
+on:
+  push:
+    branches: [arena/01a09b42-5]
+    paths: [.github/workflows/ui-overhead.yml, scripts/build_ui_experiment.py, scripts/test_ui_overhead_android.py]
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: ui-overhead-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    if: ${{ contains(github.event.head_commit.message, '[ui overhead]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Build isolated UI experiment with identical native payload
+        run: |
+          mkdir -p evidence
+          python3 ci/verify_performance_candidate.py
+          python3 -m venv .venv
+          .venv/bin/pip install pytest==9.1.1 androguard==4.1.4 numpy==2.2.6 tqdm==4.67.1 pyyaml==6.0.2
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0'
+          bash scripts/fetch_tools.sh
+          bash ci/log_step.sh ui-build .venv/bin/python scripts/build_ui_experiment.py
+          # The host test patches the exact released DEX too, not a fabricated fixture.
+          java -jar .cache/tools/package/lib/apktool.jar d -f -r -o .cache/ui-baseline .delivery/GGUF-Chat-mobile.apk
+          bash ci/log_step.sh ui-regression .venv/bin/python -m pytest -q tests/test_ui_overhead.py tests/test_reply_notifications.py tests/test_performance_code.py tests/test_strict_vulkan.py tests/test_vulkan_target.py tests/test_latency.py tests/test_generation_stats.py
+          git clone --depth 1 --branch v0.4.1 https://github.com/ggml-org/llama.cpp .cache/llama-mobile
+          test "$(git -C .cache/llama-mobile rev-parse HEAD)" = b29c606e28a01b1bc8c1351026a0fa6e616bf6c4
+          bash ci/mobile-models.sh
+          bash scripts/build_test_input.sh
+          bash scripts/build_code_test.sh
+          sudo chmod a+rw /dev/kvm
+          bash ci/prepare_vulkan.sh
+      - uses: reactivecircus/android-emulator-runner@v2
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GGUF_TEST_APK: .delivery/GGUF-Chat-mobile.apk
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_5
+          ram-size: 6144M
+          heap-size: 1024M
+          disk-size: 8192M
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -gpu host -feature Vulkan -noaudio -no-boot-anim
+          script: bash ci/log_step.sh emulator .venv/bin/python scripts/test_ui_overhead_android.py
+      - name: Report
+        if: always()
+        run: python3 ci/report_android.py evidence
+      - name: Publish bounded real evidence
+        if: always()
+        run: bash ci/publish_evidence.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-experiment-not-release
+          path: |
+            evidence/
+            .cache/ci-logs/
+            .cache/ui-experiment/candidate.apk
+            .cache/ui-experiment/aligned.apk
+          retention-days: 7

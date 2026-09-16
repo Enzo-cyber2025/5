@@ -46,7 +46,8 @@ def patch_reply_notifications(app):
     p=app/'GenerationService$2.smali';s=p.read_text()
     marker='    invoke-static {}, Lcom/ggufchat/app/GenerationStats;->notifyNow()Z';assert s.count(marker)==1
     s=s.replace(marker,'''    iget-object v0, p0, Lcom/ggufchat/app/GenerationService$2;->this$0:Lcom/ggufchat/app/GenerationService;
-    invoke-static {v0}, Lcom/ggufchat/app/ReplyNotifications;->progressNow(Landroid/app/Service;)Z''')
+    iget-object v1, p0, Lcom/ggufchat/app/GenerationService$2;->val$reply:Ljava/lang/StringBuilder;
+    invoke-static {v0, v1}, Lcom/ggufchat/app/ReplyNotifications;->progressNow(Landroid/app/Service;Ljava/lang/StringBuilder;)Z''')
     p.write_text(s)
     p=app/'GenerationService$1.smali';s=p.read_text()
     s=replace_method(s,'.method public run()V','''    .locals 4

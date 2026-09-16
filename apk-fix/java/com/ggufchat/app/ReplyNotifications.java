@@ -26,7 +26,8 @@ public final class ReplyNotifications {
         volatile boolean interactive;
         boolean registered, persisted;
         String chatId;
-        long lastUpdate, updates, skippedOff;
+        long updates, skippedOff;
+        final PreviewCadence preview=new PreviewCadence();
         State(Service service) {
             app=service.getApplicationContext();
             PowerManager pm=app.getSystemService(PowerManager.class);
@@ -59,7 +60,7 @@ public final class ReplyNotifications {
     private static String tag(String chatId){return "reply-ready:"+chatId;}
     public static void begin(Service service,String chatId) {
         State s=STATES.get(service);if(s==null){install(service);s=STATES.get(service);}
-        s.chatId=chatId;s.persisted=false;s.lastUpdate=0;s.updates=0;s.skippedOff=0;
+        s.chatId=chatId;s.persisted=false;s.preview.reset();s.updates=0;s.skippedOff=0;
         // A previous reply in THIS chat must not masquerade as this request's
         // completion if the new request is cancelled. Other chats are untouched.
         try { service.getSystemService(NotificationManager.class).cancel(tag(chatId),READY_ID); }
@@ -68,14 +69,14 @@ public final class ReplyNotifications {
     public static void persisted(Service service) {
         State s=STATES.get(service);if(s!=null)s.persisted=true;
     }
-    public static boolean progressNow(Service service) {
+    public static boolean progressNow(Service service,StringBuilder reply) {
         State s=STATES.get(service);if(s==null)return false;
         // Screen broadcasts update a volatile flag, avoiding a PowerManager IPC
         // per token callback. If registration failed, keep the safe old cadence.
         if(s.registered&&!s.interactive){s.skippedOff++;return false;}
         long now=SystemClock.elapsedRealtime();
-        if(s.updates>0 && now-s.lastUpdate<1000)return false;
-        s.lastUpdate=now;s.updates++;return true;
+        if(!s.preview.needsUpdate(now,reply.length()))return false;
+        s.updates++;return true;
     }
     public static void finished(Service service,boolean success) {
         State s=STATES.get(service);if(s==null)return;

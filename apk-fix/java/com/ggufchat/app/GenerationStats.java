@@ -29,7 +29,7 @@ public final class GenerationStats {
         if(before!=null&&now-before<1000000000L)return false;
         NOTICE.set(now);return true;
     }
-    public static String preview(StringBuilder text){return text.substring(0,Math.min(80,text.length()));}
+    public static String preview(StringBuilder text){return text.substring(0,Math.min(PreviewCadence.PREFIX_LENGTH,text.length()));}
     public static void attach(Object message){
         String value=RESULT.get();RESULT.remove();NOTICE.remove();LATENCY.remove();
         try{message.getClass().getField("generationMetrics").set(message,value);}

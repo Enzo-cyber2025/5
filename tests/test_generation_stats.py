@@ -19,7 +19,8 @@ def test_metric_is_per_message_and_footer_outside_bubble():
     s=(ROOT/'apk-fix/java/com/ggufchat/app/GenerationStats.java').read_text()
     assert 'ThreadLocal<String>' in s and 'RESULT.remove();NOTICE.remove()' in s
     assert 'tokens*1e9/(double)ns' in s and 'sem medição' in s
-    assert '1000000000L' in s and 'Math.min(80,text.length())' in s
+    assert '1000000000L' in s and 'Math.min(PreviewCadence.PREFIX_LENGTH,text.length())' in s
+    assert 'PREFIX_LENGTH=80' in (ROOT/'apk-fix/java/com/ggufchat/app/PreviewCadence.java').read_text()
     assert 'tokens/s' in s
     ui=(ROOT/'apk-fix/java/com/ggufchat/app/GenerationStatsUi.java').read_text()
     assert 'column.addView(view)' in ui
