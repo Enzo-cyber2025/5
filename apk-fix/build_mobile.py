@@ -3,6 +3,7 @@ from compute_patches import patch_compute
 from generation_stats import patch_generation_stats
 from latency_patches import patch_latency_ui
 from reply_notifications import patch_reply_notifications
+from performance_ui import patch_performance_ui
 """Build a coherent native stack and an UNSIGNED APK, for local persistent signing.
 No signing key or password is placed in CI, artifacts, logs or Git.
 """
@@ -79,6 +80,7 @@ def ui_patches(app):
     patch_generation_stats(app)
     patch_latency_ui(app)
     patch_reply_notifications(app)
+    patch_performance_ui(app)
 
 def main():
     WORK.mkdir(parents=True,exist_ok=True)
@@ -144,11 +146,21 @@ def main():
         prebuilt=ndk/'toolchains/llvm/prebuilt/linux-x86_64'
         for abi,triple in [('arm64-v8a','aarch64-linux-android'),('x86_64','x86_64-linux-android')]:
             build=WORK/abi
-            run('cmake','-S',ROOT/'apk-fix/native','-B',build,'-G','Ninja',f'-DLLAMA_SOURCE={source}',f'-DGGUF_SPIRV_INCLUDE_DIR={ROOT}/.cache/spirv-install/include',f'-DSPIRV-Headers_DIR={ROOT}/.cache/spirv-install/share/cmake/SPIRV-Headers',f'-DCMAKE_TOOLCHAIN_FILE={ndk}/build/cmake/android.toolchain.cmake',f'-DANDROID_ABI={abi}','-DANDROID_PLATFORM=android-28','-DCMAKE_BUILD_TYPE=Release',f'-DVulkan_INCLUDE_DIR={ROOT}/.cache/vulkan-headers',f'-DVulkan_LIBRARY={prebuilt}/sysroot/usr/lib/{triple}/28/libvulkan.so','-DVulkan_GLSLC_EXECUTABLE=/usr/bin/glslc')
-            run('cmake','--build',build,'--target','aijni','--parallel','2')
-            for name,src in [('libaijni.so',build/'libaijni.so'),('libc++_shared.so',prebuilt/f'sysroot/usr/lib/{triple}/libc++_shared.so')]:
+            run('cmake','-S',ROOT/'apk-fix/native','-B',build,'-G','Ninja',f'-DLLAMA_SOURCE={source}',f'-DGGUF_SPIRV_INCLUDE_DIR={ROOT}/.cache/spirv-install/include',f'-DSPIRV-Headers_DIR={ROOT}/.cache/spirv-install/share/cmake/SPIRV-Headers',f'-DCMAKE_TOOLCHAIN_FILE={ndk}/build/cmake/android.toolchain.cmake',f'-DANDROID_ABI={abi}','-DANDROID_PLATFORM=android-28','-DCMAKE_BUILD_TYPE=Release','-DGGML_CPU_ARM_ARCH=', '-UHAVE_*',f'-DVulkan_INCLUDE_DIR={ROOT}/.cache/vulkan-headers',f'-DVulkan_LIBRARY={prebuilt}/sysroot/usr/lib/{triple}/28/libvulkan.so','-DVulkan_GLSLC_EXECUTABLE=/usr/bin/glslc')
+            run('cmake','--build',build,'--target','aijni','ggufcpu','--parallel','2')
+            for name,src in [('libaijni.so',build/'libaijni.so'),('libggufcpu.so',build/'libggufcpu.so'),('libc++_shared.so',prebuilt/f'sysroot/usr/lib/{triple}/libc++_shared.so')]:
                 dest=WORK/f'{abi}-{name}';shutil.copyfile(src,dest);run(prebuilt/'bin/llvm-strip','--strip-debug',dest)
                 libs[f'lib/{abi}/{name}']=dest.read_bytes()
+            if abi=='arm64-v8a':
+                # Reuse the coherent stack/objects; only ggml-cpu is compiled with
+                # optional instructions. Explicit ARMv8-A + extensions avoids
+                # silently requiring unrelated ARMv8.2/8.6 ISA features.
+                for suffix,arch in [('dotprod','armv8-a+dotprod+fp16'),('i8mm','armv8-a+dotprod+fp16+i8mm')]:
+                    run('cmake','-S',ROOT/'apk-fix/native','-B',build,f'-DGGML_CPU_ARM_ARCH={arch}','-UHAVE_*')
+                    run('cmake','--build',build,'--target','aijni','--parallel','2')
+                    dest=WORK/f'{abi}-libaijni_{suffix}.so'
+                    shutil.copyfile(build/'libaijni.so',dest);run(prebuilt/'bin/llvm-strip','--strip-debug',dest)
+                    libs[f'lib/{abi}/libaijni_{suffix}.so']=dest.read_bytes()
     intermediate=WORK/'intermediate.apk'
     with zipfile.ZipFile(original) as a,zipfile.ZipFile(intermediate,'w') as b:
         for n in a.namelist():

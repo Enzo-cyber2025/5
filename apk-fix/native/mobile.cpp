@@ -3,6 +3,9 @@
 #include <android/log.h>
 #include "llama.h"
 #include "prompt_cache.h"
+#include "cpu_threads.h"
+#include <sched.h>
+#include <unistd.h>
 #include "chat.h"
 #include "gguf.h"
 #include "ggml-backend.h"
@@ -100,6 +103,21 @@ static std::string piece(const llama_vocab *v,llama_token t) {
     if(n<0) throw std::runtime_error("Falha ao decodificar token");
     return std::string(large.data(),n);
 }
+static int generation_threads(int requested) {
+    cpu_set_t allowed;CPU_ZERO(&allowed);
+    std::vector<int> capacities;int available=0;
+    if(sched_getaffinity(0,sizeof(allowed),&allowed)==0) {
+        for(int cpu=0;cpu<CPU_SETSIZE;cpu++)if(CPU_ISSET(cpu,&allowed)) {
+            available++;
+            std::ifstream f("/sys/devices/system/cpu/cpu"+std::to_string(cpu)+"/cpu_capacity");
+            int capacity=0;if(f>>capacity)capacities.push_back(capacity);
+        }
+    }
+    if(available<=0)available=std::max<long>(1,sysconf(_SC_NPROCESSORS_ONLN));
+    int result=resolve_cpu_threads(requested,available,capacities);
+    LOG("GGUF_CPU_THREADS requested=%d available=%d capacities=%zu resolved=%d",requested,available,capacities.size(),result);
+    return result;
+}
 extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *env,jclass,jstring path,jstring proj,jint context,jint threads,jint layers,jboolean mmap) {
     try {
         create_error.clear();loaded_gpu_layers=0;
@@ -154,7 +172,7 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
             throw std::runtime_error("O GGUF não carregou camadas no Vulkan. Escolha CPU explicitamente ou outro modelo/dispositivo.");
         e->layers=loaded_gpu_layers;
         auto cp=llama_context_default_params(); cp.n_ctx=context; cp.n_batch=128; cp.n_ubatch=32;
-        cp.n_threads=cp.n_threads_batch=std::max(1,std::min(threads,8));
+        cp.n_threads=cp.n_threads_batch=generation_threads(threads);
         cp.abort_callback=[](void *p){return static_cast<Engine*>(p)->cancel.load();}; cp.abort_callback_data=e.get();
         e->ctx=llama_init_from_model(e->model,cp);
         if(!e->ctx) throw std::runtime_error("Não foi possível criar contexto: reduza o contexto/modelo");
@@ -360,6 +378,12 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
                 if(e->cancel)throw std::runtime_error("Geração cancelada");
                 auto count=std::min<size_t>(llama_n_batch(e->ctx),input.size()-at);
                 auto batch=llama_batch_get_one(input.data()+at,count);
+                // Intermediate prompt chunks only populate KV. Computing their
+                // vocabulary projection is wasted: only the final position is sampled.
+                // Keep every input token and the exact 128/32 attention batching.
+                std::vector<int8_t> output_mask(count,0);
+                if(at+count==input.size())output_mask.back()=1;
+                batch.logits=output_mask.data();
                 if(llama_decode(e->ctx,batch)!=0)throw std::runtime_error("Falha de decode no prompt");
                 if(text_cache)e->cached_tokens.insert(e->cached_tokens.end(),input.begin()+at,input.begin()+at+count);
             }

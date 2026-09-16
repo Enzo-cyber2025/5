@@ -27,3 +27,9 @@ target_compile_features(aijni PRIVATE cxx_std_17)
 target_link_libraries(aijni PRIVATE llama llama-common mtmd ggml android log)
 target_link_options(aijni PRIVATE -Wl,--exclude-libs,ALL -Wl,-z,max-page-size=16384)
 set_target_properties(aijni PROPERTIES CXX_VISIBILITY_PRESET hidden)
+
+# Baseline-only probe, independent of ggml-cpu's optional ARM ISA flags.
+add_library(ggufcpu SHARED cpu_probe.cpp)
+target_compile_features(ggufcpu PRIVATE cxx_std_17)
+target_link_options(ggufcpu PRIVATE -Wl,-z,max-page-size=16384)
+set_target_properties(ggufcpu PROPERTIES CXX_VISIBILITY_PRESET hidden)
