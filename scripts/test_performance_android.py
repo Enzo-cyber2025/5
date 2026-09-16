@@ -44,6 +44,10 @@ def main():
         assert result['apk_sha256']==c['apk_sha256'];assert d.shell('getprop ro.kernel.qemu')=='1'
         d.adb('root',check=False);d.adb('wait-for-device');d.shell('wm size 720x1280');d.shell('wm density 240');d.adb('logcat','-G','16M')
         d.shell('pm disable-user --user 0 com.google.android.apps.nexuslauncher',check=False)
+        # Lavapipe reports CPU device type and is intentionally ignored unless
+        # this existing emulator-only diagnostic opt-in is explicitly enabled.
+        d.shell('setprop debug.gguf.vulkan_device 0')
+        assert d.shell('getprop debug.gguf.vulkan_device')=='0'
         init_ime(d)
         # Test the installed candidate's actual code renderer/clipboard first,
         # so UI defects are not hidden behind a long inference benchmark.
@@ -52,6 +56,8 @@ def main():
         if c.get('image_import'):
             from test_image_android import pixels
             pixels(d);checks['actual_android_image_decoder']='PASS'
+            from test_image_android import inference
+            checks['real_image_missing_metadata']=inference(d)
         assert d.shell('getprop ro.kernel.qemu')=='1'
         d.adb('uninstall',PACKAGE) # fresh disposable emulator, no user data
         base=Path('.cache/performance-base.apk');assert sha(base)==c['baseline_sha256']
@@ -75,6 +81,19 @@ def main():
                     checks['different_key_refused_without_deleting_data']='PASS'
                 d.grant_test_notifications()
             model=d.import_model(TEXT);series={};result['series'][phase]=series
+            # Actual Vulkan backend under software emulation. Functional proof only,
+            # never use these timings to claim physical GPU speed.
+            chat=d.new_chat(model,99,context_size=2048,threads=0);wait_ready(d)
+            load=d.adb('logcat','-d',f'--pid={d.alive()}')
+            (E/f'physical-performance-{phase}-vulkan-load.txt').write_text(load[-100000:])
+            assert vulkan_offloaded(load),'No actual Vulkan layer offload; see saved load diagnostics'
+            series['gpu']=run_reply(d,chat,'Give three useful study tips.',phase+'-vulkan',True,new)
+            if new:
+                log=d.adb('logcat','-d',f'--pid={d.alive()}')
+                assert 'GGUF_GPU_SAMPLING requested=1 attached=1' in log
+                m=re.search(r'GGUF_GPU_SAMPLING_RESULT backend_selected=(\d+) emitted=(\d+)',log);assert m and int(m[1])>0
+                # Preserve all stages/parameters for inspection, even if equality fails.
+                (E/'physical-performance-gpu-sampling.txt').write_text(log[-150000:])
             for screen in ('awake','asleep'):
                 runs=[];series[screen]=runs
                 for i in range(4): # 1 warmup, 3 measured repetitions
@@ -97,18 +116,6 @@ def main():
             if new:
                 assert re.search(r'GGUF_CPU_THREADS requested=2 .*resolved=2',d.adb('logcat','-d',f'--pid={d.alive()}'))
             series['manual']=run_reply(d,chat,FIRST,phase+'-manual',False,new)
-            # Actual Vulkan backend under software emulation. Functional proof only,
-            # never use these timings to claim physical GPU speed.
-            chat=d.new_chat(model,99,context_size=2048,threads=0);wait_ready(d)
-            load=d.adb('logcat','-d',f'--pid={d.alive()}');assert vulkan_offloaded(load)
-            (E/f'physical-performance-{phase}-vulkan-load.txt').write_text(load[-100000:])
-            series['gpu']=run_reply(d,chat,'Give three useful study tips.',phase+'-vulkan',True,new)
-            if new:
-                log=d.adb('logcat','-d',f'--pid={d.alive()}')
-                assert 'GGUF_GPU_SAMPLING requested=1 attached=1' in log
-                m=re.search(r'GGUF_GPU_SAMPLING_RESULT backend_selected=(\d+) emitted=(\d+)',log);assert m and int(m[1])>0
-                # Preserve all stages/parameters for inspection, even if equality fails.
-                (E/'physical-performance-gpu-sampling.txt').write_text(log[-150000:])
         before=result['series']['before'];after=result['series']['after']
         for screen in ('awake','asleep'):
             for i in range(3):
@@ -121,9 +128,6 @@ def main():
         checks['automatic_threads_and_manual_override']='PASS'
         checks['real_send_to_first_ui_timing']='PASS'
         result['medians']={screen:{phase:{kind:{'decode_tokens_s':statistics.median(x[kind]['native_decode_tokens_s'] for x in result['series'][phase][screen]),'prefill_ms':statistics.median(x[kind]['metrics']['prefillNs']/1e6 for x in result['series'][phase][screen]),'first_native_text_ms':statistics.median(x[kind]['metrics']['firstTokenNs']/1e6 for x in result['series'][phase][screen])} for kind in ('cold','follow')} for phase in ('before','after')} for screen in ('awake','asleep')}
-        if c.get('image_import'):
-            from test_image_android import inference
-            checks['real_image_missing_metadata']=inference(d)
         result['status']='PASS'
     except Exception as ex:
         result['error']=str(ex);(E/'physical-performance-failure.txt').write_text(traceback.format_exc());traceback.print_exc()
