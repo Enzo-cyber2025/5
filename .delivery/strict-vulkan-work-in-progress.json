@@ -1,5 +1,5 @@
 {
-  "status": "SIGNED_STRICT_VULKAN_PENDING_ANDROID_TEST",
+  "status": "SIGNED_STRICT_FUNCTIONAL_TEST_PASS_SPEED_TARGET_NOT_MET",
   "baseline_apk_sha256": "8a994b58efc0a65a0851534402eacb5f0c305ff534a100075a88e5c5dbf95399",
   "baseline_commit": "53dd3487bab82b313289faeb37d42135e6bc838a",
   "changes": [
@@ -37,9 +37,39 @@
   "benchmark_run": 35150143379,
   "benchmark_job": 104976090371,
   "benchmark_commit": "7a5299617182866ad5812501d0f9c249748cf54d",
-  "benchmark_status": "in_progress",
+  "benchmark_status": "completed success",
   "build_overall_status": "FAIL: external bus response CERO EMIOFSELLA.; separate exact signed comparison returned the identical incorrect answer before/after, not an introduced difference in that case",
   "vision_comparison_status": "PASS_EQUALITY_ONLY",
   "vision_semantic_result": "FAIL in both; CERO EMIOFSELLA.",
-  "strict_visual_tensor_routing": "PASS: 35 graphs, 19290 math nodes, no non-Vulkan math dispatched under guard; host orchestration CPU; software Vulkan is not physical GPU proof"
+  "strict_visual_tensor_routing": "PASS: 35 graphs, 19290 math nodes, no non-Vulkan math dispatched under guard; host orchestration CPU; software Vulkan is not physical GPU proof",
+  "measured_medians": {
+    "awake": {
+      "before": {
+        "total_s": 66.96299999998882,
+        "first_native_text_s": 4.839029597,
+        "decode_tokens_s": 2.0578317102997463
+      },
+      "after": {
+        "total_s": 67.11000000000058,
+        "first_native_text_s": 4.835357402,
+        "decode_tokens_s": 2.0514565148699138
+      }
+    },
+    "asleep": {
+      "before": {
+        "total_s": 36.54799999999523,
+        "first_native_text_s": 4.656812006,
+        "decode_tokens_s": 4.010501801006853
+      },
+      "after": {
+        "total_s": 36.10800000000745,
+        "first_native_text_s": 4.503206776,
+        "decode_tokens_s": 4.061386890142341
+      }
+    }
+  },
+  "gain_150_percent_certified": false,
+  "target_throughput_multiplier": 2.5,
+  "target_baseline_sha256": "8a994b58efc0a65a0851534402eacb5f0c305ff534a100075a88e5c5dbf95399",
+  "next_step": "Same-byte APK upstream Vulkan submission screening and separate GPU timestamp profiling, not delivery of a claimed +150% improvement."
 }
