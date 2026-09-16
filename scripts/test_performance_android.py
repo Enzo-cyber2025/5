@@ -44,6 +44,12 @@ def main():
         assert result['apk_sha256']==c['apk_sha256'];assert d.shell('getprop ro.kernel.qemu')=='1'
         d.adb('root',check=False);d.adb('wait-for-device');d.shell('wm size 720x1280');d.shell('wm density 240');d.adb('logcat','-G','16M')
         init_ime(d)
+        # Test the installed candidate's actual code renderer/clipboard first,
+        # so UI defects are not hidden behind a long inference benchmark.
+        d.adb('install','-g',apk,timeout=180)
+        checks['code_boxes_exact_android_clipboard']=code_ui(d)
+        assert d.shell('getprop ro.kernel.qemu')=='1'
+        d.adb('uninstall',PACKAGE) # fresh disposable emulator, no user data
         base=Path('.cache/performance-base.apk');assert sha(base)==c['baseline_sha256']
         d.adb('install','-r','-g',base,timeout=180);d.shell('pm clear '+PACKAGE);d.grant_test_notifications()
         for phase in ('before','after'):
@@ -111,7 +117,6 @@ def main():
         checks['automatic_threads_and_manual_override']='PASS'
         checks['real_send_to_first_ui_timing']='PASS'
         result['medians']={screen:{phase:{kind:{'decode_tokens_s':statistics.median(x[kind]['native_decode_tokens_s'] for x in result['series'][phase][screen]),'prefill_ms':statistics.median(x[kind]['metrics']['prefillNs']/1e6 for x in result['series'][phase][screen]),'first_native_text_ms':statistics.median(x[kind]['metrics']['firstTokenNs']/1e6 for x in result['series'][phase][screen])} for kind in ('cold','follow')} for phase in ('before','after')} for screen in ('awake','asleep')}
-        checks['code_boxes_exact_android_clipboard']=code_ui(d)
         result['status']='PASS'
     except Exception as ex:
         result['error']=str(ex);(E/'physical-performance-failure.txt').write_text(traceback.format_exc());traceback.print_exc()
