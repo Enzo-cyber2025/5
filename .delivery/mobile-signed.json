@@ -1,30 +1,22 @@
 {
-  "source_commit": "b2354d2182f45954075a6317e92a0b0c33a5f4da",
+  "source_commit": "4bef75be76eeb19e28dbaa6c4b36ef9ec662ccfd",
   "llama_commit": "b29c606e28a01b1bc8c1351026a0fa6e616bf6c4",
   "min_sdk": 28,
-  "native_source_commit": "ce0118db8646f1523d11725a8c5c29b6e88230f2",
-  "status": "SIGNED_REPLY_NOTIFICATION_ANDROID_PASS",
+  "native_source_commit": "4bef75be76eeb19e28dbaa6c4b36ef9ec662ccfd",
+  "status": "SIGNED_PENDING_ANDROID_TEST",
   "native": {
     "lib/arm64-v8a/libggufdiagnostics.so": "255e52f814d968e8dd008e8cea12c522aad06d943dffe8a30fe095485058b26c",
     "lib/x86_64/libggufdiagnostics.so": "dd07c5a6aef3d75a7aec0325c20dddd6b58a313085254927291dc07dcf3c0139",
-    "lib/arm64-v8a/libaijni.so": "495b0ffc40ae3e48d33b2da090dd8d747ecda8139220fbe8531b26fb81c4ebb4",
+    "lib/arm64-v8a/libaijni.so": "44fd5848e92bd18b4a56910bf32f3550b4699cb5a684379c00725854c76d0c51",
+    "lib/arm64-v8a/libggufcpu.so": "961aedde471f8a87ef305cfe2ec496beb11046fe198893a701ac994962343061",
     "lib/arm64-v8a/libc++_shared.so": "cb304e649e49cb65766da9d20a2d8bb8bd0c7cfd383e1f73838f838d1263c548",
-    "lib/x86_64/libaijni.so": "841efee8fce11672fd3c1f45f63706f2bd83ae57e8d43f4b1682b6cb0d33c123",
+    "lib/arm64-v8a/libaijni_dotprod.so": "253cedd6553e420ec117a2f7f5da67190d48597e4c7c6c22c05048104cf666f9",
+    "lib/arm64-v8a/libaijni_i8mm.so": "0a39fbd252d37794c50304ce94faad53858e515f4821ae24f1a03ec4206504d6",
+    "lib/x86_64/libaijni.so": "74dded10504b49369c364318a607d66b9d98a0adaba0f963ede8ab3efed6fa66",
+    "lib/x86_64/libggufcpu.so": "9a9605bb5b5853888abf070555b45e37530b9c2ee979ae356537305d5c315b7b",
     "lib/x86_64/libc++_shared.so": "0e8aaa2ef7f9abbe54ad76dab5162f3b7bf1a92ba1b3c63221443ecb87c1b568"
   },
-  "notification_base_sha256": "eabd016935ac51cdd89063a97fbc1b562f7f9261981f54b5191d37734e7922eb",
-  "changed_classes": [
-    "GenerationService$1.smali",
-    "GenerationService$2.smali",
-    "GenerationService.smali"
-  ],
-  "added_classes": [
-    "ReplyNotifications.smali",
-    "ReplyNotifications$0.smali",
-    "ReplyNotifications$State.smali"
-  ],
-  "unsigned_sha256": "f80e451e6cfa9f8ed70498e22d35e3ba401e29f97e5071c456806dffa395390c",
-  "apk_sha256": "3baa171c78eb5ee7f6f5c3c212904f53547a13184b9c01ea1d6ec565e2f5152e",
-  "signer_sha256": "4f75afe8637f28ccb167db407e3b2bc9b260e1cfe6059b7377ea20b0b4dc2ac3",
-  "acceptance_file": ".delivery/reply-notification-acceptance.json"
+  "unsigned_sha256": "0da1346b69d464515899b1c99d5a9dea7515ab5d13ed5cfcd640dc5081082182",
+  "apk_sha256": "8f54d7d3e9556771d7824fa2b7ff55295639ebe34421073ab51e15dde69e7eaf",
+  "signer_sha256": "bf9c75ad550a7bafd20a99ceffbb5a58d064322f245b1bf1786504ceb7700aa7"
 }
