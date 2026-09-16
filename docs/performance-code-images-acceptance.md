@@ -1,5 +1,7 @@
 # APK com caixas de código, leitura de imagens e alterações de desempenho
 
+> Relatório histórico do APK e7ee. O arquivo atual `.delivery/GGUF-Chat-mobile.apk` foi substituído pela versão Vulkan 8a994; ver [resultado atual, misto](vulkan-awake-asleep-acceptance.md). Este relatório e sua aprovação não aprovam automaticamente o APK novo. Baseline histórico preservado no commit `0b448fe59427ff9dd018d1799741a0b8a41f50f5`.
+
 ## Resultado: testes funcionais passaram; meta de velocidade não comprovada
 
 APK: `.delivery/GGUF-Chat-mobile.apk` (Android 9+, ARM64 e x86_64).

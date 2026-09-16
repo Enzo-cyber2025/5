@@ -1,6 +1,7 @@
 """Exact signed Vulkan acceptance. Functional PASS is not a 5-second phone claim."""
 import hashlib
 import json
+import statistics
 from pathlib import Path
 from verify_performance_candidate import verify as candidate
 from verify_performance_acceptance import api
@@ -46,6 +47,18 @@ def verify():
                 assert m['tokens']==x['tokens'] and m['decodeNs']>0 and m['firstTokenNs']>0
                 if screen=='awake': assert x['send_to_first_ui_ns']>0
             assert new['backend_selected']>0 and 0<new['overlap_submissions']<new['tokens']
+    # Functional acceptance must not silently become a speed-improvement claim.
+    computed = {screen: {phase: {
+        'total_s': statistics.median(x['prefill_and_generation_seconds'] for x in s['series'][phase][screen]),
+        'first_native_text_s': statistics.median(x['metrics']['firstTokenNs']/1e9 for x in s['series'][phase][screen]),
+        'decode_tokens_s': statistics.median(x['native_decode_tokens_s'] for x in s['series'][phase][screen]),
+    } for phase in ('before', 'after')} for screen in ('awake', 'asleep')}
+    assert v['medians'] == s['medians'] == computed
+    improved = all(computed[screen]['after']['total_s'] < computed[screen]['before']['total_s'] for screen in computed)
+    assert v['both_screen_states_total_speed_improved'] is improved
+    assert v['awake_send_to_first_ui_median_s'] == {
+        phase: statistics.median(x['send_to_first_ui_ns']/1e9 for x in s['series'][phase]['awake'])
+        for phase in ('before', 'after')}
     # UI seed is runtime-random; these are smoke checks, NEVER equal-seed proof.
     for phase in ('before','after'):
         x=s['series'][phase]['non_greedy']

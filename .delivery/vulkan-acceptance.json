@@ -1,0 +1,82 @@
+{
+  "status": "SIGNED_VULKAN_AWAKE_ASLEEP_FUNCTIONAL_PASS",
+  "apk_sha256": "8a994b58efc0a65a0851534402eacb5f0c305ff534a100075a88e5c5dbf95399",
+  "run": 35140030394,
+  "attempt": 1,
+  "job": 104941952652,
+  "commit": "d5a3d8e99c56fb98a140e40bd5065b647e58a1ec",
+  "vision_comparison": {
+    "run": 35138528110,
+    "attempt": 1,
+    "job": 104936885274,
+    "commit": "c27b6a7c04d1acb1ef6bceefe75f48630df89e6f",
+    "status": "PASS_EQUALITY_ONLY",
+    "semantic_vehicle": "FAIL in BOTH versions"
+  },
+  "physical_gpu_speed_certified": false,
+  "five_second_goal_certified": false,
+  "both_screen_states_total_speed_improved": false,
+  "performance_conclusion": "MIXED: first text earlier in both states; awake total/decode regressed, asleep total/decode slightly improved. Small software-Vulkan observations, not physical GPU or maximum-speed certification.",
+  "medians": {
+    "awake": {
+      "before": {
+        "total_s": 71.0109999999986,
+        "first_native_text_s": 5.542089381,
+        "decode_tokens_s": 1.9548258522860764
+      },
+      "after": {
+        "total_s": 72.04700000000594,
+        "first_native_text_s": 5.364832663,
+        "decode_tokens_s": 1.9119991983231142
+      }
+    },
+    "asleep": {
+      "before": {
+        "total_s": 40.60900000001129,
+        "first_native_text_s": 5.34557972,
+        "decode_tokens_s": 3.6260179837311983
+      },
+      "after": {
+        "total_s": 39.887000000002445,
+        "first_native_text_s": 4.99918271,
+        "decode_tokens_s": 3.673795006785115
+      }
+    }
+  },
+  "ui_review": [
+    {
+      "path": "ci-results/35140030394-1/physical-code-stream.png",
+      "sha256": "34bb9993706e8d1d735ebc518ebfc2dae3ba217557f36513a4fb51111110837f",
+      "review": "Real production renderer with synthetic fixture: Python and JSON panels, language labels and Copy; exact clipboard assertions passed."
+    },
+    {
+      "path": "ci-results/35140030394-1/physical-code-history.png",
+      "sha256": "13f55f2ea99adfbb9d718aeea268882eabe8b0d2b9ca50b50a35b92d62eb1f77",
+      "review": "History rendering preserves the same code panels; exact clipboard assertions passed."
+    },
+    {
+      "path": "ci-results/35140030394-1/physical-vulkan-plain-view.png",
+      "sha256": "91cf0090ba9bfd66ce9e6e55f20963a76bb581cc397ff59d729f0deebfa243d9",
+      "review": "Texto simples OK on original TextView; 256 exact appends asserted by fixture."
+    },
+    {
+      "path": "ci-results/35140030394-1/physical-vulkan-after-awake-3-follow.png",
+      "sha256": "b430b43376163803488b8ecc3a85f0d372caa2120b8ec12adf672784615cd83e",
+      "review": "Actual first and follow responses; visible 128-token footers, 1.9 tokens/s. Not a semantic quality pass."
+    },
+    {
+      "path": "ci-results/35140030394-1/physical-vulkan-after-asleep-3-follow.png",
+      "sha256": "9454371bfe4789c687177121550539553bcf33a029da3968e2919e7d5961a381",
+      "review": "Actual saved replies after waking, 128-token footers, 3.6 tokens/s; sleep/completion proved separately by chronology and notification/service logs."
+    },
+    {
+      "path": "ci-results/35140030394-1/inference-unknown-image-metadata.png",
+      "sha256": "8cd887b19c50a506030093b4ba2a705efae4dbaa99cb5ae6102d53eb16f8f73f",
+      "review": "Actual imported image inference answered Dog.; footer visible. This is not universal image semantic certification."
+    }
+  ],
+  "awake_send_to_first_ui_median_s": {
+    "before": 5.607249629,
+    "after": 5.424442994
+  }
+}

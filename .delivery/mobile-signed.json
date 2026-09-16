@@ -3,7 +3,7 @@
   "llama_commit": "b29c606e28a01b1bc8c1351026a0fa6e616bf6c4",
   "min_sdk": 28,
   "native_source_commit": "0e8fdd1557694b1ea538bdb323684e9ad6853a56",
-  "status": "SIGNED_PENDING_ANDROID_TEST",
+  "status": "SIGNED_VULKAN_AWAKE_ASLEEP_FUNCTIONAL_PASS",
   "native": {
     "lib/arm64-v8a/libggufdiagnostics.so": "255e52f814d968e8dd008e8cea12c522aad06d943dffe8a30fe095485058b26c",
     "lib/x86_64/libggufdiagnostics.so": "dd07c5a6aef3d75a7aec0325c20dddd6b58a313085254927291dc07dcf3c0139",
@@ -18,5 +18,7 @@
   },
   "unsigned_sha256": "d82894731343d7a8e151564503b45375cafd166c06224cb554f9e5e64c7db816",
   "apk_sha256": "8a994b58efc0a65a0851534402eacb5f0c305ff534a100075a88e5c5dbf95399",
-  "signer_sha256": "7295130ab387cd5123c1faab79c96f3ca8d8eb694ae7b15c611086d48b5898a0"
+  "signer_sha256": "7295130ab387cd5123c1faab79c96f3ca8d8eb694ae7b15c611086d48b5898a0",
+  "acceptance_file": ".delivery/vulkan-acceptance.json",
+  "performance_conclusion": "MIXED: first text earlier in both states; awake total/decode regressed, asleep total/decode slightly improved. Small software-Vulkan observations, not physical GPU or maximum-speed certification."
 }

@@ -1,5 +1,5 @@
 {
-  "status": "SIGNED_CANDIDATE_NOT_YET_ANDROID_ACCEPTED",
+  "status": "SIGNED_VULKAN_AWAKE_ASLEEP_FUNCTIONAL_PASS",
   "apk_sha256": "8a994b58efc0a65a0851534402eacb5f0c305ff534a100075a88e5c5dbf95399",
   "source_commit": "0e8fdd1557694b1ea538bdb323684e9ad6853a56",
   "native_source_commit": "0e8fdd1557694b1ea538bdb323684e9ad6853a56",
@@ -19,12 +19,12 @@
   "local_tests": "118 passed, 7 skipped focused; 142 passed, 28 skipped full build-suite selection; hosted 168 passed, 2 skipped. Exact native/UI compilation and DEX serialization gates passed.",
   "five_second_goal_certified": false,
   "physical_gpu_speed_certified": false,
-  "benchmark_run": 35137025361,
-  "benchmark_commit": "f3993c930433679e96aa7e747011cef88da64b24",
+  "benchmark_run": 35140030394,
+  "benchmark_commit": "d5a3d8e99c56fb98a140e40bd5065b647e58a1ec",
   "vision_comparison_run": 35138528110,
   "vision_comparison_commit": "c27b6a7c04d1acb1ef6bceefe75f48630df89e6f",
-  "build_overall_status": "FAIL: external single-GGUF vehicle response CERO EMIOFSELLA. (actual Vulkan image encoding completed). Same failed case now under independent signed before/after comparison; NOT yet classified as pre-existing or introduced.",
-  "pending": "Corrected signed Vulkan benchmark must complete before new speed claims or delivery.",
+  "build_overall_status": "FAIL: external single-GGUF vehicle response CERO EMIOFSELLA. Actual encoding completed. Independent exact signed before/after run 35138528110 returned the same incorrect answer in BOTH versions: equality-only PASS, semantic FAIL, not an introduced difference in this case.",
+  "pending": null,
   "last_benchmark_failure": {
     "run": 35137025361,
     "reason": "After-phase attempted duplicate import of the already-preserved model; latest harness reuses exact ID and verifies file hash. Baseline series complete, AFTER speed measurements not reached."
@@ -35,5 +35,10 @@
     "before": " CERO EMIOFSELLA.",
     "after": " CERO EMIOFSELLA.",
     "semantic_vehicle": "FAIL in BOTH versions; not an introduced change, not a semantic pass."
-  }
+  },
+  "benchmark_job": 104941952652,
+  "benchmark_conclusion": "success",
+  "performance_conclusion": "MIXED: first text earlier in both states; awake total/decode regressed, asleep total/decode slightly improved. Small software-Vulkan observations, not physical GPU or maximum-speed certification.",
+  "both_screen_states_total_speed_improved": false,
+  "acceptance_file": ".delivery/vulkan-acceptance.json"
 }
