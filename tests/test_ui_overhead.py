@@ -28,13 +28,14 @@ def test_patch_real_delivered_smali_and_refuse_double_apply(tmp_path):
     src=ROOT/'.cache/ui-baseline/smali/com/ggufchat/app'
     if not src.exists():pytest.skip('Exact delivered DEX decode required')
     sys.path.insert(0,str(ROOT/'apk-fix'))
-    from ui_overhead import patch_delivered_ui
+    from ui_overhead import patch_delivered_ui, discard_unused_stream_buffer
     for n in ('ChatActivity.smali','GenerationService$2.smali'):shutil.copyfile(src/n,tmp_path/n)
     patch_delivered_ui(tmp_path)
     s=(tmp_path/'ChatActivity.smali').read_text()
     assert s.count('ScrollTail;->request(')==1
-    # No streaming, Send timing, code parsing, completion/history or token-budget edits.
-    old=(src/'ChatActivity.smali').read_text()
+    # Other than removing the proven write-only buffer, preserve complete methods.
+    old=discard_unused_stream_buffer((src/'ChatActivity.smali').read_text())
+    assert 'streamingBuf' not in s
     for name in ('onToken','onSend','onDone','onError','onResume','onPause','renderHistory'):
         def method(text):
             import re
@@ -57,3 +58,24 @@ def test_no_animation_or_strong_view_ownership_or_token_throttle():
     assert 's.preview.reset()' in p and 's.preview.needsUpdate(now,reply.length())' in p
     assert 's.preview' not in p[p.index('void finished'):]
     assert 'PreviewCadence.PREFIX_LENGTH' in (JAVA/'GenerationStats.java').read_text()
+
+
+def test_buffer_removal_refuses_any_extra_reader():
+    src=ROOT/'.cache/ui-baseline/smali/com/ggufchat/app/ChatActivity.smali'
+    if not src.exists():pytest.skip('Decoded baseline required')
+    sys.path.insert(0,str(ROOT/'apk-fix'))
+    from ui_overhead import discard_unused_stream_buffer
+    original=src.read_text()
+    with pytest.raises(AssertionError):
+        discard_unused_stream_buffer(original+'\niget-object v0, p0, Lcom/ggufchat/app/ChatActivity;->streamingBuf:Ljava/lang/StringBuilder;')
+
+
+def test_renderer_flushes_synchronously_at_boundaries():
+    s=(JAVA/'CodeBlocks.java').read_text()
+    assert 'stream.parser.feed(chunk);\n        stream.flush();' in s
+    assert 'stream.parser.finish();stream.flush();' in s
+    assert 'public void close(){flush();code=null;plain=null;}' in s
+    assert s.index('flush(); // Mount') < s.index('mount();plain=null;')
+    assert 'if(pendingFirst==null)pendingFirst=text;' in s
+    assert 'pendingTarget.append(' in s
+    assert 'postDelayed' not in s and 'Thread.sleep' not in s

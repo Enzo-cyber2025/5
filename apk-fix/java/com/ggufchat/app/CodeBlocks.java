@@ -25,6 +25,28 @@ public final class CodeBlocks {
     private static final class Stream implements CodeFenceParser.Sink {
         final Context c;final TextView style;final LinearLayout root;final CodeFenceParser parser;
         TextView plain,code;
+        TextView pendingTarget;
+        String pendingFirst;
+        StringBuilder pendingBatch;
+        // A normal single-line token needs no extra copy/allocation. Allocate a
+        // join buffer only when the parser emits multiple runs to the SAME view.
+        void enqueue(TextView target,String text){
+            if(text.length()==0)return;
+            if(target!=pendingTarget)flush();
+            pendingTarget=target;
+            if(pendingFirst==null)pendingFirst=text;
+            else {
+                if(pendingBatch==null)pendingBatch=new StringBuilder();
+                if(pendingBatch.length()==0)pendingBatch.append(pendingFirst);
+                pendingBatch.append(text);
+            }
+        }
+        void flush(){
+            if(pendingFirst==null)return;
+            pendingTarget.append(pendingBatch!=null&&pendingBatch.length()>0?pendingBatch:pendingFirst);
+            pendingFirst=null;pendingTarget=null;
+            if(pendingBatch!=null)pendingBatch.setLength(0);
+        }
         final boolean live;boolean mounted;
         Stream(TextView source){this(source,false);}
         Stream(TextView source,boolean live){
@@ -51,8 +73,9 @@ public final class CodeBlocks {
             }
             return plain;
         }
-        public void text(String text){plain().append(text);}
+        public void text(String text){enqueue(plain(),text);}
         public void open(String language){
+            flush(); // Mount must see preceding plain text, even in this chunk.
             mount();plain=null;
             LinearLayout panel=new LinearLayout(c);panel.setOrientation(LinearLayout.VERTICAL);panel.setBackground(box(c,0xff101b23));
             panel.setContentDescription("Bloco de código");
@@ -73,8 +96,8 @@ public final class CodeBlocks {
             HorizontalScrollView scroller=new HorizontalScrollView(c);scroller.setFillViewport(false);scroller.setHorizontalScrollBarEnabled(true);
             scroller.addView(body,new ViewGroup.LayoutParams(-2,-2));panel.addView(scroller,new LinearLayout.LayoutParams(-1,-2));
         }
-        public void code(String text){code.append(text);}
-        public void close(){code=null;plain=null;}
+        public void code(String text){enqueue(code,text);}
+        public void close(){flush();code=null;plain=null;}
     }
     public static void decorate(LinearLayout column,boolean user){
         if(user)return;
@@ -82,7 +105,7 @@ public final class CodeBlocks {
             View child=column.getChildAt(i);if(!(child instanceof TextView))continue;
             TextView source=(TextView)child;String text=source.getText().toString();
             if(!text.contains("```")&&!text.contains("~~~"))continue;
-            Stream stream=new Stream(source);stream.parser.feed(text);stream.parser.finish();
+            Stream stream=new Stream(source);stream.parser.feed(text);stream.parser.finish();stream.flush();
             ViewGroup.LayoutParams params=source.getLayoutParams();column.removeViewAt(i);column.addView(stream.root,i,params);
         }
     }
@@ -98,5 +121,6 @@ public final class CodeBlocks {
             if(initial.length()>0){anchor.setText("");stream.parser.feed(initial);}
         }
         stream.parser.feed(chunk);
+        stream.flush(); // Synchronous: no timer, token throttle or first-text delay.
     }
 }

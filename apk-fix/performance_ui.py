@@ -8,8 +8,8 @@ def patch_performance_ui(app):
                 '    invoke-static {}, Lcom/ggufchat/app/NativeDispatch;->load()V',s)
     assert n==1;p.write_text(s)
     p=app/'ChatActivity.smali';s=p.read_text()
-    from ui_overhead import scroll_patch
-    s=scroll_patch(s)
+    from ui_overhead import scroll_patch, discard_unused_stream_buffer
+    s=discard_unused_stream_buffer(scroll_patch(s))
     s=s.replace('    invoke-virtual {v0, p1}, Landroid/widget/TextView;->append(Ljava/lang/CharSequence;)V',
                 '    invoke-static {p0}, Lcom/ggufchat/app/ResponseTiming;->first(Landroid/app/Activity;)V\n    invoke-static {v0, p1}, Lcom/ggufchat/app/CodeBlocks;->append(Landroid/widget/TextView;Ljava/lang/String;)V')
     a=s.index('.method private addMessageView(');b=s.index('.end method',a);part=s[a:b]

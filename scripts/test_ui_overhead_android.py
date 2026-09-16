@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Warmed before/after of two UI-only changes, keeping native binaries exact.
+"""Incremental comparison against reconstructed previous UI, native binaries exact.
 Debug-signed candidate on a disposable emulator, NOT release/update acceptance.
 Neither functional PASS nor fewer drawn frames implies the requested 21x/26x.
 """
@@ -27,8 +27,9 @@ def main():
         d.shell('wm size 720x1280');d.shell('wm density 240');d.adb('logcat','-G','32M')
         d.shell('pm disable-user --user 0 com.google.android.apps.nexuslauncher',check=False)
         d.shell('setprop debug.gguf.vulkan_device 0');init_ime(d)
+        assert build['baseline_kind']=='reconstructed_previous_ui'
         reference=None
-        for phase,apk in [('before',Path('.delivery/GGUF-Chat-mobile.apk')),('after',Path('.cache/ui-experiment/candidate.apk'))]:
+        for phase,apk in [('before',Path('.cache/ui-previous/candidate.apk')),('after',Path('.cache/ui-experiment/candidate.apk'))]:
             assert sha(apk)==build['baseline_sha256' if phase=='before' else 'candidate_sha256']
             if phase=='after':
                 # Not an update test. No user phone/data is connected; only this
@@ -66,6 +67,11 @@ def main():
                     if i==3:latest_footer(d,r,label)
             if phase=='after':
                 s['checks']['code_stream_history_copy']=code_ui(d)
+                d.shell('am force-stop com.ggufchat.codetest')
+                d.shell('am start -W -n com.ggufchat.codetest/.CodeActivity --es mode batch')
+                d.wait(lambda:position(d.ui(),text='Inserção agrupada OK',package={'com.ggufchat.codetest'}),'synchronous exact batched inserts',timeout=30)
+                d.capture('physical-ui-batch.png');s['checks']['synchronous_exact_batched_inserts']='PASS'
+                d.shell('am force-stop com.ggufchat.codetest')
                 d.shell('am start -W -n com.ggufchat.codetest/.TailActivity')
                 d.wait(lambda:position(d.ui(),text='Rolagem direta OK',package={'com.ggufchat.codetest'}),'real post-layout direct scroll',timeout=30)
                 d.capture('physical-ui-tail.png');s['checks']['direct_scroll_after_layout']='PASS'
@@ -82,6 +88,7 @@ def main():
         s['status']='PASS_UI_EXPERIMENT_ONLY'
         awake=s['medians']['awake'];asleep=s['medians']['asleep']
         s['requested_target_observations']=dict(
+            baseline_scope='Incremental versus reconstructed previous UI, NOT the original 323fd5 target baseline',
             required_throughput_multiplier=21,required_first_token_speedup=26,
             throughput_multipliers={screen:v['after']['decode_tokens_s']/v['before']['decode_tokens_s'] for screen,v in s['medians'].items()},
             awake_send_to_first_ui_speedup=awake['before']['send_to_first_ui_ns']/awake['after']['send_to_first_ui_ns'],
@@ -91,7 +98,7 @@ def main():
     except Exception as ex:
         s['error']=str(ex);(E/'physical-ui-failure.txt').write_text(traceback.format_exc());traceback.print_exc()
     finally:
-        s['scope']='Android35 x86_64 SOFTWARE Vulkan. SmolLM2-135M Q4_K_M, context2048/GPU99/auto threads/128 tokens. One excluded warmup +3 per state/version. Fixed version order can retain thermal/cache bias. Native first-token metric is NOT Send->first token with screen off. No release/update or phone speed certification.'
+        s['scope']='Android35 x86_64 SOFTWARE Vulkan. SmolLM2-135M Q4_K_M, context2048/GPU99/auto threads/128 tokens. Reconstructed previous UI versus current UI; one excluded warmup +3 per state/version. Do not multiply these ratios by another runner’s ratios. Fixed version order can retain thermal/cache bias. Native first-token metric is NOT Send->first token with screen off. No release/update or phone speed certification.'
         (E/'summary.json').write_text(json.dumps(s,indent=2,ensure_ascii=False))
         try:
             log=d.adb('logcat','-d')

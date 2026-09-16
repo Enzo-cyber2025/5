@@ -1,5 +1,5 @@
 name: UI-only Vulkan awake asleep comparison
-# Measurement round 1: 323fd5 baseline, no native or model changes.
+# Round 2: reconstructed previous UI versus buffer-free, batched text inserts.
 on:
   push:
     branches: [arena/01a09b42-5]
@@ -32,6 +32,8 @@ jobs:
           .venv/bin/pip install pytest==9.1.1 androguard==4.1.4 numpy==2.2.6 tqdm==4.67.1 pyyaml==6.0.2
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0'
           bash scripts/fetch_tools.sh
+          git fetch --no-tags --depth=1 origin 63913d1f5e60b1d912eae085c49bc237a30711d5
+          bash ci/log_step.sh ui-before-build .venv/bin/python scripts/build_ui_experiment.py --previous-ui
           bash ci/log_step.sh ui-build .venv/bin/python scripts/build_ui_experiment.py
           # The host test patches the exact released DEX too, not a fabricated fixture.
           java -jar .cache/tools/package/lib/apktool.jar d -f -r -o .cache/ui-baseline .delivery/GGUF-Chat-mobile.apk
@@ -73,4 +75,5 @@ jobs:
             .cache/ci-logs/
             .cache/ui-experiment/candidate.apk
             .cache/ui-experiment/aligned.apk
+            .cache/ui-previous/candidate.apk
           retention-days: 7
