@@ -1,19 +1,19 @@
 {
   "status": "COMPILED_ARM_ISA_SELECTION_PASS",
-  "apk_sha256": "8f54d7d3e9556771d7824fa2b7ff55295639ebe34421073ab51e15dde69e7eaf",
+  "apk_sha256": "e7ee730c5c8bc2c774375ded631fb4725bb364d09d05ea2e857cb9e38f8f69d9",
   "libraries": {
     "libaijni.so": {
-      "sha256": "44fd5848e92bd18b4a56910bf32f3550b4699cb5a684379c00725854c76d0c51",
+      "sha256": "0c930b62e84055cfffa2f64f0d2208f74bb13caf096fef0647d5980f0b4afff6",
       "optional_instruction_counts": {}
     },
     "libaijni_dotprod.so": {
-      "sha256": "253cedd6553e420ec117a2f7f5da67190d48597e4c7c6c22c05048104cf666f9",
+      "sha256": "a33bbb34679f7cec203b7b7e6f8f90da02d7cda9ccdddb97425048552d44906b",
       "optional_instruction_counts": {
         "sdot": 1038
       }
     },
     "libaijni_i8mm.so": {
-      "sha256": "0a39fbd252d37794c50304ce94faad53858e515f4821ae24f1a03ec4206504d6",
+      "sha256": "401a799ddd773435a1594837a5b6543e2cbe54238216c4895d74c3a03ede7620",
       "optional_instruction_counts": {
         "sdot": 894,
         "smmla": 244
@@ -24,5 +24,5 @@
       "optional_instruction_counts": {}
     }
   },
-  "scope": "Disassembly of real APK executable ELF sections; not physical ARM execution or a speed benchmark."
+  "scope": "Disassembly of real APK executable ELF sections, limited to listed dot-product/i8mm mnemonics; not an exhaustive ISA compatibility audit, physical ARM execution, or speed benchmark."
 }
