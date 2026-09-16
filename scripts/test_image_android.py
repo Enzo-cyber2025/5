@@ -17,7 +17,9 @@ def inference(d):
     d.launch();d.shell('mkdir -p /sdcard/Download')
     for f in (MODEL,PROJ):d.adb('push',f,'/sdcard/Download/'+f.name,timeout=300)
     select_pair(d)
-    model=d.wait(lambda:next((m for m in d.read_json('models.json') if m.get('capability')=='VISION_SINGLE_GGUF'),None),'physical unified visual model',timeout=600)
+    # A fresh library has no models.json until the asynchronous import finishes.
+    # Only absent storage is temporarily empty; malformed JSON/ADB errors still fail.
+    model=d.wait(lambda:next((m for m in d.read_json('models.json',optional=True) if m.get('capability')=='VISION_SINGLE_GGUF'),None),'physical unified visual model',timeout=600)
     fixtures();source=F/'frame-a.jpg';alias=F/'foto-sem-extensao';alias.write_bytes(source.read_bytes())
     chat=d.new_chat(model,0,context_size=4096)
     # Simulate an existing chat missing its redundant mmprojPath; actual physical

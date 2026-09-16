@@ -11,14 +11,14 @@
   "observed_static_gates": "Current exact APK executable-section dot-product/i8mm inspection: see performance-arm-isa.json. Static evidence only, not physical ARM speed or full ISA audit.",
   "local_tests": "20 passed, 8 skipped (previous focused invocation); exact candidate ARM instruction inspection passed. New corrected Android harness awaiting rerun.",
   "last_signed_test_result": {
-    "run": 35125326321,
+    "run": 35127256380,
     "status": "FAIL",
-    "reason": "Baseline Vulkan: software CPU-type device opt-in missing from test harness; no after benchmark performed.",
+    "reason": "Fresh-library test read models.json before asynchronous import completed; fixed to wait on absent optional store. Malformed JSON and I/O errors still fail.",
     "exact_candidate_passed": [
       "Android code stream/history exact clipboard (synthetic renderer fixtures)",
       "Android ImageDecoder: missing extension, white alpha, resize, EXIF, corrupt rejection"
     ],
     "image_inference": "NOT_REACHED",
-    "saf_selection_fix": "NOT_REACHED"
+    "saf_selection_fix": "PASS: authentic screenshot has both exact GGUF files selected; import screenshot shows identification in progress."
   }
 }

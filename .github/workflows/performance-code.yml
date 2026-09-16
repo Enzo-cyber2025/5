@@ -2,7 +2,7 @@ name: Signed CPU GPU and code-box tests
 on:
   push:
     branches: [arena/01a09b42-5]
-    paths: [ci/performance-candidate.json, scripts/test_performance_android.py, scripts/test_code_android.py, tests/android-code/**, .github/workflows/performance-code.yml]
+    paths: [ci/performance-candidate.json, scripts/test_performance_android.py, scripts/test_code_android.py, scripts/test_image_android.py, scripts/android_checks.py, tests/android-code/**, .github/workflows/performance-code.yml]
 permissions:
   contents: write
   actions: read
