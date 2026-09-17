@@ -84,3 +84,25 @@ def test_patch_is_idempotent_and_device_copy_cannot_fall_back_to_host(tmp_path):
     assert '~RestoreQkv(){mtmd_gguf_qkv_reference(ctx,false);}' in s
     assert 'GGUF_QKV_DIFF' in s and 'std::memcmp(fused.data(),embd,count*sizeof(float))' in s
     assert 'cp.n_batch=128; cp.n_ubatch=32;' in s
+
+
+def test_qkv_speed_gate_rejects_missing_proof_and_instrumented_samples(tmp_path):
+    import json,copy,importlib.util
+    spec=importlib.util.spec_from_file_location('qkv_eval',ROOT/'ci/evaluate_projector_qkv.py')
+    mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod)
+    r={'diagnostic':False,'verified_images':0,'image_chunks':5,'raw_history':[['assistant',' exact ']],
+       'tokens':2,'upload_bytes':100,'metrics':{'promptTokens':100,'completed':True,'decodeNs':1000000000},
+       'native_decode_tokens_s':2,'strict':{'status':'PASS'},'send_to_first_ui_ns':1000000000,
+       'stages':{'cache_disabled':1,'hits':0,'verification':0,'encode_calls':5,'encode_call_ns':500000000}}
+    b=copy.deepcopy(r);b['send_to_first_ui_ns']=800000000
+    s={'status':'PASS_QKV_EXPERIMENT_ONLY','verification':{'diagnostic':True,'verified_images':5,'image_chunks':5},
+       'loads':[{'mode':'verification','report':[['12','100','128','1']]},
+                {'mode':'separate','report':[]},{'mode':'fused','report':[['12','100','128','0']]},
+                {'mode':'fused','report':[['12','100','128','0']]},{'mode':'separate','report':[]}],
+       'warmups':[{}]*4,'measurements':[{'separate':r,'fused':b},{'fused':copy.deepcopy(b),'separate':copy.deepcopy(r)}]}
+    p=tmp_path/'summary.json';p.write_text(json.dumps(s));assert mod.evaluate(p)['status']=='OBSERVED_GAIN_IN_BOTH_PAIRS'
+    s['measurements'][1]['fused']['send_to_first_ui_ns']=1100000000;p.write_text(json.dumps(s));assert mod.evaluate(p)['status']=='NO_CONSISTENT_GAIN_OVER_5_PERCENT'
+    s['measurements'][1]['fused']['diagnostic']=True;p.write_text(json.dumps(s))
+    with pytest.raises(AssertionError):mod.evaluate(p)
+    s['status']='FAIL';p.write_text(json.dumps(s))
+    with pytest.raises(ValueError):mod.evaluate(p)

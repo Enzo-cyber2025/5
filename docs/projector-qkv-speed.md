@@ -42,3 +42,11 @@ layout, não inferência acelerada nem certificação física de GPU.
 Nenhum ganho será anunciado antes dos dados. O caminho ainda não é release.
 Decode, resize/crops e normalização continuam no host; este experimento não
 conclui a migração de todo o pré-processamento da imagem para GPU.
+
+## Execução atual
+
+Fonte **1eb0920**, CI **35275074925**, job **105383599707**, em andamento.
+Local: **203 testes passados, 70 pulados**; o teste do pós-avaliador foi adicionado
+depois do disparo do CI. O caso anterior de pares foi consolidado como igualdade
+aprovada, mas **critério de velocidade não atingido**; não é uma execução pendente.
+Nenhuma alteração de produção posterior à fonte testada foi aplicada nesta rodada.
