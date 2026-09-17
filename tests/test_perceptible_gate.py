@@ -46,3 +46,19 @@ def test_publication_is_downstream_of_both_real_test_and_independent_gate():
     relay=s[s.index('      - name: Relay approved payload'):s.index('      - name: Publish bounded')]
     assert 'if: always()' not in relay and "assert r['status']=='PASS_GAIN_GATE_RETAINED_IMAGES_ONLY'" in relay
     assert 'GGUF-Chat-mobile.apk\')' not in relay
+
+
+def test_release_signer_preserves_non_signature_metadata(tmp_path):
+    import importlib.util,zipfile
+    spec=importlib.util.spec_from_file_location('gain_signer',ROOT/'scripts/sign_gain_release.py')
+    mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod)
+    a=tmp_path/'a.apk';b=tmp_path/'b.apk'
+    def write(path,cert,service):
+        with zipfile.ZipFile(path,'w') as z:
+            z.writestr('classes.dex',b'exact-dex');z.writestr('lib/arm64-v8a/libaijni.so',b'exact-native')
+            z.writestr('META-INF/CERT.RSA',cert);z.writestr('META-INF/services/example',service)
+    write(a,b'old',b'keep');write(b,b'new',b'keep');assert mod.payload(a)==mod.payload(b)
+    write(b,b'new',b'changed');assert mod.payload(a)!=mod.payload(b)
+    s=(ROOT/'scripts/sign_gain_release.py').read_text()
+    assert s.index("gate=evaluate(report);assert gate['gain_gate_passed']")<s.index("private=ROOT/'.signing'")
+    assert 'install' not in s[s.index('def main('):].replace('in-place update','').replace('uninstall','')
