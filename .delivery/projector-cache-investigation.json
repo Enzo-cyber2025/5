@@ -1,5 +1,5 @@
 {
-  "status": "INTEGRATED_ANDROID_TEST_RUNNING",
+  "status": "PASS_PROJECTOR_CACHE_EXPERIMENT_ONLY",
   "native_source": "81bc70c8c1025fb8d46f7d99a8f9ee63af95b711",
   "tested_source": "81bc70c8c1025fb8d46f7d99a8f9ee63af95b711",
   "run": 35252559185,
@@ -31,9 +31,9 @@
   "current_scope": "Text ON/OFF, exact attachment notice matching, full image processing and separate embedding byte comparison, code/Copy/history and Android decoder. Raw stored histories must also pass ci/evaluate_projector_app.py.",
   "current_native_build": "success",
   "current_host_step": "success",
-  "android_result": "Pending; no new performance or release approval",
-  "monitor_warning": "gh run watch exited 0 without a final result when credentials failed. Exit 0 is NOT Android success.",
-  "github_connection": "Reconnected; git and gh status access restored. Prior artifact redirect returned EOF; no release downloaded.",
+  "android_result": "PASS plus independent raw saved-history equality for all 10 pairs",
+  "monitor_warning": "Previous interrupted monitor was not evidence of success; current result independently confirmed from completed CI and raw artifacts",
+  "github_connection": "Access restored; completed evidence fetched and inspected",
   "previous_completed_run": {
     "run": 35245429844,
     "conclusion": "failure",
@@ -41,5 +41,150 @@
     "confirmed_performance_comparisons": 0,
     "harness_issue": "Exact user prompt lookup omitted real APK attachment notice. Old timeout is NOT retrospectively approved."
   },
-  "real_ggml_cpu_rejection_test": "PASS locally; actual CPU output sentinel unchanged before rejection, explicit CPU still works"
+  "real_ggml_cpu_rejection_test": "PASS locally; actual CPU output sentinel unchanged before rejection, explicit CPU still works",
+  "conclusion": "success",
+  "completed_at": "2026-09-17T19:04:37Z",
+  "tested_apk_sha256": "2b444a73090dff9bd6d4ce6d199349cafd5e9ae73b83cc34e05101e7f77727cc",
+  "host_test_result": {
+    "passed": 30,
+    "skipped": 3
+  },
+  "checks": {
+    "actual_code_stream_history_copy": {
+      "stream": "PASS",
+      "history": "PASS"
+    },
+    "actual_android_pixels": "PASS",
+    "exact_responses_and_tokens": "PASS",
+    "exact_text_outputs_and_strict_routing": "PASS",
+    "cached_embeddings_equal_real_vulkan_byte_for_byte": "PASS",
+    "awake_asleep_completion_notice_cleanup": "PASS"
+  },
+  "observations": {
+    "awake": {
+      "cold_A": {
+        "before": {
+          "native_first_token_ns": 216903085362,
+          "embedding_helper_wall_ms": 8203,
+          "prefill_ns": 216895962199,
+          "encoder_calls": 5
+        },
+        "after": {
+          "native_first_token_ns": 197698532612,
+          "embedding_helper_wall_ms": 8163,
+          "prefill_ns": 197689206965,
+          "encoder_calls": 5
+        }
+      },
+      "append_B": {
+        "before": {
+          "native_first_token_ns": 398619019636,
+          "embedding_helper_wall_ms": 23921,
+          "prefill_ns": 398614765442,
+          "encoder_calls": 10
+        },
+        "after": {
+          "native_first_token_ns": 222337329277,
+          "embedding_helper_wall_ms": 20376,
+          "prefill_ns": 222332739800,
+          "encoder_calls": 5
+        }
+      },
+      "exclude_A": {
+        "before": {
+          "native_first_token_ns": 205841152752,
+          "embedding_helper_wall_ms": 8536,
+          "prefill_ns": 205837815960,
+          "encoder_calls": 5
+        },
+        "after": {
+          "native_first_token_ns": 34325064230,
+          "embedding_helper_wall_ms": 11420,
+          "prefill_ns": 34321488042,
+          "encoder_calls": 0
+        }
+      },
+      "restore_A": {
+        "before": {
+          "native_first_token_ns": 399867918961,
+          "embedding_helper_wall_ms": 17517,
+          "prefill_ns": 399864965358,
+          "encoder_calls": 10
+        },
+        "after": {
+          "native_first_token_ns": 57056647165,
+          "embedding_helper_wall_ms": 24000,
+          "prefill_ns": 57051995480,
+          "encoder_calls": 0
+        }
+      }
+    },
+    "asleep": {
+      "cold_A": {
+        "before": {
+          "native_first_token_ns": 184573289245,
+          "embedding_helper_wall_ms": 7411,
+          "prefill_ns": 184572258715,
+          "encoder_calls": 5
+        },
+        "after": {
+          "native_first_token_ns": 182737695610,
+          "embedding_helper_wall_ms": 7334,
+          "prefill_ns": 182736731540,
+          "encoder_calls": 5
+        }
+      },
+      "append_B": {
+        "before": {
+          "native_first_token_ns": 362845094353,
+          "embedding_helper_wall_ms": 16024,
+          "prefill_ns": 362844182199,
+          "encoder_calls": 10
+        },
+        "after": {
+          "native_first_token_ns": 204771674660,
+          "embedding_helper_wall_ms": 18759,
+          "prefill_ns": 204770961051,
+          "encoder_calls": 5
+        }
+      },
+      "exclude_A": {
+        "before": {
+          "native_first_token_ns": 191099582979,
+          "embedding_helper_wall_ms": 7721,
+          "prefill_ns": 191098559951,
+          "encoder_calls": 5
+        },
+        "after": {
+          "native_first_token_ns": 31455721664,
+          "embedding_helper_wall_ms": 10270,
+          "prefill_ns": 31454748981,
+          "encoder_calls": 0
+        }
+      },
+      "restore_A": {
+        "before": {
+          "native_first_token_ns": 365646325346,
+          "embedding_helper_wall_ms": 15737,
+          "prefill_ns": 365645308141,
+          "encoder_calls": 10
+        },
+        "after": {
+          "native_first_token_ns": 50699158562,
+          "embedding_helper_wall_ms": 21218,
+          "prefill_ns": 50698420346,
+          "encoder_calls": 0
+        }
+      }
+    }
+  },
+  "verified_cache_hits": 10,
+  "reviewed_screenshots": {
+    "physical-code-history.png": "32a9f1779d8f0355a5e9048dc978ebbd654c1b84084d4a3e21a698f5121c1f1f",
+    "physical-code-stream.png": "58abc2527929881cf099e5f0f3bc33d4365a2a9222f85d4aed27435e5da7ae66",
+    "physical-image-decoder.png": "96e3a9415a59898a1a85e4591a301245ddf51e4e42e76f9ab3ad154bc9e0bed4",
+    "physical-latency-projector-after-asleep-0.png": "0ccb2e5e5a03cddd8f96c3f6bfbe7959faacb1c0fff0e292e49b257808a8713a",
+    "physical-latency-projector-after-awake-0.png": "cf2ff45d02a1636c33f453a65c62775c421c5a65ad18b9b58b09a98724a8e247"
+  },
+  "measurement_limits": "One observation/stage/state/version, fixed order, no warmup. First cold text sample includes initialization; do not attribute its 24s-to-4s difference to code changes. Conditional repeated-image latency improvement is not faster first-image kernels, global tokens/s gain, physical GPU certification or ON/OFF parity."
 }

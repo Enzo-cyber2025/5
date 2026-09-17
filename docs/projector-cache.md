@@ -109,3 +109,12 @@ A execução atual é **35252559185**, fonte **81bc70c**, ainda em andamento. El
 também testa texto ON/OFF e caminhos da interface. Detalhes da política de GPU,
 da eliminação de cópias de histórico e das verificações em
 `docs/model-gpu-app-overhead.md`. Nenhuma pendência antiga é tratada como PASS.
+
+## Resultado final da continuação
+
+**35252559185 terminou com SUCCESS às 19:04:37 UTC de 2026-09-17.** Não há mais
+execução pendente dessa rodada. A comparação de cache, testes de texto/UI/sono,
+verificação de embeddings e pós-análise de históricos brutos passaram. Tempos,
+contagens de encodes, fontes e ressalvas completos estão em
+`docs/model-gpu-app-overhead.md`. A redução observada depende do reuso de imagens;
+não comprova aceleração de primeira imagem, GPU física, paridade ON/OFF ou 21×/26×.
