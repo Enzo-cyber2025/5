@@ -47,12 +47,13 @@ aceleração garantida de imagem inédita, 21×/26× global ou paridade ON/OFF.
 
 ## Validação
 
-- Local: **186 passaram, 69 pulados** após restaurar o APK original verificado.
+- Local: **188 passaram, 69 pulados** após restaurar o APK original verificado.
   As primeiras duas falhas eram ausência desse fixture, não regressão de código.
 - Testes C++ compilam as definições reais de tipos/serialização do mtmd fixado
   `b29c606e28a01b1bc8c1351026a0fa6e616bf6c4`, com dados sintéticos. Comprovam que
   alteração de pixel, `anyres`, padding, posição e ID mudam a chave, placeholders
   são rejeitados, LRU mantém A ao inserir B e limites/expulsão funcionam.
+  Há também injeção de falha de alocação e verificação de patch idempotente.
   **Não são medições de inferência nem prova de todas as arquiteturas.**
 - Android: pipeline experimental, resultados ainda pendentes. Mesmos arquivos
   públicos de cachorro/ônibus e mesmo GGUF físico independente. Preserva o
@@ -69,3 +70,14 @@ aceleração garantida de imagem inédita, 21×/26× global ou paridade ON/OFF.
 O APK entregue 323 e sua assinatura permanecem inalterados. A assinatura do
 experimento não é uma chave de atualização para esse APK. Não há aprovação de
 release ou certificação de GPU física enquanto os testes não terminarem.
+
+### Execuções desta investigação
+
+- `35243048649` / job `105276101366`: compilação nativa e testes host
+  concluídos; execução cancelada e substituída para ajustar a duração do protocolo.
+  Os fragmentos em `ci-results/35243048649-1` **não são um resultado de desempenho**.
+- `35244519496` / job `105281662691`, fonte `f89d92e`: comparação ajustada
+  em andamento. Código nativo é o de `f42c518`; o ajuste muda apenas o harness
+  e a documentação, não fotos, modelo, shaders ou parâmetros de inferência.
+- Os dois testes host adicionais foram executados localmente depois desse
+  disparo; não atribuir sua execução ao job hospedado ainda em andamento.

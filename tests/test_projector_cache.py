@@ -91,3 +91,33 @@ def test_native_retains_positions_and_separates_verification_from_speed():
     assert 'mtmd_helper_decode_image_chunk(e->projector,e->ctx,chunk,embd,past,0' in s
     assert 'cp.n_batch=128; cp.n_ubatch=32;' in s
     assert 'e->image_cache.clear();' in s[s.index('} catch(const std::exception &ex)'):]
+
+def test_patch_is_idempotent_and_rejects_stale_implementation(tmp_path):
+    if not (SRC/'tools/mtmd/mtmd.cpp').exists():pytest.skip('Pinned source required')
+    target=tmp_path/'tools/mtmd';target.mkdir(parents=True)
+    for name in ('mtmd.cpp','mtmd.h'):(target/name).write_bytes((SRC/'tools/mtmd'/name).read_bytes())
+    patch_projector(tmp_path)
+    before={p.name:p.read_bytes() for p in target.iterdir()}
+    patch_projector(tmp_path)
+    assert before=={p.name:p.read_bytes() for p in target.iterdir()}
+    cpp=target/'mtmd.cpp';cpp.write_text(cpp.read_text().replace('GGUF-PREPARED-VISION-1','WRONG-KEY-PROTOCOL'))
+    with pytest.raises(AssertionError,match='Stale projector'):patch_projector(tmp_path)
+
+def test_cache_allocation_failure_drops_optional_cache_not_inference(tmp_path):
+    cpp=tmp_path/'oom.cpp';cpp.write_text(r'''
+#include "image_embedding_cache.h"
+#include <cassert>
+#include <cstdlib>
+static bool fail=false;
+void *operator new(size_t n){if(fail){fail=false;throw std::bad_alloc();}if(void *p=std::malloc(n?n:1))return p;throw std::bad_alloc();}
+void operator delete(void *p)noexcept{std::free(p);}
+void operator delete(void *p,size_t)noexcept{std::free(p);}
+int main(){
+ ImageEmbeddingCache c;ImageEmbeddingCache::Key a{},b{};b[0]=1;
+ float actual[]={1.0f,2.0f,3.0f};assert(c.store(a,actual,3));
+ fail=true;assert(!c.store(b,actual,3));assert(!fail);
+ assert(c.bytes()==0&&c.size()==0);assert(actual[0]==1.0f&&actual[2]==3.0f);
+ assert(c.store(b,actual,3));assert(c.find(b,3));
+}''')
+    subprocess.run(['g++','-std=c++17','-Wall','-Wextra','-Werror','-I'+str(ROOT/'apk-fix/native'),str(cpp),'-o',str(tmp_path/'oom')],check=True)
+    subprocess.run([str(tmp_path/'oom')],check=True)
