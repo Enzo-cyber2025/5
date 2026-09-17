@@ -1,5 +1,5 @@
 {
-  "status": "ANDROID_BYTE_VERIFICATION_RUNNING",
+  "status": "PASS_EXPERIMENTAL_VULKAN_PACKING_BYTES_ONLY",
   "source_commit": "5e66e0fcef7811cb3b76c24c30d53b04881f212b",
   "run": 35259603589,
   "job": 105331708595,
@@ -29,5 +29,26 @@
     "last_observed": "in_progress",
     "cancelled_by_this_experiment": false
   },
-  "delivered_apk_unchanged": true
+  "delivered_apk_unchanged": true,
+  "conclusion": "success",
+  "completed_at": "2026-09-17T19:01:43Z",
+  "tested_apk_sha256": "46d76fe41eca76e3242d33d5baa4463f2e1ab1c5d5ea8fa127f610cda00ec7d3",
+  "host_test_result": {
+    "passed": 17,
+    "skipped": 0
+  },
+  "verified_pixel_bytes": 15728640,
+  "verified_chunks": 5,
+  "identical_embedding_bytes": 737280,
+  "raw_response_equal": true,
+  "raw_response": " Dog.",
+  "observed_math_nodes": {
+    "control": 15139,
+    "vulkan": 15144
+  },
+  "proof": "Same APK and parameters, cache disabled; direct GPU pixel readback comparison and equal full projector embedding hashes. No speed approval.",
+  "reviewed_screenshots": {
+    "physical-latency-image-upload-control.png": "fb1889cf1bfc63909f0951d2c4b673cd6f688380924d3d361dbb3aa4644a9ad1",
+    "physical-latency-image-upload-vulkan.png": "5e9c3e6dbdf6de1d75618cb341a09455e28ffa67ed4e515f788316d6733dd76f"
+  }
 }

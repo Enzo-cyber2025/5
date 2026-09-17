@@ -55,14 +55,36 @@ ou arquivos do repositório principal.
 O workflow de entrada RGB tem grupo de concorrência próprio: não substitui nem
 cancela o experimento integrado anterior `35252559185` (fonte `81bc70c`).
 
-Sem resultado Android concluído, não há comprovação de equivalência no dispositivo,
-ganho de velocidade, aprovação de release ou cumprimento do objetivo de levar
-todo o pré-processamento para a GPU.
+A verificação Android desta etapa foi concluída com sucesso, conforme abaixo.
+Isso não aprova velocidade, todos os modelos/formatos/dispositivos, uso de GPU
+física, release ou transferência de todo o pré-processamento para GPU.
 
-## Acompanhamento
+## Resultado concluído
 
-Fonte `5e66e0f`; execução `35259603589`, job `105331708595`. Compilação nativa e
-etapas host concluídas; verificação Android ainda em andamento na última consulta.
-Localmente: **196 passados, 70 pulados**, incluindo o grafo ggml real de layout.
-O teste integrado anterior permanece separado e não foi cancelado. Nenhum desses
-estados pendentes é aprovação de velocidade, equivalência Android ou release.
+- Fonte **5e66e0f**, execução **35259603589**, job **105331708595**: SUCCESS,
+  concluído em 2026-09-17 às 19:01:43 UTC.
+- APK experimental **46d76fe41eca76e3242d33d5baa4463f2e1ab1c5d5ea8fa127f610cda00ec7d3**.
+  O controle e o modo Vulkan usaram esse mesmo APK; o APK 323 reassinado
+  mencionado no manifesto de build não foi a variante de controle deste ensaio.
+- **5 recortes × 3 MiB = 15 MiB** de pixels comparados diretamente após readback
+  do tensor planar Vulkan, sem diferença de bytes.
+- Hashes de **720 KiB** de embeddings completos iguais entre os dois modos.
+- Resposta bruta igual, inclusive espaço inicial: ` Dog.`. Dois tokens em cada modo.
+- Cache de embeddings desativado: zero hits e cinco encodes por modo.
+- **15.139 → 15.144** nós matemáticos submetidos ao dispositivo selecionado:
+  cinco operações adicionais de reorganização, uma por recorte. Sem fallback CPU
+  dos cálculos tensorais do modelo. A cópia planar temporária da CPU foi evitada
+  no modo experimental, não todas as cópias host/driver do fluxo.
+- Os dois screenshots reais foram revisados: mesma resposta e footer abaixo da
+  bolha. A exibição de tokens/s não mede o tempo inteiro de processamento da foto.
+- Host CI: **17 passaram**. Suíte local: **196 passaram, 70 pulados**.
+
+Os tempos brutos (aproximadamente 250 s e 219 s) são de um ensaio instrumentado,
+com uma observação por modo e ordem fixa. Não são um ganho comprovado de 12%,
+nem aprovação de desempenho no aparelho. Não usar readback/hashing diagnósticos
+como benchmark comum. **O caminho permanece opt-in e desativado por padrão.**
+
+Evidências: `ci-results/35259603589-1/`, metadados consolidados em
+`.delivery/image-upload-experiment.json`. O APK entregue permanece 323 e não foi
+substituído. O teste integrado anterior `35252559185` segue independente, sem
+ser cancelado nem considerado aprovado por este resultado.
