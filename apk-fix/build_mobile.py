@@ -90,6 +90,9 @@ def main():
     apktool=Path(os.environ['APKTOOL_JAR']);source=ROOT/'.cache/llama-mobile'
     if not source.exists(): run('git','clone','--depth','1','--branch','v0.4.1','https://github.com/ggml-org/llama.cpp',source)
     assert subprocess.check_output(['git','-C',str(source),'rev-parse','HEAD'],text=True).strip()==SOURCE_SHA
+    # Cached dependencies may contain patches from a different experiment.
+    # Restore tracked upstream sources, then apply exactly this checkout's patches.
+    run('git','-C',source,'restore','--source=HEAD','--worktree','.')
     vk=source/'ggml/src/ggml-vulkan/ggml-vulkan.cpp';s=vk.read_text();old='device_extensions.push_back("VK_KHR_16bit_storage");'
     if old in s:
         s=s.replace(old,'// Core Vulkan 1.2 already requires the queried 16-bit storage feature; no extension alias required.')
@@ -116,6 +119,8 @@ def main():
     patch_projector(source)
     graph=source/'src/llama-graph.cpp';graph.write_text(patch_token_readback(graph.read_text()))
     clip=source/'tools/mtmd/clip.cpp';clip.write_text(patch_clip_gpu(clip.read_text()))
+    from image_upload_patches import patch_image_upload
+    patch_image_upload(source)
     loader=source/'src/llama-model-loader.cpp';loader.write_text(patch_combined_loader(loader.read_text()))
     classes=WORK/'classes';classes.mkdir(exist_ok=True)
     android=sdk/'platforms/android-35/android.jar'
