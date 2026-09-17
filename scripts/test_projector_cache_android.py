@@ -17,6 +17,7 @@ from android_checks import PACKAGE,vulkan_offloaded,image_prefill_records
 E=Path('evidence')
 PROMPT='Name the main animal or vehicle in the attached images. Reply in English.'
 STAGES=('cold_A','append_B','exclude_A','restore_A')
+REPETITIONS=1 # Full-size projector costs minutes per photo under software Vulkan.
 def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 
 def exclude_first(d,chat,excluded):
@@ -37,7 +38,8 @@ def series(d,model,label,asleep,after,verify=False):
     assert vulkan_offloaded(load) and 'GGUF_PROJECTOR_WEIGHTS backend=Vulkan' in load
     (E/f'physical-projector-{label}-load.txt').write_text(load[-100000:])
     attach(d,chat,['frame-a.jpg']);rows={}
-    for stage in STAGES:
+    stages=STAGES[:3] if verify else STAGES
+    for stage in stages:
         if stage=='append_B':attach(d,chat,['frame-b.jpg'])
         elif stage=='exclude_A':exclude_first(d,chat,True)
         elif stage=='restore_A':exclude_first(d,chat,False)
@@ -50,6 +52,10 @@ def series(d,model,label,asleep,after,verify=False):
         assert records and all(backend=='Vulkan' for _,backend in records)
         m=re.search(r'GGUF_IMAGE_EMBED_CACHE hits=(\d+) misses=(\d+) bytes=(\d+)',log);assert m
         r['cache']=dict(zip(('hits','misses','bytes'),map(int,m.groups())))
+        helper_ms=[int(v) for v in re.findall(r'image decoded \(batch \d+/\d+\) in (\d+) ms',log)]
+        assert len(helper_ms)>=len(records),'Missing upstream embedding helper timings'
+        r['embedding_helper_wall_ms']=sum(helper_ms) # submission/waits, not isolated GPU time
+        r['embedding_helper_batches']=len(helper_ms)
         assert r['cache']['bytes']<=16*1024*1024
         if after:
             m=re.search(r'GGUF_PROJECTOR_STAGES ([^\r\n]+)',log);assert m
@@ -63,7 +69,7 @@ def series(d,model,label,asleep,after,verify=False):
             assert r['cache']['hits']==0 and r['cache']['misses']>0
         rows[stage]=r
         (E/f'physical-projector-{label}.json').write_text(json.dumps(rows,indent=2,ensure_ascii=False))
-    if after:latest_footer(d,rows['restore_A'],'projector-'+label)
+    if after:latest_footer(d,rows[stages[-1]],'projector-'+label)
     return rows
 
 def main():
@@ -78,9 +84,9 @@ def main():
         external=independent_single();expected=tensor_hashes(MODEL);expected.update(tensor_hashes(PROJ));assert tensor_hashes(external)==expected
         s['external_gguf_sha256']=sha(external)
         model=None
-        # Alternate version order per repetition, and screen order too. Fresh
-        # Engine for every four-stage series; the first image starts uncached.
-        for repetition in range(3):
+        # Fresh Engine for every four-stage series; first image starts uncached.
+        # One series per state/version: exploratory, not statistical certification.
+        for repetition in range(REPETITIONS):
             for phase in (('before','after') if repetition%2==0 else ('after','before')):
                 apk=Path('.cache/projector-'+('baseline' if phase=='before' else 'candidate')+'.apk')
                 assert sha(apk)==s['build'][phase+'_sha256']
@@ -96,7 +102,7 @@ def main():
                     rows=series(d,model,label,screen=='asleep',phase=='after')
                     s['series'][label]=rows
                     (E/'summary.json').write_text(json.dumps(s,indent=2,ensure_ascii=False))
-        for rep in range(3):
+        for rep in range(REPETITIONS):
             for screen in ('awake','asleep'):
                 before=s['series'][f'before-{screen}-{rep}'];after=s['series'][f'after-{screen}-{rep}']
                 for stage in STAGES:
@@ -111,10 +117,11 @@ def main():
         assert sum(r['stages']['verified_hits'] for r in s['verification'].values())>0
         s['checks']['cached_embeddings_equal_real_vulkan_byte_for_byte']='PASS'
         s['checks']['awake_asleep_completion_notice_cleanup']='PASS'
-        s['medians']={screen:{stage:{phase:{
-            'native_first_token_ns':statistics.median(s['series'][f'{phase}-{screen}-{i}'][stage]['metrics']['firstTokenNs'] for i in range(3)),
-            'prefill_ns':statistics.median(s['series'][f'{phase}-{screen}-{i}'][stage]['metrics']['prefillNs'] for i in range(3)),
-            'encoder_calls':statistics.median(s['series'][f'{phase}-{screen}-{i}'][stage]['cache']['misses'] for i in range(3))
+        s['observations']={screen:{stage:{phase:{
+            'native_first_token_ns':statistics.median(s['series'][f'{phase}-{screen}-{i}'][stage]['metrics']['firstTokenNs'] for i in range(REPETITIONS)),
+            'embedding_helper_wall_ms':statistics.median(s['series'][f'{phase}-{screen}-{i}'][stage]['embedding_helper_wall_ms'] for i in range(REPETITIONS)),
+            'prefill_ns':statistics.median(s['series'][f'{phase}-{screen}-{i}'][stage]['metrics']['prefillNs'] for i in range(REPETITIONS)),
+            'encoder_calls':statistics.median(s['series'][f'{phase}-{screen}-{i}'][stage]['cache']['misses'] for i in range(REPETITIONS))
         } for phase in ('before','after')} for stage in STAGES} for screen in ('awake','asleep')}
         s['status']='PASS_PROJECTOR_CACHE_EXPERIMENT_ONLY'
     except Exception as ex:
@@ -122,7 +129,7 @@ def main():
     finally:
         try:d.shell('setprop wrap.'+PACKAGE+" ''")
         except Exception:pass
-        s['scope']='Real APK, actual SAF image bytes, same GGUF/quantization/parameters, software Vulkan. Re-signed baseline retains every non-signature payload entry from delivered 323. Candidate also includes prior UI changes. 3 fresh-Engine sequences/state/version, interleaved version order; no independent warmup or statistical significance claim. encode_call_ns is host wall time including device dependencies, NOT isolated GPU kernel time; verification samples excluded. Native image preparation/tokenization and submission are not full Android Send-to-first-text. No first-image, physical GPU, universal quality, ON/OFF parity or 21x/26x guarantee.'
+        s['scope']='Real APK, actual SAF image bytes, same GGUF/quantization/parameters, software Vulkan. Re-signed baseline retains every non-signature payload entry from delivered 323. Candidate also includes prior UI changes. One fresh-Engine sequence/state/version, fixed before/after and awake/asleep order; no independent warmup, statistical significance or repeatability claim. Long full-resolution software-projector runtime limits this exploratory sample, not image resolution or output budget. encode_call_ns is host wall time including device dependencies, NOT isolated GPU kernel time; verification samples excluded. Native image preparation/tokenization and submission are not full Android Send-to-first-text. No first-image, physical GPU, universal quality, ON/OFF parity or 21x/26x guarantee.'
         (E/'summary.json').write_text(json.dumps(s,indent=2,ensure_ascii=False))
     return 0 if s['status']=='PASS_PROJECTOR_CACHE_EXPERIMENT_ONLY' else 1
 if __name__=='__main__':raise SystemExit(main())
