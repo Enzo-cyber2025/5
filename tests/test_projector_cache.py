@@ -22,13 +22,21 @@ int main(){
  assert(!c.store(d,values,std::numeric_limits<size_t>::max()));
  assert(!c.store(d,nullptr,1));assert(!c.store(d,values,0));
  for(int i=2;i<128;i++){d[0]=i;assert(c.store(d,values,3));}
- assert(c.size()==128);assert(c.find(a,3));d[0]=128;assert(c.store(d,values,3));
+ c.begin_request();assert(c.size()==128);assert(c.find(a,3));d[0]=128;assert(c.store(d,values,3));
  assert(c.find(a,3)&&!c.find(b,3));assert(c.size()==128);
  c.clear();assert(c.bytes()==0&&!c.find(a,3));
  std::vector<float> big(ImageEmbeddingCache::capacity_bytes/sizeof(float),2.5f);
  assert(c.store(a,big.data(),big.size()));assert(c.bytes()==ImageEmbeddingCache::capacity_bytes);
- assert(c.store(b,values,3));assert(!c.find(a,big.size()));assert(c.bytes()==sizeof(values));
+ c.begin_request();assert(c.store(b,values,3));assert(!c.find(a,big.size()));assert(c.bytes()==sizeof(values));
  ImageEmbeddingCache other;assert(!other.find(b,3));
+ // Same image scan exceeds capacity: retain a useful subset, do not thrash.
+ c.clear();big.resize(ImageEmbeddingCache::capacity_bytes/sizeof(float)/2);
+ assert(c.store(a,big.data(),big.size()));assert(c.store(b,big.data(),big.size()));
+ assert(!c.store(d,big.data(),big.size()));assert(c.size()==2);
+ c.begin_request();assert(c.find(a,big.size()));assert(c.find(b,big.size()));
+ assert(!c.store(d,big.data(),big.size()));assert(c.bytes()==ImageEmbeddingCache::capacity_bytes);
+ // A later DIFFERENT request may replace entries not used in that request.
+ c.begin_request();assert(c.store(d,big.data(),big.size()));assert(c.find(d,big.size()));
 }''')
     subprocess.run(['g++','-std=c++17','-Wall','-Wextra','-Werror','-I'+str(ROOT/'apk-fix/native'),str(cpp),'-o',str(tmp_path/'cache')],check=True)
     subprocess.run([str(tmp_path/'cache')],check=True)

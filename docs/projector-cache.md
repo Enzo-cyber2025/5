@@ -6,7 +6,9 @@ O cache anterior era indexado pela ordem dos recortes e descartado integralmente
 quando a lista ordenada de hashes de imagens mudava. Acrescentar B a uma conversa
 com A obrigava a executar novamente o projetor para A.
 
-Agora o Engine mantém uma LRU por entrada preparada. A chave SHA-256 cobre a
+Agora o Engine mantém uma LRU por entrada preparada, protegendo entradas usadas
+no pedido atual contra expulsão. Isso evita a regressão clássica de uma varredura
+sequencial maior que o cache, que expulsaria todas as entradas antes do reuso. A chave SHA-256 cobre a
 serialização de metadados, **todos os bytes dos pixels F32 preparados** e os quatro
 campos `anyres` omitidos pela serialização upstream. Os pixels são percorridos em
 seu buffer existente, sem concatenar/copiar o payload para calcular a chave.
@@ -36,7 +38,8 @@ continuam sendo os contadores reais de geração, separados da velocidade de dec
 
 `GGUF_VERIFY_IMAGE_EMBED_CACHE=1` é um diagnóstico: em cada hit recalcula o
 projetor e compara **todos os bytes** do embedding. Essa execução é deliberadamente
-mais lenta e será excluída da comparação de desempenho. O controle de diagnóstico
+mais lenta e será excluída da comparação de desempenho. Seus contadores incluem
+também as recodificações de verificação: não são apresentados como chamadas evitadas. O controle de diagnóstico
 `GGUF_DISABLE_IMAGE_EMBED_CACHE` permite desabilitar somente o cache, não trocar
 modelo, parâmetros ou backend. Nenhum desses controles é ativado por padrão.
 

@@ -61,10 +61,10 @@ def series(d,model,label,asleep,after,verify=False):
             m=re.search(r'GGUF_PROJECTOR_STAGES ([^\r\n]+)',log);assert m
             r['stages']={k:int(v) for k,v in re.findall(r'(\w+)=(\d+)',m[1])}
             t=r['stages'];assert t['verification']==int(verify) and t['cache_disabled']==0
-            assert t['hits']==r['cache']['hits'] and t['encode_calls']==r['cache']['misses']
+            assert t['hits']==r['cache']['hits'] and t['encode_calls']==r['cache']['misses']+t['verified_hits']
             assert t['verified_hits']==(t['hits'] if verify else 0)
             if stage=='append_B':assert t['hits']>0 and t['encode_calls']>0
-            if stage in ('exclude_A','restore_A'):assert t['hits']>0 and t['encode_calls']==0
+            if stage in ('exclude_A','restore_A'):assert t['hits']>0 and t['encode_calls']==t['verified_hits']
         else:
             assert r['cache']['hits']==0 and r['cache']['misses']>0
         rows[stage]=r

@@ -331,6 +331,7 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
             e->cached_tokens.clear();llama_memory_clear(memory,true);
             if(!e->projector || !mtmd_support_vision(e->projector))
                 throw std::runtime_error("Este modelo/projetor não aceita imagens. Use um par com visão.");
+            e->image_cache.begin_request();
             mtmd::bitmaps bitmaps;
             const auto bitmap_started=Clock::now();
             for(int i=0;i<n_images;i++) {
@@ -377,9 +378,11 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
                         image_hits++;
                         if(verify_cache) {
                             // Instrumented correctness run, excluded from speed claims.
+                            const auto verify_started=Clock::now();
                             if(mtmd_encode_chunk(e->projector,chunk)!=0 ||
                                std::memcmp(embd,mtmd_get_output_embd(e->projector),count*sizeof(float))!=0)
                                 throw std::runtime_error("Cache visual divergiu da execução real do projetor");
+                            encode_ns+=std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now()-verify_started).count();
                             verified_hits++;
                         }
                     } else {
@@ -402,7 +405,7 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
             LOG("GGUF_PROJECTOR_STAGES bitmap_ns=%lld tokenize_ns=%lld key_ns=%llu encode_call_ns=%llu encode_calls=%zu hits=%zu verified_hits=%zu verification=%d cache_disabled=%d",
                 (long long)std::chrono::duration_cast<std::chrono::nanoseconds>(tokenize_started-bitmap_started).count(),
                 (long long)std::chrono::duration_cast<std::chrono::nanoseconds>(tokenize_finished-tokenize_started).count(),
-                (unsigned long long)key_ns,(unsigned long long)encode_ns,image_misses,image_hits,verified_hits,(int)verify_cache,(int)cache_disabled);
+                (unsigned long long)key_ns,(unsigned long long)encode_ns,image_misses+verified_hits,image_hits,verified_hits,(int)verify_cache,(int)cache_disabled);
             LOG("GGUF_MEDIA_PREFILL images=%d tokens=%zu positions=%d",n_images,input_size,past);
         } else {
             auto input=tokens(vocab,text);input_size=input.size();
