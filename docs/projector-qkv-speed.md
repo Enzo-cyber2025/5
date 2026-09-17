@@ -43,10 +43,42 @@ Nenhum ganho será anunciado antes dos dados. O caminho ainda não é release.
 Decode, resize/crops e normalização continuam no host; este experimento não
 conclui a migração de todo o pré-processamento da imagem para GPU.
 
-## Execução atual
+## Resultado concluído
 
-Fonte **1eb0920**, CI **35275074925**, job **105383599707**, em andamento.
-Local: **203 testes passados, 70 pulados**; o teste do pós-avaliador foi adicionado
-depois do disparo do CI. O caso anterior de pares foi consolidado como igualdade
-aprovada, mas **critério de velocidade não atingido**; não é uma execução pendente.
-Nenhuma alteração de produção posterior à fonte testada foi aplicada nesta rodada.
+Fonte **1eb0920**, CI **35275074925**, job **105383599707**: SUCCESS em
+2026-09-17 às **21:46:17 UTC**. Sucesso funcional não significa aprovação de velocidade.
+
+| Comparação aquecida | Q/K/V separados | QKV fundido | Razão de velocidade |
+|---|---:|---:|---:|
+| A → B | 100,026 s | 99,216 s | 1,00816× |
+| B → A | 99,064 s | 98,902 s | 1,00164× |
+
+Razão mediana **1,00490×**: diferenças inferiores a 1%, potencialmente incluindo
+ruído. **Não superou 5% nos dois pares; não ativado por padrão.**
+As chamadas ao encoder continuaram sendo cinco; cada uma computa os mesmos cinco
+recortes no total. Os nós matemáticos caíram de 15.144 para 14.904 devido à fusão,
+mas os FLOPs das multiplicações não caíram nessa proporção.
+
+- **12 camadas** fundidas no experimento.
+- **22.671.360 bytes** de pesos/biases copiados no dispositivo e verificados no
+  diagnóstico, sem requantização. **21,621 MiB adicionais** de memória GPU.
+- **5 embeddings completos** de recortes comparados byte a byte com o caminho
+  individual original, em execução separada (dez encodes nesse diagnóstico).
+- Mesmos pixels (**15 MiB por amostra**), histórico bruto, resposta e contagem de
+  tokens nos modos cronometrados. Cache desligado para não mascarar o trabalho.
+- Flash attention efetivamente **enabled** em todos os warmups e no diagnóstico;
+  o pós-check também rejeitaria uma mudança de política AUTO entre os modos.
+- Quatro screenshots reais revisados; o footer mede decode de dois tokens, não
+  a espera inteira pelo processamento da foto. Não usar essa taxa curta como
+  prova de ganho global de geração de texto.
+- Host CI: **23 passaram**. Local: **203 passaram, 70 pulados**. O teste adicional
+  do pós-avaliador foi adicionado após o disparo; não atribuído ao job anterior.
+
+Os ~100 s desta execução não devem ser comparados aos ~212 s de outro runner:
+a comparação válida está dentro desta tabela. Não há comprovação de aceleração
+relevante no aparelho físico, ganho global 21×/26×, paridade ON/OFF, release ou
+migração de todo o pré-processamento para GPU. Os originais e o APK entregue 323
+permanecem inalterados. Não há job pendente nesta rodada.
+
+Evidências completas: `ci-results/35275074925-1/`. Consolidação em
+`.delivery/projector-qkv-experiment.json` e `.delivery/projector-qkv-speed-result.json`.
