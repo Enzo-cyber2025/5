@@ -19,7 +19,9 @@ recorte e avalia texto/imagens no LLM na ordem original. Não agrupa entradas j�
 em cache nem duplica a próxima entrada se sua chave for igual à atual. Declínio
 por incompatibilidade/tamanho antes de calcular mantém execução individual
 **na GPU**, não fallback CPU. Falha de cálculo do lote aborta, sem tentar refazer
-silenciosamente. Há limite de dois recortes simultâneos, não cota de anexos.
+silenciosamente. Há limite de dois recortes simultâneos, não cota de anexos. A API de batch faz
+cópias temporárias dos pixels e aumenta o pico de memória/ativações. Esse custo
+entra nas medições; não se presume que agrupar seja sempre mais rápido.
 
 ## Protocolo
 
@@ -48,3 +50,12 @@ primeira inicialização fria. Decode, redimensionamento, recortes e normalizaç
 continuam no host: isso não conclui o objetivo de todo o pré-processamento GPU.
 Nenhum APK de entrega foi substituído e os resultados das rodadas anteriores
 não serão somados/multiplicados para fabricar os ganhos pedidos.
+
+## Execução
+
+Fonte **7fcfb6bc264a9fc87bebee90a66ebc366b4b55a2**, execução **35266241599**,
+job **105354027833**, em andamento. Suíte local: **200 passados, 70 pulados**;
+um teste adicional do avaliador foi adicionado depois do disparo do CI.
+O avaliador `ci/evaluate_projector_pairs.py` rejeita resultado incompleto,
+instrumentação nas amostras, mudança de histórico bruto e ganho inconsistente.
+Nenhum ganho ou aprovação de release será declarado antes do resultado completo.

@@ -107,3 +107,24 @@ def test_patches_and_native_bounds(tmp_path):
     assert s.index('pair.consumed(chunk)')>s.index('result=mtmd_helper_decode_image_chunk')
     assert 'std::memcmp(embd,mtmd_get_output_embd' in s
     assert 'cp.n_batch=128; cp.n_ubatch=32;' in s
+
+
+def test_timing_gate_excludes_instrumentation_and_requires_both_pairs(tmp_path):
+    import json,copy,importlib.util
+    spec=importlib.util.spec_from_file_location('pair_eval',ROOT/'ci/evaluate_projector_pairs.py')
+    mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod)
+    base={'diagnostic':False,'raw_history':[['user','prompt'],['assistant',' exact ']],'upload_bytes':100,'tokens':2,
+          'metrics':{'promptTokens':100,'completed':True,'decodeNs':1000000000},'native_decode_tokens_s':2,
+          'strict':{'status':'PASS'},'stages':{'verification':0,'cache_disabled':1,'hits':0,'encode_calls':5},
+          'pairs':{'verification':0,'verified_images':0,'pair_calls':0},'send_to_first_ui_ns':1000000000}
+    paired=copy.deepcopy(base);paired['send_to_first_ui_ns']=800000000;paired['stages']['encode_calls']=3;paired['pairs']['pair_calls']=2
+    s={'status':'PASS_PAIRED_EXPERIMENT_ONLY','warmups':[{}]*4,
+       'measurements':[{'serial':base,'paired':paired},{'paired':copy.deepcopy(paired),'serial':copy.deepcopy(base)}],
+       'verification':{'diagnostic':True,'pairs':{'verification':1,'verified_images':4,'paired_images':4}}}
+    p=tmp_path/'result.json';p.write_text(json.dumps(s));assert mod.evaluate(p)['status']=='OBSERVED_GAIN_IN_BOTH_PAIRS'
+    s['measurements'][1]['paired']['send_to_first_ui_ns']=1100000000;p.write_text(json.dumps(s))
+    assert mod.evaluate(p)['status']=='NO_CONSISTENT_GAIN_OVER_5_PERCENT'
+    s['measurements'][0]['paired']['diagnostic']=True;p.write_text(json.dumps(s))
+    with pytest.raises(AssertionError):mod.evaluate(p)
+    s['status']='FAIL';p.write_text(json.dumps(s))
+    with pytest.raises(ValueError):mod.evaluate(p)
