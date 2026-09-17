@@ -1,0 +1,182 @@
+{
+  "cold_A": {
+    "tokens": 2,
+    "prefill_and_generation_seconds": 183.23799999999756,
+    "prefill_and_generation_tokens_s": 0.010914766587716668,
+    "response": "Dog.",
+    "metrics": {
+      "tokens": 2,
+      "decodeNs": 502061595,
+      "prefillNs": 182736731540,
+      "completed": true,
+      "version": 3,
+      "timingScope": "prefill_synchronized_before_decode",
+      "firstTokenNs": 182737695610,
+      "promptTokens": 516,
+      "reusedPromptTokens": 0
+    },
+    "callbacks": 2,
+    "native_decode_tokens_s": 3.9835749635460567,
+    "strict": {
+      "status": "PASS",
+      "submitted_graphs": 28,
+      "submitted_math_nodes": 15139,
+      "tensor_cpu_fallback": "blocked_by_native_policy",
+      "host_orchestration": "CPU",
+      "physical_gpu_certified": false
+    },
+    "cache": {
+      "hits": 0,
+      "misses": 5,
+      "bytes": 737280
+    },
+    "embedding_helper_wall_ms": 7334,
+    "embedding_helper_batches": 5,
+    "stages": {
+      "bitmap_ns": 27493446,
+      "tokenize_ns": 23161327,
+      "key_ns": 126235397,
+      "encode_call_ns": 158738651441,
+      "encode_calls": 5,
+      "hits": 0,
+      "verified_hits": 0,
+      "verification": 0,
+      "cache_disabled": 0
+    }
+  },
+  "append_B": {
+    "tokens": 2,
+    "prefill_and_generation_seconds": 205.3009999999922,
+    "prefill_and_generation_tokens_s": 0.009741793756484752,
+    "response": "Dog.",
+    "metrics": {
+      "tokens": 2,
+      "decodeNs": 530101443,
+      "prefillNs": 204770961051,
+      "completed": true,
+      "version": 3,
+      "timingScope": "prefill_synchronized_before_decode",
+      "firstTokenNs": 204771674660,
+      "promptTokens": 938,
+      "reusedPromptTokens": 0
+    },
+    "callbacks": 2,
+    "native_decode_tokens_s": 3.7728627726070916,
+    "strict": {
+      "status": "PASS",
+      "submitted_graphs": 45,
+      "submitted_math_nodes": 25220,
+      "tensor_cpu_fallback": "blocked_by_native_policy",
+      "host_orchestration": "CPU",
+      "physical_gpu_certified": false
+    },
+    "cache": {
+      "hits": 5,
+      "misses": 5,
+      "bytes": 1474560
+    },
+    "embedding_helper_wall_ms": 18759,
+    "embedding_helper_batches": 10,
+    "stages": {
+      "bitmap_ns": 55934409,
+      "tokenize_ns": 51176959,
+      "key_ns": 255576122,
+      "encode_call_ns": 158464776382,
+      "encode_calls": 5,
+      "hits": 5,
+      "verified_hits": 0,
+      "verification": 0,
+      "cache_disabled": 0
+    }
+  },
+  "exclude_A": {
+    "tokens": 2,
+    "prefill_and_generation_seconds": 31.964000000007218,
+    "prefill_and_generation_tokens_s": 0.06257039169063786,
+    "response": "Bus.",
+    "metrics": {
+      "tokens": 2,
+      "decodeNs": 509269833,
+      "prefillNs": 31454748981,
+      "completed": true,
+      "version": 3,
+      "timingScope": "prefill_synchronized_before_decode",
+      "firstTokenNs": 31455721664,
+      "promptTokens": 638,
+      "reusedPromptTokens": 0
+    },
+    "callbacks": 2,
+    "native_decode_tokens_s": 3.9271911870735137,
+    "strict": {
+      "status": "PASS",
+      "submitted_graphs": 27,
+      "submitted_math_nodes": 16011,
+      "tensor_cpu_fallback": "blocked_by_native_policy",
+      "host_orchestration": "CPU",
+      "physical_gpu_certified": false
+    },
+    "cache": {
+      "hits": 5,
+      "misses": 0,
+      "bytes": 1474560
+    },
+    "embedding_helper_wall_ms": 10270,
+    "embedding_helper_batches": 5,
+    "stages": {
+      "bitmap_ns": 27765851,
+      "tokenize_ns": 26864974,
+      "key_ns": 127677614,
+      "encode_call_ns": 0,
+      "encode_calls": 0,
+      "hits": 5,
+      "verified_hits": 0,
+      "verification": 0,
+      "cache_disabled": 0
+    }
+  },
+  "restore_A": {
+    "tokens": 3,
+    "prefill_and_generation_seconds": 51.471000000005006,
+    "prefill_and_generation_tokens_s": 0.05828524800372459,
+    "response": "Bus.",
+    "metrics": {
+      "tokens": 3,
+      "decodeNs": 772487775,
+      "prefillNs": 50698420346,
+      "completed": true,
+      "version": 3,
+      "timingScope": "prefill_synchronized_before_decode",
+      "firstTokenNs": 50699158562,
+      "promptTokens": 994,
+      "reusedPromptTokens": 0
+    },
+    "callbacks": 3,
+    "native_decode_tokens_s": 3.8835566038569347,
+    "strict": {
+      "status": "PASS",
+      "submitted_graphs": 42,
+      "submitted_math_nodes": 24906,
+      "tensor_cpu_fallback": "blocked_by_native_policy",
+      "host_orchestration": "CPU",
+      "physical_gpu_certified": false
+    },
+    "cache": {
+      "hits": 10,
+      "misses": 0,
+      "bytes": 1474560
+    },
+    "embedding_helper_wall_ms": 21218,
+    "embedding_helper_batches": 10,
+    "stages": {
+      "bitmap_ns": 54218814,
+      "tokenize_ns": 48305196,
+      "key_ns": 246743534,
+      "encode_call_ns": 0,
+      "encode_calls": 0,
+      "hits": 10,
+      "verified_hits": 0,
+      "verification": 0,
+      "cache_disabled": 0
+    }
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "cold_A": {
+    "tokens": 2,
+    "prefill_and_generation_seconds": 198.55399999998917,
+    "prefill_and_generation_tokens_s": 0.010072826535854775,
+    "response": "Dog.",
+    "metrics": {
+      "tokens": 2,
+      "decodeNs": 640124142,
+      "prefillNs": 197913284088,
+      "completed": true,
+      "version": 3,
+      "timingScope": "prefill_synchronized_before_decode",
+      "firstTokenNs": 197917503450,
+      "promptTokens": 516,
+      "reusedPromptTokens": 0
+    },
+    "callbacks": 2,
+    "native_decode_tokens_s": 3.1243939554462234,
+    "send_to_first_ui_ns": 198331314451,
+    "strict": {
+      "status": "PASS",
+      "submitted_graphs": 28,
+      "submitted_math_nodes": 15139,
+      "tensor_cpu_fallback": "blocked_by_native_policy",
+      "host_orchestration": "CPU",
+      "physical_gpu_certified": false
+    },
+    "cache": {
+      "hits": 0,
+      "misses": 5,
+      "bytes": 737280
+    },
+    "embedding_helper_wall_ms": 8318,
+    "embedding_helper_batches": 5,
+    "stages": {
+      "bitmap_ns": 27331907,
+      "tokenize_ns": 22682436,
+      "key_ns": 145956012,
+      "encode_call_ns": 171608594883,
+      "encode_calls": 5,
+      "hits": 0,
+      "verified_hits": 0,
+      "verification": 1,
+      "cache_disabled": 0
+    }
+  },
+  "append_B": {
+    "tokens": 2,
+    "prefill_and_generation_seconds": 395.24600000001374,
+    "prefill_and_generation_tokens_s": 0.005060139761060025,
+    "response": "Dog.",
+    "metrics": {
+      "tokens": 2,
+      "decodeNs": 678850892,
+      "prefillNs": 394566637832,
+      "completed": true,
+      "version": 3,
+      "timingScope": "prefill_synchronized_before_decode",
+      "firstTokenNs": 394568973384,
+      "promptTokens": 938,
+      "reusedPromptTokens": 0
+    },
+    "callbacks": 2,
+    "native_decode_tokens_s": 2.9461550740659557,
+    "send_to_first_ui_ns": 395347119067,
+    "strict": {
+      "status": "PASS",
+      "submitted_graphs": 50,
+      "submitted_math_nodes": 26720,
+      "tensor_cpu_fallback": "blocked_by_native_policy",
+      "host_orchestration": "CPU",
+      "physical_gpu_certified": false
+    },
+    "cache": {
+      "hits": 5,
+      "misses": 5,
+      "bytes": 1474560
+    },
+    "embedding_helper_wall_ms": 17899,
+    "embedding_helper_batches": 10,
+    "stages": {
+      "bitmap_ns": 54749261,
+      "tokenize_ns": 47475114,
+      "key_ns": 279131439,
+      "encode_call_ns": 346382371820,
+      "encode_calls": 10,
+      "hits": 5,
+      "verified_hits": 5,
+      "verification": 1,
+      "cache_disabled": 0
+    }
+  },
+  "exclude_A": {
+    "tokens": 2,
+    "prefill_and_generation_seconds": 203.91699999998673,
+    "prefill_and_generation_tokens_s": 0.00980791204264544,
+    "response": "Bus.",
+    "metrics": {
+      "tokens": 2,
+      "decodeNs": 663770018,
+      "prefillNs": 203253055950,
+      "completed": true,
+      "version": 3,
+      "timingScope": "prefill_synchronized_before_decode",
+      "firstTokenNs": 203256325638,
+      "promptTokens": 638,
+      "reusedPromptTokens": 0
+    },
+    "callbacks": 2,
+    "native_decode_tokens_s": 3.013091802528508,
+    "send_to_first_ui_ns": 203715008815,
+    "strict": {
+      "status": "PASS",
+      "submitted_graphs": 32,
+      "submitted_math_nodes": 17511,
+      "tensor_cpu_fallback": "blocked_by_native_policy",
+      "host_orchestration": "CPU",
+      "physical_gpu_certified": false
+    },
+    "cache": {
+      "hits": 5,
+      "misses": 0,
+      "bytes": 1474560
+    },
+    "embedding_helper_wall_ms": 8406,
+    "embedding_helper_batches": 5,
+    "stages": {
+      "bitmap_ns": 28403307,
+      "tokenize_ns": 27939890,
+      "key_ns": 124667967,
+      "encode_call_ns": 171629265329,
+      "encode_calls": 5,
+      "hits": 5,
+      "verified_hits": 5,
+      "verification": 1,
+      "cache_disabled": 0
+    }
+  }
+}
