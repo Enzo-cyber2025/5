@@ -112,6 +112,8 @@ def main():
     from strict_vulkan_patches import apply as apply_strict_vulkan
     apply_strict_vulkan(source)
     from vulkan_patches import patch_token_readback
+    from projector_patches import patch_projector
+    patch_projector(source)
     graph=source/'src/llama-graph.cpp';graph.write_text(patch_token_readback(graph.read_text()))
     clip=source/'tools/mtmd/clip.cpp';clip.write_text(patch_clip_gpu(clip.read_text()))
     loader=source/'src/llama-model-loader.cpp';loader.write_text(patch_combined_loader(loader.read_text()))

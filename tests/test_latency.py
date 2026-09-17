@@ -48,12 +48,12 @@ def test_incremental_stream_has_no_full_copy_or_live_truncation(tmp_path):
 
 def test_image_cache_is_bounded_content_keyed_and_keeps_upstream_positions():
     s=(ROOT/'apk-fix/native/mobile.cpp').read_text()
-    assert 'mtmd_bitmap_get_id(bitmap.ptr.get())' in s
-    assert 'e->image_set_id!=image_set_id' in s
-    assert 'mtmd_input_chunk_save(chunk' in s and 'image_ordinal' in s
-    assert 'cached.metadata==metadata && cached.values.size()==count' in s
-    assert 'constexpr size_t cache_limit=16*1024*1024' in s
-    assert 'catch(const std::bad_alloc &)' in s
+    assert 'mtmd_gguf_image_fingerprint(chunk,key.data())' in s
+    assert 'image_set_id' not in s
+    cache=(ROOT/'apk-fix/native/image_embedding_cache.h').read_text()
+    assert 'it->key==key && it->values.size()==count' in cache
+    assert 'capacity_bytes = 16*1024*1024' in cache
+    assert 'catch(const std::bad_alloc &)' in cache
     assert 'mtmd_helper_decode_image_chunk(e->projector,e->ctx,chunk,embd,past,0' in s
     assert 'GGUF_IMAGE_EMBED_CACHE hits=' in s
 

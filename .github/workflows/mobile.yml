@@ -28,7 +28,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   build:
-    if: ${{ !contains(github.event.head_commit.message, '[signed mobile]') }}
+    if: ${{ !contains(github.event.head_commit.message, '[signed mobile]') && !contains(github.event.head_commit.message, '[projector cache]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 85
     steps:
