@@ -79,8 +79,10 @@ release ou certificação de GPU física enquanto os testes não terminarem.
 - `35243048649` / job `105276101366`: compilação nativa e testes host
   concluídos; execução cancelada e substituída para ajustar a duração do protocolo.
   Os fragmentos em `ci-results/35243048649-1` **não são um resultado de desempenho**.
-- `35244519496` / job `105281662691`, fonte `f89d92e`: comparação ajustada
-  em andamento. Código nativo é o de `f42c518`; o ajuste muda apenas o harness
-  e a documentação, não fotos, modelo, shaders ou parâmetros de inferência.
-- Os dois testes host adicionais foram executados localmente depois desse
-  disparo; não atribuir sua execução ao job hospedado ainda em andamento.
+- `35244519496` / job `105281662691`: cancelada antes das medições Android
+  para incluir a proteção contra varreduras maiores que o cache e os contadores
+  completos de recodificação diagnóstica. Não fornece resultado de velocidade.
+- **Atual: `35245429844` / job `105284510816`, fonte `54c1942`.**
+  Compilação/execução ainda em andamento; não apresentar aprovação pendente como PASS.
+- O primeiro job registrou 21 testes host passados e 3 pulados. O código atual
+  tem testes adicionais; a suíte local completa é 188 passados e 69 pulados.

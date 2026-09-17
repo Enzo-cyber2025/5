@@ -1,16 +1,9 @@
 {
   "status": "EXPERIMENT_RUNNING_NOT_RELEASE_APPROVED",
-  "native_source": "f42c5181c86f48d2a3dba3477f54131537bea5c2",
-  "tested_source": "f89d92e0a1024a7e8a7293ef57a5aa72710054f4",
-  "run": 35244519496,
-  "job": 105281662691,
-  "superseded_run": {
-    "run": 35243048649,
-    "conclusion": "cancelled",
-    "native_build": "success",
-    "host_checks": "success",
-    "performance_result": false
-  },
+  "native_source": "54c1942a36700549092ca9c607503f81641d80c4",
+  "tested_source": "54c1942a36700549092ca9c607503f81641d80c4",
+  "run": 35245429844,
+  "job": 105284510816,
   "local_tests": {
     "passed": 188,
     "skipped": 69
@@ -20,5 +13,20 @@
   "physical_gpu_certified": false,
   "release_approved": false,
   "requested_21x_26x_targets_certified": false,
-  "warning": "Await completed real Android comparison. Cached results are compared byte-for-byte only in separate diagnostic inference, excluded from speed measurements."
+  "warning": "Await completed real Android comparison. Cached results are compared byte-for-byte only in separate diagnostic inference, excluded from speed measurements.",
+  "superseded_runs": [
+    {
+      "run": 35243048649,
+      "conclusion": "cancelled",
+      "native_build": "success",
+      "host_checks": "21 passed, 3 skipped",
+      "performance_result": false
+    },
+    {
+      "run": 35244519496,
+      "conclusion": "cancelled",
+      "reason": "Replaced before Android measurements to include scan-resistant cache protection and accurate diagnostic encode counters."
+    }
+  ],
+  "current_scope": "One actual four-stage image sequence per screen state and APK, plus separate byte-verification of cached A and B. In progress; no measured gain or release approval yet."
 }
