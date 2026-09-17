@@ -17,7 +17,7 @@ def stamp(log,marker):
     assert m,'No timestamp: '+marker
     h,mi,s,ms=map(int,m.groups());return h*3600+mi*60+s+ms/1000
 
-def measured_reply(d,chat,prompt,phase,stats):
+def measured_reply(d,chat,prompt,phase,stats,persisted_prompt=None,timeout=600):
     d.send(prompt);pid=d.alive()
     def done():
         assert d.alive()==pid,'App process changed'
@@ -25,12 +25,12 @@ def measured_reply(d,chat,prompt,phase,stats):
         if 'Generation failed:' in log:raise AssertionError(log[-4000:])
         if not generation_completed(log):return None
         chats=d.read_json('chats.json')
-        try:answer=assistant_reply(chats,chat['id'],prompt)
+        try:answer=assistant_reply(chats,chat['id'],prompt if persisted_prompt is None else persisted_prompt)
         except AssertionError:return None
         hit=re.search(r'GGUF_NATIVE_COMPLETE tokens=(\d+)',log);assert hit
         elapsed=stamp(log,'GGUF_NATIVE_COMPLETE')-stamp(log,'GGUF_CONTENT_PREPARED')
         if elapsed<0:elapsed+=86400
-        assert 0<elapsed<600, 'Invalid benchmark clock interval'
+        assert 0<elapsed<timeout, 'Invalid benchmark clock interval'
         record=dict(tokens=int(hit[1]),prefill_and_generation_seconds=elapsed,prefill_and_generation_tokens_s=int(hit[1])/elapsed,response=answer)
         saved=next(c for c in chats if c['id']==chat['id'])
         message=next(m for m in reversed(saved['messages']) if m['role']=='assistant')
@@ -45,7 +45,14 @@ def measured_reply(d,chat,prompt,phase,stats):
         # Keep complete source logs in artifacts; bounded extracts in git.
         (E/f'physical-speed-{phase}-log.txt').write_text(log[-150000:])
         return record
-    return d.wait(done,'native completion and per-message counters: '+phase,timeout=600)
+    try:
+        return d.wait(done,'native completion and per-message counters: '+phase,timeout=timeout)
+    finally:
+        # Preserve evidence on timeout too; never infer model success from timeout.
+        try:
+            (E/f'physical-speed-{phase}-last-log.txt').write_text(d.adb('logcat','-d',f'--pid={pid}')[-180000:])
+            (E/f'physical-speed-{phase}-last-chats.json').write_text(json.dumps(d.read_json('chats.json'),ensure_ascii=False))
+        except Exception:pass
 
 def footer(d,record,stage):
     def ready():

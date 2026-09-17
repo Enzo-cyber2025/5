@@ -18,6 +18,11 @@ E=Path('evidence')
 PROMPT='Name the main animal or vehicle in the attached images. Reply in English.'
 STAGES=('cold_A','append_B','exclude_A','restore_A')
 REPETITIONS=1 # Full-size projector costs minutes per photo under software Vulkan.
+def persisted_image_prompt(prompt,pending):
+    # Exact onSend format verified in the delivered APK's actual DEX.
+    if not pending:return prompt
+    return f'Arquivo anexado: {pending} arquivo(s)\n\nAnexos vinculados a esta mensagem para leitura.\n\n'+prompt
+
 def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 
 def exclude_first(d,chat,excluded):
@@ -37,13 +42,16 @@ def series(d,model,label,asleep,after,verify=False):
     load=d.adb('logcat','-d',f'--pid={pid}')
     assert vulkan_offloaded(load) and 'GGUF_PROJECTOR_WEIGHTS backend=Vulkan' in load
     (E/f'physical-projector-{label}-load.txt').write_text(load[-100000:])
+    if after:assert re.search(r'GGUF_MODEL_ALL_LAYERS loaded=(\d+) total=\1 tensor_cpu_fallback=blocked',load)
     attach(d,chat,['frame-a.jpg']);rows={}
     stages=STAGES[:3] if verify else STAGES
     for stage in stages:
         if stage=='append_B':attach(d,chat,['frame-b.jpg'])
         elif stage=='exclude_A':exclude_first(d,chat,True)
         elif stage=='restore_A':exclude_first(d,chat,False)
-        r=run_reply(d,chat,PROMPT,'projector-'+label+'-'+stage,asleep,True)
+        pending=sum(item.get('message',-1)<0 for item in item_state(d,chat)['items'])
+        expected=persisted_image_prompt(PROMPT,pending)
+        r=run_reply(d,chat,PROMPT,'projector-'+label+'-'+stage,asleep,True,persisted_prompt=expected,timeout=1200)
         assert d.alive()==pid,'Cache comparison must keep the same Engine process'
         log=d.adb('logcat','-d',f'--pid={pid}')
         r['strict']=strict_audit(log)
@@ -83,7 +91,8 @@ def main():
         d.shell('setprop debug.gguf.vulkan_device 0');init_ime(d);fixtures()
         external=independent_single();expected=tensor_hashes(MODEL);expected.update(tensor_hashes(PROJ));assert tensor_hashes(external)==expected
         s['external_gguf_sha256']=sha(external)
-        model=None
+        model=None;text_model=None
+        s['text_series']={}
         # Fresh Engine for every four-stage series; first image starts uncached.
         # One series per state/version: exploratory, not statistical certification.
         for repetition in range(REPETITIONS):
@@ -97,6 +106,24 @@ def main():
                     model=d.import_model(external)
                     assert d.shell('sha256sum '+shlex.quote(model['path'])).split()[0]==s['external_gguf_sha256']
                 configure(d,{})
+                # Exercise common app paths before the long vision comparison.
+                if phase=='after':
+                    from test_code_android import run as code_ui
+                    from test_image_android import pixels
+                    s['checks']['actual_code_stream_history_copy']=code_ui(d)
+                    pixels(d);s['checks']['actual_android_pixels']='PASS'
+                from test_generation_stats_android import TEXT
+                from test_vulkan_speed_android import PROMPT as TEXT_PROMPT
+                if text_model is None:text_model=d.import_model(TEXT)
+                text_rows={}
+                for state in ('awake','asleep'):
+                    tc=d.new_chat(text_model,99,context_size=2048,threads=0);wait_ready(d)
+                    tr=run_reply(d,tc,TEXT_PROMPT,'whole-app-'+phase+'-'+state,state=='asleep',True)
+                    tr['strict']=strict_audit(d.adb('logcat','-d',f'--pid={d.alive()}'))
+                    assert tr['tokens']==128
+                    text_rows[state]=tr
+                s['text_series'][phase]=text_rows
+                (E/'summary.json').write_text(json.dumps(s,indent=2,ensure_ascii=False))
                 for screen in (('awake','asleep') if repetition%2==0 else ('asleep','awake')):
                     label=f'{phase}-{screen}-{repetition}'
                     rows=series(d,model,label,screen=='asleep',phase=='after')
@@ -109,6 +136,9 @@ def main():
                     assert before[stage]['response']==after[stage]['response'],('Changed deterministic visual output',screen,rep,stage)
                     assert before[stage]['tokens']==after[stage]['tokens']
         s['checks']['exact_responses_and_tokens']='PASS'
+        for state in ('awake','asleep'):
+            assert s['text_series']['before'][state]['response']==s['text_series']['after'][state]['response']
+        s['checks']['exact_text_outputs_and_strict_routing']='PASS'
         # Separate, deliberately slower verification: recompute every cached
         # embedding on real Vulkan and memcmp ALL output bytes, not only text.
         d.adb('install','-r','-g','.cache/projector-candidate.apk',timeout=180)

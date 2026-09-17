@@ -9,11 +9,11 @@ from android_checks import PACKAGE,completed_after_actual_sleep,vulkan_offloaded
 from test_code_android import run as code_ui
 E=Path('evidence')
 def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
-def run_reply(d,chat,prompt,label,asleep,new):
+def run_reply(d,chat,prompt,label,asleep,new,persisted_prompt=None,timeout=600):
     wait_ready(d)
     original=d.send
     if asleep:d.send=lambda text,clear_log=True:sleep_after_start(d,original,text,clear_log)
-    try:r=measured_reply(d,chat,prompt,'perf-'+label,True)
+    try:r=measured_reply(d,chat,prompt,'perf-'+label,True,persisted_prompt=persisted_prompt,timeout=timeout)
     finally:d.send=original
     log=d.adb('logcat','-d',f'--pid={d.alive()}')
     if asleep:

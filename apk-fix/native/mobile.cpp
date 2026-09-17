@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <limits>
 #include "strict_vulkan.h"
+#include "model_offload.h"
 #include <sched.h>
 #include <unistd.h>
 #include "chat.h"
@@ -55,6 +56,7 @@ static jlong next_handle=1;
 static std::once_flag initialized;
 static thread_local std::string create_error;
 static thread_local int loaded_gpu_layers=0;
+static thread_local int reported_total_layers=0;
 static std::shared_ptr<Engine> get(jlong h) {
     std::lock_guard<std::mutex> guard(registry_mutex);
     auto i=engines.find(h); return i==engines.end()?nullptr:i->second;
@@ -124,7 +126,7 @@ static int generation_threads(int requested) {
 }
 extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *env,jclass,jstring path,jstring proj,jint context,jint threads,jint layers,jboolean mmap) {
     try {
-        create_error.clear();loaded_gpu_layers=0;ggml_backend_gguf_strict_reset();
+        create_error.clear();loaded_gpu_layers=0;reported_total_layers=0;ggml_backend_gguf_strict_reset();
         const int requested_layers=layers;
         if(layers!=0) layers=INT_MAX; // Vulkan mode is all layers, never partial CPU inference.
         auto model_path=utf8(env,path), projector_path=utf8(env,proj);
@@ -155,8 +157,9 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
             llama_log_set([](ggml_log_level level,const char *text,void*) {
                 const char *offload=std::strstr(text,"offloaded ");
                 int n=0,total=0;
-                if(offload && std::sscanf(offload,"offloaded %d/%d layers to GPU",&n,&total)==2)
-                    loaded_gpu_layers=n;
+                if(offload && std::sscanf(offload,"offloaded %d/%d layers to GPU",&n,&total)==2) {
+                    loaded_gpu_layers=n;reported_total_layers=total;
+                }
                 __android_log_write(level==GGML_LOG_LEVEL_ERROR?ANDROID_LOG_ERROR:ANDROID_LOG_INFO,"GGUFNativeStderr",text);
             },nullptr);
             llama_backend_init();
@@ -180,8 +183,9 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
         StrictVulkanScope strict(e->strict_device);
         e->model=llama_model_load_from_file(model_path.c_str(),mp);
         if(!e->model) throw std::runtime_error("O carregador não conseguiu abrir os pesos. Consulte o diagnóstico nativo: arquivo/arquitetura/backend ou alocação podem causar esta falha");
-        if(layers!=0 && loaded_gpu_layers<=0)
-            throw std::runtime_error("O GGUF não carregou camadas no Vulkan. Escolha CPU explicitamente ou outro modelo/dispositivo.");
+        if(layers!=0 && !complete_gpu_offload(loaded_gpu_layers,reported_total_layers))
+            throw std::runtime_error("Vulkan estrito: carregamento completo das camadas não confirmado. Execução parcial/CPU bloqueada.");
+        if(layers!=0)LOG("GGUF_MODEL_ALL_LAYERS loaded=%d total=%d tensor_cpu_fallback=blocked",loaded_gpu_layers,reported_total_layers);
         e->layers=loaded_gpu_layers;
         auto cp=llama_context_default_params(); cp.n_ctx=context; cp.n_batch=128; cp.n_ubatch=32;
         // This JNI emits one sequence and requests logits ONLY for its final

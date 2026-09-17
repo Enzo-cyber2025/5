@@ -77,7 +77,9 @@ jobs:
             .cache/mobile/x86_64
           key: native-v041-ndk28-v1-${{ runner.os }}-${{ github.run_id }}
       - name: Host cache regressions with pinned actual private types
-        run: bash ci/log_step.sh projector-host .venv/bin/python -m pytest -q tests/test_projector_cache.py tests/test_latency.py tests/test_image_import.py tests/test_strict_vulkan.py tests/test_ui_overhead.py
+        run: bash ci/log_step.sh projector-host .venv/bin/python -m pytest -q tests/test_projector_cache.py tests/test_projector_measurement.py tests/test_inference.py tests/test_latency.py tests/test_image_import.py tests/test_strict_vulkan.py tests/test_ui_overhead.py
+      - name: Real CPU tensor fallback blocked before computation
+        run: bash ci/log_step.sh strict-actual-ggml bash scripts/test_strict_vulkan_host.sh
       - name: Disposable signatures and exact baseline payload proof
         run: |
           mkdir -p evidence

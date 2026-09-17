@@ -7,7 +7,7 @@ JAVA=ROOT/'apk-fix/java/com/ggufchat/app/AttachmentInference.java'
 
 def test_actual_multimodal_bridge_is_not_a_filename_notice():
     s=JAVA.read_text();native=(ROOT/'apk-fix/native/mobile.cpp').read_text();hooks=(ROOT/'apk-fix/attachment_patches.py').read_text()
-    assert 'contents.toString()+rows.get(row)[1]' in s
+    assert 'prependContents(contents,rows.get(row)[1])' in s
     assert 'AttachmentStore.directory(c,chatId)' in s and 'f.length()!=item.getLong("size")' in s
     assert 'mtmd_tokenize(e->projector' in native and 'mtmd_helper_eval_chunk_single(e->projector,e->ctx' in native
     assert 'input_size=mtmd_helper_get_n_tokens' in native
@@ -65,3 +65,27 @@ def test_current_mtmd_input_uses_full_byte_length(tmp_path):
     cpp.write_text('#include <string>\n#include <cassert>\n#include "mtmd.h"\n'+helper+'\nint main(){std::string s=u8"Olá <__media__> ônibus"; auto t=media_input(s); assert(t.text_len==s.size()); assert(std::string(t.text,t.text_len)==s); assert(t.add_special && t.parse_special); assert(media_input(std::string()).text_len==0); }')
     subprocess.run(['g++','-std=c++17','-I'+str(upstream/'tools/mtmd'),'-I'+str(upstream/'include'),'-I'+str(upstream/'ggml/include'),str(cpp),'-o',str(exe)],check=True)
     subprocess.run([str(exe)],check=True)
+
+
+def test_attachment_free_history_preserves_string_and_prefix_bytes(tmp_path):
+    s=JAVA.read_text()
+    assert 'StringBuilder contents=null;' in s
+    assert s.index('if(item.optInt("message",-1)!=m)continue;')<s.index('if(contents==null)contents=new StringBuilder();')
+    javac=shutil.which('javac')
+    if not javac:pytest.skip('CI supplies the JDK compiler')
+    method=re.search(r'    static String prependContents\(.*?\n    }',s,re.S).group()
+    cpp=tmp_path/'HistoryTest.java'
+    cpp.write_text('''public class HistoryTest {\n'''+method+'''
+ public static void main(String[] args){
+  String text=new String(new char[100000]).replace('\\0','x')+"ação\\r\\n  code  ";
+  assert prependContents(null,text)==text;
+  assert prependContents(new StringBuilder(),text)==text;
+  StringBuilder prefix=new StringBuilder("\\n--- Anexo ---\\n");
+  String result=prependContents(prefix,text);
+  assert result.equals(prefix.toString()+text);
+  prefix.append("changed");assert !result.equals(prefix.toString()+text);
+  for(int i=0;i<10000;i++)assert prependContents(null,text)==text;
+ }
+}''')
+    subprocess.run([javac,'-encoding','UTF-8','-d',str(tmp_path),str(cpp)],check=True)
+    subprocess.run([str(jdk4py.JAVA_HOME/'bin/java'),'-ea','-cp',str(tmp_path),'HistoryTest'],check=True)

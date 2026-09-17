@@ -115,3 +115,20 @@ def test_android_audit_requires_completed_math_and_no_block():
     assert strict_audit(log)['submitted_math_nodes']==1000
     for bad in [log.replace('enabled=1','enabled=0'),log.replace('math_nodes=1000','math_nodes=0'),log.replace('blocked=0','blocked=1'),log.replace('selected=129','selected=0'),log.replace('GGUF_NATIVE_COMPLETE',''),log+'\nGGUF_STRICT_VULKAN_BLOCKED',log+'\n'+log]:
         with pytest.raises(AssertionError):strict_audit(bad)
+
+
+def test_partial_or_missing_offload_is_rejected_at_load(tmp_path):
+    cpp=tmp_path/'offload.cpp'
+    cpp.write_text('''#include "model_offload.h"
+#include <cassert>
+int main(){assert(complete_gpu_offload(31,31));
+assert(!complete_gpu_offload(1,31));assert(!complete_gpu_offload(0,31));
+assert(!complete_gpu_offload(0,0));assert(!complete_gpu_offload(32,31));
+assert(!complete_gpu_offload(-1,-1));}
+''')
+    subprocess.run(['g++','-std=c++17','-I'+str(ROOT/'apk-fix/native'),str(cpp),'-o',str(tmp_path/'offload')],check=True)
+    subprocess.run([str(tmp_path/'offload')],check=True)
+    s=(ROOT/'apk-fix/native/mobile.cpp').read_text()
+    assert s.index('!complete_gpu_offload(')<s.index('e->ctx=llama_init_from_model')
+    assert 'reported_total_layers=0;ggml_backend_gguf_strict_reset();' in s
+    assert 'e->gpu_weights[0].buft=ggml_backend_dev_buffer_type(e->strict_device)' in s
