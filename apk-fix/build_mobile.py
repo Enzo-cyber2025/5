@@ -123,6 +123,8 @@ def main():
     patch_image_upload(source)
     from projector_batch_patches import patch_projector_batch
     patch_projector_batch(source)
+    from projector_qkv_patches import patch_projector_qkv
+    patch_projector_qkv(source)
     loader=source/'src/llama-model-loader.cpp';loader.write_text(patch_combined_loader(loader.read_text()))
     classes=WORK/'classes';classes.mkdir(exist_ok=True)
     android=sdk/'platforms/android-35/android.jar'

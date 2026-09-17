@@ -363,6 +363,9 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
             const bool verify_pairs=std::getenv("GGUF_VERIFY_PROJECTOR_BATCH")!=nullptr;
             if(paired && !e->strict_device)throw std::runtime_error("Lotes visuais experimentais exigem Vulkan estrito");
             ProjectorPair pair;
+            const bool verify_qkv=std::getenv("GGUF_VERIFY_QKV")!=nullptr;
+            size_t qkv_verified_images=0;
+            if(paired && std::getenv("GGUF_VULKAN_QKV"))throw std::runtime_error("Experimentos QKV e batch não devem ser misturados");
             // Diagnostic controls only: never change model/sampler parameters.
             const bool cache_disabled=std::getenv("GGUF_DISABLE_IMAGE_EMBED_CACHE")!=nullptr;
             const bool verify_cache=std::getenv("GGUF_VERIFY_IMAGE_EMBED_CACHE")!=nullptr;
@@ -445,6 +448,31 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
                             encode_ns+=std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now()-verify_started).count();
                             encode_calls++;pair_verified_images++;
                         }
+                        if(verify_qkv) {
+                            // Separate diagnostic: same original tensors, same GPU,
+                            // full individual projector output, no CPU reference math.
+                            const auto verify_started=Clock::now();
+                            std::vector<float> fused(embd,embd+count);
+                            if(!mtmd_gguf_qkv_reference(e->projector,true))
+                                throw std::runtime_error("QKV de referência indisponível");
+                            struct RestoreQkv {
+                                mtmd_context *ctx;
+                                ~RestoreQkv(){mtmd_gguf_qkv_reference(ctx,false);}
+                            } restore{e->projector};
+                            if(mtmd_encode_chunk(e->projector,chunk)!=0)
+                                throw std::runtime_error("Falha ao verificar QKV individual em Vulkan");
+                            embd=mtmd_get_output_embd(e->projector);
+                            if(!embd)throw std::runtime_error("QKV individual sem embeddings");
+                            if(std::memcmp(fused.data(),embd,count*sizeof(float))!=0) {
+                                for(size_t at=0;at<count;at++)if(std::memcmp(fused.data()+at,embd+at,sizeof(float))!=0) {
+                                    uint32_t a,b;std::memcpy(&a,fused.data()+at,4);std::memcpy(&b,embd+at,4);
+                                    LOG("GGUF_QKV_DIFF index=%zu fused_bits=%08x separate_bits=%08x",at,a,b);break;
+                                }
+                                throw std::runtime_error("QKV fundido divergiu byte a byte do caminho original");
+                            }
+                            encode_ns+=std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now()-verify_started).count();
+                            encode_calls++;qkv_verified_images++;
+                        }
                         if(key_valid)e->image_cache.store(key,embd,count);
                     }
                     // Keep upstream non-causal attention, M-RoPE and batching logic.
@@ -461,6 +489,7 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
                 (long long)std::chrono::duration_cast<std::chrono::nanoseconds>(tokenize_finished-tokenize_started).count(),
                 (unsigned long long)key_ns,(unsigned long long)encode_ns,encode_calls,image_hits,verified_hits,(int)verify_cache,(int)cache_disabled);
             LOG("GGUF_PROJECTOR_PAIRS enabled=%d pair_calls=%zu paired_images=%zu verified_images=%zu verification=%d",(int)paired,pair_calls,pair_images,pair_verified_images,(int)verify_pairs);
+            LOG("GGUF_QKV_RESULT requested=%d verification=%d verified_images=%zu",std::getenv("GGUF_VULKAN_QKV")!=nullptr,(int)verify_qkv,qkv_verified_images);
             LOG("GGUF_MEDIA_PREFILL images=%d tokens=%zu positions=%d",n_images,input_size,past);
         } else {
             auto input=tokens(vocab,text);input_size=input.size();
