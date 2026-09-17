@@ -52,6 +52,7 @@ def main(report_dir):
     candidate=work/'signed.apk'
     subprocess.run([str(java),'-jar',str(signer),'sign','--ks',str(key),'--ks-key-alias','ggufchat-speed',
                     '--ks-pass','file:'+str(password),'--key-pass','file:'+str(password),
+                    '--v1-signing-enabled','false','--v2-signing-enabled','true','--v3-signing-enabled','true',
                     '--out',str(candidate),str(source)],check=True,capture_output=True)
     verified=subprocess.check_output([str(java),'-jar',str(signer),'verify','--verbose','--print-certs',str(candidate)],text=True)
     cert=re.search(r'Signer #1 certificate SHA-256 digest: ([0-9a-f]{64})',verified);assert cert
