@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Quality passing CI is not speed approval; verify warmed, non-diagnostic pairs."""
-import json,sys,statistics
+import json,sys,statistics,re
 from pathlib import Path
 
 def evaluate(path):
@@ -12,6 +12,17 @@ def evaluate(path):
     for x in loads[1:]:
         if x['mode']=='fused':assert int(x['report'][0][3])==0
         else:assert not x['report']
+    # AUTO attention can choose a different implementation when QKV strides
+    # change. Same-context reference alone must not hide a cross-mode change.
+    base=Path(path).parent
+    labels=['byte-verification']+[f'{i}-{mode}-warmup' for i in range(2) for mode in ('separate','fused')]
+    attention=[]
+    for label in labels:
+        log=(base/f'physical-speed-perf-qkv-{label}-last-log.txt').read_text()
+        states=re.findall(r'warmup: flash attention is (enabled|disabled)',log)
+        assert len(states)==1, 'Missing/ambiguous realized attention policy: '+label
+        attention.append(states[0])
+    assert len(set(attention))==1, 'AUTO attention changed between control and fused mode'
     rows=s['measurements'];assert len(rows)==2 and len(s['warmups'])==4
     assert [list(x) for x in rows]==[['separate','fused'],['fused','separate']]
     output=[]
@@ -33,7 +44,7 @@ def evaluate(path):
                        'separate_encode_call_s':a['stages']['encode_call_ns']/1e9,'fused_encode_call_s':b['stages']['encode_call_ns']/1e9})
     ratios=[x['ratio'] for x in output]
     return {'status':'OBSERVED_GAIN_IN_BOTH_PAIRS' if all(x>1.05 for x in ratios) else 'NO_CONSISTENT_GAIN_OVER_5_PERCENT',
-            'observations':output,'median_ratio':statistics.median(ratios),
+            'observations':output,'median_ratio':statistics.median(ratios),'realized_flash_attention':attention[0],
             'extra_device_bytes':[int(x['report'][0][2]) for x in loads if x['report']],
             'quality':'exact original weight-copy bytes, full projector output reference, raw saved histories',
             'scope':'Two AB/BA warmed observations per mode on one software-Vulkan runner; not physical GPU, statistics, cold startup or global speedup',

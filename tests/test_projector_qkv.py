@@ -100,9 +100,15 @@ def test_qkv_speed_gate_rejects_missing_proof_and_instrumented_samples(tmp_path)
                 {'mode':'separate','report':[]},{'mode':'fused','report':[['12','100','128','0']]},
                 {'mode':'fused','report':[['12','100','128','0']]},{'mode':'separate','report':[]}],
        'warmups':[{}]*4,'measurements':[{'separate':r,'fused':b},{'fused':copy.deepcopy(b),'separate':copy.deepcopy(r)}]}
+    labels=['byte-verification']+[f'{i}-{mode}-warmup' for i in range(2) for mode in ('separate','fused')]
+    for label in labels:(tmp_path/f'physical-speed-perf-qkv-{label}-last-log.txt').write_text('warmup: flash attention is enabled')
     p=tmp_path/'summary.json';p.write_text(json.dumps(s));assert mod.evaluate(p)['status']=='OBSERVED_GAIN_IN_BOTH_PAIRS'
     s['measurements'][1]['fused']['send_to_first_ui_ns']=1100000000;p.write_text(json.dumps(s));assert mod.evaluate(p)['status']=='NO_CONSISTENT_GAIN_OVER_5_PERCENT'
     s['measurements'][1]['fused']['diagnostic']=True;p.write_text(json.dumps(s))
     with pytest.raises(AssertionError):mod.evaluate(p)
     s['status']='FAIL';p.write_text(json.dumps(s))
     with pytest.raises(ValueError):mod.evaluate(p)
+    s['status']='PASS_QKV_EXPERIMENT_ONLY';s['measurements'][1]['fused']['diagnostic']=False;p.write_text(json.dumps(s))
+    (tmp_path/'physical-speed-perf-qkv-1-fused-warmup-last-log.txt').write_text('warmup: flash attention is disabled')
+    with pytest.raises(AssertionError,match='AUTO attention changed'):mod.evaluate(p)
+
