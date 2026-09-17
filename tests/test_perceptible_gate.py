@@ -62,3 +62,13 @@ def test_release_signer_preserves_non_signature_metadata(tmp_path):
     s=(ROOT/'scripts/sign_gain_release.py').read_text()
     assert s.index("gate=evaluate(report);assert gate['gain_gate_passed']")<s.index("private=ROOT/'.signing'")
     assert 'install' not in s[s.index('def main('):].replace('in-place update','').replace('uninstall','')
+
+
+def test_public_archive_fetch_refuses_unapproved_report_before_network(tmp_path,monkeypatch):
+    import importlib.util,json
+    spec=importlib.util.spec_from_file_location('gain_fetcher',ROOT/'scripts/fetch_gain_approved_apk.py')
+    mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod)
+    monkeypatch.setattr(mod.urllib.request,'urlopen',lambda *a,**k:pytest.fail('Network must not run before gain approval'))
+    (tmp_path/'summary.json').write_text(json.dumps({'status':'FAIL'}))
+    with pytest.raises(AssertionError):mod.main(tmp_path,'0'*40)
+    with pytest.raises(AssertionError):mod.main(tmp_path,'not-a-commit')
