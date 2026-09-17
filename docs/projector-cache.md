@@ -83,6 +83,18 @@ release ou certificação de GPU física enquanto os testes não terminarem.
   para incluir a proteção contra varreduras maiores que o cache e os contadores
   completos de recodificação diagnóstica. Não fornece resultado de velocidade.
 - **Atual: `35245429844` / job `105284510816`, fonte `54c1942`.**
-  Compilação/execução ainda em andamento; não apresentar aprovação pendente como PASS.
+  Compilação nativa e etapa host concluídas com sucesso. Android ainda em andamento
+  na última consulta pública; não apresentar aprovação pendente como PASS.
 - O primeiro job registrou 21 testes host passados e 3 pulados. O código atual
   tem testes adicionais; a suíte local completa é 188 passados e 69 pulados.
+
+### Interrupção de acompanhamento autenticado
+
+A conexão do GitHub passou a devolver **401 Bad credentials** durante a execução
+Android. O monitor `gh run watch` terminou com exit 0, mas sem conclusão final;
+essa saída **não** é aprovação. Duas consultas autenticadas falharam, assim como
+o acesso git. A página pública e a API REST pública, consultadas pelo leitor web,
+ainda informavam `in_progress`. Não há ganho medido confirmado nem novo APK liberado.
+É necessário reconectar o GitHub na Arena para recuperar o acompanhamento
+autenticado e os artefatos. O job remoto já iniciado pode continuar independentemente
+dessa conexão. Não foram solicitadas, expostas ou armazenadas credenciais no chat.

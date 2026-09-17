@@ -1,5 +1,5 @@
 {
-  "status": "EXPERIMENT_RUNNING_NOT_RELEASE_APPROVED",
+  "status": "ANDROID_IN_PROGRESS_AUTH_CONNECTION_401",
   "native_source": "54c1942a36700549092ca9c607503f81641d80c4",
   "tested_source": "54c1942a36700549092ca9c607503f81641d80c4",
   "run": 35245429844,
@@ -28,5 +28,10 @@
       "reason": "Replaced before Android measurements to include scan-resistant cache protection and accurate diagnostic encode counters."
     }
   ],
-  "current_scope": "One actual four-stage image sequence per screen state and APK, plus separate byte-verification of cached A and B. In progress; no measured gain or release approval yet."
+  "current_scope": "One actual four-stage image sequence per screen state and APK, plus separate byte-verification of cached A and B. In progress; no measured gain or release approval yet.",
+  "current_native_build": "success",
+  "current_host_step": "success",
+  "android_result": "not confirmed; public GitHub REST/page still reported in_progress after authenticated access failed",
+  "monitor_warning": "gh run watch exited 0 without a final result when credentials failed. Exit 0 is NOT Android success.",
+  "github_connection": "401 Bad credentials; reconnection in Arena required for authenticated git/gh and artifact retrieval. Public read-only status remains accessible through web fetch."
 }
