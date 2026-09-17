@@ -58,3 +58,11 @@ cancela o experimento integrado anterior `35252559185` (fonte `81bc70c`).
 Sem resultado Android concluído, não há comprovação de equivalência no dispositivo,
 ganho de velocidade, aprovação de release ou cumprimento do objetivo de levar
 todo o pré-processamento para a GPU.
+
+## Acompanhamento
+
+Fonte `5e66e0f`; execução `35259603589`, job `105331708595`. Compilação nativa e
+etapas host concluídas; verificação Android ainda em andamento na última consulta.
+Localmente: **196 passados, 70 pulados**, incluindo o grafo ggml real de layout.
+O teste integrado anterior permanece separado e não foi cancelado. Nenhum desses
+estados pendentes é aprovação de velocidade, equivalência Android ou release.

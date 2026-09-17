@@ -1,0 +1,33 @@
+{
+  "status": "ANDROID_BYTE_VERIFICATION_RUNNING",
+  "source_commit": "5e66e0fcef7811cb3b76c24c30d53b04881f212b",
+  "run": 35259603589,
+  "job": 105331708595,
+  "native_build": "success",
+  "host_steps": "success",
+  "local_tests": {
+    "passed": 196,
+    "skipped": 70
+  },
+  "default_enabled": false,
+  "release_approved": false,
+  "speed_approved": false,
+  "physical_gpu_certified": false,
+  "gpu_stage": "HWC to contiguous CHW float32 packing, enabled only by GGUF_VULKAN_IMAGE_PACK",
+  "host_stages": [
+    "file IO",
+    "decode",
+    "orientation/color preparation",
+    "resize/crops",
+    "normalization",
+    "upload orchestration/driver host copies"
+  ],
+  "control": "Same APK; flag absent vs present; image embedding cache disabled in both; readback and full output hashing are diagnostic, not speed measurements",
+  "prior_integrated_run": {
+    "id": 35252559185,
+    "source": "81bc70c8c1025fb8d46f7d99a8f9ee63af95b711",
+    "last_observed": "in_progress",
+    "cancelled_by_this_experiment": false
+  },
+  "delivered_apk_unchanged": true
+}
