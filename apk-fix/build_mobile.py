@@ -121,6 +121,8 @@ def main():
     clip=source/'tools/mtmd/clip.cpp';clip.write_text(patch_clip_gpu(clip.read_text()))
     from image_upload_patches import patch_image_upload
     patch_image_upload(source)
+    from projector_batch_patches import patch_projector_batch
+    patch_projector_batch(source)
     loader=source/'src/llama-model-loader.cpp';loader.write_text(patch_combined_loader(loader.read_text()))
     classes=WORK/'classes';classes.mkdir(exist_ok=True)
     android=sdk/'platforms/android-35/android.jar'

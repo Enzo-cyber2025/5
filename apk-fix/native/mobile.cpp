@@ -6,6 +6,7 @@
 #include "cpu_threads.h"
 #include "decode_delivery.h"
 #include "image_embedding_cache.h"
+#include "projector_pair.h"
 #include <cstdlib>
 #include <limits>
 #include "strict_vulkan.h"
@@ -356,7 +357,12 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
             if(input_size+1>=(size_t)llama_n_ctx(e->ctx))
                 throw std::runtime_error("Texto e imagens excedem o contexto. Desative anexos na lista, use outra conversa ou aumente o contexto. Nenhum conteúdo foi cortado silenciosamente.");
             const auto tokenize_finished=Clock::now();
-            uint64_t key_ns=0,encode_ns=0;size_t verified_hits=0;
+            uint64_t key_ns=0,encode_ns=0;size_t verified_hits=0,encode_calls=0;
+            size_t pair_calls=0,pair_images=0,pair_verified_images=0;
+            const bool paired=std::getenv("GGUF_PROJECTOR_BATCH2")!=nullptr;
+            const bool verify_pairs=std::getenv("GGUF_VERIFY_PROJECTOR_BATCH")!=nullptr;
+            if(paired && !e->strict_device)throw std::runtime_error("Lotes visuais experimentais exigem Vulkan estrito");
+            ProjectorPair pair;
             // Diagnostic controls only: never change model/sampler parameters.
             const bool cache_disabled=std::getenv("GGUF_DISABLE_IMAGE_EMBED_CACHE")!=nullptr;
             const bool verify_cache=std::getenv("GGUF_VERIFY_IMAGE_EMBED_CACHE")!=nullptr;
@@ -369,7 +375,7 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
                 if(is_image) {
                     const size_t tokens=mtmd_input_chunk_get_n_tokens(chunk);
                     const int width=llama_model_n_embd_inp(e->model);
-                    if(width<=0 || tokens>std::numeric_limits<size_t>::max()/(size_t)width)
+                    if(width<=0 || tokens>std::numeric_limits<size_t>::max()/sizeof(float)/(size_t)width)
                         throw std::runtime_error("Dimensões de embeddings visuais inválidas");
                     const size_t count=tokens*width;
                     ImageEmbeddingCache::Key key{};
@@ -387,20 +393,64 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
                                std::memcmp(embd,mtmd_get_output_embd(e->projector),count*sizeof(float))!=0)
                                 throw std::runtime_error("Cache visual divergiu da execução real do projetor");
                             encode_ns+=std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now()-verify_started).count();
-                            verified_hits++;
+                            verified_hits++;encode_calls++;
                         }
                     } else {
                         image_misses++;
-                        const auto encode_started=Clock::now();
-                        if(mtmd_encode_chunk(e->projector,chunk)!=0)throw std::runtime_error("Falha ao codificar pixels no projetor");
-                        encode_ns+=std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now()-encode_started).count();
-                        embd=mtmd_get_output_embd(e->projector);
+                        bool from_pair=paired && pair.ready(chunk);
+                        if(from_pair)embd=pair.output(chunk);
+                        else {
+                            const mtmd_input_chunk *next=nullptr;
+                            if(paired)for(size_t j=i+1;j<chunks.size();j++) {
+                                const auto kind=mtmd_input_chunk_get_type(chunks[j]);
+                                if(kind==MTMD_INPUT_CHUNK_TYPE_TEXT)continue;
+                                if(kind!=MTMD_INPUT_CHUNK_TYPE_IMAGE)break;
+                                bool already_cached=false;
+                                const size_t next_tokens=mtmd_input_chunk_get_n_tokens(chunks[j]);
+                                if(!cache_disabled && next_tokens<=ImageEmbeddingCache::capacity_bytes/sizeof(float)/(size_t)width) {
+                                    const auto next_key_started=Clock::now();
+                                    ImageEmbeddingCache::Key next_key{};
+                                    if(mtmd_gguf_image_fingerprint(chunks[j],next_key.data())==0)
+                                        already_cached=(key_valid && key==next_key) || e->image_cache.find(next_key,next_tokens*width)!=nullptr;
+                                    key_ns+=std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now()-next_key_started).count();
+                                }
+                                if(!already_cached)next=chunks[j];
+                                break; // only the NEXT image; never retain an unbounded batch
+                            }
+                            const auto encode_started=Clock::now();
+                            if(paired && pair.start(e->projector,chunk,next)) {
+                                from_pair=true;pair_calls++;pair_images+=2;embd=pair.output(chunk);
+                            } else {
+                                if(mtmd_encode_chunk(e->projector,chunk)!=0)throw std::runtime_error("Falha ao codificar pixels no projetor");
+                                embd=mtmd_get_output_embd(e->projector);
+                            }
+                            encode_calls++;
+                            encode_ns+=std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now()-encode_started).count();
+                        }
                         if(!embd)throw std::runtime_error("Projetor não devolveu embeddings visuais");
+                        if(verify_pairs && from_pair) {
+                            const auto verify_started=Clock::now();
+                            if(mtmd_encode_chunk(e->projector,chunk)!=0)
+                                throw std::runtime_error("Falha na verificação individual do lote visual");
+                            const auto *reference=mtmd_get_output_embd(e->projector);
+                            if(!reference)throw std::runtime_error("Encoder de referência não devolveu embeddings");
+                            if(std::memcmp(embd,reference,count*sizeof(float))!=0) {
+                                for(size_t at=0;at<count;at++)if(std::memcmp(embd+at,reference+at,sizeof(float))!=0) {
+                                    uint32_t actual_bits,reference_bits;
+                                    std::memcpy(&actual_bits,embd+at,4);std::memcpy(&reference_bits,reference+at,4);
+                                    LOG("GGUF_PROJECTOR_PAIR_DIFF index=%zu batch_bits=%08x single_bits=%08x",at,actual_bits,reference_bits);break;
+                                }
+                                throw std::runtime_error("Lote visual divergiu byte a byte do encoder individual");
+                            }
+                            encode_ns+=std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now()-verify_started).count();
+                            encode_calls++;pair_verified_images++;
+                        }
                         if(key_valid)e->image_cache.store(key,embd,count);
                     }
                     // Keep upstream non-causal attention, M-RoPE and batching logic.
                     // Only the pure vision encoder is skipped on an exact cache hit.
                     result=mtmd_helper_decode_image_chunk(e->projector,e->ctx,chunk,embd,past,0,llama_n_batch(e->ctx),&past,nullptr,nullptr);
+                    pair.consumed(chunk);
                 } else result=mtmd_helper_eval_chunk_single(e->projector,e->ctx,chunk,past,0,llama_n_batch(e->ctx),i+1==chunks.size(),&past);
                 if(result!=0)throw std::runtime_error("Falha ao avaliar texto/imagem no modelo");
                 if(is_image)LOG("GGUF_IMAGE_EVALUATED tokens=%zu backend=%s",mtmd_input_chunk_get_n_tokens(chunk),e->layers>0?"Vulkan":"CPU");
@@ -409,7 +459,8 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
             LOG("GGUF_PROJECTOR_STAGES bitmap_ns=%lld tokenize_ns=%lld key_ns=%llu encode_call_ns=%llu encode_calls=%zu hits=%zu verified_hits=%zu verification=%d cache_disabled=%d",
                 (long long)std::chrono::duration_cast<std::chrono::nanoseconds>(tokenize_started-bitmap_started).count(),
                 (long long)std::chrono::duration_cast<std::chrono::nanoseconds>(tokenize_finished-tokenize_started).count(),
-                (unsigned long long)key_ns,(unsigned long long)encode_ns,image_misses+verified_hits,image_hits,verified_hits,(int)verify_cache,(int)cache_disabled);
+                (unsigned long long)key_ns,(unsigned long long)encode_ns,encode_calls,image_hits,verified_hits,(int)verify_cache,(int)cache_disabled);
+            LOG("GGUF_PROJECTOR_PAIRS enabled=%d pair_calls=%zu paired_images=%zu verified_images=%zu verification=%d",(int)paired,pair_calls,pair_images,pair_verified_images,(int)verify_pairs);
             LOG("GGUF_MEDIA_PREFILL images=%d tokens=%zu positions=%d",n_images,input_size,past);
         } else {
             auto input=tokens(vocab,text);input_size=input.size();
