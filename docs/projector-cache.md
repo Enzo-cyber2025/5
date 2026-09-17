@@ -98,3 +98,14 @@ ainda informavam `in_progress`. Não há ganho medido confirmado nem novo APK li
 É necessário reconectar o GitHub na Arena para recuperar o acompanhamento
 autenticado e os artefatos. O job remoto já iniciado pode continuar independentemente
 dessa conexão. Não foram solicitadas, expostas ou armazenadas credenciais no chat.
+
+## Continuação após reconexão
+
+O resultado `35245429844` foi recuperado: **FAIL**, timeout na primeira imagem do
+baseline, sem comparação do candidato. A busca de resposta exigia o prompt sem
+o aviso que o APK real grava ao anexar arquivos. O método foi corrigido, sem
+alterar prompt digitado, modelo ou pixels; diagnósticos de timeout agora são salvos.
+A execução atual é **35252559185**, fonte **81bc70c**, ainda em andamento. Ela
+também testa texto ON/OFF e caminhos da interface. Detalhes da política de GPU,
+da eliminação de cópias de histórico e das verificações em
+`docs/model-gpu-app-overhead.md`. Nenhuma pendência antiga é tratada como PASS.

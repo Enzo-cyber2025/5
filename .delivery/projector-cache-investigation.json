@@ -1,12 +1,12 @@
 {
-  "status": "ANDROID_IN_PROGRESS_AUTH_CONNECTION_401",
-  "native_source": "54c1942a36700549092ca9c607503f81641d80c4",
-  "tested_source": "54c1942a36700549092ca9c607503f81641d80c4",
-  "run": 35245429844,
-  "job": 105284510816,
+  "status": "INTEGRATED_ANDROID_TEST_RUNNING",
+  "native_source": "81bc70c8c1025fb8d46f7d99a8f9ee63af95b711",
+  "tested_source": "81bc70c8c1025fb8d46f7d99a8f9ee63af95b711",
+  "run": 35252559185,
+  "job": 105308188440,
   "local_tests": {
-    "passed": 188,
-    "skipped": 69
+    "passed": 192,
+    "skipped": 70
   },
   "delivered_apk_unchanged": true,
   "delivered_sha256": "323fd5a33667c6cab278699e97c89fe253e1bb7acead45b869729bf022eb9f5c",
@@ -28,10 +28,18 @@
       "reason": "Replaced before Android measurements to include scan-resistant cache protection and accurate diagnostic encode counters."
     }
   ],
-  "current_scope": "One actual four-stage image sequence per screen state and APK, plus separate byte-verification of cached A and B. In progress; no measured gain or release approval yet.",
+  "current_scope": "Text ON/OFF, exact attachment notice matching, full image processing and separate embedding byte comparison, code/Copy/history and Android decoder. Raw stored histories must also pass ci/evaluate_projector_app.py.",
   "current_native_build": "success",
   "current_host_step": "success",
-  "android_result": "not confirmed; public GitHub REST/page still reported in_progress after authenticated access failed",
+  "android_result": "Pending; no new performance or release approval",
   "monitor_warning": "gh run watch exited 0 without a final result when credentials failed. Exit 0 is NOT Android success.",
-  "github_connection": "401 Bad credentials; reconnection in Arena required for authenticated git/gh and artifact retrieval. Public read-only status remains accessible through web fetch."
+  "github_connection": "Reconnected; git and gh status access restored. Prior artifact redirect returned EOF; no release downloaded.",
+  "previous_completed_run": {
+    "run": 35245429844,
+    "conclusion": "failure",
+    "error": "Timeout on baseline first image; candidate comparison not reached",
+    "confirmed_performance_comparisons": 0,
+    "harness_issue": "Exact user prompt lookup omitted real APK attachment notice. Old timeout is NOT retrospectively approved."
+  },
+  "real_ggml_cpu_rejection_test": "PASS locally; actual CPU output sentinel unchanged before rejection, explicit CPU still works"
 }
