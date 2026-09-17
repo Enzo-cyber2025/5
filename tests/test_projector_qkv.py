@@ -111,4 +111,3 @@ def test_qkv_speed_gate_rejects_missing_proof_and_instrumented_samples(tmp_path)
     s['status']='PASS_QKV_EXPERIMENT_ONLY';s['measurements'][1]['fused']['diagnostic']=False;p.write_text(json.dumps(s))
     (tmp_path/'physical-speed-perf-qkv-1-fused-warmup-last-log.txt').write_text('warmup: flash attention is disabled')
     with pytest.raises(AssertionError,match='AUTO attention changed'):mod.evaluate(p)
-
