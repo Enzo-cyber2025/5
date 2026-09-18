@@ -1,0 +1,37 @@
+{
+  "status": "MEDIA_PREFIX_GAIN_OR_REGRESSION_NOT_MET",
+  "passed": false,
+  "kind": "text",
+  "first_text_speedups": [],
+  "decode_ratios": [],
+  "cold_native_ratios": [],
+  "text": {
+    "awake_first_native": [
+      1.021860050358707,
+      0.9360302123482666,
+      0.9881681297793713
+    ],
+    "awake_decode": [
+      1.0072194566237633,
+      0.8687340764211,
+      1.0057958987176916
+    ],
+    "awake_first_ui": [
+      1.0198742355662798,
+      0.9339662090876982,
+      0.9880596224288081
+    ],
+    "asleep_first_native": [
+      1.018721602150982,
+      1.0168441442293872,
+      1.0189867097604597
+    ],
+    "asleep_decode": [
+      1.0184720267563685,
+      0.98686760104639,
+      1.0053106635050373
+    ]
+  },
+  "release_approved": false,
+  "scope": "Three AB/BA/AB pairs. Any positive continuation gain in every image pair; decode/text controls at most 3% slower per observation and nonnegative medians. Cold native first-token ratios must also satisfy the regression guard. No all-model, physical GPU or final-delivered-APK comparison claim."
+}
