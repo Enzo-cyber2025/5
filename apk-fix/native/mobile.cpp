@@ -343,7 +343,14 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
         if(n_images) {
             // Image identity/embedding positions are not inferred from text IDs.
 #ifdef GGUF_EXPERIMENT_MEDIA_PREFIX
+            const bool media_requested=media_prefix_opt_in() && e->strict_device && e->cache_supported && media_prefix_model(e->model);
+            const bool media_cleared_early=!media_requested || e->media_prefix.empty();
             e->cached_tokens.clear();
+            if(media_cleared_early) {
+                // Control and cold requests clear at the ORIGINAL point, before
+                // image preparation. Do not handicap the control by delaying it.
+                llama_memory_clear(memory,true);e->media_prefix.clear();
+            }
 #else
             e->cached_tokens.clear();llama_memory_clear(memory,true);
 #endif
@@ -392,12 +399,11 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
             llama_pos past=0;size_t image_hits=0,image_misses=0;
 #ifdef GGUF_EXPERIMENT_MEDIA_PREFIX
             std::vector<MediaPrefixChunk> media_description;
-            const bool media_eligible=media_prefix_opt_in() && e->strict_device && e->cache_supported &&
-                media_prefix_model(e->model) && media_prefix_describe(e->projector,chunks.ptr.get(),media_description);
+            const bool media_eligible=media_requested && media_prefix_describe(e->projector,chunks.ptr.get(),media_description);
             auto media_plan=media_prefix_plan(e->media_prefix,media_description,media_eligible,
                 llama_memory_seq_pos_min(memory,0),llama_memory_seq_pos_max(memory,0));
             if(media_plan.tokens && !llama_memory_seq_rm(memory,0,media_plan.tokens,-1))media_plan={};
-            if(!media_plan.tokens)llama_memory_clear(memory,true);
+            if(!media_plan.tokens && !media_cleared_early)llama_memory_clear(memory,true);
             e->media_prefix.clear(); // publish metadata only after successful prefill
             reused_tokens=media_plan.tokens;
             past=media_plan.tokens;

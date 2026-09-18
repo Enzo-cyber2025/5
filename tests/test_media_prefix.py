@@ -60,7 +60,7 @@ def test_experimental_build_and_runtime_gates_and_failure_invalidation():
     assert 'mtmd_decode_use_mrope(ctx)' in bridge and 'mtmd_decode_use_non_causal(ctx,chunk)' in bridge
     assert 'llama.attention.sliding_window' in bridge and '"llama"' in bridge
     assert 'llama_memory_seq_rm(memory,0,media_plan.tokens,-1)' in native
-    assert 'if(!media_plan.tokens)llama_memory_clear(memory,true)' in native
+    assert 'if(!media_plan.tokens && !media_cleared_early)llama_memory_clear(memory,true)' in native
     assert 'optimized!=reference' in native and 'media_eval(0)' in native
     failure=native[native.index('} catch(const std::exception &ex) {',native.index('static jboolean generate')):]
     assert 'e->media_prefix.clear()' in failure
@@ -120,3 +120,11 @@ int main(){
     subprocess.run(['g++','-std=c++17','-Wall','-Wextra','-Werror','-I'+str(ROOT/'apk-fix/native'),
         '-I'+str(source/'include'),'-I'+str(source/'ggml/include'),'-I'+str(source/'tools/mtmd'),str(cpp),'-o',str(exe)],check=True)
     subprocess.run([str(exe)],check=True)
+
+
+def test_control_and_cold_clear_keep_original_timing():
+    s=(ROOT/'apk-fix/native/mobile.cpp').read_text()
+    assert 'media_cleared_early=!media_requested || e->media_prefix.empty()' in s
+    at=s.index('if(media_cleared_early)')
+    assert at<s.index('const auto bitmap_started=Clock::now()')
+    assert s.index('llama_memory_clear(memory,true);e->media_prefix.clear()',at)<s.index('const auto bitmap_started=Clock::now()')
