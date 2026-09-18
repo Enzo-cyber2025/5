@@ -29,6 +29,7 @@ def bundle():
                 elif kind == 'text':
                     for stage, row in obs['states']['awake'].items():
                         row['tokens'] = row['metrics']['tokens'] = 128
+                        row['completion_reason'] = 'length'
                         row['native_decode_tokens_s'] = 128
                         row['metrics']['reusedPromptTokens'] = 0 if stage == 'warmup' else 204
                     obs['states']['asleep'] = copy.deepcopy(obs['states']['awake'])
@@ -81,3 +82,20 @@ def test_optimized_python_refused():
         "import sys;sys.path.insert(0,'ci');from evaluate_projector_combined_bundle import evaluate_bundle;evaluate_bundle({}, {})"],
         cwd=ROOT, capture_output=True, text=True)
     assert r.returncode != 0 and 'Optimized Python' in r.stderr
+
+
+def test_natural_eos_keeps_full_budget_and_identical_outputs():
+    proof, reports = bundle()
+    for pair in reports['text']['pairs']:
+        for phase in pair.values():
+            for state in phase['states'].values():
+                for row in state.values():
+                    row['tokens'] = row['metrics']['tokens'] = 103
+                    row['native_decode_tokens_s'] = 103
+                    row['completion_reason'] = 'eog'
+    seal(reports['text'], proof)
+    assert evaluate_bundle(proof, reports)['passed']
+    row=reports['text']['pairs'][0]['after']['states']['awake']['sample']
+    row['settings']['nPredict']=103
+    with pytest.raises(AssertionError):
+        evaluate_bundle(proof, reports)

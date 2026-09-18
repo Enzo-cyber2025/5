@@ -20,7 +20,8 @@ def row_check(r,after,stage,kind,verify=False):
     assert [x[0] for x in history]==['user','assistant']*(len(history)//2)
     assert all(isinstance(x[1],str) and x[1] for x in history)
     if kind=='text':
-        assert r['tokens']==128
+        assert 64<=r['tokens']<=128 and m['promptTokens']+128<=cfg['contextSize']
+        assert r['completion_reason']==('length' if r['tokens']==128 else 'eog')
         assert (m['reusedPromptTokens']==0) if stage=='warmup' else (0<m['reusedPromptTokens']<m['promptTokens'])
         return
     images=r['image_records'];assert images and all(int(n)>0 and b=='Vulkan' for n,b in images)

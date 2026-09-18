@@ -7,7 +7,7 @@ permissions:
   contents: write
   actions: read
 concurrency:
-  group: projector-combined-${{ github.ref }}
+  group: ${{ contains(github.event.head_commit.message, '[projector combined]') && format('projector-combined-{0}', github.ref) || format('projector-combined-skip-{0}', github.sha) }}
   cancel-in-progress: true
 jobs:
   build:

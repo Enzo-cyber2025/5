@@ -20,6 +20,13 @@ E=Path('evidence');APK=Path('.cache/combined-import/candidate.apk')
 COMBINED={'GGUF_PROJECTOR_BATCH2':'1','GGUF_VULKAN_QKV':'1','GGUF_PROJECTOR_COMBINATION':'1'}
 def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 
+def text_completion(r,log):
+    # Keep nPredict=128; an actual EOS is not a shortened output budget.
+    complete=re.findall(r'GGUF_NATIVE_COMPLETE tokens=(\d+) reason=(length|eog) projector=1',log)
+    assert len(complete)==1 and int(complete[0][0])==r['tokens']
+    assert 64<=r['tokens']<=128 and 'GGUF_IMAGE_EVALUATED' not in log
+    r['completion_reason']=complete[0][1]
+
 def memory(d,label):
     log=d.shell('dumpsys meminfo '+PACKAGE)
     (E/f'physical-combined-{label}-memory.txt').write_text(log)
@@ -68,7 +75,7 @@ def observation(d,model,label,after,kind,verify=False):
             saved=next(c for c in d.read_json('chats.json') if c['id']==chat['id'])
             r['raw_history']=[(m['role'],m['content']) for m in saved['messages'] if m['role'] in ('user','assistant')]
             r['settings']={k:saved[k] for k in ('nPredict','temperature','topP','topK','minP','repeatPenalty','repeatLastN','contextSize','nThreads','gpuLayers','useMmap','thinking','webSearch','systemPrompt')}
-            if kind=='text':assert r['tokens']==128 and 'GGUF_IMAGE_EVALUATED' not in log
+            if kind=='text':text_completion(r,log)
             else:
                 assert f'GGUF_PROJECTOR_COMBINATION enabled={int(after)} verification={int(verify)}' in log
                 r['image_records']=image_prefill_records(log,1)
@@ -104,7 +111,7 @@ def observation_text_sleep(d,model,label,after):
         r=run_reply(d,chat,prompt,f'combined-{label}-asleep-{stage}',True,True,timeout=1200)
         assert d.alive()==pid
         log=d.adb('logcat','-d',f'--pid={pid}');r['strict']=strict_audit(log)
-        assert r['tokens']==128 and 'GGUF_IMAGE_EVALUATED' not in log
+        text_completion(r,log)
         r.update(combined=after,diagnostic=False)
         saved=next(c for c in d.read_json('chats.json') if c['id']==chat['id'])
         r['raw_history']=[(m['role'],m['content']) for m in saved['messages'] if m['role'] in ('user','assistant')]

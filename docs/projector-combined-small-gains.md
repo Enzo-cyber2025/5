@@ -41,7 +41,7 @@ python3 ci/evaluate_projector_combined_bundle.py \
   --proof ci-results/35392374636-1-combined-verify/summary.json \
   --awake ci-results/35392374636-1-combined-awake/summary.json \
   --asleep ci-results/35392374636-1-combined-asleep/summary.json \
-  --text ci-results/35392374636-1-combined-text/summary.json \
+  --text ci-results/${EOS_RUN_ID:?}-1-combined-text-eos/summary.json \
   --cache ci-results/35392374636-1-combined-cache/summary.json
 ```
 
@@ -57,3 +57,26 @@ a ativação segura por capacidade/arquitetura e as implicações de memória ai
 precisam ser tratadas antes de outra entrega. Não trocar o APK assinado atual ou
 sua chave por causa deste experimento. A chave privada do certificado atual não
 está disponível no ambiente restaurado; não gerar substituta silenciosamente.
+
+
+## Controle de texto: recuperação sem recompilar o APK
+
+O job de texto de `35392374636` parou no primeiro warmup: a resposta terminou
+normalmente em EOS com **103 tokens**, mantendo `nPredict=128`. Não chegou a
+comparar os modos; não registrar isso como lentidão, ganho ou controle aprovado.
+Esse relatório histórico permanece intacto.
+
+`projector-text-eos.yml` repete **somente** esse controle com o APK de SHA
+`2053c037e3d9ca776f9c1d285722338c4967135044d7c026803450bd0b33baf1`
+e a prova de bytes baixados da execução original. Não recompila o candidato nem
+aproveita uma medição de outro APK. O limite continua 128, deve haver contexto
+para todo o orçamento, as respostas/tokens devem ser iguais entre braços, e
+respostas menores que 64 tokens não servem à medição. `eog` é obrigatório abaixo
+de 128; `length` é obrigatório ao atingir o limite. Sem suprimir EOS ou inventar
+tokens. Três pares AB/BA/AB, tela ON/OFF, todos os demais controles preservados.
+
+No comando acima, `EOS_RUN_ID` deve apontar à execução dessa recuperação. O
+agrupador exige o mesmo build e a mesma prova dos outros três workloads. Se a
+recuperação falhar, o pacote completo segue sem aprovação. Alterações sem a tag
+`[projector combined]` usam outro grupo de concorrência para não interromper
+as medições originais ainda em execução.
