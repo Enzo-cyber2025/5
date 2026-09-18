@@ -1,0 +1,89 @@
+{
+  "tokens": 84,
+  "prefill_and_generation_seconds": 28.214000000007218,
+  "prefill_and_generation_tokens_s": 2.977245339192547,
+  "response": "1. Learn a language by watching movies, TV shows, or audiobooks in your local area.\n2. Practice speaking with friends and family to improve your listening skills.\n3. Use online resources such as language learning apps like Duolingo or Babbel to practice grammar and vocabulary.\n4. Join a language club or community group to learn more about the language and get feedback on your pronunciation.",
+  "metrics": {
+    "tokens": 84,
+    "decodeNs": 21907030352,
+    "prefillNs": 6307277896,
+    "completed": true,
+    "version": 3,
+    "timingScope": "prefill_synchronized_before_decode",
+    "firstTokenNs": 6307797586,
+    "promptTokens": 200,
+    "reusedPromptTokens": 73
+  },
+  "callbacks": 84,
+  "native_decode_tokens_s": 3.8343855214648586,
+  "chat": {
+    "id": "1a0b67d49841ea29b",
+    "title": "GGUF regression 1a0b67d49841ea29b",
+    "modelPath": "/data/user/0/com.ggufchat.app/files/models/1789767680253_external-one.gguf",
+    "mmprojPath": "/data/user/0/com.ggufchat.app/files/models/1789767680253_external-one.gguf",
+    "createdAt": 1789768059268,
+    "updatedAt": 1789768153116,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Explain ten practical ways to learn a language. Give a detailed example for each. Reply in English.",
+        "ts": 1789768079008,
+        "thinking": false
+      },
+      {
+        "role": "assistant",
+        "content": " 1. Learn a language by watching movies, TV shows, or audiobooks in your local area.\n2. Practice speaking with friends and family to improve your listening skills.\n3. Use online resources such as language learning apps like Duolingo or Babbel to practice grammar and vocabulary.\n4. Join a language club or community group to learn more about the language and get feedback on your pronunciation.\n5. Take a course at a local language school or university to improve your speaking skills.",
+        "ts": 1789768110594,
+        "thinking": false,
+        "generationMetrics": {
+          "tokens": 103,
+          "decodeNs": 26402037882,
+          "prefillNs": 5126830619,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 5127325202,
+          "promptTokens": 73,
+          "reusedPromptTokens": 0
+        }
+      },
+      {
+        "role": "user",
+        "content": "Give ten more practical recommendations, with detailed examples. Reply in English.",
+        "ts": 1789768124856,
+        "thinking": false
+      },
+      {
+        "role": "assistant",
+        "content": "  1. Learn a language by watching movies, TV shows, or audiobooks in your local area.\n2. Practice speaking with friends and family to improve your listening skills.\n3. Use online resources such as language learning apps like Duolingo or Babbel to practice grammar and vocabulary.\n4. Join a language club or community group to learn more about the language and get feedback on your pronunciation.",
+        "ts": 1789768153116,
+        "thinking": false,
+        "generationMetrics": {
+          "tokens": 84,
+          "decodeNs": 21907030352,
+          "prefillNs": 6307277896,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 6307797586,
+          "promptTokens": 200,
+          "reusedPromptTokens": 73
+        }
+      }
+    ],
+    "nPredict": 128,
+    "temperature": 0,
+    "topP": 0.949999988079071,
+    "topK": 40,
+    "minP": 0.05000000074505806,
+    "repeatPenalty": 1.100000023841858,
+    "repeatLastN": 64,
+    "contextSize": 4096,
+    "nThreads": 2,
+    "gpuLayers": 99,
+    "useMmap": true,
+    "thinking": false,
+    "webSearch": false,
+    "systemPrompt": null
+  }
+}
