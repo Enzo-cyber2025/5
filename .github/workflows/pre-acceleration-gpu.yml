@@ -1,0 +1,69 @@
+name: Pre-acceleration APK versus delivered native GPU token rate
+on:
+  push:
+    branches: [arena/01a09b42-5]
+    paths: [.github/workflows/pre-acceleration-gpu.yml]
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: pre-acceleration-gpu-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  compare:
+    if: ${{ contains(github.event.head_commit.message, '[pre acceleration gpu]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        state: [awake, asleep]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Recover exact APK before first recorded acceleration experiment
+        run: |
+          mkdir -p .cache evidence
+          git fetch --depth=1 origin 2af2b3894fe18d4a8eb5c3320cc0d9539b78d44d
+          git show 2af2b3894fe18d4a8eb5c3320cc0d9539b78d44d:.delivery/GGUF-Chat-mobile.apk > .cache/pre-acceleration.apk
+          echo '0c45fd2e6c318da3ebb961bbd461c56d7401161c31a1869157f509550e4b05d1  .cache/pre-acceleration.apk' | sha256sum -c -
+          echo 'bd7c45d3c9b80ee583e0d4102595c5ed55242c37aa0394f0befe093c07fd88d2  entrega/GGUF-Chat-acelerado.apk' | sha256sum -c -
+      - name: Same pinned text fixture and standalone observer, no native rebuild
+        run: |
+          mkdir -p .cache/mobile-models
+          curl --fail --location --retry 3 --max-time 900 'https://huggingface.co/bartowski/SmolLM2-135M-Instruct-GGUF/resolve/main/SmolLM2-135M-Instruct-Q4_K_M.gguf' -o .cache/mobile-models/SmolLM2-135M-Instruct-Q4_K_M.gguf
+          echo '2e8040ceae7815abe0dcb3540b9995eaa1fa0d2ca9e797d0a635ae4433c68c2d  .cache/mobile-models/SmolLM2-135M-Instruct-Q4_K_M.gguf' | sha256sum -c -
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0'
+          bash scripts/build_gpu_rate_observer.sh
+          sudo chmod a+rw /dev/kvm
+          bash ci/prepare_vulkan.sh
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_5
+          ram-size: 6144M
+          heap-size: 1024M
+          disk-size: 8192M
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -gpu host -feature Vulkan -noaudio -no-boot-anim -camera-back emulated -camera-front emulated
+          script: bash ci/log_step.sh emulator python3 scripts/test_gpu_rate_android.py ${{ matrix.state }}
+      - name: Independently validate token mapping, full outputs, GPU and paired rate
+        run: python3 ci/evaluate_gpu_rate.py evidence/summary.json > evidence/physical-gpu-rate-comparison.json
+      - name: Publish actual results or explicit failure, never release diagnostic APKs
+        if: always()
+        env:
+          GGUF_EVIDENCE_VARIANT: pre-accel-gpu-${{ matrix.state }}
+        run: bash ci/log_step.sh publish bash ci/publish_evidence.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pre-acceleration-gpu-${{ matrix.state }}-evidence
+          path: evidence/
