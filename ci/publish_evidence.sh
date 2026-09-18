@@ -6,6 +6,11 @@ BRANCH=arena/01a09b42-5
 [[ "${GITHUB_REF:-}" == "refs/heads/$BRANCH" ]]
 [[ "$(git branch --show-current)" == "$BRANCH" ]]
 DEST="ci-results/${GITHUB_RUN_ID:?}-${GITHUB_RUN_ATTEMPT:?}"
+# Parallel experiment jobs must not overwrite each other's summary or screenshots.
+if [[ -n "${GGUF_EVIDENCE_VARIANT:-}" ]]; then
+  [[ "$GGUF_EVIDENCE_VARIANT" =~ ^[a-z][a-z0-9-]{0,31}$ ]]
+  DEST="$DEST-$GGUF_EVIDENCE_VARIANT"
+fi
 mkdir -p "$DEST"
 python3 - "$DEST" <<'PY'
 import os

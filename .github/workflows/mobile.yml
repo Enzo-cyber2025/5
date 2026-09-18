@@ -28,12 +28,12 @@ concurrency:
   cancel-in-progress: true
 jobs:
   isolated-experiment:
-    if: ${{ contains(github.event.head_commit.message, '[local stream]') }}
+    if: ${{ contains(github.event.head_commit.message, '[local stream]') || contains(github.event.head_commit.message, '[wait speed]') }}
     runs-on: ubuntu-latest
     steps:
-      - run: echo 'The DEX-only local-stream workflow owns this experiment; do not rebuild or relay native payloads.'
+      - run: echo 'The dedicated experiment workflow owns this run; do not duplicate the build or relay an unapproved payload.'
   build:
-    if: ${{ !contains(github.event.head_commit.message, '[signed mobile]') && !contains(github.event.head_commit.message, '[projector cache]') && !contains(github.event.head_commit.message, '[local stream]') }}
+    if: ${{ !contains(github.event.head_commit.message, '[signed mobile]') && !contains(github.event.head_commit.message, '[projector cache]') && !contains(github.event.head_commit.message, '[local stream]') && !contains(github.event.head_commit.message, '[wait speed]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 85
     steps:

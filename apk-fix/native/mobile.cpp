@@ -34,6 +34,7 @@
 #include <cstdio>
 #include <cstring>
 #include <climits>
+#include <time.h>
 
 #define LOG(...) __android_log_print(ANDROID_LOG_INFO,"GGUFChatNative",__VA_ARGS__)
 struct Engine {
@@ -297,6 +298,8 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
     jmethodID on_token=nullptr,on_done=nullptr; jclass clazz=nullptr;
     using Clock=std::chrono::steady_clock;
     auto started=Clock::now(),decode_started=started,last_flush=started;
+    timespec worker_cpu_started{};
+    const bool worker_cpu_available=clock_gettime(CLOCK_THREAD_CPUTIME_ID,&worker_cpu_started)==0;
     bool ok=false,decoding=false;int emitted=0,callbacks=0,backend_sampled=0,overlap_submissions=0;
     std::string pending;pending.reserve(4096);
     int64_t first_token_ns=-1;size_t prompt_tokens=0,reused_tokens=0;bool text_cache=false;
@@ -567,6 +570,12 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
         if(on_token&&!env->ExceptionCheck())try{flush();}catch(...){}
     }
     auto finished=Clock::now();
+    timespec worker_cpu_finished{};
+    const bool worker_cpu_measured=worker_cpu_available && clock_gettime(CLOCK_THREAD_CPUTIME_ID,&worker_cpu_finished)==0;
+    const int64_t worker_cpu_ns=worker_cpu_measured?
+        (int64_t)(worker_cpu_finished.tv_sec-worker_cpu_started.tv_sec)*1000000000LL+
+        worker_cpu_finished.tv_nsec-worker_cpu_started.tv_nsec:0;
+    LOG("GGUF_HOST_WORKER_CPU available=%d thread_cpu_ns=%lld",(int)worker_cpu_measured,(long long)worker_cpu_ns);
     jlong decode_ns=decoding?std::chrono::duration_cast<std::chrono::nanoseconds>(finished-decode_started).count():0;
     jlong prefill_ns=std::chrono::duration_cast<std::chrono::nanoseconds>((decoding?decode_started:finished)-started).count();
     LOG("GGUF_STRICT_VULKAN_RESULT enabled=%d submitted_graphs=%llu submitted_math_nodes=%llu blocked=%d host_orchestration=CPU",
