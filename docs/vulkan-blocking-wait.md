@@ -58,3 +58,7 @@ previamente recuperados por Git autenticado; hashes/prefixos e proveniência
 constam em `.delivery/vulkan-wait-rejected.json`. Os gates foram recomputados
 localmente. Essa recuperação não é um fetch Git autenticado nem download do
 binário experimental.
+
+Após a autorização de entrega com ganhos menores, a conexão funcionou novamente:
+os relatórios foram obtidos por Git autenticado em d3aa668 e conferidos byte a
+byte contra a recuperação pública. Ambos os resultados de rejeição coincidem.
