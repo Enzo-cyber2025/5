@@ -7,6 +7,9 @@
 #include "decode_delivery.h"
 #include "image_embedding_cache.h"
 #include "projector_pair.h"
+#ifdef GGUF_EXPERIMENT_MEDIA_PREFIX
+#include "media_prefix_mtmd.h"
+#endif
 #include <cstdlib>
 #include <limits>
 #include "strict_vulkan.h"
@@ -50,6 +53,9 @@ struct Engine {
     std::vector<llama_token> cached_tokens; // exact tokens whose KV is present
     bool cache_supported=false;
     ImageEmbeddingCache image_cache;
+#ifdef GGUF_EXPERIMENT_MEDIA_PREFIX
+    std::vector<MediaPrefixChunk> media_prefix;
+#endif
     ~Engine() { if(projector) mtmd_free(projector); if(ctx) llama_free(ctx); if(model) llama_model_free(model); }
 };
 static std::mutex registry_mutex;
@@ -336,7 +342,11 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
         auto memory=llama_get_memory(e->ctx);
         if(n_images) {
             // Image identity/embedding positions are not inferred from text IDs.
+#ifdef GGUF_EXPERIMENT_MEDIA_PREFIX
+            e->cached_tokens.clear();
+#else
             e->cached_tokens.clear();llama_memory_clear(memory,true);
+#endif
             if(!e->projector || !mtmd_support_vision(e->projector))
                 throw std::runtime_error("Este modelo/projetor não aceita imagens. Use um par com visão.");
             e->image_cache.begin_request();
@@ -380,7 +390,34 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
             const bool cache_disabled=std::getenv("GGUF_DISABLE_IMAGE_EMBED_CACHE")!=nullptr;
             const bool verify_cache=std::getenv("GGUF_VERIFY_IMAGE_EMBED_CACHE")!=nullptr;
             llama_pos past=0;size_t image_hits=0,image_misses=0;
+#ifdef GGUF_EXPERIMENT_MEDIA_PREFIX
+            std::vector<MediaPrefixChunk> media_description;
+            const bool media_eligible=media_prefix_opt_in() && e->strict_device && e->cache_supported &&
+                media_prefix_model(e->model) && media_prefix_describe(e->projector,chunks.ptr.get(),media_description);
+            auto media_plan=media_prefix_plan(e->media_prefix,media_description,media_eligible,
+                llama_memory_seq_pos_min(memory,0),llama_memory_seq_pos_max(memory,0));
+            if(media_plan.tokens && !llama_memory_seq_rm(memory,0,media_plan.tokens,-1))media_plan={};
+            if(!media_plan.tokens)llama_memory_clear(memory,true);
+            e->media_prefix.clear(); // publish metadata only after successful prefill
+            reused_tokens=media_plan.tokens;
+            past=media_plan.tokens;
+            auto media_eval=[&](size_t begin) {
+#endif
             for(size_t i=0;i<chunks.size();i++) {
+#ifdef GGUF_EXPERIMENT_MEDIA_PREFIX
+                if(i<begin) {
+                    if(mtmd_input_chunk_get_type(chunks[i])==MTMD_INPUT_CHUNK_TYPE_IMAGE) {
+                        // Preserve the embedding cache's per-request scan resistance
+                        // even though these retained KV cells need no embedding decode.
+                        const auto &d=media_description[i];
+                        const int width=llama_model_n_embd_inp(e->model);
+                        if(width>0 && d.count<=ImageEmbeddingCache::capacity_bytes/sizeof(float)/(size_t)width)
+                            e->image_cache.find(d.pixels,d.count*(size_t)width);
+                        LOG("GGUF_IMAGE_KV_REUSED tokens=%zu backend=Vulkan",mtmd_input_chunk_get_n_tokens(chunks[i]));
+                    }
+                    continue;
+                }
+#endif
                 if(e->cancel)throw std::runtime_error("Geração cancelada");
                 const auto *chunk=chunks[i];
                 const bool is_image=mtmd_input_chunk_get_type(chunk)==MTMD_INPUT_CHUNK_TYPE_IMAGE;
@@ -394,7 +431,11 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
                     ImageEmbeddingCache::Key key{};
                     const auto key_started=Clock::now();
                     const bool key_valid=!cache_disabled && count<=ImageEmbeddingCache::capacity_bytes/sizeof(float) &&
+#ifdef GGUF_EXPERIMENT_MEDIA_PREFIX
+                        (media_eligible?(key=media_description[i].pixels,true):mtmd_gguf_image_fingerprint(chunk,key.data())==0);
+#else
                         mtmd_gguf_image_fingerprint(chunk,key.data())==0;
+#endif
                     key_ns+=std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now()-key_started).count();
                     float *embd=key_valid?e->image_cache.find(key,count):nullptr;
                     if(embd) {
@@ -493,6 +534,24 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
                 if(result!=0)throw std::runtime_error("Falha ao avaliar texto/imagem no modelo");
                 if(is_image)LOG("GGUF_IMAGE_EVALUATED tokens=%zu backend=%s",mtmd_input_chunk_get_n_tokens(chunk),e->layers>0?"Vulkan":"CPU");
             }
+#ifdef GGUF_EXPERIMENT_MEDIA_PREFIX
+            };
+            media_eval(media_plan.chunks);
+            const bool verify_media=std::getenv("GGUF_VERIFY_MEDIA_PREFIX")!=nullptr;
+            size_t verified_bytes=0;
+            if(verify_media && media_plan.tokens) {
+                if(!(temp<=0))throw std::runtime_error("Diagnóstico KV requer sampling greedy, sem alterar parâmetros");
+                auto optimized=media_prefix_snapshot(e->ctx);
+                llama_memory_clear(memory,true);past=0;
+                media_eval(0); // original full prefill; same prepared chunks and GPU
+                auto reference=media_prefix_snapshot(e->ctx);
+                if(optimized!=reference)throw std::runtime_error("Prefixo multimodal divergiu byte a byte do KV original");
+                verified_bytes=reference.size();
+            }
+            if(media_eligible)e->media_prefix=std::move(media_description);
+            LOG("GGUF_MEDIA_PREFIX enabled=%d eligible=%d reused_chunks=%zu reused_tokens=%zu verification=%d verified_bytes=%zu",
+                (int)media_prefix_opt_in(),(int)media_eligible,media_plan.chunks,media_plan.tokens,(int)verify_media,verified_bytes);
+#endif
             LOG("GGUF_IMAGE_EMBED_CACHE hits=%zu misses=%zu bytes=%zu",image_hits,image_misses,e->image_cache.bytes());
             LOG("GGUF_PROJECTOR_STAGES bitmap_ns=%lld tokenize_ns=%lld key_ns=%llu encode_call_ns=%llu encode_calls=%zu hits=%zu verified_hits=%zu verification=%d cache_disabled=%d",
                 (long long)std::chrono::duration_cast<std::chrono::nanoseconds>(tokenize_started-bitmap_started).count(),
@@ -502,6 +561,9 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
             LOG("GGUF_QKV_RESULT requested=%d verification=%d verified_images=%zu",std::getenv("GGUF_VULKAN_QKV")!=nullptr,(int)verify_qkv,qkv_verified_images);
             LOG("GGUF_MEDIA_PREFILL images=%d tokens=%zu positions=%d",n_images,input_size,past);
         } else {
+#ifdef GGUF_EXPERIMENT_MEDIA_PREFIX
+            e->media_prefix.clear(); // switching to text cannot reuse stale media KV
+#endif
             auto input=tokens(vocab,text);input_size=input.size();
             if(input.empty() || input_size>=(size_t)llama_n_ctx(e->ctx))throw std::runtime_error("Conversa e documentos excedem o contexto. Desative anexos na lista, inicie outra conversa ou aumente o contexto. Nenhum texto foi cortado silenciosamente.");
             text_cache=e->cache_supported;
@@ -570,6 +632,9 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
         if(e->cancel || env->ExceptionCheck()) throw std::runtime_error("Geração cancelada ou callback falhou");
         ok=true;LOG("GGUF_NATIVE_COMPLETE tokens=%d reason=%s projector=%d",emitted,reason,e->projector!=nullptr);
     } catch(const std::exception &ex) {
+#ifdef GGUF_EXPERIMENT_MEDIA_PREFIX
+        e->media_prefix.clear();
+#endif
         e->cached_tokens.clear(); // failed/partial work is never reused
         e->image_cache.clear();
         e->error=ex.what();if(*ggml_backend_gguf_strict_error())e->error=ggml_backend_gguf_strict_error();LOG("Generation failed: %s",e->error.c_str());
