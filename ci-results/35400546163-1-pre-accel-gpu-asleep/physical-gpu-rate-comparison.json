@@ -1,0 +1,30 @@
+{
+  "comparison_valid": true,
+  "metric": "native_token_delivery_intervals_excluding_first_token_and_prefill",
+  "state": "asleep",
+  "pairs": [
+    {
+      "before_tps": 3.828824762688635,
+      "after_tps": 3.978797577573683,
+      "ratio": 1.0391694120729975
+    },
+    {
+      "before_tps": 4.107104081650983,
+      "after_tps": 4.040002067877921,
+      "ratio": 0.9836619641384671
+    },
+    {
+      "before_tps": 4.068059182612387,
+      "after_tps": 4.06895832467312,
+      "ratio": 1.0002210248229857
+    }
+  ],
+  "before_median_tps": 4.068059182612387,
+  "after_median_tps": 4.040002067877921,
+  "median_paired_gain_percent": 0.02210248229856937,
+  "all_pairs_faster": false,
+  "physical_gpu_certified": false,
+  "release_approved": false,
+  "baseline_all_tensor_gpu_policy_proven": false,
+  "scope": "Unchanged original DEX/native/resources in disposable test-signed copies; same native observer, 127 token-delivery intervals after first callback. Not app/UI/footer timing or pure GPU kernel time."
+}
