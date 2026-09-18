@@ -4,9 +4,9 @@ import json,statistics,sys,math
 from pathlib import Path
 from perceptible_image_gate import BASELINE,CANDIDATE
 
-def evaluate(s):
+def evaluate(s, *, baseline_sha=BASELINE, candidate_sha=CANDIDATE):
     assert s.get('status')!='FAIL' and not s.get('error')
-    assert s['build']['baseline_original_sha256']==BASELINE and s['build']['candidate_original_sha256']==CANDIDATE
+    assert s['build']['baseline_original_sha256']==baseline_sha and s['build']['candidate_original_sha256']==candidate_sha
     assert s['build']['resigning_payload_exact'] is True
     pairs=s['pairs'];assert len(pairs)==3
     expected=[['before','after'],['after','before'],['before','after']]

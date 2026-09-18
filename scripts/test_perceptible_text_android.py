@@ -16,12 +16,16 @@ E=Path('evidence')
 PRIME='Explain ten practical ways to learn a language. Give a detailed example for each. Reply in English.'
 FOLLOW='Give ten more practical recommendations, with detailed examples. Reply in English.'
 
-def run(d,model,label,state):
-    configure(d,{})
+def run(d,model,label,state,settings=None):
+    configure(d,settings or {})
     d.adb('logcat','-c');chat=d.new_chat(model,99,context_size=2048,threads=0);wait_ready(d)
     pid=d.alive();env=d.adb('exec-out','cat',f'/proc/{pid}/environ',binary=True).split(b'\0')
     assert not any(x.startswith((b'GGUF_VERIFY_',b'GGUF_VULKAN_QKV=',b'GGUF_PROJECTOR_BATCH2=')) for x in env)
     load=d.adb('logcat','-d',f'--pid={pid}');assert vulkan_offloaded(load)
+    if settings and 'GGUF_LOCAL_STREAM' in settings:
+        flag=settings['GGUF_LOCAL_STREAM']
+        assert ('GGUF_LOCAL_STREAM='+flag).encode() in env
+        assert 'GGUF_LOCAL_STREAM enabled='+flag in load
     (E/f'physical-text-gain-{label}-{state}-load.txt').write_text(load[-100000:])
     rows={}
     for kind,prompt in [('warmup',PRIME),('sample',FOLLOW)]:
