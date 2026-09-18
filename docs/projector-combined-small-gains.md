@@ -80,3 +80,17 @@ agrupador exige o mesmo build e a mesma prova dos outros três workloads. Se a
 recuperação falhar, o pacote completo segue sem aprovação. Alterações sem a tag
 `[projector combined]` usam outro grupo de concorrência para não interromper
 as medições originais ainda em execução.
+
+
+## Resultados recebidos em 18/09/2026: combinação não aprovada
+
+- Imagens ON, `35392374636`: os três pares passaram. Razões Send→primeiro
+  texto: 1,025836 / 1,031412 / 1,002291; encoder: 1,031337 / 1,042557 /
+  1,007693. Memória QKV adicional: 22.671.360 bytes.
+- Controle de texto recuperado, `35397655356`, mesmo APK/prova: executou
+  corretamente, mas **não passou o controle de regressão**. Decode ON:
+  1,028751 / 0,993936 / 1,018272. Decode OFF: 1,011138 / 0,863607 /
+  0,991250; primeiro token nativo OFF: 1,003396 / 0,842567 / 0,958538.
+- Portanto, mesmo com ganhos em imagens ON, **não habilitar a combinação**
+  por padrão nem incorporá-la à entrega. Não enfraquecer o limite de regressão
+  ou substituir o resultado por outra repetição favorável. APK bd7c45d intacto.

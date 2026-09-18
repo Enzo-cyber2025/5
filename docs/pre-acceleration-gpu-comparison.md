@@ -1,5 +1,35 @@
 # APK anterior à primeira aceleração: comparação de T/s Vulkan
 
+## Resultado concluído — 18/09/2026
+
+Execução real [35400546163](https://github.com/Enzo-cyber2025/5/actions/runs/35400546163), ambos os estados concluídos. **Não demonstrou ganho estável de T/s contra esse baseline.**
+
+| Estado | APK anterior, mediana T/s | APK atual, mediana T/s | Variação entre essas medianas |
+|---|---:|---:|---:|
+| Tela ligada | 3,983264 | 3,965417 | −0,45% |
+| Tela apagada | 4,068059 | 4,040002 | −0,69% |
+
+Pares individuais, na ordem AB/BA/AB:
+
+| Estado / par | Anterior T/s | Atual T/s | Atual/anterior − 1 |
+|---|---:|---:|---:|
+| Ligada / 1 | 3,767568 | 3,912604 | +3,8496% |
+| Ligada / 2 | 4,026488 | 3,965417 | −1,5167% |
+| Ligada / 3 | 3,983264 | 3,989104 | +0,1466% |
+| Apagada / 1 | 3,828825 | 3,978798 | +3,9169% |
+| Apagada / 2 | 4,107104 | 4,040002 | −1,6338% |
+| Apagada / 3 | 4,068059 | 4,068958 | +0,0221% |
+
+A **mediana das razões pareadas**, outra estatística (não a razão das medianas), é +0,1466% ON e +0,0221% OFF. Há regressão no segundo par dos dois estados. Não selecionar apenas o primeiro par positivo nem apresentar essas oscilações pequenas como aceleração comprovada. Três pares não demonstram significância estatística.
+
+Os dois braços mantiveram modelo, parâmetros, 128 tokens, prompts, IDs de entrada e respostas completas idênticos. A validação durante a execução exigiu offload Vulkan em ambos e política estrita de operações/amostragem no atual. São **intervalos de entrega nativa após o primeiro token em Vulkan por software**, não desempenho da GPU do telefone, tempo puro de kernel ou rodapé/UI do aplicativo.
+
+Assinaturas de diagnóstico: somente cópias temporárias, com todos os arquivos não relacionados à assinatura idênticos aos originais. APK entregue e chave de produção não alterados.
+
+Evidências completas de callbacks/saídas e resultados: `ci-results/35400546163-1-pre-accel-gpu-{awake,asleep}/`. Reavaliação local dos dois `summary.json` passou; todos os dados brutos de callbacks e os dois contadores nativos de 128 tokens por observação foram reconferidos. **Limitação de retenção:** o log de sistema limitado a 1,5 MB da primeira observação antiga de cada estado perdeu o carregamento e o marcador inicial do warmup. O harness validou esses dados no log completo durante a execução; a cópia publicada conserva os contadores de fim de ambos os estágios e o estágio medido. As outras dez observações permitem repetir também a coleta integral a partir do log publicado. O harness foi corrigido para preservar separadamente o log completo do processo nativo em execuções futuras; não se refez o teste para escolher outro resultado.
+
+Verificação do código deste protocolo: 51 testes selecionados passaram; Java, DEX, assinaturas e igualdade dos arquivos dos APKs foram verificados no CI. A suíte host completa, após instalar as dependências declaradas, teve 281 aprovados, 117 ignorados e 2 falhas por ausência da fixture `.cache/gguf/GGUF-Chat.apk`; **não é aprovação da suíte completa**.
+
 ## Referência corrigida
 
 A referência é `2af2b3894fe18d4a8eb5c3320cc0d9539b78d44d:.delivery/GGUF-Chat-mobile.apk`, SHA-256 `0c45fd2e6c318da3ebb961bbd461c56d7401161c31a1869157f509550e4b05d1`. O primeiro registro de candidato de aceleração (`9a5e656:ci/speed-candidate.json`) nomeia explicitamente esse APK como baseline, antes do candidato `b8145469`. Isso identifica a primeira rodada **registrada no Git**, não uma recuperação independente de toda a cronologia das mensagens.
@@ -40,4 +70,4 @@ O Android exige compatibilidade de assinatura para instrumentação. Criam-se **
 
 O avaliador separa **comparação válida** de **todos os pares mais rápidos**. Uma regressão também é resultado e não será rotulada como ganho. Três pares em uma fixture não certificam desempenho no telefone, todos os modelos, imagens, pureza de kernels GPU ou ausência universal de regressões. `release_approved` permanece falso: é comparação, não nova entrega.
 
-**Estado ao criar este protocolo:** ainda sem medição Android válida `0c45fd2e → bd7c45d3`. Testes unitários verificam o protocolo, não substituem sua execução real.
+**Decisão:** comparação executada; ganho estável de taxa de geração não demonstrado. A aprovação do job indica medição válida, não ganho ou nova aprovação de entrega.

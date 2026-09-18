@@ -13,11 +13,15 @@ E=Path('evidence');BUILD=Path('.cache/gpu-rate')
 TEXT=Path('.cache/mobile-models/SmolLM2-135M-Instruct-Q4_K_M.gguf')
 def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 
-def collect(report,log,phase):
-    assert report['status']=='PASS_NATIVE_OBSERVER',report
+def process_log(log):
     starts=[line.split()[2] for line in log.splitlines() if 'GPU_RATE_BEGIN stage=' in line]
     assert len(starts)==2 and len(set(starts))==1,'Missing markers or process restart'
-    pid=starts[0];log='\n'.join(line for line in log.splitlines() if len(line.split())>2 and line.split()[2]==pid)
+    pid=starts[0]
+    return '\n'.join(line for line in log.splitlines() if len(line.split())>2 and line.split()[2]==pid)
+
+def collect(report,log,phase):
+    assert report['status']=='PASS_NATIVE_OBSERVER',report
+    log=process_log(log)
     assert vulkan_offloaded(log),'No actual positive native Vulkan offload; no GPU comparison'
     assert 'GGUF_STRICT_VULKAN_BLOCKED' not in log
     report['vulkan_positive_offload']=True
@@ -74,6 +78,12 @@ def main(state):
                 (E/f'physical-gpu-rate-{label}-raw.json').write_text(json.dumps(report,indent=2,ensure_ascii=False))
                 report['test_apk_sha256']=sha(apk)
                 pair[phase]=collect(report,log,phase)
+                # Keep the COMPLETE inference process log separately. Busy first
+                # boot system logs can otherwise displace load/warmup markers
+                # from the bounded diagnostic tail, even after runtime checks pass.
+                native_log=process_log(log)
+                assert len(native_log.encode())<1900000,'Native proof exceeds publication bound; do not silently truncate'
+                (E/f'physical-gpu-rate-{label}-native.txt').write_text(native_log)
                 (E/'summary.json').write_text(json.dumps(s,indent=2,ensure_ascii=False))
         s['status']='COMPLETE_OBSERVATIONS';s['evaluation']=evaluate(s)
         print(json.dumps(s['evaluation'],indent=2),flush=True)
