@@ -23,6 +23,7 @@ def payload(path):
         return {n:hashlib.sha256(z.read(n)).hexdigest() for n in names if not signature_entry(n)}
 
 def main(report_dir,text_report_dir):
+    if not __debug__:raise RuntimeError("Optimized Python disables required assertions; signing refused")
     source=ROOT/'.delivery/GGUF-Chat-gain-approved-payload.apk'
     report=json.loads((Path(report_dir)/'summary.json').read_text())
     assert report['status']=='PASS_GAIN_GATE_RETAINED_IMAGES_ONLY'

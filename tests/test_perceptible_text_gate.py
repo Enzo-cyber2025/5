@@ -77,3 +77,11 @@ def test_signer_rejects_missing_text_gate_before_any_private_key_access(tmp_path
     (text/'summary.json').write_text(json.dumps(s))
     with pytest.raises(AssertionError):mod.main(image,text)
     assert not (tmp_path/'.signing').exists() and not (tmp_path/'entrega').exists()
+
+
+def test_optimized_python_cannot_disable_release_checks():
+    import subprocess
+    for module,call in (('sign_gain_release',"main('missing','missing')"),('perceptible_text_gate','evaluate({})'),('perceptible_image_gate','evaluate({})')):
+        code="import sys;sys.path[:0]=['scripts','ci'];import "+module+" as m;m."+call
+        result=subprocess.run([sys.executable,'-O','-c',code],cwd=ROOT,capture_output=True,text=True)
+        assert result.returncode!=0 and 'Optimized Python' in result.stderr

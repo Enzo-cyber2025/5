@@ -6,6 +6,7 @@ BASELINE='323fd5a33667c6cab278699e97c89fe253e1bb7acead45b869729bf022eb9f5c'
 CANDIDATE='2b444a73090dff9bd6d4ce6d199349cafd5e9ae73b83cc34e05101e7f77727cc'
 
 def evaluate(s):
+    if not __debug__:raise RuntimeError("Optimized Python cannot validate release evidence")
     assert s.get("status")!="FAIL" and not s.get("error")
     assert s['build']['baseline_original_sha256']==BASELINE
     assert s['build']['candidate_original_sha256']==CANDIDATE
