@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "/home/runner/work/5/5/scripts/test_first_working_android.py", line 83, in main
+    model=d.import_model(TEXT)
+          ^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_android.py", line 258, in import_model
+    self.tap(text="Importar GGUF", package={PACKAGE}, contains=True)
+  File "/home/runner/work/5/5/scripts/test_android.py", line 81, in tap
+    raise AssertionError(f"Controle não encontrado: {selector}")
+AssertionError: Controle não encontrado: {'text': 'Importar GGUF', 'package': {'com.ggufchat.app'}, 'contains': True}
