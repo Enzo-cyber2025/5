@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'ci'))
 from perceptible_image_gate import evaluate,CANDIDATE
+from perceptible_text_gate import evaluate as evaluate_text
 
 def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 def signature_entry(name):
@@ -21,11 +22,14 @@ def payload(path):
         if len(names)!=len(set(names)):raise ValueError('Duplicate ZIP entries')
         return {n:hashlib.sha256(z.read(n)).hexdigest() for n in names if not signature_entry(n)}
 
-def main(report_dir):
+def main(report_dir,text_report_dir):
     source=ROOT/'.delivery/GGUF-Chat-gain-approved-payload.apk'
     report=json.loads((Path(report_dir)/'summary.json').read_text())
     assert report['status']=='PASS_GAIN_GATE_RETAINED_IMAGES_ONLY'
     gate=evaluate(report);assert gate['gain_gate_passed']
+    text_report=json.loads((Path(text_report_dir)/'summary.json').read_text())
+    assert text_report['status']=='PASS_TEXT_GAIN_GATE','Text gain has not passed; combined delivery is blocked'
+    text_gate=evaluate_text(text_report);assert text_gate['text_gain_passed']
     assert sha(source)==CANDIDATE,'Only the exact validated compiled payload may be signed'
     destination=ROOT/'entrega/GGUF-Chat-acelerado.apk'
     if destination.exists():raise RuntimeError('Delivery file already exists; never silently replace a signed release')
@@ -63,9 +67,11 @@ def main(report_dir):
     record={'status':'SIGNED_AFTER_PERCEPTIBLE_IMAGE_GATE','apk_path':str(destination.relative_to(ROOT)),
             'apk_sha256':sha(destination),'signer_sha256':cert[1],'payload_source_sha256':CANDIDATE,
             'compiled_source':'81bc70c8c1025fb8d46f7d99a8f9ee63af95b711','non_signature_payload_identical':True,
-            'gate':gate,'signing_key_retained_locally':True,'old_delivered_apk_preserved':True,
+            'gate':gate,'text_gate':text_gate,'signing_key_retained_locally':True,'old_delivered_apk_preserved':True,
             'update_warning':'Different certificate from delivered 7295. Not an in-place update; do not uninstall the existing app without preserving its data.',
             'scope':'Measured retained-image reactivation benefit only; not first-image or general text/GPU speed certification. GPU input-packing/batch/QKV experiments are not enabled.'}
     (ROOT/'.delivery/perceptible-speed-delivery.json').write_text(json.dumps(record,indent=2)+'\n')
     print(json.dumps({'apk':str(destination),'sha256':record['apk_sha256'],'signer_sha256':cert[1]},indent=2))
-if __name__=='__main__':main(sys.argv[1])
+if __name__=='__main__':
+    if len(sys.argv)!=3:raise SystemExit('Usage: sign_gain_release.py IMAGE_REPORT_DIR TEXT_REPORT_DIR; both gates required')
+    main(sys.argv[1],sys.argv[2])

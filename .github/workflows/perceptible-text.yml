@@ -1,0 +1,95 @@
+name: Warmed text gain gate before combined delivery
+on:
+  push:
+    branches: [arena/01a09b42-5]
+    paths: [.github/workflows/perceptible-text.yml, scripts/test_perceptible_text_android.py, ci/perceptible_text_gate.py]
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: perceptible-text-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    if: ${{ contains(github.event.head_commit.message, '[text gain]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Verify exact APK payloads and sign only disposable comparison copies
+        run: |
+          mkdir -p .cache evidence
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0'
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,shutil
+          p=Path('.delivery/GGUF-Chat-gain-approved-payload.apk')
+          assert hashlib.sha256(p.read_bytes()).hexdigest()=='2b444a73090dff9bd6d4ce6d199349cafd5e9ae73b83cc34e05101e7f77727cc'
+          shutil.copyfile(p,'.cache/gain-original-candidate.apk')
+          assert hashlib.sha256(Path('.delivery/GGUF-Chat-mobile.apk').read_bytes()).hexdigest()=='323fd5a33667c6cab278699e97c89fe253e1bb7acead45b869729bf022eb9f5c'
+          PY
+          keytool -genkeypair -keystore "$RUNNER_TEMP/gain-test.p12" -storetype PKCS12 -storepass android -keypass android -alias test -keyalg RSA -keysize 2048 -validity 2 -dname 'CN=Disposable speed comparison, O=NOT RELEASE SIGNING'
+          SIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          "$SIGNER" sign --ks "$RUNNER_TEMP/gain-test.p12" --ks-pass pass:android --key-pass pass:android --out .cache/gain-before.apk .delivery/GGUF-Chat-mobile.apk
+          "$SIGNER" sign --ks "$RUNNER_TEMP/gain-test.p12" --ks-pass pass:android --key-pass pass:android --out .cache/gain-after.apk .cache/gain-original-candidate.apk
+          "$SIGNER" verify --verbose --print-certs .cache/gain-after.apk > evidence/physical-gain-signature.txt
+          python3 - <<'PY'
+          import json,hashlib,zipfile
+          from pathlib import Path
+          def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+          def payload(p):
+            with zipfile.ZipFile(p) as z:return {n:hashlib.sha256(z.read(n)).hexdigest() for n in z.namelist() if not n.startswith('META-INF/')}
+          assert payload('.cache/gain-before.apk')==payload('.delivery/GGUF-Chat-mobile.apk')
+          assert payload('.cache/gain-after.apk')==payload('.cache/gain-original-candidate.apk')
+          Path('evidence/physical-gain-build.json').write_text(json.dumps(dict(
+            baseline_original_sha256=sha('.delivery/GGUF-Chat-mobile.apk'),candidate_original_sha256=sha('.cache/gain-original-candidate.apk'),
+            before_sha256=sha('.cache/gain-before.apk'),after_sha256=sha('.cache/gain-after.apk'),resigning_payload_exact=True,
+            candidate_source='81bc70c8c1025fb8d46f7d99a8f9ee63af95b711',candidate_functional_run=35252559185,
+            comparison_signer='Disposable; not the final release signing key'),indent=2))
+          PY
+      - name: Fixtures and regression helpers
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install -r requirements-test.txt numpy==2.2.6 tqdm==4.67.1 pyyaml==6.0.2
+          .venv/bin/python -m pytest -q tests/test_perceptible_text_gate.py tests/test_perceptible_gate.py
+          git clone --depth 1 --branch v0.4.1 https://github.com/ggml-org/llama.cpp .cache/llama-mobile
+          test "$(git -C .cache/llama-mobile rev-parse HEAD)" = b29c606e28a01b1bc8c1351026a0fa6e616bf6c4
+          bash ci/mobile-models.sh
+          bash scripts/build_test_input.sh
+          bash scripts/build_code_test.sh
+          sudo chmod a+rw /dev/kvm
+          bash ci/prepare_vulkan.sh
+      - uses: reactivecircus/android-emulator-runner@v2
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GGUF_MOBILE_VULKAN: '1'
+          GGUF_TEST_APK: .cache/gain-after.apk
+          GGUF_TEST_STRICT_GPU: '1'
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_5
+          ram-size: 6144M
+          heap-size: 1024M
+          disk-size: 8192M
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -gpu host -feature Vulkan -noaudio -no-boot-anim -camera-back emulated -camera-front emulated
+          script: .venv/bin/python scripts/test_perceptible_text_android.py
+      - name: Require independent text gain before combined approval
+        run: python3 ci/perceptible_text_gate.py evidence/summary.json > evidence/physical-text-gain-result.json
+      - name: Publish bounded measured evidence, including failures
+        if: always()
+        run: bash ci/publish_evidence.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: perceptible-text-evidence
+          path: evidence/
