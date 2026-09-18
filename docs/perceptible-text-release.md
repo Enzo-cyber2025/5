@@ -61,3 +61,49 @@ A receita normal de build não aplica esse patch. O experimento compara original
 AB/BA/AB por controle. Exige o gate ON-versus-original e, adicionalmente,
 ON-versus-OFF >=3% em cada par/mediana >=5%, sem regressões relevantes no sono
 ou primeiro texto. É hipótese ainda não aprovada, não uma entrega acelerada.
+
+### Experimento concluído: não adotar a comunicação direta
+
+Run [35295026946](https://github.com/Enzo-cyber2025/5/actions/runs/35295026946),
+fonte `5897a03`, concluiu em 45m43s com testes funcionais bem-sucedidos, mas seu
+resultado de velocidade é **`NO_MATERIAL_ADDITIONAL_GAIN`**. Sucesso do job não
+significa aprovação da aceleração.
+
+No **mesmo APK**, rota ON versus OFF, razões pareadas de tokens/s com tela
+ligada: **0,992622; 1,007493; 1,015878**. Mediana **+0,7493%**, primeiro par
+ligeiramente pior. Espera até primeiro texto também ficou ligeiramente pior
+(mediana da razão OFF/ON 0,982694). Sono praticamente inalterado. Não atende o
+critério adicional predefinido; permanece desligado e fora da receita normal.
+
+A comparação do APK experimental ON contra o original 323 chegou a mediana
++39,77% nesta outra máquina do CI. **Não atribuir esse ganho à comunicação
+direta:** o controle OFF do mesmo APK já apresentava praticamente toda essa
+vantagem. Não comparar velocidades absolutas entre runners, substituir o
+resultado +9,49% do payload 2b44, ou selecionar só o melhor runner para aprovar.
+
+Históricos completos, 128 tokens, aquecimento/cache, rotas estritas e cálculos
+dos dois comparativos foram revalidados localmente. Todos os hashes de
+bibliotecas nativas **declarados pelo relatório** coincidem com o APK base 2b44
+local. Código/Copy passou. Relatório completo e proveniência ficam em
+`.delivery/local-stream-experiment.json`.
+
+#### Reconexão e sincronização
+
+Após a reconexão pelo Arena, o relatório foi recuperado por **Git autenticado**
+do commit `d2d1709986522d80f473f9bb311968f21ed852ac`. Seu objeto Git completo é
+`9666311cc9f6feb4c007277746d8c37cc30645d8`, SHA-256
+`4d0cc63c2045c454583754b1046b5862c30df0e91260b0c78c28f0487d61de48`.
+Isso substitui a dependência da leitura pública usada durante a interrupção da
+conexão. O status final do job também foi confirmado pela API autenticada.
+
+O download do artefato binário experimental 10527654696 encontrou EOF no Azure.
+Isso é uma falha de transporte, não outra falha de autenticação. Não afirmar
+verificação binária local desse APK; sua comparação byte a byte permanece a
+executada pelo builder do CI. Não é necessário publicar um APK experimental
+rejeitado para recuperar essa cópia: os registros autenticados já permitem
+recomputar a rejeição.
+
+Os gates de imagens e texto do payload 2b44 foram recalculados novamente:
+imagens aprovadas, texto abaixo do critério. Nenhum limite foi relaxado, nenhuma
+chave persistente foi criada, nenhum APK final foi assinado ou liberado. O APK
+original permanece byte a byte intacto.
