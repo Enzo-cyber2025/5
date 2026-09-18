@@ -28,6 +28,29 @@ RGB Vulkan e sem prova da combinação. O APK entregue bd7c45d continua intacto.
 - Reportar bytes extras de QKV, PSS e tempo de abertura do chat. PSS depois da
   geração não é pico nem memória total de GPU. Não esconder o custo de memória.
 
+## Decisão conjunta
+
+`ci/evaluate_projector_combined_bundle.py` exige a prova numérica e os quatro
+relatórios completos. Recalcula cada resultado, confere o mesmo APK/prova e
+recusa controles ausentes ou trocados: uma vitória em imagens não encobre uma
+regressão em texto, sono ou cache. Mesmo o resultado positivo se chama
+`PASS_COMBINED_QUALIFICATION_NOT_RELEASE`, mantendo `release_approved=false`.
+
+```sh
+python3 ci/evaluate_projector_combined_bundle.py \
+  --proof ci-results/35392374636-1-combined-verify/summary.json \
+  --awake ci-results/35392374636-1-combined-awake/summary.json \
+  --asleep ci-results/35392374636-1-combined-asleep/summary.json \
+  --text ci-results/35392374636-1-combined-text/summary.json \
+  --cache ci-results/35392374636-1-combined-cache/summary.json
+```
+
+Esses caminhos só estarão completos após os respectivos jobs publicarem suas
+medições; o comando não aceita resultado pendente como aprovação. Antes de uma
+nova entrega, também é necessário comparar a configuração final contra o **APK
+realmente entregue**: os dois modos de um APK experimental isolam as flags, mas
+não provam o efeito de todas as diferenças de código em relação à entrega.
+
 A inicialização QKV atual só aceita um subconjunto de Idefics3. Mesmo uma vitória
 nos testes não autoriza habilitar a flag indiscriminadamente em todos os modelos:
 a ativação segura por capacidade/arquitetura e as implicações de memória ainda
