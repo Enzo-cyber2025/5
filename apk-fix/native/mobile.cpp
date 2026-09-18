@@ -14,6 +14,9 @@
 #include <limits>
 #include "strict_vulkan.h"
 #include "model_offload.h"
+#ifdef GGUF_EXPERIMENT_EXPANDED_WEIGHTS
+#include "expanded_weights.h"
+#endif
 #include <sched.h>
 #include <unistd.h>
 #include "chat.h"
@@ -53,6 +56,9 @@ struct Engine {
     std::vector<llama_token> cached_tokens; // exact tokens whose KV is present
     bool cache_supported=false;
     ImageEmbeddingCache image_cache;
+#ifdef GGUF_EXPERIMENT_EXPANDED_WEIGHTS
+    ExpandedWeights expanded_weights;
+#endif
 #ifdef GGUF_EXPERIMENT_MEDIA_PREFIX
     std::vector<MediaPrefixChunk> media_prefix;
 #endif
@@ -195,6 +201,16 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
             throw std::runtime_error("Vulkan estrito: carregamento completo das camadas não confirmado. Execução parcial/CPU bloqueada.");
         if(layers!=0)LOG("GGUF_MODEL_ALL_LAYERS loaded=%d total=%d tensor_cpu_fallback=blocked",loaded_gpu_layers,reported_total_layers);
         e->layers=loaded_gpu_layers;
+#ifdef GGUF_EXPERIMENT_EXPANDED_WEIGHTS
+        if(expanded_flag("GGUF_EXPAND_WEIGHTS")) {
+            const auto expansion_started=std::chrono::steady_clock::now();
+            const bool verify=expanded_flag("GGUF_VERIFY_EXPANDED_WEIGHTS");
+            e->expanded_weights.prepare(e->model,e->strict_device,verify);
+            LOG("GGUF_EXPANDED_WEIGHTS enabled=1 tensors=%zu extra_device_bytes=%zu verification=%d verified_bytes=%zu prepare_ns=%lld precision=F32 conversion=Vulkan",
+                e->expanded_weights.allocations.size(),e->expanded_weights.extra_bytes,(int)verify,e->expanded_weights.verified_bytes,
+                (long long)std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now()-expansion_started).count());
+        } else LOG("GGUF_EXPANDED_WEIGHTS enabled=0");
+#endif
         auto cp=llama_context_default_params(); cp.n_ctx=context; cp.n_batch=128; cp.n_ubatch=32;
         // This JNI emits one sequence and requests logits ONLY for its final
         // token. Reserve one output row, not n_batch unused vocabulary rows.

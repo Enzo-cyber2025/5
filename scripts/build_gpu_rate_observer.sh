@@ -16,9 +16,13 @@ javac --release 8 -classpath "$JAR" -d "$OUT/classes" tests/android-gpu-rate/src
 "$BT/apksigner" sign --ks "$KEY" --ks-pass pass:android "$OUT/observer.apk"
 "$BT/apksigner" sign --ks "$KEY" --ks-pass pass:android --out "$OUT/before.apk" .cache/pre-acceleration.apk
 "$BT/apksigner" sign --ks "$KEY" --ks-pass pass:android --out "$OUT/after.apk" entrega/GGUF-Chat-acelerado.apk
+if [[ -n "${GGUF_EXPANDED_TEST_IMPORT:-}" ]]; then
+  "$BT/apksigner" sign --ks "$KEY" --ks-pass pass:android --out "$OUT/candidate.apk" "$GGUF_EXPANDED_TEST_IMPORT/candidate.apk"
+  "$BT/apksigner" verify --verbose "$OUT/candidate.apk"
+fi
 for apk in before after observer; do "$BT/apksigner" verify --verbose "$OUT/$apk.apk"; done
 python3 - <<'PY'
-import hashlib,json,sys
+import hashlib,json,sys,os
 from pathlib import Path
 sys.path[:0]=['scripts','ci']
 from sign_gain_release import payload
@@ -30,6 +34,15 @@ for phase,src in [('before',Path('.cache/pre-acceleration.apk')),('after',Path('
     reports[phase]=dict(original_sha256=original,test_sha256=hashlib.sha256(dst.read_bytes()).hexdigest(),
                        non_signature_payload_identical=True,native={k:v for k,v in entries.items() if k.startswith('lib/')},
                        entry_manifest_sha256=hashlib.sha256(json.dumps(entries,sort_keys=True).encode()).hexdigest())
-r=dict(payloads=reports,observer_sha256=hashlib.sha256((out/'observer.apk').read_bytes()).hexdigest(),release_approved=False)
+experiment=None
+if os.environ.get('GGUF_EXPANDED_TEST_IMPORT'):
+    folder=Path(os.environ['GGUF_EXPANDED_TEST_IMPORT']);experiment=json.loads((folder/'build.json').read_text())
+    assert experiment['experimental_expanded_weights_build'] is True and experiment['default_enabled'] is False and experiment['release_approved'] is False
+    src=folder/'candidate.apk';dst=out/'candidate.apk'
+    original=hashlib.sha256(src.read_bytes()).hexdigest();assert original==experiment['apk_sha256']
+    entries=payload(src);assert entries==payload(dst),'Candidate signing changed executable/resources'
+    reports['candidate']=dict(original_sha256=original,test_sha256=hashlib.sha256(dst.read_bytes()).hexdigest(),non_signature_payload_identical=True,
+        native={k:v for k,v in entries.items() if k.startswith('lib/')},entry_manifest_sha256=hashlib.sha256(json.dumps(entries,sort_keys=True).encode()).hexdigest())
+r=dict(payloads=reports,observer_sha256=hashlib.sha256((out/'observer.apk').read_bytes()).hexdigest(),release_approved=False,experiment=experiment)
 (out/'build.json').write_text(json.dumps(r,indent=2));Path('evidence/physical-gpu-rate-build.json').write_text(json.dumps(r,indent=2))
 PY

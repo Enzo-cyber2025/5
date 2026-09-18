@@ -24,13 +24,14 @@ def rate(r,phase,state,stage):
     if phase=='after':assert r['strict']['status']=='PASS' and r['strict']['tensor_cpu_fallback']=='blocked_by_native_policy'
     return 127e9/r['interval_ns']
 
-def evaluate(s):
+def evaluate_pair(s,expected_hashes,expected_environments):
+    """Shared arithmetic; caller must bind expected identities to its own protocol."""
     assert s['status']=='COMPLETE_OBSERVATIONS' and s['state'] in ('awake','asleep')
-    assert s['apk_sha256']==HASHES and s['model_sha256']==MODEL
+    assert s['apk_sha256']==expected_hashes and s['model_sha256']==MODEL
     assert s['hardware']=='software_vulkan_emulator' and s['release_approved'] is False
     build=s['build'];assert build['release_approved'] is False
-    for p in HASHES:
-        assert build['payloads'][p]['original_sha256']==HASHES[p]
+    for p in expected_hashes:
+        assert build['payloads'][p]['original_sha256']==expected_hashes[p]
         assert build['payloads'][p]['non_signature_payload_identical'] is True
         assert build['payloads'][p]['native'] and len(build['payloads'][p]['test_sha256'])==64
     assert len(s['pairs'])==3
@@ -41,7 +42,7 @@ def evaluate(s):
         for phase in ('before','after'):
             r=pair[phase];assert r['status']=='PASS_NATIVE_OBSERVER' and r['model_sha256']==MODEL
             assert r['test_apk_sha256']==build['payloads'][phase]['test_sha256']
-            assert r['settings']==SETTINGS and r['vulkan_environment']=={'GGML_VK_VISIBLE_DEVICES':'0'}
+            assert r['settings']==SETTINGS and r['vulkan_environment']==expected_environments[phase]
             assert r['vulkan_positive_offload'] is True
             assert r['batch']==128 and r['ubatch']==32
             for stage in ('warmup','sample'):
@@ -62,6 +63,10 @@ def evaluate(s):
                 all_pairs_faster=all(x>1 for x in ratios),physical_gpu_certified=False,release_approved=False,
                 baseline_all_tensor_gpu_policy_proven=False,
                 scope='Unchanged original DEX/native/resources in disposable test-signed copies; same native observer, 127 token-delivery intervals after first callback. Not app/UI/footer timing or pure GPU kernel time.')
+
+def evaluate(s):
+    # Historical comparison remains fixed; experiments cannot silently replace it.
+    return evaluate_pair(s,HASHES,{p:{'GGML_VK_VISIBLE_DEVICES':'0'} for p in HASHES})
 
 if __name__=='__main__':
     if not __debug__:raise RuntimeError('Assertions required')

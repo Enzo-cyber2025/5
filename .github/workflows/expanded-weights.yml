@@ -1,0 +1,185 @@
+name: Lossless Vulkan weight expansion towards 2x historical token rate
+on:
+  push:
+    branches: [arena/01a09b42-5]
+    paths: [.github/workflows/expanded-weights.yml]
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: expanded-weights-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    if: ${{ contains(github.event.head_commit.message, '[expanded weights]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 85
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Use the Android SDK already installed on the hosted runner
+        run: |
+          test -d "$ANDROID_HOME"
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
+          # Avoid the failing setup action; accept licenses on the existing SDK.
+          set +o pipefail
+          yes | "$SDKMANAGER" --licenses > /tmp/android-licenses.log
+          set -o pipefail
+      - name: Pinned tools and source APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install -r requirements-test.txt
+          bash scripts/fetch_tools.sh
+          python3 scripts/fetch_original.py
+          sdkmanager 'ndk;28.2.13676358' 'platforms;android-35' 'build-tools;35.0.0'
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/28.2.13676358" >> "$GITHUB_ENV"
+          sudo apt-get update -qq
+          sudo apt-get install -y ninja-build glslc libvulkan-dev
+          git clone --depth 1 --branch vulkan-sdk-1.4.357.0 https://github.com/KhronosGroup/Vulkan-Headers .cache/vulkan-sdk
+          test "$(git -C .cache/vulkan-sdk rev-parse HEAD)" = e3b1eec08173d6b825cd3ac88c885a63b621504a
+          git clone --depth 1 --branch vulkan-sdk-1.4.357.0 https://github.com/KhronosGroup/SPIRV-Headers .cache/spirv-headers
+          test "$(git -C .cache/spirv-headers rev-parse HEAD)" = 29981f65241605e08b0ede4cfeb999fe3b723c6a
+          cmake -S .cache/spirv-headers -B .cache/spirv-build -DCMAKE_INSTALL_PREFIX="$PWD/.cache/spirv-install"
+          cmake --install .cache/spirv-build
+          mkdir -p .cache/vulkan-headers
+          cp -r .cache/vulkan-sdk/include/. .cache/vulkan-headers/
+      - uses: actions/cache@v4
+        id: native-cache
+        with:
+          path: |
+            .cache/llama-mobile
+            .cache/mobile/arm64-v8a
+            .cache/mobile/x86_64
+          key: native-v041-ndk28-v1-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: native-v041-ndk28-v1-${{ runner.os }}-
+      - name: Compile real native stack and compact UI
+        env:
+          APKTOOL_JAR: .cache/tools/package/lib/apktool.jar
+          GGUF_REUSE_TESTED_NATIVE: '0'
+          GGUF_EXPERIMENT_EXPANDED_WEIGHTS: '1'
+        run: bash ci/log_step.sh mobile-build python3 apk-fix/build_mobile.py
+      - name: Save compiled native objects before Android acceptance (including on later test failure)
+        if: steps.native-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            .cache/llama-mobile
+            .cache/mobile/arm64-v8a
+            .cache/mobile/x86_64
+          key: native-v041-ndk28-v1-${{ runner.os }}-${{ github.run_id }}
+      - name: Strict dispatch and expansion guards
+        run: |
+          bash ci/log_step.sh strict-host bash scripts/test_strict_vulkan_host.sh
+          .venv/bin/python -m pytest -q tests/test_expanded_weights.py tests/test_gpu_rate.py tests/test_strict_vulkan.py
+
+      - name: Sign one disposable comparison APK, never replace the delivered file
+        run: |
+          mkdir -p .cache/expanded-export evidence
+          keytool -genkeypair -keystore "$RUNNER_TEMP/expanded-test.p12" -storetype PKCS12 -storepass android -keypass android -alias test -keyalg RSA -keysize 2048 -validity 2 -dname 'CN=Disposable Vulkan lossless expansion experiment NOT release'
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$RUNNER_TEMP/expanded-test.p12" --ks-pass pass:android --out .cache/expanded-export/candidate.apk dist/GGUF-Chat-mobile-unsigned.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose .cache/expanded-export/candidate.apk
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 4 .cache/expanded-export/candidate.apk
+          rm "$RUNNER_TEMP/expanded-test.p12"
+          python3 - <<'PY'
+          import hashlib,json,sys,subprocess,zipfile
+          from pathlib import Path
+          sys.path.insert(0,'scripts')
+          from sign_gain_release import payload
+          apk=Path('.cache/expanded-export/candidate.apk')
+          assert payload(apk)==payload('dist/GGUF-Chat-mobile-unsigned.apk')
+          with zipfile.ZipFile(apk) as z:
+              for abi in ('x86_64','arm64-v8a'):
+                  assert b'GGUF_EXPANDED_WEIGHTS' in z.read('lib/'+abi+'/libaijni.so')
+          r=dict(apk_sha256=hashlib.sha256(apk.read_bytes()).hexdigest(),source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),experimental_expanded_weights_build=True,default_enabled=False,control='Pre-acceleration 0c45fd2e and exact delivered bd7c45d3; expansion explicitly enabled only for candidate',release_approved=False)
+          Path('.cache/expanded-export/build.json').write_text(json.dumps(r,indent=2))
+          Path('evidence/physical-expanded-build.json').write_text(json.dumps(r,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: expanded-payload-not-release
+          path: .cache/expanded-export/*
+          include-hidden-files: true
+          retention-days: 7
+      - name: Publish build diagnostics
+        if: always()
+        env:
+          GGUF_EVIDENCE_VARIANT: expanded-build
+        run: bash ci/publish_evidence.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: expanded-build-diagnostics
+          path: |
+            evidence/
+            .cache/ci-logs/
+  measure:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        state: [awake, asleep]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/download-artifact@v4
+        with:
+          name: expanded-payload-not-release
+          path: .cache/expanded-import
+      - name: Recover exact APK before first recorded acceleration experiment
+        run: |
+          mkdir -p .cache evidence
+          git fetch --depth=1 origin 2af2b3894fe18d4a8eb5c3320cc0d9539b78d44d
+          git show 2af2b3894fe18d4a8eb5c3320cc0d9539b78d44d:.delivery/GGUF-Chat-mobile.apk > .cache/pre-acceleration.apk
+          echo '0c45fd2e6c318da3ebb961bbd461c56d7401161c31a1869157f509550e4b05d1  .cache/pre-acceleration.apk' | sha256sum -c -
+          echo 'bd7c45d3c9b80ee583e0d4102595c5ed55242c37aa0394f0befe093c07fd88d2  entrega/GGUF-Chat-acelerado.apk' | sha256sum -c -
+      - name: Same pinned text fixture and standalone observer, no native rebuild
+        run: |
+          mkdir -p .cache/mobile-models
+          curl --fail --location --retry 3 --max-time 900 'https://huggingface.co/bartowski/SmolLM2-135M-Instruct-GGUF/resolve/main/SmolLM2-135M-Instruct-Q4_K_M.gguf' -o .cache/mobile-models/SmolLM2-135M-Instruct-Q4_K_M.gguf
+          echo '2e8040ceae7815abe0dcb3540b9995eaa1fa0d2ca9e797d0a635ae4433c68c2d  .cache/mobile-models/SmolLM2-135M-Instruct-Q4_K_M.gguf' | sha256sum -c -
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0'
+          GGUF_EXPANDED_TEST_IMPORT=.cache/expanded-import bash scripts/build_gpu_rate_observer.sh
+          sudo chmod a+rw /dev/kvm
+          bash ci/prepare_vulkan.sh
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_5
+          ram-size: 6144M
+          heap-size: 1024M
+          disk-size: 8192M
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -gpu host -feature Vulkan -noaudio -no-boot-anim -camera-back emulated -camera-front emulated
+          script: bash ci/log_step.sh emulator python3 scripts/test_expanded_weights_android.py ${{ matrix.state }}
+      - name: Independently validate token mapping, full outputs, GPU and paired rate
+        run: python3 ci/evaluate_expanded_weights.py evidence/summary.json > evidence/physical-expanded-target.json
+      - name: Publish actual results or explicit failure, never release diagnostic APKs
+        if: always()
+        env:
+          GGUF_EVIDENCE_VARIANT: expanded-weights-${{ matrix.state }}
+        run: bash ci/log_step.sh publish bash ci/publish_evidence.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: expanded-weights-${{ matrix.state }}-evidence
+          path: evidence/
