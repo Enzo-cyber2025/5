@@ -1,0 +1,30 @@
+{
+  "status": "TEXT_GAIN_GATE_NOT_MET",
+  "text_gain_passed": false,
+  "observations": {
+    "awake": {
+      "decode_speedup_ratios": [
+        1.1764407968636534,
+        1.0734242650322416,
+        1.0949083083536018
+      ],
+      "median_decode_speedup": 1.0949083083536018,
+      "first_ui_speedup_ratios": [
+        1.74855987610222,
+        1.407287366836244,
+        1.448185389179026
+      ],
+      "median_first_ui_speedup": 1.448185389179026
+    },
+    "asleep": {
+      "decode_speedup_ratios": [
+        1.013021971882003,
+        0.983674079184237,
+        1.0077494981355946
+      ],
+      "median_decode_speedup": 1.0077494981355946
+    }
+  },
+  "requirements": "Each awake pair >=10% faster decode; awake median >=15%; no asleep pair >3% slower; no awake first-UI pair >5.3% slower.",
+  "scope": "Three paired warmed text continuations, same model/prompt/context/128-token budget, software Vulkan. Not cold startup or physical-device certification."
+}
