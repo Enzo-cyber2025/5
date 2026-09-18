@@ -71,3 +71,25 @@ contra o APK efetivamente entregue, revisão de suporte, custo de memória e
 continuidade de assinatura. A chave da entrega anterior está indisponível; não
 criar substituta silenciosamente. Vulkan por software não certifica aparelhos
 físicos. O teste de QKV+batch2 continua separado, sem misturar seus ganhos.
+
+## Continuação do APK já compilado
+
+A execução `35396552642`, fonte `0c1af84`, compilou as ABIs reais, passou nos
+checks nativos/ggml, assinou e carregou o artefato experimental. Falhou **depois**,
+em `Publish build diagnostics`; por dependência, a verificação Android não
+começou. A causa específica da falha de publicação ainda não foi recuperada:
+os downloads de logs retornaram EOF. Não registrar falha de velocidade ou
+correção do prefixo a partir desse problema de infraestrutura.
+
+`media-prefix-resume.yml` consulta o job original `105767020631`, exige que
+compilação, checks e assinatura tenham passado e que a única etapa falha seja
+publicação. Baixa o artefato daquele run, confere SHA/source/flags, e retoma a
+cadeia **referência KV → medições**, sem compilar, reassinar ou trocar o APK.
+Os novos logs de publicação/Android também passam pelo coletor de anotações
+limitadas para facilitar diagnóstico quando o transporte de logs não funciona.
+
+A publicação agora admite quatro tentativas apenas para rejeição explícita
+`fetch first`/`non-fast-forward`, sempre com rebase e push na mesma branch. Erro
+de autenticação, conflito ou outra causa falha imediatamente, sem force push.
+Isso trata corridas entre jobs paralelos, sem presumir que essa foi a causa da
+falha original e sem enfraquecer nenhum teste.

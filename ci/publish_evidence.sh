@@ -33,7 +33,7 @@ git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
 git add -- "$DEST"
 if ! git diff --cached --quiet; then
   git commit -m "Record Android emulator evidence ${GITHUB_RUN_ID} [skip ci]"
-  # Rebase this evidence-only commit if another repair advanced the SAME branch.
-  git pull --rebase origin "$BRANCH"
-  git push origin "$BRANCH"
+  # Different jobs can finish between pull and push. Retry only that bounded
+  # fast-forward race; all other failures stay visible and fail closed.
+  bash ci/push_evidence.sh
 fi

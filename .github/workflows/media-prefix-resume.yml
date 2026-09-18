@@ -1,0 +1,208 @@
+name: Continue multimodal KV qualification with exact compiled APK
+on:
+  push:
+    branches: [arena/01a09b42-5]
+    paths: [.github/workflows/media-prefix-resume.yml]
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: media-prefix-resume-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    name: Recover exact APK after publication-only failure
+    if: ${{ contains(github.event.head_commit.message, '[media prefix resume]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - name: Require successful compile, host tests, signing and artifact upload
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p evidence
+          python3 - <<'PYCODE'
+          import json,subprocess
+          from pathlib import Path
+          def api(path):return json.loads(subprocess.check_output(['gh','api','repos/Enzo-cyber2025/5/'+path],text=True))
+          run=api('actions/runs/35396552642')
+          assert run['head_sha']=='0c1af8498e6f01f5c52fc73245598345d4008554'
+          assert run['head_branch']=='arena/01a09b42-5'
+          job=api('actions/jobs/105767020631')
+          assert job['run_id']==35396552642 and job['name']=='build'
+          required=['Compile real native stack and compact UI','Real strict dispatch and whole-chunk prefix checks','Sign one disposable comparison APK, never replace the delivered file']
+          for name in required:
+              assert [s['conclusion'] for s in job['steps'] if s['name']==name]==['success']
+          assert [s['name'] for s in job['steps'] if s['conclusion']=='failure']==['Publish build diagnostics']
+          assert all(s['conclusion']=='success' for s in job['steps'] if s['name']=='Run actions/upload-artifact@v4')
+          report=dict(original_run=35396552642,original_job=105767020631,source_commit=run['head_sha'],required_steps_passed=required,failed_step='Publish build diagnostics',native_or_speed_failure=False,release_approved=False)
+          Path('evidence/physical-media-prefix-recovery.json').write_text(json.dumps(report,indent=2))
+          PYCODE
+      - uses: actions/download-artifact@v4
+        with:
+          name: media-prefix-payload-not-release
+          path: .cache/media-prefix-export
+          run-id: 35396552642
+          github-token: ${{ github.token }}
+      - name: Verify immutable compiled content and publish its provenance
+        run: |
+          python3 - <<'PYCODE'
+          import hashlib,json,zipfile
+          from pathlib import Path
+          root=Path('.cache/media-prefix-export')
+          build=json.loads((root/'build.json').read_text());apk=root/'candidate.apk'
+          assert build['source_commit']=='0c1af8498e6f01f5c52fc73245598345d4008554'
+          assert hashlib.sha256(apk.read_bytes()).hexdigest()==build['apk_sha256']
+          assert build['experimental_media_prefix_build'] is True and build['default_media_prefix'] is False and build['release_approved'] is False
+          with zipfile.ZipFile(apk) as z:
+              for abi in ('arm64-v8a','x86_64'):
+                  assert b'GGUF_MEDIA_PREFIX enabled=' in z.read('lib/'+abi+'/libaijni.so')
+                  assert b'GGUF_VULKAN_WAIT_POLICY' not in z.read('lib/'+abi+'/libaijni.so')
+          Path('evidence/physical-media-prefix-build.json').write_text(json.dumps(build,indent=2))
+          PYCODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: media-prefix-payload-not-release
+          path: .cache/media-prefix-export/*
+          include-hidden-files: true
+          retention-days: 7
+      - name: Publish recovered build provenance without rebuilding or resigning
+        env:
+          GGUF_EVIDENCE_VARIANT: media-prefix-build
+        run: bash ci/log_step.sh publish bash ci/publish_evidence.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: media-prefix-recovery-evidence
+          path: evidence/
+  verify:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/download-artifact@v4
+        with:
+          name: media-prefix-payload-not-release
+          path: .cache/media-prefix-import
+      - name: Exact fixtures and emulator prerequisites
+        run: |
+          mkdir -p evidence
+          python3 -m venv .venv
+          .venv/bin/pip install -r requirements-test.txt numpy==2.2.6 tqdm==4.67.1 pyyaml==6.0.2
+          git clone --depth 1 --branch v0.4.1 https://github.com/ggml-org/llama.cpp .cache/llama-mobile
+          test "$(git -C .cache/llama-mobile rev-parse HEAD)" = b29c606e28a01b1bc8c1351026a0fa6e616bf6c4
+          bash ci/mobile-models.sh
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0'
+          bash scripts/build_test_input.sh
+          bash scripts/build_code_test.sh .cache/media-prefix-import/candidate.apk
+          sudo chmod a+rw /dev/kvm
+          bash ci/prepare_vulkan.sh
+      - uses: reactivecircus/android-emulator-runner@v2
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GGUF_MOBILE_VULKAN: '1'
+          GGUF_TEST_APK: .cache/media-prefix-import/candidate.apk
+          GGUF_TEST_STRICT_GPU: '1'
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_5
+          ram-size: 6144M
+          heap-size: 1024M
+          disk-size: 8192M
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -gpu host -feature Vulkan -noaudio -no-boot-anim -camera-back emulated -camera-front emulated
+          script: bash ci/log_step.sh emulator .venv/bin/python scripts/test_media_prefix_android.py verify
+      - name: Require full KV reference and mutation checks before timing
+        run: python3 ci/evaluate_media_prefix.py evidence/summary.json > evidence/physical-media-prefix-verification.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: media-prefix-byte-proof
+          path: evidence/summary.json
+      - name: Publish verification, including a numerical mismatch
+        if: always()
+        env:
+          GGUF_EVIDENCE_VARIANT: media-prefix-verify
+        run: bash ci/log_step.sh publish bash ci/publish_evidence.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: media-prefix-verification-evidence
+          path: evidence/
+  measure:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        kind: [awake, asleep, text]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/download-artifact@v4
+        with:
+          name: media-prefix-payload-not-release
+          path: .cache/media-prefix-import
+      - uses: actions/download-artifact@v4
+        with:
+          name: media-prefix-byte-proof
+          path: .cache/media-prefix-proof
+      - name: Exact fixtures and emulator prerequisites
+        run: |
+          mkdir -p evidence
+          python3 -m venv .venv
+          .venv/bin/pip install -r requirements-test.txt numpy==2.2.6 tqdm==4.67.1 pyyaml==6.0.2
+          git clone --depth 1 --branch v0.4.1 https://github.com/ggml-org/llama.cpp .cache/llama-mobile
+          test "$(git -C .cache/llama-mobile rev-parse HEAD)" = b29c606e28a01b1bc8c1351026a0fa6e616bf6c4
+          bash ci/mobile-models.sh
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0'
+          bash scripts/build_test_input.sh
+          bash scripts/build_code_test.sh .cache/media-prefix-import/candidate.apk
+          sudo chmod a+rw /dev/kvm
+          bash ci/prepare_vulkan.sh
+      - uses: reactivecircus/android-emulator-runner@v2
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GGUF_MOBILE_VULKAN: '1'
+          GGUF_TEST_APK: .cache/media-prefix-import/candidate.apk
+          GGUF_TEST_STRICT_GPU: '1'
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_5
+          ram-size: 6144M
+          heap-size: 1024M
+          disk-size: 8192M
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -gpu host -feature Vulkan -noaudio -no-boot-anim -camera-back emulated -camera-front emulated
+          script: bash ci/log_step.sh emulator .venv/bin/python scripts/test_media_prefix_android.py ${{ matrix.kind }}
+      - name: Independent small-gain and nonregression evaluation
+        run: python3 ci/evaluate_media_prefix.py evidence/summary.json .cache/media-prefix-proof/summary.json > evidence/physical-media-prefix-gate.json
+      - name: Publish bounded paired results, including non-approval
+        if: always()
+        env:
+          GGUF_EVIDENCE_VARIANT: media-prefix-${{ matrix.kind }}
+        run: bash ci/log_step.sh publish bash ci/publish_evidence.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: media-prefix-${{ matrix.kind }}-evidence
+          path: evidence/
