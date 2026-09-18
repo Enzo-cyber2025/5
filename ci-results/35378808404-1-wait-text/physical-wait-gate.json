@@ -1,0 +1,44 @@
+{
+  "status": "WAIT_GAIN_NOT_MET",
+  "gain_passed": false,
+  "kind": "text",
+  "performance": {
+    "status": "TEXT_GAIN_GATE_NOT_MET",
+    "text_gain_passed": false,
+    "observations": {
+      "awake": {
+        "decode_speedup_ratios": [
+          1.0297442327062998,
+          0.9860677826108978,
+          0.9875706702530628
+        ],
+        "median_decode_speedup": 0.9875706702530628,
+        "first_ui_speedup_ratios": [
+          1.0289977804976327,
+          0.9843282675308015,
+          0.9520942939137089
+        ],
+        "median_first_ui_speedup": 0.9843282675308015
+      },
+      "asleep": {
+        "decode_speedup_ratios": [
+          0.9968353382851689,
+          0.9845295777416897,
+          1.0417206565830763
+        ],
+        "median_decode_speedup": 0.9968353382851689
+      }
+    },
+    "requirements": "Each awake pair >=10% faster decode; awake median >=15%; no asleep pair >3% slower; no awake first-UI pair >5.3% slower.",
+    "scope": "Three paired warmed text continuations, same model/prompt/context/128-token budget, software Vulkan. Not cold startup or physical-device certification."
+  },
+  "worker_cpu_speedup_ratios": [
+    0.9671214868142712,
+    0.9711389979731789,
+    1.0235837822543397
+  ],
+  "median_worker_cpu_ratio": 0.9711389979731789,
+  "physical_gpu_certified": false,
+  "release_approved": false,
+  "scope": "Same APK polling versus default blocking; all model tensor math remains on selected Vulkan backend. Warmed full work, no precision/budget changes. Text: each awake >=10%, median >=15%, sleep/first-text regression guards. Images: encoder and first-UI >=10% in both pairs. Worker CPU time lower in each awake pair. Not release/all-model/physical-device certification."
+}
