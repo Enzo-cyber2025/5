@@ -368,7 +368,14 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
             ProjectorPair pair;
             const bool verify_qkv=std::getenv("GGUF_VERIFY_QKV")!=nullptr;
             size_t qkv_verified_images=0;
-            if(paired && std::getenv("GGUF_VULKAN_QKV"))throw std::runtime_error("Experimentos QKV e batch não devem ser misturados");
+            // Explicit third opt-in: normal builds/configurations still reject an
+            // unvalidated combination. The diagnostic compares every combined
+            // embedding to an individual, unfused encode on the SAME GPU.
+            const char *combo=std::getenv("GGUF_PROJECTOR_COMBINATION");
+            const bool combined=paired && std::getenv("GGUF_VULKAN_QKV");
+            if(combined && (!combo || std::strcmp(combo,"1")!=0))
+                throw std::runtime_error("Combinação QKV/batch exige autorização experimental explícita");
+            LOG("GGUF_PROJECTOR_COMBINATION enabled=%d verification=%d",(int)combined,(int)(verify_pairs && verify_qkv));
             // Diagnostic controls only: never change model/sampler parameters.
             const bool cache_disabled=std::getenv("GGUF_DISABLE_IMAGE_EMBED_CACHE")!=nullptr;
             const bool verify_cache=std::getenv("GGUF_VERIFY_IMAGE_EMBED_CACHE")!=nullptr;
