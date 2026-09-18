@@ -1,0 +1,18 @@
+{
+  "status": "FAIL",
+  "kind": "text",
+  "build": {
+    "apk_sha256": "2053c037e3d9ca776f9c1d285722338c4967135044d7c026803450bd0b33baf1",
+    "source_commit": "11da7aa98b773754856dbdb1edefc8c6717e0e27",
+    "default_combined": false,
+    "control": "Same APK; stock RGB in both modes; before no experiments, after explicit batch2+QKV+combination flags",
+    "release_approved": false
+  },
+  "pairs": [],
+  "release_approved": false,
+  "model_sha256": "650283ee95856be73ff45fa277ac6a4238b4d1bb52a670983c2e1690fd352a12",
+  "byte_reference_sha256": "ae5ae0009b6ed99d72949f34f7293d498ede28e838267d8cec75036718618680",
+  "reference_attention": "enabled",
+  "error": "",
+  "scope": "Opt-in batch2+QKV, stock RGB packing, same APK/GGUF/settings. Dedicated full byte reference before any benchmarks. Three AB/BA/AB warmed pairs per workload. Cache disabled for encoder timing, enabled for cache regressions. Observed app PSS is not total device/peak GPU memory. Software Vulkan only; not general release approval."
+}
