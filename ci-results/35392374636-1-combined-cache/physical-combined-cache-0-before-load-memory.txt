@@ -1,0 +1,49 @@
+Applications Memory Usage (in Kilobytes):
+Uptime: 100420 Realtime: 100420
+
+** MEMINFO in pid 4688 [com.ggufchat.app] **
+                   Pss  Private  Private     Swap      Rss     Heap     Heap     Heap
+                 Total    Dirty    Clean    Dirty    Total     Size    Alloc     Free
+                ------   ------   ------   ------   ------   ------   ------   ------
+  Native Heap    39048    39048        0        0    39048   260780   253801     2118
+  Dalvik Heap     9016     9016        0        0     9016    17657     8829     8828
+ Dalvik Other     1816     1768        0        0     1864                           
+        Stack      400      400        0        0      400                           
+       Ashmem       10        0        0        0      568                           
+    Other dev       25        0       16        0      440                           
+     .so mmap    19615     4932     6996        0    71956                           
+    .jar mmap     4886        0      112        0    56008                           
+    .apk mmap      389        0       60        0     4636                           
+    .ttf mmap      173        0       56        0      680                           
+    .dex mmap      296       28        0        0     1444                           
+    .oat mmap      651       56        0        0    13344                           
+    .art mmap    29379    29368        0        0    29572                           
+   Other mmap     1487       52       92        0     5732                           
+      Unknown     9160     9160        0        0     9160                           
+        TOTAL   116351    93828     7332        0   243868   278437   262630    10946
+ 
+ App Summary
+                       Pss(KB)                        Rss(KB)
+                        ------                         ------
+           Java Heap:    38384                          38588
+         Native Heap:    39048                          39048
+                Code:    12240                         148164
+               Stack:      400                            400
+            Graphics:        0                              0
+       Private Other:    11088
+              System:    15191
+             Unknown:                                   17668
+ 
+           TOTAL PSS:   116351            TOTAL RSS:   243868      TOTAL SWAP (KB):        0
+ 
+ Objects
+               Views:       88         ViewRootImpl:        2
+         AppContexts:        7           Activities:        2
+              Assets:        6        AssetManagers:        0
+       Local Binders:       19        Proxy Binders:       58
+       Parcel memory:        5         Parcel count:       20
+    Death Recipients:        0             WebViews:        0
+ 
+ SQL
+         MEMORY_USED:        0
+  PAGECACHE_OVERFLOW:        0          MALLOC_SIZE:        0

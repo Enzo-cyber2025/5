@@ -1,0 +1,47 @@
+{
+  "status": "PASS_COMBINED_REGRESSION_GUARDS",
+  "kind": "cache",
+  "passed": true,
+  "speedup_ratios": [
+    1.090014526681915,
+    0.9963616068957611,
+    1.051742974496386
+  ],
+  "encoder_speedup_ratios": [],
+  "text": {},
+  "extra_qkv_device_bytes": [
+    22671360,
+    22671360,
+    22671360
+  ],
+  "app_pss_kib": [
+    {
+      "before": 124476,
+      "after": 127650
+    },
+    {
+      "before": 126310,
+      "after": 127918
+    },
+    {
+      "before": 126561,
+      "after": 129417
+    }
+  ],
+  "chat_startup_ns": [
+    {
+      "before": 22584556505,
+      "after": 20357400264
+    },
+    {
+      "before": 19731075716,
+      "after": 20631824510
+    },
+    {
+      "before": 19367308716,
+      "after": 19462597936
+    }
+  ],
+  "release_approved": false,
+  "scope": "Three paired warmed runs of the same APK and full workload. Any consistently positive awake image/encoder gain counts. Regression controls allow at most 3% per observation and require nonnegative medians. Byte reference and actual attention policy required. PSS is not peak/total GPU memory. Unsupported projectors and a generally safe activation policy still need separate review; not a release certificate."
+}
