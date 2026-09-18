@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Independent text gate; image-cache improvements never count as text speedup."""
-import json,statistics,sys
+import json,statistics,sys,math
 from pathlib import Path
 from perceptible_image_gate import BASELINE,CANDIDATE
 
 def evaluate(s):
     assert s.get('status')!='FAIL' and not s.get('error')
     assert s['build']['baseline_original_sha256']==BASELINE and s['build']['candidate_original_sha256']==CANDIDATE
-    assert s['build']['resigning_payload_exact']
+    assert s['build']['resigning_payload_exact'] is True
     pairs=s['pairs'];assert len(pairs)==3
     expected=[['before','after'],['after','before'],['before','after']]
     assert [list(p) for p in pairs]==expected
@@ -17,17 +17,25 @@ def evaluate(s):
         for pair in pairs:
             a,b=pair['before'][state]['sample'],pair['after'][state]['sample']
             assert a['raw_history']==b['raw_history'] and a['tokens']==b['tokens']==128
+            assert len(a['raw_history'])==4 and [m[0] for m in a['raw_history']]==['user','assistant','user','assistant']
+            assert all(isinstance(m[1],str) and m[1] for m in a['raw_history'])
+            assert pair['before'][state]['warmup']['raw_history']==pair['after'][state]['warmup']['raw_history']==a['raw_history'][:2]
             assert a['metrics']['promptTokens']==b['metrics']['promptTokens']
             for phase in ('before','after'):
                 for kind in ('warmup','sample'):
                     r=pair[phase][state][kind]
-                    assert r['tokens']==128 and r['metrics']['completed']
+                    assert r['tokens']==r['metrics']['tokens']==128 and r['metrics']['completed'] is True
+                    assert r['metrics']['version']==3 and r['metrics']['timingScope']=='prefill_synchronized_before_decode'
                     assert r['strict']['status']=='PASS'
-                    assert r['metrics']['decodeNs']>0 and r['metrics']['reusedPromptTokens']>=0
+                    assert math.isfinite(r['metrics']['decodeNs']) and r['metrics']['decodeNs']>0
+                    assert 0<=r['metrics']['reusedPromptTokens']<r['metrics']['promptTokens']
+                    if kind=='warmup':assert r['metrics']['reusedPromptTokens']==0
+                    else:assert r['metrics']['reusedPromptTokens']>0,'Measured continuation lost its warmed Engine/cache'
+                    assert math.isfinite(r['native_decode_tokens_s']) and r['native_decode_tokens_s']>0
                     assert abs(r['native_decode_tokens_s']-128e9/r['metrics']['decodeNs'])<1e-8
             ratios.append(b['native_decode_tokens_s']/a['native_decode_tokens_s'])
             if state=='awake':
-                assert a['send_to_first_ui_ns']>0 and b['send_to_first_ui_ns']>0
+                assert all(math.isfinite(r['send_to_first_ui_ns']) and r['send_to_first_ui_ns']>0 for r in (a,b))
                 latencies.append(a['send_to_first_ui_ns']/b['send_to_first_ui_ns'])
         result[state]={'decode_speedup_ratios':ratios,'median_decode_speedup':statistics.median(ratios)}
         if latencies:result[state].update(first_ui_speedup_ratios=latencies,median_first_ui_speedup=statistics.median(latencies))

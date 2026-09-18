@@ -44,8 +44,9 @@ jobs:
           import json,hashlib,zipfile
           from pathlib import Path
           def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
-          def payload(p):
-            with zipfile.ZipFile(p) as z:return {n:hashlib.sha256(z.read(n)).hexdigest() for n in z.namelist() if not n.startswith('META-INF/')}
+          import sys
+          sys.path.insert(0,'scripts')
+          from sign_gain_release import payload
           assert payload('.cache/gain-before.apk')==payload('.delivery/GGUF-Chat-mobile.apk')
           assert payload('.cache/gain-after.apk')==payload('.cache/gain-original-candidate.apk')
           Path('evidence/physical-gain-build.json').write_text(json.dumps(dict(
