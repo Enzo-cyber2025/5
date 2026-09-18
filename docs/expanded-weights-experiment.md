@@ -65,3 +65,20 @@ incompatível silenciosamente. Não declarar ganhos antes da execução Android.
 
 Arquivos: `apk-fix/native/expanded_weights.h`, `ci/evaluate_expanded_weights.py`,
 `scripts/test_expanded_weights_android.py`, `.github/workflows/expanded-weights.yml`.
+
+## Resultado — rejeitado
+
+Execução `35402357865`, APK c3bad5b7c3505ac85cf02cde579db4d0f23db2405b81518dcaee685a0aa6348f,
+fonte e8ab84f1f3c43806126e27f4bcf909e6138932f9. Ambos os estados terminaram com
+`TWO_TIMES_TARGET_NOT_MET`; falha do gate de desempenho, não erro da medição.
+Valores verificados: 537.919.488 bytes; memória extra alocada: 538.738.176 bytes.
+
+- ON, no mesmo runner: histórico 3,9617; entregue 3,9349; expansão 4,1077 T/s
+  (medianas). Ganho pareado mediano histórico +3,9734%, entregue +4,9439%.
+- OFF, no mesmo runner: histórico 9,6018; entregue 9,8080; expansão 7,3766 T/s.
+  Razões pareadas medianas histórico −23,1755%, entregue −23,6964%.
+
+Não comparar taxas absolutas entre esses runners/estados nem com execuções
+anteriores. Saídas e valores preservados não tornam uma regressão aceitável.
+**Padrão continua OFF. Não foi incluído no APK entregue.**
+A próxima hipótese está em `docs/repacked-weights-experiment.md`.

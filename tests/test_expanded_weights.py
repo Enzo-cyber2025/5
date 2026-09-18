@@ -58,7 +58,7 @@ def test_compile_and_runtime_flags_default_off_and_transactional_gpu_conversion(
     assert 'std::strcmp(s,"1")==0' in header
     assert 'ggml_get_rows(owner->context,src,ids)' in header and 'ggml_backend_graph_compute' in header
     assert 'ggml_backend_buft_get_device' in header and 'GGML_BACKEND_BUFFER_USAGE_WEIGHTS' in header
-    assert header.index('std::memcmp(reference.data()')<header.index('p->original->type=GGML_TYPE_F32')
+    assert header.index('std::memcmp(reference.data()')<header.index('p->original->type=p->expanded->type')
     assert 'if(verify)' in header and 'experimental_limit' in header
     assert 'throw std::runtime_error' in header and 'CPU inference/dequant fallback' in header
 

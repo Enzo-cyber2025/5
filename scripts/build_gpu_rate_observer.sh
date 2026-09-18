@@ -6,6 +6,10 @@ BT="$SDK/build-tools/35.0.0"
 JAR="$SDK/platforms/android-35/android.jar"
 OUT=.cache/gpu-rate
 mkdir -p "$OUT/classes" "$OUT/dex" evidence
+if [[ -n "${GGUF_REPACKED_TEST_IMPORT:-}" ]]; then
+  [[ -z "${GGUF_EXPANDED_TEST_IMPORT:-}" ]]
+  export GGUF_EXPANDED_TEST_IMPORT="$GGUF_REPACKED_TEST_IMPORT"
+fi
 KEY="$RUNNER_TEMP/gpu-rate-observer.p12"
 keytool -genkeypair -keystore "$KEY" -storetype PKCS12 -storepass android -alias test -keyalg RSA -keysize 2048 -validity 2 -dname 'CN=Disposable unchanged-native GPU benchmark NOT release'
 trap 'rm -f "$KEY"' EXIT
@@ -37,7 +41,8 @@ for phase,src in [('before',Path('.cache/pre-acceleration.apk')),('after',Path('
 experiment=None
 if os.environ.get('GGUF_EXPANDED_TEST_IMPORT'):
     folder=Path(os.environ['GGUF_EXPANDED_TEST_IMPORT']);experiment=json.loads((folder/'build.json').read_text())
-    assert experiment['experimental_expanded_weights_build'] is True and experiment['default_enabled'] is False and experiment['release_approved'] is False
+    flag='experimental_repacked_weights_build' if os.environ.get('GGUF_REPACKED_TEST_IMPORT') else 'experimental_expanded_weights_build'
+    assert experiment[flag] is True and experiment['default_enabled'] is False and experiment['release_approved'] is False
     src=folder/'candidate.apk';dst=out/'candidate.apk'
     original=hashlib.sha256(src.read_bytes()).hexdigest();assert original==experiment['apk_sha256']
     entries=payload(src);assert entries==payload(dst),'Candidate signing changed executable/resources'

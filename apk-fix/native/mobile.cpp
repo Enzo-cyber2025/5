@@ -14,7 +14,7 @@
 #include <limits>
 #include "strict_vulkan.h"
 #include "model_offload.h"
-#ifdef GGUF_EXPERIMENT_EXPANDED_WEIGHTS
+#if defined(GGUF_EXPERIMENT_EXPANDED_WEIGHTS) || defined(GGUF_EXPERIMENT_REPACKED_WEIGHTS)
 #include "expanded_weights.h"
 #endif
 #include <sched.h>
@@ -56,7 +56,7 @@ struct Engine {
     std::vector<llama_token> cached_tokens; // exact tokens whose KV is present
     bool cache_supported=false;
     ImageEmbeddingCache image_cache;
-#ifdef GGUF_EXPERIMENT_EXPANDED_WEIGHTS
+#if defined(GGUF_EXPERIMENT_EXPANDED_WEIGHTS) || defined(GGUF_EXPERIMENT_REPACKED_WEIGHTS)
     ExpandedWeights expanded_weights;
 #endif
 #ifdef GGUF_EXPERIMENT_MEDIA_PREFIX
@@ -210,6 +210,16 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
                 e->expanded_weights.allocations.size(),e->expanded_weights.extra_bytes,(int)verify,e->expanded_weights.verified_bytes,
                 (long long)std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now()-expansion_started).count());
         } else LOG("GGUF_EXPANDED_WEIGHTS enabled=0");
+#endif
+#ifdef GGUF_EXPERIMENT_REPACKED_WEIGHTS
+        if(expanded_flag("GGUF_REPACK_WEIGHTS")) {
+            const auto repack_started=std::chrono::steady_clock::now();
+            const bool verify=expanded_flag("GGUF_VERIFY_REPACKED_WEIGHTS");
+            e->expanded_weights.prepare(e->model,e->strict_device,verify,true);
+            LOG("GGUF_REPACKED_WEIGHTS enabled=1 tensors=%zu extra_device_bytes=%zu verification=%d verified_bytes=%zu prepare_ns=%lld precision=Q8_LOSSLESS conversion=Vulkan",
+                e->expanded_weights.allocations.size(),e->expanded_weights.extra_bytes,(int)verify,e->expanded_weights.verified_bytes,
+                (long long)std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now()-repack_started).count());
+        } else LOG("GGUF_REPACKED_WEIGHTS enabled=0");
 #endif
         auto cp=llama_context_default_params(); cp.n_ctx=context; cp.n_batch=128; cp.n_ubatch=32;
         // This JNI emits one sequence and requests logits ONLY for its final

@@ -5,6 +5,8 @@ from pathlib import Path
 from test_gpu_rate_android import Android,PACKAGE,TEXT,BUILD,E,sha,collect,process_log
 sys.path.insert(0,str(Path('ci').resolve()))
 from evaluate_expanded_weights import evaluate,ENV,ON,VERIFY,MODEL
+MARKER="GGUF_EXPANDED_WEIGHTS";PRECISION="F32";NAME="expanded"
+COMPLETE_STATUS="COMPLETE_EXPANDED_OBSERVATIONS"
 
 
 def observation(d,s,phase,state,label,env):
@@ -22,24 +24,25 @@ def observation(d,s,phase,state,label,env):
     d.adb('logcat','-c')
     try:
         stdout=d.shell(f'am instrument -w -r -e state {state} -e emulator_confirmed 1 com.ggufchat.gpurate/com.ggufchat.gpurate.RateInstrumentation',timeout=1200)
-        (E/f'physical-expanded-{label}-instrument.txt').write_text(stdout)
+        (E/f'physical-{NAME}-{label}-instrument.txt').write_text(stdout)
     finally:
         log=d.adb('logcat','-d','-v','threadtime')
-        (E/f'physical-expanded-{label}-system-tail.txt').write_text(log[-1000000:])
+        (E/f'physical-{NAME}-{label}-system-tail.txt').write_text(log[-1000000:])
     r=d.read_json('gpu-rate.json')
-    (E/f'physical-expanded-{label}-raw.json').write_text(json.dumps(r,indent=2,ensure_ascii=False))
+    (E/f'physical-{NAME}-{label}-raw.json').write_text(json.dumps(r,indent=2,ensure_ascii=False))
     r['test_apk_sha256']=sha(apk);r=collect(r,log,'before' if phase=='before' else 'after')
     native=process_log(log);assert len(native.encode())<1900000
-    (E/f'physical-expanded-{label}-native.txt').write_text(native)
+    (E/f'physical-{NAME}-{label}-native.txt').write_text(native)
     assert r['vulkan_environment']==env
     # This experiment qualifies only the selected full-FP32 software device;
     # it cannot certify a mobile driver's different FP16 matmul policy.
     assert 'fp16: 0' in native and 'llvmpipe' in native
+    if PRECISION=='Q8_LOSSLESS':assert 'int dot: 0' in native,'No activation requantization policy changes permitted'
     if phase=='candidate':
-        m=re.findall(r'GGUF_EXPANDED_WEIGHTS enabled=1 tensors=(\d+) extra_device_bytes=(\d+) verification=(\d+) verified_bytes=(\d+) prepare_ns=(\d+) precision=F32 conversion=Vulkan',native)
+        m=re.findall(re.escape(MARKER)+r' enabled=1 tensors=(\d+) extra_device_bytes=(\d+) verification=(\d+) verified_bytes=(\d+) prepare_ns=(\d+) precision='+re.escape(PRECISION)+r' conversion=Vulkan',native)
         assert len(m)==1,'Missing real expansion proof'
         r['expansion']=dict(zip(('tensors','extra_device_bytes','verification','verified_bytes','prepare_ns'),map(int,m[0])))
-        r['expansion'].update(precision='F32',conversion='Vulkan')
+        r['expansion'].update(precision=PRECISION,conversion='Vulkan')
     return r
 
 
@@ -65,10 +68,10 @@ def main(state):
             for phase in order:
                 pair[phase]=observation(d,s,phase,state,f'{i+1}-{phase}-{state}',ON if phase=='candidate' else ENV)
                 (E/'summary.json').write_text(json.dumps(s,indent=2,ensure_ascii=False))
-        s['status']='COMPLETE_EXPANDED_OBSERVATIONS';s['evaluation']=evaluate(s)
+        s['status']=COMPLETE_STATUS;s['evaluation']=evaluate(s)
         print(json.dumps(s['evaluation'],indent=2),flush=True)
     except Exception:
-        s['status']='FAIL';(E/'physical-expanded-failure.txt').write_text(traceback.format_exc());raise
+        s['status']='FAIL';(E/f'physical-{NAME}-failure.txt').write_text(traceback.format_exc());raise
     finally:
         d.shell('setprop wrap.'+PACKAGE+" ''",check=False);d.shell('input keyevent 224',check=False)
         (E/'summary.json').write_text(json.dumps(s,indent=2,ensure_ascii=False))
