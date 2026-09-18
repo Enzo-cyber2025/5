@@ -50,6 +50,8 @@ def main(report_dir,text_report_dir,*,stable_authorization=None):
     key=private/'ggufchat-speed.p12';password=private/'ggufchat-speed.password'
     if key.exists()!=password.exists():raise RuntimeError('Incomplete signing state; do not rotate or overwrite keys')
     if not key.exists():
+        if (ROOT/'.delivery/perceptible-speed-delivery.json').exists():
+            raise RuntimeError('A prior signed release exists but its private key is missing; silent key rotation refused')
         old_umask=os.umask(0o077)
         try:
             with password.open('x') as f:f.write(secrets.token_hex(32)+'\n')
@@ -72,6 +74,9 @@ def main(report_dir,text_report_dir,*,stable_authorization=None):
                     '--out',str(candidate),str(source)],check=True,capture_output=True)
     verified=subprocess.check_output([str(java),'-jar',str(signer),'verify','--verbose','--print-certs',str(candidate)],text=True)
     cert=re.search(r'Signer #1 certificate SHA-256 digest: ([0-9a-f]{64})',verified);assert cert
+    prior_record=ROOT/'.delivery/perceptible-speed-delivery.json'
+    if prior_record.exists():
+        assert cert[1]==json.loads(prior_record.read_text())['signer_sha256'],'Existing release certificate changed; key rotation refused'
     assert payload(source)==payload(candidate),'Signing changed non-signature APK data'
     # With minSdk 28+, the verifier selects v3 and reports v2 as not verified.
     # Verify v2 separately in its SDK range; never change the APK's minSdk.

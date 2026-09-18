@@ -73,3 +73,9 @@ def test_both_signatures_verified_without_changing_manifest_min_sdk():
     assert "Scheme v2): true' in verified_v2" in source
     assert "Scheme v3): true' in verified" in source
     assert "certificate SHA-256 digest: '+cert[1] in verified_v2" in source
+
+
+def test_existing_release_never_silently_rotates_a_lost_or_changed_key():
+    source=(ROOT/'scripts/sign_gain_release.py').read_text()
+    assert source.index('silent key rotation refused')<source.index("with password.open('x')")
+    assert source.index('Existing release certificate changed')<source.index('candidate.replace(destination)')

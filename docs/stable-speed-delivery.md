@@ -64,7 +64,12 @@ minSdk 28+. Esse override não altera o APK nem reduz seu Android mínimo.
 ## Assinatura e dados
 
 Certificado novo: `bc4edf6c222ff6a602b3757fbda64fa2b9f23585add6080cf771f7315ce5b158`.
-A chave foi mantida privadamente nesta área de trabalho, fora do Git.
+A chave foi mantida privadamente no momento da assinatura, fora do Git.
+Na restauração posterior desta área de trabalho, o keystore e sua senha não
+estão presentes. O APK foi recuperado por Git e é exatamente o mesmo arquivo,
+com o mesmo certificado; não foi reassinado e nenhuma chave substituta foi
+gerada. Não prometer futuras atualizações com esse certificado sem recuperar
+a chave. Estado atual: `.delivery/signing-key-availability.json`.
 
 **Assinatura diferente do APK antigo 7295: não é uma atualização compatível
 sobre ele. Não desinstale a versão antiga sem preservar conversas, anexos e
