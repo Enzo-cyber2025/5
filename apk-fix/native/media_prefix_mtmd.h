@@ -14,9 +14,11 @@ inline bool media_prefix_opt_in() {
 inline bool media_prefix_model(const llama_model *model) {
     // Start narrowly: no recurrent, encoder, hybrid, SWA or position variants.
     // Caller additionally checks its existing architecture and device policy.
-    char arch[32]{},swa[32]{};
+    char arch[32]{},swa[32]{},causal[32]{};
     if(llama_model_meta_val_str(model,"general.architecture",arch,sizeof(arch))!=5 ||
        std::strcmp(arch,"llama")!=0)return false;
+    const int c=llama_model_meta_val_str(model,"llama.attention.causal",causal,sizeof(causal));
+    if(c>=0 && !(c==4 && std::strcmp(causal,"true")==0))return false;
     const int n=llama_model_meta_val_str(model,"llama.attention.sliding_window",swa,sizeof(swa));
     return n<0 || (n==1 && std::strcmp(swa,"0")==0);
 }

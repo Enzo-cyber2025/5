@@ -82,3 +82,41 @@ def test_default_native_body_unchanged_by_experiment():
         elif inside and line.strip()=='#endif':inside=False;keep=True
         elif keep:lines.append(line)
     assert not inside and hashlib.sha256(''.join(lines).encode()).hexdigest()==before_sha
+
+
+def test_actual_eligibility_function_rejects_noncausal_and_swa_metadata(tmp_path):
+    source=ROOT/'.cache/llama-mobile'
+    if not source.exists():source=ROOT/'.cache/llama-prefix-audit'
+    if not source.exists():pytest.skip('Pinned upstream headers required')
+    cpp=tmp_path/'eligibility.cpp'
+    cpp.write_text(r'''#include "mtmd.h"
+extern "C" int32_t mtmd_gguf_image_fingerprint(const mtmd_input_chunk *, unsigned char[32]);
+#include "media_prefix_mtmd.h"
+#include <cassert>
+#include <cstdio>
+#include <map>
+#include <string>
+// Metadata API fixture only; exercise the actual C++ eligibility function.
+std::map<std::string,std::string> metadata;
+extern "C" int32_t llama_model_meta_val_str(const llama_model *,const char *key,char *dst,size_t size){
+ auto it=metadata.find(key);if(it==metadata.end())return -1;
+ return snprintf(dst,size,"%s",it->second.c_str());
+}
+int main(){
+ assert(!media_prefix_model(nullptr));
+ metadata["general.architecture"]="llama";assert(media_prefix_model(nullptr));
+ metadata["llama.attention.causal"]="true";assert(media_prefix_model(nullptr));
+ metadata["llama.attention.causal"]="false";assert(!media_prefix_model(nullptr));
+ metadata["llama.attention.causal"]="unknown";assert(!media_prefix_model(nullptr));
+ metadata.erase("llama.attention.causal");
+ metadata["llama.attention.sliding_window"]="0";assert(media_prefix_model(nullptr));
+ metadata["llama.attention.sliding_window"]="4096";assert(!media_prefix_model(nullptr));
+ metadata.erase("llama.attention.sliding_window");
+ metadata["general.architecture"]="gemma3";assert(!media_prefix_model(nullptr));
+ metadata["general.architecture"]=std::string(1000,'a');assert(!media_prefix_model(nullptr));
+}
+''')
+    exe=tmp_path/'eligibility'
+    subprocess.run(['g++','-std=c++17','-Wall','-Wextra','-Werror','-I'+str(ROOT/'apk-fix/native'),
+        '-I'+str(source/'include'),'-I'+str(source/'ggml/include'),'-I'+str(source/'tools/mtmd'),str(cpp),'-o',str(exe)],check=True)
+    subprocess.run([str(exe)],check=True)
