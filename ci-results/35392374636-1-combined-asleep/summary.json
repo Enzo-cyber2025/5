@@ -1,0 +1,1528 @@
+{
+  "status": "PASS_COMBINED_REGRESSION_GUARDS",
+  "kind": "asleep",
+  "build": {
+    "apk_sha256": "2053c037e3d9ca776f9c1d285722338c4967135044d7c026803450bd0b33baf1",
+    "source_commit": "11da7aa98b773754856dbdb1edefc8c6717e0e27",
+    "default_combined": false,
+    "control": "Same APK; stock RGB in both modes; before no experiments, after explicit batch2+QKV+combination flags",
+    "release_approved": false
+  },
+  "pairs": [
+    {
+      "before": {
+        "load": {
+          "startup_ns": 22280927308,
+          "qkv": [],
+          "pss_kib": 116069
+        },
+        "states": {
+          "asleep": {
+            "warmup": {
+              "tokens": 2,
+              "prefill_and_generation_seconds": 217.4210000000021,
+              "prefill_and_generation_tokens_s": 0.009198743451644417,
+              "response": "Dog.",
+              "metrics": {
+                "tokens": 2,
+                "decodeNs": 552678715,
+                "prefillNs": 216868559692,
+                "completed": true,
+                "version": 3,
+                "timingScope": "prefill_synchronized_before_decode",
+                "firstTokenNs": 216869503582,
+                "promptTokens": 513,
+                "reusedPromptTokens": 0
+              },
+              "callbacks": 2,
+              "native_decode_tokens_s": 3.618738963015791,
+              "strict": {
+                "status": "PASS",
+                "submitted_graphs": 28,
+                "submitted_math_nodes": 15139,
+                "tensor_cpu_fallback": "blocked_by_native_policy",
+                "host_orchestration": "CPU",
+                "physical_gpu_certified": false
+              },
+              "combined": false,
+              "diagnostic": false,
+              "raw_history": [
+                [
+                  "user",
+                  "Arquivo anexado: 1 arquivo(s)\n\nAnexos vinculados a esta mensagem para leitura.\n\nName the main animal in the image. Reply in English."
+                ],
+                [
+                  "assistant",
+                  " Dog."
+                ]
+              ],
+              "settings": {
+                "nPredict": 128,
+                "temperature": 0,
+                "topP": 0.949999988079071,
+                "topK": 40,
+                "minP": 0.05000000074505806,
+                "repeatPenalty": 1.100000023841858,
+                "repeatLastN": 64,
+                "contextSize": 4096,
+                "nThreads": 2,
+                "gpuLayers": 99,
+                "useMmap": true,
+                "thinking": false,
+                "webSearch": false,
+                "systemPrompt": null
+              },
+              "image_records": [
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ]
+              ],
+              "prepared_dimensions": [
+                [
+                  "1024",
+                  "803",
+                  "ImageDecoder"
+                ]
+              ],
+              "stages": {
+                "bitmap_ns": 45315577,
+                "tokenize_ns": 40031459,
+                "key_ns": 380,
+                "encode_call_ns": 179009450571,
+                "encode_calls": 5,
+                "hits": 0,
+                "verified_hits": 0,
+                "verification": 0,
+                "cache_disabled": 1
+              },
+              "pairing": {
+                "enabled": 0,
+                "pair_calls": 0,
+                "paired_images": 0,
+                "verified_images": 0,
+                "verification": 0
+              },
+              "qkv": {
+                "requested": 0,
+                "verification": 0,
+                "verified_images": 0
+              },
+              "upload_bytes": 15728640,
+              "realized_attention": "enabled"
+            },
+            "sample": {
+              "tokens": 2,
+              "prefill_and_generation_seconds": 193.60599999999977,
+              "prefill_and_generation_tokens_s": 0.01033025835976159,
+              "response": "Dog.",
+              "metrics": {
+                "tokens": 2,
+                "decodeNs": 559988540,
+                "prefillNs": 193045929096,
+                "completed": true,
+                "version": 3,
+                "timingScope": "prefill_synchronized_before_decode",
+                "firstTokenNs": 193046518817,
+                "promptTokens": 538,
+                "reusedPromptTokens": 0
+              },
+              "callbacks": 2,
+              "native_decode_tokens_s": 3.571501659658964,
+              "strict": {
+                "status": "PASS",
+                "submitted_graphs": 28,
+                "submitted_math_nodes": 15139,
+                "tensor_cpu_fallback": "blocked_by_native_policy",
+                "host_orchestration": "CPU",
+                "physical_gpu_certified": false
+              },
+              "combined": false,
+              "diagnostic": false,
+              "raw_history": [
+                [
+                  "user",
+                  "Arquivo anexado: 1 arquivo(s)\n\nAnexos vinculados a esta mensagem para leitura.\n\nName the main animal in the image. Reply in English."
+                ],
+                [
+                  "assistant",
+                  " Dog."
+                ],
+                [
+                  "user",
+                  "Name the main animal in the image. Reply in English."
+                ],
+                [
+                  "assistant",
+                  " Dog."
+                ]
+              ],
+              "settings": {
+                "nPredict": 128,
+                "temperature": 0,
+                "topP": 0.949999988079071,
+                "topK": 40,
+                "minP": 0.05000000074505806,
+                "repeatPenalty": 1.100000023841858,
+                "repeatLastN": 64,
+                "contextSize": 4096,
+                "nThreads": 2,
+                "gpuLayers": 99,
+                "useMmap": true,
+                "thinking": false,
+                "webSearch": false,
+                "systemPrompt": null
+              },
+              "image_records": [
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ]
+              ],
+              "prepared_dimensions": [
+                [
+                  "1024",
+                  "803",
+                  "ImageDecoder"
+                ]
+              ],
+              "stages": {
+                "bitmap_ns": 29842735,
+                "tokenize_ns": 27136248,
+                "key_ns": 429,
+                "encode_call_ns": 168470044534,
+                "encode_calls": 5,
+                "hits": 0,
+                "verified_hits": 0,
+                "verification": 0,
+                "cache_disabled": 1
+              },
+              "pairing": {
+                "enabled": 0,
+                "pair_calls": 0,
+                "paired_images": 0,
+                "verified_images": 0,
+                "verification": 0
+              },
+              "qkv": {
+                "requested": 0,
+                "verification": 0,
+                "verified_images": 0
+              },
+              "upload_bytes": 15728640,
+              "realized_attention": "enabled"
+            }
+          }
+        },
+        "pss_kib_after": 127063
+      },
+      "after": {
+        "load": {
+          "startup_ns": 21938757785,
+          "qkv": [
+            [
+              "12",
+              "22671360",
+              "22671360",
+              "0"
+            ]
+          ],
+          "pss_kib": 119544
+        },
+        "states": {
+          "asleep": {
+            "warmup": {
+              "tokens": 2,
+              "prefill_and_generation_seconds": 186.5240000000049,
+              "prefill_and_generation_tokens_s": 0.010722480753146767,
+              "response": "Dog.",
+              "metrics": {
+                "tokens": 2,
+                "decodeNs": 522843553,
+                "prefillNs": 186001403630,
+                "completed": true,
+                "version": 3,
+                "timingScope": "prefill_synchronized_before_decode",
+                "firstTokenNs": 186002635148,
+                "promptTokens": 513,
+                "reusedPromptTokens": 0
+              },
+              "callbacks": 2,
+              "native_decode_tokens_s": 3.8252360357592474,
+              "strict": {
+                "status": "PASS",
+                "submitted_graphs": 26,
+                "submitted_math_nodes": 14395,
+                "tensor_cpu_fallback": "blocked_by_native_policy",
+                "host_orchestration": "CPU",
+                "physical_gpu_certified": false
+              },
+              "combined": true,
+              "diagnostic": false,
+              "raw_history": [
+                [
+                  "user",
+                  "Arquivo anexado: 1 arquivo(s)\n\nAnexos vinculados a esta mensagem para leitura.\n\nName the main animal in the image. Reply in English."
+                ],
+                [
+                  "assistant",
+                  " Dog."
+                ]
+              ],
+              "settings": {
+                "nPredict": 128,
+                "temperature": 0,
+                "topP": 0.949999988079071,
+                "topK": 40,
+                "minP": 0.05000000074505806,
+                "repeatPenalty": 1.100000023841858,
+                "repeatLastN": 64,
+                "contextSize": 4096,
+                "nThreads": 2,
+                "gpuLayers": 99,
+                "useMmap": true,
+                "thinking": false,
+                "webSearch": false,
+                "systemPrompt": null
+              },
+              "image_records": [
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ]
+              ],
+              "prepared_dimensions": [
+                [
+                  "1024",
+                  "803",
+                  "ImageDecoder"
+                ]
+              ],
+              "stages": {
+                "bitmap_ns": 29305463,
+                "tokenize_ns": 23559246,
+                "key_ns": 469,
+                "encode_call_ns": 161027715963,
+                "encode_calls": 3,
+                "hits": 0,
+                "verified_hits": 0,
+                "verification": 0,
+                "cache_disabled": 1
+              },
+              "pairing": {
+                "enabled": 1,
+                "pair_calls": 2,
+                "paired_images": 4,
+                "verified_images": 0,
+                "verification": 0
+              },
+              "qkv": {
+                "requested": 1,
+                "verification": 0,
+                "verified_images": 0
+              },
+              "upload_bytes": 15728640,
+              "realized_attention": "enabled"
+            },
+            "sample": {
+              "tokens": 2,
+              "prefill_and_generation_seconds": 188.25199999999313,
+              "prefill_and_generation_tokens_s": 0.010624057114931437,
+              "response": "Dog.",
+              "metrics": {
+                "tokens": 2,
+                "decodeNs": 506254890,
+                "prefillNs": 187745757947,
+                "completed": true,
+                "version": 3,
+                "timingScope": "prefill_synchronized_before_decode",
+                "firstTokenNs": 187746473963,
+                "promptTokens": 538,
+                "reusedPromptTokens": 0
+              },
+              "callbacks": 2,
+              "native_decode_tokens_s": 3.9505791242826316,
+              "strict": {
+                "status": "PASS",
+                "submitted_graphs": 26,
+                "submitted_math_nodes": 14395,
+                "tensor_cpu_fallback": "blocked_by_native_policy",
+                "host_orchestration": "CPU",
+                "physical_gpu_certified": false
+              },
+              "combined": true,
+              "diagnostic": false,
+              "raw_history": [
+                [
+                  "user",
+                  "Arquivo anexado: 1 arquivo(s)\n\nAnexos vinculados a esta mensagem para leitura.\n\nName the main animal in the image. Reply in English."
+                ],
+                [
+                  "assistant",
+                  " Dog."
+                ],
+                [
+                  "user",
+                  "Name the main animal in the image. Reply in English."
+                ],
+                [
+                  "assistant",
+                  " Dog."
+                ]
+              ],
+              "settings": {
+                "nPredict": 128,
+                "temperature": 0,
+                "topP": 0.949999988079071,
+                "topK": 40,
+                "minP": 0.05000000074505806,
+                "repeatPenalty": 1.100000023841858,
+                "repeatLastN": 64,
+                "contextSize": 4096,
+                "nThreads": 2,
+                "gpuLayers": 99,
+                "useMmap": true,
+                "thinking": false,
+                "webSearch": false,
+                "systemPrompt": null
+              },
+              "image_records": [
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ]
+              ],
+              "prepared_dimensions": [
+                [
+                  "1024",
+                  "803",
+                  "ImageDecoder"
+                ]
+              ],
+              "stages": {
+                "bitmap_ns": 29568013,
+                "tokenize_ns": 31826035,
+                "key_ns": 419,
+                "encode_call_ns": 162448895282,
+                "encode_calls": 3,
+                "hits": 0,
+                "verified_hits": 0,
+                "verification": 0,
+                "cache_disabled": 1
+              },
+              "pairing": {
+                "enabled": 1,
+                "pair_calls": 2,
+                "paired_images": 4,
+                "verified_images": 0,
+                "verification": 0
+              },
+              "qkv": {
+                "requested": 1,
+                "verification": 0,
+                "verified_images": 0
+              },
+              "upload_bytes": 15728640,
+              "realized_attention": "enabled"
+            }
+          }
+        },
+        "pss_kib_after": 132122
+      }
+    },
+    {
+      "after": {
+        "load": {
+          "startup_ns": 22293547632,
+          "qkv": [
+            [
+              "12",
+              "22671360",
+              "22671360",
+              "0"
+            ]
+          ],
+          "pss_kib": 117806
+        },
+        "states": {
+          "asleep": {
+            "warmup": {
+              "tokens": 2,
+              "prefill_and_generation_seconds": 191.06600000000617,
+              "prefill_and_generation_tokens_s": 0.010467587116493439,
+              "response": "Dog.",
+              "metrics": {
+                "tokens": 2,
+                "decodeNs": 525365348,
+                "prefillNs": 190541501633,
+                "completed": true,
+                "version": 3,
+                "timingScope": "prefill_synchronized_before_decode",
+                "firstTokenNs": 190542375644,
+                "promptTokens": 513,
+                "reusedPromptTokens": 0
+              },
+              "callbacks": 2,
+              "native_decode_tokens_s": 3.8068746018627784,
+              "strict": {
+                "status": "PASS",
+                "submitted_graphs": 26,
+                "submitted_math_nodes": 14395,
+                "tensor_cpu_fallback": "blocked_by_native_policy",
+                "host_orchestration": "CPU",
+                "physical_gpu_certified": false
+              },
+              "combined": true,
+              "diagnostic": false,
+              "raw_history": [
+                [
+                  "user",
+                  "Arquivo anexado: 1 arquivo(s)\n\nAnexos vinculados a esta mensagem para leitura.\n\nName the main animal in the image. Reply in English."
+                ],
+                [
+                  "assistant",
+                  " Dog."
+                ]
+              ],
+              "settings": {
+                "nPredict": 128,
+                "temperature": 0,
+                "topP": 0.949999988079071,
+                "topK": 40,
+                "minP": 0.05000000074505806,
+                "repeatPenalty": 1.100000023841858,
+                "repeatLastN": 64,
+                "contextSize": 4096,
+                "nThreads": 2,
+                "gpuLayers": 99,
+                "useMmap": true,
+                "thinking": false,
+                "webSearch": false,
+                "systemPrompt": null
+              },
+              "image_records": [
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ]
+              ],
+              "prepared_dimensions": [
+                [
+                  "1024",
+                  "803",
+                  "ImageDecoder"
+                ]
+              ],
+              "stages": {
+                "bitmap_ns": 29190659,
+                "tokenize_ns": 23859415,
+                "key_ns": 421,
+                "encode_call_ns": 165830886102,
+                "encode_calls": 3,
+                "hits": 0,
+                "verified_hits": 0,
+                "verification": 0,
+                "cache_disabled": 1
+              },
+              "pairing": {
+                "enabled": 1,
+                "pair_calls": 2,
+                "paired_images": 4,
+                "verified_images": 0,
+                "verification": 0
+              },
+              "qkv": {
+                "requested": 1,
+                "verification": 0,
+                "verified_images": 0
+              },
+              "upload_bytes": 15728640,
+              "realized_attention": "enabled"
+            },
+            "sample": {
+              "tokens": 2,
+              "prefill_and_generation_seconds": 189.62900000000081,
+              "prefill_and_generation_tokens_s": 0.010546910019037127,
+              "response": "Dog.",
+              "metrics": {
+                "tokens": 2,
+                "decodeNs": 525884075,
+                "prefillNs": 189103554100,
+                "completed": true,
+                "version": 3,
+                "timingScope": "prefill_synchronized_before_decode",
+                "firstTokenNs": 189104212128,
+                "promptTokens": 538,
+                "reusedPromptTokens": 0
+              },
+              "callbacks": 2,
+              "native_decode_tokens_s": 3.8031195373238864,
+              "strict": {
+                "status": "PASS",
+                "submitted_graphs": 26,
+                "submitted_math_nodes": 14395,
+                "tensor_cpu_fallback": "blocked_by_native_policy",
+                "host_orchestration": "CPU",
+                "physical_gpu_certified": false
+              },
+              "combined": true,
+              "diagnostic": false,
+              "raw_history": [
+                [
+                  "user",
+                  "Arquivo anexado: 1 arquivo(s)\n\nAnexos vinculados a esta mensagem para leitura.\n\nName the main animal in the image. Reply in English."
+                ],
+                [
+                  "assistant",
+                  " Dog."
+                ],
+                [
+                  "user",
+                  "Name the main animal in the image. Reply in English."
+                ],
+                [
+                  "assistant",
+                  " Dog."
+                ]
+              ],
+              "settings": {
+                "nPredict": 128,
+                "temperature": 0,
+                "topP": 0.949999988079071,
+                "topK": 40,
+                "minP": 0.05000000074505806,
+                "repeatPenalty": 1.100000023841858,
+                "repeatLastN": 64,
+                "contextSize": 4096,
+                "nThreads": 2,
+                "gpuLayers": 99,
+                "useMmap": true,
+                "thinking": false,
+                "webSearch": false,
+                "systemPrompt": null
+              },
+              "image_records": [
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ]
+              ],
+              "prepared_dimensions": [
+                [
+                  "1024",
+                  "803",
+                  "ImageDecoder"
+                ]
+              ],
+              "stages": {
+                "bitmap_ns": 29236094,
+                "tokenize_ns": 26849332,
+                "key_ns": 628,
+                "encode_call_ns": 163894485124,
+                "encode_calls": 3,
+                "hits": 0,
+                "verified_hits": 0,
+                "verification": 0,
+                "cache_disabled": 1
+              },
+              "pairing": {
+                "enabled": 1,
+                "pair_calls": 2,
+                "paired_images": 4,
+                "verified_images": 0,
+                "verification": 0
+              },
+              "qkv": {
+                "requested": 1,
+                "verification": 0,
+                "verified_images": 0
+              },
+              "upload_bytes": 15728640,
+              "realized_attention": "enabled"
+            }
+          }
+        },
+        "pss_kib_after": 132219
+      },
+      "before": {
+        "load": {
+          "startup_ns": 22066807058,
+          "qkv": [],
+          "pss_kib": 117919
+        },
+        "states": {
+          "asleep": {
+            "warmup": {
+              "tokens": 2,
+              "prefill_and_generation_seconds": 195.00100000000384,
+              "prefill_and_generation_tokens_s": 0.010256357659704108,
+              "response": "Dog.",
+              "metrics": {
+                "tokens": 2,
+                "decodeNs": 551466384,
+                "prefillNs": 194449624476,
+                "completed": true,
+                "version": 3,
+                "timingScope": "prefill_synchronized_before_decode",
+                "firstTokenNs": 194450885218,
+                "promptTokens": 513,
+                "reusedPromptTokens": 0
+              },
+              "callbacks": 2,
+              "native_decode_tokens_s": 3.626694315423585,
+              "strict": {
+                "status": "PASS",
+                "submitted_graphs": 28,
+                "submitted_math_nodes": 15139,
+                "tensor_cpu_fallback": "blocked_by_native_policy",
+                "host_orchestration": "CPU",
+                "physical_gpu_certified": false
+              },
+              "combined": false,
+              "diagnostic": false,
+              "raw_history": [
+                [
+                  "user",
+                  "Arquivo anexado: 1 arquivo(s)\n\nAnexos vinculados a esta mensagem para leitura.\n\nName the main animal in the image. Reply in English."
+                ],
+                [
+                  "assistant",
+                  " Dog."
+                ]
+              ],
+              "settings": {
+                "nPredict": 128,
+                "temperature": 0,
+                "topP": 0.949999988079071,
+                "topK": 40,
+                "minP": 0.05000000074505806,
+                "repeatPenalty": 1.100000023841858,
+                "repeatLastN": 64,
+                "contextSize": 4096,
+                "nThreads": 2,
+                "gpuLayers": 99,
+                "useMmap": true,
+                "thinking": false,
+                "webSearch": false,
+                "systemPrompt": null
+              },
+              "image_records": [
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ]
+              ],
+              "prepared_dimensions": [
+                [
+                  "1024",
+                  "803",
+                  "ImageDecoder"
+                ]
+              ],
+              "stages": {
+                "bitmap_ns": 29064846,
+                "tokenize_ns": 25423372,
+                "key_ns": 429,
+                "encode_call_ns": 170039805886,
+                "encode_calls": 5,
+                "hits": 0,
+                "verified_hits": 0,
+                "verification": 0,
+                "cache_disabled": 1
+              },
+              "pairing": {
+                "enabled": 0,
+                "pair_calls": 0,
+                "paired_images": 0,
+                "verified_images": 0,
+                "verification": 0
+              },
+              "qkv": {
+                "requested": 0,
+                "verification": 0,
+                "verified_images": 0
+              },
+              "upload_bytes": 15728640,
+              "realized_attention": "enabled"
+            },
+            "sample": {
+              "tokens": 2,
+              "prefill_and_generation_seconds": 191.93499999999767,
+              "prefill_and_generation_tokens_s": 0.010420194336624505,
+              "response": "Dog.",
+              "metrics": {
+                "tokens": 2,
+                "decodeNs": 550090706,
+                "prefillNs": 191384897875,
+                "completed": true,
+                "version": 3,
+                "timingScope": "prefill_synchronized_before_decode",
+                "firstTokenNs": 191385530505,
+                "promptTokens": 538,
+                "reusedPromptTokens": 0
+              },
+              "callbacks": 2,
+              "native_decode_tokens_s": 3.635764026160442,
+              "strict": {
+                "status": "PASS",
+                "submitted_graphs": 28,
+                "submitted_math_nodes": 15139,
+                "tensor_cpu_fallback": "blocked_by_native_policy",
+                "host_orchestration": "CPU",
+                "physical_gpu_certified": false
+              },
+              "combined": false,
+              "diagnostic": false,
+              "raw_history": [
+                [
+                  "user",
+                  "Arquivo anexado: 1 arquivo(s)\n\nAnexos vinculados a esta mensagem para leitura.\n\nName the main animal in the image. Reply in English."
+                ],
+                [
+                  "assistant",
+                  " Dog."
+                ],
+                [
+                  "user",
+                  "Name the main animal in the image. Reply in English."
+                ],
+                [
+                  "assistant",
+                  " Dog."
+                ]
+              ],
+              "settings": {
+                "nPredict": 128,
+                "temperature": 0,
+                "topP": 0.949999988079071,
+                "topK": 40,
+                "minP": 0.05000000074505806,
+                "repeatPenalty": 1.100000023841858,
+                "repeatLastN": 64,
+                "contextSize": 4096,
+                "nThreads": 2,
+                "gpuLayers": 99,
+                "useMmap": true,
+                "thinking": false,
+                "webSearch": false,
+                "systemPrompt": null
+              },
+              "image_records": [
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ]
+              ],
+              "prepared_dimensions": [
+                [
+                  "1024",
+                  "803",
+                  "ImageDecoder"
+                ]
+              ],
+              "stages": {
+                "bitmap_ns": 31075395,
+                "tokenize_ns": 25454490,
+                "key_ns": 450,
+                "encode_call_ns": 166873551949,
+                "encode_calls": 5,
+                "hits": 0,
+                "verified_hits": 0,
+                "verification": 0,
+                "cache_disabled": 1
+              },
+              "pairing": {
+                "enabled": 0,
+                "pair_calls": 0,
+                "paired_images": 0,
+                "verified_images": 0,
+                "verification": 0
+              },
+              "qkv": {
+                "requested": 0,
+                "verification": 0,
+                "verified_images": 0
+              },
+              "upload_bytes": 15728640,
+              "realized_attention": "enabled"
+            }
+          }
+        },
+        "pss_kib_after": 129622
+      }
+    },
+    {
+      "before": {
+        "load": {
+          "startup_ns": 22053896431,
+          "qkv": [],
+          "pss_kib": 120813
+        },
+        "states": {
+          "asleep": {
+            "warmup": {
+              "tokens": 2,
+              "prefill_and_generation_seconds": 194.38999999999942,
+              "prefill_and_generation_tokens_s": 0.010288595092340171,
+              "response": "Dog.",
+              "metrics": {
+                "tokens": 2,
+                "decodeNs": 537945763,
+                "prefillNs": 193852499539,
+                "completed": true,
+                "version": 3,
+                "timingScope": "prefill_synchronized_before_decode",
+                "firstTokenNs": 193853901314,
+                "promptTokens": 513,
+                "reusedPromptTokens": 0
+              },
+              "callbacks": 2,
+              "native_decode_tokens_s": 3.717846923538275,
+              "strict": {
+                "status": "PASS",
+                "submitted_graphs": 28,
+                "submitted_math_nodes": 15139,
+                "tensor_cpu_fallback": "blocked_by_native_policy",
+                "host_orchestration": "CPU",
+                "physical_gpu_certified": false
+              },
+              "combined": false,
+              "diagnostic": false,
+              "raw_history": [
+                [
+                  "user",
+                  "Arquivo anexado: 1 arquivo(s)\n\nAnexos vinculados a esta mensagem para leitura.\n\nName the main animal in the image. Reply in English."
+                ],
+                [
+                  "assistant",
+                  " Dog."
+                ]
+              ],
+              "settings": {
+                "nPredict": 128,
+                "temperature": 0,
+                "topP": 0.949999988079071,
+                "topK": 40,
+                "minP": 0.05000000074505806,
+                "repeatPenalty": 1.100000023841858,
+                "repeatLastN": 64,
+                "contextSize": 4096,
+                "nThreads": 2,
+                "gpuLayers": 99,
+                "useMmap": true,
+                "thinking": false,
+                "webSearch": false,
+                "systemPrompt": null
+              },
+              "image_records": [
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ]
+              ],
+              "prepared_dimensions": [
+                [
+                  "1024",
+                  "803",
+                  "ImageDecoder"
+                ]
+              ],
+              "stages": {
+                "bitmap_ns": 29099308,
+                "tokenize_ns": 24789039,
+                "key_ns": 433,
+                "encode_call_ns": 170059870752,
+                "encode_calls": 5,
+                "hits": 0,
+                "verified_hits": 0,
+                "verification": 0,
+                "cache_disabled": 1
+              },
+              "pairing": {
+                "enabled": 0,
+                "pair_calls": 0,
+                "paired_images": 0,
+                "verified_images": 0,
+                "verification": 0
+              },
+              "qkv": {
+                "requested": 0,
+                "verification": 0,
+                "verified_images": 0
+              },
+              "upload_bytes": 15728640,
+              "realized_attention": "enabled"
+            },
+            "sample": {
+              "tokens": 2,
+              "prefill_and_generation_seconds": 191.8110000000015,
+              "prefill_and_generation_tokens_s": 0.010426930676551314,
+              "response": "Dog.",
+              "metrics": {
+                "tokens": 2,
+                "decodeNs": 521907826,
+                "prefillNs": 191288899570,
+                "completed": true,
+                "version": 3,
+                "timingScope": "prefill_synchronized_before_decode",
+                "firstTokenNs": 191289505400,
+                "promptTokens": 538,
+                "reusedPromptTokens": 0
+              },
+              "callbacks": 2,
+              "native_decode_tokens_s": 3.8320942901515336,
+              "strict": {
+                "status": "PASS",
+                "submitted_graphs": 28,
+                "submitted_math_nodes": 15139,
+                "tensor_cpu_fallback": "blocked_by_native_policy",
+                "host_orchestration": "CPU",
+                "physical_gpu_certified": false
+              },
+              "combined": false,
+              "diagnostic": false,
+              "raw_history": [
+                [
+                  "user",
+                  "Arquivo anexado: 1 arquivo(s)\n\nAnexos vinculados a esta mensagem para leitura.\n\nName the main animal in the image. Reply in English."
+                ],
+                [
+                  "assistant",
+                  " Dog."
+                ],
+                [
+                  "user",
+                  "Name the main animal in the image. Reply in English."
+                ],
+                [
+                  "assistant",
+                  " Dog."
+                ]
+              ],
+              "settings": {
+                "nPredict": 128,
+                "temperature": 0,
+                "topP": 0.949999988079071,
+                "topK": 40,
+                "minP": 0.05000000074505806,
+                "repeatPenalty": 1.100000023841858,
+                "repeatLastN": 64,
+                "contextSize": 4096,
+                "nThreads": 2,
+                "gpuLayers": 99,
+                "useMmap": true,
+                "thinking": false,
+                "webSearch": false,
+                "systemPrompt": null
+              },
+              "image_records": [
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ]
+              ],
+              "prepared_dimensions": [
+                [
+                  "1024",
+                  "803",
+                  "ImageDecoder"
+                ]
+              ],
+              "stages": {
+                "bitmap_ns": 28992831,
+                "tokenize_ns": 23589321,
+                "key_ns": 431,
+                "encode_call_ns": 166784720066,
+                "encode_calls": 5,
+                "hits": 0,
+                "verified_hits": 0,
+                "verification": 0,
+                "cache_disabled": 1
+              },
+              "pairing": {
+                "enabled": 0,
+                "pair_calls": 0,
+                "paired_images": 0,
+                "verified_images": 0,
+                "verification": 0
+              },
+              "qkv": {
+                "requested": 0,
+                "verification": 0,
+                "verified_images": 0
+              },
+              "upload_bytes": 15728640,
+              "realized_attention": "enabled"
+            }
+          }
+        },
+        "pss_kib_after": 130210
+      },
+      "after": {
+        "load": {
+          "startup_ns": 20887617937,
+          "qkv": [
+            [
+              "12",
+              "22671360",
+              "22671360",
+              "0"
+            ]
+          ],
+          "pss_kib": 113452
+        },
+        "states": {
+          "asleep": {
+            "warmup": {
+              "tokens": 2,
+              "prefill_and_generation_seconds": 190.30399999998917,
+              "prefill_and_generation_tokens_s": 0.01050950058853263,
+              "response": "Dog.",
+              "metrics": {
+                "tokens": 2,
+                "decodeNs": 527855001,
+                "prefillNs": 189775954085,
+                "completed": true,
+                "version": 3,
+                "timingScope": "prefill_synchronized_before_decode",
+                "firstTokenNs": 189777142151,
+                "promptTokens": 513,
+                "reusedPromptTokens": 0
+              },
+              "callbacks": 2,
+              "native_decode_tokens_s": 3.788919298313137,
+              "strict": {
+                "status": "PASS",
+                "submitted_graphs": 26,
+                "submitted_math_nodes": 14395,
+                "tensor_cpu_fallback": "blocked_by_native_policy",
+                "host_orchestration": "CPU",
+                "physical_gpu_certified": false
+              },
+              "combined": true,
+              "diagnostic": false,
+              "raw_history": [
+                [
+                  "user",
+                  "Arquivo anexado: 1 arquivo(s)\n\nAnexos vinculados a esta mensagem para leitura.\n\nName the main animal in the image. Reply in English."
+                ],
+                [
+                  "assistant",
+                  " Dog."
+                ]
+              ],
+              "settings": {
+                "nPredict": 128,
+                "temperature": 0,
+                "topP": 0.949999988079071,
+                "topK": 40,
+                "minP": 0.05000000074505806,
+                "repeatPenalty": 1.100000023841858,
+                "repeatLastN": 64,
+                "contextSize": 4096,
+                "nThreads": 2,
+                "gpuLayers": 99,
+                "useMmap": true,
+                "thinking": false,
+                "webSearch": false,
+                "systemPrompt": null
+              },
+              "image_records": [
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ]
+              ],
+              "prepared_dimensions": [
+                [
+                  "1024",
+                  "803",
+                  "ImageDecoder"
+                ]
+              ],
+              "stages": {
+                "bitmap_ns": 28845966,
+                "tokenize_ns": 23298028,
+                "key_ns": 370,
+                "encode_call_ns": 165063736957,
+                "encode_calls": 3,
+                "hits": 0,
+                "verified_hits": 0,
+                "verification": 0,
+                "cache_disabled": 1
+              },
+              "pairing": {
+                "enabled": 1,
+                "pair_calls": 2,
+                "paired_images": 4,
+                "verified_images": 0,
+                "verification": 0
+              },
+              "qkv": {
+                "requested": 1,
+                "verification": 0,
+                "verified_images": 0
+              },
+              "upload_bytes": 15728640,
+              "realized_attention": "enabled"
+            },
+            "sample": {
+              "tokens": 2,
+              "prefill_and_generation_seconds": 191.99800000000687,
+              "prefill_and_generation_tokens_s": 0.01041677517474103,
+              "response": "Dog.",
+              "metrics": {
+                "tokens": 2,
+                "decodeNs": 531306822,
+                "prefillNs": 191467033513,
+                "completed": true,
+                "version": 3,
+                "timingScope": "prefill_synchronized_before_decode",
+                "firstTokenNs": 191467619436,
+                "promptTokens": 538,
+                "reusedPromptTokens": 0
+              },
+              "callbacks": 2,
+              "native_decode_tokens_s": 3.764303256019551,
+              "strict": {
+                "status": "PASS",
+                "submitted_graphs": 26,
+                "submitted_math_nodes": 14395,
+                "tensor_cpu_fallback": "blocked_by_native_policy",
+                "host_orchestration": "CPU",
+                "physical_gpu_certified": false
+              },
+              "combined": true,
+              "diagnostic": false,
+              "raw_history": [
+                [
+                  "user",
+                  "Arquivo anexado: 1 arquivo(s)\n\nAnexos vinculados a esta mensagem para leitura.\n\nName the main animal in the image. Reply in English."
+                ],
+                [
+                  "assistant",
+                  " Dog."
+                ],
+                [
+                  "user",
+                  "Name the main animal in the image. Reply in English."
+                ],
+                [
+                  "assistant",
+                  " Dog."
+                ]
+              ],
+              "settings": {
+                "nPredict": 128,
+                "temperature": 0,
+                "topP": 0.949999988079071,
+                "topK": 40,
+                "minP": 0.05000000074505806,
+                "repeatPenalty": 1.100000023841858,
+                "repeatLastN": 64,
+                "contextSize": 4096,
+                "nThreads": 2,
+                "gpuLayers": 99,
+                "useMmap": true,
+                "thinking": false,
+                "webSearch": false,
+                "systemPrompt": null
+              },
+              "image_records": [
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ],
+                [
+                  "64",
+                  "Vulkan"
+                ]
+              ],
+              "prepared_dimensions": [
+                [
+                  "1024",
+                  "803",
+                  "ImageDecoder"
+                ]
+              ],
+              "stages": {
+                "bitmap_ns": 29018247,
+                "tokenize_ns": 24347406,
+                "key_ns": 399,
+                "encode_call_ns": 166525931977,
+                "encode_calls": 3,
+                "hits": 0,
+                "verified_hits": 0,
+                "verification": 0,
+                "cache_disabled": 1
+              },
+              "pairing": {
+                "enabled": 1,
+                "pair_calls": 2,
+                "paired_images": 4,
+                "verified_images": 0,
+                "verification": 0
+              },
+              "qkv": {
+                "requested": 1,
+                "verification": 0,
+                "verified_images": 0
+              },
+              "upload_bytes": 15728640,
+              "realized_attention": "enabled"
+            }
+          }
+        },
+        "pss_kib_after": 133477
+      }
+    }
+  ],
+  "release_approved": false,
+  "model_sha256": "650283ee95856be73ff45fa277ac6a4238b4d1bb52a670983c2e1690fd352a12",
+  "byte_reference_sha256": "ae5ae0009b6ed99d72949f34f7293d498ede28e838267d8cec75036718618680",
+  "reference_attention": "enabled",
+  "code_and_copy": {
+    "stream": "PASS",
+    "history": "PASS"
+  },
+  "result": {
+    "status": "PASS_COMBINED_REGRESSION_GUARDS",
+    "kind": "asleep",
+    "passed": true,
+    "speedup_ratios": [
+      1.028229797034934,
+      1.0120638157729445,
+      0.9990697432990253
+    ],
+    "encoder_speedup_ratios": [
+      1.0370648827223337,
+      1.0181767362260303,
+      1.0015540407786803
+    ],
+    "text": {},
+    "extra_qkv_device_bytes": [
+      22671360,
+      22671360,
+      22671360
+    ],
+    "app_pss_kib": [
+      {
+        "before": 127063,
+        "after": 132122
+      },
+      {
+        "before": 129622,
+        "after": 132219
+      },
+      {
+        "before": 130210,
+        "after": 133477
+      }
+    ],
+    "chat_startup_ns": [
+      {
+        "before": 22280927308,
+        "after": 21938757785
+      },
+      {
+        "before": 22066807058,
+        "after": 22293547632
+      },
+      {
+        "before": 22053896431,
+        "after": 20887617937
+      }
+    ],
+    "release_approved": false,
+    "scope": "Three paired warmed runs of the same APK and full workload. Any consistently positive awake image/encoder gain counts. Regression controls allow at most 3% per observation and require nonnegative medians. Byte reference and actual attention policy required. PSS is not peak/total GPU memory. Unsupported projectors and a generally safe activation policy still need separate review; not a release certificate."
+  },
+  "scope": "Opt-in batch2+QKV, stock RGB packing, same APK/GGUF/settings. Dedicated full byte reference before any benchmarks. Three AB/BA/AB warmed pairs per workload. Cache disabled for encoder timing, enabled for cache regressions. Observed app PSS is not total device/peak GPU memory. Software Vulkan only; not general release approval."
+}

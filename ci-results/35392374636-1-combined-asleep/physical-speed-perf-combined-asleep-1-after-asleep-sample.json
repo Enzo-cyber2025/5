@@ -1,0 +1,89 @@
+{
+  "tokens": 2,
+  "prefill_and_generation_seconds": 189.62900000000081,
+  "prefill_and_generation_tokens_s": 0.010546910019037127,
+  "response": "Dog.",
+  "metrics": {
+    "tokens": 2,
+    "decodeNs": 525884075,
+    "prefillNs": 189103554100,
+    "completed": true,
+    "version": 3,
+    "timingScope": "prefill_synchronized_before_decode",
+    "firstTokenNs": 189104212128,
+    "promptTokens": 538,
+    "reusedPromptTokens": 0
+  },
+  "callbacks": 2,
+  "native_decode_tokens_s": 3.8031195373238864,
+  "chat": {
+    "id": "1a0b665bc5a97bc98",
+    "title": "GGUF regression 1a0b665bc5a97bc98",
+    "modelPath": "/data/user/0/com.ggufchat.app/files/models/1789765523225_external-one.gguf",
+    "mmprojPath": "/data/user/0/com.ggufchat.app/files/models/1789765523225_external-one.gguf",
+    "createdAt": 1789766515802,
+    "updatedAt": 1789766968607,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Arquivo anexado: 1 arquivo(s)\n\nAnexos vinculados a esta mensagem para leitura.\n\nName the main animal in the image. Reply in English.",
+        "ts": 1789766572741,
+        "thinking": false
+      },
+      {
+        "role": "assistant",
+        "content": " Dog.",
+        "ts": 1789766764461,
+        "thinking": false,
+        "generationMetrics": {
+          "tokens": 2,
+          "decodeNs": 525365348,
+          "prefillNs": 190541501633,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 190542375644,
+          "promptTokens": 513,
+          "reusedPromptTokens": 0
+        }
+      },
+      {
+        "role": "user",
+        "content": "Name the main animal in the image. Reply in English.",
+        "ts": 1789766778342,
+        "thinking": false
+      },
+      {
+        "role": "assistant",
+        "content": " Dog.",
+        "ts": 1789766968607,
+        "thinking": false,
+        "generationMetrics": {
+          "tokens": 2,
+          "decodeNs": 525884075,
+          "prefillNs": 189103554100,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 189104212128,
+          "promptTokens": 538,
+          "reusedPromptTokens": 0
+        }
+      }
+    ],
+    "nPredict": 128,
+    "temperature": 0,
+    "topP": 0.949999988079071,
+    "topK": 40,
+    "minP": 0.05000000074505806,
+    "repeatPenalty": 1.100000023841858,
+    "repeatLastN": 64,
+    "contextSize": 4096,
+    "nThreads": 2,
+    "gpuLayers": 99,
+    "useMmap": true,
+    "thinking": false,
+    "webSearch": false,
+    "systemPrompt": null
+  }
+}
