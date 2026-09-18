@@ -1,0 +1,23 @@
+{
+  "status": "WAIT_GAIN_NOT_MET",
+  "gain_passed": false,
+  "kind": "images",
+  "performance": {
+    "first_ui_speedup_ratios": [
+      0.9933414486944652,
+      0.9974293157302848
+    ],
+    "encoder_speedup_ratios": [
+      0.9919302908080314,
+      0.9958182094902122
+    ]
+  },
+  "worker_cpu_speedup_ratios": [
+    0.9373789827022765,
+    1.0007078129894083
+  ],
+  "median_worker_cpu_ratio": 0.9690433978458424,
+  "physical_gpu_certified": false,
+  "release_approved": false,
+  "scope": "Same APK polling versus default blocking; all model tensor math remains on selected Vulkan backend. Warmed full work, no precision/budget changes. Text: each awake >=10%, median >=15%, sleep/first-text regression guards. Images: encoder and first-UI >=10% in both pairs. Worker CPU time lower in each awake pair. Not release/all-model/physical-device certification."
+}
