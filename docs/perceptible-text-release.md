@@ -107,3 +107,13 @@ Os gates de imagens e texto do payload 2b44 foram recalculados novamente:
 imagens aprovadas, texto abaixo do critério. Nenhum limite foi relaxado, nenhuma
 chave persistente foi criada, nenhum APK final foi assinado ou liberado. O APK
 original permanece byte a byte intacto.
+
+
+## Decisão posterior autorizada: ganho pequeno consistente é válido
+
+Em 18/09/2026, o usuário autorizou explicitamente qualquer ganho estável. A
+política original acima não foi modificada: o resultado +9,49% continua abaixo
+de +15%. A nova política separada `user-stable-observed-v1` aprovou os três pares
+positivos do payload 2b44, com qualidade preservada e controles de regressão.
+A entrega foi assinada sem modificar seu conteúdo não relacionado à assinatura.
+Veja [a decisão atual e suas limitações](stable-speed-delivery.md).

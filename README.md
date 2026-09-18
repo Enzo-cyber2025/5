@@ -1,3 +1,26 @@
+# Entrega atual nesta sessão: ganhos consistentes observados
+
+**[APK assinado — GGUF-Chat-acelerado.apk](entrega/GGUF-Chat-acelerado.apk)** · 51.128.050 bytes · sem ZIP.
+
+Após autorização explícita para aceitar ganhos menores: texto com tela ligada
+**+9,49% mediano** (três pares positivos), primeiro texto **30,95% menos espera**;
+reativação de imagens retidas **7,34× / 7,40× mais rápida**. Medições em emulador
+Vulkan, não garantia para todo aparelho ou ganho equivalente em imagens novas.
+Nenhum modelo, conteúdo ou orçamento de saída foi reduzido. Experimentos sem
+benefício consistente não foram acrescentados.
+
+**Nova assinatura:** não desinstale a versão antiga sem preservar conversas,
+anexos e modelos fora do app. Não é uma atualização compatível com o certificado
+antigo. Nenhum dado do usuário foi apagado.
+
+[Critério autorizado, resultados completos e limitações](docs/stable-speed-delivery.md).
+O teste anterior continua reprovado no limiar de +15%; não foi rebatizado como
+aprovado. Esta entrega usa uma política separada autorizada pelo usuário.
+
+---
+
+## Entregas anteriores (histórico)
+
 # GGUF Chat — resposta pronta com a tela apagada
 
 ## [Baixar APK — sem ZIP](https://raw.githubusercontent.com/Enzo-cyber2025/5/f189650ded443bfcdf9f3438c188e1bfde2d9fe9/.delivery/GGUF-Chat-mobile.apk)

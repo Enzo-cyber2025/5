@@ -41,3 +41,20 @@ Assim o candidato medido não precisa ser modificado depois para ativar a mudan�
 - APK só é candidato, não entrega aprovada. Testes em Vulkan por software não
   certificam aceleração em GPU física. Uma hipótese que falhar permanece fora
   do build normal; não diminuir os limites depois de ver resultados.
+
+
+## Resultado: rejeitado, inclusive pelo critério posterior de ganho pequeno
+
+Run 35378808404, fonte e0709c2. Compilação, funcionalidade, respostas completas,
+rotas estritas, contagens de grafos/nós e código/Copy passaram. Ambos os gates
+numéricos falharam intencionalmente: texto ON mediano −1,24%, espera de imagens
+ligeiramente pior nos dois pares. CPU da thread geradora tampouco caiu de forma
+consistente. Portanto, a hipótese de benefício não se confirmou; **não faz
+parte do APK entregue**. O build normal continua sem aplicar esse patch.
+
+Os relatórios completos foram recuperados do HTML público, em commits
+imutáveis, depois da expiração da conexão. O leitor foi validado contra bytes
+previamente recuperados por Git autenticado; hashes/prefixos e proveniência
+constam em `.delivery/vulkan-wait-rejected.json`. Os gates foram recomputados
+localmente. Essa recuperação não é um fetch Git autenticado nem download do
+binário experimental.
