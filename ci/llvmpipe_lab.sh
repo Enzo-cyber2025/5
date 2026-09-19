@@ -31,6 +31,7 @@ if [[ ! -d "$SRC/.git" ]]; then
   git clone --depth 1 --branch v0.4.1 https://github.com/ggml-org/llama.cpp "$SRC"
 fi
 test "$(git -C "$SRC" rev-parse HEAD)" = "$PIN"
+echo "# llvmpipe host lab $(date -u +%FT%TZ) [flags: $lab_flags patches: $lab_patches]" > "$LAB/table.md"
 
 if [[ ! -f "$MODEL" ]]; then
   mkdir -p "$(dirname "$MODEL")"
@@ -108,7 +109,7 @@ run_ceiling() { # CPU Vulkan compute ceiling: is a 2-3x kernel win possible here
   local dir=ci/lab_compute
   mkdir -p "$LAB/ceiling"
   local ok=1 pattern block
-  for pattern in 0 1 2 3 4 5 6; do
+  for pattern in 0 1 2 3 4 5 6 7 8 9 10; do
     glslc -fshader-stage=comp -DPATTERN=$pattern -o "$LAB/ceiling/p$pattern.spv" "$dir/ceiling.comp" \
       >> "$LAB/ceiling-build.log" 2>&1 || ok=0
   done
@@ -121,9 +122,15 @@ run_ceiling() { # CPU Vulkan compute ceiling: is a 2-3x kernel win possible here
   fi
   : > "$LAB/ceiling.txt"
   # 0 vec4 fma | 1 scalar fma | 2 horizontal dot | 3 unpack+dot | 4 unpack+accumulate
-  # 5 vec4 fma + barrier per iteration | 6 vec4 fma + shared round trip per iteration
-  for pattern in 0 1 2 3 4 5 6; do
-    local macs=4; [[ $pattern == 1 ]] && macs=1
+  # 5 fma + barrier per iteration | 6 fma + shared round trip per iteration
+  # 7 four independent accumulators | 8 loads only | 9 pure ALU | 10 chained fma
+  local pattern macs
+  for pattern in 0 1 2 3 4 5 6 7 8 9 10; do
+    macs=4
+    case $pattern in
+      1) macs=1;;
+      7|9|10) macs=4;;
+    esac
     for block in 8 32 128; do
       local spec groups inner
       for spec in "512 128" "8192 128"; do
@@ -143,8 +150,10 @@ run_ceiling() { # CPU Vulkan compute ceiling: is a 2-3x kernel win possible here
   done
   cp "$LAB/ceiling.txt" evidence/physical-llvmpipe-ceiling.txt
   printf '### compute ceiling (llvmpipe)\n' >> "$LAB/table.md"
-  grep -E 'pattern=(0|4|5|6) block=32 ' "$LAB/ceiling.txt" | head -8 >> "$LAB/table.md"
-  grep '^scaling ' "$LAB/ceiling.txt" | head -5 >> "$LAB/table.md"
+  # No pipe into head here: head exits early, grep dies of SIGPIPE and pipefail
+  # turns that into a silent lab failure. The published evidence keeps every line.
+  { grep -E 'pattern=(0|7|8|9|10) block=32 ' "$LAB/ceiling.txt" >> "$LAB/table.md" || true; }
+  { grep '^scaling ' "$LAB/ceiling.txt" >> "$LAB/table.md" || true; }
   return 0
 }
 
@@ -173,10 +182,24 @@ generate_fixture() { # generate_fixture <bin> <label>
   printf '### greedy-%s exit=%s bytes=%s\n' "$label" "$rc" "$(wc -c < "$LAB/greedy-$label.tail")" | tee -a "$LAB/table.md"
 }
 
+publish_lab_evidence() {
+  mkdir -p evidence
+  cp "$LAB/table.md" evidence/physical-llvmpipe-lab.txt
+  [[ -f "$LAB/ceiling.txt" ]] && cp "$LAB/ceiling.txt" evidence/physical-llvmpipe-ceiling.txt
+  [[ -f evidence/physical-llvmpipe-features.txt ]] || true
+  return 0
+}
+
 echo "phase: device probe"
 run_device_probe
 echo "phase: compute ceiling"
 run_ceiling
+if [[ "${LAB_SKIP_BUILD:-0}" == 1 ]]; then
+  echo "probe-only run: no llama.cpp build, no bench"
+  printf '### probe-only run: device probe and ceiling only, no llama.cpp bench\n' >> "$LAB/table.md"
+  publish_lab_evidence
+  exit 0
+fi
 echo "phase: spirv-headers"
 ensure_spirv_headers
 echo "phase: build patched source"
@@ -206,11 +229,10 @@ run() { # run <label> [env assignments...] -- extra bench args
   local rc=${PIPESTATUS[0]}
   set -e
   echo "(exit $rc)" >> "$LAB/table.md"
-  grep -E '^[|]' "$LAB/$label.log" | tail -4 >> "$LAB/table.md"
+  { grep -E '^[|]' "$LAB/$label.log" | tail -4 >> "$LAB/table.md" || true; }
   echo
 }
 
-echo "# llvmpipe host lab $(date -u +%FT%TZ) [flags: $lab_flags patches: $lab_patches]" > "$LAB/table.md"
 
 if [[ -n "$CTRL_BENCH" ]]; then
   run gpu-control  "$CTRL_BENCH" "${COMMON[@]}" -r 2 -ngl 99
@@ -232,7 +254,7 @@ if [[ -n "$CTRL_BENCH" ]]; then
     printf 'greedy text identical: YES\n' | tee -a "$LAB/table.md"
   else
     printf 'greedy text identical: NO\n' | tee -a "$LAB/table.md"
-    diff "$LAB/greedy-control.tail" "$LAB/greedy-variant.tail" | head -20 | tee -a "$LAB/table.md" || true
+    { diff "$LAB/greedy-control.tail" "$LAB/greedy-variant.tail" || true; } | sed -n '1,20p' | tee -a "$LAB/table.md" || true
   fi
 fi
 run gpu-no-multi-add   env GGML_VK_DISABLE_MULTI_ADD=1 "$BENCH" "${QUICK[@]}" -ngl 99
@@ -263,13 +285,12 @@ fi
 # publisher's allow-list, so these numbers reach the session branch even though
 # Actions log and artifact downloads are not reachable from every client.
 mkdir -p evidence
-cp "$LAB/table.md" evidence/physical-llvmpipe-lab.txt
 {
   echo "# backend decisions actually taken by the measured device"
   echo "spirv-headers dir: ${SPIRV_HEADERS_DIR:-unset}"
   for log in "$LAB"/gpu-*.log; do
     [[ -f "$log" ]] || continue
-    grep -h -E 'GGUF_VK_ROW_TILE|GGUF_VK_DMMV|use_subgroups|GGML_VK_' "$log" | head -4 | sed "s|^|$(basename "$log"): |"
+    { grep -h -E 'GGUF_VK_ROW_TILE|GGUF_VK_DMMV|use_subgroups|GGML_VK_' "$log" || true; } | sed -n "1,4p" | sed "s|^|$(basename "$log"): |"
   done
 } > evidence/physical-llvmpipe-knobs.txt 2>/dev/null || true
 {
@@ -277,10 +298,10 @@ cp "$LAB/table.md" evidence/physical-llvmpipe-lab.txt
   echo "compile flags: [$lab_flags] patches: [$lab_patches]"
   echo
   echo "--- variant ---"
-  grep -E 'GFLOPS|Total time' "$LAB/profile.stderr.log" 2>/dev/null | tail -40
+  { grep -E 'GFLOPS|Total time' "$LAB/profile.stderr.log" 2>/dev/null || true; } | sed -n '1,60p'
   if [[ -n "$CTRL_BENCH" ]]; then
     echo "--- control ---"
-    grep -E 'GFLOPS|Total time' "$LAB/profile-control.stderr.log" 2>/dev/null | tail -40
+    { grep -E 'GFLOPS|Total time' "$LAB/profile-control.stderr.log" 2>/dev/null || true; } | sed -n '1,60p'
   fi
 } > evidence/physical-llvmpipe-lab-profile.txt
 wc -c evidence/physical-llvmpipe-lab.txt evidence/physical-llvmpipe-lab-profile.txt

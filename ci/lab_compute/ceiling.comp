@@ -8,6 +8,12 @@
 //   5 vec4 accumulator plus one workgroup barrier per iteration
 //   6 vec4 accumulator plus a shared-memory round trip and two barriers per
 //     iteration (the shape the k-quant and shmem-reduction DMMV shaders use)
+//   7 one load plus four independent scalar accumulators (ILP 4)
+//   8 one load plus four adds into one accumulator (memory bound, no FMA)
+//   9 four independent scalar accumulators and no load at all (pure ALU)
+//  10 one load plus four chained FMAs into one accumulator (latency bound)
+// 0/2/4 measure the shipped loop shapes; 7/9 vs 10 separate instruction level
+// parallelism from plain vector-FMA latency, and 8 bounds the load path.
 // Only linear addressing and power-of-two windows are used, so the measurement
 // is about arithmetic shape and synchronisation cost, not about cache behaviour.
 layout(local_size_x_id = 0, local_size_y = 1, local_size_z = 1) in;
@@ -34,6 +40,7 @@ void main() {
 
     vec4 acc = vec4(0.0);
     float sacc = 0.0;
+    float a0 = 0.0, a1 = 0.0, a2 = 0.0, a3 = 0.0;
     const vec4 av = a[gid % n];
 
     for (uint k = 0u; k < p.inner; ++k) {
@@ -61,12 +68,31 @@ void main() {
         barrier();
         acc.y = smem[(tid + 1u) % BLOCK_SIZE];
         barrier();
+#elif PATTERN == 7
+        a0 = fma(av.x, bv.x, a0);
+        a1 = fma(av.y, bv.y, a1);
+        a2 = fma(av.z, bv.z, a2);
+        a3 = fma(av.w, bv.w, a3);
+#elif PATTERN == 8
+        sacc += (bv.x + bv.y) + (bv.z + bv.w);
+#elif PATTERN == 9
+        a0 = fma(av.x, av.y, a0);
+        a1 = fma(av.y, av.z, a1);
+        a2 = fma(av.z, av.w, a2);
+        a3 = fma(av.w, av.x, a3);
+#elif PATTERN == 10
+        sacc = fma(av.x, bv.x, sacc);
+        sacc = fma(av.y, bv.y, sacc);
+        sacc = fma(av.z, bv.z, sacc);
+        sacc = fma(av.w, bv.w, sacc);
 #else
 #error unknown PATTERN
 #endif
     }
 #if PATTERN == 0 || PATTERN == 4 || PATTERN == 5 || PATTERN == 6
     o[gid] = (acc.x + acc.y) + (acc.z + acc.w);
+#elif PATTERN == 7 || PATTERN == 9
+    o[gid] = (a0 + a1) + (a2 + a3);
 #else
     o[gid] = sacc;
 #endif

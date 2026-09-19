@@ -62,6 +62,10 @@ jobs:
           LAB_PATCHES: ${{ steps.patches.outputs.list }}
         run: python3 ci/llvmpipe_lab_patches.py
       - name: Run the lab
+        env:
+          # [lab-probe] skips both llama.cpp builds and publishes only the
+          # device probe and the compute ceiling sweep.
+          LAB_SKIP_BUILD: ${{ contains(github.event.head_commit.message, '[lab-probe]') && '1' || '0' }}
         run: bash ci/log_step.sh lab bash ci/llvmpipe_lab.sh
       - uses: actions/upload-artifact@v4
         if: always()
