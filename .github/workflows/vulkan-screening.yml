@@ -139,8 +139,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        label: [row4, row8, row16, large, row4large]
+        label: [row2, row4, row8, row16, large, row2large, row4large]
         include:
+          - label: row2
+            lever: '{"GGUF_VK_ROW_TILE":"2"}'
           - label: row4
             lever: '{"GGUF_VK_ROW_TILE":"4"}'
           - label: row8
@@ -149,6 +151,8 @@ jobs:
             lever: '{"GGUF_VK_ROW_TILE":"16"}'
           - label: large
             lever: '{"GGUF_VK_DMMV_LARGE":"1"}'
+          - label: row2large
+            lever: '{"GGUF_VK_ROW_TILE":"2","GGUF_VK_DMMV_LARGE":"1"}'
           - label: row4large
             lever: '{"GGUF_VK_ROW_TILE":"4","GGUF_VK_DMMV_LARGE":"1"}'
     steps:

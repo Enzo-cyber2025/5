@@ -252,3 +252,55 @@ def test_workflow_measures_both_predeclared_factors_in_both_states():
     assert "'[row tile]'" in (ROOT/'.github/workflows/mobile.yml').read_text()
     assert 'GGUF_ROW_TILE_TEST_IMPORT' in (ROOT/'scripts/build_gpu_rate_observer.sh').read_text()
     assert 'GGUF_EXPERIMENT_ROW_TILE "Build opt-in unchanged-precision Vulkan row grouping" OFF' in (ROOT/'apk-fix/native/CMakeLists.txt').read_text()
+
+
+def screening_fixture():
+    import json as _json
+    from evaluate_screening import evaluate as evaluate_screening
+    import test_row_tile as self_module
+    base = self_module.fixture(4)
+    s = dict(status='COMPLETE_SCREENING', screening_only=True, release_approved=False, state='awake',
+             label='row4', configuration=dict(ENV, GGUF_VK_ROW_TILE='4'), baseline_environment=dict(ENV),
+             model_sha256=base['model_sha256'], build=base['build'], pairs=[])
+    for i in range(2):
+        order = ['off', 'on'] if i % 2 == 0 else ['on', 'off']
+        pair = {'order': order}; s['pairs'].append(pair)
+        for arm in ('off', 'on'):
+            r = copy.deepcopy(base['pairs'][0]['candidate'])
+            r['vulkan_environment'] = dict(ENV) if arm == 'off' else s['configuration']
+            step = 300000000 if arm == 'off' else 150000000
+            for stage in ('warmup', 'sample'):
+                row = r[stage]; row['callback_times_ns'] = [1000000000+j*step for j in range(128)]
+                row['interval_ns'] = 127*step
+            pair[arm] = r
+    return s
+
+
+def test_screening_is_discovery_only_and_still_fails_closed():
+    from evaluate_screening import evaluate as evaluate_screening
+    s = screening_fixture(); r = evaluate_screening(s)
+    assert r['status'] == 'SCREENING_ONLY_NOT_ACCEPTANCE' and not r['release_approved'] and not r['physical_gpu_certified']
+    assert r['both_pairs_faster'] and r['median_paired_ratio'] > 1.5
+    # A screening run must never claim either acceptance flag, even when faster.
+    for mutate in (lambda x: x.update(release_approved=True),
+                   lambda x: x.update(status='COMPLETE_ROW_TILE_OBSERVATIONS'),
+                   lambda x: x['pairs'][0]['on'].update(test_apk_sha256='f'*64),
+                   lambda x: x['pairs'][0]['on'].update(vulkan_environment=dict(ENV)),
+                   lambda x: x['pairs'][0]['on'].update(native_per_token_callbacks=False),
+                   lambda x: x['pairs'][0]['on']['sample'].update(native_tokens=127),
+                   lambda x: x['pairs'][0]['on']['sample'].update(response='different'),
+                   lambda x: x['pairs'][0]['on']['settings'].update(context=4096),
+                   lambda x: x.update(baseline_environment={'GGUF_VK_ROW_TILE': '4'})):
+        broken = screening_fixture(); mutate(broken)
+        with pytest.raises(AssertionError): evaluate_screening(broken)
+
+
+def test_screening_workflow_covers_parallelism_both_ways_and_needs_the_marker():
+    workflow = (ROOT/'.github/workflows/vulkan-screening.yml').read_text()
+    for label in ('row2', 'row4', 'row8', 'row16', 'large', 'row2large', 'row4large'):
+        assert label in workflow
+    assert 'GGUF_VK_DMMV_LARGE' in workflow and 'GGUF_VK_ROW_TILE' in workflow
+    assert "contains(github.event.head_commit.message, '[screen]')" in workflow
+    assert 'evaluate_screening.py' in workflow and 'screen_row_grouping_android.py' in workflow
+    assert 'screening-payload-not-release' in workflow
+    assert "contains(github.event.head_commit.message, '[row tile measure]')" in (ROOT/'.github/workflows/row-tile.yml').read_text()

@@ -26,7 +26,7 @@ concurrency:
 jobs:
   build-and-host-regressions:
     # Delivery reuses the exact signed APK from a completed successful test.
-    if: ${{ !contains(github.event.head_commit.message, '[apk delivery]') && !contains(github.event.head_commit.message, '[mobile]') && !contains(github.event.head_commit.message, '[signed mobile]') && !contains(github.event.head_commit.message, '[latency candidate]') }}
+    if: ${{ !contains(github.event.head_commit.message, '[apk delivery]') && !contains(github.event.head_commit.message, '[mobile]') && !contains(github.event.head_commit.message, '[signed mobile]') && !contains(github.event.head_commit.message, '[latency candidate]') && !contains(github.event.head_commit.message, '[screen]') && !contains(github.event.head_commit.message, '[row tile measure]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -74,7 +74,7 @@ jobs:
           if-no-files-found: error
 
   android-integration:
-    if: ${{ github.event_name == 'push' || inputs.run_android }}
+    if: ${{ inputs.run_android || (github.event_name == 'push' && !contains(github.event.head_commit.message, '[screen]') && !contains(github.event.head_commit.message, '[row tile measure]')) }}
     needs: build-and-host-regressions
     runs-on: ubuntu-latest
     timeout-minutes: 45

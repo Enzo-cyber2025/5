@@ -74,9 +74,15 @@ def test_default_native_body_unchanged_by_experiment():
     # Native body at 3608876; independent of shallow CI checkout depth.
     before_sha='262c18ffe625f5a281d37e65b8715bb0555c49d08d5810f51e6bd3fd16c5da5b'
     current=(ROOT/'apk-fix/native/mobile.cpp').read_text()
+    # Any top-level single #else guard of an opt-in experiment macro must keep
+    # its #else branch byte-identical to the shipped body, not only media prefix.
+    def opens(line):
+        text=line.strip()
+        return (text.startswith('#ifdef GGUF_EXPERIMENT_') or
+                (text.startswith('#if defined(GGUF_EXPERIMENT_') and text.endswith(')')))
     lines=[];inside=False;keep=True
     for line in current.splitlines(keepends=True):
-        if line.strip()=='#ifdef GGUF_EXPERIMENT_MEDIA_PREFIX':
+        if opens(line):
             assert not inside;inside=True;keep=False
         elif inside and line.strip()=='#else':keep=True
         elif inside and line.strip()=='#endif':inside=False;keep=True

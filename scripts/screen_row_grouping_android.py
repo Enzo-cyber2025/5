@@ -1,29 +1,29 @@
 #!/usr/bin/env python3
-"""Screening only: A/B the candidate APK's own configurations on one emulator.
+"""Screening only: A/B the SAME candidate APK with itself, one lever at a time.
 
-This is discovery, not acceptance. It never approves a release and never
-replaces the historical/delivered protocol in scripts/test_row_tile_android.py.
+Both arms install the identical APK; only the environment differs. Discovery,
+never acceptance: the accepted protocol in scripts/test_row_tile_android.py is
+the one that compares against the pre-acceleration and delivered APKs.
 """
 import json
 import os
 import sys
 import traceback
 import test_expanded_weights_android as harness
+from test_row_tile_android import candidate_metadata
 from evaluate_row_tile import ENV, MODEL
 
 
 def main(state, label):
     assert state in ('awake', 'asleep')
     config = json.loads(os.environ['SCREEN_ENV'])
-    assert config != ENV, 'Screening baseline must leave the build at its own defaults'
-    harness.NAME = 'screen'; harness.ON = config
+    assert config != ENV and 'GGUF_VK_ROW_TILE' in config or 'GGUF_VK_DMMV_LARGE' in config, config
+    harness.NAME = 'screen'; harness.ON = config; harness.candidate_metadata = candidate_metadata
     d = harness.Android('emulator-5554', harness.E)
     build = json.loads((harness.BUILD/'build.json').read_text())
     assert build['experiment']['default_enabled'] is False and build['experiment']['release_approved'] is False
-    # Both arms are the same candidate APK: one with this build's defaults, one with the lever.
-    build = dict(build); build['payloads'] = {name: dict(build['payloads']['candidate']) for name in ('before', 'candidate')}
     s = dict(status='FAIL', state=state, label=label, screening_only=True, release_approved=False,
-             configuration=config, model_sha256=harness.sha(harness.TEXT), pairs=[], build=build)
+             configuration=config, baseline_environment=ENV, model_sha256=harness.sha(harness.TEXT), pairs=[], build=build)
     def save():
         (harness.E/'summary.json').write_text(json.dumps(s, indent=2, ensure_ascii=False))
     try:
@@ -33,19 +33,13 @@ def main(state, label):
         d.adb('install', '-r', '-t', harness.BUILD/'observer.apk', timeout=180)
         d.adb('push', harness.TEXT, '/data/local/tmp/gpu-rate.gguf', timeout=180)
         assert d.shell('sha256sum /data/local/tmp/gpu-rate.gguf').split()[0] == MODEL
-        reference = {}
         for i in range(2):
-            pair = {'order': ['before', 'candidate'] if i % 2 == 0 else ['candidate', 'before']}; s['pairs'].append(pair)
-            for phase in pair['order']:
-                env = ENV if phase == 'before' else config
-                pair[phase] = harness.observation(d, s, phase, state, f'{i+1}-{phase}-{state}', env)
+            order = ['off', 'on'] if i % 2 == 0 else ['on', 'off']
+            pair = {'order': order}; s['pairs'].append(pair)
+            for arm in order:
+                env = ENV if arm == 'off' else config
+                pair[arm] = harness.observation(d, s, 'candidate', state, f'{i+1}-{arm}-{state}', env)
                 save()
-                for stage in ('warmup', 'sample'):
-                    key = tuple(pair[phase][stage][field] for field in ('prompt', 'prompt_token_ids', 'response', 'chunks'))
-                    if stage in reference:
-                        assert reference[stage] == key, 'Screening arms produced different output'
-                    else:
-                        reference[stage] = key
         s['status'] = 'COMPLETE_SCREENING'
     except Exception:
         s['status'] = 'FAIL'; (harness.E/f'physical-screen-{label}-failure.txt').write_text(traceback.format_exc()); raise
