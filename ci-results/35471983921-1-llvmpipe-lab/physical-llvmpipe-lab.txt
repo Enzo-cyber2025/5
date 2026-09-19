@@ -1,0 +1,17 @@
+# llvmpipe host lab 2026-09-19T21:59:18Z [flags:  patches: dmmv_accum_lab_patches]
+shaderFloat16 = true
+subgroupSize = 8
+subgroupArithmetic = true
+subgroupShuffle = true
+subgroupClustered = true
+subgroupSizeControl = true
+computeFullSubgroups = true
+maxComputeWorkGroupInvocations = 1024
+maxComputeWorkGroupSize = (1024,1024,1024)
+### compute ceiling (llvmpipe)
+scaling device=llvmpipe (LLVM 20.1.2, 256 bits) driver_version=104865800 block=32 groups=1 inner=256 macs_per_iter=4.0 reps=3 ms=0.102 gmacs_per_s=0.107 gpairs_per_s=0.027
+scaling device=llvmpipe (LLVM 20.1.2, 256 bits) driver_version=104865800 block=32 groups=8 inner=256 macs_per_iter=4.0 reps=3 ms=0.212 gmacs_per_s=0.412 gpairs_per_s=0.103
+scaling device=llvmpipe (LLVM 20.1.2, 256 bits) driver_version=104865800 block=32 groups=512 inner=256 macs_per_iter=4.0 reps=3 ms=8.284 gmacs_per_s=0.675 gpairs_per_s=0.169
+scaling device=llvmpipe (LLVM 20.1.2, 256 bits) driver_version=104865800 block=32 groups=8192 inner=256 macs_per_iter=4.0 reps=3 ms=119.343 gmacs_per_s=0.750 gpairs_per_s=0.187
+scaling device=llvmpipe (LLVM 20.1.2, 256 bits) driver_version=104865800 block=32 groups=65536 inner=256 macs_per_iter=4.0 reps=3 ms=950.901 gmacs_per_s=0.753 gpairs_per_s=0.188
+### probe-only run: device probe and ceiling only, no llama.cpp bench
