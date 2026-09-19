@@ -195,6 +195,23 @@ outra GPU.
   no `git push`). Os commits ficam locais até a reconexão; nada é perdido e o
   APK entregue não é tocado.
 
+### Incidente de cache de build (encontrado e corrigido)
+
+A triagem 35456005328 falhou nos sete jobs com `Ambiguous or missing native row
+grouping`. O log nativo do braço OFF mostrava o **formato antigo** da linha de
+configuração (sem `large=`), ou seja, o APK medido não correspondia ao código
+do commit: o job restaurou objetos nativos compilados de uma execução anterior
+e o CMake não recompilou o arquivo alterado, porque os objetos restaurados
+tinham mtime mais novo que as fontes.
+
+Correções: (1) chave de cache passa a incluir o hash de
+`apk-fix/native/**`, `apk-fix/*.py` e `ci/mobile-models.sh`; (2) o build falha
+explicitamente se a biblioteca empacotada não contiver os marcadores
+diagnósticos atuais (`GGUF_ROW_TILE_CALLBACKS`, `large=%u fp16`,
+`lanes=%u activation`, `GGUF_VK_ROW_TILE_PRE`). Assim, um binário desatualizado
+não pode mais ser medido silenciosamente. Nenhuma taxa foi publicada nessa
+execução.
+
 ### Prova de qual pipeline realmente rodou
 
 O log nativo agora registra, na linha de configuração, `large=` (se o lever de

@@ -60,8 +60,8 @@ jobs:
             .cache/llama-mobile
             .cache/mobile/arm64-v8a
             .cache/mobile/x86_64
-          key: native-v041-ndk28-v1-${{ runner.os }}-${{ github.run_id }}
-          restore-keys: native-v041-ndk28-v1-${{ runner.os }}-
+          key: native-v041-ndk28-v2-${{ runner.os }}-${{ hashFiles('apk-fix/native/**', 'apk-fix/*.py', 'ci/mobile-models.sh') }}-${{ github.run_id }}
+          restore-keys: native-v041-ndk28-v2-${{ runner.os }}-
       - name: Compile real native stack and compact UI
         env:
           APKTOOL_JAR: .cache/tools/package/lib/apktool.jar
@@ -75,7 +75,7 @@ jobs:
             .cache/llama-mobile
             .cache/mobile/arm64-v8a
             .cache/mobile/x86_64
-          key: native-v041-ndk28-v1-${{ runner.os }}-${{ github.run_id }}
+          key: native-v041-ndk28-v2-${{ runner.os }}-${{ hashFiles('apk-fix/native/**', 'apk-fix/*.py', 'ci/mobile-models.sh') }}-${{ github.run_id }}
       - name: Real CPU tensor fallback blocked before computation
         run: bash ci/log_step.sh strict-actual-ggml bash scripts/test_strict_vulkan_host.sh
       - name: Exact pixel layout graph and guarded opt-in tests

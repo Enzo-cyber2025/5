@@ -335,3 +335,15 @@ def test_every_workflow_parses_and_has_no_duplicate_job_keys():
             keys = re.findall(r'^    ([a-z][a-z-]*):', block, re.M)
             duplicates = sorted({key for key in keys if keys.count(key) > 1})
             assert not duplicates, f'{workflow.name} job {job} repeats {duplicates}'
+
+
+def test_build_fails_instead_of_measuring_a_stale_native_binary():
+    for name in ('row-tile', 'vulkan-screening'):
+        workflow = (ROOT/f'.github/workflows/{name}.yml').read_text()
+        # Native object cache must be invalidated when native sources change.
+        assert "native-v041-ndk28-v2-${{ runner.os }}-${{ hashFiles('apk-fix/native/**', 'apk-fix/*.py', 'ci/mobile-models.sh') }}" in workflow
+        assert 'restore-keys: native-v041-ndk28-v1' not in workflow
+        # The packaged native library must contain the current diagnostic markers.
+        for marker in ("b'GGUF_VK_ROW_TILE'", "b'GGUF_ROW_TILE_CALLBACKS'", "b'large=%u fp16'",
+                       "b'lanes=%u activation'", "b'GGUF_VK_ROW_TILE_PRE'"):
+            assert marker in workflow, (name, marker)

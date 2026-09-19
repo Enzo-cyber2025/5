@@ -68,8 +68,8 @@ jobs:
             .cache/llama-mobile
             .cache/mobile/arm64-v8a
             .cache/mobile/x86_64
-          key: native-v041-ndk28-v1-${{ runner.os }}-${{ github.run_id }}
-          restore-keys: native-v041-ndk28-v1-${{ runner.os }}-
+          key: native-v041-ndk28-v2-${{ runner.os }}-${{ hashFiles('apk-fix/native/**', 'apk-fix/*.py', 'ci/mobile-models.sh') }}-${{ github.run_id }}
+          restore-keys: native-v041-ndk28-v2-${{ runner.os }}-
       - name: Compile real native stack and compact UI
         env:
           APKTOOL_JAR: .cache/tools/package/lib/apktool.jar
@@ -84,7 +84,7 @@ jobs:
             .cache/llama-mobile
             .cache/mobile/arm64-v8a
             .cache/mobile/x86_64
-          key: native-v041-ndk28-v1-${{ runner.os }}-${{ github.run_id }}
+          key: native-v041-ndk28-v2-${{ runner.os }}-${{ hashFiles('apk-fix/native/**', 'apk-fix/*.py', 'ci/mobile-models.sh') }}-${{ github.run_id }}
       - name: Strict dispatch, row grouping and 3x gate tests
         run: |
           bash ci/log_step.sh strict-host bash scripts/test_strict_vulkan_host.sh
@@ -107,8 +107,11 @@ jobs:
           assert payload(apk)==payload('dist/GGUF-Chat-mobile-unsigned.apk')
           with zipfile.ZipFile(apk) as z:
               for abi in ('x86_64','arm64-v8a'):
-                  assert b'GGUF_VK_ROW_TILE' in z.read('lib/'+abi+'/libaijni.so')
-                  assert b'GGUF_ROW_TILE_CALLBACKS' in z.read('lib/'+abi+'/libaijni.so')
+                  lib=z.read('lib/'+abi+'/libaijni.so')
+                  # Fail the build instead of silently measuring a cached, older binary.
+                  for marker in (b'GGUF_VK_ROW_TILE', b'GGUF_ROW_TILE_CALLBACKS', b'large=%u fp16',
+                                 b'lanes=%u activation', b'GGUF_VK_ROW_TILE_PRE'):
+                      assert marker in lib, (abi, marker)
           r=dict(apk_sha256=hashlib.sha256(apk.read_bytes()).hexdigest(),source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),experimental_row_tile_build=True,target_multiplier=3,predeclared_factors=[4,8],per_token_callbacks=True,default_enabled=False,control='Pre-acceleration 0c45fd2e and exact delivered bd7c45d3; predeclared row factors 4 and 8 only for candidate',release_approved=False)
           Path('.cache/row-tile-export/build.json').write_text(json.dumps(r,indent=2))
           Path('evidence/physical-row-tile-build.json').write_text(json.dumps(r,indent=2))

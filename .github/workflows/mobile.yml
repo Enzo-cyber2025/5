@@ -82,8 +82,8 @@ jobs:
             .cache/llama-mobile
             .cache/mobile/arm64-v8a
             .cache/mobile/x86_64
-          key: native-v041-ndk28-v1-${{ runner.os }}-${{ github.run_id }}
-          restore-keys: native-v041-ndk28-v1-${{ runner.os }}-
+          key: native-v041-ndk28-v2-${{ runner.os }}-${{ hashFiles('apk-fix/native/**', 'apk-fix/*.py', 'ci/mobile-models.sh') }}-${{ github.run_id }}
+          restore-keys: native-v041-ndk28-v2-${{ runner.os }}-
       - name: Compile real native stack and compact UI
         env:
           APKTOOL_JAR: .cache/tools/package/lib/apktool.jar
@@ -97,7 +97,7 @@ jobs:
             .cache/llama-mobile
             .cache/mobile/arm64-v8a
             .cache/mobile/x86_64
-          key: native-v041-ndk28-v1-${{ runner.os }}-${{ github.run_id }}
+          key: native-v041-ndk28-v2-${{ runner.os }}-${{ hashFiles('apk-fix/native/**', 'apk-fix/*.py', 'ci/mobile-models.sh') }}-${{ github.run_id }}
       - name: Existing regressions
         run: bash ci/log_step.sh tooling .venv/bin/python -m pytest -q tests/test_tooling.py tests/test_mobile_build.py tests/test_unified.py tests/test_attachments.py tests/test_inference.py tests/test_physical_gguf.py tests/test_import_progress.py tests/test_compute.py tests/test_single_import_ui.py tests/test_generation_stats.py tests/test_latency.py tests/test_reply_notifications.py tests/test_performance_code.py tests/test_image_import.py tests/test_vulkan_pipeline.py tests/test_strict_vulkan.py
       - name: Real ggml CPU tensor dispatch blocked before math
