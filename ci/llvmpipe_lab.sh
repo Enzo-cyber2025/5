@@ -69,12 +69,27 @@ ensure_spirv_headers() { # ggml's Vulkan CMake asks for SPIRV-Headers explicitly
     rm -rf "$src"
     git clone --depth 1 --branch vulkan-sdk-1.4.357.0 https://github.com/KhronosGroup/SPIRV-Headers "$src"
   fi
-  test "$(git -C "$src" rev-parse HEAD)" = "$pin"
-  if [[ ! -f "$install/share/cmake/SPIRV-Headers/SPIRV-HeadersConfig.cmake" ]]; then
+  local head
+  head=$(git -C "$src" rev-parse HEAD)
+  if [[ "$head" != "$pin" ]]; then
+    echo "SPIRV-Headers pin mismatch: $head != $pin"
+    return 1
+  fi
+  local config
+  config=$(find "$install" -name SPIRV-HeadersConfig.cmake -print -quit 2>/dev/null || true)
+  if [[ -z "$config" ]]; then
     cmake -S "$src" -B .cache/spirv-build -DCMAKE_INSTALL_PREFIX="$PWD/$install" > "$LAB/spirv-cmake.log" 2>&1
     cmake --install .cache/spirv-build >> "$LAB/spirv-cmake.log" 2>&1
+    config=$(find "$install" -name SPIRV-HeadersConfig.cmake -print -quit 2>/dev/null || true)
   fi
-  test -f "$install/share/cmake/SPIRV-Headers/SPIRV-HeadersConfig.cmake"
+  if [[ -z "$config" ]]; then
+    echo "SPIRV-HeadersConfig.cmake not found under $install; last cmake log lines:"
+    tail -20 "$LAB/spirv-cmake.log" || true
+    return 1
+  fi
+  SPIRV_HEADERS_DIR=$(dirname "$config")
+  echo "spirv-headers: $SPIRV_HEADERS_DIR"
+  return 0
 }
 
 run_device_probe() { # subgroup shape and compute limits of the measured device
@@ -139,7 +154,7 @@ build_bench() { # build_bench <src> <build> <flags>
     -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_SERVER=OFF -DLLAMA_CURL=OFF \
     -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_TOOLS=ON -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_CXX_FLAGS="$flags" \
-    -DSPIRV-Headers_DIR="$PWD/.cache/spirv-install/share/cmake/SPIRV-Headers" \
+    -DSPIRV-Headers_DIR="$SPIRV_HEADERS_DIR" \
     -DVulkan_GLSLC_EXECUTABLE="$(command -v glslc)" \
     > "$LAB/$(basename "$build")-cmake.log" 2>&1
   cmake --build "$build" --target llama-bench llama-cli -j "$(nproc)" > "$LAB/$(basename "$build")-build.log" 2>&1
@@ -158,9 +173,13 @@ generate_fixture() { # generate_fixture <bin> <label>
   printf '### greedy-%s exit=%s bytes=%s\n' "$label" "$rc" "$(wc -c < "$LAB/greedy-$label.tail")" | tee -a "$LAB/table.md"
 }
 
+echo "phase: device probe"
 run_device_probe
+echo "phase: compute ceiling"
 run_ceiling
+echo "phase: spirv-headers"
 ensure_spirv_headers
+echo "phase: build patched source"
 build_bench "$SRC" "$BUILD" "$lab_flags"
 BENCH="$BUILD/bin/llama-bench"
 CTRL_BENCH=''
@@ -170,6 +189,7 @@ if [[ -n "$lab_patches" ]]; then
     git clone --depth 1 --branch v0.4.1 https://github.com/ggml-org/llama.cpp "$CTRL_SRC"
   fi
   test "$(git -C "$CTRL_SRC" rev-parse HEAD)" = "$PIN"
+  echo "phase: build pristine control"
   build_bench "$CTRL_SRC" "$CTRL_BUILD" ''
   CTRL_BENCH="$CTRL_BUILD/bin/llama-bench"
 fi
@@ -244,6 +264,14 @@ fi
 # Actions log and artifact downloads are not reachable from every client.
 mkdir -p evidence
 cp "$LAB/table.md" evidence/physical-llvmpipe-lab.txt
+{
+  echo "# backend decisions actually taken by the measured device"
+  echo "spirv-headers dir: ${SPIRV_HEADERS_DIR:-unset}"
+  for log in "$LAB"/gpu-*.log; do
+    [[ -f "$log" ]] || continue
+    grep -h -E 'GGUF_VK_ROW_TILE|GGUF_VK_DMMV|use_subgroups|GGML_VK_' "$log" | head -4 | sed "s|^|$(basename "$log"): |"
+  done
+} > evidence/physical-llvmpipe-knobs.txt 2>/dev/null || true
 {
   echo "host: $(nproc) cpus | $(grep -m1 'model name' /proc/cpuinfo | sed 's/.*: //')"
   echo "compile flags: [$lab_flags] patches: [$lab_patches]"
