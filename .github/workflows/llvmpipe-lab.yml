@@ -31,7 +31,7 @@ jobs:
       - name: Host toolchain and CPU Vulkan driver (disposable runner only)
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y cmake ninja-build build-essential glslc libvulkan-dev vulkan-tools mesa-vulkan-drivers
+          sudo apt-get install -y cmake ninja-build build-essential glslc glslang-tools libvulkan-dev vulkan-tools mesa-vulkan-drivers
       - name: Pinned source and exact fixture, optional kernel patch
         env:
           LAB_PATCHES: ${{ github.event.inputs.lab_patches }}
@@ -46,6 +46,7 @@ jobs:
           retention-days: 14
       - name: Publish lab diagnostics (never a release)
         if: always()
+        continue-on-error: true
         env:
           GGUF_EVIDENCE_VARIANT: llvmpipe-lab
         run: bash ci/publish_evidence.sh

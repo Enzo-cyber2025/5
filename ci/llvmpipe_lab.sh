@@ -110,6 +110,23 @@ GGML_VK_PERF_LOGGER=1 "$BENCH" -m "$MODEL" -p 16 -n 128 -t 2 -b 128 -ub 32 -r 1 
 grep -i -E 'GFLOPS|Total time|Vulkan Timings' "$LAB/profile.stderr.log" | tail -60 | tee "$LAB/profile-ops.txt" || true
 tail -6 "$LAB/profile.stdout.log"
 
+# Bounded machine-readable results. physical-* names are inside the evidence
+# publisher's allow-list, so these numbers reach the session branch even though
+# Actions log and artifact downloads are not reachable from every client.
+mkdir -p evidence
+cp "$LAB/table.md" evidence/physical-llvmpipe-lab.txt
+{
+  echo "host: $(nproc) cpus | $(grep -m1 'model name' /proc/cpuinfo | sed 's/.*: //')"
+  echo "compile flags: [$lab_flags] patches: [$lab_patches]"
+  echo
+  sed -n '/GFLOPS\|Total time/p' "$LAB/profile.stderr.log" 2>/dev/null | tail -50
+} > evidence/physical-llvmpipe-lab-profile.txt
+wc -c evidence/physical-llvmpipe-lab.txt evidence/physical-llvmpipe-lab-profile.txt
+
+# The Checks API annotation channel keeps only the tail of this log, so the table
+# is printed last, after everything else has been written to files.
 echo
 echo "===== table.md ====="
 cat "$LAB/table.md"
+echo "===== profile (tail) ====="
+tail -18 evidence/physical-llvmpipe-lab-profile.txt
