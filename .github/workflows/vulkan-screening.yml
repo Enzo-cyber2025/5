@@ -68,6 +68,10 @@ jobs:
             .cache/mobile/x86_64
           key: native-v041-ndk28-v2-${{ runner.os }}-${{ hashFiles('apk-fix/native/**', 'apk-fix/*.py', 'ci/mobile-models.sh') }}-${{ github.run_id }}
           restore-keys: native-v041-ndk28-v2-${{ runner.os }}-
+      - name: Cached objects must never look newer than the sources
+        # actions/cache restores objects with extraction-time mtimes; without this
+        # Ninja can reuse a stale libaijni.so and the run measures the wrong code.
+        run: find apk-fix/native -type f -exec touch {} +
       - name: Compile real native stack and compact UI
         env:
           APKTOOL_JAR: .cache/tools/package/lib/apktool.jar

@@ -55,8 +55,9 @@ BLOCK = '''#if defined(GGUF_EXPERIMENT_ROW_TILE)
             throw std::runtime_error("GGUF row tile factor exceeds the driver workgroup invocation limit");
         }
     }
-    GGML_LOG_INFO("GGUF_VK_ROW_TILE factor=%u stdq=%u kq=%u stdq_int=%u kq_int=%u q5_rows=%u q8_rows=%u kq_rows=%u fp16=%u int_dot=%u subgroup=%u\\n",
+    GGML_LOG_INFO("GGUF_VK_ROW_TILE factor=%u stdq=%u kq=%u stdq_int=%u kq_int=%u q5_rows=%u q8_rows=%u kq_rows=%u large=%u fp16=%u int_dot=%u subgroup=%u\\n",
         gguf_row_factor, rm_stdq, rm_kq, rm_stdq_int, rm_kq_int, 2*rm_stdq, rm_stdq, rm_kq,
+        uint32_t(getenv("GGUF_VK_DMMV_LARGE") != nullptr),
         uint32_t(device->fp16), uint32_t(device->integer_dot_product), device->subgroup_size);
 #endif
 '''
@@ -68,8 +69,8 @@ DISPATCH_BLOCK = '''#if defined(GGUF_EXPERIMENT_ROW_TILE)
             const unsigned slot = src0->type == GGML_TYPE_Q5_0 ? 0 : src0->type == GGML_TYPE_Q8_0 ? 1 :
                                   src0->type == GGML_TYPE_Q4_K ? 2 : 3;
             std::call_once(gguf_row_seen[slot], [&]() {
-                GGML_LOG_INFO("GGUF_VK_ROW_TILE_DISPATCH type=%s rows=%u activation=%s quantize_y=%u columns=%u\\n",
-                    ggml_type_name(src0->type), dmmv->wg_denoms[0], ggml_type_name(src1->type),
+                GGML_LOG_INFO("GGUF_VK_ROW_TILE_DISPATCH type=%s rows=%u lanes=%u activation=%s quantize_y=%u columns=%u\\n",
+                    ggml_type_name(src0->type), dmmv->wg_denoms[0], dmmv->wg_denoms[1], ggml_type_name(src1->type),
                     uint32_t(quantize_y), uint32_t(ne11));
             });
         }

@@ -347,3 +347,32 @@ def test_build_fails_instead_of_measuring_a_stale_native_binary():
         for marker in ("b'GGUF_VK_ROW_TILE'", "b'GGUF_ROW_TILE_CALLBACKS'", "b'large=%u fp16'",
                        "b'lanes=%u activation'", "b'GGUF_VK_ROW_TILE_PRE'"):
             assert marker in workflow, (name, marker)
+
+
+def test_patched_sources_really_emit_every_packaged_marker_and_field():
+    # The acceptance CI greps the packaged .so for these markers. A silently
+    # failed edit once shipped the old format string, so verify the source too.
+    import subprocess as _subprocess
+    source = ROOT/'.cache/llama-mobile'
+    if not source.exists(): pytest.skip('Pinned upstream absent')
+    rel = 'ggml/src/ggml-vulkan/ggml-vulkan.cpp'
+    original = _subprocess.check_output(['git','-C',str(source),'show','HEAD:'+rel],text=True)
+    from dmmv_large_patches import patch as large_patch
+    patched = large_patch(patch(original))
+    native = (ROOT/'apk-fix/native/mobile.cpp').read_text()
+    emitted = {'GGUF_VK_ROW_TILE': patched, 'GGUF_ROW_TILE_CALLBACKS': native,
+               'large=%u fp16': patched, 'lanes=%u activation': patched, 'GGUF_VK_ROW_TILE_PRE': patched}
+    missing = [marker for marker, text in emitted.items() if marker not in text]
+    assert not missing, f'Sources no longer emit {missing}'
+    for field in ('factor=%u', 'stdq_int=%u', 'kq_rows=%u', 'subgroup=%u'):
+        assert field in patched
+    assert patched.count('uint32_t(getenv("GGUF_VK_DMMV_LARGE") != nullptr)') == 1
+    assert patched.count('dmmv->wg_denoms[1]') == 1
+
+
+def test_build_refreshes_source_times_after_restoring_cached_objects():
+    # GitHub's cache restores objects with extraction-time mtimes, which look
+    # newer than the checked-out sources and made Ninja reuse a stale binary.
+    for name in ('row-tile', 'vulkan-screening'):
+        workflow = (ROOT/f'.github/workflows/{name}.yml').read_text()
+        assert 'find apk-fix/native -type f -exec touch {} +' in workflow, name

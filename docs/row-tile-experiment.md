@@ -234,3 +234,23 @@ aceitação: `ci/evaluate_screening.py` só valida identidade, contagens e saíd
 e nunca aprova release. A hipótese que sobra é **aumentar o paralelismo** (mais
 lanes por linha), coerente com a queda observada ao reduzir grupos de trabalho.
 Nada disso foi medido ainda.
+
+
+### Terceiro incidente: cache restaurou objetos "mais novos" que as fontes
+
+A execução 35458536766 compilou do zero (a chave de cache mudou), então o
+formato emitido ainda era o antigo e a checagem de marcadores falhou no
+empacotamento — corretamente. Duas causas somadas:
+
+1. Uma edição anterior no gerador de patch não encontrou o texto alvo e falhou
+   sem avisar; o código emitido continuou no formato antigo.
+2. O `actions/cache` restaura objetos com mtime do momento da extração, que
+   fica **mais novo** que as fontes recém-clonadas. O Ninja então considera os
+   objetos atualizados e reaproveita um `libaijni.so` antigo.
+
+Correções: verificação de contagem em cada substituição do gerador; teste que
+aplica o patch ao upstream fixado e exige os cinco marcadores e os campos lidos
+pelo avaliador; passo de build que faz `touch` nas fontes nativas depois do
+restore do cache; e a checagem de marcadores no APK empacotado, que agora
+falha o build em vez de medir o binário errado. Nenhuma taxa saiu dessas
+execuções.
