@@ -95,7 +95,8 @@ ensure_spirv_headers() { # ggml's Vulkan CMake asks for SPIRV-Headers explicitly
     tail -20 "$LAB/spirv-cmake.log" || true
     return 1
   fi
-  SPIRV_HEADERS_DIR=$(dirname "$config")
+  # find_package(SPIRV-Headers CONFIG) only accepts an absolute <pkg>_DIR.
+  SPIRV_HEADERS_DIR=$(cd "$(dirname "$config")" && pwd)
   echo "spirv-headers: $SPIRV_HEADERS_DIR"
   return 0
 }
@@ -187,6 +188,7 @@ build_bench() { # build_bench <src> <build> <flags>
     -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_TOOLS=ON -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_CXX_FLAGS="$flags" \
     -DSPIRV-Headers_DIR="$SPIRV_HEADERS_DIR" \
+    -DCMAKE_PREFIX_PATH="$SPIRV_HEADERS_DIR/../../.." \
     -DVulkan_GLSLC_EXECUTABLE="$(command -v glslc)" \
     > "$cmake_log" 2>&1; then
     echo "build failed: cmake configure for $build (tail of $cmake_log)"
