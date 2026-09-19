@@ -9,6 +9,14 @@ MARKER="GGUF_EXPANDED_WEIGHTS";PRECISION="F32";NAME="expanded"
 COMPLETE_STATUS="COMPLETE_EXPANDED_OBSERVATIONS"
 
 
+def candidate_metadata(native):
+    m=re.findall(re.escape(MARKER)+r' enabled=1 tensors=(\d+) extra_device_bytes=(\d+) verification=(\d+) verified_bytes=(\d+) prepare_ns=(\d+) precision='+re.escape(PRECISION)+r' conversion=Vulkan',native)
+    assert len(m)==1,'Missing real expansion proof'
+    x=dict(zip(('tensors','extra_device_bytes','verification','verified_bytes','prepare_ns'),map(int,m[0])))
+    x.update(precision=PRECISION,conversion='Vulkan')
+    return {'expansion':x}
+
+
 def observation(d,s,phase,state,label,env):
     apk=BUILD/(phase+'.apk');assert sha(apk)==s['build']['payloads'][phase]['test_sha256']
     assert d.shell('getprop ro.kernel.qemu')=='1'
@@ -38,11 +46,7 @@ def observation(d,s,phase,state,label,env):
     # it cannot certify a mobile driver's different FP16 matmul policy.
     assert 'fp16: 0' in native and 'llvmpipe' in native
     if PRECISION=='Q8_LOSSLESS':assert 'int dot: 0' in native,'No activation requantization policy changes permitted'
-    if phase=='candidate':
-        m=re.findall(re.escape(MARKER)+r' enabled=1 tensors=(\d+) extra_device_bytes=(\d+) verification=(\d+) verified_bytes=(\d+) prepare_ns=(\d+) precision='+re.escape(PRECISION)+r' conversion=Vulkan',native)
-        assert len(m)==1,'Missing real expansion proof'
-        r['expansion']=dict(zip(('tensors','extra_device_bytes','verification','verified_bytes','prepare_ns'),map(int,m[0])))
-        r['expansion'].update(precision=PRECISION,conversion='Vulkan')
+    if phase=='candidate':r.update(candidate_metadata(native))
     return r
 
 

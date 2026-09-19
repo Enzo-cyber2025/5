@@ -31,7 +31,7 @@ pesos. Não altera arquivo GGUF, precisão dos valores, modelo ou sampling.
 
 Mesmo protocolo de três trios alternados do experimento F32: pré-aceleração
 0c45fd2e, entregue bd7c45d3 e candidato. Mesmos prompts completos, GGUF, 128
-tokens, configurações e GPU real do emulador. Excluir carregamento/prefill/primeiro
+tokens, configurações e Vulkan via llvmpipe no emulador. Excluir carregamento/prefill/primeiro
 token; excluir warmup e TODA a etapa de verificação. Requer **≥2× contra o
 histórico em todos os pares**, sem queda contra o entregue, nos dois estados.
 
@@ -39,3 +39,32 @@ histórico em todos os pares**, sem queda contra o entregue, nos dois estados.
 numérica antes das medições e publica inclusive rejeições. Não aprova release
 nem troca certificado ou APK entregue. GPU física, imagens, memória/inicialização
 e compatibilidade ampla continuam fora da aprovação desta fixture textual.
+
+
+## Resultado final: 35404555171 rejeitado
+
+Compilação nativa e prova de valores passaram; ambos os estados completaram
+observações válidas, mas retornaram **TWO_TIMES_TARGET_NOT_MET**. Fonte
+`568af56a3db44ab28278b6c708754ee9334ff66d`; APK experimental
+`365982a91b5f25b122d7f74db59420ebbe85c478e7d044ecdfe287c4f63c9a72`.
+166 tensores convertidos, 312.311.808 bytes de valores F32 interpretados
+verificados, além de escalas/inteiros; 82.957.824 bytes adicionais de buffers.
+
+| Tela | Histórico T/s mediano | Entregue T/s mediano | Candidato T/s mediano | Ganho pareado mediano vs histórico | vs entregue |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Ligada | 6.969238311 | 6.904573260 | 6.184322713 | -10.318858% | -10.279705% |
+| Apagada | 8.796873054 | 8.871023776 | 8.198547015 | -6.415037% | -7.580599% |
+
+Os seis pares históricos e os seis pares contra o entregue foram regressões.
+Não habilitar nem entregar. Estados em runners diferentes: as taxas absolutas
+não medem o efeito de apagar a tela. Prova fora do tempo; Vulkan por software,
+não a GPU física do telefone. APK entregue intacto.
+
+Após reconexão, evidências recuperadas por Git autenticado no commit
+`186f7f795b820bca682e553c35483864593497db`; ambos os resumos foram reavaliados
+localmente, com igualdade integral aos relatórios publicados. A tentativa
+anterior por página pública não é mais a única fonte disponível.
+
+A nova meta solicitada é **+200% = 3×**. Isso não altera retroativamente os
+relatórios 2× rejeitados. A próxima hipótese separada está documentada em
+[row-tile-experiment.md](row-tile-experiment.md).

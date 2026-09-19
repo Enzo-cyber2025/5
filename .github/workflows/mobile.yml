@@ -28,12 +28,12 @@ concurrency:
   cancel-in-progress: true
 jobs:
   isolated-experiment:
-    if: ${{ contains(github.event.head_commit.message, '[local stream]') || contains(github.event.head_commit.message, '[wait speed]') || contains(github.event.head_commit.message, '[projector combined]') || contains(github.event.head_commit.message, '[media prefix]') || contains(github.event.head_commit.message, '[expanded weights]') }}
+    if: ${{ contains(github.event.head_commit.message, '[local stream]') || contains(github.event.head_commit.message, '[wait speed]') || contains(github.event.head_commit.message, '[projector combined]') || contains(github.event.head_commit.message, '[media prefix]') || contains(github.event.head_commit.message, '[expanded weights]') || contains(github.event.head_commit.message, '[row tile]') }}
     runs-on: ubuntu-latest
     steps:
       - run: echo 'The dedicated experiment workflow owns this run; do not duplicate the build or relay an unapproved payload.'
   build:
-    if: ${{ !contains(github.event.head_commit.message, '[signed mobile]') && !contains(github.event.head_commit.message, '[projector cache]') && !contains(github.event.head_commit.message, '[local stream]') && !contains(github.event.head_commit.message, '[wait speed]') && !contains(github.event.head_commit.message, '[projector combined]') && !contains(github.event.head_commit.message, '[media prefix]') && !contains(github.event.head_commit.message, '[expanded weights]') }}
+    if: ${{ !contains(github.event.head_commit.message, '[signed mobile]') && !contains(github.event.head_commit.message, '[projector cache]') && !contains(github.event.head_commit.message, '[local stream]') && !contains(github.event.head_commit.message, '[wait speed]') && !contains(github.event.head_commit.message, '[projector combined]') && !contains(github.event.head_commit.message, '[media prefix]') && !contains(github.event.head_commit.message, '[expanded weights]') && !contains(github.event.head_commit.message, '[row tile]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 85
     steps:

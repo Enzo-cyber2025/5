@@ -6,6 +6,10 @@ BT="$SDK/build-tools/35.0.0"
 JAR="$SDK/platforms/android-35/android.jar"
 OUT=.cache/gpu-rate
 mkdir -p "$OUT/classes" "$OUT/dex" evidence
+if [[ -n "${GGUF_ROW_TILE_TEST_IMPORT:-}" ]]; then
+  [[ -z "${GGUF_REPACKED_TEST_IMPORT:-}" && -z "${GGUF_EXPANDED_TEST_IMPORT:-}" ]]
+  export GGUF_EXPANDED_TEST_IMPORT="$GGUF_ROW_TILE_TEST_IMPORT"
+fi
 if [[ -n "${GGUF_REPACKED_TEST_IMPORT:-}" ]]; then
   [[ -z "${GGUF_EXPANDED_TEST_IMPORT:-}" ]]
   export GGUF_EXPANDED_TEST_IMPORT="$GGUF_REPACKED_TEST_IMPORT"
@@ -42,6 +46,7 @@ experiment=None
 if os.environ.get('GGUF_EXPANDED_TEST_IMPORT'):
     folder=Path(os.environ['GGUF_EXPANDED_TEST_IMPORT']);experiment=json.loads((folder/'build.json').read_text())
     flag='experimental_repacked_weights_build' if os.environ.get('GGUF_REPACKED_TEST_IMPORT') else 'experimental_expanded_weights_build'
+    if os.environ.get('GGUF_ROW_TILE_TEST_IMPORT'):flag='experimental_row_tile_build'
     assert experiment[flag] is True and experiment['default_enabled'] is False and experiment['release_approved'] is False
     src=folder/'candidate.apk';dst=out/'candidate.apk'
     original=hashlib.sha256(src.read_bytes()).hexdigest();assert original==experiment['apk_sha256']
