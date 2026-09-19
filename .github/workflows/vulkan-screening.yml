@@ -133,9 +133,8 @@ jobs:
     needs: build
     env:
       SCREEN_ENV: ${{ matrix.lever }}
-    timeout-minutes: 45
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
