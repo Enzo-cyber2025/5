@@ -245,3 +245,6 @@ echo "===== table.md ====="
 cat "$LAB/table.md"
 echo "===== profile (tail) ====="
 tail -20 evidence/physical-llvmpipe-lab-profile.txt
+
+# Lab A/B run marker: the push trigger requires [lab] in the head commit message,
+# and the job only runs when ci/llvmpipe_lab.sh (or the workflow) changed in the push.
