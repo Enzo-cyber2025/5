@@ -254,3 +254,80 @@ pelo avaliador; passo de build que faz `touch` nas fontes nativas depois do
 restore do cache; e a checagem de marcadores no APK empacotado, que agora
 falha o build em vez de medir o binário errado. Nenhuma taxa saiu dessas
 execuções.
+
+## Resultado do screening 35465977658 e correção de leitura
+
+O workflow `vulkan-screening.yml` mediu o **mesmo APK candidato** com e sem cada
+lever, em pares alternados, tela acesa. O avaliador `ci/evaluate_screening.py`
+calcula `razão = tps(ON)/tps(OFF)`; portanto **razão > 1 é ganho**.
+
+| config | pares válidos | razão par 0 | razão par 1 | veredito |
+|---|---|---|---|---|
+| row4 | 2 | 0,975817 | 0,916849 | mais lento |
+| row8 | 2 | 1,366197 | 0,989355 | misto (um par ganha, o outro perde) |
+| large | 2 | 0,545987 | 0,540473 | **mais lento** |
+| row4large | 2 | 0,834013 | 0,626397 | mais lento |
+| row2 / row16 / row2large | 1 | — | — | **inválidos**: o observador rejeitou o fator |
+
+Uma leitura anterior desta sessão trocou o sentido da razão e registrou
+"1,85×" para o lever `large`. **Isso estava errado**: `large` foi 1,83-1,85×
+**mais lento** (`0,545987` e `0,540473`), `row4` também perdeu
+(`0,975817`/`0,916849`) e `row4large` perdeu ainda mais
+(`0,834013`/`0,626397`). O único par acima de 1,0 é `row8`/par 0
+(`1,366197`), com o par 1 em `0,989355`: misto, não é ganho estável. Nenhum
+lever de agrupamento de linhas ou de workgroup largo produziu ganho estável ≥ 1
+nesta plataforma. Nada disso é evidência de release: o screening não compara com
+o APK histórico e não certifica GPU física.
+
+Os três jobs reprovados não falharam por medição física: o script de observação
+recusa fatores fora de `PREDECLARED_FACTORS=(4,8)`, então `row2`, `row16` e
+`row2large` abortaram em `candidate_metadata`. Nenhuma taxa saiu dessas
+execuções.
+
+## O que o perfil de kernels diz (e o que ele descarta)
+
+`ci-results/35156484592-1/physical-vulkan-kernel-timings.txt` (instrumentado, com
+overhead do logger) mostra o perfil de uma execução completa de 128 tokens em
+llvmpipe. Somando apenas as operações de decodificação:
+
+| operação | tempo total | % do decode | GFLOPS/s |
+|---|---|---|---|
+| `MUL_MAT_VEC q5_0 m=1536` (gate+up fundidos) | 11,23 s | 32% | 1,19 |
+| `MUL_MAT_VEC q8_0 m=49152` (cabeça) | 5,54 s | 16% | 1,30 |
+| projeções qkv (`m=576/192`) | 4,34 s | 12% | 0,94-0,98 |
+| `ffn_down` q6_K/q4_K com add | 4,37 s | 13% | 1,15-2,01 |
+| `attn_output` + add | 2,51 s | 7% | 0,96 |
+| flash attention (n=1) | 2,53 s | 7% | 0,88 |
+| RMS_NORM_MUL (576,1,1,1) | 1,52 s | 4% | — |
+| ROPE + SET_ROWS | 0,95 s | 3% | — |
+
+Duas conclusões quantitativas:
+
+1. Matvecs `n=1` (DMMV) são ~80% do tempo de decodificação e rodam a
+   **~1,0-1,3 GFLOPS/s**, com ~**120 ns por invocação** (8 threads por linha em
+   `BLOCK_SIZE=8`). Operações triviais (SUB, STEP, SCALE, SET_ROWS) custam
+   ~130-200 µs cada, ou seja o custo fixo de um dispatch é da ordem de 10⁻⁴ s.
+2. No **mesmo** processo, o caminho batido (MMQ, `n=30/32`, usado no prefill)
+   atinge **4,8-5,4 GFLOPS/s**: 4-5× mais eficiente por operação. O gargalo não é
+   a máquina, é a estrutura do kernel `n=1`.
+
+Isso descarta "reduzir o número de workgroups" como alavanca: multiplicar as
+linhas por grupo mantém o número de invocações e só aumentou o trabalho serial
+por thread, exatamente como medido acima. O caminho com potencial real de 3×
+está no item 2: aproximar o kernel `n=1` da eficiência do kernel batido.
+
+## Laboratório host-side (llvmpipe) para iterar rápido
+
+`.github/workflows/llvmpipe-lab.yml` + `ci/llvmpipe_lab.sh` constroem o
+`llama-bench` a partir do **mesmo** upstream fixado e medem, no host do runner,
+o **mesmo** dispositivo (lavapipe/llvmpipe) que o emulador usa via `-gpu host`.
+Isso dá uma volta de iteração de minutos em vez de dezenas de minutos por
+emulador, e serve para descartar hipóteses antes de gastar uma execução de
+screening. Não é evidência de release, de GPU física nem de celular: é
+laboratório, exatamente como o próprio dataset de perfis acima.
+
+O laboratório mede: linha de base `-ngl 99` e referência `-ngl 0`, varredura de
+`LP_NUM_THREADS` (para saber se o lavapipe usa 1 ou N núcleos neste shader),
+knobs de submissão/fusão/MMVQ e o perfil por operação. Patch opcional
+(`LAB_PATCHES`) permite comparar um kernel alterado contra o controle limpo no
+mesmo run.

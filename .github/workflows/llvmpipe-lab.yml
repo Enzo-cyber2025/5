@@ -1,0 +1,45 @@
+name: llvmpipe kernel lab (host, not acceptance)
+on:
+  push:
+    branches: [arena/01a09b42-5]
+    paths:
+      - '.github/workflows/llvmpipe-lab.yml'
+      - 'ci/llvmpipe_lab.sh'
+      - 'ci/llvmpipe_lab_patches.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: llvmpipe-lab-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  lab:
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[lab]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Host toolchain and CPU Vulkan driver (disposable runner only)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y cmake ninja-build build-essential glslc libvulkan-dev vulkan-tools mesa-vulkan-drivers
+      - name: Pinned source and exact fixture, optional kernel patch
+        run: |
+          LAB_PATCHES="${LAB_PATCHES:-}" python3 ci/llvmpipe_lab_patches.py
+      - name: Run the lab
+        run: bash ci/log_step.sh lab bash ci/llvmpipe_lab.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: llvmpipe-lab-${{ github.run_id }}
+          path: .cache/lab/
+          retention-days: 14
+      - name: Publish lab diagnostics (never a release)
+        if: always()
+        env:
+          GGUF_EVIDENCE_VARIANT: llvmpipe-lab
+        run: bash ci/publish_evidence.sh

@@ -9,6 +9,9 @@ fixture uses is covered so the effect is not limited to one weight type.
 from pathlib import Path
 
 MARKER = 'GGUF_ROW_TILE_EXPERIMENT'
+
+# The lab and the mobile build enable this code path explicitly.
+LAB_COMPILE_FLAGS = ('-DGGUF_EXPERIMENT_ROW_TILE=1',)
 ANCHOR = '    const bool use_subgroups = device->subgroup_arithmetic;\n'
 BLOCK = '''#if defined(GGUF_EXPERIMENT_ROW_TILE)
     // GGUF_ROW_TILE_EXPERIMENT: fixed predeclared factor, not runtime autotuning.
