@@ -42,10 +42,14 @@ static Args parse(int argc, char ** argv) {
         else if (key == "--groups") args.groups = (uint32_t) std::strtoul(value, nullptr, 10);
         else if (key == "--inner") args.inner = (uint32_t) std::strtoul(value, nullptr, 10);
         else if (key == "--reps") args.reps = (uint32_t) std::strtoul(value, nullptr, 10);
+        else if (key == "--mb") args.mb = (uint32_t) std::strtoul(value, nullptr, 10);
         else if (key == "--macs") args.macs_per_iter = std::strtod(value, nullptr);
         else { std::fprintf(stderr, "unknown argument %s\n", key.c_str()); std::exit(2); }
     }
     if (args.spv.empty()) { std::fprintf(stderr, "--spv is required\n"); std::exit(2); }
+    if (args.mb == 0 || (args.mb & (args.mb - 1)) != 0) {
+        std::fprintf(stderr, "--mb must be a power of two\n"); std::exit(2);
+    }
     if (args.block == 0 || args.groups == 0 || args.inner == 0 || args.reps == 0) {
         std::fprintf(stderr, "block, groups, inner and reps must be non-zero\n");
         std::exit(2);
@@ -118,11 +122,17 @@ int main(int argc, char ** argv) {
         VKC(vkBindBufferMemory(device, buffer, memory, 0));
     };
 
-    const uint32_t vec4_count = 1u << 16;  // 64K vec4 for A, same for B
+    const uint32_t vec4_count = 1u << 16;  // 1 MiB operand for A
+    // B and C are streamed. The shipped kernel reads a hundred megabyte weight
+    // set on every token, so a cache resident window measures the wrong thing.
+    const uint32_t stream_count = (args.mb * 1024u * 1024u) / 16u;
     VkBuffer buffer_a = VK_NULL_HANDLE, buffer_b = VK_NULL_HANDLE, buffer_o = VK_NULL_HANDLE;
+    VkBuffer buffer_c = VK_NULL_HANDLE;
     VkDeviceMemory mem_a = VK_NULL_HANDLE, mem_b = VK_NULL_HANDLE, mem_o = VK_NULL_HANDLE;
+    VkDeviceMemory mem_c = VK_NULL_HANDLE;
     make_buffer(VkDeviceSize(vec4_count) * 16, buffer_a, mem_a);
-    make_buffer(VkDeviceSize(vec4_count) * 16, buffer_b, mem_b);
+    make_buffer(VkDeviceSize(stream_count) * 16, buffer_b, mem_b);
+    make_buffer(VkDeviceSize(stream_count) * 16, buffer_c, mem_c);
     make_buffer(VkDeviceSize(args.groups) * VkDeviceSize(args.block) * 4, buffer_o, mem_o);
 
     float * mapped = nullptr;
@@ -130,18 +140,21 @@ int main(int argc, char ** argv) {
     for (uint32_t i = 0; i < vec4_count * 4; ++i) mapped[i] = 0.5f;
     vkUnmapMemory(device, mem_a);
     VKC(vkMapMemory(device, mem_b, 0, VK_WHOLE_SIZE, 0, reinterpret_cast<void **>(&mapped)));
-    for (uint32_t i = 0; i < vec4_count * 4; ++i) mapped[i] = 0.25f;
+    for (uint32_t i = 0; i < stream_count * 4; ++i) mapped[i] = 0.25f;
     vkUnmapMemory(device, mem_b);
+    VKC(vkMapMemory(device, mem_c, 0, VK_WHOLE_SIZE, 0, reinterpret_cast<void **>(&mapped)));
+    for (uint32_t i = 0; i < stream_count * 4; ++i) mapped[i] = 0x0f0f0f0fu;
+    vkUnmapMemory(device, mem_c);
 
-    VkDescriptorSetLayoutBinding bindings[3]{};
-    for (uint32_t i = 0; i < 3; ++i) {
+    VkDescriptorSetLayoutBinding bindings[4]{};
+    for (uint32_t i = 0; i < 4; ++i) {
         bindings[i].binding = i;
         bindings[i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         bindings[i].descriptorCount = 1;
         bindings[i].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
     }
     VkDescriptorSetLayoutCreateInfo dslci{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
-    dslci.bindingCount = 3;
+    dslci.bindingCount = 4;
     dslci.pBindings = bindings;
     VkDescriptorSetLayout set_layout = VK_NULL_HANDLE;
     VKC(vkCreateDescriptorSetLayout(device, &dslci, nullptr, &set_layout));
@@ -187,7 +200,7 @@ int main(int argc, char ** argv) {
 
     VkDescriptorPoolSize pool_size{};
     pool_size.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    pool_size.descriptorCount = 3;
+    pool_size.descriptorCount = 4;
     VkDescriptorPoolCreateInfo dpci{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
     dpci.maxSets = 1;
     dpci.poolSizeCount = 1;
@@ -201,10 +214,11 @@ int main(int argc, char ** argv) {
     VkDescriptorSet set = VK_NULL_HANDLE;
     VKC(vkAllocateDescriptorSets(device, &dsai, &set));
 
-    VkDescriptorBufferInfo infos[3] = {
-        {buffer_a, 0, VK_WHOLE_SIZE}, {buffer_b, 0, VK_WHOLE_SIZE}, {buffer_o, 0, VK_WHOLE_SIZE}};
-    VkWriteDescriptorSet writes[3]{};
-    for (uint32_t i = 0; i < 3; ++i) {
+    VkDescriptorBufferInfo infos[4] = {
+        {buffer_a, 0, VK_WHOLE_SIZE}, {buffer_b, 0, VK_WHOLE_SIZE},
+        {buffer_o, 0, VK_WHOLE_SIZE}, {buffer_c, 0, VK_WHOLE_SIZE}};
+    VkWriteDescriptorSet writes[4]{};
+    for (uint32_t i = 0; i < 4; ++i) {
         writes[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         writes[i].dstSet = set;
         writes[i].dstBinding = i;
@@ -212,7 +226,7 @@ int main(int argc, char ** argv) {
         writes[i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         writes[i].pBufferInfo = &infos[i];
     }
-    vkUpdateDescriptorSets(device, 3, writes, 0, nullptr);
+    vkUpdateDescriptorSets(device, 4, writes, 0, nullptr);
 
     VkCommandPoolCreateInfo cpoolci{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
     cpoolci.queueFamilyIndex = family;
@@ -268,9 +282,11 @@ int main(int argc, char ** argv) {
     vkDestroyDescriptorSetLayout(device, set_layout, nullptr);
     vkDestroyBuffer(device, buffer_a, nullptr);
     vkDestroyBuffer(device, buffer_b, nullptr);
+    vkDestroyBuffer(device, buffer_c, nullptr);
     vkDestroyBuffer(device, buffer_o, nullptr);
     vkFreeMemory(device, mem_a, nullptr);
     vkFreeMemory(device, mem_b, nullptr);
+    vkFreeMemory(device, mem_c, nullptr);
     vkFreeMemory(device, mem_o, nullptr);
     vkDestroyDevice(device, nullptr);
     vkDestroyInstance(instance, nullptr);
