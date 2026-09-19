@@ -114,7 +114,15 @@ execução de shaders no Android**. A execução nativa e as taxas ainda precisa
 ser obtidas pela CI.
 
 
-## Execução anterior (35443220722): falha de diagnóstico, não de medição
+## Execuções anteriores: falhas de diagnóstico, não de medição
+
+Segunda execução (35444185532): o estado ON falhou no guard do experimento. A
+checagem comparava `device->name`, que é o identificador lógico **"Vulkan0"**, com
+"llvmpipe"; o nome real do dispositivo físico está em
+`device->properties.deviceName`. Corrigido, com log anterior à validação
+(`GGUF_VK_ROW_TILE_PRE`) para que qualquer falha exponha os valores medidos, e
+com verificação de que `linhas_por_grupo × subgroup` cabe em
+`maxComputeWorkGroupInvocations`. Nenhuma taxa foi publicada nessa execução.
 
 Build nativo passou; os dois jobs de medição falharam no parser antes de
 qualquer razão ser calculada. O log nativo mostra `GGUF_VK_ROW_TILE factor=1`

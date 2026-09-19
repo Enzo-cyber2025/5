@@ -174,17 +174,23 @@ def test_patch_preserves_all_existing_shader_and_dispatch_code(tmp_path):
 def test_native_guard_compiles_and_defaults_off(tmp_path):
     # Compiles the actual injected block, not a reimplementation. NOT GPU proof.
     source = tmp_path/'guard.cpp'; exe = tmp_path/'guard'
-    source.write_text('''#include <cstdint>
+    source.write_text('''#include <algorithm>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <stdexcept>
 #include <string>
 #include <cstdio>
 #define GGML_LOG_INFO(...) std::printf(__VA_ARGS__)
-struct Device {std::string name="llvmpipe"; bool fp16=false,integer_dot_product=false; unsigned subgroup_size=8;};
+struct Limits {unsigned maxComputeWorkGroupInvocations;};
+struct Properties {std::string deviceName; Limits limits;};
+struct Device {Properties properties; bool fp16=false,integer_dot_product=false; unsigned subgroup_size=8;};
 int main(int argc,char** argv){Device d; auto device=&d;
+volatile unsigned wg_limit = 256;
+if(argc>1)d.properties.deviceName=argv[1]; else d.properties.deviceName="llvmpipe (LLVM 21.0.0, 256 bits)";
+if(argc>2)d.fp16=true; if(argc>3)wg_limit=(unsigned)atoi(argv[3]);
+d.properties.limits.maxComputeWorkGroupInvocations=wg_limit;
 uint32_t rm_stdq=1, rm_kq=2, rm_stdq_int=1, rm_kq_int=1;
-if(argc>1)d.name=argv[1]; if(argc>2)d.fp16=true;
 try {
 '''+BLOCK+'''
 return (int)(rm_stdq + 2*rm_kq + 4*rm_stdq_int + 8*rm_kq_int);
@@ -199,6 +205,8 @@ return (int)(rm_stdq + 2*rm_kq + 4*rm_stdq_int + 8*rm_kq_int);
         assert subprocess.run([str(exe)],env={**env,'GGUF_VK_ROW_TILE':value},capture_output=True).returncode == 255
     for args in (['Adreno'], ['llvmpipe','fp16']):
         assert subprocess.run([str(exe),*args],env={**env,'GGUF_VK_ROW_TILE':'4'},capture_output=True).returncode == 255
+    for factor in (4, 8):
+        assert subprocess.run([str(exe),'llvmpipe (LLVM)','','64'],env={**env,'GGUF_VK_ROW_TILE':str(factor)},capture_output=True).returncode == 255
     assert subprocess.run([str(exe)],env={**env,'GGUF_VK_ROW_TILE':'4','GGML_VK_FORCE_MMVQ':'1'},capture_output=True).returncode == 255
     subprocess.run(['g++','-std=c++17',str(source),'-o',str(exe)],check=True,capture_output=True)
     assert subprocess.run([str(exe),'Adreno'],env={**env,'GGUF_VK_ROW_TILE':'4'},capture_output=True).returncode == 17
