@@ -7,6 +7,11 @@ on:
       - 'ci/llvmpipe_lab.sh'
       - 'ci/llvmpipe_lab_patches.py'
   workflow_dispatch:
+    inputs:
+      lab_patches:
+        description: 'Comma separated apk-fix patch modules applied to the pinned checkout'
+        required: false
+        default: 'row_tile_patches,dmmv_large_patches'
 permissions:
   contents: read
   actions: read
@@ -28,8 +33,9 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y cmake ninja-build build-essential glslc libvulkan-dev vulkan-tools mesa-vulkan-drivers
       - name: Pinned source and exact fixture, optional kernel patch
-        run: |
-          LAB_PATCHES="${LAB_PATCHES:-}" python3 ci/llvmpipe_lab_patches.py
+        env:
+          LAB_PATCHES: ${{ github.event.inputs.lab_patches }}
+        run: python3 ci/llvmpipe_lab_patches.py
       - name: Run the lab
         run: bash ci/log_step.sh lab bash ci/llvmpipe_lab.sh
       - uses: actions/upload-artifact@v4
