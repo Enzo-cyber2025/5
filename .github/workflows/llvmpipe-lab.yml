@@ -13,7 +13,9 @@ on:
         required: false
         default: 'row_tile_patches,dmmv_large_patches'
 permissions:
-  contents: read
+  # The evidence publisher commits bounded lab results to this session branch, so
+  # the numbers stay readable even when log and artifact downloads are blocked.
+  contents: write
   actions: read
 concurrency:
   group: llvmpipe-lab-${{ github.ref }}

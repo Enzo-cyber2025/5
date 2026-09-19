@@ -62,6 +62,21 @@ printf '%s\n' "$icd" > "$LAB/icd.txt"
 } > "$LAB/host.txt"
 vulkaninfo --summary > "$LAB/vulkan-summary.txt" 2>&1 || true
 
+ensure_spirv_headers() { # ggml's Vulkan CMake asks for SPIRV-Headers explicitly
+  local pin=29981f65241605e08b0ede4cfeb999fe3b723c6a
+  local src=.cache/spirv-headers install=.cache/spirv-install
+  if [[ ! -d "$src/.git" ]]; then
+    rm -rf "$src"
+    git clone --depth 1 --branch vulkan-sdk-1.4.357.0 https://github.com/KhronosGroup/SPIRV-Headers "$src"
+  fi
+  test "$(git -C "$src" rev-parse HEAD)" = "$pin"
+  if [[ ! -f "$install/share/cmake/SPIRV-Headers/SPIRV-HeadersConfig.cmake" ]]; then
+    cmake -S "$src" -B .cache/spirv-build -DCMAKE_INSTALL_PREFIX="$PWD/$install" > "$LAB/spirv-cmake.log" 2>&1
+    cmake --install .cache/spirv-build >> "$LAB/spirv-cmake.log" 2>&1
+  fi
+  test -f "$install/share/cmake/SPIRV-Headers/SPIRV-HeadersConfig.cmake"
+}
+
 run_device_probe() { # subgroup shape and compute limits of the measured device
   if ! g++ -std=c++17 -O2 ci/vulkan_features.cpp -lvulkan -o "$LAB/vulkan-features" >> "$LAB/probe-build.log" 2>&1; then
     printf '### device probe failed to build\n' | tee -a "$LAB/table.md"
@@ -123,7 +138,10 @@ build_bench() { # build_bench <src> <build> <flags>
   cmake -S "$src" -B "$build" -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_OPENMP=OFF \
     -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_SERVER=OFF -DLLAMA_CURL=OFF \
     -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_TOOLS=ON -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_CXX_FLAGS="$flags" > "$LAB/$(basename "$build")-cmake.log" 2>&1
+    -DCMAKE_CXX_FLAGS="$flags" \
+    -DSPIRV-Headers_DIR="$PWD/.cache/spirv-install/share/cmake/SPIRV-Headers" \
+    -DVulkan_GLSLC_EXECUTABLE="$(command -v glslc)" \
+    > "$LAB/$(basename "$build")-cmake.log" 2>&1
   cmake --build "$build" --target llama-bench llama-cli -j "$(nproc)" > "$LAB/$(basename "$build")-build.log" 2>&1
   test -x "$build/bin/llama-bench"
 }
@@ -142,6 +160,7 @@ generate_fixture() { # generate_fixture <bin> <label>
 
 run_device_probe
 run_ceiling
+ensure_spirv_headers
 build_bench "$SRC" "$BUILD" "$lab_flags"
 BENCH="$BUILD/bin/llama-bench"
 CTRL_BENCH=''
