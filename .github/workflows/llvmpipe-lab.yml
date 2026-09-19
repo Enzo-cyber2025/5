@@ -32,11 +32,32 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y cmake ninja-build build-essential glslc glslang-tools libvulkan-dev vulkan-tools mesa-vulkan-drivers
-      - name: Pinned source and exact fixture, optional kernel patch
+      - name: Select the kernel patch set
+        id: patches
         env:
           # workflow_dispatch is not reachable for this token, so the push marker is
-          # the trigger; the patch set comes from the input or the default below.
-          LAB_PATCHES: ${{ github.event.inputs.lab_patches || 'row_tile_patches,dmmv_large_patches' }}
+          # the trigger and the patch list travels in the commit message:
+          #   [lab]                  -> LAB_DEFAULT_PATCHES
+          #   [lab:dmmv_accum_lab_patches,row_tile_patches] -> explicit list
+          MSG: ${{ github.event.head_commit.message }}
+          INPUT: ${{ github.event.inputs.lab_patches }}
+          LAB_DEFAULT_PATCHES: ${{ vars.LAB_DEFAULT_PATCHES }}
+        run: |
+          list=$(printf '%s' "${INPUT:-}" | tr -d '[:space:]')
+          if [ -z "$list" ]; then
+            list=$(printf '%s' "$MSG" | sed -n 's/.*\[lab:\([^]]*\)\].*/\1/p')
+          fi
+          if [ -z "$list" ] || [ "$list" = "-" ]; then
+            list="${LAB_DEFAULT_PATCHES:-dmmv_accum_lab_patches}"
+          fi
+          case "$list" in
+            *[!A-Za-z0-9_,]*) echo "LAB patch list rejected: $list"; exit 1;;
+          esac
+          echo "Selected LAB_PATCHES=$list"
+          echo "list=$list" >> "$GITHUB_OUTPUT"
+      - name: Pinned source and exact fixture, optional kernel patch
+        env:
+          LAB_PATCHES: ${{ steps.patches.outputs.list }}
         run: python3 ci/llvmpipe_lab_patches.py
       - name: Run the lab
         run: bash ci/log_step.sh lab bash ci/llvmpipe_lab.sh

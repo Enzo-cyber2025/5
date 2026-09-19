@@ -29,7 +29,9 @@ def clone_pinned():
 def main():
     requested = [name.strip() for name in os.environ.get('LAB_PATCHES', '').split(',') if name.strip()]
     clone_pinned()
-    sys.path.insert(0, str(Path('apk-fix').resolve()))
+    # Lab-only modules live in ci/; release/mobile patches live in apk-fix/.
+    for directory in ('ci', 'apk-fix'):
+        sys.path.insert(0, str(Path(directory).resolve()))
     applied, flags = [], []
     for name in requested:
         module = __import__(name)
