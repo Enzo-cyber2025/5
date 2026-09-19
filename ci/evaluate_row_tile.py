@@ -13,24 +13,32 @@ ACCEPTED_FACTORS = (1, 2, 4, 8, 16)
 ENV = {'GGML_VK_VISIBLE_DEVICES': '0'}
 COMPLETE = 'COMPLETE_ROW_TILE_OBSERVATIONS'
 CONFIG = re.compile(r'GGUF_VK_ROW_TILE factor=(\d+) stdq=(\d+) kq=(\d+) stdq_int=(\d+) kq_int=(\d+) '
-                    r'q5_rows=(\d+) q8_rows=(\d+) kq_rows=(\d+) fp16=(\d+) int_dot=(\d+) subgroup=(\d+)')
-DISPATCH = re.compile(r'GGUF_VK_ROW_TILE_DISPATCH type=(\w+) rows=(\d+) activation=(\w+) quantize_y=(\d+) columns=(\d+)')
-KEYS = ('factor', 'stdq', 'kq', 'stdq_int', 'kq_int', 'q5_rows', 'q8_rows', 'kq_rows', 'fp16', 'int_dot', 'subgroup')
+                    r'q5_rows=(\d+) q8_rows=(\d+) kq_rows=(\d+) large=(\d+) fp16=(\d+) int_dot=(\d+) subgroup=(\d+)')
+DISPATCH = re.compile(r'GGUF_VK_ROW_TILE_DISPATCH type=(\w+) rows=(\d+) lanes=(\d+) activation=(\w+) quantize_y=(\d+) columns=(\d+)')
+KEYS = ('factor', 'stdq', 'kq', 'stdq_int', 'kq_int', 'q5_rows', 'q8_rows', 'kq_rows', 'large', 'fp16', 'int_dot', 'subgroup')
 
 
-def environment(factor):
-    return ENV if factor == 1 else {**ENV, 'GGUF_VK_ROW_TILE': str(factor)}
+def environment(factor, large=False):
+    env = dict(ENV)
+    if factor != 1:
+        env['GGUF_VK_ROW_TILE'] = str(factor)
+    if large:
+        env['GGUF_VK_DMMV_LARGE'] = '1'
+    return env
 
 
-def tile(factor):
+def tile(factor, large=False):
     assert factor in ACCEPTED_FACTORS
-    return dict(zip(KEYS, (factor, factor, 2*factor, factor, factor, 2*factor, factor, 2*factor, 0, 0, 8)))
+    values = (factor, factor, 2*factor, factor, factor, 2*factor, factor, 2*factor, int(large), 0, 0, 8)
+    return dict(zip(KEYS, values))
 
 
-def dispatch(factor):
+def dispatch(factor, large=False):
     # Mirror of the pinned pipeline constants: stdq rows are 2*rm_stdq (Q8_0 1*rm_stdq),
-    # k-quants use rm_kq directly.
-    return {t: dict(rows=rows, activation='f32', quantize_y=0, columns=1)
+    # k-quants use rm_kq directly; lanes is the workgroup width of the selected
+    # variant (subgroup width, four times wider for the large-workgroup lever).
+    lanes = 8 * (4 if large else 1)
+    return {t: dict(rows=rows, lanes=lanes, activation='f32', quantize_y=0, columns=1)
             for t, rows in [('q5_0', 2*factor), ('q8_0', factor), ('q4_K', 2*factor), ('q6_K', 2*factor)]}
 
 
@@ -38,21 +46,21 @@ def parse_native(native):
     configurations = {tuple(int(v) for v in match) for match in CONFIG.findall(native)}
     matches = [dict(zip(KEYS, values)) for values in configurations]
     dispatches = {}
-    for name, rows, activation, quantize_y, columns in DISPATCH.findall(native):
-        entry = dict(rows=int(rows), activation=activation, quantize_y=int(quantize_y), columns=int(columns))
+    for name, rows, lanes, activation, quantize_y, columns in DISPATCH.findall(native):
+        entry = dict(rows=int(rows), lanes=int(lanes), activation=activation, quantize_y=int(quantize_y), columns=int(columns))
         assert dispatches.setdefault(name, entry) == entry, 'Conflicting dispatch audit entries'
     return matches, dispatches
 
 
-def validate_observation(r, state, build, factor):
+def validate_observation(r, state, build, factor, large=False):
     assert r['status'] == 'PASS_NATIVE_OBSERVER' and r['model_sha256'] == MODEL
     assert r['settings'] == SETTINGS and r['batch'] == 128 and r['ubatch'] == 32
     assert r['vulkan_positive_offload'] is True
     assert r['test_apk_sha256'] == build['payloads']['candidate']['test_sha256']
-    assert r['vulkan_environment'] == environment(factor)
+    assert r['vulkan_environment'] == environment(factor, large)
     assert r['native_per_token_callbacks'] is True
-    assert r['tile'] == tile(factor), (r['tile'], tile(factor))
-    assert r['tile_dispatch'] == dispatch(factor), (r['tile_dispatch'], dispatch(factor))
+    assert r['tile'] == tile(factor, large), (r['tile'], tile(factor, large))
+    assert r['tile_dispatch'] == dispatch(factor, large), (r['tile_dispatch'], dispatch(factor, large))
     assert 'expansion' not in r, 'This is not a weight conversion experiment'
     for stage in ('warmup', 'sample'):
         rate(r[stage], 'after', state, stage)
@@ -63,7 +71,7 @@ def evaluate(s):
     assert s['status'] == COMPLETE and s['state'] in ('awake', 'asleep')
     assert s['hardware'] == 'software_vulkan_emulator' and s['release_approved'] is False
     assert s['model_sha256'] == MODEL and len(s['pairs']) == 3
-    factor = s['factor']
+    factor = s['factor']; large = s['large']
     assert int(factor) in PREDECLARED_FACTORS, 'Only predeclared screening factors may be measured'
     build = s['build']; experiment = build['experiment']
     assert experiment['experimental_row_tile_build'] is True
@@ -76,8 +84,10 @@ def evaluate(s):
     assert build['payloads']['candidate']['original_sha256'] == candidate
     assert not any(experiment.get(k, False) for k in ('experimental_expanded_weights_build', 'experimental_repacked_weights_build'))
     # SAME-APK OFF/ON correctness observations are never used for speed ratios.
-    for mode, mode_factor in [('off', 1), ('on', factor)]:
-        validate_observation(s['correctness'][mode], s['state'], build, mode_factor)
+    # The OFF arm of the same-APK correctness check must be the untouched default:
+    # neither the row factor nor the wider workgroup may be enabled there.
+    for mode, mode_factor, mode_large in [('off', 1, False), ('on', factor, large)]:
+        validate_observation(s['correctness'][mode], s['state'], build, mode_factor, large=mode_large)
     reference = s['correctness']['off']
     for r in [s['correctness']['on'], *[p[phase] for p in s['pairs'] for phase in ('before', 'after', 'candidate')]]:
         for stage in ('warmup', 'sample'):
@@ -85,7 +95,7 @@ def evaluate(s):
                 assert r[stage][key] == reference[stage][key], 'Complete output/prompt differs'
     for i, pair in enumerate(s['pairs']):
         assert pair['order'] == (['before', 'after', 'candidate'] if i % 2 == 0 else ['candidate', 'after', 'before'])
-        validate_observation(pair['candidate'], s['state'], build, factor)
+        validate_observation(pair['candidate'], s['state'], build, factor, large=s['large'])
         for stage in ('warmup', 'sample'):
             assert pair['after'][stage]['strict']['status'] == 'PASS'
 
@@ -97,7 +107,7 @@ def evaluate(s):
         projected['build']['payloads'] = {'before': build['payloads'][control], 'after': build['payloads']['candidate']}
         projected['pairs'] = [dict(order=['before', 'after'] if i % 2 == 0 else ['after', 'before'],
                                    before=p[control], after=p['candidate']) for i, p in enumerate(s['pairs'])]
-        comparisons[label] = evaluate_pair(projected, expected, {'before': ENV, 'after': environment(factor)})
+        comparisons[label] = evaluate_pair(projected, expected, {'before': ENV, 'after': environment(factor, s['large'])})
     reached = all(p['ratio'] >= TARGET_MULTIPLIER for p in comparisons['historical']['pairs'])
     no_regression = all(p['ratio'] >= 1 for p in comparisons['delivered']['pairs'])
     return dict(status='PASS_3X_THIS_TEXT_STATE_NOT_RELEASE' if reached and no_regression else 'THREE_TIMES_TARGET_NOT_MET',
@@ -113,6 +123,6 @@ if __name__ == '__main__':
     summary = json.load(open(sys.argv[1]))
     result = evaluate(summary)
     evidence = Path('evidence'); evidence.mkdir(exist_ok=True)
-    (evidence/f"physical-row-tile-target-{summary['state']}-f{summary['factor']}.json").write_text(json.dumps(result, indent=2))
+    (evidence/f"physical-row-tile-target-{summary['state']}-f{summary['factor']}-l{int(summary['large'])}.json").write_text(json.dumps(result, indent=2))
     print(json.dumps(result, indent=2))
     raise SystemExit(0 if result['target_3x_passed'] else 1)

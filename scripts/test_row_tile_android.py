@@ -14,19 +14,19 @@ def candidate_metadata(native):
     configurations, dispatches = parse_native(native)
     assert len(configurations) == 1, f'Ambiguous or missing native row grouping: {configurations}'
     value = configurations[0]
-    assert value['factor'] in (1, *PREDECLARED_FACTORS) and value == tile(value['factor'])
+    assert value['factor'] in (1, *PREDECLARED_FACTORS) and value == tile(value['factor'], bool(value['large']))
     counts = __import__('re').findall(r'GGUF_ROW_TILE_CALLBACKS per_token=1 emitted=(\d+) callbacks=(\d+)', native)
     assert counts == [('128', '128'), ('128', '128')], 'Both native stages must independently confirm real per-token callbacks'
     return {'tile': value, 'native_per_token_callbacks': True, 'tile_dispatch': dispatches}
 
 
-def main(state, factor):
+def main(state, factor, large='0'):
     assert state in ('awake', 'asleep') and int(factor) in PREDECLARED_FACTORS
-    factor = int(factor)
+    factor = int(factor); large = large == '1'
     harness.NAME = 'row-tile'; harness.candidate_metadata = candidate_metadata
-    harness.ON = environment(factor)
+    harness.ON = environment(factor, large)
     d = harness.Android('emulator-5554', harness.E)
-    s = dict(status='FAIL', state=state, factor=factor, hardware='software_vulkan_emulator', release_approved=False,
+    s = dict(status='FAIL', state=state, factor=factor, large=large, hardware='software_vulkan_emulator', release_approved=False,
              model_sha256=harness.sha(harness.TEXT), pairs=[], correctness={},
              build=json.loads((harness.BUILD/'build.json').read_text()))
     def save():
@@ -63,4 +63,4 @@ def main(state, factor):
 
 if __name__ == '__main__':
     if not __debug__: raise RuntimeError('Assertions required')
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1], sys.argv[2], *(sys.argv[3:4] or ['0']))

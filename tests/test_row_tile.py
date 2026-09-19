@@ -14,26 +14,26 @@ from test_row_tile_android import candidate_metadata
 from test_expanded_weights import fixture as expansion_fixture
 
 LOG_CONFIG = ('GGUF_VK_ROW_TILE factor={f} stdq={f} kq={kq} stdq_int={f} kq_int={f} '
-              'q5_rows={q5} q8_rows={f} kq_rows={kq} fp16=0 int_dot=0 subgroup=8')
-LOG_DISPATCH = ('GGUF_VK_ROW_TILE_DISPATCH type={t} rows={rows} activation=f32 quantize_y=0 columns=1')
+              'q5_rows={q5} q8_rows={f} kq_rows={kq} large={large} fp16=0 int_dot=0 subgroup=8')
+LOG_DISPATCH = ('GGUF_VK_ROW_TILE_DISPATCH type={t} rows={rows} lanes={lanes} activation=f32 quantize_y=0 columns=1')
 
 
-def native_log(factor):
-    lines = ['llvmpipe fp16: 0 int dot: 0', LOG_CONFIG.format(f=factor, kq=2*factor, q5=2*factor)]
-    lines += [LOG_DISPATCH.format(t=t, rows=entry['rows']) for t, entry in dispatch(factor).items()]
+def native_log(factor, large=False):
+    lines = ['llvmpipe fp16: 0 int dot: 0', LOG_CONFIG.format(f=factor, kq=2*factor, q5=2*factor, large=int(large))]
+    lines += [LOG_DISPATCH.format(t=t, rows=entry['rows'], lanes=entry['lanes']) for t, entry in dispatch(factor, large).items()]
     lines += ['GGUF_ROW_TILE_CALLBACKS per_token=1 emitted=128 callbacks=128'] * 2
     return '\n'.join(lines) + '\n'
 
 
-def fixture(factor=4):
-    s = expansion_fixture(); s['status'] = COMPLETE; s['factor'] = factor
+def fixture(factor=4, large=False):
+    s = expansion_fixture(); s['status'] = COMPLETE; s['factor'] = factor; s['large'] = large
     e = s['build']['experiment']; e.pop('experimental_expanded_weights_build')
     e.update(experimental_row_tile_build=True, target_multiplier=3, predeclared_factors=list(PREDECLARED_FACTORS),
              per_token_callbacks=True)
     s.pop('proof')
     for pair in s['pairs']:
-        r = pair['candidate']; r.pop('expansion'); r.update(tile=tile(factor), tile_dispatch=dispatch(factor),
-                                                            vulkan_environment=environment(factor))
+        r = pair['candidate']; r.pop('expansion'); r.update(tile=tile(factor, large), tile_dispatch=dispatch(factor, large),
+                                                            vulkan_environment=environment(factor, large))
         for stage in ('warmup', 'sample'):
             row = pair['before'][stage]
             row['callback_times_ns'] = [1000000000+i*300000000 for i in range(128)]
@@ -118,6 +118,16 @@ def test_invalid_identity_quality_scope_or_precision_cannot_pass(mutate):
     with pytest.raises(AssertionError): evaluate(s)
 
 
+def test_wrong_pipeline_lanes_fail_the_evaluator_not_just_the_parser():
+    s = fixture(4, large=False)
+    for dispatch_entry in s['pairs'][0]['candidate']['tile_dispatch'].values(): dispatch_entry['lanes'] = 32
+    with pytest.raises(AssertionError): evaluate(s)
+    s = fixture(8, large=True)
+    for dispatch_entry in s['pairs'][0]['candidate']['tile_dispatch'].values(): dispatch_entry['lanes'] = 8
+    with pytest.raises(AssertionError): evaluate(s)
+    assert evaluate(fixture(8, large=True))['target_3x_passed']
+
+
 def test_correctness_and_warmup_rates_are_not_speed_samples():
     s = fixture(); expected = evaluate(s)
     for r in [*s['correctness'].values(), *[p[k] for p in s['pairs'] for k in ('before','after','candidate')]]:
@@ -130,13 +140,17 @@ def test_correctness_and_warmup_rates_are_not_speed_samples():
 def test_native_telemetry_not_just_an_environment_variable():
     assert parse_native(native_log(4))[0] == [tile(4)]
     assert parse_native(native_log(8))[0] == [tile(8)]
+    assert parse_native(native_log(4, True))[0] == [tile(4, True)]
     assert candidate_metadata(native_log(4))['tile'] == tile(4)
     assert candidate_metadata(native_log(4))['tile_dispatch'] == dispatch(4)
+    assert candidate_metadata(native_log(8, True))['tile_dispatch'] == dispatch(8, True)
+    assert candidate_metadata(native_log(4, True))['tile'] == tile(4, True)
     # Repeated identical lines (dynamic pipeline compiles) are one configuration.
     assert parse_native(native_log(4)*5)[0] == [tile(4)]
     for invalid in ['llvmpipe fp16: 0 int dot: 0',
                     native_log(4).replace('kq_rows=8', 'kq_rows=2'),
                     native_log(4).replace('int_dot=0', 'int_dot=1'),
+
                     native_log(4) + native_log(8),
                     native_log(4) + 'GGUF_REPACKED_WEIGHTS enabled=1\n',
                     native_log(4).replace('emitted=128 callbacks=128', 'emitted=128 callbacks=64')]:

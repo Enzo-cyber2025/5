@@ -140,6 +140,7 @@ jobs:
       matrix:
         state: [awake, asleep]
         factor: [4, 8]
+        large: ['0', '1']
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
@@ -180,16 +181,16 @@ jobs:
           disk-size: 8192M
           disable-animations: true
           emulator-options: -no-window -no-snapshot -gpu host -feature Vulkan -noaudio -no-boot-anim -camera-back emulated -camera-front emulated
-          script: bash ci/log_step.sh emulator python3 scripts/test_row_tile_android.py ${{ matrix.state }} ${{ matrix.factor }}
+          script: bash ci/log_step.sh emulator python3 scripts/test_row_tile_android.py ${{ matrix.state }} ${{ matrix.factor }} ${{ matrix.large }}
       - name: Independently validate token mapping, full outputs, GPU and paired rate
         run: python3 ci/evaluate_row_tile.py evidence/summary.json
       - name: Publish actual results or explicit failure, never release diagnostic APKs
         if: always()
         env:
-          GGUF_EVIDENCE_VARIANT: row-tile-${{ matrix.state }}-f${{ matrix.factor }}
+          GGUF_EVIDENCE_VARIANT: row-tile-${{ matrix.state }}-f${{ matrix.factor }}-l${{ matrix.large }}
         run: bash ci/log_step.sh publish bash ci/publish_evidence.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: row-tile-${{ matrix.state }}-f${{ matrix.factor }}-evidence
+          name: row-tile-${{ matrix.state }}-f${{ matrix.factor }}-l${{ matrix.large }}-evidence
           path: evidence/

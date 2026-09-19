@@ -195,11 +195,24 @@ outra GPU.
   no `git push`). Os commits ficam locais até a reconexão; nada é perdido e o
   APK entregue não é tocado.
 
+### Prova de qual pipeline realmente rodou
+
+O log nativo agora registra, na linha de configuração, `large=` (se o lever de
+workgroup largo estava ativo) e, no primeiro dispatch de cada tipo, **rows e
+lanes** do pipeline efetivamente selecionado. O avaliador exige que rows e lanes
+batam com o que a configuração pede — não basta a variável de ambiente. Assim,
+uma execução "ON" que na verdade usou o pipeline padrão é reprovada em vez de
+ser tratada como ganho.
+
+A aceitação agora cobre matriz estado × fator {4, 8} × largo {0, 1}: oito jobs,
+todos exigindo as razões ≥3 (histórico) e ≥1 (entregue).
+
 ### Próximo passo preparado (não executado)
 
-`vulkan-screening.yml` mede, no mesmo APK e no mesmo emulador, cinco
-configurações alternadas: fator 4, 8, 16, workgroup largo (`GGUF_VK_DMMV_LARGE`,
-32 lanes por linha em vez de 8) e fator 4 + largo. É triagem de descoberta, não
+`vulkan-screening.yml` mede, no mesmo APK e no mesmo emulador, sete
+configurações alternadas: fatores 2, 4, 8 e 16, workgroup largo
+(`GGUF_VK_DMMV_LARGE`, 32 lanes por linha em vez de 8), fator 2 + largo e
+fator 4 + largo. É triagem de descoberta, não
 aceitação: `ci/evaluate_screening.py` só valida identidade, contagens e saídas,
 e nunca aprova release. A hipótese que sobra é **aumentar o paralelismo** (mais
 lanes por linha), coerente com a queda observada ao reduzir grupos de trabalho.
