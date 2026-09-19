@@ -185,6 +185,16 @@ elemento exigiria dot product inteiro ou fp16 — o dispositivo reporta
 `int dot: 0` e `fp16: 0` — ou seja, exige outro caminho numérico (proibido) ou
 outra GPU.
 
+### Incidentes de infraestrutura (registrados)
+
+- 35450340252: o workflow de triagem era **inválido** (`timeout-minutes`
+  duplicado no job), e o GitHub rejeitou o arquivo sem gastar tempo de build.
+  Corrigido; agora existe teste que faz parse de todos os arquivos de workflow e
+  falha em chave duplicada de job.
+- Reconexões do GitHub caíram repetidamente durante a sessão (HTTP 401 na API e
+  no `git push`). Os commits ficam locais até a reconexão; nada é perdido e o
+  APK entregue não é tocado.
+
 ### Próximo passo preparado (não executado)
 
 `vulkan-screening.yml` mede, no mesmo APK e no mesmo emulador, cinco
