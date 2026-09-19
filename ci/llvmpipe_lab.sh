@@ -6,7 +6,11 @@
 # When LAB_PATCHES is non-empty the lab builds BOTH a pristine checkout of the same
 # pin (control) and the patched checkout (variant) and benches them in the same job,
 # so a kernel change is compared against the untouched upstream on one machine.
-set -euo pipefail
+set -Eeuo pipefail
+# Name the exact line that aborted: two lab runs died silently inside a bare
+# `test`, which left the failure invisible in the published annotation.
+trap 'rc=$?; echo "lab aborted: line $LINENO rc=$rc"
+' ERR
 [[ "${GITHUB_ACTIONS:-}" == true ]]
 
 PIN=b29c606e28a01b1bc8c1351026a0fa6e616bf6c4
@@ -30,7 +34,10 @@ if [[ ! -d "$SRC/.git" ]]; then
   rm -rf "$SRC"
   git clone --depth 1 --branch v0.4.1 https://github.com/ggml-org/llama.cpp "$SRC"
 fi
-test "$(git -C "$SRC" rev-parse HEAD)" = "$PIN"
+if [[ "$(git -C "$SRC" rev-parse HEAD)" != "$PIN" ]]; then
+  echo "pinned checkout is not at the pin: $(git -C "$SRC" rev-parse HEAD) != $PIN"
+  exit 1
+fi
 echo "# llvmpipe host lab $(date -u +%FT%TZ) [flags: $lab_flags patches: $lab_patches]" > "$LAB/table.md"
 
 if [[ ! -f "$MODEL" ]]; then
