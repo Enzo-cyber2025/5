@@ -167,15 +167,29 @@ run_ceiling() { # CPU Vulkan compute ceiling: is a 2-3x kernel win possible here
 
 build_bench() { # build_bench <src> <build> <flags>
   local src=$1 build=$2 flags=$3
-  cmake -S "$src" -B "$build" -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_OPENMP=OFF \
+  local cmake_log="$LAB/$(basename "$build")-cmake.log"
+  local build_log="$LAB/$(basename "$build")-build.log"
+  if ! cmake -S "$src" -B "$build" -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_OPENMP=OFF \
     -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_SERVER=OFF -DLLAMA_CURL=OFF \
     -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_TOOLS=ON -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_CXX_FLAGS="$flags" \
     -DSPIRV-Headers_DIR="$SPIRV_HEADERS_DIR" \
     -DVulkan_GLSLC_EXECUTABLE="$(command -v glslc)" \
-    > "$LAB/$(basename "$build")-cmake.log" 2>&1
-  cmake --build "$build" --target llama-bench llama-cli -j "$(nproc)" > "$LAB/$(basename "$build")-build.log" 2>&1
-  test -x "$build/bin/llama-bench"
+    > "$cmake_log" 2>&1; then
+    echo "build failed: cmake configure for $build (tail of $cmake_log)"
+    tail -30 "$cmake_log" || true
+    return 1
+  fi
+  if ! cmake --build "$build" --target llama-bench llama-cli -j "$(nproc)" > "$build_log" 2>&1; then
+    echo "build failed: compile for $build (tail of $build_log)"
+    tail -40 "$build_log" || true
+    return 1
+  fi
+  if [[ ! -x "$build/bin/llama-bench" ]]; then
+    echo "build failed: $build/bin/llama-bench missing (tail of $build_log)"
+    tail -20 "$build_log" || true
+    return 1
+  fi
 }
 
 generate_fixture() { # generate_fixture <bin> <label>
@@ -230,18 +244,16 @@ QUICK=(-m "$MODEL" -p 16 -n 128 -t 2 -b 128 -ub 32 -o md -r 1)
 
 run() { # run <label> [env assignments...] -- extra bench args
   local label=$1; shift
-  echo "### $label"
-  echo "### $label" >> "$LAB/table.md"
+  echo "### $label" | tee -a "$LAB/table.md"
   set +e
-  "$@" 2>&1 | tee "$LAB/$label.log" | grep -E '^[|]|^llama_bench|t/s' | tail -8
-  local rc=${PIPESTATUS[0]}
+  "$@" > "$LAB/$label.log" 2>&1
+  local rc=$?
   set -e
-  echo "(exit $rc)" >> "$LAB/table.md"
-  { grep -E '^[|]' "$LAB/$label.log" | tail -4 >> "$LAB/table.md" || true; }
-  echo
+  printf '(exit %s)\n' "$rc" >> "$LAB/table.md"
+  { grep -E '^\|' "$LAB/$label.log" | tail -4 >> "$LAB/table.md" || true; }
 }
 
-
+# Anchors: patched build against the pristine build of the same pin, same job.
 if [[ -n "$CTRL_BENCH" ]]; then
   run gpu-control  "$CTRL_BENCH" "${COMMON[@]}" -r 2 -ngl 99
   run gpu-variant  "$BENCH"      "${COMMON[@]}" -r 2 -ngl 99
@@ -249,11 +261,33 @@ else
   run gpu-default  "$BENCH"      "${COMMON[@]}" -r 2 -ngl 99
 fi
 run cpu-reference  "$BENCH" "${COMMON[@]}" -r 2 -ngl 0
+# How many host cores the software driver actually uses.
 for threads in 1 2 4 8; do
-  LP_NUM_THREADS=$threads run "gpu-lp-threads-$threads" env LP_NUM_THREADS=$threads "$BENCH" "${QUICK[@]}" -ngl 99
+  run "gpu-lp-threads-$threads" env LP_NUM_THREADS=$threads "$BENCH" "${QUICK[@]}" -ngl 99
 done
+# Are the graph level fusions on this driver a help or a cost?
+run gpu-no-multi-add   env GGML_VK_DISABLE_MULTI_ADD=1 "$BENCH" "${QUICK[@]}" -ngl 99
+run gpu-force-mmvq     env GGML_VK_FORCE_MMVQ=1 "$BENCH" "${QUICK[@]}" -ngl 99
+run gpu-no-fusion      env GGML_VK_DISABLE_FUSION=1 "$BENCH" "${QUICK[@]}" -ngl 99
+run gpu-no-graph-opt   env GGML_VK_DISABLE_GRAPH_OPTIMIZE=1 "$BENCH" "${QUICK[@]}" -ngl 99
+run gpu-nodes-8        env GGML_VK_MAX_NODES_PER_SUBMIT=8 "$BENCH" "${QUICK[@]}" -ngl 99
+run gpu-nodes-128      env GGML_VK_MAX_NODES_PER_SUBMIT=128 "$BENCH" "${QUICK[@]}" -ngl 99
+if [[ "$lab_patches" == *row_tile_patches* ]]; then
+  # Rows per workgroup: fewer workgroups for the same arithmetic.
+  for factor in 2 4 8; do
+    run "gpu-rowtile-$factor" env GGUF_VK_ROW_TILE=$factor "$BENCH" "${QUICK[@]}" -ngl 99
+  done
+fi
+if [[ "$lab_patches" == *dmmv_large_patches* ]]; then
+  # Upstream's large workgroup path, which this driver never selects by itself.
+  run gpu-dmmv-large  env GGUF_VK_DMMV_LARGE=1 "$BENCH" "${QUICK[@]}" -ngl 99
+  if [[ "$lab_patches" == *row_tile_patches* ]]; then
+    run gpu-rowtile-4-large env GGUF_VK_ROW_TILE=4 GGUF_VK_DMMV_LARGE=1 "$BENCH" "${QUICK[@]}" -ngl 99
+  fi
+fi
+
+# Greedy fixture: a faster kernel that changes the text is not a result.
 if [[ -n "$CTRL_BENCH" ]]; then
-  # A faster kernel that changes the text is not a result: compare greedy output.
   generate_fixture "$CTRL_BENCH" control
   generate_fixture "$BENCH" variant
   if [[ "$(wc -c < "$LAB/greedy-control.tail")" -lt 200 || "$(wc -c < "$LAB/greedy-variant.tail")" -lt 200 ]]; then
@@ -265,27 +299,13 @@ if [[ -n "$CTRL_BENCH" ]]; then
     { diff "$LAB/greedy-control.tail" "$LAB/greedy-variant.tail" || true; } | sed -n '1,20p' | tee -a "$LAB/table.md" || true
   fi
 fi
-run gpu-no-multi-add   env GGML_VK_DISABLE_MULTI_ADD=1 "$BENCH" "${QUICK[@]}" -ngl 99
-run gpu-force-mmvq     env GGML_VK_FORCE_MMVQ=1 "$BENCH" "${QUICK[@]}" -ngl 99
-run gpu-no-fusion      env GGML_VK_DISABLE_FUSION=1 "$BENCH" "${QUICK[@]}" -ngl 99
-run gpu-no-graph-opt   env GGML_VK_DISABLE_GRAPH_OPTIMIZE=1 "$BENCH" "${QUICK[@]}" -ngl 99
-run gpu-nodes-8        env GGML_VK_MAX_NODES_PER_SUBMIT=8 "$BENCH" "${QUICK[@]}" -ngl 99
-run gpu-nodes-128      env GGML_VK_MAX_NODES_PER_SUBMIT=128 "$BENCH" "${QUICK[@]}" -ngl 99
-if [[ "$lab_patches" == *row_tile_patches* ]]; then
-  run gpu-rowtile-2      env GGUF_VK_ROW_TILE=2 "$BENCH" "${QUICK[@]}" -ngl 99
-  run gpu-rowtile-4      env GGUF_VK_ROW_TILE=4 "$BENCH" "${QUICK[@]}" -ngl 99
-  run gpu-rowtile-8      env GGUF_VK_ROW_TILE=8 "$BENCH" "${QUICK[@]}" -ngl 99
-fi
-if [[ "$lab_patches" == *dmmv_large_patches* ]]; then
-  run gpu-dmmv-large     env GGUF_VK_DMMV_LARGE=1 "$BENCH" "${QUICK[@]}" -ngl 99
-fi
 
 # Per-operation table for the decode path only (prompt 16, generation 128).
 echo "### profile"
-GGML_VK_PERF_LOGGER=1 "$BENCH" -m "$MODEL" -p 16 -n 128 -t 2 -b 128 -ub 32 -r 1 -ngl 99 \
+GGML_VK_PERF_LOGGER=1 "$BENCH" -m "$MODEL" -p 16 -n 64 -t 2 -b 128 -ub 32 -r 1 -ngl 99 \
   > "$LAB/profile.stdout.log" 2> "$LAB/profile.stderr.log" || true
 if [[ -n "$CTRL_BENCH" ]]; then
-  GGML_VK_PERF_LOGGER=1 "$CTRL_BENCH" -m "$MODEL" -p 16 -n 128 -t 2 -b 128 -ub 32 -r 1 -ngl 99 \
+  GGML_VK_PERF_LOGGER=1 "$CTRL_BENCH" -m "$MODEL" -p 16 -n 64 -t 2 -b 128 -ub 32 -r 1 -ngl 99 \
     > "$LAB/profile-control.stdout.log" 2> "$LAB/profile-control.stderr.log" || true
 fi
 
