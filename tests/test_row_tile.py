@@ -304,3 +304,20 @@ def test_screening_workflow_covers_parallelism_both_ways_and_needs_the_marker():
     assert 'evaluate_screening.py' in workflow and 'screen_row_grouping_android.py' in workflow
     assert 'screening-payload-not-release' in workflow
     assert "contains(github.event.head_commit.message, '[row tile measure]')" in (ROOT/'.github/workflows/row-tile.yml').read_text()
+
+
+def test_every_workflow_parses_and_has_no_duplicate_job_keys():
+    # A duplicate job key made a whole workflow invalid and cost a full cycle.
+    import re
+    import yaml
+    workflows = sorted((ROOT/'.github/workflows').glob('*.yml'))
+    assert workflows
+    for workflow in workflows:
+        text = workflow.read_text()
+        yaml.safe_load(text)
+        for job in re.findall(r'^  ([A-Za-z0-9_-]+):\n', text, re.M):
+            block = text.split(f'  {job}:', 1)[1]
+            block = block.split('\n  ', 1)[0] if '\n  ' in block else block
+            keys = re.findall(r'^    ([a-z][a-z-]*):', block, re.M)
+            duplicates = sorted({key for key in keys if keys.count(key) > 1})
+            assert not duplicates, f'{workflow.name} job {job} repeats {duplicates}'
