@@ -139,3 +139,58 @@ confirmou HTTP 401. **Nenhuma execução Android deste novo experimento foi
 iniciada.** Alterações estão commitadas localmente na mesma branch. É necessária
 nova reconexão do GitHub no Arena para publicar e disparar a CI. Não houve
 mudança de assinatura do APK entregue nem declaração de ganho comprovado.
+
+
+## Resultado medido — 35445074482 (rejeitado para a meta de 3×)
+
+Execução válida: build nativo passou, os quatro jobs (2 estados × 2 fatores)
+completaram as observações, com 128 callbacks e 128 tokens por contador nativo,
+saídas completas idênticas entre OFF/ON e entre todos os pares, offload Vulkan
+positivo e prova fora do tempo. Nenhum par foi descartado.
+
+| Estado | Fator | T/s histórico | T/s entregue | T/s candidato | Ganho vs histórico | vs entregue |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Ligada | 4 | 6,980898 | 6,830280 | 7,147468 | **+2,386%** | **+4,644%** |
+| Ligada | 8 | 3,989070 | 3,962265 | 2,906984 | **−26,894%** | **−26,452%** |
+| Apagada | 4 | 9,068770 | 8,907170 | 8,971528 | **−0,018%** | **+1,820%** |
+| Apagada | 8 | 6,703739 | 6,679453 | 6,439861 | **−3,936%** | **−3,620%** |
+
+- Fator 8: **regressão em todos os seis pares**, com as três razões entre 0,73 e
+  0,88. Não usar.
+- Fator 4: ganho pequeno e **não estável** — na tela apagada um dos três pares
+  ficou 1,8% mais lento que o histórico, e o ganho contra o entregue (+1,8%/+4,6%)
+  está na ordem da variação já observada entre pares. Não atende 3×.
+- Meta de **+200% (3×) não atingida**. `target_3x_passed=false` nos quatro jobs.
+- As taxas absolutas **não** são comparáveis entre estados nem entre jobs: os
+  controles rodaram a 3,99 T/s e a 6,98 T/s em runners diferentes com o mesmo
+  código. Só as razões pareadas valem.
+
+### Por que não deu 3×
+
+O perfil nativo mostra kernels a ~1-2 GFLOPS/s, mas as três famílias de
+experimento já medidas mostram que nenhum recurso isolado explica o custo:
+
+| Experimento | O que mudou | Efeito medido |
+| --- | --- | --- |
+| Expansão F32 (35402357865) | remove decodificação, 6× mais bytes | +4,0% acordado, −23,2% apagado |
+| Repack Q5→Q8 (35404555171) | menos operações de bits | −10,3% acordado, −6,4% apagado |
+| Agrupamento de linhas f4 | 4× menos grupos | +2,4% / −0,02% |
+| Agrupamento de linhas f8 | 8× menos grupos | −26,9% / −3,9% |
+
+Menos ALU de decodificação não acelera; menos tráfego de memória acelera de
+forma modesta; menos grupos de trabalho **piora** quando reduz paralelismo. Isso
+indica que o tempo está distribuído em custo por elemento/por thread do llvmpipe,
+não em um recurso que o agrupamento de linhas ataque. Reduzir instruções por
+elemento exigiria dot product inteiro ou fp16 — o dispositivo reporta
+`int dot: 0` e `fp16: 0` — ou seja, exige outro caminho numérico (proibido) ou
+outra GPU.
+
+### Próximo passo preparado (não executado)
+
+`vulkan-screening.yml` mede, no mesmo APK e no mesmo emulador, cinco
+configurações alternadas: fator 4, 8, 16, workgroup largo (`GGUF_VK_DMMV_LARGE`,
+32 lanes por linha em vez de 8) e fator 4 + largo. É triagem de descoberta, não
+aceitação: `ci/evaluate_screening.py` só valida identidade, contagens e saídas,
+e nunca aprova release. A hipótese que sobra é **aumentar o paralelismo** (mais
+lanes por linha), coerente com a queda observada ao reduzir grupos de trabalho.
+Nada disso foi medido ainda.

@@ -123,6 +123,8 @@ def main():
             'GGUF_EXPERIMENT_MEDIA_PREFIX','GGUF_EXPERIMENT_BLOCKING_WAIT'))
         from row_tile_patches import apply as apply_row_tile
         apply_row_tile(source)
+        from dmmv_large_patches import apply as apply_dmmv_large
+        apply_dmmv_large(source)
     if os.environ.get('GGUF_EXPERIMENT_REPACKED_WEIGHTS')=='1':
         assert os.environ.get('GGUF_EXPERIMENT_EXPANDED_WEIGHTS')!='1'
         from repack_q5_patches import apply as apply_repack_q5

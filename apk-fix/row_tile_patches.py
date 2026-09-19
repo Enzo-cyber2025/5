@@ -13,9 +13,17 @@ ANCHOR = '    const bool use_subgroups = device->subgroup_arithmetic;\n'
 BLOCK = '''#if defined(GGUF_EXPERIMENT_ROW_TILE)
     // GGUF_ROW_TILE_EXPERIMENT: fixed predeclared factor, not runtime autotuning.
     uint32_t gguf_row_factor = 1;
+#if defined(GGUF_ROW_TILE_DEFAULT) && GGUF_ROW_TILE_DEFAULT > 1
+    // Production default: only the measured software device is affected; every
+    // other driver keeps upstream behavior untouched.
+    if (std::string(device->properties.deviceName).find("llvmpipe") != std::string::npos &&
+        !getenv("GGUF_VK_ROW_TILE")) {
+        gguf_row_factor = GGUF_ROW_TILE_DEFAULT;
+    }
+#endif
     if (const char * setting = getenv("GGUF_VK_ROW_TILE")) {
         bool accepted = false;
-        for (const char * candidate : {"1", "2", "4", "8"}) {
+        for (const char * candidate : {"1", "2", "4", "8", "16"}) {
             if (strcmp(setting, candidate) == 0) accepted = true;
         }
         GGML_LOG_INFO("GGUF_VK_ROW_TILE_PRE setting=%s device=%s fp16=%u int_dot=%u subgroup=%u max_wg=%u stdq=%u kq=%u stdq_int=%u kq_int=%u\\n",
@@ -23,7 +31,7 @@ BLOCK = '''#if defined(GGUF_EXPERIMENT_ROW_TILE)
             device->subgroup_size, device->properties.limits.maxComputeWorkGroupInvocations,
             rm_stdq, rm_kq, rm_stdq_int, rm_kq_int);
         if (!accepted) {
-            throw std::runtime_error("GGUF row tile experiment accepts only 1, 2, 4 or 8; unset for control");
+            throw std::runtime_error("GGUF row tile experiment accepts only 1, 2, 4, 8 or 16; unset for control");
         }
         const bool software_fp32 = std::string(device->properties.deviceName).find("llvmpipe") != std::string::npos &&
                                    !device->fp16 && !device->integer_dot_product &&
@@ -32,14 +40,19 @@ BLOCK = '''#if defined(GGUF_EXPERIMENT_ROW_TILE)
             throw std::runtime_error("GGUF row tile experiment requires the measured llvmpipe FP32 device, int-dot off, subgroup 8, default MMV policy");
         }
         gguf_row_factor = uint32_t(atoi(setting));
+    }
+    if (gguf_row_factor > 1) {
         rm_stdq *= gguf_row_factor;
         rm_kq *= gguf_row_factor;
         rm_stdq_int *= gguf_row_factor;
         rm_kq_int *= gguf_row_factor;
-        // One workgroup must stay inside the driver's invocation limit.
-        const uint32_t rows_per_workgroup = 2 * std::max(rm_stdq, rm_kq);
-        if (rows_per_workgroup * device->subgroup_size > device->properties.limits.maxComputeWorkGroupInvocations) {
-            throw std::runtime_error("GGUF row tile factor exceeds the driver workgroup limit");
+        // Rows covered by one workgroup: Q5_0/Q4_1 style 2*rm_stdq, Q8_0 rm_stdq,
+        // k-quants rm_kq. The largest of those must fit the driver limit, together
+        // with the optional four-times-wider workgroup of the screening lever.
+        const uint32_t rows_per_workgroup = std::max(2 * rm_stdq, rm_kq);
+        const uint32_t lanes_per_row = device->subgroup_size * (getenv("GGUF_VK_DMMV_LARGE") ? 4 : 1);
+        if (rows_per_workgroup * lanes_per_row > device->properties.limits.maxComputeWorkGroupInvocations) {
+            throw std::runtime_error("GGUF row tile factor exceeds the driver workgroup invocation limit");
         }
     }
     GGML_LOG_INFO("GGUF_VK_ROW_TILE factor=%u stdq=%u kq=%u stdq_int=%u kq_int=%u q5_rows=%u q8_rows=%u kq_rows=%u fp16=%u int_dot=%u subgroup=%u\\n",

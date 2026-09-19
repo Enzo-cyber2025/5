@@ -9,7 +9,7 @@ from evaluate_gpu_rate import evaluate_pair, rate, HASHES, MODEL, SETTINGS
 
 TARGET_MULTIPLIER = 3
 PREDECLARED_FACTORS = (4, 8)
-ACCEPTED_FACTORS = (1, 2, 4, 8)
+ACCEPTED_FACTORS = (1, 2, 4, 8, 16)
 ENV = {'GGML_VK_VISIBLE_DEVICES': '0'}
 COMPLETE = 'COMPLETE_ROW_TILE_OBSERVATIONS'
 CONFIG = re.compile(r'GGUF_VK_ROW_TILE factor=(\d+) stdq=(\d+) kq=(\d+) stdq_int=(\d+) kq_int=(\d+) '

@@ -200,8 +200,8 @@ return (int)(rm_stdq + 2*rm_kq + 4*rm_stdq_int + 8*rm_kq_int);
     subprocess.run(['g++','-std=c++17','-DGGUF_EXPERIMENT_ROW_TILE=1',str(source),'-o',str(exe)],check=True,capture_output=True)
     assert subprocess.run([str(exe)],env=env,capture_output=True).returncode == 17
     for factor in ACCEPTED_FACTORS:
-        assert subprocess.run([str(exe)],env={**env,'GGUF_VK_ROW_TILE':str(factor)},capture_output=True).returncode == 17*factor
-    for value in ('0','16','garbage',''):
+        assert subprocess.run([str(exe)],env={**env,'GGUF_VK_ROW_TILE':str(factor)},capture_output=True).returncode == (17*factor) % 256
+    for value in ('0','32','garbage',''):
         assert subprocess.run([str(exe)],env={**env,'GGUF_VK_ROW_TILE':value},capture_output=True).returncode == 255
     for args in (['Adreno'], ['llvmpipe','fp16']):
         assert subprocess.run([str(exe),*args],env={**env,'GGUF_VK_ROW_TILE':'4'},capture_output=True).returncode == 255
@@ -210,6 +210,13 @@ return (int)(rm_stdq + 2*rm_kq + 4*rm_stdq_int + 8*rm_kq_int);
     assert subprocess.run([str(exe)],env={**env,'GGUF_VK_ROW_TILE':'4','GGML_VK_FORCE_MMVQ':'1'},capture_output=True).returncode == 255
     subprocess.run(['g++','-std=c++17',str(source),'-o',str(exe)],check=True,capture_output=True)
     assert subprocess.run([str(exe),'Adreno'],env={**env,'GGUF_VK_ROW_TILE':'4'},capture_output=True).returncode == 17
+
+    # Production default: compiled-in factor applies with no environment variable,
+    # only on the measured device, and the environment can still disable it.
+    subprocess.run(['g++','-std=c++17','-DGGUF_EXPERIMENT_ROW_TILE=1','-DGGUF_ROW_TILE_DEFAULT=8',str(source),'-o',str(exe)],check=True,capture_output=True)
+    assert subprocess.run([str(exe)],env=env,capture_output=True).returncode == (17*8) % 256
+    assert subprocess.run([str(exe)],env={**env,'GGUF_VK_ROW_TILE':'1'},capture_output=True).returncode == 17
+    assert subprocess.run([str(exe),'Adreno'],env=env,capture_output=True).returncode == 17
 
 
 def test_per_token_delivery_is_experimental_real_work_and_not_synthetic_timing(tmp_path):
