@@ -84,11 +84,11 @@ ensure_spirv_headers() { # ggml's Vulkan CMake asks for SPIRV-Headers explicitly
     return 1
   fi
   local config
-  config=$(find "$install" -name SPIRV-HeadersConfig.cmake -print -quit 2>/dev/null || true)
+  config=$(find "$PWD/$install" -name SPIRV-HeadersConfig.cmake -print -quit 2>/dev/null || true)
   if [[ -z "$config" ]]; then
     cmake -S "$src" -B .cache/spirv-build -DCMAKE_INSTALL_PREFIX="$PWD/$install" > "$LAB/spirv-cmake.log" 2>&1
     cmake --install .cache/spirv-build >> "$LAB/spirv-cmake.log" 2>&1
-    config=$(find "$install" -name SPIRV-HeadersConfig.cmake -print -quit 2>/dev/null || true)
+    config=$(find "$PWD/$install" -name SPIRV-HeadersConfig.cmake -print -quit 2>/dev/null || true)
   fi
   if [[ -z "$config" ]]; then
     echo "SPIRV-HeadersConfig.cmake not found under $install; last cmake log lines:"
@@ -96,7 +96,11 @@ ensure_spirv_headers() { # ggml's Vulkan CMake asks for SPIRV-Headers explicitly
     return 1
   fi
   # find_package(SPIRV-Headers CONFIG) only accepts an absolute <pkg>_DIR.
-  SPIRV_HEADERS_DIR=$(cd "$(dirname "$config")" && pwd)
+  SPIRV_HEADERS_DIR="$(cd "$(dirname "$config")" 2>/dev/null && pwd || true)"
+  if [[ -z "$SPIRV_HEADERS_DIR" ]]; then
+    echo "could not resolve an absolute package dir from $config"
+    return 1
+  fi
   echo "spirv-headers: $SPIRV_HEADERS_DIR"
   return 0
 }

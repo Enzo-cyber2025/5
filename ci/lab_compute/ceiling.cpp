@@ -28,6 +28,7 @@ static std::vector<char> read_file(const std::string & path) {
 struct Args {
     std::string spv;
     uint32_t block = 32, groups = 4096, inner = 128, reps = 5;
+    uint32_t mb = 1;  // streamed buffer size, power of two mebibytes
     double macs_per_iter = 1.0;  // 4 for a vec4 pattern, 1 for a scalar pattern
 };
 
