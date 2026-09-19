@@ -1,31 +1,55 @@
-"""Opt-in experiment: amortize standard-quant matvec workgroups, not math/precision.
+"""Opt-in experiment: amortize standard- and k-quant matvec workgroups.
 
-Pinned shaders already compute NUM_ROWS independent rows. Change their shared
-row multiplier, keeping shader source, reduction and workgroup width untouched.
-The experiment is intentionally restricted to the measured FP32 software driver.
+The pinned shaders already compute NUM_ROWS independent rows per workgroup. The
+dispatch divides the row count by the pipeline's wg_denoms, so raising the row
+multiplier cuts the number of dispatched workgroups without touching shader
+source, reduction order, activation policy or precision. Every quant family the
+fixture uses is covered so the effect is not limited to one weight type.
 """
 from pathlib import Path
 
 MARKER = 'GGUF_ROW_TILE_EXPERIMENT'
-ANCHOR = '    // RDNA3: above four columns, static 4 rows for all types bench faster than the default\n'
+ANCHOR = '    const bool use_subgroups = device->subgroup_arithmetic;\n'
 BLOCK = '''#if defined(GGUF_EXPERIMENT_ROW_TILE)
     // GGUF_ROW_TILE_EXPERIMENT: fixed predeclared factor, not runtime autotuning.
     uint32_t gguf_row_factor = 1;
     if (const char * setting = getenv("GGUF_VK_ROW_TILE")) {
-        if (strcmp(setting, "4") != 0) {
-            throw std::runtime_error("GGUF row tile experiment accepts only factor 4; unset for control");
+        bool accepted = false;
+        for (const char * candidate : {"1", "2", "4", "8"}) {
+            if (strcmp(setting, candidate) == 0) accepted = true;
+        }
+        if (!accepted) {
+            throw std::runtime_error("GGUF row tile experiment accepts only 1, 2, 4 or 8; unset for control");
         }
         if (device->name.find("llvmpipe") == std::string::npos || device->fp16 ||
             device->integer_dot_product || getenv("GGML_VK_FORCE_MMVQ") || getenv("GGML_VK_DISABLE_MMVQ") ||
-            device->subgroup_size != 8 || rm_stdq != 1) {
+            device->subgroup_size != 8 || rm_stdq != 1 || rm_kq != 2 || rm_stdq_int != 1 || rm_kq_int != 1) {
             throw std::runtime_error("GGUF row tile experiment requires llvmpipe FP32, int-dot off, subgroup 8, default MMV policy");
         }
-        gguf_row_factor = 4;
+        gguf_row_factor = uint32_t(atoi(setting));
         rm_stdq *= gguf_row_factor;
+        rm_kq *= gguf_row_factor;
+        rm_stdq_int *= gguf_row_factor;
+        rm_kq_int *= gguf_row_factor;
     }
-    GGML_LOG_INFO("GGUF_VK_ROW_TILE factor=%u stdq=%u q5_rows=%u q8_rows=%u fp16=%u int_dot=%u subgroup=%u\\n",
-        gguf_row_factor, rm_stdq, 2*rm_stdq, rm_stdq,
+    GGML_LOG_INFO("GGUF_VK_ROW_TILE factor=%u stdq=%u kq=%u stdq_int=%u kq_int=%u q5_rows=%u q8_rows=%u kq_rows=%u fp16=%u int_dot=%u subgroup=%u\\n",
+        gguf_row_factor, rm_stdq, rm_kq, rm_stdq_int, rm_kq_int, 2*rm_stdq, rm_stdq, rm_kq,
         uint32_t(device->fp16), uint32_t(device->integer_dot_product), device->subgroup_size);
+#endif
+'''
+DISPATCH_BLOCK = '''#if defined(GGUF_EXPERIMENT_ROW_TILE)
+        // GGUF_ROW_TILE_DISPATCH_AUDIT
+        if (ne11 == 1 && (src0->type == GGML_TYPE_Q5_0 || src0->type == GGML_TYPE_Q8_0 ||
+                          src0->type == GGML_TYPE_Q4_K || src0->type == GGML_TYPE_Q6_K)) {
+            static std::once_flag gguf_row_seen[4];
+            const unsigned slot = src0->type == GGML_TYPE_Q5_0 ? 0 : src0->type == GGML_TYPE_Q8_0 ? 1 :
+                                  src0->type == GGML_TYPE_Q4_K ? 2 : 3;
+            std::call_once(gguf_row_seen[slot], [&]() {
+                GGML_LOG_INFO("GGUF_VK_ROW_TILE_DISPATCH type=%s rows=%u activation=%s quantize_y=%u columns=%u\\n",
+                    ggml_type_name(src0->type), dmmv->wg_denoms[0], ggml_type_name(src1->type),
+                    uint32_t(quantize_y), uint32_t(ne11));
+            });
+        }
 #endif
 '''
 
@@ -48,19 +72,3 @@ def patch(source):
 def apply(root):
     path = Path(root) / 'ggml/src/ggml-vulkan/ggml-vulkan.cpp'
     path.write_text(patch(path.read_text()))
-
-# One recorded single-column dispatch per relevant weight type, not a timing
-# profiler. Native completion/strict audits separately establish execution.
-DISPATCH_BLOCK = '''#if defined(GGUF_EXPERIMENT_ROW_TILE)
-        // GGUF_ROW_TILE_DISPATCH_AUDIT
-        if (ne11 == 1 && (src0->type == GGML_TYPE_Q5_0 || src0->type == GGML_TYPE_Q8_0)) {
-            static std::once_flag gguf_row_seen[2];
-            const unsigned slot = src0->type == GGML_TYPE_Q5_0 ? 0 : 1;
-            std::call_once(gguf_row_seen[slot], [&]() {
-                GGML_LOG_INFO("GGUF_VK_ROW_TILE_DISPATCH type=%s rows=%u activation=%s quantize_y=%u columns=%u\\n",
-                    ggml_type_name(src0->type), dmmv->wg_denoms[0], ggml_type_name(src1->type),
-                    uint32_t(quantize_y), uint32_t(ne11));
-            });
-        }
-#endif
-'''

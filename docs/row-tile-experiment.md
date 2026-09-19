@@ -18,7 +18,8 @@ com o mesmo divisor de dispatch e a mesma constante de especialização.
   sampling, número de tokens, batch/ubatch e número de threads.
 - Pode reduzir o custo de agendar grupos e reutilizar leituras de ativações.
   Também pode piorar pressão de registradores. Nenhum ganho é presumido.
-- Fator 4 predefinido; sem varredura para escolher uma execução favorável.
+- Fatores aceitos em tempo de execução: 1 (controle), 2, 4 e 8. A medição de
+  confirmação usa somente 4 e 8, declarados antes da execução.
 - Build `GGUF_EXPERIMENT_ROW_TILE=1` e ambiente `GGUF_VK_ROW_TILE=4` obrigatórios.
   Ambos ficam fora do caminho normal. Sem variável: controle, fator 1.
 - O modo ativo rejeita outros valores, hardware que não seja llvmpipe FP32,
@@ -29,11 +30,32 @@ com o mesmo divisor de dispatch e a mesma constante de especialização.
   ambiente diretamente, sem ler um campo ainda não inicializado.
 - Não combina expansão F32, repack Q5→Q8, prefixo multimodal ou espera alterada.
 
-O log registra configuração e o primeiro dispatch de uma coluna para Q5_0 e
-Q8_0, incluindo linhas efetivas, ativação F32 e ausência de requantização.
+O log registra a configuração e o primeiro dispatch de uma coluna para Q5_0,
+Q8_0, Q4_K e Q6_K, incluindo linhas efetivas, ativação F32 e ausência de
+requantização. Compilações dinâmicas repetem a linha de configuração; o
+avaliador exige que todas sejam **idênticas** (uma única configuração), não
+uma linha única. A primeira execução falhou exatamente por isso: o build estava
+correto, mas o parser tratava compilações repetidas como ambiguidade.
 Isso não é um perfil de tempo dos kernels. A conclusão nativa e a auditoria de
 Vulkan estrito são verificações separadas da execução. A telemetria pontual
 ocorre no warmup; as verificações `call_once` permanecem no código medido.
+
+## Por que essa hipótese, com dados
+
+Timings instrumentados de um experimento anterior
+(`ci-results/35156484592-1/physical-vulkan-kernel-timings.txt`) mostram, do
+tempo total, aproximadamente 30% em `MUL_MAT_VEC q5_0 m=1536 n=1 k=576`, 15% em
+`MUL_MAT_VEC q8_0 m=49152 n=1 k=576` (cabeça de vocabulário), 7% em
+`MUL_MAT_VEC q6_K`, 7% em `MUL_MAT_ADD MUL_MAT_VEC q5_0`, 6% em outros combos
+Q5_0/Q8_0 e 4% em `MUL_MAT_VEC q4_K`. Todos rodam a **~1-2 GFLOPS/s**, cerca de
+1% do que o hardware entrega — ou seja, o custo está no número de grupos de
+trabalho despachados e não na aritmética. O divisor de dispatch
+(`wg_denoms[0]`) é o que define quantas linhas cada grupo cobre, então aumentar
+esse multiplicador reduz o número de despachos sem mudar nenhuma conta.
+
+Isso é uma hipótese quantitativa, não um resultado: o perfil tem overhead de
+instrumentação e foi medido em outro runner. O efeito real precisa aparecer nos
+pares cronometrados.
 
 ## Protocolo e aprovação
 
@@ -53,7 +75,11 @@ ocorre no warmup; as verificações `call_once` permanecem no código medido.
 6. Não comparar taxas absolutas entre runners, somar ganhos de experiências
    diferentes, diminuir orçamento ou retardar controles.
 
-Workflow: `.github/workflows/row-tile.yml`; avaliador: `ci/evaluate_row_tile.py`.
+Workflow: `.github/workflows/row-tile.yml` (matriz estado × fator: 4 jobs);
+avaliador: `ci/evaluate_row_tile.py`, que grava
+`evidence/physical-row-tile-target-<estado>-f<fator>.json`. A meta é atingida se
+**existir um fator pré-declarado** com todas as razões históricas ≥3 e todas as
+razões contra o entregue ≥1, nos dois estados.
 O sucesso de um estado não aprova release. Imagens, outras cargas, startup,
 memória, CPU/arquiteturas não suportadas, GPU física e continuidade da assinatura
 continuam necessários. O APK entregue `bd7c45d3…` não é alterado.
@@ -80,13 +106,22 @@ razão para não chamar o experimento de release qualificado.
 
 ## Validação antes da execução Android
 
-117 testes locais passaram; quatro foram omitidos por dependências locais
+121 testes locais passaram; quatro foram omitidos por dependências locais
 ausentes (compilador GLSL, JDK ou DEX do candidato). Há teste C++ executando o bloco real de configuração com
 macro ON/OFF, checagem do patch contra o upstream fixado, testes de identidade,
 telemetria e rejeição do avaliador 3×. Esses testes **não provam velocidade nem
 execução de shaders no Android**. A execução nativa e as taxas ainda precisam
 ser obtidas pela CI.
 
+
+## Execução anterior (35443220722): falha de diagnóstico, não de medição
+
+Build nativo passou; os dois jobs de medição falharam no parser antes de
+qualquer razão ser calculada. O log nativo mostra `GGUF_VK_ROW_TILE factor=1`
+30 vezes por estágio (uma por compilação dinâmica de pipeline) — o build estava
+correto e o fator OFF é 1. Nenhuma razão de velocidade foi publicada, nenhum
+APK foi entregue, nada foi declarado como ganho. A lista de despachos também
+confirmou Q5_0 e Q8_0 de uma coluna com ativação F32 e sem requantização.
 
 ## Publicação pendente
 

@@ -101,7 +101,7 @@ jobs:
               for abi in ('x86_64','arm64-v8a'):
                   assert b'GGUF_VK_ROW_TILE' in z.read('lib/'+abi+'/libaijni.so')
                   assert b'GGUF_ROW_TILE_CALLBACKS' in z.read('lib/'+abi+'/libaijni.so')
-          r=dict(apk_sha256=hashlib.sha256(apk.read_bytes()).hexdigest(),source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),experimental_row_tile_build=True,target_multiplier=3,row_factor=4,per_token_callbacks=True,default_enabled=False,control='Pre-acceleration 0c45fd2e and exact delivered bd7c45d3; fixed row factor 4 only for candidate',release_approved=False)
+          r=dict(apk_sha256=hashlib.sha256(apk.read_bytes()).hexdigest(),source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),experimental_row_tile_build=True,target_multiplier=3,predeclared_factors=[4,8],per_token_callbacks=True,default_enabled=False,control='Pre-acceleration 0c45fd2e and exact delivered bd7c45d3; predeclared row factors 4 and 8 only for candidate',release_approved=False)
           Path('.cache/row-tile-export/build.json').write_text(json.dumps(r,indent=2))
           Path('evidence/physical-row-tile-build.json').write_text(json.dumps(r,indent=2))
           PY
@@ -131,6 +131,7 @@ jobs:
       fail-fast: false
       matrix:
         state: [awake, asleep]
+        factor: [4, 8]
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
@@ -171,16 +172,16 @@ jobs:
           disk-size: 8192M
           disable-animations: true
           emulator-options: -no-window -no-snapshot -gpu host -feature Vulkan -noaudio -no-boot-anim -camera-back emulated -camera-front emulated
-          script: bash ci/log_step.sh emulator python3 scripts/test_row_tile_android.py ${{ matrix.state }}
+          script: bash ci/log_step.sh emulator python3 scripts/test_row_tile_android.py ${{ matrix.state }} ${{ matrix.factor }}
       - name: Independently validate token mapping, full outputs, GPU and paired rate
-        run: python3 ci/evaluate_row_tile.py evidence/summary.json > evidence/physical-row-tile-target.json
+        run: python3 ci/evaluate_row_tile.py evidence/summary.json
       - name: Publish actual results or explicit failure, never release diagnostic APKs
         if: always()
         env:
-          GGUF_EVIDENCE_VARIANT: row-tile-${{ matrix.state }}
+          GGUF_EVIDENCE_VARIANT: row-tile-${{ matrix.state }}-f${{ matrix.factor }}
         run: bash ci/log_step.sh publish bash ci/publish_evidence.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: row-tile-${{ matrix.state }}-evidence
+          name: row-tile-${{ matrix.state }}-f${{ matrix.factor }}-evidence
           path: evidence/
