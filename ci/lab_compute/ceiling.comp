@@ -1,0 +1,73 @@
+#version 450
+// llvmpipe compute ceiling probe. PATTERN selects the inner-loop shape:
+//   0 vec4 fused multiply-add accumulator (ideal vector pattern)
+//   1 scalar float fused multiply-add accumulator
+//   2 horizontal dot() per iteration (the shape of the pinned DMMV hot loop)
+//   3 nibble unpack plus horizontal dot() per iteration (q4/q5 style dequant)
+//   4 nibble unpack plus element-wise accumulation, one reduction at the end
+//   5 vec4 accumulator plus one workgroup barrier per iteration
+//   6 vec4 accumulator plus a shared-memory round trip and two barriers per
+//     iteration (the shape the k-quant and shmem-reduction DMMV shaders use)
+// Only linear addressing and power-of-two windows are used, so the measurement
+// is about arithmetic shape and synchronisation cost, not about cache behaviour.
+layout(local_size_x_id = 0, local_size_y = 1, local_size_z = 1) in;
+
+layout(constant_id = 0) const uint BLOCK_SIZE = 32;
+
+layout(binding = 0) readonly buffer A { vec4 a[]; };
+layout(binding = 1) readonly buffer B { vec4 b[]; };
+layout(binding = 2) writeonly buffer O { float o[]; };
+
+layout(push_constant) uniform P { uint inner; } p;
+
+shared float smem[BLOCK_SIZE];
+
+void main() {
+    const uint gid = gl_GlobalInvocationID.x;
+    const uint tid = gl_LocalInvocationID.x;
+    const uint n = uint(a.length());
+    if (n < 128u) {
+        o[gid] = 0.0;
+        return;
+    }
+    const uint start = (gid * 7u) % (n - 64u);
+
+    vec4 acc = vec4(0.0);
+    float sacc = 0.0;
+    const vec4 av = a[gid % n];
+
+    for (uint k = 0u; k < p.inner; ++k) {
+        const vec4 bv = b[start + (k & 63u)];
+#if PATTERN == 0
+        acc = fma(av, bv, acc);
+#elif PATTERN == 1
+        sacc = fma(av.x, bv.x, sacc);
+#elif PATTERN == 2
+        sacc += dot(av, bv);
+#elif PATTERN == 3
+        const uint word = floatBitsToUint(av.x) + k;
+        const uvec4 packed = (uvec4(word) >> uvec4(0u, 4u, 8u, 12u)) & uvec4(0xFu);
+        sacc += dot(vec4(packed) - vec4(8.0), bv);
+#elif PATTERN == 4
+        const uint word = floatBitsToUint(av.x) + k;
+        const uvec4 packed = (uvec4(word) >> uvec4(0u, 4u, 8u, 12u)) & uvec4(0xFu);
+        acc = fma(vec4(packed) - vec4(8.0), bv, acc);
+#elif PATTERN == 5
+        acc = fma(av, bv, acc);
+        barrier();
+#elif PATTERN == 6
+        acc = fma(av, bv, acc);
+        smem[tid] = acc.x;
+        barrier();
+        acc.y = smem[(tid + 1u) % BLOCK_SIZE];
+        barrier();
+#else
+#error unknown PATTERN
+#endif
+    }
+#if PATTERN == 0 || PATTERN == 4 || PATTERN == 5 || PATTERN == 6
+    o[gid] = (acc.x + acc.y) + (acc.z + acc.w);
+#else
+    o[gid] = sacc;
+#endif
+}

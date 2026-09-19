@@ -17,7 +17,7 @@ CTRL_BUILD=${LAB_LLAMA_CTRL_BUILD:-.cache/llama-host-ctrl-build}
 LAB=${LAB_DIR:-.cache/lab}
 MODEL=${LAB_MODEL:-.cache/mobile-models/SmolLM2-135M-Instruct-Q4_K_M.gguf}
 MODEL_SHA=2e8040ceae7815abe0dcb3540b9995eaa1fa0d2ca9e797d0a635ae4433c68c2d
-mkdir -p "$LAB"
+mkdir -p "$LAB" evidence .cache
 
 lab_flags=''
 lab_patches=''
@@ -62,6 +62,62 @@ printf '%s\n' "$icd" > "$LAB/icd.txt"
 } > "$LAB/host.txt"
 vulkaninfo --summary > "$LAB/vulkan-summary.txt" 2>&1 || true
 
+run_device_probe() { # subgroup shape and compute limits of the measured device
+  if ! g++ -std=c++17 -O2 ci/vulkan_features.cpp -lvulkan -o "$LAB/vulkan-features" >> "$LAB/probe-build.log" 2>&1; then
+    printf '### device probe failed to build\n' | tee -a "$LAB/table.md"
+    tail -20 "$LAB/probe-build.log" || true
+    return 0
+  fi
+  "$LAB/vulkan-features" > evidence/physical-llvmpipe-features.txt 2>&1 || true
+  grep -E 'shaderFloat16|subgroupSize|subgroupArithmetic|subgroupShuffle|subgroupClustered|computeFullSubgroups|maxComputeWorkGroupInvocations|maxComputeWorkGroupSize' \
+    evidence/physical-llvmpipe-features.txt >> "$LAB/table.md" || true
+  return 0
+}
+
+run_ceiling() { # CPU Vulkan compute ceiling: is a 2-3x kernel win possible here?
+  local dir=ci/lab_compute
+  mkdir -p "$LAB/ceiling"
+  local ok=1 pattern block
+  for pattern in 0 1 2 3 4 5 6; do
+    glslc -fshader-stage=comp -DPATTERN=$pattern -o "$LAB/ceiling/p$pattern.spv" "$dir/ceiling.comp" \
+      >> "$LAB/ceiling-build.log" 2>&1 || ok=0
+  done
+  g++ -std=c++17 -O2 -Wall "$dir/ceiling.cpp" -lvulkan -o "$LAB/ceiling/ceiling" \
+    >> "$LAB/ceiling-build.log" 2>&1 || ok=0
+  if [[ $ok != 1 ]]; then
+    printf '### ceiling probe failed to build (see ceiling-build.log)\n' | tee -a "$LAB/table.md"
+    tail -20 "$LAB/ceiling-build.log" || true
+    return 0
+  fi
+  : > "$LAB/ceiling.txt"
+  # 0 vec4 fma | 1 scalar fma | 2 horizontal dot | 3 unpack+dot | 4 unpack+accumulate
+  # 5 vec4 fma + barrier per iteration | 6 vec4 fma + shared round trip per iteration
+  for pattern in 0 1 2 3 4 5 6; do
+    local macs=4; [[ $pattern == 1 ]] && macs=1
+    for block in 8 32 128; do
+      local spec groups inner
+      for spec in "512 128" "8192 128"; do
+        read -r groups inner <<< "$spec"
+        "$LAB/ceiling/ceiling" --spv "$LAB/ceiling/p$pattern.spv" --block "$block" --groups "$groups" \
+          --inner "$inner" --reps 3 --macs "$macs" 2>&1 | sed "s/^/pattern=$pattern /" >> "$LAB/ceiling.txt" \
+          || printf 'pattern=%s block=%s groups=%s FAILED\n' "$pattern" "$block" "$groups" >> "$LAB/ceiling.txt"
+      done
+    done
+  done
+  # Same shape, growing grid: how many cores does this driver actually use?
+  local groups
+  for groups in 1 8 512 8192 65536; do
+    "$LAB/ceiling/ceiling" --spv "$LAB/ceiling/p0.spv" --block 32 --groups "$groups" --inner 256 \
+      --reps 3 --macs 4 2>&1 | sed 's/^/scaling /' >> "$LAB/ceiling.txt" \
+      || printf 'scaling groups=%s FAILED\n' "$groups" >> "$LAB/ceiling.txt"
+  done
+  cp "$LAB/ceiling.txt" evidence/physical-llvmpipe-ceiling.txt
+  printf '### compute ceiling (llvmpipe)\n' >> "$LAB/table.md"
+  grep -E 'pattern=(0|4|5|6) block=32 ' "$LAB/ceiling.txt" | head -8 >> "$LAB/table.md"
+  grep '^scaling ' "$LAB/ceiling.txt" | head -5 >> "$LAB/table.md"
+  return 0
+}
+
 build_bench() { # build_bench <src> <build> <flags>
   local src=$1 build=$2 flags=$3
   cmake -S "$src" -B "$build" -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_OPENMP=OFF \
@@ -84,6 +140,8 @@ generate_fixture() { # generate_fixture <bin> <label>
   printf '### greedy-%s exit=%s bytes=%s\n' "$label" "$rc" "$(wc -c < "$LAB/greedy-$label.tail")" | tee -a "$LAB/table.md"
 }
 
+run_device_probe
+run_ceiling
 build_bench "$SRC" "$BUILD" "$lab_flags"
 BENCH="$BUILD/bin/llama-bench"
 CTRL_BENCH=''

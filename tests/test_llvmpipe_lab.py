@@ -100,3 +100,29 @@ def test_accum_patch_refuses_to_apply_twice(tmp_path):
     assert 'gguf_acc0' in target.read_text()
     with pytest.raises(AssertionError, match='already applied'):
         accum.apply(tmp_path)
+
+
+def test_device_probe_reports_the_subgroup_shape_that_decides_reduction_cost():
+    text = (ROOT/'ci/vulkan_features.cpp').read_text()
+    for field in ('subgroupSize', 'subgroupSupportedOperations', 'subgroupArithmetic',
+                  'computeFullSubgroups', 'minSubgroupSize', 'maxSubgroupSize',
+                  'shaderFloat16', 'shaderIntegerDotProduct',
+                  'maxComputeWorkGroupInvocations', 'timestampPeriod'):
+        assert field in text, field
+    # The mandatory compute prerequisite and the exit contract of prepare_vulkan.sh stay.
+    assert 'storageBuffer16BitAccess = %s' in text
+    assert 'return storage.storageBuffer16BitAccess?0:1;' in text
+    lab = (ROOT/'ci/llvmpipe_lab.sh').read_text()
+    assert 'evidence/physical-llvmpipe-features.txt' in lab
+
+
+def test_ceiling_probe_covers_the_patterns_that_separate_the_hypotheses():
+    text = (ROOT/'ci/lab_compute/ceiling.comp').read_text()
+    for pattern in range(7):
+        assert f'#elif PATTERN == {pattern}' in text or f'#if PATTERN == {pattern}' in text, pattern
+    # Barrier and shared-memory cost must be measurable, not assumed.
+    assert text.count('barrier();') >= 3
+    assert 'shared float smem[BLOCK_SIZE];' in text
+    runner = (ROOT/'ci/lab_compute/ceiling.cpp').read_text()
+    assert '--macs' in runner and 'gpairs_per_s' in runner
+    assert 'vkCmdDispatch' in runner and 'pSpecializationInfo' in runner
