@@ -82,3 +82,52 @@ próximo alvo.
    greedy** — só vale se o texto for idêntico.
 2. Harness de aceitação no emulador: três pares alternados, tela ligada e
    apagada, saídas completas e contadores nativos iguais.
+
+## Atualização: a comparação com dados em cache subestimava o efeito
+
+Run 35471983921 (probe), mesmo runner, três formatos para os mesmos 8 MACs:
+
+| padrão | cargas por 8 MACs | leitura | GMAC/s |
+|---|---:|---|---:|
+| 0 | 1 (vec4) | janela de 1 MB em cache | 0,737 |
+| 11 | 5 (a forma fixada do Q5_0) | janela em cache | 1,005 |
+| 12 | 2 (bloco alinhado) | janela em cache | 1,134 |
+| 13 | 5 (a forma fixada do Q5_0) | **stream de 256 MiB** | 1,145 |
+| 14 | 2 (bloco alinhado) | **stream de 256 MiB** | **1,659** |
+| 15 | 1 (vec4 contígua) | stream de 256 MiB | 1,443 |
+
+Em cache, tirar 3 das 5 cargas vale 1,13x. Com os pesos vindo da memória de
+verdade (100 MB por token, como no modelo), vale **1,45x** — e uma única carga
+vetorial (15) não supera o par de palavras alinhadas (14), porque lê o dobro de
+bytes por MAC.
+
+Isto é o contrário da conclusão anterior: a contagem de cargas não importa
+quando tudo cabe em cache, e importa muito quando não cabe. As medições de
+11/12 (e o "padrão 11 == padrão 12") mediam o caso errado.
+
+Observação de método: os absolutos variam até 3x entre runners (p0 = 2,319
+GMAC/s no run 35470651775, 0,737 no 35471983921). Só razões dentro do mesmo run
+valem.
+
+## O que implementar agora
+
+Reempacotar Q5_0 e Q8_0 na memória da GPU, no upload, para blocos alinhados em 4
+bytes que preservam exatamente os mesmos bits:
+
+```
+Q5_0  22 B -> 24 B : [u32: d(f16) | qh] [uvec4: 16 bytes de nibbles]
+Q8_0  34 B -> 36 B : [u32: d(f16) | 0]  [uvec4: 8 palavras de 4 int8]
+```
+
+Cada 8 valores passa de cinco cargas (dois pedaços do qh, dois pedaços de qs,
+a escala) para duas. Os valores são montados com as mesmas expressões, então o
+resultado é bit a bit o mesmo: nenhuma mudança de precisão, GGUF intacto.
+
+Custo de memória: +9% nos tensores Q5_0 e +6% nos Q8_0 (alguns MB, não os 538 MB
+da expansão para F32 que já foi rejeitada).
+
+Escopo: Q5_0+Q8_0 somam 19,3 s dos 37,4 s medidos no perfil de 128 tokens (52%).
+Com 1,45x neles, o token inteiro cai ~1,3x. Para o 2x ainda faltam: o mesmo
+tratamento nos K-quants (q4_K/q6_K, 4,5 s), o caminho de atenuação
+(FLASH_ATTN a 0,88 GFLOPS/s, 2,8 s) e as operações pequenas (norm 1,5 s, rope
+1,0 s, glu 0,6 s — cada uma pagando a taxa fixa de despacho do driver).
