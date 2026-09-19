@@ -2,7 +2,15 @@ name: Unchanged-precision GPU row grouping towards 3x historical token rate
 on:
   push:
     branches: [arena/01a09b42-5]
-    paths: [.github/workflows/row-tile.yml]
+    paths:
+      - '.github/workflows/row-tile.yml'
+      - 'apk-fix/row_tile_patches.py'
+      - 'ci/evaluate_row_tile.py'
+      - 'scripts/test_row_tile_android.py'
+      - 'scripts/test_expanded_weights_android.py'
+      - 'tests/test_row_tile.py'
+      - 'apk-fix/native/mobile.cpp'
+  workflow_dispatch:
 permissions:
   contents: write
   actions: read
