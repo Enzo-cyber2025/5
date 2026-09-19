@@ -1,0 +1,76 @@
+{
+  "status": "FAIL",
+  "state": "asleep",
+  "hardware": "software_vulkan_emulator",
+  "release_approved": false,
+  "model_sha256": "2e8040ceae7815abe0dcb3540b9995eaa1fa0d2ca9e797d0a635ae4433c68c2d",
+  "pairs": [],
+  "correctness": {},
+  "build": {
+    "payloads": {
+      "before": {
+        "original_sha256": "0c45fd2e6c318da3ebb961bbd461c56d7401161c31a1869157f509550e4b05d1",
+        "test_sha256": "f028265fa42fda083648f62325a0b806ae4606ee35dbb712923d9ae87084066e",
+        "non_signature_payload_identical": true,
+        "native": {
+          "lib/arm64-v8a/libggufdiagnostics.so": "255e52f814d968e8dd008e8cea12c522aad06d943dffe8a30fe095485058b26c",
+          "lib/x86_64/libggufdiagnostics.so": "dd07c5a6aef3d75a7aec0325c20dddd6b58a313085254927291dc07dcf3c0139",
+          "lib/arm64-v8a/libaijni.so": "e2697b660db7359844a3f9ed01cbad4a9ec8d53abac13f646ed2531f13b2c345",
+          "lib/arm64-v8a/libc++_shared.so": "cb304e649e49cb65766da9d20a2d8bb8bd0c7cfd383e1f73838f838d1263c548",
+          "lib/x86_64/libaijni.so": "11cd987b96b4d66ece0d9b7b5ce0233d69212af715691b3c52f8d395e0053f52",
+          "lib/x86_64/libc++_shared.so": "0e8aaa2ef7f9abbe54ad76dab5162f3b7bf1a92ba1b3c63221443ecb87c1b568"
+        },
+        "entry_manifest_sha256": "99cbe0daabb8d7bfbee5873d91a940b06e6ab4ea706bcd78de66a0d3117cc828"
+      },
+      "after": {
+        "original_sha256": "bd7c45d3c9b80ee583e0d4102595c5ed55242c37aa0394f0befe093c07fd88d2",
+        "test_sha256": "0f5189c67b41da21492150891968e7e20dbf5bf9f9171ad5394d158fb5e235a3",
+        "non_signature_payload_identical": true,
+        "native": {
+          "lib/arm64-v8a/libggufdiagnostics.so": "255e52f814d968e8dd008e8cea12c522aad06d943dffe8a30fe095485058b26c",
+          "lib/x86_64/libggufdiagnostics.so": "dd07c5a6aef3d75a7aec0325c20dddd6b58a313085254927291dc07dcf3c0139",
+          "lib/arm64-v8a/libaijni.so": "4c975fb6f7e7b45ab4b18ba38221e934c641a92fb31c91f8f6c033abcaa0ebe6",
+          "lib/arm64-v8a/libggufcpu.so": "961aedde471f8a87ef305cfe2ec496beb11046fe198893a701ac994962343061",
+          "lib/arm64-v8a/libc++_shared.so": "cb304e649e49cb65766da9d20a2d8bb8bd0c7cfd383e1f73838f838d1263c548",
+          "lib/arm64-v8a/libaijni_dotprod.so": "dd103d3515ba3e770d82b1b67444eb8eaaee7c02ff0636a0288f4db1e4aa432d",
+          "lib/arm64-v8a/libaijni_i8mm.so": "7c733ea6b2b0d5f15cf405eeff701e8fe49508c0a877b6ccb868e0c5006cb981",
+          "lib/x86_64/libaijni.so": "3edd4475c2fd263304dab9ac6cd01b159a485e9d83485a20b20735ad02bf849c",
+          "lib/x86_64/libggufcpu.so": "9a9605bb5b5853888abf070555b45e37530b9c2ee979ae356537305d5c315b7b",
+          "lib/x86_64/libc++_shared.so": "0e8aaa2ef7f9abbe54ad76dab5162f3b7bf1a92ba1b3c63221443ecb87c1b568"
+        },
+        "entry_manifest_sha256": "75d55487f81ee9871767f057e1109c14e6a6966ff3cb45d72d1d4187db9b6498"
+      },
+      "candidate": {
+        "original_sha256": "554d0ce5cfe2843a55d3c5ff25b8784c4f2bda5372c3a4b3a07b8aee6bc7aaab",
+        "test_sha256": "d6249eca57b7a121c858638ca9ebbb37a8eed1c187ac324c03144de6c130dd74",
+        "non_signature_payload_identical": true,
+        "native": {
+          "lib/arm64-v8a/libggufdiagnostics.so": "255e52f814d968e8dd008e8cea12c522aad06d943dffe8a30fe095485058b26c",
+          "lib/x86_64/libggufdiagnostics.so": "dd07c5a6aef3d75a7aec0325c20dddd6b58a313085254927291dc07dcf3c0139",
+          "lib/arm64-v8a/libaijni.so": "dcc39488815c00e1f0a1414f2481e77c995a76ebecdee16d7805063fc7e148eb",
+          "lib/arm64-v8a/libggufcpu.so": "961aedde471f8a87ef305cfe2ec496beb11046fe198893a701ac994962343061",
+          "lib/arm64-v8a/libc++_shared.so": "cb304e649e49cb65766da9d20a2d8bb8bd0c7cfd383e1f73838f838d1263c548",
+          "lib/arm64-v8a/libaijni_dotprod.so": "6bc34b7b8b232d26d6b35be136bf61a123cb7b2b24349788c2eede6e0cf510bd",
+          "lib/arm64-v8a/libaijni_i8mm.so": "4fd27a0b4b9dd743a6c66115e23a3f10729871ff544c4aa100a6ad732b9da167",
+          "lib/x86_64/libaijni.so": "9827543d2419205782939da70a2f11415e7f2d080f395a2049f7c3a59bf53b2f",
+          "lib/x86_64/libggufcpu.so": "9a9605bb5b5853888abf070555b45e37530b9c2ee979ae356537305d5c315b7b",
+          "lib/x86_64/libc++_shared.so": "0e8aaa2ef7f9abbe54ad76dab5162f3b7bf1a92ba1b3c63221443ecb87c1b568"
+        },
+        "entry_manifest_sha256": "6ea88ac4839d110686ff08e99cb5550b82f88a3ec56c4a3a0cd321ded1a465ec"
+      }
+    },
+    "observer_sha256": "abbad3ba8c4f813d3f60c589941f42d7d4cca602e426f4e3c86419ceef4e9086",
+    "release_approved": false,
+    "experiment": {
+      "apk_sha256": "554d0ce5cfe2843a55d3c5ff25b8784c4f2bda5372c3a4b3a07b8aee6bc7aaab",
+      "source_commit": "53831adb8450d64af476e7af5465f0760c7a1d11",
+      "experimental_row_tile_build": true,
+      "target_multiplier": 3,
+      "row_factor": 4,
+      "per_token_callbacks": true,
+      "default_enabled": false,
+      "control": "Pre-acceleration 0c45fd2e and exact delivered bd7c45d3; fixed row factor 4 only for candidate",
+      "release_approved": false
+    }
+  }
+}
