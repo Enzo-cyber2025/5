@@ -12,6 +12,8 @@
 //   8 one load plus four adds into one accumulator (memory bound, no FMA)
 //   9 four independent scalar accumulators and no load at all (pure ALU)
 //  10 one load plus four chained FMAs into one accumulator (latency bound)
+//  11 seven loads per eight MACs, the load count of the shipped Q5_0 path
+//  12 one load per eight MACs, the load count an aligned relayout can reach
 // 0/2/4 measure the shipped loop shapes; 7/9 vs 10 separate instruction level
 // parallelism from plain vector-FMA latency, and 8 bounds the load path.
 // Only linear addressing and power-of-two windows are used, so the measurement
@@ -85,6 +87,36 @@ void main() {
         sacc = fma(av.y, bv.y, sacc);
         sacc = fma(av.z, bv.z, sacc);
         sacc = fma(av.w, bv.w, sacc);
+#elif PATTERN == 11
+        // Seven minimal loads and eight MACs per iteration: the shape the pinned
+        // Q5_0 dequantisation has (qh twice, qs twice, scale, activation).
+        const vec4 l0 = b[start + (k & 63u)];
+        const vec4 l1 = b[start + ((k + 1u) & 63u)];
+        const vec4 l2 = b[start + ((k + 2u) & 63u)];
+        const vec4 l3 = b[start + ((k + 3u) & 63u)];
+        const vec4 l4 = b[start + ((k + 4u) & 63u)];
+        const vec4 l5 = b[start + ((k + 5u) & 63u)];
+        const vec4 l6 = b[start + ((k + 6u) & 63u)];
+        a0 = fma(av.x, l0.x, a0);
+        a1 = fma(av.y, l1.x, a1);
+        a2 = fma(av.z, l2.x, a2);
+        a3 = fma(av.w, l3.x, a3);
+        a0 = fma(av.x, l4.x, a0);
+        a1 = fma(av.y, l5.x, a1);
+        a2 = fma(av.z, l6.x, a2);
+        a3 = fma(av.w, l0.y, a3);
+#elif PATTERN == 12
+        // One load for eight MACs, which is what a four byte aligned relayout of
+        // the same quantised bits can feed when every consumer reads one word.
+        const vec4 m0 = b[start + (k & 63u)];
+        a0 = fma(av.x, m0.x, a0);
+        a1 = fma(av.y, m0.y, a1);
+        a2 = fma(av.z, m0.z, a2);
+        a3 = fma(av.w, m0.w, a3);
+        a0 = fma(av.y, m0.x, a0);
+        a1 = fma(av.z, m0.y, a1);
+        a2 = fma(av.w, m0.z, a2);
+        a3 = fma(av.x, m0.w, a3);
 #else
 #error unknown PATTERN
 #endif

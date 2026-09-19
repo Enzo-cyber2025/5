@@ -109,7 +109,7 @@ run_ceiling() { # CPU Vulkan compute ceiling: is a 2-3x kernel win possible here
   local dir=ci/lab_compute
   mkdir -p "$LAB/ceiling"
   local ok=1 pattern block
-  for pattern in 0 1 2 3 4 5 6 7 8 9 10; do
+  for pattern in 0 1 2 3 4 5 6 7 8 9 10 11 12; do
     glslc -fshader-stage=comp -DPATTERN=$pattern -o "$LAB/ceiling/p$pattern.spv" "$dir/ceiling.comp" \
       >> "$LAB/ceiling-build.log" 2>&1 || ok=0
   done
@@ -125,11 +125,12 @@ run_ceiling() { # CPU Vulkan compute ceiling: is a 2-3x kernel win possible here
   # 5 fma + barrier per iteration | 6 fma + shared round trip per iteration
   # 7 four independent accumulators | 8 loads only | 9 pure ALU | 10 chained fma
   local pattern macs
-  for pattern in 0 1 2 3 4 5 6 7 8 9 10; do
+  for pattern in 0 1 2 3 4 5 6 7 8 9 10 11 12; do
     macs=4
     case $pattern in
       1) macs=1;;
       7|9|10) macs=4;;
+      11|12) macs=8;;
     esac
     for block in 8 32 128; do
       local spec groups inner
@@ -152,7 +153,7 @@ run_ceiling() { # CPU Vulkan compute ceiling: is a 2-3x kernel win possible here
   printf '### compute ceiling (llvmpipe)\n' >> "$LAB/table.md"
   # No pipe into head here: head exits early, grep dies of SIGPIPE and pipefail
   # turns that into a silent lab failure. The published evidence keeps every line.
-  { grep -E 'pattern=(0|7|8|9|10) block=32 ' "$LAB/ceiling.txt" >> "$LAB/table.md" || true; }
+  { grep -E 'pattern=(0|9|11|12) block=32 ' "$LAB/ceiling.txt" >> "$LAB/table.md" || true; }
   { grep '^scaling ' "$LAB/ceiling.txt" >> "$LAB/table.md" || true; }
   return 0
 }

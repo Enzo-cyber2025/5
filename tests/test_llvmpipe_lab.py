@@ -118,7 +118,7 @@ def test_device_probe_reports_the_subgroup_shape_that_decides_reduction_cost():
 
 def test_ceiling_probe_covers_the_patterns_that_separate_the_hypotheses():
     text = (ROOT/'ci/lab_compute/ceiling.comp').read_text()
-    for pattern in range(11):
+    for pattern in range(13):
         assert f'#elif PATTERN == {pattern}' in text or f'#if PATTERN == {pattern}' in text, pattern
     # 7/9 carry four independent accumulators, 8 is the load-only shape.
     assert 'float a0 = 0.0, a1 = 0.0, a2 = 0.0, a3 = 0.0;' in text
