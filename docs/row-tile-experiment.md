@@ -58,11 +58,41 @@ O sucesso de um estado não aprova release. Imagens, outras cargas, startup,
 memória, CPU/arquiteturas não suportadas, GPU física e continuidade da assinatura
 continuam necessários. O APK entregue `bd7c45d3…` não é alterado.
 
+## Observação por token sem teto artificial de callbacks
+
+O código normal agrupa entregas separadas por menos de 50 ms. Acima de cerca de
+20 T/s isso pode produzir menos de 128 callbacks para 128 tokens; contar esses
+callbacks como se fossem tokens seria incorreto. O build experimental, tanto
+OFF quanto ON, entrega cada trecho real após sampling/decode, sem esse
+agrupamento temporal. Não cria callbacks vazios, timestamps, espera artificial,
+tokens extras ou respostas preparadas. Mantém a retenção necessária de UTF-8
+incompleto; por isso a fixture ainda precisa comprovar 128 callbacks completos,
+128 tokens no contador nativo independente e saídas completas iguais.
+
+A mesma primeira/última entrega continua definindo os 127 intervalos; o trabalho
+adicional de JNI fica dentro do tempo. Não se atribui um ganho ao simples
+número de callbacks, nem se compara com controles que tenham agrupamento
+incompatível. Os APKs históricos/entregues não são modificados e também precisam
+passar a contagem 128/128. A alteração é explicitamente registrada no manifesto
+`per_token_callbacks=true` e nos dois contadores nativos de cada observação.
+O fluxo normal e o APK entregue conservam a política anterior. Esta é mais uma
+razão para não chamar o experimento de release qualificado.
+
 ## Validação antes da execução Android
 
-102 testes locais passaram, um teste de compilação GLSL foi omitido por falta
-do compilador local. Há teste C++ executando o bloco real de configuração com
+117 testes locais passaram; quatro foram omitidos por dependências locais
+ausentes (compilador GLSL, JDK ou DEX do candidato). Há teste C++ executando o bloco real de configuração com
 macro ON/OFF, checagem do patch contra o upstream fixado, testes de identidade,
 telemetria e rejeição do avaliador 3×. Esses testes **não provam velocidade nem
 execução de shaders no Android**. A execução nativa e as taxas ainda precisam
 ser obtidas pela CI.
+
+
+## Publicação pendente
+
+A reconexão permitiu recuperar e reavaliar as evidências anteriores. Porém, na
+tentativa de push do novo experimento, a autenticação voltou a falhar; a API
+confirmou HTTP 401. **Nenhuma execução Android deste novo experimento foi
+iniciada.** Alterações estão commitadas localmente na mesma branch. É necessária
+nova reconexão do GitHub no Arena para publicar e disparar a CI. Não houve
+mudança de assinatura do APK entregue nem declaração de ganho comprovado.

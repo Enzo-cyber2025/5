@@ -19,7 +19,9 @@ def candidate_metadata(native):
     dispatches = re.findall(r'GGUF_VK_ROW_TILE_DISPATCH type=(q5_0|q8_0) rows=(\d+) activation=(\w+) quantize_y=(\d+) columns=(\d+)', native)
     expected = [('q5_0', str(value['q5_rows']), 'f32', '0', '1'), ('q8_0', str(value['q8_rows']), 'f32', '0', '1')]
     assert sorted(dispatches) == sorted(expected), 'Missing actual FP32 single-column pipeline dispatch'
-    return {'tile': value, 'tile_dispatch': {t: dict(rows=int(r), activation=a, quantize_y=int(q), columns=int(c)) for t,r,a,q,c in dispatches}}
+    counts = re.findall(r'GGUF_ROW_TILE_CALLBACKS per_token=1 emitted=(\d+) callbacks=(\d+)', native)
+    assert counts == [('128','128'), ('128','128')], 'Both native stages must independently confirm real per-token callbacks'
+    return {'tile': value, 'native_per_token_callbacks': True, 'tile_dispatch': {t: dict(rows=int(r), activation=a, quantize_y=int(q), columns=int(c)) for t,r,a,q,c in dispatches}}
 
 
 def main(state):

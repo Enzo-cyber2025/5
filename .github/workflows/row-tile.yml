@@ -100,7 +100,8 @@ jobs:
           with zipfile.ZipFile(apk) as z:
               for abi in ('x86_64','arm64-v8a'):
                   assert b'GGUF_VK_ROW_TILE' in z.read('lib/'+abi+'/libaijni.so')
-          r=dict(apk_sha256=hashlib.sha256(apk.read_bytes()).hexdigest(),source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),experimental_row_tile_build=True,target_multiplier=3,row_factor=4,default_enabled=False,control='Pre-acceleration 0c45fd2e and exact delivered bd7c45d3; fixed row factor 4 only for candidate',release_approved=False)
+                  assert b'GGUF_ROW_TILE_CALLBACKS' in z.read('lib/'+abi+'/libaijni.so')
+          r=dict(apk_sha256=hashlib.sha256(apk.read_bytes()).hexdigest(),source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),experimental_row_tile_build=True,target_multiplier=3,row_factor=4,per_token_callbacks=True,default_enabled=False,control='Pre-acceleration 0c45fd2e and exact delivered bd7c45d3; fixed row factor 4 only for candidate',release_approved=False)
           Path('.cache/row-tile-export/build.json').write_text(json.dumps(r,indent=2))
           Path('evidence/physical-row-tile-build.json').write_text(json.dumps(r,indent=2))
           PY

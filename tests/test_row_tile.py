@@ -17,7 +17,7 @@ from test_expanded_weights import fixture as expansion_fixture
 def fixture():
     s = expansion_fixture(); s['status'] = COMPLETE
     e = s['build']['experiment']; e.pop('experimental_expanded_weights_build')
-    e.update(experimental_row_tile_build=True, target_multiplier=3, row_factor=4)
+    e.update(experimental_row_tile_build=True, target_multiplier=3, row_factor=4, per_token_callbacks=True)
     s.pop('proof')
     for pair in s['pairs']:
         r = pair['candidate']; r.pop('expansion'); r['tile'] = tile(4); r['vulkan_environment'] = ON.copy()
@@ -28,6 +28,7 @@ def fixture():
     s['correctness'] = {mode: copy.deepcopy(s['pairs'][0]['candidate']) for mode in ('off', 'on')}
     s['correctness']['off'].update(tile=tile(1), vulkan_environment=ENV.copy())
     for r in [*s['correctness'].values(), *[p['candidate'] for p in s['pairs']]]:
+        r['native_per_token_callbacks'] = True
         f = r['tile']['factor']; r['tile_dispatch'] = {t: dict(rows=n,activation='f32',quantize_y=0,columns=1) for t,n in [('q5_0',2*f),('q8_0',f)]}
     return s
 
@@ -66,6 +67,8 @@ def test_no_regression_against_delivered_is_separate_from_historical_target():
 @pytest.mark.parametrize('mutate', [
     lambda s: s['build']['experiment'].update(target_multiplier=2),
     lambda s: s['build']['experiment'].update(row_factor=8),
+    lambda s: s['build']['experiment'].update(per_token_callbacks=False),
+    lambda s: s['pairs'][0]['candidate'].update(native_per_token_callbacks=False),
     lambda s: s['build']['experiment'].update(default_enabled=True),
     lambda s: s['build']['experiment'].update(experimental_repacked_weights_build=True),
     lambda s: s['build']['experiment'].update(source_commit='x'*40),
@@ -102,8 +105,9 @@ def test_correctness_and_warmup_rates_are_not_speed_samples():
 def test_native_telemetry_not_just_an_environment_variable():
     line = 'llvmpipe fp16: 0 int dot: 0\nGGUF_VK_ROW_TILE factor=4 stdq=4 q5_rows=8 q8_rows=4 fp16=0 int_dot=0 subgroup=8\n'
     line += 'GGUF_VK_ROW_TILE_DISPATCH type=q5_0 rows=8 activation=f32 quantize_y=0 columns=1\nGGUF_VK_ROW_TILE_DISPATCH type=q8_0 rows=4 activation=f32 quantize_y=0 columns=1\n'
+    line += 'GGUF_ROW_TILE_CALLBACKS per_token=1 emitted=128 callbacks=128\n'*2
     assert candidate_metadata(line)['tile'] == tile(4)
-    for invalid in [line+line, line.replace('q5_rows=8','q5_rows=2'), line.replace('int dot: 0','int dot: 1'), line+'GGUF_REPACKED_WEIGHTS enabled=1', 'llvmpipe fp16: 0 int dot: 0']:
+    for invalid in [line+line, line.replace('q5_rows=8','q5_rows=2'), line.replace('emitted=128 callbacks=128','emitted=128 callbacks=64'), line.replace('int dot: 0','int dot: 1'), line+'GGUF_REPACKED_WEIGHTS enabled=1', 'llvmpipe fp16: 0 int dot: 0']:
         with pytest.raises(AssertionError): candidate_metadata(invalid)
 
 
@@ -163,3 +167,27 @@ def test_workflow_keeps_delivery_separate_and_requires_both_states():
     assert "'[row tile]'" in (ROOT/'.github/workflows/mobile.yml').read_text()
     assert 'GGUF_ROW_TILE_TEST_IMPORT' in (ROOT/'scripts/build_gpu_rate_observer.sh').read_text()
     assert 'GGUF_EXPERIMENT_ROW_TILE "Build opt-in unchanged-precision Vulkan row grouping" OFF' in (ROOT/'apk-fix/native/CMakeLists.txt').read_text()
+
+
+def test_per_token_delivery_is_experimental_real_work_and_not_synthetic_timing(tmp_path):
+    source = (ROOT/'apk-fix/native/mobile.cpp').read_text()
+    start = source.index('#if defined(GGUF_EXPERIMENT_ROW_TILE)', source.index('decode_and_deliver(e->layers>0'))
+    end = source.index('#endif', start) + len('#endif')
+    block = source[start:end]
+    assert 'flush();' in block and 'std::chrono::milliseconds(50)' in block
+    assert 'emitted++' not in block and 'on_token' not in block and 'sleep' not in block
+    assert 'GGUF_ROW_TILE_CALLBACKS per_token=1 emitted=%d callbacks=%d' in source
+    # Execute the actual conditional in both builds, in a synthetic rapid stream.
+    code = tmp_path/'callbacks.cpp'; exe = tmp_path/'callbacks'
+    code.write_text('''#include <chrono>
+#include <string>
+struct FixedClock {static std::chrono::steady_clock::time_point now(){return {};}};
+int main(){using Clock=FixedClock;auto last_flush=Clock::now();
+std::string pending;int emitted=0,callbacks=0;auto flush=[&](){callbacks++;};
+for(emitted=1;emitted<=4;++emitted){
+'''+block+'''
+}return callbacks;}
+''')
+    for defines, expected in [([],1), (['-DGGUF_EXPERIMENT_ROW_TILE=1'],4)]:
+        subprocess.run(['g++','-std=c++17',*defines,str(code),'-o',str(exe)],check=True,capture_output=True)
+        assert subprocess.run([str(exe)],capture_output=True).returncode == expected

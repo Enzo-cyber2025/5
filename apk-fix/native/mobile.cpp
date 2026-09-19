@@ -656,12 +656,23 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
                 if(text_cache)e->cached_tokens.push_back(t);
                 if(e->layers>0 && emitted>1)overlap_submissions++;
             },[&] {
+#if defined(GGUF_EXPERIMENT_ROW_TILE)
+                // Diagnostic fidelity: a 50 ms coalescer cannot expose one
+                // callback per real token above ~20 t/s. Emit each actual token,
+                // for BOTH row-factor OFF and ON. No synthetic callbacks/times.
+                // Additional JNI work remains inside the measured interval.
+                flush();
+#else
                 if(emitted==1 || pending.size()>=4096 || Clock::now()-last_flush>=std::chrono::milliseconds(50))flush();
+#endif
             });
         }
         flush();
         if(!pending.empty()) {auto text=java_string(env,"\xef\xbf\xbd");env->CallVoidMethod(callback,on_token,text);env->DeleteLocalRef(text);}
         if(e->cancel || env->ExceptionCheck()) throw std::runtime_error("Geração cancelada ou callback falhou");
+#if defined(GGUF_EXPERIMENT_ROW_TILE)
+        LOG("GGUF_ROW_TILE_CALLBACKS per_token=1 emitted=%d callbacks=%d",emitted,callbacks);
+#endif
         ok=true;LOG("GGUF_NATIVE_COMPLETE tokens=%d reason=%s projector=%d",emitted,reason,e->projector!=nullptr);
     } catch(const std::exception &ex) {
 #ifdef GGUF_EXPERIMENT_MEDIA_PREFIX

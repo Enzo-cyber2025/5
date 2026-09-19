@@ -23,6 +23,7 @@ def validate_observation(r, state, build, factor):
     assert r['vulkan_positive_offload'] is True
     assert r['test_apk_sha256'] == build['payloads']['candidate']['test_sha256']
     assert r['vulkan_environment'] == (ON if factor == 4 else ENV)
+    assert r['native_per_token_callbacks'] is True
     assert r['tile'] == tile(factor)
     assert r['tile_dispatch'] == {t: dict(rows=rows, activation='f32', quantize_y=0, columns=1)
                                   for t, rows in [('q5_0',2*factor), ('q8_0',factor)]}
@@ -40,6 +41,7 @@ def evaluate(s):
     assert experiment['experimental_row_tile_build'] is True
     assert experiment['default_enabled'] is False and experiment['release_approved'] is False
     assert experiment['target_multiplier'] == TARGET_MULTIPLIER and experiment['row_factor'] == 4
+    assert experiment['per_token_callbacks'] is True
     assert re.fullmatch('[0-9a-f]{40}', experiment['source_commit'])
     candidate = experiment['apk_sha256']; assert re.fullmatch('[0-9a-f]{64}', candidate)
     assert build['payloads']['candidate']['original_sha256'] == candidate
