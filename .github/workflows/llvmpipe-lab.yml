@@ -34,7 +34,9 @@ jobs:
           sudo apt-get install -y cmake ninja-build build-essential glslc glslang-tools libvulkan-dev vulkan-tools mesa-vulkan-drivers
       - name: Pinned source and exact fixture, optional kernel patch
         env:
-          LAB_PATCHES: ${{ github.event.inputs.lab_patches }}
+          # workflow_dispatch is not reachable for this token, so the push marker is
+          # the trigger; the patch set comes from the input or the default below.
+          LAB_PATCHES: ${{ github.event.inputs.lab_patches || 'row_tile_patches,dmmv_large_patches' }}
         run: python3 ci/llvmpipe_lab_patches.py
       - name: Run the lab
         run: bash ci/log_step.sh lab bash ci/llvmpipe_lab.sh
