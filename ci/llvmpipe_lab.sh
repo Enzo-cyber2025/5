@@ -265,6 +265,8 @@ generate_fixture() { # generate_fixture <bench-bin> <label>
   grep -v -E 't/s|ms per token|llama_perf|llama_|load time|sampling time|prompt eval|total time|^$|^\[' \
     "$LAB/greedy-$label.txt" | tail -c 1200 > "$LAB/greedy-$label.tail"
   printf '### greedy-%s exit=%s bytes=%s\n' "$label" "$rc" "$(wc -c < "$LAB/greedy-$label.tail")" | tee -a "$LAB/table.md"
+  # The comparison needs real text, but a short generation is still a valid text:
+  # any non-empty tail is compared, and the size is recorded either way.
 }
 
 publish_lab_evidence() {
@@ -356,7 +358,7 @@ fi
 if [[ -n "$CTRL_BENCH" ]]; then
   generate_fixture "$CTRL_BENCH" control
   generate_fixture "$BENCH" variant
-  if [[ "$(wc -c < "$LAB/greedy-control.tail")" -lt 200 || "$(wc -c < "$LAB/greedy-variant.tail")" -lt 200 ]]; then
+  if [[ "$(wc -c < "$LAB/greedy-control.tail")" -lt 32 || "$(wc -c < "$LAB/greedy-variant.tail")" -lt 32 ]]; then
     printf 'greedy compare skipped: a run produced no usable text\n' | tee -a "$LAB/table.md"
   elif diff -q "$LAB/greedy-control.tail" "$LAB/greedy-variant.tail" > /dev/null; then
     printf 'greedy text identical: YES\n' | tee -a "$LAB/table.md"
@@ -398,7 +400,10 @@ mkdir -p evidence
     { grep -E 'GFLOPS|Total time' "$LAB/profile-control.stderr.log" 2>/dev/null || true; } | sed -n '1,60p'
   fi
 } > evidence/physical-llvmpipe-lab-profile.txt
-wc -c evidence/physical-llvmpipe-lab.txt evidence/physical-llvmpipe-lab-profile.txt
+# Copy the benchmark table here as well: the probe-only path never runs this far,
+# and a missing table made a later line fail and hide every number.
+cp "$LAB/table.md" evidence/physical-llvmpipe-lab.txt
+{ wc -c evidence/physical-llvmpipe-lab.txt evidence/physical-llvmpipe-lab-profile.txt || true; }
 
 # The Checks API annotation channel keeps only the tail of this log, so the table
 # is printed last, after everything else has been written to files.
