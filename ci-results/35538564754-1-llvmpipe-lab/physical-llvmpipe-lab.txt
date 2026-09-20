@@ -1,0 +1,97 @@
+# llvmpipe host lab 2026-09-20T21:24:16Z [flags:  patches: gguf_aligned_q5_lab_patches]
+shaderFloat16 = true
+subgroupSize = 8
+subgroupArithmetic = true
+subgroupShuffle = true
+subgroupClustered = true
+subgroupSizeControl = true
+computeFullSubgroups = true
+maxComputeWorkGroupInvocations = 1024
+maxComputeWorkGroupSize = (1024,1024,1024)
+### compute ceiling (llvmpipe)
+scaling device=llvmpipe (LLVM 20.1.2, 256 bits) driver_version=104865800 block=32 groups=1 inner=256 macs_per_iter=4.0 reps=3 ms=0.076 gmacs_per_s=0.144 gpairs_per_s=0.036
+scaling device=llvmpipe (LLVM 20.1.2, 256 bits) driver_version=104865800 block=32 groups=8 inner=256 macs_per_iter=4.0 reps=3 ms=0.146 gmacs_per_s=0.598 gpairs_per_s=0.149
+scaling device=llvmpipe (LLVM 20.1.2, 256 bits) driver_version=104865800 block=32 groups=512 inner=256 macs_per_iter=4.0 reps=3 ms=5.684 gmacs_per_s=0.984 gpairs_per_s=0.246
+scaling device=llvmpipe (LLVM 20.1.2, 256 bits) driver_version=104865800 block=32 groups=8192 inner=256 macs_per_iter=4.0 reps=3 ms=82.882 gmacs_per_s=1.080 gpairs_per_s=0.270
+scaling device=llvmpipe (LLVM 20.1.2, 256 bits) driver_version=104865800 block=32 groups=65536 inner=256 macs_per_iter=4.0 reps=3 ms=642.206 gmacs_per_s=1.115 gpairs_per_s=0.279
+### gpu-control
+(exit 0)
+| model                          |       size |     params | backend    | ngl | n_batch | n_ubatch |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | --: | ------: | -------: | --------------: | -------------------: |
+| llama 256M Q4_K - Medium       |  98.87 MiB |   134.52 M | Vulkan     |  99 |     128 |       32 |            pp16 |        471.25 ± 0.95 |
+| llama 256M Q4_K - Medium       |  98.87 MiB |   134.52 M | Vulkan     |  99 |     128 |       32 |           tg128 |        186.72 ± 0.61 |
+### gpu-variant
+(exit 0)
+| model                          |       size |     params | backend    | ngl | n_batch | n_ubatch |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | --: | ------: | -------: | --------------: | -------------------: |
+| llama 256M Q4_K - Medium       |  98.87 MiB |   134.52 M | Vulkan     |  99 |     128 |       32 |            pp16 |        470.53 ± 0.89 |
+| llama 256M Q4_K - Medium       |  98.87 MiB |   134.52 M | Vulkan     |  99 |     128 |       32 |           tg128 |        187.15 ± 0.63 |
+### cpu-reference
+(exit 0)
+| model                          |       size |     params | backend    | ngl | n_batch | n_ubatch |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | --: | ------: | -------: | --------------: | -------------------: |
+| llama 256M Q4_K - Medium       |  98.87 MiB |   134.52 M | Vulkan     |   0 |     128 |       32 |            pp16 |        464.05 ± 0.67 |
+| llama 256M Q4_K - Medium       |  98.87 MiB |   134.52 M | Vulkan     |   0 |     128 |       32 |           tg128 |        186.81 ± 0.10 |
+### gpu-lp-threads-1
+(exit 0)
+| model                          |       size |     params | backend    | ngl | n_batch | n_ubatch |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | --: | ------: | -------: | --------------: | -------------------: |
+| llama 256M Q4_K - Medium       |  98.87 MiB |   134.52 M | Vulkan     |  99 |     128 |       32 |            pp16 |        471.21 ± 0.00 |
+| llama 256M Q4_K - Medium       |  98.87 MiB |   134.52 M | Vulkan     |  99 |     128 |       32 |           tg128 |        186.91 ± 0.00 |
+### gpu-lp-threads-2
+(exit 0)
+| model                          |       size |     params | backend    | ngl | n_batch | n_ubatch |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | --: | ------: | -------: | --------------: | -------------------: |
+| llama 256M Q4_K - Medium       |  98.87 MiB |   134.52 M | Vulkan     |  99 |     128 |       32 |            pp16 |        469.21 ± 0.00 |
+| llama 256M Q4_K - Medium       |  98.87 MiB |   134.52 M | Vulkan     |  99 |     128 |       32 |           tg128 |        186.05 ± 0.00 |
+### gpu-lp-threads-4
+(exit 0)
+| model                          |       size |     params | backend    | ngl | n_batch | n_ubatch |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | --: | ------: | -------: | --------------: | -------------------: |
+| llama 256M Q4_K - Medium       |  98.87 MiB |   134.52 M | Vulkan     |  99 |     128 |       32 |            pp16 |        470.61 ± 0.00 |
+| llama 256M Q4_K - Medium       |  98.87 MiB |   134.52 M | Vulkan     |  99 |     128 |       32 |           tg128 |        187.98 ± 0.00 |
+### gpu-lp-threads-8
+(exit 0)
+| model                          |       size |     params | backend    | ngl | n_batch | n_ubatch |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | --: | ------: | -------: | --------------: | -------------------: |
+| llama 256M Q4_K - Medium       |  98.87 MiB |   134.52 M | Vulkan     |  99 |     128 |       32 |            pp16 |        469.60 ± 0.00 |
+| llama 256M Q4_K - Medium       |  98.87 MiB |   134.52 M | Vulkan     |  99 |     128 |       32 |           tg128 |        186.45 ± 0.00 |
+### gpu-no-multi-add
+(exit 0)
+| model                          |       size |     params | backend    | ngl | n_batch | n_ubatch |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | --: | ------: | -------: | --------------: | -------------------: |
+| llama 256M Q4_K - Medium       |  98.87 MiB |   134.52 M | Vulkan     |  99 |     128 |       32 |            pp16 |        466.88 ± 0.00 |
+| llama 256M Q4_K - Medium       |  98.87 MiB |   134.52 M | Vulkan     |  99 |     128 |       32 |           tg128 |        186.95 ± 0.00 |
+### gpu-force-mmvq
+(exit 0)
+| model                          |       size |     params | backend    | ngl | n_batch | n_ubatch |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | --: | ------: | -------: | --------------: | -------------------: |
+| llama 256M Q4_K - Medium       |  98.87 MiB |   134.52 M | Vulkan     |  99 |     128 |       32 |            pp16 |        463.83 ± 0.00 |
+| llama 256M Q4_K - Medium       |  98.87 MiB |   134.52 M | Vulkan     |  99 |     128 |       32 |           tg128 |        186.48 ± 0.00 |
+### gpu-no-fusion
+(exit 0)
+| model                          |       size |     params | backend    | ngl | n_batch | n_ubatch |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | --: | ------: | -------: | --------------: | -------------------: |
+| llama 256M Q4_K - Medium       |  98.87 MiB |   134.52 M | Vulkan     |  99 |     128 |       32 |            pp16 |        471.46 ± 0.00 |
+| llama 256M Q4_K - Medium       |  98.87 MiB |   134.52 M | Vulkan     |  99 |     128 |       32 |           tg128 |        179.28 ± 0.00 |
+### gpu-no-graph-opt
+(exit 0)
+| model                          |       size |     params | backend    | ngl | n_batch | n_ubatch |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | --: | ------: | -------: | --------------: | -------------------: |
+| llama 256M Q4_K - Medium       |  98.87 MiB |   134.52 M | Vulkan     |  99 |     128 |       32 |            pp16 |        469.21 ± 0.00 |
+| llama 256M Q4_K - Medium       |  98.87 MiB |   134.52 M | Vulkan     |  99 |     128 |       32 |           tg128 |        186.54 ± 0.00 |
+### gpu-nodes-8
+(exit 0)
+| model                          |       size |     params | backend    | ngl | n_batch | n_ubatch |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | --: | ------: | -------: | --------------: | -------------------: |
+| llama 256M Q4_K - Medium       |  98.87 MiB |   134.52 M | Vulkan     |  99 |     128 |       32 |            pp16 |        470.59 ± 0.00 |
+| llama 256M Q4_K - Medium       |  98.87 MiB |   134.52 M | Vulkan     |  99 |     128 |       32 |           tg128 |        186.71 ± 0.00 |
+### gpu-nodes-128
+(exit 0)
+| model                          |       size |     params | backend    | ngl | n_batch | n_ubatch |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | --: | ------: | -------: | --------------: | -------------------: |
+| llama 256M Q4_K - Medium       |  98.87 MiB |   134.52 M | Vulkan     |  99 |     128 |       32 |            pp16 |        470.70 ± 0.00 |
+| llama 256M Q4_K - Medium       |  98.87 MiB |   134.52 M | Vulkan     |  99 |     128 |       32 |           tg128 |        187.07 ± 0.00 |
+### greedy-control exit=0 bytes=96
+### greedy-variant exit=0 bytes=96
+greedy text identical: YES
