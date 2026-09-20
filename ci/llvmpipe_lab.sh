@@ -208,11 +208,13 @@ build_bench() { # build_bench <src> <build> <flags>
     tail -30 "$cmake_log" || true
     return 1
   fi
-  # The pinned tree calls the CLI tool `llama-cli`, but a target that does not
-  # exist aborts the whole build, so only ask for the ones that are really there.
+  # A target that does not exist aborts the whole build. In this tree llama-cli is
+  # only defined when LLAMA_BUILD_SERVER is on, because it links the server
+  # library, so the greedy fixture runs llama-completion: the same CLI without
+  # that dependency.
   local targets=(llama-bench)
-  if [[ -d "$src/tools/cli" ]]; then
-    targets+=(llama-cli)
+  if [[ -d "$src/tools/completion" ]]; then
+    targets+=(llama-completion)
   fi
   if ! cmake --build "$build" --target "${targets[@]}" -j "$(nproc)" > "$build_log" 2>&1; then
     # A parallel build can also die from a transient kill; retry once single
@@ -239,8 +241,8 @@ build_bench() { # build_bench <src> <build> <flags>
       return 1
     fi
   fi
-  if [[ ${#targets[@]} -gt 1 && ! -x "$build/bin/llama-cli" ]]; then
-    echo "build failed: $build/bin/llama-cli missing"
+  if [[ ${#targets[@]} -gt 1 && ! -x "$build/bin/llama-completion" ]]; then
+    echo "build failed: $build/bin/llama-completion missing"
     return 1
   fi
   if [[ ! -x "$build/bin/llama-bench" ]]; then
@@ -252,8 +254,8 @@ build_bench() { # build_bench <src> <build> <flags>
 
 generate_fixture() { # generate_fixture <bench-bin> <label>
   local bin=$1 label=$2
-  if [[ -x "$(dirname "$bin")/llama-cli" ]]; then
-    bin="$(dirname "$bin")/llama-cli"
+  if [[ -x "$(dirname "$bin")/llama-completion" ]]; then
+    bin="$(dirname "$bin")/llama-completion"
   fi
   set +e
   "$bin" -m "$MODEL" -p 'Explain ten practical ways to learn a language. Give a detailed example for each.'     -n 24 --temp 0 -t 2 -b 128 -ub 32 -ngl 99 -no-cnv -s 1 > "$LAB/greedy-$label.txt" 2> "$LAB/greedy-$label.err"
