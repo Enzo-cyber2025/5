@@ -48,6 +48,14 @@ if [[ ! -f "$MODEL" ]]; then
 fi
 echo "$MODEL_SHA  $MODEL" | sha256sum -c -
 
+# What the fixture model is actually made of: a relayout that targets a type the
+# model does not contain measures nothing. Header only, so it costs no bandwidth.
+echo "### gguf tensor types (fixture) into the table"
+{
+  echo "### gguf tensor types (fixture)"
+  python3 ci/gguf_tensor_types.py "$MODEL"
+} >> "$LAB/table.md" 2>&1 || echo "gguf tensor type dump failed" >> "$LAB/table.md"
+
 # Lavapipe is the only ICD in this job; leave no doubt about which device ran.
 icd=$(python3 - <<'PY'
 from pathlib import Path
