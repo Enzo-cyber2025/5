@@ -337,7 +337,7 @@ mkdir -p evidence
   echo "spirv-headers dir: ${SPIRV_HEADERS_DIR:-unset}"
   for log in "$LAB"/gpu-*.log; do
     [[ -f "$log" ]] || continue
-    { grep -h -E 'GGUF_VK_ROW_TILE|GGUF_VK_DMMV|use_subgroups|GGML_VK_' "$log" || true; } | sed -n "1,4p" | sed "s|^|$(basename "$log"): |"
+    { grep -h -E 'GGUF_ALIGNED_Q5|GGUF_VK_ROW_TILE|GGUF_VK_DMMV|use_subgroups|GGML_VK_' "$log" || true; } | sed -n "1,6p" | sed "s|^|$(basename "$log"): |"
   done
 } > evidence/physical-llvmpipe-knobs.txt 2>/dev/null || true
 {
