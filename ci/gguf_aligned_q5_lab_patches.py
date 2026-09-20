@@ -113,7 +113,7 @@ HOST_HELPERS = '''
 // GGUF_ALIGNED_Q5 (lab only): Q5_0 weights are copied once into a four byte
 // aligned Q5_1 buffer so the decode matvec can read words instead of halves.
 // Same nibbles, same high bits, same scale, no requantisation.
-static std::unordered_map<const ggml_tensor *, vk_buffer> gguf_aligned_q5_buffers;
+static std::unordered_map<const ggml_tensor *, std::pair<vk_buffer, size_t>> gguf_aligned_q5_buffers;
 static size_t gguf_aligned_q5_tensors = 0;
 static size_t gguf_aligned_q5_bytes = 0;
 
@@ -121,10 +121,11 @@ static bool gguf_aligned_q5_eligible(const ggml_tensor * t) {
     if (t == nullptr || t->type != GGML_TYPE_Q5_0) return false;
     if (!ggml_is_contiguous(t) || t->view_offs != 0) return false;
     if (t->ne[0] % ggml_blck_size(GGML_TYPE_Q5_0) != 0) return false;
-    const size_t offset = (size_t)(vk_tensor_offset(t) + t->view_offs);
-    // The shader adds a_offset elements to the block index, so the repacked
-    // buffer (which starts at zero) is only equivalent when it is zero.
-    if (offset % 4 != 0 || offset % ggml_type_size(t->type) != 0) return false;
+    if (ggml_nbytes(t) % (size_t) ggml_type_size(t->type) != 0) return false;
+    // The descriptor carries the tensor's own base address and the shader indexes
+    // from there, so the copy replaces the subbuffer and nothing else. (An earlier
+    // version also demanded that the tensor offset divide the 22 byte block size,
+    // which silently refused all 166 q5_0 tensors of the fixture model.)
     return true;
 }
 
@@ -143,7 +144,7 @@ static void gguf_aligned_q5_store(vk_device & device, const ggml_tensor * t, con
     }
     vk_buffer buf = ggml_vk_create_buffer_device(device, packed.size());
     ggml_vk_buffer_write(buf, 0, packed.data(), packed.size());
-    gguf_aligned_q5_buffers[t] = buf;
+    gguf_aligned_q5_buffers[t] = { buf, packed.size() };
     gguf_aligned_q5_tensors++;
     gguf_aligned_q5_bytes += packed.size();
     std::cerr << "GGUF_ALIGNED_Q5 tensor=" << t->name << " blocks=" << blocks
@@ -152,7 +153,11 @@ static void gguf_aligned_q5_store(vk_device & device, const ggml_tensor * t, con
 
 static vk_buffer gguf_aligned_q5_lookup(const ggml_tensor * t) {
     auto it = gguf_aligned_q5_buffers.find(t);
-    return it == gguf_aligned_q5_buffers.end() ? nullptr : it->second;
+    if (it == gguf_aligned_q5_buffers.end()) return nullptr;
+    // A recycled tensor address must not bind a buffer of another size.
+    const size_t expected = (ggml_nelements(t) / ggml_blck_size(t->type)) * 24u;
+    if (it->second.second != expected) return nullptr;
+    return it->second.first;
 }
 
 '''
