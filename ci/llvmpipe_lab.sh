@@ -209,18 +209,29 @@ build_bench() { # build_bench <src> <build> <flags>
     return 1
   fi
   if ! cmake --build "$build" --target llama-bench llama-cli -j "$(nproc)" > "$build_log" 2>&1; then
-    echo "build failed: compile for $build (details in $LAB/build-errors.txt)"
-    # The job log is only readable through a 20000 character window, so the errors
-    # also go to their own file, which the evidence publisher commits.
-    {
-      echo "build: $build"
-      echo "--- error lines ---"
-      { grep -m 12 -E 'error|Error [0-9]|undefined reference|Killed|ld:' "$build_log" || true; } | sed -n '1,12p'
-      echo "--- tail ---"
-      tail -30 "$build_log" || true
-    } > "$LAB/build-errors.txt" 2>&1
-    { grep -m 6 -E 'error|Error [0-9]|Killed|ld:' "$build_log" || true; } | sed -n '1,6p'
-    return 1
+    # A parallel build can also die from a transient kill; retry once single
+    # threaded before declaring the compile itself broken, and keep both logs.
+    echo "compile for $build failed, retrying with one job"
+    cp "$build_log" "$build_log.first" || true
+    if ! cmake --build "$build" --target llama-bench llama-cli -j 2 > "$build_log" 2>&1; then
+      echo "build failed: compile for $build (details in evidence/physical-llvmpipe-build.txt)"
+      # The job log is only readable through a 20000 character window, which drops
+      # exactly the first errors, so they are published as evidence instead.
+      mkdir -p evidence
+      {
+        echo "build: $build"
+        echo "--- first attempt, error lines ---"
+        { grep -m 12 -E 'error|Error [0-9]|undefined reference|Killed|ld:' "$build_log.first" || true; } | sed -n '1,12p'
+        echo "--- first attempt, tail ---"
+        tail -20 "$build_log.first" || true
+        echo "--- retry, error lines ---"
+        { grep -m 12 -E 'error|Error [0-9]|undefined reference|Killed|ld:' "$build_log" || true; } | sed -n '1,12p'
+        echo "--- retry, tail ---"
+        tail -30 "$build_log" || true
+      } > evidence/physical-llvmpipe-build.txt 2>&1
+      { grep -m 6 -E 'error|Error [0-9]|Killed|ld:' "$build_log" || true; } | sed -n '1,6p'
+      return 1
+    fi
   fi
   if [[ ! -x "$build/bin/llama-bench" ]]; then
     echo "build failed: $build/bin/llama-bench missing (tail of $build_log)"
