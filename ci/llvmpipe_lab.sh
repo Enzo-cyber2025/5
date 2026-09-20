@@ -208,12 +208,18 @@ build_bench() { # build_bench <src> <build> <flags>
     tail -30 "$cmake_log" || true
     return 1
   fi
-  if ! cmake --build "$build" --target llama-bench llama-cli -j "$(nproc)" > "$build_log" 2>&1; then
+  # The pinned tree calls the CLI tool `llama-cli`, but a target that does not
+  # exist aborts the whole build, so only ask for the ones that are really there.
+  local targets=(llama-bench)
+  if [[ -d "$src/tools/cli" ]]; then
+    targets+=(llama-cli)
+  fi
+  if ! cmake --build "$build" --target "${targets[@]}" -j "$(nproc)" > "$build_log" 2>&1; then
     # A parallel build can also die from a transient kill; retry once single
     # threaded before declaring the compile itself broken, and keep both logs.
     echo "compile for $build failed, retrying with one job"
     cp "$build_log" "$build_log.first" || true
-    if ! cmake --build "$build" --target llama-bench llama-cli -j 2 > "$build_log" 2>&1; then
+    if ! cmake --build "$build" --target "${targets[@]}" -j 2 > "$build_log" 2>&1; then
       echo "build failed: compile for $build (details in evidence/physical-llvmpipe-build.txt)"
       # The job log is only readable through a 20000 character window, which drops
       # exactly the first errors, so they are published as evidence instead.
@@ -233,6 +239,10 @@ build_bench() { # build_bench <src> <build> <flags>
       return 1
     fi
   fi
+  if [[ ${#targets[@]} -gt 1 && ! -x "$build/bin/llama-cli" ]]; then
+    echo "build failed: $build/bin/llama-cli missing"
+    return 1
+  fi
   if [[ ! -x "$build/bin/llama-bench" ]]; then
     echo "build failed: $build/bin/llama-bench missing (tail of $build_log)"
     tail -20 "$build_log" || true
@@ -240,8 +250,11 @@ build_bench() { # build_bench <src> <build> <flags>
   fi
 }
 
-generate_fixture() { # generate_fixture <bin> <label>
+generate_fixture() { # generate_fixture <bench-bin> <label>
   local bin=$1 label=$2
+  if [[ -x "$(dirname "$bin")/llama-cli" ]]; then
+    bin="$(dirname "$bin")/llama-cli"
+  fi
   set +e
   "$bin" -m "$MODEL" -p 'Explain ten practical ways to learn a language. Give a detailed example for each.'     -n 24 --temp 0 -t 2 -b 128 -ub 32 -ngl 99 -no-cnv -s 1 > "$LAB/greedy-$label.txt" 2> "$LAB/greedy-$label.err"
   local rc=$?
