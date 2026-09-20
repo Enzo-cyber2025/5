@@ -6,6 +6,12 @@ on:
       - '.github/workflows/llvmpipe-lab.yml'
       - 'ci/llvmpipe_lab.sh'
       - 'ci/llvmpipe_lab_patches.py'
+      # Every patch module and every probe source is part of the measurement, so
+      # touching one of them must be able to trigger the lab.
+      - 'ci/*lab_patches.py'
+      - 'ci/lab_compute/**'
+      - 'ci/dmmv_accum_lab_patches.py'
+      - 'tests/test_llvmpipe_lab.py'
   workflow_dispatch:
     inputs:
       lab_patches:
