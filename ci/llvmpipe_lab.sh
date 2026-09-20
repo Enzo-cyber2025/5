@@ -209,9 +209,17 @@ build_bench() { # build_bench <src> <build> <flags>
     return 1
   fi
   if ! cmake --build "$build" --target llama-bench llama-cli -j "$(nproc)" > "$build_log" 2>&1; then
-    echo "build failed: compile for $build (first errors, then tail of $build_log)"
-    { grep -m 6 -E 'error:|fatal error:' "$build_log" || true; } | sed -n '1,6p'
-    tail -20 "$build_log" || true
+    echo "build failed: compile for $build (details in $LAB/build-errors.txt)"
+    # The job log is only readable through a 20000 character window, so the errors
+    # also go to their own file, which the evidence publisher commits.
+    {
+      echo "build: $build"
+      echo "--- error lines ---"
+      { grep -m 12 -E 'error|Error [0-9]|undefined reference|Killed|ld:' "$build_log" || true; } | sed -n '1,12p'
+      echo "--- tail ---"
+      tail -30 "$build_log" || true
+    } > "$LAB/build-errors.txt" 2>&1
+    { grep -m 6 -E 'error|Error [0-9]|Killed|ld:' "$build_log" || true; } | sed -n '1,6p'
     return 1
   fi
   if [[ ! -x "$build/bin/llama-bench" ]]; then
@@ -236,6 +244,9 @@ generate_fixture() { # generate_fixture <bin> <label>
 publish_lab_evidence() {
   mkdir -p evidence
   cp "$LAB/table.md" evidence/physical-llvmpipe-lab.txt
+  # Build diagnostics travel in their own evidence file: the job log is truncated
+  # to its last 20000 characters, which is exactly where the first errors are not.
+  [[ -f "$LAB/build-errors.txt" ]] && cp "$LAB/build-errors.txt" evidence/physical-llvmpipe-build.txt
   [[ -f "$LAB/ceiling.txt" ]] && cp "$LAB/ceiling.txt" evidence/physical-llvmpipe-ceiling.txt
   [[ -f evidence/physical-llvmpipe-features.txt ]] || true
   return 0
