@@ -191,9 +191,16 @@ DISPATCH_ANCHOR = '''    // Check for mmq first
 '''
 
 DISPATCH_PATCHED = '''    // GGUF_ALIGNED_Q5: when this weight has an aligned copy, read it with the
-    // Q5_1 pipelines, which the aligned layout was built for.
+    // Q5_1 pipelines, which the aligned layout was built for. The quantised
+    // activation path (mmq) is refused for those: its Q5_1 arithmetic takes the
+    // -16 offset from the block's min term, which this layout does not carry, so
+    // it would add a constant to every dot product. The aligned shader subtracts
+    // the same 16 the Q5_0 shader subtracts.
     vk_buffer gguf_aligned_q5 = gguf_aligned_q5_lookup(src0);
     const ggml_type gguf_aligned_q5_type = gguf_aligned_q5 != nullptr ? GGML_TYPE_Q5_1 : src0->type;
+    if (gguf_aligned_q5 != nullptr) {
+        quantize_y = false;
+    }
 
     // Check for mmq first
     vk_pipeline dmmv = quantize_y ? ggml_vk_get_dequantize_mul_mat_vec(ctx, gguf_aligned_q5_type, GGML_TYPE_Q8_1, ne11, ne20, ne00) : nullptr;
