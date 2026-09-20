@@ -131,3 +131,25 @@ Com 1,45x neles, o token inteiro cai ~1,3x. Para o 2x ainda faltam: o mesmo
 tratamento nos K-quants (q4_K/q6_K, 4,5 s), o caminho de atenuação
 (FLASH_ATTN a 0,88 GFLOPS/s, 2,8 s) e as operações pequenas (norm 1,5 s, rope
 1,0 s, glu 0,6 s — cada uma pagando a taxa fixa de despacho do driver).
+
+## Implementação (laboratório): Q5_0 → bloco alinhado de 24 bytes
+
+`ci/gguf_aligned_q5_lab_patches.py` copia cada tensor de peso Q5_0, uma vez, no
+upload, para um tensor Q5_1 de mesmo número de elementos:
+
+```
+Q5_0  22 B: [d 2][qh 4][qs 16]
+Q5_1  24 B: [d 2][m=0 2][qh 4][qs 16]      (4 B alinhado, 24 = 6 palavras)
+```
+
+Só cópias de bytes: nenhum requantização, nenhuma escala nova. O matvec alinhado
+lê **uma palavra de máscara e uma palavra de nibbles por 8 valores** (antes: cinco
+cargas de 16 bits por 4 valores, por linha), subtrai os mesmos 16 e multiplica a
+soma da linha pelo mesmo `d`. O caminho de prompt (n > 8) continua lendo o buffer
+original com os shaders originais.
+
+Correção encontrada na revisão (e presa em teste): os valores 3 e 4 de cada grupo
+saem da **metade alta da mesma palavra** de nibbles, não de uma palavra seguinte.
+`tests/test_aligned_q5_mapping.py` compara, para 4000 blocos aleatórios e
+payloads extremos, os vetores de 4 valores do leitor fixado com os do leitor
+alinhado, na ordem em que o vetor B é carregado (valor b, b+16, b+1, b+17).

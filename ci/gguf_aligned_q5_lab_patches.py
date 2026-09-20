@@ -73,17 +73,18 @@ vec4 dequantize4(uint ib, uint iqs, uint a_offset) {
     const uint vui = data_a_packed32[a_offset + ib].qs[iqs/4];
     return vec4((vui & 0xF) | qh0.x, ((vui >> 4) & 0xF) | qh0.y, ((vui >> 8) & 0xF) | qh1.x, (vui >> 12) | qh1.y) - 16.0f;
 }
-// Eight values at once: one mask word, one nibble word, no repeated reads.
+// Eight values at once: one mask word and one nibble word. The low half of the
+// nibble word carries the first four values (bytes iqs and iqs+1 of the original
+// block, low and high nibbles) and the high half the next four.
 void dequantize8(uint ib, uint iqs, uint a_offset, out vec4 v0, out vec4 v1) {
     const uint uint_qh = data_a_packed32[a_offset + ib].qh;
     const uint w0 = data_a_packed32[a_offset + ib].qs[iqs/4];
-    const uint w1 = data_a_packed32[a_offset + ib].qs[iqs/4 + 1];
     const ivec2 qh0 = ivec2(((uint_qh >> iqs) << 4) & 0x10, (uint_qh >> (iqs + 12)) & 0x10);
     const ivec2 qh1 = ivec2(((uint_qh >> (iqs + 1)) << 4) & 0x10, (uint_qh >> (iqs + 13)) & 0x10);
     const ivec2 qh2 = ivec2(((uint_qh >> (iqs + 2)) << 4) & 0x10, (uint_qh >> (iqs + 14)) & 0x10);
     const ivec2 qh3 = ivec2(((uint_qh >> (iqs + 3)) << 4) & 0x10, (uint_qh >> (iqs + 15)) & 0x10);
     v0 = vec4((w0 & 0xF) | qh0.x, ((w0 >> 4) & 0xF) | qh0.y, ((w0 >> 8) & 0xF) | qh1.x, (w0 >> 12) | qh1.y) - 16.0f;
-    v1 = vec4((w1 & 0xF) | qh2.x, ((w1 >> 4) & 0xF) | qh2.y, ((w1 >> 8) & 0xF) | qh3.x, (w1 >> 12) | qh3.y) - 16.0f;
+    v1 = vec4(((w0 >> 16) & 0xF) | qh2.x, ((w0 >> 20) & 0xF) | qh2.y, ((w0 >> 24) & 0xF) | qh3.x, (w0 >> 28) | qh3.y) - 16.0f;
 }
 #endif
 '''
@@ -212,8 +213,10 @@ SUBBUFFER_ANCHOR = """    vk_subbuffer d_Qy = ggml_vk_tensor_subbuffer(ctx, src1
 SUBBUFFER_PATCHED = """    vk_subbuffer d_Qy = ggml_vk_tensor_subbuffer(ctx, src1);
     vk_subbuffer d_X, d_Y;
 
-    if (gguf_aligned_q5 != nullptr) {
+    if (gguf_aligned_q5 != nullptr && !qx_needs_dequant) {
         // GGUF_ALIGNED_Q5: bind the aligned copy, which the Q5_1 pipeline expects.
+        // Non-contiguous input would be copied from this subbuffer with the type
+        // size of the original, so those keep the original path.
         d_Qx = { gguf_aligned_q5, 0, gguf_aligned_q5->size };
     }
 """
