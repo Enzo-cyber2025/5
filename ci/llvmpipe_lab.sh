@@ -121,7 +121,7 @@ run_ceiling() { # CPU Vulkan compute ceiling: is a 2-3x kernel win possible here
   local dir=ci/lab_compute
   mkdir -p "$LAB/ceiling"
   local ok=1 pattern block
-  for pattern in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
+  for pattern in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17; do
     glslc -fshader-stage=comp -DPATTERN=$pattern -o "$LAB/ceiling/p$pattern.spv" "$dir/ceiling.comp" \
       >> "$LAB/ceiling-build.log" 2>&1 || ok=0
   done
@@ -159,7 +159,7 @@ run_ceiling() { # CPU Vulkan compute ceiling: is a 2-3x kernel win possible here
   # the 11/12 comparison over a buffer far larger than L3: five loads against two
   # against one contiguous vector load, for the same eight MACs.
   local pattern
-  for pattern in 13 14 15; do
+  for pattern in 13 14 15 16 17; do
     for block in 32 128; do
       "$LAB/ceiling/ceiling" --spv "$LAB/ceiling/p$pattern.spv" --block "$block" --groups 8192 \
         --inner 512 --reps 3 --mb 256 --macs 8 2>&1 | sed "s/^/stream pattern=$pattern /" >> "$LAB/ceiling.txt" \
@@ -178,7 +178,7 @@ run_ceiling() { # CPU Vulkan compute ceiling: is a 2-3x kernel win possible here
   # No pipe into head here: head exits early, grep dies of SIGPIPE and pipefail
   # turns that into a silent lab failure. The published evidence keeps every line.
   { grep -E 'pattern=(0|9|11|12) block=32 ' "$LAB/ceiling.txt" >> "$LAB/table.md" || true; }
-  { grep -E '^stream pattern=(13|14|15) block=32 ' "$LAB/ceiling.txt" >> "$LAB/table.md" || true; }
+  { grep -E '^stream pattern=(13|14|15|16|17) block=32 ' "$LAB/ceiling.txt" >> "$LAB/table.md" || true; }
   { grep '^scaling ' "$LAB/ceiling.txt" >> "$LAB/table.md" || true; }
   return 0
 }
