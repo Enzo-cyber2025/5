@@ -101,7 +101,16 @@ ensure_spirv_headers() { # ggml's Vulkan CMake asks for SPIRV-Headers explicitly
     echo "could not resolve an absolute package dir from $config"
     return 1
   fi
-  echo "spirv-headers: $SPIRV_HEADERS_DIR"
+  # ggml calls find_package but never links the target, so the include directory
+  # has to be handed to the compiler explicitly or ggml-vulkan.cpp cannot see
+  # <spirv/unified1/spirv.hpp> and the whole build stops before any benchmark.
+  SPIRV_HEADERS_INCLUDE="$(cd "$(dirname "$config")/../../.." 2>/dev/null && pwd || true)/include"
+  if [[ ! -f "$SPIRV_HEADERS_INCLUDE/spirv/unified1/spirv.hpp" ]]; then
+    echo "spirv.hpp missing under $SPIRV_HEADERS_INCLUDE; tree:"
+    { find "$SPIRV_HEADERS_INCLUDE" -maxdepth 3 -name 'spirv*.hpp' || true; } | sed -n '1,10p'
+    return 1
+  fi
+  echo "spirv-headers: $SPIRV_HEADERS_DIR (include $SPIRV_HEADERS_INCLUDE)"
   return 0
 }
 
@@ -190,7 +199,7 @@ build_bench() { # build_bench <src> <build> <flags>
   if ! cmake -S "$src" -B "$build" -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_OPENMP=OFF \
     -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_SERVER=OFF -DLLAMA_CURL=OFF \
     -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_TOOLS=ON -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_CXX_FLAGS="$flags" \
+    -DCMAKE_CXX_FLAGS="$flags -I$SPIRV_HEADERS_INCLUDE" \
     -DSPIRV-Headers_DIR="$SPIRV_HEADERS_DIR" \
     -DCMAKE_PREFIX_PATH="$SPIRV_HEADERS_DIR/../../.." \
     -DVulkan_GLSLC_EXECUTABLE="$(command -v glslc)" \
@@ -200,8 +209,9 @@ build_bench() { # build_bench <src> <build> <flags>
     return 1
   fi
   if ! cmake --build "$build" --target llama-bench llama-cli -j "$(nproc)" > "$build_log" 2>&1; then
-    echo "build failed: compile for $build (tail of $build_log)"
-    tail -40 "$build_log" || true
+    echo "build failed: compile for $build (first errors, then tail of $build_log)"
+    { grep -m 6 -E 'error:|fatal error:' "$build_log" || true; } | sed -n '1,6p'
+    tail -20 "$build_log" || true
     return 1
   fi
   if [[ ! -x "$build/bin/llama-bench" ]]; then
