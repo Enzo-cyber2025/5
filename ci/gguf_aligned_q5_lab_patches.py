@@ -245,7 +245,10 @@ def apply(root):
 
     cpp = Path(root) / 'ggml/src/ggml-vulkan/ggml-vulkan.cpp'
     text = cpp.read_text()
-    text = once(text, 'static void ggml_backend_vk_buffer_set_tensor(', HOST_HELPERS + 'static void ggml_backend_vk_buffer_set_tensor(', MARKER + '_HOST')
+    # The helpers are used by the matvec dispatch and by set_tensor, so they go
+    # before the first user; the buffer helpers they need are defined earlier.
+    host_anchor = 'static void ggml_vk_mul_mat_vec_q_f16(ggml_backend_vk_context * ctx, vk_context& subctx, const struct ggml_cgraph * cgraph, int node_idx, bool swap_inputs = false) {'
+    text = once(text, host_anchor, HOST_HELPERS + host_anchor, MARKER + '_HOST')
     text = once(text, SET_TENSOR_ANCHOR, SET_TENSOR_PATCHED, MARKER + '_SET')
     text = once(text, DISPATCH_ANCHOR, DISPATCH_PATCHED, MARKER + '_DISPATCH')
     text = once(text, SUBBUFFER_ANCHOR, SUBBUFFER_PATCHED, MARKER + '_SUB')
