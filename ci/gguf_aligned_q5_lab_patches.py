@@ -129,7 +129,7 @@ static bool gguf_aligned_q5_eligible(const ggml_tensor * t) {
     return true;
 }
 
-static void gguf_aligned_q5_store(vk_device & device, const ggml_tensor * t, const void * data) {
+static void gguf_aligned_q5_store_from_bytes(vk_device & device, const ggml_tensor * t, const void * data) {
     const size_t blocks = ggml_nelements(t) / ggml_blck_size(t->type);
     const uint8_t * src = (const uint8_t *) data;
     std::vector<uint8_t> packed(blocks * 24);
@@ -149,6 +149,28 @@ static void gguf_aligned_q5_store(vk_device & device, const ggml_tensor * t, con
     gguf_aligned_q5_bytes += packed.size();
     std::cerr << "GGUF_ALIGNED_Q5 tensor=" << t->name << " blocks=" << blocks
               << " bytes=" << packed.size() << std::endl;
+}
+
+// Used by the upload hook, which receives a vk_device.
+static void gguf_aligned_q5_store(vk_device & device, const ggml_tensor * t, const void * data) {
+    gguf_aligned_q5_store_from_bytes(device, t, data);
+}
+
+// One-time fallback: read the tensor back from its device buffer, repack it and
+// keep the aligned copy. This exists because the upload hook depends on how the
+// model loader hands data to the backend, and a relayout that silently never runs
+// would be presented as a flat measurement.
+static vk_buffer gguf_aligned_q5_lazy(ggml_backend_vk_context * ctx, const ggml_tensor * t) {
+    const size_t bytes = ggml_nbytes(t);
+    if (bytes == 0 || bytes % (size_t) ggml_type_size(t->type) != 0) return nullptr;
+    const vk_subbuffer sub = ggml_vk_tensor_subbuffer(ctx, t);
+    if (sub.buffer == nullptr || sub.size < bytes) return nullptr;
+    std::vector<uint8_t> original(bytes);
+    ggml_vk_buffer_read(sub.buffer, sub.offset, original.data(), bytes);
+    gguf_aligned_q5_store_from_bytes(ctx->device, t, original.data());
+    std::cerr << "GGUF_ALIGNED_Q5_LAZY name=" << t->name << " bytes=" << bytes << std::endl;
+    auto it = gguf_aligned_q5_buffers.find(t);
+    return it == gguf_aligned_q5_buffers.end() ? nullptr : it->second.first;
 }
 
 static vk_buffer gguf_aligned_q5_lookup(const ggml_tensor * t) {
@@ -174,8 +196,14 @@ SET_TENSOR_PATCHED = '''    if (size == 0) {
         return;
     }
 
+    // GGUF_ALIGNED_Q5 diagnostic: what the loader actually hands the backend.
+    if (tensor->type == GGML_TYPE_Q5_0) {
+        std::cerr << "GGUF_ALIGNED_Q5_SET name=" << tensor->name << " offset=" << offset
+                  << " size=" << size << " nbytes=" << ggml_nbytes(tensor)
+                  << " eligible=" << (gguf_aligned_q5_eligible(tensor) ? 1 : 0) << std::endl;
+    }
     // GGUF_ALIGNED_Q5: whole tensor upload of a Q5_0 weight becomes the aligned copy.
-    if (offset == 0 && size == ggml_nbytes(tensor) && gguf_aligned_q5_eligible(tensor) &&
+    if (gguf_aligned_q5_eligible(tensor) && offset == 0 && size == ggml_nbytes(tensor) &&
         gguf_aligned_q5_buffers.find(tensor) == gguf_aligned_q5_buffers.end()) {
         gguf_aligned_q5_store(buf->device, tensor, data);
     }
@@ -202,6 +230,9 @@ DISPATCH_PATCHED = '''    // GGUF_ALIGNED_Q5: when this weight has an aligned co
     // it would add a constant to every dot product. The aligned shader subtracts
     // the same 16 the Q5_0 shader subtracts.
     vk_buffer gguf_aligned_q5 = gguf_aligned_q5_lookup(src0);
+    if (gguf_aligned_q5 == nullptr && gguf_aligned_q5_eligible(src0)) {
+        gguf_aligned_q5 = gguf_aligned_q5_lazy(ctx, src0);
+    }
     const ggml_type gguf_aligned_q5_type = gguf_aligned_q5 != nullptr ? GGML_TYPE_Q5_1 : src0->type;
     if (gguf_aligned_q5 != nullptr) {
         quantize_y = false;
