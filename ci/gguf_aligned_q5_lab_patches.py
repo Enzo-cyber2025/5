@@ -119,7 +119,22 @@ static size_t gguf_aligned_q5_bytes = 0;
 
 static bool gguf_aligned_q5_eligible(const ggml_tensor * t) {
     if (t == nullptr || t->type != GGML_TYPE_Q5_0) return false;
-    if (!ggml_is_contiguous(t) || t->view_offs != 0) return false;
+    if (t->view_offs != 0) return false;
+    if (t->ne[0] % ggml_blck_size(GGML_TYPE_Q5_0) != 0) return false;
+    if (ggml_nbytes(t) % (size_t) ggml_type_size(t->type) != 0) return false;
+    // The repack walks blocks in row order and rebuilds the row stride, so what it
+    // needs is tightly packed rows, not ggml's notion of a contiguous tensor (which
+    // is about the element stride and is false for every block quantised tensor).
+    const size_t blocks_per_row = (size_t) t->ne[0] / ggml_blck_size(t->type);
+    const size_t row_bytes = blocks_per_row * (size_t) ggml_type_size(t->type);
+    if (t->nb[0] != ggml_type_size(t->type)) return false;
+    if (t->ne[1] > 1 && (size_t) t->nb[1] != row_bytes) return false;
+    return true;
+}
+
+static bool gguf_aligned_q5_layout_ok(const ggml_tensor * t) {
+    if (t == nullptr || t->type != GGML_TYPE_Q5_0) return false;
+    if (t->view_offs != 0) return false;
     if (t->ne[0] % ggml_blck_size(GGML_TYPE_Q5_0) != 0) return false;
     if (ggml_nbytes(t) % (size_t) ggml_type_size(t->type) != 0) return false;
     // The descriptor carries the tensor's own base address and the shader indexes
@@ -229,6 +244,19 @@ DISPATCH_PATCHED = '''    // GGUF_ALIGNED_Q5: when this weight has an aligned co
     // -16 offset from the block's min term, which this layout does not carry, so
     // it would add a constant to every dot product. The aligned shader subtracts
     // the same 16 the Q5_0 shader subtracts.
+    if (src0->type == GGML_TYPE_Q5_0) {
+        static std::unordered_map<const ggml_tensor *, bool> gguf_aligned_q5_seen;
+        if (!gguf_aligned_q5_seen[src0]) {
+            gguf_aligned_q5_seen[src0] = true;
+            std::cerr << "GGUF_ALIGNED_Q5_DISPATCH name=" << src0->name
+                      << " ne0=" << src0->ne[0] << " ne1=" << src0->ne[1]
+                      << " nb0=" << src0->nb[0] << " nb1=" << src0->nb[1]
+                      << " expected_row_bytes=" << ((size_t) src0->ne[0] / ggml_blck_size(src0->type)) * (size_t) ggml_type_size(src0->type)
+                      << " view_offs=" << src0->view_offs
+                      << " layout_ok=" << (gguf_aligned_q5_layout_ok(src0) ? 1 : 0)
+                      << " eligible=" << (gguf_aligned_q5_eligible(src0) ? 1 : 0) << std::endl;
+        }
+    }
     vk_buffer gguf_aligned_q5 = gguf_aligned_q5_lookup(src0);
     if (gguf_aligned_q5 == nullptr && gguf_aligned_q5_eligible(src0)) {
         gguf_aligned_q5 = gguf_aligned_q5_lazy(ctx, src0);

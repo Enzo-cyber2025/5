@@ -397,7 +397,7 @@ mkdir -p evidence
     { grep -h -E 'GGUF_ALIGNED_Q5|GGUF_VK_ROW_TILE|GGUF_VK_DMMV|use_subgroups|GGML_VK_' "$log" || true; } | sed -n "1,3p" | sed "s|^|$(basename "$log"): |"
     # A relayout that never ran looks exactly like a relayout that did not help, so
     # every stage of it is counted here: upload calls seen, tensors repacked, uses.
-    for kind in GGUF_ALIGNED_Q5_ASYNC GGUF_ALIGNED_Q5_SET GGUF_ALIGNED_Q5_LAZY GGUF_ALIGNED_Q5_USE "GGUF_ALIGNED_Q5 tensor="; do
+    for kind in GGUF_ALIGNED_Q5_DISPATCH GGUF_ALIGNED_Q5_ASYNC GGUF_ALIGNED_Q5_SET GGUF_ALIGNED_Q5_LAZY GGUF_ALIGNED_Q5_USE "GGUF_ALIGNED_Q5 tensor="; do
       n=$(grep -c "$kind" "$log" 2>/dev/null || true)
       echo "$(basename "$log"): ${kind} count=${n:-0}"
     done
