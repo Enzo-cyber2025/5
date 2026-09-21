@@ -265,6 +265,29 @@ SUBBUFFER_PATCHED = """    vk_subbuffer d_Qy = ggml_vk_tensor_subbuffer(ctx, src
 """
 
 
+
+# The model loader uploads weights through the backend's async path, not through the
+# buffer interface, so the relayout has to hook there. Without this the copy never
+# happens and a flat result looks like a slow kernel instead of an unused one.
+ASYNC_ANCHOR = 'static void ggml_backend_vk_set_tensor_async(ggml_backend_t backend, ggml_tensor * tensor, const void * data, size_t offset, size_t size) {'
+
+ASYNC_PATCHED = '''static void ggml_backend_vk_set_tensor_async(ggml_backend_t backend, ggml_tensor * tensor, const void * data, size_t offset, size_t size) {
+    // GGUF_ALIGNED_Q5: the model loader uploads weights through this async path,
+    // which never reaches the buffer's set_tensor, so the relayout hooks here.
+    if (tensor->type == GGML_TYPE_Q5_0) {
+        std::cerr << "GGUF_ALIGNED_Q5_ASYNC name=" << tensor->name << " offset=" << offset
+                  << " size=" << size << " nbytes=" << ggml_nbytes(tensor)
+                  << " eligible=" << (gguf_aligned_q5_eligible(tensor) ? 1 : 0) << std::endl;
+    }
+    if (gguf_aligned_q5_eligible(tensor) && offset == 0 && size == ggml_nbytes(tensor) &&
+        gguf_aligned_q5_buffers.find(tensor) == gguf_aligned_q5_buffers.end() &&
+        tensor->buffer != nullptr && tensor->buffer->buft == ggml_backend_vk_get_default_buffer_type(backend)) {
+        ggml_backend_vk_buffer_context * gguf_buf_ctx = (ggml_backend_vk_buffer_context *) tensor->buffer->context;
+        gguf_aligned_q5_store(gguf_buf_ctx->device, tensor, data);
+    }
+'''
+
+
 def once(source, anchor, replacement, marker):
     if marker in source:
         return source
@@ -295,5 +318,6 @@ def apply(root):
     text = once(text, SET_TENSOR_ANCHOR, SET_TENSOR_PATCHED, MARKER + '_SET')
     text = once(text, DISPATCH_ANCHOR, DISPATCH_PATCHED, MARKER + '_DISPATCH')
     text = once(text, SUBBUFFER_ANCHOR, SUBBUFFER_PATCHED, MARKER + '_SUB')
+    text = once(text, ASYNC_ANCHOR, ASYNC_PATCHED, MARKER + '_ASYNC')
     cpp.write_text(text)
     return None
