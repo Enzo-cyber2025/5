@@ -283,7 +283,10 @@ ASYNC_PATCHED = '''static void ggml_backend_vk_set_tensor_async(ggml_backend_t b
         gguf_aligned_q5_buffers.find(tensor) == gguf_aligned_q5_buffers.end() &&
         tensor->buffer != nullptr && tensor->buffer->buft == ggml_backend_vk_get_default_buffer_type(backend)) {
         ggml_backend_vk_buffer_context * gguf_buf_ctx = (ggml_backend_vk_buffer_context *) tensor->buffer->context;
-        gguf_aligned_q5_store(gguf_buf_ctx->device, tensor, data);
+        vk_device gguf_device = gguf_buf_ctx->device.lock();
+        if (gguf_device != nullptr) {
+            gguf_aligned_q5_store(gguf_device, tensor, data);
+        }
     }
 '''
 
