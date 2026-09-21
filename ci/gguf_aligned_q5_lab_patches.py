@@ -163,7 +163,7 @@ static void gguf_aligned_q5_store(vk_device & device, const ggml_tensor * t, con
 static vk_buffer gguf_aligned_q5_lazy(ggml_backend_vk_context * ctx, const ggml_tensor * t) {
     const size_t bytes = ggml_nbytes(t);
     if (bytes == 0 || bytes % (size_t) ggml_type_size(t->type) != 0) return nullptr;
-    const vk_subbuffer sub = ggml_vk_tensor_subbuffer(ctx, t);
+    vk_subbuffer sub = ggml_vk_tensor_subbuffer(ctx, t);  // buffer_read takes a non-const reference
     if (sub.buffer == nullptr || sub.size < bytes) return nullptr;
     std::vector<uint8_t> original(bytes);
     ggml_vk_buffer_read(sub.buffer, sub.offset, original.data(), bytes);
