@@ -1,0 +1,69 @@
+build: .cache/llama-host-build
+--- first attempt, error lines ---
+/home/runner/work/5/5/.cache/llama-host/ggml/src/ggml-vulkan/ggml-vulkan.cpp:9815:11: error: missing terminating ' character
+/home/runner/work/5/5/.cache/llama-host/ggml/src/ggml-vulkan/ggml-vulkan.cpp:9816:1: error: missing terminating ' character
+/home/runner/work/5/5/.cache/llama-host/ggml/src/ggml-vulkan/ggml-vulkan.cpp:9817:14: error: expected ‘)’ before ‘;’ token
+gmake[3]: *** [ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/build.make:989: ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ggml-vulkan.cpp.o] Error 1
+gmake[2]: *** [CMakeFiles/Makefile2:884: ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/all] Error 2
+gmake[1]: *** [CMakeFiles/Makefile2:1322: tools/llama-bench/CMakeFiles/llama-bench.dir/rule] Error 2
+gmake: *** [Makefile:365: llama-bench] Error 2
+--- first attempt, tail ---
+[ 75%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/sub.comp.cpp.o
+[ 75%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/sum_rows.comp.cpp.o
+[ 75%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/swiglu.comp.cpp.o
+[ 75%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/swiglu_clamp.comp.cpp.o
+[ 75%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/swiglu_oai.comp.cpp.o
+[ 76%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/timestep_embedding.comp.cpp.o
+[ 76%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/topk_argsort.comp.cpp.o
+[ 76%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/topk_moe.comp.cpp.o
+[ 76%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/topk_nary_search.comp.cpp.o
+[ 76%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/topk_radix_select.comp.cpp.o
+[ 76%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/tri.comp.cpp.o
+[ 77%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/unary.comp.cpp.o
+[ 77%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/upscale.comp.cpp.o
+[ 77%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/wkv6.comp.cpp.o
+[ 77%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/wkv7.comp.cpp.o
+gmake[3]: *** [ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/build.make:989: ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ggml-vulkan.cpp.o] Error 1
+gmake[3]: *** Waiting for unfinished jobs....
+gmake[2]: *** [CMakeFiles/Makefile2:884: ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/all] Error 2
+gmake[1]: *** [CMakeFiles/Makefile2:1322: tools/llama-bench/CMakeFiles/llama-bench.dir/rule] Error 2
+gmake: *** [Makefile:365: llama-bench] Error 2
+--- retry, error lines ---
+/home/runner/work/5/5/.cache/llama-host/ggml/src/ggml-vulkan/ggml-vulkan.cpp:9815:11: error: missing terminating ' character
+/home/runner/work/5/5/.cache/llama-host/ggml/src/ggml-vulkan/ggml-vulkan.cpp:9816:1: error: missing terminating ' character
+/home/runner/work/5/5/.cache/llama-host/ggml/src/ggml-vulkan/ggml-vulkan.cpp:9817:14: error: expected ‘)’ before ‘;’ token
+gmake[3]: *** [ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/build.make:989: ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ggml-vulkan.cpp.o] Error 1
+gmake[2]: *** [CMakeFiles/Makefile2:884: ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/all] Error 2
+gmake[1]: *** [CMakeFiles/Makefile2:1322: tools/llama-bench/CMakeFiles/llama-bench.dir/rule] Error 2
+gmake: *** [Makefile:365: llama-bench] Error 2
+--- retry, tail ---
+[  2%] Built target cpp-httplib
+[100%] Built target vulkan-shaders-gen
+[  2%] Performing install step for 'vulkan-shaders-gen'
+-- Up-to-date: /home/runner/work/5/5/.cache/llama-host-build/Release/./vulkan-shaders-gen
+[  2%] Completed 'vulkan-shaders-gen'
+[  5%] Built target vulkan-shaders-gen
+[  8%] Built target ggml-cpu
+[  8%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ggml-vulkan.cpp.o
+/home/runner/work/5/5/.cache/llama-host/ggml/src/ggml-vulkan/ggml-vulkan.cpp:9815:11: warning: missing terminating ' character
+ 9815 |     fputc('
+      |           ^
+/home/runner/work/5/5/.cache/llama-host/ggml/src/ggml-vulkan/ggml-vulkan.cpp:9815:11: error: missing terminating ' character
+/home/runner/work/5/5/.cache/llama-host/ggml/src/ggml-vulkan/ggml-vulkan.cpp:9816:1: warning: missing terminating ' character
+ 9816 | ', f);
+      | ^
+/home/runner/work/5/5/.cache/llama-host/ggml/src/ggml-vulkan/ggml-vulkan.cpp:9816:1: error: missing terminating ' character
+ 9816 | ', f);
+      | ^~~~~~
+/home/runner/work/5/5/.cache/llama-host/ggml/src/ggml-vulkan/ggml-vulkan.cpp: In function ‘void gguf_aligned_q5_trace(const char*, ...)’:
+/home/runner/work/5/5/.cache/llama-host/ggml/src/ggml-vulkan/ggml-vulkan.cpp:9817:14: error: expected ‘)’ before ‘;’ token
+ 9817 |     fclose(f);
+      |              ^
+      |              )
+/home/runner/work/5/5/.cache/llama-host/ggml/src/ggml-vulkan/ggml-vulkan.cpp:9815:10: note: to match this ‘(’
+ 9815 |     fputc('
+      |          ^
+gmake[3]: *** [ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/build.make:989: ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ggml-vulkan.cpp.o] Error 1
+gmake[2]: *** [CMakeFiles/Makefile2:884: ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/all] Error 2
+gmake[1]: *** [CMakeFiles/Makefile2:1322: tools/llama-bench/CMakeFiles/llama-bench.dir/rule] Error 2
+gmake: *** [Makefile:365: llama-bench] Error 2
