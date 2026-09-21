@@ -417,6 +417,9 @@ mkdir -p evidence
 # Copy the benchmark table here as well: the probe-only path never runs this far,
 # and a missing table made a later line fail and hide every number.
 cp "$LAB/table.md" evidence/physical-llvmpipe-lab.txt
+# The relayout writes its own trace next to the working directory: line counts in a
+# truncated log already misled this measurement once.
+cp gguf_aligned_q5_trace.txt evidence/physical-llvmpipe-aligned-trace.txt 2>/dev/null || true
 { wc -c evidence/physical-llvmpipe-lab.txt evidence/physical-llvmpipe-lab-profile.txt || true; }
 
 # The Checks API annotation channel keeps only the tail of this log, so the table

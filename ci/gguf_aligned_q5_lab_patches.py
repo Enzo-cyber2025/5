@@ -113,6 +113,21 @@ HOST_HELPERS = '''
 // GGUF_ALIGNED_Q5 (lab only): Q5_0 weights are copied once into a four byte
 // aligned Q5_1 buffer so the decode matvec can read words instead of halves.
 // Same nibbles, same high bits, same scale, no requantisation.
+
+// Every step of the relayout writes here as well as to stderr: the bench harness,
+// the driver and the shell all sit between this code and the published log.
+#include <cstdarg>
+static void gguf_aligned_q5_trace(const char * fmt, ...) {
+    FILE * f = fopen("gguf_aligned_q5_trace.txt", "a");
+    if (f == nullptr) return;
+    va_list args;
+    va_start(args, fmt);
+    vfprintf(f, fmt, args);
+    va_end(args);
+    fputc('\n', f);
+    fclose(f);
+}
+
 static std::unordered_map<const ggml_tensor *, std::pair<vk_buffer, size_t>> gguf_aligned_q5_buffers;
 static size_t gguf_aligned_q5_tensors = 0;
 static size_t gguf_aligned_q5_bytes = 0;
@@ -162,6 +177,7 @@ static void gguf_aligned_q5_store_from_bytes(vk_device & device, const ggml_tens
     gguf_aligned_q5_buffers[t] = { buf, packed.size() };
     gguf_aligned_q5_tensors++;
     gguf_aligned_q5_bytes += packed.size();
+    gguf_aligned_q5_trace("REPACK name=%s blocks=%zu bytes=%zu", t->name, blocks, packed.size());
     std::cerr << "GGUF_ALIGNED_Q5 tensor=" << t->name << " blocks=" << blocks
               << " bytes=" << packed.size() << std::endl;
 }
@@ -183,6 +199,7 @@ static vk_buffer gguf_aligned_q5_lazy(ggml_backend_vk_context * ctx, const ggml_
     std::vector<uint8_t> original(bytes);
     ggml_vk_buffer_read(sub.buffer, sub.offset, original.data(), bytes);
     gguf_aligned_q5_store_from_bytes(ctx->device, t, original.data());
+    gguf_aligned_q5_trace("LAZY name=%s bytes=%zu", t->name, bytes);
     std::cerr << "GGUF_ALIGNED_Q5_LAZY name=" << t->name << " bytes=" << bytes << std::endl;
     auto it = gguf_aligned_q5_buffers.find(t);
     return it == gguf_aligned_q5_buffers.end() ? nullptr : it->second.first;
@@ -213,6 +230,9 @@ SET_TENSOR_PATCHED = '''    if (size == 0) {
 
     // GGUF_ALIGNED_Q5 diagnostic: what the loader actually hands the backend.
     if (tensor->type == GGML_TYPE_Q5_0) {
+        gguf_aligned_q5_trace("SET name=%s offset=%zu size=%zu nbytes=%zu eligible=%d",
+                              tensor->name, offset, size, ggml_nbytes(tensor),
+                              gguf_aligned_q5_eligible(tensor) ? 1 : 0);
         std::cerr << "GGUF_ALIGNED_Q5_SET name=" << tensor->name << " offset=" << offset
                   << " size=" << size << " nbytes=" << ggml_nbytes(tensor)
                   << " eligible=" << (gguf_aligned_q5_eligible(tensor) ? 1 : 0) << std::endl;
@@ -245,9 +265,19 @@ DISPATCH_PATCHED = '''    // GGUF_ALIGNED_Q5: when this weight has an aligned co
     // it would add a constant to every dot product. The aligned shader subtracts
     // the same 16 the Q5_0 shader subtracts.
     if (src0->type == GGML_TYPE_Q5_0) {
+        static bool gguf_aligned_q5_banner = false;
+        if (!gguf_aligned_q5_banner) {
+            gguf_aligned_q5_banner = true;
+            gguf_aligned_q5_trace("BUILD patched=true (first q5_0 matvec)");
+        }
         static std::unordered_map<const ggml_tensor *, bool> gguf_aligned_q5_seen;
         if (!gguf_aligned_q5_seen[src0]) {
             gguf_aligned_q5_seen[src0] = true;
+            gguf_aligned_q5_trace("DISPATCH name=%s ne0=%lld ne1=%lld nb0=%zu nb1=%zu view_offs=%zu layout_ok=%d eligible=%d",
+                                  src0->name, (long long) src0->ne[0], (long long) src0->ne[1],
+                                  (size_t) src0->nb[0], (size_t) src0->nb[1], (size_t) src0->view_offs,
+                                  gguf_aligned_q5_layout_ok(src0) ? 1 : 0,
+                                  gguf_aligned_q5_eligible(src0) ? 1 : 0);
             std::cerr << "GGUF_ALIGNED_Q5_DISPATCH name=" << src0->name
                       << " ne0=" << src0->ne[0] << " ne1=" << src0->ne[1]
                       << " nb0=" << src0->nb[0] << " nb1=" << src0->nb[1]
@@ -303,6 +333,9 @@ ASYNC_PATCHED = '''static void ggml_backend_vk_set_tensor_async(ggml_backend_t b
     // GGUF_ALIGNED_Q5: the model loader uploads weights through this async path,
     // which never reaches the buffer's set_tensor, so the relayout hooks here.
     if (tensor->type == GGML_TYPE_Q5_0) {
+        gguf_aligned_q5_trace("ASYNC name=%s offset=%zu size=%zu nbytes=%zu eligible=%d",
+                              tensor->name, offset, size, ggml_nbytes(tensor),
+                              gguf_aligned_q5_eligible(tensor) ? 1 : 0);
         std::cerr << "GGUF_ALIGNED_Q5_ASYNC name=" << tensor->name << " offset=" << offset
                   << " size=" << size << " nbytes=" << ggml_nbytes(tensor)
                   << " eligible=" << (gguf_aligned_q5_eligible(tensor) ? 1 : 0) << std::endl;
