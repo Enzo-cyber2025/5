@@ -1,0 +1,155 @@
+{
+  "status": "PASS_COMBINED_BYTE_REFERENCE",
+  "kind": "verify",
+  "build": {
+    "apk_sha256": "2053c037e3d9ca776f9c1d285722338c4967135044d7c026803450bd0b33baf1",
+    "source_commit": "11da7aa98b773754856dbdb1edefc8c6717e0e27",
+    "default_combined": false,
+    "control": "Same APK; stock RGB in both modes; before no experiments, after explicit batch2+QKV+combination flags",
+    "release_approved": false
+  },
+  "pairs": [],
+  "release_approved": false,
+  "model_sha256": "650283ee95856be73ff45fa277ac6a4238b4d1bb52a670983c2e1690fd352a12",
+  "verification": {
+    "load": {
+      "startup_ns": 23571375985,
+      "qkv": [
+        [
+          "12",
+          "22671360",
+          "22671360",
+          "1"
+        ]
+      ],
+      "pss_kib": 121146
+    },
+    "states": {
+      "awake": {
+        "warmup": {
+          "tokens": 2,
+          "prefill_and_generation_seconds": 540.5200000000041,
+          "prefill_and_generation_tokens_s": 0.003700140605342975,
+          "response": "Dog.",
+          "metrics": {
+            "tokens": 2,
+            "decodeNs": 669917758,
+            "prefillNs": 539849640363,
+            "completed": true,
+            "version": 3,
+            "timingScope": "prefill_synchronized_before_decode",
+            "firstTokenNs": 539852974945,
+            "promptTokens": 513,
+            "reusedPromptTokens": 0
+          },
+          "callbacks": 2,
+          "native_decode_tokens_s": 2.985441087531225,
+          "send_to_first_ui_ns": 540238179770,
+          "strict": {
+            "status": "PASS",
+            "submitted_graphs": 35,
+            "submitted_math_nodes": 16903,
+            "tensor_cpu_fallback": "blocked_by_native_policy",
+            "host_orchestration": "CPU",
+            "physical_gpu_certified": false
+          },
+          "combined": true,
+          "diagnostic": true,
+          "raw_history": [
+            [
+              "user",
+              "Arquivo anexado: 1 arquivo(s)\n\nAnexos vinculados a esta mensagem para leitura.\n\nName the main animal in the image. Reply in English."
+            ],
+            [
+              "assistant",
+              " Dog."
+            ]
+          ],
+          "settings": {
+            "nPredict": 128,
+            "temperature": 0,
+            "topP": 0.949999988079071,
+            "topK": 40,
+            "minP": 0.05000000074505806,
+            "repeatPenalty": 1.100000023841858,
+            "repeatLastN": 64,
+            "contextSize": 4096,
+            "nThreads": 2,
+            "gpuLayers": 99,
+            "useMmap": true,
+            "thinking": false,
+            "webSearch": false,
+            "systemPrompt": null
+          },
+          "image_records": [
+            [
+              "64",
+              "Vulkan"
+            ],
+            [
+              "64",
+              "Vulkan"
+            ],
+            [
+              "64",
+              "Vulkan"
+            ],
+            [
+              "64",
+              "Vulkan"
+            ],
+            [
+              "64",
+              "Vulkan"
+            ]
+          ],
+          "prepared_dimensions": [
+            [
+              "1024",
+              "803",
+              "ImageDecoder"
+            ]
+          ],
+          "stages": {
+            "bitmap_ns": 29275018,
+            "tokenize_ns": 21004298,
+            "key_ns": 411,
+            "encode_call_ns": 499108301046,
+            "encode_calls": 12,
+            "hits": 0,
+            "verified_hits": 0,
+            "verification": 0,
+            "cache_disabled": 1
+          },
+          "pairing": {
+            "enabled": 1,
+            "pair_calls": 2,
+            "paired_images": 4,
+            "verified_images": 4,
+            "verification": 1
+          },
+          "qkv": {
+            "requested": 1,
+            "verification": 1,
+            "verified_images": 5
+          },
+          "upload_bytes": 44040192,
+          "realized_attention": "enabled"
+        }
+      }
+    },
+    "pss_kib_after": 126672
+  },
+  "code_and_copy": {
+    "stream": "PASS",
+    "history": "PASS"
+  },
+  "result": {
+    "status": "PASS_COMBINED_BYTE_REFERENCE",
+    "quality_passed": true,
+    "verified_images": 5,
+    "realized_attention": "enabled",
+    "release_approved": false
+  },
+  "scope": "Opt-in batch2+QKV, stock RGB packing, same APK/GGUF/settings. Dedicated full byte reference before any benchmarks. Three AB/BA/AB warmed pairs per workload. Cache disabled for encoder timing, enabled for cache regressions. Observed app PSS is not total device/peak GPU memory. Software Vulkan only; not general release approval."
+}

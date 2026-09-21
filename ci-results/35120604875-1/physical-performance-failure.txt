@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/home/runner/work/5/5/scripts/test_performance_android.py", line 67, in main
+    model=d.import_model(TEXT);series={};result['series'][phase]=series
+          ^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_android.py", line 253, in import_model
+    self.launch()
+  File "/home/runner/work/5/5/scripts/test_android.py", line 130, in launch
+    self.wait(lambda: has_package(self.ui(), {PACKAGE}), "MainActivity em primeiro plano")
+  File "/home/runner/work/5/5/scripts/test_android.py", line 74, in wait
+    raise AssertionError(f"Timeout: {description}")
+AssertionError: Timeout: MainActivity em primeiro plano

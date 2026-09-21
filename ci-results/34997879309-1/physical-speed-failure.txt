@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/home/runner/work/5/5/scripts/test_generation_stats_android.py", line 90, in main
+    footer(d,r,'footer');d.launch();d.open_existing_chat(chat['title']);footer(d,r,'reopened-footer')
+    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_generation_stats_android.py", line 57, in footer
+    label=captions[0]['text'];rate=float(re.search(r'([\d.,]+) tokens/s',label)[1].replace(',','.'))
+          ~~~~~~~~~~~^^^^^^^^
+TypeError: element indices must be integers

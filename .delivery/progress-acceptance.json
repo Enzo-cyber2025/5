@@ -1,0 +1,84 @@
+{
+  "status": "SIGNED_PROGRESS_ANDROID_PASS",
+  "apk_sha256": "afaf22c63022b44320604407246abe47a921c4e4d1fe55694ce7428abb047e86",
+  "source_commit": "dba56b23dc490b360dc927f1fc82994e8c336e8d",
+  "signer_sha256": "9b658c30f602e0f2ff65c176423cb95bea8fbdeb660c306ab908862f90d9bc3c",
+  "release_tag": "gguf-progress-dba56b2",
+  "ui_review": {
+    "status": "PASS",
+    "apk_sha256": "afaf22c63022b44320604407246abe47a921c4e4d1fe55694ce7428abb047e86",
+    "scope": "Actual adb screencap images opened and inspected: paired and single imports, visible named percentages, explicit native indeterminacy, and dismissal after rejection. No reconstructed or generated UI.",
+    "genuine_screenshots": [
+      {
+        "path": "ci-results/34973247833-1-gemma4/physical-progress-gemma4-pair-copy0-2.png",
+        "sha256": "cdb14842af6e008a31ad6b795f7f9b0885440642870826d9bec10b77c975cb72",
+        "observed": "Importação 1: 40%, nome visível; demais etapas aguardando"
+      },
+      {
+        "path": "ci-results/34973247833-1-gemma4/physical-progress-gemma4-pair-copy1-1.png",
+        "sha256": "42e44e824ad20d6108b1103e43f2eb1fec6baf25904d2ca3e99b5b97acd790a8",
+        "observed": "Importação 1 e identificação 1: 100%; importação 2: 39%, com nome mmproj-F16.gguf"
+      },
+      {
+        "path": "ci-results/34973247833-1-gemma4/physical-progress-gemma4-pair-identify0-0.png",
+        "sha256": "1925471b05cdc3e0bca8faeed9e2548a3785f9069e4d059846c385cf4ca14861",
+        "observed": "Identificação 1: 3%; cópia 1 concluída"
+      },
+      {
+        "path": "ci-results/34973247833-1-gemma4/physical-progress-gemma4-pair-merge-2.png",
+        "sha256": "34d363c3914f641c06a69e9f075f72b315e96be9283fe964d2da59407abb2fff",
+        "observed": "Unificação dos pesos: 45%; cópias/identificações já concluídas"
+      },
+      {
+        "path": "ci-results/34973247833-1-gemma4/physical-progress-gemma4-pair-verify-2.png",
+        "sha256": "578399f6516ff46402b2e3e49797c6ac4735540ce3801068db3911789acfa55c",
+        "observed": "Conferência dos tensores: 46%; unificação concluída"
+      },
+      {
+        "path": "ci-results/34973247833-1-gemma4/physical-progress-gemma4-pair-native-0.png",
+        "sha256": "a59beb21edd500dad02721ff26ce10241ff0e21233d34620965cb640a87dfc90",
+        "observed": "Validação no motor explicitamente sem percentual; etapas anteriores 100%; salvamento aguardando; sem rodapé 0/100"
+      },
+      {
+        "path": "ci-results/34973247833-1-regression/physical-progress-single-text-identify0-0.png",
+        "sha256": "ddcbcdbdae6ac46d1fd193d88b40b5bc72c917ac4d4c75b870e285a5cf6f5ede",
+        "observed": "Importação individual textual: cópia 100%, identificação 4%, nome visível"
+      },
+      {
+        "path": "ci-results/34973247833-1-regression/physical-progress-single-vision-native-0.png",
+        "sha256": "6a530f616201f8316129df369550cc806d975204a0129b654529342d22778513",
+        "observed": "GGUF visual externo: cópia/identificação 100%, validação nativa explicitamente indeterminada"
+      },
+      {
+        "path": "ci-results/34973247833-1-regression/physical-progress-single-rejected.png",
+        "sha256": "c711db74ef61fab59337308f64d01b561557c94df34c664c4a92d9ab99d16930",
+        "observed": "Diálogo fechado depois da rejeição; biblioteca anterior visível, sem novo registro"
+      }
+    ]
+  },
+  "gemma4": {
+    "run": 34973247833,
+    "attempt": 1,
+    "job": 104394458336,
+    "commit": "958694d02857522ad88feadb86d0dc830ed07ff3"
+  },
+  "regression": {
+    "run": 34973247833,
+    "attempt": 1,
+    "job": 104394458575,
+    "commit": "958694d02857522ad88feadb86d0dc830ed07ff3"
+  },
+  "quality_review": {
+    "general_quality_approved": false,
+    "oversize_greeting": {
+      "automatic": "PASS",
+      "manual": "FAIL",
+      "reason": "The response echoes the instruction containing hello instead of actually performing the greeting."
+    },
+    "retained_failures": [
+      "per-chat code override answered ORCHID instead of CEDAR",
+      "normal-model image-rejection follow-up did not greet as requested"
+    ],
+    "note": "Functional I/O/error recovery passes do not override these semantic limitations."
+  }
+}

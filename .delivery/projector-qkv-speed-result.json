@@ -1,0 +1,30 @@
+{
+  "status": "NO_CONSISTENT_GAIN_OVER_5_PERCENT",
+  "observations": [
+    {
+      "separate_first_ui_s": 100.0257558,
+      "fused_first_ui_s": 99.215900931,
+      "ratio": 1.0081625511777916,
+      "separate_encode_call_s": 86.061302507,
+      "fused_encode_call_s": 85.572547239
+    },
+    {
+      "separate_first_ui_s": 99.064295752,
+      "fused_first_ui_s": 98.901670256,
+      "ratio": 1.001644314960294,
+      "separate_encode_call_s": 85.452622261,
+      "fused_encode_call_s": 85.359460279
+    }
+  ],
+  "median_ratio": 1.004903433069043,
+  "realized_flash_attention": "enabled",
+  "extra_device_bytes": [
+    22671360,
+    22671360,
+    22671360
+  ],
+  "quality": "exact original weight-copy bytes, full projector output reference, raw saved histories",
+  "scope": "Two AB/BA warmed observations per mode on one software-Vulkan runner; not physical GPU, statistics, cold startup or global speedup",
+  "release_approved": false,
+  "physical_gpu_certified": false
+}

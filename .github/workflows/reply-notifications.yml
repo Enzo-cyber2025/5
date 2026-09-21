@@ -1,0 +1,106 @@
+name: Reply notification build and real screen-off test
+on:
+  push:
+    branches: [arena/01a09b42-5]
+    paths:
+      - apk-fix/reply_notifications.py
+      - apk-fix/java/com/ggufchat/app/ReplyNotifications.java
+      - scripts/build_reply_notifications.py
+      - scripts/test_reply_notifications_android.py
+      - ci/reply-notification-candidate.json
+      - .github/workflows/reply-notifications.yml
+permissions:
+  contents: write
+  actions: read
+jobs:
+  build:
+    if: ${{ contains(github.event.head_commit.message, '[reply build]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Compile only delivery changes on exact approved payload
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install -r requirements-test.txt
+          bash scripts/fetch_tools.sh
+          mkdir -p .cache
+          curl -fL --retry 3 'https://raw.githubusercontent.com/Enzo-cyber2025/5/c5035bafcee844337dcedb033ae8671a813f5b91/.delivery/GGUF-Chat-mobile.apk' -o .cache/reply-base.apk
+          .venv/bin/python scripts/build_reply_notifications.py
+          .venv/bin/python -m pytest tests/test_reply_notifications.py tests/test_latency.py tests/test_generation_stats.py tests/test_compute.py -q
+      - name: Relay unsigned APK, no private key in CI
+        run: |
+          git config user.name 'GGUF build relay'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f .delivery/GGUF-Chat-mobile-unsigned.apk .delivery/mobile-build.json
+          git commit -m 'Relay unsigned notification update; native bytes preserved [skip ci]'
+          git pull --rebase origin arena/01a09b42-5
+          git push origin arena/01a09b42-5
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reply-build-provenance
+          path: .delivery/mobile-build.json
+  test:
+    if: ${{ contains(github.event.head_commit.message, '[reply candidate]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Exact APK, unchanged native payload and same certificate
+        run: |
+          mkdir -p .cache evidence
+          curl -fL --retry 3 'https://raw.githubusercontent.com/Enzo-cyber2025/5/c5035bafcee844337dcedb033ae8671a813f5b91/.delivery/GGUF-Chat-mobile.apk' -o .cache/reply-base.apk
+          python3 ci/verify_reply_notification_candidate.py
+          SIGNER=$(find "$ANDROID_HOME/build-tools" -path '*/apksigner' -type f | sort -V | tail -1)
+          "$SIGNER" verify --verbose --print-certs .delivery/GGUF-Chat-mobile.apk | tee evidence/physical-reply-signature.txt
+          "$SIGNER" verify --verbose --print-certs .cache/reply-base.apk | tee evidence/physical-reply-baseline-signature.txt
+          grep 'certificate SHA-256 digest: 4f75afe8637f28ccb167db407e3b2bc9b260e1cfe6059b7377ea20b0b4dc2ac3' evidence/physical-reply-signature.txt
+          grep 'certificate SHA-256 digest: 4f75afe8637f28ccb167db407e3b2bc9b260e1cfe6059b7377ea20b0b4dc2ac3' evidence/physical-reply-baseline-signature.txt
+          python3 -m venv .venv
+          .venv/bin/pip install numpy==2.2.6 tqdm==4.67.1 pyyaml==6.0.2
+          git clone --depth 1 --branch v0.4.1 https://github.com/ggml-org/llama.cpp .cache/llama-mobile
+          test "$(git -C .cache/llama-mobile rev-parse HEAD)" = b29c606e28a01b1bc8c1351026a0fa6e616bf6c4
+          bash ci/mobile-models.sh
+          bash scripts/build_test_input.sh
+          sudo chmod a+rw /dev/kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GGUF_TEST_APK: .delivery/GGUF-Chat-mobile.apk
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_5
+          ram-size: 6144M
+          heap-size: 1024M
+          disk-size: 8192M
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: .venv/bin/python scripts/test_reply_notifications_android.py
+      - name: Report
+        if: always()
+        run: python3 ci/report_android.py evidence
+      - name: Publish bounded real evidence
+        if: always()
+        run: bash ci/publish_evidence.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reply-notification-evidence
+          path: evidence/

@@ -1,0 +1,36 @@
+09-18 22:29:02.740  9811 10438 I GGUFSystem: GGUF_SYSTEM_PROMPT_APPLIED scope=global chars=107 sha256=dde45e87ea07db0b49bcddd022d4f41a452610560d9af636571c26d16a4bcd04
+09-18 22:29:02.875   570   585 I PowerManagerService: Going to sleep due to sleep_button (uid 1000, screenOffTimeout=2147483647, activityTimeoutWM=-1, maxDimRatio=0.20000005, maxDimDur=7000)...
+09-18 22:29:03.170   570   622 I PowerManagerService: Sleeping (uid 1000)...
+09-18 22:29:03.183   570   570 I PowerManagerService: onFlip(): Face up.
+09-18 22:29:03.342  9811 10438 I GGUFInference: GGUF_IMAGE_PREPARED width=1024 height=803 decoder=ImageDecoder orientation=automatic color=sRGB
+09-18 22:29:03.344  9811 10438 I GGUFInference: GGUF_CONTENT_PREPARED files=1 images=1 text_chars=0
+09-18 22:29:03.345  9811 10438 I GGUFChatNative: GGUF_GPU_SAMPLING requested=1 attached=1
+09-18 22:29:03.403  9811 10438 I GGUFChatNative: GGUF_PROJECTOR_COMBINATION enabled=0 verification=0
+09-18 22:29:08.403  9811  9884 I GGUFNativeStderr: GGUF_IMAGE_UPLOAD packing=CPU bytes=3145728 host_planar_copy=1
+09-18 22:29:44.003  9811 10438 I GGUFChatNative: GGUF_IMAGE_EVALUATED tokens=64 backend=Vulkan
+09-18 22:29:45.519  9811  9884 I GGUFNativeStderr: GGUF_IMAGE_UPLOAD packing=CPU bytes=3145728 host_planar_copy=1
+09-18 22:30:19.551  9811 10438 I GGUFChatNative: GGUF_IMAGE_EVALUATED tokens=64 backend=Vulkan
+09-18 22:30:21.068  9811  9884 I GGUFNativeStderr: GGUF_IMAGE_UPLOAD packing=CPU bytes=3145728 host_planar_copy=1
+09-18 22:30:55.192  9811 10438 I GGUFChatNative: GGUF_IMAGE_EVALUATED tokens=64 backend=Vulkan
+09-18 22:30:56.725  9811  9884 I GGUFNativeStderr: GGUF_IMAGE_UPLOAD packing=CPU bytes=3145728 host_planar_copy=1
+09-18 22:31:31.202  9811 10438 I GGUFChatNative: GGUF_IMAGE_EVALUATED tokens=64 backend=Vulkan
+09-18 22:31:32.727  9811  9884 I GGUFNativeStderr: GGUF_IMAGE_UPLOAD packing=CPU bytes=3145728 host_planar_copy=1
+09-18 22:32:07.348  9811 10438 I GGUFChatNative: GGUF_IMAGE_EVALUATED tokens=64 backend=Vulkan
+09-18 22:32:13.100  9811 10438 I GGUFChatNative: GGUF_MEDIA_PREFIX enabled=1 eligible=1 reused_chunks=0 reused_tokens=0 verification=0 verified_bytes=0
+09-18 22:32:13.100  9811 10438 I GGUFChatNative: GGUF_IMAGE_EMBED_CACHE hits=0 misses=5 bytes=737280
+09-18 22:32:13.100  9811 10438 I GGUFChatNative: GGUF_PROJECTOR_STAGES bitmap_ns=28837223 tokenize_ns=23075912 key_ns=10760 encode_call_ns=165379212411 encode_calls=5 hits=0 verified_hits=0 verification=0 cache_disabled=0
+09-18 22:32:13.101  9811 10438 I GGUFChatNative: GGUF_PROJECTOR_PAIRS enabled=0 pair_calls=0 paired_images=0 verified_images=0 verification=0
+09-18 22:32:13.101  9811 10438 I GGUFChatNative: GGUF_QKV_RESULT requested=0 verification=0 verified_images=0
+09-18 22:32:13.101  9811 10438 I GGUFChatNative: GGUF_MEDIA_PREFILL images=1 tokens=516 positions=516
+09-18 22:32:13.101  9811 10438 I GGUFChatNative: GGUF_PROMPT_CACHE input_tokens=516 reused_tokens=0 evaluated_tokens=516 media=1
+09-18 22:32:13.631  9811 10438 I GGUFChatNative: GGUF_NATIVE_COMPLETE tokens=2 reason=eog projector=1
+09-18 22:32:13.631  9811 10438 I GGUFChatNative: GGUF_HOST_WORKER_CPU available=1 thread_cpu_ns=168206795571
+09-18 22:32:13.631  9811 10438 I GGUFChatNative: GGUF_STRICT_VULKAN_RESULT enabled=1 submitted_graphs=28 submitted_math_nodes=15139 blocked=0 host_orchestration=CPU
+09-18 22:32:13.631  9811 10438 I GGUFChatNative: GGUF_GPU_SAMPLING_RESULT backend_selected=3 emitted=2
+09-18 22:32:13.631  9811 10438 I GGUFChatNative: GGUF_VULKAN_DELIVERY token_only_export=1 overlap_submissions=1 first_text_immediate=1
+09-18 22:32:13.631  9811 10438 I GGUFChatNative: GGUF_RESPONSE_LATENCY first_token_ns=189759394469 prompt_tokens=516 reused_tokens=0
+09-18 22:32:13.631  9811 10438 I GGUFChatNative: GGUF_GENERATION_STATS tokens=2 decode_ns=527655960 prefill_ns=189758814236 callbacks=2 success=1
+09-18 22:32:13.632  9811 10438 I System.out: GGUF_REPAIR_GENERATION_OK
+09-18 22:32:13.634  9811 10438 I GGUFReplyNotice: GGUF_NOTICE_STATS progress_updates=0 skipped_screen_off=2
+09-18 22:32:13.637  9811 10438 I GGUFReplyNotice: GGUF_REPLY_NOTICE posted=1 saved=1 screen_off=1 locked=0
+09-18 22:32:13.643  9811  9811 I GGUFReplyNotice: GGUF_REPLY_SERVICE_DESTROYED

@@ -1,0 +1,8 @@
+{
+  "vulkan_environment": {
+    "GGML_VK_VISIBLE_DEVICES": "0",
+    "GGUF_VK_ROW_TILE": "8"
+  },
+  "status": "FAIL",
+  "error": "java.lang.IllegalStateException: Native load failed: GGUF row tile experiment requires llvmpipe FP32, int-dot off, subgroup 8, default MMV policy\n\tat com.ggufchat.gpurate.RateInstrumentation.require(RateInstrumentation.java:31)\n\tat com.ggufchat.gpurate.RateInstrumentation.onStart(RateInstrumentation.java:110)\n\tat android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2594)\n"
+}

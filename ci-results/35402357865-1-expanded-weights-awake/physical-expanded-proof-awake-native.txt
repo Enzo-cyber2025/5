@@ -1,0 +1,1328 @@
+09-18 22:52:04.756  2701  2701 W app_process64: type=1400 audit(0.0:30): avc:  denied  { read } for  name="u:object_r:userdebug_or_eng_prop:s0" dev="tmpfs" ino=349 scontext=u:r:untrusted_app:s0:c210,c256,c512,c768 tcontext=u:object_r:userdebug_or_eng_prop:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-18 22:52:04.781  2701  2701 W libc    : Access denied finding property "ro.debuggable"
+09-18 22:52:04.776  2701  2701 W app_process64: type=1400 audit(0.0:31): avc:  denied  { read } for  name="u:object_r:userdebug_or_eng_prop:s0" dev="tmpfs" ino=349 scontext=u:r:untrusted_app:s0:c210,c256,c512,c768 tcontext=u:object_r:userdebug_or_eng_prop:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-18 22:52:04.788  2701  2701 W libc    : Access denied finding property "ro.debuggable"
+09-18 22:52:04.797  2701  2701 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 10210 <<<<<<
+09-18 22:52:04.797  2701  2701 W libc    : Access denied finding property "ro.debuggable"
+09-18 22:52:04.792  2701  2701 W om.ggufchat.app: type=1400 audit(0.0:32): avc:  denied  { read } for  name="u:object_r:userdebug_or_eng_prop:s0" dev="tmpfs" ino=349 scontext=u:r:untrusted_app:s0:c210,c256,c512,c768 tcontext=u:object_r:userdebug_or_eng_prop:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-18 22:52:04.856  2701  2701 I AndroidRuntime: Using default boot image
+09-18 22:52:04.858  2701  2701 I AndroidRuntime: Leaving lock profiling enabled
+09-18 22:52:04.863  2701  2701 W libc    : Access denied finding property "odsign.verification.success"
+09-18 22:52:04.864  2701  2701 W libc    : Access denied finding property "ro.debuggable"
+09-18 22:52:04.852  2701  2701 W om.ggufchat.app: type=1400 audit(0.0:33): avc:  denied  { read } for  name="u:object_r:odsign_prop:s0" dev="tmpfs" ino=262 scontext=u:r:untrusted_app:s0:c210,c256,c512,c768 tcontext=u:object_r:odsign_prop:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-18 22:52:04.873  2701  2701 W com.ggufchat.app: ART APEX data files are untrusted.
+09-18 22:52:04.856  2701  2701 W om.ggufchat.app: type=1400 audit(0.0:34): avc:  denied  { read } for  name="u:object_r:userdebug_or_eng_prop:s0" dev="tmpfs" ino=349 scontext=u:r:untrusted_app:s0:c210,c256,c512,c768 tcontext=u:object_r:userdebug_or_eng_prop:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-18 22:52:04.892  2701  2701 I com.ggufchat.app: Core platform API reporting enabled, enforcing=false
+09-18 22:52:04.893  2701  2701 I com.ggufchat.app: Using CollectorTypeCMC GC.
+09-18 22:52:04.888  2701  2701 W om.ggufchat.app: type=1400 audit(0.0:35): avc:  denied  { getattr } for  path="/apex/apex-info-list.xml" dev="tmpfs" ino=88 scontext=u:r:untrusted_app:s0:c210,c256,c512,c768 tcontext=u:object_r:apex_info_file:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-18 22:52:05.529  2701  2701 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-18 22:52:05.685  2701  2701 D nativeloader: Load libicu_jni.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-18 22:52:05.686  2701  2701 D com.ggufchat.app: u_setTimeZoneFilesDirectory("/apex/com.android.tzdata/etc/tz/versioned/8/icu") succeeded. 
+09-18 22:52:05.686  2701  2701 D com.ggufchat.app: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt75l.dat
+09-18 22:52:05.801  2701  2701 D nativeloader: Load libjavacore.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-18 22:52:05.802  2701  2701 D nativeloader: Load libopenjdk.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-18 22:52:05.803  2701  2701 W com.ggufchat.app: Unexpected CPU variant for x86: x86_64.
+09-18 22:52:05.803  2701  2701 W com.ggufchat.app: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, goldmont-without-sha-xsaves, tremont, kabylake, default
+09-18 22:52:05.992  2701  2701 W libc    : Access denied finding property "ro.product.name_for_attestation"
+09-18 22:52:05.992  2701  2701 W libc    : Access denied finding property "ro.product.device_for_attestation"
+09-18 22:52:05.992  2701  2701 W libc    : Access denied finding property "ro.product.manufacturer_for_attestation"
+09-18 22:52:05.992  2701  2701 W libc    : Access denied finding property "ro.product.brand_for_attestation"
+09-18 22:52:05.992  2701  2701 W libc    : Access denied finding property "ro.product.model_for_attestation"
+09-18 22:52:05.984  2701  2701 W main    : type=1400 audit(0.0:36): avc:  denied  { read } for  name="u:object_r:build_attestation_prop:s0" dev="tmpfs" ino=90 scontext=u:r:untrusted_app:s0:c210,c256,c512,c768 tcontext=u:object_r:build_attestation_prop:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-18 22:52:05.992  2701  2701 W main    : type=1400 audit(0.0:37): avc:  denied  { read } for  name="u:object_r:build_attestation_prop:s0" dev="tmpfs" ino=90 scontext=u:r:untrusted_app:s0:c210,c256,c512,c768 tcontext=u:object_r:build_attestation_prop:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-18 22:52:05.992  2701  2701 W main    : type=1400 audit(0.0:38): avc:  denied  { read } for  name="u:object_r:build_attestation_prop:s0" dev="tmpfs" ino=90 scontext=u:r:untrusted_app:s0:c210,c256,c512,c768 tcontext=u:object_r:build_attestation_prop:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-18 22:52:06.017  2701  2701 W libc    : Access denied finding property "ro.debuggable"
+09-18 22:52:05.992  2701  2701 W main    : type=1400 audit(0.0:39): avc:  denied  { read } for  name="u:object_r:build_attestation_prop:s0" dev="tmpfs" ino=90 scontext=u:r:untrusted_app:s0:c210,c256,c512,c768 tcontext=u:object_r:build_attestation_prop:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-18 22:52:05.992  2701  2701 W main    : type=1400 audit(0.0:40): avc:  denied  { read } for  name="u:object_r:build_attestation_prop:s0" dev="tmpfs" ino=90 scontext=u:r:untrusted_app:s0:c210,c256,c512,c768 tcontext=u:object_r:build_attestation_prop:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-18 22:52:05.996  2701  2701 W main    : type=1400 audit(0.0:41): avc:  denied  { read } for  name="u:object_r:userdebug_or_eng_prop:s0" dev="tmpfs" ino=349 scontext=u:r:untrusted_app:s0:c210,c256,c512,c768 tcontext=u:object_r:userdebug_or_eng_prop:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-18 22:52:06.076  2701  2701 D nativeloader: Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok
+09-18 22:52:06.077  2701  2701 D AndroidRuntime: Calling main entry com.android.internal.os.WrapperInit
+09-18 22:52:06.077  2701  2701 D Zygote  : begin preload
+09-18 22:52:06.079  2701  2701 I Zygote  : Calling ZygoteHooks.beginPreload()
+09-18 22:52:07.069  2701  2701 V WrapperInitTiming: BeginPreload took to complete: 991ms
+09-18 22:52:07.075  2701  2701 I Zygote  : Preloading classes...
+09-18 22:52:07.079  2701  2701 W Zygote  : Class not found for preloading: android.app.PendingIntent$$ExternalSyntheticLambda3
+09-18 22:52:07.095  2701  2701 D nativeloader: Load libjavacrypto.so using APEX ns com_android_conscrypt for caller /apex/com.android.conscrypt/javalib/conscrypt.jar: ok
+09-18 22:52:07.100  2701  2701 W main    : type=1400 audit(0.0:43): avc:  denied  { read } for  name="u:object_r:qemu_sf_lcd_density_prop:s0" dev="tmpfs" ino=285 scontext=u:r:untrusted_app:s0:c210,c256,c512,c768 tcontext=u:object_r:qemu_sf_lcd_density_prop:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-18 22:52:07.111  2701  2701 W libc    : Access denied finding property "qemu.sf.lcd_density"
+09-18 22:52:07.111  2701  2701 W libc    : Access denied finding property "qemu.sf.lcd_density"
+09-18 22:52:07.114  2701  2701 I Typeface: Preloading /system/fonts/Roboto-Regular.ttf
+09-18 22:52:07.115  2701  2701 I Typeface: Preloading /system/fonts/RobotoStatic-Regular.ttf
+09-18 22:52:07.115  2701  2701 I SystemFonts: Loading font config from /system/etc/fonts.xml
+09-18 22:52:07.108  2701  2701 W main    : type=1400 audit(0.0:44): avc:  denied  { read } for  name="u:object_r:qemu_sf_lcd_density_prop:s0" dev="tmpfs" ino=285 scontext=u:r:untrusted_app:s0:c210,c256,c512,c768 tcontext=u:object_r:qemu_sf_lcd_density_prop:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-18 22:52:07.223  2701  2701 E ActivityRecognitionHardware: activity_recognition HAL is deprecated. class_init is effectively a no-op
+09-18 22:52:07.532  2701  2818 W com.ggufchat.app: Suspending all threads took: 14.796ms
+09-18 22:52:07.593  2701  2818 I com.ggufchat.app: Background concurrent mark compact GC freed 4641KB AllocSpace bytes, 18(448KB) LOS objects, 49% free, 8143KB/15MB, paused 24.739ms,353us total 196.848ms
+09-18 22:52:08.306  2701  2701 D nativeloader: Load libmedia_jni.so using system ns (caller=/system/framework/framework.jar!classes2.dex): ok
+09-18 22:52:08.306  2701  2701 D MtpDeviceJNI: register_android_mtp_MtpDevice
+09-18 22:52:08.310  2701  2701 D nativeloader: Load libsoundpool.so using system ns (caller=/system/framework/framework.jar!classes2.dex): ok
+09-18 22:52:08.310  2701  2701 D nativeloader: Load libaudioeffect_jni.so using system ns (caller=/system/framework/framework.jar!classes2.dex): ok
+09-18 22:52:08.313  2701  2701 D nativeloader: Load librtp_jni.so using system ns (caller=/system/framework/voip-common.jar): ok
+09-18 22:52:08.313  2701  2701 I com.ggufchat.app: Thread[1,tid=2701,Native,Thread*=0x7e786f080010,peer=0x140009c0,"main"] recursive attempt to load library "librtp_jni.so"
+09-18 22:52:08.317  2701  2701 D nativeloader: Load libvintf_jni.so using system ns (caller=/system/framework/framework.jar!classes3.dex): ok
+09-18 22:52:08.389  2701  2701 D nativeloader: Load librs_jni.so using system ns (caller=/system/framework/framework.jar!classes3.dex): ok
+09-18 22:52:09.043  2701  2701 W Zygote  : Class not found for preloading: android.window.ImeOnBackInvokedDispatcher$$ExternalSyntheticLambda0
+09-18 22:52:09.044  2701  2701 W Zygote  : Class not found for preloading: android.window.WindowOnBackInvokedDispatcher$OnBackInvokedCallbackWrapper$CallbackRef
+09-18 22:52:09.048  2701  2701 W com.ggufchat.app: Core platform API violation: Llibcore/io/Memory;->peekLong(JZ)J from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+09-18 22:52:09.048  2701  2701 W com.ggufchat.app: Core platform API violation: Llibcore/io/Memory;->pokeLong(JJZ)V from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+09-18 22:52:09.048  2701  2701 W com.ggufchat.app: Core platform API violation: Llibcore/io/Memory;->pokeInt(JIZ)V from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+09-18 22:52:09.048  2701  2701 W com.ggufchat.app: Core platform API violation: Llibcore/io/Memory;->peekInt(JZ)I from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+09-18 22:52:09.048  2701  2701 W com.ggufchat.app: Core platform API violation: Llibcore/io/Memory;->pokeByte(JB)V from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+09-18 22:52:09.048  2701  2701 W com.ggufchat.app: Core platform API violation: Llibcore/io/Memory;->peekByte(J)B from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+09-18 22:52:09.048  2701  2701 W com.ggufchat.app: Core platform API violation: Llibcore/io/Memory;->pokeByteArray(J[BII)V from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+09-18 22:52:09.048  2701  2701 W com.ggufchat.app: Core platform API violation: Llibcore/io/Memory;->peekByteArray(J[BII)V from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+09-18 22:52:09.077  2701  2701 W libc    : Access denied finding property "ro.debuggable"
+09-18 22:52:09.068  2701  2701 W main    : type=1400 audit(0.0:45): avc:  denied  { search } for  name="f2fs" dev="sysfs" ino=5830 scontext=u:r:untrusted_app:s0:c210,c256,c512,c768 tcontext=u:object_r:sysfs_fs_f2fs:s0 tclass=dir permissive=0 app=com.ggufchat.app
+09-18 22:52:09.081  2701  2701 W libc    : Access denied finding property "ro.debuggable"
+09-18 22:52:09.083  2701  2701 W OverlayConfig: partition_order.xml does not exist.
+09-18 22:52:09.072  2701  2701 W main    : type=1400 audit(0.0:46): avc:  denied  { read } for  name="u:object_r:userdebug_or_eng_prop:s0" dev="tmpfs" ino=349 scontext=u:r:untrusted_app:s0:c210,c256,c512,c768 tcontext=u:object_r:userdebug_or_eng_prop:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-18 22:52:09.076  2701  2701 W main    : type=1400 audit(0.0:47): avc:  denied  { read } for  name="u:object_r:userdebug_or_eng_prop:s0" dev="tmpfs" ino=349 scontext=u:r:untrusted_app:s0:c210,c256,c512,c768 tcontext=u:object_r:userdebug_or_eng_prop:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-18 22:52:09.076  2701  2701 W main    : type=1400 audit(0.0:48): avc:  denied  { read } for  name=".default-apex-info-list.xml" dev="tmpfs" ino=88 scontext=u:r:untrusted_app:s0:c210,c256,c512,c768 tcontext=u:object_r:apex_info_file:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-18 22:52:09.122  2701  2701 W com.ggufchat.app: unable to execute idmap2: Permission denied
+09-18 22:52:09.122  2701  2701 W OverlayConfig: 'idmap2 create-multiple' failed: no mutable="false" overlays targeting "android" will be loaded
+09-18 22:52:09.112  2701  2701 W main    : type=1400 audit(0.0:49): avc:  denied  { execute } for  name="idmap2" dev="dm-5" ino=381 scontext=u:r:untrusted_app:s0:c210,c256,c512,c768 tcontext=u:object_r:idmap_exec:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-18 22:52:09.142  2701  2701 W libc    : Access denied finding property "ro.debuggable"
+09-18 22:52:09.164  2701  2701 W libc    : Access denied finding property "ro.debuggable"
+09-18 22:52:09.136  2701  2701 W main    : type=1400 audit(0.0:50): avc:  denied  { read } for  name="u:object_r:userdebug_or_eng_prop:s0" dev="tmpfs" ino=349 scontext=u:r:untrusted_app:s0:c210,c256,c512,c768 tcontext=u:object_r:userdebug_or_eng_prop:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-18 22:52:09.181  2701  2701 W libc    : Access denied finding property "ro.debuggable"
+09-18 22:52:09.156  2701  2701 W main    : type=1400 audit(0.0:51): avc:  denied  { read } for  name="u:object_r:userdebug_or_eng_prop:s0" dev="tmpfs" ino=349 scontext=u:r:untrusted_app:s0:c210,c256,c512,c768 tcontext=u:object_r:userdebug_or_eng_prop:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-18 22:52:09.168  2701  2701 W main    : type=1400 audit(0.0:52): avc:  denied  { read } for  name="u:object_r:userdebug_or_eng_prop:s0" dev="tmpfs" ino=349 scontext=u:r:untrusted_app:s0:c210,c256,c512,c768 tcontext=u:object_r:userdebug_or_eng_prop:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-18 22:52:09.387  2701  2701 D nativeloader: Load libframework-connectivity-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity.jar: ok
+09-18 22:52:09.549  2701  2701 W Zygote  : Class not found for preloading: sun.util.locale.BaseLocale$Key-IA
+09-18 22:52:09.550  2701  2701 I Zygote  : ...preloaded 17758 classes in 2475ms.
+09-18 22:52:09.550  2701  2701 V WrapperInitTiming: PreloadClasses took to complete: 2476ms
+09-18 22:52:09.551  2701  2701 D nativeloader: InitApexLibraries:
+09-18 22:52:09.551  2701  2701 D nativeloader:   com_android_art: libnativehelper.so
+09-18 22:52:09.551  2701  2701 D nativeloader:   com_android_i18n: libicui18n.so:libicuuc.so:libicu.so
+09-18 22:52:09.551  2701  2701 D nativeloader:   com_android_neuralnetworks: libneuralnetworks.so
+09-18 22:52:09.551  2701  2701 D nativeloader: InitDefaultPublicLibraries for_preload=0: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libclang_rt.hwasan-aarch64-android.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-18 22:52:09.551  2701  2701 D nativeloader: Configuring clns-shared-1 for other apk /system/framework/android.hidl.base-V1.0-java.jar. target_sdk_version=35, uses_libraries=, library_path=, permitted_path=/data:/mnt/expand
+09-18 22:52:09.551  2701  2701 D nativeloader: InitExtendedPublicLibraries: 
+09-18 22:52:09.566  2701  2701 I nativeloader: InitVendorPublicLibraries skipped: Failed to read /vendor/etc/public.libraries.txt: No such file or directory
+09-18 22:52:09.566  2701  2701 D nativeloader: InitProductPublicLibraries: 
+09-18 22:52:09.566  2701  2701 D ApplicationLoaders: Created zygote-cached class loader: /system/framework/android.hidl.base-V1.0-java.jar
+09-18 22:52:09.568  2701  2701 D nativeloader: Configuring clns-shared-2 for other apk /system/framework/android.hidl.manager-V1.0-java.jar. target_sdk_version=35, uses_libraries=, library_path=, permitted_path=/data:/mnt/expand
+09-18 22:52:09.568  2701  2701 D ApplicationLoaders: Created zygote-cached class loader: /system/framework/android.hidl.manager-V1.0-java.jar
+09-18 22:52:09.569  2701  2701 D nativeloader: Configuring clns-shared-3 for other apk /system/framework/android.test.base.jar. target_sdk_version=35, uses_libraries=, library_path=, permitted_path=/data:/mnt/expand
+09-18 22:52:09.569  2701  2701 D ApplicationLoaders: Created zygote-cached class loader: /system/framework/android.test.base.jar
+09-18 22:52:09.569  2701  2701 D nativeloader: Configuring clns-shared-4 for other apk /system/framework/org.apache.http.legacy.jar. target_sdk_version=35, uses_libraries=, library_path=, permitted_path=/data:/mnt/expand
+09-18 22:52:09.570  2701  2701 D ApplicationLoaders: Created zygote-cached class loader: /system/framework/org.apache.http.legacy.jar
+09-18 22:52:09.570  2701  2701 D nativeloader: Configuring clns-shared-5 for other apk /system_ext/framework/androidx.window.extensions.jar. target_sdk_version=35, uses_libraries=, library_path=, permitted_path=/data:/mnt/expand
+09-18 22:52:09.570  2701  2701 D ApplicationLoaders: Created zygote-cached class loader: /system_ext/framework/androidx.window.extensions.jar
+09-18 22:52:09.583  2701  2701 D nativeloader: Configuring clns-shared-6 for other apk /system_ext/framework/androidx.window.sidecar.jar. target_sdk_version=35, uses_libraries=, library_path=, permitted_path=/data:/mnt/expand
+09-18 22:52:09.585  2701  2701 D ApplicationLoaders: Created zygote-cached class loader: /system_ext/framework/androidx.window.sidecar.jar
+09-18 22:52:09.585  2701  2701 V WrapperInitTiming: CacheNonBootClasspathClassLoaders took to complete: 34ms
+09-18 22:52:09.585  2701  2701 I Resources: Preloading resources...
+09-18 22:52:09.590  2701  2701 W Resources: Preloaded drawable resource #0x10802cb (android:drawable/dialog_background_material) that varies with configuration!!
+09-18 22:52:09.599  2701  2701 W Resources: Preloaded drawable resource #0x1080846 (android:drawable/progress_horizontal_material) that varies with configuration!!
+09-18 22:52:09.599  2701  2701 W Resources: Preloaded drawable resource #0x108084a (android:drawable/progress_indeterminate_horizontal_material) that varies with configuration!!
+09-18 22:52:09.607  2701  2701 I Resources: ...preloaded 63 resources in 22ms.
+09-18 22:52:09.610  2701  2701 I Resources: ...preloaded 41 resources in 3ms.
+09-18 22:52:09.610  2701  2701 V WrapperInitTiming: PreloadResources took to complete: 25ms
+09-18 22:52:09.624  2701  2701 I Zygote  : Preloading shared libraries...
+09-18 22:52:09.625  2701  2701 D nativeloader: Load libandroid.so using system ns (caller=/system/framework/framework.jar!classes5.dex): ok
+09-18 22:52:09.625  2701  2701 D nativeloader: Load libjnigraphics.so using system ns (caller=/system/framework/framework.jar!classes5.dex): ok
+09-18 22:52:09.625  2701  2701 D nativeloader: Load libcompiler_rt.so using system ns (caller=/system/framework/framework.jar!classes5.dex): ok
+09-18 22:52:09.626  2701  2701 E com.ggufchat.app: Unable to find pattern file or unable to map it for am
+09-18 22:52:09.626  2701  2701 D nativeloader: Load libwebviewchromium_loader.so using system ns (caller=/system/framework/framework.jar!classes4.dex): ok
+09-18 22:52:09.634  2701  2701 I Zygote  : Called ZygoteHooks.endPreload()
+09-18 22:52:09.634  2701  2701 I Zygote  : Installed AndroidKeyStoreProvider in 0ms.
+09-18 22:52:09.638  2701  2701 I Zygote  : Warmed up JCA providers in 4ms.
+09-18 22:52:09.638  2701  2701 D Zygote  : end preload
+09-18 22:52:09.671  2701  2701 D nativeloader: Load libstats_jni.so using APEX ns com_android_os_statsd for caller /apex/com.android.os.statsd/javalib/framework-statsd.jar: ok
+09-18 22:52:09.680  2701  2701 D CompatChangeReporter: Compat change id reported: 242716250; UID 10210; state: ENABLED
+09-18 22:52:09.724  2701  2701 W ActivityThread: Package uses different ABI(s) than its instrumentation: package[com.ggufchat.app]: x86_64, null instrumentation[com.ggufchat.gpurate]: null, null
+09-18 22:52:09.737  2701  2701 W ziparchive: Unable to open '/data/app/~~uwTw7df6e1BHeVj6urGAmA==/com.ggufchat.gpurate-X_Ll02O33NkQFby5a-RHRA==/base.dm': No such file or directory
+09-18 22:52:09.737  2701  2701 W ziparchive: Unable to open '/data/app/~~uwTw7df6e1BHeVj6urGAmA==/com.ggufchat.gpurate-X_Ll02O33NkQFby5a-RHRA==/base.dm': No such file or directory
+09-18 22:52:09.749  2701  2701 W ziparchive: Unable to open '/data/app/~~q3CWaAjVwG4ecP1jq3YZbg==/com.ggufchat.app-g3SLJbkwEPTNLn58nz4S3A==/base.dm': No such file or directory
+09-18 22:52:09.749  2701  2701 W ziparchive: Unable to open '/data/app/~~q3CWaAjVwG4ecP1jq3YZbg==/com.ggufchat.app-g3SLJbkwEPTNLn58nz4S3A==/base.dm': No such file or directory
+09-18 22:52:10.638  2701  2701 D nativeloader: Configuring clns-7 for other apk /data/app/~~uwTw7df6e1BHeVj6urGAmA==/com.ggufchat.gpurate-X_Ll02O33NkQFby5a-RHRA==/base.apk:/data/app/~~q3CWaAjVwG4ecP1jq3YZbg==/com.ggufchat.app-g3SLJbkwEPTNLn58nz4S3A==/base.apk. target_sdk_version=34, uses_libraries=, library_path=/data/app/~~uwTw7df6e1BHeVj6urGAmA==/com.ggufchat.gpurate-X_Ll02O33NkQFby5a-RHRA==/lib/x86_64:/data/app/~~q3CWaAjVwG4ecP1jq3YZbg==/com.ggufchat.app-g3SLJbkwEPTNLn58nz4S3A==/lib/x86_64:/data/app/~~uwTw7df6e1BHeVj6urGAmA==/com.ggufchat.gpurate-X_Ll02O33NkQFby5a-RHRA==/base.apk!/lib/x86_64:/data/app/~~q3CWaAjVwG4ecP1jq3YZbg==/com.ggufchat.app-g3SLJbkwEPTNLn58nz4S3A==/base.apk!/lib/x86_64, permitted_path=/data:/mnt/expand:/data/user/0/com.ggufchat.app
+09-18 22:52:10.694  2701  2701 V GraphicsEnvironment: Currently set values for:
+09-18 22:52:10.694  2701  2701 V GraphicsEnvironment:   angle_gl_driver_selection_pkgs=[]
+09-18 22:52:10.694  2701  2701 V GraphicsEnvironment:   angle_gl_driver_selection_values=[]
+09-18 22:52:10.694  2701  2701 V GraphicsEnvironment: Global.Settings values are invalid: number of packages: 0, number of values: 0
+09-18 22:52:10.694  2701  2701 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+09-18 22:52:10.712  2701  2701 W ziparchive: Unable to open '/data/app/~~uwTw7df6e1BHeVj6urGAmA==/com.ggufchat.gpurate-X_Ll02O33NkQFby5a-RHRA==/base.dm': No such file or directory
+09-18 22:52:10.712  2701  2701 W ziparchive: Unable to open '/data/app/~~uwTw7df6e1BHeVj6urGAmA==/com.ggufchat.gpurate-X_Ll02O33NkQFby5a-RHRA==/base.dm': No such file or directory
+09-18 22:52:10.713  2701  2701 W ziparchive: Unable to open '/data/app/~~q3CWaAjVwG4ecP1jq3YZbg==/com.ggufchat.app-g3SLJbkwEPTNLn58nz4S3A==/base.dm': No such file or directory
+09-18 22:52:10.713  2701  2701 W ziparchive: Unable to open '/data/app/~~q3CWaAjVwG4ecP1jq3YZbg==/com.ggufchat.app-g3SLJbkwEPTNLn58nz4S3A==/base.dm': No such file or directory
+09-18 22:52:11.605  2701  2701 I incfs   : Initial API level of the device: 35
+09-18 22:52:11.608  2701  2701 W libc    : Access denied finding property "ro.incremental.enable"
+09-18 22:52:11.608  2701  2701 I incfs   : ro.incremental.enable: on
+09-18 22:52:11.611  2701  2701 I incfs   : IncFs_Features: v2
+09-18 22:52:11.612  2701  2701 I incfs-mounts: [incfs] Loaded incremental-fs mount info: 2 instances, 4 mount points
+09-18 22:52:11.600  2701  2701 W om.ggufchat.app: type=1400 audit(0.0:53): avc:  denied  { read } for  name="u:object_r:incremental_prop:s0" dev="tmpfs" ino=218 scontext=u:r:untrusted_app:s0:c210,c256,c512,c768 tcontext=u:object_r:incremental_prop:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-18 22:52:11.604  2701  2701 W om.ggufchat.app: type=1400 audit(0.0:54): avc:  denied  { read } for  name="filesystems" dev="proc" ino=4026532076 scontext=u:r:untrusted_app:s0:c210,c256,c512,c768 tcontext=u:object_r:proc_filesystems:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-18 22:52:11.662  2701  3133 I GGUFNativeStderr: Emulator-only GGML_VK_VISIBLE_DEVICES=0; software Vulkan is not hardware acceleration
+09-18 22:52:11.685  2701  3133 E platform: Failed to open rendernode: No such file or directory
+09-18 22:52:11.720  2701  3133 D vulkan  : searching for layers in '/data/app/~~q3CWaAjVwG4ecP1jq3YZbg==/com.ggufchat.app-g3SLJbkwEPTNLn58nz4S3A==/lib/x86_64'
+09-18 22:52:11.720  2701  3133 D vulkan  : searching for layers in '/data/app/~~uwTw7df6e1BHeVj6urGAmA==/com.ggufchat.gpurate-X_Ll02O33NkQFby5a-RHRA==/base.apk!/lib/x86_64'
+09-18 22:52:11.720  2701  3133 D vulkan  : searching for layers in '/data/app/~~q3CWaAjVwG4ecP1jq3YZbg==/com.ggufchat.app-g3SLJbkwEPTNLn58nz4S3A==/base.apk!/lib/x86_64'
+09-18 22:52:11.720  2701  3133 I GGUFNativeStderr: Vulkan loader API 1.3.0; bundled ggml Vulkan requires >= 1.2
+09-18 22:52:11.720  2701  3133 D nativeloader: Load /data/app/~~q3CWaAjVwG4ecP1jq3YZbg==/com.ggufchat.app-g3SLJbkwEPTNLn58nz4S3A==/lib/x86_64/libggufdiagnostics.so using ns clns-7 from class loader (caller=/data/app/~~q3CWaAjVwG4ecP1jq3YZbg==/com.ggufchat.app-g3SLJbkwEPTNLn58nz4S3A==/base.apk): ok
+09-18 22:52:11.721  2701  3133 D nativeloader: Load /data/app/~~q3CWaAjVwG4ecP1jq3YZbg==/com.ggufchat.app-g3SLJbkwEPTNLn58nz4S3A==/lib/x86_64/libggufcpu.so using ns clns-7 from class loader (caller=/data/app/~~q3CWaAjVwG4ecP1jq3YZbg==/com.ggufchat.app-g3SLJbkwEPTNLn58nz4S3A==/base.apk): ok
+09-18 22:52:11.726  2701  3133 D nativeloader: Load /data/app/~~q3CWaAjVwG4ecP1jq3YZbg==/com.ggufchat.app-g3SLJbkwEPTNLn58nz4S3A==/lib/x86_64/libaijni.so using ns clns-7 from class loader (caller=/data/app/~~q3CWaAjVwG4ecP1jq3YZbg==/com.ggufchat.app-g3SLJbkwEPTNLn58nz4S3A==/base.apk): ok
+09-18 22:52:11.726  2701  3133 I GGUFDispatch: GGUF_CPU_DISPATCH library=aijni
+09-18 22:52:12.532  2701  3133 I UiAutomation: Initialized for user 0 on display 0
+09-18 22:52:12.930  2701  3133 I GGUFChatNative: GGUF_MEMORY_TELEMETRY file_bytes=105454432 available=4263297024 mmap=1 policy=actual_allocator
+09-18 22:52:13.003  2701  3133 I GGUFNativeStderr: ggml_vulkan: Found 1 Vulkan devices:
+09-18 22:52:13.006  2701  3133 I GGUFNativeStderr: ggml_vulkan: 0 = llvmpipe (LLVM 21.0.0, 256 bits) (llvmpipe) | uma: 0 | fp16: 0 | bf16: 0 | fp4: 0 | warp size: 8 | shared memory: 32768 | int dot: 0 | matrix cores: none
+09-18 22:52:13.007  2701  3133 I GGUFNativeStderr: ggml_vulkan: Warning: Device type is CPU. This is probably not the device you want.
+09-18 22:52:13.080  2701  3133 I GGUFChatNative: GGUF_STRICT_VULKAN requested_layers=99 effective_layers=all weights=all tensor_cpu_fallback=blocked host_orchestration=CPU
+09-18 22:52:13.102  2701  3133 I GGUFNativeStderr: llama_model_loader: loaded meta data with 37 key-value pairs and 272 tensors from /data/user/0/com.ggufchat.app/files/gpu-rate.gguf (version GGUF V3 (latest))
+09-18 22:52:13.106  2701  3133 I GGUFNativeStderr: llama_model_loader: Dumping metadata keys/values. Note: KV overrides do not apply in this output.
+09-18 22:52:13.106  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv   0:                       general.architecture str              = llama
+09-18 22:52:13.106  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv   1:                               general.type str              = model
+09-18 22:52:13.106  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv   2:                               general.name str              = Smollm2 135M 8k Lc100K Mix1 Ep2
+09-18 22:52:13.106  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv   3:                       general.organization str              = HuggingFaceTB
+09-18 22:52:13.106  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv   4:                           general.finetune str              = 8k-lc100k-mix1-ep2
+09-18 22:52:13.107  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv   5:                           general.basename str              = smollm2
+09-18 22:52:13.107  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv   6:                         general.size_label str              = 135M
+09-18 22:52:13.107  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv   7:                            general.license str              = apache-2.0
+09-18 22:52:13.107  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv   8:                          general.languages arr[str,1]       = ["en"]
+09-18 22:52:13.107  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv   9:                          llama.block_count u32              = 30
+09-18 22:52:13.107  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv  10:                       llama.context_length u32              = 8192
+09-18 22:52:13.107  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv  11:                     llama.embedding_length u32              = 576
+09-18 22:52:13.107  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv  12:                  llama.feed_forward_length u32              = 1536
+09-18 22:52:13.107  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv  13:                 llama.attention.head_count u32              = 9
+09-18 22:52:13.107  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv  14:              llama.attention.head_count_kv u32              = 3
+09-18 22:52:13.107  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv  15:                       llama.rope.freq_base f32              = 100000.000000
+09-18 22:52:13.107  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv  16:     llama.attention.layer_norm_rms_epsilon f32              = 0.000010
+09-18 22:52:13.107  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv  17:                          general.file_type u32              = 15
+09-18 22:52:13.107  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv  18:                           llama.vocab_size u32              = 49152
+09-18 22:52:13.107  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv  19:                 llama.rope.dimension_count u32              = 64
+09-18 22:52:13.107  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv  20:            tokenizer.ggml.add_space_prefix bool             = false
+09-18 22:52:13.108  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv  21:               tokenizer.ggml.add_bos_token bool             = false
+09-18 22:52:13.108  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv  22:                       tokenizer.ggml.model str              = gpt2
+09-18 22:52:13.108  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv  23:                         tokenizer.ggml.pre str              = smollm
+09-18 22:52:13.135  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv  24:                      tokenizer.ggml.tokens arr[str,49152]   = ["<|endoftext|>", "<|im_start|>", "<|...
+09-18 22:52:13.152  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv  25:                  tokenizer.ggml.token_type arr[i32,49152]   = [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, ...
+09-18 22:52:13.176  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv  26:                      tokenizer.ggml.merges arr[str,48900]   = ["Ġ t", "Ġ a", "i n", "h e", "Ġ Ġ...
+09-18 22:52:13.176  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv  27:                tokenizer.ggml.bos_token_id u32              = 1
+09-18 22:52:13.176  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv  28:                tokenizer.ggml.eos_token_id u32              = 2
+09-18 22:52:13.176  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv  29:            tokenizer.ggml.unknown_token_id u32              = 0
+09-18 22:52:13.176  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv  30:            tokenizer.ggml.padding_token_id u32              = 2
+09-18 22:52:13.177  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv  31:                    tokenizer.chat_template str              = {% for message in messages %}{% if lo...
+09-18 22:52:13.177  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv  32:               general.quantization_version u32              = 2
+09-18 22:52:13.177  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv  33:                      quantize.imatrix.file str              = /models_out/SmolLM2-135M-Instruct-GGU...
+09-18 22:52:13.177  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv  34:                   quantize.imatrix.dataset str              = /training_dir/calibration_datav3.txt
+09-18 22:52:13.177  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv  35:             quantize.imatrix.entries_count i32              = 210
+09-18 22:52:13.177  2701  3133 I GGUFNativeStderr: llama_model_loader: - kv  36:              quantize.imatrix.chunks_count i32              = 141
+09-18 22:52:13.177  2701  3133 I GGUFNativeStderr: llama_model_loader: - type  f32:   61 tensors
+09-18 22:52:13.177  2701  3133 I GGUFNativeStderr: llama_model_loader: - type q5_0:  166 tensors
+09-18 22:52:13.177  2701  3133 I GGUFNativeStderr: llama_model_loader: - type q8_0:   15 tensors
+09-18 22:52:13.177  2701  3133 I GGUFNativeStderr: llama_model_loader: - type q4_K:   16 tensors
+09-18 22:52:13.177  2701  3133 I GGUFNativeStderr: llama_model_loader: - type q6_K:   14 tensors
+09-18 22:52:13.177  2701  3133 I GGUFNativeStderr: print_info: file format = GGUF V3 (latest)
+09-18 22:52:13.177  2701  3133 I GGUFNativeStderr: print_info: file type   = Q4_K - Medium
+09-18 22:52:13.177  2701  3133 I GGUFNativeStderr: print_info: file size   = 98.87 MiB (6.17 BPW) 
+09-18 22:52:13.177  2701  3133 I GGUFNativeStderr: llama_prepare_model_devices: using device Vulkan0 (llvmpipe (LLVM 21.0.0, 256 bits)) (unknown id) - 15989 MiB free
+09-18 22:52:13.257  2701  3133 I GGUFNativeStderr: init_tokenizer: initializing tokenizer for type 2
+09-18 22:52:13.281  2701  3133 I GGUFNativeStderr: load: 0 unused tokens
+09-18 22:52:13.288  2701  3133 I GGUFNativeStderr: load: control token:     15 '<jupyter_script>' is not marked as EOG
+09-18 22:52:13.290  2701  3133 I GGUFNativeStderr: load: control token:      7 '<gh_stars>' is not marked as EOG
+09-18 22:52:13.291  2701  3133 I GGUFNativeStderr: load: control token:      5 '<file_sep>' is not marked as EOG
+09-18 22:52:13.297  2701  3133 I GGUFNativeStderr: load: control token:     12 '<jupyter_text>' is not marked as EOG
+09-18 22:52:13.297  2701  3133 I GGUFNativeStderr: load: control token:     10 '<issue_closed>' is not marked as EOG
+09-18 22:52:13.297  2701  3133 I GGUFNativeStderr: load: control token:     11 '<jupyter_start>' is not marked as EOG
+09-18 22:52:13.297  2701  3133 I GGUFNativeStderr: load: control token:      1 '<|im_start|>' is not marked as EOG
+09-18 22:52:13.297  2701  3133 I GGUFNativeStderr: load: control token:      9 '<issue_comment>' is not marked as EOG
+09-18 22:52:13.298  2701  3133 I GGUFNativeStderr: load: control token:      8 '<issue_start>' is not marked as EOG
+09-18 22:52:13.306  2701  3133 I GGUFNativeStderr: load: control token:     13 '<jupyter_code>' is not marked as EOG
+09-18 22:52:13.307  2701  3133 I GGUFNativeStderr: load: control token:      3 '<repo_name>' is not marked as EOG
+09-18 22:52:13.307  2701  3133 I GGUFNativeStderr: load: control token:      6 '<filename>' is not marked as EOG
+09-18 22:52:13.309  2701  3133 I GGUFNativeStderr: load: control token:     14 '<jupyter_output>' is not marked as EOG
+09-18 22:52:13.309  2701  3133 I GGUFNativeStderr: load: control token:     16 '<empty_output>' is not marked as EOG
+09-18 22:52:13.318  2701  3133 I GGUFNativeStderr: load: printing all EOG tokens:
+09-18 22:52:13.318  2701  3133 I GGUFNativeStderr: load:   - 0 ('<|endoftext|>')
+09-18 22:52:13.318  2701  3133 I GGUFNativeStderr: load:   - 2 ('<|im_end|>')
+09-18 22:52:13.318  2701  3133 I GGUFNativeStderr: load:   - 4 ('<reponame>')
+09-18 22:52:13.318  2701  3133 I GGUFNativeStderr: load: special tokens cache size = 17
+09-18 22:52:13.382  2701  3133 I GGUFNativeStderr: load: token to piece cache size = 0.3170 MB
+09-18 22:52:13.386  2701  3133 I GGUFNativeStderr: print_info: arch                  = llama
+09-18 22:52:13.386  2701  3133 I GGUFNativeStderr: print_info: vocab_only            = 0
+09-18 22:52:13.386  2701  3133 I GGUFNativeStderr: print_info: no_alloc              = 0
+09-18 22:52:13.386  2701  3133 I GGUFNativeStderr: print_info: n_ctx_train           = 8192
+09-18 22:52:13.386  2701  3133 I GGUFNativeStderr: print_info: n_embd_inp            = 576
+09-18 22:52:13.386  2701  3133 I GGUFNativeStderr: print_info: n_embd                = 576
+09-18 22:52:13.387  2701  3133 I GGUFNativeStderr: print_info: n_embd_out            = 576
+09-18 22:52:13.387  2701  3133 I GGUFNativeStderr: print_info: n_layer               = 30
+09-18 22:52:13.387  2701  3133 I GGUFNativeStderr: print_info: n_layer_all           = 30
+09-18 22:52:13.387  2701  3133 I GGUFNativeStderr: print_info: n_head                = 9
+09-18 22:52:13.387  2701  3133 I GGUFNativeStderr: print_info: n_head_kv             = 3
+09-18 22:52:13.387  2701  3133 I GGUFNativeStderr: print_info: n_rot                 = 64
+09-18 22:52:13.387  2701  3133 I GGUFNativeStderr: print_info: n_swa                 = 0
+09-18 22:52:13.387  2701  3133 I GGUFNativeStderr: print_info: is_swa_any            = 0
+09-18 22:52:13.387  2701  3133 I GGUFNativeStderr: print_info: non_causal_type       = 0
+09-18 22:52:13.387  2701  3133 I GGUFNativeStderr: print_info: n_embd_head_k         = 64
+09-18 22:52:13.387  2701  3133 I GGUFNativeStderr: print_info: n_embd_head_v         = 64
+09-18 22:52:13.387  2701  3133 I GGUFNativeStderr: print_info: n_gqa                 = 3
+09-18 22:52:13.387  2701  3133 I GGUFNativeStderr: print_info: n_embd_k_gqa          = 192
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: n_embd_v_gqa          = 192
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: f_norm_eps            = 0.0e+00
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: f_norm_rms_eps        = 1.0e-05
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: f_clamp_kqv           = 0.0e+00
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: f_max_alibi_bias      = 0.0e+00
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: f_logit_scale         = 0.0e+00
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: f_attn_scale          = 0.0e+00
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: f_attn_value_scale    = 0.0000
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: n_ff                  = 1536
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: n_expert              = 0
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: n_expert_used         = 0
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: n_expert_groups       = 0
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: n_group_used          = 0
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: causal attn           = 1
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: pooling type          = -1
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: rope type             = 0
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: rope scaling          = linear
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: freq_base_train       = 100000.0
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: freq_scale_train      = 1
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: n_ctx_orig_yarn       = 8192
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: rope_yarn_log_mul     = 0.0000
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: rope_finetuned        = unknown
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: model type            = 256M
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: model params          = 134.52 M
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: general.name          = Smollm2 135M 8k Lc100K Mix1 Ep2
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: vocab type            = BPE
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: n_vocab               = 49152
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: n_merges              = 48900
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: BOS token             = 1 '<|im_start|>'
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: EOS token             = 2 '<|im_end|>'
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: EOT token             = 2 '<|im_end|>'
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: UNK token             = 0 '<|endoftext|>'
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: PAD token             = 2 '<|im_end|>'
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: LF token              = 198 'Ċ'
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: FIM REP token         = 4 '<reponame>'
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: EOG token             = 0 '<|endoftext|>'
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: EOG token             = 2 '<|im_end|>'
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: EOG token             = 4 '<reponame>'
+09-18 22:52:13.388  2701  3133 I GGUFNativeStderr: print_info: max token length      = 162
+09-18 22:52:13.398  2701  3133 I GGUFNativeStderr: load_tensors: loading model tensors, this can take a while... (load_mode = mmap)
+09-18 22:52:13.407  2701  3133 I GGUFNativeStderr: load_tensors: layer   0 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.407  2701  3133 I GGUFNativeStderr: load_tensors: layer   1 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.407  2701  3133 I GGUFNativeStderr: load_tensors: layer   2 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.407  2701  3133 I GGUFNativeStderr: load_tensors: layer   3 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.407  2701  3133 I GGUFNativeStderr: load_tensors: layer   4 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.407  2701  3133 I GGUFNativeStderr: load_tensors: layer   5 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.407  2701  3133 I GGUFNativeStderr: load_tensors: layer   6 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.408  2701  3133 I GGUFNativeStderr: load_tensors: layer   7 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.408  2701  3133 I GGUFNativeStderr: load_tensors: layer   8 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.408  2701  3133 I GGUFNativeStderr: load_tensors: layer   9 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.408  2701  3133 I GGUFNativeStderr: load_tensors: layer  10 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.408  2701  3133 I GGUFNativeStderr: load_tensors: layer  11 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.408  2701  3133 I GGUFNativeStderr: load_tensors: layer  12 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.408  2701  3133 I GGUFNativeStderr: load_tensors: layer  13 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.408  2701  3133 I GGUFNativeStderr: load_tensors: layer  14 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.408  2701  3133 I GGUFNativeStderr: load_tensors: layer  15 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.408  2701  3133 I GGUFNativeStderr: load_tensors: layer  16 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.408  2701  3133 I GGUFNativeStderr: load_tensors: layer  17 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.408  2701  3133 I GGUFNativeStderr: load_tensors: layer  18 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.408  2701  3133 I GGUFNativeStderr: load_tensors: layer  19 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.408  2701  3133 I GGUFNativeStderr: load_tensors: layer  20 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.408  2701  3133 I GGUFNativeStderr: load_tensors: layer  21 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.408  2701  3133 I GGUFNativeStderr: load_tensors: layer  22 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.408  2701  3133 I GGUFNativeStderr: load_tensors: layer  23 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.409  2701  3133 I GGUFNativeStderr: load_tensors: layer  24 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.409  2701  3133 I GGUFNativeStderr: load_tensors: layer  25 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.409  2701  3133 I GGUFNativeStderr: load_tensors: layer  26 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.409  2701  3133 I GGUFNativeStderr: load_tensors: layer  27 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.409  2701  3133 I GGUFNativeStderr: load_tensors: layer  28 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.409  2701  3133 I GGUFNativeStderr: load_tensors: layer  29 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.409  2701  3133 I GGUFNativeStderr: load_tensors: layer  30 assigned to device Vulkan0, is_swa = 0
+09-18 22:52:13.410  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor token_embd.weight
+09-18 22:52:13.410  2701  3133 I GGUFNativeStderr: tensor token_embd.weight (28 MiB q8_0) buffer type overridden to Vulkan0
+09-18 22:52:13.412  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor output_norm.weight
+09-18 22:52:13.414  2701  3133 I GGUFNativeStderr: tensor output_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-18 22:52:13.414  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor output.weight
+09-18 22:52:13.414  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor token_embd.weight
+09-18 22:52:13.414  2701  3133 I GGUFNativeStderr: tensor token_embd.weight (28 MiB q8_0) buffer type overridden to Vulkan0
+09-18 22:52:13.414  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_norm.weight
+09-18 22:52:13.415  2701  3133 I GGUFNativeStderr: tensor blk.0.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-18 22:52:13.415  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_qkv.weight
+09-18 22:52:13.415  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_q.weight
+09-18 22:52:13.415  2701  3133 I GGUFNativeStderr: tensor blk.0.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.415  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_k.weight
+09-18 22:52:13.415  2701  3133 I GGUFNativeStderr: tensor blk.0.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.415  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_v.weight
+09-18 22:52:13.415  2701  3133 I GGUFNativeStderr: tensor blk.0.attn_v.weight (0 MiB q8_0) buffer type overridden to Vulkan0
+09-18 22:52:13.415  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_q.bias
+09-18 22:52:13.415  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_k.bias
+09-18 22:52:13.415  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_v.bias
+09-18 22:52:13.415  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_output.weight
+09-18 22:52:13.415  2701  3133 I GGUFNativeStderr: tensor blk.0.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.415  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_output.bias
+09-18 22:52:13.415  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_norm.weight
+09-18 22:52:13.415  2701  3133 I GGUFNativeStderr: tensor blk.0.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-18 22:52:13.415  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-18 22:52:13.415  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_gate.weight
+09-18 22:52:13.415  2701  3133 I GGUFNativeStderr: tensor blk.0.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.415  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_down.weight
+09-18 22:52:13.415  2701  3133 I GGUFNativeStderr: tensor blk.0.ffn_down.weight (0 MiB q6_K) buffer type overridden to Vulkan0
+09-18 22:52:13.415  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_up.weight
+09-18 22:52:13.417  2701  3133 I GGUFNativeStderr: tensor blk.0.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.417  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_gate.bias
+09-18 22:52:13.419  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_down.bias
+09-18 22:52:13.419  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_up.bias
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_norm.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: tensor blk.1.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_qkv.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_q.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: tensor blk.1.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_k.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: tensor blk.1.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_v.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: tensor blk.1.attn_v.weight (0 MiB q8_0) buffer type overridden to Vulkan0
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_q.bias
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_k.bias
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_v.bias
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_output.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: tensor blk.1.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_output.bias
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_norm.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: tensor blk.1.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_gate.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: tensor blk.1.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_down.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: tensor blk.1.ffn_down.weight (0 MiB q6_K) buffer type overridden to Vulkan0
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_up.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: tensor blk.1.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_gate.bias
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_down.bias
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_up.bias
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_norm.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: tensor blk.2.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_qkv.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_q.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: tensor blk.2.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_k.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: tensor blk.2.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_v.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: tensor blk.2.attn_v.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_q.bias
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_k.bias
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_v.bias
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_output.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: tensor blk.2.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_output.bias
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_norm.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: tensor blk.2.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_gate.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: tensor blk.2.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_down.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: tensor blk.2.ffn_down.weight (0 MiB q4_K) buffer type overridden to Vulkan0
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_up.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: tensor blk.2.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_gate.bias
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_down.bias
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_up.bias
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_norm.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: tensor blk.3.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_qkv.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_q.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: tensor blk.3.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_k.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: tensor blk.3.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_v.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: tensor blk.3.attn_v.weight (0 MiB q8_0) buffer type overridden to Vulkan0
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_q.bias
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_k.bias
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_v.bias
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_output.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: tensor blk.3.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_output.bias
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_norm.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: tensor blk.3.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_gate.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: tensor blk.3.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_down.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: tensor blk.3.ffn_down.weight (0 MiB q6_K) buffer type overridden to Vulkan0
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_up.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: tensor blk.3.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_gate.bias
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_down.bias
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_up.bias
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_norm.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: tensor blk.4.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_qkv.weight
+09-18 22:52:13.420  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_q.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: tensor blk.4.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_k.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: tensor blk.4.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_v.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: tensor blk.4.attn_v.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_q.bias
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_k.bias
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_v.bias
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_output.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: tensor blk.4.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_output.bias
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_norm.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: tensor blk.4.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_gate.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: tensor blk.4.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_down.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: tensor blk.4.ffn_down.weight (0 MiB q4_K) buffer type overridden to Vulkan0
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_up.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: tensor blk.4.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_gate.bias
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_down.bias
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_up.bias
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_norm.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: tensor blk.5.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_qkv.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_q.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: tensor blk.5.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_k.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: tensor blk.5.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_v.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: tensor blk.5.attn_v.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_q.bias
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_k.bias
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_v.bias
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_output.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: tensor blk.5.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_output.bias
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_norm.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: tensor blk.5.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_gate.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: tensor blk.5.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_down.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: tensor blk.5.ffn_down.weight (0 MiB q4_K) buffer type overridden to Vulkan0
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_up.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: tensor blk.5.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_gate.bias
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_down.bias
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_up.bias
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_norm.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: tensor blk.6.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_qkv.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_q.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: tensor blk.6.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_k.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: tensor blk.6.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_v.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: tensor blk.6.attn_v.weight (0 MiB q8_0) buffer type overridden to Vulkan0
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_q.bias
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_k.bias
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_v.bias
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_output.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: tensor blk.6.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_output.bias
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_norm.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: tensor blk.6.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_gate.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: tensor blk.6.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_down.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: tensor blk.6.ffn_down.weight (0 MiB q6_K) buffer type overridden to Vulkan0
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_up.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: tensor blk.6.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_gate.bias
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_down.bias
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_up.bias
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_norm.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: tensor blk.7.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_qkv.weight
+09-18 22:52:13.421  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_q.weight
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: tensor blk.7.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_k.weight
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: tensor blk.7.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_v.weight
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: tensor blk.7.attn_v.weight (0 MiB q8_0) buffer type overridden to Vulkan0
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_q.bias
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_k.bias
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_v.bias
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_output.weight
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: tensor blk.7.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_output.bias
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_norm.weight
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: tensor blk.7.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_gate.weight
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: tensor blk.7.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_down.weight
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: tensor blk.7.ffn_down.weight (0 MiB q6_K) buffer type overridden to Vulkan0
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_up.weight
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: tensor blk.7.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_gate.bias
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_down.bias
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_up.bias
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_norm.weight
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: tensor blk.8.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_qkv.weight
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_q.weight
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: tensor blk.8.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_k.weight
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: tensor blk.8.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_v.weight
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: tensor blk.8.attn_v.weight (0 MiB q8_0) buffer type overridden to Vulkan0
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_q.bias
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_k.bias
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_v.bias
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_output.weight
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: tensor blk.8.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_output.bias
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_norm.weight
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: tensor blk.8.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_gate.weight
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: tensor blk.8.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_down.weight
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: tensor blk.8.ffn_down.weight (0 MiB q6_K) buffer type overridden to Vulkan0
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_up.weight
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: tensor blk.8.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_gate.bias
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_down.bias
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_up.bias
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_norm.weight
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: tensor blk.9.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_qkv.weight
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_q.weight
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: tensor blk.9.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_k.weight
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: tensor blk.9.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_v.weight
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: tensor blk.9.attn_v.weight (0 MiB q8_0) buffer type overridden to Vulkan0
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_q.bias
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_k.bias
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_v.bias
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_output.weight
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: tensor blk.9.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_output.bias
+09-18 22:52:13.440  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_norm.weight
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: tensor blk.9.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_gate.weight
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: tensor blk.9.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_down.weight
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: tensor blk.9.ffn_down.weight (0 MiB q6_K) buffer type overridden to Vulkan0
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_up.weight
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: tensor blk.9.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_gate.bias
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_down.bias
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_up.bias
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_norm.weight
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: tensor blk.10.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_qkv.weight
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_q.weight
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: tensor blk.10.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_k.weight
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: tensor blk.10.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_v.weight
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: tensor blk.10.attn_v.weight (0 MiB q8_0) buffer type overridden to Vulkan0
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_q.bias
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_k.bias
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_v.bias
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_output.weight
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: tensor blk.10.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_output.bias
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_norm.weight
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: tensor blk.10.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_gate.weight
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: tensor blk.10.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_down.weight
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: tensor blk.10.ffn_down.weight (0 MiB q6_K) buffer type overridden to Vulkan0
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_up.weight
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: tensor blk.10.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_gate.bias
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_down.bias
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_up.bias
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_norm.weight
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: tensor blk.11.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_qkv.weight
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_q.weight
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: tensor blk.11.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_k.weight
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: tensor blk.11.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_v.weight
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: tensor blk.11.attn_v.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_q.bias
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_k.bias
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_v.bias
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_output.weight
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: tensor blk.11.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_output.bias
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_norm.weight
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: tensor blk.11.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_gate.weight
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: tensor blk.11.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_down.weight
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: tensor blk.11.ffn_down.weight (0 MiB q4_K) buffer type overridden to Vulkan0
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_up.weight
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: tensor blk.11.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_gate.bias
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_down.bias
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_up.bias
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_norm.weight
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: tensor blk.12.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_qkv.weight
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_q.weight
+09-18 22:52:13.441  2701  3133 I GGUFNativeStderr: tensor blk.12.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-18 22:52:13.463  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:13.463  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:13.466  2701  3133 I GGUFNativeStderr: load_tensors: offloading output layer to GPU
+09-18 22:52:13.466  2701  3133 I GGUFNativeStderr: load_tensors: offloading 29 repeating layers to GPU
+09-18 22:52:13.466  2701  3133 I GGUFNativeStderr: load_tensors: offloaded 31/31 layers to GPU
+09-18 22:52:13.466  2701  3133 I GGUFNativeStderr: load_tensors:      Vulkan0 model buffer size =    98.87 MiB
+09-18 22:52:13.779  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:13.786  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:13.802  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:13.808  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:13.832  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:13.841  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:13.861  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:13.876  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:13.898  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:13.903  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:13.911  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:13.917  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:13.923  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:13.928  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:13.932  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:13.937  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:13.940  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:13.944  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:13.950  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:13.952  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:13.957  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:13.960  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:13.964  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:13.971  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:13.974  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:13.979  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:13.981  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:13.984  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:13.989  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:13.992  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:13.996  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.004  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.009  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.015  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.021  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.035  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.042  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.051  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.061  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.072  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.074  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.094  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.122  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.127  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.162  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.186  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.263  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.287  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.355  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.369  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.375  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.382  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.392  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.403  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.468  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.516  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.554  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.565  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.579  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.605  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.611  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.675  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.690  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.711  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.786  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.816  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.830  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.834  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.846  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.854  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.866  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.877  2701  3133 I GGUFNativeStderr: .
+09-18 22:52:14.879  2701  3133 I GGUFNativeStderr: 
+09-18 22:52:14.880  2701  3133 I GGUFChatNative: GGUF_MODEL_ALL_LAYERS loaded=31 total=31 tensor_cpu_fallback=blocked
+09-18 22:52:14.892  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:14.892  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:14.897  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:14.898  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:15.760  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:15.760  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:16.026  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:16.033  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:16.991  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:16.991  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.074  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.074  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.080  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.081  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.085  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.085  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.142  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.142  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.164  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.164  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.302  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.302  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.320  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.320  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.329  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.329  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.343  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.343  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.347  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.347  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.356  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.356  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.375  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.375  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.402  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.403  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.421  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.422  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.435  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.436  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.441  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.444  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.452  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.453  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.472  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.472  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.497  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.498  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.621  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.622  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.640  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.640  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.647  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.647  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.651  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.651  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.654  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.654  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.661  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.662  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.679  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.679  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.704  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.704  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.737  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.737  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.747  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.752  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.758  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.759  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.763  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.763  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.773  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.773  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.803  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.803  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.845  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.845  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.891  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:17.891  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:17.966  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.020  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.037  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.041  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.071  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.071  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.121  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.124  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.158  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.164  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.199  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.212  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.249  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.254  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.266  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.274  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.292  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.292  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.303  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.307  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.319  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.323  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.346  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.349  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.370  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.370  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.398  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.399  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.415  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.423  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.431  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.434  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.447  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.447  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.462  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.462  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.493  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.493  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.529  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.529  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.574  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.574  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.589  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.589  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.602  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.602  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.616  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.616  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.631  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.631  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.678  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.678  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.699  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.699  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.722  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.722  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.736  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.736  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.746  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.746  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.761  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.761  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.775  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.775  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.807  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.807  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.846  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.846  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.863  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.863  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.873  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.873  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.884  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.884  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.893  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.893  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.901  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.901  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.930  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.930  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:18.967  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:18.967  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.008  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.008  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.018  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.018  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.027  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.027  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.041  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.041  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.049  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.049  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.086  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.087  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.127  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.127  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.153  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.153  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.163  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.163  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.174  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.174  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.183  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.183  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.193  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.193  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.229  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.229  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.273  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.273  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.324  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.324  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.336  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.336  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.345  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.345  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.353  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.355  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.366  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.366  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.393  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.394  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.422  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.422  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.441  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.441  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.450  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.450  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.458  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.458  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.469  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.469  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.476  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.476  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.499  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.499  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.536  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.536  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.564  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.564  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.582  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.582  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.594  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.594  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.603  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.603  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.619  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.619  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.649  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.649  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.679  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.679  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.703  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.703  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.717  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.717  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.727  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.727  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.734  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.734  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.742  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.742  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.762  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.762  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.790  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.790  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.810  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.810  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.825  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.825  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.833  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.833  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.849  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.850  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.861  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.861  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.905  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.905  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.942  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.943  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.983  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.984  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:19.999  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:19.999  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.018  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.019  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.045  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.046  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.065  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.066  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.093  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.094  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.122  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.123  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.160  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.160  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.171  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.171  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.186  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.187  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.197  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.198  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.218  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.218  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.245  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.248  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.281  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.281  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.313  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.315  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.326  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.328  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.335  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.337  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.347  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.347  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.358  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.359  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.381  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.381  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.413  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.413  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.446  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.446  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.458  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.459  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.464  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.464  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.474  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.474  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.491  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.492  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.520  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.521  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.550  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.550  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.578  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.579  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.588  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.589  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.596  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.597  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.601  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.602  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.613  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.614  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.648  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.649  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.690  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.690  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.726  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.726  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.737  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.737  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.745  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.745  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.752  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.752  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.763  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.765  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.824  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.825  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.853  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.854  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.880  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.881  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.907  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.907  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.930  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.930  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.958  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.958  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:20.983  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:20.983  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.024  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.024  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.052  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.052  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.083  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.084  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.099  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.101  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.117  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.119  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.125  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.125  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.138  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.140  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.172  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.172  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.207  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.207  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.254  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.254  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.269  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.269  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.285  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.285  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.304  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.304  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.331  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.331  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.362  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.362  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.412  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.412  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.449  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.451  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.477  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.478  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.490  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.490  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.502  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.502  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.516  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.516  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.545  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.545  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.586  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.586  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.631  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.631  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.645  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.645  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.653  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.653  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.665  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.665  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.673  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.673  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.695  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.695  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.719  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.719  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.744  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.744  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.763  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.763  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.781  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.781  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.798  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.799  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.817  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.817  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.845  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.845  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.897  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.897  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.936  2701  3133 I GGUFChatNative: GGUF_EXPANDED_WEIGHTS enabled=1 tensors=211 extra_device_bytes=538738176 verification=1 verified_bytes=537919488 prepare_ns=7055863179 precision=F32 conversion=Vulkan
+09-18 22:52:21.937  2701  3133 I GGUFChatNative: GGUF_CPU_THREADS requested=2 available=2 capacities=0 resolved=2
+09-18 22:52:21.937  2701  3133 I GGUFNativeStderr: llama_context: constructing llama_context
+09-18 22:52:21.937  2701  3133 I GGUFNativeStderr: llama_context: n_seq_max             = 1
+09-18 22:52:21.937  2701  3133 I GGUFNativeStderr: llama_context: n_ctx                 = 2048
+09-18 22:52:21.937  2701  3133 I GGUFNativeStderr: llama_context: n_ctx_seq             = 2048
+09-18 22:52:21.937  2701  3133 I GGUFNativeStderr: llama_context: n_batch               = 128
+09-18 22:52:21.937  2701  3133 I GGUFNativeStderr: llama_context: n_ubatch              = 32
+09-18 22:52:21.937  2701  3133 I GGUFNativeStderr: llama_context: causal_attn           = 1
+09-18 22:52:21.937  2701  3133 I GGUFNativeStderr: llama_context: flash_attn            = auto
+09-18 22:52:21.937  2701  3133 I GGUFNativeStderr: llama_context: kv_unified            = false
+09-18 22:52:21.937  2701  3133 I GGUFNativeStderr: llama_context: freq_base             = 100000.0
+09-18 22:52:21.937  2701  3133 I GGUFNativeStderr: llama_context: freq_scale            = 1
+09-18 22:52:21.937  2701  3133 I GGUFNativeStderr: llama_context: n_rs_seq              = 0
+09-18 22:52:21.937  2701  3133 I GGUFNativeStderr: llama_context: n_outputs_max         = 1
+09-18 22:52:21.937  2701  3133 I GGUFNativeStderr: llama_context: n_outputs_max_per_seq = 1
+09-18 22:52:21.937  2701  3133 I GGUFNativeStderr: llama_context: n_ctx_seq (2048) < n_ctx_train (8192) -- the full capacity of the model will not be utilized
+09-18 22:52:21.937  2701  3133 I GGUFNativeStderr: set_abort_callback: call
+09-18 22:52:21.937  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.939  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.941  2701  3133 I GGUFNativeStderr: llama_context: Vulkan_Host  output buffer size =     0.19 MiB
+09-18 22:52:21.941  2701  3133 I GGUFNativeStderr: llama_kv_cache: layer   0: dev = Vulkan0
+09-18 22:52:21.941  2701  3133 I GGUFNativeStderr: llama_kv_cache: layer   1: dev = Vulkan0
+09-18 22:52:21.941  2701  3133 I GGUFNativeStderr: llama_kv_cache: layer   2: dev = Vulkan0
+09-18 22:52:21.941  2701  3133 I GGUFNativeStderr: llama_kv_cache: layer   3: dev = Vulkan0
+09-18 22:52:21.941  2701  3133 I GGUFNativeStderr: llama_kv_cache: layer   4: dev = Vulkan0
+09-18 22:52:21.941  2701  3133 I GGUFNativeStderr: llama_kv_cache: layer   5: dev = Vulkan0
+09-18 22:52:21.941  2701  3133 I GGUFNativeStderr: llama_kv_cache: layer   6: dev = Vulkan0
+09-18 22:52:21.941  2701  3133 I GGUFNativeStderr: llama_kv_cache: layer   7: dev = Vulkan0
+09-18 22:52:21.941  2701  3133 I GGUFNativeStderr: llama_kv_cache: layer   8: dev = Vulkan0
+09-18 22:52:21.941  2701  3133 I GGUFNativeStderr: llama_kv_cache: layer   9: dev = Vulkan0
+09-18 22:52:21.941  2701  3133 I GGUFNativeStderr: llama_kv_cache: layer  10: dev = Vulkan0
+09-18 22:52:21.941  2701  3133 I GGUFNativeStderr: llama_kv_cache: layer  11: dev = Vulkan0
+09-18 22:52:21.941  2701  3133 I GGUFNativeStderr: llama_kv_cache: layer  12: dev = Vulkan0
+09-18 22:52:21.941  2701  3133 I GGUFNativeStderr: llama_kv_cache: layer  13: dev = Vulkan0
+09-18 22:52:21.942  2701  3133 I GGUFNativeStderr: llama_kv_cache: layer  14: dev = Vulkan0
+09-18 22:52:21.942  2701  3133 I GGUFNativeStderr: llama_kv_cache: layer  15: dev = Vulkan0
+09-18 22:52:21.942  2701  3133 I GGUFNativeStderr: llama_kv_cache: layer  16: dev = Vulkan0
+09-18 22:52:21.942  2701  3133 I GGUFNativeStderr: llama_kv_cache: layer  17: dev = Vulkan0
+09-18 22:52:21.942  2701  3133 I GGUFNativeStderr: llama_kv_cache: layer  18: dev = Vulkan0
+09-18 22:52:21.942  2701  3133 I GGUFNativeStderr: llama_kv_cache: layer  19: dev = Vulkan0
+09-18 22:52:21.942  2701  3133 I GGUFNativeStderr: llama_kv_cache: layer  20: dev = Vulkan0
+09-18 22:52:21.942  2701  3133 I GGUFNativeStderr: llama_kv_cache: layer  21: dev = Vulkan0
+09-18 22:52:21.942  2701  3133 I GGUFNativeStderr: llama_kv_cache: layer  22: dev = Vulkan0
+09-18 22:52:21.942  2701  3133 I GGUFNativeStderr: llama_kv_cache: layer  23: dev = Vulkan0
+09-18 22:52:21.942  2701  3133 I GGUFNativeStderr: llama_kv_cache: layer  24: dev = Vulkan0
+09-18 22:52:21.942  2701  3133 I GGUFNativeStderr: llama_kv_cache: layer  25: dev = Vulkan0
+09-18 22:52:21.942  2701  3133 I GGUFNativeStderr: llama_kv_cache: layer  26: dev = Vulkan0
+09-18 22:52:21.942  2701  3133 I GGUFNativeStderr: llama_kv_cache: layer  27: dev = Vulkan0
+09-18 22:52:21.942  2701  3133 I GGUFNativeStderr: llama_kv_cache: layer  28: dev = Vulkan0
+09-18 22:52:21.942  2701  3133 I GGUFNativeStderr: llama_kv_cache: layer  29: dev = Vulkan0
+09-18 22:52:21.942  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:21.942  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:21.943  2701  3133 I GGUFNativeStderr: llama_kv_cache:    Vulkan0 KV buffer size =    45.00 MiB
+09-18 22:52:21.982  2701  3133 I GGUFNativeStderr: llama_kv_cache: size =   45.00 MiB (  2048 cells,  30 layers,  1/1 seqs), K (f16):   22.50 MiB, V (f16):   22.50 MiB
+09-18 22:52:21.982  2701  3133 I GGUFNativeStderr: llama_kv_cache: attn_rot_k = 0, n_embd_head_k_all = 64
+09-18 22:52:21.982  2701  3133 I GGUFNativeStderr: llama_kv_cache: attn_rot_v = 0, n_embd_head_k_all = 64
+09-18 22:52:21.982  2701  3133 I GGUFNativeStderr: llama_context: enumerating backends
+09-18 22:52:21.982  2701  3133 I GGUFNativeStderr: llama_context: backend_ptrs.size() = 2
+09-18 22:52:21.982  2701  3133 I GGUFNativeStderr: sched_reserve: reserving ...
+09-18 22:52:21.982  2701  3133 I GGUFNativeStderr: sched_reserve: max_nodes = 2176
+09-18 22:52:21.997  2701  3133 I GGUFNativeStderr: sched_reserve: reserving full memory module
+09-18 22:52:21.997  2701  3133 I GGUFNativeStderr: sched_reserve: worst-case: n_tokens = 32, n_seqs = 1, n_outputs = 1
+09-18 22:52:21.997  2701  3133 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =    1, n_seqs =  1, n_outputs =    1
+09-18 22:52:22.004  2701  3133 I GGUFNativeStderr: resolve_fused_ops: Flash Attention enabled
+09-18 22:52:22.004  2701  3133 I GGUFNativeStderr: resolve_fused_ops: resolving fused DeepSeek V4 HC support:
+09-18 22:52:22.004  2701  3133 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =    1, n_seqs =  1, n_outputs =    1
+09-18 22:52:22.006  2701  3133 I GGUFNativeStderr: resolve_fused_ops: fused DeepSeek V4 HC pre enabled
+09-18 22:52:22.007  2701  3133 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =    1, n_seqs =  1, n_outputs =    1
+09-18 22:52:22.016  2701  3133 I GGUFNativeStderr: resolve_fused_ops: fused DeepSeek V4 HC comb enabled
+09-18 22:52:22.016  2701  3133 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =    1, n_seqs =  1, n_outputs =    1
+09-18 22:52:22.018  2701  3133 I GGUFNativeStderr: resolve_fused_ops: fused DeepSeek V4 HC post enabled
+09-18 22:52:22.018  2701  3133 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =   32, n_seqs =  1, n_outputs =    1
+09-18 22:52:22.026  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:22.026  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:22.041  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:22.041  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:22.042  2701  3133 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =    1, n_seqs =  1, n_outputs =    1
+09-18 22:52:22.046  2701  3133 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =   32, n_seqs =  1, n_outputs =    1
+09-18 22:52:22.056  2701  3133 I GGUFNativeStderr: sched_reserve:    Vulkan0 compute buffer size =     0.83 MiB
+09-18 22:52:22.056  2701  3133 I GGUFNativeStderr: sched_reserve: Vulkan_Host compute buffer size =     0.20 MiB
+09-18 22:52:22.056  2701  3133 I GGUFNativeStderr: sched_reserve: graph nodes  = 936
+09-18 22:52:22.056  2701  3133 I GGUFNativeStderr: sched_reserve: graph splits = 1
+09-18 22:52:22.056  2701  3133 I GGUFNativeStderr: sched_reserve: reserve took 73.65 ms, sched copies = 1
+09-18 22:52:22.056  2701  3133 I GGUFChatNative: GGUF_CONTEXT_TUNING batch=128 ubatch=32 threads=2 prefix_cache_supported=1
+09-18 22:52:22.056  2701  3133 I GGUFChatNative: GGUF_UNIT_LOADED language=Vulkan layers=31 projector=none
+09-18 22:52:22.056  2701  3133 I GGUFChatNative: model loaded: n_ctx=2048 projector=none
+09-18 22:52:22.104  2701  3133 I GpuRateObserver: GPU_RATE_BEGIN stage=warmup
+09-18 22:52:22.104  2701  3133 I GGUFNativeStderr: set_sampler: seq_id = 0, sampler = 0x7e792f08b950
+09-18 22:52:22.104  2701  3133 I GGUFChatNative: GGUF_GPU_SAMPLING requested=1 attached=1
+09-18 22:52:22.107  2701  3133 I GGUFNativeStderr: sched_reserve: reserving ...
+09-18 22:52:22.108  2701  3133 I GGUFNativeStderr: sched_reserve: max_nodes = 2202
+09-18 22:52:22.120  2701  3133 I GGUFNativeStderr: sched_reserve: reserving full memory module
+09-18 22:52:22.122  2701  3133 I GGUFNativeStderr: sched_reserve: worst-case: n_tokens = 32, n_seqs = 1, n_outputs = 1
+09-18 22:52:22.122  2701  3133 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =   32, n_seqs =  1, n_outputs =    1
+09-18 22:52:22.132  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:22.132  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:22.133  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:22.133  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:22.133  2701  3133 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =    1, n_seqs =  1, n_outputs =    1
+09-18 22:52:22.135  2701  3133 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =   32, n_seqs =  1, n_outputs =    1
+09-18 22:52:22.146  2701  3133 I GGUFNativeStderr: sched_reserve:    Vulkan0 compute buffer size =     0.83 MiB
+09-18 22:52:22.146  2701  3133 I GGUFNativeStderr: sched_reserve: Vulkan_Host compute buffer size =     0.20 MiB
+09-18 22:52:22.146  2701  3133 I GGUFNativeStderr: sched_reserve: graph nodes  = 961
+09-18 22:52:22.146  2701  3133 I GGUFNativeStderr: sched_reserve: graph splits = 1
+09-18 22:52:22.146  2701  3133 I GGUFNativeStderr: sched_reserve: reserve took 38.90 ms, sched copies = 1
+09-18 22:52:22.151  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:22.151  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:22.163  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:22.163  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:52:38.835  2701  3133 I GGUFChatNative: GGUF_PROMPT_CACHE input_tokens=30 reused_tokens=0 evaluated_tokens=30 media=0
+09-18 22:52:39.032  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:52:39.032  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:53:24.477  2701  3133 I GGUFChatNative: GGUF_NATIVE_COMPLETE tokens=128 reason=length projector=0
+09-18 22:53:24.478  2701  3133 I GGUFNativeStderr: set_sampler: seq_id = 0, sampler = 0x0
+09-18 22:53:24.478  2701  3133 I GGUFChatNative: GGUF_HOST_WORKER_CPU available=1 thread_cpu_ns=27770615724
+09-18 22:53:24.478  2701  3133 I GGUFChatNative: GGUF_STRICT_VULKAN_RESULT enabled=1 submitted_graphs=128 submitted_math_nodes=75904 blocked=0 host_orchestration=CPU
+09-18 22:53:24.478  2701  3133 I GGUFChatNative: GGUF_GPU_SAMPLING_RESULT backend_selected=128 emitted=128
+09-18 22:53:24.478  2701  3133 I GGUFChatNative: GGUF_VULKAN_DELIVERY token_only_export=1 overlap_submissions=126 first_text_immediate=1
+09-18 22:53:24.478  2701  3133 I GGUFChatNative: GGUF_RESPONSE_LATENCY first_token_ns=16921017891 prompt_tokens=30 reused_tokens=0
+09-18 22:53:24.478  2701  3133 I GGUFChatNative: GGUF_GENERATION_STATS tokens=128 decode_ns=45453482803 prefill_ns=16920282580 callbacks=128 success=1
+09-18 22:53:24.479  2701  3133 I GpuRateObserver: GPU_RATE_END stage=warmup
+09-18 22:53:24.479  2701  3133 I GpuRateObserver: GPU_RATE_BEGIN stage=sample
+09-18 22:53:24.479  2701  3133 I GGUFNativeStderr: set_sampler: seq_id = 0, sampler = 0x7e792f08b950
+09-18 22:53:24.480  2701  3133 I GGUFChatNative: GGUF_GPU_SAMPLING requested=1 attached=1
+09-18 22:53:24.482  2701  3133 I GGUFNativeStderr: sched_reserve: reserving ...
+09-18 22:53:24.482  2701  3133 I GGUFNativeStderr: sched_reserve: max_nodes = 2202
+09-18 22:53:24.494  2701  3133 I GGUFNativeStderr: sched_reserve: reserving full memory module
+09-18 22:53:24.495  2701  3133 I GGUFNativeStderr: sched_reserve: worst-case: n_tokens = 32, n_seqs = 1, n_outputs = 1
+09-18 22:53:24.495  2701  3133 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =   32, n_seqs =  1, n_outputs =    1
+09-18 22:53:24.500  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:53:24.501  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:53:24.501  2701  3133 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 22:53:24.503  2701  3133 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 22:53:24.505  2701  3133 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =    1, n_seqs =  1, n_outputs =    1
+09-18 22:53:24.506  2701  3133 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =   32, n_seqs =  1, n_outputs =    1
+09-18 22:53:24.508  2701  3133 I GGUFNativeStderr: sched_reserve:    Vulkan0 compute buffer size =     0.83 MiB
+09-18 22:53:24.508  2701  3133 I GGUFNativeStderr: sched_reserve: Vulkan_Host compute buffer size =     0.20 MiB
+09-18 22:53:24.508  2701  3133 I GGUFNativeStderr: sched_reserve: graph nodes  = 961
+09-18 22:53:24.508  2701  3133 I GGUFNativeStderr: sched_reserve: graph splits = 1
+09-18 22:53:24.508  2701  3133 I GGUFNativeStderr: sched_reserve: reserve took 26.54 ms, sched copies = 1
+09-18 22:53:24.638  2701  3133 I GGUFChatNative: GGUF_PROMPT_CACHE input_tokens=184 reused_tokens=157 evaluated_tokens=27 media=0
+09-18 22:54:01.775  2701  3133 I GGUFChatNative: GGUF_NATIVE_COMPLETE tokens=128 reason=length projector=0
+09-18 22:54:01.775  2701  3133 I GGUFNativeStderr: set_sampler: seq_id = 0, sampler = 0x0
+09-18 22:54:01.776  2701  3133 I GGUFChatNative: GGUF_HOST_WORKER_CPU available=1 thread_cpu_ns=32009436050
+09-18 22:54:01.776  2701  3133 I GGUFChatNative: GGUF_STRICT_VULKAN_RESULT enabled=1 submitted_graphs=128 submitted_math_nodes=75904 blocked=0 host_orchestration=CPU
+09-18 22:54:01.776  2701  3133 I GGUFChatNative: GGUF_GPU_SAMPLING_RESULT backend_selected=128 emitted=128
+09-18 22:54:01.776  2701  3133 I GGUFChatNative: GGUF_VULKAN_DELIVERY token_only_export=1 overlap_submissions=126 first_text_immediate=1
+09-18 22:54:01.776  2701  3133 I GGUFChatNative: GGUF_RESPONSE_LATENCY first_token_ns=2353051237 prompt_tokens=184 reused_tokens=157
+09-18 22:54:01.776  2701  3133 I GGUFChatNative: GGUF_GENERATION_STATS tokens=128 decode_ns=34943599135 prefill_ns=2352852307 callbacks=128 success=1
+09-18 22:54:01.778  2701  3133 I GpuRateObserver: GPU_RATE_END stage=sample
+09-18 22:54:02.041  2701  3133 I GGUFNativeStderr: ~llama_context:    Vulkan0 compute buffer size is   0.8294 MiB, matches expectation of   0.8294 MiB
+09-18 22:54:02.041  2701  3133 I GGUFNativeStderr: ~llama_context: Vulkan_Host compute buffer size is   0.1966 MiB, matches expectation of   0.1966 MiB

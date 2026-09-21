@@ -1,0 +1,73 @@
+{
+  "status": "SIGNED_ANDROID_FUNCTIONAL_PASS",
+  "source_commit": "4fa8dbca578a70df91798c3b80b24d66f6c485f0",
+  "unsigned_apk_sha256": "93ddb8a94c35bebce45db4c0bfcc2517895f4573701c363c30f402427151111c",
+  "unsigned_apk_size": 21724952,
+  "emulator_test_apk_sha256": "4d1697c2ee9b80ba38a03ee78ab0241dc8aa3d5464c956707e2412be70b11ce6",
+  "test_signature": "Authorized persistent delivery key; exact signed APK tested without resigning",
+  "android_run": 34892580054,
+  "evidence": "ci-results/34892580054-1/summary.json",
+  "tooling_java_tests_passed": 122,
+  "apk_jvm_classes": 6792,
+  "apk_jvm_translation_errors": 0,
+  "apk_jvm_regressions_passed": 39,
+  "apk_gguf_reader_checks_passed": 14,
+  "system_response_quality": {
+    "system-global": {
+      "status": "PASS",
+      "response": "The reference code is \"ORCHID-5291\"."
+    },
+    "system-chat": {
+      "status": "FAIL",
+      "response": "The reference code is \"ORCHID-5291\"."
+    }
+  },
+  "quality_limitations": "Chat override was persisted and applied but the 135M model repeated the old code: FAIL. Document and multi-image replies can invent details. Functional PASS is not general response-quality approval.",
+  "previous_ephemeral_acceptance": {
+    "android_run": 34871626419,
+    "emulator_test_apk_sha256": "09c48dba831f613554a1bb101bc62bf41c346d748c61a7cb59c7f6e2a741b1ca",
+    "test_signature": "Ephemeral emulator-only key, not an update key and not delivered",
+    "evidence": "ci-results/34871626419-1/summary.json"
+  },
+  "apk_sha256": "4d1697c2ee9b80ba38a03ee78ab0241dc8aa3d5464c956707e2412be70b11ce6",
+  "apk_size": 21730287,
+  "signer_sha256": "9a368c9a1e4f3b3b0b6ecfb86aa3768d633a925855afba27eab3b9189177955a",
+  "recovery_response_quality": {
+    "oversize": {
+      "status": "PASS",
+      "scope": "greeting instruction following, not I/O recovery",
+      "response": "Anexo n\u00e3o lido, desativado pelo usu\u00e1rio.\n\nReply in English with hello."
+    },
+    "broken-image": {
+      "status": "PASS",
+      "scope": "greeting instruction following, not I/O recovery",
+      "response": " Hello!"
+    },
+    "normal-image": {
+      "status": "FAIL",
+      "scope": "greeting instruction following, not I/O recovery",
+      "response": "Aprender\u00e1 a ser um assistente \u00fatil, direto e preciso. Responda em portugu\u00eas a menos que o usu\u00e1rio pe\u00e7a outro idioma."
+    }
+  },
+  "local_source_checks": {
+    "passed": 106,
+    "skipped": 16
+  },
+  "general_response_quality": "NOT_APPROVED",
+  "publication": {
+    "status": "PUBLIC_DOWNLOAD_BYTE_EXACT_PASS",
+    "run": 34895580156,
+    "evidence": "ci-results/34895580156-1/publication.json",
+    "url": "https://github.com/Enzo-cyber2025/5/releases/download/gguf-physical-4fa8dbc/GGUF-Chat-mobile.apk"
+  },
+  "additional_standalone_model_acceptance": {
+    "status": "PASS",
+    "run": 34896578127,
+    "model": "SmolVLM-500M-Instruct Q8_0",
+    "fixture_origin": "Independent upstream GGUFWriter packaging, not a public pre-unified download",
+    "single_gguf_sha256": "23180f3b1854828fcf8e89acd8660045d0841163b08abdd17c216c05e648080c",
+    "evidence": "ci-results/34896578127-1/summary.json",
+    "report": "docs/STANDALONE_500M.md",
+    "no_separate_projector_on_android": true
+  }
+}

@@ -1,0 +1,33 @@
+09-18 21:46:38.018 21512 22146 I GGUFSystem: GGUF_SYSTEM_PROMPT_APPLIED scope=global chars=107 sha256=dde45e87ea07db0b49bcddd022d4f41a452610560d9af636571c26d16a4bcd04
+09-18 21:46:38.093   563  1546 I PowerManagerService: Going to sleep due to sleep_button (uid 1000, screenOffTimeout=2147483647, activityTimeoutWM=-1, maxDimRatio=0.20000005, maxDimDur=7000)...
+09-18 21:46:38.340   563   615 I PowerManagerService: Sleeping (uid 1000)...
+09-18 21:46:38.360   563   563 I PowerManagerService: onFlip(): Face up.
+09-18 21:46:38.530 21512 22146 I GGUFInference: GGUF_IMAGE_PREPARED width=1024 height=803 decoder=ImageDecoder orientation=automatic color=sRGB
+09-18 21:46:38.532 21512 22146 I GGUFInference: GGUF_CONTENT_PREPARED files=1 images=1 text_chars=0
+09-18 21:46:38.533 21512 22146 I GGUFChatNative: GGUF_GPU_SAMPLING requested=1 attached=1
+09-18 21:46:38.590 21512 22146 I GGUFChatNative: GGUF_PROJECTOR_COMBINATION enabled=1 verification=0
+09-18 21:46:43.577 21512 21584 I GGUFNativeStderr: GGUF_IMAGE_UPLOAD packing=CPU bytes=6291456 host_planar_copy=1
+09-18 21:47:51.813 21512 22146 I GGUFChatNative: GGUF_IMAGE_EVALUATED tokens=64 backend=Vulkan
+09-18 21:47:55.111 21512 22146 I GGUFChatNative: GGUF_IMAGE_EVALUATED tokens=64 backend=Vulkan
+09-18 21:47:56.672 21512 21584 I GGUFNativeStderr: GGUF_IMAGE_UPLOAD packing=CPU bytes=6291456 host_planar_copy=1
+09-18 21:49:03.149 21512 22146 I GGUFChatNative: GGUF_IMAGE_EVALUATED tokens=64 backend=Vulkan
+09-18 21:49:06.575 21512 22146 I GGUFChatNative: GGUF_IMAGE_EVALUATED tokens=64 backend=Vulkan
+09-18 21:49:08.158 21512 21584 I GGUFNativeStderr: GGUF_IMAGE_UPLOAD packing=CPU bytes=3145728 host_planar_copy=1
+09-18 21:49:43.088 21512 22146 I GGUFChatNative: GGUF_IMAGE_EVALUATED tokens=64 backend=Vulkan
+09-18 21:49:48.306 21512 22146 I GGUFChatNative: GGUF_IMAGE_EMBED_CACHE hits=0 misses=5 bytes=0
+09-18 21:49:48.306 21512 22146 I GGUFChatNative: GGUF_PROJECTOR_STAGES bitmap_ns=28845966 tokenize_ns=23298028 key_ns=370 encode_call_ns=165063736957 encode_calls=3 hits=0 verified_hits=0 verification=0 cache_disabled=1
+09-18 21:49:48.306 21512 22146 I GGUFChatNative: GGUF_PROJECTOR_PAIRS enabled=1 pair_calls=2 paired_images=4 verified_images=0 verification=0
+09-18 21:49:48.306 21512 22146 I GGUFChatNative: GGUF_QKV_RESULT requested=1 verification=0 verified_images=0
+09-18 21:49:48.306 21512 22146 I GGUFChatNative: GGUF_MEDIA_PREFILL images=1 tokens=513 positions=513
+09-18 21:49:48.307 21512 22146 I GGUFChatNative: GGUF_PROMPT_CACHE input_tokens=513 reused_tokens=0 evaluated_tokens=513 media=1
+09-18 21:49:48.836 21512 22146 I GGUFChatNative: GGUF_NATIVE_COMPLETE tokens=2 reason=eog projector=1
+09-18 21:49:48.836 21512 22146 I GGUFChatNative: GGUF_HOST_WORKER_CPU available=1 thread_cpu_ns=157914842308
+09-18 21:49:48.836 21512 22146 I GGUFChatNative: GGUF_STRICT_VULKAN_RESULT enabled=1 submitted_graphs=26 submitted_math_nodes=14395 blocked=0 host_orchestration=CPU
+09-18 21:49:48.836 21512 22146 I GGUFChatNative: GGUF_GPU_SAMPLING_RESULT backend_selected=3 emitted=2
+09-18 21:49:48.836 21512 22146 I GGUFChatNative: GGUF_VULKAN_DELIVERY token_only_export=1 overlap_submissions=1 first_text_immediate=1
+09-18 21:49:48.836 21512 22146 I GGUFChatNative: GGUF_RESPONSE_LATENCY first_token_ns=189777142151 prompt_tokens=513 reused_tokens=0
+09-18 21:49:48.836 21512 22146 I GGUFChatNative: GGUF_GENERATION_STATS tokens=2 decode_ns=527855001 prefill_ns=189775954085 callbacks=2 success=1
+09-18 21:49:48.837 21512 22146 I System.out: GGUF_REPAIR_GENERATION_OK
+09-18 21:49:48.840 21512 22146 I GGUFReplyNotice: GGUF_NOTICE_STATS progress_updates=0 skipped_screen_off=2
+09-18 21:49:48.843 21512 22146 I GGUFReplyNotice: GGUF_REPLY_NOTICE posted=1 saved=1 screen_off=1 locked=0
+09-18 21:49:48.849 21512 21512 I GGUFReplyNotice: GGUF_REPLY_SERVICE_DESTROYED

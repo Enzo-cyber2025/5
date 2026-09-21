@@ -1,0 +1,28 @@
+{
+  "status": "COMPILED_ARM_ISA_SELECTION_PASS",
+  "apk_sha256": "8a994b58efc0a65a0851534402eacb5f0c305ff534a100075a88e5c5dbf95399",
+  "libraries": {
+    "libaijni.so": {
+      "sha256": "bac14158b88f445e1c041e6c4e054a071c952346f1cb2932d1adff5ae0b81e05",
+      "optional_instruction_counts": {}
+    },
+    "libaijni_dotprod.so": {
+      "sha256": "09834b899b5a7661644287ab3d3a0370434be3988eb5ef3b74bb0c8debd85830",
+      "optional_instruction_counts": {
+        "sdot": 1038
+      }
+    },
+    "libaijni_i8mm.so": {
+      "sha256": "ffc5dd95c239fca316293aa51e79c795e9dda54751b1c1a64f4502dfe1c69fd0",
+      "optional_instruction_counts": {
+        "sdot": 894,
+        "smmla": 244
+      }
+    },
+    "libggufcpu.so": {
+      "sha256": "961aedde471f8a87ef305cfe2ec496beb11046fe198893a701ac994962343061",
+      "optional_instruction_counts": {}
+    }
+  },
+  "scope": "Disassembly of real APK executable ELF sections, limited to listed dot-product/i8mm mnemonics; not an exhaustive ISA compatibility audit, physical ARM execution, or speed benchmark."
+}

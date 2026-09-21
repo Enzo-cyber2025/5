@@ -1,0 +1,18 @@
+{
+  "status": "FAIL",
+  "scope": "real-models-vulkan-generation-NOT-SAF",
+  "cases": {
+    "smolvlm": {
+      "status": "FAIL",
+      "setup": "rooted test provisioning of actual GGUF bytes, not SAF",
+      "model_sha256": "2a31195d3769c0b0fd0a4906201666108834848db768af11de1d2cef7cd35e65",
+      "requested_layers": 99,
+      "projector_backend": "CPU",
+      "projector_sha256": "7e943f7c53f0382a6fc41b6ee0c2def63ba4fded9ab8ed039cc9e2ab905e0edd",
+      "pid": "4056"
+    }
+  },
+  "apk_sha256": "409985de54388cbcb1429a8db4cd26139cc47a5764864c6cd4b408c75f07099f",
+  "environment": "Android 15 x86_64, Mesa software Vulkan; not physical GPU",
+  "error": ""
+}

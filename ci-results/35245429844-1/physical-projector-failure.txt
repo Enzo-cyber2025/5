@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "/home/runner/work/5/5/scripts/test_projector_cache_android.py", line 102, in main
+    rows=series(d,model,label,screen=='asleep',phase=='after')
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_projector_cache_android.py", line 46, in series
+    r=run_reply(d,chat,PROMPT,'projector-'+label+'-'+stage,asleep,True)
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_performance_android.py", line 16, in run_reply
+    try:r=measured_reply(d,chat,prompt,'perf-'+label,True)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_generation_stats_android.py", line 48, in measured_reply
+    return d.wait(done,'native completion and per-message counters: '+phase,timeout=600)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_android.py", line 74, in wait
+    raise AssertionError(f"Timeout: {description}")
+AssertionError: Timeout: native completion and per-message counters: perf-projector-before-awake-0-cold_A

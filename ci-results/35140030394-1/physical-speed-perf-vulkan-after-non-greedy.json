@@ -1,0 +1,66 @@
+{
+  "tokens": 83,
+  "prefill_and_generation_seconds": 50.29899999999907,
+  "prefill_and_generation_tokens_s": 1.6501322093878912,
+  "response": "1. Practice regularly: The more you practice, the better your learning will be over time. It's a habit that can help improve memory and concentration.\n\n2. Set clear goals: This is important because it allows you to know what you want to achieve in one day or week. \n\n3. Use mnemonic devices: These are simple techniques that make things easier by linking concepts together, creating new memories.",
+  "metrics": {
+    "tokens": 83,
+    "decodeNs": 44590620982,
+    "prefillNs": 5706949300,
+    "completed": true,
+    "version": 3,
+    "timingScope": "prefill_synchronized_before_decode",
+    "firstTokenNs": 5708904972,
+    "promptTokens": 62,
+    "reusedPromptTokens": 0
+  },
+  "callbacks": 83,
+  "native_decode_tokens_s": 1.8613779797663013,
+  "chat": {
+    "id": "1a0abcd8045ef39f3",
+    "title": "GGUF regression 1a0abcd8045ef39f3",
+    "modelPath": "/data/user/0/com.ggufchat.app/files/models/1789586691722_SmolLM2-135M-Instruct-Q4_K_M.gguf",
+    "mmprojPath": null,
+    "createdAt": 1789588766789,
+    "updatedAt": 1789588847364,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Give three useful study tips.",
+        "ts": 1789588796996,
+        "thinking": false
+      },
+      {
+        "role": "assistant",
+        "content": "1. Practice regularly: The more you practice, the better your learning will be over time. It's a habit that can help improve memory and concentration.\n\n2. Set clear goals: This is important because it allows you to know what you want to achieve in one day or week. \n\n3. Use mnemonic devices: These are simple techniques that make things easier by linking concepts together, creating new memories.",
+        "ts": 1789588847364,
+        "thinking": false,
+        "generationMetrics": {
+          "tokens": 83,
+          "decodeNs": 44590620982,
+          "prefillNs": 5706949300,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 5708904972,
+          "promptTokens": 62,
+          "reusedPromptTokens": 0
+        }
+      }
+    ],
+    "nPredict": 128,
+    "temperature": 0.699999988079071,
+    "topP": 0.949999988079071,
+    "topK": 40,
+    "minP": 0.05000000074505806,
+    "repeatPenalty": 1.100000023841858,
+    "repeatLastN": 64,
+    "contextSize": 2048,
+    "nThreads": 0,
+    "gpuLayers": 99,
+    "useMmap": true,
+    "thinking": false,
+    "webSearch": false,
+    "systemPrompt": null
+  }
+}

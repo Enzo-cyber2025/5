@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/home/runner/work/5/5/scripts/test_gemma4_android.py", line 79, in main
+    answer=reply(d,chat,'Name the main animal in the image. Reply in English with one word.','gemma4-image',images=1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_inference_android.py", line 91, in reply
+    text=d.wait(check,'resposta baseada no conteúdo real: '+stage,timeout=600)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_android.py", line 74, in wait
+    raise AssertionError(f"Timeout: {description}")
+AssertionError: Timeout: resposta baseada no conteúdo real: gemma4-image

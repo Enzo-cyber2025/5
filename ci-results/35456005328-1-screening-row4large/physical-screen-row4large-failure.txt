@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/home/runner/work/5/5/scripts/screen_row_grouping_android.py", line 41, in main
+    pair[arm] = harness.observation(d, s, 'candidate', state, f'{i+1}-{arm}-{state}', env)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_expanded_weights_android.py", line 49, in observation
+    if phase=='candidate':r.update(candidate_metadata(native))
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_row_tile_android.py", line 15, in candidate_metadata
+    assert len(configurations) == 1, f'Ambiguous or missing native row grouping: {configurations}'
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Ambiguous or missing native row grouping: []

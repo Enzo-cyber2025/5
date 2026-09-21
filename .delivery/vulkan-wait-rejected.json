@@ -1,0 +1,1917 @@
+{
+  "run": 35378808404,
+  "source_commit": "e0709c2d13e4eaa860ed96237708069d448281ef",
+  "status": "REJECTED_NO_STABLE_GAIN",
+  "release_approved": false,
+  "reports": {
+    "text": {
+      "status": "WAIT_GAIN_NOT_MET",
+      "kind": "text",
+      "build": {
+        "apk_sha256": "a24a3fdcba15bf4e037e6a1ba5bbc66d3edf0569a683623b817d74133313f39e",
+        "source_commit": "e0709c2d13e4eaa860ed96237708069d448281ef",
+        "experimental_wait_build": true,
+        "default_blocking_wait": true,
+        "control": "Same APK with GGUF_VULKAN_BLOCKING_WAIT=0; candidate flag absent",
+        "release_approved": false
+      },
+      "pairs": [
+        {
+          "before": {
+            "awake": {
+              "warmup": {
+                "tokens": 128,
+                "prefill_and_generation_seconds": 30.31500000000233,
+                "prefill_and_generation_tokens_s": 4.2223321787890535,
+                "response": "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to",
+                "metrics": {
+                  "tokens": 128,
+                  "decodeNs": 22633908390,
+                  "prefillNs": 7681841211,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 7685474569,
+                  "promptTokens": 77,
+                  "reusedPromptTokens": 0
+                },
+                "callbacks": 128,
+                "native_decode_tokens_s": 5.655231866916644,
+                "send_to_first_ui_ns": 7738219961,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 130,
+                  "submitted_math_nodes": 77090,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 25582570416,
+                "blocking_wait": false,
+                "raw_history": [
+                  [
+                    "user",
+                    "Explain ten practical ways to learn a language. Give a detailed example for each. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to"
+                  ]
+                ]
+              },
+              "sample": {
+                "tokens": 128,
+                "prefill_and_generation_seconds": 26.04800000000978,
+                "prefill_and_generation_tokens_s": 4.914004914003069,
+                "response": "Ten more practical recommendations for learning a language include:\n\n1. **Language Exchange Programs**: Join language exchange programs like Conversation Exchange or Tandem to connect with native speakers and practice speaking skills in real-time.\n\n2. **Online Tutoring Platforms**: Utilize online tutoring platforms that offer one-on-one sessions, allowing you to learn at your own pace while receiving guidance from a tutor.\n\n3. **Language Immersive Experiences**: Participate in language immersion experiences through podcasts or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening and speaking skills.\n\n4. **Practice Reading and",
+                "metrics": {
+                  "tokens": 128,
+                  "decodeNs": 25321900650,
+                  "prefillNs": 725985782,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 729931975,
+                  "promptTokens": 231,
+                  "reusedPromptTokens": 204
+                },
+                "callbacks": 128,
+                "native_decode_tokens_s": 5.054912811215062,
+                "send_to_first_ui_ns": 785656469,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 128,
+                  "submitted_math_nodes": 75904,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 18608336840,
+                "blocking_wait": false,
+                "raw_history": [
+                  [
+                    "user",
+                    "Explain ten practical ways to learn a language. Give a detailed example for each. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to"
+                  ],
+                  [
+                    "user",
+                    "Give ten more practical recommendations, with detailed examples. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten more practical recommendations for learning a language include:\n\n1. **Language Exchange Programs**: Join language exchange programs like Conversation Exchange or Tandem to connect with native speakers and practice speaking skills in real-time.\n\n2. **Online Tutoring Platforms**: Utilize online tutoring platforms that offer one-on-one sessions, allowing you to learn at your own pace while receiving guidance from a tutor.\n\n3. **Language Immersive Experiences**: Participate in language immersion experiences through podcasts or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening and speaking skills.\n\n4. **Practice Reading and"
+                  ]
+                ]
+              }
+            },
+            "asleep": {
+              "warmup": {
+                "tokens": 128,
+                "prefill_and_generation_seconds": 20.86599999999453,
+                "prefill_and_generation_tokens_s": 6.134381290138673,
+                "response": "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to",
+                "metrics": {
+                  "tokens": 128,
+                  "decodeNs": 17977471533,
+                  "prefillNs": 2888551986,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 2889645737,
+                  "promptTokens": 77,
+                  "reusedPromptTokens": 0
+                },
+                "callbacks": 128,
+                "native_decode_tokens_s": 7.120022399425818,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 130,
+                  "submitted_math_nodes": 77090,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 19484083469,
+                "blocking_wait": false,
+                "raw_history": [
+                  [
+                    "user",
+                    "Explain ten practical ways to learn a language. Give a detailed example for each. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to"
+                  ]
+                ]
+              },
+              "sample": {
+                "tokens": 128,
+                "prefill_and_generation_seconds": 18.478000000002794,
+                "prefill_and_generation_tokens_s": 6.927156618680628,
+                "response": "Ten more practical recommendations for learning a language include:\n\n1. **Language Exchange Programs**: Join language exchange programs like Conversation Exchange or Tandem to connect with native speakers and practice speaking skills in real-time.\n\n2. **Online Tutoring Platforms**: Utilize online tutoring platforms that offer one-on-one sessions, allowing you to learn at your own pace while receiving guidance from a tutor.\n\n3. **Language Immersive Experiences**: Participate in language immersion experiences through podcasts or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening and speaking skills.\n\n4. **Practice Reading and",
+                "metrics": {
+                  "tokens": 128,
+                  "decodeNs": 17624429566,
+                  "prefillNs": 853232544,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 855163850,
+                  "promptTokens": 231,
+                  "reusedPromptTokens": 204
+                },
+                "callbacks": 128,
+                "native_decode_tokens_s": 7.262646403429135,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 128,
+                  "submitted_math_nodes": 75904,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 17158739787,
+                "blocking_wait": false,
+                "raw_history": [
+                  [
+                    "user",
+                    "Explain ten practical ways to learn a language. Give a detailed example for each. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to"
+                  ],
+                  [
+                    "user",
+                    "Give ten more practical recommendations, with detailed examples. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten more practical recommendations for learning a language include:\n\n1. **Language Exchange Programs**: Join language exchange programs like Conversation Exchange or Tandem to connect with native speakers and practice speaking skills in real-time.\n\n2. **Online Tutoring Platforms**: Utilize online tutoring platforms that offer one-on-one sessions, allowing you to learn at your own pace while receiving guidance from a tutor.\n\n3. **Language Immersive Experiences**: Participate in language immersion experiences through podcasts or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening and speaking skills.\n\n4. **Practice Reading and"
+                  ]
+                ]
+              }
+            }
+          },
+          "after": {
+            "awake": {
+              "warmup": {
+                "tokens": 128,
+                "prefill_and_generation_seconds": 25.48300000000745,
+                "prefill_and_generation_tokens_s": 5.022956480789647,
+                "response": "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to",
+                "metrics": {
+                  "tokens": 128,
+                  "decodeNs": 22788811270,
+                  "prefillNs": 2694929198,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 2697825783,
+                  "promptTokens": 77,
+                  "reusedPromptTokens": 0
+                },
+                "callbacks": 128,
+                "native_decode_tokens_s": 5.616791436967304,
+                "send_to_first_ui_ns": 2793626195,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 130,
+                  "submitted_math_nodes": 77090,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 20096488105,
+                "blocking_wait": true,
+                "raw_history": [
+                  [
+                    "user",
+                    "Explain ten practical ways to learn a language. Give a detailed example for each. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to"
+                  ]
+                ]
+              },
+              "sample": {
+                "tokens": 128,
+                "prefill_and_generation_seconds": 25.29000000000815,
+                "prefill_and_generation_tokens_s": 5.061289047052541,
+                "response": "Ten more practical recommendations for learning a language include:\n\n1. **Language Exchange Programs**: Join language exchange programs like Conversation Exchange or Tandem to connect with native speakers and practice speaking skills in real-time.\n\n2. **Online Tutoring Platforms**: Utilize online tutoring platforms that offer one-on-one sessions, allowing you to learn at your own pace while receiving guidance from a tutor.\n\n3. **Language Immersive Experiences**: Participate in language immersion experiences through podcasts or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening and speaking skills.\n\n4. **Practice Reading and",
+                "metrics": {
+                  "tokens": 128,
+                  "decodeNs": 24590475815,
+                  "prefillNs": 700412970,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 703901660,
+                  "promptTokens": 231,
+                  "reusedPromptTokens": 204
+                },
+                "callbacks": 128,
+                "native_decode_tokens_s": 5.205267314181899,
+                "send_to_first_ui_ns": 763516194,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 128,
+                  "submitted_math_nodes": 75904,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 19240950691,
+                "blocking_wait": true,
+                "raw_history": [
+                  [
+                    "user",
+                    "Explain ten practical ways to learn a language. Give a detailed example for each. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to"
+                  ],
+                  [
+                    "user",
+                    "Give ten more practical recommendations, with detailed examples. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten more practical recommendations for learning a language include:\n\n1. **Language Exchange Programs**: Join language exchange programs like Conversation Exchange or Tandem to connect with native speakers and practice speaking skills in real-time.\n\n2. **Online Tutoring Platforms**: Utilize online tutoring platforms that offer one-on-one sessions, allowing you to learn at your own pace while receiving guidance from a tutor.\n\n3. **Language Immersive Experiences**: Participate in language immersion experiences through podcasts or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening and speaking skills.\n\n4. **Practice Reading and"
+                  ]
+                ]
+              }
+            },
+            "asleep": {
+              "warmup": {
+                "tokens": 128,
+                "prefill_and_generation_seconds": 20.047000000005937,
+                "prefill_and_generation_tokens_s": 6.3849952611344385,
+                "response": "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to",
+                "metrics": {
+                  "tokens": 128,
+                  "decodeNs": 17390792003,
+                  "prefillNs": 2656317649,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 2657001629,
+                  "promptTokens": 77,
+                  "reusedPromptTokens": 0
+                },
+                "callbacks": 128,
+                "native_decode_tokens_s": 7.360216830718196,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 130,
+                  "submitted_math_nodes": 77090,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 18824448477,
+                "blocking_wait": true,
+                "raw_history": [
+                  [
+                    "user",
+                    "Explain ten practical ways to learn a language. Give a detailed example for each. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to"
+                  ]
+                ]
+              },
+              "sample": {
+                "tokens": 128,
+                "prefill_and_generation_seconds": 18.529000000009546,
+                "prefill_and_generation_tokens_s": 6.9080900210445275,
+                "response": "Ten more practical recommendations for learning a language include:\n\n1. **Language Exchange Programs**: Join language exchange programs like Conversation Exchange or Tandem to connect with native speakers and practice speaking skills in real-time.\n\n2. **Online Tutoring Platforms**: Utilize online tutoring platforms that offer one-on-one sessions, allowing you to learn at your own pace while receiving guidance from a tutor.\n\n3. **Language Immersive Experiences**: Participate in language immersion experiences through podcasts or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening and speaking skills.\n\n4. **Practice Reading and",
+                "metrics": {
+                  "tokens": 128,
+                  "decodeNs": 17680381994,
+                  "prefillNs": 849027326,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 850049787,
+                  "promptTokens": 231,
+                  "reusedPromptTokens": 204
+                },
+                "callbacks": 128,
+                "native_decode_tokens_s": 7.239662584407847,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 128,
+                  "submitted_math_nodes": 75904,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 17341624390,
+                "blocking_wait": true,
+                "raw_history": [
+                  [
+                    "user",
+                    "Explain ten practical ways to learn a language. Give a detailed example for each. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to"
+                  ],
+                  [
+                    "user",
+                    "Give ten more practical recommendations, with detailed examples. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten more practical recommendations for learning a language include:\n\n1. **Language Exchange Programs**: Join language exchange programs like Conversation Exchange or Tandem to connect with native speakers and practice speaking skills in real-time.\n\n2. **Online Tutoring Platforms**: Utilize online tutoring platforms that offer one-on-one sessions, allowing you to learn at your own pace while receiving guidance from a tutor.\n\n3. **Language Immersive Experiences**: Participate in language immersion experiences through podcasts or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening and speaking skills.\n\n4. **Practice Reading and"
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "after": {
+            "awake": {
+              "warmup": {
+                "tokens": 128,
+                "prefill_and_generation_seconds": 25.01600000000326,
+                "prefill_and_generation_tokens_s": 5.1167252958100145,
+                "response": "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to",
+                "metrics": {
+                  "tokens": 128,
+                  "decodeNs": 22371342506,
+                  "prefillNs": 2643920895,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 2647281306,
+                  "promptTokens": 77,
+                  "reusedPromptTokens": 0
+                },
+                "callbacks": 128,
+                "native_decode_tokens_s": 5.721605664285474,
+                "send_to_first_ui_ns": 2698969424,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 130,
+                  "submitted_math_nodes": 77090,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 21001736243,
+                "blocking_wait": true,
+                "raw_history": [
+                  [
+                    "user",
+                    "Explain ten practical ways to learn a language. Give a detailed example for each. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to"
+                  ]
+                ]
+              },
+              "sample": {
+                "tokens": 128,
+                "prefill_and_generation_seconds": 24.995999999999185,
+                "prefill_and_generation_tokens_s": 5.120819331093142,
+                "response": "Ten more practical recommendations for learning a language include:\n\n1. **Language Exchange Programs**: Join language exchange programs like Conversation Exchange or Tandem to connect with native speakers and practice speaking skills in real-time.\n\n2. **Online Tutoring Platforms**: Utilize online tutoring platforms that offer one-on-one sessions, allowing you to learn at your own pace while receiving guidance from a tutor.\n\n3. **Language Immersive Experiences**: Participate in language immersion experiences through podcasts or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening and speaking skills.\n\n4. **Practice Reading and",
+                "metrics": {
+                  "tokens": 128,
+                  "decodeNs": 24298956623,
+                  "prefillNs": 698103017,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 701658422,
+                  "promptTokens": 231,
+                  "reusedPromptTokens": 204
+                },
+                "callbacks": 128,
+                "native_decode_tokens_s": 5.267715893564028,
+                "send_to_first_ui_ns": 757641060,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 128,
+                  "submitted_math_nodes": 75904,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 19797303069,
+                "blocking_wait": true,
+                "raw_history": [
+                  [
+                    "user",
+                    "Explain ten practical ways to learn a language. Give a detailed example for each. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to"
+                  ],
+                  [
+                    "user",
+                    "Give ten more practical recommendations, with detailed examples. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten more practical recommendations for learning a language include:\n\n1. **Language Exchange Programs**: Join language exchange programs like Conversation Exchange or Tandem to connect with native speakers and practice speaking skills in real-time.\n\n2. **Online Tutoring Platforms**: Utilize online tutoring platforms that offer one-on-one sessions, allowing you to learn at your own pace while receiving guidance from a tutor.\n\n3. **Language Immersive Experiences**: Participate in language immersion experiences through podcasts or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening and speaking skills.\n\n4. **Practice Reading and"
+                  ]
+                ]
+              }
+            },
+            "asleep": {
+              "warmup": {
+                "tokens": 128,
+                "prefill_and_generation_seconds": 22.729999999995925,
+                "prefill_and_generation_tokens_s": 5.631324241092079,
+                "response": "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to",
+                "metrics": {
+                  "tokens": 128,
+                  "decodeNs": 19897689121,
+                  "prefillNs": 2832441409,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 2833247292,
+                  "promptTokens": 77,
+                  "reusedPromptTokens": 0
+                },
+                "callbacks": 128,
+                "native_decode_tokens_s": 6.432907822693286,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 130,
+                  "submitted_math_nodes": 77090,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 18421977247,
+                "blocking_wait": true,
+                "raw_history": [
+                  [
+                    "user",
+                    "Explain ten practical ways to learn a language. Give a detailed example for each. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to"
+                  ]
+                ]
+              },
+              "sample": {
+                "tokens": 128,
+                "prefill_and_generation_seconds": 18.90099999999802,
+                "prefill_and_generation_tokens_s": 6.772128458812412,
+                "response": "Ten more practical recommendations for learning a language include:\n\n1. **Language Exchange Programs**: Join language exchange programs like Conversation Exchange or Tandem to connect with native speakers and practice speaking skills in real-time.\n\n2. **Online Tutoring Platforms**: Utilize online tutoring platforms that offer one-on-one sessions, allowing you to learn at your own pace while receiving guidance from a tutor.\n\n3. **Language Immersive Experiences**: Participate in language immersion experiences through podcasts or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening and speaking skills.\n\n4. **Practice Reading and",
+                "metrics": {
+                  "tokens": 128,
+                  "decodeNs": 18020908631,
+                  "prefillNs": 881259024,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 882147402,
+                  "promptTokens": 231,
+                  "reusedPromptTokens": 204
+                },
+                "callbacks": 128,
+                "native_decode_tokens_s": 7.102860495048032,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 128,
+                  "submitted_math_nodes": 75904,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 17597772598,
+                "blocking_wait": true,
+                "raw_history": [
+                  [
+                    "user",
+                    "Explain ten practical ways to learn a language. Give a detailed example for each. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to"
+                  ],
+                  [
+                    "user",
+                    "Give ten more practical recommendations, with detailed examples. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten more practical recommendations for learning a language include:\n\n1. **Language Exchange Programs**: Join language exchange programs like Conversation Exchange or Tandem to connect with native speakers and practice speaking skills in real-time.\n\n2. **Online Tutoring Platforms**: Utilize online tutoring platforms that offer one-on-one sessions, allowing you to learn at your own pace while receiving guidance from a tutor.\n\n3. **Language Immersive Experiences**: Participate in language immersion experiences through podcasts or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening and speaking skills.\n\n4. **Practice Reading and"
+                  ]
+                ]
+              }
+            }
+          },
+          "before": {
+            "awake": {
+              "warmup": {
+                "tokens": 128,
+                "prefill_and_generation_seconds": 24.47500000000582,
+                "prefill_and_generation_tokens_s": 5.2298263534206155,
+                "response": "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to",
+                "metrics": {
+                  "tokens": 128,
+                  "decodeNs": 21820551685,
+                  "prefillNs": 2654587212,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 2657059263,
+                  "promptTokens": 77,
+                  "reusedPromptTokens": 0
+                },
+                "callbacks": 128,
+                "native_decode_tokens_s": 5.866029505018906,
+                "send_to_first_ui_ns": 2697417853,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 130,
+                  "submitted_math_nodes": 77090,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 20603209151,
+                "blocking_wait": false,
+                "raw_history": [
+                  [
+                    "user",
+                    "Explain ten practical ways to learn a language. Give a detailed example for each. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to"
+                  ]
+                ]
+              },
+              "sample": {
+                "tokens": 128,
+                "prefill_and_generation_seconds": 24.64900000000489,
+                "prefill_and_generation_tokens_s": 5.192908434418216,
+                "response": "Ten more practical recommendations for learning a language include:\n\n1. **Language Exchange Programs**: Join language exchange programs like Conversation Exchange or Tandem to connect with native speakers and practice speaking skills in real-time.\n\n2. **Online Tutoring Platforms**: Utilize online tutoring platforms that offer one-on-one sessions, allowing you to learn at your own pace while receiving guidance from a tutor.\n\n3. **Language Immersive Experiences**: Participate in language immersion experiences through podcasts or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening and speaking skills.\n\n4. **Practice Reading and",
+                "metrics": {
+                  "tokens": 128,
+                  "decodeNs": 23960418277,
+                  "prefillNs": 688840839,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 691459496,
+                  "promptTokens": 231,
+                  "reusedPromptTokens": 204
+                },
+                "callbacks": 128,
+                "native_decode_tokens_s": 5.342143802342103,
+                "send_to_first_ui_ns": 745767512,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 128,
+                  "submitted_math_nodes": 75904,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 19225933065,
+                "blocking_wait": false,
+                "raw_history": [
+                  [
+                    "user",
+                    "Explain ten practical ways to learn a language. Give a detailed example for each. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to"
+                  ],
+                  [
+                    "user",
+                    "Give ten more practical recommendations, with detailed examples. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten more practical recommendations for learning a language include:\n\n1. **Language Exchange Programs**: Join language exchange programs like Conversation Exchange or Tandem to connect with native speakers and practice speaking skills in real-time.\n\n2. **Online Tutoring Platforms**: Utilize online tutoring platforms that offer one-on-one sessions, allowing you to learn at your own pace while receiving guidance from a tutor.\n\n3. **Language Immersive Experiences**: Participate in language immersion experiences through podcasts or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening and speaking skills.\n\n4. **Practice Reading and"
+                  ]
+                ]
+              }
+            },
+            "asleep": {
+              "warmup": {
+                "tokens": 128,
+                "prefill_and_generation_seconds": 20.16500000000815,
+                "prefill_and_generation_tokens_s": 6.347632035702865,
+                "response": "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to",
+                "metrics": {
+                  "tokens": 128,
+                  "decodeNs": 17414046667,
+                  "prefillNs": 2751383670,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 2752420586,
+                  "promptTokens": 77,
+                  "reusedPromptTokens": 0
+                },
+                "callbacks": 128,
+                "native_decode_tokens_s": 7.350388019951893,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 130,
+                  "submitted_math_nodes": 77090,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 19096708694,
+                "blocking_wait": false,
+                "raw_history": [
+                  [
+                    "user",
+                    "Explain ten practical ways to learn a language. Give a detailed example for each. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to"
+                  ]
+                ]
+              },
+              "sample": {
+                "tokens": 128,
+                "prefill_and_generation_seconds": 18.610000000000582,
+                "prefill_and_generation_tokens_s": 6.878022568511338,
+                "response": "Ten more practical recommendations for learning a language include:\n\n1. **Language Exchange Programs**: Join language exchange programs like Conversation Exchange or Tandem to connect with native speakers and practice speaking skills in real-time.\n\n2. **Online Tutoring Platforms**: Utilize online tutoring platforms that offer one-on-one sessions, allowing you to learn at your own pace while receiving guidance from a tutor.\n\n3. **Language Immersive Experiences**: Participate in language immersion experiences through podcasts or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening and speaking skills.\n\n4. **Practice Reading and",
+                "metrics": {
+                  "tokens": 128,
+                  "decodeNs": 17742117565,
+                  "prefillNs": 868809596,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 870013509,
+                  "promptTokens": 231,
+                  "reusedPromptTokens": 204
+                },
+                "callbacks": 128,
+                "native_decode_tokens_s": 7.214471414196155,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 128,
+                  "submitted_math_nodes": 75904,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 17350201318,
+                "blocking_wait": false,
+                "raw_history": [
+                  [
+                    "user",
+                    "Explain ten practical ways to learn a language. Give a detailed example for each. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to"
+                  ],
+                  [
+                    "user",
+                    "Give ten more practical recommendations, with detailed examples. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten more practical recommendations for learning a language include:\n\n1. **Language Exchange Programs**: Join language exchange programs like Conversation Exchange or Tandem to connect with native speakers and practice speaking skills in real-time.\n\n2. **Online Tutoring Platforms**: Utilize online tutoring platforms that offer one-on-one sessions, allowing you to learn at your own pace while receiving guidance from a tutor.\n\n3. **Language Immersive Experiences**: Participate in language immersion experiences through podcasts or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening and speaking skills.\n\n4. **Practice Reading and"
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "before": {
+            "awake": {
+              "warmup": {
+                "tokens": 128,
+                "prefill_and_generation_seconds": 24.510999999998603,
+                "prefill_and_generation_tokens_s": 5.222145159316523,
+                "response": "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to",
+                "metrics": {
+                  "tokens": 128,
+                  "decodeNs": 22021175224,
+                  "prefillNs": 2490011083,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 2492486085,
+                  "promptTokens": 77,
+                  "reusedPromptTokens": 0
+                },
+                "callbacks": 128,
+                "native_decode_tokens_s": 5.8125871438731345,
+                "send_to_first_ui_ns": 2573917018,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 130,
+                  "submitted_math_nodes": 77090,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 20897532527,
+                "blocking_wait": false,
+                "raw_history": [
+                  [
+                    "user",
+                    "Explain ten practical ways to learn a language. Give a detailed example for each. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to"
+                  ]
+                ]
+              },
+              "sample": {
+                "tokens": 128,
+                "prefill_and_generation_seconds": 24.49899999999616,
+                "prefill_and_generation_tokens_s": 5.224703049104864,
+                "response": "Ten more practical recommendations for learning a language include:\n\n1. **Language Exchange Programs**: Join language exchange programs like Conversation Exchange or Tandem to connect with native speakers and practice speaking skills in real-time.\n\n2. **Online Tutoring Platforms**: Utilize online tutoring platforms that offer one-on-one sessions, allowing you to learn at your own pace while receiving guidance from a tutor.\n\n3. **Language Immersive Experiences**: Participate in language immersion experiences through podcasts or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening and speaking skills.\n\n4. **Practice Reading and",
+                "metrics": {
+                  "tokens": 128,
+                  "decodeNs": 23824300743,
+                  "prefillNs": 675753238,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 679939620,
+                  "promptTokens": 231,
+                  "reusedPromptTokens": 204
+                },
+                "callbacks": 128,
+                "native_decode_tokens_s": 5.372665556096485,
+                "send_to_first_ui_ns": 743895396,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 128,
+                  "submitted_math_nodes": 75904,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 19832557681,
+                "blocking_wait": false,
+                "raw_history": [
+                  [
+                    "user",
+                    "Explain ten practical ways to learn a language. Give a detailed example for each. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to"
+                  ],
+                  [
+                    "user",
+                    "Give ten more practical recommendations, with detailed examples. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten more practical recommendations for learning a language include:\n\n1. **Language Exchange Programs**: Join language exchange programs like Conversation Exchange or Tandem to connect with native speakers and practice speaking skills in real-time.\n\n2. **Online Tutoring Platforms**: Utilize online tutoring platforms that offer one-on-one sessions, allowing you to learn at your own pace while receiving guidance from a tutor.\n\n3. **Language Immersive Experiences**: Participate in language immersion experiences through podcasts or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening and speaking skills.\n\n4. **Practice Reading and"
+                  ]
+                ]
+              }
+            },
+            "asleep": {
+              "warmup": {
+                "tokens": 128,
+                "prefill_and_generation_seconds": 20.395000000004075,
+                "prefill_and_generation_tokens_s": 6.276048050991637,
+                "response": "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to",
+                "metrics": {
+                  "tokens": 128,
+                  "decodeNs": 17478946463,
+                  "prefillNs": 2914941476,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 2916074340,
+                  "promptTokens": 77,
+                  "reusedPromptTokens": 0
+                },
+                "callbacks": 128,
+                "native_decode_tokens_s": 7.32309583251797,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 130,
+                  "submitted_math_nodes": 77090,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 19205981934,
+                "blocking_wait": false,
+                "raw_history": [
+                  [
+                    "user",
+                    "Explain ten practical ways to learn a language. Give a detailed example for each. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to"
+                  ]
+                ]
+              },
+              "sample": {
+                "tokens": 128,
+                "prefill_and_generation_seconds": 18.60899999999674,
+                "prefill_and_generation_tokens_s": 6.878392175830105,
+                "response": "Ten more practical recommendations for learning a language include:\n\n1. **Language Exchange Programs**: Join language exchange programs like Conversation Exchange or Tandem to connect with native speakers and practice speaking skills in real-time.\n\n2. **Online Tutoring Platforms**: Utilize online tutoring platforms that offer one-on-one sessions, allowing you to learn at your own pace while receiving guidance from a tutor.\n\n3. **Language Immersive Experiences**: Participate in language immersion experiences through podcasts or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening and speaking skills.\n\n4. **Practice Reading and",
+                "metrics": {
+                  "tokens": 128,
+                  "decodeNs": 17712163142,
+                  "prefillNs": 897290800,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 897934789,
+                  "promptTokens": 231,
+                  "reusedPromptTokens": 204
+                },
+                "callbacks": 128,
+                "native_decode_tokens_s": 7.226672370495491,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 128,
+                  "submitted_math_nodes": 75904,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 17288722711,
+                "blocking_wait": false,
+                "raw_history": [
+                  [
+                    "user",
+                    "Explain ten practical ways to learn a language. Give a detailed example for each. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to"
+                  ],
+                  [
+                    "user",
+                    "Give ten more practical recommendations, with detailed examples. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten more practical recommendations for learning a language include:\n\n1. **Language Exchange Programs**: Join language exchange programs like Conversation Exchange or Tandem to connect with native speakers and practice speaking skills in real-time.\n\n2. **Online Tutoring Platforms**: Utilize online tutoring platforms that offer one-on-one sessions, allowing you to learn at your own pace while receiving guidance from a tutor.\n\n3. **Language Immersive Experiences**: Participate in language immersion experiences through podcasts or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening and speaking skills.\n\n4. **Practice Reading and"
+                  ]
+                ]
+              }
+            }
+          },
+          "after": {
+            "awake": {
+              "warmup": {
+                "tokens": 128,
+                "prefill_and_generation_seconds": 24.794999999998254,
+                "prefill_and_generation_tokens_s": 5.1623311151445455,
+                "response": "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to",
+                "metrics": {
+                  "tokens": 128,
+                  "decodeNs": 22228308845,
+                  "prefillNs": 2567599263,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 2570341425,
+                  "promptTokens": 77,
+                  "reusedPromptTokens": 0
+                },
+                "callbacks": 128,
+                "native_decode_tokens_s": 5.758422779373615,
+                "send_to_first_ui_ns": 2623497700,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 130,
+                  "submitted_math_nodes": 77090,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 20496606945,
+                "blocking_wait": true,
+                "raw_history": [
+                  [
+                    "user",
+                    "Explain ten practical ways to learn a language. Give a detailed example for each. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to"
+                  ]
+                ]
+              },
+              "sample": {
+                "tokens": 128,
+                "prefill_and_generation_seconds": 24.8579999999929,
+                "prefill_and_generation_tokens_s": 5.149247727091342,
+                "response": "Ten more practical recommendations for learning a language include:\n\n1. **Language Exchange Programs**: Join language exchange programs like Conversation Exchange or Tandem to connect with native speakers and practice speaking skills in real-time.\n\n2. **Online Tutoring Platforms**: Utilize online tutoring platforms that offer one-on-one sessions, allowing you to learn at your own pace while receiving guidance from a tutor.\n\n3. **Language Immersive Experiences**: Participate in language immersion experiences through podcasts or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening and speaking skills.\n\n4. **Practice Reading and",
+                "metrics": {
+                  "tokens": 128,
+                  "decodeNs": 24124147730,
+                  "prefillNs": 734386168,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 738104080,
+                  "promptTokens": 231,
+                  "reusedPromptTokens": 204
+                },
+                "callbacks": 128,
+                "native_decode_tokens_s": 5.30588692427975,
+                "send_to_first_ui_ns": 781325338,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 128,
+                  "submitted_math_nodes": 75904,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 19375607571,
+                "blocking_wait": true,
+                "raw_history": [
+                  [
+                    "user",
+                    "Explain ten practical ways to learn a language. Give a detailed example for each. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to"
+                  ],
+                  [
+                    "user",
+                    "Give ten more practical recommendations, with detailed examples. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten more practical recommendations for learning a language include:\n\n1. **Language Exchange Programs**: Join language exchange programs like Conversation Exchange or Tandem to connect with native speakers and practice speaking skills in real-time.\n\n2. **Online Tutoring Platforms**: Utilize online tutoring platforms that offer one-on-one sessions, allowing you to learn at your own pace while receiving guidance from a tutor.\n\n3. **Language Immersive Experiences**: Participate in language immersion experiences through podcasts or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening and speaking skills.\n\n4. **Practice Reading and"
+                  ]
+                ]
+              }
+            },
+            "asleep": {
+              "warmup": {
+                "tokens": 128,
+                "prefill_and_generation_seconds": 19.218999999997322,
+                "prefill_and_generation_tokens_s": 6.66007596649242,
+                "response": "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to",
+                "metrics": {
+                  "tokens": 128,
+                  "decodeNs": 16611283571,
+                  "prefillNs": 2606685475,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 2607408782,
+                  "promptTokens": 77,
+                  "reusedPromptTokens": 0
+                },
+                "callbacks": 128,
+                "native_decode_tokens_s": 7.7056056175853,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 130,
+                  "submitted_math_nodes": 77090,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 18107604157,
+                "blocking_wait": true,
+                "raw_history": [
+                  [
+                    "user",
+                    "Explain ten practical ways to learn a language. Give a detailed example for each. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to"
+                  ]
+                ]
+              },
+              "sample": {
+                "tokens": 128,
+                "prefill_and_generation_seconds": 17.845000000001164,
+                "prefill_and_generation_tokens_s": 7.172877556738114,
+                "response": "Ten more practical recommendations for learning a language include:\n\n1. **Language Exchange Programs**: Join language exchange programs like Conversation Exchange or Tandem to connect with native speakers and practice speaking skills in real-time.\n\n2. **Online Tutoring Platforms**: Utilize online tutoring platforms that offer one-on-one sessions, allowing you to learn at your own pace while receiving guidance from a tutor.\n\n3. **Language Immersive Experiences**: Participate in language immersion experiences through podcasts or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening and speaking skills.\n\n4. **Practice Reading and",
+                "metrics": {
+                  "tokens": 128,
+                  "decodeNs": 17002795356,
+                  "prefillNs": 842802327,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 843974388,
+                  "promptTokens": 231,
+                  "reusedPromptTokens": 204
+                },
+                "callbacks": 128,
+                "native_decode_tokens_s": 7.528173886703339,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 128,
+                  "submitted_math_nodes": 75904,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 16800375242,
+                "blocking_wait": true,
+                "raw_history": [
+                  [
+                    "user",
+                    "Explain ten practical ways to learn a language. Give a detailed example for each. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten practical ways to learn a language include:\n\n1. **Online Courses and Tutorials**: Websites like Coursera, Udemy, and edX offer courses on various languages such as Spanish, French, German, Italian, Portuguese, and more. You can find free resources online that cater to your learning goals.\n\n2. **Language Immersive Experiences**: Engage in language immersion experiences through podcasts, audiobooks, or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening skills and comprehension.\n\n3. **Practice Speaking and Writing**: Engage with native speakers by speaking to"
+                  ],
+                  [
+                    "user",
+                    "Give ten more practical recommendations, with detailed examples. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    "Ten more practical recommendations for learning a language include:\n\n1. **Language Exchange Programs**: Join language exchange programs like Conversation Exchange or Tandem to connect with native speakers and practice speaking skills in real-time.\n\n2. **Online Tutoring Platforms**: Utilize online tutoring platforms that offer one-on-one sessions, allowing you to learn at your own pace while receiving guidance from a tutor.\n\n3. **Language Immersive Experiences**: Participate in language immersion experiences through podcasts or YouTube channels where you immerse yourself in the culture of a country or region. This helps improve your listening and speaking skills.\n\n4. **Practice Reading and"
+                  ]
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "release_approved": false,
+      "model_sha256": "2e8040ceae7815abe0dcb3540b9995eaa1fa0d2ca9e797d0a635ae4433c68c2d",
+      "code_and_copy": {
+        "stream": "PASS",
+        "history": "PASS"
+      },
+      "result": {
+        "status": "WAIT_GAIN_NOT_MET",
+        "gain_passed": false,
+        "kind": "text",
+        "performance": {
+          "status": "TEXT_GAIN_GATE_NOT_MET",
+          "text_gain_passed": false,
+          "observations": {
+            "awake": {
+              "decode_speedup_ratios": [
+                1.0297442327062998,
+                0.9860677826108978,
+                0.9875706702530628
+              ],
+              "median_decode_speedup": 0.9875706702530628,
+              "first_ui_speedup_ratios": [
+                1.0289977804976327,
+                0.9843282675308015,
+                0.9520942939137089
+              ],
+              "median_first_ui_speedup": 0.9843282675308015
+            },
+            "asleep": {
+              "decode_speedup_ratios": [
+                0.9968353382851689,
+                0.9845295777416897,
+                1.0417206565830763
+              ],
+              "median_decode_speedup": 0.9968353382851689
+            }
+          },
+          "requirements": "Each awake pair >=10% faster decode; awake median >=15%; no asleep pair >3% slower; no awake first-UI pair >5.3% slower.",
+          "scope": "Three paired warmed text continuations, same model/prompt/context/128-token budget, software Vulkan. Not cold startup or physical-device certification."
+        },
+        "worker_cpu_speedup_ratios": [
+          0.9671214868142712,
+          0.9711389979731789,
+          1.0235837822543397
+        ],
+        "median_worker_cpu_ratio": 0.9711389979731789,
+        "physical_gpu_certified": false,
+        "release_approved": false,
+        "scope": "Same APK polling versus default blocking; all model tensor math remains on selected Vulkan backend. Warmed full work, no precision/budget changes. Text: each awake >=10%, median >=15%, sleep/first-text regression guards. Images: encoder and first-UI >=10% in both pairs. Worker CPU time lower in each awake pair. Not release/all-model/physical-device certification."
+      },
+      "scope": "Same APK/GGUF/sampling/context/full input/budget. Polling control env=0; candidate uses its default blocking wait with flag absent. Warmups excluded. Same GPU completion fence, no artificial timing delay or shader/precision changes. Text: three paired ON/OFF runs; images: two paired warmed full encodes with cache disabled in BOTH modes. Software Vulkan only; not physical GPU or general release approval.",
+      "retrieval": {
+        "commit": "d3aa6688e98fab53ff1e4c03e0e7d27622b9736d",
+        "path": "ci-results/35378808404-1-wait-text/summary.json",
+        "computed_git_blob_sha1": "612b3fc1ef77117c332a97e6d876fe09180fb05c",
+        "published_blob_prefix": "612b3fc",
+        "sha256": "13a3e7d06e614fc9a9d3135f7e00e0750aa35f6fc28a23e0bcf8f65fb20178f7",
+        "transport": "Public GitHub rawLines, immutable commit and 7-char Git blob prefix. Not authenticated git or an independently expected full hash.",
+        "subsequently_confirmed_by_authenticated_git": true,
+        "authenticated_commit": "d3aa6688e98fab53ff1e4c03e0e7d27622b9736d",
+        "authenticated_git_blob_sha1": "612b3fc1ef77117c332a97e6d876fe09180fb05c"
+      }
+    },
+    "images": {
+      "status": "WAIT_GAIN_NOT_MET",
+      "kind": "images",
+      "build": {
+        "apk_sha256": "a24a3fdcba15bf4e037e6a1ba5bbc66d3edf0569a683623b817d74133313f39e",
+        "source_commit": "e0709c2d13e4eaa860ed96237708069d448281ef",
+        "experimental_wait_build": true,
+        "default_blocking_wait": true,
+        "control": "Same APK with GGUF_VULKAN_BLOCKING_WAIT=0; candidate flag absent",
+        "release_approved": false
+      },
+      "pairs": [
+        {
+          "before": {
+            "awake": {
+              "warmup": {
+                "tokens": 2,
+                "prefill_and_generation_seconds": 233.59700000000885,
+                "prefill_and_generation_tokens_s": 0.008561753789645948,
+                "response": "Dog.",
+                "metrics": {
+                  "tokens": 2,
+                  "decodeNs": 708754122,
+                  "prefillNs": 232888586756,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 232907642436,
+                  "promptTokens": 513,
+                  "reusedPromptTokens": 0
+                },
+                "callbacks": 2,
+                "native_decode_tokens_s": 2.82185307699699,
+                "send_to_first_ui_ns": 233278644845,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 28,
+                  "submitted_math_nodes": 15139,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 170436177617,
+                "blocking_wait": false,
+                "raw_history": [
+                  [
+                    "user",
+                    "Arquivo anexado: 1 arquivo(s)\n\nAnexos vinculados a esta mensagem para leitura.\n\nName the main animal in the image. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    " Dog."
+                  ]
+                ],
+                "image_records": [
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ]
+                ],
+                "prepared_dimensions": [
+                  [
+                    "1024",
+                    "803",
+                    "ImageDecoder"
+                  ]
+                ],
+                "stages": {
+                  "bitmap_ns": 28732138,
+                  "tokenize_ns": 22786051,
+                  "key_ns": 551,
+                  "encode_call_ns": 191923489634,
+                  "encode_calls": 5,
+                  "hits": 0,
+                  "verified_hits": 0,
+                  "verification": 0,
+                  "cache_disabled": 1
+                }
+              },
+              "sample": {
+                "tokens": 2,
+                "prefill_and_generation_seconds": 204.34500000000116,
+                "prefill_and_generation_tokens_s": 0.009787369399789516,
+                "response": "Dog.",
+                "metrics": {
+                  "tokens": 2,
+                  "decodeNs": 686142688,
+                  "prefillNs": 203660404392,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 203663094322,
+                  "promptTokens": 538,
+                  "reusedPromptTokens": 0
+                },
+                "callbacks": 2,
+                "native_decode_tokens_s": 2.914845607157443,
+                "send_to_first_ui_ns": 204062226344,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 28,
+                  "submitted_math_nodes": 15139,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 142838491872,
+                "blocking_wait": false,
+                "raw_history": [
+                  [
+                    "user",
+                    "Arquivo anexado: 1 arquivo(s)\n\nAnexos vinculados a esta mensagem para leitura.\n\nName the main animal in the image. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    " Dog."
+                  ],
+                  [
+                    "user",
+                    "Name the main animal in the image. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    " Dog."
+                  ]
+                ],
+                "image_records": [
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ]
+                ],
+                "prepared_dimensions": [
+                  [
+                    "1024",
+                    "803",
+                    "ImageDecoder"
+                  ]
+                ],
+                "stages": {
+                  "bitmap_ns": 29125813,
+                  "tokenize_ns": 21781857,
+                  "key_ns": 410,
+                  "encode_call_ns": 176752288513,
+                  "encode_calls": 5,
+                  "hits": 0,
+                  "verified_hits": 0,
+                  "verification": 0,
+                  "cache_disabled": 1
+                }
+              }
+            }
+          },
+          "after": {
+            "awake": {
+              "warmup": {
+                "tokens": 2,
+                "prefill_and_generation_seconds": 205.2609999999986,
+                "prefill_and_generation_tokens_s": 0.009743692177276803,
+                "response": "Dog.",
+                "metrics": {
+                  "tokens": 2,
+                  "decodeNs": 692483812,
+                  "prefillNs": 204568352756,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 204572201498,
+                  "promptTokens": 513,
+                  "reusedPromptTokens": 0
+                },
+                "callbacks": 2,
+                "native_decode_tokens_s": 2.888154156591317,
+                "send_to_first_ui_ns": 204962795304,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 28,
+                  "submitted_math_nodes": 15139,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 149572499335,
+                "blocking_wait": true,
+                "raw_history": [
+                  [
+                    "user",
+                    "Arquivo anexado: 1 arquivo(s)\n\nAnexos vinculados a esta mensagem para leitura.\n\nName the main animal in the image. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    " Dog."
+                  ]
+                ],
+                "image_records": [
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ]
+                ],
+                "prepared_dimensions": [
+                  [
+                    "1024",
+                    "803",
+                    "ImageDecoder"
+                  ]
+                ],
+                "stages": {
+                  "bitmap_ns": 29142052,
+                  "tokenize_ns": 24369227,
+                  "key_ns": 420,
+                  "encode_call_ns": 178258320788,
+                  "encode_calls": 5,
+                  "hits": 0,
+                  "verified_hits": 0,
+                  "verification": 0,
+                  "cache_disabled": 1
+                }
+              },
+              "sample": {
+                "tokens": 2,
+                "prefill_and_generation_seconds": 205.75100000000384,
+                "prefill_and_generation_tokens_s": 0.009720487385237314,
+                "response": "Dog.",
+                "metrics": {
+                  "tokens": 2,
+                  "decodeNs": 709711296,
+                  "prefillNs": 205041716321,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 205043992148,
+                  "promptTokens": 538,
+                  "reusedPromptTokens": 0
+                },
+                "callbacks": 2,
+                "native_decode_tokens_s": 2.818047297925493,
+                "send_to_first_ui_ns": 205430093159,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 28,
+                  "submitted_math_nodes": 15139,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 152380728081,
+                "blocking_wait": true,
+                "raw_history": [
+                  [
+                    "user",
+                    "Arquivo anexado: 1 arquivo(s)\n\nAnexos vinculados a esta mensagem para leitura.\n\nName the main animal in the image. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    " Dog."
+                  ],
+                  [
+                    "user",
+                    "Name the main animal in the image. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    " Dog."
+                  ]
+                ],
+                "image_records": [
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ]
+                ],
+                "prepared_dimensions": [
+                  [
+                    "1024",
+                    "803",
+                    "ImageDecoder"
+                  ]
+                ],
+                "stages": {
+                  "bitmap_ns": 29400604,
+                  "tokenize_ns": 24038730,
+                  "key_ns": 432,
+                  "encode_call_ns": 178190231865,
+                  "encode_calls": 5,
+                  "hits": 0,
+                  "verified_hits": 0,
+                  "verification": 0,
+                  "cache_disabled": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "after": {
+            "awake": {
+              "warmup": {
+                "tokens": 2,
+                "prefill_and_generation_seconds": 205.16199999999662,
+                "prefill_and_generation_tokens_s": 0.009748393952096552,
+                "response": "Dog.",
+                "metrics": {
+                  "tokens": 2,
+                  "decodeNs": 680936893,
+                  "prefillNs": 204480207797,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 204485510332,
+                  "promptTokens": 513,
+                  "reusedPromptTokens": 0
+                },
+                "callbacks": 2,
+                "native_decode_tokens_s": 2.9371297407438313,
+                "send_to_first_ui_ns": 204877746461,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 28,
+                  "submitted_math_nodes": 15139,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 145558715159,
+                "blocking_wait": true,
+                "raw_history": [
+                  [
+                    "user",
+                    "Arquivo anexado: 1 arquivo(s)\n\nAnexos vinculados a esta mensagem para leitura.\n\nName the main animal in the image. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    " Dog."
+                  ]
+                ],
+                "image_records": [
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ]
+                ],
+                "prepared_dimensions": [
+                  [
+                    "1024",
+                    "803",
+                    "ImageDecoder"
+                  ]
+                ],
+                "stages": {
+                  "bitmap_ns": 29566144,
+                  "tokenize_ns": 23356327,
+                  "key_ns": 451,
+                  "encode_call_ns": 177931744638,
+                  "encode_calls": 5,
+                  "hits": 0,
+                  "verified_hits": 0,
+                  "verification": 0,
+                  "cache_disabled": 1
+                }
+              },
+              "sample": {
+                "tokens": 2,
+                "prefill_and_generation_seconds": 206.95900000000256,
+                "prefill_and_generation_tokens_s": 0.009663749824844414,
+                "response": "Dog.",
+                "metrics": {
+                  "tokens": 2,
+                  "decodeNs": 661159724,
+                  "prefillNs": 206297448542,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 206300544338,
+                  "promptTokens": 538,
+                  "reusedPromptTokens": 0
+                },
+                "callbacks": 2,
+                "native_decode_tokens_s": 3.024987650336668,
+                "send_to_first_ui_ns": 206692405699,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 28,
+                  "submitted_math_nodes": 15139,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 152874320787,
+                "blocking_wait": true,
+                "raw_history": [
+                  [
+                    "user",
+                    "Arquivo anexado: 1 arquivo(s)\n\nAnexos vinculados a esta mensagem para leitura.\n\nName the main animal in the image. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    " Dog."
+                  ],
+                  [
+                    "user",
+                    "Name the main animal in the image. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    " Dog."
+                  ]
+                ],
+                "image_records": [
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ]
+                ],
+                "prepared_dimensions": [
+                  [
+                    "1024",
+                    "803",
+                    "ImageDecoder"
+                  ]
+                ],
+                "stages": {
+                  "bitmap_ns": 29230989,
+                  "tokenize_ns": 23854625,
+                  "key_ns": 492,
+                  "encode_call_ns": 179325114265,
+                  "encode_calls": 5,
+                  "hits": 0,
+                  "verified_hits": 0,
+                  "verification": 0,
+                  "cache_disabled": 1
+                }
+              }
+            }
+          },
+          "before": {
+            "awake": {
+              "warmup": {
+                "tokens": 2,
+                "prefill_and_generation_seconds": 206.38400000000547,
+                "prefill_and_generation_tokens_s": 0.009690673695635064,
+                "response": "Dog.",
+                "metrics": {
+                  "tokens": 2,
+                  "decodeNs": 673097299,
+                  "prefillNs": 205710909860,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 205713336261,
+                  "promptTokens": 513,
+                  "reusedPromptTokens": 0
+                },
+                "callbacks": 2,
+                "native_decode_tokens_s": 2.971338620688775,
+                "send_to_first_ui_ns": 206118503525,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 28,
+                  "submitted_math_nodes": 15139,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 153630938477,
+                "blocking_wait": false,
+                "raw_history": [
+                  [
+                    "user",
+                    "Arquivo anexado: 1 arquivo(s)\n\nAnexos vinculados a esta mensagem para leitura.\n\nName the main animal in the image. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    " Dog."
+                  ]
+                ],
+                "image_records": [
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ]
+                ],
+                "prepared_dimensions": [
+                  [
+                    "1024",
+                    "803",
+                    "ImageDecoder"
+                  ]
+                ],
+                "stages": {
+                  "bitmap_ns": 29500713,
+                  "tokenize_ns": 22957310,
+                  "key_ns": 421,
+                  "encode_call_ns": 179087920080,
+                  "encode_calls": 5,
+                  "hits": 0,
+                  "verified_hits": 0,
+                  "verification": 0,
+                  "cache_disabled": 1
+                }
+              },
+              "sample": {
+                "tokens": 2,
+                "prefill_and_generation_seconds": 206.4539999999979,
+                "prefill_and_generation_tokens_s": 0.009687387989576468,
+                "response": "Dog.",
+                "metrics": {
+                  "tokens": 2,
+                  "decodeNs": 677007127,
+                  "prefillNs": 205777842095,
+                  "completed": true,
+                  "version": 3,
+                  "timingScope": "prefill_synchronized_before_decode",
+                  "firstTokenNs": 205780379419,
+                  "promptTokens": 538,
+                  "reusedPromptTokens": 0
+                },
+                "callbacks": 2,
+                "native_decode_tokens_s": 2.9541786492891675,
+                "send_to_first_ui_ns": 206161064783,
+                "strict": {
+                  "status": "PASS",
+                  "submitted_graphs": 28,
+                  "submitted_math_nodes": 15139,
+                  "tensor_cpu_fallback": "blocked_by_native_policy",
+                  "host_orchestration": "CPU",
+                  "physical_gpu_certified": false
+                },
+                "worker_cpu_ns": 152982527217,
+                "blocking_wait": false,
+                "raw_history": [
+                  [
+                    "user",
+                    "Arquivo anexado: 1 arquivo(s)\n\nAnexos vinculados a esta mensagem para leitura.\n\nName the main animal in the image. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    " Dog."
+                  ],
+                  [
+                    "user",
+                    "Name the main animal in the image. Reply in English."
+                  ],
+                  [
+                    "assistant",
+                    " Dog."
+                  ]
+                ],
+                "image_records": [
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ],
+                  [
+                    "64",
+                    "Vulkan"
+                  ]
+                ],
+                "prepared_dimensions": [
+                  [
+                    "1024",
+                    "803",
+                    "ImageDecoder"
+                  ]
+                ],
+                "stages": {
+                  "bitmap_ns": 29686649,
+                  "tokenize_ns": 23230380,
+                  "key_ns": 443,
+                  "encode_call_ns": 178575214204,
+                  "encode_calls": 5,
+                  "hits": 0,
+                  "verified_hits": 0,
+                  "verification": 0,
+                  "cache_disabled": 1
+                }
+              }
+            }
+          }
+        }
+      ],
+      "release_approved": false,
+      "model_sha256": "650283ee95856be73ff45fa277ac6a4238b4d1bb52a670983c2e1690fd352a12",
+      "code_and_copy": {
+        "stream": "PASS",
+        "history": "PASS"
+      },
+      "result": {
+        "status": "WAIT_GAIN_NOT_MET",
+        "gain_passed": false,
+        "kind": "images",
+        "performance": {
+          "first_ui_speedup_ratios": [
+            0.9933414486944652,
+            0.9974293157302848
+          ],
+          "encoder_speedup_ratios": [
+            0.9919302908080314,
+            0.9958182094902122
+          ]
+        },
+        "worker_cpu_speedup_ratios": [
+          0.9373789827022765,
+          1.0007078129894083
+        ],
+        "median_worker_cpu_ratio": 0.9690433978458424,
+        "physical_gpu_certified": false,
+        "release_approved": false,
+        "scope": "Same APK polling versus default blocking; all model tensor math remains on selected Vulkan backend. Warmed full work, no precision/budget changes. Text: each awake >=10%, median >=15%, sleep/first-text regression guards. Images: encoder and first-UI >=10% in both pairs. Worker CPU time lower in each awake pair. Not release/all-model/physical-device certification."
+      },
+      "scope": "Same APK/GGUF/sampling/context/full input/budget. Polling control env=0; candidate uses its default blocking wait with flag absent. Warmups excluded. Same GPU completion fence, no artificial timing delay or shader/precision changes. Text: three paired ON/OFF runs; images: two paired warmed full encodes with cache disabled in BOTH modes. Software Vulkan only; not physical GPU or general release approval.",
+      "retrieval": {
+        "commit": "d3aa6688e98fab53ff1e4c03e0e7d27622b9736d",
+        "path": "ci-results/35378808404-1-wait-images/summary.json",
+        "computed_git_blob_sha1": "ff9e097a3220d8d4848cabbb01a596ac074107e9",
+        "published_blob_prefix": "ff9e097",
+        "sha256": "5841118697048887f5dbdd78abaa432b486609a29b1676f6cfff4bd8586c9f98",
+        "transport": "Public GitHub rawLines, immutable commit and 7-char Git blob prefix. Not authenticated git or an independently expected full hash.",
+        "subsequently_confirmed_by_authenticated_git": true,
+        "authenticated_commit": "d3aa6688e98fab53ff1e4c03e0e7d27622b9736d",
+        "authenticated_git_blob_sha1": "ff9e097a3220d8d4848cabbb01a596ac074107e9"
+      }
+    }
+  }
+}

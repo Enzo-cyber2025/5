@@ -1,0 +1,65 @@
+build: .cache/llama-host-build
+--- first attempt, error lines ---
+/home/runner/work/5/5/.cache/llama-host/ggml/src/ggml-vulkan/ggml-vulkan.cpp:17172:45: error: invalid initialization of reference of type ‘vk_device&’ {aka ‘std::shared_ptr<vk_device_struct>&’} from expression of type ‘vk_device_ref’ {aka ‘std::weak_ptr<vk_device_struct>’}
+gmake[3]: *** [ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/build.make:989: ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ggml-vulkan.cpp.o] Error 1
+gmake[2]: *** [CMakeFiles/Makefile2:884: ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/all] Error 2
+gmake[1]: *** [CMakeFiles/Makefile2:1322: tools/llama-bench/CMakeFiles/llama-bench.dir/rule] Error 2
+gmake: *** [Makefile:365: llama-bench] Error 2
+--- first attempt, tail ---
+[ 68%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/pool2d.comp.cpp.o
+[ 68%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/quantize_q8_1.comp.cpp.o
+[ 70%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/reglu.comp.cpp.o
+[ 70%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/repeat.comp.cpp.o
+[ 70%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/repeat_back.comp.cpp.o
+[ 70%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/rms_norm.comp.cpp.o
+[ 70%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/rms_norm_back.comp.cpp.o
+[ 71%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/rms_norm_partials.comp.cpp.o
+[ 71%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/roll.comp.cpp.o
+[ 71%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/rope_multi.comp.cpp.o
+[ 71%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/rope_neox.comp.cpp.o
+[ 71%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/rope_norm.comp.cpp.o
+[ 71%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/rope_vision.comp.cpp.o
+[ 72%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/scale.comp.cpp.o
+[ 72%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/silu_back.comp.cpp.o
+gmake[3]: *** [ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/build.make:989: ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ggml-vulkan.cpp.o] Error 1
+gmake[3]: *** Waiting for unfinished jobs....
+gmake[2]: *** [CMakeFiles/Makefile2:884: ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/all] Error 2
+gmake[1]: *** [CMakeFiles/Makefile2:1322: tools/llama-bench/CMakeFiles/llama-bench.dir/rule] Error 2
+gmake: *** [Makefile:365: llama-bench] Error 2
+--- retry, error lines ---
+/home/runner/work/5/5/.cache/llama-host/ggml/src/ggml-vulkan/ggml-vulkan.cpp:17172:45: error: invalid initialization of reference of type ‘vk_device&’ {aka ‘std::shared_ptr<vk_device_struct>&’} from expression of type ‘vk_device_ref’ {aka ‘std::weak_ptr<vk_device_struct>’}
+gmake[3]: *** [ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/build.make:989: ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ggml-vulkan.cpp.o] Error 1
+gmake[2]: *** [CMakeFiles/Makefile2:884: ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/all] Error 2
+gmake[1]: *** [CMakeFiles/Makefile2:1322: tools/llama-bench/CMakeFiles/llama-bench.dir/rule] Error 2
+gmake: *** [Makefile:365: llama-bench] Error 2
+--- retry, tail ---
+[ 10%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/soft_max_large3.comp.cpp.o
+[ 10%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/solve_tri.comp.cpp.o
+[ 10%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ssm_conv.comp.cpp.o
+[ 10%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ssm_scan.comp.cpp.o
+[ 11%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/sub.comp.cpp.o
+[ 11%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/sum_rows.comp.cpp.o
+[ 11%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/swiglu.comp.cpp.o
+[ 11%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/swiglu_clamp.comp.cpp.o
+[ 11%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/swiglu_oai.comp.cpp.o
+[ 12%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/timestep_embedding.comp.cpp.o
+[ 12%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/topk_argsort.comp.cpp.o
+[ 12%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/topk_moe.comp.cpp.o
+[ 12%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/topk_nary_search.comp.cpp.o
+[ 12%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/topk_radix_select.comp.cpp.o
+[ 12%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/tri.comp.cpp.o
+[ 13%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/unary.comp.cpp.o
+[ 13%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/upscale.comp.cpp.o
+[ 13%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/wkv6.comp.cpp.o
+[ 13%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/wkv7.comp.cpp.o
+/home/runner/work/5/5/.cache/llama-host/ggml/src/ggml-vulkan/ggml-vulkan.cpp: In function ‘void ggml_backend_vk_set_tensor_async(ggml_backend_t, ggml_tensor*, const void*, size_t, size_t)’:
+/home/runner/work/5/5/.cache/llama-host/ggml/src/ggml-vulkan/ggml-vulkan.cpp:17172:45: error: invalid initialization of reference of type ‘vk_device&’ {aka ‘std::shared_ptr<vk_device_struct>&’} from expression of type ‘vk_device_ref’ {aka ‘std::weak_ptr<vk_device_struct>’}
+17172 |         gguf_aligned_q5_store(gguf_buf_ctx->device, tensor, data);
+      |                               ~~~~~~~~~~~~~~^~~~~~
+/home/runner/work/5/5/.cache/llama-host/ggml/src/ggml-vulkan/ggml-vulkan.cpp:9843:47: note: in passing argument 1 of ‘void gguf_aligned_q5_store(vk_device&, const ggml_tensor*, const void*)’
+ 9843 | static void gguf_aligned_q5_store(vk_device & device, const ggml_tensor * t, const void * data) {
+      |                                   ~~~~~~~~~~~~^~~~~~
+gmake[3]: *** [ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/build.make:989: ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ggml-vulkan.cpp.o] Error 1
+gmake[2]: *** [CMakeFiles/Makefile2:884: ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/all] Error 2
+gmake[1]: *** [CMakeFiles/Makefile2:1322: tools/llama-bench/CMakeFiles/llama-bench.dir/rule] Error 2
+gmake: *** [Makefile:365: llama-bench] Error 2

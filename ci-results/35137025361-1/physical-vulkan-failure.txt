@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/home/runner/work/5/5/scripts/test_vulkan_speed_android.py", line 92, in main
+    model = d.import_model(TEXT)
+            ^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_android.py", line 270, in import_model
+    return self.wait(completed, f"importação persistida de {source.name}", timeout=300)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_android.py", line 74, in wait
+    raise AssertionError(f"Timeout: {description}")
+AssertionError: Timeout: importação persistida de SmolLM2-135M-Instruct-Q4_K_M.gguf

@@ -1,0 +1,105 @@
+{
+  "status": "SIGNED_LATENCY_ANDROID_PASS",
+  "apk_sha256": "eabd016935ac51cdd89063a97fbc1b562f7f9261981f54b5191d37734e7922eb",
+  "source_commit": "ce0118db8646f1523d11725a8c5c29b6e88230f2",
+  "signer_sha256": "4f75afe8637f28ccb167db407e3b2bc9b260e1cfe6059b7377ea20b0b4dc2ac3",
+  "run": 35017084063,
+  "job": 104543107009,
+  "attempt": 1,
+  "commit": "4266f9b948292dc1feb111962a4d18e2894e4fd9",
+  "checks": {
+    "signature_change_blocks_update_without_data_loss": "PASS",
+    "installation_policy_verified": "PASS",
+    "prefix_reuse_system_edit_restart_and_footer": "PASS",
+    "identical_outputs_with_real_prefix_reuse": "PASS",
+    "cancel_invalidates_partial_cache": "PASS",
+    "real_image_no_text_cache_screen_off_and_lease_release": "PASS",
+    "same_image_embeddings_reused_and_changed_images_reencoded": "PASS"
+  },
+  "installation_scope": "different certificate: refused update; fresh install on disposable emulator ONLY, no data migration claim",
+  "ui_review": {
+    "status": "PASS",
+    "apk_sha256": "eabd016935ac51cdd89063a97fbc1b562f7f9261981f54b5191d37734e7922eb",
+    "method": "Opened and visually inspected all five real emulator PNGs; no generated/mock screenshots.",
+    "images": [
+      {
+        "path": "ci-results/35017084063-1/physical-latency-follow-footer.png",
+        "sha256": "832efc0e43453f3525ec7b28698008fbad4a2e246ce27c2f3d68525fda974f24",
+        "observation": "4.5 tokens/s cold and 7.6 tokens/s follow-up, both 128 tokens; footer below response; camera disabled for text model."
+      },
+      {
+        "path": "ci-results/35017084063-1/physical-latency-changed-system-footer.png",
+        "sha256": "e9308cfcfed2d8867a05e2db5832bde2a8762227c7b4d84325e27f32e5631537",
+        "observation": "7.3 tokens/s and 128 tokens, full newlines retained. Model answer is not the requested code; same answer as baseline, not semantic quality approval."
+      },
+      {
+        "path": "ci-results/35017084063-1/physical-latency-reopened-footer.png",
+        "sha256": "f1f93249ceebb65cd6987fafe2a317393325078f40b2c0beb4cf76f5c820c403",
+        "observation": "Same response and 7.3 tokens/s / 128 tokens persisted after process restart."
+      },
+      {
+        "path": "ci-results/35017084063-1/physical-latency-vision-footer.png",
+        "sha256": "d40204995dc1a257fed18104bef7256c6d18a764167850519889b0e98a61fa09",
+        "observation": "Actual Dog response; 45.0 tokens/s for only two tokens, not a benchmark; footer below bubble."
+      },
+      {
+        "path": "ci-results/35017084063-1/physical-latency-cached-image-footer.png",
+        "sha256": "e931dc0358f087b7c3ce4397d84a4bcc6902cfcb9669e2db0e8ae625e5356b61",
+        "observation": "Repeated same image gives White dog; measured footer below each response; 3 and 4 token replies are not a decode-rate benchmark."
+      }
+    ]
+  },
+  "benchmark": {
+    "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+    "model_sha256": "2e8040ceae7815abe0dcb3540b9995eaa1fa0d2ca9e797d0a635ae4433c68c2d",
+    "backend": "CPU",
+    "threads": 2,
+    "context": 2048,
+    "warmup_pairs_excluded": 1,
+    "repetitions": 3,
+    "scope": "Prefill and engine token generation are measured by native monotonic clock. firstTokenNs is engine-to-first-delivery, NOT tap-to-screen or model-loading time. No physical-phone speed certification.",
+    "cold": {
+      "before": {
+        "prefill_ms": 9809.546386,
+        "decode_tokens_s": 4.479989931805027,
+        "native_total_ms": 38325.519803
+      },
+      "after": {
+        "prefill_ms": 9878.775052,
+        "decode_tokens_s": 4.520536489646424,
+        "native_total_ms": 37803.359122
+      }
+    },
+    "follow": {
+      "before": {
+        "prefill_ms": 14643.442087,
+        "decode_tokens_s": 7.566613305217003,
+        "native_total_ms": 31559.860944
+      },
+      "after": {
+        "prefill_ms": 1465.212215,
+        "decode_tokens_s": 7.64559537344314,
+        "native_total_ms": 18206.877677
+      }
+    },
+    "follow_prefill_reduction_percent": 89.99407238889025,
+    "follow_native_total_reduction_percent": 42.310019333398245,
+    "new_first_delivery_ms": {
+      "cold": 9881.105971,
+      "follow": 1470.177935
+    }
+  },
+  "image_prefill_ms": {
+    "cold": 21745.825337,
+    "warm": 4784.319344,
+    "scope": "Same image and native process, different follow-up questions. One observation, not a statistical speed guarantee."
+  },
+  "limits": [
+    "Android 35 x86_64 emulator, not a physical phone or physical GPU performance certification.",
+    "Three measured text pairs per version after an excluded warmup pair. Same GGUF bytes, sampling and context.",
+    "No meaningful cold-prefill or decode-only speedup claimed. Main measured improvement is reused-history prefill.",
+    "One cold/warm image comparison with different follow-up questions, not a statistical image speed guarantee.",
+    "Identical test outputs do not establish universal model accuracy. Tiny models remain repetitive and can ignore the requested system reference code.",
+    "New certificate cannot update the previous certificate; uninstalling may destroy app data. No data migration guarantee."
+  ]
+}

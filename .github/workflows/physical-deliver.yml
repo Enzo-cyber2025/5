@@ -1,0 +1,25 @@
+name: Deliver tested signed physical GGUF APK
+# Tag the publication revision; the binary source/hash and completed run stay pinned.
+on:
+  push:
+    branches: [arena/01a09b42-5]
+    paths: [.github/workflows/physical-deliver.yml]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  deliver:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: Verify functional acceptance, disclose quality failures and compare public APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: Enzo-cyber2025/5
+        run: bash ci/log_step.sh physical-delivery bash ci/deliver_physical.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: physical-delivery-verification
+          path: .cache/ci-logs/

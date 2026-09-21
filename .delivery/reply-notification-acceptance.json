@@ -1,0 +1,30 @@
+{
+  "status": "SIGNED_REPLY_NOTIFICATION_ANDROID_PASS",
+  "apk_sha256": "3baa171c78eb5ee7f6f5c3c212904f53547a13184b9c01ea1d6ec565e2f5152e",
+  "run": 35024391643,
+  "job": 104567769488,
+  "commit": "f189650ded443bfcdf9f3438c188e1bfde2d9fe9",
+  "attempt": 1,
+  "ui_review": {
+    "status": "PASS",
+    "apk_sha256": "3baa171c78eb5ee7f6f5c3c212904f53547a13184b9c01ea1d6ec565e2f5152e",
+    "images": [
+      {
+        "path": "ci-results/35024391643-1/physical-reply-notification-shade.png",
+        "sha256": "9b78ebd39085a5e77f065087ec946c26edc0c484ece5e18f3da4619a31eff7a6",
+        "review": "Actual Android shade: Resposta pronta, generic saved-response body, above Silent group."
+      },
+      {
+        "path": "ci-results/35024391643-1/physical-latency-notification-opened-chat.png",
+        "sha256": "1a35f156423920bf46339f96fe22eae1fabe96efb60e69f48735d26e12d14b5f",
+        "review": "Correct destination conversation, saved response and 44.7 tokens/s / 128 tokens footer visible; send enabled."
+      }
+    ],
+    "scope": "Original emulator screenshots opened and visually reviewed. Vision screenshot is black because captured while asleep; it is not used as visual evidence. Vision inference is proved separately by saved response, native image-inference logs, sleep chronology and actual NotificationManager record."
+  },
+  "limits": [
+    "Android 35 x86_64 emulator, not a physical phone or audible-speaker test.",
+    "Single text equality comparison is not a statistical performance benchmark.",
+    "Notification delivery respects runtime permission, channel settings and DND."
+  ]
+}

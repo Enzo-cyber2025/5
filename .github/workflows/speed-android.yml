@@ -1,0 +1,70 @@
+name: Signed tokens per second and real before-after benchmark
+on:
+  push:
+    branches: [arena/01a09b42-5]
+    paths: [ci/speed-candidate.json, scripts/test_generation_stats_android.py, .github/workflows/speed-android.yml]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  test:
+    if: ${{ contains(github.event.head_commit.message, '[speed candidate]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Exact signed payload and baseline
+        run: |
+          mkdir -p .cache evidence
+          python3 - <<'PY'
+          import hashlib,json,zipfile
+          from pathlib import Path
+          c=json.load(open('ci/speed-candidate.json'));m=json.load(open('.delivery/mobile-signed.json'));u=json.load(open('.delivery/mobile-build.json'))
+          assert c['apk_sha256']==m['apk_sha256']==hashlib.sha256(Path('.delivery/GGUF-Chat-mobile.apk').read_bytes()).hexdigest()
+          assert c['source_commit']==m['source_commit']==u['source_commit']
+          assert c['signer_sha256']==m['signer_sha256']=='3dd851d414caaa20d06ea22391e75b752aab0d26c749168b3353dd389b1332da'
+          assert m['unsigned_sha256']==u['sha256']==hashlib.sha256(Path('.delivery/GGUF-Chat-mobile-unsigned.apk').read_bytes()).hexdigest()
+          with zipfile.ZipFile('.delivery/GGUF-Chat-mobile.apk') as a,zipfile.ZipFile('.delivery/GGUF-Chat-mobile-unsigned.apk') as b:
+            assert a.namelist()==b.namelist()
+            for n in a.namelist():assert a.read(n)==b.read(n)
+          PY
+          SIGNER=$(find "$ANDROID_HOME/build-tools" -path '*/apksigner' -type f | sort -V | tail -1)
+          "$SIGNER" verify --verbose --print-certs .delivery/GGUF-Chat-mobile.apk | tee evidence/physical-speed-signature.txt
+          grep 'certificate SHA-256 digest: 3dd851d414caaa20d06ea22391e75b752aab0d26c749168b3353dd389b1332da' evidence/physical-speed-signature.txt
+          curl -fL --retry 3 'https://raw.githubusercontent.com/Enzo-cyber2025/5/2af2b3894fe18d4a8eb5c3320cc0d9539b78d44d/.delivery/GGUF-Chat-mobile.apk' -o .cache/speed-baseline.apk
+          echo '0c45fd2e6c318da3ebb961bbd461c56d7401161c31a1869157f509550e4b05d1  .cache/speed-baseline.apk' | sha256sum -c -
+          python3 -m venv .venv
+          .venv/bin/pip install numpy==2.2.6 tqdm==4.67.1 pyyaml==6.0.2
+          git clone --depth 1 --branch v0.4.1 https://github.com/ggml-org/llama.cpp .cache/llama-mobile
+          test "$(git -C .cache/llama-mobile rev-parse HEAD)" = b29c606e28a01b1bc8c1351026a0fa6e616bf6c4
+          bash ci/mobile-models.sh
+          sudo chmod a+rw /dev/kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GGUF_TEST_APK: .delivery/GGUF-Chat-mobile.apk
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_5
+          ram-size: 6144M
+          heap-size: 1024M
+          disk-size: 8192M
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: .venv/bin/python scripts/test_generation_stats_android.py
+      - name: Report
+        if: always()
+        run: python3 ci/report_android.py evidence
+      - name: Publish real bounded evidence
+        if: always()
+        run: bash ci/publish_evidence.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tokens-per-second-evidence
+          path: evidence/

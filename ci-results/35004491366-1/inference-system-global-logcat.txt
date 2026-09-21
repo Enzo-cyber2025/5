@@ -1,0 +1,27 @@
+--------- beginning of main
+09-15 18:15:44.990  9478  9478 I ImeTracker: com.ggufchat.app:8b3c0f1b: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser true
+09-15 18:15:44.991  9478  9478 D InputMethodManager: showSoftInput() view=android.widget.EditText{4409360 VFED..CL. .F.P..ID 128,0-493,67 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+09-15 18:15:44.995  9478  9478 I AssistStructure: Flattened final assist data: 1964 bytes, containing 1 windows, 13 views
+09-15 18:15:44.999  9478  9491 D EGL_emulation: app_time_stats: avg=225.33ms min=5.29ms max=2936.15ms count=14
+09-15 18:15:45.124  9478  9478 D InsetsController: show(ime(), fromIme=true)
+09-15 18:15:45.142  9478  9615 W InteractionJankMonitor: Initializing without READ_DEVICE_CONFIG permission. enabled=true, interval=1, missedFrameThreshold=3, frameTimeThreshold=64, package=com.ggufchat.app
+09-15 18:15:45.235  9478  9478 I ImeTracker: com.ggufchat.app:8b3c0f1b: onShown
+09-15 18:15:46.029  9478  9491 D EGL_emulation: app_time_stats: avg=30.75ms min=6.84ms max=135.55ms count=22
+09-15 18:15:47.114  9478  9491 D EGL_emulation: app_time_stats: avg=170.51ms min=12.40ms max=499.34ms count=6
+09-15 18:15:48.115  9478  9491 D EGL_emulation: app_time_stats: avg=500.04ms min=499.54ms max=500.54ms count=2
+09-15 18:15:48.425  9478  9478 I ImeTracker: com.ggufchat.app:a30ae4b: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+09-15 18:15:48.442  9478  9478 D InsetsController: hide(ime(), fromIme=true)
+09-15 18:15:48.601  9478  9664 I GGUFSystem: GGUF_SYSTEM_PROMPT_APPLIED scope=global chars=75 sha256=1642448ffe03fdfa0e9dd148bf55b31a93a931b0bd21348014965592430a22bf
+09-15 18:15:48.609  9478  9664 I GGUFInference: GGUF_CONTENT_PREPARED files=0 images=0 text_chars=0
+09-15 18:15:48.618  9478  9478 I ImeTracker: com.ggufchat.app:e31d9d3c: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_ON_ANIMATION_STATE_CHANGED fromUser false
+09-15 18:15:48.619  9478  9478 I ImeTracker: com.ggufchat.app:a30ae4b: onHidden
+09-15 18:15:48.772  9478  9478 W FrameTracker: Missed App frame:JANK_APP_DEADLINE_MISSED, 61499, 0, CUJ=J<IME_INSETS_SHOW_ANIMATION::0@0@com.ggufchat.app>
+09-15 18:15:49.137  9478  9491 D EGL_emulation: app_time_stats: avg=68.93ms min=15.39ms max=271.19ms count=14
+09-15 18:15:50.095  9478  9664 I GGUFChatNative: GGUF_PROMPT_CACHE input_tokens=43 reused_tokens=0 evaluated_tokens=43 media=0
+09-15 18:15:50.153  9478  9491 D EGL_emulation: app_time_stats: avg=57.72ms min=9.05ms max=456.56ms count=16
+09-15 18:15:51.172  9478  9491 D EGL_emulation: app_time_stats: avg=21.04ms min=8.43ms max=55.70ms count=39
+09-15 18:15:52.201  9478  9491 D EGL_emulation: app_time_stats: avg=28.31ms min=14.19ms max=96.87ms count=30
+09-15 18:15:52.501  9478  9664 I GGUFChatNative: GGUF_NATIVE_COMPLETE tokens=14 reason=eog projector=0
+09-15 18:15:52.501  9478  9664 I GGUFChatNative: GGUF_RESPONSE_LATENCY first_token_ns=1488564731 prompt_tokens=43 reused_tokens=0
+09-15 18:15:52.501  9478  9664 I GGUFChatNative: GGUF_GENERATION_STATS tokens=14 decode_ns=2405397242 prefill_ns=1485982204 callbacks=14 success=1
+09-15 18:15:52.501  9478  9664 I System.out: GGUF_REPAIR_GENERATION_OK

@@ -1,0 +1,71 @@
+{
+  "status": "FAIL",
+  "scope": "single-stored-unit-SAF-eye-Vulkan-projector-text",
+  "checks": {
+    "saf_multiselect_pair": "PASS",
+    "imported_sha256": "PASS",
+    "single_stored_unit_and_eye": "PASS",
+    "pair_survives_restart": "PASS",
+    "native_model_and_projector_load": "PASS",
+    "vulkan_language_and_projector_weights": "PASS",
+    "compact_single_row_10px_toggle": "PASS",
+    "native_generation_and_persistence": "PASS",
+    "second_vulkan_generation": "PASS",
+    "basic_response_quality": "PASS",
+    "repeat_saf_import_keeps_pairs_separate": "PASS",
+    "normal_model_without_eye": "PASS",
+    "delete_unit_removes_both_preserves_others": "PASS",
+    "physical_A55": "NOT_TESTED: emulator x86_64 is not Samsung ARM64 hardware",
+    "image_inference": "NOT_TESTED: model/projector load and text message only"
+  },
+  "apk_sha256": "9cd84919a40b66ec79b33b2195996f329d0e3d3a4c3811e0ef49bc23e7b77ce1",
+  "backend_requested": "Vulkan, 99 language layers requested; projector weights also Vulkan",
+  "environment": "Android Vulkan through Mesa software driver, not physical GPU",
+  "generation_pid": "4975",
+  "offload_records": [
+    "offloaded 31/31 layers to GPU"
+  ],
+  "attachment_checks": {
+    "multimodal_controls": {
+      "camera_bounds": [
+        24,
+        1201,
+        78,
+        1255
+      ],
+      "clip_bounds": [
+        88,
+        1201,
+        142,
+        1255
+      ],
+      "input_bounds": [
+        152,
+        1195,
+        541,
+        1262
+      ],
+      "camera_enabled": true
+    },
+    "multiple_photos_from_files": "PASS",
+    "mixed_types_empty_large_and_exact_bytes": "PASS",
+    "draft_survives_restart": "PASS",
+    "two_real_camera_photos": [
+      {
+        "width": 1392,
+        "height": 1856,
+        "size": 74372,
+        "sha256": "8d9d1d1afea6119047943ddbf02a23d66cb722e30b7cc820bc146f446e46c051"
+      },
+      {
+        "width": 1392,
+        "height": 1856,
+        "size": 73018,
+        "sha256": "ea392d0f508cc7890c060acbd2c9b0ddd75e3cbade53c02caeb0c3723dbaa00b"
+      }
+    ],
+    "remove_one_preserves_others": "PASS"
+  },
+  "attachment_scope": "real SAF multi-file/photo selection, external camera, persistence, removal and message binding; NOT content inference",
+  "error": "Attachment test: "
+}

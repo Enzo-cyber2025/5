@@ -1,0 +1,40 @@
+--------- beginning of main
+09-14 20:49:28.512 21525 21525 I ImeTracker: com.ggufchat.app:7246284: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser true
+09-14 20:49:28.512 21525 21525 D InputMethodManager: showSoftInput() view=android.widget.EditText{2106fb3 VFED..CL. .F.P..ID 128,0-517,67 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+09-14 20:49:28.526 21525 21538 D EGL_emulation: app_time_stats: avg=127.56ms min=3.17ms max=3267.58ms count=31
+09-14 20:49:28.668 21525 21525 D InsetsController: show(ime(), fromIme=true)
+09-14 20:49:28.688 21525 22082 W InteractionJankMonitor: Initializing without READ_DEVICE_CONFIG permission. enabled=true, interval=1, missedFrameThreshold=3, frameTimeThreshold=64, package=com.ggufchat.app
+09-14 20:49:28.729 21525 21525 I ImeTracker: com.ggufchat.app:7246284: onShown
+09-14 20:49:29.565 21525 21538 D EGL_emulation: app_time_stats: avg=33.34ms min=4.81ms max=193.54ms count=26
+09-14 20:49:30.583 21525 21538 D EGL_emulation: app_time_stats: avg=27.80ms min=3.90ms max=77.63ms count=31
+09-14 20:49:31.590 21525 21538 D EGL_emulation: app_time_stats: avg=335.61ms min=25.90ms max=501.04ms count=3
+09-14 20:49:32.688 21525 21538 D EGL_emulation: app_time_stats: avg=366.12ms min=100.15ms max=499.99ms count=3
+09-14 20:49:32.700 21525 21525 I ImeTracker: com.ggufchat.app:c23a4d7: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+09-14 20:49:32.762 21525 21525 D InsetsController: hide(ime(), fromIme=true)
+09-14 20:49:32.822 21525 22115 I GGUFSystem: GGUF_SYSTEM_PROMPT_APPLIED scope=global chars=107 sha256=dde45e87ea07db0b49bcddd022d4f41a452610560d9af636571c26d16a4bcd04
+09-14 20:49:32.865 21525 21525 I ImeTracker: com.ggufchat.app:254b73ad: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_ON_ANIMATION_STATE_CHANGED fromUser false
+09-14 20:49:32.867 21525 21525 I ImeTracker: com.ggufchat.app:c23a4d7: onHidden
+09-14 20:49:32.950 21525 22115 D nativeloader: Load libpdfclient.so using APEX ns com_android_mediaprovider for caller /apex/com.android.mediaprovider/javalib/framework-pdf.jar: ok
+09-14 20:49:33.093 21525 22115 D pdf_document_jni: Creating FPDF_DOCUMENT from fd: 106
+09-14 20:49:33.270 21525 22115 D pdf_document_jni: Deleting Document: 0x73cfb428bd50
+09-14 20:49:33.270 21525 22115 D pdf_document_jni: Destroyed Document: 0x73cfb428bd50
+09-14 20:49:33.274 21525 22115 I GGUFInference: GGUF_CONTENT_PREPARED files=1 images=1 text_chars=1
+09-14 20:49:33.739 21525 21538 D EGL_emulation: app_time_stats: avg=31.19ms min=4.98ms max=210.94ms count=26
+09-14 20:49:35.233 21525 21538 D EGL_emulation: app_time_stats: avg=497.67ms min=483.78ms max=508.22ms count=3
+09-14 20:49:36.737 21525 21538 D EGL_emulation: app_time_stats: avg=501.42ms min=493.15ms max=511.52ms count=3
+09-14 20:49:38.249 21525 21538 D EGL_emulation: app_time_stats: avg=503.97ms min=496.21ms max=513.09ms count=3
+09-14 20:49:39.255 21525 21538 D EGL_emulation: app_time_stats: avg=502.88ms min=501.14ms max=504.62ms count=2
+09-14 20:49:40.256 21525 21538 D EGL_emulation: app_time_stats: avg=500.34ms min=491.58ms max=509.10ms count=2
+09-14 20:49:41.265 21525 21538 D EGL_emulation: app_time_stats: avg=504.44ms min=494.91ms max=513.98ms count=2
+09-14 20:49:42.783 21525 21538 D EGL_emulation: app_time_stats: avg=505.98ms min=493.63ms max=519.20ms count=3
+09-14 20:49:43.155 21525 21525 E FrameTracker: force finish cuj, time out: J<IME_INSETS_HIDE_ANIMATION::1@0@com.ggufchat.app>
+09-14 20:49:43.808 21525 21538 D EGL_emulation: app_time_stats: avg=512.03ms min=479.82ms max=544.24ms count=2
+09-14 20:49:44.812 21525 21538 D EGL_emulation: app_time_stats: avg=501.99ms min=480.67ms max=523.31ms count=2
+09-14 20:49:46.281 21525 21538 D EGL_emulation: app_time_stats: avg=489.75ms min=473.87ms max=499.16ms count=3
+09-14 20:49:47.027 21525 22115 I GGUFChatNative: GGUF_IMAGE_EVALUATED tokens=64 backend=Vulkan
+09-14 20:49:47.281 21525 21538 D EGL_emulation: app_time_stats: avg=499.97ms min=498.64ms max=501.30ms count=2
+09-14 20:49:48.756 21525 22115 I GGUFChatNative: GGUF_MEDIA_PREFILL images=1 tokens=257 positions=257
+09-14 20:49:48.782 21525 21538 D EGL_emulation: app_time_stats: avg=500.18ms min=494.09ms max=505.77ms count=3
+09-14 20:49:49.793 21525 21538 D EGL_emulation: app_time_stats: avg=20.25ms min=6.08ms max=48.10ms count=36
+09-14 20:49:49.884 21525 22115 I GGUFChatNative: GGUF_NATIVE_COMPLETE tokens=3 reason=eog projector=1
+09-14 20:49:49.885 21525 22115 I System.out: GGUF_REPAIR_GENERATION_OK

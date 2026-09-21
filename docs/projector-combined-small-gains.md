@@ -1,0 +1,96 @@
+# Pequenos ganhos combinados: qualificar, não somar porcentagens
+
+O usuário reiterou que qualquer ganho estável é válido. Batch2 (+1,40%) e QKV
+(+0,49%) tiveram dois pares exploratórios positivos, mas isolados, ambos com
+RGB Vulkan e sem prova da combinação. O APK entregue bd7c45d continua intacto.
+
+## Experimento isolado
+
+- Um único APK, mesmos GGUF, entrada integral, contexto, sampling e orçamento.
+- Controle: processamento serial/separado, **RGB original na CPU**. Tratamento:
+  batch2 + QKV, **o mesmo RGB original**. Não importar o antigo experimento RGB
+  como suposto ganho nem multiplicar porcentagens de runners diferentes.
+- Uma terceira autorização explícita `GGUF_PROJECTOR_COMBINATION=1` é exigida
+  além das duas flags. Não habilitar a combinação no build/uso normal.
+- Primeiro, em GPU, conferir bytes dos pesos e **todos** os embeddings combinados
+  contra encodes individuais com projeções originais, no mesmo contexto. A
+  política real de atenção AUTO deve coincidir também entre modos/processos.
+- Qualquer diferença ou erro impede que os jobs de velocidade comecem.
+- Depois, três pares AB/BA/AB aquecidos em quatro tarefas separadas: imagens
+  ON, imagens OFF, texto ON/OFF com o mesmo modelo visual carregado e cache de
+  imagens habilitado. Cache fica desligado nos dois lados dos testes do encoder.
+- Sem mínimo antigo de 5%: qualquer ganho positivo **nos três pares ON**, tanto
+  no encoder quanto Send→primeiro texto, é elegível. Outros testes não podem
+  apresentar queda >3% por observação nem mediana negativa. Isso é consistência
+  observada em poucas amostras, não garantia estatística ou para todo aparelho.
+- Código/Copy, respostas completas, tokens, dimensões, bytes de upload e rotas
+  estritas também precisam passar. Sono deve ser real, com aviso de conclusão.
+- Reportar bytes extras de QKV, PSS e tempo de abertura do chat. PSS depois da
+  geração não é pico nem memória total de GPU. Não esconder o custo de memória.
+
+## Decisão conjunta
+
+`ci/evaluate_projector_combined_bundle.py` exige a prova numérica e os quatro
+relatórios completos. Recalcula cada resultado, confere o mesmo APK/prova e
+recusa controles ausentes ou trocados: uma vitória em imagens não encobre uma
+regressão em texto, sono ou cache. Mesmo o resultado positivo se chama
+`PASS_COMBINED_QUALIFICATION_NOT_RELEASE`, mantendo `release_approved=false`.
+
+```sh
+python3 ci/evaluate_projector_combined_bundle.py \
+  --proof ci-results/35392374636-1-combined-verify/summary.json \
+  --awake ci-results/35392374636-1-combined-awake/summary.json \
+  --asleep ci-results/35392374636-1-combined-asleep/summary.json \
+  --text ci-results/${EOS_RUN_ID:?}-1-combined-text-eos/summary.json \
+  --cache ci-results/35392374636-1-combined-cache/summary.json
+```
+
+Esses caminhos só estarão completos após os respectivos jobs publicarem suas
+medições; o comando não aceita resultado pendente como aprovação. Antes de uma
+nova entrega, também é necessário comparar a configuração final contra o **APK
+realmente entregue**: os dois modos de um APK experimental isolam as flags, mas
+não provam o efeito de todas as diferenças de código em relação à entrega.
+
+A inicialização QKV atual só aceita um subconjunto de Idefics3. Mesmo uma vitória
+nos testes não autoriza habilitar a flag indiscriminadamente em todos os modelos:
+a ativação segura por capacidade/arquitetura e as implicações de memória ainda
+precisam ser tratadas antes de outra entrega. Não trocar o APK assinado atual ou
+sua chave por causa deste experimento. A chave privada do certificado atual não
+está disponível no ambiente restaurado; não gerar substituta silenciosamente.
+
+
+## Controle de texto: recuperação sem recompilar o APK
+
+O job de texto de `35392374636` parou no primeiro warmup: a resposta terminou
+normalmente em EOS com **103 tokens**, mantendo `nPredict=128`. Não chegou a
+comparar os modos; não registrar isso como lentidão, ganho ou controle aprovado.
+Esse relatório histórico permanece intacto.
+
+`projector-text-eos.yml` repete **somente** esse controle com o APK de SHA
+`2053c037e3d9ca776f9c1d285722338c4967135044d7c026803450bd0b33baf1`
+e a prova de bytes baixados da execução original. Não recompila o candidato nem
+aproveita uma medição de outro APK. O limite continua 128, deve haver contexto
+para todo o orçamento, as respostas/tokens devem ser iguais entre braços, e
+respostas menores que 64 tokens não servem à medição. `eog` é obrigatório abaixo
+de 128; `length` é obrigatório ao atingir o limite. Sem suprimir EOS ou inventar
+tokens. Três pares AB/BA/AB, tela ON/OFF, todos os demais controles preservados.
+
+No comando acima, `EOS_RUN_ID` deve apontar à execução dessa recuperação. O
+agrupador exige o mesmo build e a mesma prova dos outros três workloads. Se a
+recuperação falhar, o pacote completo segue sem aprovação. Alterações sem a tag
+`[projector combined]` usam outro grupo de concorrência para não interromper
+as medições originais ainda em execução.
+
+
+## Resultados recebidos em 18/09/2026: combinação não aprovada
+
+- Imagens ON, `35392374636`: os três pares passaram. Razões Send→primeiro
+  texto: 1,025836 / 1,031412 / 1,002291; encoder: 1,031337 / 1,042557 /
+  1,007693. Memória QKV adicional: 22.671.360 bytes.
+- Controle de texto recuperado, `35397655356`, mesmo APK/prova: executou
+  corretamente, mas **não passou o controle de regressão**. Decode ON:
+  1,028751 / 0,993936 / 1,018272. Decode OFF: 1,011138 / 0,863607 /
+  0,991250; primeiro token nativo OFF: 1,003396 / 0,842567 / 0,958538.
+- Portanto, mesmo com ganhos em imagens ON, **não habilitar a combinação**
+  por padrão nem incorporá-la à entrega. Não enfraquecer o limite de regressão
+  ou substituir o resultado por outra repetição favorável. APK bd7c45d intacto.

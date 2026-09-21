@@ -1,0 +1,48 @@
+{
+  "status": "QUALITY_PASS_SPEED_GATE_NOT_MET",
+  "source_commit": "7fcfb6bc264a9fc87bebee90a66ebc366b4b55a2",
+  "run": 35266241599,
+  "job": 105354027833,
+  "local_tests": {
+    "passed": 200,
+    "skipped": 70
+  },
+  "default_enabled": false,
+  "release_approved": false,
+  "speed_approved": false,
+  "physical_gpu_certified": false,
+  "protocol": "Same APK and full photo, GPU packing both modes, cache disabled, two warm AB/BA pairs; separate full embedding-byte verification",
+  "host_work_remaining": [
+    "file IO",
+    "decode",
+    "resize/crops",
+    "normalization",
+    "mtmd temporary input copies"
+  ],
+  "delivered_apk_unchanged": true,
+  "ci_conclusion": "success",
+  "timing_evaluation": {
+    "status": "NO_CONSISTENT_GAIN_OVER_5_PERCENT",
+    "observations": [
+      {
+        "serial_send_to_first_ui_seconds": 212.477423359,
+        "paired_send_to_first_ui_seconds": 209.04852461,
+        "ratio": 1.0164024058787162,
+        "serial_encode_calls": 5,
+        "paired_encode_calls": 3
+      },
+      {
+        "serial_send_to_first_ui_seconds": 212.089829076,
+        "paired_send_to_first_ui_seconds": 209.661030782,
+        "ratio": 1.0115844050033571,
+        "serial_encode_calls": 5,
+        "paired_encode_calls": 3
+      }
+    ],
+    "median_ratio": 1.0139934054410367,
+    "quality_gate": "passed raw histories and separate bit verification",
+    "scope": "Two warmed same-run pairs, AB/BA, full uncached photo. Not cold startup, screen-off, statistics, physical GPU or release approval.",
+    "release_approved": false,
+    "physical_gpu_certified": false
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "status": "QUALITY_PASS_SPEED_GATE_NOT_MET",
+  "source_commit": "1eb0920dd608d9dbd85a3f9091c837ea0a0d130b",
+  "run": 35275074925,
+  "job": 105383599707,
+  "local_tests": {
+    "passed": 203,
+    "skipped": 70
+  },
+  "default_enabled": false,
+  "speed_approved": false,
+  "release_approved": false,
+  "physical_gpu_certified": false,
+  "scope": "QKV device-byte concatenation, original quantization preserved; separate GPU reference before warm ABBA timing; extra GPU weights retained and reported",
+  "delivered_apk_unchanged": true,
+  "ci_conclusion": "success",
+  "completed_at": "2026-09-17T21:46:17Z",
+  "tested_apk_sha256": "fbce6c438d39d4fd0118121a113b89b31fe05766b51eb9b4fab16668c8cb9e2c",
+  "host_tests": {
+    "passed": 23,
+    "skipped": 0
+  },
+  "verified_image_chunks": 5,
+  "verified_weight_bytes": 22671360,
+  "extra_device_bytes": 22671360,
+  "evaluation": {
+    "status": "NO_CONSISTENT_GAIN_OVER_5_PERCENT",
+    "observations": [
+      {
+        "separate_first_ui_s": 100.0257558,
+        "fused_first_ui_s": 99.215900931,
+        "ratio": 1.0081625511777916,
+        "separate_encode_call_s": 86.061302507,
+        "fused_encode_call_s": 85.572547239
+      },
+      {
+        "separate_first_ui_s": 99.064295752,
+        "fused_first_ui_s": 98.901670256,
+        "ratio": 1.001644314960294,
+        "separate_encode_call_s": 85.452622261,
+        "fused_encode_call_s": 85.359460279
+      }
+    ],
+    "median_ratio": 1.004903433069043,
+    "realized_flash_attention": "enabled",
+    "extra_device_bytes": [
+      22671360,
+      22671360,
+      22671360
+    ],
+    "quality": "exact original weight-copy bytes, full projector output reference, raw saved histories",
+    "scope": "Two AB/BA warmed observations per mode on one software-Vulkan runner; not physical GPU, statistics, cold startup or global speedup",
+    "release_approved": false,
+    "physical_gpu_certified": false
+  },
+  "adoption": "Not enabled by default: less than 1 percent observed improvement, 21.621 MiB extra device memory; two observations cannot separate tiny differences from noise.",
+  "reviewed_screenshots": {
+    "physical-latency-qkv-0-fused.png": "85173df96701b77f450cbbab60f977639f9e69de3597672c14ac16c3c3ce1ed6",
+    "physical-latency-qkv-0-separate.png": "07549be92459f9f0bf0c173da8096433e9984461d1c1e037761c2ece074b0974",
+    "physical-latency-qkv-1-fused.png": "c960c80ef6d299ae1e7e9af34f2434bd894916eaf6389b5d6f70915b6c3b5a92",
+    "physical-latency-qkv-1-separate.png": "f5c98dc8fb53cc29e238083df2bbeecab2edeceeeaea280271f2e8c153169cf7"
+  }
+}

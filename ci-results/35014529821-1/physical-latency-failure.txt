@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/home/runner/work/5/5/scripts/test_latency_android.py", line 76, in main
+    d.shell('ime enable com.ggufchat.testinput/.InputBridge')
+  File "/home/runner/work/5/5/scripts/test_android.py", line 47, in shell
+    return self.adb("shell", command, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_android.py", line 41, in adb
+    raise RuntimeError(f"ADB falhou ({result.returncode}): {args}\n{detail}")
+RuntimeError: ADB falhou (255): ('shell', 'ime enable com.ggufchat.testinput/.InputBridge')
+Unknown input method com.ggufchat.testinput/.InputBridge cannot be enabled for user #0
+

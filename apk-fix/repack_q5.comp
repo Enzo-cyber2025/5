@@ -1,0 +1,33 @@
+#version 450
+// Lossless encoded-layout transform: TWO Q5_0 blocks (44 bytes) -> TWO
+// Q8_0 blocks (68 bytes). Original fp16 scale bits are copied, NOT recomputed.
+// Only integer operations; no new quantization and no floating-point rounding.
+layout(local_size_x=64,local_size_y=1,local_size_z=1) in;
+layout(binding=0) readonly buffer Source { uint source_words[]; };
+layout(binding=1) writeonly buffer Target { uint target_words[]; };
+layout(push_constant) uniform Parameters {uint pairs;uint source_offset_words;uint target_offset_words;} p;
+uint byte_at(uint byte_index) {
+    return (source_words[p.source_offset_words+byte_index/4] >> ((byte_index%4)*8)) & 255u;
+}
+uint output_byte(uint pair_index,uint index) {
+    uint block=index/34u;
+    uint lane=index%34u;
+    uint source_base=pair_index*44u+block*22u;
+    if(lane<2u)return byte_at(source_base+lane);
+    lane-=2u;
+    uint packed=byte_at(source_base+6u+(lane%16u));
+    uint low=lane<16u ? (packed&15u) : (packed>>4);
+    uint high=(byte_at(source_base+2u+lane/8u)>>(lane%8u))&1u;
+    int signed_value=int(low | (high<<4))-16;
+    return uint(signed_value)&255u;
+}
+void main() {
+    uint pair_index=gl_GlobalInvocationID.x;
+    if(pair_index>=p.pairs)return;
+    for(uint word=0u;word<17u;++word) {
+        uint b=word*4u;
+        target_words[p.target_offset_words+pair_index*17u+word]=
+            output_byte(pair_index,b) | (output_byte(pair_index,b+1u)<<8) |
+            (output_byte(pair_index,b+2u)<<16) | (output_byte(pair_index,b+3u)<<24);
+    }
+}

@@ -1,0 +1,200 @@
+{
+  "status": "PASS_EXPERIMENTAL_VULKAN_PACKING_BYTES_ONLY",
+  "build": {
+    "before_sha256": "bb09d9669109ed906f75187e8f00fa506f55d8eec18896e6063c6742cb373f9c",
+    "after_sha256": "46d76fe41eca76e3242d33d5baa4463f2e1ab1c5d5ea8fa127f610cda00ec7d3",
+    "delivered_sha256": "323fd5a33667c6cab278699e97c89fe253e1bb7acead45b869729bf022eb9f5c",
+    "baseline_payload_exact": true,
+    "candidate_native": {
+      "lib/arm64-v8a/libggufdiagnostics.so": "255e52f814d968e8dd008e8cea12c522aad06d943dffe8a30fe095485058b26c",
+      "lib/x86_64/libggufdiagnostics.so": "dd07c5a6aef3d75a7aec0325c20dddd6b58a313085254927291dc07dcf3c0139",
+      "lib/arm64-v8a/libaijni.so": "8156e3417f367e102b487c76c467f9edd2bbe58a8729e7117b5c1dfb5ed93d1e",
+      "lib/arm64-v8a/libggufcpu.so": "961aedde471f8a87ef305cfe2ec496beb11046fe198893a701ac994962343061",
+      "lib/arm64-v8a/libc++_shared.so": "cb304e649e49cb65766da9d20a2d8bb8bd0c7cfd383e1f73838f838d1263c548",
+      "lib/arm64-v8a/libaijni_dotprod.so": "b6219849c93dba8726b1dde83a16c04b36a8c12bde37cbd0b2ec171a55fa2a54",
+      "lib/arm64-v8a/libaijni_i8mm.so": "d56f949ec7dfc95d10bece0badf9b13aaea77aa65844ec7e0a0f6b7ccf4d5a70",
+      "lib/x86_64/libaijni.so": "af841b9a2aabb1fa32de37f05c1b413fb42fbdb04c206fbd665c44e1bfa4247c",
+      "lib/x86_64/libggufcpu.so": "9a9605bb5b5853888abf070555b45e37530b9c2ee979ae356537305d5c315b7b",
+      "lib/x86_64/libc++_shared.so": "0e8aaa2ef7f9abbe54ad76dab5162f3b7bf1a92ba1b3c63221443ecb87c1b568"
+    },
+    "source_commit": "5e66e0fcef7811cb3b76c24c30d53b04881f212b",
+    "release": false,
+    "signature": "Disposable shared experiment key; NOT the delivered update certificate."
+  },
+  "tested_apk_sha256": "46d76fe41eca76e3242d33d5baa4463f2e1ab1c5d5ea8fa127f610cda00ec7d3",
+  "control_kind": "same candidate APK, Vulkan packing flag unset",
+  "both_modes_same_apk": true,
+  "series": {
+    "control": {
+      "tokens": 2,
+      "prefill_and_generation_seconds": 250.0060000000085,
+      "prefill_and_generation_tokens_s": 0.007999808004607617,
+      "response": "Dog.",
+      "metrics": {
+        "tokens": 2,
+        "decodeNs": 753770655,
+        "prefillNs": 249252112843,
+        "completed": true,
+        "version": 3,
+        "timingScope": "prefill_synchronized_before_decode",
+        "firstTokenNs": 249262148695,
+        "promptTokens": 513,
+        "reusedPromptTokens": 0
+      },
+      "callbacks": 2,
+      "native_decode_tokens_s": 2.653326959245979,
+      "send_to_first_ui_ns": 249698482198,
+      "strict": {
+        "status": "PASS",
+        "submitted_graphs": 28,
+        "submitted_math_nodes": 15139,
+        "tensor_cpu_fallback": "blocked_by_native_policy",
+        "host_orchestration": "CPU",
+        "physical_gpu_certified": false
+      },
+      "raw_response": " Dog.",
+      "uploads": [
+        [
+          "CPU",
+          "3145728",
+          "1"
+        ],
+        [
+          "CPU",
+          "3145728",
+          "1"
+        ],
+        [
+          "CPU",
+          "3145728",
+          "1"
+        ],
+        [
+          "CPU",
+          "3145728",
+          "1"
+        ],
+        [
+          "CPU",
+          "3145728",
+          "1"
+        ]
+      ],
+      "embedding_digests": [
+        [
+          "57f7af82188cc470c6a8e3fc910a083f7f762258a63a08d1a531fba2407143d5",
+          "147456"
+        ],
+        [
+          "0e66a125c1a8b95de7504a6a9661d863075f841084b34cd9163ebf091c274141",
+          "147456"
+        ],
+        [
+          "d21e1102ac27235aaaadccf3e7be9fda56e01be68a2cd2d8d6ce3f885fee8aa3",
+          "147456"
+        ],
+        [
+          "fe7551e40c2cc19d84ccb0f5276d92b217fd2a3a9e5153f9729e572457e72382",
+          "147456"
+        ],
+        [
+          "418c3afdd8057deb598a71a82c061c9f42eec1ab7203cf80e8ba4b57069eeb5c",
+          "147456"
+        ]
+      ],
+      "pixel_verification_bytes": [],
+      "benchmark": false
+    },
+    "vulkan": {
+      "tokens": 2,
+      "prefill_and_generation_seconds": 218.97500000000582,
+      "prefill_and_generation_tokens_s": 0.009133462724055014,
+      "response": "Dog.",
+      "metrics": {
+        "tokens": 2,
+        "decodeNs": 719611990,
+        "prefillNs": 218255427515,
+        "completed": true,
+        "version": 3,
+        "timingScope": "prefill_synchronized_before_decode",
+        "firstTokenNs": 218284193529,
+        "promptTokens": 513,
+        "reusedPromptTokens": 0
+      },
+      "callbacks": 2,
+      "native_decode_tokens_s": 2.7792755370849225,
+      "send_to_first_ui_ns": 218674112747,
+      "strict": {
+        "status": "PASS",
+        "submitted_graphs": 28,
+        "submitted_math_nodes": 15144,
+        "tensor_cpu_fallback": "blocked_by_native_policy",
+        "host_orchestration": "CPU",
+        "physical_gpu_certified": false
+      },
+      "raw_response": " Dog.",
+      "uploads": [
+        [
+          "Vulkan",
+          "3145728",
+          "0"
+        ],
+        [
+          "Vulkan",
+          "3145728",
+          "0"
+        ],
+        [
+          "Vulkan",
+          "3145728",
+          "0"
+        ],
+        [
+          "Vulkan",
+          "3145728",
+          "0"
+        ],
+        [
+          "Vulkan",
+          "3145728",
+          "0"
+        ]
+      ],
+      "embedding_digests": [
+        [
+          "57f7af82188cc470c6a8e3fc910a083f7f762258a63a08d1a531fba2407143d5",
+          "147456"
+        ],
+        [
+          "0e66a125c1a8b95de7504a6a9661d863075f841084b34cd9163ebf091c274141",
+          "147456"
+        ],
+        [
+          "d21e1102ac27235aaaadccf3e7be9fda56e01be68a2cd2d8d6ce3f885fee8aa3",
+          "147456"
+        ],
+        [
+          "fe7551e40c2cc19d84ccb0f5276d92b217fd2a3a9e5153f9729e572457e72382",
+          "147456"
+        ],
+        [
+          "418c3afdd8057deb598a71a82c061c9f42eec1ab7203cf80e8ba4b57069eeb5c",
+          "147456"
+        ]
+      ],
+      "pixel_verification_bytes": [
+        3145728,
+        3145728,
+        3145728,
+        3145728,
+        3145728
+      ],
+      "benchmark": false
+    }
+  },
+  "speed_approval": false,
+  "release_approved": false,
+  "default_enabled": false,
+  "gguf_sha256": "650283ee95856be73ff45fa277ac6a4238b4d1bb52a670983c2e1690fd352a12",
+  "scope": "Actual Android APK, actual SAF dog photo and unchanged public SmolVLM GGUF. Only RGB layout packing moves to Vulkan. Decode, resize, crops, normalization and upload orchestration remain host work. Separate control/GPU fresh-Engine runs, cache disabled, pixel readback and full embedding SHA-256 comparison. Instrumented, one observation/mode; NOT speed, physical GPU, universal architecture or release approval. Experiment is off by default."
+}

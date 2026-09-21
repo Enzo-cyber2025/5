@@ -1,0 +1,476 @@
+--------- beginning of main
+09-19 13:11:33.531  4596  4596 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 0 <<<<<<
+09-19 13:11:33.535  4596  4596 I AndroidRuntime: Using default boot image
+09-19 13:11:33.535  4596  4596 I AndroidRuntime: Leaving lock profiling enabled
+09-19 13:11:33.537  4596  4596 I app_process: Core platform API reporting enabled, enforcing=false
+09-19 13:11:33.537  4596  4596 I app_process: Using CollectorTypeCMC GC.
+09-19 13:11:33.593  4596  4596 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-19 13:11:33.600  4596  4596 D nativeloader: Load libicu_jni.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-19 13:11:33.600  4596  4596 D app_process: u_setTimeZoneFilesDirectory("/apex/com.android.tzdata/etc/tz/versioned/8/icu") succeeded. 
+09-19 13:11:33.600  4596  4596 D app_process: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt75l.dat
+09-19 13:11:33.602  4596  4596 D nativeloader: Load libjavacore.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-19 13:11:33.602  4596  4596 D nativeloader: Load libopenjdk.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-19 13:11:33.603  4596  4596 W app_process: Unexpected CPU variant for x86: x86_64.
+09-19 13:11:33.603  4596  4596 W app_process: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, goldmont-without-sha-xsaves, tremont, kabylake, default
+09-19 13:11:33.620  4596  4596 D nativeloader: Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok
+09-19 13:11:33.620  4596  4596 D AndroidRuntime: Calling main entry com.android.commands.am.Am
+09-19 13:11:33.622  4596  4596 D UiAutomationConnection: Created on user UserHandle{0}
+--------- beginning of system
+09-19 13:11:33.623   562  1851 I ActivityManager: Force stopping com.ggufchat.app appid=10211 user=0: start instr
+09-19 13:11:33.626   562  1851 V GrammaticalInflectionUtils: AttributionSource: AttributionSource { uid = 10211, packageName = null, attributionTag = null, token = android.os.Binder@29e4c85, deviceId = 0, next = null } does not have READ_SYSTEM_GRAMMATICAL_GENDER permission.
+09-19 13:11:33.628   562  1851 I AppsFilter: interaction: PackageSetting{6b105bc com.android.microdroid.empty_payload/10201} -> PackageSetting{86aa5d9 com.ggufchat.app/10211} BLOCKED
+09-19 13:11:33.630   562   889 I AppWidgetServiceImpl: Received broadcast: android.intent.action.PACKAGE_UNSTOPPED on user 0
+09-19 13:11:33.631   562   889 I AppWidgetServiceImpl: Updating package stopped masked state for uid 10211 package com.ggufchat.app isStopped false
+09-19 13:11:33.638   359   359 D Zygote  : Forked child process 4607
+09-19 13:11:33.642   358   358 I netd    : tetherGetStats() -> {[]} <0.90ms>
+09-19 13:11:33.644  4607  4607 I om.ggufchat.app: Using CollectorTypeCMC GC.
+09-19 13:11:33.644  4607  4607 W om.ggufchat.app: Unexpected CPU variant for x86: x86_64.
+09-19 13:11:33.644  4607  4607 W om.ggufchat.app: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, goldmont-without-sha-xsaves, tremont, kabylake, default
+09-19 13:11:33.645  4607  4607 E om.ggufchat.app: Not starting debugger since process cannot load the jdwp agent.
+09-19 13:11:33.698  1251  4526 I NetworkScheduler.Stats: Task com.google.android.gms/com.google.android.gms.tapandpay.gcmtask.TapAndPayGcmTaskService started execution. cause:7 exec_start_elapsed_seconds: 181 [CONTEXT service_id=218 ]
+09-19 13:11:33.702  1251  4527 W TapAndPay: NfcAdapter is null while obtaining CardEmulation instance. [CONTEXT service_id=79 ]
+09-19 13:11:33.702  1251  4527 W TapAndPay: java.lang.NullPointerException: NfcAdapter is null
+09-19 13:11:33.702  1251  4527 W TapAndPay: 	at android.nfc.cardemulation.CardEmulation.getInstance(CardEmulation.java:170)
+09-19 13:11:33.702  1251  4527 W TapAndPay: 	at dhwn.<init>(:com.google.android.gms@242335041@24.23.35 (190800-646585959):15)
+09-19 13:11:33.702  1251  4527 W TapAndPay: 	at com.google.android.gms.tapandpay.hce.task.TapAndPayAidRegistrationTaskOperation.a(:com.google.android.gms@242335041@24.23.35 (190800-646585959):50)
+09-19 13:11:33.702  1251  4527 W TapAndPay: 	at com.google.android.gms.tapandpay.gcmtask.TapAndPayGcmTaskChimeraService.a(:com.google.android.gms@242335041@24.23.35 (190800-646585959):32)
+09-19 13:11:33.702  1251  4527 W TapAndPay: 	at bpjj.call(:com.google.android.gms@242335041@24.23.35 (190800-646585959):32)
+09-19 13:11:33.702  1251  4527 W TapAndPay: 	at java.util.concurrent.FutureTask.run(FutureTask.java:264)
+09-19 13:11:33.702  1251  4527 W TapAndPay: 	at angs.c(:com.google.android.gms@242335041@24.23.35 (190800-646585959):50)
+09-19 13:11:33.702  1251  4527 W TapAndPay: 	at angs.run(:com.google.android.gms@242335041@24.23.35 (190800-646585959):76)
+09-19 13:11:33.702  1251  4527 W TapAndPay: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+09-19 13:11:33.702  1251  4527 W TapAndPay: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+09-19 13:11:33.702  1251  4527 W TapAndPay: 	at anmg.run(:com.google.android.gms@242335041@24.23.35 (190800-646585959):8)
+09-19 13:11:33.702  1251  4527 W TapAndPay: 	at java.lang.Thread.run(Thread.java:1012)
+09-19 13:11:33.711  1251  4526 I NetworkScheduler.Stats: Task com.google.android.gms/com.google.android.gms.droidguard.DroidGuardGcmTaskService started execution. cause:7 exec_start_elapsed_seconds: 181 [CONTEXT service_id=218 ]
+09-19 13:11:33.714   562  1851 D ActivityManager: sync unfroze 2532 com.google.android.gms.unstable for 6
+09-19 13:11:33.716  1251  4526 I NetworkScheduler.Stats: Task com.google.android.gms/com.google.android.gms.tapandpay.gcmtask.TapAndPayGcmTaskService finished executing. cause:7 result: 3 elapsed_millis: 20 uptime_millis: 20 exec_start_elapsed_seconds: 181 [CONTEXT service_id=218 ]
+09-19 13:11:33.721  1251  4526 I NetworkScheduler.Stats: Task com.google.android.gms/com.google.android.gms.droidguard.DroidGuardGcmTaskService finished executing. cause:7 result: 1 elapsed_millis: 16 uptime_millis: 16 exec_start_elapsed_seconds: 181 [CONTEXT service_id=218 ]
+09-19 13:11:33.729  1622  1622 D BoundBrokerSvc: onRebind: Intent { act=com.google.android.gms.semanticlocationhistory.settings.SettingsSyncOneOffService.ACTION_TASK_READY dat=chimera-action:/... cmp=com.google.android.gms/.chimera.GmsInternalBoundBrokerService }
+09-19 13:11:33.724  4620  4620 W app_process64: type=1400 audit(0.0:88): avc:  denied  { read } for  name="u:object_r:userdebug_or_eng_prop:s0" dev="tmpfs" ino=349 scontext=u:r:untrusted_app:s0:c211,c256,c512,c768 tcontext=u:object_r:userdebug_or_eng_prop:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-19 13:11:33.733  4620  4620 W libc    : Access denied finding property "ro.debuggable"
+09-19 13:11:33.736  1622  4537 I LocationHistory: [SettingsSyncOneOffTask] Synced ODLH settings for all accounts. [CONTEXT service_id=314 ]
+09-19 13:11:33.732  4620  4620 W app_process64: type=1400 audit(0.0:89): avc:  denied  { read } for  name="u:object_r:userdebug_or_eng_prop:s0" dev="tmpfs" ino=349 scontext=u:r:untrusted_app:s0:c211,c256,c512,c768 tcontext=u:object_r:userdebug_or_eng_prop:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-19 13:11:33.738  4620  4620 W libc    : Access denied finding property "ro.debuggable"
+09-19 13:11:33.739  4620  4620 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 10211 <<<<<<
+09-19 13:11:33.740  1622  1622 D BoundBrokerSvc: onUnbind: Intent { act=com.google.android.gms.semanticlocationhistory.settings.SettingsSyncOneOffService.ACTION_TASK_READY dat=chimera-action:/... cmp=com.google.android.gms/.chimera.GmsInternalBoundBrokerService }
+09-19 13:11:33.744  4620  4620 W libc    : Access denied finding property "ro.debuggable"
+09-19 13:11:33.736  4620  4620 W om.ggufchat.app: type=1400 audit(0.0:90): avc:  denied  { read } for  name="u:object_r:userdebug_or_eng_prop:s0" dev="tmpfs" ino=349 scontext=u:r:untrusted_app:s0:c211,c256,c512,c768 tcontext=u:object_r:userdebug_or_eng_prop:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-19 13:11:33.749  1251  4526 I NetworkScheduler.Stats: Task com.google.android.gms/com.google.android.gms.semanticlocationhistory.settings.SettingsSyncOneOffService started execution. cause:5 exec_start_elapsed_seconds: 181 [CONTEXT service_id=218 ]
+09-19 13:11:33.750  4620  4620 I AndroidRuntime: Using default boot image
+09-19 13:11:33.750  4620  4620 I AndroidRuntime: Leaving lock profiling enabled
+09-19 13:11:33.750  2532  2768 D TrafficStats: tagSocket(98) with statsTag=0x1803, statsUid=10143
+09-19 13:11:33.750  1251  4526 I NetworkScheduler.Stats: Task com.google.android.gms/com.google.android.gms.semanticlocationhistory.settings.SettingsSyncOneOffService finished executing. cause:5 result: 1 elapsed_millis: 13 uptime_millis: 13 exec_start_elapsed_seconds: 181 [CONTEXT service_id=218 ]
+09-19 13:11:33.755  4620  4620 W libc    : Access denied finding property "odsign.verification.success"
+09-19 13:11:33.755  4620  4620 W libc    : Access denied finding property "ro.debuggable"
+09-19 13:11:33.758  4620  4620 W com.ggufchat.app: ART APEX data files are untrusted.
+09-19 13:11:33.758  4620  4620 I com.ggufchat.app: Core platform API reporting enabled, enforcing=false
+09-19 13:11:33.748  4620  4620 W om.ggufchat.app: type=1400 audit(0.0:91): avc:  denied  { read } for  name="u:object_r:odsign_prop:s0" dev="tmpfs" ino=262 scontext=u:r:untrusted_app:s0:c211,c256,c512,c768 tcontext=u:object_r:odsign_prop:s0 tclass=file permissive=0 app=com.ggufchat.app
+--------- beginning of kernel
+09-19 13:11:33.944     0     0 W audit   : audit_lost=11 audit_rate_limit=5 audit_backlog_limit=64
+09-19 13:11:33.950     0     0 E audit   : rate limit exceeded
+09-19 13:11:33.765  4620  4620 I com.ggufchat.app: Using CollectorTypeCMC GC.
+09-19 13:11:33.752  4620  4620 W om.ggufchat.app: type=1400 audit(0.0:92): avc:  denied  { read } for  name="u:object_r:userdebug_or_eng_prop:s0" dev="tmpfs" ino=349 scontext=u:r:untrusted_app:s0:c211,c256,c512,c768 tcontext=u:object_r:userdebug_or_eng_prop:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-19 13:11:33.771  1251  4526 I NetworkScheduler.Stats: Task com.google.android.gms/com.google.android.gms.auth.account.be.legacy.AuthCronService started execution. cause:5 exec_start_elapsed_seconds: 181 [CONTEXT service_id=218 ]
+09-19 13:11:33.771  1251  4526 I NetworkScheduler.Stats: Task com.google.android.gms/com.google.android.gms.auth.account.be.legacy.AuthCronService finished executing. cause:5 result: 3 elapsed_millis: 9 uptime_millis: 9 exec_start_elapsed_seconds: 181 [CONTEXT service_id=218 ]
+09-19 13:11:33.782  1622  4565 I ChimeraConfigurator: Starting update, reason: 1 urgentFeatures: 
+09-19 13:11:33.784  1251  4526 I NetworkScheduler.Stats: Task com.google.android.gms/com.google.android.gms.chimera.container.ConfigService started execution. cause:5 exec_start_elapsed_seconds: 181 [CONTEXT service_id=218 ]
+09-19 13:11:33.814  1622  4565 I GmsDebugLogger: [73] 1801
+09-19 13:11:33.816  1622  4565 W ZappDownloader: No successful Zapp module downloads for requested modules [VisionBarcode.optional:242335100800:permitMetered, TfliteDynamiteDynamite.integ:262730502100800, MapsCoreDynamite.integ:241610202100800, MlkitBarcodeUi.optional:242335100800:permitMetered].
+09-19 13:11:33.816  1622  4565 I GmsDebugLogger: [30] [VisionBarcode.optional:242335100800],[TfliteDynamiteDynamite.integ:262730502100800],[MapsCoreDynamite.integ:241610202100800],[MlkitBarcodeUi.optional:242335100800]
+09-19 13:11:33.821  1622  4565 I ChimeraConfigService: Scheduling checkin for one-off execution between [3300,43201] seconds from now (1789823493821) [CONTEXT service_id=264 ]
+09-19 13:11:33.824  1622  4565 I ChimeraConfigService: Scheduling checkin every 43201 seconds, with flex of 21600 seconds [CONTEXT service_id=264 ]
+09-19 13:11:33.829  1251  4528 I NetworkScheduler.Stats: Task com.google.android.gms/com.google.android.gms.chimera.container.ConfigService finished executing. cause:5 result: 2 elapsed_millis: 52 uptime_millis: 52 exec_start_elapsed_seconds: 181 [CONTEXT service_id=218 ]
+09-19 13:11:33.832  4620  4620 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-19 13:11:33.840  4620  4620 D nativeloader: Load libicu_jni.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-19 13:11:33.840  4620  4620 D com.ggufchat.app: u_setTimeZoneFilesDirectory("/apex/com.android.tzdata/etc/tz/versioned/8/icu") succeeded. 
+09-19 13:11:33.840  4620  4620 D com.ggufchat.app: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt75l.dat
+09-19 13:11:33.841  4620  4620 D nativeloader: Load libjavacore.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-19 13:11:33.841  4620  4620 D nativeloader: Load libopenjdk.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-19 13:11:33.842  4620  4620 W com.ggufchat.app: Unexpected CPU variant for x86: x86_64.
+09-19 13:11:33.842  4620  4620 W com.ggufchat.app: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, goldmont-without-sha-xsaves, tremont, kabylake, default
+09-19 13:11:33.855  4620  4620 W libc    : Access denied finding property "ro.product.name_for_attestation"
+09-19 13:11:33.856  4620  4620 W libc    : Access denied finding property "ro.product.device_for_attestation"
+09-19 13:11:33.856  4620  4620 W libc    : Access denied finding property "ro.product.manufacturer_for_attestation"
+09-19 13:11:33.856  4620  4620 W libc    : Access denied finding property "ro.product.brand_for_attestation"
+09-19 13:11:33.856  4620  4620 W libc    : Access denied finding property "ro.product.model_for_attestation"
+09-19 13:11:33.856  4620  4620 W libc    : Access denied finding property "ro.debuggable"
+09-19 13:11:33.857  4620  4620 D nativeloader: Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok
+09-19 13:11:33.857  4620  4620 D AndroidRuntime: Calling main entry com.android.internal.os.WrapperInit
+09-19 13:11:33.858  4620  4620 D Zygote  : begin preload
+09-19 13:11:33.858  4620  4620 I Zygote  : Calling ZygoteHooks.beginPreload()
+09-19 13:11:33.858   359   359 I Zygote  : Wrapped process has pid 4620
+09-19 13:11:33.858   562   613 W ActivityManager: Slow operation: 230ms so far, now at startProcess: returned from zygote!
+09-19 13:11:33.859   562   613 W ActivityManager: Slow operation: 231ms so far, now at startProcess: done updating battery stats
+09-19 13:11:33.859   562   613 W ActivityManager: Slow operation: 231ms so far, now at startProcess: building log message
+09-19 13:11:33.859   562   613 I ActivityManager: Start proc 4620:com.ggufchat.app/u0a211 for added application com.ggufchat.app
+09-19 13:11:33.859   562   613 W ActivityManager: Slow operation: 231ms so far, now at startProcess: starting to update pids map
+09-19 13:11:33.859   562   613 W ActivityManager: Slow operation: 231ms so far, now at startProcess: done updating pids map
+09-19 13:11:33.882  4620  4620 V WrapperInitTiming: BeginPreload took to complete: 25ms
+09-19 13:11:33.883  4620  4620 I Zygote  : Preloading classes...
+09-19 13:11:33.886  4620  4620 W Zygote  : Class not found for preloading: android.app.PendingIntent$$ExternalSyntheticLambda3
+09-19 13:11:33.894  4620  4620 D nativeloader: Load libjavacrypto.so using APEX ns com_android_conscrypt for caller /apex/com.android.conscrypt/javalib/conscrypt.jar: ok
+09-19 13:11:33.901  4620  4620 W libc    : Access denied finding property "qemu.sf.lcd_density"
+09-19 13:11:33.901  4620  4620 W libc    : Access denied finding property "qemu.sf.lcd_density"
+09-19 13:11:33.903  4620  4620 I Typeface: Preloading /system/fonts/Roboto-Regular.ttf
+09-19 13:11:33.903  4620  4620 I Typeface: Preloading /system/fonts/RobotoStatic-Regular.ttf
+09-19 13:11:33.903  4620  4620 I SystemFonts: Loading font config from /system/etc/fonts.xml
+09-19 13:11:33.931  4620  4620 E ActivityRecognitionHardware: activity_recognition HAL is deprecated. class_init is effectively a no-op
+09-19 13:11:33.947   562  1853 I RemoteProvisionSysSvc: getRegistration(android.hardware.security.keymint.IRemotelyProvisionedComponent/default)
+09-19 13:11:34.130     0     0 I servicemanager: Caller(pid=171,uid=1017,sid=u:r:keystore:s0) Found android.hardware.security.keymint.IRemotelyProvisionedComponent/default in device VINTF manifest.
+09-19 13:11:33.961   562  1853 D ActivityManager: sync unfroze 3048 com.google.android.rkpdapp for 6
+09-19 13:11:33.966   562   562 I RegistrationProxy: onServiceConnected: com.android.rkpdapp.service.RemoteProvisioningService
+09-19 13:11:33.972   562  1619 I RegistrationProxy: IGetRegistrationCallback.onSuccess
+09-19 13:11:34.152     0     0 I servicemanager: Caller(pid=3048,uid=10190,sid=u:r:rkpdapp:s0:c190,c256,c512,c768) Found android.hardware.security.keymint.IRemotelyProvisionedComponent/default in device VINTF manifest.
+09-19 13:11:33.973   562  1853 I RemoteProvisionSysSvc: Fetching key 10143 for client 59202605
+09-19 13:11:33.973   562  1853 I RegistrationProxy: getKeyAsync operation started with callback 109454690
+09-19 13:11:33.973  3048  3149 I RkpdRegistrationBinder: Key requested for : android.hardware.security.keymint.IRemotelyProvisionedComponent/default, clientUid: 1017, keyId: 10143, callback: 201340963
+09-19 13:11:33.975  3048  3149 I RkpdRegistrationBinder: Key successfully assigned to client
+09-19 13:11:33.975   562   562 I RemoteProvisionSysSvc: Successfully fetched key for client 59202605
+09-19 13:11:33.981   173   173 D SoftKeymaster: system/keymaster/km_openssl/certificate_utils.cpp, Line 148: Using TAG_CERTIFICATE_NOT_BEFORE: 0
+09-19 13:11:33.981   173   173 D SoftKeymaster: system/keymaster/km_openssl/certificate_utils.cpp, Line 154: Using TAG_CERTIFICATE_NOT_AFTER: 2461449600000
+09-19 13:11:33.981   173   173 D SoftKeymaster: system/keymaster/km_openssl/certificate_utils.cpp, Line 159: Got certificate date params:  NotBefore = 0, NotAfter = 2461449600000
+09-19 13:11:33.981   173   173 D SoftKeymaster: system/keymaster/km_openssl/certificate_utils.cpp, Line 273: Setting notBefore to 0
+09-19 13:11:33.981   173   173 D SoftKeymaster: system/keymaster/km_openssl/certificate_utils.cpp, Line 282: Setting notAfter to 2461449600
+09-19 13:11:34.161     0     0 I servicemanager: Caller(pid=171,uid=1017,sid=u:r:keystore:s0) Found android.hardware.security.keymint.IRemotelyProvisionedComponent/default in device VINTF manifest.
+09-19 13:11:33.988   562  1619 D BiometricService: Sensor ID(0), oemStrength: 15, updatedStrength: 15, modality 2, state: 0, cookie: 0, sensorId 0, hasEnrollments: false cannot participate in Keystore operations
+09-19 13:11:33.988   562  1619 D BiometricService: Sensor ID(4), oemStrength: 15, updatedStrength: 15, modality 8, state: 0, cookie: 0, sensorId 4, hasEnrollments: false cannot participate in Keystore operations
+09-19 13:11:34.018  4620  4620 D nativeloader: Load libmedia_jni.so using system ns (caller=/system/framework/framework.jar!classes2.dex): ok
+09-19 13:11:34.018  4620  4620 D MtpDeviceJNI: register_android_mtp_MtpDevice
+09-19 13:11:34.023  4620  4620 D nativeloader: Load libsoundpool.so using system ns (caller=/system/framework/framework.jar!classes2.dex): ok
+09-19 13:11:34.024  4620  4620 D nativeloader: Load libaudioeffect_jni.so using system ns (caller=/system/framework/framework.jar!classes2.dex): ok
+09-19 13:11:34.026   358  4637 I resolv  : GetAddrInfoHandler::run: {100 786532 100 983140 10143 0}
+09-19 13:11:34.027  2532  4624 D TrafficStats: tagSocket(117) with statsTag=0x1809, statsUid=-1
+09-19 13:11:34.027  2532  4624 D TrafficStats: tagSocket(117) with statsTag=0x1809, statsUid=-1
+09-19 13:11:34.028  2532  4624 D TrafficStats: tagSocket(117) with statsTag=0x1809, statsUid=-1
+09-19 13:11:34.029  4620  4620 D nativeloader: Load librtp_jni.so using system ns (caller=/system/framework/voip-common.jar): ok
+09-19 13:11:34.029  4620  4620 I com.ggufchat.app: Thread[1,tid=4620,Native,Thread*=0x7df2bf61fbe0,peer=0x140009c0,"main"] recursive attempt to load library "librtp_jni.so"
+09-19 13:11:34.033  4620  4620 D nativeloader: Load libvintf_jni.so using system ns (caller=/system/framework/framework.jar!classes3.dex): ok
+09-19 13:11:34.035   562  1620 W ParceledListSlice: Element #14 is 37900 bytes.
+09-19 13:11:34.036   562  1620 W ParceledListSlice: Element #15 is 18184 bytes.
+09-19 13:11:34.036   562  1620 W ParceledListSlice: Element #22 is 30408 bytes.
+09-19 13:11:34.036   562  1620 W ParceledListSlice: Overly large reply size: 88136
+09-19 13:11:34.042  4620  4620 D nativeloader: Load librs_jni.so using system ns (caller=/system/framework/framework.jar!classes3.dex): ok
+09-19 13:11:34.068  4620  4620 W Zygote  : Class not found for preloading: android.window.ImeOnBackInvokedDispatcher$$ExternalSyntheticLambda0
+09-19 13:11:34.068  4620  4620 W Zygote  : Class not found for preloading: android.window.WindowOnBackInvokedDispatcher$OnBackInvokedCallbackWrapper$CallbackRef
+09-19 13:11:34.068  4620  4620 W com.ggufchat.app: Core platform API violation: Llibcore/io/Memory;->peekLong(JZ)J from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+09-19 13:11:34.068  4620  4620 W com.ggufchat.app: Core platform API violation: Llibcore/io/Memory;->pokeLong(JJZ)V from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+09-19 13:11:34.068  4620  4620 W com.ggufchat.app: Core platform API violation: Llibcore/io/Memory;->pokeInt(JIZ)V from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+09-19 13:11:34.068  4620  4620 W com.ggufchat.app: Core platform API violation: Llibcore/io/Memory;->peekInt(JZ)I from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+09-19 13:11:34.068  4620  4620 W com.ggufchat.app: Core platform API violation: Llibcore/io/Memory;->pokeByte(JB)V from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+09-19 13:11:34.068  4620  4620 W com.ggufchat.app: Core platform API violation: Llibcore/io/Memory;->peekByte(J)B from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+09-19 13:11:34.068  4620  4620 W com.ggufchat.app: Core platform API violation: Llibcore/io/Memory;->pokeByteArray(J[BII)V from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+09-19 13:11:34.068  4620  4620 W com.ggufchat.app: Core platform API violation: Llibcore/io/Memory;->peekByteArray(J[BII)V from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+09-19 13:11:34.085  2532  4624 W libc    : Access denied finding property "persist.adb.tls_server.enable"
+09-19 13:11:34.085  2532  4624 W libc    : Access denied finding property "service.adb.tls.port"
+09-19 13:11:34.093  4620  4620 W libc    : Access denied finding property "ro.debuggable"
+09-19 13:11:34.097  4620  4620 W libc    : Access denied finding property "ro.debuggable"
+09-19 13:11:34.099  4620  4620 W OverlayConfig: partition_order.xml does not exist.
+09-19 13:11:34.111  4620  4620 W com.ggufchat.app: unable to execute idmap2: Permission denied
+09-19 13:11:34.111  4620  4620 W OverlayConfig: 'idmap2 create-multiple' failed: no mutable="false" overlays targeting "android" will be loaded
+09-19 13:11:34.113  4620  4620 W libc    : Access denied finding property "ro.debuggable"
+09-19 13:11:34.113  4620  4620 W libc    : Access denied finding property "ro.debuggable"
+09-19 13:11:34.114  4620  4620 W libc    : Access denied finding property "ro.debuggable"
+09-19 13:11:34.124  4620  4620 D nativeloader: Load libframework-connectivity-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity.jar: ok
+09-19 13:11:34.143  4620  4620 W Zygote  : Class not found for preloading: sun.util.locale.BaseLocale$Key-IA
+09-19 13:11:34.144  4620  4620 I Zygote  : ...preloaded 17758 classes in 262ms.
+09-19 13:11:34.144  4620  4620 V WrapperInitTiming: PreloadClasses took to complete: 262ms
+09-19 13:11:34.145  4620  4620 D nativeloader: InitApexLibraries:
+09-19 13:11:34.145  4620  4620 D nativeloader:   com_android_art: libnativehelper.so
+09-19 13:11:34.145  4620  4620 D nativeloader:   com_android_i18n: libicui18n.so:libicuuc.so:libicu.so
+09-19 13:11:34.145  4620  4620 D nativeloader:   com_android_neuralnetworks: libneuralnetworks.so
+09-19 13:11:34.145  4620  4620 D nativeloader: InitDefaultPublicLibraries for_preload=0: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libclang_rt.hwasan-aarch64-android.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-19 13:11:34.145  4620  4620 D nativeloader: Configuring clns-shared-1 for other apk /system/framework/android.hidl.base-V1.0-java.jar. target_sdk_version=35, uses_libraries=, library_path=, permitted_path=/data:/mnt/expand
+09-19 13:11:34.145  4620  4620 D nativeloader: InitExtendedPublicLibraries: 
+09-19 13:11:34.146  4620  4620 I nativeloader: InitVendorPublicLibraries skipped: Failed to read /vendor/etc/public.libraries.txt: No such file or directory
+09-19 13:11:34.146  4620  4620 D nativeloader: InitProductPublicLibraries: 
+09-19 13:11:34.146  4620  4620 D ApplicationLoaders: Created zygote-cached class loader: /system/framework/android.hidl.base-V1.0-java.jar
+09-19 13:11:34.147  4620  4620 D nativeloader: Configuring clns-shared-2 for other apk /system/framework/android.hidl.manager-V1.0-java.jar. target_sdk_version=35, uses_libraries=, library_path=, permitted_path=/data:/mnt/expand
+09-19 13:11:34.147  4620  4620 D ApplicationLoaders: Created zygote-cached class loader: /system/framework/android.hidl.manager-V1.0-java.jar
+09-19 13:11:34.147  4620  4620 D nativeloader: Configuring clns-shared-3 for other apk /system/framework/android.test.base.jar. target_sdk_version=35, uses_libraries=, library_path=, permitted_path=/data:/mnt/expand
+09-19 13:11:34.148  4620  4620 D ApplicationLoaders: Created zygote-cached class loader: /system/framework/android.test.base.jar
+09-19 13:11:34.148  4620  4620 D nativeloader: Configuring clns-shared-4 for other apk /system/framework/org.apache.http.legacy.jar. target_sdk_version=35, uses_libraries=, library_path=, permitted_path=/data:/mnt/expand
+09-19 13:11:34.148  4620  4620 D ApplicationLoaders: Created zygote-cached class loader: /system/framework/org.apache.http.legacy.jar
+09-19 13:11:34.149  4620  4620 D nativeloader: Configuring clns-shared-5 for other apk /system_ext/framework/androidx.window.extensions.jar. target_sdk_version=35, uses_libraries=, library_path=, permitted_path=/data:/mnt/expand
+09-19 13:11:34.149  4620  4620 D ApplicationLoaders: Created zygote-cached class loader: /system_ext/framework/androidx.window.extensions.jar
+09-19 13:11:34.149  4620  4620 D nativeloader: Configuring clns-shared-6 for other apk /system_ext/framework/androidx.window.sidecar.jar. target_sdk_version=35, uses_libraries=, library_path=, permitted_path=/data:/mnt/expand
+09-19 13:11:34.149  4620  4620 D ApplicationLoaders: Created zygote-cached class loader: /system_ext/framework/androidx.window.sidecar.jar
+09-19 13:11:34.149  4620  4620 V WrapperInitTiming: CacheNonBootClasspathClassLoaders took to complete: 5ms
+09-19 13:11:34.149  4620  4620 I Resources: Preloading resources...
+09-19 13:11:34.151  4620  4620 W Resources: Preloaded drawable resource #0x10802cb (android:drawable/dialog_background_material) that varies with configuration!!
+09-19 13:11:34.155  4620  4620 W Resources: Preloaded drawable resource #0x1080846 (android:drawable/progress_horizontal_material) that varies with configuration!!
+09-19 13:11:34.155  4620  4620 W Resources: Preloaded drawable resource #0x108084a (android:drawable/progress_indeterminate_horizontal_material) that varies with configuration!!
+09-19 13:11:34.157  4620  4620 I Resources: ...preloaded 63 resources in 8ms.
+09-19 13:11:34.158  4620  4620 I Resources: ...preloaded 41 resources in 1ms.
+09-19 13:11:34.158  4620  4620 V WrapperInitTiming: PreloadResources took to complete: 9ms
+09-19 13:11:34.161  4620  4620 I Zygote  : Preloading shared libraries...
+09-19 13:11:34.162  4620  4620 D nativeloader: Load libandroid.so using system ns (caller=/system/framework/framework.jar!classes5.dex): ok
+09-19 13:11:34.162  4620  4620 D nativeloader: Load libjnigraphics.so using system ns (caller=/system/framework/framework.jar!classes5.dex): ok
+09-19 13:11:34.163  4620  4620 D nativeloader: Load libcompiler_rt.so using system ns (caller=/system/framework/framework.jar!classes5.dex): ok
+09-19 13:11:34.163  4620  4620 E com.ggufchat.app: Unable to find pattern file or unable to map it for am
+09-19 13:11:34.163  4620  4620 D nativeloader: Load libwebviewchromium_loader.so using system ns (caller=/system/framework/framework.jar!classes4.dex): ok
+09-19 13:11:34.164  4620  4620 I Zygote  : Called ZygoteHooks.endPreload()
+09-19 13:11:34.164  4620  4620 I Zygote  : Installed AndroidKeyStoreProvider in 0ms.
+09-19 13:11:34.165  4620  4620 I Zygote  : Warmed up JCA providers in 1ms.
+09-19 13:11:34.165  4620  4620 D Zygote  : end preload
+09-19 13:11:34.168  4620  4620 D nativeloader: Load libstats_jni.so using APEX ns com_android_os_statsd for caller /apex/com.android.os.statsd/javalib/framework-statsd.jar: ok
+09-19 13:11:34.168  4620  4620 D CompatChangeReporter: Compat change id reported: 242716250; UID 10211; state: ENABLED
+09-19 13:11:34.170  4620  4620 W ActivityThread: Package uses different ABI(s) than its instrumentation: package[com.ggufchat.app]: x86_64, null instrumentation[com.ggufchat.gpurate]: null, null
+09-19 13:11:34.171  4620  4620 W ziparchive: Unable to open '/data/app/~~RLVraDRB7RHnl_lOWYJ_8Q==/com.ggufchat.gpurate-zl4ofqeqVHLqDj7LKfFFaA==/base.dm': No such file or directory
+09-19 13:11:34.171  4620  4620 W ziparchive: Unable to open '/data/app/~~RLVraDRB7RHnl_lOWYJ_8Q==/com.ggufchat.gpurate-zl4ofqeqVHLqDj7LKfFFaA==/base.dm': No such file or directory
+09-19 13:11:34.172  4620  4620 W ziparchive: Unable to open '/data/app/~~72y1m5tGxsbDTxSuRZFjJQ==/com.ggufchat.app-8vAmN7soUbKUVgU6ejn9Lg==/base.dm': No such file or directory
+09-19 13:11:34.172  4620  4620 W ziparchive: Unable to open '/data/app/~~72y1m5tGxsbDTxSuRZFjJQ==/com.ggufchat.app-8vAmN7soUbKUVgU6ejn9Lg==/base.dm': No such file or directory
+09-19 13:11:34.216  4620  4620 D nativeloader: Configuring clns-7 for other apk /data/app/~~RLVraDRB7RHnl_lOWYJ_8Q==/com.ggufchat.gpurate-zl4ofqeqVHLqDj7LKfFFaA==/base.apk:/data/app/~~72y1m5tGxsbDTxSuRZFjJQ==/com.ggufchat.app-8vAmN7soUbKUVgU6ejn9Lg==/base.apk. target_sdk_version=34, uses_libraries=, library_path=/data/app/~~RLVraDRB7RHnl_lOWYJ_8Q==/com.ggufchat.gpurate-zl4ofqeqVHLqDj7LKfFFaA==/lib/x86_64:/data/app/~~72y1m5tGxsbDTxSuRZFjJQ==/com.ggufchat.app-8vAmN7soUbKUVgU6ejn9Lg==/lib/x86_64:/data/app/~~RLVraDRB7RHnl_lOWYJ_8Q==/com.ggufchat.gpurate-zl4ofqeqVHLqDj7LKfFFaA==/base.apk!/lib/x86_64:/data/app/~~72y1m5tGxsbDTxSuRZFjJQ==/com.ggufchat.app-8vAmN7soUbKUVgU6ejn9Lg==/base.apk!/lib/x86_64, permitted_path=/data:/mnt/expand:/data/user/0/com.ggufchat.app
+09-19 13:11:34.220  4620  4620 V GraphicsEnvironment: Currently set values for:
+09-19 13:11:34.220  4620  4620 V GraphicsEnvironment:   angle_gl_driver_selection_pkgs=[]
+09-19 13:11:34.220  4620  4620 V GraphicsEnvironment:   angle_gl_driver_selection_values=[]
+09-19 13:11:34.220  4620  4620 V GraphicsEnvironment: Global.Settings values are invalid: number of packages: 0, number of values: 0
+09-19 13:11:34.220  4620  4620 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+09-19 13:11:34.221  4620  4620 W ziparchive: Unable to open '/data/app/~~RLVraDRB7RHnl_lOWYJ_8Q==/com.ggufchat.gpurate-zl4ofqeqVHLqDj7LKfFFaA==/base.dm': No such file or directory
+09-19 13:11:34.221  4620  4620 W ziparchive: Unable to open '/data/app/~~RLVraDRB7RHnl_lOWYJ_8Q==/com.ggufchat.gpurate-zl4ofqeqVHLqDj7LKfFFaA==/base.dm': No such file or directory
+09-19 13:11:34.222  4620  4620 W ziparchive: Unable to open '/data/app/~~72y1m5tGxsbDTxSuRZFjJQ==/com.ggufchat.app-8vAmN7soUbKUVgU6ejn9Lg==/base.dm': No such file or directory
+09-19 13:11:34.222  4620  4620 W ziparchive: Unable to open '/data/app/~~72y1m5tGxsbDTxSuRZFjJQ==/com.ggufchat.app-8vAmN7soUbKUVgU6ejn9Lg==/base.dm': No such file or directory
+09-19 13:11:34.224   562  1620 D FileUtils: Rounded bytes from 6218379264 to 8000000000
+09-19 13:11:34.232  2532  4624 W SystemServiceRegistry: No service published for: persistent_data_block
+09-19 13:11:34.240  2532  4624 I EGL_emulation: Opening libGLESv1_CM_emulation.so
+09-19 13:11:34.240  2532  4624 I EGL_emulation: Opening libGLESv2_emulation.so
+09-19 13:11:34.268  4620  4620 I incfs   : Initial API level of the device: 35
+09-19 13:11:34.268  4620  4620 W libc    : Access denied finding property "ro.incremental.enable"
+09-19 13:11:34.268  4620  4620 I incfs   : ro.incremental.enable: on
+09-19 13:11:34.268  4620  4620 I incfs   : IncFs_Features: v2
+09-19 13:11:34.269  4620  4620 I incfs-mounts: [incfs] Loaded incremental-fs mount info: 2 instances, 4 mount points
+09-19 13:11:34.273  4620  4640 I GGUFNativeStderr: Emulator-only GGML_VK_VISIBLE_DEVICES=0; software Vulkan is not hardware acceleration
+09-19 13:11:34.277  4620  4640 E platform: Failed to open rendernode: No such file or directory
+09-19 13:11:34.290  4620  4640 D vulkan  : searching for layers in '/data/app/~~72y1m5tGxsbDTxSuRZFjJQ==/com.ggufchat.app-8vAmN7soUbKUVgU6ejn9Lg==/lib/x86_64'
+09-19 13:11:34.291  4620  4640 D vulkan  : searching for layers in '/data/app/~~RLVraDRB7RHnl_lOWYJ_8Q==/com.ggufchat.gpurate-zl4ofqeqVHLqDj7LKfFFaA==/base.apk!/lib/x86_64'
+09-19 13:11:34.291  4620  4640 D vulkan  : searching for layers in '/data/app/~~72y1m5tGxsbDTxSuRZFjJQ==/com.ggufchat.app-8vAmN7soUbKUVgU6ejn9Lg==/base.apk!/lib/x86_64'
+09-19 13:11:34.291  4620  4640 I GGUFNativeStderr: Vulkan loader API 1.3.0; bundled ggml Vulkan requires >= 1.2
+09-19 13:11:34.291  4620  4640 D nativeloader: Load /data/app/~~72y1m5tGxsbDTxSuRZFjJQ==/com.ggufchat.app-8vAmN7soUbKUVgU6ejn9Lg==/lib/x86_64/libggufdiagnostics.so using ns clns-7 from class loader (caller=/data/app/~~72y1m5tGxsbDTxSuRZFjJQ==/com.ggufchat.app-8vAmN7soUbKUVgU6ejn9Lg==/base.apk): ok
+09-19 13:11:34.292  4620  4640 D nativeloader: Load /data/app/~~72y1m5tGxsbDTxSuRZFjJQ==/com.ggufchat.app-8vAmN7soUbKUVgU6ejn9Lg==/lib/x86_64/libggufcpu.so using ns clns-7 from class loader (caller=/data/app/~~72y1m5tGxsbDTxSuRZFjJQ==/com.ggufchat.app-8vAmN7soUbKUVgU6ejn9Lg==/base.apk): ok
+09-19 13:11:34.295  4620  4640 D nativeloader: Load /data/app/~~72y1m5tGxsbDTxSuRZFjJQ==/com.ggufchat.app-8vAmN7soUbKUVgU6ejn9Lg==/lib/x86_64/libaijni.so using ns clns-7 from class loader (caller=/data/app/~~72y1m5tGxsbDTxSuRZFjJQ==/com.ggufchat.app-8vAmN7soUbKUVgU6ejn9Lg==/base.apk): ok
+09-19 13:11:34.295  4620  4640 I GGUFDispatch: GGUF_CPU_DISPATCH library=aijni
+09-19 13:11:34.375   562  1620 D ConnectivityService: requestNetwork for uid/pid:10144/1636 activeRequest: null callbackRequest: 144 [NetworkRequest [ REQUEST id=144, [ Transports: CELLULAR Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VPN&NOT_VCN_MANAGED&NOT_BANDWIDTH_CONSTRAINED Forbidden: LOCAL_NETWORK Uid: 10144 RequestorUid: 10144 RequestorPkg: com.google.android.googlequicksearchbox UnderlyingNetworks: Null] ]] callback flags: 0 order: 2147483647 isUidTracked: false
+09-19 13:11:34.378   358   358 I netd    : networkSetPermissionForNetwork(101, 0) <2.09ms>
+09-19 13:11:34.383   562   862 D ConnectivityService: NetReassign [144 : null → 101] [c 0] [a 6] [i 1]
+09-19 13:11:34.383   562   862 D ConnectivityService: reportNetworkConnectivity(100, false) by 10144
+09-19 13:11:34.384  1055  2324 D NetworkMonitor/100: Forcing reevaluation for UID 10144. Dns signal count: 0
+09-19 13:11:34.385  1055  4647 D TrafficStats: tagSocket(92) with statsTag=0xffffff81, statsUid=-1
+09-19 13:11:34.386  1055  4648 D TrafficStats: tagSocket(107) with statsTag=0xffffff81, statsUid=-1
+09-19 13:11:34.389  1055  4648 D TrafficStats: tagSocket(107) with statsTag=0xffffff81, statsUid=-1
+09-19 13:11:34.389  1055  4647 D TrafficStats: tagSocket(92) with statsTag=0xffffff81, statsUid=-1
+09-19 13:11:34.401   358  4650 I resolv  : ResNSendHandler::run: 0 / {100 983140 100 983140 1073 1}
+09-19 13:11:34.401   358  4650 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x7752654de290
+09-19 13:11:34.401   358  4649 I resolv  : ResNSendHandler::run: 0 / {100 983140 100 983140 1073 1}
+09-19 13:11:34.401   358  4649 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x7753754da970
+09-19 13:11:34.404   358  4651 I resolv  : ResNSendHandler::run: 0 / {100 983140 100 983140 1073 1}
+09-19 13:11:34.404   358  4651 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x7753754d9ef0
+09-19 13:11:34.405  1055  1055 D TrafficStats: tagSocket(92) with statsTag=0xffffffff, statsUid=-1
+09-19 13:11:34.405   358  4652 I resolv  : ResNSendHandler::run: 0 / {100 983140 100 983140 1073 1}
+09-19 13:11:34.405   358  4652 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x7753e54dca30
+09-19 13:11:34.407  1055  1055 D TrafficStats: tagSocket(92) with statsTag=0xffffffff, statsUid=-1
+09-19 13:11:34.408  1055  4648 D NetworkMonitor/100: PROBE_DNS connectivitycheck.gstatic.com 21ms OK 142.250.73.67,2607:f8b0:400a:800::2003
+09-19 13:11:34.408  1055  1055 D TrafficStats: tagSocket(92) with statsTag=0xffffffff, statsUid=-1
+09-19 13:11:34.410  1055  1055 D TrafficStats: tagSocket(107) with statsTag=0xffffffff, statsUid=-1
+09-19 13:11:34.410  1055  1055 D TrafficStats: tagSocket(107) with statsTag=0xffffffff, statsUid=-1
+09-19 13:11:34.410   358  4653 I resolv  : GetAddrInfoHandler::run: {100 983140 100 983140 1073 1}
+09-19 13:11:34.410   358  4655 I resolv  : res_nmkquery: (QUERY, IN, A)
+09-19 13:11:34.410   358  4655 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x7753754d9ef0
+09-19 13:11:34.411   358  4654 I resolv  : res_nmkquery: (QUERY, IN, AAAA)
+09-19 13:11:34.411   358  4655 I resolv  : doQuery: rcode=0, ancount=1, return value=63
+09-19 13:11:34.411   358  4654 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x7753754da970
+09-19 13:11:34.411   358  4654 I resolv  : doQuery: rcode=0, ancount=1, return value=75
+09-19 13:11:34.411  1055  1055 D TrafficStats: tagSocket(107) with statsTag=0xffffffff, statsUid=-1
+09-19 13:11:34.411  1055  4648 D TrafficStats: tagSocket(92) with statsTag=0xffffff81, statsUid=-1
+09-19 13:11:34.411  1055  1055 D TrafficStats: tagSocket(107) with statsTag=0xffffffff, statsUid=-1
+09-19 13:11:34.412  1055  1055 D TrafficStats: tagSocket(107) with statsTag=0xffffffff, statsUid=-1
+09-19 13:11:34.412  1055  1055 D TrafficStats: tagSocket(107) with statsTag=0xffffffff, statsUid=-1
+09-19 13:11:34.412  1055  1055 D TrafficStats: tagSocket(107) with statsTag=0xffffffff, statsUid=-1
+09-19 13:11:34.413  1055  1055 D TrafficStats: tagSocket(107) with statsTag=0xffffffff, statsUid=-1
+09-19 13:11:34.414  1055  1055 D TrafficStats: tagSocket(107) with statsTag=0xffffffff, statsUid=-1
+09-19 13:11:34.414  1055  1055 D TrafficStats: tagSocket(107) with statsTag=0xffffffff, statsUid=-1
+09-19 13:11:34.414  1055  1055 D TrafficStats: tagSocket(107) with statsTag=0xffffffff, statsUid=-1
+09-19 13:11:34.415  1055  1055 D TrafficStats: tagSocket(107) with statsTag=0xffffffff, statsUid=-1
+09-19 13:11:34.415  1055  1055 D TrafficStats: tagSocket(107) with statsTag=0xffffffff, statsUid=-1
+09-19 13:11:34.415  1055  1055 D TrafficStats: tagSocket(107) with statsTag=0xffffffff, statsUid=-1
+09-19 13:11:34.415  1055  1055 D TrafficStats: tagSocket(107) with statsTag=0xffffffff, statsUid=-1
+09-19 13:11:34.416  1055  4647 D NetworkMonitor/100: PROBE_DNS www.google.com 30ms OK 142.251.156.119,142.251.157.119,142.251.152.119,142.251.150.119,142.251.153.119,142.251.155.119,142.251.151.119,142.251.154.119,2001:4860:4829:7700::,2001:4860:4826:7700::,2001:4860:482d:7700::,2001:4860:482c:7700::,2001:4860:482a:7700::,2001:4860:4828:7700::,2001:4860:4827:7700::,2001:4860:482b:7700::
+09-19 13:11:34.417   358  4656 I resolv  : GetAddrInfoHandler::run: {100 983140 100 983140 1073 1}
+09-19 13:11:34.420   358  4658 I resolv  : res_nmkquery: (QUERY, IN, A)
+09-19 13:11:34.420   358  4658 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x7753e54dca30
+09-19 13:11:34.420   358  4658 I resolv  : doQuery: rcode=0, ancount=8, return value=160
+09-19 13:11:34.421   358  4657 I resolv  : res_nmkquery: (QUERY, IN, AAAA)
+09-19 13:11:34.422   358  4657 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x7752654de290
+09-19 13:11:34.422   358  4657 I resolv  : doQuery: rcode=0, ancount=8, return value=256
+09-19 13:11:34.422  1055  4647 D TrafficStats: tagSocket(107) with statsTag=0xffffff81, statsUid=-1
+09-19 13:11:34.599  4620  4640 I UiAutomation: Initialized for user 0 on display 0
+09-19 13:11:34.600   562  1620 D AccessibilityManagerService: changeCurrentUserForTestAutomationIfNeededLocked(0): ignoring because device doesn't support visible background users
+09-19 13:11:34.600   562  1620 I UiAutomationManager: Registering UiTestAutomationService (id=com.android.server.accessibility/UiAutomation, flags=0x0) when called by user 0
+09-19 13:11:34.601   562  1620 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-19 13:11:34.602   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:11:34.603   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:11:34.603   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:11:34.603  1467  2214 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-19 13:11:34.607  1636  1925 I A       : NGA disabled since it's running Panthera and at least one a11y feature is on.
+09-19 13:11:34.607  1636  1925 I A       : (REDACTED) Nga state changed to %s
+09-19 13:11:34.607  1636  1925 I A       : (REDACTED) isTngActive=%s
+09-19 13:11:34.607   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:11:34.611   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:11:34.611   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:11:34.611   562   562 D BatterySaverPolicy: accessibility changed to true, updating policy.
+09-19 13:11:34.628  4620  4640 I GGUFChatNative: GGUF_MEMORY_TELEMETRY file_bytes=105454432 available=4203372544 mmap=1 policy=actual_allocator
+09-19 13:11:34.635  1511  1830 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b
+09-19 13:11:34.635  1511  1830 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b
+09-19 13:11:34.635  1511  1830 I A       : Unsubscribed to apa or classic variant change.
+09-19 13:11:34.641  1467  1580 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-19 13:11:34.641  1467  1580 I AiAiEcho: EchoTargets: 
+09-19 13:11:34.641  1467  1580 I AiAiEcho: Filtered by AiAi flag check: 
+09-19 13:11:34.641  1467  1580 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-19 13:11:34.641  1467  1580 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-19 13:11:34.641  1467  1580 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-19 13:11:34.642  1467  1580 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-19 13:11:34.642  1467  1580 I AiAiEcho: EchoTargets: 
+09-19 13:11:34.642  1467  1580 I AiAiEcho: Filtered by AiAi flag check: 
+09-19 13:11:34.642  1467  1580 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-19 13:11:34.642  1467  1580 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-19 13:11:34.642  1467  1580 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-19 13:11:34.650  1467  1580 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-19 13:11:34.652   941   941 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-19 13:11:34.653  1467  1580 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface home with targets# 0 (types=[])
+09-19 13:11:34.655  1196  1196 D SsBaseTemplateCard: No text view can be set up
+09-19 13:11:34.655  1196  1196 D SsBaseTemplateCard: Passed-in item info is null
+09-19 13:11:34.655  1196  1196 D SsBaseTemplateCard: Passed-in item info is null
+09-19 13:11:34.655  1196  1196 D SsBaseTemplateCard: Passed-in item info is null
+09-19 13:11:34.655  1196  1196 I SsBaseTemplateCard: Secondary card pane is null
+09-19 13:11:34.684  1196  1719 D EGL_emulation: app_time_stats: avg=217.52ms min=12.75ms max=1683.84ms count=10
+09-19 13:11:34.687  4620  4640 I GGUFNativeStderr: ggml_vulkan: Found 1 Vulkan devices:
+09-19 13:11:34.690  4620  4640 I GGUFNativeStderr: ggml_vulkan: 0 = llvmpipe (LLVM 21.0.0, 256 bits) (llvmpipe) | uma: 0 | fp16: 0 | bf16: 0 | fp4: 0 | warp size: 8 | shared memory: 32768 | int dot: 0 | matrix cores: none
+09-19 13:11:34.690  4620  4640 I GGUFNativeStderr: ggml_vulkan: Warning: Device type is CPU. This is probably not the device you want.
+09-19 13:11:34.745  1622  4563 E WakeLock: DG:service ** IS FORCE-RELEASED ON TIMEOUT **
+09-19 13:11:34.749  1055  4648 D NetworkMonitor/100: PROBE_HTTP http://connectivitycheck.gstatic.com/generate_204 time=336ms ret=204 request={Connection=[close], User-Agent=[Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.32 Safari/537.36]} headers={null=[HTTP/1.1 204 No Content], Connection=[close], Content-Length=[0], Cross-Origin-Resource-Policy=[cross-origin], Date=[Sat, 19 Sep 2026 13:11:34 GMT], X-Android-Received-Millis=[1789823494745], X-Android-Response-Source=[NETWORK 204], X-Android-Selected-Protocol=[http/1.1], X-Android-Sent-Millis=[1789823494501]}
+09-19 13:11:34.749  4620  4640 I GGUFChatNative: Create failed: GGUF row tile experiment requires llvmpipe FP32, int-dot off, subgroup 8, default MMV policy
+09-19 13:11:34.750  4620  4640 E GpuRateObserver: Native benchmark failed
+09-19 13:11:34.750  4620  4640 E GpuRateObserver: java.lang.IllegalStateException: Native load failed: GGUF row tile experiment requires llvmpipe FP32, int-dot off, subgroup 8, default MMV policy
+09-19 13:11:34.750  4620  4640 E GpuRateObserver: 	at com.ggufchat.gpurate.RateInstrumentation.require(RateInstrumentation.java:31)
+09-19 13:11:34.750  4620  4640 E GpuRateObserver: 	at com.ggufchat.gpurate.RateInstrumentation.onStart(RateInstrumentation.java:110)
+09-19 13:11:34.750  4620  4640 E GpuRateObserver: 	at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2594)
+09-19 13:11:34.754   562  1620 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-19 13:11:34.755   562  1620 D AccessibilityManagerService: restoreCurrentUserForTestAutomationIfNeededLocked(): ignoring because device doesn't support visible background users
+09-19 13:11:34.755   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:11:34.756   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:11:34.756   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:11:34.756  1055  4647 D NetworkMonitor/100: PROBE_HTTPS https://www.google.com/generate_204 time=339ms ret=204 request={Connection=[close], User-Agent=[Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.32 Safari/537.36]} headers={null=[HTTP/1.1 204 No Content], Alt-Svc=[h3=":443"; ma=2592000,h3-29=":443"; ma=2592000], Connection=[close], Content-Length=[0], Cross-Origin-Resource-Policy=[cross-origin], Date=[Sat, 19 Sep 2026 13:11:35 GMT], X-Android-Received-Millis=[1789823494755], X-Android-Response-Source=[NETWORK 204], X-Android-Selected-Protocol=[http/1.1], X-Android-Sent-Millis=[1789823494748]}
+09-19 13:11:34.757   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:11:34.758   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:11:34.758   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:11:34.758   562   562 D BatterySaverPolicy: accessibility changed to false, updating policy.
+09-19 13:11:34.758  1467  1484 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-19 13:11:34.759  1055  4646 D NetworkMonitor/100: isCaptivePortal: isSuccessful()=true isPortal()=false RedirectUrl=null isPartialConnectivity()=false Time=374ms
+09-19 13:11:34.760   562  1851 I ActivityManager: Force stopping com.ggufchat.app appid=10211 user=0: finished inst
+09-19 13:11:34.760  1636  1923 I A       : NGA enabled in interactor.
+09-19 13:11:34.762  1636  1923 I A       : (REDACTED) Nga state changed to %s
+09-19 13:11:34.762  1636  1923 I A       : (REDACTED) isTngActive=%s
+09-19 13:11:34.762  1467  1580 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-19 13:11:34.762  1467  1580 I AiAiEcho: EchoTargets: 
+09-19 13:11:34.762  1467  1580 I AiAiEcho: Filtered by AiAi flag check: 
+09-19 13:11:34.762  1467  1580 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-19 13:11:34.763  4596  4596 I app_process: System.exit called, status: 0
+09-19 13:11:34.763  4596  4596 I AndroidRuntime: VM exiting with result code 0.
+09-19 13:11:34.765   562  1851 E ActivityManager: Unable to freeze binder for 4620: -11
+09-19 13:11:34.946     0     0 I binder  : 562:1851 ioctl 400c620e 768d413d7354 returned -11
+09-19 13:11:34.948     0     0 I binder  : 562:1851 ioctl 400c620e 768d413d7354 returned -11
+09-19 13:11:34.765   562   601 D DisplayManagerService: Drop pending events for gone uid 10211
+09-19 13:11:34.765   562  1851 I ActivityManager: Killing 4620:com.ggufchat.app/u0a211 (adj 0): stop com.ggufchat.app due to finished inst
+09-19 13:11:34.765   562  1851 E libprocessgroup: Failed to write 1 to /sys/fs/cgroup/uid_10211/pid_4620/cgroup.kill: No such file or directory
+09-19 13:11:34.765   562  1851 E libprocessgroup: Failed to open /sys/fs/cgroup/uid_10211/pid_4620/cgroup.procs: No such file or directory
+09-19 13:11:34.767  1511  4120 I A       : Initializing all components
+09-19 13:11:34.767  1511  1830 I A       : (REDACTED) onIsEnabledChanged, isEnabled: %s
+09-19 13:11:34.767  1511  1830 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-19 13:11:34.767  1511  1830 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-19 13:11:34.767  1511  1830 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-19 13:11:34.767  1511  1830 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-19 13:11:34.767  1511  1830 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-19 13:11:34.767  1511  1830 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-19 13:11:34.767  1511  1830 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-19 13:11:34.767  1511  1830 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-19 13:11:34.767  1511  1830 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-19 13:11:34.767  1511  1830 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-19 13:11:34.767  1511  1830 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-19 13:11:34.768  1511  1830 I A       : (REDACTED) Setting session to type: %s
+09-19 13:11:34.768  1511  1830 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-19 13:11:34.768  1511  1830 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-19 13:11:34.768  1511  1830 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-19 13:11:34.768  1511  1830 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-19 13:11:34.768  1511  1830 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-19 13:11:34.768  1511  1830 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-19 13:11:34.768  1511  1830 I A       : (REDACTED) setNavBarVisible: %s
+09-19 13:11:34.770  1467  1580 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-19 13:11:34.770  1467  1580 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-19 13:11:34.770  1467  1580 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-19 13:11:34.770  1467  1580 I AiAiEcho: EchoTargets: 
+09-19 13:11:34.770  1467  1580 I AiAiEcho: Filtered by AiAi flag check: 
+09-19 13:11:34.770  1467  1580 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-19 13:11:34.771  1467  1580 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-19 13:11:34.771  1467  1580 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-19 13:11:34.771  1467  1580 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-19 13:11:34.771  1467  1580 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface home with targets# 0 (types=[])
+09-19 13:11:34.774  1511  1832 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b
+09-19 13:11:34.789   941   941 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-19 13:11:34.789   562   862 D ConnectivityService: [100 WIFI] validation passed
+09-19 13:11:34.790   562   862 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+09-19 13:11:34.799  1511  1830 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-19 13:11:34.799  1511  1830 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-19 13:11:34.799  1511  1830 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-19 13:11:34.799  1511  1830 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-19 13:11:34.799  1511  1830 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-19 13:11:34.799  1511  1830 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-19 13:11:34.800  1511  1830 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b
+09-19 13:11:34.801   358   358 I netd    : tetherGetStats() -> {[]} <0.71ms>
+09-19 13:11:34.809   562   862 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+09-19 13:11:34.809   562   862 D InetDiagMessage: Destroyed live tcp sockets for uids={10211} in 20ms
+09-19 13:11:34.810   562   862 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+09-19 13:11:34.810   562   862 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+09-19 13:11:34.810   562   862 D InetDiagMessage: Destroyed live tcp sockets for uids={20211} in 1ms
+09-19 13:11:34.811  1511  1832 I ALT.ARCProvider: (REDACTED) #audio# activating audio request client(%s)
+09-19 13:11:34.811   562   614 E libprocessgroup: Failed to write 1 to /sys/fs/cgroup/uid_10211/pid_4620/cgroup.kill: No such file or directory
+09-19 13:11:34.811   562   614 E libprocessgroup: Failed to open /sys/fs/cgroup/uid_10211/pid_4620/cgroup.procs: No such file or directory
+09-19 13:11:34.813  1511  1832 I ALT.ClientsRegy: (REDACTED) #audio# activating audio client(token(%d), %s)
+09-19 13:11:34.813  1511  1832 I ALT.ClientsRegy: (REDACTED) #audio# enforcing concurrency state on a new client(%s, token(%d))
+09-19 13:11:34.814  1511  1832 I ALT.AudioRoutesRegy: (REDACTED) #audio# initializing the default route(%d) for %s
+09-19 13:11:34.818  1511  1832 I ALT.ARClient: (REDACTED) #audio# routing audio request client(token(%d)) to(%s)
+09-19 13:11:34.818  1511  1832 I ALT.HotwordRoutesRegy: (REDACTED) #audio# initializing the default route(%s) for hotword
+09-19 13:11:34.819  1511  1832 I ALT.AudioRoutesRegy: (REDACTED) #audio# updating to audio route(token(%d), %s) for %s
+09-19 13:11:34.819  1511  1830 I A       : Initialize
+09-19 13:11:34.819  1511  1830 I A       : (REDACTED) on opa visibility changed %s
+09-19 13:11:34.820  1511  1830 I A       : (REDACTED) on opa visibility changed %s
+09-19 13:11:34.820  1511  1830 I A       : (REDACTED) stopListening(%s, %s)
+09-19 13:11:35.007     0     0 I binder  : undelivered transaction 343152, process died.
+09-19 13:11:34.825  1511  1832 I ALT.AudioRoutesRegy: (REDACTED) #audio# audio route(token(%d), %s) OK to update
+09-19 13:11:34.825  1511  1832 I ALT.AudioRoutesRegy: (REDACTED) #audio# enforcing concurrency state on a new audio route of %s
+09-19 13:11:34.825  1511  1832 I ALT.AudioRoutesRegy: (REDACTED) #audio# disconnecting(%s) audio %s for %s
+09-19 13:11:34.826  1511  1832 I ALT.AudioRoutesRegy: (REDACTED) #audio# starting connection to audio route(token(%d), %s) for %s
+09-19 13:11:34.829  1511  1830 I NgaEntryPointEventSendr: setupConnection
+09-19 13:11:34.831  1511  1832 I A       : (REDACTED) State changed: %s => %s by %s and %s with %s
+09-19 13:11:34.834  1511  1832 I A       : (REDACTED) Recognizer choice: (recognizer_type: %s, recognizer_mode: %s, choice_reason: %s)
+09-19 13:11:34.835  1196  1196 D SsBaseTemplateCard: No text view can be set up
+09-19 13:11:34.835  1196  1196 D SsBaseTemplateCard: Passed-in item info is null
+09-19 13:11:34.835  1196  1196 D SsBaseTemplateCard: Passed-in item info is null
+09-19 13:11:34.835  1196  1196 D SsBaseTemplateCard: Passed-in item info is null
+09-19 13:11:34.835  1196  1196 I SsBaseTemplateCard: Secondary card pane is null
+09-19 13:11:34.863   562  1620 V ActivityManager: Got obituary of 4620:com.ggufchat.app
+09-19 13:11:34.864   562  1619 D OomAdjuster: Not killing cached processes
+09-19 13:11:35.043     0     0 I binder  : undelivered TRANSACTION_COMPLETE
+09-19 13:11:35.046     0     0 I binder  : undelivered transaction 343177, process died.
+09-19 13:11:34.866  1511  1830 I NgaEntryPointEventSendr: (REDACTED) State changed: %s => %s
+09-19 13:11:34.866  1511  1830 I NgaEntryPointEventSendr: onServiceConnected
+09-19 13:11:34.866  1636  2339 I A       : Calling beginBinderSession().
+09-19 13:11:34.867  1511  1832 I A       : (REDACTED) onActiveStateChangeEvent: %s => %s
+09-19 13:11:34.867  1636  2339 I A       : beginBinderSession(): calling binder
+09-19 13:11:34.868   359   359 I Zygote  : Process 4607 exited cleanly (137)
+09-19 13:11:34.868  1511  1830 I NgaEntryPointEventSendr: (REDACTED) State changed: %s => %s
+09-19 13:11:34.894  1511  1832 W A       : (REDACTED) Missing generator mapping for generator %s
+09-19 13:11:34.894  1511  1832 W A       : (REDACTED) Missing generator mapping for generator %s
+09-19 13:11:34.894  1511  1832 W A       : (REDACTED) Missing generator mapping for generator %s
+09-19 13:11:34.902  1511  1830 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b
+09-19 13:11:34.903  1511  1832 I A       : (REDACTED) #onActiveStateChangeEvent, newState: %s, previousState: %s.
+09-19 13:11:34.905   562  1619 W ActivityManager: Unable to start service Intent { cmp=com.google.android.apps.tachyon/.clientapi.ClientApiService } U=0: not found
+09-19 13:11:35.087     0     0 I logd    : logdr: UID=0 GID=0 PID=4661 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns

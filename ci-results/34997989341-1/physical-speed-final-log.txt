@@ -1,0 +1,475 @@
+--------- beginning of main
+09-15 17:10:11.024   373 11760 W android.hardware.audio@7.1-impl.ranchu: pcmWrite:259 pcm_writei failed with 'cannot read/write stream data: I/O error' (-1)
+09-15 17:10:11.024   373 11760 E android.hardware.audio@7.1-impl.ranchu: pcmWrite:260 failure: -1
+09-15 17:10:11.128   373 11760 W android.hardware.audio@7.1-impl.ranchu: pcmWrite:259 pcm_writei failed with 'cannot read/write stream data: I/O error' (-1)
+09-15 17:10:11.128   373 11760 E android.hardware.audio@7.1-impl.ranchu: pcmWrite:260 failure: -1
+09-15 17:10:11.141 11794 11794 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 0 <<<<<<
+09-15 17:10:11.145 11794 11794 I AndroidRuntime: Using default boot image
+09-15 17:10:11.145 11794 11794 I AndroidRuntime: Leaving lock profiling enabled
+09-15 17:10:11.147 11794 11794 I app_process: Core platform API reporting enabled, enforcing=false
+09-15 17:10:11.147 11794 11794 I app_process: Using CollectorTypeCMC GC.
+09-15 17:10:11.203 11794 11794 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-15 17:10:11.211 11794 11794 D nativeloader: Load libicu_jni.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-15 17:10:11.211 11794 11794 D app_process: u_setTimeZoneFilesDirectory("/apex/com.android.tzdata/etc/tz/versioned/8/icu") succeeded. 
+09-15 17:10:11.211 11794 11794 D app_process: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt75l.dat
+09-15 17:10:11.211 11794 11794 D nativeloader: Load libjavacore.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-15 17:10:11.212 11794 11794 D nativeloader: Load libopenjdk.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-15 17:10:11.213 11794 11794 W app_process: Unexpected CPU variant for x86: x86_64.
+09-15 17:10:11.213 11794 11794 W app_process: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, goldmont-without-sha-xsaves, tremont, kabylake, default
+09-15 17:10:11.214 11794 11794 W app_process: ClassLoaderContext shared library size mismatch. Expected=2, found=0 (PCL[]{PCL[/system/framework/android.test.base.jar*724373495]#PCL[/system/framework/android.test.mock.jar*1452759902]} | PCL[])
+09-15 17:10:11.215 11794 11794 W app_process: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[]{PCL[/system/framework/android.test.runner.jar*2496447986]#PCL[/system/framework/android.test.base.jar*724373495]} | PCL[/system/framework/android.test.runner.jar*2496447986])
+09-15 17:10:11.229 11794 11794 D nativeloader: Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok
+09-15 17:10:11.229 11794 11794 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-15 17:10:11.231 11794 11794 D UiAutomationConnection: Created on user UserHandle{0}
+09-15 17:10:11.231 11794 11794 I UiAutomation: Initialized for user 0 on display 0
+09-15 17:10:11.231 11794 11794 W UiAutomation: Created with deprecatead constructor, assumes DEFAULT_DISPLAY
+--------- beginning of system
+09-15 17:10:11.232   563  4110 D AccessibilityManagerService: changeCurrentUserForTestAutomationIfNeededLocked(0): ignoring because device doesn't support visible background users
+09-15 17:10:11.232   563  4110 I UiAutomationManager: Registering UiTestAutomationService (id=com.android.server.accessibility/UiAutomation, flags=0x0) when called by user 0
+09-15 17:10:11.233   563  4110 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-15 17:10:11.233  1467  1523 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-15 17:10:11.234   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:11.234   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:11.234   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:11.234   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:11.234   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:11.234   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:11.234   563   563 D BatterySaverPolicy: accessibility changed to true, updating policy.
+09-15 17:10:11.234  1467  1800 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-15 17:10:11.235 11794 11806 V UiAutomation: Init UiAutomation@8331e7a[id=128, displayId=0, flags=0]
+09-15 17:10:11.236   373 11760 W android.hardware.audio@7.1-impl.ranchu: pcmWrite:259 pcm_writei failed with 'cannot read/write stream data: I/O error' (-1)
+09-15 17:10:11.236   373 11760 E android.hardware.audio@7.1-impl.ranchu: pcmWrite:260 failure: -1
+09-15 17:10:11.236   563  1174 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-15 17:10:11.237  1467  1800 I AiAiEcho: EchoTargets: 
+09-15 17:10:11.237  1467  1800 I AiAiEcho: Filtered by AiAi flag check: 
+09-15 17:10:11.237  1467  1800 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 17:10:11.237  1467  1800 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 17:10:11.237   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:11.237   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:11.237   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:11.237   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:11.238  1467  1800 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-15 17:10:11.238  1467  1800 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-15 17:10:11.239   920   920 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-15 17:10:11.239  1467  1523 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-15 17:10:11.240  1467  1800 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-15 17:10:11.240  1467  1800 I AiAiEcho: EchoTargets: 
+09-15 17:10:11.240  1467  1800 I AiAiEcho: Filtered by AiAi flag check: 
+09-15 17:10:11.240  1467  1800 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 17:10:11.240  1467  1800 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 17:10:11.240  1467  1800 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-15 17:10:11.240  1467  1800 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-15 17:10:11.240   920   920 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-15 17:10:11.340   373 11760 W android.hardware.audio@7.1-impl.ranchu: pcmWrite:259 pcm_writei failed with 'cannot read/write stream data: I/O error' (-1)
+09-15 17:10:11.340   373 11760 E android.hardware.audio@7.1-impl.ranchu: pcmWrite:260 failure: -1
+09-15 17:10:11.365  1103  1103 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 17:10:11.365  1103  1103 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 17:10:11.444   373 11760 W android.hardware.audio@7.1-impl.ranchu: pcmWrite:259 pcm_writei failed with 'cannot read/write stream data: I/O error' (-1)
+09-15 17:10:11.444   373 11760 E android.hardware.audio@7.1-impl.ranchu: pcmWrite:260 failure: -1
+09-15 17:10:11.462   373  1525 D android.hardware.audio@7.1-impl.ranchu: threadLoop: entering standby, frames: 7315712
+09-15 17:10:11.548   373 11760 W android.hardware.audio@7.1-impl.ranchu: pcmWrite:259 pcm_writei failed with 'cannot read/write stream data: I/O error' (-1)
+09-15 17:10:11.548   373 11760 E android.hardware.audio@7.1-impl.ranchu: pcmWrite:260 failure: -1
+09-15 17:10:11.866  1103  1103 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 17:10:11.867  1103  1103 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 17:10:11.957   563   670 D ActivityManager: freezing 2620 com.google.android.gms.unstable
+09-15 17:10:12.035   563  2797 E TaskPersister: File error accessing recents directory (directory doesn't exist?).
+09-15 17:10:12.144  1691  1691 I wpa_supplicant: wlan0: CTRL-EVENT-BEACON-LOSS 
+09-15 17:10:12.241 11794 11794 I AccessibilityNodeInfoDumper: Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@19deb; boundsInParent: Rect(0, 0 - 672, 0); boundsInScreen: Rect(24, 142 - 696, 142); boundsInWindow: Rect(24, 142 - 696, 142); packageName: com.ggufchat.app; className: android.widget.LinearLayout; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: null; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; granularScrollingSupported: false; importantForAccessibility: false; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+09-15 17:10:12.241 11794 11794 W AccessibilityNodeInfoDumper: Fetch time: 2ms
+09-15 17:10:12.242   563  4110 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-15 17:10:12.243   563  4110 D AccessibilityManagerService: restoreCurrentUserForTestAutomationIfNeededLocked(): ignoring because device doesn't support visible background users
+09-15 17:10:12.243   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:12.243   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:12.243   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:12.243   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:12.243   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:12.243   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:12.243   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:12.243   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:12.243   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:12.243   563   563 D BatterySaverPolicy: accessibility changed to false, updating policy.
+09-15 17:10:12.244 11794 11794 D AndroidRuntime: Shutting down VM
+09-15 17:10:12.244  1467  1523 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-15 17:10:12.245  1467  1800 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-15 17:10:12.246  1467  1800 I AiAiEcho: EchoTargets: 
+09-15 17:10:12.246  1467  1800 I AiAiEcho: Filtered by AiAi flag check: 
+09-15 17:10:12.246  1467  1800 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 17:10:12.246  1467  1800 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 17:10:12.246  1467  1800 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-15 17:10:12.246  1467  1800 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-15 17:10:12.249   920   920 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-15 17:10:12.309   563   595 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:12.321   563   595 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:12.368  1103  1103 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 17:10:12.368  1103  1103 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 17:10:12.869  1103  1103 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 17:10:12.870  1103  1103 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 17:10:13.098   563  4110 V AutofillSession: Primary service component name: ComponentInfo{com.google.android.gms/com.google.android.gms.autofill.service.AutofillService}, secondary service component name: ComponentInfo{com.android.credentialmanager/com.android.credentialmanager.autofill.CredentialAutofillService}
+09-15 17:10:13.098   563  4110 V SecondaryProviderHandler: Creating a secondary provider handler with component name, ComponentInfo{com.android.credentialmanager/com.android.credentialmanager.autofill.CredentialAutofillService}
+09-15 17:10:13.098   563  4110 D RequestId: nextId(): requestId = 820
+09-15 17:10:13.098   563  4110 W FillRequestEventLogger: Couldn't find packageName: com.google.android.inputmethod.latin
+09-15 17:10:13.099   563   563 D AutofillInlineSuggestionsRequestSession: onCreateInlineSuggestionsRequestLocked called: 1073741824@1466732531
+09-15 17:10:13.100   563  1842 D AutofillInlineSuggestionsRequestSession: onInlineSuggestionsSessionInvalidated() called.
+09-15 17:10:13.101  1371  1371 I GoogleInputMethodService: GoogleInputMethodService.onFinishInput():3157 
+09-15 17:10:13.101 11280 11280 I ImeTracker: com.ggufchat.app:9da1951a: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser true
+09-15 17:10:13.102  1371  1371 I GoogleInputMethodService: GoogleInputMethodService.updateDeviceLockedStatus():2248 repeatCheckTimes = 0, locked = false
+09-15 17:10:13.102 11280 11280 D InputMethodManager: showSoftInput() view=android.widget.EditText{d9a5a80 VFED..CL. .F.P..ID 128,0-493,67 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+09-15 17:10:13.104  1371  1371 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1986 onStartInput(EditorInfo{EditorInfo{packageName=com.ggufchat.app, inputType=24001, inputTypeString=Normal, enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=40000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=0, initialSelEnd=0, initialCapsMode=2000, label=null, fieldId=-1, fieldName=null, extras=Bundle[mParcelledData.dataSize=168], hintText=non-empty, hintLocales=[]}}, false)
+09-15 17:10:13.104   563  4110 D AutofillInlineSuggestionsRequestSession: onInlineSuggestionsRequest() received: InlineSuggestionsRequest { maxSuggestionCount = 9, inlinePresentationSpecs = [InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }], hostPackageName = com.google.android.inputmethod.latin, supportedLocales = [en_US], extras = Bundle[EMPTY_PARCEL], hostInputToken = android.os.BinderProxy@c54dd0, hostDisplayId = 0, inlineTooltipPresentationSpec = null }
+09-15 17:10:13.104  1371  1371 I GoogleInputMethodService: GoogleInputMethodService.updateDeviceLockedStatus():2248 repeatCheckTimes = 1, locked = false
+09-15 17:10:13.105  1371  1371 I AndroidIME: InputBundleManager.loadActiveInputBundleId():450 loadActiveInputBundleId: en-US, ime_english_united_states
+09-15 17:10:13.106   563  1842 W PackageConfigPersister: App-specific configuration not found for packageName: com.ggufchat.app and userId: 0
+09-15 17:10:13.108  1371  1371 I GoogleInputMethodService: GoogleInputMethodService.onStartInputView():2098 onStartInputView(EditorInfo{EditorInfo{packageName=com.ggufchat.app, inputType=24001, inputTypeString=Normal, enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=40000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=0, initialSelEnd=0, initialCapsMode=2000, label=null, fieldId=-1, fieldName=null, extras=Bundle[{androidx.core.view.inputmethod.EditorInfoCompat.STYLUS_HANDWRITING_ENABLED=true}], hintText=non-empty, hintLocales=[]}}, false)
+09-15 17:10:13.110   364   398 I netd    : tetherGetStats() -> {[]} <0.36ms>
+09-15 17:10:13.110  1371  1371 I GoogleInputMethodService: GoogleInputMethodService.updateDeviceLockedStatus():2248 repeatCheckTimes = 1, locked = false
+09-15 17:10:13.111  1371  1371 I KeyboardHeightUtil: KeyboardHeightUtil.getOemKeyboardHeightRatio():206 systemKeyboardHeightRatio:1.000000.
+09-15 17:10:13.111  1371  1371 I AndroidIME: AbstractIme.onActivate():89 LatinIme.onActivate() : EditorInfo = EditorInfo{packageName=com.ggufchat.app, inputType=24001, inputTypeString=Normal, enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=40000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=0, initialSelEnd=0, initialCapsMode=2000, label=null, fieldId=-1, fieldName=null, extras=Bundle[{androidx.core.view.inputmethod.EditorInfoCompat.STYLUS_HANDWRITING_ENABLED=true}], hintText=non-empty, hintLocales=[]}, IncognitoMode = false, DeviceLocked = false
+09-15 17:10:13.112  1371  1371 I Delight5Facilitator: Delight5Facilitator.initializeForIme():747 initializeForIme() : Locale = [en_US], layout = qwerty
+09-15 17:10:13.112  1371  1371 I VoiceInputHandler: VoiceInputHandler.onActivateIme():99 registering TalkbackStateListener
+09-15 17:10:13.114  1371  1371 I VoiceInputManagerWrapper: VoiceInputManagerWrapper.cancelShutdown():102 cancelShutdown()
+09-15 17:10:13.114  1371  1371 I VoiceInputManagerWrapper: VoiceInputManagerWrapper.syncLanguagePacks():114 syncLanguagePacks()
+09-15 17:10:13.114  1371  4883 I SpeechFactory: SpeechRecognitionFactory.maybeScheduleAutoPackDownloadForFallback():200 maybeScheduleAutoPackDownloadForFallback()
+09-15 17:10:13.114  1371  4883 I FallbackOnDeviceRecognitionProvider: FallbackOnDeviceRecognitionProvider.maybeScheduleAutoPackDownload():197 maybeScheduleAutoPackDownload() for language tag en-US
+09-15 17:10:13.115  1371  1371 I LatinIme: LatinIme.updateEnableInlineSuggestionsOnDecoderSideFlags():1174 inline flag updated to:false
+09-15 17:10:13.116 11280 11280 I AssistStructure: Flattened final assist data: 1964 bytes, containing 1 windows, 13 views
+09-15 17:10:13.117   563  4110 D AutofillSession: createPendingIntent for request 820
+09-15 17:10:13.118  1371  1371 I InputBundle: InputBundle.consumeEvent():884 Skip consuming an event as keyboard status is 0
+09-15 17:10:13.118  1371  1371 I KeyboardWrapper: KeyboardWrapper.activateKeyboard():575 activateKeyboard(): type=prime, status=0, imeDef=ktt{stringId=ime_english_united_states, language=en-US, languageTag=en-US, processedConditions={enable_number_row=false, device=phone}, className=com.google.android.apps.inputmethod.libs.latin5.LatinIme, label=0, keyEventInterpreter=null, inlineComposing=true, autoCapital=true, announceAutoSelectedCandidate=true, statusIcon=0, primeKeyboardType=SOFT, indicatorIcon=0, indicatorLabel=US, displayAppCompletions=true, extraValues=ktl{}, processors=kvl@77ed4e2, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=true, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, secondaryIme=null, keyboardGroupDef=kut@468ec9, phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=true, supportsAccessPoints=true}
+09-15 17:10:13.120  1371  1371 I KeyboardManager: KeyboardManager.requestKeyboard():234 Creating keyboard prime, imeId=ime_english_united_states, cacheKey=theme_border_stylesheet_noshadow_gsans_pillkey_silkpopup_hover_light_phone_navredesign
+09-15 17:10:13.120  1371  1371 I KeyboardWrapper: KeyboardWrapper.onKeyboardReady():239 onKeyboardReady(): type=prime(prime), kb=com.google.android.apps.inputmethod.latin.keyboard.LatinPrimeKeyboard@fe390ef
+09-15 17:10:13.120  1371  1371 I KeyboardWrapper: KeyboardWrapper.doActivateKeyboard():606 doActivateKeyboard(): prime
+09-15 17:10:13.120   563  4110 D ContentCapturePerUserService: Notified activity assist data for activity: Token{c3d69a7 ActivityRecord{c5da266 u0 com.ggufchat.app/.ChatActivity t30}} without a session Id
+09-15 17:10:13.120 11280 11293 D EGL_emulation: app_time_stats: avg=162.66ms min=1.02ms max=3532.93ms count=27
+09-15 17:10:13.123  1371  1371 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-15 17:10:13.123  1371  1371 W Keyboard: Keyboard.getKeyboardViewHelper():574 null helper is returned: keyboardDef=kuo{processedConditions={enable_more_candidates_view_for_multilingual=false, enable_secondary_symbols=false, variant=qwerty, language=en-US, device=phone, expressions=normal, keyboard_mode=normal, show_secondary_digits=true, enable_preemptive_decode=true, rtl_layout=false}, globalConditions={global_theme_key=theme_border_stylesheet_noshadow_gsans_pillkey_silkpopup_hover_light_phone_navredesign, global_locale=en_US, global_density_dpi=240, global_orientation=1}, className=.latin.keyboard.LatinPrimeKeyboard, resourceIds=[#0x7f170663, #0x7f1708e0], initialStates=0, keyboardViewDefs=[kvb{direction=null, id=#0x7f0b014d, isScalable=true, layoutId=#0x7f0e039d, type=BODY, touchable=true, defaultShow=true}, kvb{direction=null, id=#0x7f0b014d, isScalable=false, layoutId=#0x7f0e01aa, type=FLOATING_CANDIDATES, touchable=false, defaultShow=false}, kvb{direction=LOCALE, id=#0x7f0b014d, isScalable=false, layoutId=#0x7f0e0591, type=HEADER, touchable=true, defaultShow=true}], persistentStates=0, persistentStatesPrefKey=null, popupBubbleLayoutId=#0x7f0e068d, recentKeyLayoutId=0, recentKeyPopupLayoutId=0, recentKeyType=null, rememberRecentKey=NONE, sessionStates=17592186044419}, type=WIDGET, helpersCreated=[kib@b070e0c, kib@190d355, kib@3cc116a, null], context.getResources().getConfiguration(): {1.0 310mcc260mnc [en_US] ldltr sw480dp w480dp h853dp 240dpi lrg long port finger qwerty/v/v -nav/h winConfig={ mBounds=Rect(0, 0 - 720, 1280) mAppBounds=Rect(0, 0 - 720, 1280) mMaxBounds=Rect(0, 0 - 720, 1280) mDisplayRotation=ROTATION_0 mWindowingMode=fullscreen mActivityType=undefined mAlwaysOnTop=undefined mRotation=ROTATION_0} as.3 s.103 fontWeightAdjustment=0}
+09-15 17:10:13.123  1371  1371 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-15 17:10:13.126  1371  1371 I GoogleInputMethodService: GoogleInputMethodService.startInputIfInputViewStarted():3728 startInputIfInputViewStarted(): default prime
+09-15 17:10:13.126  1371  1371 I KeyboardModeManager: KeyboardModeManager.setInputViewKeyboardViewHolderProvider():625 setInputView() : supportsOneHandedMode=true supportsSplitMode=true
+09-15 17:10:13.126  1371  1371 I NormalModeController: NormalModeController.getKeyboardBodyViewHolderPaddingBottom():104 currentPrimeKeyboardType:SOFT systemPaddingBottom:-1
+09-15 17:10:13.126  1371  1371 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-15 17:10:13.126  1371  1371 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-15 17:10:13.126  1371  1371 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-15 17:10:13.126  1371  1371 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-15 17:10:13.126  1371  1371 I NormalModeController: NormalModeController.getKeyboardBodyViewHolderPaddingBottom():104 currentPrimeKeyboardType:SOFT systemPaddingBottom:-1
+09-15 17:10:13.126  1371  1371 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-15 17:10:13.126  1371  1371 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-15 17:10:13.126  1371  1371 I KeyboardModeManager: KeyboardModeManager.setInputViewKeyboardViewHolderProvider():613 setInputView() : supportsOneHandedMode=true, supportSplitMode=true
+09-15 17:10:13.142  1371  1371 I CrowdsourceExtension: CrowdsourceExtension.checkIfDefaultBrowserIsAllowed():110 Failed to get default browser. The default browser may be deactived.
+09-15 17:10:13.143  1371  1371 I AccessoryInputModeManager: AccessoryInputModeManager.onModeStarted():308 Accessory input mode started: null
+09-15 17:10:13.143  1371  1371 W SupplementaryKeyboardsWrapper: SupplementaryKeyboardsWrapper.deactivateKeyboard():159 keyboard accessory_candidates_consumer is not activated before!
+09-15 17:10:13.143  1371  1371 I VoiceImeExtension: VoiceImeExtension.shouldStartVoiceInputAutomaticallyInCurrentInputBox():415 No private IME option set to start voice input.
+09-15 17:10:13.144  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:13.152  1371  1371 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-15 17:10:13.152  1371  1371 I WindowMetricsNotification: WindowMetricsNotification.notifyWithWindow():113 
+09-15 17:10:13.152  1371  1371 I WindowMetricsNotification: WindowMetricsNotification.notify():106 WindowMetricsNotification{bounds=Rect(0, 36 - 720, 1280), insets=Rect(0, 0 - 0, 72), densityDpi=240, smallestScreenWidthDp=480, displayWidth=720, displayHeight=1280, xdpi=440.0, ydpi=440.0}; DisplayMetrics{density=1.5, width=720, height=1280, scaledDensity=1.5, xdpi=440.0, ydpi=440.0}
+09-15 17:10:13.173   563   563 W FillRequestEventLogger: Shouldn't be logging AutofillFillRequestReported again for same event
+09-15 17:10:13.173   563   563 W FillResponseEventLogger: Shouldn't be logging AutofillFillRequestReported again for same event
+09-15 17:10:13.173   563   563 D AutofillSession: clearPendingIntentLocked
+09-15 17:10:13.173   563   563 D AutofillInlineSuggestionsRequestSession: onInlineSuggestionsResponseLocked called for:1073741824@1466732531
+09-15 17:10:13.173   563   563 D AutofillInlineSuggestionsRequestSession: maybeNotifyFillUiEventLoked(): hasSuggestionToShow=false, mPreviousHasNonPinSuggestionShow=false
+09-15 17:10:13.173   563   563 D AutofillInlineSuggestionsRequestSession: Send inline response: 0
+09-15 17:10:13.173  4018  4018 V InlineSuggestionRenderService: handleDestroySuggestionViews called for 0:1466732531
+09-15 17:10:13.176   563   585 D AutofillUI: destroySaveUiUiThread(): already destroyed
+09-15 17:10:13.189   563  1386 D ActivityManager: sync unfroze 1656 com.google.android.gms for 6
+09-15 17:10:13.197  1656  1656 D BoundBrokerSvc: onBind: Intent { act=com.google.firebase.dynamiclinks.service.START pkg=com.google.android.gms }
+09-15 17:10:13.197  1656  1656 D BoundBrokerSvc: Loading bound service for intent: Intent { act=com.google.firebase.dynamiclinks.service.START pkg=com.google.android.gms }
+09-15 17:10:13.199  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:13.206  1286  2459 I IPCThreadState: oneway function results for code 1 on binder at 0x7ff4e8c73b10 will be dropped but finished with status UNKNOWN_TRANSACTION and reply parcel size 80
+09-15 17:10:13.209  1656  1656 D BoundBrokerSvc: onBind: Intent { act=com.google.android.mdd.service.START dat=chimera-action:/... cmp=com.google.android.gms/.chimera.GmsBoundBrokerService }
+09-15 17:10:13.209  1656  1656 D BoundBrokerSvc: Loading bound service for intent: Intent { act=com.google.android.mdd.service.START dat=chimera-action:/... cmp=com.google.android.gms/.chimera.GmsBoundBrokerService }
+09-15 17:10:13.212   563  1174 W ProcessStats: Tracking association SourceState{1ea23b3 com.google.android.gms.persistent/10143 BFgs #7628} whose proc state 4 is better than process ProcessState{5e9abe3 com.google.android.gms/10143 pkg=com.google.android.gms} proc state 14 (1 skipped)
+09-15 17:10:13.216  1371  1371 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1067<1069, inputStateId=794, lastInputStateId=793
+09-15 17:10:13.216  1371  1371 I GoogleInputMethodService: GoogleInputMethodService$1.onKeyboardViewShown():494 onKeyboardViewShown: keyboardType=prime, keyboardViewType=HEADER keyboardView=com.google.android.libraries.inputmethod.widgets.SoftKeyboardView{5ff25a9 V.E...... ........ 0,0-720,66}
+09-15 17:10:13.219  1371  1371 I GoogleInputMethodService: GoogleInputMethodService$1.onKeyboardViewShown():494 onKeyboardViewShown: keyboardType=prime, keyboardViewType=BODY keyboardView=com.google.android.libraries.inputmethod.widgets.SoftKeyboardView{74dbf4a V.E...... ........ 0,0-720,360}
+09-15 17:10:13.220  1371  1371 I NewLanguagePromptExtension: NewLanguagePromptExtension$1.onKeyboardViewShown():115 Not show new language banner: no new languages.
+09-15 17:10:13.220  1371  1371 I WindowMetricsNotification: WindowMetricsNotification.notifyWithWindow():113 
+09-15 17:10:13.220  1371  1371 I WindowMetricsNotification: WindowMetricsNotification.notify():106 WindowMetricsNotification{bounds=Rect(0, 36 - 720, 1280), insets=Rect(0, 0 - 0, 72), densityDpi=240, smallestScreenWidthDp=480, displayWidth=720, displayHeight=1280, xdpi=440.0, ydpi=440.0}; DisplayMetrics{density=1.5, width=720, height=1280, scaledDensity=1.5, xdpi=440.0, ydpi=440.0}
+09-15 17:10:13.220  1371  1371 I WindowMetricsNotification: WindowMetricsNotification.notifyWithWindow():113 
+09-15 17:10:13.220  1371  1371 I WindowMetricsNotification: WindowMetricsNotification.notify():106 WindowMetricsNotification{bounds=Rect(0, 36 - 720, 1280), insets=Rect(0, 0 - 0, 72), densityDpi=240, smallestScreenWidthDp=480, displayWidth=720, displayHeight=1280, xdpi=440.0, ydpi=440.0}; DisplayMetrics{density=1.5, width=720, height=1280, scaledDensity=1.5, xdpi=440.0, ydpi=440.0}
+09-15 17:10:13.220  1371  1371 I NormalModeController: NormalModeController.getKeyboardBodyViewHolderPaddingBottom():104 currentPrimeKeyboardType:SOFT systemPaddingBottom:-1
+09-15 17:10:13.220  1371  1811 I Delight5Decoder: Delight5DecoderWrapper.setKeyboardLayout():511 setKeyboardLayout()
+09-15 17:10:13.226  1371  1371 W AndroidSpellCheckerService: AndroidSpellCheckerService.initialize():73 initialize...
+09-15 17:10:13.226  1371  1371 I ShortcutsDataManager: ShortcutsDataManager.onContentChanged():72 onContentChanged()
+09-15 17:10:13.226  1371  1371 I ContactsDataManager: ContactsDataManager.onContentChanged():159 onContentChanged()
+09-15 17:10:13.226  1371  1371 W AndroidSpellCheckerService: AndroidSpellCheckerService.initialize():83 initialize...done
+09-15 17:10:13.238 11280 11280 D InsetsController: show(ime(), fromIme=true)
+09-15 17:10:13.243  1371  6585 I AndroidSpellCheckerService: AndroidSpellCheckerService.createSession():139 com.google.android.keyboard.client.delight5.LanguageIdentifier@aaea164 is created
+09-15 17:10:13.247   920   987 D WindowManagerShell: onKeepClearAreasChanged: restricted={}, unrestricted={Rect(0, 782 - 720, 1280)}
+09-15 17:10:13.247   920   920 E OverviewProxyService: Failed to get overview proxy for system bar attr change.
+09-15 17:10:13.249  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:13.259  1656  1656 D BoundBrokerSvc: onBind: Intent { act=com.google.android.gms.common.BIND_SHARED_PREFS pkg=com.google.android.gms }
+09-15 17:10:13.259  1656  1656 D BoundBrokerSvc: Loading bound service for intent: Intent { act=com.google.android.gms.common.BIND_SHARED_PREFS pkg=com.google.android.gms }
+09-15 17:10:13.266 11280 11823 W InteractionJankMonitor: Initializing without READ_DEVICE_CONFIG permission. enabled=true, interval=1, missedFrameThreshold=3, frameTimeThreshold=64, package=com.ggufchat.app
+09-15 17:10:13.285 11280 11280 I ImeTracker: com.ggufchat.app:9da1951a: onShown
+09-15 17:10:13.290  1371  1371 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-15 17:10:13.296  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:13.296  1371  1371 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1070<1072, inputStateId=796, lastInputStateId=797
+09-15 17:10:13.332  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:13.337   563   595 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:13.378  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:13.388  1103  1103 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 17:10:13.388  1103  1103 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 17:10:13.404  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:13.447  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:13.468  1371  1811 I native  : I0000 00:00:1789492213.468243    1811 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-15 17:10:13.468  1371  1371 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1072<1079, inputStateId=801, lastInputStateId=801
+09-15 17:10:13.540  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:13.561  1371  1371 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-15 17:10:13.587  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:13.588  1371  1371 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1082<1083, inputStateId=804, lastInputStateId=805
+09-15 17:10:13.627  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:13.669  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:13.674  1371  1371 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-15 17:10:13.727  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:13.736  1371  1371 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-15 17:10:13.824  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:13.824  1371  1371 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-15 17:10:13.831  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:13.833  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:13.889  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:13.898  1103  1103 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 17:10:13.899  1103  1103 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 17:10:13.925  1371  1371 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1090<1092, inputStateId=812, lastInputStateId=813
+09-15 17:10:13.943  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:13.958  1371  1811 I native  : I0000 00:00:1789492213.958153    1811 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-15 17:10:13.985  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:13.988  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:13.989  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:13.990  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:13.993  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:13.993  1371  1371 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1092<1095, inputStateId=814, lastInputStateId=815
+09-15 17:10:13.996  1371  1811 I native  : I0000 00:00:1789492213.996027    1811 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-15 17:10:13.996  1371  1371 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1094<1095, inputStateId=815, lastInputStateId=815
+09-15 17:10:14.010  1371  1371 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-15 17:10:14.045  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:14.075  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:14.106  1371  1811 I native  : I0000 00:00:1789492214.106651    1811 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-15 17:10:14.133 11280 11293 D EGL_emulation: app_time_stats: avg=48.49ms min=18.23ms max=134.51ms count=20
+09-15 17:10:14.134  1371  1811 I native  : I0000 00:00:1789492214.134756    1811 input-context-store.cc:186] Ignoring stale client request for OverrideDecodedCandidates
+09-15 17:10:14.143  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:14.157  1371  1811 I native  : I0000 00:00:1789492214.157879    1811 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-15 17:10:14.181  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:14.181  1371  1371 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1098<1103, inputStateId=0, lastInputStateId=820
+09-15 17:10:14.183  1371  1811 I native  : I0000 00:00:1789492214.183493    1811 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-15 17:10:14.186  1371  1371 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1100<1103, inputStateId=819, lastInputStateId=820
+09-15 17:10:14.189  1371  1811 I native  : I0000 00:00:1789492214.189169    1811 input-context-store.cc:186] Ignoring stale client request for OverrideDecodedCandidates
+09-15 17:10:14.214  1371  1371 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1102<1104, inputStateId=0, lastInputStateId=820
+09-15 17:10:14.216  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:14.242  1371  1371 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-15 17:10:14.249  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:14.272  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:14.314  1371  1878 D EGL_emulation: app_time_stats: avg=101.50ms min=17.67ms max=270.24ms count=11
+09-15 17:10:14.315  1371  1371 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-15 17:10:14.320  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:14.324  1371  1371 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1108<1110, inputStateId=826, lastInputStateId=827
+09-15 17:10:14.344   563   595 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:14.344   563   595 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:14.346  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:14.348  1371  1371 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1110<1111, inputStateId=829, lastInputStateId=830
+09-15 17:10:14.399  1103  1103 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 17:10:14.400  1103  1103 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 17:10:14.416  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:14.461  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:14.462  1371  1371 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-15 17:10:14.493  1371  1371 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1114<1116, inputStateId=833, lastInputStateId=834
+09-15 17:10:14.506  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:14.575  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:14.577  1371  1371 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1116<1117, inputStateId=835, lastInputStateId=836
+09-15 17:10:14.612  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:14.615  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:14.616  1371  1371 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-15 17:10:14.629   364   398 I netd    : tetherGetStats() -> {[]} <0.79ms>
+09-15 17:10:14.693  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:14.697  1371  1371 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-15 17:10:14.702  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:14.710  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:14.710  1371  1371 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-15 17:10:14.745  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:14.824  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:14.849  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:14.849  1371  1371 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1122<1125, inputStateId=841, lastInputStateId=844
+09-15 17:10:14.896  1371  1371 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1124<1126, inputStateId=843, lastInputStateId=844
+09-15 17:10:14.897  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:14.903  1371  1371 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1126<1128, inputStateId=845, lastInputStateId=846
+09-15 17:10:14.906  1103  1103 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 17:10:14.908  1103  1103 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 17:10:14.920  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:14.920  1371  1371 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1128<1130, inputStateId=848, lastInputStateId=849
+09-15 17:10:14.929  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:14.934  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:14.934  1371  1371 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-15 17:10:14.989  1371  1811 I native  : I0000 00:00:1789492214.989381    1811 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-15 17:10:15.008  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:15.014  1371  1371 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-15 17:10:15.033  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:15.066  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:15.071  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:15.089  1371  1811 I native  : I0000 00:00:1789492215.089035    1811 input-context-store.cc:186] Ignoring stale client request for OverrideDecodedCandidates
+09-15 17:10:15.167 11280 11293 D EGL_emulation: app_time_stats: avg=44.31ms min=21.95ms max=80.35ms count=22
+09-15 17:10:15.178  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:15.181  1371  1371 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1130<1140, inputStateId=0, lastInputStateId=854
+09-15 17:10:15.184  1371  1811 I native  : I0000 00:00:1789492215.184375    1811 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-15 17:10:15.222  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:15.222  1371  1371 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1139<1142, inputStateId=854, lastInputStateId=855
+09-15 17:10:15.237  1371  1811 I native  : I0000 00:00:1789492215.237638    1811 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-15 17:10:15.273  1371  1371 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 17:10:15.280  1371  1371 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1141<1145, inputStateId=855, lastInputStateId=857
+09-15 17:10:15.280  1371  1371 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1143<1145, inputStateId=856, lastInputStateId=857
+09-15 17:10:15.358   563   595 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:15.410  1103  1103 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 17:10:15.416  1103  1103 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 17:10:15.478 11828 11828 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 0 <<<<<<
+09-15 17:10:15.483 11828 11828 I AndroidRuntime: Using default boot image
+09-15 17:10:15.483 11828 11828 I AndroidRuntime: Leaving lock profiling enabled
+09-15 17:10:15.486 11828 11828 I app_process: Core platform API reporting enabled, enforcing=false
+09-15 17:10:15.486 11828 11828 I app_process: Using CollectorTypeCMC GC.
+09-15 17:10:15.494  1371  1371 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-15 17:10:15.500  1371  1878 D EGL_emulation: app_time_stats: avg=148.20ms min=23.04ms max=415.00ms count=8
+09-15 17:10:15.577 11828 11828 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-15 17:10:15.586 11828 11828 D nativeloader: Load libicu_jni.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-15 17:10:15.586 11828 11828 D app_process: u_setTimeZoneFilesDirectory("/apex/com.android.tzdata/etc/tz/versioned/8/icu") succeeded. 
+09-15 17:10:15.586 11828 11828 D app_process: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt75l.dat
+09-15 17:10:15.587 11828 11828 D nativeloader: Load libjavacore.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-15 17:10:15.587 11828 11828 D nativeloader: Load libopenjdk.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-15 17:10:15.589 11828 11828 W app_process: Unexpected CPU variant for x86: x86_64.
+09-15 17:10:15.589 11828 11828 W app_process: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, goldmont-without-sha-xsaves, tremont, kabylake, default
+09-15 17:10:15.589 11828 11828 W app_process: ClassLoaderContext shared library size mismatch. Expected=2, found=0 (PCL[]{PCL[/system/framework/android.test.base.jar*724373495]#PCL[/system/framework/android.test.mock.jar*1452759902]} | PCL[])
+09-15 17:10:15.590 11828 11828 W app_process: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[]{PCL[/system/framework/android.test.runner.jar*2496447986]#PCL[/system/framework/android.test.base.jar*724373495]} | PCL[/system/framework/android.test.runner.jar*2496447986])
+09-15 17:10:15.603 11828 11828 D nativeloader: Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok
+09-15 17:10:15.603 11828 11828 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-15 17:10:15.605 11828 11828 D UiAutomationConnection: Created on user UserHandle{0}
+09-15 17:10:15.605 11828 11828 I UiAutomation: Initialized for user 0 on display 0
+09-15 17:10:15.605 11828 11828 W UiAutomation: Created with deprecatead constructor, assumes DEFAULT_DISPLAY
+09-15 17:10:15.606   563  4110 D AccessibilityManagerService: changeCurrentUserForTestAutomationIfNeededLocked(0): ignoring because device doesn't support visible background users
+09-15 17:10:15.606   563  4110 I UiAutomationManager: Registering UiTestAutomationService (id=com.android.server.accessibility/UiAutomation, flags=0x0) when called by user 0
+09-15 17:10:15.607   563  4110 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-15 17:10:15.607  1467  2385 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-15 17:10:15.607   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:15.608  1467  1800 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-15 17:10:15.608  1467  1800 I AiAiEcho: EchoTargets: 
+09-15 17:10:15.608  1467  1800 I AiAiEcho: Filtered by AiAi flag check: 
+09-15 17:10:15.608  1467  1800 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 17:10:15.608  1467  1800 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 17:10:15.608  1467  1800 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-15 17:10:15.608 11828 11840 V UiAutomation: Init UiAutomation@9647a9e[id=129, displayId=0, flags=0]
+09-15 17:10:15.608  1467  1800 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-15 17:10:15.608   920   920 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-15 17:10:15.609   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:15.609   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:15.609   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:15.609   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:15.610   563  4110 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-15 17:10:15.610   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:15.610   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:15.610   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:15.610   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:15.610   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:15.610   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:15.611   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:15.611   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:15.611   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:15.611   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:15.611   563   563 D BatterySaverPolicy: accessibility changed to true, updating policy.
+09-15 17:10:15.616  1371  1371 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-15 17:10:15.620  1467  1523 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-15 17:10:15.621  1467  1800 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-15 17:10:15.621  1467  1800 I AiAiEcho: EchoTargets: 
+09-15 17:10:15.621  1467  1800 I AiAiEcho: Filtered by AiAi flag check: 
+09-15 17:10:15.621  1467  1800 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 17:10:15.621  1467  1800 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 17:10:15.621  1467  1800 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-15 17:10:15.621  1467  1800 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-15 17:10:15.623   920   920 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-15 17:10:15.911  1103  1103 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 17:10:15.917  1103  1103 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 17:10:16.296 11280 11293 D EGL_emulation: app_time_stats: avg=220.92ms min=36.03ms max=500.29ms count=5
+09-15 17:10:16.412  1103  1103 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 17:10:16.417  1103  1103 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 17:10:16.526   563   595 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:16.532   563   595 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:16.628 11828 11828 I AccessibilityNodeInfoDumper: Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@19df8; boundsInParent: Rect(0, 0 - 672, 0); boundsInScreen: Rect(24, 142 - 696, 142); boundsInWindow: Rect(24, 142 - 696, 142); packageName: com.ggufchat.app; className: android.widget.LinearLayout; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: null; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; granularScrollingSupported: false; importantForAccessibility: false; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+09-15 17:10:16.628 11828 11828 W AccessibilityNodeInfoDumper: Fetch time: 3ms
+09-15 17:10:16.629   563  1842 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-15 17:10:16.629   563  1842 D AccessibilityManagerService: restoreCurrentUserForTestAutomationIfNeededLocked(): ignoring because device doesn't support visible background users
+09-15 17:10:16.629   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:16.630   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:16.630   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:16.630   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:16.630   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:16.630   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:16.630 11828 11828 D AndroidRuntime: Shutting down VM
+09-15 17:10:16.631   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:16.632   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:16.632   563   563 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:16.632   563   563 D BatterySaverPolicy: accessibility changed to false, updating policy.
+09-15 17:10:16.632  1467  2385 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-15 17:10:16.633  1467  1800 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-15 17:10:16.633  1467  1800 I AiAiEcho: EchoTargets: 
+09-15 17:10:16.633  1467  1800 I AiAiEcho: Filtered by AiAi flag check: 
+09-15 17:10:16.633  1467  1800 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 17:10:16.633  1467  1800 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 17:10:16.633  1467  1800 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-15 17:10:16.633  1467  1800 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-15 17:10:16.635   920   920 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-15 17:10:16.914  1103  1103 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 17:10:16.917  1103  1103 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 17:10:17.415  1103  1103 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 17:10:17.417  1103  1103 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 17:10:17.498   432   656 D audioserver: logFgsApiBegin: FGS Logger Transaction failed, -129
+09-15 17:10:17.499   563  1217 W AS.PlaybackActivityMon: No piid assigned for invalid/internal port id 15
+09-15 17:10:17.502 11280 11293 D EGL_emulation: app_time_stats: avg=401.91ms min=206.24ms max=505.83ms count=3
+09-15 17:10:17.521 11280 11280 I ImeTracker: com.ggufchat.app:3b529863: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+09-15 17:10:17.526  1371  1371 I GoogleInputMethodService: GoogleInputMethodService.onFinishInputView():2393 
+09-15 17:10:17.528   563  1217 I ActivityManager: Background started FGS: Allowed [callingPackage: com.ggufchat.app; callingUid: 10209; uidState: TOP ; uidBFSL: [BFSL]; intent: Intent { act=com.ggufchat.app.action.GENERATE cmp=com.ggufchat.app/.GenerationService (has extras) }; code:PROC_STATE_TOP; tempAllowListReason:<null>; targetSdkVersion:34; callerTargetSdkVersion:34; startForegroundCount:0; bindFromPackage:null: isBindService:false]
+09-15 17:10:17.538  1371  1371 W TooltipLifecycleManager: TooltipLifecycleManager.dismissTooltips():152 Tooltip with id spell_check_add_to_dictionary not found in tooltipManager.
+09-15 17:10:17.540  1371  1371 I InputBundle: InputBundle.consumeEvent():884 Skip consuming an event as keyboard status is 0
+09-15 17:10:17.540  1371  1371 I VoiceInputHandler: VoiceInputHandler.onDeactivateIme():115 unregistering TalkbackStateListener
+09-15 17:10:17.540  1371  1371 I VoiceInputManagerWrapper: VoiceInputManagerWrapper.shutdown():124 shutdown()
+09-15 17:10:17.541   563  1842 W ForegroundServiceTypeLoggerModule: Foreground service start for UID: 10209 does not have any types
+09-15 17:10:17.548   364   398 I netd    : tetherGetStats() -> {[]} <0.51ms>
+09-15 17:10:17.549  1371  1371 I AndroidIME: AbstractIme.onDeactivate():202 LatinIme.onDeactivate()
+09-15 17:10:17.549   563   595 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 17:10:17.552  1371  1647 W ModuleManager: ModuleManager.loadModule():473 Module mgc is not available
+09-15 17:10:17.553  1371  1371 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-15 17:10:17.560  1371  1371 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1986 onStartInput(EditorInfo{EditorInfo{packageName=com.ggufchat.app, inputType=24001, inputTypeString=Normal, enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=40000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=0, initialSelEnd=0, initialCapsMode=3000, label=null, fieldId=-1, fieldName=null, extras=Bundle[mParcelledData.dataSize=168], hintText=non-empty, hintLocales=[]}}, true)
+09-15 17:10:17.560  1371  1371 I GoogleInputMethodService: GoogleInputMethodService.updateDeviceLockedStatus():2248 repeatCheckTimes = 1, locked = false
+09-15 17:10:17.560  1371  1371 W SessionManager: SessionManager.beginSession():53 Try to begin an already begun session [INPUT_SESSION], end it first
+09-15 17:10:17.561  1371  1371 I AndroidIME: InputBundleManager.loadActiveInputBundleId():450 loadActiveInputBundleId: en-US, ime_english_united_states
+09-15 17:10:17.565 11280 11280 D InsetsController: hide(ime(), fromIme=true)
+09-15 17:10:17.576   920   920 E OverviewProxyService: Failed to get overview proxy for system bar attr change.
+09-15 17:10:17.583  1371  1878 D EGL_emulation: app_time_stats: avg=694.22ms min=23.51ms max=1944.88ms count=3
+09-15 17:10:17.584   920   987 D WindowManagerShell: onKeepClearAreasChanged: restricted={}, unrestricted={}
+09-15 17:10:17.660   432   540 D audioserver: logFgsApiEnd: FGS Logger Transaction failed, -129
+09-15 17:10:17.668   563  1217 W PackageConfigPersister: App-specific configuration not found for packageName: com.ggufchat.app and userId: 0
+09-15 17:10:17.668  1371  1371 W NotificationCenter: NotificationCenter$ListenerData.notifyOnExecutor():672 Heavy notify work detected on UI thread: |kga->jjc| takes 105ms
+09-15 17:10:17.669  1371  1371 I WindowMetricsNotification: WindowMetricsNotification.notifyWithWindow():113 
+09-15 17:10:17.669  1371  1371 I WindowMetricsNotification: WindowMetricsNotification.notify():106 WindowMetricsNotification{bounds=Rect(0, 36 - 720, 1280), insets=Rect(0, 0 - 0, 72), densityDpi=240, smallestScreenWidthDp=480, displayWidth=720, displayHeight=1280, xdpi=440.0, ydpi=440.0}; DisplayMetrics{density=1.5, width=720, height=1280, scaledDensity=1.5, xdpi=440.0, ydpi=440.0}
+09-15 17:10:17.669  1371  1371 I ShortcutsDataManager: AbstractContentDataManager.startImportContentTask():240 startImportContentTask()
+09-15 17:10:17.673  1371  1825 I ShortcutsDataManager: AbstractContentDataManager$ImportContentTask.doInBackground():255 doInBackground()
+09-15 17:10:17.673  1371  1825 I PersonalDictionaryDataHandler: PersonalDictionaryDataHandler.beginProcess():114 LanguageTags = [en-US]
+09-15 17:10:17.685 11280 11855 I GGUFSystem: GGUF_SYSTEM_PROMPT_APPLIED scope=global chars=107 sha256=dde45e87ea07db0b49bcddd022d4f41a452610560d9af636571c26d16a4bcd04
+09-15 17:10:17.709   563  1842 D ActivityManager: sync unfroze 1746 android.process.acore for 7
+09-15 17:10:17.716 11280 11280 I ImeTracker: com.ggufchat.app:830a61df: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_ON_ANIMATION_STATE_CHANGED fromUser false
+09-15 17:10:17.717 11280 11280 I ImeTracker: com.ggufchat.app:3b529863: onHidden
+09-15 17:10:17.718   563   689 I ImeTracker: com.ggufchat.app:830a61df: onCancelled at PHASE_SERVER_SHOULD_HIDE
+09-15 17:10:17.873   563   576 I system_server: Background concurrent mark compact GC freed 30MB AllocSpace bytes, 39(772KB) LOS objects, 47% free, 26MB/50MB, paused 11.994ms,1.742ms total 360.610ms
+09-15 17:10:17.877  1371  1825 I ShortcutsDataManager: AbstractContentDataManager.importRecords():345 importRecords() : Success : Count = 0
+09-15 17:10:17.879  1371  1825 I ShortcutsDataManager: AbstractContentDataManager.importContentData():295 importContentData() : Ending import process
+09-15 17:10:17.896   563   578 W system_server: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/LatinIMEGooglePrebuilt/LatinIMEGooglePrebuilt.apk' with 1 weak references
+09-15 17:10:17.900   563   578 W system_server: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/GoogleTTS/GoogleTTS.apk' with 1 weak references
+09-15 17:10:17.903  1371  1811 I Delight5Decoder: Delight5DecoderWrapper.unloadLanguageModel():943 unloadLanguageModel() : 4, version [n/a]
+09-15 17:10:17.917  1103  1103 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 17:10:17.917  1103  1103 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 17:10:17.949  1371  1825 I PersonalLanguageModelUpdater: PersonalLanguageModelUpdater$UpdateOperation.performInternal():165 run() : Added 0 words and 0 shortcuts
+09-15 17:10:17.952  1371  1825 I DynamicLanguageModelOperation: DynamicLanguageModelOperation.perform():43 perform() : 4 : dxm : Completed
+09-15 17:10:17.956  1371  1811 I Delight5Decoder: Delight5DecoderWrapper.loadLanguageModel():730 loadLanguageModel() : 4, version [n/a]
+09-15 17:10:17.957  1371  1811 I Delight5Decoder: Delight5DecoderWrapper.loadLanguageModel():771 Loaded dynamic LM 4.en
+09-15 17:10:17.957  1371  1371 I ShortcutsDataManager: AbstractContentDataManager$ImportContentTask.onPostExecute():266 onPostExecute() : Result = [2,0]
+09-15 17:10:17.957  1371  1371 I ShortcutsDataManager: ShortcutsDataManager.onImportFinished():82 onImportFinished() : Result = 2 : Count = 0
+09-15 17:10:17.968 11864 11864 W BpBinder: Linking to death on android.gui.ISurfaceComposer but there are no threads (yet?) listening to incoming transactions. See ProcessState::startThreadPool and ProcessState::setThreadPoolMaxThreadCount. Generally you should setup the binder threadpool before other initialization steps.
+09-15 17:10:17.968 11864 11864 W ProcessState: Extra binder thread started, but 0 threads requested. Do not use *startThreadPool when zero threads are requested.
+09-15 17:10:17.979   152   152 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+09-15 17:10:17.979 11864 11868 I Gralloc4: mapper 4.x is not supported
+--------- beginning of kernel
+09-15 17:10:18.174     0     0 I servicemanager: Caller(pid=11864,uid=0,sid=u:r:su:s0) Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest. No alternative instances declared in VINTF.
+09-15 17:10:18.095 11280 11855 I GGUFInference: GGUF_CONTENT_PREPARED files=1 images=1 text_chars=0

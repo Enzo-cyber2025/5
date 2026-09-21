@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "/home/runner/work/5/5/scripts/test_latency_android.py", line 71, in main
+    first=run_reply(d,chat,FIRST,f'{phase}-{i}-cold',new)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_latency_android.py", line 41, in run_reply
+    r=measured_reply(d,chat,prompt,'latency-'+phase,True)
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_generation_stats_android.py", line 48, in measured_reply
+    return d.wait(done,'native completion and per-message counters: '+phase,timeout=600)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_android.py", line 74, in wait
+    raise AssertionError(f"Timeout: {description}")
+AssertionError: Timeout: native completion and per-message counters: latency-before-0-cold

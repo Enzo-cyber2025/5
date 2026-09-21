@@ -1,0 +1,46 @@
+--------- beginning of main
+09-18 18:41:13.137 12382 12382 I ImeTracker: com.ggufchat.app:dced9950: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser true
+09-18 18:41:13.138 12382 12382 D InputMethodManager: showSoftInput() view=android.widget.EditText{45eba98 VFED..CL. .F.P..ID 128,0-493,67 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+09-18 18:41:13.141 12382 12382 I AssistStructure: Flattened final assist data: 3036 bytes, containing 1 windows, 16 views
+09-18 18:41:13.150 12382 12394 D EGL_emulation: app_time_stats: avg=297.80ms min=6.38ms max=4594.65ms count=16
+09-18 18:41:14.210 12382 12394 D EGL_emulation: app_time_stats: avg=264.80ms min=28.22ms max=498.62ms count=4
+09-18 18:41:15.211 12382 12394 D EGL_emulation: app_time_stats: avg=500.56ms min=500.48ms max=500.65ms count=2
+09-18 18:41:16.711 12382 12394 D EGL_emulation: app_time_stats: avg=499.81ms min=499.43ms max=500.21ms count=3
+09-18 18:41:17.338 12382 12382 I ImeTracker: com.ggufchat.app:feb1c878: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+09-18 18:41:17.364 12382 12991 I GGUFSystem: GGUF_SYSTEM_PROMPT_APPLIED scope=global chars=107 sha256=dde45e87ea07db0b49bcddd022d4f41a452610560d9af636571c26d16a4bcd04
+09-18 18:41:17.365 12382 12991 I GGUFInference: GGUF_CONTENT_PREPARED files=0 images=0 text_chars=0
+09-18 18:41:17.365 12382 12991 I GGUFNativeStderr: set_sampler: seq_id = 0, sampler = 0x7fe110586d70
+09-18 18:41:17.367 12382 12991 I GGUFChatNative: GGUF_GPU_SAMPLING requested=1 attached=1
+09-18 18:41:17.367 12382 12382 D InsetsController: hide(ime(), fromIme=true)
+09-18 18:41:17.368 12382 12382 I ImeTracker: com.ggufchat.app:feb1c878: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+09-18 18:41:17.395 12382 12991 I GGUFNativeStderr: sched_reserve: reserving ...
+09-18 18:41:17.401 12382 12991 I GGUFNativeStderr: sched_reserve: max_nodes = 2202
+09-18 18:41:17.435 12382 12991 I GGUFNativeStderr: sched_reserve: reserving full memory module
+09-18 18:41:17.435 12382 12991 I GGUFNativeStderr: sched_reserve: worst-case: n_tokens = 32, n_seqs = 1, n_outputs = 1
+09-18 18:41:17.435 12382 12991 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =   32, n_seqs =  1, n_outputs =    1
+09-18 18:41:17.451 12382 12991 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 18:41:17.451 12382 12991 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 18:41:17.452 12382 12991 I MESA    : on_vkAllocateMemory: has alloc flags
+09-18 18:41:17.452 12382 12991 I MESA    : allocateCoherentMemory: has alloc flags
+09-18 18:41:17.453 12382 12991 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =    1, n_seqs =  1, n_outputs =    1
+09-18 18:41:17.455 12382 12991 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =   32, n_seqs =  1, n_outputs =    1
+09-18 18:41:17.458 12382 12991 I GGUFNativeStderr: sched_reserve:    Vulkan0 compute buffer size =     0.83 MiB
+09-18 18:41:17.459 12382 12991 I GGUFNativeStderr: sched_reserve: Vulkan_Host compute buffer size =     0.20 MiB
+09-18 18:41:17.459 12382 12991 I GGUFNativeStderr: sched_reserve: graph nodes  = 961
+09-18 18:41:17.459 12382 12991 I GGUFNativeStderr: sched_reserve: graph splits = 1
+09-18 18:41:17.459 12382 12991 I GGUFNativeStderr: sched_reserve: reserve took 57.11 ms, sched copies = 1
+09-18 18:41:17.565 12382 12991 I GGUFChatNative: GGUF_PROMPT_CACHE input_tokens=231 reused_tokens=204 evaluated_tokens=27 media=0
+09-18 18:41:17.904 12382 12394 D EGL_emulation: app_time_stats: avg=238.61ms min=23.96ms max=513.84ms count=5
+09-18 18:41:18.081 12382 12382 D VRI[ChatActivity]: visibilityChanged oldVisibility=true newVisibility=false
+09-18 18:41:35.975 12382 12991 I GGUFChatNative: GGUF_NATIVE_COMPLETE tokens=128 reason=length projector=0
+09-18 18:41:35.975 12382 12991 I GGUFNativeStderr: set_sampler: seq_id = 0, sampler = 0x0
+09-18 18:41:35.975 12382 12991 I GGUFChatNative: GGUF_HOST_WORKER_CPU available=1 thread_cpu_ns=17350201318
+09-18 18:41:35.975 12382 12991 I GGUFChatNative: GGUF_STRICT_VULKAN_RESULT enabled=1 submitted_graphs=128 submitted_math_nodes=75904 blocked=0 host_orchestration=CPU
+09-18 18:41:35.975 12382 12991 I GGUFChatNative: GGUF_GPU_SAMPLING_RESULT backend_selected=128 emitted=128
+09-18 18:41:35.975 12382 12991 I GGUFChatNative: GGUF_VULKAN_DELIVERY token_only_export=1 overlap_submissions=126 first_text_immediate=1
+09-18 18:41:35.976 12382 12991 I GGUFChatNative: GGUF_RESPONSE_LATENCY first_token_ns=870013509 prompt_tokens=231 reused_tokens=204
+09-18 18:41:35.976 12382 12991 I GGUFChatNative: GGUF_GENERATION_STATS tokens=128 decode_ns=17742117565 prefill_ns=868809596 callbacks=128 success=1
+09-18 18:41:35.976 12382 12991 I System.out: GGUF_REPAIR_GENERATION_OK
+09-18 18:41:35.979 12382 12991 I GGUFReplyNotice: GGUF_NOTICE_STATS progress_updates=0 skipped_screen_off=128
+09-18 18:41:35.981 12382 12991 I GGUFReplyNotice: GGUF_REPLY_NOTICE posted=1 saved=1 screen_off=1 locked=0
+09-18 18:41:35.985 12382 12382 I GGUFReplyNotice: GGUF_REPLY_SERVICE_DESTROYED

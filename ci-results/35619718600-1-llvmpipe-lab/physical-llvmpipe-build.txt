@@ -1,0 +1,65 @@
+build: .cache/llama-host-build
+--- first attempt, error lines ---
+/home/runner/work/5/5/.cache/llama-host/ggml/src/ggml-vulkan/ggml-vulkan.cpp:9857:29: error: binding reference of type ‘vk_buffer&’ {aka ‘std::shared_ptr<vk_buffer_struct>&’} to ‘const vk_buffer’ {aka ‘const std::shared_ptr<vk_buffer_struct>’} discards qualifiers
+gmake[3]: *** [ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/build.make:989: ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ggml-vulkan.cpp.o] Error 1
+gmake[2]: *** [CMakeFiles/Makefile2:884: ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/all] Error 2
+gmake[1]: *** [CMakeFiles/Makefile2:1322: tools/llama-bench/CMakeFiles/llama-bench.dir/rule] Error 2
+gmake: *** [Makefile:365: llama-bench] Error 2
+--- first attempt, tail ---
+[ 70%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/rms_norm.comp.cpp.o
+[ 70%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/rms_norm_back.comp.cpp.o
+[ 71%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/rms_norm_partials.comp.cpp.o
+[ 71%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/roll.comp.cpp.o
+[ 71%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/rope_multi.comp.cpp.o
+[ 71%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/rope_neox.comp.cpp.o
+[ 71%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/rope_norm.comp.cpp.o
+[ 71%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/rope_vision.comp.cpp.o
+[ 72%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/scale.comp.cpp.o
+[ 72%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/silu_back.comp.cpp.o
+[ 72%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/snake.comp.cpp.o
+[ 72%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/soft_max.comp.cpp.o
+[ 72%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/soft_max_back.comp.cpp.o
+[ 73%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/soft_max_large1.comp.cpp.o
+[ 73%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/soft_max_large2.comp.cpp.o
+gmake[3]: *** [ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/build.make:989: ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ggml-vulkan.cpp.o] Error 1
+gmake[3]: *** Waiting for unfinished jobs....
+gmake[2]: *** [CMakeFiles/Makefile2:884: ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/all] Error 2
+gmake[1]: *** [CMakeFiles/Makefile2:1322: tools/llama-bench/CMakeFiles/llama-bench.dir/rule] Error 2
+gmake: *** [Makefile:365: llama-bench] Error 2
+--- retry, error lines ---
+/home/runner/work/5/5/.cache/llama-host/ggml/src/ggml-vulkan/ggml-vulkan.cpp:9857:29: error: binding reference of type ‘vk_buffer&’ {aka ‘std::shared_ptr<vk_buffer_struct>&’} to ‘const vk_buffer’ {aka ‘const std::shared_ptr<vk_buffer_struct>’} discards qualifiers
+gmake[3]: *** [ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/build.make:989: ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ggml-vulkan.cpp.o] Error 1
+gmake[2]: *** [CMakeFiles/Makefile2:884: ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/all] Error 2
+gmake[1]: *** [CMakeFiles/Makefile2:1322: tools/llama-bench/CMakeFiles/llama-bench.dir/rule] Error 2
+gmake: *** [Makefile:365: llama-bench] Error 2
+--- retry, tail ---
+[  8%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/soft_max_large3.comp.cpp.o
+[  8%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/solve_tri.comp.cpp.o
+[  8%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ssm_conv.comp.cpp.o
+[  8%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ssm_scan.comp.cpp.o
+[ 10%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/sub.comp.cpp.o
+[ 10%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/sum_rows.comp.cpp.o
+[ 10%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/swiglu.comp.cpp.o
+[ 10%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/swiglu_clamp.comp.cpp.o
+[ 10%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/swiglu_oai.comp.cpp.o
+[ 11%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/timestep_embedding.comp.cpp.o
+[ 11%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/topk_argsort.comp.cpp.o
+[ 11%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/topk_moe.comp.cpp.o
+[ 11%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/topk_nary_search.comp.cpp.o
+[ 11%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/topk_radix_select.comp.cpp.o
+[ 11%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/tri.comp.cpp.o
+[ 12%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/unary.comp.cpp.o
+[ 12%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/upscale.comp.cpp.o
+[ 12%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/wkv6.comp.cpp.o
+[ 12%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/wkv7.comp.cpp.o
+/home/runner/work/5/5/.cache/llama-host/ggml/src/ggml-vulkan/ggml-vulkan.cpp: In function ‘vk_buffer gguf_aligned_q5_lazy(ggml_backend_vk_context*, const ggml_tensor*)’:
+/home/runner/work/5/5/.cache/llama-host/ggml/src/ggml-vulkan/ggml-vulkan.cpp:9857:29: error: binding reference of type ‘vk_buffer&’ {aka ‘std::shared_ptr<vk_buffer_struct>&’} to ‘const vk_buffer’ {aka ‘const std::shared_ptr<vk_buffer_struct>’} discards qualifiers
+ 9857 |     ggml_vk_buffer_read(sub.buffer, sub.offset, original.data(), bytes);
+      |                         ~~~~^~~~~~
+/home/runner/work/5/5/.cache/llama-host/ggml/src/ggml-vulkan/ggml-vulkan.cpp:8965:44: note:   initializing argument 1 of ‘void ggml_vk_buffer_read(vk_buffer&, size_t, void*, size_t)’
+ 8965 | static void ggml_vk_buffer_read(vk_buffer& src, size_t offset, void * dst, size_t size) {
+      |                                 ~~~~~~~~~~~^~~
+gmake[3]: *** [ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/build.make:989: ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ggml-vulkan.cpp.o] Error 1
+gmake[2]: *** [CMakeFiles/Makefile2:884: ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/all] Error 2
+gmake[1]: *** [CMakeFiles/Makefile2:1322: tools/llama-bench/CMakeFiles/llama-bench.dir/rule] Error 2
+gmake: *** [Makefile:365: llama-bench] Error 2

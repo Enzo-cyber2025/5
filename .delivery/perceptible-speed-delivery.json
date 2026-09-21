@@ -1,0 +1,78 @@
+{
+  "status": "SIGNED_AFTER_USER_STABLE_GAIN_ACCEPTANCE",
+  "apk_path": "entrega/GGUF-Chat-acelerado.apk",
+  "apk_sha256": "bd7c45d3c9b80ee583e0d4102595c5ed55242c37aa0394f0befe093c07fd88d2",
+  "signer_sha256": "bc4edf6c222ff6a602b3757fbda64fa2b9f23585add6080cf771f7315ce5b158",
+  "payload_source_sha256": "2b444a73090dff9bd6d4ce6d199349cafd5e9ae73b83cc34e05101e7f77727cc",
+  "compiled_source": "81bc70c8c1025fb8d46f7d99a8f9ee63af95b711",
+  "non_signature_payload_identical": true,
+  "gate": {
+    "status": "PASS_GAIN_GATE_RETAINED_IMAGES_ONLY",
+    "gain_gate_passed": true,
+    "observations": [
+      {
+        "before_seconds": 422.861519311,
+        "after_seconds": 57.62148216,
+        "speedup": 7.3386088566209144,
+        "seconds_saved": 365.240037151
+      },
+      {
+        "before_seconds": 417.350644177,
+        "after_seconds": 56.423294552,
+        "speedup": 7.396779069544893,
+        "seconds_saved": 360.927349625
+      }
+    ],
+    "required_speedup_each_pair": 2,
+    "required_seconds_saved_each_pair": 10,
+    "scope": "Reactivating two previously processed photos after excluding one; same byte/model settings; software Vulkan; fresh Engine and complete prime/exclude sequence per observation. No promise for first image, physical device or text throughput.",
+    "physical_gpu_certified": false,
+    "fresh_image_speedup_certified": false
+  },
+  "text_gate": {
+    "status": "PASS_USER_STABLE_OBSERVED_TEXT_GAIN",
+    "text_gain_passed": true,
+    "policy": "user-stable-observed-v1",
+    "observations": {
+      "awake": {
+        "decode_speedup_ratios": [
+          1.1764407968636534,
+          1.0734242650322416,
+          1.0949083083536018
+        ],
+        "median_decode_speedup": 1.0949083083536018,
+        "first_ui_speedup_ratios": [
+          1.74855987610222,
+          1.407287366836244,
+          1.448185389179026
+        ],
+        "median_first_ui_speedup": 1.448185389179026
+      },
+      "asleep": {
+        "decode_speedup_ratios": [
+          1.013021971882003,
+          0.983674079184237,
+          1.0077494981355946
+        ],
+        "median_decode_speedup": 1.0077494981355946
+      }
+    },
+    "original_gate_status": "TEXT_GAIN_GATE_NOT_MET",
+    "original_gate_passed": false,
+    "requirements": "Every one of three warmed awake pairs faster; no first-text pair slower; asleep median not slower and no asleep pair >3% slower. Original quality/input/128-token/cache/routing checks unchanged.",
+    "scope": "User explicitly accepts small consistent measured gains. Consistency in three observed paired runs, not statistical certainty or physical-device/all-model performance certification. Original 15% requirement remains failed if it failed; not retroactively relabeled."
+  },
+  "text_policy": "user-stable-observed-v1",
+  "user_authorization": {
+    "policy": "user-stable-observed-v1",
+    "user_request": "qualquer ganho estavel e valido. e aplique tudo que nao atarpalha o desempenho",
+    "payload_source_sha256": "2b444a73090dff9bd6d4ce6d199349cafd5e9ae73b83cc34e05101e7f77727cc",
+    "preserve_original_gate_result": true,
+    "date": "2026-09-18",
+    "scope": "Accept smaller consistent measured gains for this exact payload; do not adopt inconsistent or unverified combinations. No physical-device or universal zero-regression promise."
+  },
+  "signing_key_retained_locally": true,
+  "old_delivered_apk_preserved": true,
+  "update_warning": "Different certificate from delivered 7295. Not an in-place update; do not uninstall the existing app without preserving its data.",
+  "scope": "Measured retained-image reactivation and warmed text continuations; not first-image or general text/GPU speed certification. GPU input-packing/batch/QKV experiments are not enabled."
+}

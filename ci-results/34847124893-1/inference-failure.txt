@@ -1,0 +1,128 @@
+Traceback (most recent call last):
+  File "/home/runner/work/5/5/scripts/test_inference_android.py", line 124, in main
+    checks['normal_model_image_rejected']=error_case(d,normal,'frame-a.jpg','precisa de modelo','normal-image')
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_inference_android.py", line 113, in error_case
+    assert re.search(r'\b(hello|hi|hey)\b',text,re.I),text
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Aprenderá a ser um assistente útil, direto e preciso. Responda em português a menos que o usuário peça outro idioma.
+
+: avg=60.85ms min=6.08ms max=468.49ms count=18
+09-14 13:18:30.313 10991 11003 D EGL_emulation: app_time_stats: avg=500.52ms min=498.34ms max=502.69ms count=2
+09-14 13:18:31.627 10991 11003 D EGL_emulation: app_time_stats: avg=437.93ms min=313.96ms max=502.12ms count=3
+09-14 13:18:32.677 10991 11003 D EGL_emulation: app_time_stats: avg=20.46ms min=6.86ms max=75.34ms count=35
+09-14 13:18:33.716 10991 11003 D EGL_emulation: app_time_stats: avg=27.38ms min=7.13ms max=82.54ms count=30
+09-14 13:18:34.722 10991 11003 D EGL_emulation: app_time_stats: avg=20.18ms min=7.29ms max=62.33ms count=36
+09-14 13:18:35.732 10991 11003 D EGL_emulation: app_time_stats: avg=20.65ms min=7.25ms max=48.67ms count=37
+09-14 13:18:36.742 10991 11003 D EGL_emulation: app_time_stats: avg=18.93ms min=5.99ms max=59.04ms count=35
+09-14 13:18:37.774 10991 11003 D EGL_emulation: app_time_stats: avg=24.56ms min=7.72ms max=111.31ms count=32
+09-14 13:18:38.293 10991 10991 E FrameTracker: force finish cuj, time out: J<IME_INSETS_HIDE_ANIMATION::1@0@com.ggufchat.app>
+09-14 13:18:38.293 10991 10991 W FrameTracker: Missed SF frame:UNKNOWN: 66, 79114, 0, CUJ=J<IME_INSETS_HIDE_ANIMATION::1@0@com.ggufchat.app>
+09-14 13:18:38.826 10991 11003 D EGL_emulation: app_time_stats: avg=20.27ms min=7.25ms max=89.34ms count=35
+09-14 13:18:39.842 10991 11003 D EGL_emulation: app_time_stats: avg=18.39ms min=7.05ms max=80.13ms count=35
+09-14 13:18:40.860 10991 11003 D EGL_emulation: app_time_stats: avg=20.14ms min=7.50ms max=59.77ms count=37
+09-14 13:18:41.888 10991 11003 D EGL_emulation: app_time_stats: avg=19.16ms min=7.58ms max=38.37ms count=38
+09-14 13:18:42.890 10991 11003 D EGL_emulation: app_time_stats: avg=21.71ms min=6.93ms max=43.27ms count=35
+09-14 13:18:43.891 10991 11003 D EGL_emulation: app_time_stats: avg=25.05ms min=7.28ms max=67.43ms count=32
+09-14 13:18:44.894 10991 11003 D EGL_emulati
+[output truncated]
+$ adb shell if [ -e /data/user/0/com.ggufchat.app/files/attachments/07b7954227132a2b03a33060a51db114d0b1e38a49b69aed2899905d64a7eebd/index.json ]; then cat /data/user/0/com.ggufchat.app/files/attachments/07b7954227132a2b03a33060a51db114d0b1e38a49b69aed2899905d64a7eebd/index.json; else printf '[]'; fi
+exit=0
+{"items":[{"id":"7aafc2b5-2f2d-4875-a947-941e81a26b60","name":"frame-a.jpg","mime":"image\/jpeg","size":661378,"message":0,"excluded":true}],"error":""}$ adb shell pidof com.ggufchat.app
+exit=0
+10991
+$ adb logcat -d --pid=10991
+exit=0
+--------- beginning of main
+09-14 13:18:22.227 10991 11003 D EGL_emulation: app_time_stats: avg=205.07ms min=7.77ms max=501.95ms count=5
+09-14 13:18:23.725 10991 11003 D EGL_emulation: app_time_stats: avg=499.33ms min=498.11ms max=499.98ms count=3
+09-14 13:18:24.212 10991 10991 I ImeTracker: com.ggufchat.app:15a636e4: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser true
+09-14 13:18:24.212 10991 10991 D InputMethodManager: showSoftInput() view=android.widget.EditText{a365ce6 VFED..CL. .F.P.... 128,0-517,67 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+09-14 13:18:24.325 10991 10991 E FrameTracker: force finish cuj, time out: J<IME_INSETS_HIDE_ANIMATION::1@0@com.ggufchat.app>
+09-14 13:18:24.325 10991 10991 W FrameTracker: Missed SF frame:UNKNOWN: 66, 76427, 0, CUJ=J<IME_INSETS_HIDE_ANIMATION::1@0@com.ggufchat.app>
+09-14 13:18:24.325 10991 10991 D InsetsController: show(ime(), fromIme=true)
+09-14 13:18:24.414 10991 10991 I ImeTracker: com.ggufchat.app:15a636e4: onShown
+09-14 13:18:24.740 10991 11003 D EGL_emulation: app_time_stats: avg=106.25ms min=8.55ms max=515.05ms count=9
+09-14 13:18:26.058 10991 11003 D EGL_emulation: app_time_stats: avg=57.87ms min=7.70ms max=425.13ms count=19
+09-14 13:18:27.060 10991 11003 D EGL_emulation: app_time_stats: avg=500.77ms min=500.37ms max=501.18ms count=2
+09-14 13:18:27.782 10991 10991 I ImeTracker: com.ggufchat.app:b86e8d6c: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+09-14 13:18:27.791 10991 10991 D InsetsController: hide(ime(), fromIme=true)
+09-14 13:18:27.880 10991 11729 I GGUFInference: GGUF_CONTENT_PREPARED files=0 images=0 text_chars=0
+09-14 13:18:27.955 10991 10991 I ImeTracker: com.ggufchat.app:c1c51164: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_ON_ANIMATION_STATE_CHANGED fromUser false
+09-14 13:18:27.955 10991 10991 I ImeTracker: com.ggufchat.app:b86e8d6c: onHidden
+09-14 13:18:28.094 10991 11003 D EGL_emulation: app_time_stats: avg=95.34ms min=7.11ms max=497.94ms count=10
+09-14 13:18:28.095 10991 10991 W FrameTracker: Missed App frame:JANK_APP_DEADLINE_MISSED, 78450, 0, CUJ=J<IME_INSETS_SHOW_ANIMATION::0@0@com.ggufchat.app>
+09-14 13:18:29.312 10991 11003 D EGL_emulation: app_time_stats: avg=60.85ms min=6.08ms max=468.49ms count=18
+09-14 13:18:30.313 10991 11003 D EGL_emulation: app_time_stats: avg=500.52ms min=498.34ms max=502.69ms count=2
+09-14 13:18:31.627 10991 11003 D EGL_emulation: app_time_stats: avg=437.93ms min=313.96ms max=502.12ms count=3
+09-14 13:18:32.677 10991 11003 D EGL_emulation: app_time_stats: avg=20.46ms min=6.86ms max=75.34ms count=35
+09-14 13:18:33.716 10991 11003 D EGL_emulation: app_time_stats: avg=27.38ms min=7.13ms max=82.54ms count=30
+09-14 13:18:34.722 10991 11003 D EGL_emulation: app_time_stats: avg=20.18ms min=7.29ms max=62.33ms count=36
+09-14 13:18:35.732 10991 11003 D EGL_emulation: app_time_stats: avg=20.65ms min=7.25ms max=48.67ms count=37
+09-14 13:18:36.742 10991 11003 D EGL_emulation: app_time_stats: avg=18.93ms min=5.99ms max=59.04ms count=35
+09-14 13:18:37.774 10991 11003 D EGL_emulation: app_time_stats: avg=24.56ms min=7.72ms max=111.31ms count=32
+09-14 13:18:38.293 10991 10991 E FrameTracker: force finish cuj, time out: J<IME_INSETS_HIDE_ANIMATION::1@0@com.ggufchat.app>
+09-14 13:18:38.293 10991 10991 W FrameTracker: Missed SF frame:UNKNOWN: 66, 79114, 0, CUJ=J<IME_INSETS_HIDE_ANIMATION::1@0@com.ggufchat.app>
+09-14 13:18:38.826 10991 11003 D EGL_emulation: app_time_stats: avg=20.27ms min=7.25ms max=89.34ms count=35
+09-14 13:18:39.842 10991 11003 D EGL_emulation: app_time_stats: avg=18.39ms min=7.05ms max=80.13ms count=35
+09-14 13:18:40.860 10991 11003 D EGL_emulation: app_time_stats: avg=20.14ms min=7.50ms max=59.77ms count=37
+09-14 13:18:41.888 10991 11003 D EGL_emulation: app_time_stats: avg=19.16ms min=7.58ms max=38.37ms count=38
+09-14 13:18:42.890 10991 11003 D EGL_emulation: app_time_stats: avg=21.71ms min=6.93ms max=43.27ms count=35
+09-14 13:18:43.891 10991 11003 D EGL_emulation: app_time_stats: avg=25.05ms min=7.28ms max=67.43ms count=32
+09-14 13:18:44.894 10991 11003 D EGL_emulati
+[output truncated]
+$ adb shell if [ -e /data/user/0/com.ggufchat.app/files/attachments/07b7954227132a2b03a33060a51db114d0b1e38a49b69aed2899905d64a7eebd/index.json ]; then cat /data/user/0/com.ggufchat.app/files/attachments/07b7954227132a2b03a33060a51db114d0b1e38a49b69aed2899905d64a7eebd/index.json; else printf '[]'; fi
+exit=0
+{"items":[{"id":"7aafc2b5-2f2d-4875-a947-941e81a26b60","name":"frame-a.jpg","mime":"image\/jpeg","size":661378,"message":0,"excluded":true}],"error":""}$ adb shell pidof com.ggufchat.app
+exit=0
+10991
+$ adb logcat -d --pid=10991
+exit=0
+--------- beginning of main
+09-14 13:18:22.227 10991 11003 D EGL_emulation: app_time_stats: avg=205.07ms min=7.77ms max=501.95ms count=5
+09-14 13:18:23.725 10991 11003 D EGL_emulation: app_time_stats: avg=499.33ms min=498.11ms max=499.98ms count=3
+09-14 13:18:24.212 10991 10991 I ImeTracker: com.ggufchat.app:15a636e4: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser true
+09-14 13:18:24.212 10991 10991 D InputMethodManager: showSoftInput() view=android.widget.EditText{a365ce6 VFED..CL. .F.P.... 128,0-517,67 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+09-14 13:18:24.325 10991 10991 E FrameTracker: force finish cuj, time out: J<IME_INSETS_HIDE_ANIMATION::1@0@com.ggufchat.app>
+09-14 13:18:24.325 10991 10991 W FrameTracker: Missed SF frame:UNKNOWN: 66, 76427, 0, CUJ=J<IME_INSETS_HIDE_ANIMATION::1@0@com.ggufchat.app>
+09-14 13:18:24.325 10991 10991 D InsetsController: show(ime(), fromIme=true)
+09-14 13:18:24.414 10991 10991 I ImeTracker: com.ggufchat.app:15a636e4: onShown
+09-14 13:18:24.740 10991 11003 D EGL_emulation: app_time_stats: avg=106.25ms min=8.55ms max=515.05ms count=9
+09-14 13:18:26.058 10991 11003 D EGL_emulation: app_time_stats: avg=57.87ms min=7.70ms max=425.13ms count=19
+09-14 13:18:27.060 10991 11003 D EGL_emulation: app_time_stats: avg=500.77ms min=500.37ms max=501.18ms count=2
+09-14 13:18:27.782 10991 10991 I ImeTracker: com.ggufchat.app:b86e8d6c: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+09-14 13:18:27.791 10991 10991 D InsetsController: hide(ime(), fromIme=true)
+09-14 13:18:27.880 10991 11729 I GGUFInference: GGUF_CONTENT_PREPARED files=0 images=0 text_chars=0
+09-14 13:18:27.955 10991 10991 I ImeTracker: com.ggufchat.app:c1c51164: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_ON_ANIMATION_STATE_CHANGED fromUser false
+09-14 13:18:27.955 10991 10991 I ImeTracker: com.ggufchat.app:b86e8d6c: onHidden
+09-14 13:18:28.094 10991 11003 D EGL_emulation: app_time_stats: avg=95.34ms min=7.11ms max=497.94ms count=10
+09-14 13:18:28.095 10991 10991 W FrameTracker: Missed App frame:JANK_APP_DEADLINE_MISSED, 78450, 0, CUJ=J<IME_INSETS_SHOW_ANIMATION::0@0@com.ggufchat.app>
+09-14 13:18:29.312 10991 11003 D EGL_emulation: app_time_stats: avg=60.85ms min=6.08ms max=468.49ms count=18
+09-14 13:18:30.313 10991 11003 D EGL_emulation: app_time_stats: avg=500.52ms min=498.34ms max=502.69ms count=2
+09-14 13:18:31.627 10991 11003 D EGL_emulation: app_time_stats: avg=437.93ms min=313.96ms max=502.12ms count=3
+09-14 13:18:32.677 10991 11003 D EGL_emulation: app_time_stats: avg=20.46ms min=6.86ms max=75.34ms count=35
+09-14 13:18:33.716 10991 11003 D EGL_emulation: app_time_stats: avg=27.38ms min=7.13ms max=82.54ms count=30
+09-14 13:18:34.722 10991 11003 D EGL_emulation: app_time_stats: avg=20.18ms min=7.29ms max=62.33ms count=36
+09-14 13:18:35.732 10991 11003 D EGL_emulation: app_time_stats: avg=20.65ms min=7.25ms max=48.67ms count=37
+09-14 13:18:36.742 10991 11003 D EGL_emulation: app_time_stats: avg=18.93ms min=5.99ms max=59.04ms count=35
+09-14 13:18:37.774 10991 11003 D EGL_emulation: app_time_stats: avg=24.56ms min=7.72ms max=111.31ms count=32
+09-14 13:18:38.293 10991 10991 E FrameTracker: force finish cuj, time out: J<IME_INSETS_HIDE_ANIMATION::1@0@com.ggufchat.app>
+09-14 13:18:38.293 10991 10991 W FrameTracker: Missed SF frame:UNKNOWN: 66, 79114, 0, CUJ=J<IME_INSETS_HIDE_ANIMATION::1@0@com.ggufchat.app>
+09-14 13:18:38.826 10991 11003 D EGL_emulation: app_time_stats: avg=20.27ms min=7.25ms max=89.34ms count=35
+09-14 13:18:39.842 10991 11003 D EGL_emulation: app_time_stats: avg=18.39ms min=7.05ms max=80.13ms count=35
+09-14 13:18:40.860 10991 11003 D EGL_emulation: app_time_stats: avg=20.14ms min=7.50ms max=59.77ms count=37
+09-14 13:18:41.888 10991 11003 D EGL_emulation: app_time_stats: avg=19.16ms min=7.58ms max=38.37ms count=38
+09-14 13:18:42.890 10991 11003 D EGL_emulation: app_time_stats: avg=21.71ms min=6.93ms max=43.27ms count=35
+09-14 13:18:43.891 10991 11003 D EGL_emulation: app_time_stats: avg=25.05ms min=7.28ms max=67.43ms count=32
+09-14 13:18:44.894 10991 11003 D EGL_emulati
+[output truncated]
+$ adb shell if [ -e /data/user/0/com.ggufchat.app/files/attachments/07b7954227132a2b03a33060a51db114d0b1e38a49b69aed2899905d64a7eebd/index.json ]; then cat /data/user/0/com.ggufchat.app/files/attachments/07b7954227132a2b03a33060a51db114d0b1e38a49b69aed2899905d64a7eebd/index.json; else printf '[]'; fi
+exit=0
+{"items":[{"id":"7aafc2b5-2f2d-4875-a947-941e81a26b60","name":"frame-a.jpg","mime":"image\/jpeg","size":661378,"message":0,"excluded":true}],"error":""}$ adb shell cat /data/user/0/com.ggufchat.app/files/chats.json
+exit=0
+[{"id":"1a0a0096c21a1ca3c","title":"GGUF regression 1a0a0096c21a1ca3c","modelPath":"\/data\/user\/0\/com.ggufchat.app\/files\/models\/1789391341765_SmolVLM-256M-Instruct-Q8_0.gguf","mmprojPath":"\/data\/user\/0\/com.ggufchat.app\/files\/models\/1789391338987_mmproj-SmolVLM-256M-Instruct-Q8_0.gguf","createdAt":1789391367201,"updatedAt":1789391451745,"messages":[{"role":"user","content":"Reply in English with a short greeting.","ts":1789391395654,"thinking":false},{"role":"assistant","content":" Hello, it's a bit more difficult to understand. It's like trying to talk in another language, but you can still say the same thing with just one word.","ts":1789391433586,"thinking":false},{"role":"user","content":"Reply in English: What is two plus two?","ts":1789391440856,"thinking":false},{"role":"assistant","content":" Two + two = four.","ts":1789391451745,"thinking":false}],"nPredict":128,"temperature":0,"topP":0.949999988079071,"topK":40,"minP":0.05000000074505806,"repeatPenalty":1.100000023841858,"repeatLastN":64,"contextSize":1024,"nThreads":2,"gpuLayers":99,"useMmap":true,"thinking":false,"webSearch":false},{"id":"1a0a00ba4685407c6","title":"GGUF regression 1a0a00ba4685407c6","modelPath":"\/data\/user\/0\/com.ggufchat.app\/files\/models\/1789391474719_SmolVLM-256M-Instruct-Q8_0.gguf","mmprojPath":"\/data\/user\/0\/com.ggufchat.app\/files\/models\/1789391474374_mmproj-SmolVLM-256M-Instruct-Q8_0.gguf","createdAt":1789391512680,"updatedAt":1789391626225,"messages":[{"role":"user","content":"Arquivo anexado: 9 arquivo(s)\n\nAnexos vinculados a esta mensagem para leitura.\n\nReply with hello.","ts":1789391626224,"thinking":false}],"nPredict":128,"temperature":0,"topP":0.949999988079071,"topK":40,"minP":0.05000000074505806,"repeatPenalty":1.100000023841858,"repeatLastN":64,"contextSize":1024,"nThreads":2,"gpuLayers":0,"useMmap":true,"thinking":false,"webSearch":false},{"id":"1a0a00e54b77f6f80","title":"GGUF regression 1a0a00e54b77f6f80","modelPath":"\/data\/user\/0\/com.ggufchat.app\/files\/models\/1789391491318_SmolLM2-135M-Instruct-Q4_K_M.gguf","mmprojPath":null,"createdAt":1789391688887,"updatedAt":1789391761925,"messages":[{"role":"user","content":"Arquivo anexado: 1 arquivo(s)\n\nAnexos vinculados a esta mensagem para leitura.\n\nDescribe the attached file.","ts":1789391736538,"thinking":false},{"role":"user","content":"Reply in English with hello.","ts":1789391750254,"thinking":false},{"role":"assistant","content":"Anexo não lido, desativado pelo usuário.\n\nReply in English with hello.","ts":1789391761925,"thinking":false}],"nPredict":128,"temperature":0,"topP":0.949999988079071,"topK":40,"minP":0.05000000074505806,"repeatPenalty":1.100000023841858,"repeatLastN":64,"contextSize":1024,"nThreads":2,"gpuLayers":0,"useMmap":true,"thinking":false,"webSearch":false},{"id":"1a0a00f9aea27152f","title":"GGUF regression 1a0a00f9aea27152f","modelPath":"\/data\/user\/0\/com.ggufchat.app\/files\/models\/1789391474719_SmolVLM-256M-Instruct-Q8_0.gguf","mmprojPath":"\/data\/user\/0\/com.ggufchat.app\/files\/models\/1789391474374_mmproj-SmolVLM-256M-Instruct-Q8_0.gguf","createdAt":1789391772394,"updatedAt":1789391835496,"messages":[{"role":"user","content":"Arquivo anexado: 1 arquivo(s)\n\nAnexos vinculados a esta mensagem para leitura.\n\nDescribe the attached file.","ts":1789391819754,"thinking":false},{"role":"user","content":"Reply in English with hello.","ts":1789391833603,"thinking":false},{"role":"assistant","content":" Hello!","ts":1789391835496,"thinking":false}],"nPredict":128,"temperature":0,"topP":0.949999988079071,"topK":40,"minP":0.05000000074505806,"repeatPenalty":1.100000023841858,"repeatLastN":64,"contextSize":1024,"nThreads":2,"gpuLayers":0,"useMmap":true,"thinking":false,"webSearch":false},{"id":"1a0a010b92643fb2b","title":"GGUF regression 1a0a010b92643fb2b","modelPath":"\/data\/user\/0\/com.ggufchat.app\/files\/models\/1789391491318_SmolLM2-135M-Instruct-Q4_K_M.gguf","mmprojPath":null,"createdAt":1789391845670,"updatedAt":1789391927051,"messages":[{"role":"user","content":"Arquivo anexado: 1 arquivo(s)\n\nAnexos vincul
+[output truncated]
+$ adb exec-out screencap -p
+exit=0
+$ adb shell find /data/user/0/com.ggufchat.app/cache/attachment-inference -type f 2>/dev/null
+exit=0

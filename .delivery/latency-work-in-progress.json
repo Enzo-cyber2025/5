@@ -1,0 +1,23 @@
+{
+  "status": "COMPLETED_ACCEPTED",
+  "apk_sha256": "eabd016935ac51cdd89063a97fbc1b562f7f9261981f54b5191d37734e7922eb",
+  "source_commit": "ce0118db8646f1523d11725a8c5c29b6e88230f2",
+  "signer_sha256": "4f75afe8637f28ccb167db407e3b2bc9b260e1cfe6059b7377ea20b0b4dc2ac3",
+  "build_run": 35013826315,
+  "build_job": 104532130205,
+  "broad_android_result": "SUCCESS; 8 physical checks, attachments/content. Software Vulkan, ephemeral test signature. System-chat semantic quality FAIL remains documented.",
+  "latency_run": 35017084063,
+  "latency_job": 104543107009,
+  "latency_commit": "4266f9b",
+  "last_observed_latency_status": "completed / success; full evidence verified after reconnection",
+  "blocker": null,
+  "signing": "4f75 key and private backup both verified present. Do not regenerate. Incompatible with user baseline 3dd; disclosed under prior authorization.",
+  "local_targeted_tests": "21 PASS / 1 SKIP",
+  "approved_speed_gain": true,
+  "harness_failures": {
+    "35014529821": "cold-boot IME registration, fixed by real unlock + observed registration",
+    "35015163610": "hidden IME: Back dismissed system dialog. Eight actual baseline generations passed; replaced with real InputConnection and explicit Save",
+    "35016320164": "SAF root lookup raced drawer population. Real screenshot shows Downloads; now waits actual drawer and provider/framework title ID"
+  },
+  "acceptance_file": ".delivery/latency-acceptance.json"
+}

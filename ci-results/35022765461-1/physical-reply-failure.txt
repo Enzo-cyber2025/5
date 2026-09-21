@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "/home/runner/work/5/5/scripts/test_reply_notifications_android.py", line 138, in main
+    fixtures();vchat=d.new_chat(vision,0,context_size=4096);attach(d,vchat,['frame-a.jpg'])
+    ^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_inference_android.py", line 37, in fixtures
+    result=json.loads(subprocess.check_output(['gh','api',f'repos/{repo}/git/blobs/{blob}']))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/subprocess.py", line 466, in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['gh', 'api', 'repos/pytorch/hub/git/blobs/12f0e0dd1162b94a5b0919ce8b91821450965985']' returned non-zero exit status 4.

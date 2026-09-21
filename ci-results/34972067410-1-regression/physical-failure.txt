@@ -1,0 +1,105 @@
+Traceback (most recent call last):
+  File "/home/runner/work/5/5/scripts/test_physical_android.py", line 81, in main
+    if observer:checks['measured_pair_progress']=observer.finish([MODEL.stat().st_size,PROJ.stat().st_size],pair=True)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/import_progress_checks.py", line 50, in finish
+    assert self.captured,'No real progress UI screenshot captured'
+           ^^^^^^^^^^^^^
+AssertionError: No real progress UI screenshot captured
+
+false
+09-15 13:02:05.481  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=identify0 percent=30 done=179 total=595 complete=false
+09-15 13:02:05.482  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS s
+[output truncated]
+$ adb shell rm -f /sdcard/gguf-test-ui.xml
+exit=0
+$ adb shell uiautomator dump /sdcard/gguf-test-ui.xml
+exit=0
+UI hierchary dumped to: /sdcard/gguf-test-ui.xml
+$ adb exec-out cat /sdcard/gguf-test-ui.xml
+exit=0
+<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><hierarchy rotation="0"><node index="0" text="" resource-id="" class="android.widget.FrameLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[30,565][690,788]"><node index="0" text="" resource-id="" class="android.widget.FrameLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[54,589][666,764]"><node index="0" text="" resource-id="android:id/content" class="android.widget.FrameLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[54,589][666,764]"><node index="0" text="" resource-id="android:id/parentPanel" class="android.widget.LinearLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[54,589][666,764]"><node index="0" text="" resource-id="android:id/topPanel" class="android.widget.LinearLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[54,589][666,657]"><node index="0" text="" resource-id="android:id/title_template" class="android.widget.LinearLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[54,589][666,657]"><node index="0" text="Progresso da importação" resource-id="android:id/alertTitle" class="android.widget.TextView" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[90,616][630,657]" /></node></node><node index="1" text="" resource-id="android:id/customPanel" class="android.widget.FrameLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[54,657][666,764]"><node index="0" text="" resource-id="android:id/custom" class="android.widget.FrameLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[54,657][666,764]"><node index="0" text="" resource-id="" class="android.widget.RelativeLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[54,657][666,764]"><node index="0" text="" resource-id="android:id/progress" class="android.widget.ProgressBar" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[90,684][630,708]" /><node index="1" text="0%" resource-id="android:id/progress_percent" class="android.widget.TextView" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable=
+[output truncated]
+$ adb shell if [ -e /data/user/0/com.ggufchat.app/files/models.json ]; then cat /data/user/0/com.ggufchat.app/files/models.json; else printf '[]'; fi
+exit=0
+[]$ adb logcat -d -s GGUFProgress:I *:S
+exit=0
+--------- beginning of main
+09-15 13:02:02.357  2942  2942 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=-1 done=0 total=-1 complete=false
+09-15 13:02:02.406  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=0 done=0 total=175054528 complete=false
+09-15 13:02:02.766  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=5 done=8781824 total=175054528 complete=false
+09-15 13:02:02.785  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=10 done=17563648 total=175054528 complete=false
+09-15 13:02:02.880  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=15 done=26345472 total=175054528 complete=false
+09-15 13:02:02.970  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=20 done=35127296 total=175054528 complete=false
+09-15 13:02:02.998  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=25 done=43778048 total=175054528 complete=false
+09-15 13:02:03.167  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=30 done=52559872 total=175054528 complete=false
+09-15 13:02:03.238  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=35 done=61341696 total=175054528 complete=false
+09-15 13:02:03.292  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=40 done=70123520 total=175054528 complete=false
+09-15 13:02:03.322  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=45 done=78905344 total=175054528 complete=false
+09-15 13:02:03.347  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=50 done=87556096 total=175054528 complete=false
+09-15 13:02:03.368  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=55 done=96337920 total=175054528 complete=false
+09-15 13:02:03.389  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=60 done=105119744 total=175054528 complete=false
+09-15 13:02:03.406  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=65 done=113901568 total=175054528 complete=false
+09-15 13:02:03.464  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=70 done=122552320 total=175054528 complete=false
+09-15 13:02:03.476  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=75 done=131334144 total=175054528 complete=false
+09-15 13:02:03.489  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=80 done=140115968 total=175054528 complete=false
+09-15 13:02:03.502  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=85 done=148897792 total=175054528 complete=false
+09-15 13:02:03.514  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=90 done=157679616 total=175054528 complete=false
+09-15 13:02:03.527  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=95 done=166330368 total=175054528 complete=false
+09-15 13:02:03.764  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=100 done=175054528 total=175054528 complete=true
+09-15 13:02:03.765  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=identify0 percent=-1 done=0 total=-1 complete=false
+09-15 13:02:03.766  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=identify0 percent=0 done=0 total=595 complete=false
+09-15 13:02:03.768  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=identify0 percent=5 done=30 total=595 complete=false
+09-15 13:02:05.474  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=identify0 percent=10 done=60 total=595 complete=false
+09-15 13:02:05.476  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=identify0 percent=15 done=90 total=595 complete=false
+09-15 13:02:05.478  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=identify0 percent=20 done=119 total=595 complete=false
+09-15 13:02:05.479  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=identify0 percent=25 done=149 total=595 complete=false
+09-15 13:02:05.481  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=identify0 percent=30 done=179 total=595 complete=false
+09-15 13:02:05.482  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS s
+[output truncated]
+$ adb shell rm -f /sdcard/gguf-test-ui.xml
+exit=0
+$ adb shell uiautomator dump /sdcard/gguf-test-ui.xml
+exit=0
+UI hierchary dumped to: /sdcard/gguf-test-ui.xml
+$ adb exec-out cat /sdcard/gguf-test-ui.xml
+exit=0
+<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><hierarchy rotation="0"><node index="0" text="" resource-id="" class="android.widget.FrameLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[0,0][720,1280]"><node index="0" text="" resource-id="" class="android.widget.LinearLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[0,0][720,1280]"><node index="0" text="" resource-id="android:id/content" class="android.widget.FrameLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[0,74][720,1280]"><node index="0" text="" resource-id="" class="android.widget.LinearLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[0,74][720,1280]"><node index="0" text="Prompt de sistema global" resource-id="" class="android.widget.Button" package="com.ggufchat.app" content-desc="Prompt de sistema global" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,104][260,158]" /><node index="1" text="" resource-id="" class="android.widget.LinearLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,158][696,212]"><node index="0" text="GGUF Chat" resource-id="" class="android.widget.TextView" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,160][605,209]" /><node index="1" text="Ajustes" resource-id="" class="android.widget.Button" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[605,158][696,212]" /></node><node index="2" text="" resource-id="" class="android.widget.FrameLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,224][696,1202]"><node index="0" text="" resource-id="" class="android.widget.LinearLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,224][696,1202]"><node index="0" text="Importar .gguf" resource-id="" class="android.widget.Button" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,224][696,278]" /><node index="1" text="Selecione um ou mais arquivos .gguf. Selecione linguagem + projetor para criar um GGUF físico único, ou importe um GGUF completo. Visão identificada por metadados e tensores; tokens de imagem não bastam." resource-id="" class="android.widget.TextView" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="fa
+[output truncated]
+$ adb shell if [ -e /data/user/0/com.ggufchat.app/files/models.json ]; then cat /data/user/0/com.ggufchat.app/files/models.json; else printf '[]'; fi
+exit=0
+[{"id":"0d53f4ab-7147-4934-b08a-631567d9b284","name":"SmolVLM 256M Instruct","architecture":"llama","path":"\/data\/user\/0\/com.ggufchat.app\/files\/models\/0d53f4ab-7147-4934-b08a-631567d9b284-unified.gguf","size":278824896,"importedAt":1789477330601,"fileName":"0d53f4ab-7147-4934-b08a-631567d9b284-unified.gguf","mmprojPath":"\/data\/user\/0\/com.ggufchat.app\/files\/models\/0d53f4ab-7147-4934-b08a-631567d9b284-unified.gguf","multimodal":true,"capability":"VISION_SINGLE_GGUF"}]$ adb logcat -d -s GGUFProgress:I *:S
+exit=0
+--------- beginning of main
+09-15 13:02:02.357  2942  2942 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=-1 done=0 total=-1 complete=false
+09-15 13:02:02.406  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=0 done=0 total=175054528 complete=false
+09-15 13:02:02.766  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=5 done=8781824 total=175054528 complete=false
+09-15 13:02:02.785  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=10 done=17563648 total=175054528 complete=false
+09-15 13:02:02.880  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=15 done=26345472 total=175054528 complete=false
+09-15 13:02:02.970  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=20 done=35127296 total=175054528 complete=false
+09-15 13:02:02.998  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=25 done=43778048 total=175054528 complete=false
+09-15 13:02:03.167  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=30 done=52559872 total=175054528 complete=false
+09-15 13:02:03.238  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=35 done=61341696 total=175054528 complete=false
+09-15 13:02:03.292  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=40 done=70123520 total=175054528 complete=false
+09-15 13:02:03.322  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=45 done=78905344 total=175054528 complete=false
+09-15 13:02:03.347  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=50 done=87556096 total=175054528 complete=false
+09-15 13:02:03.368  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=55 done=96337920 total=175054528 complete=false
+09-15 13:02:03.389  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=60 done=105119744 total=175054528 complete=false
+09-15 13:02:03.406  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=65 done=113901568 total=175054528 complete=false
+09-15 13:02:03.464  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=70 done=122552320 total=175054528 complete=false
+09-15 13:02:03.476  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=75 done=131334144 total=175054528 complete=false
+09-15 13:02:03.489  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=80 done=140115968 total=175054528 complete=false
+09-15 13:02:03.502  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=85 done=148897792 total=175054528 complete=false
+09-15 13:02:03.514  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=90 done=157679616 total=175054528 complete=false
+09-15 13:02:03.527  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=95 done=166330368 total=175054528 complete=false
+09-15 13:02:03.764  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=copy0 percent=100 done=175054528 total=175054528 complete=true
+09-15 13:02:03.765  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=identify0 percent=-1 done=0 total=-1 complete=false
+09-15 13:02:03.766  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=identify0 percent=0 done=0 total=595 complete=false
+09-15 13:02:03.768  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=identify0 percent=5 done=30 total=595 complete=false
+09-15 13:02:05.474  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=identify0 percent=10 done=60 total=595 complete=false
+09-15 13:02:05.476  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=identify0 percent=15 done=90 total=595 complete=false
+09-15 13:02:05.478  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=identify0 percent=20 done=119 total=595 complete=false
+09-15 13:02:05.479  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=identify0 percent=25 done=149 total=595 complete=false
+09-15 13:02:05.481  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS stage=identify0 percent=30 done=179 total=595 complete=false
+09-15 13:02:05.482  2942  4576 I GGUFProgress: GGUF_IMPORT_PROGRESS s
+[output truncated]

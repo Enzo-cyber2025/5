@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "/home/runner/work/5/5/scripts/test_performance_android.py", line 50, in main
+    checks['code_boxes_exact_android_clipboard']=code_ui(d)
+                                                 ^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_code_android.py", line 14, in run
+    d.wait(lambda:position(d.ui(),text='Streaming pronto' if mode=='stream' else 'Histórico pronto',package={PKG}),'production renderer '+mode)
+  File "/home/runner/work/5/5/scripts/test_android.py", line 74, in wait
+    raise AssertionError(f"Timeout: {description}")
+AssertionError: Timeout: production renderer stream

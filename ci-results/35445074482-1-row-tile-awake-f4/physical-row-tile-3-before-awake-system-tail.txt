@@ -1,0 +1,1764 @@
+--------- beginning of main
+09-19 13:34:40.485  1898  1898 I wpa_supplicant: wlan0: CTRL-EVENT-BEACON-LOSS 
+--------- beginning of system
+09-19 13:34:40.506   557   557 I NotificationService: Cannot find enqueued record for key: 0|com.google.android.apps.wellbeing|174344743|null|10142
+09-19 13:34:40.512  5821  5821 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 0 <<<<<<
+09-19 13:34:40.516  5821  5821 I AndroidRuntime: Using default boot image
+09-19 13:34:40.516  5821  5821 I AndroidRuntime: Leaving lock profiling enabled
+09-19 13:34:40.517  5821  5821 I app_process: Core platform API reporting enabled, enforcing=false
+09-19 13:34:40.518  5821  5821 I app_process: Using CollectorTypeCMC GC.
+09-19 13:34:40.570  5821  5821 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-19 13:34:40.576  5821  5821 D nativeloader: Load libicu_jni.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-19 13:34:40.577  5821  5821 D app_process: u_setTimeZoneFilesDirectory("/apex/com.android.tzdata/etc/tz/versioned/8/icu") succeeded. 
+09-19 13:34:40.577  5821  5821 D app_process: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt75l.dat
+09-19 13:34:40.577  5821  5821 D nativeloader: Load libjavacore.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-19 13:34:40.578  5821  5821 D nativeloader: Load libopenjdk.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-19 13:34:40.579  5821  5821 W app_process: Unexpected CPU variant for x86: x86_64.
+09-19 13:34:40.579  5821  5821 W app_process: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, goldmont-without-sha-xsaves, tremont, kabylake, default
+09-19 13:34:40.590  5821  5821 D nativeloader: Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok
+09-19 13:34:40.591  5821  5821 D AndroidRuntime: Calling main entry com.android.commands.am.Am
+09-19 13:34:40.592  5821  5821 D UiAutomationConnection: Created on user UserHandle{0}
+09-19 13:34:40.593   557  2013 I ActivityManager: Force stopping com.ggufchat.app appid=10218 user=0: start instr
+09-19 13:34:40.595   557  2013 V GrammaticalInflectionUtils: AttributionSource: AttributionSource { uid = 10218, packageName = null, attributionTag = null, token = android.os.Binder@b1e39dd, deviceId = 0, next = null } does not have READ_SYSTEM_GRAMMATICAL_GENDER permission.
+09-19 13:34:40.597   557  2013 I AppsFilter: interaction: PackageSetting{3f3b806 com.android.microdroid.empty_payload/10199} -> PackageSetting{e84db0b com.ggufchat.app/10218} BLOCKED
+09-19 13:34:40.601   557   860 I AppWidgetServiceImpl: Received broadcast: android.intent.action.PACKAGE_UNSTOPPED on user 0
+09-19 13:34:40.601   557   860 I AppWidgetServiceImpl: Updating package stopped masked state for uid 10218 package com.ggufchat.app isStopped false
+09-19 13:34:40.605   360   407 I netd    : tetherGetStats() -> {[]} <2.65ms>
+09-19 13:34:40.610   361   361 D Zygote  : Forked child process 5832
+09-19 13:34:40.627  5832  5832 I om.ggufchat.app: Using CollectorTypeCMC GC.
+09-19 13:34:40.627  5832  5832 W om.ggufchat.app: Unexpected CPU variant for x86: x86_64.
+09-19 13:34:40.627  5832  5832 W om.ggufchat.app: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, goldmont-without-sha-xsaves, tremont, kabylake, default
+09-19 13:34:40.629  5832  5832 E om.ggufchat.app: Not starting debugger since process cannot load the jdwp agent.
+09-19 13:34:40.687  5845  5845 W libc    : Access denied finding property "ro.debuggable"
+09-19 13:34:40.687  5845  5845 W libc    : Access denied finding property "ro.debuggable"
+09-19 13:34:40.687  5845  5845 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 10218 <<<<<<
+09-19 13:34:40.688  5845  5845 W libc    : Access denied finding property "ro.debuggable"
+09-19 13:34:40.693  5845  5845 I AndroidRuntime: Using default boot image
+09-19 13:34:40.684  5845  5845 W app_process64: type=1400 audit(0.0:266): avc:  denied  { read } for  name="u:object_r:userdebug_or_eng_prop:s0" dev="tmpfs" ino=349 scontext=u:r:untrusted_app:s0:c218,c256,c512,c768 tcontext=u:object_r:userdebug_or_eng_prop:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-19 13:34:40.693  5845  5845 I AndroidRuntime: Leaving lock profiling enabled
+09-19 13:34:40.693  5845  5845 W libc    : Access denied finding property "odsign.verification.success"
+09-19 13:34:40.695  5845  5845 W libc    : Access denied finding property "ro.debuggable"
+09-19 13:34:40.697  5845  5845 W com.ggufchat.app: ART APEX data files are untrusted.
+09-19 13:34:40.697  5845  5845 I com.ggufchat.app: Core platform API reporting enabled, enforcing=false
+--------- beginning of kernel
+09-19 13:34:40.851     0     0 W audit   : audit_lost=149 audit_rate_limit=5 audit_backlog_limit=64
+09-19 13:34:40.684  5845  5845 W app_process64: type=1400 audit(0.0:267): avc:  denied  { read } for  name="u:object_r:userdebug_or_eng_prop:s0" dev="tmpfs" ino=349 scontext=u:r:untrusted_app:s0:c218,c256,c512,c768 tcontext=u:object_r:userdebug_or_eng_prop:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-19 13:34:40.853     0     0 E audit   : rate limit exceeded
+09-19 13:34:40.684  5845  5845 W om.ggufchat.app: type=1400 audit(0.0:268): avc:  denied  { read } for  name="u:object_r:userdebug_or_eng_prop:s0" dev="tmpfs" ino=349 scontext=u:r:untrusted_app:s0:c218,c256,c512,c768 tcontext=u:object_r:userdebug_or_eng_prop:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-19 13:34:40.704  5845  5845 I com.ggufchat.app: Using CollectorTypeCMC GC.
+09-19 13:34:40.688  5845  5845 W om.ggufchat.app: type=1400 audit(0.0:269): avc:  denied  { read } for  name="u:object_r:odsign_prop:s0" dev="tmpfs" ino=262 scontext=u:r:untrusted_app:s0:c218,c256,c512,c768 tcontext=u:object_r:odsign_prop:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-19 13:34:40.688  5845  5845 W om.ggufchat.app: type=1400 audit(0.0:270): avc:  denied  { read } for  name="u:object_r:userdebug_or_eng_prop:s0" dev="tmpfs" ino=349 scontext=u:r:untrusted_app:s0:c218,c256,c512,c768 tcontext=u:object_r:userdebug_or_eng_prop:s0 tclass=file permissive=0 app=com.ggufchat.app
+09-19 13:34:40.756  5845  5845 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-19 13:34:40.763  5845  5845 D nativeloader: Load libicu_jni.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-19 13:34:40.763  5845  5845 D com.ggufchat.app: u_setTimeZoneFilesDirectory("/apex/com.android.tzdata/etc/tz/versioned/8/icu") succeeded. 
+09-19 13:34:40.763  5845  5845 D com.ggufchat.app: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt75l.dat
+09-19 13:34:40.763  5845  5845 D nativeloader: Load libjavacore.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-19 13:34:40.764  5845  5845 D nativeloader: Load libopenjdk.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-19 13:34:40.765  5845  5845 W com.ggufchat.app: Unexpected CPU variant for x86: x86_64.
+09-19 13:34:40.765  5845  5845 W com.ggufchat.app: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, goldmont-without-sha-xsaves, tremont, kabylake, default
+09-19 13:34:40.776  5845  5845 W libc    : Access denied finding property "ro.product.name_for_attestation"
+09-19 13:34:40.776  5845  5845 W libc    : Access denied finding property "ro.product.device_for_attestation"
+09-19 13:34:40.776  5845  5845 W libc    : Access denied finding property "ro.product.manufacturer_for_attestation"
+09-19 13:34:40.776  5845  5845 W libc    : Access denied finding property "ro.product.brand_for_attestation"
+09-19 13:34:40.776  5845  5845 W libc    : Access denied finding property "ro.product.model_for_attestation"
+09-19 13:34:40.776  5845  5845 W libc    : Access denied finding property "ro.debuggable"
+09-19 13:34:40.776  5845  5845 D nativeloader: Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok
+09-19 13:34:40.777  5845  5845 D AndroidRuntime: Calling main entry com.android.internal.os.WrapperInit
+09-19 13:34:40.777  5845  5845 D Zygote  : begin preload
+09-19 13:34:40.777  5845  5845 I Zygote  : Calling ZygoteHooks.beginPreload()
+09-19 13:34:40.777   361   361 I Zygote  : Wrapped process has pid 5845
+09-19 13:34:40.777   557   590 W ActivityManager: Slow operation: 181ms so far, now at startProcess: returned from zygote!
+09-19 13:34:40.778   557   590 W ActivityManager: Slow operation: 181ms so far, now at startProcess: done updating battery stats
+09-19 13:34:40.778   557   590 W ActivityManager: Slow operation: 181ms so far, now at startProcess: building log message
+09-19 13:34:40.778   557   590 I ActivityManager: Start proc 5845:com.ggufchat.app/u0a218 for added application com.ggufchat.app
+09-19 13:34:40.778   557   590 W ActivityManager: Slow operation: 181ms so far, now at startProcess: starting to update pids map
+09-19 13:34:40.778   557   590 W ActivityManager: Slow operation: 181ms so far, now at startProcess: done updating pids map
+09-19 13:34:40.794  5845  5845 V WrapperInitTiming: BeginPreload took to complete: 17ms
+09-19 13:34:40.794  5845  5845 I Zygote  : Preloading classes...
+09-19 13:34:40.797  5845  5845 W Zygote  : Class not found for preloading: android.app.PendingIntent$$ExternalSyntheticLambda3
+09-19 13:34:40.803  5845  5845 D nativeloader: Load libjavacrypto.so using APEX ns com_android_conscrypt for caller /apex/com.android.conscrypt/javalib/conscrypt.jar: ok
+09-19 13:34:40.808  5845  5845 W libc    : Access denied finding property "qemu.sf.lcd_density"
+09-19 13:34:40.808  5845  5845 W libc    : Access denied finding property "qemu.sf.lcd_density"
+09-19 13:34:40.810  5845  5845 I Typeface: Preloading /system/fonts/Roboto-Regular.ttf
+09-19 13:34:40.810  5845  5845 I Typeface: Preloading /system/fonts/RobotoStatic-Regular.ttf
+09-19 13:34:40.810  5845  5845 I SystemFonts: Loading font config from /system/etc/fonts.xml
+09-19 13:34:40.822  5845  5845 E ActivityRecognitionHardware: activity_recognition HAL is deprecated. class_init is effectively a no-op
+09-19 13:34:40.879  5845  5845 D nativeloader: Load libmedia_jni.so using system ns (caller=/system/framework/framework.jar!classes2.dex): ok
+09-19 13:34:40.879  5845  5845 D MtpDeviceJNI: register_android_mtp_MtpDevice
+09-19 13:34:40.882  5845  5845 D nativeloader: Load libsoundpool.so using system ns (caller=/system/framework/framework.jar!classes2.dex): ok
+09-19 13:34:40.882  5845  5845 D nativeloader: Load libaudioeffect_jni.so using system ns (caller=/system/framework/framework.jar!classes2.dex): ok
+09-19 13:34:40.885  5845  5845 D nativeloader: Load librtp_jni.so using system ns (caller=/system/framework/voip-common.jar): ok
+09-19 13:34:40.885  5845  5845 I com.ggufchat.app: Thread[1,tid=5845,Native,Thread*=0x7c0b85a49010,peer=0x140009c0,"main"] recursive attempt to load library "librtp_jni.so"
+09-19 13:34:40.887  5845  5845 D nativeloader: Load libvintf_jni.so using system ns (caller=/system/framework/framework.jar!classes3.dex): ok
+09-19 13:34:40.894  5845  5845 D nativeloader: Load librs_jni.so using system ns (caller=/system/framework/framework.jar!classes3.dex): ok
+09-19 13:34:40.907  5845  5845 W Zygote  : Class not found for preloading: android.window.ImeOnBackInvokedDispatcher$$ExternalSyntheticLambda0
+09-19 13:34:40.908  5845  5845 W Zygote  : Class not found for preloading: android.window.WindowOnBackInvokedDispatcher$OnBackInvokedCallbackWrapper$CallbackRef
+09-19 13:34:40.908  5845  5845 W com.ggufchat.app: Core platform API violation: Llibcore/io/Memory;->peekLong(JZ)J from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+09-19 13:34:40.908  5845  5845 W com.ggufchat.app: Core platform API violation: Llibcore/io/Memory;->pokeLong(JJZ)V from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+09-19 13:34:40.908  5845  5845 W com.ggufchat.app: Core platform API violation: Llibcore/io/Memory;->pokeInt(JIZ)V from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+09-19 13:34:40.908  5845  5845 W com.ggufchat.app: Core platform API violation: Llibcore/io/Memory;->peekInt(JZ)I from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+09-19 13:34:40.908  5845  5845 W com.ggufchat.app: Core platform API violation: Llibcore/io/Memory;->pokeByte(JB)V from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+09-19 13:34:40.908  5845  5845 W com.ggufchat.app: Core platform API violation: Llibcore/io/Memory;->peekByte(J)B from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+09-19 13:34:40.908  5845  5845 W com.ggufchat.app: Core platform API violation: Llibcore/io/Memory;->pokeByteArray(J[BII)V from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+09-19 13:34:40.908  5845  5845 W com.ggufchat.app: Core platform API violation: Llibcore/io/Memory;->peekByteArray(J[BII)V from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+09-19 13:34:40.915  5845  5845 W libc    : Access denied finding property "ro.debuggable"
+09-19 13:34:40.917  5845  5845 W libc    : Access denied finding property "ro.debuggable"
+09-19 13:34:40.919  5845  5845 W OverlayConfig: partition_order.xml does not exist.
+09-19 13:34:40.926  5845  5845 W com.ggufchat.app: unable to execute idmap2: Permission denied
+09-19 13:34:40.926  5845  5845 W OverlayConfig: 'idmap2 create-multiple' failed: no mutable="false" overlays targeting "android" will be loaded
+09-19 13:34:40.928  5845  5845 W libc    : Access denied finding property "ro.debuggable"
+09-19 13:34:40.928  5845  5845 W libc    : Access denied finding property "ro.debuggable"
+09-19 13:34:40.929  5845  5845 W libc    : Access denied finding property "ro.debuggable"
+09-19 13:34:40.934  5845  5845 D nativeloader: Load libframework-connectivity-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity.jar: ok
+09-19 13:34:40.948  5845  5845 W Zygote  : Class not found for preloading: sun.util.locale.BaseLocale$Key-IA
+09-19 13:34:40.949  5845  5845 I Zygote  : ...preloaded 17758 classes in 155ms.
+09-19 13:34:40.949  5845  5845 V WrapperInitTiming: PreloadClasses took to complete: 156ms
+09-19 13:34:40.950  5845  5845 D nativeloader: InitApexLibraries:
+09-19 13:34:40.950  5845  5845 D nativeloader:   com_android_art: libnativehelper.so
+09-19 13:34:40.950  5845  5845 D nativeloader:   com_android_i18n: libicui18n.so:libicuuc.so:libicu.so
+09-19 13:34:40.950  5845  5845 D nativeloader:   com_android_neuralnetworks: libneuralnetworks.so
+09-19 13:34:40.950  5845  5845 D nativeloader: InitDefaultPublicLibraries for_preload=0: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libclang_rt.hwasan-aarch64-android.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-19 13:34:40.950  5845  5845 D nativeloader: Configuring clns-shared-1 for other apk /system/framework/android.hidl.base-V1.0-java.jar. target_sdk_version=35, uses_libraries=, library_path=, permitted_path=/data:/mnt/expand
+09-19 13:34:40.950  5845  5845 D nativeloader: InitExtendedPublicLibraries: 
+09-19 13:34:40.950  5845  5845 I nativeloader: InitVendorPublicLibraries skipped: Failed to read /vendor/etc/public.libraries.txt: No such file or directory
+09-19 13:34:40.950  5845  5845 D nativeloader: InitProductPublicLibraries: 
+09-19 13:34:40.950  5845  5845 D ApplicationLoaders: Created zygote-cached class loader: /system/framework/android.hidl.base-V1.0-java.jar
+09-19 13:34:40.951  5845  5845 D nativeloader: Configuring clns-shared-2 for other apk /system/framework/android.hidl.manager-V1.0-java.jar. target_sdk_version=35, uses_libraries=, library_path=, permitted_path=/data:/mnt/expand
+09-19 13:34:40.951  5845  5845 D ApplicationLoaders: Created zygote-cached class loader: /system/framework/android.hidl.manager-V1.0-java.jar
+09-19 13:34:40.951  5845  5845 D nativeloader: Configuring clns-shared-3 for other apk /system/framework/android.test.base.jar. target_sdk_version=35, uses_libraries=, library_path=, permitted_path=/data:/mnt/expand
+09-19 13:34:40.952  5845  5845 D ApplicationLoaders: Created zygote-cached class loader: /system/framework/android.test.base.jar
+09-19 13:34:40.952  5845  5845 D nativeloader: Configuring clns-shared-4 for other apk /system/framework/org.apache.http.legacy.jar. target_sdk_version=35, uses_libraries=, library_path=, permitted_path=/data:/mnt/expand
+09-19 13:34:40.952  5845  5845 D ApplicationLoaders: Created zygote-cached class loader: /system/framework/org.apache.http.legacy.jar
+09-19 13:34:40.952  5845  5845 D nativeloader: Configuring clns-shared-5 for other apk /system_ext/framework/androidx.window.extensions.jar. target_sdk_version=35, uses_libraries=, library_path=, permitted_path=/data:/mnt/expand
+09-19 13:34:40.953  5845  5845 D ApplicationLoaders: Created zygote-cached class loader: /system_ext/framework/androidx.window.extensions.jar
+09-19 13:34:40.953  5845  5845 D nativeloader: Configuring clns-shared-6 for other apk /system_ext/framework/androidx.window.sidecar.jar. target_sdk_version=35, uses_libraries=, library_path=, permitted_path=/data:/mnt/expand
+09-19 13:34:40.953  5845  5845 D ApplicationLoaders: Created zygote-cached class loader: /system_ext/framework/androidx.window.sidecar.jar
+09-19 13:34:40.953  5845  5845 V WrapperInitTiming: CacheNonBootClasspathClassLoaders took to complete: 4ms
+09-19 13:34:40.953  5845  5845 I Resources: Preloading resources...
+09-19 13:34:40.955  5845  5845 W Resources: Preloaded drawable resource #0x10802cb (android:drawable/dialog_background_material) that varies with configuration!!
+09-19 13:34:40.956  5845  5845 W Resources: Preloaded drawable resource #0x1080846 (android:drawable/progress_horizontal_material) that varies with configuration!!
+09-19 13:34:40.956  5845  5845 W Resources: Preloaded drawable resource #0x108084a (android:drawable/progress_indeterminate_horizontal_material) that varies with configuration!!
+09-19 13:34:40.957  5845  5845 I Resources: ...preloaded 63 resources in 3ms.
+09-19 13:34:40.957  5845  5845 I Resources: ...preloaded 41 resources in 1ms.
+09-19 13:34:40.957  5845  5845 V WrapperInitTiming: PreloadResources took to complete: 4ms
+09-19 13:34:40.960  5845  5845 I Zygote  : Preloading shared libraries...
+09-19 13:34:40.961  5845  5845 D nativeloader: Load libandroid.so using system ns (caller=/system/framework/framework.jar!classes5.dex): ok
+09-19 13:34:40.961  5845  5845 D nativeloader: Load libjnigraphics.so using system ns (caller=/system/framework/framework.jar!classes5.dex): ok
+09-19 13:34:40.961  5845  5845 D nativeloader: Load libcompiler_rt.so using system ns (caller=/system/framework/framework.jar!classes5.dex): ok
+09-19 13:34:40.962  5845  5845 E com.ggufchat.app: Unable to find pattern file or unable to map it for am
+09-19 13:34:40.962  5845  5845 D nativeloader: Load libwebviewchromium_loader.so using system ns (caller=/system/framework/framework.jar!classes4.dex): ok
+09-19 13:34:40.962  5845  5845 I Zygote  : Called ZygoteHooks.endPreload()
+09-19 13:34:40.962  5845  5845 I Zygote  : Installed AndroidKeyStoreProvider in 1ms.
+09-19 13:34:40.963  5845  5845 I Zygote  : Warmed up JCA providers in 0ms.
+09-19 13:34:40.963  5845  5845 D Zygote  : end preload
+09-19 13:34:40.965  5845  5845 D nativeloader: Load libstats_jni.so using APEX ns com_android_os_statsd for caller /apex/com.android.os.statsd/javalib/framework-statsd.jar: ok
+09-19 13:34:40.965  5845  5845 D CompatChangeReporter: Compat change id reported: 242716250; UID 10218; state: ENABLED
+09-19 13:34:40.967  5845  5845 W ActivityThread: Package uses different ABI(s) than its instrumentation: package[com.ggufchat.app]: x86_64, null instrumentation[com.ggufchat.gpurate]: null, null
+09-19 13:34:40.967  5845  5845 W ziparchive: Unable to open '/data/app/~~Rle942jo4UmJe31ZHxjvbw==/com.ggufchat.gpurate-LY3hjBXmWPka1o3GkSXslA==/base.dm': No such file or directory
+09-19 13:34:40.967  5845  5845 W ziparchive: Unable to open '/data/app/~~Rle942jo4UmJe31ZHxjvbw==/com.ggufchat.gpurate-LY3hjBXmWPka1o3GkSXslA==/base.dm': No such file or directory
+09-19 13:34:40.968  5845  5845 W ziparchive: Unable to open '/data/app/~~YpNSuY3ec7xTjyZUTx7oMA==/com.ggufchat.app-BRA-EggUGvCixes_ZiIyqw==/base.dm': No such file or directory
+09-19 13:34:40.968  5845  5845 W ziparchive: Unable to open '/data/app/~~YpNSuY3ec7xTjyZUTx7oMA==/com.ggufchat.app-BRA-EggUGvCixes_ZiIyqw==/base.dm': No such file or directory
+09-19 13:34:41.007  5845  5845 D nativeloader: Configuring clns-7 for other apk /data/app/~~Rle942jo4UmJe31ZHxjvbw==/com.ggufchat.gpurate-LY3hjBXmWPka1o3GkSXslA==/base.apk:/data/app/~~YpNSuY3ec7xTjyZUTx7oMA==/com.ggufchat.app-BRA-EggUGvCixes_ZiIyqw==/base.apk. target_sdk_version=34, uses_libraries=, library_path=/data/app/~~Rle942jo4UmJe31ZHxjvbw==/com.ggufchat.gpurate-LY3hjBXmWPka1o3GkSXslA==/lib/x86_64:/data/app/~~YpNSuY3ec7xTjyZUTx7oMA==/com.ggufchat.app-BRA-EggUGvCixes_ZiIyqw==/lib/x86_64:/data/app/~~Rle942jo4UmJe31ZHxjvbw==/com.ggufchat.gpurate-LY3hjBXmWPka1o3GkSXslA==/base.apk!/lib/x86_64:/data/app/~~YpNSuY3ec7xTjyZUTx7oMA==/com.ggufchat.app-BRA-EggUGvCixes_ZiIyqw==/base.apk!/lib/x86_64, permitted_path=/data:/mnt/expand:/data/user/0/com.ggufchat.app
+09-19 13:34:41.008  5845  5845 V GraphicsEnvironment: Currently set values for:
+09-19 13:34:41.008  5845  5845 V GraphicsEnvironment:   angle_gl_driver_selection_pkgs=[]
+09-19 13:34:41.008  5845  5845 V GraphicsEnvironment:   angle_gl_driver_selection_values=[]
+09-19 13:34:41.008  5845  5845 V GraphicsEnvironment: Global.Settings values are invalid: number of packages: 0, number of values: 0
+09-19 13:34:41.008  5845  5845 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+09-19 13:34:41.009  5845  5845 W ziparchive: Unable to open '/data/app/~~Rle942jo4UmJe31ZHxjvbw==/com.ggufchat.gpurate-LY3hjBXmWPka1o3GkSXslA==/base.dm': No such file or directory
+09-19 13:34:41.009  5845  5845 W ziparchive: Unable to open '/data/app/~~Rle942jo4UmJe31ZHxjvbw==/com.ggufchat.gpurate-LY3hjBXmWPka1o3GkSXslA==/base.dm': No such file or directory
+09-19 13:34:41.010  5845  5845 W ziparchive: Unable to open '/data/app/~~YpNSuY3ec7xTjyZUTx7oMA==/com.ggufchat.app-BRA-EggUGvCixes_ZiIyqw==/base.dm': No such file or directory
+09-19 13:34:41.010  5845  5845 W ziparchive: Unable to open '/data/app/~~YpNSuY3ec7xTjyZUTx7oMA==/com.ggufchat.app-BRA-EggUGvCixes_ZiIyqw==/base.dm': No such file or directory
+09-19 13:34:41.046  5845  5845 I incfs   : Initial API level of the device: 35
+09-19 13:34:41.046  5845  5845 W libc    : Access denied finding property "ro.incremental.enable"
+09-19 13:34:41.046  5845  5845 I incfs   : ro.incremental.enable: on
+09-19 13:34:41.046  5845  5845 I incfs   : IncFs_Features: v2
+09-19 13:34:41.046  5845  5845 I incfs-mounts: [incfs] Loaded incremental-fs mount info: 2 instances, 4 mount points
+09-19 13:34:41.050  5845  5858 I GGUFNativeStderr: Emulator-only GGML_VK_VISIBLE_DEVICES=0; software Vulkan is not hardware acceleration
+09-19 13:34:41.055  5845  5858 E platform: Failed to open rendernode: No such file or directory
+09-19 13:34:41.059  5845  5858 D vulkan  : searching for layers in '/data/app/~~YpNSuY3ec7xTjyZUTx7oMA==/com.ggufchat.app-BRA-EggUGvCixes_ZiIyqw==/lib/x86_64'
+09-19 13:34:41.059  5845  5858 D vulkan  : searching for layers in '/data/app/~~Rle942jo4UmJe31ZHxjvbw==/com.ggufchat.gpurate-LY3hjBXmWPka1o3GkSXslA==/base.apk!/lib/x86_64'
+09-19 13:34:41.059  5845  5858 D vulkan  : searching for layers in '/data/app/~~YpNSuY3ec7xTjyZUTx7oMA==/com.ggufchat.app-BRA-EggUGvCixes_ZiIyqw==/base.apk!/lib/x86_64'
+09-19 13:34:41.060  5845  5858 I GGUFNativeStderr: Vulkan loader API 1.3.0; bundled ggml Vulkan requires >= 1.2
+09-19 13:34:41.060  5845  5858 D nativeloader: Load /data/app/~~YpNSuY3ec7xTjyZUTx7oMA==/com.ggufchat.app-BRA-EggUGvCixes_ZiIyqw==/lib/x86_64/libggufdiagnostics.so using ns clns-7 from class loader (caller=/data/app/~~YpNSuY3ec7xTjyZUTx7oMA==/com.ggufchat.app-BRA-EggUGvCixes_ZiIyqw==/base.apk): ok
+09-19 13:34:41.063  5845  5858 D nativeloader: Load /data/app/~~YpNSuY3ec7xTjyZUTx7oMA==/com.ggufchat.app-BRA-EggUGvCixes_ZiIyqw==/lib/x86_64/libaijni.so using ns clns-7 from class loader (caller=/data/app/~~YpNSuY3ec7xTjyZUTx7oMA==/com.ggufchat.app-BRA-EggUGvCixes_ZiIyqw==/base.apk): ok
+09-19 13:34:41.293  5845  5858 I UiAutomation: Initialized for user 0 on display 0
+09-19 13:34:41.294   557  2013 D AccessibilityManagerService: changeCurrentUserForTestAutomationIfNeededLocked(0): ignoring because device doesn't support visible background users
+09-19 13:34:41.294   557  2013 I UiAutomationManager: Registering UiTestAutomationService (id=com.android.server.accessibility/UiAutomation, flags=0x0) when called by user 0
+09-19 13:34:41.295   557  2013 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-19 13:34:41.295  1430  4034 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-19 13:34:41.295   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:34:41.295   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:34:41.296   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:34:41.296   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:34:41.296   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:34:41.296   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:34:41.296   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:34:41.296   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:34:41.296   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:34:41.296   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:34:41.296   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:34:41.296   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:34:41.296   557   557 D BatterySaverPolicy: accessibility changed to true, updating policy.
+09-19 13:34:41.297  1642  1931 I A       : NGA disabled since it's running Panthera and at least one a11y feature is on.
+09-19 13:34:41.297  1642  1931 I A       : (REDACTED) Nga state changed to %s
+09-19 13:34:41.297  1642  1931 I A       : (REDACTED) isTngActive=%s
+09-19 13:34:41.301  1483  1914 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b
+09-19 13:34:41.302  1483  1914 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b
+09-19 13:34:41.302  1483  1914 I A       : Unsubscribed to apa or classic variant change.
+09-19 13:34:41.307  1430  1639 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-19 13:34:41.307  1430  1639 I AiAiEcho: EchoTargets: 
+09-19 13:34:41.307  1430  1639 I AiAiEcho: Filtered by AiAi flag check: 
+09-19 13:34:41.307  1430  1639 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-19 13:34:41.307  1430  1639 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-19 13:34:41.307  1430  1639 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-19 13:34:41.307  1430  1639 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-19 13:34:41.307  1430  1639 I AiAiEcho: EchoTargets: 
+09-19 13:34:41.307  1430  1639 I AiAiEcho: Filtered by AiAi flag check: 
+09-19 13:34:41.307  1430  1639 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-19 13:34:41.307  1430  1639 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-19 13:34:41.307  1430  1639 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-19 13:34:41.307  1430  1639 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-19 13:34:41.307  1430  1639 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface home with targets# 0 (types=[])
+09-19 13:34:41.308  1204  1204 D SsBaseTemplateCard: No text view can be set up
+09-19 13:34:41.308  1204  1204 D SsBaseTemplateCard: Passed-in item info is null
+09-19 13:34:41.308  1204  1204 D SsBaseTemplateCard: Passed-in item info is null
+09-19 13:34:41.308  1204  1204 D SsBaseTemplateCard: Passed-in item info is null
+09-19 13:34:41.308  1204  1204 I SsBaseTemplateCard: Secondary card pane is null
+09-19 13:34:41.317   917   917 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-19 13:34:41.338  5845  5858 I GGUFChatNative: GGUF_MEMORY_TELEMETRY file_bytes=105454432 available=4327948288 mmap=1 policy=actual_allocator
+09-19 13:34:41.346  1204  1687 D EGL_emulation: app_time_stats: avg=163.21ms min=9.64ms max=1178.84ms count=12
+09-19 13:34:41.386  5845  5858 I GGUFNativeStderr: ggml_vulkan: Found 1 Vulkan devices:
+09-19 13:34:41.387  5845  5858 I GGUFNativeStderr: ggml_vulkan: 0 = llvmpipe (LLVM 21.0.0, 256 bits) (llvmpipe) | uma: 0 | fp16: 0 | bf16: 0 | fp4: 0 | warp size: 8 | shared memory: 32768 | int dot: 0 | matrix cores: none
+09-19 13:34:41.387  5845  5858 I GGUFNativeStderr: ggml_vulkan: Warning: Device type is CPU. This is probably not the device you want.
+09-19 13:34:41.400  5845  5858 I GGUFNativeStderr: llama_model_loader: loaded meta data with 37 key-value pairs and 272 tensors from /data/user/0/com.ggufchat.app/files/gpu-rate.gguf (version GGUF V3 (latest))
+09-19 13:34:41.400  5845  5858 I GGUFNativeStderr: llama_model_loader: Dumping metadata keys/values. Note: KV overrides do not apply in this output.
+09-19 13:34:41.400  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv   0:                       general.architecture str              = llama
+09-19 13:34:41.400  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv   1:                               general.type str              = model
+09-19 13:34:41.400  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv   2:                               general.name str              = Smollm2 135M 8k Lc100K Mix1 Ep2
+09-19 13:34:41.400  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv   3:                       general.organization str              = HuggingFaceTB
+09-19 13:34:41.400  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv   4:                           general.finetune str              = 8k-lc100k-mix1-ep2
+09-19 13:34:41.400  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv   5:                           general.basename str              = smollm2
+09-19 13:34:41.400  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv   6:                         general.size_label str              = 135M
+09-19 13:34:41.401  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv   7:                            general.license str              = apache-2.0
+09-19 13:34:41.401  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv   8:                          general.languages arr[str,1]       = ["en"]
+09-19 13:34:41.401  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv   9:                          llama.block_count u32              = 30
+09-19 13:34:41.401  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv  10:                       llama.context_length u32              = 8192
+09-19 13:34:41.401  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv  11:                     llama.embedding_length u32              = 576
+09-19 13:34:41.401  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv  12:                  llama.feed_forward_length u32              = 1536
+09-19 13:34:41.401  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv  13:                 llama.attention.head_count u32              = 9
+09-19 13:34:41.401  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv  14:              llama.attention.head_count_kv u32              = 3
+09-19 13:34:41.401  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv  15:                       llama.rope.freq_base f32              = 100000.000000
+09-19 13:34:41.401  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv  16:     llama.attention.layer_norm_rms_epsilon f32              = 0.000010
+09-19 13:34:41.401  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv  17:                          general.file_type u32              = 15
+09-19 13:34:41.401  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv  18:                           llama.vocab_size u32              = 49152
+09-19 13:34:41.401  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv  19:                 llama.rope.dimension_count u32              = 64
+09-19 13:34:41.401  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv  20:            tokenizer.ggml.add_space_prefix bool             = false
+09-19 13:34:41.401  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv  21:               tokenizer.ggml.add_bos_token bool             = false
+09-19 13:34:41.401  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv  22:                       tokenizer.ggml.model str              = gpt2
+09-19 13:34:41.401  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv  23:                         tokenizer.ggml.pre str              = smollm
+09-19 13:34:41.412  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv  24:                      tokenizer.ggml.tokens arr[str,49152]   = ["<|endoftext|>", "<|im_start|>", "<|...
+09-19 13:34:41.416  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv  25:                  tokenizer.ggml.token_type arr[i32,49152]   = [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, ...
+09-19 13:34:41.426  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv  26:                      tokenizer.ggml.merges arr[str,48900]   = ["Ġ t", "Ġ a", "i n", "h e", "Ġ Ġ...
+09-19 13:34:41.426  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv  27:                tokenizer.ggml.bos_token_id u32              = 1
+09-19 13:34:41.426  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv  28:                tokenizer.ggml.eos_token_id u32              = 2
+09-19 13:34:41.426  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv  29:            tokenizer.ggml.unknown_token_id u32              = 0
+09-19 13:34:41.427  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv  30:            tokenizer.ggml.padding_token_id u32              = 2
+09-19 13:34:41.427  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv  31:                    tokenizer.chat_template str              = {% for message in messages %}{% if lo...
+09-19 13:34:41.427  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv  32:               general.quantization_version u32              = 2
+09-19 13:34:41.427  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv  33:                      quantize.imatrix.file str              = /models_out/SmolLM2-135M-Instruct-GGU...
+09-19 13:34:41.427  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv  34:                   quantize.imatrix.dataset str              = /training_dir/calibration_datav3.txt
+09-19 13:34:41.427  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv  35:             quantize.imatrix.entries_count i32              = 210
+09-19 13:34:41.427  5845  5858 I GGUFNativeStderr: llama_model_loader: - kv  36:              quantize.imatrix.chunks_count i32              = 141
+09-19 13:34:41.427  5845  5858 I GGUFNativeStderr: llama_model_loader: - type  f32:   61 tensors
+09-19 13:34:41.427  5845  5858 I GGUFNativeStderr: llama_model_loader: - type q5_0:  166 tensors
+09-19 13:34:41.427  5845  5858 I GGUFNativeStderr: llama_model_loader: - type q8_0:   15 tensors
+09-19 13:34:41.427  5845  5858 I GGUFNativeStderr: llama_model_loader: - type q4_K:   16 tensors
+09-19 13:34:41.427  5845  5858 I GGUFNativeStderr: llama_model_loader: - type q6_K:   14 tensors
+09-19 13:34:41.427  5845  5858 I GGUFNativeStderr: print_info: file format = GGUF V3 (latest)
+09-19 13:34:41.427  5845  5858 I GGUFNativeStderr: print_info: file type   = Q4_K - Medium
+09-19 13:34:41.427  5845  5858 I GGUFNativeStderr: print_info: file size   = 98.87 MiB (6.17 BPW) 
+09-19 13:34:41.428  5845  5858 I GGUFNativeStderr: llama_prepare_model_devices: using device Vulkan0 (llvmpipe (LLVM 21.0.0, 256 bits)) (unknown id) - 15989 MiB free
+09-19 13:34:41.450  5845  5858 I GGUFNativeStderr: init_tokenizer: initializing tokenizer for type 2
+09-19 13:34:41.456  5845  5858 I GGUFNativeStderr: load: 0 unused tokens
+09-19 13:34:41.457  5845  5858 I GGUFNativeStderr: load: control token:     15 '<jupyter_script>' is not marked as EOG
+09-19 13:34:41.458  5845  5858 I GGUFNativeStderr: load: control token:      7 '<gh_stars>' is not marked as EOG
+09-19 13:34:41.458  5845  5858 I GGUFNativeStderr: load: control token:      5 '<file_sep>' is not marked as EOG
+09-19 13:34:41.459  5845  5858 I GGUFNativeStderr: load: control token:     12 '<jupyter_text>' is not marked as EOG
+09-19 13:34:41.459  5845  5858 I GGUFNativeStderr: load: control token:     10 '<issue_closed>' is not marked as EOG
+09-19 13:34:41.459  5845  5858 I GGUFNativeStderr: load: control token:     11 '<jupyter_start>' is not marked as EOG
+09-19 13:34:41.459  5845  5858 I GGUFNativeStderr: load: control token:      1 '<|im_start|>' is not marked as EOG
+09-19 13:34:41.459  5845  5858 I GGUFNativeStderr: load: control token:      9 '<issue_comment>' is not marked as EOG
+09-19 13:34:41.459  5845  5858 I GGUFNativeStderr: load: control token:      8 '<issue_start>' is not marked as EOG
+09-19 13:34:41.460  5845  5858 I GGUFNativeStderr: load: control token:     13 '<jupyter_code>' is not marked as EOG
+09-19 13:34:41.460  5845  5858 I GGUFNativeStderr: load: control token:      3 '<repo_name>' is not marked as EOG
+09-19 13:34:41.461  5845  5858 I GGUFNativeStderr: load: control token:      6 '<filename>' is not marked as EOG
+09-19 13:34:41.461  5845  5858 I GGUFNativeStderr: load: control token:     14 '<jupyter_output>' is not marked as EOG
+09-19 13:34:41.461  5845  5858 I GGUFNativeStderr: load: control token:     16 '<empty_output>' is not marked as EOG
+09-19 13:34:41.462  5845  5858 I GGUFNativeStderr: load: printing all EOG tokens:
+09-19 13:34:41.462  5845  5858 I GGUFNativeStderr: load:   - 0 ('<|endoftext|>')
+09-19 13:34:41.462  5845  5858 I GGUFNativeStderr: load:   - 2 ('<|im_end|>')
+09-19 13:34:41.462  5845  5858 I GGUFNativeStderr: load:   - 4 ('<reponame>')
+09-19 13:34:41.462  5845  5858 I GGUFNativeStderr: load: special tokens cache size = 17
+09-19 13:34:41.473  5845  5858 I GGUFNativeStderr: load: token to piece cache size = 0.3170 MB
+09-19 13:34:41.473  5845  5858 I GGUFNativeStderr: print_info: arch                  = llama
+09-19 13:34:41.473  5845  5858 I GGUFNativeStderr: print_info: vocab_only            = 0
+09-19 13:34:41.473  5845  5858 I GGUFNativeStderr: print_info: no_alloc              = 0
+09-19 13:34:41.473  5845  5858 I GGUFNativeStderr: print_info: n_ctx_train           = 8192
+09-19 13:34:41.473  5845  5858 I GGUFNativeStderr: print_info: n_embd_inp            = 576
+09-19 13:34:41.473  5845  5858 I GGUFNativeStderr: print_info: n_embd                = 576
+09-19 13:34:41.473  5845  5858 I GGUFNativeStderr: print_info: n_embd_out            = 576
+09-19 13:34:41.473  5845  5858 I GGUFNativeStderr: print_info: n_layer               = 30
+09-19 13:34:41.473  5845  5858 I GGUFNativeStderr: print_info: n_layer_all           = 30
+09-19 13:34:41.473  5845  5858 I GGUFNativeStderr: print_info: n_head                = 9
+09-19 13:34:41.473  5845  5858 I GGUFNativeStderr: print_info: n_head_kv             = 3
+09-19 13:34:41.473  5845  5858 I GGUFNativeStderr: print_info: n_rot                 = 64
+09-19 13:34:41.473  5845  5858 I GGUFNativeStderr: print_info: n_swa                 = 0
+09-19 13:34:41.473  5845  5858 I GGUFNativeStderr: print_info: is_swa_any            = 0
+09-19 13:34:41.473  5845  5858 I GGUFNativeStderr: print_info: non_causal_type       = 0
+09-19 13:34:41.473  5845  5858 I GGUFNativeStderr: print_info: n_embd_head_k         = 64
+09-19 13:34:41.473  5845  5858 I GGUFNativeStderr: print_info: n_embd_head_v         = 64
+09-19 13:34:41.473  5845  5858 I GGUFNativeStderr: print_info: n_gqa                 = 3
+09-19 13:34:41.473  5845  5858 I GGUFNativeStderr: print_info: n_embd_k_gqa          = 192
+09-19 13:34:41.473  5845  5858 I GGUFNativeStderr: print_info: n_embd_v_gqa          = 192
+09-19 13:34:41.473  5845  5858 I GGUFNativeStderr: print_info: f_norm_eps            = 0.0e+00
+09-19 13:34:41.473  5845  5858 I GGUFNativeStderr: print_info: f_norm_rms_eps        = 1.0e-05
+09-19 13:34:41.473  5845  5858 I GGUFNativeStderr: print_info: f_clamp_kqv           = 0.0e+00
+09-19 13:34:41.473  5845  5858 I GGUFNativeStderr: print_info: f_max_alibi_bias      = 0.0e+00
+09-19 13:34:41.473  5845  5858 I GGUFNativeStderr: print_info: f_logit_scale         = 0.0e+00
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: f_attn_scale          = 0.0e+00
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: f_attn_value_scale    = 0.0000
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: n_ff                  = 1536
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: n_expert              = 0
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: n_expert_used         = 0
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: n_expert_groups       = 0
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: n_group_used          = 0
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: causal attn           = 1
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: pooling type          = -1
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: rope type             = 0
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: rope scaling          = linear
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: freq_base_train       = 100000.0
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: freq_scale_train      = 1
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: n_ctx_orig_yarn       = 8192
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: rope_yarn_log_mul     = 0.0000
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: rope_finetuned        = unknown
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: model type            = 256M
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: model params          = 134.52 M
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: general.name          = Smollm2 135M 8k Lc100K Mix1 Ep2
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: vocab type            = BPE
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: n_vocab               = 49152
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: n_merges              = 48900
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: BOS token             = 1 '<|im_start|>'
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: EOS token             = 2 '<|im_end|>'
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: EOT token             = 2 '<|im_end|>'
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: UNK token             = 0 '<|endoftext|>'
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: PAD token             = 2 '<|im_end|>'
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: LF token              = 198 'Ċ'
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: FIM REP token         = 4 '<reponame>'
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: EOG token             = 0 '<|endoftext|>'
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: EOG token             = 2 '<|im_end|>'
+09-19 13:34:41.474  5845  5858 I GGUFNativeStderr: print_info: EOG token             = 4 '<reponame>'
+09-19 13:34:41.475  5845  5858 I GGUFNativeStderr: print_info: max token length      = 162
+09-19 13:34:41.475  5845  5858 I GGUFNativeStderr: load_tensors: loading model tensors, this can take a while... (load_mode = mmap)
+09-19 13:34:41.497  5845  5858 I GGUFNativeStderr: load_tensors: layer   0 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.497  5845  5858 I GGUFNativeStderr: load_tensors: layer   1 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.497  5845  5858 I GGUFNativeStderr: load_tensors: layer   2 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.497  5845  5858 I GGUFNativeStderr: load_tensors: layer   3 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.497  5845  5858 I GGUFNativeStderr: load_tensors: layer   4 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.497  5845  5858 I GGUFNativeStderr: load_tensors: layer   5 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.497  5845  5858 I GGUFNativeStderr: load_tensors: layer   6 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.498  5845  5858 I GGUFNativeStderr: load_tensors: layer   7 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.498  5845  5858 I GGUFNativeStderr: load_tensors: layer   8 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.498  5845  5858 I GGUFNativeStderr: load_tensors: layer   9 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.498  5845  5858 I GGUFNativeStderr: load_tensors: layer  10 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.498  5845  5858 I GGUFNativeStderr: load_tensors: layer  11 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.498  5845  5858 I GGUFNativeStderr: load_tensors: layer  12 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.498  5845  5858 I GGUFNativeStderr: load_tensors: layer  13 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.498  5845  5858 I GGUFNativeStderr: load_tensors: layer  14 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.498  5845  5858 I GGUFNativeStderr: load_tensors: layer  15 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.498  5845  5858 I GGUFNativeStderr: load_tensors: layer  16 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.498  5845  5858 I GGUFNativeStderr: load_tensors: layer  17 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.498  5845  5858 I GGUFNativeStderr: load_tensors: layer  18 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.498  5845  5858 I GGUFNativeStderr: load_tensors: layer  19 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.498  5845  5858 I GGUFNativeStderr: load_tensors: layer  20 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.498  5845  5858 I GGUFNativeStderr: load_tensors: layer  21 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.498  5845  5858 I GGUFNativeStderr: load_tensors: layer  22 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.498  5845  5858 I GGUFNativeStderr: load_tensors: layer  23 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.498  5845  5858 I GGUFNativeStderr: load_tensors: layer  24 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.498  5845  5858 I GGUFNativeStderr: load_tensors: layer  25 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.498  5845  5858 I GGUFNativeStderr: load_tensors: layer  26 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.498  5845  5858 I GGUFNativeStderr: load_tensors: layer  27 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.498  5845  5858 I GGUFNativeStderr: load_tensors: layer  28 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.498  5845  5858 I GGUFNativeStderr: load_tensors: layer  29 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.498  5845  5858 I GGUFNativeStderr: load_tensors: layer  30 assigned to device Vulkan0, is_swa = 0
+09-19 13:34:41.498  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor token_embd.weight
+09-19 13:34:41.498  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor output_norm.weight
+09-19 13:34:41.498  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor output.weight
+09-19 13:34:41.498  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor token_embd.weight
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_norm.weight
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_qkv.weight
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_q.weight
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_k.weight
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_v.weight
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_q.bias
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_k.bias
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_v.bias
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_output.weight
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_output.bias
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_norm.weight
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_gate.weight
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_down.weight
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_up.weight
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_gate.bias
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_down.bias
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_up.bias
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_norm.weight
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_qkv.weight
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_q.weight
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_k.weight
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_v.weight
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_q.bias
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_k.bias
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_v.bias
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_output.weight
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_output.bias
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_norm.weight
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_gate.weight
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_down.weight
+09-19 13:34:41.499  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_up.weight
+09-19 13:34:41.500  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_gate.bias
+09-19 13:34:41.500  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_down.bias
+09-19 13:34:41.500  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_up.bias
+09-19 13:34:41.500  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_norm.weight
+09-19 13:34:41.500  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_qkv.weight
+09-19 13:34:41.500  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_q.weight
+09-19 13:34:41.500  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_k.weight
+09-19 13:34:41.500  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_v.weight
+09-19 13:34:41.500  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_q.bias
+09-19 13:34:41.500  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_k.bias
+09-19 13:34:41.500  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_v.bias
+09-19 13:34:41.500  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_output.weight
+09-19 13:34:41.500  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_output.bias
+09-19 13:34:41.500  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_norm.weight
+09-19 13:34:41.500  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-19 13:34:41.500  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_gate.weight
+09-19 13:34:41.500  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_down.weight
+09-19 13:34:41.501  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_up.weight
+09-19 13:34:41.501  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_gate.bias
+09-19 13:34:41.501  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_down.bias
+09-19 13:34:41.501  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_up.bias
+09-19 13:34:41.501  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_norm.weight
+09-19 13:34:41.501  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_qkv.weight
+09-19 13:34:41.501  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_q.weight
+09-19 13:34:41.501  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_k.weight
+09-19 13:34:41.501  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_v.weight
+09-19 13:34:41.501  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_q.bias
+09-19 13:34:41.501  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_k.bias
+09-19 13:34:41.501  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_v.bias
+09-19 13:34:41.501  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_output.weight
+09-19 13:34:41.501  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_output.bias
+09-19 13:34:41.501  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_norm.weight
+09-19 13:34:41.501  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-19 13:34:41.501  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_gate.weight
+09-19 13:34:41.501  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_down.weight
+09-19 13:34:41.501  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_up.weight
+09-19 13:34:41.501  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_gate.bias
+09-19 13:34:41.501  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_down.bias
+09-19 13:34:41.501  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_up.bias
+09-19 13:34:41.501  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_norm.weight
+09-19 13:34:41.501  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_qkv.weight
+09-19 13:34:41.501  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_q.weight
+09-19 13:34:41.501  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_k.weight
+09-19 13:34:41.501  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_v.weight
+09-19 13:34:41.501  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_q.bias
+09-19 13:34:41.502  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_k.bias
+09-19 13:34:41.502  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_v.bias
+09-19 13:34:41.502  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_output.weight
+09-19 13:34:41.502  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_output.bias
+09-19 13:34:41.502  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_norm.weight
+09-19 13:34:41.502  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-19 13:34:41.502  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_gate.weight
+09-19 13:34:41.502  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_down.weight
+09-19 13:34:41.502  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_up.weight
+09-19 13:34:41.502  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_gate.bias
+09-19 13:34:41.502  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_down.bias
+09-19 13:34:41.502  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_up.bias
+09-19 13:34:41.502  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_norm.weight
+09-19 13:34:41.502  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_qkv.weight
+09-19 13:34:41.502  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_q.weight
+09-19 13:34:41.502  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_k.weight
+09-19 13:34:41.502  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_v.weight
+09-19 13:34:41.502  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_q.bias
+09-19 13:34:41.502  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_k.bias
+09-19 13:34:41.502  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_v.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_output.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_output.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_norm.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_gate.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_down.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_up.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_gate.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_down.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_up.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_norm.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_qkv.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_q.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_k.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_v.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_q.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_k.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_v.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_output.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_output.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_norm.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_gate.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_down.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_up.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_gate.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_down.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_up.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_norm.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_qkv.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_q.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_k.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_v.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_q.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_k.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_v.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_output.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_output.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_norm.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_gate.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_down.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_up.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_gate.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_down.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_up.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_norm.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_qkv.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_q.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_k.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_v.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_q.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_k.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_v.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_output.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_output.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_norm.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_gate.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_down.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_up.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_gate.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_down.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_up.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_norm.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_qkv.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_q.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_k.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_v.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_q.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_k.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_v.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_output.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_output.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_norm.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_gate.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_down.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_up.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_gate.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_down.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_up.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_norm.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_qkv.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_q.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_k.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_v.weight
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_q.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_k.bias
+09-19 13:34:41.503  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_v.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_output.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_output.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_norm.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_gate.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_down.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_up.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_gate.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_down.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_up.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_norm.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_qkv.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_q.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_k.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_v.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_q.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_k.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_v.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_output.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_output.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_norm.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_gate.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_down.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_up.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_gate.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_down.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_up.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_norm.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_qkv.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_q.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_k.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_v.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_q.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_k.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_v.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_output.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_output.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.ffn_norm.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.ffn_gate.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.ffn_down.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.ffn_up.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.ffn_gate.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.ffn_down.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.ffn_up.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_norm.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_qkv.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_q.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_k.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_v.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_q.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_k.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_v.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_output.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_output.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.ffn_norm.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.ffn_gate.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.ffn_down.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.ffn_up.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.ffn_gate.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.ffn_down.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.ffn_up.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_norm.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_qkv.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_q.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_k.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_v.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_q.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_k.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_v.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_output.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_output.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.ffn_norm.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.ffn_gate.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.ffn_down.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.ffn_up.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.ffn_gate.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.ffn_down.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.ffn_up.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_norm.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_qkv.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_q.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_k.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_v.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_q.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_k.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_v.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_output.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_output.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.ffn_norm.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.ffn_gate.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.ffn_down.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.ffn_up.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.ffn_gate.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.ffn_down.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.ffn_up.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_norm.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_qkv.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_q.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_k.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_v.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_q.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_k.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_v.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_output.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_output.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.ffn_norm.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.ffn_gate.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.ffn_down.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.ffn_up.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.ffn_gate.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.ffn_down.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.ffn_up.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_norm.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_qkv.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_q.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_k.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_v.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_q.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_k.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_v.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_output.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_output.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.ffn_norm.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.ffn_gate.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.ffn_down.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.ffn_up.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.ffn_gate.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.ffn_down.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.ffn_up.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_norm.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_qkv.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_q.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_k.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_v.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_q.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_k.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_v.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_output.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_output.bias
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.ffn_norm.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-19 13:34:41.504  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.ffn_gate.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.ffn_down.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.ffn_up.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.ffn_gate.bias
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.ffn_down.bias
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.ffn_up.bias
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_norm.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_qkv.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_q.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_k.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_v.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_q.bias
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_k.bias
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_v.bias
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_output.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_output.bias
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.ffn_norm.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.ffn_gate.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.ffn_down.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.ffn_up.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.ffn_gate.bias
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.ffn_down.bias
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.ffn_up.bias
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_norm.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_qkv.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_q.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_k.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_v.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_q.bias
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_k.bias
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_v.bias
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_output.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_output.bias
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.ffn_norm.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.ffn_gate.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.ffn_down.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.ffn_up.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.ffn_gate.bias
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.ffn_down.bias
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.ffn_up.bias
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_norm.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_qkv.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_q.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_k.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_v.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_q.bias
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_k.bias
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_v.bias
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_output.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_output.bias
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.ffn_norm.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.ffn_gate.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.ffn_down.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.ffn_up.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.ffn_gate.bias
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.ffn_down.bias
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.ffn_up.bias
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_norm.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_qkv.weight
+09-19 13:34:41.505  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_q.weight
+09-19 13:34:41.506  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.23.ffn_gate.weight
+09-19 13:34:41.506  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.23.ffn_down.weight
+09-19 13:34:41.506  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.23.ffn_up.weight
+09-19 13:34:41.506  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.23.ffn_gate.bias
+09-19 13:34:41.506  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.23.ffn_down.bias
+09-19 13:34:41.506  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.23.ffn_up.bias
+09-19 13:34:41.506  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_norm.weight
+09-19 13:34:41.506  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_qkv.weight
+09-19 13:34:41.506  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_q.weight
+09-19 13:34:41.506  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_k.weight
+09-19 13:34:41.506  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_v.weight
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_q.bias
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_k.bias
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_v.bias
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_output.weight
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_output.bias
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.ffn_norm.weight
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.ffn_gate.weight
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.ffn_down.weight
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.ffn_up.weight
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.ffn_gate.bias
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.ffn_down.bias
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.ffn_up.bias
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_norm.weight
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_qkv.weight
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_q.weight
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_k.weight
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_v.weight
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_q.bias
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_k.bias
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_v.bias
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_output.weight
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_output.bias
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.ffn_norm.weight
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.ffn_gate.weight
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.ffn_down.weight
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.ffn_up.weight
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.ffn_gate.bias
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.ffn_down.bias
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.ffn_up.bias
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_norm.weight
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_qkv.weight
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_q.weight
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_k.weight
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_v.weight
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_q.bias
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_k.bias
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_v.bias
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_output.weight
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_output.bias
+09-19 13:34:41.507  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.ffn_norm.weight
+09-19 13:34:41.508  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-19 13:34:41.508  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.ffn_gate.weight
+09-19 13:34:41.508  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.ffn_down.weight
+09-19 13:34:41.508  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.ffn_up.weight
+09-19 13:34:41.508  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.ffn_gate.bias
+09-19 13:34:41.508  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.ffn_down.bias
+09-19 13:34:41.508  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.ffn_up.bias
+09-19 13:34:41.508  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_norm.weight
+09-19 13:34:41.508  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_qkv.weight
+09-19 13:34:41.508  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_q.weight
+09-19 13:34:41.508  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_k.weight
+09-19 13:34:41.508  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_v.weight
+09-19 13:34:41.509  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_q.bias
+09-19 13:34:41.509  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_k.bias
+09-19 13:34:41.509  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_v.bias
+09-19 13:34:41.509  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_output.weight
+09-19 13:34:41.509  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_output.bias
+09-19 13:34:41.509  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.ffn_norm.weight
+09-19 13:34:41.509  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-19 13:34:41.509  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.ffn_gate.weight
+09-19 13:34:41.509  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.ffn_down.weight
+09-19 13:34:41.509  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.ffn_up.weight
+09-19 13:34:41.509  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.ffn_gate.bias
+09-19 13:34:41.509  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.ffn_down.bias
+09-19 13:34:41.509  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.ffn_up.bias
+09-19 13:34:41.510  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_norm.weight
+09-19 13:34:41.510  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_qkv.weight
+09-19 13:34:41.510  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_q.weight
+09-19 13:34:41.510  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_k.weight
+09-19 13:34:41.510  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_v.weight
+09-19 13:34:41.510  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_q.bias
+09-19 13:34:41.510  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_k.bias
+09-19 13:34:41.510  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_v.bias
+09-19 13:34:41.511  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_output.weight
+09-19 13:34:41.511  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_output.bias
+09-19 13:34:41.511  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.ffn_norm.weight
+09-19 13:34:41.511  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-19 13:34:41.511  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.ffn_gate.weight
+09-19 13:34:41.511  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.ffn_down.weight
+09-19 13:34:41.511  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.ffn_up.weight
+09-19 13:34:41.511  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.ffn_gate.bias
+09-19 13:34:41.511  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.ffn_down.bias
+09-19 13:34:41.511  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.ffn_up.bias
+09-19 13:34:41.511  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_norm.weight
+09-19 13:34:41.512  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_qkv.weight
+09-19 13:34:41.512  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_q.weight
+09-19 13:34:41.512  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_k.weight
+09-19 13:34:41.512  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_v.weight
+09-19 13:34:41.512  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_q.bias
+09-19 13:34:41.512  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_k.bias
+09-19 13:34:41.512  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_v.bias
+09-19 13:34:41.512  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_output.weight
+09-19 13:34:41.512  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_output.bias
+09-19 13:34:41.512  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.ffn_norm.weight
+09-19 13:34:41.512  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-19 13:34:41.512  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.ffn_gate.weight
+09-19 13:34:41.513  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.ffn_down.weight
+09-19 13:34:41.513  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.ffn_up.weight
+09-19 13:34:41.513  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.ffn_gate.bias
+09-19 13:34:41.513  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.ffn_down.bias
+09-19 13:34:41.513  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.ffn_up.bias
+09-19 13:34:41.513  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_q.scale
+09-19 13:34:41.513  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_k.scale
+09-19 13:34:41.513  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_v.scale
+09-19 13:34:41.513  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_output.scale
+09-19 13:34:41.513  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_gate.scale
+09-19 13:34:41.513  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_down.scale
+09-19 13:34:41.513  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_up.scale
+09-19 13:34:41.514  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_q.input_scale
+09-19 13:34:41.514  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_k.input_scale
+09-19 13:34:41.514  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_v.input_scale
+09-19 13:34:41.514  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_output.input_scale
+09-19 13:34:41.514  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_gate.input_scale
+09-19 13:34:41.514  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_down.input_scale
+09-19 13:34:41.514  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_up.input_scale
+09-19 13:34:41.514  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_q.scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_k.scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_v.scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_output.scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_gate.scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_down.scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_up.scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_q.input_scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_k.input_scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_v.input_scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_output.input_scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_gate.input_scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_down.input_scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_up.input_scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_q.scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_k.scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_v.scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_output.scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_gate.scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_down.scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_up.scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_q.input_scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_k.input_scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_v.input_scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_output.input_scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_gate.input_scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_down.input_scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_up.input_scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_q.scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_k.scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_v.scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_output.scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_gate.scale
+09-19 13:34:41.515  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_down.scale
+09-19 13:34:41.516  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_up.scale
+09-19 13:34:41.516  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_q.input_scale
+09-19 13:34:41.516  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_k.input_scale
+09-19 13:34:41.516  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_v.input_scale
+09-19 13:34:41.516  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_output.input_scale
+09-19 13:34:41.516  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_gate.input_scale
+09-19 13:34:41.516  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_down.input_scale
+09-19 13:34:41.516  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_up.input_scale
+09-19 13:34:41.516  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_q.scale
+09-19 13:34:41.516  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_k.scale
+09-19 13:34:41.516  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_v.scale
+09-19 13:34:41.516  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_output.scale
+09-19 13:34:41.516  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_gate.scale
+09-19 13:34:41.516  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_down.scale
+09-19 13:34:41.516  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_up.scale
+09-19 13:34:41.516  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_q.input_scale
+09-19 13:34:41.516  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_k.input_scale
+09-19 13:34:41.516  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_v.input_scale
+09-19 13:34:41.516  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_output.input_scale
+09-19 13:34:41.516  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_gate.input_scale
+09-19 13:34:41.516  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_down.input_scale
+09-19 13:34:41.516  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_up.input_scale
+09-19 13:34:41.516  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_q.scale
+09-19 13:34:41.516  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_k.scale
+09-19 13:34:41.516  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_v.scale
+09-19 13:34:41.516  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_output.scale
+09-19 13:34:41.516  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_gate.scale
+09-19 13:34:41.516  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_down.scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_up.scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_q.input_scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_k.input_scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_v.input_scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_output.input_scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_gate.input_scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_down.input_scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_up.input_scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_q.scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_k.scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_v.scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_output.scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_gate.scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_down.scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_up.scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_q.input_scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_k.input_scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_v.input_scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_output.input_scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_gate.input_scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_down.input_scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_up.input_scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_q.scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_k.scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_v.scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_output.scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_gate.scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_down.scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_up.scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_q.input_scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_k.input_scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_v.input_scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_output.input_scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_gate.input_scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_down.input_scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_up.input_scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_q.scale
+09-19 13:34:41.517  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_k.scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_v.scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_output.scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_gate.scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_down.scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_up.scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_q.input_scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_k.input_scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_v.input_scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_output.input_scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_gate.input_scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_down.input_scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_up.input_scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_q.scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_k.scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_v.scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_output.scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_gate.scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_down.scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_up.scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_q.input_scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_k.input_scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_v.input_scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_output.input_scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_gate.input_scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_down.input_scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_up.input_scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_q.scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_k.scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_v.scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_output.scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_gate.scale
+09-19 13:34:41.518  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_down.scale
+09-19 13:34:41.519  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_up.scale
+09-19 13:34:41.519  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_q.input_scale
+09-19 13:34:41.519  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_k.input_scale
+09-19 13:34:41.519  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_v.input_scale
+09-19 13:34:41.519  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_output.input_scale
+09-19 13:34:41.519  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_gate.input_scale
+09-19 13:34:41.519  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_down.input_scale
+09-19 13:34:41.519  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_up.input_scale
+09-19 13:34:41.519  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_q.scale
+09-19 13:34:41.519  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_k.scale
+09-19 13:34:41.519  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_v.scale
+09-19 13:34:41.519  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_output.scale
+09-19 13:34:41.519  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_gate.scale
+09-19 13:34:41.519  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_down.scale
+09-19 13:34:41.519  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_up.scale
+09-19 13:34:41.519  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_q.input_scale
+09-19 13:34:41.519  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_k.input_scale
+09-19 13:34:41.519  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_v.input_scale
+09-19 13:34:41.519  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_output.input_scale
+09-19 13:34:41.519  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_gate.input_scale
+09-19 13:34:41.519  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_down.input_scale
+09-19 13:34:41.519  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_up.input_scale
+09-19 13:34:41.519  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_q.scale
+09-19 13:34:41.519  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_k.scale
+09-19 13:34:41.519  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_v.scale
+09-19 13:34:41.519  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_output.scale
+09-19 13:34:41.519  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.ffn_gate.scale
+09-19 13:34:41.519  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.ffn_down.scale
+09-19 13:34:41.519  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.ffn_up.scale
+09-19 13:34:41.520  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_q.input_scale
+09-19 13:34:41.520  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_k.input_scale
+09-19 13:34:41.520  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_v.input_scale
+09-19 13:34:41.520  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_output.input_scale
+09-19 13:34:41.520  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.ffn_gate.input_scale
+09-19 13:34:41.520  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.ffn_down.input_scale
+09-19 13:34:41.520  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.12.ffn_up.input_scale
+09-19 13:34:41.520  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_q.scale
+09-19 13:34:41.520  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_k.scale
+09-19 13:34:41.520  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_v.scale
+09-19 13:34:41.520  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_output.scale
+09-19 13:34:41.520  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.ffn_gate.scale
+09-19 13:34:41.520  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.ffn_down.scale
+09-19 13:34:41.520  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.ffn_up.scale
+09-19 13:34:41.520  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_q.input_scale
+09-19 13:34:41.520  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_k.input_scale
+09-19 13:34:41.520  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_v.input_scale
+09-19 13:34:41.520  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_output.input_scale
+09-19 13:34:41.520  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.ffn_gate.input_scale
+09-19 13:34:41.520  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.ffn_down.input_scale
+09-19 13:34:41.520  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.13.ffn_up.input_scale
+09-19 13:34:41.520  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_q.scale
+09-19 13:34:41.520  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_k.scale
+09-19 13:34:41.521  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_v.scale
+09-19 13:34:41.521  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_output.scale
+09-19 13:34:41.521  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.ffn_gate.scale
+09-19 13:34:41.521  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.ffn_down.scale
+09-19 13:34:41.521  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.ffn_up.scale
+09-19 13:34:41.521  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_q.input_scale
+09-19 13:34:41.521  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_k.input_scale
+09-19 13:34:41.521  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_v.input_scale
+09-19 13:34:41.521  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_output.input_scale
+09-19 13:34:41.521  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.ffn_gate.input_scale
+09-19 13:34:41.521  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.ffn_down.input_scale
+09-19 13:34:41.521  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.14.ffn_up.input_scale
+09-19 13:34:41.521  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_q.scale
+09-19 13:34:41.521  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_k.scale
+09-19 13:34:41.521  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_v.scale
+09-19 13:34:41.521  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_output.scale
+09-19 13:34:41.521  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.ffn_gate.scale
+09-19 13:34:41.521  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.ffn_down.scale
+09-19 13:34:41.521  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.ffn_up.scale
+09-19 13:34:41.521  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_q.input_scale
+09-19 13:34:41.521  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_k.input_scale
+09-19 13:34:41.522  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_v.input_scale
+09-19 13:34:41.522  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_output.input_scale
+09-19 13:34:41.522  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.ffn_gate.input_scale
+09-19 13:34:41.522  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.ffn_down.input_scale
+09-19 13:34:41.522  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.15.ffn_up.input_scale
+09-19 13:34:41.522  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_q.scale
+09-19 13:34:41.522  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_k.scale
+09-19 13:34:41.522  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_v.scale
+09-19 13:34:41.522  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_output.scale
+09-19 13:34:41.522  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.ffn_gate.scale
+09-19 13:34:41.522  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.ffn_down.scale
+09-19 13:34:41.522  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.ffn_up.scale
+09-19 13:34:41.522  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_q.input_scale
+09-19 13:34:41.522  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_k.input_scale
+09-19 13:34:41.522  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_v.input_scale
+09-19 13:34:41.522  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_output.input_scale
+09-19 13:34:41.522  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.ffn_gate.input_scale
+09-19 13:34:41.522  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.ffn_down.input_scale
+09-19 13:34:41.522  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.16.ffn_up.input_scale
+09-19 13:34:41.522  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_q.scale
+09-19 13:34:41.522  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_k.scale
+09-19 13:34:41.522  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_v.scale
+09-19 13:34:41.522  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_output.scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.ffn_gate.scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.ffn_down.scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.ffn_up.scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_q.input_scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_k.input_scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_v.input_scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_output.input_scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.ffn_gate.input_scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.ffn_down.input_scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.17.ffn_up.input_scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_q.scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_k.scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_v.scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_output.scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.ffn_gate.scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.ffn_down.scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.ffn_up.scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_q.input_scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_k.input_scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_v.input_scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_output.input_scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.ffn_gate.input_scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.ffn_down.input_scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.18.ffn_up.input_scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_q.scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_k.scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_v.scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_output.scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.ffn_gate.scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.ffn_down.scale
+09-19 13:34:41.523  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.ffn_up.scale
+09-19 13:34:41.524  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_q.input_scale
+09-19 13:34:41.524  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_k.input_scale
+09-19 13:34:41.524  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_v.input_scale
+09-19 13:34:41.524  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_output.input_scale
+09-19 13:34:41.524  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.ffn_gate.input_scale
+09-19 13:34:41.524  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.ffn_down.input_scale
+09-19 13:34:41.524  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.19.ffn_up.input_scale
+09-19 13:34:41.524  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_q.scale
+09-19 13:34:41.524  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_k.scale
+09-19 13:34:41.524  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_v.scale
+09-19 13:34:41.524  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_output.scale
+09-19 13:34:41.524  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.ffn_gate.scale
+09-19 13:34:41.524  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.ffn_down.scale
+09-19 13:34:41.524  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.ffn_up.scale
+09-19 13:34:41.524  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_q.input_scale
+09-19 13:34:41.524  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_k.input_scale
+09-19 13:34:41.524  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_v.input_scale
+09-19 13:34:41.524  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_output.input_scale
+09-19 13:34:41.524  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.ffn_gate.input_scale
+09-19 13:34:41.524  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.ffn_down.input_scale
+09-19 13:34:41.524  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.20.ffn_up.input_scale
+09-19 13:34:41.524  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_q.scale
+09-19 13:34:41.524  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_k.scale
+09-19 13:34:41.524  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_v.scale
+09-19 13:34:41.524  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_output.scale
+09-19 13:34:41.524  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.ffn_gate.scale
+09-19 13:34:41.524  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.ffn_down.scale
+09-19 13:34:41.524  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.ffn_up.scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_q.input_scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_k.input_scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_v.input_scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_output.input_scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.ffn_gate.input_scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.ffn_down.input_scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.21.ffn_up.input_scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_q.scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_k.scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_v.scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_output.scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.22.ffn_gate.scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.22.ffn_down.scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.22.ffn_up.scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_q.input_scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_k.input_scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_v.input_scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_output.input_scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.22.ffn_gate.input_scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.22.ffn_down.input_scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.22.ffn_up.input_scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_q.scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_k.scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_v.scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_output.scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.23.ffn_gate.scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.23.ffn_down.scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.23.ffn_up.scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_q.input_scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_k.input_scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_v.input_scale
+09-19 13:34:41.525  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_output.input_scale
+09-19 13:34:41.526  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.23.ffn_gate.input_scale
+09-19 13:34:41.526  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.23.ffn_down.input_scale
+09-19 13:34:41.526  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.23.ffn_up.input_scale
+09-19 13:34:41.526  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_q.scale
+09-19 13:34:41.526  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_k.scale
+09-19 13:34:41.526  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_v.scale
+09-19 13:34:41.526  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_output.scale
+09-19 13:34:41.526  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.ffn_gate.scale
+09-19 13:34:41.526  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.ffn_down.scale
+09-19 13:34:41.526  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.ffn_up.scale
+09-19 13:34:41.526  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_q.input_scale
+09-19 13:34:41.526  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_k.input_scale
+09-19 13:34:41.526  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_v.input_scale
+09-19 13:34:41.526  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_output.input_scale
+09-19 13:34:41.526  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.ffn_gate.input_scale
+09-19 13:34:41.526  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.ffn_down.input_scale
+09-19 13:34:41.526  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.24.ffn_up.input_scale
+09-19 13:34:41.526  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_q.scale
+09-19 13:34:41.526  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_k.scale
+09-19 13:34:41.526  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_v.scale
+09-19 13:34:41.526  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_output.scale
+09-19 13:34:41.526  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.ffn_gate.scale
+09-19 13:34:41.526  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.ffn_down.scale
+09-19 13:34:41.526  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.ffn_up.scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_q.input_scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_k.input_scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_v.input_scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_output.input_scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.ffn_gate.input_scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.ffn_down.input_scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.25.ffn_up.input_scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_q.scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_k.scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_v.scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_output.scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.ffn_gate.scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.ffn_down.scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.ffn_up.scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_q.input_scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_k.input_scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_v.input_scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_output.input_scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.ffn_gate.input_scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.ffn_down.input_scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.26.ffn_up.input_scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_q.scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_k.scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_v.scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_output.scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.ffn_gate.scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.ffn_down.scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.ffn_up.scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_q.input_scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_k.input_scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_v.input_scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_output.input_scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.ffn_gate.input_scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.ffn_down.input_scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.27.ffn_up.input_scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_q.scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_k.scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_v.scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_output.scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.ffn_gate.scale
+09-19 13:34:41.527  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.ffn_down.scale
+09-19 13:34:41.528  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.ffn_up.scale
+09-19 13:34:41.528  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_q.input_scale
+09-19 13:34:41.528  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_k.input_scale
+09-19 13:34:41.528  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_v.input_scale
+09-19 13:34:41.528  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_output.input_scale
+09-19 13:34:41.528  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.ffn_gate.input_scale
+09-19 13:34:41.528  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.ffn_down.input_scale
+09-19 13:34:41.528  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.28.ffn_up.input_scale
+09-19 13:34:41.528  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_q.scale
+09-19 13:34:41.528  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_k.scale
+09-19 13:34:41.528  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_v.scale
+09-19 13:34:41.528  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_output.scale
+09-19 13:34:41.528  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.ffn_gate.scale
+09-19 13:34:41.528  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.ffn_down.scale
+09-19 13:34:41.528  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.ffn_up.scale
+09-19 13:34:41.528  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_q.input_scale
+09-19 13:34:41.528  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_k.input_scale
+09-19 13:34:41.528  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_v.input_scale
+09-19 13:34:41.528  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_output.input_scale
+09-19 13:34:41.528  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.ffn_gate.input_scale
+09-19 13:34:41.528  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.ffn_down.input_scale
+09-19 13:34:41.528  5845  5858 I GGUFNativeStderr: create_tensor: loading tensor blk.29.ffn_up.input_scale
+09-19 13:34:41.528  5845  5858 I GGUFNativeStderr: done_getting_tensors: tensor 'token_embd.weight' (q8_0) (and 0 others) cannot be used with preferred buffer type Vulkan_Host, using CPU instead
+09-19 13:34:41.538  5845  5858 I MESA    : on_vkAllocateMemory: has alloc flags
+09-19 13:34:41.538  5845  5858 I MESA    : allocateCoherentMemory: has alloc flags
+09-19 13:34:41.539  5845  5858 I GGUFNativeStderr: load_tensors: offloading output layer to GPU
+09-19 13:34:41.539  5845  5858 I GGUFNativeStderr: load_tensors: offloading 29 repeating layers to GPU
+09-19 13:34:41.539  5845  5858 I GGUFNativeStderr: load_tensors: offloaded 31/31 layers to GPU
+09-19 13:34:41.539  5845  5858 I GGUFNativeStderr: load_tensors:   CPU_Mapped model buffer size =    28.69 MiB
+09-19 13:34:41.539  5845  5858 I GGUFNativeStderr: load_tensors:      Vulkan0 model buffer size =    98.87 MiB
+09-19 13:34:41.539  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.632  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.632  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.638  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.640  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.646  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.649  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.653  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.657  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.661  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.665  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.670  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.674  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.677  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.683  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.686  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.691  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.693  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.699  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.701  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.707  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.709  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.714  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.717  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.722  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.727  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.730  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.734  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.738  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.742  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.746  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.750  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.754  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.758  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.761  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.766  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.770  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.773  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.779  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.782  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.786  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.789  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.794  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.798  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.803  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.806  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.810  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.814  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.818  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.821  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.825  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.830  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.833  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.837  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.843  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.846  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.850  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.855  5845  5858 I GGUFNativeStderr: .
+09-19 13:34:41.855  5845  5858 I GGUFNativeStderr: 
+09-19 13:34:41.856  5845  5858 I GGUFNativeStderr: llama_context: constructing llama_context
+09-19 13:34:41.856  5845  5858 I GGUFNativeStderr: llama_context: n_seq_max             = 1
+09-19 13:34:41.856  5845  5858 I GGUFNativeStderr: llama_context: n_ctx                 = 2048
+09-19 13:34:41.856  5845  5858 I GGUFNativeStderr: llama_context: n_ctx_seq             = 2048
+09-19 13:34:41.856  5845  5858 I GGUFNativeStderr: llama_context: n_batch               = 128
+09-19 13:34:41.856  5845  5858 I GGUFNativeStderr: llama_context: n_ubatch              = 32
+09-19 13:34:41.856  5845  5858 I GGUFNativeStderr: llama_context: causal_attn           = 1
+09-19 13:34:41.856  5845  5858 I GGUFNativeStderr: llama_context: flash_attn            = auto
+09-19 13:34:41.856  5845  5858 I GGUFNativeStderr: llama_context: kv_unified            = false
+09-19 13:34:41.856  5845  5858 I GGUFNativeStderr: llama_context: freq_base             = 100000.0
+09-19 13:34:41.856  5845  5858 I GGUFNativeStderr: llama_context: freq_scale            = 1
+09-19 13:34:41.856  5845  5858 I GGUFNativeStderr: llama_context: n_rs_seq              = 0
+09-19 13:34:41.856  5845  5858 I GGUFNativeStderr: llama_context: n_outputs_max         = 128
+09-19 13:34:41.856  5845  5858 I GGUFNativeStderr: llama_context: n_outputs_max_per_seq = 1
+09-19 13:34:41.856  5845  5858 I GGUFNativeStderr: llama_context: n_ctx_seq (2048) < n_ctx_train (8192) -- the full capacity of the model will not be utilized
+09-19 13:34:41.856  5845  5858 I GGUFNativeStderr: set_abort_callback: call
+09-19 13:34:41.856  5845  5858 I MESA    : on_vkAllocateMemory: has alloc flags
+09-19 13:34:41.856  5845  5858 I MESA    : allocateCoherentMemory: has alloc flags
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_context: Vulkan_Host  output buffer size =     0.19 MiB
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_kv_cache: layer   0: dev = Vulkan0
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_kv_cache: layer   1: dev = Vulkan0
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_kv_cache: layer   2: dev = Vulkan0
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_kv_cache: layer   3: dev = Vulkan0
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_kv_cache: layer   4: dev = Vulkan0
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_kv_cache: layer   5: dev = Vulkan0
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_kv_cache: layer   6: dev = Vulkan0
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_kv_cache: layer   7: dev = Vulkan0
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_kv_cache: layer   8: dev = Vulkan0
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_kv_cache: layer   9: dev = Vulkan0
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_kv_cache: layer  10: dev = Vulkan0
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_kv_cache: layer  11: dev = Vulkan0
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_kv_cache: layer  12: dev = Vulkan0
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_kv_cache: layer  13: dev = Vulkan0
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_kv_cache: layer  14: dev = Vulkan0
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_kv_cache: layer  15: dev = Vulkan0
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_kv_cache: layer  16: dev = Vulkan0
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_kv_cache: layer  17: dev = Vulkan0
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_kv_cache: layer  18: dev = Vulkan0
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_kv_cache: layer  19: dev = Vulkan0
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_kv_cache: layer  20: dev = Vulkan0
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_kv_cache: layer  21: dev = Vulkan0
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_kv_cache: layer  22: dev = Vulkan0
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_kv_cache: layer  23: dev = Vulkan0
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_kv_cache: layer  24: dev = Vulkan0
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_kv_cache: layer  25: dev = Vulkan0
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_kv_cache: layer  26: dev = Vulkan0
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_kv_cache: layer  27: dev = Vulkan0
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_kv_cache: layer  28: dev = Vulkan0
+09-19 13:34:41.858  5845  5858 I GGUFNativeStderr: llama_kv_cache: layer  29: dev = Vulkan0
+09-19 13:34:41.858  5845  5858 I MESA    : on_vkAllocateMemory: has alloc flags
+09-19 13:34:41.858  5845  5858 I MESA    : allocateCoherentMemory: has alloc flags
+09-19 13:34:41.859  5845  5858 I GGUFNativeStderr: llama_kv_cache:    Vulkan0 KV buffer size =    45.00 MiB
+09-19 13:34:41.895  5845  5858 I GGUFNativeStderr: llama_kv_cache: size =   45.00 MiB (  2048 cells,  30 layers,  1/1 seqs), K (f16):   22.50 MiB, V (f16):   22.50 MiB
+09-19 13:34:41.895  5845  5858 I GGUFNativeStderr: llama_kv_cache: attn_rot_k = 0, n_embd_head_k_all = 64
+09-19 13:34:41.895  5845  5858 I GGUFNativeStderr: llama_kv_cache: attn_rot_v = 0, n_embd_head_k_all = 64
+09-19 13:34:41.895  5845  5858 I GGUFNativeStderr: llama_context: enumerating backends
+09-19 13:34:41.895  5845  5858 I GGUFNativeStderr: llama_context: backend_ptrs.size() = 2
+09-19 13:34:41.895  5845  5858 I GGUFNativeStderr: sched_reserve: reserving ...
+09-19 13:34:41.895  5845  5858 I GGUFNativeStderr: sched_reserve: max_nodes = 2184
+09-19 13:34:41.896  5845  5858 I GGUFNativeStderr: sched_reserve: reserving full memory module
+09-19 13:34:41.896  5845  5858 I GGUFNativeStderr: sched_reserve: worst-case: n_tokens = 32, n_seqs = 1, n_outputs = 1
+09-19 13:34:41.896  5845  5858 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =    1, n_seqs =  1, n_outputs =    1
+09-19 13:34:41.898  5845  5858 I GGUFNativeStderr: resolve_fused_ops: Flash Attention enabled
+09-19 13:34:41.898  5845  5858 I GGUFNativeStderr: resolve_fused_ops: resolving fused DeepSeek V4 HC support:
+09-19 13:34:41.898  5845  5858 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =    1, n_seqs =  1, n_outputs =    1
+09-19 13:34:41.899  5845  5858 I GGUFNativeStderr: resolve_fused_ops: fused DeepSeek V4 HC pre enabled
+09-19 13:34:41.899  5845  5858 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =    1, n_seqs =  1, n_outputs =    1
+09-19 13:34:41.900  5845  5858 I GGUFNativeStderr: resolve_fused_ops: fused DeepSeek V4 HC comb enabled
+09-19 13:34:41.900  5845  5858 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =    1, n_seqs =  1, n_outputs =    1
+09-19 13:34:41.901  5845  5858 I GGUFNativeStderr: resolve_fused_ops: fused DeepSeek V4 HC post enabled
+09-19 13:34:41.901  5845  5858 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =   32, n_seqs =  1, n_outputs =   32
+09-19 13:34:41.903  5845  5858 I MESA    : on_vkAllocateMemory: has alloc flags
+09-19 13:34:41.903  5845  5858 I MESA    : allocateCoherentMemory: has alloc flags
+09-19 13:34:41.903  5845  5858 I MESA    : on_vkAllocateMemory: has alloc flags
+09-19 13:34:41.903  5845  5858 I MESA    : allocateCoherentMemory: has alloc flags
+09-19 13:34:41.904  5845  5858 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =    1, n_seqs =  1, n_outputs =    1
+09-19 13:34:41.905  5845  5858 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =   32, n_seqs =  1, n_outputs =   32
+09-19 13:34:41.906  5845  5858 I GGUFNativeStderr: sched_reserve:    Vulkan0 compute buffer size =     6.14 MiB
+09-19 13:34:41.906  5845  5858 I GGUFNativeStderr: sched_reserve: Vulkan_Host compute buffer size =     0.27 MiB
+09-19 13:34:41.906  5845  5858 I GGUFNativeStderr: sched_reserve: graph nodes  = 936
+09-19 13:34:41.906  5845  5858 I GGUFNativeStderr: sched_reserve: graph splits = 2
+09-19 13:34:41.906  5845  5858 I GGUFNativeStderr: sched_reserve: reserve took 11.62 ms, sched copies = 1
+09-19 13:34:41.906  5845  5858 I GGUFChatNative: GGUF_UNIT_LOADED language=Vulkan layers=31 projector=none
+09-19 13:34:41.906  5845  5858 I GGUFChatNative: model loaded: n_ctx=2048 projector=none
+09-19 13:34:41.917  1329  1329 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-19 13:34:41.918  1329  1329 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-19 13:34:41.919  1329  1329 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-19 13:34:41.921  5845  5858 I GpuRateObserver: GPU_RATE_BEGIN stage=warmup
+09-19 13:34:41.924  5845  5858 I MESA    : on_vkAllocateMemory: has alloc flags
+09-19 13:34:41.924  5845  5858 I MESA    : allocateCoherentMemory: has alloc flags
+09-19 13:34:43.128     0     0 W healthd : battery l=100 v=5000 t=25.0 h=2 st=2 c=900000 fc=3000000 cc=10 chg=a
+09-19 13:34:43.376  5845  5858 I MESA    : on_vkAllocateMemory: has alloc flags
+09-19 13:34:43.376  5845  5858 I MESA    : allocateCoherentMemory: has alloc flags
+09-19 13:34:44.355  5778  5780 I AidlLazyServiceRegistrar: Process has 0 (of 2 available) client(s) in use after notification android.system.virtualizationmaintenance has clients: 0
+09-19 13:34:44.355  5778  5780 I AidlLazyServiceRegistrar: Trying to shut down the service. No clients in use for any service in process.
+09-19 13:34:44.505     0     0 I servicemanager: Notifying android.system.virtualizationmaintenance they don't (previously: do) have clients when we now have no record of a client
+09-19 13:34:44.510     0     0 I servicemanager: Caller(pid=5778,uid=1000,sid=u:r:virtualizationservice:s0) Unregistering android.system.virtualizationmaintenance
+09-19 13:34:44.513     0     0 I BpBinder: onLastStrongRef automatically unlinking death recipients:
+09-19 13:34:44.514     0     0 I servicemanager: Caller(pid=5778,uid=1000,sid=u:r:virtualizationservice:s0) Unregistering android.system.virtualizationservice
+09-19 13:34:44.364  5778  5780 I AidlLazyServiceRegistrar: Unregistered all clients and exiting
+09-19 13:34:44.517     0     0 I BpBinder: onLastStrongRef automatically unlinking death recipients:
+09-19 13:34:44.519     0     0 I init    : Service 'virtualizationservice' (pid 5778) exited with status 0 oneshot service took 5.506000 seconds in background
+09-19 13:34:44.521     0     0 I init    : Sending signal 9 to service 'virtualizationservice' (pid 5778) process group...
+09-19 13:34:44.523     0     0 I libprocessgroup: Removed cgroup /sys/fs/cgroup/uid_1000/pid_5778
+09-19 13:34:46.342   557   588 D OomAdjuster: Not killing cached processes
+09-19 13:34:46.358   360   407 I netd    : tetherGetStats() -> {[]} <0.37ms>
+09-19 13:34:46.909   557  1695 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:34:48.129   557   588 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:34:48.574     0     0 I logd    : start watching /data/system/packages.list ...
+09-19 13:34:48.576     0     0 I logd    : ReadPackageList, total packages: 218
+09-19 13:34:48.428  1898  1898 I wpa_supplicant: wlan0: CTRL-EVENT-BEACON-LOSS 
+09-19 13:34:48.477   557   661 D ActivityManager: freezing 2719 com.android.chrome
+09-19 13:34:48.483   557   661 D ActivityManager: freezing 2837 com.google.android.documentsui
+09-19 13:34:48.551   557   661 D ActivityManager: freezing 1859 android.process.media
+09-19 13:34:48.579   557   903 W FileUtils: Failed to chmod(AtomicFile[/data/system_de/0/system/game-manager-service.xml]): android.system.ErrnoException: chmod failed: ENOENT (No such file or directory)
+09-19 13:34:48.756   557   588 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:34:49.339   360   407 I netd    : tetherGetStats() -> {[]} <1.25ms>
+09-19 13:34:49.539   557   661 D ActivityManager: freezing 2672 com.google.android.packageinstaller
+09-19 13:34:50.035   171  5725 I keystore2: system/security/keystore2/watchdog/src/lib.rs:319 - Watchdog thread idle -> terminating. Have a great day.
+09-19 13:34:51.304   557   588 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:34:53.614   557  1695 D OomAdjuster: Not killing cached processes
+09-19 13:34:54.460  1379  1379 D BoundBrokerSvc: onUnbind: Intent { act=com.google.android.gms.feedback.internal.IFeedbackService dat=chimera-action:/... cmp=com.google.android.gms/.chimera.GmsBoundBrokerService }
+09-19 13:34:54.531  1379  1388 W gle.android.gms: ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~YpNSuY3ec7xTjyZUTx7oMA==/com.ggufchat.app-BRA-EggUGvCixes_ZiIyqw==/base.apk' with 1 weak references
+09-19 13:34:55.964   557   825 D WifiConfigStore: Writing to stores completed in 2 ms.
+09-19 13:34:56.358  1898  1898 I wpa_supplicant: wlan0: CTRL-EVENT-BEACON-LOSS 
+09-19 13:34:56.909   557  1427 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:34:59.358   557   661 D ActivityManager: freezing 1642 com.google.android.googlequicksearchbox:search
+09-19 13:34:59.359   557   661 D ActivityManager: freezing 3524 com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0
+09-19 13:34:59.457   557  1427 W AppOps  : Noting op not finished: uid 10143 pkg com.google.android.gms code 113 startTime of in progress event=1789824703028
+09-19 13:34:59.464   557  1427 D OomAdjuster: Not killing cached processes
+09-19 13:34:59.465   557  1427 W AppOps  : Noting op not finished: uid 10143 pkg com.google.android.gms code 113 startTime of in progress event=1789824703028
+09-19 13:34:59.466   557  1427 W AppOps  : Noting op not finished: uid 10143 pkg com.google.android.gms code 79 startTime of in progress event=1789824703028
+09-19 13:34:59.468  1192  2295 I ActivityScheduler: nextTriggerTime: 681294, in 235300ms, detectorType: 39, FULL_TYPE alarmWindowMillis: 30000
+09-19 13:34:59.469   557   589 D ActivityManager: sync unfroze 2405 com.google.android.gms.unstable for 10
+09-19 13:34:59.470   557   589 D ActivityManager: sync unfroze 3310 com.google.android.gms.ui for 10
+09-19 13:34:59.595   557   661 D ActivityManager: freezing 918 com.google.android.permissioncontroller
+09-19 13:35:00.043   917  1102 D EGL_emulation: app_time_stats: avg=59938.03ms min=59938.03ms max=59938.03ms count=1
+09-19 13:35:00.043  1430  1639 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-19 13:35:00.044  1430  1639 I AiAiEcho: EchoTargets: 
+09-19 13:35:00.044  1430  1639 I AiAiEcho: Filtered by AiAi flag check: 
+09-19 13:35:00.044  1430  1639 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-19 13:35:00.044  1430  1639 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-19 13:35:00.044  1430  1639 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-19 13:35:00.044  1430  1639 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-19 13:35:00.044  1430  1639 I AiAiEcho: EchoTargets: 
+09-19 13:35:00.044  1430  1639 I AiAiEcho: Filtered by AiAi flag check: 
+09-19 13:35:00.044  1430  1639 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-19 13:35:00.044  1430  1639 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-19 13:35:00.044  1430  1639 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-19 13:35:00.045  1430  1639 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-19 13:35:00.045  1430  1639 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface home with targets# 0 (types=[])
+09-19 13:35:00.045   917   917 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-19 13:35:00.045  1204  1204 D SsBaseTemplateCard: No text view can be set up
+09-19 13:35:00.048  1204  1204 D SsBaseTemplateCard: Passed-in item info is null
+09-19 13:35:00.048  1204  1204 D SsBaseTemplateCard: Passed-in item info is null
+09-19 13:35:00.048  1204  1204 D SsBaseTemplateCard: Passed-in item info is null
+09-19 13:35:00.048  1204  1204 I SsBaseTemplateCard: Secondary card pane is null
+09-19 13:35:00.120  1204  1687 D EGL_emulation: app_time_stats: avg=18774.51ms min=18774.51ms max=18774.51ms count=1
+09-19 13:35:00.712   557   832 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+09-19 13:35:00.714   557   832 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+09-19 13:35:00.714   557   832 D InetDiagMessage: Destroyed live tcp sockets for uids={10095, 10096, 10101, 10142, 10145, 10207, 10217, 20142, 20217, 99000} in 4ms
+09-19 13:35:01.465  5845  5858 I GGUFChatNative: GGUF_NATIVE_COMPLETE tokens=128 reason=length projector=0
+09-19 13:35:01.466  5845  5858 I GpuRateObserver: GPU_RATE_END stage=warmup
+09-19 13:35:01.466  5845  5858 I GpuRateObserver: GPU_RATE_BEGIN stage=sample
+09-19 13:35:04.550  1898  1898 I wpa_supplicant: wlan0: CTRL-EVENT-BEACON-LOSS 
+09-19 13:35:05.715  1483  1920 I BistoHotwordHelper: (REDACTED) getHotwordActive::active query: %s, watch: %s, devices connected: %s
+09-19 13:35:06.486   557  2010 D OomAdjuster: Not killing cached processes
+09-19 13:35:06.911   557  1427 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:35:09.882   360   407 I netd    : tetherGetStats() -> {[]} <0.27ms>
+09-19 13:35:12.486  1898  1898 I wpa_supplicant: wlan0: CTRL-EVENT-BEACON-LOSS 
+09-19 13:35:14.534   557  2010 D OomAdjuster: Not killing cached processes
+09-19 13:35:16.910   557  1695 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:35:18.522   557   661 D ActivityManager: freezing 1560 com.android.keychain
+09-19 13:35:18.522   557   661 D ActivityManager: freezing 1081 com.android.settings
+09-19 13:35:18.523   557   661 D ActivityManager: freezing 3076 com.android.dynsystem:dynsystem
+09-19 13:35:18.523   557   661 D ActivityManager: freezing 3028 com.android.dynsystem
+09-19 13:35:18.524   557   661 D ActivityManager: freezing 1979 com.android.localtransport
+09-19 13:35:20.422  1898  1898 I wpa_supplicant: wlan0: CTRL-EVENT-BEACON-LOSS 
+09-19 13:35:24.058  5845  5858 I GGUFChatNative: GGUF_NATIVE_COMPLETE tokens=128 reason=length projector=0
+09-19 13:35:24.060  5845  5858 I GpuRateObserver: GPU_RATE_END stage=sample
+09-19 13:35:24.339  5845  5858 I GGUFNativeStderr: ~llama_context:    Vulkan0 compute buffer size is   6.1406 MiB, matches expectation of   6.1406 MiB
+09-19 13:35:24.339  5845  5858 I GGUFNativeStderr: ~llama_context: Vulkan_Host compute buffer size is   0.2665 MiB, matches expectation of   0.2665 MiB
+09-19 13:35:24.413   557  1695 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-19 13:35:24.413   557  1695 D AccessibilityManagerService: restoreCurrentUserForTestAutomationIfNeededLocked(): ignoring because device doesn't support visible background users
+09-19 13:35:24.413   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:35:24.414   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:35:24.414   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:35:24.414   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:35:24.415   557  1695 I ActivityManager: Force stopping com.ggufchat.app appid=10218 user=0: finished inst
+09-19 13:35:24.415   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:35:24.415   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:35:24.415   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:35:24.415   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:35:24.415   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:35:24.415   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:35:24.415   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:35:24.416   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:35:24.416   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:35:24.416   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:35:24.569     0     0 I binder  : 557:1695 ioctl 400c620e 7bbe7d6f3354 returned -11
+09-19 13:35:24.571     0     0 I binder  : 557:1695 ioctl 400c620e 7bbe7d6f3354 returned -11
+09-19 13:35:24.420   557  1695 E ActivityManager: Unable to freeze binder for 5845: -11
+09-19 13:35:24.420   557  1695 I ActivityManager: Killing 5845:com.ggufchat.app/u0a218 (adj 0): stop com.ggufchat.app due to finished inst
+09-19 13:35:24.421  5821  5821 I app_process: System.exit called, status: 0
+09-19 13:35:24.421  5821  5821 I AndroidRuntime: VM exiting with result code 0.
+09-19 13:35:24.422   557  1695 E libprocessgroup: Failed to write 1 to /sys/fs/cgroup/uid_10218/pid_5845/cgroup.kill: No such file or directory
+09-19 13:35:24.422   557  1695 E libprocessgroup: Failed to open /sys/fs/cgroup/uid_10218/pid_5845/cgroup.procs: No such file or directory
+09-19 13:35:24.423   557   578 D DisplayManagerService: Drop pending events for gone uid 10218
+09-19 13:35:24.424   557  1695 D OomAdjuster: Not killing cached processes
+09-19 13:35:24.425   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:35:24.425   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:35:24.425   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:35:24.425   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:35:24.425   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:35:24.425   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:35:24.425   557   557 W IPCThreadState: Sending oneway calls to frozen process.
+09-19 13:35:24.425   557   557 D BatterySaverPolicy: accessibility changed to false, updating policy.
+09-19 13:35:24.427   557   591 E libprocessgroup: Failed to write 1 to /sys/fs/cgroup/uid_10218/pid_5845/cgroup.kill: No such file or directory
+09-19 13:35:24.427   557   591 E libprocessgroup: Failed to open /sys/fs/cgroup/uid_10218/pid_5845/cgroup.procs: No such file or directory
+09-19 13:35:24.430  1430  1951 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-19 13:35:24.431  1430  1639 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-19 13:35:24.431  1430  1639 I AiAiEcho: EchoTargets: 
+09-19 13:35:24.431  1430  1639 I AiAiEcho: Filtered by AiAi flag check: 
+09-19 13:35:24.431  1430  1639 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-19 13:35:24.431  1430  1639 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-19 13:35:24.431  1430  1639 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-19 13:35:24.431  1430  1639 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-19 13:35:24.431  1430  1639 I AiAiEcho: EchoTargets: 
+09-19 13:35:24.431  1430  1639 I AiAiEcho: Filtered by AiAi flag check: 
+09-19 13:35:24.431  1430  1639 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-19 13:35:24.431  1430  1639 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-19 13:35:24.431  1430  1639 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-19 13:35:24.431  1430  1639 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-19 13:35:24.438   917   917 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-19 13:35:24.438  1430  1639 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface home with targets# 0 (types=[])
+09-19 13:35:24.439  1204  1204 D SsBaseTemplateCard: No text view can be set up
+09-19 13:35:24.439  1204  1204 D SsBaseTemplateCard: Passed-in item info is null
+09-19 13:35:24.439  1204  1204 D SsBaseTemplateCard: Passed-in item info is null
+09-19 13:35:24.440  1204  1204 D SsBaseTemplateCard: Passed-in item info is null
+09-19 13:35:24.440  1204  1204 I SsBaseTemplateCard: Secondary card pane is null
+09-19 13:35:24.440   557  1427 V ActivityManager: Got obituary of 5845:com.ggufchat.app
+09-19 13:35:24.591     0     0 I binder  : undelivered TRANSACTION_COMPLETE
+09-19 13:35:24.592     0     0 I binder  : undelivered transaction 446376, process died.
+09-19 13:35:24.441   361   361 I Zygote  : Process 5832 exited cleanly (137)
+09-19 13:35:24.486  1204  1687 D EGL_emulation: app_time_stats: avg=24365.85ms min=24365.85ms max=24365.85ms count=1
+09-19 13:35:24.502  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /apex/com.android.wifi/app/OsuLoginGoogle@350820300/OsuLoginGoogle.apk' with 1 weak references
+09-19 13:35:24.503  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/PacProcessor/PacProcessor.apk' with 1 weak references
+09-19 13:35:24.503  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/SimAppDialog/SimAppDialog.apk' with 1 weak references
+09-19 13:35:24.503  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/product/overlay/SimAppDialog__sdk_gphone64_x86_64__auto_generated_rro_product.apk' with 1 weak references
+09-19 13:35:24.503  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /apex/com.android.adservices/priv-app/AdServicesApkGoogle@350820260/AdServicesApkGoogle.apk' with 1 weak references
+09-19 13:35:24.504  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/overlay/DisplayCutoutEmulationHole/DisplayCutoutEmulationHoleOverlay.apk' with 1 weak references
+09-19 13:35:24.504  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/overlay/DisplayCutoutEmulationTall/DisplayCutoutEmulationTallOverlay.apk' with 1 weak references
+09-19 13:35:24.504  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/CertInstaller/CertInstaller.apk' with 1 weak references
+09-19 13:35:24.504  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/talkback/talkback.apk' with 1 weak references
+09-19 13:35:24.504  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/vendor/overlay/EmulatorTalkBackOverlay/EmulatorTalkBackOverlay.apk' with 1 weak references
+09-19 13:35:24.504  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/overlay/NavigationBarMode3Button/NavigationBarMode3ButtonOverlay.apk' with 1 weak references
+09-19 13:35:24.505  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/Camera2/Camera2.apk' with 1 weak references
+09-19 13:35:24.505  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/EasterEgg/EasterEgg.apk' with 1 weak references
+09-19 13:35:24.505  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/MtpService/MtpService.apk' with 1 weak references
+09-19 13:35:24.505  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /apex/com.android.nfcservices/priv-app/NfcNciApexGoogle@AE3A.240806.043/NfcNciApexGoogle.apk' with 1 weak references
+09-19 13:35:24.505  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/Stk/Stk.apk' with 1 weak references
+09-19 13:35:24.505  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/PrebuiltDeskClockGoogle/PrebuiltDeskClockGoogle.apk' with 1 weak references
+09-19 13:35:24.506  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/overlay/NavigationBarMode2Button/NavigationBarMode2ButtonOverlay.apk' with 1 weak references
+09-19 13:35:24.506  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/priv-app/DevicePersonalizationPrebuiltPixel2021-aiai_20240329.00_RC16/DevicePersonalizationPrebuiltPixel2021-aiai_20240329.00_RC16.apk' with 1 weak references
+09-19 13:35:24.507  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/PrebuiltGmail/PrebuiltGmail.apk' with 1 weak references
+09-19 13:35:24.508  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /apex/com.android.permission/priv-app/GooglePermissionController@350820360/GooglePermissionController.apk' with 1 weak references
+09-19 13:35:24.508  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/product/overlay/GooglePermissionControllerOverlay.apk' with 1 weak references
+09-19 13:35:24.508  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /apex/com.android.btservices/app/BluetoothGoogle@342010060/BluetoothGoogle.apk' with 1 weak references
+09-19 13:35:24.509  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/SettingsProvider/SettingsProvider.apk' with 1 weak references
+09-19 13:35:24.509  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/product/overlay/LargeScreenSettingsProviderOverlay.apk' with 1 weak references
+09-19 13:35:24.509  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/product/overlay/SettingsProvider__sdk_gphone64_x86_64__auto_generated_rro_product.apk' with 1 weak references
+09-19 13:35:24.509  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/PrintSpooler/PrintSpooler.apk' with 1 weak references
+09-19 13:35:24.509  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/BasicDreams/BasicDreams.apk' with 1 weak references
+09-19 13:35:24.509  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/priv-app/DeviceIntelligenceNetworkPrebuilt-astrea_20240329.00_RC02/DeviceIntelligenceNetworkPrebuilt-astrea_20240329.00_RC02.apk' with 1 weak references
+09-19 13:35:24.509  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/InputDevices/InputDevices.apk' with 1 weak references
+09-19 13:35:24.509  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /apex/com.android.devicelock/priv-app/DeviceLockControllerGoogle@AE3A.240806.043/DeviceLockControllerGoogle.apk' with 1 weak references
+09-19 13:35:24.509  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/priv-app/GoogleDialer/GoogleDialer.apk' with 1 weak references
+09-19 13:35:24.510  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/BuiltInPrintService/BuiltInPrintService.apk' with 1 weak references
+09-19 13:35:24.510  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/product/overlay/BuiltInPrintService__sdk_gphone64_x86_64__auto_generated_rro_product.apk' with 1 weak references
+09-19 13:35:24.510  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/CaptivePortalLoginGoogle/CaptivePortalLoginGoogle.apk' with 1 weak references
+09-19 13:35:24.510  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/MusicFX/MusicFX.apk' with 1 weak references
+09-19 13:35:24.510  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/Drive/Drive.apk' with 1 weak references
+09-19 13:35:24.510  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/Maps/Maps.apk' with 1 weak references
+09-19 13:35:24.510  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/ModuleMetadataGoogle/ModuleMetadataGoogle.apk' with 1 weak references
+09-19 13:35:24.510  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/overlay/DisplayCutoutEmulationEmu01/DisplayCutoutEmulationEmu01Overlay.apk' with 1 weak references
+09-19 13:35:24.510  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system_ext/priv-app/AvatarPickerGoogle/AvatarPickerGoogle.apk' with 1 weak references
+09-19 13:35:24.511  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/MarkupGoogle_v2/MarkupGoogle_v2.apk' with 1 weak references
+09-19 13:35:24.511  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/NetworkStackGoogle/NetworkStackGoogle.apk' with 1 weak references
+09-19 13:35:24.511  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /apex/com.android.rkpd/priv-app/rkpdapp.google@350820300/rkpdapp.google.apk' with 1 weak references
+09-19 13:35:24.511  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/GoogleContacts/GoogleContacts.apk' with 1 weak references
+09-19 13:35:24.511  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/Telecom/Telecom.apk' with 1 weak references
+09-19 13:35:24.511  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/product/overlay/Telecom__sdk_gphone64_x86_64__auto_generated_rro_product.apk' with 1 weak references
+09-19 13:35:24.511  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/KeyChain/KeyChain.apk' with 1 weak references
+09-19 13:35:24.511  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~iEBszwh7QipZ0g9NxLBoSQ==/com.android.chrome-pQuttATo_ckvHHP_bT2nUQ==/Chrome.apk' with 1 weak references
+09-19 13:35:24.511  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~m99EvZwqkvF65NFgIWA7xQ==/com.google.android.trichromelibrary_636771938-YMYqUKd8e-luymJzIkzxbg==/TrichromeLibrary.apk' with 1 weak references
+09-19 13:35:24.511  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/GooglePackageInstaller/GooglePackageInstaller.apk' with 1 weak references
+09-19 13:35:24.511  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/PixelThemesStub/PixelThemesStub.apk' with 1 weak references
+09-19 13:35:24.512  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system_ext/priv-app/GoogleServicesFramework/GoogleServicesFramework.apk' with 1 weak references
+09-19 13:35:24.512  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/TagGoogle/TagGoogle.apk' with 1 weak references
+09-19 13:35:24.512  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/GoogleTTS/GoogleTTS.apk' with 1 weak references
+09-19 13:35:24.512  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/CallLogBackup/CallLogBackup.apk' with 1 weak references
+09-19 13:35:24.512  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/priv-app/PartnerSetupPrebuilt/PartnerSetupPrebuilt.apk' with 1 weak references
+09-19 13:35:24.512  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/CameraExtensionsProxy/CameraExtensionsProxy.apk' with 1 weak references
+09-19 13:35:24.512  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/NexusWallpapersStubPrebuilt2018/NexusWallpapersStubPrebuilt2018.apk' with 1 weak references
+09-19 13:35:24.512  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system_ext/priv-app/NexusLauncherRelease/NexusLauncherRelease.apk' with 1 weak references
+09-19 13:35:24.513  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/CarrierDefaultApp/CarrierDefaultApp.apk' with 1 weak references
+09-19 13:35:24.513  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/CredentialManager/CredentialManager.apk' with 1 weak references
+09-19 13:35:24.513  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/overlay/FontNotoSerifSource/FontNotoSerifSourceOverlay.apk' with 1 weak references
+09-19 13:35:24.513  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/DeviceAsWebcam/DeviceAsWebcam.apk' with 1 weak references
+09-19 13:35:24.513  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/ProxyHandler/ProxyHandler.apk' with 1 weak references
+09-19 13:35:24.513  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /apex/com.android.permission/priv-app/GoogleSafetyCenterResources@350820360/GoogleSafetyCenterResources.apk' with 1 weak references
+09-19 13:35:24.513  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/overlay/DisplayCutoutEmulationWaterfall/DisplayCutoutEmulationWaterfallOverlay.apk' with 1 weak references
+09-19 13:35:24.513  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/IntentResolver/IntentResolver.apk' with 1 weak references
+09-19 13:35:24.513  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/overlay/TransparentNavigationBar/TransparentNavigationBarOverlay.apk' with 1 weak references
+09-19 13:35:24.514  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/E2eeContactKeysProvider/E2eeContactKeysProvider.apk' with 1 weak references
+09-19 13:35:24.514  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /apex/com.android.tethering/priv-app/ServiceConnectivityResourcesGoogle@350820300/ServiceConnectivityResourcesGoogle.apk' with 1 weak references
+09-19 13:35:24.514  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/vendor/overlay/goldfish_overlay_connectivity_google.apk' with 1 weak references
+09-19 13:35:24.514  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system_ext/priv-app/GoogleFeedback/GoogleFeedback.apk' with 1 weak references
+09-19 13:35:24.514  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/GooglePrintRecommendationService/GooglePrintRecommendationService.apk' with 1 weak references
+09-19 13:35:24.514  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/Photos/Photos.apk' with 1 weak references
+09-19 13:35:24.514  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/CalendarGooglePrebuilt/CalendarGooglePrebuilt.apk' with 1 weak references
+09-19 13:35:24.514  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/ManagedProvisioning/ManagedProvisioning.apk' with 1 weak references
+09-19 13:35:24.515  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/SoundPicker/SoundPicker.apk' with 1 weak references
+09-19 13:35:24.515  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/DocumentsUIGoogle/DocumentsUIGoogle.apk' with 1 weak references
+09-19 13:35:24.515  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/PrebuiltGoogleTelemetryTvp/PrebuiltGoogleTelemetryTvp.apk' with 1 weak references
+09-19 13:35:24.515  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system_ext/priv-app/MultiDisplayProvider/MultiDisplayProvider.apk' with 1 weak references
+09-19 13:35:24.515  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/DeviceDiagnostics/DeviceDiagnostics.apk' with 1 weak references
+09-19 13:35:24.515  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/product/overlay/DeviceDiagnostics__sdk_gphone64_x86_64__auto_generated_rro_product.apk' with 1 weak references
+09-19 13:35:24.515  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/overlay/NotesRoleEnabled/NotesRoleEnabledOverlay.apk' with 1 weak references
+09-19 13:35:24.515  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/LiveWallpapersPicker/LiveWallpapersPicker.apk' with 1 weak references
+09-19 13:35:24.516  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/PrebuiltGoogleAdservicesTvp/PrebuiltGoogleAdservicesTvp.apk' with 1 weak references
+09-19 13:35:24.516  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /apex/com.android.healthfitness/priv-app/HealthConnectControllerGoogle@350820300/HealthConnectControllerGoogle.apk' with 1 weak references
+09-19 13:35:24.516  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/priv-app/KidsSupervisionStub/KidsSupervisionStub.apk' with 1 weak references
+09-19 13:35:24.516  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system_ext/priv-app/StorageManager/StorageManager.apk' with 1 weak references
+09-19 13:35:24.516  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/product/overlay/StorageManager__sdk_gphone64_x86_64__auto_generated_rro_product.apk' with 1 weak references
+09-19 13:35:24.516  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/BookmarkProvider/BookmarkProvider.apk' with 1 weak references
+09-19 13:35:24.516  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system_ext/priv-app/SettingsGoogle/SettingsGoogle.apk' with 1 weak references
+09-19 13:35:24.517  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/product/overlay/SettingsGoogle__sdk_gphone64_x86_64__auto_generated_rro_product.apk' with 1 weak references
+09-19 13:35:24.517  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/priv-app/SettingsIntelligenceGooglePrebuilt/SettingsIntelligenceGooglePrebuilt.apk' with 1 weak references
+09-19 13:35:24.517  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /apex/com.android.uwb/priv-app/ServiceUwbResourcesGoogle@350820300/ServiceUwbResourcesGoogle.apk' with 1 weak references
+09-19 13:35:24.517  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /apex/com.android.wifi/priv-app/ServiceWifiResourcesGoogle@350820300/ServiceWifiResourcesGoogle.apk' with 1 weak references
+09-19 13:35:24.517  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system_ext/priv-app/ThemePicker/ThemePicker.apk' with 1 weak references
+09-19 13:35:24.518  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system_ext/priv-app/WallpaperPickerGoogleRelease/WallpaperPickerGoogleRelease.apk' with 1 weak references
+09-19 13:35:24.518  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/priv-app/OdadPrebuilt/OdadPrebuilt.apk' with 1 weak references
+09-19 13:35:24.518  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/TeleService/TeleService.apk' with 1 weak references
+09-19 13:35:24.519  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/vendor/overlay/TeleService__sdk_gphone64_x86_64__auto_generated_rro_vendor.apk' with 1 weak references
+09-19 13:35:24.519  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/product/overlay/TeleService__sdk_gphone64_x86_64__auto_generated_rro_product.apk' with 1 weak references
+09-19 13:35:24.519  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/Shell/Shell.apk' with 1 weak references
+09-19 13:35:24.519  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/BlockedNumberProvider/BlockedNumberProvider.apk' with 1 weak references
+09-19 13:35:24.519  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/UserDictionaryProvider/UserDictionaryProvider.apk' with 1 weak references
+09-19 13:35:24.519  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system_ext/app/EmergencyInfoGoogleNoUi/EmergencyInfoGoogleNoUi.apk' with 1 weak references
+09-19 13:35:24.519  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/overlay/NavigationBarModeGestural/NavigationBarModeGesturalOverlay.apk' with 1 weak references
+09-19 13:35:24.519  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/FusedLocation/FusedLocation.apk' with 1 weak references
+09-19 13:35:24.519  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system_ext/priv-app/SystemUIGoogle/SystemUIGoogle.apk' with 1 weak references
+09-19 13:35:24.519  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/vendor/overlay/SystemUIGoogle__sdk_gphone64_x86_64__auto_generated_rro_vendor.apk' with 1 weak references
+09-19 13:35:24.519  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/product/overlay/SystemUIGoogle__sdk_gphone64_x86_64__auto_generated_rro_product.apk' with 1 weak references
+09-19 13:35:24.519  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/product/overlay/SystemUIEmulationPixel5/SystemUIEmulationPixel5Overlay.apk' with 1 weak references
+09-19 13:35:24.520  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/YouTubeMusicPrebuilt/YouTubeMusicPrebuilt.apk' with 1 weak references
+09-19 13:35:24.520  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/BluetoothMidiService/BluetoothMidiService.apk' with 1 weak references
+09-19 13:35:24.520  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/app/Traceur/Traceur.apk' with 1 weak references
+09-19 13:35:24.520  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /apex/com.android.cellbroadcast/priv-app/GoogleCellBroadcastApp@350820300/GoogleCellBroadcastApp.apk' with 1 weak references
+09-19 13:35:24.520  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /system/priv-app/ContactsProvider/ContactsProvider.apk' with 1 weak references
+09-19 13:35:24.520  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '/product/overlay/ContactsProvider__sdk_gphone64_x86_64__auto_generated_rro_product.apk' with 1 weak references
+09-19 13:35:24.521  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/LatinIMEGooglePrebuilt/LatinIMEGooglePrebuilt.apk' with 1 weak references
+09-19 13:35:24.521  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /product/priv-app/GoogleRestorePrebuilt-v526684/GoogleRestorePrebuilt-v526684.apk' with 1 weak references
+09-19 13:35:24.521  1361  1375 W .apps.wellbeing: ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~YpNSuY3ec7xTjyZUTx7oMA==/com.ggufchat.app-BRA-EggUGvCixes_ZiIyqw==/base.apk' with 1 weak references
+09-19 13:35:24.530   360   407 I netd    : tetherGetStats() -> {[]} <11.55ms>
+09-19 13:35:24.726     0     0 I logd    : logdr: UID=0 GID=0 PID=5880 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns

@@ -1,0 +1,1061 @@
+{
+  "status": "PASS_PROJECTOR_CACHE_EXPERIMENT_ONLY",
+  "build": {
+    "before_sha256": "c8758573a80695f213f1917fb517a09d4db1da430acd8892a6e5b3935d79868a",
+    "after_sha256": "2b444a73090dff9bd6d4ce6d199349cafd5e9ae73b83cc34e05101e7f77727cc",
+    "delivered_sha256": "323fd5a33667c6cab278699e97c89fe253e1bb7acead45b869729bf022eb9f5c",
+    "baseline_payload_exact": true,
+    "candidate_native": {
+      "lib/arm64-v8a/libggufdiagnostics.so": "255e52f814d968e8dd008e8cea12c522aad06d943dffe8a30fe095485058b26c",
+      "lib/x86_64/libggufdiagnostics.so": "dd07c5a6aef3d75a7aec0325c20dddd6b58a313085254927291dc07dcf3c0139",
+      "lib/arm64-v8a/libaijni.so": "4c975fb6f7e7b45ab4b18ba38221e934c641a92fb31c91f8f6c033abcaa0ebe6",
+      "lib/arm64-v8a/libggufcpu.so": "961aedde471f8a87ef305cfe2ec496beb11046fe198893a701ac994962343061",
+      "lib/arm64-v8a/libc++_shared.so": "cb304e649e49cb65766da9d20a2d8bb8bd0c7cfd383e1f73838f838d1263c548",
+      "lib/arm64-v8a/libaijni_dotprod.so": "dd103d3515ba3e770d82b1b67444eb8eaaee7c02ff0636a0288f4db1e4aa432d",
+      "lib/arm64-v8a/libaijni_i8mm.so": "7c733ea6b2b0d5f15cf405eeff701e8fe49508c0a877b6ccb868e0c5006cb981",
+      "lib/x86_64/libaijni.so": "3edd4475c2fd263304dab9ac6cd01b159a485e9d83485a20b20735ad02bf849c",
+      "lib/x86_64/libggufcpu.so": "9a9605bb5b5853888abf070555b45e37530b9c2ee979ae356537305d5c315b7b",
+      "lib/x86_64/libc++_shared.so": "0e8aaa2ef7f9abbe54ad76dab5162f3b7bf1a92ba1b3c63221443ecb87c1b568"
+    },
+    "source_commit": "81bc70c8c1025fb8d46f7d99a8f9ee63af95b711",
+    "release": false,
+    "signature": "Disposable shared experiment key; NOT the delivered update certificate."
+  },
+  "series": {
+    "before-awake-0": {
+      "cold_A": {
+        "tokens": 2,
+        "prefill_and_generation_seconds": 217.89100000000326,
+        "prefill_and_generation_tokens_s": 0.009178901377294015,
+        "response": "Dog.",
+        "metrics": {
+          "tokens": 2,
+          "decodeNs": 995260346,
+          "prefillNs": 216895962199,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 216903085362,
+          "promptTokens": 516,
+          "reusedPromptTokens": 0
+        },
+        "callbacks": 2,
+        "native_decode_tokens_s": 2.0095244506003858,
+        "send_to_first_ui_ns": 217512178496,
+        "strict": {
+          "status": "PASS",
+          "submitted_graphs": 28,
+          "submitted_math_nodes": 15139,
+          "tensor_cpu_fallback": "blocked_by_native_policy",
+          "host_orchestration": "CPU",
+          "physical_gpu_certified": false
+        },
+        "cache": {
+          "hits": 0,
+          "misses": 5,
+          "bytes": 737280
+        },
+        "embedding_helper_wall_ms": 8203,
+        "embedding_helper_batches": 5
+      },
+      "append_B": {
+        "tokens": 2,
+        "prefill_and_generation_seconds": 399.6570000000065,
+        "prefill_and_generation_tokens_s": 0.005004291179686499,
+        "response": "Dog.",
+        "metrics": {
+          "tokens": 2,
+          "decodeNs": 1042638861,
+          "prefillNs": 398614765442,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 398619019636,
+          "promptTokens": 938,
+          "reusedPromptTokens": 0
+        },
+        "callbacks": 2,
+        "native_decode_tokens_s": 1.9182097222827377,
+        "send_to_first_ui_ns": 400074516139,
+        "strict": {
+          "status": "PASS",
+          "submitted_graphs": 50,
+          "submitted_math_nodes": 26720,
+          "tensor_cpu_fallback": "blocked_by_native_policy",
+          "host_orchestration": "CPU",
+          "physical_gpu_certified": false
+        },
+        "cache": {
+          "hits": 0,
+          "misses": 10,
+          "bytes": 1474560
+        },
+        "embedding_helper_wall_ms": 23921,
+        "embedding_helper_batches": 10
+      },
+      "exclude_A": {
+        "tokens": 2,
+        "prefill_and_generation_seconds": 206.91700000000128,
+        "prefill_and_generation_tokens_s": 0.009665711372192656,
+        "response": "Bus.",
+        "metrics": {
+          "tokens": 2,
+          "decodeNs": 1078669193,
+          "prefillNs": 205837815960,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 205841152752,
+          "promptTokens": 638,
+          "reusedPromptTokens": 0
+        },
+        "callbacks": 2,
+        "native_decode_tokens_s": 1.85413657215665,
+        "send_to_first_ui_ns": 206399849748,
+        "strict": {
+          "status": "PASS",
+          "submitted_graphs": 32,
+          "submitted_math_nodes": 17511,
+          "tensor_cpu_fallback": "blocked_by_native_policy",
+          "host_orchestration": "CPU",
+          "physical_gpu_certified": false
+        },
+        "cache": {
+          "hits": 0,
+          "misses": 5,
+          "bytes": 737280
+        },
+        "embedding_helper_wall_ms": 8536,
+        "embedding_helper_batches": 5
+      },
+      "restore_A": {
+        "tokens": 3,
+        "prefill_and_generation_seconds": 400.8319999999949,
+        "prefill_and_generation_tokens_s": 0.007484432380648347,
+        "response": "Bus.",
+        "metrics": {
+          "tokens": 3,
+          "decodeNs": 966650291,
+          "prefillNs": 399864965358,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 399867918961,
+          "promptTokens": 994,
+          "reusedPromptTokens": 0
+        },
+        "callbacks": 3,
+        "native_decode_tokens_s": 3.1035008502366446,
+        "send_to_first_ui_ns": 401119484634,
+        "strict": {
+          "status": "PASS",
+          "submitted_graphs": 52,
+          "submitted_math_nodes": 27906,
+          "tensor_cpu_fallback": "blocked_by_native_policy",
+          "host_orchestration": "CPU",
+          "physical_gpu_certified": false
+        },
+        "cache": {
+          "hits": 0,
+          "misses": 10,
+          "bytes": 1474560
+        },
+        "embedding_helper_wall_ms": 17517,
+        "embedding_helper_batches": 10
+      }
+    },
+    "before-asleep-0": {
+      "cold_A": {
+        "tokens": 2,
+        "prefill_and_generation_seconds": 185.09199999999691,
+        "prefill_and_generation_tokens_s": 0.01080543729604755,
+        "response": "Dog.",
+        "metrics": {
+          "tokens": 2,
+          "decodeNs": 520033089,
+          "prefillNs": 184572258715,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 184573289245,
+          "promptTokens": 516,
+          "reusedPromptTokens": 0
+        },
+        "callbacks": 2,
+        "native_decode_tokens_s": 3.8459091206021316,
+        "strict": {
+          "status": "PASS",
+          "submitted_graphs": 28,
+          "submitted_math_nodes": 15139,
+          "tensor_cpu_fallback": "blocked_by_native_policy",
+          "host_orchestration": "CPU",
+          "physical_gpu_certified": false
+        },
+        "cache": {
+          "hits": 0,
+          "misses": 5,
+          "bytes": 737280
+        },
+        "embedding_helper_wall_ms": 7411,
+        "embedding_helper_batches": 5
+      },
+      "append_B": {
+        "tokens": 2,
+        "prefill_and_generation_seconds": 363.3799999999974,
+        "prefill_and_generation_tokens_s": 0.0055038802355661135,
+        "response": "Dog.",
+        "metrics": {
+          "tokens": 2,
+          "decodeNs": 535973893,
+          "prefillNs": 362844182199,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 362845094353,
+          "promptTokens": 938,
+          "reusedPromptTokens": 0
+        },
+        "callbacks": 2,
+        "native_decode_tokens_s": 3.7315250353061504,
+        "strict": {
+          "status": "PASS",
+          "submitted_graphs": 50,
+          "submitted_math_nodes": 26720,
+          "tensor_cpu_fallback": "blocked_by_native_policy",
+          "host_orchestration": "CPU",
+          "physical_gpu_certified": false
+        },
+        "cache": {
+          "hits": 0,
+          "misses": 10,
+          "bytes": 1474560
+        },
+        "embedding_helper_wall_ms": 16024,
+        "embedding_helper_batches": 10
+      },
+      "exclude_A": {
+        "tokens": 2,
+        "prefill_and_generation_seconds": 191.6070000000036,
+        "prefill_and_generation_tokens_s": 0.010438032013443989,
+        "response": "Bus.",
+        "metrics": {
+          "tokens": 2,
+          "decodeNs": 508474183,
+          "prefillNs": 191098559951,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 191099582979,
+          "promptTokens": 638,
+          "reusedPromptTokens": 0
+        },
+        "callbacks": 2,
+        "native_decode_tokens_s": 3.9333363755067974,
+        "strict": {
+          "status": "PASS",
+          "submitted_graphs": 32,
+          "submitted_math_nodes": 17511,
+          "tensor_cpu_fallback": "blocked_by_native_policy",
+          "host_orchestration": "CPU",
+          "physical_gpu_certified": false
+        },
+        "cache": {
+          "hits": 0,
+          "misses": 5,
+          "bytes": 737280
+        },
+        "embedding_helper_wall_ms": 7721,
+        "embedding_helper_batches": 5
+      },
+      "restore_A": {
+        "tokens": 3,
+        "prefill_and_generation_seconds": 366.4539999999979,
+        "prefill_and_generation_tokens_s": 0.008186566390324617,
+        "response": "Bus.",
+        "metrics": {
+          "tokens": 3,
+          "decodeNs": 808869634,
+          "prefillNs": 365645308141,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 365646325346,
+          "promptTokens": 994,
+          "reusedPromptTokens": 0
+        },
+        "callbacks": 3,
+        "native_decode_tokens_s": 3.7088794954070434,
+        "strict": {
+          "status": "PASS",
+          "submitted_graphs": 52,
+          "submitted_math_nodes": 27906,
+          "tensor_cpu_fallback": "blocked_by_native_policy",
+          "host_orchestration": "CPU",
+          "physical_gpu_certified": false
+        },
+        "cache": {
+          "hits": 0,
+          "misses": 10,
+          "bytes": 1474560
+        },
+        "embedding_helper_wall_ms": 15737,
+        "embedding_helper_batches": 10
+      }
+    },
+    "after-awake-0": {
+      "cold_A": {
+        "tokens": 2,
+        "prefill_and_generation_seconds": 198.34999999999127,
+        "prefill_and_generation_tokens_s": 0.010083186286867094,
+        "response": "Dog.",
+        "metrics": {
+          "tokens": 2,
+          "decodeNs": 660702841,
+          "prefillNs": 197689206965,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 197698532612,
+          "promptTokens": 516,
+          "reusedPromptTokens": 0
+        },
+        "callbacks": 2,
+        "native_decode_tokens_s": 3.027079461279326,
+        "send_to_first_ui_ns": 198125068164,
+        "strict": {
+          "status": "PASS",
+          "submitted_graphs": 28,
+          "submitted_math_nodes": 15139,
+          "tensor_cpu_fallback": "blocked_by_native_policy",
+          "host_orchestration": "CPU",
+          "physical_gpu_certified": false
+        },
+        "cache": {
+          "hits": 0,
+          "misses": 5,
+          "bytes": 737280
+        },
+        "embedding_helper_wall_ms": 8163,
+        "embedding_helper_batches": 5,
+        "stages": {
+          "bitmap_ns": 27756417,
+          "tokenize_ns": 22730368,
+          "key_ns": 124834994,
+          "encode_call_ns": 171777997816,
+          "encode_calls": 5,
+          "hits": 0,
+          "verified_hits": 0,
+          "verification": 0,
+          "cache_disabled": 0
+        }
+      },
+      "append_B": {
+        "tokens": 2,
+        "prefill_and_generation_seconds": 222.98500000000058,
+        "prefill_and_generation_tokens_s": 0.008969213175774132,
+        "response": "Dog.",
+        "metrics": {
+          "tokens": 2,
+          "decodeNs": 653571717,
+          "prefillNs": 222332739800,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 222337329277,
+          "promptTokens": 938,
+          "reusedPromptTokens": 0
+        },
+        "callbacks": 2,
+        "native_decode_tokens_s": 3.0601079391567367,
+        "send_to_first_ui_ns": 223125079075,
+        "strict": {
+          "status": "PASS",
+          "submitted_graphs": 45,
+          "submitted_math_nodes": 25220,
+          "tensor_cpu_fallback": "blocked_by_native_policy",
+          "host_orchestration": "CPU",
+          "physical_gpu_certified": false
+        },
+        "cache": {
+          "hits": 5,
+          "misses": 5,
+          "bytes": 1474560
+        },
+        "embedding_helper_wall_ms": 20376,
+        "embedding_helper_batches": 10,
+        "stages": {
+          "bitmap_ns": 54074849,
+          "tokenize_ns": 47809641,
+          "key_ns": 263185117,
+          "encode_call_ns": 172524546326,
+          "encode_calls": 5,
+          "hits": 5,
+          "verified_hits": 0,
+          "verification": 0,
+          "cache_disabled": 0
+        }
+      },
+      "exclude_A": {
+        "tokens": 2,
+        "prefill_and_generation_seconds": 34.947000000000116,
+        "prefill_and_generation_tokens_s": 0.057229518985892736,
+        "response": "Bus.",
+        "metrics": {
+          "tokens": 2,
+          "decodeNs": 625547206,
+          "prefillNs": 34321488042,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 34325064230,
+          "promptTokens": 638,
+          "reusedPromptTokens": 0
+        },
+        "callbacks": 2,
+        "native_decode_tokens_s": 3.1972007561008913,
+        "send_to_first_ui_ns": 34780604933,
+        "strict": {
+          "status": "PASS",
+          "submitted_graphs": 27,
+          "submitted_math_nodes": 16011,
+          "tensor_cpu_fallback": "blocked_by_native_policy",
+          "host_orchestration": "CPU",
+          "physical_gpu_certified": false
+        },
+        "cache": {
+          "hits": 5,
+          "misses": 0,
+          "bytes": 1474560
+        },
+        "embedding_helper_wall_ms": 11420,
+        "embedding_helper_batches": 5,
+        "stages": {
+          "bitmap_ns": 28808279,
+          "tokenize_ns": 31371492,
+          "key_ns": 131691181,
+          "encode_call_ns": 0,
+          "encode_calls": 0,
+          "hits": 5,
+          "verified_hits": 0,
+          "verification": 0,
+          "cache_disabled": 0
+        }
+      },
+      "restore_A": {
+        "tokens": 3,
+        "prefill_and_generation_seconds": 58.036000000007334,
+        "prefill_and_generation_tokens_s": 0.051692053208346904,
+        "response": "Bus.",
+        "metrics": {
+          "tokens": 3,
+          "decodeNs": 978884566,
+          "prefillNs": 57051995480,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 57056647165,
+          "promptTokens": 994,
+          "reusedPromptTokens": 0
+        },
+        "callbacks": 3,
+        "native_decode_tokens_s": 3.0647127395815943,
+        "send_to_first_ui_ns": 57934672893,
+        "strict": {
+          "status": "PASS",
+          "submitted_graphs": 42,
+          "submitted_math_nodes": 24906,
+          "tensor_cpu_fallback": "blocked_by_native_policy",
+          "host_orchestration": "CPU",
+          "physical_gpu_certified": false
+        },
+        "cache": {
+          "hits": 10,
+          "misses": 0,
+          "bytes": 1474560
+        },
+        "embedding_helper_wall_ms": 24000,
+        "embedding_helper_batches": 10,
+        "stages": {
+          "bitmap_ns": 95257284,
+          "tokenize_ns": 113773496,
+          "key_ns": 275213841,
+          "encode_call_ns": 0,
+          "encode_calls": 0,
+          "hits": 10,
+          "verified_hits": 0,
+          "verification": 0,
+          "cache_disabled": 0
+        }
+      }
+    },
+    "after-asleep-0": {
+      "cold_A": {
+        "tokens": 2,
+        "prefill_and_generation_seconds": 183.23799999999756,
+        "prefill_and_generation_tokens_s": 0.010914766587716668,
+        "response": "Dog.",
+        "metrics": {
+          "tokens": 2,
+          "decodeNs": 502061595,
+          "prefillNs": 182736731540,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 182737695610,
+          "promptTokens": 516,
+          "reusedPromptTokens": 0
+        },
+        "callbacks": 2,
+        "native_decode_tokens_s": 3.9835749635460567,
+        "strict": {
+          "status": "PASS",
+          "submitted_graphs": 28,
+          "submitted_math_nodes": 15139,
+          "tensor_cpu_fallback": "blocked_by_native_policy",
+          "host_orchestration": "CPU",
+          "physical_gpu_certified": false
+        },
+        "cache": {
+          "hits": 0,
+          "misses": 5,
+          "bytes": 737280
+        },
+        "embedding_helper_wall_ms": 7334,
+        "embedding_helper_batches": 5,
+        "stages": {
+          "bitmap_ns": 27493446,
+          "tokenize_ns": 23161327,
+          "key_ns": 126235397,
+          "encode_call_ns": 158738651441,
+          "encode_calls": 5,
+          "hits": 0,
+          "verified_hits": 0,
+          "verification": 0,
+          "cache_disabled": 0
+        }
+      },
+      "append_B": {
+        "tokens": 2,
+        "prefill_and_generation_seconds": 205.3009999999922,
+        "prefill_and_generation_tokens_s": 0.009741793756484752,
+        "response": "Dog.",
+        "metrics": {
+          "tokens": 2,
+          "decodeNs": 530101443,
+          "prefillNs": 204770961051,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 204771674660,
+          "promptTokens": 938,
+          "reusedPromptTokens": 0
+        },
+        "callbacks": 2,
+        "native_decode_tokens_s": 3.7728627726070916,
+        "strict": {
+          "status": "PASS",
+          "submitted_graphs": 45,
+          "submitted_math_nodes": 25220,
+          "tensor_cpu_fallback": "blocked_by_native_policy",
+          "host_orchestration": "CPU",
+          "physical_gpu_certified": false
+        },
+        "cache": {
+          "hits": 5,
+          "misses": 5,
+          "bytes": 1474560
+        },
+        "embedding_helper_wall_ms": 18759,
+        "embedding_helper_batches": 10,
+        "stages": {
+          "bitmap_ns": 55934409,
+          "tokenize_ns": 51176959,
+          "key_ns": 255576122,
+          "encode_call_ns": 158464776382,
+          "encode_calls": 5,
+          "hits": 5,
+          "verified_hits": 0,
+          "verification": 0,
+          "cache_disabled": 0
+        }
+      },
+      "exclude_A": {
+        "tokens": 2,
+        "prefill_and_generation_seconds": 31.964000000007218,
+        "prefill_and_generation_tokens_s": 0.06257039169063786,
+        "response": "Bus.",
+        "metrics": {
+          "tokens": 2,
+          "decodeNs": 509269833,
+          "prefillNs": 31454748981,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 31455721664,
+          "promptTokens": 638,
+          "reusedPromptTokens": 0
+        },
+        "callbacks": 2,
+        "native_decode_tokens_s": 3.9271911870735137,
+        "strict": {
+          "status": "PASS",
+          "submitted_graphs": 27,
+          "submitted_math_nodes": 16011,
+          "tensor_cpu_fallback": "blocked_by_native_policy",
+          "host_orchestration": "CPU",
+          "physical_gpu_certified": false
+        },
+        "cache": {
+          "hits": 5,
+          "misses": 0,
+          "bytes": 1474560
+        },
+        "embedding_helper_wall_ms": 10270,
+        "embedding_helper_batches": 5,
+        "stages": {
+          "bitmap_ns": 27765851,
+          "tokenize_ns": 26864974,
+          "key_ns": 127677614,
+          "encode_call_ns": 0,
+          "encode_calls": 0,
+          "hits": 5,
+          "verified_hits": 0,
+          "verification": 0,
+          "cache_disabled": 0
+        }
+      },
+      "restore_A": {
+        "tokens": 3,
+        "prefill_and_generation_seconds": 51.471000000005006,
+        "prefill_and_generation_tokens_s": 0.05828524800372459,
+        "response": "Bus.",
+        "metrics": {
+          "tokens": 3,
+          "decodeNs": 772487775,
+          "prefillNs": 50698420346,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 50699158562,
+          "promptTokens": 994,
+          "reusedPromptTokens": 0
+        },
+        "callbacks": 3,
+        "native_decode_tokens_s": 3.8835566038569347,
+        "strict": {
+          "status": "PASS",
+          "submitted_graphs": 42,
+          "submitted_math_nodes": 24906,
+          "tensor_cpu_fallback": "blocked_by_native_policy",
+          "host_orchestration": "CPU",
+          "physical_gpu_certified": false
+        },
+        "cache": {
+          "hits": 10,
+          "misses": 0,
+          "bytes": 1474560
+        },
+        "embedding_helper_wall_ms": 21218,
+        "embedding_helper_batches": 10,
+        "stages": {
+          "bitmap_ns": 54218814,
+          "tokenize_ns": 48305196,
+          "key_ns": 246743534,
+          "encode_call_ns": 0,
+          "encode_calls": 0,
+          "hits": 10,
+          "verified_hits": 0,
+          "verification": 0,
+          "cache_disabled": 0
+        }
+      }
+    }
+  },
+  "checks": {
+    "actual_code_stream_history_copy": {
+      "stream": "PASS",
+      "history": "PASS"
+    },
+    "actual_android_pixels": "PASS",
+    "exact_responses_and_tokens": "PASS",
+    "exact_text_outputs_and_strict_routing": "PASS",
+    "cached_embeddings_equal_real_vulkan_byte_for_byte": "PASS",
+    "awake_asleep_completion_notice_cleanup": "PASS"
+  },
+  "external_gguf_sha256": "650283ee95856be73ff45fa277ac6a4238b4d1bb52a670983c2e1690fd352a12",
+  "text_series": {
+    "before": {
+      "awake": {
+        "tokens": 128,
+        "prefill_and_generation_seconds": 85.41900000000169,
+        "prefill_and_generation_tokens_s": 1.4984956508504836,
+        "response": "Tenho uma própria estrutura de suas informações para ajudar um peso mais diverte.\n\n1. **Pronunciation**: Aprendi o pronunciam em inglês, como \"ponte\" e \"perduve\".\n\n2. **Reading**: Aprendi o que você precisamos de acorda para ajudar uma peso mais diverte.\n\n3. **Practice**: Aprendi o que você preciso do-it-além, como \"p",
+        "metrics": {
+          "tokens": 128,
+          "decodeNs": 61240524870,
+          "prefillNs": 24179695954,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 24183012311,
+          "promptTokens": 62,
+          "reusedPromptTokens": 0
+        },
+        "callbacks": 128,
+        "native_decode_tokens_s": 2.09011925145507,
+        "send_to_first_ui_ns": 24265109457,
+        "strict": {
+          "status": "PASS",
+          "submitted_graphs": 129,
+          "submitted_math_nodes": 76497,
+          "tensor_cpu_fallback": "blocked_by_native_policy",
+          "host_orchestration": "CPU",
+          "physical_gpu_certified": false
+        }
+      },
+      "asleep": {
+        "tokens": 128,
+        "prefill_and_generation_seconds": 34.55500000000029,
+        "prefill_and_generation_tokens_s": 3.7042396180002584,
+        "response": "Tenho uma própria estrutura de suas informações para ajudar um peso mais diverte.\n\n1. **Pronunciation**: Aprendi o pronunciam em inglês, como \"ponte\" e \"perduve\".\n\n2. **Reading**: Aprendi o que você precisamos de acorda para ajudar uma peso mais diverte.\n\n3. **Practice**: Aprendi o que você preciso do-it-além, como \"p",
+        "metrics": {
+          "tokens": 128,
+          "decodeNs": 29942307928,
+          "prefillNs": 4612753395,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 4613593642,
+          "promptTokens": 62,
+          "reusedPromptTokens": 0
+        },
+        "callbacks": 128,
+        "native_decode_tokens_s": 4.274887570717391,
+        "strict": {
+          "status": "PASS",
+          "submitted_graphs": 129,
+          "submitted_math_nodes": 76497,
+          "tensor_cpu_fallback": "blocked_by_native_policy",
+          "host_orchestration": "CPU",
+          "physical_gpu_certified": false
+        }
+      }
+    },
+    "after": {
+      "awake": {
+        "tokens": 128,
+        "prefill_and_generation_seconds": 40.26400000001013,
+        "prefill_and_generation_tokens_s": 3.179018478044104,
+        "response": "Tenho uma própria estrutura de suas informações para ajudar um peso mais diverte.\n\n1. **Pronunciation**: Aprendi o pronunciam em inglês, como \"ponte\" e \"perduve\".\n\n2. **Reading**: Aprendi o que você precisamos de acorda para ajudar uma peso mais diverte.\n\n3. **Practice**: Aprendi o que você preciso do-it-além, como \"p",
+        "metrics": {
+          "tokens": 128,
+          "decodeNs": 36172009607,
+          "prefillNs": 4093018028,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 4099650692,
+          "promptTokens": 62,
+          "reusedPromptTokens": 0
+        },
+        "callbacks": 128,
+        "native_decode_tokens_s": 3.53864773869875,
+        "send_to_first_ui_ns": 4139826007,
+        "strict": {
+          "status": "PASS",
+          "submitted_graphs": 129,
+          "submitted_math_nodes": 76497,
+          "tensor_cpu_fallback": "blocked_by_native_policy",
+          "host_orchestration": "CPU",
+          "physical_gpu_certified": false
+        }
+      },
+      "asleep": {
+        "tokens": 128,
+        "prefill_and_generation_seconds": 34.161000000007334,
+        "prefill_and_generation_tokens_s": 3.746962910921007,
+        "response": "Tenho uma própria estrutura de suas informações para ajudar um peso mais diverte.\n\n1. **Pronunciation**: Aprendi o pronunciam em inglês, como \"ponte\" e \"perduve\".\n\n2. **Reading**: Aprendi o que você precisamos de acorda para ajudar uma peso mais diverte.\n\n3. **Practice**: Aprendi o que você preciso do-it-além, como \"p",
+        "metrics": {
+          "tokens": 128,
+          "decodeNs": 30077047588,
+          "prefillNs": 4084056391,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 4084846424,
+          "promptTokens": 62,
+          "reusedPromptTokens": 0
+        },
+        "callbacks": 128,
+        "native_decode_tokens_s": 4.255736857997619,
+        "strict": {
+          "status": "PASS",
+          "submitted_graphs": 129,
+          "submitted_math_nodes": 76497,
+          "tensor_cpu_fallback": "blocked_by_native_policy",
+          "host_orchestration": "CPU",
+          "physical_gpu_certified": false
+        }
+      }
+    }
+  },
+  "verification": {
+    "cold_A": {
+      "tokens": 2,
+      "prefill_and_generation_seconds": 198.55399999998917,
+      "prefill_and_generation_tokens_s": 0.010072826535854775,
+      "response": "Dog.",
+      "metrics": {
+        "tokens": 2,
+        "decodeNs": 640124142,
+        "prefillNs": 197913284088,
+        "completed": true,
+        "version": 3,
+        "timingScope": "prefill_synchronized_before_decode",
+        "firstTokenNs": 197917503450,
+        "promptTokens": 516,
+        "reusedPromptTokens": 0
+      },
+      "callbacks": 2,
+      "native_decode_tokens_s": 3.1243939554462234,
+      "send_to_first_ui_ns": 198331314451,
+      "strict": {
+        "status": "PASS",
+        "submitted_graphs": 28,
+        "submitted_math_nodes": 15139,
+        "tensor_cpu_fallback": "blocked_by_native_policy",
+        "host_orchestration": "CPU",
+        "physical_gpu_certified": false
+      },
+      "cache": {
+        "hits": 0,
+        "misses": 5,
+        "bytes": 737280
+      },
+      "embedding_helper_wall_ms": 8318,
+      "embedding_helper_batches": 5,
+      "stages": {
+        "bitmap_ns": 27331907,
+        "tokenize_ns": 22682436,
+        "key_ns": 145956012,
+        "encode_call_ns": 171608594883,
+        "encode_calls": 5,
+        "hits": 0,
+        "verified_hits": 0,
+        "verification": 1,
+        "cache_disabled": 0
+      }
+    },
+    "append_B": {
+      "tokens": 2,
+      "prefill_and_generation_seconds": 395.24600000001374,
+      "prefill_and_generation_tokens_s": 0.005060139761060025,
+      "response": "Dog.",
+      "metrics": {
+        "tokens": 2,
+        "decodeNs": 678850892,
+        "prefillNs": 394566637832,
+        "completed": true,
+        "version": 3,
+        "timingScope": "prefill_synchronized_before_decode",
+        "firstTokenNs": 394568973384,
+        "promptTokens": 938,
+        "reusedPromptTokens": 0
+      },
+      "callbacks": 2,
+      "native_decode_tokens_s": 2.9461550740659557,
+      "send_to_first_ui_ns": 395347119067,
+      "strict": {
+        "status": "PASS",
+        "submitted_graphs": 50,
+        "submitted_math_nodes": 26720,
+        "tensor_cpu_fallback": "blocked_by_native_policy",
+        "host_orchestration": "CPU",
+        "physical_gpu_certified": false
+      },
+      "cache": {
+        "hits": 5,
+        "misses": 5,
+        "bytes": 1474560
+      },
+      "embedding_helper_wall_ms": 17899,
+      "embedding_helper_batches": 10,
+      "stages": {
+        "bitmap_ns": 54749261,
+        "tokenize_ns": 47475114,
+        "key_ns": 279131439,
+        "encode_call_ns": 346382371820,
+        "encode_calls": 10,
+        "hits": 5,
+        "verified_hits": 5,
+        "verification": 1,
+        "cache_disabled": 0
+      }
+    },
+    "exclude_A": {
+      "tokens": 2,
+      "prefill_and_generation_seconds": 203.91699999998673,
+      "prefill_and_generation_tokens_s": 0.00980791204264544,
+      "response": "Bus.",
+      "metrics": {
+        "tokens": 2,
+        "decodeNs": 663770018,
+        "prefillNs": 203253055950,
+        "completed": true,
+        "version": 3,
+        "timingScope": "prefill_synchronized_before_decode",
+        "firstTokenNs": 203256325638,
+        "promptTokens": 638,
+        "reusedPromptTokens": 0
+      },
+      "callbacks": 2,
+      "native_decode_tokens_s": 3.013091802528508,
+      "send_to_first_ui_ns": 203715008815,
+      "strict": {
+        "status": "PASS",
+        "submitted_graphs": 32,
+        "submitted_math_nodes": 17511,
+        "tensor_cpu_fallback": "blocked_by_native_policy",
+        "host_orchestration": "CPU",
+        "physical_gpu_certified": false
+      },
+      "cache": {
+        "hits": 5,
+        "misses": 0,
+        "bytes": 1474560
+      },
+      "embedding_helper_wall_ms": 8406,
+      "embedding_helper_batches": 5,
+      "stages": {
+        "bitmap_ns": 28403307,
+        "tokenize_ns": 27939890,
+        "key_ns": 124667967,
+        "encode_call_ns": 171629265329,
+        "encode_calls": 5,
+        "hits": 5,
+        "verified_hits": 5,
+        "verification": 1,
+        "cache_disabled": 0
+      }
+    }
+  },
+  "observations": {
+    "awake": {
+      "cold_A": {
+        "before": {
+          "native_first_token_ns": 216903085362,
+          "embedding_helper_wall_ms": 8203,
+          "prefill_ns": 216895962199,
+          "encoder_calls": 5
+        },
+        "after": {
+          "native_first_token_ns": 197698532612,
+          "embedding_helper_wall_ms": 8163,
+          "prefill_ns": 197689206965,
+          "encoder_calls": 5
+        }
+      },
+      "append_B": {
+        "before": {
+          "native_first_token_ns": 398619019636,
+          "embedding_helper_wall_ms": 23921,
+          "prefill_ns": 398614765442,
+          "encoder_calls": 10
+        },
+        "after": {
+          "native_first_token_ns": 222337329277,
+          "embedding_helper_wall_ms": 20376,
+          "prefill_ns": 222332739800,
+          "encoder_calls": 5
+        }
+      },
+      "exclude_A": {
+        "before": {
+          "native_first_token_ns": 205841152752,
+          "embedding_helper_wall_ms": 8536,
+          "prefill_ns": 205837815960,
+          "encoder_calls": 5
+        },
+        "after": {
+          "native_first_token_ns": 34325064230,
+          "embedding_helper_wall_ms": 11420,
+          "prefill_ns": 34321488042,
+          "encoder_calls": 0
+        }
+      },
+      "restore_A": {
+        "before": {
+          "native_first_token_ns": 399867918961,
+          "embedding_helper_wall_ms": 17517,
+          "prefill_ns": 399864965358,
+          "encoder_calls": 10
+        },
+        "after": {
+          "native_first_token_ns": 57056647165,
+          "embedding_helper_wall_ms": 24000,
+          "prefill_ns": 57051995480,
+          "encoder_calls": 0
+        }
+      }
+    },
+    "asleep": {
+      "cold_A": {
+        "before": {
+          "native_first_token_ns": 184573289245,
+          "embedding_helper_wall_ms": 7411,
+          "prefill_ns": 184572258715,
+          "encoder_calls": 5
+        },
+        "after": {
+          "native_first_token_ns": 182737695610,
+          "embedding_helper_wall_ms": 7334,
+          "prefill_ns": 182736731540,
+          "encoder_calls": 5
+        }
+      },
+      "append_B": {
+        "before": {
+          "native_first_token_ns": 362845094353,
+          "embedding_helper_wall_ms": 16024,
+          "prefill_ns": 362844182199,
+          "encoder_calls": 10
+        },
+        "after": {
+          "native_first_token_ns": 204771674660,
+          "embedding_helper_wall_ms": 18759,
+          "prefill_ns": 204770961051,
+          "encoder_calls": 5
+        }
+      },
+      "exclude_A": {
+        "before": {
+          "native_first_token_ns": 191099582979,
+          "embedding_helper_wall_ms": 7721,
+          "prefill_ns": 191098559951,
+          "encoder_calls": 5
+        },
+        "after": {
+          "native_first_token_ns": 31455721664,
+          "embedding_helper_wall_ms": 10270,
+          "prefill_ns": 31454748981,
+          "encoder_calls": 0
+        }
+      },
+      "restore_A": {
+        "before": {
+          "native_first_token_ns": 365646325346,
+          "embedding_helper_wall_ms": 15737,
+          "prefill_ns": 365645308141,
+          "encoder_calls": 10
+        },
+        "after": {
+          "native_first_token_ns": 50699158562,
+          "embedding_helper_wall_ms": 21218,
+          "prefill_ns": 50698420346,
+          "encoder_calls": 0
+        }
+      }
+    }
+  },
+  "scope": "Real APK, actual SAF image bytes, same GGUF/quantization/parameters, software Vulkan. Re-signed baseline retains every non-signature payload entry from delivered 323. Candidate also includes prior UI changes. One fresh-Engine sequence/state/version, fixed before/after and awake/asleep order; no independent warmup, statistical significance or repeatability claim. Long full-resolution software-projector runtime limits this exploratory sample, not image resolution or output budget. encode_call_ns is host wall time including device dependencies, NOT isolated GPU kernel time; verification samples excluded. Native image preparation/tokenization and submission are not full Android Send-to-first-text. No first-image, physical GPU, universal quality, ON/OFF parity or 21x/26x guarantee."
+}

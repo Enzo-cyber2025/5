@@ -1,0 +1,31 @@
+{
+  "status": "SIGNED_ANDROID_FUNCTIONAL_PASS_PERFORMANCE_GOAL_UNMET",
+  "apk_sha256": "e7ee730c5c8bc2c774375ded631fb4725bb364d09d05ea2e857cb9e38f8f69d9",
+  "source_commit": "06c46f76329ed4cb0e93e03cd857910d391d33a3",
+  "build_run": 35122790161,
+  "signed_test_run": 35127872319,
+  "target": "Improve CPU/GPU throughput and first-token latency awake/asleep; copyable fenced-code panels; real image import and visual encoding.",
+  "performance_claim": "No 15 or 20 tokens/s guarantee. User phone and exact GGUF/configuration have not been supplied. Emulator CPU/GPU results are not phone certification.",
+  "signature": "7295130ab387cd5123c1faab79c96f3ca8d8eb694ae7b15c611086d48b5898a0",
+  "signature_change": "New authorized certificate 7295130a differs from delivered 4f75 and previous candidate bf9. In-place update compatibility must not be claimed. Protect existing data before any uninstall.",
+  "observed_static_gates": "Current exact APK executable-section dot-product/i8mm inspection: see performance-arm-isa.json. Static evidence only, not physical ARM speed or full ISA audit.",
+  "local_tests": "Focused source tests: 11 passed, 3 skipped. Synthetic verifier tests: 13 passed, not Android evidence. Earlier wider focused suite: 20 passed, 8 skipped. Exact ARM executable inspection and final signed Android acceptance verifier passed.",
+  "signed_test_commit": "8306a951f28580a485deddf5dfa65295bb664024",
+  "previous_failed_test_result": {
+    "run": 35127256380,
+    "status": "FAIL",
+    "reason": "Fresh-library test read models.json before asynchronous import completed; fixed to wait on absent optional store. Malformed JSON and I/O errors still fail.",
+    "exact_candidate_passed": [
+      "Android code stream/history exact clipboard (synthetic renderer fixtures)",
+      "Android ImageDecoder: missing extension, white alpha, resize, EXIF, corrupt rejection"
+    ],
+    "image_inference": "NOT_REACHED",
+    "saf_selection_fix": "PASS: authentic screenshot has both exact GGUF files selected; import screenshot shows identification in progress."
+  },
+  "last_signed_test_result": {
+    "run": 35127872319,
+    "status": "PASS",
+    "scope": "Bounded functional evidence only; speed goal not certified.",
+    "awake_cpu_auto_cold_regression_observed": true
+  }
+}

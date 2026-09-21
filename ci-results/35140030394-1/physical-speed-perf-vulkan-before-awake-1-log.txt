@@ -1,0 +1,244 @@
+--------- beginning of main
+09-16 19:27:31.570  5680  5680 I ImeTracker: com.ggufchat.app:9b584549: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser true
+09-16 19:27:31.570  5680  5680 D InputMethodManager: showSoftInput() view=android.widget.EditText{ce56365 VFED..CL. .F.P..ID 128,0-493,67 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+09-16 19:27:31.575  5680  5680 I AssistStructure: Flattened final assist data: 1964 bytes, containing 1 windows, 13 views
+09-16 19:27:31.580  5680  5693 D EGL_emulation: app_time_stats: avg=500.17ms min=5.62ms max=7303.26ms count=15
+09-16 19:27:32.679  5680  5693 D EGL_emulation: app_time_stats: avg=366.28ms min=113.92ms max=500.09ms count=3
+09-16 19:27:33.680  5680  5693 D EGL_emulation: app_time_stats: avg=500.04ms min=499.74ms max=500.35ms count=2
+09-16 19:27:35.180  5680  5693 D EGL_emulation: app_time_stats: avg=499.98ms min=499.68ms max=500.25ms count=3
+09-16 19:27:35.841  5680  5680 I ImeTracker: com.ggufchat.app:7d04e0ae: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+09-16 19:27:35.876  5680  5680 D InsetsController: hide(ime(), fromIme=true)
+09-16 19:27:35.876  5680  5680 I ImeTracker: com.ggufchat.app:7d04e0ae: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+09-16 19:27:35.882  5680  5913 I GGUFSystem: GGUF_SYSTEM_PROMPT_APPLIED scope=global chars=107 sha256=dde45e87ea07db0b49bcddd022d4f41a452610560d9af636571c26d16a4bcd04
+09-16 19:27:35.883  5680  5913 I GGUFInference: GGUF_CONTENT_PREPARED files=0 images=0 text_chars=0
+09-16 19:27:35.883  5680  5913 I GGUFNativeStderr: set_sampler: seq_id = 0, sampler = 0x7994a315dd30
+09-16 19:27:35.884  5680  5913 I GGUFChatNative: GGUF_GPU_SAMPLING requested=1 attached=1
+09-16 19:27:35.923  5680  5913 I GGUFNativeStderr: sched_reserve: reserving ...
+09-16 19:27:35.924  5680  5913 I GGUFNativeStderr: sched_reserve: max_nodes = 2210
+09-16 19:27:35.934  5680  5913 I GGUFNativeStderr: sched_reserve: reserving full memory module
+09-16 19:27:35.937  5680  5913 I GGUFNativeStderr: sched_reserve: worst-case: n_tokens = 32, n_seqs = 1, n_outputs = 1
+09-16 19:27:35.938  5680  5913 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =   32, n_seqs =  1, n_outputs =   32
+09-16 19:27:35.974  5680  5913 I MESA    : on_vkAllocateMemory: has alloc flags
+09-16 19:27:35.975  5680  5913 I MESA    : allocateCoherentMemory: has alloc flags
+09-16 19:27:36.000  5680  5913 I MESA    : on_vkAllocateMemory: has alloc flags
+09-16 19:27:36.000  5680  5913 I MESA    : allocateCoherentMemory: has alloc flags
+09-16 19:27:36.001  5680  5913 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =    1, n_seqs =  1, n_outputs =    1
+09-16 19:27:36.003  5680  5913 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =   32, n_seqs =  1, n_outputs =   32
+09-16 19:27:36.007  5680  5913 I GGUFNativeStderr: sched_reserve:    Vulkan0 compute buffer size =    12.38 MiB
+09-16 19:27:36.007  5680  5913 I GGUFNativeStderr: sched_reserve: Vulkan_Host compute buffer size =     0.27 MiB
+09-16 19:27:36.007  5680  5913 I GGUFNativeStderr: sched_reserve: graph nodes  = 961
+09-16 19:27:36.007  5680  5913 I GGUFNativeStderr: sched_reserve: graph splits = 2
+09-16 19:27:36.007  5680  5913 I GGUFNativeStderr: sched_reserve: reserve took 83.36 ms, sched copies = 1
+09-16 19:27:36.066  5680  5913 I MESA    : on_vkAllocateMemory: has alloc flags
+09-16 19:27:36.066  5680  5913 I MESA    : allocateCoherentMemory: has alloc flags
+09-16 19:27:36.120  5680  5913 I MESA    : on_vkAllocateMemory: has alloc flags
+09-16 19:27:36.120  5680  5913 I MESA    : allocateCoherentMemory: has alloc flags
+09-16 19:27:36.203  5680  5693 D EGL_emulation: app_time_stats: avg=70.01ms min=9.42ms max=499.65ms count=13
+09-16 19:27:37.390  5680  5693 D EGL_emulation: app_time_stats: avg=74.73ms min=9.23ms max=445.62ms count=14
+09-16 19:27:38.887  5680  5693 D EGL_emulation: app_time_stats: avg=499.18ms min=494.83ms max=504.49ms count=3
+09-16 19:27:39.896  5680  5693 D EGL_emulation: app_time_stats: avg=504.55ms min=499.69ms max=509.40ms count=2
+09-16 19:27:40.904  5680  5693 D EGL_emulation: app_time_stats: avg=503.87ms min=502.47ms max=505.27ms count=2
+09-16 19:27:41.481  5680  5913 I GGUFChatNative: GGUF_PROMPT_CACHE input_tokens=62 reused_tokens=0 evaluated_tokens=62 media=0
+09-16 19:27:41.484  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:41.485  5680  5680 I GGUFUiTiming: GGUF_UI_FIRST_TEXT send_to_first_ui_ns=5654843492
+09-16 19:27:41.523  5680  5913 I MESA    : on_vkAllocateMemory: has alloc flags
+09-16 19:27:41.524  5680  5913 I MESA    : allocateCoherentMemory: has alloc flags
+09-16 19:27:42.119  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:42.138  5680  5693 D EGL_emulation: app_time_stats: avg=83.84ms min=7.67ms max=549.14ms count=13
+09-16 19:27:42.609  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:43.090  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:43.180  5680  5693 D EGL_emulation: app_time_stats: avg=43.45ms min=9.47ms max=110.66ms count=22
+09-16 19:27:43.614  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:44.118  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:44.191  5680  5693 D EGL_emulation: app_time_stats: avg=38.09ms min=12.59ms max=173.19ms count=21
+09-16 19:27:44.577  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:45.073  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:45.194  5680  5693 D EGL_emulation: app_time_stats: avg=35.69ms min=9.02ms max=102.41ms count=21
+09-16 19:27:45.588  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:46.059  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:46.216  5680  5693 D EGL_emulation: app_time_stats: avg=38.74ms min=10.30ms max=103.18ms count=22
+09-16 19:27:46.553  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:47.065  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:47.238  5680  5693 D EGL_emulation: app_time_stats: avg=31.24ms min=10.12ms max=116.70ms count=22
+09-16 19:27:47.581  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:48.076  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:48.266  5680  5693 D EGL_emulation: app_time_stats: avg=39.66ms min=10.52ms max=137.39ms count=21
+09-16 19:27:48.601  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:49.095  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:49.328  5680  5693 D EGL_emulation: app_time_stats: avg=43.17ms min=15.03ms max=115.73ms count=21
+09-16 19:27:49.617  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:50.120  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:50.339  5680  5693 D EGL_emulation: app_time_stats: avg=38.54ms min=8.68ms max=126.40ms count=20
+09-16 19:27:50.644  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:51.105  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:51.356  5680  5693 D EGL_emulation: app_time_stats: avg=39.15ms min=10.60ms max=141.54ms count=20
+09-16 19:27:51.587  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:52.140  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:52.369  5680  5693 D EGL_emulation: app_time_stats: avg=37.10ms min=12.19ms max=138.58ms count=20
+09-16 19:27:52.636  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:53.149  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:53.409  5680  5693 D EGL_emulation: app_time_stats: avg=38.65ms min=9.44ms max=144.76ms count=22
+09-16 19:27:53.632  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:54.132  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:54.447  5680  5693 D EGL_emulation: app_time_stats: avg=32.05ms min=10.42ms max=98.54ms count=22
+09-16 19:27:54.618  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:55.116  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:55.449  5680  5693 D EGL_emulation: app_time_stats: avg=36.99ms min=7.14ms max=126.95ms count=21
+09-16 19:27:55.618  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:56.153  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:56.457  5680  5693 D EGL_emulation: app_time_stats: avg=41.42ms min=11.64ms max=142.34ms count=19
+09-16 19:27:56.663  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:57.163  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:57.469  5680  5693 D EGL_emulation: app_time_stats: avg=39.25ms min=8.85ms max=133.97ms count=20
+09-16 19:27:57.637  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:58.163  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:58.478  5680  5693 D EGL_emulation: app_time_stats: avg=33.03ms min=9.33ms max=143.33ms count=23
+09-16 19:27:58.674  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:59.189  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:27:59.486  5680  5693 D EGL_emulation: app_time_stats: avg=42.95ms min=12.67ms max=142.07ms count=19
+09-16 19:27:59.686  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:00.212  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:00.496  5680  5693 D EGL_emulation: app_time_stats: avg=40.60ms min=8.77ms max=217.60ms count=19
+09-16 19:28:00.742  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:01.255  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:01.523  5680  5693 D EGL_emulation: app_time_stats: avg=37.29ms min=12.86ms max=124.73ms count=22
+09-16 19:28:01.747  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:02.260  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:02.552  5680  5693 D EGL_emulation: app_time_stats: avg=39.99ms min=9.02ms max=138.29ms count=20
+09-16 19:28:02.772  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:03.293  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:03.570  5680  5693 D EGL_emulation: app_time_stats: avg=44.95ms min=10.01ms max=138.12ms count=20
+09-16 19:28:03.766  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:04.283  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:04.578  5680  5693 D EGL_emulation: app_time_stats: avg=37.92ms min=12.29ms max=127.34ms count=22
+09-16 19:28:04.750  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:05.268  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:05.613  5680  5693 D EGL_emulation: app_time_stats: avg=36.70ms min=13.25ms max=156.54ms count=21
+09-16 19:28:05.803  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:06.326  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:06.623  5680  5693 D EGL_emulation: app_time_stats: avg=40.98ms min=8.96ms max=133.64ms count=20
+09-16 19:28:06.867  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:07.356  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:07.631  5680  5693 D EGL_emulation: app_time_stats: avg=36.39ms min=9.16ms max=116.03ms count=21
+09-16 19:28:07.855  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:08.359  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:08.656  5680  5693 D EGL_emulation: app_time_stats: avg=44.88ms min=10.29ms max=128.23ms count=19
+09-16 19:28:08.872  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:09.386  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:09.669  5680  5693 D EGL_emulation: app_time_stats: avg=37.29ms min=11.53ms max=140.81ms count=22
+09-16 19:28:09.923  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:10.456  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:10.693  5680  5693 D EGL_emulation: app_time_stats: avg=44.14ms min=14.67ms max=180.90ms count=19
+09-16 19:28:10.995  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:11.488  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:11.718  5680  5693 D EGL_emulation: app_time_stats: avg=35.79ms min=10.56ms max=129.59ms count=22
+09-16 19:28:12.007  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:12.486  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:12.792  5680  5693 D EGL_emulation: app_time_stats: avg=49.10ms min=13.27ms max=197.46ms count=19
+09-16 19:28:12.994  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:13.477  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:13.805  5680  5693 D EGL_emulation: app_time_stats: avg=34.85ms min=11.60ms max=111.07ms count=21
+09-16 19:28:13.980  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:14.504  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:14.807  5680  5693 D EGL_emulation: app_time_stats: avg=37.33ms min=11.81ms max=85.37ms count=20
+09-16 19:28:15.051  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:15.541  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:15.815  5680  5693 D EGL_emulation: app_time_stats: avg=41.66ms min=14.47ms max=146.63ms count=20
+09-16 19:28:16.013  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:16.552  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:16.832  5680  5693 D EGL_emulation: app_time_stats: avg=39.71ms min=11.48ms max=151.33ms count=21
+09-16 19:28:17.092  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:17.587  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:17.874  5680  5693 D EGL_emulation: app_time_stats: avg=42.90ms min=10.15ms max=162.89ms count=20
+09-16 19:28:18.083  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:18.596  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:18.881  5680  5693 D EGL_emulation: app_time_stats: avg=38.78ms min=9.10ms max=136.15ms count=21
+09-16 19:28:19.088  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:19.590  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:19.931  5680  5693 D EGL_emulation: app_time_stats: avg=39.42ms min=12.61ms max=160.57ms count=21
+09-16 19:28:20.075  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:20.576  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:20.946  5680  5693 D EGL_emulation: app_time_stats: avg=34.23ms min=10.21ms max=88.06ms count=22
+09-16 19:28:21.085  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:21.604  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:21.983  5680  5693 D EGL_emulation: app_time_stats: avg=36.87ms min=10.88ms max=126.30ms count=21
+09-16 19:28:22.123  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:22.628  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:22.996  5680  5693 D EGL_emulation: app_time_stats: avg=37.12ms min=10.96ms max=137.85ms count=22
+09-16 19:28:23.152  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:23.676  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:24.032  5680  5693 D EGL_emulation: app_time_stats: avg=43.34ms min=12.75ms max=117.51ms count=21
+09-16 19:28:24.166  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:24.695  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:25.082  5680  5693 D EGL_emulation: app_time_stats: avg=42.00ms min=13.30ms max=125.91ms count=20
+09-16 19:28:25.188  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:25.746  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:26.104  5680  5693 D EGL_emulation: app_time_stats: avg=39.92ms min=12.15ms max=133.72ms count=21
+09-16 19:28:26.238  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:26.756  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:27.124  5680  5693 D EGL_emulation: app_time_stats: avg=48.71ms min=11.71ms max=144.69ms count=19
+09-16 19:28:27.262  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:27.762  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:28.176  5680  5693 D EGL_emulation: app_time_stats: avg=38.75ms min=9.18ms max=119.32ms count=22
+09-16 19:28:28.272  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:28.729  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:29.248  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:29.272  5680  5693 D EGL_emulation: app_time_stats: avg=47.87ms min=12.46ms max=133.90ms count=19
+09-16 19:28:29.770  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:30.295  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:30.325  5680  5693 D EGL_emulation: app_time_stats: avg=39.60ms min=16.43ms max=162.37ms count=20
+09-16 19:28:30.778  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:31.274  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:31.350  5680  5693 D EGL_emulation: app_time_stats: avg=42.01ms min=11.34ms max=154.02ms count=20
+09-16 19:28:31.797  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:32.314  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:32.383  5680  5693 D EGL_emulation: app_time_stats: avg=44.30ms min=10.02ms max=132.59ms count=20
+09-16 19:28:32.830  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:33.346  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:33.412  5680  5693 D EGL_emulation: app_time_stats: avg=38.62ms min=14.95ms max=114.99ms count=21
+09-16 19:28:33.887  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:34.456  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:34.490  5680  5693 D EGL_emulation: app_time_stats: avg=47.67ms min=15.02ms max=149.45ms count=19
+09-16 19:28:34.968  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:35.531  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:35.559  5680  5693 D EGL_emulation: app_time_stats: avg=45.18ms min=12.33ms max=148.63ms count=19
+09-16 19:28:36.073  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:36.638  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:36.655  5680  5693 D EGL_emulation: app_time_stats: avg=41.93ms min=13.19ms max=182.06ms count=20
+09-16 19:28:37.163  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:37.678  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:37.705  5680  5693 D EGL_emulation: app_time_stats: avg=42.71ms min=13.47ms max=138.38ms count=19
+09-16 19:28:38.177  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:38.733  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:38.760  5680  5693 D EGL_emulation: app_time_stats: avg=45.79ms min=11.37ms max=137.61ms count=20
+09-16 19:28:39.232  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:39.800  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:39.832  5680  5693 D EGL_emulation: app_time_stats: avg=47.03ms min=12.42ms max=172.33ms count=20
+09-16 19:28:40.312  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:40.808  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:40.841  5680  5693 D EGL_emulation: app_time_stats: avg=40.75ms min=12.60ms max=136.61ms count=19
+09-16 19:28:41.334  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:41.878  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:41.908  5680  5693 D EGL_emulation: app_time_stats: avg=37.92ms min=12.02ms max=127.65ms count=21
+09-16 19:28:42.353  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:42.888  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:42.910  5680  5693 D EGL_emulation: app_time_stats: avg=43.68ms min=16.72ms max=107.28ms count=19
+09-16 19:28:43.391  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:43.911  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:43.940  5680  5693 D EGL_emulation: app_time_stats: avg=38.91ms min=11.73ms max=157.48ms count=19
+09-16 19:28:44.428  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:44.924  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:44.957  5680  5693 D EGL_emulation: app_time_stats: avg=40.84ms min=13.24ms max=129.96ms count=19
+09-16 19:28:45.463  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:45.987  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:46.042  5680  5693 D EGL_emulation: app_time_stats: avg=44.94ms min=11.41ms max=155.03ms count=21
+09-16 19:28:46.466  5680  5913 I GGUFNativeStderr: llama_sampler_sample: Backend sampler selected token for idx -1. Skipping CPU samplers
+09-16 19:28:46.469  5680  5913 I GGUFChatNative: GGUF_NATIVE_COMPLETE tokens=128 reason=length projector=0
+09-16 19:28:46.469  5680  5913 I GGUFNativeStderr: set_sampler: seq_id = 0, sampler = 0x0
+09-16 19:28:46.469  5680  5913 I GGUFChatNative: GGUF_GPU_SAMPLING_RESULT backend_selected=128 emitted=128
+09-16 19:28:46.469  5680  5913 I GGUFChatNative: GGUF_RESPONSE_LATENCY first_token_ns=5605213371 prompt_tokens=62 reused_tokens=0
+09-16 19:28:46.469  5680  5913 I GGUFChatNative: GGUF_GENERATION_STATS tokens=128 decode_ns=64985788554 prefill_ns=5600413394 callbacks=128 success=1
+09-16 19:28:46.469  5680  5913 I System.out: GGUF_REPAIR_GENERATION_OK
+09-16 19:28:46.472  5680  5913 I GGUFReplyNotice: GGUF_NOTICE_STATS progress_updates=59 skipped_screen_off=0
+09-16 19:28:46.473  5680  5913 I GGUFReplyNotice: GGUF_REPLY_NOTICE suppressed=screen_active
+09-16 19:28:46.539  5680  5680 I GGUFReplyNotice: GGUF_REPLY_SERVICE_DESTROYED

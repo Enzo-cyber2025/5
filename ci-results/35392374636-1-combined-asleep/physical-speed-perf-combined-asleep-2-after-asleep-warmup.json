@@ -1,0 +1,66 @@
+{
+  "tokens": 2,
+  "prefill_and_generation_seconds": 190.30399999998917,
+  "prefill_and_generation_tokens_s": 0.01050950058853263,
+  "response": "Dog.",
+  "metrics": {
+    "tokens": 2,
+    "decodeNs": 527855001,
+    "prefillNs": 189775954085,
+    "completed": true,
+    "version": 3,
+    "timingScope": "prefill_synchronized_before_decode",
+    "firstTokenNs": 189777142151,
+    "promptTokens": 513,
+    "reusedPromptTokens": 0
+  },
+  "callbacks": 2,
+  "native_decode_tokens_s": 3.788919298313137,
+  "chat": {
+    "id": "1a0b67b86ad94595d",
+    "title": "GGUF regression 1a0b67b86ad94595d",
+    "modelPath": "/data/user/0/com.ggufchat.app/files/models/1789765523225_external-one.gguf",
+    "mmprojPath": "/data/user/0/com.ggufchat.app/files/models/1789765523225_external-one.gguf",
+    "createdAt": 1789767943853,
+    "updatedAt": 1789768188837,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Arquivo anexado: 1 arquivo(s)\n\nAnexos vinculados a esta mensagem para leitura.\n\nName the main animal in the image. Reply in English.",
+        "ts": 1789767997954,
+        "thinking": false
+      },
+      {
+        "role": "assistant",
+        "content": " Dog.",
+        "ts": 1789768188837,
+        "thinking": false,
+        "generationMetrics": {
+          "tokens": 2,
+          "decodeNs": 527855001,
+          "prefillNs": 189775954085,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 189777142151,
+          "promptTokens": 513,
+          "reusedPromptTokens": 0
+        }
+      }
+    ],
+    "nPredict": 128,
+    "temperature": 0,
+    "topP": 0.949999988079071,
+    "topK": 40,
+    "minP": 0.05000000074505806,
+    "repeatPenalty": 1.100000023841858,
+    "repeatLastN": 64,
+    "contextSize": 4096,
+    "nThreads": 2,
+    "gpuLayers": 99,
+    "useMmap": true,
+    "thinking": false,
+    "webSearch": false,
+    "systemPrompt": null
+  }
+}

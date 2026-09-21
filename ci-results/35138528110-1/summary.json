@@ -1,0 +1,18 @@
+{
+  "status": "PASS_EQUALITY_ONLY",
+  "apk_sha256": "8a994b58efc0a65a0851534402eacb5f0c305ff534a100075a88e5c5dbf95399",
+  "baseline_sha256": "e7ee730c5c8bc2c774375ded631fb4725bb364d09d05ea2e857cb9e38f8f69d9",
+  "responses": {
+    "before": " CERO EMIOFSELLA.",
+    "after": " CERO EMIOFSELLA."
+  },
+  "semantic_vehicle": {
+    "before": "FAIL",
+    "after": "FAIL"
+  },
+  "checks": {
+    "same_external_bytes_real_vulkan_and_equal_response": "PASS"
+  },
+  "external_gguf_sha256": "650283ee95856be73ff45fa277ac6a4238b4d1bb52a670983c2e1690fd352a12",
+  "scope": "One real external-format GGUF/bus observation per exact signed APK, same software Vulkan and image/settings. Equality is NOT semantic success; inspect semantic_vehicle separately."
+}

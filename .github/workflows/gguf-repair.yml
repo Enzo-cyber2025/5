@@ -1,0 +1,139 @@
+name: GGUF Chat repair
+
+on:
+  push:
+    branches: [arena/01a09b42-5]
+  workflow_dispatch:
+    inputs:
+      android_mode:
+        description: 'Backend a testar (Vulkan exige offload, não aceita fallback CPU)'
+        type: choice
+        options: [vulkan, cpu]
+        default: vulkan
+      run_android:
+        description: 'Executar emulador descartável e modelo real (consome minutos adicionais)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: gguf-repair-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-host-regressions:
+    # Delivery reuses the exact signed APK from a completed successful test.
+    if: ${{ !contains(github.event.head_commit.message, '[apk delivery]') && !contains(github.event.head_commit.message, '[mobile]') && !contains(github.event.head_commit.message, '[signed mobile]') && !contains(github.event.head_commit.message, '[latency candidate]') && !contains(github.event.head_commit.message, '[screen]') && !contains(github.event.head_commit.message, '[row tile measure]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Dependências de teste
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install -r requirements-test.txt
+      - name: Ferramentas e APK original fixados por hash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          bash ci/log_step.sh tools bash scripts/fetch_tools.sh
+          bash ci/log_step.sh original python3 scripts/fetch_original.py
+      - uses: android-actions/setup-android@v3
+      - name: NDK fixado para runtime C++ oficial e diagnósticos (llama/ggml preservados)
+        run: |
+          sdkmanager --install "ndk;28.2.13676358"
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/28.2.13676358" >> "$GITHUB_ENV"
+      - name: Reconstruir e verificar assinatura
+        run: |
+          export JAVA_HOME=$(.venv/bin/python -c 'import jdk4py; print(jdk4py.JAVA_HOME)')
+          export APKTOOL_JAR="$PWD/.cache/tools/package/lib/apktool.jar"
+          export APKSIGNER_JAR="$PWD/.cache/tools/package/lib/apksigner.jar"
+          export GGUF_KEYSTORE_PASSWORD=$(openssl rand -hex 32)
+          echo "::add-mask::$GGUF_KEYSTORE_PASSWORD"
+          bash ci/log_step.sh build bash apk-fix/rebuild_on_runner.sh
+      - name: Regressões de ferramentas e bytecode real no host
+        run: |
+          bash ci/log_step.sh tooling .venv/bin/python -m pytest -q tests/test_tooling.py
+          export APKTOOL_JAR="$PWD/.cache/tools/package/lib/apktool.jar"
+          bash ci/log_step.sh host bash scripts/test_host.sh
+      - name: APK de teste (NÃO é aprovação no Android)
+        uses: actions/upload-artifact@v4
+        with:
+          name: gguf-chat-host-tested
+          path: |
+            dist/GGUF-Chat-repaired.apk
+            dist/GGUF-Chat-repaired.apk.sha256
+            dist/native-regression/
+          retention-days: 7
+          if-no-files-found: error
+
+  android-integration:
+    if: ${{ inputs.run_android || (github.event_name == 'push' && !contains(github.event.head_commit.message, '[screen]') && !contains(github.event.head_commit.message, '[row tile measure]')) }}
+    needs: build-and-host-regressions
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: arena/01a09b42-5
+      - name: Fixar código na revisão que produziu o APK
+        run: git reset --hard "$GITHUB_SHA"
+      - uses: actions/download-artifact@v4
+        with:
+          name: gguf-chat-host-tested
+          path: dist
+      - name: Modelo real (sem fallback para fixture artificial)
+        run: |
+          mkdir -p .cache/models
+          curl --fail --location --retry 2 --max-time 600 \
+            'https://huggingface.co/bartowski/SmolLM2-135M-Instruct-GGUF/resolve/main/SmolLM2-135M-Instruct-Q4_K_M.gguf' \
+            -o .cache/models/smollm2.gguf
+          sha256sum .cache/models/smollm2.gguf
+      - name: Permissão KVM
+        run: sudo chmod a+rw /dev/kvm
+      - name: Vulkan de software com armazenamento de 16 bits (Mesa Lavapipe)
+        if: ${{ inputs.android_mode != 'cpu' }}
+        run: bash ci/prepare_vulkan.sh
+      - name: Geração nativa e verificação do backend solicitado (SAF fora deste teste)
+        uses: reactivecircus/android-emulator-runner@v2
+        env:
+          ANDROID_SERIAL: emulator-5554
+          GGUF_EMULATOR_VK_DEVICE: ${{ inputs.android_mode != 'cpu' && '0' || '' }}
+          GGUF_TEST_MODEL: .cache/models/smollm2.gguf
+          GGUF_RUNTIME_REGRESSION: dist/native-regression
+          GGUF_MODEL_SETUP: provisioned
+          GGUF_GENERATION_ONLY: ${{ inputs.android_mode == 'cpu' && '1' || '0' }}
+          GGUF_VULKAN_ONLY: ${{ inputs.android_mode != 'cpu' && '1' || '0' }}
+          GGUF_REQUIRE_VULKAN: ${{ inputs.android_mode != 'cpu' && '1' || '0' }}
+        with:
+          api-level: ${{ inputs.android_mode == 'cpu' && 30 || 35 }}
+          target: google_apis
+          arch: x86_64
+          profile: pixel_5
+          ram-size: 4096M
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -gpu ${{ inputs.android_mode == 'cpu' && 'swiftshader' || 'host' }} -feature Vulkan -noaudio -no-boot-anim
+          script: bash ci/log_step.sh emulator bash .github/emu-test-x86.sh
+      - name: Diagnóstico Android legível pela API
+        if: always()
+        run: python3 ci/report_android.py evidence
+      - name: Publicar capturas e resumo nesta branch
+        if: always()
+        run: bash ci/publish_evidence.sh
+      - name: Evidências, inclusive em falha
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gguf-chat-android-evidence
+          path: evidence/
+          if-no-files-found: warn
+          retention-days: 7

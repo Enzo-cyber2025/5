@@ -1,0 +1,22 @@
+{
+  "fixed": {
+    "exit_code": 0,
+    "stdout": "{\"pthread_mutexattr_size\":8,\"callee_saved_preserved\":true,\"rbx\":\"1122334455667788\"}\n",
+    "stderr": "",
+    "result": {
+      "pthread_mutexattr_size": 8,
+      "callee_saved_preserved": true,
+      "rbx": "1122334455667788"
+    }
+  },
+  "original": {
+    "exit_code": 1,
+    "stdout": "{\"pthread_mutexattr_size\":8,\"callee_saved_preserved\":false,\"rbx\":\"11223344ffffffff\"}\n",
+    "stderr": "",
+    "result": {
+      "pthread_mutexattr_size": 8,
+      "callee_saved_preserved": false,
+      "rbx": "11223344ffffffff"
+    }
+  }
+}

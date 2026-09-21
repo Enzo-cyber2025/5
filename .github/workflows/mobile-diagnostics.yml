@@ -1,0 +1,33 @@
+name: Mobile build diagnostics relay
+on:
+  push:
+    branches: [arena/01a09b42-5]
+    paths: [.github/workflows/mobile-diagnostics.yml]
+permissions:
+  actions: read
+jobs:
+  diagnostics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: mobile-pair-evidence
+          path: logs
+          run-id: 34785228538
+          github-token: ${{ github.token }}
+      - run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          text='\n'.join(p.read_text(errors='replace') for p in Path('logs').rglob('final-logcat.txt'))
+          text='\n'.join(line for line in text.splitlines() if 'AccessibilityNodeInfoDumper' not in line and re.search(r'DocumentsUI|ActionHandler|PickActivity|select|Select|SecurityException|Permission|GGUF|[EWFA] AndroidRuntime',line))
+          import xml.etree.ElementTree as ET, json
+          for p in sorted(Path('logs').rglob('ui-*.xml')):
+              nodes=list(ET.parse(p).iter('node'))
+              if any(n.get('text','').casefold() in ('open','select') or ' selected' in n.get('text','') for n in nodes):
+                  text+='\n'+p.name+' '+json.dumps([{k:n.get(k) for k in ('text','content-desc','bounds','selected','checked')} for n in nodes if n.get('text') or n.get('content-desc')],ensure_ascii=False)
+          text=text[-25000:]
+          for i in range(0,len(text),2500):
+              chunk=text[i:i+2500].replace('%','%25').replace('\r','%0D').replace('\n','%0A')
+              print(f'::notice title=Build diagnostic {i//2500}::{chunk}')
+          PY

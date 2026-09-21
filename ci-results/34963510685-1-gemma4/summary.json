@@ -1,0 +1,32 @@
+{
+  "status": "PASS",
+  "scope": "Gemma4-reference-pair-physical-merge-and-native-vision",
+  "checks": {
+    "different_signature_update_blocked_without_losing_old_private_data": "PASS",
+    "atomic_native_validated_one_file_commit": "PASS",
+    "real_SAF_pair_to_one_GGUF_all_2012_tensors": "PASS",
+    "single_file_survives_restart": "PASS",
+    "native_Gemma4_same_file_vision_Vulkan_Jinja": "PASS",
+    "native_image_history_after_restart": "PASS",
+    "image_inference": "PASS",
+    "native_Gemma4_text_only": "PASS"
+  },
+  "apk_sha256": "5f7247a5ffe663a583ccf46adf161f2e8f27e64780f3aa3a39f070c8259bd840",
+  "environment": "Android emulator, Mesa software Vulkan, exact signed candidate; 12 GiB configured guest RAM (not physical hardware)",
+  "model_reference": "unsloth/gemma-4-E2B-it-GGUF at 0314792d7f1f7e229411f620751375812bb9faf2, Q3_K_S + mmproj-F16",
+  "response_quality": {
+    "gemma4-image": {
+      "status": "PASS",
+      "response": "Dog"
+    },
+    "gemma4-restart": {
+      "status": "PASS",
+      "response": "Dog"
+    },
+    "gemma4-text": {
+      "status": "PASS",
+      "response": "4"
+    }
+  },
+  "limits": "Vision/text tested; audio weights preserved, but no audio-input UI/transcription acceptance. Reference pair is not asserted to match user files. No physical GPU/RAM approval."
+}

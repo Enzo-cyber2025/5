@@ -1,0 +1,23 @@
+{
+  "status": "REQUESTED_TARGETS_NOT_MET",
+  "required_throughput_multiplier": 21,
+  "required_first_token_speedup": 26,
+  "throughput_multipliers": {
+    "awake": 1.0578323486696461,
+    "asleep": 1.0034734808516514
+  },
+  "end_to_end_first_token_speedups": {
+    "awake": 1.1660521569898634,
+    "asleep": null
+  },
+  "awake_asleep_throughput_ratio": 0.7778951092596132,
+  "checks": {
+    "throughput_21x_both_states": false,
+    "first_token_wait_26x_both_states": false,
+    "awake_at_least_as_fast_as_asleep": false,
+    "asleep_not_slowed": true
+  },
+  "physical_gpu_certified": false,
+  "release_approved": false,
+  "note": "Missing screen-off Send->first-token measurements cannot be replaced with native firstTokenNs. Equality here is of observed medians, not a universal timing guarantee."
+}

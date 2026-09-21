@@ -1,0 +1,146 @@
+name: Projector cache real Vulkan comparison
+on:
+  push:
+    branches: [arena/01a09b42-5]
+    paths: [.github/workflows/projector-cache.yml, scripts/test_projector_cache_android.py, apk-fix/projector_patches.py, apk-fix/native/image_embedding_cache.h]
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: projector-cache-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    if: ${{ contains(github.event.head_commit.message, '[projector cache]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 110
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Use the Android SDK already installed on the hosted runner
+        run: |
+          test -d "$ANDROID_HOME"
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
+          # Avoid the failing setup action; accept licenses on the existing SDK.
+          set +o pipefail
+          yes | "$SDKMANAGER" --licenses > /tmp/android-licenses.log
+          set -o pipefail
+      - name: Pinned tools and source APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install -r requirements-test.txt
+          bash scripts/fetch_tools.sh
+          python3 scripts/fetch_original.py
+          sdkmanager 'ndk;28.2.13676358' 'platforms;android-35' 'build-tools;35.0.0'
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/28.2.13676358" >> "$GITHUB_ENV"
+          sudo apt-get update -qq
+          sudo apt-get install -y ninja-build glslc libvulkan-dev
+          git clone --depth 1 --branch vulkan-sdk-1.4.357.0 https://github.com/KhronosGroup/Vulkan-Headers .cache/vulkan-sdk
+          test "$(git -C .cache/vulkan-sdk rev-parse HEAD)" = e3b1eec08173d6b825cd3ac88c885a63b621504a
+          git clone --depth 1 --branch vulkan-sdk-1.4.357.0 https://github.com/KhronosGroup/SPIRV-Headers .cache/spirv-headers
+          test "$(git -C .cache/spirv-headers rev-parse HEAD)" = 29981f65241605e08b0ede4cfeb999fe3b723c6a
+          cmake -S .cache/spirv-headers -B .cache/spirv-build -DCMAKE_INSTALL_PREFIX="$PWD/.cache/spirv-install"
+          cmake --install .cache/spirv-build
+          mkdir -p .cache/vulkan-headers
+          cp -r .cache/vulkan-sdk/include/. .cache/vulkan-headers/
+      - uses: actions/cache@v4
+        id: native-cache
+        with:
+          path: |
+            .cache/llama-mobile
+            .cache/mobile/arm64-v8a
+            .cache/mobile/x86_64
+          key: native-v041-ndk28-v1-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: native-v041-ndk28-v1-${{ runner.os }}-
+      - name: Compile real native stack and compact UI
+        env:
+          APKTOOL_JAR: .cache/tools/package/lib/apktool.jar
+          GGUF_REUSE_TESTED_NATIVE: '0'
+        run: bash ci/log_step.sh mobile-build python3 apk-fix/build_mobile.py
+      - name: Save compiled native objects before Android acceptance (including on later test failure)
+        if: steps.native-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            .cache/llama-mobile
+            .cache/mobile/arm64-v8a
+            .cache/mobile/x86_64
+          key: native-v041-ndk28-v1-${{ runner.os }}-${{ github.run_id }}
+      - name: Host cache regressions with pinned actual private types
+        run: bash ci/log_step.sh projector-host .venv/bin/python -m pytest -q tests/test_projector_cache.py tests/test_projector_measurement.py tests/test_inference.py tests/test_latency.py tests/test_image_import.py tests/test_strict_vulkan.py tests/test_ui_overhead.py
+      - name: Real CPU tensor fallback blocked before computation
+        run: bash ci/log_step.sh strict-actual-ggml bash scripts/test_strict_vulkan_host.sh
+      - name: Disposable signatures and exact baseline payload proof
+        run: |
+          mkdir -p evidence
+          keytool -genkeypair -keystore "$RUNNER_TEMP/projector-only.p12" -storetype PKCS12 -storepass android -keypass android -alias test -keyalg RSA -keysize 2048 -validity 2 -dname 'CN=Disposable projector comparison, O=NOT FOR RELEASE'
+          SIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          "$SIGNER" sign --ks "$RUNNER_TEMP/projector-only.p12" --ks-pass pass:android --key-pass pass:android --out .cache/projector-baseline.apk .delivery/GGUF-Chat-mobile.apk
+          "$SIGNER" sign --ks "$RUNNER_TEMP/projector-only.p12" --ks-pass pass:android --key-pass pass:android --out .cache/projector-candidate.apk dist/GGUF-Chat-mobile-unsigned.apk
+          "$SIGNER" verify --verbose --print-certs .cache/projector-candidate.apk > evidence/physical-projector-signature.txt
+          python3 - <<'PY'
+          import hashlib,json,zipfile,subprocess
+          from pathlib import Path
+          def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+          def payload(p):
+              with zipfile.ZipFile(p) as z:return {n:hashlib.sha256(z.read(n)).hexdigest() for n in z.namelist() if not n.startswith('META-INF/')}
+          delivered='.delivery/GGUF-Chat-mobile.apk'
+          assert sha(delivered)=='323fd5a33667c6cab278699e97c89fe253e1bb7acead45b869729bf022eb9f5c'
+          assert payload(delivered)==payload('.cache/projector-baseline.apk')
+          assert payload('dist/GGUF-Chat-mobile-unsigned.apk')==payload('.cache/projector-candidate.apk')
+          Path('evidence/physical-projector-build.json').write_text(json.dumps(dict(
+            before_sha256=sha('.cache/projector-baseline.apk'),after_sha256=sha('.cache/projector-candidate.apk'),
+            delivered_sha256=sha(delivered),baseline_payload_exact=True,
+            candidate_native={k:v for k,v in payload('.cache/projector-candidate.apk').items() if k.endswith('.so')},
+            source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
+            release=False,signature='Disposable shared experiment key; NOT the delivered update certificate.'),indent=2))
+          PY
+      - name: Real image/model fixtures and actual input bridge
+        run: |
+          bash ci/mobile-models.sh
+          .venv/bin/pip install numpy==2.2.6 tqdm==4.67.1 pyyaml==6.0.2
+          bash scripts/build_test_input.sh
+          bash scripts/build_code_test.sh dist/GGUF-Chat-mobile-unsigned.apk
+      - name: Software Vulkan and KVM
+        run: |
+          sudo chmod a+rw /dev/kvm
+          bash ci/prepare_vulkan.sh
+      - uses: reactivecircus/android-emulator-runner@v2
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GGUF_MOBILE_VULKAN: '1'
+          GGUF_TEST_APK: .cache/projector-candidate.apk
+          GGUF_TEST_STRICT_GPU: '1'
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_5
+          ram-size: 6144M
+          heap-size: 1024M
+          disk-size: 8192M
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -gpu host -feature Vulkan -noaudio -no-boot-anim -camera-back emulated -camera-front emulated
+          script: .venv/bin/python scripts/test_projector_cache_android.py
+      - name: Publish bounded evidence only, never replace delivered APK
+        if: always()
+        run: bash ci/publish_evidence.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: projector-cache-experiment
+          path: |
+            .cache/projector-candidate.apk
+            dist/mobile-build.json
+            .cache/ci-logs/
+            evidence/

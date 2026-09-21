@@ -1,0 +1,704 @@
+09-13 22:29:36.716  4056  4198 I GGUFNativeStderr: Emulator-only GGML_VK_VISIBLE_DEVICES=0; software Vulkan is not hardware acceleration
+09-13 22:29:36.737  4056  4198 I GGUFNativeStderr: Vulkan loader API 1.3.0; bundled ggml Vulkan requires >= 1.2
+09-13 22:29:36.775  4056  4198 I GGUFChatNative: Memory guard: estimated=799452704 available=4140007424
+09-13 22:29:36.940  4056  4198 I GGUFNativeStderr: ggml_vulkan: Found 1 Vulkan devices:
+09-13 22:29:36.943  4056  4198 I GGUFNativeStderr: ggml_vulkan: 0 = llvmpipe (LLVM 21.0.0, 256 bits) (llvmpipe) | uma: 0 | fp16: 0 | bf16: 0 | warp size: 8 | shared memory: 32768 | int dot: 0 | matrix cores: none
+09-13 22:29:36.947  4056  4198 I GGUFNativeStderr: ggml_vulkan: Warning: Device type is CPU. This is probably not the device you want.
+09-13 22:29:36.958  4056  4198 I GGUFNativeStderr: llama_model_load_from_file_impl: using device Vulkan0 (llvmpipe (LLVM 21.0.0, 256 bits)) (unknown id) - 15993 MiB free
+09-13 22:29:37.020  4056  4198 I GGUFNativeStderr: llama_model_loader: loaded meta data with 49 key-value pairs and 273 tensors from /data/user/0/com.ggufchat.app/files/models/SmolVLM-256M-Instruct-Q8_0.gguf (version GGUF V3 (latest))
+09-13 22:29:37.020  4056  4198 I GGUFNativeStderr: llama_model_loader: Dumping metadata keys/values. Note: KV overrides do not apply in this output.
+09-13 22:29:37.020  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv   0:                       general.architecture str              = llama
+09-13 22:29:37.020  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv   1:                               general.type str              = model
+09-13 22:29:37.020  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv   2:                               general.name str              = SmolVLM 256M Instruct
+09-13 22:29:37.020  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv   3:                           general.finetune str              = Instruct
+09-13 22:29:37.020  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv   4:                           general.basename str              = SmolVLM
+09-13 22:29:37.020  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv   5:                         general.size_label str              = 256M
+09-13 22:29:37.020  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv   6:                            general.license str              = apache-2.0
+09-13 22:29:37.020  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv   7:                   general.base_model.count u32              = 2
+09-13 22:29:37.020  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv   8:                  general.base_model.0.name str              = SmolLM2 135M Instruct
+09-13 22:29:37.020  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv   9:          general.base_model.0.organization str              = HuggingFaceTB
+09-13 22:29:37.021  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  10:              general.base_model.0.repo_url str              = https://huggingface.co/HuggingFaceTB/...
+09-13 22:29:37.021  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  11:                  general.base_model.1.name str              = Siglip Base Patch16 512
+09-13 22:29:37.021  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  12:               general.base_model.1.version str              = 512
+09-13 22:29:37.021  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  13:          general.base_model.1.organization str              = Google
+09-13 22:29:37.021  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  14:              general.base_model.1.repo_url str              = https://huggingface.co/google/siglip-...
+09-13 22:29:37.021  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  15:                      general.dataset.count u32              = 2
+09-13 22:29:37.021  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  16:                     general.dataset.0.name str              = The_Cauldron
+09-13 22:29:37.021  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  17:             general.dataset.0.organization str              = HuggingFaceM4
+09-13 22:29:37.021  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  18:                 general.dataset.0.repo_url str              = https://huggingface.co/HuggingFaceM4/...
+09-13 22:29:37.021  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  19:                     general.dataset.1.name str              = Docmatix
+09-13 22:29:37.021  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  20:             general.dataset.1.organization str              = HuggingFaceM4
+09-13 22:29:37.021  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  21:                 general.dataset.1.repo_url str              = https://huggingface.co/HuggingFaceM4/...
+09-13 22:29:37.021  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  22:                               general.tags arr[str,1]       = ["image-text-to-text"]
+09-13 22:29:37.021  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  23:                          general.languages arr[str,1]       = ["en"]
+09-13 22:29:37.021  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  24:                          llama.block_count u32              = 30
+09-13 22:29:37.021  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  25:                       llama.context_length u32              = 8192
+09-13 22:29:37.021  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  26:                     llama.embedding_length u32              = 576
+09-13 22:29:37.021  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  27:                  llama.feed_forward_length u32              = 1536
+09-13 22:29:37.021  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  28:                 llama.attention.head_count u32              = 9
+09-13 22:29:37.021  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  29:              llama.attention.head_count_kv u32              = 3
+09-13 22:29:37.021  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  30:                       llama.rope.freq_base f32              = 100000.000000
+09-13 22:29:37.021  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  31:     llama.attention.layer_norm_rms_epsilon f32              = 0.000010
+09-13 22:29:37.021  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  32:                 llama.attention.key_length u32              = 64
+09-13 22:29:37.021  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  33:               llama.attention.value_length u32              = 64
+09-13 22:29:37.021  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  34:                           llama.vocab_size u32              = 49280
+09-13 22:29:37.021  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  35:                 llama.rope.dimension_count u32              = 64
+09-13 22:29:37.021  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  36:                       tokenizer.ggml.model str              = gpt2
+09-13 22:29:37.021  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  37:                         tokenizer.ggml.pre str              = smollm
+09-13 22:29:37.038  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  38:                      tokenizer.ggml.tokens arr[str,49280]   = ["<|endoftext|>", "<|im_start|>", "<|...
+09-13 22:29:37.042  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  39:                  tokenizer.ggml.token_type arr[i32,49280]   = [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, ...
+09-13 22:29:37.066  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  40:                      tokenizer.ggml.merges arr[str,48900]   = ["Ġ t", "Ġ a", "i n", "h e", "Ġ Ġ...
+09-13 22:29:37.066  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  41:                tokenizer.ggml.bos_token_id u32              = 1
+09-13 22:29:37.066  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  42:                tokenizer.ggml.eos_token_id u32              = 49279
+09-13 22:29:37.066  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  43:            tokenizer.ggml.unknown_token_id u32              = 0
+09-13 22:29:37.066  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  44:            tokenizer.ggml.padding_token_id u32              = 2
+09-13 22:29:37.066  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  45:                    tokenizer.chat_template str              = <|im_start|>{% for message in message...
+09-13 22:29:37.066  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  46:            tokenizer.ggml.add_space_prefix bool             = false
+09-13 22:29:37.066  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  47:               general.quantization_version u32              = 2
+09-13 22:29:37.066  4056  4198 I GGUFNativeStderr: llama_model_loader: - kv  48:                          general.file_type u32              = 7
+09-13 22:29:37.066  4056  4198 I GGUFNativeStderr: llama_model_loader: - type  f32:   61 tensors
+09-13 22:29:37.066  4056  4198 I GGUFNativeStderr: llama_model_loader: - type q8_0:  212 tensors
+09-13 22:29:37.066  4056  4198 I GGUFNativeStderr: print_info: file format = GGUF V3 (latest)
+09-13 22:29:37.066  4056  4198 I GGUFNativeStderr: print_info: file type   = Q8_0
+09-13 22:29:37.066  4056  4198 I GGUFNativeStderr: print_info: file size   = 165.24 MiB (8.51 BPW) 
+09-13 22:29:37.186  4056  4198 I GGUFNativeStderr: init_tokenizer: initializing tokenizer for type 2
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49278 '<|reserved_special_token_87|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49274 '<|reserved_special_token_83|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49270 '<|reserved_special_token_79|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49269 '<|reserved_special_token_78|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49268 '<|reserved_special_token_77|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49264 '<|reserved_special_token_73|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49261 '<|reserved_special_token_70|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49257 '<|reserved_special_token_66|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49253 '<|reserved_special_token_62|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49252 '<|reserved_special_token_61|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49251 '<|reserved_special_token_60|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49249 '<|reserved_special_token_58|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49247 '<|reserved_special_token_56|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49245 '<|reserved_special_token_54|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49243 '<|reserved_special_token_52|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49240 '<|reserved_special_token_49|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49236 '<|reserved_special_token_45|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49234 '<|reserved_special_token_43|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49231 '<|reserved_special_token_40|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49230 '<|reserved_special_token_39|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49228 '<|reserved_special_token_37|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49226 '<|reserved_special_token_35|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49220 '<|reserved_special_token_29|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49219 '<|reserved_special_token_28|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49212 '<|reserved_special_token_21|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49211 '<|reserved_special_token_20|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49208 '<|reserved_special_token_17|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49205 '<|reserved_special_token_14|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49203 '<|reserved_special_token_12|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49201 '<|reserved_special_token_10|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49200 '<|reserved_special_token_9|>' is not marked as EOG
+09-13 22:29:37.236  4056  4198 I GGUFNativeStderr: load: control token:  49196 '<|reserved_special_token_5|>' is not marked as EOG
+09-13 22:29:37.237  4056  4198 I GGUFNativeStderr: load: control token:  49194 '<|reserved_special_token_3|>' is not marked as EOG
+09-13 22:29:37.237  4056  4198 I GGUFNativeStderr: load: control token:  49192 '<|reserved_special_token_1|>' is not marked as EOG
+09-13 22:29:37.237  4056  4198 I GGUFNativeStderr: load: control token:  49191 '<|reserved_special_token_0|>' is not marked as EOG
+09-13 22:29:37.237  4056  4198 I GGUFNativeStderr: load: control token:  49186 '<row_6_col_4>' is not marked as EOG
+09-13 22:29:37.237  4056  4198 I GGUFNativeStderr: load: control token:  49185 '<row_6_col_3>' is not marked as EOG
+09-13 22:29:37.237  4056  4198 I GGUFNativeStderr: load: control token:  49180 '<row_5_col_4>' is not marked as EOG
+09-13 22:29:37.237  4056  4198 I GGUFNativeStderr: load: control token:  49179 '<row_5_col_3>' is not marked as EOG
+09-13 22:29:37.237  4056  4198 I GGUFNativeStderr: load: control token:  49178 '<row_5_col_2>' is not marked as EOG
+09-13 22:29:37.237  4056  4198 I GGUFNativeStderr: load: control token:  49174 '<row_4_col_4>' is not marked as EOG
+09-13 22:29:37.237  4056  4198 I GGUFNativeStderr: load: control token:  49172 '<row_4_col_2>' is not marked as EOG
+09-13 22:29:37.237  4056  4198 I GGUFNativeStderr: load: control token:  49169 '<row_3_col_5>' is not marked as EOG
+09-13 22:29:37.237  4056  4198 I GGUFNativeStderr: load: control token:  49163 '<row_2_col_5>' is not marked as EOG
+09-13 22:29:37.237  4056  4198 I GGUFNativeStderr: load: control token:  49159 '<row_2_col_1>' is not marked as EOG
+09-13 22:29:37.237  4056  4198 I GGUFNativeStderr: load: control token:  49158 '<row_1_col_6>' is not marked as EOG
+09-13 22:29:37.237  4056  4198 I GGUFNativeStderr: load: control token:  49157 '<row_1_col_5>' is not marked as EOG
+09-13 22:29:37.237  4056  4198 I GGUFNativeStderr: load: control token:  49154 '<row_1_col_2>' is not marked as EOG
+09-13 22:29:37.237  4056  4198 I GGUFNativeStderr: load: control token:  49153 '<row_1_col_1>' is not marked as EOG
+09-13 22:29:37.237  4056  4198 I GGUFNativeStderr: load: control token:  49152 '<global-img>' is not marked as EOG
+09-13 22:29:37.237  4056  4198 I GGUFNativeStderr: load: control token:  49256 '<|reserved_special_token_65|>' is not marked as EOG
+09-13 22:29:37.237  4056  4198 I GGUFNativeStderr: load: control token:  49242 '<|reserved_special_token_51|>' is not marked as EOG
+09-13 22:29:37.237  4056  4198 I GGUFNativeStderr: load: control token:  49164 '<row_2_col_6>' is not marked as EOG
+09-13 22:29:37.237  4056  4198 I GGUFNativeStderr: load: control token:  49222 '<|reserved_special_token_31|>' is not marked as EOG
+09-13 22:29:37.237  4056  4198 I GGUFNativeStderr: load: control token:  49167 '<row_3_col_3>' is not marked as EOG
+09-13 22:29:37.237  4056  4198 I GGUFNativeStderr: load: control token:  49224 '<|reserved_special_token_33|>' is not marked as EOG
+09-13 22:29:37.237  4056  4198 I GGUFNativeStderr: load: control token:  49181 '<row_5_col_5>' is not marked as EOG
+09-13 22:29:37.237  4056  4198 I GGUFNativeStderr: load: control token:  49223 '<|reserved_special_token_32|>' is not marked as EOG
+09-13 22:29:37.237  4056  4198 I GGUFNativeStderr: load: control token:  49225 '<|reserved_special_token_34|>' is not marked as EOG
+09-13 22:29:37.237  4056  4198 I GGUFNativeStderr: load: control token:  49267 '<|reserved_special_token_76|>' is not marked as EOG
+09-13 22:29:37.237  4056  4198 I GGUFNativeStderr: load: control token:  49277 '<|reserved_special_token_86|>' is not marked as EOG
+09-13 22:29:37.237  4056  4198 I GGUFNativeStderr: load: control token:  49238 '<|reserved_special_token_47|>' is not marked as EOG
+09-13 22:29:37.238  4056  4198 I GGUFNativeStderr: load: control token:  49217 '<|reserved_special_token_26|>' is not marked as EOG
+09-13 22:29:37.238  4056  4198 I GGUFNativeStderr: load: control token:  49175 '<row_4_col_5>' is not marked as EOG
+09-13 22:29:37.242  4056  4198 I GGUFNativeStderr: load: control token:  49165 '<row_3_col_1>' is not marked as EOG
+09-13 22:29:37.242  4056  4198 I GGUFNativeStderr: load: control token:  49235 '<|reserved_special_token_44|>' is not marked as EOG
+09-13 22:29:37.242  4056  4198 I GGUFNativeStderr: load: control token:  49176 '<row_4_col_6>' is not marked as EOG
+09-13 22:29:37.242  4056  4198 I GGUFNativeStderr: load: control token:  49161 '<row_2_col_3>' is not marked as EOG
+09-13 22:29:37.242  4056  4198 I GGUFNativeStderr: load: control token:  49210 '<|reserved_special_token_19|>' is not marked as EOG
+09-13 22:29:37.242  4056  4198 I GGUFNativeStderr: load: control token:  49275 '<|reserved_special_token_84|>' is not marked as EOG
+09-13 22:29:37.242  4056  4198 I GGUFNativeStderr: load: control token:  49160 '<row_2_col_2>' is not marked as EOG
+09-13 22:29:37.242  4056  4198 I GGUFNativeStderr: load: control token:  49276 '<|reserved_special_token_85|>' is not marked as EOG
+09-13 22:29:37.242  4056  4198 I GGUFNativeStderr: load: control token:  49187 '<row_6_col_5>' is not marked as EOG
+09-13 22:29:37.242  4056  4198 I GGUFNativeStderr: load: control token:  49218 '<|reserved_special_token_27|>' is not marked as EOG
+09-13 22:29:37.242  4056  4198 I GGUFNativeStderr: load: control token:  49183 '<row_6_col_1>' is not marked as EOG
+09-13 22:29:37.243  4056  4198 I GGUFNativeStderr: load: control token:  49155 '<row_1_col_3>' is not marked as EOG
+09-13 22:29:37.243  4056  4198 I GGUFNativeStderr: load: control token:  49195 '<|reserved_special_token_4|>' is not marked as EOG
+09-13 22:29:37.243  4056  4198 I GGUFNativeStderr: load: control token:  49189 '<fake_token_around_image>' is not marked as EOG
+09-13 22:29:37.243  4056  4198 I GGUFNativeStderr: load: control token:  49193 '<|reserved_special_token_2|>' is not marked as EOG
+09-13 22:29:37.244  4056  4198 I GGUFNativeStderr: load: control token:  49182 '<row_5_col_6>' is not marked as EOG
+09-13 22:29:37.244  4056  4198 I GGUFNativeStderr: load: control token:  49241 '<|reserved_special_token_50|>' is not marked as EOG
+09-13 22:29:37.244  4056  4198 I GGUFNativeStderr: load: control token:  49255 '<|reserved_special_token_64|>' is not marked as EOG
+09-13 22:29:37.245  4056  4198 I GGUFNativeStderr: load: control token:  49248 '<|reserved_special_token_57|>' is not marked as EOG
+09-13 22:29:37.245  4056  4198 I GGUFNativeStderr: load: control token:     15 '<jupyter_script>' is not marked as EOG
+09-13 22:29:37.245  4056  4198 I GGUFNativeStderr: load: control token:      7 '<gh_stars>' is not marked as EOG
+09-13 22:29:37.246  4056  4198 I GGUFNativeStderr: load: control token:  49250 '<|reserved_special_token_59|>' is not marked as EOG
+09-13 22:29:37.246  4056  4198 I GGUFNativeStderr: load: control token:  49199 '<|reserved_special_token_8|>' is not marked as EOG
+09-13 22:29:37.247  4056  4198 I GGUFNativeStderr: load: control token:  49206 '<|reserved_special_token_15|>' is not marked as EOG
+09-13 22:29:37.247  4056  4198 I GGUFNativeStderr: load: control token:  49263 '<|reserved_special_token_72|>' is not marked as EOG
+09-13 22:29:37.247  4056  4198 I GGUFNativeStderr: load: control token:      5 '<file_sep>' is not marked as EOG
+09-13 22:29:37.247  4056  4198 I GGUFNativeStderr: load: control token:  49190 '<image>' is not marked as EOG
+09-13 22:29:37.247  4056  4198 I GGUFNativeStderr: load: control token:  49221 '<|reserved_special_token_30|>' is not marked as EOG
+09-13 22:29:37.247  4056  4198 I GGUFNativeStderr: load: control token:  49204 '<|reserved_special_token_13|>' is not marked as EOG
+09-13 22:29:37.247  4056  4198 I GGUFNativeStderr: load: control token:  49177 '<row_5_col_1>' is not marked as EOG
+09-13 22:29:37.247  4056  4198 I GGUFNativeStderr: load: control token:  49171 '<row_4_col_1>' is not marked as EOG
+09-13 22:29:37.247  4056  4198 I GGUFNativeStderr: load: control token:  49262 '<|reserved_special_token_71|>' is not marked as EOG
+09-13 22:29:37.248  4056  4198 I GGUFNativeStderr: load: control token:  49214 '<|reserved_special_token_23|>' is not marked as EOG
+09-13 22:29:37.250  4056  4198 I GGUFNativeStderr: load: control token:  49239 '<|reserved_special_token_48|>' is not marked as EOG
+09-13 22:29:37.250  4056  4198 I GGUFNativeStderr: load: control token:  49173 '<row_4_col_3>' is not marked as EOG
+09-13 22:29:37.251  4056  4198 I GGUFNativeStderr: load: control token:  49237 '<|reserved_special_token_46|>' is not marked as EOG
+09-13 22:29:37.252  4056  4198 I GGUFNativeStderr: load: control token:  49188 '<row_6_col_6>' is not marked as EOG
+09-13 22:29:37.252  4056  4198 I GGUFNativeStderr: load: control token:  49259 '<|reserved_special_token_68|>' is not marked as EOG
+09-13 22:29:37.252  4056  4198 I GGUFNativeStderr: load: control token:  49198 '<|reserved_special_token_7|>' is not marked as EOG
+09-13 22:29:37.252  4056  4198 I GGUFNativeStderr: load: control token:  49260 '<|reserved_special_token_69|>' is not marked as EOG
+09-13 22:29:37.252  4056  4198 I GGUFNativeStderr: load: control token:  49232 '<|reserved_special_token_41|>' is not marked as EOG
+09-13 22:29:37.252  4056  4198 I GGUFNativeStderr: load: control token:     12 '<jupyter_text>' is not marked as EOG
+09-13 22:29:37.252  4056  4198 I GGUFNativeStderr: load: control token:     10 '<issue_closed>' is not marked as EOG
+09-13 22:29:37.252  4056  4198 I GGUFNativeStderr: load: control token:  49271 '<|reserved_special_token_80|>' is not marked as EOG
+09-13 22:29:37.252  4056  4198 I GGUFNativeStderr: load: control token:     11 '<jupyter_start>' is not marked as EOG
+09-13 22:29:37.252  4056  4198 I GGUFNativeStderr: load: control token:      1 '<|im_start|>' is not marked as EOG
+09-13 22:29:37.253  4056  4198 I GGUFNativeStderr: load: control token:  49168 '<row_3_col_4>' is not marked as EOG
+09-13 22:29:37.253  4056  4198 I GGUFNativeStderr: load: control token:      9 '<issue_comment>' is not marked as EOG
+09-13 22:29:37.253  4056  4198 I GGUFNativeStderr: load: control token:      8 '<issue_start>' is not marked as EOG
+09-13 22:29:37.253  4056  4198 I GGUFNativeStderr: load: control token:  49156 '<row_1_col_4>' is not marked as EOG
+09-13 22:29:37.253  4056  4198 I GGUFNativeStderr: load: control token:  49197 '<|reserved_special_token_6|>' is not marked as EOG
+09-13 22:29:37.253  4056  4198 I GGUFNativeStderr: load: control token:  49273 '<|reserved_special_token_82|>' is not marked as EOG
+09-13 22:29:37.255  4056  4198 I GGUFNativeStderr: load: control token:  49265 '<|reserved_special_token_74|>' is not marked as EOG
+09-13 22:29:37.255  4056  4198 I GGUFNativeStderr: load: control token:  49216 '<|reserved_special_token_25|>' is not marked as EOG
+09-13 22:29:37.256  4056  4198 I GGUFNativeStderr: load: control token:  49215 '<|reserved_special_token_24|>' is not marked as EOG
+09-13 22:29:37.256  4056  4198 I GGUFNativeStderr: load: control token:  49229 '<|reserved_special_token_38|>' is not marked as EOG
+09-13 22:29:37.256  4056  4198 I GGUFNativeStderr: load: control token:  49184 '<row_6_col_2>' is not marked as EOG
+09-13 22:29:37.256  4056  4198 I GGUFNativeStderr: load: control token:  49162 '<row_2_col_4>' is not marked as EOG
+09-13 22:29:37.256  4056  4198 I GGUFNativeStderr: load: control token:  49258 '<|reserved_special_token_67|>' is not marked as EOG
+09-13 22:29:37.256  4056  4198 I GGUFNativeStderr: load: control token:  49244 '<|reserved_special_token_53|>' is not marked as EOG
+09-13 22:29:37.256  4056  4198 I GGUFNativeStderr: load: control token:  49213 '<|reserved_special_token_22|>' is not marked as EOG
+09-13 22:29:37.256  4056  4198 I GGUFNativeStderr: load: control token:  49202 '<|reserved_special_token_11|>' is not marked as EOG
+09-13 22:29:37.256  4056  4198 I GGUFNativeStderr: load: control token:  49207 '<|reserved_special_token_16|>' is not marked as EOG
+09-13 22:29:37.256  4056  4198 I GGUFNativeStderr: load: control token:  49166 '<row_3_col_2>' is not marked as EOG
+09-13 22:29:37.257  4056  4198 I GGUFNativeStderr: load: control token:  49246 '<|reserved_special_token_55|>' is not marked as EOG
+09-13 22:29:37.257  4056  4198 I GGUFNativeStderr: load: control token:     13 '<jupyter_code>' is not marked as EOG
+09-13 22:29:37.257  4056  4198 I GGUFNativeStderr: load: control token:  49254 '<|reserved_special_token_63|>' is not marked as EOG
+09-13 22:29:37.257  4056  4198 I GGUFNativeStderr: load: control token:  49227 '<|reserved_special_token_36|>' is not marked as EOG
+09-13 22:29:37.257  4056  4198 I GGUFNativeStderr: load: control token:  49266 '<|reserved_special_token_75|>' is not marked as EOG
+09-13 22:29:37.257  4056  4198 I GGUFNativeStderr: load: control token:      3 '<repo_name>' is not marked as EOG
+09-13 22:29:37.257  4056  4198 I GGUFNativeStderr: load: control token:  49272 '<|reserved_special_token_81|>' is not marked as EOG
+09-13 22:29:37.257  4056  4198 I GGUFNativeStderr: load: control token:  49170 '<row_3_col_6>' is not marked as EOG
+09-13 22:29:37.258  4056  4198 I GGUFNativeStderr: load: control token:      6 '<filename>' is not marked as EOG
+09-13 22:29:37.258  4056  4198 I GGUFNativeStderr: load: control token:  49233 '<|reserved_special_token_42|>' is not marked as EOG
+09-13 22:29:37.258  4056  4198 I GGUFNativeStderr: load: control token:  49209 '<|reserved_special_token_18|>' is not marked as EOG
+09-13 22:29:37.258  4056  4198 I GGUFNativeStderr: load: control token:     14 '<jupyter_output>' is not marked as EOG
+09-13 22:29:37.258  4056  4198 I GGUFNativeStderr: load: control token:     16 '<empty_output>' is not marked as EOG
+09-13 22:29:37.264  4056  4198 I GGUFNativeStderr: load: printing all EOG tokens:
+09-13 22:29:37.264  4056  4198 I GGUFNativeStderr: load:   - 0 ('<|endoftext|>')
+09-13 22:29:37.264  4056  4198 I GGUFNativeStderr: load:   - 2 ('<|im_end|>')
+09-13 22:29:37.264  4056  4198 I GGUFNativeStderr: load:   - 4 ('<reponame>')
+09-13 22:29:37.264  4056  4198 I GGUFNativeStderr: load:   - 49279 ('<end_of_utterance>')
+09-13 22:29:37.264  4056  4198 I GGUFNativeStderr: load: special tokens cache size = 145
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: load: token to piece cache size = 0.3199 MB
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: arch             = llama
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: vocab_only       = 0
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: n_ctx_train      = 8192
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: n_embd           = 576
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: n_layer          = 30
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: n_head           = 9
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: n_head_kv        = 3
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: n_rot            = 64
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: n_swa            = 0
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: is_swa_any       = 0
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: n_embd_head_k    = 64
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: n_embd_head_v    = 64
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: n_gqa            = 3
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: n_embd_k_gqa     = 192
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: n_embd_v_gqa     = 192
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: f_norm_eps       = 0.0e+00
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: f_norm_rms_eps   = 1.0e-05
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: f_clamp_kqv      = 0.0e+00
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: f_max_alibi_bias = 0.0e+00
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: f_logit_scale    = 0.0e+00
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: f_attn_scale     = 0.0e+00
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: n_ff             = 1536
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: n_expert         = 0
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: n_expert_used    = 0
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: causal attn      = 1
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: pooling type     = 0
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: rope type        = 0
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: rope scaling     = linear
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: freq_base_train  = 100000.0
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: freq_scale_train = 1
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: n_ctx_orig_yarn  = 8192
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: rope_finetuned   = unknown
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: model type       = 256M
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: model params     = 162.97 M
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: general.name     = SmolVLM 256M Instruct
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: vocab type       = BPE
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: n_vocab          = 49280
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: n_merges         = 48900
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: BOS token        = 1 '<|im_start|>'
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: EOS token        = 49279 '<end_of_utterance>'
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: EOT token        = 49279 '<end_of_utterance>'
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: UNK token        = 0 '<|endoftext|>'
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: PAD token        = 2 '<|im_end|>'
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: LF token         = 198 'Ċ'
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: FIM REP token    = 4 '<reponame>'
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: EOG token        = 0 '<|endoftext|>'
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: EOG token        = 2 '<|im_end|>'
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: EOG token        = 4 '<reponame>'
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: EOG token        = 49279 '<end_of_utterance>'
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: print_info: max token length = 162
+09-13 22:29:37.292  4056  4198 I GGUFNativeStderr: load_tensors: loading model tensors, this can take a while... (mmap = true)
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer   0 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer   1 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer   2 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer   3 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer   4 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer   5 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer   6 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer   7 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer   8 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer   9 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer  10 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer  11 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer  12 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer  13 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer  14 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer  15 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer  16 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer  17 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer  18 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer  19 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer  20 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer  21 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer  22 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer  23 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer  24 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer  25 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer  26 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer  27 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer  28 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer  29 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: load_tensors: layer  30 assigned to device Vulkan0, is_swa = 0
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor token_embd.weight
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor output_norm.weight
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor output.weight
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_norm.weight
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_q.weight
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_k.weight
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_v.weight
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_output.weight
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_norm.weight
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_gate.weight
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_down.weight
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_up.weight
+09-13 22:29:37.331  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_norm.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_q.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_k.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_v.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_output.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_norm.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_gate.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_down.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_up.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_norm.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_q.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_k.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_v.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_output.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_norm.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_gate.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_down.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_up.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_norm.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_q.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_k.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_v.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_output.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_norm.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_gate.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_down.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_up.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_norm.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_q.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_k.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_v.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_output.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_norm.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_gate.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_down.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_up.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_norm.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_q.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_k.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_v.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_output.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_norm.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_gate.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_down.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_up.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_norm.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_q.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_k.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_v.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_output.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_norm.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_gate.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_down.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_up.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_norm.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_q.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_k.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_v.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_output.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_norm.weight
+09-13 22:29:37.332  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_gate.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_down.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_up.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_norm.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_q.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_k.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_v.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_output.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_norm.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_gate.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_down.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_up.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_norm.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_q.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_k.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_v.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_output.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_norm.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_gate.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_down.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_up.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_norm.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_q.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_k.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_v.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_output.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_norm.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_gate.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_down.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_up.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_norm.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_q.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_k.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_v.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_output.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_norm.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_gate.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_down.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_up.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_norm.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_q.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_k.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_v.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_output.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.12.ffn_norm.weight
+09-13 22:29:37.334  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.12.ffn_gate.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.12.ffn_down.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.12.ffn_up.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_norm.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_q.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_k.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_v.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_output.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.13.ffn_norm.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.13.ffn_gate.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.13.ffn_down.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.13.ffn_up.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_norm.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_q.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_k.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_v.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_output.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.14.ffn_norm.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.14.ffn_gate.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.14.ffn_down.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.14.ffn_up.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_norm.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_q.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_k.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_v.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_output.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.15.ffn_norm.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.15.ffn_gate.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.15.ffn_down.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.15.ffn_up.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_norm.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_q.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_k.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_v.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_output.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.16.ffn_norm.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.16.ffn_gate.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.16.ffn_down.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.16.ffn_up.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_norm.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_q.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_k.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_v.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_output.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.17.ffn_norm.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.17.ffn_gate.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.17.ffn_down.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.17.ffn_up.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_norm.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_q.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_k.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_v.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_output.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.18.ffn_norm.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.18.ffn_gate.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.18.ffn_down.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.18.ffn_up.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_norm.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_q.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_k.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_v.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_output.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.19.ffn_norm.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.19.ffn_gate.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.19.ffn_down.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.19.ffn_up.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_norm.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_q.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_k.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_v.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_output.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.20.ffn_norm.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.20.ffn_gate.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.20.ffn_down.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.20.ffn_up.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_norm.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_q.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_k.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_v.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_output.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.21.ffn_norm.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.21.ffn_gate.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.21.ffn_down.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.21.ffn_up.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_norm.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_q.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_k.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_v.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_output.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.22.ffn_norm.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.22.ffn_gate.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.22.ffn_down.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.22.ffn_up.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_norm.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_q.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_k.weight
+09-13 22:29:37.335  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_v.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_output.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.23.ffn_norm.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.23.ffn_gate.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.23.ffn_down.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.23.ffn_up.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_norm.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_q.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_k.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_v.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_output.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.24.ffn_norm.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.24.ffn_gate.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.24.ffn_down.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.24.ffn_up.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_norm.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_q.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_k.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_v.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_output.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.25.ffn_norm.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.25.ffn_gate.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.25.ffn_down.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.25.ffn_up.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_norm.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_q.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_k.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_v.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_output.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.26.ffn_norm.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.26.ffn_gate.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.26.ffn_down.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.26.ffn_up.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_norm.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_q.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_k.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_v.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_output.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.27.ffn_norm.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.27.ffn_gate.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.27.ffn_down.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.27.ffn_up.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_norm.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_q.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_k.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_v.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_output.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.28.ffn_norm.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.28.ffn_gate.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.28.ffn_down.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.28.ffn_up.weight
+09-13 22:29:37.336  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_norm.weight
+09-13 22:29:37.338  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_q.weight
+09-13 22:29:37.338  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_k.weight
+09-13 22:29:37.338  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_v.weight
+09-13 22:29:37.338  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_output.weight
+09-13 22:29:37.338  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.29.ffn_norm.weight
+09-13 22:29:37.338  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.29.ffn_gate.weight
+09-13 22:29:37.338  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.29.ffn_down.weight
+09-13 22:29:37.338  4056  4198 I GGUFNativeStderr: create_tensor: loading tensor blk.29.ffn_up.weight
+09-13 22:29:37.338  4056  4198 I GGUFNativeStderr: load_tensors: tensor 'token_embd.weight' (q8_0) (and 0 others) cannot be used with preferred buffer type Vulkan_Host, using CPU instead
+09-13 22:29:37.364  4056  4198 I GGUFNativeStderr: load_tensors: offloading 30 repeating layers to GPU
+09-13 22:29:37.364  4056  4198 I GGUFNativeStderr: load_tensors: offloading output layer to GPU
+09-13 22:29:37.364  4056  4198 I GGUFNativeStderr: load_tensors: offloaded 31/31 layers to GPU
+09-13 22:29:37.364  4056  4198 I GGUFNativeStderr: load_tensors:   CPU_Mapped model buffer size =    28.76 MiB
+09-13 22:29:37.364  4056  4198 I GGUFNativeStderr: load_tensors:      Vulkan0 model buffer size =   136.47 MiB
+09-13 22:29:37.364  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.613  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.616  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.628  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.634  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.645  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.659  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.669  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.699  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.712  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.726  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.737  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.757  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.773  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.788  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.794  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.812  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.815  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.840  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.849  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.858  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.867  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.875  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.879  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.889  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.902  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.919  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.936  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.943  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.960  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.965  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.973  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:37.983  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.006  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.018  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.035  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.045  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.056  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.064  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.069  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.081  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.086  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.092  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.099  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.106  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.115  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.123  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.134  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.154  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.161  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.172  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.184  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.195  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.210  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.219  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.227  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.236  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.246  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.258  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.269  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.311  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.321  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.342  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.363  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.401  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.412  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.456  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.464  4056  4198 I GGUFNativeStderr: .
+09-13 22:29:38.464  4056  4198 I GGUFNativeStderr: 
+09-13 22:29:38.469  4056  4198 I GGUFNativeStderr: llama_context: constructing llama_context
+09-13 22:29:38.469  4056  4198 I GGUFNativeStderr: llama_context: n_seq_max     = 1
+09-13 22:29:38.469  4056  4198 I GGUFNativeStderr: llama_context: n_ctx         = 1024
+09-13 22:29:38.469  4056  4198 I GGUFNativeStderr: llama_context: n_ctx_per_seq = 1024
+09-13 22:29:38.469  4056  4198 I GGUFNativeStderr: llama_context: n_batch       = 128
+09-13 22:29:38.469  4056  4198 I GGUFNativeStderr: llama_context: n_ubatch      = 64
+09-13 22:29:38.469  4056  4198 I GGUFNativeStderr: llama_context: causal_attn   = 1
+09-13 22:29:38.469  4056  4198 I GGUFNativeStderr: llama_context: flash_attn    = auto
+09-13 22:29:38.469  4056  4198 I GGUFNativeStderr: llama_context: kv_unified    = false
+09-13 22:29:38.469  4056  4198 I GGUFNativeStderr: llama_context: freq_base     = 100000.0
+09-13 22:29:38.469  4056  4198 I GGUFNativeStderr: llama_context: freq_scale    = 1
+09-13 22:29:38.469  4056  4198 I GGUFNativeStderr: llama_context: n_ctx_per_seq (1024) < n_ctx_train (8192) -- the full capacity of the model will not be utilized
+09-13 22:29:38.481  4056  4198 I GGUFNativeStderr: set_abort_callback: call
+09-13 22:29:38.482  4056  4198 I GGUFNativeStderr: llama_context: Vulkan_Host  output buffer size =     0.19 MiB
+09-13 22:29:38.482  4056  4198 I GGUFNativeStderr: create_memory: n_ctx = 1024 (padded)
+09-13 22:29:38.482  4056  4198 I GGUFNativeStderr: llama_kv_cache: layer   0: dev = Vulkan0
+09-13 22:29:38.482  4056  4198 I GGUFNativeStderr: llama_kv_cache: layer   1: dev = Vulkan0
+09-13 22:29:38.493  4056  4198 I GGUFNativeStderr: llama_kv_cache: layer   2: dev = Vulkan0
+09-13 22:29:38.493  4056  4198 I GGUFNativeStderr: llama_kv_cache: layer   3: dev = Vulkan0
+09-13 22:29:38.493  4056  4198 I GGUFNativeStderr: llama_kv_cache: layer   4: dev = Vulkan0
+09-13 22:29:38.493  4056  4198 I GGUFNativeStderr: llama_kv_cache: layer   5: dev = Vulkan0
+09-13 22:29:38.493  4056  4198 I GGUFNativeStderr: llama_kv_cache: layer   6: dev = Vulkan0
+09-13 22:29:38.493  4056  4198 I GGUFNativeStderr: llama_kv_cache: layer   7: dev = Vulkan0
+09-13 22:29:38.493  4056  4198 I GGUFNativeStderr: llama_kv_cache: layer   8: dev = Vulkan0
+09-13 22:29:38.493  4056  4198 I GGUFNativeStderr: llama_kv_cache: layer   9: dev = Vulkan0
+09-13 22:29:38.493  4056  4198 I GGUFNativeStderr: llama_kv_cache: layer  10: dev = Vulkan0
+09-13 22:29:38.493  4056  4198 I GGUFNativeStderr: llama_kv_cache: layer  11: dev = Vulkan0
+09-13 22:29:38.493  4056  4198 I GGUFNativeStderr: llama_kv_cache: layer  12: dev = Vulkan0
+09-13 22:29:38.493  4056  4198 I GGUFNativeStderr: llama_kv_cache: layer  13: dev = Vulkan0
+09-13 22:29:38.493  4056  4198 I GGUFNativeStderr: llama_kv_cache: layer  14: dev = Vulkan0
+09-13 22:29:38.493  4056  4198 I GGUFNativeStderr: llama_kv_cache: layer  15: dev = Vulkan0
+09-13 22:29:38.493  4056  4198 I GGUFNativeStderr: llama_kv_cache: layer  16: dev = Vulkan0
+09-13 22:29:38.493  4056  4198 I GGUFNativeStderr: llama_kv_cache: layer  17: dev = Vulkan0
+09-13 22:29:38.493  4056  4198 I GGUFNativeStderr: llama_kv_cache: layer  18: dev = Vulkan0
+09-13 22:29:38.493  4056  4198 I GGUFNativeStderr: llama_kv_cache: layer  19: dev = Vulkan0
+09-13 22:29:38.493  4056  4198 I GGUFNativeStderr: llama_kv_cache: layer  20: dev = Vulkan0
+09-13 22:29:38.493  4056  4198 I GGUFNativeStderr: llama_kv_cache: layer  21: dev = Vulkan0
+09-13 22:29:38.493  4056  4198 I GGUFNativeStderr: llama_kv_cache: layer  22: dev = Vulkan0
+09-13 22:29:38.493  4056  4198 I GGUFNativeStderr: llama_kv_cache: layer  23: dev = Vulkan0
+09-13 22:29:38.493  4056  4198 I GGUFNativeStderr: llama_kv_cache: layer  24: dev = Vulkan0
+09-13 22:29:38.493  4056  4198 I GGUFNativeStderr: llama_kv_cache: layer  25: dev = Vulkan0
+09-13 22:29:38.494  4056  4198 I GGUFNativeStderr: llama_kv_cache: layer  26: dev = Vulkan0
+09-13 22:29:38.494  4056  4198 I GGUFNativeStderr: llama_kv_cache: layer  27: dev = Vulkan0
+09-13 22:29:38.494  4056  4198 I GGUFNativeStderr: llama_kv_cache: layer  28: dev = Vulkan0
+09-13 22:29:38.494  4056  4198 I GGUFNativeStderr: llama_kv_cache: layer  29: dev = Vulkan0
+09-13 22:29:38.495  4056  4198 I GGUFNativeStderr: llama_kv_cache:    Vulkan0 KV buffer size =    22.50 MiB
+09-13 22:29:38.547  4056  4198 I GGUFNativeStderr: llama_kv_cache: size =   22.50 MiB (  1024 cells,  30 layers,  1/1 seqs), K (f16):   11.25 MiB, V (f16):   11.25 MiB
+09-13 22:29:38.547  4056  4198 I GGUFNativeStderr: llama_context: enumerating backends
+09-13 22:29:38.547  4056  4198 I GGUFNativeStderr: llama_context: backend_ptrs.size() = 2
+09-13 22:29:38.547  4056  4198 I GGUFNativeStderr: llama_context: max_nodes = 2184
+09-13 22:29:38.548  4056  4198 I GGUFNativeStderr: llama_context: reserving full memory module
+09-13 22:29:38.548  4056  4198 I GGUFNativeStderr: llama_context: worst-case: n_tokens = 64, n_seqs = 1, n_outputs = 1
+09-13 22:29:38.548  4056  4198 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =    1, n_seqs =  1, n_outputs =    1
+09-13 22:29:38.551  4056  4198 I GGUFNativeStderr: llama_context: Flash Attention was auto, set to enabled
+09-13 22:29:38.551  4056  4198 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =   64, n_seqs =  1, n_outputs =   64
+09-13 22:29:38.567  4056  4198 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =    1, n_seqs =  1, n_outputs =    1
+09-13 22:29:38.576  4056  4198 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =   64, n_seqs =  1, n_outputs =   64
+09-13 22:29:38.577  4056  4198 I GGUFNativeStderr: llama_context:    Vulkan0 compute buffer size =    12.70 MiB
+09-13 22:29:38.577  4056  4198 I GGUFNativeStderr: llama_context: Vulkan_Host compute buffer size =     0.39 MiB
+09-13 22:29:38.577  4056  4198 I GGUFNativeStderr: llama_context: graph nodes  = 937
+09-13 22:29:38.577  4056  4198 I GGUFNativeStderr: llama_context: graph splits = 2
+09-13 22:29:38.577  4056  4198 I GGUFChatNative: model loaded: n_ctx=1024 projector=none

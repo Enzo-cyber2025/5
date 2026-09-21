@@ -1,0 +1,92 @@
+{
+  "tokens": 2,
+  "prefill_and_generation_seconds": 33.58100000000559,
+  "prefill_and_generation_tokens_s": 0.059557487865151935,
+  "response": "Bus.",
+  "metrics": {
+    "tokens": 2,
+    "decodeNs": 701325661,
+    "prefillNs": 32879764213,
+    "completed": true,
+    "version": 3,
+    "timingScope": "prefill_synchronized_before_decode",
+    "firstTokenNs": 32882052702,
+    "promptTokens": 572,
+    "reusedPromptTokens": 0
+  },
+  "callbacks": 2,
+  "native_decode_tokens_s": 2.8517422236457994,
+  "send_to_first_ui_ns": 33296977206,
+  "strict": {
+    "status": "PASS",
+    "submitted_graphs": 25,
+    "submitted_math_nodes": 14825,
+    "tensor_cpu_fallback": "blocked_by_native_policy",
+    "host_orchestration": "CPU",
+    "physical_gpu_certified": false
+  },
+  "cache": {
+    "hits": 5,
+    "misses": 0,
+    "bytes": 1474560
+  },
+  "stages": {
+    "bitmap_ns": 31489539,
+    "tokenize_ns": 31290797,
+    "key_ns": 155065860,
+    "encode_call_ns": 0,
+    "encode_calls": 0,
+    "hits": 5,
+    "verified_hits": 0,
+    "verification": 0,
+    "cache_disabled": 0
+  },
+  "raw_history": [
+    [
+      "user",
+      "Arquivo anexado: 2 arquivo(s)\n\nAnexos vinculados a esta mensagem para leitura.\n\nName the main animal or vehicle in the attached images. Reply in English."
+    ],
+    [
+      "assistant",
+      " Bus."
+    ],
+    [
+      "user",
+      "Name the main animal or vehicle in the attached images. Reply in English."
+    ],
+    [
+      "assistant",
+      " Bus."
+    ]
+  ],
+  "image_records": [
+    [
+      "64",
+      "Vulkan"
+    ],
+    [
+      "64",
+      "Vulkan"
+    ],
+    [
+      "64",
+      "Vulkan"
+    ],
+    [
+      "64",
+      "Vulkan"
+    ],
+    [
+      "64",
+      "Vulkan"
+    ]
+  ],
+  "prepared_dimensions": [
+    [
+      "768",
+      "1024",
+      "ImageDecoder"
+    ]
+  ],
+  "diagnostic": false
+}

@@ -1,0 +1,43 @@
+build: .cache/llama-host-build
+--- first attempt, error lines ---
+--- first attempt, tail ---
+[ 97%] Building CXX object common/CMakeFiles/llama-common.dir/sampling.cpp.o
+[ 97%] Building CXX object common/CMakeFiles/llama-common.dir/speculative.cpp.o
+[ 97%] Building CXX object common/CMakeFiles/llama-common.dir/subproc.cpp.o
+[ 97%] Building CXX object common/CMakeFiles/llama-common.dir/trie.cpp.o
+[ 98%] Building CXX object common/CMakeFiles/llama-common.dir/unicode.cpp.o
+[ 98%] Building CXX object common/CMakeFiles/llama-common.dir/jinja/lexer.cpp.o
+[ 98%] Building CXX object common/CMakeFiles/llama-common.dir/jinja/parser.cpp.o
+[ 98%] Building CXX object common/CMakeFiles/llama-common.dir/jinja/runtime.cpp.o
+[ 98%] Building CXX object common/CMakeFiles/llama-common.dir/jinja/value.cpp.o
+[ 98%] Building CXX object common/CMakeFiles/llama-common.dir/jinja/string.cpp.o
+[100%] Building CXX object common/CMakeFiles/llama-common.dir/jinja/caps.cpp.o
+[100%] Linking CXX shared library ../bin/libllama-common.so
+[100%] Built target llama-common
+[100%] Building CXX object tools/llama-bench/CMakeFiles/llama-bench-impl.dir/llama-bench.cpp.o
+[100%] Linking CXX shared library ../../bin/libllama-bench-impl.so
+[100%] Built target llama-bench-impl
+[100%] Building CXX object tools/llama-bench/CMakeFiles/llama-bench.dir/main.cpp.o
+[100%] Linking CXX executable ../../bin/llama-bench
+[100%] Built target llama-bench
+gmake: *** No rule to make target 'llama-cli'.  Stop.
+--- retry, error lines ---
+--- retry, tail ---
+[  0%] Built target llama-common-base
+[  0%] Performing build step for 'vulkan-shaders-gen'
+[  2%] Built target ggml-base
+gmake[4]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+[  2%] Built target cpp-httplib
+[100%] Built target vulkan-shaders-gen
+[  2%] Performing install step for 'vulkan-shaders-gen'
+-- Up-to-date: /home/runner/work/5/5/.cache/llama-host-build/Release/./vulkan-shaders-gen
+[  2%] Completed 'vulkan-shaders-gen'
+[  5%] Built target vulkan-shaders-gen
+[  8%] Built target ggml-cpu
+[ 77%] Built target ggml-vulkan
+[ 77%] Built target ggml
+[ 87%] Built target llama
+[100%] Built target llama-common
+[100%] Built target llama-bench-impl
+[100%] Built target llama-bench
+gmake: *** No rule to make target 'llama-cli'.  Stop.

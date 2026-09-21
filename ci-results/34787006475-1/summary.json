@@ -1,0 +1,43 @@
+{
+  "status": "PASS",
+  "scope": "real-models-vulkan-generation-NOT-SAF",
+  "cases": {
+    "smolvlm": {
+      "status": "PASS",
+      "setup": "rooted test provisioning of actual GGUF bytes, not SAF",
+      "model_sha256": "2a31195d3769c0b0fd0a4906201666108834848db768af11de1d2cef7cd35e65",
+      "requested_layers": 99,
+      "projector_backend": "CPU",
+      "projector_sha256": "7e943f7c53f0382a6fc41b6ee0c2def63ba4fded9ab8ed039cc9e2ab905e0edd",
+      "pid": "4006",
+      "offload_records": [
+        "offloaded 31/31 layers to GPU"
+      ],
+      "native_generations": 2,
+      "completions": [
+        "GGUF_NATIVE_COMPLETE tokens=34 reason=eog projector=1",
+        "GGUF_NATIVE_COMPLETE tokens=6 reason=eog projector=1"
+      ],
+      "basic_response_quality": "FAIL: Resposta à pergunta 2 + 2 não corresponde à resposta simples esperada: 4"
+    },
+    "smollm2": {
+      "status": "PASS",
+      "setup": "rooted test provisioning of actual GGUF bytes, not SAF",
+      "model_sha256": "2e8040ceae7815abe0dcb3540b9995eaa1fa0d2ca9e797d0a635ae4433c68c2d",
+      "requested_layers": 99,
+      "projector_backend": null,
+      "pid": "5368",
+      "offload_records": [
+        "offloaded 31/31 layers to GPU"
+      ],
+      "native_generations": 2,
+      "completions": [
+        "GGUF_NATIVE_COMPLETE tokens=128 reason=length projector=0",
+        "GGUF_NATIVE_COMPLETE tokens=61 reason=eog projector=0"
+      ],
+      "basic_response_quality": "FAIL: Resposta não contém uma saudação pertinente ao primeiro pedido"
+    }
+  },
+  "apk_sha256": "409985de54388cbcb1429a8db4cd26139cc47a5764864c6cd4b408c75f07099f",
+  "environment": "Android 15 x86_64, Mesa software Vulkan; not physical GPU"
+}

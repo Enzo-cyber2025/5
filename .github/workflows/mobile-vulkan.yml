@@ -1,0 +1,52 @@
+name: Shipped mobile APK Vulkan tests
+on:
+  push:
+    branches: [arena/01a09b42-5]
+    paths:
+      - .github/workflows/mobile-vulkan.yml
+      - scripts/test_mobile_vulkan.py
+permissions:
+  contents: write
+  actions: read
+jobs:
+  vulkan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Real model files with mandatory SHA-256 checks
+        run: |
+          set -euo pipefail
+          bash ci/mobile-models.sh
+          curl --fail --location --retry 2 --max-time 600 'https://huggingface.co/bartowski/SmolLM2-135M-Instruct-GGUF/resolve/main/SmolLM2-135M-Instruct-Q4_K_M.gguf' -o .cache/mobile-models/SmolLM2-135M-Instruct-Q4_K_M.gguf
+          echo '2e8040ceae7815abe0dcb3540b9995eaa1fa0d2ca9e797d0a635ae4433c68c2d  .cache/mobile-models/SmolLM2-135M-Instruct-Q4_K_M.gguf' | sha256sum -c -
+      - name: KVM and real software Vulkan driver
+        run: |
+          sudo chmod a+rw /dev/kvm
+          bash ci/prepare_vulkan.sh
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_5
+          ram-size: 6144M
+          heap-size: 1024M
+          disk-size: 8192M
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -gpu host -feature Vulkan -noaudio -no-boot-anim -camera-back none
+          script: python3 scripts/test_mobile_vulkan.py
+      - name: Report
+        if: always()
+        run: python3 ci/report_android.py evidence
+      - name: Publish evidence
+        if: always()
+        run: bash ci/publish_evidence.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mobile-vulkan-evidence
+          path: evidence/

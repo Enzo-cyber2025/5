@@ -1,0 +1,823 @@
+--------- beginning of main
+09-14 13:02:44.516 19169 19169 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 0 <<<<<<
+09-14 13:02:44.520 19169 19169 I AndroidRuntime: Using default boot image
+09-14 13:02:44.520 19169 19169 I AndroidRuntime: Leaving lock profiling enabled
+09-14 13:02:44.522 19169 19169 I app_process: Core platform API reporting enabled, enforcing=false
+09-14 13:02:44.523 19169 19169 I app_process: Using CollectorTypeCMC GC.
+09-14 13:02:44.597 19169 19169 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-14 13:02:44.606 19169 19169 D nativeloader: Load libicu_jni.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-14 13:02:44.607 19169 19169 D app_process: u_setTimeZoneFilesDirectory("/apex/com.android.tzdata/etc/tz/versioned/8/icu") succeeded. 
+09-14 13:02:44.607 19169 19169 D app_process: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt75l.dat
+09-14 13:02:44.608 19169 19169 D nativeloader: Load libjavacore.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-14 13:02:44.608 19169 19169 D nativeloader: Load libopenjdk.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-14 13:02:44.609 19169 19169 W app_process: Unexpected CPU variant for x86: x86_64.
+09-14 13:02:44.609 19169 19169 W app_process: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, goldmont-without-sha-xsaves, tremont, kabylake, default
+09-14 13:02:44.611 19169 19169 W app_process: ClassLoaderContext shared library size mismatch. Expected=2, found=0 (PCL[]{PCL[/system/framework/android.test.base.jar*724373495]#PCL[/system/framework/android.test.mock.jar*1452759902]} | PCL[])
+09-14 13:02:44.612 19169 19169 W app_process: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[]{PCL[/system/framework/android.test.runner.jar*2496447986]#PCL[/system/framework/android.test.base.jar*724373495]} | PCL[/system/framework/android.test.runner.jar*2496447986])
+09-14 13:02:44.629 19169 19169 D nativeloader: Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok
+09-14 13:02:44.629 19169 19169 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-14 13:02:44.631 19169 19169 D UiAutomationConnection: Created on user UserHandle{0}
+09-14 13:02:44.631 19169 19169 I UiAutomation: Initialized for user 0 on display 0
+09-14 13:02:44.631 19169 19169 W UiAutomation: Created with deprecatead constructor, assumes DEFAULT_DISPLAY
+--------- beginning of system
+09-14 13:02:44.632   562  1038 D AccessibilityManagerService: changeCurrentUserForTestAutomationIfNeededLocked(0): ignoring because device doesn't support visible background users
+09-14 13:02:44.633   562  1038 I UiAutomationManager: Registering UiTestAutomationService (id=com.android.server.accessibility/UiAutomation, flags=0x0) when called by user 0
+09-14 13:02:44.633   562  1038 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-14 13:02:44.634  1448  2442 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-14 13:02:44.635  1448  1615 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 13:02:44.635  1448  1615 I AiAiEcho: EchoTargets: 
+09-14 13:02:44.635  1448  1615 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 13:02:44.635  1448  1615 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:02:44.635  1448  1615 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:02:44.635  1448  1615 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 13:02:44.635  1448  1615 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-14 13:02:44.635   927   927 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-14 13:02:44.636   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:44.636   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:44.636   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:44.636   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:44.636   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:44.636   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:44.636   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:44.636   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:44.637   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:44.637   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:44.637   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:44.637   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:44.637   562   562 D BatterySaverPolicy: accessibility changed to true, updating policy.
+09-14 13:02:44.653 19169 19181 V UiAutomation: Init UiAutomation@c090e03[id=332, displayId=0, flags=0]
+09-14 13:02:44.656   562  1024 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-14 13:02:44.657   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:44.657   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:44.657   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:44.658   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:44.658   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:44.658   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:44.658   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:44.659   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:44.665  1448  2442 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-14 13:02:44.666  1448  1615 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 13:02:44.667  1448  1615 I AiAiEcho: EchoTargets: 
+09-14 13:02:44.667  1448  1615 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 13:02:44.667  1448  1615 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:02:44.670  1448  1615 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:02:44.670  1448  1615 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 13:02:44.671  1448  1615 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-14 13:02:44.671   927   927 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-14 13:02:44.714  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:44.714  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:44.794   378  1401 D android.hardware.audio@7.1-impl.ranchu: threadLoop: entering standby, frames: 19912576
+09-14 13:02:45.215  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:45.216  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:45.438   562  2876 E TaskPersister: File error accessing recents directory (directory doesn't exist?).
+09-14 13:02:45.662 19169 19169 I AccessibilityNodeInfoDumper: Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@1b5ad; boundsInParent: Rect(0, 0 - 672, 0); boundsInScreen: Rect(24, 142 - 696, 142); boundsInWindow: Rect(24, 142 - 696, 142); packageName: com.ggufchat.app; className: android.widget.LinearLayout; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: null; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; granularScrollingSupported: false; importantForAccessibility: false; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+09-14 13:02:45.663 19169 19169 W AccessibilityNodeInfoDumper: Fetch time: 3ms
+09-14 13:02:45.664   562  1024 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-14 13:02:45.664   562  1024 D AccessibilityManagerService: restoreCurrentUserForTestAutomationIfNeededLocked(): ignoring because device doesn't support visible background users
+09-14 13:02:45.665   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:45.665   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:45.665  1448  2442 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-14 13:02:45.665 19169 19169 D AndroidRuntime: Shutting down VM
+09-14 13:02:45.666  1448  1615 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 13:02:45.666   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:45.666   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:45.669  1448  1615 I AiAiEcho: EchoTargets: 
+09-14 13:02:45.669  1448  1615 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 13:02:45.669  1448  1615 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:02:45.669  1448  1615 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:02:45.669  1448  1615 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 13:02:45.669  1448  1615 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-14 13:02:45.670   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:45.670   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:45.671   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:45.671   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:45.673   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:45.673   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:45.673   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:45.673   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:45.674   562   562 D BatterySaverPolicy: accessibility changed to false, updating policy.
+09-14 13:02:45.675   927   927 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-14 13:02:45.717  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:45.717  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:46.218  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:46.219  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:46.534   562  2213 V AutofillSession: Primary service component name: ComponentInfo{com.google.android.gms/com.google.android.gms.autofill.service.AutofillService}, secondary service component name: ComponentInfo{com.android.credentialmanager/com.android.credentialmanager.autofill.CredentialAutofillService}
+09-14 13:02:46.534   562  2213 V SecondaryProviderHandler: Creating a secondary provider handler with component name, ComponentInfo{com.android.credentialmanager/com.android.credentialmanager.autofill.CredentialAutofillService}
+09-14 13:02:46.535   562  2213 D RequestId: nextId(): requestId = 640
+09-14 13:02:46.535   562  2213 W FillRequestEventLogger: Couldn't find packageName: com.google.android.inputmethod.latin
+09-14 13:02:46.536   562   562 D AutofillInlineSuggestionsRequestSession: onCreateInlineSuggestionsRequestLocked called: 1073741824@1082862033
+09-14 13:02:46.537  1327  1327 I GoogleInputMethodService: GoogleInputMethodService.onFinishInput():3157 
+09-14 13:02:46.538  1327  1327 I GoogleInputMethodService: GoogleInputMethodService.updateDeviceLockedStatus():2248 repeatCheckTimes = 0, locked = false
+09-14 13:02:46.538 18667 18667 I ImeTracker: com.ggufchat.app:b628c1db: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser true
+09-14 13:02:46.538  1327  1327 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1986 onStartInput(EditorInfo{EditorInfo{packageName=com.ggufchat.app, inputType=24001, inputTypeString=Normal, enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=40000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=0, initialSelEnd=0, initialCapsMode=2000, label=null, fieldId=-1, fieldName=null, extras=Bundle[mParcelledData.dataSize=168], hintText=non-empty, hintLocales=[]}}, false)
+09-14 13:02:46.539  1327  1327 I GoogleInputMethodService: GoogleInputMethodService.updateDeviceLockedStatus():2248 repeatCheckTimes = 1, locked = false
+09-14 13:02:46.539  1327  1327 I AndroidIME: InputBundleManager.loadActiveInputBundleId():450 loadActiveInputBundleId: en-US, ime_english_united_states
+09-14 13:02:46.539 18667 18667 D InputMethodManager: showSoftInput() view=android.widget.EditText{abc7124 VFED..CL. .F.P..ID 128,0-517,67 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+09-14 13:02:46.539   562  2213 W PackageConfigPersister: App-specific configuration not found for packageName: com.ggufchat.app and userId: 0
+09-14 13:02:46.540   562  1687 D AutofillInlineSuggestionsRequestSession: onInlineSuggestionsSessionInvalidated() called.
+09-14 13:02:46.546 18667 18667 I AssistStructure: Flattened final assist data: 1960 bytes, containing 1 windows, 13 views
+09-14 13:02:46.550   562  1692 D AutofillInlineSuggestionsRequestSession: onInlineSuggestionsRequest() received: InlineSuggestionsRequest { maxSuggestionCount = 9, inlinePresentationSpecs = [InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }], hostPackageName = com.google.android.inputmethod.latin, supportedLocales = [en_US], extras = Bundle[EMPTY_PARCEL], hostInputToken = android.os.BinderProxy@7cbaee3, hostDisplayId = 0, inlineTooltipPresentationSpec = null }
+09-14 13:02:46.551   562  1024 D AutofillSession: createPendingIntent for request 640
+09-14 13:02:46.551 18667 18679 D EGL_emulation: app_time_stats: avg=1768.50ms min=6.53ms max=3530.48ms count=2
+09-14 13:02:46.552   562  1024 D ContentCapturePerUserService: Notified activity assist data for activity: Token{49da6a3 ActivityRecord{c6d05d2 u0 com.ggufchat.app/.ChatActivity t36}} without a session Id
+09-14 13:02:46.554  1327  1327 I GoogleInputMethodService: GoogleInputMethodService.onStartInputView():2098 onStartInputView(EditorInfo{EditorInfo{packageName=com.ggufchat.app, inputType=24001, inputTypeString=Normal, enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=40000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=0, initialSelEnd=0, initialCapsMode=2000, label=null, fieldId=-1, fieldName=null, extras=Bundle[{androidx.core.view.inputmethod.EditorInfoCompat.STYLUS_HANDWRITING_ENABLED=true}], hintText=non-empty, hintLocales=[]}}, false)
+09-14 13:02:46.573   366   366 I netd    : tetherGetStats() -> {[]} <4.12ms>
+09-14 13:02:46.586  1327  1327 I GoogleInputMethodService: GoogleInputMethodService.updateDeviceLockedStatus():2248 repeatCheckTimes = 1, locked = false
+09-14 13:02:46.587  1327  1327 I KeyboardHeightUtil: KeyboardHeightUtil.getOemKeyboardHeightRatio():206 systemKeyboardHeightRatio:1.000000.
+09-14 13:02:46.587  1327  1327 I AndroidIME: AbstractIme.onActivate():89 LatinIme.onActivate() : EditorInfo = EditorInfo{packageName=com.ggufchat.app, inputType=24001, inputTypeString=Normal, enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=40000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=0, initialSelEnd=0, initialCapsMode=2000, label=null, fieldId=-1, fieldName=null, extras=Bundle[{androidx.core.view.inputmethod.EditorInfoCompat.STYLUS_HANDWRITING_ENABLED=true}], hintText=non-empty, hintLocales=[]}, IncognitoMode = false, DeviceLocked = false
+09-14 13:02:46.588  1327  1327 I Delight5Facilitator: Delight5Facilitator.initializeForIme():747 initializeForIme() : Locale = [en_US], layout = qwerty
+09-14 13:02:46.588  1327  1327 I VoiceInputHandler: VoiceInputHandler.onActivateIme():99 registering TalkbackStateListener
+09-14 13:02:46.589  1327  1327 I VoiceInputManagerWrapper: VoiceInputManagerWrapper.cancelShutdown():102 cancelShutdown()
+09-14 13:02:46.589  1327  1327 I VoiceInputManagerWrapper: VoiceInputManagerWrapper.syncLanguagePacks():114 syncLanguagePacks()
+09-14 13:02:46.590  1327  1327 I LatinIme: LatinIme.updateEnableInlineSuggestionsOnDecoderSideFlags():1174 inline flag updated to:false
+09-14 13:02:46.591  1327  1327 I InputBundle: InputBundle.consumeEvent():884 Skip consuming an event as keyboard status is 0
+09-14 13:02:46.591  1327  1327 I KeyboardWrapper: KeyboardWrapper.activateKeyboard():575 activateKeyboard(): type=prime, status=0, imeDef=ktt{stringId=ime_english_united_states, language=en-US, languageTag=en-US, processedConditions={enable_number_row=false, device=phone}, className=com.google.android.apps.inputmethod.libs.latin5.LatinIme, label=0, keyEventInterpreter=null, inlineComposing=true, autoCapital=true, announceAutoSelectedCandidate=true, statusIcon=0, primeKeyboardType=SOFT, indicatorIcon=0, indicatorLabel=US, displayAppCompletions=true, extraValues=ktl{}, processors=kvl@5bbf7e0, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=true, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, secondaryIme=null, keyboardGroupDef=kut@43c75fb, phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=true, supportsAccessPoints=true}
+09-14 13:02:46.591  1327  1327 I KeyboardManager: KeyboardManager.requestKeyboard():234 Creating keyboard prime, imeId=ime_english_united_states, cacheKey=theme_border_stylesheet_noshadow_gsans_pillkey_silkpopup_hover_light_phone_navredesign
+09-14 13:02:46.591  1327  1327 I KeyboardWrapper: KeyboardWrapper.onKeyboardReady():239 onKeyboardReady(): type=prime(prime), kb=com.google.android.apps.inputmethod.latin.keyboard.LatinPrimeKeyboard@7f6e656
+09-14 13:02:46.592  1327  1327 I KeyboardWrapper: KeyboardWrapper.doActivateKeyboard():606 doActivateKeyboard(): prime
+09-14 13:02:46.594  1327  1327 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-14 13:02:46.595  1327  1327 W Keyboard: Keyboard.getKeyboardViewHelper():574 null helper is returned: keyboardDef=kuo{processedConditions={enable_more_candidates_view_for_multilingual=false, enable_secondary_symbols=false, variant=qwerty, language=en-US, device=phone, expressions=normal, keyboard_mode=normal, show_secondary_digits=true, enable_preemptive_decode=true, rtl_layout=false}, globalConditions={global_theme_key=theme_border_stylesheet_noshadow_gsans_pillkey_silkpopup_hover_light_phone_navredesign, global_locale=en_US, global_density_dpi=240, global_orientation=1}, className=.latin.keyboard.LatinPrimeKeyboard, resourceIds=[#0x7f170663, #0x7f1708e0], initialStates=0, keyboardViewDefs=[kvb{direction=null, id=#0x7f0b014d, isScalable=true, layoutId=#0x7f0e039d, type=BODY, touchable=true, defaultShow=true}, kvb{direction=null, id=#0x7f0b014d, isScalable=false, layoutId=#0x7f0e01aa, type=FLOATING_CANDIDATES, touchable=false, defaultShow=false}, kvb{direction=LOCALE, id=#0x7f0b014d, isScalable=false, layoutId=#0x7f0e0591, type=HEADER, touchable=true, defaultShow=true}], persistentStates=0, persistentStatesPrefKey=null, popupBubbleLayoutId=#0x7f0e068d, recentKeyLayoutId=0, recentKeyPopupLayoutId=0, recentKeyType=null, rememberRecentKey=NONE, sessionStates=17592186044419}, type=WIDGET, helpersCreated=[kib@594f5e5, kib@776a8ba, kib@ecab36b, null], context.getResources().getConfiguration(): {1.0 310mcc260mnc [en_US] ldltr sw480dp w480dp h853dp 240dpi lrg long port finger qwerty/v/v -nav/h winConfig={ mBounds=Rect(0, 0 - 720, 1280) mAppBounds=Rect(0, 0 - 720, 1280) mMaxBounds=Rect(0, 0 - 720, 1280) mDisplayRotation=ROTATION_0 mWindowingMode=fullscreen mActivityType=undefined mAlwaysOnTop=undefined mRotation=ROTATION_0} as.3 s.95 fontWeightAdjustment=0}
+09-14 13:02:46.595  1327  1327 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-14 13:02:46.597  1327  1327 I GoogleInputMethodService: GoogleInputMethodService.startInputIfInputViewStarted():3728 startInputIfInputViewStarted(): default prime
+09-14 13:02:46.597  1327  1327 I KeyboardModeManager: KeyboardModeManager.setInputViewKeyboardViewHolderProvider():625 setInputView() : supportsOneHandedMode=true supportsSplitMode=true
+09-14 13:02:46.597  1327  1327 I NormalModeController: NormalModeController.getKeyboardBodyViewHolderPaddingBottom():104 currentPrimeKeyboardType:SOFT systemPaddingBottom:-1
+09-14 13:02:46.597  1327  1327 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-14 13:02:46.597  1327  1327 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-14 13:02:46.597  1327  1327 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-14 13:02:46.597  1327  1327 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-14 13:02:46.597  1327  1327 I NormalModeController: NormalModeController.getKeyboardBodyViewHolderPaddingBottom():104 currentPrimeKeyboardType:SOFT systemPaddingBottom:-1
+09-14 13:02:46.597  1327  1327 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-14 13:02:46.597  1327  1327 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-14 13:02:46.597  1327  1327 I KeyboardModeManager: KeyboardModeManager.setInputViewKeyboardViewHolderProvider():613 setInputView() : supportsOneHandedMode=true, supportSplitMode=true
+09-14 13:02:46.601  1327  5190 I SpeechFactory: SpeechRecognitionFactory.maybeScheduleAutoPackDownloadForFallback():200 maybeScheduleAutoPackDownloadForFallback()
+09-14 13:02:46.601  1327  5190 I FallbackOnDeviceRecognitionProvider: FallbackOnDeviceRecognitionProvider.maybeScheduleAutoPackDownload():197 maybeScheduleAutoPackDownload() for language tag en-US
+09-14 13:02:46.601  1327  1327 I AccessoryInputModeManager: AccessoryInputModeManager.onModeStarted():308 Accessory input mode started: null
+09-14 13:02:46.601  1327  1327 W SupplementaryKeyboardsWrapper: SupplementaryKeyboardsWrapper.deactivateKeyboard():159 keyboard accessory_candidates_consumer is not activated before!
+09-14 13:02:46.604  1327  1327 I CrowdsourceExtension: CrowdsourceExtension.checkIfDefaultBrowserIsAllowed():110 Failed to get default browser. The default browser may be deactived.
+09-14 13:02:46.604   562   562 W FillRequestEventLogger: Shouldn't be logging AutofillFillRequestReported again for same event
+09-14 13:02:46.604   562   562 W FillResponseEventLogger: Shouldn't be logging AutofillFillRequestReported again for same event
+09-14 13:02:46.604  1327  1327 I VoiceImeExtension: VoiceImeExtension.shouldStartVoiceInputAutomaticallyInCurrentInputBox():415 No private IME option set to start voice input.
+09-14 13:02:46.610   562   562 D AutofillSession: clearPendingIntentLocked
+09-14 13:02:46.611   562   562 D AutofillInlineSuggestionsRequestSession: onInlineSuggestionsResponseLocked called for:1073741824@1082862033
+09-14 13:02:46.611   562   562 D AutofillInlineSuggestionsRequestSession: maybeNotifyFillUiEventLoked(): hasSuggestionToShow=false, mPreviousHasNonPinSuggestionShow=false
+09-14 13:02:46.611   562   562 D AutofillInlineSuggestionsRequestSession: Send inline response: 0
+09-14 13:02:46.611   562   586 D AutofillUI: destroySaveUiUiThread(): already destroyed
+09-14 13:02:46.614  1527  1527 D BoundBrokerSvc: onBind: Intent { act=com.google.android.mdd.service.START dat=chimera-action:/... cmp=com.google.android.gms/.chimera.GmsBoundBrokerService }
+09-14 13:02:46.614  1527  1527 D BoundBrokerSvc: Loading bound service for intent: Intent { act=com.google.android.mdd.service.START dat=chimera-action:/... cmp=com.google.android.gms/.chimera.GmsBoundBrokerService }
+09-14 13:02:46.616  3979  3979 V InlineSuggestionRenderService: handleDestroySuggestionViews called for 0:1082862033
+09-14 13:02:46.616  1527  1527 D BoundBrokerSvc: onBind: Intent { act=com.google.firebase.dynamiclinks.service.START pkg=com.google.android.gms }
+09-14 13:02:46.616  1527  1527 D BoundBrokerSvc: Loading bound service for intent: Intent { act=com.google.firebase.dynamiclinks.service.START pkg=com.google.android.gms }
+09-14 13:02:46.631  1327  1327 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-14 13:02:46.631  1327  1327 I WindowMetricsNotification: WindowMetricsNotification.notifyWithWindow():113 
+09-14 13:02:46.632  1327  1327 I WindowMetricsNotification: WindowMetricsNotification.notify():106 WindowMetricsNotification{bounds=Rect(0, 36 - 720, 1280), insets=Rect(0, 0 - 0, 72), densityDpi=240, smallestScreenWidthDp=480, displayWidth=720, displayHeight=1280, xdpi=440.0, ydpi=440.0}; DisplayMetrics{density=1.5, width=720, height=1280, scaledDensity=1.5, xdpi=440.0, ydpi=440.0}
+09-14 13:02:46.717  1327  1327 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:02:46.719  1327  1327 I GoogleInputMethodService: GoogleInputMethodService$1.onKeyboardViewShown():494 onKeyboardViewShown: keyboardType=prime, keyboardViewType=HEADER keyboardView=com.google.android.libraries.inputmethod.widgets.SoftKeyboardView{bf48ddb V.E...... ........ 0,0-720,66}
+09-14 13:02:46.719  1327  1327 I GoogleInputMethodService: GoogleInputMethodService$1.onKeyboardViewShown():494 onKeyboardViewShown: keyboardType=prime, keyboardViewType=BODY keyboardView=com.google.android.libraries.inputmethod.widgets.SoftKeyboardView{a8171fa V.E...... ........ 0,0-720,360}
+09-14 13:02:46.720  1327  1327 I NewLanguagePromptExtension: NewLanguagePromptExtension$1.onKeyboardViewShown():115 Not show new language banner: no new languages.
+09-14 13:02:46.720  1327  1327 I WindowMetricsNotification: WindowMetricsNotification.notifyWithWindow():113 
+09-14 13:02:46.720  1327  1327 I WindowMetricsNotification: WindowMetricsNotification.notify():106 WindowMetricsNotification{bounds=Rect(0, 36 - 720, 1280), insets=Rect(0, 0 - 0, 72), densityDpi=240, smallestScreenWidthDp=480, displayWidth=720, displayHeight=1280, xdpi=440.0, ydpi=440.0}; DisplayMetrics{density=1.5, width=720, height=1280, scaledDensity=1.5, xdpi=440.0, ydpi=440.0}
+09-14 13:02:46.720  1327  1327 I WindowMetricsNotification: WindowMetricsNotification.notifyWithWindow():113 
+09-14 13:02:46.720  1327  1327 I WindowMetricsNotification: WindowMetricsNotification.notify():106 WindowMetricsNotification{bounds=Rect(0, 36 - 720, 1280), insets=Rect(0, 0 - 0, 72), densityDpi=240, smallestScreenWidthDp=480, displayWidth=720, displayHeight=1280, xdpi=440.0, ydpi=440.0}; DisplayMetrics{density=1.5, width=720, height=1280, scaledDensity=1.5, xdpi=440.0, ydpi=440.0}
+09-14 13:02:46.720  1327  1327 I NormalModeController: NormalModeController.getKeyboardBodyViewHolderPaddingBottom():104 currentPrimeKeyboardType:SOFT systemPaddingBottom:-1
+09-14 13:02:46.721  1327  1327 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1100<1102, inputStateId=865, lastInputStateId=864
+09-14 13:02:46.721  1327  1800 I Delight5Decoder: Delight5DecoderWrapper.setKeyboardLayout():511 setKeyboardLayout()
+09-14 13:02:46.732  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:46.736  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:46.736 18667 18667 D InsetsController: show(ime(), fromIme=true)
+09-14 13:02:46.743   927   978 D WindowManagerShell: onKeepClearAreasChanged: restricted={}, unrestricted={Rect(0, 782 - 720, 1280)}
+09-14 13:02:46.747  1327  1327 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:02:46.748   927   927 E OverviewProxyService: Failed to get overview proxy for system bar attr change.
+09-14 13:02:46.768 18667 19197 W InteractionJankMonitor: Initializing without READ_DEVICE_CONFIG permission. enabled=true, interval=1, missedFrameThreshold=3, frameTimeThreshold=64, package=com.ggufchat.app
+09-14 13:02:46.775 18667 18667 I ImeTracker: com.ggufchat.app:b628c1db: onShown
+09-14 13:02:46.792  1527  1527 D BoundBrokerSvc: onBind: Intent { act=com.google.android.gms.common.BIND_SHARED_PREFS pkg=com.google.android.gms }
+09-14 13:02:46.792  1527  1527 D BoundBrokerSvc: Loading bound service for intent: Intent { act=com.google.android.gms.common.BIND_SHARED_PREFS pkg=com.google.android.gms }
+09-14 13:02:46.838  1327  1327 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-14 13:02:46.883  1327  1327 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:02:46.883  1327  1327 W AndroidSpellCheckerService: AndroidSpellCheckerService.initialize():73 initialize...
+09-14 13:02:46.884  1327  1327 I ShortcutsDataManager: ShortcutsDataManager.onContentChanged():72 onContentChanged()
+09-14 13:02:46.884  1327  1327 I ContactsDataManager: ContactsDataManager.onContentChanged():159 onContentChanged()
+09-14 13:02:46.884  1327  1327 W AndroidSpellCheckerService: AndroidSpellCheckerService.initialize():83 initialize...done
+09-14 13:02:46.888  1327  1339 I AndroidSpellCheckerService: AndroidSpellCheckerService.createSession():139 com.google.android.keyboard.client.delight5.LanguageIdentifier@b9fe110 is created
+09-14 13:02:46.919  1327  1327 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1103<1104, inputStateId=867, lastInputStateId=868
+09-14 13:02:46.921  1327  1327 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:02:46.994  1327  1327 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:02:46.997  1327  1327 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:02:47.059  1327  1327 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:02:47.062  1327  1327 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:02:47.081  1327  1327 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:02:47.083  1327  1800 I native  : I0000 00:00:1789390967.083879    1800 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-14 13:02:47.132  1327  1327 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:02:47.134  1327  1327 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:02:47.136  1327  1327 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1105<1112, inputStateId=871, lastInputStateId=873
+09-14 13:02:47.137  1327  1327 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1111<1112, inputStateId=872, lastInputStateId=873
+09-14 13:02:47.175  1327  1327 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:02:47.175  1327  1327 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1113<1114, inputStateId=874, lastInputStateId=875
+09-14 13:02:47.181  1327  1327 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:02:47.223  1327  1327 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:02:47.234  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:47.236  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:47.268  1327  1327 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-14 13:02:47.275  1327  1327 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:02:47.276  1327  1327 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1117<1118, inputStateId=878, lastInputStateId=879
+09-14 13:02:47.334  1327  1327 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:02:47.377  1327  1800 I native  : I0000 00:00:1789390967.376964    1800 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-14 13:02:47.393  1327  1327 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1119<1121, inputStateId=880, lastInputStateId=880
+09-14 13:02:47.470  1327  1327 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:02:47.474  1327  1327 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:02:47.477  1327  1800 I native  : I0000 00:00:1789390967.477740    1800 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-14 13:02:47.497  1327  1327 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:02:47.522  1327  1327 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1121<1125, inputStateId=881, lastInputStateId=883
+09-14 13:02:47.522  1327  1327 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1123<1125, inputStateId=882, lastInputStateId=883
+09-14 13:02:47.528  1327  1327 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:02:47.567 18667 18679 D EGL_emulation: app_time_stats: avg=60.81ms min=12.36ms max=217.46ms count=15
+09-14 13:02:47.575  1327  1327 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1125<1127, inputStateId=884, lastInputStateId=885
+09-14 13:02:47.593  1327  1327 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:02:47.597  1327  1327 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:02:47.601  1327  1327 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:02:47.661  1327  1327 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:02:47.663  1327  1800 I native  : I0000 00:00:1789390967.663196    1800 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-14 13:02:47.679  1327  1327 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:02:47.680  1327  1327 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1127<1132, inputStateId=886, lastInputStateId=890
+09-14 13:02:47.717  1327  1327 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1129<1133, inputStateId=888, lastInputStateId=890
+09-14 13:02:47.718  1327  1327 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1131<1133, inputStateId=889, lastInputStateId=890
+09-14 13:02:47.736  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:47.736  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:47.747  1327  1327 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:02:47.749  1327  1327 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1133<1134, inputStateId=892, lastInputStateId=893
+09-14 13:02:47.774  1327  1327 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:02:47.776  1327  1327 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1135<1136, inputStateId=894, lastInputStateId=895
+09-14 13:02:47.783  1327  1327 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 13:02:47.906  1327  1327 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-14 13:02:47.917  1327  1879 D EGL_emulation: app_time_stats: avg=240.37ms min=48.76ms max=542.51ms count=5
+09-14 13:02:48.015 19202 19202 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 0 <<<<<<
+09-14 13:02:48.019   366   366 I netd    : tetherGetStats() -> {[]} <0.31ms>
+09-14 13:02:48.020 19202 19202 I AndroidRuntime: Using default boot image
+09-14 13:02:48.020 19202 19202 I AndroidRuntime: Leaving lock profiling enabled
+09-14 13:02:48.023 19202 19202 I app_process: Core platform API reporting enabled, enforcing=false
+09-14 13:02:48.023 19202 19202 I app_process: Using CollectorTypeCMC GC.
+09-14 13:02:48.116 19202 19202 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-14 13:02:48.125 19202 19202 D nativeloader: Load libicu_jni.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-14 13:02:48.125 19202 19202 D app_process: u_setTimeZoneFilesDirectory("/apex/com.android.tzdata/etc/tz/versioned/8/icu") succeeded. 
+09-14 13:02:48.125 19202 19202 D app_process: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt75l.dat
+09-14 13:02:48.126 19202 19202 D nativeloader: Load libjavacore.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-14 13:02:48.127 19202 19202 D nativeloader: Load libopenjdk.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-14 13:02:48.128 19202 19202 W app_process: Unexpected CPU variant for x86: x86_64.
+09-14 13:02:48.128 19202 19202 W app_process: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, goldmont-without-sha-xsaves, tremont, kabylake, default
+09-14 13:02:48.129 19202 19202 W app_process: ClassLoaderContext shared library size mismatch. Expected=2, found=0 (PCL[]{PCL[/system/framework/android.test.base.jar*724373495]#PCL[/system/framework/android.test.mock.jar*1452759902]} | PCL[])
+09-14 13:02:48.130 19202 19202 W app_process: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[]{PCL[/system/framework/android.test.runner.jar*2496447986]#PCL[/system/framework/android.test.base.jar*724373495]} | PCL[/system/framework/android.test.runner.jar*2496447986])
+09-14 13:02:48.147 19202 19202 D nativeloader: Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok
+09-14 13:02:48.147 19202 19202 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-14 13:02:48.149 19202 19202 D UiAutomationConnection: Created on user UserHandle{0}
+09-14 13:02:48.149 19202 19202 I UiAutomation: Initialized for user 0 on display 0
+09-14 13:02:48.149 19202 19202 W UiAutomation: Created with deprecatead constructor, assumes DEFAULT_DISPLAY
+09-14 13:02:48.150   562  1687 D AccessibilityManagerService: changeCurrentUserForTestAutomationIfNeededLocked(0): ignoring because device doesn't support visible background users
+09-14 13:02:48.150   562  1687 I UiAutomationManager: Registering UiTestAutomationService (id=com.android.server.accessibility/UiAutomation, flags=0x0) when called by user 0
+09-14 13:02:48.151   562  1687 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-14 13:02:48.151  1448  2442 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-14 13:02:48.152 19202 19214 V UiAutomation: Init UiAutomation@d3a6a27[id=333, displayId=0, flags=0]
+09-14 13:02:48.152  1448  1615 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 13:02:48.152  1448  1615 I AiAiEcho: EchoTargets: 
+09-14 13:02:48.152  1448  1615 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 13:02:48.152  1448  1615 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:02:48.152  1448  1615 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:02:48.152   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:48.152  1448  1615 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 13:02:48.152   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:48.152  1448  1615 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-14 13:02:48.152   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:48.153   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:48.153   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:48.153   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:48.153   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:48.155   927   927 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-14 13:02:48.157   562   650 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-14 13:02:48.157  1448  2442 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-14 13:02:48.157  1448  1615 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 13:02:48.157  1448  1615 I AiAiEcho: EchoTargets: 
+09-14 13:02:48.157  1448  1615 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 13:02:48.157  1448  1615 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:02:48.157  1448  1615 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:02:48.157  1448  1615 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 13:02:48.158  1448  1615 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-14 13:02:48.158   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:48.158   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:48.158   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:48.158   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:48.158   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:48.159   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:48.159   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:48.159   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:48.159   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:48.159   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:48.159   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:48.159   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:48.159   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:48.159   562   562 D BatterySaverPolicy: accessibility changed to true, updating policy.
+09-14 13:02:48.160  1327  1327 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-14 13:02:48.163   927   927 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-14 13:02:48.255  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:48.255  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:48.756  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:48.757  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:48.812 18667 18679 D EGL_emulation: app_time_stats: avg=146.62ms min=6.51ms max=516.28ms count=8
+09-14 13:02:49.171 19202 19202 I AccessibilityNodeInfoDumper: Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@1b5bd; boundsInParent: Rect(0, 0 - 672, 0); boundsInScreen: Rect(24, 142 - 696, 142); boundsInWindow: Rect(24, 142 - 696, 142); packageName: com.ggufchat.app; className: android.widget.LinearLayout; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: null; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; granularScrollingSupported: false; importantForAccessibility: false; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+09-14 13:02:49.172 19202 19202 W AccessibilityNodeInfoDumper: Fetch time: 3ms
+09-14 13:02:49.174   562  1692 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-14 13:02:49.174   562  1692 D AccessibilityManagerService: restoreCurrentUserForTestAutomationIfNeededLocked(): ignoring because device doesn't support visible background users
+09-14 13:02:49.174   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:49.174   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:49.175   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:49.175  1448  2442 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-14 13:02:49.175   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:49.175 19202 19202 D AndroidRuntime: Shutting down VM
+09-14 13:02:49.175   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:49.176   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:49.176   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:49.176  1448  1615 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 13:02:49.176  1448  1615 I AiAiEcho: EchoTargets: 
+09-14 13:02:49.176  1448  1615 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 13:02:49.176  1448  1615 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:02:49.176  1448  1615 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:02:49.176  1448  1615 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 13:02:49.176   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:49.179  1448  1615 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-14 13:02:49.179   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:49.179   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:49.180   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:49.180   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:49.180   562   562 D BatterySaverPolicy: accessibility changed to false, updating policy.
+09-14 13:02:49.181   927   927 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-14 13:02:49.258  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:49.259  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:49.662  1647  1647 I wpa_supplicant: wlan0: CTRL-EVENT-BEACON-LOSS 
+09-14 13:02:49.760  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:49.760  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:50.059   432  1438 D audioserver: logFgsApiBegin: FGS Logger Transaction failed, -129
+09-14 13:02:50.061   562   650 W AS.PlaybackActivityMon: No piid assigned for invalid/internal port id 15
+09-14 13:02:50.063 18667 18679 D EGL_emulation: app_time_stats: avg=417.05ms min=251.72ms max=499.86ms count=3
+09-14 13:02:50.067   432   547 D AudioFlinger: mixer(0x7ca742ca38e0) throttle end: throttle time(25)
+09-14 13:02:50.091 18667 18667 I ImeTracker: com.ggufchat.app:3bb032c3: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+09-14 13:02:50.093   562  1024 I ActivityManager: Background started FGS: Allowed [callingPackage: com.ggufchat.app; callingUid: 10209; uidState: TOP ; uidBFSL: [BFSL]; intent: Intent { act=com.ggufchat.app.action.GENERATE cmp=com.ggufchat.app/.GenerationService (has extras) }; code:PROC_STATE_TOP; tempAllowListReason:<null>; targetSdkVersion:34; callerTargetSdkVersion:34; startForegroundCount:0; bindFromPackage:null: isBindService:false]
+09-14 13:02:50.111  1327  1327 I GoogleInputMethodService: GoogleInputMethodService.onFinishInputView():2393 
+09-14 13:02:50.120   562   650 W ForegroundServiceTypeLoggerModule: Foreground service start for UID: 10209 does not have any types
+09-14 13:02:50.129  1327  1327 W TooltipLifecycleManager: TooltipLifecycleManager.dismissTooltips():152 Tooltip with id spell_check_add_to_dictionary not found in tooltipManager.
+09-14 13:02:50.129  1327  1327 I InputBundle: InputBundle.consumeEvent():884 Skip consuming an event as keyboard status is 0
+09-14 13:02:50.130  1327  1327 I VoiceInputHandler: VoiceInputHandler.onDeactivateIme():115 unregistering TalkbackStateListener
+09-14 13:02:50.130  1327  1327 I VoiceInputManagerWrapper: VoiceInputManagerWrapper.shutdown():124 shutdown()
+09-14 13:02:50.131  1327  1327 I AndroidIME: AbstractIme.onDeactivate():202 LatinIme.onDeactivate()
+09-14 13:02:50.131  1327  1327 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1986 onStartInput(EditorInfo{EditorInfo{packageName=com.ggufchat.app, inputType=24001, inputTypeString=Normal, enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=40000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=0, initialSelEnd=0, initialCapsMode=3000, label=null, fieldId=-1, fieldName=null, extras=Bundle[mParcelledData.dataSize=168], hintText=non-empty, hintLocales=[]}}, true)
+09-14 13:02:50.132 18667 18667 D InsetsController: hide(ime(), fromIme=true)
+09-14 13:02:50.132  1327  1327 I GoogleInputMethodService: GoogleInputMethodService.updateDeviceLockedStatus():2248 repeatCheckTimes = 1, locked = false
+09-14 13:02:50.133  1327  1327 W SessionManager: SessionManager.beginSession():53 Try to begin an already begun session [INPUT_SESSION], end it first
+09-14 13:02:50.134  1327  1327 I AndroidIME: InputBundleManager.loadActiveInputBundleId():450 loadActiveInputBundleId: en-US, ime_english_united_states
+09-14 13:02:50.134   562  2213 W PackageConfigPersister: App-specific configuration not found for packageName: com.ggufchat.app and userId: 0
+09-14 13:02:50.135   366   366 I netd    : tetherGetStats() -> {[]} <2.38ms>
+09-14 13:02:50.160  1327  1598 W ModuleManager: ModuleManager.loadModule():473 Module mgc is not available
+09-14 13:02:50.161  1327  1598 I NebulaeTrainingCacheMetricsProcessor: NebulaeTrainingCacheMetricsProcessor.processEndSession():510 No input action collection in this session, skip logging.
+09-14 13:02:50.209   927   927 E OverviewProxyService: Failed to get overview proxy for system bar attr change.
+09-14 13:02:50.210   927   978 W Looper  : Slow dispatch took 74ms wmshell.main h=android.os.Handler c=com.android.wm.shell.common.DisplayInsetsController$PerDisplay$DisplayWindowInsetsControllerImpl$$ExternalSyntheticLambda3@3b3250f m=0
+09-14 13:02:50.210   927   978 W Looper  : Slow delivery took 75ms wmshell.main h=android.os.Handler c=com.android.wm.shell.pip.PinnedStackListenerForwarder$PinnedTaskListenerImpl$$ExternalSyntheticLambda0@12b899c m=0
+09-14 13:02:50.211   927   978 D WindowManagerShell: onKeepClearAreasChanged: restricted={}, unrestricted={}
+09-14 13:02:50.211  1327  1327 W NotificationCenter: NotificationCenter$ListenerData.notifyOnExecutor():672 Heavy notify work detected on UI thread: |kga->jjc| takes 77ms
+09-14 13:02:50.212  1327  1327 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1172, header height:66 and isFullscreenMode:false, so the max keyboard body height is:945
+09-14 13:02:50.215  1327  1327 I WindowMetricsNotification: WindowMetricsNotification.notifyWithWindow():113 
+09-14 13:02:50.215  1327  1327 I WindowMetricsNotification: WindowMetricsNotification.notify():106 WindowMetricsNotification{bounds=Rect(0, 36 - 720, 1280), insets=Rect(0, 0 - 0, 72), densityDpi=240, smallestScreenWidthDp=480, displayWidth=720, displayHeight=1280, xdpi=440.0, ydpi=440.0}; DisplayMetrics{density=1.5, width=720, height=1280, scaledDensity=1.5, xdpi=440.0, ydpi=440.0}
+09-14 13:02:50.215  1327  1327 I ShortcutsDataManager: AbstractContentDataManager.startImportContentTask():240 startImportContentTask()
+09-14 13:02:50.218  1327  1811 I ShortcutsDataManager: AbstractContentDataManager$ImportContentTask.doInBackground():255 doInBackground()
+09-14 13:02:50.218  1327  1811 I PersonalDictionaryDataHandler: PersonalDictionaryDataHandler.beginProcess():114 LanguageTags = [en-US]
+09-14 13:02:50.220   562  1687 D ActivityManager: sync unfroze 1641 android.process.acore for 7
+09-14 13:02:50.225   432   547 D audioserver: logFgsApiEnd: FGS Logger Transaction failed, -129
+09-14 13:02:50.240  1327  1879 D EGL_emulation: app_time_stats: avg=773.94ms min=147.40ms max=2008.84ms count=3
+09-14 13:02:50.260   562  2213 D ActivityManager: Stop FGS timeout: ServiceRecord{5f8787 u0 com.ggufchat.app/.GenerationService c:com.ggufchat.app}
+09-14 13:02:50.261  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:50.261   562  2213 W ForegroundServiceTypeLoggerModule: FGS stop call for: 10209 has no types!
+09-14 13:02:50.277  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:50.282  1327  1811 I ShortcutsDataManager: AbstractContentDataManager.importRecords():345 importRecords() : Success : Count = 0
+09-14 13:02:50.283  1327  1811 I ShortcutsDataManager: AbstractContentDataManager.importContentData():295 importContentData() : Ending import process
+09-14 13:02:50.284  1327  1800 I Delight5Decoder: Delight5DecoderWrapper.unloadLanguageModel():943 unloadLanguageModel() : 4, version [n/a]
+09-14 13:02:50.326 18667 18667 I ImeTracker: com.ggufchat.app:361cfc2a: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_ON_ANIMATION_STATE_CHANGED fromUser false
+09-14 13:02:50.330 18667 18667 I ImeTracker: com.ggufchat.app:3bb032c3: onHidden
+09-14 13:02:50.330   562   690 I ImeTracker: com.ggufchat.app:361cfc2a: onCancelled at PHASE_SERVER_SHOULD_HIDE
+09-14 13:02:50.334  1327  1811 I PersonalLanguageModelUpdater: PersonalLanguageModelUpdater$UpdateOperation.performInternal():165 run() : Added 0 words and 0 shortcuts
+09-14 13:02:50.334  1327  1811 I DynamicLanguageModelOperation: DynamicLanguageModelOperation.perform():43 perform() : 4 : dxm : Completed
+09-14 13:02:50.335  1327  1800 I Delight5Decoder: Delight5DecoderWrapper.loadLanguageModel():730 loadLanguageModel() : 4, version [n/a]
+09-14 13:02:50.335  1327  1800 I Delight5Decoder: Delight5DecoderWrapper.loadLanguageModel():771 Loaded dynamic LM 4.en
+09-14 13:02:50.341   562   562 W NotificationHistory: Attempted to add notif for locked/gone/disabled user 0
+09-14 13:02:50.344   927  1065 D EGL_emulation: app_time_stats: avg=3942.51ms min=2.66ms max=7882.36ms count=2
+09-14 13:02:50.360  1448  1885 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:02:50.363  1448  1885 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:02:50.364   562  2213 D CoreBackPreview: Window{ebc6d7b u0 Toast}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@7b2e3d6, mPriority=0, mIsAnimationCallback=false}
+09-14 13:02:50.395   927   978 W Looper  : Drained
+09-14 13:02:50.429  1327  1327 I ShortcutsDataManager: AbstractContentDataManager$ImportContentTask.onPostExecute():266 onPostExecute() : Result = [2,0]
+09-14 13:02:50.431  1327  1327 I ShortcutsDataManager: ShortcutsDataManager.onImportFinished():82 onImportFinished() : Result = 2 : Count = 0
+09-14 13:02:50.460   927  1236 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:02:50.464   927  1236 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:02:50.467   562   562 W NotificationHistory: Attempted to add notif for locked/gone/disabled user 0
+09-14 13:02:50.471  1448  1885 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:02:50.471  1448  1885 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:02:50.473  1448  1885 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:02:50.473  1448  1885 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:02:50.510   927  1236 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:02:50.511   927  1236 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:02:50.548   927  1236 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:02:50.552   927  1236 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:02:50.677  1448  1885 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 13:02:50.677  1448  1885 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 13:02:50.777  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:50.778  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:50.952   927  1236 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:02:50.958   927  1236 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:02:50.994   927   927 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 13:02:51.109 18667 18679 D EGL_emulation: app_time_stats: avg=42.06ms min=8.11ms max=204.10ms count=20
+09-14 13:02:51.279  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:51.280  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+--------- beginning of kernel
+09-14 13:02:51.457     0     0 I logd    : logdr: UID=0 GID=0 PID=19240 n tail=0 logMask=99 pid=18667 start=0ns deadline=0ns
+09-14 13:02:51.413 19245 19245 W BpBinder: Linking to death on android.gui.ISurfaceComposer but there are no threads (yet?) listening to incoming transactions. See ProcessState::startThreadPool and ProcessState::setThreadPoolMaxThreadCount. Generally you should setup the binder threadpool before other initialization steps.
+09-14 13:02:51.414 19245 19245 W ProcessState: Extra binder thread started, but 0 threads requested. Do not use *startThreadPool when zero threads are requested.
+09-14 13:02:51.433   158   158 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+09-14 13:02:51.433 19245 19246 I Gralloc4: mapper 4.x is not supported
+09-14 13:02:51.557     0     0 I servicemanager: Caller(pid=19245,uid=0,sid=u:r:su:s0) Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest. No alternative instances declared in VINTF.
+09-14 13:02:51.440   927  1065 D EGL_emulation: app_time_stats: avg=93.79ms min=3.69ms max=205.66ms count=11
+09-14 13:02:51.692 19249 19249 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 0 <<<<<<
+09-14 13:02:51.696 19249 19249 I AndroidRuntime: Using default boot image
+09-14 13:02:51.697 19249 19249 I AndroidRuntime: Leaving lock profiling enabled
+09-14 13:02:51.699 19249 19249 I app_process: Core platform API reporting enabled, enforcing=false
+09-14 13:02:51.699 19249 19249 I app_process: Using CollectorTypeCMC GC.
+09-14 13:02:51.781 19249 19249 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-14 13:02:51.782  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:51.783  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:51.791 19249 19249 D nativeloader: Load libicu_jni.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-14 13:02:51.791 19249 19249 D app_process: u_setTimeZoneFilesDirectory("/apex/com.android.tzdata/etc/tz/versioned/8/icu") succeeded. 
+09-14 13:02:51.791 19249 19249 D app_process: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt75l.dat
+09-14 13:02:51.792 19249 19249 D nativeloader: Load libjavacore.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-14 13:02:51.793 19249 19249 D nativeloader: Load libopenjdk.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-14 13:02:51.795 19249 19249 W app_process: Unexpected CPU variant for x86: x86_64.
+09-14 13:02:51.795 19249 19249 W app_process: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, goldmont-without-sha-xsaves, tremont, kabylake, default
+09-14 13:02:51.797 19249 19249 W app_process: ClassLoaderContext shared library size mismatch. Expected=2, found=0 (PCL[]{PCL[/system/framework/android.test.base.jar*724373495]#PCL[/system/framework/android.test.mock.jar*1452759902]} | PCL[])
+09-14 13:02:51.798 19249 19249 W app_process: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[]{PCL[/system/framework/android.test.runner.jar*2496447986]#PCL[/system/framework/android.test.base.jar*724373495]} | PCL[/system/framework/android.test.runner.jar*2496447986])
+09-14 13:02:51.817 19249 19249 D nativeloader: Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok
+09-14 13:02:51.818 19249 19249 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-14 13:02:51.821 19249 19249 D UiAutomationConnection: Created on user UserHandle{0}
+09-14 13:02:51.821 19249 19249 I UiAutomation: Initialized for user 0 on display 0
+09-14 13:02:51.821 19249 19249 W UiAutomation: Created with deprecatead constructor, assumes DEFAULT_DISPLAY
+09-14 13:02:51.822   562  2212 D AccessibilityManagerService: changeCurrentUserForTestAutomationIfNeededLocked(0): ignoring because device doesn't support visible background users
+09-14 13:02:51.822   562  2212 I UiAutomationManager: Registering UiTestAutomationService (id=com.android.server.accessibility/UiAutomation, flags=0x0) when called by user 0
+09-14 13:02:51.824   562  2212 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-14 13:02:51.825  1448  1855 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-14 13:02:51.825   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:51.826   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:51.826   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:51.826   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:51.827 19249 19261 V UiAutomation: Init UiAutomation@a1f6f42[id=334, displayId=0, flags=0]
+09-14 13:02:51.827  1448  1615 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 13:02:51.829  1448  1615 I AiAiEcho: EchoTargets: 
+09-14 13:02:51.829  1448  1615 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 13:02:51.829  1448  1615 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:02:51.829   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:51.829   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:51.830  1448  1615 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:02:51.830   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:51.830   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:51.831   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:51.831   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:51.831   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:51.832   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:51.832   562   562 D BatterySaverPolicy: accessibility changed to true, updating policy.
+09-14 13:02:51.832  1448  1615 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 13:02:51.834  1448  1615 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-14 13:02:51.835   562  1038 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-14 13:02:51.836  1448  1855 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-14 13:02:51.836   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:51.839   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:51.839   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:51.839   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:51.839   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:51.839   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:51.839   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:51.840   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:51.840  1448  1615 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 13:02:51.840  1448  1615 I AiAiEcho: EchoTargets: 
+09-14 13:02:51.840  1448  1615 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 13:02:51.840  1448  1615 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:02:51.840  1448  1615 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:02:51.840  1448  1615 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 13:02:51.841  1448  1615 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-14 13:02:51.841   927   927 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-14 13:02:51.846   927   927 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-14 13:02:52.062   562   671 D ActivityManager: freezing 3404 com.google.android.apps.docs
+09-14 13:02:52.063   562   671 D ActivityManager: freezing 2587 com.android.externalstorage
+09-14 13:02:52.063   562   671 D ActivityManager: freezing 17896 com.google.android.apps.messaging
+09-14 13:02:52.068   562   847 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+09-14 13:02:52.069   562   847 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+09-14 13:02:52.069   562   847 D InetDiagMessage: Destroyed live tcp sockets for uids={10158} in 4ms
+09-14 13:02:52.070   562   847 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+09-14 13:02:52.072   562   847 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+09-14 13:02:52.073   562   847 D InetDiagMessage: Destroyed live tcp sockets for uids={10104} in 4ms
+09-14 13:02:52.285  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:52.285  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:52.378   562   671 D ActivityManager: freezing 2819 com.google.android.documentsui
+09-14 13:02:52.381   562   847 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+09-14 13:02:52.381   562   847 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+09-14 13:02:52.381   562   847 D InetDiagMessage: Destroyed live tcp sockets for uids={10093} in 2ms
+09-14 13:02:52.440   927  1065 D EGL_emulation: app_time_stats: avg=199.98ms min=157.21ms max=240.88ms count=5
+09-14 13:02:52.597 18667 18679 D EGL_emulation: app_time_stats: avg=371.89ms min=48.40ms max=498.55ms count=4
+09-14 13:02:52.687   927   927 W WindowOnBackDispatcher: sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda11@1ab5ff7
+09-14 13:02:52.687   562   650 D CoreBackPreview: Window{ebc6d7b u0 Toast}: Setting back callback null
+09-14 13:02:52.689   562  1687 W InputManager-JNI: Input channel object 'ebc6d7b Toast (client)' was disposed without first being removed with the input manager!
+09-14 13:02:52.691   562  1687 W NotificationService: Toast already killed. pkg=com.ggufchat.app token=android.os.BinderProxy@33fab6b
+09-14 13:02:52.786  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:52.787  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:52.842 19249 19249 W AccessibilityNodeInfoDumper: Fetch time: 3ms
+09-14 13:02:52.843   562  1687 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-14 13:02:52.843   562  1687 D AccessibilityManagerService: restoreCurrentUserForTestAutomationIfNeededLocked(): ignoring because device doesn't support visible background users
+09-14 13:02:52.843   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:52.843   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:52.843   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:52.843   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:52.844   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:52.844 19249 19249 D AndroidRuntime: Shutting down VM
+09-14 13:02:52.844   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:52.844   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:52.844   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:52.844   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:52.845   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:52.848  1448  1855 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-14 13:02:52.848   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:52.848   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:52.848   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:52.848   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:52.849  1448  1615 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 13:02:52.849   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:52.850   562   562 D BatterySaverPolicy: accessibility changed to false, updating policy.
+09-14 13:02:52.849  1448  1615 I AiAiEcho: EchoTargets: 
+09-14 13:02:52.849  1448  1615 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 13:02:52.849  1448  1615 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:02:52.850  1448  1615 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:02:52.850  1448  1615 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 13:02:52.851  1448  1615 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-14 13:02:52.851   927   927 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-14 13:02:53.130   378  1401 D android.hardware.audio@7.1-impl.ranchu: threadLoop: entering standby, frames: 20061632
+09-14 13:02:53.289  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:53.289  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:53.441   927  1065 D EGL_emulation: app_time_stats: avg=200.07ms min=199.22ms max=200.97ms count=5
+09-14 13:02:53.743   432   432 D audioserver: logFgsApiBegin: FGS Logger Transaction failed, -129
+09-14 13:02:53.743   562  1038 W AS.PlaybackActivityMon: No piid assigned for invalid/internal port id 15
+09-14 13:02:53.745   432   547 D AudioFlinger: mixer(0x7ca742ca38e0) throttle end: throttle time(33)
+09-14 13:02:53.754 18667 18679 D EGL_emulation: app_time_stats: avg=385.69ms min=160.01ms max=500.41ms count=3
+09-14 13:02:53.766   562   650 D CoreBackPreview: Window{4fa485e u0 com.ggufchat.app/com.ggufchat.app.ChatActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@b1e8c6a, mPriority=0, mIsAnimationCallback=false}
+09-14 13:02:53.791  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:53.795  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:53.912   432   547 D audioserver: logFgsApiEnd: FGS Logger Transaction failed, -129
+09-14 13:02:53.992 19274 19274 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 0 <<<<<<
+09-14 13:02:53.999 19274 19274 I AndroidRuntime: Using default boot image
+09-14 13:02:53.999 19274 19274 I AndroidRuntime: Leaving lock profiling enabled
+09-14 13:02:54.004 19274 19274 I app_process: Core platform API reporting enabled, enforcing=false
+09-14 13:02:54.005 19274 19274 I app_process: Using CollectorTypeCMC GC.
+09-14 13:02:54.137 19274 19274 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-14 13:02:54.149 19274 19274 D nativeloader: Load libicu_jni.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-14 13:02:54.149 19274 19274 D app_process: u_setTimeZoneFilesDirectory("/apex/com.android.tzdata/etc/tz/versioned/8/icu") succeeded. 
+09-14 13:02:54.149 19274 19274 D app_process: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt75l.dat
+09-14 13:02:54.152 19274 19274 D nativeloader: Load libjavacore.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-14 13:02:54.153 19274 19274 D nativeloader: Load libopenjdk.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-14 13:02:54.155 19274 19274 W app_process: Unexpected CPU variant for x86: x86_64.
+09-14 13:02:54.155 19274 19274 W app_process: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, goldmont-without-sha-xsaves, tremont, kabylake, default
+09-14 13:02:54.158 19274 19274 W app_process: ClassLoaderContext shared library size mismatch. Expected=2, found=0 (PCL[]{PCL[/system/framework/android.test.base.jar*724373495]#PCL[/system/framework/android.test.mock.jar*1452759902]} | PCL[])
+09-14 13:02:54.159 19274 19274 W app_process: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[]{PCL[/system/framework/android.test.runner.jar*2496447986]#PCL[/system/framework/android.test.base.jar*724373495]} | PCL[/system/framework/android.test.runner.jar*2496447986])
+09-14 13:02:54.179 19274 19274 D nativeloader: Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok
+09-14 13:02:54.180 19274 19274 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-14 13:02:54.188 19274 19274 D UiAutomationConnection: Created on user UserHandle{0}
+09-14 13:02:54.188 19274 19274 I UiAutomation: Initialized for user 0 on display 0
+09-14 13:02:54.188 19274 19274 W UiAutomation: Created with deprecatead constructor, assumes DEFAULT_DISPLAY
+09-14 13:02:54.189   562  2213 D AccessibilityManagerService: changeCurrentUserForTestAutomationIfNeededLocked(0): ignoring because device doesn't support visible background users
+09-14 13:02:54.189   562  2213 I UiAutomationManager: Registering UiTestAutomationService (id=com.android.server.accessibility/UiAutomation, flags=0x0) when called by user 0
+09-14 13:02:54.190   562  2213 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-14 13:02:54.196 19274 19287 V UiAutomation: Init UiAutomation@2b81d54[id=335, displayId=0, flags=0]
+09-14 13:02:54.197   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:54.197   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:54.197   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:54.198   562  1038 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-14 13:02:54.198   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:54.198   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:54.199   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:54.199   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:54.199   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:54.199   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:54.200   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:54.200  1448  2312 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-14 13:02:54.201  1448  2312 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-14 13:02:54.202  1448  1615 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 13:02:54.202  1448  1615 I AiAiEcho: EchoTargets: 
+09-14 13:02:54.202  1448  1615 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 13:02:54.202  1448  1615 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:02:54.202  1448  1615 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:02:54.202  1448  1615 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 13:02:54.202  1448  1615 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 13:02:54.202  1448  1615 I AiAiEcho: EchoTargets: 
+09-14 13:02:54.202  1448  1615 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 13:02:54.202  1448  1615 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:02:54.202  1448  1615 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:02:54.203  1448  1615 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 13:02:54.203  1448  1615 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-14 13:02:54.203  1448  1615 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-14 13:02:54.203   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:54.203   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:54.207   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:54.207   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:54.208   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:54.208   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:54.208   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:54.208   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:54.208   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:54.208   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:54.208   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:54.208   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:54.208   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:54.208   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:54.208   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:54.208   562   562 D BatterySaverPolicy: accessibility changed to true, updating policy.
+09-14 13:02:54.214   927   927 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-14 13:02:54.215   927   927 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-14 13:02:54.291  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:54.295  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:54.641   927  1065 D EGL_emulation: app_time_stats: avg=199.95ms min=178.64ms max=226.79ms count=6
+09-14 13:02:54.793  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:54.796  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:55.209 19274 19274 W AccessibilityNodeInfoDumper: Fetch time: 2ms
+09-14 13:02:55.211   562  1024 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-14 13:02:55.211   562  1024 D AccessibilityManagerService: restoreCurrentUserForTestAutomationIfNeededLocked(): ignoring because device doesn't support visible background users
+09-14 13:02:55.211   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:55.211   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:55.211   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:55.211   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:55.211  1448  2442 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-14 13:02:55.212   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:55.212   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:55.212   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:55.212   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:55.212   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:55.212   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:55.212   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:55.212   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:55.212   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:55.212   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:55.212   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:55.212   562   562 D BatterySaverPolicy: accessibility changed to false, updating policy.
+09-14 13:02:55.213 19274 19274 D AndroidRuntime: Shutting down VM
+09-14 13:02:55.217  1448  1615 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 13:02:55.217  1448  1615 I AiAiEcho: EchoTargets: 
+09-14 13:02:55.217  1448  1615 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 13:02:55.217  1448  1615 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:02:55.217  1448  1615 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:02:55.217  1448  1615 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 13:02:55.218  1448  1615 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-14 13:02:55.218   927   927 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-14 13:02:55.296  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:55.297  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:55.378 18667 18679 D EGL_emulation: app_time_stats: avg=245.07ms min=5.56ms max=1220.34ms count=6
+09-14 13:02:55.644   927  1065 D EGL_emulation: app_time_stats: avg=200.72ms min=173.82ms max=221.65ms count=5
+09-14 13:02:55.799  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:55.799  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:56.141 18667 18741 I GGUFNativeStderr: s_glBindAttribLocation: bind attrib 0 name inPosition
+09-14 13:02:56.141 18667 18741 I GGUFNativeStderr: s_glBindAttribLocation: bind attrib 1 name inColor
+09-14 13:02:56.141 18667 18741 I GGUFNativeStderr: s_glBindAttribLocation: bind attrib 2 name inCircleEdge
+09-14 13:02:56.216   432   432 D audioserver: logFgsApiBegin: FGS Logger Transaction failed, -129
+09-14 13:02:56.217   562  1038 W AS.PlaybackActivityMon: No piid assigned for invalid/internal port id 15
+09-14 13:02:56.238   432   547 D AudioFlinger: mixer(0x7ca742ca38e0) throttle end: throttle time(32)
+09-14 13:02:56.259 18667 18667 W WindowOnBackDispatcher: sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda11@4f78cca
+09-14 13:02:56.260   562  1692 D CoreBackPreview: Window{4fa485e u0 com.ggufchat.app/com.ggufchat.app.ChatActivity}: Setting back callback null
+09-14 13:02:56.261   562  1692 W InputManager-JNI: Input channel object '4fa485e com.ggufchat.app/com.ggufchat.app.ChatActivity (client)' was disposed without first being removed with the input manager!
+09-14 13:02:56.264   562  1692 D CoreBackPreview: Window{60327e6 u0 com.ggufchat.app/com.ggufchat.app.ChatActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@74abc79, mPriority=0, mIsAnimationCallback=false}
+09-14 13:02:56.277 19298 19298 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 0 <<<<<<
+09-14 13:02:56.297 19298 19298 I AndroidRuntime: Using default boot image
+09-14 13:02:56.300  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:56.300  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:56.301 19298 19298 I AndroidRuntime: Leaving lock profiling enabled
+09-14 13:02:56.313 19298 19298 I app_process: Core platform API reporting enabled, enforcing=false
+09-14 13:02:56.318   562   588 V WindowManager: Unknown focus tokens, dropping reportFocusChanged
+09-14 13:02:56.339 19298 19298 I app_process: Using CollectorTypeCMC GC.
+09-14 13:02:56.392   366   366 I netd    : tetherGetStats() -> {[]} <6.10ms>
+09-14 13:02:56.465 19298 19298 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-14 13:02:56.476 19298 19298 D nativeloader: Load libicu_jni.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-14 13:02:56.477 19298 19298 D app_process: u_setTimeZoneFilesDirectory("/apex/com.android.tzdata/etc/tz/versioned/8/icu") succeeded. 
+09-14 13:02:56.477 19298 19298 D app_process: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt75l.dat
+09-14 13:02:56.478 19298 19298 D nativeloader: Load libjavacore.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-14 13:02:56.479 19298 19298 D nativeloader: Load libopenjdk.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-14 13:02:56.481 19298 19298 W app_process: Unexpected CPU variant for x86: x86_64.
+09-14 13:02:56.481 19298 19298 W app_process: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, goldmont-without-sha-xsaves, tremont, kabylake, default
+09-14 13:02:56.483 19298 19298 W app_process: ClassLoaderContext shared library size mismatch. Expected=2, found=0 (PCL[]{PCL[/system/framework/android.test.base.jar*724373495]#PCL[/system/framework/android.test.mock.jar*1452759902]} | PCL[])
+09-14 13:02:56.484 19298 19298 W app_process: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[]{PCL[/system/framework/android.test.runner.jar*2496447986]#PCL[/system/framework/android.test.base.jar*724373495]} | PCL[/system/framework/android.test.runner.jar*2496447986])
+09-14 13:02:56.508 19298 19298 D nativeloader: Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok
+09-14 13:02:56.509 19298 19298 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-14 13:02:56.511 19298 19298 D UiAutomationConnection: Created on user UserHandle{0}
+09-14 13:02:56.512 19298 19298 I UiAutomation: Initialized for user 0 on display 0
+09-14 13:02:56.512 19298 19298 W UiAutomation: Created with deprecatead constructor, assumes DEFAULT_DISPLAY
+09-14 13:02:56.513   562  1024 D AccessibilityManagerService: changeCurrentUserForTestAutomationIfNeededLocked(0): ignoring because device doesn't support visible background users
+09-14 13:02:56.513   562  1024 I UiAutomationManager: Registering UiTestAutomationService (id=com.android.server.accessibility/UiAutomation, flags=0x0) when called by user 0
+09-14 13:02:56.514   562  1024 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-14 13:02:56.515   432   547 D audioserver: logFgsApiEnd: FGS Logger Transaction failed, -129
+09-14 13:02:56.516 19298 19311 V UiAutomation: Init UiAutomation@f9d226f[id=336, displayId=0, flags=0]
+09-14 13:02:56.527   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:56.527   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:56.527   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:56.527   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:56.527   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:56.527   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:56.527   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:56.527   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:56.527   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:56.527   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:56.527   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:56.527   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:56.527   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:56.527   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:56.528   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:56.528   562   562 D BatterySaverPolicy: accessibility changed to true, updating policy.
+09-14 13:02:56.552   562  1024 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-14 13:02:56.553   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:56.553   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:56.553   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:56.553   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:56.553   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:56.553   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:56.553   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:56.553   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:56.554   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:56.554   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:56.563  1448  1855 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-14 13:02:56.573  1448  1615 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 13:02:56.573  1448  1615 I AiAiEcho: EchoTargets: 
+09-14 13:02:56.573  1448  1615 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 13:02:56.573  1448  1615 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:02:56.573  1448  1615 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:02:56.578  1448  1615 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 13:02:56.579  1448  1615 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-14 13:02:56.579   927   927 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-14 13:02:56.580  1448  2312 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-14 13:02:56.580  1448  1615 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 13:02:56.581  1448  1615 I AiAiEcho: EchoTargets: 
+09-14 13:02:56.581  1448  1615 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 13:02:56.581  1448  1615 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:02:56.581  1448  1615 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:02:56.581  1448  1615 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 13:02:56.581  1448  1615 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-14 13:02:56.581   927   927 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-14 13:02:56.694   927  1065 D EGL_emulation: app_time_stats: avg=209.86ms min=114.26ms max=298.31ms count=5
+09-14 13:02:56.803  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:56.803  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:57.321  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:57.322  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:57.598  1647  1647 I wpa_supplicant: wlan0: CTRL-EVENT-BEACON-LOSS 
+09-14 13:02:57.637 19298 19298 W AccessibilityNodeInfoDumper: Fetch time: 3ms
+09-14 13:02:57.639   562  1024 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-14 13:02:57.639   562  1024 D AccessibilityManagerService: restoreCurrentUserForTestAutomationIfNeededLocked(): ignoring because device doesn't support visible background users
+09-14 13:02:57.640   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:57.640   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:57.640  1448  2312 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-14 13:02:57.640   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:57.640   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:57.640   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:57.640   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:57.640   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:57.640   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:57.640   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:57.640   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:57.642  1448  1615 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 13:02:57.642  1448  1615 I AiAiEcho: EchoTargets: 
+09-14 13:02:57.642  1448  1615 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 13:02:57.642  1448  1615 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:02:57.642  1448  1615 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 13:02:57.643  1448  1615 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 13:02:57.643  1448  1615 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-14 13:02:57.643   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:57.643   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:57.643   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:57.643   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:57.643   562   562 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 13:02:57.644   562   562 D BatterySaverPolicy: accessibility changed to false, updating policy.
+09-14 13:02:57.645   927   927 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-14 13:02:57.645 19298 19298 D AndroidRuntime: Shutting down VM
+09-14 13:02:57.709   927  1065 D EGL_emulation: app_time_stats: avg=202.89ms min=196.67ms max=217.79ms count=5
+09-14 13:02:57.823  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:57.824  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:57.860 18667 18679 D EGL_emulation: app_time_stats: avg=358.57ms min=13.27ms max=1197.31ms count=4
+09-14 13:02:58.325  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:58.325  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:58.563   432   432 D audioserver: logFgsApiBegin: FGS Logger Transaction failed, -129
+09-14 13:02:58.563   562  1038 W AS.PlaybackActivityMon: No piid assigned for invalid/internal port id 15
+09-14 13:02:58.582   432   547 D AudioFlinger: mixer(0x7ca742ca38e0) throttle end: throttle time(5)
+09-14 13:02:58.644 18667 18667 W WindowOnBackDispatcher: sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda11@d5cfd93
+09-14 13:02:58.645   562  1038 D CoreBackPreview: Window{60327e6 u0 com.ggufchat.app/com.ggufchat.app.ChatActivity}: Setting back callback null
+09-14 13:02:58.647   562  1038 W InputManager-JNI: Input channel object '60327e6 com.ggufchat.app/com.ggufchat.app.ChatActivity (client)' was disposed without first being removed with the input manager!
+09-14 13:02:58.706   562   588 V WindowManager: Unknown focus tokens, dropping reportFocusChanged
+09-14 13:02:58.711 18667 18679 D EGL_emulation: app_time_stats: avg=990.69ms min=42.86ms max=4637.65ms count=5
+09-14 13:02:58.717   927  1065 D EGL_emulation: app_time_stats: avg=201.66ms min=192.83ms max=209.98ms count=5
+09-14 13:02:58.760   432   547 D audioserver: logFgsApiEnd: FGS Logger Transaction failed, -129
+09-14 13:02:58.821 19326 19326 W BpBinder: Linking to death on android.gui.ISurfaceComposer but there are no threads (yet?) listening to incoming transactions. See ProcessState::startThreadPool and ProcessState::setThreadPoolMaxThreadCount. Generally you should setup the binder threadpool before other initialization steps.
+09-14 13:02:58.821 19326 19326 W ProcessState: Extra binder thread started, but 0 threads requested. Do not use *startThreadPool when zero threads are requested.
+09-14 13:02:58.828  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:58.833  1112  1112 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-14 13:02:58.866   158   158 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+09-14 13:02:58.866 19326 19327 I Gralloc4: mapper 4.x is not supported
+09-14 13:02:58.992     0     0 I servicemanager: Caller(pid=19326,uid=0,sid=u:r:su:s0) Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest. No alternative instances declared in VINTF.
+09-14 13:02:59.130     0     0 I logd    : logdr: UID=0 GID=0 PID=19328 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns

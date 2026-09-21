@@ -1,0 +1,39 @@
+--------- beginning of main
+09-14 20:30:00.015  6453  6453 I ImeTracker: com.ggufchat.app:83378443: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser true
+09-14 20:30:00.016  6453  6453 D InputMethodManager: showSoftInput() view=android.widget.EditText{551f337 VFED..CL. .F.P..ID 128,0-517,67 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+09-14 20:30:00.025  6453  6466 D EGL_emulation: app_time_stats: avg=123.52ms min=3.15ms max=3416.69ms count=33
+09-14 20:30:00.054  6453  6453 I AssistStructure: Flattened final assist data: 1968 bytes, containing 1 windows, 13 views
+09-14 20:30:00.450  6453  6453 D InsetsController: show(ime(), fromIme=true)
+09-14 20:30:00.462  6453  7015 W InteractionJankMonitor: Initializing without READ_DEVICE_CONFIG permission. enabled=true, interval=1, missedFrameThreshold=3, frameTimeThreshold=64, package=com.ggufchat.app
+09-14 20:30:00.507  6453  6453 I ImeTracker: com.ggufchat.app:83378443: onShown
+09-14 20:30:01.058  6453  6466 D EGL_emulation: app_time_stats: avg=44.24ms min=5.24ms max=384.82ms count=20
+09-14 20:30:02.389  6453  6466 D EGL_emulation: app_time_stats: avg=49.04ms min=4.41ms max=514.89ms count=24
+09-14 20:30:03.390  6453  6466 D EGL_emulation: app_time_stats: avg=500.29ms min=500.01ms max=500.57ms count=2
+09-14 20:30:03.998  6453  6453 I ImeTracker: com.ggufchat.app:41e9d420: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+09-14 20:30:04.038  6453  6453 D InsetsController: hide(ime(), fromIme=true)
+09-14 20:30:04.097  6453  7065 I GGUFSystem: GGUF_SYSTEM_PROMPT_APPLIED scope=global chars=107 sha256=dde45e87ea07db0b49bcddd022d4f41a452610560d9af636571c26d16a4bcd04
+09-14 20:30:04.168  6453  6453 I ImeTracker: com.ggufchat.app:fba368df: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_ON_ANIMATION_STATE_CHANGED fromUser false
+09-14 20:30:04.175  6453  6453 I ImeTracker: com.ggufchat.app:41e9d420: onHidden
+09-14 20:30:04.188  6453  7065 D skia    : Failed to parse XMP standard metadata.
+09-14 20:30:04.374  6453  7065 I GGUFInference: GGUF_CONTENT_PREPARED files=1 images=1 text_chars=0
+09-14 20:30:04.518  6453  6466 D EGL_emulation: app_time_stats: avg=61.87ms min=6.70ms max=499.79ms count=16
+09-14 20:30:05.583  6453  6466 D EGL_emulation: app_time_stats: avg=61.04ms min=7.40ms max=481.35ms count=16
+09-14 20:30:06.597  6453  6466 D EGL_emulation: app_time_stats: avg=507.03ms min=496.07ms max=518.00ms count=2
+09-14 20:30:07.602  6453  6466 D EGL_emulation: app_time_stats: avg=502.41ms min=501.23ms max=503.59ms count=2
+09-14 20:30:08.603  6453  6466 D EGL_emulation: app_time_stats: avg=500.43ms min=489.86ms max=511.00ms count=2
+09-14 20:30:09.607  6453  6466 D EGL_emulation: app_time_stats: avg=501.63ms min=499.97ms max=503.29ms count=2
+09-14 20:30:10.635  6453  6466 D EGL_emulation: app_time_stats: avg=514.01ms min=496.64ms max=531.38ms count=2
+09-14 20:30:10.763  6453  6453 E FrameTracker: force finish cuj, time out: J<IME_INSETS_SHOW_ANIMATION::0@0@com.ggufchat.app>
+09-14 20:30:12.120  6453  6466 D EGL_emulation: app_time_stats: avg=494.14ms min=470.61ms max=510.87ms count=3
+09-14 20:30:13.152  6453  6466 D EGL_emulation: app_time_stats: avg=516.29ms min=494.13ms max=538.46ms count=2
+09-14 20:30:14.455  6453  6453 E FrameTracker: force finish cuj, time out: J<IME_INSETS_HIDE_ANIMATION::1@0@com.ggufchat.app>
+09-14 20:30:14.634  6453  6466 D EGL_emulation: app_time_stats: avg=494.02ms min=462.90ms max=511.70ms count=3
+09-14 20:30:15.635  6453  6466 D EGL_emulation: app_time_stats: avg=500.03ms min=460.18ms max=539.87ms count=2
+09-14 20:30:17.187  6453  6466 D EGL_emulation: app_time_stats: avg=517.24ms min=472.10ms max=558.16ms count=3
+09-14 20:30:18.397  6453  7065 I GGUFChatNative: GGUF_IMAGE_EVALUATED tokens=64 backend=Vulkan
+09-14 20:30:18.638  6453  6466 D EGL_emulation: app_time_stats: avg=483.72ms min=451.76ms max=522.47ms count=3
+09-14 20:30:19.756  6453  7065 I GGUFChatNative: GGUF_MEDIA_PREFILL images=1 tokens=247 positions=247
+09-14 20:30:19.776  6453  6466 D EGL_emulation: app_time_stats: avg=379.16ms min=149.43ms max=525.52ms count=3
+09-14 20:30:20.522  6453  7065 I GGUFChatNative: GGUF_NATIVE_COMPLETE tokens=2 reason=eog projector=1
+09-14 20:30:20.523  6453  7065 I System.out: GGUF_REPAIR_GENERATION_OK
+09-14 20:30:20.785  6453  6466 D EGL_emulation: app_time_stats: avg=15.66ms min=3.71ms max=61.30ms count=41

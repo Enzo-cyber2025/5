@@ -1,0 +1,55 @@
+name: Deliver tested APK
+on:
+  push:
+    branches: [arena/01a09b42-5]
+    paths: [.github/workflows/deliver-apk.yml]
+permissions:
+  actions: read
+  contents: write
+jobs:
+  publish-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Confirm successful source run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/Enzo-cyber2025/5/actions/runs/34778868262 > /tmp/source-run.json
+          python3 - <<'PY'
+          import json
+          r = json.load(open('/tmp/source-run.json'))
+          assert r['conclusion'] == 'success'
+          assert r['head_sha'] == 'f6dc9542a835481a5e54448b186be739947f806a'
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: gguf-chat-host-tested
+          path: tested
+          run-id: 34778868262
+          github-token: ${{ github.token }}
+      - name: Verify exact APK and publish standalone download
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: Enzo-cyber2025/5
+        run: |
+          set -euo pipefail
+          exec > >(tee /tmp/apk-delivery.log) 2>&1
+          APK=tested/GGUF-Chat-repaired.apk
+          echo "b3ae6a0df9c9cd38f947f67df6c19fe01ea6dfd39eb4f39979cd13009c62a0f6  $APK" | sha256sum -c -
+          TAG=gguf-apk-f6dc954
+          gh release view "$TAG" >/dev/null
+          gh release upload "$TAG" "$APK" --clobber
+          gh release view "$TAG" --json assets --jq '.assets[] | select(.name == "GGUF-Chat-repaired.apk") | .url'
+      - name: Delivery diagnostics
+        if: always()
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('/tmp/apk-delivery.log')
+          if p.exists():
+              text = p.read_text()[-8000:]
+              for i in range(0, len(text), 2800):
+                  chunk = text[i:i+2800].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+                  print('::notice title=APK delivery::' + chunk)
+          PY

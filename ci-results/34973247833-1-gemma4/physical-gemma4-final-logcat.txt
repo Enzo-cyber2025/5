@@ -1,0 +1,906 @@
+--------- beginning of main
+09-15 13:39:10.999 15094 15094 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 0 <<<<<<
+09-15 13:39:11.002 15094 15094 I AndroidRuntime: Using default boot image
+09-15 13:39:11.002 15094 15094 I AndroidRuntime: Leaving lock profiling enabled
+09-15 13:39:11.004 15094 15094 I app_process: Core platform API reporting enabled, enforcing=false
+09-15 13:39:11.004 15094 15094 I app_process: Using CollectorTypeCMC GC.
+09-15 13:39:11.052 15094 15094 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-15 13:39:11.058 15094 15094 D nativeloader: Load libicu_jni.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-15 13:39:11.059 15094 15094 D app_process: u_setTimeZoneFilesDirectory("/apex/com.android.tzdata/etc/tz/versioned/8/icu") succeeded. 
+09-15 13:39:11.059 15094 15094 D app_process: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt75l.dat
+09-15 13:39:11.059 15094 15094 D nativeloader: Load libjavacore.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-15 13:39:11.060 15094 15094 D nativeloader: Load libopenjdk.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-15 13:39:11.061 15094 15094 W app_process: Unexpected CPU variant for x86: x86_64.
+09-15 13:39:11.061 15094 15094 W app_process: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, goldmont-without-sha-xsaves, tremont, kabylake, default
+09-15 13:39:11.062 15094 15094 W app_process: ClassLoaderContext shared library size mismatch. Expected=2, found=0 (PCL[]{PCL[/system/framework/android.test.base.jar*724373495]#PCL[/system/framework/android.test.mock.jar*1452759902]} | PCL[])
+09-15 13:39:11.062 15094 15094 W app_process: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[]{PCL[/system/framework/android.test.runner.jar*2496447986]#PCL[/system/framework/android.test.base.jar*724373495]} | PCL[/system/framework/android.test.runner.jar*2496447986])
+09-15 13:39:11.076 15094 15094 D nativeloader: Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok
+09-15 13:39:11.076 15094 15094 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-15 13:39:11.078 15094 15094 D UiAutomationConnection: Created on user UserHandle{0}
+09-15 13:39:11.078 15094 15094 I UiAutomation: Initialized for user 0 on display 0
+09-15 13:39:11.078 15094 15094 W UiAutomation: Created with deprecatead constructor, assumes DEFAULT_DISPLAY
+--------- beginning of system
+09-15 13:39:11.079   571   587 D AccessibilityManagerService: changeCurrentUserForTestAutomationIfNeededLocked(0): ignoring because device doesn't support visible background users
+09-15 13:39:11.079   571   587 I UiAutomationManager: Registering UiTestAutomationService (id=com.android.server.accessibility/UiAutomation, flags=0x0) when called by user 0
+09-15 13:39:11.079   571   587 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-15 13:39:11.080  1480  2193 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-15 13:39:11.081   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:11.081 15094 15106 V UiAutomation: Init UiAutomation@4a69e5d[id=56, displayId=0, flags=0]
+09-15 13:39:11.081  1480  1790 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-15 13:39:11.081  1480  1790 I AiAiEcho: EchoTargets: 
+09-15 13:39:11.081  1480  1790 I AiAiEcho: Filtered by AiAi flag check: 
+09-15 13:39:11.081  1480  1790 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 13:39:11.081  1480  1790 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 13:39:11.081  1480  1790 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-15 13:39:11.082  1480  1790 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-15 13:39:11.082   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:11.082   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:11.082   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:11.082   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:11.082   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:11.082   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:11.082   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:11.082   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:11.082   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:11.082   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:11.082   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:11.082   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:11.083   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:11.083   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:11.083   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:11.083   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:11.084   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:11.084   571   571 D BatterySaverPolicy: accessibility changed to true, updating policy.
+09-15 13:39:11.084   571  1910 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-15 13:39:11.085   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:11.085   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:11.085   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:11.085   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:11.085   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:11.085   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:11.085   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:11.085   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:11.085   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:11.085   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:11.085   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:11.085   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:11.086  1480  1508 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-15 13:39:11.086  1480  1790 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-15 13:39:11.086  1480  1790 I AiAiEcho: EchoTargets: 
+09-15 13:39:11.086  1480  1790 I AiAiEcho: Filtered by AiAi flag check: 
+09-15 13:39:11.086  1480  1790 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 13:39:11.086  1480  1790 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 13:39:11.086  1480  1790 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-15 13:39:11.086  1480  1790 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-15 13:39:11.087   944   944 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-15 13:39:11.088   944   944 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-15 13:39:11.332  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:11.834  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:12.090 15094 15094 I AccessibilityNodeInfoDumper: Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@117e1; boundsInParent: Rect(0, 0 - 672, 0); boundsInScreen: Rect(24, 180 - 696, 180); boundsInWindow: Rect(24, 180 - 696, 180); packageName: com.ggufchat.app; className: android.widget.LinearLayout; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: null; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; granularScrollingSupported: false; importantForAccessibility: false; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+09-15 13:39:12.091 15094 15094 W AccessibilityNodeInfoDumper: Fetch time: 2ms
+09-15 13:39:12.092   571  1904 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-15 13:39:12.092  1480  1508 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-15 13:39:12.092   571  1904 D AccessibilityManagerService: restoreCurrentUserForTestAutomationIfNeededLocked(): ignoring because device doesn't support visible background users
+09-15 13:39:12.092  1480  1790 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-15 13:39:12.093  1480  1790 I AiAiEcho: EchoTargets: 
+09-15 13:39:12.093  1480  1790 I AiAiEcho: Filtered by AiAi flag check: 
+09-15 13:39:12.093  1480  1790 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 13:39:12.093  1480  1790 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 13:39:12.093  1480  1790 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-15 13:39:12.093  1480  1790 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-15 13:39:12.093   944   944 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-15 13:39:12.093   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:12.094   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:12.094   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:12.094   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:12.094   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:12.094   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:12.094   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:12.094   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:12.094   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:12.094   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:12.094   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:12.094   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:12.094   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:12.094   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:12.094   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:12.094 15094 15094 D AndroidRuntime: Shutting down VM
+09-15 13:39:12.095   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:12.095   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:12.095   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:12.096   571   571 D BatterySaverPolicy: accessibility changed to false, updating policy.
+09-15 13:39:12.335  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:12.343  1726  1726 I wpa_supplicant: wlan0: CTRL-EVENT-BEACON-LOSS 
+09-15 13:39:12.836  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:12.947   571  1904 V AutofillSession: Primary service component name: ComponentInfo{com.google.android.gms/com.google.android.gms.autofill.service.AutofillService}, secondary service component name: ComponentInfo{com.android.credentialmanager/com.android.credentialmanager.autofill.CredentialAutofillService}
+09-15 13:39:12.947   571  1904 V SecondaryProviderHandler: Creating a secondary provider handler with component name, ComponentInfo{com.android.credentialmanager/com.android.credentialmanager.autofill.CredentialAutofillService}
+09-15 13:39:12.948   571  1904 D RequestId: nextId(): requestId = 802
+09-15 13:39:12.948   571  1904 W FillRequestEventLogger: Couldn't find packageName: com.google.android.inputmethod.latin
+09-15 13:39:12.949   571   571 D AutofillInlineSuggestionsRequestSession: onCreateInlineSuggestionsRequestLocked called: 1073741824@1312189578
+09-15 13:39:12.949   571  1904 D AutofillInlineSuggestionsRequestSession: onInlineSuggestionsSessionInvalidated() called.
+09-15 13:39:12.950 14969 14969 I ImeTracker: com.ggufchat.app:d64711c: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser true
+09-15 13:39:12.950  1384  1384 I GoogleInputMethodService: GoogleInputMethodService.onFinishInput():3157 
+09-15 13:39:12.951 14969 14969 D InputMethodManager: showSoftInput() view=android.widget.EditText{bcc42af VFED..CL. .F.P..ID 128,0-517,67 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+09-15 13:39:12.951  1384  1384 I GoogleInputMethodService: GoogleInputMethodService.updateDeviceLockedStatus():2248 repeatCheckTimes = 0, locked = false
+09-15 13:39:12.956  1384  1384 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1986 onStartInput(EditorInfo{EditorInfo{packageName=com.ggufchat.app, inputType=24001, inputTypeString=Normal, enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=40000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=0, initialSelEnd=0, initialCapsMode=2000, label=null, fieldId=-1, fieldName=null, extras=Bundle[mParcelledData.dataSize=168], hintText=non-empty, hintLocales=[]}}, false)
+09-15 13:39:12.956   571   587 D AutofillInlineSuggestionsRequestSession: onInlineSuggestionsRequest() received: InlineSuggestionsRequest { maxSuggestionCount = 9, inlinePresentationSpecs = [InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }], hostPackageName = com.google.android.inputmethod.latin, supportedLocales = [en_US], extras = Bundle[EMPTY_PARCEL], hostInputToken = android.os.BinderProxy@7a690f0, hostDisplayId = 0, inlineTooltipPresentationSpec = null }
+09-15 13:39:12.957  1384  1384 I GoogleInputMethodService: GoogleInputMethodService.updateDeviceLockedStatus():2248 repeatCheckTimes = 1, locked = false
+09-15 13:39:12.957  1384  1384 I AndroidIME: InputBundleManager.loadActiveInputBundleId():450 loadActiveInputBundleId: en-US, ime_english_united_states
+09-15 13:39:12.957   571   587 W PackageConfigPersister: App-specific configuration not found for packageName: com.ggufchat.app and userId: 0
+09-15 13:39:12.959 14969 14969 I AssistStructure: Flattened final assist data: 1936 bytes, containing 1 windows, 13 views
+09-15 13:39:12.963  1384  1384 I GoogleInputMethodService: GoogleInputMethodService.onStartInputView():2098 onStartInputView(EditorInfo{EditorInfo{packageName=com.ggufchat.app, inputType=24001, inputTypeString=Normal, enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=40000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=0, initialSelEnd=0, initialCapsMode=2000, label=null, fieldId=-1, fieldName=null, extras=Bundle[{androidx.core.view.inputmethod.EditorInfoCompat.STYLUS_HANDWRITING_ENABLED=true}], hintText=non-empty, hintLocales=[]}}, false)
+09-15 13:39:12.964   571   663 D AutofillSession: createPendingIntent for request 802
+09-15 13:39:12.965   571   663 D ContentCapturePerUserService: Notified activity assist data for activity: Token{b6308fa ActivityRecord{c71af25 u0 com.ggufchat.app/.ChatActivity t16}} without a session Id
+09-15 13:39:12.966   371   371 I netd    : tetherGetStats() -> {[]} <1.62ms>
+09-15 13:39:12.971  1384  1384 I GoogleInputMethodService: GoogleInputMethodService.updateDeviceLockedStatus():2248 repeatCheckTimes = 1, locked = false
+09-15 13:39:12.971 14969 14983 D EGL_emulation: app_time_stats: avg=867.96ms min=48.50ms max=5277.37ms count=7
+09-15 13:39:12.988  1384  1384 I KeyboardHeightUtil: KeyboardHeightUtil.getOemKeyboardHeightRatio():206 systemKeyboardHeightRatio:1.000000.
+09-15 13:39:12.988  1384  1384 I AndroidIME: AbstractIme.onActivate():89 LatinIme.onActivate() : EditorInfo = EditorInfo{packageName=com.ggufchat.app, inputType=24001, inputTypeString=Normal, enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=40000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=0, initialSelEnd=0, initialCapsMode=2000, label=null, fieldId=-1, fieldName=null, extras=Bundle[{androidx.core.view.inputmethod.EditorInfoCompat.STYLUS_HANDWRITING_ENABLED=true}], hintText=non-empty, hintLocales=[]}, IncognitoMode = false, DeviceLocked = false
+09-15 13:39:12.989  1384  1384 I Delight5Facilitator: Delight5Facilitator.initializeForIme():747 initializeForIme() : Locale = [en_US], layout = qwerty
+09-15 13:39:12.989  1384  1384 I Delight5Facilitator: Delight5Facilitator.resetDecoder():919 resetDecoder() : Locale = [en_US]
+09-15 13:39:12.990   571  2181 D FileUtils: Rounded bytes from 12547575808 to 16000000000
+09-15 13:39:12.991  1384  1384 I Delight5Decoder: Delight5DecoderWrapper.createOrResetDecoder():373 Decoder reset
+09-15 13:39:12.996   571   663 D ActivityManager: sync unfroze 1456 com.google.android.gms for 6
+09-15 13:39:13.006  1456  1456 D BoundBrokerSvc: onBind: Intent { act=com.google.android.mdd.service.START dat=chimera-action:/... cmp=com.google.android.gms/.chimera.GmsBoundBrokerService }
+09-15 13:39:13.006  1456  1456 D BoundBrokerSvc: Loading bound service for intent: Intent { act=com.google.android.mdd.service.START dat=chimera-action:/... cmp=com.google.android.gms/.chimera.GmsBoundBrokerService }
+09-15 13:39:13.007   571   587 W ProcessStats: Tracking association SourceState{3033c2c com.google.android.gms.persistent/10143 BFgs #7313} whose proc state 4 is better than process ProcessState{5c92bdf com.google.android.gms/10143 pkg=com.google.android.gms} proc state 14 (1 skipped)
+09-15 13:39:13.023  1384  2096 I MainLanguageModelLoader: MainLanguageModelLoader.call():139 Running LM loader for [en_US]
+09-15 13:39:13.024   571   571 W FillRequestEventLogger: Shouldn't be logging AutofillFillRequestReported again for same event
+09-15 13:39:13.024   571   571 W FillResponseEventLogger: Shouldn't be logging AutofillFillRequestReported again for same event
+09-15 13:39:13.024   571   571 D AutofillSession: clearPendingIntentLocked
+09-15 13:39:13.024   571   571 D AutofillInlineSuggestionsRequestSession: onInlineSuggestionsResponseLocked called for:1073741824@1312189578
+09-15 13:39:13.024   571   571 D AutofillInlineSuggestionsRequestSession: maybeNotifyFillUiEventLoked(): hasSuggestionToShow=false, mPreviousHasNonPinSuggestionShow=false
+09-15 13:39:13.024   571   571 D AutofillInlineSuggestionsRequestSession: Send inline response: 0
+09-15 13:39:13.024  3559  3559 V InlineSuggestionRenderService: handleDestroySuggestionViews called for 0:1312189578
+09-15 13:39:13.025  1384  2096 I DelightDataFileManagerLanguageModelProvider: DelightDataFileManagerLanguageModelProvider.fetchLanguageModel():76 find data en-840 mdd
+09-15 13:39:13.026  1384  1384 I VoiceInputHandler: VoiceInputHandler.onActivateIme():99 registering TalkbackStateListener
+09-15 13:39:13.026  1384  2096 I LmManager: LmManager.asyncUpdateEnabledLanguageModels():96 asyncUpdateEnabledLanguageModels()
+09-15 13:39:13.027  1384 15126 I SuperDelight: SuperDelightManager.initializeBundledDelightSuperpacks():374 initializeBundledDelightSuperpacks()
+09-15 13:39:13.027  1384  2096 I SuperDelight: SuperDelightManager.initializeOverridesSuperpacks():400 initializeOverridesSuperpacks()
+09-15 13:39:13.027  1384  2096 I DelightKLPDownloader: DelightKLPDownloader.downloadKLPInternal():185 downloading KLP for en_840
+09-15 13:39:13.027  1384  2096 I ManifestedDataDownloader: ManifestedDataDownloader.download():57 downloading manifest https://www.gstatic.com/android/keyboard/dictionarypack/2024070918/metadata.json-perlang/en-840.json?v=2024071002
+09-15 13:39:13.028   571   594 D AutofillUI: destroySaveUiUiThread(): already destroyed
+09-15 13:39:13.028  1384  1384 I VoiceInputManagerWrapper: VoiceInputManagerWrapper.cancelShutdown():102 cancelShutdown()
+09-15 13:39:13.028  1384  1384 I VoiceInputManagerWrapper: VoiceInputManagerWrapper.syncLanguagePacks():114 syncLanguagePacks()
+09-15 13:39:13.028  1384  6303 I SpeechFactory: SpeechRecognitionFactory.maybeScheduleAutoPackDownloadForFallback():200 maybeScheduleAutoPackDownloadForFallback()
+09-15 13:39:13.028  1384  6303 I FallbackOnDeviceRecognitionProvider: FallbackOnDeviceRecognitionProvider.maybeScheduleAutoPackDownload():197 maybeScheduleAutoPackDownload() for language tag en-US
+09-15 13:39:13.028  1384  1384 I LatinIme: LatinIme.updateEnableInlineSuggestionsOnDecoderSideFlags():1174 inline flag updated to:false
+09-15 13:39:13.030  1384  1384 I InputBundle: InputBundle.consumeEvent():884 Skip consuming an event as keyboard status is 0
+09-15 13:39:13.031  1384  1384 I KeyboardWrapper: KeyboardWrapper.activateKeyboard():575 activateKeyboard(): type=prime, status=0, imeDef=ktt{stringId=ime_english_united_states, language=en-US, languageTag=en-US, processedConditions={enable_number_row=false, device=phone}, className=com.google.android.apps.inputmethod.libs.latin5.LatinIme, label=0, keyEventInterpreter=null, inlineComposing=true, autoCapital=true, announceAutoSelectedCandidate=true, statusIcon=0, primeKeyboardType=SOFT, indicatorIcon=0, indicatorLabel=US, displayAppCompletions=true, extraValues=ktl{}, processors=kvl@bda053b, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=true, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, secondaryIme=null, keyboardGroupDef=kut@6f4357a, phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=true, supportsAccessPoints=true}
+09-15 13:39:13.031  1384  1384 I KeyboardManager: KeyboardManager.requestKeyboard():234 Creating keyboard prime, imeId=ime_english_united_states, cacheKey=theme_border_stylesheet_noshadow_gsans_pillkey_silkpopup_hover_light_phone_navredesign
+09-15 13:39:13.031  1384  1384 I KeyboardWrapper: KeyboardWrapper.onKeyboardReady():239 onKeyboardReady(): type=prime(prime), kb=com.google.android.apps.inputmethod.latin.keyboard.LatinPrimeKeyboard@1656988
+09-15 13:39:13.031  1384  1384 I KeyboardWrapper: KeyboardWrapper.doActivateKeyboard():606 doActivateKeyboard(): prime
+09-15 13:39:13.036  1384  1927 I SP      : Registering bundled_delight.2024043000, url: null, constraints: *:*:*:*, flags: *, requested: 2024043000, current: 2024043000
+09-15 13:39:13.037  1384  1384 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-15 13:39:13.037  1384  1384 W Keyboard: Keyboard.getKeyboardViewHelper():574 null helper is returned: keyboardDef=kuo{processedConditions={enable_more_candidates_view_for_multilingual=false, enable_secondary_symbols=false, variant=qwerty, language=en-US, device=phone, expressions=normal, keyboard_mode=normal, show_secondary_digits=true, enable_preemptive_decode=true, rtl_layout=false}, globalConditions={global_theme_key=theme_border_stylesheet_noshadow_gsans_pillkey_silkpopup_hover_light_phone_navredesign, global_locale=en_US, global_density_dpi=240, global_orientation=1}, className=.latin.keyboard.LatinPrimeKeyboard, resourceIds=[#0x7f170663, #0x7f1708e0], initialStates=0, keyboardViewDefs=[kvb{direction=null, id=#0x7f0b014d, isScalable=true, layoutId=#0x7f0e039d, type=BODY, touchable=true, defaultShow=true}, kvb{direction=null, id=#0x7f0b014d, isScalable=false, layoutId=#0x7f0e01aa, type=FLOATING_CANDIDATES, touchable=false, defaultShow=false}, kvb{direction=LOCALE, id=#0x7f0b014d, isScalable=false, layoutId=#0x7f0e0591, type=HEADER, touchable=true, defaultShow=true}], persistentStates=0, persistentStatesPrefKey=null, popupBubbleLayoutId=#0x7f0e068d, recentKeyLayoutId=0, recentKeyPopupLayoutId=0, recentKeyType=null, rememberRecentKey=NONE, sessionStates=17592186044419}, type=WIDGET, helpersCreated=[kib@22ca67, kib@b25c014, kib@31110bd, null], context.getResources().getConfiguration(): {1.0 310mcc260mnc [en_US] ldltr sw480dp w480dp h853dp 240dpi lrg long port finger qwerty/v/v -nav/h winConfig={ mBounds=Rect(0, 0 - 720, 1280) mAppBounds=Rect(0, 0 - 720, 1280) mMaxBounds=Rect(0, 0 - 720, 1280) mDisplayRotation=ROTATION_0 mWindowingMode=fullscreen mActivityType=undefined mAlwaysOnTop=undefined mRotation=ROTATION_0} as.3 s.126 fontWeightAdjustment=0}
+09-15 13:39:13.038  1384  1384 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-15 13:39:13.038  1384 15125 I SuperDelight: SuperDelightManager.lambda$syncOverridesLanguageModels$14():683 SuperDelightManager#syncOverridesLanguageModels(): Superpack delight_overrides not found or negative version provided
+09-15 13:39:13.038  1384 15125 I SuperDelight: SuperDelightManager.lambda$syncBundledLanguageModels$16():769 SuperDelightManager#syncBundledLanguageModels(): Syncing for version 2024043000
+09-15 13:39:13.039  1384  1927 I SuperDelight: SuperDelightBundledSlicingStrategy.getSlices():41 BundledSlicing#getSlices() : Locale = [en_US]
+09-15 13:39:13.039  1384  1927 I SuperDelight: SuperDelightBundledSlicingStrategy.getSlices():67 BundledSlicing#getSlices(): result {slices=[bundled_delight:main_en_us_2024022600_2], last batch=true, sync metadata=false}
+09-15 13:39:13.039  1384  1927 I SP      : Syncing bundled_delight (2024043000) with slices: [main_en_us_2024022600_2], metadata: false
+09-15 13:39:13.040  1384  1384 I GoogleInputMethodService: GoogleInputMethodService.startInputIfInputViewStarted():3728 startInputIfInputViewStarted(): default prime
+09-15 13:39:13.040  1384  1384 I KeyboardModeManager: KeyboardModeManager.setInputViewKeyboardViewHolderProvider():625 setInputView() : supportsOneHandedMode=true supportsSplitMode=true
+09-15 13:39:13.040  1384  1384 I NormalModeController: NormalModeController.getKeyboardBodyViewHolderPaddingBottom():104 currentPrimeKeyboardType:SOFT systemPaddingBottom:-1
+09-15 13:39:13.040  1384  1384 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-15 13:39:13.040  1384  1384 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-15 13:39:13.040  1384  1384 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-15 13:39:13.040  1384  1384 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-15 13:39:13.040  1384  1384 I NormalModeController: NormalModeController.getKeyboardBodyViewHolderPaddingBottom():104 currentPrimeKeyboardType:SOFT systemPaddingBottom:-1
+09-15 13:39:13.040  1384  1384 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-15 13:39:13.040  1384  1384 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-15 13:39:13.040  1384  1384 I KeyboardModeManager: KeyboardModeManager.setInputViewKeyboardViewHolderProvider():613 setInputView() : supportsOneHandedMode=true, supportSplitMode=true
+09-15 13:39:13.042  1384 15126 I SuperDelight: SuperDelightManager$2.onSuccess():631 delight_overrides sync success, adding to data file manager
+09-15 13:39:13.043  1384  1384 I CrowdsourceExtension: CrowdsourceExtension.checkIfDefaultBrowserIsAllowed():110 Failed to get default browser. The default browser may be deactived.
+09-15 13:39:13.044  1384  1384 I AccessoryInputModeManager: AccessoryInputModeManager.onModeStarted():308 Accessory input mode started: null
+09-15 13:39:13.044  1384  1384 W SupplementaryKeyboardsWrapper: SupplementaryKeyboardsWrapper.deactivateKeyboard():159 keyboard accessory_candidates_consumer is not activated before!
+09-15 13:39:13.044  1384 15116 I DownloadManager: DownloadManager.downloadInternal():390 Download for __KLP_manifest_delight__en-840 scheduled with params DownloadParams{allowMetered=true, requireCharging=false, foreground=false, immediately=true, priority=0}
+09-15 13:39:13.047  1384 15116 I DownloadManager: DownloadManager.startDownload():484 start download of __KLP_manifest_delight__en-840
+09-15 13:39:13.048  1384  2096 I DelightDataFileManagerLanguageModelProvider: DelightDataFileManagerLanguageModelProvider.fetchLanguageModel():76 find data en-US bundled_delight
+09-15 13:39:13.049  1384  2096 I LmManager: LmManager.asyncUpdateEnabledLanguageModels():96 asyncUpdateEnabledLanguageModels()
+09-15 13:39:13.049  1384  2096 I SuperDelight: SuperDelightManager.initializeOverridesSuperpacks():400 initializeOverridesSuperpacks()
+09-15 13:39:13.049  1384  2096 I DelightKLPDownloader: DelightKLPDownloader.downloadKLPInternal():185 downloading KLP for en_840
+09-15 13:39:13.050  1384  2096 I ManifestedDataDownloader: ManifestedDataDownloader.download():57 downloading manifest https://www.gstatic.com/android/keyboard/dictionarypack/2024070918/metadata.json-perlang/en-840.json?v=2024071002
+09-15 13:39:13.050  1384  2096 I MainLanguageModelLoader: MainLanguageModelLoader.updateLmAvailableState():349 updateLmAvailableState(): locale? en_US prevState? AVAILABLE
+09-15 13:39:13.052  1456  1456 D BoundBrokerSvc: onBind: Intent { act=com.google.firebase.dynamiclinks.service.START pkg=com.google.android.gms }
+09-15 13:39:13.052  1456  1456 D BoundBrokerSvc: Loading bound service for intent: Intent { act=com.google.firebase.dynamiclinks.service.START pkg=com.google.android.gms }
+09-15 13:39:13.053  1384  2096 I MainLanguageModelLoader: MainLanguageModelLoader.updateLmAvailableState():385 updateLmAvailableState(): locale? en_US newState? AVAILABLE
+09-15 13:39:13.053  1384 15126 I SuperDelight: SuperDelightManager.initializeBundledDelightSuperpacks():374 initializeBundledDelightSuperpacks()
+09-15 13:39:13.053  1384  2087 I Delight5Decoder: Delight5DecoderWrapper.loadLanguageModel():730 loadLanguageModel() : 1, version [2024070900]
+09-15 13:39:13.054  1384  1927 I SP      : Sync for bundled_delight succeeded in 14 ms: no changes
+09-15 13:39:13.054  1384  1927 I SP      : GC for 'bundled_delight' (10) with ttl of 0 ms took 0 ms (0/0/0)
+09-15 13:39:13.054  1384  1927 I LmManager: LmManager$1.onSuccess():82 Bundled delight sync success
+09-15 13:39:13.054  1384  1927 I SP      : Registering bundled_delight.2024043000, url: null, constraints: *:*:*:*, flags: *, requested: 2024043000, current: 2024043000
+09-15 13:39:13.054  1384 15125 I SuperDelight: SuperDelightManager.lambda$syncOverridesLanguageModels$14():683 SuperDelightManager#syncOverridesLanguageModels(): Superpack delight_overrides not found or negative version provided
+09-15 13:39:13.054  1384 15125 I SuperDelight: SuperDelightManager$2.onSuccess():631 delight_overrides sync success, adding to data file manager
+09-15 13:39:13.054  1384  1384 I VoiceImeExtension: VoiceImeExtension.shouldStartVoiceInputAutomaticallyInCurrentInputBox():415 No private IME option set to start voice input.
+09-15 13:39:13.055  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:13.062  1384  1384 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-15 13:39:13.062  1384  1384 I WindowMetricsNotification: WindowMetricsNotification.notifyWithWindow():113 
+09-15 13:39:13.062  1384  1384 I WindowMetricsNotification: WindowMetricsNotification.notify():106 WindowMetricsNotification{bounds=Rect(0, 74 - 720, 1280), insets=Rect(0, 0 - 0, 72), densityDpi=240, smallestScreenWidthDp=480, displayWidth=720, displayHeight=1280, xdpi=440.0, ydpi=440.0}; DisplayMetrics{density=1.5, width=720, height=1280, scaledDensity=1.5, xdpi=440.0, ydpi=440.0}
+09-15 13:39:13.099  1384  2096 I Delight5Facilitator: BlocklistLoader.call():39 Running blocklist loader
+09-15 13:39:13.100  1384  2096 I Delight5Facilitator: ContactsLanguageModelLoader.call():37 Running contacts language model loader
+09-15 13:39:13.112  1384  2096 I Delight5Facilitator: ContactsLanguageModelLoader.call():49 Contacts language model is unloaded: preferences=false, deviceLocked=false, blockPersonalData=false
+09-15 13:39:13.127  1384  2096 I Delight5Facilitator: PersonalLanguageModelLoader.call():47 Running personal language model loader
+09-15 13:39:13.128  1384  2096 I Delight5Facilitator: UserHistoryLanguageModelLoader.call():84 Running user history language model loader
+09-15 13:39:13.151 14969 14969 D InsetsController: show(ime(), fromIme=true)
+09-15 13:39:13.152  1384 15125 I SuperDelight: SuperDelightManager.lambda$syncBundledLanguageModels$16():769 SuperDelightManager#syncBundledLanguageModels(): Syncing for version 2024043000
+09-15 13:39:13.153 14969 15130 W InteractionJankMonitor: Initializing without READ_DEVICE_CONFIG permission. enabled=true, interval=1, missedFrameThreshold=3, frameTimeThreshold=64, package=com.ggufchat.app
+09-15 13:39:13.155  1384 15126 I SuperDelight: SuperDelightManager$2.onSuccess():631 bundled_delight sync success, adding to data file manager
+09-15 13:39:13.156  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:13.157   944   993 D WindowManagerShell: onKeepClearAreasChanged: restricted={}, unrestricted={Rect(0, 782 - 720, 1280)}
+09-15 13:39:13.161   944   944 E OverviewProxyService: Failed to get overview proxy for system bar attr change.
+09-15 13:39:13.163  1384  1384 I GoogleInputMethodService: GoogleInputMethodService$1.onKeyboardViewShown():494 onKeyboardViewShown: keyboardType=prime, keyboardViewType=HEADER keyboardView=com.google.android.libraries.inputmethod.widgets.SoftKeyboardView{9cad2fb V.E...... ........ 0,0-720,66}
+09-15 13:39:13.164  1384  1384 I GoogleInputMethodService: GoogleInputMethodService$1.onKeyboardViewShown():494 onKeyboardViewShown: keyboardType=prime, keyboardViewType=BODY keyboardView=com.google.android.libraries.inputmethod.widgets.SoftKeyboardView{e2c0cb V.E...... ........ 0,0-720,360}
+09-15 13:39:13.164  1384  1384 I NewLanguagePromptExtension: NewLanguagePromptExtension$1.onKeyboardViewShown():115 Not show new language banner: no new languages.
+09-15 13:39:13.164  1384  1384 I WindowMetricsNotification: WindowMetricsNotification.notifyWithWindow():113 
+09-15 13:39:13.164  1384  1384 I WindowMetricsNotification: WindowMetricsNotification.notify():106 WindowMetricsNotification{bounds=Rect(0, 74 - 720, 1280), insets=Rect(0, 0 - 0, 72), densityDpi=240, smallestScreenWidthDp=480, displayWidth=720, displayHeight=1280, xdpi=440.0, ydpi=440.0}; DisplayMetrics{density=1.5, width=720, height=1280, scaledDensity=1.5, xdpi=440.0, ydpi=440.0}
+09-15 13:39:13.164  1384  1384 I WindowMetricsNotification: WindowMetricsNotification.notifyWithWindow():113 
+09-15 13:39:13.164  1384  1384 I WindowMetricsNotification: WindowMetricsNotification.notify():106 WindowMetricsNotification{bounds=Rect(0, 74 - 720, 1280), insets=Rect(0, 0 - 0, 72), densityDpi=240, smallestScreenWidthDp=480, displayWidth=720, displayHeight=1280, xdpi=440.0, ydpi=440.0}; DisplayMetrics{density=1.5, width=720, height=1280, scaledDensity=1.5, xdpi=440.0, ydpi=440.0}
+09-15 13:39:13.164  1384  1384 I NormalModeController: NormalModeController.getKeyboardBodyViewHolderPaddingBottom():104 currentPrimeKeyboardType:SOFT systemPaddingBottom:-1
+09-15 13:39:13.176  1384  1384 W AndroidSpellCheckerService: AndroidSpellCheckerService.initialize():73 initialize...
+09-15 13:39:13.176  1384  1384 I ShortcutsDataManager: ShortcutsDataManager.onContentChanged():72 onContentChanged()
+09-15 13:39:13.176  1384  1384 I ContactsDataManager: ContactsDataManager.onContentChanged():159 onContentChanged()
+09-15 13:39:13.176  1384  1384 W AndroidSpellCheckerService: AndroidSpellCheckerService.initialize():83 initialize...done
+09-15 13:39:13.177  1384  1430 I AndroidSpellCheckerService: AndroidSpellCheckerService.createSession():139 com.google.android.keyboard.client.delight5.LanguageIdentifier@b485394 is created
+09-15 13:39:13.177  1384 15126 I DataFileManager: DataFileManager.addDataWithoutNotify():181 data en-US already exists
+09-15 13:39:13.226  1384  2096 I EmojiShortcutsLoader: EmojiShortcutsLoader.getEmojiShortcuts():135 Reading en_US emoji shortcuts
+09-15 13:39:13.235  1456  1456 D BoundBrokerSvc: onBind: Intent { act=com.google.android.gms.common.BIND_SHARED_PREFS pkg=com.google.android.gms }
+09-15 13:39:13.235  1456  1456 D BoundBrokerSvc: Loading bound service for intent: Intent { act=com.google.android.gms.common.BIND_SHARED_PREFS pkg=com.google.android.gms }
+09-15 13:39:13.242 14969 14969 I ImeTracker: com.ggufchat.app:d64711c: onShown
+09-15 13:39:13.311  1384 15116 I DownloadManager: DownloadManager.downloadInternal():390 Download for __KLP_manifest_delight__en-840 scheduled with params DownloadParams{allowMetered=true, requireCharging=false, foreground=false, immediately=true, priority=0}
+09-15 13:39:13.311  1384  1927 I SuperDelight: SuperDelightBundledSlicingStrategy.getSlices():41 BundledSlicing#getSlices() : Locale = [en_US]
+09-15 13:39:13.311  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:13.312  1384  1927 I SuperDelight: SuperDelightBundledSlicingStrategy.getSlices():67 BundledSlicing#getSlices(): result {slices=[bundled_delight:main_en_us_2024022600_2], last batch=true, sync metadata=false}
+09-15 13:39:13.312  1384  1927 I SP      : Syncing bundled_delight (2024043000) with slices: [main_en_us_2024022600_2], metadata: false
+09-15 13:39:13.314  1384  1384 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-15 13:39:13.321  1384  2087 I Delight5Decoder: Delight5DecoderWrapper.loadLanguageModel():752 Loaded main LM 1.en
+09-15 13:39:13.322  1384  2087 I Delight5Decoder: Delight5DecoderWrapper.loadLanguageModel():730 loadLanguageModel() : 7, version [n/a]
+09-15 13:39:13.322  1384  2087 I native  : I0000 00:00:1789479553.322388    2087 blocklist-assembly.cc:126] LoadBlocklist en
+09-15 13:39:13.322  1384  2087 I Delight5Decoder: Delight5DecoderWrapper.loadLanguageModel():771 Loaded dynamic LM 7.en
+09-15 13:39:13.322  1384  2087 I Delight5Decoder: Delight5DecoderWrapper.loadLanguageModel():730 loadLanguageModel() : 4, version [n/a]
+09-15 13:39:13.322  1384 15116 I DownloadManager: DownloadManager.startDownload():484 start download of __KLP_manifest_delight__en-840
+09-15 13:39:13.323  1384  2087 I Delight5Decoder: Delight5DecoderWrapper.loadLanguageModel():771 Loaded dynamic LM 4.en
+09-15 13:39:13.323  1384  2087 I Delight5Decoder: Delight5DecoderWrapper.setKeyboardLayout():511 setKeyboardLayout()
+09-15 13:39:13.328  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:13.330  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:13.338  1384  2087 I Delight5Decoder: Delight5DecoderWrapper.loadLanguageModel():730 loadLanguageModel() : 3, version [n/a]
+09-15 13:39:13.339  1384  2087 I Delight5Decoder: Delight5DecoderWrapper.loadLanguageModel():771 Loaded dynamic LM 3.en
+09-15 13:39:13.339  1384  2087 W Delight5Decoder: Delight5DecoderWrapper.shouldAbandonMessage():2218 Detected old [FetchSuggestions] request in background: 258<259
+09-15 13:39:13.345  1384 15116 I DownloadManager: DownloadManager.downloadInternal():390 Download for __KLP_delight__en-840 scheduled with params DownloadParams{allowMetered=false, requireCharging=false, foreground=false, immediately=false, priority=500}
+09-15 13:39:13.351  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:13.388  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:13.457  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:13.460  1384  2096 I EmojiShortcutsLoader: EmojiShortcutsLoader.getEmojiShortcuts():156 Read en_US emoji shortcuts successfully.
+09-15 13:39:13.463  1384  2096 I EmojiShortcutsLoader: EmojiShortcutsLoader.call():71 1 emoji shortcut maps loaded.
+09-15 13:39:13.464  1384 15116 I DownloadManager: DownloadManager.downloadInternal():390 Download for __KLP_delight__en-840 scheduled with params DownloadParams{allowMetered=false, requireCharging=false, foreground=false, immediately=false, priority=500}
+09-15 13:39:13.465  1384  1927 I SP      : Sync for bundled_delight succeeded in 235 ms: no changes
+09-15 13:39:13.465  1384  1927 I SP      : GC for 'bundled_delight' (10) with ttl of 0 ms took 0 ms (0/0/0)
+09-15 13:39:13.465  1384  1927 I LmManager: LmManager$1.onSuccess():82 Bundled delight sync success
+09-15 13:39:13.466  1384 15125 I SuperDelight: SuperDelightManager$2.onSuccess():631 bundled_delight sync success, adding to data file manager
+09-15 13:39:13.466  1384 15125 I DataFileManager: DataFileManager.addDataWithoutNotify():181 data en-US already exists
+09-15 13:39:13.466  1384  2096 I EmojiShortcutsLoader: EmojiShortcutsLoader.call():82 Finished loading emoji shortcuts
+09-15 13:39:13.466  1384  2096 I Delight5Facilitator: EmailLanguageModelLoader.call():32 Running email language model loader
+09-15 13:39:13.467  1384  2096 I Delight5Facilitator: KeyCorrectionTfliteModelLoader.call():31 Running Key Correction Tflite Model loader
+09-15 13:39:13.467  1384  2096 I Delight5Facilitator: RankingModelLoader.call():30 Running Ranking Model loader
+09-15 13:39:13.467  1384  2096 I CrankEngineLocales: CrankEngineLocales.getLocaleToUseForCrankEngine():66 Using locale en_US for emoji prediction
+09-15 13:39:13.467  1384  2096 I CrankEngineLocales: CrankEngineLocales.getLocaleToUseForCrankEngine():66 Using locale en_US for emoji prediction
+09-15 13:39:13.467  1384  2096 I CrankEngineLocales: CrankEngineLocales.getLocaleToUseForCrankEngine():66 Using locale en_US for emoji prediction
+09-15 13:39:13.467  1384  2096 I CrankEngineLocales: CrankEngineLocales.getLocaleToUseForCrankEngine():66 Using locale en_US for emoji prediction
+09-15 13:39:13.467  1384  2096 I CrankEngineLocales: CrankEngineLocales.getLocaleToUseForCrankEngine():66 Using locale en_US for emoji prediction
+09-15 13:39:13.467  1384  2096 I CrankEngineLocales: CrankEngineLocales.getLocaleToUseForCrankEngine():66 Using locale en_US for emoji prediction
+09-15 13:39:13.476  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:13.519  1384  2096 I CrankEngineLocales: CrankEngineLocales.getLocaleToUseForCrankEngine():66 Using locale en_US for emoji prediction
+09-15 13:39:13.521  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:13.565  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:13.596  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:13.608  1384  2087 I native  : I0000 00:00:1789479553.608818    2087 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-15 13:39:13.618  1384  2087 I Delight5Decoder: Delight5DecoderWrapper.loadLanguageModel():730 loadLanguageModel() : 29, version [n/a]
+09-15 13:39:13.626  1384  2087 W Delight5Decoder: Delight5DecoderWrapper.getTimerTypeForLoadLanguageModule():878 Cannot find timer type for loading language model 29
+09-15 13:39:13.632  1384  2087 I Delight5Decoder: Delight5DecoderWrapper.loadLanguageModel():771 Loaded dynamic LM 29.en
+09-15 13:39:13.654  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:13.659   571  1910 W JobScheduler: Job didn't exist in JobStore: 1d2028 #u0a156/20 com.google.android.inputmethod.latin/androidx.work.impl.background.systemjob.SystemJobService
+09-15 13:39:13.660  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:13.661  1384  1384 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 262<273, inputStateId=9, lastInputStateId=10
+09-15 13:39:13.668  1384  1384 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-15 13:39:13.674  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:13.704  1384  1400 I putmethod.latin: Background concurrent mark compact GC freed 15MB AllocSpace bytes, 34(916KB) LOS objects, 49% free, 16MB/33MB, paused 358us,1.428ms total 235.102ms
+09-15 13:39:13.713  1384  6334 W AutoCloseableTracker: AutoCloseableTracker.drainReferenceQueue():96 Cleanup AutoCloseable object that missing the close() call
+09-15 13:39:13.713  1384  6334 W AutoCloseableTracker: ixo
+09-15 13:39:13.713  1384  6334 W AutoCloseableTracker: 	at ixl.<init>(PG:20)
+09-15 13:39:13.713  1384  6334 W AutoCloseableTracker: 	at ixs.<init>(PG:1)
+09-15 13:39:13.713  1384  6334 W AutoCloseableTracker: 	at ixq.<init>(PG:2)
+09-15 13:39:13.713  1384  6334 W AutoCloseableTracker: 	at com.google.android.keyboard.client.delight5.LanguageIdentifier.<init>(PG:6)
+09-15 13:39:13.713  1384  6334 W AutoCloseableTracker: 	at com.google.android.keyboard.client.delight5.LanguageIdentifier.<init>(PG:8)
+09-15 13:39:13.713  1384  6334 W AutoCloseableTracker: 	at com.android.inputmethod.latin.spellcheck.AndroidSpellCheckerService.createSession(PG:32)
+09-15 13:39:13.713  1384  6334 W AutoCloseableTracker: 	at android.service.textservice.SpellCheckerService$SpellCheckerServiceBinder.getISpellCheckerSession(SpellCheckerService.java:361)
+09-15 13:39:13.713  1384  6334 W AutoCloseableTracker: 	at com.android.internal.textservice.ISpellCheckerService$Stub.onTransact(ISpellCheckerService.java:111)
+09-15 13:39:13.713  1384  6334 W AutoCloseableTracker: 	at android.os.Binder.execTransactInternal(Binder.java:1505)
+09-15 13:39:13.713  1384  6334 W AutoCloseableTracker: 	at android.os.Binder.execTransact(Binder.java:1444)
+09-15 13:39:13.715  1384  1402 W SP      : File ref is being finalized but wasn't closed, file: en_cpu_272adaa02e4841a0e8fe0d7f95b77421[2]
+09-15 13:39:13.715  1384  1402 W SP      : File ref is being finalized but wasn't closed, file: main_en_us_2024022600_2[20]
+09-15 13:39:13.715  1384  1402 W SP      : File ref is being finalized but wasn't closed, file: main_en_us_2024022600_2[20]
+09-15 13:39:13.715  1384  1402 W SP      : File ref is being finalized but wasn't closed, file: main_en_us_2024022600_2[20]
+09-15 13:39:13.716  1384  1402 W SP      : File ref is being finalized but wasn't closed, file: main_en_us_2024022600_2[20]
+09-15 13:39:13.716  1384  1402 W SP      : File ref is being finalized but wasn't closed, file: tflite-nwp-756c50035b995cfb0f7e8feb7d1b10ee[9]
+09-15 13:39:13.716  1384  1402 W SP      : File ref is being finalized but wasn't closed, file: tflite-nwp-756c50035b995cfb0f7e8feb7d1b10ee[9]
+09-15 13:39:13.716  1384  1402 W SP      : File ref is being finalized but wasn't closed, file: 2023012316_en[15]
+09-15 13:39:13.716  1384  1402 W SP      : File ref is being finalized but wasn't closed, file: 2023012316_en[15]
+09-15 13:39:13.716  1384  1402 W SP      : File ref is being finalized but wasn't closed, file: 2023012316_en[15]
+09-15 13:39:13.716  1384  1402 W SP      : File ref is being finalized but wasn't closed, file: 2023012316_en[15]
+09-15 13:39:13.716  1384  1402 W SP      : File ref is being finalized but wasn't closed, file: 2023012316_en[15]
+09-15 13:39:13.716  1384  8624 I NativeLibHelper: NativeLibHelper.loadLibrary():162 Loaded native library:integrated_shared_object (result=true)
+09-15 13:39:13.717  1384  1402 W SP      : File ref is being finalized but wasn't closed, file: 2023012316_en[15]
+09-15 13:39:13.724  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:13.729  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:13.734  1384  8624 D nativeloader: Load /product/app/LatinIMEGooglePrebuilt/LatinIMEGooglePrebuilt.apk!/lib/x86_64/libgrammar-checker_jni.so using ns product-clns-7 from class loader (caller=/product/app/LatinIMEGooglePrebuilt/LatinIMEGooglePrebuilt.apk!classes2.dex): ok
+09-15 13:39:13.744  1384  8624 I NativeLibHelper: NativeLibHelper.loadLibrary():162 Loaded native library:integrated_shared_object (result=true)
+09-15 13:39:13.762  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:13.770  1384  1384 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-15 13:39:13.803  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:13.821  1384  8624 I tflite  : Created TensorFlow Lite XNNPACK delegate for CPU.
+09-15 13:39:13.845  1384  8624 W tflite  : Attempting to use a delegate that only supports static-sized tensors with a graph that has dynamic-sized tensors (tensor#94 is a dynamic-sized tensor).
+09-15 13:39:13.846  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:13.848  1384  1384 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-15 13:39:13.849  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:13.852  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:13.884  1384 15128 W WM-Processor: Didn't find WorkSpec for id WorkGenerationalId(workSpecId=38f72891-f9e4-453f-9f43-ca1df72fa659, generation=0)
+09-15 13:39:13.887   571  1910 D ConnectivityService: requestNetwork for uid/pid:10156/1384 activeRequest: null callbackRequest: 178 [NetworkRequest [ REQUEST id=179, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED&NOT_BANDWIDTH_CONSTRAINED Uid: 10156 RequestorUid: 10156 RequestorPkg: com.google.android.inputmethod.latin UnderlyingNetworks: Null] ]] callback flags: 0 order: 2147483647 isUidTracked: false
+09-15 13:39:13.901  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:13.901  1384  1384 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 285<286, inputStateId=15, lastInputStateId=16
+09-15 13:39:13.913   571   854 D ConnectivityService: NetReassign [179 : null → 100] [c 0] [a 0] [i 1]
+09-15 13:39:13.913   571   847 D OemPaidWifiNetworkFactory: got request NetworkRequest [ REQUEST id=179, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED&NOT_BANDWIDTH_CONSTRAINED Uid: 10156 RequestorUid: 10156 RequestorPkg: com.google.android.inputmethod.latin UnderlyingNetworks: Null] ]
+09-15 13:39:13.913   571   847 D MultiInternetWifiNetworkFactory: got request NetworkRequest [ REQUEST id=179, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED&NOT_BANDWIDTH_CONSTRAINED Uid: 10156 RequestorUid: 10156 RequestorPkg: com.google.android.inputmethod.latin UnderlyingNetworks: Null] ]
+09-15 13:39:13.914   571   847 D WifiNetworkFactory: got request NetworkRequest [ REQUEST id=179, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED&NOT_BANDWIDTH_CONSTRAINED Uid: 10156 RequestorUid: 10156 RequestorPkg: com.google.android.inputmethod.latin UnderlyingNetworks: Null] ]
+09-15 13:39:13.914   571   847 D UntrustedWifiNetworkFactory: got request NetworkRequest [ REQUEST id=179, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED&NOT_BANDWIDTH_CONSTRAINED Uid: 10156 RequestorUid: 10156 RequestorPkg: com.google.android.inputmethod.latin UnderlyingNetworks: Null] ]
+09-15 13:39:13.923   571  1910 D ConnectivityService: requestNetwork for uid/pid:10156/1384 activeRequest: null callbackRequest: 180 [NetworkRequest [ REQUEST id=181, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED&NOT_BANDWIDTH_CONSTRAINED Uid: 10156 RequestorUid: 10156 RequestorPkg: com.google.android.inputmethod.latin UnderlyingNetworks: Null] ]] callback flags: 0 order: 2147483647 isUidTracked: false
+09-15 13:39:13.923   571   847 D OemPaidWifiNetworkFactory: got request NetworkRequest [ REQUEST id=181, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED&NOT_BANDWIDTH_CONSTRAINED Uid: 10156 RequestorUid: 10156 RequestorPkg: com.google.android.inputmethod.latin UnderlyingNetworks: Null] ]
+09-15 13:39:13.926   571   847 D MultiInternetWifiNetworkFactory: got request NetworkRequest [ REQUEST id=181, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED&NOT_BANDWIDTH_CONSTRAINED Uid: 10156 RequestorUid: 10156 RequestorPkg: com.google.android.inputmethod.latin UnderlyingNetworks: Null] ]
+09-15 13:39:13.926   571   847 D WifiNetworkFactory: got request NetworkRequest [ REQUEST id=181, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED&NOT_BANDWIDTH_CONSTRAINED Uid: 10156 RequestorUid: 10156 RequestorPkg: com.google.android.inputmethod.latin UnderlyingNetworks: Null] ]
+09-15 13:39:13.926   571   847 D UntrustedWifiNetworkFactory: got request NetworkRequest [ REQUEST id=181, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED&NOT_BANDWIDTH_CONSTRAINED Uid: 10156 RequestorUid: 10156 RequestorPkg: com.google.android.inputmethod.latin UnderlyingNetworks: Null] ]
+09-15 13:39:13.926   571   854 D ConnectivityService: NetReassign [181 : null → 100] [c 0] [a 0] [i 3]
+09-15 13:39:13.928  1384  1384 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-15 13:39:13.934  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:13.935  1384  1384 I MDDTaskScheduler: MDDTaskScheduler$Worker.startWorkInner():122 work mdd_download_work started
+09-15 13:39:13.935  1384  1384 I DownloadManager: DownloadManager.startDownload():484 start download of __KLP_delight__en-840
+09-15 13:39:13.936  1384  1384 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 287<289, inputStateId=17, lastInputStateId=18
+09-15 13:39:14.006 14969 14983 D EGL_emulation: app_time_stats: avg=43.10ms min=6.74ms max=140.54ms count=19
+09-15 13:39:14.014  1384 15124 I DelightKLPDownloader: DelightKLPDownloader$2.onSuccess():207 klp en_840 downloaded with version 2024070900
+09-15 13:39:14.015  1384 15124 I DelightKLPDownloader: DelightKLPDownloader$2.onSuccess():207 klp en_840 downloaded with version 2024070900
+09-15 13:39:14.015  1384 15124 I WM-WorkerWrapper: Worker result SUCCESS for Work [ id=d755a908-632c-41e5-acb3-cce4d26f6b55, tags={ com.google.android.libraries.inputmethod.mdd.MDDTaskScheduler$Worker } ]
+09-15 13:39:14.019  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:14.022  1384  2087 I native  : I0000 00:00:1789479554.022329    2087 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-15 13:39:14.077  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:14.083   571  1910 W JobScheduler: Job didn't exist in JobStore: c3816d4 #u0a156/21 com.google.android.inputmethod.latin/androidx.work.impl.background.systemjob.SystemJobService
+09-15 13:39:14.083  1384  1384 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 289<293, inputStateId=19, lastInputStateId=21
+09-15 13:39:14.083  1384  1384 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 291<293, inputStateId=20, lastInputStateId=21
+09-15 13:39:14.133  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:14.136  1384  2087 I native  : I0000 00:00:1789479554.136764    2087 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-15 13:39:14.144  1384  1384 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 293<295, inputStateId=22, lastInputStateId=22
+09-15 13:39:14.147  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:14.188  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:14.192  1384  2087 I native  : I0000 00:00:1789479554.192488    2087 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-15 13:39:14.226  1384  1384 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 295<299, inputStateId=24, lastInputStateId=24
+09-15 13:39:14.227  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:14.230  1384  1384 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 299<300, inputStateId=25, lastInputStateId=26
+09-15 13:39:14.232  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:14.261  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:14.313  1384  1384 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-15 13:39:14.320  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:14.322  1384  1384 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 303<304, inputStateId=29, lastInputStateId=30
+09-15 13:39:14.327  1384  2161 D EGL_emulation: app_time_stats: avg=143.04ms min=13.01ms max=383.55ms count=8
+09-15 13:39:14.344  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:14.344  1384  1384 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 305<306, inputStateId=32, lastInputStateId=33
+09-15 13:39:14.347  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:14.350  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:14.353  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:14.354  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:14.382  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:14.382  1384  2087 I native  : I0000 00:00:1789479554.382641    2087 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-15 13:39:14.418  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:14.420  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:14.422  1384  1384 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 307<311, inputStateId=34, lastInputStateId=36
+09-15 13:39:14.444  1384  1384 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 309<311, inputStateId=35, lastInputStateId=36
+09-15 13:39:14.446  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:14.451  1384  2087 I native  : I0000 00:00:1789479554.451152    2087 input-context-store.cc:186] Ignoring stale client request for OverrideDecodedCandidates
+09-15 13:39:14.483  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:14.485  1384  1384 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 311<314, inputStateId=0, lastInputStateId=40
+09-15 13:39:14.485  1384  1384 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 313<314, inputStateId=39, lastInputStateId=40
+09-15 13:39:14.519  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:14.525  1384  1384 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-15 13:39:14.570  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:14.572  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:14.664  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:14.727  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:14.728  1384  1384 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 317<320, inputStateId=44, lastInputStateId=47
+09-15 13:39:14.771  1384  1384 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 319<321, inputStateId=46, lastInputStateId=47
+09-15 13:39:14.773  1384  1384 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-15 13:39:14.773  1384  1384 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 321<322, inputStateId=48, lastInputStateId=49
+09-15 13:39:14.840  1384  1384 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-15 13:39:14.854  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:14.939 15139 15139 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 0 <<<<<<
+09-15 13:39:14.942 15139 15139 I AndroidRuntime: Using default boot image
+09-15 13:39:14.942 15139 15139 I AndroidRuntime: Leaving lock profiling enabled
+09-15 13:39:14.944 15139 15139 I app_process: Core platform API reporting enabled, enforcing=false
+09-15 13:39:14.945 15139 15139 I app_process: Using CollectorTypeCMC GC.
+09-15 13:39:14.993 15139 15139 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-15 13:39:15.000 15139 15139 D nativeloader: Load libicu_jni.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-15 13:39:15.000 15139 15139 D app_process: u_setTimeZoneFilesDirectory("/apex/com.android.tzdata/etc/tz/versioned/8/icu") succeeded. 
+09-15 13:39:15.000 15139 15139 D app_process: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt75l.dat
+09-15 13:39:15.000 15139 15139 D nativeloader: Load libjavacore.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-15 13:39:15.001 15139 15139 D nativeloader: Load libopenjdk.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-15 13:39:15.002 15139 15139 W app_process: Unexpected CPU variant for x86: x86_64.
+09-15 13:39:15.002 15139 15139 W app_process: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, goldmont-without-sha-xsaves, tremont, kabylake, default
+09-15 13:39:15.003 15139 15139 W app_process: ClassLoaderContext shared library size mismatch. Expected=2, found=0 (PCL[]{PCL[/system/framework/android.test.base.jar*724373495]#PCL[/system/framework/android.test.mock.jar*1452759902]} | PCL[])
+09-15 13:39:15.004 15139 15139 W app_process: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[]{PCL[/system/framework/android.test.runner.jar*2496447986]#PCL[/system/framework/android.test.base.jar*724373495]} | PCL[/system/framework/android.test.runner.jar*2496447986])
+09-15 13:39:15.016 15139 15139 D nativeloader: Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok
+09-15 13:39:15.017 15139 15139 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-15 13:39:15.019 15139 15139 D UiAutomationConnection: Created on user UserHandle{0}
+09-15 13:39:15.019 15139 15139 I UiAutomation: Initialized for user 0 on display 0
+09-15 13:39:15.019 15139 15139 W UiAutomation: Created with deprecatead constructor, assumes DEFAULT_DISPLAY
+09-15 13:39:15.020   571   587 D AccessibilityManagerService: changeCurrentUserForTestAutomationIfNeededLocked(0): ignoring because device doesn't support visible background users
+09-15 13:39:15.020   571   587 I UiAutomationManager: Registering UiTestAutomationService (id=com.android.server.accessibility/UiAutomation, flags=0x0) when called by user 0
+09-15 13:39:15.020   571   587 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-15 13:39:15.020  1480  2201 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-15 13:39:15.021  1480  1790 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-15 13:39:15.021  1480  1790 I AiAiEcho: EchoTargets: 
+09-15 13:39:15.021  1480  1790 I AiAiEcho: Filtered by AiAi flag check: 
+09-15 13:39:15.021  1480  1790 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 13:39:15.021  1480  1790 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 13:39:15.021  1480  1790 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-15 13:39:15.021   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:15.021  1480  1790 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-15 13:39:15.021   944   944 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-15 13:39:15.021   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:15.021   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:15.021   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:15.021   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:15.022   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:15.022   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:15.022 15139 15151 V UiAutomation: Init UiAutomation@5d7fa81[id=57, displayId=0, flags=0]
+09-15 13:39:15.025   571  2191 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-15 13:39:15.026   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:15.026   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:15.026   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:15.027   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:15.027   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:15.027   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:15.027   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:15.027   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:15.027   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:15.027   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:15.027   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:15.027   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:15.028   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:15.028   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:15.028   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:15.028   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:15.028   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:15.028   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:15.028   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:15.028   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:15.028   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:15.029   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:15.029   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:15.029   571   571 D BatterySaverPolicy: accessibility changed to true, updating policy.
+09-15 13:39:15.044  1480  2201 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-15 13:39:15.044  1480  1790 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-15 13:39:15.044  1480  1790 I AiAiEcho: EchoTargets: 
+09-15 13:39:15.044  1480  1790 I AiAiEcho: Filtered by AiAi flag check: 
+09-15 13:39:15.044  1480  1790 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 13:39:15.044  1480  1790 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 13:39:15.044  1480  1790 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-15 13:39:15.045  1480  1790 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-15 13:39:15.045   944   944 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-15 13:39:15.123  1384  1384 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-15 13:39:15.294 14969 14983 D EGL_emulation: app_time_stats: avg=50.19ms min=6.29ms max=472.61ms count=21
+09-15 13:39:15.356  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:15.857  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:16.034 15139 15139 I AccessibilityNodeInfoDumper: Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@117ef; boundsInParent: Rect(0, 0 - 672, 0); boundsInScreen: Rect(24, 180 - 696, 180); boundsInWindow: Rect(24, 180 - 696, 180); packageName: com.ggufchat.app; className: android.widget.LinearLayout; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: null; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; granularScrollingSupported: false; importantForAccessibility: false; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+09-15 13:39:16.035 15139 15139 W AccessibilityNodeInfoDumper: Fetch time: 4ms
+09-15 13:39:16.037   571   663 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-15 13:39:16.037   571   663 D AccessibilityManagerService: restoreCurrentUserForTestAutomationIfNeededLocked(): ignoring because device doesn't support visible background users
+09-15 13:39:16.037  1480  2405 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-15 13:39:16.037   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:16.037   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:16.037   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:16.037   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:16.037   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:16.037   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:16.037   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:16.037  1480  1790 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-15 13:39:16.037   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:16.037   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:16.037  1480  1790 I AiAiEcho: EchoTargets: 
+09-15 13:39:16.037  1480  1790 I AiAiEcho: Filtered by AiAi flag check: 
+09-15 13:39:16.037  1480  1790 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 13:39:16.037   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:16.037   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:16.037  1480  1790 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 13:39:16.037   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:16.037   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:16.037   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:16.037   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:16.037   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:16.037  1480  1790 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-15 13:39:16.037   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:16.037   571   571 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 13:39:16.037   571   571 D BatterySaverPolicy: accessibility changed to false, updating policy.
+09-15 13:39:16.039  1480  1790 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-15 13:39:16.040   944   944 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-15 13:39:16.040 15139 15139 D AndroidRuntime: Shutting down VM
+09-15 13:39:16.297 14969 14983 D EGL_emulation: app_time_stats: avg=501.19ms min=499.60ms max=502.78ms count=2
+09-15 13:39:16.358  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:16.859  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:16.892   439   886 D audioserver: logFgsApiBegin: FGS Logger Transaction failed, -129
+09-15 13:39:16.896   571   587 W AS.PlaybackActivityMon: No piid assigned for invalid/internal port id 15
+09-15 13:39:16.935 14969 14969 I ImeTracker: com.ggufchat.app:5e1418dc: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+09-15 13:39:16.937  1384  1384 I GoogleInputMethodService: GoogleInputMethodService.onFinishInputView():2393 
+09-15 13:39:16.941   571  2181 I ActivityManager: Background started FGS: Allowed [callingPackage: com.ggufchat.app; callingUid: 10209; uidState: TOP ; uidBFSL: [BFSL]; intent: Intent { act=com.ggufchat.app.action.GENERATE cmp=com.ggufchat.app/.GenerationService (has extras) }; code:PROC_STATE_TOP; tempAllowListReason:<null>; targetSdkVersion:34; callerTargetSdkVersion:34; startForegroundCount:0; bindFromPackage:null: isBindService:false]
+09-15 13:39:16.945  1384  1384 W TooltipLifecycleManager: TooltipLifecycleManager.dismissTooltips():152 Tooltip with id spell_check_add_to_dictionary not found in tooltipManager.
+09-15 13:39:16.945  1384  1384 I InputBundle: InputBundle.consumeEvent():884 Skip consuming an event as keyboard status is 0
+09-15 13:39:16.945  1384  1384 I VoiceInputHandler: VoiceInputHandler.onDeactivateIme():115 unregistering TalkbackStateListener
+09-15 13:39:16.945  1384  1384 I VoiceInputManagerWrapper: VoiceInputManagerWrapper.shutdown():124 shutdown()
+09-15 13:39:16.946  1384  1384 E native  : E0000 00:00:1789479556.946919    1384 key-correction-manager.cc:337] User feature cache is not ready for key correction!
+09-15 13:39:16.947  1384  1384 I AndroidIME: AbstractIme.onDeactivate():202 LatinIme.onDeactivate()
+09-15 13:39:16.947 14969 14969 D InsetsController: hide(ime(), fromIme=true)
+09-15 13:39:16.951  1384  1911 W ModuleManager: ModuleManager.loadModule():473 Module mgc is not available
+09-15 13:39:16.954   944   944 E OverviewProxyService: Failed to get overview proxy for system bar attr change.
+09-15 13:39:16.956   944   993 D WindowManagerShell: onKeepClearAreasChanged: restricted={}, unrestricted={}
+09-15 13:39:16.957  1384  1384 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-15 13:39:16.957   371   371 I netd    : tetherGetStats() -> {[]} <0.74ms>
+09-15 13:39:16.962   571   587 W ForegroundServiceTypeLoggerModule: Foreground service start for UID: 10209 does not have any types
+09-15 13:39:16.970  1384  2161 D EGL_emulation: app_time_stats: avg=528.52ms min=53.03ms max=1840.41ms count=5
+09-15 13:39:16.980  1384  1384 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1986 onStartInput(EditorInfo{EditorInfo{packageName=com.ggufchat.app, inputType=24001, inputTypeString=Normal, enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=40000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=0, initialSelEnd=0, initialCapsMode=3000, label=null, fieldId=-1, fieldName=null, extras=Bundle[mParcelledData.dataSize=168], hintText=non-empty, hintLocales=[]}}, true)
+09-15 13:39:16.983  1384  1384 I GoogleInputMethodService: GoogleInputMethodService.updateDeviceLockedStatus():2248 repeatCheckTimes = 1, locked = false
+09-15 13:39:16.983  1384  1384 W SessionManager: SessionManager.beginSession():53 Try to begin an already begun session [INPUT_SESSION], end it first
+09-15 13:39:16.983  1384  1384 I AndroidIME: InputBundleManager.loadActiveInputBundleId():450 loadActiveInputBundleId: en-US, ime_english_united_states
+09-15 13:39:16.984   571  2191 W PackageConfigPersister: App-specific configuration not found for packageName: com.ggufchat.app and userId: 0
+09-15 13:39:16.984  1384  1384 I WindowMetricsNotification: WindowMetricsNotification.notifyWithWindow():113 
+09-15 13:39:16.984  1384  1384 I WindowMetricsNotification: WindowMetricsNotification.notify():106 WindowMetricsNotification{bounds=Rect(0, 74 - 720, 1280), insets=Rect(0, 0 - 0, 72), densityDpi=240, smallestScreenWidthDp=480, displayWidth=720, displayHeight=1280, xdpi=440.0, ydpi=440.0}; DisplayMetrics{density=1.5, width=720, height=1280, scaledDensity=1.5, xdpi=440.0, ydpi=440.0}
+09-15 13:39:16.984  1384  1384 I ShortcutsDataManager: AbstractContentDataManager.startImportContentTask():240 startImportContentTask()
+09-15 13:39:17.011  1384  2097 I ShortcutsDataManager: AbstractContentDataManager$ImportContentTask.doInBackground():255 doInBackground()
+09-15 13:39:17.012 14969 15168 I GGUFSystem: GGUF_SYSTEM_PROMPT_APPLIED scope=global chars=107 sha256=dde45e87ea07db0b49bcddd022d4f41a452610560d9af636571c26d16a4bcd04
+09-15 13:39:17.028  1384  2097 I PersonalDictionaryDataHandler: PersonalDictionaryDataHandler.beginProcess():114 LanguageTags = [en-US]
+09-15 13:39:17.048   571  1904 D ActivityManager: sync unfroze 1642 android.process.acore for 7
+09-15 13:39:17.053 14969 14969 I ImeTracker: com.ggufchat.app:2ac1887a: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_ON_ANIMATION_STATE_CHANGED fromUser false
+09-15 13:39:17.056   571   699 I ImeTracker: com.ggufchat.app:2ac1887a: onCancelled at PHASE_SERVER_SHOULD_HIDE
+09-15 13:39:17.056 14969 14969 I ImeTracker: com.ggufchat.app:5e1418dc: onHidden
+--------- beginning of kernel
+09-15 13:39:17.216     0     0 I logd    : logdr: UID=0 GID=0 PID=15166 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:17.085  1384  2097 I ShortcutsDataManager: AbstractContentDataManager.importRecords():345 importRecords() : Success : Count = 0
+09-15 13:39:17.090 14969 15168 I GGUFChatNative: GGUF_JINJA_TEMPLATE_APPLIED messages=2
+09-15 13:39:17.090  1384  2097 I ShortcutsDataManager: AbstractContentDataManager.importContentData():295 importContentData() : Ending import process
+09-15 13:39:17.090 14969 15168 I GGUFInference: GGUF_CONTENT_PREPARED files=0 images=0 text_chars=0
+09-15 13:39:17.094   439   542 D audioserver: logFgsApiEnd: FGS Logger Transaction failed, -129
+09-15 13:39:17.105  1384  2087 I Delight5Decoder: Delight5DecoderWrapper.unloadLanguageModel():943 unloadLanguageModel() : 4, version [n/a]
+09-15 13:39:17.163 14969 14969 W FrameTracker: Missed App frame:JANK_APP_DEADLINE_MISSED, 130217, 0, CUJ=J<IME_INSETS_SHOW_ANIMATION::0@0@com.ggufchat.app>
+09-15 13:39:17.217 14969 15168 I MESA    : on_vkAllocateMemory: has alloc flags
+09-15 13:39:17.217 14969 15168 I MESA    : allocateCoherentMemory: has alloc flags
+09-15 13:39:17.287  1384  2097 I PersonalLanguageModelUpdater: PersonalLanguageModelUpdater$UpdateOperation.performInternal():165 run() : Added 0 words and 0 shortcuts
+09-15 13:39:17.287  1384  2097 I DynamicLanguageModelOperation: DynamicLanguageModelOperation.perform():43 perform() : 4 : dxm : Completed
+09-15 13:39:17.287  1384  2087 I Delight5Decoder: Delight5DecoderWrapper.loadLanguageModel():730 loadLanguageModel() : 4, version [n/a]
+09-15 13:39:17.288  1384  2087 I Delight5Decoder: Delight5DecoderWrapper.loadLanguageModel():771 Loaded dynamic LM 4.en
+09-15 13:39:17.289  1384  1384 I ShortcutsDataManager: AbstractContentDataManager$ImportContentTask.onPostExecute():266 onPostExecute() : Result = [2,0]
+09-15 13:39:17.289  1384  1384 I ShortcutsDataManager: ShortcutsDataManager.onImportFinished():82 onImportFinished() : Result = 2 : Count = 0
+09-15 13:39:17.361  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:17.448 14969 14983 D EGL_emulation: app_time_stats: avg=71.05ms min=8.79ms max=496.93ms count=15
+09-15 13:39:17.896  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:18.353     0     0 I logd    : logdr: UID=0 GID=0 PID=15179 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:18.397  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:18.450 14969 14983 D EGL_emulation: app_time_stats: avg=72.52ms min=8.87ms max=462.97ms count=12
+09-15 13:39:18.732 14969 15168 I MESA    : on_vkAllocateMemory: has alloc flags
+09-15 13:39:18.732 14969 15168 I MESA    : allocateCoherentMemory: has alloc flags
+09-15 13:39:18.899  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:19.407     0     0 I logd    : logdr: UID=0 GID=0 PID=15187 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:19.400  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:19.561  1278  8925 I AlarmManager: setExactAndAllowWhileIdle [name: GCM_HB_ALARM type: 2 triggerAtMillis: 1658293]
+09-15 13:39:19.564  1278  8925 E WakeLock: GCM_HB_ALARM release without a matched acquire!
+09-15 13:39:19.901  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:19.938   380  4193 D android.hardware.audio@7.1-impl.ranchu: threadLoop: entering standby, frames: 2606848
+09-15 13:39:19.964 14969 14983 D EGL_emulation: app_time_stats: avg=504.67ms min=499.60ms max=514.16ms count=3
+09-15 13:39:20.281  1726  1726 I wpa_supplicant: wlan0: CTRL-EVENT-BEACON-LOSS 
+09-15 13:39:20.520     0     0 I logd    : logdr: UID=0 GID=0 PID=15197 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:20.402  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:20.906  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:20.967 14969 14983 D EGL_emulation: app_time_stats: avg=501.72ms min=500.71ms max=502.73ms count=2
+09-15 13:39:21.406  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:21.623     0     0 I logd    : logdr: UID=0 GID=0 PID=15205 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:21.908  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:21.975 14969 14983 D EGL_emulation: app_time_stats: avg=503.78ms min=500.21ms max=507.35ms count=2
+09-15 13:39:22.409  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:22.740     0     0 I logd    : logdr: UID=0 GID=0 PID=15213 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:22.910  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:23.104   371   371 I netd    : tetherGetStats() -> {[]} <0.40ms>
+09-15 13:39:23.411  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:23.477 14969 14983 D EGL_emulation: app_time_stats: avg=500.42ms min=491.96ms max=505.94ms count=3
+09-15 13:39:23.871     0     0 I logd    : logdr: UID=0 GID=0 PID=15221 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:23.913  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:24.417  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:24.854  1518  1780 I BistoHotwordHelper: (REDACTED) getHotwordActive::active query: %s, watch: %s, devices connected: %s
+09-15 13:39:25.022     0     0 I logd    : logdr: UID=0 GID=0 PID=15229 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:24.920  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:24.972 14969 14983 D EGL_emulation: app_time_stats: avg=498.28ms min=490.42ms max=505.15ms count=3
+09-15 13:39:25.421  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:25.928  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:26.129     0     0 I logd    : logdr: UID=0 GID=0 PID=15237 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:25.991 14969 14983 D EGL_emulation: app_time_stats: avg=509.32ms min=497.15ms max=521.49ms count=2
+09-15 13:39:26.429  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:26.931  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:27.039  1384  1911 I ProtoXDBBufferWrapper: ProtoXDBBufferWrapper.flushToStorage():158 Flushed 6 data item(s) to storage.
+09-15 13:39:27.229     0     0 I logd    : logdr: UID=0 GID=0 PID=15245 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:27.177   571   571 W NotificationHistory: Attempted to add notif for locked/gone/disabled user 0
+09-15 13:39:27.181  1480  1932 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-15 13:39:27.181  1480  1932 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-15 13:39:27.220   944  1251 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-15 13:39:27.232   944  1251 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-15 13:39:27.269   944  1084 D EGL_emulation: app_time_stats: avg=27233.10ms min=27233.10ms max=27233.10ms count=1
+09-15 13:39:27.336 14969 14969 E FrameTracker: force finish cuj, time out: J<IME_INSETS_HIDE_ANIMATION::1@0@com.ggufchat.app>
+09-15 13:39:27.336 14969 14969 W FrameTracker: Missed App frame:UNKNOWN: 328, 130717, 0, CUJ=J<IME_INSETS_HIDE_ANIMATION::1@0@com.ggufchat.app>
+09-15 13:39:27.432  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:27.521 14969 14983 D EGL_emulation: app_time_stats: avg=510.12ms min=497.68ms max=530.97ms count=3
+09-15 13:39:27.933  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:28.064   571   587 W ProcessStats: Tracking association SourceState{3033c2c com.google.android.gms.persistent/10143 BFgs #7336} whose proc state 4 is better than process ProcessState{5c92bdf com.google.android.gms/10143 pkg=com.google.android.gms} proc state 14 (32 skipped)
+09-15 13:39:28.069  1456  1456 D BoundBrokerSvc: onUnbind: Intent { act=com.google.android.mdd.service.START dat=chimera-action:/... cmp=com.google.android.gms/.chimera.GmsBoundBrokerService }
+09-15 13:39:28.355     0     0 I logd    : logdr: UID=0 GID=0 PID=15253 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:28.220  1726  1726 I wpa_supplicant: wlan0: CTRL-EVENT-BEACON-LOSS 
+09-15 13:39:28.319  1456  1456 D BoundBrokerSvc: onUnbind: Intent { act=com.google.firebase.dynamiclinks.service.START pkg=com.google.android.gms }
+09-15 13:39:28.434  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:28.463   944  1084 D EGL_emulation: app_time_stats: avg=170.50ms min=34.39ms max=204.33ms count=7
+09-15 13:39:28.935  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:28.986 14969 14983 D EGL_emulation: app_time_stats: avg=488.32ms min=461.82ms max=533.40ms count=3
+09-15 13:39:29.521     0     0 I logd    : logdr: UID=0 GID=0 PID=15261 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:29.437  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:29.667   944  1084 D EGL_emulation: app_time_stats: avg=200.75ms min=195.20ms max=205.66ms count=6
+09-15 13:39:29.938  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:30.439  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:30.501 14969 14983 D EGL_emulation: app_time_stats: avg=504.77ms min=463.64ms max=529.01ms count=3
+09-15 13:39:30.700     0     0 I logd    : logdr: UID=0 GID=0 PID=15269 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:30.868   944  1084 D EGL_emulation: app_time_stats: avg=200.11ms min=161.90ms max=233.22ms count=6
+09-15 13:39:30.944  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:31.447  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:31.505 14969 14983 D EGL_emulation: app_time_stats: avg=502.16ms min=487.52ms max=516.81ms count=2
+09-15 13:39:31.882     0     0 I logd    : logdr: UID=0 GID=0 PID=15277 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:31.949  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:32.068   944  1084 D EGL_emulation: app_time_stats: avg=199.86ms min=193.03ms max=205.82ms count=6
+09-15 13:39:32.450  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:32.534 14969 14983 D EGL_emulation: app_time_stats: avg=514.42ms min=499.23ms max=529.61ms count=2
+09-15 13:39:32.985     0     0 I logd    : logdr: UID=0 GID=0 PID=15285 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:32.952  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:33.259   944  1084 D EGL_emulation: app_time_stats: avg=198.50ms min=185.84ms max=208.15ms count=6
+09-15 13:39:33.453  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:33.959  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:34.013 14969 14983 D EGL_emulation: app_time_stats: avg=492.98ms min=466.12ms max=531.56ms count=3
+09-15 13:39:34.190     0     0 I logd    : logdr: UID=0 GID=0 PID=15293 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:34.267   944  1084 D EGL_emulation: app_time_stats: avg=201.52ms min=194.12ms max=210.75ms count=5
+09-15 13:39:34.462  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:34.964  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:35.039 14969 14983 D EGL_emulation: app_time_stats: avg=512.96ms min=506.48ms max=519.44ms count=2
+09-15 13:39:35.372     0     0 I logd    : logdr: UID=0 GID=0 PID=15301 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:35.292   944  1084 D EGL_emulation: app_time_stats: avg=205.15ms min=188.58ms max=214.86ms count=5
+09-15 13:39:35.465  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:35.969  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:36.041 14969 14983 D EGL_emulation: app_time_stats: avg=500.82ms min=497.48ms max=504.16ms count=2
+09-15 13:39:36.413  1726  1726 I wpa_supplicant: wlan0: CTRL-EVENT-BEACON-LOSS 
+09-15 13:39:36.573     0     0 I logd    : logdr: UID=0 GID=0 PID=15309 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:36.471  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:36.491  3764  3764 W TimedProcessReaper: Memory state is: 125
+09-15 13:39:36.491  3764  3764 D TimedProcessReaper: Attempted to reap process, but was too important
+09-15 13:39:36.493   944  1084 D EGL_emulation: app_time_stats: avg=198.78ms min=183.72ms max=209.87ms count=6
+09-15 13:39:36.946  1384  1911 I VoiceInputManagerWrapper: VoiceInputManagerWrapper.shutdownVoiceInternal():140 shutdownVoiceInternal()
+09-15 13:39:36.973  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:37.475  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:37.554 14969 14983 D EGL_emulation: app_time_stats: avg=504.39ms min=486.32ms max=520.35ms count=3
+09-15 13:39:37.680   944  1084 D EGL_emulation: app_time_stats: avg=197.83ms min=180.60ms max=207.25ms count=6
+09-15 13:39:37.829     0     0 I logd    : logdr: UID=0 GID=0 PID=15317 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:37.976  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:38.375   571   678 D ActivityManager: freezing 1456 com.google.android.gms
+09-15 13:39:38.478  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:38.555 14969 14983 D EGL_emulation: app_time_stats: avg=500.51ms min=485.45ms max=515.56ms count=2
+09-15 13:39:38.696   944  1084 D EGL_emulation: app_time_stats: avg=203.05ms min=190.20ms max=209.51ms count=5
+09-15 13:39:38.976     0     0 I logd    : logdr: UID=0 GID=0 PID=15325 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:38.981  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:39.483  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:39.576 14969 14983 D EGL_emulation: app_time_stats: avg=509.65ms min=478.55ms max=540.75ms count=2
+09-15 13:39:39.700   944  1084 D EGL_emulation: app_time_stats: avg=200.70ms min=189.96ms max=211.23ms count=5
+09-15 13:39:40.131     0     0 I logd    : logdr: UID=0 GID=0 PID=15333 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:39.984  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:40.486  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:40.580 14969 14983 D EGL_emulation: app_time_stats: avg=501.86ms min=489.97ms max=513.75ms count=2
+09-15 13:39:40.702   944  1084 D EGL_emulation: app_time_stats: avg=200.48ms min=174.42ms max=222.15ms count=5
+09-15 13:39:40.987  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:41.331     0     0 I logd    : logdr: UID=0 GID=0 PID=15341 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:41.490  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:41.603 14969 14983 D EGL_emulation: app_time_stats: avg=511.51ms min=504.19ms max=518.83ms count=2
+09-15 13:39:41.728   944  1084 D EGL_emulation: app_time_stats: avg=205.18ms min=180.67ms max=253.23ms count=5
+09-15 13:39:41.992  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:42.469     0     0 I logd    : logdr: UID=0 GID=0 PID=15349 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:42.495  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:42.609 14969 14983 D EGL_emulation: app_time_stats: avg=502.87ms min=477.79ms max=527.95ms count=2
+09-15 13:39:42.739   944  1084 D EGL_emulation: app_time_stats: avg=202.21ms min=191.94ms max=211.08ms count=5
+09-15 13:39:42.998  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:43.601     0     0 I logd    : logdr: UID=0 GID=0 PID=15357 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:43.499  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:43.636 14969 14983 D EGL_emulation: app_time_stats: avg=513.11ms min=501.98ms max=524.23ms count=2
+09-15 13:39:43.776   944  1084 D EGL_emulation: app_time_stats: avg=207.41ms min=194.18ms max=231.77ms count=5
+09-15 13:39:44.002  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:44.345  1726  1726 I wpa_supplicant: wlan0: CTRL-EVENT-BEACON-LOSS 
+09-15 13:39:44.503  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:44.646 14969 14983 D EGL_emulation: app_time_stats: avg=505.15ms min=478.03ms max=532.27ms count=2
+09-15 13:39:44.808     0     0 I logd    : logdr: UID=0 GID=0 PID=15365 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:44.779   944  1084 D EGL_emulation: app_time_stats: avg=200.52ms min=188.95ms max=209.29ms count=5
+09-15 13:39:45.004  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:45.506  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:45.924     0     0 I logd    : logdr: UID=0 GID=0 PID=15374 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:45.974   944  1084 D EGL_emulation: app_time_stats: avg=199.05ms min=178.36ms max=221.78ms count=6
+09-15 13:39:46.017  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:46.135 14969 14983 D EGL_emulation: app_time_stats: avg=496.33ms min=486.20ms max=503.19ms count=3
+09-15 13:39:46.518  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:47.049     0     0 I logd    : logdr: UID=0 GID=0 PID=15382 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:47.000   944  1084 D EGL_emulation: app_time_stats: avg=205.06ms min=197.91ms max=218.86ms count=5
+09-15 13:39:47.036  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:47.173 14969 14983 D EGL_emulation: app_time_stats: avg=518.68ms min=496.44ms max=540.92ms count=2
+09-15 13:39:47.537  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:48.009   944  1084 D EGL_emulation: app_time_stats: avg=201.87ms min=183.86ms max=230.40ms count=5
+09-15 13:39:48.174     0     0 I logd    : logdr: UID=0 GID=0 PID=15390 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:48.064  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:48.191 14969 14983 D EGL_emulation: app_time_stats: avg=508.91ms min=502.84ms max=514.97ms count=2
+09-15 13:39:48.565  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:49.046   944  1084 D EGL_emulation: app_time_stats: avg=207.27ms min=197.86ms max=234.64ms count=5
+09-15 13:39:49.099  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:49.362     0     0 I logd    : logdr: UID=0 GID=0 PID=15398 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:49.257 14969 14983 D EGL_emulation: app_time_stats: avg=532.99ms min=528.78ms max=537.21ms count=2
+09-15 13:39:49.601  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:50.102  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:50.271   944  1084 D EGL_emulation: app_time_stats: avg=204.08ms min=174.65ms max=226.69ms count=6
+09-15 13:39:50.579     0     0 I logd    : logdr: UID=0 GID=0 PID=15406 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:50.603  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:50.738 14969 14983 D EGL_emulation: app_time_stats: avg=493.73ms min=464.00ms max=514.59ms count=3
+09-15 13:39:51.104  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:51.285   944  1084 D EGL_emulation: app_time_stats: avg=202.83ms min=195.24ms max=220.77ms count=5
+09-15 13:39:51.738     0     0 W healthd : battery l=100 v=5000 t=25.0 h=2 st=2 c=900000 fc=3000000 cc=10 chg=a
+09-15 13:39:51.742     0     0 I logd    : logdr: UID=0 GID=0 PID=15414 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:51.608  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:51.792 14969 14983 D EGL_emulation: app_time_stats: avg=526.75ms min=496.18ms max=557.31ms count=2
+09-15 13:39:52.120  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:52.288   944  1084 D EGL_emulation: app_time_stats: avg=199.99ms min=187.32ms max=213.64ms count=5
+09-15 13:39:52.297  1726  1726 I wpa_supplicant: wlan0: CTRL-EVENT-BEACON-LOSS 
+09-15 13:39:52.621  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:52.859     0     0 I logd    : logdr: UID=0 GID=0 PID=15422 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:53.124  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:53.293 14969 14983 D EGL_emulation: app_time_stats: avg=500.35ms min=477.06ms max=520.55ms count=3
+09-15 13:39:53.296   944  1084 D EGL_emulation: app_time_stats: avg=201.64ms min=187.10ms max=211.81ms count=5
+09-15 13:39:53.625  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:54.085     0     0 I logd    : logdr: UID=0 GID=0 PID=15430 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:54.127  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:54.342   944  1084 D EGL_emulation: app_time_stats: avg=209.17ms min=193.10ms max=249.79ms count=5
+09-15 13:39:54.628  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:54.793 14969 14983 D EGL_emulation: app_time_stats: avg=499.79ms min=489.61ms max=518.36ms count=3
+09-15 13:39:55.186     0     0 I logd    : logdr: UID=0 GID=0 PID=15438 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:55.132  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:55.498   944  1084 D EGL_emulation: app_time_stats: avg=192.60ms min=159.28ms max=212.46ms count=6
+09-15 13:39:55.632  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:56.141  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:56.323     0     0 I logd    : logdr: UID=0 GID=0 PID=15446 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:56.288 14969 14983 D EGL_emulation: app_time_stats: avg=498.26ms min=493.27ms max=503.51ms count=3
+09-15 13:39:56.543   944  1084 D EGL_emulation: app_time_stats: avg=208.97ms min=190.60ms max=220.63ms count=5
+09-15 13:39:56.643  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:57.162  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:57.309 14969 14983 D EGL_emulation: app_time_stats: avg=510.48ms min=506.45ms max=514.51ms count=2
+09-15 13:39:57.474     0     0 I logd    : logdr: UID=0 GID=0 PID=15454 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:57.546   944  1084 D EGL_emulation: app_time_stats: avg=200.47ms min=185.56ms max=223.28ms count=5
+09-15 13:39:57.663  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:58.164  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:58.314 14969 14983 D EGL_emulation: app_time_stats: avg=502.31ms min=491.05ms max=513.57ms count=2
+09-15 13:39:58.689     0     0 I logd    : logdr: UID=0 GID=0 PID=15462 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:58.665  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:58.729   944  1084 D EGL_emulation: app_time_stats: avg=197.20ms min=167.85ms max=245.44ms count=6
+09-15 13:39:59.179  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:59.830     0     0 I logd    : logdr: UID=0 GID=0 PID=15470 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:39:59.681  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:39:59.739   944  1084 D EGL_emulation: app_time_stats: avg=201.95ms min=178.76ms max=221.36ms count=5
+09-15 13:39:59.830 14969 14983 D EGL_emulation: app_time_stats: avg=505.21ms min=487.27ms max=521.98ms count=3
+09-15 13:40:00.009  1480  1790 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-15 13:40:00.009  1480  1790 I AiAiEcho: EchoTargets: 
+09-15 13:40:00.009  1480  1790 I AiAiEcho: Filtered by AiAi flag check: 
+09-15 13:40:00.009  1480  1790 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 13:40:00.009  1480  1790 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 13:40:00.009  1480  1790 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-15 13:40:00.009  1480  1790 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-15 13:40:00.010  1480  1790 I AiAiEcho: EchoTargets: 
+09-15 13:40:00.010  1480  1790 I AiAiEcho: Filtered by AiAi flag check: 
+09-15 13:40:00.010  1480  1790 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 13:40:00.010  1480  1790 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 13:40:00.010  1480  1790 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-15 13:40:00.011  1480  1790 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-15 13:40:00.033   944   944 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-15 13:40:00.182  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:40:00.216  1726  1726 I wpa_supplicant: wlan0: CTRL-EVENT-BEACON-LOSS 
+09-15 13:40:00.684  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:40:01.079     0     0 I logd    : logdr: UID=0 GID=0 PID=15478 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:40:00.953   944  1084 D EGL_emulation: app_time_stats: avg=173.40ms min=90.37ms max=226.22ms count=7
+09-15 13:40:01.187  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:40:01.327 14969 14983 D EGL_emulation: app_time_stats: avg=498.90ms min=490.57ms max=504.75ms count=3
+09-15 13:40:01.368   571   587 D WifiNl80211Manager: Scan result ready event
+09-15 13:40:01.369   571   587 D WifiNative: Scan result ready event
+09-15 13:40:01.376   571   847 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+09-15 13:40:01.689  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:40:02.163   944  1084 D EGL_emulation: app_time_stats: avg=201.69ms min=167.38ms max=235.01ms count=6
+09-15 13:40:02.318     0     0 I logd    : logdr: UID=0 GID=0 PID=15486 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:40:02.206  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:40:02.341 14969 14983 D EGL_emulation: app_time_stats: avg=507.04ms min=504.35ms max=509.74ms count=2
+09-15 13:40:02.710  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:40:03.166   944  1084 D EGL_emulation: app_time_stats: avg=200.51ms min=184.94ms max=230.06ms count=5
+09-15 13:40:03.212  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:40:03.458     0     0 I logd    : logdr: UID=0 GID=0 PID=15494 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:40:03.716  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:40:03.851 14969 14983 D EGL_emulation: app_time_stats: avg=503.32ms min=496.19ms max=517.57ms count=3
+09-15 13:40:04.181   944  1084 D EGL_emulation: app_time_stats: avg=202.96ms min=191.60ms max=213.84ms count=5
+09-15 13:40:04.229  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:40:04.610     0     0 I logd    : logdr: UID=0 GID=0 PID=15502 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:40:04.731  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:40:04.852 14969 14983 D EGL_emulation: app_time_stats: avg=500.49ms min=498.11ms max=502.87ms count=2
+09-15 13:40:05.203   944  1084 D EGL_emulation: app_time_stats: avg=204.30ms min=188.91ms max=223.10ms count=5
+09-15 13:40:05.236  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:40:05.239  1480  1932 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-15 13:40:05.239  1480  1932 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-15 13:40:05.269   944  1251 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-15 13:40:05.271   944  1251 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-15 13:40:05.312 14969 15168 I MESA    : on_vkAllocateMemory: has alloc flags
+09-15 13:40:05.312 14969 15168 I MESA    : allocateCoherentMemory: has alloc flags
+09-15 13:40:05.698     0     0 I logd    : logdr: UID=0 GID=0 PID=15511 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:40:05.737  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:40:05.871 14969 14983 D EGL_emulation: app_time_stats: avg=41.38ms min=6.64ms max=259.22ms count=18
+09-15 13:40:05.929 14969 15168 I MESA    : on_vkAllocateMemory: has alloc flags
+09-15 13:40:05.930 14969 15168 I MESA    : allocateCoherentMemory: has alloc flags
+09-15 13:40:06.216   944  1084 D EGL_emulation: app_time_stats: avg=202.59ms min=148.01ms max=242.81ms count=5
+09-15 13:40:06.260  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:40:06.809     0     0 I logd    : logdr: UID=0 GID=0 PID=15519 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:40:06.761  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:40:06.990 14969 14983 D EGL_emulation: app_time_stats: avg=196.78ms min=13.02ms max=500.98ms count=5
+09-15 13:40:07.219   944  1084 D EGL_emulation: app_time_stats: avg=200.65ms min=182.65ms max=220.80ms count=5
+09-15 13:40:07.263  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:40:07.766  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:40:07.918     0     0 I logd    : logdr: UID=0 GID=0 PID=15527 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:40:08.244   944  1084 D EGL_emulation: app_time_stats: avg=170.75ms min=46.46ms max=204.35ms count=6
+09-15 13:40:08.285  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:40:08.521 14969 14983 D EGL_emulation: app_time_stats: avg=510.06ms min=499.45ms max=530.88ms count=3
+09-15 13:40:08.787  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:40:09.067     0     0 I logd    : logdr: UID=0 GID=0 PID=15535 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:40:09.175  1726  1726 I wpa_supplicant: wlan0: CTRL-EVENT-BEACON-LOSS 
+09-15 13:40:09.279   944  1084 D EGL_emulation: app_time_stats: avg=207.12ms min=195.07ms max=228.70ms count=5
+09-15 13:40:09.288  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:40:09.376 14969 15168 I GGUFChatNative: GGUF_NATIVE_COMPLETE tokens=1 reason=eog projector=1
+09-15 13:40:09.376 14969 15168 I System.out: GGUF_REPAIR_GENERATION_OK
+09-15 13:40:09.379   571  1904 D ActivityManager: Stop FGS timeout: ServiceRecord{16b2522 u0 com.ggufchat.app/.GenerationService c:com.ggufchat.app}
+09-15 13:40:09.380   571  1904 W ForegroundServiceTypeLoggerModule: FGS stop call for: 10209 has no types!
+09-15 13:40:09.384  1480  1932 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-15 13:40:09.384  1480  1932 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-15 13:40:09.407   944  1251 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-15 13:40:09.409   944  1251 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-15 13:40:09.524 14969 14983 D EGL_emulation: app_time_stats: avg=119.18ms min=5.27ms max=499.40ms count=8
+09-15 13:40:09.592   571   571 W NotificationHistory: Attempted to add notif for locked/gone/disabled user 0
+09-15 13:40:09.601  1480  1932 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-15 13:40:09.601  1480  1932 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-15 13:40:09.631   944  1251 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-15 13:40:09.643   944  1251 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-15 13:40:09.789  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:40:09.798  1480  1932 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-15 13:40:09.798  1480  1932 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-15 13:40:10.129     0     0 I logd    : logdr: UID=0 GID=0 PID=15544 n tail=0 logMask=99 pid=14969 start=0ns deadline=0ns
+09-15 13:40:10.060   944  1251 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-15 13:40:10.065   944  1251 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-15 13:40:10.083   944   944 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-15 13:40:10.099 15554 15554 W BpBinder: Linking to death on android.gui.ISurfaceComposer but there are no threads (yet?) listening to incoming transactions. See ProcessState::startThreadPool and ProcessState::setThreadPoolMaxThreadCount. Generally you should setup the binder threadpool before other initialization steps.
+09-15 13:40:10.099 15554 15554 W ProcessState: Extra binder thread started, but 0 threads requested. Do not use *startThreadPool when zero threads are requested.
+09-15 13:40:10.134   162   162 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+09-15 13:40:10.134 15554 15555 I Gralloc4: mapper 4.x is not supported
+09-15 13:40:10.282     0     0 I servicemanager: Caller(pid=15554,uid=0,sid=u:r:su:s0) Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest. No alternative instances declared in VINTF.
+09-15 13:40:10.294  1118  1118 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 13:40:10.327   944  1084 D EGL_emulation: app_time_stats: avg=110.23ms min=13.01ms max=220.05ms count=9
+09-15 13:40:10.490 15562 15562 W BpBinder: Linking to death on android.gui.ISurfaceComposer but there are no threads (yet?) listening to incoming transactions. See ProcessState::startThreadPool and ProcessState::setThreadPoolMaxThreadCount. Generally you should setup the binder threadpool before other initialization steps.
+09-15 13:40:10.490 15562 15562 W ProcessState: Extra binder thread started, but 0 threads requested. Do not use *startThreadPool when zero threads are requested.
+09-15 13:40:10.503   162   162 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+09-15 13:40:10.503 15562 15563 I Gralloc4: mapper 4.x is not supported
+09-15 13:40:10.654     0     0 I servicemanager: Caller(pid=15562,uid=0,sid=u:r:su:s0) Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest. No alternative instances declared in VINTF.
+09-15 13:40:10.556 14969 14983 D EGL_emulation: app_time_stats: avg=38.51ms min=5.48ms max=304.24ms count=22

@@ -1,0 +1,80 @@
+{
+  "status": "FUNCTIONAL_ACCEPTANCE_PASS_150_PERCENT_TARGET_NOT_MET",
+  "baseline_apk_sha256": "8a994b58efc0a65a0851534402eacb5f0c305ff534a100075a88e5c5dbf95399",
+  "baseline_commit": "53dd3487bab82b313289faeb37d42135e6bc838a",
+  "changes": [
+    "Vulkan mode requests every layer and Vulkan buffer placement for ALL language weights, including token embeddings",
+    "Scheduler prioritizes selected Vulkan device for supported small math operations instead of CPU placement heuristics",
+    "Whole scheduled graph preflight rejects non-Vulkan tensor math before any split submits; direct backend graph dispatch also guarded",
+    "Scoped thread-local policy covers language, mtmd and KV schedulers without silently changing an explicit CPU engine",
+    "Require complete backend sampler chain and selected token; unsupported configurations fail clearly without changing sampling parameters",
+    "Reserve one decoder output row instead of unused n_batch vocabulary rows; encoder/diffusion requirements and complete input/output token limits preserved"
+  ],
+  "local_results": "145 passed, 28 skipped regression selection; full patched host llama compiled; real patched ggml CPU graph and scheduler rejected ADD before execution, explicit CPU scope still works",
+  "android_candidate_approved": true,
+  "physical_gpu_speed_certified": false,
+  "five_second_goal_certified": false,
+  "all_application_on_gpu": false,
+  "scope": "Strict tensor-compute routing in Vulkan mode. Android/UI/files/tokenization/image preprocessing/RNG and sampler state bookkeeping remain host CPU work. Software Vulkan itself runs on CPU in emulators. CPU mode remains explicit, never automatic fallback.",
+  "delivery": "New signed candidate 323fd5 is not approved/delivered. Last delivered 8a994 remains pinned at commit 53dd3487bab82b313289faeb37d42135e6bc838a.",
+  "source_commit": "d3a16d7677be07ca61898fa31907b9ed95b4e198",
+  "build_run": 35148206020,
+  "superseded_build_run": 35148018242,
+  "android_visual_test_scope": "New strict harness explicitly selects GPU 99 for real dog-image inference. Historical test_image_android default is CPU; do not retrospectively call that old helper a Vulkan test.",
+  "apk_sha256": "323fd5a33667c6cab278699e97c89fe253e1bb7acead45b869729bf022eb9f5c",
+  "unsigned_sha256": "01c86072a860c293ec5d68317eb4dd5e40d6fc37dcff6ed10b5617c4e12c7036",
+  "signer_sha256": "7295130ab387cd5123c1faab79c96f3ca8d8eb694ae7b15c611086d48b5898a0",
+  "build_job": 104969880647,
+  "build_steps": "Native/UI compile, 171 regressions PASS / 2 SKIP, real ggml rejection, DEX and relay PASS",
+  "vision_comparison_run": 35149450717,
+  "vision_comparison_commit": "92e1e7436cb3329630a1914113487fb4039e92ae",
+  "vision_comparison_job": 104973741503,
+  "failed_benchmark": {
+    "run": 35149450810,
+    "job": 104973742107,
+    "reason": "No Android summary produced; emulator shell exit1. Exact signed payload PASS. Original log fetch EOF in client; runner diagnostic relay and wrapped retry prepared. No speed result."
+  },
+  "benchmark_run": 35150143379,
+  "benchmark_job": 104976090371,
+  "benchmark_commit": "7a5299617182866ad5812501d0f9c249748cf54d",
+  "benchmark_status": "completed success",
+  "build_overall_status": "FAIL: external bus response CERO EMIOFSELLA.; separate exact signed comparison returned the identical incorrect answer before/after, not an introduced difference in that case",
+  "vision_comparison_status": "PASS_EQUALITY_ONLY",
+  "vision_semantic_result": "FAIL in both; CERO EMIOFSELLA.",
+  "strict_visual_tensor_routing": "PASS: 35 graphs, 19290 math nodes, no non-Vulkan math dispatched under guard; host orchestration CPU; software Vulkan is not physical GPU proof",
+  "measured_medians": {
+    "awake": {
+      "before": {
+        "total_s": 66.96299999998882,
+        "first_native_text_s": 4.839029597,
+        "decode_tokens_s": 2.0578317102997463
+      },
+      "after": {
+        "total_s": 67.11000000000058,
+        "first_native_text_s": 4.835357402,
+        "decode_tokens_s": 2.0514565148699138
+      }
+    },
+    "asleep": {
+      "before": {
+        "total_s": 36.54799999999523,
+        "first_native_text_s": 4.656812006,
+        "decode_tokens_s": 4.010501801006853
+      },
+      "after": {
+        "total_s": 36.10800000000745,
+        "first_native_text_s": 4.503206776,
+        "decode_tokens_s": 4.061386890142341
+      }
+    }
+  },
+  "gain_150_percent_certified": false,
+  "target_throughput_multiplier": 2.5,
+  "target_baseline_sha256": "8a994b58efc0a65a0851534402eacb5f0c305ff534a100075a88e5c5dbf95399",
+  "next_step": "No CI remains pending. No submission-policy change adopted; 2.5x throughput requires further validated kernel/hardware work and remains unachieved. Do not call this APK a +150% speed release.",
+  "speed_target_approved": false,
+  "profile_run": 35156484592,
+  "profile_status": "EXPLORATORY_PASS_NO_NEW_POLICY_ADOPTED",
+  "private_signing_key_available_locally": false,
+  "signing_note": "After reconnect the workspace had an older snapshot. Published session source/APKs/evidence were restored from this same remote branch without changing APK bytes. No local .signing or private-gguf-signing backup was found. The existing tested 323fd5 APK remains signed with the SAME 7295 certificate; do not promise the next build can use that key unless it is recovered."
+}

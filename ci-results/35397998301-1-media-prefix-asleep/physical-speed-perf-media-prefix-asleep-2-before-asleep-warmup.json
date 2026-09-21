@@ -1,0 +1,66 @@
+{
+  "tokens": 2,
+  "prefill_and_generation_seconds": 192.05499999999302,
+  "prefill_and_generation_tokens_s": 0.010413683580224794,
+  "response": "Dog.",
+  "metrics": {
+    "tokens": 2,
+    "decodeNs": 547996993,
+    "prefillNs": 191506575592,
+    "completed": true,
+    "version": 3,
+    "timingScope": "prefill_synchronized_before_decode",
+    "firstTokenNs": 191507181563,
+    "promptTokens": 516,
+    "reusedPromptTokens": 0
+  },
+  "callbacks": 2,
+  "native_decode_tokens_s": 3.6496550629795155,
+  "chat": {
+    "id": "1a0b6ab8b82a5c5f6",
+    "title": "GGUF regression 1a0b6ab8b82a5c5f6",
+    "modelPath": "/data/user/0/com.ggufchat.app/files/models/1789769831353_external-one.gguf",
+    "mmprojPath": "/data/user/0/com.ggufchat.app/files/models/1789769831353_external-one.gguf",
+    "createdAt": 1789771090818,
+    "updatedAt": 1789771338333,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Arquivo anexado: 1 arquivo(s)\n\nAnexos vinculados a esta mensagem para leitura.\n\nName the main animal or vehicle in the attached images. Reply in English.",
+        "ts": 1789771145689,
+        "thinking": false
+      },
+      {
+        "role": "assistant",
+        "content": " Dog.",
+        "ts": 1789771338333,
+        "thinking": false,
+        "generationMetrics": {
+          "tokens": 2,
+          "decodeNs": 547996993,
+          "prefillNs": 191506575592,
+          "completed": true,
+          "version": 3,
+          "timingScope": "prefill_synchronized_before_decode",
+          "firstTokenNs": 191507181563,
+          "promptTokens": 516,
+          "reusedPromptTokens": 0
+        }
+      }
+    ],
+    "nPredict": 128,
+    "temperature": 0,
+    "topP": 0.949999988079071,
+    "topK": 40,
+    "minP": 0.05000000074505806,
+    "repeatPenalty": 1.100000023841858,
+    "repeatLastN": 64,
+    "contextSize": 4096,
+    "nThreads": 2,
+    "gpuLayers": 99,
+    "useMmap": true,
+    "thinking": false,
+    "webSearch": false,
+    "systemPrompt": null
+  }
+}

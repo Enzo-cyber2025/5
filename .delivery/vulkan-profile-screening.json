@@ -1,0 +1,70 @@
+{
+  "status": "EXPLORATORY_PASS_NO_NEW_POLICY_ADOPTED",
+  "run": 35156484592,
+  "attempt": 1,
+  "job": 104997041756,
+  "commit": "c0f75fb49d21142fd15e292bfa58a640089c559c",
+  "apk_sha256": "323fd5a33667c6cab278699e97c89fe253e1bb7acead45b869729bf022eb9f5c",
+  "gain_150_percent_certified": false,
+  "physical_gpu_certified": false,
+  "all_outputs_identical": true,
+  "observations": {
+    "default100": {
+      "awake": {
+        "native_decode_tokens_s": 1.9941072666781874,
+        "prefill_and_generation_seconds": 88.4780000000028,
+        "environment": {}
+      },
+      "asleep": {
+        "native_decode_tokens_s": 4.0522101754718065,
+        "prefill_and_generation_seconds": 36.620999999999185,
+        "environment": {}
+      }
+    },
+    "submit32": {
+      "awake": {
+        "native_decode_tokens_s": 2.027246674591976,
+        "prefill_and_generation_seconds": 67.72900000000664,
+        "environment": {
+          "GGML_VK_MAX_NODES_PER_SUBMIT": "32"
+        }
+      },
+      "asleep": {
+        "native_decode_tokens_s": 4.081067186065856,
+        "prefill_and_generation_seconds": 35.836999999999534,
+        "environment": {
+          "GGML_VK_MAX_NODES_PER_SUBMIT": "32"
+        }
+      }
+    },
+    "submit512": {
+      "awake": {
+        "native_decode_tokens_s": 2.0515821758905677,
+        "prefill_and_generation_seconds": 66.96300000000338,
+        "environment": {
+          "GGML_VK_MAX_NODES_PER_SUBMIT": "512"
+        }
+      },
+      "asleep": {
+        "native_decode_tokens_s": 3.527560100942464,
+        "prefill_and_generation_seconds": 41.33499999999185,
+        "environment": {
+          "GGML_VK_MAX_NODES_PER_SUBMIT": "512"
+        }
+      }
+    },
+    "timestamps": {
+      "asleep": {
+        "native_decode_tokens_s": 3.66890263425152,
+        "prefill_and_generation_seconds": 39.53900000000431,
+        "environment": {
+          "GGML_VK_PERF_LOGGER_CONCURRENT": "1",
+          "GGML_VK_PERF_LOGGER_FREQUENCY": "128",
+          "GGML_VK_PERF_LOGGER": "1"
+        }
+      }
+    }
+  },
+  "instrumented_timestamp_group_matmul_fraction": 0.8275255930031392,
+  "limits": "One observation per policy/state; no warmup control, order effects possible. First default awake prefill was cold. Profiler adds waits; its throughput is NOT comparable to unprofiled rates. Grouped timestamps include fused neighbours, not isolated matmul costs. No +150% claim and no phone extrapolation."
+}

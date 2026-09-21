@@ -1,0 +1,87 @@
+name: llvmpipe kernel lab (host, not acceptance)
+on:
+  push:
+    branches: [arena/01a09b42-5]
+    paths:
+      - '.github/workflows/llvmpipe-lab.yml'
+      - 'ci/llvmpipe_lab.sh'
+      - 'ci/llvmpipe_lab_patches.py'
+      # Every patch module and every probe source is part of the measurement, so
+      # touching one of them must be able to trigger the lab.
+      - 'ci/*lab_patches.py'
+      - 'ci/lab_compute/**'
+      - 'ci/dmmv_accum_lab_patches.py'
+      - 'tests/test_llvmpipe_lab.py'
+  workflow_dispatch:
+    inputs:
+      lab_patches:
+        description: 'Comma separated apk-fix patch modules applied to the pinned checkout'
+        required: false
+        default: 'row_tile_patches,dmmv_large_patches'
+permissions:
+  # The evidence publisher commits bounded lab results to this session branch, so
+  # the numbers stay readable even when log and artifact downloads are blocked.
+  contents: write
+  actions: read
+concurrency:
+  group: llvmpipe-lab-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  lab:
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[lab]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Host toolchain and CPU Vulkan driver (disposable runner only)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y cmake ninja-build build-essential glslc glslang-tools libvulkan-dev vulkan-tools mesa-vulkan-drivers
+      - name: Select the kernel patch set
+        id: patches
+        env:
+          # workflow_dispatch is not reachable for this token, so the push marker is
+          # the trigger and the patch list travels in the commit message:
+          #   [lab]                  -> LAB_DEFAULT_PATCHES
+          #   [lab:dmmv_accum_lab_patches,row_tile_patches] -> explicit list
+          MSG: ${{ github.event.head_commit.message }}
+          INPUT: ${{ github.event.inputs.lab_patches }}
+          LAB_DEFAULT_PATCHES: ${{ vars.LAB_DEFAULT_PATCHES }}
+        run: |
+          list=$(printf '%s' "${INPUT:-}" | tr -d '[:space:]')
+          if [ -z "$list" ]; then
+            list=$(printf '%s' "$MSG" | sed -n 's/.*\[lab:\([^]]*\)\].*/\1/p')
+          fi
+          if [ -z "$list" ] || [ "$list" = "-" ]; then
+            list="${LAB_DEFAULT_PATCHES:-dmmv_accum_lab_patches}"
+          fi
+          case "$list" in
+            *[!A-Za-z0-9_,]*) echo "LAB patch list rejected: $list"; exit 1;;
+          esac
+          echo "Selected LAB_PATCHES=$list"
+          echo "list=$list" >> "$GITHUB_OUTPUT"
+      - name: Pinned source and exact fixture, optional kernel patch
+        env:
+          LAB_PATCHES: ${{ steps.patches.outputs.list }}
+        run: python3 ci/llvmpipe_lab_patches.py
+      - name: Run the lab
+        env:
+          # [lab-probe] skips both llama.cpp builds and publishes only the
+          # device probe and the compute ceiling sweep.
+          LAB_SKIP_BUILD: ${{ contains(github.event.head_commit.message, '[lab-probe]') && '1' || '0' }}
+        run: bash ci/log_step.sh lab bash ci/llvmpipe_lab.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: llvmpipe-lab-${{ github.run_id }}
+          path: .cache/lab/
+          retention-days: 14
+      - name: Publish lab diagnostics (never a release)
+        if: always()
+        continue-on-error: true
+        env:
+          GGUF_EVIDENCE_VARIANT: llvmpipe-lab
+        run: bash ci/publish_evidence.sh

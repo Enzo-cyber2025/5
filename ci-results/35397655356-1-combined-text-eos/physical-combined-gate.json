@@ -1,0 +1,74 @@
+{
+  "status": "COMBINED_GAIN_OR_REGRESSION_NOT_MET",
+  "kind": "text",
+  "passed": false,
+  "speedup_ratios": [],
+  "encoder_speedup_ratios": [],
+  "text": {
+    "awake": {
+      "decode": [
+        1.0287506757189815,
+        0.9939358168328984,
+        1.0182723461929588
+      ],
+      "first_native": [
+        1.0293202417934522,
+        1.0883900477189747,
+        1.0481399321064842
+      ],
+      "first_ui": [
+        1.0255788769084944,
+        1.0915856931494352,
+        1.0522638594952098
+      ]
+    },
+    "asleep": {
+      "decode": [
+        1.0111384556044003,
+        0.8636066510062675,
+        0.9912500468247478
+      ],
+      "first_native": [
+        1.0033956425690544,
+        0.8425665636337519,
+        0.9585384791277569
+      ],
+      "first_ui": []
+    }
+  },
+  "extra_qkv_device_bytes": [
+    22671360,
+    22671360,
+    22671360
+  ],
+  "app_pss_kib": [
+    {
+      "before": 123834,
+      "after": 123200
+    },
+    {
+      "before": 127895,
+      "after": 124987
+    },
+    {
+      "before": 129163,
+      "after": 128827
+    }
+  ],
+  "chat_startup_ns": [
+    {
+      "before": 22870714849,
+      "after": 20999296351
+    },
+    {
+      "before": 22347771788,
+      "after": 20908339336
+    },
+    {
+      "before": 20952547632,
+      "after": 21052807808
+    }
+  ],
+  "release_approved": false,
+  "scope": "Three paired warmed runs of the same APK and full workload. Any consistently positive awake image/encoder gain counts. Regression controls allow at most 3% per observation and require nonnegative medians. Byte reference and actual attention policy required. PSS is not peak/total GPU memory. Unsupported projectors and a generally safe activation policy still need separate review; not a release certificate."
+}

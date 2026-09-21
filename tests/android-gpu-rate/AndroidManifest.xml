@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.ggufchat.gpurate">
+ <uses-sdk android:minSdkVersion="28" android:targetSdkVersion="35"/>
+ <uses-permission android:name="android.permission.WAKE_LOCK"/>
+ <application android:label="Disposable native GPU rate observer"/>
+ <instrumentation android:name="com.ggufchat.gpurate.RateInstrumentation" android:targetPackage="com.ggufchat.app" android:functionalTest="true"/>
+</manifest>

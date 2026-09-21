@@ -1,0 +1,19 @@
+name: Deliver tested attachments APK
+on:
+  push:
+    branches: [arena/01a09b42-5]
+    paths: [.github/workflows/unified-deliver.yml]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  deliver:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: Verify tested bytes, publish only APK and compare public download
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: Enzo-cyber2025/5
+        run: bash ci/log_step.sh delivery bash ci/deliver_attachments.sh

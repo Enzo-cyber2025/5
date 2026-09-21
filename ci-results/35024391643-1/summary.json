@@ -1,0 +1,55 @@
+{
+  "status": "PASS",
+  "apk_sha256": "3baa171c78eb5ee7f6f5c3c212904f53547a13184b9c01ea1d6ec565e2f5152e",
+  "checks": {
+    "same_signature_update_preserves_models_and_chats": "PASS",
+    "same_output_screen_off_saved_reply_alert_survives_service_stop": "PASS",
+    "screen_off_progress_notifications_suppressed_without_changing_tokens": "PASS",
+    "notification_tap_opens_correct_chat_and_auto_cancels": "PASS",
+    "foreground_no_unnecessary_alert_and_native_cache_preserved": "PASS",
+    "cancel_does_not_notify_success": "PASS",
+    "real_image_reply_notifies_while_asleep": "PASS",
+    "denied_permission_does_not_break_saved_generation": "PASS"
+  },
+  "observations": {
+    "before": {
+      "tokens": 128,
+      "prefill_and_generation_seconds": 6.228999999992084,
+      "prefill_and_generation_tokens_s": 20.54904479052218,
+      "response": "1. **Learn the Alphabet**: Start with the alphabet and gradually move to numbers, as it helps you remember words by sight rather than sound.\n\n2. **Practice Speaking**: Engage in conversations regularly with native speakers or language exchange partners who can provide feedback on your pronunciation and grammar.\n\n3. **Read at a Level Appropriate for Your Age**: Begin with simple texts like books, articles, and news stories to improve comprehension and vocabulary retention.\n\n4. **Use Apps and Websites**: Utilize apps like Duolingo, Babbel, and Rosetta Stone to enhance language learning skills and practice speaking. Websites like language exchange platforms and language learning",
+      "metrics": {
+        "tokens": 128,
+        "decodeNs": 3777464652,
+        "prefillNs": 2452104093,
+        "completed": true,
+        "version": 2,
+        "firstTokenNs": 2453727007,
+        "promptTokens": 73,
+        "reusedPromptTokens": 0
+      },
+      "callbacks": 52,
+      "native_decode_tokens_s": 33.88516155465007
+    },
+    "after": {
+      "tokens": 128,
+      "prefill_and_generation_seconds": 4.673999999999069,
+      "prefill_and_generation_tokens_s": 27.385537013270326,
+      "response": "1. **Learn the Alphabet**: Start with the alphabet and gradually move to numbers, as it helps you remember words by sight rather than sound.\n\n2. **Practice Speaking**: Engage in conversations regularly with native speakers or language exchange partners who can provide feedback on your pronunciation and grammar.\n\n3. **Read at a Level Appropriate for Your Age**: Begin with simple texts like books, articles, and news stories to improve comprehension and vocabulary retention.\n\n4. **Use Apps and Websites**: Utilize apps like Duolingo, Babbel, and Rosetta Stone to enhance language learning skills and practice speaking. Websites like language exchange platforms and language learning",
+      "metrics": {
+        "tokens": 128,
+        "decodeNs": 2862778792,
+        "prefillNs": 1811892642,
+        "completed": true,
+        "version": 2,
+        "firstTokenNs": 1812535037,
+        "promptTokens": 73,
+        "reusedPromptTokens": 0
+      },
+      "callbacks": 45,
+      "native_decode_tokens_s": 44.71180251778252
+    },
+    "progress_updates": 0,
+    "screen_off_updates_skipped": 45,
+    "scope": "One genuine same-prompt comparison, NOT a statistical speed benchmark. Native bytes unchanged. Counts concern progress notifications, not token generation."
+  }
+}

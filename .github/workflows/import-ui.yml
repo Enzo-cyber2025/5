@@ -1,0 +1,57 @@
+name: Signed single import button and multi-selection
+on:
+  push:
+    branches: [arena/01a09b42-5]
+    paths: [ci/import-ui-candidate.json, .github/workflows/import-ui.yml, scripts/test_single_import_ui_android.py]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  test:
+    if: ${{ contains(github.event.head_commit.message, '[import-ui candidate]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify exact signed UI-only update and original approved payload
+        run: |
+          mkdir -p .cache evidence
+          curl --fail --location --retry 3 'https://github.com/Enzo-cyber2025/5/releases/download/gguf-progress-dba56b2/GGUF-Chat-mobile.apk' -o .cache/import-ui-base.apk
+          python3 ci/verify_import_ui.py
+          SIGNER=$(find "$ANDROID_HOME/build-tools" -path '*/apksigner' -type f | sort -V | tail -1)
+          "$SIGNER" verify --verbose --print-certs .delivery/GGUF-Chat-mobile.apk | tee evidence/physical-import-ui-signature.txt
+          grep 'certificate SHA-256 digest: 9b658c30f602e0f2ff65c176423cb95bea8fbdeb660c306ab908862f90d9bc3c' evidence/physical-import-ui-signature.txt
+          python3 -m venv .venv
+          .venv/bin/pip install numpy==2.2.6 tqdm==4.67.1 pyyaml==6.0.2
+          git clone --depth 1 --branch v0.4.1 https://github.com/ggml-org/llama.cpp .cache/llama-mobile
+          test "$(git -C .cache/llama-mobile rev-parse HEAD)" = b29c606e28a01b1bc8c1351026a0fa6e616bf6c4
+          bash ci/mobile-models.sh
+          sudo chmod a+rw /dev/kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        env:
+          GGUF_TEST_APK: .delivery/GGUF-Chat-mobile.apk
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_5
+          ram-size: 6144M
+          heap-size: 1024M
+          disk-size: 8192M
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: .venv/bin/python scripts/test_single_import_ui_android.py
+      - name: Report
+        if: always()
+        run: python3 ci/report_android.py evidence
+      - name: Publish bounded real evidence
+        if: always()
+        run: bash ci/publish_evidence.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: single-import-ui-evidence
+          path: evidence/

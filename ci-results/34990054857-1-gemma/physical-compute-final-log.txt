@@ -1,0 +1,843 @@
+r_size=4, offset=3034521664, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1345]: n_dims = 1, name = a.pre_encode.out.bias, tensor_size=6144, offset=3034521696, shape:[1536, 1, 1, 1], type = f32
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1346]: n_dims = 2, name = a.pre_encode.out.weight, tensor_size=3145728, offset=3034527840, shape:[1024, 1536, 1, 1], type = f16
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1347]: n_dims = 2, name = a.input_projection.weight, tensor_size=4194304, offset=3037673568, shape:[1024, 1024, 1, 1], type = f32
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1348]: n_dims = 4, name = a.conv1d.0.weight, tensor_size=4608, offset=3041867872, shape:[3, 3, 1, 128], type = f32
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1349]: n_dims = 1, name = a.conv1d.0.norm.weight, tensor_size=512, offset=3041872480, shape:[128, 1, 1, 1], type = f32
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1350]: n_dims = 4, name = a.conv1d.1.weight, tensor_size=147456, offset=3041872992, shape:[3, 3, 128, 32], type = f32
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1351]: n_dims = 1, name = a.conv1d.1.norm.weight, tensor_size=128, offset=3042020448, shape:[32, 1, 1, 1], type = f32
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1352]: n_dims = 2, name = mm.a.input_projection.weight, tensor_size=4718592, offset=3042020576, shape:[1536, 1536, 1, 1], type = f16
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1353]: n_dims = 2, name = mm.input_projection.weight, tensor_size=2359296, offset=3046739168, shape:[768, 1536, 1, 1], type = f16
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1354]: n_dims = 1, name = v.blk.0.ln1.weight, tensor_size=3072, offset=3049098464, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1355]: n_dims = 1, name = v.blk.0.ffn_down.input_max, tensor_size=4, offset=3049101536, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1356]: n_dims = 1, name = v.blk.0.ffn_down.input_min, tensor_size=4, offset=3049101568, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1357]: n_dims = 2, name = v.blk.0.ffn_down.weight, tensor_size=4718592, offset=3049101600, shape:[3072, 768, 1, 1], type = f16
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1358]: n_dims = 1, name = v.blk.0.ffn_down.output_max, tensor_size=4, offset=3053820192, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1359]: n_dims = 1, name = v.blk.0.ffn_down.output_min, tensor_size=4, offset=3053820224, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1360]: n_dims = 1, name = v.blk.0.ffn_gate.input_max, tensor_size=4, offset=3053820256, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1361]: n_dims = 1, name = v.blk.0.ffn_gate.input_min, tensor_size=4, offset=3053820288, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1362]: n_dims = 2, name = v.blk.0.ffn_gate.weight, tensor_size=4718592, offset=3053820320, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1363]: n_dims = 1, name = v.blk.0.ffn_gate.output_max, tensor_size=4, offset=3058538912, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1364]: n_dims = 1, name = v.blk.0.ffn_gate.output_min, tensor_size=4, offset=3058538944, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1365]: n_dims = 1, name = v.blk.0.ffn_up.input_max, tensor_size=4, offset=3058538976, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1366]: n_dims = 1, name = v.blk.0.ffn_up.input_min, tensor_size=4, offset=3058539008, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1367]: n_dims = 2, name = v.blk.0.ffn_up.weight, tensor_size=4718592, offset=3058539040, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1368]: n_dims = 1, name = v.blk.0.ffn_up.output_max, tensor_size=4, offset=3063257632, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1369]: n_dims = 1, name = v.blk.0.ffn_up.output_min, tensor_size=4, offset=3063257664, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1370]: n_dims = 1, name = v.blk.0.attn_post_norm.weight, tensor_size=3072, offset=3063257696, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1371]: n_dims = 1, name = v.blk.0.ffn_post_norm.weight, tensor_size=3072, offset=3063260768, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1372]: n_dims = 1, name = v.blk.0.ln2.weight, tensor_size=3072, offset=3063263840, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1373]: n_dims = 1, name = v.blk.0.attn_k_norm.weight, tensor_size=256, offset=3063266912, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1374]: n_dims = 1, name = v.blk.0.attn_k.input_max, tensor_size=4, offset=3063267168, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1375]: n_dims = 1, name = v.blk.0.attn_k.input_min, tensor_size=4, offset=3063267200, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1376]: n_dims = 2, name = v.blk.0.attn_k.weight, tensor_size=1179648, offset=3063267232, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1377]: n_dims = 1, name = v.blk.0.attn_k.output_max, tensor_size=4, offset=3064446880, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1378]: n_dims = 1, name = v.blk.0.attn_k.output_min, tensor_size=4, offset=3064446912, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1379]: n_dims = 1, name = v.blk.0.attn_out.input_max, tensor_size=4, offset=3064446944, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1380]: n_dims = 1, name = v.blk.0.attn_out.input_min, tensor_size=4, offset=3064446976, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1381]: n_dims = 2, name = v.blk.0.attn_out.weight, tensor_size=1179648, offset=3064447008, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.462  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1382]: n_dims = 1, name = v.blk.0.attn_out.output_max, tensor_size=4, offset=3065626656, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.463  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1383]: n_dims = 1, name = v.blk.0.attn_out.output_min, tensor_size=4, offset=3065626688, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.463  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1384]: n_dims = 1, name = v.blk.0.attn_q_norm.weight, tensor_size=256, offset=3065626720, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.463  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1385]: n_dims = 1, name = v.blk.0.attn_q.input_max, tensor_size=4, offset=3065626976, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.463  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1386]: n_dims = 1, name = v.blk.0.attn_q.input_min, tensor_size=4, offset=3065627008, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.463  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1387]: n_dims = 2, name = v.blk.0.attn_q.weight, tensor_size=1179648, offset=3065627040, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.463  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1388]: n_dims = 1, name = v.blk.0.attn_q.output_max, tensor_size=4, offset=3066806688, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.463  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1389]: n_dims = 1, name = v.blk.0.attn_q.output_min, tensor_size=4, offset=3066806720, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.463  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1390]: n_dims = 1, name = v.blk.0.attn_v.input_max, tensor_size=4, offset=3066806752, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.463  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1391]: n_dims = 1, name = v.blk.0.attn_v.input_min, tensor_size=4, offset=3066806784, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.463  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1392]: n_dims = 2, name = v.blk.0.attn_v.weight, tensor_size=1179648, offset=3066806816, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.463  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1393]: n_dims = 1, name = v.blk.0.attn_v.output_max, tensor_size=4, offset=3067986464, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.463  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1394]: n_dims = 1, name = v.blk.0.attn_v.output_min, tensor_size=4, offset=3067986496, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.464  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1395]: n_dims = 1, name = v.blk.1.ln1.weight, tensor_size=3072, offset=3067986528, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.464  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1396]: n_dims = 1, name = v.blk.1.ffn_down.input_max, tensor_size=4, offset=3067989600, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.464  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1397]: n_dims = 1, name = v.blk.1.ffn_down.input_min, tensor_size=4, offset=3067989632, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.465  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1398]: n_dims = 2, name = v.blk.1.ffn_down.weight, tensor_size=4718592, offset=3067989664, shape:[3072, 768, 1, 1], type = f16
+09-15 15:50:18.465  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1399]: n_dims = 1, name = v.blk.1.ffn_down.output_max, tensor_size=4, offset=3072708256, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.465  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1400]: n_dims = 1, name = v.blk.1.ffn_down.output_min, tensor_size=4, offset=3072708288, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.465  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1401]: n_dims = 1, name = v.blk.1.ffn_gate.input_max, tensor_size=4, offset=3072708320, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.465  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1402]: n_dims = 1, name = v.blk.1.ffn_gate.input_min, tensor_size=4, offset=3072708352, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.465  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1403]: n_dims = 2, name = v.blk.1.ffn_gate.weight, tensor_size=4718592, offset=3072708384, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.465  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1404]: n_dims = 1, name = v.blk.1.ffn_gate.output_max, tensor_size=4, offset=3077426976, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.465  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1405]: n_dims = 1, name = v.blk.1.ffn_gate.output_min, tensor_size=4, offset=3077427008, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.465  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1406]: n_dims = 1, name = v.blk.1.ffn_up.input_max, tensor_size=4, offset=3077427040, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.465  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1407]: n_dims = 1, name = v.blk.1.ffn_up.input_min, tensor_size=4, offset=3077427072, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.465  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1408]: n_dims = 2, name = v.blk.1.ffn_up.weight, tensor_size=4718592, offset=3077427104, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.465  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1409]: n_dims = 1, name = v.blk.1.ffn_up.output_max, tensor_size=4, offset=3082145696, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.465  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1410]: n_dims = 1, name = v.blk.1.ffn_up.output_min, tensor_size=4, offset=3082145728, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.465  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1411]: n_dims = 1, name = v.blk.1.attn_post_norm.weight, tensor_size=3072, offset=3082145760, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.465  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1412]: n_dims = 1, name = v.blk.1.ffn_post_norm.weight, tensor_size=3072, offset=3082148832, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.465  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1413]: n_dims = 1, name = v.blk.1.ln2.weight, tensor_size=3072, offset=3082151904, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.465  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1414]: n_dims = 1, name = v.blk.1.attn_k_norm.weight, tensor_size=256, offset=3082154976, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.465  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1415]: n_dims = 1, name = v.blk.1.attn_k.input_max, tensor_size=4, offset=3082155232, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.465  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1416]: n_dims = 1, name = v.blk.1.attn_k.input_min, tensor_size=4, offset=3082155264, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.465  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1417]: n_dims = 2, name = v.blk.1.attn_k.weight, tensor_size=1179648, offset=3082155296, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.465  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1418]: n_dims = 1, name = v.blk.1.attn_k.output_max, tensor_size=4, offset=3083334944, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.465  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1419]: n_dims = 1, name = v.blk.1.attn_k.output_min, tensor_size=4, offset=3083334976, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.465  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1420]: n_dims = 1, name = v.blk.1.attn_out.input_max, tensor_size=4, offset=3083335008, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.465  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1421]: n_dims = 1, name = v.blk.1.attn_out.input_min, tensor_size=4, offset=3083335040, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.468  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1422]: n_dims = 2, name = v.blk.1.attn_out.weight, tensor_size=1179648, offset=3083335072, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1423]: n_dims = 1, name = v.blk.1.attn_out.output_max, tensor_size=4, offset=3084514720, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1424]: n_dims = 1, name = v.blk.1.attn_out.output_min, tensor_size=4, offset=3084514752, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1425]: n_dims = 1, name = v.blk.1.attn_q_norm.weight, tensor_size=256, offset=3084514784, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1426]: n_dims = 1, name = v.blk.1.attn_q.input_max, tensor_size=4, offset=3084515040, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1427]: n_dims = 1, name = v.blk.1.attn_q.input_min, tensor_size=4, offset=3084515072, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1428]: n_dims = 2, name = v.blk.1.attn_q.weight, tensor_size=1179648, offset=3084515104, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1429]: n_dims = 1, name = v.blk.1.attn_q.output_max, tensor_size=4, offset=3085694752, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1430]: n_dims = 1, name = v.blk.1.attn_q.output_min, tensor_size=4, offset=3085694784, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1431]: n_dims = 1, name = v.blk.1.attn_v.input_max, tensor_size=4, offset=3085694816, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1432]: n_dims = 1, name = v.blk.1.attn_v.input_min, tensor_size=4, offset=3085694848, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1433]: n_dims = 2, name = v.blk.1.attn_v.weight, tensor_size=1179648, offset=3085694880, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1434]: n_dims = 1, name = v.blk.1.attn_v.output_max, tensor_size=4, offset=3086874528, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1435]: n_dims = 1, name = v.blk.1.attn_v.output_min, tensor_size=4, offset=3086874560, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1436]: n_dims = 1, name = v.blk.10.ln1.weight, tensor_size=3072, offset=3086874592, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1437]: n_dims = 1, name = v.blk.10.ffn_down.input_max, tensor_size=4, offset=3086877664, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1438]: n_dims = 1, name = v.blk.10.ffn_down.input_min, tensor_size=4, offset=3086877696, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1439]: n_dims = 2, name = v.blk.10.ffn_down.weight, tensor_size=4718592, offset=3086877728, shape:[3072, 768, 1, 1], type = f16
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1440]: n_dims = 1, name = v.blk.10.ffn_down.output_max, tensor_size=4, offset=3091596320, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1441]: n_dims = 1, name = v.blk.10.ffn_down.output_min, tensor_size=4, offset=3091596352, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1442]: n_dims = 1, name = v.blk.10.ffn_gate.input_max, tensor_size=4, offset=3091596384, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1443]: n_dims = 1, name = v.blk.10.ffn_gate.input_min, tensor_size=4, offset=3091596416, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1444]: n_dims = 2, name = v.blk.10.ffn_gate.weight, tensor_size=4718592, offset=3091596448, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1445]: n_dims = 1, name = v.blk.10.ffn_gate.output_max, tensor_size=4, offset=3096315040, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1446]: n_dims = 1, name = v.blk.10.ffn_gate.output_min, tensor_size=4, offset=3096315072, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1447]: n_dims = 1, name = v.blk.10.ffn_up.input_max, tensor_size=4, offset=3096315104, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1448]: n_dims = 1, name = v.blk.10.ffn_up.input_min, tensor_size=4, offset=3096315136, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1449]: n_dims = 2, name = v.blk.10.ffn_up.weight, tensor_size=4718592, offset=3096315168, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1450]: n_dims = 1, name = v.blk.10.ffn_up.output_max, tensor_size=4, offset=3101033760, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1451]: n_dims = 1, name = v.blk.10.ffn_up.output_min, tensor_size=4, offset=3101033792, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1452]: n_dims = 1, name = v.blk.10.attn_post_norm.weight, tensor_size=3072, offset=3101033824, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1453]: n_dims = 1, name = v.blk.10.ffn_post_norm.weight, tensor_size=3072, offset=3101036896, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1454]: n_dims = 1, name = v.blk.10.ln2.weight, tensor_size=3072, offset=3101039968, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1455]: n_dims = 1, name = v.blk.10.attn_k_norm.weight, tensor_size=256, offset=3101043040, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1456]: n_dims = 1, name = v.blk.10.attn_k.input_max, tensor_size=4, offset=3101043296, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1457]: n_dims = 1, name = v.blk.10.attn_k.input_min, tensor_size=4, offset=3101043328, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1458]: n_dims = 2, name = v.blk.10.attn_k.weight, tensor_size=1179648, offset=3101043360, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1459]: n_dims = 1, name = v.blk.10.attn_k.output_max, tensor_size=4, offset=3102223008, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1460]: n_dims = 1, name = v.blk.10.attn_k.output_min, tensor_size=4, offset=3102223040, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1461]: n_dims = 1, name = v.blk.10.attn_out.input_max, tensor_size=4, offset=3102223072, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1462]: n_dims = 1, name = v.blk.10.attn_out.input_min, tensor_size=4, offset=3102223104, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.469  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1463]: n_dims = 2, name = v.blk.10.attn_out.weight, tensor_size=1179648, offset=3102223136, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1464]: n_dims = 1, name = v.blk.10.attn_out.output_max, tensor_size=4, offset=3103402784, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1465]: n_dims = 1, name = v.blk.10.attn_out.output_min, tensor_size=4, offset=3103402816, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1466]: n_dims = 1, name = v.blk.10.attn_q_norm.weight, tensor_size=256, offset=3103402848, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1467]: n_dims = 1, name = v.blk.10.attn_q.input_max, tensor_size=4, offset=3103403104, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1468]: n_dims = 1, name = v.blk.10.attn_q.input_min, tensor_size=4, offset=3103403136, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1469]: n_dims = 2, name = v.blk.10.attn_q.weight, tensor_size=1179648, offset=3103403168, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1470]: n_dims = 1, name = v.blk.10.attn_q.output_max, tensor_size=4, offset=3104582816, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1471]: n_dims = 1, name = v.blk.10.attn_q.output_min, tensor_size=4, offset=3104582848, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1472]: n_dims = 1, name = v.blk.10.attn_v.input_max, tensor_size=4, offset=3104582880, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1473]: n_dims = 1, name = v.blk.10.attn_v.input_min, tensor_size=4, offset=3104582912, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1474]: n_dims = 2, name = v.blk.10.attn_v.weight, tensor_size=1179648, offset=3104582944, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1475]: n_dims = 1, name = v.blk.10.attn_v.output_max, tensor_size=4, offset=3105762592, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1476]: n_dims = 1, name = v.blk.10.attn_v.output_min, tensor_size=4, offset=3105762624, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1477]: n_dims = 1, name = v.blk.11.ln1.weight, tensor_size=3072, offset=3105762656, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1478]: n_dims = 1, name = v.blk.11.ffn_down.input_max, tensor_size=4, offset=3105765728, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1479]: n_dims = 1, name = v.blk.11.ffn_down.input_min, tensor_size=4, offset=3105765760, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1480]: n_dims = 2, name = v.blk.11.ffn_down.weight, tensor_size=4718592, offset=3105765792, shape:[3072, 768, 1, 1], type = f16
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1481]: n_dims = 1, name = v.blk.11.ffn_down.output_max, tensor_size=4, offset=3110484384, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1482]: n_dims = 1, name = v.blk.11.ffn_down.output_min, tensor_size=4, offset=3110484416, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1483]: n_dims = 1, name = v.blk.11.ffn_gate.input_max, tensor_size=4, offset=3110484448, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1484]: n_dims = 1, name = v.blk.11.ffn_gate.input_min, tensor_size=4, offset=3110484480, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1485]: n_dims = 2, name = v.blk.11.ffn_gate.weight, tensor_size=4718592, offset=3110484512, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1486]: n_dims = 1, name = v.blk.11.ffn_gate.output_max, tensor_size=4, offset=3115203104, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1487]: n_dims = 1, name = v.blk.11.ffn_gate.output_min, tensor_size=4, offset=3115203136, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1488]: n_dims = 1, name = v.blk.11.ffn_up.input_max, tensor_size=4, offset=3115203168, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1489]: n_dims = 1, name = v.blk.11.ffn_up.input_min, tensor_size=4, offset=3115203200, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1490]: n_dims = 2, name = v.blk.11.ffn_up.weight, tensor_size=4718592, offset=3115203232, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1491]: n_dims = 1, name = v.blk.11.ffn_up.output_max, tensor_size=4, offset=3119921824, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1492]: n_dims = 1, name = v.blk.11.ffn_up.output_min, tensor_size=4, offset=3119921856, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1493]: n_dims = 1, name = v.blk.11.attn_post_norm.weight, tensor_size=3072, offset=3119921888, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1494]: n_dims = 1, name = v.blk.11.ffn_post_norm.weight, tensor_size=3072, offset=3119924960, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1495]: n_dims = 1, name = v.blk.11.ln2.weight, tensor_size=3072, offset=3119928032, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1496]: n_dims = 1, name = v.blk.11.attn_k_norm.weight, tensor_size=256, offset=3119931104, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1497]: n_dims = 1, name = v.blk.11.attn_k.input_max, tensor_size=4, offset=3119931360, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1498]: n_dims = 1, name = v.blk.11.attn_k.input_min, tensor_size=4, offset=3119931392, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1499]: n_dims = 2, name = v.blk.11.attn_k.weight, tensor_size=1179648, offset=3119931424, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1500]: n_dims = 1, name = v.blk.11.attn_k.output_max, tensor_size=4, offset=3121111072, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1501]: n_dims = 1, name = v.blk.11.attn_k.output_min, tensor_size=4, offset=3121111104, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1502]: n_dims = 1, name = v.blk.11.attn_out.input_max, tensor_size=4, offset=3121111136, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1503]: n_dims = 1, name = v.blk.11.attn_out.input_min, tensor_size=4, offset=3121111168, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1504]: n_dims = 2, name = v.blk.11.attn_out.weight, tensor_size=1179648, offset=3121111200, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1505]: n_dims = 1, name = v.blk.11.attn_out.output_max, tensor_size=4, offset=3122290848, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1506]: n_dims = 1, name = v.blk.11.attn_out.output_min, tensor_size=4, offset=3122290880, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1507]: n_dims = 1, name = v.blk.11.attn_q_norm.weight, tensor_size=256, offset=3122290912, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1508]: n_dims = 1, name = v.blk.11.attn_q.input_max, tensor_size=4, offset=3122291168, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1509]: n_dims = 1, name = v.blk.11.attn_q.input_min, tensor_size=4, offset=3122291200, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.470  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1510]: n_dims = 2, name = v.blk.11.attn_q.weight, tensor_size=1179648, offset=3122291232, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.471  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1511]: n_dims = 1, name = v.blk.11.attn_q.output_max, tensor_size=4, offset=3123470880, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.471  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1512]: n_dims = 1, name = v.blk.11.attn_q.output_min, tensor_size=4, offset=3123470912, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.471  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1513]: n_dims = 1, name = v.blk.11.attn_v.input_max, tensor_size=4, offset=3123470944, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.471  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1514]: n_dims = 1, name = v.blk.11.attn_v.input_min, tensor_size=4, offset=3123470976, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.471  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1515]: n_dims = 2, name = v.blk.11.attn_v.weight, tensor_size=1179648, offset=3123471008, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.471  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1516]: n_dims = 1, name = v.blk.11.attn_v.output_max, tensor_size=4, offset=3124650656, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.471  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1517]: n_dims = 1, name = v.blk.11.attn_v.output_min, tensor_size=4, offset=3124650688, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.471  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1518]: n_dims = 1, name = v.blk.12.ln1.weight, tensor_size=3072, offset=3124650720, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.471  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1519]: n_dims = 1, name = v.blk.12.ffn_down.input_max, tensor_size=4, offset=3124653792, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.471  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1520]: n_dims = 1, name = v.blk.12.ffn_down.input_min, tensor_size=4, offset=3124653824, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.471  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1521]: n_dims = 2, name = v.blk.12.ffn_down.weight, tensor_size=4718592, offset=3124653856, shape:[3072, 768, 1, 1], type = f16
+09-15 15:50:18.472  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1522]: n_dims = 1, name = v.blk.12.ffn_down.output_max, tensor_size=4, offset=3129372448, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.472  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1523]: n_dims = 1, name = v.blk.12.ffn_down.output_min, tensor_size=4, offset=3129372480, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.472  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1524]: n_dims = 1, name = v.blk.12.ffn_gate.input_max, tensor_size=4, offset=3129372512, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.472  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1525]: n_dims = 1, name = v.blk.12.ffn_gate.input_min, tensor_size=4, offset=3129372544, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.472  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1526]: n_dims = 2, name = v.blk.12.ffn_gate.weight, tensor_size=4718592, offset=3129372576, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.472  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1527]: n_dims = 1, name = v.blk.12.ffn_gate.output_max, tensor_size=4, offset=3134091168, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.472  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1528]: n_dims = 1, name = v.blk.12.ffn_gate.output_min, tensor_size=4, offset=3134091200, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.472  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1529]: n_dims = 1, name = v.blk.12.ffn_up.input_max, tensor_size=4, offset=3134091232, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.472  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1530]: n_dims = 1, name = v.blk.12.ffn_up.input_min, tensor_size=4, offset=3134091264, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.472  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1531]: n_dims = 2, name = v.blk.12.ffn_up.weight, tensor_size=4718592, offset=3134091296, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.472  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1532]: n_dims = 1, name = v.blk.12.ffn_up.output_max, tensor_size=4, offset=3138809888, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.472  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1533]: n_dims = 1, name = v.blk.12.ffn_up.output_min, tensor_size=4, offset=3138809920, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.472  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1534]: n_dims = 1, name = v.blk.12.attn_post_norm.weight, tensor_size=3072, offset=3138809952, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.472  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1535]: n_dims = 1, name = v.blk.12.ffn_post_norm.weight, tensor_size=3072, offset=3138813024, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.473  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1536]: n_dims = 1, name = v.blk.12.ln2.weight, tensor_size=3072, offset=3138816096, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.473  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1537]: n_dims = 1, name = v.blk.12.attn_k_norm.weight, tensor_size=256, offset=3138819168, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.473  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1538]: n_dims = 1, name = v.blk.12.attn_k.input_max, tensor_size=4, offset=3138819424, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.473  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1539]: n_dims = 1, name = v.blk.12.attn_k.input_min, tensor_size=4, offset=3138819456, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.477  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1540]: n_dims = 2, name = v.blk.12.attn_k.weight, tensor_size=1179648, offset=3138819488, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.477  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1541]: n_dims = 1, name = v.blk.12.attn_k.output_max, tensor_size=4, offset=3139999136, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.477  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1542]: n_dims = 1, name = v.blk.12.attn_k.output_min, tensor_size=4, offset=3139999168, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.477  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1543]: n_dims = 1, name = v.blk.12.attn_out.input_max, tensor_size=4, offset=3139999200, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.477  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1544]: n_dims = 1, name = v.blk.12.attn_out.input_min, tensor_size=4, offset=3139999232, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.477  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1545]: n_dims = 2, name = v.blk.12.attn_out.weight, tensor_size=1179648, offset=3139999264, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.477  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1546]: n_dims = 1, name = v.blk.12.attn_out.output_max, tensor_size=4, offset=3141178912, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.477  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1547]: n_dims = 1, name = v.blk.12.attn_out.output_min, tensor_size=4, offset=3141178944, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.477  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1548]: n_dims = 1, name = v.blk.12.attn_q_norm.weight, tensor_size=256, offset=3141178976, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.477  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1549]: n_dims = 1, name = v.blk.12.attn_q.input_max, tensor_size=4, offset=3141179232, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.477  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1550]: n_dims = 1, name = v.blk.12.attn_q.input_min, tensor_size=4, offset=3141179264, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.477  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1551]: n_dims = 2, name = v.blk.12.attn_q.weight, tensor_size=1179648, offset=3141179296, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.477  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1552]: n_dims = 1, name = v.blk.12.attn_q.output_max, tensor_size=4, offset=3142358944, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1553]: n_dims = 1, name = v.blk.12.attn_q.output_min, tensor_size=4, offset=3142358976, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1554]: n_dims = 1, name = v.blk.12.attn_v.input_max, tensor_size=4, offset=3142359008, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1555]: n_dims = 1, name = v.blk.12.attn_v.input_min, tensor_size=4, offset=3142359040, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1556]: n_dims = 2, name = v.blk.12.attn_v.weight, tensor_size=1179648, offset=3142359072, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1557]: n_dims = 1, name = v.blk.12.attn_v.output_max, tensor_size=4, offset=3143538720, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1558]: n_dims = 1, name = v.blk.12.attn_v.output_min, tensor_size=4, offset=3143538752, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1559]: n_dims = 1, name = v.blk.13.ln1.weight, tensor_size=3072, offset=3143538784, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1560]: n_dims = 1, name = v.blk.13.ffn_down.input_max, tensor_size=4, offset=3143541856, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1561]: n_dims = 1, name = v.blk.13.ffn_down.input_min, tensor_size=4, offset=3143541888, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1562]: n_dims = 2, name = v.blk.13.ffn_down.weight, tensor_size=4718592, offset=3143541920, shape:[3072, 768, 1, 1], type = f16
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1563]: n_dims = 1, name = v.blk.13.ffn_down.output_max, tensor_size=4, offset=3148260512, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1564]: n_dims = 1, name = v.blk.13.ffn_down.output_min, tensor_size=4, offset=3148260544, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1565]: n_dims = 1, name = v.blk.13.ffn_gate.input_max, tensor_size=4, offset=3148260576, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1566]: n_dims = 1, name = v.blk.13.ffn_gate.input_min, tensor_size=4, offset=3148260608, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1567]: n_dims = 2, name = v.blk.13.ffn_gate.weight, tensor_size=4718592, offset=3148260640, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1568]: n_dims = 1, name = v.blk.13.ffn_gate.output_max, tensor_size=4, offset=3152979232, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1569]: n_dims = 1, name = v.blk.13.ffn_gate.output_min, tensor_size=4, offset=3152979264, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1570]: n_dims = 1, name = v.blk.13.ffn_up.input_max, tensor_size=4, offset=3152979296, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1571]: n_dims = 1, name = v.blk.13.ffn_up.input_min, tensor_size=4, offset=3152979328, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1572]: n_dims = 2, name = v.blk.13.ffn_up.weight, tensor_size=4718592, offset=3152979360, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1573]: n_dims = 1, name = v.blk.13.ffn_up.output_max, tensor_size=4, offset=3157697952, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1574]: n_dims = 1, name = v.blk.13.ffn_up.output_min, tensor_size=4, offset=3157697984, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1575]: n_dims = 1, name = v.blk.13.attn_post_norm.weight, tensor_size=3072, offset=3157698016, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1576]: n_dims = 1, name = v.blk.13.ffn_post_norm.weight, tensor_size=3072, offset=3157701088, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1577]: n_dims = 1, name = v.blk.13.ln2.weight, tensor_size=3072, offset=3157704160, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1578]: n_dims = 1, name = v.blk.13.attn_k_norm.weight, tensor_size=256, offset=3157707232, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1579]: n_dims = 1, name = v.blk.13.attn_k.input_max, tensor_size=4, offset=3157707488, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1580]: n_dims = 1, name = v.blk.13.attn_k.input_min, tensor_size=4, offset=3157707520, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1581]: n_dims = 2, name = v.blk.13.attn_k.weight, tensor_size=1179648, offset=3157707552, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1582]: n_dims = 1, name = v.blk.13.attn_k.output_max, tensor_size=4, offset=3158887200, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1583]: n_dims = 1, name = v.blk.13.attn_k.output_min, tensor_size=4, offset=3158887232, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1584]: n_dims = 1, name = v.blk.13.attn_out.input_max, tensor_size=4, offset=3158887264, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1585]: n_dims = 1, name = v.blk.13.attn_out.input_min, tensor_size=4, offset=3158887296, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1586]: n_dims = 2, name = v.blk.13.attn_out.weight, tensor_size=1179648, offset=3158887328, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1587]: n_dims = 1, name = v.blk.13.attn_out.output_max, tensor_size=4, offset=3160066976, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1588]: n_dims = 1, name = v.blk.13.attn_out.output_min, tensor_size=4, offset=3160067008, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1589]: n_dims = 1, name = v.blk.13.attn_q_norm.weight, tensor_size=256, offset=3160067040, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1590]: n_dims = 1, name = v.blk.13.attn_q.input_max, tensor_size=4, offset=3160067296, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1591]: n_dims = 1, name = v.blk.13.attn_q.input_min, tensor_size=4, offset=3160067328, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1592]: n_dims = 2, name = v.blk.13.attn_q.weight, tensor_size=1179648, offset=3160067360, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1593]: n_dims = 1, name = v.blk.13.attn_q.output_max, tensor_size=4, offset=3161247008, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1594]: n_dims = 1, name = v.blk.13.attn_q.output_min, tensor_size=4, offset=3161247040, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1595]: n_dims = 1, name = v.blk.13.attn_v.input_max, tensor_size=4, offset=3161247072, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1596]: n_dims = 1, name = v.blk.13.attn_v.input_min, tensor_size=4, offset=3161247104, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1597]: n_dims = 2, name = v.blk.13.attn_v.weight, tensor_size=1179648, offset=3161247136, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1598]: n_dims = 1, name = v.blk.13.attn_v.output_max, tensor_size=4, offset=3162426784, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1599]: n_dims = 1, name = v.blk.13.attn_v.output_min, tensor_size=4, offset=3162426816, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1600]: n_dims = 1, name = v.blk.14.ln1.weight, tensor_size=3072, offset=3162426848, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1601]: n_dims = 1, name = v.blk.14.ffn_down.input_max, tensor_size=4, offset=3162429920, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1602]: n_dims = 1, name = v.blk.14.ffn_down.input_min, tensor_size=4, offset=3162429952, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1603]: n_dims = 2, name = v.blk.14.ffn_down.weight, tensor_size=4718592, offset=3162429984, shape:[3072, 768, 1, 1], type = f16
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1604]: n_dims = 1, name = v.blk.14.ffn_down.output_max, tensor_size=4, offset=3167148576, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1605]: n_dims = 1, name = v.blk.14.ffn_down.output_min, tensor_size=4, offset=3167148608, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1606]: n_dims = 1, name = v.blk.14.ffn_gate.input_max, tensor_size=4, offset=3167148640, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1607]: n_dims = 1, name = v.blk.14.ffn_gate.input_min, tensor_size=4, offset=3167148672, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1608]: n_dims = 2, name = v.blk.14.ffn_gate.weight, tensor_size=4718592, offset=3167148704, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1609]: n_dims = 1, name = v.blk.14.ffn_gate.output_max, tensor_size=4, offset=3171867296, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1610]: n_dims = 1, name = v.blk.14.ffn_gate.output_min, tensor_size=4, offset=3171867328, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1611]: n_dims = 1, name = v.blk.14.ffn_up.input_max, tensor_size=4, offset=3171867360, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1612]: n_dims = 1, name = v.blk.14.ffn_up.input_min, tensor_size=4, offset=3171867392, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1613]: n_dims = 2, name = v.blk.14.ffn_up.weight, tensor_size=4718592, offset=3171867424, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1614]: n_dims = 1, name = v.blk.14.ffn_up.output_max, tensor_size=4, offset=3176586016, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1615]: n_dims = 1, name = v.blk.14.ffn_up.output_min, tensor_size=4, offset=3176586048, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1616]: n_dims = 1, name = v.blk.14.attn_post_norm.weight, tensor_size=3072, offset=3176586080, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1617]: n_dims = 1, name = v.blk.14.ffn_post_norm.weight, tensor_size=3072, offset=3176589152, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1618]: n_dims = 1, name = v.blk.14.ln2.weight, tensor_size=3072, offset=3176592224, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1619]: n_dims = 1, name = v.blk.14.attn_k_norm.weight, tensor_size=256, offset=3176595296, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1620]: n_dims = 1, name = v.blk.14.attn_k.input_max, tensor_size=4, offset=3176595552, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1621]: n_dims = 1, name = v.blk.14.attn_k.input_min, tensor_size=4, offset=3176595584, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1622]: n_dims = 2, name = v.blk.14.attn_k.weight, tensor_size=1179648, offset=3176595616, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1623]: n_dims = 1, name = v.blk.14.attn_k.output_max, tensor_size=4, offset=3177775264, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1624]: n_dims = 1, name = v.blk.14.attn_k.output_min, tensor_size=4, offset=3177775296, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1625]: n_dims = 1, name = v.blk.14.attn_out.input_max, tensor_size=4, offset=3177775328, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1626]: n_dims = 1, name = v.blk.14.attn_out.input_min, tensor_size=4, offset=3177775360, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1627]: n_dims = 2, name = v.blk.14.attn_out.weight, tensor_size=1179648, offset=3177775392, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1628]: n_dims = 1, name = v.blk.14.attn_out.output_max, tensor_size=4, offset=3178955040, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1629]: n_dims = 1, name = v.blk.14.attn_out.output_min, tensor_size=4, offset=3178955072, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1630]: n_dims = 1, name = v.blk.14.attn_q_norm.weight, tensor_size=256, offset=3178955104, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1631]: n_dims = 1, name = v.blk.14.attn_q.input_max, tensor_size=4, offset=3178955360, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1632]: n_dims = 1, name = v.blk.14.attn_q.input_min, tensor_size=4, offset=3178955392, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1633]: n_dims = 2, name = v.blk.14.attn_q.weight, tensor_size=1179648, offset=3178955424, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1634]: n_dims = 1, name = v.blk.14.attn_q.output_max, tensor_size=4, offset=3180135072, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1635]: n_dims = 1, name = v.blk.14.attn_q.output_min, tensor_size=4, offset=3180135104, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1636]: n_dims = 1, name = v.blk.14.attn_v.input_max, tensor_size=4, offset=3180135136, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1637]: n_dims = 1, name = v.blk.14.attn_v.input_min, tensor_size=4, offset=3180135168, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1638]: n_dims = 2, name = v.blk.14.attn_v.weight, tensor_size=1179648, offset=3180135200, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.478  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1639]: n_dims = 1, name = v.blk.14.attn_v.output_max, tensor_size=4, offset=3181314848, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.479  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1640]: n_dims = 1, name = v.blk.14.attn_v.output_min, tensor_size=4, offset=3181314880, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.479  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1641]: n_dims = 1, name = v.blk.15.ln1.weight, tensor_size=3072, offset=3181314912, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.479  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1642]: n_dims = 1, name = v.blk.15.ffn_down.input_max, tensor_size=4, offset=3181317984, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.479  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1643]: n_dims = 1, name = v.blk.15.ffn_down.input_min, tensor_size=4, offset=3181318016, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.479  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1644]: n_dims = 2, name = v.blk.15.ffn_down.weight, tensor_size=4718592, offset=3181318048, shape:[3072, 768, 1, 1], type = f16
+09-15 15:50:18.479  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1645]: n_dims = 1, name = v.blk.15.ffn_down.output_max, tensor_size=4, offset=3186036640, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.479  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1646]: n_dims = 1, name = v.blk.15.ffn_down.output_min, tensor_size=4, offset=3186036672, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.479  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1647]: n_dims = 1, name = v.blk.15.ffn_gate.input_max, tensor_size=4, offset=3186036704, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.479  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1648]: n_dims = 1, name = v.blk.15.ffn_gate.input_min, tensor_size=4, offset=3186036736, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.479  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1649]: n_dims = 2, name = v.blk.15.ffn_gate.weight, tensor_size=4718592, offset=3186036768, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.480  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1650]: n_dims = 1, name = v.blk.15.ffn_gate.output_max, tensor_size=4, offset=3190755360, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.480  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1651]: n_dims = 1, name = v.blk.15.ffn_gate.output_min, tensor_size=4, offset=3190755392, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.480  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1652]: n_dims = 1, name = v.blk.15.ffn_up.input_max, tensor_size=4, offset=3190755424, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.480  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1653]: n_dims = 1, name = v.blk.15.ffn_up.input_min, tensor_size=4, offset=3190755456, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.480  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1654]: n_dims = 2, name = v.blk.15.ffn_up.weight, tensor_size=4718592, offset=3190755488, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.480  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1655]: n_dims = 1, name = v.blk.15.ffn_up.output_max, tensor_size=4, offset=3195474080, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.480  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1656]: n_dims = 1, name = v.blk.15.ffn_up.output_min, tensor_size=4, offset=3195474112, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.480  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1657]: n_dims = 1, name = v.blk.15.attn_post_norm.weight, tensor_size=3072, offset=3195474144, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.480  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1658]: n_dims = 1, name = v.blk.15.ffn_post_norm.weight, tensor_size=3072, offset=3195477216, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.480  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1659]: n_dims = 1, name = v.blk.15.ln2.weight, tensor_size=3072, offset=3195480288, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.481  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1660]: n_dims = 1, name = v.blk.15.attn_k_norm.weight, tensor_size=256, offset=3195483360, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.481  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1661]: n_dims = 1, name = v.blk.15.attn_k.input_max, tensor_size=4, offset=3195483616, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.481  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1662]: n_dims = 1, name = v.blk.15.attn_k.input_min, tensor_size=4, offset=3195483648, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.481  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1663]: n_dims = 2, name = v.blk.15.attn_k.weight, tensor_size=1179648, offset=3195483680, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.481  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1664]: n_dims = 1, name = v.blk.15.attn_k.output_max, tensor_size=4, offset=3196663328, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.481  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1665]: n_dims = 1, name = v.blk.15.attn_k.output_min, tensor_size=4, offset=3196663360, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.481  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1666]: n_dims = 1, name = v.blk.15.attn_out.input_max, tensor_size=4, offset=3196663392, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.481  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1667]: n_dims = 1, name = v.blk.15.attn_out.input_min, tensor_size=4, offset=3196663424, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.481  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1668]: n_dims = 2, name = v.blk.15.attn_out.weight, tensor_size=1179648, offset=3196663456, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.481  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1669]: n_dims = 1, name = v.blk.15.attn_out.output_max, tensor_size=4, offset=3197843104, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.481  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1670]: n_dims = 1, name = v.blk.15.attn_out.output_min, tensor_size=4, offset=3197843136, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.481  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1671]: n_dims = 1, name = v.blk.15.attn_q_norm.weight, tensor_size=256, offset=3197843168, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.481  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1672]: n_dims = 1, name = v.blk.15.attn_q.input_max, tensor_size=4, offset=3197843424, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.482  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1673]: n_dims = 1, name = v.blk.15.attn_q.input_min, tensor_size=4, offset=3197843456, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.482  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1674]: n_dims = 2, name = v.blk.15.attn_q.weight, tensor_size=1179648, offset=3197843488, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.482  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1675]: n_dims = 1, name = v.blk.15.attn_q.output_max, tensor_size=4, offset=3199023136, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.482  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1676]: n_dims = 1, name = v.blk.15.attn_q.output_min, tensor_size=4, offset=3199023168, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.482  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1677]: n_dims = 1, name = v.blk.15.attn_v.input_max, tensor_size=4, offset=3199023200, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.482  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1678]: n_dims = 1, name = v.blk.15.attn_v.input_min, tensor_size=4, offset=3199023232, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.482  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1679]: n_dims = 2, name = v.blk.15.attn_v.weight, tensor_size=1179648, offset=3199023264, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.482  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1680]: n_dims = 1, name = v.blk.15.attn_v.output_max, tensor_size=4, offset=3200202912, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.482  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1681]: n_dims = 1, name = v.blk.15.attn_v.output_min, tensor_size=4, offset=3200202944, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.482  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1682]: n_dims = 1, name = v.blk.2.ln1.weight, tensor_size=3072, offset=3200202976, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.482  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1683]: n_dims = 1, name = v.blk.2.ffn_down.input_max, tensor_size=4, offset=3200206048, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.482  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1684]: n_dims = 1, name = v.blk.2.ffn_down.input_min, tensor_size=4, offset=3200206080, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.482  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1685]: n_dims = 2, name = v.blk.2.ffn_down.weight, tensor_size=4718592, offset=3200206112, shape:[3072, 768, 1, 1], type = f16
+09-15 15:50:18.484  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1686]: n_dims = 1, name = v.blk.2.ffn_down.output_max, tensor_size=4, offset=3204924704, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1687]: n_dims = 1, name = v.blk.2.ffn_down.output_min, tensor_size=4, offset=3204924736, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1688]: n_dims = 1, name = v.blk.2.ffn_gate.input_max, tensor_size=4, offset=3204924768, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1689]: n_dims = 1, name = v.blk.2.ffn_gate.input_min, tensor_size=4, offset=3204924800, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1690]: n_dims = 2, name = v.blk.2.ffn_gate.weight, tensor_size=4718592, offset=3204924832, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1691]: n_dims = 1, name = v.blk.2.ffn_gate.output_max, tensor_size=4, offset=3209643424, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1692]: n_dims = 1, name = v.blk.2.ffn_gate.output_min, tensor_size=4, offset=3209643456, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1693]: n_dims = 1, name = v.blk.2.ffn_up.input_max, tensor_size=4, offset=3209643488, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1694]: n_dims = 1, name = v.blk.2.ffn_up.input_min, tensor_size=4, offset=3209643520, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1695]: n_dims = 2, name = v.blk.2.ffn_up.weight, tensor_size=4718592, offset=3209643552, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1696]: n_dims = 1, name = v.blk.2.ffn_up.output_max, tensor_size=4, offset=3214362144, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1697]: n_dims = 1, name = v.blk.2.ffn_up.output_min, tensor_size=4, offset=3214362176, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1698]: n_dims = 1, name = v.blk.2.attn_post_norm.weight, tensor_size=3072, offset=3214362208, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1699]: n_dims = 1, name = v.blk.2.ffn_post_norm.weight, tensor_size=3072, offset=3214365280, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1700]: n_dims = 1, name = v.blk.2.ln2.weight, tensor_size=3072, offset=3214368352, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1701]: n_dims = 1, name = v.blk.2.attn_k_norm.weight, tensor_size=256, offset=3214371424, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1702]: n_dims = 1, name = v.blk.2.attn_k.input_max, tensor_size=4, offset=3214371680, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1703]: n_dims = 1, name = v.blk.2.attn_k.input_min, tensor_size=4, offset=3214371712, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1704]: n_dims = 2, name = v.blk.2.attn_k.weight, tensor_size=1179648, offset=3214371744, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1705]: n_dims = 1, name = v.blk.2.attn_k.output_max, tensor_size=4, offset=3215551392, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1706]: n_dims = 1, name = v.blk.2.attn_k.output_min, tensor_size=4, offset=3215551424, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1707]: n_dims = 1, name = v.blk.2.attn_out.input_max, tensor_size=4, offset=3215551456, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1708]: n_dims = 1, name = v.blk.2.attn_out.input_min, tensor_size=4, offset=3215551488, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1709]: n_dims = 2, name = v.blk.2.attn_out.weight, tensor_size=1179648, offset=3215551520, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1710]: n_dims = 1, name = v.blk.2.attn_out.output_max, tensor_size=4, offset=3216731168, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1711]: n_dims = 1, name = v.blk.2.attn_out.output_min, tensor_size=4, offset=3216731200, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1712]: n_dims = 1, name = v.blk.2.attn_q_norm.weight, tensor_size=256, offset=3216731232, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1713]: n_dims = 1, name = v.blk.2.attn_q.input_max, tensor_size=4, offset=3216731488, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1714]: n_dims = 1, name = v.blk.2.attn_q.input_min, tensor_size=4, offset=3216731520, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1715]: n_dims = 2, name = v.blk.2.attn_q.weight, tensor_size=1179648, offset=3216731552, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1716]: n_dims = 1, name = v.blk.2.attn_q.output_max, tensor_size=4, offset=3217911200, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1717]: n_dims = 1, name = v.blk.2.attn_q.output_min, tensor_size=4, offset=3217911232, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1718]: n_dims = 1, name = v.blk.2.attn_v.input_max, tensor_size=4, offset=3217911264, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1719]: n_dims = 1, name = v.blk.2.attn_v.input_min, tensor_size=4, offset=3217911296, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1720]: n_dims = 2, name = v.blk.2.attn_v.weight, tensor_size=1179648, offset=3217911328, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1721]: n_dims = 1, name = v.blk.2.attn_v.output_max, tensor_size=4, offset=3219090976, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1722]: n_dims = 1, name = v.blk.2.attn_v.output_min, tensor_size=4, offset=3219091008, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1723]: n_dims = 1, name = v.blk.3.ln1.weight, tensor_size=3072, offset=3219091040, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1724]: n_dims = 1, name = v.blk.3.ffn_down.input_max, tensor_size=4, offset=3219094112, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1725]: n_dims = 1, name = v.blk.3.ffn_down.input_min, tensor_size=4, offset=3219094144, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1726]: n_dims = 2, name = v.blk.3.ffn_down.weight, tensor_size=4718592, offset=3219094176, shape:[3072, 768, 1, 1], type = f16
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1727]: n_dims = 1, name = v.blk.3.ffn_down.output_max, tensor_size=4, offset=3223812768, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1728]: n_dims = 1, name = v.blk.3.ffn_down.output_min, tensor_size=4, offset=3223812800, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1729]: n_dims = 1, name = v.blk.3.ffn_gate.input_max, tensor_size=4, offset=3223812832, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1730]: n_dims = 1, name = v.blk.3.ffn_gate.input_min, tensor_size=4, offset=3223812864, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1731]: n_dims = 2, name = v.blk.3.ffn_gate.weight, tensor_size=4718592, offset=3223812896, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1732]: n_dims = 1, name = v.blk.3.ffn_gate.output_max, tensor_size=4, offset=3228531488, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1733]: n_dims = 1, name = v.blk.3.ffn_gate.output_min, tensor_size=4, offset=3228531520, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1734]: n_dims = 1, name = v.blk.3.ffn_up.input_max, tensor_size=4, offset=3228531552, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1735]: n_dims = 1, name = v.blk.3.ffn_up.input_min, tensor_size=4, offset=3228531584, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1736]: n_dims = 2, name = v.blk.3.ffn_up.weight, tensor_size=4718592, offset=3228531616, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1737]: n_dims = 1, name = v.blk.3.ffn_up.output_max, tensor_size=4, offset=3233250208, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1738]: n_dims = 1, name = v.blk.3.ffn_up.output_min, tensor_size=4, offset=3233250240, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1739]: n_dims = 1, name = v.blk.3.attn_post_norm.weight, tensor_size=3072, offset=3233250272, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1740]: n_dims = 1, name = v.blk.3.ffn_post_norm.weight, tensor_size=3072, offset=3233253344, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1741]: n_dims = 1, name = v.blk.3.ln2.weight, tensor_size=3072, offset=3233256416, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1742]: n_dims = 1, name = v.blk.3.attn_k_norm.weight, tensor_size=256, offset=3233259488, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1743]: n_dims = 1, name = v.blk.3.attn_k.input_max, tensor_size=4, offset=3233259744, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1744]: n_dims = 1, name = v.blk.3.attn_k.input_min, tensor_size=4, offset=3233259776, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1745]: n_dims = 2, name = v.blk.3.attn_k.weight, tensor_size=1179648, offset=3233259808, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1746]: n_dims = 1, name = v.blk.3.attn_k.output_max, tensor_size=4, offset=3234439456, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1747]: n_dims = 1, name = v.blk.3.attn_k.output_min, tensor_size=4, offset=3234439488, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1748]: n_dims = 1, name = v.blk.3.attn_out.input_max, tensor_size=4, offset=3234439520, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.485  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1749]: n_dims = 1, name = v.blk.3.attn_out.input_min, tensor_size=4, offset=3234439552, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.486  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1750]: n_dims = 2, name = v.blk.3.attn_out.weight, tensor_size=1179648, offset=3234439584, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.486  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1751]: n_dims = 1, name = v.blk.3.attn_out.output_max, tensor_size=4, offset=3235619232, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.486  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1752]: n_dims = 1, name = v.blk.3.attn_out.output_min, tensor_size=4, offset=3235619264, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.486  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1753]: n_dims = 1, name = v.blk.3.attn_q_norm.weight, tensor_size=256, offset=3235619296, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.486  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1754]: n_dims = 1, name = v.blk.3.attn_q.input_max, tensor_size=4, offset=3235619552, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.486  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1755]: n_dims = 1, name = v.blk.3.attn_q.input_min, tensor_size=4, offset=3235619584, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.486  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1756]: n_dims = 2, name = v.blk.3.attn_q.weight, tensor_size=1179648, offset=3235619616, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.486  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1757]: n_dims = 1, name = v.blk.3.attn_q.output_max, tensor_size=4, offset=3236799264, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.486  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1758]: n_dims = 1, name = v.blk.3.attn_q.output_min, tensor_size=4, offset=3236799296, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.486  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1759]: n_dims = 1, name = v.blk.3.attn_v.input_max, tensor_size=4, offset=3236799328, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.487  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1760]: n_dims = 1, name = v.blk.3.attn_v.input_min, tensor_size=4, offset=3236799360, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.487  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1761]: n_dims = 2, name = v.blk.3.attn_v.weight, tensor_size=1179648, offset=3236799392, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.487  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1762]: n_dims = 1, name = v.blk.3.attn_v.output_max, tensor_size=4, offset=3237979040, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.487  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1763]: n_dims = 1, name = v.blk.3.attn_v.output_min, tensor_size=4, offset=3237979072, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.487  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1764]: n_dims = 1, name = v.blk.4.ln1.weight, tensor_size=3072, offset=3237979104, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.487  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1765]: n_dims = 1, name = v.blk.4.ffn_down.input_max, tensor_size=4, offset=3237982176, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.487  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1766]: n_dims = 1, name = v.blk.4.ffn_down.input_min, tensor_size=4, offset=3237982208, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.487  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1767]: n_dims = 2, name = v.blk.4.ffn_down.weight, tensor_size=4718592, offset=3237982240, shape:[3072, 768, 1, 1], type = f16
+09-15 15:50:18.487  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1768]: n_dims = 1, name = v.blk.4.ffn_down.output_max, tensor_size=4, offset=3242700832, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.487  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1769]: n_dims = 1, name = v.blk.4.ffn_down.output_min, tensor_size=4, offset=3242700864, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.487  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1770]: n_dims = 1, name = v.blk.4.ffn_gate.input_max, tensor_size=4, offset=3242700896, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.487  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1771]: n_dims = 1, name = v.blk.4.ffn_gate.input_min, tensor_size=4, offset=3242700928, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.487  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1772]: n_dims = 2, name = v.blk.4.ffn_gate.weight, tensor_size=4718592, offset=3242700960, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.488  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1773]: n_dims = 1, name = v.blk.4.ffn_gate.output_max, tensor_size=4, offset=3247419552, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.488  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1774]: n_dims = 1, name = v.blk.4.ffn_gate.output_min, tensor_size=4, offset=3247419584, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.488  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1775]: n_dims = 1, name = v.blk.4.ffn_up.input_max, tensor_size=4, offset=3247419616, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.488  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1776]: n_dims = 1, name = v.blk.4.ffn_up.input_min, tensor_size=4, offset=3247419648, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.488  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1777]: n_dims = 2, name = v.blk.4.ffn_up.weight, tensor_size=4718592, offset=3247419680, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.488  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1778]: n_dims = 1, name = v.blk.4.ffn_up.output_max, tensor_size=4, offset=3252138272, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.489  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1779]: n_dims = 1, name = v.blk.4.ffn_up.output_min, tensor_size=4, offset=3252138304, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.489  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1780]: n_dims = 1, name = v.blk.4.attn_post_norm.weight, tensor_size=3072, offset=3252138336, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.489  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1781]: n_dims = 1, name = v.blk.4.ffn_post_norm.weight, tensor_size=3072, offset=3252141408, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.489  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1782]: n_dims = 1, name = v.blk.4.ln2.weight, tensor_size=3072, offset=3252144480, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.489  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1783]: n_dims = 1, name = v.blk.4.attn_k_norm.weight, tensor_size=256, offset=3252147552, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.489  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1784]: n_dims = 1, name = v.blk.4.attn_k.input_max, tensor_size=4, offset=3252147808, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.489  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1785]: n_dims = 1, name = v.blk.4.attn_k.input_min, tensor_size=4, offset=3252147840, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.489  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1786]: n_dims = 2, name = v.blk.4.attn_k.weight, tensor_size=1179648, offset=3252147872, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.489  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1787]: n_dims = 1, name = v.blk.4.attn_k.output_max, tensor_size=4, offset=3253327520, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.489  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1788]: n_dims = 1, name = v.blk.4.attn_k.output_min, tensor_size=4, offset=3253327552, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.489  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1789]: n_dims = 1, name = v.blk.4.attn_out.input_max, tensor_size=4, offset=3253327584, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.489  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1790]: n_dims = 1, name = v.blk.4.attn_out.input_min, tensor_size=4, offset=3253327616, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.489  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1791]: n_dims = 2, name = v.blk.4.attn_out.weight, tensor_size=1179648, offset=3253327648, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.489  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1792]: n_dims = 1, name = v.blk.4.attn_out.output_max, tensor_size=4, offset=3254507296, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.489  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1793]: n_dims = 1, name = v.blk.4.attn_out.output_min, tensor_size=4, offset=3254507328, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.489  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1794]: n_dims = 1, name = v.blk.4.attn_q_norm.weight, tensor_size=256, offset=3254507360, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.489  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1795]: n_dims = 1, name = v.blk.4.attn_q.input_max, tensor_size=4, offset=3254507616, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.489  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1796]: n_dims = 1, name = v.blk.4.attn_q.input_min, tensor_size=4, offset=3254507648, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.489  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1797]: n_dims = 2, name = v.blk.4.attn_q.weight, tensor_size=1179648, offset=3254507680, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.489  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1798]: n_dims = 1, name = v.blk.4.attn_q.output_max, tensor_size=4, offset=3255687328, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.492  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1799]: n_dims = 1, name = v.blk.4.attn_q.output_min, tensor_size=4, offset=3255687360, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1800]: n_dims = 1, name = v.blk.4.attn_v.input_max, tensor_size=4, offset=3255687392, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1801]: n_dims = 1, name = v.blk.4.attn_v.input_min, tensor_size=4, offset=3255687424, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1802]: n_dims = 2, name = v.blk.4.attn_v.weight, tensor_size=1179648, offset=3255687456, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1803]: n_dims = 1, name = v.blk.4.attn_v.output_max, tensor_size=4, offset=3256867104, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1804]: n_dims = 1, name = v.blk.4.attn_v.output_min, tensor_size=4, offset=3256867136, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1805]: n_dims = 1, name = v.blk.5.ln1.weight, tensor_size=3072, offset=3256867168, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1806]: n_dims = 1, name = v.blk.5.ffn_down.input_max, tensor_size=4, offset=3256870240, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1807]: n_dims = 1, name = v.blk.5.ffn_down.input_min, tensor_size=4, offset=3256870272, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1808]: n_dims = 2, name = v.blk.5.ffn_down.weight, tensor_size=4718592, offset=3256870304, shape:[3072, 768, 1, 1], type = f16
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1809]: n_dims = 1, name = v.blk.5.ffn_down.output_max, tensor_size=4, offset=3261588896, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1810]: n_dims = 1, name = v.blk.5.ffn_down.output_min, tensor_size=4, offset=3261588928, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1811]: n_dims = 1, name = v.blk.5.ffn_gate.input_max, tensor_size=4, offset=3261588960, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1812]: n_dims = 1, name = v.blk.5.ffn_gate.input_min, tensor_size=4, offset=3261588992, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1813]: n_dims = 2, name = v.blk.5.ffn_gate.weight, tensor_size=4718592, offset=3261589024, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1814]: n_dims = 1, name = v.blk.5.ffn_gate.output_max, tensor_size=4, offset=3266307616, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1815]: n_dims = 1, name = v.blk.5.ffn_gate.output_min, tensor_size=4, offset=3266307648, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1816]: n_dims = 1, name = v.blk.5.ffn_up.input_max, tensor_size=4, offset=3266307680, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1817]: n_dims = 1, name = v.blk.5.ffn_up.input_min, tensor_size=4, offset=3266307712, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1818]: n_dims = 2, name = v.blk.5.ffn_up.weight, tensor_size=4718592, offset=3266307744, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1819]: n_dims = 1, name = v.blk.5.ffn_up.output_max, tensor_size=4, offset=3271026336, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1820]: n_dims = 1, name = v.blk.5.ffn_up.output_min, tensor_size=4, offset=3271026368, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1821]: n_dims = 1, name = v.blk.5.attn_post_norm.weight, tensor_size=3072, offset=3271026400, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1822]: n_dims = 1, name = v.blk.5.ffn_post_norm.weight, tensor_size=3072, offset=3271029472, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1823]: n_dims = 1, name = v.blk.5.ln2.weight, tensor_size=3072, offset=3271032544, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1824]: n_dims = 1, name = v.blk.5.attn_k_norm.weight, tensor_size=256, offset=3271035616, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1825]: n_dims = 1, name = v.blk.5.attn_k.input_max, tensor_size=4, offset=3271035872, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1826]: n_dims = 1, name = v.blk.5.attn_k.input_min, tensor_size=4, offset=3271035904, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1827]: n_dims = 2, name = v.blk.5.attn_k.weight, tensor_size=1179648, offset=3271035936, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1828]: n_dims = 1, name = v.blk.5.attn_k.output_max, tensor_size=4, offset=3272215584, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1829]: n_dims = 1, name = v.blk.5.attn_k.output_min, tensor_size=4, offset=3272215616, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1830]: n_dims = 1, name = v.blk.5.attn_out.input_max, tensor_size=4, offset=3272215648, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1831]: n_dims = 1, name = v.blk.5.attn_out.input_min, tensor_size=4, offset=3272215680, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1832]: n_dims = 2, name = v.blk.5.attn_out.weight, tensor_size=1179648, offset=3272215712, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1833]: n_dims = 1, name = v.blk.5.attn_out.output_max, tensor_size=4, offset=3273395360, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1834]: n_dims = 1, name = v.blk.5.attn_out.output_min, tensor_size=4, offset=3273395392, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1835]: n_dims = 1, name = v.blk.5.attn_q_norm.weight, tensor_size=256, offset=3273395424, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1836]: n_dims = 1, name = v.blk.5.attn_q.input_max, tensor_size=4, offset=3273395680, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1837]: n_dims = 1, name = v.blk.5.attn_q.input_min, tensor_size=4, offset=3273395712, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1838]: n_dims = 2, name = v.blk.5.attn_q.weight, tensor_size=1179648, offset=3273395744, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1839]: n_dims = 1, name = v.blk.5.attn_q.output_max, tensor_size=4, offset=3274575392, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1840]: n_dims = 1, name = v.blk.5.attn_q.output_min, tensor_size=4, offset=3274575424, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1841]: n_dims = 1, name = v.blk.5.attn_v.input_max, tensor_size=4, offset=3274575456, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1842]: n_dims = 1, name = v.blk.5.attn_v.input_min, tensor_size=4, offset=3274575488, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1843]: n_dims = 2, name = v.blk.5.attn_v.weight, tensor_size=1179648, offset=3274575520, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1844]: n_dims = 1, name = v.blk.5.attn_v.output_max, tensor_size=4, offset=3275755168, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1845]: n_dims = 1, name = v.blk.5.attn_v.output_min, tensor_size=4, offset=3275755200, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1846]: n_dims = 1, name = v.blk.6.ln1.weight, tensor_size=3072, offset=3275755232, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1847]: n_dims = 1, name = v.blk.6.ffn_down.input_max, tensor_size=4, offset=3275758304, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1848]: n_dims = 1, name = v.blk.6.ffn_down.input_min, tensor_size=4, offset=3275758336, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1849]: n_dims = 2, name = v.blk.6.ffn_down.weight, tensor_size=4718592, offset=3275758368, shape:[3072, 768, 1, 1], type = f16
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1850]: n_dims = 1, name = v.blk.6.ffn_down.output_max, tensor_size=4, offset=3280476960, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1851]: n_dims = 1, name = v.blk.6.ffn_down.output_min, tensor_size=4, offset=3280476992, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1852]: n_dims = 1, name = v.blk.6.ffn_gate.input_max, tensor_size=4, offset=3280477024, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1853]: n_dims = 1, name = v.blk.6.ffn_gate.input_min, tensor_size=4, offset=3280477056, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1854]: n_dims = 2, name = v.blk.6.ffn_gate.weight, tensor_size=4718592, offset=3280477088, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1855]: n_dims = 1, name = v.blk.6.ffn_gate.output_max, tensor_size=4, offset=3285195680, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1856]: n_dims = 1, name = v.blk.6.ffn_gate.output_min, tensor_size=4, offset=3285195712, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1857]: n_dims = 1, name = v.blk.6.ffn_up.input_max, tensor_size=4, offset=3285195744, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1858]: n_dims = 1, name = v.blk.6.ffn_up.input_min, tensor_size=4, offset=3285195776, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1859]: n_dims = 2, name = v.blk.6.ffn_up.weight, tensor_size=4718592, offset=3285195808, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1860]: n_dims = 1, name = v.blk.6.ffn_up.output_max, tensor_size=4, offset=3289914400, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1861]: n_dims = 1, name = v.blk.6.ffn_up.output_min, tensor_size=4, offset=3289914432, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1862]: n_dims = 1, name = v.blk.6.attn_post_norm.weight, tensor_size=3072, offset=3289914464, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1863]: n_dims = 1, name = v.blk.6.ffn_post_norm.weight, tensor_size=3072, offset=3289917536, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1864]: n_dims = 1, name = v.blk.6.ln2.weight, tensor_size=3072, offset=3289920608, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1865]: n_dims = 1, name = v.blk.6.attn_k_norm.weight, tensor_size=256, offset=3289923680, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1866]: n_dims = 1, name = v.blk.6.attn_k.input_max, tensor_size=4, offset=3289923936, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1867]: n_dims = 1, name = v.blk.6.attn_k.input_min, tensor_size=4, offset=3289923968, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1868]: n_dims = 2, name = v.blk.6.attn_k.weight, tensor_size=1179648, offset=3289924000, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1869]: n_dims = 1, name = v.blk.6.attn_k.output_max, tensor_size=4, offset=3291103648, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1870]: n_dims = 1, name = v.blk.6.attn_k.output_min, tensor_size=4, offset=3291103680, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1871]: n_dims = 1, name = v.blk.6.attn_out.input_max, tensor_size=4, offset=3291103712, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1872]: n_dims = 1, name = v.blk.6.attn_out.input_min, tensor_size=4, offset=3291103744, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1873]: n_dims = 2, name = v.blk.6.attn_out.weight, tensor_size=1179648, offset=3291103776, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1874]: n_dims = 1, name = v.blk.6.attn_out.output_max, tensor_size=4, offset=3292283424, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1875]: n_dims = 1, name = v.blk.6.attn_out.output_min, tensor_size=4, offset=3292283456, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1876]: n_dims = 1, name = v.blk.6.attn_q_norm.weight, tensor_size=256, offset=3292283488, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1877]: n_dims = 1, name = v.blk.6.attn_q.input_max, tensor_size=4, offset=3292283744, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1878]: n_dims = 1, name = v.blk.6.attn_q.input_min, tensor_size=4, offset=3292283776, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1879]: n_dims = 2, name = v.blk.6.attn_q.weight, tensor_size=1179648, offset=3292283808, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.493  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1880]: n_dims = 1, name = v.blk.6.attn_q.output_max, tensor_size=4, offset=3293463456, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.494  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1881]: n_dims = 1, name = v.blk.6.attn_q.output_min, tensor_size=4, offset=3293463488, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.494  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1882]: n_dims = 1, name = v.blk.6.attn_v.input_max, tensor_size=4, offset=3293463520, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.494  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1883]: n_dims = 1, name = v.blk.6.attn_v.input_min, tensor_size=4, offset=3293463552, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.494  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1884]: n_dims = 2, name = v.blk.6.attn_v.weight, tensor_size=1179648, offset=3293463584, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.494  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1885]: n_dims = 1, name = v.blk.6.attn_v.output_max, tensor_size=4, offset=3294643232, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.494  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1886]: n_dims = 1, name = v.blk.6.attn_v.output_min, tensor_size=4, offset=3294643264, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.494  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1887]: n_dims = 1, name = v.blk.7.ln1.weight, tensor_size=3072, offset=3294643296, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.494  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1888]: n_dims = 1, name = v.blk.7.ffn_down.input_max, tensor_size=4, offset=3294646368, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.494  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1889]: n_dims = 1, name = v.blk.7.ffn_down.input_min, tensor_size=4, offset=3294646400, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.494  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1890]: n_dims = 2, name = v.blk.7.ffn_down.weight, tensor_size=4718592, offset=3294646432, shape:[3072, 768, 1, 1], type = f16
+09-15 15:50:18.494  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1891]: n_dims = 1, name = v.blk.7.ffn_down.output_max, tensor_size=4, offset=3299365024, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.494  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1892]: n_dims = 1, name = v.blk.7.ffn_down.output_min, tensor_size=4, offset=3299365056, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.494  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1893]: n_dims = 1, name = v.blk.7.ffn_gate.input_max, tensor_size=4, offset=3299365088, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.495  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1894]: n_dims = 1, name = v.blk.7.ffn_gate.input_min, tensor_size=4, offset=3299365120, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.495  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1895]: n_dims = 2, name = v.blk.7.ffn_gate.weight, tensor_size=4718592, offset=3299365152, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.495  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1896]: n_dims = 1, name = v.blk.7.ffn_gate.output_max, tensor_size=4, offset=3304083744, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.495  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1897]: n_dims = 1, name = v.blk.7.ffn_gate.output_min, tensor_size=4, offset=3304083776, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.495  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1898]: n_dims = 1, name = v.blk.7.ffn_up.input_max, tensor_size=4, offset=3304083808, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.495  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1899]: n_dims = 1, name = v.blk.7.ffn_up.input_min, tensor_size=4, offset=3304083840, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.495  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1900]: n_dims = 2, name = v.blk.7.ffn_up.weight, tensor_size=4718592, offset=3304083872, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.495  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1901]: n_dims = 1, name = v.blk.7.ffn_up.output_max, tensor_size=4, offset=3308802464, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.495  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1902]: n_dims = 1, name = v.blk.7.ffn_up.output_min, tensor_size=4, offset=3308802496, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.495  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1903]: n_dims = 1, name = v.blk.7.attn_post_norm.weight, tensor_size=3072, offset=3308802528, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.495  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1904]: n_dims = 1, name = v.blk.7.ffn_post_norm.weight, tensor_size=3072, offset=3308805600, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.495  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1905]: n_dims = 1, name = v.blk.7.ln2.weight, tensor_size=3072, offset=3308808672, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.495  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1906]: n_dims = 1, name = v.blk.7.attn_k_norm.weight, tensor_size=256, offset=3308811744, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.495  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1907]: n_dims = 1, name = v.blk.7.attn_k.input_max, tensor_size=4, offset=3308812000, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.496  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1908]: n_dims = 1, name = v.blk.7.attn_k.input_min, tensor_size=4, offset=3308812032, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.496  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1909]: n_dims = 2, name = v.blk.7.attn_k.weight, tensor_size=1179648, offset=3308812064, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.496  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1910]: n_dims = 1, name = v.blk.7.attn_k.output_max, tensor_size=4, offset=3309991712, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.496  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1911]: n_dims = 1, name = v.blk.7.attn_k.output_min, tensor_size=4, offset=3309991744, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.496  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1912]: n_dims = 1, name = v.blk.7.attn_out.input_max, tensor_size=4, offset=3309991776, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.496  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1913]: n_dims = 1, name = v.blk.7.attn_out.input_min, tensor_size=4, offset=3309991808, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.496  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1914]: n_dims = 2, name = v.blk.7.attn_out.weight, tensor_size=1179648, offset=3309991840, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.496  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1915]: n_dims = 1, name = v.blk.7.attn_out.output_max, tensor_size=4, offset=3311171488, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.496  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1916]: n_dims = 1, name = v.blk.7.attn_out.output_min, tensor_size=4, offset=3311171520, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.496  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1917]: n_dims = 1, name = v.blk.7.attn_q_norm.weight, tensor_size=256, offset=3311171552, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.496  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1918]: n_dims = 1, name = v.blk.7.attn_q.input_max, tensor_size=4, offset=3311171808, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.496  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1919]: n_dims = 1, name = v.blk.7.attn_q.input_min, tensor_size=4, offset=3311171840, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.496  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1920]: n_dims = 2, name = v.blk.7.attn_q.weight, tensor_size=1179648, offset=3311171872, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.497  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1921]: n_dims = 1, name = v.blk.7.attn_q.output_max, tensor_size=4, offset=3312351520, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.497  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1922]: n_dims = 1, name = v.blk.7.attn_q.output_min, tensor_size=4, offset=3312351552, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.497  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1923]: n_dims = 1, name = v.blk.7.attn_v.input_max, tensor_size=4, offset=3312351584, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.497  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1924]: n_dims = 1, name = v.blk.7.attn_v.input_min, tensor_size=4, offset=3312351616, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.497  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1925]: n_dims = 2, name = v.blk.7.attn_v.weight, tensor_size=1179648, offset=3312351648, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.497  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1926]: n_dims = 1, name = v.blk.7.attn_v.output_max, tensor_size=4, offset=3313531296, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.497  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1927]: n_dims = 1, name = v.blk.7.attn_v.output_min, tensor_size=4, offset=3313531328, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.497  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1928]: n_dims = 1, name = v.blk.8.ln1.weight, tensor_size=3072, offset=3313531360, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.497  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1929]: n_dims = 1, name = v.blk.8.ffn_down.input_max, tensor_size=4, offset=3313534432, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.497  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1930]: n_dims = 1, name = v.blk.8.ffn_down.input_min, tensor_size=4, offset=3313534464, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.497  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1931]: n_dims = 2, name = v.blk.8.ffn_down.weight, tensor_size=4718592, offset=3313534496, shape:[3072, 768, 1, 1], type = f16
+09-15 15:50:18.497  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1932]: n_dims = 1, name = v.blk.8.ffn_down.output_max, tensor_size=4, offset=3318253088, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.497  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1933]: n_dims = 1, name = v.blk.8.ffn_down.output_min, tensor_size=4, offset=3318253120, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.497  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1934]: n_dims = 1, name = v.blk.8.ffn_gate.input_max, tensor_size=4, offset=3318253152, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.497  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1935]: n_dims = 1, name = v.blk.8.ffn_gate.input_min, tensor_size=4, offset=3318253184, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.498  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1936]: n_dims = 2, name = v.blk.8.ffn_gate.weight, tensor_size=4718592, offset=3318253216, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.500  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1937]: n_dims = 1, name = v.blk.8.ffn_gate.output_max, tensor_size=4, offset=3322971808, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.500  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1938]: n_dims = 1, name = v.blk.8.ffn_gate.output_min, tensor_size=4, offset=3322971840, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1939]: n_dims = 1, name = v.blk.8.ffn_up.input_max, tensor_size=4, offset=3322971872, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1940]: n_dims = 1, name = v.blk.8.ffn_up.input_min, tensor_size=4, offset=3322971904, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1941]: n_dims = 2, name = v.blk.8.ffn_up.weight, tensor_size=4718592, offset=3322971936, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1942]: n_dims = 1, name = v.blk.8.ffn_up.output_max, tensor_size=4, offset=3327690528, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1943]: n_dims = 1, name = v.blk.8.ffn_up.output_min, tensor_size=4, offset=3327690560, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1944]: n_dims = 1, name = v.blk.8.attn_post_norm.weight, tensor_size=3072, offset=3327690592, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1945]: n_dims = 1, name = v.blk.8.ffn_post_norm.weight, tensor_size=3072, offset=3327693664, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1946]: n_dims = 1, name = v.blk.8.ln2.weight, tensor_size=3072, offset=3327696736, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1947]: n_dims = 1, name = v.blk.8.attn_k_norm.weight, tensor_size=256, offset=3327699808, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1948]: n_dims = 1, name = v.blk.8.attn_k.input_max, tensor_size=4, offset=3327700064, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1949]: n_dims = 1, name = v.blk.8.attn_k.input_min, tensor_size=4, offset=3327700096, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1950]: n_dims = 2, name = v.blk.8.attn_k.weight, tensor_size=1179648, offset=3327700128, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1951]: n_dims = 1, name = v.blk.8.attn_k.output_max, tensor_size=4, offset=3328879776, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1952]: n_dims = 1, name = v.blk.8.attn_k.output_min, tensor_size=4, offset=3328879808, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1953]: n_dims = 1, name = v.blk.8.attn_out.input_max, tensor_size=4, offset=3328879840, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1954]: n_dims = 1, name = v.blk.8.attn_out.input_min, tensor_size=4, offset=3328879872, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1955]: n_dims = 2, name = v.blk.8.attn_out.weight, tensor_size=1179648, offset=3328879904, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1956]: n_dims = 1, name = v.blk.8.attn_out.output_max, tensor_size=4, offset=3330059552, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1957]: n_dims = 1, name = v.blk.8.attn_out.output_min, tensor_size=4, offset=3330059584, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1958]: n_dims = 1, name = v.blk.8.attn_q_norm.weight, tensor_size=256, offset=3330059616, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1959]: n_dims = 1, name = v.blk.8.attn_q.input_max, tensor_size=4, offset=3330059872, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1960]: n_dims = 1, name = v.blk.8.attn_q.input_min, tensor_size=4, offset=3330059904, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1961]: n_dims = 2, name = v.blk.8.attn_q.weight, tensor_size=1179648, offset=3330059936, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1962]: n_dims = 1, name = v.blk.8.attn_q.output_max, tensor_size=4, offset=3331239584, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1963]: n_dims = 1, name = v.blk.8.attn_q.output_min, tensor_size=4, offset=3331239616, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1964]: n_dims = 1, name = v.blk.8.attn_v.input_max, tensor_size=4, offset=3331239648, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1965]: n_dims = 1, name = v.blk.8.attn_v.input_min, tensor_size=4, offset=3331239680, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1966]: n_dims = 2, name = v.blk.8.attn_v.weight, tensor_size=1179648, offset=3331239712, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1967]: n_dims = 1, name = v.blk.8.attn_v.output_max, tensor_size=4, offset=3332419360, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1968]: n_dims = 1, name = v.blk.8.attn_v.output_min, tensor_size=4, offset=3332419392, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1969]: n_dims = 1, name = v.blk.9.ln1.weight, tensor_size=3072, offset=3332419424, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1970]: n_dims = 1, name = v.blk.9.ffn_down.input_max, tensor_size=4, offset=3332422496, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1971]: n_dims = 1, name = v.blk.9.ffn_down.input_min, tensor_size=4, offset=3332422528, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1972]: n_dims = 2, name = v.blk.9.ffn_down.weight, tensor_size=4718592, offset=3332422560, shape:[3072, 768, 1, 1], type = f16
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1973]: n_dims = 1, name = v.blk.9.ffn_down.output_max, tensor_size=4, offset=3337141152, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1974]: n_dims = 1, name = v.blk.9.ffn_down.output_min, tensor_size=4, offset=3337141184, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1975]: n_dims = 1, name = v.blk.9.ffn_gate.input_max, tensor_size=4, offset=3337141216, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1976]: n_dims = 1, name = v.blk.9.ffn_gate.input_min, tensor_size=4, offset=3337141248, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1977]: n_dims = 2, name = v.blk.9.ffn_gate.weight, tensor_size=4718592, offset=3337141280, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1978]: n_dims = 1, name = v.blk.9.ffn_gate.output_max, tensor_size=4, offset=3341859872, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1979]: n_dims = 1, name = v.blk.9.ffn_gate.output_min, tensor_size=4, offset=3341859904, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1980]: n_dims = 1, name = v.blk.9.ffn_up.input_max, tensor_size=4, offset=3341859936, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1981]: n_dims = 1, name = v.blk.9.ffn_up.input_min, tensor_size=4, offset=3341859968, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1982]: n_dims = 2, name = v.blk.9.ffn_up.weight, tensor_size=4718592, offset=3341860000, shape:[768, 3072, 1, 1], type = f16
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1983]: n_dims = 1, name = v.blk.9.ffn_up.output_max, tensor_size=4, offset=3346578592, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1984]: n_dims = 1, name = v.blk.9.ffn_up.output_min, tensor_size=4, offset=3346578624, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1985]: n_dims = 1, name = v.blk.9.attn_post_norm.weight, tensor_size=3072, offset=3346578656, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1986]: n_dims = 1, name = v.blk.9.ffn_post_norm.weight, tensor_size=3072, offset=3346581728, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1987]: n_dims = 1, name = v.blk.9.ln2.weight, tensor_size=3072, offset=3346584800, shape:[768, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1988]: n_dims = 1, name = v.blk.9.attn_k_norm.weight, tensor_size=256, offset=3346587872, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1989]: n_dims = 1, name = v.blk.9.attn_k.input_max, tensor_size=4, offset=3346588128, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1990]: n_dims = 1, name = v.blk.9.attn_k.input_min, tensor_size=4, offset=3346588160, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1991]: n_dims = 2, name = v.blk.9.attn_k.weight, tensor_size=1179648, offset=3346588192, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1992]: n_dims = 1, name = v.blk.9.attn_k.output_max, tensor_size=4, offset=3347767840, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1993]: n_dims = 1, name = v.blk.9.attn_k.output_min, tensor_size=4, offset=3347767872, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1994]: n_dims = 1, name = v.blk.9.attn_out.input_max, tensor_size=4, offset=3347767904, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1995]: n_dims = 1, name = v.blk.9.attn_out.input_min, tensor_size=4, offset=3347767936, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1996]: n_dims = 2, name = v.blk.9.attn_out.weight, tensor_size=1179648, offset=3347767968, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1997]: n_dims = 1, name = v.blk.9.attn_out.output_max, tensor_size=4, offset=3348947616, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1998]: n_dims = 1, name = v.blk.9.attn_out.output_min, tensor_size=4, offset=3348947648, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[1999]: n_dims = 1, name = v.blk.9.attn_q_norm.weight, tensor_size=256, offset=3348947680, shape:[64, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[2000]: n_dims = 1, name = v.blk.9.attn_q.input_max, tensor_size=4, offset=3348947936, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.501  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[2001]: n_dims = 1, name = v.blk.9.attn_q.input_min, tensor_size=4, offset=3348947968, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.502  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[2002]: n_dims = 2, name = v.blk.9.attn_q.weight, tensor_size=1179648, offset=3348948000, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.502  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[2003]: n_dims = 1, name = v.blk.9.attn_q.output_max, tensor_size=4, offset=3350127648, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.502  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[2004]: n_dims = 1, name = v.blk.9.attn_q.output_min, tensor_size=4, offset=3350127680, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.502  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[2005]: n_dims = 1, name = v.blk.9.attn_v.input_max, tensor_size=4, offset=3350127712, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.502  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[2006]: n_dims = 1, name = v.blk.9.attn_v.input_min, tensor_size=4, offset=3350127744, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.502  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[2007]: n_dims = 2, name = v.blk.9.attn_v.weight, tensor_size=1179648, offset=3350127776, shape:[768, 768, 1, 1], type = f16
+09-15 15:50:18.502  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[2008]: n_dims = 1, name = v.blk.9.attn_v.output_max, tensor_size=4, offset=3351307424, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.502  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[2009]: n_dims = 1, name = v.blk.9.attn_v.output_min, tensor_size=4, offset=3351307456, shape:[1, 1, 1, 1], type = f32
+09-15 15:50:18.502  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[2010]: n_dims = 4, name = v.patch_embd.weight, tensor_size=1179648, offset=3351307488, shape:[16, 16, 3, 768], type = f16
+09-15 15:50:18.502  6303  6385 I GGUFNativeStderr: clip_model_loader: tensor[2011]: n_dims = 3, name = v.position_embd.weight, tensor_size=62914560, offset=3352487136, shape:[768, 10240, 2, 1], type = f32
+09-15 15:50:18.503  6303  6385 I GGUFNativeStderr: clip_ctx: CLIP using CPU backend
+09-15 15:50:18.503  6303  6385 I GGUFNativeStderr: load_hparams: projector:          gemma4v
+09-15 15:50:18.503  6303  6385 I GGUFNativeStderr: load_hparams: n_embd:             768
+09-15 15:50:18.503  6303  6385 I GGUFNativeStderr: load_hparams: n_head:             12
+09-15 15:50:18.503  6303  6385 I GGUFNativeStderr: load_hparams: n_ff:               3072
+09-15 15:50:18.503  6303  6385 I GGUFNativeStderr: load_hparams: n_layer:            16
+09-15 15:50:18.503  6303  6385 I GGUFNativeStderr: load_hparams: ffn_op:             gelu_quick
+09-15 15:50:18.503  6303  6385 I GGUFNativeStderr: load_hparams: projection_dim:     1536
+09-15 15:50:18.503  6303  6385 I GGUFNativeStderr: --- vision hparams ---
+09-15 15:50:18.503  6303  6385 I GGUFNativeStderr: load_hparams: image_size:         224
+09-15 15:50:18.503  6303  6385 I GGUFNativeStderr: load_hparams: patch_size:         16
+09-15 15:50:18.503  6303  6385 I GGUFNativeStderr: load_hparams: has_llava_proj:     0
+09-15 15:50:18.503  6303  6385 I GGUFNativeStderr: load_hparams: minicpmv_version:   0
+09-15 15:50:18.503  6303  6385 I GGUFNativeStderr: load_hparams: n_merge:            3
+09-15 15:50:18.503  6303  6385 I GGUFNativeStderr: load_hparams: n_wa_pattern: 0
+09-15 15:50:18.503  6303  6385 I GGUFNativeStderr: load_hparams: image_min_pixels:   161280
+09-15 15:50:18.503  6303  6385 I GGUFNativeStderr: load_hparams: image_max_pixels:   2580480
+09-15 15:50:18.503  6303  6385 I GGUFNativeStderr: load_hparams: model size:         3257.16 MiB
+09-15 15:50:18.504  6303  6385 I GGUFNativeStderr: load_hparams: metadata size:      0.71 MiB
+09-15 15:50:18.821  6303  6385 I GGUFNativeStderr: load_tensors: loaded 211 tensors from /data/user/0/com.ggufchat.app/files/models/cbe9b1d5-a1ac-4db1-91ed-4d2294768e4e-unified.gguf
+09-15 15:50:18.821  6303  6385 I GGUFNativeStderr: GGUF_PROJECTOR_WEIGHTS backend=CPU bytes=368648192 tensors=211
+09-15 15:50:18.826  6303  6385 I GGUFNativeStderr: get_dummy_batch: warmup with image size = 768 x 768
+09-15 15:50:18.829  6303  6385 I GGUFNativeStderr: clip_ctx: CLIP using CPU backend
+09-15 15:50:18.829  6303  6385 I GGUFNativeStderr: load_hparams: projector:          gemma4a
+09-15 15:50:18.829  6303  6385 I GGUFNativeStderr: load_hparams: n_embd:             1024
+09-15 15:50:18.829  6303  6385 I GGUFNativeStderr: load_hparams: n_head:             8
+09-15 15:50:18.829  6303  6385 I GGUFNativeStderr: load_hparams: n_ff:               4096
+09-15 15:50:18.829  6303  6385 I GGUFNativeStderr: load_hparams: n_layer:            12
+09-15 15:50:18.829  6303  6385 I GGUFNativeStderr: load_hparams: ffn_op:             gelu_quick
+09-15 15:50:18.829  6303  6385 I GGUFNativeStderr: load_hparams: projection_dim:     1536
+09-15 15:50:18.829  6303  6385 I GGUFNativeStderr: --- audio hparams ---
+09-15 15:50:18.829  6303  6385 I GGUFNativeStderr: load_hparams: n_mel_bins:         128
+09-15 15:50:18.829  6303  6385 I GGUFNativeStderr: load_hparams: proj_stack_factor:  0
+09-15 15:50:18.829  6303  6385 I GGUFNativeStderr: load_hparams: audio_chunk_len:    0
+09-15 15:50:18.829  6303  6385 I GGUFNativeStderr: load_hparams: audio_sample_rate:  16000
+09-15 15:50:18.829  6303  6385 I GGUFNativeStderr: load_hparams: audio_n_fft:        512
+09-15 15:50:18.829  6303  6385 I GGUFNativeStderr: load_hparams: audio_window_len:   320
+09-15 15:50:18.829  6303  6385 I GGUFNativeStderr: load_hparams: audio_hop_len:      160
+09-15 15:50:18.829  6303  6385 I GGUFNativeStderr: load_hparams: model size:         3257.16 MiB
+09-15 15:50:18.829  6303  6385 I GGUFNativeStderr: load_hparams: metadata size:      0.71 MiB
+09-15 15:50:18.855  6303  6324 D EGL_emulation: app_time_stats: avg=53.27ms min=10.01ms max=151.75ms count=20
+09-15 15:50:18.894  1087  1087 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 15:50:18.896  1087  1087 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 15:50:19.395  1087  1087 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 15:50:19.396  1087  1087 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 15:50:19.448   551  2608 E TaskPersister: File error accessing recents directory (directory doesn't exist?).
+09-15 15:50:19.492   363  3623 D android.hardware.audio@7.1-impl.ranchu: threadLoop: entering standby, frames: 2190144
+09-15 15:50:19.896  1087  1087 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 15:50:19.897  1087  1087 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 15:50:19.901   551   658 D ActivityManager: freezing 1660 android.process.acore
+09-15 15:50:19.910  6303  6324 D EGL_emulation: app_time_stats: avg=150.67ms min=149.59ms max=154.99ms count=7
+09-15 15:50:19.911   551   833 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+09-15 15:50:19.913   551   833 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+09-15 15:50:19.913   551   833 D InetDiagMessage: Destroyed live tcp sockets for uids={10091} in 2ms
+09-15 15:50:20.159  6303  6385 I GGUFNativeStderr: load_tensors: loaded 273 tensors from /data/user/0/com.ggufchat.app/files/models/cbe9b1d5-a1ac-4db1-91ed-4d2294768e4e-unified.gguf
+09-15 15:50:20.159  6303  6385 I GGUFNativeStderr: GGUF_PROJECTOR_WEIGHTS backend=CPU bytes=618071168 tensors=273
+09-15 15:50:20.182  6303  6385 I GGUFNativeStderr: get_dummy_batch: warmup with audio size = 3000
+09-15 15:50:20.196  6303  6385 I GGUFNativeStderr: init_audio: audio input is in experimental stage and may have reduced quality:
+09-15 15:50:20.196  6303  6385 I GGUFNativeStderr:     https://github.com/ggml-org/llama.cpp/discussions/13759
+09-15 15:50:20.197  6303  6384 I GGUFChatNative: GGUF_SINGLE_FILE_LOADED same_path=1
+09-15 15:50:20.197  6303  6384 I GGUFChatNative: GGUF_PROJECTOR_LOADED vision=1 audio=1
+09-15 15:50:20.197  6303  6384 I GGUFChatNative: GGUF_UNIT_LOADED language=CPU layers=0 projector=CPU
+09-15 15:50:20.197  6303  6384 I GGUFChatNative: model loaded: n_ctx=1024 projector=loaded
+09-15 15:50:20.397  1087  1087 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 15:50:20.397  1087  1087 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 15:50:20.898  1087  1087 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 15:50:20.898  1087  1087 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 15:50:21.202  6303  6303 I om.ggufchat.app: Waiting for a blocking GC NativeAlloc
+09-15 15:50:21.208  6396  6396 W AccessibilityNodeInfoDumper: Fetch time: 8ms
+09-15 15:50:21.209   551  1642 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-15 15:50:21.209   551  1642 D AccessibilityManagerService: restoreCurrentUserForTestAutomationIfNeededLocked(): ignoring because device doesn't support visible background users
+09-15 15:50:21.209   551   551 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 15:50:21.209   551   551 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 15:50:21.209   551   551 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 15:50:21.209   551   551 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 15:50:21.210   551   551 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 15:50:21.210   551   551 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 15:50:21.210   551   551 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 15:50:21.210   551   551 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 15:50:21.210   551   551 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 15:50:21.210   551   551 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 15:50:21.210  6396  6396 D AndroidRuntime: Shutting down VM
+09-15 15:50:21.211  1399  2734 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-15 15:50:21.211  1399  1681 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-15 15:50:21.211  1399  1681 I AiAiEcho: EchoTargets: 
+09-15 15:50:21.211  1399  1681 I AiAiEcho: Filtered by AiAi flag check: 
+09-15 15:50:21.211  1399  1681 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 15:50:21.211  1399  1681 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-15 15:50:21.211  1399  1681 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-15 15:50:21.211  1399  1681 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-15 15:50:21.212   913   913 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-15 15:50:21.212   551   551 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 15:50:21.212   551   551 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 15:50:21.212   551   551 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 15:50:21.212   551   551 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 15:50:21.212   551   551 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 15:50:21.212   551   551 D BatterySaverPolicy: accessibility changed to false, updating policy.
+09-15 15:50:21.213  1485  1701 I A       : NGA enabled in interactor.
+09-15 15:50:21.213  1485  1701 I A       : (REDACTED) Nga state changed to %s
+09-15 15:50:21.213  1485  1701 I A       : (REDACTED) isTngActive=%s
+09-15 15:50:21.215  1435  2494 I A       : Initializing all components
+09-15 15:50:21.215  1435  1725 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b
+09-15 15:50:21.215  1435  1725 I A       : (REDACTED) onIsEnabledChanged, isEnabled: %s
+09-15 15:50:21.215  1435  1725 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-15 15:50:21.215  1435  1725 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-15 15:50:21.215  1435  1725 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-15 15:50:21.215  1435  1725 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-15 15:50:21.216  1435  1725 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-15 15:50:21.216  1435  1725 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-15 15:50:21.216  1435  1725 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-15 15:50:21.216  1435  1725 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-15 15:50:21.216  1435  1725 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-15 15:50:21.216  1435  1725 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-15 15:50:21.216  1435  1725 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-15 15:50:21.216  1435  1725 I A       : (REDACTED) Setting session to type: %s
+09-15 15:50:21.216  1435  1725 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-15 15:50:21.216  1435  1725 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-15 15:50:21.216  1435  1725 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-15 15:50:21.216  1435  1725 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-15 15:50:21.216  1435  1725 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-15 15:50:21.216  1435  1725 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-15 15:50:21.216  1435  1725 I A       : (REDACTED) setNavBarVisible: %s
+09-15 15:50:21.216  1435  1725 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-15 15:50:21.216  1435  1725 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-15 15:50:21.216  1435  1725 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-15 15:50:21.216  1435  1725 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-15 15:50:21.216  1435  1725 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-15 15:50:21.216  1435  1725 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-15 15:50:21.216  1435  1725 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b
+09-15 15:50:21.218  1435  1745 I A       : (REDACTED) State changed: %s => %s by %s and %s with %s
+09-15 15:50:21.218  1435  1745 I A       : (REDACTED) Recognizer choice: (recognizer_type: %s, recognizer_mode: %s, choice_reason: %s)
+09-15 15:50:21.219  1435  1745 I A       : (REDACTED) onActiveStateChangeEvent: %s => %s
+09-15 15:50:21.219  1435  1745 I A       : (REDACTED) #onActiveStateChangeEvent, newState: %s, previousState: %s.
+09-15 15:50:21.220  1435  1745 I NgaEntryPointEventSendr: setupConnection
+09-15 15:50:21.221  1435  1725 I A       : Initialize
+09-15 15:50:21.221   551  1642 D OomAdjuster: Not killing cached processes
+09-15 15:50:21.222  1435  1725 I A       : (REDACTED) on opa visibility changed %s
+09-15 15:50:21.222  1435  1725 I A       : (REDACTED) on opa visibility changed %s
+09-15 15:50:21.222  1435  1725 I A       : (REDACTED) stopListening(%s, %s)
+09-15 15:50:21.223  1435  1745 I NgaEntryPointEventSendr: (REDACTED) State changed: %s => %s
+09-15 15:50:21.223  1435  1745 I NgaEntryPointEventSendr: onServiceConnected
+09-15 15:50:21.223  1485  1510 I A       : Calling beginBinderSession().
+09-15 15:50:21.223  1485  1510 I A       : beginBinderSession(): calling binder
+09-15 15:50:21.223  1435  1745 I NgaEntryPointEventSendr: (REDACTED) State changed: %s => %s
+09-15 15:50:21.226   551   569 W ActivityManager: Unable to start service Intent { cmp=com.google.android.apps.tachyon/.clientapi.ClientApiService } U=0: not found
+09-15 15:50:21.226  1435  1745 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b
+09-15 15:50:21.226  1435  1745 I INV.SystemUI: showGestureNav
+09-15 15:50:21.226  1435  1745 I INV.SystemUI: (REDACTED) setUiHints(hints = %s)
+09-15 15:50:21.227  1435  1725 I A       : Successfully initialized all components
+09-15 15:50:21.230  1435  1745 I INV.SystemUI: setUiHints: finished successfully
+09-15 15:50:21.235  1485  2150 W A       : (REDACTED) %s task was not run. Callback from Service received after client was disposed.
+09-15 15:50:21.235  1485  2150 W A       : (REDACTED) %s task was not run. Callback from Service received after client was disposed.
+09-15 15:50:21.237  1485  2878 I PBSessionCacheImpl: (REDACTED) Deleted sessionId[%d] from persistence.
+09-15 15:50:21.238  1485  2150 W A       : (REDACTED) %s task was not run. Callback from Service received after client was disposed.
+09-15 15:50:21.239  1435  1725 I NgaEntryPointEventSendr: (REDACTED) State changed: %s => %s (%s)
+09-15 15:50:21.240  1485  2150 W SearchServiceCore: Abort, client detached.
+09-15 15:50:21.399  1087  1087 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 15:50:21.399  1087  1087 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 15:50:21.900  1087  1087 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 15:50:21.901  1087  1087 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 15:50:22.111  6416  6416 W BpBinder: Linking to death on android.gui.ISurfaceComposer but there are no threads (yet?) listening to incoming transactions. See ProcessState::startThreadPool and ProcessState::setThreadPoolMaxThreadCount. Generally you should setup the binder threadpool before other initialization steps.
+09-15 15:50:22.111  6416  6416 W ProcessState: Extra binder thread started, but 0 threads requested. Do not use *startThreadPool when zero threads are requested.
+09-15 15:50:22.120   146   146 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+09-15 15:50:22.120  6416  6417 I Gralloc4: mapper 4.x is not supported
+09-15 15:50:22.305     0     0 I servicemanager: Caller(pid=6416,uid=0,sid=u:r:su:s0) Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest. No alternative instances declared in VINTF.
+09-15 15:50:22.403  1087  1087 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 15:50:22.403  1087  1087 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?
+09-15 15:50:22.437  6438  6438 W BpBinder: Linking to death on android.gui.ISurfaceComposer but there are no threads (yet?) listening to incoming transactions. See ProcessState::startThreadPool and ProcessState::setThreadPoolMaxThreadCount. Generally you should setup the binder threadpool before other initialization steps.
+09-15 15:50:22.437  6438  6438 W ProcessState: Extra binder thread started, but 0 threads requested. Do not use *startThreadPool when zero threads are requested.
+09-15 15:50:22.448   146   146 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+09-15 15:50:22.448  6438  6439 I Gralloc4: mapper 4.x is not supported
+09-15 15:50:22.634     0     0 I servicemanager: Caller(pid=6438,uid=0,sid=u:r:su:s0) Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest. No alternative instances declared in VINTF.
+09-15 15:50:22.525   551   584 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 15:50:22.526   551   584 W IPCThreadState: Sending oneway calls to frozen process.
+09-15 15:50:22.753     0     0 I logd    : logdr: UID=0 GID=0 PID=6440 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns

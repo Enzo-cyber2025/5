@@ -1,0 +1,229 @@
+#version 450
+// llvmpipe compute ceiling probe. PATTERN selects the inner-loop shape:
+//   0 vec4 fused multiply-add accumulator (ideal vector pattern)
+//   1 scalar float fused multiply-add accumulator
+//   2 horizontal dot() per iteration (the shape of the pinned DMMV hot loop)
+//   3 nibble unpack plus horizontal dot() per iteration (q4/q5 style dequant)
+//   4 nibble unpack plus element-wise accumulation, one reduction at the end
+//   5 vec4 accumulator plus one workgroup barrier per iteration
+//   6 vec4 accumulator plus a shared-memory round trip and two barriers per
+//     iteration (the shape the k-quant and shmem-reduction DMMV shaders use)
+//   7 one load plus four independent scalar accumulators (ILP 4)
+//   8 one load plus four adds into one accumulator (memory bound, no FMA)
+//   9 four independent scalar accumulators and no load at all (pure ALU)
+//  10 one load plus four chained FMAs into one accumulator (latency bound)
+//  11 five loads and the full unpack per eight values, the pinned Q5_0 shape
+//  12 two loads and the same unpack, what the same bits cost in an aligned block
+//  13 five loads per eight MACs while streaming a buffer far larger than cache
+//  14 two loads per eight MACs over the same streamed bytes
+//  15 one contiguous sixteen byte load per eight MACs, the packed ceiling
+//  16 two word loads per eight MACs from an aligned block (scale and high bits
+//     in one word, eight nibbles in the next): the 24 byte per block design
+//  17 one word load per eight MACs with the block header amortised over four
+//     iterations: the design that duplicates the header per eight values
+// 11/12 read a cache resident window; 13/14/15 walk a big buffer so the answer
+// is about memory behaviour, which is what the shipped kernel sees (its weights
+// are a hundred megabytes and never fit in cache).
+// 0/2/4 measure the shipped loop shapes; 7/9 vs 10 separate instruction level
+// parallelism from plain vector-FMA latency, and 8 bounds the load path.
+// Only linear addressing and power-of-two windows are used, so the measurement
+// is about arithmetic shape and synchronisation cost, not about cache behaviour.
+layout(local_size_x_id = 0, local_size_y = 1, local_size_z = 1) in;
+
+layout(constant_id = 0) const uint BLOCK_SIZE = 32;
+
+layout(binding = 0) readonly buffer A { vec4 a[]; };
+layout(binding = 1) readonly buffer B { vec4 b[]; };
+layout(binding = 2) writeonly buffer O { float o[]; };
+layout(binding = 3) readonly buffer C { uint c[]; };
+
+layout(push_constant) uniform P { uint inner; } p;
+
+shared float smem[BLOCK_SIZE];
+
+void main() {
+    const uint gid = gl_GlobalInvocationID.x;
+    const uint tid = gl_LocalInvocationID.x;
+    const uint n = uint(a.length());
+    if (n < 128u) {
+        o[gid] = 0.0;
+        return;
+    }
+    const uint start = (gid * 7u) % (n - 64u);
+
+    vec4 acc = vec4(0.0);
+    float sacc = 0.0;
+    float hold;
+
+    float a0 = 0.0, a1 = 0.0, a2 = 0.0, a3 = 0.0;
+    hold = 0.0;
+    const vec4 av = a[gid % n];
+
+    for (uint k = 0u; k < p.inner; ++k) {
+        const vec4 bv = b[start + (k & 63u)];
+#if PATTERN == 0
+        acc = fma(av, bv, acc);
+#elif PATTERN == 1
+        sacc = fma(av.x, bv.x, sacc);
+#elif PATTERN == 2
+        sacc += dot(av, bv);
+#elif PATTERN == 3
+        const uint word = floatBitsToUint(av.x) + k;
+        const uvec4 packed = (uvec4(word) >> uvec4(0u, 4u, 8u, 12u)) & uvec4(0xFu);
+        sacc += dot(vec4(packed) - vec4(8.0), bv);
+#elif PATTERN == 4
+        const uint word = floatBitsToUint(av.x) + k;
+        const uvec4 packed = (uvec4(word) >> uvec4(0u, 4u, 8u, 12u)) & uvec4(0xFu);
+        acc = fma(vec4(packed) - vec4(8.0), bv, acc);
+#elif PATTERN == 5
+        acc = fma(av, bv, acc);
+        barrier();
+#elif PATTERN == 6
+        acc = fma(av, bv, acc);
+        smem[tid] = acc.x;
+        barrier();
+        acc.y = smem[(tid + 1u) % BLOCK_SIZE];
+        barrier();
+#elif PATTERN == 7
+        a0 = fma(av.x, bv.x, a0);
+        a1 = fma(av.y, bv.y, a1);
+        a2 = fma(av.z, bv.z, a2);
+        a3 = fma(av.w, bv.w, a3);
+#elif PATTERN == 8
+        sacc += (bv.x + bv.y) + (bv.z + bv.w);
+#elif PATTERN == 9
+        a0 = fma(av.x, av.y, a0);
+        a1 = fma(av.y, av.z, a1);
+        a2 = fma(av.z, av.w, a2);
+        a3 = fma(av.w, av.x, a3);
+#elif PATTERN == 10
+        sacc = fma(av.x, bv.x, sacc);
+        sacc = fma(av.y, bv.y, sacc);
+        sacc = fma(av.z, bv.z, sacc);
+        sacc = fma(av.w, bv.w, sacc);
+#elif PATTERN == 11
+        // The pinned Q5_0 shape for eight values of one row: five loads (two words
+        // of the high bit mask, two nibble words, the scale) plus the full unpack.
+        const vec4 l0 = b[start + (k & 63u)];
+        const vec4 l1 = b[start + ((k + 3u) & 63u)];
+        const vec4 l2 = b[start + ((k + 5u) & 63u)];
+        const vec4 l3 = b[start + ((k + 7u) & 63u)];
+        const vec4 l4 = b[start + ((k + 11u) & 63u)];
+        const uint qh = floatBitsToUint(l0.x) ^ floatBitsToUint(l1.x);
+        const uint iqs = (k & 3u) * 4u;
+        const ivec2 q0 = ivec2(((qh >> iqs) << 4) & 0x10, (qh >> (iqs + 12)) & 0x10);
+        const ivec2 q1 = ivec2(((qh >> (iqs + 1)) << 4) & 0x10, (qh >> (iqs + 13)) & 0x10);
+        const ivec2 q2 = ivec2(((qh >> (iqs + 2)) << 4) & 0x10, (qh >> (iqs + 14)) & 0x10);
+        const ivec2 q3 = ivec2(((qh >> (iqs + 3)) << 4) & 0x10, (qh >> (iqs + 15)) & 0x10);
+        const uint w0 = floatBitsToUint(l2.x);
+        const uint w1 = floatBitsToUint(l3.x);
+        const vec4 v0 = vec4((w0 & 0xFu) | q0.x, ((w0 >> 4) & 0xFu) | q0.y, ((w0 >> 8) & 0xFu) | q1.x, (w0 >> 12) | q1.y) - 16.0f;
+        const vec4 v1 = vec4((w1 & 0xFu) | q2.x, ((w1 >> 4) & 0xFu) | q2.y, ((w1 >> 8) & 0xFu) | q3.x, (w1 >> 12) | q3.y) - 16.0f;
+        const float dm0 = l4.x;
+        sacc += dot(v0 * dm0, av);
+        sacc += dot(v1 * dm0, av);
+#elif PATTERN == 12
+        // The same eight values and the same unpack, but the block is four byte
+        // aligned so one word carries the scale and the whole high bit mask, and
+        // the next carries eight nibbles: two loads instead of five.
+        const vec4 m0 = b[start + (k & 63u)];
+        const vec4 m1 = b[start + ((k + 5u) & 63u)];
+        const uint qh = floatBitsToUint(m0.x);
+        const uint iqs = (k & 3u) * 4u;
+        const ivec2 q0 = ivec2(((qh >> iqs) << 4) & 0x10, (qh >> (iqs + 12)) & 0x10);
+        const ivec2 q1 = ivec2(((qh >> (iqs + 1)) << 4) & 0x10, (qh >> (iqs + 13)) & 0x10);
+        const ivec2 q2 = ivec2(((qh >> (iqs + 2)) << 4) & 0x10, (qh >> (iqs + 14)) & 0x10);
+        const ivec2 q3 = ivec2(((qh >> (iqs + 3)) << 4) & 0x10, (qh >> (iqs + 15)) & 0x10);
+        const uint w0 = floatBitsToUint(m1.x);
+        const uint w1 = floatBitsToUint(m1.y);
+        const vec4 v0 = vec4((w0 & 0xFu) | q0.x, ((w0 >> 4) & 0xFu) | q0.y, ((w0 >> 8) & 0xFu) | q1.x, (w0 >> 12) | q1.y) - 16.0f;
+        const vec4 v1 = vec4((w1 & 0xFu) | q2.x, ((w1 >> 4) & 0xFu) | q2.y, ((w1 >> 8) & 0xFu) | q3.x, (w1 >> 12) | q3.y) - 16.0f;
+        const float dm0 = m0.y;
+        sacc += dot(v0 * dm0, av);
+        sacc += dot(v1 * dm0, av);
+#elif PATTERN == 13
+        // Five loads per eight MACs, streaming: the pinned Q5_0 access shape.
+        const uint mask = uint(c.length()) - 1u;
+        const uint base = (start + k * 6u) & mask;
+        const uint w0 = c[base];
+        const uint w1 = c[(base + 1u) & mask];
+        const uint w2 = c[(base + 2u) & mask];
+        const uint w3 = c[(base + 3u) & mask];
+        const uint w4 = c[(base + 4u) & mask];
+        sacc = fma(float(w0), av.x, sacc);
+        sacc = fma(float(w1), av.y, sacc);
+        sacc = fma(float(w2), av.z, sacc);
+        sacc = fma(float(w3), av.w, sacc);
+        sacc = fma(float(w4), av.x, sacc);
+        sacc = fma(float(w0 ^ w1), av.y, sacc);
+        sacc = fma(float(w2 ^ w3), av.z, sacc);
+        sacc = fma(float(w4 ^ w0), av.w, sacc);
+#elif PATTERN == 14
+        // Two loads per eight MACs over the same streamed bytes: a four byte
+        // aligned block can carry the scale and the whole nibble group in wide
+        // words, so one iteration costs two loads instead of five.
+        const uint mask = uint(c.length()) - 1u;
+        const uint base = (start + k * 6u) & mask;
+        const uint v0 = c[base];
+        const uint v1 = c[(base + 1u) & mask];
+        sacc = fma(float(v0), av.x, sacc);
+        sacc = fma(float(v1), av.y, sacc);
+        sacc = fma(float(v0 >> 4), av.z, sacc);
+        sacc = fma(float(v1 >> 4), av.w, sacc);
+        sacc = fma(float(v0 >> 8), av.x, sacc);
+        sacc = fma(float(v1 >> 8), av.y, sacc);
+        sacc = fma(float(v0 >> 12), av.z, sacc);
+        sacc = fma(float(v1 >> 12), av.w, sacc);
+#elif PATTERN == 15
+        // One contiguous sixteen byte load per eight MACs: the packed ceiling.
+        const uint mask = uint(b.length()) - 1u;
+        const vec4 v = b[(start + k * 2u) & mask];
+        sacc = fma(v.x, av.x, sacc);
+        sacc = fma(v.y, av.y, sacc);
+        sacc = fma(v.z, av.z, sacc);
+        sacc = fma(v.w, av.w, sacc);
+        sacc = fma(v.x, av.y, sacc);
+        sacc = fma(v.y, av.z, sacc);
+        sacc = fma(v.z, av.w, sacc);
+        sacc = fma(v.w, av.x, sacc);
+#elif PATTERN == 16
+        // Aligned block, header word plus one nibble word per eight values.
+        const uint mask = uint(c.length()) - 1u;
+        const uint base = (start + k * 6u) & mask;
+        const uint w0 = c[base];
+        const uint w1 = c[(base + 1u) & mask];
+        sacc = fma(float(w1 & 0xFu) * float(w0 >> 16), av.x, sacc);
+        sacc = fma(float((w1 >> 4) & 0xFu) * float(w0 >> 16), av.y, sacc);
+        sacc = fma(float((w1 >> 8) & 0xFu) * float(w0 >> 16), av.z, sacc);
+        sacc = fma(float(w1 >> 12) * float(w0 >> 16), av.w, sacc);
+        sacc = fma(float(w1 & 0xFu), av.x, sacc);
+        sacc = fma(float((w1 >> 4) & 0xFu), av.y, sacc);
+        sacc = fma(float((w1 >> 8) & 0xFu), av.z, sacc);
+        sacc = fma(float(w1 >> 12), av.w, sacc);
+#elif PATTERN == 17
+        // One word per eight values, block header read once per four iterations.
+        const uint mask = uint(c.length()) - 1u;
+        const uint word = c[(start + k) & mask];
+        if ((k & 3u) == 0u) {
+            hold = float(c[(start + k + 1u) & mask] >> 16);
+        }
+        sacc = fma(float(word & 0xFu) * hold, av.x, sacc);
+        sacc = fma(float((word >> 4) & 0xFu) * hold, av.y, sacc);
+        sacc = fma(float((word >> 8) & 0xFu) * hold, av.z, sacc);
+        sacc = fma(float(word >> 12) * hold, av.w, sacc);
+        sacc = fma(float(word & 0xFu), av.x, sacc);
+        sacc = fma(float((word >> 4) & 0xFu), av.y, sacc);
+        sacc = fma(float((word >> 8) & 0xFu), av.z, sacc);
+        sacc = fma(float(word >> 12), av.w, sacc);
+#else
+#error unknown PATTERN
+#endif
+    }
+#if PATTERN == 0 || PATTERN == 4 || PATTERN == 5 || PATTERN == 6
+    o[gid] = (acc.x + acc.y) + (acc.z + acc.w);
+#elif PATTERN == 7 || PATTERN == 9
+    o[gid] = (a0 + a1) + (a2 + a3);
+#else
+    o[gid] = sacc;
+#endif
+}

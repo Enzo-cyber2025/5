@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/home/runner/work/5/5/scripts/test_row_tile_android.py", line 44, in main
+    s['correctness'][mode] = harness.observation(d, s, 'candidate', state, 'correctness-'+mode+'-'+state, environment)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_expanded_weights_android.py", line 49, in observation
+    if phase=='candidate':r.update(candidate_metadata(native))
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_row_tile_android.py", line 16, in candidate_metadata
+    assert len(matches) == 1, 'Missing/ambiguous native row-tile configuration'
+           ^^^^^^^^^^^^^^^^^
+AssertionError: Missing/ambiguous native row-tile configuration

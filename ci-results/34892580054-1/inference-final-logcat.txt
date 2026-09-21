@@ -1,0 +1,1011 @@
+--------- beginning of main
+09-14 20:49:26.542 22045 22045 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 0 <<<<<<
+09-14 20:49:26.546 22045 22045 I AndroidRuntime: Using default boot image
+09-14 20:49:26.546 22045 22045 I AndroidRuntime: Leaving lock profiling enabled
+09-14 20:49:26.548 22045 22045 I app_process: Core platform API reporting enabled, enforcing=false
+09-14 20:49:26.548 22045 22045 I app_process: Using CollectorTypeCMC GC.
+09-14 20:49:26.608 22045 22045 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-14 20:49:26.615 22045 22045 D nativeloader: Load libicu_jni.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-14 20:49:26.615 22045 22045 D app_process: u_setTimeZoneFilesDirectory("/apex/com.android.tzdata/etc/tz/versioned/8/icu") succeeded. 
+09-14 20:49:26.615 22045 22045 D app_process: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt75l.dat
+09-14 20:49:26.616 22045 22045 D nativeloader: Load libjavacore.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-14 20:49:26.616 22045 22045 D nativeloader: Load libopenjdk.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-14 20:49:26.617 22045 22045 W app_process: Unexpected CPU variant for x86: x86_64.
+09-14 20:49:26.617 22045 22045 W app_process: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, goldmont-without-sha-xsaves, tremont, kabylake, default
+09-14 20:49:26.618 22045 22045 W app_process: ClassLoaderContext shared library size mismatch. Expected=2, found=0 (PCL[]{PCL[/system/framework/android.test.base.jar*724373495]#PCL[/system/framework/android.test.mock.jar*1452759902]} | PCL[])
+09-14 20:49:26.619 22045 22045 W app_process: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[]{PCL[/system/framework/android.test.runner.jar*2496447986]#PCL[/system/framework/android.test.base.jar*724373495]} | PCL[/system/framework/android.test.runner.jar*2496447986])
+09-14 20:49:26.634 22045 22045 D nativeloader: Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok
+09-14 20:49:26.635 22045 22045 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-14 20:49:26.636 22045 22045 D UiAutomationConnection: Created on user UserHandle{0}
+09-14 20:49:26.636 22045 22045 I UiAutomation: Initialized for user 0 on display 0
+09-14 20:49:26.637 22045 22045 W UiAutomation: Created with deprecatead constructor, assumes DEFAULT_DISPLAY
+--------- beginning of system
+09-14 20:49:26.637   555   990 D AccessibilityManagerService: changeCurrentUserForTestAutomationIfNeededLocked(0): ignoring because device doesn't support visible background users
+09-14 20:49:26.637   555   990 I UiAutomationManager: Registering UiTestAutomationService (id=com.android.server.accessibility/UiAutomation, flags=0x0) when called by user 0
+09-14 20:49:26.638   555   990 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-14 20:49:26.639   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:26.639   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:26.639   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:26.639   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:26.639   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:26.639   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:26.639   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:26.639   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:26.640   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:26.640   555   555 D BatterySaverPolicy: accessibility changed to true, updating policy.
+09-14 20:49:26.640 22045 22057 V UiAutomation: Init UiAutomation@2513475[id=467, displayId=0, flags=0]
+09-14 20:49:26.642  1455  2181 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-14 20:49:26.642  1455  1671 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 20:49:26.643  1455  1671 I AiAiEcho: EchoTargets: 
+09-14 20:49:26.643  1455  1671 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 20:49:26.643  1455  1671 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 20:49:26.643  1455  1671 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 20:49:26.643  1455  1671 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 20:49:26.643  1455  1671 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 20:49:26.643  1455  1671 I AiAiEcho: EchoTargets: 
+09-14 20:49:26.643  1455  1671 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 20:49:26.643  1455  1671 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 20:49:26.643  1455  1671 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 20:49:26.643  1455  1671 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 20:49:26.645  1513  1793 I A       : NGA disabled since it's running Panthera and at least one a11y feature is on.
+09-14 20:49:26.645  1513  1793 I A       : (REDACTED) Nga state changed to %s
+09-14 20:49:26.645  1513  1793 I A       : (REDACTED) isTngActive=%s
+09-14 20:49:26.650  1455  1671 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-14 20:49:26.650  1443  1660 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b
+09-14 20:49:26.651  1443  1657 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b
+09-14 20:49:26.651  1443  1657 I A       : Unsubscribed to apa or classic variant change.
+09-14 20:49:26.653   555  1941 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-14 20:49:26.653   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:26.653   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:26.653   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:26.653   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:26.654   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:26.654   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:26.654  1455  1671 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface home with targets# 0 (types=[])
+09-14 20:49:26.655   912   912 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-14 20:49:26.664  1163  1163 D SsBaseTemplateCard: No text view can be set up
+09-14 20:49:26.664  1163  1163 D SsBaseTemplateCard: Passed-in item info is null
+09-14 20:49:26.664  1163  1163 D SsBaseTemplateCard: Passed-in item info is null
+09-14 20:49:26.664  1163  1163 D SsBaseTemplateCard: Passed-in item info is null
+09-14 20:49:26.665  1163  1163 I SsBaseTemplateCard: Secondary card pane is null
+09-14 20:49:26.665  1455  5180 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-14 20:49:26.665  1455  1671 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 20:49:26.666  1455  1671 I AiAiEcho: EchoTargets: 
+09-14 20:49:26.666  1455  1671 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 20:49:26.666  1455  1671 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 20:49:26.666  1455  1671 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 20:49:26.666  1455  1671 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 20:49:26.666  1455  1671 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 20:49:26.666  1455  1671 I AiAiEcho: EchoTargets: 
+09-14 20:49:26.666  1455  1671 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 20:49:26.666  1455  1671 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 20:49:26.667  1455  1671 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 20:49:26.667  1455  1671 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 20:49:26.667  1455  1671 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-14 20:49:26.668  1455  1671 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface home with targets# 0 (types=[])
+09-14 20:49:26.668  1163  1163 D SsBaseTemplateCard: No text view can be set up
+09-14 20:49:26.668  1163  1163 D SsBaseTemplateCard: Passed-in item info is null
+09-14 20:49:26.668  1163  1163 D SsBaseTemplateCard: Passed-in item info is null
+09-14 20:49:26.668  1163  1163 D SsBaseTemplateCard: Passed-in item info is null
+09-14 20:49:26.668  1163  1163 I SsBaseTemplateCard: Secondary card pane is null
+09-14 20:49:26.674   912   912 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-14 20:49:27.190   366  3777 D android.hardware.audio@7.1-impl.ranchu: threadLoop: entering standby, frames: 28233600
+09-14 20:49:27.645 22045 22045 I AccessibilityNodeInfoDumper: Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@20fc8; boundsInParent: Rect(0, 0 - 672, 0); boundsInScreen: Rect(24, 180 - 696, 180); boundsInWindow: Rect(24, 180 - 696, 180); packageName: com.ggufchat.app; className: android.widget.LinearLayout; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: null; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; granularScrollingSupported: false; importantForAccessibility: false; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+09-14 20:49:27.645 22045 22045 W AccessibilityNodeInfoDumper: Fetch time: 2ms
+09-14 20:49:27.647   555   990 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-14 20:49:27.647   555   990 D AccessibilityManagerService: restoreCurrentUserForTestAutomationIfNeededLocked(): ignoring because device doesn't support visible background users
+09-14 20:49:27.647   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:27.647   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:27.647   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:27.648 22045 22045 D AndroidRuntime: Shutting down VM
+09-14 20:49:27.648  1455  5180 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-14 20:49:27.648   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:27.648   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:27.648  1455  1671 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 20:49:27.649   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:27.649   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:27.650   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:27.650   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:27.650   555   555 D BatterySaverPolicy: accessibility changed to false, updating policy.
+09-14 20:49:27.651  1455  1671 I AiAiEcho: EchoTargets: 
+09-14 20:49:27.651  1455  1671 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 20:49:27.651  1455  1671 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 20:49:27.652  1513  1790 I A       : NGA enabled in interactor.
+09-14 20:49:27.652  1513  1790 I A       : (REDACTED) Nga state changed to %s
+09-14 20:49:27.652  1513  1790 I A       : (REDACTED) isTngActive=%s
+09-14 20:49:27.653  1455  1671 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 20:49:27.657  1455  1671 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 20:49:27.657  1455  1671 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 20:49:27.659  1443  1657 I A       : (REDACTED) on opa visibility changed %s
+09-14 20:49:27.659  1443  1657 I A       : (REDACTED) on opa visibility changed %s
+09-14 20:49:27.659  1443  2815 I A       : Initializing all components
+09-14 20:49:27.657  1455  1671 I AiAiEcho: EchoTargets: 
+09-14 20:49:27.657  1455  1671 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 20:49:27.657  1455  1671 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 20:49:27.659  1443  1660 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b
+09-14 20:49:27.659  1443  1660 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b
+09-14 20:49:27.659  1443  1660 I A       : (REDACTED) onIsEnabledChanged, isEnabled: %s
+09-14 20:49:27.659  1443  1660 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:27.659  1443  1660 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:27.659  1443  1660 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:27.659  1443  1660 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:27.659  1443  1660 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:27.659  1443  1657 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b
+09-14 20:49:27.660  1443  1660 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:27.660  1443  1660 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:27.660  1443  1660 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:27.660  1443  1660 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:27.660  1443  1660 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:27.660  1443  1660 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:27.660  1443  1660 I A       : (REDACTED) Setting session to type: %s
+09-14 20:49:27.660  1443  1660 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:27.660  1443  1660 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:27.660  1443  1660 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:27.660  1443  1660 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:27.660  1443  1660 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:27.660  1443  1660 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:27.660  1443  1660 I A       : (REDACTED) setNavBarVisible: %s
+09-14 20:49:27.660  1443  1660 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:27.660  1443  1660 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:27.660  1443  1660 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:27.660  1443  1660 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:27.660  1443  1660 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:27.660  1443  1660 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:27.660  1443  1660 I A       : (REDACTED) State changed: %s => %s by %s and %s with %s
+09-14 20:49:27.661  1443  1660 I A       : (REDACTED) Recognizer choice: (recognizer_type: %s, recognizer_mode: %s, choice_reason: %s)
+09-14 20:49:27.661  1443  1657 I A       : Initialize
+09-14 20:49:27.661  1443  1660 I A       : (REDACTED) onActiveStateChangeEvent: %s => %s
+09-14 20:49:27.661  1443  1660 I A       : (REDACTED) #onActiveStateChangeEvent, newState: %s, previousState: %s.
+09-14 20:49:27.661  1443  1657 I A       : (REDACTED) stopListening(%s, %s)
+09-14 20:49:27.661  1455  1671 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 20:49:27.661  1455  1671 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 20:49:27.661  1455  1671 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-14 20:49:27.661  1455  1671 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface home with targets# 0 (types=[])
+09-14 20:49:27.663  1443  1657 I NgaEntryPointEventSendr: setupConnection
+09-14 20:49:27.663   912   912 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-14 20:49:27.663  1163  1163 D SsBaseTemplateCard: No text view can be set up
+09-14 20:49:27.663  1163  1163 D SsBaseTemplateCard: Passed-in item info is null
+09-14 20:49:27.663  1163  1163 D SsBaseTemplateCard: Passed-in item info is null
+09-14 20:49:27.663  1163  1163 D SsBaseTemplateCard: Passed-in item info is null
+09-14 20:49:27.663  1163  1163 I SsBaseTemplateCard: Secondary card pane is null
+09-14 20:49:27.665  1443  1657 I NgaEntryPointEventSendr: (REDACTED) State changed: %s => %s
+09-14 20:49:27.665  1443  1657 I INV.SystemUI: showGestureNav
+09-14 20:49:27.665  1443  1657 I INV.SystemUI: (REDACTED) setUiHints(hints = %s)
+09-14 20:49:27.666  1443  1657 I NgaEntryPointEventSendr: onServiceConnected
+09-14 20:49:27.666  1513  2872 I A       : Calling beginBinderSession().
+09-14 20:49:27.666  1513  2872 I A       : beginBinderSession(): calling binder
+09-14 20:49:27.666  1443  1657 I NgaEntryPointEventSendr: (REDACTED) State changed: %s => %s
+09-14 20:49:27.668  1443  1657 I A       : Successfully initialized all components
+09-14 20:49:27.671  1443  1660 I INV.SystemUI: setUiHints: finished successfully
+09-14 20:49:27.674   555  2728 E TaskPersister: File error accessing recents directory (directory doesn't exist?).
+09-14 20:49:27.680   357   357 I netd    : tetherGetStats() -> {[]} <0.40ms>
+09-14 20:49:27.681   555   572 W ActivityManager: Unable to start service Intent { cmp=com.google.android.apps.tachyon/.clientapi.ClientApiService } U=0: not found
+09-14 20:49:27.684  1513  2127 W A       : (REDACTED) %s task was not run. Callback from Service received after client was disposed.
+09-14 20:49:27.684  1513  3963 I PBSessionCacheImpl: (REDACTED) Deleted sessionId[%d] from persistence.
+09-14 20:49:27.685  1443  1660 I NgaEntryPointEventSendr: (REDACTED) State changed: %s => %s (%s)
+09-14 20:49:27.695  1513  2127 W SearchServiceCore: Abort, client detached.
+09-14 20:49:28.431   555   831 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:28.431   555   831 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:28.431   555   831 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:28.431   555   831 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:28.432   555   831 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:28.433  3682  3948 I BugleRcsEngine: handleMessage processing message:[NOTIFY_UPTIME_IGNORE_STATE_CHANGED] with [non-null]:RcsEngineImpl reference [CONTEXT log_prefix="RcsEngineImpl[DUAL_REG]:[118d0e0d-b252]>Handler" thread_id=69 ]
+09-14 20:49:28.433  3682  3724 I BugleRcsEngine: Connected state: [1], networkType: [WIFI] [CONTEXT thread_id=62 ]
+09-14 20:49:28.434  1203  1572 I ChimeraSrvcProxy: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl
+09-14 20:49:28.435  1203  1572 W .gms.persistent: Large reply transaction of 1056768 bytes, interface descriptor , code 1
+09-14 20:49:28.436  3682  3948 I BugleRcsEngine: No RCS Configuration was found in Bugle for simID: redacted-pii:sim_id[chars:20,last3:897] [CONTEXT log_prefix="ProvisioningEngineDataRetriever" thread_id=69 ]
+09-14 20:49:28.497  1163  1163 I NexusNavHandleLongPressHandler: Omni invocation: touch started
+09-14 20:49:28.498  1163  1163 D ActivityTracker: Registering callback: com.android.launcher3.LauncherInitListener@95065bd, reason=OtherActivityInputConsumer.startTouchTrackingForWindowAnimation
+09-14 20:49:28.498  1163  1163 D RecentsView: onGestureAnimationStart - runningTasks: [[id=48 windowingMode=1 user=0 lastActiveTime=1421722] null]
+09-14 20:49:28.498  1163  1163 D RecentsView: showCurrentTask - runningTasks: [[id=48 windowingMode=1 user=0 lastActiveTime=1421722] null]
+09-14 20:49:28.498  1163  1163 D OverviewActionsView: updateForGroupedTask() called with: isGroupedTask = [false], canSaveAppPair = [false]
+09-14 20:49:28.498  1163  1163 D OverviewActionsView: updateActionButtonsVisibility() called: showSingleTaskActions = [true], showGroupActions = [false]
+09-14 20:49:28.498   912   959 V ShellRecents: RecentsTransitionHandler.startRecentsTransition
+09-14 20:49:28.499   912   959 V WindowManagerShell: Directly starting a new transition type=3 wct=WindowContainerTransaction { changes = {} hops = [{PendingIntent: options=Bundle[mParcelledData.dataSize=412]}] errorCallbackToken=null taskFragmentOrganizer=null } handler=com.android.wm.shell.recents.RecentsTransitionHandler@fb5ad70
+09-14 20:49:28.499  1163  1163 I NexusNavHandleLongPressHandler: Omni invocation: touch finished with reason: touch action up
+09-14 20:49:28.500  1163  1163 D ActivityTracker: Unregistering callback: com.android.launcher3.LauncherInitListener@95065bd, reason=AbsSwipeUpHandler.invalidateHandler
+09-14 20:49:28.500  1163  1163 D OverviewActionsView: updateForGroupedTask() called with: isGroupedTask = [false], canSaveAppPair = [false]
+09-14 20:49:28.500  1163  1163 D OverviewActionsView: updateActionButtonsVisibility() called: showSingleTaskActions = [true], showGroupActions = [false]
+09-14 20:49:28.500  1163  1163 D OverviewActionsView: updateForGroupedTask() called with: isGroupedTask = [false], canSaveAppPair = [false]
+09-14 20:49:28.501   428   428 I BpBinder: onLastStrongRef automatically unlinking death recipients: 
+09-14 20:49:28.508   555  1622 V AutofillSession: Primary service component name: ComponentInfo{com.google.android.gms/com.google.android.gms.autofill.service.AutofillService}, secondary service component name: ComponentInfo{com.android.credentialmanager/com.android.credentialmanager.autofill.CredentialAutofillService}
+09-14 20:49:28.508   555  1622 V SecondaryProviderHandler: Creating a secondary provider handler with component name, ComponentInfo{com.android.credentialmanager/com.android.credentialmanager.autofill.CredentialAutofillService}
+09-14 20:49:28.509   555  1622 D RequestId: nextId(): requestId = 864
+09-14 20:49:28.509   555  1622 W FillRequestEventLogger: Couldn't find packageName: com.google.android.inputmethod.latin
+09-14 20:49:28.511   555  1622 W ActivityTaskManager: enqueueAssistContext failed: caller ActivityRecord{8d2c2c4 u0 com.ggufchat.app/.ChatActivity t48} is not current top ActivityRecord{1f65637 u0 com.google.android.apps.nexuslauncher/.NexusLauncherActivity t7}
+09-14 20:49:28.511   555  1622 W AutofillSession: failed to request autofill data for Token{acd5ad ActivityRecord{8d2c2c4 u0 com.ggufchat.app/.ChatActivity t48}}
+09-14 20:49:28.512 21525 21525 I ImeTracker: com.ggufchat.app:7246284: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser true
+09-14 20:49:28.512 21525 21525 D InputMethodManager: showSoftInput() view=android.widget.EditText{2106fb3 VFED..CL. .F.P..ID 128,0-517,67 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+09-14 20:49:28.513  1163  1163 D OverviewActionsView: updateActionButtonsVisibility() called: showSingleTaskActions = [true], showGroupActions = [false]
+09-14 20:49:28.513  1163  1163 D RecentsView: onGestureAnimationEnd - mEnableDrawingLiveTile: false
+09-14 20:49:28.514  1163  1163 D StateManager: goToState - fromState: Normal, toState: Normal, partial trace:
+09-14 20:49:28.514  1163  1163 D StateManager: 	at com.android.quickstep.BaseActivityInterface.onTransitionCancelled(go/retraceme 31f9979659277bb965985aff1272c33e3c3c9e755b77166d20a2465454178f2c:29)
+09-14 20:49:28.514  1163  1163 D StateManager: 	at com.android.quickstep.AbsSwipeUpHandler.resetStateForAnimationCancel(go/retraceme 31f9979659277bb965985aff1272c33e3c3c9e755b77166d20a2465454178f2c:22)
+09-14 20:49:28.514  1163  1163 D StateManager: 	at com.android.quickstep.AbsSwipeUpHandler.c0(go/retraceme 31f9979659277bb965985aff1272c33e3c3c9e755b77166d20a2465454178f2c:1)
+09-14 20:49:28.514  1163  1163 I TopTaskTracker: onTaskMovedToFront: (moved taskInfo to front) taskId=7, baseIntent=Intent { act=android.intent.action.MAIN cat=[android.intent.category.HOME] flg=0x10000100 cmp=com.google.android.apps.nexuslauncher/.NexusLauncherActivity }
+09-14 20:49:28.515   555   572 I AppWidgetServiceImpl: startListening() 0
+09-14 20:49:28.516   912   959 V ShellRecents: [13452516] RecentsController.setTransition: id=android.os.BinderProxy@ebbfd4d
+09-14 20:49:28.517  1163  1163 D StatsLog: LAUNCHER_ONRESUME
+09-14 20:49:28.518   912   959 D WindowManagerShell: setLauncherKeepClearAreaHeight: visible=true, height=302
+09-14 20:49:28.521  1328  1328 I GoogleInputMethodService: GoogleInputMethodService.onFinishInput():3157 
+09-14 20:49:28.522  1328  1328 I GoogleInputMethodService: GoogleInputMethodService.updateDeviceLockedStatus():2248 repeatCheckTimes = 0, locked = false
+09-14 20:49:28.522  1328  1328 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1986 onStartInput(EditorInfo{EditorInfo{packageName=com.ggufchat.app, inputType=24001, inputTypeString=Normal, enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=40000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=0, initialSelEnd=0, initialCapsMode=2000, label=null, fieldId=-1, fieldName=null, extras=Bundle[mParcelledData.dataSize=168], hintText=non-empty, hintLocales=[]}}, false)
+09-14 20:49:28.523  1328  1328 I GoogleInputMethodService: GoogleInputMethodService.updateDeviceLockedStatus():2248 repeatCheckTimes = 1, locked = false
+09-14 20:49:28.524  1328  1328 I AndroidIME: InputBundleManager.loadActiveInputBundleId():450 loadActiveInputBundleId: en-US, ime_english_united_states
+09-14 20:49:28.524  1163  1163 D NexusLauncherModelDelegate: notifySmartspaceEvent: SmartspaceTargetEvent{mSmartspaceTarget=null, mSmartspaceActionId='null', mEventType=6}
+09-14 20:49:28.525   555   555 D AutofillInlineSuggestionsRequestSession: onCreateInlineSuggestionsRequestLocked called: 1073741824@2134081048
+09-14 20:49:28.525   555   572 W PackageConfigPersister: App-specific configuration not found for packageName: com.ggufchat.app and userId: 0
+09-14 20:49:28.526 21525 21538 D EGL_emulation: app_time_stats: avg=127.56ms min=3.17ms max=3267.58ms count=31
+09-14 20:49:28.528  1328  1328 I GoogleInputMethodService: GoogleInputMethodService.onStartInputView():2098 onStartInputView(EditorInfo{EditorInfo{packageName=com.ggufchat.app, inputType=24001, inputTypeString=Normal, enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=40000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=0, initialSelEnd=0, initialCapsMode=2000, label=null, fieldId=-1, fieldName=null, extras=Bundle[{androidx.core.view.inputmethod.EditorInfoCompat.STYLUS_HANDWRITING_ENABLED=true}], hintText=non-empty, hintLocales=[]}}, false)
+09-14 20:49:28.528  1328  1328 I GoogleInputMethodService: GoogleInputMethodService.updateDeviceLockedStatus():2248 repeatCheckTimes = 1, locked = false
+09-14 20:49:28.529   555  1464 W AppSearchIcing: icing-search-engine.cc:321: Error: 5, Message: Document (com.google.android.googlequicksearchbox$OneSearchZeroStateGoogleSuggestions/default, zp) not found.
+09-14 20:49:28.533  1163  1948 D OneSearchSuggestProvider: AppSearch 0-state cache not available, fallback to AGA
+09-14 20:49:28.533  1163  1948 D OneSearchSuggestProvider: java.util.concurrent.CompletionException: java.util.NoSuchElementException: No value present
+09-14 20:49:28.533  1163  1948 D OneSearchSuggestProvider: 	at java.util.concurrent.CompletableFuture.encodeThrowable(CompletableFuture.java:308)
+09-14 20:49:28.533  1163  1948 D OneSearchSuggestProvider: 	at java.util.concurrent.CompletableFuture.completeThrowable(CompletableFuture.java:323)
+09-14 20:49:28.533  1163  1948 D OneSearchSuggestProvider: 	at java.util.concurrent.CompletableFuture$UniAccept.tryFire(CompletableFuture.java:684)
+09-14 20:49:28.533  1163  1948 D OneSearchSuggestProvider: 	at java.util.concurrent.CompletableFuture.postComplete(CompletableFuture.java:486)
+09-14 20:49:28.533  1163  1948 D OneSearchSuggestProvider: 	at java.util.concurrent.CompletableFuture.completeExceptionally(CompletableFuture.java:2138)
+09-14 20:49:28.533  1163  1948 D OneSearchSuggestProvider: 	at com.google.android.apps.nexuslauncher.allapps.E0.onResult(go/retraceme 31f9979659277bb965985aff1272c33e3c3c9e755b77166d20a2465454178f2c:67)
+09-14 20:49:28.533  1163  1948 D OneSearchSuggestProvider: 	at android.app.appsearch.SearchSessionUtil$1.lambda$onResult$0(go/retraceme 64eee9e9f568ff45978879ad2ff83146f2618ee8a88278736fbdf5fae931976e:144)
+09-14 20:49:28.533  1163  1948 D OneSearchSuggestProvider: 	at android.app.appsearch.SearchSessionUtil$1.$r8$lambda$CEk3q8sDAQVhU3rQwVueB8FAj_M(go/retraceme 64eee9e9f568ff45978879ad2ff83146f2618ee8a88278736fbdf5fae931976e:1)
+09-14 20:49:28.533  1163  1948 D OneSearchSuggestProvider: 	at android.app.appsearch.SearchSessionUtil$1$$ExternalSyntheticLambda0.run(go/retraceme 64eee9e9f568ff45978879ad2ff83146f2618ee8a88278736fbdf5fae931976e:22)
+09-14 20:49:28.533  1163  1948 D OneSearchSuggestProvider: 	at android.os.Handler.handleCallback(Handler.java:959)
+09-14 20:49:28.533  1163  1948 D OneSearchSuggestProvider: 	at android.os.Handler.dispatchMessage(Handler.java:100)
+09-14 20:49:28.533  1163  1948 D OneSearchSuggestProvider: 	at android.os.Looper.loopOnce(Looper.java:232)
+09-14 20:49:28.533  1163  1948 D OneSearchSuggestProvider: 	at android.os.Looper.loop(Looper.java:317)
+09-14 20:49:28.533  1163  1948 D OneSearchSuggestProvider: 	at android.os.HandlerThread.run(HandlerThread.java:85)
+09-14 20:49:28.533  1163  1948 D OneSearchSuggestProvider: Caused by: java.util.NoSuchElementException: No value present
+09-14 20:49:28.533  1163  1948 D OneSearchSuggestProvider: 	at java.util.Optional.get(Optional.java:143)
+09-14 20:49:28.533  1163  1948 D OneSearchSuggestProvider: 	at com.google.android.apps.nexuslauncher.allapps.E0.onResult(go/retraceme 31f9979659277bb965985aff1272c33e3c3c9e755b77166d20a2465454178f2c:28)
+09-14 20:49:28.533  1163  1948 D OneSearchSuggestProvider: 	... 8 more
+09-14 20:49:28.534  1163  1948 D OneSearchSuggestProvider: Created the binder channel successfully for end point service =com.google.android.apps.search.googleapp.search.suggest.plugins.onesearch.server.OneSearchSuggestService , mChannel=i1{delegate=f{logId=337, target=directaddress:///AndroidComponentAddress%5BIntent%20%7B%20act=grpc.io.action.BIND%20cmp=com.google.android.googlequicksearchbox/com.google.android.apps.search.googleapp.search.suggest.plugins.onesearch.server.OneSearchSuggestService%20%7D%5D}} , mOneSearchConnection=l2.Z@deaef99
+09-14 20:49:28.534  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.getOemKeyboardHeightRatio():206 systemKeyboardHeightRatio:1.000000.
+09-14 20:49:28.534  1328  1328 I AndroidIME: AbstractIme.onActivate():89 LatinIme.onActivate() : EditorInfo = EditorInfo{packageName=com.ggufchat.app, inputType=24001, inputTypeString=Normal, enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=40000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=0, initialSelEnd=0, initialCapsMode=2000, label=null, fieldId=-1, fieldName=null, extras=Bundle[{androidx.core.view.inputmethod.EditorInfoCompat.STYLUS_HANDWRITING_ENABLED=true}], hintText=non-empty, hintLocales=[]}, IncognitoMode = false, DeviceLocked = false
+09-14 20:49:28.534  1328  1328 I Delight5Facilitator: Delight5Facilitator.initializeForIme():747 initializeForIme() : Locale = [en_US], layout = qwerty
+09-14 20:49:28.535  1328  1328 I VoiceInputHandler: VoiceInputHandler.onActivateIme():99 registering TalkbackStateListener
+09-14 20:49:28.535  1328  1328 I VoiceInputManagerWrapper: VoiceInputManagerWrapper.cancelShutdown():102 cancelShutdown()
+09-14 20:49:28.535  1328  1328 I VoiceInputManagerWrapper: VoiceInputManagerWrapper.syncLanguagePacks():114 syncLanguagePacks()
+09-14 20:49:28.535  1328  1328 I LatinIme: LatinIme.updateEnableInlineSuggestionsOnDecoderSideFlags():1174 inline flag updated to:false
+09-14 20:49:28.537  1328  1328 I InputBundle: InputBundle.consumeEvent():884 Skip consuming an event as keyboard status is 0
+09-14 20:49:28.538  1328  1328 I KeyboardWrapper: KeyboardWrapper.activateKeyboard():575 activateKeyboard(): type=prime, status=0, imeDef=ktt{stringId=ime_english_united_states, language=en-US, languageTag=en-US, processedConditions={enable_number_row=false, device=phone}, className=com.google.android.apps.inputmethod.libs.latin5.LatinIme, label=0, keyEventInterpreter=null, inlineComposing=true, autoCapital=true, announceAutoSelectedCandidate=true, statusIcon=0, primeKeyboardType=SOFT, indicatorIcon=0, indicatorLabel=US, displayAppCompletions=true, extraValues=ktl{}, processors=kvl@e92bfec, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=true, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, secondaryIme=null, keyboardGroupDef=kut@b62a751, phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=true, supportsAccessPoints=true}
+09-14 20:49:28.538  1328  1328 I KeyboardManager: KeyboardManager.requestKeyboard():234 Creating keyboard prime, imeId=ime_english_united_states, cacheKey=theme_border_stylesheet_noshadow_gsans_pillkey_silkpopup_hover_light_phone_navredesign
+09-14 20:49:28.538  1328  1328 I KeyboardWrapper: KeyboardWrapper.onKeyboardReady():239 onKeyboardReady(): type=prime(prime), kb=com.google.android.apps.inputmethod.latin.keyboard.LatinPrimeKeyboard@b3b70b7
+09-14 20:49:28.538  1328  1328 I KeyboardWrapper: KeyboardWrapper.doActivateKeyboard():606 doActivateKeyboard(): prime
+09-14 20:49:28.539  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:28.539  1328  1328 W Keyboard: Keyboard.getKeyboardViewHelper():574 null helper is returned: keyboardDef=kuo{processedConditions={enable_more_candidates_view_for_multilingual=false, enable_secondary_symbols=false, variant=qwerty, language=en-US, device=phone, expressions=normal, keyboard_mode=normal, show_secondary_digits=true, enable_preemptive_decode=true, rtl_layout=false}, globalConditions={global_theme_key=theme_border_stylesheet_noshadow_gsans_pillkey_silkpopup_hover_light_phone_navredesign, global_locale=en_US, global_density_dpi=240, global_orientation=1}, className=.latin.keyboard.LatinPrimeKeyboard, resourceIds=[#0x7f170663, #0x7f1708e0], initialStates=0, keyboardViewDefs=[kvb{direction=null, id=#0x7f0b014d, isScalable=true, layoutId=#0x7f0e039d, type=BODY, touchable=true, defaultShow=true}, kvb{direction=null, id=#0x7f0b014d, isScalable=false, layoutId=#0x7f0e01aa, type=FLOATING_CANDIDATES, touchable=false, defaultShow=false}, kvb{direction=LOCALE, id=#0x7f0b014d, isScalable=false, layoutId=#0x7f0e0591, type=HEADER, touchable=true, defaultShow=true}], persistentStates=0, persistentStatesPrefKey=null, popupBubbleLayoutId=#0x7f0e068d, recentKeyLayoutId=0, recentKeyPopupLayoutId=0, recentKeyType=null, rememberRecentKey=NONE, sessionStates=17592186044419}, type=WIDGET, helpersCreated=[kib@85f6b09, kib@533810e, kib@714672f, null], context.getResources().getConfiguration(): {1.0 310mcc260mnc [en_US] ldltr sw480dp w480dp h853dp 240dpi lrg long port finger qwerty/v/v -nav/h winConfig={ mBounds=Rect(0, 0 - 720, 1280) mAppBounds=Rect(0, 0 - 720, 1280) mMaxBounds=Rect(0, 0 - 720, 1280) mDisplayRotation=ROTATION_0 mWindowingMode=fullscreen mActivityType=undefined mAlwaysOnTop=undefined mRotation=ROTATION_0} as.4 s.127 fontWeightAdjustment=0}
+09-14 20:49:28.539  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:28.540  1328  1328 I GoogleInputMethodService: GoogleInputMethodService.startInputIfInputViewStarted():3728 startInputIfInputViewStarted(): default prime
+09-14 20:49:28.540  1328  1328 I KeyboardModeManager: KeyboardModeManager.setInputViewKeyboardViewHolderProvider():625 setInputView() : supportsOneHandedMode=true supportsSplitMode=true
+09-14 20:49:28.541  1328  1328 I NormalModeController: NormalModeController.getKeyboardBodyViewHolderPaddingBottom():104 currentPrimeKeyboardType:SOFT systemPaddingBottom:-1
+09-14 20:49:28.541  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:28.541  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:28.541  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:28.541  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:28.541  1328  1328 I NormalModeController: NormalModeController.getKeyboardBodyViewHolderPaddingBottom():104 currentPrimeKeyboardType:SOFT systemPaddingBottom:-1
+09-14 20:49:28.541  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:28.541  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:28.541  1328  1328 I KeyboardModeManager: KeyboardModeManager.setInputViewKeyboardViewHolderProvider():613 setInputView() : supportsOneHandedMode=true, supportSplitMode=true
+09-14 20:49:28.550  1328  5660 I SpeechFactory: SpeechRecognitionFactory.maybeScheduleAutoPackDownloadForFallback():200 maybeScheduleAutoPackDownloadForFallback()
+09-14 20:49:28.551  1163  1227 D QuickstepModelDelegate: notifyAppTargetEvent action=1 launchLocation=workspace/0/[-1,-1]/[1,1]
+09-14 20:49:28.562  1455  1671 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 20:49:28.562  1455  1671 I AiAiEcho: EchoTargets: 
+09-14 20:49:28.562  1455  1671 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 20:49:28.562  1455  1671 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 20:49:28.562  1455  1671 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 20:49:28.562  1455  1671 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 20:49:28.562  1455  1671 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface home with targets# 0 (types=[])
+09-14 20:49:28.564  1163  1163 D BaseDepthController: setSurface:
+09-14 20:49:28.564  1163  1163 D BaseDepthController: 	mWaitingOnSurfaceValidity: false
+09-14 20:49:28.564  1163  1163 D BaseDepthController: 	mSurface: Surface(name=com.google.android.apps.nexuslauncher/com.google.android.apps.nexuslauncher.NexusLauncherActivity)/@0x60d6900
+09-14 20:49:28.564  1328  5660 I FallbackOnDeviceRecognitionProvider: FallbackOnDeviceRecognitionProvider.maybeScheduleAutoPackDownload():197 maybeScheduleAutoPackDownload() for language tag en-US
+09-14 20:49:28.565  1328  1328 I AccessoryInputModeManager: AccessoryInputModeManager.onModeStarted():308 Accessory input mode started: null
+09-14 20:49:28.565  1328  1328 W SupplementaryKeyboardsWrapper: SupplementaryKeyboardsWrapper.deactivateKeyboard():159 keyboard accessory_candidates_consumer is not activated before!
+09-14 20:49:28.567  1513  1513 I A       : (REDACTED) Created gRPC endpoint for service %s
+09-14 20:49:28.569  1328  1328 I CrowdsourceExtension: CrowdsourceExtension.checkIfDefaultBrowserIsAllowed():110 Failed to get default browser. The default browser may be deactived.
+09-14 20:49:28.569  1328  1328 I VoiceImeExtension: VoiceImeExtension.shouldStartVoiceInputAutomaticallyInCurrentInputBox():415 No private IME option set to start voice input.
+09-14 20:49:28.575   555   990 D AutofillInlineSuggestionsRequestSession: onInlineSuggestionsSessionInvalidated() called.
+09-14 20:49:28.576   555   990 D AutofillInlineSuggestionsRequestSession: onInlineSuggestionsRequest() received: InlineSuggestionsRequest { maxSuggestionCount = 9, inlinePresentationSpecs = [InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }, InlinePresentationSpec { minSize = 51x66, maxSize = 360x66, style = Bundle[mParcelledData.dataSize=2844] }], hostPackageName = com.google.android.inputmethod.latin, supportedLocales = [en_US], extras = Bundle[EMPTY_PARCEL], hostInputToken = android.os.BinderProxy@5a01d5b, hostDisplayId = 0, inlineTooltipPresentationSpec = null }
+09-14 20:49:28.580  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:28.581  1328  1328 I WindowMetricsNotification: WindowMetricsNotification.notifyWithWindow():113 
+09-14 20:49:28.581  1163  1163 D RecentsView: applyLoadPlan - taskGroups: [type=1 task1=[id=48 windowingMode=1 user=0 lastActiveTime=1451703] null task2=null]
+09-14 20:49:28.582  1328  1328 I WindowMetricsNotification: WindowMetricsNotification.notify():106 WindowMetricsNotification{bounds=Rect(0, 74 - 720, 1280), insets=Rect(0, 0 - 0, 72), densityDpi=240, smallestScreenWidthDp=480, displayWidth=720, displayHeight=1280, xdpi=440.0, ydpi=440.0}; DisplayMetrics{density=1.5, width=720, height=1280, scaledDensity=1.5, xdpi=440.0, ydpi=440.0}
+09-14 20:49:28.583  1163  1163 D OverviewActionsView: updateForGroupedTask() called with: isGroupedTask = [false], canSaveAppPair = [false]
+09-14 20:49:28.583  1163  1163 D OverviewActionsView: updateActionButtonsVisibility() called: showSingleTaskActions = [true], showGroupActions = [false]
+09-14 20:49:28.583  1163  1163 D SsBaseTemplateCard: No text view can be set up
+09-14 20:49:28.583  1163  1163 D SsBaseTemplateCard: Passed-in item info is null
+09-14 20:49:28.583  1163  1163 D SsBaseTemplateCard: Passed-in item info is null
+09-14 20:49:28.583  1163  1163 D SsBaseTemplateCard: Passed-in item info is null
+09-14 20:49:28.583  1163  1163 I SsBaseTemplateCard: Secondary card pane is null
+09-14 20:49:28.589   555   576 V WindowManager: Sent Transition (#214) createdAt=09-14 20:49:28.499
+09-14 20:49:28.589   555   576 V WindowManager:     startWCT=WindowContainerTransaction { changes = {} hops = [{PendingIntent: options=Bundle[{android.activity.splashScreenStyle=-1, android.activity.sourceInfo=android.app.ActivityOptions$SourceInfo@70f9563, android:activity.animAbortListener=null, android.activity.transientLaunch=true}]}] errorCallbackToken=null taskFragmentOrganizer=null }
+09-14 20:49:28.589   555   576 V WindowManager:     info={id=214 t=TO_FRONT f=0x80 trk=0 r=[0@Point(0, 0)] c=[
+09-14 20:49:28.589   555   576 V WindowManager:         {WCT{RemoteToken{7784a01 Task{a430155 #1 type=home}}} m=TO_FRONT f=SHOW_WALLPAPER|MOVE_TO_TOP leash=Surface(name=Task=1)/@0x59553d3 sb=Rect(0, 0 - 720, 1280) eb=Rect(0, 0 - 720, 1280) d=0 taskParent=-1},
+09-14 20:49:28.589   555   576 V WindowManager:         {WCT{RemoteToken{c7ea2c8 Task{ef228ac #48 type=standard A=10209:com.ggufchat.app}}} m=TO_BACK f=NONE leash=Surface(name=Task=48)/@0xb2714dc sb=Rect(0, 0 - 720, 1280) eb=Rect(0, 0 - 720, 1280) d=0 taskParent=-1},
+09-14 20:49:28.589   555   576 V WindowManager:         {null m=TO_FRONT f=IS_WALLPAPER leash=Surface(name=WallpaperWindowToken{f409dae token=android.os.Binder@8729629})/@0x18700d6 sb=Rect(0, 0 - 720, 1280) eb=Rect(0, 0 - 720, 1280) d=0}
+09-14 20:49:28.589   555   576 V WindowManager:     ]}
+09-14 20:49:28.601   555   572 D ActivityManager: sync unfroze 1406 com.google.android.gms for 6
+09-14 20:49:28.607   912  2160 V WindowManagerShell: onTransitionReady(transaction=2383706870511)
+09-14 20:49:28.607   912   959 V WindowManagerShell: onTransitionReady (#214) android.os.BinderProxy@ebbfd4d: {id=214 t=TO_FRONT f=0x80 trk=0 r=[0@Point(0, 0)] c=[{WCT{android.window.IWindowContainerToken$Stub$Proxy@c209a4e} m=TO_FRONT f=SHOW_WALLPAPER|MOVE_TO_TOP leash=Surface(name=Task=1)/@0x3c68002 sb=Rect(0, 0 - 720, 1280) eb=Rect(0, 0 - 720, 1280) d=0 taskParent=-1},{WCT{android.window.IWindowContainerToken$Stub$Proxy@f39a76f} m=TO_BACK f=NONE leash=Surface(name=Task=48)/@0xa114d13 sb=Rect(0, 0 - 720, 1280) eb=Rect(0, 0 - 720, 1280) d=0 taskParent=-1},{null m=TO_FRONT f=IS_WALLPAPER leash=Surface(name=WallpaperWindowToken{f409dae token=android.os.Binder@8729629})/@0xe8bcb50 sb=Rect(0, 0 - 720, 1280) eb=Rect(0, 0 - 720, 1280) d=0}]}
+09-14 20:49:28.607   912   959 V WindowManagerShell: Playing animation for (#214) android.os.BinderProxy@ebbfd4d@0
+09-14 20:49:28.607   912   959 V WindowManagerShell:  try firstHandler com.android.wm.shell.recents.RecentsTransitionHandler@fb5ad70
+09-14 20:49:28.607   912   959 V ShellRecents: [13452516] RecentsController.start
+09-14 20:49:28.608   912   959 V ShellRecents:   adding pausing leaf taskId=48 at layer=8
+09-14 20:49:28.608   912   959 V ShellRecents: Applying transaction=2383706870511
+09-14 20:49:28.608   912   959 V ShellRecents: Trying to get a handler for takeover but the flag is disabled
+09-14 20:49:28.608   912   959 V ShellRecents: [13452516] RecentsController.start: calling onAnimationStart with 2 apps
+09-14 20:49:28.609   912   959 V WindowManagerShell:  animated by firstHandler
+09-14 20:49:28.611   555   572 W ProcessStats: Tracking association SourceState{d862dd4 com.google.android.inputmethod.latin/10152 BFgs #12608} whose proc state 4 is better than process ProcessState{67b3a4e com.google.android.gms/10143 pkg=com.google.android.gms} proc state 14 (26 skipped)
+09-14 20:49:28.616  1406  1406 D BoundBrokerSvc: onBind: Intent { act=com.google.firebase.dynamiclinks.service.START pkg=com.google.android.gms }
+09-14 20:49:28.616  1406  1406 D BoundBrokerSvc: Loading bound service for intent: Intent { act=com.google.firebase.dynamiclinks.service.START pkg=com.google.android.gms }
+09-14 20:49:28.631   555  1941 W UserManagerService: Requested status bar icon for non-badged user 0
+09-14 20:49:28.660  1163  1551 D EGL_emulation: app_time_stats: avg=4010.03ms min=4010.03ms max=4010.03ms count=1
+09-14 20:49:28.660   428   438 I BpBinder: onLastStrongRef automatically unlinking death recipients: 
+09-14 20:49:28.661  1406 22080 I GmscoreIpa: Starting mediastore instant index [CONTEXT service_id=255 ]
+09-14 20:49:28.662  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:28.662  1328  1328 I GoogleInputMethodService: GoogleInputMethodService$1.onKeyboardViewShown():494 onKeyboardViewShown: keyboardType=prime, keyboardViewType=HEADER keyboardView=com.google.android.libraries.inputmethod.widgets.SoftKeyboardView{d9b1ed8 V.E...... ........ 0,0-720,66}
+09-14 20:49:28.663  1328  1328 I GoogleInputMethodService: GoogleInputMethodService$1.onKeyboardViewShown():494 onKeyboardViewShown: keyboardType=prime, keyboardViewType=BODY keyboardView=com.google.android.libraries.inputmethod.widgets.SoftKeyboardView{6e9e87c V.E...... ........ 0,0-720,360}
+09-14 20:49:28.663  1328  1328 I NewLanguagePromptExtension: NewLanguagePromptExtension$1.onKeyboardViewShown():115 Not show new language banner: no new languages.
+09-14 20:49:28.663  1328  1328 I WindowMetricsNotification: WindowMetricsNotification.notifyWithWindow():113 
+09-14 20:49:28.664   912   959 V ShellRecents: [13452516] RecentsController.finishInner: toHome=false userLeave=false willFinishToHome=false state=0
+09-14 20:49:28.664   912   959 V ShellRecents:   returning to app
+09-14 20:49:28.664   912   959 V ShellRecents: [13452516] RecentsController.cleanup
+09-14 20:49:28.664   912   959 V WindowManagerShell: Transition animation finished (aborted=false), notifying core (#214) android.os.BinderProxy@ebbfd4d@0
+09-14 20:49:28.664  1328  1328 I WindowMetricsNotification: WindowMetricsNotification.notify():106 WindowMetricsNotification{bounds=Rect(0, 74 - 720, 1280), insets=Rect(0, 0 - 0, 72), densityDpi=240, smallestScreenWidthDp=480, displayWidth=720, displayHeight=1280, xdpi=440.0, ydpi=440.0}; DisplayMetrics{density=1.5, width=720, height=1280, scaledDensity=1.5, xdpi=440.0, ydpi=440.0}
+09-14 20:49:28.665  1328  1328 I WindowMetricsNotification: WindowMetricsNotification.notifyWithWindow():113 
+09-14 20:49:28.665  1328  1328 I WindowMetricsNotification: WindowMetricsNotification.notify():106 WindowMetricsNotification{bounds=Rect(0, 74 - 720, 1280), insets=Rect(0, 0 - 0, 72), densityDpi=240, smallestScreenWidthDp=480, displayWidth=720, displayHeight=1280, xdpi=440.0, ydpi=440.0}; DisplayMetrics{density=1.5, width=720, height=1280, scaledDensity=1.5, xdpi=440.0, ydpi=440.0}
+09-14 20:49:28.665  1328  1328 I NormalModeController: NormalModeController.getKeyboardBodyViewHolderPaddingBottom():104 currentPrimeKeyboardType:SOFT systemPaddingBottom:-1
+09-14 20:49:28.665  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1701<1702, inputStateId=1452, lastInputStateId=1451
+09-14 20:49:28.666   555   576 V WindowManager: Finish Transition (#214): created at 09-14 20:49:28.499 collect-started=0.061ms started=0.08ms ready=20.065ms sent=85.565ms finished=166.804ms
+09-14 20:49:28.667  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1702<1703, inputStateId=1453, lastInputStateId=1451
+09-14 20:49:28.668 21525 21525 D InsetsController: show(ime(), fromIme=true)
+09-14 20:49:28.669  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:28.672   912   959 V WindowManagerShell: Track 0 became idle
+09-14 20:49:28.672   912   959 V WindowManagerShell: All active transition animations finished
+09-14 20:49:28.672   912   959 V ShellRecents: [13452516] RecentsController.finishInner: calling finish callback
+09-14 20:49:28.676  1328  1809 I Delight5Decoder: Delight5DecoderWrapper.setKeyboardLayout():511 setKeyboardLayout()
+09-14 20:49:28.685   555  1942 W UserManagerService: Requested status bar icon for non-badged user 0
+09-14 20:49:28.688   555  1622 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:28.688 21525 22082 W InteractionJankMonitor: Initializing without READ_DEVICE_CONFIG permission. enabled=true, interval=1, missedFrameThreshold=3, frameTimeThreshold=64, package=com.ggufchat.app
+09-14 20:49:28.691   555  1622 W UserManagerService: Requested status bar icon for non-badged user 0
+09-14 20:49:28.698   912   959 D WindowManagerShell: onKeepClearAreasChanged: restricted={}, unrestricted={Rect(0, 782 - 720, 1280)}
+09-14 20:49:28.726  1328  1328 W AndroidSpellCheckerService: AndroidSpellCheckerService.initialize():73 initialize...
+09-14 20:49:28.726  1328  1328 I ShortcutsDataManager: ShortcutsDataManager.onContentChanged():72 onContentChanged()
+09-14 20:49:28.726  1328  1328 I ContactsDataManager: ContactsDataManager.onContentChanged():159 onContentChanged()
+09-14 20:49:28.726  1328  1328 W AndroidSpellCheckerService: AndroidSpellCheckerService.initialize():83 initialize...done
+09-14 20:49:28.727  1328  1858 I AndroidSpellCheckerService: AndroidSpellCheckerService.createSession():139 com.google.android.keyboard.client.delight5.LanguageIdentifier@bb2fdb5 is created
+09-14 20:49:28.729 21525 21525 I ImeTracker: com.ggufchat.app:7246284: onShown
+09-14 20:49:28.729  1163  1163 D SearchTargetUtil: query= size=15
+09-14 20:49:28.729  1163  1163 D SearchTargetUtil: layoutType=extra_tall_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{bitmap_url=data:image/jpeg;base64,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,suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=true,is_personal=false,suggest_raw_text=lsu tigers football,input_query=android.app.search.Query@e46d7be,group_id=web1456050,response_id=c62c2c93-eca2-4f73-8381-dc9c8d4b8264,support_query_builder=false,} searchAction=LSU Tigers football searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=
+09-14 20:49:28.729  1163  1163 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=apple iphone 18 pro max,input_query=android.app.search.Query@e46d7be,group_id=web1456050,response_id=c62c2c93-eca2-4f73-8381-dc9c8d4b8264,support_query_builder=false,} searchAction=apple iphone 18 pro max searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=true,suggestion_action_rpc=2,}ParentID: null targetID: d1db071e-f3f9-4a1a-9806-6ef7483b493a
+09-14 20:49:28.729  1163  1163 D SearchTargetUtil: layoutType=extra_tall_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{bitmap_url=data:image/jpeg;base64,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,suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=true,is_personal=false,suggest_raw_text=jensen huang,input_query=android.app.search.Query@e46d7be,group_id=web1456050,response_id=c62c2c93-eca2-4f73-8381-dc9c8d4b8264,support_query_builder=false,} searchAction=Jensen Huang searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=true,suggestion_action_rpc=2,}ParentID: null targetID: 385ec80d-ef29-4438-83bc-28833208804c
+09-14 20:49:28.729  1163  1163 D SearchTargetUtil: layoutType=extra_tall_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{bitmap_url=data:image/jpeg;base64,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,suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=true,is_personal=false,suggest_raw_text=coffee,input_query=android.app.search.Query@e46d7be,group_id=web1456050,response_id=c62c2c93-eca2-4f73-8381-dc9c8d4b8264,support_query_builder=false,} searchAction=Coffee searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=true,suggestion_action_rpc=2,}ParentID: null targetID: 186f184e-93b1-406e-8bc5-ec6ed08b712f
+09-14 20:49:28.729  1163  1163 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=rolling stones songs,input_query=android.app.search.Query@e46d7be,group_id=web1456050,response_id=c62c2c93-eca2-4f73-8381-dc9c8d4b8264,support_query_builder=false,} searchAction=rolling stones songs searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=true,suggestion_action_rpc=2,}ParentID: null targetID: 68fe7eab-b8f1-448c-b712-be9deb41cf89
+09-14 20:49:28.729  1163  1163 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=ironman triathlon,input_query=android.app.search.Query@e46d7be,group_id=web1456050,response_id=c62c2c93-eca2-4f73-8381-dc9c8d4b8264,support_query_builder=false,} searchAction=ironman triathlon searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=true,suggestion_action_rpc=2,}ParentID: null targetID: 7c02b2d8-4ff2-4f16-8ab3-3d718be774bf
+09-14 20:49:28.729  1163  1163 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=apple ios 27 release date,input_query=android.app.search.Query@e46d7be,group_id=web1456050,response_id=c62c2c93-eca2-4f73-8381-dc9c8d4b8264,support_query_builder=false,} searchAction=apple ios 27 release date searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=true,suggestion_action_rpc=2,}ParentID: null targetID: 93f4e86d-afa6-4fd8-8169-bed3e7f0c55a
+09-14 20:49:28.729  1163  1163 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=burger king chicken nuggets,input_query=android.app.search.Query@e46d7be,group_id=web1456050,response_id=c62c2c93-eca2-4f73-8381-dc9c8d4b8264,support_query_builder=false,} searchAction=burger king chicken nuggets searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=true,suggestion_action_rpc=2,}ParentID: null targetID: 879a9984-b5ec-467b-ace1-f01604db7102
+09-14 20:49:28.730  1163  1163 D SearchTargetUtil: layoutType=extra_tall_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{bitmap_url=,suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=true,is_personal=false,suggest_raw_text=northern ireland,input_query=android.app.search.Query@e46d7be,group_id=web1456050,response_id=c62c2c93-eca2-4f73-8381-dc9c8d4b8264,support_query_builder=false,} searchAction=Northern Ireland searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=true,suggestion_action_rpc=2,}ParentID: null targetID: 82e2c3e4-2c94-4126-b0d7-d26a64e484a4
+09-14 20:49:28.730  1163  1163 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=nyt crossword answers,input_query=android.app.search.Query@e46d7be,group_id=web1456050,response_id=c62c2c93-eca2-4f73-8381-dc9c8d4b8264,support_query_builder=false,} searchAction=nyt crossword answers searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=true,suggestion_action_rpc=2,}ParentID: null targetID: 65277d65-f37b-43ea-84c7-fd9bd9223de0
+09-14 20:49:28.730  1163  1163 D SearchTargetUtil: layoutType=extra_tall_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{bitmap_url=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADkAAABICAMAAAB7uK3TAAAAb1BMVEX///8vJB0qHhZzbmsoHBMnGhEkFgtSS0eFgX4gEACgnpwZAADDwcAJAAD09PQVAABtaGYAAADU09IeDACsqql/e3inpKNgWlYbBwDq6em8urlEPDePi4llYFze3dwQAACXlJI9NC7Lysk1KyRKQz7crwopAAACYElEQVRYhe2Y7bKjIAyGUQtVq/itaK32aO//Gk8FrK0GqM7s7OzMvr/swCMSkpAUoUlB66jkNkithkUEn2BhwkJfBbqhpVdUwWDZG0DLYgUE0sQIWlbSAaTviUHSh4B6LAYdgKxsPuY5NQVU3wR6AUixon1W2Y/w8ZCqyCxXkQ5ftK/3k7fTQZIm2aRkPzn45ST/wD7V+vtkd/c1ygfNmoR5amVRWNQqcnZjlUjiK8jOGHN9AZPIHK29D5M/InZsYJsniUqHWpMVH7fP5da0lUw7OAbJmMcGhkIZpZFclGrIGDz85sJns2YhSfsViTI+27tPz1dpsDlHOZqvRejM7Ufc6bnAEo2LSa5809UthNy8VpCB3LWFCdd8amRWlsQUJOcD1IiwGiTrxIjaHoVI1DGDl79l6k8S0TbqL7DmdyYUJKd1A1h3GQCsUZFKSdOLs99FotF6n6sj24rr5Y2fc3Vk7E2XvBcfIFce/58sk+ipPtxP5tm7j+wiuVNHw1FyqQP2kkvVsps8YNs/R14Np8ICBVmLpDDfAR/5VlwVWSNKxIXkP1OZU7NyS871LZN1qUz5WPyKZEYNO2DXsZyrk/2A7FV/UVS/aupPSw/GJJ+8Oo9VlKVWhJWwjS9kKaA28dk4I8FC9gwIkTF+L+x0kf39zbuW/rb/t0hhPq+FxrRkKvwfrqN1JB3FmUGdxLM/4aRddelag5/JavIBgeghR6OtXlf/AJLM4MNT8weCtakBtjz4W2VyUcvub896pPKDTRv8IIpWnbfrXj/ygHPT888K7G7KvweeKspUTCu7IP8FdRg198P/J08AAAAASUVORK5CYII=,suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=true,is_personal=false,suggest_raw_text=san diego padres,input_query=android.app.search.Query@e46d7be,group_id=web1456050,response_id=c62c2c93-eca2-4f73-8381-dc9c8d4b8264,support_query_builder=false,} searchAction=San Diego Padres searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=true,suggestion_action_rpc=2,}ParentID: null targetID: a4787a75-6e6b-49a8-9288-bbabeac28b17
+09-14 20:49:28.730  1163  1163 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=artificial intelligence,input_query=android.app.search.Query@e46d7be,group_id=web1456050,response_id=c62c2c93-eca2-4f73-8381-dc9c8d4b8264,support_query_builder=false,} searchAction=artificial intelligence searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=true,suggestion_action_rpc=2,}ParentID: null targetID: 25b05a27-7c0d-4dbd-9109-3a9ac60218f4
+09-14 20:49:28.730  1163  1163 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=flash flood warning,input_query=android.app.search.Query@e46d7be,group_id=web1456050,response_id=c62c2c93-eca2-4f73-8381-dc9c8d4b8264,support_query_builder=false,} searchAction=flash flood warning searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=true,suggestion_action_rpc=2,}ParentID: null targetID: ae22038c-e998-4447-aa82-271d799b0e1b
+09-14 20:49:28.730  1163  1163 D SearchTargetUtil: layoutType=extra_tall_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{bitmap_url=data:image/jpeg;base64,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,suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=true,is_personal=false,suggest_raw_text=ella langley,input_query=android.app.search.Query@e46d7be,group_id=web1456050,response_id=c62c2c93-eca2-4f73-8381-dc9c8d4b8264,support_query_builder=false,} searchAction=Ella Langley searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=true,suggestion_action_rpc=2,}ParentID: null targetID: 90300bdc-e16a-4b51-8126-2564cca7fbcb
+09-14 20:49:28.730  1163  1163 D SearchTargetUtil: layoutType=extra_tall_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{bitmap_url=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAMAAABiM0N1AAAAe1BMVEUTJ0/5+fn///8AADz8/PwAAD8AHEkAADoJIkwAHkoAFEUQJU4AGEcACkL29vcAG0nKzNLl5ugAEESJjp0kM1eprLZiaX/S1Nnf4ON2fI6iprEyP187RmSanqq0t8CPlKJLVG4cLVNaYnltc4fAwskAADQAACwsOVtCTWnvCzR+AAADn0lEQVRYhe1YXZOiMBCUSUIigWDELxQQlbvd//8LL0yCRFf3otzLVW1erKKynclMT/dkZ7Of9T+s+N/AzEl5+gcwgp81ZHIyTnbYAhTpVJg52QOlmk8Op9UQRXCeT4OR/Ag0iuiCTMMRbGHCMQEdxCSc+UlbnIZNwkkrRSMEWk0KKG2pxaHdpIDSFixOBNWUgPJPsDATSyZWkYsngs0EDslcDTiTSC35brhYBHXyPhBvrjim9u+3fVKOOHT7fqrFYcSJ4Pi2fkii+0QPJPp4m0RsD1isI0yr2bxFAJWt+19YL9/EkRwvBhXp8Pfi7EPmLwJleDEolmyLQDNbfBkXr3WurRhd8BnrI6PaFX++gf1LxOQYB5VyxhUiZvZ7WgBlLzAzvtiLmcOJwly7MLKOQvsCEYiiruSSYYoGOzOw17wHrKTGgHrvkRl4EpIUEEEZDCRjTNC256AD+sTrCIn4wVdzHMQ/dkBYfUF25gQIrppYgaesNkc9r+O8Vye6CCYS68CTels11o8iqJbhijtw0VEQNQA4qZzZhlsAs801sIVhXjYLa0pUiVA6igo8QRTxrwXiOo+MDsFW4gI6J3mSMbK67LUnk3oVjDMExNqybrYKwJN/WJNgCkne2VwYBKB0DMZ86D6y4HCyvPAE31tU16fwcLJVA3c41ESCo9rvJFg8hFF7uEEAULuu3vREUuHan1Z6tGeAXVOX7ZywLEHRDh9pkjNcU6vqlrFlklvupX3a4BjYqvHZK/Oe+/TFHqa7m85gzyRJnDxTpeltXtGYbpyW6dK3uWRkKTF9QGGhMKD6zguT3plg730lGjZjTMn6OheI1qS3O7jhY3lXaEv2yJMhtgM9XjUbbThZw/rEJF7tQVo5CoAXqFGEsYzGcdRwiKzEUjgr018FEOsW0bECxuugGLzbOAU0A82MEbLaCtcjs2GokothtzCT7jgJ9imEgg+nMJsgax33Kzlav3RNy8xEODq35dmaJ/1d59w16+NXgiROrhEJR+9xghM4iYM6fnDOz1uHUzwmsLXw/gZ5zPBp4r3c3GRnuluBa48xDfeLdBZpW14a3ExHbXKn3IjO85dvpq+Ch4iNJ3K8u0Wi6vS8xcVMeXp5l0uy9ZFAn75T9uH1Z/eWt7kk66uUmU5Lv5ccwZx+UqCXO/WW2aHpjaIXsg35q5ayCnfrvfw6vIslry5FUa5IyNBjducrRp7It4jTNA4fC+X0f2n8rLfWHwzALJabQZ+SAAAAAElFTkSuQmCC,suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=true,is_personal=false,suggest_raw_text=atlanta braves,input_query=android.app.search.Query@e46d7be,group_id=web1456050,response_id=c62c2c93-eca2-4f73-8381-dc9c8d4b8264,support_query_builder=false,} searchAction=Atlanta Braves searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=true,suggestion_action_rpc=2,}ParentID: null targetID: 120846d7-2d88-4ee1-ba58-3db444d6b5bf
+09-14 20:49:28.734  1406  1406 D BoundBrokerSvc: onBind: Intent { act=com.google.android.gms.common.BIND_SHARED_PREFS pkg=com.google.android.gms }
+09-14 20:49:28.734  1406  1406 D BoundBrokerSvc: Loading bound service for intent: Intent { act=com.google.android.gms.common.BIND_SHARED_PREFS pkg=com.google.android.gms }
+09-14 20:49:28.737  1163  1163 I TopTaskTracker: onTaskMovedToFront: (moved taskInfo to front) taskId=48, baseIntent=Intent { flg=0x10008000 cmp=com.ggufchat.app/.MainActivity }
+09-14 20:49:28.737  1163  1163 D VRI[NexusLauncherActivity]: visibilityChanged oldVisibility=true newVisibility=false
+09-14 20:49:28.737  1163  1163 W SplitSelectStateCtor: Missing session instanceIds
+09-14 20:49:28.737  1163  1163 D StatsLog: LAUNCHER_SPLIT_SELECTION_EXIT_INTERRUPTED
+09-14 20:49:28.739   912   959 D WindowManagerShell: setLauncherKeepClearAreaHeight: visible=false, height=302
+09-14 20:49:28.748  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:28.749   555  1554 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:28.760  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:28.766   357   357 I netd    : tetherGetStats() -> {[]} <4.02ms>
+09-14 20:49:28.789  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:28.791   555  1554 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:28.797  1163  1163 D NexusLauncherModelDelegate: notifySmartspaceEvent: SmartspaceTargetEvent{mSmartspaceTarget=null, mSmartspaceActionId='null', mEventType=7}
+09-14 20:49:28.831  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:28.832   555  1554 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:28.833  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:28.836   555  1581 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:28.848  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:28.852   555  1861 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:28.856  1163  1163 D BaseDepthController: setSurface:
+09-14 20:49:28.856  1163  1163 D BaseDepthController: 	mWaitingOnSurfaceValidity: false
+09-14 20:49:28.856  1163  1163 D BaseDepthController: 	mSurface: null
+09-14 20:49:28.856  1163  1163 D BaseDepthController: mSurface is null and mCurrentBlur is: 0
+09-14 20:49:28.857  1163  1163 D StateManager: goToState - fromState: Normal, toState: Normal, partial trace:
+09-14 20:49:28.857  1163  1163 D StateManager: 	at com.android.launcher3.statemanager.StateManager.moveToRestState(go/retraceme 31f9979659277bb965985aff1272c33e3c3c9e755b77166d20a2465454178f2c:4)
+09-14 20:49:28.857  1163  1163 D StateManager: 	at com.android.launcher3.statemanager.StateManager.moveToRestState(go/retraceme 31f9979659277bb965985aff1272c33e3c3c9e755b77166d20a2465454178f2c:1)
+09-14 20:49:28.857  1163  1163 D StateManager: 	at com.android.launcher3.statemanager.StatefulActivity.onStop(go/retraceme 31f9979659277bb965985aff1272c33e3c3c9e755b77166d20a2465454178f2c:34)
+09-14 20:49:28.857  1163  1163 D StatsLog: LAUNCHER_ONSTOP
+09-14 20:49:28.858   555  1554 I AppWidgetServiceImpl: setAppWidgetHidden() 0
+09-14 20:49:28.858  1163  1948 D OneSearchSuggestProvider: Shut down the binder channel
+09-14 20:49:28.858  1163  1163 D StatsLog: LAUNCHER_GOOGLE_SEARCH_RESTORE_LIST_SIZE_AFTER_ACTIVITY_RESTART
+09-14 20:49:28.871  1328  1809 I native  : I0000 00:00:1789418968.871143    1809 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-14 20:49:28.873  1163  1182 I IPCThreadState: oneway function results for code 2 on binder at 0x73ce442c3ec0 will be dropped but finished with status UNKNOWN_TRANSACTION
+09-14 20:49:28.878  1328  1809 I native  : I0000 00:00:1789418968.878637    1809 input-context-store.cc:186] Ignoring stale client request for OverrideDecodedCandidates
+09-14 20:49:28.880  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:28.881  1328  1809 I native  : I0000 00:00:1789418968.881193    1809 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-14 20:49:28.881   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:28.882  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1705<1713, inputStateId=0, lastInputStateId=1459
+09-14 20:49:28.883  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1711<1713, inputStateId=1459, lastInputStateId=1459
+09-14 20:49:28.883  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:28.885   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:28.909  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:28.910   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:28.927  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:28.927  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1713<1717, inputStateId=1460, lastInputStateId=1463
+09-14 20:49:28.927   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:28.950  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1715<1717, inputStateId=1462, lastInputStateId=1463
+09-14 20:49:28.974  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:28.974  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:28.976   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:28.982  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1719<1721, inputStateId=1467, lastInputStateId=1468
+09-14 20:49:28.990  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:28.991   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:28.992  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:29.028  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.028  1328  1809 I native  : I0000 00:00:1789418969.028393    1809 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-14 20:49:29.029   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.029  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1723<1725, inputStateId=1471, lastInputStateId=1471
+09-14 20:49:29.051  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:29.054  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.059   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.060  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.061   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.063  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.064   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.083  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.084   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.092  1328  1809 I native  : I0000 00:00:1789418969.092011    1809 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-14 20:49:29.106  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1727<1729, inputStateId=1474, lastInputStateId=1474
+09-14 20:49:29.110  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.111   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.134  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:29.151  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:29.189  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.190   555  1554 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.204  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.204  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1733<1734, inputStateId=1479, lastInputStateId=1480
+09-14 20:49:29.205   555  1554 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.206  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.207   555  1554 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.259  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.259   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.264  1328  1809 I native  : I0000 00:00:1789418969.264007    1809 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-14 20:49:29.264  1328  1809 I native  : I0000 00:00:1789418969.264515    1809 input-context-store.cc:186] Ignoring stale client request for OverrideDecodedCandidates
+09-14 20:49:29.274  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1735<1737, inputStateId=0, lastInputStateId=1481
+09-14 20:49:29.284  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:29.293  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.296   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.318  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:29.321  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.326   555  1554 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.372  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.372  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:29.372   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.376  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.377   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.430  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.430   555  1554 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.457  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.458  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:29.458   555  1554 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.462  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1745<1747, inputStateId=1492, lastInputStateId=1493
+09-14 20:49:29.470  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.471  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1747<1748, inputStateId=1494, lastInputStateId=1495
+09-14 20:49:29.471   555  1554 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.495  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.495  1328  1809 I native  : I0000 00:00:1789418969.495817    1809 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-14 20:49:29.496   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.496  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1749<1751, inputStateId=1496, lastInputStateId=1496
+09-14 20:49:29.515  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.518  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1751<1752, inputStateId=1497, lastInputStateId=1498
+09-14 20:49:29.519   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.551  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:29.556  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.558   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.559  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.560   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.565 21525 21538 D EGL_emulation: app_time_stats: avg=33.34ms min=4.81ms max=193.54ms count=26
+09-14 20:49:29.593  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.593  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1755<1756, inputStateId=1501, lastInputStateId=1502
+09-14 20:49:29.594   555  1554 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.620  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.621  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1757<1758, inputStateId=1503, lastInputStateId=1504
+09-14 20:49:29.622   555  1554 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.661  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.662   555  1554 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.663  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.663   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.687  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.687  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:29.690   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.696  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.696   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.697  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1761<1763, inputStateId=1507, lastInputStateId=1508
+09-14 20:49:29.731  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.732   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.732  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1763<1764, inputStateId=1509, lastInputStateId=1510
+09-14 20:49:29.736  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.742   555  1861 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.762  1328  1809 I native  : I0000 00:00:1789418969.762602    1809 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-14 20:49:29.786  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.786  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1765<1768, inputStateId=1511, lastInputStateId=1512
+09-14 20:49:29.790   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.798  1328  1809 I native  : I0000 00:00:1789418969.798630    1809 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-14 20:49:29.798  1328  1809 I native  : I0000 00:00:1789418969.798890    1809 input-context-store.cc:186] Ignoring stale client request for OverrideDecodedCandidates
+09-14 20:49:29.810  1328  1809 I native  : I0000 00:00:1789418969.810689    1809 input-context-store.cc:186] Ignoring stale client request for OverrideDecodedCandidates
+09-14 20:49:29.813  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.813  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1767<1771, inputStateId=0, lastInputStateId=1514
+09-14 20:49:29.813  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1769<1771, inputStateId=0, lastInputStateId=1514
+09-14 20:49:29.813   555  1554 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.835  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.838  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1771<1773, inputStateId=1515, lastInputStateId=1516
+09-14 20:49:29.838   555  1554 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.856  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.856  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1773<1774, inputStateId=1517, lastInputStateId=1518
+09-14 20:49:29.856   555  1554 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.884  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.886  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:29.886   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.924  1328  1856 D EGL_emulation: app_time_stats: avg=80.98ms min=9.00ms max=193.25ms count=15
+09-14 20:49:29.926  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.927   555  1554 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.953  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.954  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1779<1780, inputStateId=1522, lastInputStateId=1523
+09-14 20:49:29.954   555  1554 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.970  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.971   555  1554 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.974  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.974  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1781<1782, inputStateId=1524, lastInputStateId=1525
+09-14 20:49:29.974   555  1554 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:29.996  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:29.998   555  1554 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:30.022  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:30.038  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:30.039  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1785<1786, inputStateId=1528, lastInputStateId=1529
+09-14 20:49:30.040   555  1554 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:30.059  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:30.059  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:30.060   555  1554 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:30.062  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:30.063   555  1554 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:30.079  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:30.080  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:30.083   555  1554 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:30.100  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1790<1792, inputStateId=1532, lastInputStateId=1533
+09-14 20:49:30.153  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:30.154   555  1554 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:30.155  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:30.156   555  1554 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:30.158  1328  1809 I native  : I0000 00:00:1789418970.158065    1809 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-14 20:49:30.173  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:30.178  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1792<1796, inputStateId=1534, lastInputStateId=1536
+09-14 20:49:30.179   555  1861 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:30.179  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1794<1796, inputStateId=1535, lastInputStateId=1536
+09-14 20:49:30.202  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:30.202   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:30.203  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:30.209  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:30.209   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:30.238  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:30.238  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1798<1799, inputStateId=1540, lastInputStateId=1541
+09-14 20:49:30.239   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:30.277  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:30.277  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1800<1803, inputStateId=1542, lastInputStateId=1543
+09-14 20:49:30.278  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:30.278   555  1861 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:30.305  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:30.311  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1803<1805, inputStateId=1545, lastInputStateId=1546
+09-14 20:49:30.312  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:30.312   555  1861 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:30.347  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:30.362  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:30.362  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1805<1806, inputStateId=1547, lastInputStateId=1548
+09-14 20:49:30.402  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:30.407   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:30.437  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:30.438   555  1861 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:30.454   357   357 I netd    : tetherGetStats() -> {[]} <0.38ms>
+09-14 20:49:30.475  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:30.477   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:30.494  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:30.501  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:30.515  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:30.516   555  1941 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:30.551  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:30.552   555  1861 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:30.553  1328  1809 I native  : I0000 00:00:1789418970.553097    1809 input-context-store.cc:262] Ignoring stale client request for FetchSuggestions
+09-14 20:49:30.571  1328  1328 W InputContextProxy: InputContextProxy.applyClientDiffInternal():940 Ignore [FetchSuggestions] diff due to stale request: 1813<1815, inputStateId=1555, lastInputStateId=1555
+09-14 20:49:30.574  1328  1328 I StylusModule: StylusModule.onUpdateToolType():770 Update tool type = 0
+09-14 20:49:30.574   555  1861 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:30.583 21525 21538 D EGL_emulation: app_time_stats: avg=27.80ms min=3.90ms max=77.63ms count=31
+09-14 20:49:30.610  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:30.701  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:30.713 22088 22088 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 0 <<<<<<
+09-14 20:49:30.715 22088 22088 I AndroidRuntime: Using default boot image
+09-14 20:49:30.715 22088 22088 I AndroidRuntime: Leaving lock profiling enabled
+09-14 20:49:30.717 22088 22088 I app_process: Core platform API reporting enabled, enforcing=false
+09-14 20:49:30.717 22088 22088 I app_process: Using CollectorTypeCMC GC.
+09-14 20:49:30.778 22088 22088 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-14 20:49:30.785 22088 22088 D nativeloader: Load libicu_jni.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-14 20:49:30.785 22088 22088 D app_process: u_setTimeZoneFilesDirectory("/apex/com.android.tzdata/etc/tz/versioned/8/icu") succeeded. 
+09-14 20:49:30.785 22088 22088 D app_process: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt75l.dat
+09-14 20:49:30.786 22088 22088 D nativeloader: Load libjavacore.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-14 20:49:30.786 22088 22088 D nativeloader: Load libopenjdk.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-14 20:49:30.787 22088 22088 W app_process: Unexpected CPU variant for x86: x86_64.
+09-14 20:49:30.787 22088 22088 W app_process: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, goldmont-without-sha-xsaves, tremont, kabylake, default
+09-14 20:49:30.788 22088 22088 W app_process: ClassLoaderContext shared library size mismatch. Expected=2, found=0 (PCL[]{PCL[/system/framework/android.test.base.jar*724373495]#PCL[/system/framework/android.test.mock.jar*1452759902]} | PCL[])
+09-14 20:49:30.789 22088 22088 W app_process: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[]{PCL[/system/framework/android.test.runner.jar*2496447986]#PCL[/system/framework/android.test.base.jar*724373495]} | PCL[/system/framework/android.test.runner.jar*2496447986])
+09-14 20:49:30.801 22088 22088 D nativeloader: Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok
+09-14 20:49:30.801 22088 22088 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-14 20:49:30.803 22088 22088 D UiAutomationConnection: Created on user UserHandle{0}
+09-14 20:49:30.803 22088 22088 I UiAutomation: Initialized for user 0 on display 0
+09-14 20:49:30.803 22088 22088 W UiAutomation: Created with deprecatead constructor, assumes DEFAULT_DISPLAY
+09-14 20:49:30.803   555   990 D AccessibilityManagerService: changeCurrentUserForTestAutomationIfNeededLocked(0): ignoring because device doesn't support visible background users
+09-14 20:49:30.804   555   990 I UiAutomationManager: Registering UiTestAutomationService (id=com.android.server.accessibility/UiAutomation, flags=0x0) when called by user 0
+09-14 20:49:30.804   555   990 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-14 20:49:30.805   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:30.805 22088 22100 V UiAutomation: Init UiAutomation@3829099[id=468, displayId=0, flags=0]
+09-14 20:49:30.806  1455  2181 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-14 20:49:30.806   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:30.806   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:30.807  1455  1671 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 20:49:30.807  1455  1671 I AiAiEcho: EchoTargets: 
+09-14 20:49:30.807  1455  1671 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 20:49:30.807  1455  1671 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 20:49:30.807  1455  1671 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 20:49:30.807  1455  1671 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 20:49:30.807   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:30.807   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:30.807  1455  1671 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 20:49:30.807  1455  1671 I AiAiEcho: EchoTargets: 
+09-14 20:49:30.807  1455  1671 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 20:49:30.807  1455  1671 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 20:49:30.807  1455  1671 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 20:49:30.807  1455  1671 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 20:49:30.807  1455  1671 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-14 20:49:30.807  1455  1671 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface home with targets# 0 (types=[])
+09-14 20:49:30.807   555  1861 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-14 20:49:30.808   912   912 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-14 20:49:30.808   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:30.809  1513  1834 I A       : NGA disabled since it's running Panthera and at least one a11y feature is on.
+09-14 20:49:30.809   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:30.809   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:30.809  1513  1834 I A       : (REDACTED) Nga state changed to %s
+09-14 20:49:30.809   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:30.809  1513  1834 I A       : (REDACTED) isTngActive=%s
+09-14 20:49:30.810   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:30.810   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:30.810   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:30.810   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:30.810   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:30.810   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:30.810   555   555 D BatterySaverPolicy: accessibility changed to true, updating policy.
+09-14 20:49:30.811  1443  1657 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b
+09-14 20:49:30.811  1443  1657 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b
+09-14 20:49:30.811  1443  1657 I A       : Unsubscribed to apa or classic variant change.
+09-14 20:49:30.814  1455  2181 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-14 20:49:30.814  1455  1671 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 20:49:30.815  1455  1671 I AiAiEcho: EchoTargets: 
+09-14 20:49:30.815  1455  1671 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 20:49:30.815  1455  1671 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 20:49:30.815  1455  1671 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 20:49:30.815  1455  1671 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 20:49:30.815  1455  1671 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 20:49:30.815  1455  1671 I AiAiEcho: EchoTargets: 
+09-14 20:49:30.815  1455  1671 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 20:49:30.815  1455  1671 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 20:49:30.815  1455  1671 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 20:49:30.815  1455  1671 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 20:49:30.815  1455  1671 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-14 20:49:30.815  1163  1163 D SsBaseTemplateCard: No text view can be set up
+09-14 20:49:30.815  1455  1671 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface home with targets# 0 (types=[])
+09-14 20:49:30.815  1163  1163 D SsBaseTemplateCard: Passed-in item info is null
+09-14 20:49:30.815  1163  1163 D SsBaseTemplateCard: Passed-in item info is null
+09-14 20:49:30.816  1163  1163 D SsBaseTemplateCard: Passed-in item info is null
+09-14 20:49:30.816  1163  1163 I SsBaseTemplateCard: Secondary card pane is null
+09-14 20:49:30.816   912   912 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-14 20:49:30.816  1163  1163 D SsBaseTemplateCard: No text view can be set up
+09-14 20:49:30.816  1163  1163 D SsBaseTemplateCard: Passed-in item info is null
+09-14 20:49:30.817  1163  1163 D SsBaseTemplateCard: Passed-in item info is null
+09-14 20:49:30.817  1163  1163 D SsBaseTemplateCard: Passed-in item info is null
+09-14 20:49:30.817  1163  1163 I SsBaseTemplateCard: Secondary card pane is null
+09-14 20:49:30.918  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:31.590 21525 21538 D EGL_emulation: app_time_stats: avg=335.61ms min=25.90ms max=501.04ms count=3
+09-14 20:49:31.668   555  2728 E TaskPersister: File error accessing recents directory (directory doesn't exist?).
+09-14 20:49:31.817 22088 22088 I AccessibilityNodeInfoDumper: Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@20fd5; boundsInParent: Rect(0, 0 - 672, 0); boundsInScreen: Rect(24, 180 - 696, 180); boundsInWindow: Rect(24, 180 - 696, 180); packageName: com.ggufchat.app; className: android.widget.LinearLayout; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: null; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; granularScrollingSupported: false; importantForAccessibility: false; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+09-14 20:49:31.818 22088 22088 W AccessibilityNodeInfoDumper: Fetch time: 2ms
+09-14 20:49:31.819   555  1861 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+09-14 20:49:31.819   555  1861 D AccessibilityManagerService: restoreCurrentUserForTestAutomationIfNeededLocked(): ignoring because device doesn't support visible background users
+09-14 20:49:31.819  1455  2181 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+09-14 20:49:31.820   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:31.820 22088 22088 D AndroidRuntime: Shutting down VM
+09-14 20:49:31.821  1455  1671 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 20:49:31.821   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:31.821   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:31.821   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:31.821   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:31.821   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:31.822  1513  1793 I A       : NGA enabled in interactor.
+09-14 20:49:31.822  1513  1793 I A       : (REDACTED) Nga state changed to %s
+09-14 20:49:31.822  1513  1793 I A       : (REDACTED) isTngActive=%s
+09-14 20:49:31.823   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:31.823   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:31.823   555   555 W IPCThreadState: Sending oneway calls to frozen process.
+09-14 20:49:31.823  1455  1671 I AiAiEcho: EchoTargets: 
+09-14 20:49:31.823  1455  1671 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 20:49:31.823  1455  1671 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 20:49:31.823   555   555 D BatterySaverPolicy: accessibility changed to false, updating policy.
+09-14 20:49:31.823  1455  1671 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 20:49:31.824  1455  1671 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 20:49:31.824  1455  1671 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+09-14 20:49:31.824  1455  1671 I AiAiEcho: EchoTargets: 
+09-14 20:49:31.824  1455  1671 I AiAiEcho: Filtered by AiAi flag check: 
+09-14 20:49:31.824  1455  1671 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 20:49:31.824  1455  1671 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period="10 SECONDS" ]
+09-14 20:49:31.824  1455  1671 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+09-14 20:49:31.824  1443  2815 I A       : Initializing all components
+09-14 20:49:31.825  1455  1671 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+09-14 20:49:31.825  1455  1671 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface home with targets# 0 (types=[])
+09-14 20:49:31.826  1443  1657 I A       : (REDACTED) onIsEnabledChanged, isEnabled: %s
+09-14 20:49:31.826  1443  1657 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:31.826  1443  1657 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:31.826  1443  1657 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:31.826  1443  1657 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:31.826  1443  1657 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:31.826  1443  1657 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:31.826  1443  1657 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:31.826  1443  1657 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:31.826  1443  1657 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:31.826  1443  1657 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:31.826  1443  1657 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:31.826  1443  1657 I A       : (REDACTED) Setting session to type: %s
+09-14 20:49:31.826  1443  1657 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:31.826  1443  1657 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:31.826  1443  1657 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:31.826  1443  1657 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:31.826  1443  1657 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:31.826  1443  1657 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:31.826  1443  1657 I A       : (REDACTED) setNavBarVisible: %s
+09-14 20:49:31.826  1443  1657 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:31.827  1163  1163 D SsBaseTemplateCard: No text view can be set up
+09-14 20:49:31.827  1163  1163 D SsBaseTemplateCard: Passed-in item info is null
+09-14 20:49:31.827  1163  1163 D SsBaseTemplateCard: Passed-in item info is null
+09-14 20:49:31.828  1163  1163 D SsBaseTemplateCard: Passed-in item info is null
+09-14 20:49:31.828  1163  1163 I SsBaseTemplateCard: Secondary card pane is null
+09-14 20:49:31.830  1443  1660 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b
+09-14 20:49:31.830  1443  1660 I A       : (REDACTED) State changed: %s => %s by %s and %s with %s
+09-14 20:49:31.831  1443  1660 I A       : (REDACTED) Recognizer choice: (recognizer_type: %s, recognizer_mode: %s, choice_reason: %s)
+09-14 20:49:31.831   912   912 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+09-14 20:49:31.831  1443  1660 I A       : (REDACTED) onActiveStateChangeEvent: %s => %s
+09-14 20:49:31.832  1443  1657 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:31.832  1443  1657 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:31.832  1443  1657 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:31.832  1443  1657 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:31.832  1443  1657 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+09-14 20:49:31.833  1443  1657 I A       : (REDACTED) on opa visibility changed %s
+09-14 20:49:31.833  1443  1660 I A       : (REDACTED) #onActiveStateChangeEvent, newState: %s, previousState: %s.
+09-14 20:49:31.833  1443  1657 I A       : (REDACTED) on opa visibility changed %s
+09-14 20:49:31.833  1443  1657 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b
+09-14 20:49:31.834  1443  1660 I NgaEntryPointEventSendr: setupConnection
+09-14 20:49:31.837  1443  1660 I NgaEntryPointEventSendr: (REDACTED) State changed: %s => %s
+09-14 20:49:31.837  1443  1660 I A       : (REDACTED) stopListening(%s, %s)
+09-14 20:49:31.838  1443  1657 I A       : Initialize
+09-14 20:49:31.838  1443  1660 I NgaEntryPointEventSendr: onServiceConnected
+09-14 20:49:31.838  1513  2872 I A       : Calling beginBinderSession().
+09-14 20:49:31.838  1513  2872 I A       : beginBinderSession(): calling binder
+09-14 20:49:31.839  1443  1660 I NgaEntryPointEventSendr: (REDACTED) State changed: %s => %s
+09-14 20:49:31.839  1443  1660 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b
+09-14 20:49:31.839  1443  1657 I INV.SystemUI: showGestureNav
+09-14 20:49:31.839  1443  1657 I INV.SystemUI: (REDACTED) setUiHints(hints = %s)
+09-14 20:49:31.840  1443  1660 I A       : Successfully initialized all components
+09-14 20:49:31.841   555   572 W ActivityManager: Unable to start service Intent { cmp=com.google.android.apps.tachyon/.clientapi.ClientApiService } U=0: not found
+09-14 20:49:31.842   357   357 I netd    : tetherGetStats() -> {[]} <0.31ms>
+09-14 20:49:31.843  1443  1657 I INV.SystemUI: setUiHints: finished successfully
+09-14 20:49:31.846  1513  2258 I PBSessionCacheImpl: (REDACTED) Deleted sessionId[%d] from persistence.
+09-14 20:49:31.847  1513  2127 W SearchServiceCore: Abort, client detached.
+09-14 20:49:31.848  1443  1660 I NgaEntryPointEventSendr: (REDACTED) State changed: %s => %s (%s)
+09-14 20:49:32.688 21525 21538 D EGL_emulation: app_time_stats: avg=366.12ms min=100.15ms max=499.99ms count=3
+09-14 20:49:32.689   424   453 D audioserver: logFgsApiBegin: FGS Logger Transaction failed, -129
+09-14 20:49:32.690   555  1581 W AS.PlaybackActivityMon: No piid assigned for invalid/internal port id 15
+09-14 20:49:32.693   424   531 D AudioFlinger: mixer(0x7f7ed86228e0) throttle end: throttle time(41)
+09-14 20:49:32.700   555   572 W PresentationStatsEventLogger: Bad view state for: -1
+09-14 20:49:32.700 21525 21525 I ImeTracker: com.ggufchat.app:c23a4d7: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+09-14 20:49:32.712   555  1581 I ActivityManager: Background started FGS: Allowed [callingPackage: com.ggufchat.app; callingUid: 10209; uidState: TOP ; uidBFSL: [BFSL]; intent: Intent { act=com.ggufchat.app.action.GENERATE cmp=com.ggufchat.app/.GenerationService (has extras) }; code:PROC_STATE_TOP; tempAllowListReason:<null>; targetSdkVersion:34; callerTargetSdkVersion:34; startForegroundCount:0; bindFromPackage:null: isBindService:false]
+09-14 20:49:32.716  1328  1328 I GoogleInputMethodService: GoogleInputMethodService.onFinishInputView():2393 
+09-14 20:49:32.726   555  1581 W ForegroundServiceTypeLoggerModule: Foreground service start for UID: 10209 does not have any types
+09-14 20:49:32.757  1163  1551 D EGL_emulation: app_time_stats: avg=1001.89ms min=33.33ms max=3837.48ms count=4
+09-14 20:49:32.762 21525 21525 D InsetsController: hide(ime(), fromIme=true)
+09-14 20:49:32.764   424   531 D AudioFlinger: mixer(0x7f7ed86228e0) throttle end: throttle time(11)
+09-14 20:49:32.765  1328  1328 W TooltipLifecycleManager: TooltipLifecycleManager.dismissTooltips():152 Tooltip with id spell_check_add_to_dictionary not found in tooltipManager.
+09-14 20:49:32.765  1328  1328 I InputBundle: InputBundle.consumeEvent():884 Skip consuming an event as keyboard status is 0
+09-14 20:49:32.765  1328  1328 I VoiceInputHandler: VoiceInputHandler.onDeactivateIme():115 unregistering TalkbackStateListener
+09-14 20:49:32.765  1328  1328 I VoiceInputManagerWrapper: VoiceInputManagerWrapper.shutdown():124 shutdown()
+09-14 20:49:32.766  1328  1328 I AndroidIME: AbstractIme.onDeactivate():202 LatinIme.onDeactivate()
+09-14 20:49:32.772   912   959 D WindowManagerShell: onKeepClearAreasChanged: restricted={}, unrestricted={}
+09-14 20:49:32.775  1328  1328 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():45 leave 161 height for app when ime window height:1134, header height:66 and isFullscreenMode:false, so the max keyboard body height is:907
+09-14 20:49:32.786  1328  1639 W ModuleManager: ModuleManager.loadModule():473 Module mgc is not available
+09-14 20:49:32.787  1328  1639 I NebulaeTrainingCacheMetricsProcessor: NebulaeTrainingCacheMetricsProcessor.processEndSession():510 No input action collection in this session, skip logging.
+09-14 20:49:32.822 21525 22115 I GGUFSystem: GGUF_SYSTEM_PROMPT_APPLIED scope=global chars=107 sha256=dde45e87ea07db0b49bcddd022d4f41a452610560d9af636571c26d16a4bcd04
+09-14 20:49:32.832  1328  1856 D EGL_emulation: app_time_stats: avg=221.85ms min=10.88ms max=1909.19ms count=13
+09-14 20:49:32.832  1328  1328 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1986 onStartInput(EditorInfo{EditorInfo{packageName=com.ggufchat.app, inputType=24001, inputTypeString=Normal, enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=40000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=0, initialSelEnd=0, initialCapsMode=3000, label=null, fieldId=-1, fieldName=null, extras=Bundle[mParcelledData.dataSize=168], hintText=non-empty, hintLocales=[]}}, true)
+09-14 20:49:32.834  1328  1328 I GoogleInputMethodService: GoogleInputMethodService.updateDeviceLockedStatus():2248 repeatCheckTimes = 1, locked = false
+09-14 20:49:32.834  1328  1328 W SessionManager: SessionManager.beginSession():53 Try to begin an already begun session [INPUT_SESSION], end it first
+--------- beginning of kernel
+09-14 20:49:32.997     0     0 I logd    : logdr: UID=0 GID=0 PID=22116 n tail=0 logMask=99 pid=21525 start=0ns deadline=0ns
+09-14 20:49:32.835  1328  1328 I AndroidIME: InputBundleManager.loadActiveInputBundleId():450 loadActiveInputBundleId: en-US, ime_english_united_states
+09-14 20:49:32.835   555  1581 W PackageConfigPersister: App-specific configuration not found for packageName: com.ggufchat.app and userId: 0
+09-14 20:49:32.835  1328  1328 I WindowMetricsNotification: WindowMetricsNotification.notifyWithWindow():113 
+09-14 20:49:32.836  1328  1328 I WindowMetricsNotification: WindowMetricsNotification.notify():106 WindowMetricsNotification{bounds=Rect(0, 74 - 720, 1280), insets=Rect(0, 0 - 0, 72), densityDpi=240, smallestScreenWidthDp=480, displayWidth=720, displayHeight=1280, xdpi=440.0, ydpi=440.0}; DisplayMetrics{density=1.5, width=720, height=1280, scaledDensity=1.5, xdpi=440.0, ydpi=440.0}
+09-14 20:49:32.836  1328  1328 I ShortcutsDataManager: AbstractContentDataManager.startImportContentTask():240 startImportContentTask()
+09-14 20:49:32.843  1328  1825 I ShortcutsDataManager: AbstractContentDataManager$ImportContentTask.doInBackground():255 doInBackground()
+09-14 20:49:32.843  1328  1825 I PersonalDictionaryDataHandler: PersonalDictionaryDataHandler.beginProcess():114 LanguageTags = [en-US]
+09-14 20:49:32.850   555  1581 D ActivityManager: sync unfroze 1707 android.process.acore for 7
+09-14 20:49:32.865 21525 21525 I ImeTracker: com.ggufchat.app:254b73ad: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_ON_ANIMATION_STATE_CHANGED fromUser false
+09-14 20:49:32.866   555   678 I ImeTracker: com.ggufchat.app:254b73ad: onCancelled at PHASE_SERVER_SHOULD_HIDE
+09-14 20:49:32.866   357   357 I netd    : tetherGetStats() -> {[]} <0.34ms>
+09-14 20:49:32.867 21525 21525 I ImeTracker: com.ggufchat.app:c23a4d7: onHidden
+09-14 20:49:32.879   424   531 D audioserver: logFgsApiEnd: FGS Logger Transaction failed, -129
+09-14 20:49:32.885  1328  1825 I ShortcutsDataManager: AbstractContentDataManager.importRecords():345 importRecords() : Success : Count = 0
+09-14 20:49:32.894  1328  1825 I ShortcutsDataManager: AbstractContentDataManager.importContentData():295 importContentData() : Ending import process
+09-14 20:49:32.895  1328  1809 I Delight5Decoder: Delight5DecoderWrapper.unloadLanguageModel():943 unloadLanguageModel() : 4, version [n/a]
+09-14 20:49:32.927  1328  1825 I PersonalLanguageModelUpdater: PersonalLanguageModelUpdater$UpdateOperation.performInternal():165 run() : Added 0 words and 0 shortcuts
+09-14 20:49:32.927  1328  1825 I DynamicLanguageModelOperation: DynamicLanguageModelOperation.perform():43 perform() : 4 : dxm : Completed
+09-14 20:49:32.927  1328  1809 I Delight5Decoder: Delight5DecoderWrapper.loadLanguageModel():730 loadLanguageModel() : 4, version [n/a]
+09-14 20:49:32.927  1328  1328 I ShortcutsDataManager: AbstractContentDataManager$ImportContentTask.onPostExecute():266 onPostExecute() : Result = [2,0]
+09-14 20:49:32.927  1328  1328 I ShortcutsDataManager: ShortcutsDataManager.onImportFinished():82 onImportFinished() : Result = 2 : Count = 0
+09-14 20:49:32.927  1328  1809 I Delight5Decoder: Delight5DecoderWrapper.loadLanguageModel():771 Loaded dynamic LM 4.en
+09-14 20:49:32.942   555   555 W NotificationHistory: Attempted to add notif for locked/gone/disabled user 0
+09-14 20:49:32.946  1455  1862 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 20:49:32.946  1455  1862 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 20:49:32.950 21525 22115 D nativeloader: Load libpdfclient.so using APEX ns com_android_mediaprovider for caller /apex/com.android.mediaprovider/javalib/framework-pdf.jar: ok
+09-14 20:49:32.975   912  1256 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 20:49:32.981   912  1256 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 20:49:33.022   912  1050 D EGL_emulation: app_time_stats: avg=4178.29ms min=13.43ms max=8343.15ms count=2
+09-14 20:49:33.093 21525 22115 D pdf_document_jni: Creating FPDF_DOCUMENT from fd: 106
+09-14 20:49:33.270 21525 22115 D pdf_document_jni: Deleting Document: 0x73cfb428bd50
+09-14 20:49:33.270 21525 22115 D pdf_document_jni: Destroyed Document: 0x73cfb428bd50
+09-14 20:49:33.274 21525 22115 I GGUFInference: GGUF_CONTENT_PREPARED files=1 images=1 text_chars=1
+09-14 20:49:33.517  1603  1603 I wpa_supplicant: wlan0: CTRL-EVENT-BEACON-LOSS 
+09-14 20:49:33.739 21525 21538 D EGL_emulation: app_time_stats: avg=31.19ms min=4.98ms max=210.94ms count=26
+09-14 20:49:34.098     0     0 I logd    : logdr: UID=0 GID=0 PID=22135 n tail=0 logMask=99 pid=21525 start=0ns deadline=0ns
+09-14 20:49:34.044   912  1050 D EGL_emulation: app_time_stats: avg=170.23ms min=23.21ms max=226.48ms count=6
+09-14 20:49:34.282   357 22141 I resolv  : GetAddrInfoHandler::run: {100 786532 100 983140 10143 0}
+09-14 20:49:34.282   357 22142 I resolv  : res_nmkquery: (QUERY, IN, AAAA)
+09-14 20:49:34.282   357 22143 I resolv  : res_nmkquery: (QUERY, IN, A)
+09-14 20:49:34.324   555   659 D ActivityManager: freezing 2170 com.android.externalstorage
+09-14 20:49:34.325   555   659 D ActivityManager: freezing 12975 com.google.android.apps.docs
+09-14 20:49:34.329   555   831 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+09-14 20:49:34.330   555   831 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+09-14 20:49:34.330   555   831 D InetDiagMessage: Destroyed live tcp sockets for uids={10104} in 4ms
+09-14 20:49:34.330   555   831 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+09-14 20:49:34.331   555   831 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+09-14 20:49:34.333   555   831 D InetDiagMessage: Destroyed live tcp sockets for uids={10159} in 3ms
+09-14 20:49:34.562   555   659 D ActivityManager: freezing 2517 com.google.android.documentsui
+09-14 20:49:34.564   555   831 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+09-14 20:49:34.564   555   831 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+09-14 20:49:34.564   555   831 D InetDiagMessage: Destroyed live tcp sockets for uids={10096} in 2ms
+09-14 20:49:34.637   357 22143 I resolv  : res_nsend: used send_dg 107 terrno: 0
+09-14 20:49:34.637   357 22143 I resolv  : doQuery: rcode=0, ancount=2, return value=107
+09-14 20:49:34.637   357 22142 I resolv  : res_nsend: used send_dg 91 terrno: 0
+09-14 20:49:34.637   357 22142 I resolv  : doQuery: rcode=0, ancount=2, return value=91
+09-14 20:49:34.639  1203 21586 D TrafficStats: tagSocket(-1) with statsTag=0x30000407, statsUid=-1
+09-14 20:49:34.639  1203 21586 I TrafficStats: tagSocketFd(-1, 805307399, -1) failed with errno-9
+09-14 20:49:34.639  1203 21586 D TrafficStats: tagSocket(99) with statsTag=0x30000407, statsUid=-1
+09-14 20:49:35.175     0     0 I logd    : logdr: UID=0 GID=0 PID=22146 n tail=0 logMask=99 pid=21525 start=0ns deadline=0ns
+09-14 20:49:35.059   912  1050 D EGL_emulation: app_time_stats: avg=202.91ms min=193.07ms max=225.47ms count=5
+09-14 20:49:35.233 21525 21538 D EGL_emulation: app_time_stats: avg=497.67ms min=483.78ms max=508.22ms count=3
+09-14 20:49:35.640  1203 20643 D TrafficStats: tagSocket(118) with statsTag=0x30000407, statsUid=-1
+09-14 20:49:35.644  1203 20643 I AlarmManager: setExactAndAllowWhileIdle [name: GCM_HB_ALARM type: 2 triggerAtMillis: 2023171]
+09-14 20:49:35.700  1203 20643 I AlarmManager: setExactAndAllowWhileIdle [name: GCM_HB_ALARM type: 2 triggerAtMillis: 2023226]
+09-14 20:49:35.700  1203 20643 E WakeLock: GCM_CONN_ALARM release without a matched acquire!
+09-14 20:49:35.702  1203 20643 I AlarmManager: setExactAndAllowWhileIdle [name: GCM_HB_ALARM type: 2 triggerAtMillis: 2023228]
+09-14 20:49:35.801   366  3777 D android.hardware.audio@7.1-impl.ranchu: threadLoop: entering standby, frames: 28384832
+09-14 20:49:36.261     0     0 I logd    : logdr: UID=0 GID=0 PID=22167 n tail=0 logMask=99 pid=21525 start=0ns deadline=0ns
+09-14 20:49:36.268   912  1050 D EGL_emulation: app_time_stats: avg=201.50ms min=194.60ms max=212.85ms count=6
+09-14 20:49:36.737 21525 21538 D EGL_emulation: app_time_stats: avg=501.42ms min=493.15ms max=511.52ms count=3
+09-14 20:49:37.328     0     0 I logd    : logdr: UID=0 GID=0 PID=22175 n tail=0 logMask=99 pid=21525 start=0ns deadline=0ns
+09-14 20:49:37.272   912  1050 D EGL_emulation: app_time_stats: avg=200.84ms min=190.11ms max=211.63ms count=5
+09-14 20:49:38.249 21525 21538 D EGL_emulation: app_time_stats: avg=503.97ms min=496.21ms max=513.09ms count=3
+09-14 20:49:38.415     0     0 I logd    : logdr: UID=0 GID=0 PID=22183 n tail=0 logMask=99 pid=21525 start=0ns deadline=0ns
+09-14 20:49:38.279   912  1050 D EGL_emulation: app_time_stats: avg=201.32ms min=186.58ms max=222.00ms count=5
+09-14 20:49:38.701   555   579 W ProcessStats: Tracking association SourceState{46ec11d com.google.android.inputmethod.latin/10152 ImpBg #12640} whose proc state 6 is better than process ProcessState{b6d3f92 android.process.acore/10091 pkg=com.android.providers.userdictionary (sub)} proc state 14 (12 skipped)
+09-14 20:49:38.911   357   357 I netd    : tetherGetStats() -> {[]} <0.38ms>
+09-14 20:49:39.255 21525 21538 D EGL_emulation: app_time_stats: avg=502.88ms min=501.14ms max=504.62ms count=2
+09-14 20:49:39.575     0     0 I logd    : logdr: UID=0 GID=0 PID=22191 n tail=0 logMask=99 pid=21525 start=0ns deadline=0ns
+09-14 20:49:39.474   912  1050 D EGL_emulation: app_time_stats: avg=198.97ms min=177.87ms max=209.19ms count=6
+09-14 20:49:40.256 21525 21538 D EGL_emulation: app_time_stats: avg=500.34ms min=491.58ms max=509.10ms count=2
+09-14 20:49:40.685     0     0 I logd    : logdr: UID=0 GID=0 PID=22199 n tail=0 logMask=99 pid=21525 start=0ns deadline=0ns
+09-14 20:49:40.672   912  1050 D EGL_emulation: app_time_stats: avg=199.70ms min=176.92ms max=221.56ms count=6
+09-14 20:49:41.265 21525 21538 D EGL_emulation: app_time_stats: avg=504.44ms min=494.91ms max=513.98ms count=2
+09-14 20:49:41.440  1603  1603 I wpa_supplicant: wlan0: CTRL-EVENT-BEACON-LOSS 
+09-14 20:49:41.806     0     0 I logd    : logdr: UID=0 GID=0 PID=22207 n tail=0 logMask=99 pid=21525 start=0ns deadline=0ns
+09-14 20:49:41.681   912  1050 D EGL_emulation: app_time_stats: avg=201.72ms min=167.79ms max=226.22ms count=5
+09-14 20:49:41.877   555  1861 D WifiNl80211Manager: Scan result ready event
+09-14 20:49:41.877   555  1861 D WifiNative: Scan result ready event
+09-14 20:49:41.878  1513  2127 I WorkerManager: dispose()
+09-14 20:49:41.878  1513  2127 W A       : (REDACTED) Queue length for executor %s is now %d. Perhaps some tasks are too long, or the pool is too small.
+09-14 20:49:41.882   555   659 D ActivityManager: freezing 1513 com.google.android.googlequicksearchbox:search
+09-14 20:49:41.883   555   659 D ActivityManager: freezing 3143 com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0
+09-14 20:49:41.951  1443  1683 I BistoHotwordHelper: (REDACTED) getHotwordActive::active query: %s, watch: %s, devices connected: %s
+09-14 20:49:41.958   555   824 I HalDevMgr: bestIfaceCreationProposal is null, requestIface=STA, existingIface=[name=wlan0 type=STA]
+09-14 20:49:42.077   555   831 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET, states=14
+09-14 20:49:42.077   555   831 D InetDiagMessage: Destroyed 0 sockets, proto=IPPROTO_TCP, family=AF_INET6, states=14
+09-14 20:49:42.077   555   831 D InetDiagMessage: Destroyed live tcp sockets for uids={99000} in 2ms
+09-14 20:49:42.783 21525 21538 D EGL_emulation: app_time_stats: avg=505.98ms min=493.63ms max=519.20ms count=3
+09-14 20:49:42.954     0     0 I logd    : logdr: UID=0 GID=0 PID=22215 n tail=0 logMask=99 pid=21525 start=0ns deadline=0ns
+09-14 20:49:42.785   912  1050 D EGL_emulation: app_time_stats: avg=220.81ms min=197.68ms max=255.86ms count=5
+09-14 20:49:43.155 21525 21525 E FrameTracker: force finish cuj, time out: J<IME_INSETS_HIDE_ANIMATION::1@0@com.ggufchat.app>
+09-14 20:49:43.808 21525 21538 D EGL_emulation: app_time_stats: avg=512.03ms min=479.82ms max=544.24ms count=2
+09-14 20:49:43.813  1406  1406 D BoundBrokerSvc: onUnbind: Intent { act=com.google.firebase.dynamiclinks.service.START pkg=com.google.android.gms }
+09-14 20:49:44.041     0     0 I logd    : logdr: UID=0 GID=0 PID=22223 n tail=0 logMask=99 pid=21525 start=0ns deadline=0ns
+09-14 20:49:43.957   912  1050 D EGL_emulation: app_time_stats: avg=195.37ms min=154.95ms max=209.24ms count=6
+09-14 20:49:44.812 21525 21538 D EGL_emulation: app_time_stats: avg=501.99ms min=480.67ms max=523.31ms count=2
+09-14 20:49:44.967   912  1050 D EGL_emulation: app_time_stats: avg=201.91ms min=195.45ms max=210.16ms count=5
+09-14 20:49:45.150     0     0 I logd    : logdr: UID=0 GID=0 PID=22231 n tail=0 logMask=99 pid=21525 start=0ns deadline=0ns
+09-14 20:49:46.006   912  1050 D EGL_emulation: app_time_stats: avg=207.82ms min=151.94ms max=244.03ms count=5
+09-14 20:49:46.254     0     0 I logd    : logdr: UID=0 GID=0 PID=22239 n tail=0 logMask=99 pid=21525 start=0ns deadline=0ns
+09-14 20:49:46.281 21525 21538 D EGL_emulation: app_time_stats: avg=489.75ms min=473.87ms max=499.16ms count=3
+09-14 20:49:47.022   912  1050 D EGL_emulation: app_time_stats: avg=203.14ms min=195.30ms max=222.70ms count=5
+09-14 20:49:47.027 21525 22115 I GGUFChatNative: GGUF_IMAGE_EVALUATED tokens=64 backend=Vulkan
+09-14 20:49:47.332     0     0 I logd    : logdr: UID=0 GID=0 PID=22247 n tail=0 logMask=99 pid=21525 start=0ns deadline=0ns
+09-14 20:49:47.281 21525 21538 D EGL_emulation: app_time_stats: avg=499.97ms min=498.64ms max=501.30ms count=2
+09-14 20:49:48.026   912  1050 D EGL_emulation: app_time_stats: avg=200.71ms min=198.38ms max=203.24ms count=5
+09-14 20:49:48.389     0     0 I logd    : logdr: UID=0 GID=0 PID=22260 n tail=0 logMask=99 pid=21525 start=0ns deadline=0ns
+09-14 20:49:48.756 21525 22115 I GGUFChatNative: GGUF_MEDIA_PREFILL images=1 tokens=257 positions=257
+09-14 20:49:48.782 21525 21538 D EGL_emulation: app_time_stats: avg=500.18ms min=494.09ms max=505.77ms count=3
+09-14 20:49:48.965  1455  1862 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 20:49:48.965  1455  1862 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 20:49:49.044   912  1256 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 20:49:49.046   912  1256 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 20:49:49.049   912  1050 D EGL_emulation: app_time_stats: avg=204.49ms min=195.37ms max=218.96ms count=5
+09-14 20:49:49.339  1455  1862 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 20:49:49.339  1455  1862 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 20:49:49.492     0     0 I logd    : logdr: UID=0 GID=0 PID=22269 n tail=0 logMask=99 pid=21525 start=0ns deadline=0ns
+09-14 20:49:49.378  1603  1603 I wpa_supplicant: wlan0: CTRL-EVENT-BEACON-LOSS 
+09-14 20:49:49.385   912  1256 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 20:49:49.395   912  1256 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 20:49:49.709  1455  1862 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 20:49:49.709  1455  1862 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 20:49:49.720   912  1256 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 20:49:49.720   912  1256 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 20:49:49.793 21525 21538 D EGL_emulation: app_time_stats: avg=20.25ms min=6.08ms max=48.10ms count=36
+09-14 20:49:49.884 21525 22115 I GGUFChatNative: GGUF_NATIVE_COMPLETE tokens=3 reason=eog projector=1
+09-14 20:49:49.885 21525 22115 I System.out: GGUF_REPAIR_GENERATION_OK
+09-14 20:49:49.888   555  1861 D ActivityManager: Stop FGS timeout: ServiceRecord{224287f u0 com.ggufchat.app/.GenerationService c:com.ggufchat.app}
+09-14 20:49:49.888   555  1861 W ForegroundServiceTypeLoggerModule: FGS stop call for: 10209 has no types!
+09-14 20:49:49.896  1455  1862 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 20:49:49.897  1455  1862 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 20:49:49.929   912  1256 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 20:49:49.930   912  1256 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 20:49:50.066   912  1050 D EGL_emulation: app_time_stats: avg=203.37ms min=171.68ms max=231.28ms count=5
+09-14 20:49:50.095  1455  1862 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 20:49:50.095  1455  1862 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 20:49:50.099   555   555 W NotificationHistory: Attempted to add notif for locked/gone/disabled user 0
+09-14 20:49:50.107  1455  1862 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 20:49:50.107  1455  1862 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 20:49:50.119   912  1256 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 20:49:50.120   912  1256 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 20:49:50.139   912  1256 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 20:49:50.142   912  1256 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 20:49:50.310  1455  1862 W AiAiEcho: LyftNotificationParser Ridesharing ETA not enabled
+09-14 20:49:50.310  1455  1862 I AiAiEcho: SmartspaceNotificationPredictor no parser can handle this notification or notification is invalid
+09-14 20:49:50.592     0     0 I logd    : logdr: UID=0 GID=0 PID=22277 n tail=0 logMask=99 pid=21525 start=0ns deadline=0ns
+09-14 20:49:50.506 22287 22287 W BpBinder: Linking to death on android.gui.ISurfaceComposer but there are no threads (yet?) listening to incoming transactions. See ProcessState::startThreadPool and ProcessState::setThreadPoolMaxThreadCount. Generally you should setup the binder threadpool before other initialization steps.
+09-14 20:49:50.507 22287 22287 W ProcessState: Extra binder thread started, but 0 threads requested. Do not use *startThreadPool when zero threads are requested.
+09-14 20:49:50.516   143   143 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+09-14 20:49:50.517 22287 22288 I Gralloc4: mapper 4.x is not supported
+09-14 20:49:50.682     0     0 I servicemanager: Caller(pid=22287,uid=0,sid=u:r:su:s0) Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest. No alternative instances declared in VINTF.
+09-14 20:49:50.553   912  1256 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 20:49:50.556   912  1256 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 20:49:50.572   912   912 D LocalImageResolver: Couldn't use ImageDecoder for drawable, falling back to non-resized load.
+09-14 20:49:50.742 22293 22293 W BpBinder: Linking to death on android.gui.ISurfaceComposer but there are no threads (yet?) listening to incoming transactions. See ProcessState::startThreadPool and ProcessState::setThreadPoolMaxThreadCount. Generally you should setup the binder threadpool before other initialization steps.
+09-14 20:49:50.742 22293 22293 W ProcessState: Extra binder thread started, but 0 threads requested. Do not use *startThreadPool when zero threads are requested.
+09-14 20:49:50.933     0     0 I servicemanager: Caller(pid=22293,uid=0,sid=u:r:su:s0) Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest. No alternative instances declared in VINTF.
+09-14 20:49:50.783   143   143 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+09-14 20:49:50.783 22293 22295 I Gralloc4: mapper 4.x is not supported
+09-14 20:49:50.803 21525 21538 D EGL_emulation: app_time_stats: avg=20.70ms min=3.83ms max=234.73ms count=35

@@ -1,0 +1,73 @@
+{
+  "status": "THREE_TIMES_TARGET_NOT_MET",
+  "tested_factor": 4,
+  "target_multiplier": 3,
+  "target_gain_percent": 200,
+  "target_3x_passed": false,
+  "comparisons": {
+    "historical": {
+      "comparison_valid": true,
+      "metric": "native_token_delivery_intervals_excluding_first_token_and_prefill",
+      "state": "asleep",
+      "pairs": [
+        {
+          "before_tps": 9.083667851638696,
+          "after_tps": 8.919349956328421,
+          "ratio": 0.9819106226698248
+        },
+        {
+          "before_tps": 8.973182220318256,
+          "after_tps": 8.971527846270595,
+          "ratio": 0.9998156312880937
+        },
+        {
+          "before_tps": 9.068769574505325,
+          "after_tps": 9.144701467809682,
+          "ratio": 1.0083728991767331
+        }
+      ],
+      "before_median_tps": 9.068769574505325,
+      "after_median_tps": 8.971527846270595,
+      "median_paired_gain_percent": -0.0184368711906302,
+      "all_pairs_faster": false,
+      "physical_gpu_certified": false,
+      "release_approved": false,
+      "baseline_all_tensor_gpu_policy_proven": false,
+      "scope": "Unchanged original DEX/native/resources in disposable test-signed copies; same native observer, 127 token-delivery intervals after first callback. Not app/UI/footer timing or pure GPU kernel time."
+    },
+    "delivered": {
+      "comparison_valid": true,
+      "metric": "native_token_delivery_intervals_excluding_first_token_and_prefill",
+      "state": "asleep",
+      "pairs": [
+        {
+          "before_tps": 8.90716973525694,
+          "after_tps": 8.919349956328421,
+          "ratio": 1.0013674625535953
+        },
+        {
+          "before_tps": 8.622810052862336,
+          "after_tps": 8.971527846270595,
+          "ratio": 1.0404413168410804
+        },
+        {
+          "before_tps": 8.981276083560788,
+          "after_tps": 9.144701467809682,
+          "ratio": 1.018196232108712
+        }
+      ],
+      "before_median_tps": 8.90716973525694,
+      "after_median_tps": 8.971527846270595,
+      "median_paired_gain_percent": 1.8196232108711907,
+      "all_pairs_faster": true,
+      "physical_gpu_certified": false,
+      "release_approved": false,
+      "baseline_all_tensor_gpu_policy_proven": false,
+      "scope": "Unchanged original DEX/native/resources in disposable test-signed copies; same native observer, 127 token-delivery intervals after first callback. Not app/UI/footer timing or pure GPU kernel time."
+    }
+  },
+  "same_apk_full_output_check_passed": true,
+  "physical_gpu_certified": false,
+  "release_approved": false,
+  "scope": "One text fixture on software Vulkan; both screen states and both predeclared factors must be reported. Not pure kernel/UI timing, full tensor-result bit equivalence, image qualification, startup/memory qualification or signature-continuous release."
+}

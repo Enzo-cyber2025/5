@@ -1,0 +1,163 @@
+Traceback (most recent call last):
+  File "/home/runner/work/5/5/scripts/test_physical_android.py", line 81, in main
+    answer=reply(d,chat,'Name the main animal in the image. Reply in English.','physical-one-file',images=1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_inference_android.py", line 93, in reply
+    text=d.wait(check,'resposta baseada no conteúdo real: '+stage,timeout=600)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_android.py", line 70, in wait
+    result = fn()
+             ^^^^
+  File "/home/runner/work/5/5/scripts/test_inference_android.py", line 76, in check
+    if 'Generation failed:' in log:raise AssertionError(log[-8000:])
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: --------- beginning of main
+09-14 22:15:32.493  5279  5279 I ImeTracker: com.ggufchat.app:b1ce8ae9: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser true
+09-14 22:15:32.493  5279  5279 D InputMethodManager: showSoftInput() view=android.widget.EditText{de2253c VFED..CL. .F.P..ID 128,0-517,67 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+09-14 22:15:32.505  5279  5279 I AssistStructure: Flattened final assist data: 1952 bytes, containing 1 windows, 13 views
+09-14 22:15:32.511  5279  5292 D EGL_emulation: app_time_stats: avg=228.38ms min=5.49ms max=4083.90ms count=21
+09-14 22:15:33.717  5279  5292 D EGL_emulation: app_time_stats: avg=402.10ms min=202.76ms max=501.95ms count=3
+09-14 22:15:34.082  5279  5279 D InsetsController: show(ime(), fromIme=true)
+09-14 22:15:34.111  5279  5964 W InteractionJankMonitor: Initializing without READ_DEVICE_CONFIG permission. enabled=true, interval=1, missedFrameThreshold=3, frameTimeThreshold=64, package=com.ggufchat.app
+09-14 22:15:34.195  5279  5279 I ImeTracker: com.ggufchat.app:b1ce8ae9: onShown
+09-14 22:15:34.873  5279  5292 D EGL_emulation: app_time_stats: avg=132.09ms min=17.46ms max=440.73ms count=8
+09-14 22:15:35.935  5279  5292 D EGL_emulation: app_time_stats: avg=81.32ms min=8.75ms max=169.11ms count=12
+09-14 22:15:36.980  5279  5292 D EGL_emulation: app_time_stats: avg=52.71ms min=7.39ms max=104.65ms count=16
+09-14 22:15:37.985  5279  5292 D EGL_emulation: app_time_stats: avg=68.21ms min=9.11ms max=162.88ms count=14
+09-14 22:15:39.007  5279  5292 D EGL_emulation: app_time_stats: avg=339.58ms min=73.03ms max=493.09ms count=3
+09-14 22:15:40.009  5279  5292 D EGL_emulation: app_time_stats: avg=500.75ms min=458.15ms max=543.35ms count=2
+09-14 22:15:40.394  5279  5279 I ImeTracker: com.ggufchat.app:ae8c6683: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+09-14 22:15:40.429  5279  6019 I GGUFSystem: GGUF_SYSTEM_PROMPT_APPLIED scope=global chars=107 sha256=dde45e87ea07db0b49bcddd022d4f41a452610560d9af636571c26d16a4bcd04
+09-14 22:15:40.443  5279  5279 D InsetsController: hide(ime(), fromIme=true)
+09-14 22:15:40.713  5279  5279 I ImeTracker: com.ggufchat.app:5e7ac8bd: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_ON_ANIMATION_STATE_CHANGED fromUser false
+09-14 22:15:40.714  5279  5279 I ImeTracker: com.ggufchat.app:ae8c6683: onHidden
+09-14 22:15:40.775  5279  5283 I om.ggufchat.app: Background concurrent mark compact GC freed 2137KB AllocSpace bytes, 1(132KB) LOS objects, 49% free, 2689KB/5378KB, paused 580us,576us total 343.930ms
+09-14 22:15:41.054  5279  6019 I GGUFInference: GGUF_CONTENT_PREPARED files=1 images=1 text_chars=0
+09-14 22:15:41.086  5279  5361 I GGUFNativeStderr: mtmd_tokenize: error: number of media markers in text (0) does not match number of bitmaps (1)
+09-14 22:15:41.086  5279  6019 I GGUFChatNative: Generation failed: Falha ao preparar pixels e texto para o projetor
+09-14 22:15:41.087  5279  6019 I System.out: GGUF_REPAIR_GENERATION_FAILED
+09-14 22:15:41.128  5279  5292 D EGL_emulation: app_time_stats: avg=107.12ms min=9.29ms max=368.98ms count=10
+
+4 22:11:40.798     0     0 I BIOS-e820: [mem 0x000000000009fc00-0x000000000009ffff] reserved
+09-14 22:11:40.798     0     0 I BIOS-e820: [mem 0x00000000000f0000-0x00000000000fffff] reserved
+09-14 22:11:40.798     0     0 I BIOS-e820: [mem 0x0000000000100000-0x00000000bffd5fff] usable
+09-14 22:11:40.798     0     0 I BIOS-e820: [mem 0x00000000bffd6000-0x00000000bfffffff] reserved
+09-14 22:11:40.798     0     0 I BIOS-e820: [mem 0x00000000feffc000-0x00000000feffffff] reserved
+09-14 22:11:40.798     0     0 I BIOS-e820: [mem 0x00000000fffc0000-0x00000000ffffffff] reserved
+09-14 22:11:40.798     0     0 I BIOS-e820: [mem 0x0000000100000000-0x00000001bfffffff] usable
+09-14 22:11:40.798     0     0 I stackdepot: disabled
+09-14 22:11:40.798     0     0 I         : NX (Execute Disable) protection: active
+09-14 22:11:40.798     0     0 I APIC    : Static calls initialized
+09-14 22:11:40.798     0     0 I         : user-defined physical RAM map:
+09-14 22:11:40.798     0     0 I user    : [mem 0x0000000000000000-0x000000000009fbff] usable
+09-14 22:11:40.798     0     0 I user    : [mem 0x000000000009fc00-0x000000000009ffff] reserved
+09-14 22:11:40.798     0     0 I user    : [mem 0x00000000000f0000-0x00000000000fffff] reserved
+09-14 22:11:40.798     0     0 I user    : [mem 0x0000000000100000-0x00000000bffd5fff] usable
+09-14 22:11:40.798     0     0 I user    : [mem 0x00000000bffd6000-0x00000000bfffffff] reserved
+09-14 22:11:40.798     0     0 I user    : [mem 0x00000000feffc000-0x00000000feffffff] reserved
+09-14 22:11:40.798     0     0 I user    : [mem 0x00000000ff018000-0x00000000ff027fff] reserved
+09-14 22:11:40.798     0     0 I user    : [mem 0x00000000fffc0000-0x00000000ffffffff] reserved
+09-14 22:11:40.798     0     0 I user    : [mem 0x0000000100000000-0x00000001bfffffff] usable
+09-14 22:11:40.798     0     0 I         : SMBIOS 2.8 present.
+09-14 22:11:40.798     0     0 I DMI     : QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.11.1-0-g0551a4be2c-prebuilt.qemu-project.org 04/01/2014
+09-14 22:11:40.798     0     0 I Hypervisor detected: KVM
+09-14 22:11:40.798     0     0 I kvm-clock: Using msrs 4b564d01 and 4b564d00
+09-14 22:11:40.798     0     0 I kvm-clock: using sched offset of 165302548 cycles
+09-14 22:11:40.798     0     0 I clocksource: kvm-clock: mask: 0xffffffffffffffff max_cycles: 0x1cd42e4dffb, max_idle_ns: 881590591483 ns
+09-14 22:11:40.798     0     0 I tsc     : Detected 2793.436 MHz processor
+09-14 22:11:40.798     0     0 D e820    : update [mem 0x00000000-0x00000fff] usable ==> reserved
+09-14 22:11:40.798     0     0 D e820    : remove [mem 0x000a0000-0x000fffff] usable
+09-14 22:11:40.798     0     0 I         : last_pfn = 0x1c0000 max_arch_pfn = 0x400000000
+09-14 22:11:40.799     0     0 I MTRR map: 4 entries (3 fixed + 1 variable; max 19), built from 8 variable MTRRs
+09-14 22:11:40.799     0     0 I x86/PAT : PAT not supported by the CPU.
+09-14 22:11:40.799     0     0 I x86/PAT : Configuration [0-7]: WB  WT  UC- UC  WB  WT  UC- UC
+09-14 22:11:40.799     0     0 I         : last_pfn = 0xbffd6 max_arch_pfn = 0x400000000
+09-14 22:11:40.803     0     0 I         : found SMP MP-table at [mem 0x000f5ac0-0x000f5acf]
+09-14 22:11:40.804     0     0 I RAMDISK : [mem 0x7fdf1000-0x7fffffff]
+09-14 22:11:40.80
+[output truncated]
+$ adb logcat -c
+exit=0
+$ adb shell rm -f /sdcard/gguf-test-ui.xml
+exit=0
+$ adb shell uiautomator dump /sdcard/gguf-test-ui.xml
+exit=0
+UI hierchary dumped to: /sdcard/gguf-test-ui.xml
+$ adb exec-out cat /sdcard/gguf-test-ui.xml
+exit=0
+<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><hierarchy rotation="0"><node index="0" text="" resource-id="" class="android.widget.FrameLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[0,0][720,1280]"><node index="0" text="" resource-id="" class="android.widget.LinearLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[0,0][720,1244]"><node index="0" text="" resource-id="android:id/content" class="android.widget.FrameLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[0,36][720,1244]"><node index="0" text="" resource-id="" class="android.widget.LinearLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[0,36][720,1244]"><node index="0" text="" resource-id="" class="android.widget.LinearLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,54][696,108]"><node index="0" text="‹" resource-id="" class="android.widget.Button" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,54][64,108]" /><node index="1" text="GGUF regression 1a0a1fc938492ff5a" resource-id="" class="android.widget.TextView" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[82,61][696,100]" /></node><node index="1" text="SmolVLM 256M Instruct" resource-id="" class="android.widget.TextView" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,108][696,133]" /><node index="2" text="" resource-id="" class="android.widget.ScrollView" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,142][696,1093]" /><node index="3" text="1 anexo(s) pendente(s) · 0 enviado(s)" resource-id="" class="android.widget.Button" package="com.ggufchat.app" content-desc="Lista de anexos" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,1105][351,1159]" /><node index="4" text="" resource-id="" class="android.widget.LinearLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,1159][696,1226]"><node index="0" text="" resource-id="" class="android.widget.Button" package="com.ggufchat.app" content-desc="Câmera" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,1165][78,1219]" /><node index="1" text="" resource-id="" clas
+[output truncated]
+$ adb shell input tap 346 1192
+exit=0
+$ adb shell input text Name%sthe%smain%sanimal%sin%sthe%simage.%sReply%sin%sEnglish.
+exit=0
+$ adb shell rm -f /sdcard/gguf-test-ui.xml
+exit=0
+$ adb shell uiautomator dump /sdcard/gguf-test-ui.xml
+exit=0
+UI hierchary dumped to: /sdcard/gguf-test-ui.xml
+$ adb exec-out cat /sdcard/gguf-test-ui.xml
+exit=0
+<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><hierarchy rotation="0"><node index="0" text="" resource-id="" class="android.widget.FrameLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[0,0][720,1280]"><node index="0" text="" resource-id="" class="android.widget.LinearLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[0,0][720,1244]"><node index="0" text="" resource-id="android:id/content" class="android.widget.FrameLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[0,36][720,782]"><node index="0" text="" resource-id="" class="android.widget.LinearLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[0,36][720,782]"><node index="0" text="" resource-id="" class="android.widget.LinearLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,54][696,108]"><node index="0" text="‹" resource-id="" class="android.widget.Button" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,54][64,108]" /><node index="1" text="GGUF regression 1a0a1fc938492ff5a" resource-id="" class="android.widget.TextView" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[82,61][696,100]" /></node><node index="1" text="SmolVLM 256M Instruct" resource-id="" class="android.widget.TextView" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,108][696,133]" /><node index="2" text="" resource-id="" class="android.widget.ScrollView" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,142][696,605]" /><node index="3" text="1 anexo(s) pendente(s) · 0 enviado(s)" resource-id="" class="android.widget.Button" package="com.ggufchat.app" content-desc="Lista de anexos" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,617][351,671]" /><node index="4" text="" resource-id="" class="android.widget.LinearLayout" package="com.ggufchat.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,671][696,764]"><node index="0" text="" resource-id="" class="android.widget.Button" package="com.ggufchat.app" content-desc="Câmera" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[24,690][78,744]" /><node index="1" text="" resource-id="" class="androi
+[output truncated]
+$ adb shell input tap 655 717
+exit=0
+$ adb shell pidof com.ggufchat.app
+exit=0
+5279
+$ adb shell pidof com.ggufchat.app
+exit=0
+5279
+$ adb logcat -d --pid=5279
+exit=0
+--------- beginning of main
+09-14 22:15:32.493  5279  5279 I ImeTracker: com.ggufchat.app:b1ce8ae9: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser true
+09-14 22:15:32.493  5279  5279 D InputMethodManager: showSoftInput() view=android.widget.EditText{de2253c VFED..CL. .F.P..ID 128,0-517,67 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+09-14 22:15:32.505  5279  5279 I AssistStructure: Flattened final assist data: 1952 bytes, containing 1 windows, 13 views
+09-14 22:15:32.511  5279  5292 D EGL_emulation: app_time_stats: avg=228.38ms min=5.49ms max=4083.90ms count=21
+09-14 22:15:33.717  5279  5292 D EGL_emulation: app_time_stats: avg=402.10ms min=202.76ms max=501.95ms count=3
+09-14 22:15:34.082  5279  5279 D InsetsController: show(ime(), fromIme=true)
+09-14 22:15:34.111  5279  5964 W InteractionJankMonitor: Initializing without READ_DEVICE_CONFIG permission. enabled=true, interval=1, missedFrameThreshold=3, frameTimeThreshold=64, package=com.ggufchat.app
+09-14 22:15:34.195  5279  5279 I ImeTracker: com.ggufchat.app:b1ce8ae9: onShown
+09-14 22:15:34.873  5279  5292 D EGL_emulation: app_time_stats: avg=132.09ms min=17.46ms max=440.73ms count=8
+09-14 22:15:35.935  5279  5292 D EGL_emulation: app_time_stats: avg=81.32ms min=8.75ms max=169.11ms count=12
+09-14 22:15:36.980  5279  5292 D EGL_emulation: app_time_stats: avg=52.71ms min=7.39ms max=104.65ms count=16
+09-14 22:15:37.985  5279  5292 D EGL_emulation: app_time_stats: avg=68.21ms min=9.11ms max=162.88ms count=14
+09-14 22:15:39.007  5279  5292 D EGL_emulation: app_time_stats: avg=339.58ms min=73.03ms max=493.09ms count=3
+09-14 22:15:40.009  5279  5292 D EGL_emulation: app_time_stats: avg=500.75ms min=458.15ms max=543.35ms count=2
+09-14 22:15:40.394  5279  5279 I ImeTracker: com.ggufchat.app:ae8c6683: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+09-14 22:15:40.429  5279  6019 I GGUFSystem: GGUF_SYSTEM_PROMPT_APPLIED scope=global chars=107 sha256=dde45e87ea07db0b49bcddd022d4f41a452610560d9af636571c26d16a4bcd04
+09-14 22:15:40.443  5279  5279 D InsetsController: hide(ime(), fromIme=true)
+$ adb shell if [ -e /data/user/0/com.ggufchat.app/files/attachments/60154c16e3c890ffc068ff0711fcdbaf9ef69993530b5f625876a664aade3735/index.json ]; then cat /data/user/0/com.ggufchat.app/files/attachments/60154c16e3c890ffc068ff0711fcdbaf9ef69993530b5f625876a664aade3735/index.json; else printf '[]'; fi
+exit=0
+{"items":[{"id":"e6b66bf0-c934-4a69-a3ad-c963831df9c0","name":"frame-a.jpg","mime":"image\/jpeg","size":661378,"message":0}],"error":""}$ adb shell pidof com.ggufchat.app
+exit=0
+5279
+$ adb logcat -d --pid=5279
+exit=0
+--------- beginning of main
+09-14 22:15:32.493  5279  5279 I ImeTracker: com.ggufchat.app:b1ce8ae9: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser true
+09-14 22:15:32.493  5279  5279 D InputMethodManager: showSoftInput() view=android.widget.EditText{de2253c VFED..CL. .F.P..ID 128,0-517,67 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+09-14 22:15:32.505  5279  5279 I AssistStructure: Flattened final assist data: 1952 bytes, containing 1 windows, 13 views
+09-14 22:15:32.511  5279  5292 D EGL_emulation: app_time_stats: avg=228.38ms min=5.49ms max=4083.90ms count=21
+09-14 22:15:33.717  5279  5292 D EGL_emulation: app_time_stats: avg=402.10ms min=202.76ms max=501.95ms count=3
+09-14 22:15:34.082  5279  5279 D InsetsController: show(ime(), fromIme=true)
+09-14 22:15:34.111  5279  5964 W InteractionJankMonitor: Initializing without READ_DEVICE_CONFIG permission. enabled=true, interval=1, missedFrameThreshold=3, frameTimeThreshold=64, package=com.ggufchat.app
+09-14 22:15:34.195  5279  5279 I ImeTracker: com.ggufchat.app:b1ce8ae9: onShown
+09-14 22:15:34.873  5279  5292 D EGL_emulation: app_time_stats: avg=132.09ms min=17.46ms max=440.73ms count=8
+09-14 22:15:35.935  5279  5292 D EGL_emulation: app_time_stats: avg=81.32ms min=8.75ms max=169.11ms count=12
+09-14 22:15:36.980  5279  5292 D EGL_emulation: app_time_stats: avg=52.71ms min=7.39ms max=104.65ms count=16
+09-14 22:15:37.985  5279  5292 D EGL_emulation: app_time_stats: avg=68.21ms min=9.11ms max=162.88ms count=14
+09-14 22:15:39.007  5279  5292 D EGL_emulation: app_time_stats: avg=339.58ms min=73.03ms max=493.09ms count=3
+09-14 22:15:40.009  5279  5292 D EGL_emulation: app_time_stats: avg=500.75ms min=458.15ms max=543.35ms count=2
+09-14 22:15:40.394  5279  5279 I ImeTracker: com.ggufchat.app:ae8c6683: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+09-14 22:15:40.429  5279  6019 I GGUFSystem: GGUF_SYSTEM_PROMPT_APPLIED scope=global chars=107 sha256=dde45e87ea07db0b49bcddd022d4f41a452610560d9af636571c26d16a4bcd04
+09-14 22:15:40.443  5279  5279 D InsetsController: hide(ime(), fromIme=true)
+09-14 22:15:40.713  5279  5279 I ImeTracker: com.ggufchat.app:5e7ac8bd: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_ON_ANIMATION_STATE_CHANGED fromUser false
+09-14 22:15:40.714  5279  5279 I ImeTracker: com.ggufchat.app:ae8c6683: onHidden
+09-14 22:15:40.775  5279  5283 I om.ggufchat.app: Background concurrent mark compact GC freed 2137KB AllocSpace bytes, 1(132KB) LOS objects, 49% free, 2689KB/5378KB, paused 580us,576us total 343.930ms
+09-14 22:15:41.054  5279  6019 I GGUFInference: GGUF_CONTENT_PREPARED files=1 images=1 text_chars=0
+09-14 22:15:41.086  5279  5361 I GGUFNativeStderr: mtmd_tokenize: error: number of media markers in text (0) does not match number of bitmaps (1)
+09-14 22:15:41.086  5279  6019 I GGUFChatNative: Generation failed: Falha ao preparar pixels e texto para o projetor
+09-14 22:15:41.087  5279  6019 I System.out: GGUF_REPAIR_GENERATION_FAILED
+09-14 22:15:41.128  5279  5292 D EGL_emulation: app_time_stats: avg=107.12ms min=9.29ms max=368.98ms count=10
