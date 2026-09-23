@@ -18,7 +18,26 @@ from test_mobile import MODEL, PROJ, select_pair
 E = Path('evidence')
 
 
+def failure_evidence(d,error):
+    try:
+        Path('evidence/attachments-detach-failure-ui.txt').write_text(d.ui())
+    except Exception as dump_error:
+        Path('evidence/attachments-detach-failure-ui.txt').write_text(f'dump falhou: {dump_error}\n')
+    Path('evidence/attachments-detach-failure.txt').write_text(f'{type(error).__name__}: {error}\n')
+    try:
+        Path('evidence/attachments-detach-failure-logcat.txt').write_text(d.adb('logcat','-d')[-200000:])
+    except Exception:pass
+
+
 def run(d):
+    try:
+        return _run(d)
+    except Exception as error:
+        failure_evidence(d,error)
+        raise
+
+
+def _run(d):
     E.mkdir(exist_ok=True)
     checks = {}
     d.adb('root', check=False)

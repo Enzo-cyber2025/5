@@ -5,6 +5,7 @@ on:
     paths:
       - .github/workflows/text-ui.yml
       - .github/emu-test.sh
+      - .github/emulator-text-ui.sh
       - apk-fix/build_mobile.py
       - apk-fix/patch_dex.py
       - apk-fix/patch_smali.py
@@ -145,15 +146,7 @@ jobs:
           disk-size: 8192M
           disable-animations: true
           emulator-options: -no-window -no-snapshot -gpu host -feature Vulkan -noaudio -no-boot-anim -camera-back emulated -camera-front emulated
-          script: |
-            set -euo pipefail
-            adb wait-for-device
-            adb install -r -g "$GGUF_TEST_APK"
-            adb shell pm list packages | grep -q com.ggufchat.app
-            bash ci/log_step.sh text-renderer .venv/bin/python scripts/test_text_android.py
-            adb shell am force-stop com.ggufchat.texttest
-            bash ci/log_step.sh attachments-detach .venv/bin/python scripts/test_detach_android.py
-            bash ci/log_step.sh emulator bash .github/emu-test.sh
+          script: bash .github/emulator-text-ui.sh
       - name: Publish bounded evidence to this session branch only
         if: always()
         run: bash ci/publish_text_evidence.sh

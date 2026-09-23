@@ -7,6 +7,7 @@ collapsible reasoning panel and the source panel through real taps, and requires
 the production log markers. Nothing here is presented as a model answer.
 """
 import json
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from android_checks import position
@@ -16,7 +17,30 @@ APP = 'com.ggufchat.app'
 REPORT = 'Ok: inline=ok;codigo=python;raciocinio=ok;fontes=ok;parsers=ok'
 
 
+def failure_evidence(d,error):
+    """Bounded diagnostics so a red emulator step is still explainable from git."""
+    try:
+        xml=d.ui();Path('evidence/text-ui-failure-ui.txt').write_text(xml)
+        status=[n.get('text','') for n in ET.fromstring(xml).iter('node')
+                if n.get('package')==PKG and n.get('text','')]
+        Path('evidence/text-ui-failure.txt').write_text(
+            f'{type(error).__name__}: {error}\n--- textos do app de teste ---\n'+'\n'.join(status)+'\n')
+    except Exception as dump_error:  # o próprio dump pode falhar; nunca esconder o erro real
+        Path('evidence/text-ui-failure.txt').write_text(f'{type(error).__name__}: {error}\n(dump falhou: {dump_error})\n')
+    try:
+        Path('evidence/text-ui-failure-logcat.txt').write_text(d.adb('logcat','-d')[-200000:])
+    except Exception:pass
+
+
 def run(d):
+    try:
+        return _run(d)
+    except Exception as error:
+        failure_evidence(d,error)
+        raise
+
+
+def _run(d):
     d.adb('install', '-r', '.cache/text-test/test.apk')
     d.shell('am force-stop ' + PKG)
     started = d.shell('am start -W -n ' + PKG + '/.TextActivity')
