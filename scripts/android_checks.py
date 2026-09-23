@@ -80,6 +80,50 @@ def generation_completed(log):
     return "GGUF_REPAIR_GENERATION_OK" in log
 
 
+STATS_RE = re.compile(
+    r'GGUF_GENERATION_STATS tokens=(\d+) decode_ns=(\d+) prefill_ns=(\d+) tokens_s=([\d.]+) '
+    r'first_token_ns=(-?\d+) prompt_tokens=(\d+) reused_tokens=(\d+) completed=(\d)')
+UI_FIRST_RE = re.compile(r'GGUF_UI_FIRST_TEXT send_to_first_ui_ns=(\d+)')
+SOFTWARE_VULKAN_RE = re.compile(
+    r'GGUF_VULKAN_SOFTWARE_DEVICE description="([^"]*)" action=cpu_fallback')
+
+
+def generation_stats(log):
+    """Native token counters of the last completed generation in `log`.
+
+    tokens/decode_ns come from the native engine; `tokens_s` is recomputed here
+    from those two integers so a formatted log line can never inflate a claim.
+    """
+    found = STATS_RE.findall(log)
+    if not found:
+        return None
+    tokens, decode_ns, prefill_ns, _printed, first_ns, prompt, reused, completed = found[-1]
+    tokens, decode_ns, prefill_ns = int(tokens), int(decode_ns), int(prefill_ns)
+    first_ns, prompt, reused = int(first_ns), int(prompt), int(reused)
+    return {
+        'tokens': tokens,
+        'decode_s': decode_ns / 1e9 if decode_ns else 0.0,
+        'prefill_s': prefill_ns / 1e9 if prefill_ns else 0.0,
+        'tokens_s': tokens / (decode_ns / 1e9) if tokens and decode_ns else 0.0,
+        'first_token_s': first_ns / 1e9 if first_ns >= 0 else None,
+        'prompt_tokens': prompt,
+        'reused_tokens': reused,
+        'completed': completed == '1',
+    }
+
+
+def ui_first_text_s(log):
+    """Tap-to-visible-text wait measured on the Android main thread."""
+    found = UI_FIRST_RE.findall(log)
+    return int(found[-1]) / 1e9 if found else None
+
+
+def software_vulkan_refused(log):
+    """The device offered a software rasteriser as Vulkan and the app used the CPU."""
+    found = SOFTWARE_VULKAN_RE.findall(log)
+    return found[-1] if found else None
+
+
 def gpu_offloaded(log):
     # Merely loading libggml-vulkan.so/SwiftShader is NOT proof of GPU inference.
     return bool(re.search(r"offloaded\s+[1-9]\d*(?:/\d+)?\s+layers?\s+to\s+GPU", log, re.I))

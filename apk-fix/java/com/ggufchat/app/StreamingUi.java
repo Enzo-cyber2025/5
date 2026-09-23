@@ -29,6 +29,7 @@ public final class StreamingUi {
         String full=parts[1];
         if(full.length()<done){ANSWER.remove(answer);done=0;}
         if(full.length()>done){
+            if(done==0)BackendNotice.show(activity);
             CodeBlocks.append(answer,full.substring(done));
             ANSWER.put(answer,full.length());
             answer.setContentDescription("Resposta");
@@ -44,6 +45,7 @@ public final class StreamingUi {
 
     /** Mostra na linha de status que a busca foi pedida antes da geração começar. */
     public static void announce(Activity activity){
+        BackendNotice.show(activity);
         try{
             Object chat=field(activity,"chat");
             boolean search=chat!=null&&Boolean.TRUE.equals(field(chat,"webSearch"));

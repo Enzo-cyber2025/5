@@ -37,6 +37,8 @@
 #include <locale>
 #include <stdexcept>
 #include <sys/stat.h>
+#include <sys/system_properties.h>
+#include <cctype>
 #include <cstdio>
 #include <cstring>
 #include <climits>
@@ -123,6 +125,34 @@ static std::string piece(const llama_vocab *v,llama_token t) {
     if(n<0) throw std::runtime_error("Falha ao decodificar token");
     return std::string(large.data(),n);
 }
+// Um driver Vulkan por software (Lavapipe/llvmpipe/SwiftShader) roda na CPU com
+// a sobrecarga de um driver completo: o offload para ele é mensuravelmente mais
+// lento do que usar a CPU direto. Este aplicativo recusa esse dispositivo em vez
+// de fingir aceleração, registra o motivo e mantém a CPU. Um teste pode forçar o
+// comportamento antigo com debug.gguf.allow_software_vulkan=1.
+static std::string g_backend_notice;
+
+static std::string lower(std::string value) {
+    for(char &c:value)c=(char)std::tolower((unsigned char)c);
+    return value;
+}
+
+static bool software_vulkan_device(ggml_backend_dev_t device,std::string *description) {
+    const char *text=device?ggml_backend_dev_description(device):nullptr;
+    std::string value=text?text:"";
+    if(description)*description=value;
+    std::string folded=lower(value);
+    for(const char *needle:{"llvmpipe","lavapipe","softpipe","swiftshader","swrast","software rasterizer"})
+        if(folded.find(needle)!=std::string::npos)return true;
+    return false;
+}
+
+static bool allow_software_vulkan() {
+    char value[PROP_VALUE_MAX]={0};
+    int length=__system_property_get("debug.gguf.allow_software_vulkan",value);
+    return length==1&&value[0]=='1';
+}
+
 static int generation_threads(int requested) {
     cpu_set_t allowed;CPU_ZERO(&allowed);
     std::vector<int> capacities;int available=0;
@@ -138,6 +168,11 @@ static int generation_threads(int requested) {
     LOG("GGUF_CPU_THREADS requested=%d available=%d capacities=%zu resolved=%d",requested,available,capacities.size(),result);
     return result;
 }
+extern "C" JNIEXPORT jstring JNICALL Java_com_ggufchat_app_BackendNotice_read(JNIEnv *env,jclass) {
+    if(g_backend_notice.empty())return nullptr;
+    return env->NewStringUTF(g_backend_notice.c_str());
+}
+
 extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *env,jclass,jstring path,jstring proj,jint context,jint threads,jint layers,jboolean mmap) {
     try {
         create_error.clear();loaded_gpu_layers=0;reported_total_layers=0;ggml_backend_gguf_strict_reset();
@@ -186,6 +221,19 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
         else {
             vulkan_devices[0]=ggml_backend_dev_by_name("Vulkan0");
             if(!vulkan_devices[0]) throw std::runtime_error("Vulkan indisponível. Nenhum fallback automático para CPU foi feito.");
+            std::string description;
+            if(software_vulkan_device(vulkan_devices[0],&description)&&!allow_software_vulkan()) {
+                // Offload pedido, dispositivo sem GPU real: mantém a CPU, com o
+                // pedido registrado e um aviso visível no aplicativo.
+                layers=0;
+                mp.devices=no_accelerators;
+                vulkan_devices[0]=nullptr;
+                e->strict_device=nullptr;
+                g_backend_notice="CPU (Vulkan por software ignorado: "+description+")";
+                LOG("GGUF_VULKAN_SOFTWARE_DEVICE description=\"%s\" action=cpu_fallback requested_layers=%d reason=software_driver_is_slower_than_cpu",
+                    description.c_str(),requested_layers);
+                LOG("GGUF_BACKEND_NOTICE \"%s\"",g_backend_notice.c_str());
+            } else {
             mp.devices=vulkan_devices;
             e->strict_device=vulkan_devices[0];
             // Include token embeddings and other weights normally left on CPU.
@@ -193,6 +241,7 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
             mp.tensor_buft_overrides=e->gpu_weights;
             mp.split_mode=LLAMA_SPLIT_MODE_NONE;
             LOG("GGUF_STRICT_VULKAN requested_layers=%d effective_layers=all weights=all tensor_cpu_fallback=blocked host_orchestration=CPU",requested_layers);
+            }
         }
         StrictVulkanScope strict(e->strict_device);
         e->model=llama_model_load_from_file(model_path.c_str(),mp);
@@ -221,7 +270,13 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
                 (long long)std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now()-repack_started).count());
         } else LOG("GGUF_REPACKED_WEIGHTS enabled=0");
 #endif
-        auto cp=llama_context_default_params(); cp.n_ctx=context; cp.n_batch=128; cp.n_ubatch=32;
+        // Lotes maiores: o prompt entra em menos submissões ao backend, o que
+        // encurta o caminho até o primeiro token. Sem efeito por token, portanto
+        // sem mudar a taxa de decodificação nem o resultado gerado.
+        const uint32_t prefill_batch=context>=1024?512:(context>=512?256:128);
+        const uint32_t prefill_ubatch=context>=1024?128:64;
+        auto cp=llama_context_default_params(); cp.n_ctx=context;
+        cp.n_batch=prefill_batch; cp.n_ubatch=prefill_ubatch;
         // This JNI emits one sequence and requests logits ONLY for its final
         // token. Reserve one output row, not n_batch unused vocabulary rows.
         // Encoder/diffusion architectures keep upstream output requirements.
@@ -232,7 +287,7 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
         if(!e->ctx) throw std::runtime_error("Não foi possível criar contexto: reduza o contexto/modelo");
         e->cache_supported=!llama_model_is_recurrent(e->model) && !llama_model_is_hybrid(e->model)
             && !llama_model_has_encoder(e->model) && !llama_model_is_diffusion(e->model);
-        LOG("GGUF_CONTEXT_TUNING batch=%u ubatch=%u threads=%d prefix_cache_supported=%d",
+        LOG("GGUF_CONTEXT_TUNING batch=%u ubatch=%u threads=%d prefix_cache_supported=%d prefill_policy=larger_lots",
             llama_n_batch(e->ctx),llama_n_ubatch(e->ctx),cp.n_threads,(int)e->cache_supported);
         if(!projector_path.empty()) {
             auto vp=mtmd_context_params_default(); vp.use_gpu=layers!=0; vp.n_threads=cp.n_threads; vp.print_timings=false; vp.warmup=false; vp.device=layers!=0?vulkan_devices[0]:nullptr;

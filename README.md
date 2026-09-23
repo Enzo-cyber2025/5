@@ -1,4 +1,24 @@
-# Entrega atual nesta sessão: ganhos consistentes observados
+# Rodada atual: desempenho medido no emulador e interface inspirada no Off Grid AI
+
+Pedido: +50% de T/s e espera até o primeiro token reduzida a um terço (o pedido
+literal, “−300%”, descreveria um tempo negativo; a leitura e o critério aplicado
+estão registrados no relatório e na própria medição). Execução no emulador do CI
+e interface inteira inspirada no Off Grid AI — referência de estilo, sem cópia,
+sem marca e sem qualquer vínculo com aquele aplicativo.
+
+O que mudou: política de backend honesta (Vulkan por software recusado, com
+aviso visível na tela), lotes de prefill proporcionais ao contexto (um token por
+decodificação, sem alterar a taxa por token), contadores nativos auditáveis
+(`GGUF_GENERATION_STATS`, `GGUF_UI_FIRST_TEXT`) e a linguagem visual única nas
+quatro telas. Nenhum rótulo do aplicativo foi renomeado ou alterado em caixa.
+
+Resultados da rodada: publicados em `ci-results/<run>-1-text-ui/` (`performance.json`
+com taxa, primeiro texto, ganho e alvo de cada etapa; `summary.json`; capturas).
+
+[Relatório, critério de medição e limites](docs/PERFORMANCE_UI.md).
+
+---
+
 
 **[APK assinado — GGUF-Chat-acelerado.apk](entrega/GGUF-Chat-acelerado.apk)** · 51.128.050 bytes · sem ZIP.
 

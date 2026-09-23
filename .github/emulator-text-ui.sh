@@ -26,4 +26,6 @@ phase text-renderer .venv/bin/python scripts/test_text_android.py
 "${ADB[@]}" shell am force-stop com.ggufchat.texttest
 phase attachments-detach .venv/bin/python scripts/test_detach_android.py
 phase emulator bash .github/emu-test.sh
+# Lê o que o harness mediu (não mede nada novo) e reprova se o alvo não foi atingido.
+phase performance .venv/bin/python scripts/check_performance.py
 exit "$status"

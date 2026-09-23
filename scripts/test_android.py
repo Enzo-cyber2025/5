@@ -16,7 +16,8 @@ import zipfile
 import xml.etree.ElementTree as ET
 
 from android_checks import (PACKAGE, PICKERS, assistant_reply, fusion, generation_completed,
-                            gpu_offloaded, has_package, imported, position, basic_response_quality, vulkan_offloaded)
+                            gpu_offloaded, has_package, imported, position, basic_response_quality, vulkan_offloaded,
+                            generation_stats, ui_first_text_s, software_vulkan_refused)
 
 
 class Android:
@@ -24,6 +25,7 @@ class Android:
         self.serial, self.evidence = serial, evidence
         evidence.mkdir(parents=True, exist_ok=True)
         self.counter = 0
+        self.perf = {}
         self.generation_pid = None
         self.last_ui_summary = None
 
@@ -334,11 +336,12 @@ class Android:
         self.shell("input text " + shlex.quote(prompt.replace(" ", "%s")))
         self.tap(text="Enviar", package={PACKAGE}, contains=True)
 
-    def generate(self, model, gpu_layers, stage, prompt="Reply in English with a short greeting."):
+    def generate(self, model, gpu_layers, stage, prompt="Reply in English with a short greeting.",
+                 threads=2, record=True):
         # Keep model-loading/offload evidence: clearing at send loses the backend
         # selected by the preload worker. A new chat restarts the app; filter its PID.
         self.adb("logcat", "-c")
-        chat = self.new_chat(model, gpu_layers)
+        chat = self.new_chat(model, gpu_layers, threads=threads)
         pid = self.alive()
         self.send(prompt, clear_log=False)
         def submitted():
@@ -364,8 +367,60 @@ class Android:
                 return None  # success marker precedes the atomic chat save
             (self.evidence / f"{stage}-chats.json").write_text(json.dumps(chats, ensure_ascii=False))
             (self.evidence / f"{stage}-reply.txt").write_text(reply)
+            if record:
+                self.record_perf(stage, log, gpu_layers, threads)
             return log
         return self.wait(completed, f"geração real {stage}", timeout=300)
+
+    def record_perf(self, stage, log, gpu_layers, threads):
+        """Contadores nativos de UMA geração real, gravados como evidência.
+
+        A taxa vem de tokens nativos e do tempo nativo de decodificação; o tempo
+        até o primeiro texto vem do relógio da thread principal do Android. Nada
+        é estimado a partir de caracteres, quadros ou contagem de callbacks.
+        """
+        stats = generation_stats(log) or {}
+        entry = dict(stage, gpu_layers_requested=gpu_layers, threads_requested=threads,
+                     ui_first_text_s=ui_first_text_s(log),
+                     software_vulkan_notice=software_vulkan_refused(log), **stats)
+        self.perf[stage] = entry
+        (self.evidence / f"{stage}-perf.json").write_text(json.dumps(entry, ensure_ascii=False, indent=2))
+        return entry
+
+
+def performance_report(perf):
+    """Compara a geração real entre configurações e declara o que foi medido.
+
+    A linha de base é o comportamento anterior, medido nesta mesma execução:
+    Vulkan por software aceito, 2 threads. Cada candidato é comparado com ela.
+    """
+    report = {'scope': ('Medido no emulador descartável x86_64 com o modelo real do CI; '
+                        'taxa = tokens nativos / tempo nativo de decodificação; '
+                        'primeiro texto = relógio da thread principal do Android. '
+                        'Cada etapa abre uma conversa nova, portanto a carga do modelo '
+                        'entra no tempo de tela e nunca na taxa de decodificação. '
+                        'A linha de base é o comportamento anterior, reproduzido pelo '
+                        'opt-in de teste no driver Vulkan por software deste emulador.'),
+              'baseline': 'vulkan', 'stages': perf, 'candidates': {}}
+    baseline = perf.get(report['baseline']) or {}
+    base_rate = baseline.get('tokens_s')
+    base_first = baseline.get('first_token_s') or baseline.get('ui_first_text_s')
+    for name, entry in perf.items():
+        # Uma chave que não seja uma etapa medida nunca derruba o relatório.
+        if name == report['baseline'] or not isinstance(entry, dict) or not entry.get('tokens_s'):
+            continue
+        rate = entry['tokens_s']
+        first = entry.get('first_token_s') or entry.get('ui_first_text_s')
+        report['candidates'][name] = {
+            'tokens_s': rate,
+            'throughput_gain_vs_baseline': round(rate / base_rate, 3) if base_rate else None,
+            'first_token_s': first,
+            'first_token_speedup_vs_baseline': round(base_first / first, 3) if base_first and first else None,
+            'targets': {'throughput_1_5x': bool(base_rate and rate / base_rate >= 1.5),
+                        'first_token_3x': bool(base_first and first and base_first / first >= 3.0)}}
+    report['targets_met'] = sorted(name for name, c in report['candidates'].items()
+                                   if all(c['targets'].values()))
+    return report
 
 
 def main():
@@ -516,11 +571,31 @@ def main():
             result["checks"]["basic_relevance"] = "PASS: verificação básica, não benchmark"
             result["status"] = "PASS"
             return
-        vk_log = device.generate(model, -1, "vulkan")
+        # O emulador só oferece um rasterizador Vulkan por software. Para provar
+        # que o caminho Vulkan não regrediu, o teste liga o opt-in e reproduz o
+        # comportamento anterior; sem o opt-in, a política padrão recusa esse
+        # dispositivo e executa na CPU.
+        device.shell("setprop debug.gguf.allow_software_vulkan 1")
+        try:
+            vk_log = device.generate(model, -1, "vulkan")
+        finally:
+            device.shell("setprop debug.gguf.allow_software_vulkan 0")
         offloaded = gpu_offloaded(vk_log)
-        result["checks"]["vulkan"] = "PASS: GPU offload confirmado" if offloaded else "CPU_FALLBACK: GPU não comprovada"
+        result["checks"]["vulkan"] = ("PASS: GPU offload confirmado (opt-in de teste para o driver por software)"
+                                      if offloaded else "CPU_FALLBACK: GPU não comprovada")
         if args.require_vulkan and not offloaded:
             raise AssertionError("Vulkan exigido, mas nenhuma camada foi comprovadamente enviada à GPU")
+        policy_log = device.generate(model, -1, "vulkan-policy-default")
+        refused = software_vulkan_refused(policy_log)
+        if not refused:
+            raise AssertionError("Política padrão não declarou a recusa do Vulkan por software")
+        result["checks"]["software_vulkan_policy"] = "PASS: dispositivo por software recusado -> CPU (" + refused + ")"
+        # Medição no mesmo emulador, mesmas entradas e mesmo limite de tokens.
+        device.generate(model, 0, "cpu-threads-auto", threads=0)
+        result["checks"]["cpu_auto_threads"] = "PASS: política automática de threads executada"
+        perf = performance_report(device.perf)
+        (args.evidence / "performance.json").write_text(json.dumps(perf, ensure_ascii=False, indent=2))
+        result["performance"] = perf
         # Exercise a real error path by deleting this test-only imported model.
         device.new_chat(model, 0)
         device.shell("rm " + shlex.quote(model["path"]))

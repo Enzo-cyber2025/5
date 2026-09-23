@@ -58,7 +58,9 @@ def test_build_variants_have_safe_baseline_dispatch_and_no_quality_changes():
     s=(ROOT/'apk-fix/build_mobile.py').read_text();cpp=(ROOT/'apk-fix/native/mobile.cpp').read_text()
     assert 'armv8-a+dotprod+fp16' in s and 'armv8-a+dotprod+fp16+i8mm' in s
     assert 'libggufcpu.so' in s and "'-UHAVE_*'" in s
-    assert 'cp.n_batch=128; cp.n_ubatch=32;' in cpp
+    assert 'cp.n_batch=prefill_batch; cp.n_ubatch=prefill_ubatch;' in cpp
+    assert 'prefill_batch=context>=1024?512:(context>=512?256:128)' in cpp
+    assert 'software_vulkan_device(vulkan_devices[0],&description)' in cpp
     assert 'output_mask.back()=1' in cpp and 'batch.logits=output_mask.data()' in cpp
     assert 'generation_threads(threads)' in cpp
     java=(ROOT/'apk-fix/java/com/ggufchat/app/NativeDispatch.java').read_text()

@@ -85,10 +85,22 @@ def _run(d):
     start_fixture(d)
 
     # 1. The fixture's own assertions (spans, code panel language, parsers).
+    # A fixture collects every group before failing, so one device round-trip
+    # reports all remaining problems instead of only the first one.
     def rendered():
         xml = d.ui()
-        return position(xml, text=REPORT, package={PKG})
-    d.wait(rendered, 'renderizador de texto sem falhas', timeout=60)
+        for node in ET.fromstring(xml).iter('node'):
+            text = node.get('text') or ''
+            if node.get('package') != PKG:
+                continue
+            if text.startswith('Falhou: '):
+                raise AssertionError('renderizador de texto falhou: ' + text)
+            if text.startswith('Ok: '):
+                return text
+        return None
+    report = d.wait(rendered, 'renderizador de texto sem falhas', timeout=60)
+    for group in ('inline=ok;', 'codigo=python;', 'raciocinio=ok;', 'fontes=ok;', 'parsers=ok'):
+        assert group in report, f'grupo ausente no relatório do renderizador: {group} ({report})'
     xml = d.ui()
     checks = {}
 
@@ -146,7 +158,7 @@ def _run(d):
 
     d.capture('physical-text.png')
     Path('evidence/physical-text-ui.json').write_text(json.dumps(dict(
-        status='PASS', checks=checks, fixture_report=REPORT, package=APP,
+        status='PASS', checks=checks, fixture_report=report, package=APP,
         scope='DEX de produção (MarkdownText/CodeBlocks/ThinkingView/SearchTool) em fixtures sintéticas '
               'explícitas; não é inferência de modelo.'), ensure_ascii=False, indent=2))
     d.shell('am force-stop ' + PKG)

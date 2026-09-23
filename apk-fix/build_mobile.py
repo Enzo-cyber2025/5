@@ -5,6 +5,7 @@ from latency_patches import patch_latency_ui
 from reply_notifications import patch_reply_notifications
 from performance_ui import patch_performance_ui
 from ui_features import patch_ui_features
+from offgrid_ui import patch_offgrid_ui
 """Build a coherent native stack and an UNSIGNED APK, for local persistent signing.
 No signing key or password is placed in CI, artifacts, logs or Git.
 """
@@ -83,6 +84,8 @@ def ui_patches(app):
     patch_reply_notifications(app)
     patch_performance_ui(app)
     patch_ui_features(app)
+    # Última: a linguagem visual precisa ver a árvore final de cada tela.
+    patch_offgrid_ui(app)
 
 def main():
     WORK.mkdir(parents=True,exist_ok=True)

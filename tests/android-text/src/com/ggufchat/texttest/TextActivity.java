@@ -42,6 +42,7 @@ public final class TextActivity extends Activity {
 
     private TextView status;
     private final StringBuilder report=new StringBuilder();
+    private final StringBuilder failures=new StringBuilder();
 
     @Override protected void onCreate(Bundle state){
         super.onCreate(state);
@@ -77,93 +78,107 @@ public final class TextActivity extends Activity {
             Method parseWiki=search.getMethod("parseWikipedia",String.class,int.class);
             Method decorateCodes=codes.getMethod("decorate",LinearLayout.class,boolean.class);
 
-            // 1. Negrito, itálico e código inline sobre o texto que o modelo envia.
-            TextView bubble=new TextView(this);
-            column.addView(bubble,new LinearLayout.LayoutParams(-1,-2));
-            set.invoke(null,bubble,BOLD_FIXTURE);
-            require(hasSpan(bubble,StyleSpan.class,true),"nenhum negrito/itálico aplicado");
-            require(hasSpan(bubble,TypefaceSpan.class,false),"código inline sem monoespaçado");
-            String shown=bubble.getText().toString();
-            require(!shown.contains("**")&&!shown.contains("`"),"marcador visível: "+shown);
-            require(shown.contains("negrito")&&shown.contains("código"),"texto formatado incompleto: "+shown);
-            String plain=String.valueOf(visible.invoke(null,BOLD_FIXTURE));
-            require(plain.equals("Resposta com negrito, itálico e código inline.\n"),"visible() divergente: "+plain);
-            report.append("inline=ok;");
+                        group("inline",()->{
+    // 1. Negrito, itálico e código inline sobre o texto que o modelo envia.
+                TextView bubble=new TextView(this);
+                column.addView(bubble,new LinearLayout.LayoutParams(-1,-2));
+                set.invoke(null,bubble,BOLD_FIXTURE);
+                require(hasSpan(bubble,StyleSpan.class,true),"nenhum negrito/itálico aplicado");
+                require(hasSpan(bubble,TypefaceSpan.class,false),"código inline sem monoespaçado");
+                String shown=bubble.getText().toString();
+                require(!shown.contains("**")&&!shown.contains("`"),"marcador visível: "+shown);
+                require(shown.contains("negrito")&&shown.contains("código"),"texto formatado incompleto: "+shown);
+                String plain=String.valueOf(visible.invoke(null,BOLD_FIXTURE));
+                require(plain.equals("Resposta com negrito, itálico e código inline.\n"),"visible() divergente: "+plain);
+                report.append("inline=ok;");
+            });
 
-            // 2. Bloco de código reconhecido sem cercas, com linguagem do conteúdo.
-            TextView code=new TextView(this);
-            column.addView(code,new LinearLayout.LayoutParams(-1,-2));
-            code.setText(INDENTED);
-            decorateCodes.invoke(null,column,false);
-            View codePanel=panelView(column,"Bloco de código");
-            require(codePanel!=null,"painel de código ausente para bloco recuado");
-            TextView title=firstText(codePanel);
-            require(title!=null&&title.getText().toString().contains("python"),
-                "linguagem não detectada: "+(title==null?"<sem título>":title.getText()));
-            require(find(codePanel,"Copiar código"),"botão de cópia ausente no painel de código");
-            TextView body=firstContaining(codePanel,"return a + b");
-            require(body!=null&&body.getText().toString().contains("return a + b"),"corpo do código incompleto");
-            report.append("codigo=").append(title.getText()).append(";");
+                        group("codigo",()->{
+    // 2. Bloco de código reconhecido sem cercas, com linguagem do conteúdo.
+                TextView code=new TextView(this);
+                column.addView(code,new LinearLayout.LayoutParams(-1,-2));
+                code.setText(INDENTED);
+                decorateCodes.invoke(null,column,false);
+                View codePanel=panelView(column,"Bloco de código");
+                require(codePanel!=null,"painel de código ausente para bloco recuado");
+                TextView title=firstText(codePanel);
+                require(title!=null&&title.getText().toString().contains("python"),
+                    "linguagem não detectada: "+(title==null?"<sem título>":title.getText()));
+                require(find(codePanel,"Copiar código"),"botão de cópia ausente no painel de código");
+                TextView body=firstContaining(codePanel,"return a + b");
+                require(body!=null&&body.getText().toString().contains("return a + b"),"corpo do código incompleto");
+                report.append("codigo=").append(title.getText()).append(";");
+            });
 
-            // 3. Raciocínio separado do balão da resposta (mesma marcação do app).
-            LinearLayout message=new LinearLayout(this);
-            message.setOrientation(LinearLayout.VERTICAL);
-            TextView reasoning=new TextView(this);
-            reasoning.setText("Raciocínio:\n"+REASONING);
-            message.addView(reasoning);
-            TextView answer=new TextView(this);
-            answer.setText(ANSWER);
-            message.addView(answer);
-            column.addView(message,new LinearLayout.LayoutParams(-1,-2));
-            upgrade.invoke(null,this,message);
-            boolean reasoningPanel=false,raw=false;
-            for(int i=0;i<message.getChildCount();i++){
-                if(!(message.getChildAt(i) instanceof TextView))continue;
-                TextView view=(TextView)message.getChildAt(i);
-                if("Raciocínio".equals(view.getContentDescription()))reasoningPanel=true;
-                if(view.getText().toString().contains("Raciocínio:")||view.getText().toString().contains("<thinking>"))
-                    raw=true;
-            }
-            require(reasoningPanel,"painel de raciocínio ausente no histórico");
-            require(!raw,"raciocínio ainda misturado ao balão da resposta");
-            require(find(message,"Alternar raciocínio"),"alternador do raciocínio ausente");
-            report.append("raciocinio=ok;");
+                        group("raciocinio",()->{
+    // 3. Raciocínio separado do balão da resposta (mesma marcação do app).
+                LinearLayout message=new LinearLayout(this);
+                message.setOrientation(LinearLayout.VERTICAL);
+                TextView reasoning=new TextView(this);
+                reasoning.setText("Raciocínio:\n"+REASONING);
+                message.addView(reasoning);
+                TextView answer=new TextView(this);
+                answer.setText(ANSWER);
+                message.addView(answer);
+                column.addView(message,new LinearLayout.LayoutParams(-1,-2));
+                upgrade.invoke(null,this,message);
+                // O painel é um LinearLayout: procurar content-desc só em filhos
+                // TextView escondia exatamente o que este laço existe para provar.
+                boolean raw=false;
+                for(int i=0;i<message.getChildCount();i++){
+                    if(!(message.getChildAt(i) instanceof TextView))continue;
+                    TextView view=(TextView)message.getChildAt(i);
+                    if(view.getText().toString().contains("Raciocínio:")||view.getText().toString().contains("<thinking>"))
+                        raw=true;
+                }
+                require(find(message,"Raciocínio"),"painel de raciocínio ausente no histórico");
+                require(!raw,"raciocínio ainda misturado ao balão da resposta");
+                require(find(message,"Alternar raciocínio"),"alternador do raciocínio ausente");
+                report.append("raciocinio=ok;");
+            });
 
-            // 4. Fontes da busca: consulta, provedor, fontes numeradas e falha explícita.
-            LinearLayout sources=new LinearLayout(this);
-            sources.setOrientation(LinearLayout.VERTICAL);
-            column.addView(sources,new LinearLayout.LayoutParams(-1,-2));
-            decorate.invoke(null,this,sources,SOURCES_JSON);
-            require(find(sources,"O que foi pesquisado"),"painel de fontes ausente");
-            require(find(sources,"Consulta pesquisada"),"consulta pesquisada não exibida");
-            require(find(sources,"Fonte 1")&&find(sources,"Fonte 2"),"fontes numeradas ausentes");
-            LinearLayout failure=new LinearLayout(this);
-            failure.setOrientation(LinearLayout.VERTICAL);
-            column.addView(failure,new LinearLayout.LayoutParams(-1,-2));
-            decorate.invoke(null,this,failure,"{\"query\":\"x\",\"provider\":\"nenhum\",\"error\":\"sem rede/DNS\","
-                +"\"ms\":12,\"hits\":[]}");
-            require(find(failure,"Falha na busca"),"falha de busca não foi mostrada");
-            report.append("fontes=ok;");
+                        group("fontes",()->{
+    // 4. Fontes da busca: consulta, provedor, fontes numeradas e falha explícita.
+                LinearLayout sources=new LinearLayout(this);
+                sources.setOrientation(LinearLayout.VERTICAL);
+                column.addView(sources,new LinearLayout.LayoutParams(-1,-2));
+                decorate.invoke(null,this,sources,SOURCES_JSON);
+                require(find(sources,"O que foi pesquisado"),"painel de fontes ausente");
+                require(find(sources,"Consulta pesquisada"),"consulta pesquisada não exibida");
+                require(find(sources,"Fonte 1")&&find(sources,"Fonte 2"),"fontes numeradas ausentes");
+                LinearLayout failure=new LinearLayout(this);
+                failure.setOrientation(LinearLayout.VERTICAL);
+                column.addView(failure,new LinearLayout.LayoutParams(-1,-2));
+                decorate.invoke(null,this,failure,"{\"query\":\"x\",\"provider\":\"nenhum\",\"error\":\"sem rede/DNS\","
+                    +"\"ms\":12,\"hits\":[]}");
+                require(find(failure,"Falha na busca"),"falha de busca não foi mostrada");
+                report.append("fontes=ok;");
+            });
 
-            // 5. Analisadores dos provedores reais com respostas HTTP gravadas.
-            List<?> ddg=(List<?>)parseDdg.invoke(null,DDG_HTML,5);
-            require(ddg.size()==2,"DuckDuckGo: "+ddg.size()+" resultados");
-            require("https://pt.wikipedia.org/wiki/Brasil".equals(field(ddg.get(0),"url")),"URL: "+field(ddg.get(0),"url"));
-            require(field(ddg.get(0),"title").contains("Wikipédia"),"título: "+field(ddg.get(0),"title"));
-            require(field(ddg.get(0),"snippet").contains("América do Sul")&&field(ddg.get(0),"snippet").contains("&"),
-                "trecho: "+field(ddg.get(0),"snippet"));
-            require(((List<?>)parseLite.invoke(null,DDG_HTML,5)).isEmpty(),"lite aceitou marcação html");
-            require(((List<?>)parseSearx.invoke(null,SEARX_JSON,5)).size()==2,"SearXNG");
-            List<?> wiki=(List<?>)parseWiki.invoke(null,WIKI_JSON,5);
-            require(wiki.size()==2,"Wikipédia");
-            require(field(wiki.get(0),"url").startsWith("https://pt.wikipedia.org/wiki/"),"URL wiki: "+field(wiki.get(0),"url"));
-            require(field(wiki.get(0),"snippet").indexOf('<')<0,"trecho wiki com HTML");
-            report.append("parsers=ok");
+                        group("parsers",()->{
+    // 5. Analisadores dos provedores reais com respostas HTTP gravadas.
+                List<?> ddg=(List<?>)parseDdg.invoke(null,DDG_HTML,5);
+                require(ddg.size()==2,"DuckDuckGo: "+ddg.size()+" resultados");
+                require("https://pt.wikipedia.org/wiki/Brasil".equals(field(ddg.get(0),"url")),"URL: "+field(ddg.get(0),"url"));
+                require(field(ddg.get(0),"title").contains("Wikipédia"),"título: "+field(ddg.get(0),"title"));
+                require(field(ddg.get(0),"snippet").contains("América do Sul")&&field(ddg.get(0),"snippet").contains("&"),
+                    "trecho: "+field(ddg.get(0),"snippet"));
+                require(((List<?>)parseLite.invoke(null,DDG_HTML,5)).isEmpty(),"lite aceitou marcação html");
+                require(((List<?>)parseSearx.invoke(null,SEARX_JSON,5)).size()==2,"SearXNG");
+                List<?> wiki=(List<?>)parseWiki.invoke(null,WIKI_JSON,5);
+                require(wiki.size()==2,"Wikipédia");
+                require(field(wiki.get(0),"url").startsWith("https://pt.wikipedia.org/wiki/"),"URL wiki: "+field(wiki.get(0),"url"));
+                require(field(wiki.get(0),"snippet").indexOf('<')<0,"trecho wiki com HTML");
+                report.append("parsers=ok");
+            });
 
+            if(failures.length()>0)
+                throw new AssertionError(failures.toString().trim());
             status.setText("Ok: "+report);
             Log.i(TAG,"TEXT_RENDER_PASS "+report);
         }catch(Throwable error){
             status.setText("Falhou: "+error);
+            Log.e(TAG,"TEXT_RENDER_GROUPS_FAIL "+failures);
             Log.e(TAG,"TEXT_RENDER_FAIL",error);
             throw new RuntimeException(error);
         }
@@ -187,6 +202,17 @@ public final class TextActivity extends Activity {
 
     private static String field(Object hit,String name) throws Exception {
         return String.valueOf(hit.getClass().getField(name).get(hit));
+    }
+
+    /** Cada grupo roda isolado: uma rodada no aparelho precisa diagnosticar
+     * todos os grupos, em vez de parar no primeiro e exigir outra rodada. */
+    private void group(String name,Runnable body){
+        try{
+            body.run();
+        }catch(Throwable error){
+            failures.append(name).append(": ").append(error).append('\n');
+            Log.e(TAG,"TEXT_RENDER_GROUP_FAIL "+name,error);
+        }
     }
 
     private static void require(boolean condition,String message){

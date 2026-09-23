@@ -83,7 +83,7 @@ def test_patch_is_idempotent_and_device_copy_cannot_fall_back_to_host(tmp_path):
     s=(ROOT/'apk-fix/native/mobile.cpp').read_text()
     assert '~RestoreQkv(){mtmd_gguf_qkv_reference(ctx,false);}' in s
     assert 'GGUF_QKV_DIFF' in s and 'std::memcmp(fused.data(),embd,count*sizeof(float))' in s
-    assert 'cp.n_batch=128; cp.n_ubatch=32;' in s
+    assert 'cp.n_batch=prefill_batch; cp.n_ubatch=prefill_ubatch;' in s
 
 
 def test_qkv_speed_gate_rejects_missing_proof_and_instrumented_samples(tmp_path):

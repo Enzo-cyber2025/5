@@ -65,14 +65,16 @@ def test_experimental_build_and_runtime_gates_and_failure_invalidation():
     failure=native[native.index('} catch(const std::exception &ex) {',native.index('static jboolean generate')):]
     assert 'e->media_prefix.clear()' in failure
     assert 'switching to text cannot reuse stale media KV' in native
-    assert 'cp.n_batch=128; cp.n_ubatch=32;' in native
+    assert 'cp.n_batch=prefill_batch; cp.n_ubatch=prefill_ubatch;' in native
 
 
 def test_default_native_body_unchanged_by_experiment():
     # Preprocess only the experiment blocks, compare the entire prior native file.
     import hashlib
-    # Native body at 3608876; independent of shallow CI checkout depth.
-    before_sha='262c18ffe625f5a281d37e65b8715bb0555c49d08d5810f51e6bd3fd16c5da5b'
+    # Corpo nativo depois da entrega de desempenho/interface: lote de prefill
+    # proporcional ao contexto, recusa de Vulkan por software e aviso visível do
+    # backend. Independente da profundidade do checkout no CI.
+    before_sha='61ef38474322891f505a279e6efc893b3c8af07bd6c4dce525117f58706870d2'
     current=(ROOT/'apk-fix/native/mobile.cpp').read_text()
     # Any top-level single #else guard of an opt-in experiment macro must keep
     # its #else branch byte-identical to the shipped body, not only media prefix.

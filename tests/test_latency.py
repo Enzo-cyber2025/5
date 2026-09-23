@@ -34,8 +34,13 @@ def test_real_memory_operations_and_invalidation_are_guarded():
     assert 'e->cached_tokens.clear(); // failed/partial work is never reused' in s
     assert s.index('if(llama_decode(e->ctx,llama_batch_get_one(&t,1))!=0)')<s.index('if(text_cache)e->cached_tokens.push_back(t)')
     assert 'GGUF_RESPONSE_LATENCY' in s and 'GGUF_PROMPT_CACHE' in s
-    assert 'cp.n_batch=128; cp.n_ubatch=32;' in s
-    assert 'cp.n_batch=512' not in s and 'GGUF_PREFILL_ALLOCATION_RETRY' not in s
+    assert 'cp.n_batch=prefill_batch; cp.n_ubatch=prefill_ubatch;' in s
+    # O experimento abandonado era um lote fixo gigante com nova tentativa de
+    # alocação. O que existe agora é um lote de prefill proporcional ao contexto,
+    # com teto declarado, e nenhuma nova tentativa.
+    assert 'cp.n_batch=128; cp.n_ubatch=32;' not in s
+    assert 'prefill_batch=context>=1024?512:(context>=512?256:128)' in s
+    assert 'GGUF_PREFILL_ALLOCATION_RETRY' not in s
 
 def test_incremental_stream_has_no_full_copy_or_live_truncation(tmp_path):
     sys.path.insert(0,str(ROOT/'apk-fix'))

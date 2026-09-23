@@ -99,7 +99,7 @@ def test_native_all_weights_full_sampling_and_preserved_parameters():
     assert 'if(!binding.attached)throw std::runtime_error' in s
     assert s.index('else if(e->strict_device)') < s.index('else t=llama_sampler_sample')
     assert 'llama_sampler_init_dist(seed)' in s and 'llama_sampler_init_penalties' in s
-    assert 'cp.n_batch=128; cp.n_ubatch=32;' in s
+    assert 'cp.n_batch=prefill_batch; cp.n_ubatch=prefill_ubatch;' in s
     assert '!llama_model_has_encoder(e->model) && !llama_model_is_diffusion(e->model))cp.n_outputs_max=1;' in s
     assert 'output_mask.back()=1' in s and 'batch.logits=output_mask.data()' in s
     assert 'GGUF_STRICT_VULKAN_RESULT' in s

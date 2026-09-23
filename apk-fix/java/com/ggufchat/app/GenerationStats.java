@@ -22,6 +22,16 @@ public final class GenerationStats {
             if(latency!=null){j.put("firstTokenNs",latency[0]);j.put("promptTokens",latency[1]);j.put("reusedPromptTokens",latency[2]);}
             LATENCY.remove();
             RESULT.set(j.toString());
+            // Contadores nativos auditáveis no logcat: tokens e tempo real de
+            // decodificação, sem estimativa. É isso que o teste no emulador lê.
+            // A chamada é por reflexão para que este arquivo continue sem Android.
+            long first=latency==null?-1:latency[0],prompt=latency==null?0:latency[1],reused=latency==null?0:latency[2];
+            try{
+                Class.forName("com.ggufchat.app.StatsLog")
+                    .getMethod("emit",long.class,long.class,long.class,double.class,
+                               long.class,long.class,long.class,boolean.class)
+                    .invoke(null,tokens,decodeNs,prefillNs,rate(tokens,decodeNs),first,prompt,reused,completed);
+            }catch(Throwable ignored){}
         } catch(Exception e){RESULT.remove();}
     }
     public static boolean notifyNow(){
