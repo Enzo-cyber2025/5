@@ -10,7 +10,7 @@ import json
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from android_checks import position
+from android_checks import has_package, position
 
 PKG = 'com.ggufchat.texttest'
 APP = 'com.ggufchat.app'
@@ -40,13 +40,34 @@ def run(d):
         raise
 
 
+def device_state(d):
+    """Estado do aparelho quando a fixture não aparece: sem isso um passo vermelho
+    não diria se o processo subiu, se o Android recusou o contexto do app ou se a
+    própria fixture falhou em uma asserção."""
+    parts = []
+    for command in ('logcat -d -b crash',
+                    'logcat -d -s AndroidRuntime:V GGUFTextTest:V GGUFThinking:V GGUFSearch:V GGUFImages:V',
+                    'dumpsys package ' + PKG + ' | head -60',
+                    'dumpsys activity activities | grep -iE "texttest|ResumedActivity"',
+                    'logcat -d | grep -iE "texttest|GGUFTextTest|AndroidRuntime|FATAL" | tail -200'):
+        try:
+            parts.append('$ adb shell ' + command + '\n' + d.shell(command, check=False) + '\n')
+        except Exception as error:
+            parts.append('$ adb shell ' + command + '\n(erro: ' + str(error) + ')\n')
+    Path('evidence/text-ui-device-state.txt').write_text('\n'.join(parts))
+
+
 def _run(d):
     d.adb('install', '-r', '.cache/text-test/test.apk')
     d.shell('am force-stop ' + PKG)
     started = d.shell('am start -W -n ' + PKG + '/.TextActivity')
     Path('evidence/physical-text-start.txt').write_text(started)
     assert 'Status: ok' in started, started
-    pid = d.shell('pidof ' + PKG).split()[0]
+    try:
+        d.wait(lambda: has_package(d.ui(), {PKG}), 'app de teste em primeiro plano', timeout=45)
+    except AssertionError:
+        device_state(d)
+        raise
 
     # 1. The fixture's own assertions (spans, code panel language, parsers).
     def rendered():
@@ -97,9 +118,11 @@ def _run(d):
     assert position(xml, desc='Falha na busca', package={PKG}), 'falha de busca não foi mostrada'
     checks['fontes_e_consulta_visiveis'] = 'PASS'
 
-    # 6. Production code paths actually ran inside this process.
-    log = d.adb('logcat', '-d', f'--pid={pid}')
+    # 6. Production code paths actually ran inside this process (filtrado por tag,
+    # sem depender de pidof: o processo pode ter sido reciclado pelo Android).
+    log = d.shell('logcat -d -s GGUFTextTest:V GGUFThinking:V GGUFSearch:V', check=False)
     Path('evidence/physical-text-logcat.txt').write_text(log)
+    assert 'TEXT_RENDER_START' in log, 'a fixture não registrou a própria execução' 
     for marker in ('GGUF_THINKING_PANEL attached=1', 'GGUF_THINKING_UPGRADE', 'GGUF_THINKING_TOGGLED expanded=1',
                    'GGUF_SEARCH_PANEL shown=1'):
         assert marker in log, f'sem marca real de execução: {marker}'

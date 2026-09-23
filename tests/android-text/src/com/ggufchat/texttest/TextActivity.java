@@ -22,6 +22,7 @@ import java.util.List;
  * APK. The fixture text is explicit UI test data, never a generated answer.
  */
 public final class TextActivity extends Activity {
+    static final String TAG="GGUFTextTest";
     static final String BOLD_FIXTURE="Resposta com **negrito**, *itálico* e `código` inline.\n";
     static final String REASONING="passo 1: somar\npasso 2: conferir";
     static final String ANSWER="A resposta final é 4.\n";
@@ -44,6 +45,7 @@ public final class TextActivity extends Activity {
 
     @Override protected void onCreate(Bundle state){
         super.onCreate(state);
+        Log.i(TAG,"TEXT_RENDER_START sdk="+android.os.Build.VERSION.SDK_INT);
         LinearLayout root=new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setPadding(16,35,16,12);
@@ -59,8 +61,8 @@ public final class TextActivity extends Activity {
         root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
         setContentView(root);
         try{
-            ClassLoader loader=createPackageContext("com.ggufchat.app",
-                Context.CONTEXT_INCLUDE_CODE|Context.CONTEXT_IGNORE_SECURITY).getClassLoader();
+            ClassLoader loader=productionLoader();
+            Log.i(TAG,"TEXT_RENDER_LOADER "+loader.getClass().getName());
             Class<?> markdown=loader.loadClass("com.ggufchat.app.MarkdownText");
             Class<?> thinking=loader.loadClass("com.ggufchat.app.ThinkingView");
             Class<?> search=loader.loadClass("com.ggufchat.app.SearchTool");
@@ -159,11 +161,27 @@ public final class TextActivity extends Activity {
             report.append("parsers=ok");
 
             status.setText("Ok: "+report);
-            Log.i("GGUFTextTest","TEXT_RENDER_PASS "+report);
+            Log.i(TAG,"TEXT_RENDER_PASS "+report);
         }catch(Throwable error){
             status.setText("Falhou: "+error);
-            Log.e("GGUFTextTest","TEXT_RENDER_FAIL",error);
+            Log.e(TAG,"TEXT_RENDER_FAIL",error);
             throw new RuntimeException(error);
+        }
+    }
+
+    /** Carrega o DEX instalado do app: contexto do pacote e, se o Android negar,
+     * o caminho do APK informado pelo próprio PackageManager (mesma origem real). */
+    private ClassLoader productionLoader() throws Exception {
+        try{
+            Context app=createPackageContext("com.ggufchat.app",
+                Context.CONTEXT_INCLUDE_CODE|Context.CONTEXT_IGNORE_SECURITY);
+            Log.i(TAG,"TEXT_RENDER_SOURCE apk="+app.getApplicationInfo().sourceDir+" via=createPackageContext");
+            return app.getClassLoader();
+        }catch(Exception error){
+            Log.i(TAG,"TEXT_RENDER_CONTEXT_DENIED "+error.getClass().getSimpleName());
+            String apk=getPackageManager().getApplicationInfo("com.ggufchat.app",0).sourceDir;
+            Log.i(TAG,"TEXT_RENDER_SOURCE apk="+apk+" via=PathClassLoader");
+            return new dalvik.system.PathClassLoader(apk,getClassLoader());
         }
     }
 
