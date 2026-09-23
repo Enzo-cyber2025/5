@@ -36,6 +36,10 @@ def run(d):
     try:
         return _run(d)
     except Exception as error:
+        try:
+            device_state(d)
+        except Exception:  # o diagnóstico nunca deve substituir o erro real
+            pass
         failure_evidence(d,error)
         raise
 
@@ -57,17 +61,28 @@ def device_state(d):
     Path('evidence/text-ui-device-state.txt').write_text('\n'.join(parts))
 
 
+def start_fixture(d):
+    """`am start` dizer ok não prova execução: confira a tela e, se a largada
+    tiver ficado no caminho (emulador recém-iniciado), repita a largada
+    idempotente até três vezes, registrando qual tentativa valeu."""
+    for attempt in (1, 2, 3):
+        started = d.shell('am start -W -n ' + PKG + '/.TextActivity')
+        Path('evidence/physical-text-start.txt').write_text(started)
+        assert 'Status: ok' in started, started
+        try:
+            d.wait(lambda: has_package(d.ui(), {PKG}), 'app de teste em primeiro plano', timeout=30)
+            Path('evidence/physical-text-start.txt').write_text(
+                started + f'\nvisible_on_attempt={attempt}\n')
+            return attempt
+        except AssertionError:
+            d.shell('am force-stop ' + PKG)
+    raise AssertionError('app de teste não apareceu em três largadas reais')
+
+
 def _run(d):
     d.adb('install', '-r', '.cache/text-test/test.apk')
     d.shell('am force-stop ' + PKG)
-    started = d.shell('am start -W -n ' + PKG + '/.TextActivity')
-    Path('evidence/physical-text-start.txt').write_text(started)
-    assert 'Status: ok' in started, started
-    try:
-        d.wait(lambda: has_package(d.ui(), {PKG}), 'app de teste em primeiro plano', timeout=45)
-    except AssertionError:
-        device_state(d)
-        raise
+    start_fixture(d)
 
     # 1. The fixture's own assertions (spans, code panel language, parsers).
     def rendered():
