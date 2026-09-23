@@ -62,12 +62,15 @@ A referência é de **estilo**, não de código, marca ou arte. O que foi adotad
 | Acento único esmeralda, usado com parcimônia | `#34D399` apenas em estado ativo, ação primária e sucesso |
 | Base neutra quase preta | Fundo `#0A0A0A` e três níveis de superfície (`#121212`, `#1C1C1C`) |
 | Hierarquia por tamanho/peso/opacidade, nunca por cor | Quatro faixas de texto snapshotadas por luminância + espaçamento em rótulos pequenos |
-| Plano e afiado | Cantos de 8 dp, bordas de fio de cabelo, sem gradientes nem sombras |
+| Plano e afiado | Cantos de 8 dp nos elementos criados por esta camada, sem gradientes nem sombras |
+| Superfícies existentes com estado próprio (ferramentas, alternadores) | Forma ajustada; preenchimento preservado para não apagar indicação de ligado/desligado |
 | Navegação inferior por destinos | Barra inferior de três destinos, destino ativo em esmeralda |
 
 Implementação: `apk-fix/java/com/ggufchat/app/OffgridUi.java` mais os ganchos de
-`apk-fix/offgrid_ui.py` nas quatro telas reais (Main, Conversa, Importar,
-Ajustes) e em cada mensagem recém-adicionada. A classe **nunca altera o texto de
+`apk-fix/offgrid_ui.py` nas telas reais (Main, Conversa, Ajustes — a tela de
+modelos foi unificada na página Importar) e em cada mensagem recém-adicionada. A
+camada cobre o conteúdo da página logo que ela é anexada e faz duas passadas
+curtas depois, para alcançar as listas que chegam após o `onCreate`. A classe **nunca altera o texto de
 nenhum controle** (nem caixa alta): os testes de interface procuram os rótulos
 reais no aparelho, e um estilo não pode invalidar essa prova. O que não existe na
 referência não foi inventado aqui: cada tela mantém suas funções e a linguagem é
