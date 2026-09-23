@@ -24,6 +24,7 @@ def compute_manifest(data):
     ns=index('http://schemas.android.com/apk/res/android');name=index('name');value=index('value');exported=index('exported');typ=index('foregroundServiceType')
     service=index('service');prop=index('property');uses=index('uses-permission')
     classname=index('com.ggufchat.app.ComputeService');permission=index('android.permission.FOREGROUND_SERVICE_SPECIAL_USE')
+    internet=index('android.permission.INTERNET')
     subtype=index('android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE')
     reason=index('User-initiated offline GGUF inference, weight import, physical tensor unification and native model validation while the display is off. Runs only until completion or cancellation.')
     def attr(k,t,v):return struct.pack('<IIIHBBI',ns,k,v if t==3 else 0xffffffff,8,0,t,v)
@@ -44,7 +45,10 @@ def compute_manifest(data):
         if kind==0x180:result.append(new_resources);continue
         tag=struct.unpack_from('<I',chunk,20)[0] if kind in (0x102,0x103) else -1
         if kind==0x102 and tag==index('application'):
+            # Busca na web só existe com acesso de rede declarado; sem ele a
+            # consulta falharia em silêncio (erro de permissão em runtime).
             result.append(begin(uses,[attr(name,3,permission)])+end(uses))
+            result.append(begin(uses,[attr(name,3,internet)])+end(uses))
         if kind==0x102 and tag==service:
             offset,stride,n=struct.unpack_from('<HHH',chunk,24)
             attrs=[16+offset+i*stride for i in range(n)]

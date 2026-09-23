@@ -24,7 +24,7 @@ public final class CodeBlocks {
     }
     private static final class Stream implements CodeFenceParser.Sink {
         final Context c;final TextView style;final LinearLayout root;final CodeFenceParser parser;
-        TextView plain,code;
+        TextView plain,code,title;String declared="";
         TextView pendingTarget;
         String pendingFirst;
         StringBuilder pendingBatch;
@@ -43,7 +43,9 @@ public final class CodeBlocks {
         }
         void flush(){
             if(pendingFirst==null)return;
-            pendingTarget.append(pendingBatch!=null&&pendingBatch.length()>0?pendingBatch:pendingFirst);
+            String text=pendingBatch!=null&&pendingBatch.length()>0?pendingBatch.toString():pendingFirst;
+            // Bold/italic/inline code only outside code panels; one edit per burst.
+            MarkdownText.append(pendingTarget,text);
             pendingFirst=null;pendingTarget=null;
             if(pendingBatch!=null)pendingBatch.setLength(0);
         }
@@ -83,6 +85,7 @@ public final class CodeBlocks {
             LinearLayout bar=new LinearLayout(c);bar.setGravity(Gravity.CENTER_VERTICAL);bar.setPadding(dp(c,12),dp(c,4),dp(c,6),dp(c,4));
             TextView title=new TextView(c);title.setText(language.length()==0?"Código":language);title.setTextColor(0xffadbdcc);title.setTextSize(12);
             title.setSingleLine(true);title.setEllipsize(TextUtils.TruncateAt.END);bar.addView(title,new LinearLayout.LayoutParams(0,-2,1));
+            this.title=title;declared=language;
             final TextView body=new TextView(c);code=body;body.setTextColor(0xffe2eaf2);body.setTextSize(13);body.setTypeface(Typeface.MONOSPACE);
             body.setTextIsSelectable(true);body.setHorizontallyScrolling(true);body.setPadding(dp(c,12),dp(c,12),dp(c,12),dp(c,14));
             Button copy=new Button(c);copy.setText("Copiar");copy.setAllCaps(false);copy.setTextSize(12);copy.setTextColor(0xffd3eee2);
@@ -97,13 +100,25 @@ public final class CodeBlocks {
             scroller.addView(body,new ViewGroup.LayoutParams(-2,-2));panel.addView(scroller,new LinearLayout.LayoutParams(-1,-2));
         }
         public void code(String text){enqueue(code,text);}
-        public void close(){flush();code=null;plain=null;}
+        public void close(){
+            flush();
+            if(code!=null&&declared.length()==0){
+                String detected=CodeDetect.language(code.getText().toString());
+                if(detected.length()>0&&title!=null){
+                    title.setText(detected);
+                    panel().setContentDescription("Bloco de código ("+detected+")");
+                }
+            }
+            code=null;plain=null;
+        }
+        LinearLayout panel(){return (LinearLayout)title.getParent().getParent();}
     }
     public static void decorate(LinearLayout column,boolean user){
         if(user)return;
         for(int i=0;i<column.getChildCount();i++){
             View child=column.getChildAt(i);if(!(child instanceof TextView))continue;
             TextView source=(TextView)child;String text=source.getText().toString();
+            text=CodeDetect.fenced(text);
             if(!text.contains("```")&&!text.contains("~~~"))continue;
             Stream stream=new Stream(source);stream.parser.feed(text);stream.parser.finish();stream.flush();
             ViewGroup.LayoutParams params=source.getLayoutParams();column.removeViewAt(i);column.addView(stream.root,i,params);
@@ -122,5 +137,18 @@ public final class CodeBlocks {
         }
         stream.parser.feed(chunk);
         stream.flush(); // Synchronous: no timer, token throttle or first-text delay.
+    }
+
+    /** Coluna externa da mensagem em streaming (o balão), mesmo depois de o
+     * renderizador de código mover a View para dentro do seu próprio painel. */
+    public static LinearLayout column(TextView anchor){
+        if(anchor==null)return null;
+        android.view.ViewParent parent=anchor.getParent();
+        if(!(parent instanceof LinearLayout))return null;
+        if(anchor.getTag() instanceof Stream){
+            android.view.ViewParent outer=parent.getParent();
+            if(outer instanceof LinearLayout)return (LinearLayout)outer;
+        }
+        return (LinearLayout)parent;
     }
 }
