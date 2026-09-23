@@ -1,7 +1,6 @@
 package com.ggufchat.app;
 
 import android.app.Activity;
-import android.content.res.ColorStateList;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
@@ -73,12 +72,32 @@ public final class OffgridUi {
             content.setBackgroundColor(BASE);
             int[] seen = new int[]{0};
             walk(activity, content, 0, seen);
+            // As listas reais (conversas, modelos, anexos) chegam depois do
+            // onCreate: duas passadas curtas garantem que elas também entrem na
+            // linguagem visual sem tocar em conteúdo nem em estado de controle.
+            restyle(activity, content, 600);
+            restyle(activity, content, 1800);
             Log.i(TAG, "GGUF_OFFGRID_UI screen=" + activity.getClass().getSimpleName()
                 + " views=" + seen[0] + " mono=1 radius_dp=8 accent=emerald");
         } catch (Throwable error) {
             Log.i(TAG, "GGUF_OFFGRID_UI_SKIPPED " + error.getClass().getSimpleName()
                 + " (interface original preservada)");
         }
+    }
+
+    private static void restyle(final Activity activity, final View content, long delay) {
+        if (content == null) return;
+        // View.postDelayed funciona antes e depois de anexar a janela: sem
+        // handler ainda, a chamada fica na fila da própria view.
+        content.postDelayed(new Runnable() {
+            @Override public void run() {
+                try {
+                    walk(activity, content, 0, new int[]{0});
+                } catch (Throwable ignored) {
+                    // Uma tela desconhecida não deve derrubar nada.
+                }
+            }
+        }, delay);
     }
 
     /** A tela da conversa: mesma linguagem, entrando depois do conteúdo real. */
@@ -89,6 +108,8 @@ public final class OffgridUi {
     /** Barra inferior com três destinos, um acento esmeralda no destino ativo. */
     public static void tabs(Activity activity, int active) {
         if (activity == null) return;
+        // A página acabou de ser anexada: cobre o conteúdo antes de pintar a barra.
+        screen(activity);
         try {
             Button[] tabs = {field(activity, "navChat"), field(activity, "navImport"), field(activity, "navModels")};
             for (int index = 0; index < tabs.length; index++) {
@@ -146,7 +167,7 @@ public final class OffgridUi {
             styleText(view, (TextView) view);
             return;
         }
-        surface(view, view instanceof EditText || view.isClickable());
+        surface(view, false);
     }
 
     private static void styleText(View holder, TextView text) {
@@ -191,29 +212,26 @@ public final class OffgridUi {
         if (primary) {
             button.setTextColor(ON_EMERALD);
             button.setBackground(box(button, EMERALD, 0));
-        } else {
-            button.setTextColor(TEXT_2);
-            button.setBackground(box(button, SURFACE_PLUS, BORDER));
+            return;
         }
+        // Botões de estado (ferramentas, alternadores) mantêm o próprio desenho:
+        // apagar a indicação de ligado/desligado seria uma regressão de interface.
+        surface(button, false);
     }
 
-    /** Superfícies: cantos de 8 dp, neutros alinhados aos tokens, borda de fio. */
+    /** Superfícies existentes: só o formato muda (cantos de 8 dp, plano e afiado).
+     *
+     * As cores próprias de cada superfície são preservadas de propósito: ler ou
+     * sobrescrever o preenchimento de um drawable do aplicativo apagaria estados
+     * visuais (ligado/desligado, seleção) que o usuário precisa enxergar. Os
+     * tokens de cor entram nos elementos que esta classe cria (ações primárias,
+     * campos de entrada, destinos da barra inferior) e no fundo de cada tela.
+     */
     private static void surface(View view, boolean bordered) {
         Drawable background = view.getBackground();
         if (!(background instanceof GradientDrawable)) return;
-        GradientDrawable shape = (GradientDrawable) background.mutate();
         try {
-            shape.setCornerRadius(dp(view, 8));
-            ColorStateList solid = shape.getColor();
-            int color = solid == null ? 0 : solid.getDefaultColor();
-            if (isAccent(color)) {
-                shape.setColor(EMERALD);
-            } else if (isNeutralDark(color)) {
-                shape.setColor(luminance(color) > 0.055f ? SURFACE_PLUS : SURFACE);
-            }
-            if (bordered && shape.getStrokeWidth() <= 0) {
-                shape.setStroke(Math.max(1, dp(view, 1) / 2), BORDER);
-            }
+            ((GradientDrawable) background.mutate()).setCornerRadius(dp(view, 8));
         } catch (Throwable ignored) {
             // Um drawable exótico não deve interromper a tela.
         }
@@ -246,13 +264,6 @@ public final class OffgridUi {
     private static boolean isMuted(int color) {
         float value = luminance(color);
         return value < 0.55f;
-    }
-
-    private static boolean isNeutralDark(int color) {
-        if (color == 0) return false;
-        int r = (color >> 16) & 0xFF, g = (color >> 8) & 0xFF, b = color & 0xFF;
-        int high = Math.max(r, Math.max(g, b)), low = Math.min(r, Math.min(g, b));
-        return high - low <= 18 && luminance(color) < 0.16f;
     }
 
     private static boolean isAccent(int color) {

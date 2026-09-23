@@ -19,7 +19,9 @@ names = ('summary.json', 'failure-context.txt', 'mobile-reply.txt', 'mobile-repl
          'apk-payload.json', 'host-vulkan.txt', 'launch.png', 'final-screen.png',
          'physical-text-ui.json', 'physical-text.png', 'physical-text-logcat.txt',
          'physical-text-start.txt', 'physical-code-ui.json', 'physical-code-stream.png',
-         'text-ui-device-state.txt', 'attachments-detach.json', 'performance.json')
+         'text-ui-device-state.txt', 'attachments-detach.json', 'performance.json',
+         'cpu-logcat.txt', 'vulkan-logcat.txt', 'vulkan-policy-default-logcat.txt',
+         'cpu-threads-auto-logcat.txt')
 for name in names:
     p = source / name
     if p.is_file() and p.stat().st_size < 2_000_000:

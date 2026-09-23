@@ -84,6 +84,7 @@ STATS_RE = re.compile(
     r'GGUF_GENERATION_STATS tokens=(\d+) decode_ns=(\d+) prefill_ns=(\d+) tokens_s=([\d.]+) '
     r'first_token_ns=(-?\d+) prompt_tokens=(\d+) reused_tokens=(\d+) completed=(\d)')
 UI_FIRST_RE = re.compile(r'GGUF_UI_FIRST_TEXT send_to_first_ui_ns=(\d+)')
+CPU_THREADS_RE = re.compile(r'GGUF_CPU_THREADS requested=(\d+) available=(\d+) capacities=(\d+) resolved=(\d+)')
 SOFTWARE_VULKAN_RE = re.compile(
     r'GGUF_VULKAN_SOFTWARE_DEVICE description="([^"]*)" action=cpu_fallback')
 
@@ -122,6 +123,16 @@ def software_vulkan_refused(log):
     """The device offered a software rasteriser as Vulkan and the app used the CPU."""
     found = SOFTWARE_VULKAN_RE.findall(log)
     return found[-1] if found else None
+
+
+def cpu_threads(log):
+    """Quantas threads o motor realmente usou, e o que o aparelho oferecia."""
+    found = CPU_THREADS_RE.findall(log)
+    if not found:
+        return None
+    requested, available, capacities, resolved = (int(value) for value in found[-1])
+    return {'requested': requested, 'available': available,
+            'capacities': capacities, 'resolved': resolved}
 
 
 def gpu_offloaded(log):

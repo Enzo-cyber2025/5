@@ -17,7 +17,7 @@ import xml.etree.ElementTree as ET
 
 from android_checks import (PACKAGE, PICKERS, assistant_reply, fusion, generation_completed,
                             gpu_offloaded, has_package, imported, position, basic_response_quality, vulkan_offloaded,
-                            generation_stats, ui_first_text_s, software_vulkan_refused)
+                            generation_stats, ui_first_text_s, software_vulkan_refused, cpu_threads)
 
 
 class Android:
@@ -381,6 +381,8 @@ class Android:
         """
         stats = generation_stats(log) or {}
         entry = dict(stage, gpu_layers_requested=gpu_layers, threads_requested=threads,
+                     threads_resolved=cpu_threads(log),
+                     backend='vulkan' if gpu_offloaded(log) else 'cpu',
                      ui_first_text_s=ui_first_text_s(log),
                      software_vulkan_notice=software_vulkan_refused(log), **stats)
         self.perf[stage] = entry
