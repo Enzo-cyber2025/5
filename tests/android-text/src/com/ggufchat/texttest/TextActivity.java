@@ -204,9 +204,14 @@ public final class TextActivity extends Activity {
         return String.valueOf(hit.getClass().getField(name).get(hit));
     }
 
+    /** Etapa de um grupo. Precisa poder lançar exceção verificada: os grupos
+     * chamam a reflexão dos métodos de produção (invoke lança
+     * InvocationTargetException), coisa que Runnable não permite. */
+    private interface Step{void run() throws Exception;}
+
     /** Cada grupo roda isolado: uma rodada no aparelho precisa diagnosticar
      * todos os grupos, em vez de parar no primeiro e exigir outra rodada. */
-    private void group(String name,Runnable body){
+    private void group(String name,Step body){
         try{
             body.run();
         }catch(Throwable error){

@@ -121,12 +121,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          bash ci/mobile-models.sh
-          bash scripts/build_test_input.sh
-          bash scripts/build_code_test.sh
-          bash scripts/build_text_test.sh
+          # Cada etapa vai por ci/log_step.sh: o log do job não é legível para
+          # todos os clientes, mas as anotações do check run são. Sem isso uma
+          # falha aqui exige adivinhar qual dos passos quebrou.
+          bash ci/log_step.sh models bash ci/mobile-models.sh
+          bash ci/log_step.sh test-input bash scripts/build_test_input.sh
+          bash ci/log_step.sh code-fixture bash scripts/build_code_test.sh
+          bash ci/log_step.sh text-fixture bash scripts/build_text_test.sh
           sudo chmod a+rw /dev/kvm
-          bash ci/prepare_vulkan.sh
+          bash ci/log_step.sh vulkan-stack bash ci/prepare_vulkan.sh
       - uses: reactivecircus/android-emulator-runner@v2
         env:
           GH_TOKEN: ${{ github.token }}
