@@ -113,6 +113,30 @@ def generation_stats(log):
     }
 
 
+WARMUP_RE = re.compile(r'GGUF_WARMUP input_tokens=(\d+) prefilled=(\d+) reused_tokens=(\d+) gpu=(\d) aborted=(\d)')
+WARMUP_SKIP_RE = re.compile(r'GGUF_WARMUP_SKIPPED reason=(\w+)')
+WARMUP_UI_RE = re.compile(r'GGUF_WARMUP_UI ok=(\d) chars=(\d+)')
+WARMUP_TEXT_RE = re.compile(r'GGUF_WARMUP_TEXT ok=(\d) chars=(\d+)')
+
+
+def warmup_state(log):
+    """O que o aquecimento de prefixo realmente fez nesta etapa.
+
+    `ran` só é verdadeiro com o contador nativo (`GGUF_WARMUP`); um simples
+    "ok=1" da camada Java não conta como aquecimento. `text_repeats` conta as
+    passadas de digitação, para a evidência mostrar que o KV cresceu junto.
+    """
+    ran = WARMUP_RE.findall(log)
+    skips = WARMUP_SKIP_RE.findall(log)
+    state = {'ran': bool(ran), 'skipped': skips[-1] if skips else None,
+             'ui_ok': bool(WARMUP_UI_RE.search(log)), 'typed_passes': len(WARMUP_TEXT_RE.findall(log))}
+    if ran:
+        tokens, prefilled, reused, gpu, aborted = (int(value) for value in ran[-1])
+        state.update({'input_tokens': tokens, 'prefilled': prefilled,
+                      'reused_tokens': reused, 'gpu': bool(gpu), 'aborted': bool(aborted)})
+    return state
+
+
 def ui_first_text_s(log):
     """Tap-to-visible-text wait measured on the Android main thread."""
     found = UI_FIRST_RE.findall(log)

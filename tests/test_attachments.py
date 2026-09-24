@@ -15,6 +15,9 @@ from mobile_manifest import enforce_min_sdk
 
 
 def test_private_provider_and_honest_foreground_compute_manifest():
+    if not (ROOT/'.cache/gguf/GGUF-Chat.apk').is_file():
+        pytest.skip('APK original verificado ausente; scripts/fetch_original.py baixa')
+
     from androguard.core.axml import AXMLPrinter
     from lxml import etree
     with zipfile.ZipFile(ROOT/'.cache/gguf/GGUF-Chat.apk') as z:original=z.read('AndroidManifest.xml')

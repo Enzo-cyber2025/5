@@ -6,6 +6,7 @@ from reply_notifications import patch_reply_notifications
 from performance_ui import patch_performance_ui
 from ui_features import patch_ui_features
 from offgrid_ui import patch_offgrid_ui
+from warmup_patches import patch_warmup
 """Build a coherent native stack and an UNSIGNED APK, for local persistent signing.
 No signing key or password is placed in CI, artifacts, logs or Git.
 """
@@ -64,8 +65,15 @@ def ui_patches(app):
         s=re.sub(r'(    invoke-virtual \{([vp]\d+), [vp]\d+\}, Landroid/widget/Button;->setLayoutParams\(Landroid/view/ViewGroup\$LayoutParams;\)V)',r'\1\n    invoke-static {\2}, Lcom/ggufchat/app/CompactUi;->style(Landroid/widget/Button;)V',s)
         p.write_text(s)
     p=app/'MainActivity$25.smali';s=p.read_text().replace('if-nez v1, :cond_0','if-eqz v1, :cond_0').replace('if-nez v2, :cond_0','if-eqz v2, :cond_0');p.write_text(s)
-    # Safer defaults for a mobile memory budget; user can deliberately change them.
-    p=app/'Settings.smali';s=p.read_text();a=s.index('.method public static gpuLayers(');b=s.index('.end method',a);s=s[:a]+s[a:b].replace('const/4 v2, -0x1','const/4 v2, 0x0')+s[b:]
+    # GPU primeiro: o padrão de fábrica é "automático" (gpuLayers = -1), que pede
+    # o modelo inteiro na GPU. Se o dispositivo Vulkan for um rasterizador por
+    # software, a política recusa e executa na CPU com aviso visível; se a GPU não
+    # comportar o modelo inteiro, o aplicativo também não usa offload parcial
+    # silencioso. Em nenhum dos casos o usuário fica sem saber o que está rodando.
+    # O contexto padrão continua reduzido por orçamento de memória móvel.
+    p=app/'Settings.smali';s=p.read_text()
+    a=s.index('.method public static gpuLayers(');b=s.index('.end method',a)
+    assert 'const/4 v2, -0x1' in s[a:b], 'padrão de fábrica da GPU mudou no APK base'
     a=s.index('.method public static contextSize(');b=s.index('.end method',a);s=s[:a]+s[a:b].replace('const/16 v2, 0x1000','const/16 v2, 0x400')+s[b:];p.write_text(s)
     # Surface the actual native create error rather than labelling every failure corrupt GGUF.
     p=app/'EngineManager.smali';s=p.read_text();marker='    const-string v1, "N\\u00e3o foi poss\\u00edvel carregar o modelo. Verifique se o arquivo GGUF est\\u00e1 \\u00edntegro."'
@@ -84,6 +92,8 @@ def ui_patches(app):
     patch_reply_notifications(app)
     patch_performance_ui(app)
     patch_ui_features(app)
+    # Aquecimento depois das demais camadas: só adiciona uma chamada ao onCreate.
+    patch_warmup(app)
     # Última: a linguagem visual precisa ver a árvore final de cada tela.
     patch_offgrid_ui(app)
 

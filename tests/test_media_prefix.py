@@ -74,7 +74,8 @@ def test_default_native_body_unchanged_by_experiment():
     # Corpo nativo depois da entrega de desempenho/interface: lote de prefill
     # proporcional ao contexto, recusa de Vulkan por software e aviso visível do
     # backend. Independente da profundidade do checkout no CI.
-    before_sha='628810c19e02f75e819f47d32729c324a73de0f2aff9cd3a1b4bcc5687d0c12a'
+    # Atualizado com o aquecimento de prefixo e os avisos de backend/NPU.
+    before_sha='ca63cf798a6086a116af43c8188c391e72af2392032f435a296ca2216c262849'
     current=(ROOT/'apk-fix/native/mobile.cpp').read_text()
     # Any top-level single #else guard of an opt-in experiment macro must keep
     # its #else branch byte-identical to the shipped body, not only media prefix.
@@ -89,7 +90,10 @@ def test_default_native_body_unchanged_by_experiment():
         elif inside and line.strip()=='#else':keep=True
         elif inside and line.strip()=='#endif':inside=False;keep=True
         elif keep:lines.append(line)
-    assert not inside and hashlib.sha256(''.join(lines).encode()).hexdigest()==before_sha
+    assert not inside
+    computed=hashlib.sha256(''.join(lines).encode()).hexdigest()
+    # A mensagem traz o valor medido: atualizar o pin é uma decisão, não uma adivinhação.
+    assert computed==before_sha, f'corpo nativo padrão mudou: {computed}'
 
 
 def test_actual_eligibility_function_rejects_noncausal_and_swa_metadata(tmp_path):

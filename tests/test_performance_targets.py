@@ -6,6 +6,7 @@ inspirada no Off Grid AI. Elas não produzem números: os números vêm do emula
 """
 import importlib.util
 import json
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -214,6 +215,27 @@ def test_inspector_panels_use_the_neutral_palette():
     assert combined.count('0xFF2A2A2A') >= 3, 'painéis com fio de cabelo'
 
 
+def test_prefix_warmup_hook_is_opt_in_per_channel(tmp_path, monkeypatch):
+    """Sem a variável do canal, o gancho não entra: os outros canais medem o mesmo de antes."""
+    base = ROOT / '.cache/original-decoded/smali/com/ggufchat/app'
+    if not base.is_dir():
+        pytest.skip('APK decodificado local ausente; a cadeia roda no CI')
+    import build_mobile
+    sys.path.insert(0, str(ROOT / 'apk-fix'))
+    import warmup_patches
+    monkeypatch.delenv(warmup_patches.ENV, raising=False)
+    off = Path(tmp_path) / 'off'
+    shutil.copytree(base, off)
+    assert warmup_patches.patch_warmup(off) is False
+    assert 'ResponseWarmup' not in (off / 'ChatActivity.smali').read_text()
+    monkeypatch.setenv(warmup_patches.ENV, '1')
+    on = Path(tmp_path) / 'on'
+    shutil.copytree(base, on)
+    assert warmup_patches.patch_warmup(on) is True
+    text = (on / 'ChatActivity.smali').read_text()
+    assert text.count(warmup_patches.CALL.strip()) == 1
+
+
 def test_offgrid_ui_patch_lands_on_all_real_screens(tmp_path):
     base = ROOT / '.cache/original-decoded/smali/com/ggufchat/app'
     if not base.is_dir():
@@ -221,13 +243,23 @@ def test_offgrid_ui_patch_lands_on_all_real_screens(tmp_path):
     app = Path(tmp_path) / 'app'
     shutil.copytree(base, app)
     import build_mobile
-    build_mobile.ui_patches(app)
+    sys.path.insert(0, str(ROOT / 'apk-fix'))
+    import warmup_patches
+    os.environ[warmup_patches.ENV] = '1'  # canal de texto liga o aquecimento
+    try:
+        build_mobile.ui_patches(app)
+    finally:
+        os.environ.pop(warmup_patches.ENV, None)
     main = (app / 'MainActivity.smali').read_text()
     chat = (app / 'ChatActivity.smali').read_text()
     settings = (app / 'SettingsActivity.smali').read_text()
     assert main.count('OffgridUi;->screen') == 1 and main.count('OffgridUi;->tabs') == 1
     assert chat.count('OffgridUi;->chat') == 1 and chat.count('OffgridUi;->bubble') == 1
     assert settings.count('OffgridUi;->screen') == 1
+    # O aquecimento de prefixo entrou exatamente uma vez, logo depois de a tela
+    # existir, e só como chamada — sem texto novo e sem const-string.
+    assert chat.count('ResponseWarmup;->install(Landroid/app/Activity;)V') == 1
+    assert chat.index('ResponseWarmup;->install') > chat.index('setContentView')
     # Os ganchos só inserem chamadas de estilo: nenhum texto, nenhum const-string.
     patch = (ROOT / 'apk-fix/offgrid_ui.py').read_text()
     inserted = [line for line in patch.splitlines() if 'OffgridUi;->' in line]

@@ -21,6 +21,12 @@ jobs:
   emulator:
     runs-on: ubuntu-latest
     timeout-minutes: 180
+    # Aquecimento de prefixo no APK candidato e etapas experimentais de medição
+    # (GPU pedida, aquecimento ligado e desligado na mesma rodada). As etapas
+    # extras não mudam nenhum critério de aprovação; elas existem para medir.
+    env:
+      GGUF_EXPERIMENT_WARMUP: '1'
+      GGUF_EXPERIMENT_SUITE: '1'
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
@@ -143,6 +149,16 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -no-snapshot -gpu host -feature Vulkan -noaudio -no-boot-anim -camera-back emulated -camera-front emulated
           script: bash .github/emulator-text-ui.sh
+      - name: Local gates on the same sources (suite, sintaxe nativa, javac)
+        if: always()
+        run: |
+          # O mesmo estado de fontes que o CI compila: o build deixa o checkout
+          # do llama.cpp com os patches aplicados; os testes comparam com o
+          # upstream, então ele volta ao estado do HEAD antes de rodar.
+          git -C .cache/llama-mobile restore --source=HEAD --worktree . || true
+          .venv/bin/python scripts/check_native_syntax.py
+          .venv/bin/python scripts/check_java_compile.py
+          .venv/bin/python -m pytest tests/ -q -p no:cacheprovider
       - name: Publish bounded evidence to this session branch only
         if: always()
         run: bash ci/publish_text_evidence.sh

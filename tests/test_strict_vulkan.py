@@ -95,7 +95,9 @@ def test_native_all_weights_full_sampling_and_preserved_parameters():
     assert 'gpu_weights[2]={{".*",nullptr},{nullptr,nullptr}}' in s
     assert 'mp.tensor_buft_overrides=e->gpu_weights;' in s
     assert s.index('StrictVulkanScope strict(e->strict_device);') < s.index('e->model=llama_model_load_from_file')
-    assert s.count('StrictVulkanScope strict(e->strict_device);')==2
+    # Três escopos: carregar o modelo, gerar e aquecer o prefixo — o aquecimento
+    # também roda inteiro na GPU quando a GPU é quem executa.
+    assert s.count('StrictVulkanScope strict(e->strict_device);')==3
     assert 'if(!binding.attached)throw std::runtime_error' in s
     assert s.index('else if(e->strict_device)') < s.index('else t=llama_sampler_sample')
     assert 'llama_sampler_init_dist(seed)' in s and 'llama_sampler_init_penalties' in s

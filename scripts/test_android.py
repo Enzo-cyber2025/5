@@ -7,6 +7,7 @@ Every critical command/assertion fails the run; diagnostics are always retained.
 """
 import argparse
 import hashlib
+import os
 import json
 from pathlib import Path
 import shlex
@@ -17,7 +18,8 @@ import xml.etree.ElementTree as ET
 
 from android_checks import (PACKAGE, PICKERS, assistant_reply, fusion, generation_completed,
                             gpu_offloaded, has_package, imported, position, basic_response_quality, vulkan_offloaded,
-                            generation_stats, ui_first_text_s, software_vulkan_refused, cpu_threads)
+                            generation_stats, ui_first_text_s, software_vulkan_refused, cpu_threads,
+                            warmup_state)
 
 
 class Android:
@@ -345,21 +347,63 @@ class Android:
                 if attempt == 2 or not position(xml, text=title, package={PACKAGE}):
                     raise
 
-    def send(self, prompt, clear_log=True):
+    def wait_for_load(self, timeout=120):
+        """Espera o preload do modelo terminar (o nativo registra GGUF_UNIT_LOADED).
+
+        As etapas de aquecimento esperam isso antes de enviar: o que elas medem é a
+        espera do envio, não o carregamento — que já é medido nas outras etapas.
+        """
+        def ready():
+            return 'GGUF_UNIT_LOADED' in self.adb("logcat", "-d", check=False) or None
+        self.wait(ready, "modelo carregado antes do envio", timeout=timeout)
+
+    def wait_for_warmup(self, timeout=20):
+        """Espera o aquecimento de prefixo terminar, se ele estiver acontecendo."""
+        def finished():
+            log = self.adb("logcat", "-d", check=False)
+            if 'GGUF_WARMUP ' in log or 'GGUF_WARMUP_SKIPPED' in log:
+                return True
+            return None
+        try:
+            self.wait(finished, "aquecimento de prefixo", timeout=timeout)
+        except AssertionError:
+            # Não é falha da etapa: o nativo registra o motivo (SKIPPED) quando não aquece.
+            pass
+
+    def send(self, prompt, clear_log=True, typed_pause=0.0):
+        """Digita e envia.
+
+        Com `typed_pause` o texto entra em duas passadas separadas por essa pausa,
+        como um usuário que digita e hesita: é o cenário que permite ao aplicativo
+        aquecer o prompt no tempo de digitação. Sem a pausa, é o envio direto.
+        """
         if clear_log:
             self.adb("logcat", "-c")
         self.tap(class_name="android.widget.EditText", package={PACKAGE})
-        self.shell("input text " + shlex.quote(prompt.replace(" ", "%s")))
+        words = prompt.split(" ")
+        if typed_pause <= 0 or len(words) < 2:
+            self.shell("input text " + shlex.quote(prompt.replace(" ", "%s")))
+        else:
+            half = max(1, len(words) // 2)
+            self.shell("input text " + shlex.quote(" ".join(words[:half]).replace(" ", "%s")))
+            time.sleep(typed_pause)
+            self.shell("input text " + shlex.quote(" " + " ".join(words[half:]).replace(" ", "%s")))
         self.tap(text="Enviar", package={PACKAGE}, contains=True)
 
     def generate(self, model, gpu_layers, stage, prompt="Reply in English with a short greeting.",
-                 threads=2, record=True):
+                 threads=2, record=True, typed_pause=0.0, await_load=False, settle=0.0):
         # Keep model-loading/offload evidence: clearing at send loses the backend
         # selected by the preload worker. A new chat restarts the app; filter its PID.
         self.adb("logcat", "-c")
         chat = self.new_chat(model, gpu_layers, threads=threads)
         pid = self.alive()
-        self.send(prompt, clear_log=False)
+        if await_load:
+            self.wait_for_load()
+            if typed_pause > 0:
+                self.wait_for_warmup()
+            if settle:
+                time.sleep(settle)
+        self.send(prompt, clear_log=False, typed_pause=typed_pause)
         def submitted():
             chats = self.read_json("chats.json")
             (self.evidence / f"{stage}-chats.json").write_text(json.dumps(chats, ensure_ascii=False))
@@ -402,6 +446,7 @@ class Android:
                      threads_resolved=cpu_threads(log),
                      backend='vulkan' if gpu_offloaded(log) else 'cpu',
                      ui_first_text_s=ui_first_text_s(log),
+                     warmup=warmup_state(log),
                      software_vulkan_notice=software_vulkan_refused(log), **stats)
         self.perf[stage] = entry
         (self.evidence / f"{stage}-perf.json").write_text(json.dumps(entry, ensure_ascii=False, indent=2))
@@ -409,6 +454,16 @@ class Android:
 
 
 REGRESSION_TOLERANCE = 0.05
+
+
+def gpu_experiments_enabled():
+    """Etapas experimentais de GPU/aquecimento só rodam quando pedidas.
+
+    Elas existem para medir o que este emulador consegue provar: o pedido de GPU
+    com recusa explícita, o aquecimento de prefixo ligado e desligado na mesma
+    rodada. Não alteram nenhum critério de aprovação do fluxo normal.
+    """
+    return os.environ.get('GGUF_EXPERIMENT_SUITE') == '1'
 
 
 def performance_report(perf):
@@ -460,6 +515,7 @@ def performance_report(perf):
             # Ruído entre etapas do mesmo emulador chega a poucos por cento: só uma
             # queda maior que a tolerância é tratada como regressão.
             'regression_vs_baseline': bool(base_rate and rate < base_rate * (1 - REGRESSION_TOLERANCE))}
+    report['warmup_experiment'] = warmup_experiment(perf)
     report['targets_met'] = sorted(name for name, c in report['candidates'].items()
                                    if all(c['targets'].values()))
     report['regressions'] = sorted(name for name, c in report['candidates'].items()
@@ -467,6 +523,46 @@ def performance_report(perf):
     report['regression_tolerance'] = REGRESSION_TOLERANCE
     report['environment'] = environment_limits(perf)
     return report
+
+
+def warmup_experiment(perf):
+    """O aquecimento de prefixo comparado consigo mesmo, na mesma rodada.
+
+    Só entra no relatório o que foi medido nas etapas nomeadas abaixo: com o
+    aquecimento desligado por propriedade de teste e com ele ligado, no mesmo
+    aparelho, no mesmo modelo e na mesma configuração de envio. Sem as duas
+    medições, o relatório diz que não há comparação — nunca estima.
+    """
+    off = perf.get('gpu-off-cold') or {}
+    cold = perf.get('gpu-preferred-cold') or {}
+    typed = perf.get('gpu-preferred-typed') or {}
+    result = {'compared': False,
+              'scope': ('Mesma rodada, mesmo emulador, mesmo modelo e mesmos tokens de '
+                        'saída; a única diferença entre "off" e "cold" é o aquecimento '
+                        'de prefixo ligado por propriedade de teste.')}
+    if off.get('ui_first_text_s') and cold.get('ui_first_text_s'):
+        result['compared'] = True
+        result['wait_off_s'] = off['ui_first_text_s']
+        result['wait_cold_s'] = cold['ui_first_text_s']
+        result['wait_speedup_cold'] = round(off['ui_first_text_s'] / cold['ui_first_text_s'], 3)
+        result['engine_wait_off_s'] = off.get('first_token_s')
+        result['engine_wait_cold_s'] = cold.get('first_token_s')
+        result['prefill_off_s'] = off.get('prefill_s')
+        result['prefill_cold_s'] = cold.get('prefill_s')
+        result['reused_tokens_off'] = off.get('reused_tokens')
+        result['reused_tokens_cold'] = cold.get('reused_tokens')
+    if typed.get('ui_first_text_s') and cold.get('ui_first_text_s'):
+        result['wait_typed_s'] = typed['ui_first_text_s']
+        result['wait_speedup_typed'] = round(cold['ui_first_text_s'] / typed['ui_first_text_s'], 3)
+        result['warmup_typed'] = typed.get('warmup')
+    result['comparator_note'] = ('As etapas de aquecimento esperam o modelo terminar de carregar '
+                                 'antes de enviar, porque o que elas medem é a espera do envio. As '
+                                 'demais etapas enviam assim que a conversa abre; por isso a '
+                                 'comparação justa do aquecimento é contra gpu-off-cold, medido nas '
+                                 'mesmas condições (mesma carga, mesma espera, mesma configuração).')
+    result['warmup_cold'] = cold.get('warmup')
+    result['warmup_off'] = off.get('warmup')
+    return result
 
 
 def environment_limits(perf):
@@ -655,6 +751,30 @@ def main():
         if not refused:
             raise AssertionError("Política padrão não declarou a recusa do Vulkan por software")
         result["checks"]["software_vulkan_policy"] = "PASS: dispositivo por software recusado -> CPU (" + refused + ")"
+        if gpu_experiments_enabled():
+            # Preferência por GPU pedida pelo usuário (camadas 99 = modelo inteiro).
+            # Neste emulador o dispositivo Vulkan é um rasterizador por software:
+            # a política recusa a GPU e executa na CPU, e a rodada registra o
+            # motivo. Onde houver GPU real (Adreno/Mali), este mesmo pedido é o
+            # caminho executado — é o padrão de fábrica do aplicativo.
+            device.generate(model, 99, "gpu-preferred-cold", await_load=True, settle=5.0)
+            result["checks"]["gpu_preferred"] = ("PASS: pedido de GPU medido; "
+                + ("offload real confirmado" if gpu_offloaded((args.evidence / "gpu-preferred-cold-logcat.txt").read_text())
+                   else "recusa registrada e CPU usada (emulador sem GPU real)"))
+            # Digitação com pausa: o aplicativo aquece o prompt enquanto o usuário escreve.
+            device.generate(model, 99, "gpu-preferred-typed", typed_pause=1.2,
+                            await_load=True, settle=5.0)
+            # OFF na mesma rodada: aquecimento desligado por propriedade de teste.
+            device.shell("setprop debug.gguf.disable_warmup 1")
+            try:
+                device.generate(model, 99, "gpu-off-cold", await_load=True, settle=5.0)
+            finally:
+                device.shell("setprop debug.gguf.disable_warmup 0")
+            result["checks"]["prefix_warmup_experiment"] = (
+                "PASS: aquecimento ligado e desligado medidos na mesma rodada"
+                if (device.perf.get("gpu-off-cold", {}).get("ui_first_text_s")
+                    and device.perf.get("gpu-preferred-cold", {}).get("ui_first_text_s"))
+                else "NOT_MEASURED: falta uma das duas medições")
         # Medição no mesmo emulador, mesmas entradas e mesmo limite de tokens.
         device.generate(model, 0, "cpu-threads-auto", threads=0)
         result["checks"]["cpu_auto_threads"] = "PASS: política automática de threads executada"
