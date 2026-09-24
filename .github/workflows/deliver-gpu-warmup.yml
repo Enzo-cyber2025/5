@@ -97,15 +97,20 @@ jobs:
           apk = Path('.cache/delivery/GGUF-Chat-gpu-warmup.apk')
           # Receipt da rodada verde de emulador que exercitou estes bytes de código.
           receipt = json.loads(Path('ci-results/36041334551-1-text-ui/physical-text-ui-build.json').read_text())
+          # O recibo de payload da rodada verde traz, além das bibliotecas, o
+          # classes.dex do candidato testado.
+          payload_receipt = json.loads(Path('ci-results/36041334551-1-text-ui/apk-payload.json').read_text())
           tested_commit = 'b55d4b1f13545dd1417c3673cc6fa4b4e19d1515'
           marker = Path('GGUF_DELIVERY_SOURCE_COMMIT').read_text().strip() if Path('GGUF_DELIVERY_SOURCE_COMMIT').exists() else None
           with zipfile.ZipFile(apk) as z:
               names = [n for n in z.namelist() if not n.startswith('META-INF/')]
               payload = {n: hashlib.sha256(z.read(n)).hexdigest() for n in names}
-          mismatched = [name for name, digest in receipt['native'].items()
-                        if payload.get(name) != digest]
+          expected = dict(receipt['native'])
+          expected.update({name: digest for name, digest in payload_receipt.items()
+                           if name == 'classes.dex'})
+          mismatched = [name for name, digest in expected.items() if payload.get(name) != digest]
           assert not mismatched, f'payload diferente do testado: {mismatched}'
-          assert 'classes.dex' in payload and 'AndroidManifest.xml' in payload
+          assert 'classes.dex' in expected and 'AndroidManifest.xml' in payload
           assert (marker or tested_commit) in receipt['source_commit'], 'receipt de outra revisão'
           record = {
               'status': 'PUBLISHED_PREDELIVERY_TEST_SIGNED',
@@ -114,7 +119,8 @@ jobs:
               'tested_run': 36041334551,
               'tested_commit': receipt['source_commit'],
               'payload_entries': len(names),
-              'native_verified': sorted(receipt['native']),
+              'verified_against_tested_run': sorted(expected),
+              'recorded_only': ['AndroidManifest.xml'],  # não foi medido pelo recibo da rodada
               'classes_dex_sha256': payload['classes.dex'],
               'android_manifest_sha256': payload['AndroidManifest.xml'],
               'signature': 'chave gerada nesta execução e descartada; certificado novo, não é release de loja',
@@ -134,7 +140,7 @@ jobs:
           GH_REPO: Enzo-cyber2025/5
         run: |
           set -euo pipefail
-          TAG="gguf-gpu-warmup-$(git rev-parse --short=7 HEAD)"
+          TAG="gguf-gpu-warmup"
           cat > /tmp/notes.md <<'MD'
           Pré-entrega de teste: GPU primeiro, prefixo do prompt aquecido, interface Off Grid AI.
 
@@ -154,11 +160,16 @@ jobs:
           certificado novo, não é release de loja. Para instalar sobre uma versão de outro
           certificado é preciso desinstalar antes (preserve conversas, anexos e modelos).
 
-          O payload (bibliotecas nativas, classes.dex e manifesto) foi conferido hash a hash
-          contra o que a rodada verde de emulador exercitou.
+          Conferência: as bibliotecas nativas e o classes.dex deste APK têm exatamente o mesmo
+          hash do binário que a rodada verde de emulador exercitou. O manifesto entra no recibo
+          como hash registrado deste binário (a rodada não mediu o dele).
           MD
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" .cache/delivery/GGUF-Chat-gpu-warmup.apk
+            # Mesma release, bytes e nota atualizados: o link de download do
+            # usuário aponta para um só lugar e nunca fica desatualizado.
+            gh release upload "$TAG" .cache/delivery/GGUF-Chat-gpu-warmup.apk --clobber
+            gh release edit "$TAG" --notes-file /tmp/notes.md
+            gh release edit "$TAG" --target "$(git rev-parse HEAD)"
           else
             gh release create "$TAG" --prerelease --latest=false \
               --target "$(git rev-parse HEAD)" \

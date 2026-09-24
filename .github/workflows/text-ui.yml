@@ -5,7 +5,10 @@ on:
     # Tudo que entra no APK candidato ou no harness: sem esta lista completa um
     # push que mudasse só o nativo (ou só um teste) não rodava o emulador.
     paths:
-      - .github/**
+      # Só o que este fluxo consome: ele mesmo, o script do emulador e o que entra
+      # no APK/harness. Editar outro workflow não muda o aplicativo.
+      - .github/workflows/text-ui.yml
+      - .github/emulator-text-ui.sh
       - apk-fix/**
       - tests/**
       - scripts/**
