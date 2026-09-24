@@ -2,21 +2,14 @@ name: Android text UI, attachments and search on the emulator
 on:
   push:
     branches: [arena/01a0d024-5]
+    # Tudo que entra no APK candidato ou no harness: sem esta lista completa um
+    # push que mudasse só o nativo (ou só um teste) não rodava o emulador.
     paths:
-      - .github/workflows/text-ui.yml
-      - .github/emu-test.sh
-      - .github/emulator-text-ui.sh
-      - apk-fix/build_mobile.py
-      - apk-fix/patch_dex.py
-      - apk-fix/patch_smali.py
-      - apk-fix/ui_features.py
-      - apk-fix/java/**
-      - tests/android-text/**
-      - scripts/test_text_android.py
-      - scripts/test_detach_android.py
-      - scripts/build_text_test.sh
-      - scripts/test_android.py
-      - ci/publish_text_evidence.sh
+      - .github/**
+      - apk-fix/**
+      - tests/**
+      - scripts/**
+      - ci/**
   workflow_dispatch:
 permissions:
   contents: write
