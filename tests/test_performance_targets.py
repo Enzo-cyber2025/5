@@ -193,6 +193,8 @@ def test_offgrid_ui_keeps_state_colors_and_flattens_only_content_actions():
     assert 'isAccentFill(button)' in java and 'isAccent(color)' in java
     # Rótulo que não é ação primária nem estado vira ação de conteúdo plana.
     assert 'box(button, SURFACE_PLUS, BORDER)' in java
+    # A ação principal da tela inicial continua sendo o único destaque esmeralda.
+    assert '"Nova conversa"' in java
     # Preenchimento com estado nunca é repintado, e o que não tem estado perde
     # só o matiz: a luminosidade fica, o tom do tema não.
     assert 'list.isStateful()' in java and 'greyOf(color)' in java

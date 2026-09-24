@@ -49,7 +49,8 @@ public final class OffgridUi {
     private static final int TEXT_4 = 0xFF6E6E6E;
 
     private static final String[] PRIMARY_LABELS = {
-        "Enviar", "Salvar", "Criar", "Aplicar", "Baixar", "Importar", "Continuar", "Concluir"};
+        "Enviar", "Salvar", "Criar", "Aplicar", "Baixar", "Importar", "Continuar", "Concluir",
+        "Nova conversa"};
 
     private static Typeface mono;
 
