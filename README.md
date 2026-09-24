@@ -1,10 +1,57 @@
-# Rodada atual: desempenho medido no emulador e interface inspirada no Off Grid AI
+# Rodada atual: prefixo aquecido, GPU primeiro e o NPU declarado
 
-Pedido: +50% de T/s e espera até o primeiro token reduzida a um terço (o pedido
-literal, “−300%”, descreveria um tempo negativo; a leitura e o critério aplicado
-estão registrados no relatório e na própria medição). Execução no emulador do CI
-e interface inteira inspirada no Off Grid AI — referência de estilo, sem cópia,
-sem marca e sem qualquer vínculo com aquele aplicativo.
+Pedido: priorizar a GPU, cortar a espera até o primeiro token a um terço (o pedido
+literal, “−300%”, descreveria um tempo negativo; o critério aplicado é 3× menos
+espera), NPU do A55 *se possível*, busca na web e testar tudo.
+
+**Espera.** A decomposição medida mostra onde ela mora: `first_token_ns=1,655 s`
+com `prefill_ns=1,652 s` — o prefill do prompt é a espera. O aplicativo agora
+pré-preenche no KV o prefixo que o envio vai reutilizar, no tempo ocioso da
+conversa e da digitação, sem produzir logits e sem consumir nenhum token de saída.
+Medido na mesma rodada, mesma condição, mesma carga
+(`36038199713-1-text-ui/performance.json`):
+
+| etapa | aquecimento | envio → primeiro texto | 1º token (motor) | prefill | reaproveitados |
+| --- | --- | --- | --- | --- | --- |
+| `gpu-preferred-cold` | ligado | **0,408 s** | 0,233 s | 0,229 s | 64 de 65 tokens |
+| `gpu-off-cold` | desligado | **2,549 s** | 2,339 s | 2,335 s | 0 de 65 |
+| `gpu-preferred-typed` | ligado, digitando | 0,421 s | 0,201 s | 0,197 s | 64 de 65 |
+
+**6,25× menos espera na comparação justa** (alvo: 3×). O custo do prefill não
+desapareceu: ele saiu da frente do usuário e foi para o tempo ocioso da tela —
+nenhum texto foi cortado e nenhum token de saída foi reduzido. As etapas normais da
+mesma rodada (envio logo depois de a conversa abrir, com a digitação do harness)
+ficaram em 0,41-0,51 s contra 1,8-2,1 s da rodada anterior, medida do mesmo jeito
+(`36028665561`); a taxa de decodificação não regrediu em nenhuma etapa
+(`regressions: []`) e ficou em 2,1×-2,7× a linha de base da própria rodada.
+
+**GPU primeiro.** O aplicativo pede o modelo inteiro na GPU por padrão (99 camadas)
+e o pipeline não rebaixa mais esse padrão para CPU. Quando o dispositivo Vulkan é
+um rasterizador por software, a recusa é declarada e a execução é na CPU — agora de
+verdade: o pedido de camadas também volta a zero, então o carregador não anuncia
+mais “offloaded 31/31 layers to GPU” numa execução de CPU, e o nativo declara
+`GGUF_BACKEND_EXECUTION backend=cpu|vulkan` no ponto da decisão. GPU só é anunciada
+quando existe dispositivo estrito; a recusa nunca é sobrescrita pelo aviso novo.
+
+**NPU do A55: não é possível neste binário.** O Exynos 1480 tem NPU, mas este
+llama.cpp fixado não tem backend de NPU para Exynos (só o `ggml-hexagon`, que exige
+o SDK proprietário da Qualcomm), a NNAPI está descontinuada e a Samsung expõe a
+NPU por SDK fechado de parceiro. O aplicativo detecta o SoC e **diz isso na tela**
+(“NPU … presente, sem backend compatível neste binário”) em vez de prometer
+aceleração. O emulador do CI não tem NPU alguma, então não haveria o que medir.
+
+**Busca na web:** verificada ponta a ponta na mesma rodada — consulta exibida,
+provedor (Wikipédia), contagem, fontes numeradas e o caminho de falha, com
+`GGUF_SEARCH_PANEL shown=1 provider=Wikipédia hits=2` no log.
+
+**Testes:** 439 testes locais (o CI roda a suíte), sintaxe nativa com g++ e javac
+antes de publicar evidência, além das fases de emulador (texto 5/5, anexos 3/3,
+geração nativa, política de software, etapas de medição). Detalhes, limites e
+evidência por etapa: [docs/GPU_WARMUP_NPU.md](docs/GPU_WARMUP_NPU.md).
+
+---
+
+## Rodada anterior: desempenho medido no emulador e interface inspirada no Off Grid AI
 
 **O que a medição mostrou.** No emulador do CI (2 núcleos, Vulkan por software) o
 caminho anterior aceitava o driver por software como se fosse GPU. Com a política

@@ -16,13 +16,21 @@ pode ser verificada, no nativo:
   camadas (`complete_gpu_offload`). Offload parcial silencioso não existe:
   `EngineManager` só tenta a CPU quando o pedido foi explicitamente 0;
 - dispositivo Vulkan que é um rasterizador por software (llvmpipe/lavapipe/
-  SwiftShader…): recusa declarada e execução na CPU, com aviso visível na tela
+  SwiftShader…): recusa declarada e execução na CPU — de verdade: o pedido de
+  camadas (`mp.n_gpu_layers`) volta a zero, senão o carregador ainda anuncia
+  “offloaded N/N layers to GPU” por causa do pedido original e a execução fica
+  ambígua. O aviso fica visível na tela e nunca é sobrescrito pelo aviso de GPU
   (opt-in `debug.gguf.allow_software_vulkan=1` existe só para reproduzir o
   comportamento antigo nas medições);
 - GPU pedida mas o modelo não coube nela: a execução vai para a CPU **dizendo o
   motivo** (`CPU (a GPU não comportou o modelo inteiro; offload parcial recusado
   por política: …)`), em vez de cair para a CPU em silêncio;
-- GPU usada: o aviso mostra `GPU (Vulkan, camadas N/N)`.
+- GPU usada: o aviso mostra `GPU (Vulkan, camadas N/N)` e o nativo declara
+  `GGUF_BACKEND_EXECUTION backend=vulkan layers=N total=M`; nos caminhos de CPU a
+  declaração diz `backend=cpu` com o motivo (`software_vulkan_refused`,
+  `gpu_load_failed`, `requested_gpu_not_used`, `cpu_choice`). É essa declaração —
+  e não a linha do carregador — que o relatório de desempenho usa para classificar
+  cada etapa.
 
 O emulador do CI só oferece o rasterizador por software, então **lá** o caminho
 medido é a recusa declarada + CPU. Quem tem GPU real (Adreno/Mali) pega o mesmo
@@ -88,6 +96,25 @@ envio**, não a carga:
 e não a comparação com as etapas que enviam durante a carga — que sustenta
 qualquer afirmação de espera. Sem as duas medições o relatório diz
 `compared: false` e não estima nada.
+
+### Medição da rodada 36038199713 (mesma condição, mesma máquina)
+
+| Etapa | Aquecimento | Espera até o primeiro texto | 1º token (motor) | prefill | tokens reaproveitados | decodificação |
+| --- | --- | --- | --- | --- | --- | --- |
+| `gpu-preferred-cold` | ligado | **0,408 s** | 0,233 s | 0,229 s | 64 de 65 | 11,28 T/s |
+| `gpu-off-cold` | desligado | **2,549 s** | 2,339 s | 2,335 s | 0 de 65 | 8,90 T/s |
+| `gpu-preferred-typed` | ligado (2 passadas) | 0,421 s | 0,201 s | 0,197 s | 64 de 65 | 9,48 T/s |
+
+- **6,25x menos espera** na comparação justa (alvo do pedido: 3x, ou "um terço do
+  tempo"). O `reused_tokens` de 64 de 65 tokens é a própria garantia do último
+  token aparecendo no log: só ele foi decodificado no envio.
+- O custo do prefill (2,33 s) **não desapareceu**: ele saiu da frente do usuário e
+  passou para o tempo ocioso da conversa/da digitação. Nada foi cortado.
+- Etapas normais da mesma rodada (envio logo após a conversa abrir, com a digitação
+  do harness): `cpu` 0,508 s, `vulkan-policy-default` 0,512 s,
+  `cpu-threads-auto` 0,407 s — contra 1,8-2,1 s da rodada anterior medida do mesmo
+  jeito (`36028665561`). A taxa de decodificação não regrediu em nenhuma etapa
+  (`regressions: []`) e ficou em 2,1x-2,7x a linha de base da própria rodada.
 
 ## 3. NPU do A55 (Exynos 1480): não é possível neste binário — e o app diz isso
 
