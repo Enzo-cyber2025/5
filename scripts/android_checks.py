@@ -159,9 +159,28 @@ def cpu_threads(log):
             'capacities': capacities, 'resolved': resolved}
 
 
+BACKEND_EXECUTION_RE = re.compile(r'GGUF_BACKEND_EXECUTION backend=(cpu|vulkan)')
+OFFLOAD_RE = re.compile(r"offloaded\s+[1-9]\d*(?:/\d+)?\s+layers?\s+to\s+GPU", re.I)
+
+
+def backend_execution(log):
+    """Backend que executa, declarado pelo nativo no momento da decisão.
+
+    É a única classificação confiável: no caminho de recusa do Vulkan por software
+    o carregador já registrou "offloaded N/N layers to GPU" apenas porque o pedido
+    de camadas era INT_MAX, mesmo com a lista de dispositivos esvaziada e a
+    execução na CPU.
+    """
+    found = BACKEND_EXECUTION_RE.findall(log)
+    return found[-1] if found else None
+
+
 def gpu_offloaded(log):
-    # Merely loading libggml-vulkan.so/SwiftShader is NOT proof of GPU inference.
-    return bool(re.search(r"offloaded\s+[1-9]\d*(?:/\d+)?\s+layers?\s+to\s+GPU", log, re.I))
+    # Merecer carregar libggml-vulkan.so/SwiftShader NÃO é prova de inferência em GPU.
+    declared = backend_execution(log)
+    if declared is not None:
+        return declared == 'vulkan'
+    return bool(OFFLOAD_RE.search(log))
 
 
 def basic_response_quality(greeting, arithmetic):

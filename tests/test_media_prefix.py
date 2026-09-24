@@ -75,7 +75,7 @@ def test_default_native_body_unchanged_by_experiment():
     # proporcional ao contexto, recusa de Vulkan por software e aviso visível do
     # backend. Independente da profundidade do checkout no CI.
     # Atualizado com o aquecimento de prefixo e os avisos de backend/NPU.
-    before_sha='ca63cf798a6086a116af43c8188c391e72af2392032f435a296ca2216c262849'
+    before_sha='774c9d59c39976c5bf1bdd7c1c6297c09fa64952af2c05612f281074aec2e223'
     current=(ROOT/'apk-fix/native/mobile.cpp').read_text()
     # Any top-level single #else guard of an opt-in experiment macro must keep
     # its #else branch byte-identical to the shipped body, not only media prefix.

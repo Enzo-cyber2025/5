@@ -124,3 +124,40 @@ def test_warmup_state_requires_the_native_counter(harness):
     assert state['ran'] is True and state['prefilled'] == 63 and state['ui_ok'] is True
     off = 'I GGUFChatNative: GGUF_WARMUP_SKIPPED reason=property'
     assert warmup_state(off) == {'ran': False, 'skipped': 'property', 'ui_ok': False, 'typed_passes': 0}
+
+
+def test_backend_classification_follows_the_native_declaration(harness):
+    """O log do carregador não decide o backend: a declaração do nativo decide.
+
+    Caso real medido na rodada 36038199713: o Vulkan por software foi recusado
+    (execução na CPU), mas o carregador ainda escreveu "offloaded 31/31 layers to
+    GPU" porque o pedido de camadas era INT_MAX. Classificar por essa linha
+    chamaria de GPU uma execução na CPU.
+    """
+    from android_checks import backend_execution, gpu_offloaded
+    refused = ('GGUF_VULKAN_SOFTWARE_DEVICE description="llvmpipe (LLVM 21.0.0)" '
+               'action=cpu_fallback requested_layers=-1\n'
+               'load_tensors: offloaded 31/31 layers to GPU\n'
+               'GGUF_BACKEND_EXECUTION backend=cpu reason=software_vulkan_refused\n')
+    assert backend_execution(refused) == 'cpu'
+    assert gpu_offloaded(refused) is False
+    strict = ('load_tensors: offloaded 31/31 layers to GPU\n'
+              'GGUF_BACKEND_EXECUTION backend=vulkan layers=31 total=31\n')
+    assert backend_execution(strict) == 'vulkan' and gpu_offloaded(strict) is True
+    # Logs anteriores à declaração continuam classificáveis pelo texto antigo.
+    legacy = 'load_tensors: offloaded 31/31 layers to GPU\n'
+    assert backend_execution(legacy) is None and gpu_offloaded(legacy) is True
+    cpu_choice = 'GGUF_BACKEND_EXECUTION backend=cpu reason=cpu_choice\n'
+    assert gpu_offloaded(cpu_choice) is False
+
+
+def test_software_refusal_really_forces_cpu_in_the_native():
+    """A recusa precisa valer: sem zerar n_gpu_layers o carregador ainda anuncia GPU."""
+    native = (ROOT / 'apk-fix/native/mobile.cpp').read_text()
+    start = native.index('software_vulkan_device(vulkan_devices[0],&description)')
+    block = native[start:native.index('} else {', start)]
+    assert 'mp.n_gpu_layers=0;' in block, 'recusa sem efeito: o pedido de camadas continua valendo'
+    assert 'mp.devices=no_accelerators;' in block
+    # O aviso de GPU só pode ser escrito quando o dispositivo estrito existe.
+    assert 'const bool gpu_executes=(e->layers>0 && e->strict_device!=nullptr);' in native
+    assert native.count('GGUF_BACKEND_EXECUTION backend=vulkan') == 1

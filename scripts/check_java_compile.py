@@ -38,9 +38,8 @@ def find_javac():
 
 
 def document_jars():
-    """Jarras de anexos (PDF/DOCX) já baixadas, se estiverem em cache."""
-    cached = sorted((ROOT / '.cache/document-libs').glob('*.jar'))
-    return [jar for jar in cached if jar.name != 'pdfbox.jar']
+    """As MESMAS jarras que o build põe na classpath (PDFBox/DOCX), se em cache."""
+    return sorted((ROOT / '.cache/document-libs').glob('*.jar'))
 
 
 def main():

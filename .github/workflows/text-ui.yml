@@ -156,9 +156,19 @@ jobs:
           # do llama.cpp com os patches aplicados; os testes comparam com o
           # upstream, então ele volta ao estado do HEAD antes de rodar.
           git -C .cache/llama-mobile restore --source=HEAD --worktree . || true
-          .venv/bin/python scripts/check_native_syntax.py
-          .venv/bin/python scripts/check_java_compile.py
-          .venv/bin/python -m pytest tests/ -q -p no:cacheprovider
+          # Pelo log_step: o log do job não é alcançável de todo cliente, mas a
+          # anotação do check run é. O texto também vai para a evidência publicada,
+          # então uma reprovação aqui é legível depois.
+          set +e
+          bash ci/log_step.sh local-gates bash -c '
+            .venv/bin/python scripts/check_native_syntax.py &&
+            .venv/bin/python scripts/check_java_compile.py &&
+            .venv/bin/python -m pytest tests/ -q -p no:cacheprovider'
+          status=$?
+          # O texto vai para a evidência publicada antes de reprovar o passo: uma
+          # rodada vermelha precisa deixar o motivo legível.
+          cp .cache/ci-logs/local-gates.log evidence/local-gates.txt
+          exit $status
       - name: Publish bounded evidence to this session branch only
         if: always()
         run: bash ci/publish_text_evidence.sh

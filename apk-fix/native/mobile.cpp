@@ -268,13 +268,18 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
             if(software_vulkan_device(vulkan_devices[0],&description)&&!allow_software_vulkan()) {
                 // Offload pedido, dispositivo sem GPU real: mantém a CPU, com o
                 // pedido registrado e um aviso visível no aplicativo.
+                // `mp.n_gpu_layers` também volta a zero: sem isso o carregador
+                // ainda anuncia "offloaded N/N layers to GPU" por causa do pedido
+                // (INT_MAX), e a execução ficava ambígua entre CPU e rasterizador.
                 layers=0;
+                mp.n_gpu_layers=0;
                 mp.devices=no_accelerators;
                 vulkan_devices[0]=nullptr;
                 e->strict_device=nullptr;
                 g_backend_notice="CPU (Vulkan por software ignorado: "+description+")";
                 LOG("GGUF_VULKAN_SOFTWARE_DEVICE description=\"%s\" action=cpu_fallback requested_layers=%d reason=software_driver_is_slower_than_cpu",
                     description.c_str(),requested_layers);
+                LOG("GGUF_BACKEND_EXECUTION backend=cpu reason=software_vulkan_refused description=\"%s\"",description.c_str());
                 LOG("GGUF_BACKEND_NOTICE \"%s\"",g_backend_notice.c_str());
             } else {
             mp.devices=vulkan_devices;
@@ -341,24 +346,41 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
             if(projector_path==model_path) LOG("GGUF_SINGLE_FILE_LOADED same_path=1");
             LOG("GGUF_PROJECTOR_LOADED vision=%d audio=%d",mtmd_support_vision(e->projector),mtmd_support_audio(e->projector));
         }
-        if(e->layers>0) {
-            // A GPU executou tudo: dizer isso é parte de priorizar a GPU.
-            g_backend_notice="GPU (Vulkan, camadas "+std::to_string(e->layers)+"/"+std::to_string(reported_total_layers)+")";
+        // Quem executa de verdade: o dispositivo Vulkan estrito é o único caminho
+        // em que as camadas foram para uma GPU. Sem ele, mesmo com o pedido de GPU,
+        // a execução é na CPU (recusa declarada ou modelo sem camadas na GPU).
+        const bool gpu_executes=(e->layers>0 && e->strict_device!=nullptr);
+        if(gpu_executes) {
             g_gpu_load_error.clear();
-            LOG("GGUF_BACKEND_NOTICE \"%s\"",g_backend_notice.c_str());
+            LOG("GGUF_BACKEND_EXECUTION backend=vulkan layers=%d total=%d",e->layers,reported_total_layers);
+            if(g_backend_notice.empty()) {
+                g_backend_notice="GPU (Vulkan, camadas "+std::to_string(e->layers)+"/"+std::to_string(reported_total_layers)+")";
+                LOG("GGUF_BACKEND_NOTICE \"%s\"",g_backend_notice.c_str());
+            }
         } else if(requested_layers!=0 && !g_gpu_load_error.empty()) {
             // Preferência por GPU, sem offload parcial silencioso: o modelo inteiro
             // não coube, então a execução é na CPU e o motivo fica visível.
-            g_backend_notice="CPU (a GPU não comportou o modelo inteiro; offload parcial recusado por política: "+g_gpu_load_error+")";
+            LOG("GGUF_BACKEND_EXECUTION backend=cpu reason=gpu_load_failed");
+            if(g_backend_notice.empty()) {
+                g_backend_notice="CPU (a GPU não comportou o modelo inteiro; offload parcial recusado por política: "+g_gpu_load_error+")";
+                LOG("GGUF_BACKEND_NOTICE \"%s\"",g_backend_notice.c_str());
+            }
             g_gpu_load_error.clear();
-            LOG("GGUF_BACKEND_NOTICE \"%s\"",g_backend_notice.c_str());
-        } else if(requested_layers!=0 && g_backend_notice.empty()) {
-            g_backend_notice="CPU (modelo carregado sem camadas na GPU)";
-            LOG("GGUF_BACKEND_NOTICE \"%s\"",g_backend_notice.c_str());
-        } else g_gpu_load_error.clear();
+        } else if(requested_layers!=0) {
+            LOG("GGUF_BACKEND_EXECUTION backend=cpu reason=requested_gpu_not_used");
+            if(g_backend_notice.empty()) {
+                g_backend_notice="CPU (modelo carregado sem camadas na GPU)";
+                LOG("GGUF_BACKEND_NOTICE \"%s\"",g_backend_notice.c_str());
+            }
+            g_gpu_load_error.clear();
+        } else {
+            LOG("GGUF_BACKEND_EXECUTION backend=cpu reason=cpu_choice");
+            g_gpu_load_error.clear();
+        }
         probe_npu();
-        LOG("GGUF_UNIT_LOADED language=%s layers=%d projector=%s npu_notice=%d",e->layers>0?"Vulkan":"CPU",e->layers,
-            e->projector?(e->layers>0?"Vulkan":"CPU"):"none",(int)!g_backend_notice.empty());
+        const char *execution=gpu_executes?"Vulkan":"CPU";
+        LOG("GGUF_UNIT_LOADED language=%s layers=%d projector=%s npu_notice=%d strict_device=%d",
+            execution,e->layers,e->projector?execution:"none",(int)!g_backend_notice.empty(),(int)(e->strict_device!=nullptr));
         LOG("model loaded: n_ctx=%u projector=%s",llama_n_ctx(e->ctx),e->projector?"loaded":"none");
         std::lock_guard<std::mutex> guard(registry_mutex); auto id=next_handle++; engines[id]=e; return id;
     } catch(const std::exception &ex) {
@@ -909,7 +931,7 @@ extern "C" JNIEXPORT jboolean JNICALL Java_com_ggufchat_app_ResponseWarmup_nativ
             llama_synchronize(e->ctx);
         }
         LOG("GGUF_WARMUP input_tokens=%zu prefilled=%zu reused_tokens=%zu gpu=%d aborted=%d",
-            input.size(),done,reuse,(int)(e->layers>0),(int)aborted);
+            input.size(),done,reuse,(int)(e->layers>0 && e->strict_device!=nullptr),(int)aborted);
         return done>reuse;
     } catch(const std::exception &ex) {
         LOG("GGUF_WARMUP_FAILED reason=%s",ex.what());
