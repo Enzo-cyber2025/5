@@ -35,6 +35,13 @@ def test_private_provider_and_honest_foreground_compute_manifest():
     generation.set(ns+'foregroundServiceType',original_generation.get(ns+'foregroundServiceType'));generation.remove(generation.find('property'))
     permission=next(x for x in after.findall('uses-permission') if x.get(ns+'name')=='android.permission.FOREGROUND_SERVICE_SPECIAL_USE')
     after.remove(permission)
+    # INTERNET é exigida pela busca na web e já vem declarada no APK base: o
+    # gerador não deve repetir a declaração, e o teste continua exigindo que
+    # NENHUMA outra permissão mude em relação ao APK base.
+    internets=[x for x in after.findall('uses-permission') if x.get(ns+'name')=='android.permission.INTERNET']
+    assert len(internets)==1, 'INTERNET duplicada no manifesto corrigido'
+    assert etree.tostring(internets[0])==etree.tostring(
+        next(x for x in before.findall('uses-permission') if x.get(ns+'name')=='android.permission.INTERNET'))
     assert etree.tostring(before)==etree.tostring(after)
     with pytest.raises(ValueError,match='already present'):attachment_manifest(attachment_manifest(original))
 

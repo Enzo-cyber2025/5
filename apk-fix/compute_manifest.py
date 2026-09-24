@@ -39,16 +39,26 @@ def compute_manifest(data):
     ids.extend([0]*(len(strings)-len(ids)));ids[value]=0x01010024
     assert ids[name]==0x01010003 and ids[typ]!=0
     new_resources=struct.pack('<HHI',0x180,8,8+4*len(ids))+struct.pack('<'+'I'*len(ids),*ids)
-    result=[];generation=False;changed=0
+    result=[];generation=False;changed=0;internet_declared=False
     for kind,chunk in chunks:
         if kind==1:result.append(new_pool);continue
         if kind==0x180:result.append(new_resources);continue
         tag=struct.unpack_from('<I',chunk,20)[0] if kind in (0x102,0x103) else -1
+        if kind==0x102 and tag==index('uses-permission'):
+            # O APK base já pode declarar INTERNET: nesse caso não repetir a
+            # declaração, porque permissão duplicada no manifesto é sujeira
+            # desnecessária (e o manifesto é conferido byte a byte nos testes).
+            offset,stride,n=struct.unpack_from('<HHH',chunk,24)
+            for a in (16+offset+i*stride for i in range(n)):
+                if (struct.unpack_from('<I',chunk,a+4)[0]==name and chunk[a+15]==3
+                        and struct.unpack_from('<I',chunk,a+16)[0]==internet):
+                    internet_declared=True
         if kind==0x102 and tag==index('application'):
             # Busca na web só existe com acesso de rede declarado; sem ele a
             # consulta falharia em silêncio (erro de permissão em runtime).
             result.append(begin(uses,[attr(name,3,permission)])+end(uses))
-            result.append(begin(uses,[attr(name,3,internet)])+end(uses))
+            if not internet_declared:
+                result.append(begin(uses,[attr(name,3,internet)])+end(uses))
         if kind==0x102 and tag==service:
             offset,stride,n=struct.unpack_from('<HHH',chunk,24)
             attrs=[16+offset+i*stride for i in range(n)]

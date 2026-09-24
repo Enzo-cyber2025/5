@@ -74,10 +74,17 @@ def test_renderer_flushes_synchronously_at_boundaries():
     s=(JAVA/'CodeBlocks.java').read_text()
     assert 'stream.parser.feed(chunk);\n        stream.flush();' in s
     assert 'stream.parser.finish();stream.flush();' in s
-    assert 'public void close(){flush();code=null;plain=null;}' in s
+    # O fechamento limpa o estado depois de despejar o que estava pendente. Ele
+    # ganhou a detecção de linguagem do bloco; o que este teste protege é o
+    # despejo síncrono e a limpeza, não a forma de uma linha só.
+    close = s[s.index('public void close(){'):]
+    close = close[:close.index('\n        }')]
+    assert 'flush();' in close and 'code=null;plain=null;' in close
     assert s.index('flush(); // Mount') < s.index('mount();plain=null;')
     assert 'if(pendingFirst==null)pendingFirst=text;' in s
-    assert 'pendingTarget.append(' in s
+    # O lote é acumulado por destino (uma única inserção por despejo), não por
+    # uma chamada de append direta na view a cada chunk.
+    assert 'pendingBatch.append(pendingFirst)' in s and 'pendingTarget=target' in s
     assert 'postDelayed' not in s and 'Thread.sleep' not in s
 
 

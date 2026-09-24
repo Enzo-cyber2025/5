@@ -43,13 +43,29 @@ def test_software_vulkan_is_refused_and_the_choice_is_visible():
 
 def test_prefill_lots_scale_with_context_and_decode_stays_one_token():
     cpp = NATIVE.read_text()
-    assert 'const uint32_t prefill_batch=context>=1024?512:(context>=512?256:128);' in cpp
+    assert 'const uint32_t prefill_batch=context>=2048?512:(context>=1024?256:128);' in cpp
     assert 'const uint32_t prefill_ubatch=context>=1024?128:64;' in cpp
     assert 'cp.n_batch=prefill_batch; cp.n_ubatch=prefill_ubatch;' in cpp
     assert 'prefill_policy=larger_lots' in cpp
     # Um token por decodificação: lote só afeta a entrada do prompt.
     assert 'llama_batch_get_one(&t,1)' in cpp
-    assert 'cp.n_outputs_max=1' in cpp
+    assert 'if(!llama_model_has_encoder(e->model) && !llama_model_is_diffusion(e->model))cp.n_outputs_max=1;' in cpp
+
+
+def test_cpu_thread_policy_uses_the_cores_the_device_has():
+    toml = (ROOT / 'apk-fix/native/cpu_threads.h').read_text()
+    # Um pedido explícito do usuário continua sendo respeitado, com teto de 8.
+    assert 'if(requested>0)return std::max(1,std::min(requested,8));' in toml
+    # Sem capacidades no sistema de arquivos (emulador), usar os núcleos existentes
+    # em vez de fixar 4: antes, um aparelho de 8 núcleos iguais perdia metade da CPU.
+    assert 'int selected=available; // sem capacidades: todos os núcleos permitidos' in toml
+    assert 'std::min(4,available)' not in toml
+    # Com capacidades, o corte cai de 60% para 50% do pico, ainda com teto de 8.
+    assert 'capacity*100>=peak*50LL' in toml and 'capacity*100>=peak*60LL' not in toml
+    assert 'std::min(selected,8)' in toml
+    # A escolha continua registrada para auditoria no logcat.
+    native = (ROOT / 'apk-fix/native/mobile.cpp').read_text()
+    assert 'GGUF_CPU_THREADS requested=%d available=%d capacities=%zu resolved=%d' in native
 
 
 def test_native_counters_and_first_text_are_logged_and_parsed():
@@ -77,27 +93,79 @@ def test_native_counters_and_first_text_are_logged_and_parsed():
 
 def test_performance_report_requires_both_targets_from_measured_values():
     harness = _module('harness_under_test', ROOT / 'scripts/test_android.py')
-    baseline = {'tokens_s': 10.0, 'first_token_s': 3.0}
-    good = {'baseline': 'vulkan',
-            'vulkan': baseline,
-            'cpu': {'tokens_s': 15.5, 'first_token_s': 1.0},
-            'cpu-threads-auto': {'tokens_s': 12.0, 'first_token_s': 2.9}}
-    report = harness.performance_report(good)
+    baseline = {'tokens_s': 10.0, 'ui_first_text_s': 3.0, 'threads_resolved': {'available': 8}}
+    stages = {'vulkan': baseline,
+              'cpu': {'tokens_s': 15.5, 'ui_first_text_s': 1.0, 'threads_resolved': {'available': 8}},
+              'cpu-threads-auto': {'tokens_s': 12.0, 'ui_first_text_s': 2.9, 'threads_resolved': {'available': 8}}}
+    report = harness.performance_report(stages)
     assert report['targets_met'] == ['cpu'], 'só a etapa que cumpre as DUAS metas é aprovada'
     assert report['candidates']['cpu']['throughput_gain_vs_baseline'] == pytest.approx(1.55)
-    assert report['candidates']['cpu']['first_token_speedup_vs_baseline'] == pytest.approx(3.0)
-    assert report['candidates']['cpu-threads-auto']['targets'] == {'throughput_1_5x': False, 'first_token_3x': False}
+    assert report['candidates']['cpu']['wait_speedup_vs_baseline'] == pytest.approx(3.0)
+    assert report['candidates']['cpu']['waited_metric'] == 'ui_first_text_s'
+    assert report['candidates']['cpu-threads-auto']['targets'] == {'throughput_1_5x': False, 'first_text_3x': False}
     assert 'primeiro texto' in report['scope'] and 'tokens nativos' in report['scope']
+    assert '-300%' in report['interpretation']
+    assert (report['environment']['targets_required']) is True
+
+
+def test_two_core_software_device_declares_the_targets_unreachable():
+    """Exigir 1,5x num aparelho de 2 núcleos com Vulkan por software não informa nada."""
+    harness = _module('harness_under_test', ROOT / 'scripts/test_android.py')
+    stages = {'vulkan': {'tokens_s': 11.2, 'ui_first_text_s': 1.8,
+                         'threads_resolved': {'available': 2},
+                         'software_vulkan_notice': 'llvmpipe (LLVM 21.0.0, 256 bits)'},
+              'cpu-threads-auto': {'tokens_s': 11.3, 'ui_first_text_s': 1.75,
+                                   'threads_resolved': {'available': 2},
+                                   'software_vulkan_notice': 'llvmpipe (LLVM 21.0.0, 256 bits)'}}
+    report = harness.performance_report(stages)
+    assert report['environment']['targets_required'] is False
+    assert any('2 núcleos' in limit for limit in report['environment']['limits'])
+    assert any('software' in limit for limit in report['environment']['limits'])
+    assert report['targets_met'] == []
+    assert report['regressions'] == []
+
+
+def test_small_noise_is_not_a_regression_but_a_real_drop_is():
+    harness = _module('harness_under_test', ROOT / 'scripts/test_android.py')
+    def stages(rate):
+        return {'vulkan': {'tokens_s': 10.0, 'ui_first_text_s': 2.0, 'threads_resolved': {'available': 8}},
+                'cpu': {'tokens_s': rate, 'ui_first_text_s': 2.0, 'threads_resolved': {'available': 8}}}
+    assert harness.performance_report(stages(9.8))['regressions'] == []   # 2% de ruído
+    assert harness.performance_report(stages(9.0))['regressions'] == ['cpu']
 
 
 def test_performance_gate_reads_the_measurement_and_flags_the_interpretation(tmp_path):
     gate = (ROOT / 'scripts/check_performance.py').read_text()
     assert 'tokens nativos' in gate
-    assert 'impossível' in gate, 'a leitura literal de -300% precisa ficar registrada'
+    assert 'tempo negativo' in gate, 'a leitura literal de -300% precisa ficar registrada'
+    assert 'Regressão medida contra a própria linha de base' in gate
     missing = Path(tmp_path) / 'nao-existe.json'
     with pytest.raises(SystemExit):
         sys.argv = ['check_performance.py', str(missing)]
         _module('gate_under_test', ROOT / 'scripts/check_performance.py').main()
+
+
+def test_gate_fails_on_regression_and_passes_without_targets_when_device_limits(tmp_path, capsys):
+    gate = _module('gate_under_test2', ROOT / 'scripts/check_performance.py')
+    harness = _module('harness_under_test2', ROOT / 'scripts/test_android.py')
+    def write(stages):
+        path = Path(tmp_path) / 'performance.json'
+        path.write_text(json.dumps(harness.performance_report(stages)))
+        return str(path)
+    two_cores = 2
+    slow = write({'vulkan': {'tokens_s': 10.0, 'ui_first_text_s': 2.0,
+                             'threads_resolved': {'available': two_cores}},
+                  'cpu': {'tokens_s': 11.0, 'ui_first_text_s': 1.9,
+                          'threads_resolved': {'available': two_cores},
+                          'software_vulkan_notice': 'llvmpipe'}})
+    sys.argv = ['check_performance.py', slow]
+    gate.main()  # metas fora de alcance aqui, sem regressão: passa e declara
+    assert 'não avaliáveis' in capsys.readouterr().out
+    worse = write({'vulkan': {'tokens_s': 10.0, 'ui_first_text_s': 2.0, 'threads_resolved': {'available': 8}},
+                   'cpu': {'tokens_s': 8.0, 'ui_first_text_s': 2.0, 'threads_resolved': {'available': 8}}})
+    sys.argv = ['check_performance.py', worse]
+    with pytest.raises(SystemExit):
+        gate.main()
 
 
 def test_offgrid_ui_covers_every_screen_without_renaming_labels():

@@ -6,16 +6,26 @@ estão registrados no relatório e na própria medição). Execução no emulado
 e interface inteira inspirada no Off Grid AI — referência de estilo, sem cópia,
 sem marca e sem qualquer vínculo com aquele aplicativo.
 
-O que mudou: política de backend honesta (Vulkan por software recusado, com
-aviso visível na tela), lotes de prefill proporcionais ao contexto (um token por
-decodificação, sem alterar a taxa por token), contadores nativos auditáveis
+**O que a medição mostrou.** No emulador do CI (2 núcleos, Vulkan por software) o
+caminho anterior aceitava o driver por software como se fosse GPU. Com a política
+nova o aplicativo executa na CPU, que é o backend correto nesse aparelho, e a
+diferença é medida na mesma rodada: **1,72× em T/s e 1,15× na espera até o
+primeiro texto** contra aquele caminho (números em
+`ci-results/35935859714-1-text-ui/performance.json`). **As metas de 1,5× e de um
+terço da espera não são atingíveis neste emulador** e não foram declaradas
+atingidas: 2 núcleos não têm paralelismo a ganhar e o teto medido do driver Vulkan
+por software é de 0,55–0,74 GMAC/s. O relatório declara esses limites com o dado
+que os sustenta, e o verificador reprova a rodada por regressão medida ou por
+ausência de medição — nunca aprova por ausência de dado.
+
+Também nesta rodada: política de threads da CPU que usa os núcleos que o aparelho
+tem (o aplicativo vem de fábrica com “automático”), lotes de prefill proporcionais
+ao contexto (um token por decodificação, sem mudar a taxa por token), uma linha de
+saída de logits também na CPU, contadores nativos auditáveis
 (`GGUF_GENERATION_STATS`, `GGUF_UI_FIRST_TEXT`) e a linguagem visual única nas
-quatro telas. Nenhum rótulo do aplicativo foi renomeado ou alterado em caixa.
+telas. Nenhum rótulo do aplicativo foi renomeado ou alterado em caixa.
 
-Resultados da rodada: publicados em `ci-results/<run>-1-text-ui/` (`performance.json`
-com taxa, primeiro texto, ganho e alvo de cada etapa; `summary.json`; capturas).
-
-[Relatório, critério de medição e limites](docs/PERFORMANCE_UI.md).
+[Relatório, critério de medição, limites e evidências](docs/PERFORMANCE_UI.md).
 
 ---
 

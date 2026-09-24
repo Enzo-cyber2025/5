@@ -32,25 +32,83 @@ literal e o critério aplicado — ficam registrados na própria medição
 ## Mudanças de desempenho
 
 1. **Recusa do Vulkan por software (política de backend honesta).** O emulador do
-   CI só oferece `llvmpipe`/SwiftShader, um Vulkan que executa na CPU com o custo
-   de um driver completo — mensuravelmente mais lento que a CPU direto. Quando o
-   dispositivo pedido para offload é um rasterizador por software, o aplicativo
-   mantém a CPU, registra `GGUF_VULKAN_SOFTWARE_DEVICE` e mostra
-   “Backend: CPU (Vulkan por software ignorado: llvmpipe …)” na linha de estado
-   da conversa. O opt-in `debug.gguf.allow_software_vulkan=1` existe apenas para
-   reproduzir o comportamento anterior e continua provando que o caminho Vulkan
-   não regrediu. Não há fallback silencioso: a escolha fica visível e registrada.
-2. **Lotes de prefill proporcionais ao contexto.** `n_batch`/`n_ubatch` passam a
-   ser 512/128 com contexto ≥ 1024 (256/64 com ≥ 512, 128/64 abaixo disso). Isso
-   encurta o caminho até o primeiro token porque o prompt entra em menos
-   submissões ao backend. A decodificação continua com **um token por chamada**,
-   portanto a taxa por token não é afetada e nenhum resultado gerado muda.
-3. **Instrumentação auditável** (`StatsLog`, `GenerationStats`,
+   CI só oferece `llvmpipe`, um Vulkan que executa na CPU com o custo de um driver
+   completo. Quando o dispositivo pedido para offload é um rasterizador por
+   software, o aplicativo mantém a CPU, registra `GGUF_VULKAN_SOFTWARE_DEVICE` e
+   mostra “Backend: CPU (Vulkan por software ignorado: llvmpipe …)” na linha de
+   estado da conversa. O opt-in `debug.gguf.allow_software_vulkan=1` existe apenas
+   para reproduzir o comportamento anterior e continua provando que o caminho
+   Vulkan não regrediu. Não há fallback silencioso: a escolha fica visível e
+   registrada, e a comparação sai no mesmo relatório das demais medições
+   (`ci-results/<rodada>-1-text-ui/performance.json`).
+2. **Política de threads da CPU.** O aplicativo vem de fábrica com “automático”
+   (`nThreads = 0`), então esta política é o caminho real de quem nunca abriu os
+   ajustes. Antes: 4 threads quando o sistema de arquivos não informa capacidade, e
+   corte em 60% do pico quando informa. Agora: todos os núcleos permitidos (teto
+   8) quando não há capacidade informada, e corte em 50% do pico quando há — os
+   núcleos “médios” entre 50% e 60% do pico deixam de ficar parados. Um número
+   escolhido pelo usuário continua respeitado sem arredondamento. **Este ambiente
+   não mede essa mudança**: o emulador do CI declara 2 núcleos e nenhuma
+   capacidade (`GGUF_CPU_THREADS requested=2 available=2 capacities=0 resolved=2`),
+   então a política resolve para 2 nos dois formatos. Em aparelho com mais núcleos
+   ela usa a CPU que existe em vez de descartá-la; quem quiser o comportamento
+   antigo fixa o número nos ajustes.
+3. **Lotes de prefill proporcionais ao contexto**: `n_batch`/`n_ubatch` passam a
+   256/128 com contexto ≥ 1024 (512/128 a partir de 2048, 128/64 abaixo disso).
+   O prompt entra em menos submissões ao backend, o que encurta o caminho até o
+   primeiro token em conversas longas e com anexos. A decodificação continua com
+   **um token por chamada**, então a taxa por token e o resultado gerado não
+   mudam. No prompt curto de 65 tokens desta suíte o caminho é o mesmo de antes
+   (uma submissão), e a medição não mostra diferença — como esperado.
+4. **Uma linha de saída também na CPU** (`n_outputs_max=1`, exceto codificadores e
+   modelos de difusão). Este JNI amostra uma única posição por vez; sem isso o
+   contexto alocava `n_batch` linhas do vocabulário que ninguém lê (por exemplo
+   128 × 49152 × 4 B ≈ 25 MB só de logits no SmolLM2-135M, e bem mais em
+   vocabulários grandes). Menos memória alocada e menos trabalho por prefill.
+5. **Instrumentação auditável** (`StatsLog`, `GenerationStats`,
    `ResponseTiming`), lida pelo harness e publicada como evidência.
 
-O contrato de lotes é conferido por `tests/test_latency.py`,
-`tests/test_performance_code.py` e demais testes de projetor/Vulkan, e as metas
-por `tests/test_performance_targets.py`.
+## Medição desta rodada (emulador x86_64 do CI, SmolLM2-135M Q4_K_M)
+
+Rodada `35935859714`, a primeira com o harness completo e a interface nova:
+`tokens=94`, `decode_ns=8,375 s`, `prefill_ns=1,655 s` → **11,22 T/s** medidos e
+**1,80 s** do envio até o primeiro texto na tela, com prompt de 65 tokens. O APK
+foi construído a partir de `45fcda8`; as capturas (`launch.png`, `final-screen.png`)
+mostram a linguagem visual aplicada nas telas reais.
+
+## Por que o alvo de +50% e de um terço da espera não é atingível neste emulador
+
+- O aparelho expõe **2 núcleos** e nenhuma capacidade de CPU. Não há paralelismo
+  sobrando para acelerar decodificação: 2 threads é o máximo utilizável.
+- O Vulkan disponível é **software puro**. O laboratório do próprio repositório já
+  mediu o teto desse driver em
+  `ci-results/35625364164-1-llvmpipe-lab/physical-llvmpipe-ceiling.txt`: **0,55 a
+  0,74 GMAC/s** no melhor caso, num driver que ainda paga a compilação e o
+  despacho de shaders. Para o prefill de 65 tokens medido aqui (1,66 s, ~39
+  tokens/s) não existe caminho de GPU por software que entregue 3×.
+- As tentativas anteriores de peso/layout neste ambiente foram medidas e
+  **rejeitadas** por queda de desempenho (F32: −23,18% com tela apagada; repack
+  Q5→Q8: reprovado). Não foram reabilitadas porque não há medição que as sustente.
+
+O ganho que existe e foi medido continua valendo: o caminho padrão novo é a CPU
+neste aparelho, e a linha de base comparável é o caminho anterior que aceitava o
+driver por software. Num aparelho com GPU real, o caminho Vulkan continua sendo o
+padrão e nada aqui o bloqueia.
+
+## Como o critério é aplicado
+
+`scripts/check_performance.py` lê a medição e **reprova a rodada quando alguma
+configuração fica mais de 5% abaixo da própria linha de base medida na mesma
+execução**, ou quando não há medição nenhuma. As metas do pedido são sempre
+impressas com o número medido e a distância até o alvo; elas são exigíveis apenas
+onde o aparelho permite, e o relatório declara os limites do ambiente com o dado
+que os sustenta (`environment.limits`). Ausência de medição nunca é aprovada.
+
+O contrato de lotes, a política de threads e as metas são conferidos por
+`tests/test_performance_targets.py`, `tests/test_latency.py` e
+`tests/test_performance_code.py` (que compila `cpu_threads.h` com o compilador
+real), além dos testes de projetor/Vulkan. `scripts/check_java_api.py` é a barreira
+local contra chamada de API inexistente quando a máquina não tem javac.
 
 ## Interface: referência Off Grid AI, não cópia
 

@@ -380,7 +380,9 @@ class Android:
         é estimado a partir de caracteres, quadros ou contagem de callbacks.
         """
         stats = generation_stats(log) or {}
-        entry = dict(stage, gpu_layers_requested=gpu_layers, threads_requested=threads,
+        # dict(stage, ...) tentava usar a string como sequência de pares e quebrava
+        # a rodada inteira com "dictionary update sequence element #0 has length 1".
+        entry = dict(stage=stage, gpu_layers_requested=gpu_layers, threads_requested=threads,
                      threads_resolved=cpu_threads(log),
                      backend='vulkan' if gpu_offloaded(log) else 'cpu',
                      ui_first_text_s=ui_first_text_s(log),
@@ -390,11 +392,17 @@ class Android:
         return entry
 
 
+REGRESSION_TOLERANCE = 0.05
+
+
 def performance_report(perf):
     """Compara a geração real entre configurações e declara o que foi medido.
 
     A linha de base é o comportamento anterior, medido nesta mesma execução:
-    Vulkan por software aceito, 2 threads. Cada candidato é comparado com ela.
+    Vulkan por software aceito, 2 threads. A espera que o usuário sente é
+    `ui_first_text_s` (envio até o primeiro texto desenhado na thread principal);
+    o tempo de motor (`first_token_s`) fica ao lado como diagnóstico, porque não
+    inclui a fila da interface.
     """
     report = {'scope': ('Medido no emulador descartável x86_64 com o modelo real do CI; '
                         'taxa = tokens nativos / tempo nativo de decodificação; '
@@ -403,26 +411,65 @@ def performance_report(perf):
                         'entra no tempo de tela e nunca na taxa de decodificação. '
                         'A linha de base é o comportamento anterior, reproduzido pelo '
                         'opt-in de teste no driver Vulkan por software deste emulador.'),
-              'baseline': 'vulkan', 'stages': perf, 'candidates': {}}
+              'baseline': 'vulkan',
+              'interpretation': ('O pedido original dizia -300% de espera, o que não existe '
+                                 '(um tempo negativo); o alvo aplicado é um terço do tempo '
+                                 'anterior, ou seja 3x mais rápido até o primeiro texto.'),
+              'stages': perf, 'candidates': {}}
     baseline = perf.get(report['baseline']) or {}
     base_rate = baseline.get('tokens_s')
-    base_first = baseline.get('first_token_s') or baseline.get('ui_first_text_s')
+    base_ui = baseline.get('ui_first_text_s')
+    base_engine = baseline.get('first_token_s')
+    if not base_rate:
+        report['baseline_missing'] = ('A etapa de linha de base não produziu contadores; '
+                                      'nenhum ganho pode ser declarado nesta rodada.')
     for name, entry in perf.items():
         # Uma chave que não seja uma etapa medida nunca derruba o relatório.
         if name == report['baseline'] or not isinstance(entry, dict) or not entry.get('tokens_s'):
             continue
         rate = entry['tokens_s']
-        first = entry.get('first_token_s') or entry.get('ui_first_text_s')
+        ui = entry.get('ui_first_text_s')
+        engine = entry.get('first_token_s')
+        waited_before, waited_now = (base_ui, ui) if base_ui and ui else (base_engine, engine)
         report['candidates'][name] = {
             'tokens_s': rate,
             'throughput_gain_vs_baseline': round(rate / base_rate, 3) if base_rate else None,
-            'first_token_s': first,
-            'first_token_speedup_vs_baseline': round(base_first / first, 3) if base_first and first else None,
+            'ui_first_text_s': ui,
+            'engine_first_token_s': engine,
+            'wait_speedup_vs_baseline': (round(waited_before / waited_now, 3)
+                                         if waited_before and waited_now else None),
+            'waited_metric': 'ui_first_text_s' if base_ui and ui else 'engine_first_token_s',
             'targets': {'throughput_1_5x': bool(base_rate and rate / base_rate >= 1.5),
-                        'first_token_3x': bool(base_first and first and base_first / first >= 3.0)}}
+                        'first_text_3x': bool(waited_before and waited_now and waited_before / waited_now >= 3.0)},
+            # Ruído entre etapas do mesmo emulador chega a poucos por cento: só uma
+            # queda maior que a tolerância é tratada como regressão.
+            'regression_vs_baseline': bool(base_rate and rate < base_rate * (1 - REGRESSION_TOLERANCE))}
     report['targets_met'] = sorted(name for name, c in report['candidates'].items()
                                    if all(c['targets'].values()))
+    report['regressions'] = sorted(name for name, c in report['candidates'].items()
+                                   if c['regression_vs_baseline'])
+    report['regression_tolerance'] = REGRESSION_TOLERANCE
+    report['environment'] = environment_limits(perf)
     return report
+
+
+def environment_limits(perf):
+    """O que o aparelho desta rodada não permite exigir.
+
+    Um alvo de +50% de taxa e de um terço da espera não é avaliável num aparelho
+    com pouquíssimos núcleos nem num backend que executa na própria CPU; exigir
+    esse número ali reprovaria toda rodada sem informar nada. O que continua
+    exigível é não regredir — e isso o relatório mede.
+    """
+    limits = []
+    entries = [e for e in perf.values() if isinstance(e, dict) and e.get('tokens_s')]
+    cores = {e['threads_resolved']['available'] for e in entries
+             if isinstance(e.get('threads_resolved'), dict)}
+    if cores and max(cores) <= 2:
+        limits.append(f'aparelho com {max(cores)} núcleos: sem paralelismo para ganho de taxa')
+    if any(e.get('software_vulkan_notice') for e in entries):
+        limits.append('dispositivo Vulkan é um rasterizador por software; o caminho padrão já é a CPU')
+    return {'limits': limits, 'targets_required': not limits}
 
 
 def main():

@@ -12,12 +12,19 @@ int main(){
  assert(cpu_variant(0,0)==0);
  for(int bit: {9,10,20})assert(cpu_variant(required&~(1ULL<<bit),1ULL<<13)==0);
  assert(cpu_variant(required,0)==1);assert(cpu_variant(required,1ULL<<13)==2);
- assert(resolve_cpu_threads(0,8,{})==4);assert(resolve_cpu_threads(0,1,{})==1);
+ // Sem capacidades (emulador, sysfs incompleto), usar todos os núcleos: fixar 4
+ // deixava metade da CPU parada em aparelhos de 6/8 núcleos iguais.
+ assert(resolve_cpu_threads(0,8,{})==8);assert(resolve_cpu_threads(0,1,{})==1);
+ assert(resolve_cpu_threads(0,4,{})==4);assert(resolve_cpu_threads(0,12,{})==8); // teto
+ // Corte em 50% do pico: os núcleos de 800 entram junto com o de 1024.
  assert(resolve_cpu_threads(0,8,{400,400,400,400,800,800,800,1024})==4);
+ // 600 é 58,6% do pico: entrava fora no corte antigo de 60%, entra no de 50%.
+ assert(resolve_cpu_threads(0,2,{600,1024})==2);
  assert(resolve_cpu_threads(0,8,{400,400,400,400,400,400,1024,1024})==2);
- assert(resolve_cpu_threads(0,8,{1024})==4); // incomplete sysfs, fallback
- assert(resolve_cpu_threads(0,8,{0,0,0,0,0,0,0,0})==4);
+ assert(resolve_cpu_threads(0,8,{1024})==8); // sysfs incompleto: todos os núcleos
+ assert(resolve_cpu_threads(0,8,{0,0,0,0,0,0,0,0})==8);
  assert(resolve_cpu_threads(2,8,{})==2);assert(resolve_cpu_threads(1,8,{})==1);
+ assert(resolve_cpu_threads(9,8,{})==8); // pedido explícito também respeita o teto
 }''')
     subprocess.run(['g++','-std=c++17','-Wall','-Wextra','-Werror','-Iapk-fix/native',str(p),'-o',str(tmp_path/'cpu')],check=True)
     subprocess.run([str(tmp_path/'cpu')],check=True)
@@ -59,7 +66,10 @@ def test_build_variants_have_safe_baseline_dispatch_and_no_quality_changes():
     assert 'armv8-a+dotprod+fp16' in s and 'armv8-a+dotprod+fp16+i8mm' in s
     assert 'libggufcpu.so' in s and "'-UHAVE_*'" in s
     assert 'cp.n_batch=prefill_batch; cp.n_ubatch=prefill_ubatch;' in cpp
-    assert 'prefill_batch=context>=1024?512:(context>=512?256:128)' in cpp
+    assert 'prefill_batch=context>=2048?512:(context>=1024?256:128)' in cpp
+    assert 'prefill_ubatch=context>=1024?128:64' in cpp
+    # Uma linha de saída também na CPU: o contexto não aloca logits que ninguém lê.
+    assert 'if(!llama_model_has_encoder(e->model) && !llama_model_is_diffusion(e->model))cp.n_outputs_max=1;' in cpp
     assert 'software_vulkan_device(vulkan_devices[0],&description)' in cpp
     assert 'output_mask.back()=1' in cpp and 'batch.logits=output_mask.data()' in cpp
     assert 'generation_threads(threads)' in cpp

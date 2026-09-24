@@ -39,7 +39,8 @@ def test_real_memory_operations_and_invalidation_are_guarded():
     # alocação. O que existe agora é um lote de prefill proporcional ao contexto,
     # com teto declarado, e nenhuma nova tentativa.
     assert 'cp.n_batch=128; cp.n_ubatch=32;' not in s
-    assert 'prefill_batch=context>=1024?512:(context>=512?256:128)' in s
+    assert 'prefill_batch=context>=2048?512:(context>=1024?256:128)' in s
+    assert 'prefill_ubatch=context>=1024?128:64' in s
     assert 'GGUF_PREFILL_ALLOCATION_RETRY' not in s
 
 def test_incremental_stream_has_no_full_copy_or_live_truncation(tmp_path):

@@ -273,14 +273,15 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
         // Lotes maiores: o prompt entra em menos submissões ao backend, o que
         // encurta o caminho até o primeiro token. Sem efeito por token, portanto
         // sem mudar a taxa de decodificação nem o resultado gerado.
-        const uint32_t prefill_batch=context>=1024?512:(context>=512?256:128);
+        const uint32_t prefill_batch=context>=2048?512:(context>=1024?256:128);
         const uint32_t prefill_ubatch=context>=1024?128:64;
         auto cp=llama_context_default_params(); cp.n_ctx=context;
         cp.n_batch=prefill_batch; cp.n_ubatch=prefill_ubatch;
-        // This JNI emits one sequence and requests logits ONLY for its final
-        // token. Reserve one output row, not n_batch unused vocabulary rows.
-        // Encoder/diffusion architectures keep upstream output requirements.
-        if(e->strict_device && !llama_model_has_encoder(e->model) && !llama_model_is_diffusion(e->model))cp.n_outputs_max=1;
+        // Este JNI amostra uma única posição: a do último token do prompt e,
+        // depois, a de cada token decodificado. Reservar uma linha de saída vale
+        // também para a CPU — sem isso o contexto aloca n_batch linhas do
+        // vocabulário que ninguém lê. Codificadores/difusão mantêm o padrão.
+        if(!llama_model_has_encoder(e->model) && !llama_model_is_diffusion(e->model))cp.n_outputs_max=1;
         cp.n_threads=cp.n_threads_batch=generation_threads(threads);
         cp.abort_callback=[](void *p){return static_cast<Engine*>(p)->cancel.load();}; cp.abort_callback_data=e.get();
         e->ctx=llama_init_from_model(e->model,cp);
