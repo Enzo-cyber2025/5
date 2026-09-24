@@ -4,6 +4,20 @@ Pedido: priorizar a GPU, cortar a espera até o primeiro token a um terço (o pe
 literal, “−300%”, descreveria um tempo negativo; o critério aplicado é 3× menos
 espera), NPU do A55 *se possível*, busca na web e testar tudo.
 
+## [Baixar o APK desta rodada — sem ZIP](https://github.com/Enzo-cyber2025/5/releases/download/gguf-gpu-warmup/GGUF-Chat-gpu-warmup.apk)
+
+51.247.031 bytes · SHA-256 `0a237b94b79eb2403ddf95c65d6b31625a93e658afcc9906f11ff6a08413a7a5` ·
+rodada verde `36041334551` · recibo em
+[`ci-results/delivery-gpu-warmup.json`](ci-results/delivery-gpu-warmup.json).
+
+As bibliotecas nativas e o `classes.dex` deste APK têm exatamente o mesmo hash do
+binário que a rodada verde de emulador exercitou — a entrega só publica se
+conferir, e reprova sem publicar se não conferir. **Assinatura:** a chave foi
+gerada na execução que montou o APK e descartada em seguida (este repositório não
+guarda material de assinatura privado). É uma pré-entrega de teste com certificado
+novo: para instalar sobre uma versão de outro certificado, desinstale antes —
+preserve conversas, anexos e modelos fora do aplicativo.
+
 **Espera.** A decomposição medida mostra onde ela mora: `first_token_ns=1,655 s`
 com `prefill_ns=1,652 s` — o prefill do prompt é a espera. O aplicativo agora
 pré-preenche no KV o prefixo que o envio vai reutilizar, no tempo ocioso da
