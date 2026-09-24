@@ -20,7 +20,12 @@ import android.widget.Toast;
 public final class CodeBlocks {
     private static int dp(Context c,int n){return Math.round(c.getResources().getDisplayMetrics().density*n);}
     private static GradientDrawable box(Context c,int color){
-        GradientDrawable d=new GradientDrawable();d.setColor(color);d.setCornerRadius(dp(c,12));return d;
+        GradientDrawable d=new GradientDrawable();d.setColor(color);d.setCornerRadius(dp(c,8));return d;
+    }
+    /** Painel de conteúdo: superfície neutra com fio de cabelo, sem matiz. */
+    private static GradientDrawable panel(Context c){
+        GradientDrawable d=new GradientDrawable();d.setColor(0xFF1C1C1C);
+        d.setStroke(Math.max(1,dp(c,1)/2),0xFF2A2A2A);d.setCornerRadius(dp(c,8));return d;
     }
     private static final class Stream implements CodeFenceParser.Sink {
         final Context c;final TextView style;final LinearLayout root;final CodeFenceParser parser;
@@ -79,18 +84,18 @@ public final class CodeBlocks {
         public void open(String language){
             flush(); // Mount must see preceding plain text, even in this chunk.
             mount();plain=null;
-            LinearLayout panel=new LinearLayout(c);panel.setOrientation(LinearLayout.VERTICAL);panel.setBackground(box(c,0xff101b23));
+            LinearLayout panel=new LinearLayout(c);panel.setOrientation(LinearLayout.VERTICAL);panel.setBackground(panel(c));
             panel.setContentDescription("Bloco de código");
             LinearLayout.LayoutParams pp=new LinearLayout.LayoutParams(-1,-2);pp.setMargins(0,dp(c,6),0,dp(c,6));root.addView(panel,pp);
             LinearLayout bar=new LinearLayout(c);bar.setGravity(Gravity.CENTER_VERTICAL);bar.setPadding(dp(c,12),dp(c,4),dp(c,6),dp(c,4));
-            TextView title=new TextView(c);title.setText(language.length()==0?"Código":language);title.setTextColor(0xffadbdcc);title.setTextSize(12);
+            TextView title=new TextView(c);title.setText(language.length()==0?"Código":language);title.setTextColor(0xFFA1A1A1);title.setTextSize(12);
             title.setSingleLine(true);title.setEllipsize(TextUtils.TruncateAt.END);bar.addView(title,new LinearLayout.LayoutParams(0,-2,1));
             this.title=title;declared=language;
-            final TextView body=new TextView(c);code=body;body.setTextColor(0xffe2eaf2);body.setTextSize(13);body.setTypeface(Typeface.MONOSPACE);
+            final TextView body=new TextView(c);code=body;body.setTextColor(0xFFD4D4D4);body.setTextSize(13);body.setTypeface(Typeface.MONOSPACE);
             body.setTextIsSelectable(true);body.setHorizontallyScrolling(true);body.setPadding(dp(c,12),dp(c,12),dp(c,12),dp(c,14));
-            Button copy=new Button(c);copy.setText("Copiar");copy.setAllCaps(false);copy.setTextSize(12);copy.setTextColor(0xffd3eee2);
+            Button copy=new Button(c);copy.setText("Copiar");copy.setAllCaps(false);copy.setTextSize(12);copy.setTextColor(0xFFD4D4D4);copy.setTypeface(Typeface.MONOSPACE);
             copy.setMinWidth(0);copy.setMinimumWidth(0);copy.setMinHeight(dp(c,40));copy.setMinimumHeight(dp(c,40));
-            copy.setBackground(box(c,0xff244234));copy.setContentDescription("Copiar código");
+            copy.setBackground(panel(c));copy.setContentDescription("Copiar código");
             copy.setOnClickListener(new View.OnClickListener(){public void onClick(View v){
                 ClipboardManager clipboard=(ClipboardManager)c.getSystemService(Context.CLIPBOARD_SERVICE);
                 if(clipboard!=null){clipboard.setPrimaryClip(ClipData.newPlainText("Código",body.getText().toString()));Toast.makeText(c,"Código copiado",Toast.LENGTH_SHORT).show();}

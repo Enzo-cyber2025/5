@@ -1,14 +1,19 @@
 package com.ggufchat.app;
 
 import android.app.Activity;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -214,9 +219,44 @@ public final class OffgridUi {
             button.setBackground(box(button, EMERALD, 0));
             return;
         }
-        // Botões de estado (ferramentas, alternadores) mantêm o próprio desenho:
-        // apagar a indicação de ligado/desligado seria uma regressão de interface.
-        surface(button, false);
+        // Caixas de seleção e alternadores: o desenho É o estado (marcado,
+        // ligado, desligado). Mexer nele apagaria informação.
+        if (button instanceof CompoundButton) {
+            surface(button, false);
+            return;
+        }
+        // Botões de ferramenta do próprio aplicativo indicam "ligado" com o
+        // acento esmeralda (Ui.ACCENT2). Esse preenchimento é a informação, e
+        // o rótulo também diz o estado ("Busca ON"/"Thinking ON"): fica.
+        if (isAccentFill(button)) {
+            surface(button, false);
+            return;
+        }
+        // Rótulos que não são ação primária nem estado viram ação de conteúdo:
+        // plano, fio de cabelo, texto em segundo nível, alinhado à esquerda.
+        button.setTextColor(TEXT_2);
+        button.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
+        button.setBackground(box(button, SURFACE_PLUS, BORDER));
+    }
+
+    /** Preenchimento atual de um botão é o acento (estado "ligado")? */
+    private static boolean isAccentFill(View view) {
+        try {
+            Drawable background = view.getBackground();
+            int color;
+            if (background instanceof GradientDrawable) {
+                ColorStateList list = ((GradientDrawable) background).getColor();
+                if (list == null) return false;
+                color = list.getDefaultColor();
+            } else if (background instanceof ColorDrawable) {
+                color = ((ColorDrawable) background).getColor();
+            } else {
+                return false;
+            }
+            return Color.alpha(color) > 40 && isAccent(color);
+        } catch (Throwable error) {
+            return false;
+        }
     }
 
     /** Superfícies existentes: só o formato muda (cantos de 8 dp, plano e afiado).
@@ -231,10 +271,47 @@ public final class OffgridUi {
         Drawable background = view.getBackground();
         if (!(background instanceof GradientDrawable)) return;
         try {
-            ((GradientDrawable) background.mutate()).setCornerRadius(dp(view, 8));
+            GradientDrawable shape = (GradientDrawable) background.mutate();
+            shape.setCornerRadius(dp(view, 8));
+            neutralize(shape);
         } catch (Throwable ignored) {
             // Um drawable exótico não deve interromper a tela.
         }
+    }
+
+    /** Tira o matiz de preenchimentos sem estado próprio.
+     *
+     * O tema do sistema pinta controles com a cor secundária padrão (arroxeada);
+     * num painel isso destoa de uma paleta neutra. Aqui a cor saturada vira o
+     * cinza neutro de luminosidade equivalente, e só isso muda: preenchimento com
+     * estado (ligado/desligado, pressionado) fica intacto porque ali a cor é
+     * informação, e o acento esmeralda continua sendo o acento.
+     */
+    private static void neutralize(GradientDrawable shape) {
+        ColorStateList list = shape.getColor();
+        if (list == null || list.isStateful()) return;
+        int color = list.getDefaultColor();
+        if (Color.alpha(color) < 40 || isAccent(color) || !saturated(color)) return;
+        shape.setColor(greyOf(color));
+    }
+
+    private static int greyOf(int color) {
+        float value = luminance(color);
+        if (value < 0.05f) return BASE;
+        if (value < 0.09f) return SURFACE;
+        if (value < 0.14f) return SURFACE_PLUS;
+        if (value < 0.22f) return BORDER;
+        if (value < 0.40f) return 0xFF3A3A3A;
+        if (value < 0.60f) return TEXT_4;
+        if (value < 0.78f) return TEXT_3;
+        if (value < 0.92f) return TEXT_2;
+        return TEXT;
+    }
+
+    private static boolean saturated(int color) {
+        int r = (color >> 16) & 0xFF, g = (color >> 8) & 0xFF, b = color & 0xFF;
+        int high = Math.max(r, Math.max(g, b)), low = Math.min(r, Math.min(g, b));
+        return high - low > 16;
     }
 
     private static GradientDrawable box(View view, int fill, int stroke) {

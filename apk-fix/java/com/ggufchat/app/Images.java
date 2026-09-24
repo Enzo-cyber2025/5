@@ -72,7 +72,7 @@ public final class Images {
         line.setGravity(Gravity.CENTER_VERTICAL);
         holder.summary=new TextView(activity);
         holder.summary.setTextSize(11.5f);
-        holder.summary.setTextColor(0xff9fb4c4);
+        holder.summary.setTextColor(0xFFA1A1A1);
         holder.summary.setSingleLine(true);
         holder.summary.setEllipsize(TextUtils.TruncateAt.END);
         holder.summary.setContentDescription("Imagens anexadas");
@@ -139,7 +139,7 @@ public final class Images {
                 chip.setOrientation(LinearLayout.HORIZONTAL);
                 chip.setGravity(Gravity.CENTER_VERTICAL);
                 GradientDrawable box=new GradientDrawable();
-                box.setColor(0xff152430);box.setCornerRadius(dp(activity,10));
+                box.setColor(0xFF1C1C1C);box.setStroke(Math.max(1,dp(activity,1)/2),0xFF2A2A2A);box.setCornerRadius(dp(activity,8));
                 chip.setBackground(box);
                 chip.setPadding(dp(activity,6),dp(activity,4),dp(activity,6),dp(activity,4));
                 ImageView preview=new ImageView(activity);
@@ -148,7 +148,7 @@ public final class Images {
                 if(bitmap!=null)preview.setImageBitmap(bitmap);
                 chip.addView(preview,new LinearLayout.LayoutParams(dp(activity,THUMB_DP),dp(activity,THUMB_DP)));
                 TextView label=new TextView(activity);
-                label.setTextSize(11);label.setTextColor(0xffc2d2de);label.setMaxWidth(dp(activity,90));
+                label.setTextSize(11);label.setTextColor(0xFFD4D4D4);label.setMaxWidth(dp(activity,90));
                 label.setSingleLine(true);label.setEllipsize(TextUtils.TruncateAt.MIDDLE);
                 label.setText((item.optInt("message",-1)<0?"":"")+item.optString("name","imagem"));
                 LinearLayout.LayoutParams labelParams=new LinearLayout.LayoutParams(-2,-2);
@@ -170,7 +170,7 @@ public final class Images {
             }
             if(found.size()>shown){
                 TextView more=new TextView(activity);
-                more.setTextSize(11.5f);more.setTextColor(0xff9fb4c4);
+                more.setTextSize(11.5f);more.setTextColor(0xFFA1A1A1);
                 more.setText("+"+(found.size()-shown)+" …");
                 holder.chips.addView(more);
             }

@@ -334,13 +334,13 @@ public final class SearchTool {
         LinearLayout panel=new LinearLayout(context);
         panel.setOrientation(LinearLayout.VERTICAL);
         GradientDrawable box=new GradientDrawable();
-        box.setColor(0xff101b23);box.setCornerRadius(dp(context,12));
+        box.setColor(0xFF1C1C1C);box.setStroke(Math.max(1,dp(context,1)/2),0xFF2A2A2A);box.setCornerRadius(dp(context,8));
         panel.setBackground(box);panel.setPadding(dp(context,12),dp(context,8),dp(context,12),dp(context,10));
         LinearLayout.LayoutParams params=new LinearLayout.LayoutParams(-1,-2);
         params.setMargins(0,0,0,dp(context,6));
         panel.setLayoutParams(params);
         TextView header=new TextView(context);
-        header.setTextSize(12);header.setTextColor(0xff9fb4c4);header.setSingleLine(true);
+        header.setTextSize(12);header.setTextColor(0xFFA1A1A1);header.setSingleLine(true);
         header.setEllipsize(TextUtils.TruncateAt.END);
         header.setText(report.ok()
             ? "O que foi pesquisado · "+report.provider+" · "+report.hits.size()+" fonte(s) · "+report.millis+" ms"
@@ -348,7 +348,7 @@ public final class SearchTool {
         header.setContentDescription("O que foi pesquisado");
         panel.addView(header,new LinearLayout.LayoutParams(-1,-2));
         TextView query=new TextView(context);
-        query.setTextSize(12.5f);query.setTextColor(0xffe2eaf2);
+        query.setTextSize(12.5f);query.setTextColor(0xFFD4D4D4);
         query.setText("Consulta: "+report.query);
         query.setContentDescription("Consulta pesquisada");
         panel.addView(query,new LinearLayout.LayoutParams(-1,-2));
@@ -363,6 +363,11 @@ public final class SearchTool {
             final Hit hit=report.hits.get(i);
             Button source=new Button(context);
             source.setAllCaps(false);source.setTextSize(11.5f);source.setSingleLine(true);
+            source.setTextColor(0xFFD4D4D4);
+            GradientDrawable row=new GradientDrawable();
+            row.setColor(0xFF121212);row.setStroke(Math.max(1,dp(context,1)/2),0xFF2A2A2A);row.setCornerRadius(dp(context,8));
+            source.setBackground(row);
+            source.setGravity(Gravity.START|Gravity.CENTER_VERTICAL);
             source.setEllipsize(TextUtils.TruncateAt.END);
             source.setText("["+(i+1)+"] "+hit.title);
             source.setContentDescription("Fonte "+(i+1));
@@ -381,7 +386,7 @@ public final class SearchTool {
             panel.addView(source);
             if(hit.snippet.length()>0){
                 TextView snippet=new TextView(context);
-                snippet.setTextSize(11.5f);snippet.setTextColor(0xffb9c9d6);
+                snippet.setTextSize(11.5f);snippet.setTextColor(0xFFA1A1A1);
                 snippet.setText(hit.snippet.length()>220?hit.snippet.substring(0,220)+"…":hit.snippet);
                 panel.addView(snippet,new LinearLayout.LayoutParams(-1,-2));
             }

@@ -87,7 +87,7 @@ public final class ThinkingView {
         LinearLayout panel=new LinearLayout(c);
         panel.setOrientation(LinearLayout.VERTICAL);
         GradientDrawable box=new GradientDrawable();
-        box.setColor(0xff152430);box.setCornerRadius(dp(c,12));panel.setBackground(box);
+        box.setColor(0xFF1C1C1C);box.setStroke(Math.max(1,dp(c,1)/2),0xFF2A2A2A);box.setCornerRadius(dp(c,8));panel.setBackground(box);
         panel.setPadding(dp(c,12),dp(c,8),dp(c,12),dp(c,10));
         LinearLayout.LayoutParams params=new LinearLayout.LayoutParams(-1,-2);
         params.setMargins(0,0,0,dp(c,6));
@@ -96,7 +96,7 @@ public final class ThinkingView {
         bar.setOrientation(LinearLayout.HORIZONTAL);
         bar.setGravity(Gravity.CENTER_VERTICAL);
         final TextView header=new TextView(c);
-        header.setTextSize(12);header.setTextColor(0xff9fb4c4);header.setSingleLine(true);
+        header.setTextSize(12);header.setTextColor(0xFFA1A1A1);header.setSingleLine(true);
         header.setEllipsize(TextUtils.TruncateAt.END);
         bar.addView(header,new LinearLayout.LayoutParams(0,-2,1));
         final Button toggle=new Button(c);
@@ -107,7 +107,7 @@ public final class ThinkingView {
         bar.addView(toggle,new LinearLayout.LayoutParams(-2,dp(c,32)));
         panel.addView(bar,new LinearLayout.LayoutParams(-1,-2));
         final TextView body=new TextView(c);
-        body.setTextSize(12.5f);body.setTextColor(0xffc2d2de);body.setTextIsSelectable(true);
+        body.setTextSize(12.5f);body.setTextColor(0xFFD4D4D4);body.setTextIsSelectable(true);
         body.setPadding(0,dp(c,6),0,0);
         body.setContentDescription("Raciocínio detalhado");
         body.setVisibility(View.GONE);

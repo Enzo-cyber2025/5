@@ -76,7 +76,7 @@ public final class MarkdownText {
             if(c=='`'){
                 if((state&CODE)!=0){
                     open(out,codeStart,out.length(),new TypefaceSpan("monospace"));
-                    open(out,codeStart,out.length(),new BackgroundColorSpan(0x33234a3d));
+                    open(out,codeStart,out.length(),new BackgroundColorSpan(0x332e2e2e));
                     state&=~CODE;
                 }else{
                     codeStart=out.length();state|=CODE;
@@ -114,8 +114,8 @@ public final class MarkdownText {
         if((state&STRIKE)!=0)open(out,strikeStart,out.length(),new StrikethroughSpan());
         if((state&CODE)!=0){
             open(out,codeStart,out.length(),new TypefaceSpan("monospace"));
-            open(out,codeStart,out.length(),new BackgroundColorSpan(0x33234a3d));
-            open(out,codeStart,out.length(),new ForegroundColorSpan(0xffd3eee2));
+            open(out,codeStart,out.length(),new BackgroundColorSpan(0x332e2e2e));
+            open(out,codeStart,out.length(),new ForegroundColorSpan(0xFFD4D4D4));
         }
         return out;
     }

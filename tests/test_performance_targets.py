@@ -183,6 +183,35 @@ def test_offgrid_ui_covers_every_screen_without_renaming_labels():
         assert hook in patch, f'gancho ausente: {hook}'
 
 
+def test_offgrid_ui_keeps_state_colors_and_flattens_only_content_actions():
+    java = (ROOT / 'apk-fix/java/com/ggufchat/app/OffgridUi.java').read_text()
+    # Alternadores e caixas de seleção preservam o próprio desenho: nele está o
+    # estado (ligado/desligado/marcado) que o usuário precisa enxergar.
+    assert 'button instanceof CompoundButton' in java
+    # O acento esmeralda do próprio aplicativo marca "ligado" (Ui.ACCENT2) e
+    # continua sendo a informação, com o rótulo dizendo o estado.
+    assert 'isAccentFill(button)' in java and 'isAccent(color)' in java
+    # Rótulo que não é ação primária nem estado vira ação de conteúdo plana.
+    assert 'box(button, SURFACE_PLUS, BORDER)' in java
+    # Preenchimento com estado nunca é repintado, e o que não tem estado perde
+    # só o matiz: a luminosidade fica, o tom do tema não.
+    assert 'list.isStateful()' in java and 'greyOf(color)' in java
+
+
+def test_inspector_panels_use_the_neutral_palette():
+    app = ROOT / 'apk-fix/java/com/ggufchat/app'
+    files = ['SearchTool.java', 'CodeBlocks.java', 'ThinkingView.java', 'Images.java', 'MarkdownText.java']
+    old = ('0xff101b23', '0xff152430', '0xff244234', '0xff9fb4c4', '0xffe2eaf2',
+           '0xffc2d2de', '0xffb9c9d6', '0xffadbdcc', '0xffd3eee2', '0x33234a3d')
+    for name in files:
+        text = (app / name).read_text().lower()
+        for token in old:
+            assert token not in text, f'{name} ainda usa o tom antigo {token}'
+    combined = '\n'.join((app / name).read_text() for name in files)
+    assert '0xFFA1A1A1' in combined and '0xFFD4D4D4' in combined, 'níveis de texto neutros'
+    assert combined.count('0xFF2A2A2A') >= 3, 'painéis com fio de cabelo'
+
+
 def test_offgrid_ui_patch_lands_on_all_real_screens(tmp_path):
     base = ROOT / '.cache/original-decoded/smali/com/ggufchat/app'
     if not base.is_dir():
