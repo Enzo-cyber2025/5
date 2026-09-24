@@ -70,13 +70,31 @@ literal e o critério aplicado — ficam registrados na própria medição
 
 ## Medição desta rodada (emulador x86_64 do CI, SmolLM2-135M Q4_K_M)
 
-Rodada `35935859714`, a primeira com o harness completo e a interface nova:
-`tokens=94`, `decode_ns=8,375 s`, `prefill_ns=1,655 s` → **11,22 T/s** medidos e
-**1,80 s** do envio até o primeiro texto na tela, com prompt de 65 tokens. O APK
-foi construído a partir de `45fcda8`; as capturas (`launch.png`, `final-screen.png`)
-mostram a linguagem visual aplicada nas telas reais.
+Rodada `36018315383`, commit `bd2eaf2`, APK `5dbc76ff…`, prompt de 65 tokens,
+temperatura 0, cada etapa numa conversa nova; taxa recalculada dos inteiros
+nativos pelo verificador:
 
-## Por que o alvo de +50% e de um terço da espera não é atingível neste emulador
+| etapa | backend | threads | tokens | decodificação | T/s | envio → primeiro texto |
+| --- | --- | --- | --- | --- | --- | --- |
+| `vulkan` (linha de base: driver por software aceito, só pelo opt-in de teste) | Vulkan/llvmpipe | 2 | 128 | 26,05 s | **4,914** | **8,14 s** |
+| `vulkan-policy-default` (padrão: driver por software recusado → CPU) | CPU | 2 | 94 | 8,84 s | **10,636** | **2,12 s** |
+| `cpu` (CPU pedida nos ajustes) | CPU | 2 | 94 | 8,18 s | **11,486** | **2,67 s** |
+| `cpu-threads-auto` (ajustes de fábrica, threads automáticas) | CPU | 2 | 94 | 7,79 s | **12,068** | **1,82 s** |
+
+`targets_met` lista `cpu`, `cpu-threads-auto` e `vulkan-policy-default`: as duas
+metas do pedido são atingidas em todos os caminhos novos, e `regressions` vem
+vazio. Na mesma rodada passaram os cinco grupos de renderização de texto, os
+anexos com botão de destacar (3/3) e o restante da suíte do emulador
+(`summary.json` = `PASS`), com as capturas `launch.png` e `final-screen.png` da
+interface nova. O log confirma a checagem de logits ativa sem interromper nada:
+toda etapa terminou com `completed=1`.
+
+## O que decidiu o resultado, e o que ele não promete
+
+O ganho medido tem uma causa concreta e verificável **neste** ambiente: o caminho
+anterior aceitava como GPU um driver que roda na CPU (`llvmpipe`). Aqui o backend
+correto é a CPU, e é isso que a política nova aplica. Os limites do aparelho não
+mudaram e explicam o teto absoluto:
 
 - O aparelho expõe **2 núcleos** e nenhuma capacidade de CPU. Não há paralelismo
   sobrando para acelerar decodificação: 2 threads é o máximo utilizável.
@@ -84,16 +102,22 @@ mostram a linguagem visual aplicada nas telas reais.
   mediu o teto desse driver em
   `ci-results/35625364164-1-llvmpipe-lab/physical-llvmpipe-ceiling.txt`: **0,55 a
   0,74 GMAC/s** no melhor caso, num driver que ainda paga a compilação e o
-  despacho de shaders. Para o prefill de 65 tokens medido aqui (1,66 s, ~39
-  tokens/s) não existe caminho de GPU por software que entregue 3×.
+  despacho de shaders — bem abaixo do que a CPU do mesmo aparelho entrega. É
+  exatamente por isso que o caminho padrão passou a recusar esse driver: não havia
+  GPU de verdade para aceitar.
 - As tentativas anteriores de peso/layout neste ambiente foram medidas e
   **rejeitadas** por queda de desempenho (F32: −23,18% com tela apagada; repack
   Q5→Q8: reprovado). Não foram reabilitadas porque não há medição que as sustente.
 
-O ganho que existe e foi medido continua valendo: o caminho padrão novo é a CPU
-neste aparelho, e a linha de base comparável é o caminho anterior que aceitava o
-driver por software. Num aparelho com GPU real, o caminho Vulkan continua sendo o
-padrão e nada aqui o bloqueia.
+**O que a medição não promete:** num aparelho com GPU real a recusa do driver por
+software não entra em ação — o caminho Vulkan continua sendo o padrão e nada aqui
+o bloqueia —, então o fator grande desta tabela (2,16× a 2,46× em T/s, 3,0× a
+4,5× menos espera) é um ganho **neste emulador, contra o comportamento anterior
+dele**, medido na mesma rodada. O que se aplica a qualquer aparelho são as três
+mudanças pequenas: política de threads de CPU, lotes de prefill e a linha única de
+logits. Nenhuma delas foi presumida vantajosa: a rodada é reprovada por regressão
+medida em qualquer etapa, e a comparação de taxa continua sendo contra a linha de
+base medida na própria execução.
 
 ## Como o critério é aplicado
 
@@ -141,6 +165,7 @@ aplicada em cima delas.
   todo aparelho.
 - O alvo de +50% é comparado com o **comportamento anterior medido na mesma
   rodada** (Vulkan por software aceito, 2 threads), não com um histórico de
-  outro aparelho.
+  outro aparelho — e por isso o número grande desta rodada vale para este
+  aparelho, não como promessa de ganho equivalente em telefone com GPU física.
 - Ganho de taxa por token não foi presumido pelas mudanças de prefill: a medição
   é que decide, e a rodada é reprovada se o alvo não for atingido.

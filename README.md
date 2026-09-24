@@ -9,13 +9,25 @@ sem marca e sem qualquer vínculo com aquele aplicativo.
 **O que a medição mostrou.** No emulador do CI (2 núcleos, Vulkan por software) o
 caminho anterior aceitava o driver por software como se fosse GPU. Com a política
 nova o aplicativo executa na CPU, que é o backend correto nesse aparelho, e a
-diferença é medida na mesma rodada: **1,72× em T/s e 1,15× na espera até o
-primeiro texto** contra aquele caminho (números em
-`ci-results/35935859714-1-text-ui/performance.json`). **As metas de 1,5× e de um
-terço da espera não são atingíveis neste emulador** e não foram declaradas
-atingidas: 2 núcleos não têm paralelismo a ganhar e o teto medido do driver Vulkan
-por software é de 0,55–0,74 GMAC/s. O relatório declara esses limites com o dado
-que os sustenta, e o verificador reprova a rodada por regressão medida ou por
+diferença é medida na mesma rodada, contra aquele caminho (rodada `36018315383`,
+prompt de 65 tokens, cada etapa numa conversa nova):
+
+| caminho medido | T/s | envio → primeiro texto | contra o caminho anterior |
+| --- | --- | --- | --- |
+| anterior (`vulkan`: driver por software aceito) | 4,914 | 8,14 s | linha de base |
+| `vulkan-policy-default` (padrão: driver recusado → CPU) | 10,636 | 2,12 s | **2,16× em T/s · 3,85× menos espera** |
+| `cpu` (CPU pedida nos ajustes, 2 threads) | 11,486 | 2,67 s | **2,34× em T/s · 3,05× menos espera** |
+| `cpu-threads-auto` (ajustes de fábrica) | 12,068 | 1,82 s | **2,46× em T/s · 4,48× menos espera** |
+
+As duas metas do pedido — 1,5× em T/s e um terço da espera — estão declaradas
+atingidas em **todos os três caminhos novos** (`targets_met`), com zero regressões
+medidas (`regressions: []`). Números completos em
+`ci-results/36018315383-1-text-ui/performance.json`, com a leitura honesta do
+ambiente: **o fator grande existe porque neste aparelho o caminho anterior era o
+driver Vulkan por software** (teto medido de 0,55–0,74 GMAC/s). Num aparelho com
+GPU real a recusa do software não entra em ação — o Vulkan continua sendo o padrão
+—, e lá o que vale são as outras mudanças: política de threads, lotes de prefill e
+a linha única de logits. O verificador reprova a rodada por regressão medida ou por
 ausência de medição — nunca aprova por ausência de dado.
 
 Também nesta rodada: política de threads da CPU que usa os núcleos que o aparelho
