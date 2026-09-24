@@ -1,0 +1,176 @@
+{
+  "status": "PASS",
+  "checks": {
+    "emulator": "BOOTED: x86_64",
+    "installation": "PASS",
+    "notification_setup": "GRANTED_FOR_TEST",
+    "launch": "PASS",
+    "text_import": "PASS",
+    "fusion_persistence": "SKIP: par visão/mmproj não fornecido",
+    "cpu_generation": "PASS",
+    "vulkan": "PASS: GPU offload confirmado (opt-in de teste para o driver por software)",
+    "software_vulkan_policy": "PASS: dispositivo por software recusado -> CPU (llvmpipe (LLVM 21.0.0, 256 bits))",
+    "cpu_auto_threads": "PASS: política automática de threads executada",
+    "missing_model": "PASS: erro tratado e processo vivo"
+  },
+  "apk_sha256": "89e117951183e36731f73dd16d7f367638953ccd91a7b739527f987a4e184d84",
+  "scope": "android-integration",
+  "generation_parameters": {
+    "max_tokens": 128,
+    "temperature": 0.0,
+    "language_requested": "English"
+  },
+  "model_setup": "saf",
+  "model_sha256": "2e8040ceae7815abe0dcb3540b9995eaa1fa0d2ca9e797d0a635ae4433c68c2d",
+  "android_api": 35,
+  "performance": {
+    "scope": "Medido no emulador descartável x86_64 com o modelo real do CI; taxa = tokens nativos / tempo nativo de decodificação; primeiro texto = relógio da thread principal do Android. Cada etapa abre uma conversa nova, portanto a carga do modelo entra no tempo de tela e nunca na taxa de decodificação. A linha de base é o comportamento anterior, reproduzido pelo opt-in de teste no driver Vulkan por software deste emulador.",
+    "baseline": "vulkan",
+    "interpretation": "O pedido original dizia -300% de espera, o que não existe (um tempo negativo); o alvo aplicado é um terço do tempo anterior, ou seja 3x mais rápido até o primeiro texto.",
+    "stages": {
+      "cpu": {
+        "stage": "cpu",
+        "gpu_layers_requested": 0,
+        "threads_requested": 2,
+        "threads_resolved": {
+          "requested": 2,
+          "available": 2,
+          "capacities": 0,
+          "resolved": 2
+        },
+        "backend": "cpu",
+        "ui_first_text_s": 1.82969943,
+        "software_vulkan_notice": null,
+        "tokens": 94,
+        "decode_s": 8.830165953,
+        "prefill_s": 1.652302871,
+        "tokens_s": 10.645326543162422,
+        "first_token_s": 1.655446687,
+        "prompt_tokens": 65,
+        "reused_tokens": 0,
+        "completed": true
+      },
+      "vulkan": {
+        "stage": "vulkan",
+        "gpu_layers_requested": -1,
+        "threads_requested": 2,
+        "threads_resolved": {
+          "requested": 2,
+          "available": 2,
+          "capacities": 0,
+          "resolved": 2
+        },
+        "backend": "vulkan",
+        "ui_first_text_s": 26.107743154,
+        "software_vulkan_notice": null,
+        "tokens": 128,
+        "decode_s": 47.565688227,
+        "prefill_s": 25.857253119,
+        "tokens_s": 2.6910154098714916,
+        "first_token_s": 25.86100049,
+        "prompt_tokens": 65,
+        "reused_tokens": 0,
+        "completed": true
+      },
+      "vulkan-policy-default": {
+        "stage": "vulkan-policy-default",
+        "gpu_layers_requested": -1,
+        "threads_requested": 2,
+        "threads_resolved": {
+          "requested": 2,
+          "available": 2,
+          "capacities": 0,
+          "resolved": 2
+        },
+        "backend": "vulkan",
+        "ui_first_text_s": 1.81805878,
+        "software_vulkan_notice": "llvmpipe (LLVM 21.0.0, 256 bits)",
+        "tokens": 94,
+        "decode_s": 8.167139411,
+        "prefill_s": 1.74955264,
+        "tokens_s": 11.50953782831172,
+        "first_token_s": 1.752796383,
+        "prompt_tokens": 65,
+        "reused_tokens": 0,
+        "completed": true
+      },
+      "cpu-threads-auto": {
+        "stage": "cpu-threads-auto",
+        "gpu_layers_requested": 0,
+        "threads_requested": 0,
+        "threads_resolved": {
+          "requested": 0,
+          "available": 2,
+          "capacities": 0,
+          "resolved": 2
+        },
+        "backend": "cpu",
+        "ui_first_text_s": 2.130398198,
+        "software_vulkan_notice": null,
+        "tokens": 94,
+        "decode_s": 9.795013328,
+        "prefill_s": 1.874889652,
+        "tokens_s": 9.596719968853115,
+        "first_token_s": 1.877411289,
+        "prompt_tokens": 65,
+        "reused_tokens": 0,
+        "completed": true
+      }
+    },
+    "candidates": {
+      "cpu": {
+        "tokens_s": 10.645326543162422,
+        "throughput_gain_vs_baseline": 3.956,
+        "ui_first_text_s": 1.82969943,
+        "engine_first_token_s": 1.655446687,
+        "wait_speedup_vs_baseline": 14.269,
+        "waited_metric": "ui_first_text_s",
+        "targets": {
+          "throughput_1_5x": true,
+          "first_text_3x": true
+        },
+        "regression_vs_baseline": false
+      },
+      "vulkan-policy-default": {
+        "tokens_s": 11.50953782831172,
+        "throughput_gain_vs_baseline": 4.277,
+        "ui_first_text_s": 1.81805878,
+        "engine_first_token_s": 1.752796383,
+        "wait_speedup_vs_baseline": 14.36,
+        "waited_metric": "ui_first_text_s",
+        "targets": {
+          "throughput_1_5x": true,
+          "first_text_3x": true
+        },
+        "regression_vs_baseline": false
+      },
+      "cpu-threads-auto": {
+        "tokens_s": 9.596719968853115,
+        "throughput_gain_vs_baseline": 3.566,
+        "ui_first_text_s": 2.130398198,
+        "engine_first_token_s": 1.877411289,
+        "wait_speedup_vs_baseline": 12.255,
+        "waited_metric": "ui_first_text_s",
+        "targets": {
+          "throughput_1_5x": true,
+          "first_text_3x": true
+        },
+        "regression_vs_baseline": false
+      }
+    },
+    "targets_met": [
+      "cpu",
+      "cpu-threads-auto",
+      "vulkan-policy-default"
+    ],
+    "regressions": [],
+    "regression_tolerance": 0.05,
+    "environment": {
+      "limits": [
+        "aparelho com 2 núcleos: sem paralelismo para ganho de taxa",
+        "dispositivo Vulkan é um rasterizador por software; o caminho padrão já é a CPU"
+      ],
+      "targets_required": false
+    }
+  }
+}
