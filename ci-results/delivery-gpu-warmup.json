@@ -1,11 +1,12 @@
 {
   "status": "PUBLISHED_PREDELIVERY_TEST_SIGNED",
-  "apk_sha256": "730c7f9ae2be978354aa0f6260370c5fba6467752d9d850089bdba48b2316a08",
+  "apk_sha256": "0a237b94b79eb2403ddf95c65d6b31625a93e658afcc9906f11ff6a08413a7a5",
   "apk_size": 51247031,
   "tested_run": 36041334551,
   "tested_commit": "b55d4b1f13545dd1417c3673cc6fa4b4e19d1515",
   "payload_entries": 146,
-  "native_verified": [
+  "verified_against_tested_run": [
+    "classes.dex",
     "lib/arm64-v8a/libaijni.so",
     "lib/arm64-v8a/libaijni_dotprod.so",
     "lib/arm64-v8a/libaijni_i8mm.so",
@@ -16,6 +17,9 @@
     "lib/x86_64/libc++_shared.so",
     "lib/x86_64/libggufcpu.so",
     "lib/x86_64/libggufdiagnostics.so"
+  ],
+  "recorded_only": [
+    "AndroidManifest.xml"
   ],
   "classes_dex_sha256": "3794724109b2258d113ca0694829b6b91a74cf6114b663a7d8dd7bdb008d3d82",
   "android_manifest_sha256": "3ea7be292d3ded086b5accb20bdef2e8e45a166dec2f819780a92630b1641291",
