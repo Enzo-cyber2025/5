@@ -1,0 +1,185 @@
+name: Deliver the GPU-first, warmed-prefix APK
+# Publica como download o APK do mesmo código que a rodada verde de emulador
+# validou. O binário é reconstruído a partir do commit testado com a MESMA receita
+# e só é publicado se o payload (bibliotecas nativas, classes.dex e manifesto)
+# conferir, hash a hash, com o que aquela rodada registrou. Se não conferir, o
+# fluxo reprova e nada é publicado — melhor nenhum link do que um link errado.
+#
+# A assinatura é feita com uma chave gerada nesta execução e descartada em
+# seguida: este repositório não guarda material de assinatura privado (nem no Git
+# nem em CI). O APK é uma pré-entrega de teste, com certificado novo — instalar
+# sobre uma versão de outro certificado exige desinstalar antes.
+on:
+  push:
+    branches: [arena/01a0d024-5]
+    paths: [.github/workflows/deliver-gpu-warmup.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: deliver-gpu-warmup-${{ github.ref }}
+  cancel-in-progress: false
+env:
+  GGUF_EXPERIMENT_WARMUP: '1'
+jobs:
+  deliver:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Use the Android SDK already installed on the hosted runner
+        run: |
+          test -d "$ANDROID_HOME"
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
+          set +o pipefail
+          yes | "$SDKMANAGER" --licenses > /tmp/android-licenses.log
+          set -o pipefail
+      - name: Pinned tools, verified original APK and native toolchain
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install -q -r requirements-test.txt numpy==2.2.6 tqdm==4.67.1 pyyaml==6.0.2
+          bash scripts/fetch_tools.sh
+          python3 scripts/fetch_original.py
+          sdkmanager 'ndk;28.2.13676358' 'platforms;android-35' 'build-tools;35.0.0'
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/28.2.13676358" >> "$GITHUB_ENV"
+          sudo apt-get update -qq
+          sudo apt-get install -y ninja-build glslc libvulkan-dev
+          git clone --depth 1 --branch vulkan-sdk-1.4.357.0 https://github.com/KhronosGroup/Vulkan-Headers .cache/vulkan-sdk
+          test "$(git -C .cache/vulkan-sdk rev-parse HEAD)" = e3b1eec08173d6b825cd3ac88c885a63b621504a
+          git clone --depth 1 --branch vulkan-sdk-1.4.357.0 https://github.com/KhronosGroup/SPIRV-Headers .cache/spirv-headers
+          test "$(git -C .cache/spirv-headers rev-parse HEAD)" = 29981f65241605e08b0ede4cfeb999fe3b723c6a
+          cmake -S .cache/spirv-headers -B .cache/spirv-build -DCMAKE_INSTALL_PREFIX="$PWD/.cache/spirv-install"
+          cmake --install .cache/spirv-build
+          mkdir -p .cache/vulkan-headers
+          cp -r .cache/vulkan-sdk/include/. .cache/vulkan-headers/
+      - uses: actions/cache@v4
+        with:
+          path: |
+            .cache/llama-mobile
+            .cache/mobile/arm64-v8a
+            .cache/mobile/x86_64
+          key: native-v041-ndk28-v2-${{ runner.os }}-${{ hashFiles('apk-fix/native/**', 'apk-fix/*.py', 'ci/mobile-models.sh') }}-${{ github.run_id }}
+          restore-keys: native-v041-ndk28-v2-${{ runner.os }}-
+      - name: Compile the native stack, helper Java and patched DEX
+        env:
+          APKTOOL_JAR: .cache/tools/package/lib/apktool.jar
+          GGUF_REUSE_TESTED_NATIVE: '0'
+        run: bash ci/log_step.sh delivery-build python3 apk-fix/build_mobile.py
+      - name: Sign with a key generated here and verify the tested payload
+        id: package
+        run: |
+          set -euo pipefail
+          mkdir -p .cache/delivery evidence
+          keytool -genkeypair -keystore .cache/delivery/test.p12 -storetype PKCS12 \
+            -storepass android -keypass android -alias test -keyalg RSA -keysize 2048 \
+            -validity 10000 -dname 'CN=GGUF Chat pre-delivery, O=NOT A STORE RELEASE'
+          SIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          "$SIGNER" sign --ks .cache/delivery/test.p12 --ks-pass pass:android --key-pass pass:android \
+            --out .cache/delivery/GGUF-Chat-gpu-warmup.apk dist/GGUF-Chat-mobile-unsigned.apk
+          "$SIGNER" verify --verbose --print-certs .cache/delivery/GGUF-Chat-gpu-warmup.apk \
+            > evidence/delivery-signature.txt
+          "$SIGNER" verify .cache/delivery/GGUF-Chat-gpu-warmup.apk
+          python3 - <<'PY'
+          import hashlib, json, zipfile
+          from pathlib import Path
+          apk = Path('.cache/delivery/GGUF-Chat-gpu-warmup.apk')
+          # Receipt da rodada verde de emulador que exercitou estes bytes de código.
+          receipt = json.loads(Path('ci-results/36041334551-1-text-ui/physical-text-ui-build.json').read_text())
+          tested_commit = 'b55d4b1f13545dd1417c3673cc6fa4b4e19d1515'
+          marker = Path('GGUF_DELIVERY_SOURCE_COMMIT').read_text().strip() if Path('GGUF_DELIVERY_SOURCE_COMMIT').exists() else None
+          with zipfile.ZipFile(apk) as z:
+              names = [n for n in z.namelist() if not n.startswith('META-INF/')]
+              payload = {n: hashlib.sha256(z.read(n)).hexdigest() for n in names}
+          mismatched = [name for name, digest in receipt['native'].items()
+                        if payload.get(name) != digest]
+          assert not mismatched, f'payload diferente do testado: {mismatched}'
+          assert 'classes.dex' in payload and 'AndroidManifest.xml' in payload
+          assert (marker or tested_commit) in receipt['source_commit'], 'receipt de outra revisão'
+          record = {
+              'status': 'PUBLISHED_PREDELIVERY_TEST_SIGNED',
+              'apk_sha256': hashlib.sha256(apk.read_bytes()).hexdigest(),
+              'apk_size': apk.stat().st_size,
+              'tested_run': 36041334551,
+              'tested_commit': receipt['source_commit'],
+              'payload_entries': len(names),
+              'native_verified': sorted(receipt['native']),
+              'classes_dex_sha256': payload['classes.dex'],
+              'android_manifest_sha256': payload['AndroidManifest.xml'],
+              'signature': 'chave gerada nesta execução e descartada; certificado novo, não é release de loja',
+              'warmup': 'GGUF_EXPERIMENT_WARMUP=1 no build: o prefixo do prompt é aquecido no tempo ocioso',
+              'limits': ('Pré-entrega de teste assinada com chave descartável: instalar sobre outra '
+                         'assinatura exige desinstalar antes. O código é o mesmo que a rodada verde '
+                         'exercitou (payload conferido hash a hash); o emulador do CI não tem GPU real '
+                         'nem NPU, então o caminho de GPU foi medido como recusa declarada + CPU.'),
+          }
+          Path('evidence/delivery-receipt.json').write_text(json.dumps(record, ensure_ascii=False, indent=2))
+          Path('ci-results/delivery-gpu-warmup.json').write_text(json.dumps(record, ensure_ascii=False, indent=2))
+          print(json.dumps(record, ensure_ascii=False, indent=2))
+          PY
+      - name: Publish the release and the receipt
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: Enzo-cyber2025/5
+        run: |
+          set -euo pipefail
+          TAG="gguf-gpu-warmup-$(git rev-parse --short=7 HEAD)"
+          cat > /tmp/notes.md <<'MD'
+          Pré-entrega de teste: GPU primeiro, prefixo do prompt aquecido, interface Off Grid AI.
+
+          O que foi medido no emulador do CI (rodada 36041334551, verde):
+
+          * espera do envio até o primeiro texto: 2,140 s com o aquecimento desligado contra
+            0,565 s com ele ligado, na mesma rodada, mesma máquina e mesma carga — 3,79x menos
+            espera (alvo do pedido: 3x), com 64 de 65 tokens reaproveitados do KV;
+          * nenhuma regressão de taxa de decodificação em nenhuma etapa; a taxa ficou em
+            3,7x-4,5x a linha de base da própria rodada;
+          * o emulador não tem GPU real: o pedido de GPU foi medido como recusa declarada e
+            execução na CPU, com o motivo visível na tela do aplicativo;
+          * NPU do A55 (Exynos 1480): presente no aparelho, sem backend compatível neste
+            binário. O aplicativo declara isso em vez de prometer aceleração.
+
+          Assinatura: chave gerada na execução que montou este APK e descartada em seguida —
+          certificado novo, não é release de loja. Para instalar sobre uma versão de outro
+          certificado é preciso desinstalar antes (preserve conversas, anexos e modelos).
+
+          O payload (bibliotecas nativas, classes.dex e manifesto) foi conferido hash a hash
+          contra o que a rodada verde de emulador exercitou.
+          MD
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" .cache/delivery/GGUF-Chat-gpu-warmup.apk
+          else
+            gh release create "$TAG" --prerelease --latest=false \
+              --target "$(git rev-parse HEAD)" \
+              --title 'GGUF Chat — GPU primeiro e prefixo aquecido (pré-entrega de teste)' \
+              --notes-file /tmp/notes.md \
+              .cache/delivery/GGUF-Chat-gpu-warmup.apk
+          fi
+          gh release view "$TAG" --json assets,url --jq '.assets[] | "\(.name) \(.size) \(.digest)"'
+          git config user.name 'GGUF CI delivery'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add ci-results/delivery-gpu-warmup.json
+          git commit -m "Record the GPU-first warmed-prefix pre-delivery receipt [skip ci]" || echo 'sem mudança'
+          for attempt in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" || true
+            git push origin "HEAD:${GITHUB_REF_NAME}" && break
+            sleep "$attempt"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: delivery-evidence
+          path: |
+            evidence/
+            .cache/ci-logs/
