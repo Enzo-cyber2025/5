@@ -16,16 +16,14 @@ VULKAN=os.environ.get('GGUF_MOBILE_VULKAN')=='1'
 
 
 class MobileAndroid(Android):
-    def ui(self):
-        # DocumentsUI sometimes returns success without producing a dump while
-        # its window is transitioning. Retry collection, never a native crash,
-        # never a send action, and never reuse a previous XML file.
-        for attempt in range(3):
-            try:return super().ui()
-            except ET.ParseError:
-                if attempt==2:raise
-                self.alive()
-                time.sleep(0.5)
+    """Driver destes testes: o retry de dump vazio vive na classe base.
+
+    DocumentsUI às vezes responde sucesso sem produzir dump enquanto a janela
+    transiciona; `Android.ui` repete a coleta nesse caso (nunca reaproveita XML
+    antigo, nunca trata como falha do aplicativo). Antes o retry existia só aqui,
+    e um teste que usava a classe base — o de anexos — reprovou a rodada
+    36026742459 com `ParseError: syntax error: line 1, column 0`.
+    """
 
 
 def unified_pair(models, vision_name, projector_name):

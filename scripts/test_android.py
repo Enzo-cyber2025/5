@@ -49,11 +49,21 @@ class Android:
         return self.adb("shell", command, **kwargs)
 
     def ui(self):
-        # Never reuse a stale UI dump after a navigation/failed command.
-        self.shell("rm -f /sdcard/gguf-test-ui.xml")
-        self.shell("uiautomator dump /sdcard/gguf-test-ui.xml")
-        xml = self.adb("exec-out", "cat", "/sdcard/gguf-test-ui.xml")
-        root = ET.fromstring(xml)
+        # uiautomator pode responder sucesso sem produzir dump enquanto a janela
+        # troca (DocumentsUI, transições de atividade): nesse caso o XML chega
+        # vazio. Um dump vazio é repetido — nunca reaproveitado como se fosse a
+        # tela atual, e nunca confundido com falha do aplicativo.
+        for attempt in range(3):
+            xml = self._ui_dump()
+            try:
+                root = ET.fromstring(xml)
+            except ET.ParseError:
+                if attempt == 2:
+                    raise
+                self.alive()
+                time.sleep(0.5)
+                continue
+            break
         summary = [{k: n.get(k) for k in ("text", "content-desc", "resource-id", "bounds", "enabled", "selected")}
                    for n in root.iter("node") if n.get("text") or n.get("content-desc")]
         if summary != self.last_ui_summary:
@@ -62,6 +72,12 @@ class Android:
         self.counter += 1
         (self.evidence / f"ui-{self.counter:04d}.xml").write_text(xml)
         return xml
+
+    def _ui_dump(self):
+        # Never reuse a stale UI dump after a navigation/failed command.
+        self.shell("rm -f /sdcard/gguf-test-ui.xml")
+        self.shell("uiautomator dump /sdcard/gguf-test-ui.xml")
+        return self.adb("exec-out", "cat", "/sdcard/gguf-test-ui.xml")
 
     def capture(self, name):
         (self.evidence / name).write_bytes(self.adb("exec-out", "screencap", "-p", binary=True))
