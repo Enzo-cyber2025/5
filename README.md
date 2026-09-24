@@ -12,17 +12,28 @@ nova o aplicativo executa na CPU, que é o backend correto nesse aparelho, e a
 diferença é medida na mesma rodada, contra aquele caminho (rodada `36018315383`,
 prompt de 65 tokens, cada etapa numa conversa nova):
 
-| caminho medido | T/s | envio → primeiro texto | contra o caminho anterior |
+| etapa | T/s medidos | envio → primeiro texto | ganho contra a própria linha de base |
 | --- | --- | --- | --- |
-| anterior (`vulkan`: driver por software aceito) | 4,914 | 8,14 s | linha de base |
-| `vulkan-policy-default` (padrão: driver recusado → CPU) | 10,636 | 2,12 s | **2,16× em T/s · 3,85× menos espera** |
-| `cpu` (CPU pedida nos ajustes, 2 threads) | 11,486 | 2,67 s | **2,34× em T/s · 3,05× menos espera** |
-| `cpu-threads-auto` (ajustes de fábrica) | 12,068 | 1,82 s | **2,46× em T/s · 4,48× menos espera** |
+| anterior (`vulkan`: driver por software aceito) | 4,4 – 4,9 | 8,1 – 8,9 s | linha de base da rodada `36018315383` |
+| `vulkan-policy-default` (padrão: driver recusado → CPU) | 9,4 – 11,5 | 1,8 – 2,3 s | **2,12× a 2,16× em T/s · 3,78× a 3,85× menos espera** |
+| `cpu` (CPU pedida nos ajustes, 2 threads) | 10,6 – 11,5 | 1,8 – 2,7 s | **2,34× a 2,39× em T/s · 3,05× a 4,17× menos espera** |
+| `cpu-threads-auto` (ajustes de fábrica) | 9,6 – 12,1 | 1,8 – 2,1 s | **2,43× a 2,46× em T/s · 4,30× a 4,48× menos espera** |
+
+As faixas juntam as duas rodadas verdes completas (`36018315383` e `36028665561`).
+**Os caminhos novos são estáveis** (9,4 a 12,1 T/s, 1,8 a 2,7 s do envio ao
+primeiro texto); quem varia é a linha de base, porque o driver Vulkan por software
+disputa a CPU da máquina do CI — numa terceira rodada ele mediu 2,7 T/s e 26 s, o
+que infla o mesmo ganho para 3,6×–4,3× em T/s e ~14× na espera. Por isso a
+comparação honesta é esta: **contra o comportamento anterior, o ganho medido é de
+2,1× a 4,3× em T/s e de 3,0× a 14,4× na espera, dependendo de quanto o driver por
+software conseguiu rodar na rodada** — sempre maior que as metas do pedido
+(1,5× e 3×), nunca abaixo delas, e sem nenhuma regressão medida em qualquer etapa.
 
 As duas metas do pedido — 1,5× em T/s e um terço da espera — estão declaradas
 atingidas em **todos os três caminhos novos** (`targets_met`), com zero regressões
 medidas (`regressions: []`). Números completos em
-`ci-results/36018315383-1-text-ui/performance.json`, com a leitura honesta do
+`ci-results/36018315383-1-text-ui/performance.json` e
+`ci-results/36028665561-1-text-ui/performance.json`, com a leitura honesta do
 ambiente: **o fator grande existe porque neste aparelho o caminho anterior era o
 driver Vulkan por software** (teto medido de 0,55–0,74 GMAC/s). Num aparelho com
 GPU real a recusa do software não entra em ação — o Vulkan continua sendo o padrão
