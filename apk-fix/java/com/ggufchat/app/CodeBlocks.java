@@ -23,7 +23,7 @@ public final class CodeBlocks {
         GradientDrawable d=new GradientDrawable();d.setColor(color);d.setCornerRadius(dp(c,8));return d;
     }
     /** Painel de conteúdo: superfície neutra com fio de cabelo, sem matiz. */
-    private static GradientDrawable panel(Context c){
+    private static GradientDrawable quiet(Context c){
         GradientDrawable d=new GradientDrawable();d.setColor(0xFF1C1C1C);
         d.setStroke(Math.max(1,dp(c,1)/2),0xFF2A2A2A);d.setCornerRadius(dp(c,8));return d;
     }
@@ -84,7 +84,7 @@ public final class CodeBlocks {
         public void open(String language){
             flush(); // Mount must see preceding plain text, even in this chunk.
             mount();plain=null;
-            LinearLayout panel=new LinearLayout(c);panel.setOrientation(LinearLayout.VERTICAL);panel.setBackground(panel(c));
+            LinearLayout panel=new LinearLayout(c);panel.setOrientation(LinearLayout.VERTICAL);panel.setBackground(quiet(c));
             panel.setContentDescription("Bloco de código");
             LinearLayout.LayoutParams pp=new LinearLayout.LayoutParams(-1,-2);pp.setMargins(0,dp(c,6),0,dp(c,6));root.addView(panel,pp);
             LinearLayout bar=new LinearLayout(c);bar.setGravity(Gravity.CENTER_VERTICAL);bar.setPadding(dp(c,12),dp(c,4),dp(c,6),dp(c,4));
@@ -95,7 +95,7 @@ public final class CodeBlocks {
             body.setTextIsSelectable(true);body.setHorizontallyScrolling(true);body.setPadding(dp(c,12),dp(c,12),dp(c,12),dp(c,14));
             Button copy=new Button(c);copy.setText("Copiar");copy.setAllCaps(false);copy.setTextSize(12);copy.setTextColor(0xFFD4D4D4);copy.setTypeface(Typeface.MONOSPACE);
             copy.setMinWidth(0);copy.setMinimumWidth(0);copy.setMinHeight(dp(c,40));copy.setMinimumHeight(dp(c,40));
-            copy.setBackground(panel(c));copy.setContentDescription("Copiar código");
+            copy.setBackground(quiet(c));copy.setContentDescription("Copiar código");
             copy.setOnClickListener(new View.OnClickListener(){public void onClick(View v){
                 ClipboardManager clipboard=(ClipboardManager)c.getSystemService(Context.CLIPBOARD_SERVICE);
                 if(clipboard!=null){clipboard.setPrimaryClip(ClipData.newPlainText("Código",body.getText().toString()));Toast.makeText(c,"Código copiado",Toast.LENGTH_SHORT).show();}
