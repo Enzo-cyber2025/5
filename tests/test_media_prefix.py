@@ -74,7 +74,7 @@ def test_default_native_body_unchanged_by_experiment():
     # Corpo nativo depois da entrega de desempenho/interface: lote de prefill
     # proporcional ao contexto, recusa de Vulkan por software e aviso visível do
     # backend. Independente da profundidade do checkout no CI.
-    before_sha='90b6230bd21896b0013802ccadc133acad944b6ec754fb35193b218f6abdb959'
+    before_sha='628810c19e02f75e819f47d32729c324a73de0f2aff9cd3a1b4bcc5687d0c12a'
     current=(ROOT/'apk-fix/native/mobile.cpp').read_text()
     # Any top-level single #else guard of an opt-in experiment macro must keep
     # its #else branch byte-identical to the shipped body, not only media prefix.

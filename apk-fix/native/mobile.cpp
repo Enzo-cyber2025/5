@@ -683,6 +683,12 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
         // (sampling would wait for the same work anyway), so the decode-only
         // footer never charges prompt GPU work to response-token throughput.
         llama_synchronize(e->ctx);
+        // O contexto foi criado com uma única linha de saída. Se o backend não
+        // expuser os logits da última posição, o certo é falhar alto em vez de
+        // amostrar lixo; no caminho Vulkan quem amostra é a GPU, que informa o
+        // token por outro canal, e ali esta checagem não se aplica.
+        if(!binding.attached && !e->strict_device && llama_get_logits_ith(e->ctx,-1)==nullptr)
+            throw std::runtime_error("Sem logits para a última posição do prompt; geração interrompida em vez de amostrar lixo");
         decode_started=Clock::now();decoding=true;
         int limit=std::min<int>(predict,llama_n_ctx(e->ctx)-input_size);
         const char *reason="length";

@@ -47,6 +47,9 @@ def test_prefill_lots_scale_with_context_and_decode_stays_one_token():
     assert 'const uint32_t prefill_ubatch=context>=1024?128:64;' in cpp
     assert 'cp.n_batch=prefill_batch; cp.n_ubatch=prefill_ubatch;' in cpp
     assert 'prefill_policy=larger_lots' in cpp
+    # Uma linha de saída sem logits para a última posição do prompt é erro alto,
+    # nunca amostragem de lixo.
+    assert 'llama_get_logits_ith(e->ctx,-1)==nullptr' in cpp
     # Um token por decodificação: lote só afeta a entrada do prompt.
     assert 'llama_batch_get_one(&t,1)' in cpp
     assert 'if(!llama_model_has_encoder(e->model) && !llama_model_is_diffusion(e->model))cp.n_outputs_max=1;' in cpp
