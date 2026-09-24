@@ -1,0 +1,25 @@
+{
+  "status": "PUBLISHED_PREDELIVERY_TEST_SIGNED",
+  "apk_sha256": "730c7f9ae2be978354aa0f6260370c5fba6467752d9d850089bdba48b2316a08",
+  "apk_size": 51247031,
+  "tested_run": 36041334551,
+  "tested_commit": "b55d4b1f13545dd1417c3673cc6fa4b4e19d1515",
+  "payload_entries": 146,
+  "native_verified": [
+    "lib/arm64-v8a/libaijni.so",
+    "lib/arm64-v8a/libaijni_dotprod.so",
+    "lib/arm64-v8a/libaijni_i8mm.so",
+    "lib/arm64-v8a/libc++_shared.so",
+    "lib/arm64-v8a/libggufcpu.so",
+    "lib/arm64-v8a/libggufdiagnostics.so",
+    "lib/x86_64/libaijni.so",
+    "lib/x86_64/libc++_shared.so",
+    "lib/x86_64/libggufcpu.so",
+    "lib/x86_64/libggufdiagnostics.so"
+  ],
+  "classes_dex_sha256": "3794724109b2258d113ca0694829b6b91a74cf6114b663a7d8dd7bdb008d3d82",
+  "android_manifest_sha256": "3ea7be292d3ded086b5accb20bdef2e8e45a166dec2f819780a92630b1641291",
+  "signature": "chave gerada nesta execução e descartada; certificado novo, não é release de loja",
+  "warmup": "GGUF_EXPERIMENT_WARMUP=1 no build: o prefixo do prompt é aquecido no tempo ocioso",
+  "limits": "Pré-entrega de teste assinada com chave descartável: instalar sobre outra assinatura exige desinstalar antes. O código é o mesmo que a rodada verde exercitou (payload conferido hash a hash); o emulador do CI não tem GPU real nem NPU, então o caminho de GPU foi medido como recusa declarada + CPU."
+}
