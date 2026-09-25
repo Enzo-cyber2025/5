@@ -212,6 +212,10 @@ def test_prefill_ubatch_is_tunable_and_logged():
     harness = SRC.read_text()
     assert '"prefill-ubatch-128", 128' in harness and '"prefill-ubatch-256", 256' in harness
     assert 'prefill_ms_per_token' in harness
+    # A comparação de sub-lote mede pré-preenchimento (prompt longo, sem aquecimento)
+    # e por isso fica fora da conta de ganho/regressão de decodificação.
+    assert "if name.startswith('prefill-ubatch-'):" in harness
+    assert "report['prefill_experiment'] = prefill_experiment(perf)" in harness
     assert 'long_prompt' in harness  # mesmo texto nas duas etapas: só o sub-lote muda
     checks = (ROOT / 'scripts/android_checks.py').read_text()
     assert 'GGUF_CONTEXT_TUNING' in checks

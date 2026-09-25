@@ -75,8 +75,16 @@ def start_fixture(d):
                 started + f'\nvisible_on_attempt={attempt}\n')
             return attempt
         except AssertionError:
+            # Um diálogo do sistema na frente ("Pixel Launcher isn't responding")
+            # deixou o app fora do primeiro plano na rodada 36188984196 e derrubou
+            # todas as fases seguintes. Fechar o diálogo e registrar o que estava
+            # na tela é parte de largar o app, não um extra.
+            Path('evidence/physical-text-occupied.txt').write_text(d.ui())
+            d.shell('input keyevent KEYCODE_BACK', check=False)
+            d.shell('input keyevent KEYCODE_HOME', check=False)
             d.shell('am force-stop ' + PKG)
-    raise AssertionError('app de teste não apareceu em três largadas reais')
+    raise AssertionError('app de teste não apareceu em três largadas reais '
+                         '(o que estava na tela está em evidence/physical-text-occupied.txt)')
 
 
 def _run(d):

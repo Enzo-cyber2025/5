@@ -605,6 +605,12 @@ def performance_report(perf):
         # Uma chave que não seja uma etapa medida nunca derruba o relatório.
         if name == report['baseline'] or not isinstance(entry, dict) or not entry.get('tokens_s'):
             continue
+        # As etapas de sub-lote medem o PRÉ-PREENCHIMENTO (prompt longo, aquecimento
+        # desligado): a taxa de decodificação delas não é comparável à linha de base
+        # de prompt curto e por isso não entram na conta de ganho/regressão. Elas
+        # aparecem em `prefill_experiment`, com a conta que lhes pertence.
+        if name.startswith('prefill-ubatch-'):
+            continue
         rate = entry['tokens_s']
         ui = entry.get('ui_first_text_s')
         engine = entry.get('first_token_s')
@@ -623,6 +629,7 @@ def performance_report(perf):
             # queda maior que a tolerância é tratada como regressão.
             'regression_vs_baseline': bool(base_rate and rate < base_rate * (1 - REGRESSION_TOLERANCE))}
     report['warmup_experiment'] = warmup_experiment(perf)
+    report['prefill_experiment'] = prefill_experiment(perf)
     report['targets_met'] = sorted(name for name, c in report['candidates'].items()
                                    if all(c['targets'].values()))
     report['regressions'] = sorted(name for name, c in report['candidates'].items()
@@ -630,6 +637,38 @@ def performance_report(perf):
     report['regression_tolerance'] = REGRESSION_TOLERANCE
     report['environment'] = environment_limits(perf)
     return report
+
+
+def prefill_experiment(perf):
+    """Compara o custo do pré-preenchimento entre tamanhos de sub-lote.
+
+    A métrica é ms por token que o backend realmente processou
+    (`prefill_ns / (prompt_tokens - reused_tokens)`), medida com o aquecimento
+    desligado e o MESMO texto nas duas etapas. Sem ganho medido, o padrão do
+    aplicativo não muda — o experimento não vira promessa.
+    """
+    stages = []
+    for name, entry in sorted(perf.items()):
+        if not name.startswith('prefill-ubatch-') or not isinstance(entry, dict):
+            continue
+        prefill = entry.get('prefill') or {}
+        if not prefill.get('prefill_ms_per_token'):
+            continue
+        stages.append({'stage': name,
+                       'sub_batch': (entry.get('context_tuning') or {}).get('ubatch'),
+                       **prefill})
+    if len(stages) < 2:
+        return {'status': 'NOT_MEASURED', 'stages': stages,
+                'detail': 'faltou a métrica de pré-preenchimento em uma das etapas'}
+    melhor = min(stages, key=lambda stage: stage['prefill_ms_per_token'])
+    pior = max(stages, key=lambda stage: stage['prefill_ms_per_token'])
+    ganho = round(pior['prefill_ms_per_token'] / melhor['prefill_ms_per_token'], 3)
+    return {'status': 'MEDIDO', 'stages': stages, 'best': melhor['stage'],
+            'gain_x': ganho,
+            'detail': ('mesmo texto, aquecimento desligado nas duas etapas; '
+                       f"{melhor['stage']} custou {melhor['prefill_ms_per_token']} ms por token "
+                       f"pré-preenchido contra {pior['prefill_ms_per_token']} ms "
+                       f"({ganho}x)")}
 
 
 def warmup_experiment(perf):

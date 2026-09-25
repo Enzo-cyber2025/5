@@ -23,6 +23,26 @@ phase() {
 }
 
 "${ADB[@]}" wait-for-device
+# Pré-verificação do aparelho: um emulador recém-nascido às vezes fica com o
+# launcher travado ("Pixel Launcher isn't responding") e nenhum app chega ao
+# primeiro plano — foi o que derrubou as cinco fases da rodada 36188984196 sem
+# nada de errado no aplicativo. Espera o boot, mantém a tela acesa e fecha o que
+# estiver na frente antes de medir qualquer coisa.
+for _ in $(seq 1 30); do
+  [ "$("${ADB[@]}" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ] && break
+  sleep 5
+done
+"${ADB[@]}" shell svc power stayon true >/dev/null 2>&1 || true
+"${ADB[@]}" shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1 || true
+sleep 10
+for _ in $(seq 1 6); do
+  top="$("${ADB[@]}" shell dumpsys activity activities 2>/dev/null | grep -m1 topResumedActivity || true)"
+  case "$top" in
+    *nexuslauncher*|*NexusLauncher*) break;;
+    "") sleep 5;;
+    *) "${ADB[@]}" shell input keyevent KEYCODE_BACK >/dev/null 2>&1 || true; sleep 3;;
+  esac
+done
 "${ADB[@]}" install -r -g "$GGUF_TEST_APK"
 "${ADB[@]}" shell pm list packages | grep -q com.ggufchat.app
 echo "installed candidate: $GGUF_TEST_APK"
