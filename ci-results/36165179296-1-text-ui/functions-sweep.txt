@@ -1,0 +1,20 @@
+varredura funcional: 19 funções, 11 PASS, 3 SKIP, 5 FAIL
+PASS estado_vazio: primeira execução: a tela vazia orienta ("Toque em + Nova conversa para começar")
+FAIL abas: AssertionError: Timeout: conteúdo de Ajustes
+FAIL importar_botoes: AssertionError: faltam os dois caminhos de importação desta versão (botão único e par texto+mmproj)
+FAIL ajustes: AssertionError: Controle não encontrado: {'text': 'Salvar ajustes', 'package': {'com.ggufchat.app'}, 'contains': True}
+PASS modelo_listado: modelo importado listado com o nome real (SmolLM2-135M-Instruct-Q4_K_M)
+SKIP descarregar_e_recarregar: esta versão não oferece descarregar o modelo pela interface (nenhum controle com esse rótulo na tela de modelos)
+PASS nova_conversa: criada com escolha de modelo; resposta persistida (33 caracteres, 9 tokens nativos)
+PASS parar_geracao: parou no meio e manteve a resposta parcial (551 caracteres, 116 tokens antes de parar)
+PASS raciocinio: raciocínio liga e persiste (chat.thinking=true), prompt de sistema aplicado, painel próprio anexado, e o bloco não vaza para o texto visível; desliga limpo
+PASS busca_fontes: botão liga ("Busca ON") e a busca devolve DuckDuckGo com 5 fonte(s) em 2192 ms (teto 12000 ms), fontes persistidas na mensagem
+FAIL gaveta_ferramentas: AssertionError: gaveta de ferramentas não abriu
+FAIL seletores_de_anexo: AssertionError: gaveta de ferramentas não abriu
+PASS anexo_texto: texto anexado e enviado: conteúdo preparado (files=1, text_chars=54) e anexo preservado na mensagem
+SKIP visao: sem par visão/mmproj neste runner: seleção, pré-processamento e leitura de imagem não podem ser provados — e não serão aprovados por omissão
+PASS notificacao: com a tela apagada durante a geração, o canal "Respostas prontas" apareceu no dumpsys
+PASS historico: conversa "GGUF regression 1a0d9a8426018fed3" reabriu com o conteúdo salvo depois de fechar o aplicativo
+PASS excluir_conversa: conversa "GGUF regression 1a0d9a944ca8f2e8c" excluída pela interface e sumiu do armazenamento
+SKIP excluir_modelo: esta versão não oferece excluir o modelo pela interface (nenhum controle com esse rótulo na tela de modelos)
+PASS sem_modelo: sem modelo, criar conversa avisa o usuário em vez de falhar em silêncio

@@ -1,0 +1,89 @@
+{
+  "status": "FAIL",
+  "functions_total": 19,
+  "functions_failed": [
+    "abas",
+    "importar_botoes",
+    "ajustes",
+    "gaveta_ferramentas",
+    "seletores_de_anexo"
+  ],
+  "functions": {
+    "estado_vazio": {
+      "status": "PASS",
+      "detail": "primeira execução: a tela vazia orienta (\"Toque em + Nova conversa para começar\")"
+    },
+    "abas": {
+      "status": "FAIL",
+      "detail": "AssertionError: Timeout: conteúdo de Ajustes"
+    },
+    "importar_botoes": {
+      "status": "FAIL",
+      "detail": "AssertionError: faltam os dois caminhos de importação desta versão (botão único e par texto+mmproj)"
+    },
+    "ajustes": {
+      "status": "FAIL",
+      "detail": "AssertionError: Controle não encontrado: {'text': 'Salvar ajustes', 'package': {'com.ggufchat.app'}, 'contains': True}"
+    },
+    "modelo_listado": {
+      "status": "PASS",
+      "detail": "modelo importado listado com o nome real (SmolLM2-135M-Instruct-Q4_K_M)"
+    },
+    "descarregar_e_recarregar": {
+      "status": "SKIP",
+      "detail": "esta versão não oferece descarregar o modelo pela interface (nenhum controle com esse rótulo na tela de modelos)"
+    },
+    "nova_conversa": {
+      "status": "PASS",
+      "detail": "criada com escolha de modelo; resposta persistida (33 caracteres, 9 tokens nativos)"
+    },
+    "parar_geracao": {
+      "status": "PASS",
+      "detail": "parou no meio e manteve a resposta parcial (551 caracteres, 116 tokens antes de parar)"
+    },
+    "raciocinio": {
+      "status": "PASS",
+      "detail": "raciocínio liga e persiste (chat.thinking=true), prompt de sistema aplicado, painel próprio anexado, e o bloco não vaza para o texto visível; desliga limpo"
+    },
+    "busca_fontes": {
+      "status": "PASS",
+      "detail": "botão liga (\"Busca ON\") e a busca devolve DuckDuckGo com 5 fonte(s) em 2192 ms (teto 12000 ms), fontes persistidas na mensagem"
+    },
+    "gaveta_ferramentas": {
+      "status": "FAIL",
+      "detail": "AssertionError: gaveta de ferramentas não abriu"
+    },
+    "seletores_de_anexo": {
+      "status": "FAIL",
+      "detail": "AssertionError: gaveta de ferramentas não abriu"
+    },
+    "anexo_texto": {
+      "status": "PASS",
+      "detail": "texto anexado e enviado: conteúdo preparado (files=1, text_chars=54) e anexo preservado na mensagem"
+    },
+    "visao": {
+      "status": "SKIP",
+      "detail": "sem par visão/mmproj neste runner: seleção, pré-processamento e leitura de imagem não podem ser provados — e não serão aprovados por omissão"
+    },
+    "notificacao": {
+      "status": "PASS",
+      "detail": "com a tela apagada durante a geração, o canal \"Respostas prontas\" apareceu no dumpsys"
+    },
+    "historico": {
+      "status": "PASS",
+      "detail": "conversa \"GGUF regression 1a0d9a8426018fed3\" reabriu com o conteúdo salvo depois de fechar o aplicativo"
+    },
+    "excluir_conversa": {
+      "status": "PASS",
+      "detail": "conversa \"GGUF regression 1a0d9a944ca8f2e8c\" excluída pela interface e sumiu do armazenamento"
+    },
+    "excluir_modelo": {
+      "status": "SKIP",
+      "detail": "esta versão não oferece excluir o modelo pela interface (nenhum controle com esse rótulo na tela de modelos)"
+    },
+    "sem_modelo": {
+      "status": "PASS",
+      "detail": "sem modelo, criar conversa avisa o usuário em vez de falhar em silêncio"
+    }
+  }
+}
