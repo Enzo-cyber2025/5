@@ -196,6 +196,41 @@ modelo — e o botão da busca, que vive na gaveta recolhida aberta pelo botão
 rótulo acompanhando. Se a rede do emulador não puder ser derrubada, a fase é
 declarada SKIP, nunca aprovada por omissão.
 
+### 4.2 Varredura funcional ("testa TODAS as funções")
+
+`scripts/test_functions_android.py` percorre a superfície do aplicativo como um
+usuário a percorre — 19 funções, cada uma com PASS, FAIL ou SKIP **declarado com
+motivo**, e o relatório publicado (`functions-sweep.json` e `functions-sweep.txt`).
+Começa do zero de propósito (`pm clear` e modelo preparado), para que o estado vazio
+e a primeira execução sejam observados de verdade, e roda por último porque exclui o
+modelo ao testar "Excluir modelo".
+
+| Função | O que precisa ser observado |
+| --- | --- |
+| estado vazio | primeira execução orienta o usuário ("+ Nova conversa") |
+| abas | Chat, Importar, AI Modelos e Ajustes mostram conteúdo próprio |
+| importar | caminho unitário **e** o par texto+mmproj oferecidos |
+| ajustes | os oito campos; valor inválido recusado; valor válido salvo e persistido nas preferências |
+| modelo | listado pelo nome real; descarregar da memória **e voltar a gerar** |
+| conversa | criação com escolha de modelo, envio e resposta persistida |
+| parar | interrompe no meio (bem antes do limite de tokens) e mantém a resposta parcial |
+| raciocínio | rótulo, `chat.thinking=true`, prompt de sistema aplicado, painel próprio, e o bloco não vaza para o texto |
+| busca | botão liga; fontes obtidas **e persistidas na mensagem**; teto respeitado |
+| gaveta | os cinco controles (Foto, Vídeo, Áudio, Arquivo, Ferramentas) |
+| seletores | os quatro abrem e o aplicativo volta vivo |
+| anexo de texto | arquivo escolhido no seletor real, conteúdo preparado para o modelo e anexo preservado na mensagem |
+| visão | SKIP sem par visão/mmproj — nunca aprovada por omissão |
+| notificação | com a tela apagada, o canal "Respostas prontas" aparece no `dumpsys` |
+| histórico | conversa reabre com o conteúdo salvo depois de fechar o aplicativo |
+| excluir conversa | diálogo confirmado e conversa fora do armazenamento |
+| excluir modelo | modelo fora do armazenamento (SKIP declarado se a versão não oferecer o controle) |
+| sem modelo | sem modelo importado, criar conversa avisa em vez de falhar em silêncio |
+
+Toda falha e todo SKIP gravam também `functions-<nome>-ui.xml` (a árvore de views do
+momento): é o que permite dizer se o defeito é do aplicativo ou do teste — foi assim
+que as seis falhas da primeira varredura foram identificadas como do teste, com a
+captura de tela mostrando exatamente o que estava na frente do usuário.
+
 ## 5. O que roda em cada gate
 
 | Gate | O que verifica |

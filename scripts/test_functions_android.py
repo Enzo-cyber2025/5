@@ -251,7 +251,7 @@ def main():
 
     def abas():
         chegou = []
-        for label, marker in (('Importar', 'Importar GGUF'), ('AI Modelos', 'Modelo'),
+        for label, marker in (('Importar', 'Importar GGUF'), ('AI Modelos', model['name']),
                               ('Ajustes', 'Salvar ajustes'), ('Chat', 'Nova conversa')):
             device.launch()
             if not tap_exact(device, label, optional=True):
@@ -310,7 +310,7 @@ def main():
 
     def modelo_listado():
         device.launch()
-        tap_label(device, 'Modelos', optional=True)
+        tap_exact(device, 'AI Modelos', optional=True) or tap_label(device, 'Modelos', optional=True)
         wait_screen(device, model['name'], timeout=25)
         return f'modelo importado listado com o nome real ({model["name"]})'
 
