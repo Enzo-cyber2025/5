@@ -76,7 +76,7 @@ public final class SearchBudget {
      * tentativa após tentativa. Com o orçamento quase esgotado devolve {0,0}: a
      * requisição não é aberta.
      */
-    public int slices(int connectConfigured, int readConfigured) {
+    public int[] slices(int connectConfigured, int readConfigured) {
         return slices(connectConfigured, readConfigured, System.nanoTime());
     }
 

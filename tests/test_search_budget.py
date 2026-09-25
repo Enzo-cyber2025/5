@@ -138,6 +138,35 @@ def test_failed_search_tells_the_model_there_are_no_sources():
     assert 'Não há resultados de busca para citar' in notice
 
 
+def test_public_signatures_are_what_the_search_calls():
+    """Tipos declarados conferem — o javac do CI pegou `int slices(...)` em vez de `int[]`.
+
+    Este host não tem javac: sem esta checagem, um erro de tipo só apareceria no
+    CI, depois de um ciclo inteiro de emulador. javalang lê os tipos declarados.
+    """
+    import javalang
+    tree = javalang.parse.parse(BUDGET.read_text())
+    expected = {
+        ('sliceMs', 1): 'int', ('slices', 2): 'int[]',
+        ('remainingMs', 0): 'int', ('totalMs', 0): 'int', ('expired', 0): 'boolean',
+    }
+    def declared(node):
+        """Tipo como aparece na assinatura: 'int[]', não 'int' (javalang guarda a
+        dimensão à parte, e foi exatamente aí que o erro passou)."""
+        kind = node.return_type
+        name = getattr(kind, 'name', None) or str(kind)
+        return name + '[]' * len(getattr(kind, 'dimensions', None) or [])
+
+    found = {}
+    for _, method in tree.filter(javalang.tree.MethodDeclaration):
+        found[(method.name, len(method.parameters or []))] = declared(method)
+    for key, wanted in expected.items():
+        assert found.get(key) == wanted, f'{key}: esperado {wanted}, encontrado {found.get(key)}'
+    static = {m.name for _, m in tree.filter(javalang.tree.MethodDeclaration)
+              if 'static' in m.modifiers}
+    assert 'connectivityFailure' in static and 'configuredMs' in static
+
+
 def test_budget_class_stays_pure_java():
     """Nada de Android no arquivo que o teste de host executa."""
     text = BUDGET.read_text()
