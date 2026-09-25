@@ -55,6 +55,7 @@ class Sweep:
             detail = function()
         except SkipCheck as skip:
             self.results[name] = {'status': 'SKIP', 'detail': str(skip)}
+            self.dump(name)
             print(f'SKIP {name}: {skip}', flush=True)
             return False
         except Exception as error:  # noqa: BLE001 — o relatório precisa continuar
@@ -66,10 +67,18 @@ class Sweep:
                 self.device.capture(f'functions-{name}.png')
             except Exception as capture_error:  # noqa: BLE001
                 print(f'(captura indisponível: {capture_error})', flush=True)
+            self.dump(name)
             return False
         self.results[name] = {'status': 'PASS', 'detail': detail}
         print(f'PASS {name}: {detail}', flush=True)
         return True
+
+    def dump(self, name):
+        """Guarda a árvore de views do momento: é o que permite explicar um FAIL/SKIP."""
+        try:
+            (self.evidence / f'functions-{name}-ui.xml').write_text(self.device.ui())
+        except Exception as error:  # noqa: BLE001
+            print(f'(dump indisponível: {error})', flush=True)
 
     def write(self):
         report = {
@@ -102,6 +111,16 @@ def tap_label(device, label, contains=True, optional=False):
     return device.tap(text=label, package={PACKAGE}, contains=contains, optional=optional)
 
 
+def tap_exact(device, label, optional=False):
+    """Toque no controle cujo texto é EXATAMENTE esse.
+
+    "Busca" não pode casar com "Busca ON", e "Excluir" não pode casar com o título
+    "Excluir conversa" do diálogo — foi assim que a confirmação da exclusão ficou
+    sem ser tocada na varredura anterior.
+    """
+    return tap_label(device, label, contains=False, optional=optional)
+
+
 def edit_near(device, label):
     """EditText na mesma faixa vertical do rótulo — o campo daquele ajuste."""
     root = ET.fromstring(device.ui())
@@ -113,6 +132,7 @@ def edit_near(device, label):
                 target = tuple(map(int, match.groups()))
     if target is None:
         raise AssertionError(f'rótulo do ajuste não encontrado: {label}')
+    candidatos = []
     for node in root.iter('node'):
         if node.get('package') not in PACKAGE or node.get('class') != 'android.widget.EditText':
             continue
@@ -120,9 +140,13 @@ def edit_near(device, label):
         if not match:
             continue
         x1, y1, x2, y2 = map(int, match.groups())
-        if y1 >= target[1] - 60 and y2 <= target[3] + 120:
-            return (x1 + x2) // 2, (y1 + y2) // 2
-    raise AssertionError(f'campo editável não encontrado perto de "{label}"')
+        if y1 >= target[3] - 10:  # abaixo do rótulo
+            candidatos.append((y1, (x1 + x2) // 2, (y1 + y2) // 2))
+    if not candidatos:
+        raise AssertionError(f'campo editável não encontrado abaixo de "{label}"')
+    # o campo do ajuste é o mais próximo abaixo do rótulo, não o primeiro da tela
+    _, x, y = min(candidatos)
+    return x, y
 
 
 def field_text(device, point):
@@ -157,7 +181,8 @@ def other_window(device):
 
 def picker_then_back(device, label):
     """Abre o seletor do botão indicado e volta: o seletor abre, o app continua vivo."""
-    tap_label(device, label)
+    if not tap_exact(device, label, optional=True):
+        raise AssertionError(f'botão {label} não encontrado na gaveta')
     appeared = False
     deadline = time.monotonic() + 25
     while time.monotonic() < deadline:
@@ -226,24 +251,28 @@ def main():
 
     def abas():
         chegou = []
-        for label, marker in (('Importar', 'Importar .gguf'), ('Modelos', 'Modelos'),
+        for label, marker in (('Importar', 'Importar GGUF'), ('AI Modelos', 'Modelo'),
                               ('Ajustes', 'Salvar ajustes'), ('Chat', 'Nova conversa')):
-            if not tap_label(device, label, optional=True):
+            device.launch()
+            if not tap_exact(device, label, optional=True):
                 continue
-            if device.wait(lambda m=marker: on_screen(device, m), f'conteúdo de {label}', timeout=25):
+            if device.wait(lambda m=marker: on_screen(device, m), f'conteúdo de {label}',
+                           timeout=25):
                 chegou.append(label)
         if len(chegou) < 3:
             raise AssertionError(f'abas alcançadas: {chegou}')
         return 'abas navegam e mostram conteúdo próprio: ' + ', '.join(chegou)
 
     def importar_botoes():
-        tap_label(device, 'Importar')
-        wait_screen(device, 'Importar .gguf')
-        single = on_screen(device, 'Importar .gguf')
+        device.launch()
+        tap_exact(device, 'Importar')
+        wait_screen(device, 'Importar GGUF')
+        single = on_screen(device, 'Importar GGUF')
         pair = on_screen(device, 'Importar 2 GGUFs')
         if not single or not pair:
-            raise AssertionError('faltam os dois caminhos de importação (unitário e par texto+mmproj)')
-        return 'importação oferece o caminho unitário e o par texto+mmproj'
+            raise AssertionError('faltam os dois caminhos de importação desta versão '
+                                 '(botão único e par texto+mmproj)')
+        return 'importação oferece o caminho unitário (Importar GGUF) e o par texto+mmproj'
 
     def ajustes():
         device.launch()
@@ -287,9 +316,10 @@ def main():
 
     def descarregar_e_recarregar():
         device.launch()
-        tap_label(device, 'Modelos', optional=True)
+        tap_exact(device, 'AI Modelos', optional=True) or tap_label(device, 'Modelos', optional=True)
         if not tap_label(device, 'Descarregar', optional=True):
-            raise SkipCheck('controle de descarregar modelo não presente nesta versão')
+            raise SkipCheck('esta versão não oferece descarregar o modelo pela interface '
+                            '(nenhum controle com esse rótulo na tela de modelos)')
         device.wait(lambda: (on_screen(device, 'descarregado')
                              or 'Modelo descarregado' in device.adb('logcat', '-d')),
                     'confirmação do descarregamento', timeout=25)
@@ -339,7 +369,7 @@ def main():
         device.wait_for_load()
         if not device.tools_open():
             raise AssertionError('gaveta de ferramentas não abriu')
-        tap_label(device, 'Thinking', contains=False)
+        tap_exact(device, 'Thinking')
         wait_screen(device, 'Thinking ON', contains=False, timeout=15)
         device.send('Say hello in English.')
         device.wait(lambda: generation_completed(device.adb('logcat', '-d')), 'geração com raciocínio', timeout=180)
@@ -355,7 +385,7 @@ def main():
                                  f'persistido={row.get("thinking")})')
         if vazou:
             raise AssertionError('o bloco de raciocínio vazou para o texto visível')
-        tap_label(device, 'Thinking ON', contains=False)
+        tap_exact(device, 'Thinking ON')
         wait_screen(device, 'Thinking', contains=False, timeout=15)
         return ('raciocínio liga e persiste (chat.thinking=true), prompt de sistema aplicado, painel '
                 'próprio anexado, e o bloco não vaza para o texto visível; desliga limpo')
@@ -370,7 +400,7 @@ def main():
         estado = device.search_button_state()
         if estado is not False:
             raise AssertionError(f'a conversa nova deveria estar com a busca desligada (estado={estado})')
-        tap_label(device, 'Busca', contains=False)
+        tap_exact(device, 'Busca')
         wait_screen(device, 'Busca ON', contains=False, timeout=15)
         prompt = 'Reply in English: What is the capital of Japan?'
         device.send(prompt)
@@ -424,7 +454,7 @@ def main():
         device.wait_for_load()
         if not device.tools_open():
             raise AssertionError('gaveta de ferramentas não abriu')
-        tap_label(device, 'Arquivo')
+        tap_exact(device, 'Arquivo')
         device.wait(lambda: has_package(device.ui(), PICKERS), 'seletor de arquivo', timeout=25)
         device.choose_file(nome)
         device.wait(lambda: on_screen(device, 'Anexo'), 'anexo listado na mensagem', timeout=30)
@@ -474,11 +504,18 @@ def main():
         chats = device.read_json('chats.json', optional=True) or []
         if not chats:
             raise SkipCheck('sem conversas para conferir após reinício')
-        alvo = max(chats, key=lambda c: c.get('updatedAt', 0))
-        esperada = next((m['content'] for m in reversed(alvo.get('messages', []))
-                         if m.get('role') == 'assistant' and m.get('content')), '')
-        if not esperada:
-            raise SkipCheck('nenhuma resposta para conferir após reinício')
+        # A conversa do teste de "parar" tem resposta parcial; a do raciocínio e a
+        # da busca têm resposta inteira. A mais nova pode não ter (parou no meio),
+        # então a escolha é: a mais nova QUE TENHA resposta persistida.
+        def respondida(chat):
+            return any(m.get('role') == 'assistant' and (m.get('content') or '').strip()
+                       for m in chat.get('messages', []))
+        alvo = next((c for c in sorted(chats, key=lambda c: c.get('updatedAt', 0), reverse=True)
+                     if respondida(c)), None)
+        if not alvo:
+            raise SkipCheck('nenhuma conversa com resposta persistida para conferir')
+        esperada = next(m['content'] for m in reversed(alvo['messages'])
+                        if m.get('role') == 'assistant' and (m.get('content') or '').strip())
         device.shell(f'am force-stop {PACKAGE}')
         device.launch()
         device.open_existing_chat(alvo['title'])
@@ -492,18 +529,18 @@ def main():
             raise SkipCheck('sem conversas para excluir')
         alvo = max(chats, key=lambda c: c.get('updatedAt', 0))
         device.launch()
-        if not tap_label(device, 'Excluir conversa', optional=True):
-            # Sem controle direto: toque longo na linha, como o usuário faz.
-            ponto = on_screen(device, alvo['title'])
-            if not ponto:
-                raise AssertionError('conversa não encontrada na lista')
-            x, y = ponto
-            device.shell(f'input touchscreen swipe {x} {y} {x} {y} 900')
-            device.wait(lambda: on_screen(device, 'Excluir'), 'opção de excluir conversa', timeout=20)
-            tap_label(device, 'Excluir conversa', optional=True)
-            tap_label(device, 'Excluir', optional=True)
-        else:
-            tap_label(device, 'Excluir', optional=True)
+        ponto = on_screen(device, alvo['title'])
+        if not ponto:
+            raise AssertionError('conversa não encontrada na lista')
+        x, y = ponto
+        device.shell(f'input touchscreen swipe {x} {y} {x} {y} 900')  # toque longo
+        # O diálogo de confirmação traz o próprio título "Excluir conversa" e o
+        # botão "EXCLUIR": casamento exato, senão o toque cai no título e nada é
+        # confirmado (foi o que aconteceu na primeira varredura).
+        device.wait(lambda: on_screen(device, 'Excluir conversa'),
+                    'diálogo de excluir conversa', timeout=25)
+        if not tap_exact(device, 'Excluir', optional=True):
+            raise AssertionError('o botão de confirmar a exclusão não foi encontrado')
 
         def sumiu():
             restantes = device.read_json('chats.json', optional=True) or []
@@ -516,10 +553,11 @@ def main():
         if not models:
             raise SkipCheck('sem modelo para excluir')
         device.launch()
-        tap_label(device, 'Modelos', optional=True)
+        tap_exact(device, 'AI Modelos', optional=True) or tap_label(device, 'Modelos', optional=True)
         if not (tap_label(device, 'Excluir modelo', optional=True)
                 or tap_label(device, 'Remover modelo', optional=True)):
-            raise SkipCheck('controle de excluir modelo não presente nesta versão')
+            raise SkipCheck('esta versão não oferece excluir o modelo pela interface '
+                            '(nenhum controle com esse rótulo na tela de modelos)')
         tap_label(device, 'Excluir', optional=True)
 
         def vazio():

@@ -218,7 +218,7 @@ def test_function_sweep_covers_every_labelled_control():
     uma promessa sem lastro.
     """
     sweep = (ROOT / 'scripts/test_functions_android.py').read_text()
-    for rotulo in ('Nova conversa', 'Importar .gguf', 'Importar 2 GGUFs', 'Salvar ajustes',
+    for rotulo in ('Nova conversa', 'Importar GGUF', 'Importar 2 GGUFs', 'Salvar ajustes',
                    'Parar', 'Thinking', 'Busca', 'Foto', 'Vídeo', 'Áudio', 'Arquivo', 'Ferramentas',
                    'Excluir conversa', 'Excluir modelo', 'Descarregar'):
         assert rotulo in sweep, f'"{rotulo}" não é exercitado pela varredura'
