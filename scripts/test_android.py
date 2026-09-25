@@ -323,6 +323,9 @@ class Android:
         self.write_private("files/chats.json", json.dumps(chats))
         self.launch()
         self.open_existing_chat(chat["title"])
+        # Guarda a conversa desta etapa: generate() devolve o logcat, e os passos
+        # seguintes precisam do id para conferir rótulo, persistência e painel.
+        self.last_chat = chat
         return chat
 
     def open_existing_chat(self, title):
@@ -414,17 +417,15 @@ class Android:
         current = self.search_button_state()
         if current is None:
             raise AssertionError("não foi possível abrir a gaveta de ferramentas")
-        if current is None:
-            raise AssertionError("botão de busca não encontrado na tela")
         if current != desired:
             self.tap(text="Busca ON" if current else "Busca", package={PACKAGE})
 
         def persisted():
             chats = self.read_json("chats.json", optional=True) or []
-            if not chats:
+            row = next((c for c in chats if c.get("id") == self.last_chat["id"]), None)
+            if row is None:
                 return None
-            newest = max(chats, key=lambda c: c.get("updatedAt", 0))
-            return True if newest.get("webSearch") == desired else None
+            return True if row.get("webSearch") == desired else None
 
         self.wait(persisted, f"busca {'ligada' if desired else 'desligada'} e persistida", timeout=20)
         after = self.search_button_state()
