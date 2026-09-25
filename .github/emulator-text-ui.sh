@@ -32,4 +32,9 @@ phase attachments-detach .venv/bin/python scripts/test_detach_android.py
 phase emulator bash .github/emu-test.sh
 # Lê o que o harness mediu (não mede nada novo) e reprova se o alvo não foi atingido.
 phase performance .venv/bin/python scripts/check_performance.py
+# Varredura funcional: cada função visível exercitada, com PASS/FAIL/SKIP declarado.
+# Roda por último porque exclui o modelo de propósito, ao testar "Excluir modelo".
+phase functions .venv/bin/python scripts/test_functions_android.py \
+  --serial "$ANDROID_SERIAL" --apk "${GGUF_OUTPUT_APK:-dist/GGUF-Chat-repaired.apk}" \
+  --model "$GGUF_TEST_MODEL" --allow-data-reset --evidence "$GGUF_EVIDENCE"
 exit "$status"

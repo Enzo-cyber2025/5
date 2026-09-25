@@ -180,10 +180,16 @@ def search_panel(chats, chat_id, prompt):
         raw = message.get('searchSources')
         if raw is None:
             continue
+        # Na mensagem persistida as fontes são um OBJETO JSON; em memória o app
+        # guarda a string (Message.fromJson → SearchTool.read). Aceitar só uma das
+        # formas reprovava o aplicativo por culpa do próprio teste.
+        if isinstance(raw, dict):
+            return raw
         try:
-            return json.loads(raw)
+            value = json.loads(raw)
         except (TypeError, ValueError):
             return None
+        return value if isinstance(value, dict) else None
     return None
 
 

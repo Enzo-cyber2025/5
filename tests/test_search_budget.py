@@ -140,6 +140,47 @@ def test_failed_search_tells_the_model_there_are_no_sources():
     assert 'Não há resultados de busca para citar' in notice
 
 
+def test_search_panel_accepts_what_the_app_persists():
+    """Busca persistida: as fontes são um OBJETO JSON; em memória, string.
+
+    Aceitar só a string reprovou o aplicativo por culpa do teste na rodada
+    36085765567 — o app gravou as fontes certas e o helper devolveu None.
+    """
+    from android_checks import search_panel
+    objeto = [{'id': 'x', 'messages': [
+        {'role': 'user', 'content': 'q'},
+        {'role': 'assistant', 'content': 'a', 'searchSources': {'provider': 'DuckDuckGo', 'hits': [1, 2]}}]}]
+    assert search_panel(objeto, 'x', 'q')['provider'] == 'DuckDuckGo'
+    string = [{'id': 'x', 'messages': [
+        {'role': 'user', 'content': 'q'},
+        {'role': 'assistant', 'content': 'a',
+         'searchSources': '{"provider": "Wikipédia", "hits": [1]}'}]}]
+    assert search_panel(string, 'x', 'q')['provider'] == 'Wikipédia'
+    lixo = [{'id': 'x', 'messages': [
+        {'role': 'user', 'content': 'q'},
+        {'role': 'assistant', 'content': 'a', 'searchSources': 'nao-e-json'}]}]
+    assert search_panel(lixo, 'x', 'q') is None
+
+
+def test_function_sweep_covers_every_labelled_control():
+    """A varredura cobre os controles que o próprio aplicativo anuncia.
+
+    Os rótulos vêm da tabela de strings do dex do APK original (lida sem JDK):
+    cada um deles tem de aparecer na varredura, senão "todas as funções" seria
+    uma promessa sem lastro.
+    """
+    sweep = (ROOT / 'scripts/test_functions_android.py').read_text()
+    for rotulo in ('Nova conversa', 'Importar .gguf', 'Importar 2 GGUFs', 'Salvar ajustes',
+                   'Parar', 'Thinking', 'Busca', 'Foto', 'Vídeo', 'Áudio', 'Arquivo', 'Ferramentas',
+                   'Excluir conversa', 'Excluir modelo', 'Descarregar'):
+        assert rotulo in sweep, f'"{rotulo}" não é exercitado pela varredura'
+    for funcao in ('estado_vazio', 'abas', 'ajustes', 'nova_conversa', 'parar_geracao',
+                   'raciocinio', 'busca_fontes', 'gaveta_ferramentas', 'seletores_de_anexo',
+                   'anexo_texto', 'visao', 'notificacao', 'historico', 'excluir_conversa',
+                   'excluir_modelo', 'sem_modelo'):
+        assert f"('{funcao}'" in sweep, f'função {funcao} fora da ordem da varredura'
+
+
 def test_public_signatures_are_what_the_search_calls():
     """Tipos declarados conferem — o javac do CI pegou `int slices(...)` em vez de `int[]`.
 
