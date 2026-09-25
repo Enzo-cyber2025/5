@@ -347,8 +347,22 @@ class Android:
                 if attempt == 2 or not position(xml, text=title, package={PACKAGE}):
                     raise
 
+    @staticmethod
+    def search_toggle_visible(xml):
+        """O rótulo do botão de busca está na tela AGORA? (casamento exato)"""
+        return bool(position(xml, text="Busca ON", package={PACKAGE})
+                    or position(xml, text="Busca", package={PACKAGE}))
+
     def search_button_state(self):
-        """Estado do botão de busca na tela: True ligado, False desligado, None ausente."""
+        """Estado do botão de busca, com a gaveta de ferramentas aberta.
+
+        Os controles da conversa (Busca, Raciocínio, foto, anexo, ferramentas) vivem
+        numa gaveta recolhida, aberta pelo botão de ferramentas — é assim que o
+        usuário chega neles. Sem abrir a gaveta o rótulo não está na tela, e isso não
+        é defeito: é o desenho compacto da barra.
+        """
+        if not self.tools_open():
+            return None
         xml = self.ui()
         if position(xml, text="Busca ON", package={PACKAGE}):
             return True
@@ -356,9 +370,24 @@ class Android:
             return False
         return None
 
+    def tools_open(self):
+        """Garante a gaveta de ferramentas aberta e devolve se os controles apareceram."""
+        xml = self.ui()
+        if self.search_toggle_visible(xml):
+            return True
+        drawer = position(xml, desc="Alternar ferramentas", package={PACKAGE})
+        if drawer is None:
+            return False
+        self.shell(f"input tap {drawer[0]} {drawer[1]}")
+        self.wait(lambda: self.search_toggle_visible(self.ui()),
+                  "gaveta de ferramentas aberta (botão 'Alternar ferramentas')", timeout=20)
+        return True
+
     def toggle_search(self, desired):
         """Alterna a busca pelo botão real e confirma estado, rótulo e persistência."""
         current = self.search_button_state()
+        if current is None:
+            raise AssertionError("não foi possível abrir a gaveta de ferramentas")
         if current is None:
             raise AssertionError("botão de busca não encontrado na tela")
         if current != desired:
@@ -785,7 +814,10 @@ def main():
         # 0) O botão da busca: parte de desligado (a conversa desta etapa), liga e
         #    desliga pelo toque real, conferindo rótulo e persistência nos dois
         #    sentidos.
-        if device.search_button_state() is not False:
+        state = device.search_button_state()
+        if state is None:
+            raise AssertionError("não foi possível abrir a gaveta de ferramentas da conversa")
+        if state is not False:
             raise AssertionError("a conversa desta etapa deveria estar com a busca desligada")
         device.toggle_search(True)
         device.toggle_search(False)

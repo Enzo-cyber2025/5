@@ -21,6 +21,10 @@ import java.net.UnknownHostException;
 public final class SearchBudget {
     public static final int DEFAULT_MS = 12000;
     public static final int MIN_MS = 250;
+    /** Abaixo disto o orçamento está gasto: nenhuma requisição nova é aberta.
+     *  Importa porque zero, num timeout de HttpURLConnection, quer dizer "sem
+     *  limite" — tentar com zero traria a espera infinita de volta. */
+    public static final int MIN_SLICE_MS = 50;
     public static final String PROPERTY = "debug.gguf.search_budget_ms";
 
     private final int totalMs;
@@ -61,8 +65,26 @@ public final class SearchBudget {
 
     int sliceMs(int configured, long nowNanos) {
         int remaining = remainingMs(nowNanos);
-        if (remaining <= 0) return 0;
-        return Math.min(remaining, Math.max(Math.min(configured, remaining), Math.min(MIN_MS, remaining)));
+        if (remaining < MIN_SLICE_MS) return 0;
+        return Math.min(configured, remaining);
+    }
+
+    /** Fatias de conexão e leitura de UMA requisição.
+     *
+     * Cada fase recebe, no máximo, metade do que resta do orçamento, então a soma
+     * das duas nunca passa do restante — e o total da busca nunca passa do teto,
+     * tentativa após tentativa. Com o orçamento quase esgotado devolve {0,0}: a
+     * requisição não é aberta.
+     */
+    public int slices(int connectConfigured, int readConfigured) {
+        return slices(connectConfigured, readConfigured, System.nanoTime());
+    }
+
+    int[] slices(int connectConfigured, int readConfigured, long nowNanos) {
+        int remaining = remainingMs(nowNanos);
+        if (remaining < MIN_SLICE_MS) return new int[]{0, 0};
+        int share = remaining / 2;
+        return new int[]{Math.min(connectConfigured, share), Math.min(readConfigured, share)};
     }
 
     /** Falha de rede (DNS, conexão recusada, sem rota) invalida os demais provedores. */

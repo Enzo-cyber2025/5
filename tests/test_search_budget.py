@@ -86,7 +86,14 @@ def test_every_search_attempt_is_bounded_by_the_budget():
     # Cada tentativa é registrada pelo orçamento (contagem = tentativas no código).
     attempts = re.findall(r'Attempt \w+=attempt\(', tool)
     assert len(attempts) == 4, attempts
-    assert 'int connect=budget.sliceMs(CONNECT_TIMEOUT),read=budget.sliceMs(READ_TIMEOUT);' in tool
+    # As duas fatias de cada requisição vêm do orçamento (conexão e leitura), e
+    # uma fatia zero não pode abrir requisição nenhuma: zero é "sem limite".
+    assert 'int[] timeouts=budget.slices(CONNECT_TIMEOUT,READ_TIMEOUT);' in tool
+    assert 'if(connect<=0||read<=0){' in tool
+    budget = BUDGET.read_text()
+    assert 'int[] slices(int connectConfigured, int readConfigured, long nowNanos)' in budget
+    assert 'int share = remaining / 2;' in budget
+    assert 'if (remaining < MIN_SLICE_MS) return new int[]{0, 0};' in budget
     # Nenhuma conexão pode ser aberta sem passar pela fatia do orçamento.
     assert tool.count('get(') >= 4
     assert 'get(url,connect,read)' in tool

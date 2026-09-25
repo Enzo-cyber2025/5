@@ -197,8 +197,15 @@ public final class SearchTool {
     private static Attempt attempt(String provider,String url,int max,SearchBudget budget,
                                    ArrayList<String> errors,Parser parser){
         int remaining=budget.remainingMs();
-        if(remaining<=0)return new Attempt(null,true);
-        int connect=budget.sliceMs(CONNECT_TIMEOUT),read=budget.sliceMs(READ_TIMEOUT);
+        int[] timeouts=budget.slices(CONNECT_TIMEOUT,READ_TIMEOUT);
+        int connect=timeouts[0],read=timeouts[1];
+        if(connect<=0||read<=0){
+            // Zero num timeout de HttpURLConnection vale "sem limite": com o
+            // orçamento gasto não se abre requisição nenhuma.
+            errors.add(provider+": não tentado, orçamento com "+remaining+" ms restantes");
+            Log.i(TAG,"GGUF_SEARCH_ATTEMPT provider="+provider+" skipped=1 remaining_ms="+remaining);
+            return new Attempt(null,true);
+        }
         Log.i(TAG,"GGUF_SEARCH_ATTEMPT provider="+provider+" budget_ms="+budget.totalMs()
             +" remaining_ms="+remaining+" connect_ms="+connect+" read_ms="+read);
         try{
