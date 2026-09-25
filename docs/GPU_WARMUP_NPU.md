@@ -156,6 +156,43 @@ shown=1`). O aquecimento só pré-enche o KV com tokens idênticos aos que o env
 produziria; quando a busca injeta resultados no turno do usuário, o prefixo
 comum continua sendo reaproveitado e o resto é decodificado normalmente.
 
+### 4.1 O teto de tempo da busca (relato "minutos pesquisando")
+
+Com a busca ligada, quem ficava minutos esperando não era o modelo: era a busca,
+antes de o modelo carregar. Quatro provedores eram tentados em sequência
+(SearXNG opcional → DuckDuckGo → DuckDuckGo Lite → Wikipédia), cada um com 8 s de
+conexão e 12 s de leitura, sem teto para o conjunto e sem parar quando a rede já
+havia falhado — sem internet, são 80 s de espera garantida antes do primeiro token,
+e nada na tela dizia que algo estava errado.
+
+O conserto é um orçamento único para a busca inteira (`SearchBudget`, 12 s por
+padrão, `debug.gguf.search_budget_ms`):
+
+| Regra | Efeito |
+| --- | --- |
+| Cada requisição recebe no máximo metade do que resta (conexão e leitura) | a soma das tentativas nunca passa do teto |
+| Abaixo de 50 ms restantes, nenhuma requisição nova é aberta | zero, num timeout de `HttpURLConnection`, significa "sem limite": era o caminho de volta para a espera infinita |
+| DNS, conexão recusada ou sem rota interrompem a cadeia | insistir nos outros provedores só somaria espera |
+| Sem fontes, a resposta sai de qualquer forma | o painel declara o motivo e o tempo gasto; o modelo é avisado ("BUSCA NA WEB INDISPONÍVEL NESTA RESPOSTA… diga que não pesquisou") em vez de continuar sob a instrução de citar fontes que não existem |
+
+A tela diz o limite antes de gastá-lo ("Pesquisando na web (até 12 s)…"), e o log
+prova o que aconteceu: `GGUF_SEARCH_ATTEMPT` (orçamento, restante, fatias de
+conexão e leitura), `GGUF_SEARCH_BUDGET` (total, gasto, esgotado) e
+`GGUF_SEARCH_PROMPT mode=fontes|indisponivel`.
+
+O autoteste `tests/java/SearchBudgetSelfTest.java` roda com o **mesmo** arquivo que
+entra no APK, com relógio sintético em nanossegundos: fatia nunca passa do
+restante nem do pedido, conexão+leitura cabem no restante, quatro tentativas cabem
+no orçamento, expirado não abre fatia, falha de rede interrompe a cadeia, e quatro
+provedores que nunca respondem terminam perto de 400 ms — não em minutos.
+
+No emulador, três fases novas: busca com a rede do runner (a resposta sai e o teto
+é respeitado; com fontes, o painel precisa registrá-las), falha de rede
+determinística (endpoint local fechado, teto de 4 s: a cadeia para na primeira
+tentativa e a resposta sai sem fontes, com o modelo avisado) e o botão da busca —
+que vive na gaveta recolhida aberta pelo botão "Alternar ferramentas", como o
+usuário o alcança — ligando, desligando e persistindo com o rótulo acompanhando.
+
 ## 5. O que roda em cada gate
 
 | Gate | O que verifica |
