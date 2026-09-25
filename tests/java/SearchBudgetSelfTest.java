@@ -34,7 +34,10 @@ public final class SearchBudgetSelfTest {
                 int slice = budget.sliceMs(configured, now);
                 if (slice > remaining || slice > configured) bounded = false;
                 if (remaining < SearchBudget.MIN_SLICE_MS && slice != 0) bounded = false;
-                if (slice != 0 && slice < SearchBudget.MIN_SLICE_MS) useful = false;
+                // Com restante e pedido acima do piso, a fatia entregue serve para
+                // uma requisição (nunca 1 ms por acidente de arredondamento).
+                if (remaining >= SearchBudget.MIN_SLICE_MS && configured >= SearchBudget.MIN_SLICE_MS
+                    && slice < SearchBudget.MIN_SLICE_MS) useful = false;
             }
         }
         check("fatia nunca excede o restante nem o pedido", bounded, "");
