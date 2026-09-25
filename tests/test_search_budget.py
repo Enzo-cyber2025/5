@@ -23,7 +23,9 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'scripts'))
 JAVA = ROOT / 'apk-fix/java/com/ggufchat/app'
+SRC = ROOT / 'scripts/test_android.py'
 TOOL = JAVA / 'SearchTool.java'
 BUDGET = JAVA / 'SearchBudget.java'
 SELF_TEST = ROOT / 'tests/java/SearchBudgetSelfTest.java'
@@ -138,6 +140,52 @@ def test_failed_search_tells_the_model_there_are_no_sources():
     notice = (JAVA / 'SearchNotice.java').read_text()
     assert 'import android' not in notice  # roda no host
     assert 'Não há resultados de busca para citar' in notice
+
+
+def test_search_stages_use_the_stage_chat_id():
+    """As fases de busca precisam do id da conversa DAQUELA etapa.
+
+    `generate()` devolve o logcat (string). Guardar esse retorno e indexá-lo como
+    conversa custou duas rodadas de 25 minutos de emulador ("string indices must be
+    integers", depois "'Android' object has no attribute 'last_chat'"). Esta
+    checagem de host impede a terceira: nada indexa o retorno de `generate()` e o
+    único id usado vem de `last_chat`, gravado em `new_chat`.
+    """
+    import ast
+    source = SRC.read_text()
+    tree = ast.parse(source)
+    # Guardar o LOG é legítimo (outras etapas fazem isso); o erro é tratá-lo como
+    # conversa, indexando por chave de texto.
+    logs = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Assign) or not isinstance(node.value, ast.Call):
+            continue
+        call = node.value
+        if isinstance(call.func, ast.Attribute) and call.func.attr == 'generate':
+            logs.update(t.id for t in node.targets if isinstance(t, ast.Name))
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Subscript) or not isinstance(node.value, ast.Name):
+            continue
+        if node.value.id not in logs:
+            continue
+        index = node.slice
+        assert not (isinstance(index, ast.Constant) and isinstance(index.value, str)), (
+            f'{node.value.id} é o logcat de uma geração, não uma conversa: '
+            f'indexá-lo com {index.value!r} é o bug que custou duas rodadas')
+    assert source.count('self.last_chat = chat') == 1, 'new_chat precisa gravar a conversa da etapa'
+    assert source.count('device.last_chat["id"]') == 2, 'as duas fases de busca usam o id da etapa'
+    assert 'search_chat[' not in source
+
+
+def test_timing_reports_flag_an_attempt_over_the_remaining_budget():
+    """A invariante que o emulador confere também tem prova de host, nos dois sentidos."""
+    from android_checks import search_timing
+    good = ('GGUF_SEARCH_ATTEMPT provider=DDG budget_ms=12000 remaining_ms=12000 '
+            'connect_ms=3000 read_ms=4000\nGGUF_SEARCH_BUDGET total_ms=12000 used_ms=900 '
+            'exhausted=0 provider=nenhum\n')
+    assert search_timing(good)['attempt_slices_within_budget'] is True
+    bad = good.replace('read_ms=4000', 'read_ms=12000')
+    assert search_timing(bad)['attempt_slices_within_budget'] is False
 
 
 def test_search_panel_accepts_what_the_app_persists():
