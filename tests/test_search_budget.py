@@ -188,6 +188,35 @@ def test_timing_reports_flag_an_attempt_over_the_remaining_budget():
     assert search_timing(bad)['attempt_slices_within_budget'] is False
 
 
+def test_search_prompt_block_is_bounded_for_latency():
+    """O bloco de fontes entra no prompt: cada caractere é tempo de espera.
+
+    Medido no emulador: pré-preenchimento a ~40 tokens/s, então um prompt de 829
+    tokens custava 20,25 s até o primeiro texto. O teto e os cortes precisam
+    existir no código, e o log precisa dizer o tamanho real do bloco.
+    """
+    tool = TOOL.read_text()
+    assert 'MAX_PROMPT_CHARS=1400' in tool
+    assert 'PROMPT_HITS=3, PROMPT_SNIPPET=140, PROMPT_URL=100' in tool
+    assert 'private static String clip(String value,int max)' in tool
+    assert 'out.length()' in tool and 'GGUF_SEARCH_PROMPT_SIZE chars=' in tool
+    # o corte é declarado, nunca silencioso
+    assert 'fonte(s) a mais no painel' in tool
+
+
+def test_prefill_ubatch_is_tunable_and_logged():
+    """O ajuste do sub-lote precisa ser medível: propriedade + registro do usado."""
+    native = (ROOT / 'apk-fix/native/mobile.cpp').read_text()
+    assert 'debug_int("debug.gguf.prefill_ubatch",0)' in native
+    assert 'GGUF_CONTEXT_TUNING batch=%u ubatch=%u' in native
+    harness = SRC.read_text()
+    assert '"prefill-ubatch-128", 128' in harness and '"prefill-ubatch-256", 256' in harness
+    assert 'prefill_ms_per_token' in harness
+    assert 'long_prompt' in harness  # mesmo texto nas duas etapas: só o sub-lote muda
+    checks = (ROOT / 'scripts/android_checks.py').read_text()
+    assert 'GGUF_CONTEXT_TUNING' in checks
+
+
 def test_search_panel_accepts_what_the_app_persists():
     """Busca persistida: as fontes são um OBJETO JSON; em memória, string.
 

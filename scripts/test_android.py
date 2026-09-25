@@ -19,7 +19,7 @@ import xml.etree.ElementTree as ET
 from android_checks import (PACKAGE, PICKERS, assistant_reply, fusion, generation_completed,
                             gpu_offloaded, has_package, imported, position, basic_response_quality, vulkan_offloaded,
                             generation_stats, ui_first_text_s, software_vulkan_refused, cpu_threads,
-                            warmup_state, search_timing, search_panel)
+                            warmup_state, search_timing, search_panel, context_tuning)
 
 
 class Android:
@@ -518,6 +518,25 @@ class Android:
             return log
         return self.wait(completed, f"geração real {stage}", timeout=300)
 
+    def prefill_metric(self, log):
+        """Custo real do pré-preenchimento: ms por token que o backend processou.
+
+        `prefill_ns` cobre só os tokens que NÃO vieram do aquecimento, então dividir
+        pelo tamanho do prompt mentiria quando o prefixo foi reutilizado. A conta
+        honesta é (prompt_tokens - reused_tokens).
+        """
+        rows = re.findall(r'GGUF_GENERATION_STATS tokens=\d+ decode_ns=\d+ prefill_ns=(\d+)'
+                          r'[^\n]*prompt_tokens=(\d+) reused_tokens=(\d+)', log)
+        if not rows:
+            return None
+        prefill_ns, prompt, reused = map(int, rows[-1])
+        fresh = prompt - reused
+        if fresh <= 0:
+            return None
+        return {'prompt_tokens': prompt, 'reused_tokens': reused, 'fresh_tokens': fresh,
+                'prefill_s': round(prefill_ns / 1e9, 4),
+                'prefill_ms_per_token': round(prefill_ns / 1e6 / fresh, 3)}
+
     def record_perf(self, stage, log, gpu_layers, threads):
         """Contadores nativos de UMA geração real, gravados como evidência.
 
@@ -533,6 +552,8 @@ class Android:
                      backend='vulkan' if gpu_offloaded(log) else 'cpu',
                      ui_first_text_s=ui_first_text_s(log),
                      warmup=warmup_state(log),
+                     prefill=self.prefill_metric(log),
+                     context_tuning=context_tuning(log),
                      software_vulkan_notice=software_vulkan_refused(log), **stats)
         self.perf[stage] = entry
         (self.evidence / f"{stage}-perf.json").write_text(json.dumps(entry, ensure_ascii=False, indent=2))
@@ -952,6 +973,31 @@ def main():
                 if (device.perf.get("gpu-off-cold", {}).get("ui_first_text_s")
                     and device.perf.get("gpu-preferred-cold", {}).get("ui_first_text_s"))
                 else "NOT_MEASURED: falta uma das duas medições")
+            # Sub-lote do pré-preenchimento: mesmo texto, mesmo contexto, mesma
+            # quantidade de tokens — a única diferença é o tamanho do sub-lote. O
+            # aquecimento fica desligado nas duas para que o número meça o
+            # pré-preenchimento inteiro, e não o resto depois do prefixo.
+            long_prompt = ("Summarize in English, one line: " + " ".join(
+                f"item {n} of a long list about local language models and their speed" for n in range(24)))
+            device.shell("setprop debug.gguf.disable_warmup 1")
+            try:
+                for stage, ubatch in (("prefill-ubatch-128", 128), ("prefill-ubatch-256", 256)):
+                    device.shell(f"setprop debug.gguf.prefill_ubatch {ubatch}")
+                    device.generate(model, 0, stage, prompt=long_prompt, await_load=True)
+            finally:
+                device.shell("setprop debug.gguf.prefill_ubatch 0")
+                device.shell("setprop debug.gguf.disable_warmup 0")
+            small = device.perf.get("prefill-ubatch-128", {})
+            large = device.perf.get("prefill-ubatch-256", {})
+            first, second = small.get("prefill") or {}, large.get("prefill") or {}
+            if first.get("prefill_ms_per_token") and second.get("prefill_ms_per_token"):
+                result["checks"]["prefill_ubatch_experiment"] = (
+                    f"MEDIDO: 128 → {first['prefill_ms_per_token']} ms/token "
+                    f"({first['fresh_tokens']} tokens), 256 → {second['prefill_ms_per_token']} ms/token "
+                    f"({second['fresh_tokens']} tokens); nada muda de padrão sem ganho medido")
+            else:
+                result["checks"]["prefill_ubatch_experiment"] = (
+                    "NOT_MEASURED: falta a métrica de pré-preenchimento em uma das etapas")
         # Medição no mesmo emulador, mesmas entradas e mesmo limite de tokens.
         device.generate(model, 0, "cpu-threads-auto", threads=0)
         result["checks"]["cpu_auto_threads"] = "PASS: política automática de threads executada"

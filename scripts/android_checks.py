@@ -193,6 +193,24 @@ def search_panel(chats, chat_id, prompt):
     return None
 
 
+CONTEXT_TUNING_RE = re.compile(
+    r'GGUF_CONTEXT_TUNING batch=(\d+) ubatch=(\d+) threads=(\d+) prefix_cache_supported=(\d)')
+
+
+def context_tuning(log):
+    """O que o motor REALMENTE usou no contexto (lote, sub-lote, threads).
+
+    Um ajuste medido sem este registro não vale nada: sem ele não se sabe qual
+    configuração produziu o número.
+    """
+    found = CONTEXT_TUNING_RE.findall(log)
+    if not found:
+        return None
+    batch, ubatch, threads, cache = found[-1]
+    return {'batch': int(batch), 'ubatch': int(ubatch), 'threads': int(threads),
+            'prefix_cache_supported': cache == '1'}
+
+
 def warmup_state(log):
     """O que o aquecimento de prefixo realmente fez nesta etapa.
 

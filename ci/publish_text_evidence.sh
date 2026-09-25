@@ -29,7 +29,9 @@ for name in names:
 for pattern in ('attachments-*', 'inference-*', 'physical-*', 'system-*', 'text-*', 'search-*',
                 'functions-*', '*-perf.json'):
     for p in source.glob(pattern):
-        if p.suffix in ('.png', '.json', '.txt') and p.is_file() and p.stat().st_size < 2_000_000:
+        # .xml entra aqui: a árvore de views é a prova de que explica um FAIL da
+        # varredura funcional (sem ela, um "controle não encontrado" fica sem causa).
+        if p.suffix in ('.png', '.json', '.txt', '.xml') and p.is_file() and p.stat().st_size < 2_000_000:
             shutil.copyfile(p, dest / p.name)
 (dest / 'run.txt').write_text('https://github.com/Enzo-cyber2025/5/actions/runs/' + os.environ['GITHUB_RUN_ID'] + '\n')
 (dest / 'branch.txt').write_text(os.environ['GITHUB_REF'] + '\n')

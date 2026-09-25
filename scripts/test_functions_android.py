@@ -107,8 +107,38 @@ def wait_screen(device, label, timeout=20, contains=True):
     return device.wait(lambda: on_screen(device, label, contains), f'"{label}" na tela', timeout=timeout)
 
 
+def visible_labels(device, limit=14):
+    """Os rótulos visíveis agora — o que permite explicar uma falha de navegação."""
+    seen = []
+    for node in ET.fromstring(device.ui()).iter('node'):
+        if node.get('package') not in PACKAGE:
+            continue
+        for key in ('text', 'content-desc'):
+            value = (node.get(key) or '').strip()
+            if value and value not in seen:
+                seen.append(value)
+    return seen[:limit]
+
+
 def tap_label(device, label, contains=True, optional=False):
-    return device.tap(text=label, package={PACKAGE}, contains=contains, optional=optional)
+    found = device.tap(text=label, package={PACKAGE}, contains=contains, optional=True)
+    if not found and not optional:
+        raise AssertionError(f'controle "{label}" não está na tela; visíveis: {visible_labels(device)}')
+    return found
+
+
+def scroll_to(device, label, tries=4, contains=True):
+    """Procura o rótulo rolando a tela: conteúdo abaixo da dobra também é função.
+
+    Na varredura anterior "Salvar ajustes" não foi encontrado porque o botão fica
+    no fim de uma lista rolável — a tela não caber. Rolar é o que um usuário faz.
+    """
+    for _ in range(tries):
+        if on_screen(device, label, contains):
+            return True
+        device.shell('input touchscreen swipe 360 1000 360 500 300')
+        time.sleep(0.7)
+    return bool(on_screen(device, label, contains))
 
 
 def tap_exact(device, label, optional=False):
@@ -256,9 +286,20 @@ def main():
             device.launch()
             if not tap_exact(device, label, optional=True):
                 continue
-            if device.wait(lambda m=marker: on_screen(device, m), f'conteúdo de {label}',
-                           timeout=25):
+            try:
+                device.wait(lambda m=marker: on_screen(device, m), f'conteúdo de {label}', timeout=25)
                 chegou.append(label)
+            except AssertionError:  # rola a tela e tenta de novo
+                try:
+                    device.wait(lambda m=marker: scroll_to(device, m), f'conteúdo de {label} após rolar',
+                                timeout=15)
+                    chegou.append(label)
+                except AssertionError:
+                    print(f'   (a aba {label} não mostrou "{marker}"; '
+                          f'visíveis: {visible_labels(device)})', flush=True)
+            except AssertionError:
+                print(f'   (a aba {label} não mostrou "{marker}"; '
+                      f'visíveis: {visible_labels(device)})', flush=True)
         if len(chegou) < 3:
             raise AssertionError(f'abas alcançadas: {chegou}')
         return 'abas navegam e mostram conteúdo próprio: ' + ', '.join(chegou)
@@ -267,11 +308,12 @@ def main():
         device.launch()
         tap_exact(device, 'Importar')
         wait_screen(device, 'Importar GGUF')
-        single = on_screen(device, 'Importar GGUF')
-        pair = on_screen(device, 'Importar 2 GGUFs')
+        single = on_screen(device, 'Importar GGUF') or scroll_to(device, 'Importar GGUF')
+        pair = on_screen(device, 'Importar 2 GGUFs') or scroll_to(device, 'Importar 2 GGUFs')
         if not single or not pair:
-            raise AssertionError('faltam os dois caminhos de importação desta versão '
-                                 '(botão único e par texto+mmproj)')
+            raise AssertionError('faltam os dois caminhos de importação nesta tela '
+                                 f'(unitário={bool(single)}, par={bool(pair)}); '
+                                 f'visíveis: {visible_labels(device)}')
         return 'importação oferece o caminho unitário (Importar GGUF) e o par texto+mmproj'
 
     def ajustes():
@@ -280,9 +322,23 @@ def main():
             raise SkipCheck('aba Ajustes não encontrada nesta versão')
         campos = ('Camadas na GPU', 'Tamanho de contexto', 'Threads de CPU', 'Máximo de tokens',
                   'Temperatura', 'Top-K', 'Top-P', 'Min-P')
-        faltando = [c for c in campos if not on_screen(device, c)]
+        # A lista de ajustes rola: a tela não cabe. Percorrer e voltar é o que um
+        # usuário faz; exigir os oito de uma vez era exigir do emulador, não do app.
+        vistos = set()
+        for _ in range(5):
+            vistos.update(c for c in campos if on_screen(device, c))
+            if len(vistos) == len(campos):
+                break
+            device.shell('input touchscreen swipe 360 1000 360 500 300')
+            time.sleep(0.6)
+        faltando = [c for c in campos if c not in vistos]
         if faltando:
-            raise AssertionError(f'ajustes ausentes na tela: {faltando}')
+            raise AssertionError(f'ajustes ausentes mesmo rolando a lista: {faltando}; '
+                                 f'visíveis: {visible_labels(device)}')
+        for _ in range(5):  # volta ao topo para editar o campo conhecido
+            device.shell('input touchscreen swipe 360 500 360 1000 300')
+            time.sleep(0.4)
+        scroll_to(device, 'Tamanho de contexto')
         point = edit_near(device, 'Tamanho de contexto')
         antes = field_text(device, point)
         type_into(device, point, 'abc')
@@ -298,7 +354,10 @@ def main():
                 raise AssertionError('valor inválido aceito sem aviso')
         point = edit_near(device, 'Tamanho de contexto')
         type_into(device, point, '1024')
-        tap_label(device, 'Salvar ajustes')
+        scroll_to(device, 'Salvar ajustes')
+        if not tap_label(device, 'Salvar ajustes', optional=True):
+            raise AssertionError('botão de salvar não encontrado na tela de ajustes; '
+                                 f'visíveis: {visible_labels(device)}')
 
         def persistido():
             prefs = device.shell(f'cat /data/user/0/{PACKAGE}/shared_prefs/ggufchat_settings.xml')
@@ -368,7 +427,8 @@ def main():
         chat = device.new_chat(model, 0, threads=2)
         device.wait_for_load()
         if not device.tools_open():
-            raise AssertionError('gaveta de ferramentas não abriu')
+            raise AssertionError('gaveta de ferramentas não abriu; visíveis: '
+                                 + ', '.join(visible_labels(device, 20)))
         tap_exact(device, 'Thinking')
         wait_screen(device, 'Thinking ON', contains=False, timeout=15)
         device.send('Say hello in English.')
@@ -396,7 +456,8 @@ def main():
         chat = device.new_chat(model, 0, threads=2)
         device.wait_for_load()
         if not device.tools_open():
-            raise AssertionError('gaveta de ferramentas não abriu')
+            raise AssertionError('gaveta de ferramentas não abriu; visíveis: '
+                                 + ', '.join(visible_labels(device, 20)))
         estado = device.search_button_state()
         if estado is not False:
             raise AssertionError(f'a conversa nova deveria estar com a busca desligada (estado={estado})')
@@ -426,10 +487,24 @@ def main():
         return (f'botão liga ("Busca ON"); sem rede/fontes neste runner, motivo persistido na mensagem: '
                 f'{panel["error"][:80]}')
 
+    def abrir_conversa():
+        """Gaveta só existe dentro de uma conversa: abre a mais recente com resposta."""
+        chats = device.read_json('chats.json', optional=True) or []
+        alvo = next((c for c in sorted(chats, key=lambda c: c.get('updatedAt', 0), reverse=True)
+                     if c.get('messages')), None)
+        if not alvo:
+            device.new_chat(model, 0, threads=2)
+            return
+        device.shell(f'am force-stop {PACKAGE}')
+        device.launch()
+        device.open_existing_chat(alvo['title'])
+
     def gaveta():
         device.launch()
+        abrir_conversa()
         if not device.tools_open():
-            raise AssertionError('gaveta de ferramentas não abriu')
+            raise AssertionError('gaveta de ferramentas não abriu; visíveis: '
+                                 + ', '.join(visible_labels(device, 20)))
         faltando = [b for b in ('Foto', 'Vídeo', 'Áudio', 'Arquivo', 'Ferramentas')
                     if not on_screen(device, b)]
         if faltando:
@@ -438,8 +513,10 @@ def main():
 
     def seletores():
         device.launch()
+        abrir_conversa()
         if not device.tools_open():
-            raise AssertionError('gaveta de ferramentas não abriu')
+            raise AssertionError('gaveta de ferramentas não abriu; visíveis: '
+                                 + ', '.join(visible_labels(device, 20)))
         provas = []
         for label in ('Foto', 'Vídeo', 'Áudio', 'Arquivo'):
             device.tools_open()
@@ -453,7 +530,8 @@ def main():
         chat = device.new_chat(model, 0, threads=2)
         device.wait_for_load()
         if not device.tools_open():
-            raise AssertionError('gaveta de ferramentas não abriu')
+            raise AssertionError('gaveta de ferramentas não abriu; visíveis: '
+                                 + ', '.join(visible_labels(device, 20)))
         tap_exact(device, 'Arquivo')
         device.wait(lambda: has_package(device.ui(), PICKERS), 'seletor de arquivo', timeout=25)
         device.choose_file(nome)

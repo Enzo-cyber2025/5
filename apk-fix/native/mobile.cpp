@@ -146,6 +146,16 @@ static bool debug_flag(const char *name) {
     return length==1&&value[0]=='1';
 }
 
+/** Propriedade de depuração com valor inteiro (0 = ausente ou inválida). */
+static long debug_int(const char *name,long fallback) {
+    char value[PROP_VALUE_MAX]={0};
+    if(__system_property_get(name,value)<=0 || !value[0]) return fallback;
+    char *end=nullptr;
+    long parsed=std::strtol(value,&end,10);
+    if(end==value) return fallback;
+    return parsed;
+}
+
 static std::string lower(std::string value) {
     for(char &c:value)c=(char)std::tolower((unsigned char)c);
     return value;
@@ -322,7 +332,14 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
         // encurta o caminho até o primeiro token. Sem efeito por token, portanto
         // sem mudar a taxa de decodificação nem o resultado gerado.
         const uint32_t prefill_batch=context>=2048?512:(context>=1024?256:128);
-        const uint32_t prefill_ubatch=context>=1024?128:64;
+        // Sub-lote do pré-preenchimento ajustável: é o parâmetro que decide quantos
+        // tokens o backend processa por submissão. O valor usado vai para o log,
+        // porque um ajuste medido sem registro não vale nada.
+        uint32_t prefill_ubatch=context>=1024?128:64;
+        // Ajustável por propriedade porque é ela que o aparelho permite mudar
+        // (variável de ambiente não chega ao processo do aplicativo).
+        long tuned=debug_int("debug.gguf.prefill_ubatch",0);
+        if(tuned>=32 && tuned<=1024) prefill_ubatch=(uint32_t)tuned;
         auto cp=llama_context_default_params(); cp.n_ctx=context;
         cp.n_batch=prefill_batch; cp.n_ubatch=prefill_ubatch;
         // Este JNI amostra uma única posição: a do último token do prompt e,

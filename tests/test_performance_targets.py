@@ -45,7 +45,11 @@ def test_software_vulkan_is_refused_and_the_choice_is_visible():
 def test_prefill_lots_scale_with_context_and_decode_stays_one_token():
     cpp = NATIVE.read_text()
     assert 'const uint32_t prefill_batch=context>=2048?512:(context>=1024?256:128);' in cpp
-    assert 'const uint32_t prefill_ubatch=context>=1024?128:64;' in cpp
+    # O padrão não mudou; ele passou a ser ajustável por propriedade de depuração
+    # (medida que decide, nunca palpite) e o valor usado vai para o log.
+    assert 'uint32_t prefill_ubatch=context>=1024?128:64;' in cpp
+    assert 'debug_int("debug.gguf.prefill_ubatch",0)' in cpp
+    assert 'GGUF_CONTEXT_TUNING batch=%u ubatch=%u' in cpp
     assert 'cp.n_batch=prefill_batch; cp.n_ubatch=prefill_ubatch;' in cpp
     assert 'prefill_policy=larger_lots' in cpp
     # Uma linha de saída sem logits para a última posição do prompt é erro alto,
