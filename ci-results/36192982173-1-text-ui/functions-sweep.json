@@ -1,0 +1,89 @@
+{
+  "status": "FAIL",
+  "functions_total": 19,
+  "functions_failed": [
+    "importar_botoes",
+    "ajustes",
+    "nova_conversa",
+    "gaveta_ferramentas",
+    "seletores_de_anexo"
+  ],
+  "functions": {
+    "estado_vazio": {
+      "status": "PASS",
+      "detail": "primeira execução: a tela vazia orienta (\"Toque em + Nova conversa para começar\")"
+    },
+    "abas": {
+      "status": "PASS",
+      "detail": "abas navegam e mostram conteúdo próprio: Importar, AI Modelos, Ajustes, Chat"
+    },
+    "importar_botoes": {
+      "status": "FAIL",
+      "detail": "AssertionError: faltam os dois caminhos de importação nesta tela (unitário=True, par=False); visíveis: ['Prompt de sistema global', 'GGUF Chat', 'Ajustes', 'Importar GGUF', 'Selecione um ou mais arquivos .gguf. Selecione linguagem + projetor para criar um GGUF físico único, ou importe um GGUF completo. Visão identificada por metadados e tensores; tokens de imagem não bastam.', 'Downloads', 'SmolLM2-135M-Instruct-Q4_K_M · não analisado; reimporte', 'Excluir', 'Chat', 'Seção: Chat', 'Importar', 'Seção atual: Importar', 'AI Modelos', 'Seção: AI Modelos']"
+    },
+    "ajustes": {
+      "status": "FAIL",
+      "detail": "AssertionError: controle \"Salvar ajustes\" não está na tela; visíveis: ['‹', 'Ajustes', 'Tamanho de contexto (tokens)', 'abc', 'Threads de CPU (0 = automático)', '0', 'Camadas na GPU Vulkan (-1 = todas, 0 = só CPU)', '99', 'Máximo de tokens por resposta', '1024', 'Temperatura', '0.8', 'Top-P']"
+    },
+    "modelo_listado": {
+      "status": "PASS",
+      "detail": "modelo importado listado com o nome real (SmolLM2-135M-Instruct-Q4_K_M)"
+    },
+    "descarregar_e_recarregar": {
+      "status": "SKIP",
+      "detail": "esta versão não oferece descarregar o modelo pela interface (nenhum controle com esse rótulo na tela de modelos)"
+    },
+    "nova_conversa": {
+      "status": "FAIL",
+      "detail": "NameError: name 're' is not defined"
+    },
+    "parar_geracao": {
+      "status": "PASS",
+      "detail": "parou no meio e manteve a resposta parcial (195 caracteres, 43 tokens antes de parar)"
+    },
+    "raciocinio": {
+      "status": "PASS",
+      "detail": "raciocínio liga e persiste (chat.thinking=true), prompt de sistema aplicado, painel próprio anexado, e o bloco não vaza para o texto visível; desliga limpo"
+    },
+    "busca_fontes": {
+      "status": "PASS",
+      "detail": "botão liga (\"Busca ON\") e a busca devolve DuckDuckGo com 5 fonte(s) em 2089 ms (teto 12000 ms), fontes persistidas na mensagem"
+    },
+    "gaveta_ferramentas": {
+      "status": "FAIL",
+      "detail": "AssertionError: botões ausentes na gaveta: ['Ferramentas']"
+    },
+    "seletores_de_anexo": {
+      "status": "FAIL",
+      "detail": "AssertionError: Timeout: volta do seletor Foto"
+    },
+    "anexo_texto": {
+      "status": "PASS",
+      "detail": "texto anexado e enviado: conteúdo preparado (files=1, text_chars=54) e anexo preservado na mensagem"
+    },
+    "visao": {
+      "status": "SKIP",
+      "detail": "sem par visão/mmproj neste runner: seleção, pré-processamento e leitura de imagem não podem ser provados — e não serão aprovados por omissão"
+    },
+    "notificacao": {
+      "status": "PASS",
+      "detail": "com a tela apagada durante a geração, o canal \"Respostas prontas\" apareceu no dumpsys"
+    },
+    "historico": {
+      "status": "PASS",
+      "detail": "conversa \"GGUF regression 1a0da9e380b5d7143\" reabriu com o conteúdo salvo depois de fechar o aplicativo"
+    },
+    "excluir_conversa": {
+      "status": "PASS",
+      "detail": "conversa \"GGUF regression 1a0da9f4c89e9b6dd\" excluída pela interface e sumiu do armazenamento"
+    },
+    "excluir_modelo": {
+      "status": "SKIP",
+      "detail": "esta versão não oferece excluir o modelo pela interface (nenhum controle com esse rótulo na tela de modelos)"
+    },
+    "sem_modelo": {
+      "status": "PASS",
+      "detail": "sem modelo, criar conversa avisa o usuário em vez de falhar em silêncio"
+    }
+  }
+}
