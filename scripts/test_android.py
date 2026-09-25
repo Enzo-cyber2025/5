@@ -370,6 +370,32 @@ class Android:
             return False
         return None
 
+    def ping_ok(self):
+        """A rede do emulador responde? Verificado de dentro do aparelho."""
+        out = self.shell("ping -c 1 -W 2 8.8.8.8", check=False)
+        return "1 received" in out or "1 packets received" in out
+
+    def disable_network(self):
+        """Derruba a rede do emulador e confirma; sem confirmação, não se afirma nada."""
+        self.shell("cmd connectivity airplane-mode enable", check=False)
+        self.shell("svc wifi disable", check=False)
+        self.shell("svc data disable", check=False)
+        for _ in range(15):
+            if not self.ping_ok():
+                return True
+            time.sleep(1)
+        return False
+
+    def restore_network(self):
+        self.shell("svc wifi enable", check=False)
+        self.shell("svc data enable", check=False)
+        self.shell("cmd connectivity airplane-mode disable", check=False)
+        for _ in range(20):
+            if self.ping_ok():
+                return True
+            time.sleep(1)
+        return False
+
     def tools_open(self):
         """Garante a gaveta de ferramentas aberta e devolve se os controles apareceram."""
         xml = self.ui()
@@ -824,9 +850,11 @@ def main():
         result["checks"]["search_toggle"] = "PASS: liga, desliga e persiste com o rótulo acompanhando"
         # 1) Rede como o runner oferecer (com internet ou não): a resposta sai e o
         #    teto é respeitado.
-        search_chat = device.generate(model, 0, "search-online", search=True, await_load=True,
-                                      settle=5.0,
-                                      prompt="Reply in English: What is the capital of Brazil?")
+        device.generate(model, 0, "search-online", search=True, await_load=True,
+                        settle=5.0,
+                        prompt="Reply in English: What is the capital of Brazil?")
+        # generate() devolve o logcat; a conversa desta etapa fica em last_chat.
+        online_chat_id = device.last_chat["id"]
         online_log = (args.evidence / "search-online-logcat.txt").read_text()
         online = search_timing(online_log)
         if not online:
@@ -841,7 +869,7 @@ def main():
         if not online["attempt_slices_within_budget"]:
             raise AssertionError("uma tentativa recebeu mais tempo do que o orçamento restante")
         chats = device.read_json("chats.json")
-        panel = search_panel(chats, search_chat["id"],
+        panel = search_panel(chats, online_chat_id,
                              "Reply in English: What is the capital of Brazil?")
         panel_file = args.evidence / "search-online-panel.json"
         panel_file.write_text(json.dumps(panel, ensure_ascii=False, indent=2))
@@ -859,42 +887,46 @@ def main():
             result["checks"]["search_online"] = (
                 f"PASS: sem fontes neste runner; resposta gerada mesmo assim em "
                 f"{online['used_ms']} ms de {online['budget_ms']} ms, motivo no painel")
-        # 2) Falha de rede determinística (endpoint local fechado): a cadeia de
-        #    provedores precisa parar na hora, não tentar os quatro.
-        device.shell("setprop debug.gguf.search_endpoint https://127.0.0.1:9/search")
-        device.shell("setprop debug.gguf.search_budget_ms 4000")
+        # 2) O cenário do relato: aparelho SEM rede. A cadeia de provedores precisa
+        #    parar na primeira falha (não tentar as quatro) e a resposta precisa sair
+        #    de qualquer forma, com o motivo declarado ao usuário e ao modelo.
+        network_down = device.disable_network()
         try:
-            offline_chat = device.generate(model, 0, "search-offline", search=True, await_load=True,
-                                           settle=5.0,
-                                           prompt="Reply in English: What is the capital of France?")
+            if not network_down:
+                result["checks"]["search_offline"] = (
+                    "SKIP: não foi possível derrubar a rede do emulador (ping ainda responde)")
+            else:
+                device.generate(model, 0, "search-offline", search=True, await_load=True,
+                                settle=5.0,
+                                prompt="Reply in English: What is the capital of France?")
+                offline_chat_id = device.last_chat["id"]
+                offline = search_timing((args.evidence / "search-offline-logcat.txt").read_text())
+                if not offline:
+                    raise AssertionError("a busca sem rede não registrou orçamento")
+                if offline["used_ms"] > offline["budget_ms"] + 1500:
+                    raise AssertionError(
+                        f"busca sem rede passou do teto: {offline['used_ms']} ms > {offline['budget_ms']} ms")
+                if len(offline["attempts"]) != 1:
+                    raise AssertionError(
+                        "falha de rede não interrompeu a cadeia: " + str(offline["attempts"]))
+                if offline["sources"]:
+                    raise AssertionError("sem rede, a busca não pode produzir fontes")
+                offline_panel = search_panel(device.read_json("chats.json"), offline_chat_id,
+                                             "Reply in English: What is the capital of France?")
+                (args.evidence / "search-offline-panel.json").write_text(
+                    json.dumps(offline_panel, ensure_ascii=False, indent=2))
+                if not offline_panel or not (offline_panel.get("error") or "").strip():
+                    raise AssertionError("busca sem rede precisa declarar a falha no painel")
+                if offline["prompt_mode"] != "indisponivel":
+                    raise AssertionError(
+                        "sem fontes, o modelo precisa ser avisado de que a busca falhou: "
+                        + str(offline["prompt_mode"]))
+                result["checks"]["search_offline"] = (
+                    f"PASS: sem rede, a cadeia parou na primeira tentativa "
+                    f"({offline['provider']}) em {offline['used_ms']} ms, resposta gerada sem fontes")
         finally:
-            device.shell("setprop debug.gguf.search_endpoint ''")
-            device.shell("setprop debug.gguf.search_budget_ms ''")
-        offline = search_timing((args.evidence / "search-offline-logcat.txt").read_text())
-        if not offline:
-            raise AssertionError("a busca offline não registrou orçamento")
-        if offline["budget_ms"] != 4000:
-            raise AssertionError(f"teto configurado ignorado: {offline['budget_ms']} ms")
-        if offline["exhausted"]:
-            raise AssertionError("falha imediata de conexão não pode consumir o orçamento inteiro")
-        if offline["used_ms"] > offline["budget_ms"]:
-            raise AssertionError(f"busca offline passou do teto: {offline['used_ms']} ms")
-        if offline["attempts"] != ["SearXNG"]:
-            raise AssertionError(f"falha de rede não interrompeu a cadeia: {offline['attempts']}")
-        if offline["sources"]:
-            raise AssertionError("endpoint fechado não pode produzir fontes")
-        offline_panel = search_panel(device.read_json("chats.json"), offline_chat["id"],
-                                     "Reply in English: What is the capital of France?")
-        (args.evidence / "search-offline-panel.json").write_text(
-            json.dumps(offline_panel, ensure_ascii=False, indent=2))
-        if not offline_panel or not (offline_panel.get("error") or "").strip():
-            raise AssertionError("busca offline precisa declarar a falha no painel")
-        if offline["prompt_mode"] != "indisponivel":
-            raise AssertionError(
-                "sem fontes, o modelo precisa ser avisado de que a busca falhou: " + str(offline["prompt_mode"]))
-        result["checks"]["search_offline"] = (
-            f"PASS: falha de rede interrompeu a cadeia em {offline['used_ms']} ms "
-            f"(teto {offline['budget_ms']} ms), resposta gerada sem fontes")
+            if not device.restore_network():
+                result["checks"]["network_restored"] = "AVISO: a rede do emulador não voltou ao normal"
         if gpu_experiments_enabled():
             # Preferência por GPU pedida pelo usuário (camadas 99 = modelo inteiro).
             # Neste emulador o dispositivo Vulkan é um rasterizador por software:

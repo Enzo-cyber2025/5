@@ -151,7 +151,10 @@ def search_timing(log):
         'provider': provider,
         'announced_budget_ms': int(announced[-1]) if announced else None,
         'attempts': [name for name, *_ in attempts],
-        'attempt_slices_within_budget': all(slice_ <= budget for _, budget, _, slice_, _ in attempts),
+        # A soma das duas fatias de uma tentativa nunca passa do restante do
+        # orçamento — é a garantia central do conserto, no relógio do aparelho.
+        'attempt_slices_within_budget': all(
+            connect + read <= remaining for _, _, remaining, connect, read in attempts),
         'sources': int(hits[-1][1]) if hits else 0,
         'prompt_mode': SEARCH_PROMPT_RE.findall(log)[-1] if SEARCH_PROMPT_RE.findall(log) else None,
         'error': failures[-1][2] if failures else None,

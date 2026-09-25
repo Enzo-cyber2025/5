@@ -61,10 +61,12 @@ def test_self_test_is_not_a_fake_pass(tmp_path):
     broken = (tmp_path / 'broken').mkdir(parents=True) or (tmp_path / 'broken')
     package = broken / 'com/ggufchat/app'
     package.mkdir(parents=True)
-    # Mesmo teste, orçamento sabotado: a fatia passa a ignorar o restante.
-    text = BUDGET.read_text().replace(
-        'return Math.min(remaining, Math.max(Math.min(configured, remaining), Math.min(MIN_MS, remaining)));',
-        'return configured;')
+    # Mesmo teste, orçamento sabotado: as fatias passam a ignorar o restante.
+    # A sabotagem precisa existir NESTE arquivo: a primeira versão mirava um trecho
+    # que já não existia, virava no-op e a "prova negativa" provava nada.
+    original = BUDGET.read_text()
+    text = original.replace('int share = remaining / 2;', 'int share = Integer.MAX_VALUE;')
+    assert text != original, 'a sabotagem não encontrou o trecho: reveja este teste'
     (package / 'SearchBudget.java').write_text(text)
     shutil.copyfile(JAVA / 'SearchNotice.java', package / 'SearchNotice.java')
     shutil.copyfile(SELF_TEST, package / 'SearchBudgetSelfTest.java')

@@ -187,11 +187,14 @@ no orçamento, expirado não abre fatia, falha de rede interrompe a cadeia, e qu
 provedores que nunca respondem terminam perto de 400 ms — não em minutos.
 
 No emulador, três fases novas: busca com a rede do runner (a resposta sai e o teto
-é respeitado; com fontes, o painel precisa registrá-las), falha de rede
-determinística (endpoint local fechado, teto de 4 s: a cadeia para na primeira
-tentativa e a resposta sai sem fontes, com o modelo avisado) e o botão da busca —
-que vive na gaveta recolhida aberta pelo botão "Alternar ferramentas", como o
-usuário o alcança — ligando, desligando e persistindo com o rótulo acompanhando.
+é respeitado; com fontes, o painel precisa registrá-las), **busca sem rede** — a
+rede do emulador é derrubada de verdade (avião, wi-fi e dados; confirmado por
+ping, e restaurada no fim) e a fase exige que a cadeia pare na primeira tentativa,
+que a resposta saia sem fontes e que o motivo apareça no painel e no aviso ao
+modelo — e o botão da busca, que vive na gaveta recolhida aberta pelo botão
+"Alternar ferramentas", como o usuário o alcança: liga, desliga e persiste com o
+rótulo acompanhando. Se a rede do emulador não puder ser derrubada, a fase é
+declarada SKIP, nunca aprovada por omissão.
 
 ## 5. O que roda em cada gate
 

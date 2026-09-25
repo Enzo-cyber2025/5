@@ -21,7 +21,7 @@ names = ('summary.json', 'failure-context.txt', 'mobile-reply.txt', 'mobile-repl
          'physical-text-start.txt', 'physical-code-ui.json', 'physical-code-stream.png',
          'text-ui-device-state.txt', 'attachments-detach.json', 'performance.json',
          'cpu-logcat.txt', 'vulkan-logcat.txt', 'vulkan-policy-default-logcat.txt',
-         'cpu-threads-auto-logcat.txt', 'local-gates.txt')
+         'cpu-threads-auto-logcat.txt', 'local-gates.txt', 'phases-failed.txt')
 for name in names:
     p = source / name
     if p.is_file() and p.stat().st_size < 2_000_000:
@@ -33,12 +33,21 @@ for pattern in ('attachments-*', 'inference-*', 'physical-*', 'system-*', 'text-
 (dest / 'run.txt').write_text('https://github.com/Enzo-cyber2025/5/actions/runs/' + os.environ['GITHUB_RUN_ID'] + '\n')
 (dest / 'branch.txt').write_text(os.environ['GITHUB_REF'] + '\n')
 PY
+# Uma rodada sem evidência utilizável não pode terminar como publicação bem
+# sucedida: o passo tem de ser tão visível quanto o defeito que o interrompeu.
+COUNT=$(find "$DEST" -type f | wc -l)
+echo "::notice title=GGUF evidência::copiados $COUNT arquivo(s) para $DEST"
+if [[ ! -f "$DEST/summary.json" && ! -f "$DEST/local-gates.txt" && -z "$(find "$DEST" -name '*-logcat.txt' -print -quit)" ]]; then
+  echo "::error title=GGUF evidência::a rodada não produziu summary, gates nem logcat; nada foi publicado"
+  find evidence -maxdepth 1 -type f | head -20 || true
+  exit 1
+fi
 git config user.name 'GGUF CI evidence'
 git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
 git add -- "$DEST"
 if git diff --cached --quiet; then
-  echo 'No evidence changes to publish.'
-  exit 0
+  echo "::error title=GGUF evidência::nada a publicar em $DEST apesar de $COUNT arquivo(s) copiados"
+  exit 1
 fi
 git commit -m "Record Android text UI evidence ${GITHUB_RUN_ID} [skip ci]"
 log=$(mktemp)
@@ -47,6 +56,7 @@ for attempt in 1 2 3 4; do
   git pull --rebase origin "$BRANCH"
   if git push origin "$BRANCH" >"$log" 2>&1; then
     cat "$log"
+    echo "::notice title=GGUF evidência::publicado $(git rev-parse --short HEAD) em $BRANCH"
     exit 0
   fi
   cat "$log" >&2

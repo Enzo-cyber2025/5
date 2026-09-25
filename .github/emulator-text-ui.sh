@@ -8,6 +8,7 @@ cd "$(dirname "$0")/.."
 : "${GGUF_TEST_APK:?}"
 ADB=(adb -s "$ANDROID_SERIAL")
 status=0
+mkdir -p evidence
 
 phase() {
   local label="$1"; shift
@@ -15,6 +16,9 @@ phase() {
     return 0
   fi
   status=1
+  # Uma fase que morre antes de escrever qualquer coisa deixa registro próprio:
+  # sem isto o passo de publicação não tinha o que publicar e ainda dizia sucesso.
+  echo "$(date -u +%H:%M:%S) fase $label falhou (exit != 0)" >> evidence/phases-failed.txt
   echo "::warning title=GGUF $label failed::Fase $label falhou; as demais fases continuam para não perder evidência real."
 }
 

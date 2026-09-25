@@ -84,7 +84,11 @@ public final class SearchBudgetSelfTest {
         check("DNS/conexão/sem rota interrompem a cadeia",
               SearchBudget.connectivityFailure(new UnknownHostException("x"))
               && SearchBudget.connectivityFailure(new ConnectException("recusada"))
+              && SearchBudget.connectivityFailure(new java.net.SocketException("Network is unreachable"))
+              && SearchBudget.connectivityFailure(new java.io.IOException("envio",
+                     new java.net.SocketException("Network is down")))
               && !SearchBudget.connectivityFailure(new SocketTimeoutException("leitura lenta"))
+              && !SearchBudget.connectivityFailure(new java.net.SocketException("Connection reset"))
               && !SearchBudget.connectivityFailure(new IllegalStateException("HTTP 403")), "");
 
         // 6. Cronometrado de verdade: quatro provedores que nunca respondem, com teto

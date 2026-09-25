@@ -2,7 +2,9 @@ package com.ggufchat.app;
 
 import java.net.ConnectException;
 import java.net.NoRouteToHostException;
+import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Locale;
 
 /** Teto de tempo e política de rede da busca na web.
  *
@@ -94,6 +96,17 @@ public final class SearchBudget {
             if (current instanceof UnknownHostException
                 || current instanceof ConnectException
                 || current instanceof NoRouteToHostException) return true;
+            // Sem rota, o Android costuma dizer "Network is unreachable" num
+            // SocketException comum. Timeout de leitura NÃO é subclasse disto:
+            // um provedor lento continua merecendo a vez dos demais.
+            if (current instanceof SocketException) {
+                String message = current.getMessage();
+                if (message != null) {
+                    String lower = message.toLowerCase(Locale.ROOT);
+                    if (lower.contains("unreachable") || lower.contains("network is down")
+                        || lower.contains("no route")) return true;
+                }
+            }
             current = current == current.getCause() ? null : current.getCause();
         }
         return false;
