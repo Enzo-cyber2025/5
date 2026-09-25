@@ -1,4 +1,5 @@
 """Pure assertions shared by Android automation and regression tests."""
+import json
 import re
 import xml.etree.ElementTree as ET
 
@@ -117,6 +118,70 @@ WARMUP_RE = re.compile(r'GGUF_WARMUP input_tokens=(\d+) prefilled=(\d+) reused_t
 WARMUP_SKIP_RE = re.compile(r'GGUF_WARMUP_SKIPPED reason=(\w+)')
 WARMUP_UI_RE = re.compile(r'GGUF_WARMUP_UI ok=(\d) chars=(\d+)')
 WARMUP_TEXT_RE = re.compile(r'GGUF_WARMUP_TEXT ok=(\d) chars=(\d+)')
+
+
+SEARCH_BUDGET_RE = re.compile(
+    r'GGUF_SEARCH_BUDGET total_ms=(\d+) used_ms=(\d+) exhausted=(\d) provider=(\S+)')
+SEARCH_RESULT_RE = re.compile(r'GGUF_SEARCH provider=(\S+) results=(\d+) ms=(\d+)')
+SEARCH_FAILED_RE = re.compile(r'GGUF_SEARCH_FAILED provider=(\S+) ms=(\d+) error=(.*)')
+SEARCH_ANNOUNCED_RE = re.compile(r'GGUF_SEARCH_ANNOUNCED query_pending=1 budget_ms=(\d+)')
+SEARCH_PROMPT_RE = re.compile(r'GGUF_SEARCH_PROMPT mode=(\w+)')
+SEARCH_ATTEMPT_RE = re.compile(
+    r'GGUF_SEARCH_ATTEMPT provider=(\S+) budget_ms=(\d+) remaining_ms=(\d+) connect_ms=(\d+) read_ms=(\d+)')
+
+
+def search_timing(log):
+    """Quanto a busca custou de verdade: orçamento, gasto e o que foi encontrado.
+
+    O teto é o ponto do conserto: sem ele a busca gastava minutos (quatro
+    provedores em sequência, cada um com 8 s de conexão e 12 s de leitura) antes de
+    o modelo responder. `used_ms` é medido pelo próprio aplicativo.
+    """
+    found = SEARCH_BUDGET_RE.findall(log)
+    if not found:
+        return None
+    total, used, exhausted, provider = found[-1]
+    attempts = [(name, int(budget), int(remaining), int(connect), int(read))
+                for name, budget, remaining, connect, read in SEARCH_ATTEMPT_RE.findall(log)]
+    hits = SEARCH_RESULT_RE.findall(log)
+    failures = SEARCH_FAILED_RE.findall(log)
+    announced = SEARCH_ANNOUNCED_RE.findall(log)
+    result = {
+        'budget_ms': int(total), 'used_ms': int(used), 'exhausted': exhausted == '1',
+        'provider': provider,
+        'announced_budget_ms': int(announced[-1]) if announced else None,
+        'attempts': [name for name, *_ in attempts],
+        'attempt_slices_within_budget': all(slice_ <= budget for _, budget, _, slice_, _ in attempts),
+        'sources': int(hits[-1][1]) if hits else 0,
+        'prompt_mode': SEARCH_PROMPT_RE.findall(log)[-1] if SEARCH_PROMPT_RE.findall(log) else None,
+        'error': failures[-1][2] if failures else None,
+    }
+    return result
+
+
+def search_panel(chats, chat_id, prompt):
+    """O painel de proveniência persistido na resposta — a fonte do que a tela mostra."""
+    if not isinstance(chats, list):
+        return None
+    chat = next((c for c in chats if c.get('id') == chat_id), None)
+    if not chat:
+        return None
+    messages = chat.get('messages', [])
+    users = [i for i, m in enumerate(messages)
+             if m.get('role') == 'user' and m.get('content') == prompt]
+    if not users:
+        return None
+    for message in messages[users[-1] + 1:]:
+        if message.get('role') != 'assistant':
+            continue
+        raw = message.get('searchSources')
+        if raw is None:
+            continue
+        try:
+            return json.loads(raw)
+        except (TypeError, ValueError):
+            return None
+    return None
 
 
 def warmup_state(log):

@@ -19,7 +19,7 @@ import xml.etree.ElementTree as ET
 from android_checks import (PACKAGE, PICKERS, assistant_reply, fusion, generation_completed,
                             gpu_offloaded, has_package, imported, position, basic_response_quality, vulkan_offloaded,
                             generation_stats, ui_first_text_s, software_vulkan_refused, cpu_threads,
-                            warmup_state)
+                            warmup_state, search_timing, search_panel)
 
 
 class Android:
@@ -289,7 +289,7 @@ class Android:
                 return None
         return self.wait(completed, f"importação persistida de {source.name}", timeout=300)
 
-    def new_chat(self, model, gpu_layers, context_size=1024, threads=2):
+    def new_chat(self, model, gpu_layers, context_size=1024, threads=2, search=False):
         self.shell(f"am force-stop {PACKAGE}")
         prefs = ET.Element("map")
         for name, value in (("selectedModelId", model["id"]), ("selectedModelName", model["name"]),
@@ -317,7 +317,7 @@ class Android:
         for c in chats:
             if c["id"] == chat["id"]:
                 c.update(nPredict=128, temperature=0.0, contextSize=context_size,
-                         gpuLayers=gpu_layers, webSearch=False, thinking=False)
+                         gpuLayers=gpu_layers, webSearch=search, thinking=False)
                 c["title"] = "GGUF regression " + chat["id"]
                 chat = c
         self.write_private("files/chats.json", json.dumps(chats))
@@ -346,6 +346,36 @@ class Android:
                 xml = self.ui()
                 if attempt == 2 or not position(xml, text=title, package={PACKAGE}):
                     raise
+
+    def search_button_state(self):
+        """Estado do botão de busca na tela: True ligado, False desligado, None ausente."""
+        xml = self.ui()
+        if position(xml, text="Busca ON", package={PACKAGE}):
+            return True
+        if position(xml, text="Busca", package={PACKAGE}):
+            return False
+        return None
+
+    def toggle_search(self, desired):
+        """Alterna a busca pelo botão real e confirma estado, rótulo e persistência."""
+        current = self.search_button_state()
+        if current is None:
+            raise AssertionError("botão de busca não encontrado na tela")
+        if current != desired:
+            self.tap(text="Busca ON" if current else "Busca", package={PACKAGE})
+
+        def persisted():
+            chats = self.read_json("chats.json", optional=True) or []
+            if not chats:
+                return None
+            newest = max(chats, key=lambda c: c.get("updatedAt", 0))
+            return True if newest.get("webSearch") == desired else None
+
+        self.wait(persisted, f"busca {'ligada' if desired else 'desligada'} e persistida", timeout=20)
+        after = self.search_button_state()
+        if after != desired:
+            raise AssertionError(f"o rótulo do botão não acompanhou o estado: {after} != {desired}")
+        return True
 
     def wait_for_load(self, timeout=120):
         """Espera o preload do modelo terminar (o nativo registra GGUF_UNIT_LOADED).
@@ -391,11 +421,11 @@ class Android:
         self.tap(text="Enviar", package={PACKAGE}, contains=True)
 
     def generate(self, model, gpu_layers, stage, prompt="Reply in English with a short greeting.",
-                 threads=2, record=True, typed_pause=0.0, await_load=False, settle=0.0):
+                 threads=2, record=True, typed_pause=0.0, await_load=False, settle=0.0, search=False):
         # Keep model-loading/offload evidence: clearing at send loses the backend
         # selected by the preload worker. A new chat restarts the app; filter its PID.
         self.adb("logcat", "-c")
-        chat = self.new_chat(model, gpu_layers, threads=threads)
+        chat = self.new_chat(model, gpu_layers, threads=threads, search=search)
         pid = self.alive()
         if await_load:
             self.wait_for_load()
@@ -751,6 +781,88 @@ def main():
         if not refused:
             raise AssertionError("Política padrão não declarou a recusa do Vulkan por software")
         result["checks"]["software_vulkan_policy"] = "PASS: dispositivo por software recusado -> CPU (" + refused + ")"
+        # Busca na web de verdade, com o teto de tempo que o defeito exigiu.
+        # 0) O botão da busca: parte de desligado (a conversa desta etapa), liga e
+        #    desliga pelo toque real, conferindo rótulo e persistência nos dois
+        #    sentidos.
+        if device.search_button_state() is not False:
+            raise AssertionError("a conversa desta etapa deveria estar com a busca desligada")
+        device.toggle_search(True)
+        device.toggle_search(False)
+        result["checks"]["search_toggle"] = "PASS: liga, desliga e persiste com o rótulo acompanhando"
+        # 1) Rede como o runner oferecer (com internet ou não): a resposta sai e o
+        #    teto é respeitado.
+        search_chat = device.generate(model, 0, "search-online", search=True, await_load=True,
+                                      settle=5.0,
+                                      prompt="Reply in English: What is the capital of Brazil?")
+        online_log = (args.evidence / "search-online-logcat.txt").read_text()
+        online = search_timing(online_log)
+        if not online:
+            raise AssertionError("a busca não registrou orçamento (GGUF_SEARCH_BUDGET ausente)")
+        allowance = online["budget_ms"] + 1500  # margem do relógio entre processos
+        if online["used_ms"] > allowance:
+            raise AssertionError(f"busca passou do teto: {online['used_ms']} ms > {online['budget_ms']} ms")
+        if online["announced_budget_ms"] != online["budget_ms"]:
+            raise AssertionError("o status não anunciou o mesmo teto aplicado na busca")
+        if online["prompt_mode"] is None:
+            raise AssertionError("o modelo não foi informado do resultado da busca")
+        if not online["attempt_slices_within_budget"]:
+            raise AssertionError("uma tentativa recebeu mais tempo do que o orçamento restante")
+        chats = device.read_json("chats.json")
+        panel = search_panel(chats, search_chat["id"],
+                             "Reply in English: What is the capital of Brazil?")
+        panel_file = args.evidence / "search-online-panel.json"
+        panel_file.write_text(json.dumps(panel, ensure_ascii=False, indent=2))
+        if online["sources"]:
+            if not panel or not panel.get("hits"):
+                raise AssertionError("fontes encontradas, mas o painel de proveniência não as registrou")
+            result["checks"]["search_online"] = (
+                f"PASS: {online['provider']} com {online['sources']} fonte(s) em "
+                f"{online['used_ms']} ms de {online['budget_ms']} ms, painel persistido")
+        else:
+            if not panel or not (panel.get("error") or "").strip():
+                raise AssertionError("busca sem fontes precisa registrar o motivo no painel")
+            if not online["exhausted"] and not online["error"]:
+                raise AssertionError("busca terminou sem fontes, sem motivo declarado")
+            result["checks"]["search_online"] = (
+                f"PASS: sem fontes neste runner; resposta gerada mesmo assim em "
+                f"{online['used_ms']} ms de {online['budget_ms']} ms, motivo no painel")
+        # 2) Falha de rede determinística (endpoint local fechado): a cadeia de
+        #    provedores precisa parar na hora, não tentar os quatro.
+        device.shell("setprop debug.gguf.search_endpoint https://127.0.0.1:9/search")
+        device.shell("setprop debug.gguf.search_budget_ms 4000")
+        try:
+            offline_chat = device.generate(model, 0, "search-offline", search=True, await_load=True,
+                                           settle=5.0,
+                                           prompt="Reply in English: What is the capital of France?")
+        finally:
+            device.shell("setprop debug.gguf.search_endpoint ''")
+            device.shell("setprop debug.gguf.search_budget_ms ''")
+        offline = search_timing((args.evidence / "search-offline-logcat.txt").read_text())
+        if not offline:
+            raise AssertionError("a busca offline não registrou orçamento")
+        if offline["budget_ms"] != 4000:
+            raise AssertionError(f"teto configurado ignorado: {offline['budget_ms']} ms")
+        if offline["exhausted"]:
+            raise AssertionError("falha imediata de conexão não pode consumir o orçamento inteiro")
+        if offline["used_ms"] > offline["budget_ms"]:
+            raise AssertionError(f"busca offline passou do teto: {offline['used_ms']} ms")
+        if offline["attempts"] != ["SearXNG"]:
+            raise AssertionError(f"falha de rede não interrompeu a cadeia: {offline['attempts']}")
+        if offline["sources"]:
+            raise AssertionError("endpoint fechado não pode produzir fontes")
+        offline_panel = search_panel(device.read_json("chats.json"), offline_chat["id"],
+                                     "Reply in English: What is the capital of France?")
+        (args.evidence / "search-offline-panel.json").write_text(
+            json.dumps(offline_panel, ensure_ascii=False, indent=2))
+        if not offline_panel or not (offline_panel.get("error") or "").strip():
+            raise AssertionError("busca offline precisa declarar a falha no painel")
+        if offline["prompt_mode"] != "indisponivel":
+            raise AssertionError(
+                "sem fontes, o modelo precisa ser avisado de que a busca falhou: " + str(offline["prompt_mode"]))
+        result["checks"]["search_offline"] = (
+            f"PASS: falha de rede interrompeu a cadeia em {offline['used_ms']} ms "
+            f"(teto {offline['budget_ms']} ms), resposta gerada sem fontes")
         if gpu_experiments_enabled():
             # Preferência por GPU pedida pelo usuário (camadas 99 = modelo inteiro).
             # Neste emulador o dispositivo Vulkan é um rasterizador por software:

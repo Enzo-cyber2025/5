@@ -26,7 +26,7 @@ for name in names:
     p = source / name
     if p.is_file() and p.stat().st_size < 2_000_000:
         shutil.copyfile(p, dest / name)
-for pattern in ('attachments-*', 'inference-*', 'physical-*', 'system-*', 'text-*', '*-perf.json'):
+for pattern in ('attachments-*', 'inference-*', 'physical-*', 'system-*', 'text-*', 'search-*', '*-perf.json'):
     for p in source.glob(pattern):
         if p.suffix in ('.png', '.json', '.txt') and p.is_file() and p.stat().st_size < 2_000_000:
             shutil.copyfile(p, dest / p.name)

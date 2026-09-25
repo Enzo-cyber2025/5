@@ -51,9 +51,12 @@ public final class StreamingUi {
             boolean search=chat!=null&&Boolean.TRUE.equals(field(chat,"webSearch"));
             Object status=field(activity,"statusLine");
             if(search&&status instanceof TextView){
-                ((TextView)status).setText("Pesquisando na web antes de responder…");
+                // O teto aparece junto: "Pesquisando" sem limite era o que fazia a
+                // espera parecer travada.
+                int budget=SearchBudget.configuredMs();
+                ((TextView)status).setText("Pesquisando na web (até "+(budget/1000)+" s) antes de responder…");
                 ((TextView)status).setContentDescription("Pesquisando na web");
-                Log.i("GGUFSearch","GGUF_SEARCH_ANNOUNCED query_pending=1");
+                Log.i("GGUFSearch","GGUF_SEARCH_ANNOUNCED query_pending=1 budget_ms="+budget);
             }
         }catch(Exception ex){
             Log.i("GGUFSearch","GGUF_SEARCH_ANNOUNCE_SKIPPED "+ex.getClass().getSimpleName());

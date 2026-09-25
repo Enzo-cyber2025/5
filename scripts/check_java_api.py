@@ -23,6 +23,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCES = ROOT / 'apk-fix/java'
+TEST_SOURCES = ROOT / 'tests/java'  # só o autoteste de host; não entra no APK
 ANDROID_JAR = ROOT / '.cache/android-platforms/android-33/android.jar'
 DECODED = ROOT / '.cache/original-decoded/smali'
 UTF8 = re.compile(rb'[\x20-\x7e]{3,}', re.A)
