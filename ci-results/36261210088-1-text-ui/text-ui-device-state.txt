@@ -1,0 +1,131 @@
+$ adb shell logcat -d -b crash
+
+
+$ adb shell logcat -d -s AndroidRuntime:V GGUFTextTest:V GGUFThinking:V GGUFSearch:V GGUFImages:V
+--------- beginning of main
+09-26 18:16:52.925   949   949 I AndroidRuntime: VM exiting with result code 0, cleanup skipped.
+09-26 18:17:07.958  2288  2288 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-26 18:17:07.966  2288  2288 I AndroidRuntime: Using default boot image
+09-26 18:17:07.966  2288  2288 I AndroidRuntime: Leaving lock profiling enabled
+09-26 18:17:08.197  2288  2288 D AndroidRuntime: Calling main entry com.android.commands.svc.Svc
+09-26 18:17:08.199  2288  2288 D AndroidRuntime: Shutting down VM
+09-26 18:17:26.283  3341  3341 I GGUFTextTest: TEXT_RENDER_START sdk=35
+09-26 18:17:26.331  3341  3341 I GGUFTextTest: TEXT_RENDER_SOURCE apk=/data/app/~~9LV79cDZrN2c9vb1oRj1sQ==/com.ggufchat.app-LTeXIWH0kt5LQcCHWh4AxQ==/base.apk via=createPackageContext
+09-26 18:17:26.458  3341  3341 I GGUFTextTest: TEXT_RENDER_LOADER dalvik.system.PathClassLoader
+09-26 18:17:26.474  3341  3341 I GGUFThinking: GGUF_THINKING_PANEL attached=1
+09-26 18:17:26.474  3341  3341 I GGUFThinking: GGUF_THINKING_UPGRADE column_children=2
+09-26 18:17:26.476  3341  3341 I GGUFSearch: GGUF_SEARCH_PANEL shown=1 provider=Wikipédia hits=2 error=0
+09-26 18:17:26.476  3341  3341 I GGUFSearch: GGUF_SEARCH_PANEL shown=1 provider=nenhum hits=0 error=1
+09-26 18:17:26.481  3341  3341 I GGUFTextTest: TEXT_RENDER_PASS inline=ok;codigo=python;raciocinio=ok;fontes=ok;parsers=ok
+09-26 18:17:27.590  3405  3405 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-26 18:17:27.601  3405  3405 I AndroidRuntime: Using default boot image
+09-26 18:17:27.601  3405  3405 I AndroidRuntime: Leaving lock profiling enabled
+09-26 18:17:27.863  3405  3405 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-26 18:17:29.324  3405  3405 D AndroidRuntime: Shutting down VM
+09-26 18:17:30.518  3594  3594 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-26 18:17:30.524  3594  3594 I AndroidRuntime: Using default boot image
+09-26 18:17:30.524  3594  3594 I AndroidRuntime: Leaving lock profiling enabled
+09-26 18:17:30.783  3594  3594 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-26 18:17:31.881  3594  3594 D AndroidRuntime: Shutting down VM
+
+$ adb shell dumpsys package com.ggufchat.texttest | head -60
+Domain verification status:
+
+Key Set Manager:
+  [com.ggufchat.texttest]
+      Signing KeySets: 60
+
+Packages:
+  Package [com.ggufchat.texttest] (b1be9f1):
+    appId=10210
+    pkg=Package{a29313e com.ggufchat.texttest}
+    codePath=/data/app/~~ksQaRjxCRfbn_9MSVxCRWQ==/com.ggufchat.texttest-I64SRJgVi1zZFHtM1_pbBg==
+    resourcePath=/data/app/~~ksQaRjxCRfbn_9MSVxCRWQ==/com.ggufchat.texttest-I64SRJgVi1zZFHtM1_pbBg==
+    legacyNativeLibraryDir=/data/app/~~ksQaRjxCRfbn_9MSVxCRWQ==/com.ggufchat.texttest-I64SRJgVi1zZFHtM1_pbBg==/lib
+    extractNativeLibs=true
+    primaryCpuAbi=null
+    secondaryCpuAbi=null
+    cpuAbiOverride=null
+    versionCode=0 minSdk=28 targetSdk=35
+    minExtensionVersions=[]
+    versionName=null
+    hiddenApiEnforcementPolicy=2
+    usesNonSdkApi=false
+    splits=[base]
+    apkSigningVersion=4
+    flags=[ HAS_CODE ALLOW_CLEAR_USER_DATA ALLOW_BACKUP ]
+    privateFlags=[ PRIVATE_FLAG_ACTIVITIES_RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION ALLOW_AUDIO_PLAYBACK_CAPTURE PRIVATE_FLAG_ALLOW_NATIVE_HEAP_POINTER_TAGGING ]
+    forceQueryable=false
+    queriesPackages=[com.ggufchat.app]
+    scannedAsStoppedSystemApp=false
+    supportsScreens=[small, medium, large, xlarge, resizeable, anyDensity]
+    timeStamp=2026-09-26 18:17:24
+    lastUpdateTime=2026-09-26 18:17:24
+    installerPackageName=null
+    installerPackageUid=-1
+    initiatingPackageName=com.android.shell
+    originatingPackageName=null
+    packageSource=1
+    loadingProgress=100%
+    loadingCompletedTime=2026-09-26 18:17:24
+    appMetadataFilePath=null
+    appMetadataSource=0
+    signatures=PackageSignatures{47f0b9f version:4, signatures:[6066e910], past signatures:[]}
+    installPermissionsFixed=false
+    pkgFlags=[ HAS_CODE ALLOW_CLEAR_USER_DATA ALLOW_BACKUP ]
+    privatePkgFlags=[ PRIVATE_FLAG_ACTIVITIES_RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION ALLOW_AUDIO_PLAYBACK_CAPTURE PRIVATE_FLAG_ALLOW_NATIVE_HEAP_POINTER_TAGGING ]
+    apexModuleName=null
+    User 0: ceDataInode=499777 deDataInode=278959 installed=true hidden=false suspended=false distractionFlags=0 stopped=false notLaunched=false enabled=0 instant=false virtual=false quarantined=false
+      installReason=0
+      dataDir=/data/user/0/com.ggufchat.texttest
+      firstInstallTime=2026-09-26 18:17:24
+      uninstallReason=0
+      overlay paths:
+        /product/overlay/EmulationPixel5/EmulationPixel5Overlay.apk
+        /product/overlay/NavigationBarModeGestural/NavigationBarModeGesturalOverlay.apk
+      legacy overlay paths:
+        /product/overlay/EmulationPixel5/EmulationPixel5Overlay.apk
+        /product/overlay/NavigationBarModeGestural/NavigationBarModeGesturalOverlay.apk
+      runtime permissions:
+
+Queries:
+
+$ adb shell dumpsys activity activities | grep -iE "texttest|ResumedActivity"
+* Task{f57cae4 #8 type=standard A=10210:com.ggufchat.texttest U=0 visible=true visibleRequested=true mode=fullscreen translucent=false sz=1}
+    topResumedActivity=ActivityRecord{ed8f11 u0 com.ggufchat.texttest/.TextActivity t8}
+    * Hist  #0: ActivityRecord{ed8f11 u0 com.ggufchat.texttest/.TextActivity t8}
+      packageName=com.ggufchat.texttest processName=com.ggufchat.texttest
+      app=ProcessRecord{3785cb9 3341:com.ggufchat.texttest/u0a210}
+      Intent { flg=0x10000000 cmp=com.ggufchat.texttest/.TextActivity }
+      rootOfTask=true task=Task{f57cae4 #8 type=standard A=10210:com.ggufchat.texttest}
+      taskAffinity=10210:com.ggufchat.texttest
+      mActivityComponent=com.ggufchat.texttest/.TextActivity
+      baseDir=/data/app/~~ksQaRjxCRfbn_9MSVxCRWQ==/com.ggufchat.texttest-I64SRJgVi1zZFHtM1_pbBg==/base.apk
+      dataDir=/data/user/0/com.ggufchat.texttest
+      windows=[Window{2d86620 u0 com.ggufchat.texttest/com.ggufchat.texttest.TextActivity}]
+    Resumed: ActivityRecord{ed8f11 u0 com.ggufchat.texttest/.TextActivity t8}
+  ResumedActivity: ActivityRecord{ed8f11 u0 com.ggufchat.texttest/.TextActivity t8}
+  topDisplayFocusedRootTask=Task{f57cae4 #8 type=standard A=10210:com.ggufchat.texttest}
+  deepestLastOrientationSource=ActivityRecord{ed8f11 u0 com.ggufchat.texttest/.TextActivity t8}
+  mCurrentFocus=Window{2d86620 u0 com.ggufchat.texttest/com.ggufchat.texttest.TextActivity}
+  mFocusedApp=ActivityRecord{ed8f11 u0 com.ggufchat.texttest/.TextActivity t8}
+  mObscuringWindow=Window{2d86620 u0 com.ggufchat.texttest/com.ggufchat.texttest.TextActivity}
+      mPreferredTopFocusableRootTask=Task{f57cae4 #8 type=standard A=10210:com.ggufchat.texttest}
+      mLastFocusedRootTask=Task{f57cae4 #8 type=standard A=10210:com.ggufchat.texttest}
+      * Task{f57cae4 #8 type=standard A=10210:com.ggufchat.texttest U=0 visible=true visibleRequested=true mode=fullscreen translucent=false sz=1}
+        * ActivityRecord{ed8f11 u0 com.ggufchat.texttest/.TextActivity t8}
+    mFocusedWindow=Window{2d86620 u0 com.ggufchat.texttest/com.ggufchat.texttest.TextActivity}
+    mTopFullscreenOpaqueWindowState=Window{2d86620 u0 com.ggufchat.texttest/com.ggufchat.texttest.TextActivity}
+    mSystemBarColorApps={ActivityRecord{ed8f11 u0 com.ggufchat.texttest/.TextActivity t8}}
+    mNavBarColorWindowCandidate=Window{2d86620 u0 com.ggufchat.texttest/com.ggufchat.texttest.TextActivity}
+    mNavBarBackgroundWindowCandidate=Window{2d86620 u0 com.ggufchat.texttest/com.ggufchat.texttest.TextActivity}
+      Window{2d86620 u0 com.ggufchat.texttest/com.ggufchat.texttest.TextActivity}
+      Window{2d86620 u0 com.ggufchat.texttest/com.ggufchat.texttest.TextActivity}:
+        mControlTarget=Window{2d86620 u0 com.ggufchat.texttest/com.ggufchat.texttest.TextActivity}
+        mControlTarget=Window{2d86620 u0 com.ggufchat.texttest/com.ggufchat.texttest.TextActivity}
+        mControlTarget=Window{2d86620 u0 com.ggufchat.texttest/com.ggufchat.texttest.TextActivity}
+        (fullscreen) Task{f57cae4 #8 type=standard A=10210:com.ggufchat.texttest}
+  VisibleActivityProcess:[ ProcessRecord{3785cb9 3341:com.ggufchat.texttest/u0a210}]
+
+$ adb shell logcat -d | grep -iE "texttest|GGUFTextTest|AndroidRuntime|FATAL" | tail -200
+09-26 18:16:52.925   949   949 I AndroidRuntime: VM exiting with result code 0, cleanup skipped.
