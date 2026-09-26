@@ -127,6 +127,21 @@ def tap_label(device, label, contains=True, optional=False):
     return found
 
 
+def last_button(device, label):
+    """Centro do ÚLTIMO botão com esse texto exato (o diálogo vem depois da tela)."""
+    achados = []
+    for node in ET.fromstring(device.ui()).iter('node'):
+        if node.get('package') not in PACKAGE or node.get('class') != 'android.widget.Button':
+            continue
+        match = re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', node.get('bounds', ''))
+        if not match or (node.get('text') or '') != label or not match:
+            continue
+        x1, y1, x2, y2 = map(int, match.groups())
+        if x2 > x1 and y2 > y1:
+            achados.append(((x1 + x2) // 2, (y1 + y2) // 2))
+    return achados[-1] if achados else None
+
+
 def scroll_to(device, label, tries=4, contains=True):
     """Procura o rótulo rolando a tela: conteúdo abaixo da dobra também é função.
 
@@ -379,16 +394,18 @@ def main():
         type_into(device, point, 'abc')
         depois = field_text(device, point)
         recusou_entrada = depois == antes or not re.search(r'[a-zA-Z]', depois)
+        prefs = lambda: device.shell(  # noqa: E731 — leitura usada em duas esperas
+            f'cat /data/user/0/{PACKAGE}/shared_prefs/ggufchat_settings.xml')
         if not recusou_entrada:
-            # O botão fica no fim da lista de ajustes: sem rolar, o toque não existe.
+            # O campo aceitou letras. O comportamento declarado deste aplicativo não é
+            # avisar "valor inválido" (essa mensagem não existe no APK): o smali diz
+            # `parseInt(campo, 4096)` com catch que devolve o padrão. Então o que se
+            # exige aqui é o que o aplicativo promete: o padrão, sem corromper o ajuste.
             scroll_to(device, 'Salvar ajustes')
             tap_label(device, 'Salvar ajustes')
-            avisou = device.wait(
-                lambda: (on_screen(device, 'Valor inválido')
-                         or 'Valor inválido' in device.adb('logcat', '-d')),
-                'recusa de valor inválido', timeout=10)
-            if not avisou:
-                raise AssertionError('valor inválido aceito sem aviso')
+            device.wait(lambda: re.search(r'name="contextSize"[^>]*>4096<', prefs()),
+                        'valor não numérico caiu no padrão 4096', timeout=25)
+            device.alive()
         scroll_to(device, 'Tamanho de contexto')
         point = edit_near(device, 'Tamanho de contexto')
         type_into(device, point, '1024')
@@ -398,11 +415,10 @@ def main():
                                  f'visíveis: {visible_labels(device)}')
 
         def persistido():
-            prefs = device.shell(f'cat /data/user/0/{PACKAGE}/shared_prefs/ggufchat_settings.xml')
-            return 'contextSize' in prefs and '1024' in prefs
+            return re.search(r'name="contextSize"[^>]*>1024<', prefs()) is not None
         device.wait(persistido, 'contexto salvo nas preferências', timeout=25)
-        detalhe = ('valor não numérico recusado pelo campo' if recusou_entrada
-                   else 'valor inválido recusado com aviso')
+        detalhe = ('valor não numérico recusado pelo próprio campo' if recusou_entrada
+                   else 'valor não numérico não corrompe o ajuste: cai no padrão 4096')
         return f'os oito ajustes estão na tela; {detalhe}; valor válido salvo e persistido'
 
     def modelo_listado():
@@ -412,24 +428,28 @@ def main():
         return f'modelo importado listado com o nome real ({model["name"]})'
 
     def descarregar_e_recarregar():
-        # Antes de procurar o controle, carrega o modelo de verdade: com o modelo
-        # fora da memória não há o que descarregar, e um SKIP sem essa carga diria
-        # "não oferece" quando o certo seria "nada a descarregar ainda".
+        # Onde está o controle: a tabela de strings do APK original mostra
+        # "Descarregar modelo da memória" em SettingsActivity.onCreate — a tela de
+        # Ajustes, não a de modelos. A varredura anterior procurava na tela errada e
+        # declarava SKIP ("não oferece") para um controle que existe.
         device.generate(model, 0, 'functions-unload-pre', prompt='Reply in English: say ok')
         device.launch()
-        tap_exact(device, 'AI Modelos', optional=True) or tap_label(device, 'Modelos', optional=True)
-        if not (tap_label(device, 'Descarregar', optional=True)
-                or tap_label(device, 'Remover da memória', optional=True)):
-            raise SkipCheck('nenhum controle de descarregar na tela de modelos, com o modelo '
-                            'carregado; rótulos visíveis: ' + ', '.join(visible_labels(device, 20)))
-        device.wait(lambda: (on_screen(device, 'descarregado')
+        if not tap_label(device, 'Ajustes', optional=True):
+            raise SkipCheck('aba Ajustes não encontrada nesta versão')
+        if not scroll_to(device, 'Descarregar modelo da memória'):
+            raise SkipCheck('controle de descarregar ausente mesmo rolando os ajustes; '
+                            'rótulos visíveis: ' + ', '.join(visible_labels(device, 20)))
+        tap_label(device, 'Descarregar modelo da memória')
+        device.wait(lambda: (on_screen(device, 'Modelo descarregado')
                              or 'Modelo descarregado' in device.adb('logcat', '-d')),
                     'confirmação do descarregamento', timeout=25)
         device.alive()
+        # Descarregar de verdade tem de ser sentido: a geração seguinte só responde
+        # se o modelo voltou para a memória (recarga real, não presumida).
         device.generate(model, 0, 'functions-unload', prompt='Reply in English: say ok')
         if not (args.evidence / 'functions-unload-reply.txt').read_text().strip():
             raise AssertionError('sem resposta depois de descarregar: o modelo não voltou')
-        return 'descarregou da memória e voltou a gerar resposta (recarga real, não presumida)'
+        return 'descarregou pela tela de Ajustes ("Modelo descarregado.") e voltou a gerar resposta'
 
     def nova_conversa():
         device.generate(model, 0, 'functions-chat', prompt='Reply in English: one word, hello')
@@ -679,19 +699,34 @@ def main():
         models = device.read_json('models.json', optional=True) or []
         if not models:
             raise SkipCheck('sem modelo para excluir')
+        # Quem tem o botão "Excluir" da linha é a tela de importação: a árvore de views
+        # da rodada 36192982173 mostra o botão ao lado do modelo importado, e o smali
+        # do APK original liga esse botão ao diálogo "Excluir modelo" ("O arquivo será
+        # removido do armazenamento do app."). A tela "AI Modelos" só lista nome e
+        # tamanho — procurar ali era procurar no lugar errado.
         device.launch()
-        tap_exact(device, 'AI Modelos', optional=True) or tap_label(device, 'Modelos', optional=True)
-        if not (tap_exact(device, 'Excluir', optional=True)
-                or tap_label(device, 'Excluir modelo', optional=True)
-                or tap_label(device, 'Remover modelo', optional=True)):
-            raise SkipCheck('nenhum controle de exclusão na tela de modelos; rótulos '
+        tap_exact(device, 'Importar')
+        if not scroll_to(device, models[0]['fileName']):
+            raise AssertionError('o modelo não está listado na tela de importação; '
+                                 'visíveis: ' + ', '.join(visible_labels(device, 20)))
+        if not tap_exact(device, 'Excluir', optional=True):
+            raise SkipCheck('nenhum controle de exclusão na linha do modelo; rótulos '
                             'visíveis: ' + ', '.join(visible_labels(device, 20)))
-        # O diálogo de confirmação usa "EXCLUIR" maiúsculo com o título "Excluir modelo":
-        # casamento exato, senão o toque cai no título e nada é confirmado (erro já
-        # cometido na varredura da conversa). A remoção também pode ser imediata.
-        time.sleep(2)
-        if tap_exact(device, 'EXCLUIR', optional=True):
-            pass
+        device.wait(lambda: on_screen(device, 'Excluir modelo'),
+                    'diálogo de excluir modelo', timeout=25)
+        # Confirmação por casamento exato: "Excluir" também é o rótulo da linha, e o
+        # título do diálogo é "Excluir modelo" — tocar em qualquer um dos dois não
+        # confirma nada (foi o erro da varredura da conversa, que ficou sem excluir).
+        if not tap_exact(device, 'EXCLUIR', optional=True):
+            # O smali declara os botões do diálogo como "Excluir" e "Cancelar". O
+            # primeiro "Excluir" da árvore é o da linha (atrás do diálogo), então o
+            # toque vai no ÚLTIMO botão com esse texto exato — o do diálogo, que é
+            # acrescentado depois.
+            botao = last_button(device, 'Excluir')
+            if not botao:
+                raise AssertionError('diálogo aberto mas sem botão de confirmação; '
+                                     'visíveis: ' + ', '.join(visible_labels(device, 20)))
+            device.shell(f'input tap {botao[0]} {botao[1]}')
 
         def vazio():
             restantes = device.read_json('models.json', optional=True) or []
@@ -701,7 +736,7 @@ def main():
         except AssertionError:
             raise AssertionError('o modelo continua no armazenamento depois de excluir; '
                                  'visíveis: ' + ', '.join(visible_labels(device, 20)))
-        return 'modelo excluído pela interface e removido do armazenamento'
+        return 'excluído pela linha da importação, diálogo confirmado e arquivo fora do armazenamento'
 
     def sem_modelo():
         device.launch()

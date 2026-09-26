@@ -211,7 +211,7 @@ modelo ao testar "Excluir modelo".
 | abas | Chat, Importar, AI Modelos e Ajustes mostram conteúdo próprio |
 | importar | entrada única "Importar GGUF" que abre o seletor real; a tela antiga (dois arquivos) continua alcançável e redireciona para ela; a tela explica o caminho do projetor |
 | ajustes | os oito campos; valor inválido recusado; valor válido salvo e persistido nas preferências |
-| modelo | listado pelo nome real; descarregar da memória (procurado **depois** de carregar o modelo) **e voltar a gerar** |
+| modelo | listado pelo nome real; descarregar da memória pela tela de **Ajustes** ("Descarregar modelo da memória", procurado depois de carregar o modelo) **e voltar a gerar** |
 | conversa | criação com escolha de modelo, envio e resposta persistida |
 | parar | interrompe no meio (bem antes do limite de tokens) e mantém a resposta parcial |
 | raciocínio | rótulo, `chat.thinking=true`, prompt de sistema aplicado, painel próprio, e o bloco não vaza para o texto |
@@ -223,7 +223,7 @@ modelo ao testar "Excluir modelo".
 | notificação | com a tela apagada, o canal "Respostas prontas" aparece no `dumpsys` |
 | histórico | conversa reabre com o conteúdo salvo depois de fechar o aplicativo |
 | excluir conversa | diálogo confirmado e conversa fora do armazenamento |
-| excluir modelo | controle da linha, confirmação "EXCLUIR" e modelo fora do armazenamento (SKIP declarado só depois de procurar na tela, com os rótulos visíveis no motivo) |
+| excluir modelo | botão "Excluir" da linha na tela de **importação**, diálogo "Excluir modelo" confirmado e arquivo fora do armazenamento (SKIP declarado só depois de procurar na tela, com os rótulos visíveis no motivo) |
 | sem modelo | sem modelo importado, criar conversa avisa em vez de falhar em silêncio |
 
 Toda falha e todo SKIP gravam também `functions-<nome>-ui.xml` (a árvore de views do
