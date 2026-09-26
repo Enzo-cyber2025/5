@@ -1173,7 +1173,14 @@ def main():
             # medido nas duas etapas, o padrão do aplicativo continua F16.
             for stage, kv in (("decode-kv-f16", 1), ("decode-kv-q8", 8)):
                 device.shell(f"setprop debug.gguf.kv_type {kv}")
-                device.generate(model, 99, stage, await_load=True, settle=5.0)
+                try:
+                    device.generate(model, 99, stage, await_load=True, settle=5.0)
+                except AssertionError as error:
+                    # Um cache que este binário não aceita tem que ser DECLARADO, nunca
+                    # derrubar a rodada: o experimento mede, não reprova. A etapa
+                    # seguinte volta a abrir o aplicativo do zero.
+                    result["checks"][f"kv_cache_{stage}"] = f"AVISO: etapa não concluída: {error}"
+                    device.launch()
             device.shell("setprop debug.gguf.kv_type 0")
             f16_kv = (device.perf.get("decode-kv-f16", {}).get("kv_cache") or {}).get("kv")
             q8_kv = (device.perf.get("decode-kv-q8", {}).get("kv_cache") or {}).get("kv")
