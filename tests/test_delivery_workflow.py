@@ -32,9 +32,10 @@ def test_no_hand_written_run_pins_remain():
     assert 'status=success' in text and 'text-ui.yml/runs' in text
 
 
-def test_the_resolved_run_must_cover_the_commit_being_delivered():
+def test_the_resolved_run_must_be_the_commit_being_delivered():
+    """Recibo de outra revisão não vale: os hashes dele descrevem outros bytes."""
     text = WORKFLOW.read_text()
-    assert 'git merge-base --is-ancestor "$sha" HEAD' in text
+    assert '[ "$sha" != "$(git rev-parse HEAD)" ]' in text
     assert 'skip=1' in text and "steps.green.outputs.skip != '1'" in text
 
 

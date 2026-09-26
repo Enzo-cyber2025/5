@@ -91,11 +91,13 @@ jobs:
           sha=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run}" --jq '.head_sha')
           git fetch --no-tags --depth=200 origin "$sha" || true
           receipt="ci-results/${run}-1-text-ui"
-          if ! git merge-base --is-ancestor "$sha" HEAD || [ ! -f "${receipt}/physical-text-ui-build.json" ]; then
-            # Push que não passou pelo emulador (ou rodada de antes do código atual):
-            # não há o que entregar. O passo seguinte nem roda, e nada é publicado.
+          # A rodada verde tem de ser DESTE commit: é o que faz os hashes do recibo
+          # valerem para os bytes que serão publicados. Entregar código novo sob o
+          # recibo de uma rodada antiga (ou de outro commit) seria prometer o que não
+          # foi exercitado. Push que mexe só neste fluxo cai aqui e não publica nada.
+          if [ "$sha" != "$(git rev-parse HEAD)" ] || [ ! -f "${receipt}/physical-text-ui-build.json" ]; then
             echo "skip=1" >> "$GITHUB_OUTPUT"
-            echo "::warning title=GGUF entrega::a rodada verde ${run} (${sha::7}) não cobre este commit; nada sera publicado"
+            echo "::warning title=GGUF entrega::a rodada verde ${run} é de ${sha::7}, não de ${GITHUB_SHA::7}; nada sera publicado (rode o fluxo de novo depois do verde deste commit)"
             exit 0
           fi
           echo "run=$run" >> "$GITHUB_OUTPUT"
