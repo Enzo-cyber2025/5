@@ -78,7 +78,9 @@ def test_default_native_body_unchanged_by_experiment():
     # Recomputado ao tornar o sub-lote do pré-preenchimento ajustável por
     # propriedade de depuração (padrão inalterado: 128 com contexto >= 1024).
     # e ao poder medir/registrar o tipo de cache K/V (padrão inalterado: F16).
-    before_sha='6fe5c4d17d741ee1d375410bc3517fe153c2bf01aa115b9f3459b3ad73aee83b'
+    # e ao logar GGUF_UNIT_RELEASED em Native.destroy (prova do "descarregar modelo":
+    # o toast expirava antes da leitura e não dizia se havia motor para descarregar).
+    before_sha='c6a7cbb23eba64b2f0b42e629c25efcebe669c1d9a8fcae4a3d814ad131ebeac'
     current=(ROOT/'apk-fix/native/mobile.cpp').read_text()
     # Any top-level single #else guard of an opt-in experiment macro must keep
     # its #else branch byte-identical to the shipped body, not only media prefix.

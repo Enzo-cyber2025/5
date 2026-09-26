@@ -538,20 +538,32 @@ def main():
                             'rótulos visíveis: ' + ', '.join(visible_labels(device, 20)))
         scroll_to(device, 'Backend atual')
         antes = backend_text(device)
+        # A prova é o log do binário, não um toast de vida curta: o botão chama
+        # EngineManager.release() -> Native.destroy(), que agora registra
+        # GGUF_UNIT_RELEASED found=<0|1>. Um toast pode expirar antes da leitura (foi
+        # o FAIL da rodada 36255713807) e não diz se havia motor para descarregar.
+        device.adb('logcat', '-c')
         tap_label(device, 'Descarregar modelo da memória')
-        aviso = wait_toast(device, 'Modelo descarregado')
-        if not aviso:
-            raise AssertionError('o aplicativo não confirmou o descarregamento na tela '
-                                 f'("Modelo descarregado."); Backend atual antes={antes!r}; '
-                                 'visíveis: ' + ', '.join(visible_labels(device, 20)))
+
+        def liberado():
+            return 'GGUF_UNIT_RELEASED found=1' in device.adb('logcat', '-d')
+        device.wait(liberado, 'motor descarregado de verdade (GGUF_UNIT_RELEASED found=1)',
+                    timeout=40)
+        aviso = wait_toast(device, 'Modelo descarregado', timeout=3)
         device.alive()
         # Recarga real, não presumida: a geração seguinte só responde se o modelo voltou.
         device.generate(model, 0, 'functions-unload', prompt='Reply in English: say ok')
         if not (args.evidence / 'functions-unload-reply.txt').read_text().strip():
             raise AssertionError('sem resposta depois de descarregar: o modelo não voltou')
-        return (f'botão na tela de Ajustes; o aplicativo confirmou ("{aviso}") e a geração '
-                f'seguinte recarregou de verdade (Backend atual: {antes!r} antes do toque — '
-                'o motor da conversa não fica vivo entre telas, então este valor é observação)')
+        log = device.adb('logcat', '-d')
+        if 'GGUF_UNIT_LOADED' not in log:
+            raise AssertionError('o modelo respondeu mas o log não mostra a recarga '
+                                 '(GGUF_UNIT_LOADED): a prova seria presumida')
+        extra = f', toast "{aviso}" também visto' if aviso else ''
+        return ('botão na tela de Ajustes; descarregou de verdade (GGUF_UNIT_RELEASED '
+                f'found=1 no log do binário{extra}) e a geração seguinte recarregou '
+                f'(GGUF_UNIT_LOADED; Backend atual: {antes!r} antes do toque é observação: '
+                'o motor da conversa não fica vivo entre telas)')
 
     def nova_conversa():
         device.generate(model, 0, 'functions-chat', prompt='Reply in English: one word, hello')

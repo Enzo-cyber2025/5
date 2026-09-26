@@ -262,6 +262,161 @@ def test_submit_fails_with_the_field_and_the_visible_labels(tmp_path):
     assert device.taps == 3
 
 
+class SendDevice:
+    """Aparelho de mentira para o `send` de baixo nível (digitar e tocar em Enviar).
+
+    O `SubmitDevice` acima substitui o próprio `send`, então não consegue provar o
+    comportamento dele. Aqui só existem as primitivas que o `send` de verdade usa:
+    `wait`, `composer_ready`, `field_focused`, `ui`, `tap`, `shell` e `adb`.
+    """
+
+    def __init__(self, ready_after=0, button_after=0):
+        self.actions = []
+        self.taps = 0
+        # Leituras do compositor que ainda encontram campo/botão desabilitados.
+        self.ready_after = ready_after
+        self.ready_checks = 0
+        # Leituras que ainda encontram o botão Enviar desabilitado depois da digitação.
+        self.button_after = button_after
+        self.button_checks = 0
+        self.focused = False
+
+    def adb(self, *args, check=True):
+        self.actions.append(('adb', args))
+        return ''
+
+    def shell(self, command, check=True):
+        self.actions.append(('shell', command))
+        return ''
+
+    def composer_ready(self):
+        self.ready_checks += 1
+        return self.ready_checks > self.ready_after
+
+    def field_focused(self):
+        return self.focused
+
+    def ui(self):
+        # `position` exige enabled=true e área positiva: é o que o extrator real vê
+        # quando o aplicativo ainda carrega o modelo (Enviar desabilitado).
+        self.button_checks += 1
+        enabled = 'true' if self.button_checks > self.button_after else 'false'
+        return ('<hierarchy><node package="com.ggufchat.app" class="android.widget.EditText" '
+                'text="oi" enabled="true" bounds="[0,0][10,10]" />'
+                f'<node package="com.ggufchat.app" class="android.widget.Button" text="Enviar" '
+                f'enabled="{enabled}" bounds="[0,0][10,10]" /></hierarchy>')
+
+    def wait(self, condition, what, timeout=20):
+        for _ in range(50):
+            result = condition()
+            if result:
+                return result
+        raise AssertionError(f'Timeout: {what}')
+
+    def tap(self, **selector):
+        if selector.get('text') == 'Enviar':
+            if self.button_checks <= self.button_after:
+                raise AssertionError(f"Controle não encontrado: {selector}")  # toque cego
+            self.taps += 1
+        self.actions.append(('tap', selector))
+        return True
+
+
+def test_send_waits_for_the_composer_before_typing_and_before_tapping():
+    """Rodada 36255713807: `send` tocava em Enviar sem esperar o compositor.
+
+    A fase de desempenho morreu com "Controle não encontrado: Enviar" enquanto o
+    aplicativo ainda carregava o modelo — o `submit` já esperava, o `send` não.
+    """
+    device = SendDevice(ready_after=2, button_after=2)
+    Android.send(device, 'oi')
+    assert device.ready_checks >= 3, 'digitou antes de o compositor estar habilitado'
+    assert device.taps == 1, 'não tocou em Enviar exatamente uma vez depois de pronto'
+    digitou = [a for a in device.actions if a[0] == 'shell' and 'input text' in a[1]]
+    enviou = [a for a in device.actions if a[0] == 'tap' and a[1].get('text') == 'Enviar']
+    assert digitou and enviou, 'faltou digitar ou enviar'
+    assert device.actions.index(digitou[0]) > 0
+    assert device.button_checks > device.button_after, 'o botão nunca foi conferido habilitado'
+
+
+def test_send_declares_instead_of_tapping_a_composer_that_never_appears():
+    device = SendDevice(ready_after=99)
+    with pytest.raises(AssertionError) as error:
+        Android.send(device, 'oi')
+    assert 'compositor' in str(error.value)
+    assert device.taps == 0, 'nenhum toque cego em Enviar'
+    assert not [a for a in device.actions if a[0] == 'shell' and 'input text' in a[1]], \
+        'não pode digitar num campo que não existe'
+
+
+class ScreenDevice:
+    """Aparelho de mentira que muda de tela: serve para o toque e a foto da janela.
+
+    `ui` é o MÉTODO DE VERDADE: o que está sob teste é a retentativa dele quando a
+    foto sai sem nenhum nó do aplicativo; o que o aparelho de mentira troca é só a
+    origem da foto (`_ui_dump`).
+    """
+
+    ui = Android.ui
+
+    def __init__(self, screens, evidence):
+        self.screens = list(screens)
+        self.actions = []
+        self.dumps = 0
+        self.evidence = evidence
+        self.counter = 0
+        self.last_ui_summary = None
+
+    def _ui_dump(self):
+        self.dumps += 1
+        return self.screens[0] if len(self.screens) == 1 else self.screens.pop(0)
+
+    def shell(self, command, check=True):
+        self.actions.append(command)
+        return ''
+
+    def alive(self):
+        return 1234
+
+    def wait(self, condition, what, timeout=20):
+        for _ in range(50):
+            result = condition()
+            if result:
+                return result
+        raise AssertionError(f'Timeout: {what}')
+
+
+def test_tap_retries_a_control_that_a_transition_hid_for_a_moment(tmp_path):
+    """Rodada 36255713807: o botão Enviar estava na tela e o toque desistiu.
+
+    A foto pegou a janela de cima (teclado aberto numa transição), sem nós do
+    aplicativo; o toque precisa de uma segunda foto antes de acusar ausência.
+    """
+    vazio = ('<hierarchy><node package="com.android.inputmethod" text="q" enabled="true" '
+             'bounds="[0,0][10,10]" /></hierarchy>')
+    device = ScreenDevice([vazio, screen('Escreva sua mensagem…', 'Enviar')], tmp_path)
+    assert Android.tap(device, text='Enviar', contains=True) is True
+    assert any(action.startswith('input tap') for action in device.actions)
+
+
+def test_tap_says_the_control_is_missing_with_what_is_visible(tmp_path):
+    device = ScreenDevice([screen('Ajustes')], tmp_path)
+    with pytest.raises(AssertionError) as error:
+        Android.tap(device, text='Enviar', contains=True)
+    assert 'Controle não encontrado' in str(error.value)
+    assert 'Ajustes' in str(error.value), 'a mensagem precisa listar o que estava na tela'
+
+
+def test_ui_refuses_a_photo_of_another_window_and_hides_the_keyboard(tmp_path):
+    """A foto pode sair da janela de cima; ESC recolhe o teclado sem fechar a tela."""
+    vazio = ('<hierarchy><node package="com.android.inputmethod" text="q" enabled="true" '
+             'bounds="[0,0][10,10]" /></hierarchy>')
+    device = ScreenDevice([vazio, screen('Enviar')], tmp_path)
+    xml = Android.ui(device)
+    assert 'Enviar' in xml
+    assert 'input keyevent 111' in device.actions, 'recolher o teclado antes da segunda foto'
+
+
 def test_prefill_experiment_uses_its_own_metric_and_stays_out_of_the_throughput_race():
     perf = {'vulkan': perf_entry(1.0, 20.0, 18.0),
             'cpu-threads-auto': perf_entry(9.0, 0.4, 0.3),

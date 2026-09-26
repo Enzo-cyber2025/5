@@ -71,3 +71,19 @@ def test_ci_passes_the_vision_pair_to_the_sweep_when_the_pieces_exist():
     models = (ROOT / 'ci/mobile-models.sh').read_text()
     assert 'SmolVLM-256M-Instruct-Q8_0.gguf' in models
     assert 'mmproj-SmolVLM-256M-Instruct-Q8_0.gguf' in models
+
+
+def test_unload_is_proven_by_the_engine_log_not_by_an_expiring_toast():
+    """Rodada 36255713807: o \"descarregar modelo\" era aprovado só pelo toast.
+
+    O toast vive poucos segundos e não diz se HAVIA motor para descarregar; a
+    rodada falhou ao lê-lo antes de expirar. A prova passou a ser o log do próprio
+    binário (GGUF_UNIT_RELEASED found=1) mais a recarga real (GGUF_UNIT_LOADED).
+    """
+    sweep = SWEEP.read_text()
+    assert 'GGUF_UNIT_RELEASED found=1' in sweep, 'a varredura precisa exigir o log do motor'
+    assert 'GGUF_UNIT_LOADED' in sweep, 'a recarga real continua sendo exigida'
+    native = (ROOT / 'apk-fix/native/mobile.cpp').read_text()
+    assert 'GGUF_UNIT_RELEASED found=%d remaining=%zu' in native, \
+        'Native.destroy é quem sabe se havia motor; sem esse log a prova volta a ser um toast'
+    assert 'Java_com_ggufchat_app_Native_destroy' in native

@@ -67,7 +67,16 @@ class Android:
                 self.alive()
                 time.sleep(0.5)
                 continue
-            break
+            # A foto pode sair da janela de CIMA (teclado aberto durante uma
+            # transição) e não trazer nenhum nó do aplicativo: aí o controle
+            # "Enviar" aparecia como ausente quando quem faltava era a foto — foi
+            # o FAIL da rodada 36255713807. Recolhe o teclado (ESC, que não fecha a
+            # tela) e tira outra foto antes de acusar o aplicativo.
+            if attempt == 2 or any(n.get("package") == PACKAGE for n in root.iter("node")):
+                break
+            self.alive()
+            self.shell("input keyevent 111", check=False)
+            time.sleep(0.5)
         summary = [{k: n.get(k) for k in ("text", "content-desc", "resource-id", "bounds", "enabled", "selected")}
                    for n in root.iter("node") if n.get("text") or n.get("content-desc")]
         if summary != self.last_ui_summary:
@@ -97,10 +106,23 @@ class Android:
 
     def tap(self, *, optional=False, **selector):
         point = position(self.ui(), **selector)
+        if point is None and not optional:
+            # Uma transição de tela pode esconder o controle por um instante: entre a
+            # conferência e o toque ele reaparece. Desistir no primeiro dump foi o que
+            # produziu "Controle não encontrado: Enviar" na rodada 36255713807, com o
+            # botão na tela. A espera é limitada e o erro final mostra o que se via.
+            try:
+                self.wait(lambda: position(self.ui(), **selector),
+                          f"controle visível: {selector}", timeout=20)
+            except AssertionError:
+                pass  # a mensagem abaixo diz o que era esperado e o que se via
+            point = position(self.ui(), **selector)
         if point is None:
             if optional:
                 return False
-            raise AssertionError(f"Controle não encontrado: {selector}")
+            labels = [n.get("text") for n in ET.fromstring(self.ui()).iter("node")
+                      if n.get("package") == PACKAGE and n.get("text")]
+            raise AssertionError(f"Controle não encontrado: {selector}; visíveis: {labels[:12]}")
         self.shell(f"input tap {point[0]} {point[1]}")
         return True
 
@@ -458,15 +480,23 @@ class Android:
             # Não é falha da etapa: o nativo registra o motivo (SKIPPED) quando não aquece.
             pass
 
-    def send(self, prompt, clear_log=True, typed_pause=0.0):
+    def send(self, prompt, clear_log=True, typed_pause=0.0, ready_timeout=180):
         """Digita e envia.
 
         Com `typed_pause` o texto entra em duas passadas separadas por essa pausa,
         como um usuário que digita e hesita: é o cenário que permite ao aplicativo
         aquecer o prompt no tempo de digitação. Sem a pausa, é o envio direto.
+
+        Antes de digitar e antes de tocar em Enviar, o compositor é conferido
+        HABILITADO: enquanto o modelo carrega ou aquece, o aplicativo desabilita
+        campo e botão, e o toque cego falhava com "Controle não encontrado: Enviar"
+        (rodada 36255713807). Esperar aqui é esperar o aplicativo; a espera que as
+        etapas medem continua começando no envio já persistido.
         """
         if clear_log:
             self.adb("logcat", "-c")
+        self.wait(self.composer_ready, "compositor habilitado antes de digitar",
+                  timeout=ready_timeout)
         self.tap(class_name="android.widget.EditText", package={PACKAGE})
         # O toque pode chegar antes de a janela aceitar foco: na rodada 36253269770 o
         # campo ficou com o texto de dica ("Escreva sua mensagem...") e o prompt nunca
@@ -481,6 +511,10 @@ class Android:
             self.shell("input text " + shlex.quote(" ".join(words[:half]).replace(" ", "%s")))
             time.sleep(typed_pause)
             self.shell("input text " + shlex.quote(" " + " ".join(words[half:]).replace(" ", "%s")))
+        # A recarga do modelo pode desabilitar o botão de novo entre a digitação e o
+        # toque: espera limitada, nunca toque cego.
+        self.wait(lambda: position(self.ui(), text="Enviar", package={PACKAGE}, contains=True),
+                  "botão Enviar habilitado antes do toque", timeout=120)
         self.tap(text="Enviar", package={PACKAGE}, contains=True)
 
     def field_focused(self):
@@ -1278,7 +1312,9 @@ def main():
         # Exercise a real error path by deleting this test-only imported model.
         device.new_chat(model, 0)
         device.shell("rm " + shlex.quote(model["path"]))
-        device.send("Teste")
+        # Aqui o compositor já está pronto (conversa nova com o modelo apagado): a
+        # espera é curta de propósito, para o teste do erro não gastar 3 minutos.
+        device.send("Teste", ready_timeout=15)
         device.wait(lambda: "Arquivo GGUF ausente" in device.shell("dumpsys notification --noredact"),
                     "erro tratado de arquivo ausente", timeout=30)
         device.alive()

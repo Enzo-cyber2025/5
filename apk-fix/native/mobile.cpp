@@ -417,9 +417,13 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
         LOG("Create failed: %s",create_error.c_str()); return 0; }
 }
 extern "C" JNIEXPORT void JNICALL Java_com_ggufchat_app_Native_destroy(JNIEnv*,jclass,jlong h) {
-    std::shared_ptr<Engine> old;
-    { std::lock_guard<std::mutex> g(registry_mutex); auto i=engines.find(h); if(i!=engines.end()) { old=i->second; engines.erase(i); } }
+    std::shared_ptr<Engine> old; size_t remaining=0;
+    { std::lock_guard<std::mutex> g(registry_mutex); auto i=engines.find(h); if(i!=engines.end()) { old=i->second; engines.erase(i); } remaining=engines.size(); }
     if(old) old->cancel=true; // an in-flight generation retains ownership until it exits
+    // O botão "Descarregar modelo da memória" chama isto. O log diz se HAVIA motor
+    // para descarregar: sem esta linha, "descarregou" e "não havia nada carregado"
+    // ficavam com a mesma aparência na tela, e a prova virava um toast que expira.
+    LOG("GGUF_UNIT_RELEASED found=%d remaining=%zu handle=%lld",(int)(old!=nullptr),remaining,(long long)h);
 }
 extern "C" JNIEXPORT void JNICALL Java_com_ggufchat_app_Native_abort(JNIEnv*,jclass,jlong h) { auto e=get(h); if(e) e->cancel=true; }
 extern "C" JNIEXPORT jstring JNICALL Java_com_ggufchat_app_Native_lastError(JNIEnv *env,jclass,jlong h) {
