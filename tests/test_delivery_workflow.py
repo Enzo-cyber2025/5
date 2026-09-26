@@ -33,10 +33,26 @@ def test_no_hand_written_run_pins_remain():
 
 
 def test_the_resolved_run_must_be_the_commit_being_delivered():
-    """Recibo de outra revisão não vale: os hashes dele descrevem outros bytes."""
+    """Recibo de outra revisão não vale: os hashes dele descrevem outros bytes.
+
+    Entre a rodada verde e o commit da entrega só podem existir commits que NÃO
+    mudam o APK (evidência publicada pela própria rodada, notas, este fluxo). Se
+    qualquer arquivo de `apk-fix/**`, `ci/**` ou do fluxo do emulador aparecer na
+    diferença, a entrega para — e os hashes do recibo continuam sendo a última
+    palavra antes de publicar qualquer byte.
+    """
     text = WORKFLOW.read_text()
     assert '[ "$sha" != "$(git rev-parse HEAD)" ]' in text
     assert 'skip=1' in text and "steps.green.outputs.skip != '1'" in text
+    # A lista de permitidos existe, é explícita e não inclui o código do aplicativo.
+    assert 'permitidos=' in text
+    permitidos = text.split('permitidos=', 1)[1].split('\n', 1)[0]
+    for caminho in ('ci-results/', 'docs/', 'tests/', 'scripts/', 'README', '.delivery/'):
+        assert caminho in permitidos, caminho
+    for caminho in ('apk-fix/', 'ci/emulator', 'emulator-text-ui'):
+        assert caminho not in permitidos, caminho
+    assert 'mudanca_apk=$(git diff --name-only "$sha" HEAD' in text
+    assert 'payload diferente do testado' in text
 
 
 def test_the_expensive_steps_do_not_run_without_a_green_run(workflow):

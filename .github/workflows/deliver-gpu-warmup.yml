@@ -91,13 +91,20 @@ jobs:
           sha=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run}" --jq '.head_sha')
           git fetch --no-tags --depth=200 origin "$sha" || true
           receipt="ci-results/${run}-1-text-ui"
-          # A rodada verde tem de ser DESTE commit: é o que faz os hashes do recibo
-          # valerem para os bytes que serão publicados. Entregar código novo sob o
-          # recibo de uma rodada antiga (ou de outro commit) seria prometer o que não
-          # foi exercitado. Push que mexe só neste fluxo cai aqui e não publica nada.
-          if [ "$sha" != "$(git rev-parse HEAD)" ] || [ ! -f "${receipt}/physical-text-ui-build.json" ]; then
+          # Os hashes do recibo só valem para os bytes que a rodada exercitou. Entre a
+          # rodada verde e este commit podem existir commits que NÃO mudam o aplicativo:
+          # a própria evidência (ci-results/), notas/docs e este fluxo. Isso é permitido
+          # — o payload reconstruído ainda é conferido hash a hash antes de publicar. Se
+          # qualquer arquivo que influencia o APK (apk-fix/**, ci/**, o fluxo do emulador)
+          # aparecer na diferença, a entrega para: aí é rodada nova, não pino velho.
+          permitidos='^(ci-results/|docs/|tests/|scripts/|README\.md|\.delivery/|\.github/workflows/deliver-gpu-warmup\.yml)$'
+          mudanca_apk=''
+          if [ "$sha" != "$(git rev-parse HEAD)" ]; then
+            mudanca_apk=$(git diff --name-only "$sha" HEAD | grep -vE "$permitidos" || true)
+          fi
+          if [ ! -f "${receipt}/physical-text-ui-build.json" ] || [ -n "$mudanca_apk" ]; then
             echo "skip=1" >> "$GITHUB_OUTPUT"
-            echo "::warning title=GGUF entrega::a rodada verde ${run} é de ${sha::7}, não de ${GITHUB_SHA::7}; nada sera publicado (rode o fluxo de novo depois do verde deste commit)"
+            echo "::warning title=GGUF entrega::a rodada verde ${run} é de ${sha::7} e a diferença até ${GITHUB_SHA::7} mexe no aplicativo (${mudanca_apk:-recibo ausente}); nada sera publicado (rode o fluxo de novo depois do verde deste commit)"
             exit 0
           fi
           echo "run=$run" >> "$GITHUB_OUTPUT"
