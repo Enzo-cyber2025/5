@@ -211,7 +211,7 @@ modelo ao testar "Excluir modelo".
 | abas | Chat, Importar, AI Modelos e Ajustes mostram conteúdo próprio |
 | importar | entrada única "Importar GGUF" que abre o seletor real; a tela antiga (dois arquivos) continua alcançável e redireciona para ela; a tela explica o caminho do projetor |
 | ajustes | os oito campos; valor inválido recusado; valor válido salvo e persistido nas preferências |
-| modelo | listado pelo nome real; descarregar da memória pela tela de **Ajustes** ("Descarregar modelo da memória") com prova de **estado**: "Backend atual" traz o backend do motor vivo e passa a "—" depois de descarregar (é o que `EngineManager.backend()` devolve sem motor), sem reiniciar o processo para não matar o motor; a geração seguinte prova a recarga |
+| modelo | listado pelo nome real; descarregar da memória pela tela de **Ajustes** ("Descarregar modelo da memória"); a prova é a mensagem do próprio aplicativo ("Modelo descarregado.", capturada enquanto está na tela) e a **recarga real** na geração seguinte. `Backend atual` fica como observação, nunca como critério: medido, ele mostra "—" também com a conversa recém-usada, porque o motor da conversa não fica vivo entre telas |
 | conversa | criação com escolha de modelo, envio e resposta persistida |
 | parar | interrompe no meio (bem antes do limite de tokens) e mantém a resposta parcial |
 | raciocínio | rótulo, `chat.thinking=true`, prompt de sistema aplicado, painel próprio, e o bloco não vaza para o texto |
@@ -226,6 +226,13 @@ modelo ao testar "Excluir modelo".
 | excluir conversa | diálogo confirmado e conversa fora do armazenamento |
 | excluir modelo | botão "Excluir" da linha do modelo (pelo **nome**, que é o que a lista mostra) na tela de **importação**, diálogo "Excluir modelo" confirmado e arquivo fora do armazenamento (SKIP declarado só depois de procurar na tela, com os rótulos visíveis no motivo) |
 | sem modelo | sem modelo importado, criar conversa avisa em vez de falhar em silêncio |
+
+O envio é conferido, não presumido: o campo de texto é lido de volta depois de
+digitar (e o texto é redigitado se preciso), o botão Enviar é tocado até o aplicativo
+persistir o prompt, e o que ficou no campo vai para a evidência
+(`<etapa>-composer.txt`). Foi assim que a medição do sub-lote parou de cair sem
+explicação: em 36247594609 o prompt nunca chegou ao campo e a rodada inteira morreu
+como "Timeout: prompt enviado".
 
 Toda falha e todo SKIP gravam também `functions-<nome>-ui.xml` (a árvore de views do
 momento): é o que permite dizer se o defeito é do aplicativo ou do teste — foi assim

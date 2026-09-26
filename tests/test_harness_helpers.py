@@ -36,6 +36,99 @@ def perf_entry(tokens_s, ui_first, first_token, prompt=800, reused=40, prefill_n
                         'prefill_ms_per_token': round(prefill_ns / 1e6 / (prompt - reused), 3)}}
 
 
+Android = harness.Android
+
+
+class SubmitDevice:
+    """Aparelho de mentira para exercitar o envio: o campo e o botão como eu quiser."""
+
+    def __init__(self, field_text, persist_after=1):
+        self.field = field_text
+        self.persist_after = persist_after
+        self.taps = 0
+        self.actions = []
+
+    def send(self, prompt, clear_log=True, typed_pause=0.0):
+        self.actions.append(('send', prompt, clear_log))
+
+    def composer_text(self):
+        return self.field
+
+    def clear_composer(self, size):
+        self.actions.append(('clear', size))
+        self.field = ''
+
+    def tap(self, **selector):
+        self.actions.append(('tap', selector))
+        if selector.get('text') == 'Enviar':
+            self.taps += 1
+        return True
+
+    def ui(self):
+        # Tela mínima para a mensagem de erro do submit listar os rótulos visíveis.
+        return ('<hierarchy><node package="com.ggufchat.app" class="android.widget.EditText" '
+                'text="" enabled="true" bounds="[0,0][10,10]" />'
+                '<node package="com.ggufchat.app" class="android.widget.Button" text="Enviar" '
+                'enabled="true" bounds="[0,0][10,10]" /></hierarchy>')
+
+    def wait(self, condition, what, timeout=20):
+        result = condition()
+        if not result:
+            raise AssertionError(f'Timeout: {what}')
+        return result
+
+    def read_json(self, name):
+        if self.taps >= self.persist_after:
+            return [{'id': 'chat-1', 'messages': [{'role': 'user', 'content': self.prompt}]}]
+        return [{'id': 'chat-1', 'messages': []}]
+
+
+def test_submit_insists_until_the_app_persists_the_prompt(tmp_path):
+    """O botão Enviar pode estar desabilitado no primeiro toque (app carregando).
+
+    Rodada 36247594609: o prompt nunca foi persistido e a rodada inteira caiu com
+    'Timeout: prompt enviado'. Agora o toque é repetido até o app persistir.
+    """
+    device = SubmitDevice('Reply in English: ok', persist_after=2)
+    device.prompt = 'Reply in English: ok'
+    device.evidence = tmp_path
+    device.last_chat = {'id': 'chat-1'}
+    Android.submit(device, device.prompt, label='stage')
+    assert device.taps == 2
+    assert (tmp_path / 'stage-composer.txt').read_text().startswith('campo conferido')
+
+
+def test_submit_retypes_when_the_field_did_not_receive_the_text(tmp_path):
+    device = SubmitDevice('texto errado no campo', persist_after=1)
+    device.prompt = 'o prompt correto'
+    device.evidence = tmp_path
+    device.last_chat = {'id': 'chat-1'}
+
+    def composer_text():
+        return device.field
+    # O campo devolve o texto errado na primeira leitura e o certo depois de limpar.
+    state = {'n': 0}
+
+    def fake_composer():
+        state['n'] += 1
+        return device.field if state['n'] == 1 else device.prompt
+    device.composer_text = fake_composer
+    Android.submit(device, device.prompt, label='stage')
+    assert ('clear', len('texto errado no campo')) in device.actions
+    assert (tmp_path / 'stage-composer.txt').read_text().startswith('campo conferido')
+
+
+def test_submit_fails_with_the_field_and_the_visible_labels(tmp_path):
+    device = SubmitDevice('', persist_after=99)
+    device.prompt = 'nunca persiste'
+    device.evidence = tmp_path
+    device.last_chat = {'id': 'chat-1'}
+    with pytest.raises(AssertionError) as error:
+        Android.submit(device, device.prompt, label='stage')
+    assert 'três toques' in str(error.value)
+    assert device.taps == 3
+
+
 def test_prefill_experiment_uses_its_own_metric_and_stays_out_of_the_throughput_race():
     perf = {'vulkan': perf_entry(1.0, 20.0, 18.0),
             'cpu-threads-auto': perf_entry(9.0, 0.4, 0.3),

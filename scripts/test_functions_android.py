@@ -107,6 +107,21 @@ def wait_screen(device, label, timeout=20, contains=True):
     return device.wait(lambda: on_screen(device, label, contains), f'"{label}" na tela', timeout=timeout)
 
 
+def wait_toast(device, text, timeout=8):
+    """A mensagem do próprio aplicativo (toast), capturada enquanto está na tela.
+
+    Um toast vive poucos segundos e não passa pelo logcat: a leitura precisa ser
+    repetida enquanto ele existe, em vez de uma leitura única.
+    """
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        for label in visible_labels(device, 40):
+            if text in label:
+                return label
+        time.sleep(0.4)
+    return None
+
+
 def backend_text(device):
     """O valor de "Backend atual: ..." na tela de Ajustes ("—" sem motor carregado)."""
     for label in visible_labels(device, 40):
@@ -501,10 +516,13 @@ def main():
         # Onde está o controle: a tabela de strings do APK original mostra
         # "Descarregar modelo da memória" em SettingsActivity.onCreate — a tela de
         # Ajustes, não a de modelos. A varredura anterior procurava na tela errada.
-        # E a prova não é a mensagem "Modelo descarregado." (que é um toast e pode
-        # passar entre duas leituras): é o que a própria tela diz em "Backend atual:",
-        # que vem de EngineManager.backend() — o nome do backend só existe enquanto
-        # há motor vivo, e "—" é o que o código devolve quando não há.
+        #
+        # O que prova o descarregamento: a mensagem do próprio aplicativo ("Modelo
+        # descarregado.") capturada enquanto está na tela, e a recarga real na
+        # geração seguinte. O que NÃO prova: "Backend atual" — medido nesta rodada,
+        # ele mostra "—" também com a conversa recém-usada, porque o motor da
+        # conversa não fica vivo entre telas (rodada 36247594609). O valor é
+        # registrado como observação, nunca como critério.
         device.generate(model, 0, 'functions-unload-pre', prompt='Reply in English: say ok')
         device.launch()
         if not tap_label(device, 'Ajustes', optional=True):
@@ -513,30 +531,21 @@ def main():
             raise SkipCheck('controle de descarregar ausente mesmo rolando os ajustes; '
                             'rótulos visíveis: ' + ', '.join(visible_labels(device, 20)))
         scroll_to(device, 'Backend atual')
-        carregado = backend_text(device)
-        if carregado in (None, '—'):
-            raise AssertionError('logo depois de gerar, a tela de Ajustes diz que não há '
-                                 f'modelo carregado ("Backend atual: {carregado}")')
+        antes = backend_text(device)
         tap_label(device, 'Descarregar modelo da memória')
-        # Sem reiniciar o processo: volta e reabre a tela de Ajustes, que lê o estado
-        # de novo ao ser criada. Reiniciar o aplicativo mataria o motor de qualquer
-        # forma e não provaria nada sobre o botão.
-        device.shell('input keyevent KEYCODE_BACK')
-        device.wait(lambda: has_package(device.ui(), {PACKAGE}), 'volta ao aplicativo', timeout=20)
-        if not tap_label(device, 'Ajustes', optional=True):
-            raise AssertionError('não foi possível reabrir a tela de Ajustes')
-        scroll_to(device, 'Backend atual')
-        descarregado = backend_text(device)
-        if descarregado != '—':
-            raise AssertionError(f'depois de descarregar, o motor continua vivo '
-                                 f'("Backend atual: {descarregado}")')
+        aviso = wait_toast(device, 'Modelo descarregado')
+        if not aviso:
+            raise AssertionError('o aplicativo não confirmou o descarregamento na tela '
+                                 f'("Modelo descarregado."); Backend atual antes={antes!r}; '
+                                 'visíveis: ' + ', '.join(visible_labels(device, 20)))
         device.alive()
         # Recarga real, não presumida: a geração seguinte só responde se o modelo voltou.
         device.generate(model, 0, 'functions-unload', prompt='Reply in English: say ok')
         if not (args.evidence / 'functions-unload-reply.txt').read_text().strip():
             raise AssertionError('sem resposta depois de descarregar: o modelo não voltou')
-        return (f'carregado mostra "{carregado}", descarregar devolve "—" (EngineManager sem '
-                'motor) e a geração seguinte recarrega de verdade')
+        return (f'botão na tela de Ajustes; o aplicativo confirmou ("{aviso}") e a geração '
+                f'seguinte recarregou de verdade (Backend atual: {antes!r} antes do toque — '
+                'o motor da conversa não fica vivo entre telas, então este valor é observação)')
 
     def nova_conversa():
         device.generate(model, 0, 'functions-chat', prompt='Reply in English: one word, hello')

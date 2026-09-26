@@ -242,8 +242,11 @@ def test_prefill_ubatch_is_tunable_and_logged():
     assert 'long_prompt' in harness  # mesmo texto nas duas etapas: só o sub-lote muda
     # Digitar também é parte do envio: o prazo e o tamanho do prompt têm de ser
     # declarados, senão um prompt longo reprova o app por lentidão do teclado.
-    assert 'submit_timeout=180' in harness and 'def generate(' in harness
-    assert 'submit_timeout=30):' in harness  # o padrão não mudou para as outras etapas
+    # O envio confere o campo e insiste no botão: o prompt não pode "sumir" sem
+    # explicação (rodada 36247594609), e o que ficou no campo vai para a evidência.
+    assert 'def submit(self, prompt' in harness
+    assert 'composer_text()' in harness and '-composer.txt' in harness
+    assert "self.submit(prompt, typed_pause=typed_pause, label=stage)" in harness
     checks = (ROOT / 'scripts/android_checks.py').read_text()
     assert 'GGUF_CONTEXT_TUNING' in checks
 

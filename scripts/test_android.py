@@ -477,9 +477,63 @@ class Android:
             self.shell("input text " + shlex.quote(" " + " ".join(words[half:]).replace(" ", "%s")))
         self.tap(text="Enviar", package={PACKAGE}, contains=True)
 
+    def composer_text(self):
+        """O que está no campo de texto agora (para conferir o que foi digitado)."""
+        for node in ET.fromstring(self.ui()).iter("node"):
+            if node.get("package") == PACKAGE and node.get("class") == "android.widget.EditText":
+                return node.get("text", "")
+        return None
+
+    def clear_composer(self, size):
+        """Apaga o campo: fim da linha e um DEL por caractere, numa chamada só."""
+        self.shell("input keyevent KEYCODE_MOVE_END")
+        self.shell("input keyevent " + " ".join(["KEYCODE_DEL"] * (min(int(size), 900) + 5)))
+
+    def submit(self, prompt, typed_pause=0.0, label=None, clear_log=False):
+        """Envia conferindo o efeito, e insiste enquanto o aplicativo não persistir.
+
+        O envio é parte do que está sendo medido: quando o texto não entra no campo
+        (ou o botão Enviar está desabilitado porque o modelo ainda carrega), o prompt
+        não é persistido e a falha aparecia só como "Timeout: prompt enviado"
+        (rodada 36247594609). Aqui o campo é lido de volta, o texto é redigitado se
+        preciso, e o botão é tocado até o aplicativo persistir o prompt — como um
+        usuário faria. O que ficou no campo vai para a evidência `<etapa>-composer.txt`.
+        """
+        evidence = (self.evidence / f"{label}-composer.txt") if label else None
+        typed = None
+        for attempt in (1, 2):
+            self.send(prompt, clear_log=clear_log and attempt == 1, typed_pause=typed_pause)
+            typed = self.composer_text()
+            if typed == prompt:
+                break
+            self.tap(class_name="android.widget.EditText", package={PACKAGE})
+            self.clear_composer(len(typed or ""))
+        if evidence is not None:
+            evidence.write_text(("campo conferido: igual ao prompt\n" if typed == prompt else
+                                 "o campo não recebeu o texto exato\n")
+                                + f"no campo: {typed!r}\nesperado: {prompt!r}\n")
+
+        def persisted():
+            chats = self.read_json("chats.json")
+            current = next(c for c in chats if c["id"] == self.last_chat["id"])
+            return any(m.get("role") == "user" and m.get("content") == prompt
+                       for m in current.get("messages", []))
+
+        for attempt in (1, 2, 3):
+            self.tap(text="Enviar", package={PACKAGE}, contains=True)
+            try:
+                self.wait(persisted, "prompt enviado e persistido pelo aplicativo", timeout=20)
+                return
+            except AssertionError:
+                if attempt == 3:
+                    labels = [node.get("text") for node in ET.fromstring(self.ui()).iter("node")
+                              if node.get("package") == PACKAGE and node.get("text")]
+                    raise AssertionError(
+                        "o aplicativo não persistiu o prompt depois de três toques em Enviar; "
+                        f"no campo agora: {self.composer_text()!r}; visíveis: {labels[:12]}")
+
     def generate(self, model, gpu_layers, stage, prompt="Reply in English with a short greeting.",
-                 threads=2, record=True, typed_pause=0.0, await_load=False, settle=0.0, search=False,
-                 submit_timeout=30):
+                 threads=2, record=True, typed_pause=0.0, await_load=False, settle=0.0, search=False):
         # Keep model-loading/offload evidence: clearing at send loses the backend
         # selected by the preload worker. A new chat restarts the app; filter its PID.
         self.adb("logcat", "-c")
@@ -491,17 +545,12 @@ class Android:
                 self.wait_for_warmup()
             if settle:
                 time.sleep(settle)
-        self.send(prompt, clear_log=False, typed_pause=typed_pause)
-        def submitted():
-            chats = self.read_json("chats.json")
-            (self.evidence / f"{stage}-chats.json").write_text(json.dumps(chats, ensure_ascii=False))
-            current = next(c for c in chats if c["id"] == chat["id"])
-            return any(m.get("role") == "user" and m.get("content") == prompt
-                       for m in current.get("messages", []))
-        # Digitar é parte do envio: um prompt longo entra caractere a caractere pelo
-        # `input text`, e 30 s fixos reprovavam o aplicativo por lentidão do teclado
-        # do emulador (rodada 36245048939).
-        self.wait(submitted, "prompt enviado e persistido pelo aplicativo", timeout=submit_timeout)
+        # submit() confere o campo, redigita se preciso e insiste no botão Enviar
+        # (um prompt longo pode chegar enquanto o aplicativo ainda carrega/aquece).
+        # A conversa da etapa já ficou em `self.last_chat` dentro do new_chat().
+        self.submit(prompt, typed_pause=typed_pause, label=stage)
+        chats = self.read_json("chats.json")
+        (self.evidence / f"{stage}-chats.json").write_text(json.dumps(chats, ensure_ascii=False))
 
         def completed():
             if getattr(self,'progress_observer',None):self.progress_observer.poll()
@@ -1031,8 +1080,7 @@ def main():
             try:
                 for stage, ubatch in (("prefill-ubatch-128", 128), ("prefill-ubatch-256", 256)):
                     device.shell(f"setprop debug.gguf.prefill_ubatch {ubatch}")
-                    device.generate(model, 0, stage, prompt=long_prompt, await_load=True,
-                                    submit_timeout=180)
+                    device.generate(model, 0, stage, prompt=long_prompt, await_load=True)
             finally:
                 device.shell("setprop debug.gguf.prefill_ubatch 0")
                 device.shell("setprop debug.gguf.disable_warmup 0")
