@@ -182,14 +182,47 @@ def scroll_to(device, label, tries=5, contains=True):
     return visible()
 
 
+def tools_button(device, label):
+    """Ponto de toque de um botão da linha de ferramentas, se ele estiver inteiro na tela.
+
+    A linha rola para o lado: "Áudio" aparece cortado na borda, "Arquivo" e
+    "Ferramentas" ficam fora. Um botão cortado tem centro fora da tela e o toque
+    cai no vazio (foi assim que "Arquivo" não foi encontrado na rodada
+    36245048939: a linha terminava em "Áudio"). Só devolve o ponto quando o
+    centro está dentro dos limites do emulador (720x1280 configurado pelo app).
+    """
+    for node in ET.fromstring(device.ui()).iter('node'):
+        if node.get('package') not in PACKAGE or node.get('class') != 'android.widget.Button':
+            continue
+        if (node.get('text') or '') != label or node.get('enabled') != 'true':
+            continue
+        match = re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', node.get('bounds', ''))
+        if not match:
+            continue
+        x1, y1, x2, y2 = map(int, match.groups())
+        x, y = (x1 + x2) // 2, (y1 + y2) // 2
+        if 10 <= x <= 1070 and y2 > y1 and x2 > x1:
+            return x, y
+    return None
+
+
+def scroll_tools_to(device, label, tries=5):
+    """Traz o botão para dentro da linha rolável de ferramentas, nos dois sentidos."""
+    if tools_button(device, label):
+        return tools_button(device, label)
+    for step in ('input touchscreen swipe 950 2028 200 2028 300',
+                 'input touchscreen swipe 200 2028 950 2028 300'):
+        for _ in range(tries):
+            device.shell(step)
+            time.sleep(0.6)
+            if tools_button(device, label):
+                return tools_button(device, label)
+    return None
+
+
 def scroll_tools_row(device):
-    """Rola a linha de ferramentas para o lado: 'Ferramentas' fica fora da tela."""
-    for _ in range(4):
-        if on_screen(device, 'Ferramentas', contains=False):
-            return True
-        device.shell('input touchscreen swipe 900 2028 300 2028 300')
-        time.sleep(0.6)
-    return bool(on_screen(device, 'Ferramentas', contains=False))
+    """Compatibilidade: traz o botão "Ferramentas" (último da linha) para a tela."""
+    return scroll_tools_to(device, 'Ferramentas') is not None
 
 
 def tap_exact(device, label, optional=False):
@@ -269,9 +302,13 @@ def picker_then_back(device, label):
     estiver na frente, e a prova de vida é o MESMO processo (PID), porque voltar
     na tela pode ser uma reinicialização disfarçada.
     """
-    if not tap_exact(device, label, optional=True):
-        raise AssertionError(f'botão {label} não encontrado na tela; '
-                             f'visíveis: {visible_labels(device)}')
+    ponto = tools_button(device, label) or (scroll_tools_row(device) if label == 'Ferramentas'
+                                            else scroll_tools_to(device, label))
+    if ponto and 10 <= ponto[0] <= 1070:
+        device.shell(f'input tap {ponto[0]} {ponto[1]}')
+    elif not tap_exact(device, label, optional=True):
+        raise AssertionError(f'botão {label} não encontrado na tela, nem rolando a linha de '
+                             f'ferramentas; visíveis: {visible_labels(device)}')
     pid = device.alive()
     opened = None
     deadline = time.monotonic() + 25
@@ -475,6 +512,7 @@ def main():
         if not scroll_to(device, 'Descarregar modelo da memória'):
             raise SkipCheck('controle de descarregar ausente mesmo rolando os ajustes; '
                             'rótulos visíveis: ' + ', '.join(visible_labels(device, 20)))
+        scroll_to(device, 'Backend atual')
         carregado = backend_text(device)
         if carregado in (None, '—'):
             raise AssertionError('logo depois de gerar, a tela de Ajustes diz que não há '
@@ -514,7 +552,10 @@ def main():
         chat = device.new_chat(model, 0, threads=2)
         device.wait_for_load()
         device.send('Write a long numbered list in English, at least fifty items.')
-        device.wait(lambda: on_screen(device, 'Parar'), 'botão Parar durante a geração', timeout=30)
+        # 120 s: se o motor acabou de ser descarregado (ou é a primeira geração da
+        # varredura), a carga do modelo entra nesta espera. Cronometrar 30 s aqui
+        # media o emulador, não o aplicativo (rodada 36245048939).
+        device.wait(lambda: on_screen(device, 'Parar'), 'botão Parar durante a geração', timeout=120)
         time.sleep(2)
         tap_label(device, 'Parar')
 
@@ -617,9 +658,10 @@ def main():
         if not device.tools_open():
             raise AssertionError('gaveta de ferramentas não abriu; visíveis: '
                                  + ', '.join(visible_labels(device, 20)))
-        faltando = [b for b in ('Foto', 'Vídeo', 'Áudio', 'Arquivo') if not on_screen(device, b)]
+        faltando = [b for b in ('Foto', 'Vídeo', 'Áudio', 'Arquivo')
+                    if not (on_screen(device, b) and scroll_tools_to(device, b))]
         if faltando:
-            raise AssertionError(f'botões ausentes na gaveta: {faltando}')
+            raise AssertionError(f'botões ausentes (ou fora de alcance) na gaveta: {faltando}')
         # 'Ferramentas' é o último botão da linha: fica fora da tela até rolar para
         # o lado (a linha é um HorizontalScrollView). Rolar é o que o usuário faz.
         if not scroll_tools_row(device):
@@ -641,15 +683,15 @@ def main():
             raise AssertionError('gaveta de ferramentas não abriu; visíveis: '
                                  + ', '.join(visible_labels(device, 20)))
         provas = []
-        # Foto: sem par visão/mmproj o próprio aplicativo não abre nada (o smali
-        # manda voltar quando não é multimodal), então o exigível aqui é que o
-        # toque não derrube o processo — e o motivo fica declarado. Com o par, o
-        # caminho é o diálogo "Fotos" → "Importar foto".
-        foto = 'PASS: botão Foto responde sem derrubar o processo' if not args.mmproj else None
+        # Vídeo/Áudio/Arquivo vão para o seletor do sistema (ACTION_OPEN_DOCUMENT).
         for label in ('Vídeo', 'Áudio', 'Arquivo'):
             device.tools_open()
             provas.append(picker_then_back(device, label))
-        if foto is None:
+        # Foto: sem par visão/mmproj o aplicativo não abre nada — o próprio código
+        # (Attachments.cameraMenu/pick) volta quando não é multimodal —, então o
+        # exigível é que o toque não derrube o processo; com o par, o caminho é o
+        # diálogo "Fotos" → "Importar foto" → seletor de imagens.
+        if args.mmproj:
             device.tools_open()
             if not tap_exact(device, 'Foto', optional=True):
                 raise AssertionError('botão Foto não encontrado na linha de ferramentas')
@@ -657,13 +699,26 @@ def main():
             tap_exact(device, 'Importar foto')
             device.wait(lambda: has_package(device.ui(), PICKERS) or other_window(device),
                         'seletor de imagens', timeout=25)
-        device.tools_open()
-        if not tap_exact(device, 'Foto', optional=True):
-            raise AssertionError('botão Foto não encontrado na linha de ferramentas')
-        device.alive()
-        detalhe = ('Foto: sem par visão/mmproj o aplicativo não abre seletor (volta sem erro), '
-                   'como declara o próprio código' if foto else
-                   'Foto: diálogo "Fotos" e seletor de imagens abriram')
+            # Volta ao aplicativo e confere que foi o mesmo processo (nada de crash).
+            pid = device.alive()
+            deadline = time.monotonic() + 25
+            while time.monotonic() < deadline and not has_package(device.ui(), {PACKAGE}):
+                device.shell('input keyevent KEYCODE_BACK')
+                time.sleep(1)
+            if not has_package(device.ui(), {PACKAGE}):
+                device.shell(f'am start -W -n {PACKAGE}/.MainActivity')
+                device.wait(lambda: has_package(device.ui(), {PACKAGE}), 'volta do seletor de imagens',
+                            timeout=25)
+            if device.alive() != pid:
+                raise AssertionError('o processo mudou ao abrir o seletor de imagens')
+            detalhe = 'Foto: diálogo "Fotos", "Importar foto" e seletor de imagens, mesmo processo'
+        else:
+            device.tools_open()
+            if not tap_exact(device, 'Foto', optional=True):
+                raise AssertionError('botão Foto não encontrado na linha de ferramentas')
+            device.alive()
+            detalhe = ('Foto: sem par visão/mmproj o aplicativo não abre seletor (volta sem erro), '
+                       'como declara o próprio código')
         return ('Vídeo, Áudio e Arquivo abriram o seletor do sistema e o aplicativo voltou no '
                 f'mesmo processo; {detalhe}')
 
@@ -729,7 +784,7 @@ def main():
         device.new_chat(model, 0, threads=2)
         device.wait_for_load()
         device.send('Write a long numbered list in English, at least fifty items.')
-        device.wait(lambda: on_screen(device, 'Parar'), 'geração em andamento', timeout=30)
+        device.wait(lambda: on_screen(device, 'Parar'), 'geração em andamento', timeout=120)
         device.shell('input keyevent KEYCODE_HOME')
         device.shell('input keyevent KEYCODE_POWER')  # tela apaga: canal de resposta pronta
         try:

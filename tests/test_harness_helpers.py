@@ -118,6 +118,51 @@ def test_scroll_to_swipes_and_finds_the_label_below_the_fold():
     assert any('swipe' in action for action in device.actions)
 
 
+def tools_screen(labels, package='com.ggufchat.app', x_start=44, width=150):
+    """Tela com a linha de ferramentas: cada botão deslocado para a direita."""
+    nodes = []
+    x = x_start
+    for label in labels:
+        nodes.append(f'<node package="{package}" class="android.widget.Button" text="{label}" '
+                     f'content-desc="" enabled="true" bounds="[{x},1979][{x + width},2078]" />')
+        x += width + 10
+    return f'<hierarchy>{"".join(nodes)}</hierarchy>'
+
+
+def test_tools_button_refuses_a_button_whose_centre_is_off_screen():
+    """Rodada 36245048939: a linha terminava em "Áudio" cortado e "Arquivo" não existia
+    como alvo de toque — o centro ficava fora da tela."""
+    sweep = load('sweep_under_test', 'scripts/test_functions_android.py')
+    # "Áudio" termina em 1036 (cortado) e "Arquivo" começa depois de 1080.
+    device = FakeDevice([tools_screen(['Foto', 'Vídeo', 'Áudio', 'Arquivo', 'Ferramentas'],
+                                      x_start=955)],)
+    assert sweep.tools_button(device, 'Arquivo') is None
+    assert sweep.tools_button(device, 'Áudio') is None
+
+
+def test_scroll_tools_to_brings_the_last_button_into_reach():
+    sweep = load('sweep_under_test', 'scripts/test_functions_android.py')
+    # A cada rolagem a linha anda 200 px para a esquerda (o conteúdo é revelado).
+    telas = [tools_screen(['Sistema', 'Thinking', 'Busca ON', 'Foto', 'Vídeo', 'Áudio',
+                           'Arquivo', 'Ferramentas'], x_start=44),
+             tools_screen(['Sistema', 'Thinking', 'Busca ON', 'Foto', 'Vídeo', 'Áudio',
+                           'Arquivo', 'Ferramentas'], x_start=-160),
+             tools_screen(['Sistema', 'Thinking', 'Busca ON', 'Foto', 'Vídeo', 'Áudio',
+                           'Arquivo', 'Ferramentas'], x_start=-520),
+             tools_screen(['Sistema', 'Thinking', 'Busca ON', 'Foto', 'Vídeo', 'Áudio',
+                           'Arquivo', 'Ferramentas'], x_start=-520)]
+    device = FakeDevice(telas)
+    ponto = sweep.scroll_tools_to(device, 'Ferramentas')
+    assert ponto is not None and ponto[0] <= 1070
+    assert any('swipe' in action for action in device.actions)
+
+
+def test_scroll_tools_to_says_nothing_when_the_button_is_nowhere():
+    sweep = load('sweep_under_test', 'scripts/test_functions_android.py')
+    device = FakeDevice([tools_screen(['Foto', 'Vídeo'], x_start=44)] * 12)
+    assert sweep.scroll_tools_to(device, 'Ferramentas') is None
+
+
 def test_scroll_to_finds_what_is_above_the_current_position():
     """A rodada 36238272473 ficou no fim da lista e procurava só para baixo."""
     sweep = load('sweep_under_test', 'scripts/test_functions_android.py')
