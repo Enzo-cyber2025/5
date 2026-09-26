@@ -166,6 +166,9 @@ jobs:
           bash ci/log_step.sh local-gates bash -c '
             .venv/bin/python scripts/check_native_syntax.py &&
             .venv/bin/python scripts/check_java_compile.py &&
+            (undef=$(.venv/bin/python -m pyflakes scripts tests apk-fix |
+              grep -E "undefined name|undefined local" || true);
+              if [ -n "$undef" ]; then printf "%s\n" "$undef"; exit 1; fi) &&
             .venv/bin/python -m pytest tests/ -q -p no:cacheprovider'
           status=$?
           # O texto vai para a evidência publicada antes de reprovar o passo: uma

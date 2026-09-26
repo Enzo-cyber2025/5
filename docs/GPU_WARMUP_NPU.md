@@ -209,21 +209,21 @@ modelo ao testar "Excluir modelo".
 | --- | --- |
 | estado vazio | primeira execução orienta o usuário ("+ Nova conversa") |
 | abas | Chat, Importar, AI Modelos e Ajustes mostram conteúdo próprio |
-| importar | caminho unitário **e** o par texto+mmproj oferecidos |
+| importar | entrada única "Importar GGUF" que abre o seletor real; a tela antiga (dois arquivos) continua alcançável e redireciona para ela; a tela explica o caminho do projetor |
 | ajustes | os oito campos; valor inválido recusado; valor válido salvo e persistido nas preferências |
-| modelo | listado pelo nome real; descarregar da memória **e voltar a gerar** |
+| modelo | listado pelo nome real; descarregar da memória (procurado **depois** de carregar o modelo) **e voltar a gerar** |
 | conversa | criação com escolha de modelo, envio e resposta persistida |
 | parar | interrompe no meio (bem antes do limite de tokens) e mantém a resposta parcial |
 | raciocínio | rótulo, `chat.thinking=true`, prompt de sistema aplicado, painel próprio, e o bloco não vaza para o texto |
 | busca | botão liga; fontes obtidas **e persistidas na mensagem**; teto respeitado |
-| gaveta | os cinco controles (Foto, Vídeo, Áudio, Arquivo, Ferramentas) |
-| seletores | os quatro abrem e o aplicativo volta vivo |
+| gaveta | os quatro anexos (Foto, Vídeo, Áudio, Arquivo) dentro da linha "Ferramentas da conversa", junto de Sistema, Thinking e Busca |
+| seletores | os quatro abrem e o aplicativo volta **no mesmo processo** (PID), com a tarefa trazida de volta sem reiniciar |
 | anexo de texto | arquivo escolhido no seletor real, conteúdo preparado para o modelo e anexo preservado na mensagem |
 | visão | SKIP sem par visão/mmproj — nunca aprovada por omissão |
 | notificação | com a tela apagada, o canal "Respostas prontas" aparece no `dumpsys` |
 | histórico | conversa reabre com o conteúdo salvo depois de fechar o aplicativo |
 | excluir conversa | diálogo confirmado e conversa fora do armazenamento |
-| excluir modelo | modelo fora do armazenamento (SKIP declarado se a versão não oferecer o controle) |
+| excluir modelo | controle da linha, confirmação "EXCLUIR" e modelo fora do armazenamento (SKIP declarado só depois de procurar na tela, com os rótulos visíveis no motivo) |
 | sem modelo | sem modelo importado, criar conversa avisa em vez de falhar em silêncio |
 
 Toda falha e todo SKIP gravam também `functions-<nome>-ui.xml` (a árvore de views do
@@ -231,13 +231,42 @@ momento): é o que permite dizer se o defeito é do aplicativo ou do teste — f
 que as seis falhas da primeira varredura foram identificadas como do teste, com a
 captura de tela mostrando exatamente o que estava na frente do usuário.
 
+### 4.3 O bloco de fontes da busca encolheu, e o pré-preenchimento passou a ser medido
+
+O teto de tempo resolveu a espera *da busca*; sobrou a espera *do modelo* para ler
+o que a busca trouxe. Medido na rodada 36165179296: a pergunta de uma linha com
+busca ligada virava um prompt de **829 tokens** e custava **20,25 s até o primeiro
+texto** (pré-preenchimento a ~40 tokens/s no emulador, 45 tokens aproveitados do
+aquecimento). Quem pagava não era a resposta: era o texto das fontes.
+
+O corte agora é declarado, não silencioso: até **3 fontes**, trecho de 140
+caracteres, URL de 100, bloco inteiro limitado a **1400 caracteres**, e o que fica
+fora é dito no próprio bloco ("(N fonte(s) a mais no painel)") e medido no log
+(`GGUF_SEARCH_PROMPT_SIZE chars= cap=`). O painel da busca continua guardando
+todas as fontes: o corte é do que entra no prompt, não do que o usuário vê.
+
+A segunda frente é o pré-preenchimento em si. O sub-lote (`n_ubatch`) decide
+quantos tokens o backend processa por submissão, e o padrão deste binário
+(128 com contexto ≥ 1024) nunca havia sido comparado. Agora:
+
+* o valor usado é propriedade de depuração (`debug.gguf.prefill_ubatch`, 32–1024)
+  e aparece no log (`GGUF_CONTEXT_TUNING batch= ubatch= threads= …`) — um ajuste
+  medido sem registro do que foi usado não vale nada;
+* a rodada mede **o mesmo texto, com o aquecimento desligado**, em 128 e 256, com
+  a conta honesta `prefill_ns / (prompt_tokens - reused_tokens)` — dividir pelo
+  tamanho do prompt mentiria quando o prefixo vem do aquecimento;
+* a comparação sai em `performance.json` → `prefill_experiment`, fora da conta de
+  ganho/regressão de decodificação (ela mede pré-preenchimento, não T/s de
+  resposta). **O padrão do aplicativo não muda sem ganho medido.**
+
 ## 5. O que roda em cada gate
 
 | Gate | O que verifica |
 | --- | --- |
-| `pytest tests/` | 437 testes locais (o CI roda a mesma suíte), incluindo política de NPU e prefixo compilada com g++ |
+| `pytest tests/` | 448 testes locais (o CI roda a mesma suíte), incluindo política de NPU e prefixo compilada com g++ |
 | `scripts/check_native_syntax.py` | `g++ -fsyntax-only` no nativo, com as declarações que os patches adicionam |
 | `scripts/check_java_compile.py` | `javac --release 8` nos ajudantes, onde existe javac (o CI tem) |
 | `scripts/check_java_api.py` | nomes de API chamados contra `android.jar` e o smali do APK base |
 | `scripts/check_performance.py` | lê o `performance.json` medido: reprova regressão > 5% e exige as metas quando o aparelho permite |
 | `.github/workflows/text-ui.yml` | emulador real: texto, anexos destacados, geração nativa e as etapas de medição; depois suíte, sintaxe nativa e javac antes de publicar a evidência |
+| `.github/emulator-text-ui.sh` (pré-verificação) | espera `sys.boot_completed`, mantém a tela acesa e fecha o que estiver na frente antes da primeira fase: a rodada 36188984196 perdeu as cinco fases com um launcher travado no emulador, sem defeito nenhum no aplicativo |

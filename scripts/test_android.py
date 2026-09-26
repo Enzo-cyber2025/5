@@ -9,6 +9,7 @@ import argparse
 import hashlib
 import os
 import json
+import re
 from pathlib import Path
 import shlex
 import subprocess

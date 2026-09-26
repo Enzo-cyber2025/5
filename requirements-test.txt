@@ -3,6 +3,9 @@ jdk4py==25.0.2.1
 jpype1==1.7.1
 javalang==0.13.0
 pytest==9.1.1
+# Nomes indefinidos no harness reprovam aqui, no host: a rodada 36192982173 gastou
+# trinta minutos de emulador por um `re` que não havia sido importado.
+pyflakes==4.0.0
 patchelf==0.17.2.4
 # Execute both original JNI ISAs with explicit external-call test doubles.
 unicorn==2.1.4

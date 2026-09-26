@@ -210,25 +210,44 @@ def other_window(device):
 
 
 def picker_then_back(device, label):
-    """Abre o seletor do botão indicado e volta: o seletor abre, o app continua vivo."""
+    """Abre o seletor do botão indicado e volta ao aplicativo de verdade.
+
+    Na rodada 36192982173 dois BACKs fixos deixaram o launcher na frente e a
+    espera pela volta do aplicativo expirou — o aplicativo não tinha defeito, o
+    teste é que saía da pilha errada. Agora: BACK só enquanto o aplicativo não
+    estiver na frente, e a prova de vida é o MESMO processo (PID), porque voltar
+    na tela pode ser uma reinicialização disfarçada.
+    """
     if not tap_exact(device, label, optional=True):
-        raise AssertionError(f'botão {label} não encontrado na gaveta')
-    appeared = False
+        raise AssertionError(f'botão {label} não encontrado na tela; '
+                             f'visíveis: {visible_labels(device)}')
+    pid = device.alive()
+    opened = None
     deadline = time.monotonic() + 25
     while time.monotonic() < deadline:
         xml = device.ui()
-        if has_package(xml, PICKERS) or other_window(device):
-            appeared = True
+        if has_package(xml, PICKERS):
+            opened = 'seletor de arquivos do sistema'
+            break
+        if other_window(device):
+            opened = 'janela do sistema'
             break
         time.sleep(1)
-    for _ in range(2):
+    deadline = time.monotonic() + 25
+    while time.monotonic() < deadline and not has_package(device.ui(), {PACKAGE}):
         device.shell('input keyevent KEYCODE_BACK')
         time.sleep(1)
-    device.wait(lambda: has_package(device.ui(), {PACKAGE}), f'volta do seletor {label}', timeout=25)
-    device.alive()
-    if not appeared:
+    if not has_package(device.ui(), {PACKAGE}):
+        # A tarefa do seletor pode ter levado o aplicativo para trás do launcher:
+        # traz a tarefa existente para a frente, sem -S (que reiniciaria o processo).
+        device.shell(f'am start -W -n {PACKAGE}/.MainActivity')
+        device.wait(lambda: has_package(device.ui(), {PACKAGE}), f'volta do seletor {label}', timeout=25)
+    if device.alive() != pid:
+        raise AssertionError(f'o processo do aplicativo mudou ao abrir {label}: '
+                             f'{pid} → {device.alive()} (crash ou reinício)')
+    if not opened:
         raise AssertionError(f'o seletor de {label} não apareceu')
-    return f'{label} abriu o seletor e o aplicativo voltou vivo'
+    return f'{label} abriu o {opened} e o aplicativo voltou no mesmo processo'
 
 
 def write_downloads_fixture(device, name, body):
@@ -308,13 +327,29 @@ def main():
         device.launch()
         tap_exact(device, 'Importar')
         wait_screen(device, 'Importar GGUF')
-        single = on_screen(device, 'Importar GGUF') or scroll_to(device, 'Importar GGUF')
-        pair = on_screen(device, 'Importar 2 GGUFs') or scroll_to(device, 'Importar 2 GGUFs')
-        if not single or not pair:
-            raise AssertionError('faltam os dois caminhos de importação nesta tela '
-                                 f'(unitário={bool(single)}, par={bool(pair)}); '
+        if not (on_screen(device, 'Importar GGUF') or scroll_to(device, 'Importar GGUF')):
+            raise AssertionError('não há entrada de importação nesta tela; '
                                  f'visíveis: {visible_labels(device)}')
-        return 'importação oferece o caminho unitário (Importar GGUF) e o par texto+mmproj'
+        # Esta versão tem UMA entrada de importação, de propósito: a tela antiga de
+        # dois arquivos virou redirecionamento para cá (apk-fix/single_import_ui.py).
+        # O teste então exige duas coisas: a entrada abre o seletor real, e a tela
+        # explica o caminho do projetor — senão o par texto+mmproj sumiria calado.
+        texto = ' '.join(visible_labels(device, 30)).casefold()
+        if 'projetor' not in texto:
+            raise AssertionError('a tela de importação não explica o caminho com projetor: '
+                                 + ' '.join(visible_labels(device, 30))[:200])
+        prova = picker_then_back(device, 'Importar GGUF')
+        # A tela antiga (dois arquivos) continua alcançável e redireciona para a
+        # entrada única: é a promessa de apk-fix/single_import_ui.py, provada aqui.
+        device.shell(f'am start -W -n {PACKAGE}/.ModelsActivity')
+        try:
+            device.wait(lambda: on_screen(device, 'Importar GGUF'),
+                        'tela antiga leva à importação atual', timeout=25)
+        except AssertionError:
+            raise AssertionError('a tela antiga de importação não levou à entrada única; '
+                                 'visíveis: ' + ', '.join(visible_labels(device, 20)))
+        return ('entrada única "Importar GGUF" que abre o seletor de verdade e a tela '
+                f'explica os dois caminhos (par linguagem+projetor ou GGUF completo); {prova}')
 
     def ajustes():
         device.launch()
@@ -345,6 +380,8 @@ def main():
         depois = field_text(device, point)
         recusou_entrada = depois == antes or not re.search(r'[a-zA-Z]', depois)
         if not recusou_entrada:
+            # O botão fica no fim da lista de ajustes: sem rolar, o toque não existe.
+            scroll_to(device, 'Salvar ajustes')
             tap_label(device, 'Salvar ajustes')
             avisou = device.wait(
                 lambda: (on_screen(device, 'Valor inválido')
@@ -352,6 +389,7 @@ def main():
                 'recusa de valor inválido', timeout=10)
             if not avisou:
                 raise AssertionError('valor inválido aceito sem aviso')
+        scroll_to(device, 'Tamanho de contexto')
         point = edit_near(device, 'Tamanho de contexto')
         type_into(device, point, '1024')
         scroll_to(device, 'Salvar ajustes')
@@ -374,11 +412,16 @@ def main():
         return f'modelo importado listado com o nome real ({model["name"]})'
 
     def descarregar_e_recarregar():
+        # Antes de procurar o controle, carrega o modelo de verdade: com o modelo
+        # fora da memória não há o que descarregar, e um SKIP sem essa carga diria
+        # "não oferece" quando o certo seria "nada a descarregar ainda".
+        device.generate(model, 0, 'functions-unload-pre', prompt='Reply in English: say ok')
         device.launch()
         tap_exact(device, 'AI Modelos', optional=True) or tap_label(device, 'Modelos', optional=True)
-        if not tap_label(device, 'Descarregar', optional=True):
-            raise SkipCheck('esta versão não oferece descarregar o modelo pela interface '
-                            '(nenhum controle com esse rótulo na tela de modelos)')
+        if not (tap_label(device, 'Descarregar', optional=True)
+                or tap_label(device, 'Remover da memória', optional=True)):
+            raise SkipCheck('nenhum controle de descarregar na tela de modelos, com o modelo '
+                            'carregado; rótulos visíveis: ' + ', '.join(visible_labels(device, 20)))
         device.wait(lambda: (on_screen(device, 'descarregado')
                              or 'Modelo descarregado' in device.adb('logcat', '-d')),
                     'confirmação do descarregamento', timeout=25)
@@ -505,11 +548,17 @@ def main():
         if not device.tools_open():
             raise AssertionError('gaveta de ferramentas não abriu; visíveis: '
                                  + ', '.join(visible_labels(device, 20)))
-        faltando = [b for b in ('Foto', 'Vídeo', 'Áudio', 'Arquivo', 'Ferramentas')
-                    if not on_screen(device, b)]
+        faltando = [b for b in ('Foto', 'Vídeo', 'Áudio', 'Arquivo') if not on_screen(device, b)]
         if faltando:
             raise AssertionError(f'botões ausentes na gaveta: {faltando}')
-        return 'abre com os cinco controles: Foto, Vídeo, Áudio, Arquivo e Ferramentas'
+        # "Ferramentas" não é um item: é a própria linha de ferramentas da conversa
+        # (desc "Ferramentas da conversa"), que traz Sistema, Thinking, Busca e os
+        # quatro anexos. A árvore de views da rodada 36192982173 está no repositório
+        # e é ela que sustenta esta leitura.
+        if not position(device.ui(), desc='Ferramentas da conversa', package={PACKAGE}):
+            raise AssertionError('a linha "Ferramentas da conversa" não está na tela')
+        return ('abre com os quatro anexos (Foto, Vídeo, Áudio, Arquivo) na linha '
+                '"Ferramentas da conversa", junto de Sistema, Thinking e Busca')
 
     def seletores():
         device.launch()
@@ -632,16 +681,26 @@ def main():
             raise SkipCheck('sem modelo para excluir')
         device.launch()
         tap_exact(device, 'AI Modelos', optional=True) or tap_label(device, 'Modelos', optional=True)
-        if not (tap_label(device, 'Excluir modelo', optional=True)
+        if not (tap_exact(device, 'Excluir', optional=True)
+                or tap_label(device, 'Excluir modelo', optional=True)
                 or tap_label(device, 'Remover modelo', optional=True)):
-            raise SkipCheck('esta versão não oferece excluir o modelo pela interface '
-                            '(nenhum controle com esse rótulo na tela de modelos)')
-        tap_label(device, 'Excluir', optional=True)
+            raise SkipCheck('nenhum controle de exclusão na tela de modelos; rótulos '
+                            'visíveis: ' + ', '.join(visible_labels(device, 20)))
+        # O diálogo de confirmação usa "EXCLUIR" maiúsculo com o título "Excluir modelo":
+        # casamento exato, senão o toque cai no título e nada é confirmado (erro já
+        # cometido na varredura da conversa). A remoção também pode ser imediata.
+        time.sleep(2)
+        if tap_exact(device, 'EXCLUIR', optional=True):
+            pass
 
         def vazio():
             restantes = device.read_json('models.json', optional=True) or []
             return True if not restantes else None
-        device.wait(vazio, 'modelo removido do armazenamento', timeout=30)
+        try:
+            device.wait(vazio, 'modelo removido do armazenamento', timeout=30)
+        except AssertionError:
+            raise AssertionError('o modelo continua no armazenamento depois de excluir; '
+                                 'visíveis: ' + ', '.join(visible_labels(device, 20)))
         return 'modelo excluído pela interface e removido do armazenamento'
 
     def sem_modelo():

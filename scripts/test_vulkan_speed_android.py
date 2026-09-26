@@ -78,6 +78,10 @@ def main():
         init_ime(d)
         d.adb('install', '-g', base, timeout=180)
         d.grant_test_notifications()
+        # A segunda fase reutiliza o modelo importado na primeira; deixar isso
+        # explícito evita depender da ordem do laço (e um erro claro no lugar de
+        # um NameError se a ordem mudar).
+        model = None
         for phase in ('before', 'after'):
             new = phase == 'after'
             strict = new and c.get('strict_tensor_routing', False)
@@ -101,7 +105,11 @@ def main():
                 # Reuse the model whose preservation was just verified. A second
                 # asynchronous import could race the next force-stop or create a
                 # duplicate filename, invalidating the before/after comparison.
-                model = next(x for x in d.read_json('models.json') if x['id']==model['id'])
+                # O id vem de fora: dentro do gerador, `model` ainda está sendo
+                # reatribuído (o modelo da rodada anterior, preservado acima).
+                assert model is not None, 'a fase "after" precisa do modelo da fase "before"'
+                keep_id = model['id']
+                model = next(x for x in d.read_json('models.json') if x['id'] == keep_id)
             else:
                 model = d.import_model(TEXT)
             assert d.shell('sha256sum '+shlex.quote(model['path'])).split()[0] == sha(TEXT)

@@ -204,6 +204,29 @@ def test_search_prompt_block_is_bounded_for_latency():
     assert 'fonte(s) a mais no painel' in tool
 
 
+def test_prefill_metric_runs_on_a_real_log_line():
+    """A conta do pré-preenchimento precisa rodar de verdade no host.
+
+    O rodada 36192982173 morreu com `name 're' is not defined` dentro desta
+    função: nenhum teste a executava, então um erro de digitação virou uma
+    rodada inteira perdida no emulador. Aqui ela é chamada com um log sintético.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('harness', ROOT / 'scripts/test_android.py')
+    harness = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(harness)
+    log = ('09-25 22:00:40 I GGUFNative: GGUF_GENERATION_STATS tokens=42 decode_ns=4564219002 '
+           'prefill_ns=453200511 prompt_tokens=829 reused_tokens=45')
+    metric = harness.Android.prefill_metric(None, log)
+    assert metric['fresh_tokens'] == 784
+    assert metric['prompt_tokens'] == 829 and metric['reused_tokens'] == 45
+    assert metric['prefill_ms_per_token'] == pytest.approx(453200511 / 1e6 / 784, abs=1e-3)
+    assert harness.Android.prefill_metric(None, 'sem contadores') is None
+    # Sem tokens novos não há custo por token a declarar.
+    assert harness.Android.prefill_metric(
+        None, 'GGUF_GENERATION_STATS tokens=1 decode_ns=1 prefill_ns=5 prompt_tokens=9 reused_tokens=9') is None
+
+
 def test_prefill_ubatch_is_tunable_and_logged():
     """O ajuste do sub-lote precisa ser medível: propriedade + registro do usado."""
     native = (ROOT / 'apk-fix/native/mobile.cpp').read_text()
@@ -251,10 +274,20 @@ def test_function_sweep_covers_every_labelled_control():
     uma promessa sem lastro.
     """
     sweep = (ROOT / 'scripts/test_functions_android.py').read_text()
-    for rotulo in ('Nova conversa', 'Importar GGUF', 'Importar 2 GGUFs', 'Salvar ajustes',
-                   'Parar', 'Thinking', 'Busca', 'Foto', 'Vídeo', 'Áudio', 'Arquivo', 'Ferramentas',
-                   'Excluir conversa', 'Excluir modelo', 'Descarregar'):
-        assert rotulo in sweep, f'"{rotulo}" não é exercitado pela varredura'
+    # Rótulo anunciado pelo APK original → o que a varredura faz para exercitá-lo.
+    # "Importar 2 GGUFs" é a tela antiga: hoje ela redireciona para a entrada única
+    # e o que se exercita é esse caminho (o rótulo não existe mais como botão).
+    # "Ferramentas" é a linha "Ferramentas da conversa", verificada por desc.
+    cobertos = {
+        'Nova conversa': 'Nova conversa', 'Importar GGUF': 'Importar GGUF',
+        'Importar 2 GGUFs': 'ModelsActivity', 'Salvar ajustes': 'Salvar ajustes',
+        'Parar': 'Parar', 'Thinking': 'Thinking', 'Busca': 'Busca', 'Foto': 'Foto',
+        'Vídeo': 'Vídeo', 'Áudio': 'Áudio', 'Arquivo': 'Arquivo',
+        'Ferramentas': 'Ferramentas da conversa', 'Excluir conversa': 'Excluir conversa',
+        'Excluir modelo': 'Excluir modelo', 'Descarregar': 'Descarregar',
+    }
+    for rotulo, prova in cobertos.items():
+        assert prova in sweep, f'"{rotulo}" não é exercitado pela varredura (esperado: {prova})'
     for funcao in ('estado_vazio', 'abas', 'ajustes', 'nova_conversa', 'parar_geracao',
                    'raciocinio', 'busca_fontes', 'gaveta_ferramentas', 'seletores_de_anexo',
                    'anexo_texto', 'visao', 'notificacao', 'historico', 'excluir_conversa',
