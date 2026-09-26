@@ -35,7 +35,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'scripts'))
 
 from android_checks import (PACKAGE, PICKERS, generation_completed,  # noqa: E402
-                            has_package, position, search_panel)
+                            has_package, position, pref_value, search_panel)
 
 
 class SkipCheck(Exception):
@@ -403,7 +403,7 @@ def main():
             # exige aqui é o que o aplicativo promete: o padrão, sem corromper o ajuste.
             scroll_to(device, 'Salvar ajustes')
             tap_label(device, 'Salvar ajustes')
-            device.wait(lambda: re.search(r'name="contextSize"[^>]*>4096<', prefs()),
+            device.wait(lambda: pref_value(prefs(), 'contextSize') == '4096',
                         'valor não numérico caiu no padrão 4096', timeout=25)
             device.alive()
         scroll_to(device, 'Tamanho de contexto')
@@ -415,7 +415,7 @@ def main():
                                  f'visíveis: {visible_labels(device)}')
 
         def persistido():
-            return re.search(r'name="contextSize"[^>]*>1024<', prefs()) is not None
+            return pref_value(prefs(), 'contextSize') == '1024'
         device.wait(persistido, 'contexto salvo nas preferências', timeout=25)
         detalhe = ('valor não numérico recusado pelo próprio campo' if recusou_entrada
                    else 'valor não numérico não corrompe o ajuste: cai no padrão 4096')

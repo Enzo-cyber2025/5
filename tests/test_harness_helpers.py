@@ -86,6 +86,23 @@ def screen(*labels, package='com.ggufchat.app'):
     return f'<hierarchy>{nodes}</hierarchy>'
 
 
+def test_pref_value_reads_the_two_formats_android_writes():
+    """O ajuste persistido tem o valor como ATRIBUTO — `>1024<` nunca casaria."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('checks', ROOT / 'scripts/android_checks.py')
+    checks = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(checks)
+    atributo = '<int name="contextSize" value="1024" />'
+    elemento = '<int name="contextSize">1024</int>'
+    assert checks.pref_value(atributo, 'contextSize') == '1024'
+    assert checks.pref_value(elemento, 'contextSize') == '1024'
+    assert checks.pref_value(atributo, 'nThreads') is None
+    # A varredura precisa usar o leitor, não um casamento de texto improvisado.
+    sweep = (ROOT / 'scripts/test_functions_android.py').read_text()
+    assert "pref_value(prefs(), 'contextSize')" in sweep
+    assert 'name="contextSize"[^>]*>' not in sweep
+
+
 def test_visible_labels_lists_what_is_on_screen():
     sweep = load('sweep_under_test', 'scripts/test_functions_android.py')
     device = FakeDevice([screen('Nova conversa', 'Ajustes')])

@@ -211,6 +211,22 @@ def context_tuning(log):
             'prefix_cache_supported': cache == '1'}
 
 
+def pref_value(xml, name):
+    """Valor de um ajuste persistido, nos dois formatos que o Android escreve.
+
+    O `shared_prefs` do aplicativo guarda inteiros como
+    `<int name="contextSize" value="1024" />` — o valor é atributo, não o texto do
+    elemento. Uma busca por `>1024<` nunca encontraria nada e o teste reprovaria o
+    aplicativo por causa do formato do arquivo.
+    """
+    for pattern in (rf'name="{re.escape(name)}"\s+value="([^"]*)"',
+                    rf'name="{re.escape(name)}"\s*>([^<]*)<'):
+        found = re.search(pattern, xml)
+        if found:
+            return found.group(1)
+    return None
+
+
 def warmup_state(log):
     """O que o aquecimento de prefixo realmente fez nesta etapa.
 
