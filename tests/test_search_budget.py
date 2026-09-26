@@ -89,7 +89,10 @@ def test_every_search_attempt_is_bounded_by_the_budget():
     assert 'new SearchBudget()' in tool, 'a busca precisa criar o orçamento'
     # Cada tentativa é registrada pelo orçamento (contagem = tentativas no código).
     attempts = re.findall(r'Attempt \w+=attempt\(', tool)
-    assert len(attempts) == 4, attempts
+    # Quatro tentativas em série e uma dentro da corrida: as DUAS formas passam
+    # pela mesma função de tentativa, que é quem fatia o orçamento.
+    assert len(attempts) == 5, attempts
+    assert 'Attempt attempt=attempt(provider,url,max,budget,raceErrors,parser);' in tool
     # As duas fatias de cada requisição vêm do orçamento (conexão e leitura), e
     # uma fatia zero não pode abrir requisição nenhuma: zero é "sem limite".
     assert 'int[] timeouts=budget.slices(CONNECT_TIMEOUT,READ_TIMEOUT);' in tool

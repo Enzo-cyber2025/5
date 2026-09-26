@@ -20,7 +20,8 @@ import xml.etree.ElementTree as ET
 from android_checks import (PACKAGE, PICKERS, assistant_reply, fusion, generation_completed,
                             gpu_offloaded, has_package, imported, position, basic_response_quality, vulkan_offloaded,
                             generation_stats, ui_first_text_s, software_vulkan_refused, cpu_threads,
-                            warmup_state, search_timing, search_panel, context_tuning, kv_cache)
+                            warmup_state, search_timing, search_panel, context_tuning, kv_cache,
+                            search_cache_hit, search_race_winner)
 
 
 class Android:
@@ -638,6 +639,7 @@ class Android:
                      prefill=self.prefill_metric(log),
                      context_tuning=context_tuning(log),
                      kv_cache=kv_cache(log),
+                     search=search_timing(log),
                      software_vulkan_notice=software_vulkan_refused(log), **stats)
         self.perf[stage] = entry
         (self.evidence / f"{stage}-perf.json").write_text(json.dumps(entry, ensure_ascii=False, indent=2))
@@ -720,6 +722,7 @@ def performance_report(perf):
     report['warmup_experiment'] = warmup_experiment(perf)
     report['prefill_experiment'] = prefill_experiment(perf)
     report['kv_experiment'] = kv_experiment(perf)
+    report['search_experiment'] = search_experiment(perf)
     report['targets_met'] = sorted(name for name, c in report['candidates'].items()
                                    if all(c['targets'].values()))
     report['regressions'] = sorted(name for name, c in report['candidates'].items()
@@ -727,6 +730,39 @@ def performance_report(perf):
     report['regression_tolerance'] = REGRESSION_TOLERANCE
     report['environment'] = environment_limits(perf)
     return report
+
+
+def search_experiment(perf):
+    """Busca em sequência contra busca em corrida, e consulta repetida no cache.
+
+    A espera da busca é o que o usuário sente antes de o modelo começar a responder.
+    Sequência e corrida são medidas na MESMA rodada, com a mesma pergunta; a corrida
+    só vira padrão com ganho medido. O cache é provado pela segunda consulta igual na
+    mesma execução do aplicativo: se ela não achou o resultado na memória, o relatório
+    diz que não foi medido em vez de prometer.
+    """
+    sequential = (perf.get('search-online') or {}).get('search') or {}
+    raced = (perf.get('search-race') or {}).get('search') or {}
+    cached = (perf.get('search-cache') or {}).get('search') or {}
+    result = {'sequential_ms': sequential.get('used_ms'),
+              'race_ms': raced.get('used_ms'),
+              'sequential_provider': sequential.get('provider'),
+              'race_provider': raced.get('provider'),
+              'cache_hit_ms': cached.get('used_ms'),
+              'cache_provider': cached.get('provider')}
+    if sequential.get('used_ms') and raced.get('used_ms'):
+        result['status'] = 'MEDIDO'
+        result['gain_x'] = round(sequential['used_ms'] / raced['used_ms'], 3) if raced['used_ms'] else None
+        result['detail'] = (f"mesma pergunta: sequência {sequential['used_ms']} ms "
+                            f"({sequential.get('provider')}) contra corrida {raced['used_ms']} ms "
+                            f"({raced.get('provider')}); o padrão só muda com ganho medido")
+    else:
+        result['status'] = 'NOT_MEASURED'
+        result['detail'] = 'faltou a medição de uma das duas formas de busca'
+    if cached.get('used_ms') is not None:
+        result['cache_detail'] = (f"consulta repetida: {cached['used_ms']} ms com "
+                                  f"{cached.get('provider')}")
+    return result
 
 
 def kv_experiment(perf):
@@ -1166,6 +1202,49 @@ def main():
             else:
                 result["checks"]["prefill_ubatch_experiment"] = (
                     "NOT_MEASURED: falta a métrica de pré-preenchimento em uma das etapas")
+        # 3) Corrida entre provedores: a MESMA pergunta do cenário online, com os
+        #    provedores partindo juntos. Só mede; o padrão só muda com ganho medido.
+        device.shell("setprop debug.gguf.search_race 1")
+        try:
+            device.generate(model, 99, "search-race", await_load=True, settle=5.0, search=True,
+                            prompt="Reply in English: What is the capital of Brazil?")
+        finally:
+            device.shell("setprop debug.gguf.search_race 0")
+        race_log = (args.evidence / "search-race-logcat.txt").read_text()
+        race = search_timing(race_log)
+        winner = search_race_winner(race_log)
+        if race and winner:
+            result["checks"]["search_race"] = (
+                f"MEDIDO: a corrida venceu com {winner['winner']} em {race['used_ms']} ms "
+                f"({race['sources']} fonte(s)); {winner['pending']} de {winner['candidates']} "
+                "candidatos ainda corriam quando a resposta chegou")
+        else:
+            result["checks"]["search_race"] = "NOT_MEASURED: a corrida não registrou vencedor"
+        # 4) Consulta repetida: a segunda busca igual, na MESMA execução do aplicativo,
+        #    não deve ir à rede de novo. O que prova é a linha do cache, com a idade.
+        device.shell("setprop debug.gguf.search_cache_ms 60000")
+        try:
+            device.new_chat(model, 99, search=True)
+            device.wait_for_load()
+            repeated = "Reply in English: What is the capital of Peru?"
+            device.submit(repeated, label="search-cache-1")
+            device.wait(lambda: generation_completed(device.adb("logcat", "-d")),
+                        "primeira consulta com busca concluída", timeout=240)
+            device.submit(repeated, label="search-cache-2")
+            device.wait(lambda: 'GGUF_SEARCH_CACHE' in device.adb("logcat", "-d"),
+                        "segunda consulta atendida pelo cache", timeout=240)
+        finally:
+            device.shell("setprop debug.gguf.search_cache_ms 0")
+        hit = search_cache_hit(device.adb("logcat", "-d"))
+        if hit:
+            device.perf["search-cache"] = {"stage": "search-cache", "search": {
+                "used_ms": 0, "provider": hit["provider"], "sources": hit["results"]}}
+            result["checks"]["search_cache"] = (
+                f"PASS: consulta repetida saiu da memória ({hit['results']} fonte(s), "
+                f"{hit['age_ms']} ms de idade, teto {hit['ttl_ms']} ms), sem nova ida à rede")
+        else:
+            result["checks"]["search_cache"] = (
+                "NOT_MEASURED: a segunda consulta não registrou acerto de cache")
         if gpu_experiments_enabled():
             # Cache K/V: o mesmo modelo, o mesmo texto e o mesmo limite de tokens com
             # o cache padrão (F16) e com cache quantizado (Q8_0). Cache quantizado é

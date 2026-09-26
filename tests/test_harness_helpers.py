@@ -127,6 +127,51 @@ def test_submit_retypes_when_the_field_did_not_receive_the_text(tmp_path):
     assert (tmp_path / 'stage-composer.txt').read_text().startswith('campo conferido')
 
 
+def search_entry(used_ms, provider, sources=5):
+    entry = perf_entry(9.0, 1.0, 0.9)
+    entry['search'] = {'used_ms': used_ms, 'provider': provider, 'sources': sources,
+                       'budget_ms': 12000, 'exhausted': False}
+    return entry
+
+
+def test_search_experiment_compares_sequence_and_race_in_the_same_round():
+    perf = {'vulkan': perf_entry(1.0, 20.0, 18.0),
+            'search-online': search_entry(1700, 'DuckDuckGo'),
+            'search-race': search_entry(520, 'Wikipédia'),
+            'search-cache': {'stage': 'search-cache',
+                             'search': {'used_ms': 0, 'provider': 'Wikipédia', 'sources': 4}}}
+    report = harness.performance_report(perf)
+    experiment = report['search_experiment']
+    assert experiment['status'] == 'MEDIDO'
+    assert experiment['gain_x'] == pytest.approx(1700 / 520, abs=0.01)
+    assert experiment['race_provider'] == 'Wikipédia'
+    assert 'consulta repetida' in experiment['cache_detail']
+    json.dumps(report)
+
+
+def test_search_experiment_declares_absence_without_both_measurements():
+    report = harness.performance_report({'vulkan': perf_entry(1.0, 20.0, 18.0),
+                                         'search-online': search_entry(1700, 'DuckDuckGo')})
+    assert report['search_experiment']['status'] == 'NOT_MEASURED'
+    assert 'faltou a medição' in report['search_experiment']['detail']
+
+
+def test_search_cache_hit_and_race_winner_read_the_engine_log():
+    spec = importlib.util.spec_from_file_location('checks_search', ROOT / 'scripts/android_checks.py')
+    checks = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(checks)
+    log = ('GGUF_SEARCH_CACHE hit=1 provider=Wikipédia results=4 age_ms=812 ttl_ms=60000 '
+           'size=1 query=capital\n'
+           'GGUF_SEARCH_RACE winner=Wikipédia results=4 candidates_pending=1 candidates=2\n')
+    assert checks.search_cache_hit(log) == {'provider': 'Wikipédia', 'results': 4,
+                                            'age_ms': 812, 'ttl_ms': 60000}
+    assert checks.search_race_winner(log) == {'winner': 'Wikipédia', 'results': 4,
+                                             'pending': 1, 'candidates': 2}
+    # Rodada sem corrida nem cache: nada é inventado.
+    assert checks.search_cache_hit('GGUF_SEARCH provider=DDG results=5 ms=1700 query=x') is None
+    assert checks.search_race_winner('GGUF_SEARCH provider=DDG results=5 ms=1700 query=x') is None
+
+
 def kv_entry(tokens_s, kv, ui_first=1.0):
     entry = perf_entry(tokens_s, ui_first, ui_first - 0.1)
     entry['kv_cache'] = {'kv': kv, 'flash_attn_requested': 'AUTO'}

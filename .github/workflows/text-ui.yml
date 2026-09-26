@@ -139,6 +139,10 @@ jobs:
           GGUF_TEST_APK: .cache/arena-text/candidate.apk
           GGUF_OUTPUT_APK: .cache/arena-text/candidate.apk
           GGUF_TEST_MODEL: .cache/mobile-models/SmolLM2-135M-Instruct-Q4_K_M.gguf
+          # Par de visão (o mesmo que ci/mobile-models.sh baixa e confere): sem ele,
+          # "visão" seria SKIP declarado na varredura; com ele, imagem de ponta a ponta.
+          GGUF_TEST_VISION: .cache/mobile-models/SmolVLM-256M-Instruct-Q8_0.gguf
+          GGUF_TEST_MMPROJ: .cache/mobile-models/mmproj-SmolVLM-256M-Instruct-Q8_0.gguf
           GGUF_TEST_STRICT_GPU: '1'
           GGUF_EVIDENCE: evidence
         with:

@@ -21,7 +21,9 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -45,7 +47,24 @@ public final class SearchTool {
     private static final Pattern LITE_SNIPPET=Pattern.compile("class=\"result-snippet\"[^>]*>(.*?)</td>",Pattern.DOTALL);
     private static final Pattern TAGS=Pattern.compile("(?s)<[^>]*>");
     private static final Pattern WS=Pattern.compile("\\s+");
+    // Corrida entre provedores independentes e cache de consulta: as duas coisas
+    // que atacam a ESPERA da busca (não a quantidade de fontes). Os dois ficam
+    // desligados por padrão e ligados por propriedade de teste até a rodada medir:
+    // em sequência, a espera era a soma das tentativas; em corrida, é a do provedor
+    // mais rápido que trouxer fonte.
+    private static final String RACE_PROPERTY="debug.gguf.search_race";
+    private static final String CACHE_PROPERTY="debug.gguf.search_cache_ms";
+    private static final int CACHE_MAX=8;
+    private static final Map<String,Report> CACHE=new LinkedHashMap<String,Report>();
     private static final ThreadLocal<Report> PENDING=new ThreadLocal<Report>();
+    private static final Parser SEARX_PARSER=new Parser(){
+        public ArrayList<Hit> parse(String body,int limit) throws Exception{return parseSearxng(body,limit);}};
+    private static final Parser DDG_PARSER=new Parser(){
+        public ArrayList<Hit> parse(String body,int limit) throws Exception{return parseDuckDuckGo(body,limit);}};
+    private static final Parser LITE_PARSER=new Parser(){
+        public ArrayList<Hit> parse(String body,int limit) throws Exception{return parseDuckDuckGoLite(body,limit);}};
+    private static final Parser WIKI_PARSER=new Parser(){
+        public ArrayList<Hit> parse(String body,int limit) throws Exception{return parseWikipedia(body,limit);}};
 
     private SearchTool(){}
 
@@ -56,6 +75,8 @@ public final class SearchTool {
 
     public static final class Report {
         public final String query,provider,error;
+        /** Quando este resultado foi obtido; o cache recusa o que passou do TTL. */
+        public final long storedAtMs=System.currentTimeMillis();
         public final ArrayList<Hit> hits;public final long millis;
         public final int budgetMs;public final boolean budgetExhausted;
         Report(String query,String provider,ArrayList<Hit> hits,String error,long millis,int budgetMs,boolean budgetExhausted){
@@ -67,13 +88,53 @@ public final class SearchTool {
 
     private static int dp(Context c,int n){return Math.round(c.getResources().getDisplayMetrics().density*n);}
 
+    /** Propriedade de depuração (o aparelho não entrega variável de ambiente ao app). */
+    private static String property(String name){
+        try{
+            Object value=Class.forName("android.os.SystemProperties")
+                .getMethod("get",String.class,String.class).invoke(null,name,"");
+            return value==null?null:(String)value;
+        }catch(Throwable ignored){}
+        return null;
+    }
+
+    private static int intProperty(String name,int fallback){
+        String value=property(name);
+        if(value==null||value.length()==0)return fallback;
+        try{return Integer.parseInt(value.trim());}catch(NumberFormatException ex){return fallback;}
+    }
+
+    private static boolean raceEnabled(){return intProperty(RACE_PROPERTY,0)==1;}
+
+    private static int cacheMs(){return Math.max(0,intProperty(CACHE_PROPERTY,0));}
+
+    /** Consulta repetida não deveria custar outra ida à rede. */
+    private static Report cached(String query){
+        int ttl=cacheMs();
+        if(ttl<=0)return null;
+        synchronized(CACHE){
+            Report hit=CACHE.get(query);
+            if(hit==null)return null;
+            long age=System.currentTimeMillis()-hit.storedAtMs;
+            if(age>ttl){CACHE.remove(query);return null;}
+            Log.i(TAG,"GGUF_SEARCH_CACHE hit=1 provider="+hit.provider+" results="+hit.hits.size()
+                +" age_ms="+age+" ttl_ms="+ttl+" size="+CACHE.size()+" query="+query);
+            return new Report(hit.query,hit.provider,hit.hits,null,0,hit.budgetMs,false);
+        }
+    }
+
+    private static void remember(Report report){
+        if(report==null||!report.ok()||cacheMs()<=0)return;
+        synchronized(CACHE){
+            CACHE.put(report.query,report);
+            while(CACHE.size()>CACHE_MAX)CACHE.remove(CACHE.keySet().iterator().next());
+        }
+    }
+
     /** Endpoint SearXNG opcional; sem ele, os provedores padrão sem chave são usados. */
     private static String endpoint(){
-        try{
-            String property=(String)Class.forName("android.os.SystemProperties")
-                .getMethod("get",String.class,String.class).invoke(null,"debug.gguf.search_endpoint","");
-            if(property!=null&&property.startsWith("https://"))return property;
-        }catch(Throwable ignored){}
+        String configured=property("debug.gguf.search_endpoint");
+        if(configured!=null&&configured.startsWith("https://"))return configured;
         return null;
     }
 
@@ -237,38 +298,96 @@ public final class SearchTool {
         if(trimmed.length()==0){
             return new Report(trimmed,"nenhum",new ArrayList<Hit>(),"Consulta vazia",0,budget.totalMs(),false);
         }
+        // Consulta repetida sai da memória, com idade declarada no log — o painel
+        // mostra 0 ms porque a segunda busca realmente não foi à rede.
+        Report remembered=cached(trimmed);
+        if(remembered!=null)return remembered;
         try{
             String encoded=URLEncoder.encode(trimmed,"UTF-8");
             String endpoint=endpoint();
             if(endpoint!=null){
                 Attempt searx=attempt("SearXNG",endpoint+(endpoint.contains("?")?"&":"?")+"q="+encoded+"&format=json",
-                                      max,budget,errors,new Parser(){
-                    public ArrayList<Hit> parse(String body,int limit) throws Exception {return parseSearxng(body,limit);}
-                });
+                                      max,budget,errors,SEARX_PARSER);
                 if(searx.hits!=null&&!searx.hits.isEmpty())return finish(trimmed,"SearXNG",searx.hits,null,started,budget,false);
                 if(searx.stop)return finishBudget(trimmed,errors,budget,started);
             }
+            if(raceEnabled()){
+                // Com a corrida ligada, os provedores independentes partem juntos e a
+                // primeira fonte útil vence; a sequência abaixo continua sendo o padrão
+                // até a rodada medir o ganho.
+                Report raced=race(trimmed,encoded,max,budget,errors,started);
+                if(raced!=null)return raced;
+                return finishBudget(trimmed,errors,budget,started);
+            }
             Attempt ddg=attempt("DuckDuckGo","https://html.duckduckgo.com/html/?q="+encoded+"&kl=pt-br",
-                                max,budget,errors,new Parser(){
-                public ArrayList<Hit> parse(String body,int limit) throws Exception {return parseDuckDuckGo(body,limit);}
-            });
+                                max,budget,errors,DDG_PARSER);
             if(ddg.hits!=null&&!ddg.hits.isEmpty())return finish(trimmed,"DuckDuckGo",ddg.hits,null,started,budget,false);
             if(ddg.stop)return finishBudget(trimmed,errors,budget,started);
             Attempt lite=attempt("DuckDuckGo Lite","https://lite.duckduckgo.com/lite/?q="+encoded,
-                                 max,budget,errors,new Parser(){
-                public ArrayList<Hit> parse(String body,int limit) throws Exception {return parseDuckDuckGoLite(body,limit);}
-            });
+                                 max,budget,errors,LITE_PARSER);
             if(lite.hits!=null&&!lite.hits.isEmpty())return finish(trimmed,"DuckDuckGo Lite",lite.hits,null,started,budget,false);
             if(lite.stop)return finishBudget(trimmed,errors,budget,started);
             Attempt wiki=attempt("Wikipédia","https://pt.wikipedia.org/w/api.php?action=query&list=search&format=json&utf8=1&srlimit="
-                                 +max+"&srsearch="+encoded,max,budget,errors,new Parser(){
-                public ArrayList<Hit> parse(String body,int limit) throws Exception {return parseWikipedia(body,limit);}
-            });
+                                 +max+"&srsearch="+encoded,max,budget,errors,WIKI_PARSER);
             if(wiki.hits!=null&&!wiki.hits.isEmpty())return finish(trimmed,"Wikipédia",wiki.hits,null,started,budget,false);
         }catch(Exception ex){
             errors.add(describe(ex));
         }
         return finishBudget(trimmed,errors,budget,started);
+    }
+
+    /** Corrida entre provedores independentes dentro do MESMO orçamento.
+     *
+     * Em sequência, a espera era a soma das tentativas. Aqui cada tentativa recebe a
+     * fatia que o orçamento permite (nunca o orçamento inteiro, e nunca uma fatia
+     * maior que o restante), então correr não gasta mais tempo do que uma tentativa:
+     * a espera vira a do provedor mais rápido que devolver fonte. O nome de quem
+     * respondeu continua registrado no painel, e a corrida não inventa fonte —
+     * resposta vazia não vence. As tentativas perdedoras terminam sozinhas, dentro
+     * da própria fatia, e o que elas registrarem entra no motivo declarado.
+     */
+    private static Report race(String query,String encoded,int max,SearchBudget budget,
+                               ArrayList<String> errors,long started){
+        final String[][] plan={
+            {"DuckDuckGo","https://html.duckduckgo.com/html/?q="+encoded+"&kl=pt-br"},
+            {"Wikipédia","https://pt.wikipedia.org/w/api.php?action=query&list=search&format=json&utf8=1&srlimit="
+                +max+"&srsearch="+encoded},
+        };
+        final Parser[] parsers={DDG_PARSER,WIKI_PARSER};
+        final Object lock=new Object();
+        final ArrayList<String> winnerNames=new ArrayList<String>();
+        final ArrayList<ArrayList<Hit>> winners=new ArrayList<ArrayList<Hit>>();
+        final ArrayList<String> raceErrors=new ArrayList<String>();
+        final int[] pending={plan.length};
+        final boolean[] stopped={false};
+        for(int index=0;index<plan.length;index++){
+            final String provider=plan[index][0],url=plan[index][1];
+            final Parser parser=parsers[index];
+            Thread worker=new Thread(new Runnable(){public void run(){
+                Attempt attempt=attempt(provider,url,max,budget,raceErrors,parser);
+                synchronized(lock){
+                    if(attempt.hits!=null&&!attempt.hits.isEmpty()){winners.add(attempt.hits);winnerNames.add(provider);}
+                    else if(attempt.stop)stopped[0]=true;
+                    pending[0]--;
+                    lock.notifyAll();
+                }
+            }},"gguf-search-"+provider);
+            worker.setDaemon(true);
+            worker.start();
+        }
+        synchronized(lock){
+            while(winners.isEmpty()&&!stopped[0]&&pending[0]>0){
+                int remaining=budget.remainingMs();
+                if(remaining<=0)break;
+                try{lock.wait(Math.min(200,Math.max(1,remaining)));}
+                catch(InterruptedException ex){Thread.currentThread().interrupt();break;}
+            }
+        }
+        if(!raceErrors.isEmpty())errors.addAll(raceErrors);
+        if(winners.isEmpty())return null;
+        Log.i(TAG,"GGUF_SEARCH_RACE winner="+winnerNames.get(0)+" results="+winners.get(0).size()
+            +" candidates_pending="+pending[0]+" candidates="+plan.length);
+        return finish(query,winnerNames.get(0),winners.get(0),null,started,budget,false);
     }
 
     /** Encerra sem fontes, declarando se o orçamento acabou ou se a rede falhou. */
@@ -307,6 +426,7 @@ public final class SearchTool {
             +" exhausted="+(exhausted?1:0)+" provider="+provider);
         if(report.ok())Log.i(TAG,"GGUF_SEARCH provider="+provider+" results="+hits.size()+" ms="+millis+" query="+query);
         else Log.i(TAG,"GGUF_SEARCH_FAILED provider="+provider+" ms="+millis+" error="+(error==null?"":error));
+        remember(report);
         return report;
     }
 

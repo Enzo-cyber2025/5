@@ -228,6 +228,31 @@ def kv_cache(log):
     return {'kv': kv, 'flash_attn_requested': flash}
 
 
+SEARCH_CACHE_RE = re.compile(
+    r'GGUF_SEARCH_CACHE hit=1 provider=(\S+) results=(\d+) age_ms=(\d+) ttl_ms=(\d+)')
+SEARCH_RACE_RE = re.compile(
+    r'GGUF_SEARCH_RACE winner=(\S+) results=(\d+) candidates_pending=(\d+) candidates=(\d+)')
+
+
+def search_cache_hit(log):
+    """A consulta repetida saiu da memória? (prova do cache, com a idade do resultado.)"""
+    found = SEARCH_CACHE_RE.findall(log)
+    if not found:
+        return None
+    provider, results, age, ttl = found[-1]
+    return {'provider': provider, 'results': int(results), 'age_ms': int(age), 'ttl_ms': int(ttl)}
+
+
+def search_race_winner(log):
+    """Quem venceu a corrida de provedores e quantos candidatos ainda corriam."""
+    found = SEARCH_RACE_RE.findall(log)
+    if not found:
+        return None
+    winner, results, pending, candidates = found[-1]
+    return {'winner': winner, 'results': int(results), 'pending': int(pending),
+            'candidates': int(candidates)}
+
+
 def pref_value(xml, name):
     """Valor de um ajuste persistido, nos dois formatos que o Android escreve.
 

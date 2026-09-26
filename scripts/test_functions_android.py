@@ -34,8 +34,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'scripts'))
 
-from android_checks import (PACKAGE, PICKERS, generation_completed,  # noqa: E402
-                            has_package, position, pref_value, search_panel)
+from android_checks import (PACKAGE, PICKERS, assistant_reply, fusion,  # noqa: E402
+                            generation_completed, has_package, position, pref_value, search_panel)
 
 
 class SkipCheck(Exception):
@@ -370,7 +370,8 @@ def main():
     parser.add_argument('--serial', required=True)
     parser.add_argument('--model', type=Path, required=True)
     parser.add_argument('--apk', type=Path, required=True)
-    parser.add_argument('--mmproj', type=Path)
+    parser.add_argument('--vision', type=Path, help='GGUF de visão, junto com --mmproj')
+    parser.add_argument('--mmproj', type=Path, help='projetor (mmproj) do par de visão')
     parser.add_argument('--evidence', type=Path, default=Path('evidence'))
     parser.add_argument('--allow-data-reset', action='store_true')
     args = parser.parse_args()
@@ -378,6 +379,11 @@ def main():
         parser.error('Use somente emulador descartável, com --allow-data-reset explícito.')
     if not args.model.is_file():
         parser.error(f'modelo inexistente: {args.model}')
+    if bool(args.vision) != bool(args.mmproj):
+        parser.error('Forneça --vision e --mmproj juntos (o par é o que habilita visão).')
+    for path in (args.vision, args.mmproj):
+        if path and not path.is_file():
+            parser.error(f'peça de visão inexistente: {path}')
 
     from test_android import Android  # mesmo harness das outras fases
     args.evidence.mkdir(parents=True, exist_ok=True)
@@ -782,11 +788,48 @@ def main():
                 f'text_chars={prepared.group(3)}) e anexo preservado na mensagem')
 
     def visao():
-        if not args.mmproj:
+        """Imagem de verdade: par importado por SAF, anexo enviado e avaliado pelo motor.
+
+        Sem o par, é SKIP declarado — nunca PASS por omissão. Com o par, o que prova a
+        função não é a tela: é o motor tendo AVALIADO a imagem (`GGUF_IMAGE_EVALUATED`,
+        com contagem de tokens) e a resposta persistida depois disso, além da cópia do
+        anexo com hash conferido no armazenamento privado (o mesmo caminho da fase de
+        anexos).
+        """
+        if not (args.vision and args.mmproj):
             raise SkipCheck('sem par visão/mmproj neste runner: seleção, pré-processamento e leitura de '
                             'imagem não podem ser provados — e não serão aprovados por omissão')
-        raise SkipCheck('par visão/mmproj fornecido; a inferência de imagem tem fase própria '
-                        '(test_media_prefix_android.py)')
+        try:
+            from test_inference_android import F, fixtures, attach  # reuso do caminho já provado
+        except Exception as exc:
+            raise SkipCheck(f'fixtures de visão indisponíveis neste runner ({type(exc).__name__}: {exc})')
+        device.import_model(args.vision)
+        device.import_model(args.mmproj)
+        modelos = device.read_json('models.json')
+        visao_id, _, _ = fusion(modelos, args.vision.name, args.mmproj.name)
+        modelo = next(m for m in modelos if m['id'] == visao_id)
+        fixtures()
+        nome = 'imagem-da-visao.jpg'
+        (F / nome).write_bytes((F / 'frame-a.jpg').read_bytes())
+        chat = device.new_chat(modelo, 0, context_size=4096)
+        device.wait_for_load()
+        attach(device, chat, [nome])  # SAF com hash conferido na cópia privada
+        prompt = 'In English, describe the image in one line.'
+        device.submit(prompt, label='functions-visao')
+        device.wait(lambda: generation_completed(device.adb('logcat', '-d')),
+                   'geração com a imagem anexada', timeout=600)
+        log = device.adb('logcat', '-d')
+        (args.evidence / 'functions-visao-logcat.txt').write_text(log)
+        avaliada = re.search(r'GGUF_IMAGE_EVALUATED tokens=(\d+) backend=(\w+)', log)
+        resposta = assistant_reply(device.read_json('chats.json'), chat['id'], prompt).strip()
+        if not avaliada:
+            raise AssertionError('o motor não avaliou a imagem (sem GGUF_IMAGE_EVALUATED); visíveis: '
+                                 + ', '.join(visible_labels(device, 20)))
+        if not resposta:
+            raise AssertionError('a imagem foi avaliada pelo motor mas nenhuma resposta foi persistida')
+        return (f'par visão/mmproj importado por SAF e vinculado; imagem anexada (hash conferido) e '
+                f'avaliada pelo motor ({avaliada.group(1)} tokens de imagem, backend {avaliada.group(2)}) '
+                f'com resposta persistida ({len(resposta)} caracteres)')
 
     def notificacao():
         device.launch()
@@ -867,37 +910,46 @@ def main():
         # tamanho — procurar ali era procurar no lugar errado.
         device.launch()
         tap_exact(device, 'Importar')
-        if not scroll_to(device, models[0]['name']):
-            raise AssertionError('o modelo não está listado na tela de importação; '
-                                 'visíveis: ' + ', '.join(visible_labels(device, 20)))
-        if not tap_exact(device, 'Excluir', optional=True):
-            raise SkipCheck('nenhum controle de exclusão na linha do modelo; rótulos '
-                            'visíveis: ' + ', '.join(visible_labels(device, 20)))
-        device.wait(lambda: on_screen(device, 'Excluir modelo'),
-                    'diálogo de excluir modelo', timeout=25)
-        # Confirmação por casamento exato: "Excluir" também é o rótulo da linha, e o
-        # título do diálogo é "Excluir modelo" — tocar em qualquer um dos dois não
-        # confirma nada (foi o erro da varredura da conversa, que ficou sem excluir).
-        if not tap_exact(device, 'EXCLUIR', optional=True):
-            # O smali declara os botões do diálogo como "Excluir" e "Cancelar". O
-            # primeiro "Excluir" da árvore é o da linha (atrás do diálogo), então o
-            # toque vai no ÚLTIMO botão com esse texto exato — o do diálogo, que é
-            # acrescentado depois.
-            botao = last_button(device, 'Excluir')
-            if not botao:
-                raise AssertionError('diálogo aberto mas sem botão de confirmação; '
+        apagados = []
+        # Apaga TODOS os modelos listados: com o par de visão importado, apagar só o
+        # primeiro deixaria modelo no armazenamento e a função seguinte ("sem modelo")
+        # mediria outra coisa. O que é provado aqui é a exclusão pela interface, com
+        # confirmação, repetida até não sobrar nenhum.
+        for modelo in models:
+            if not scroll_to(device, modelo['name']):
+                raise AssertionError('o modelo não está listado na tela de importação; '
                                      'visíveis: ' + ', '.join(visible_labels(device, 20)))
-            device.shell(f'input tap {botao[0]} {botao[1]}')
+            if not tap_exact(device, 'Excluir', optional=True):
+                raise SkipCheck('nenhum controle de exclusão na linha do modelo; rótulos '
+                                'visíveis: ' + ', '.join(visible_labels(device, 20)))
+            device.wait(lambda: on_screen(device, 'Excluir modelo'),
+                        'diálogo de excluir modelo', timeout=25)
+            # Confirmação por casamento exato: "Excluir" também é o rótulo da linha, e o
+            # título do diálogo é "Excluir modelo" — tocar em qualquer um dos dois não
+            # confirma nada (foi o erro da varredura da conversa, que ficou sem excluir).
+            if not tap_exact(device, 'EXCLUIR', optional=True):
+                # O smali declara os botões do diálogo como "Excluir" e "Cancelar". O
+                # primeiro "Excluir" da árvore é o da linha (atrás do diálogo), então o
+                # toque vai no ÚLTIMO botão com esse texto exato — o do diálogo, que é
+                # acrescentado depois.
+                botao = last_button(device, 'Excluir')
+                if not botao:
+                    raise AssertionError('diálogo aberto mas sem botão de confirmação; '
+                                         'visíveis: ' + ', '.join(visible_labels(device, 20)))
+                device.shell(f'input tap {botao[0]} {botao[1]}')
 
-        def vazio():
-            restantes = device.read_json('models.json', optional=True) or []
-            return True if not restantes else None
-        try:
-            device.wait(vazio, 'modelo removido do armazenamento', timeout=30)
-        except AssertionError:
-            raise AssertionError('o modelo continua no armazenamento depois de excluir; '
-                                 'visíveis: ' + ', '.join(visible_labels(device, 20)))
-        return 'excluído pela linha da importação, diálogo confirmado e arquivo fora do armazenamento'
+            def sumiu_este(nome=modelo['name']):
+                restantes = device.read_json('models.json', optional=True) or []
+                return True if all(m.get('name') != nome for m in restantes) else None
+            try:
+                device.wait(sumiu_este, 'modelo removido do armazenamento', timeout=30)
+            except AssertionError:
+                raise AssertionError(f'o modelo {modelo["name"]!r} continua no armazenamento '
+                                     'depois de excluir; visíveis: '
+                                     + ', '.join(visible_labels(device, 20)))
+            apagados.append(modelo['name'])
+        return (f'{len(apagados)} modelo(s) excluído(s) pela linha da importação, diálogo '
+                f'confirmado e arquivo fora do armazenamento: ' + ', '.join(apagados))
 
     def sem_modelo():
         device.launch()

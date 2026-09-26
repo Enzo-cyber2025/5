@@ -54,7 +54,13 @@ phase emulator bash .github/emu-test.sh
 phase performance .venv/bin/python scripts/check_performance.py
 # Varredura funcional: cada função visível exercitada, com PASS/FAIL/SKIP declarado.
 # Roda por último porque exclui o modelo de propósito, ao testar "Excluir modelo".
+# Com o par de visão presente, a varredura também prova imagem de ponta a ponta
+# (importar por SAF, anexar e o motor avaliar) em vez de declarar SKIP.
+VISAO=()
+if [ -n "${GGUF_TEST_VISION:-}" ] && [ -n "${GGUF_TEST_MMPROJ:-}" ]; then
+  VISAO=(--vision "$GGUF_TEST_VISION" --mmproj "$GGUF_TEST_MMPROJ")
+fi
 phase functions .venv/bin/python scripts/test_functions_android.py \
   --serial "$ANDROID_SERIAL" --apk "${GGUF_OUTPUT_APK:-dist/GGUF-Chat-repaired.apk}" \
-  --model "$GGUF_TEST_MODEL" --allow-data-reset --evidence "$GGUF_EVIDENCE"
+  --model "$GGUF_TEST_MODEL" --allow-data-reset --evidence "$GGUF_EVIDENCE" "${VISAO[@]}"
 exit "$status"
