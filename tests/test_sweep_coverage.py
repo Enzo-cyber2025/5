@@ -48,6 +48,30 @@ def test_vision_is_only_approved_when_the_engine_evaluated_the_image():
     assert '--vision' in source and "'--vision'" in source
     # A cópia do anexo é a mesma do caminho já provado (SAF + hash conferido).
     assert 'attach(device, chat, [nome])' in funcao
+    # O par entra como o APLICATIVO o entrega: UMA seleção, dois arquivos, um GGUF
+    # físico. Duas seleções separadas deixam mmprojPath=null (rodada 36258711211).
+    assert 'device.pair_import(args.vision, args.mmproj)' in funcao
+    assert 'import_model(args.vision)' not in funcao
+    # E o botão Foto é provado na conversa multimodal (não só desenhado).
+    assert 'foto_com_par(device)' in funcao
+
+
+def test_pair_import_is_one_selection_and_needs_the_app_own_unification():
+    harness = (ROOT / 'scripts/test_android.py').read_text()
+    funcao = harness[harness.index('    def pair_import(self'):harness.index('    def new_chat(self')]
+    # Seleção múltipla REAL no seletor do sistema, com os ícones de marcação.
+    assert 'select_exact_documents(self, [vision.name, projector.name])' in funcao
+    # E a unificação tem de vir do próprio aplicativo, com o log dele.
+    assert 'GGUF_PHYSICAL_UNIFICATION_OK' in funcao
+    assert 'unificado' in funcao
+    # Duas seleções separadas não são aceitas como par.
+    assert 'import_model(args.vision)' not in harness
+    # A fase de texto não pode mais aceitar o formato legado como par importado agora.
+    assert 'unified_vision(device.read_json("models.json"))' in harness
+    # Foto: a decisão é do MODELO DA CONVERSA, não da flag do runner.
+    sweep = SWEEP.read_text()
+    seletores = sweep[sweep.index('    def seletores():'):sweep.index('    def ferramentas_dialogo():')]
+    assert 'if args.mmproj:' not in seletores, 'a flag do runner não decide o comportamento do aplicativo'
 
 
 def test_deleting_a_model_removes_every_listed_model():

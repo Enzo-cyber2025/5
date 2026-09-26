@@ -34,7 +34,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'scripts'))
 
-from android_checks import (PACKAGE, PICKERS, assistant_reply, fusion,  # noqa: E402
+from android_checks import (PACKAGE, PICKERS, assistant_reply,  # noqa: E402
                             generation_completed, has_package, position, pref_value, search_panel)
 
 
@@ -351,6 +351,34 @@ def picker_then_back(device, label):
     if not opened:
         raise AssertionError(f'o seletor de {label} não apareceu')
     return f'{label} abriu o {opened} e o aplicativo voltou no mesmo processo'
+
+
+def foto_com_par(device):
+    """Foto na conversa MULTIMODAL: diálogo "Fotos" → "Importar foto" → seletor.
+
+    O aplicativo só abre esse caminho quando a CONVERSA está ligada a um par
+    visão/mmproj (Attachments.multimodal() lê chat.mmprojPath) — é a prova de que o
+    botão usa o par, e não de que só existe desenhado.
+    """
+    device.tools_open()
+    if not tap_exact(device, 'Foto', optional=True):
+        raise AssertionError('botão Foto não encontrado na conversa multimodal; visíveis: '
+                             + ', '.join(visible_labels(device, 20)))
+    device.wait(lambda: on_screen(device, 'Fotos'), 'diálogo de fotos no modo multimodal', timeout=20)
+    tap_exact(device, 'Importar foto')
+    device.wait(lambda: has_package(device.ui(), PICKERS) or other_window(device),
+                'seletor de imagens', timeout=30)
+    pid = device.alive()
+    deadline = time.monotonic() + 25
+    while time.monotonic() < deadline and not has_package(device.ui(), {PACKAGE}):
+        device.shell('input keyevent KEYCODE_BACK')
+        time.sleep(1)
+    if not has_package(device.ui(), {PACKAGE}):
+        device.shell(f'am start -W -n {PACKAGE}/.MainActivity')
+        device.wait(lambda: has_package(device.ui(), {PACKAGE}), 'volta do seletor de imagens', timeout=25)
+    if device.alive() != pid:
+        raise AssertionError(f'o processo mudou no caminho de foto: {pid} → {device.alive()}')
+    return 'Foto abriu o diálogo e o seletor de imagens no mesmo processo'
 
 
 def write_downloads_fixture(device, name, body):
@@ -714,38 +742,22 @@ def main():
         for label in ('Vídeo', 'Áudio', 'Arquivo'):
             device.tools_open()
             provas.append(picker_then_back(device, label))
-        # Foto: sem par visão/mmproj o aplicativo não abre nada — o próprio código
-        # (Attachments.cameraMenu/pick) volta quando não é multimodal —, então o
-        # exigível é que o toque não derrube o processo; com o par, o caminho é o
-        # diálogo "Fotos" → "Importar foto" → seletor de imagens.
-        if args.mmproj:
-            device.tools_open()
-            if not tap_exact(device, 'Foto', optional=True):
-                raise AssertionError('botão Foto não encontrado na linha de ferramentas')
-            device.wait(lambda: on_screen(device, 'Fotos'), 'menu de fotos', timeout=15)
-            tap_exact(device, 'Importar foto')
-            device.wait(lambda: has_package(device.ui(), PICKERS) or other_window(device),
-                        'seletor de imagens', timeout=25)
-            # Volta ao aplicativo e confere que foi o mesmo processo (nada de crash).
-            pid = device.alive()
-            deadline = time.monotonic() + 25
-            while time.monotonic() < deadline and not has_package(device.ui(), {PACKAGE}):
-                device.shell('input keyevent KEYCODE_BACK')
-                time.sleep(1)
-            if not has_package(device.ui(), {PACKAGE}):
-                device.shell(f'am start -W -n {PACKAGE}/.MainActivity')
-                device.wait(lambda: has_package(device.ui(), {PACKAGE}), 'volta do seletor de imagens',
-                            timeout=25)
-            if device.alive() != pid:
-                raise AssertionError('o processo mudou ao abrir o seletor de imagens')
-            detalhe = 'Foto: diálogo "Fotos", "Importar foto" e seletor de imagens, mesmo processo'
-        else:
-            device.tools_open()
-            if not tap_exact(device, 'Foto', optional=True):
-                raise AssertionError('botão Foto não encontrado na linha de ferramentas')
-            device.alive()
-            detalhe = ('Foto: sem par visão/mmproj o aplicativo não abre seletor (volta sem erro), '
-                       'como declara o próprio código')
+        # Foto: o que o aplicativo faz depende do MODELO DA CONVERSA ABERTA
+        # (Attachments.multimodal() lê chat.mmprojPath), não de o par existir no
+        # runner. Aqui a conversa é de TEXTO de propósito: o exigível é que o toque
+        # não derrube o processo e não abra seletor nenhum. O caminho com o par —
+        # diálogo "Fotos" → "Importar foto" → seletor de imagens — é exercitado na
+        # etapa visao, na conversa multimodal de verdade (foto_com_par).
+        device.tools_open()
+        if not tap_exact(device, 'Foto', optional=True):
+            raise AssertionError('botão Foto não encontrado na linha de ferramentas')
+        time.sleep(1)
+        device.alive()
+        if has_package(device.ui(), PICKERS):
+            raise AssertionError('conversa de texto abriu o seletor de imagens: o aplicativo deveria '
+                                 'recusar sem par visão/mmproj ligado à conversa')
+        detalhe = ('Foto: em conversa de texto o aplicativo não abre seletor (volta sem erro) e o '
+                   'processo continua vivo; com o par ligado, o caminho completo é provado na etapa visao')
         return ('Vídeo, Áudio e Arquivo abriram o seletor do sistema e o aplicativo voltou no '
                 f'mesmo processo; {detalhe}')
 
@@ -815,11 +827,11 @@ def main():
             from test_inference_android import F, fixtures, attach  # reuso do caminho já provado
         except Exception as exc:
             raise SkipCheck(f'fixtures de visão indisponíveis neste runner ({type(exc).__name__}: {exc})')
-        device.import_model(args.vision)
-        device.import_model(args.mmproj)
-        modelos = device.read_json('models.json')
-        visao_id, _, _ = fusion(modelos, args.vision.name, args.mmproj.name)
-        modelo = next(m for m in modelos if m['id'] == visao_id)
+        # O par entra como o APLICATIVO o entrega: dois arquivos na MESMA seleção do
+        # seletor, unificados num GGUF físico (path == mmprojPath). Duas seleções
+        # separadas não vinculam nada — a rodada 36258711211 registrou mmprojPath=null
+        # e reprovou esse caminho; a prova aqui é o registro unificado persistido.
+        modelo = device.pair_import(args.vision, args.mmproj)
         fixtures()
         nome = 'imagem-da-visao.jpg'
         (F / nome).write_bytes((F / 'frame-a.jpg').read_bytes())
@@ -839,9 +851,12 @@ def main():
                                  + ', '.join(visible_labels(device, 20)))
         if not resposta:
             raise AssertionError('a imagem foi avaliada pelo motor mas nenhuma resposta foi persistida')
-        return (f'par visão/mmproj importado por SAF e vinculado; imagem anexada (hash conferido) e '
-                f'avaliada pelo motor ({avaliada.group(1)} tokens de imagem, backend {avaliada.group(2)}) '
-                f'com resposta persistida ({len(resposta)} caracteres)')
+        # Com o par ligado à conversa, o caminho de foto do aplicativo abre de verdade.
+        foto = foto_com_par(device)
+        return (f'par visão/mmproj importado numa única seleção e unificado num GGUF físico; '
+                f'imagem anexada (hash conferido) e avaliada pelo motor ({avaliada.group(1)} tokens de '
+                f'imagem, backend {avaliada.group(2)}) com resposta persistida ({len(resposta)} '
+                f'caracteres); {foto}')
 
     def notificacao():
         device.launch()

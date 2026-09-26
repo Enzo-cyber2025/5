@@ -17,11 +17,12 @@ import time
 import zipfile
 import xml.etree.ElementTree as ET
 
-from android_checks import (PACKAGE, PICKERS, assistant_reply, fusion, generation_completed,
+from android_checks import (PACKAGE, PICKERS, assistant_reply, generation_completed,
                             gpu_offloaded, has_package, imported, position, basic_response_quality, vulkan_offloaded,
                             generation_stats, ui_first_text_s, software_vulkan_refused, cpu_threads,
                             warmup_state, search_timing, search_panel, context_tuning, kv_cache,
-                            search_cache_hit, search_race_winner)
+                            search_cache_hit, search_race_winner, unified_vision,
+                            select_exact_documents)
 
 
 class Android:
@@ -312,6 +313,60 @@ class Android:
             except AssertionError:
                 return None
         return self.wait(completed, f"importação persistida de {source.name}", timeout=300)
+
+    def pair_import(self, vision, projector, timeout=600):
+        """Importa o par visão+projetor do jeito que o APLICATIVO espera.
+
+        A tela tem UM botão ("Importar GGUF") com seleção múltipla: dois componentes
+        compatíveis escolhidos na MESMA seleção passam pela unificação atômica e viram
+        UM GGUF físico (path == mmprojPath, multimodal=true, capacidade
+        VISION_SINGLE_GGUF). Importar os dois em seleções SEPARADAS não vincula nada —
+        a rodada 36258711211 registrou `mmprojPath: null` e `multimodal: false` e
+        reprovou, com razão, o caminho antigo. O que confirma o par aqui é o registro
+        unificado PERSISTIDO mais a unificação registrada pelo próprio aplicativo
+        (GGUF_PHYSICAL_UNIFICATION_OK / GGUF_ATOMIC_IMPORT_COMMITTED).
+        """
+        self.launch()
+        for source in (vision, projector):
+            self.adb("push", source, f"/sdcard/Download/{source.name}", timeout=300)
+            self.shell("am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d " +
+                       shlex.quote(f"file:///storage/emulated/0/Download/{source.name}"), check=False)
+        antes = {m["id"] for m in self.read_json("models.json", optional=True)}
+        self.adb("logcat", "-c")
+        self.tap(text="Importar", package={PACKAGE}, contains=True)
+        self.tap(text="Importar GGUF", package={PACKAGE}, contains=True)
+        self.wait(lambda: has_package(self.ui(), PICKERS), "seletor de arquivos")
+        for _ in range(6):
+            xml = self.ui()
+            if not has_package(xml, PICKERS):
+                raise AssertionError("o seletor fechou antes da seleção múltipla")
+            if not any(position(xml, text=t, package=PICKERS) for t in ("Open from", "Abrir de")):
+                break
+            self.select_downloads()
+            time.sleep(1)
+        self.tap(desc="List view", package=PICKERS, optional=True)
+        # Ícones de seleção, não o nome do arquivo (o nome abre o documento).
+        select_exact_documents(self, [vision.name, projector.name])
+        self.capture("pair-selected.png")
+        self.confirm_picker(self.ui())
+        self.wait(lambda: not has_package(self.ui(), PICKERS), "retorno da seleção SAF")
+
+        def unificado():
+            if getattr(self, "progress_observer", None):
+                self.progress_observer.poll()
+            self.alive()
+            modelos = self.read_json("models.json", optional=True)
+            novos = [m for m in modelos if m["id"] not in antes]
+            return next((m for m in novos if m.get("multimodal") is True
+                         and m.get("mmprojPath") and m.get("mmprojPath") == m.get("path")), None)
+        unidade = self.wait(unificado, "par unificado persistido (um GGUF físico)", timeout=timeout)
+        log = self.adb("logcat", "-d")
+        (self.evidence / "pair-import-logcat.txt").write_text(log)
+        if "GGUF_PHYSICAL_UNIFICATION_OK" not in log:
+            raise AssertionError("o registro unificado apareceu, mas o log do aplicativo não "
+                                 "confirma a unificação física (GGUF_PHYSICAL_UNIFICATION_OK)")
+        self.last_pair = unidade
+        return unidade
 
     def new_chat(self, model, gpu_layers, context_size=1024, threads=2, search=False):
         self.shell(f"am force-stop {PACKAGE}")
@@ -1003,14 +1058,20 @@ def main():
             result["checks"]["text_import"] = "PASS"
         device.capture("import.png")
         if args.vision:
-            device.import_model(args.vision)
-            device.import_model(args.mmproj)
-            before = fusion(device.read_json("models.json"), args.vision.name, args.mmproj.name)
+            unidade = device.pair_import(args.vision, args.mmproj)
+            antes = (unidade["path"], unidade["mmprojPath"], unidade["multimodal"])
             device.launch()
-            after = fusion(device.read_json("models.json"), args.vision.name, args.mmproj.name)
-            if before != after:
+            depois = next((m for m in device.read_json("models.json") if m["id"] == unidade["id"]), None)
+            if depois is None:
+                raise AssertionError("o par unificado desapareceu depois de reiniciar")
+            if (depois["path"], depois["mmprojPath"], depois["multimodal"]) != antes:
                 raise AssertionError("Vínculo mudou após reiniciar")
-            result["checks"]["fusion_persistence"] = "PASS (não testa inferência de imagem)"
+            unificado = unified_vision(device.read_json("models.json"))
+            if unificado["id"] != unidade["id"]:
+                raise AssertionError("Mais de um par unificado na biblioteca; o vínculo ficaria ambíguo")
+            result["checks"]["fusion_persistence"] = (
+                "PASS: dois GGUFs numa única seleção viraram UM GGUF físico (unificação atômica "
+                "registrada pelo aplicativo) e o vínculo sobreviveu ao reinício; não testa inferência de imagem")
         else:
             result["checks"]["fusion_persistence"] = "SKIP: par visão/mmproj não fornecido"
         if args.vulkan_only:

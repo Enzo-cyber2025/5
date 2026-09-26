@@ -50,12 +50,40 @@ def imported(models, filename):
 
 
 def fusion(models, vision_name, projector_name):
+    """Formato LEGADO: dois registros, o de visão apontando para o projetor.
+
+    Continua valendo para pares antigos que o aplicativo preserva, mas NÃO é o que
+    a importação atual entrega — ver `unified_vision`.
+    """
     vision, projector = imported(models, vision_name), imported(models, projector_name)
     if vision["id"] == projector["id"] or vision.get("mmprojPath") != projector["path"]:
         raise AssertionError("Modelo de visão não está vinculado ao projetor esperado")
     if vision.get("multimodal") is not True:
         raise AssertionError("multimodal não foi persistido")
     return vision["id"], vision["path"], vision["mmprojPath"]
+
+
+def unified_vision(models, *, expected_capability="VISION_SINGLE_GGUF"):
+    """O par visão+projetor como a importação atual do aplicativo o entrega.
+
+    A tela tem UM botão ("Importar GGUF") com seleção múltipla: dois componentes
+    compatíveis escolhidos na MESMA seleção passam pela unificação atômica e viram
+    UM GGUF físico — `path == mmprojPath`, `multimodal == true`. Importar os dois em
+    seleções separadas não vincula nada: as rodadas 36255713807 e 36258711211
+    registraram `mmprojPath: null` e `multimodal: false` no caminho antigo, e a
+    reprovação estava certa. O que este ajudante exige é o registro unificado.
+    """
+    candidatos = [m for m in models if m.get("multimodal") is True
+                  and m.get("mmprojPath") and m.get("mmprojPath") == m.get("path")]
+    if not candidatos:
+        vistos = [{"fileName": m.get("fileName"), "multimodal": m.get("multimodal"),
+                   "mmprojPath": m.get("mmprojPath"), "capability": m.get("capability")}
+                  for m in models]
+        raise AssertionError(f"nenhum registro unificado de visão (um GGUF físico) em models.json: {vistos}")
+    unificado = candidatos[0]
+    if expected_capability and unificado.get("capability") != expected_capability:
+        raise AssertionError(f"capacidade inesperada do par unificado: {unificado.get('capability')!r}")
+    return unificado
 
 
 def assistant_reply(chats, chat_id, prompt):

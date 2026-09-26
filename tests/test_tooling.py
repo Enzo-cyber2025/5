@@ -17,7 +17,7 @@ from build_apk import rebuild_zip, verify_alignment, verify_payload
 from patch_dex import PATCHES, patch_bytes
 from patch_smali import GENERATE, MODEL_PICKER_METHOD, MODEL_PICKER_FILTER, patch_model_picker, apply
 from android_checks import (PACKAGE, PICKERS, assistant_reply, fusion, generation_completed,
-                            gpu_offloaded, has_package, imported, position)
+                            gpu_offloaded, has_package, imported, position, unified_vision)
 
 PICKER = '''<hierarchy><node package="com.google.android.documentsui" text="Images" enabled="true" bounds="[0,0][30,30]"/>
 <node package="com.google.android.documentsui" text="RECENT FILES" enabled="true" bounds="[0,30][90,60]"/>
@@ -63,6 +63,42 @@ def test_fusion_missing_wrong_projector_fails(value):
     data[0]["mmprojPath"] = value
     with pytest.raises(AssertionError):
         fusion(data, "vision.gguf", "mmproj.gguf")
+
+
+def unificado():
+    """O par como a importação ATUAL entrega: um GGUF físico, sem projetor solto."""
+    return [{"id": "u", "fileName": "abc-unified.gguf", "path": "/models/abc-unified.gguf",
+             "mmprojPath": "/models/abc-unified.gguf", "multimodal": True,
+             "capability": "VISION_SINGLE_GGUF"}]
+
+
+def test_unified_vision_accepts_the_single_physical_file_the_app_writes():
+    unidade = unified_vision(unificado())
+    assert unidade["id"] == "u" and unidade["path"] == unidade["mmprojPath"]
+
+
+@pytest.mark.parametrize("data", [
+    [],                                              # biblioteca vazia
+    models(),                                        # formato legado: dois registros
+    [{"id": "x", "path": "/x", "mmprojPath": None, "multimodal": False}],   # o FAIL real
+    [{"id": "x", "path": "/x", "mmprojPath": "/x", "multimodal": True,
+      "capability": "IMAGE_TOKENS_ONLY"}],           # marcado multimodal sem pesos de visão
+])
+def test_unified_vision_rejects_anything_that_is_not_one_unified_pair(data):
+    with pytest.raises(AssertionError):
+        unified_vision(data)
+
+
+def test_pair_import_proves_the_app_unified_the_two_files(tmp_path):
+    """Duas seleções separadas não vinculam nada — o teste tem que exigir a do app.
+
+    Rodada 36258711211: o caminho antigo (importar o GGUF de visão e depois o
+    projetor) deixou `mmprojPath: null`, `multimodal: false` e derrubou a fase do
+    emulador. O que vale é a unificação atômica registrada pelo aplicativo.
+    """
+    harness = (ROOT / "scripts/test_android.py").read_text()
+    assert "GGUF_PHYSICAL_UNIFICATION_OK" in harness
+    assert "select_exact_documents(self, [vision.name, projector.name])" in harness
 
 
 @pytest.mark.parametrize("data", [[], {}, [{"fileName": "vision.gguf"}], models() + [models()[0]]])
