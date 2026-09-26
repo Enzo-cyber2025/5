@@ -168,6 +168,15 @@ def search_timing(log):
     found = SEARCH_BUDGET_RE.findall(log)
     if not found:
         return None
+    # Cada busca começa com GGUF_SEARCH_ANNOUNCED. O `logcat -d` traz o buffer
+    # INTEIRO, com as buscas anteriores junto: sem cortar na última, a checagem de
+    # "a cadeia parou na primeira falha" contava tentativas de buscas antigas — foi
+    # assim que a rodada 36272556329 reprovou o aplicativo (offline com DUAS
+    # tentativas DuckDuckGo) quando o log mostrava uma busca de 104 ms parando
+    # certo e outra, 18 s depois, de 1 ms. O recorte é a última busca, só ela.
+    anuncios = [m.start() for m in re.finditer(SEARCH_ANNOUNCED_RE, log)]
+    if anuncios:
+        log = log[anuncios[-1]:]
     total, used, exhausted, provider = found[-1]
     attempts = [(name, int(budget), int(remaining), int(connect), int(read))
                 for name, budget, remaining, connect, read in SEARCH_ATTEMPT_RE.findall(log)]
@@ -482,16 +491,70 @@ def _linha_da_gaveta(xml):
     return None
 
 
-def abrir_pasta_de_downloads(d, timeout=40):
+def _foto_do_seletor(xml):
+    """Assinatura do que está visível no seletor: texto e posição de cada item.
+
+    Serve para saber que a lista PAROU. A rodada 36272556329 mostrou duas fases
+    (anexos e visão) tocando no nome de uma pasta e a pasta não abrindo: o toque
+    saía enquanto a lista ainda se re-arrumava depois de trocar a raiz. A foto
+    repetida é a prova barata de que nada mais está se mexendo.
+    """
+    return tuple((n.get("text") or "", n.get("resource-id", ""), n.get("bounds", ""))
+                 for n in nodes(xml) if n.get("package") in PICKERS and n.get("text"))
+
+
+def espera_seletor_parado(d, tentativas=8, intervalo=0.4):
+    """Espera a lista do seletor PARAR: duas fotos seguidas com o mesmo conteúdo.
+
+    Um toque que sai enquanto a lista se re-arruma cai na linha errada (ou em nada):
+    a rodada 36272556329 tocou no nome da pasta e a pasta não abriu. Devolve False
+    se a lista não parar dentro das tentativas — quem chama decide o que fazer.
+    """
+    import time
+    anterior = None
+    for _ in range(tentativas):
+        foto = _foto_do_seletor(d.ui())
+        if foto and foto == anterior:
+            return True
+        anterior = foto
+        time.sleep(intervalo)
+    return False
+
+
+def _espera_lista_parada(d, limite, intervalo=0.4):
+    """Espera a pasta certa abrir e a lista parar de se mexer (duas fotos iguais)."""
+    import time
+    anterior = None
+    while time.monotonic() < limite:
+        xml = d.ui()
+        if not _na_pasta_de_downloads(xml) or _gaveta_aberta(xml):
+            anterior = None
+            time.sleep(intervalo)
+            continue
+        foto = _foto_do_seletor(xml)
+        if foto and foto == anterior:
+            return True
+        anterior = foto
+        time.sleep(intervalo)
+    return False
+
+
+def abrir_pasta_de_downloads(d, timeout=60):
     """Leva o seletor para a pasta Downloads, a raiz onde a marcação foi PROVADA.
 
-    Rodada 36267877767: o seletor abriu em "Recent files" e NENHUM gesto marcou as
-    linhas — toque longo com o dedo preso, toque simples e swipe com deslocamento —
-    a etapa de visão ficou sem par e a varredura fechou 19/20. A última vez que a
-    marcação múltipla foi provada de verdade (rodada 34978739703, contador "2
-    selected" em `physical-import-ui-pair-selected.png`) o seletor estava em
-    Downloads, alcançado por "Show roots" → "Downloads". O harness repete esse
-    caminho ANTES de marcar e, se não conseguir, diz exatamente o que viu.
+    Duas rodadas mostraram que a raiz e a HORA do toque importam:
+
+    * 36267877767 — o seletor abriu em "Recent files" e NENHUM gesto marcou as
+      linhas (toque longo com o dedo preso, toque simples, swipe com deslocamento);
+    * 36272556329 — com o seletor já em Downloads, duas fases tocaram no nome de uma
+      pasta e a pasta não abriu ("arquivos na pasta isolada"): a lista ainda estava
+      se re-arrumando por causa da troca de raiz feita pelo próprio harness.
+
+    A marcação múltipla PROVADA (rodada 34978739703, contador "2 selected") saiu da
+    pasta Downloads alcançada por "Show roots" → "Downloads" — é este o caminho
+    aqui. Quando a pasta certa já está aberta, o harness NÃO re-seleciona a mesma
+    raiz (isso recarregaria a lista debaixo do dedo): só fecha a gaveta. E só
+    devolve depois de a lista PARAR (duas fotos iguais).
     """
     import time
     limite = time.monotonic() + timeout
@@ -499,32 +562,42 @@ def abrir_pasta_de_downloads(d, timeout=40):
     while time.monotonic() < limite:
         xml = d.ui()
         barra, faixa = cabecalho_do_seletor(xml)
-        if _na_pasta_de_downloads(xml):
+        gaveta = _gaveta_aberta(xml)
+        if _na_pasta_de_downloads(xml) and not gaveta:
             return faixa or barra
-        if not _nos_recentes(xml) and barra:
-            # Já é uma pasta de verdade (o chamador pode ter aberto uma subpasta).
-            return barra
         botao = (position(xml, desc="Show roots", package=PICKERS)
                  or position(xml, desc="Mostrar raízes", package=PICKERS)
                  or position(xml, desc="Mostrar raiz", package=PICKERS))
         if not botao:
             tentativas.append(f"sem botão de raízes na barra ({barra!r}/{faixa!r})")
             break
-        if not _gaveta_aberta(xml):
+        if gaveta:
+            if _na_pasta_de_downloads(xml):
+                # Mesma raiz: fechar a gaveta basta. Re-tocar a raiz recarregaria a
+                # lista e o próximo toque cairia numa tela se mexendo.
+                d.shell(f"input tap {int(botao[0])} {int(botao[1])}", check=False)
+            else:
+                destino = _linha_da_gaveta(xml)
+                if destino is None:
+                    d.shell(f"input tap {int(botao[0])} {int(botao[1])}", check=False)
+                    tentativas.append(f"gaveta sem Downloads ({barra!r})")
+                    continue
+                d.shell(f"input tap {int(destino[0])} {int(destino[1])}", check=False)
+        else:
             d.shell(f"input tap {int(botao[0])} {int(botao[1])}", check=False)
-        destino = None
-        limite_gaveta = time.monotonic() + 8
-        while destino is None and time.monotonic() < limite_gaveta:
-            destino = _linha_da_gaveta(xml)
+            destino = None
+            limite_gaveta = time.monotonic() + 8
+            while destino is None and time.monotonic() < limite_gaveta:
+                destino = _linha_da_gaveta(xml)
+                if destino is None:
+                    xml = d.ui()
             if destino is None:
-                xml = d.ui()
-        if not destino:
-            tentativas.append(f"gaveta de raízes sem Downloads ({barra!r})")
-            continue
-        d.shell(f"input tap {int(destino[0])} {int(destino[1])}", check=False)
-        if _espera_downloads(d, limite):
+                tentativas.append(f"gaveta de raízes sem Downloads ({barra!r})")
+                continue
+            d.shell(f"input tap {int(destino[0])} {int(destino[1])}", check=False)
+        if _espera_lista_parada(d, limite):
             return "Downloads"
-        tentativas.append("toquei em Downloads e a pasta não abriu")
+        tentativas.append("toquei em Downloads e a pasta não abriu/parou")
     try:
         # A próxima rodada não precisa adivinhar: o XML do seletor fica na evidência.
         (d.evidence / "saf-roots-failure-ui.xml").write_text(d.ui())
@@ -532,15 +605,6 @@ def abrir_pasta_de_downloads(d, timeout=40):
         pass
     raise AssertionError("não consegui abrir a pasta Downloads no seletor do sistema"
                          + (": " + "; ".join(tentativas) if tentativas else ""))
-
-
-def _espera_downloads(d, limite, intervalo=0.5):
-    import time
-    while time.monotonic() < limite:
-        if _na_pasta_de_downloads(d.ui()):
-            return True
-        time.sleep(intervalo)
-    return False
 
 
 def select_exact_documents(d, names):

@@ -191,6 +191,41 @@ def test_timing_reports_flag_an_attempt_over_the_remaining_budget():
     assert search_timing(bad)['attempt_slices_within_budget'] is False
 
 
+def test_search_timing_reads_only_the_last_search_in_the_log_buffer():
+    """`logcat -d` traz o buffer inteiro: a checagem da cadeia é da ÚLTIMA busca.
+
+    Rodada 36272556329: o aplicativo parou certo na primeira falha (104 ms, "demais
+    provedores ignorados: falha de rede") e a rodada reprovou o aplicativo por
+    contar tentativas de uma busca anterior que ainda estava no mesmo buffer.
+    """
+    from android_checks import search_timing
+    anuncio = 'GGUF_SEARCH_ANNOUNCED query_pending=1 budget_ms=12000\n'
+    primeira = (anuncio
+                + 'GGUF_SEARCH_ATTEMPT provider=DuckDuckGo budget_ms=12000 remaining_ms=11999 '
+                  'connect_ms=3000 read_ms=4000\n'
+                + 'GGUF_SEARCH_ATTEMPT provider=Wikipédia budget_ms=12000 remaining_ms=8000 '
+                  'connect_ms=3000 read_ms=4000\n'
+                + 'GGUF_SEARCH provider=DuckDuckGo results=5 ms=900\n'
+                + 'GGUF_SEARCH_BUDGET total_ms=12000 used_ms=900 exhausted=0 provider=DuckDuckGo\n')
+    ultima = (anuncio
+              + 'GGUF_SEARCH_ATTEMPT provider=DuckDuckGo budget_ms=12000 remaining_ms=11999 '
+                'connect_ms=3000 read_ms=4000\n'
+              + 'GGUF_SEARCH_FAILED provider=nenhum ms=104 error=DuckDuckGo: sem rede/DNS; '
+                'demais provedores ignorados: falha de rede\n'
+              + 'GGUF_SEARCH_BUDGET total_ms=12000 used_ms=104 exhausted=0 provider=nenhum\n')
+    # Sozinha, a primeira busca é lida inteira.
+    sozinha = search_timing(primeira)
+    assert sozinha['attempts'] == ['DuckDuckGo', 'Wikipédia'], sozinha
+    assert sozinha['used_ms'] == 900 and sozinha['sources'] == 5, sozinha
+    # Com as duas no buffer, vale a ÚLTIMA — que parou na primeira falha.
+    junto = search_timing(primeira + ultima)
+    assert junto['attempts'] == ['DuckDuckGo'], junto
+    assert junto['used_ms'] == 104 and junto['provider'] == 'nenhum', junto
+    assert junto['sources'] == 0, junto
+    assert junto['attempt_slices_within_budget'] is True
+    assert 'falha de rede' in (junto['error'] or ''), junto
+
+
 def test_search_prompt_block_is_bounded_for_latency():
     """O bloco de fontes entra no prompt: cada caractere é tempo de espera.
 

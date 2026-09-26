@@ -6,7 +6,8 @@ import base64,hashlib,json,re,shlex,subprocess,traceback,zipfile,zlib
 from pathlib import Path
 from test_mobile import MobileAndroid,APK,VULKAN
 from test_attachment_android import item_state,wait_items,select_all
-from android_checks import PACKAGE,PICKERS,position,has_package,generation_completed,image_prefill_records
+from android_checks import (PACKAGE,PICKERS,position,has_package,generation_completed,
+                            image_prefill_records,espera_seletor_parado)
 E=Path('evidence')
 F=Path('.cache/inference-fixtures')
 SOURCES=[('frame-a.jpg','pytorch/hub','12f0e0dd1162b94a5b0919ce8b91821450965985','f3f87bb8ab3c26c7ecfd3ac60421d7f32b0503d1d6c5baf8bac42ed93d86351a'),('frame-b.jpg','ultralytics/yolov5','b43e311165c785f000eb7493ff8fb662d06a3f83','33b198a1d2839bb9ac4c65d61f9e852196793cae9a0781360859425f6022b69c')]
@@ -58,9 +59,19 @@ def attach(d,chat,names):
     d.tap(desc='Anexar arquivos',package={PACKAGE})
     d.wait(lambda:has_package(d.ui(),PICKERS),'SAF de anexos')
     d.tap(desc='Show roots',package=PICKERS);d.select_downloads()
-    d.wait(lambda:position(d.ui(),text=folder,package=PICKERS),'pasta nova no gerenciador')
-    d.tap(text=folder,package=PICKERS)
-    d.wait(lambda:all(position(d.ui(),text=n,package=PICKERS) for n in names),'arquivos na pasta isolada')
+    # Entrar na pasta só vale com PROVA: a rodada 36272556329 tocou no nome e a
+    # pasta não abriu (a lista ainda se re-arrumava depois da troca de raiz). Aqui
+    # o toque espera a lista parar e é repetido até os arquivos aparecerem.
+    for tentativa in (1, 2, 3):
+        d.wait(lambda:position(d.ui(),text=folder,package=PICKERS),'pasta nova no gerenciador',timeout=30)
+        espera_seletor_parado(d)
+        d.tap(text=folder,package=PICKERS)
+        try:
+            d.wait(lambda:all(position(d.ui(),text=n,package=PICKERS) for n in names),
+                   'arquivos na pasta isolada',timeout=30)
+            break
+        except AssertionError:
+            if tentativa==3:raise
     select_all(d,names)
     state=wait_items(d,chat,before+len(names))
     key=hashlib.sha256(chat['id'].encode()).hexdigest()

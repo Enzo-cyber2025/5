@@ -136,11 +136,37 @@ def test_checks_are_independent_and_generations_are_long_enough_to_catch():
     assert sweep.count('self.restaurar(name)') == 2, 'SKIP e FAIL têm de restaurar a tela'
     assert 'aplicativo devolvido à tela inicial' in sweep
     for funcao in ('parar_geracao', 'notificacao'):
-        trecho = sweep[sweep.index(f'    def {funcao}():'):]
-        trecho = trecho[:trecho.index('    def ', 10)] if '    def ' in trecho[10:] else trecho
+        inicio = sweep.index(f'    def {funcao}():')
+        trecho = sweep[inicio:]
+        # O corpo termina na próxima função de MESMA indentação (funções internas,
+        # com 8 espaços, não cortam o trecho).
+        fim = trecho.find('\n    def ', 10)
+        if fim > 0:
+            trecho = trecho[:fim]
         assert 'n_predict=' in trecho and '1024' in trecho, \
             f'{funcao} precisa de geração longa o bastante para o botão Parar ser visto'
         assert 'última medição' in trecho, 'sem a medição na mensagem, o FAIL não explica nada'
     # O limite padrão continua 128 para as demais etapas (rodagem curta).
     harness = (ROOT / 'scripts/test_android.py').read_text()
     assert 'def new_chat(self, model, gpu_layers, context_size=1024, threads=2, search=False,\n                 n_predict=128):' in harness
+
+
+def test_geracao_longa_pede_um_texto_que_nao_termina_sozinho():
+    """Contar até 300 mantém o motor gerando até o limite de tokens.
+
+    Rodada 36272556329: "uma lista de cinquenta itens" fez o SmolLM2 encerrar sozinho
+    em 246 tokens (13,8 s) e as duas etapas que precisam PEGAR a geração em andamento
+    (`parar_geracao`, `notificacao`) reprovaram sem nunca ver o botão "Parar" — a
+    janela de 13,8 s ficou menor que o custo das leituras de tela.
+    """
+    fonte = (ROOT / 'scripts/test_functions_android.py').read_text()
+    pedido = 'Count from 1 to 300 in English, one number per line, without stopping.'
+    assert fonte.count(pedido) == 2, 'as duas etapas que pegam a geração usam o mesmo pedido'
+    for funcao in ('parar_geracao', 'notificacao'):
+        trecho = fonte[fonte.index(f'def {funcao}():'):]
+        trecho = trecho[:trecho.index('\n    def ')]
+        assert 'n_predict=1024' in trecho or 'n_predict=limpar' in trecho, funcao
+        assert pedido in trecho, funcao
+        assert 'última medição' in trecho, funcao
+
+

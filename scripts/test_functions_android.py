@@ -640,17 +640,27 @@ def main():
         device.launch()
         chat = device.new_chat(model, 0, threads=2, n_predict=limpar)
         device.wait_for_load()
-        device.send('Write a long numbered list in English, at least fifty items.')
+        # Pedido SEM ponto final previsível: "uma lista de cinquenta itens" fez o
+        # SmolLM2 encerrar sozinho em 246 tokens (13,8 s) na rodada 36272556329 e a
+        # janela do botão ficou menor que o custo de uma leitura de tela. Contar até
+        # 300 mantém o motor gerando até o limite de tokens.
+        device.send('Count from 1 to 300 in English, one number per line, without stopping.')
         # 120 s: se o motor acabou de ser descarregado (ou é a primeira geração da
         # varredura), a carga do modelo entra nesta espera. Cronometrar 30 s aqui
         # media o emulador, não o aplicativo (rodada 36245048939).
+        olhadas = []
+
+        def parar_visivel():
+            olhadas.append(1)
+            return on_screen(device, 'Parar')
+
         try:
-            device.wait(lambda: on_screen(device, 'Parar'), 'botão Parar durante a geração',
-                        timeout=120)
+            device.wait(parar_visivel, 'botão Parar durante a geração', timeout=120)
         except AssertionError:
             estadio = last_stats(device.adb('logcat', '-d'))
-            raise AssertionError('o botão Parar não apareceu na geração de '
-                                 f'{limpar} tokens (última medição: {estadio})')
+            raise AssertionError(f'o botão Parar não apareceu em {len(olhadas)} leitura(s) de '
+                                 f'tela durante a geração de {limpar} tokens '
+                                 f'(última medição: {estadio})')
         time.sleep(2)
         tap_label(device, 'Parar')
 
@@ -904,7 +914,7 @@ def main():
         device.launch()
         device.new_chat(model, 0, threads=2, n_predict=1024)
         device.wait_for_load()
-        device.send('Write a long numbered list in English, at least fifty items.')
+        device.send('Count from 1 to 300 in English, one number per line, without stopping.')
         try:
             device.wait(lambda: on_screen(device, 'Parar'), 'geração em andamento', timeout=120)
         except AssertionError:

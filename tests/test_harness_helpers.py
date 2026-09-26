@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 # scripts/), então o caminho entra antes de qualquer import deles.
 sys.path.insert(0, str(ROOT / 'scripts'))
 
-from android_checks import select_exact_documents  # noqa: E402
+from android_checks import abrir_pasta_de_downloads, select_exact_documents  # noqa: E402
 
 
 def load(name, relative):
@@ -492,7 +492,7 @@ class PickerDevice:
 
     def _toque(self, x, y):
         if abs(x - self.MOSTRAR_RAIZES[0]) < 60 and abs(y - self.MOSTRAR_RAIZES[1]) < 60:
-            self.gaveta = True                      # "Show roots"
+            self.gaveta = not self.gaveta           # "Show roots" alterna a gaveta
             return
         if self.gaveta:
             for nome, topo in self.RAIZES.items():
@@ -557,6 +557,26 @@ def test_select_exact_documents_leaves_recents_for_downloads_and_marks_by_touch(
     assert int(toques[0].split()[2]) == device.MOSTRAR_RAIZES[0], toques
     assert int(toques[1].split()[3]) == device.RAIZES['Downloads'], toques
     assert all(int(a.split()[3]) >= 700 for a in toques[2:]), toques
+
+
+def test_drawer_already_open_on_downloads_is_only_closed():
+    """Já na pasta certa, re-tocar a raiz recarregaria a lista debaixo do dedo.
+
+    Rodada 36272556329: duas fases tocaram no nome de uma pasta e a pasta não abriu
+    ("arquivos na pasta isolada") logo depois de o harness trocar a raiz do seletor.
+    Dentro da pasta, com a gaveta aberta, o certo é fechar a gaveta e devolver.
+    """
+    device = PickerDevice(['model.gguf'], modo='toque', raiz='Downloads')
+    device.shell('input tap 77 202')            # quem abriu a gaveta foi o chamador
+    assert device.gaveta is True
+    device.actions.clear()                      # daqui em diante, só o que o harness faz
+    retorno = abrir_pasta_de_downloads(device)
+    assert retorno == 'Downloads', retorno
+    assert device.gaveta is False, 'a gaveta tem de ser fechada'
+    # Nenhum toque na linha Downloads da gaveta: só o do hambúrguer.
+    toques = [a for a in device.actions if a.startswith('input tap')]
+    assert toques == ['input tap 77 202'], toques
+    assert device.selecionados == set()
 
 
 def test_select_exact_documents_falls_back_to_the_held_finger_when_taps_do_not_mark():
