@@ -82,6 +82,14 @@ class Android:
             # dele aqui, que derrubou a fase de texto na rodada 36261210088.
             if not self.shell(f"pidof {PACKAGE}", check=False).strip():
                 break
+            if has_package(xml, PICKERS):
+                # A janela de cima é o SELETOR DE ARQUIVOS do sistema: a foto está
+                # legítima (é justamente o que o teste quer ver) e mandar ESC para
+                # dentro dela mexeria na seleção que o teste acabou de fazer — a
+                # rodada 36267877767 marcou duas vezes e as duas fotos do seletor
+                # apareceram com nenhuma linha marcada. ESC continua valendo só
+                # quando quem cobre o aplicativo é o teclado.
+                break
             self.shell("input keyevent 111", check=False)
             time.sleep(0.5)
         summary = [{k: n.get(k) for k in ("text", "content-desc", "resource-id", "bounds", "enabled", "selected")}
@@ -237,22 +245,18 @@ class Android:
         return saved
 
     def select_downloads(self):
-        # The drawer animates/populates asynchronously. A single lookup for each
-        # spelling can miss Downloads just as it appears on the second lookup.
-        # Use one observed snapshot and accept both framework/provider title IDs.
-        def ready():
-            xml = self.ui()
-            if not any(position(xml, text=t, package=PICKERS) for t in ("Open from", "Abrir de")):
-                return None
-            for n in ET.fromstring(xml).iter("node"):
-                rid = n.get("resource-id", "")
-                if n.get("text", "").casefold() in ("downloads", "download") and rid.endswith("/title"):
-                    point = position(xml, text=n.get("text"), resource_id=rid, package=PICKERS)
-                    if point:
-                        return point
-            return None
-        x, y = self.wait(ready, "Raiz Downloads visível no menu SAF", timeout=30)
-        self.shell(f"input tap {x} {y}")
+        """Abre a pasta Downloads no seletor — receita única, já provada.
+
+        Antes esta função esperava a gaveta pelo rótulo "Open from"/"Abrir de",
+        que **não existe em nenhum dump de evidência deste repositório** (0
+        ocorrências em 281 pastas de `ci-results`): na prática ela esperava 30 s por
+        um texto que esta versão do DocumentsUI não escreve. Quem navega agora é
+        `abrir_pasta_de_downloads`, que abre a gaveta (sem fechar a que já estava
+        aberta), toca a raiz Downloads e CONFIRMA pela barra/cabeçalho que a pasta
+        abriu — e, se não conseguir, deixa o XML do seletor na evidência.
+        """
+        from android_checks import abrir_pasta_de_downloads
+        return abrir_pasta_de_downloads(self)
 
     def confirm_picker(self, xml):
         for label in ("Open", "Abrir", "Select", "Selecionar", "Done", "Concluído"):
@@ -1181,10 +1185,18 @@ def main():
         device.toggle_search(False)
         result["checks"]["search_toggle"] = "PASS: liga, desliga e persiste com o rótulo acompanhando"
         # 1) Rede como o runner oferecer (com internet ou não): a resposta sai e o
-        #    teto é respeitado.
-        device.generate(model, 0, "search-online", search=True, await_load=True,
-                        settle=5.0,
-                        prompt="Reply in English: What is the capital of Brazil?")
+        #    teto é respeitado. A propriedade é fixada em 0 (caminho SEQUENCIAL) para
+        #    que a comparação abaixo continue sendo sequência contra corrida mesmo se
+        #    o padrão do aplicativo passar a ser a corrida — o experimento mede, não
+        #    depende do padrão.
+        device.shell("setprop debug.gguf.search_race 0")
+        try:
+            device.generate(model, 0, "search-online", search=True, await_load=True,
+                            settle=5.0,
+                            prompt="Reply in English: What is the capital of Brazil?")
+        finally:
+            # Devolve a propriedade ao estado do aparelho: vazio = padrão do app.
+            device.shell("setprop debug.gguf.search_race ''")
         # generate() devolve o logcat; a conversa desta etapa fica em last_chat.
         online_chat_id = device.last_chat["id"]
         online_log = (args.evidence / "search-online-logcat.txt").read_text()
@@ -1319,7 +1331,7 @@ def main():
             device.generate(model, 99, "search-race", await_load=True, settle=5.0, search=True,
                             prompt="Reply in English: What is the capital of Brazil?")
         finally:
-            device.shell("setprop debug.gguf.search_race 0")
+            device.shell("setprop debug.gguf.search_race ''")
         race_log = (args.evidence / "search-race-logcat.txt").read_text()
         race = search_timing(race_log)
         winner = search_race_winner(race_log)
@@ -1344,7 +1356,7 @@ def main():
             device.wait(lambda: 'GGUF_SEARCH_CACHE' in device.adb("logcat", "-d"),
                         "segunda consulta atendida pelo cache", timeout=240)
         finally:
-            device.shell("setprop debug.gguf.search_cache_ms 0")
+            device.shell("setprop debug.gguf.search_cache_ms ''")
         hit = search_cache_hit(device.adb("logcat", "-d"))
         if hit:
             device.perf["search-cache"] = {"stage": "search-cache", "search": {

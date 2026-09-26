@@ -396,26 +396,180 @@ def image_prefill_records(log, images):
     return records
 
 
+RAIZES_DE_DOWNLOADS = ("downloads", "download")
+TITULOS_RECENTES = ("recent", "recentes")
+FAIXAS_RECENTES = ("recent files", "arquivos recentes", "ficheiros recentes")
+
+
+def cabecalho_do_seletor(xml):
+    """(barra, faixa) da tela do seletor: 'Downloads' + 'Files in Downloads'.
+
+    A barra é o título no alto (classe TextView, sem o resource-id das linhas); a
+    faixa é o cabeçalho da lista (`header_title`: 'Recent files' ou 'Files in X').
+    É por aqui que o harness SABE em que raiz o seletor está — e diz onde estava
+    quando não consegue marcar, em vez de culpar o aparelho.
+    """
+    barra = faixa = ""
+    for node in nodes(xml):
+        if node.get("package") not in PICKERS:
+            continue
+        texto = (node.get("text") or "").strip()
+        if not texto:
+            continue
+        rid = node.get("resource-id", "")
+        if rid.endswith("/header_title"):
+            faixa = texto
+            continue
+        if not node.get("class", "").endswith("TextView") or rid.endswith("/title"):
+            continue
+        limite = re.fullmatch(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", node.get("bounds", ""))
+        if limite and int(limite.group(2)) < 400:      # a barra fica acima das linhas
+            barra = texto
+    return barra, faixa
+
+
+def _nos_recentes(xml):
+    barra, faixa = cabecalho_do_seletor(xml)
+    return (barra.casefold() in TITULOS_RECENTES
+            or faixa.casefold() in FAIXAS_RECENTES)
+
+
+def _na_pasta_de_downloads(xml):
+    barra, faixa = cabecalho_do_seletor(xml)
+    return "download" in f"{barra} {faixa}".casefold()
+
+
+def _gaveta_aberta(xml):
+    """Gaveta de raízes aberta? (itens de raiz têm `resource-id .../title`.)
+
+    Os chips de tipo ("Images", "Videos", "Documents") NÃO contam: são botões sem
+    esse resource-id. Sem esta pergunta o harness tocaria "Show roots" com a gaveta
+    já aberta e a fecharia — o duplo toque que os chamadores antigos faziam.
+    """
+    for node in nodes(xml):
+        if node.get("package") not in PICKERS or node.get("class") != "android.widget.TextView":
+            continue
+        if not node.get("resource-id", "").endswith("/title"):
+            continue
+        if (node.get("text") or "").strip().casefold() in (
+                "images", "videos", "documents", "downloads", "audio",
+                "recent", "recentes", "internal storage", "armazenamento interno"):
+            return True
+    return False
+
+
+def _linha_da_gaveta(xml):
+    """Ponto da linha "Downloads" da gaveta de raízes (None enquanto ela não abre).
+
+    A linha da gaveta é um item de raiz (`resource-id .../title`, como na receita
+    já provada por `select_downloads`). O título da barra também se chama
+    "Downloads" quando já estamos na pasta — por isso ele não serve: fica acima
+    das faixas (y < 400) e não tem o `.../title` de item.
+    """
+    for node in nodes(xml):
+        if node.get("package") not in PICKERS:
+            continue
+        if (node.get("text") or "").strip().casefold() not in RAIZES_DE_DOWNLOADS:
+            continue
+        limites = re.fullmatch(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", node.get("bounds", ""))
+        if not limites:
+            continue
+        x1, y1, x2, y2 = map(int, limites.groups())
+        if not node.get("resource-id", "").endswith("/title") and y1 < 400:
+            continue
+        if x2 > x1 and y2 > y1:
+            return (x1 + x2) // 2, (y1 + y2) // 2
+    return None
+
+
+def abrir_pasta_de_downloads(d, timeout=40):
+    """Leva o seletor para a pasta Downloads, a raiz onde a marcação foi PROVADA.
+
+    Rodada 36267877767: o seletor abriu em "Recent files" e NENHUM gesto marcou as
+    linhas — toque longo com o dedo preso, toque simples e swipe com deslocamento —
+    a etapa de visão ficou sem par e a varredura fechou 19/20. A última vez que a
+    marcação múltipla foi provada de verdade (rodada 34978739703, contador "2
+    selected" em `physical-import-ui-pair-selected.png`) o seletor estava em
+    Downloads, alcançado por "Show roots" → "Downloads". O harness repete esse
+    caminho ANTES de marcar e, se não conseguir, diz exatamente o que viu.
+    """
+    import time
+    limite = time.monotonic() + timeout
+    tentativas = []
+    while time.monotonic() < limite:
+        xml = d.ui()
+        barra, faixa = cabecalho_do_seletor(xml)
+        if _na_pasta_de_downloads(xml):
+            return faixa or barra
+        if not _nos_recentes(xml) and barra:
+            # Já é uma pasta de verdade (o chamador pode ter aberto uma subpasta).
+            return barra
+        botao = (position(xml, desc="Show roots", package=PICKERS)
+                 or position(xml, desc="Mostrar raízes", package=PICKERS)
+                 or position(xml, desc="Mostrar raiz", package=PICKERS))
+        if not botao:
+            tentativas.append(f"sem botão de raízes na barra ({barra!r}/{faixa!r})")
+            break
+        if not _gaveta_aberta(xml):
+            d.shell(f"input tap {int(botao[0])} {int(botao[1])}", check=False)
+        destino = None
+        limite_gaveta = time.monotonic() + 8
+        while destino is None and time.monotonic() < limite_gaveta:
+            destino = _linha_da_gaveta(xml)
+            if destino is None:
+                xml = d.ui()
+        if not destino:
+            tentativas.append(f"gaveta de raízes sem Downloads ({barra!r})")
+            continue
+        d.shell(f"input tap {int(destino[0])} {int(destino[1])}", check=False)
+        if _espera_downloads(d, limite):
+            return "Downloads"
+        tentativas.append("toquei em Downloads e a pasta não abriu")
+    try:
+        # A próxima rodada não precisa adivinhar: o XML do seletor fica na evidência.
+        (d.evidence / "saf-roots-failure-ui.xml").write_text(d.ui())
+    except Exception:
+        pass
+    raise AssertionError("não consegui abrir a pasta Downloads no seletor do sistema"
+                         + (": " + "; ".join(tentativas) if tentativas else ""))
+
+
+def _espera_downloads(d, limite, intervalo=0.5):
+    import time
+    while time.monotonic() < limite:
+        if _na_pasta_de_downloads(d.ui()):
+            return True
+        time.sleep(intervalo)
+    return False
+
+
 def select_exact_documents(d, names):
     """Seleciona documentos nomeados com o gesto que o Android reconhece.
 
-    As rodadas 36261210088 e 36265128113 mostraram o mesmo defeito de harness: os
-    toques simples em coordenadas do "ícone" não marcaram a linha (selected=false), e
-    também não marcaram com `input touchscreen swipe x y x y 900` — um swipe sem
-    deslocamento não gera MOVE, e sem MOVE não existe espera: para o Android, aquilo
-    é um toque curto. O gesto garantido é o TOQUE LONGO na linha, e ele é feito aqui
-    com `input motionevent DOWN/UP` (API 30+): o dedo fica PRESO enquanto a tela é
-    lida até a marcação aparecer — o tempo do toque longo é o próprio gesto, não um
-    `sleep` de duração inventada. Sem `motionevent` no aparelho, a alternativa é o
-    swipe com deslocamento mínimo (o MOVE que faz o Android reconhecer a espera).
+    Duas rodadas seguidas reprovaram por defeito de HARNESS, não do aplicativo:
 
-    A prova é sempre o estado da linha (`selected`) ou o contador do próprio seletor
+    * 36261210088/36265128113 — toque simples em coordenadas do "ícone" e
+      `input touchscreen swipe x y x y 900` (swipe parado: não gera MOVE, então
+      não há espera) não marcaram nada;
+    * 36267877767 — o seletor abriu na visão "Recent files" e nem o toque longo
+      com o dedo preso (`input motionevent DOWN`, o gesto garantido na API 30+)
+      marcou; a marcação múltipla já PROVADA (rodada 34978739703, "2 selected")
+      aconteceu na pasta Downloads, depois de "Show roots" → "Downloads".
+
+    Por isso a ordem agora é: (1) garantir uma raiz onde a marcação existe — se o
+    seletor está em "Recent", navegar para Downloads; (2) marcar com o toque
+    simples, que é o gesto provado nessa raiz; (3) se o toque não marcar, o toque
+    longo com o dedo preso; (4) e só por último o swipe com deslocamento. A prova
+    é sempre o estado da linha (`selected`) ou o contador do próprio seletor
     ("N selected") — nunca "deve ter selecionado". Se nenhum gesto marcar, o teste
-    REPROVA dizendo o que tentou.
+    REPROVA dizendo a raiz em que estava e o que tentou.
     """
-    import re
-    import xml.etree.ElementTree as ET
+    import time
     assert names and len(set(names)) == len(names)
+    xml = d.ui()
+    visiveis = {n.get("text") for n in nodes(xml) if n.get("package") in PICKERS}
+    if _nos_recentes(xml) or not all(name in visiveis for name in names):
+        abrir_pasta_de_downloads(d)
 
     def rows():
         xml = d.ui()
@@ -465,7 +619,6 @@ def select_exact_documents(d, names):
         """Espera a marcação aparecer. Devolve False em vez de estourar: quem decide
         o próximo gesto é o laço de tentativas, e um erro do aparelho (comando
         inválido, processo ausente) tem de subir como erro, não virar 'não marcou'."""
-        import time
         limite = time.monotonic() + timeout
         while time.monotonic() < limite:
             if marcado_ou_contado(name, quantidade):
@@ -490,33 +643,53 @@ def select_exact_documents(d, names):
         finally:
             d.shell(f'input motionevent UP {int(x)} {int(y)}', check=False)
 
+    def tentar(gesto, x, y, name, quantidade):
+        if gesto == 'toque-simples':
+            d.shell(f'input tap {int(x)} {int(y)}', check=False)
+        elif gesto == 'toque-longo':
+            toque_longo(x, y, name, quantidade)
+        else:
+            d.shell(f'input touchscreen swipe {int(x)} {int(y)} {int(x) + 2} {int(y) + 2} 900',
+                    check=False)
+
+    gestos = ('toque-simples', 'toque-longo', 'swipe-com-deslocamento')
     for indice, name in enumerate(names):
         quantidade = indice + 1
-        for tentativa in (1, 2, 3):
+        feitos = []
+        for tentativa in range(4):
             xml, found = rows()
-            assert name in found, f'{name} não está na lista do seletor'
+            assert name in found, (f'{name} não está na lista do seletor '
+                                   f'({cabecalho_do_seletor(xml)[0]!r}/'
+                                   f'{cabecalho_do_seletor(xml)[1]!r})')
+            if marcada(found[name]):
+                break
+            # A lista se re-arruma quando a barra de seleção aparece, e uma foto pode
+            # pegar a transição: marca só com a linha PARADA (duas fotos iguais) —
+            # a rodada 36265128113 tocou numa coordenada de uma tela que já mudou.
+            for _ in range(3):
+                antes = found[name].get('bounds')
+                time.sleep(0.3)
+                xml_novo, encontrado_novo = rows()
+                if name not in encontrado_novo:
+                    break
+                xml, found = xml_novo, encontrado_novo
+                if found[name].get('bounds') == antes or marcada(found[name]):
+                    break
             if marcada(found[name]):
                 break
             x, y = alvo(xml, found[name], name)
-            if quantidade == 1 and tentativa == 1:
-                # Entrar em seleção múltipla: toque longo (a PRIMEIRA marcação).
-                toque_longo(x, y, name, quantidade)
-            elif tentativa <= 2:
-                # Já em seleção múltipla, o toque simples alterna a marcação.
-                d.shell(f'input tap {int(x)} {int(y)}', check=False)
-            else:
-                # Último recurso: o toque longo por swipe (MOVE explícito).
-                d.shell(f'input touchscreen swipe {int(x)} {int(y)} {int(x) + 2} {int(y) + 2} 900',
-                        check=False)
+            gesto = gestos[min(tentativa, len(gestos) - 1)]
+            tentar(gesto, x, y, name, quantidade)
+            feitos.append(gesto)
             if espera_marcacao(name, quantidade):
                 break
             if tentativa == 3:
+                barra, faixa = cabecalho_do_seletor(rows()[0])
                 raise AssertionError(
                     f'não consegui marcar {name} no seletor do sistema: '
-                    + ('toque longo (motionevent e swipe), toque simples e swipe curto'
-                       if quantidade == 1 else
-                       'toque simples (duas vezes) e toque longo por swipe')
-                    + f' não marcaram a linha nem o contador chegou a {quantidade}')
+                    + ' e '.join(dict.fromkeys(feitos))
+                    + f' não marcaram a linha nem o contador chegou a {quantidade} '
+                      f'(raiz do seletor: {barra!r}/{faixa!r})')
     d.wait(lambda: contador(rows()[0], len(names)),
            f'contagem exata de {len(names)} arquivos selecionados', timeout=15)
 

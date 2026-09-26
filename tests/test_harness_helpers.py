@@ -421,46 +421,92 @@ def test_ui_refuses_a_photo_of_another_window_and_hides_the_keyboard(tmp_path):
 
 
 class PickerDevice:
-    """DocumentsUI de mentira: só marca o que for marcado com o gesto certo.
+    """DocumentsUI de mentira COM raiz: em "Recentes" nenhum gesto marca.
 
-    `selecionados` muda de verdade quando chega um toque longo (swipe parado) ou um
-    toque simples já em modo de seleção — é isso que o ajudante tem de provocar.
+    Reproduz o que as rodadas mostraram de verdade: na visão "Recent files" NENHUM
+    gesto marcou as linhas (36267877767 — toque longo com o dedo preso, toque
+    simples e swipe com deslocamento); na pasta Downloads o toque simples marcou
+    (34978739703, contador "2 selected"). O ajudante tem de sair de Recentes por
+    "Show roots" → "Downloads" ANTES de marcar.
     """
 
     PACKAGE = 'com.google.android.documentsui'
+    MOSTRAR_RAIZES = (77, 202)                 # hambúrguer da barra, como no dump real
+    RAIZES = {'Images': 430, 'Videos': 510, 'Downloads': 590}
 
-    def __init__(self, names, modo):
+    def __init__(self, names, modo, raiz='Recentes', raizes=None):
         self.names = list(names)
-        self.modo = modo           # 'toque-longo' (só o gesto longo marca) ou 'nunca'
+        self.modo = modo            # 'toque', 'toque-longo' (só o gesto longo marca) ou 'nunca'
+        self.raiz = raiz
+        self.raizes = list(raizes) if raizes is not None else ['Images', 'Videos', 'Downloads']
+        self.gaveta = False
         self.selecionados = set()
         self.actions = []
+        self.preso = None
         self.rows_dumps = 0
 
     def ui(self):
         self.rows_dumps += 1
+        barra, faixa = (('Recent', 'Recent files') if self.raiz == 'Recentes'
+                        else (self.raiz, f'Files in {self.raiz}'))
+        barra_xml = (
+            f'<node package="{self.PACKAGE}" class="android.widget.ImageButton" content-desc="Show roots" '
+            f'clickable="true" enabled="true" bounds="[0,136][154,268]" />'
+            f'<node package="{self.PACKAGE}" class="android.widget.TextView" text="{barra}" '
+            f'enabled="true" bounds="[198,165][471,239]" />'
+            f'<node package="{self.PACKAGE}" resource-id="{self.PACKAGE}:id/header_title" '
+            f'class="android.widget.TextView" text="{faixa}" enabled="true" bounds="[66,400][1014,565]" />')
         linhas = []
         for indice, nome in enumerate(self.names):
             marcado = 'true' if nome in self.selecionados else 'false'
-            topo = 200 + indice * 220
+            topo = 700 + indice * 220
             linhas.append(
                 f'<node package="{self.PACKAGE}" class="android.widget.LinearLayout" '
-                f'resource-id="com.google.android.documentsui:id/item_root" selected="{marcado}" '
+                f'resource-id="{self.PACKAGE}:id/item_root" selected="{marcado}" '
                 f'bounds="[0,{topo}][1080,{topo + 198}]" clickable="true">'
                 f'<node package="{self.PACKAGE}" class="android.widget.ImageView" '
-                f'resource-id="com.google.android.documentsui:id/icon_thumb" '
+                f'resource-id="{self.PACKAGE}:id/icon_thumb" '
                 f'bounds="[44,{topo + 44}][154,{topo + 154}]" />'
                 f'<node package="{self.PACKAGE}" class="android.widget.TextView" '
-                f'text="{nome}" bounds="[198,{topo + 42}][838,{topo + 101}]" enabled="true" />'
+                f'text="{nome}" resource-id="android:id/title" enabled="true" '
+                f'bounds="[198,{topo + 42}][838,{topo + 101}]" />'
                 '</node>')
         contador = ''
         if self.selecionados:
             contador = (f'<node package="{self.PACKAGE}" class="android.widget.TextView" '
                         f'text="{len(self.selecionados)} selected" enabled="true" '
-                        f'bounds="[0,0][10,10]" />')
-        return '<hierarchy>' + ''.join(linhas) + contador + '</hierarchy>'
+                        f'bounds="[300,150][700,250]" />')
+        gaveta = ''
+        if self.gaveta:
+            gaveta = ''.join(
+                f'<node package="{self.PACKAGE}" class="android.widget.TextView" '
+                f'resource-id="{self.PACKAGE}:id/title" text="{nome}" enabled="true" '
+                f'bounds="[66,{topo - 30}][1014,{topo + 30}]" />'
+                for nome, topo in self.RAIZES.items() if nome in self.raizes)
+        return '<hierarchy>' + barra_xml + ''.join(linhas) + contador + gaveta + '</hierarchy>'
 
     def _linha(self, y):
-        return self.names[(y - 200) // 220]
+        indice = (y - 700) // 220
+        assert 0 <= indice < len(self.names), f'gesto fora das linhas: y={y}'
+        return self.names[indice]
+
+    def _toque(self, x, y):
+        if abs(x - self.MOSTRAR_RAIZES[0]) < 60 and abs(y - self.MOSTRAR_RAIZES[1]) < 60:
+            self.gaveta = True                      # "Show roots"
+            return
+        if self.gaveta:
+            for nome, topo in self.RAIZES.items():
+                if nome in self.raizes and topo - 30 <= y < topo + 30:
+                    self.raiz = nome
+                    self.gaveta = False
+                    self.selecionados.clear()       # trocar de raiz perde a seleção
+                    return
+            return
+        if self.raiz == 'Recentes' or self.modo == 'nunca':
+            return                                  # Recentes: nenhum gesto marca
+        if self.modo == 'toque-longo' and not self.selecionados:
+            return                                  # nesse modo, só o gesto longo abre a seleção
+        self.selecionados.add(self._linha(y))
 
     def shell(self, command, check=True):
         self.actions.append(command)
@@ -468,59 +514,107 @@ class PickerDevice:
         if tokens[:3] == ['input', 'motionevent', 'DOWN']:
             # O toque longo REAL: o dedo fica preso e o app entra em seleção com ele
             # ainda abaixado — é o que o harness tem de provocar (o UP vem depois).
-            if self.modo == 'toque-longo':
-                y = int(tokens[4])
+            x, y = int(tokens[3]), int(tokens[4])
+            self.preso = (x, y)
+            if self.modo == 'toque-longo' and self.raiz != 'Recentes':
                 self.selecionados.add(self._linha(y))
-                self.preso = (int(tokens[3]), y)
         elif tokens[:3] == ['input', 'motionevent', 'UP']:
             self.preso = None
         elif tokens[:2] == ['input', 'tap']:
-            # Toque simples só marca se a seleção múltipla já estiver aberta.
-            y = int(tokens[3])
-            if self.modo == 'toque-longo' and self.selecionados:
-                self.selecionados.add(self._linha(y))
+            self._toque(int(tokens[2]), int(tokens[3]))
         elif tokens[:2] == ['input', 'touchscreen']:
             # swipe x1 y1 x2 y2 duração — só marca com deslocamento de verdade.
             assert tokens[4] != tokens[6] or tokens[5] != tokens[7], \
                 f'swipe sem MOVE não é toque longo: {command}'
-            if self.modo == 'toque-longo':
+            if self.modo != 'nunca' and self.raiz != 'Recentes':
                 self.selecionados.add(self._linha(int(tokens[5])))
         return ''
 
     def wait(self, condition, what, timeout=20):
-        for _ in range(6):
+        for _ in range(8):
             resultado = condition()
             if resultado:
                 return resultado
         raise AssertionError(f'Timeout: {what}')
 
 
-def test_select_exact_documents_enters_selection_with_a_long_press():
-    """Rodada 36261210088: toques simples no "ícone" não marcaram nada.
+def test_select_exact_documents_leaves_recents_for_downloads_and_marks_by_touch():
+    """Rodada 36267877767: em "Recent files" NENHUM gesto marcou; em Downloads marca.
 
-    O gesto que o Android garante é o toque longo para entrar em seleção múltipla;
-    depois dele, toque simples alterna a marcação. A prova é o contador do próprio
-    seletor.
+    A última marcação múltipla provada (34978739703) foi em Downloads, depois de
+    "Show roots" → "Downloads": é esse o caminho que o ajudante tem de repetir.
     """
     device = PickerDevice(['SmolVLM-256M-Instruct-Q8_0.gguf', 'mmproj-SmolVLM-256M-Instruct-Q8_0.gguf'],
-                          modo='toque-longo')
+                          modo='toque')
+    assert device.raiz == 'Recentes'
     select_exact_documents(device, list(device.names))
-    gestos = ' | '.join(device.actions)
-    assert 'input motionevent DOWN' in gestos, 'sem toque longo não há seleção múltipla'
-    assert 'input motionevent UP' in gestos, 'o dedo tem de ser solto depois de marcar'
+    assert device.raiz == 'Downloads', 'o ajudante tem de sair da visão Recentes'
+    assert device.gaveta is False, 'a gaveta de raízes tem de ser fechada'
     assert device.selecionados == set(device.names)
+    # Ordem real: primeiro "Show roots", depois a linha Downloads da gaveta, depois as linhas.
+    toques = [a for a in device.actions if a.startswith('input tap')]
+    assert int(toques[0].split()[3]) == device.MOSTRAR_RAIZES[1], toques
+    assert int(toques[0].split()[2]) == device.MOSTRAR_RAIZES[0], toques
+    assert int(toques[1].split()[3]) == device.RAIZES['Downloads'], toques
+    assert all(int(a.split()[3]) >= 700 for a in toques[2:]), toques
+
+
+def test_select_exact_documents_falls_back_to_the_held_finger_when_taps_do_not_mark():
+    """O toque simples é o gesto provado, mas se ele não marcar o dedo fica PRESO.
+
+    Quem decide é a marcação: só vale o que apareceu no contador do seletor.
+    """
+    device = PickerDevice(['model.gguf', 'projector.gguf'], modo='toque-longo', raiz='Downloads')
+    select_exact_documents(device, list(device.names))
+    assert device.selecionados == set(device.names)
+    gestos = [a for a in device.actions if a.startswith('input tap')]
+    assert gestos, 'o toque simples continua sendo a primeira tentativa'
+    primeiro_down = next(i for i, a in enumerate(device.actions) if a.startswith('input motionevent DOWN'))
+    assert primeiro_down > device.actions.index(gestos[0]), 'toque simples antes do toque longo'
+    assert any(a.startswith('input motionevent UP') for a in device.actions), \
+        'o dedo do toque longo tem de ser solto'
+    assert device.preso is None
+
+
+def test_select_exact_documents_declares_the_root_it_could_not_leave():
+    """Sem Downloads na gaveta, o teste diz o que viu — não marca por omissão."""
+    device = PickerDevice(['a.gguf', 'b.gguf'], modo='nunca', raizes=['Images', 'Videos'])
+    with pytest.raises(AssertionError) as error:
+        select_exact_documents(device, list(device.names))
+    assert 'não consegui abrir a pasta Downloads' in str(error.value)
+    assert 'gaveta de raízes sem Downloads' in str(error.value)
+    assert device.selecionados == set()
 
 
 def test_select_exact_documents_declares_when_no_gesture_marks_the_row():
-    device = PickerDevice(['a.gguf', 'b.gguf'], modo='nunca')
+    device = PickerDevice(['a.gguf', 'b.gguf'], modo='nunca', raiz='Downloads')
     with pytest.raises(AssertionError) as error:
         select_exact_documents(device, list(device.names))
     assert 'não consegui marcar a.gguf' in str(error.value)
     assert 'não marcaram a linha' in str(error.value)
+    assert 'raiz do seletor' in str(error.value), 'a mensagem diz em que raiz estava'
     # O último recurso tem de ter MOVE (swipe com deslocamento), nunca swipe parado.
     assert not any(a.startswith('input touchscreen swipe')
                    and a.split()[4] == a.split()[6] and a.split()[5] == a.split()[7]
                    for a in device.actions)
+
+
+def test_ui_does_not_send_esc_into_the_file_picker(tmp_path):
+    """O seletor do sistema NÃO é uma foto ruim: ESC ali mexeria na seleção.
+
+    A retentativa da foto manda ESC quando nenhum nó do aplicativo aparece e o
+    processo existe — o que também acontece com o DocumentsUI na frente, que é
+    justamente a janela que o teste quer fotografar (rodada 36267877767: seletor em
+    "Recent files" e nenhuma marcação sobreviveu).
+    """
+    seletor = ('<hierarchy><node package="com.google.android.documentsui" '
+               'class="android.widget.TextView" text="Recent files" enabled="true" '
+               'bounds="[66,400][1014,565]" /></hierarchy>')
+    device = ScreenDevice([seletor], tmp_path)
+    xml = Android.ui(device)
+    assert 'Recent files' in xml, 'a foto do seletor tem de ser usada como está'
+    assert not any(a.startswith('input keyevent 111') for a in device.actions), \
+        'ESC na janela do seletor cancelaria a seleção que o teste acabou de fazer'
 
 
 def test_ui_does_not_blame_the_app_when_another_package_is_on_screen(tmp_path):

@@ -704,6 +704,15 @@ def test_image_crops_are_not_source_image_count():
 
 
 def test_exact_saf_selection_ignores_recent_diagnostic_xml():
+    """A seleção casa só os nomes pedidos, com a coordenada FRESCA de cada linha.
+
+    O toque simples é o gesto provado na pasta Downloads (rodada 34978739703, "2
+    selected"): o XML de diagnóstico que um dump deixa na pasta não pode ser
+    confundido com documento escolhido, e a barra de seleção muda a altura das
+    linhas — a segunda marcação tem de usar a altura NOVA, não a velha. O caminho
+    do dedo preso fica provado em `test_harness_helpers` (toque simples primeiro,
+    toque longo quando ele não marca).
+    """
     from android_checks import select_exact_documents
 
     class Picker:
@@ -727,24 +736,13 @@ def test_exact_saf_selection_ignores_recent_diagnostic_xml():
         def shell(self, command, check=True):
             tokens = command.split()
             self.gestos.append(command)
-            if tokens[:3] == ['input', 'motionevent', 'DOWN']:
-                # Toque longo entra em seleção múltipla: obrigatório na PRIMEIRA marcação.
-                assert not self.selected, f'toque longo depois de já haver seleção: {command}'
-                assert int(tokens[4]) == 120, command
-                self.selected.append('model.gguf')
-            elif tokens[:3] == ['input', 'motionevent', 'UP']:
-                self.soltou = True
-            elif tokens[:2] == ['input', 'touchscreen']:
-                # Só como último recurso, e sempre COM deslocamento (MOVE de verdade).
-                assert tokens[4] != tokens[6], f'swipe parado não é toque longo: {command}'
-                if not self.selected:
-                    self.selected.append('model.gguf')
-            elif tokens[:2] == ['input', 'tap']:
+            if tokens[:2] == ['input', 'tap']:
                 # A linha andou quando a barra de seleção apareceu: Y tem de ser o novo.
-                assert int(tokens[3]) == 232, f'coordenada velha da linha: {command}'
-                self.selected.append('projector.gguf')
+                esperado = 120 + (12 if self.selected else 0) + 100 * len(self.selected)
+                assert int(tokens[3]) == esperado, f'coordenada velha da linha: {command}'
+                self.selected.append(['model.gguf', 'projector.gguf'][len(self.selected)])
             else:
-                raise AssertionError(command)
+                raise AssertionError(f'a pasta Downloads marca por toque: {command}')
             return ''
 
         def tap(self, *, text, package):
@@ -758,6 +756,5 @@ def test_exact_saf_selection_ignores_recent_diagnostic_xml():
     assert picker.selected == ['model.gguf', 'projector.gguf']
     # O XML de diagnóstico na pasta não pode ser confundido com documento escolhido.
     assert 'gguf-test-ui.xml' not in picker.selected
-    # O primeiro gesto é o toque longo de verdade, e o dedo é solto no fim.
-    assert picker.gestos[0].startswith('input motionevent DOWN')
-    assert getattr(picker, 'soltou', False), 'o dedo do toque longo tem de ser solto'
+    # Nenhum gesto abriu documento (`.tap` reprova) e todos usaram coordenada fresca.
+    assert picker.gestos == ['input tap 48 120', 'input tap 48 232'], picker.gestos
