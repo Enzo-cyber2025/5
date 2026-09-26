@@ -547,18 +547,27 @@ def main():
         return f'modelo importado listado com o nome real ({model["name"]})'
 
     def descarregar_e_recarregar():
-        # Onde está o controle: a tabela de strings do APK original mostra
-        # "Descarregar modelo da memória" em SettingsActivity.onCreate — a tela de
-        # Ajustes, não a de modelos. A varredura anterior procurava na tela errada.
-        #
-        # O que prova o descarregamento: a mensagem do próprio aplicativo ("Modelo
-        # descarregado.") capturada enquanto está na tela, e a recarga real na
-        # geração seguinte. O que NÃO prova: "Backend atual" — medido nesta rodada,
-        # ele mostra "—" também com a conversa recém-usada, porque o motor da
-        # conversa não fica vivo entre telas (rodada 36247594609). O valor é
-        # registrado como observação, nunca como critério.
+        """Descarregar precisa de motor CARREGADO no mesmo processo para provar algo.
+
+        A rodada 36261210088 esperava `GGUF_UNIT_RELEASED found=1` depois de abrir a
+        tela com `am start -S` (que mata o processo): sem motor carregado, o botão
+        não tinha o que liberar e a espera estourava. A prova honesta é: gerar uma
+        resposta (o motor carrega neste processo), voltar à tela principal SEM
+        reiniciar, tocar no botão e ver o próprio binário registrar a liberação
+        (`GGUF_UNIT_RELEASED found=1`); depois, gerar de novo e ver a recarga
+        (`GGUF_UNIT_LOADED`). O toast continua sendo observação, nunca critério.
+        """
         device.generate(model, 0, 'functions-unload-pre', prompt='Reply in English: say ok')
-        device.launch()
+        pid = device.alive()
+        # Volta à tela principal sem reiniciar o processo: é o que faz o botão ter
+        # um motor de verdade para descarregar.
+        if not tap_exact(device, '‹', optional=True):
+            device.shell('input keyevent KEYCODE_BACK')
+        device.wait(lambda: on_screen(device, 'Ajustes') or on_screen(device, 'Nova conversa'),
+                    'tela principal depois da conversa', timeout=25)
+        if device.alive() != pid:
+            raise AssertionError('o processo mudou ao voltar da conversa; sem o mesmo processo a '
+                                 'prova do descarregamento não valeria')
         if not tap_label(device, 'Ajustes', optional=True):
             raise SkipCheck('aba Ajustes não encontrada nesta versão')
         if not scroll_to(device, 'Descarregar modelo da memória'):
@@ -566,32 +575,35 @@ def main():
                             'rótulos visíveis: ' + ', '.join(visible_labels(device, 20)))
         scroll_to(device, 'Backend atual')
         antes = backend_text(device)
-        # A prova é o log do binário, não um toast de vida curta: o botão chama
-        # EngineManager.release() -> Native.destroy(), que agora registra
-        # GGUF_UNIT_RELEASED found=<0|1>. Um toast pode expirar antes da leitura (foi
-        # o FAIL da rodada 36255713807) e não diz se havia motor para descarregar.
+        # A prova é o log do binário, não um toast de vida curta que expira antes da
+        # leitura (rodada 36255713807). O log diz se HAVIA motor para descarregar.
         device.adb('logcat', '-c')
         tap_label(device, 'Descarregar modelo da memória')
-
-        def liberado():
-            return 'GGUF_UNIT_RELEASED found=1' in device.adb('logcat', '-d')
-        device.wait(liberado, 'motor descarregado de verdade (GGUF_UNIT_RELEASED found=1)',
-                    timeout=40)
+        def registrado():
+            texto = device.adb('logcat', '-d')
+            return texto if 'GGUF_UNIT_RELEASED' in texto else None
+        log = device.wait(registrado, 'descarregamento registrado pelo binário (GGUF_UNIT_RELEASED)',
+                          timeout=60)
+        liberado = re.search(r'GGUF_UNIT_RELEASED found=(\d+) remaining=(\d+)', log)
+        if not liberado or liberado.group(1) != '1':
+            raise AssertionError('o motor estava carregado neste processo (uma resposta acabou de ser '
+                                 'gerada sem reiniciar o aplicativo) e o botão não liberou nada: '
+                                 f'log={liberado.group(0) if liberado else "ausente"}')
         aviso = wait_toast(device, 'Modelo descarregado', timeout=3)
         device.alive()
         # Recarga real, não presumida: a geração seguinte só responde se o modelo voltou.
         device.generate(model, 0, 'functions-unload', prompt='Reply in English: say ok')
+        recarga = device.adb('logcat', '-d')
+        if 'GGUF_UNIT_LOADED' not in recarga:
+            raise AssertionError('o modelo respondeu, mas o log não mostra a recarga (GGUF_UNIT_LOADED): '
+                                 'a prova seria presumida')
         if not (args.evidence / 'functions-unload-reply.txt').read_text().strip():
             raise AssertionError('sem resposta depois de descarregar: o modelo não voltou')
-        log = device.adb('logcat', '-d')
-        if 'GGUF_UNIT_LOADED' not in log:
-            raise AssertionError('o modelo respondeu mas o log não mostra a recarga '
-                                 '(GGUF_UNIT_LOADED): a prova seria presumida')
         extra = f', toast "{aviso}" também visto' if aviso else ''
-        return ('botão na tela de Ajustes; descarregou de verdade (GGUF_UNIT_RELEASED '
-                f'found=1 no log do binário{extra}) e a geração seguinte recarregou '
-                f'(GGUF_UNIT_LOADED; Backend atual: {antes!r} antes do toque é observação: '
-                'o motor da conversa não fica vivo entre telas)')
+        return ('botão na tela de Ajustes; com o motor carregado no mesmo processo, descarregou de '
+                f'verdade (GGUF_UNIT_RELEASED found=1, remaining={liberado.group(2)}{extra}) e a '
+                f'geração seguinte recarregou (GGUF_UNIT_LOADED; Backend atual: {antes!r} antes do '
+                'toque é observação: o motor da conversa não fica vivo entre telas)')
 
     def nova_conversa():
         device.generate(model, 0, 'functions-chat', prompt='Reply in English: one word, hello')

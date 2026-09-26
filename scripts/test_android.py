@@ -75,7 +75,13 @@ class Android:
             # tela) e tira outra foto antes de acusar o aplicativo.
             if attempt == 2 or any(n.get("package") == PACKAGE for n in root.iter("node")):
                 break
-            self.alive()
+            # Sem nó do aplicativo pode ser (a) uma janela de cima na transição ou
+            # (b) outro pacote em teste (a fixture de texto não tem processo do app).
+            # Nos dois casos a foto está legítima: só recolhe o teclado e repete
+            # quando o processo do aplicativo existe de fato — nunca acusa a ausência
+            # dele aqui, que derrubou a fase de texto na rodada 36261210088.
+            if not self.shell(f"pidof {PACKAGE}", check=False).strip():
+                break
             self.shell("input keyevent 111", check=False)
             time.sleep(0.5)
         summary = [{k: n.get(k) for k in ("text", "content-desc", "resource-id", "bounds", "enabled", "selected")}

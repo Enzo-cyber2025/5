@@ -105,8 +105,16 @@ def test_unload_is_proven_by_the_engine_log_not_by_an_expiring_toast():
     binário (GGUF_UNIT_RELEASED found=1) mais a recarga real (GGUF_UNIT_LOADED).
     """
     sweep = SWEEP.read_text()
-    assert 'GGUF_UNIT_RELEASED found=1' in sweep, 'a varredura precisa exigir o log do motor'
+    assert 'GGUF_UNIT_RELEASED' in sweep, 'a varredura precisa exigir o log do motor'
+    assert "liberado.group(1) != '1'" in sweep, 'só found=1 prova que havia motor para liberar'
     assert 'GGUF_UNIT_LOADED' in sweep, 'a recarga real continua sendo exigida'
+    # Sem o MESMO processo, o botão não teria motor carregado para liberar: a prova
+    # tem de vir de uma resposta gerada antes, sem reiniciar o aplicativo.
+    funcao = sweep[sweep.index('    def descarregar_e_recarregar():'):sweep.index('    def nova_conversa():')]
+    assert 'device.generate(model, 0, \'functions-unload-pre\'' in funcao
+    assert "device.alive() != pid" in funcao
+    assert 'device.launch()' not in funcao.split('device.generate(model, 0, \'functions-unload-pre\'')[1].split('GGUF_UNIT_RELEASED')[0], \
+        'reiniciar o aplicativo antes do toque esvazia a prova: sem motor, não há o que descarregar'
     native = (ROOT / 'apk-fix/native/mobile.cpp').read_text()
     assert 'GGUF_UNIT_RELEASED found=%d remaining=%zu' in native, \
         'Native.destroy é quem sabe se havia motor; sem esse log a prova volta a ser um toast'

@@ -709,6 +709,7 @@ def test_exact_saf_selection_ignores_recent_diagnostic_xml():
     class Picker:
         def __init__(self):
             self.selected = []
+            self.gestos = []
 
         def ui(self):
             names = ['gguf-test-ui.xml', 'model.gguf', 'projector.gguf']
@@ -718,15 +719,25 @@ def test_exact_saf_selection_ignores_recent_diagnostic_xml():
             for i, name in enumerate(names):
                 top = i * 100 + (12 if self.selected else 0)
                 rows.append(
-                    f'<node resource-id="com.android.documentsui:id/item_root" selected="{str(name in self.selected).lower()}" '
+                    f'<node resource-id="com.google.android.documentsui:id/item_root" selected="{str(name in self.selected).lower()}" '
                     f'bounds="[0,{top}][720,{top+40}]">'
-                    f'<node text="{name}" enabled="true" package="com.android.documentsui" bounds="[80,{top}][600,{top+40}]"/></node>')
-            return '<hierarchy>' + ''.join(rows) + f'<node text="{len(self.selected)} selected" enabled="true" package="com.android.documentsui" bounds="[0,0][100,40]"/></hierarchy>'
+                    f'<node text="{name}" enabled="true" package="com.google.android.documentsui" bounds="[80,{top}][600,{top+40}]"/></node>')
+            return '<hierarchy>' + ''.join(rows) + f'<node text="{len(self.selected)} selected" enabled="true" package="com.google.android.documentsui" bounds="[0,0][100,40]"/></hierarchy>'
 
-        def shell(self, command):
-            expected = 'input tap 48 120' if not self.selected else 'input tap 48 232'
-            assert command == expected
-            self.selected.append('model.gguf' if not self.selected else 'projector.gguf')
+        def shell(self, command, check=True):
+            tokens = command.split()
+            self.gestos.append(command)
+            if tokens[:2] == ['input', 'touchscreen']:
+                # Toque longo entra em seleção múltipla: obrigatório na PRIMEIRA marcação.
+                assert not self.selected, f'toque longo depois de já haver seleção: {command}'
+                assert int(tokens[4]) == 120, command
+                self.selected.append('model.gguf')
+            elif tokens[:2] == ['input', 'tap']:
+                # A linha andou quando a barra de seleção apareceu: Y tem de ser o novo.
+                assert int(tokens[3]) == 232, f'coordenada velha da linha: {command}'
+                self.selected.append('projector.gguf')
+            else:
+                raise AssertionError(command)
 
         def tap(self, *, text, package):
             raise AssertionError('A selection gesture must not open a document')
@@ -737,3 +748,5 @@ def test_exact_saf_selection_ignores_recent_diagnostic_xml():
     picker = Picker()
     select_exact_documents(picker, ['model.gguf', 'projector.gguf'])
     assert picker.selected == ['model.gguf', 'projector.gguf']
+    # O XML de diagnóstico na pasta não pode ser confundido com documento escolhido.
+    assert 'gguf-test-ui.xml' not in picker.selected

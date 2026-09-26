@@ -397,42 +397,92 @@ def image_prefill_records(log, images):
 
 
 def select_exact_documents(d, names):
-    """Use document selection icons, not long-press range/exclusive selection."""
+    """Seleciona documentos nomeados com um gesto que o Android garante.
+
+    Toque simples em coordenadas do "ícone" depende da versão do DocumentsUI: na
+    rodada 36261210088 os toques não marcaram nada e as fases de anexos e de visão
+    caíram com "named document selected". O gesto garantido para entrar em seleção
+    múltipla é o TOQUE LONGO na linha; a partir daí, toques simples alternam a
+    marcação. A prova é sempre o contador do próprio seletor ("N selected") mais o
+    estado da linha — nunca "deve ter selecionado".
+    """
+    import re
     import xml.etree.ElementTree as ET
     assert names and len(set(names)) == len(names)
+
     def rows():
-        xml=d.ui();root=ET.fromstring(xml)
-        parents={child:parent for parent in root.iter() for child in parent}
-        found={}
+        xml = d.ui()
+        root = ET.fromstring(xml)
+        parents = {child: parent for parent in root.iter() for child in parent}
+        found = {}
         for node in root.iter('node'):
-            name=node.get('text')
-            if name not in names or node.get('package') not in PICKERS:continue
-            row=node
+            name = node.get('text')
+            if name not in names or node.get('package') not in PICKERS:
+                continue
+            row = node
             while row in parents:
-                if row.get('resource-id','').endswith('/item_root'):break
-                row=parents[row]
-            if not row.get('resource-id','').endswith('/item_root'):
-                # Current Android DocumentsUI exposes document selection on the
-                # thumbnail at the left of the named row, not its Open action.
-                row=parents.get(node,node)
-            found[name]=row
-        return xml,found
-    for name in names:
-        for attempt in range(3):
-            xml,found=rows();assert name in found,name
-            row=found[name]
-            if row.get('selected')=='true' or any(n.get('checked')=='true' for n in row.iter()):break
-            # Use the current title Y (list headers move when selection starts).
-            x,y=position(xml,text=name,package=PICKERS)
-            left=int(re.findall(r'\d+',row.get('bounds','[0,0][720,1280]'))[0])
-            d.shell(f'input tap {left+48} {y}')
-            def selected():
-                _,current=rows();r=current.get(name)
-                return r is not None and (r.get('selected')=='true' or any(n.get('checked')=='true' for n in r.iter()))
-            try:d.wait(selected,'named document selected: '+name,timeout=8);break
+                if row.get('resource-id', '').endswith('/item_root'):
+                    break
+                row = parents[row]
+            if not row.get('resource-id', '').endswith('/item_root'):
+                row = parents.get(node, node)
+            found[name] = row
+        return xml, found
+
+    def marcada(row):
+        return row is not None and (row.get('selected') == 'true'
+                                    or any(n.get('checked') == 'true' for n in row.iter()))
+
+    def contador(xml, quantidade):
+        for texto in (f'{quantidade} selected', f'{quantidade} selecionado', f'{quantidade} selecionados'):
+            if position(xml, text=texto, package=PICKERS):
+                return True
+        return False
+
+    def toca(x, y):
+        d.shell(f'input tap {int(x)} {int(y)}')
+
+    def segura(x, y):
+        # Toque longo de verdade: swipe parado, sem soltar o dedo antes do tempo.
+        d.shell(f'input touchscreen swipe {int(x)} {int(y)} {int(x)} {int(y)} 900')
+
+    def alvo(xml, row, name):
+        """Ponto de marcação: o ícone quando existe, senão o começo da linha."""
+        for node in row.iter('node'):
+            if node.get('resource-id', '').endswith(('/icon_thumb', '/icon_mime', '/icon_check')):
+                b = list(map(int, re.findall(r'\d+', node.get('bounds', ''))))
+                if len(b) == 4 and b[2] > b[0] and b[3] > b[1]:
+                    return (b[0] + b[2]) // 2, (b[1] + b[3]) // 2
+        x, y = position(xml, text=name, package=PICKERS)
+        left = int(re.findall(r'\d+', row.get('bounds', '[0,0][720,1280]'))[0])
+        return left + 48, y
+
+    def marcado_ou_contado(name, quantidade):
+        xml, found = rows()
+        return marcada(found.get(name)) or contador(xml, quantidade)
+
+    for indice, name in enumerate(names):
+        quantidade = indice + 1
+        for tentativa in (1, 2, 3):
+            xml, found = rows()
+            assert name in found, f'{name} não está na lista do seletor'
+            if marcada(found[name]):
+                break
+            x, y = alvo(xml, found[name], name)
+            # O toque longo entra em seleção múltipla; a partir daí, toque simples
+            # alterna a marcação. O que marca é o gesto, não a coordenada do ícone.
+            segura(x, y) if quantidade == 1 and tentativa == 1 else toca(x, y)
+            try:
+                d.wait(lambda: marcado_ou_contado(name, quantidade),
+                       f'documento marcado: {name}', timeout=10)
+                break
             except AssertionError:
-                if attempt==2:raise
-    d.wait(lambda: position(d.ui(), text=f'{len(names)} selected', package=PICKERS), 'contagem exata de arquivos selecionados')
+                if tentativa == 3:
+                    raise AssertionError(
+                        f'não consegui marcar {name} no seletor do sistema: toque longo e toque '
+                        f'simples não marcaram a linha nem o contador chegou a {quantidade}')
+    d.wait(lambda: contador(rows()[0], len(names)),
+           f'contagem exata de {len(names)} arquivos selecionados', timeout=15)
 
 
 def active_wake_locks(power_dump):

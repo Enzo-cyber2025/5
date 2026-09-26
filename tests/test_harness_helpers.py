@@ -17,6 +17,8 @@ ROOT = Path(__file__).resolve().parents[1]
 # scripts/), então o caminho entra antes de qualquer import deles.
 sys.path.insert(0, str(ROOT / 'scripts'))
 
+from android_checks import select_exact_documents  # noqa: E402
+
 
 def load(name, relative):
     spec = importlib.util.spec_from_file_location(name, ROOT / relative)
@@ -373,7 +375,8 @@ class ScreenDevice:
 
     def shell(self, command, check=True):
         self.actions.append(command)
-        return ''
+        # O aplicativo existe nesta simulação: é o que a retentativa da foto exige.
+        return '4321\n' if command.startswith('pidof') else ''
 
     def alive(self):
         return 1234
@@ -415,6 +418,112 @@ def test_ui_refuses_a_photo_of_another_window_and_hides_the_keyboard(tmp_path):
     xml = Android.ui(device)
     assert 'Enviar' in xml
     assert 'input keyevent 111' in device.actions, 'recolher o teclado antes da segunda foto'
+
+
+class PickerDevice:
+    """DocumentsUI de mentira: só marca o que for marcado com o gesto certo.
+
+    `selecionados` muda de verdade quando chega um toque longo (swipe parado) ou um
+    toque simples já em modo de seleção — é isso que o ajudante tem de provocar.
+    """
+
+    PACKAGE = 'com.google.android.documentsui'
+
+    def __init__(self, names, modo):
+        self.names = list(names)
+        self.modo = modo           # 'toque-longo' (só o gesto longo marca) ou 'nunca'
+        self.selecionados = set()
+        self.actions = []
+        self.rows_dumps = 0
+
+    def ui(self):
+        self.rows_dumps += 1
+        linhas = []
+        for indice, nome in enumerate(self.names):
+            marcado = 'true' if nome in self.selecionados else 'false'
+            topo = 200 + indice * 220
+            linhas.append(
+                f'<node package="{self.PACKAGE}" class="android.widget.LinearLayout" '
+                f'resource-id="com.google.android.documentsui:id/item_root" selected="{marcado}" '
+                f'bounds="[0,{topo}][1080,{topo + 198}]" clickable="true">'
+                f'<node package="{self.PACKAGE}" class="android.widget.ImageView" '
+                f'resource-id="com.google.android.documentsui:id/icon_thumb" '
+                f'bounds="[44,{topo + 44}][154,{topo + 154}]" />'
+                f'<node package="{self.PACKAGE}" class="android.widget.TextView" '
+                f'text="{nome}" bounds="[198,{topo + 42}][838,{topo + 101}]" enabled="true" />'
+                '</node>')
+        contador = ''
+        if self.selecionados:
+            contador = (f'<node package="{self.PACKAGE}" class="android.widget.TextView" '
+                        f'text="{len(self.selecionados)} selected" enabled="true" '
+                        f'bounds="[0,0][10,10]" />')
+        return '<hierarchy>' + ''.join(linhas) + contador + '</hierarchy>'
+
+    def _linha(self, y):
+        return self.names[(y - 200) // 220]
+
+    def shell(self, command, check=True):
+        self.actions.append(command)
+        if command.startswith('input tap'):
+            _, _, x, y = command.split()
+            if self.modo == 'toque-longo' and self.selecionados:
+                self.selecionados.add(self._linha(int(y)))
+        elif command.startswith('input touchscreen swipe'):
+            # input touchscreen swipe x1 y1 x2 y2 duração
+            _, _, _, _, y, _, _, _ = command.split()
+            if self.modo == 'toque-longo':
+                self.selecionados.add(self._linha(int(y)))
+        return ''
+
+    def wait(self, condition, what, timeout=20):
+        for _ in range(6):
+            resultado = condition()
+            if resultado:
+                return resultado
+        raise AssertionError(f'Timeout: {what}')
+
+
+def test_select_exact_documents_enters_selection_with_a_long_press():
+    """Rodada 36261210088: toques simples no "ícone" não marcaram nada.
+
+    O gesto que o Android garante é o toque longo para entrar em seleção múltipla;
+    depois dele, toque simples alterna a marcação. A prova é o contador do próprio
+    seletor.
+    """
+    device = PickerDevice(['SmolVLM-256M-Instruct-Q8_0.gguf', 'mmproj-SmolVLM-256M-Instruct-Q8_0.gguf'],
+                          modo='toque-longo')
+    select_exact_documents(device, list(device.names))
+    assert 'input touchscreen swipe' in ' '.join(device.actions), \
+        'sem toque longo não há seleção múltipla garantida'
+    assert device.selecionados == set(device.names)
+
+
+def test_select_exact_documents_declares_when_no_gesture_marks_the_row():
+    device = PickerDevice(['a.gguf', 'b.gguf'], modo='nunca')
+    with pytest.raises(AssertionError) as error:
+        select_exact_documents(device, list(device.names))
+    assert 'não consegui marcar a.gguf' in str(error.value)
+    assert 'não marcaram a linha' in str(error.value)
+
+
+def test_ui_does_not_blame_the_app_when_another_package_is_on_screen(tmp_path):
+    """A fixture de texto roda no aparelho SEM processo do aplicativo.
+
+    A retentativa da foto (rodada 36255713807) chamava `alive()` e a fase de texto
+    passou a falhar com "Processo do app ausente" mesmo com a fixture aprovada.
+    """
+    outro = ('<hierarchy><node package="com.ggufchat.texttest" '
+             'text="Ok: inline=ok" enabled="true" bounds="[0,0][10,10]" /></hierarchy>')
+    device = ScreenDevice([outro], tmp_path)
+    device.shell_answers = {'pidof com.ggufchat.app': ''}
+
+    def shell(command, check=True):
+        device.actions.append(command)
+        return device.shell_answers.get(command, '')
+    device.shell = shell
+    xml = Android.ui(device)
+    assert 'texttest' in xml, 'a foto legítima de outro pacote precisa ser devolvida'
+    assert 'input keyevent 111' not in device.actions, 'não há teclado do app para recolher'
 
 
 def test_prefill_experiment_uses_its_own_metric_and_stays_out_of_the_throughput_race():
