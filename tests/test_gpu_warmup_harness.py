@@ -44,6 +44,17 @@ def make_recorder(module, tmp_path):
                                                    for k, v in selector.items()}, sort_keys=True)))
             return True
 
+        def ui(self):
+            # O envio confere o foco do campo antes de digitar (rodada 36253269770:
+            # o texto ficou no vazio). A tela de mentira tem campo focado e Enviar
+            # habilitado, como o aplicativo tem quando está pronto para receber.
+            xml = ('<hierarchy><node package="com.ggufchat.app" class="android.widget.EditText" '
+                   'text="" focused="true" enabled="true" bounds="[0,0][10,10]" />'
+                   '<node package="com.ggufchat.app" class="android.widget.Button" text="Enviar" '
+                   'enabled="true" bounds="[0,0][10,10]" /></hierarchy>')
+            self.calls.append(('ui', xml))
+            return xml
+
     return Recorder()
 
 

@@ -77,7 +77,8 @@ def test_default_native_body_unchanged_by_experiment():
     # Atualizado com o aquecimento de prefixo e os avisos de backend/NPU.
     # Recomputado ao tornar o sub-lote do pré-preenchimento ajustável por
     # propriedade de depuração (padrão inalterado: 128 com contexto >= 1024).
-    before_sha='d484c12ae56371763b41fc61c70e0a873fc8fb604592e4d8b9c2624d3340a2e4'
+    # e ao poder medir/registrar o tipo de cache K/V (padrão inalterado: F16).
+    before_sha='6fe5c4d17d741ee1d375410bc3517fe153c2bf01aa115b9f3459b3ad73aee83b'
     current=(ROOT/'apk-fix/native/mobile.cpp').read_text()
     # Any top-level single #else guard of an opt-in experiment macro must keep
     # its #else branch byte-identical to the shipped body, not only media prefix.

@@ -380,6 +380,13 @@ def test_send_can_preserve_backend_preload_logs(tmp_path, monkeypatch):
     monkeypatch.setattr(d, 'adb', lambda *a: commands.append(a))
     monkeypatch.setattr(d, 'shell', lambda c: None)
     monkeypatch.setattr(d, 'tap', lambda **k: None)
+    # O envio confere o foco do campo antes de digitar: a tela de mentira responde
+    # com o campo focado e o botão Enviar, sem tocar no adb de verdade.
+    monkeypatch.setattr(d, 'ui', lambda: '<hierarchy><node package="com.ggufchat.app" '
+                        'class="android.widget.EditText" text="" focused="true" enabled="true" '
+                        'bounds="[0,0][10,10]" /><node package="com.ggufchat.app" '
+                        'class="android.widget.Button" text="Enviar" enabled="true" '
+                        'bounds="[0,0][10,10]" /></hierarchy>')
     d.send('Hello', clear_log=False)
     assert not commands
     d.send('Hello')

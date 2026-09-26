@@ -20,7 +20,7 @@ import xml.etree.ElementTree as ET
 from android_checks import (PACKAGE, PICKERS, assistant_reply, fusion, generation_completed,
                             gpu_offloaded, has_package, imported, position, basic_response_quality, vulkan_offloaded,
                             generation_stats, ui_first_text_s, software_vulkan_refused, cpu_threads,
-                            warmup_state, search_timing, search_panel, context_tuning)
+                            warmup_state, search_timing, search_panel, context_tuning, kv_cache)
 
 
 class Android:
@@ -467,6 +467,11 @@ class Android:
         if clear_log:
             self.adb("logcat", "-c")
         self.tap(class_name="android.widget.EditText", package={PACKAGE})
+        # O toque pode chegar antes de a janela aceitar foco: na rodada 36253269770 o
+        # campo ficou com o texto de dica ("Escreva sua mensagem...") e o prompt nunca
+        # entrou. Confere o foco e repete o toque UMA vez, sem inventar envio.
+        if not self.field_focused():
+            self.tap(class_name="android.widget.EditText", package={PACKAGE})
         words = prompt.split(" ")
         if typed_pause <= 0 or len(words) < 2:
             self.shell("input text " + shlex.quote(prompt.replace(" ", "%s")))
@@ -476,6 +481,21 @@ class Android:
             time.sleep(typed_pause)
             self.shell("input text " + shlex.quote(" " + " ".join(words[half:]).replace(" ", "%s")))
         self.tap(text="Enviar", package={PACKAGE}, contains=True)
+
+    def field_focused(self):
+        """O campo de texto está com o foco (a digitação vai para ele, não para o vazio)."""
+        xml = ET.fromstring(self.ui())
+        return any(node.get("package") == PACKAGE and node.get("class") == "android.widget.EditText"
+                   and node.get("focused") == "true" for node in xml.iter("node"))
+
+    def composer_ready(self):
+        """Campo de mensagem E botão Enviar existem e estão HABILITADOS nesta tela."""
+        xml = ET.fromstring(self.ui())
+        nodes = [node for node in xml.iter("node") if node.get("package") == PACKAGE
+                 and node.get("enabled") == "true"]
+        field = any(node.get("class") == "android.widget.EditText" for node in nodes)
+        button = any(node.get("text") == "Enviar" for node in nodes)
+        return field and button
 
     def composer_text(self):
         """O que está no campo de texto agora (para conferir o que foi digitado)."""
@@ -500,6 +520,11 @@ class Android:
         usuário faria. O que ficou no campo vai para a evidência `<etapa>-composer.txt`.
         """
         evidence = (self.evidence / f"{label}-composer.txt") if label else None
+        # Enquanto o modelo carrega, o aplicativo desabilita o compositor: o `position`
+        # ignora controle desabilitado, então o toque em Enviar falhava com "Controle
+        # não encontrado" (rodada 36253269770). Esperar aqui é esperar o APLICATIVO,
+        # antes do envio — a espera medida pelo aplicativo começa no envio persistido.
+        self.wait(self.composer_ready, "campo de mensagem e botão Enviar habilitados", timeout=180)
         typed = None
         for attempt in (1, 2):
             self.send(prompt, clear_log=clear_log and attempt == 1, typed_pause=typed_pause)
@@ -520,6 +545,10 @@ class Android:
                        for m in current.get("messages", []))
 
         for attempt in (1, 2, 3):
+            # O compositor pode voltar a ficar indisponível entre uma tentativa e outra
+            # (recarga do modelo); espera limitada antes de cada toque, nunca toque cego.
+            self.wait(lambda: position(self.ui(), text="Enviar", package={PACKAGE}, contains=True),
+                      "botão Enviar habilitado", timeout=120)
             self.tap(text="Enviar", package={PACKAGE}, contains=True)
             try:
                 self.wait(persisted, "prompt enviado e persistido pelo aplicativo", timeout=20)
@@ -608,6 +637,7 @@ class Android:
                      warmup=warmup_state(log),
                      prefill=self.prefill_metric(log),
                      context_tuning=context_tuning(log),
+                     kv_cache=kv_cache(log),
                      software_vulkan_notice=software_vulkan_refused(log), **stats)
         self.perf[stage] = entry
         (self.evidence / f"{stage}-perf.json").write_text(json.dumps(entry, ensure_ascii=False, indent=2))
@@ -665,6 +695,11 @@ def performance_report(perf):
         # aparecem em `prefill_experiment`, com a conta que lhes pertence.
         if name.startswith('prefill-ubatch-'):
             continue
+        # As etapas de cache K/V medem a DECODIFICAÇÃO com um cache quantizado; elas
+        # aparecem em `kv_experiment`, onde a comparação é entre as duas e não contra
+        # a linha de base de cache F16.
+        if name.startswith('decode-kv-'):
+            continue
         rate = entry['tokens_s']
         ui = entry.get('ui_first_text_s')
         engine = entry.get('first_token_s')
@@ -684,6 +719,7 @@ def performance_report(perf):
             'regression_vs_baseline': bool(base_rate and rate < base_rate * (1 - REGRESSION_TOLERANCE))}
     report['warmup_experiment'] = warmup_experiment(perf)
     report['prefill_experiment'] = prefill_experiment(perf)
+    report['kv_experiment'] = kv_experiment(perf)
     report['targets_met'] = sorted(name for name, c in report['candidates'].items()
                                    if all(c['targets'].values()))
     report['regressions'] = sorted(name for name, c in report['candidates'].items()
@@ -691,6 +727,41 @@ def performance_report(perf):
     report['regression_tolerance'] = REGRESSION_TOLERANCE
     report['environment'] = environment_limits(perf)
     return report
+
+
+def kv_experiment(perf):
+    """Cache K/V padrão (F16) contra cache quantizado (Q8_0), na mesma rodada.
+
+    A decodificação em aparelho sem GPU real é limitada por banda de memória: ler um
+    cache menor por token é um ganho que se mede, não se estima. A comparação usa as
+    duas etapas que só diferem nisso e exige que o log confirme o tipo usado —
+    `setprop` sem efeito não pode virar ganho. Sem ganho medido o padrão continua F16.
+    """
+    f16 = perf.get('decode-kv-f16') or {}
+    q8 = perf.get('decode-kv-q8') or {}
+    stages = []
+    for name, entry in (('decode-kv-f16', f16), ('decode-kv-q8', q8)):
+        if not isinstance(entry, dict) or not entry.get('tokens_s'):
+            continue
+        stages.append({'stage': name,
+                       'kv_type': (entry.get('kv_cache') or {}).get('kv'),
+                       'tokens_s': entry['tokens_s'],
+                       'ui_first_text_s': entry.get('ui_first_text_s')})
+    if len(stages) < 2:
+        return {'status': 'NOT_MEASURED', 'stages': stages,
+                'detail': 'faltou a taxa de decodificação em uma das duas etapas de cache'}
+    aplicado = (q8.get('kv_cache') or {}).get('kv')
+    base_rate, q8_rate = f16['tokens_s'], q8['tokens_s']
+    ganho = round(q8_rate / base_rate, 3) if base_rate else None
+    resultado = {'status': 'MEDIDO', 'stages': stages, 'gain_x': ganho,
+                 'quantized_cache_applied': aplicado,
+                 'detail': (f'F16 {base_rate} T/s contra Q8_0 {q8_rate} T/s '
+                            f'({ganho}x); nada muda de padrão sem ganho medido')}
+    if aplicado != 'Q8_0':
+        resultado['status'] = 'NAO_APLICADO'
+        resultado['detail'] = ('a configuração de cache quantizado não apareceu no log; '
+                               'a rodada não declara ganho')
+    return resultado
 
 
 def prefill_experiment(perf):
@@ -1095,6 +1166,23 @@ def main():
             else:
                 result["checks"]["prefill_ubatch_experiment"] = (
                     "NOT_MEASURED: falta a métrica de pré-preenchimento em uma das etapas")
+        if gpu_experiments_enabled():
+            # Cache K/V: o mesmo modelo, o mesmo texto e o mesmo limite de tokens com
+            # o cache padrão (F16) e com cache quantizado (Q8_0). Cache quantizado é
+            # quase sem perda e troca precisão por banda de memória — sem ganho
+            # medido nas duas etapas, o padrão do aplicativo continua F16.
+            for stage, kv in (("decode-kv-f16", 1), ("decode-kv-q8", 8)):
+                device.shell(f"setprop debug.gguf.kv_type {kv}")
+                device.generate(model, 99, stage, await_load=True, settle=5.0)
+            device.shell("setprop debug.gguf.kv_type 0")
+            f16_kv = (device.perf.get("decode-kv-f16", {}).get("kv_cache") or {}).get("kv")
+            q8_kv = (device.perf.get("decode-kv-q8", {}).get("kv_cache") or {}).get("kv")
+            if f16_kv and q8_kv:
+                result["checks"]["kv_cache_applied"] = (
+                    f"PASS: motor registrou cache K/V usado ({f16_kv} e {q8_kv})")
+            else:
+                result["checks"]["kv_cache_applied"] = (
+                    "AVISO: o log do motor não registrou o tipo de cache K/V desta rodada")
         # Medição no mesmo emulador, mesmas entradas e mesmo limite de tokens.
         device.generate(model, 0, "cpu-threads-auto", threads=0)
         result["checks"]["cpu_auto_threads"] = "PASS: política automática de threads executada"

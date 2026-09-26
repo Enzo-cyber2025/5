@@ -42,11 +42,19 @@ Android = harness.Android
 class SubmitDevice:
     """Aparelho de mentira para exercitar o envio: o campo e o botão como eu quiser."""
 
-    def __init__(self, field_text, persist_after=1):
+    def __init__(self, field_text, persist_after=1, ready_after=0):
         self.field = field_text
         self.persist_after = persist_after
         self.taps = 0
         self.actions = []
+        # Quantas leituras do compositor ainda encontram o botão desabilitado (o
+        # aplicativo desabilita Enviar enquanto carrega o modelo).
+        self.ready_after = ready_after
+        self.ready_checks = 0
+
+    def composer_ready(self):
+        self.ready_checks += 1
+        return self.ready_checks > self.ready_after
 
     def send(self, prompt, clear_log=True, typed_pause=0.0):
         self.actions.append(('send', prompt, clear_log))
@@ -72,10 +80,11 @@ class SubmitDevice:
                 'enabled="true" bounds="[0,0][10,10]" /></hierarchy>')
 
     def wait(self, condition, what, timeout=20):
-        result = condition()
-        if not result:
-            raise AssertionError(f'Timeout: {what}')
-        return result
+        for _ in range(5):
+            result = condition()
+            if result:
+                return result
+        raise AssertionError(f'Timeout: {what}')
 
     def read_json(self, name):
         if self.taps >= self.persist_after:
@@ -116,6 +125,85 @@ def test_submit_retypes_when_the_field_did_not_receive_the_text(tmp_path):
     Android.submit(device, device.prompt, label='stage')
     assert ('clear', len('texto errado no campo')) in device.actions
     assert (tmp_path / 'stage-composer.txt').read_text().startswith('campo conferido')
+
+
+def kv_entry(tokens_s, kv, ui_first=1.0):
+    entry = perf_entry(tokens_s, ui_first, ui_first - 0.1)
+    entry['kv_cache'] = {'kv': kv, 'flash_attn_requested': 'AUTO'}
+    return entry
+
+
+def test_kv_experiment_compares_the_two_caches_and_stays_out_of_the_throughput_race():
+    perf = {'vulkan': perf_entry(1.0, 20.0, 18.0),
+            'cpu-threads-auto': perf_entry(9.0, 0.4, 0.3),
+            'decode-kv-f16': kv_entry(9.0, 'F16'),
+            'decode-kv-q8': kv_entry(11.7, 'Q8_0')}
+    report = harness.performance_report(perf)
+    # A etapa de cache quantizado não entra na conta de ganho contra a linha de base.
+    assert 'decode-kv-q8' not in report['candidates']
+    experiment = report['kv_experiment']
+    assert experiment['status'] == 'MEDIDO'
+    assert experiment['gain_x'] == pytest.approx(1.3, abs=0.01)
+    assert experiment['quantized_cache_applied'] == 'Q8_0'
+    assert report['regressions'] == []
+    json.dumps(report)
+
+
+def test_kv_experiment_refuses_to_claim_a_gain_the_log_does_not_show():
+    perf = {'vulkan': perf_entry(1.0, 20.0, 18.0),
+            'decode-kv-f16': kv_entry(9.0, 'F16'),
+            'decode-kv-q8': kv_entry(11.7, 'F16')}
+    report = harness.performance_report(perf)
+    # Sem o log provando o cache quantizado, não existe ganho declarado.
+    assert report['kv_experiment']['status'] == 'NAO_APLICADO'
+    assert 'não declara ganho' in report['kv_experiment']['detail']
+
+
+def test_kv_experiment_declares_absence_instead_of_guessing():
+    report = harness.performance_report({'vulkan': perf_entry(1.0, 20.0, 18.0),
+                                         'decode-kv-q8': kv_entry(11.7, 'Q8_0')})
+    assert report['kv_experiment']['status'] == 'NOT_MEASURED'
+    assert 'faltou a taxa' in report['kv_experiment']['detail']
+
+
+def test_kv_cache_reads_the_type_the_engine_logged():
+    spec = importlib.util.spec_from_file_location('checks_kv', ROOT / 'scripts/android_checks.py')
+    checks = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(checks)
+    log = ('GGUF_CONTEXT_TUNING batch=256 ubatch=128 threads=4 prefix_cache_supported=1 '
+           'prefill_policy=larger_lots kv=Q8_0 fa_requested=AUTO')
+    assert checks.kv_cache(log) == {'kv': 'Q8_0', 'flash_attn_requested': 'AUTO'}
+    # Rodada antiga, sem os campos novos: nada é inventado.
+    assert checks.kv_cache('GGUF_CONTEXT_TUNING batch=256 ubatch=128 threads=4 '
+                           'prefix_cache_supported=1 prefill_policy=larger_lots') is None
+    assert checks.context_tuning(log)['ubatch'] == 128
+
+
+def test_submit_waits_for_the_composer_instead_of_tapping_a_disabled_button(tmp_path):
+    """O aplicativo desabilita o compositor enquanto carrega o modelo.
+
+    Rodada 36253269770: o toque em Enviar falhou com "Controle não encontrado"
+    porque o `position` ignora controle desabilitado — o envio tem que esperar o
+    aplicativo, e não desistir antes dele.
+    """
+    device = SubmitDevice('Reply in English: ok', persist_after=1, ready_after=2)
+    device.prompt = 'Reply in English: ok'
+    device.evidence = tmp_path
+    device.last_chat = {'id': 'chat-1'}
+    Android.submit(device, device.prompt, label='stage')
+    assert device.ready_checks >= 3, 'o envio tocou o botão antes de o compositor ficar pronto'
+    assert device.taps == 1
+
+
+def test_submit_declares_when_the_composer_never_becomes_ready(tmp_path):
+    device = SubmitDevice('', persist_after=1, ready_after=99)
+    device.prompt = 'prompt'
+    device.evidence = tmp_path
+    device.last_chat = {'id': 'chat-1'}
+    with pytest.raises(AssertionError) as error:
+        Android.submit(device, device.prompt, label='stage')
+    assert 'campo de mensagem e botão Enviar habilitados' in str(error.value)
+    assert device.taps == 0, 'nenhum toque cego em Enviar quando o compositor não existe'
 
 
 def test_submit_fails_with_the_field_and_the_visible_labels(tmp_path):

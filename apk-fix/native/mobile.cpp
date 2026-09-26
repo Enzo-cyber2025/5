@@ -342,6 +342,14 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
         if(tuned>=32 && tuned<=1024) prefill_ubatch=(uint32_t)tuned;
         auto cp=llama_context_default_params(); cp.n_ctx=context;
         cp.n_batch=prefill_batch; cp.n_ubatch=prefill_ubatch;
+        // Cache K/V: o padrão continua F16. A propriedade de depuração permite
+        // MEDIR no mesmo aparelho um cache quantizado (Q8_0), que troca um pouco
+        // de precisão por banda de memória — e é a banda que limita a decodificação
+        // onde não há GPU real. O llama.cpp liga a atenção flash sozinho quando o
+        // cache V é quantizado. Nada muda de padrão sem ganho medido, e o valor
+        // usado aparece no log (ajuste medido sem registro não vale nada).
+        const long kv_tuned=debug_int("debug.gguf.kv_type",0);
+        if(kv_tuned==1 || kv_tuned==8) { cp.type_k=(ggml_type)kv_tuned; cp.type_v=(ggml_type)kv_tuned; }
         // Este JNI amostra uma única posição: a do último token do prompt e,
         // depois, a de cada token decodificado. Reservar uma linha de saída vale
         // também para a CPU — sem isso o contexto aloca n_batch linhas do
@@ -353,8 +361,9 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
         if(!e->ctx) throw std::runtime_error("Não foi possível criar contexto: reduza o contexto/modelo");
         e->cache_supported=!llama_model_is_recurrent(e->model) && !llama_model_is_hybrid(e->model)
             && !llama_model_has_encoder(e->model) && !llama_model_is_diffusion(e->model);
-        LOG("GGUF_CONTEXT_TUNING batch=%u ubatch=%u threads=%d prefix_cache_supported=%d prefill_policy=larger_lots",
-            llama_n_batch(e->ctx),llama_n_ubatch(e->ctx),cp.n_threads,(int)e->cache_supported);
+        LOG("GGUF_CONTEXT_TUNING batch=%u ubatch=%u threads=%d prefix_cache_supported=%d prefill_policy=larger_lots kv=%s fa_requested=%s",
+            llama_n_batch(e->ctx),llama_n_ubatch(e->ctx),cp.n_threads,(int)e->cache_supported,
+            ggml_type_name(cp.type_k),llama_flash_attn_type_name(cp.flash_attn_type));
         if(!projector_path.empty()) {
             auto vp=mtmd_context_params_default(); vp.use_gpu=layers!=0; vp.n_threads=cp.n_threads; vp.print_timings=false; vp.warmup=false; vp.device=layers!=0?vulkan_devices[0]:nullptr;
             e->projector=mtmd_init_from_file(projector_path.c_str(),e->model,vp);

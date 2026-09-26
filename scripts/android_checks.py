@@ -196,6 +196,10 @@ def search_panel(chats, chat_id, prompt):
 CONTEXT_TUNING_RE = re.compile(
     r'GGUF_CONTEXT_TUNING batch=(\d+) ubatch=(\d+) threads=(\d+) prefix_cache_supported=(\d)')
 
+# Campos opcionais: rodadas antigas não os tinham, e a falta deles não pode
+# invalidar o que aquelas rodadas mediram.
+KV_CACHE_RE = re.compile(r'GGUF_CONTEXT_TUNING .*?kv=(\w+) fa_requested=(\w+)')
+
 
 def context_tuning(log):
     """O que o motor REALMENTE usou no contexto (lote, sub-lote, threads).
@@ -209,6 +213,19 @@ def context_tuning(log):
     batch, ubatch, threads, cache = found[-1]
     return {'batch': int(batch), 'ubatch': int(ubatch), 'threads': int(threads),
             'prefix_cache_supported': cache == '1'}
+
+
+def kv_cache(log):
+    """Tipo do cache K/V e atenção flash pedidos, como o motor registrou.
+
+    O experimento de cache quantizado só vale se o log provar que a configuração
+    pedida foi a usada: `setprop` sem efeito não pode virar "ganho medido".
+    """
+    found = KV_CACHE_RE.findall(log)
+    if not found:
+        return None
+    kv, flash = found[-1]
+    return {'kv': kv, 'flash_attn_requested': flash}
 
 
 def pref_value(xml, name):

@@ -193,6 +193,7 @@ jobs:
           summary = (receipt / 'functions-sweep.txt').read_text().splitlines()[0]
           warm = perf.get('warmup_experiment') or {}
           prefill = perf.get('prefill_experiment') or {}
+          kv = perf.get('kv_experiment') or {}
           stages = perf.get('stages') or {}
           def wait(stage):
               value = (stages.get(stage) or {}).get('ui_first_text_s')
@@ -211,6 +212,8 @@ jobs:
               f'* taxas de decodificacao medidas por etapa: {taxas}',
               f'* pre-preenchimento por token (mesmo texto, aquecimento desligado): '
               f"{prefill.get('detail', 'nao medido')}",
+              f"* cache K/V (decodificacao, mesmo texto nas duas etapas): "
+              f"{kv.get('detail', 'nao medido')}",
               f'* varredura funcional: {summary}',
               '* o emulador nao tem GPU real: o pedido de GPU foi medido como recusa declarada e',
               '  execucao na CPU, com o motivo visivel na tela do aplicativo;',
