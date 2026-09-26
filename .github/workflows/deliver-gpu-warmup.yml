@@ -72,13 +72,51 @@ jobs:
             .cache/mobile/x86_64
           key: native-v041-ndk28-v2-${{ runner.os }}-${{ hashFiles('apk-fix/native/**', 'apk-fix/*.py', 'ci/mobile-models.sh') }}-${{ github.run_id }}
           restore-keys: native-v041-ndk28-v2-${{ runner.os }}-
+      - name: Resolve the green emulator run that exercised these bytes
+        id: green
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Os pinos eram números escritos à mão e envelheciam: o fluxo passava a
+          # comparar contra uma rodada antiga. Agora a rodada é resolvida na hora:
+          # a última rodada VERDE deste fluxo no branch, e o commit dela tem de ser
+          # ancestral do que está sendo entregue.
+          run=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/text-ui.yml/runs?branch=${GITHUB_REF_NAME}&status=success&per_page=1" --jq '.workflow_runs[0] // empty | .id') || true
+          if [ -z "${run:-}" ]; then
+            echo "skip=1" >> "$GITHUB_OUTPUT"
+            echo "::warning title=GGUF entrega::nenhuma rodada verde de emulador neste branch; nada sera publicado"
+            exit 0
+          fi
+          sha=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run}" --jq '.head_sha')
+          git fetch --no-tags --depth=200 origin "$sha" || true
+          receipt="ci-results/${run}-1-text-ui"
+          if ! git merge-base --is-ancestor "$sha" HEAD || [ ! -f "${receipt}/physical-text-ui-build.json" ]; then
+            # Push que não passou pelo emulador (ou rodada de antes do código atual):
+            # não há o que entregar. O passo seguinte nem roda, e nada é publicado.
+            echo "skip=1" >> "$GITHUB_OUTPUT"
+            echo "::warning title=GGUF entrega::a rodada verde ${run} (${sha::7}) não cobre este commit; nada sera publicado"
+            exit 0
+          fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "receipt=$receipt" >> "$GITHUB_OUTPUT"
+          echo "skip=0" >> "$GITHUB_OUTPUT"
+          echo "::notice title=GGUF entrega::rodada verde ${run} em ${sha::7}"
+
       - name: Compile the native stack, helper Java and patched DEX
+        if: steps.green.outputs.skip != '1'
         env:
           APKTOOL_JAR: .cache/tools/package/lib/apktool.jar
           GGUF_REUSE_TESTED_NATIVE: '0'
         run: bash ci/log_step.sh delivery-build python3 apk-fix/build_mobile.py
       - name: Sign with a key generated here and verify the tested payload
         id: package
+        if: steps.green.outputs.skip != '1'
+        env:
+          GREEN_RUN: ${{ steps.green.outputs.run }}
+          GREEN_SHA: ${{ steps.green.outputs.sha }}
+          GREEN_RECEIPT: ${{ steps.green.outputs.receipt }}
         run: |
           set -euo pipefail
           mkdir -p .cache/delivery evidence
@@ -92,15 +130,15 @@ jobs:
             > evidence/delivery-signature.txt
           "$SIGNER" verify .cache/delivery/GGUF-Chat-gpu-warmup.apk
           python3 - <<'PY'
-          import hashlib, json, zipfile
+          import hashlib, json, os, zipfile
           from pathlib import Path
           apk = Path('.cache/delivery/GGUF-Chat-gpu-warmup.apk')
           # Receipt da rodada verde de emulador que exercitou estes bytes de código.
-          receipt = json.loads(Path('ci-results/36041334551-1-text-ui/physical-text-ui-build.json').read_text())
+          receipt = json.loads(Path(os.environ['GREEN_RECEIPT'] + '/physical-text-ui-build.json').read_text())
           # O recibo de payload da rodada verde traz, além das bibliotecas, o
           # classes.dex do candidato testado.
-          payload_receipt = json.loads(Path('ci-results/36041334551-1-text-ui/apk-payload.json').read_text())
-          tested_commit = 'b55d4b1f13545dd1417c3673cc6fa4b4e19d1515'
+          payload_receipt = json.loads(Path(os.environ['GREEN_RECEIPT'] + '/apk-payload.json').read_text())
+          tested_commit = os.environ['GREEN_SHA']
           marker = Path('GGUF_DELIVERY_SOURCE_COMMIT').read_text().strip() if Path('GGUF_DELIVERY_SOURCE_COMMIT').exists() else None
           with zipfile.ZipFile(apk) as z:
               names = [n for n in z.namelist() if not n.startswith('META-INF/')]
@@ -116,7 +154,7 @@ jobs:
               'status': 'PUBLISHED_PREDELIVERY_TEST_SIGNED',
               'apk_sha256': hashlib.sha256(apk.read_bytes()).hexdigest(),
               'apk_size': apk.stat().st_size,
-              'tested_run': 36041334551,
+              'tested_run': int(os.environ['GREEN_RUN']),
               'tested_commit': receipt['source_commit'],
               'payload_entries': len(names),
               'verified_against_tested_run': sorted(expected),
@@ -135,27 +173,53 @@ jobs:
           print(json.dumps(record, ensure_ascii=False, indent=2))
           PY
       - name: Publish the release and the receipt
+        if: steps.green.outputs.skip != '1'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: Enzo-cyber2025/5
+          GREEN_RECEIPT: ${{ steps.green.outputs.receipt }}
         run: |
           set -euo pipefail
           TAG="gguf-gpu-warmup"
-          cat > /tmp/notes.md <<'MD'
-          Pré-entrega de teste: GPU primeiro, prefixo do prompt aquecido, interface Off Grid AI.
-
-          O que foi medido no emulador do CI (rodada 36041334551, verde):
-
-          * espera do envio até o primeiro texto: 2,140 s com o aquecimento desligado contra
-            0,565 s com ele ligado, na mesma rodada, mesma máquina e mesma carga — 3,79x menos
-            espera (alvo do pedido: 3x), com 64 de 65 tokens reaproveitados do KV;
-          * nenhuma regressão de taxa de decodificação em nenhuma etapa; a taxa ficou em
-            3,7x-4,5x a linha de base da própria rodada;
-          * o emulador não tem GPU real: o pedido de GPU foi medido como recusa declarada e
-            execução na CPU, com o motivo visível na tela do aplicativo;
-          * NPU do A55 (Exynos 1480): presente no aparelho, sem backend compatível neste
-            binário. O aplicativo declara isso em vez de prometer aceleração.
-
+          # As notas saem do que a rodada MEDIU (performance.json e a varredura
+          # publicados na evidencia), nao de numeros escritos a mao que envelhecem.
+          python3 - "$GREEN_RECEIPT" > /tmp/notes-medidos.md <<'PY'
+          import json, sys
+          from pathlib import Path
+          receipt = Path(sys.argv[1])
+          perf = json.loads((receipt / 'performance.json').read_text())
+          summary = (receipt / 'functions-sweep.txt').read_text().splitlines()[0]
+          warm = perf.get('warmup_experiment') or {}
+          prefill = perf.get('prefill_experiment') or {}
+          stages = perf.get('stages') or {}
+          def wait(stage):
+              value = (stages.get(stage) or {}).get('ui_first_text_s')
+              return f'{value:.3f} s' if value else 'nao medido'
+          taxas = ', '.join(f"{name} {entry.get('tokens_s'):.2f} T/s"
+                            for name, entry in sorted(stages.items())
+                            if isinstance(entry, dict) and entry.get('tokens_s'))
+          linhas = [
+              'Pre-entrega de teste: GPU primeiro, prefixo do prompt aquecido, interface Off Grid AI.',
+              '',
+              'O que foi medido no emulador do CI (rodada verde desta entrega):',
+              '',
+              f'* espera do envio ate o primeiro texto: {wait("gpu-off-cold")} com o aquecimento '
+              f'desligado contra {wait("gpu-preferred-cold")} com ele ligado, na mesma rodada e '
+              f'mesma maquina' + (f" - {warm['speedup_x']}x menos espera" if warm.get('speedup_x') else ''),
+              f'* taxas de decodificacao medidas por etapa: {taxas}',
+              f'* pre-preenchimento por token (mesmo texto, aquecimento desligado): '
+              f"{prefill.get('detail', 'nao medido')}",
+              f'* varredura funcional: {summary}',
+              '* o emulador nao tem GPU real: o pedido de GPU foi medido como recusa declarada e',
+              '  execucao na CPU, com o motivo visivel na tela do aplicativo;',
+              '* NPU do A55 (Exynos 1480): presente no aparelho, sem backend compativel neste',
+              '  binario. O aplicativo declara isso em vez de prometer aceleracao.',
+              '',
+          ]
+          print('\n'.join(linhas))
+          PY
+          cat /tmp/notes-medidos.md > /tmp/notes.md
+          cat >> /tmp/notes.md <<'MD'
           Assinatura: chave gerada na execução que montou este APK e descartada em seguida —
           certificado novo, não é release de loja. Para instalar sobre uma versão de outro
           certificado é preciso desinstalar antes (preserve conversas, anexos e modelos).
