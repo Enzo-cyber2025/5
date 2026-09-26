@@ -1,0 +1,65 @@
+{
+  "stage": "search-offline",
+  "gpu_layers_requested": 0,
+  "threads_requested": 2,
+  "threads_resolved": {
+    "requested": 2,
+    "available": 2,
+    "capacities": 0,
+    "resolved": 2
+  },
+  "backend": "cpu",
+  "ui_first_text_s": 4.226652068,
+  "warmup": {
+    "ran": true,
+    "skipped": null,
+    "ui_ok": true,
+    "typed_passes": 2,
+    "input_tokens": 100,
+    "prefilled": 100,
+    "reused_tokens": 45,
+    "gpu": false,
+    "aborted": false
+  },
+  "prefill": {
+    "prompt_tokens": 264,
+    "reused_tokens": 45,
+    "fresh_tokens": 219,
+    "prefill_s": 4.1231,
+    "prefill_ms_per_token": 18.827
+  },
+  "context_tuning": {
+    "batch": 256,
+    "ubatch": 128,
+    "threads": 2,
+    "prefix_cache_supported": true
+  },
+  "kv_cache": {
+    "kv": "f16",
+    "flash_attn_requested": "auto"
+  },
+  "search": {
+    "budget_ms": 12000,
+    "used_ms": 1,
+    "exhausted": false,
+    "provider": "nenhum",
+    "announced_budget_ms": 12000,
+    "attempts": [
+      "DuckDuckGo",
+      "DuckDuckGo"
+    ],
+    "attempt_slices_within_budget": true,
+    "sources": 0,
+    "prompt_mode": "indisponivel",
+    "error": "DuckDuckGo: sem rede/DNS; demais provedores ignorados: falha de rede"
+  },
+  "software_vulkan_notice": null,
+  "tokens": 9,
+  "decode_s": 2.033909033,
+  "prefill_s": 4.123085694,
+  "tokens_s": 4.424976660202482,
+  "first_token_s": 4.124769004,
+  "prompt_tokens": 264,
+  "reused_tokens": 45,
+  "completed": true
+}
