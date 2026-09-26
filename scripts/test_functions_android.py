@@ -107,6 +107,15 @@ def wait_screen(device, label, timeout=20, contains=True):
     return device.wait(lambda: on_screen(device, label, contains), f'"{label}" na tela', timeout=timeout)
 
 
+def backend_text(device):
+    """O valor de "Backend atual: ..." na tela de Ajustes ("—" sem motor carregado)."""
+    for label in visible_labels(device, 40):
+        found = re.search(r'Backend atual:[ \t]*([^\n]*)', label)
+        if found:
+            return found.group(1).strip()
+    return None
+
+
 def visible_labels(device, limit=14):
     """Os rótulos visíveis agora — o que permite explicar uma falha de navegação."""
     seen = []
@@ -142,18 +151,45 @@ def last_button(device, label):
     return achados[-1] if achados else None
 
 
-def scroll_to(device, label, tries=4, contains=True):
-    """Procura o rótulo rolando a tela: conteúdo abaixo da dobra também é função.
+def scroll_to(device, label, tries=5, contains=True):
+    """Procura o rótulo rolando, nos DOIS sentidos.
 
-    Na varredura anterior "Salvar ajustes" não foi encontrado porque o botão fica
-    no fim de uma lista rolável — a tela não caber. Rolar é o que um usuário faz.
+    Na rodada 36238272473 a tela de Ajustes ficou no fim da lista e a busca só
+    rolava para baixo: "Tamanho de contexto" estava acima e o teste reprovou o
+    aplicativo por causa do sentido da rolagem. Agora a busca volta ao topo
+    primeiro e, se não achar, procura também para cima.
     """
-    for _ in range(tries):
-        if on_screen(device, label, contains):
+    def visible():
+        return bool(on_screen(device, label, contains))
+
+    if visible():
+        return True
+    for _ in range(6):  # volta ao topo antes de procurar
+        device.shell('input touchscreen swipe 360 500 360 1000 250')
+        time.sleep(0.3)
+        if visible():
             return True
+    for _ in range(tries):  # procura descendo
         device.shell('input touchscreen swipe 360 1000 360 500 300')
-        time.sleep(0.7)
-    return bool(on_screen(device, label, contains))
+        time.sleep(0.6)
+        if visible():
+            return True
+    for _ in range(tries):  # e, se preciso, subindo
+        device.shell('input touchscreen swipe 360 500 360 1000 300')
+        time.sleep(0.5)
+        if visible():
+            return True
+    return visible()
+
+
+def scroll_tools_row(device):
+    """Rola a linha de ferramentas para o lado: 'Ferramentas' fica fora da tela."""
+    for _ in range(4):
+        if on_screen(device, 'Ferramentas', contains=False):
+            return True
+        device.shell('input touchscreen swipe 900 2028 300 2028 300')
+        time.sleep(0.6)
+    return bool(on_screen(device, 'Ferramentas', contains=False))
 
 
 def tap_exact(device, label, optional=False):
@@ -323,17 +359,14 @@ def main():
             try:
                 device.wait(lambda m=marker: on_screen(device, m), f'conteúdo de {label}', timeout=25)
                 chegou.append(label)
-            except AssertionError:  # rola a tela e tenta de novo
+            except AssertionError:  # rola a tela e tenta de novo antes de desistir
                 try:
-                    device.wait(lambda m=marker: scroll_to(device, m), f'conteúdo de {label} após rolar',
-                                timeout=15)
+                    device.wait(lambda m=marker: scroll_to(device, m),
+                                f'conteúdo de {label} após rolar', timeout=15)
                     chegou.append(label)
                 except AssertionError:
                     print(f'   (a aba {label} não mostrou "{marker}"; '
                           f'visíveis: {visible_labels(device)})', flush=True)
-            except AssertionError:
-                print(f'   (a aba {label} não mostrou "{marker}"; '
-                      f'visíveis: {visible_labels(device)})', flush=True)
         if len(chegou) < 3:
             raise AssertionError(f'abas alcançadas: {chegou}')
         return 'abas navegam e mostram conteúdo próprio: ' + ', '.join(chegou)
@@ -430,8 +463,11 @@ def main():
     def descarregar_e_recarregar():
         # Onde está o controle: a tabela de strings do APK original mostra
         # "Descarregar modelo da memória" em SettingsActivity.onCreate — a tela de
-        # Ajustes, não a de modelos. A varredura anterior procurava na tela errada e
-        # declarava SKIP ("não oferece") para um controle que existe.
+        # Ajustes, não a de modelos. A varredura anterior procurava na tela errada.
+        # E a prova não é a mensagem "Modelo descarregado." (que é um toast e pode
+        # passar entre duas leituras): é o que a própria tela diz em "Backend atual:",
+        # que vem de EngineManager.backend() — o nome do backend só existe enquanto
+        # há motor vivo, e "—" é o que o código devolve quando não há.
         device.generate(model, 0, 'functions-unload-pre', prompt='Reply in English: say ok')
         device.launch()
         if not tap_label(device, 'Ajustes', optional=True):
@@ -439,17 +475,30 @@ def main():
         if not scroll_to(device, 'Descarregar modelo da memória'):
             raise SkipCheck('controle de descarregar ausente mesmo rolando os ajustes; '
                             'rótulos visíveis: ' + ', '.join(visible_labels(device, 20)))
+        carregado = backend_text(device)
+        if carregado in (None, '—'):
+            raise AssertionError('logo depois de gerar, a tela de Ajustes diz que não há '
+                                 f'modelo carregado ("Backend atual: {carregado}")')
         tap_label(device, 'Descarregar modelo da memória')
-        device.wait(lambda: (on_screen(device, 'Modelo descarregado')
-                             or 'Modelo descarregado' in device.adb('logcat', '-d')),
-                    'confirmação do descarregamento', timeout=25)
+        # Sem reiniciar o processo: volta e reabre a tela de Ajustes, que lê o estado
+        # de novo ao ser criada. Reiniciar o aplicativo mataria o motor de qualquer
+        # forma e não provaria nada sobre o botão.
+        device.shell('input keyevent KEYCODE_BACK')
+        device.wait(lambda: has_package(device.ui(), {PACKAGE}), 'volta ao aplicativo', timeout=20)
+        if not tap_label(device, 'Ajustes', optional=True):
+            raise AssertionError('não foi possível reabrir a tela de Ajustes')
+        scroll_to(device, 'Backend atual')
+        descarregado = backend_text(device)
+        if descarregado != '—':
+            raise AssertionError(f'depois de descarregar, o motor continua vivo '
+                                 f'("Backend atual: {descarregado}")')
         device.alive()
-        # Descarregar de verdade tem de ser sentido: a geração seguinte só responde
-        # se o modelo voltou para a memória (recarga real, não presumida).
+        # Recarga real, não presumida: a geração seguinte só responde se o modelo voltou.
         device.generate(model, 0, 'functions-unload', prompt='Reply in English: say ok')
         if not (args.evidence / 'functions-unload-reply.txt').read_text().strip():
             raise AssertionError('sem resposta depois de descarregar: o modelo não voltou')
-        return 'descarregou pela tela de Ajustes ("Modelo descarregado.") e voltou a gerar resposta'
+        return (f'carregado mostra "{carregado}", descarregar devolve "—" (EngineManager sem '
+                'motor) e a geração seguinte recarrega de verdade')
 
     def nova_conversa():
         device.generate(model, 0, 'functions-chat', prompt='Reply in English: one word, hello')
@@ -571,14 +620,19 @@ def main():
         faltando = [b for b in ('Foto', 'Vídeo', 'Áudio', 'Arquivo') if not on_screen(device, b)]
         if faltando:
             raise AssertionError(f'botões ausentes na gaveta: {faltando}')
+        # 'Ferramentas' é o último botão da linha: fica fora da tela até rolar para
+        # o lado (a linha é um HorizontalScrollView). Rolar é o que o usuário faz.
+        if not scroll_tools_row(device):
+            raise AssertionError('o botão "Ferramentas" não apareceu nem rolando a linha; '
+                                 'visíveis: ' + ', '.join(visible_labels(device, 20)))
         # "Ferramentas" não é um item: é a própria linha de ferramentas da conversa
         # (desc "Ferramentas da conversa"), que traz Sistema, Thinking, Busca e os
         # quatro anexos. A árvore de views da rodada 36192982173 está no repositório
         # e é ela que sustenta esta leitura.
         if not position(device.ui(), desc='Ferramentas da conversa', package={PACKAGE}):
             raise AssertionError('a linha "Ferramentas da conversa" não está na tela')
-        return ('abre com os quatro anexos (Foto, Vídeo, Áudio, Arquivo) na linha '
-                '"Ferramentas da conversa", junto de Sistema, Thinking e Busca')
+        return ('abre com Sistema, Thinking, Busca, os quatro anexos (Foto, Vídeo, Áudio, '
+                'Arquivo) e o botão "Ferramentas" ao fim da linha (alcançado rolando)')
 
     def seletores():
         device.launch()
@@ -587,10 +641,53 @@ def main():
             raise AssertionError('gaveta de ferramentas não abriu; visíveis: '
                                  + ', '.join(visible_labels(device, 20)))
         provas = []
-        for label in ('Foto', 'Vídeo', 'Áudio', 'Arquivo'):
+        # Foto: sem par visão/mmproj o próprio aplicativo não abre nada (o smali
+        # manda voltar quando não é multimodal), então o exigível aqui é que o
+        # toque não derrube o processo — e o motivo fica declarado. Com o par, o
+        # caminho é o diálogo "Fotos" → "Importar foto".
+        foto = 'PASS: botão Foto responde sem derrubar o processo' if not args.mmproj else None
+        for label in ('Vídeo', 'Áudio', 'Arquivo'):
             device.tools_open()
             provas.append(picker_then_back(device, label))
-        return '; '.join(provas)
+        if foto is None:
+            device.tools_open()
+            if not tap_exact(device, 'Foto', optional=True):
+                raise AssertionError('botão Foto não encontrado na linha de ferramentas')
+            device.wait(lambda: on_screen(device, 'Fotos'), 'menu de fotos', timeout=15)
+            tap_exact(device, 'Importar foto')
+            device.wait(lambda: has_package(device.ui(), PICKERS) or other_window(device),
+                        'seletor de imagens', timeout=25)
+        device.tools_open()
+        if not tap_exact(device, 'Foto', optional=True):
+            raise AssertionError('botão Foto não encontrado na linha de ferramentas')
+        device.alive()
+        detalhe = ('Foto: sem par visão/mmproj o aplicativo não abre seletor (volta sem erro), '
+                   'como declara o próprio código' if foto else
+                   'Foto: diálogo "Fotos" e seletor de imagens abriram')
+        return ('Vídeo, Áudio e Arquivo abriram o seletor do sistema e o aplicativo voltou no '
+                f'mesmo processo; {detalhe}')
+
+    def ferramentas_dialogo():
+        device.launch()
+        abrir_conversa()
+        if not device.tools_open():
+            raise AssertionError('gaveta de ferramentas não abriu; visíveis: '
+                                 + ', '.join(visible_labels(device, 20)))
+        if not scroll_tools_row(device):
+            raise SkipCheck('botão "Ferramentas" fora de alcance nesta versão')
+        tap_exact(device, 'Ferramentas')
+        # O diálogo (showToolsDialog) traz o título "Ferramentas", as opções de
+        # Thinking/Busca e "Fechar": é a segunda porta para as mesmas ferramentas.
+        device.wait(lambda: on_screen(device, 'Fechar'), 'diálogo de ferramentas', timeout=20)
+        opcoes = [b for b in ('Thinking', 'Busca') if on_screen(device, b)]
+        if not opcoes:
+            raise AssertionError('diálogo abriu sem as opções de ferramentas; visíveis: '
+                                 + ', '.join(visible_labels(device, 20)))
+        tap_exact(device, 'Fechar')
+        device.wait(lambda: not on_screen(device, 'Fechar'), 'diálogo fechado', timeout=15)
+        device.alive()
+        return ('botão "Ferramentas" ao fim da linha abre o diálogo com ' + ', '.join(opcoes)
+                + ' e "Fechar"')
 
     def anexo_texto():
         nome = 'gguf-anexo-de-teste.txt'
@@ -706,7 +803,7 @@ def main():
         # tamanho — procurar ali era procurar no lugar errado.
         device.launch()
         tap_exact(device, 'Importar')
-        if not scroll_to(device, models[0]['fileName']):
+        if not scroll_to(device, models[0]['name']):
             raise AssertionError('o modelo não está listado na tela de importação; '
                                  'visíveis: ' + ', '.join(visible_labels(device, 20)))
         if not tap_exact(device, 'Excluir', optional=True):
@@ -755,7 +852,8 @@ def main():
         ('ajustes', ajustes), ('modelo_listado', modelo_listado),
         ('descarregar_e_recarregar', descarregar_e_recarregar), ('nova_conversa', nova_conversa),
         ('parar_geracao', parar_geracao), ('raciocinio', raciocinio), ('busca_fontes', busca_fontes),
-        ('gaveta_ferramentas', gaveta), ('seletores_de_anexo', seletores), ('anexo_texto', anexo_texto),
+        ('gaveta_ferramentas', gaveta), ('ferramentas_dialogo', ferramentas_dialogo),
+        ('seletores_de_anexo', seletores), ('anexo_texto', anexo_texto),
         ('visao', visao), ('notificacao', notificacao), ('historico', historico),
         ('excluir_conversa', excluir_conversa), ('excluir_modelo', excluir_modelo),
         ('sem_modelo', sem_modelo),

@@ -199,7 +199,7 @@ declarada SKIP, nunca aprovada por omissão.
 ### 4.2 Varredura funcional ("testa TODAS as funções")
 
 `scripts/test_functions_android.py` percorre a superfície do aplicativo como um
-usuário a percorre — 19 funções, cada uma com PASS, FAIL ou SKIP **declarado com
+usuário a percorre — 20 funções, cada uma com PASS, FAIL ou SKIP **declarado com
 motivo**, e o relatório publicado (`functions-sweep.json` e `functions-sweep.txt`).
 Começa do zero de propósito (`pm clear` e modelo preparado), para que o estado vazio
 e a primeira execução sejam observados de verdade, e roda por último porque exclui o
@@ -211,19 +211,20 @@ modelo ao testar "Excluir modelo".
 | abas | Chat, Importar, AI Modelos e Ajustes mostram conteúdo próprio |
 | importar | entrada única "Importar GGUF" que abre o seletor real; a tela antiga (dois arquivos) continua alcançável e redireciona para ela; a tela explica o caminho do projetor |
 | ajustes | os oito campos; valor inválido recusado; valor válido salvo e persistido nas preferências |
-| modelo | listado pelo nome real; descarregar da memória pela tela de **Ajustes** ("Descarregar modelo da memória", procurado depois de carregar o modelo) **e voltar a gerar** |
+| modelo | listado pelo nome real; descarregar da memória pela tela de **Ajustes** ("Descarregar modelo da memória") com prova de **estado**: "Backend atual" traz o backend do motor vivo e passa a "—" depois de descarregar (é o que `EngineManager.backend()` devolve sem motor), sem reiniciar o processo para não matar o motor; a geração seguinte prova a recarga |
 | conversa | criação com escolha de modelo, envio e resposta persistida |
 | parar | interrompe no meio (bem antes do limite de tokens) e mantém a resposta parcial |
 | raciocínio | rótulo, `chat.thinking=true`, prompt de sistema aplicado, painel próprio, e o bloco não vaza para o texto |
 | busca | botão liga; fontes obtidas **e persistidas na mensagem**; teto respeitado |
-| gaveta | os quatro anexos (Foto, Vídeo, Áudio, Arquivo) dentro da linha "Ferramentas da conversa", junto de Sistema, Thinking e Busca |
-| seletores | os quatro abrem e o aplicativo volta **no mesmo processo** (PID), com a tarefa trazida de volta sem reiniciar |
+| gaveta | Sistema, Thinking, Busca, os quatro anexos (Foto, Vídeo, Áudio, Arquivo) e o botão "Ferramentas" ao fim da linha "Ferramentas da conversa" (alcançado rolando para o lado) |
+| diálogo de ferramentas | o botão "Ferramentas" abre o diálogo com Thinking/Busca e "Fechar" |
+| seletores | Vídeo, Áudio e Arquivo abrem o seletor do sistema e o aplicativo volta **no mesmo processo** (PID); Foto, sem par visão/mmproj, não abre nada — o próprio código do aplicativo manda voltar quando não é multimodal, e o teste declara isso em vez de exigir o impossível |
 | anexo de texto | arquivo escolhido no seletor real, conteúdo preparado para o modelo e anexo preservado na mensagem |
 | visão | SKIP sem par visão/mmproj — nunca aprovada por omissão |
 | notificação | com a tela apagada, o canal "Respostas prontas" aparece no `dumpsys` |
 | histórico | conversa reabre com o conteúdo salvo depois de fechar o aplicativo |
 | excluir conversa | diálogo confirmado e conversa fora do armazenamento |
-| excluir modelo | botão "Excluir" da linha na tela de **importação**, diálogo "Excluir modelo" confirmado e arquivo fora do armazenamento (SKIP declarado só depois de procurar na tela, com os rótulos visíveis no motivo) |
+| excluir modelo | botão "Excluir" da linha do modelo (pelo **nome**, que é o que a lista mostra) na tela de **importação**, diálogo "Excluir modelo" confirmado e arquivo fora do armazenamento (SKIP declarado só depois de procurar na tela, com os rótulos visíveis no motivo) |
 | sem modelo | sem modelo importado, criar conversa avisa em vez de falhar em silêncio |
 
 Toda falha e todo SKIP gravam também `functions-<nome>-ui.xml` (a árvore de views do

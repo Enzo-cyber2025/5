@@ -71,6 +71,7 @@ class FakeDevice:
         self.actions = []
 
     def ui(self):
+        # Devolve a tela atual; só avança quando há mais de uma (a última fica).
         return self.screens[0] if len(self.screens) == 1 else self.screens.pop(0)
 
     def shell(self, command, check=True):
@@ -111,10 +112,18 @@ def test_visible_labels_lists_what_is_on_screen():
 
 def test_scroll_to_swipes_and_finds_the_label_below_the_fold():
     sweep = load('sweep_under_test', 'scripts/test_functions_android.py')
-    device = FakeDevice([screen('Camadas na GPU'), screen('Camadas na GPU'),
-                         screen('Camadas na GPU', 'Salvar ajustes')])
+    device = FakeDevice([screen('Camadas na GPU')] * 8 +
+                        [screen('Camadas na GPU', 'Salvar ajustes')])
     assert sweep.scroll_to(device, 'Salvar ajustes') is True
     assert any('swipe' in action for action in device.actions)
+
+
+def test_scroll_to_finds_what_is_above_the_current_position():
+    """A rodada 36238272473 ficou no fim da lista e procurava só para baixo."""
+    sweep = load('sweep_under_test', 'scripts/test_functions_android.py')
+    device = FakeDevice([screen('Tamanho de contexto (tokens)')] * 6 +
+                        [screen('Rodapé da lista', 'Salvar ajustes')] * 8)
+    assert sweep.scroll_to(device, 'Tamanho de contexto') is True
 
 
 def test_scroll_to_gives_up_without_lying():

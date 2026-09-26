@@ -283,7 +283,7 @@ def test_function_sweep_covers_every_labelled_control():
         'Importar 2 GGUFs': 'ModelsActivity', 'Salvar ajustes': 'Salvar ajustes',
         'Parar': 'Parar', 'Thinking': 'Thinking', 'Busca': 'Busca', 'Foto': 'Foto',
         'Vídeo': 'Vídeo', 'Áudio': 'Áudio', 'Arquivo': 'Arquivo',
-        'Ferramentas': 'Ferramentas da conversa', 'Excluir conversa': 'Excluir conversa',
+        'Ferramentas': 'scroll_tools_row', 'Excluir conversa': 'Excluir conversa',
         'Excluir modelo': 'Excluir modelo', 'Descarregar': 'Descarregar',
     }
     for rotulo, prova in cobertos.items():
@@ -291,7 +291,7 @@ def test_function_sweep_covers_every_labelled_control():
     for funcao in ('estado_vazio', 'abas', 'ajustes', 'nova_conversa', 'parar_geracao',
                    'raciocinio', 'busca_fontes', 'gaveta_ferramentas', 'seletores_de_anexo',
                    'anexo_texto', 'visao', 'notificacao', 'historico', 'excluir_conversa',
-                   'excluir_modelo', 'sem_modelo'):
+                   'excluir_modelo', 'sem_modelo', 'ferramentas_dialogo'):
         assert f"('{funcao}'" in sweep, f'função {funcao} fora da ordem da varredura'
 
 
