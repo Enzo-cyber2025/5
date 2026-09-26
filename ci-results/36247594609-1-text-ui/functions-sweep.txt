@@ -1,0 +1,21 @@
+varredura funcional: 20 funções, 18 PASS, 1 SKIP, 1 FAIL
+PASS estado_vazio: primeira execução: a tela vazia orienta ("Toque em + Nova conversa para começar")
+PASS abas: abas navegam e mostram conteúdo próprio: Importar, AI Modelos, Ajustes, Chat
+PASS importar_botoes: entrada única "Importar GGUF" que abre o seletor de verdade e a tela explica os dois caminhos (par linguagem+projetor ou GGUF completo); Importar GGUF abriu o seletor de arquivos do sistema e o aplicativo voltou no mesmo processo
+PASS ajustes: os oito ajustes estão na tela; valor não numérico não corrompe o ajuste: cai no padrão 4096; valor válido salvo e persistido
+PASS modelo_listado: modelo importado listado com o nome real (SmolLM2-135M-Instruct-Q4_K_M)
+FAIL descarregar_e_recarregar: AssertionError: logo depois de gerar, a tela de Ajustes diz que não há modelo carregado ("Backend atual: —")
+PASS nova_conversa: criada com escolha de modelo; resposta persistida (33 caracteres, 9 tokens nativos)
+PASS parar_geracao: parou no meio e manteve a resposta parcial (457 caracteres, 96 tokens antes de parar)
+PASS raciocinio: raciocínio liga e persiste (chat.thinking=true), prompt de sistema aplicado, painel próprio anexado, e o bloco não vaza para o texto visível; desliga limpo
+PASS busca_fontes: botão liga ("Busca ON") e a busca devolve DuckDuckGo com 5 fonte(s) em 2065 ms (teto 12000 ms), fontes persistidas na mensagem
+PASS gaveta_ferramentas: abre com Sistema, Thinking, Busca, os quatro anexos (Foto, Vídeo, Áudio, Arquivo) e o botão "Ferramentas" ao fim da linha (alcançado rolando)
+PASS ferramentas_dialogo: botão "Ferramentas" ao fim da linha abre o diálogo com Thinking, Busca e "Fechar"
+PASS seletores_de_anexo: Vídeo, Áudio e Arquivo abriram o seletor do sistema e o aplicativo voltou no mesmo processo; Foto: sem par visão/mmproj o aplicativo não abre seletor (volta sem erro), como declara o próprio código
+PASS anexo_texto: texto anexado e enviado: conteúdo preparado (files=1, text_chars=54) e anexo preservado na mensagem
+SKIP visao: sem par visão/mmproj neste runner: seleção, pré-processamento e leitura de imagem não podem ser provados — e não serão aprovados por omissão
+PASS notificacao: com a tela apagada durante a geração, o canal "Respostas prontas" apareceu no dumpsys
+PASS historico: conversa "GGUF regression 1a0de353efc5a6835" reabriu com o conteúdo salvo depois de fechar o aplicativo
+PASS excluir_conversa: conversa "GGUF regression 1a0de3637c11a4db5" excluída pela interface e sumiu do armazenamento
+PASS excluir_modelo: excluído pela linha da importação, diálogo confirmado e arquivo fora do armazenamento
+PASS sem_modelo: sem modelo, criar conversa avisa o usuário em vez de falhar em silêncio
