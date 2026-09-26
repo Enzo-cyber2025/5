@@ -57,6 +57,7 @@ class Sweep:
             self.results[name] = {'status': 'SKIP', 'detail': str(skip)}
             self.dump(name)
             print(f'SKIP {name}: {skip}', flush=True)
+            self.restaurar(name)
             return False
         except Exception as error:  # noqa: BLE001 — o relatório precisa continuar
             detail = f'{type(error).__name__}: {error}'
@@ -68,10 +69,26 @@ class Sweep:
             except Exception as capture_error:  # noqa: BLE001
                 print(f'(captura indisponível: {capture_error})', flush=True)
             self.dump(name)
+            self.restaurar(name)
             return False
         self.results[name] = {'status': 'PASS', 'detail': detail}
         print(f'PASS {name}: {detail}', flush=True)
         return True
+
+    def restaurar(self, name):
+        """Devolve o aplicativo à tela inicial depois de SKIP/FAIL.
+
+        Sem isto, uma falha que deixa o seletor do sistema na frente derruba as
+        funções SEGUINTES — cada veredito tem de ser independente. O que foi feito
+        fica registrado no relatório, e nada aqui mascara o erro anterior.
+        """
+        try:
+            self.device.shell('input keyevent KEYCODE_BACK', check=False)
+            self.device.launch()
+            self.device.alive()
+            self.results[name]['detail'] += '; aplicativo devolvido à tela inicial antes da próxima função'
+        except Exception as error:  # noqa: BLE001
+            self.results[name]['detail'] += f'; não foi possível voltar à tela inicial: {error}'
 
     def dump(self, name):
         """Guarda a árvore de views do momento: é o que permite explicar um FAIL/SKIP."""
@@ -615,14 +632,25 @@ def main():
                 f'{stat[0] if stat else "?"} tokens nativos)')
 
     def parar_geracao():
+        # Orçamento LONGO de propósito: a geração de 128 tokens termina em ~8 s e o
+        # botão "Parar" vive menos que o custo de uma leitura de tela (1-2 s) — a
+        # rodada 36265128113 terminou a geração antes de o teste ver o botão, com a
+        # resposta de 128 tokens na evidência. Com 1024 tokens a janela é de ~1 min.
+        limpar = 1024
         device.launch()
-        chat = device.new_chat(model, 0, threads=2)
+        chat = device.new_chat(model, 0, threads=2, n_predict=limpar)
         device.wait_for_load()
         device.send('Write a long numbered list in English, at least fifty items.')
         # 120 s: se o motor acabou de ser descarregado (ou é a primeira geração da
         # varredura), a carga do modelo entra nesta espera. Cronometrar 30 s aqui
         # media o emulador, não o aplicativo (rodada 36245048939).
-        device.wait(lambda: on_screen(device, 'Parar'), 'botão Parar durante a geração', timeout=120)
+        try:
+            device.wait(lambda: on_screen(device, 'Parar'), 'botão Parar durante a geração',
+                        timeout=120)
+        except AssertionError:
+            estadio = last_stats(device.adb('logcat', '-d'))
+            raise AssertionError('o botão Parar não apareceu na geração de '
+                                 f'{limpar} tokens (última medição: {estadio})')
         time.sleep(2)
         tap_label(device, 'Parar')
 
@@ -637,8 +665,8 @@ def main():
         reply = device.wait(parcial, 'resposta parcial persistida após parar', timeout=60)
         device.capture('functions-parar.png')
         stat = last_stats(device.adb('logcat', '-d'))
-        if stat and stat[0] >= 128:
-            raise AssertionError('Parar não interrompeu: a geração chegou ao limite de tokens')
+        if stat and stat[0] >= limpar:
+            raise AssertionError(f'Parar não interrompeu: a geração chegou ao limite de {limpar} tokens')
         return (f'parou no meio e manteve a resposta parcial ({len(reply["content"])} caracteres'
                 + (f', {stat[0]} tokens antes de parar' if stat else '') + ')')
 
@@ -871,11 +899,18 @@ def main():
                 f'caracteres); {foto}')
 
     def notificacao():
+        # Mesma razão da etapa anterior: com 128 tokens a geração acaba antes de o
+        # teste ver "Parar" (rodada 36265128113); com 1024 a janela é de ~1 min.
         device.launch()
-        device.new_chat(model, 0, threads=2)
+        device.new_chat(model, 0, threads=2, n_predict=1024)
         device.wait_for_load()
         device.send('Write a long numbered list in English, at least fifty items.')
-        device.wait(lambda: on_screen(device, 'Parar'), 'geração em andamento', timeout=120)
+        try:
+            device.wait(lambda: on_screen(device, 'Parar'), 'geração em andamento', timeout=120)
+        except AssertionError:
+            estadio = last_stats(device.adb('logcat', '-d'))
+            raise AssertionError('a geração de 1024 tokens não ficou em andamento o bastante para '
+                                 f'a tela mostrar "Parar" (última medição: {estadio})')
         device.shell('input keyevent KEYCODE_HOME')
         device.shell('input keyevent KEYCODE_POWER')  # tela apaga: canal de resposta pronta
         try:

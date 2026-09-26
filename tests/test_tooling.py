@@ -727,17 +727,25 @@ def test_exact_saf_selection_ignores_recent_diagnostic_xml():
         def shell(self, command, check=True):
             tokens = command.split()
             self.gestos.append(command)
-            if tokens[:2] == ['input', 'touchscreen']:
+            if tokens[:3] == ['input', 'motionevent', 'DOWN']:
                 # Toque longo entra em seleção múltipla: obrigatório na PRIMEIRA marcação.
                 assert not self.selected, f'toque longo depois de já haver seleção: {command}'
                 assert int(tokens[4]) == 120, command
                 self.selected.append('model.gguf')
+            elif tokens[:3] == ['input', 'motionevent', 'UP']:
+                self.soltou = True
+            elif tokens[:2] == ['input', 'touchscreen']:
+                # Só como último recurso, e sempre COM deslocamento (MOVE de verdade).
+                assert tokens[4] != tokens[6], f'swipe parado não é toque longo: {command}'
+                if not self.selected:
+                    self.selected.append('model.gguf')
             elif tokens[:2] == ['input', 'tap']:
                 # A linha andou quando a barra de seleção apareceu: Y tem de ser o novo.
                 assert int(tokens[3]) == 232, f'coordenada velha da linha: {command}'
                 self.selected.append('projector.gguf')
             else:
                 raise AssertionError(command)
+            return ''
 
         def tap(self, *, text, package):
             raise AssertionError('A selection gesture must not open a document')
@@ -750,3 +758,6 @@ def test_exact_saf_selection_ignores_recent_diagnostic_xml():
     assert picker.selected == ['model.gguf', 'projector.gguf']
     # O XML de diagnóstico na pasta não pode ser confundido com documento escolhido.
     assert 'gguf-test-ui.xml' not in picker.selected
+    # O primeiro gesto é o toque longo de verdade, e o dedo é solto no fim.
+    assert picker.gestos[0].startswith('input motionevent DOWN')
+    assert getattr(picker, 'soltou', False), 'o dedo do toque longo tem de ser solto'

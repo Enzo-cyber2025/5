@@ -374,7 +374,16 @@ class Android:
         self.last_pair = unidade
         return unidade
 
-    def new_chat(self, model, gpu_layers, context_size=1024, threads=2, search=False):
+    def new_chat(self, model, gpu_layers, context_size=1024, threads=2, search=False,
+                 n_predict=128):
+        """Conversa nova com o limite de tokens pedido.
+
+        `n_predict` importa para os testes que precisam PEGAR a geração em andamento
+        (botão "Parar", notificação de resposta pronta): com 128 tokens a geração
+        termina em ~8 s e a janela do botão é menor que o custo de uma leitura de
+        tela — foi o que reprovou `parar_geracao` e `notificacao` na rodada
+        36265128113, com as duas respostas concluídas na evidência.
+        """
         self.shell(f"am force-stop {PACKAGE}")
         prefs = ET.Element("map")
         for name, value in (("selectedModelId", model["id"]), ("selectedModelName", model["name"]),
@@ -401,7 +410,7 @@ class Android:
         chats = self.read_json("chats.json")
         for c in chats:
             if c["id"] == chat["id"]:
-                c.update(nPredict=128, temperature=0.0, contextSize=context_size,
+                c.update(nPredict=n_predict, temperature=0.0, contextSize=context_size,
                          gpuLayers=gpu_layers, webSearch=search, thinking=False)
                 c["title"] = "GGUF regression " + chat["id"]
                 chat = c

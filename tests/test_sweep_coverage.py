@@ -119,3 +119,28 @@ def test_unload_is_proven_by_the_engine_log_not_by_an_expiring_toast():
     assert 'GGUF_UNIT_RELEASED found=%d remaining=%zu' in native, \
         'Native.destroy é quem sabe se havia motor; sem esse log a prova volta a ser um toast'
     assert 'Java_com_ggufchat_app_Native_destroy' in native
+
+
+def test_checks_are_independent_and_generations_are_long_enough_to_catch():
+    """Dois defeitos de harness que já custaram rodadas vermelhas.
+
+    (a) Uma falha que deixa o seletor do sistema na frente derrubava as funções
+        seguintes; cada veredito tem de ser independente.
+    (b) As etapas que precisam PEGAR a geração em andamento (botão "Parar",
+        notificação) usavam o mesmo orçamento de 128 tokens das outras: com a taxa
+        medida (15-17 T/s) a geração acabava antes de a tela ser lida, e a rodada
+        36265128113 terminou com as duas respostas concluídas na evidência.
+    """
+    sweep = SWEEP.read_text()
+    assert 'def restaurar(self, name):' in sweep
+    assert sweep.count('self.restaurar(name)') == 2, 'SKIP e FAIL têm de restaurar a tela'
+    assert 'aplicativo devolvido à tela inicial' in sweep
+    for funcao in ('parar_geracao', 'notificacao'):
+        trecho = sweep[sweep.index(f'    def {funcao}():'):]
+        trecho = trecho[:trecho.index('    def ', 10)] if '    def ' in trecho[10:] else trecho
+        assert 'n_predict=' in trecho and '1024' in trecho, \
+            f'{funcao} precisa de geração longa o bastante para o botão Parar ser visto'
+        assert 'última medição' in trecho, 'sem a medição na mensagem, o FAIL não explica nada'
+    # O limite padrão continua 128 para as demais etapas (rodagem curta).
+    harness = (ROOT / 'scripts/test_android.py').read_text()
+    assert 'def new_chat(self, model, gpu_layers, context_size=1024, threads=2, search=False,\n                 n_predict=128):' in harness

@@ -201,6 +201,13 @@ jobs:
           warm = perf.get('warmup_experiment') or {}
           prefill = perf.get('prefill_experiment') or {}
           kv = perf.get('kv_experiment') or {}
+          busca = perf.get('search_experiment') or {}
+          def ms(valor):
+              return f'{valor:.0f} ms' if isinstance(valor, (int, float)) else 'nao medido'
+          comparacao_busca = ' / '.join(
+              f'{nome} {ms(busca.get(chave))}' for nome, chave in
+              (('sequencial', 'sequential_ms'), ('corrida', 'race_ms'),
+               ('consulta repetida', 'cache_hit_ms')) if isinstance(busca.get(chave), (int, float))) or 'nao medido'
           stages = perf.get('stages') or {}
           def wait(stage):
               value = (stages.get(stage) or {}).get('ui_first_text_s')
@@ -221,6 +228,8 @@ jobs:
               f"{prefill.get('detail', 'nao medido')}",
               f"* cache K/V (decodificacao, mesmo texto nas duas etapas): "
               f"{kv.get('detail', 'nao medido')}",
+              f'* busca na web, mesma pergunta na mesma rodada: {comparacao_busca}'
+              + (f" - {busca['gain_x']:.2f}x menos espera com a corrida" if busca.get('gain_x') else ''),
               f'* varredura funcional: {summary}',
               '* o emulador nao tem GPU real: o pedido de GPU foi medido como recusa declarada e',
               '  execucao na CPU, com o motivo visivel na tela do aplicativo;',

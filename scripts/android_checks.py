@@ -397,14 +397,21 @@ def image_prefill_records(log, images):
 
 
 def select_exact_documents(d, names):
-    """Seleciona documentos nomeados com um gesto que o Android garante.
+    """Seleciona documentos nomeados com o gesto que o Android reconhece.
 
-    Toque simples em coordenadas do "ícone" depende da versão do DocumentsUI: na
-    rodada 36261210088 os toques não marcaram nada e as fases de anexos e de visão
-    caíram com "named document selected". O gesto garantido para entrar em seleção
-    múltipla é o TOQUE LONGO na linha; a partir daí, toques simples alternam a
-    marcação. A prova é sempre o contador do próprio seletor ("N selected") mais o
-    estado da linha — nunca "deve ter selecionado".
+    As rodadas 36261210088 e 36265128113 mostraram o mesmo defeito de harness: os
+    toques simples em coordenadas do "ícone" não marcaram a linha (selected=false), e
+    também não marcaram com `input touchscreen swipe x y x y 900` — um swipe sem
+    deslocamento não gera MOVE, e sem MOVE não existe espera: para o Android, aquilo
+    é um toque curto. O gesto garantido é o TOQUE LONGO na linha, e ele é feito aqui
+    com `input motionevent DOWN/UP` (API 30+): o dedo fica PRESO enquanto a tela é
+    lida até a marcação aparecer — o tempo do toque longo é o próprio gesto, não um
+    `sleep` de duração inventada. Sem `motionevent` no aparelho, a alternativa é o
+    swipe com deslocamento mínimo (o MOVE que faz o Android reconhecer a espera).
+
+    A prova é sempre o estado da linha (`selected`) ou o contador do próprio seletor
+    ("N selected") — nunca "deve ter selecionado". Se nenhum gesto marcar, o teste
+    REPROVA dizendo o que tentou.
     """
     import re
     import xml.etree.ElementTree as ET
@@ -439,13 +446,6 @@ def select_exact_documents(d, names):
                 return True
         return False
 
-    def toca(x, y):
-        d.shell(f'input tap {int(x)} {int(y)}')
-
-    def segura(x, y):
-        # Toque longo de verdade: swipe parado, sem soltar o dedo antes do tempo.
-        d.shell(f'input touchscreen swipe {int(x)} {int(y)} {int(x)} {int(y)} 900')
-
     def alvo(xml, row, name):
         """Ponto de marcação: o ícone quando existe, senão o começo da linha."""
         for node in row.iter('node'):
@@ -461,6 +461,35 @@ def select_exact_documents(d, names):
         xml, found = rows()
         return marcada(found.get(name)) or contador(xml, quantidade)
 
+    def espera_marcacao(name, quantidade, timeout=10):
+        """Espera a marcação aparecer. Devolve False em vez de estourar: quem decide
+        o próximo gesto é o laço de tentativas, e um erro do aparelho (comando
+        inválido, processo ausente) tem de subir como erro, não virar 'não marcou'."""
+        import time
+        limite = time.monotonic() + timeout
+        while time.monotonic() < limite:
+            if marcado_ou_contado(name, quantidade):
+                return True
+            time.sleep(0.4)
+        return False
+
+    def toque_longo(x, y, name, quantidade):
+        """Dedo PRESO na linha até a marcação aparecer: é isso que caracteriza o
+        toque longo. O `UP` sai sempre, mesmo se a marcação não vier."""
+        # `or ''`: uma camada de aparelho pode devolver None; ausência de texto não
+        # pode virar exceção e esconder a pergunta que importa (a linha marcou?).
+        saida = d.shell(f'input motionevent DOWN {int(x)} {int(y)}', check=False) or ''
+        if 'Unknown command' in saida or 'Usage' in saida or 'not found' in saida:
+            # `input` sem motionevent: swipe COM deslocamento (o MOVE é obrigatório
+            # para o Android reconhecer a espera) — e a verificação segue como sempre.
+            d.shell(f'input touchscreen swipe {int(x)} {int(y)} {int(x) + 2} {int(y) + 2} 900',
+                    check=False)
+            return
+        try:
+            espera_marcacao(name, quantidade, timeout=8)
+        finally:
+            d.shell(f'input motionevent UP {int(x)} {int(y)}', check=False)
+
     for indice, name in enumerate(names):
         quantidade = indice + 1
         for tentativa in (1, 2, 3):
@@ -469,18 +498,25 @@ def select_exact_documents(d, names):
             if marcada(found[name]):
                 break
             x, y = alvo(xml, found[name], name)
-            # O toque longo entra em seleção múltipla; a partir daí, toque simples
-            # alterna a marcação. O que marca é o gesto, não a coordenada do ícone.
-            segura(x, y) if quantidade == 1 and tentativa == 1 else toca(x, y)
-            try:
-                d.wait(lambda: marcado_ou_contado(name, quantidade),
-                       f'documento marcado: {name}', timeout=10)
+            if quantidade == 1 and tentativa == 1:
+                # Entrar em seleção múltipla: toque longo (a PRIMEIRA marcação).
+                toque_longo(x, y, name, quantidade)
+            elif tentativa <= 2:
+                # Já em seleção múltipla, o toque simples alterna a marcação.
+                d.shell(f'input tap {int(x)} {int(y)}', check=False)
+            else:
+                # Último recurso: o toque longo por swipe (MOVE explícito).
+                d.shell(f'input touchscreen swipe {int(x)} {int(y)} {int(x) + 2} {int(y) + 2} 900',
+                        check=False)
+            if espera_marcacao(name, quantidade):
                 break
-            except AssertionError:
-                if tentativa == 3:
-                    raise AssertionError(
-                        f'não consegui marcar {name} no seletor do sistema: toque longo e toque '
-                        f'simples não marcaram a linha nem o contador chegou a {quantidade}')
+            if tentativa == 3:
+                raise AssertionError(
+                    f'não consegui marcar {name} no seletor do sistema: '
+                    + ('toque longo (motionevent e swipe), toque simples e swipe curto'
+                       if quantidade == 1 else
+                       'toque simples (duas vezes) e toque longo por swipe')
+                    + f' não marcaram a linha nem o contador chegou a {quantidade}')
     d.wait(lambda: contador(rows()[0], len(names)),
            f'contagem exata de {len(names)} arquivos selecionados', timeout=15)
 

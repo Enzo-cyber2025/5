@@ -464,15 +464,27 @@ class PickerDevice:
 
     def shell(self, command, check=True):
         self.actions.append(command)
-        if command.startswith('input tap'):
-            _, _, x, y = command.split()
-            if self.modo == 'toque-longo' and self.selecionados:
-                self.selecionados.add(self._linha(int(y)))
-        elif command.startswith('input touchscreen swipe'):
-            # input touchscreen swipe x1 y1 x2 y2 duração
-            _, _, _, _, y, _, _, _ = command.split()
+        tokens = command.split()
+        if tokens[:3] == ['input', 'motionevent', 'DOWN']:
+            # O toque longo REAL: o dedo fica preso e o app entra em seleção com ele
+            # ainda abaixado — é o que o harness tem de provocar (o UP vem depois).
             if self.modo == 'toque-longo':
-                self.selecionados.add(self._linha(int(y)))
+                y = int(tokens[4])
+                self.selecionados.add(self._linha(y))
+                self.preso = (int(tokens[3]), y)
+        elif tokens[:3] == ['input', 'motionevent', 'UP']:
+            self.preso = None
+        elif tokens[:2] == ['input', 'tap']:
+            # Toque simples só marca se a seleção múltipla já estiver aberta.
+            y = int(tokens[3])
+            if self.modo == 'toque-longo' and self.selecionados:
+                self.selecionados.add(self._linha(y))
+        elif tokens[:2] == ['input', 'touchscreen']:
+            # swipe x1 y1 x2 y2 duração — só marca com deslocamento de verdade.
+            assert tokens[4] != tokens[6] or tokens[5] != tokens[7], \
+                f'swipe sem MOVE não é toque longo: {command}'
+            if self.modo == 'toque-longo':
+                self.selecionados.add(self._linha(int(tokens[5])))
         return ''
 
     def wait(self, condition, what, timeout=20):
@@ -493,8 +505,9 @@ def test_select_exact_documents_enters_selection_with_a_long_press():
     device = PickerDevice(['SmolVLM-256M-Instruct-Q8_0.gguf', 'mmproj-SmolVLM-256M-Instruct-Q8_0.gguf'],
                           modo='toque-longo')
     select_exact_documents(device, list(device.names))
-    assert 'input touchscreen swipe' in ' '.join(device.actions), \
-        'sem toque longo não há seleção múltipla garantida'
+    gestos = ' | '.join(device.actions)
+    assert 'input motionevent DOWN' in gestos, 'sem toque longo não há seleção múltipla'
+    assert 'input motionevent UP' in gestos, 'o dedo tem de ser solto depois de marcar'
     assert device.selecionados == set(device.names)
 
 
@@ -504,6 +517,10 @@ def test_select_exact_documents_declares_when_no_gesture_marks_the_row():
         select_exact_documents(device, list(device.names))
     assert 'não consegui marcar a.gguf' in str(error.value)
     assert 'não marcaram a linha' in str(error.value)
+    # O último recurso tem de ter MOVE (swipe com deslocamento), nunca swipe parado.
+    assert not any(a.startswith('input touchscreen swipe')
+                   and a.split()[4] == a.split()[6] and a.split()[5] == a.split()[7]
+                   for a in device.actions)
 
 
 def test_ui_does_not_blame_the_app_when_another_package_is_on_screen(tmp_path):
