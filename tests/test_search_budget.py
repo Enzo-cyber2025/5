@@ -240,6 +240,10 @@ def test_prefill_ubatch_is_tunable_and_logged():
     assert "if name.startswith('prefill-ubatch-'):" in harness
     assert "report['prefill_experiment'] = prefill_experiment(perf)" in harness
     assert 'long_prompt' in harness  # mesmo texto nas duas etapas: só o sub-lote muda
+    # Digitar também é parte do envio: o prazo e o tamanho do prompt têm de ser
+    # declarados, senão um prompt longo reprova o app por lentidão do teclado.
+    assert 'submit_timeout=180' in harness and 'def generate(' in harness
+    assert 'submit_timeout=30):' in harness  # o padrão não mudou para as outras etapas
     checks = (ROOT / 'scripts/android_checks.py').read_text()
     assert 'GGUF_CONTEXT_TUNING' in checks
 
@@ -264,6 +268,12 @@ def test_search_panel_accepts_what_the_app_persists():
         {'role': 'user', 'content': 'q'},
         {'role': 'assistant', 'content': 'a', 'searchSources': 'nao-e-json'}]}]
     assert search_panel(lixo, 'x', 'q') is None
+
+
+def test_evidence_whitelist_publishes_the_prefill_stages():
+    """A medição do sub-lote só vale se os arquivos dela forem publicados."""
+    publish = (ROOT / 'ci/publish_text_evidence.sh').read_text()
+    assert "'prefill-*'" in publish
 
 
 def test_function_sweep_covers_every_labelled_control():

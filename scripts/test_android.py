@@ -478,7 +478,8 @@ class Android:
         self.tap(text="Enviar", package={PACKAGE}, contains=True)
 
     def generate(self, model, gpu_layers, stage, prompt="Reply in English with a short greeting.",
-                 threads=2, record=True, typed_pause=0.0, await_load=False, settle=0.0, search=False):
+                 threads=2, record=True, typed_pause=0.0, await_load=False, settle=0.0, search=False,
+                 submit_timeout=30):
         # Keep model-loading/offload evidence: clearing at send loses the backend
         # selected by the preload worker. A new chat restarts the app; filter its PID.
         self.adb("logcat", "-c")
@@ -497,7 +498,10 @@ class Android:
             current = next(c for c in chats if c["id"] == chat["id"])
             return any(m.get("role") == "user" and m.get("content") == prompt
                        for m in current.get("messages", []))
-        self.wait(submitted, "prompt enviado e persistido pelo aplicativo", timeout=30)
+        # Digitar é parte do envio: um prompt longo entra caractere a caractere pelo
+        # `input text`, e 30 s fixos reprovavam o aplicativo por lentidão do teclado
+        # do emulador (rodada 36245048939).
+        self.wait(submitted, "prompt enviado e persistido pelo aplicativo", timeout=submit_timeout)
 
         def completed():
             if getattr(self,'progress_observer',None):self.progress_observer.poll()
@@ -1017,13 +1021,18 @@ def main():
             # quantidade de tokens — a única diferença é o tamanho do sub-lote. O
             # aquecimento fica desligado nas duas para que o número meça o
             # pré-preenchimento inteiro, e não o resto depois do prefixo.
-            long_prompt = ("Summarize in English, one line: " + " ".join(
-                f"item {n} of a long list about local language models and their speed" for n in range(24)))
+            # Prompt longo o bastante para o pré-preenchimento ser medível, e curto o
+            # bastante para o teclado do emulador digitar dentro do prazo (o prazo é
+            # declarado abaixo, não escondido).
+            long_prompt = "Summarize in English, one line. " + " ".join(
+                f"item {n} of a list about local language models and their speed"
+                for n in range(12))
             device.shell("setprop debug.gguf.disable_warmup 1")
             try:
                 for stage, ubatch in (("prefill-ubatch-128", 128), ("prefill-ubatch-256", 256)):
                     device.shell(f"setprop debug.gguf.prefill_ubatch {ubatch}")
-                    device.generate(model, 0, stage, prompt=long_prompt, await_load=True)
+                    device.generate(model, 0, stage, prompt=long_prompt, await_load=True,
+                                    submit_timeout=180)
             finally:
                 device.shell("setprop debug.gguf.prefill_ubatch 0")
                 device.shell("setprop debug.gguf.disable_warmup 0")

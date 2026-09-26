@@ -27,7 +27,7 @@ for name in names:
     if p.is_file() and p.stat().st_size < 2_000_000:
         shutil.copyfile(p, dest / name)
 for pattern in ('attachments-*', 'inference-*', 'physical-*', 'system-*', 'text-*', 'search-*',
-                'functions-*', '*-perf.json'):
+                'functions-*', 'prefill-*', '*-perf.json'):
     for p in source.glob(pattern):
         # .xml entra aqui: a árvore de views é a prova de que explica um FAIL da
         # varredura funcional (sem ela, um "controle não encontrado" fica sem causa).
