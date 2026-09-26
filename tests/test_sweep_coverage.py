@@ -1,0 +1,73 @@
+"""Contratos da varredura funcional: toda função declarada, todo veredito real.
+
+O pedido foi "testa TODAS as funções". Estes testes protegem o que faz a varredura
+valer: cada função da lista tem implementação, o veredito é PASS/FAIL/SKIP com
+motivo, SKIP existe para peça ausente (nunca PASS por omissão), a visão só é
+aprovada com o motor tendo avaliado a imagem, e o caminho do par visão/mmproj está
+ligado no CI quando as peças existem.
+"""
+import re
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+SWEEP = ROOT / 'scripts/test_functions_android.py'
+SCRIPT = ROOT / '.github/emulator-text-ui.sh'
+WORKFLOW = ROOT / '.github/workflows/text-ui.yml'
+
+
+def test_every_listed_function_has_an_implementation():
+    source = SWEEP.read_text()
+    ordem = re.search(r'ordem = \[(.*?)\n    \]', source, re.DOTALL).group(1)
+    nomes = re.findall(r"\('(\w+)', (\w+)\)", ordem)
+    assert len(nomes) == 20, nomes
+    for nome, funcao in nomes:
+        assert f'def {funcao}():' in source, f'{nome} não tem implementação ({funcao})'
+
+
+def test_verdicts_are_declared_with_reason_and_skip_is_not_a_pass():
+    source = SWEEP.read_text()
+    # Três vereditos, e o SKIP carrega o motivo de peça ausente.
+    assert "self.results[name] = {'status': 'SKIP', 'detail': str(skip)}" in source
+    assert "self.results[name] = {'status': 'FAIL', 'detail': detail}" in source
+    assert "self.results[name] = {'status': 'PASS', 'detail': detail}" in source
+    assert 'class SkipCheck(Exception):' in source
+    # O relatório é reprovado por qualquer falha e sai com o resumo completo.
+    assert "if report['status'] != 'PASS':" in source
+    assert 'functions-sweep.txt' in source and 'functions-sweep.json' in source
+
+
+def test_vision_is_only_approved_when_the_engine_evaluated_the_image():
+    source = SWEEP.read_text()
+    funcao = source[source.index('    def visao():'):source.index('    def notificacao():')]
+    # Sem o par: SKIP declarado, nunca aprovação por omissão.
+    assert 'raise SkipCheck' in funcao
+    # Com o par: o que prova é o motor ter avaliado a imagem e a resposta persistida.
+    assert 'GGUF_IMAGE_EVALUATED' in funcao
+    assert 'GGUF_IMAGE_EVALUATED' in source
+    assert "assistant_reply" in funcao
+    assert '--vision' in source and "'--vision'" in source
+    # A cópia do anexo é a mesma do caminho já provado (SAF + hash conferido).
+    assert 'attach(device, chat, [nome])' in funcao
+
+
+def test_deleting_a_model_removes_every_listed_model():
+    source = SWEEP.read_text()
+    funcao = source[source.index('    def excluir_modelo():'):source.index('    def sem_modelo():')]
+    # Com o par de visão importado há mais de um modelo: apagar só o primeiro deixaria
+    # a função seguinte ("sem modelo") medindo outra coisa.
+    assert 'for modelo in models:' in funcao
+    assert 'all(m.get(\'name\') != nome for m in restantes)' in funcao
+
+
+def test_ci_passes_the_vision_pair_to_the_sweep_when_the_pieces_exist():
+    script = SCRIPT.read_text()
+    assert 'VISAO=(--vision "$GGUF_TEST_VISION" --mmproj "$GGUF_TEST_MMPROJ")' in script
+    assert '"${VISAO[@]}"' in script
+    workflow = WORKFLOW.read_text()
+    assert 'GGUF_TEST_VISION: .cache/mobile-models/SmolVLM-256M-Instruct-Q8_0.gguf' in workflow
+    assert ('GGUF_TEST_MMPROJ: .cache/mobile-models/'
+            'mmproj-SmolVLM-256M-Instruct-Q8_0.gguf') in workflow
+    # As peças baixadas e conferidas por hash são exatamente essas.
+    models = (ROOT / 'ci/mobile-models.sh').read_text()
+    assert 'SmolVLM-256M-Instruct-Q8_0.gguf' in models
+    assert 'mmproj-SmolVLM-256M-Instruct-Q8_0.gguf' in models
