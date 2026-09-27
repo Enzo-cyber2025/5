@@ -1,0 +1,51 @@
+{
+  "stage": "decode-kv-q8",
+  "gpu_layers_requested": 99,
+  "threads_requested": 2,
+  "threads_resolved": {
+    "requested": 2,
+    "available": 2,
+    "capacities": 0,
+    "resolved": 2
+  },
+  "backend": "cpu",
+  "ui_first_text_s": 0.657823984,
+  "warmup": {
+    "ran": true,
+    "skipped": null,
+    "ui_ok": true,
+    "typed_passes": 1,
+    "input_tokens": 65,
+    "prefilled": 65,
+    "reused_tokens": 48,
+    "gpu": false,
+    "aborted": false
+  },
+  "prefill": {
+    "prompt_tokens": 65,
+    "reused_tokens": 64,
+    "fresh_tokens": 1,
+    "prefill_s": 0.447,
+    "prefill_ms_per_token": 447.021
+  },
+  "context_tuning": {
+    "batch": 256,
+    "ubatch": 128,
+    "threads": 2,
+    "prefix_cache_supported": true
+  },
+  "kv_cache": {
+    "kv": "q8_0",
+    "flash_attn_requested": "auto"
+  },
+  "search": null,
+  "software_vulkan_notice": "llvmpipe (LLVM 21.0.0, 256 bits)",
+  "tokens": 42,
+  "decode_s": 4.076907865,
+  "prefill_s": 0.447020609,
+  "tokens_s": 10.30192523126838,
+  "first_token_s": 0.450491689,
+  "prompt_tokens": 65,
+  "reused_tokens": 64,
+  "completed": true
+}
