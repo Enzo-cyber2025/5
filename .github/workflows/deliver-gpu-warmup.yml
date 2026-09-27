@@ -102,7 +102,13 @@ jobs:
           # — o payload reconstruído ainda é conferido hash a hash antes de publicar. Se
           # qualquer arquivo que influencia o APK (apk-fix/**, ci/**, o fluxo do emulador)
           # aparecer na diferença, a entrega para: aí é rodada nova, não pino velho.
-          permitidos='^(ci-results/|docs/|tests/|scripts/|README\.md|\.delivery/|\.github/workflows/deliver-gpu-warmup\.yml)$'
+          # Prefixos SEM âncora de fim: o que a entrega permite são ARQUIVOS DENTRO
+          # dessas pastas (ci-results/<rodada>/evidence.png), não a pasta como string
+          # exata. Com `$` no fim do grupo, nenhum arquivo de ci-results/ casava, a
+          # diferença até o commit de evidência era lida como "mexeu no aplicativo" e
+          # a entrega pulava a publicação (rodada 36350833517: passos 9-11 skipped,
+          # release intacta). Os dois itens de arquivo único levam `$` de propósito.
+          permitidos='^(ci-results/|docs/|tests/|scripts/|\.delivery/|README\.md$|\.github/workflows/deliver-gpu-warmup\.yml$)'
           mudanca_apk=''
           if [ "$sha" != "$(git rev-parse HEAD)" ]; then
             mudanca_apk=$(git diff --name-only "$sha" HEAD | grep -vE "$permitidos" || true)

@@ -80,3 +80,28 @@ def test_release_notes_come_from_the_measurement_not_from_typed_numbers():
     assert '3,79x' not in text
     assert "perf.get('warmup_experiment')" in text
     assert "functions-sweep.txt" in text
+
+def test_a_lista_de_permitidos_casa_arquivos_dentro_das_pastas_nao_a_pasta_como_string():
+    """O bug que pulou a publicação (rodada 36350833517).
+
+    A regex estava ancorada com `$` no grupo inteiro, então só casava a string
+    exata "ci-results/" — nenhum arquivo DENTRO da pasta. A diferença até o commit
+    de evidência (que o CI empurra com [skip ci]) era lida como "mexeu no
+    aplicativo" e a entrega pulava os passos de build/assinatura/publicação,
+    deixando a release antiga no ar sem publicar nada. Este teste roda a regex como
+    o `grep -vE` do fluxo roda, em caminhos reais.
+    """
+    import re
+    texto = WORKFLOW.read_text()
+    permitidos = texto.split('permitidos=', 1)[1].split('\n', 1)[0].strip().strip("'")
+    for caminho in ('ci-results/36346929204-1-text-ui/apk-payload.json',
+                    'ci-results/36346929204-1-text-ui/physical-text-ui-build.json',
+                    'ci-results/delivery-gpu-warmup.json',
+                    'docs/GPU_WARMUP_NPU.md', 'tests/test_sweep_coverage.py',
+                    'scripts/test_android.py', '.delivery/nota.md', 'README.md',
+                    '.github/workflows/deliver-gpu-warmup.yml'):
+        assert re.search(permitidos, caminho), f'a entrega precisa permitir {caminho}'
+    for caminho in ('apk-fix/native/mobile.cpp', 'apk-fix/java/com/ggufchat/app/SearchTool.java',
+                    'ci/emulator-text-ui.sh', '.github/workflows/text-ui.yml',
+                    'README1.md', 'ci-resultsx/qualquer'):
+        assert not re.search(permitidos, caminho), f'a entrega NÃO pode permitir {caminho}'
