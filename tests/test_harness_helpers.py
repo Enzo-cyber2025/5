@@ -665,6 +665,32 @@ def test_downloads_already_open_nao_recebe_toque_nenhum():
     assert device.selecionados == set()
 
 
+def test_dump_real_da_rodada_36276321752_nao_gera_toque_nenhum():
+    """O dump EXATO que derrubou a fase `visao` não pode produzir toque.
+
+    `tests/fixtures/picker/downloads-com-gaveta-aberta.xml` é o XML da evidência da
+    rodada 36276321752: barra "Downloads", cabeçalho "Files in Downloads", a gaveta
+    de raízes por cima (linhas "Recent"/"Images"/"Documents"/"Downloads") e as pastas
+    da pasta isolada dentro. O ajudante tem de reconhecer a raiz certa e devolver sem
+    tocar em nada — nenhum `input` sai daqui.
+    """
+    dump = (ROOT / 'tests/fixtures/picker/downloads-com-gaveta-aberta.xml').read_text()
+    comandos = []
+
+    class Device:
+        evidence = ROOT / 'tests/fixtures/picker'
+
+        def ui(self):
+            return dump
+
+        def shell(self, command, check=True):
+            comandos.append(command)
+            return ''
+
+    assert abrir_pasta_de_downloads(Device()) == 'Files in Downloads'
+    assert comandos == [], f'nenhum toque esperado neste dump, houve: {comandos}'
+
+
 def test_gaveta_aberta_cobrindo_as_linhas_e_fechada_uma_vez_so():
     """A gaveta cobre as linhas: `select_exact_documents` fecha UMA vez e marca.
 
