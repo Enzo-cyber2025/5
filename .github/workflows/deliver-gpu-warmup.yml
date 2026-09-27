@@ -9,6 +9,11 @@ name: Deliver the GPU-first, warmed-prefix APK
 # seguida: este repositório não guarda material de assinatura privado (nem no Git
 # nem em CI). O APK é uma pré-entrega de teste, com certificado novo — instalar
 # sobre uma versão de outro certificado exige desinstalar antes.
+# Como esta entrega é disparada: um push que toque ESTE arquivo, ou o botão
+# "Run workflow". O disparo por API (`workflow_dispatch`) exige um token com
+# permissão de ações, que o agente da sessão não tem (403 "Resource not accessible
+# by integration"); o push no próprio fluxo é o gatilho que sempre funciona e é o
+# que publica a rodada verde mais recente.
 on:
   push:
     branches: [arena/01a0d024-5]
