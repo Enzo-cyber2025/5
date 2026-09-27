@@ -20,10 +20,22 @@ RODADA = '36165160000'
 
 
 def copia(tmp_path):
-    """Cópia dos dois arquivos que o script edita, no caminho que ele espera."""
+    """Cópia dos dois arquivos que o script edita, no caminho que ele espera.
+
+    O repositório JÁ entrega a corrida ligada (ganho medido em 36334440430); os
+    testes precisam do estado em que o script tem o que fazer, então a cópia volta
+    ao padrão anterior (corrida/cache desligados). Sem isso o script responderia
+    "já estavam ligados" e os contratos de flip não seriam exercitados.
+    """
     (tmp_path / 'apk-fix/java/com/ggufchat/app').mkdir(parents=True)
     (tmp_path / 'apk-fix/native').mkdir(parents=True)
-    shutil.copy(TOOL, tmp_path / 'apk-fix/java/com/ggufchat/app/SearchTool.java')
+    destino = tmp_path / 'apk-fix/java/com/ggufchat/app/SearchTool.java'
+    shutil.copy(TOOL, destino)
+    texto = destino.read_text()
+    desligado = (texto.replace('intProperty(RACE_PROPERTY,1)!=0', 'intProperty(RACE_PROPERTY,0)==1')
+                 .replace('intProperty(CACHE_PROPERTY,60000)', 'intProperty(CACHE_PROPERTY,0)'))
+    assert desligado != texto, 'a corrida já não está ligada? o teste perderia o sentido'
+    destino.write_text(desligado)
     shutil.copy(NATIVE, tmp_path / 'apk-fix/native/mobile.cpp')
     return tmp_path
 

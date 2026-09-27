@@ -104,9 +104,17 @@ public final class SearchTool {
         try{return Integer.parseInt(value.trim());}catch(NumberFormatException ex){return fallback;}
     }
 
-    private static boolean raceEnabled(){return intProperty(RACE_PROPERTY,0)==1;}
+    // Corrida LIGADA por padrão: medido na mesma rodada e no mesmo aparelho
+    // (rodada 36334440430), ela devolve fonte com a latência do provedor mais rápido
+    // em vez da soma das tentativas — 1.55x menos espera, dentro do MESMO
+    // orçamento. `debug.gguf.search_race 0` desliga para comparar de novo.
+    private static boolean raceEnabled(){return intProperty(RACE_PROPERTY,1)!=0;}
 
-    private static int cacheMs(){return Math.max(0,intProperty(CACHE_PROPERTY,0));}
+    // Consulta repetida sai da memória por padrão (60 s): repetir a mesma pergunta
+    // na mesma execução do aplicativo não volta à rede. A idade do resultado vai
+    // para o log e o que passou do teto é descartado em vez de servido velho;
+    // `debug.gguf.search_cache_ms 0` desliga.
+    private static int cacheMs(){return Math.max(0,intProperty(CACHE_PROPERTY,60000));}
 
     /** Consulta repetida não deveria custar outra ida à rede. */
     private static Report cached(String query){
