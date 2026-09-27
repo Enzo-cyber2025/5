@@ -145,7 +145,11 @@ def test_checks_are_independent_and_generations_are_long_enough_to_catch():
             trecho = trecho[:fim]
         assert 'n_predict=' in trecho and '1024' in trecho, \
             f'{funcao} precisa de geração longa o bastante para o botão Parar ser visto'
-        assert 'última medição' in trecho, 'sem a medição na mensagem, o FAIL não explica nada'
+        # Cada tentativa é medida: a mensagem diz quantas leituras de tela houve e o que
+        # o MOTOR registrou no log — sem isso um FAIL não distingue "a geração acabou
+        # antes" de "a tela nunca mostrou o botão" (36321822068).
+        for campo in ('leitura(s)', 'estatística', 'espera_parar'):
+            assert campo in trecho, f'{funcao}: o FAIL precisa registrar {campo}'
     # O limite padrão continua 128 para as demais etapas (rodagem curta).
     harness = (ROOT / 'scripts/test_android.py').read_text()
     assert 'def new_chat(self, model, gpu_layers, context_size=1024, threads=2, search=False,\n                 n_predict=128):' in harness
@@ -171,6 +175,10 @@ def test_geracao_longa_pede_um_texto_que_nao_termina_sozinho():
         assert 'n_predict=1024' in trecho or 'n_predict=limpar' in trecho, funcao
         assert 'threads=2' in trecho, funcao
         assert pedido in trecho, funcao
-        assert 'última medição' in trecho, funcao
+        # A repetição é LIMITADA (duas tentativas) e fica na evidência: repetir uma
+        # medição que não deu janela não afrouxa a prova (o toque no botão e a resposta
+        # parcial persistida continuam obrigatórios).
+        assert 'for tentativa in (1, 2)' in trecho, funcao
+        assert 'tentativas' in trecho, funcao
 
 

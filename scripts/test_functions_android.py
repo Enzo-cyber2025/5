@@ -410,6 +410,24 @@ def last_stats(log):
     return tuple(map(int, matches[-1])) if matches else None
 
 
+def espera_parar(device, timeout=120):
+    """Espera o botão "Parar" enquanto a geração corre: (visto, leituras, estadio).
+
+    As duas etapas que precisam PEGAR a geração em andamento (`parar_geracao` e
+    `notificacao`) dependem de o controle trocar de "Enviar" para "Parar" durante a
+    resposta. Ler o motor ao fim da espera é o que distingue "a geração acabou antes
+    da leitura" (o modelo encerrou sozinho) de "a tela nunca mostrou o botão" — em
+    36321822068 a resposta foi de 14 tokens e o teste só soube dizer que não viu.
+    """
+    leituras = 0
+    limite = time.monotonic() + timeout
+    while time.monotonic() < limite:
+        leituras += 1
+        if on_screen(device, 'Parar'):
+            return True, leituras, last_stats(device.adb('logcat', '-d'))
+    return False, leituras, last_stats(device.adb('logcat', '-d'))
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--serial', required=True)
@@ -633,39 +651,42 @@ def main():
 
     def parar_geracao():
         # A configuração desta etapa é a que PASSOU em rodada (36267877767: parou com
-        # 171 tokens; 36165179296: 116; 36192982173: 43). Duas tentativas de "melhorar"
-        # falharam por medir a coisa errada:
+        # 171 tokens; 36165179296: 116; 36192982173: 43). O pedido não se troca:
+        # "conte até 300" e "…, one item per line." produziram respostas de 39 e 14
+        # tokens (36276321752, 36321822068) e a janela do botão ficou menor que uma
+        # leitura de tela. A rodada 36272556329 gerou 246 tokens sem o teste ver o
+        # botão — era o envio duplicado do harness (corrigido em 72be6a9): duas
+        # gerações por mensagem, com a tela trocando por baixo da leitura.
         #
-        #  * 36272556329 — o mesmo pedido, e o SmolLM2 encerrou sozinho em 246 tokens
-        #    (13,8 s) antes de o teste ver o botão;
-        #  * 36276321752 / 36321822068 — pedidos trocados ("conte até 300", "…, one item
-        #    per line.") viraram respostas de 39 e 14 tokens, e a janela do botão ficou
-        #    menor que uma leitura de tela.
-        #
-        # O teste não pode depender de o modelo querer escrever muito: o pedido abaixo
-        # é o que comprovadamente gera longo nesta linha de modelo, com o limite de 1024
-        # tokens da própria conversa. É esta combinação que fica.
+        # O modelo é pequeno e pode encerrar sozinho antes de a tela mostrar "Parar".
+        # Quando a geração ACABA sem o botão ter sido visto, a etapa repete UMA vez o
+        # mesmo pedido em conversa nova. Repetir uma medição que não deu janela não
+        # afrouxa a prova: a prova continua sendo o toque no botão e a resposta
+        # parcial persistida (e as duas tentativas ficam na evidência).
         limpar = 1024
-        device.launch()
-        chat = device.new_chat(model, 0, threads=2, n_predict=limpar)
-        device.wait_for_load()
-        device.send('Write a long numbered list in English, at least fifty items.')
-        # 120 s: se o motor acabou de ser descarregado (ou é a primeira geração da
-        # varredura), a carga do modelo entra nesta espera. Cronometrar 30 s aqui
-        # media o emulador, não o aplicativo (rodada 36245048939).
-        olhadas = []
-
-        def parar_visivel():
-            olhadas.append(1)
-            return on_screen(device, 'Parar')
-
-        try:
-            device.wait(parar_visivel, 'botão Parar durante a geração', timeout=120)
-        except AssertionError:
-            estadio = last_stats(device.adb('logcat', '-d'))
-            raise AssertionError(
-                f'o botão Parar não apareceu em {len(olhadas)} leitura(s) de tela durante a '
-                f'geração de {limpar} tokens (última medição: {estadio})')
+        pedido = 'Write a long numbered list in English, at least fifty items.'
+        tentativas = []
+        visto = False
+        for tentativa in (1, 2):
+            device.launch()
+            chat = device.new_chat(model, 0, threads=2, n_predict=limpar)
+            device.wait_for_load()
+            device.send(pedido)
+            # 120 s: se o motor acabou de ser descarregado (ou é a primeira geração da
+            # varredura), a carga do modelo entra nesta espera. Cronometrar 30 s aqui
+            # media o emulador, não o aplicativo (rodada 36245048939).
+            visto, leituras, estadio = espera_parar(device)
+            tentativas.append(
+                f'tentativa {tentativa}: {leituras} leitura(s); motor '
+                + (f'com estatística de {estadio[0]} tokens no log' if estadio
+                   else 'sem estatística no log (geração provavelmente em andamento)')
+                + f'; botão {"visto" if visto else "não visto"}')
+            if visto:
+                break
+        (args.evidence / 'functions-parar-tentativas.txt').write_text('\n'.join(tentativas) + '\n')
+        if not visto:
+            raise AssertionError('o botão Parar não apareceu em nenhuma tentativa: '
+                                 + '; '.join(tentativas))
         time.sleep(2)
         tap_label(device, 'Parar')
 
@@ -914,19 +935,31 @@ def main():
                 f'caracteres); {foto}')
 
     def notificacao():
-        # Mesma configuração da etapa anterior (a que passa em rodada): com 128 tokens
-        # a geração acaba antes de o teste ver "Parar" (36265128113) e pedidos
-        # "melhorados" viraram respostas de 39 e 14 tokens (36276321752, 36321822068).
-        device.launch()
-        device.new_chat(model, 0, threads=2, n_predict=1024)
-        device.wait_for_load()
-        device.send('Write a long numbered list in English, at least fifty items.')
-        try:
-            device.wait(lambda: on_screen(device, 'Parar'), 'geração em andamento', timeout=120)
-        except AssertionError:
-            estadio = last_stats(device.adb('logcat', '-d'))
-            raise AssertionError('a geração de 1024 tokens não ficou em andamento o bastante para '
-                                 f'a tela mostrar "Parar" (última medição: {estadio})')
+        # Mesma configuração da etapa anterior (a que passa em rodada) e a mesma
+        # janela: com 128 tokens a geração acaba antes de o teste ver "Parar"
+        # (36265128113) e pedidos "melhorados" viraram respostas de 39 e 14 tokens
+        # (36276321752, 36321822068). Se a geração terminar sem o botão ser visto, a
+        # etapa repete UMA vez — e as tentativas ficam na evidência.
+        pedido = 'Write a long numbered list in English, at least fifty items.'
+        tentativas = []
+        visto = False
+        for tentativa in (1, 2):
+            device.launch()
+            device.new_chat(model, 0, threads=2, n_predict=1024)
+            device.wait_for_load()
+            device.send(pedido)
+            visto, leituras, estadio = espera_parar(device)
+            tentativas.append(
+                f'tentativa {tentativa}: {leituras} leitura(s); motor '
+                + (f'com estatística de {estadio[0]} tokens no log' if estadio
+                   else 'sem estatística no log (geração provavelmente em andamento)')
+                + f'; botão {"visto" if visto else "não visto"}')
+            if visto:
+                break
+        (args.evidence / 'functions-notificacao-tentativas.txt').write_text('\n'.join(tentativas) + '\n')
+        if not visto:
+            raise AssertionError('a geração não ficou em andamento o bastante para a tela mostrar '
+                                 '"Parar" em nenhuma tentativa: ' + '; '.join(tentativas))
         device.shell('input keyevent KEYCODE_HOME')
         device.shell('input keyevent KEYCODE_POWER')  # tela apaga: canal de resposta pronta
         try:

@@ -309,6 +309,59 @@ novo. Os testes de host em `tests/test_harness_helpers.py` cobrem os quatro caso
 (aceita de primeira, botão ainda desabilitado, campo com texto errado, texto
 consumido sem persistir).
 
+### 4.6 O seletor LEMBRA a última pasta — e o cabeçalho mente sobre ela
+
+A rodada 36321822068 caiu em três fases (`emulator`, `anexo_texto`, `visao`) por um
+motivo só, e ele não era do aplicativo. O seletor do sistema guarda a **última pasta
+usada pelo aplicativo**: depois das fases de anexo, ele reabria dentro da pasta
+isolada `000-read-999967` — com o cabeçalho ainda dizendo `Files in Downloads` e o pão
+de navegação dizendo a verdade, `Downloads › 000-read-999967`. O harness acreditava no
+cabeçalho, concluía "já estou em Downloads, não toco em nada" (regra criada contra
+outro defeito, o toque no hambúrguer lido no meio da animação) e tentava marcar o
+modelo **dentro daquela pasta**, onde só existia a imagem de anexo. O resultado foi
+`Falha ao selecionar SmolLM2-135M-Instruct-Q4_K_M.gguf; nenhuma importação será
+presumida` na fase do emulador e três funções reprovadas na varredura.
+
+Quem responde "onde eu estou" é o **pão de navegação** (`breadcrumb_text`), nunca o
+cabeçalho: a raiz Downloads é o caminho com um segmento, `Downloads`; qualquer
+segmento depois dele é uma pasta dentro dela. Com a resposta certa, a saída é:
+
+* **gaveta de raízes aberta** (o dump de `anexo_texto` mostra ela por cima do pão, de
+  `[0,268]` a `[770,2274]`): quem leva à raiz é a linha `Downloads` da própria gaveta,
+  que navega e fecha a gaveta — tocar o pão ali acertaria a gaveta;
+* **gaveta fechada**: o pão, seguido de releitura do caminho. O nó do pão é
+  `clickable="false"` (quem trata o toque é o layout pai), então o toque é CONFIRMADO
+  relendo o caminho e, se ele não mudar, sobe um nível com `KEYCODE_BACK` — que só sai
+  quando o caminho mostra uma pasta **abaixo** de Downloads (na raiz o BACK fecharia o
+  seletor).
+
+Os dois dumps reais dessa rodada ficaram como prova em `tests/fixtures/picker/`
+(`downloads-dentro-da-pasta-isolada.xml` e `downloads-dentro-da-pasta-com-gaveta.xml`),
+com testes que exigem o toque no pão e o toque na linha da gaveta, respectivamente.
+
+### 4.7 O botão "Parar": a configuração que passou é a que fica
+
+As duas etapas que pegam a geração em andamento (`parar_geracao`, `notificacao`)
+reprovaram em 36276321752 e 36321822068 com respostas de **39** e **14 tokens**: os
+pedidos trocados ("conte até 300", "…, one item per line.") encurtaram a geração, e a
+janela do botão `Parar` ficou menor que uma leitura de tela — 40 leituras sem nunca
+ver o controle. A configuração que PASSA em rodada é a que fica: o pedido
+`Write a long numbered list in English, at least fifty items.`, o limite de 1024
+tokens da conversa e 2 threads (36267877767 parou com 171 tokens; 36165179296 com 116;
+36192982173 com 43). Um teste de host tranca essa configuração para que a próxima
+"melhoria" não volte a trocar o que já estava provado.
+
+A rodada 36272556329 gerou 246 tokens sem o teste ver o botão; isso é explicado pelo
+envio duplicado (corrigido em `72be6a9`) — duas gerações por mensagem, com a tela
+trocando por baixo da leitura. Ainda assim, um modelo de 135 M pode encerrar sozinho
+antes de a tela mostrar "Parar". Por isso a espera do botão agora **registra** cada
+tentativa (quantas leituras de tela, e o que o motor registrou no log naquele momento —
+o que distingue "a geração acabou antes" de "a tela nunca mostrou o botão") e, quando a
+geração acaba sem o botão ter sido visto, a etapa **repete uma vez** o mesmo pedido em
+conversa nova. A prova não muda: o toque no botão e a resposta parcial persistida; as
+duas tentativas ficam na evidência (`functions-parar-tentativas.txt` e
+`functions-notificacao-tentativas.txt`).
+
 ## 5. O que roda em cada gate
 
 | Gate | O que verifica |
