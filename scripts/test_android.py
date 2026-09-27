@@ -25,6 +25,18 @@ from android_checks import (PACKAGE, PICKERS, assistant_reply, generation_comple
                             select_exact_documents)
 
 
+# O campo de texto publica uma DICA quando está vazio: "ler o campo" devolve a dica.
+# Ela conta como campo VAZIO (a rodada 36325432837 a tratou como texto digitado e
+# mandou a mensagem duas vezes). No nível do módulo porque os métodos são exercitados
+# com aparelhos de mentira que não herdam de `Android`.
+DICA_DO_CAMPO = "Escreva sua mensagem"
+
+# Tamanho de cada pedaço de digitação. O texto vai por uma linha de comando do
+# `adb shell`, que tem limite: o prompt de ~190 tokens do experimento de
+# pré-preenchimento chegou embaralhado ao campo (rodada 36325432837).
+PEDACO_DE_DIGITACAO = 120
+
+
 class Android:
     def __init__(self, serial, evidence):
         self.serial, self.evidence = serial, evidence
@@ -579,12 +591,23 @@ class Android:
             self.tap(class_name="android.widget.EditText", package={PACKAGE})
         words = prompt.split(" ")
         if typed_pause <= 0 or len(words) < 2:
-            self.shell("input text " + shlex.quote(prompt.replace(" ", "%s")))
+            self._digitar_em_pedacos(prompt)
         else:
             half = max(1, len(words) // 2)
-            self.shell("input text " + shlex.quote(" ".join(words[:half]).replace(" ", "%s")))
+            self._digitar_em_pedacos(" ".join(words[:half]))
             time.sleep(typed_pause)
-            self.shell("input text " + shlex.quote(" " + " ".join(words[half:]).replace(" ", "%s")))
+            self._digitar_em_pedacos(" " + " ".join(words[half:]))
+
+    def _digitar_em_pedacos(self, texto):
+        """Digita o texto em pedaços que cabem na linha de comando do `input text`.
+
+        Cada pedaço é uma chamada; a pausa curta entre eles é o tempo do campo
+        receber o texto (sem ela o IME perde a última palavra do pedaço). O que
+        prova a digitação continua sendo a leitura do campo em quem chama.
+        """
+        for pedaco in em_pedacos(texto, PEDACO_DE_DIGITACAO):
+            self.shell("input text " + shlex.quote(pedaco.replace(" ", "%s")))
+            time.sleep(0.12)
 
     def send(self, prompt, clear_log=True, typed_pause=0.0, ready_timeout=180):
         """Digita e envia UMA vez.
@@ -620,16 +643,33 @@ class Android:
         return field and button
 
     def composer_text(self):
-        """O que está no campo de texto agora (para conferir o que foi digitado)."""
+        """O que está no campo de texto agora; a DICA do campo vazio conta como vazio.
+
+        A rodada 36325432837 tratou a dica como "outro texto no campo": redigitou o
+        prompt e tocou em Enviar de novo, e a mensagem foi enviada DUAS vezes (duas
+        gerações, "Parar" na tela) — a etapa `visao` morreu porque a última mensagem
+        do usuário ainda não tinha resposta. Campo com a dica é campo vazio.
+        """
         for node in ET.fromstring(self.ui()).iter("node"):
             if node.get("package") == PACKAGE and node.get("class") == "android.widget.EditText":
-                return node.get("text", "")
+                texto = node.get("text", "") or ""
+                return "" if texto.strip().startswith(DICA_DO_CAMPO) else texto
         return None
 
     def clear_composer(self, size):
-        """Apaga o campo: fim da linha e um DEL por caractere, numa chamada só."""
+        """Apaga o campo: fim da linha e DELs em LOTES.
+
+        Uma linha de comando com centenas de `keyevent` não cabe no `adb shell`: os
+        DELs saíam truncados, o campo ficava com o resto e a digitação seguinte se
+        misturava a ele (rodada 36325432837, campo com ' about loSummarize …').
+        Quem confere que o campo ficou vazio é quem chama, lendo o campo de novo.
+        """
         self.shell("input keyevent KEYCODE_MOVE_END")
-        self.shell("input keyevent " + " ".join(["KEYCODE_DEL"] * (min(int(size), 900) + 5)))
+        restantes = min(int(size), 1200) + 5
+        while restantes > 0:
+            lote = min(restantes, 80)
+            self.shell("input keyevent " + " ".join(["KEYCODE_DEL"] * lote))
+            restantes -= lote
 
     def mensagens_do_usuario(self, prompt, chat_id=None):
         """Quantas mensagens do usuário com ESTE texto já estão persistidas.
@@ -709,8 +749,6 @@ class Android:
             try:
                 self.wait(lambda: self.mensagens_do_usuario(prompt) > antes,
                           "mensagem do usuário persistida pelo aplicativo", timeout=30)
-                registra("mensagem enviada uma vez e persistida")
-                return
             except AssertionError:
                 campo = self.composer_text()
                 tentativas.append(f"tentativa {tentativa}: nada persistido em 30 s "
@@ -720,14 +758,18 @@ class Android:
                 if campo:
                     continue        # campo com outro texto: o laço limpa e digita de novo
                 # Campo vazio: o aplicativo consumiu o texto do campo. Esperar mais é
-                # certo; reenviar NÃO é — duplicaria a mensagem.
+                # certo; reenviar NÃO é — duplicaria a mensagem. A gravação pode vir
+                # junto com o fim da resposta (etapa `visao`, com imagem anexada).
                 try:
                     self.wait(lambda: self.mensagens_do_usuario(prompt) > antes,
                               "mensagem do usuário persistida depois do envio", timeout=120)
-                    registra("mensagem enviada uma vez; persistida depois do envio")
-                    return
                 except AssertionError:
                     break
+            # A checagem de DUPLICATA fica FORA do `except`: dois envios iguais não
+            # podem virar um "nada persistido em 30 s" e ser retentados em silêncio.
+            self._uma_mensagem_so(prompt, antes, tentativas)
+            registra("mensagem enviada uma vez e persistida")
+            return
         registra("falhou: o aplicativo não registrou a mensagem do usuário")
         labels = [node.get("text") for node in ET.fromstring(self.ui()).iter("node")
                   if node.get("package") == PACKAGE and node.get("text")]
@@ -735,6 +777,21 @@ class Android:
             "o aplicativo não persistiu a mensagem do usuário sem que ela fosse enviada "
             f"duas vezes; no campo agora: {self.composer_text()!r}; visíveis: {labels[:12]}; "
             + "; ".join(tentativas))
+
+    def _uma_mensagem_so(self, prompt, antes, tentativas):
+        """Um envio é UM envio: contar duas mensagens iguais é reprovar, não seguir.
+
+        Repetir a pergunta na mesma conversa dispara duas buscas e duas gerações, e a
+        medida da etapa (espera, T/s, busca) passa a valer para duas execuções. A
+        contagem é do que o aplicativo PERSISTIU nesta conversa; se subiu mais de uma
+        vez, a etapa reprova dizendo o número, em vez de medir o dobro em silêncio.
+        """
+        registradas = self.mensagens_do_usuario(prompt)
+        if registradas > antes + 1:
+            tentativas.append(f"o aplicativo registrou a mensagem {registradas - antes} vezes")
+            raise AssertionError(
+                f"um envio virou {registradas - antes} mensagens iguais nesta conversa "
+                f"(antes: {antes}, depois: {registradas}): a medida desta etapa não vale")
 
     def generate(self, model, gpu_layers, stage, prompt="Reply in English with a short greeting.",
                  threads=2, record=True, typed_pause=0.0, await_load=False, settle=0.0, search=False):
@@ -818,6 +875,37 @@ class Android:
         self.perf[stage] = entry
         (self.evidence / f"{stage}-perf.json").write_text(json.dumps(entry, ensure_ascii=False, indent=2))
         return entry
+
+
+def em_pedacos(texto, limite):
+    """Quebra o texto em pedaços de até `limite` caracteres, SEM cortar palavra.
+
+    Existe porque o texto chega ao aplicativo por uma linha de comando com limite:
+    pedaços maiores eram truncados/embaralhados pelo `input text`.
+    """
+    if limite < 1:
+        raise ValueError("limite de digitação precisa ser positivo")
+    pedacos, atual = [], ""
+    # Um espaço no COMEÇO é digitado (a segunda passada da digitação com pausa começa
+    # com ele): `split(" ")` sozinho o perderia e as duas metades colariam.
+    com_espaco_inicial = texto.startswith(" ")
+    for palavra in texto[1:].split(" ") if com_espaco_inicial else texto.split(" "):
+        while len(palavra) > limite:          # palavra sozinha maior que o pedaço
+            if atual:
+                pedacos.append(atual)
+                atual = ""
+            pedacos.append(palavra[:limite])
+            palavra = palavra[limite:]
+        if atual and len(atual) + 1 + len(palavra) > limite:
+            pedacos.append(atual)
+            atual = palavra
+        elif palavra:
+            atual = f"{atual} {palavra}" if atual else palavra
+    if atual:
+        pedacos.append(atual)
+    if com_espaco_inicial and pedacos:
+        pedacos[0] = " " + pedacos[0]
+    return pedacos
 
 
 REGRESSION_TOLERANCE = 0.05

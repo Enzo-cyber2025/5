@@ -57,10 +57,20 @@ class SubmitDevice:
     reproduz o defeito de o aplicativo limpar o campo sem registrar a mensagem.
     """
 
-    def __init__(self, field_text, persist_after=1, ready_after=0, consome_texto=False):
+    dica = 'Escreva sua mensagem…'
+
+    def __init__(self, field_text, persist_after=1, ready_after=0, consome_texto=False,
+                 persiste_apos_leituras=0):
         self.field = field_text
         self.persist_after = persist_after
         self.consome_texto = consome_texto
+        # Quantas leituras do que o aplicativo persistiu são necessárias para a
+        # mensagem aparecer (o aplicativo grava a conversa no FIM da resposta; com
+        # imagem anexada isso passa de 30 s — foi o que a etapa `visao` mostrou na
+        # rodada 36325432837).
+        self.persiste_apos_leituras = persiste_apos_leituras
+        self.leituras = 0
+        self.pendentes = []
         self.envios = 0                 # toques em Enviar COM texto no campo
         self.taps_vazios = 0            # toques em Enviar com o campo vazio
         self.typed = []                 # textos digitados (digitar ou send)
@@ -86,6 +96,9 @@ class SubmitDevice:
         self.tap(text='Enviar')
 
     def composer_text(self):
+        # Campo vazio de verdade, como o driver lê o campo quando a dica está lá
+        # (`composer_text` do driver devolve a DICA como vazio — o mapeamento da dica
+        # é provado em `test_o_texto_de_dica_do_campo_conta_como_campo_vazio`).
         return self.field
 
     def clear_composer(self, size):
@@ -100,7 +113,10 @@ class SubmitDevice:
                 return True
             self.envios += 1
             if self.persist_after is not None and self.envios >= self.persist_after:
-                self.mensagens.append(self.field)
+                if self.persiste_apos_leituras:
+                    self.pendentes.append(self.field)   # aceita agora, grava depois
+                else:
+                    self.mensagens.append(self.field)
                 self.field = ''
             elif self.consome_texto:
                 # O aplicativo aceitou o toque (campo limpo) e não registrou nada.
@@ -109,7 +125,15 @@ class SubmitDevice:
             # é o botão desabilitado enquanto o modelo carrega.
         return True
 
+    def _uma_mensagem_so(self, prompt, antes, tentativas):
+        # A regra de "um envio é um envio" é a do driver real; o aparelho de mentira
+        # só empresta o estado (mensagens persistidas).
+        return Android._uma_mensagem_so(self, prompt, antes, tentativas)
+
     def mensagens_do_usuario(self, prompt, chat_id=None):
+        self.leituras += 1
+        while self.pendentes and self.leituras >= self.persiste_apos_leituras:
+            self.mensagens.append(self.pendentes.pop(0))
         return sum(1 for m in self.mensagens if m == prompt)
 
     def read_json(self, name):
@@ -199,6 +223,88 @@ def test_submit_nao_reenvia_quando_o_aplicativo_consome_o_texto_sem_persistir(tm
         Android.submit(device, prompt, label='stage')
     assert device.envios == 1, 'um toque só, mesmo sem persistência'
     assert 'sem que ela fosse enviada duas vezes' in str(error.value), str(error.value)
+
+
+def test_digitar_quebra_o_texto_em_pedacos_sem_cortar_palavra():
+    """Rodada 36325432837: o prompt longo chegou EMBARALHADO ao campo.
+
+    `input text` recebe o texto numa linha de comando do `adb shell`, que tem limite:
+    o prompt de ~190 tokens do experimento de pré-preenchimento virou
+    ' about loSummarize in English, one line. … item 2 of a list about cf a list about
+    local' e o `Enviar` nunca pôde ser tocado. A digitação passa a ir em pedaços.
+    """
+    from test_android import em_pedacos
+    prompt = ('Summarize in English, one line. '
+              + ' '.join(f'item {n} of a list about local language models and their speed'
+                         for n in range(12)))
+    pedacos = em_pedacos(prompt, 120)
+    assert len(pedacos) > 1, 'um prompt deste tamanho tem de ir em mais de um pedaço'
+    assert all(len(pedaco) <= 120 for pedaco in pedacos), [len(p) for p in pedacos]
+    assert ' '.join(pedacos) == prompt, 'quebrar o texto não pode cortar nem colar palavras'
+    # Um espaço no começo é digitado (a segunda passada da digitação com pausa começa
+    # com ele): sem isso as duas metades colariam.
+    assert em_pedacos(' um dois', 5) == [' um', 'dois']
+    assert em_pedacos('', 120) == []
+
+
+def test_digitar_manda_mais_de_uma_chamada_para_o_prompt_longo(tmp_path):
+    prompt = 'palavra ' * 60      # 540 caracteres: bem acima do limite por chamada
+    device = ScreenDevice([screen_com_campo()], tmp_path)
+    # O que NÃO é o alvo deste teste: foco/toque/espera da tela. O alvo é a quebra em
+    # pedaços dentro do `_digitar_em_pedacos` do driver, com o `shell` do aparelho.
+    device.composer_ready = lambda: True
+    device.field_focused = lambda: True
+    device.tap = lambda **selector: True
+    device.shell = lambda command, **kwargs: device.actions.append(command) or ''
+    # O que ESTE teste exercita é a quebra em pedaços do driver: só ela vem do real.
+    device._digitar_em_pedacos = Android._digitar_em_pedacos.__get__(device)
+    Android.digitar(device, prompt.strip())
+    chamadas = [c for c in device.actions if 'input text' in c]
+    assert len(chamadas) > 1, chamadas
+    assert all(len(c) < 600 for c in chamadas), [(len(c)) for c in chamadas]
+    texto = ' '.join(c.split('input text ', 1)[1].strip().replace('%s', ' ') for c in chamadas)
+    assert texto == prompt.strip(), texto[:120]
+
+
+def test_o_texto_de_dica_do_campo_conta_como_campo_vazio(tmp_path):
+    device = ScreenDevice([screen_com_campo()], tmp_path)
+    assert Android.composer_text(device) == '', 'a dica não é texto digitado'
+    assert Android.field_focused(device), 'com a dica no campo o foco continua no campo'
+    digitado = screen_com_campo().replace('Escreva sua mensagem…', 'texto de verdade')
+    assert Android.composer_text(ScreenDevice([digitado], tmp_path)) == 'texto de verdade'
+
+
+def test_submit_espera_a_persistencia_atrasada_sem_enviar_de_novo(tmp_path):
+    """O aplicativo aceita o texto (campo fica com a dica) e grava a conversa depois.
+
+    Com imagem anexada a gravação passa de 30 s. A rodada 36325432837 leu a dica como
+    "outro texto no campo", redigitou e tocou em Enviar outra vez: a mensagem foi
+    enviada duas vezes, a segunda geração apareceu com "Parar" na tela e a etapa
+    `visao` morreu sem achar a resposta da última mensagem.
+    """
+    device = SubmitDevice('', persist_after=1, persiste_apos_leituras=3)
+    prompt = 'In English, describe the image in one line.'
+    device.prompt = prompt
+    device.evidence = tmp_path
+    device.last_chat = {'id': 'chat-1'}
+    Android.submit(device, prompt, label='functions-visao')
+    assert device.envios == 1, 'um envio só, mesmo com a gravação atrasada'
+    assert device.typed == [prompt], 'não redigitar o que o aplicativo aceitou'
+    assert device.mensagens == [prompt]
+    assert (tmp_path / 'functions-visao-composer.txt').read_text().startswith('campo conferido')
+
+
+def test_submit_reprova_quando_o_aplicativo_registra_a_mensagem_duas_vezes(tmp_path):
+    """Duas mensagens iguais na mesma conversa dobram a medida: isso reprova."""
+    device = SubmitDevice('', persist_after=1, persiste_apos_leituras=3)
+    prompt = 'pergunta única'
+    device.prompt = prompt
+    device.evidence = tmp_path
+    device.last_chat = {'id': 'chat-1'}
+    device.pendentes.append(prompt)          # o envio já aceito que será gravado...
+    with pytest.raises(AssertionError) as error:
+        Android.submit(device, prompt, label='stage')
+    assert 'um envio virou 2 mensagens iguais' in str(error.value), str(error.value)
 
 
 def search_entry(used_ms, provider, sources=5):
@@ -965,6 +1071,15 @@ def screen(*labels, package='com.ggufchat.app'):
     nodes = ''.join(f'<node package="{package}" text="{label}" content-desc="" enabled="true" '
                     f'bounds="[0,0][10,10]" />' for label in labels)
     return f'<hierarchy>{nodes}</hierarchy>'
+
+
+def screen_com_campo(package='com.ggufchat.app'):
+    """Uma tela como o aplicativo publica: o CAMPO de texto existe, com a dica dentro."""
+    return (f'<hierarchy><node package="{package}" class="android.widget.EditText" '
+            f'text="Escreva sua mensagem…" enabled="true" focused="true" '
+            f'bounds="[0,0][10,10]" />'
+            f'<node package="{package}" class="android.widget.Button" text="Enviar" '
+            f'enabled="true" bounds="[0,10][10,20]" /></hierarchy>')
 
 
 def test_pref_value_reads_the_two_formats_android_writes():
