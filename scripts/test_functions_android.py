@@ -757,7 +757,11 @@ def main():
             raise AssertionError(f'a conversa nova deveria estar com a busca desligada (estado={estado})')
         tap_exact(device, 'Busca')
         wait_screen(device, 'Busca ON', contains=False, timeout=15)
-        prompt = 'Reply in English: What is the capital of Japan?'
+        # A pergunta tem que PEDIR dado recente da web — o portão (SearchGating)
+        # pula HTTP para perguntas de conhecimento estático ("capital do Japão")
+        # para não pagar 12 s de espera à toa. Se o prompt não pedir dado externo,
+        # a busca é pulada de propósito e nenhum GGUF_SEARCH_BUDGET é emitido.
+        prompt = 'Reply in English: Give me today\'s top technology headlines (web search required).'
         device.send(prompt)
         device.wait(lambda: generation_completed(device.adb('logcat', '-d')), 'geração com busca', timeout=240)
         log = device.adb('logcat', '-d')
