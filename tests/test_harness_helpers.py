@@ -710,48 +710,88 @@ def test_dump_real_de_subpasta_da_rodada_36321822068_e_reconhecido_como_subpasta
 
     `tests/fixtures/picker/downloads-dentro-da-pasta-isolada.xml` é a evidência da
     rodada 36321822068: cabeçalho "Files in Downloads" e caminho
-    "Downloads › 000-read-999967" com a imagem de anexo na lista.
+    "Downloads › 000-read-999967". O toque no segmento "Downloads" do pão de
+    navegação é CONFIRMADO relendo o caminho — nada de "deve ter voltado".
     """
-    dump = (ROOT / 'tests/fixtures/picker/downloads-dentro-da-pasta-isolada.xml').read_text()
-    assert not _na_pasta_de_downloads(dump), 'subpasta não é a raiz Downloads'
-    comandos = []
+    pasta = (ROOT / 'tests/fixtures/picker/downloads-dentro-da-pasta-isolada.xml').read_text()
+    raiz = (ROOT / 'tests/fixtures/picker/downloads-com-gaveta-aberta.xml').read_text()
+    assert not _na_pasta_de_downloads(pasta), 'subpasta não é a raiz Downloads'
+    assert _na_pasta_de_downloads(raiz), 'o dump da raiz continua sendo a raiz'
+
+    class Device:
+        def __init__(self):
+            self.subpasta = True
+            self.comandos = []
+
+        def ui(self):
+            return pasta if self.subpasta else raiz
+
+        def shell(self, command, check=True):
+            self.comandos.append(command)
+            if command.startswith('input tap'):
+                self.subpasta = False          # o toque no pão de navegação funciona
+            return ''
+
+    device = Device()
+    assert _voltar_para_a_raiz_de_downloads(device, pasta) is True
+    assert device.comandos == ['input tap 140 334'], device.comandos
+
+
+def test_toque_no_pao_que_nao_funciona_cai_no_back_do_sistema():
+    """Pão de navegação é `clickable="false"` no dump real: se o toque não mudar o
+    caminho, sobe com `KEYCODE_BACK` — e só dentro de Downloads (o BACK na raiz
+    fecharia o seletor)."""
+    pasta = (ROOT / 'tests/fixtures/picker/downloads-dentro-da-pasta-isolada.xml').read_text()
+    raiz = (ROOT / 'tests/fixtures/picker/downloads-com-gaveta-aberta.xml').read_text()
+
+    class Device:
+        def __init__(self, obedece_ao_toque):
+            self.subpasta = True
+            self.obedece_ao_toque = obedece_ao_toque
+            self.comandos = []
+
+        def ui(self):
+            return pasta if self.subpasta else raiz
+
+        def shell(self, command, check=True):
+            self.comandos.append(command)
+            if self.obedece_ao_toque and command.startswith('input tap'):
+                self.subpasta = False
+            if command == 'input keyevent KEYCODE_BACK':
+                self.subpasta = False
+            return ''
+
+    surdo = Device(obedece_ao_toque=False)
+    assert _voltar_para_a_raiz_de_downloads(surdo, pasta) is True
+    assert surdo.comandos[0] == 'input tap 140 334', surdo.comandos
+    assert surdo.comandos[-1] == 'input keyevent KEYCODE_BACK', surdo.comandos
+
+
+def test_dump_real_com_gaveta_aberta_sobre_a_subpasta_usa_a_linha_da_gaveta():
+    """Com a gaveta aberta POR CIMA do pão de navegação, quem leva à raiz é a linha
+    "Downloads" da gaveta.
+
+    `tests/fixtures/picker/downloads-dentro-da-pasta-com-gaveta.xml` é o dump REAL da
+    fase `anexo_texto` da rodada 36321822068: a gaveta ("Open from" + raízes) cobre o
+    pão de navegação — tocar o pão cairia na gaveta, não no caminho.
+    """
+    gaveta = (ROOT / 'tests/fixtures/picker/downloads-dentro-da-pasta-com-gaveta.xml').read_text()
+    dispositivos = []
 
     class Device:
         def ui(self):
-            return dump
+            return gaveta
 
         def shell(self, command, check=True):
-            comandos.append(command)
+            dispositivos.append(command)
             return ''
 
-    assert _voltar_para_a_raiz_de_downloads(Device(), dump) is True
-    assert comandos == ['input tap 140 334'], comandos
-    # E `select_exact_documents` sai da subpasta antes de procurar as linhas.
-    comandos.clear()
-    fila = [dump, dump]
-    raiz = (ROOT / 'tests/fixtures/picker/downloads-com-gaveta-aberta.xml').read_text()
-
-    class DeviceSaindo:
-        def ui(self):
-            return fila.pop(0) if fila else raiz
-
-        def shell(self, command, check=True):
-            comandos.append(command)
-            return ''
-
-        def wait(self, condition, what, timeout=20):
-            for _ in range(8):
-                r = condition()
-                if r:
-                    return r
-            raise AssertionError(f'Timeout: {what}')
-
-    device = DeviceSaindo()
     try:
-        select_exact_documents(device, ['SmolLM2-135M-Instruct-Q4_K_M.gguf'])
-    except Exception:
-        pass      # o aparelho de mentira não marca; o que importa é SAIR da subpasta
-    assert comandos and comandos[0] == 'input tap 140 334', comandos
+        abrir_pasta_de_downloads(Device(), timeout=3)
+    except AssertionError:
+        pass      # o aparelho de mentira não fecha a gaveta; o que importa é o toque
+    assert dispositivos and dispositivos[0] == 'input tap 462 828', dispositivos
+    assert 'input tap 140 334' not in dispositivos, 'o pão de navegação está coberto'
 
 
 def test_dump_real_da_rodada_36276321752_nao_gera_toque_nenhum():

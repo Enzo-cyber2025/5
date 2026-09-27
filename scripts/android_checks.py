@@ -484,12 +484,55 @@ def _na_pasta_de_downloads(xml):
             and barra.casefold() in RAIZES_DE_DOWNLOADS)
 
 
-def _voltar_para_a_raiz_de_downloads(d, xml):
-    """Sai de uma subpasta tocando no segmento "Downloads" do caminho.
+def _espera_raiz_de_downloads(d, tentativas=8, intervalo=0.4):
+    """Espera o caminho do seletor virar a raiz Downloads. Confirma lendo o caminho."""
+    import time
+    for _ in range(tentativas):
+        if _na_pasta_de_downloads(d.ui()):
+            return True
+        time.sleep(intervalo)
+    return False
 
-    Uma subpasta de Downloads mantém o cabeçalho "Files in Downloads"; o caminho de
-    volta é o segmento "Downloads" do pão de navegação, que fica ACIMA das linhas.
-    Devolve True quando tocou em algo.
+
+def _voltar_para_a_raiz_de_downloads(d, xml):
+    """Sai de uma subpasta de Downloads até a RAIZ, confirmando cada passo.
+
+    Uma subpasta de Downloads mantém o cabeçalho "Files in Downloads": o que diz
+    onde se está é o pão de navegação (`breadcrumb_text`), e foi ele que derrubou
+    três fases na rodada 36321822068 — o seletor LEMBRA a última pasta usada pelo
+    aplicativo (`… › 000-read-999967`) e o harness marcava o modelo lá dentro.
+
+    O caminho de volta é o segmento "Downloads" do pão. O nó do pão é
+    `clickable="false"` (quem trata o toque é o layout pai), então o toque pode não
+    fazer nada: por isso cada tentativa é CONFIRMADA relendo o caminho, e o
+    `KEYCODE_BACK` (que no seletor do sistema sobe um nível) entra como segunda
+    tentativa — só depois de confirmar que ainda se está dentro de Downloads.
+
+    Devolve True quando tocou/andou; quem chama confere o caminho de novo.
+    """
+    if _gaveta_aberta(xml):
+        return False                      # a gaveta cobre o pão; o laço trata a gaveta
+    if _toque_no_pao_de_navegacao(d, xml):
+        if _espera_raiz_de_downloads(d):
+            return True
+    xml = d.ui()
+    segmentos = _segmentos_do_pao_de_navegacao(xml)
+    if (len(segmentos) >= 2 and segmentos[-2].casefold() in RAIZES_DE_DOWNLOADS
+            and not _na_pasta_de_downloads(xml)):
+        # Ainda DENTRO de Downloads (e o toque não resolveu): o BACK do sistema sobe
+        # um nível. O teste acima é o que impede o BACK de fechar o seletor: ele só
+        # sai quando o caminho mostra uma pasta ABAIXO de Downloads.
+        d.shell("input keyevent KEYCODE_BACK", check=False)
+        return _espera_raiz_de_downloads(d)
+    return False
+
+
+def _toque_no_pao_de_navegacao(d, xml):
+    """Toca o segmento "Downloads" do pão de navegação (o caminho de volta).
+
+    O segmento fica na barra de cima; as linhas da gaveta se chamam "Downloads"
+    também, mas têm `.../title` (e o pão não tem). Sem pão de navegação não se toca
+    em nada: adivinhar coordenada foi o que criou os defeitos de rodadas passadas.
     """
     for node in nodes(xml):
         if node.get("package") not in PICKERS:
@@ -502,8 +545,9 @@ def _voltar_para_a_raiz_de_downloads(d, xml):
         if not limite:
             continue
         x1, y1, x2, y2 = map(int, limite.groups())
-        d.shell(f"input tap {(x1 + x2) // 2} {(y1 + y2) // 2}", check=False)
-        return True
+        if x2 > x1 and y2 > y1:
+            d.shell(f"input tap {(x1 + x2) // 2} {(y1 + y2) // 2}", check=False)
+            return True
     return False
 
 
@@ -650,17 +694,23 @@ def abrir_pasta_de_downloads(d, timeout=60):
                 return faixa or barra
             tentativas.append("a pasta Downloads está aberta, mas a lista não parou")
             break
-        if _voltar_para_a_raiz_de_downloads(d, xml):
-            # Dentro de uma subpasta (o seletor lembra a última usada): o caminho de
-            # volta é o segmento Downloads do pão de navegação.
-            tentativas.append(f"voltei da subpasta {barra!r} pelo pão de navegação")
-            continue
         if _gaveta_confirmada(d):
+            # A gaveta de raízes é uma camada POR CIMA do pão de navegação: com ela
+            # aberta, quem leva à raiz é a própria linha "Downloads" da gaveta (e a
+            # gaveta fecha ao navegar). A rodada 36321822068 pegou o seletor com a
+            # gaveta aberta SOBRE a pasta lembrada — tocar o pão ali acertaria a
+            # gaveta, não o caminho.
             destino = _linha_da_gaveta(d.ui())
             if destino is None:
                 tentativas.append(f"gaveta aberta sem a linha Downloads ({barra!r}/{faixa!r})")
                 break
             d.shell(f"input tap {int(destino[0])} {int(destino[1])}", check=False)
+            continue
+        if _voltar_para_a_raiz_de_downloads(d, xml):
+            # Dentro de uma subpasta (o seletor lembra a última usada): o caminho de
+            # volta é o segmento Downloads do pão de navegação (ou o BACK, se o
+            # toque não mudar o caminho) — sempre confirmado relendo o caminho.
+            tentativas.append(f"saí da subpasta {barra!r} para a raiz Downloads")
             continue
         botao = (position(xml, desc="Show roots", package=PICKERS)
                  or position(xml, desc="Mostrar raízes", package=PICKERS)
