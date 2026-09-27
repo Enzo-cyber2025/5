@@ -152,29 +152,24 @@ def test_checks_are_independent_and_generations_are_long_enough_to_catch():
 
 
 def test_geracao_longa_pede_um_texto_que_nao_termina_sozinho():
-    """A janela do botão "Parar" tem de durar mais que uma leitura de tela.
+    """A configuração desta etapa é a que PASSOU em rodada — e está travada aqui.
 
-    Duas tentativas provaram que PEDIR um texto longo não garante a janela:
-
-    * 36272556329 — "uma lista de cinquenta itens" fez o SmolLM2 encerrar sozinho em
-      246 tokens (13,8 s) e o teste não chegou a ver o botão;
-    * 36276321752 — "conte até 300" virou uma resposta de 39 tokens em PORTUGUÊS (o
-      modelo segue o prompt de sistema) e a resposta terminou antes da primeira
-      leitura.
-
-    O que fica: o pedido que comprovadamente gera longo nesta linha de modelo E um
-    único thread (a mesma geração leva cerca de o dobro do tempo de parede; o teste
-    mede a existência do controle, não velocidade).
+    Histórico, para ninguém "melhorar" de novo sem medir: com 128 tokens as duas
+    etapas terminavam antes de o teste ver "Parar" (36265128113); com o pedido que
+    comprovadamente gera longo e o limite de 1024 tokens elas passaram em várias
+    rodadas (36267877767 parou com 171 tokens, 36165179296 com 116, 36192982173 com
+    43). Trocar o pedido por "conte até 300" ou acrescentar ", one item per line."
+    produziu respostas de 39 e 14 tokens (36276321752, 36321822068) e a janela do
+    botão ficou menor que uma leitura de tela.
     """
     fonte = (ROOT / 'scripts/test_functions_android.py').read_text()
-    pedido = ('Write a long numbered list in English, at least fifty items, '
-              'one item per line.')
+    pedido = 'Write a long numbered list in English, at least fifty items.'
     assert fonte.count(pedido) == 2, 'as duas etapas que pegam a geração usam o mesmo pedido'
     for funcao in ('parar_geracao', 'notificacao'):
         trecho = fonte[fonte.index(f'def {funcao}():'):]
         trecho = trecho[:trecho.index('\n    def ')]
         assert 'n_predict=1024' in trecho or 'n_predict=limpar' in trecho, funcao
-        assert 'threads=1' in trecho, f'{funcao}: um thread é o que dobra a janela do botão'
+        assert 'threads=2' in trecho, funcao
         assert pedido in trecho, funcao
         assert 'última medição' in trecho, funcao
 

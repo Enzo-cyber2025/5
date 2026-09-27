@@ -17,7 +17,9 @@ ROOT = Path(__file__).resolve().parents[1]
 # scripts/), então o caminho entra antes de qualquer import deles.
 sys.path.insert(0, str(ROOT / 'scripts'))
 
-from android_checks import abrir_pasta_de_downloads, select_exact_documents  # noqa: E402
+from android_checks import (abrir_pasta_de_downloads, select_exact_documents,  # noqa: E402
+                             _na_pasta_de_downloads,
+                             _voltar_para_a_raiz_de_downloads)
 
 
 def load(name, relative):
@@ -517,10 +519,14 @@ class PickerDevice:
     MOSTRAR_RAIZES = (77, 202)                 # hambúrguer da barra, como no dump real
     RAIZES = {'Images': 430, 'Videos': 510, 'Downloads': 590}
 
-    def __init__(self, names, modo, raiz='Recentes', raizes=None):
+    def __init__(self, names, modo, raiz='Recentes', raizes=None, pasta=None):
         self.names = list(names)
         self.modo = modo            # 'toque', 'toque-longo' (só o gesto longo marca) ou 'nunca'
         self.raiz = raiz
+        # Pasta aberta DENTRO de Downloads. O seletor do sistema lembra a última
+        # pasta usada pelo aplicativo — é assim que a rodada 36321822068 tentou
+        # marcar o modelo dentro da pasta isolada de anexos.
+        self.pasta = pasta
         self.raizes = list(raizes) if raizes is not None else ['Images', 'Videos', 'Downloads']
         self.gaveta = False
         self.selecionados = set()
@@ -532,13 +538,27 @@ class PickerDevice:
         self.rows_dumps += 1
         barra, faixa = (('Recent', 'Recent files') if self.raiz == 'Recentes'
                         else (self.raiz, f'Files in {self.raiz}'))
+        pao = ''
+        if self.raiz != 'Recentes':
+            # Pão de navegação como no aparelho: "Downloads" e, dentro dela, o nome
+            # da pasta. É ele — não o cabeçalho — que diz o diretório aberto.
+            pao = (f'<node package="{self.PACKAGE}" resource-id="{self.PACKAGE}:id/breadcrumb_text" '
+                   f'class="android.widget.TextView" text="{self.raiz}" enabled="true" '
+                   f'bounds="[0,268][281,400]" />')
+            if self.pasta:
+                pao += (f'<node package="{self.PACKAGE}" '
+                        f'resource-id="{self.PACKAGE}:id/breadcrumb_text" '
+                        f'class="android.widget.TextView" text="{self.pasta}" enabled="true" '
+                        f'bounds="[347,268][715,400]" />')
+                barra = self.pasta
         barra_xml = (
             f'<node package="{self.PACKAGE}" class="android.widget.ImageButton" content-desc="Show roots" '
             f'clickable="true" enabled="true" bounds="[0,136][154,268]" />'
             f'<node package="{self.PACKAGE}" class="android.widget.TextView" text="{barra}" '
             f'enabled="true" bounds="[198,165][471,239]" />'
             f'<node package="{self.PACKAGE}" resource-id="{self.PACKAGE}:id/header_title" '
-            f'class="android.widget.TextView" text="{faixa}" enabled="true" bounds="[66,400][1014,565]" />')
+            f'class="android.widget.TextView" text="{faixa}" enabled="true" bounds="[66,400][1014,565]" />'
+            + pao)
         linhas = []
         for indice, nome in enumerate(self.names):
             marcado = 'true' if nome in self.selecionados else 'false'
@@ -568,7 +588,7 @@ class PickerDevice:
                 for nome, topo in self.RAIZES.items() if nome in self.raizes)
         # A gaveta de raízes é uma camada POR CIMA: com ela aberta, as linhas de
         # arquivo não estão visíveis (é o que o dump real mostra).
-        corpo = '' if self.gaveta else ''.join(linhas)
+        corpo = '' if self.gaveta else ('' if self.pasta else ''.join(linhas))
         return '<hierarchy>' + barra_xml + corpo + contador + gaveta + '</hierarchy>'
 
     def _linha(self, y):
@@ -577,6 +597,9 @@ class PickerDevice:
         return self.names[indice]
 
     def _toque(self, x, y):
+        if self.pasta and 0 <= x < 281 and 268 <= y < 400:
+            self.pasta = None                       # pão de navegação "Downloads"
+            return
         if abs(x - self.MOSTRAR_RAIZES[0]) < 60 and abs(y - self.MOSTRAR_RAIZES[1]) < 60:
             self.gaveta = not self.gaveta           # "Show roots" alterna a gaveta
             return
@@ -663,6 +686,72 @@ def test_downloads_already_open_nao_recebe_toque_nenhum():
     assert device.actions == [], f'nenhum toque esperado, houve: {device.actions}'
     assert device.gaveta is True, 'a gaveta não é assunto deste ajudante'
     assert device.selecionados == set()
+
+
+def test_subpasta_lembrada_pelo_seletor_e_abandonada_pelo_pao_de_navegacao():
+    """O seletor LEMBRA a última pasta: o modelo tem de ser marcado na RAIZ.
+
+    Rodada 36321822068: depois das fases de anexo, o diretório lembrado era a pasta
+    isolada `000-read-*`. O cabeçalho continuava dizendo "Files in Downloads" e três
+    etapas caíram tentando marcar o modelo DENTRO da pasta (`emulator`, `anexo_texto`,
+    `visao`). Quem diz o diretório aberto é o pão de navegação.
+    """
+    device = PickerDevice(['model.gguf'], modo='toque', raiz='Downloads', pasta='000-read-999967')
+    device.actions.clear()
+    assert abrir_pasta_de_downloads(device) == 'Files in Downloads'
+    assert device.pasta is None, 'a subpasta lembrada tem de ser abandonada'
+    toques = [a for a in device.actions if a.startswith('input tap')]
+    assert toques == ['input tap 140 334'], f'o toque é no segmento Downloads: {toques}'
+    assert device.gaveta is False, 'nem a gaveta nem as linhas entram nesse caminho'
+
+
+def test_dump_real_de_subpasta_da_rodada_36321822068_e_reconhecido_como_subpasta():
+    """O dump REAL da subpasta lembrada: não é a raiz, e o caminho de volta é o pão.
+
+    `tests/fixtures/picker/downloads-dentro-da-pasta-isolada.xml` é a evidência da
+    rodada 36321822068: cabeçalho "Files in Downloads" e caminho
+    "Downloads › 000-read-999967" com a imagem de anexo na lista.
+    """
+    dump = (ROOT / 'tests/fixtures/picker/downloads-dentro-da-pasta-isolada.xml').read_text()
+    assert not _na_pasta_de_downloads(dump), 'subpasta não é a raiz Downloads'
+    comandos = []
+
+    class Device:
+        def ui(self):
+            return dump
+
+        def shell(self, command, check=True):
+            comandos.append(command)
+            return ''
+
+    assert _voltar_para_a_raiz_de_downloads(Device(), dump) is True
+    assert comandos == ['input tap 140 334'], comandos
+    # E `select_exact_documents` sai da subpasta antes de procurar as linhas.
+    comandos.clear()
+    fila = [dump, dump]
+    raiz = (ROOT / 'tests/fixtures/picker/downloads-com-gaveta-aberta.xml').read_text()
+
+    class DeviceSaindo:
+        def ui(self):
+            return fila.pop(0) if fila else raiz
+
+        def shell(self, command, check=True):
+            comandos.append(command)
+            return ''
+
+        def wait(self, condition, what, timeout=20):
+            for _ in range(8):
+                r = condition()
+                if r:
+                    return r
+            raise AssertionError(f'Timeout: {what}')
+
+    device = DeviceSaindo()
+    try:
+        select_exact_documents(device, ['SmolLM2-135M-Instruct-Q4_K_M.gguf'])
+    except Exception:
+        pass      # o aparelho de mentira não marca; o que importa é SAIR da subpasta
+    assert comandos and comandos[0] == 'input tap 140 334', comandos
 
 
 def test_dump_real_da_rodada_36276321752_nao_gera_toque_nenhum():

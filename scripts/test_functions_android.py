@@ -632,20 +632,24 @@ def main():
                 f'{stat[0] if stat else "?"} tokens nativos)')
 
     def parar_geracao():
-        # O botão "Parar" só existe enquanto o motor gera, e cada leitura de tela
-        # custa 1-2 s. O orçamento de 128 tokens não bastava (36265128113: geração de
-        # ~8 s terminou antes de o teste ver o botão) e PEDIR um texto longo também
-        # não garante nada: "uma lista de cinquenta itens" fez o SmolLM2 encerrar
-        # sozinho em 246 tokens (13,8 s) e "conte até 300" virou uma resposta de 39
-        # tokens em português (o modelo segue o prompt de sistema, rodada 36276321752).
-        # Duas medidas garantem a janela: o pedido que comprovadamente gera longo na
-        # mesma linha de modelo, e UM thread — a mesma geração leva cerca de o dobro
-        # do tempo de parede, e o teste mede a EXISTÊNCIA do controle, não velocidade.
+        # A configuração desta etapa é a que PASSOU em rodada (36267877767: parou com
+        # 171 tokens; 36165179296: 116; 36192982173: 43). Duas tentativas de "melhorar"
+        # falharam por medir a coisa errada:
+        #
+        #  * 36272556329 — o mesmo pedido, e o SmolLM2 encerrou sozinho em 246 tokens
+        #    (13,8 s) antes de o teste ver o botão;
+        #  * 36276321752 / 36321822068 — pedidos trocados ("conte até 300", "…, one item
+        #    per line.") viraram respostas de 39 e 14 tokens, e a janela do botão ficou
+        #    menor que uma leitura de tela.
+        #
+        # O teste não pode depender de o modelo querer escrever muito: o pedido abaixo
+        # é o que comprovadamente gera longo nesta linha de modelo, com o limite de 1024
+        # tokens da própria conversa. É esta combinação que fica.
         limpar = 1024
         device.launch()
-        chat = device.new_chat(model, 0, threads=1, n_predict=limpar)
+        chat = device.new_chat(model, 0, threads=2, n_predict=limpar)
         device.wait_for_load()
-        device.send('Write a long numbered list in English, at least fifty items, one item per line.')
+        device.send('Write a long numbered list in English, at least fifty items.')
         # 120 s: se o motor acabou de ser descarregado (ou é a primeira geração da
         # varredura), a carga do modelo entra nesta espera. Cronometrar 30 s aqui
         # media o emulador, não o aplicativo (rodada 36245048939).
@@ -659,9 +663,9 @@ def main():
             device.wait(parar_visivel, 'botão Parar durante a geração', timeout=120)
         except AssertionError:
             estadio = last_stats(device.adb('logcat', '-d'))
-            raise AssertionError(f'o botão Parar não apareceu em {len(olhadas)} leitura(s) de '
-                                 f'tela durante a geração de {limpar} tokens '
-                                 f'(última medição: {estadio})')
+            raise AssertionError(
+                f'o botão Parar não apareceu em {len(olhadas)} leitura(s) de tela durante a '
+                f'geração de {limpar} tokens (última medição: {estadio})')
         time.sleep(2)
         tap_label(device, 'Parar')
 
@@ -910,12 +914,13 @@ def main():
                 f'caracteres); {foto}')
 
     def notificacao():
-        # Mesma razão da etapa anterior: 128 tokens acabam antes de o teste ver
-        # "Parar"; o pedido acima (lista de 50 itens) e um thread dão a janela.
+        # Mesma configuração da etapa anterior (a que passa em rodada): com 128 tokens
+        # a geração acaba antes de o teste ver "Parar" (36265128113) e pedidos
+        # "melhorados" viraram respostas de 39 e 14 tokens (36276321752, 36321822068).
         device.launch()
-        device.new_chat(model, 0, threads=1, n_predict=1024)
+        device.new_chat(model, 0, threads=2, n_predict=1024)
         device.wait_for_load()
-        device.send('Write a long numbered list in English, at least fifty items, one item per line.')
+        device.send('Write a long numbered list in English, at least fifty items.')
         try:
             device.wait(lambda: on_screen(device, 'Parar'), 'geração em andamento', timeout=120)
         except AssertionError:

@@ -447,9 +447,64 @@ def _nos_recentes(xml):
             or faixa.casefold() in FAIXAS_RECENTES)
 
 
+def _segmentos_do_pao_de_navegacao(xml):
+    """O caminho aberto, do mais raso ao mais fundo (o pão de navegação do seletor).
+
+    Cada segmento do caminho é um TextView com `resource-id .../breadcrumb_text`
+    ("Downloads", depois o nome da pasta). É a única leitura que distingue "estou na
+    raiz Downloads" de "estou DENTRO de uma pasta de Downloads" — o cabeçalho
+    (`header_title`) diz "Files in Downloads" nos dois casos.
+    """
+    segmentos = []
+    for node in nodes(xml):
+        if node.get("package") not in PICKERS:
+            continue
+        if not node.get("resource-id", "").endswith("/breadcrumb_text"):
+            continue
+        texto = (node.get("text") or "").strip()
+        if texto:
+            segmentos.append(texto)
+    return segmentos
+
+
 def _na_pasta_de_downloads(xml):
+    """O diretório ABERTO é a raiz Downloads?
+
+    O seletor LEMBRA a última pasta usada pelo aplicativo: depois das fases de
+    anexo, o diretório lembrado é a pasta isolada `000-read-*`, e a rodada
+    36321822068 tentou marcar o modelo DENTRO dela (cabeçalho "Files in Downloads",
+    pão de navegação "Downloads › 000-read-999967"): três etapas caíram — `emulator`,
+    `anexo_texto` e `visao`. O cabeçalho não serve como resposta; o caminho serve.
+    """
+    segmentos = _segmentos_do_pao_de_navegacao(xml)
+    if segmentos:
+        return segmentos[-1].casefold() in RAIZES_DE_DOWNLOADS
     barra, faixa = cabecalho_do_seletor(xml)
-    return "download" in f"{barra} {faixa}".casefold()
+    return ("download" in f"{barra} {faixa}".casefold()
+            and barra.casefold() in RAIZES_DE_DOWNLOADS)
+
+
+def _voltar_para_a_raiz_de_downloads(d, xml):
+    """Sai de uma subpasta tocando no segmento "Downloads" do caminho.
+
+    Uma subpasta de Downloads mantém o cabeçalho "Files in Downloads"; o caminho de
+    volta é o segmento "Downloads" do pão de navegação, que fica ACIMA das linhas.
+    Devolve True quando tocou em algo.
+    """
+    for node in nodes(xml):
+        if node.get("package") not in PICKERS:
+            continue
+        if not node.get("resource-id", "").endswith("/breadcrumb_text"):
+            continue
+        if (node.get("text") or "").strip().casefold() not in RAIZES_DE_DOWNLOADS:
+            continue
+        limite = re.fullmatch(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", node.get("bounds", ""))
+        if not limite:
+            continue
+        x1, y1, x2, y2 = map(int, limite.groups())
+        d.shell(f"input tap {(x1 + x2) // 2} {(y1 + y2) // 2}", check=False)
+        return True
+    return False
 
 
 def _gaveta_aberta(xml):
@@ -595,6 +650,11 @@ def abrir_pasta_de_downloads(d, timeout=60):
                 return faixa or barra
             tentativas.append("a pasta Downloads está aberta, mas a lista não parou")
             break
+        if _voltar_para_a_raiz_de_downloads(d, xml):
+            # Dentro de uma subpasta (o seletor lembra a última usada): o caminho de
+            # volta é o segmento Downloads do pão de navegação.
+            tentativas.append(f"voltei da subpasta {barra!r} pelo pão de navegação")
+            continue
         if _gaveta_confirmada(d):
             destino = _linha_da_gaveta(d.ui())
             if destino is None:
