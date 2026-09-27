@@ -285,11 +285,17 @@ números no recibo (`search_experiment` → `sequential_ms` / `race_ms` /
 `cache_hit_ms`), que é o que a nota da entrega publica. O padrão só muda com
 
 ```
-scripts/flip_search_defaults.py --race-gain <R> --round <RODADA> [--ubatch-gain <U>]
+scripts/flip_search_defaults.py --race-gain <R> --round <RODADA> \
+    [--ubatch-gain <U>] [--kv-gain <K>]
 ```
 
 que exige ganho medido ≥ 1,1x e deixa o número da rodada escrito no próprio código —
-um ajuste sem rodada não vale nada.
+um ajuste sem rodada não vale nada. O mesmo comando virá o sub-lote do
+pré-preenchimento (256 no lugar de 128, medida da mesma rodada) e o cache K/V em Q8_0
+(medido contra o F16; `debug.gguf.kv_type 1` volta ao F16 para comparar de novo).
+`tests/test_flip_defaults.py` roda o script de verdade sobre cópias dos arquivos e exige
+que ganho abaixo do mínimo não escreva NENHUM byte, que o ensaio (`--dry-run`) não
+escreva nada e que a virada deixe o ganho e a rodada no código.
 
 ### 4.5 Um envio é um envio: o defeito do harness que dobrava cada medida
 

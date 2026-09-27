@@ -30,6 +30,8 @@ def main():
                         help='ganho medido da corrida (sequencial ÷ corrida), com vírgula ou ponto')
     parser.add_argument('--ubatch-gain', default=None,
                         help='ganho medido do sub-lote 256 sobre 128 (opcional)')
+    parser.add_argument('--kv-gain', default=None,
+                        help='ganho medido do cache K/V em Q8_0 sobre F16 (opcional)')
     parser.add_argument('--round', required=True, help='rodada verde que mediu o ganho')
     parser.add_argument('--dry-run', action='store_true')
     args = parser.parse_args()
@@ -56,6 +58,29 @@ def main():
                           f'(rodada {args.round}, ganho medido {sub:.2f}x)')
             else:
                 print('o sub-lote já não está em 128; nada a fazer')
+
+    if args.kv_gain is not None:
+        cache = float(args.kv_gain.replace(',', '.'))
+        if cache < GANHO_MINIMO:
+            print(f'ganho medido do cache K/V {cache:.2f}x é menor que {GANHO_MINIMO}x: '
+                  'o padrão do cache NÃO foi mudado')
+        else:
+            nativo = NATIVE.read_text()
+            antigo_kv = 'const long kv_tuned=debug_int("debug.gguf.kv_type",0);'
+            novo_kv = ('// Q8_0 por padrão: medido no MESMO aparelho e na mesma rodada '
+                       f'({args.round}) {cache:.2f}x mais rápido na decodificação que o F16,\n'
+                       '        // e é a banda de memória que limita onde não há GPU real. '
+                       '`debug.gguf.kv_type 1` volta ao F16.\n'
+                       '        const long kv_tuned=debug_int("debug.gguf.kv_type",8);')
+            if antigo_kv in nativo:
+                if args.dry_run:
+                    print(f'(ensaio) o cache K/V viraria Q8_0 ({cache:.2f}x medido)')
+                else:
+                    NATIVE.write_text(nativo.replace(antigo_kv, novo_kv))
+                    print(f'mobile.cpp: cache K/V Q8_0 por padrão '
+                          f'(rodada {args.round}, ganho medido {cache:.2f}x)')
+            else:
+                print('o cache K/V já não está em F16 por padrão; nada a fazer')
 
     texto = TOOL.read_text()
     if 'intProperty(RACE_PROPERTY,1)' in texto:
