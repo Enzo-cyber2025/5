@@ -26,7 +26,7 @@ GANHO_MINIMO = 1.1  # abaixo disto não é ganho: é ruído de rede
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--race-gain', required=True,
+    parser.add_argument('--race-gain', default=None,
                         help='ganho medido da corrida (sequencial ÷ corrida), com vírgula ou ponto')
     parser.add_argument('--ubatch-gain', default=None,
                         help='ganho medido do sub-lote 256 sobre 128 (opcional)')
@@ -35,10 +35,19 @@ def main():
     parser.add_argument('--round', required=True, help='rodada verde que mediu o ganho')
     parser.add_argument('--dry-run', action='store_true')
     args = parser.parse_args()
-    ganho = float(args.race_gain.replace(',', '.'))
-    if ganho < GANHO_MINIMO:
-        print(f'ganho medido {ganho:.2f}x é menor que {GANHO_MINIMO}x: NADA foi mudado')
-        return 1
+    if args.race_gain is None and args.ubatch_gain is None and args.kv_gain is None:
+        parser.error('informe pelo menos um ganho medido (--race-gain/--ubatch-gain/--kv-gain)')
+    # Cada alavanca é independente: o ganho medido de uma decide SÓ aquela. Sem
+    # medida acima do mínimo, a alavanca fica como está.
+    mudou = False
+    if args.race_gain is not None:
+        ganho = float(args.race_gain.replace(',', '.'))
+        if ganho < GANHO_MINIMO:
+            print(f'ganho medido da corrida {ganho:.2f}x é menor que {GANHO_MINIMO}x: '
+                  'a corrida e o cache NÃO mudam')
+            ganho = None
+    else:
+        ganho = None
     if args.ubatch_gain is not None:
         sub = float(args.ubatch_gain.replace(',', '.'))
         if sub < GANHO_MINIMO:
@@ -57,6 +66,7 @@ def main():
                     print(f'(ensaio) o sub-lote viraria 256 ({sub:.2f}x medido)')
                 else:
                     NATIVE.write_text(nativo.replace(antigo, novo))
+                    mudou = True
                     print(f'mobile.cpp: sub-lote do pré-preenchimento 256 por padrão '
                           f'(rodada {args.round}, ganho medido {sub:.2f}x)')
             else:
@@ -80,15 +90,19 @@ def main():
                     print(f'(ensaio) o cache K/V viraria Q8_0 ({cache:.2f}x medido)')
                 else:
                     NATIVE.write_text(nativo.replace(antigo_kv, novo_kv))
+                    mudou = True
                     print(f'mobile.cpp: cache K/V Q8_0 por padrão '
                           f'(rodada {args.round}, ganho medido {cache:.2f}x)')
             else:
                 print('o cache K/V já não está em F16 por padrão; nada a fazer')
 
+    if ganho is None:
+        print('NADA foi mudado' if not mudou else 'o que tinha ganho medido foi aplicado')
+        return 0 if mudou else 1
     texto = TOOL.read_text()
     if 'intProperty(RACE_PROPERTY,1)' in texto:
         print('os padrões de busca já estavam ligados; nada a fazer')
-        return 0
+        return 0 if mudou else 1
     antigo_race = 'private static boolean raceEnabled(){return intProperty(RACE_PROPERTY,0)==1;}'
     novo_race = (
         '// Corrida LIGADA por padrão: medido na mesma rodada e no mesmo aparelho\n'
@@ -112,6 +126,7 @@ def main():
         print('(ensaio) o arquivo seria alterado; nada foi escrito')
         return 0
     TOOL.write_text(texto)
+    mudou = True
     print(f'SearchTool.java: corrida e cache ligados por padrão (rodada {args.round}, '
           f'ganho medido {ganho:.2f}x)')
     return 0

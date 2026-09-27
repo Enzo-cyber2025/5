@@ -47,6 +47,7 @@ def test_ganho_abaixo_do_minimo_nao_escreve_um_byte(tmp_path):
     resultado = roda(work, '--race-gain', '1.05', '--ubatch-gain', '1.04', '--kv-gain', '1.02')
     assert resultado.returncode == 1, resultado.stdout
     assert 'NADA foi mudado' in resultado.stdout
+    assert 'a corrida e o cache NÃO mudam' in resultado.stdout
     assert tool(work) == antes_tool and nativo(work) == antes_nativo
 
 
@@ -63,6 +64,17 @@ def test_ganho_medido_vira_padrao_com_a_rodada_no_codigo(tmp_path):
     assert ': (context>=1024?256:64);' in codigo, 'sub-lote 256 com o ganho medido'
     assert f'rodada {RODADA}' in codigo
     assert 'debug_int("debug.gguf.kv_type",8)' in codigo, 'cache K/V em Q8_0 com o ganho medido'
+
+
+def test_uma_alavanca_com_ganho_muda_sozinha_sem_as_outras(tmp_path):
+    """K/V medido e corrida não: o cache K/V vira Q8_0 e a busca fica como está."""
+    work = copia(tmp_path)
+    antes_tool = tool(work)
+    resultado = roda(work, '--kv-gain', '1.30')
+    assert resultado.returncode == 0, resultado.stdout
+    assert 'debug_int("debug.gguf.kv_type",8)' in nativo(work)
+    assert tool(work) == antes_tool, 'a corrida não foi medida: não pode ser ligada'
+    assert ': (context>=1024?128:64);' in nativo(work), 'o sub-lote não foi medido: não muda'
 
 
 def test_ensaio_mostra_o_que_faria_sem_escrever(tmp_path):
