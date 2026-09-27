@@ -25,7 +25,7 @@ pode ser verificada, no nativo:
 - GPU pedida mas o modelo não coube nela: a execução vai para a CPU **dizendo o
   motivo** (`CPU (a GPU não comportou o modelo inteiro; offload parcial recusado
   por política: …)`), em vez de cair para a CPU em silêncio;
-- GPU usada: o aviso mostra `GPU (Vulkan, camadas N/N)` e o nativo declara
+- GPU usada: o aviso mostra `GPU (Vulkan, NOME DO DISPOSITIVO, camadas N/N)` e o nativo declara
   `GGUF_BACKEND_EXECUTION backend=vulkan layers=N total=M`; nos caminhos de CPU a
   declaração diz `backend=cpu` com o motivo (`software_vulkan_refused`,
   `gpu_load_failed`, `requested_gpu_not_used`, `cpu_choice`). É essa declaração —
@@ -367,6 +367,75 @@ geração acaba sem o botão ter sido visto, a etapa **repete uma vez** o mesmo 
 conversa nova. A prova não muda: o toque no botão e a resposta parcial persistida; as
 duas tentativas ficam na evidência (`functions-parar-tentativas.txt` e
 `functions-notificacao-tentativas.txt`).
+
+### 4.8 Xclipse 530 (Galaxy A55 / Exynos 1480): o que o app reconhece e o que NÃO foi medido aqui
+
+O aparelho do relato é o Galaxy A55 5G: Exynos 1480 (4× Cortex-A78 2,75 GHz +
+4× Cortex-A55 2,0 GHz), **GPU Xclipse 530** (AMD RDNA, 1300 MHz) e 8 GB de RAM.
+Não há Xclipse em nenhum emulador do CI — o `Vulkan0` daqui é o rasterizador por
+software `llvmpipe`, que o aplicativo **recusa** (é mensuravelmente mais lento que
+a CPU). Portanto: nada nesta página afirma ganho medido *na Xclipse*. O que existe,
+e é verificável no aparelho, é o seguinte.
+
+**1) A GPU é reconhecida pelo nome e o nome aparece na tela.** O aviso do backend
+passou a dizer qual dispositivo executa, e não apenas "Vulkan":
+
+```
+GPU (Vulkan, Xclipse 530, camadas 31/31, coopmat KHR)   # GPU real, driver com matrizes cooperativas
+GPU (Vulkan, Adreno 740, camadas 31/31, coopmat nenhum) # GPU real sem esse caminho
+CPU (Vulkan por software ignorado: llvmpipe (LLVM 21.0.0, 256 bits))   # emulador do CI
+```
+
+O nome vem do próprio driver (`VkPhysicalDeviceProperties.deviceName`), via
+`ggml_backend_dev_description`; o aviso usa a parte antes do primeiro parêntese e
+no máximo 48 caracteres. No aparelho, é assim que o usuário confirma que a Xclipse
+está executando — em vez de acreditar numa promessa.
+
+**2) Com GPU real, o sub-lote do pré-preenchimento é o padrão do llama.cpp (512).**
+`prefill_ubatch` decide quantos tokens o backend recebe por submissão — é o
+parâmetro que mexe no tempo até o primeiro texto. Sem GPU real (emulador com
+rasterizador por software, ou CPU escolhida em Ajustes) vale o valor medido neste
+CI; com GPU real vale `min(lote, 512)`. A escolha, com a classe do dispositivo,
+vai para o log:
+
+```
+GGUF_DEVICE_TUNING gpu_request=1 real_gpu=1 ubatch_class="gpu_real"
+GGUF_BACKEND_EXECUTION backend=vulkan layers=31 total=31 device="Xclipse 530" ubatch=512
+```
+
+Como conferir no aparelho: `adb logcat -s GGUFChatNative | grep -E "GGUF_DEVICE_TUNING|GGUF_BACKEND_EXECUTION|GGUF_CONTEXT_TUNING"`.
+
+**3) O que o driver oferece é lido do próprio backend e declarado.** Quando o
+backend do llama.cpp enumera os dispositivos, ele imprime uma linha com o que o
+driver expõe (`fp16`, `int dot`, tamanho de subgrupo, memória compartilhada e
+`matrix cores`). O aplicativo lê essa linha (`apk-fix/native/device_caps.h`,
+testado no host com g++) e acrescenta ao aviso o que interessa para o
+pré-preenchimento: `coopmat KHR` quando o driver oferece matrizes cooperativas,
+`coopmat nenhum` quando não oferece. No Galaxy A55 quem responde é o driver da
+Xclipse 530; no emulador do CI, o `llvmpipe` responde `nenhum`. O valor bruto vai
+para o log:
+
+```
+GGUF_DEVICE_CAPS device="Xclipse 530 (Samsung, Vulkan 1.3)" uma=1 fp16=1 int_dot=1 warp=64 shared=65536 matrix_cores=KHR
+```
+
+**4) O que o llama.cpp já decide sozinho, e ninguém precisa "otimizar" à mão.**
+O binário compila o backend Vulkan do llama.cpp (`GGML_VULKAN=ON`) e o backend
+escolhe em tempo de execução o que o driver expõe: matrizes cooperativas
+(coopmat/coopmat2) quando existem, `shaderFloat16`, atenção flash quando o cache
+K/V é quantizado, e o tamanho de subgrupo do dispositivo. Fixar isso por palpite
+seria pior do que deixar a detecção do backend decidir: no emulador de software
+esses recursos não existem, então **nenhum ajuste dessa família pode ser medido
+aqui** — e por isso nenhum foi imposto.
+
+**5) KV quantizado (Q8_0) e cache de busca continuam condicionados a ganho medido.**
+As chaves `debug.gguf.kv_type`, `debug.gguf.search_race`, `debug.gguf.search_cache_ms`
+e `debug.gguf.prefill_ubatch` existem para MEDIR; virar padrão exige ≥1,1× na mesma
+rodada (`scripts/flip_search_defaults.py`). Sem recibo, o padrão não muda.
+
+**6) NPU da Exynos 1480:** presente no SoC, sem backend compatível neste binário —
+o aplicativo declara isso (§3) em vez de prometer aceleração. É a mesma razão pela
+qual a Xclipse, e não a NPU, faz o trabalho pesado aqui.
 
 ## 5. O que roda em cada gate
 

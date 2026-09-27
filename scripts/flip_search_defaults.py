@@ -46,8 +46,11 @@ def main():
                   'o padrão do pré-preenchimento NÃO foi mudado')
         else:
             nativo = NATIVE.read_text()
-            antigo = 'uint32_t prefill_ubatch=context>=1024?128:64;'
-            novo = ('uint32_t prefill_ubatch=context>=1024?256:64;'
+            # Sem GPU real (o caso medido no CI) o sub-lote é o que decide o
+            # pré-preenchimento; com GPU real vale o padrão do llama.cpp (512),
+            # escolhido por classe de dispositivo — por isso o alvo é o ramo final.
+            antigo = ': (context>=1024?128:64);'
+            novo = (': (context>=1024?256:64);'
                     f'  // 256 medido {sub:.2f}x melhor que 128 (rodada {args.round})')
             if antigo in nativo:
                 if args.dry_run:

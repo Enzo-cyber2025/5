@@ -78,9 +78,12 @@ def test_default_native_body_unchanged_by_experiment():
     # Recomputado ao tornar o sub-lote do pré-preenchimento ajustável por
     # propriedade de depuração (padrão inalterado: 128 com contexto >= 1024).
     # e ao poder medir/registrar o tipo de cache K/V (padrão inalterado: F16).
+    # Atualizado ao declarar o DISPOSITIVO Vulkan (nome do driver) e o que ele
+    # oferece (`matrix cores`), e ao escolher o sub-lote do pré-preenchimento por
+    # classe de dispositivo: GPU real usa 512, sem GPU real vale o valor medido.
     # e ao logar GGUF_UNIT_RELEASED em Native.destroy (prova do "descarregar modelo":
     # o toast expirava antes da leitura e não dizia se havia motor para descarregar).
-    before_sha='c6a7cbb23eba64b2f0b42e629c25efcebe669c1d9a8fcae4a3d814ad131ebeac'
+    before_sha='dd7dcbed7305dd6c737532cd2eaeab5e0cb83f10167b01c28a8efee3103e165d'
     current=(ROOT/'apk-fix/native/mobile.cpp').read_text()
     # Any top-level single #else guard of an opt-in experiment macro must keep
     # its #else branch byte-identical to the shipped body, not only media prefix.

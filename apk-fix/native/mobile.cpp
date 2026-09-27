@@ -15,6 +15,7 @@
 #include "strict_vulkan.h"
 #include "model_offload.h"
 #include "npu_policy.h"
+#include "device_caps.h"
 #if defined(GGUF_EXPERIMENT_EXPANDED_WEIGHTS) || defined(GGUF_EXPERIMENT_REPACKED_WEIGHTS)
 #include "expanded_weights.h"
 #endif
@@ -139,6 +140,11 @@ static std::string g_backend_notice;
 // GPU e, se o modelo não couber nela por inteiro, executar na CPU — dizendo isso
 // na tela, em vez de cair para a CPU em silêncio.
 static std::string g_gpu_load_error;
+// O que o driver Vulkan ofereceu, capturado da linha que o backend imprime.
+// Sem isso, a única resposta possível seria "Vulkan" — e no Galaxy A55 o
+// usuário quer saber se a Xclipse 530 está lá e se as matrizes cooperativas
+// (o caminho rápido de pré-preenchimento em GPU AMD) estão disponíveis.
+static DeviceCaps g_device_caps;
 
 static bool debug_flag(const char *name) {
     char value[PROP_VALUE_MAX]={0};
@@ -172,6 +178,20 @@ static bool software_vulkan_device(ggml_backend_dev_t device,std::string *descri
 }
 
 static bool allow_software_vulkan() { return debug_flag("debug.gguf.allow_software_vulkan"); }
+
+// Nome do dispositivo que EXECUTA, como o driver o reporta — no Galaxy A55
+// (Exynos 1480) é a "Xclipse 530". O aviso da tela passa a dizer QUAL GPU está
+// sendo usada, em vez de só "Vulkan": em aparelho de GPU real, o usuário vê o
+// nome; no emulador de CI, vê o rasterizador por software. O texto do driver
+// costuma trazer detalhes entre parênteses ("llvmpipe (LLVM 21.0.0, 256 bits)"):
+// o aviso fica com a primeira parte e no máximo 48 caracteres.
+static std::string device_short_name(const char *description) {
+    std::string value = description ? description : "";
+    const size_t detail = value.find(" (");
+    if (detail != std::string::npos) value = value.substr(0, detail);
+    if (value.size() > 48) value = value.substr(0, 45) + "...";
+    return value.empty() ? std::string("dispositivo sem nome") : value;
+}
 
 // NPU do aparelho: presente ou não, e se existe backend compatível NESTE binário.
 // A classificação é um cabeçalho puro, compilado e testado no host; o Android
@@ -262,6 +282,13 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
                 if(offload && std::sscanf(offload,"offloaded %d/%d layers to GPU",&n,&total)==2) {
                     loaded_gpu_layers=n;reported_total_layers=total;
                 }
+                const DeviceCaps caps=device_caps_parse(text);
+                if(!caps.matrix_cores.empty()) {
+                    g_device_caps=caps;
+                    LOG("GGUF_DEVICE_CAPS device=\"%s\" uma=%s fp16=%s int_dot=%s warp=%s shared=%s matrix_cores=%s",
+                        caps.device.c_str(),caps.uma.c_str(),caps.fp16.c_str(),caps.int_dot.c_str(),
+                        caps.warp_size.c_str(),caps.shared_memory.c_str(),caps.matrix_cores.c_str());
+                }
                 __android_log_write(level==GGML_LOG_LEVEL_ERROR?ANDROID_LOG_ERROR:ANDROID_LOG_INFO,"GGUFNativeStderr",text);
             },nullptr);
             llama_backend_init();
@@ -332,10 +359,17 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
         // encurta o caminho até o primeiro token. Sem efeito por token, portanto
         // sem mudar a taxa de decodificação nem o resultado gerado.
         const uint32_t prefill_batch=context>=2048?512:(context>=1024?256:128);
-        // Sub-lote do pré-preenchimento ajustável: é o parâmetro que decide quantos
-        // tokens o backend processa por submissão. O valor usado vai para o log,
-        // porque um ajuste medido sem registro não vale nada.
-        uint32_t prefill_ubatch=context>=1024?128:64;
+        // Sub-lote do pré-preenchimento: é o parâmetro que decide quantos tokens o
+        // backend processa por submissão. Sem GPU real (emulador com rasterizador
+        // por software, ou CPU escolhida), vale o valor medido neste CI; com GPU
+        // real executando — o caso do Galaxy A55 com a Xclipse 530 — vale o padrão
+        // do próprio llama.cpp (512), limitado pelo lote. Nada disso é promessa:
+        // o valor em uso vai para o log e para o aviso da tela.
+        const bool real_gpu_request = layers!=0 && e->strict_device!=nullptr
+            && !software_vulkan_device(e->strict_device,nullptr);
+        uint32_t prefill_ubatch = real_gpu_request
+            ? std::min<uint32_t>(prefill_batch,512u)
+            : (context>=1024?128:64);
         // Ajustável por propriedade porque é ela que o aparelho permite mudar
         // (variável de ambiente não chega ao processo do aplicativo).
         long tuned=debug_int("debug.gguf.prefill_ubatch",0);
@@ -364,6 +398,8 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
         LOG("GGUF_CONTEXT_TUNING batch=%u ubatch=%u threads=%d prefix_cache_supported=%d prefill_policy=larger_lots kv=%s fa_requested=%s",
             llama_n_batch(e->ctx),llama_n_ubatch(e->ctx),cp.n_threads,(int)e->cache_supported,
             ggml_type_name(cp.type_k),llama_flash_attn_type_name(cp.flash_attn_type));
+        LOG("GGUF_DEVICE_TUNING gpu_request=%d real_gpu=%d ubatch_class=\"%s\"",
+            (int)(layers!=0),(int)real_gpu_request,real_gpu_request?"gpu_real":(layers!=0?"sem_gpu_real":"cpu_escolhida"));
         if(!projector_path.empty()) {
             auto vp=mtmd_context_params_default(); vp.use_gpu=layers!=0; vp.n_threads=cp.n_threads; vp.print_timings=false; vp.warmup=false; vp.device=layers!=0?vulkan_devices[0]:nullptr;
             e->projector=mtmd_init_from_file(projector_path.c_str(),e->model,vp);
@@ -378,9 +414,13 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
         const bool gpu_executes=(e->layers>0 && e->strict_device!=nullptr);
         if(gpu_executes) {
             g_gpu_load_error.clear();
-            LOG("GGUF_BACKEND_EXECUTION backend=vulkan layers=%d total=%d",e->layers,reported_total_layers);
+            const std::string device_name=device_short_name(ggml_backend_dev_description(e->strict_device));
+            LOG("GGUF_BACKEND_EXECUTION backend=vulkan layers=%d total=%d device=\"%s\" ubatch=%u",
+                e->layers,reported_total_layers,device_name.c_str(),llama_n_ubatch(e->ctx));
             if(g_backend_notice.empty()) {
-                g_backend_notice="GPU (Vulkan, camadas "+std::to_string(e->layers)+"/"+std::to_string(reported_total_layers)+")";
+                const std::string extras=device_caps_summary(g_device_caps);
+                g_backend_notice="GPU (Vulkan, "+device_name+", camadas "+std::to_string(e->layers)+"/"+std::to_string(reported_total_layers)
+                    +(extras.empty()?"":", "+extras)+")";
                 LOG("GGUF_BACKEND_NOTICE \"%s\"",g_backend_notice.c_str());
             }
         } else if(requested_layers!=0 && !g_gpu_load_error.empty()) {

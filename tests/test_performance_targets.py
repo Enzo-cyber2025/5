@@ -42,13 +42,40 @@ def test_software_vulkan_is_refused_and_the_choice_is_visible():
     assert stream.count('BackendNotice.show(activity)') == 2, 'aviso no envio e no primeiro texto'
 
 
+def test_o_aviso_da_gpu_diz_qual_dispositivo_executa_no_aparelho():
+    """No Galaxy A55 o aviso precisa dizer "Xclipse 530", não apenas "Vulkan".
+
+    O nome vem do driver (`VkPhysicalDeviceProperties.deviceName`, exposto por
+    `ggml_backend_dev_description`); o aviso corta o detalhe entre parênteses e
+    limita o tamanho. É o que permite ao usuário CONFERIR que a GPU do aparelho
+    está executando — o emulador do CI não tem Xclipse, então nenhum número daqui
+    vale como medida dela.
+    """
+    cpp = NATIVE.read_text()
+    assert 'static std::string device_short_name(const char *description)' in cpp
+    assert 'value.find(" (")' in cpp and 'if (value.size() > 48)' in cpp
+    assert 'device_short_name(ggml_backend_dev_description(e->strict_device))' in cpp
+    assert '"+device_name+", camadas "+std::to_string(e->layers)' in cpp
+    assert 'GGUF_BACKEND_EXECUTION backend=vulkan layers=%d total=%d device=' in cpp
+    assert 'GGUF_DEVICE_TUNING gpu_request=%d real_gpu=%d ubatch_class=' in cpp
+    doc = (ROOT / 'docs/GPU_WARMUP_NPU.md').read_text()
+    assert 'Xclipse 530' in doc, 'o aparelho do relato precisa estar nomeado no documento'
+    assert 'nenhum ajuste dessa família pode ser medido' in doc.lower() or \
+        'nada nesta página afirma ganho medido' in doc
+
+
 def test_prefill_lots_scale_with_context_and_decode_stays_one_token():
     cpp = NATIVE.read_text()
     assert 'const uint32_t prefill_batch=context>=2048?512:(context>=1024?256:128);' in cpp
     # O padrão não mudou; ele passou a ser ajustável por propriedade de depuração
     # (medida que decide, nunca palpite) e o valor usado vai para o log.
-    assert 'uint32_t prefill_ubatch=context>=1024?128:64;' in cpp
+    # O sub-lote continua ajustável por propriedade (a medida decide), agora com
+    # classes distintas: GPU real usa o padrão do llama.cpp; sem GPU real vale o
+    # valor medido neste CI.
     assert 'debug_int("debug.gguf.prefill_ubatch",0)' in cpp
+    assert 'const bool real_gpu_request = layers!=0 && e->strict_device!=nullptr' in cpp
+    assert 'std::min<uint32_t>(prefill_batch,512u)' in cpp
+    assert ': (context>=1024?128:64);' in cpp
     assert 'GGUF_CONTEXT_TUNING batch=%u ubatch=%u' in cpp
     assert 'cp.n_batch=prefill_batch; cp.n_ubatch=prefill_ubatch;' in cpp
     assert 'prefill_policy=larger_lots' in cpp

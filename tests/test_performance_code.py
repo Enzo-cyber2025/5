@@ -67,7 +67,8 @@ def test_build_variants_have_safe_baseline_dispatch_and_no_quality_changes():
     assert 'libggufcpu.so' in s and "'-UHAVE_*'" in s
     assert 'cp.n_batch=prefill_batch; cp.n_ubatch=prefill_ubatch;' in cpp
     assert 'prefill_batch=context>=2048?512:(context>=1024?256:128)' in cpp
-    assert 'prefill_ubatch=context>=1024?128:64' in cpp
+    assert 'std::min<uint32_t>(prefill_batch,512u)' in cpp
+    assert ': (context>=1024?128:64);' in cpp
     # Uma linha de saída também na CPU: o contexto não aloca logits que ninguém lê.
     assert 'if(!llama_model_has_encoder(e->model) && !llama_model_is_diffusion(e->model))cp.n_outputs_max=1;' in cpp
     assert 'software_vulkan_device(vulkan_devices[0],&description)' in cpp

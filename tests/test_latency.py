@@ -40,7 +40,9 @@ def test_real_memory_operations_and_invalidation_are_guarded():
     # com teto declarado, e nenhuma nova tentativa.
     assert 'cp.n_batch=128; cp.n_ubatch=32;' not in s
     assert 'prefill_batch=context>=2048?512:(context>=1024?256:128)' in s
-    assert 'prefill_ubatch=context>=1024?128:64' in s
+    # GPU real usa o padrão do llama.cpp; sem GPU real vale o valor medido aqui.
+    assert 'const bool real_gpu_request = layers!=0 && e->strict_device!=nullptr' in s
+    assert ': (context>=1024?128:64);' in s
     assert 'GGUF_PREFILL_ALLOCATION_RETRY' not in s
 
 def test_incremental_stream_has_no_full_copy_or_live_truncation(tmp_path):
