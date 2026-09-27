@@ -209,6 +209,13 @@ def search_timing(log):
         'provider': provider,
         'announced_budget_ms': int(announced[-1]) if announced else None,
         'attempts': [name for name, *_ in attempts],
+        # Todas as tentativas começaram no INÍCIO (remaining ≈ orçamento) = partida
+        # paralela (corrida de provedores). Uma tentativa SERIAL depois de uma falha
+        # aparece com `remaining_ms` já consumido — é essa que a checagem offline
+        # reprova, e não a corrida (rodada 36338598381: os dois provedores partiram
+        # juntos, com remaining_ms=11999, e foram reprovados como "cadeia").
+        'attempts_parallel': all(remaining >= budget - 5
+                                 for _, budget, remaining, _, _ in attempts),
         # A soma das duas fatias de uma tentativa nunca passa do restante do
         # orçamento — é a garantia central do conserto, no relógio do aparelho.
         'attempt_slices_within_budget': all(

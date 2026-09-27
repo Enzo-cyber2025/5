@@ -448,6 +448,22 @@ def test_kv_experiment_compares_the_two_caches_and_stays_out_of_the_throughput_r
     json.dumps(report)
 
 
+def test_kv_experiment_accepts_the_engine_log_casing_and_the_round_reports_it():
+    """O log do motor grava `kv=q8_0` (ggml_type_name), não 'Q8_0'.
+
+    Rodada 36334440430: o cache quantizado FOI aplicado e logado (`kv_cache: q8_0`)
+    e o relatório declarava NAO_APLICADO por comparar com 'Q8_0' literal — a alavanca
+    do cache K/V nunca poderia ser aprovada. A conferência passou a ser sem caixa.
+    """
+    perf = {'vulkan': perf_entry(1.0, 20.0, 18.0),
+            'decode-kv-f16': kv_entry(9.0, 'f16'),
+            'decode-kv-q8': kv_entry(11.7, 'q8_0')}
+    experiment = harness.performance_report(perf)['kv_experiment']
+    assert experiment['status'] == 'MEDIDO', experiment
+    assert experiment['quantized_cache_applied'] == 'q8_0'
+    assert experiment['gain_x'] == pytest.approx(1.3, abs=0.01)
+
+
 def test_kv_experiment_refuses_to_claim_a_gain_the_log_does_not_show():
     perf = {'vulkan': perf_entry(1.0, 20.0, 18.0),
             'decode-kv-f16': kv_entry(9.0, 'F16'),

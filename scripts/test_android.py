@@ -1085,7 +1085,11 @@ def kv_experiment(perf):
                  'quantized_cache_applied': aplicado,
                  'detail': (f'F16 {base_rate} T/s contra Q8_0 {q8_rate} T/s '
                             f'({ganho}x); nada muda de padrão sem ganho medido')}
-    if aplicado != 'Q8_0':
+    # O motor grava o nome do tipo como o llama.cpp o conhece (`kv=q8_0`, minúsculo);
+    # exigir 'Q8_0' literal reprovava um cache quantizado que FOI aplicado e logado
+    # (rodada 36334440430: `quantized_cache_applied: "q8_0"` com status NAO_APLICADO).
+    # A conferência é sem caixa, e o valor do log continua indo inteiro ao relatório.
+    if (aplicado or '').strip().lower() != 'q8_0':
         resultado['status'] = 'NAO_APLICADO'
         resultado['detail'] = ('a configuração de cache quantizado não apareceu no log; '
                                'a rodada não declara ganho')
@@ -1434,7 +1438,13 @@ def main():
                 if offline["used_ms"] > offline["budget_ms"] + 1500:
                     raise AssertionError(
                         f"busca sem rede passou do teto: {offline['used_ms']} ms > {offline['budget_ms']} ms")
-                if len(offline["attempts"]) != 1:
+                # Com a corrida ligada por padrão (ganho medido de 1,55x na rodada
+                # 36334440430) os provedores partem JUNTOS: dois nomes na lista é
+                # paralelismo, não uma cadeia que continuou depois da falha. O que não
+                # pode existir é tentativa SERIAL iniciada depois da primeira falha —
+                # é essa que gastava minutos. `attempts_parallel` diz isso pelo relógio
+                # do próprio aplicativo (remaining_ms de cada tentativa).
+                if not offline["attempts_parallel"]:
                     raise AssertionError(
                         "falha de rede não interrompeu a cadeia: " + str(offline["attempts"]))
                 if offline["sources"]:

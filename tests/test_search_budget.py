@@ -406,3 +406,41 @@ def test_budget_class_stays_pure_java():
     assert 'import android' not in text
     assert 'java.net.' in text
     assert 'public static final int DEFAULT_MS = 12000;' in text
+
+def test_tentativas_paralelas_da_corrida_nao_sao_cadeia():
+    """A corrida de provedores parte junto; a cadeia serial é que gasta minutos.
+
+    Rodada 36338598381: com a corrida ligada por padrão (ganho medido 1,55x), a
+    busca offline tentou DuckDuckGo e Wikipédia em PARALELO — as duas com
+    `remaining_ms=11999` — e a checagem antiga (exatamente UMA tentativa) reprovou o
+    aplicativo por "cadeia". O relógio do próprio aplicativo distingue os dois casos.
+    """
+    from android_checks import search_timing
+    anuncio = 'GGUF_SEARCH_ANNOUNCED query_pending=1 budget_ms=12000\n'
+    paralela = (anuncio
+                + 'GGUF_SEARCH_ATTEMPT provider=DuckDuckGo budget_ms=12000 remaining_ms=11999 '
+                  'connect_ms=3000 read_ms=4000\n'
+                + 'GGUF_SEARCH_ATTEMPT provider=Wikipédia budget_ms=12000 remaining_ms=11999 '
+                  'connect_ms=3000 read_ms=4000\n'
+                + 'GGUF_SEARCH_FAILED provider=nenhum ms=81 error=DuckDuckGo: sem rede/DNS\n'
+                + 'GGUF_SEARCH_BUDGET total_ms=12000 used_ms=81 exhausted=0 provider=nenhum\n')
+    lida = search_timing(paralela)
+    assert lida['attempts'] == ['DuckDuckGo', 'Wikipédia'], lida
+    assert lida['attempts_parallel'] is True, lida
+    # Sozinha, uma tentativa também é "início no começo do orçamento".
+    sozinha = search_timing(anuncio
+                            + 'GGUF_SEARCH_ATTEMPT provider=DuckDuckGo budget_ms=12000 '
+                              'remaining_ms=11999 connect_ms=3000 read_ms=4000\n'
+                            + 'GGUF_SEARCH_FAILED provider=nenhum ms=154 error=sem rede/DNS\n'
+                            + 'GGUF_SEARCH_BUDGET total_ms=12000 used_ms=154 exhausted=0 '
+                              'provider=nenhum\n')
+    assert sozinha['attempts_parallel'] is True, sozinha
+    # A cadeia SERIAL (segunda tentativa com o orçamento já consumido) continua
+    # reprovada: é ela que somava as esperas.
+    serial = (anuncio
+              + 'GGUF_SEARCH_ATTEMPT provider=DuckDuckGo budget_ms=12000 remaining_ms=11999 '
+                'connect_ms=3000 read_ms=4000\n'
+              + 'GGUF_SEARCH_ATTEMPT provider=Wikipédia budget_ms=12000 remaining_ms=8000 '
+                'connect_ms=3000 read_ms=4000\n'
+              + 'GGUF_SEARCH_BUDGET total_ms=12000 used_ms=5100 exhausted=0 provider=nenhum\n')
+    assert search_timing(serial)['attempts_parallel'] is False, search_timing(serial)

@@ -410,7 +410,7 @@ def last_stats(log):
     return tuple(map(int, matches[-1])) if matches else None
 
 
-def espera_parar(device, timeout=120):
+def espera_parar(device, timeout=120, tocar=False):
     """Espera o botão "Parar" enquanto a geração corre: (visto, leituras, estadio).
 
     As duas etapas que precisam PEGAR a geração em andamento (`parar_geracao` e
@@ -418,12 +418,21 @@ def espera_parar(device, timeout=120):
     resposta. Ler o motor ao fim da espera é o que distingue "a geração acabou antes
     da leitura" (o modelo encerrou sozinho) de "a tela nunca mostrou o botão" — em
     36321822068 a resposta foi de 14 tokens e o teste só soube dizer que não viu.
+
+    Com `tocar=True`, o toque sai do MESMO dump que viu o controle. A rodada
+    36338598381 perdeu a janela conferindo em um dump e tocando em outro, com 2 s de
+    espera no meio: o botão foi visto na primeira leitura e, na hora do toque, a
+    geração (246 tokens) já tinha terminado. Quem para a geração é o toque, então ele
+    acontece assim que o controle aparece, como o faria um usuário.
     """
     leituras = 0
     limite = time.monotonic() + timeout
     while time.monotonic() < limite:
         leituras += 1
-        if on_screen(device, 'Parar'):
+        ponto = position(device.ui(), text='Parar', package={PACKAGE}, contains=True)
+        if ponto:
+            if tocar:
+                device.shell(f'input tap {ponto[0]} {ponto[1]}')
             return True, leituras, last_stats(device.adb('logcat', '-d'))
     return False, leituras, last_stats(device.adb('logcat', '-d'))
 
@@ -675,7 +684,8 @@ def main():
             # 120 s: se o motor acabou de ser descarregado (ou é a primeira geração da
             # varredura), a carga do modelo entra nesta espera. Cronometrar 30 s aqui
             # media o emulador, não o aplicativo (rodada 36245048939).
-            visto, leituras, estadio = espera_parar(device)
+            # tocar=True: o toque em "Parar" sai do mesmo dump que vê o botão.
+            visto, leituras, estadio = espera_parar(device, tocar=True)
             tentativas.append(
                 f'tentativa {tentativa}: {leituras} leitura(s); motor '
                 + (f'com estatística de {estadio[0]} tokens no log' if estadio
@@ -687,8 +697,8 @@ def main():
         if not visto:
             raise AssertionError('o botão Parar não apareceu em nenhuma tentativa: '
                                  + '; '.join(tentativas))
-        time.sleep(2)
-        tap_label(device, 'Parar')
+        # O toque já foi dado no dump que viu o botão (espera_parar(tocar=True)):
+        # repetir aqui chegava tarde, depois de a geração ter acabado.
 
         def parcial():
             device.alive()

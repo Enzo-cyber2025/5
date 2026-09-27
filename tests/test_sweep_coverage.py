@@ -203,3 +203,30 @@ def test_vision_compares_against_the_text_the_app_persists_with_the_attachment()
     trecho = funcao[funcao.index('    def visao():'):funcao.index('    def notificacao():')]
     assert 'persisted_attachment_prompt(prompt, [nome])' in trecho
     assert "assistant_reply(device.read_json('chats.json'), chat['id'], alvo)" in trecho
+
+def test_o_toque_em_parar_sai_do_mesmo_dump_que_ve_o_botao():
+    """Rodada 36338598381: o botão foi visto e o toque chegou depois da geração.
+
+    A etapa conferia em um dump, dormia 2 s e tocava em outro dump; a geração de 246
+    tokens terminou no meio e o toque não achou mais o controle ("Parar" não está na
+    tela), embora o botão tivesse sido visto na PRIMEIRA leitura. Agora a posição sai
+    do mesmo dump que viu o botão e o toque acontece na hora — como o faria um usuário.
+    """
+    sweep = SWEEP.read_text()
+    funcao = sweep[sweep.index('    def parar_geracao():'):sweep.index('    def notificacao():')]
+    assert 'espera_parar(device, tocar=True)' in funcao
+    assert 'time.sleep(2)' not in funcao, 'nada de dormir entre ver o botão e tocar'
+    assert 'tap_label(device, \'Parar\')' not in funcao, 'o toque atrasado saiu daqui'
+    # A espera continua declarada nas duas etapas que precisam pegar a geração.
+    for nome in ('parar_geracao', 'notificacao'):
+        trecho = sweep[sweep.index(f'    def {nome}():'):]
+        trecho = trecho[:trecho.index('\n    def ')]
+        assert 'espera_parar(device' in trecho, nome
+    # A notificação segue conferindo (sem tocar) — ela não para a geração.
+    notificacao = sweep[sweep.index('    def notificacao():'):]
+    notificacao = notificacao[:notificacao.index('\n    def ')]
+    assert 'espera_parar(device, tocar=True)' not in notificacao
+    espera = sweep[sweep.index('def espera_parar(device'):sweep.index('def main():')]
+    assert 'limite = time.monotonic() + timeout' in espera
+    assert "device.shell(f'input tap {ponto[0]} {ponto[1]}')" in espera, \
+        'o toque usa a posição do MESMO dump'
