@@ -267,6 +267,48 @@ quantos tokens o backend processa por submissão, e o padrão deste binário
   ganho/regressão de decodificação (ela mede pré-preenchimento, não T/s de
   resposta). **O padrão do aplicativo não muda sem ganho medido.**
 
+### 4.4 Corrida entre provedores e cache de consulta repetida (só com ganho medido)
+
+O teto de tempo limita a espera; não a encurta. Duas alavancas existem atrás de
+propriedade de depuração e ficam **desligadas por padrão** até a rodada medir o
+ganho, na mesma máquina e com a mesma pergunta:
+
+* `debug.gguf.search_race 1` — DuckDuckGo e Wikipédia partem juntos e a resposta usa
+  o vencedor (`GGUF_SEARCH_RACE winner=… candidates=2`), em vez de somar as
+  tentativas em sequência;
+* `debug.gguf.search_cache_ms <ms>` — a mesma consulta repetida na mesma execução do
+  aplicativo sai da memória (LRU de 8, com teto de idade declarado no log:
+  `GGUF_SEARCH_CACHE hit=1 age_ms=…`), sem voltar à rede.
+
+A rodada mede as três situações (sequencial, corrida, consulta repetida) e grava os
+números no recibo (`search_experiment` → `sequential_ms` / `race_ms` /
+`cache_hit_ms`), que é o que a nota da entrega publica. O padrão só muda com
+
+```
+scripts/flip_search_defaults.py --race-gain <R> --round <RODADA> [--ubatch-gain <U>]
+```
+
+que exige ganho medido ≥ 1,1x e deixa o número da rodada escrito no próprio código —
+um ajuste sem rodada não vale nada.
+
+### 4.5 Um envio é um envio: o defeito do harness que dobrava cada medida
+
+A evidência da rodada 36276321752 mostrou **todas** as conversas com a mesma
+pergunta duas vezes. Não era o aplicativo: o `submit` mandava a mensagem pelo `send`
+e depois conferia o campo para decidir se tinha enviado. Como o aplicativo LIMPA o
+campo quando aceita a mensagem, a leitura dava "não enviou" e o texto era mandado de
+novo — duas buscas, duas gerações e uma espera dobrada por envio, desde `08e2da0`.
+Foi esse defeito que fez a checagem de busca sem rede contar duas tentativas numa
+rodada em que o aplicativo parou certo na primeira falha.
+
+O envio agora é provado pelo que o aplicativo PERSISTE (a contagem de mensagens do
+usuário com aquele texto sobe), digitar e enviar são passos separados, e nunca se
+toca em Enviar com o campo vazio: quando o aplicativo consome o texto sem registrar
+a mensagem, o teste espera e reprova dizendo isso, em vez de mandar a mensagem de
+novo. Os testes de host em `tests/test_harness_helpers.py` cobrem os quatro casos
+(aceita de primeira, botão ainda desabilitado, campo com texto errado, texto
+consumido sem persistir).
+
 ## 5. O que roda em cada gate
 
 | Gate | O que verifica |
