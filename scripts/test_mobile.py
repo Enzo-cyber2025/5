@@ -85,7 +85,15 @@ def select_pair(d):
         return
     d.capture('saf-two-selected.png')
     # Select is the toolbar action. Do not hit a row's accessibility Open icon.
-    d.tap(text='Select',package=PICKERS)
+    # O aplicativo pode assumir a seleção assim que os DOIS arquivos ficam marcados:
+    # na rodada 36325432837 o seletor saiu da tela com o par já importado (o app
+    # abriu "Importando modelo" e subiu o serviço de cálculo). Tocar em Select é o
+    # caminho normal; se o seletor já saiu, quem prova a importação é a espera do
+    # progresso logo abaixo — e o caso fica registrado, nunca presumido.
+    if not d.tap(text='Select',package=PICKERS,optional=True) and not has_package(d.ui(),PICKERS):
+        Path('evidence/pair-selection-select-missing.txt').write_text(
+            'o seletor saiu da tela antes do toque em Select; a importação é conferida '
+            'pelo progresso do próprio aplicativo, em vez de presumida\n')
     observer=getattr(d,'progress_observer',None)
     if observer:
         # Actual worker events prove the SAF result reached the app; do not block

@@ -62,21 +62,34 @@ def test_typed_send_splits_the_text_in_two_passes_with_a_pause(harness, tmp_path
     device = make_recorder(harness, tmp_path)
     monkeypatch.setattr(harness.time, 'sleep', lambda seconds: device.calls.append(('sleep', seconds)))
     device.send('Reply in English with a short greeting.', typed_pause=1.2)
-    texts = [call[1] for call in device.calls if call[0] == 'shell']
-    assert len(texts) == 2, texts
-    parts = [text.split('input text ', 1)[1].strip("'").replace('%s', ' ') for text in texts]
+    # Só os comandos que DIGITAM interessam aqui; antes de cada um o cursor vai para
+    # o fim do campo (KEYCODE_MOVE_END), que é um keyevent e não um 'input text'.
+    textos = [call[1] for call in device.calls
+              if call[0] == 'shell' and 'input text' in call[1]]
+    assert len(textos) == 2, textos
+    parts = [text.split('input text ', 1)[1].strip("'").replace('%s', ' ') for text in textos]
     assert ''.join(parts) == 'Reply in English with a short greeting.'  # nada é perdido
     # A pausa fica entre as duas passadas, nunca depois do envio.
-    order = [call[0] for call in device.calls]
-    assert order.index('sleep') == order.index('shell') + 1
+    ordem = [i for i, call in enumerate(device.calls)
+             if call[0] == 'shell' and 'input text' in call[1]]
+    pausas = [(i, call[1]) for i, call in enumerate(device.calls) if call[0] == 'sleep']
+    grandes = [i for i, segundos in pausas if segundos >= 1.0]
+    assert len(grandes) == 1 and ordem[0] < grandes[0] < ordem[1], pausas
+    # As outras pausas são curtas, dentro da digitação: o campo recebe cada pedaço.
+    assert all(segundos <= 0.2 for i, segundos in pausas if i not in grandes), pausas
     assert device.calls[-1][0] == 'tap' and 'Enviar' in device.calls[-1][1]
 
 
 def test_plain_send_stays_a_single_pass(harness, tmp_path):
     device = make_recorder(harness, tmp_path)
     device.send('Reply in English with a short greeting.')
-    texts = [call[1] for call in device.calls if call[0] == 'shell']
-    assert texts == ['input text Reply%sin%sEnglish%swith%sa%sshort%sgreeting.']  # uma passada
+    textos = [call[1] for call in device.calls
+              if call[0] == 'shell' and 'input text' in call[1]]
+    assert textos == ['input text Reply%sin%sEnglish%swith%sa%sshort%sgreeting.']  # uma passada
+    # O cursor vai para o fim antes de digitar (uma vez: um pedaço só).
+    assert [call[1] for call in device.calls
+            if call[0] == 'shell' and call[1].startswith('input keyevent')] == \
+        ['input keyevent KEYCODE_MOVE_END']
     assert all(call[0] != 'sleep' for call in device.calls)
 
 

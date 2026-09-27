@@ -262,8 +262,82 @@ def test_digitar_manda_mais_de_uma_chamada_para_o_prompt_longo(tmp_path):
     chamadas = [c for c in device.actions if 'input text' in c]
     assert len(chamadas) > 1, chamadas
     assert all(len(c) < 600 for c in chamadas), [(len(c)) for c in chamadas]
-    texto = ' '.join(c.split('input text ', 1)[1].strip().replace('%s', ' ') for c in chamadas)
-    assert texto == prompt.strip(), texto[:120]
+    # O que o campo RECEBE: cada pedaço, com o espaço que o separa do seguinte. A
+    # rodada 36329747224 mostrou o que acontece quando ele não vai: 'aboutlocal',
+    # 'speeditem' — palavras coladas no prompt do pré-preenchimento.
+    texto = ''.join(c.split('input text ', 1)[1].strip().replace('%s', ' ').strip("'")
+                    for c in chamadas)
+    assert texto == prompt.strip(), texto[:160]
+    # Antes de cada pedaço o cursor vai para o FIM: sem isso o pedaço entra no meio
+    # do texto já digitado (' and their speed models anSummarize…').
+    assert device.actions.count('input keyevent KEYCODE_MOVE_END') == len(chamadas)
+
+
+class ChatDevice:
+    """Aparelho de mentira só para contar mensagens persistidas do usuário."""
+
+    def __init__(self, mensagens, chat_id='chat-1'):
+        self.mensagens = mensagens
+        self.last_chat = {'id': chat_id}
+
+    def read_json(self, name):
+        return [{'id': 'chat-1',
+                 'messages': [{'role': 'user', 'content': m} for m in self.mensagens]}]
+
+
+def test_a_mensagem_com_anexo_conta_como_a_mensagem_do_usuario(tmp_path):
+    """Com anexo, o aplicativo grava a mensagem com um preâmbulo DELE.
+
+    Rodada 36329747224: a resposta da visão estava na tela ("White dog sitting on
+    green grass.") e a etapa reprovava porque o conteúdo persistido era
+    "Arquivo anexado: 1 arquivo(s)\n\nAnexos vinculados a esta mensagem para
+    leitura.\n\nIn English, describe the image in one line." — o prompt no FIM.
+    Comparar por igualdade exata nunca ia achar.
+    """
+    prompt = 'In English, describe the image in one line.'
+    com_anexo = ('Arquivo anexado: 1 arquivo(s)\n\nAnexos vinculados a esta mensagem para '
+                 'leitura.\n\n' + prompt)
+    assert Android.mensagens_do_usuario(ChatDevice([com_anexo]), prompt) == 1
+    assert Android.mensagens_do_usuario(ChatDevice([prompt]), prompt) == 1
+    assert Android.mensagens_do_usuario(ChatDevice(['outra pergunta']), prompt) == 0
+    assert Android.mensagens_do_usuario(ChatDevice([com_anexo, com_anexo]), prompt) == 2
+    assert Android.mensagens_do_usuario(ChatDevice([prompt]), '') == 0
+
+
+class ComposerDevice:
+    """Campo de texto que só esvazia depois de N DELs (lote engolido pelo IME)."""
+
+    def __init__(self, texto, esvazia_apos_dels):
+        self.field = texto
+        self.esvazia_apos_dels = esvazia_apos_dels
+        self.dels = 0
+        self.leituras = 0
+
+    def shell(self, command, check=True):
+        if command.startswith('input keyevent') and 'KEYCODE_DEL' in command:
+            self.dels += command.count('KEYCODE_DEL')
+            if self.dels >= self.esvazia_apos_dels:
+                self.field = ''
+        return ''
+
+    def composer_text(self):
+        self.leituras += 1
+        return self.field
+
+
+def test_apagar_o_campo_confere_que_esvaziou(tmp_path):
+    texto = 'a' * 300
+    device = ComposerDevice(texto, esvazia_apos_dels=300)
+    Android.clear_composer(device, len(texto))
+    assert device.field == ''
+    assert device.leituras >= 1, 'o campo tem de ser lido de volta depois de apagar'
+
+
+def test_apagar_o_campo_reprova_dizendo_o_que_ficou(tmp_path):
+    device = ComposerDevice('sobra teimosa', esvazia_apos_dels=10 ** 9)
+    with pytest.raises(AssertionError) as erro:
+        Android.clear_composer(device, 20)
+    assert 'não ficou vazio' in str(erro.value) and 'sobra teimosa' in str(erro.value)
 
 
 def test_o_texto_de_dica_do_campo_conta_como_campo_vazio(tmp_path):

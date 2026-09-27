@@ -594,19 +594,30 @@ class Android:
             self._digitar_em_pedacos(prompt)
         else:
             half = max(1, len(words) // 2)
-            self._digitar_em_pedacos(" ".join(words[:half]))
+            self._digitar_em_pedacos(" ".join(words[:half]), separador="")
             time.sleep(typed_pause)
             self._digitar_em_pedacos(" " + " ".join(words[half:]))
 
-    def _digitar_em_pedacos(self, texto):
+    def _digitar_em_pedacos(self, texto, separador=" "):
         """Digita o texto em pedaços que cabem na linha de comando do `input text`.
 
-        Cada pedaço é uma chamada; a pausa curta entre eles é o tempo do campo
-        receber o texto (sem ela o IME perde a última palavra do pedaço). O que
-        prova a digitação continua sendo a leitura do campo em quem chama.
+        Duas coisas que a rodada 36329747224 provou necessárias, e que faltavam:
+
+        * o espaço entre o FIM de um pedaço e o começo do próximo não viaja na linha
+          de comando: ele entra no fim do pedaço (`separador`), senão as palavras
+          colam ('aboutlocal', 'speeditem' — era o campo do pré-preenchimento);
+        * antes de cada pedaço o cursor vai para o FIM do campo (KEYCODE_MOVE_END):
+          sem isso o pedaço entra no meio do texto já digitado e o prompt chega
+          embaralhado (' and their speed models anSummarize in English…').
+
+        A pausa curta entre pedaços é o tempo do campo receber o texto. O que prova a
+        digitação continua sendo a leitura do campo em quem chama.
         """
-        for pedaco in em_pedacos(texto, PEDACO_DE_DIGITACAO):
-            self.shell("input text " + shlex.quote(pedaco.replace(" ", "%s")))
+        pedacos = em_pedacos(texto, PEDACO_DE_DIGITACAO)
+        for indice, pedaco in enumerate(pedacos):
+            self.shell("input keyevent KEYCODE_MOVE_END")
+            corpo = pedaco if indice == len(pedacos) - 1 else pedaco + separador
+            self.shell("input text " + shlex.quote(corpo.replace(" ", "%s")))
             time.sleep(0.12)
 
     def send(self, prompt, clear_log=True, typed_pause=0.0, ready_timeout=180):
@@ -657,19 +668,28 @@ class Android:
         return None
 
     def clear_composer(self, size):
-        """Apaga o campo: fim da linha e DELs em LOTES.
+        """Apaga o campo em LOTES e CONFERE que esvaziou.
 
         Uma linha de comando com centenas de `keyevent` não cabe no `adb shell`: os
         DELs saíam truncados, o campo ficava com o resto e a digitação seguinte se
-        misturava a ele (rodada 36325432837, campo com ' about loSummarize …').
-        Quem confere que o campo ficou vazio é quem chama, lendo o campo de novo.
+        misturava a ele (rodadas 36325432837 e 36329747224, campo com
+        ' and their speed models anSummarize …'). Apagar sem conferir é o que deixava
+        o resto passar: agora o campo é lido de volta e, se ainda houver texto, apaga
+        de novo; se continuar sujo, a etapa falha DIZENDO o que ficou.
         """
-        self.shell("input keyevent KEYCODE_MOVE_END")
         restantes = min(int(size), 1200) + 5
-        while restantes > 0:
-            lote = min(restantes, 80)
-            self.shell("input keyevent " + " ".join(["KEYCODE_DEL"] * lote))
-            restantes -= lote
+        for _ in (1, 2, 3):
+            self.shell("input keyevent KEYCODE_MOVE_END")
+            faltam = restantes
+            while faltam > 0:
+                lote = min(faltam, 80)
+                self.shell("input keyevent " + " ".join(["KEYCODE_DEL"] * lote))
+                faltam -= lote
+            if not self.composer_text():
+                return
+            restantes = 60   # o que sobrou está perto do cursor: segunda passada curta
+        raise AssertionError("o campo não ficou vazio depois de apagar: "
+                             + repr(self.composer_text()))
 
     def mensagens_do_usuario(self, prompt, chat_id=None):
         """Quantas mensagens do usuário com ESTE texto já estão persistidas.
@@ -681,12 +701,22 @@ class Android:
         a mesma pergunta duas vezes (duas buscas, duas gerações, uma espera dobrada).
         """
         chat_id = chat_id or (self.last_chat or {}).get("id")
+        alvo = (prompt or "").strip()
+        if not alvo:
+            return 0
         chats = self.read_json("chats.json")
         atual = next((c for c in chats if c.get("id") == chat_id), None)
         if atual is None:
             return 0
+        # Com anexo, o aplicativo grava a MESMA mensagem com um preâmbulo dele
+        # ("Arquivo anexado: 1 arquivo(s)\n\nAnexos vinculados a esta mensagem…").
+        # Exigir igualdade exata reprovava a etapa `visao` com a resposta na tela
+        # (rodada 36329747224); o que identifica a mensagem é o prompt no FIM.
+        def mesma_mensagem(conteudo):
+            texto = (conteudo or "").strip()
+            return texto == alvo or (texto.endswith(alvo) and len(texto) >= len(alvo))
         return sum(1 for m in atual.get("messages", [])
-                   if m.get("role") == "user" and (m.get("content") or "").strip() == prompt.strip())
+                   if m.get("role") == "user" and mesma_mensagem(m.get("content")))
 
     def submit(self, prompt, typed_pause=0.0, label=None, clear_log=False):
         """Envia UMA mensagem, conferindo o efeito pelo que o aplicativo persistiu.
