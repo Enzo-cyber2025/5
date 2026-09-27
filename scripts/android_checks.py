@@ -165,19 +165,23 @@ def search_timing(log):
     provedores em sequência, cada um com 8 s de conexão e 12 s de leitura) antes de
     o modelo responder. `used_ms` é medido pelo próprio aplicativo.
     """
-    found = SEARCH_BUDGET_RE.findall(log)
-    if not found:
+    encontrados = list(re.finditer(SEARCH_BUDGET_RE, log))
+    if not encontrados:
         return None
-    # Cada busca começa com GGUF_SEARCH_ANNOUNCED. O `logcat -d` traz o buffer
-    # INTEIRO, com as buscas anteriores junto: sem cortar na última, a checagem de
-    # "a cadeia parou na primeira falha" contava tentativas de buscas antigas — foi
-    # assim que a rodada 36272556329 reprovou o aplicativo (offline com DUAS
-    # tentativas DuckDuckGo) quando o log mostrava uma busca de 104 ms parando
-    # certo e outra, 18 s depois, de 1 ms. O recorte é a última busca, só ela.
-    anuncios = [m.start() for m in re.finditer(SEARCH_ANNOUNCED_RE, log)]
+    # Cada busca começa com GGUF_SEARCH_ANNOUNCED e termina com GGUF_SEARCH_BUDGET.
+    # O `logcat -d` traz o buffer INTEIRO: sem recortar, a checagem de "a cadeia
+    # parou na primeira falha" contava tentativas de buscas antigas — foi assim que a
+    # rodada 36272556329 reprovou o aplicativo (uma busca de 104 ms parando certo e
+    # outra, 18 s depois, de 1 ms). O recorte é a busca que produziu o ÚLTIMO
+    # orçamento: um anúncio DEPOIS dele é uma busca que ainda estava começando e não
+    # pode apagar a leitura da que terminou (foi o que a rodada 36276321752 mostrou,
+    # quando o harness ainda mandava a mensagem duas vezes).
+    ultimo_orcamento = encontrados[-1].start()
+    anuncios = [m.start() for m in re.finditer(SEARCH_ANNOUNCED_RE, log)
+                if m.start() < ultimo_orcamento]
     if anuncios:
         log = log[anuncios[-1]:]
-    total, used, exhausted, provider = found[-1]
+    total, used, exhausted, provider = encontrados[-1].groups()
     attempts = [(name, int(budget), int(remaining), int(connect), int(read))
                 for name, budget, remaining, connect, read in SEARCH_ATTEMPT_RE.findall(log)]
     hits = SEARCH_RESULT_RE.findall(log)
@@ -522,16 +526,19 @@ def espera_seletor_parado(d, tentativas=8, intervalo=0.4):
 
 
 def _espera_lista_parada(d, limite, intervalo=0.4):
-    """Espera a pasta certa abrir e a lista parar de se mexer (duas fotos iguais)."""
+    """Espera a lista do seletor parar de se mexer (duas fotos iguais).
+
+    A gaveta de raízes, quando aberta, é uma camada POR CIMA da lista: ela não move
+    as linhas. Exigir a gaveta fechada aqui fazia o laço girar até o limite quando a
+    própria animação de fechar era lida (rodada 36276321752: o harness "fechou" uma
+    gaveta que já estava fechando, o toque abriu a gaveta, e a fase `visao` morreu
+    esperando a lista parar). Quem fecha a gaveta, e só quando as linhas não estão
+    visíveis, é o `select_exact_documents`.
+    """
     import time
     anterior = None
     while time.monotonic() < limite:
-        xml = d.ui()
-        if not _na_pasta_de_downloads(xml) or _gaveta_aberta(xml):
-            anterior = None
-            time.sleep(intervalo)
-            continue
-        foto = _foto_do_seletor(xml)
+        foto = _foto_do_seletor(d.ui())
         if foto and foto == anterior:
             return True
         anterior = foto
@@ -539,22 +546,43 @@ def _espera_lista_parada(d, limite, intervalo=0.4):
     return False
 
 
+def _gaveta_confirmada(d, tentativas=4, intervalo=0.5):
+    """A gaveta está aberta em DUAS fotos seguidas? Animação não engana duas vezes.
+
+    Um dump tirado no meio da animação de fechar ainda mostra as linhas da gaveta.
+    Foi assim que o harness tocou no hambúrguer para "fechar" uma gaveta que já
+    estava fechando — e o toque ABRIU a gaveta (rodada 36276321752).
+    """
+    import time
+    anterior = None
+    for _ in range(tentativas):
+        aberta = _gaveta_aberta(d.ui())
+        if not aberta:
+            return False
+        if anterior is True:
+            return True
+        anterior = aberta
+        time.sleep(intervalo)
+    return False
+
+
 def abrir_pasta_de_downloads(d, timeout=60):
     """Leva o seletor para a pasta Downloads, a raiz onde a marcação foi PROVADA.
 
-    Duas rodadas mostraram que a raiz e a HORA do toque importam:
+    Cada rodada custou uma fase e ensinou uma regra:
 
-    * 36267877767 — o seletor abriu em "Recent files" e NENHUM gesto marcou as
-      linhas (toque longo com o dedo preso, toque simples, swipe com deslocamento);
-    * 36272556329 — com o seletor já em Downloads, duas fases tocaram no nome de uma
-      pasta e a pasta não abriu ("arquivos na pasta isolada"): a lista ainda estava
-      se re-arrumando por causa da troca de raiz feita pelo próprio harness.
+    * 36267877767 — o seletor abriu em "Recent files" e NENHUM gesto marcou as linhas
+      (toque longo com o dedo preso, toque simples, swipe com deslocamento); a saída
+      é navegar para Downloads pela gaveta de raízes;
+    * 36272556329 — o harness tocou no nome de uma pasta enquanto a lista ainda se
+      re-arrumava depois de trocar a raiz: a pasta não abria;
+    * 36276321752 — já DENTRO de Downloads, o harness tocou no hambúrguer para
+      "fechar" uma gaveta lida no meio da animação: o toque abriu a gaveta de
+      verdade, o laço exigia a gaveta fechada e a fase `visao` morreu esperando.
 
-    A marcação múltipla PROVADA (rodada 34978739703, contador "2 selected") saiu da
-    pasta Downloads alcançada por "Show roots" → "Downloads" — é este o caminho
-    aqui. Quando a pasta certa já está aberta, o harness NÃO re-seleciona a mesma
-    raiz (isso recarregaria a lista debaixo do dedo): só fecha a gaveta. E só
-    devolve depois de a lista PARAR (duas fotos iguais).
+    Regra final, sem exceção: quando a raiz certa já está aberta, NÃO se toca em
+    NADA — só se espera a lista parar. A gaveta é usada apenas para SAIR de outra
+    raiz, e só depois de ela estar comprovadamente aberta em duas fotos seguidas.
     """
     import time
     limite = time.monotonic() + timeout
@@ -562,42 +590,33 @@ def abrir_pasta_de_downloads(d, timeout=60):
     while time.monotonic() < limite:
         xml = d.ui()
         barra, faixa = cabecalho_do_seletor(xml)
-        gaveta = _gaveta_aberta(xml)
-        if _na_pasta_de_downloads(xml) and not gaveta:
-            return faixa or barra
+        if _na_pasta_de_downloads(xml):
+            if _espera_lista_parada(d, limite):
+                return faixa or barra
+            tentativas.append("a pasta Downloads está aberta, mas a lista não parou")
+            break
+        if _gaveta_confirmada(d):
+            destino = _linha_da_gaveta(d.ui())
+            if destino is None:
+                tentativas.append(f"gaveta aberta sem a linha Downloads ({barra!r}/{faixa!r})")
+                break
+            d.shell(f"input tap {int(destino[0])} {int(destino[1])}", check=False)
+            continue
         botao = (position(xml, desc="Show roots", package=PICKERS)
                  or position(xml, desc="Mostrar raízes", package=PICKERS)
                  or position(xml, desc="Mostrar raiz", package=PICKERS))
         if not botao:
             tentativas.append(f"sem botão de raízes na barra ({barra!r}/{faixa!r})")
             break
-        if gaveta:
-            if _na_pasta_de_downloads(xml):
-                # Mesma raiz: fechar a gaveta basta. Re-tocar a raiz recarregaria a
-                # lista e o próximo toque cairia numa tela se mexendo.
-                d.shell(f"input tap {int(botao[0])} {int(botao[1])}", check=False)
-            else:
-                destino = _linha_da_gaveta(xml)
-                if destino is None:
-                    d.shell(f"input tap {int(botao[0])} {int(botao[1])}", check=False)
-                    tentativas.append(f"gaveta sem Downloads ({barra!r})")
-                    continue
-                d.shell(f"input tap {int(destino[0])} {int(destino[1])}", check=False)
-        else:
-            d.shell(f"input tap {int(botao[0])} {int(botao[1])}", check=False)
-            destino = None
-            limite_gaveta = time.monotonic() + 8
-            while destino is None and time.monotonic() < limite_gaveta:
-                destino = _linha_da_gaveta(xml)
-                if destino is None:
-                    xml = d.ui()
-            if destino is None:
-                tentativas.append(f"gaveta de raízes sem Downloads ({barra!r})")
-                continue
-            d.shell(f"input tap {int(destino[0])} {int(destino[1])}", check=False)
-        if _espera_lista_parada(d, limite):
-            return "Downloads"
-        tentativas.append("toquei em Downloads e a pasta não abriu/parou")
+        d.shell(f"input tap {int(botao[0])} {int(botao[1])}", check=False)
+        destino = None
+        limite_gaveta = time.monotonic() + 8
+        while destino is None and time.monotonic() < limite_gaveta:
+            destino = _linha_da_gaveta(d.ui())
+        if destino is None:
+            tentativas.append("toquei em \"Show roots\" e a linha Downloads não apareceu")
+            continue
+        d.shell(f"input tap {int(destino[0])} {int(destino[1])}", check=False)
     try:
         # A próxima rodada não precisa adivinhar: o XML do seletor fica na evidência.
         (d.evidence / "saf-roots-failure-ui.xml").write_text(d.ui())
@@ -605,6 +624,30 @@ def abrir_pasta_de_downloads(d, timeout=60):
         pass
     raise AssertionError("não consegui abrir a pasta Downloads no seletor do sistema"
                          + (": " + "; ".join(tentativas) if tentativas else ""))
+
+
+def fechar_gaveta_de_raizes(d, timeout=15):
+    """Fecha a gaveta SÓ quando ela está comprovadamente aberta (duas fotos iguais).
+
+    A gaveta cobre as linhas de arquivo. Quando o teste precisa tocar numa linha e a
+    gaveta está aberta, ela precisa sair do caminho — uma vez, com prova, e não a
+    cada leitura de tela (tocar no hambúrguer durante a animação o reabre).
+    """
+    import time
+    if not _gaveta_confirmada(d):
+        return False
+    xml = d.ui()
+    botao = (position(xml, desc="Show roots", package=PICKERS)
+             or position(xml, desc="Mostrar raízes", package=PICKERS)
+             or position(xml, desc="Mostrar raiz", package=PICKERS))
+    if not botao:
+        return False
+    d.shell(f"input tap {int(botao[0])} {int(botao[1])}", check=False)
+    limite = time.monotonic() + timeout
+    while time.monotonic() < limite:
+        if not _gaveta_aberta(d.ui()):
+            return True
+    return False
 
 
 def select_exact_documents(d, names):
@@ -632,6 +675,13 @@ def select_exact_documents(d, names):
     assert names and len(set(names)) == len(names)
     xml = d.ui()
     visiveis = {n.get("text") for n in nodes(xml) if n.get("package") in PICKERS}
+    if _gaveta_aberta(xml) and not all(name in visiveis for name in names):
+        # A gaveta cobre as linhas de arquivo. Fechar é uma ação de uma vez só, com
+        # prova de que ela está aberta (duas fotos iguais): tocar no hambúrguer
+        # durante a animação de fechar reabre a gaveta (rodada 36276321752).
+        fechar_gaveta_de_raizes(d)
+        xml = d.ui()
+        visiveis = {n.get("text") for n in nodes(xml) if n.get("package") in PICKERS}
     if _nos_recentes(xml) or not all(name in visiveis for name in names):
         abrir_pasta_de_downloads(d)
 

@@ -153,6 +153,37 @@ def test_performance_gate_reads_the_measurement_and_flags_the_interpretation(tmp
         _module('gate_under_test', ROOT / 'scripts/check_performance.py').main()
 
 
+def test_missing_measurement_points_at_the_emulator_phase_instead_of_a_mystery(tmp_path, capsys):
+    """Rodada 36272556329: performance.json não existia e a fase caiu sem dizer por quê.
+
+    A fase `performance` só lê o que a fase `emulator` escreve no fim; quando o
+    emulador morre antes (naquela rodada, a checagem de busca), as duas fases falham
+    no mesmo minuto e a segunda parecia um defeito de desempenho. Agora ela cita o
+    erro do resumo do emulador.
+    """
+    evidencia = Path(tmp_path) / 'evidence'
+    evidencia.mkdir()
+    (evidencia / 'summary.json').write_text(json.dumps(
+        {'status': 'FAIL', 'error': "falha de rede não interrompeu a cadeia: ['DuckDuckGo']"}))
+    (evidencia / 'phases-failed.txt').write_text(
+        '21:42:56 fase emulator falhou (exit != 0)\n21:42:56 fase performance falhou (exit != 0)\n')
+    gate = _module('gate_sem_medicao', ROOT / 'scripts/check_performance.py')
+    sys.argv = ['check_performance.py', str(evidencia / 'performance.json')]
+    with pytest.raises(SystemExit) as erro:
+        gate.main()
+    texto = str(erro.value)
+    assert 'fim da fase emulator' in texto, texto
+    assert 'fases que falharam nesta rodada: 21:42:56 fase emulator' in texto, texto
+    assert 'registra o erro: falha de rede não interrompeu a cadeia' in texto, texto
+    # Sem resumo nem registro de fase, a mensagem ainda nomeia o que falta.
+    (evidencia / 'summary.json').unlink()
+    (evidencia / 'phases-failed.txt').unlink()
+    with pytest.raises(SystemExit) as erro:
+        gate.main()
+    texto = str(erro.value)
+    assert 'não existe: nenhuma fase chegou a escrever o resumo' in texto, texto
+
+
 def test_gate_fails_on_regression_and_passes_without_targets_when_device_limits(tmp_path, capsys):
     gate = _module('gate_under_test2', ROOT / 'scripts/check_performance.py')
     harness = _module('harness_under_test2', ROOT / 'scripts/test_android.py')

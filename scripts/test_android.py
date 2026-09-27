@@ -251,9 +251,11 @@ class Android:
         que **não existe em nenhum dump de evidência deste repositório** (0
         ocorrências em 281 pastas de `ci-results`): na prática ela esperava 30 s por
         um texto que esta versão do DocumentsUI não escreve. Quem navega agora é
-        `abrir_pasta_de_downloads`, que abre a gaveta (sem fechar a que já estava
-        aberta), toca a raiz Downloads e CONFIRMA pela barra/cabeçalho que a pasta
-        abriu — e, se não conseguir, deixa o XML do seletor na evidência.
+        `abrir_pasta_de_downloads`: se a pasta certa já está aberta, ele NÃO toca em
+        nada (um toque no hambúrguer lido no meio da animação abria a gaveta e a
+        fase `visao` morria esperando — rodada 36276321752); se está em outra raiz,
+        abre a gaveta, toca a linha Downloads e CONFIRMA pela barra/cabeçalho que a
+        pasta abriu — e, se não conseguir, deixa o XML do seletor na evidência.
         """
         from android_checks import abrir_pasta_de_downloads
         return abrir_pasta_de_downloads(self)
@@ -554,21 +556,19 @@ class Android:
             # Não é falha da etapa: o nativo registra o motivo (SKIPPED) quando não aquece.
             pass
 
-    def send(self, prompt, clear_log=True, typed_pause=0.0, ready_timeout=180):
-        """Digita e envia.
+    def digitar(self, prompt, typed_pause=0.0, ready_timeout=180):
+        """Digita o prompt no compositor, SEM tocar em Enviar.
 
         Com `typed_pause` o texto entra em duas passadas separadas por essa pausa,
         como um usuário que digita e hesita: é o cenário que permite ao aplicativo
-        aquecer o prompt no tempo de digitação. Sem a pausa, é o envio direto.
+        aquecer o prompt no tempo de digitação. Sem a pausa, é a digitação direta.
 
-        Antes de digitar e antes de tocar em Enviar, o compositor é conferido
-        HABILITADO: enquanto o modelo carrega ou aquece, o aplicativo desabilita
-        campo e botão, e o toque cego falhava com "Controle não encontrado: Enviar"
-        (rodada 36255713807). Esperar aqui é esperar o aplicativo; a espera que as
-        etapas medem continua começando no envio já persistido.
+        Digitar e enviar são passos separados de propósito: quem decide tocar em
+        Enviar é o `submit`/`send`, e só com o texto CONFERIDO no campo. Quando o
+        toque ficava solto no meio do caminho, um segundo toque com o campo já
+        vazio reenviava a mesma mensagem (rodada 36276321752: cada conversa com a
+        pergunta duas vezes, duas buscas e duas gerações para um envio só).
         """
-        if clear_log:
-            self.adb("logcat", "-c")
         self.wait(self.composer_ready, "compositor habilitado antes de digitar",
                   timeout=ready_timeout)
         self.tap(class_name="android.widget.EditText", package={PACKAGE})
@@ -585,6 +585,19 @@ class Android:
             self.shell("input text " + shlex.quote(" ".join(words[:half]).replace(" ", "%s")))
             time.sleep(typed_pause)
             self.shell("input text " + shlex.quote(" " + " ".join(words[half:]).replace(" ", "%s")))
+
+    def send(self, prompt, clear_log=True, typed_pause=0.0, ready_timeout=180):
+        """Digita e envia UMA vez.
+
+        Antes de digitar e antes de tocar em Enviar, o compositor é conferido
+        HABILITADO: enquanto o modelo carrega ou aquece, o aplicativo desabilita
+        campo e botão, e o toque cego falhava com "Controle não encontrado: Enviar"
+        (rodada 36255713807). Esperar aqui é esperar o aplicativo; a espera que as
+        etapas medem continua começando no envio já persistido.
+        """
+        if clear_log:
+            self.adb("logcat", "-c")
+        self.digitar(prompt, typed_pause=typed_pause, ready_timeout=ready_timeout)
         # A recarga do modelo pode desabilitar o botão de novo entre a digitação e o
         # toque: espera limitada, nunca toque cego.
         self.wait(lambda: position(self.ui(), text="Enviar", package={PACKAGE}, contains=True),
@@ -618,15 +631,39 @@ class Android:
         self.shell("input keyevent KEYCODE_MOVE_END")
         self.shell("input keyevent " + " ".join(["KEYCODE_DEL"] * (min(int(size), 900) + 5)))
 
+    def mensagens_do_usuario(self, prompt, chat_id=None):
+        """Quantas mensagens do usuário com ESTE texto já estão persistidas.
+
+        A contagem — e não "existe alguma?" — é o que separa "o aplicativo aceitou a
+        mensagem" de "o toque não pegou". Comparar o campo com o prompt não serve para
+        isso: depois de aceitar a mensagem o aplicativo limpa o campo, e ler o campo
+        vazio como "não enviou" foi o que fez cada etapa da rodada 36276321752 mandar
+        a mesma pergunta duas vezes (duas buscas, duas gerações, uma espera dobrada).
+        """
+        chat_id = chat_id or (self.last_chat or {}).get("id")
+        chats = self.read_json("chats.json")
+        atual = next((c for c in chats if c.get("id") == chat_id), None)
+        if atual is None:
+            return 0
+        return sum(1 for m in atual.get("messages", [])
+                   if m.get("role") == "user" and (m.get("content") or "").strip() == prompt.strip())
+
     def submit(self, prompt, typed_pause=0.0, label=None, clear_log=False):
-        """Envia conferindo o efeito, e insiste enquanto o aplicativo não persistir.
+        """Envia UMA mensagem, conferindo o efeito pelo que o aplicativo persistiu.
 
         O envio é parte do que está sendo medido: quando o texto não entra no campo
         (ou o botão Enviar está desabilitado porque o modelo ainda carrega), o prompt
         não é persistido e a falha aparecia só como "Timeout: prompt enviado"
         (rodada 36247594609). Aqui o campo é lido de volta, o texto é redigitado se
-        preciso, e o botão é tocado até o aplicativo persistir o prompt — como um
-        usuário faria. O que ficou no campo vai para a evidência `<etapa>-composer.txt`.
+        preciso, e o botão só é tocado com o texto conferido NO CAMPO.
+
+        Nunca reenviar é a regra desta função. A prova do envio é a contagem de
+        mensagens do usuário com este texto AUMENTAR. Se o campo ficou vazio e a
+        contagem não subiu, o aplicativo consumiu o texto: aí a espera continua (a
+        mensagem pode ser persistida junto com a resposta), mas tocar em Enviar de
+        novo duplicaria a mensagem — foi o que a rodada 36276321752 mostrou em TODAS
+        as etapas: mesma pergunta duas vezes na conversa, duas buscas e duas gerações
+        por envio. O que ficou no campo vai para a evidência `<etapa>-composer.txt`.
         """
         evidence = (self.evidence / f"{label}-composer.txt") if label else None
         # Enquanto o modelo carrega, o aplicativo desabilita o compositor: o `position`
@@ -634,41 +671,70 @@ class Android:
         # não encontrado" (rodada 36253269770). Esperar aqui é esperar o APLICATIVO,
         # antes do envio — a espera medida pelo aplicativo começa no envio persistido.
         self.wait(self.composer_ready, "campo de mensagem e botão Enviar habilitados", timeout=180)
+        antes = self.mensagens_do_usuario(prompt)
         typed = None
-        for attempt in (1, 2):
-            self.send(prompt, clear_log=clear_log and attempt == 1, typed_pause=typed_pause)
+        tentativas = []
+
+        def registra(final=None):
+            if evidence is None:
+                return
+            depois = self.mensagens_do_usuario(prompt)
+            evidence.write_text(
+                ("campo conferido: igual ao prompt\n" if typed == prompt
+                 else "o campo não recebeu o texto exato\n")
+                + f"no campo: {typed!r}\nesperado: {prompt!r}\n"
+                  f"mensagens do usuário com este texto antes: {antes}, depois: {depois}\n"
+                + ("; ".join(tentativas) + "\n" if tentativas else "")
+                + (f"resultado: {final}\n" if final else ""))
+
+        for tentativa in (1, 2, 3):
+            if clear_log and tentativa == 1:
+                self.adb("logcat", "-c")
             typed = self.composer_text()
-            if typed == prompt:
-                break
-            self.tap(class_name="android.widget.EditText", package={PACKAGE})
-            self.clear_composer(len(typed or ""))
-        if evidence is not None:
-            evidence.write_text(("campo conferido: igual ao prompt\n" if typed == prompt else
-                                 "o campo não recebeu o texto exato\n")
-                                + f"no campo: {typed!r}\nesperado: {prompt!r}\n")
-
-        def persisted():
-            chats = self.read_json("chats.json")
-            current = next(c for c in chats if c["id"] == self.last_chat["id"])
-            return any(m.get("role") == "user" and m.get("content") == prompt
-                       for m in current.get("messages", []))
-
-        for attempt in (1, 2, 3):
+            if typed != prompt:
+                if typed:
+                    self.tap(class_name="android.widget.EditText", package={PACKAGE})
+                    self.clear_composer(len(typed))
+                self.digitar(prompt, typed_pause=typed_pause, ready_timeout=120)
+                typed = self.composer_text()
+            if typed != prompt:
+                tentativas.append(f"tentativa {tentativa}: o campo não recebeu o texto exato")
+                continue
             # O compositor pode voltar a ficar indisponível entre uma tentativa e outra
             # (recarga do modelo); espera limitada antes de cada toque, nunca toque cego.
             self.wait(lambda: position(self.ui(), text="Enviar", package={PACKAGE}, contains=True),
                       "botão Enviar habilitado", timeout=120)
             self.tap(text="Enviar", package={PACKAGE}, contains=True)
+            tentativas.append(f"tentativa {tentativa}: toquei em Enviar com o texto no campo")
             try:
-                self.wait(persisted, "prompt enviado e persistido pelo aplicativo", timeout=20)
+                self.wait(lambda: self.mensagens_do_usuario(prompt) > antes,
+                          "mensagem do usuário persistida pelo aplicativo", timeout=30)
+                registra("mensagem enviada uma vez e persistida")
                 return
             except AssertionError:
-                if attempt == 3:
-                    labels = [node.get("text") for node in ET.fromstring(self.ui()).iter("node")
-                              if node.get("package") == PACKAGE and node.get("text")]
-                    raise AssertionError(
-                        "o aplicativo não persistiu o prompt depois de três toques em Enviar; "
-                        f"no campo agora: {self.composer_text()!r}; visíveis: {labels[:12]}")
+                campo = self.composer_text()
+                tentativas.append(f"tentativa {tentativa}: nada persistido em 30 s "
+                                  f"(campo agora: {campo!r})")
+                if campo == prompt:
+                    continue        # o toque não pegou: tenta de novo, com o texto no campo
+                if campo:
+                    continue        # campo com outro texto: o laço limpa e digita de novo
+                # Campo vazio: o aplicativo consumiu o texto do campo. Esperar mais é
+                # certo; reenviar NÃO é — duplicaria a mensagem.
+                try:
+                    self.wait(lambda: self.mensagens_do_usuario(prompt) > antes,
+                              "mensagem do usuário persistida depois do envio", timeout=120)
+                    registra("mensagem enviada uma vez; persistida depois do envio")
+                    return
+                except AssertionError:
+                    break
+        registra("falhou: o aplicativo não registrou a mensagem do usuário")
+        labels = [node.get("text") for node in ET.fromstring(self.ui()).iter("node")
+                  if node.get("package") == PACKAGE and node.get("text")]
+        raise AssertionError(
+            "o aplicativo não persistiu a mensagem do usuário sem que ela fosse enviada "
+            f"duas vezes; no campo agora: {self.composer_text()!r}; visíveis: {labels[:12]}; "
+            + "; ".join(tentativas))
 
     def generate(self, model, gpu_layers, stage, prompt="Reply in English with a short greeting.",
                  threads=2, record=True, typed_pause=0.0, await_load=False, settle=0.0, search=False):

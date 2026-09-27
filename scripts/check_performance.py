@@ -30,10 +30,43 @@ TARGETS = {'throughput_1_5x': 'ganho de 1,5x em T/s',
            'first_text_3x': 'primeiro texto 3x mais rápido (um terço da espera)'}
 
 
+def motivo_sem_medicao(path):
+    """Aponta o que impediu a medição, em vez de só dizer que o arquivo falta.
+
+    `performance.json` é escrito no FIM da fase `emulator`, depois de todas as
+    checagens. Quando a fase `emulator` morre antes (rodada 36272556329: falha da
+    própria checagem de busca), a fase `performance` falhava no mesmo minuto sem
+    nenhuma pista — parecia um defeito de desempenho e era só consequência. A
+    mensagem cita o registro da rodada, sem adivinhar quem escreveu o quê.
+    """
+    partes = []
+    fases = path.with_name('phases-failed.txt')
+    if fases.is_file():
+        linhas = [linha.strip() for linha in fases.read_text().splitlines() if linha.strip()]
+        if linhas:
+            partes.append('fases que falharam nesta rodada: ' + ' | '.join(linhas))
+    resumo = path.with_name('summary.json')
+    if resumo.is_file():
+        try:
+            dados = json.loads(resumo.read_text())
+        except ValueError as exc:
+            partes.append(f'{resumo} ilegível ({exc})')
+        else:
+            erro = dados.get('error')
+            partes.append(f'{resumo} registra o erro: {erro}' if erro
+                          else f'{resumo} existe e não registra erro')
+    else:
+        partes.append(f'{resumo} não existe: nenhuma fase chegou a escrever o resumo')
+    return ('o arquivo é escrito no fim da fase emulator; '
+            + '; '.join(partes) if partes else
+            'o arquivo é escrito no fim da fase emulator, que não deixou registro na evidência')
+
+
 def main():
     path = Path(sys.argv[1] if len(sys.argv) > 1 else 'evidence/performance.json')
     if not path.is_file():
-        raise SystemExit(f'Sem medição de desempenho: {path} não existe')
+        raise SystemExit(f'Sem medição de desempenho: {path} não existe — '
+                         + motivo_sem_medicao(path))
     report = json.loads(path.read_text())
     candidates = report.get('candidates') or {}
     if not candidates:

@@ -152,20 +152,29 @@ def test_checks_are_independent_and_generations_are_long_enough_to_catch():
 
 
 def test_geracao_longa_pede_um_texto_que_nao_termina_sozinho():
-    """Contar até 300 mantém o motor gerando até o limite de tokens.
+    """A janela do botão "Parar" tem de durar mais que uma leitura de tela.
 
-    Rodada 36272556329: "uma lista de cinquenta itens" fez o SmolLM2 encerrar sozinho
-    em 246 tokens (13,8 s) e as duas etapas que precisam PEGAR a geração em andamento
-    (`parar_geracao`, `notificacao`) reprovaram sem nunca ver o botão "Parar" — a
-    janela de 13,8 s ficou menor que o custo das leituras de tela.
+    Duas tentativas provaram que PEDIR um texto longo não garante a janela:
+
+    * 36272556329 — "uma lista de cinquenta itens" fez o SmolLM2 encerrar sozinho em
+      246 tokens (13,8 s) e o teste não chegou a ver o botão;
+    * 36276321752 — "conte até 300" virou uma resposta de 39 tokens em PORTUGUÊS (o
+      modelo segue o prompt de sistema) e a resposta terminou antes da primeira
+      leitura.
+
+    O que fica: o pedido que comprovadamente gera longo nesta linha de modelo E um
+    único thread (a mesma geração leva cerca de o dobro do tempo de parede; o teste
+    mede a existência do controle, não velocidade).
     """
     fonte = (ROOT / 'scripts/test_functions_android.py').read_text()
-    pedido = 'Count from 1 to 300 in English, one number per line, without stopping.'
+    pedido = ('Write a long numbered list in English, at least fifty items, '
+              'one item per line.')
     assert fonte.count(pedido) == 2, 'as duas etapas que pegam a geração usam o mesmo pedido'
     for funcao in ('parar_geracao', 'notificacao'):
         trecho = fonte[fonte.index(f'def {funcao}():'):]
         trecho = trecho[:trecho.index('\n    def ')]
         assert 'n_predict=1024' in trecho or 'n_predict=limpar' in trecho, funcao
+        assert 'threads=1' in trecho, f'{funcao}: um thread é o que dobra a janela do botão'
         assert pedido in trecho, funcao
         assert 'última medição' in trecho, funcao
 

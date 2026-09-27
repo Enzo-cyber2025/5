@@ -226,6 +226,31 @@ def test_search_timing_reads_only_the_last_search_in_the_log_buffer():
     assert 'falha de rede' in (junto['error'] or ''), junto
 
 
+def test_anuncio_no_fim_do_buffer_nao_apaga_a_busca_que_terminou():
+    """Um anúncio DEPOIS do último orçamento é uma busca que está começando.
+
+    Rodada 36276321752: o harness ainda mandava a mesma mensagem duas vezes, e a
+    última leitura pegou um anúncio sem orçamento logo depois de a busca anterior
+    ter terminado — a leitura da busca que terminou (com o modo do prompt, o
+    provedor e o erro) tem de continuar valendo.
+    """
+    from android_checks import search_timing
+    anuncio = 'GGUF_SEARCH_ANNOUNCED query_pending=1 budget_ms=12000\n'
+    busca = (anuncio
+             + 'GGUF_SEARCH_ATTEMPT provider=DuckDuckGo budget_ms=12000 remaining_ms=11999 '
+               'connect_ms=3000 read_ms=4000\n'
+             + 'GGUF_SEARCH provider=DuckDuckGo results=5 ms=1245 '
+               'query=Reply in English: What is the capital of Brazil?\n'
+             + 'GGUF_SEARCH_PROMPT mode=fontes hits=5 usados=3\n'
+             + 'GGUF_SEARCH_BUDGET total_ms=12000 used_ms=1245 exhausted=0 provider=DuckDuckGo\n')
+    # A busca que terminou continua sendo lida mesmo com um anúncio novo no fim.
+    lido = search_timing(busca + anuncio)
+    assert lido['used_ms'] == 1245 and lido['provider'] == 'DuckDuckGo', lido
+    assert lido['sources'] == 5, lido
+    assert lido['prompt_mode'] == 'fontes', lido
+    assert lido['announced_budget_ms'] == 12000, lido
+
+
 def test_search_prompt_block_is_bounded_for_latency():
     """O bloco de fontes entra no prompt: cada caractere é tempo de espera.
 

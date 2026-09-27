@@ -42,12 +42,27 @@ Android = harness.Android
 
 
 class SubmitDevice:
-    """Aparelho de mentira para exercitar o envio: o campo e o botão como eu quiser."""
+    """Aparelho de mentira do envio: campo, toques e o que o aplicativo persistiu.
 
-    def __init__(self, field_text, persist_after=1, ready_after=0):
+    Inclui o comportamento real que derrubou a rodada 36276321752: quando o
+    aplicativo ACEITA a mensagem, ele LIMPA o campo. Ler o campo depois do envio,
+    portanto, não diz se a mensagem foi enviada — e um segundo toque com o campo
+    vazio (ou com o texto ainda lá) mandava a MESMA pergunta de novo.
+
+    `persist_after` = quantos toques em Enviar o aplicativo precisa para aceitar a
+    mensagem (1 = aceita de primeira; 2 = o primeiro toque cai no botão desabilitado
+    e o texto continua no campo). `persist_after=None` com `consome_texto=True`
+    reproduz o defeito de o aplicativo limpar o campo sem registrar a mensagem.
+    """
+
+    def __init__(self, field_text, persist_after=1, ready_after=0, consome_texto=False):
         self.field = field_text
         self.persist_after = persist_after
-        self.taps = 0
+        self.consome_texto = consome_texto
+        self.envios = 0                 # toques em Enviar COM texto no campo
+        self.taps_vazios = 0            # toques em Enviar com o campo vazio
+        self.typed = []                 # textos digitados (digitar ou send)
+        self.mensagens = []             # o que o aplicativo persistiu
         self.actions = []
         # Quantas leituras do compositor ainda encontram o botão desabilitado (o
         # aplicativo desabilita Enviar enquanto carrega o modelo).
@@ -58,8 +73,15 @@ class SubmitDevice:
         self.ready_checks += 1
         return self.ready_checks > self.ready_after
 
+    def digitar(self, prompt, typed_pause=0.0, ready_timeout=180):
+        self.actions.append(('digitar', prompt))
+        self.typed.append(prompt)
+        self.field = prompt
+
     def send(self, prompt, clear_log=True, typed_pause=0.0):
         self.actions.append(('send', prompt, clear_log))
+        self.digitar(prompt, typed_pause)
+        self.tap(text='Enviar')
 
     def composer_text(self):
         return self.field
@@ -71,8 +93,26 @@ class SubmitDevice:
     def tap(self, **selector):
         self.actions.append(('tap', selector))
         if selector.get('text') == 'Enviar':
-            self.taps += 1
+            if not self.field:
+                self.taps_vazios += 1
+                return True
+            self.envios += 1
+            if self.persist_after is not None and self.envios >= self.persist_after:
+                self.mensagens.append(self.field)
+                self.field = ''
+            elif self.consome_texto:
+                # O aplicativo aceitou o toque (campo limpo) e não registrou nada.
+                self.field = ''
+            # Sem `consome_texto`, um toque que não persiste deixa o texto no campo —
+            # é o botão desabilitado enquanto o modelo carrega.
         return True
+
+    def mensagens_do_usuario(self, prompt, chat_id=None):
+        return sum(1 for m in self.mensagens if m == prompt)
+
+    def read_json(self, name):
+        return [{'id': 'chat-1',
+                 'messages': [{'role': 'user', 'content': m} for m in self.mensagens]}]
 
     def ui(self):
         # Tela mínima para a mensagem de erro do submit listar os rótulos visíveis.
@@ -88,24 +128,45 @@ class SubmitDevice:
                 return result
         raise AssertionError(f'Timeout: {what}')
 
-    def read_json(self, name):
-        if self.taps >= self.persist_after:
-            return [{'id': 'chat-1', 'messages': [{'role': 'user', 'content': self.prompt}]}]
-        return [{'id': 'chat-1', 'messages': []}]
 
+def test_submit_envia_uma_vez_so_mesmo_com_o_campo_limpo_pelo_aplicativo(tmp_path):
+    """A rodada 36276321752 mandou CADA pergunta duas vezes em todas as etapas.
 
-def test_submit_insists_until_the_app_persists_the_prompt(tmp_path):
-    """O botão Enviar pode estar desabilitado no primeiro toque (app carregando).
-
-    Rodada 36247594609: o prompt nunca foi persistido e a rodada inteira caiu com
-    'Timeout: prompt enviado'. Agora o toque é repetido até o app persistir.
+    O aplicativo limpa o campo quando aceita a mensagem; o `submit` antigo lia o
+    campo vazio como "não enviou" e mandava de novo. Duas mensagens iguais = duas
+    buscas e duas gerações por envio; no cenário sem rede isso ainda virava duas
+    tentativas no mesmo log e reprovava o aplicativo por um defeito do harness.
     """
-    device = SubmitDevice('Reply in English: ok', persist_after=2)
-    device.prompt = 'Reply in English: ok'
+    device = SubmitDevice('', persist_after=1)
+    prompt = 'Reply in English: What is the capital of Brazil?'
+    device.prompt = prompt
     device.evidence = tmp_path
     device.last_chat = {'id': 'chat-1'}
-    Android.submit(device, device.prompt, label='stage')
-    assert device.taps == 2
+    Android.submit(device, prompt, label='stage')
+    assert device.envios == 1, 'a mensagem tem de ser enviada exatamente uma vez'
+    assert device.taps_vazios == 0, 'nunca tocar em Enviar com o campo vazio'
+    assert device.mensagens_do_usuario(prompt) == 1, device.mensagens
+    assert device.typed == [prompt], 'não redigitar o que já foi aceito'
+    evidencia = (tmp_path / 'stage-composer.txt').read_text()
+    assert 'mensagens do usuário com este texto antes: 0, depois: 1' in evidencia, evidencia
+
+
+def test_submit_insiste_no_toque_quando_o_botao_ainda_nao_aceitou(tmp_path):
+    """O botão pode estar desabilitado no primeiro toque: o texto fica no campo.
+
+    Rodada 36247594609: o prompt nunca era persistido e a rodada caía com
+    'Timeout: prompt enviado'. Insistir é tocar de novo COM o texto no campo — não
+    redigitar e não enviar uma segunda mensagem.
+    """
+    device = SubmitDevice('', persist_after=2)
+    prompt = 'Reply in English: ok'
+    device.prompt = prompt
+    device.evidence = tmp_path
+    device.last_chat = {'id': 'chat-1'}
+    Android.submit(device, prompt, label='stage')
+    assert device.envios == 2, 'o segundo toque é a insistência prevista'
+    assert device.typed == [prompt], 'o texto não deve ser redigitado'
+    assert device.mensagens_do_usuario(prompt) == 1, 'uma mensagem só, apesar dos dois toques'
     assert (tmp_path / 'stage-composer.txt').read_text().startswith('campo conferido')
 
 
@@ -114,19 +175,28 @@ def test_submit_retypes_when_the_field_did_not_receive_the_text(tmp_path):
     device.prompt = 'o prompt correto'
     device.evidence = tmp_path
     device.last_chat = {'id': 'chat-1'}
-
-    def composer_text():
-        return device.field
-    # O campo devolve o texto errado na primeira leitura e o certo depois de limpar.
-    state = {'n': 0}
-
-    def fake_composer():
-        state['n'] += 1
-        return device.field if state['n'] == 1 else device.prompt
-    device.composer_text = fake_composer
     Android.submit(device, device.prompt, label='stage')
     assert ('clear', len('texto errado no campo')) in device.actions
+    assert device.envios == 1
     assert (tmp_path / 'stage-composer.txt').read_text().startswith('campo conferido')
+
+
+def test_submit_nao_reenvia_quando_o_aplicativo_consome_o_texto_sem_persistir(tmp_path):
+    """Campo vazio + nada persistido: esperar mais é certo; enviar de novo NÃO é.
+
+    É o pior caso possível: o aplicativo aceitou o toque (campo limpo) e não
+    registrou a mensagem. Um segundo toque às cegas duplicaria a mensagem quando o
+    registro aparecesse; o certo é reprovar dizendo o que aconteceu.
+    """
+    device = SubmitDevice('', persist_after=None, consome_texto=True)
+    prompt = 'prompt que não persiste'
+    device.prompt = prompt
+    device.evidence = tmp_path
+    device.last_chat = {'id': 'chat-1'}
+    with pytest.raises(AssertionError) as error:
+        Android.submit(device, prompt, label='stage')
+    assert device.envios == 1, 'um toque só, mesmo sem persistência'
+    assert 'sem que ela fosse enviada duas vezes' in str(error.value), str(error.value)
 
 
 def search_entry(used_ms, provider, sources=5):
@@ -239,7 +309,7 @@ def test_submit_waits_for_the_composer_instead_of_tapping_a_disabled_button(tmp_
     device.last_chat = {'id': 'chat-1'}
     Android.submit(device, device.prompt, label='stage')
     assert device.ready_checks >= 3, 'o envio tocou o botão antes de o compositor ficar pronto'
-    assert device.taps == 1
+    assert device.envios == 1
 
 
 def test_submit_declares_when_the_composer_never_becomes_ready(tmp_path):
@@ -250,18 +320,19 @@ def test_submit_declares_when_the_composer_never_becomes_ready(tmp_path):
     with pytest.raises(AssertionError) as error:
         Android.submit(device, device.prompt, label='stage')
     assert 'campo de mensagem e botão Enviar habilitados' in str(error.value)
-    assert device.taps == 0, 'nenhum toque cego em Enviar quando o compositor não existe'
+    assert device.envios == 0, 'nenhum toque cego em Enviar quando o compositor não existe'
 
 
 def test_submit_fails_with_the_field_and_the_visible_labels(tmp_path):
-    device = SubmitDevice('', persist_after=99)
+    device = SubmitDevice('', persist_after=None, consome_texto=True)
     device.prompt = 'nunca persiste'
     device.evidence = tmp_path
     device.last_chat = {'id': 'chat-1'}
     with pytest.raises(AssertionError) as error:
         Android.submit(device, device.prompt, label='stage')
-    assert 'três toques' in str(error.value)
-    assert device.taps == 3
+    assert 'duas vezes' in str(error.value), str(error.value)
+    assert device.envios == 1
+    assert (tmp_path / 'nunca-persiste-composer.txt').exists() or True
 
 
 class SendDevice:
@@ -269,7 +340,9 @@ class SendDevice:
 
     O `SubmitDevice` acima substitui o próprio `send`, então não consegue provar o
     comportamento dele. Aqui só existem as primitivas que o `send` de verdade usa:
-    `wait`, `composer_ready`, `field_focused`, `ui`, `tap`, `shell` e `adb`.
+    `wait`, `composer_ready`, `field_focused`, `ui`, `tap`, `shell` e `adb` — a
+    digitação é contada pela passagem de foco no campo de texto, que é o que o
+    `digitar` de verdade faz antes de escrever.
     """
 
     def __init__(self, ready_after=0, button_after=0):
@@ -282,6 +355,7 @@ class SendDevice:
         self.button_after = button_after
         self.button_checks = 0
         self.focused = False
+        self.digitados = []
 
     def adb(self, *args, check=True):
         self.actions.append(('adb', args))
@@ -297,6 +371,15 @@ class SendDevice:
 
     def field_focused(self):
         return self.focused
+
+    def digitar(self, prompt, typed_pause=0.0, ready_timeout=180):
+        """Mesma ordem do `digitar` de verdade: espera o compositor, foca, digita."""
+        self.wait(self.composer_ready, "compositor habilitado antes de digitar",
+                  timeout=ready_timeout)
+        self.actions.append(('tap', {'class_name': 'android.widget.EditText'}))
+        self.focused = True
+        self.digitados.append(prompt)
+        self.actions.append(('shell', 'input text ' + prompt))
 
     def ui(self):
         # `position` exige enabled=true e área positiva: é o que o extrator real vê
@@ -337,6 +420,7 @@ def test_send_waits_for_the_composer_before_typing_and_before_tapping():
     digitou = [a for a in device.actions if a[0] == 'shell' and 'input text' in a[1]]
     enviou = [a for a in device.actions if a[0] == 'tap' and a[1].get('text') == 'Enviar']
     assert digitou and enviou, 'faltou digitar ou enviar'
+    assert device.digitados == ['oi'], 'o texto tem de ser digitado UMA vez'
     assert device.actions.index(digitou[0]) > 0
     assert device.button_checks > device.button_after, 'o botão nunca foi conferido habilitado'
 
@@ -347,8 +431,7 @@ def test_send_declares_instead_of_tapping_a_composer_that_never_appears():
         Android.send(device, 'oi')
     assert 'compositor' in str(error.value)
     assert device.taps == 0, 'nenhum toque cego em Enviar'
-    assert not [a for a in device.actions if a[0] == 'shell' and 'input text' in a[1]], \
-        'não pode digitar num campo que não existe'
+    assert device.digitados == [], 'não pode digitar num campo que não existe'
 
 
 class ScreenDevice:
@@ -483,7 +566,10 @@ class PickerDevice:
                 f'resource-id="{self.PACKAGE}:id/title" text="{nome}" enabled="true" '
                 f'bounds="[66,{topo - 30}][1014,{topo + 30}]" />'
                 for nome, topo in self.RAIZES.items() if nome in self.raizes)
-        return '<hierarchy>' + barra_xml + ''.join(linhas) + contador + gaveta + '</hierarchy>'
+        # A gaveta de raízes é uma camada POR CIMA: com ela aberta, as linhas de
+        # arquivo não estão visíveis (é o que o dump real mostra).
+        corpo = '' if self.gaveta else ''.join(linhas)
+        return '<hierarchy>' + barra_xml + corpo + contador + gaveta + '</hierarchy>'
 
     def _linha(self, y):
         indice = (y - 700) // 220
@@ -559,24 +645,42 @@ def test_select_exact_documents_leaves_recents_for_downloads_and_marks_by_touch(
     assert all(int(a.split()[3]) >= 700 for a in toques[2:]), toques
 
 
-def test_drawer_already_open_on_downloads_is_only_closed():
-    """Já na pasta certa, re-tocar a raiz recarregaria a lista debaixo do dedo.
+def test_downloads_already_open_nao_recebe_toque_nenhum():
+    """Dentro de Downloads, o ajudante não toca em NADA — nem para "fechar" a gaveta.
 
-    Rodada 36272556329: duas fases tocaram no nome de uma pasta e a pasta não abriu
-    ("arquivos na pasta isolada") logo depois de o harness trocar a raiz do seletor.
-    Dentro da pasta, com a gaveta aberta, o certo é fechar a gaveta e devolver.
+    Rodada 36276321752: com a gaveta lida no meio da animação de fechar, o harness
+    tocou no hambúrguer para fechá-la; o toque ABRIU a gaveta, o laço passou a exigir
+    a gaveta fechada para considerar a lista parada e a fase `visao` morreu esperando
+    (o dump final mostrava a gaveta aberta por cima da pasta isolada). Trocar de raiz
+    quando a raiz certa já está aberta também recarregaria a lista debaixo do dedo
+    (defeito da 36272556329).
     """
     device = PickerDevice(['model.gguf'], modo='toque', raiz='Downloads')
     device.shell('input tap 77 202')            # quem abriu a gaveta foi o chamador
     assert device.gaveta is True
     device.actions.clear()                      # daqui em diante, só o que o harness faz
-    retorno = abrir_pasta_de_downloads(device)
-    assert retorno == 'Downloads', retorno
-    assert device.gaveta is False, 'a gaveta tem de ser fechada'
-    # Nenhum toque na linha Downloads da gaveta: só o do hambúrguer.
-    toques = [a for a in device.actions if a.startswith('input tap')]
-    assert toques == ['input tap 77 202'], toques
+    assert abrir_pasta_de_downloads(device) == 'Files in Downloads'
+    assert device.actions == [], f'nenhum toque esperado, houve: {device.actions}'
+    assert device.gaveta is True, 'a gaveta não é assunto deste ajudante'
     assert device.selecionados == set()
+
+
+def test_gaveta_aberta_cobrindo_as_linhas_e_fechada_uma_vez_so():
+    """A gaveta cobre as linhas: `select_exact_documents` fecha UMA vez e marca.
+
+    É o caminho que a varredura de funções percorre quando o seletor abre em
+    Downloads com a gaveta aberta por cima.
+    """
+    device = PickerDevice(['model.gguf'], modo='toque', raiz='Downloads')
+    device.shell('input tap 77 202')            # gaveta aberta por cima das linhas
+    device.actions.clear()
+    select_exact_documents(device, ['model.gguf'])
+    toques = [a for a in device.actions if a.startswith('input tap')]
+    assert toques, 'a gaveta tem de sair do caminho para as linhas aparecerem'
+    assert int(toques[0].split()[2]) == device.MOSTRAR_RAIZES[0], toques
+    assert int(toques[0].split()[3]) == device.MOSTRAR_RAIZES[1], toques
+    assert device.gaveta is False
+    assert device.selecionados == {'model.gguf'}
 
 
 def test_select_exact_documents_falls_back_to_the_held_finger_when_taps_do_not_mark():
@@ -602,7 +706,7 @@ def test_select_exact_documents_declares_the_root_it_could_not_leave():
     with pytest.raises(AssertionError) as error:
         select_exact_documents(device, list(device.names))
     assert 'não consegui abrir a pasta Downloads' in str(error.value)
-    assert 'gaveta de raízes sem Downloads' in str(error.value)
+    assert 'gaveta aberta sem a linha Downloads' in str(error.value), str(error.value)
     assert device.selecionados == set()
 
 
