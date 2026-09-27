@@ -34,7 +34,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'scripts'))
 
-from android_checks import (PACKAGE, PICKERS, assistant_reply,  # noqa: E402
+from android_checks import (PACKAGE, PICKERS, assistant_reply, persisted_attachment_prompt,  # noqa: E402
                             generation_completed, has_package, position, pref_value, search_panel)
 
 
@@ -921,7 +921,10 @@ def main():
         log = device.adb('logcat', '-d')
         (args.evidence / 'functions-visao-logcat.txt').write_text(log)
         avaliada = re.search(r'GGUF_IMAGE_EVALUATED tokens=(\d+) backend=(\w+)', log)
-        resposta = assistant_reply(device.read_json('chats.json'), chat['id'], prompt).strip()
+        # O alvo é o texto COMO O APLICATIVO O GRAVA: com anexo, ele persistiu o
+        # preâmbulo do anexo na frente (rodada 36334440430). Igualdade exata segue valendo.
+        alvo = persisted_attachment_prompt(prompt, [nome])
+        resposta = assistant_reply(device.read_json('chats.json'), chat['id'], alvo).strip()
         if not avaliada:
             raise AssertionError('o motor não avaliou a imagem (sem GGUF_IMAGE_EVALUATED); visíveis: '
                                  + ', '.join(visible_labels(device, 20)))

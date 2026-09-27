@@ -181,4 +181,25 @@ def test_geracao_longa_pede_um_texto_que_nao_termina_sozinho():
         assert 'for tentativa in (1, 2)' in trecho, funcao
         assert 'tentativas' in trecho, funcao
 
+def test_vision_compares_against_the_text_the_app_persists_with_the_attachment():
+    """Rodada 36334440430: exato, porém contra o texto COMO O APLICATIVO GRAVA.
 
+    A etapa `visao` reprovou em "O prompt não chegou à conversa esperada" porque
+    comparava `content == prompt`, mas a mensagem com anexo é persistida com o
+    preâmbulo do anexo na frente (o mesmo formato que o caminho de anexos registra).
+    Nada afrouxa: a conferência segue de igualdade exata (tests/test_projector_measurement
+    prova que `assistant_reply` NÃO aceita substring) — o alvo é que carrega a contagem.
+    """
+    import sys
+    sys.path.insert(0, str(ROOT / 'scripts'))
+    from android_checks import persisted_attachment_prompt
+    assert persisted_attachment_prompt('Oi', []) == 'Oi'
+    assert persisted_attachment_prompt('Oi', ['a.jpg']) == (
+        'Arquivo anexado: 1 arquivo(s)\n\n'
+        'Anexos vinculados a esta mensagem para leitura.\n\nOi')
+    assert persisted_attachment_prompt('Oi', ['a.jpg', 'p.gguf']).startswith(
+        'Arquivo anexado: 2 arquivo(s)')
+    funcao = SWEEP.read_text()
+    trecho = funcao[funcao.index('    def visao():'):funcao.index('    def notificacao():')]
+    assert 'persisted_attachment_prompt(prompt, [nome])' in trecho
+    assert "assistant_reply(device.read_json('chats.json'), chat['id'], alvo)" in trecho

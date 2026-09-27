@@ -86,6 +86,23 @@ def unified_vision(models, *, expected_capability="VISION_SINGLE_GGUF"):
     return unificado
 
 
+def persisted_attachment_prompt(prompt, arquivos):
+    """A mensagem COM ANEXO é gravada como preâmbulo + texto do usuário.
+
+    `arquivos` é a lista de nomes anexados (o aplicativo grava a CONTAGEM). A
+    conferência continua de igualdade exata — o que muda é o alvo: o texto como o
+    aplicativo o persiste. Rodada 36334440430: a etapa `visao` reprovou em "O prompt
+    não chegou à conversa esperada" porque exigia `content == prompt` e a mensagem
+    vinha com "Arquivo anexado: 1 arquivo(s)\n\nAnexos vinculados a esta mensagem
+    para leitura.\n\n" na frente; o mesmo formato que o caminho de anexos já registra.
+    """
+    nomes = list(arquivos)
+    if not nomes:
+        return prompt
+    return (f'Arquivo anexado: {len(nomes)} arquivo(s)\n\n'
+            'Anexos vinculados a esta mensagem para leitura.\n\n' + prompt)
+
+
 def assistant_reply(chats, chat_id, prompt):
     if not isinstance(chats, list):
         raise AssertionError("chats.json não é uma lista")
