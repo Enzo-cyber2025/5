@@ -476,9 +476,26 @@ public final class SearchTool {
         return text.length()<=max?text:text.substring(0,max-1)+"\u2026";
     }
 
-    /** Chamado no worker da geração; guarda o relatório para anexar à mensagem. */
+    /** Chamado no worker da geração; guarda o relatório para anexar à mensagem.
+     *
+     * Bug "pesquisa sem precisar": no envio manual (max=5, antes de o primeiro
+     * token sair), a busca prévia só dispara se a pergunta realmente pedir dado
+     * externo/recente — caso contrário devolve uma string VAZIA (sem bloco de
+     * fontes, sem HTTP) e o modelo responde direto, sem esperar 12 s de rede.
+     * Quando a busca é chamada por fluxos internos (ex.: reexecução por
+     * ferramenta), max==0 pula o portão. */
     public static String searchText(String query,int max){
-        Report report=gather(query,max);
+        Report report;
+        if(max>0&&!SearchGating.needsWeb(query)){
+            // Sem disparo de rede: a mensagem não leva painel de fontes.
+            Log.i(TAG,"GGUF_SEARCH_GATED skipped=1 reason=nao_pede_dado_externo chars="
+                +(query==null?0:query.length())+" query="+query);
+            report=new Report(query==null?"":query.trim(),"pulado",
+                new ArrayList<Hit>(),null,0,SearchBudget.configuredMs(),false);
+            PENDING.set(report);
+            return "";
+        }
+        report=gather(query,max);
         PENDING.set(report);
         return promptText(report);
     }

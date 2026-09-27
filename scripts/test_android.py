@@ -1381,7 +1381,7 @@ def main():
         try:
             device.generate(model, 0, "search-online", search=True, await_load=True,
                             settle=5.0,
-                            prompt="Reply in English: What is the capital of Brazil?")
+                            prompt="Reply in English: today's news headlines about Brazil (web search required)")
         finally:
             # Devolve a propriedade ao estado do aparelho: vazio = padrão do app.
             device.shell("setprop debug.gguf.search_race ''")
@@ -1402,7 +1402,7 @@ def main():
             raise AssertionError("uma tentativa recebeu mais tempo do que o orçamento restante")
         chats = device.read_json("chats.json")
         panel = search_panel(chats, online_chat_id,
-                             "Reply in English: What is the capital of Brazil?")
+                             "Reply in English: today's news headlines about Brazil (web search required)")
         panel_file = args.evidence / "search-online-panel.json"
         panel_file.write_text(json.dumps(panel, ensure_ascii=False, indent=2))
         if online["sources"]:
@@ -1430,7 +1430,7 @@ def main():
             else:
                 device.generate(model, 0, "search-offline", search=True, await_load=True,
                                 settle=5.0,
-                                prompt="Reply in English: What is the capital of France?")
+                                prompt="Reply in English: current price of Brent crude oil today? Cite sources.")
                 offline_chat_id = device.last_chat["id"]
                 offline = search_timing((args.evidence / "search-offline-logcat.txt").read_text())
                 if not offline:
@@ -1450,7 +1450,7 @@ def main():
                 if offline["sources"]:
                     raise AssertionError("sem rede, a busca não pode produzir fontes")
                 offline_panel = search_panel(device.read_json("chats.json"), offline_chat_id,
-                                             "Reply in English: What is the capital of France?")
+                                             "Reply in English: current price of Brent crude oil today? Cite sources.")
                 (args.evidence / "search-offline-panel.json").write_text(
                     json.dumps(offline_panel, ensure_ascii=False, indent=2))
                 if not offline_panel or not (offline_panel.get("error") or "").strip():
@@ -1523,7 +1523,7 @@ def main():
         device.shell("setprop debug.gguf.search_race 1")
         try:
             device.generate(model, 99, "search-race", await_load=True, settle=5.0, search=True,
-                            prompt="Reply in English: What is the capital of Brazil?")
+                            prompt="Reply in English: today's news headlines about Brazil (web search required)")
         finally:
             device.shell("setprop debug.gguf.search_race ''")
         race_log = (args.evidence / "search-race-logcat.txt").read_text()
@@ -1542,7 +1542,7 @@ def main():
         try:
             device.new_chat(model, 99, search=True)
             device.wait_for_load()
-            repeated = "Reply in English: What is the capital of Peru?"
+            repeated = "Reply in English: today's latest headlines from Peru."
             device.submit(repeated, label="search-cache-1")
             device.wait(lambda: generation_completed(device.adb("logcat", "-d")),
                         "primeira consulta com busca concluída", timeout=240)
