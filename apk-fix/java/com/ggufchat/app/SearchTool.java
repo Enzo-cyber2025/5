@@ -384,9 +384,21 @@ public final class SearchTool {
             worker.start();
         }
         synchronized(lock){
-            while(winners.isEmpty()&&!stopped[0]&&pending[0]>0){
+            while(pending[0]>0){
                 int remaining=budget.remainingMs();
                 if(remaining<=0)break;
+                // Quando a falha é de rede/DNS/recusa de conexão, ela vale para todos
+                // os provedores (os mesmos DNS/rotas são compartilhados). Mesmo assim
+                // é preciso esperar os demais workers terminarem de registrar seu
+                // GGUF_SEARCH_ATTEMPT — do contrário um thread que ainda não tinha
+                // escrito a linha de abertura é derrubado pelo retorno precoce e o
+                // log mostra só um provedor (rodada 36364000491: DuckDuckGo partiu,
+                // Wikipédia não chegou a aparecer; o parser achou uma lista com um
+                // só item e acusou cadeia serial). Esperar pelo pending=0 não soma
+                // espera: cada worker já está dentro da sua própria fatia de
+                // connect/read com timeout, e a exceção de DNS cai no primeiro
+                // pacote (dezenas de ms).
+                if(winners.size()>0)break;
                 try{lock.wait(Math.min(200,Math.max(1,remaining)));}
                 catch(InterruptedException ex){Thread.currentThread().interrupt();break;}
             }

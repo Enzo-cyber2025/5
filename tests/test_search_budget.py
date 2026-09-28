@@ -407,6 +407,25 @@ def test_budget_class_stays_pure_java():
     assert 'java.net.' in text
     assert 'public static final int DEFAULT_MS = 12000;' in text
 
+def test_corrida_espera_todos_workers_registrarem_suas_tentativas():
+    """Falha de rede em paralelo não pode matar o outro thread antes do log.
+
+    Rodada 36364000491: offline, DuckDuckGo batia DNS em 85 ms e curto-circuitava
+    o retorno pro modelo enquanto o thread da Wikipédia ainda não tinha escrito a
+    linha GGUF_SEARCH_ATTEMPT. O log ficava só com DuckDuckGo na lista de
+    tentativas e o parser acusava "cadeia não interrompida". O laço da corrida
+    agora espera pending[0]==0 (ou vencedor, ou orçamento zerado), não para no
+    primeiro stopped[0]=true quando ainda há workers abrindo requisição.
+    """
+    texto = (Path(__file__).resolve().parent.parent
+             / 'apk-fix' / 'java' / 'com' / 'ggufchat' / 'app' / 'SearchTool.java').read_text()
+    assert 'while(pending[0]>0)' in texto, (
+        'o laço da corrida precisa esperar todos os workers sinalizarem, '
+        'não apenas o primeiro stop=true')
+    # O early-exit por vencedor existe (não esperamos a toa por perdedores quando
+    # já temos uma fonte), mas a condição de espera base é pending[0]==0.
+    assert 'if(winners.size()>0)break;' in texto
+
 def test_tentativas_paralelas_da_corrida_nao_sao_cadeia():
     """A corrida de provedores parte junto; a cadeia serial é que gasta minutos.
 
