@@ -1,0 +1,66 @@
+{
+  "stage": "search-online",
+  "gpu_layers_requested": 0,
+  "threads_requested": 2,
+  "threads_resolved": {
+    "requested": 2,
+    "available": 2,
+    "capacities": 0,
+    "resolved": 2
+  },
+  "backend": "cpu",
+  "ui_first_text_s": 7.965408096,
+  "warmup": {
+    "ran": true,
+    "skipped": null,
+    "ui_ok": true,
+    "typed_passes": 1,
+    "input_tokens": 72,
+    "prefilled": 72,
+    "reused_tokens": 48,
+    "gpu": false,
+    "aborted": false
+  },
+  "prefill": {
+    "prompt_tokens": 248,
+    "reused_tokens": 45,
+    "fresh_tokens": 203,
+    "prefill_s": 3.4161,
+    "prefill_ms_per_token": 16.828
+  },
+  "context_tuning": {
+    "batch": 256,
+    "ubatch": 128,
+    "threads": 2,
+    "prefix_cache_supported": true
+  },
+  "kv_cache": {
+    "kv": "f16",
+    "flash_attn_requested": "auto"
+  },
+  "search": {
+    "budget_ms": 12000,
+    "used_ms": 4489,
+    "exhausted": false,
+    "provider": "nenhum",
+    "announced_budget_ms": 12000,
+    "attempts": [
+      "DuckDuckGo",
+      "Wikipédia"
+    ],
+    "attempts_parallel": false,
+    "attempt_slices_within_budget": true,
+    "sources": 0,
+    "prompt_mode": "indisponivel",
+    "error": "DuckDuckGo: HTTP 202; DuckDuckGo Lite: HTTP 202; Wikipédia: nenhum resultado"
+  },
+  "software_vulkan_notice": null,
+  "tokens": 128,
+  "decode_s": 11.811762498,
+  "prefill_s": 3.416118313,
+  "tokens_s": 10.836655412066854,
+  "first_token_s": 3.417717211,
+  "prompt_tokens": 248,
+  "reused_tokens": 45,
+  "completed": true
+}
