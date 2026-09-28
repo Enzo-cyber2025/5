@@ -22,18 +22,22 @@ def test_o_portao_de_busca_previa_so_dispara_para_perguntas_que_pedem_dado_exter
     Antes do conserto, qualquer envio com o botão Busca ligado disparava HTTP
     antes do primeiro token — até "oi" ou "explique recursão" pagavam o teto de
     espera. Agora a busca prévia só dispara quando a pergunta tem indicadores
-    claros de dado recente (data, notícia, cotação, preço, placar, clima…).
+    claros de dado recente (data, notícia, cotação, preço, placar, clima…) em
+    PORTUGUÊS ou INGLÊS (os prompts de teste do harness são em inglês).
     """
     assert 'class SearchGating' in SRC
     assert 'public static boolean needsWeb(String text)' in SRC
     assert 'return TRIGGERS.matcher(t).find();' in SRC
     # Strings curtas (sem ?) nunca disparam — protege "oi", "bom dia", etc.
     assert 'if(t.length()<12 && !t.contains("?"))return false;' in SRC
-    # Gatilhos (classes de palavras) presentes na regex:
+    # Gatilhos em pt e en (classes de palavras) presentes na regex:
     for trecho in ('hoje', 'agora', 'ontem', 'amanhã', 'notícias?', 'preço d[eo]',
                    'cotação', 'placar d[eo]', 'temperatura', 'clima',
                    'previsão do tempo', 'wikipedia', 'site oficial',
-                   'fonte oficial', 'em 202[4-9]', 'resultado do jogo'):
+                   'fonte oficial', 'em 202[4-9]', 'resultado do jogo',
+                   'news', 'headlines?', 'current price', 'brent',
+                   'price of', 'weather', 'forecast', 'cite',
+                   'today', 'latest', 'yesterday'):
         assert trecho in SRC, f'gatilho ausente: {trecho}'
 
 
