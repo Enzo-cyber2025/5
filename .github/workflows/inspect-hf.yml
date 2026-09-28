@@ -3,20 +3,25 @@ on:
   push:
     branches: [arena/01a0d024-5]
     paths: [ci/hf_probe.py]
+permissions:
+  contents: write
 jobs:
   inspect:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ github.token }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Git config
+        run: |
+          git config user.name "ci-bot"
+          git config user.email "ci@local"
       - name: Deps
         run: sudo apt-get update -qq && sudo apt-get install -y -qq p7zip-full file xxd
       - name: Probe
         run: bash ci/hf_fetch.sh
-      - uses: actions/upload-artifact@v4
-        with:
-          name: hf-report
-          path: hf-report/

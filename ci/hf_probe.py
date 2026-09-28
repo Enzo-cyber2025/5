@@ -16,7 +16,7 @@ def fetch(url, method=None, rng=None):
 r=[]
 def say(s): print(s); r.append(s)
 say("== WHOAMI ==")
-b,sc,h=fetch("https://huggingface.co/api/whoami-v2"); say(f"status:{sc}"); say(b[:500].decode(errors="replace"))
+b,sc,h=fetch("https://huggingface.co/api/whoami-v2"); say(f"status:{sc}"); say(b[:300].decode(errors="replace"))
 say("== REPO ==")
 b,sc,h=fetch(f"https://huggingface.co/api/models/{REPO}"); say(f"status:{sc}")
 try:
@@ -26,21 +26,23 @@ try:
 except Exception as e: say(f"json falhou:{e}"); say(b[:3000].decode(errors="replace"))
 say("== FILE HEAD ==")
 b,sc,h=fetch(f"https://huggingface.co/{REPO}/resolve/main/{FILE}",method="HEAD"); say(f"status:{sc}")
-for k in ("content-length","content-type","location","etag"):
+for k in ("content-length","content-type","location","etag","x-error-code"):
     if k in h: say(f" {k}:{h[k]}")
 say("== BAIXANDO 2MB ==")
 b,sc,h=fetch(f"https://huggingface.co/{REPO}/resolve/main/{FILE}",rng="bytes=0-2097151"); say(f"status:{sc} bytes:{len(b)}")
-open(f"{OUTDIR}/head-2mb.bin","wb").write(b)
 if sc in (200,206):
-    try: say(subprocess.check_output(["file",f"{OUTDIR}/head-2mb.bin"]).decode())
+    open(f"{OUTDIR}/head-2mb.bin","wb").write(b)
+    try: say(subprocess.check_output(["file",f"{OUTDIR}/head-2mb.bin"]).decode().strip())
     except Exception as e: say(f"file:{e}")
     say("hex16:"+b[:16].hex())
-    say("7z sig: "+("SIM" if b[:6]==b"7z\xbc\xaf'\x1c" else "NAO"))
-    say("zip sig: "+("SIM" if b[:2]==b"PK" else "NAO"))
-    say("rar sig: "+("SIM" if b[:7].startswith(b"Rar!\x1a\x07") else "NAO"))
+    say("7z_sig:"+("SIM" if b[:6]==b"7z\xbc\xaf'\x1c" else "NAO"))
+    say("zip_sig:"+("SIM" if b[:2]==b"PK" else "NAO"))
+    say("rar_sig:"+("SIM" if b[:7].startswith(b"Rar!\x1a\x07") else "NAO"))
     try:
         out=subprocess.check_output(["7z","l",f"{OUTDIR}/head-2mb.bin"],stderr=subprocess.STDOUT,timeout=20).decode(errors="replace")
         for line in out.splitlines()[:80]: say(line)
     except subprocess.CalledProcessError as e:
         say("7z falhou:"); say((e.output.decode(errors="replace") if e.output else "")[:1500])
+else:
+    say("body erro: "+b[:800].decode(errors="replace"))
 open(f"{OUTDIR}/report.txt","w").write("\n".join(r))
