@@ -2,15 +2,17 @@ name: Inspecionar ativo privado do HuggingFace
 on:
   push:
     branches: [arena/01a0d024-5]
-    paths: [ci/hf_pieces.sh]
+    paths: [ci/hf_fetch.sh]
 jobs:
   inspect:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Roda
-        run: bash ci/hf_pieces.sh
+      - name: Dependencias
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq p7zip-full file xxd
+      - name: Probe
+        run: bash ci/hf_fetch.sh
