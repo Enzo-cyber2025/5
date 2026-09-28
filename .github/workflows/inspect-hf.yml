@@ -1,0 +1,43 @@
+name: Inspecionar ativo privado do HuggingFace
+on:
+  push:
+    branches: [arena/01a0d024-5]
+    paths: [.github/workflows/inspect-hf.yml]
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - name: Autentica e inspeciona
+        env:
+          HF_TOKEN: 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
+        run: |
+          set -eu
+          echo "::add-mask::$HF_TOKEN"
+          REPO='enzo123456789/sla1'
+          FILE='BeamNG.drive.7z'
+          HEAD=524288
+          echo "== whoami =="
+          curl -sS -H "Authorization: Bearer $HF_TOKEN" https://huggingface.co/api/whoami-v2             | python3 -c "import sys,json;d=json.load(sys.stdin);print('auth ok, tipo:',d.get('type','?'))"
+          echo "== metadata do repo =="
+          curl -sS -H "Authorization: Bearer $HF_TOKEN" "https://huggingface.co/api/models/$REPO" -o /tmp/repo.json || { cat /tmp/repo.json; exit 2; }
+          python3 - <<PY
+import json
+d=json.load(open('/tmp/repo.json'))
+print('id:',d.get('id'),'privado?',d.get('private'))
+sib=[s.get('rfilename') for s in d.get('siblings',[])]
+print('arquivos:',len(sib))
+for n in sib[:80]: print(' ',n)
+if len(sib)>80: print(f' (+{len(sib)-80} mais)')
+PY
+          echo "== metadados HTTP do arquivo =="
+          curl -sS -I -H "Authorization: Bearer $HF_TOKEN" "https://huggingface.co/$REPO/resolve/main/$FILE" | head -20
+          echo "== primeiros $HEAD bytes =="
+          curl -sS -f --range 0-$((HEAD-1)) -H "Authorization: Bearer $HF_TOKEN"             "https://huggingface.co/$REPO/resolve/main/$FILE" -o /tmp/head.bin
+          ls -la /tmp/head.bin
+          file /tmp/head.bin || true
+          echo "-- magic hex (64 bytes):"
+          xxd -l 64 /tmp/head.bin || true
+          echo "-- strings iniciais:"
+          strings -n 8 /tmp/head.bin | head -30 || true
