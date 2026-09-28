@@ -214,7 +214,12 @@ def search_timing(log):
         # aparece com `remaining_ms` já consumido — é essa que a checagem offline
         # reprova, e não a corrida (rodada 36338598381: os dois provedores partiram
         # juntos, com remaining_ms=11999, e foram reprovados como "cadeia").
-        'attempts_parallel': all(remaining >= budget - 5
+        # Tolerância de 50 ms para agendamento de thread no emulador: o segundo
+        # worker sempre começa alguns ms depois do primeiro (rodada 36443686022:
+        # Wikipédia partiu com remaining_ms=11986, 14 ms após DuckDuckGo — ainda é
+        # paralelo; uma cadeia serial verdadeira tem remaining_ms milhares de ms
+        # menor por causa do timeout HTTP do provedor anterior).
+        'attempts_parallel': all(remaining >= budget - 50
                                  for _, budget, remaining, _, _ in attempts),
         # A soma das duas fatias de uma tentativa nunca passa do restante do
         # orçamento — é a garantia central do conserto, no relógio do aparelho.
