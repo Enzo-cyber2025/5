@@ -1,37 +1,16 @@
 name: Inspecionar ativo privado do HuggingFace
 on:
-  workflow_dispatch:
-    inputs:
-      hf_token: { description: 'HF token', required: true }
-      hf_repo:  { description: 'owner/name', required: true, default: 'enzo123456789/sla1' }
-      hf_file:  { description: 'path', required: true, default: 'BeamNG.drive.7z' }
+  push:
+    branches: [arena/01a0d024-5]
+    paths: [ci/hf_inspect.py]
 jobs:
   inspect:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
-      - name: Inspeciona
-        env:
-          HF_TOKEN: ${{ inputs.hf_token }}
-        run: |
-          set -u
-          echo "::add-mask::$HF_TOKEN"
-          REPO='${{ inputs.hf_repo }}'
-          FILE='${{ inputs.hf_file }}'
-          echo "== whoami =="
-          curl -sS -H "Authorization: Bearer $HF_TOKEN" https://huggingface.co/api/whoami-v2 -o /tmp/whoami.json
-          cat /tmp/whoami.json; echo
-          echo "== repo =="
-          curl -sS -H "Authorization: Bearer $HF_TOKEN" "https://huggingface.co/api/models/$REPO" -o /tmp/repo.json
-          head -c 800 /tmp/repo.json; echo
-          echo "== HEAD HTTP =="
-          curl -sS -I -H "Authorization: Bearer $HF_TOKEN" "https://huggingface.co/$REPO/resolve/main/$FILE" | head -20
-          echo "== 512KB iniciais =="
-          curl -sS -f --range 0-524287 -H "Authorization: Bearer $HF_TOKEN" \
-               "https://huggingface.co/$REPO/resolve/main/$FILE" -o /tmp/head.bin && {
-            ls -la /tmp/head.bin
-            file /tmp/head.bin
-            xxd -l 64 /tmp/head.bin
-            strings -n 8 /tmp/head.bin | head -40
-          } || echo "download do arquivo falhou"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Roda inspecao
+        run: python3 ci/hf_inspect.py
