@@ -19,30 +19,53 @@ jobs:
           REPO='enzo123456789/sla1'
           FILE='BeamNG.drive.7z'
           HEAD=524288
-          echo "== whoami =="
-          curl -sS -H "Authorization: Bearer $HF_TOKEN" https://huggingface.co/api/whoami-v2 -o /tmp/whoami.json || { cat /tmp/whoami.json; exit 2; }
-          cat /tmp/whoami.json | python3 -c "import sys,json;d=json.load(sys.stdin);print('auth ok, tipo:',d.get('type','?'),'email:',d.get('email','(sem)'))"
-          echo "== metadata do repo =="
-          curl -sS -H "Authorization: Bearer $HF_TOKEN" "https://huggingface.co/api/models/$REPO" -o /tmp/repo.json
-          python3 - <<PY
-import json,sys
-try:
-  d=json.load(open('/tmp/repo.json'))
-except Exception as e:
-  print('ERRO lendo repo:',open('/tmp/repo.json').read()[:500]); sys.exit(2)
-print('id:',d.get('id'),'privado?',d.get('private'))
+          mkdir -p hf-report
+          {
+            echo "# relatorio de inspecao HF"
+            echo
+            echo "repo: $REPO"
+            echo "arquivo: $FILE"
+            echo
+            echo "## whoami"
+            curl -sS -H "Authorization: Bearer $HF_TOKEN" https://huggingface.co/api/whoami-v2 -o /tmp/whoami.json
+            cat /tmp/whoami.json
+            echo
+            echo "## metadata do repo"
+            curl -sS -H "Authorization: Bearer $HF_TOKEN" "https://huggingface.co/api/models/$REPO" -o /tmp/repo.json || { echo "CURL FALHOU (repo)"; cat /tmp/repo.json; exit 2; }
+            cat /tmp/repo.json
+            echo
+            echo "## lista de arquivos"
+            python3 - <<PY
+import json
+d=json.load(open('/tmp/repo.json'))
 sib=[s.get('rfilename') for s in d.get('siblings',[])]
-print('arquivos:',len(sib))
-for n in sib[:80]: print(' ',n)
-if len(sib)>80: print(f' (+{len(sib)-80} mais)')
+print('total:',len(sib))
+for n in sib: print(' -',n)
 PY
-          echo "== metadados HTTP do arquivo =="
-          curl -sS -I -H "Authorization: Bearer $HF_TOKEN" "https://huggingface.co/$REPO/resolve/main/$FILE" | head -20
-          echo "== primeiros $HEAD bytes =="
-          curl -sS -f --range 0-$((HEAD-1)) -H "Authorization: Bearer $HF_TOKEN"             "https://huggingface.co/$REPO/resolve/main/$FILE" -o /tmp/head.bin
-          ls -la /tmp/head.bin
-          file /tmp/head.bin || true
-          echo "-- magic hex:"
-          xxd -l 64 /tmp/head.bin || true
-          echo "-- strings iniciais:"
-          strings -n 8 /tmp/head.bin | head -30 || true
+            echo
+            echo "## HEAD HTTP do arquivo"
+            curl -sS -I -H "Authorization: Bearer $HF_TOKEN" "https://huggingface.co/$REPO/resolve/main/$FILE"
+            echo
+            echo "## primeiros $HEAD bytes"
+            if curl -sS -f --range 0-$((HEAD-1)) -H "Authorization: Bearer $HF_TOKEN"                  "https://huggingface.co/$REPO/resolve/main/$FILE" -o /tmp/head.bin; then
+              ls -la /tmp/head.bin
+              echo
+              echo "### file(1):"
+              file /tmp/head.bin
+              echo
+              echo "### magic hex (64 bytes):"
+              xxd -l 64 /tmp/head.bin
+              echo
+              echo "### strings iniciais:"
+              strings -n 8 /tmp/head.bin | head -40
+              cp /tmp/head.bin hf-report/head.bin
+            else
+              echo "CURL FALHOU no download do arquivo (HTTP/network)."
+              echo "Tentando sem /main/"
+              curl -sS -I -H "Authorization: Bearer $HF_TOKEN" "https://huggingface.co/$REPO/resolve/$FILE" | head -20
+            fi
+          } > hf-report/report.txt 2>&1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hf-report
+          path: hf-report/
