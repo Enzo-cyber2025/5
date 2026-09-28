@@ -1,0 +1,66 @@
+{
+  "stage": "search-race",
+  "gpu_layers_requested": 99,
+  "threads_requested": 2,
+  "threads_resolved": {
+    "requested": 2,
+    "available": 2,
+    "capacities": 0,
+    "resolved": 2
+  },
+  "backend": "cpu",
+  "ui_first_text_s": 10.791486226,
+  "warmup": {
+    "ran": true,
+    "skipped": null,
+    "ui_ok": true,
+    "typed_passes": 1,
+    "input_tokens": 72,
+    "prefilled": 72,
+    "reused_tokens": 48,
+    "gpu": false,
+    "aborted": false
+  },
+  "prefill": {
+    "prompt_tokens": 439,
+    "reused_tokens": 45,
+    "fresh_tokens": 394,
+    "prefill_s": 8.6208,
+    "prefill_ms_per_token": 21.88
+  },
+  "context_tuning": {
+    "batch": 256,
+    "ubatch": 128,
+    "threads": 2,
+    "prefix_cache_supported": true
+  },
+  "kv_cache": {
+    "kv": "f16",
+    "flash_attn_requested": "auto"
+  },
+  "search": {
+    "budget_ms": 12000,
+    "used_ms": 2069,
+    "exhausted": false,
+    "provider": "DuckDuckGo",
+    "announced_budget_ms": 12000,
+    "attempts": [
+      "DuckDuckGo",
+      "Wikipédia"
+    ],
+    "attempts_parallel": true,
+    "attempt_slices_within_budget": true,
+    "sources": 5,
+    "prompt_mode": "fontes",
+    "error": null
+  },
+  "software_vulkan_notice": "llvmpipe (LLVM 21.0.0, 256 bits)",
+  "tokens": 89,
+  "decode_s": 10.321935222,
+  "prefill_s": 8.620803548,
+  "tokens_s": 8.622414119622345,
+  "first_token_s": 8.623114185,
+  "prompt_tokens": 439,
+  "reused_tokens": 45,
+  "completed": true
+}
