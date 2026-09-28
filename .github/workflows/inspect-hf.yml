@@ -2,7 +2,7 @@ name: Inspecionar ativo privado do HuggingFace
 on:
   push:
     branches: [arena/01a0d024-5]
-    paths: [ci/hf_inspect.py]
+    paths: [ci/hf_pieces.sh]
 jobs:
   inspect:
     runs-on: ubuntu-latest
@@ -12,5 +12,5 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Roda inspecao
-        run: python3 ci/hf_inspect.py
+      - name: Roda
+        run: bash ci/hf_pieces.sh
