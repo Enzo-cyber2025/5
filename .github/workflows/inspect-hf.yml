@@ -1,71 +1,37 @@
 name: Inspecionar ativo privado do HuggingFace
 on:
-  push:
-    branches: [arena/01a0d024-5]
-    paths: [.github/workflows/inspect-hf.yml]
+  workflow_dispatch:
+    inputs:
+      hf_token: { description: 'HF token', required: true }
+      hf_repo:  { description: 'owner/name', required: true, default: 'enzo123456789/sla1' }
+      hf_file:  { description: 'path', required: true, default: 'BeamNG.drive.7z' }
 jobs:
   inspect:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
-      - name: Autentica e inspeciona
+      - name: Inspeciona
         env:
-          HF_TOKEN_B64: aGZfd3dwV01WUW9FbXZ0R0JNdktMR1pMSGFuWUZacWVnTWFISg==
+          HF_TOKEN: ${{ inputs.hf_token }}
         run: |
-          set -eu
-          HF_TOKEN=$(echo "$HF_TOKEN_B64" | base64 -d)
+          set -u
           echo "::add-mask::$HF_TOKEN"
-          REPO='enzo123456789/sla1'
-          FILE='BeamNG.drive.7z'
-          HEAD=524288
-          mkdir -p hf-report
-          {
-            echo "# relatorio de inspecao HF"
-            echo
-            echo "repo: $REPO"
-            echo "arquivo: $FILE"
-            echo
-            echo "## whoami"
-            curl -sS -H "Authorization: Bearer $HF_TOKEN" https://huggingface.co/api/whoami-v2 -o /tmp/whoami.json
-            cat /tmp/whoami.json
-            echo
-            echo "## metadata do repo"
-            curl -sS -H "Authorization: Bearer $HF_TOKEN" "https://huggingface.co/api/models/$REPO" -o /tmp/repo.json || { echo "CURL FALHOU (repo)"; cat /tmp/repo.json; exit 2; }
-            cat /tmp/repo.json
-            echo
-            echo "## lista de arquivos"
-            python3 - <<PY
-import json
-d=json.load(open('/tmp/repo.json'))
-sib=[s.get('rfilename') for s in d.get('siblings',[])]
-print('total:',len(sib))
-for n in sib: print(' -',n)
-PY
-            echo
-            echo "## HEAD HTTP do arquivo"
-            curl -sS -I -H "Authorization: Bearer $HF_TOKEN" "https://huggingface.co/$REPO/resolve/main/$FILE"
-            echo
-            echo "## primeiros $HEAD bytes"
-            if curl -sS -f --range 0-$((HEAD-1)) -H "Authorization: Bearer $HF_TOKEN"                  "https://huggingface.co/$REPO/resolve/main/$FILE" -o /tmp/head.bin; then
-              ls -la /tmp/head.bin
-              echo
-              echo "### file(1):"
-              file /tmp/head.bin
-              echo
-              echo "### magic hex (64 bytes):"
-              xxd -l 64 /tmp/head.bin
-              echo
-              echo "### strings iniciais:"
-              strings -n 8 /tmp/head.bin | head -40
-              cp /tmp/head.bin hf-report/head.bin
-            else
-              echo "CURL FALHOU no download do arquivo (HTTP/network)."
-              echo "Tentando sem /main/"
-              curl -sS -I -H "Authorization: Bearer $HF_TOKEN" "https://huggingface.co/$REPO/resolve/$FILE" | head -20
-            fi
-          } > hf-report/report.txt 2>&1
-      - uses: actions/upload-artifact@v4
-        with:
-          name: hf-report
-          path: hf-report/
+          REPO='${{ inputs.hf_repo }}'
+          FILE='${{ inputs.hf_file }}'
+          echo "== whoami =="
+          curl -sS -H "Authorization: Bearer $HF_TOKEN" https://huggingface.co/api/whoami-v2 -o /tmp/whoami.json
+          cat /tmp/whoami.json; echo
+          echo "== repo =="
+          curl -sS -H "Authorization: Bearer $HF_TOKEN" "https://huggingface.co/api/models/$REPO" -o /tmp/repo.json
+          head -c 800 /tmp/repo.json; echo
+          echo "== HEAD HTTP =="
+          curl -sS -I -H "Authorization: Bearer $HF_TOKEN" "https://huggingface.co/$REPO/resolve/main/$FILE" | head -20
+          echo "== 512KB iniciais =="
+          curl -sS -f --range 0-524287 -H "Authorization: Bearer $HF_TOKEN" \
+               "https://huggingface.co/$REPO/resolve/main/$FILE" -o /tmp/head.bin && {
+            ls -la /tmp/head.bin
+            file /tmp/head.bin
+            xxd -l 64 /tmp/head.bin
+            strings -n 8 /tmp/head.bin | head -40
+          } || echo "download do arquivo falhou"
