@@ -1,0 +1,66 @@
+{
+  "stage": "search-online",
+  "gpu_layers_requested": 0,
+  "threads_requested": 2,
+  "threads_resolved": {
+    "requested": 2,
+    "available": 2,
+    "capacities": 0,
+    "resolved": 2
+  },
+  "backend": "cpu",
+  "ui_first_text_s": 13.639932419,
+  "warmup": {
+    "ran": true,
+    "skipped": null,
+    "ui_ok": true,
+    "typed_passes": 1,
+    "input_tokens": 72,
+    "prefilled": 72,
+    "reused_tokens": 48,
+    "gpu": false,
+    "aborted": false
+  },
+  "prefill": {
+    "prompt_tokens": 246,
+    "reused_tokens": 45,
+    "fresh_tokens": 201,
+    "prefill_s": 4.9821,
+    "prefill_ms_per_token": 24.787
+  },
+  "context_tuning": {
+    "batch": 256,
+    "ubatch": 128,
+    "threads": 2,
+    "prefix_cache_supported": true
+  },
+  "kv_cache": {
+    "kv": "f16",
+    "flash_attn_requested": "auto"
+  },
+  "search": {
+    "budget_ms": 12000,
+    "used_ms": 8519,
+    "exhausted": false,
+    "provider": "nenhum",
+    "announced_budget_ms": 12000,
+    "attempts": [
+      "DuckDuckGo",
+      "Wikipédia"
+    ],
+    "attempts_parallel": false,
+    "attempt_slices_within_budget": true,
+    "sources": 0,
+    "prompt_mode": "indisponivel",
+    "error": "DuckDuckGo: tempo esgotado; DuckDuckGo Lite: tempo esgotado; Wikipédia: nenhum resultado"
+  },
+  "software_vulkan_notice": null,
+  "tokens": 128,
+  "decode_s": 15.343836068,
+  "prefill_s": 4.982126618,
+  "tokens_s": 8.342112065896455,
+  "first_token_s": 4.984510959,
+  "prompt_tokens": 246,
+  "reused_tokens": 45,
+  "completed": true
+}
