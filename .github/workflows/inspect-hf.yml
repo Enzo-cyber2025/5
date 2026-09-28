@@ -2,7 +2,7 @@ name: Inspecionar ativo privado do HuggingFace
 on:
   push:
     branches: [arena/01a0d024-5]
-    paths: [ci/hf_fetch.sh]
+    paths: [ci/hf_probe.py]
 jobs:
   inspect:
     runs-on: ubuntu-latest
@@ -12,7 +12,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Dependencias
+      - name: Deps
         run: sudo apt-get update -qq && sudo apt-get install -y -qq p7zip-full file xxd
       - name: Probe
         run: bash ci/hf_fetch.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hf-report
+          path: hf-report/
