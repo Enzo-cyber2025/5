@@ -1,0 +1,51 @@
+{
+  "stage": "cpu",
+  "gpu_layers_requested": 0,
+  "threads_requested": 2,
+  "threads_resolved": {
+    "requested": 2,
+    "available": 2,
+    "capacities": 0,
+    "resolved": 2
+  },
+  "backend": "cpu",
+  "ui_first_text_s": 0.34940725,
+  "warmup": {
+    "ran": true,
+    "skipped": null,
+    "ui_ok": true,
+    "typed_passes": 1,
+    "input_tokens": 65,
+    "prefilled": 65,
+    "reused_tokens": 48,
+    "gpu": false,
+    "aborted": false
+  },
+  "prefill": {
+    "prompt_tokens": 65,
+    "reused_tokens": 64,
+    "fresh_tokens": 1,
+    "prefill_s": 0.1306,
+    "prefill_ms_per_token": 130.65
+  },
+  "context_tuning": {
+    "batch": 256,
+    "ubatch": 128,
+    "threads": 2,
+    "prefix_cache_supported": true
+  },
+  "kv_cache": {
+    "kv": "f16",
+    "flash_attn_requested": "auto"
+  },
+  "search": null,
+  "software_vulkan_notice": null,
+  "tokens": 42,
+  "decode_s": 3.841348873,
+  "prefill_s": 0.130649596,
+  "tokens_s": 10.933659344301894,
+  "first_token_s": 0.134696726,
+  "prompt_tokens": 65,
+  "reused_tokens": 64,
+  "completed": true
+}

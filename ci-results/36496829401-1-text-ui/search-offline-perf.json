@@ -1,0 +1,66 @@
+{
+  "stage": "search-offline",
+  "gpu_layers_requested": 0,
+  "threads_requested": 2,
+  "threads_resolved": {
+    "requested": 2,
+    "available": 2,
+    "capacities": 0,
+    "resolved": 2
+  },
+  "backend": "cpu",
+  "ui_first_text_s": 7.541805114,
+  "warmup": {
+    "ran": true,
+    "skipped": null,
+    "ui_ok": true,
+    "typed_passes": 1,
+    "input_tokens": 72,
+    "prefilled": 72,
+    "reused_tokens": 48,
+    "gpu": false,
+    "aborted": false
+  },
+  "prefill": {
+    "prompt_tokens": 283,
+    "reused_tokens": 45,
+    "fresh_tokens": 238,
+    "prefill_s": 7.2847,
+    "prefill_ms_per_token": 30.608
+  },
+  "context_tuning": {
+    "batch": 256,
+    "ubatch": 128,
+    "threads": 2,
+    "prefix_cache_supported": true
+  },
+  "kv_cache": {
+    "kv": "f16",
+    "flash_attn_requested": "auto"
+  },
+  "search": {
+    "budget_ms": 12000,
+    "used_ms": 28,
+    "exhausted": false,
+    "provider": "nenhum",
+    "announced_budget_ms": 12000,
+    "attempts": [
+      "DuckDuckGo",
+      "Wikipédia"
+    ],
+    "attempts_parallel": true,
+    "attempt_slices_within_budget": true,
+    "sources": 0,
+    "prompt_mode": "indisponivel",
+    "error": "Wikipédia: sem rede/DNS; demais provedores ignorados: falha de rede; DuckDuckGo: sem rede/DNS; demais provedores ignorados: falha de rede; DuckDuckGo Lite: sem rede/DNS; demais provedores ignorados: falha de rede"
+  },
+  "software_vulkan_notice": null,
+  "tokens": 16,
+  "decode_s": 1.827554742,
+  "prefill_s": 7.28473151,
+  "tokens_s": 8.75486771055091,
+  "first_token_s": 7.289405709,
+  "prompt_tokens": 283,
+  "reused_tokens": 45,
+  "completed": true
+}
