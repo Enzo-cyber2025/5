@@ -34,7 +34,12 @@ public final class SearchTool {
     private static final String TAG="GGUFSearch";
     // Tentativa curta por provedor: o teto real da busca é o SearchBudget, que
     // soma as tentativas e nunca passa do orçamento total.
-    private static final int CONNECT_TIMEOUT=3000, READ_TIMEOUT=4000, MAX_PROMPT_CHARS=1400;
+    // Timeouts por fatia: connect 2 s / read 3 s. Valores anteriores (3/4) deixavam
+    // uma falha de DNS ou de rota esperando até 7 s antes de desistir; no celular
+    // isso era sentido como "a pesquisa demora MUITO". Com a corrida paralela, o
+    // primeiro provedor que devolve fonte vence, então timeouts menores não
+    // queimam resultado — só fazem a desistência chegar mais cedo.
+    private static final int CONNECT_TIMEOUT=2000, READ_TIMEOUT=3000, MAX_PROMPT_CHARS=1400;
     // O bloco de fontes entra no prompt e o prompt é pré-preenchido antes da
     // resposta: cada caractere aqui vira tempo de espera. Medido no emulador, o
     // pré-preenchimento roda a ~40 tokens/s, então 829 tokens de prompt custavam
@@ -356,12 +361,19 @@ public final class SearchTool {
      */
     private static Report race(String query,String encoded,int max,SearchBudget budget,
                                ArrayList<String> errors,long started){
+        // Três provedores em paralelo: DuckDuckGo HTML, DuckDuckGo Lite e Wikipédia.
+        // Lite é mais leve e responde mais rápido em redes móveis; HTML resgata
+        // títulos/snippets mais ricos; Wikipédia é a fonte mais confiável para
+        // nomes/datas/biografias. Cada um corre na sua própria fatia de
+        // connect/read sem estourar o orçamento total; o primeiro resultado útil
+        // vence. A espera é a do provedor mais rápido, não a soma.
         final String[][] plan={
-            {"DuckDuckGo","https://html.duckduckgo.com/html/?q="+encoded+"&kl=pt-br"},
+            {"DuckDuckGo","https://html.duckduckgo.com/html/?q="+encoded+"&kl=pt-br",},
+            {"DuckDuckGo Lite","https://lite.duckduckgo.com/lite/?q="+encoded},
             {"Wikipédia","https://pt.wikipedia.org/w/api.php?action=query&list=search&format=json&utf8=1&srlimit="
                 +max+"&srsearch="+encoded},
         };
-        final Parser[] parsers={DDG_PARSER,WIKI_PARSER};
+        final Parser[] parsers={DDG_PARSER,LITE_PARSER,WIKI_PARSER};
         final Object lock=new Object();
         final ArrayList<String> winnerNames=new ArrayList<String>();
         final ArrayList<ArrayList<Hit>> winners=new ArrayList<ArrayList<Hit>>();

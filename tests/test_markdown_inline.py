@@ -30,3 +30,41 @@ def test_o_parser_reconhece_os_caracteres_de_marcador():
     # ^ e _ e $ agora disparam o caminho de estilização; antes só *, `, ~, \\ faziam.
     for c in ('*', '`', '~', '\\', '^', '_', '$'):
         assert f"'{c}'" in SRC or f'"\\{c}"' in SRC or f"'\\{c}'" in SRC, c
+
+
+def test_fast_path_incremental_sem_setText_por_token():
+    """O texto demorava a aparecer porque view.setText() era chamado a cada token.
+
+    O conserto: append incremental (view.append(chunk)) enquanto o marcador
+    permanece aberto; repinte só quando um par fecha (ou ao fim via
+    finalizeStream). Isto elimina o relayout O(n^2) a cada token que roubava
+    ~3 tok/s no A55.
+    """
+    assert 'FAST PATH' in SRC, 'comentario do fast path esperado como marcador'
+    assert 'if(previous&&!closesAnyMarker(chunk)){' in SRC, (
+        'append incremental esperado')
+    assert 'view.append(chunk);' in SRC
+    assert 'public static void finalizeStream(TextView view)' in SRC, (
+        'finalizeStream no fim da geracao para um unico repinte final')
+    assert 'closesAnyMarker' in SRC, 'helper para detectar fechamento de par'
+
+
+def test_blocos_recuados_sao_conservadores():
+    """Bloco de codigo nao deve aparecer onde nao tinha (bug de listas indentadas).
+
+    CodeDetect.fenced() agora exige sinais claros de codigo (palavras-chave
+    detectadas OU 3+ linhas recuadas) e recusa listas/citacoes (- * 1. a) >).
+    """
+    detect = (HERE / 'apk-fix' / 'java' / 'com' / 'ggufchat' / 'app' / 'CodeDetect.java').read_text()
+    assert 'CONSERVADOR' in detect
+    assert 'looksLikeList' in detect
+    assert 'startsWith("- ")' in detect and 'startsWith("* ")' in detect
+    assert 'manyLines=nonBlank>=3' in detect or 'nonBlank>=3' in detect
+
+
+def test_corrida_tem_tres_provedores_e_timeouts_menores():
+    """A busca lenta em rede movel: 3 provedores paralelos, timeouts menores."""
+    search = (HERE / 'apk-fix' / 'java' / 'com' / 'ggufchat' / 'app' / 'SearchTool.java').read_text()
+    assert 'DuckDuckGo Lite' in search and 'DuckDuckGo' in search and 'Wikipédia' in search
+    assert 'private static final int CONNECT_TIMEOUT=2000' in search
+    assert 'READ_TIMEOUT=3000' in search

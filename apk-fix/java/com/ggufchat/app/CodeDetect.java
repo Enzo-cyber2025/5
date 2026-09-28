@@ -56,7 +56,17 @@ public final class CodeDetect {
     private static boolean indented(String line){return line.startsWith("    ")||line.startsWith("\t");}
     private static boolean blank(String line){return line.trim().length()==0;}
 
-    /** Marca blocos recuados com cercas para o renderizador já existente. */
+    /** Marca blocos recuados com cercas para o renderizador já existente.
+     *
+     * CONSERVADOR: a versão anterior convertia QUALQUER bloco de duas+ linhas
+     * recuadas em 4 espaços/tab em bloco de código (bug "gerou bloco de código
+     * onde não tinha" — listas com continuação indentada, citações, parágrafos
+     * recuados por engano e texto dentro de tabelas Markdown todos ganhavam
+     * ```…``` de mentira). Agora um bloco recuado só ganha cerca se a detecção
+     * de linguagem reconhece SINAIS CLAROS de código (palavras-chave, JSON,
+     * chaves/ponto-e-vírgula, etc.) OU se há 3+ linhas não em branco todas
+     * recuadas — e o texto não começa com marcadores de lista (- * 1. a) ou
+     * citação (>). */
     public static String fenced(String text){
         if(text==null||text.length()==0)return text;
         if(text.contains("```")||text.contains("~~~"))return text; // fences explícitas já bastam
@@ -66,14 +76,27 @@ public final class CodeDetect {
         while(i<lines.length){
             if(!indented(lines[i])){out.append(lines[i]).append('\n');i++;continue;}
             int start=i,nonBlank=0,j=i;
+            boolean looksLikeList=false;
             while(j<lines.length&&(indented(lines[j])||blank(lines[j]))){
-                if(indented(lines[j]))nonBlank++;
+                if(indented(lines[j])){
+                    nonBlank++;
+                    String trimmed=lines[j].trim();
+                    // Lista/citação continuação indentada: NÃO é código.
+                    if(trimmed.startsWith("- ")||trimmed.startsWith("* ")||trimmed.startsWith("+ ")
+                       ||trimmed.startsWith("> ")||trimmed.matches("\\d+[.)]\\s.*")){
+                        looksLikeList=true;
+                    }
+                }
                 j++;
             }
-            if(nonBlank<2){out.append(lines[i]).append('\n');i++;continue;}
             int end=j;
             while(end>start&&blank(lines[end-1]))end--;
-            out.append("```").append(language(join(lines,start,end))).append('\n');
+            String candidate=join(lines,start,end);
+            String lang=language(candidate);
+            boolean manyLines=nonBlank>=3;
+            boolean isCode=!looksLikeList&&(lang.length()>0||manyLines);
+            if(!isCode||nonBlank<2){out.append(lines[i]).append('\n');i++;continue;}
+            out.append("```").append(lang).append('\n');
             for(int k=start;k<end;k++)out.append(lines[k]).append('\n');
             out.append("```\n");
             for(int k=end;k<j;k++)out.append(lines[k]).append('\n');

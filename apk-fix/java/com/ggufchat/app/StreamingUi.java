@@ -39,7 +39,15 @@ public final class StreamingUi {
     public static void finish(Activity activity){
         try{
             Object view=field(activity,"streamingView");
-            if(view instanceof TextView){ANSWER.remove(view);RAW.remove(view);}
+            if(view instanceof TextView){
+                TextView tv=(TextView)view;
+                // Último reparse da resposta completa: fecha spans que ficaram
+                // abertos durante o fast path incremental (ver comentário em
+                // MarkdownText.append). Executa UMA VEZ no fim da geração, não
+                // por token — sem custo de O(n²).
+                MarkdownText.finalizeStream(tv);
+                ANSWER.remove(tv);RAW.remove(tv);
+            }
         }catch(Exception ex){}
     }
 

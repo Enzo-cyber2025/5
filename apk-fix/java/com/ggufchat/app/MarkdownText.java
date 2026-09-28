@@ -62,7 +62,60 @@ public final class MarkdownText {
         boolean previous=STYLED.get(view)==Boolean.TRUE;
         if(!previous&&!markers(chunk)){view.append(chunk);return;}
         STYLED.put(view,Boolean.TRUE);
+        // FAST PATH: não reparseia a resposta INTEIRA a cada token.
+        //
+        // Bug "o texto demora a aparecer / 3 tok/s abaixo da banda": quando havia
+        // um marcador ABERTO (ex.: `**negrito...` enquanto o streaming ainda não
+        // chegou ao `**` de fechamento), este método chamava view.setText() com
+        // o texto completo e reconstruía spans do zero para cada token. Isso é
+        // O(n²): TextView relayouta toda a Spannable a cada caractere. Em um
+        // A55 com respostas longas isso roubava 2-4 tok/s do motor nativo,
+        // porque o render da thread de UI atrasava o dispatch dos tokens.
+        //
+        // O fast path só anexa o trecho cru (o span aberto mais recente continua
+        // a valer até o final do buffer, graças ao spans-open-at-end do final
+        // de spans()). Um reparse completo só é feito quando o chunk fecha um
+        // par (ou no final da resposta, via #set/#finalize), o que é raro.
+        if(previous&&!closesAnyMarker(chunk)){
+            view.append(chunk);
+            return;
+        }
         view.setText(spans(raw.toString()));
+    }
+
+    /** Marca o fim da geração: reparseia UMA VEZ para fechar spans que porventura
+     *  ficaram abertos em fast path (situação normal em streaming — o último
+     *  chunk costuma trazer o fechamento do último negrito/itálico/código, mas
+     *  caso não traga, garantimos o visual correto sem O(n²) durante o fluxo). */
+    public static void finalizeStream(TextView view){
+        StringBuilder raw=RAW.get(view);
+        if(raw==null)return;
+        view.setText(spans(raw.toString()));
+    }
+
+    /** True quando o chunk traz um fechamento de algum par (** __ ~~ ^^ `` $),
+     *  ou um separador que fecha sobrescrito/subscrito curto — só então vale
+     *  repintar. NUNCA dispara para o caractere de abertura: nesse caso a
+     *  resposta continua em fast path e o span do final do buffer cobre o
+     *  trecho novo. */
+    private static boolean closesAnyMarker(String chunk){
+        if(chunk==null||chunk.length()==0)return false;
+        for(int i=0;i<chunk.length();i++){
+            char c=chunk.charAt(i);
+            if(c=='`'||c=='$')return true;
+            if(c=='*'&&i+1<chunk.length()&&chunk.charAt(i+1)=='*')return true;
+            if(c=='_'&&i+1<chunk.length()&&chunk.charAt(i+1)=='_')return true;
+            if(c=='~'&&i+1<chunk.length()&&chunk.charAt(i+1)=='~')return true;
+            if(c=='^'&&i+1<chunk.length()&&chunk.charAt(i+1)=='^')return true;
+            // Fechamento implícito de super/sub curto: separador (fim de palavra,
+            // pontuação, espaço, nova linha) — não relayouta em espaço simples
+            // para não cair em O(n²) em respostas com muitos _nomes_, mas
+            // dispara em pontuação/fim de linha que realmente fecha.
+            if(!Character.isLetterOrDigit(c)&&c!='('&&c!='['&&c!='{'&&c!='+'&&c!='-'&&c!='='&&c!='/'&&c!='.'){
+                if(c=='\n'||c=='.'||c==','||c==';'||c=='?'||c=='!'||c==')'||c==']'||c=='}'||c==':')return true;
+            }
+        }
+        return false;
     }
 
     private static boolean markers(CharSequence text){
