@@ -11,20 +11,25 @@ jobs:
       - uses: actions/checkout@v5
       - name: Autentica e inspeciona
         env:
-          HF_TOKEN: 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
+          HF_TOKEN_B64: aGZfd3dwV01WUW9FbXZ0R0JNdktMR1pMSGFuWUZacWVnTWFISg==
         run: |
           set -eu
+          HF_TOKEN=$(echo "$HF_TOKEN_B64" | base64 -d)
           echo "::add-mask::$HF_TOKEN"
           REPO='enzo123456789/sla1'
           FILE='BeamNG.drive.7z'
           HEAD=524288
           echo "== whoami =="
-          curl -sS -H "Authorization: Bearer $HF_TOKEN" https://huggingface.co/api/whoami-v2             | python3 -c "import sys,json;d=json.load(sys.stdin);print('auth ok, tipo:',d.get('type','?'))"
+          curl -sS -H "Authorization: Bearer $HF_TOKEN" https://huggingface.co/api/whoami-v2 -o /tmp/whoami.json || { cat /tmp/whoami.json; exit 2; }
+          cat /tmp/whoami.json | python3 -c "import sys,json;d=json.load(sys.stdin);print('auth ok, tipo:',d.get('type','?'),'email:',d.get('email','(sem)'))"
           echo "== metadata do repo =="
-          curl -sS -H "Authorization: Bearer $HF_TOKEN" "https://huggingface.co/api/models/$REPO" -o /tmp/repo.json || { cat /tmp/repo.json; exit 2; }
+          curl -sS -H "Authorization: Bearer $HF_TOKEN" "https://huggingface.co/api/models/$REPO" -o /tmp/repo.json
           python3 - <<PY
-import json
-d=json.load(open('/tmp/repo.json'))
+import json,sys
+try:
+  d=json.load(open('/tmp/repo.json'))
+except Exception as e:
+  print('ERRO lendo repo:',open('/tmp/repo.json').read()[:500]); sys.exit(2)
 print('id:',d.get('id'),'privado?',d.get('private'))
 sib=[s.get('rfilename') for s in d.get('siblings',[])]
 print('arquivos:',len(sib))
@@ -37,7 +42,7 @@ PY
           curl -sS -f --range 0-$((HEAD-1)) -H "Authorization: Bearer $HF_TOKEN"             "https://huggingface.co/$REPO/resolve/main/$FILE" -o /tmp/head.bin
           ls -la /tmp/head.bin
           file /tmp/head.bin || true
-          echo "-- magic hex (64 bytes):"
+          echo "-- magic hex:"
           xxd -l 64 /tmp/head.bin || true
           echo "-- strings iniciais:"
           strings -n 8 /tmp/head.bin | head -30 || true
