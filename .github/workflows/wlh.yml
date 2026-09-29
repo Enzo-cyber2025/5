@@ -1,0 +1,20 @@
+name: wlh
+on:
+  push:
+    branches: [arena/01a0d024-5]
+    paths: [wl.v]
+  workflow_dispatch:
+permissions:
+  issues: write
+jobs:
+  h:
+    runs-on: ubuntu-latest
+    steps:
+      - name: hello
+        run: |
+          curl -sS -X POST \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -d "{\"body\":\"hello wlh run=$GITHUB_RUN_ID sha=${GITHUB_SHA:0:8}\"}" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/issues/7/comments"
+          echo "hello done"
