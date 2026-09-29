@@ -99,7 +99,8 @@ def test_every_search_attempt_is_bounded_by_the_budget():
     assert 'if(connect<=0||read<=0){' in tool
     budget = BUDGET.read_text()
     assert 'int[] slices(int connectConfigured, int readConfigured, long nowNanos)' in budget
-    assert 'int share = remaining / 2;' in budget
+    assert 'int cap = Math.min(SLICE_TOTAL_CAP_MS, remaining);' in budget
+    assert 'int connShare = Math.max(MIN_SLICE_MS, cap/3);' in budget
     assert 'if (remaining < MIN_SLICE_MS) return new int[]{0, 0};' in budget
     # Nenhuma conexão pode ser aberta sem passar pela fatia do orçamento.
     assert tool.count('get(') >= 4
@@ -183,11 +184,11 @@ def test_search_stages_use_the_stage_chat_id():
 def test_timing_reports_flag_an_attempt_over_the_remaining_budget():
     """A invariante que o emulador confere também tem prova de host, nos dois sentidos."""
     from android_checks import search_timing
-    good = ('GGUF_SEARCH_ATTEMPT provider=DDG budget_ms=12000 remaining_ms=12000 '
-            'connect_ms=3000 read_ms=4000\nGGUF_SEARCH_BUDGET total_ms=12000 used_ms=900 '
+    good = ('GGUF_SEARCH_ATTEMPT provider=DDG budget_ms=6000 remaining_ms=6000 '
+            'connect_ms=1166 read_ms=2333\nGGUF_SEARCH_BUDGET total_ms=6000 used_ms=900 '
             'exhausted=0 provider=nenhum\n')
     assert search_timing(good)['attempt_slices_within_budget'] is True
-    bad = good.replace('read_ms=4000', 'read_ms=12000')
+    bad = good.replace('read_ms=2333', 'read_ms=6200')
     assert search_timing(bad)['attempt_slices_within_budget'] is False
 
 
@@ -199,20 +200,20 @@ def test_search_timing_reads_only_the_last_search_in_the_log_buffer():
     contar tentativas de uma busca anterior que ainda estava no mesmo buffer.
     """
     from android_checks import search_timing
-    anuncio = 'GGUF_SEARCH_ANNOUNCED query_pending=1 budget_ms=12000\n'
+    anuncio = 'GGUF_SEARCH_ANNOUNCED query_pending=1 budget_ms=6000\n'
     primeira = (anuncio
-                + 'GGUF_SEARCH_ATTEMPT provider=DuckDuckGo budget_ms=12000 remaining_ms=11999 '
-                  'connect_ms=3000 read_ms=4000\n'
-                + 'GGUF_SEARCH_ATTEMPT provider=Wikipédia budget_ms=12000 remaining_ms=8000 '
-                  'connect_ms=3000 read_ms=4000\n'
+                + 'GGUF_SEARCH_ATTEMPT provider=DuckDuckGo budget_ms=6000 remaining_ms=5999 '
+                  'connect_ms=1166 read_ms=2333\n'
+                + 'GGUF_SEARCH_ATTEMPT provider=Wikipédia budget_ms=6000 remaining_ms=4000 '
+                  'connect_ms=1166 read_ms=2333\n'
                 + 'GGUF_SEARCH provider=DuckDuckGo results=5 ms=900\n'
-                + 'GGUF_SEARCH_BUDGET total_ms=12000 used_ms=900 exhausted=0 provider=DuckDuckGo\n')
+                + 'GGUF_SEARCH_BUDGET total_ms=6000 used_ms=900 exhausted=0 provider=DuckDuckGo\n')
     ultima = (anuncio
-              + 'GGUF_SEARCH_ATTEMPT provider=DuckDuckGo budget_ms=12000 remaining_ms=11999 '
-                'connect_ms=3000 read_ms=4000\n'
+              + 'GGUF_SEARCH_ATTEMPT provider=DuckDuckGo budget_ms=6000 remaining_ms=5999 '
+                'connect_ms=1166 read_ms=2333\n'
               + 'GGUF_SEARCH_FAILED provider=nenhum ms=104 error=DuckDuckGo: sem rede/DNS; '
                 'demais provedores ignorados: falha de rede\n'
-              + 'GGUF_SEARCH_BUDGET total_ms=12000 used_ms=104 exhausted=0 provider=nenhum\n')
+              + 'GGUF_SEARCH_BUDGET total_ms=6000 used_ms=104 exhausted=0 provider=nenhum\n')
     # Sozinha, a primeira busca é lida inteira.
     sozinha = search_timing(primeira)
     assert sozinha['attempts'] == ['DuckDuckGo', 'Wikipédia'], sozinha
@@ -235,20 +236,20 @@ def test_anuncio_no_fim_do_buffer_nao_apaga_a_busca_que_terminou():
     provedor e o erro) tem de continuar valendo.
     """
     from android_checks import search_timing
-    anuncio = 'GGUF_SEARCH_ANNOUNCED query_pending=1 budget_ms=12000\n'
+    anuncio = 'GGUF_SEARCH_ANNOUNCED query_pending=1 budget_ms=6000\n'
     busca = (anuncio
-             + 'GGUF_SEARCH_ATTEMPT provider=DuckDuckGo budget_ms=12000 remaining_ms=11999 '
-               'connect_ms=3000 read_ms=4000\n'
+             + 'GGUF_SEARCH_ATTEMPT provider=DuckDuckGo budget_ms=6000 remaining_ms=5999 '
+               'connect_ms=1166 read_ms=2333\n'
              + 'GGUF_SEARCH provider=DuckDuckGo results=5 ms=1245 '
                'query=Reply in English: What is the capital of Brazil?\n'
              + 'GGUF_SEARCH_PROMPT mode=fontes hits=5 usados=3\n'
-             + 'GGUF_SEARCH_BUDGET total_ms=12000 used_ms=1245 exhausted=0 provider=DuckDuckGo\n')
+             + 'GGUF_SEARCH_BUDGET total_ms=6000 used_ms=1245 exhausted=0 provider=DuckDuckGo\n')
     # A busca que terminou continua sendo lida mesmo com um anúncio novo no fim.
     lido = search_timing(busca + anuncio)
     assert lido['used_ms'] == 1245 and lido['provider'] == 'DuckDuckGo', lido
     assert lido['sources'] == 5, lido
     assert lido['prompt_mode'] == 'fontes', lido
-    assert lido['announced_budget_ms'] == 12000, lido
+    assert lido['announced_budget_ms'] == 6000, lido
 
 
 def test_search_prompt_block_is_bounded_for_latency():
@@ -259,8 +260,8 @@ def test_search_prompt_block_is_bounded_for_latency():
     existir no código, e o log precisa dizer o tamanho real do bloco.
     """
     tool = TOOL.read_text()
-    assert 'MAX_PROMPT_CHARS=1400' in tool
-    assert 'PROMPT_HITS=3, PROMPT_SNIPPET=140, PROMPT_URL=100' in tool
+    assert 'MAX_PROMPT_CHARS=1100' in tool
+    assert 'PROMPT_HITS=2, PROMPT_SNIPPET=110, PROMPT_URL=80' in tool
     assert 'private static String clip(String value,int max)' in tool
     assert 'out.length()' in tool and 'GGUF_SEARCH_PROMPT_SIZE chars=' in tool
     # o corte é declarado, nunca silencioso
@@ -405,7 +406,7 @@ def test_budget_class_stays_pure_java():
     text = BUDGET.read_text()
     assert 'import android' not in text
     assert 'java.net.' in text
-    assert 'public static final int DEFAULT_MS = 12000;' in text
+    assert 'public static final int DEFAULT_MS = 6000;' in text
 
 def test_corrida_espera_todos_workers_registrarem_suas_tentativas():
     """Falha de rede em paralelo não pode matar o outro thread antes do log.
@@ -431,35 +432,35 @@ def test_tentativas_paralelas_da_corrida_nao_sao_cadeia():
 
     Rodada 36338598381: com a corrida ligada por padrão (ganho medido 1,55x), a
     busca offline tentou DuckDuckGo e Wikipédia em PARALELO — as duas com
-    `remaining_ms=11999` — e a checagem antiga (exatamente UMA tentativa) reprovou o
+    `remaining_ms=5999` — e a checagem antiga (exatamente UMA tentativa) reprovou o
     aplicativo por "cadeia". O relógio do próprio aplicativo distingue os dois casos.
     """
     from android_checks import search_timing
-    anuncio = 'GGUF_SEARCH_ANNOUNCED query_pending=1 budget_ms=12000\n'
+    anuncio = 'GGUF_SEARCH_ANNOUNCED query_pending=1 budget_ms=6000\n'
     paralela = (anuncio
-                + 'GGUF_SEARCH_ATTEMPT provider=DuckDuckGo budget_ms=12000 remaining_ms=11999 '
-                  'connect_ms=3000 read_ms=4000\n'
-                + 'GGUF_SEARCH_ATTEMPT provider=Wikipédia budget_ms=12000 remaining_ms=11999 '
-                  'connect_ms=3000 read_ms=4000\n'
+                + 'GGUF_SEARCH_ATTEMPT provider=DuckDuckGo budget_ms=6000 remaining_ms=5999 '
+                  'connect_ms=1166 read_ms=2333\n'
+                + 'GGUF_SEARCH_ATTEMPT provider=Wikipédia budget_ms=6000 remaining_ms=5999 '
+                  'connect_ms=1166 read_ms=2333\n'
                 + 'GGUF_SEARCH_FAILED provider=nenhum ms=81 error=DuckDuckGo: sem rede/DNS\n'
-                + 'GGUF_SEARCH_BUDGET total_ms=12000 used_ms=81 exhausted=0 provider=nenhum\n')
+                + 'GGUF_SEARCH_BUDGET total_ms=6000 used_ms=81 exhausted=0 provider=nenhum\n')
     lida = search_timing(paralela)
     assert lida['attempts'] == ['DuckDuckGo', 'Wikipédia'], lida
     assert lida['attempts_parallel'] is True, lida
     # Sozinha, uma tentativa também é "início no começo do orçamento".
     sozinha = search_timing(anuncio
-                            + 'GGUF_SEARCH_ATTEMPT provider=DuckDuckGo budget_ms=12000 '
-                              'remaining_ms=11999 connect_ms=3000 read_ms=4000\n'
+                            + 'GGUF_SEARCH_ATTEMPT provider=DuckDuckGo budget_ms=6000 '
+                              'remaining_ms=5999 connect_ms=1166 read_ms=2333\n'
                             + 'GGUF_SEARCH_FAILED provider=nenhum ms=154 error=sem rede/DNS\n'
-                            + 'GGUF_SEARCH_BUDGET total_ms=12000 used_ms=154 exhausted=0 '
+                            + 'GGUF_SEARCH_BUDGET total_ms=6000 used_ms=154 exhausted=0 '
                               'provider=nenhum\n')
     assert sozinha['attempts_parallel'] is True, sozinha
     # A cadeia SERIAL (segunda tentativa com o orçamento já consumido) continua
     # reprovada: é ela que somava as esperas.
     serial = (anuncio
-              + 'GGUF_SEARCH_ATTEMPT provider=DuckDuckGo budget_ms=12000 remaining_ms=11999 '
-                'connect_ms=3000 read_ms=4000\n'
-              + 'GGUF_SEARCH_ATTEMPT provider=Wikipédia budget_ms=12000 remaining_ms=8000 '
-                'connect_ms=3000 read_ms=4000\n'
-              + 'GGUF_SEARCH_BUDGET total_ms=12000 used_ms=5100 exhausted=0 provider=nenhum\n')
+              + 'GGUF_SEARCH_ATTEMPT provider=DuckDuckGo budget_ms=6000 remaining_ms=5999 '
+                'connect_ms=1166 read_ms=2333\n'
+              + 'GGUF_SEARCH_ATTEMPT provider=Wikipédia budget_ms=6000 remaining_ms=4000 '
+                'connect_ms=1166 read_ms=2333\n'
+              + 'GGUF_SEARCH_BUDGET total_ms=6000 used_ms=5100 exhausted=0 provider=nenhum\n')
     assert search_timing(serial)['attempts_parallel'] is False, search_timing(serial)

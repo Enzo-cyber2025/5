@@ -21,8 +21,12 @@ import java.util.Locale;
  * de host, sem emulador, com relógio sintético.
  */
 public final class SearchBudget {
-    public static final int DEFAULT_MS = 12000;
+    public static final int DEFAULT_MS = 6000;
     public static final int MIN_MS = 250;
+    /** Timeout hard-kill por requisição individual: se um provedor não responder
+     *  em 3,5s (conexão+leitura), a corrida paralela já matou a espera e passa pro
+     *  próximo. Valores maiores deixam a busca parecer "travada" em redes ruins. */
+    public static final int SLICE_TOTAL_CAP_MS = 3500;
     /** Abaixo disto o orçamento está gasto: nenhuma requisição nova é aberta.
      *  Importa porque zero, num timeout de HttpURLConnection, quer dizer "sem
      *  limite" — tentar com zero traria a espera infinita de volta. */
@@ -85,8 +89,10 @@ public final class SearchBudget {
     int[] slices(int connectConfigured, int readConfigured, long nowNanos) {
         int remaining = remainingMs(nowNanos);
         if (remaining < MIN_SLICE_MS) return new int[]{0, 0};
-        int share = remaining / 2;
-        return new int[]{Math.min(connectConfigured, share), Math.min(readConfigured, share)};
+        int cap = Math.min(SLICE_TOTAL_CAP_MS, remaining);
+        int connShare = Math.max(MIN_SLICE_MS, cap/3);
+        int readShare = Math.max(MIN_SLICE_MS, cap - connShare);
+        return new int[]{Math.min(connectConfigured, connShare), Math.min(readConfigured, readShare)};
     }
 
     /** Falha de rede (DNS, conexão recusada, sem rota) invalida os demais provedores. */

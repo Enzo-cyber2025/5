@@ -39,13 +39,13 @@ public final class SearchTool {
     // isso era sentido como "a pesquisa demora MUITO". Com a corrida paralela, o
     // primeiro provedor que devolve fonte vence, então timeouts menores não
     // queimam resultado — só fazem a desistência chegar mais cedo.
-    private static final int CONNECT_TIMEOUT=2000, READ_TIMEOUT=3000, MAX_PROMPT_CHARS=1400;
+    private static final int CONNECT_TIMEOUT=1200, READ_TIMEOUT=2000, MAX_PROMPT_CHARS=1100;
     // O bloco de fontes entra no prompt e o prompt é pré-preenchido antes da
     // resposta: cada caractere aqui vira tempo de espera. Medido no emulador, o
     // pré-preenchimento roda a ~40 tokens/s, então 829 tokens de prompt custavam
     // 20,25 s até o primeiro texto. Três fontes, trechos curtos e URL compacta
     // mantêm o que o modelo precisa para citar e cortam mais da metade do custo.
-    private static final int PROMPT_HITS=3, PROMPT_SNIPPET=140, PROMPT_URL=100;
+    private static final int PROMPT_HITS=2, PROMPT_SNIPPET=110, PROMPT_URL=80;
     private static final Pattern DDG_TITLE=Pattern.compile("class=\"result__a\"[^>]*href=\"([^\"]+)\"[^>]*>(.*?)</a>",Pattern.DOTALL);
     private static final Pattern DDG_SNIPPET=Pattern.compile("class=\"result__snippet\"[^>]*>(.*?)</a>",Pattern.DOTALL);
     private static final Pattern LITE_LINK=Pattern.compile("<a[^>]*class=\"result-link\"[^>]*href=\"([^\"]+)\"[^>]*>(.*?)</a>",Pattern.DOTALL);
@@ -119,7 +119,7 @@ public final class SearchTool {
     // na mesma execução do aplicativo não volta à rede. A idade do resultado vai
     // para o log e o que passou do teto é descartado em vez de servido velho;
     // `debug.gguf.search_cache_ms 0` desliga.
-    private static int cacheMs(){return Math.max(0,intProperty(CACHE_PROPERTY,60000));}
+    private static int cacheMs(){return Math.max(0,intProperty(CACHE_PROPERTY,180000));}
 
     /** Consulta repetida não deveria custar outra ida à rede. */
     private static Report cached(String query){
