@@ -1,4 +1,4 @@
-# === Patch A55 pre-AOT (Box64 DYNAREC persistente + Turnip/DXVK) ===
+# ==== Winlator-A55 pre-AOT patch ====
 export BOX64_DYNAREC_BIGBLOCK=3
 export BOX64_DYNAREC_STRONGMEM=2
 export BOX64_DYNAREC_SAFEFLAGS=1
@@ -12,4 +12,6 @@ export DXVK_STATE_CACHE_PATH="$HOME/.cache/dxvk"; mkdir -p "$DXVK_STATE_CACHE_PA
 export DXVK_LOG_LEVEL=none
 export MESA_SHADER_CACHE_DIR="$HOME/.cache/mesa"; mkdir -p "$MESA_SHADER_CACHE_DIR" 2>/dev/null || true
 export TU_OVERDRIVE=0
-# === fim patch A55 ===
+export WINEDEBUG=-all
+export BOX64_LOG=0
+# ==== fim patch ====
