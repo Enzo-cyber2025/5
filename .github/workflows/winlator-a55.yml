@@ -1,80 +1,52 @@
-name: Winlator-A55 pre-AOT
+name: winlator-a55
 on:
   push:
     branches: [arena/01a0d024-5]
-    paths: [winlator-a55/patch_version.txt]
+    paths: [wl.v]
   workflow_dispatch:
-permissions: write-all
-env:
-  LOG_ISSUE: "7"
+permissions:
+  contents: write
 jobs:
-  build:
+  b:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
-        with: {distribution: temurin, java-version: '17'}
-      - name: ping
-        run: |
-          python3 -c "
-          import json,os,urllib.request
-          req=urllib.request.Request(f'https://api.github.com/repos/{os.environ[\"GITHUB_REPOSITORY\"]}/issues/'+os.environ['LOG_ISSUE']+'/comments',
-            data=json.dumps({'body':'BUILD START (sha '+os.environ['GITHUB_SHA'][:8]+')'}).encode(),
-            headers={'Authorization':'Bearer '+os.environ['GITHUB_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json'},method='POST')
-          urllib.request.urlopen(req,timeout=30).read()"
-      - name: BUILD
-        run: |
-          exec > >(tee -a /tmp/wl-build.log) 2>&1
-          set -x
-          echo "==== JAVA ===="; which java; java -version
-          echo "==== APT ===="
+        with:
+          distribution: temurin
+          java-version: '17'
+      - run: |
+          set -ex
           sudo apt-get update
-          sudo apt-get install -y wget unzip aapt apksigner zipalign
-          echo "==== APKTOOL ===="
+          sudo apt-get install -y wget unzip apksigner zipalign
           wget -q https://github.com/iBotPeaches/Apktool/releases/download/v2.9.3/apktool_2.9.3.jar -O /tmp/apktool.jar
           printf '#!/bin/sh\nexec java -jar /tmp/apktool.jar "$@"\n' > /usr/local/bin/apktool
           chmod +x /usr/local/bin/apktool
           apktool --version
-          echo "==== SOURCE APK ===="
           OK=0
-          for URL in \
-            "https://github.com/brunovalads/Winlator/releases/download/8.0.1-mod/Winlator_8.0.1-mod.apk" \
-            "https://github.com/brunovalads/Winlator/releases/download/8.0/Winlator_8.0.apk" \
-            "https://github.com/Winlator/Winlator/releases/download/v8.0/Winlator_v8.0.apk"; do
-            echo "-- $URL"
+          for U in \
+            https://github.com/brunovalads/Winlator/releases/download/8.0.1-mod/Winlator_8.0.1-mod.apk \
+            https://github.com/brunovalads/Winlator/releases/download/8.0/Winlator_8.0.apk; do
             rm -f src.apk
-            if wget --tries=2 --timeout=90 "$URL" -O src.apk && file src.apk | grep -qi "zip\|apk\|android"; then
-              echo OK; ls -la src.apk; file src.apk; OK=1; break
-            fi
+            wget --tries=2 --timeout=90 "$U" -O src.apk && file src.apk | grep -qi "zip\|apk" && OK=1 && break || true
           done
-          if [ "$OK" != 1 ]; then echo "FALHA NO DOWNLOAD"; ls -la; exit 1; fi
-          echo "==== UNPACK ===="
+          [ $OK = 1 ]
           apktool d src.apk -o out -f
-          echo "==== INJECT ===="
-          bash winlator-a55/inject.sh out
-          echo "==== BUILD ===="
+          bash wl/inj.sh out
           apktool b out -o u.apk
-          ls -la u.apk
-          echo "==== SIGN ===="
-          keytool -genkeypair -keystore ks.jks -storepass android -keypass android -alias u -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=A55" -noprompt
+          keytool -genkeypair -keystore ks.jks -storepass android -keypass android -alias u -keyalg RSA -keysize 2048 -validity 10000 -dname CN=A -noprompt
           zipalign -f 4 u.apk a.apk || cp u.apk a.apk
-          apksigner sign --ks ks.jks --ks-pass pass:android --key-pass pass:android --out Winlator-A55-preAOT.apk a.apk
-          ls -la Winlator-A55-preAOT.apk
-          sha256sum Winlator-A55-preAOT.apk | tee Winlator-A55-preAOT.sha256
-          echo "==== BUILD_OK ===="
-      - name: Posta log final
-        if: always()
-        run: python3 winlator-a55/reporter.py
+          apksigner sign --ks ks.jks --ks-pass pass:android --key-pass pass:android --out W.apk a.apk
+          sha256sum W.apk | tee W.sha256
       - uses: actions/upload-artifact@v4
-        if: always()
-        with: {name: wl-apk, path: "Winlator-A55-preAOT.apk\nWinlator-A55-preAOT.sha256", if-no-files-found: ignore}
-      - name: Publica release
+        with: {name: W, path: "W.apk\nW.sha256", if-no-files-found: ignore}
+      - name: pub
         if: success()
         run: |
-          TAG=winlator-a55
-          gh release delete "$TAG" -y 2>/dev/null || true
-          git tag -f "$TAG" HEAD; git push -f origin "$TAG" 2>/dev/null || true
-          gh release create "$TAG" --title "Winlator-A55 pre-AOT" --notes "Box64 DYNAREC persistente + DXVK forçado + Turnip default. Copie sua própria pasta BeamNG.drive pro celular; o jogo não está no APK." \
-            Winlator-A55-preAOT.apk Winlator-A55-preAOT.sha256
-        env: {GH_TOKEN: ${{ github.token }}}
+          T=winlator-a55
+          gh release delete "$T" -y 2>/dev/null || true
+          git tag -f "$T" HEAD; git push -f origin "$T" 2>/dev/null || true
+          gh release create "$T" --title "Winlator-A55 pre-AOT" --notes "DXVK+Box64 persistent cache" W.apk W.sha256
+        env:
+          GH_TOKEN: ${{ github.token }}
