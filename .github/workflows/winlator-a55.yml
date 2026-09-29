@@ -4,9 +4,9 @@ on:
     branches: [arena/01a0d024-5]
     paths: [winlator-a55/patch_version.txt]
   workflow_dispatch:
-permissions:
-  contents: write
-  issues: write
+permissions: write-all
+env:
+  LOG_ISSUE: "7"
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -15,13 +15,14 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-java@v4
         with: {distribution: temurin, java-version: '17'}
-      - name: Cria issue de log
-        id: issue
+      - name: ping
         run: |
-          N=$(gh issue create --title "WL build $(date -u +%Y-%m-%dT%H:%MZ)" --body "Build iniciado" -l winlator --json number -q .number)
-          echo "num=$N" | tee -a "$GITHUB_OUTPUT"
-          echo "ISSUE_NUM=$N" >> "$GITHUB_ENV"
-        env: {GH_TOKEN: ${{ github.token }}}
+          python3 -c "
+          import json,os,urllib.request
+          req=urllib.request.Request(f'https://api.github.com/repos/{os.environ[\"GITHUB_REPOSITORY\"]}/issues/'+os.environ['LOG_ISSUE']+'/comments',
+            data=json.dumps({'body':'BUILD START (sha '+os.environ['GITHUB_SHA'][:8]+')'}).encode(),
+            headers={'Authorization':'Bearer '+os.environ['GITHUB_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json'},method='POST')
+          urllib.request.urlopen(req,timeout=30).read()"
       - name: BUILD
         run: |
           exec > >(tee -a /tmp/wl-build.log) 2>&1
@@ -62,11 +63,9 @@ jobs:
           ls -la Winlator-A55-preAOT.apk
           sha256sum Winlator-A55-preAOT.apk | tee Winlator-A55-preAOT.sha256
           echo "==== BUILD_OK ===="
-        env: {GH_TOKEN: ${{ github.token }}}
-      - name: Posta log na issue
+      - name: Posta log final
         if: always()
         run: python3 winlator-a55/reporter.py
-        env: {GH_TOKEN: ${{ github.token }}}
       - uses: actions/upload-artifact@v4
         if: always()
         with: {name: wl-apk, path: "Winlator-A55-preAOT.apk\nWinlator-A55-preAOT.sha256", if-no-files-found: ignore}
@@ -76,7 +75,6 @@ jobs:
           TAG=winlator-a55
           gh release delete "$TAG" -y 2>/dev/null || true
           git tag -f "$TAG" HEAD; git push -f origin "$TAG" 2>/dev/null || true
-          gh release create "$TAG" --title "Winlator-A55 pre-AOT (Box64 persistent + DXVK)" \
-            --notes "Box64 dynarec persistente (BOX64_DYNAREC_PERSISTENT=1, BIGBLOCK=3) + DXVK forçado + cache de shaders persistente + Turnip default. Copie sua própria pasta BeamNG.drive para o celular; o APK não inclui o jogo." \
+          gh release create "$TAG" --title "Winlator-A55 pre-AOT" --notes "Box64 DYNAREC persistente + DXVK forçado + Turnip default. Copie sua própria pasta BeamNG.drive pro celular; o jogo não está no APK." \
             Winlator-A55-preAOT.apk Winlator-A55-preAOT.sha256
         env: {GH_TOKEN: ${{ github.token }}}
