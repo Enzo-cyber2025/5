@@ -14,62 +14,46 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-java@v4
         with: {distribution: temurin, java-version: '17'}
-      - name: Deps
+      - name: Fetch apktool + uber-signer (passo separado, sem heredocs)
         run: |
-          sudo apt-get -qq update
-          sudo apt-get -qq install -y wget unzip
-          # uber-apk-signer (só precisa de Java; zipalign/apksigner embutidos)
-          wget -q https://github.com/nickola/uber-apk-signer/releases/download/v1.3.0/uber-apk-signer-1.3.0.jar -O /tmp/uber.jar
-          # apktool
+          set -x
           wget -q https://github.com/iBotPeaches/Apktool/releases/download/v2.9.3/apktool_2.9.3.jar -O /tmp/apktool.jar
-          cat > /usr/local/bin/apktool <<'S'
-#!/bin/sh
-exec java -jar /tmp/apktool.jar "$@"
-S
+          wget -q https://github.com/nickola/uber-apk-signer/releases/download/v1.3.0/uber-apk-signer-1.3.0.jar -O /tmp/uber.jar
+          printf '%s\n' '#!/bin/sh' 'exec java -jar /tmp/apktool.jar "$@"' > /usr/local/bin/apktool
           chmod +x /usr/local/bin/apktool
-      - name: Baixa APK fonte (várias URLs de fallback)
+          apktool --version
+      - name: Download source APK
         run: |
+          set -x
           for URL in \
             "https://github.com/brunovalads/Winlator/releases/download/8.0.1-mod/Winlator_8.0.1-mod.apk" \
             "https://github.com/brunovalads/Winlator/releases/download/8.0/Winlator_8.0.apk" \
             "https://github.com/Winlator/Winlator/releases/download/v8.0/Winlator_v8.0.apk"; do
-            echo "-- tentando $URL"
-            if wget --tries=2 --timeout=60 -q "$URL" -O winlator-orig.apk && [ -s winlator-orig.apk ]; then
-              echo "OK: $(ls -la winlator-orig.apk)"; break
+            echo "Tentando $URL"
+            if wget --tries=2 --timeout=60 "$URL" -O winlator-orig.apk && [ -s winlator-orig.apk ]; then
+              echo OK; file winlator-orig.apk; break
             fi
             rm -f winlator-orig.apk
           done
           test -s winlator-orig.apk
-          file winlator-orig.apk
-      - name: Desempacota
+      - name: Unpack
         run: apktool d winlator-orig.apk -o out -f
-      - name: Injeta pre-AOT
+      - name: Inject pre-AOT
         run: bash winlator-a55/inject.sh out
-      - name: Reempacota (apktool b)
+      - name: Repack
         run: apktool b out -o unsigned.apk
-      - name: Alinha e assina (uber-apk-signer faz zipalign+apksigner)
+      - name: Sign
         run: |
-          ls -la unsigned.apk
           java -jar /tmp/uber.jar -a unsigned.apk --out .
-          ls -la *-aligned-signed.apk
-          cp $(ls *-aligned-signed.apk | head -1) Winlator-A55-preAOT.apk
-          ls -la Winlator-A55-preAOT.apk
+          cp *-aligned-signed.apk Winlator-A55-preAOT.apk
           sha256sum Winlator-A55-preAOT.apk | tee Winlator-A55-preAOT.sha256
       - uses: actions/upload-artifact@v4
-        with:
-          name: Winlator-A55-preAOT
-          path: |
-            Winlator-A55-preAOT.apk
-            Winlator-A55-preAOT.sha256
-      - name: Publica na release
+        with: {name: Winlator-A55, path: "Winlator-A55-preAOT.apk\nWinlator-A55-preAOT.sha256"}
+      - name: Publish
+        if: success()
         run: |
           TAG=winlator-a55
           gh release delete "$TAG" -y 2>/dev/null || true
-          git tag -f "$TAG" HEAD
-          git push -f origin "$TAG" 2>/dev/null || true
-          gh release create "$TAG" \
-            --title "Winlator-A55 pre-AOT (Box64 cache persistente)" \
-            --notes-file winlator-a55/RELEASE_NOTES.md \
-            Winlator-A55-preAOT.apk Winlator-A55-preAOT.sha256
-        env:
-          GH_TOKEN: ${{ github.token }}
+          git tag -f "$TAG" HEAD; git push -f origin "$TAG" 2>/dev/null || true
+          gh release create "$TAG" --title "Winlator-A55 pre-AOT" --notes-file winlator-a55/RELEASE_NOTES.md Winlator-A55-preAOT.apk Winlator-A55-preAOT.sha256
+        env: {GH_TOKEN: ${{ github.token }}}
