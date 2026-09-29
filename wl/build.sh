@@ -4,17 +4,31 @@ LOG=wl/build.log
 : > "$LOG"
 exec > >(tee -a "$LOG") 2>&1
 
+post() {
+  # posta log como comentario na issue #7
+  python3 - "$LOG" <<'PY'
+import json, os, sys, urllib.request
+log = open(sys.argv[1], 'rb').read().decode('utf-8', 'replace')[-55000:]
+body = "### build log\n\n```\n" + log + "\n```\n"
+repo = os.environ['GITHUB_REPOSITORY']
+tok = os.environ.get('GITHUB_TOKEN','')
+req = urllib.request.Request(
+    f"https://api.github.com/repos/{repo}/issues/7/comments",
+    data=json.dumps({'body': body}).encode(),
+    headers={'Authorization': f'Bearer {tok}', 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json'},
+    method='POST')
+try:
+    r = urllib.request.urlopen(req, timeout=30)
+    print("POSTED", r.status)
+except Exception as e:
+    print("POST ERR", e)
+PY
+}
+
 on_err() {
-  echo "=== ERR (exit=$?) ==="
-  tail -100 "$LOG" || true
-  # Commita o log de volta em um branch de logs
-  cd "$GITHUB_WORKSPACE"
-  git config user.email "ci@local"
-  git config user.name "ci"
-  git checkout -B wl-logs origin/arena/01a0d024-5 || git checkout -B wl-logs
-  git add -f wl/build.log
-  git commit -m "wl log $(date -u +%H%M%S)" || true
-  git push -f origin wl-logs 2>&1 | tail -5 || true
+  echo "=== ERR exit=$? ==="
+  tail -80 "$LOG" || true
+  post || true
 }
 trap on_err ERR
 
