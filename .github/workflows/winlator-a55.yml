@@ -2,7 +2,7 @@ name: Winlator A55 (pre-AOT Box64)
 on:
   push:
     branches: [arena/01a0d024-5]
-    paths: [winlator-a55/**, .github/workflows/winlator-a55.yml]
+    paths: [winlator-a55/patch_version.txt]
   workflow_dispatch:
 permissions:
   contents: write
@@ -12,83 +12,45 @@ jobs:
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v5
-        with: {fetch-depth:0, token: ${{ github.token }}}
-      - name: Dependencias
-        id: deps
-        continue-on-error: true
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - name: Deps
         run: |
-          set -x
           sudo apt-get -qq update
-          sudo apt-get -qq install -y wget unzip openjdk-17-jdk-headless aapt apksigner zipalign default-jdk
+          sudo apt-get -qq install -y wget unzip aapt apksigner zipalign
           wget -q https://github.com/iBotPeaches/Apktool/releases/download/v2.9.3/apktool_2.9.3.jar -O /usr/local/bin/apktool.jar
           cat > /usr/local/bin/apktool <<'S'
 #!/bin/sh
 exec java -jar /usr/local/bin/apktool.jar "$@"
 S
           chmod +x /usr/local/bin/apktool
-          apktool --version
-          java -version
-      - name: Baixa APK oficial
-        id: dl
-        continue-on-error: true
-        run: |
-          set -x
-          wget -v https://github.com/brunovalads/Winlator/releases/download/8.0.1-mod/Winlator_8.0.1-mod.apk -O winlator-orig.apk
-          ls -la winlator-orig.apk
-          file winlator-orig.apk
+      - name: Baixa APK
+        run: wget -q https://github.com/brunovalads/Winlator/releases/download/8.0.1-mod/Winlator_8.0.1-mod.apk -O winlator-orig.apk && ls -la winlator-orig.apk
       - name: Desempacota
-        id: unpack
-        continue-on-error: true
         run: apktool d winlator-orig.apk -o out -f
-      - name: Injeta pre-AOT
-        id: inj
-        continue-on-error: true
+      - name: Injeta
         run: bash winlator-a55/inject.sh out
-      - name: Reempacota e assina
-        id: pack
-        continue-on-error: true
+      - name: Empacota e assina
         run: |
-          set -x
-          apktool b out -o Winlator-A55-preAOT-aligned.apk
-          ls -la *.apk
-          keytool -genkeypair -keystore ks.jks -storepass android -keypass android -alias u -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=A55,OU=Local,O=Local,C=BR" -noprompt
-          zipalign -f 4 Winlator-A55-preAOT-aligned.apk Winlator-A55-preAOT.apk || cp Winlator-A55-preAOT-aligned.apk Winlator-A55-preAOT.apk
-          apksigner sign --ks ks.jks --ks-pass pass:android --key-pass pass:android --out Winlator-A55-preAOT-signed.apk Winlator-A55-preAOT.apk
-          mv Winlator-A55-preAOT-signed.apk Winlator-A55-preAOT.apk
+          apktool b out -o u.apk
+          keytool -genkeypair -keystore ks.jks -storepass android -keypass android -alias u -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=A55" -noprompt
+          zipalign -f 4 u.apk a.apk || cp u.apk a.apk
+          apksigner sign --ks ks.jks --ks-pass pass:android --key-pass pass:android --out Winlator-A55-preAOT.apk a.apk
           ls -la Winlator-A55-preAOT.apk
           sha256sum Winlator-A55-preAOT.apk | tee Winlator-A55-preAOT.sha256
-      - name: Salva log e publica
-        if: always()
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: Winlator-A55
+          path: |
+            Winlator-A55-preAOT.apk
+            Winlator-A55-preAOT.sha256
+      - name: Publica
         run: |
-          set +e
-          mkdir -p wl-logs
-          {
-            echo "== steps =="
-            echo "deps:    ${{ steps.deps.outcome }}"
-            echo "dl:      ${{ steps.dl.outcome }}"
-            echo "unpack:  ${{ steps.unpack.outcome }}"
-            echo "inj:     ${{ steps.inj.outcome }}"
-            echo "pack:    ${{ steps.pack.outcome }}"
-            echo
-            echo "== java =="; which java; java -version 2>&1
-            echo "== apktool =="; which apktool; apktool --version 2>&1
-            echo "== ls cwd =="; ls -la
-            echo "== ls out =="; ls out 2>&1 | head -40
-          } > wl-logs/build.log 2>&1
-          if [ -f Winlator-A55-preAOT.apk ]; then
-            echo "APK_EXISTE=1" >> wl-logs/build.log
-          fi
-          git config user.name "ci-bot"; git config user.email "ci@local"
-          git pull --rebase origin arena/01a0d024-5 2>/dev/null || true
-          git add wl-logs/ Winlator-A55-preAOT.apk Winlator-A55-preAOT.sha256 2>/dev/null || true
-          git commit -m "WL: log + artefatos [skip ci]" || true
-          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/Enzo-cyber2025/5.git" HEAD:arena/01a0d024-5 || true
-          if [ -f Winlator-A55-preAOT.apk ]; then
-            TAG=winlator-a55
-            gh release delete "$TAG" -y 2>/dev/null || true
-            git tag -f "$TAG" HEAD
-            git push -f origin "$TAG" 2>/dev/null || true
-            gh release create "$TAG" --title "Winlator otimizado p/ A55 (pre-AOT)" --notes-file winlator-a55/RELEASE_NOTES.md Winlator-A55-preAOT.apk Winlator-A55-preAOT.sha256
-          fi
+          TAG=winlator-a55
+          gh release delete "$TAG" -y 2>/dev/null || true
+          git tag -f "$TAG" HEAD; git push -f origin "$TAG" 2>/dev/null || true
+          gh release create "$TAG" --title "Winlator A55 (pre-AOT Box64)" --notes-file winlator-a55/RELEASE_NOTES.md Winlator-A55-preAOT.apk Winlator-A55-preAOT.sha256
         env:
           GH_TOKEN: ${{ github.token }}
