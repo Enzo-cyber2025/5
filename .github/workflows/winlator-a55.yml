@@ -1,0 +1,48 @@
+name: Winlator A55 (pre-AOT Box64)
+on:
+  push:
+    branches: [arena/01a0d024-5]
+    paths: [winlator-a55/**, .github/workflows/winlator-a55.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v5
+      - name: Dependencias
+        run: |
+          sudo apt-get -qq update
+          sudo apt-get -qq install -y wget unzip openjdk-17-jdk-headless aapt apksigner zipalign
+          wget -q https://github.com/iBotPeaches/Apktool/releases/download/v2.9.3/apktool_2.9.3.jar -O /usr/local/bin/apktool.jar
+          cat > /usr/local/bin/apktool <<'S'
+#!/bin/sh
+exec java -jar /usr/local/bin/apktool.jar "$@"
+S
+          chmod +x /usr/local/bin/apktool
+      - name: Baixa APK oficial
+        run: wget -q https://github.com/brunovalads/Winlator/releases/download/8.0.1-mod/Winlator_8.0.1-mod.apk -O winlator-orig.apk && ls -la winlator-orig.apk
+      - name: Desempacota
+        run: apktool d winlator-orig.apk -o out -f
+      - name: Injeta pre-AOT
+        run: bash winlator-a55/inject.sh out
+      - name: Reempacota e assina
+        run: |
+          apktool b out -o Winlator-A55-preAOT-aligned.apk
+          keytool -genkeypair -keystore ks.jks -storepass android -keypass android -alias u -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=A55,OU=Local,O=Local,C=BR" -noprompt
+          zipalign -f 4 Winlator-A55-preAOT-aligned.apk Winlator-A55-preAOT.apk || cp Winlator-A55-preAOT-aligned.apk Winlator-A55-preAOT.apk
+          apksigner sign --ks ks.jks --ks-pass pass:android --key-pass pass:android --out Winlator-A55-preAOT-signed.apk Winlator-A55-preAOT.apk
+          mv Winlator-A55-preAOT-signed.apk Winlator-A55-preAOT.apk
+          ls -la Winlator-A55-preAOT.apk
+          sha256sum Winlator-A55-preAOT.apk | tee Winlator-A55-preAOT.sha256
+      - name: Publica
+        run: |
+          TAG=winlator-a55
+          gh release delete "$TAG" -y 2>/dev/null || true
+          git tag -f "$TAG" HEAD
+          git push -f origin "$TAG" 2>/dev/null || true
+          gh release create "$TAG" --title "Winlator otimizado p/ A55 (pre-AOT Box64)" --notes-file winlator-a55/RELEASE_NOTES.md Winlator-A55-preAOT.apk Winlator-A55-preAOT.sha256
+        env:
+          GH_TOKEN: ${{ github.token }}
