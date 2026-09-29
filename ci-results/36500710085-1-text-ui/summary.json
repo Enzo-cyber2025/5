@@ -1,0 +1,1028 @@
+{
+  "status": "PASS",
+  "checks": {
+    "emulator": "BOOTED: x86_64",
+    "installation": "PASS",
+    "notification_setup": "GRANTED_FOR_TEST",
+    "launch": "PASS",
+    "text_import": "PASS",
+    "fusion_persistence": "PASS: dois GGUFs numa única seleção viraram UM GGUF físico (unificação atômica registrada pelo aplicativo) e o vínculo sobreviveu ao reinício; não testa inferência de imagem",
+    "cpu_generation": "PASS",
+    "vulkan": "PASS: GPU offload confirmado (opt-in de teste para o driver por software)",
+    "software_vulkan_policy": "PASS: dispositivo por software recusado -> CPU (llvmpipe (LLVM 21.0.0, 256 bits))",
+    "search_toggle": "PASS: liga, desliga e persiste com o rótulo acompanhando",
+    "search_online": "PASS: DuckDuckGo com 5 fonte(s) em 2090 ms de 12000 ms, painel persistido",
+    "search_offline": "PASS: sem rede, a cadeia parou na primeira tentativa (nenhum) em 122 ms, resposta gerada sem fontes",
+    "network_restored": "AVISO: a rede do emulador não voltou ao normal",
+    "gpu_preferred": "PASS: pedido de GPU medido; recusa registrada e CPU usada (emulador sem GPU real)",
+    "prefix_warmup_experiment": "PASS: aquecimento ligado e desligado medidos na mesma rodada",
+    "prefill_ubatch_experiment": "MEDIDO: 128 → 16.513 ms/token (223 tokens), 256 → 18.603 ms/token (223 tokens); nada muda de padrão sem ganho medido",
+    "search_race": "MEDIDO: a corrida venceu com DuckDuckGo em 1860 ms (5 fonte(s)); 0 de 3 candidatos ainda corriam quando a resposta chegou",
+    "search_cache": "PASS: consulta repetida saiu da memória (5 fonte(s), 27342 ms de idade, teto 60000 ms), sem nova ida à rede",
+    "kv_cache_applied": "PASS: motor registrou cache K/V usado (f16 e q8_0)",
+    "cpu_auto_threads": "PASS: política automática de threads executada",
+    "missing_model": "PASS: erro tratado e processo vivo"
+  },
+  "apk_sha256": "fbdcd943c5cadcbe5465f3a3bf0b25962d8e4615e5ecd08e8dbac7e81d1ed712",
+  "scope": "android-integration",
+  "generation_parameters": {
+    "max_tokens": 128,
+    "temperature": 0.0,
+    "language_requested": "English"
+  },
+  "model_setup": "saf",
+  "model_sha256": "2e8040ceae7815abe0dcb3540b9995eaa1fa0d2ca9e797d0a635ae4433c68c2d",
+  "android_api": 35,
+  "performance": {
+    "scope": "Medido no emulador descartável x86_64 com o modelo real do CI; taxa = tokens nativos / tempo nativo de decodificação; primeiro texto = relógio da thread principal do Android. Cada etapa abre uma conversa nova, portanto a carga do modelo entra no tempo de tela e nunca na taxa de decodificação. A linha de base é o comportamento anterior, reproduzido pelo opt-in de teste no driver Vulkan por software deste emulador.",
+    "baseline": "vulkan",
+    "interpretation": "O pedido original dizia -300% de espera, o que não existe (um tempo negativo); o alvo aplicado é um terço do tempo anterior, ou seja 3x mais rápido até o primeiro texto.",
+    "stages": {
+      "cpu": {
+        "stage": "cpu",
+        "gpu_layers_requested": 0,
+        "threads_requested": 2,
+        "threads_resolved": {
+          "requested": 2,
+          "available": 2,
+          "capacities": 0,
+          "resolved": 2
+        },
+        "backend": "cpu",
+        "ui_first_text_s": 0.327468587,
+        "warmup": {
+          "ran": true,
+          "skipped": null,
+          "ui_ok": true,
+          "typed_passes": 1,
+          "input_tokens": 65,
+          "prefilled": 65,
+          "reused_tokens": 48,
+          "gpu": false,
+          "aborted": false
+        },
+        "prefill": {
+          "prompt_tokens": 65,
+          "reused_tokens": 64,
+          "fresh_tokens": 1,
+          "prefill_s": 0.2112,
+          "prefill_ms_per_token": 211.207
+        },
+        "context_tuning": {
+          "batch": 256,
+          "ubatch": 128,
+          "threads": 2,
+          "prefix_cache_supported": true
+        },
+        "kv_cache": {
+          "kv": "f16",
+          "flash_attn_requested": "auto"
+        },
+        "search": null,
+        "software_vulkan_notice": null,
+        "tokens": 42,
+        "decode_s": 1.933250767,
+        "prefill_s": 0.211206884,
+        "tokens_s": 21.725065737423808,
+        "first_token_s": 0.215749634,
+        "prompt_tokens": 65,
+        "reused_tokens": 64,
+        "completed": true
+      },
+      "vulkan": {
+        "stage": "vulkan",
+        "gpu_layers_requested": -1,
+        "threads_requested": 2,
+        "threads_resolved": {
+          "requested": 2,
+          "available": 2,
+          "capacities": 0,
+          "resolved": 2
+        },
+        "backend": "vulkan",
+        "ui_first_text_s": 0.749146506,
+        "warmup": {
+          "ran": true,
+          "skipped": null,
+          "ui_ok": true,
+          "typed_passes": 1,
+          "input_tokens": 65,
+          "prefilled": 65,
+          "reused_tokens": 48,
+          "gpu": true,
+          "aborted": false
+        },
+        "prefill": {
+          "prompt_tokens": 65,
+          "reused_tokens": 64,
+          "fresh_tokens": 1,
+          "prefill_s": 0.7078,
+          "prefill_ms_per_token": 707.846
+        },
+        "context_tuning": {
+          "batch": 256,
+          "ubatch": 128,
+          "threads": 2,
+          "prefix_cache_supported": true
+        },
+        "kv_cache": {
+          "kv": "f16",
+          "flash_attn_requested": "auto"
+        },
+        "search": null,
+        "software_vulkan_notice": null,
+        "tokens": 128,
+        "decode_s": 21.130982052,
+        "prefill_s": 0.707845879,
+        "tokens_s": 6.0574562831491825,
+        "first_token_s": 0.711904889,
+        "prompt_tokens": 65,
+        "reused_tokens": 64,
+        "completed": true
+      },
+      "vulkan-policy-default": {
+        "stage": "vulkan-policy-default",
+        "gpu_layers_requested": -1,
+        "threads_requested": 2,
+        "threads_resolved": {
+          "requested": 2,
+          "available": 2,
+          "capacities": 0,
+          "resolved": 2
+        },
+        "backend": "cpu",
+        "ui_first_text_s": 0.230377632,
+        "warmup": {
+          "ran": true,
+          "skipped": null,
+          "ui_ok": true,
+          "typed_passes": 1,
+          "input_tokens": 65,
+          "prefilled": 65,
+          "reused_tokens": 48,
+          "gpu": false,
+          "aborted": false
+        },
+        "prefill": {
+          "prompt_tokens": 65,
+          "reused_tokens": 64,
+          "fresh_tokens": 1,
+          "prefill_s": 0.1829,
+          "prefill_ms_per_token": 182.942
+        },
+        "context_tuning": {
+          "batch": 256,
+          "ubatch": 128,
+          "threads": 2,
+          "prefix_cache_supported": true
+        },
+        "kv_cache": {
+          "kv": "f16",
+          "flash_attn_requested": "auto"
+        },
+        "search": null,
+        "software_vulkan_notice": "llvmpipe (LLVM 21.0.0, 256 bits)",
+        "tokens": 42,
+        "decode_s": 2.244453789,
+        "prefill_s": 0.1829416,
+        "tokens_s": 18.712793377988323,
+        "first_token_s": 0.185479616,
+        "prompt_tokens": 65,
+        "reused_tokens": 64,
+        "completed": true
+      },
+      "search-online": {
+        "stage": "search-online",
+        "gpu_layers_requested": 0,
+        "threads_requested": 2,
+        "threads_resolved": {
+          "requested": 2,
+          "available": 2,
+          "capacities": 0,
+          "resolved": 2
+        },
+        "backend": "cpu",
+        "ui_first_text_s": 7.622683043,
+        "warmup": {
+          "ran": true,
+          "skipped": null,
+          "ui_ok": true,
+          "typed_passes": 1,
+          "input_tokens": 72,
+          "prefilled": 72,
+          "reused_tokens": 48,
+          "gpu": false,
+          "aborted": false
+        },
+        "prefill": {
+          "prompt_tokens": 443,
+          "reused_tokens": 45,
+          "fresh_tokens": 398,
+          "prefill_s": 5.4738,
+          "prefill_ms_per_token": 13.753
+        },
+        "context_tuning": {
+          "batch": 256,
+          "ubatch": 128,
+          "threads": 2,
+          "prefix_cache_supported": true
+        },
+        "kv_cache": {
+          "kv": "f16",
+          "flash_attn_requested": "auto"
+        },
+        "search": {
+          "budget_ms": 12000,
+          "used_ms": 2090,
+          "exhausted": false,
+          "provider": "DuckDuckGo",
+          "announced_budget_ms": 12000,
+          "attempts": [
+            "DuckDuckGo"
+          ],
+          "attempts_parallel": true,
+          "attempt_slices_within_budget": true,
+          "sources": 5,
+          "prompt_mode": "fontes",
+          "error": null
+        },
+        "software_vulkan_notice": null,
+        "tokens": 121,
+        "decode_s": 7.747619741,
+        "prefill_s": 5.473819611,
+        "tokens_s": 15.617699892997368,
+        "first_token_s": 5.476812425,
+        "prompt_tokens": 443,
+        "reused_tokens": 45,
+        "completed": true
+      },
+      "search-offline": {
+        "stage": "search-offline",
+        "gpu_layers_requested": 0,
+        "threads_requested": 2,
+        "threads_resolved": {
+          "requested": 2,
+          "available": 2,
+          "capacities": 0,
+          "resolved": 2
+        },
+        "backend": "cpu",
+        "ui_first_text_s": 3.828434161,
+        "warmup": {
+          "ran": true,
+          "skipped": null,
+          "ui_ok": true,
+          "typed_passes": 1,
+          "input_tokens": 72,
+          "prefilled": 72,
+          "reused_tokens": 48,
+          "gpu": false,
+          "aborted": false
+        },
+        "prefill": {
+          "prompt_tokens": 283,
+          "reused_tokens": 45,
+          "fresh_tokens": 238,
+          "prefill_s": 3.6375,
+          "prefill_ms_per_token": 15.284
+        },
+        "context_tuning": {
+          "batch": 256,
+          "ubatch": 128,
+          "threads": 2,
+          "prefix_cache_supported": true
+        },
+        "kv_cache": {
+          "kv": "f16",
+          "flash_attn_requested": "auto"
+        },
+        "search": {
+          "budget_ms": 12000,
+          "used_ms": 122,
+          "exhausted": false,
+          "provider": "nenhum",
+          "announced_budget_ms": 12000,
+          "attempts": [
+            "DuckDuckGo",
+            "Wikipédia"
+          ],
+          "attempts_parallel": true,
+          "attempt_slices_within_budget": true,
+          "sources": 0,
+          "prompt_mode": "indisponivel",
+          "error": "Wikipédia: sem rede/DNS; demais provedores ignorados: falha de rede; DuckDuckGo: sem rede/DNS; demais provedores ignorados: falha de rede; DuckDuckGo Lite: sem rede/DNS; demais provedores ignorados: falha de rede"
+        },
+        "software_vulkan_notice": null,
+        "tokens": 16,
+        "decode_s": 1.023410556,
+        "prefill_s": 3.637482133,
+        "tokens_s": 15.633999381964554,
+        "first_token_s": 3.641066505,
+        "prompt_tokens": 283,
+        "reused_tokens": 45,
+        "completed": true
+      },
+      "gpu-preferred-cold": {
+        "stage": "gpu-preferred-cold",
+        "gpu_layers_requested": 99,
+        "threads_requested": 2,
+        "threads_resolved": {
+          "requested": 2,
+          "available": 2,
+          "capacities": 0,
+          "resolved": 2
+        },
+        "backend": "cpu",
+        "ui_first_text_s": 0.256460476,
+        "warmup": {
+          "ran": true,
+          "skipped": null,
+          "ui_ok": true,
+          "typed_passes": 1,
+          "input_tokens": 65,
+          "prefilled": 65,
+          "reused_tokens": 48,
+          "gpu": false,
+          "aborted": false
+        },
+        "prefill": {
+          "prompt_tokens": 65,
+          "reused_tokens": 64,
+          "fresh_tokens": 1,
+          "prefill_s": 0.1369,
+          "prefill_ms_per_token": 136.861
+        },
+        "context_tuning": {
+          "batch": 256,
+          "ubatch": 128,
+          "threads": 2,
+          "prefix_cache_supported": true
+        },
+        "kv_cache": {
+          "kv": "f16",
+          "flash_attn_requested": "auto"
+        },
+        "search": null,
+        "software_vulkan_notice": "llvmpipe (LLVM 21.0.0, 256 bits)",
+        "tokens": 42,
+        "decode_s": 1.713753989,
+        "prefill_s": 0.136861034,
+        "tokens_s": 24.507601598352867,
+        "first_token_s": 0.140447173,
+        "prompt_tokens": 65,
+        "reused_tokens": 64,
+        "completed": true
+      },
+      "gpu-preferred-typed": {
+        "stage": "gpu-preferred-typed",
+        "gpu_layers_requested": 99,
+        "threads_requested": 2,
+        "threads_resolved": {
+          "requested": 2,
+          "available": 2,
+          "capacities": 0,
+          "resolved": 2
+        },
+        "backend": "cpu",
+        "ui_first_text_s": 0.20929421,
+        "warmup": {
+          "ran": true,
+          "skipped": null,
+          "ui_ok": true,
+          "typed_passes": 2,
+          "input_tokens": 65,
+          "prefilled": 65,
+          "reused_tokens": 54,
+          "gpu": false,
+          "aborted": false
+        },
+        "prefill": {
+          "prompt_tokens": 65,
+          "reused_tokens": 64,
+          "fresh_tokens": 1,
+          "prefill_s": 0.0821,
+          "prefill_ms_per_token": 82.103
+        },
+        "context_tuning": {
+          "batch": 256,
+          "ubatch": 128,
+          "threads": 2,
+          "prefix_cache_supported": true
+        },
+        "kv_cache": {
+          "kv": "f16",
+          "flash_attn_requested": "auto"
+        },
+        "search": null,
+        "software_vulkan_notice": "llvmpipe (LLVM 21.0.0, 256 bits)",
+        "tokens": 42,
+        "decode_s": 2.109629844,
+        "prefill_s": 0.082102664,
+        "tokens_s": 19.908705842142037,
+        "first_token_s": 0.086200993,
+        "prompt_tokens": 65,
+        "reused_tokens": 64,
+        "completed": true
+      },
+      "gpu-off-cold": {
+        "stage": "gpu-off-cold",
+        "gpu_layers_requested": 99,
+        "threads_requested": 2,
+        "threads_resolved": {
+          "requested": 2,
+          "available": 2,
+          "capacities": 0,
+          "resolved": 2
+        },
+        "backend": "cpu",
+        "ui_first_text_s": 1.30935291,
+        "warmup": {
+          "ran": false,
+          "skipped": "property",
+          "ui_ok": true,
+          "typed_passes": 1
+        },
+        "prefill": {
+          "prompt_tokens": 65,
+          "reused_tokens": 0,
+          "fresh_tokens": 65,
+          "prefill_s": 1.1515,
+          "prefill_ms_per_token": 17.716
+        },
+        "context_tuning": {
+          "batch": 256,
+          "ubatch": 128,
+          "threads": 2,
+          "prefix_cache_supported": true
+        },
+        "kv_cache": {
+          "kv": "f16",
+          "flash_attn_requested": "auto"
+        },
+        "search": null,
+        "software_vulkan_notice": "llvmpipe (LLVM 21.0.0, 256 bits)",
+        "tokens": 94,
+        "decode_s": 4.948728718,
+        "prefill_s": 1.15151912,
+        "tokens_s": 18.99477731686807,
+        "first_token_s": 1.154486536,
+        "prompt_tokens": 65,
+        "reused_tokens": 0,
+        "completed": true
+      },
+      "prefill-ubatch-128": {
+        "stage": "prefill-ubatch-128",
+        "gpu_layers_requested": 0,
+        "threads_requested": 2,
+        "threads_resolved": {
+          "requested": 2,
+          "available": 2,
+          "capacities": 0,
+          "resolved": 2
+        },
+        "backend": "cpu",
+        "ui_first_text_s": 3.744681265,
+        "warmup": {
+          "ran": false,
+          "skipped": "property",
+          "ui_ok": true,
+          "typed_passes": 1
+        },
+        "prefill": {
+          "prompt_tokens": 223,
+          "reused_tokens": 0,
+          "fresh_tokens": 223,
+          "prefill_s": 3.6823,
+          "prefill_ms_per_token": 16.513
+        },
+        "context_tuning": {
+          "batch": 256,
+          "ubatch": 128,
+          "threads": 2,
+          "prefix_cache_supported": true
+        },
+        "kv_cache": {
+          "kv": "f16",
+          "flash_attn_requested": "auto"
+        },
+        "search": null,
+        "software_vulkan_notice": null,
+        "tokens": 128,
+        "decode_s": 8.634632259,
+        "prefill_s": 3.682333726,
+        "tokens_s": 14.824024481944067,
+        "first_token_s": 3.684703466,
+        "prompt_tokens": 223,
+        "reused_tokens": 0,
+        "completed": true
+      },
+      "prefill-ubatch-256": {
+        "stage": "prefill-ubatch-256",
+        "gpu_layers_requested": 0,
+        "threads_requested": 2,
+        "threads_resolved": {
+          "requested": 2,
+          "available": 2,
+          "capacities": 0,
+          "resolved": 2
+        },
+        "backend": "cpu",
+        "ui_first_text_s": 4.229491748,
+        "warmup": {
+          "ran": false,
+          "skipped": "property",
+          "ui_ok": true,
+          "typed_passes": 1
+        },
+        "prefill": {
+          "prompt_tokens": 223,
+          "reused_tokens": 0,
+          "fresh_tokens": 223,
+          "prefill_s": 4.1485,
+          "prefill_ms_per_token": 18.603
+        },
+        "context_tuning": {
+          "batch": 256,
+          "ubatch": 256,
+          "threads": 2,
+          "prefix_cache_supported": true
+        },
+        "kv_cache": {
+          "kv": "f16",
+          "flash_attn_requested": "auto"
+        },
+        "search": null,
+        "software_vulkan_notice": null,
+        "tokens": 128,
+        "decode_s": 9.100435527,
+        "prefill_s": 4.148537602,
+        "tokens_s": 14.065260901001711,
+        "first_token_s": 4.151744035,
+        "prompt_tokens": 223,
+        "reused_tokens": 0,
+        "completed": true
+      },
+      "search-race": {
+        "stage": "search-race",
+        "gpu_layers_requested": 99,
+        "threads_requested": 2,
+        "threads_resolved": {
+          "requested": 2,
+          "available": 2,
+          "capacities": 0,
+          "resolved": 2
+        },
+        "backend": "cpu",
+        "ui_first_text_s": 7.969220471,
+        "warmup": {
+          "ran": true,
+          "skipped": null,
+          "ui_ok": true,
+          "typed_passes": 1,
+          "input_tokens": 72,
+          "prefilled": 72,
+          "reused_tokens": 48,
+          "gpu": false,
+          "aborted": false
+        },
+        "prefill": {
+          "prompt_tokens": 468,
+          "reused_tokens": 45,
+          "fresh_tokens": 423,
+          "prefill_s": 6.063,
+          "prefill_ms_per_token": 14.333
+        },
+        "context_tuning": {
+          "batch": 256,
+          "ubatch": 128,
+          "threads": 2,
+          "prefix_cache_supported": true
+        },
+        "kv_cache": {
+          "kv": "f16",
+          "flash_attn_requested": "auto"
+        },
+        "search": {
+          "budget_ms": 12000,
+          "used_ms": 1860,
+          "exhausted": false,
+          "provider": "DuckDuckGo",
+          "announced_budget_ms": 12000,
+          "attempts": [
+            "DuckDuckGo",
+            "Wikipédia"
+          ],
+          "attempts_parallel": true,
+          "attempt_slices_within_budget": true,
+          "sources": 5,
+          "prompt_mode": "fontes",
+          "error": null
+        },
+        "software_vulkan_notice": "llvmpipe (LLVM 21.0.0, 256 bits)",
+        "tokens": 86,
+        "decode_s": 5.774856765,
+        "prefill_s": 6.062951007,
+        "tokens_s": 14.892144255633326,
+        "first_token_s": 6.06564127,
+        "prompt_tokens": 468,
+        "reused_tokens": 45,
+        "completed": true
+      },
+      "search-cache": {
+        "stage": "search-cache",
+        "search": {
+          "used_ms": 0,
+          "provider": "DuckDuckGo",
+          "sources": 5
+        }
+      },
+      "decode-kv-f16": {
+        "stage": "decode-kv-f16",
+        "gpu_layers_requested": 99,
+        "threads_requested": 2,
+        "threads_resolved": {
+          "requested": 2,
+          "available": 2,
+          "capacities": 0,
+          "resolved": 2
+        },
+        "backend": "cpu",
+        "ui_first_text_s": 0.307056186,
+        "warmup": {
+          "ran": true,
+          "skipped": null,
+          "ui_ok": true,
+          "typed_passes": 1,
+          "input_tokens": 65,
+          "prefilled": 65,
+          "reused_tokens": 48,
+          "gpu": false,
+          "aborted": false
+        },
+        "prefill": {
+          "prompt_tokens": 65,
+          "reused_tokens": 64,
+          "fresh_tokens": 1,
+          "prefill_s": 0.2532,
+          "prefill_ms_per_token": 253.24
+        },
+        "context_tuning": {
+          "batch": 256,
+          "ubatch": 128,
+          "threads": 2,
+          "prefix_cache_supported": true
+        },
+        "kv_cache": {
+          "kv": "f16",
+          "flash_attn_requested": "auto"
+        },
+        "search": null,
+        "software_vulkan_notice": "llvmpipe (LLVM 21.0.0, 256 bits)",
+        "tokens": 42,
+        "decode_s": 2.073120589,
+        "prefill_s": 0.253239601,
+        "tokens_s": 20.25931353094096,
+        "first_token_s": 0.257801275,
+        "prompt_tokens": 65,
+        "reused_tokens": 64,
+        "completed": true
+      },
+      "decode-kv-q8": {
+        "stage": "decode-kv-q8",
+        "gpu_layers_requested": 99,
+        "threads_requested": 2,
+        "threads_resolved": {
+          "requested": 2,
+          "available": 2,
+          "capacities": 0,
+          "resolved": 2
+        },
+        "backend": "cpu",
+        "ui_first_text_s": 0.244116359,
+        "warmup": {
+          "ran": true,
+          "skipped": null,
+          "ui_ok": true,
+          "typed_passes": 1,
+          "input_tokens": 65,
+          "prefilled": 65,
+          "reused_tokens": 48,
+          "gpu": false,
+          "aborted": false
+        },
+        "prefill": {
+          "prompt_tokens": 65,
+          "reused_tokens": 64,
+          "fresh_tokens": 1,
+          "prefill_s": 0.0566,
+          "prefill_ms_per_token": 56.605
+        },
+        "context_tuning": {
+          "batch": 256,
+          "ubatch": 128,
+          "threads": 2,
+          "prefix_cache_supported": true
+        },
+        "kv_cache": {
+          "kv": "q8_0",
+          "flash_attn_requested": "auto"
+        },
+        "search": null,
+        "software_vulkan_notice": "llvmpipe (LLVM 21.0.0, 256 bits)",
+        "tokens": 42,
+        "decode_s": 1.689008316,
+        "prefill_s": 0.056605369,
+        "tokens_s": 24.86666264584573,
+        "first_token_s": 0.058729798,
+        "prompt_tokens": 65,
+        "reused_tokens": 64,
+        "completed": true
+      },
+      "cpu-threads-auto": {
+        "stage": "cpu-threads-auto",
+        "gpu_layers_requested": 0,
+        "threads_requested": 0,
+        "threads_resolved": {
+          "requested": 0,
+          "available": 2,
+          "capacities": 0,
+          "resolved": 2
+        },
+        "backend": "cpu",
+        "ui_first_text_s": 0.276857158,
+        "warmup": {
+          "ran": true,
+          "skipped": null,
+          "ui_ok": true,
+          "typed_passes": 1,
+          "input_tokens": 65,
+          "prefilled": 65,
+          "reused_tokens": 48,
+          "gpu": false,
+          "aborted": false
+        },
+        "prefill": {
+          "prompt_tokens": 65,
+          "reused_tokens": 64,
+          "fresh_tokens": 1,
+          "prefill_s": 0.2119,
+          "prefill_ms_per_token": 211.862
+        },
+        "context_tuning": {
+          "batch": 256,
+          "ubatch": 128,
+          "threads": 2,
+          "prefix_cache_supported": true
+        },
+        "kv_cache": {
+          "kv": "f16",
+          "flash_attn_requested": "auto"
+        },
+        "search": null,
+        "software_vulkan_notice": null,
+        "tokens": 42,
+        "decode_s": 2.431845857,
+        "prefill_s": 0.211861604,
+        "tokens_s": 17.270831487573187,
+        "first_token_s": 0.213924201,
+        "prompt_tokens": 65,
+        "reused_tokens": 64,
+        "completed": true
+      }
+    },
+    "candidates": {
+      "cpu": {
+        "tokens_s": 21.725065737423808,
+        "throughput_gain_vs_baseline": 3.586,
+        "ui_first_text_s": 0.327468587,
+        "engine_first_token_s": 0.215749634,
+        "wait_speedup_vs_baseline": 2.288,
+        "waited_metric": "ui_first_text_s",
+        "targets": {
+          "throughput_1_5x": true,
+          "first_text_3x": false
+        },
+        "regression_vs_baseline": false
+      },
+      "vulkan-policy-default": {
+        "tokens_s": 18.712793377988323,
+        "throughput_gain_vs_baseline": 3.089,
+        "ui_first_text_s": 0.230377632,
+        "engine_first_token_s": 0.185479616,
+        "wait_speedup_vs_baseline": 3.252,
+        "waited_metric": "ui_first_text_s",
+        "targets": {
+          "throughput_1_5x": true,
+          "first_text_3x": true
+        },
+        "regression_vs_baseline": false
+      },
+      "search-online": {
+        "tokens_s": 15.617699892997368,
+        "throughput_gain_vs_baseline": 2.578,
+        "ui_first_text_s": 7.622683043,
+        "engine_first_token_s": 5.476812425,
+        "wait_speedup_vs_baseline": 0.098,
+        "waited_metric": "ui_first_text_s",
+        "targets": {
+          "throughput_1_5x": true,
+          "first_text_3x": false
+        },
+        "regression_vs_baseline": false
+      },
+      "search-offline": {
+        "tokens_s": 15.633999381964554,
+        "throughput_gain_vs_baseline": 2.581,
+        "ui_first_text_s": 3.828434161,
+        "engine_first_token_s": 3.641066505,
+        "wait_speedup_vs_baseline": 0.196,
+        "waited_metric": "ui_first_text_s",
+        "targets": {
+          "throughput_1_5x": true,
+          "first_text_3x": false
+        },
+        "regression_vs_baseline": false
+      },
+      "gpu-preferred-cold": {
+        "tokens_s": 24.507601598352867,
+        "throughput_gain_vs_baseline": 4.046,
+        "ui_first_text_s": 0.256460476,
+        "engine_first_token_s": 0.140447173,
+        "wait_speedup_vs_baseline": 2.921,
+        "waited_metric": "ui_first_text_s",
+        "targets": {
+          "throughput_1_5x": true,
+          "first_text_3x": false
+        },
+        "regression_vs_baseline": false
+      },
+      "gpu-preferred-typed": {
+        "tokens_s": 19.908705842142037,
+        "throughput_gain_vs_baseline": 3.287,
+        "ui_first_text_s": 0.20929421,
+        "engine_first_token_s": 0.086200993,
+        "wait_speedup_vs_baseline": 3.579,
+        "waited_metric": "ui_first_text_s",
+        "targets": {
+          "throughput_1_5x": true,
+          "first_text_3x": true
+        },
+        "regression_vs_baseline": false
+      },
+      "gpu-off-cold": {
+        "tokens_s": 18.99477731686807,
+        "throughput_gain_vs_baseline": 3.136,
+        "ui_first_text_s": 1.30935291,
+        "engine_first_token_s": 1.154486536,
+        "wait_speedup_vs_baseline": 0.572,
+        "waited_metric": "ui_first_text_s",
+        "targets": {
+          "throughput_1_5x": true,
+          "first_text_3x": false
+        },
+        "regression_vs_baseline": false
+      },
+      "search-race": {
+        "tokens_s": 14.892144255633326,
+        "throughput_gain_vs_baseline": 2.458,
+        "ui_first_text_s": 7.969220471,
+        "engine_first_token_s": 6.06564127,
+        "wait_speedup_vs_baseline": 0.094,
+        "waited_metric": "ui_first_text_s",
+        "targets": {
+          "throughput_1_5x": true,
+          "first_text_3x": false
+        },
+        "regression_vs_baseline": false
+      },
+      "cpu-threads-auto": {
+        "tokens_s": 17.270831487573187,
+        "throughput_gain_vs_baseline": 2.851,
+        "ui_first_text_s": 0.276857158,
+        "engine_first_token_s": 0.213924201,
+        "wait_speedup_vs_baseline": 2.706,
+        "waited_metric": "ui_first_text_s",
+        "targets": {
+          "throughput_1_5x": true,
+          "first_text_3x": false
+        },
+        "regression_vs_baseline": false
+      }
+    },
+    "warmup_experiment": {
+      "compared": true,
+      "scope": "Mesma rodada, mesmo emulador, mesmo modelo e mesmos tokens de saída; a única diferença entre \"off\" e \"cold\" é o aquecimento de prefixo ligado por propriedade de teste.",
+      "wait_off_s": 1.30935291,
+      "wait_cold_s": 0.256460476,
+      "wait_speedup_cold": 5.105,
+      "engine_wait_off_s": 1.154486536,
+      "engine_wait_cold_s": 0.140447173,
+      "prefill_off_s": 1.15151912,
+      "prefill_cold_s": 0.136861034,
+      "reused_tokens_off": 0,
+      "reused_tokens_cold": 64,
+      "wait_typed_s": 0.20929421,
+      "wait_speedup_typed": 1.225,
+      "warmup_typed": {
+        "ran": true,
+        "skipped": null,
+        "ui_ok": true,
+        "typed_passes": 2,
+        "input_tokens": 65,
+        "prefilled": 65,
+        "reused_tokens": 54,
+        "gpu": false,
+        "aborted": false
+      },
+      "comparator_note": "As etapas de aquecimento esperam o modelo terminar de carregar antes de enviar, porque o que elas medem é a espera do envio. As demais etapas enviam assim que a conversa abre; por isso a comparação justa do aquecimento é contra gpu-off-cold, medido nas mesmas condições (mesma carga, mesma espera, mesma configuração).",
+      "warmup_cold": {
+        "ran": true,
+        "skipped": null,
+        "ui_ok": true,
+        "typed_passes": 1,
+        "input_tokens": 65,
+        "prefilled": 65,
+        "reused_tokens": 48,
+        "gpu": false,
+        "aborted": false
+      },
+      "warmup_off": {
+        "ran": false,
+        "skipped": "property",
+        "ui_ok": true,
+        "typed_passes": 1
+      }
+    },
+    "prefill_experiment": {
+      "status": "MEDIDO",
+      "stages": [
+        {
+          "stage": "prefill-ubatch-128",
+          "sub_batch": 128,
+          "prompt_tokens": 223,
+          "reused_tokens": 0,
+          "fresh_tokens": 223,
+          "prefill_s": 3.6823,
+          "prefill_ms_per_token": 16.513
+        },
+        {
+          "stage": "prefill-ubatch-256",
+          "sub_batch": 256,
+          "prompt_tokens": 223,
+          "reused_tokens": 0,
+          "fresh_tokens": 223,
+          "prefill_s": 4.1485,
+          "prefill_ms_per_token": 18.603
+        }
+      ],
+      "best": "prefill-ubatch-128",
+      "gain_x": 1.127,
+      "detail": "mesmo texto, aquecimento desligado nas duas etapas; prefill-ubatch-128 custou 16.513 ms por token pré-preenchido contra 18.603 ms (1.127x)"
+    },
+    "kv_experiment": {
+      "status": "MEDIDO",
+      "stages": [
+        {
+          "stage": "decode-kv-f16",
+          "kv_type": "f16",
+          "tokens_s": 20.25931353094096,
+          "ui_first_text_s": 0.307056186
+        },
+        {
+          "stage": "decode-kv-q8",
+          "kv_type": "q8_0",
+          "tokens_s": 24.86666264584573,
+          "ui_first_text_s": 0.244116359
+        }
+      ],
+      "gain_x": 1.227,
+      "quantized_cache_applied": "q8_0",
+      "detail": "F16 20.25931353094096 T/s contra Q8_0 24.86666264584573 T/s (1.227x); nada muda de padrão sem ganho medido"
+    },
+    "search_experiment": {
+      "sequential_ms": 2090,
+      "race_ms": 1860,
+      "sequential_provider": "DuckDuckGo",
+      "race_provider": "DuckDuckGo",
+      "cache_hit_ms": 0,
+      "cache_provider": "DuckDuckGo",
+      "status": "MEDIDO",
+      "gain_x": 1.124,
+      "detail": "mesma pergunta: sequência 2090 ms (DuckDuckGo) contra corrida 1860 ms (DuckDuckGo); o padrão só muda com ganho medido",
+      "cache_detail": "consulta repetida: 0 ms com DuckDuckGo"
+    },
+    "targets_met": [
+      "gpu-preferred-typed",
+      "vulkan-policy-default"
+    ],
+    "regressions": [],
+    "regression_tolerance": 0.05,
+    "environment": {
+      "limits": [
+        "aparelho com 2 núcleos: sem paralelismo para ganho de taxa",
+        "dispositivo Vulkan é um rasterizador por software; o caminho padrão já é a CPU"
+      ],
+      "targets_required": false
+    }
+  }
+}

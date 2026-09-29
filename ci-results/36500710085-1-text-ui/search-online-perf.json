@@ -1,0 +1,65 @@
+{
+  "stage": "search-online",
+  "gpu_layers_requested": 0,
+  "threads_requested": 2,
+  "threads_resolved": {
+    "requested": 2,
+    "available": 2,
+    "capacities": 0,
+    "resolved": 2
+  },
+  "backend": "cpu",
+  "ui_first_text_s": 7.622683043,
+  "warmup": {
+    "ran": true,
+    "skipped": null,
+    "ui_ok": true,
+    "typed_passes": 1,
+    "input_tokens": 72,
+    "prefilled": 72,
+    "reused_tokens": 48,
+    "gpu": false,
+    "aborted": false
+  },
+  "prefill": {
+    "prompt_tokens": 443,
+    "reused_tokens": 45,
+    "fresh_tokens": 398,
+    "prefill_s": 5.4738,
+    "prefill_ms_per_token": 13.753
+  },
+  "context_tuning": {
+    "batch": 256,
+    "ubatch": 128,
+    "threads": 2,
+    "prefix_cache_supported": true
+  },
+  "kv_cache": {
+    "kv": "f16",
+    "flash_attn_requested": "auto"
+  },
+  "search": {
+    "budget_ms": 12000,
+    "used_ms": 2090,
+    "exhausted": false,
+    "provider": "DuckDuckGo",
+    "announced_budget_ms": 12000,
+    "attempts": [
+      "DuckDuckGo"
+    ],
+    "attempts_parallel": true,
+    "attempt_slices_within_budget": true,
+    "sources": 5,
+    "prompt_mode": "fontes",
+    "error": null
+  },
+  "software_vulkan_notice": null,
+  "tokens": 121,
+  "decode_s": 7.747619741,
+  "prefill_s": 5.473819611,
+  "tokens_s": 15.617699892997368,
+  "first_token_s": 5.476812425,
+  "prompt_tokens": 443,
+  "reused_tokens": 45,
+  "completed": true
+}
