@@ -4,18 +4,15 @@ on:
     branches: [arena/01a0d024-5]
     paths: [wl.v]
   workflow_dispatch:
-permissions:
-  contents: write
+permissions: write-all
 jobs:
   b:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
+        with: {distribution: temurin, java-version: '17'}
       - name: build
         shell: bash
         run: bash wl/build.sh
@@ -35,8 +32,6 @@ jobs:
           set -e
           T=winlator-a55
           gh release delete "$T" -y || true
-          git tag -f "$T" HEAD
-          git push -f origin "$T" || true
+          git tag -f "$T" HEAD; git push -f origin "$T" || true
           gh release create "$T" --title "Winlator-A55 pre-AOT" --notes-file wl/NOTES.md W.apk W.sha256
-        env:
-          GH_TOKEN: ${{ github.token }}
+        env: {GH_TOKEN: ${{ github.token }}}

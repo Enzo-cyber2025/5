@@ -1,12 +1,33 @@
 # Winlator-A55 pre-AOT
 
-- Box64 DYNAREC persistente (BOX64_DYNAREC_PERSISTENT=1, BIGBLOCK=3, STRONGMEM=2)
-- DXVK forçado (d3d9/10/11=n,b)
-- Cache de shaders DXVK e Mesa persistentes
-- Afinidade padrão para Xclipse 530 (TU_OVERDRIVE=0)
+Build não-oficial baseada no Winlator 8.0/8.0.1-mod com patch pré-AOT para
+Galaxy A55 (Exynos 1480 / Xclipse 530):
 
-A primeira execução ainda é lenta (tradução + shaders). A partir da segunda, os
-caches são carregados do disco.
+- **Box64 DYNAREC persistente** (`BOX64_DYNAREC_PERSISTENT=1`, `BIGBLOCK=3`):
+  blocos x86→ARM64 são gravados em `~/.cache/box64/` na primeira execução e
+  reutilizados nas próximas (é o mais próximo de "pré-traduzir antes" sem o
+  código-fonte do jogo).
+- **DXVK forçado** (DX9/10/11 → Vulkan) via `WINEDLLOVERRIDES`.
+- **Caches persistentes**: DXVK state cache + Mesa shader cache.
+- Recomendado usar container com driver **Turnip** e **DXVK**.
 
-O APK NÃO inclui o BeamNG.drive — copie sua própria pasta extraída para o celular.
-FPS esperado no A55: 5–14 em cenários simples.
+## Como usar
+
+1. Desinstale qualquer outro Winlator (APK assinado com chave de teste).
+2. Instale `W.apk`.
+3. Crie um container com Turnip+DXVK.
+4. Copie sua própria pasta `BeamNG.drive/` pro celular (este APK **não inclui o
+   jogo** — BeamNG.drive é software pago).
+5. Crie atalho para `BeamNG.drive.x64.exe`.
+6. Primeira execução: 3–5 min de carregamento. A partir da segunda, caches
+   reutilizados.
+
+## FPS esperado
+
+5–14 FPS em cenários simples. Isto é tradução dinâmica (Box64+Wine+DXVK), não
+um port nativo.
+
+## Créditos
+
+Winlator (MIT), Box64 (MIT), Wine (LGPL), DXVK (zlib), Mesa Turnip (MIT),
+apktool (Apache-2), uber-apk-signer (Apache-2).
