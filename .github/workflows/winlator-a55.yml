@@ -12,24 +12,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
-        with: {distribution: temurin, java-version: '17'}
+        with:
+          distribution: temurin
+          java-version: '17'
       - name: ping
         run: python3 wl/ping.py
       - name: build
-        shell: bash
         run: bash wl/build.sh
       - name: postlog
         if: always()
-        run: |
-          python3 -c "
-          import json,os,urllib.request
-          log=open('wl/build.log','rb').read().decode('utf-8','replace')[-58000:] if os.path.exists('wl/build.log') else '(no log)'
-          req=urllib.request.Request(f'https://api.github.com/repos/{os.environ[\"GITHUB_REPOSITORY\"]}/issues/7/comments',
-            data=json.dumps({'body':'### build log\n\n```\n'+log+'\n```\n'}).encode(),
-            headers={'Authorization':'Bearer '+os.environ['GITHUB_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json'},method='POST')
-          try: urllib.request.urlopen(req,timeout=30)
-          except Exception as e: print('postlog err',e)
-          "
+        run: python3 wl/postlog.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -41,11 +33,12 @@ jobs:
           if-no-files-found: ignore
       - name: pub
         if: success()
-        shell: bash
         run: |
           set -e
           T=winlator-a55
           gh release delete "$T" -y || true
-          git tag -f "$T" HEAD; git push -f origin "$T" || true
+          git tag -f "$T" HEAD
+          git push -f origin "$T" || true
           gh release create "$T" --title "Winlator-A55 pre-AOT" --notes-file wl/NOTES.md W.apk W.sha256
-        env: {GH_TOKEN: ${{ github.token }}}
+        env:
+          GH_TOKEN: ${{ github.token }}
