@@ -14,6 +14,7 @@ import os,sys,traceback,time
 try:
   import huggingface_hub as h
   tok=os.environ["HF_TOKEN"]
+  t0=time.time()
   repo=os.environ.get("HF_REPO","winlator-a55-beam")
   api=h.HfApi(token=tok)
   who=api.whoami(); user=who["name"]; print("HF whoami:",user)
