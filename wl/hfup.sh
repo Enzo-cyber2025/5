@@ -1,11 +1,11 @@
 #!/bin/bash
 set -ux
-HF_USER="${1:-${HF_USER:-${GITHUB_REPOSITORY_OWNER,,}}}"
+HF_USER="${1:-${HF_USER-${GITHUB_REPOSITORY_OWNER,,}}}"
 HF_REPO="${2:-winlator-a55-beam}"
 : > hf.log
 exec > >(tee -a hf.log) 2>&1
-echo "HF_UPLOAD start user=$HF_USER repo=$HF_REPO tok_len=${#HF_TOKEN:-0}"
-[ -n "${HF_TOKEN:-}" ] || { echo "no HF_TOKEN"; exit 1; }
+echo "HF_UPLOAD start user=$HF_USER repo=$HF_REPO tok_len=${#HF_TOKEN}"
+[ -n "${HF_TOKEN-}" ] || { echo "no HF_TOKEN"; exit 1; }
 [ -s W.apk ] || { echo "no W.apk"; exit 1; }
 # Venv para o huggingface_hub (evita PEP 668)
 python3 -m venv /tmp/hfvenv 2>&1 | tail -3
