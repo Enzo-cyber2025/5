@@ -69,7 +69,7 @@ public final class SimWorld {
             return a;
         }
 
-        public final float[] radars;      // speed cameras (m along the route)
+        public float[] radars;               // speed cameras (m along the route)
 
         public static Road random(long seed) {
             Random rng = new Random(seed);
