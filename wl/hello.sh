@@ -10,7 +10,7 @@ sudo apt-get install -y wget unzip xxd aapt || fail "apt"
 echo "=== dl tools ==="
 wget -q --tries=3 --timeout=60 https://github.com/iBotPeaches/Apktool/releases/download/v2.9.3/apktool_2.9.3.jar -O /tmp/apktool.jar \
   && echo "apktool ok" || fail "apktool dl"
-wget -q --tries=3 --timeout=60 https://github.com/nickola/uber-apk-signer/releases/download/v1.3.0/uber-apk-signer-1.3.0.jar -O /tmp/uber.jar \
+wget -q --tries=3 --timeout=60 https://github.com/patrickfav/uber-apk-signer/releases/download/v1.3.0/uber-apk-signer-1.3.0.jar -O /tmp/uber.jar \
   && echo "uber ok" || fail "uber dl"
 printf '#!/bin/sh\nexec java -jar /tmp/apktool.jar "$@"\n' > /usr/local/bin/apktool
 chmod +x /usr/local/bin/apktool
