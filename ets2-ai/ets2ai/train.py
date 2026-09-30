@@ -32,19 +32,26 @@ def closed_loop_eval(layers, n_roads=N_VAL_ROADS, seed=777):
     for k in range(n_roads):
         road = Road.random(ROAD_SEED + 100 + k)   # roads never seen in training
         rows.append(run_episode(road, policy, seed=seed + k))
+    n_pass = sum(r["radar_passes"] for r in rows)
     agg = {
         "roads": n_roads,
         "finish_rate": sum(r["finished"] for r in rows) / n_roads,
         "in_lane_pct": sum(r["in_lane_pct"] for r in rows) / n_roads,
         "avg_speed_kmh": sum(r["avg_speed"] for r in rows) / n_roads * 3.6,
         "km_total": sum(r["km"] for r in rows),
+        "radar_compliance": (sum(r["radar_passes"] * r["radar_compliance"] for r in rows)
+                             / max(1, n_pass)),
+        "radar_passes": n_pass,
+        "max_lat_accel": max(r["max_lat_accel"] for r in rows),
+        "gps_mean_abs_offset_m": sum(r["mean_abs_offset"] for r in rows) / n_roads,
+        "top_speed_kmh": max(r["avg_speed"] for r in rows) * 3.6,
     }
     return agg, rows
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--epochs", type=int, default=420)
+    ap.add_argument("--epochs", type=int, default=350)
     ap.add_argument("--out", default=str(Path(__file__).resolve().parent.parent / "artifacts"))
     args = ap.parse_args()
 

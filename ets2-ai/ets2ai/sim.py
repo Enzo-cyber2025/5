@@ -10,10 +10,15 @@ import numpy as np
 DT = 0.1                 # simulation step (s)
 WHEELBASE = 4.0          # m (kinematic bicycle)
 MAX_STEER = 0.6          # rad at the wheels, scaled by |steer| command
-MAX_ACCEL = 1.3          # m/s^2 at full throttle
+MAX_ACCEL = 1.8          # m/s^2 at full throttle
 MAX_BRAKE = 3.2          # m/s^2 at full brake
-DRAG = 0.045             # rolling/aero deceleration factor per (m/s)
+DRAG = 0.030             # rolling/aero deceleration factor per (m/s)
 LAT_ACCEL_COMFORT = 2.4  # m/s^2 the expert accepts in curves
+LAT_ACCEL_ROLLOVER = 3.6  # m/s^2 where a truck starts to roll over
+ROLLOVER_MARGIN = 0.82    # the expert stays at 82% of the rollover limit
+V_MAX = 36.0              # m/s (~130 km/h): speeding policy
+RADAR_SLOW = 0.95         # fraction of the limit kept AT the camera
+RADAR_BRAKE = 2.6         # m/s^2 deceleration budget before a camera
 LANE_HALF = 2.0          # |offset| beyond this = off-lane
 ROAD_HALF = 4.6          # |offset| beyond this = off-road (crash barrier)
 
@@ -29,7 +34,7 @@ TANK_LITERS = 600
 SLEEP_HOURS = 9
 SPEED_LIMIT_MPS = 25.0         # 90 km/h truck limit
 
-LOOKAHEAD = (8.0, 18.0, 30.0, 45.0, 60.0)
+LOOKAHEAD = (8.0, 18.0, 40.0, 90.0, 170.0)
 PURE_PURSUIT_DIST = 12.0
 
 
@@ -44,6 +49,7 @@ class Road:
         for L in self.seg_lengths:
             self.cum.append(self.cum[-1] + L)
         self.length = self.cum[-1]
+        self.radars = []
         # integrate centreline
         pts = [(0.0, 0.0)]
         hdg = 0.0
@@ -60,7 +66,7 @@ class Road:
             self.sample_s.append(s)
 
     @staticmethod
-    def random(seed, n_seg=40, min_len=60.0, max_len=260.0, max_curv=0.012):
+    def random(seed, n_seg=40, min_len=60.0, max_len=420.0, max_curv=0.012):
         rng = np.random.default_rng(seed)
         lens = rng.uniform(min_len, max_len, n_seg)
         curvs = []
@@ -70,7 +76,39 @@ class Road:
                 curvs.append(0.0)
             else:
                 curvs.append(float(rng.uniform(-max_curv, max_curv)))
-        return Road(lens, curvs)
+        road = Road(lens, curvs)
+        # speed cameras along the route (the "radars")
+        rng2 = np.random.default_rng(seed + 777)
+        radars = []
+        pos = 700.0
+        while pos < road.length - 150.0:
+            radars.append(pos)
+            pos += float(rng2.uniform(1500.0, 2800.0))
+        road.radars = radars
+        return road
+
+    def upcoming_curves(self, s, max_dist=260.0):
+        """[(distance_to_start, |kappa|)] of curves ahead, in road order."""
+        out = []
+        for i, k in enumerate(self.seg_curvs):
+            seg_start, seg_end = self.cum[i], self.cum[i + 1]
+            if seg_end <= s:
+                continue
+            d = max(0.0, seg_start - s)
+            if d > max_dist:
+                break
+            if abs(k) > 1e-6:
+                out.append((d, abs(k)))
+        return out
+
+    def radar_dist_ahead(self, s):
+        """Metres to the next camera ahead of s (500 = none ahead)."""
+        best = 500.0
+        for r in self.radars:
+            d = r - s
+            if 0.0 < d < best:
+                best = d
+        return best
 
     def curvature_at(self, s):
         s = max(0.0, min(s, self.length - 1e-6))
@@ -202,6 +240,7 @@ def features(road, truck, job_left_km):
         truck.fuel,
         truck.fatigue,
         min(job_left_km, 100.0) / 100.0,
+        road.radar_dist_ahead(s) / 500.0,
     ]
 
 
@@ -211,6 +250,28 @@ def wrap_angle(a):
     while a < -math.pi:
         a += 2 * math.pi
     return a
+
+
+# ---------------------------------------------------------------------------
+# Rollover governor (ESC-like): caps speed so v^2 * |kappa| stays below the
+# rollover limit. The net proposes; the governor guarantees the physics.
+# Mirrored in SimWorld.java and in the bridge.
+# ---------------------------------------------------------------------------
+GOVERNOR_LIMIT = 0.92 * LAT_ACCEL_ROLLOVER
+
+
+def governor(road, truck, cmd):
+    """ESC: full brake if the current speed cannot be shed before the START
+    of any curve ahead (brake planned to real curve-start distance)."""
+    worst = None
+    for d, k in road.upcoming_curves(truck.s):
+        v_curve = math.sqrt(GOVERNOR_LIMIT / k)
+        v_allow = math.sqrt(v_curve ** 2 + 2.0 * MAX_BRAKE * max(0.0, d - 8.0))
+        if worst is None or v_allow < worst:
+            worst = v_allow
+    if worst is None or truck.speed <= worst:
+        return cmd
+    return (cmd[0], 0.0, 1.0)      # full brake: safety over comfort
 
 
 # ---------------------------------------------------------------------------
@@ -231,13 +292,20 @@ def expert(road, truck, job_left_km, noise=0.0, rng=None):
     alpha = math.atan2(-lat_err, d) - hdg_err
     steer = 2.0 * math.sin(alpha) / max(d, 1e-3) * 12.0
     steer = max(-1.0, min(1.0, steer))
-    # speed target from upcoming curvature (worst within lookaheads)
-    v_target = SPEED_LIMIT_MPS
-    for dist in LOOKAHEAD:
-        c = abs(road.curvature_at(s + dist))
-        if c > 1e-6:
-            v_target = min(v_target, math.sqrt(LAT_ACCEL_COMFORT / c))
-    v_target = min(v_target, 25.0)
+    # speed target: as fast as possible WITHOUT ROLLING OVER — planning the
+    # brake against the real distance to each curve START (not sample points).
+    v_target = V_MAX
+    a_lat = LAT_ACCEL_ROLLOVER * ROLLOVER_MARGIN
+    for d, k in road.upcoming_curves(s):
+        v_curve = min(V_MAX, math.sqrt(a_lat / k))
+        v_allow = math.sqrt(v_curve ** 2 + 2.0 * RADAR_BRAKE * max(0.0, d - 12.0))
+        v_target = min(v_target, v_allow)
+    # radar: only slow down within braking distance of the camera
+    d_radar = road.radar_dist_ahead(s)
+    v_radar = SPEED_LIMIT_MPS * RADAR_SLOW
+    brake_dist = max(0.0, truck.speed ** 2 - v_radar ** 2) / (2.0 * RADAR_BRAKE) + 25.0
+    if d_radar < brake_dist:
+        v_target = min(v_target, v_radar)
     # fatigue makes the expert ease off slightly (safe behaviour to imitate)
     v_target *= (1.0 - 0.08 * truck.fatigue)
     dv = v_target - truck.speed
@@ -269,17 +337,27 @@ def run_episode(road, policy, seed=0, max_steps=7000, noise=0.0,
     in_lane = off_road = 0
     stopped = False
     steps = 0
+    radar_pass = []          # speeds AT each camera
+    max_lat = 0.0            # max lateral acceleration (rollover watch)
+    off_sum = 0.0
     while steps < max_steps:
         s, offset, _ = truck.project(road)
         if s >= road.length - 10.0:
             break
         job_left = max(0.0, (road.length - s) / 1000.0)
         steer, throttle, brake = policy(road, truck, job_left, rng)
+        steer, throttle, brake = governor(road, truck, (steer, throttle, brake))
         if record:
             feats.append(features(road, truck, job_left))
             acts.append([steer, throttle, brake])
+        prev_s = s
         truck.step(road, steer, throttle, brake)
         steps += 1
+        for r in road.radars:                     # crossed a camera?
+            if prev_s < r <= truck.s:
+                radar_pass.append(truck.speed)
+        max_lat = max(max_lat, truck.speed ** 2 * abs(road.curvature_at(truck.s)))
+        off_sum += abs(truck.offset)
         if abs(offset) < LANE_HALF:
             in_lane += 1
         if abs(offset) > ROAD_HALF or truck.speed < 0.3 and steps > 60:
@@ -303,6 +381,12 @@ def run_episode(road, policy, seed=0, max_steps=7000, noise=0.0,
         "money": truck.money,
         "stopped_for_rules": stopped,
         "avg_speed": km / max(0.1, steps * DT) * 1000,
+        "radar_compliance": (sum(1 for v in radar_pass if v <= SPEED_LIMIT_MPS * 1.05)
+                             / max(1, len(radar_pass))),
+        "radar_passes": len(radar_pass),
+        "max_lat_accel": max_lat,
+        "mean_abs_offset": off_sum / max(1, steps),
+        "top_speed": max([0.0] + [a for a in [truck.speed]]) if steps else 0.0,
     }
     if record:
         return np.array(feats, dtype=np.float32), np.array(acts, dtype=np.float32), metrics

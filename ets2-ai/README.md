@@ -1,10 +1,10 @@
 # ETS2-AI — piloto automático para Euro Truck Simulator 2 (celular ↔ PC)
 
 > **Downloads (IA já treinada dentro de ambos):**
-> - APK: https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.1.0/ETS2-AI-mobile.apk
-> - EXE: https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.1.0/ETS2-AI-bridge.exe
+> - APK: https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.2.0/ETS2-AI-mobile.apk
+> - EXE: https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.2.0/ETS2-AI-bridge.exe
 >
-> **v0.1.1 — demo funcional.** A IA treinada dirige caminhão num simulador com
+> **v0.2.0 — IA velocista.** A IA treinada dirige caminhão num simulador com
 > a mesma física do jogo-alvo, gerencia combustível, sono e entregas, roda no
 > **APK do celular** (inferência 100% em Java, sem dependências) e entrega os
 > comandos ao **PC Windows** por TCP, onde o bridge injeta **teclas reais**
@@ -19,10 +19,13 @@ inéditas.
 
 | Métrica | Valor | Meta |
 |---|---|---|
-| MSE validação (loss) | **0.00150** | ≤ 0.150 ✅ (100× melhor) |
+| MSE validação (loss) | **0.00111** | ≤ 0.150 ✅ (135× melhor; "0" exato não existe — seria memorização) |
 | Rotas concluídas (circuito fechado) | **100%** (7/7) | — |
 | Tempo dentro da faixa | **100%** | > 95% |
-| Velocidade média | **65 km/h** | — |
+| Velocidade média | **71 km/h** (pico ~130 km/h nas retas) | acima do limite ✅ |
+| **Radares** | **100%** das 30 passagens abaixo do limite | freia antes do radar ✅ |
+| **Física do tombamento** | 3.33 m/s² de pico (limite 3.6) | o mais rápido possível sem tombar ✅ |
+| **Aderência ao GPS** | desvio médio de **0.13 m** do traçado | segue o traçado ✅ |
 | Amostras de treino | 115.308 pares estado→ação | — |
 
 Reproduza: `python -m ets2ai.train` (determinístico — o CI retreina do zero e
@@ -139,10 +142,28 @@ celular → PC:  C,<volante>,<acel>,<freio>,<ts_ms eco>        # RTT = agora −
 Valores físicos brutos; a normalização (÷25, ÷3.5, ÷0.6, ÷0.05…) segue
 `NeuralNet.features`/`ets2ai.sim.features` — idêntica nos dois lados.
 
-## Kaggle: token via secret, nunca em arquivo
+## Treino no Kaggle disparado pelo GitHub Actions (v0.2.0)
 
-O pipeline não depende do Kaggle hoje (dados sintéticos), mas se você for
-usar datasets do Kaggle no futuro:
+O workflow tem o job **"Treino no Kaggle (opcional, via secrets)"**: ele
+empurra um kernel com o MESMO código e semente do repo para a sua conta
+Kaggle, aguarda a execução, baixa os pesos e roda os mesmos gates de
+qualidade. Sem secrets configurados ele apenas avisa e fica verde (o treino
+local do CI continua sendo a fonte oficial).
+
+Para ativar (1 minuto):
+1. **NUNCA cole o token em chat/commit.** Gere em kaggle.com → Settings →
+   API → Create New Token (e expire qualquer token já exposto).
+2. Repo → Settings → Secrets and variables → Actions:
+   - `KAGGLE_USERNAME` = seu usuário Kaggle
+   - `KAGGLE_KEY` = o token
+3. Push qualquer mudança em `ets2-ai/` (ou Actions → Run workflow).
+
+O kernel é montado por `ets2-ai/kaggle/build_kernel.py` (auto-contido,
+sem dependências além de numpy) e orquestrado por `ets2-ai/kaggle/push.py`.
+
+## Kaggle para datasets (opcional)
+
+Se futuramente usar datasets do Kaggle:
 
 1. **Revogue** qualquer token que já tenha colado em chat/screenshot (você
    colou dois nesta conversa — HF e Kaggle — trate-os como vazados).

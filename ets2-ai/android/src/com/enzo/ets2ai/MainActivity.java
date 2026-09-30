@@ -351,12 +351,14 @@ public final class MainActivity extends Activity {
                     float[] f = NeuralNet.features(
                             world.truck.speed, world.truck.offset, world.headingError(),
                             world.curvAhead(), SimWorld.SPEED_LIMIT,
-                            world.truck.fuel, world.truck.fatigue, world.jobLeftKm());
+                            world.truck.fuel, world.truck.fatigue, world.jobLeftKm(),
+                            world.radarDist());
                     float[] raw = net.forward(f);
                     cmd = NeuralNet.clampAction(raw[0], raw[1], raw[2]);
                 } else {
                     cmd = NeuralNet.clampAction(manualSteer, manualThrottle, manualBrake);
                 }
+                cmd = SimWorld.governor(world.road, world.truck, cmd);
                 if (btKeyboard != null) {
                     btKeyboard.update(cmd[0], cmd[1], cmd[2]);   // teclas reais via BT
                 }
@@ -389,6 +391,24 @@ public final class MainActivity extends Activity {
                 drawPoly(c, edgePaint, road, i0, i1, -4.5f);
                 drawPoly(c, edgePaint, road, i0, i1, 4.5f);
                 drawPoly(c, centerPaint, road, i0, i1, 0f);
+
+                // speed cameras ahead (radar markers)
+                Paint camPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                camPaint.setColor(0xFFFFD54F);
+                for (float rs : road.radars) {
+                    if (rs > t.s - 30f && rs < t.s + 220f) {
+                        int ri = Math.min(road.ss.length - 1,
+                                Math.max(0, (int) (rs / 2f)));
+                        float rx = road.sx[ri], ry = road.sy[ri];
+                        int r0 = Math.max(0, ri - 1), r1 = Math.min(road.sx.length - 1, ri + 1);
+                        float rth = (float) Math.atan2(road.sy[r1] - road.sy[r0],
+                                road.sx[r1] - road.sx[r0]);
+                        float mx = rx - (float) Math.sin(rth) * 7.5f;
+                        float my = ry + (float) Math.cos(rth) * 7.5f;
+                        c.drawRect(mx - 3f * scale / 2, my - 3f * scale / 2,
+                                mx + 3f * scale / 2, my + 3f * scale / 2, camPaint);
+                    }
+                }
 
                 // truck: trailer + cab (local coords, heading up)
                 c.save();

@@ -12,7 +12,8 @@
       "speed_limit",
       "fuel",
       "fatigue",
-      "job_dist"
+      "job_dist",
+      "radar_dist"
     ],
     "actions": [
       "steer",
@@ -25,85 +26,125 @@
     ],
     "seed": 20260930,
     "loss_target": 0.15,
-    "epochs": 300,
-    "samples": 115308,
-    "final_loss": 0.0015028076013550162
+    "epochs": 550,
+    "samples": 141283,
+    "final_loss": 0.007888099178671837
   },
-  "mse_train": 0.0009765845024958253,
-  "mse_val": 0.0015028076013550162,
-  "mae_val": 0.02112951288890714,
+  "mse_train": 0.006726129446178675,
+  "mse_val": 0.007888099178671837,
+  "mae_val": 0.03968880472960896,
   "loss_target": 0.15,
   "target_met": true,
   "closed_loop": {
     "roads": 7,
     "finish_rate": 1.0,
     "in_lane_pct": 1.0,
-    "avg_speed_kmh": 64.68799405698029,
-    "km_total": 44.46441354913367
+    "avg_speed_kmh": 79.72513983132288,
+    "km_total": 66.67570968752985,
+    "radar_compliance": 1.0,
+    "radar_passes": 30,
+    "max_lat_accel": 3.2487082112161425,
+    "gps_mean_abs_offset_m": 0.17990288094837117,
+    "top_speed_kmh": 89.04602230692856
   },
   "closed_loop_rows": [
     {
-      "steps": 3478,
+      "steps": 4254,
       "in_lane_pct": 1.0,
       "finished": true,
-      "km": 6.063218712234548,
+      "km": 9.007441375542358,
       "money": 0.0,
       "stopped_for_rules": false,
-      "avg_speed": 17.43306127727012
+      "avg_speed": 21.174051188392944,
+      "radar_compliance": 1.0,
+      "radar_passes": 4,
+      "max_lat_accel": 3.1372035164654672,
+      "mean_abs_offset": 0.18315477542795733,
+      "top_speed": 28.94530866216022
     },
     {
-      "steps": 3557,
+      "steps": 4297,
       "in_lane_pct": 1.0,
       "finished": true,
-      "km": 6.277394305870205,
+      "km": 9.391478894727955,
       "money": 0.0,
       "stopped_for_rules": false,
-      "avg_speed": 17.648001984453764
+      "avg_speed": 21.85589689254818,
+      "radar_compliance": 1.0,
+      "radar_passes": 4,
+      "max_lat_accel": 3.2032109420498185,
+      "mean_abs_offset": 0.19060368502419062,
+      "top_speed": 16.28717543303395
     },
     {
-      "steps": 3626,
+      "steps": 4411,
       "in_lane_pct": 1.0,
       "finished": true,
-      "km": 6.466690650383937,
+      "km": 9.733529056335675,
       "money": 0.0,
       "stopped_for_rules": false,
-      "avg_speed": 17.83422683503568
+      "avg_speed": 22.066490719418894,
+      "radar_compliance": 1.0,
+      "radar_passes": 5,
+      "max_lat_accel": 3.2487082112161425,
+      "mean_abs_offset": 0.17662965706943878,
+      "top_speed": 34.86648015568758
     },
     {
-      "steps": 3509,
+      "steps": 4295,
       "in_lane_pct": 1.0,
       "finished": true,
-      "km": 6.1837702418969425,
+      "km": 9.224411489940634,
       "money": 0.0,
       "stopped_for_rules": false,
-      "avg_speed": 17.622599720424457
+      "avg_speed": 21.477093108127203,
+      "radar_compliance": 1.0,
+      "radar_passes": 4,
+      "max_lat_accel": 3.1691675155820236,
+      "mean_abs_offset": 0.20303135125476438,
+      "top_speed": 16.481810743246857
     },
     {
-      "steps": 3507,
+      "steps": 4250,
       "in_lane_pct": 1.0,
       "finished": true,
-      "km": 6.901452524305422,
+      "km": 10.512377633456845,
       "money": 0.0,
       "stopped_for_rules": false,
-      "avg_speed": 19.67907762847283
+      "avg_speed": 24.735006196369046,
+      "radar_compliance": 1.0,
+      "radar_passes": 4,
+      "max_lat_accel": 3.1827695558632025,
+      "mean_abs_offset": 0.14359849109062003,
+      "top_speed": 18.65380423358534
     },
     {
-      "steps": 3261,
+      "steps": 3907,
       "in_lane_pct": 1.0,
       "finished": true,
-      "km": 5.884851174216598,
+      "km": 8.681505294129279,
       "money": 0.0,
       "stopped_for_rules": false,
-      "avg_speed": 18.046155088060708
+      "avg_speed": 22.220387238621136,
+      "radar_compliance": 1.0,
+      "radar_passes": 5,
+      "max_lat_accel": 3.148751699616414,
+      "mean_abs_offset": 0.17939182559275418,
+      "top_speed": 24.819304588146842
     },
     {
-      "steps": 3817,
+      "steps": 4711,
       "in_lane_pct": 1.0,
       "finished": true,
-      "km": 6.687035940226018,
+      "km": 10.124965943397099,
       "money": 0.0,
       "stopped_for_rules": false,
-      "avg_speed": 17.519088132633005
+      "avg_speed": 21.49217988409488,
+      "radar_compliance": 1.0,
+      "radar_passes": 4,
+      "max_lat_accel": 3.1426016692680485,
+      "mean_abs_offset": 0.18291038117887276,
+      "top_speed": 34.899798348450055
     }
   ]
 }

@@ -22,6 +22,7 @@ FEATURES = [
     "fuel",             # fuel fraction 0..1
     "fatigue",          # fatigue 0..1 (1 = must sleep immediately)
     "job_dist",         # remaining job distance, km / 100
+    "radar_dist",       # distance to the next speed camera, m / 500
 ]
 N_IN = len(FEATURES)
 

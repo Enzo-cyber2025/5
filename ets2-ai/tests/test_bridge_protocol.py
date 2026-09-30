@@ -47,7 +47,9 @@ def test_phone_link_roundtrip():
     link.send_state(road, truck, job_left_km=5.0)
     raw = phone.makefile("rb").readline().decode().strip()
     parts = raw.split(",")
-    assert parts[0] == "S" and len(parts) == 14, raw
+    assert parts[0] == "S" and len(parts) == 15, raw
+    radar_m = float(parts[13])
+    assert 0.0 <= radar_m <= 500.0
     # normalization sanity: speed and fuel are raw physical values
     assert abs(float(parts[1]) - truck.speed) < 1e-3
     assert 0.0 <= float(parts[10]) <= 1.0 and 0.0 <= float(parts[11]) <= 1.0

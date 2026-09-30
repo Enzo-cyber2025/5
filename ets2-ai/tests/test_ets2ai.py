@@ -32,8 +32,9 @@ def layers():
 
 
 def test_contract_shape():
-    assert N_IN == 12 and N_OUT == 3
+    assert N_IN == 13 and N_OUT == 3
     assert FEATURES[:3] == ["speed", "lane_offset", "heading_error"]
+    assert FEATURES[-1] == "radar_dist"
     assert ACTIONS == ["steer", "throttle", "brake"]
 
 

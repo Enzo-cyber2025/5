@@ -39,7 +39,7 @@ def test_load_recordings_override_weight(tmp_path):
     p = tmp_path / "rec.csv"
     n = _write_recording(p, seed=60601, n_override=25)
     x, y = finetune.load_recordings([p], override_weight=1)
-    assert x.shape == (n, 12) and y.shape == (n, 3)
+    assert x.shape == (n, 13) and y.shape == (n, 3)
     x3, _ = finetune.load_recordings([p], override_weight=3)
     # 25 override rows duplicated 3x -> +50 extra rows
     assert x3.shape[0] == n + 50

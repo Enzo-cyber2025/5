@@ -60,7 +60,8 @@ def load_policy():
 def policy_cmd(layers, road, truck, job_left_km):
     f = np.asarray(sim.features(road, truck, job_left_km), dtype=np.float32)
     o = forward(f, layers)[0]
-    return clamp_action(float(o[0]), float(o[1]), float(o[2]))
+    cmd = clamp_action(float(o[0]), float(o[1]), float(o[2]))
+    return sim.governor(road, truck, cmd)
 
 
 # ---------------------------------------------------------------------------
@@ -127,6 +128,7 @@ class PhoneLink(threading.Thread):
                 ",".join(f"{c:.6f}" for c in curv),
                 f"{sim.SPEED_LIMIT_MPS:.2f}", f"{truck.fuel:.4f}",
                 f"{truck.fatigue:.4f}", f"{job_left_km:.4f}",
+                f"{road.radar_dist_ahead(truck.s):.2f}",
                 f"{int(ts*1000)}"]) + "\n")
             self._conn.sendall(msg.encode("utf-8"))
         except Exception:

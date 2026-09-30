@@ -100,11 +100,11 @@ public final class NeuralNet {
         };
     }
 
-    /** Normalizes raw physical values into the model input vector (contract). */
+    /** Normalizes raw physical values into the model input vector (contract v2). */
     public static float[] features(float speedMps, float laneOffsetM, float headingErrRad,
                                    float[] curvAhead5, float speedLimitMps, float fuel,
-                                   float fatigue, float jobLeftKm) {
-        float[] f = new float[12];
+                                   float fatigue, float jobLeftKm, float radarDistM) {
+        float[] f = new float[13];
         f[0] = speedMps / 25f;
         f[1] = laneOffsetM / 3.5f;
         f[2] = headingErrRad / 0.6f;
@@ -113,6 +113,7 @@ public final class NeuralNet {
         f[9] = fuel;
         f[10] = fatigue;
         f[11] = Math.min(jobLeftKm, 100f) / 100f;
+        f[12] = Math.min(radarDistM, 500f) / 500f;
         return f;
     }
 }

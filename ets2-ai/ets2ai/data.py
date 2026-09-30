@@ -11,7 +11,7 @@ from .sim import Road, expert, run_episode
 
 N_TRAIN_ROADS = 26
 N_VAL_ROADS = 7
-NOISE = 0.035          # steering command noise (human imperfection)
+NOISE = 0.020          # small human imperfection (tight GPS line)
 ROAD_SEED = 31337
 
 

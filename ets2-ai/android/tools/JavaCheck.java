@@ -22,11 +22,11 @@ public class JavaCheck {
 
         // ---- 1. numeric parity with numpy ----
         float[][] probes = {
-            { 0.60f, -0.5714f, 0.0833f, 0.0f, 0.02f, 0.04f, 0.05f, 0.0f, 1.0f, 0.80f, 0.10f, 0.05f },
-            { 0.85f, 0.2857f, -0.1667f, 0.03f, -0.03f, 0.0f, 0.0f, 0.0f, 1.0f, 0.55f, 0.40f, 0.30f },
-            { 0.40f, 0.0f, 0.0f, 0.06f, 0.08f, 0.08f, 0.02f, 0.0f, 1.0f, 0.95f, 0.75f, 0.80f },
-            { 0.95f, 0.8571f, 0.2500f, -0.04f, -0.06f, -0.08f, -0.02f, 0.0f, 1.0f, 0.30f, 0.05f, 0.02f },
-            { 0.10f, -0.2857f, 0.4167f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.50f, 0.20f, 0.60f },
+            { 0.60f, -0.5714f, 0.0833f, 0.0f, 0.02f, 0.04f, 0.05f, 0.0f, 1.0f, 0.80f, 0.10f, 0.05f, 0.92f },
+            { 0.85f, 0.2857f, -0.1667f, 0.03f, -0.03f, 0.0f, 0.0f, 0.0f, 1.0f, 0.55f, 0.40f, 0.30f, 0.10f },
+            { 1.30f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.95f, 0.75f, 0.80f, 0.50f },
+            { 0.95f, 0.8571f, 0.2500f, -0.04f, -0.06f, -0.08f, -0.02f, 0.0f, 1.0f, 0.30f, 0.05f, 0.02f, 0.05f },
+            { 0.10f, -0.2857f, 0.4167f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.50f, 0.20f, 0.60f, 0.80f },
         };
         System.out.println("JAVA_FORWARD_BEGIN");
         for (float[] p : probes) {
@@ -44,9 +44,11 @@ public class JavaCheck {
             float[] f = NeuralNet.features(
                     world.truck.speed, world.truck.offset, world.headingError(),
                     world.curvAhead(), SimWorld.SPEED_LIMIT,
-                    world.truck.fuel, world.truck.fatigue, world.jobLeftKm());
+                    world.truck.fuel, world.truck.fatigue, world.jobLeftKm(),
+                    world.radarDist());
             float[] raw = net.forward(f);
-            world.step(NeuralNet.clampAction(raw[0], raw[1], raw[2]));
+            float[] cmd = NeuralNet.clampAction(raw[0], raw[1], raw[2]);
+            world.step(SimWorld.governor(world.road, world.truck, cmd));
         }
         System.out.println(String.format(Locale.US,
                 "JAVA_LOOP km=%.2f in_lane=%.3f offset=%.2f speed_kmh=%.0f",

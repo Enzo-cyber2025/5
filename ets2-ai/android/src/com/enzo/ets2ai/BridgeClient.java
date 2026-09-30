@@ -10,7 +10,7 @@ import java.net.Socket;
  * TCP bridge client: the PC bridge sends truck state, we run the policy and
  * answer with actuator commands (protocol v1, CSV lines over TCP):
  *
- *   PC -> phone:  S,<speed_mps>,<offset_m>,<hdg_err>,<c1>,<c2>,<c3>,<c4>,<c5>,<limit>,<fuel>,<fatigue>,<job_km>,<t_send_ms>
+ *   PC -> phone:  S,<speed_mps>,<offset_m>,<hdg_err>,<c1>,<c2>,<c3>,<c4>,<c5>,<limit>,<fuel>,<fatigue>,<job_km>,<radar_dist_m>,<t_send_ms>
  *   phone -> PC:  C,<steer>,<throttle>,<brake>,<t_send_ms echo>
  *
  * RTT is computed from the echoed timestamp.
@@ -90,9 +90,11 @@ public final class BridgeClient implements Runnable {
             float fuel = Float.parseFloat(p[10]);
             float fatigue = Float.parseFloat(p[11]);
             float jobKm = Float.parseFloat(p[12]);
-            long tSend = Long.parseLong(p[13]);
+            float radarDist = Float.parseFloat(p[13]);
+            long tSend = Long.parseLong(p[14]);
 
-            float[] f = NeuralNet.features(speed, offset, hdgErr, curv, limit, fuel, fatigue, jobKm);
+            float[] f = NeuralNet.features(speed, offset, hdgErr, curv, limit, fuel,
+                    fatigue, jobKm, radarDist);
             float[] raw = net.forward(f);
             float[] cmd = NeuralNet.clampAction(raw[0], raw[1], raw[2]);
             answered++;

@@ -24,7 +24,7 @@ jobs:
       - name: Retreina do zero (mesma semente -> mesmos pesos)
         run: |
           cd ets2-ai
-          python -m ets2ai.train --epochs 300 --out .cache/retrain 2>&1 | tee ../.cache_train.log
+          python -m ets2ai.train --epochs 550 --out .cache/retrain 2>&1 | tee ../.cache_train.log
       - name: Compara com os pesos commitados (gates robustos)
         run: |
           cd ets2-ai
@@ -211,6 +211,42 @@ jobs:
           name: ETS2-AI-bridge-exe
           path: ets2-ai/dist/ETS2-AI-bridge.exe
 
+  kaggle-train:
+    name: Treino no Kaggle (opcional, via secrets)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Dependencias
+        run: pip install --retries 5 --timeout 90 kaggle numpy pytest
+      - name: Empurra kernel, aguarda e valida pesos do Kaggle
+        env:
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+        run: |
+          python ets2-ai/kaggle/push.py --timeout 900 || code=$?
+          if [ "${code:-0}" = "2" ]; then
+            echo "::warning::Secrets KAGGLE_USERNAME/KAGGLE_KEY nao configurados — veja ets2-ai/kaggle/push.py"
+            exit 0
+          fi
+          if [ "${code:-0}" != "0" ]; then
+            echo "::warning::Treino no Kaggle falhou; o treino local (train-verify) continua sendo a fonte oficial."
+            exit 0
+          fi
+          echo "Treino no Kaggle validado com os mesmos gates."
+      - name: Pesos treinados no Kaggle (se houver)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ets2-ai-kaggle-weights
+          path: |
+            ets2-ai/.cache/kaggle-out/model-weights.json
+            ets2-ai/.cache/kaggle-out/metrics.json
+          if-no-files-found: ignore
+
   release:
     name: Release com APK + EXE + TFLite
     needs: [android-apk, windows-exe, tflite-export]
@@ -221,7 +257,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: ets2-ai/.cache/rel
-      - name: Publica release ets2-ai-v0.1.0
+      - name: Publica release ets2-ai-v0.2.0
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -231,9 +267,9 @@ jobs:
           cp ets2-ai/.cache/rel/ets2-ai-tflite/*.tflite ets2-ai/.cache/release/
           cp ets2-ai/artifacts/model-weights.json ets2-ai/.cache/release/
           cp ets2-ai/artifacts/metrics.json ets2-ai/.cache/release/
-          NOTES="$(python3 -c "import json;m=json.load(open('ets2-ai/artifacts/metrics.json'));print(f\"MSE validacao: {m['mse_val']:.5f} (meta <= {m['loss_target']}) | circuito fechado: {m['closed_loop']['finish_rate']*100:.0f}% das rotas concluidas, {m['closed_loop']['in_lane_pct']*100:.0f}% na faixa, {m['closed_loop']['avg_speed_kmh']:.0f} km/h\")")"
-          gh release create ets2-ai-v0.1.0 \
-            --title "ETS2-AI v0.1.0 — APK + Bridge Windows" \
+          NOTES="$(python3 -c "import json;m=json.load(open('ets2-ai/artifacts/metrics.json'));c=m['closed_loop'];print(f\"MSE validacao: {m['mse_val']:.5f} (meta <= {m['loss_target']}) | circuito fechado: {c['finish_rate']*100:.0f}% rotas, {c['in_lane_pct']*100:.0f}% faixa, {c['avg_speed_kmh']:.0f} km/h, radares {c['radar_compliance']*100:.0f}%, lat max {c['max_lat_accel']:.2f} m/s2 (tombamento {3.6})\")")"
+          gh release create ets2-ai-v0.2.0 \
+            --title "ETS2-AI v0.2.0 — velocista: radares, GPS estrito, dispatcher, teclado BT, Kaggle" \
             --notes "$NOTES" \
             ets2-ai/.cache/release/* 2>/dev/null || \
-          gh release upload ets2-ai-v0.1.0 ets2-ai/.cache/release/* --clobber
+          gh release upload ets2-ai-v0.2.0 ets2-ai/.cache/release/* --clobber

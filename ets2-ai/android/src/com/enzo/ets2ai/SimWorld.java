@@ -14,9 +14,9 @@ public final class SimWorld {
     public static final float DT = 0.1f;
     public static final float WHEELBASE = 4.0f;
     public static final float MAX_STEER = 0.6f;
-    public static final float MAX_ACCEL = 1.3f;
+    public static final float MAX_ACCEL = 1.8f;
     public static final float MAX_BRAKE = 3.2f;
-    public static final float DRAG = 0.045f;
+    public static final float DRAG = 0.030f;
     public static final float LANE_HALF = 2.0f;
     public static final float ROAD_HALF = 4.6f;
 
@@ -31,15 +31,16 @@ public final class SimWorld {
     public static final float JOB_PAY_PER_KM = 12f;   // EUR (demo economy)
     public static final float SLEEP_HOTEL_EUR = 220f;
 
-    public static final float[] LOOKAHEAD = { 8f, 18f, 30f, 45f, 60f };
+    public static final float[] LOOKAHEAD = { 8f, 18f, 40f, 90f, 170f };
 
     /** Road: piecewise constant curvature; integrated centreline samples. */
     public static final class Road {
         public final float[] sx, sy, ss;      // samples every 2 m
-        private final float[] segCum, segCurv;
+        final float[] segCum, segCurv;
         public final float length;
 
         Road(float[] segLen, float[] segCurv) {
+            this.radars = new float[0];
             List<Float> cum = new ArrayList<Float>();
             cum.add(0f);
             for (float L : segLen) cum.add(cum.get(cum.size() - 1) + L);
@@ -68,16 +69,38 @@ public final class SimWorld {
             return a;
         }
 
+        public final float[] radars;      // speed cameras (m along the route)
+
         public static Road random(long seed) {
             Random rng = new Random(seed);
             int n = 40;
             float[] len = new float[n], curv = new float[n];
             for (int i = 0; i < n; i++) {
-                len[i] = 60f + rng.nextFloat() * 200f;
+                len[i] = 60f + rng.nextFloat() * 360f;
                 if (rng.nextFloat() < 0.35f) curv[i] = 0f;
                 else curv[i] = (rng.nextFloat() * 2f - 1f) * 0.012f;
             }
-            return new Road(len, curv);
+            Road road = new Road(len, curv);
+            java.util.List<Float> rad = new java.util.ArrayList<Float>();
+            Random rng2 = new Random(seed + 777L);
+            float pos = 700f;
+            while (pos < road.length - 150f) {
+                rad.add(pos);
+                pos += 1500f + rng2.nextFloat() * 1300f;
+            }
+            road.radars = new float[rad.size()];
+            for (int i = 0; i < rad.size(); i++) road.radars[i] = rad.get(i);
+            return road;
+        }
+
+        /** Metres to the next camera ahead of s (500 = none ahead). */
+        public float radarDistAhead(float s) {
+            float best = 500f;
+            for (float r : radars) {
+                float d = r - s;
+                if (d > 0f && d < best) best = d;
+            }
+            return best;
         }
 
         public float curvatureAt(float s) {
@@ -213,6 +236,30 @@ public final class SimWorld {
 
     public float jobLeftKm() {
         return Math.max(0f, (road.length - truck.s) / 1000f);
+    }
+
+    /** ESC-like rollover governor (mirrors sim.governor): full brake when the
+     *  current speed cannot be shed before the START of a curve ahead. */
+    public static float[] governor(Road road, Truck t, float[] cmd) {
+        float worst = Float.MAX_VALUE;
+        for (int i = 0; i < road.segCurv.length; i++) {
+            float segStart = road.segCum[i], segEnd = road.segCum[i + 1];
+            if (segEnd <= t.s) continue;
+            float d = Math.max(0f, segStart - t.s);
+            if (d > 260f) break;
+            float k = Math.abs(road.segCurv[i]);
+            if (k < 0.000001f) continue;
+            float vCurve = (float) Math.sqrt(0.92f * 3.6f / k);
+            float vAllow = (float) Math.sqrt(vCurve * vCurve
+                    + 2f * MAX_BRAKE * Math.max(0f, d - 8f));
+            if (vAllow < worst) worst = vAllow;
+        }
+        if (worst == Float.MAX_VALUE || t.speed <= worst) return cmd;
+        return new float[] { cmd[0], 0f, 1f };
+    }
+
+    public float radarDist() {
+        return road.radarDistAhead(truck.s);
     }
 
     public float[] curvAhead() {
