@@ -1,6 +1,6 @@
-+ echo 'HF_UPLOAD start user=enzo-cyber2025 repo=winlator-a55-beam tok_len=36'
-HF_UPLOAD start user=enzo-cyber2025 repo=winlator-a55-beam tok_len=36
-+ '[' -n 'hf_ZhagIYyJ=t8u##r_>R.{R!>y]4' ']'
++ echo 'HF_UPLOAD start user=enzo-cyber2025 repo=winlator-a55-beam tok_len=37'
+HF_UPLOAD start user=enzo-cyber2025 repo=winlator-a55-beam tok_len=37
++ '[' -n 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 ']'
 + '[' -s W.apk ']'
 + python3 -m venv /tmp/hfvenv
 + tail -3
@@ -11,22 +11,24 @@ HF_UPLOAD start user=enzo-cyber2025 repo=winlator-a55-beam tok_len=36
 WARNING: huggingface-hub 2.0.0 does not provide the extra 'cli'
 WARNING: huggingface-hub 2.0.0 does not provide the extra 'hf-transfer'
 ++ date +%s
-+ T0=1790794067
++ T0=1790794256
 + export HF_HUB_ENABLE_HF_TRANSFER=0
 + HF_HUB_ENABLE_HF_TRANSFER=0
 + /tmp/hfvenv/bin/python3 -u -
 repo_id: enzo-cyber2025/winlator-a55-beam
-create_repo warn: (Amz CF ID: 6ZnX0vyiQqIgj93727hX51pkXWqNv3hJj0FvWvBOfv-CHBFM8YgKHQ==)
+create_repo warn: (Request ID: Root=1-6abd5a10-15c8b88c6d5ab0a16a0edb6d;c6a34137-3053-4fa4-8a95-689811d292fe)
 
-Bad request:
-uploading W.apk size 156967665 at 0.24133038520812988 s
+403 Forbidden: You don't have the rights to create a model under the namespace "enzo-cyber2025".
+Cannot access content at: https://huggingface.co/api/repos/create.
+Make sure your token has the correct permissions.
+uploading W.apk size 156967662 at 0.45601630210876465 s
 Traceback (most recent call last):
   File "/tmp/hfvenv/lib/python3.12/site-packages/huggingface_hub/utils/_http.py", line 836, in hf_raise_for_status
     response.raise_for_status()
   File "/tmp/hfvenv/lib/python3.12/site-packages/httpx2/_models.py", line 827, in raise_for_status
     raise HTTPStatusError(message, request=request, response=self)
-httpx2.HTTPStatusError: Client error '400 Bad Request' for url 'https://huggingface.co/api/models/enzo-cyber2025/winlator-a55-beam/preupload/main'
-For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
+httpx2.HTTPStatusError: Client error '404 Not Found' for url 'https://huggingface.co/api/models/enzo-cyber2025/winlator-a55-beam/preupload/main'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404
 
 The above exception was the direct cause of the following exception:
 
@@ -56,13 +58,17 @@ Traceback (most recent call last):
            ^^^^^^^^^^^^^^^^^^^
   File "/tmp/hfvenv/lib/python3.12/site-packages/huggingface_hub/_commit_api.py", line 769, in _fetch_upload_modes
     hf_raise_for_status(resp)
-  File "/tmp/hfvenv/lib/python3.12/site-packages/huggingface_hub/utils/_http.py", line 929, in hf_raise_for_status
-    raise _format(BadRequestError, message, response) from e
-huggingface_hub.errors.BadRequestError: (Amz CF ID: 0WUBjRrB0ORcPtzUTacHcdv6LqhHdimePn08xja0BF0zZUnbEvDaIA==)
+  File "/tmp/hfvenv/lib/python3.12/site-packages/huggingface_hub/utils/_http.py", line 923, in hf_raise_for_status
+    raise _format(RepositoryNotFoundError, message, response, repo_type=repo_type, repo_id=repo_id) from e
+huggingface_hub.errors.RepositoryNotFoundError: 404 Client Error. (Request ID: Root=1-6abd5a10-08b2b1f910aa6ae7474c7233;36c7bfd5-7a53-4969-a8e7-0bb9d344d18d)
 
-Bad request:
+Repository Not Found for url: https://huggingface.co/api/models/enzo-cyber2025/winlator-a55-beam/preupload/main.
+Please make sure you specified the correct `repo_id` and `repo_type`.
+If you are trying to access a private or gated repo, make sure you are authenticated and your token has the required permissions.
+For more details, see https://huggingface.co/docs/huggingface_hub/authentication
+Note: Creating a commit assumes that the repo already exists on the Huggingface Hub. Please use `create_repo` if it's not the case.
 + RC=2
-+ T0=1790794067
++ T0=1790794256
 ++ date +%s
 + echo HF_UPLOAD_DONE rc=2 elapsed=0
 HF_UPLOAD_DONE rc=2 elapsed=0
