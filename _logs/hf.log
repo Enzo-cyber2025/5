@@ -1,6 +1,22 @@
-+ echo 'HF_UPLOAD start user=enzo-cyber2025 repo=winlator-a55-beam tok_len=0'
-HF_UPLOAD start user=enzo-cyber2025 repo=winlator-a55-beam tok_len=0
-+ '[' -n '' ']'
-+ echo 'no HF_TOKEN'
-no HF_TOKEN
-+ exit 1
++ echo 'HF_UPLOAD start user=enzo-cyber2025 repo=winlator-a55-beam tok_len=37'
+HF_UPLOAD start user=enzo-cyber2025 repo=winlator-a55-beam tok_len=37
++ '[' -n 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 ']'
++ '[' -s W.apk ']'
++ python3 -m venv /tmp/hfvenv
++ tail -3
++ /tmp/hfvenv/bin/pip install -q --upgrade pip
++ tail -2
++ /tmp/hfvenv/bin/pip install -q 'huggingface_hub[cli,hf_transfer]'
++ tail -5
+WARNING: huggingface-hub 2.0.0 does not provide the extra 'cli'
+WARNING: huggingface-hub 2.0.0 does not provide the extra 'hf-transfer'
++ export HF_HUB_ENABLE_HF_TRANSFER=0
++ HF_HUB_ENABLE_HF_TRANSFER=0
++ /tmp/hfvenv/bin/python3 -u -
+repo_id: enzo-cyber2025/winlator-a55-beam
+Traceback (most recent call last):
+  File "<stdin>", line 10, in <module>
+TypeError: HfApi.__init__() got an unexpected keyword argument 'timeout'
++ RC=2
+++ date +%s
+wl/hfup.sh: line 39: t0: unbound variable
