@@ -47,6 +47,6 @@ for probe, line in zip(probes, block):
         worst = max(worst, abs(got - float(want)))
 print(f"paridade Java x numpy: pior delta = {worst:.2e}")
 assert worst < 1e-4, "Java divergiu do numpy"
-assert "JAVA_LOOP_OK" in log, "loop fechado Java falhou"
+assert "JAVA_MISSION_OK" in log, "missao Java nao concluiu"
 print("JAVA PARITY OK")
 PY
