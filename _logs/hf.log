@@ -11,15 +11,15 @@ HF_UPLOAD start user=enzo-cyber2025 repo=winlator-a55-beam tok_len=36
 WARNING: huggingface-hub 2.0.0 does not provide the extra 'cli'
 WARNING: huggingface-hub 2.0.0 does not provide the extra 'hf-transfer'
 ++ date +%s
-+ T0=1790793801
++ T0=1790794067
 + export HF_HUB_ENABLE_HF_TRANSFER=0
 + HF_HUB_ENABLE_HF_TRANSFER=0
 + /tmp/hfvenv/bin/python3 -u -
 repo_id: enzo-cyber2025/winlator-a55-beam
-create_repo warn: (Amz CF ID: 5zS2pUzioYc7QxtRCdBpWkJjSTSjenNjHO1gh-wNGIo4zxttAYoBOg==)
+create_repo warn: (Amz CF ID: 6ZnX0vyiQqIgj93727hX51pkXWqNv3hJj0FvWvBOfv-CHBFM8YgKHQ==)
 
 Bad request:
-uploading W.apk size 156967664 at 0.3002893924713135 s
+uploading W.apk size 156967665 at 0.24133038520812988 s
 Traceback (most recent call last):
   File "/tmp/hfvenv/lib/python3.12/site-packages/huggingface_hub/utils/_http.py", line 836, in hf_raise_for_status
     response.raise_for_status()
@@ -58,12 +58,12 @@ Traceback (most recent call last):
     hf_raise_for_status(resp)
   File "/tmp/hfvenv/lib/python3.12/site-packages/huggingface_hub/utils/_http.py", line 929, in hf_raise_for_status
     raise _format(BadRequestError, message, response) from e
-huggingface_hub.errors.BadRequestError: (Amz CF ID: ClGwljdmMwjJyA3Z89Dm0fpVe2OTrLIUohpgFvxRv-MyIrb8oHDD1A==)
+huggingface_hub.errors.BadRequestError: (Amz CF ID: 0WUBjRrB0ORcPtzUTacHcdv6LqhHdimePn08xja0BF0zZUnbEvDaIA==)
 
 Bad request:
 + RC=2
-+ T0=1790793801
++ T0=1790794067
 ++ date +%s
-+ echo HF_UPLOAD_DONE rc=2 elapsed=1
-HF_UPLOAD_DONE rc=2 elapsed=1
++ echo HF_UPLOAD_DONE rc=2 elapsed=0
+HF_UPLOAD_DONE rc=2 elapsed=0
 + exit 2
