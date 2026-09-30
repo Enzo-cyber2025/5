@@ -37,7 +37,7 @@ public final class Backends {
                 // typical mid-drive feature vector
                 final float[] feat = NeuralNet.features(19.5f, 0.4f, 0.05f,
                         new float[] { 0.0002f, 0.001f, 0.004f, 0.002f, 0f },
-                        25f, 0.7f, 0.3f, 4.2f);
+                        25f, 0.7f, 0.3f, 4.2f, 120f);
 
                 // ---- 1) Java CPU (the one the app actually drives with) ----
                 float[] out = net.forward(feat);
