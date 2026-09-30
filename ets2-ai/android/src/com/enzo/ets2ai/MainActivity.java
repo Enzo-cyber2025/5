@@ -47,7 +47,7 @@ public final class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         try {
-            net = NeuralNet.fromAssets(getAssets(), "model-weights.txt");
+            net = NeuralNet.fromStream(getAssets().open("model-weights.txt"));
         } catch (Exception e) {
             net = null;
         }

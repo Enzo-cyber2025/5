@@ -3,32 +3,32 @@ package com.enzo.ets2ai;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * The trained driving policy, evaluated in plain Java float math.
  *
+ * Pure Java (no Android imports) so it can be compiled and verified on the
+ * host (android/check_java.sh) and packaged into the APK unchanged.
+ *
  * Weights come from assets/model-weights.txt (CSV, exported by
  * ets2ai/ets2ai/contract.py::save_device_format). The forward pass is a
  * bit-for-bit port of ets2ai/model.py::forward (tanh hidden layers, linear
- * output). Cross-checked against numpy and TFLite by the CI tests.
+ * output). Cross-checked against numpy and TFLite by the CI.
  */
 public final class NeuralNet {
 
     public final int nIn;
     public final int nOut;
-    private final float[][][] layers; // [layer][0]=W (fanIn x fanOut), [layer][1]=b
+    private final float[][][] w;   // [layer][in][out]
+    private final float[][] b;     // [layer][out]
+    private final int nLayers;
 
-    private NeuralNet(float[][][] layers, int nIn, int nOut) {
-        this.layers = layers;
+    private NeuralNet(float[][][] w, float[][] b, int nIn, int nOut) {
+        this.w = w;
+        this.b = b;
+        this.nLayers = w.length;
         this.nIn = nIn;
         this.nOut = nOut;
-    }
-
-    public static NeuralNet fromAssets(android.content.res.AssetManager am, String path)
-            throws Exception {
-        return fromStream(am.open(path));
     }
 
     /** Loads the CSV device format (see contract.py::save_device_format). */
@@ -42,32 +42,31 @@ public final class NeuralNet {
                 throw new IllegalStateException("formato invalido: " + header);
             int nIn = Integer.parseInt(h[2]);
             int nOut = Integer.parseInt(h[3]);
-            List<Integer> hidden = new ArrayList<Integer>();
-            for (int i = 4; i < h.length; i++) hidden.add(Integer.parseInt(h[i]));
+            int[] hidden = new int[h.length - 4];
+            for (int i = 4; i < h.length; i++) hidden[i - 4] = Integer.parseInt(h[i]);
 
-            List<Integer> sizes = new ArrayList<Integer>();
-            sizes.add(nIn);
-            sizes.addAll(hidden);
-            sizes.add(nOut);
+            int[] sizes = new int[hidden.length + 2];
+            sizes[0] = nIn;
+            for (int i = 0; i < hidden.length; i++) sizes[1 + i] = hidden[i];
+            sizes[hidden.length + 1] = nOut;
 
-            List<float[][][]> parsed = new ArrayList<float[][][]>();
-            for (int li = 0; li < sizes.size() - 1; li++) {
-                int fanIn = sizes.get(li), fanOut = sizes.get(li + 1);
-                float[][] w = new float[fanIn][fanOut];
+            int nLayers = sizes.length - 1;
+            float[][][] w = new float[nLayers][][];
+            float[][] b = new float[nLayers][];
+            for (int li = 0; li < nLayers; li++) {
+                int fanIn = sizes[li], fanOut = sizes[li + 1];
+                w[li] = new float[fanIn][fanOut];
                 for (int row = 0; row < fanIn; row++) {
-                    String line = r.readLine();
-                    String[] parts = line.split(",");
+                    String[] parts = r.readLine().split(",");
                     for (int col = 0; col < fanOut; col++)
-                        w[row][col] = Float.parseFloat(parts[col]);
+                        w[li][row][col] = Float.parseFloat(parts[col]);
                 }
                 String[] bParts = r.readLine().split(",");
-                float[] b = new float[fanOut];
+                b[li] = new float[fanOut];
                 for (int col = 0; col < fanOut; col++)
-                    b[col] = Float.parseFloat(bParts[col]);
-                float[][][] layer = new float[][][] { w, new float[][] { b } };
-                parsed.add(layer);
+                    b[li][col] = Float.parseFloat(bParts[col]);
             }
-            return new NeuralNet(parsed.toArray(new float[0][][]), nIn, nOut);
+            return new NeuralNet(w, b, nIn, nOut);
         } finally {
             in.close();
         }
@@ -77,23 +76,19 @@ public final class NeuralNet {
     public float[] forward(float[] x) {
         float[] a = new float[x.length];
         System.arraycopy(x, 0, a, 0, x.length);
-        int last = layers.length - 1;
-        for (int li = 0; li < layers.length; li++) {
-            float[][] w = layers[li][0];
-            float[] b = layers[li][1][0];
-            float[] z = new float[b.length];
-            for (int j = 0; j < b.length; j++) {
-                float s = b[j];
-                for (int i = 0; i < a.length; i++) s += a[i] * w[i][j];
-                z[j] = (li == last) ? s : tanh(s);
+        int last = nLayers - 1;
+        for (int li = 0; li < nLayers; li++) {
+            float[][] lw = w[li];
+            float[] lb = b[li];
+            float[] z = new float[lb.length];
+            for (int j = 0; j < lb.length; j++) {
+                float s = lb[j];
+                for (int i = 0; i < a.length; i++) s += a[i] * lw[i][j];
+                z[j] = (li == last) ? s : (float) Math.tanh(s);
             }
             a = z;
         }
         return a;
-    }
-
-    private static float tanh(float v) {
-        return (float) Math.tanh(v);
     }
 
     /** Contract clamp (ets2ai.contract.clamp_action). */
