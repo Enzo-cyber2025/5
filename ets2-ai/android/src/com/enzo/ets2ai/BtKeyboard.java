@@ -85,7 +85,7 @@ public final class BtKeyboard {
                 if (profile != BluetoothProfile.HID_DEVICE) return;
                 hid = (BluetoothHidDevice) proxy;
                 BluetoothHidDeviceAppSdpSettings sdp = new BluetoothHidDeviceAppSdpSettings(
-                        "ETS2-AI", "ETS2-AI Keyboard", "Enzo", 0x0101,
+                        "ETS2-AI", "ETS2-AI Keyboard", "Enzo",
                         (byte) 0xC1, KEYBOARD_DESCRIPTOR);
                 hid.registerApp(sdp, null, null, executor, new BluetoothHidDevice.Callback() {
                     @Override
