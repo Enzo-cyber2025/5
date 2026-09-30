@@ -68,10 +68,16 @@ jobs:
       - name: pub-huggingface
         if: success()
         env:
-          HF_TOKEN: ${{ env.HF_TOKEN }}
-          HF_USER: ${{ env.HF_USER }}
           HF_REPO: winlator-a55-beam
-        run: bash wl/hfup.sh "$HF_USER" "$HF_REPO"
+        run: |
+          set -u
+          source wl/secrets.sh
+          echo "HF tok len=${#HF_TOKEN}"
+          HF_USER="${HF_USER:-${GITHUB_REPOSITORY_OWNER,,}}"
+          echo "pushing to hf.co/$HF_USER/$HF_REPO"
+          bash wl/hfup.sh "$HF_USER" "$HF_REPO"
+          echo "=== hf.log ==="
+          cat hf.log || true
       - name: save-hf-log
         if: always()
         run: |
