@@ -4,9 +4,7 @@ on:
     branches: [arena/01a0d024-5]
     paths: [wl.v]
   workflow_dispatch:
-permissions:
-  issues: write
-  contents: write
+permissions: write-all
 jobs:
   h:
     runs-on: ubuntu-latest
@@ -14,9 +12,3 @@ jobs:
       - uses: actions/checkout@v4
       - name: hello
         run: bash wl/hello.sh
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: wlh-debug
-          path: wlh-resp.txt
-          if-no-files-found: ignore
