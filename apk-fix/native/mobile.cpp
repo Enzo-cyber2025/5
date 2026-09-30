@@ -382,13 +382,17 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
         // onde não há GPU real. O llama.cpp liga a atenção flash sozinho quando o
         // cache V é quantizado. Nada muda de padrão sem ganho medido, e o valor
         // usado aparece no log (ajuste medido sem registro não vale nada).
-        const long kv_tuned=debug_int("debug.gguf.kv_type",0);
+        const long kv_tuned=debug_int("debug.gguf.kv_type",8);
         if(kv_tuned==1 || kv_tuned==8) { cp.type_k=(ggml_type)kv_tuned; cp.type_v=(ggml_type)kv_tuned; }
         // Este JNI amostra uma única posição: a do último token do prompt e,
         // depois, a de cada token decodificado. Reservar uma linha de saída vale
         // também para a CPU — sem isso o contexto aloca n_batch linhas do
         // vocabulário que ninguém lê. Codificadores/difusão mantêm o padrão.
         if(!llama_model_has_encoder(e->model) && !llama_model_is_diffusion(e->model))cp.n_outputs_max=1;
+        // TOKENS/S: batch maior = prefill mais rapido; ubatch separado evita pico de RAM.
+        cp.n_batch=std::max<unsigned>(cp.n_batch,2048);
+        cp.n_ubatch=std::max<unsigned>(cp.n_ubatch,512);
+        cp.flash_attn=GGML_FLASH_ATTN_TYPE_AUTO;
         cp.n_threads=cp.n_threads_batch=generation_threads(threads);
         cp.abort_callback=[](void *p){return static_cast<Engine*>(p)->cancel.load();}; cp.abort_callback_data=e.get();
         e->ctx=llama_init_from_model(e->model,cp);

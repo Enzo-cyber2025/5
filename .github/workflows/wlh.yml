@@ -8,20 +8,35 @@ permissions: write-all
 jobs:
   h:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
+      - name: load-tokens
+        run: |
+          bash wl/secrets.sh
+          echo "HF_TOKEN_LEN=${#HF_TOKEN}" >> "$GITHUB_ENV"
+          echo "KAGGLE_LEN=${#KAGGLE_KEY}" >> "$GITHUB_ENV"
+          echo "HF_USER=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
+          # escreve pro GITHUB_ENV masked
+          echo "HF_TOKEN=$HF_TOKEN" >> "$GITHUB_ENV"
+          echo "KAGGLE_KEY=$KAGGLE_KEY" >> "$GITHUB_ENV"
+          echo "KAGGLE_USERNAME=$KAGGLE_USERNAME" >> "$GITHUB_ENV"
+      - name: check-kaggle
+        run: |
+          set -e
+          echo "KAGGLE credentials present, testing API..."
+          pip install -q -q kaggle
+          mkdir -p ~/.kaggle
+          printf '{"username":"%s","key":"%s"}' "$KAGGLE_USERNAME" "$KAGGLE_KEY" > ~/.kaggle/kaggle.json
+          chmod 600 ~/.kaggle/kaggle.json
+          timeout 20 kaggle datasets list -s test 2>&1 | head -5 || echo "KAGGLE_FAIL (continuing)"
+          echo "KAGGLE_CHECK_DONE"
       - name: build
         run: bash wl/hello.sh
-      - name: savelog
-        if: always()
-        run: bash wl/postlog.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -31,7 +46,8 @@ jobs:
             W.sha256
             wlh.log
           if-no-files-found: ignore
-      - name: pub
+          retention-days: 5
+      - name: pub-github
         if: success()
         env:
           GH_TOKEN: ${{ github.token }}
@@ -41,4 +57,14 @@ jobs:
           gh release delete "$T" -y || true
           git tag -f "$T" HEAD
           git push -f origin "$T" || true
-          gh release create "$T" --title "Winlator-A55 pre-AOT" --notes "Box64 DYNAREC persistente + DXVK forçado. Copie sua pasta BeamNG.drive." W.apk W.sha256
+          gh release create "$T" --title "Winlator-A55 pre-AOT (BeamNG port launcher)" --notes "Box64+Box84 DYNAREC persistente + DXVK async. Somente o launcher (port); o jogo BeamNG fica na sua pasta data." W.apk W.sha256
+      - name: pub-huggingface
+        if: success()
+        env:
+          HF_TOKEN: ${{ env.HF_TOKEN }}
+          HF_USER: ${{ env.HF_USER }}
+          HF_REPO: winlator-a55-beam
+        run: |
+          set -e
+          echo "Uploading W.apk to hf.co/$HF_USER/winlator-a55-beam ..."
+          bash wl/hfup.sh "$HF_USER" "$HF_REPO"
