@@ -65,10 +65,14 @@ class Adam:
 
 
 def train(x, y, epochs=400, batch=256, lr=2e-3, seed=SEED, verbose=True,
-          x_val=None, y_val=None):
-    """Train the MLP on (x, y) with Adam + MSE. Returns (layers, history)."""
+          x_val=None, y_val=None, start_layers=None):
+    """Train the MLP on (x, y) with Adam + MSE. Returns (layers, history).
+
+    start_layers: optional [(W,b), ...] to continue training from existing
+    weights (DAgger finetuning) instead of initialising from scratch.
+    """
     rng = np.random.default_rng(seed)
-    layers = init_layers(rng)
+    layers = start_layers if start_layers is not None else init_layers(rng)
     opt = Adam(layers, lr=lr)
     x = np.asarray(x, dtype=np.float32)
     y = np.asarray(y, dtype=np.float32)

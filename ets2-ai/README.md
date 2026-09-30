@@ -98,6 +98,7 @@ distância da entrega. **Saídas (3):** volante, acelerador, freio. Detalhe em
 ```
 ETS2-AI-bridge.exe                  # janela demo; IA local ou do celular
 ETS2-AI-bridge.exe --inject --window "Euro Truck"   # injeta teclas reais
+ETS2-AI-bridge.exe --record sessao1.csv             # grava p/ finetune (DAgger)
 ```
 - No app: **BRIDGE** → IP do PC (o bridge imprime na tela) → porta 7777.
 - Sem celular conectado (ou RTT > 0,5 s): failover automático para a IA local.
@@ -140,6 +141,31 @@ usar datasets do Kaggle no futuro:
    - run: kaggle datasets download -d <usuario>/<dataset> -p dados --unzip
    ```
 
+## Dados sem dirigir milhares de km (estratégia 0 km)
+
+Você **não precisa dirigir** para gerar dados de treino:
+
+1. **Base sintética (0 km seu):** o especialista (pure-pursuit + controle
+   preditivo) dirige no simulador e gera 115 mil pares estado→ação. É a base
+   já commitada e medida (loss 0.00150).
+2. **DAgger — correções, não direção:** com o bridge em `--record`, a IA
+   dirige e você só **aperta as setas quando ela erra** (segundos por sessão).
+   Cada correção vira uma linha `override=1` na gravação e vale 3× no treino.
+   Minutos de correções >> horas de direção passiva.
+3. **Finetune com gates de segurança:**
+   ```
+   python -m ets2ai.finetune --recordings sessao1.csv sessao2.csv
+   ```
+   O finetune **só aprova** o modelo se: MSE na gravação ≤ 0.150 **e**
+   circuito fechado ≥ 75% de rotas concluídas com > 95% na faixa. Os pesos
+   base nunca são sobrescritos — o resultado sai em
+   `artifacts-finetuned/` com relatório (`metrics-finetune.json`); promova
+   para `artifacts/` (e rode o CI) apenas se `all_pass: true`.
+4. **Calibração de telemetria (quando ligar no ETS2 real):** o mesmo formato
+   de gravação serve para alinhar as features da telemetria real do jogo
+   (SCS SDK) com as do simulador — gravar 5–10 min de direção normal sua
+   basta para calibrar escalas/offsets.
+
 ## Roadmap para o ETS2 real
 
 1. **Telemetria**: plugin do SCS SDK (DLL `scs-telemetry`, documentação
@@ -149,8 +175,8 @@ usar datasets do Kaggle no futuro:
 2. **Visão (opcional)**: frames do jogo (captura de tela/DXGI) alimentando
    as features de curvatura — a rede atual usa a "leitura" da estrada; para
    dirigir só por imagem seria um segundo modelo (CNN), treinado do zero.
-3. **Dados reais**: gravar suas partidas (o plugin de telemetria + captura)
-   gera exatamente os pares estado→ação que `ets2ai/train.py` consome.
+3. **Dados reais**: não dirija milhares de km — use `--record` + DAgger
+   (ver seção anterior). O plugin de telemetria alimenta o mesmo formato.
 4. **Segurança**: manter kill switch ESC + limite de janela alvo + failover.
 
 ## Estrutura

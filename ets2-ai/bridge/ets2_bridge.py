@@ -223,15 +223,48 @@ class KeyInjector:
 
 
 # ---------------------------------------------------------------------------
+# Recorder (DAgger): state->command log consumable by ets2ai.finetune
+# ---------------------------------------------------------------------------
+class Recorder:
+    """CSV writer: normalized 12 features + 3 commands + override flag + source.
+
+    source: L=IA local | P=IA celular | H=correcao humana (override=1) | M=manual
+    """
+    def __init__(self, path):
+        self.path = Path(path)
+        self.f = open(self.path, "w", encoding="utf-8")
+        self.f.write("ets2ai-rec,v1\n")
+        self.n = 0
+        self.overrides = 0
+
+    def write(self, feat, cmd, override, src):
+        vals = [f"{v:.6f}" for v in feat] + [f"{v:.6f}" for v in cmd]
+        vals.append(str(int(override)))
+        vals.append(src)
+        self.f.write(",".join(vals) + "\n")
+        self.n += 1
+        if override:
+            self.overrides += 1
+        if self.n % 50 == 0:
+            self.f.flush()
+
+    def close(self):
+        if not self.f.closed:
+            self.f.close()
+        return self.n
+
+
+# ---------------------------------------------------------------------------
 # Tkinter demo window (same physics as the phone)
 # ---------------------------------------------------------------------------
-def run_demo(layers, port, injector):
+def run_demo(layers, port, injector, record_path=None):
     import tkinter as tk
 
     road = sim.Road.random(20260930)
     truck = sim.Truck(road, s=5.0, offset=0.0, speed=15.0)
     link = PhoneLink(port)
     link.start()
+    rec = Recorder(record_path) if record_path else None
     state = {"ai": True, "source": "local", "km": 0.0, "msg": ""}
 
     root = tk.Tk()
@@ -249,6 +282,14 @@ def run_demo(layers, port, injector):
 
     acc = {"t": 0.0}
     manual = {"keys": set()}
+
+    def manual_from_keys():
+        ks = manual["keys"]
+        steer = (-1 if "left" in ks else 0) + (1 if "right" in ks else 0)
+        thr = 0.65 if "accel" in ks else 0.0
+        brk = 1.0 if "brake" in ks else 0.0
+        return clamp_action(steer, thr, brk), len(ks) > 0
+
     root.bind("<Left>", lambda e: manual["keys"].add("left"))
     root.bind("<Right>", lambda e: manual["keys"].add("right"))
     root.bind("<Up>", lambda e: manual["keys"].add("accel"))
@@ -265,25 +306,34 @@ def run_demo(layers, port, injector):
             acc["t"] -= sim.DT
             job_left = max(0.0, (road.length - truck.s) / 1000.0)
 
-            cmd = None
+            feat = sim.features(road, truck, job_left)
+            override = 0
+            mcmd, human_active = manual_from_keys()
             if state["ai"]:
                 link.send_state(road, truck, job_left)
                 fresh = (time.time() - link.last_recv) < PHONE_TIMEOUT_S
                 if link.latest_cmd and fresh:
                     c = link.latest_cmd
                     cmd = clamp_action(c[0], c[1], c[2])
+                    src = "P"
                     state["source"] = f"CELULAR (RTT {link.rtt_ms:.0f} ms)"
                 else:
-                    cmd = policy_cmd(layers, road, truck, job_left)
+                    o = forward(feat, layers)[0]
+                    cmd = clamp_action(float(o[0]), float(o[1]), float(o[2]))
+                    src = "L"
                     state["source"] = "local (numpy)"
+                if human_active:      # DAgger: correcao humana enquanto a IA dirige
+                    cmd = mcmd
+                    src = "H"
+                    override = 1
+                    state["source"] = "CORRECAO HUMANA (gravando p/ finetune)"
             else:
-                ks = manual["keys"]
-                steer = (-1 if "left" in ks else 0) + (1 if "right" in ks else 0)
-                thr = 0.65 if "accel" in ks else 0.0
-                brk = 1.0 if "brake" in ks else 0.0
-                cmd = clamp_action(steer, thr, brk)
+                cmd = mcmd
+                src = "M"
                 state["source"] = "manual (setas; A liga/desliga IA)"
 
+            if rec is not None:
+                rec.write(feat, cmd, override, src)
             truck.step(road, cmd[0], cmd[1], cmd[2])
             injector.update(cmd[0], cmd[1], cmd[2])
 
@@ -297,17 +347,17 @@ def run_demo(layers, port, injector):
                 state["msg"] = "BATER! Reinicie (R)"
             if truck.s >= road.length - 10:
                 state["msg"] = "Entrega concluida! Nova rota (R)"
-        root.bind("r", lambda e: None)
 
         draw()
         info.config(text=fmt())
         root.after(33, tick)
 
     def fmt():
+        recmsg = f"  |  REC {rec.n} linhas ({rec.overrides} correcoes)" if rec else ""
         return (f"[{state['source']}]  {truck.speed*3.6:5.1f} km/h   "
                 f"offset {truck.offset:+.2f} m   combustivel {truck.fuel*100:3.0f}%   "
                 f"sono {truck.fatigue*100:3.0f}%   rota {road.length/1000 - truck.s/1000:.1f} km restantes   "
-                f"{state['msg']}   | {' | '.join(link.log[-2:])}")
+                f"{state['msg']}{recmsg}   | {' | '.join(link.log[-2:])}")
 
     def draw():
         cv.delete("all")
@@ -343,6 +393,10 @@ def run_demo(layers, port, injector):
     tick()
     root.mainloop()
     injector.release_all()
+    if rec is not None:
+        n = rec.close()
+        print(f"[rec] {n} linhas em {rec.path} -> "
+              f"python -m ets2ai.finetune --recordings {rec.path}")
 
 
 def main():
@@ -352,6 +406,8 @@ def main():
                     help="injetar teclas REAIS na janela alvo (ESC mata)")
     ap.add_argument("--window", default="Euro Truck",
                     help="parte do titulo da janela alvo (ex.: 'Euro Truck')")
+    ap.add_argument("--record", metavar="CSV",
+                    help="gravar estados+comandos para finetune (DAgger)")
     args = ap.parse_args()
 
     if args.inject and sys.platform != "win32":
@@ -362,7 +418,10 @@ def main():
     if args.inject:
         print(f"[inject] alvo: janela com '{args.window}' no titulo | ESC = kill switch")
     print(f"[rede] no celular: botao BRIDGE -> IP {PhoneLink.local_ip()} porta {args.port}")
-    run_demo(layers, args.port, injector)
+    if args.record:
+        print(f"[rec] gravando em {args.record} — use as SETAS para corrigir a IA; "
+              "as correcoes viram dados de treino (DAgger)")
+    run_demo(layers, args.port, injector, record_path=args.record)
 
 
 if __name__ == "__main__":
