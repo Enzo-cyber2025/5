@@ -11,6 +11,7 @@ echo "HF_UPLOAD start user=$HF_USER repo=$HF_REPO tok_len=${#HF_TOKEN}"
 python3 -m venv /tmp/hfvenv 2>&1 | tail -3
 /tmp/hfvenv/bin/pip install -q --upgrade pip 2>&1 | tail -2
 /tmp/hfvenv/bin/pip install -q "huggingface_hub[cli,hf_transfer]" 2>&1 | tail -5
+T0=$(date +%s)
 export HF_HUB_ENABLE_HF_TRANSFER=0
 /tmp/hfvenv/bin/python3 -u - <<PY
 import os,sys,traceback,time
@@ -22,7 +23,7 @@ try:
   if not user:
     who=h.HfApi(token=tok).whoami(); user=who["name"]; print("HF whoami:",user)
   repo_id=f"{user}/{repo}"; print("repo_id:",repo_id)
-  api=h.HfApi(token=tok,timeout=600)
+  api=h.HfApi(token=tok)
   try: api.create_repo(repo_id=repo_id,repo_type="model",private=True,exist_ok=True)
   except Exception as e: print("create_repo warn:",e)
   for f in ["W.apk","W.sha256"]:
@@ -36,5 +37,6 @@ except Exception as e:
   traceback.print_exc(); sys.exit(2)
 PY
 RC=$?
-echo HF_UPLOAD_DONE rc=$RC elapsed=$(( $(date +%s) - t0 ))
+T0=${T0:-$(date +%s)}
+echo HF_UPLOAD_DONE rc=$RC elapsed=$(( $(date +%s) - T0 ))
 exit $RC
