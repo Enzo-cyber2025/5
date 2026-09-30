@@ -227,9 +227,10 @@ public final class SimWorld {
         jobPay = best.payEur;
         jobLabel = "JOB: " + best.label() + " [melhor de 3]";
         crashed = false;
-        event = "";
-        eventTimer = 0f;
-        jobsDone = 0;
+        truck.speed = 0f;                      // engine off at the job start
+        event = "engine";
+        eventTimer = 1.5f;
+        eventText = "Ligando o motor... (tecla E)";
         stepsTotal = 1;
         stepsInLane = 1;
     }
@@ -254,8 +255,18 @@ public final class SimWorld {
                     + 2f * MAX_BRAKE * Math.max(0f, d - 8f));
             if (vAllow < worst) worst = vAllow;
         }
-        if (worst == Float.MAX_VALUE || t.speed <= worst) return cmd;
-        return new float[] { cmd[0], 0f, 1f };
+        if (worst != Float.MAX_VALUE && t.speed > worst)
+            return new float[] { cmd[0], 0f, 1f };
+        // dock governor: never carry speed into the loading dock (full distance)
+        float dDock = (road.length - 6f) - t.s;
+        if (dDock > 0f && dDock < 600f) {
+            float vAllow = (float) Math.sqrt(2f * MAX_BRAKE * Math.max(0f, dDock - 2f));
+            if (t.speed > vAllow + 0.3f) return new float[] { cmd[0], 0f, 1f };
+            if (dDock <= 1.5f) return new float[] { cmd[0], 0f, 1f };   // hold
+            if (dDock < 30f && t.speed < 0.8f)
+                return new float[] { cmd[0], 0.30f, 0f };               // creep
+        }
+        return cmd;
     }
 
     public float radarDist() {
@@ -287,10 +298,12 @@ public final class SimWorld {
                 } else if ("sleep".equals(event)) {
                     truck.fatigue = 0f;
                     truck.money -= SLEEP_HOTEL_EUR;
-                } else if ("delivered".equals(event)) {
-                    jobsDone++;
-                    newRoute();
+                } else if ("unload".equals(event)) {
+                    jobsDone++;                 // cargo delivered + loaded
+                    newRoute();                 // dispatcher picks, engine starts
                     return;
+                } else if ("engine".equals(event)) {
+                    eventText = "";
                 }
                 event = "";
             }
@@ -317,12 +330,13 @@ public final class SimWorld {
             eventText = "Dormindo 9 h no hotel (-220 EUR)";
             return;
         }
-        if (truck.s >= road.length - 10f) {
+        if (truck.s >= road.length - 10f && truck.speed < 0.8f) {
             float pay = jobPay > 0f ? jobPay : truck.drivenKm * JOB_PAY_PER_KM;
             truck.money += pay;
-            event = "delivered";
-            eventTimer = 2.5f;
-            eventText = String.format("Entrega concluida! +%d EUR", (int) pay);
+            event = "unload";
+            eventTimer = 3.0f;
+            eventText = String.format(Locale.US,
+                    "No dock: descarrega e carrega (T)… +%d EUR", (int) pay);
         }
     }
 }

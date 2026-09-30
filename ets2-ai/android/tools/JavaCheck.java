@@ -38,9 +38,11 @@ public class JavaCheck {
         }
         System.out.println("JAVA_FORWARD_END");
 
-        // ---- 2. closed-loop sanity in the Java port ----
+        // ---- 2. full mission loop in the Java port ----
+        // (engine -> drive -> dock -> unload -> next job via dispatcher)
         SimWorld world = new SimWorld();
-        for (int i = 0; i < 3000; i++) {
+        int steps = 0;
+        while (world.jobsDone < 1 && steps < 30000) {
             float[] f = NeuralNet.features(
                     world.truck.speed, world.truck.offset, world.headingError(),
                     world.curvAhead(), SimWorld.SPEED_LIMIT,
@@ -49,15 +51,20 @@ public class JavaCheck {
             float[] raw = net.forward(f);
             float[] cmd = NeuralNet.clampAction(raw[0], raw[1], raw[2]);
             world.step(SimWorld.governor(world.road, world.truck, cmd));
+            steps++;
         }
         System.out.println(String.format(Locale.US,
-                "JAVA_LOOP km=%.2f in_lane=%.3f offset=%.2f speed_kmh=%.0f",
-                world.truck.drivenKm, world.inLanePct, world.truck.offset,
-                world.truck.speed * 3.6f));
+                "JAVA_MISSION steps=%d jobsDone=%d in_lane=%.3f km=%.2f money=%.0f",
+                steps, world.jobsDone, world.inLanePct,
+                world.truck.drivenKm, world.truck.money));
         if (world.inLanePct < 0.90f) {
             System.out.println("JAVA_LOOP_FAIL: fora da faixa");
             System.exit(2);
         }
-        System.out.println("JAVA_LOOP_OK");
+        if (world.jobsDone < 1) {
+            System.out.println("JAVA_MISSION_FAIL: nao entregou nenhum job");
+            System.exit(3);
+        }
+        System.out.println("JAVA_MISSION_OK");
     }
 }

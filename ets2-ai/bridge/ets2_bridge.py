@@ -39,6 +39,12 @@ PHONE_TIMEOUT_S = 0.5      # sem resposta do celular por isso = failover local
 
 # Teclas enviadas (scan codes). ETS2 vem com setas para dirigir por padrao.
 KEYMAP = {"left": 0x4B, "right": 0x4D, "accel": 0x48, "brake": 0x50}
+# Macros da missao (scan code, nome) — liga motor, engate do reboque/carga.
+# Ajuste se seus binds forem diferentes (ver ets2-ai/README.md).
+MACROS = {
+    "engine": (0x12, "E (ligar motor)"),
+    "dock":   (0x14, "T (carregar/descarregar)"),
+}
 
 
 def load_policy():
@@ -216,6 +222,17 @@ class KeyInjector:
             self._keybd(KEYMAP[k], False)
             self.down.add(k)
 
+    def tap(self, scan, name=""):
+        """One-shot keypress (down 60 ms, up) for mission macros."""
+        if not self.enabled:
+            print(f"[macro] {name or hex(scan)} (injecao desligada — apenas sim)")
+            return
+        self._keybd(scan, False)
+        time.sleep(0.06)
+        self._keybd(scan, True)
+        if name:
+            print(f"[macro] {name}")
+
     def release_all(self):
         if not self.enabled:
             return
@@ -316,7 +333,7 @@ def run_demo(layers, port, injector, record_path=None):
                 fresh = (time.time() - link.last_recv) < PHONE_TIMEOUT_S
                 if link.latest_cmd and fresh:
                     c = link.latest_cmd
-                    cmd = clamp_action(c[0], c[1], c[2])
+                    cmd = sim.governor(road, truck, clamp_action(c[0], c[1], c[2]))
                     src = "P"
                     state["source"] = f"CELULAR (RTT {link.rtt_ms:.0f} ms)"
                 else:
@@ -404,19 +421,30 @@ def run_demo(layers, port, injector, record_path=None):
 def run_headless(layers, port, injector, phone_only):
     """Modo leve para PC fraco (Pentium N5030/4 GB): sem janela, sem render,
     sem captura de tela (o projeto NUNCA captura tela — estado vem da
-    telemetria/demo). Só o servidor TCP + injeção de teclas opcional."""
-    import selectors
-    road = sim.Road.random(int(time.time()))
-    truck = sim.Truck(road, s=5.0, offset=0.0, speed=15.0)
+    telemetria/demo). Missao completa: liga motor -> dirige (IA) -> para no
+    dock com precisao -> carrega/descarrega -> dispatcher escolhe o proximo
+    trabalho -> repete."""
+    import numpy as np
+    from ets2ai import dispatch as dispatch_mod
+    rng = np.random.default_rng(int(time.time()))
+    best, _offers = dispatch_mod.pick_best(rng, sim.Road, 3)
+    road = sim.Road.random(best.road_seed)
+    truck = sim.Truck(road, s=5.0, offset=0.0, speed=0.0)
     link = PhoneLink(port)
     link.start()
+    money = 0.0
+    jobs = 0
+    phase = {"name": "engine", "t": 1.5}       # engine -> drive -> dock
+    injector.tap(*MACROS["engine"])
     print(f"[leve] headless na porta {port} | celular: botao BRIDGE -> "
           f"{PhoneLink.local_ip()}:{port} | Ctrl+C sai")
     if phone_only:
         print("[leve] --somente-celular: sem o celular o caminhao FREIA (sem IA local)")
+    print(f"[job] {best.label()} [melhor de 3]")
     last_print = 0.0
     acc = 0.0
     t_prev = time.time()
+    src = "ligando"
     try:
         while True:
             now = time.time()
@@ -424,12 +452,29 @@ def run_headless(layers, port, injector, phone_only):
             t_prev = now
             while acc >= sim.DT:
                 acc -= sim.DT
+                if phase["name"] != "drive":
+                    phase["t"] -= sim.DT
+                    if phase["t"] <= 0:
+                        if phase["name"] == "dock":
+                            money += best.pay_eur
+                            jobs += 1
+                            print(f"[job] entrega #{jobs} concluida: +{best.pay_eur:.0f} EUR "
+                                  f"(total {money:.0f} EUR)")
+                            best, _ = dispatch_mod.pick_best(rng, sim.Road, 3)
+                            road = sim.Road.random(best.road_seed)
+                            truck = sim.Truck(road, s=5.0, offset=0.0, speed=0.0)
+                            phase = {"name": "engine", "t": 1.5}
+                            injector.tap(*MACROS["engine"])
+                            print(f"[job] proximo: {best.label()} [melhor de 3]")
+                        else:                                # engine pronto
+                            phase = {"name": "drive", "t": 0.0}
+                    continue
                 job_left = max(0.0, (road.length - truck.s) / 1000.0)
                 link.send_state(road, truck, job_left)
                 fresh = (now - link.last_recv) < PHONE_TIMEOUT_S
                 if link.latest_cmd and fresh:
                     c = link.latest_cmd
-                    cmd = clamp_action(c[0], c[1], c[2])
+                    cmd = sim.governor(road, truck, clamp_action(c[0], c[1], c[2]))
                     src = "celular"
                 elif phone_only:
                     cmd = (0.0, 0.0, 0.8)              # freia ate o celular voltar
@@ -441,23 +486,60 @@ def run_headless(layers, port, injector, phone_only):
                 injector.update(cmd[0], cmd[1], cmd[2])
                 if truck.fuel < sim.REFUEL_BELOW:
                     truck.fuel = 1.0
+                    money -= dispatch_mod.FUEL_STOP_EUR
+                    print("[regra] abastecendo 600 L")
                 if truck.fatigue > sim.SLEEP_ABOVE:
                     truck.fatigue = 0.0
+                    money -= dispatch_mod.HOTEL_EUR
+                    print("[regra] dormindo 9 h no hotel")
                 if abs(truck.offset) > sim.ROAD_HALF:
-                    road = sim.Road.random(int(time.time()))
-                    truck = sim.Truck(road, s=5.0, offset=0.0, speed=15.0)
-                if truck.s >= road.length - 10:
-                    road = sim.Road.random(int(time.time()))
-                    truck = sim.Truck(road, s=5.0, offset=0.0, speed=15.0)
+                    print("[evento] fora da pista — novo trabalho")
+                    best, _ = dispatch_mod.pick_best(rng, sim.Road, 3)
+                    road = sim.Road.random(best.road_seed)
+                    truck = sim.Truck(road, s=5.0, offset=0.0, speed=0.0)
+                    phase = {"name": "engine", "t": 1.5}
+                    injector.tap(*MACROS["engine"])
+                d_dock = (road.length - 6.0) - truck.s
+                if d_dock <= 4.0 and truck.speed < 0.6:
+                    phase = {"name": "dock", "t": 3.0}
+                    injector.tap(*MACROS["dock"])
+                    print("[dock] parada precisa — descarregando/carregando...")
             if now - last_print > 2.0:
                 last_print = now
                 print(f"[leve] {src:16s} {truck.speed*3.6:5.1f} km/h "
-                      f"offset {truck.offset:+.2f} m | {link.log[-1] if link.log else ''}")
+                      f"offset {truck.offset:+.2f} m | jobs {jobs} | {money:+.0f} EUR | "
+                      f"{link.log[-1] if link.log else ''}")
             time.sleep(0.03)
     except KeyboardInterrupt:
         print("\n[leve] encerrado")
     finally:
         injector.release_all()
+
+
+def run_bench():
+    """Prova o custo do bridge: 10 s do loop leve medindo CPU do processo."""
+    import os
+    layers = load_policy()
+    injector = KeyInjector("", False)
+    road = sim.Road.random(42)
+    truck = sim.Truck(road, s=5.0, offset=0.0, speed=15.0)
+    link = None
+    t0 = time.time()
+    c0 = os.times()
+    steps = 0
+    while time.time() - t0 < 10.0:
+        for _ in range(10):                       # 100 Hz de loop interno
+            cmd = policy_cmd(layers, road, truck, 1.0)
+            truck.step(road, cmd[0], cmd[1], cmd[2])
+            steps += 1
+        time.sleep(0.01)
+    c1 = os.times()
+    wall = time.time() - t0
+    cpu = (c1.user - c0.user) + (c1.system - c0.system)
+    print(f"[bench] {steps} passos de fisica em {wall:.1f} s")
+    print(f"[bench] CPU do processo: {cpu/wall*100:.1f}% de UM nucleo "
+          f"(N5030 tem 4) — impacto no FPS do jogo: ~{cpu/wall*25:.1f}% de 1 nucleo")
+    print("[bench] captura de tela: NENHUMA (estado por telemetria/demo)")
 
 
 def main():
@@ -473,11 +555,16 @@ def main():
                     help="modo leve: sem janela (PC fraco); Ctrl+C sai")
     ap.add_argument("--somente-celular", action="store_true",
                     help="a IA roda SO no celular; sem conexao o caminhao freia")
+    ap.add_argument("--bench", action="store_true",
+                    help="medir o custo de CPU do bridge (prova do impacto no FPS)")
     args = ap.parse_args()
 
     if args.inject and sys.platform != "win32":
         print("[aviso] --inject so funciona no Windows; rodando sem injecao.")
 
+    if args.bench:
+        run_bench()
+        return
     layers = None if (args.sem_janela and args.somente_celular) else load_policy()
     injector = KeyInjector(args.window, args.inject)
     if args.inject:

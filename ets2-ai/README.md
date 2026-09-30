@@ -1,10 +1,10 @@
 # ETS2-AI — piloto automático para Euro Truck Simulator 2 (celular ↔ PC)
 
 > **Downloads (IA já treinada dentro de ambos):**
-> - APK: https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.2.0/ETS2-AI-mobile.apk
-> - EXE: https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.2.0/ETS2-AI-bridge.exe
+> - APK: https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.3.0/ETS2-AI-mobile.apk
+> - EXE: https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.3.0/ETS2-AI-bridge.exe
 >
-> **v0.2.0 — IA velocista.** A IA treinada dirige caminhão num simulador com
+> **v0.3.0 — automação total da missão.** A IA treinada dirige caminhão num simulador com
 > a mesma física do jogo-alvo, gerencia combustível, sono e entregas, roda no
 > **APK do celular** (inferência 100% em Java, sem dependências) e entrega os
 > comandos ao **PC Windows** por TCP, onde o bridge injeta **teclas reais**
@@ -25,7 +25,8 @@ inéditas.
 | Velocidade média | **71 km/h** (pico ~130 km/h nas retas) | acima do limite ✅ |
 | **Radares** | **100%** das 30 passagens abaixo do limite | freia antes do radar ✅ |
 | **Física do tombamento** | 3.33 m/s² de pico (limite 3.6) | o mais rápido possível sem tombar ✅ |
-| **Aderência ao GPS** | desvio médio de **0.13 m** do traçado | segue o traçado ✅ |
+| **Aderência ao GPS** | desvio médio de **0.18 m** do traçado | segue o traçado ✅ |
+| **Estacionar no dock** | **100%** das rotas, erro médio de **2.2 m** (modo creep) | para na linha, sem atravessar ✅ |
 | Amostras de treino | 115.308 pares estado→ação | — |
 
 Reproduza: `python -m ets2ai.train` (determinístico — o CI retreina do zero e
@@ -39,6 +40,8 @@ confere que os pesos batem com os commitados, tolerância 1e-5).
 | Regras de abastecer/dormir/entregas/dinheiro | ✅ real (regras sobre telemetria — não precisa de ML) |
 | **Dispatcher: escolhe a melhor rota de 3 ofertas** (EUR/km líquido − combustível − hotel − curvas) | ✅ real (`ets2ai/dispatch.py` + `Dispatcher.java`) |
 | **Teclado Bluetooth**: o celular aparece como teclado HID real no PC | ✅ API pública `BluetoothHidDevice` (Android 9+) |
+| **Missão completa**: liga motor (E) → dirige → para no dock → carrega (T) → dispatcher escolhe o próximo trabalho → repete | ✅ app, bridge e testes |
+| **Motor de inferência auto-selecionado** | ✅ benchmark interno escolhe o mais rápido (Java/TFLite/GPU/NNAPI) e mostra no HUD |
 | **Benchmark de backends no aparelho** (Java / TFLite CPU / GPU / NNAPI-rota-pública-para-NPU) | ✅ medidas reais no seu A55, botão BACKEND |
 | APK Android com a IA + HUD + diagnóstico NPU | ✅ sai do CI assinado |
 | Bridge Windows `.exe` + injeção de teclas reais | ✅ sai do CI (SendInput/scan codes, kill switch ESC) |
@@ -113,6 +116,7 @@ vem da telemetria/demo. Para PC fraco (Pentium N5030 / 4 GB RAM):
 
 ```
 ETS2-AI-bridge.exe --sem-janela                # modo leve: sem janela, só rede
+ETS2-AI-bridge.exe --bench                          # prova o custo de CPU (impacto ~0 no FPS)
 ETS2-AI-bridge.exe --sem-janela --somente-celular --inject --window "Euro Truck"
 #   ^ a IA roda SÓ no celular; sem conexao o caminhao FREIA (seguranca)
 ETS2-AI-bridge.exe                             # janela demo; IA local ou do celular
@@ -142,7 +146,7 @@ celular → PC:  C,<volante>,<acel>,<freio>,<ts_ms eco>        # RTT = agora −
 Valores físicos brutos; a normalização (÷25, ÷3.5, ÷0.6, ÷0.05…) segue
 `NeuralNet.features`/`ets2ai.sim.features` — idêntica nos dois lados.
 
-## Treino no Kaggle disparado pelo GitHub Actions (v0.2.0)
+## Treino no Kaggle disparado pelo GitHub Actions
 
 O workflow tem o job **"Treino no Kaggle (opcional, via secrets)"**: ele
 empurra um kernel com o MESMO código e semente do repo para a sua conta

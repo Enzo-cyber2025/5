@@ -44,6 +44,9 @@ def closed_loop_eval(layers, n_roads=N_VAL_ROADS, seed=777):
         "radar_passes": n_pass,
         "max_lat_accel": max(r["max_lat_accel"] for r in rows),
         "gps_mean_abs_offset_m": sum(r["mean_abs_offset"] for r in rows) / n_roads,
+        "dock_rate": sum(1 for r in rows if r["docked"]) / n_roads,
+        "mean_stop_error_m": (sum(r["stop_error_m"] for r in rows if r["stop_error_m"] is not None)
+                              / max(1, sum(1 for r in rows if r["stop_error_m"] is not None))),
         "top_speed_kmh": max(r["avg_speed"] for r in rows) * 3.6,
     }
     return agg, rows

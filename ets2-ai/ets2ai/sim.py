@@ -239,7 +239,7 @@ def features(road, truck, job_left_km):
         SPEED_LIMIT_MPS / 25.0,
         truck.fuel,
         truck.fatigue,
-        min(job_left_km, 100.0) / 100.0,
+        min(job_left_km, 20.0) / 20.0,
         road.radar_dist_ahead(s) / 500.0,
     ]
 
@@ -269,9 +269,19 @@ def governor(road, truck, cmd):
         v_allow = math.sqrt(v_curve ** 2 + 2.0 * MAX_BRAKE * max(0.0, d - 8.0))
         if worst is None or v_allow < worst:
             worst = v_allow
-    if worst is None or truck.speed <= worst:
-        return cmd
-    return (cmd[0], 0.0, 1.0)      # full brake: safety over comfort
+    if worst is not None and truck.speed > worst:
+        return (cmd[0], 0.0, 1.0)  # full brake: safety over comfort
+    # dock governor: never carry speed into the loading dock (full distance)
+    d_dock = (road.length - 6.0) - truck.s
+    if 0.0 < d_dock < 600.0:
+        v_allow = math.sqrt(2.0 * MAX_BRAKE * max(0.0, d_dock - 2.0))
+        if truck.speed > v_allow + 0.3:
+            return (cmd[0], 0.0, 1.0)
+        if d_dock <= 1.5:
+            return (cmd[0], 0.0, 1.0)               # hold at the line
+        if d_dock < 30.0 and truck.speed < 0.8:
+            return (cmd[0], 0.30, 0.0)              # creep to the dock
+    return cmd
 
 
 # ---------------------------------------------------------------------------
@@ -300,6 +310,14 @@ def expert(road, truck, job_left_km, noise=0.0, rng=None):
         v_curve = min(V_MAX, math.sqrt(a_lat / k))
         v_allow = math.sqrt(v_curve ** 2 + 2.0 * RADAR_BRAKE * max(0.0, d - 12.0))
         v_target = min(v_target, v_allow)
+    # dock: precise stop at the end of the route — continuous profile that
+    # begins easing off hundreds of metres out (a fixed window cannot shed
+    # 130 km/h in 130 m; physics decides the distance, not a constant).
+    d_dock = (road.length - 6.0) - s
+    if d_dock < 600.0:
+        v_target = min(v_target, math.sqrt(2.0 * 1.6 * max(0.0, d_dock)))
+        if v_target < 0.4:
+            v_target = 0.0
     # radar: only slow down within braking distance of the camera
     d_radar = road.radar_dist_ahead(s)
     v_radar = SPEED_LIMIT_MPS * RADAR_SLOW
@@ -340,9 +358,14 @@ def run_episode(road, policy, seed=0, max_steps=7000, noise=0.0,
     radar_pass = []          # speeds AT each camera
     max_lat = 0.0            # max lateral acceleration (rollover watch)
     off_sum = 0.0
+    docked = False
+    stop_error_m = None
     while steps < max_steps:
         s, offset, _ = truck.project(road)
-        if s >= road.length - 10.0:
+        d_dock = (road.length - 6.0) - s
+        if d_dock <= 4.0 and truck.speed < 0.6:      # parked AT the line
+            break
+        if s >= road.length - 1.0:
             break
         job_left = max(0.0, (road.length - s) / 1000.0)
         steer, throttle, brake = policy(road, truck, job_left, rng)
@@ -353,6 +376,14 @@ def run_episode(road, policy, seed=0, max_steps=7000, noise=0.0,
         prev_s = s
         truck.step(road, steer, throttle, brake)
         steps += 1
+        d_dock_now = (road.length - 6.0) - truck.s
+        if d_dock_now <= 4.0 and truck.speed < 0.6:
+            docked = True
+            stop_error_m = d_dock_now
+            break
+        if truck.s >= road.length - 1.0:
+            stop_error_m = (road.length - 6.0) - truck.s   # overshoot
+            break
         for r in road.radars:                     # crossed a camera?
             if prev_s < r <= truck.s:
                 radar_pass.append(truck.speed)
@@ -360,7 +391,9 @@ def run_episode(road, policy, seed=0, max_steps=7000, noise=0.0,
         off_sum += abs(truck.offset)
         if abs(offset) < LANE_HALF:
             in_lane += 1
-        if abs(offset) > ROAD_HALF or truck.speed < 0.3 and steps > 60:
+        if (abs(offset) > ROAD_HALF
+                or (truck.speed < 0.3 and steps > 60
+                    and truck.s < road.length - 60.0)):
             off_road += 1
             break
         # career rules (identical in the app): refuel / sleep
@@ -376,7 +409,9 @@ def run_episode(road, policy, seed=0, max_steps=7000, noise=0.0,
     metrics = {
         "steps": steps,
         "in_lane_pct": in_lane / max(1, steps),
-        "finished": steps < max_steps and km * 1000.0 >= road.length - 60.0,
+        "finished": docked and steps < max_steps,
+        "docked": docked,
+        "stop_error_m": stop_error_m,
         "km": km,
         "money": truck.money,
         "stopped_for_rules": stopped,

@@ -41,6 +41,8 @@ public final class MainActivity extends Activity {
     private GameView game;
     private TextView status;
     private NeuralNet net;
+    private InferenceEngine.Net engine;
+    private String engineName = "Java CPU";
     private BridgeClient bridge;
     private String bridgeStatus = "";
     private BtKeyboard btKeyboard;
@@ -56,6 +58,19 @@ public final class MainActivity extends Activity {
             net = null;
         }
         game = new GameView(this, net);
+        if (net != null) {
+            new Thread(new Runnable() {
+                public void run() {
+                    final InferenceEngine.Net e = InferenceEngine.create(MainActivity.this, net);
+                    runOnUiThread(new Runnable() {
+                        public void run() {
+                            engine = e;
+                            engineName = e.name();
+                        }
+                    });
+                }
+            }).start();
+        }
 
         FrameLayout root = new FrameLayout(this);
         root.addView(game, new FrameLayout.LayoutParams(
@@ -251,6 +266,7 @@ public final class MainActivity extends Activity {
     final class GameView extends SurfaceView implements SurfaceHolder.Callback, Runnable {
         private Thread thread;
         private volatile boolean alive;
+        private final InferenceEngine.Net javaNetHolder;
         final SimWorld world = new SimWorld();
         private final NeuralNet net;
         private final Paint roadPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -269,6 +285,7 @@ public final class MainActivity extends Activity {
         GameView(Context ctx, NeuralNet net) {
             super(ctx);
             this.net = net;
+            javaNetHolder = new InferenceEngine.JavaNet(net);
             getHolder().addCallback(this);
             roadPaint.setColor(0xFF3A3A44);
             roadPaint.setStyle(Paint.Style.STROKE);
@@ -353,7 +370,8 @@ public final class MainActivity extends Activity {
                             world.curvAhead(), SimWorld.SPEED_LIMIT,
                             world.truck.fuel, world.truck.fatigue, world.jobLeftKm(),
                             world.radarDist());
-                    float[] raw = net.forward(f);
+                    InferenceEngine.Net eng = engine != null ? engine : javaNetHolder;
+                    float[] raw = eng.forward(f);
                     cmd = NeuralNet.clampAction(raw[0], raw[1], raw[2]);
                 } else {
                     cmd = NeuralNet.clampAction(manualSteer, manualThrottle, manualBrake);
@@ -444,7 +462,7 @@ public final class MainActivity extends Activity {
 
         private void drawHud(Canvas c, int cw, int ch) {
             SimWorld.Truck t = world.truck;
-            String src = world.aiEnabled ? "IA" : "MANUAL";
+            String src = (world.aiEnabled ? "IA/" + engineName : "MANUAL");
             if (bridge != null) {
                 src += String.format(Locale.US, " | BRIDGE RTT %.0f ms (%d cmds)",
                         bridge.lastRttMs, bridge.answered);

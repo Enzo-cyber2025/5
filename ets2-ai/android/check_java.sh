@@ -17,6 +17,7 @@ javac -encoding UTF-8 -d "$OUT/classes" \
 
 { java -cp "$OUT/classes" JavaCheck android/assets/model-weights.txt 2>&1; echo "JAVACHECK_EXIT=$?"; } | tee "$OUT/java-check.log"
 grep -q "JAVA_FORWARD_END" "$OUT/java-check.log" || { echo "JavaCheck nao rodou ate o fim"; exit 3; }
+grep -q "JAVA_MISSION_OK" "$OUT/java-check.log" || { echo "Missao Java nao concluiu"; exit 4; }
 
 python3 - <<'PY'
 import sys

@@ -38,6 +38,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--timeout", type=int, default=900)
     ap.add_argument("--epochs", type=int, default=320)
+    ap.add_argument("--gpu", action="store_true",
+                    help="executar o kernel com GPU do Kaggle (nota: o modelo "
+                         "treina em ~2 min de CPU; GPU gasta cota a toa)")
     args = ap.parse_args()
 
     user = os.environ.get("KAGGLE_USERNAME", "").strip()
@@ -63,7 +66,7 @@ def main():
         "language": "python",
         "kernel_type": "script",
         "is_private": "true",
-        "enable_gpu": "false",
+        "enable_gpu": "true" if args.gpu else "false",
         "enable_internet": "false",
     }), encoding="utf-8")
 

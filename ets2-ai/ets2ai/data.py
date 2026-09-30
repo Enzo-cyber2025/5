@@ -15,6 +15,14 @@ NOISE = 0.020          # small human imperfection (tight GPS line)
 ROAD_SEED = 31337
 
 
+def _oversample_dock(feats, acts, reps=4):
+    """Duplicate approach/dock rows (last 150 m) so the policy learns the
+    precise stop: they are a tiny fraction of each episode."""
+    tail = feats[:, 11] * 20.0 * 1000.0 < 150.0     # job_left < 150 m
+    return (np.concatenate([feats] + [feats[tail]] * (reps - 1)),
+            np.concatenate([acts] + [acts[tail]] * (reps - 1)))
+
+
 def generate():
     x_train, y_train, x_val, y_val = [], [], [], []
     for k in range(N_TRAIN_ROADS + N_VAL_ROADS):
@@ -23,6 +31,7 @@ def generate():
             road,
             lambda r, t, j, rng: expert(r, t, j, noise=NOISE, rng=rng),
             seed=1000 + k, record=True)
+        feats, acts = _oversample_dock(feats, acts)
         if k < N_TRAIN_ROADS:
             x_train.append(feats); y_train.append(acts)
         else:

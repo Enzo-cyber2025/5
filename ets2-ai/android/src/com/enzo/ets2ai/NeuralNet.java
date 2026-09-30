@@ -112,7 +112,7 @@ public final class NeuralNet {
         f[8] = speedLimitMps / 25f;
         f[9] = fuel;
         f[10] = fatigue;
-        f[11] = Math.min(jobLeftKm, 100f) / 100f;
+        f[11] = Math.min(jobLeftKm, 20f) / 20f;
         f[12] = Math.min(radarDistM, 500f) / 500f;
         return f;
     }
