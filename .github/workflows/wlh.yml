@@ -62,11 +62,10 @@ jobs:
         if: success()
         env:
           HF_TOKEN: ${{ env.HF_TOKEN }}
-          HF_USER: ${{ env.HF_USER }}
           HF_REPO: winlator-a55-beam
         run: |
           set -e
-          bash wl/hfup.sh "$HF_USER" "$HF_REPO"
+          bash wl/hfup.sh "$HF_REPO"
           echo "=== hf.log ==="
           cat hf.log
       - name: save-hf-log
