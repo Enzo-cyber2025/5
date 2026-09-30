@@ -1,0 +1,253 @@
+mobile.cpp: 0 erro(s)
+cpu_probe.cpp: 0 erro(s)
+nativo: sintaxe ok (mobile.cpp, cpu_probe.cpp) com stubs de jni/android
+java: compila (41 arquivos, --release 8, javac=/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-1/x64/bin/javac)
+.................................................................F.F.... [ 11%]
+........................................................................ [ 22%]
+................s..............sssssssssssssssssssssssssssssssssssssss.. [ 34%]
+................s......F................................................ [ 45%]
+............s................ss....................s.................... [ 57%]
+..........s..........s......................................F...FF...... [ 68%]
+.............F.......................................................... [ 80%]
+........................................................................ [ 91%]
+..............s.s.s...............................ss..                   [100%]
+=================================== FAILURES ===================================
+_____________ test_ganho_medido_vira_padrao_com_a_rodada_no_codigo _____________
+
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-0/test_ganho_medido_vira_padrao_0')
+
+    def test_ganho_medido_vira_padrao_com_a_rodada_no_codigo(tmp_path):
+        work = copia(tmp_path)
+        resultado = roda(work, '--race-gain', '1.25', '--ubatch-gain', '1.30', '--kv-gain', '1.20')
+>       assert resultado.returncode == 0, resultado.stdout + resultado.stderr
+E       AssertionError: mobile.cpp: sub-lote do pré-preenchimento 256 por padrão (rodada 36165160000, ganho medido 1.30x)
+E         mobile.cpp: cache K/V Q8_0 por padrão (rodada 36165160000, ganho medido 1.20x)
+E         não encontrei no SearchTool.java: private static int cacheMs(){return Math.max(0,intProperty(C…
+E         
+E       assert 2 == 0
+E        +  where 2 = CompletedProcess(args=['/home/runner/work/5/5/.venv/bin/python', '/home/runner/work/5/5/scripts/flip_search_defaults.p... 1.20x)\nnão encontrei no SearchTool.java: private static int cacheMs(){return Math.max(0,intProperty(C…\n', stderr='').returncode
+
+tests/test_flip_defaults.py:69: AssertionError
+_________________ test_ensaio_mostra_o_que_faria_sem_escrever __________________
+
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-0/test_ensaio_mostra_o_que_faria0')
+
+    def test_ensaio_mostra_o_que_faria_sem_escrever(tmp_path):
+        work = copia(tmp_path)
+        antes_tool, antes_nativo = tool(work), nativo(work)
+        resultado = roda(work, '--race-gain', '2.0', '--ubatch-gain', '1.5', '--kv-gain', '1.4', '--dry-run')
+>       assert resultado.returncode == 0, resultado.stdout
+E       AssertionError: (ensaio) o sub-lote viraria 256 (1.50x medido)
+E         (ensaio) o cache K/V viraria Q8_0 (1.40x medido)
+E         não encontrei no SearchTool.java: private static int cacheMs(){return Math.max(0,intProperty(C…
+E         
+E       assert 2 == 0
+E        +  where 2 = CompletedProcess(args=['/home/runner/work/5/5/.venv/bin/python', '/home/runner/work/5/5/scripts/flip_search_defaults.p...medido)\nnão encontrei no SearchTool.java: private static int cacheMs(){return Math.max(0,intProperty(C…\n', stderr='').returncode
+
+tests/test_flip_defaults.py:96: AssertionError
+_____________ test_corrida_tem_tres_provedores_e_timeouts_menores ______________
+
+    def test_corrida_tem_tres_provedores_e_timeouts_menores():
+        """A busca lenta em rede movel: 3 provedores paralelos, timeouts menores."""
+        search = (HERE / 'apk-fix' / 'java' / 'com' / 'ggufchat' / 'app' / 'SearchTool.java').read_text()
+        assert 'DuckDuckGo Lite' in search and 'DuckDuckGo' in search and 'Wikipédia' in search
+>       assert 'private static final int CONNECT_TIMEOUT=2000' in search
+E       assert 'private static final int CONNECT_TIMEOUT=2000' in 'package com.ggufchat.app;\n\nimport android.content.Context;\nimport android.content.Intent;\nimport android.graphics...   public static String statusLabel(Context c,String query){\n        return "Pesquisando na web: "+query;\n    }\n}\n'
+
+tests/test_markdown_inline.py:69: AssertionError
+___________ test_every_workflow_parses_and_has_no_duplicate_job_keys ___________
+
+    def test_every_workflow_parses_and_has_no_duplicate_job_keys():
+        # A duplicate job key made a whole workflow invalid and cost a full cycle.
+        import re
+        import yaml
+        workflows = sorted((ROOT/'.github/workflows').glob('*.yml'))
+        assert workflows
+        for workflow in workflows:
+            text = workflow.read_text()
+>           yaml.safe_load(text)
+
+tests/test_row_tile.py:333: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.11/site-packages/yaml/__init__.py:125: in safe_load
+    return load(stream, SafeLoader)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/yaml/__init__.py:81: in load
+    return loader.get_single_data()
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/yaml/constructor.py:49: in get_single_data
+    node = self.get_single_node()
+           ^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/yaml/composer.py:36: in get_single_node
+    document = self.compose_document()
+               ^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/yaml/composer.py:55: in compose_document
+    node = self.compose_node(None, None)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/yaml/composer.py:84: in compose_node
+    node = self.compose_mapping_node(anchor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/yaml/composer.py:133: in compose_mapping_node
+    item_value = self.compose_node(node, item_key)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/yaml/composer.py:84: in compose_node
+    node = self.compose_mapping_node(anchor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/yaml/composer.py:133: in compose_mapping_node
+    item_value = self.compose_node(node, item_key)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/yaml/composer.py:84: in compose_node
+    node = self.compose_mapping_node(anchor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/yaml/composer.py:133: in compose_mapping_node
+    item_value = self.compose_node(node, item_key)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/yaml/composer.py:82: in compose_node
+    node = self.compose_sequence_node(anchor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/yaml/composer.py:111: in compose_sequence_node
+    node.value.append(self.compose_node(node, index))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/yaml/composer.py:84: in compose_node
+    node = self.compose_mapping_node(anchor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/yaml/composer.py:133: in compose_mapping_node
+    item_value = self.compose_node(node, item_key)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/yaml/composer.py:84: in compose_node
+    node = self.compose_mapping_node(anchor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/yaml/composer.py:127: in compose_mapping_node
+    while not self.check_event(MappingEndEvent):
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/yaml/parser.py:98: in check_event
+    self.current_event = self.state()
+                         ^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <yaml.loader.SafeLoader object at 0x7fd3009d8ad0>, first = False
+
+    def parse_flow_mapping_key(self, first=False):
+        if not self.check_token(FlowMappingEndToken):
+            if not first:
+                if self.check_token(FlowEntryToken):
+                    self.get_token()
+                else:
+                    token = self.peek_token()
+>                   raise ParserError("while parsing a flow mapping", self.marks[-1],
+                            "expected ',' or '}', but got %r" % token.id, token.start_mark)
+E                   yaml.parser.ParserError: while parsing a flow mapping
+E                     in "<unicode string>", line 36, column 14:
+E                               env: {GH_TOKEN: ${{ github.token }}}
+E                                    ^
+E                   expected ',' or '}', but got '{'
+E                     in "<unicode string>", line 36, column 26:
+E                               env: {GH_TOKEN: ${{ github.token }}}
+E                                                ^
+
+.venv/lib/python3.11/site-packages/yaml/parser.py:549: ParserError
+_____________________ test_budget_math_holds_when_executed _____________________
+
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-0/test_budget_math_holds_when_ex0')
+
+    def test_budget_math_holds_when_executed(tmp_path):
+        result = run_self_test(tmp_path)
+>       assert 'SEARCH_BUDGET_OK' in result.stdout, result.stdout + result.stderr
+E       AssertionError: PASS fatia nunca excede o restante nem o pedido
+E         PASS abaixo do mínimo útil a fatia é zero
+E         FAIL conexão+leitura cabem no restante
+E         PASS quatro tentativas cabem no orçamento (gastou 400 ms)
+E         PASS expirado não abre nova fatia
+E         PASS DNS/conexão/sem rota interrompem a cadeia
+E         PASS quatro timeouts terminam dentro do teto (levou 399 ms)
+E         PASS aviso declara o motivo e a ausência de fontes (BUSCA NA WEB INDISPONÍVEL NESTA RESPOSTA (orçamento de 12000 ms esgotado). Não há resultados de busca para citar: responda com seu próprio conhecimento e diga que não pesquisou na web.)
+E         PASS aviso sem motivo ainda é explícito
+E         PASS texto de resultados não é confundido com aviso
+E         SEARCH_BUDGET_FAILURES=1
+E         
+E       assert 'SEARCH_BUDGET_OK' in 'PASS fatia nunca excede o restante nem o pedido\nPASS abaixo do mínimo útil a fatia é zero\nFAIL conexão+leitura cabe...SS aviso sem motivo ainda é explícito\nPASS texto de resultados não é confundido com aviso\nSEARCH_BUDGET_FAILURES=1\n'
+E        +  where 'PASS fatia nunca excede o restante nem o pedido\nPASS abaixo do mínimo útil a fatia é zero\nFAIL conexão+leitura cabe...SS aviso sem motivo ainda é explícito\nPASS texto de resultados não é confundido com aviso\nSEARCH_BUDGET_FAILURES=1\n' = CompletedProcess(args=['/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-1/x64/bin/java', '-cp', '/tmp/pytest-of-... motivo ainda é explícito\nPASS texto de resultados não é confundido com aviso\nSEARCH_BUDGET_FAILURES=1\n', stderr='').stdout
+
+tests/test_search_budget.py:52: AssertionError
+______________________ test_self_test_is_not_a_fake_pass _______________________
+
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-0/test_self_test_is_not_a_fake_p0')
+
+    @pytest.mark.skipif(not SELF_TEST.is_file(), reason='autoteste ausente')
+    def test_self_test_is_not_a_fake_pass(tmp_path):
+        """Se o teto for quebrado, o autoteste precisa reprovar — senão não vale nada."""
+        javac = shutil.which('javac')
+        if not javac:
+            pytest.skip('sem javac neste host')
+        broken = (tmp_path / 'broken').mkdir(parents=True) or (tmp_path / 'broken')
+        package = broken / 'com/ggufchat/app'
+        package.mkdir(parents=True)
+        # Mesmo teste, orçamento sabotado: as fatias passam a ignorar o restante.
+        # A sabotagem precisa existir NESTE arquivo: a primeira versão mirava um trecho
+        # que já não existia, virava no-op e a "prova negativa" provava nada.
+        original = BUDGET.read_text()
+        text = original.replace('int share = remaining / 2;', 'int share = Integer.MAX_VALUE;')
+>       assert text != original, 'a sabotagem não encontrou o trecho: reveja este teste'
+E       AssertionError: a sabotagem não encontrou o trecho: reveja este teste
+E       assert 'package com.ggufchat.app;\n\nimport java.net.ConnectException;\nimport java.net.NoRouteToHostException;\nimport java.... {\n            // Sem a propriedade (ou sem Android): teto padrão.\n        }\n        return DEFAULT_MS;\n    }\n}\n' != 'package com.ggufchat.app;\n\nimport java.net.ConnectException;\nimport java.net.NoRouteToHostException;\nimport java.... {\n            // Sem a propriedade (ou sem Android): teto padrão.\n        }\n        return DEFAULT_MS;\n    }\n}\n'
+
+tests/test_search_budget.py:71: AssertionError
+_ test_o_portao_de_busca_previa_so_dispara_para_perguntas_que_pedem_dado_externo _
+
+    def test_o_portao_de_busca_previa_so_dispara_para_perguntas_que_pedem_dado_externo():
+        """Bug 'pesquisa sem precisar': respostas de conhecimento geral não esperam 12 s de rede.
+    
+        Antes do conserto, qualquer envio com o botão Busca ligado disparava HTTP
+        antes do primeiro token — até "oi" ou "explique recursão" pagavam o teto de
+        espera. Agora a busca prévia só dispara quando a pergunta tem indicadores
+        claros de dado recente (data, notícia, cotação, preço, placar, clima…) em
+        PORTUGUÊS ou INGLÊS (os prompts de teste do harness são em inglês).
+        """
+        assert 'class SearchGating' in SRC
+        assert 'public static boolean needsWeb(String text)' in SRC
+        assert 'return TRIGGERS.matcher(t).find();' in SRC
+        # Strings curtas (sem ?) nunca disparam — protege "oi", "bom dia", etc.
+>       assert 'if(t.length()<12 && !t.contains("?"))return false;' in SRC
+E       assert 'if(t.length()<12 && !t.contains("?"))return false;' in 'package com.ggufchat.app;\n\nimport java.util.ArrayList;\nimport java.util.Arrays;\nimport java.util.HashSet;\nimport...tches("\\\\d+")){\n                out.add(w); seen.add(w);\n            }\n        }\n        return out;\n    }\n}\n'
+
+tests/test_search_gating.py:32: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_flip_defaults.py::test_ganho_medido_vira_padrao_com_a_rodada_no_codigo - AssertionError: mobile.cpp: sub-lote do pré-preenchimento 256 por padrão (rodada 36165160000, ganho medido 1.30x)
+  mobile.cpp: cache K/V Q8_0 por padrão (rodada 36165160000, ganho medido 1.20x)
+  não encontrei no SearchTool.java: private static int cacheMs(){return Math.max(0,intProperty(C…
+  
+assert 2 == 0
+ +  where 2 = CompletedProcess(args=['/home/runner/work/5/5/.venv/bin/python', '/home/runner/work/5/5/scripts/flip_search_defaults.p... 1.20x)\nnão encontrei no SearchTool.java: private static int cacheMs(){return Math.max(0,intProperty(C…\n', stderr='').returncode
+FAILED tests/test_flip_defaults.py::test_ensaio_mostra_o_que_faria_sem_escrever - AssertionError: (ensaio) o sub-lote viraria 256 (1.50x medido)
+  (ensaio) o cache K/V viraria Q8_0 (1.40x medido)
+  não encontrei no SearchTool.java: private static int cacheMs(){return Math.max(0,intProperty(C…
+  
+assert 2 == 0
+ +  where 2 = CompletedProcess(args=['/home/runner/work/5/5/.venv/bin/python', '/home/runner/work/5/5/scripts/flip_search_defaults.p...medido)\nnão encontrei no SearchTool.java: private static int cacheMs(){return Math.max(0,intProperty(C…\n', stderr='').returncode
+FAILED tests/test_markdown_inline.py::test_corrida_tem_tres_provedores_e_timeouts_menores - assert 'private static final int CONNECT_TIMEOUT=2000' in 'package com.ggufchat.app;\n\nimport android.content.Context;\nimport android.content.Intent;\nimport android.graphics...   public static String statusLabel(Context c,String query){\n        return "Pesquisando na web: "+query;\n    }\n}\n'
+FAILED tests/test_row_tile.py::test_every_workflow_parses_and_has_no_duplicate_job_keys - yaml.parser.ParserError: while parsing a flow mapping
+  in "<unicode string>", line 36, column 14:
+            env: {GH_TOKEN: ${{ github.token }}}
+                 ^
+expected ',' or '}', but got '{'
+  in "<unicode string>", line 36, column 26:
+            env: {GH_TOKEN: ${{ github.token }}}
+                             ^
+FAILED tests/test_search_budget.py::test_budget_math_holds_when_executed - AssertionError: PASS fatia nunca excede o restante nem o pedido
+  PASS abaixo do mínimo útil a fatia é zero
+  FAIL conexão+leitura cabem no restante
+  PASS quatro tentativas cabem no orçamento (gastou 400 ms)
+  PASS expirado não abre nova fatia
+  PASS DNS/conexão/sem rota interrompem a cadeia
+  PASS quatro timeouts terminam dentro do teto (levou 399 ms)
+  PASS aviso declara o motivo e a ausência de fontes (BUSCA NA WEB INDISPONÍVEL NESTA RESPOSTA (orçamento de 12000 ms esgotado). Não há resultados de busca para citar: responda com seu próprio conhecimento e diga que não pesquisou na web.)
+  PASS aviso sem motivo ainda é explícito
+  PASS texto de resultados não é confundido com aviso
+  SEARCH_BUDGET_FAILURES=1
+  
+assert 'SEARCH_BUDGET_OK' in 'PASS fatia nunca excede o restante nem o pedido\nPASS abaixo do mínimo útil a fatia é zero\nFAIL conexão+leitura cabe...SS aviso sem motivo ainda é explícito\nPASS texto de resultados não é confundido com aviso\nSEARCH_BUDGET_FAILURES=1\n'
+ +  where 'PASS fatia nunca excede o restante nem o pedido\nPASS abaixo do mínimo útil a fatia é zero\nFAIL conexão+leitura cabe...SS aviso sem motivo ainda é explícito\nPASS texto de resultados não é confundido com aviso\nSEARCH_BUDGET_FAILURES=1\n' = CompletedProcess(args=['/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-1/x64/bin/java', '-cp', '/tmp/pytest-of-... motivo ainda é explícito\nPASS texto de resultados não é confundido com aviso\nSEARCH_BUDGET_FAILURES=1\n', stderr='').stdout
+FAILED tests/test_search_budget.py::test_self_test_is_not_a_fake_pass - AssertionError: a sabotagem não encontrou o trecho: reveja este teste
+assert 'package com.ggufchat.app;\n\nimport java.net.ConnectException;\nimport java.net.NoRouteToHostException;\nimport java.... {\n            // Sem a propriedade (ou sem Android): teto padrão.\n        }\n        return DEFAULT_MS;\n    }\n}\n' != 'package com.ggufchat.app;\n\nimport java.net.ConnectException;\nimport java.net.NoRouteToHostException;\nimport java.... {\n            // Sem a propriedade (ou sem Android): teto padrão.\n        }\n        return DEFAULT_MS;\n    }\n}\n'
+FAILED tests/test_search_gating.py::test_o_portao_de_busca_previa_so_dispara_para_perguntas_que_pedem_dado_externo - assert 'if(t.length()<12 && !t.contains("?"))return false;' in 'package com.ggufchat.app;\n\nimport java.util.ArrayList;\nimport java.util.Arrays;\nimport java.util.HashSet;\nimport...tches("\\\\d+")){\n                out.add(w); seen.add(w);\n            }\n        }\n        return out;\n    }\n}\n'
+7 failed, 571 passed, 52 skipped in 127.26s (0:02:07)
