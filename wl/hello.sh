@@ -35,12 +35,8 @@ rm -f u.apk W.apk
 apktool b out -o u.apk || fail "build"
 ls -la u.apk
 echo "=== sign ==="
-rm -rf signed && mkdir signed
-java -jar /tmp/uber.jar -a u.apk --out signed --allowResign --zipalign --debug 2>&1 | tail -20 || fail "sign"
-ls -la signed/
-WAPK=$(ls signed/*.apk 2>/dev/null | head -1)
-[ -n "$WAPK" ] && cp "$WAPK" W.apk && echo "signed=$WAPK"
-[ -s W.apk ] || fail "no signed apk"
+bash wl/sign.sh u.apk W.apk || fail "sign"
+ls -la W.apk
 ls -la W.apk
 sha256sum W.apk | tee W.sha256
 echo BUILD_OK
