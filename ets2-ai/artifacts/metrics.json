@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "features": [
+      "speed",
+      "lane_offset",
+      "heading_error",
+      "curv_1",
+      "curv_2",
+      "curv_3",
+      "curv_4",
+      "curv_5",
+      "speed_limit",
+      "fuel",
+      "fatigue",
+      "job_dist"
+    ],
+    "actions": [
+      "steer",
+      "throttle",
+      "brake"
+    ],
+    "hidden": [
+      24,
+      24
+    ],
+    "seed": 20260930,
+    "loss_target": 0.15,
+    "epochs": 300,
+    "samples": 115308,
+    "final_loss": 0.0015028076013550162
+  },
+  "mse_train": 0.0009765845024958253,
+  "mse_val": 0.0015028076013550162,
+  "mae_val": 0.02112951288890714,
+  "loss_target": 0.15,
+  "target_met": true,
+  "closed_loop": {
+    "roads": 7,
+    "finish_rate": 1.0,
+    "in_lane_pct": 1.0,
+    "avg_speed_kmh": 64.68799405698029,
+    "km_total": 44.46441354913367
+  },
+  "closed_loop_rows": [
+    {
+      "steps": 3478,
+      "in_lane_pct": 1.0,
+      "finished": true,
+      "km": 6.063218712234548,
+      "money": 0.0,
+      "stopped_for_rules": false,
+      "avg_speed": 17.43306127727012
+    },
+    {
+      "steps": 3557,
+      "in_lane_pct": 1.0,
+      "finished": true,
+      "km": 6.277394305870205,
+      "money": 0.0,
+      "stopped_for_rules": false,
+      "avg_speed": 17.648001984453764
+    },
+    {
+      "steps": 3626,
+      "in_lane_pct": 1.0,
+      "finished": true,
+      "km": 6.466690650383937,
+      "money": 0.0,
+      "stopped_for_rules": false,
+      "avg_speed": 17.83422683503568
+    },
+    {
+      "steps": 3509,
+      "in_lane_pct": 1.0,
+      "finished": true,
+      "km": 6.1837702418969425,
+      "money": 0.0,
+      "stopped_for_rules": false,
+      "avg_speed": 17.622599720424457
+    },
+    {
+      "steps": 3507,
+      "in_lane_pct": 1.0,
+      "finished": true,
+      "km": 6.901452524305422,
+      "money": 0.0,
+      "stopped_for_rules": false,
+      "avg_speed": 19.67907762847283
+    },
+    {
+      "steps": 3261,
+      "in_lane_pct": 1.0,
+      "finished": true,
+      "km": 5.884851174216598,
+      "money": 0.0,
+      "stopped_for_rules": false,
+      "avg_speed": 18.046155088060708
+    },
+    {
+      "steps": 3817,
+      "in_lane_pct": 1.0,
+      "finished": true,
+      "km": 6.687035940226018,
+      "money": 0.0,
+      "stopped_for_rules": false,
+      "avg_speed": 17.519088132633005
+    }
+  ]
+}

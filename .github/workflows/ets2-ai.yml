@@ -1,0 +1,165 @@
+name: ETS2-AI build (APK + EXE + TFLite)
+
+on:
+  push:
+    branches: [arena/01a0f37d-5]
+    paths: ['ets2-ai/**', '.github/workflows/ets2-ai.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  train-verify:
+    name: Retreino deterministico + testes de qualidade
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Dependencias
+        run: pip install numpy==2.2.6 pytest==9.1.1
+      - name: Retreina do zero (mesma semente -> mesmos pesos)
+        run: |
+          cd ets2-ai
+          python -m ets2ai.train --epochs 300 --out .cache/retrain
+      - name: Compara com os pesos commitados (tolerancia 1e-5)
+        run: |
+          cd ets2-ai
+          python - <<'PY'
+          import sys; sys.path.insert(0, ".")
+          import numpy as np
+          from ets2ai.contract import load_weights
+          a, ma = load_weights("artifacts/model-weights.json")
+          b, mb = load_weights(".cache/retrain/model-weights.json")
+          worst = 0.0
+          for (w1, b1), (w2, b2) in zip(a, b):
+              worst = max(worst, float(np.max(np.abs(w1 - w2))), float(np.max(np.abs(b1 - b2))))
+          print(f"pior delta retreino vs commitado: {worst:.2e}")
+          assert worst < 1e-5, "retreino nao reproduziu os pesos"
+          print("REPRODUTIBILIDADE OK")
+          PY
+      - name: Testes (pytest)
+        run: |
+          cd ets2-ai
+          pytest tests/ -q
+
+  java-parity:
+    name: Paridade Java (inferencia do APK) x numpy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compila e confere
+        run: |
+          pip install --quiet numpy==2.2.6
+          bash ets2-ai/android/check_java.sh
+
+  tflite-export:
+    name: Exporta TFLite (float32 + int8)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install tensorflow-cpu==2.18.0 numpy==2.2.6
+      - name: Converte e valida contra numpy
+        run: |
+          cd ets2-ai
+          python -m ets2ai.export_tflite --weights artifacts/model-weights.json --out .cache/tflite
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ets2-ai-tflite
+          path: |
+            ets2-ai/.cache/tflite/ets2ai-float32.tflite
+            ets2-ai/.cache/tflite/ets2ai-int8.tflite
+
+  android-apk:
+    name: APK assinado (ETS2-AI-mobile.apk)
+    needs: [train-verify, java-parity]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Build (aapt2 -> javac -> d8 -> apksigner)
+        run: bash ets2-ai/android/build_apk.sh
+      - name: Conteudo do APK (evidencia)
+        run: unzip -l ets2-ai/dist/ETS2-AI-mobile.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ETS2-AI-mobile-apk
+          path: ets2-ai/dist/ETS2-AI-mobile.apk
+
+  windows-exe:
+    name: EXE para Windows (ETS2-AI-bridge.exe)
+    needs: [train-verify]
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Dependencias
+        run: |
+          pip install pyinstaller==6.11.1 numpy==2.2.6
+      - name: Empacota o bridge (pesos embutidos)
+        shell: pwsh
+        run: |
+          cd ets2-ai
+          pyinstaller --onefile --name ETS2-AI-bridge `
+            --paths . `
+            --add-data "artifacts/model-weights.json;artifacts" `
+            --hidden-import ets2ai `
+            bridge/ets2_bridge.py
+      - name: Smoke test (importa e carrega pesos)
+        shell: pwsh
+        run: |
+          cd ets2-ai
+          dist/ETS2-AI-bridge.exe --help
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ETS2-AI-bridge-exe
+          path: ets2-ai/dist/ETS2-AI-bridge.exe
+
+  release:
+    name: Release com APK + EXE + TFLite
+    needs: [android-apk, windows-exe, tflite-export]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          path: ets2-ai/.cache/rel
+      - name: Publica release ets2-ai-v0.1.0
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p ets2-ai/.cache/release
+          cp ets2-ai/.cache/rel/ETS2-AI-mobile-apk/ETS2-AI-mobile.apk ets2-ai/.cache/release/
+          cp ets2-ai/.cache/rel/ETS2-AI-bridge-exe/ETS2-AI-bridge.exe ets2-ai/.cache/release/
+          cp ets2-ai/.cache/rel/ets2-ai-tflite/*.tflite ets2-ai/.cache/release/
+          cp ets2-ai/artifacts/model-weights.json ets2-ai/.cache/release/
+          cp ets2-ai/artifacts/metrics.json ets2-ai/.cache/release/
+          NOTES="$(python3 -c "import json;m=json.load(open('ets2-ai/artifacts/metrics.json'));print(f\"MSE validacao: {m['mse_val']:.5f} (meta <= {m['loss_target']}) | circuito fechado: {m['closed_loop']['finish_rate']*100:.0f}% das rotas concluidas, {m['closed_loop']['in_lane_pct']*100:.0f}% na faixa, {m['closed_loop']['avg_speed_kmh']:.0f} km/h\")")"
+          gh release create ets2-ai-v0.1.0 \
+            --title "ETS2-AI v0.1.0 — APK + Bridge Windows" \
+            --notes "$NOTES" \
+            ets2-ai/.cache/release/* 2>/dev/null || \
+          gh release upload ets2-ai-v0.1.0 ets2-ai/.cache/release/* --clobber
