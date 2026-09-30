@@ -18,32 +18,24 @@ jobs:
       - name: load-tokens
         run: |
           bash wl/secrets.sh
-          echo "HF_TOKEN_LEN=${#HF_TOKEN}" >> "$GITHUB_ENV"
-          echo "KAGGLE_LEN=${#KAGGLE_KEY}" >> "$GITHUB_ENV"
+          echo "HF_TOKEN_LEN=${#HF_TOKEN}"
           echo "HF_USER=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
-          # escreve pro GITHUB_ENV masked
           echo "HF_TOKEN=$HF_TOKEN" >> "$GITHUB_ENV"
           echo "KAGGLE_KEY=$KAGGLE_KEY" >> "$GITHUB_ENV"
           echo "KAGGLE_USERNAME=$KAGGLE_USERNAME" >> "$GITHUB_ENV"
       - name: check-kaggle
+        env:
+          KAGGLE_KEY: ${{ env.KAGGLE_KEY }}
+          KAGGLE_USERNAME: ${{ env.KAGGLE_USERNAME }}
         run: |
-          set -e
-          echo "KAGGLE credentials present, testing API..."
-          pip install -q -q kaggle
+          set +e
+          pip install -q -q --break-system-packages kaggle
           mkdir -p ~/.kaggle
           printf '{"username":"%s","key":"%s"}' "$KAGGLE_USERNAME" "$KAGGLE_KEY" > ~/.kaggle/kaggle.json
           chmod 600 ~/.kaggle/kaggle.json
-          timeout 20 kaggle datasets list -s test 2>&1 | head -5 || echo "KAGGLE_FAIL (continuing)"
-          echo "KAGGLE_CHECK_DONE"
+          timeout 20 kaggle datasets list -s test 2>&1 | head -5 || echo "KAGGLE_FAIL"
       - name: build
-        env:
-          RUN_ID: ${{ github.run_id }}
         run: bash wl/hello.sh
-      - name: savelog
-        if: always()
-        env:
-          RUN_ID: ${{ github.run_id }}
-        run: bash wl/postlog.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -52,6 +44,7 @@ jobs:
             W.apk
             W.sha256
             wlh.log
+            hf.log
           if-no-files-found: ignore
           retention-days: 5
       - name: pub-github
@@ -64,31 +57,37 @@ jobs:
           gh release delete "$T" -y || true
           git tag -f "$T" HEAD
           git push -f origin "$T" || true
-          gh release create "$T" --title "Winlator-A55 pre-AOT (BeamNG port launcher)" --notes "Box64+Box84 DYNAREC persistente + DXVK async. Somente o launcher (port); o jogo BeamNG fica na sua pasta data." W.apk W.sha256
+          gh release create "$T" --title "Winlator-A55 pre-AOT (BeamNG port launcher)" --notes "Box64+Box86 DYNAREC persistente + DXVK async." W.apk W.sha256
       - name: pub-huggingface
         if: success()
         env:
+          HF_TOKEN: ${{ env.HF_TOKEN }}
+          HF_USER: ${{ env.HF_USER }}
           HF_REPO: winlator-a55-beam
         run: |
           set -e
-          source wl/secrets.sh
-          echo "HF tok len=${#HF_TOKEN}"
-          HF_USER="${HF_USER:-${GITHUB_REPOSITORY_OWNER,,}}"
-          echo "pushing to hf.co/$HF_USER/$HF_REPO"
           bash wl/hfup.sh "$HF_USER" "$HF_REPO"
           echo "=== hf.log ==="
-          cat hf.log || true
+          cat hf.log
       - name: save-hf-log
         if: always()
         run: |
-          if [ -f hf.log ]; then
-            mkdir -p _logs
-            cp hf.log _logs/hf.log || true
-            cp wlh.log _logs/wlh.log || true
-            git config user.email "ci@local"; git config user.name "ci"
-            git fetch origin wl-logs 2>/dev/null && git checkout -B wl-logs origin/wl-logs || git checkout --orphan wl-logs
-            git rm -rf --ignore-unmatch . 2>/dev/null || true
-            git add _logs/hf.log _logs/wlh.log
-            git commit -m "hf log $(date -u +%H:%M:%SZ)" 2>&1 | tail -3 || true
-            git push -f origin wl-logs 2>&1 | tail -5
+          set +e
+          # Copia logs para /tmp ANTES de trocar de branch
+          mkdir -p /tmp/lg
+          [ -f hf.log ] && cp hf.log /tmp/lg/hf.log || echo "no hf.log yet"
+          [ -f wlh.log ] && cp wlh.log /tmp/lg/wlh.log
+          git config user.email "ci@local"; git config user.name "ci"
+          git fetch origin wl-logs 2>/dev/null
+          if git show-ref --verify refs/remotes/origin/wl-logs; then
+            git checkout -B wl-logs origin/wl-logs
+          else
+            git checkout --orphan wl-logs
           fi
+          git rm -rf --ignore-unmatch . 2>/dev/null || true
+          mkdir -p _logs
+          [ -f /tmp/lg/wlh.log ] && cp /tmp/lg/wlh.log _logs/wlh.log
+          [ -f /tmp/lg/hf.log ] && cp /tmp/lg/hf.log _logs/hf.log
+          git add _logs/wlh.log _logs/hf.log 2>/dev/null
+          git commit -m "hf log $(date -u +%H:%M:%SZ)" 2>&1 | tail -3
+          git push -f origin wl-logs 2>&1 | tail -5
