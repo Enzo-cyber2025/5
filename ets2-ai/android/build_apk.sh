@@ -26,7 +26,7 @@ rm -rf "$OUT/classes"/* "$OUT/dex"/*
     -A "$SRC/assets" -o "$OUT/base.apk" "$OUT/resources.zip"
 
 # 3. java -> class -> dex
-javac -source 8 -target 8 -encoding UTF-8 \
+javac -source 8 -target 8 -encoding UTF-8 -Xlint:none \
     -classpath "$JAR" -d "$OUT/classes" \
     $(find "$SRC/src" -name '*.java')
 "$BT/d8" --lib "$JAR" --min-api 26 --output "$OUT/dex" \

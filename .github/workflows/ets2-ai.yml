@@ -20,15 +20,15 @@ jobs:
         with:
           python-version: '3.11'
       - name: Dependencias
-        run: pip install numpy==2.2.6 pytest==9.1.1
+        run: pip install --retries 5 --timeout 90 numpy==2.2.6 pytest==9.1.1
       - name: Retreina do zero (mesma semente -> mesmos pesos)
         run: |
           cd ets2-ai
-          python -m ets2ai.train --epochs 300 --out .cache/retrain
+          python -m ets2ai.train --epochs 300 --out .cache/retrain 2>&1 | tee ../.cache_train.log
       - name: Compara com os pesos commitados (gates robustos)
         run: |
           cd ets2-ai
-          python - <<'PY'
+          python - <<'PY' 2>&1 | tee ../.cache_compare.log
           import sys; sys.path.insert(0, ".")
           import numpy as np
           from ets2ai.contract import load_weights
@@ -40,8 +40,6 @@ jobs:
               worst = max(worst, float(np.max(np.abs(w1 - w2))), float(np.max(np.abs(b1 - b2))))
           la, lb = ma["final_loss"], mb["final_loss"]
           print(f"pior delta pesos: {worst:.2e} | loss commitado {la:.5f} vs retreino {lb:.5f}")
-          # divergencia de float entre CPUs diferentes e' esperada; os gates
-          # que importam: mesma qualidade de loss E o modelo retreinado dirige.
           assert worst < 5e-3, "divergencia de pesos acima do orcamento"
           assert abs(la - lb) < 0.05 * max(la, 1e-9) + 1e-4, "loss divergiu"
           agg, rows = closed_loop_eval(b, n_roads=3)
@@ -54,10 +52,20 @@ jobs:
         run: |
           cd ets2-ai
           pytest tests/ -q
-      - name: Testes (pytest)
+      - name: Diagnostico (commita logs no repo em caso de falha)
+        if: failure()
         run: |
-          cd ets2-ai
-          pytest tests/ -q
+          set +e
+          mkdir -p ci-logs/${{ github.run_id }}-train
+          { echo "=== train-verify run ${{ github.run_id }} sha $GITHUB_SHA ==="
+            echo "--- .cache_train.log (ultimas 60 linhas)"; tail -60 .cache_train.log 2>/dev/null
+            echo "--- .cache_compare.log"; cat .cache_compare.log 2>/dev/null; } \
+            > ci-logs/${{ github.run_id }}-train/log.txt
+          git config user.name "ci-diag"; git config user.email "ci-diag@users.noreply.github.com"
+          git add ci-logs || true
+          git commit -m "diag: train-verify run ${{ github.run_id }} [skip ci]" || true
+          git push || true
+          exit 1
 
   java-parity:
     name: Paridade Java (inferencia do APK) x numpy
@@ -74,14 +82,23 @@ jobs:
           python-version: '3.11'
       - name: Compila e confere
         run: |
-          pip install --quiet numpy==2.2.6
-          bash ets2-ai/android/check_java.sh
-      - name: Logs em caso de falha
+          set -x
+          pip install --retries 5 --timeout 90 numpy==2.2.6 2>&1 | tee .cache_check_java.log
+          bash ets2-ai/android/check_java.sh 2>&1 | tee -a .cache_check_java.log
+          exit ${PIPESTATUS[0]}
+      - name: Diagnostico (commita logs no repo em caso de falha)
         if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: java-parity-logs
-          path: ets2-ai/.cache/java-check/
+        run: |
+          set +e
+          mkdir -p ci-logs/${{ github.run_id }}-java
+          { echo "=== java-parity run ${{ github.run_id }} sha $GITHUB_SHA ==="
+            echo "--- check_java.log completo"; cat .cache_check_java.log 2>/dev/null; } \
+            > ci-logs/${{ github.run_id }}-java/log.txt
+          git config user.name "ci-diag"; git config user.email "ci-diag@users.noreply.github.com"
+          git add ci-logs || true
+          git commit -m "diag: java-parity run ${{ github.run_id }} [skip ci]" || true
+          git push || true
+          exit 1
 
   tflite-export:
     name: Exporta TFLite (float32 + int8)
@@ -92,11 +109,28 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install tensorflow-cpu==2.18.0 numpy==2.2.6
+      - name: Dependencias
+        run: pip install --retries 5 --timeout 90 tensorflow-cpu==2.19.0 2>&1 | tee .cache_tflite_pip.log
       - name: Converte e valida contra numpy
         run: |
           cd ets2-ai
-          python -m ets2ai.export_tflite --weights artifacts/model-weights.json --out .cache/tflite
+          python -m ets2ai.export_tflite --weights artifacts/model-weights.json --out .cache/tflite 2>&1 | tee ../.cache_tflite.log
+          exit ${PIPESTATUS[0]}
+      - name: Diagnostico (commita logs no repo em caso de falha)
+        if: failure()
+        run: |
+          set +e
+          mkdir -p ci-logs/${{ github.run_id }}-tflite
+          { echo "=== tflite run ${{ github.run_id }} sha $GITHUB_SHA ==="
+            echo "--- tflite pip log"; tail -30 .cache_tflite_pip.log 2>/dev/null
+            echo "--- tflite log"; tail -60 .cache_tflite.log 2>/dev/null
+            echo "--- pip list"; pip list 2>/dev/null | grep -iE "tensorflow|numpy|keras"; } \
+            > ci-logs/${{ github.run_id }}-tflite/log.txt
+          git config user.name "ci-diag"; git config user.email "ci-diag@users.noreply.github.com"
+          git add ci-logs || true
+          git commit -m "diag: tflite run ${{ github.run_id }} [skip ci]" || true
+          git push || true
+          exit 1
       - uses: actions/upload-artifact@v4
         with:
           name: ets2-ai-tflite
@@ -116,9 +150,24 @@ jobs:
           distribution: temurin
           java-version: '17'
       - name: Build (aapt2 -> javac -> d8 -> apksigner)
-        run: bash ets2-ai/android/build_apk.sh
+        run: |
+          bash ets2-ai/android/build_apk.sh 2>&1 | tee .cache_apk.log
+          exit ${PIPESTATUS[0]}
       - name: Conteudo do APK (evidencia)
         run: unzip -l ets2-ai/dist/ETS2-AI-mobile.apk
+      - name: Diagnostico (commita logs no repo em caso de falha)
+        if: failure()
+        run: |
+          set +e
+          mkdir -p ci-logs/${{ github.run_id }}-apk
+          { echo "=== apk run ${{ github.run_id }} sha $GITHUB_SHA ==="
+            echo "--- build log"; cat .cache_apk.log 2>/dev/null; } \
+            > ci-logs/${{ github.run_id }}-apk/log.txt
+          git config user.name "ci-diag"; git config user.email "ci-diag@users.noreply.github.com"
+          git add ci-logs || true
+          git commit -m "diag: apk run ${{ github.run_id }} [skip ci]" || true
+          git push || true
+          exit 1
       - uses: actions/upload-artifact@v4
         with:
           name: ETS2-AI-mobile-apk
@@ -136,7 +185,7 @@ jobs:
           python-version: '3.11'
       - name: Dependencias
         run: |
-          pip install pyinstaller==6.11.1 numpy==2.2.6
+          pip install --retries 5 --timeout 90 pyinstaller==6.11.1 numpy==2.2.6
       - name: Empacota o bridge (pesos embutidos)
         shell: pwsh
         run: |
