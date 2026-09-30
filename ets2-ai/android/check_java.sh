@@ -12,6 +12,7 @@ rm -rf "$OUT/classes"/*
 javac -encoding UTF-8 -d "$OUT/classes" \
     android/src/com/enzo/ets2ai/NeuralNet.java \
     android/src/com/enzo/ets2ai/SimWorld.java \
+    android/src/com/enzo/ets2ai/Dispatcher.java \
     android/tools/JavaCheck.java
 
 { java -cp "$OUT/classes" JavaCheck android/assets/model-weights.txt 2>&1; echo "JAVACHECK_EXIT=$?"; } | tee "$OUT/java-check.log"

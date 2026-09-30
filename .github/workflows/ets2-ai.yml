@@ -140,7 +140,7 @@ jobs:
 
   android-apk:
     name: APK assinado (ETS2-AI-mobile.apk)
-    needs: [train-verify, java-parity]
+    needs: [train-verify, java-parity, tflite-export]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -149,9 +149,15 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Build (aapt2 -> javac -> d8 -> apksigner)
+      - name: Baixa o modelo TFLite do job anterior
+        uses: actions/download-artifact@v4
+        with:
+          name: ets2-ai-tflite
+          path: ets2-ai/.cache/tflite-in
+      - name: Build (aapt2 -> javac -> d8 -> apksigner; TFLite runtime opcional)
         run: |
-          bash ets2-ai/android/build_apk.sh 2>&1 | tee .cache_apk.log
+          TFLITE_MODEL=ets2-ai/.cache/tflite-in/ets2ai-float32.tflite \
+          TFLITE_AAR=1 bash ets2-ai/android/build_apk.sh 2>&1 | tee .cache_apk.log
           exit ${PIPESTATUS[0]}
       - name: Conteudo do APK (evidencia)
         run: unzip -l ets2-ai/dist/ETS2-AI-mobile.apk

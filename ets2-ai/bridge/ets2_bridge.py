@@ -399,6 +399,65 @@ def run_demo(layers, port, injector, record_path=None):
               f"python -m ets2ai.finetune --recordings {rec.path}")
 
 
+def run_headless(layers, port, injector, phone_only):
+    """Modo leve para PC fraco (Pentium N5030/4 GB): sem janela, sem render,
+    sem captura de tela (o projeto NUNCA captura tela — estado vem da
+    telemetria/demo). Só o servidor TCP + injeção de teclas opcional."""
+    import selectors
+    road = sim.Road.random(int(time.time()))
+    truck = sim.Truck(road, s=5.0, offset=0.0, speed=15.0)
+    link = PhoneLink(port)
+    link.start()
+    print(f"[leve] headless na porta {port} | celular: botao BRIDGE -> "
+          f"{PhoneLink.local_ip()}:{port} | Ctrl+C sai")
+    if phone_only:
+        print("[leve] --somente-celular: sem o celular o caminhao FREIA (sem IA local)")
+    last_print = 0.0
+    acc = 0.0
+    t_prev = time.time()
+    try:
+        while True:
+            now = time.time()
+            acc += min(0.25, now - t_prev)
+            t_prev = now
+            while acc >= sim.DT:
+                acc -= sim.DT
+                job_left = max(0.0, (road.length - truck.s) / 1000.0)
+                link.send_state(road, truck, job_left)
+                fresh = (now - link.last_recv) < PHONE_TIMEOUT_S
+                if link.latest_cmd and fresh:
+                    c = link.latest_cmd
+                    cmd = clamp_action(c[0], c[1], c[2])
+                    src = "celular"
+                elif phone_only:
+                    cmd = (0.0, 0.0, 0.8)              # freia ate o celular voltar
+                    src = "FREIO (sem celular)"
+                else:
+                    cmd = policy_cmd(layers, road, truck, job_left)
+                    src = "local"
+                truck.step(road, cmd[0], cmd[1], cmd[2])
+                injector.update(cmd[0], cmd[1], cmd[2])
+                if truck.fuel < sim.REFUEL_BELOW:
+                    truck.fuel = 1.0
+                if truck.fatigue > sim.SLEEP_ABOVE:
+                    truck.fatigue = 0.0
+                if abs(truck.offset) > sim.ROAD_HALF:
+                    road = sim.Road.random(int(time.time()))
+                    truck = sim.Truck(road, s=5.0, offset=0.0, speed=15.0)
+                if truck.s >= road.length - 10:
+                    road = sim.Road.random(int(time.time()))
+                    truck = sim.Truck(road, s=5.0, offset=0.0, speed=15.0)
+            if now - last_print > 2.0:
+                last_print = now
+                print(f"[leve] {src:16s} {truck.speed*3.6:5.1f} km/h "
+                      f"offset {truck.offset:+.2f} m | {link.log[-1] if link.log else ''}")
+            time.sleep(0.03)
+    except KeyboardInterrupt:
+        print("\n[leve] encerrado")
+    finally:
+        injector.release_all()
+
+
 def main():
     ap = argparse.ArgumentParser(description="ETS2-AI bridge (Windows)")
     ap.add_argument("--port", type=int, default=DEFAULT_PORT)
@@ -408,16 +467,25 @@ def main():
                     help="parte do titulo da janela alvo (ex.: 'Euro Truck')")
     ap.add_argument("--record", metavar="CSV",
                     help="gravar estados+comandos para finetune (DAgger)")
+    ap.add_argument("--sem-janela", action="store_true",
+                    help="modo leve: sem janela (PC fraco); Ctrl+C sai")
+    ap.add_argument("--somente-celular", action="store_true",
+                    help="a IA roda SO no celular; sem conexao o caminhao freia")
     args = ap.parse_args()
 
     if args.inject and sys.platform != "win32":
         print("[aviso] --inject so funciona no Windows; rodando sem injecao.")
 
-    layers = load_policy()
+    layers = None if (args.sem_janela and args.somente_celular) else load_policy()
     injector = KeyInjector(args.window, args.inject)
     if args.inject:
         print(f"[inject] alvo: janela com '{args.window}' no titulo | ESC = kill switch")
+    print("[info] este bridge NUNCA captura a tela do jogo — estado vem da "
+          "telemetria/demo (0% de GPU/CPU do ETS2)")
     print(f"[rede] no celular: botao BRIDGE -> IP {PhoneLink.local_ip()} porta {args.port}")
+    if args.sem_janela:
+        run_headless(layers, args.port, injector, args.somente_celular)
+        return
     if args.record:
         print(f"[rec] gravando em {args.record} — use as SETAS para corrigir a IA; "
               "as correcoes viram dados de treino (DAgger)")

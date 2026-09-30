@@ -189,6 +189,8 @@ public final class SimWorld {
     public int jobsDone = 0;
     public boolean crashed = false;
     public float inLanePct = 1f;
+    public float jobPay = 0f;
+    public String jobLabel = "";
     private int stepsTotal = 1, stepsInLane = 1;
 
     public SimWorld() {
@@ -196,9 +198,11 @@ public final class SimWorld {
     }
 
     public void newRoute() {
-        long seed = 31337L + (long) (Math.random() * 1e6);
-        road = Road.random(seed);
+        Dispatcher.Offer best = Dispatcher.pickBest(rng, 3);
+        road = Road.random(best.roadSeed);
         truck = new Truck(road, rng);
+        jobPay = best.payEur;
+        jobLabel = "JOB: " + best.label() + " [melhor de 3]";
         crashed = false;
         event = "";
         eventTimer = 0f;
@@ -267,7 +271,7 @@ public final class SimWorld {
             return;
         }
         if (truck.s >= road.length - 10f) {
-            float pay = truck.drivenKm * JOB_PAY_PER_KM;
+            float pay = jobPay > 0f ? jobPay : truck.drivenKm * JOB_PAY_PER_KM;
             truck.money += pay;
             event = "delivered";
             eventTimer = 2.5f;

@@ -1,6 +1,10 @@
 # ETS2-AI — piloto automático para Euro Truck Simulator 2 (celular ↔ PC)
 
-> **v0.1.0 — demo funcional.** A IA treinada dirige caminhão num simulador com
+> **Downloads (IA já treinada dentro de ambos):**
+> - APK: https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.1.0/ETS2-AI-mobile.apk
+> - EXE: https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.1.0/ETS2-AI-bridge.exe
+>
+> **v0.1.1 — demo funcional.** A IA treinada dirige caminhão num simulador com
 > a mesma física do jogo-alvo, gerencia combustível, sono e entregas, roda no
 > **APK do celular** (inferência 100% em Java, sem dependências) e entrega os
 > comandos ao **PC Windows** por TCP, onde o bridge injeta **teclas reais**
@@ -30,6 +34,9 @@ confere que os pesos batem com os commitados, tolerância 1e-5).
 |---|---|
 | Rede neural que dirige (estrada com curvas, faixa, limites) | ✅ real, medido, testado |
 | Regras de abastecer/dormir/entregas/dinheiro | ✅ real (regras sobre telemetria — não precisa de ML) |
+| **Dispatcher: escolhe a melhor rota de 3 ofertas** (EUR/km líquido − combustível − hotel − curvas) | ✅ real (`ets2ai/dispatch.py` + `Dispatcher.java`) |
+| **Teclado Bluetooth**: o celular aparece como teclado HID real no PC | ✅ API pública `BluetoothHidDevice` (Android 9+) |
+| **Benchmark de backends no aparelho** (Java / TFLite CPU / GPU / NNAPI-rota-pública-para-NPU) | ✅ medidas reais no seu A55, botão BACKEND |
 | APK Android com a IA + HUD + diagnóstico NPU | ✅ sai do CI assinado |
 | Bridge Windows `.exe` + injeção de teclas reais | ✅ sai do CI (SendInput/scan codes, kill switch ESC) |
 | Celular como "cérebro" do PC (TCP) | ✅ implementado (RTT exibido) |
@@ -90,13 +97,22 @@ distância da entrega. **Saídas (3):** volante, acelerador, freio. Detalhe em
 ### APK (celular)
 1. Baixe `ETS2-AI-mobile.apk` (release `ets2-ai-v0.1.0` ou artifact do CI).
 2. Instale (permitir "fontes desconhecidas").
-3. Toque **ROTA** para nova estrada, **IA** liga/desliga (sem IA: toque à
-   esquerda/direita = volante, meio = freio), **VEL** = x1/x2/x4,
-   **NPU** = diagnóstico do aparelho, **BRIDGE** = conectar ao PC.
+3. Toque **ROTA** para nova estrada (o dispatcher já escolhe a melhor oferta
+   de job sozinho), **IA** liga/desliga (sem IA: toque à esquerda/direita =
+   volante, meio = freio), **VEL** = x1/x2/x4, **NPU**/**BACKEND** =
+   diagnóstico e benchmark medido de aceleradores, **BRIDGE** = conectar ao
+   PC pela rede, **TECLADO BT** = o celular vira um **teclado Bluetooth
+   real** no PC (pareie o PC com o celular antes, nas configurações).
 
-### Bridge (PC)
+### Bridge (PC) — leve por construção
+**O projeto NUNCA captura a tela do jogo** (0% de GPU/CPU do ETS2): o estado
+vem da telemetria/demo. Para PC fraco (Pentium N5030 / 4 GB RAM):
+
 ```
-ETS2-AI-bridge.exe                  # janela demo; IA local ou do celular
+ETS2-AI-bridge.exe --sem-janela                # modo leve: sem janela, só rede
+ETS2-AI-bridge.exe --sem-janela --somente-celular --inject --window "Euro Truck"
+#   ^ a IA roda SÓ no celular; sem conexao o caminhao FREIA (seguranca)
+ETS2-AI-bridge.exe                             # janela demo; IA local ou do celular
 ETS2-AI-bridge.exe --inject --window "Euro Truck"   # injeta teclas reais
 ETS2-AI-bridge.exe --record sessao1.csv             # grava p/ finetune (DAgger)
 ```

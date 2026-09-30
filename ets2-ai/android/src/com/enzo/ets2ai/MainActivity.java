@@ -25,6 +25,8 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 
 import java.util.Locale;
+import android.Manifest;
+import android.content.pm.PackageManager;
 
 /**
  * ETS2-AI demo: the trained policy (pure-Java inference) drives a truck
@@ -41,6 +43,8 @@ public final class MainActivity extends Activity {
     private NeuralNet net;
     private BridgeClient bridge;
     private String bridgeStatus = "";
+    private BtKeyboard btKeyboard;
+    private String btStatus = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,6 +89,12 @@ public final class MainActivity extends Activity {
         }));
         bar.addView(button("NPU", new Runnable() {
             public void run() { showNpuDialog(); }
+        }));
+        bar.addView(button("BACKEND", new Runnable() {
+            public void run() { showBackendDialog(); }
+        }));
+        bar.addView(button("TECLADO BT", new Runnable() {
+            public void run() { showBtDialog(); }
         }));
         root.addView(bar, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -144,6 +154,75 @@ public final class MainActivity extends Activity {
                 })
                 .setNegativeButton("Cancelar", null)
                 .show();
+    }
+
+    private void showBtDialog() {
+        if (!BtKeyboard.supported()) {
+            btStatus = "Android < 9: HID indisponivel";
+            return;
+        }
+        if (btKeyboard != null) {
+            btKeyboard.stop();
+            btKeyboard = null;
+            btStatus = "teclado BT desligado";
+            return;
+        }
+        if (checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)
+                != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[] { Manifest.permission.BLUETOOTH_CONNECT }, 41);
+            btStatus = "permissao Bluetooth pedida; toque TECLADO BT de novo";
+            return;
+        }
+        btKeyboard = new BtKeyboard(new BtKeyboard.Listener() {
+            public void onStatus(final String s) {
+                runOnUiThread(new Runnable() { public void run() { btStatus = "BT: " + s; } });
+            }
+        });
+        btKeyboard.start(this);
+        // lista de aparelhos ja pareados (o PC precisa estar pareado)
+        final java.util.Set<android.bluetooth.BluetoothDevice> bonded =
+                android.bluetooth.BluetoothAdapter.getDefaultAdapter().getBondedDevices();
+        final String[] names = new String[bonded.size()];
+        final android.bluetooth.BluetoothDevice[] devs = bonded.toArray(
+                new android.bluetooth.BluetoothDevice[0]);
+        for (int i = 0; i < devs.length; i++) names[i] = devs[i].getName();
+        if (devs.length == 0) {
+            btStatus = "BT: nenhum aparelho pareado — pareie o PC nas configuracoes";
+            return;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("Conectar teclado a qual aparelho?")
+                .setItems(names, new android.content.DialogInterface.OnClickListener() {
+                    public void onClick(android.content.DialogInterface d, int w) {
+                        btKeyboard.connect(devs[w]);
+                    }
+                })
+                .setNegativeButton("Cancelar", null)
+                .show();
+    }
+
+    private void showBackendDialog() {
+        if (net == null) return;
+        Backends.benchmark(this, net, new Backends.Report() {
+            public void done(final String text) {
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        ScrollView sc = new ScrollView(MainActivity.this);
+                        TextView tv = new TextView(MainActivity.this);
+                        tv.setText(text);
+                        tv.setPadding(24, 16, 24, 16);
+                        tv.setTypeface(Typeface.MONOSPACE);
+                        tv.setTextSize(11);
+                        sc.addView(tv);
+                        new AlertDialog.Builder(MainActivity.this)
+                                .setTitle("Backends medidos neste aparelho")
+                                .setView(sc)
+                                .setPositiveButton("Fechar", null)
+                                .show();
+                    }
+                });
+            }
+        });
     }
 
     private void showNpuDialog() {
@@ -278,6 +357,9 @@ public final class MainActivity extends Activity {
                 } else {
                     cmd = NeuralNet.clampAction(manualSteer, manualThrottle, manualBrake);
                 }
+                if (btKeyboard != null) {
+                    btKeyboard.update(cmd[0], cmd[1], cmd[2]);   // teclas reais via BT
+                }
                 world.step(cmd);
             }
         }
@@ -348,9 +430,10 @@ public final class MainActivity extends Activity {
                         bridge.lastRttMs, bridge.answered);
             }
             String line = String.format(Locale.US,
-                    "FONTE: %s | %d km/h | faixa %.0f%% | EUR %.0f | entrega %.1f km | rota %.1f km%s",
+                    "%s | %d km/h | faixa %.0f%% | EUR %.0f | entrega %.1f km%s%s",
                     src, Math.round(t.speed * 3.6f), world.inLanePct * 100f, t.money,
-                    world.jobLeftKm(), roadKm(), world.crashed ? " | BATER!" : "");
+                    world.jobLeftKm(), world.crashed ? " | BATER!" : "",
+                    world.jobLabel.length() > 0 ? " | " + world.jobLabel : "");
             setStatus(line);
 
             // fuel / fatigue bars (right edge)
@@ -376,7 +459,10 @@ public final class MainActivity extends Activity {
                 }
             }
             if (bridgeStatus.length() > 0) {
-                c.drawText(bridgeStatus, 12f, ch - 120f, hudPaint);
+                c.drawText(bridgeStatus, 12f, ch - 140f, hudPaint);
+            }
+            if (btStatus.length() > 0) {
+                c.drawText(btStatus, 12f, ch - 120f, hudPaint);
             }
         }
 
