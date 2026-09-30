@@ -1,0 +1,132 @@
++ java -version
+openjdk version "17.0.20.1" 2026-08-18
+OpenJDK Runtime Environment Temurin-17.0.20.1+1 (build 17.0.20.1+1)
+OpenJDK 64-Bit Server VM Temurin-17.0.20.1+1 (build 17.0.20.1+1, mixed mode, sharing)
++ sudo apt-get update -q
+Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+Hit:2 http://azure.archive.ubuntu.com/ubuntu noble InRelease
+Get:6 https://packages.microsoft.com/ubuntu/24.04/prod noble InRelease [3600 B]
+Get:3 http://azure.archive.ubuntu.com/ubuntu noble-updates InRelease [126 kB]
+Get:4 http://azure.archive.ubuntu.com/ubuntu noble-backports InRelease [126 kB]
+Get:5 http://azure.archive.ubuntu.com/ubuntu noble-security InRelease [126 kB]
+Get:7 https://packages.microsoft.com/ubuntu/24.04/prod noble/main amd64 Packages [507 kB]
+Get:8 https://packages.microsoft.com/ubuntu/24.04/prod noble/main arm64 Packages [454 kB]
+Get:9 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 Packages [1338 kB]
+Get:10 http://azure.archive.ubuntu.com/ubuntu noble-updates/main Translation-en [301 kB]
+Get:11 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 Components [181 kB]
+Get:12 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Packages [1699 kB]
+Get:13 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe Translation-en [341 kB]
+Get:14 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Components [388 kB]
+Get:15 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted amd64 Packages [1689 kB]
+Get:16 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted Translation-en [386 kB]
+Get:17 http://azure.archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 Components [940 B]
+Get:18 http://azure.archive.ubuntu.com/ubuntu noble-backports/main amd64 Packages [40.6 kB]
+Get:19 http://azure.archive.ubuntu.com/ubuntu noble-backports/main amd64 Components [5760 B]
+Get:20 http://azure.archive.ubuntu.com/ubuntu noble-backports/universe amd64 Packages [31.0 kB]
+Get:21 http://azure.archive.ubuntu.com/ubuntu noble-backports/universe Translation-en [18.6 kB]
+Get:22 http://azure.archive.ubuntu.com/ubuntu noble-backports/universe amd64 Components [12.6 kB]
+Get:23 http://azure.archive.ubuntu.com/ubuntu noble-security/main amd64 Packages [1066 kB]
+Get:24 http://azure.archive.ubuntu.com/ubuntu noble-security/main Translation-en [220 kB]
+Get:25 http://azure.archive.ubuntu.com/ubuntu noble-security/main amd64 Components [46.4 kB]
+Get:26 http://azure.archive.ubuntu.com/ubuntu noble-security/universe amd64 Packages [1216 kB]
+Get:27 http://azure.archive.ubuntu.com/ubuntu noble-security/universe Translation-en [244 kB]
+Get:28 http://azure.archive.ubuntu.com/ubuntu noble-security/universe amd64 Components [76.3 kB]
+Get:29 http://azure.archive.ubuntu.com/ubuntu noble-security/restricted amd64 Packages [1566 kB]
+Get:30 http://azure.archive.ubuntu.com/ubuntu noble-security/restricted Translation-en [361 kB]
+Fetched 12.6 MB in 1s (8743 kB/s)
+Reading package lists...
++ sudo apt-get install -y wget unzip xxd aapt
+Reading package lists...
+Building dependency tree...
+Reading state information...
+wget is already the newest version (1.21.4-1ubuntu4.5).
+unzip is already the newest version (6.0-28ubuntu4.1).
+xxd is already the newest version (2:9.1.0016-1ubuntu7.20).
+xxd set to manually installed.
+The following additional packages will be installed:
+  android-libaapt android-libandroidfw android-libbacktrace android-libbase
+  android-libcutils android-liblog android-libutils android-libziparchive
+  libprotobuf32t64
+The following NEW packages will be installed:
+  aapt android-libaapt android-libandroidfw android-libbacktrace
+  android-libbase android-libcutils android-liblog android-libutils
+  android-libziparchive libprotobuf32t64
+0 upgraded, 10 newly installed, 0 to remove and 46 not upgraded.
+Need to get 2549 kB of archives.
+After this operation, 8732 kB of additional disk space will be used.
+Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+Get:2 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 android-liblog amd64 1:34.0.4-1build3 [35.8 kB]
+Get:3 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 android-libbase amd64 1:34.0.4-1build3 [99.0 kB]
+Get:4 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 android-libbacktrace amd64 1:34.0.4-1build3 [227 kB]
+Get:5 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 android-libcutils amd64 1:34.0.4-1build3 [35.7 kB]
+Get:6 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 android-libutils amd64 1:34.0.4-1build3 [51.8 kB]
+Get:7 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 android-libziparchive amd64 1:34.0.4-1build3 [40.7 kB]
+Get:8 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 android-libandroidfw amd64 1:14~beta1-2build3 [182 kB]
+Get:9 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libprotobuf32t64 amd64 3.21.12-8.2ubuntu0.3 [923 kB]
+Get:10 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 android-libaapt amd64 1:14~beta1-2build3 [920 kB]
+Get:11 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 aapt amd64 1:14~beta1-2build3 [34.4 kB]
+Fetched 2549 kB in 0s (7817 kB/s)
+Selecting previously unselected package android-liblog:amd64.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 202190 files and directories currently installed.)
+Preparing to unpack .../0-android-liblog_1%3a34.0.4-1build3_amd64.deb ...
+Unpacking android-liblog:amd64 (1:34.0.4-1build3) ...
+Selecting previously unselected package android-libbase:amd64.
+Preparing to unpack .../1-android-libbase_1%3a34.0.4-1build3_amd64.deb ...
+Unpacking android-libbase:amd64 (1:34.0.4-1build3) ...
+Selecting previously unselected package android-libbacktrace:amd64.
+Preparing to unpack .../2-android-libbacktrace_1%3a34.0.4-1build3_amd64.deb ...
+Unpacking android-libbacktrace:amd64 (1:34.0.4-1build3) ...
+Selecting previously unselected package android-libcutils:amd64.
+Preparing to unpack .../3-android-libcutils_1%3a34.0.4-1build3_amd64.deb ...
+Unpacking android-libcutils:amd64 (1:34.0.4-1build3) ...
+Selecting previously unselected package android-libutils:amd64.
+Preparing to unpack .../4-android-libutils_1%3a34.0.4-1build3_amd64.deb ...
+Unpacking android-libutils:amd64 (1:34.0.4-1build3) ...
+Selecting previously unselected package android-libziparchive:amd64.
+Preparing to unpack .../5-android-libziparchive_1%3a34.0.4-1build3_amd64.deb ...
+Unpacking android-libziparchive:amd64 (1:34.0.4-1build3) ...
+Selecting previously unselected package android-libandroidfw:amd64.
+Preparing to unpack .../6-android-libandroidfw_1%3a14~beta1-2build3_amd64.deb ...
+Unpacking android-libandroidfw:amd64 (1:14~beta1-2build3) ...
+Selecting previously unselected package libprotobuf32t64:amd64.
+Preparing to unpack .../7-libprotobuf32t64_3.21.12-8.2ubuntu0.3_amd64.deb ...
+Unpacking libprotobuf32t64:amd64 (3.21.12-8.2ubuntu0.3) ...
+Selecting previously unselected package android-libaapt:amd64.
+Preparing to unpack .../8-android-libaapt_1%3a14~beta1-2build3_amd64.deb ...
+Unpacking android-libaapt:amd64 (1:14~beta1-2build3) ...
+Selecting previously unselected package aapt.
+Preparing to unpack .../9-aapt_1%3a14~beta1-2build3_amd64.deb ...
+Unpacking aapt (1:14~beta1-2build3) ...
+Setting up libprotobuf32t64:amd64 (3.21.12-8.2ubuntu0.3) ...
+Setting up android-liblog:amd64 (1:34.0.4-1build3) ...
+Setting up android-libbase:amd64 (1:34.0.4-1build3) ...
+Setting up android-libziparchive:amd64 (1:34.0.4-1build3) ...
+Setting up android-libcutils:amd64 (1:34.0.4-1build3) ...
+Setting up android-libbacktrace:amd64 (1:34.0.4-1build3) ...
+Setting up android-libutils:amd64 (1:34.0.4-1build3) ...
+Setting up android-libandroidfw:amd64 (1:14~beta1-2build3) ...
+Setting up android-libaapt:amd64 (1:14~beta1-2build3) ...
+Setting up aapt (1:14~beta1-2build3) ...
+Processing triggers for man-db (2.12.0-4build2) ...
+Not building database; man-db/auto-update is not 'true'.
+Processing triggers for libc-bin (2.39-0ubuntu8.9) ...
+
+Running kernel seems to be up-to-date.
+
+No services need to be restarted.
+
+No containers need to be restarted.
+
+No user sessions are running outdated binaries.
+
+No VM guests are running outdated hypervisor (qemu) binaries on this host.
++ echo '=== dl tools ==='
+=== dl tools ===
++ wget -q --tries=3 --timeout=60 https://github.com/iBotPeaches/Apktool/releases/download/v2.9.3/apktool_2.9.3.jar -O /tmp/apktool.jar
++ echo 'apktool ok'
+apktool ok
++ wget -q --tries=3 --timeout=60 https://github.com/nickola/uber-apk-signer/releases/download/v1.3.0/uber-apk-signer-1.3.0.jar -O /tmp/uber.jar
++ fail 'uber dl'
++ echo 'FAIL uber dl'
+FAIL uber dl
++ exit 1
