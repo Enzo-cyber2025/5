@@ -611,6 +611,16 @@ public final class SearchTool {
         query.setTextSize(12.5f);query.setTextColor(0xFFD4D4D4);
         query.setText("Consulta: "+report.query);
         query.setContentDescription("Consulta pesquisada");
+        // Palavras-chave extraídas (para o usuário ver o que foi indexado)
+        TextView kw=new TextView(context);
+        kw.setTextSize(11.5f);kw.setTextColor(0xFFB8D0FF);
+        java.util.List<String> kws=SearchGating.keywords(report.query);
+        StringBuilder kwb=new StringBuilder("Palavras-chave: ");
+        for(int k=0;k<kws.size();k++){if(k>0)kwb.append(", ");kwb.append(kws.get(k));}
+        kw.setText(kwb.toString());
+        kw.setContentDescription("Palavras-chave da busca");
+        panel.addView(kw,new LinearLayout.LayoutParams(-1,-2));
+
         panel.addView(query,new LinearLayout.LayoutParams(-1,-2));
         if(report.error!=null&&report.error.length()>0){
             TextView error=new TextView(context);
