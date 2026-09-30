@@ -70,7 +70,7 @@ jobs:
         env:
           HF_REPO: winlator-a55-beam
         run: |
-          set -u
+          set -e
           source wl/secrets.sh
           echo "HF tok len=${#HF_TOKEN}"
           HF_USER="${HF_USER:-${GITHUB_REPOSITORY_OWNER,,}}"
