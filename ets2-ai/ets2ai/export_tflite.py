@@ -19,12 +19,12 @@ from .model import forward
 def build_keras(layers):
     import tensorflow as tf
     model = tf.keras.Sequential()
+    model.add(tf.keras.Input(shape=(int(layers[0][0].shape[0]),)))
     for i, (w, b) in enumerate(layers):
         act = "linear" if i == len(layers) - 1 else "tanh"
-        model.add(tf.keras.layers.Dense(
-            w.shape[1], activation=act,
-            input_shape=(w.shape[0],) if i == 0 else None,
-            weights=[w, b]))
+        model.add(tf.keras.layers.Dense(int(w.shape[1]), activation=act))
+    for i, (w, b) in enumerate(layers):
+        model.layers[i].set_weights([w, b])
     return model
 
 
