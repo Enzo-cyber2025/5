@@ -1,6 +1,6 @@
-+ echo 'HF_UPLOAD start user=enzo-cyber2025 repo=winlator-a55-beam tok_len=37'
-HF_UPLOAD start user=enzo-cyber2025 repo=winlator-a55-beam tok_len=37
-+ '[' -n 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 ']'
++ echo 'HF_UPLOAD start user=enzo-cyber2025 repo=winlator-a55-beam tok_len=36'
+HF_UPLOAD start user=enzo-cyber2025 repo=winlator-a55-beam tok_len=36
++ '[' -n 'hf_ZhagIYyJ=t8u##r_>R.{R!>y]4' ']'
 + '[' -s W.apk ']'
 + python3 -m venv /tmp/hfvenv
 + tail -3
@@ -11,23 +11,22 @@ HF_UPLOAD start user=enzo-cyber2025 repo=winlator-a55-beam tok_len=37
 WARNING: huggingface-hub 2.0.0 does not provide the extra 'cli'
 WARNING: huggingface-hub 2.0.0 does not provide the extra 'hf-transfer'
 ++ date +%s
-+ T0=1790793179
++ T0=1790793801
 + export HF_HUB_ENABLE_HF_TRANSFER=0
 + HF_HUB_ENABLE_HF_TRANSFER=0
 + /tmp/hfvenv/bin/python3 -u -
 repo_id: enzo-cyber2025/winlator-a55-beam
-create_repo warn: Client error '401 Unauthorized' for url 'https://huggingface.co/api/repos/create' (Request ID: Root=1-6abd55dc-114f321168897c2c22762dd1;ffa6c250-f488-43ae-829a-238e19dd1dbf)
-For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401
+create_repo warn: (Amz CF ID: 5zS2pUzioYc7QxtRCdBpWkJjSTSjenNjHO1gh-wNGIo4zxttAYoBOg==)
 
-User Access Token "arena" is expired
-uploading W.apk size 156967667 at 0.3125803470611572 s
+Bad request:
+uploading W.apk size 156967664 at 0.3002893924713135 s
 Traceback (most recent call last):
   File "/tmp/hfvenv/lib/python3.12/site-packages/huggingface_hub/utils/_http.py", line 836, in hf_raise_for_status
     response.raise_for_status()
   File "/tmp/hfvenv/lib/python3.12/site-packages/httpx2/_models.py", line 827, in raise_for_status
     raise HTTPStatusError(message, request=request, response=self)
-httpx2.HTTPStatusError: Client error '401 Unauthorized' for url 'https://huggingface.co/api/models/enzo-cyber2025/winlator-a55-beam/preupload/main'
-For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401
+httpx2.HTTPStatusError: Client error '400 Bad Request' for url 'https://huggingface.co/api/models/enzo-cyber2025/winlator-a55-beam/preupload/main'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
 
 The above exception was the direct cause of the following exception:
 
@@ -57,18 +56,13 @@ Traceback (most recent call last):
            ^^^^^^^^^^^^^^^^^^^
   File "/tmp/hfvenv/lib/python3.12/site-packages/huggingface_hub/_commit_api.py", line 769, in _fetch_upload_modes
     hf_raise_for_status(resp)
-  File "/tmp/hfvenv/lib/python3.12/site-packages/huggingface_hub/utils/_http.py", line 923, in hf_raise_for_status
-    raise _format(RepositoryNotFoundError, message, response, repo_type=repo_type, repo_id=repo_id) from e
-huggingface_hub.errors.RepositoryNotFoundError: 401 Client Error. (Request ID: Root=1-6abd55dc-3fb9f2513c584ae3543b15f4;f20d491c-5255-43a7-a525-4fe46d15ef7b)
+  File "/tmp/hfvenv/lib/python3.12/site-packages/huggingface_hub/utils/_http.py", line 929, in hf_raise_for_status
+    raise _format(BadRequestError, message, response) from e
+huggingface_hub.errors.BadRequestError: (Amz CF ID: ClGwljdmMwjJyA3Z89Dm0fpVe2OTrLIUohpgFvxRv-MyIrb8oHDD1A==)
 
-Repository Not Found for url: https://huggingface.co/api/models/enzo-cyber2025/winlator-a55-beam/preupload/main.
-Please make sure you specified the correct `repo_id` and `repo_type`.
-If you are trying to access a private or gated repo, make sure you are authenticated and your token has the required permissions.
-For more details, see https://huggingface.co/docs/huggingface_hub/authentication
-User Access Token "arena" is expired
-Note: Creating a commit assumes that the repo already exists on the Huggingface Hub. Please use `create_repo` if it's not the case.
+Bad request:
 + RC=2
-+ T0=1790793179
++ T0=1790793801
 ++ date +%s
 + echo HF_UPLOAD_DONE rc=2 elapsed=1
 HF_UPLOAD_DONE rc=2 elapsed=1
