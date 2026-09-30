@@ -17,7 +17,7 @@ jobs:
           java-version: '17'
       - name: load-tokens
         run: |
-          bash wl/secrets.sh
+          source wl/secrets.sh
           echo "HF_TOKEN_LEN=${#HF_TOKEN}"
           echo "HF_USER=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
           echo "HF_TOKEN=$HF_TOKEN" >> "$GITHUB_ENV"
