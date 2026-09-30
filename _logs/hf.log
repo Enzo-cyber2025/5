@@ -8,7 +8,7 @@
 + /tmp/hfvenv/bin/pip install -q huggingface_hub
 + tail -5
 ++ date +%s
-+ T0=1790794294
++ T0=1790794309
 + /tmp/hfvenv/bin/python3 -u -
 Traceback (most recent call last):
   File "/tmp/hfvenv/lib/python3.12/site-packages/huggingface_hub/utils/_http.py", line 836, in hf_raise_for_status
@@ -25,7 +25,7 @@ Traceback (most recent call last):
     hf_raise_for_status(r)
   File "/tmp/hfvenv/lib/python3.12/site-packages/huggingface_hub/utils/_http.py", line 966, in hf_raise_for_status
     raise _format(HfHubHTTPError, str(e), response) from e
-huggingface_hub.errors.HfHubHTTPError: Client error '401 Unauthorized' for url 'https://huggingface.co/api/whoami-v2' (Request ID: Root=1-6abd5a36-2f34a88f198cab577e7b3390;59cc4015-7cf6-4368-9597-4164180c031f)
+huggingface_hub.errors.HfHubHTTPError: Client error '401 Unauthorized' for url 'https://huggingface.co/api/whoami-v2' (Request ID: Root=1-6abd5a46-770216580caa9ac92b43e923;8082822f-b330-4617-a0d4-cef936a50b6b)
 For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401
 
 User Access Token "arena.ai" is expired
@@ -33,7 +33,7 @@ User Access Token "arena.ai" is expired
 The above exception was the direct cause of the following exception:
 
 Traceback (most recent call last):
-  File "<stdin>", line 7, in <module>
+  File "<stdin>", line 8, in <module>
   File "/tmp/hfvenv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 89, in _inner_fn
     return fn(*args, **kwargs)
            ^^^^^^^^^^^^^^^^^^^
@@ -45,6 +45,6 @@ Traceback (most recent call last):
 huggingface_hub.errors.HfHubHTTPError: Invalid user token. The token from HF_TOKEN environment variable is invalid. Note that HF_TOKEN takes precedence over `hf auth login`.
 + RC=2
 ++ date +%s
-+ echo HF_UPLOAD_DONE rc=2 elapsed=0
-HF_UPLOAD_DONE rc=2 elapsed=0
++ echo HF_UPLOAD_DONE rc=2 elapsed=1
+HF_UPLOAD_DONE rc=2 elapsed=1
 + exit 2
