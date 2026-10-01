@@ -1,8 +1,10 @@
 """Dataset generation: expert demonstrations on random roads.
 
-The expert is a pure-pursuit + predictive-speed controller with small
-human-like action noise, so the learned policy imitates a competent (not
-superhuman) trucker. Train/val roads are disjoint.
+The expert is a pure-pursuit + predictive-speed controller. Since v0.4.2 the
+demonstrations are PERFECT (zero action noise) — the user asked for the
+minimum loss mathematically achievable, and the old human-like noise
+(sigma=0.02) imposed a ~2e-4 MSE floor that no network could beat.
+Train/val roads are disjoint.
 """
 import numpy as np
 
@@ -11,7 +13,7 @@ from .sim import Road, expert, run_episode
 
 N_TRAIN_ROADS = 26
 N_VAL_ROADS = 7
-NOISE = 0.020          # small human imperfection (tight GPS line)
+NOISE = 0.0            # v0.4.2: especialista perfeito (antes 0.020 humano)
 ROAD_SEED = 31337
 
 

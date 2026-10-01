@@ -1,11 +1,11 @@
 # ETS2-AI — piloto automático para Euro Truck Simulator 2 (celular ↔ PC)
 
 > **Downloads (IA já treinada dentro de ambos):**
-> - APK: https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.4.1/ETS2-AI-mobile.apk
-> - EXE: https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.4.1/ETS2-AI-bridge.exe
-> - Modelo PyTorch (`.pt`): https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.4.1/ets2ai-v0.4.1.pt
+> - APK: https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.4.2/ETS2-AI-mobile.apk
+> - EXE: https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.4.2/ETS2-AI-bridge.exe
+> - Modelo PyTorch (`.pt`): https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.4.2/ets2ai-v0.4.2.pt
 >
-> **v0.4.1 — IA de 150.203 parâmetros em float64 + GPU 2×T4 + USB plug-and-play.** A IA treinada dirige caminhão num simulador com
+> **v0.4.2 — IA de 295.103 parâmetros em float64, especialista perfeito + GPU 2×T4 + USB plug-and-play.** A IA treinada dirige caminhão num simulador com
 > a mesma física do jogo-alvo, gerencia combustível, sono e entregas, roda no
 > **APK do celular** (inferência 100% em Java, sem dependências) e entrega os
 > comandos ao **PC Windows** por TCP, onde o bridge injeta **teclas reais**
@@ -20,7 +20,7 @@ inéditas.
 
 | Métrica | Valor | Meta |
 |---|---|---|
-| MSE validação (loss) | **0.008790** | ≤ 0.150 ✅ (17× melhor; chão teórico do dataset ≈ 0.0002 — ruído do especialista) |
+| MSE validação (loss) | **0.008602** | ≤ 0.150 ✅ (17× melhor; mínimo empírico — ver tabela float64 abaixo) |
 | Rotas concluídas (circuito fechado) | **100%** (7/7) | — |
 | Tempo dentro da faixa | **100%** | > 95% |
 | Velocidade média | **71 km/h** (pico ~130 km/h nas retas) | acima do limite ✅ |
@@ -49,6 +49,9 @@ confere que os pesos batem com os commitados, tolerância 1e-5).
 | APK Android com a IA + HUD + diagnóstico NPU | ✅ sai do CI assinado |
 | Bridge Windows `.exe` + injeção de teclas reais | ✅ sai do CI (SendInput/scan codes, kill switch ESC) |
 | Celular como "cérebro" do PC (TCP) | ✅ implementado (RTT exibido) |
+| **Engate/desengate do vagão (T)** | ✅ macro no bridge (scan code 0x14) — mesmo fluxo do carregar/entregar |
+| **Qualquer estrada/mapa, incl. mods** | ✅ no simulador: a política é **local** (curvatura à frente + estado do caminhão), não memoriza mapa nenhum — estrada nova = dirige do mesmo jeito; no jogo real "ver" a estrada exige telemetria (roadmap 1) |
+| **Desviar de carros / sentir o limite do veículo** | ⏳ requer telemetria do jogo (posições do trânsito, velocidade máxima do caminhão carregado) — plugin SCS SDK; no simulador a IA já respeita radares, limites e tombamento |
 | Dirigir o **ETS2 de verdade** | ⏳ requer telemetria do jogo (plugin SCS SDK) — ponto de integração pronto e documentado abaixo |
 | Rodar na **NPU** do Galaxy A55 | ❌ não exposto a apps terceiros hoje (ver veredito) |
 
@@ -70,7 +73,7 @@ Você pediu para insistir na NPU. O resultado da investigação, com fontes:
    terceiro consegue: CPU (float) e GPU (Vulkan/OpenCL via delegates).
 
 **O que o projeto faz com isso:** o APK roda a política em **Java puro
-(CPU)** — para a rede atual (13→240-240-200-200→3), isso custa **microssegundos** por
+(CPU)** — para a rede atual (13→330-330-290-290→3), isso custa **microssegundos** por
 decisão; NPU seria overkill. Mesmo assim, o CI **já exporta os `.tflite`**
 (float32 e int8) validados contra o numpy, e o app traz a tela
 **"NPU" (Diagnóstico)** que mostra no seu aparelho exatamente o que existe
@@ -80,7 +83,7 @@ chip), o modelo está pronto para plugar num delegate.
 ## Modelo PyTorch (`.pt`)
 
 Além do Java (APK), do `.tflite` e do bridge, os mesmos pesos treinados saem
-também em **`ets2ai-v0.4.1.pt`** (TorchScript, auto-contido, ~600 KB) —
+também em **`ets2ai-v0.4.2.pt`** (TorchScript, auto-contido, ~1,2 MB) —
 gerado por `ets2ai/ets2ai/export_pt.py`, que grava o arquivo só depois de
 confirmar paridade numérica com o numpy (max diff < 1e-5 em 2.048 entradas
 aleatórias). Carregar e usar em qualquer lugar com PyTorch instalado:
@@ -93,7 +96,7 @@ x = torch.zeros(1, 13)                          # [speed, lane_offset, ..., rada
 steer, throttle, brake = m(x)[0].tolist()       # ações da IA
 ```
 
-Metadados embutidos no arquivo: `m.n_params` (150.203), `m.loss` (0.008790),
+Metadados embutidos no arquivo: `m.n_params` (295.103), `m.loss` (0.008602),
 `m.features` (13 entradas), `m.actions` (steer/throttle/brake). Teste de
 regressão em `tests/test_export_pt.py` (pula onde não há torch).
 
@@ -116,20 +119,24 @@ de verdade (verificado por teste) e float64 é explícito.
 
 | Configuração | MSE validação | MSE treino |
 |---|---|---|
-| 51.715 params, float32 | **0,008568** | 0,003979 |
-| 51.715 params, float64 | 0,008987 | 0,003166 |
-| **150.203 params, float64 (v0.4.1)** | 0,008790 | 0,001020 |
-| Chão teórico (ruído do especialista) | ≈ 0,0002 | — |
+| 51.715 params, float32, especialista com ruído | 0,008568 | 0,003979 |
+| 51.715 params, float64, especialista com ruído | 0,008987 | 0,003166 |
+| 150.203 params, float64, especialista com ruído | 0,008790 | 0,001020 |
+| **295.103 params, float64, especialista perfeito (v0.4.2)** | **0,008602** | 0,001595 |
 
-Capacidade 3× e precisão dobrada não quebram o patamar de validação:
-float64 decora mais (treino 5× menor) e generaliza igual; o resíduo é
-**estrutural** — travas duras do especialista (abastecer, dormir, frear
-no radar, creep do dock) e o ruído de ação humano (σ=0,02) que define o
-chão de ~2e-4. Loss de 1e-26 não existe neste problema em precisão alguma.
+Quatro configurações — capacidade 5,7×, precisão dobrada, ruído removido —
+e a validação fica na mesma faixa (0,0086–0,0090): **este é o mínimo
+empírico do problema**. O resíduo é **estrutural**: as travas duras do
+especialista (abastecer, dormir, frear no radar, creep do dock) são
+descontinuidades que rede lisa alguma cruza de forma exata, e a validação
+mede generalização para estradas nunca vistas. Loss de 1e-26 não existe
+neste problema em precisão nenhuma; o que melhora de verdade com a
+v0.4.2 é o **controle**: MAE 0,0303 (−31%), erro de parada 0,45 m,
+desvio do GPS 0,15 m, dock/faixa/radares 100%.
 
 **O que o float64 não faz:** a loss não despenca. O resíduo (~0,0086) é
 **estrutural** — o especialista tem travas duras (abastecer, dormir, frear
-no radar, creep do dock) que uma rede suave de 150.203 parâmetros aproxima
+no radar, creep do dock) que uma rede suave de 295.103 parâmetros aproxima
 mas não cruza de forma exata; não é ruído numérico. Loss de 1e-41 exigiria
 memorizar as descontinuidades com rede lisa — não acontece em nenhuma
 precisão. Na T4 do Kaggle o FP64 roda a 1/32 da velocidade, então o kernel
@@ -241,8 +248,8 @@ Kaggle em 4 passos (conta precisa de telefone verificado):
 
 1. Abra **kaggle.com → Code → New Notebook**;
 2. Settings → Accelerator → **GPU T4 x2**;
-3. Cole o conteúdo de `kaggle/kernel-ets2ai-v0.4.1.py` numa célula
-   (ou importe `kaggle/kernel-ets2ai-v0.4.1.ipynb` via File → Import);
+3. Cole o conteúdo de `kaggle/kernel-ets2ai-v0.4.2.py` numa célula
+   (ou importe `kaggle/kernel-ets2ai-v0.4.2.ipynb` via File → Import);
 4. **Run All** — procure `[kaggle] GPU detectada: 2x` no log e, no final,
    `gpu=True, ngpus=2` + circuito fechado. O notebook é 100% auto-contido
    (gera os próprios dados; nada do repo é necessário).
