@@ -64,7 +64,7 @@ class Adam:
                 p -= self.lr * m_hat / (np.sqrt(v_hat) + self.eps)
 
 
-def train(x, y, epochs=400, batch=256, lr=2e-3, seed=SEED, verbose=True,
+def train(x, y, epochs=400, batch=512, lr=2e-3, seed=SEED, verbose=True,
           x_val=None, y_val=None, start_layers=None):
     """Train the MLP on (x, y) with Adam + MSE. Returns (layers, history).
 

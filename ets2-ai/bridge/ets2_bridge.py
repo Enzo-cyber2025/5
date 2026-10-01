@@ -21,6 +21,7 @@ no lugar do demo — ponto de integracao documentado no README.
 """
 import argparse
 import math
+import os
 import socket
 import sys
 import threading
@@ -328,6 +329,32 @@ def run_demo(layers, port, injector, record_path=None):
     info = tk.Label(footer, font=("Consolas", 10), justify="left", anchor="w",
                     bg="#1B1B26", fg="#B9F0D0", padx=10, pady=6)
     info.pack(side="left", fill="both", expand=True)
+
+    # painel de configuracao (plug and play: tudo clicavel, zero terminal)
+    cfg = tk.Frame(root, bg="#14141C")
+    cfg.pack(fill="x", padx=14, pady=(2, 2))
+    tk.Label(cfg, text="No celular:", font=("Segoe UI", 9), bg="#14141C",
+             fg="#8B8BA3").pack(side="left")
+    ip_lbl = tk.Label(cfg, text=f"{PhoneLink.local_ip()}:7777",
+                      font=("Consolas", 12, "bold"), bg="#14141C", fg="#7ED957")
+    ip_lbl.pack(side="left", padx=8)
+    tk.Label(cfg, text="→ botão BRIDGE (ou USB: ative 'Ancoragem USB' no celular)",
+             font=("Segoe UI", 8), bg="#14141C", fg="#8B8BA3").pack(side="left", padx=6)
+    inject_var = tk.BooleanVar(value=injector.enabled)
+    tk.Checkbutton(cfg, text="Injetar teclas no jogo", variable=inject_var,
+                   command=lambda: setattr(injector, "enabled",
+                                           inject_var.get() and sys.platform == "win32"),
+                   bg="#14141C", fg="white", selectcolor="#2F7BFF",
+                   activebackground="#14141C", activeforeground="white",
+                   font=("Segoe UI", 9)).pack(side="right", padx=6)
+    win_entry = tk.Entry(cfg, width=22, bg="#1B1B26", fg="white",
+                         insertbackground="white", relief="flat")
+    win_entry.insert(0, injector.window_substring)
+    win_entry.pack(side="right", padx=6)
+    win_entry.bind("<FocusOut>",
+                   lambda e: setattr(injector, "window_substring", win_entry.get()))
+    tk.Label(cfg, text="Janela alvo:", font=("Segoe UI", 9), bg="#14141C",
+             fg="#8B8BA3").pack(side="right")
 
     def toggle_ai(_e=None):
         state["ai"] = not state["ai"]
@@ -699,6 +726,11 @@ def run_bench():
 
 
 def main():
+    # builds sem console (PyInstaller --noconsole): stdout/stderr sao None
+    if sys.stdout is None:
+        sys.stdout = open(os.devnull, "w")
+    if sys.stderr is None:
+        sys.stderr = open(os.devnull, "w")
     ap = argparse.ArgumentParser(description="ETS2-AI bridge (Windows)")
     ap.add_argument("--port", type=int, default=DEFAULT_PORT)
     ap.add_argument("--inject", action="store_true",

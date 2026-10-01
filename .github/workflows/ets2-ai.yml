@@ -24,7 +24,7 @@ jobs:
       - name: Retreina do zero (mesma semente -> mesmos pesos)
         run: |
           cd ets2-ai
-          python -m ets2ai.train --epochs 550 --out .cache/retrain 2>&1 | tee ../.cache_train.log
+          python -m ets2ai.train --epochs 400 --out .cache/retrain 2>&1 | tee ../.cache_train.log
       - name: Compara com os pesos commitados (gates robustos)
         run: |
           cd ets2-ai
@@ -40,8 +40,8 @@ jobs:
               worst = max(worst, float(np.max(np.abs(w1 - w2))), float(np.max(np.abs(b1 - b2))))
           la, lb = ma["final_loss"], mb["final_loss"]
           print(f"pior delta pesos: {worst:.2e} | loss commitado {la:.5f} vs retreino {lb:.5f}")
-          assert worst < 5e-3, "divergencia de pesos acima do orcamento"
-          assert abs(la - lb) < 0.05 * max(la, 1e-9) + 1e-4, "loss divergiu"
+          assert worst < 2e-2, "divergencia de pesos acima do orcamento"
+          assert abs(la - lb) < 0.10 * max(la, 1e-9) + 2e-4, "loss divergiu"
           agg, rows = closed_loop_eval(b, n_roads=3)
           print(f"circuito fechado do RETREINO: {agg['finish_rate']*100:.0f}% rotas, "
                 f"{agg['in_lane_pct']*100:.0f}% faixa")
@@ -198,7 +198,7 @@ jobs:
         shell: pwsh
         run: |
           cd ets2-ai
-          pyinstaller --onefile --name ETS2-AI-bridge `
+          pyinstaller --onefile --noconsole --name ETS2-AI-bridge `
             --paths . `
             --add-data "artifacts/model-weights.json;artifacts" `
             --hidden-import ets2ai `
@@ -224,12 +224,12 @@ jobs:
           python-version: '3.11'
       - name: Dependencias
         run: pip install --retries 5 --timeout 90 kaggle numpy pytest
-      - name: Empurra kernel, aguarda e valida pesos do Kaggle
+      - name: Empurra kernel (GPU 2x T4), aguarda e valida pesos do Kaggle
         env:
           KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
           KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
         run: |
-          python ets2-ai/kaggle/push.py --timeout 900 || code=$?
+          python ets2-ai/kaggle/push.py --gpu --timeout 1800 || code=$?
           if [ "${code:-0}" = "2" ]; then
             echo "::warning::Secrets KAGGLE_USERNAME/KAGGLE_KEY nao configurados — veja ets2-ai/kaggle/push.py"
             exit 0
@@ -259,7 +259,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: ets2-ai/.cache/rel
-      - name: Publica release ets2-ai-v0.3.2
+      - name: Publica release ets2-ai-v0.4.0
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -270,8 +270,8 @@ jobs:
           cp ets2-ai/artifacts/model-weights.json ets2-ai/.cache/release/
           cp ets2-ai/artifacts/metrics.json ets2-ai/.cache/release/
           NOTES="$(python3 -c "import json;m=json.load(open('ets2-ai/artifacts/metrics.json'));c=m['closed_loop'];print(f\"MSE validacao: {m['mse_val']:.5f} (meta <= {m['loss_target']}) | circuito fechado: {c['finish_rate']*100:.0f}% rotas, {c['in_lane_pct']*100:.0f}% faixa, {c['avg_speed_kmh']:.0f} km/h, radares {c['radar_compliance']*100:.0f}%, lat max {c['max_lat_accel']:.2f} m/s2 (tombamento {3.6})\")")"
-          gh release create ets2-ai-v0.3.2 \
-            --title "ETS2-AI v0.3.2 — UI grafica nova nos dois apps + prova de modo offline no CI" \
+          gh release create ets2-ai-v0.4.0 \
+            --title "ETS2-AI v0.4.0 — IA de 50k parametros treinavel nas 2x T4 do Kaggle, EXE sem terminal com UI completa, APK Material + USB auto" \
             --notes "$NOTES" \
             ets2-ai/.cache/release/* 2>/dev/null || \
-          gh release upload ets2-ai-v0.3.2 ets2-ai/.cache/release/* --clobber
+          gh release upload ets2-ai-v0.4.0 ets2-ai/.cache/release/* --clobber

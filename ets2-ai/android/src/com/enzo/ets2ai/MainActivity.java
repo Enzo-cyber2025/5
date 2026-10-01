@@ -29,7 +29,16 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
+import java.net.Socket;
 import android.Manifest;
 import android.content.pm.PackageManager;
 
@@ -58,6 +67,8 @@ public final class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        getWindow().setStatusBarColor(0xFF101018);
+        getWindow().setNavigationBarColor(0xFF101018);
         try {
             net = NeuralNet.fromStream(getAssets().open("model-weights.txt"));
         } catch (Exception e) {
@@ -235,7 +246,84 @@ public final class MainActivity extends Activity {
                     }
                 })
                 .setNegativeButton("Cancelar", null)
+                .setNeutralButton("AUTO (USB/Wi-Fi)", new android.content.DialogInterface.OnClickListener() {
+                    public void onClick(android.content.DialogInterface d, int w) {
+                        autoConnectBridge();
+                    }
+                })
                 .show();
+    }
+
+    /** Procura o PC sozinho: sub-redes do aparelho + faixas tipicas de
+     *  ancoragem USB (tethering). Cabo USB + 'Ancoragem USB' ligada = rede. */
+    private void autoConnectBridge() {
+        if (net == null) return;
+        if (bridge != null) { bridge.stop(); bridge = null; }
+        bridgeStatus = "AUTO: procurando o PC (USB/Wi-Fi)...";
+        new Thread(new Runnable() {
+            public void run() {
+                List<String> prefixes = new ArrayList<String>();
+                try {
+                    Enumeration<NetworkInterface> nis = NetworkInterface.getNetworkInterfaces();
+                    while (nis.hasMoreElements()) {
+                        NetworkInterface ni = nis.nextElement();
+                        for (java.net.InterfaceAddress ia : ni.getInterfaceAddresses()) {
+                            String ip = ia.getAddress().getHostAddress();
+                            if (ip != null && ip.contains("."))
+                                prefixes.add(ip.substring(0, ip.lastIndexOf('.')));
+                        }
+                    }
+                } catch (Exception ignored) { }
+                String[] tether = { "192.168.42", "192.168.43", "192.168.44",
+                                    "192.168.45", "192.168.46" };
+                for (String t : tether) if (!prefixes.contains(t)) prefixes.add(t);
+
+                ExecutorService pool = Executors.newFixedThreadPool(24);
+                List<Future<String>> futures = new ArrayList<Future<String>>();
+                for (final String pre : prefixes) {
+                    for (int i = 1; i <= 254; i++) {
+                        final String host = pre + "." + i;
+                        futures.add(pool.submit(new java.util.concurrent.Callable<String>() {
+                            public String call() {
+                                try {
+                                    Socket sk = new Socket();
+                                    sk.connect(new InetSocketAddress(host, 7777), 150);
+                                    sk.close();
+                                    return host;
+                                } catch (Exception e) { return null; }
+                            }
+                        }));
+                    }
+                }
+                String found = null;
+                try {
+                    for (Future<String> f : futures) {
+                        String h = f.get();
+                        if (h != null) { found = h; break; }
+                    }
+                } catch (Exception ignored) { }
+                pool.shutdownNow();
+                final String host = found;
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        if (host == null) {
+                            bridgeStatus = "AUTO: PC nao encontrado — confira o bridge "
+                                    + "e a 'Ancoragem USB'";
+                            return;
+                        }
+                        bridgeStatus = "AUTO: PC encontrado em " + host + "!";
+                        bridge = new BridgeClient(host, 7777, net, new BridgeClient.Listener() {
+                            public void onStatus(final String st) {
+                                runOnUiThread(new Runnable() {
+                                    public void run() { bridgeStatus = st; }
+                                });
+                            }
+                        });
+                        new Thread(bridge).start();
+                    }
+                });
+            }
+        }).start();
     }
 
     private void showBtDialog() {

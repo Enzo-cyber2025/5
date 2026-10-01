@@ -45,13 +45,17 @@ def main():
 
     user = os.environ.get("KAGGLE_USERNAME", "").strip()
     key = os.environ.get("KAGGLE_KEY", "").strip()
-    if not user or not key:
-        print("::warning::Secrets KAGGLE_USERNAME/KAGGLE_KEY nao configurados.")
+    if not key:
+        print("::warning::Secret KAGGLE_KEY nao configurado.")
         print("Para treinar no Kaggle: repo Settings > Secrets and variables > Actions >")
-        print("  KAGGLE_USERNAME = seu usuario Kaggle")
-        print("  KAGGLE_KEY      = seu token (kaggle.com > Settings > API > Create)")
+        print("  KAGGLE_KEY = seu token (kaggle.com > Settings > API > Create)")
         print("O token NUNCA deve ser colado em chat/commit — apenas em secrets.")
         return 2
+    if not user:
+        # tokens novos (KGAT_...) podem autenticar sozinhos; CLI antigo exige
+        # usuario — tentamos e registramos o resultado para diagnostico.
+        print("[kaggle] KAGGLE_USERNAME ausente: tentando autenticacao somente-token")
+        os.environ["KAGGLE_USERNAME"] = "kaggle"   # placeholder; CLI novo ignora
 
     kdir = ROOT / ".cache" / "kaggle-kernel"
     kdir.mkdir(parents=True, exist_ok=True)

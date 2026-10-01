@@ -13,7 +13,7 @@ HERE = Path(__file__).resolve().parent
 PKG = HERE.parent / "ets2ai"
 MODULES = ["contract.py", "sim.py", "model.py", "data.py", "train.py"]
 
-FOOTER = '''
+FOOTER = """
 
 # ---------------------------------------------------------------------------
 # Kaggle runner footer (appended by build_kernel.py — do not edit here)
@@ -24,10 +24,39 @@ import os as _os
 _OUT = _os.environ.get("KAGGLE_WORKING_DIR", ".")
 print("[kaggle] gerando dados do especialista (estradas aleatorias)...")
 _xtr, _ytr, _xva, _yva = generate()
-print(f"[kaggle] treino {_xtr.shape} | val {_xva.shape}")
+print(f"[kaggle] treino {_xtr.shape} | val {_xva.shape} | "
+      f"arquitetura 13-128-128-128-128-3 (~50k params)")
 
-print("[kaggle] treinando (mesma semente do repo)...")
-_layers, _hist = train(_xtr, _ytr, epochs=320, x_val=_xva, y_val=_yva)
+_gpus = []
+_TRAIN_GPU = False
+try:
+    import tensorflow as _tf
+    _gpus = _tf.config.list_physical_devices("GPU")
+except Exception:
+    _tf = None
+
+if _tf is not None and len(_gpus) >= 1:
+    # ---------------- GPU PATH (Kaggle 2x T4, MirroredStrategy) ----------------
+    print(f"[kaggle] GPU detectada: {len(_gpus)}x {_gpus[0][1]} — treinando com "
+          f"tf.distribute.MirroredStrategy (todas as GPUs)")
+    _strategy = _tf.distribute.MirroredStrategy()
+    with _strategy.scope():
+        _model = _tf.keras.Sequential()
+        _model.add(_tf.keras.Input(shape=(13,)))
+        for _h in HIDDEN:
+            _model.add(_tf.keras.layers.Dense(_h, activation="tanh"))
+        _model.add(_tf.keras.layers.Dense(3, activation="linear"))
+        _model.compile(_tf.keras.optimizers.Adam(learning_rate=2e-3), loss="mse")
+    _model.fit(_xtr, _ytr, epochs=400, batch_size=512, verbose=2)
+    _w = _model.get_weights()
+    _layers = [(np.asarray(_w[2 * i], dtype=np.float32),
+                np.asarray(_w[2 * i + 1], dtype=np.float32))
+               for i in range(len(_w) // 2)]
+    _TRAIN_GPU = True
+else:
+    # ---------------- CPU fallback (identical math) ----------------
+    print("[kaggle] sem GPU — treinando em numpy (CPU)")
+    _layers, _hist = train(_xtr, _ytr, epochs=400, x_val=_xva, y_val=_yva)
 
 _loss_tr = mse(forward(_xtr, _layers), _ytr)
 _loss_va = mse(forward(_xva, _layers), _yva)
@@ -36,15 +65,17 @@ print(f"[kaggle] MSE treino {_loss_tr:.5f} | validacao {_loss_va:.5f} (meta <= {
 _agg, _rows = closed_loop_eval(_layers, n_roads=5)
 print(f"[kaggle] circuito fechado: {_agg['finish_rate']*100:.0f}% rotas, "
       f"{_agg['in_lane_pct']*100:.0f}% faixa, {_agg['avg_speed_kmh']:.0f} km/h, "
-      f"radares {_agg['radar_compliance']*100:.0f}%")
+      f"radares {_agg['radar_compliance']*100:.0f}%, dock {_agg['dock_rate']*100:.0f}%")
 
 save_weights(_os.path.join(_OUT, "model-weights.json"), _layers,
-             model_meta(epochs=320, samples=int(len(_xtr) + len(_xva)), loss=_loss_va))
+             model_meta(epochs=400, samples=int(len(_xtr) + len(_xva)), loss=_loss_va))
 with open(_os.path.join(_OUT, "metrics.json"), "w", encoding="utf-8") as _f:
     _json.dump({"mse_train": _loss_tr, "mse_val": _loss_va,
-                "loss_target": LOSS_TARGET, "closed_loop": _agg}, _f, indent=2)
-print("[kaggle] saida: model-weights.json + metrics.json")
-'''
+                "loss_target": LOSS_TARGET, "closed_loop": _agg,
+                "trained_on_gpu": _TRAIN_GPU, "n_gpus": len(_gpus)}, _f, indent=2)
+print(f"[kaggle] saida: model-weights.json + metrics.json (gpu={_TRAIN_GPU}, "
+      f"ngpus={len(_gpus)})")
+"""
 
 
 def strip_local_imports(src):
