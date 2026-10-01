@@ -24,6 +24,8 @@ import os as _os
 _OUT = _os.environ.get("KAGGLE_WORKING_DIR", ".")
 print("[kaggle] gerando dados do especialista (estradas aleatorias)...")
 _xtr, _ytr, _xva, _yva = generate()
+_xtr = np.asarray(_xtr, dtype=np.float32); _ytr = np.asarray(_ytr, dtype=np.float32)
+_xva = np.asarray(_xva, dtype=np.float32); _yva = np.asarray(_yva, dtype=np.float32)
 print(f"[kaggle] treino {_xtr.shape} | val {_xva.shape} | "
       f"arquitetura 13-128-128-128-128-3 (~50k params)")
 

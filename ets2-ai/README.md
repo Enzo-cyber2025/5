@@ -196,6 +196,19 @@ do Kaggle passam pelos mesmos gates (loss, circuito fechado, radares, dock)
 antes de serem aprovados. Adicione também `KAGGLE_USERNAME` (seu usuário)
 nos secrets — alguns recursos do `kaggle` CLI ainda o exigem.
 
+### Rodar manualmente no Kaggle (sem secrets)
+
+Sem os secrets configurados, dá para treinar nas 2× T4 direto na UI do
+Kaggle em 4 passos (conta precisa de telefone verificado):
+
+1. Abra **kaggle.com → Code → New Notebook**;
+2. Settings → Accelerator → **GPU T4 x2**;
+3. Cole o conteúdo de `kaggle/kernel-ets2ai-v0.4.0.py` numa célula
+   (ou importe `kaggle/kernel-ets2ai-v0.4.0.ipynb` via File → Import);
+4. **Run All** — procure `[kaggle] GPU detectada: 2x` no log e, no final,
+   `gpu=True, ngpus=2` + circuito fechado. O notebook é 100% auto-contido
+   (gera os próprios dados; nada do repo é necessário).
+
 ## Kaggle para datasets (opcional)
 
 Se futuramente usar datasets do Kaggle:
