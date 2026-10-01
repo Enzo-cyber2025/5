@@ -306,12 +306,28 @@ def run_demo(layers, port, injector, record_path=None):
 
     root = tk.Tk()
     root.title("ETS2-AI bridge — demo (ESC no modo --inject = kill switch)")
-    cv = tk.Canvas(root, width=900, height=560, bg="#1C4E28")
-    cv.pack()
-    info = tk.Label(root, font=("Courier New", 10), justify="left", anchor="w",
-                    bg="black", fg="white")
-    info.pack(fill="x")
+    root.configure(bg="#14141C")
+    W, H = 960, 600
     SCALE = 6
+
+    header = tk.Frame(root, bg="#14141C")
+    header.pack(fill="x", padx=14, pady=(10, 2))
+    tk.Label(header, text="ETS2-AI  BRIDGE", font=("Segoe UI", 15, "bold"),
+             bg="#14141C", fg="#EDEDF7").pack(side="left")
+    chip = tk.Label(header, text="IA LOCAL", font=("Segoe UI", 9, "bold"),
+                    bg="#2F7BFF", fg="white", padx=10, pady=3)
+    chip.pack(side="left", padx=12)
+    tk.Label(header, text="offline · sem captura de tela · ESC mata a injecao",
+             font=("Segoe UI", 9), bg="#14141C", fg="#8B8BA3").pack(side="right")
+
+    cv = tk.Canvas(root, width=W, height=H, bg="#101B2D", highlightthickness=0)
+    cv.pack(padx=14, pady=4)
+
+    footer = tk.Frame(root, bg="#1B1B26")
+    footer.pack(fill="x", padx=14, pady=(4, 6))
+    info = tk.Label(footer, font=("Consolas", 10), justify="left", anchor="w",
+                    bg="#1B1B26", fg="#B9F0D0", padx=10, pady=6)
+    info.pack(side="left", fill="both", expand=True)
 
     def toggle_ai(_e=None):
         state["ai"] = not state["ai"]
@@ -390,18 +406,33 @@ def run_demo(layers, port, injector, record_path=None):
         root.after(33, tick)
 
     def fmt():
-        recmsg = f"  |  REC {rec.n} linhas ({rec.overrides} correcoes)" if rec else ""
-        return (f"[{state['source']}]  {truck.speed*3.6:5.1f} km/h   "
-                f"offset {truck.offset:+.2f} m   combustivel {truck.fuel*100:3.0f}%   "
-                f"sono {truck.fatigue*100:3.0f}%   rota {road.length/1000 - truck.s/1000:.1f} km restantes   "
-                f"{state['msg']}{recmsg}   | {' | '.join(link.log[-2:])}")
+        recmsg = f"  |  REC {rec.n} ({rec.overrides} correcoes)" if rec else ""
+        chip.configure(text=state["source"].split(" (")[0].upper()[:24])
+        return (f"{truck.speed*3.6:5.1f} km/h   offset {truck.offset:+.2f} m   "
+                f"comb {truck.fuel*100:3.0f}%   sono {truck.fatigue*100:3.0f}%   "
+                f"restam {road.length/1000 - truck.s/1000:.1f} km{recmsg}\n"
+                f"{state['msg']}   |   {' | '.join(link.log[-2:])}")
 
     def draw():
         cv.delete("all")
-        W, H = 900, 560
-        cv.create_text(10, 10, anchor="nw", fill="white",
-                       text="A: IA on/off  |  setas: manual  |  celular: conecte pelo app")
         cx, cy = W / 2, H * 0.62
+        # ceu e grama com gradiente
+        for i in range(36):
+            f = i / 35.0
+            col = (int(16 + 30 * f), int(27 + 63 * f), int(45 + 25 * f))
+            y1 = (i + 1) * H * 0.45 / 36 + 1
+            cv.create_rectangle(0, i * H * 0.45 / 36, W, y1, outline="",
+                                fill="#%02x%02x%02x" % col)
+        for i in range(26):
+            f = i / 25.0
+            col = (int(46 - 18 * f), int(90 - 20 * f), int(70 - 28 * f))
+            y0 = H * 0.45 + i * H * 0.55 / 26
+            cv.create_rectangle(0, y0, W, y0 + H * 0.55 / 26 + 1, outline="",
+                                fill="#%02x%02x%02x" % col)
+        for hx, hw, hh in ((W * 0.15, 280, 55), (W * 0.55, 400, 88), (W * 0.93, 320, 46)):
+            cv.create_oval(hx - hw / 2, H * 0.45 - hh, hx + hw / 2, H * 0.45 + 30,
+                           fill="#24463A", outline="")
+
         ang = -math.pi / 2 - truck.heading
         cos, sin = math.cos(ang), math.sin(ang)
 
@@ -411,14 +442,89 @@ def run_demo(layers, port, injector, record_path=None):
 
         i0 = max(0, truck._hint - 40)
         i1 = min(len(road.samples) - 1, truck._hint + 110)
-        pts = [to_screen(*road.samples[i]) for i in range(i0, i1, 2)]
-        if len(pts) > 1:
-            cv.create_line(*[c for p in pts for c in p], width=9 * SCALE,
-                           fill="#3A3A44", capstyle="round", smooth=True)
-            cv.create_line(*[c for p in pts for c in p], width=2, fill="#F2C14E",
-                           dash=(12, 12), smooth=True)
+
+        def road_poly(lat):
+            out = []
+            for i in range(i0, i1 + 1, 2):
+                a = road.samples[max(0, i - 1)]
+                b = road.samples[min(len(road.samples) - 1, i + 1)]
+                tx_, ty_ = b[0] - a[0], b[1] - a[1]
+                tn = math.hypot(tx_, ty_) or 1.0
+                out.append(to_screen(road.samples[i][0] + (-ty_ / tn) * lat,
+                                     road.samples[i][1] + (tx_ / tn) * lat))
+            return out
+
+        pts = road_poly(0)
+        flat = [c for p in pts for c in p]
+        if len(flat) > 3:
+            cv.create_line(*flat, width=9 * SCALE, fill="#2E2E38",
+                           capstyle="round", smooth=True)
+            cv.create_line(*flat, width=1, fill="#55555F", dash=(3, 12), smooth=True)
+            for lat in (-4.5, 4.5):
+                op = [c for p in road_poly(lat) for c in p]
+                if len(op) > 3:
+                    cv.create_line(*op, width=2, fill="#E8E8E8", smooth=True)
+            cv.create_line(*flat, width=2, fill="#F2C14E", dash=(14, 14), smooth=True)
+
+        # radares
+        for rs in road.radars:
+            if truck.s - 20 < rs < truck.s + 200:
+                idx = min(len(road.samples) - 1, max(0, int(rs / 2)))
+                rx, ry = to_screen(*road.samples[idx])
+                cv.create_rectangle(rx - 5, ry - 5, rx + 5, ry + 5,
+                                    fill="#F2C14E", outline="#3A3A44")
+                cv.create_text(rx, ry - 14, text="RADAR", fill="#F2C14E",
+                               font=("Segoe UI", 7, "bold"))
+        # dock: faixa quadriculada no fim da rota
+        dock_s = road.length - 6.0
+        if dock_s < truck.s + 240:
+            idx = min(len(road.samples) - 1, max(0, int(dock_s / 2)))
+            a = road.samples[max(0, idx - 1)]
+            b = road.samples[min(len(road.samples) - 1, idx + 1)]
+            tx_, ty_ = b[0] - a[0], b[1] - a[1]
+            tn = math.hypot(tx_, ty_) or 1.0
+            nx, ny = -ty_ / tn, tx_ / tn
+            c0 = road.samples[idx]
+            e1 = to_screen(c0[0] + nx * 4.6, c0[1] + ny * 4.6)
+            e2 = to_screen(c0[0] - nx * 4.6, c0[1] - ny * 4.6)
+            cv.create_line(*e1, *e2, width=8, fill="#F5F5F5")
+            cv.create_line(*e1, *e2, width=8, fill="#1A1A22", dash=(8, 8))
+            cv.create_text((e1[0] + e2[0]) / 2, (e1[1] + e2[1]) / 2 - 16,
+                           text="DOCK", fill="#FFFFFF", font=("Segoe UI", 8, "bold"))
+
+        # caminhao: sombra, bau, cabine, para-brisa, rodas
         tx, ty = to_screen(truck.x, truck.y)
-        cv.create_rectangle(tx - 8, ty - 26, tx + 8, ty + 66, fill="#2F7BFF")
+        cv.create_oval(tx - 14, ty + 56, tx + 14, ty + 68, fill="#00000040", outline="")
+        cv.create_rectangle(tx - 8, ty - 24, tx + 8, ty + 62, fill="#C9D1DC",
+                            outline="#8A93A3")
+        cv.create_rectangle(tx - 8, ty - 44, tx + 8, ty - 22, fill="#2F7BFF",
+                            outline="#1E5BBF")
+        cv.create_rectangle(tx - 6, ty - 40, tx + 6, ty - 30, fill="#BFE3FF", outline="")
+        for wy in (-38, 28, 50):
+            cv.create_oval(tx - 11, ty + wy - 3, tx + 11, ty + wy + 3,
+                           fill="#14141C", outline="")
+
+        # HUD: velocimetro + barras + faixa de evento
+        cv.create_rectangle(W - 150, 16, W - 20, 96, fill="#00000066", outline="#FFFFFF22")
+        cv.create_text(W - 85, 44, text=f"{truck.speed*3.6:.0f}", fill="#FFFFFF",
+                       font=("Segoe UI", 26, "bold"))
+        cv.create_text(W - 85, 78, text="km/h", fill="#9FE8C1", font=("Segoe UI", 9))
+        bars = (("COMB", truck.fuel, "#7ED957", truck.fuel < 0.22),
+                ("SONO", truck.fatigue, "#FFC24B", truck.fatigue > 0.7))
+        for (label, frac, col, warn), bx in zip(bars, (W - 140, W - 78)):
+            cv.create_rectangle(bx, 112, bx + 54, 118, fill="#00000066", outline="")
+            cv.create_rectangle(bx, 112, bx + 54 * frac, 118,
+                                fill="#FF5252" if warn else col, outline="")
+            cv.create_text(bx + 27, 128, text=label, fill="#B9B9C9",
+                           font=("Segoe UI", 7, "bold"))
+        if state["msg"]:
+            cv.create_rectangle(W / 2 - 220, 18, W / 2 + 220, 50,
+                                fill="#00000099", outline="#FFFFFF33")
+            cv.create_text(W / 2, 34, text=state["msg"], fill="#FFD75E",
+                           font=("Segoe UI", 10, "bold"))
+        cv.create_text(12, H - 12, anchor="sw", fill="#8B8BA3",
+                       text="A: IA on/off  ·  setas: manual/correcao  ·  R: nova rota  ·  celular: botao BRIDGE",
+                       font=("Segoe UI", 8))
 
     def restart(_e=None):
         nonlocal road, truck
@@ -426,6 +532,15 @@ def run_demo(layers, port, injector, record_path=None):
         truck = sim.Truck(road, s=5.0, offset=0.0, speed=15.0)
         state["msg"] = ""
     root.bind("r", restart)
+
+    btns = tk.Frame(root, bg="#14141C")
+    btns.pack(fill="x", padx=14, pady=(0, 10))
+    for label, color, cmd in (("IA ON/OFF (A)", "#2F7BFF", toggle_ai),
+                              ("NOVA ROTA (R)", "#00A884", restart)):
+        tk.Button(btns, text=label, command=cmd, bg=color, fg="white",
+                  activebackground="#00000055", activeforeground="white",
+                  relief="flat", padx=14, pady=6,
+                  font=("Segoe UI", 9, "bold")).pack(side="left", padx=(0, 8))
 
     tick()
     root.mainloop()

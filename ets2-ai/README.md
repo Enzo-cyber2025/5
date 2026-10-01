@@ -1,10 +1,10 @@
 # ETS2-AI — piloto automático para Euro Truck Simulator 2 (celular ↔ PC)
 
 > **Downloads (IA já treinada dentro de ambos):**
-> - APK: https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.3.1/ETS2-AI-mobile.apk
-> - EXE: https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.3.1/ETS2-AI-bridge.exe
+> - APK: https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.3.2/ETS2-AI-mobile.apk
+> - EXE: https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.3.2/ETS2-AI-bridge.exe
 >
-> **v0.3.0 — automação total da missão.** A IA treinada dirige caminhão num simulador com
+> **v0.3.2 — UI nova + offline garantido.** A IA treinada dirige caminhão num simulador com
 > a mesma física do jogo-alvo, gerencia combustível, sono e entregas, roda no
 > **APK do celular** (inferência 100% em Java, sem dependências) e entrega os
 > comandos ao **PC Windows** por TCP, onde o bridge injeta **teclas reais**
@@ -183,6 +183,22 @@ Se futuramente usar datasets do Kaggle:
        KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
    - run: kaggle datasets download -d <usuario>/<dataset> -p dados --unzip
    ```
+
+## Offline (celular) — garantido e provado
+
+O app funciona **100% sem internet**: a IA (pesos Java + `.tflite`), o
+simulador, o dispatcher, o teclado Bluetooth e o diagnóstico NPU estão todos
+**dentro do APK**. A única função que usa rede é o botão BRIDGE (TCP opcional
+com o PC). O CI **prova** isso a cada build (`android/check_offline.sh`):
+pesos e modelo embutidos, zero downloads em runtime.
+
+## Interface gráfica (nova)
+
+Ambos os apps ganharam tema escuro: painel superior com chips (engine
+selecionado + OFFLINE), velocímetro grande, barras de combustível/sono,
+banner de eventos, céu com gradiente, colinas, radares marcados, dock
+quadriculado de chegada e caminhão detalhado (rodas, baú, para-brisa). No
+PC: header com chip de fonte da IA, botões estilizados e rodapé de telemetria.
 
 ## Dados sem dirigir milhares de km (estratégia 0 km)
 

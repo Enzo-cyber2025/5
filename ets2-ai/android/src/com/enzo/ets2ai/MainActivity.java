@@ -6,8 +6,12 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.DashPathEffect;
+import android.graphics.LinearGradient;
 import android.graphics.Paint;
+import android.graphics.RectF;
+import android.graphics.Shader;
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.Gravity;
@@ -20,6 +24,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -43,6 +48,7 @@ public final class MainActivity extends Activity {
     private NeuralNet net;
     private InferenceEngine.Net engine;
     private String engineName = "Java CPU";
+    private TextView engineChip;
     private BridgeClient bridge;
     private String bridgeStatus = "";
     private BtKeyboard btKeyboard;
@@ -66,6 +72,7 @@ public final class MainActivity extends Activity {
                         public void run() {
                             engine = e;
                             engineName = e.name();
+                            engineChip.setText(engineName);
                         }
                     });
                 }
@@ -76,54 +83,114 @@ public final class MainActivity extends Activity {
         root.addView(game, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
-        status = new TextView(this);
-        status.setTextColor(Color.WHITE);
-        status.setShadowLayer(4, 0, 0, Color.BLACK);
-        status.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        status.setTextSize(13);
-        status.setPadding(12, 8, 12, 8);
-        root.addView(status, new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
-                Gravity.TOP | Gravity.START));
+        LinearLayout panel = new LinearLayout(this);
+        panel.setOrientation(LinearLayout.VERTICAL);
+        GradientDrawable panelBg = new GradientDrawable();
+        panelBg.setColor(0xCC16161F);
+        panelBg.setCornerRadius(18f);
+        panel.setBackgroundDrawable(panelBg);
+        panel.setPadding(16, 10, 16, 12);
 
+        LinearLayout titleRow = new LinearLayout(this);
+        titleRow.setOrientation(LinearLayout.HORIZONTAL);
+        TextView title = new TextView(this);
+        title.setText("ETS2-AI");
+        title.setTextColor(Color.WHITE);
+        title.setTypeface(Typeface.DEFAULT_BOLD);
+        title.setTextSize(15);
+        titleRow.addView(title);
+        titleRow.addView(chip("OFFLINE", 0xFF00A884));
+        engineChip = chip(engineName, 0xFF2F7BFF);
+        titleRow.addView(engineChip);
+        panel.addView(titleRow);
+
+        status = new TextView(this);
+        status.setTextColor(0xFFE6E6F0);
+        status.setTypeface(Typeface.MONOSPACE);
+        status.setTextSize(11);
+        status.setPadding(0, 8, 0, 0);
+        panel.addView(status);
+
+        FrameLayout.LayoutParams plp = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.TOP | Gravity.START);
+        plp.setMargins(12, 12, 12, 12);
+        root.addView(panel, plp);
+
+        HorizontalScrollView scroll = new HorizontalScrollView(this);
+        scroll.setHorizontalScrollBarEnabled(false);
+        scroll.setBackgroundColor(0x88101420);
         LinearLayout bar = new LinearLayout(this);
         bar.setOrientation(LinearLayout.HORIZONTAL);
-        bar.setGravity(Gravity.CENTER);
-        bar.setBackgroundColor(0x66000000);
-        bar.addView(button("IA", new Runnable() {
+        bar.setGravity(Gravity.CENTER_VERTICAL);
+        bar.setPadding(10, 8, 10, 10);
+        scroll.addView(bar);
+        bar.addView(styledButton("IA", 0xFF2F7BFF, new Runnable() {
             public void run() { game.world.aiEnabled = !game.world.aiEnabled; }
         }));
-        bar.addView(button("ROTA", new Runnable() {
+        bar.addView(styledButton("ROTA", 0xFF00A884, new Runnable() {
             public void run() { game.world.newRoute(); }
         }));
-        bar.addView(button("VEL", new Runnable() {
+        bar.addView(styledButton("VEL", 0xFFF2A93B, new Runnable() {
             public void run() { game.cycleSpeed(); }
         }));
-        bar.addView(button("BRIDGE", new Runnable() {
+        bar.addView(styledButton("BRIDGE", 0xFF8E5BF2, new Runnable() {
             public void run() { showBridgeDialog(); }
         }));
-        bar.addView(button("NPU", new Runnable() {
+        bar.addView(styledButton("NPU", 0xFFE85D75, new Runnable() {
             public void run() { showNpuDialog(); }
         }));
-        bar.addView(button("BACKEND", new Runnable() {
+        bar.addView(styledButton("BACKEND", 0xFF3AA8C1, new Runnable() {
             public void run() { showBackendDialog(); }
         }));
-        bar.addView(button("TECLADO BT", new Runnable() {
+        bar.addView(styledButton("TECLADO BT", 0xFF5B6B8C, new Runnable() {
             public void run() { showBtDialog(); }
         }));
-        root.addView(bar, new FrameLayout.LayoutParams(
+        root.addView(scroll, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT,
                 Gravity.BOTTOM));
 
         setContentView(root);
     }
 
-    private Button button(String label, final Runnable r) {
+    private TextView chip(String text, int color) {
+        TextView t = new TextView(this);
+        t.setText(text);
+        t.setTextColor(Color.WHITE);
+        t.setTypeface(Typeface.DEFAULT_BOLD);
+        t.setTextSize(9);
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(color);
+        bg.setCornerRadius(10f);
+        t.setBackgroundDrawable(bg);
+        t.setPadding(14, 4, 14, 4);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.setMargins(10, 0, 0, 0);
+        lp.gravity = Gravity.CENTER_VERTICAL;
+        t.setLayoutParams(lp);
+        return t;
+    }
+
+    private Button styledButton(String label, int color, final Runnable r) {
         Button b = new Button(this);
         b.setText(label);
+        b.setTextColor(Color.WHITE);
+        b.setTypeface(Typeface.DEFAULT_BOLD);
+        b.setTextSize(12);
+        b.setAllCaps(false);
+        b.setPadding(28, 12, 28, 12);
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(color);
+        bg.setCornerRadius(22f);
+        b.setBackgroundDrawable(bg);
         b.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { r.run(); }
         });
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.setMargins(6, 0, 6, 0);
+        b.setLayoutParams(lp);
         return b;
     }
 
@@ -277,6 +344,22 @@ public final class MainActivity extends Activity {
         private final Paint hudPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Paint barBg = new Paint();
         private final Paint barFg = new Paint();
+        private final Paint skyPaint = new Paint();
+        private final Paint grassPaint = new Paint();
+        private final Paint hillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint wearPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint dockA = new Paint();
+        private final Paint dockB = new Paint();
+        private final Paint wheelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint glassPaint = new Paint();
+        private final Paint trailerBorder = new Paint();
+        private final Paint panelPaint = new Paint();
+        private final Paint bannerBg = new Paint();
+        private final Paint bigText = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint barLabel = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final RectF panelRect = new RectF();
+        private final RectF barRect = new RectF();
+        private int shaderW = -1, shaderH = -1;
         private final float scale = 6f;    // px per metre
         private int speedMult = 1;
         private float manualSteer, manualThrottle, manualBrake;
@@ -304,6 +387,23 @@ public final class MainActivity extends Activity {
             hudPaint.setTypeface(Typeface.MONOSPACE);
             hudPaint.setTextSize(14);
             barBg.setColor(0x66000000);
+            hillPaint.setColor(0xFF24463A);
+            hillPaint.setStyle(Paint.Style.FILL);
+            wearPaint.setColor(0xFF55555F);
+            wearPaint.setStyle(Paint.Style.STROKE);
+            wearPaint.setStrokeWidth(1f * scale);
+            wearPaint.setPathEffect(new DashPathEffect(new float[] { 3f * scale, 12f * scale }, 0));
+            dockA.setColor(0xFFF5F5F5);
+            dockB.setColor(0xFF1A1A22);
+            wheelPaint.setColor(0xFF14141C);
+            glassPaint.setColor(0xFFBFE3FF);
+            trailerBorder.setColor(0xFF8A93A3);
+            panelPaint.setColor(0x99101420);
+            bannerBg.setColor(0xCC1E1E28);
+            bigText.setColor(Color.WHITE);
+            bigText.setTypeface(Typeface.DEFAULT_BOLD);
+            barLabel.setColor(0xFFB9B9C9);
+            barLabel.setTypeface(Typeface.DEFAULT_BOLD);
         }
 
         void cycleSpeed() {
@@ -392,7 +492,20 @@ public final class MainActivity extends Activity {
             if (c == null) return;
             try {
                 int cw = c.getWidth(), ch = c.getHeight();
-                c.drawColor(0xFF1C4E28);                       // grama
+                // ceu e grama com gradiente (shaders em cache por tamanho)
+                if (shaderW != cw || shaderH != ch) {
+                    shaderW = cw;
+                    shaderH = ch;
+                    skyPaint.setShader(new LinearGradient(0, 0, 0, ch * 0.5f,
+                            0xFF101B2D, 0xFF2E5A46, Shader.TileMode.CLAMP));
+                    grassPaint.setShader(new LinearGradient(0, ch * 0.45f, 0, ch,
+                            0xFF2E5A46, 0xFF1C4E28, Shader.TileMode.CLAMP));
+                }
+                c.drawRect(0, 0, cw, ch * 0.5f, skyPaint);
+                c.drawCircle(cw * 0.15f, ch * 0.45f, ch * 0.10f, hillPaint);
+                c.drawCircle(cw * 0.55f, ch * 0.45f, ch * 0.15f, hillPaint);
+                c.drawCircle(cw * 0.92f, ch * 0.45f, ch * 0.08f, hillPaint);
+                c.drawRect(0, ch * 0.45f, cw, ch, grassPaint);
                 SimWorld.Road road = world.road;
                 SimWorld.Truck t = world.truck;
 
@@ -406,9 +519,33 @@ public final class MainActivity extends Activity {
                 int i0 = Math.max(0, t.hint - 60);
                 int i1 = Math.min(road.sx.length - 1, t.hint + 140);
                 drawPoly(c, roadPaint, road, i0, i1, 0f);
+                drawPoly(c, wearPaint, road, i0, i1, 0f);
                 drawPoly(c, edgePaint, road, i0, i1, -4.5f);
                 drawPoly(c, edgePaint, road, i0, i1, 4.5f);
                 drawPoly(c, centerPaint, road, i0, i1, 0f);
+
+                // dock: faixa quadriculada no fim da rota
+                float dockS = road.length - 6f;
+                if (dockS < t.s + 240f) {
+                    int di = Math.min(road.ss.length - 1, Math.max(0, (int) (dockS / 2f)));
+                    int d0 = Math.max(0, di - 1), d1 = Math.min(road.sx.length - 1, di + 1);
+                    float dtx = road.sx[d1] - road.sx[d0], dty = road.sy[d1] - road.sy[d0];
+                    float dtn = (float) Math.hypot(dtx, dty);
+                    if (dtn < 0.0001f) { dtx = 1; dty = 0; dtn = 1; }
+                    float nx = -dty / dtn, ny = dtx / dtn;
+                    float ux = dtx / dtn, uy = dty / dtn;
+                    for (int row = 0; row < 2; row++) {
+                        for (int k = 0; k < 12; k++) {
+                            float off = -4.6f + (k + 0.5f) * (9.2f / 12f);
+                            float along = row * 0.9f - 0.9f;
+                            float px = road.sx[di] + nx * off + ux * along;
+                            float py = road.sy[di] + ny * off + uy * along;
+                            Paint dp = ((row + k) % 2 == 0) ? dockA : dockB;
+                            c.drawRect(px - 0.45f * scale, py - 0.45f * scale,
+                                    px + 0.45f * scale, py + 0.45f * scale, dp);
+                        }
+                    }
+                }
 
                 // speed cameras ahead (radar markers)
                 Paint camPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -428,12 +565,20 @@ public final class MainActivity extends Activity {
                     }
                 }
 
-                // truck: trailer + cab (local coords, heading up)
+                // truck: rodas, bau com borda, cabine e para-brisa
                 c.save();
                 c.translate(t.x, t.y);
                 c.rotate((float) Math.toDegrees(t.heading));
+                c.drawCircle(-0.95f * scale, -3.3f * scale, 0.45f * scale, wheelPaint);
+                c.drawCircle(0.95f * scale, -3.3f * scale, 0.45f * scale, wheelPaint);
+                c.drawCircle(-0.95f * scale, 4.6f * scale, 0.5f * scale, wheelPaint);
+                c.drawCircle(0.95f * scale, 4.6f * scale, 0.5f * scale, wheelPaint);
+                c.drawCircle(-0.95f * scale, 7.2f * scale, 0.5f * scale, wheelPaint);
+                c.drawCircle(0.95f * scale, 7.2f * scale, 0.5f * scale, wheelPaint);
+                c.drawRect(-1.4f * scale, -2.1f * scale, 1.4f * scale, 11.1f * scale, trailerBorder);
                 c.drawRect(-1.3f * scale, -2f * scale, 1.3f * scale, 11f * scale, trailerPaint);
                 c.drawRect(-1.3f * scale, -4.5f * scale, 1.3f * scale, -1.9f * scale, cabPaint);
+                c.drawRect(-1.05f * scale, -4.1f * scale, 1.05f * scale, -3.1f * scale, glassPaint);
                 c.restore();
                 c.restore();
 
@@ -468,40 +613,59 @@ public final class MainActivity extends Activity {
                         bridge.lastRttMs, bridge.answered);
             }
             String line = String.format(Locale.US,
-                    "%s | %d km/h | faixa %.0f%% | EUR %.0f | jobs %d | entrega %.1f km%s",
-                    src, Math.round(t.speed * 3.6f), world.inLanePct * 100f, t.money,
-                    world.jobsDone, world.jobLeftKm(),
-                    world.crashed ? " | BATER!" : "");
+                    "%s | faixa %.0f%% | EUR %.0f | jobs %d | entrega %.1f km%s",
+                    src, world.inLanePct * 100f, t.money, world.jobsDone,
+                    world.jobLeftKm(), world.crashed ? " | BATER!" : "");
             setStatus(line);
 
-            // fuel / fatigue bars (right edge)
-            float bw = 26f, bh = ch * 0.35f, bx = cw - bw - 14f, by = 40f;
-            c.drawRect(bx, by, bx + bw, by + bh, barBg);
-            barFg.setColor(t.fuel < SimWorld.REFUEL_BELOW + 0.08f ? 0xFFFF5252 : 0xFF7ED957);
-            c.drawRect(bx, by + bh * (1f - t.fuel), bx + bw, by + bh, barFg);
-            c.drawRect(bx + bw + 6f, by, bx + bw + 6f + 20f, by + bh, barBg);
-            barFg.setColor(t.fatigue > 0.7f ? 0xFFFF5252 : 0xFFFFC24B);
-            c.drawRect(bx + bw + 6f, by + bh * (1f - t.fatigue), bx + bw + 6f + 20f, by + bh, barFg);
-            c.save();
-            c.rotate(-90f, bx - 6f, by + bh);
-            c.drawText("COMB", bx - 6f, by + bh, hudPaint);
-            c.restore();
+            // painel de velocidade (topo direita)
+            panelRect.set(cw - 150f, 16f, cw - 20f, 100f);
+            c.drawRoundRect(panelRect, 16f, 16f, panelPaint);
+            bigText.setTextSize(34f);
+            bigText.setTextAlign(Paint.Align.CENTER);
+            c.drawText(String.valueOf(Math.round(t.speed * 3.6f)), cw - 85f, 64f, bigText);
+            hudPaint.setTextAlign(Paint.Align.CENTER);
+            hudPaint.setTextSize(11f);
+            c.drawText("km/h", cw - 85f, 88f, hudPaint);
+            hudPaint.setTextAlign(Paint.Align.LEFT);
+            hudPaint.setTextSize(14f);
 
-            // event / crash overlay
-            if (world.eventTimer > 0f || world.crashed || world.eventText.length() > 0) {
-                if (world.eventTimer > 0f || world.crashed) {
-                    hudPaint.setTextAlign(Paint.Align.CENTER);
-                    c.drawText(world.crashed ? "BATER! Toque ROTA para recomecar"
-                            : world.eventText, cw / 2f, ch * 0.25f, hudPaint);
-                    hudPaint.setTextAlign(Paint.Align.LEFT);
-                }
+            // barras de combustivel e sono
+            barLabel.setTextSize(9f);
+            barLabel.setTextAlign(Paint.Align.CENTER);
+            drawBarH(c, cw - 150f, 112f, 60f, "COMB", t.fuel,
+                    t.fuel < SimWorld.REFUEL_BELOW + 0.08f ? 0xFFFF5252 : 0xFF7ED957);
+            drawBarH(c, cw - 78f, 112f, 60f, "SONO", t.fatigue,
+                    t.fatigue > 0.7f ? 0xFFFF5252 : 0xFFFFC24B);
+            barLabel.setTextAlign(Paint.Align.LEFT);
+
+            // banner de evento
+            String banner = world.crashed ? "BATER! Toque ROTA para recomecar"
+                    : (world.eventTimer > 0f ? world.eventText : "");
+            if (banner.length() > 0) {
+                panelRect.set(cw / 2f - 230f, ch * 0.18f, cw / 2f + 230f, ch * 0.18f + 40f);
+                bannerBg.setColor(world.crashed ? 0xCC5A1F27 : 0xCC1E1E28);
+                c.drawRoundRect(panelRect, 14f, 14f, bannerBg);
+                hudPaint.setTextAlign(Paint.Align.CENTER);
+                c.drawText(banner, cw / 2f, ch * 0.18f + 26f, hudPaint);
+                hudPaint.setTextAlign(Paint.Align.LEFT);
             }
             if (bridgeStatus.length() > 0) {
-                c.drawText(bridgeStatus, 12f, ch - 140f, hudPaint);
+                c.drawText(bridgeStatus, 14f, ch - 150f, hudPaint);
             }
             if (btStatus.length() > 0) {
-                c.drawText(btStatus, 12f, ch - 120f, hudPaint);
+                c.drawText(btStatus, 14f, ch - 130f, hudPaint);
             }
+        }
+
+        private void drawBarH(Canvas c, float x, float y, float w, String label,
+                              float frac, int color) {
+            barRect.set(x, y, x + w, y + 8f);
+            c.drawRoundRect(barRect, 4f, 4f, barBg);
+            barFg.setColor(color);
+            barRect.set(x, y, x + w * Math.max(0f, Math.min(1f, frac)), y + 8f);
+            c.drawRoundRect(barRect, 4f, 4f, barFg);
+            c.drawText(label, x + w / 2f, y + 22f, barLabel);
         }
 
         private float roadKm() {
