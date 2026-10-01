@@ -164,8 +164,16 @@ Para ativar (1 minuto):
    - `KAGGLE_KEY` = o token
 3. Push qualquer mudança em `ets2-ai/` (ou Actions → Run workflow).
 
-O kernel é montado por `ets2-ai/kaggle/build_kernel.py` (auto-contido,
-sem dependências além de numpy) e orquestrado por `ets2-ai/kaggle/push.py`.
+O kernel é montado por `ets2-ai/kaggle/build_kernel.py` (auto-contido) e
+orquestrado por `ets2-ai/kaggle/push.py`.
+
+**GPU 2× T4 (v0.4.0):** o job do CI empurra o kernel com `--gpu`. No Kaggle,
+o kernel detecta as GPUs e treina com `tf.distribute.MirroredStrategy`
+(**as duas T4 em paralelo** — `trained_on_gpu: true`, `n_gpus: 2` na saída).
+Sem GPU, o mesmo kernel roda em numpy (CPU) com matemática idêntica. Os pesos
+do Kaggle passam pelos mesmos gates (loss, circuito fechado, radares, dock)
+antes de serem aprovados. Adicione também `KAGGLE_USERNAME` (seu usuário)
+nos secrets — alguns recursos do `kaggle` CLI ainda o exigem.
 
 ## Kaggle para datasets (opcional)
 
