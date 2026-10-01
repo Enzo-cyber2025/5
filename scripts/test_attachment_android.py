@@ -4,7 +4,8 @@ import base64,hashlib,json,re,shlex,struct,traceback,zipfile
 from pathlib import Path
 import xml.etree.ElementTree as ET
 from test_mobile import MobileAndroid,APK
-from android_checks import PACKAGE,PICKERS,position,has_package,generation_completed
+from android_checks import (PACKAGE,PICKERS,position,has_package,generation_completed,
+                            espera_seletor_parado)
 
 E=Path('evidence')
 CAMERAS={'com.android.camera2','com.android.camera','com.google.android.GoogleCamera'}
@@ -43,6 +44,9 @@ def select_all(d,names):
         xml=d.ui()
         if all(position(xml,text=name,package=PICKERS) for name in names):break
         if position(xml,text='attachment-tests',package=PICKERS):
+            # Entrar na pasta só com a lista parada (rodada 36272556329: toque no
+            # nome da pasta durante a re-arrumação não abriu a pasta).
+            espera_seletor_parado(d,4)
             d.tap(text='attachment-tests',package=PICKERS)
         else:
             d.tap(desc='Show roots',package=PICKERS,optional=True)

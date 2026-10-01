@@ -1,0 +1,29 @@
+{
+  "status": "PUBLISHED_PREDELIVERY_TEST_SIGNED",
+  "apk_sha256": "5bfb4d297186311feec5912957992ecd8ad6733a5f8b4fbea0f513f93de4c51a",
+  "apk_size": 51263416,
+  "tested_run": 36346929204,
+  "tested_commit": "2693e42762d6f044b1edc3a327481564ca9d8035",
+  "payload_entries": 146,
+  "verified_against_tested_run": [
+    "classes.dex",
+    "lib/arm64-v8a/libaijni.so",
+    "lib/arm64-v8a/libaijni_dotprod.so",
+    "lib/arm64-v8a/libaijni_i8mm.so",
+    "lib/arm64-v8a/libc++_shared.so",
+    "lib/arm64-v8a/libggufcpu.so",
+    "lib/arm64-v8a/libggufdiagnostics.so",
+    "lib/x86_64/libaijni.so",
+    "lib/x86_64/libc++_shared.so",
+    "lib/x86_64/libggufcpu.so",
+    "lib/x86_64/libggufdiagnostics.so"
+  ],
+  "recorded_only": [
+    "AndroidManifest.xml"
+  ],
+  "classes_dex_sha256": "8fe0f4827de84a168841e1e0ac329d48cde6f2ac257825bb231871a5f230789d",
+  "android_manifest_sha256": "3ea7be292d3ded086b5accb20bdef2e8e45a166dec2f819780a92630b1641291",
+  "signature": "chave gerada nesta execução e descartada; certificado novo, não é release de loja",
+  "warmup": "GGUF_EXPERIMENT_WARMUP=1 no build: o prefixo do prompt é aquecido no tempo ocioso",
+  "limits": "Pré-entrega de teste assinada com chave descartável: instalar sobre outra assinatura exige desinstalar antes. O código é o mesmo que a rodada verde exercitou (payload conferido hash a hash); o emulador do CI não tem GPU real nem NPU, então o caminho de GPU foi medido como recusa declarada + CPU."
+}

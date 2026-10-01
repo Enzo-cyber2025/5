@@ -1,0 +1,65 @@
+{
+  "stage": "search-online",
+  "gpu_layers_requested": 0,
+  "threads_requested": 2,
+  "threads_resolved": {
+    "requested": 2,
+    "available": 2,
+    "capacities": 0,
+    "resolved": 2
+  },
+  "backend": "cpu",
+  "ui_first_text_s": 11.639160642,
+  "warmup": {
+    "ran": true,
+    "skipped": null,
+    "ui_ok": true,
+    "typed_passes": 2,
+    "input_tokens": 100,
+    "prefilled": 100,
+    "reused_tokens": 45,
+    "gpu": false,
+    "aborted": false
+  },
+  "prefill": {
+    "prompt_tokens": 534,
+    "reused_tokens": 45,
+    "fresh_tokens": 489,
+    "prefill_s": 10.0891,
+    "prefill_ms_per_token": 20.632
+  },
+  "context_tuning": {
+    "batch": 256,
+    "ubatch": 128,
+    "threads": 2,
+    "prefix_cache_supported": true
+  },
+  "kv_cache": {
+    "kv": "f16",
+    "flash_attn_requested": "auto"
+  },
+  "search": {
+    "budget_ms": 12000,
+    "used_ms": 1452,
+    "exhausted": false,
+    "provider": "DuckDuckGo",
+    "announced_budget_ms": 12000,
+    "attempts": [
+      "DuckDuckGo",
+      "DuckDuckGo"
+    ],
+    "attempt_slices_within_budget": true,
+    "sources": 5,
+    "prompt_mode": "fontes",
+    "error": null
+  },
+  "software_vulkan_notice": null,
+  "tokens": 9,
+  "decode_s": 0.960441376,
+  "prefill_s": 10.0891143,
+  "tokens_s": 9.370691668327291,
+  "first_token_s": 10.09227157,
+  "prompt_tokens": 534,
+  "reused_tokens": 45,
+  "completed": true
+}

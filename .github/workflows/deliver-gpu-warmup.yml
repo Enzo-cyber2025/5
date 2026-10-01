@@ -1,0 +1,293 @@
+name: Deliver the GPU-first, warmed-prefix APK
+# Publica como download o APK do mesmo código que a rodada verde de emulador
+# validou. O binário é reconstruído a partir do commit testado com a MESMA receita
+# e só é publicado se o payload (bibliotecas nativas, classes.dex e manifesto)
+# conferir, hash a hash, com o que aquela rodada registrou. Se não conferir, o
+# fluxo reprova e nada é publicado — melhor nenhum link do que um link errado.
+#
+# A assinatura é feita com uma chave gerada nesta execução e descartada em
+# seguida: este repositório não guarda material de assinatura privado (nem no Git
+# nem em CI). O APK é uma pré-entrega de teste, com certificado novo — instalar
+# sobre uma versão de outro certificado exige desinstalar antes.
+# Como esta entrega é disparada: um push que toque ESTE arquivo, ou o botão
+# "Run workflow". O disparo por API (`workflow_dispatch`) exige um token com
+# permissão de ações, que o agente da sessão não tem (403 "Resource not accessible
+# by integration"); o push no próprio fluxo é o gatilho que sempre funciona e é o
+# que publica a rodada verde mais recente.
+on:
+  push:
+    branches: [arena/01a0d024-5]
+    paths: [.github/workflows/deliver-gpu-warmup.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: deliver-gpu-warmup-${{ github.ref }}
+  cancel-in-progress: false
+env:
+  GGUF_EXPERIMENT_WARMUP: '1'
+jobs:
+  deliver:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Use the Android SDK already installed on the hosted runner
+        run: |
+          test -d "$ANDROID_HOME"
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
+          set +o pipefail
+          yes | "$SDKMANAGER" --licenses > /tmp/android-licenses.log
+          set -o pipefail
+      - name: Pinned tools, verified original APK and native toolchain
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install -q -r requirements-test.txt numpy==2.2.6 tqdm==4.67.1 pyyaml==6.0.2
+          bash scripts/fetch_tools.sh
+          python3 scripts/fetch_original.py
+          sdkmanager 'ndk;28.2.13676358' 'platforms;android-35' 'build-tools;35.0.0'
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/28.2.13676358" >> "$GITHUB_ENV"
+          sudo apt-get update -qq
+          sudo apt-get install -y ninja-build glslc libvulkan-dev
+          git clone --depth 1 --branch vulkan-sdk-1.4.357.0 https://github.com/KhronosGroup/Vulkan-Headers .cache/vulkan-sdk
+          test "$(git -C .cache/vulkan-sdk rev-parse HEAD)" = e3b1eec08173d6b825cd3ac88c885a63b621504a
+          git clone --depth 1 --branch vulkan-sdk-1.4.357.0 https://github.com/KhronosGroup/SPIRV-Headers .cache/spirv-headers
+          test "$(git -C .cache/spirv-headers rev-parse HEAD)" = 29981f65241605e08b0ede4cfeb999fe3b723c6a
+          cmake -S .cache/spirv-headers -B .cache/spirv-build -DCMAKE_INSTALL_PREFIX="$PWD/.cache/spirv-install"
+          cmake --install .cache/spirv-build
+          mkdir -p .cache/vulkan-headers
+          cp -r .cache/vulkan-sdk/include/. .cache/vulkan-headers/
+      - uses: actions/cache@v4
+        with:
+          path: |
+            .cache/llama-mobile
+            .cache/mobile/arm64-v8a
+            .cache/mobile/x86_64
+          key: native-v041-ndk28-v2-${{ runner.os }}-${{ hashFiles('apk-fix/native/**', 'apk-fix/*.py', 'ci/mobile-models.sh') }}-${{ github.run_id }}
+          restore-keys: native-v041-ndk28-v2-${{ runner.os }}-
+      - name: Resolve the green emulator run that exercised these bytes
+        id: green
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Os pinos eram números escritos à mão e envelheciam: o fluxo passava a
+          # comparar contra uma rodada antiga. Agora a rodada é resolvida na hora:
+          # a última rodada VERDE deste fluxo no branch, e o commit dela tem de ser
+          # ancestral do que está sendo entregue.
+          run=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/text-ui.yml/runs?branch=${GITHUB_REF_NAME}&status=success&per_page=1" --jq '.workflow_runs[0] // empty | .id') || true
+          if [ -z "${run:-}" ]; then
+            echo "skip=1" >> "$GITHUB_OUTPUT"
+            echo "::warning title=GGUF entrega::nenhuma rodada verde de emulador neste branch; nada sera publicado"
+            exit 0
+          fi
+          sha=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run}" --jq '.head_sha')
+          git fetch --no-tags --depth=200 origin "$sha" || true
+          receipt="ci-results/${run}-1-text-ui"
+          # Os hashes do recibo só valem para os bytes que a rodada exercitou. Entre a
+          # rodada verde e este commit podem existir commits que NÃO mudam o aplicativo:
+          # a própria evidência (ci-results/), notas/docs e este fluxo. Isso é permitido
+          # — o payload reconstruído ainda é conferido hash a hash antes de publicar. Se
+          # qualquer arquivo que influencia o APK (apk-fix/**, ci/**, o fluxo do emulador)
+          # aparecer na diferença, a entrega para: aí é rodada nova, não pino velho.
+          # Prefixos SEM âncora de fim: o que a entrega permite são ARQUIVOS DENTRO
+          # dessas pastas (ci-results/<rodada>/evidence.png), não a pasta como string
+          # exata. Com `$` no fim do grupo, nenhum arquivo de ci-results/ casava, a
+          # diferença até o commit de evidência era lida como "mexeu no aplicativo" e
+          # a entrega pulava a publicação (rodada 36350833517: passos 9-11 skipped,
+          # release intacta). Os dois itens de arquivo único levam `$` de propósito.
+          permitidos='^(ci-results/|docs/|tests/|scripts/|\.delivery/|README\.md$|\.github/workflows/deliver-gpu-warmup\.yml$)'
+          mudanca_apk=''
+          if [ "$sha" != "$(git rev-parse HEAD)" ]; then
+            mudanca_apk=$(git diff --name-only "$sha" HEAD | grep -vE "$permitidos" || true)
+          fi
+          if [ ! -f "${receipt}/physical-text-ui-build.json" ] || [ -n "$mudanca_apk" ]; then
+            echo "skip=1" >> "$GITHUB_OUTPUT"
+            echo "::warning title=GGUF entrega::a rodada verde ${run} é de ${sha::7} e a diferença até ${GITHUB_SHA::7} mexe no aplicativo (${mudanca_apk:-recibo ausente}); nada sera publicado (rode o fluxo de novo depois do verde deste commit)"
+            exit 0
+          fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "receipt=$receipt" >> "$GITHUB_OUTPUT"
+          echo "skip=0" >> "$GITHUB_OUTPUT"
+          echo "::notice title=GGUF entrega::rodada verde ${run} em ${sha::7}"
+
+      - name: Compile the native stack, helper Java and patched DEX
+        if: steps.green.outputs.skip != '1'
+        env:
+          APKTOOL_JAR: .cache/tools/package/lib/apktool.jar
+          GGUF_REUSE_TESTED_NATIVE: '0'
+        run: bash ci/log_step.sh delivery-build python3 apk-fix/build_mobile.py
+      - name: Sign with a key generated here and verify the tested payload
+        id: package
+        if: steps.green.outputs.skip != '1'
+        env:
+          GREEN_RUN: ${{ steps.green.outputs.run }}
+          GREEN_SHA: ${{ steps.green.outputs.sha }}
+          GREEN_RECEIPT: ${{ steps.green.outputs.receipt }}
+        run: |
+          set -euo pipefail
+          mkdir -p .cache/delivery evidence
+          keytool -genkeypair -keystore .cache/delivery/test.p12 -storetype PKCS12 \
+            -storepass android -keypass android -alias test -keyalg RSA -keysize 2048 \
+            -validity 10000 -dname 'CN=GGUF Chat pre-delivery, O=NOT A STORE RELEASE'
+          SIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          "$SIGNER" sign --ks .cache/delivery/test.p12 --ks-pass pass:android --key-pass pass:android \
+            --out .cache/delivery/GGUF-Chat-gpu-warmup.apk dist/GGUF-Chat-mobile-unsigned.apk
+          "$SIGNER" verify --verbose --print-certs .cache/delivery/GGUF-Chat-gpu-warmup.apk \
+            > evidence/delivery-signature.txt
+          "$SIGNER" verify .cache/delivery/GGUF-Chat-gpu-warmup.apk
+          python3 - <<'PY'
+          import hashlib, json, os, zipfile
+          from pathlib import Path
+          apk = Path('.cache/delivery/GGUF-Chat-gpu-warmup.apk')
+          # Receipt da rodada verde de emulador que exercitou estes bytes de código.
+          receipt = json.loads(Path(os.environ['GREEN_RECEIPT'] + '/physical-text-ui-build.json').read_text())
+          # O recibo de payload da rodada verde traz, além das bibliotecas, o
+          # classes.dex do candidato testado.
+          payload_receipt = json.loads(Path(os.environ['GREEN_RECEIPT'] + '/apk-payload.json').read_text())
+          tested_commit = os.environ['GREEN_SHA']
+          marker = Path('GGUF_DELIVERY_SOURCE_COMMIT').read_text().strip() if Path('GGUF_DELIVERY_SOURCE_COMMIT').exists() else None
+          with zipfile.ZipFile(apk) as z:
+              names = [n for n in z.namelist() if not n.startswith('META-INF/')]
+              payload = {n: hashlib.sha256(z.read(n)).hexdigest() for n in names}
+          expected = dict(receipt['native'])
+          expected.update({name: digest for name, digest in payload_receipt.items()
+                           if name == 'classes.dex'})
+          mismatched = [name for name, digest in expected.items() if payload.get(name) != digest]
+          assert not mismatched, f'payload diferente do testado: {mismatched}'
+          assert 'classes.dex' in expected and 'AndroidManifest.xml' in payload
+          assert (marker or tested_commit) in receipt['source_commit'], 'receipt de outra revisão'
+          record = {
+              'status': 'PUBLISHED_PREDELIVERY_TEST_SIGNED',
+              'apk_sha256': hashlib.sha256(apk.read_bytes()).hexdigest(),
+              'apk_size': apk.stat().st_size,
+              'tested_run': int(os.environ['GREEN_RUN']),
+              'tested_commit': receipt['source_commit'],
+              'payload_entries': len(names),
+              'verified_against_tested_run': sorted(expected),
+              'recorded_only': ['AndroidManifest.xml'],  # não foi medido pelo recibo da rodada
+              'classes_dex_sha256': payload['classes.dex'],
+              'android_manifest_sha256': payload['AndroidManifest.xml'],
+              'signature': 'chave gerada nesta execução e descartada; certificado novo, não é release de loja',
+              'warmup': 'GGUF_EXPERIMENT_WARMUP=1 no build: o prefixo do prompt é aquecido no tempo ocioso',
+              'limits': ('Pré-entrega de teste assinada com chave descartável: instalar sobre outra '
+                         'assinatura exige desinstalar antes. O código é o mesmo que a rodada verde '
+                         'exercitou (payload conferido hash a hash); o emulador do CI não tem GPU real '
+                         'nem NPU, então o caminho de GPU foi medido como recusa declarada + CPU.'),
+          }
+          Path('evidence/delivery-receipt.json').write_text(json.dumps(record, ensure_ascii=False, indent=2))
+          Path('ci-results/delivery-gpu-warmup.json').write_text(json.dumps(record, ensure_ascii=False, indent=2))
+          print(json.dumps(record, ensure_ascii=False, indent=2))
+          PY
+      - name: Publish the release and the receipt
+        if: steps.green.outputs.skip != '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: Enzo-cyber2025/5
+          GREEN_RECEIPT: ${{ steps.green.outputs.receipt }}
+        run: |
+          set -euo pipefail
+          TAG="gguf-gpu-warmup"
+          # As notas saem do que a rodada MEDIU (performance.json e a varredura
+          # publicados na evidencia), nao de numeros escritos a mao que envelhecem.
+          python3 - "$GREEN_RECEIPT" > /tmp/notes-medidos.md <<'PY'
+          import json, sys
+          from pathlib import Path
+          receipt = Path(sys.argv[1])
+          perf = json.loads((receipt / 'performance.json').read_text())
+          summary = (receipt / 'functions-sweep.txt').read_text().splitlines()[0]
+          warm = perf.get('warmup_experiment') or {}
+          prefill = perf.get('prefill_experiment') or {}
+          kv = perf.get('kv_experiment') or {}
+          busca = perf.get('search_experiment') or {}
+          def ms(valor):
+              return f'{valor:.0f} ms' if isinstance(valor, (int, float)) else 'nao medido'
+          comparacao_busca = ' / '.join(
+              f'{nome} {ms(busca.get(chave))}' for nome, chave in
+              (('sequencial', 'sequential_ms'), ('corrida', 'race_ms'),
+               ('consulta repetida', 'cache_hit_ms')) if isinstance(busca.get(chave), (int, float))) or 'nao medido'
+          stages = perf.get('stages') or {}
+          def wait(stage):
+              value = (stages.get(stage) or {}).get('ui_first_text_s')
+              return f'{value:.3f} s' if value else 'nao medido'
+          taxas = ', '.join(f"{name} {entry.get('tokens_s'):.2f} T/s"
+                            for name, entry in sorted(stages.items())
+                            if isinstance(entry, dict) and entry.get('tokens_s'))
+          linhas = [
+              'Pre-entrega de teste: GPU primeiro, prefixo do prompt aquecido, interface Off Grid AI.',
+              '',
+              'O que foi medido no emulador do CI (rodada verde desta entrega):',
+              '',
+              f'* espera do envio ate o primeiro texto: {wait("gpu-off-cold")} com o aquecimento '
+              f'desligado contra {wait("gpu-preferred-cold")} com ele ligado, na mesma rodada e '
+              f'mesma maquina' + (f" - {warm['speedup_x']}x menos espera" if warm.get('speedup_x') else ''),
+              f'* taxas de decodificacao medidas por etapa: {taxas}',
+              f'* pre-preenchimento por token (mesmo texto, aquecimento desligado): '
+              f"{prefill.get('detail', 'nao medido')}",
+              f"* cache K/V (decodificacao, mesmo texto nas duas etapas): "
+              f"{kv.get('detail', 'nao medido')}",
+              f'* busca na web, mesma pergunta na mesma rodada: {comparacao_busca}'
+              + (f" - {busca['gain_x']:.2f}x menos espera com a corrida" if busca.get('gain_x') else ''),
+              f'* varredura funcional: {summary}',
+              '* o emulador nao tem GPU real: o pedido de GPU foi medido como recusa declarada e',
+              '  execucao na CPU, com o motivo visivel na tela do aplicativo;',
+              '* NPU do A55 (Exynos 1480): presente no aparelho, sem backend compativel neste',
+              '  binario. O aplicativo declara isso em vez de prometer aceleracao.',
+              '',
+          ]
+          print('\n'.join(linhas))
+          PY
+          cat /tmp/notes-medidos.md > /tmp/notes.md
+          cat >> /tmp/notes.md <<'MD'
+          Assinatura: chave gerada na execução que montou este APK e descartada em seguida —
+          certificado novo, não é release de loja. Para instalar sobre uma versão de outro
+          certificado é preciso desinstalar antes (preserve conversas, anexos e modelos).
+
+          Conferência: as bibliotecas nativas e o classes.dex deste APK têm exatamente o mesmo
+          hash do binário que a rodada verde de emulador exercitou. O manifesto entra no recibo
+          como hash registrado deste binário (a rodada não mediu o dele).
+          MD
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            # Mesma release, bytes e nota atualizados: o link de download do
+            # usuário aponta para um só lugar e nunca fica desatualizado.
+            gh release upload "$TAG" .cache/delivery/GGUF-Chat-gpu-warmup.apk --clobber
+            gh release edit "$TAG" --notes-file /tmp/notes.md
+            gh release edit "$TAG" --target "$(git rev-parse HEAD)"
+          else
+            gh release create "$TAG" --prerelease --latest=false \
+              --target "$(git rev-parse HEAD)" \
+              --title 'GGUF Chat — GPU primeiro e prefixo aquecido (pré-entrega de teste)' \
+              --notes-file /tmp/notes.md \
+              .cache/delivery/GGUF-Chat-gpu-warmup.apk
+          fi
+          gh release view "$TAG" --json assets,url --jq '.assets[] | "\(.name) \(.size) \(.digest)"'
+          git config user.name 'GGUF CI delivery'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add ci-results/delivery-gpu-warmup.json
+          git commit -m "Record the GPU-first warmed-prefix pre-delivery receipt [skip ci]" || echo 'sem mudança'
+          for attempt in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" || true
+            git push origin "HEAD:${GITHUB_REF_NAME}" && break
+            sleep "$attempt"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: delivery-evidence
+          path: |
+            evidence/
+            .cache/ci-logs/
+# search-v3 Thu Oct  1 22:47:36 UTC 2026

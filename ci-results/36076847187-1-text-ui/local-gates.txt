@@ -1,0 +1,48 @@
+mobile.cpp: 0 erro(s)
+cpu_probe.cpp: 0 erro(s)
+nativo: sintaxe ok (mobile.cpp, cpu_probe.cpp) com stubs de jni/android
+java: compila (40 arquivos, --release 8, javac=/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-1/x64/bin/javac)
+........................................................................ [ 13%]
+.....................s..............ssssssssssssssssssssssssssssssssssss [ 27%]
+sss..................s.................................................. [ 41%]
+............s..............ss....................s...................... [ 55%]
+........s..........s..........................................F......... [ 68%]
+........................................................................ [ 82%]
+...................................................s.s.s................ [ 96%]
+...............ss..                                                      [100%]
+=================================== FAILURES ===================================
+_____________________ test_budget_math_holds_when_executed _____________________
+
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-0/test_budget_math_holds_when_ex0')
+
+    def test_budget_math_holds_when_executed(tmp_path):
+        result = run_self_test(tmp_path)
+>       assert 'SEARCH_BUDGET_OK' in result.stdout, result.stdout + result.stderr
+E       AssertionError: PASS fatia nunca excede o restante
+E         FAIL quatro tentativas cabem no orçamento (gastou 1597 ms)
+E         PASS expirado não abre nova fatia
+E         PASS DNS/conexão/sem rota interrompem a cadeia
+E         PASS quatro timeouts terminam dentro do teto (levou 399 ms)
+E         PASS aviso declara o motivo e a ausência de fontes (BUSCA NA WEB INDISPONÍVEL NESTA RESPOSTA (orçamento de 12000 ms esgotado). Não há resultados de busca para citar: responda com seu próprio conhecimento e diga que não pesquisou na web.)
+E         PASS aviso sem motivo ainda é explícito
+E         PASS texto de resultados não é confundido com aviso
+E         SEARCH_BUDGET_FAILURES=1
+E         
+E       assert 'SEARCH_BUDGET_OK' in 'PASS fatia nunca excede o restante\nFAIL quatro tentativas cabem no orçamento (gastou 1597 ms)\nPASS expirado não abr...SS aviso sem motivo ainda é explícito\nPASS texto de resultados não é confundido com aviso\nSEARCH_BUDGET_FAILURES=1\n'
+E        +  where 'PASS fatia nunca excede o restante\nFAIL quatro tentativas cabem no orçamento (gastou 1597 ms)\nPASS expirado não abr...SS aviso sem motivo ainda é explícito\nPASS texto de resultados não é confundido com aviso\nSEARCH_BUDGET_FAILURES=1\n' = CompletedProcess(args=['/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-1/x64/bin/java', '-cp', '/tmp/pytest-of-... motivo ainda é explícito\nPASS texto de resultados não é confundido com aviso\nSEARCH_BUDGET_FAILURES=1\n', stderr='').stdout
+
+tests/test_search_budget.py:50: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_search_budget.py::test_budget_math_holds_when_executed - AssertionError: PASS fatia nunca excede o restante
+  FAIL quatro tentativas cabem no orçamento (gastou 1597 ms)
+  PASS expirado não abre nova fatia
+  PASS DNS/conexão/sem rota interrompem a cadeia
+  PASS quatro timeouts terminam dentro do teto (levou 399 ms)
+  PASS aviso declara o motivo e a ausência de fontes (BUSCA NA WEB INDISPONÍVEL NESTA RESPOSTA (orçamento de 12000 ms esgotado). Não há resultados de busca para citar: responda com seu próprio conhecimento e diga que não pesquisou na web.)
+  PASS aviso sem motivo ainda é explícito
+  PASS texto de resultados não é confundido com aviso
+  SEARCH_BUDGET_FAILURES=1
+  
+assert 'SEARCH_BUDGET_OK' in 'PASS fatia nunca excede o restante\nFAIL quatro tentativas cabem no orçamento (gastou 1597 ms)\nPASS expirado não abr...SS aviso sem motivo ainda é explícito\nPASS texto de resultados não é confundido com aviso\nSEARCH_BUDGET_FAILURES=1\n'
+ +  where 'PASS fatia nunca excede o restante\nFAIL quatro tentativas cabem no orçamento (gastou 1597 ms)\nPASS expirado não abr...SS aviso sem motivo ainda é explícito\nPASS texto de resultados não é confundido com aviso\nSEARCH_BUDGET_FAILURES=1\n' = CompletedProcess(args=['/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-1/x64/bin/java', '-cp', '/tmp/pytest-of-... motivo ainda é explícito\nPASS texto de resultados não é confundido com aviso\nSEARCH_BUDGET_FAILURES=1\n', stderr='').stdout
+1 failed, 470 passed, 52 skipped in 35.17s

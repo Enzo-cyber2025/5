@@ -1,0 +1,150 @@
+{
+  "scope": "Medido no emulador descartável x86_64 com o modelo real do CI; taxa = tokens nativos / tempo nativo de decodificação; primeiro texto = relógio da thread principal do Android. Cada etapa abre uma conversa nova, portanto a carga do modelo entra no tempo de tela e nunca na taxa de decodificação. A linha de base é o comportamento anterior, reproduzido pelo opt-in de teste no driver Vulkan por software deste emulador.",
+  "baseline": "vulkan",
+  "interpretation": "O pedido original dizia -300% de espera, o que não existe (um tempo negativo); o alvo aplicado é um terço do tempo anterior, ou seja 3x mais rápido até o primeiro texto.",
+  "stages": {
+    "cpu": {
+      "stage": "cpu",
+      "gpu_layers_requested": 0,
+      "threads_requested": 2,
+      "threads_resolved": {
+        "requested": 2,
+        "available": 2,
+        "capacities": 0,
+        "resolved": 2
+      },
+      "backend": "cpu",
+      "ui_first_text_s": 2.671690582,
+      "software_vulkan_notice": null,
+      "tokens": 94,
+      "decode_s": 8.18418688,
+      "prefill_s": 2.48216648,
+      "tokens_s": 11.485563731408831,
+      "first_token_s": 2.483950422,
+      "prompt_tokens": 65,
+      "reused_tokens": 0,
+      "completed": true
+    },
+    "vulkan": {
+      "stage": "vulkan",
+      "gpu_layers_requested": -1,
+      "threads_requested": 2,
+      "threads_resolved": {
+        "requested": 2,
+        "available": 2,
+        "capacities": 0,
+        "resolved": 2
+      },
+      "backend": "vulkan",
+      "ui_first_text_s": 8.138472226,
+      "software_vulkan_notice": null,
+      "tokens": 128,
+      "decode_s": 26.046816629,
+      "prefill_s": 7.965231061,
+      "tokens_s": 4.91422816934517,
+      "first_token_s": 7.969276605,
+      "prompt_tokens": 65,
+      "reused_tokens": 0,
+      "completed": true
+    },
+    "vulkan-policy-default": {
+      "stage": "vulkan-policy-default",
+      "gpu_layers_requested": -1,
+      "threads_requested": 2,
+      "threads_resolved": {
+        "requested": 2,
+        "available": 2,
+        "capacities": 0,
+        "resolved": 2
+      },
+      "backend": "vulkan",
+      "ui_first_text_s": 2.116679967,
+      "software_vulkan_notice": "llvmpipe (LLVM 21.0.0, 256 bits)",
+      "tokens": 94,
+      "decode_s": 8.838062506,
+      "prefill_s": 1.896554892,
+      "tokens_s": 10.635815252062894,
+      "first_token_s": 1.898707152,
+      "prompt_tokens": 65,
+      "reused_tokens": 0,
+      "completed": true
+    },
+    "cpu-threads-auto": {
+      "stage": "cpu-threads-auto",
+      "gpu_layers_requested": 0,
+      "threads_requested": 0,
+      "threads_resolved": {
+        "requested": 0,
+        "available": 2,
+        "capacities": 0,
+        "resolved": 2
+      },
+      "backend": "cpu",
+      "ui_first_text_s": 1.816762908,
+      "software_vulkan_notice": null,
+      "tokens": 94,
+      "decode_s": 7.789293415,
+      "prefill_s": 1.704446118,
+      "tokens_s": 12.067846849751774,
+      "first_token_s": 1.706169086,
+      "prompt_tokens": 65,
+      "reused_tokens": 0,
+      "completed": true
+    }
+  },
+  "candidates": {
+    "cpu": {
+      "tokens_s": 11.485563731408831,
+      "throughput_gain_vs_baseline": 2.337,
+      "ui_first_text_s": 2.671690582,
+      "engine_first_token_s": 2.483950422,
+      "wait_speedup_vs_baseline": 3.046,
+      "waited_metric": "ui_first_text_s",
+      "targets": {
+        "throughput_1_5x": true,
+        "first_text_3x": true
+      },
+      "regression_vs_baseline": false
+    },
+    "vulkan-policy-default": {
+      "tokens_s": 10.635815252062894,
+      "throughput_gain_vs_baseline": 2.164,
+      "ui_first_text_s": 2.116679967,
+      "engine_first_token_s": 1.898707152,
+      "wait_speedup_vs_baseline": 3.845,
+      "waited_metric": "ui_first_text_s",
+      "targets": {
+        "throughput_1_5x": true,
+        "first_text_3x": true
+      },
+      "regression_vs_baseline": false
+    },
+    "cpu-threads-auto": {
+      "tokens_s": 12.067846849751774,
+      "throughput_gain_vs_baseline": 2.456,
+      "ui_first_text_s": 1.816762908,
+      "engine_first_token_s": 1.706169086,
+      "wait_speedup_vs_baseline": 4.48,
+      "waited_metric": "ui_first_text_s",
+      "targets": {
+        "throughput_1_5x": true,
+        "first_text_3x": true
+      },
+      "regression_vs_baseline": false
+    }
+  },
+  "targets_met": [
+    "cpu",
+    "cpu-threads-auto",
+    "vulkan-policy-default"
+  ],
+  "regressions": [],
+  "regression_tolerance": 0.05,
+  "environment": {
+    "limits": [
+      "aparelho com 2 núcleos: sem paralelismo para ganho de taxa",
+      "dispositivo Vulkan é um rasterizador por software; o caminho padrão já é a CPU"
+    ],
+    "targets_required": false
+  }
+}

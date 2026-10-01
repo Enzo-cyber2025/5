@@ -1,4 +1,118 @@
-# Entrega atual nesta sessão: ganhos consistentes observados
+# Rodada atual: prefixo aquecido, GPU primeiro e o NPU declarado
+
+Pedido: priorizar a GPU, cortar a espera até o primeiro token a um terço (o pedido
+literal, “−300%”, descreveria um tempo negativo; o critério aplicado é 3× menos
+espera), NPU do A55 *se possível*, busca na web e testar tudo.
+
+## [Baixar o APK desta rodada — sem ZIP](https://github.com/Enzo-cyber2025/5/releases/download/gguf-gpu-warmup/GGUF-Chat-gpu-warmup.apk)
+
+51.247.031 bytes · SHA-256 `0a237b94b79eb2403ddf95c65d6b31625a93e658afcc9906f11ff6a08413a7a5` ·
+rodada verde `36041334551` · recibo em
+[`ci-results/delivery-gpu-warmup.json`](ci-results/delivery-gpu-warmup.json).
+
+As bibliotecas nativas e o `classes.dex` deste APK têm exatamente o mesmo hash do
+binário que a rodada verde de emulador exercitou — a entrega só publica se
+conferir, e reprova sem publicar se não conferir. **Assinatura:** a chave foi
+gerada na execução que montou o APK e descartada em seguida (este repositório não
+guarda material de assinatura privado). É uma pré-entrega de teste com certificado
+novo: para instalar sobre uma versão de outro certificado, desinstale antes —
+preserve conversas, anexos e modelos fora do aplicativo.
+
+**Espera.** A decomposição medida mostra onde ela mora: `first_token_ns=1,655 s`
+com `prefill_ns=1,652 s` — o prefill do prompt é a espera. O aplicativo agora
+pré-preenche no KV o prefixo que o envio vai reutilizar, no tempo ocioso da
+conversa e da digitação, sem produzir logits e sem consumir nenhum token de saída.
+Medido na mesma rodada, mesma condição, mesma carga
+(`36038199713-1-text-ui/performance.json`):
+
+| etapa | aquecimento | envio → primeiro texto | 1º token (motor) | prefill | reaproveitados |
+| --- | --- | --- | --- | --- | --- |
+| `gpu-preferred-cold` | ligado | **0,408 s** | 0,233 s | 0,229 s | 64 de 65 tokens |
+| `gpu-off-cold` | desligado | **2,549 s** | 2,339 s | 2,335 s | 0 de 65 |
+| `gpu-preferred-typed` | ligado, digitando | 0,421 s | 0,201 s | 0,197 s | 64 de 65 |
+
+**6,25× menos espera na comparação justa** (alvo: 3×). O custo do prefill não
+desapareceu: ele saiu da frente do usuário e foi para o tempo ocioso da tela —
+nenhum texto foi cortado e nenhum token de saída foi reduzido. As etapas normais da
+mesma rodada (envio logo depois de a conversa abrir, com a digitação do harness)
+ficaram em 0,41-0,51 s contra 1,8-2,1 s da rodada anterior, medida do mesmo jeito
+(`36028665561`); a taxa de decodificação não regrediu em nenhuma etapa
+(`regressions: []`) e ficou em 2,1×-2,7× a linha de base da própria rodada.
+
+**GPU primeiro.** O aplicativo pede o modelo inteiro na GPU por padrão (99 camadas)
+e o pipeline não rebaixa mais esse padrão para CPU. Quando o dispositivo Vulkan é
+um rasterizador por software, a recusa é declarada e a execução é na CPU — agora de
+verdade: o pedido de camadas também volta a zero, então o carregador não anuncia
+mais “offloaded 31/31 layers to GPU” numa execução de CPU, e o nativo declara
+`GGUF_BACKEND_EXECUTION backend=cpu|vulkan` no ponto da decisão. GPU só é anunciada
+quando existe dispositivo estrito; a recusa nunca é sobrescrita pelo aviso novo.
+
+**NPU do A55: não é possível neste binário.** O Exynos 1480 tem NPU, mas este
+llama.cpp fixado não tem backend de NPU para Exynos (só o `ggml-hexagon`, que exige
+o SDK proprietário da Qualcomm), a NNAPI está descontinuada e a Samsung expõe a
+NPU por SDK fechado de parceiro. O aplicativo detecta o SoC e **diz isso na tela**
+(“NPU … presente, sem backend compatível neste binário”) em vez de prometer
+aceleração. O emulador do CI não tem NPU alguma, então não haveria o que medir.
+
+**Busca na web:** verificada ponta a ponta na mesma rodada — consulta exibida,
+provedor (Wikipédia), contagem, fontes numeradas e o caminho de falha, com
+`GGUF_SEARCH_PANEL shown=1 provider=Wikipédia hits=2` no log.
+
+**Testes:** 439 testes locais (o CI roda a suíte), sintaxe nativa com g++ e javac
+antes de publicar evidência, além das fases de emulador (texto 5/5, anexos 3/3,
+geração nativa, política de software, etapas de medição). Detalhes, limites e
+evidência por etapa: [docs/GPU_WARMUP_NPU.md](docs/GPU_WARMUP_NPU.md).
+
+---
+
+## Rodada anterior: desempenho medido no emulador e interface inspirada no Off Grid AI
+
+**O que a medição mostrou.** No emulador do CI (2 núcleos, Vulkan por software) o
+caminho anterior aceitava o driver por software como se fosse GPU. Com a política
+nova o aplicativo executa na CPU, que é o backend correto nesse aparelho, e a
+diferença é medida na mesma rodada, contra aquele caminho (rodada `36018315383`,
+prompt de 65 tokens, cada etapa numa conversa nova):
+
+| etapa | T/s medidos | envio → primeiro texto | ganho contra a própria linha de base |
+| --- | --- | --- | --- |
+| anterior (`vulkan`: driver por software aceito) | 4,4 – 4,9 | 8,1 – 8,9 s | linha de base da rodada `36018315383` |
+| `vulkan-policy-default` (padrão: driver recusado → CPU) | 9,4 – 11,5 | 1,8 – 2,3 s | **2,12× a 2,16× em T/s · 3,78× a 3,85× menos espera** |
+| `cpu` (CPU pedida nos ajustes, 2 threads) | 10,6 – 11,5 | 1,8 – 2,7 s | **2,34× a 2,39× em T/s · 3,05× a 4,17× menos espera** |
+| `cpu-threads-auto` (ajustes de fábrica) | 9,6 – 12,1 | 1,8 – 2,1 s | **2,43× a 2,46× em T/s · 4,30× a 4,48× menos espera** |
+
+As faixas juntam as duas rodadas verdes completas (`36018315383` e `36028665561`).
+**Os caminhos novos são estáveis** (9,4 a 12,1 T/s, 1,8 a 2,7 s do envio ao
+primeiro texto); quem varia é a linha de base, porque o driver Vulkan por software
+disputa a CPU da máquina do CI — numa terceira rodada ele mediu 2,7 T/s e 26 s, o
+que infla o mesmo ganho para 3,6×–4,3× em T/s e ~14× na espera. Por isso a
+comparação honesta é esta: **contra o comportamento anterior, o ganho medido é de
+2,1× a 4,3× em T/s e de 3,0× a 14,4× na espera, dependendo de quanto o driver por
+software conseguiu rodar na rodada** — sempre maior que as metas do pedido
+(1,5× e 3×), nunca abaixo delas, e sem nenhuma regressão medida em qualquer etapa.
+
+As duas metas do pedido — 1,5× em T/s e um terço da espera — estão declaradas
+atingidas em **todos os três caminhos novos** (`targets_met`), com zero regressões
+medidas (`regressions: []`). Números completos em
+`ci-results/36018315383-1-text-ui/performance.json` e
+`ci-results/36028665561-1-text-ui/performance.json`, com a leitura honesta do
+ambiente: **o fator grande existe porque neste aparelho o caminho anterior era o
+driver Vulkan por software** (teto medido de 0,55–0,74 GMAC/s). Num aparelho com
+GPU real a recusa do software não entra em ação — o Vulkan continua sendo o padrão
+—, e lá o que vale são as outras mudanças: política de threads, lotes de prefill e
+a linha única de logits. O verificador reprova a rodada por regressão medida ou por
+ausência de medição — nunca aprova por ausência de dado.
+
+Também nesta rodada: política de threads da CPU que usa os núcleos que o aparelho
+tem (o aplicativo vem de fábrica com “automático”), lotes de prefill proporcionais
+ao contexto (um token por decodificação, sem mudar a taxa por token), uma linha de
+saída de logits também na CPU, contadores nativos auditáveis
+(`GGUF_GENERATION_STATS`, `GGUF_UI_FIRST_TEXT`) e a linguagem visual única nas
+telas. Nenhum rótulo do aplicativo foi renomeado ou alterado em caixa.
+
+[Relatório, critério de medição, limites e evidências](docs/PERFORMANCE_UI.md).
+
+---
+
 
 **[APK assinado — GGUF-Chat-acelerado.apk](entrega/GGUF-Chat-acelerado.apk)** · 51.128.050 bytes · sem ZIP.
 

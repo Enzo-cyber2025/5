@@ -34,8 +34,16 @@ def test_real_memory_operations_and_invalidation_are_guarded():
     assert 'e->cached_tokens.clear(); // failed/partial work is never reused' in s
     assert s.index('if(llama_decode(e->ctx,llama_batch_get_one(&t,1))!=0)')<s.index('if(text_cache)e->cached_tokens.push_back(t)')
     assert 'GGUF_RESPONSE_LATENCY' in s and 'GGUF_PROMPT_CACHE' in s
-    assert 'cp.n_batch=128; cp.n_ubatch=32;' in s
-    assert 'cp.n_batch=512' not in s and 'GGUF_PREFILL_ALLOCATION_RETRY' not in s
+    assert 'cp.n_batch=prefill_batch; cp.n_ubatch=prefill_ubatch;' in s
+    # O experimento abandonado era um lote fixo gigante com nova tentativa de
+    # alocação. O que existe agora é um lote de prefill proporcional ao contexto,
+    # com teto declarado, e nenhuma nova tentativa.
+    assert 'cp.n_batch=128; cp.n_ubatch=32;' not in s
+    assert 'prefill_batch=context>=2048?512:(context>=1024?256:128)' in s
+    # GPU real usa o padrão do llama.cpp; sem GPU real vale o valor medido aqui.
+    assert 'const bool real_gpu_request = layers!=0 && e->strict_device!=nullptr' in s
+    assert ': (context>=1024?128:64);' in s
+    assert 'GGUF_PREFILL_ALLOCATION_RETRY' not in s
 
 def test_incremental_stream_has_no_full_copy_or_live_truncation(tmp_path):
     sys.path.insert(0,str(ROOT/'apk-fix'))
@@ -91,20 +99,49 @@ def test_system_edit_uses_verified_input_and_save_not_back():
     assert 'keyevent' not in editor and 'input text' not in editor
 
 
-def test_downloads_waits_for_visible_drawer_and_provider_title():
+def test_downloads_is_opened_by_show_roots_and_confirmed_by_the_header():
+    """`select_downloads` navega pelo caminho provado e CONFIRMA pela barra.
+
+    A versão antiga esperava a gaveta pelo rótulo "Open from"/"Abrir de" — que não
+    aparece em nenhum dump de evidência do repositório (rodada 36261210088 e as
+    seguintes): a espera de 30 s era por um texto inexistente. O que vale agora é
+    abrir a gaveta, tocar a raiz Downloads e ver a pasta abrir na barra.
+    """
     sys.path.insert(0,str(ROOT/'scripts'))
     from test_android import Android
-    class Fake:
-        count=0
-        commands=[]
+    class Pickers:
+        PACKAGE='com.google.android.documentsui'
+        MOSTRAR=(77,202)
+        ABAIXO=('Images','Videos','Downloads')
+        def __init__(self):
+            self.gaveta=False;self.raiz='Recentes';self.commands=[]
         def ui(self):
-            self.count+=1
-            root='<node enabled="true" text="Open from" package="com.google.android.documentsui" bounds="[0,0][400,70]"/>'
-            download='<node enabled="true" text="Downloads" package="com.google.android.documentsui" resource-id="com.google.android.documentsui:id/title" bounds="[20,100][220,160]"/>'
-            return '<hierarchy>'+root+(download if self.count>1 else '')+'</hierarchy>'
-        def wait(self,fn,*args,**kwargs):
-            assert fn() is None
-            result=fn();assert result is not None;return result
-        def shell(self,command):self.commands.append(command)
-    d=Fake();Android.select_downloads(d)
-    assert d.commands==['input tap 120 130'] and d.count==2
+            gaveta=''.join(f'<node package="{self.PACKAGE}" class="android.widget.TextView" resource-id="{self.PACKAGE}:id/title" '
+                           f'text="{n}" enabled="true" bounds="[66,{350+60*i}][1014,{410+60*i}]" />'
+                           for i,n in enumerate(self.ABAIXO)) if self.gaveta else ''
+            barra='Recent' if self.raiz=='Recentes' else self.raiz
+            faixa='Recent files' if self.raiz=='Recentes' else f'Files in {self.raiz}'
+            return (f'<hierarchy>'
+                    f'<node package="{self.PACKAGE}" class="android.widget.ImageButton" content-desc="Show roots" '
+                    f'clickable="true" enabled="true" bounds="[0,136][154,268]" />'
+                    f'<node package="{self.PACKAGE}" class="android.widget.TextView" text="{barra}" enabled="true" bounds="[198,165][471,239]" />'
+                    f'<node package="{self.PACKAGE}" resource-id="{self.PACKAGE}:id/header_title" class="android.widget.TextView" text="{faixa}" enabled="true" bounds="[66,400][1014,565]" />'
+                    + gaveta + '</hierarchy>')
+        def shell(self,command,**kwargs):
+            self.commands.append(command);tokens=command.split()
+            if tokens[:2]==['input','tap']:
+                x,y=int(tokens[2]),int(tokens[3])
+                if abs(x-self.MOSTRAR[0])<60 and abs(y-self.MOSTRAR[1])<60:
+                    self.gaveta=not self.gaveta
+                elif self.gaveta:
+                    for i,n in enumerate(self.ABAIXO):
+                        if 350+60*i<=y<410+60*i:
+                            self.raiz=n;self.gaveta=False
+            return ''
+    d=Pickers();Android.select_downloads(d)
+    assert d.raiz=='Downloads' and not d.gaveta
+    assert d.commands[0]=='input tap 77 202', d.commands       # abriu a gaveta
+    assert d.commands[1]=='input tap 540 500', d.commands      # linha Downloads da gaveta
+    # Já dentro de uma pasta de verdade, navegar de novo não toca em nada.
+    d2=Pickers();d2.raiz='Downloads';Android.select_downloads(d2)
+    assert d2.commands==[], d2.commands

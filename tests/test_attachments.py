@@ -15,6 +15,9 @@ from mobile_manifest import enforce_min_sdk
 
 
 def test_private_provider_and_honest_foreground_compute_manifest():
+    if not (ROOT/'.cache/gguf/GGUF-Chat.apk').is_file():
+        pytest.skip('APK original verificado ausente; scripts/fetch_original.py baixa')
+
     from androguard.core.axml import AXMLPrinter
     from lxml import etree
     with zipfile.ZipFile(ROOT/'.cache/gguf/GGUF-Chat.apk') as z:original=z.read('AndroidManifest.xml')
@@ -35,6 +38,13 @@ def test_private_provider_and_honest_foreground_compute_manifest():
     generation.set(ns+'foregroundServiceType',original_generation.get(ns+'foregroundServiceType'));generation.remove(generation.find('property'))
     permission=next(x for x in after.findall('uses-permission') if x.get(ns+'name')=='android.permission.FOREGROUND_SERVICE_SPECIAL_USE')
     after.remove(permission)
+    # INTERNET é exigida pela busca na web e já vem declarada no APK base: o
+    # gerador não deve repetir a declaração, e o teste continua exigindo que
+    # NENHUMA outra permissão mude em relação ao APK base.
+    internets=[x for x in after.findall('uses-permission') if x.get(ns+'name')=='android.permission.INTERNET']
+    assert len(internets)==1, 'INTERNET duplicada no manifesto corrigido'
+    assert etree.tostring(internets[0])==etree.tostring(
+        next(x for x in before.findall('uses-permission') if x.get(ns+'name')=='android.permission.INTERNET'))
     assert etree.tostring(before)==etree.tostring(after)
     with pytest.raises(ValueError,match='already present'):attachment_manifest(attachment_manifest(original))
 

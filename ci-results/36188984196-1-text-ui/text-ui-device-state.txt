@@ -1,0 +1,239 @@
+$ adb shell logcat -d -b crash
+
+
+$ adb shell logcat -d -s AndroidRuntime:V GGUFTextTest:V GGUFThinking:V GGUFSearch:V GGUFImages:V
+--------- beginning of main
+09-25 21:12:45.323   953   953 I AndroidRuntime: VM exiting with result code 0, cleanup skipped.
+09-25 21:13:11.348  2775  2775 I GGUFTextTest: TEXT_RENDER_START sdk=35
+09-25 21:13:11.386  2775  2775 I GGUFTextTest: TEXT_RENDER_SOURCE apk=/data/app/~~LW5DQJvbncxu15rZyFezKA==/com.ggufchat.app-dC8imI1Ktq7n-ouI8QulHg==/base.apk via=createPackageContext
+09-25 21:13:11.502  2775  2775 I GGUFTextTest: TEXT_RENDER_LOADER dalvik.system.PathClassLoader
+09-25 21:13:11.507  2775  2775 I GGUFThinking: GGUF_THINKING_PANEL attached=1
+09-25 21:13:11.507  2775  2775 I GGUFThinking: GGUF_THINKING_UPGRADE column_children=2
+09-25 21:13:11.509  2775  2775 I GGUFSearch: GGUF_SEARCH_PANEL shown=1 provider=Wikipédia hits=2 error=0
+09-25 21:13:11.509  2775  2775 I GGUFSearch: GGUF_SEARCH_PANEL shown=1 provider=nenhum hits=0 error=1
+09-25 21:13:11.510  2775  2775 I GGUFTextTest: TEXT_RENDER_PASS inline=ok;codigo=python;raciocinio=ok;fontes=ok;parsers=ok
+09-25 21:13:13.024  2832  2832 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-25 21:13:13.038  2832  2832 I AndroidRuntime: Using default boot image
+09-25 21:13:13.038  2832  2832 I AndroidRuntime: Leaving lock profiling enabled
+09-25 21:13:13.316  2832  2832 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-25 21:13:14.750  2832  2832 D AndroidRuntime: Shutting down VM
+09-25 21:13:16.841  3145  3145 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-25 21:13:16.844  3145  3145 I AndroidRuntime: Using default boot image
+09-25 21:13:16.844  3145  3145 I AndroidRuntime: Leaving lock profiling enabled
+09-25 21:13:16.990  3145  3145 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-25 21:13:18.241  3145  3145 D AndroidRuntime: Shutting down VM
+09-25 21:13:20.324  3386  3386 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-25 21:13:20.330  3386  3386 I AndroidRuntime: Using default boot image
+09-25 21:13:20.330  3386  3386 I AndroidRuntime: Leaving lock profiling enabled
+09-25 21:13:20.625  3386  3386 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-25 21:13:22.047  3386  3386 D AndroidRuntime: Shutting down VM
+09-25 21:13:24.166  3495  3495 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-25 21:13:24.176  3495  3495 I AndroidRuntime: Using default boot image
+09-25 21:13:24.176  3495  3495 I AndroidRuntime: Leaving lock profiling enabled
+09-25 21:13:24.355  3495  3495 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-25 21:13:25.561  3495  3495 D AndroidRuntime: Shutting down VM
+09-25 21:13:27.746  3688  3688 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-25 21:13:27.767  3688  3688 I AndroidRuntime: Using default boot image
+09-25 21:13:27.767  3688  3688 I AndroidRuntime: Leaving lock profiling enabled
+09-25 21:13:28.065  3688  3688 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-25 21:13:29.133  3688  3688 D AndroidRuntime: Shutting down VM
+09-25 21:13:31.183  3782  3782 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-25 21:13:31.199  3782  3782 I AndroidRuntime: Using default boot image
+09-25 21:13:31.199  3782  3782 I AndroidRuntime: Leaving lock profiling enabled
+09-25 21:13:31.401  3782  3782 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-25 21:13:32.484  3782  3782 D AndroidRuntime: Shutting down VM
+09-25 21:13:34.511  3850  3850 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-25 21:13:34.519  3850  3850 I AndroidRuntime: Using default boot image
+09-25 21:13:34.519  3850  3850 I AndroidRuntime: Leaving lock profiling enabled
+09-25 21:13:34.666  3850  3850 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-25 21:13:35.741  3850  3850 D AndroidRuntime: Shutting down VM
+09-25 21:13:37.764  3921  3921 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-25 21:13:37.767  3921  3921 I AndroidRuntime: Using default boot image
+09-25 21:13:37.767  3921  3921 I AndroidRuntime: Leaving lock profiling enabled
+09-25 21:13:37.871  3921  3921 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-25 21:13:38.913  3921  3921 D AndroidRuntime: Shutting down VM
+09-25 21:13:41.019  3994  3994 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-25 21:13:41.024  3994  3994 I AndroidRuntime: Using default boot image
+09-25 21:13:41.028  3994  3994 I AndroidRuntime: Leaving lock profiling enabled
+09-25 21:13:41.302  3994  3994 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-25 21:13:42.445  3994  3994 D AndroidRuntime: Shutting down VM
+09-25 21:13:45.798  4060  4060 I GGUFTextTest: TEXT_RENDER_START sdk=35
+09-25 21:13:45.856  4060  4060 I GGUFTextTest: TEXT_RENDER_SOURCE apk=/data/app/~~LW5DQJvbncxu15rZyFezKA==/com.ggufchat.app-dC8imI1Ktq7n-ouI8QulHg==/base.apk via=createPackageContext
+09-25 21:13:46.154  4060  4060 I GGUFTextTest: TEXT_RENDER_LOADER dalvik.system.PathClassLoader
+09-25 21:13:46.172  4060  4060 I GGUFThinking: GGUF_THINKING_PANEL attached=1
+09-25 21:13:46.172  4060  4060 I GGUFThinking: GGUF_THINKING_UPGRADE column_children=2
+09-25 21:13:46.178  4060  4060 I GGUFSearch: GGUF_SEARCH_PANEL shown=1 provider=Wikipédia hits=2 error=0
+09-25 21:13:46.178  4060  4060 I GGUFSearch: GGUF_SEARCH_PANEL shown=1 provider=nenhum hits=0 error=1
+09-25 21:13:46.181  4060  4060 I GGUFTextTest: TEXT_RENDER_PASS inline=ok;codigo=python;raciocinio=ok;fontes=ok;parsers=ok
+09-25 21:13:47.331  4106  4106 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-25 21:13:47.366  4106  4106 I AndroidRuntime: Using default boot image
+09-25 21:13:47.368  4106  4106 I AndroidRuntime: Leaving lock profiling enabled
+09-25 21:13:47.817  4106  4106 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-25 21:13:49.113  4106  4106 D AndroidRuntime: Shutting down VM
+09-25 21:13:51.414  4145  4145 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-25 21:13:51.420  4145  4145 I AndroidRuntime: Using default boot image
+09-25 21:13:51.425  4145  4145 I AndroidRuntime: Leaving lock profiling enabled
+09-25 21:13:51.662  4145  4145 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-25 21:13:52.730  4145  4145 D AndroidRuntime: Shutting down VM
+09-25 21:13:54.790  4182  4182 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-25 21:13:54.798  4182  4182 I AndroidRuntime: Using default boot image
+09-25 21:13:54.800  4182  4182 I AndroidRuntime: Leaving lock profiling enabled
+09-25 21:13:54.919  4182  4182 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-25 21:13:55.952  4182  4182 D AndroidRuntime: Shutting down VM
+09-25 21:13:57.954  4207  4207 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-25 21:13:57.956  4207  4207 I AndroidRuntime: Using default boot image
+09-25 21:13:57.957  4207  4207 I AndroidRuntime: Leaving lock profiling enabled
+09-25 21:13:58.068  4207  4207 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-25 21:13:59.141  4207  4207 D AndroidRuntime: Shutting down VM
+09-25 21:14:01.151  4331  4331 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-25 21:14:01.155  4331  4331 I AndroidRuntime: Using default boot image
+09-25 21:14:01.155  4331  4331 I AndroidRuntime: Leaving lock profiling enabled
+09-25 21:14:01.256  4331  4331 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-25 21:14:02.346  4331  4331 D AndroidRuntime: Shutting down VM
+09-25 21:14:04.467  4369  4369 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-25 21:14:04.473  4369  4369 I AndroidRuntime: Using default boot image
+09-25 21:14:04.475  4369  4369 I AndroidRuntime: Leaving lock profiling enabled
+09-25 21:14:04.753  4369  4369 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-25 21:14:05.842  4369  4369 D AndroidRuntime: Shutting down VM
+09-25 21:14:07.993  4393  4393 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-25 21:14:08.009  4393  4393 I AndroidRuntime: Using default boot image
+09-25 21:14:08.009  4393  4393 I AndroidRuntime: Leaving lock profiling enabled
+09-25 21:14:08.319  4393  4393 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-25 21:14:09.363  4393  4393 D AndroidRuntime: Shutting down VM
+09-25 21:14:11.303  4427  4427 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-25 21:14:11.307  4427  4427 I AndroidRuntime: Using default boot image
+09-25 21:14:11.307  4427  4427 I AndroidRuntime: Leaving lock profiling enabled
+09-25 21:14:11.381  4427  4427 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-25 21:14:12.407  4427  4427 D AndroidRuntime: Shutting down VM
+09-25 21:14:14.328  4449  4449 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-25 21:14:14.331  4449  4449 I AndroidRuntime: Using default boot image
+09-25 21:14:14.331  4449  4449 I AndroidRuntime: Leaving lock profiling enabled
+09-25 21:14:14.405  4449  4449 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-25 21:14:15.424  4449  4449 D AndroidRuntime: Shutting down VM
+09-25 21:14:17.899  4486  4486 I GGUFTextTest: TEXT_RENDER_START sdk=35
+09-25 21:14:17.912  4486  4486 I GGUFTextTest: TEXT_RENDER_SOURCE apk=/data/app/~~LW5DQJvbncxu15rZyFezKA==/com.ggufchat.app-dC8imI1Ktq7n-ouI8QulHg==/base.apk via=createPackageContext
+09-25 21:14:18.024  4486  4486 I GGUFTextTest: TEXT_RENDER_LOADER dalvik.system.PathClassLoader
+09-25 21:14:18.036  4486  4486 I GGUFThinking: GGUF_THINKING_PANEL attached=1
+09-25 21:14:18.037  4486  4486 I GGUFThinking: GGUF_THINKING_UPGRADE column_children=2
+09-25 21:14:18.041  4486  4486 I GGUFSearch: GGUF_SEARCH_PANEL shown=1 provider=Wikipédia hits=2 error=0
+09-25 21:14:18.041  4486  4486 I GGUFSearch: GGUF_SEARCH_PANEL shown=1 provider=nenhum hits=0 error=1
+09-25 21:14:18.043  4486  4486 I GGUFTextTest: TEXT_RENDER_PASS inline=ok;codigo=python;raciocinio=ok;fontes=ok;parsers=ok
+09-25 21:14:18.668  4516  4516 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-25 21:14:18.673  4516  4516 I AndroidRuntime: Using default boot image
+09-25 21:14:18.673  4516  4516 I AndroidRuntime: Leaving lock profiling enabled
+09-25 21:14:18.791  4516  4516 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-25 21:14:19.919  4516  4516 D AndroidRuntime: Shutting down VM
+09-25 21:14:21.899  4558  4558 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-25 21:14:21.903  4558  4558 I AndroidRuntime: Using default boot image
+09-25 21:14:21.903  4558  4558 I AndroidRuntime: Leaving lock profiling enabled
+09-25 21:14:22.000  4558  4558 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-25 21:14:23.031  4558  4558 D AndroidRuntime: Shutting down VM
+09-25 21:14:24.957  4588  4588 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-25 21:14:24.960  4588  4588 I AndroidRuntime: Using default boot image
+09-25 21:14:24.960  4588  4588 I AndroidRuntime: Leaving lock profiling enabled
+09-25 21:14:25.040  4588  4588 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-25 21:14:26.060  4588  4588 D AndroidRuntime: Shutting down VM
+09-25 21:14:27.988  4607  4607 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-25 21:14:27.991  4607  4607 I AndroidRuntime: Using default boot image
+09-25 21:14:27.991  4607  4607 I AndroidRuntime: Leaving lock profiling enabled
+09-25 21:14:28.076  4607  4607 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-25 21:14:29.097  4607  4607 D AndroidRuntime: Shutting down VM
+09-25 21:14:31.014  4632  4632 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-25 21:14:31.017  4632  4632 I AndroidRuntime: Using default boot image
+09-25 21:14:31.017  4632  4632 I AndroidRuntime: Leaving lock profiling enabled
+09-25 21:14:31.093  4632  4632 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-25 21:14:32.110  4632  4632 D AndroidRuntime: Shutting down VM
+09-25 21:14:34.038  4650  4650 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-25 21:14:34.041  4650  4650 I AndroidRuntime: Using default boot image
+09-25 21:14:34.041  4650  4650 I AndroidRuntime: Leaving lock profiling enabled
+09-25 21:14:34.123  4650  4650 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-25 21:14:35.146  4650  4650 D AndroidRuntime: Shutting down VM
+09-25 21:14:37.074  4668  4668 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-25 21:14:37.078  4668  4668 I AndroidRuntime: Using default boot image
+09-25 21:14:37.078  4668  4668 I AndroidRuntime: Leaving lock profiling enabled
+09-25 21:14:37.172  4668  4668 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-25 21:14:38.191  4668  4668 D AndroidRuntime: Shutting down VM
+09-25 21:14:40.117  4687  4687 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-25 21:14:40.120  4687  4687 I AndroidRuntime: Using default boot image
+09-25 21:14:40.120  4687  4687 I AndroidRuntime: Leaving lock profiling enabled
+09-25 21:14:40.202  4687  4687 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-25 21:14:41.223  4687  4687 D AndroidRuntime: Shutting down VM
+09-25 21:14:43.162  4705  4705 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-25 21:14:43.166  4705  4705 I AndroidRuntime: Using default boot image
+09-25 21:14:43.166  4705  4705 I AndroidRuntime: Leaving lock profiling enabled
+09-25 21:14:43.245  4705  4705 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-25 21:14:44.289  4705  4705 D AndroidRuntime: Shutting down VM
+09-25 21:14:46.217  4724  4724 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-25 21:14:46.220  4724  4724 I AndroidRuntime: Using default boot image
+09-25 21:14:46.220  4724  4724 I AndroidRuntime: Leaving lock profiling enabled
+09-25 21:14:46.298  4724  4724 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-25 21:14:47.330  4724  4724 D AndroidRuntime: Shutting down VM
+
+$ adb shell dumpsys package com.ggufchat.texttest | head -60
+Domain verification status:
+
+Key Set Manager:
+  [com.ggufchat.texttest]
+      Signing KeySets: 60
+
+Packages:
+  Package [com.ggufchat.texttest] (d6c2872):
+    appId=10210
+    pkg=Package{13e211b com.ggufchat.texttest}
+    codePath=/data/app/~~mM8GtTnCSvZKgzEKeYnRgw==/com.ggufchat.texttest-hgUUphz9KmxC8mZ3GWC_9A==
+    resourcePath=/data/app/~~mM8GtTnCSvZKgzEKeYnRgw==/com.ggufchat.texttest-hgUUphz9KmxC8mZ3GWC_9A==
+    legacyNativeLibraryDir=/data/app/~~mM8GtTnCSvZKgzEKeYnRgw==/com.ggufchat.texttest-hgUUphz9KmxC8mZ3GWC_9A==/lib
+    extractNativeLibs=true
+    primaryCpuAbi=null
+    secondaryCpuAbi=null
+    cpuAbiOverride=null
+    versionCode=0 minSdk=28 targetSdk=35
+    minExtensionVersions=[]
+    versionName=null
+    hiddenApiEnforcementPolicy=2
+    usesNonSdkApi=false
+    splits=[base]
+    apkSigningVersion=4
+    flags=[ HAS_CODE ALLOW_CLEAR_USER_DATA ALLOW_BACKUP ]
+    privateFlags=[ PRIVATE_FLAG_ACTIVITIES_RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION ALLOW_AUDIO_PLAYBACK_CAPTURE PRIVATE_FLAG_ALLOW_NATIVE_HEAP_POINTER_TAGGING ]
+    forceQueryable=false
+    queriesPackages=[com.ggufchat.app]
+    scannedAsStoppedSystemApp=false
+    supportsScreens=[small, medium, large, xlarge, resizeable, anyDensity]
+    timeStamp=2026-09-25 21:13:08
+    lastUpdateTime=2026-09-25 21:13:08
+    installerPackageName=null
+    installerPackageUid=-1
+    initiatingPackageName=com.android.shell
+    originatingPackageName=null
+    packageSource=1
+    loadingProgress=100%
+    loadingCompletedTime=2026-09-25 21:13:08
+    appMetadataFilePath=null
+    appMetadataSource=0
+    signatures=PackageSignatures{b6c82b8 version:4, signatures:[a3633f8d], past signatures:[]}
+    installPermissionsFixed=false
+    pkgFlags=[ HAS_CODE ALLOW_CLEAR_USER_DATA ALLOW_BACKUP ]
+    privatePkgFlags=[ PRIVATE_FLAG_ACTIVITIES_RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION ALLOW_AUDIO_PLAYBACK_CAPTURE PRIVATE_FLAG_ALLOW_NATIVE_HEAP_POINTER_TAGGING ]
+    apexModuleName=null
+    User 0: ceDataInode=492469 deDataInode=278935 installed=true hidden=false suspended=false distractionFlags=0 stopped=true notLaunched=false enabled=0 instant=false virtual=false quarantined=false
+      installReason=0
+      dataDir=/data/user/0/com.ggufchat.texttest
+      firstInstallTime=2026-09-25 21:13:08
+      uninstallReason=0
+      overlay paths:
+        /product/overlay/EmulationPixel5/EmulationPixel5Overlay.apk
+        /product/overlay/NavigationBarModeGestural/NavigationBarModeGesturalOverlay.apk
+      legacy overlay paths:
+        /product/overlay/EmulationPixel5/EmulationPixel5Overlay.apk
+        /product/overlay/NavigationBarModeGestural/NavigationBarModeGesturalOverlay.apk
+      runtime permissions:
+
+Queries:
+
+$ adb shell dumpsys activity activities | grep -iE "texttest|ResumedActivity"
+topResumedActivity=ActivityRecord{84a5b7e u0 com.google.android.apps.nexuslauncher/.NexusLauncherActivity t7}
+  ResumedActivity: ActivityRecord{84a5b7e u0 com.google.android.apps.nexuslauncher/.NexusLauncherActivity t7}
+
+$ adb shell logcat -d | grep -iE "texttest|GGUFTextTest|AndroidRuntime|FATAL" | tail -200
+09-25 21:12:45.323   953   953 I AndroidRuntime: VM exiting with result code 0, cleanup skipped.

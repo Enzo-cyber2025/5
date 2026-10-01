@@ -16,16 +16,14 @@ VULKAN=os.environ.get('GGUF_MOBILE_VULKAN')=='1'
 
 
 class MobileAndroid(Android):
-    def ui(self):
-        # DocumentsUI sometimes returns success without producing a dump while
-        # its window is transitioning. Retry collection, never a native crash,
-        # never a send action, and never reuse a previous XML file.
-        for attempt in range(3):
-            try:return super().ui()
-            except ET.ParseError:
-                if attempt==2:raise
-                self.alive()
-                time.sleep(0.5)
+    """Driver destes testes: o retry de dump vazio vive na classe base.
+
+    DocumentsUI às vezes responde sucesso sem produzir dump enquanto a janela
+    transiciona; `Android.ui` repete a coleta nesse caso (nunca reaproveita XML
+    antigo, nunca trata como falha do aplicativo). Antes o retry existia só aqui,
+    e um teste que usava a classe base — o de anexos — reprovou a rodada
+    36026742459 com `ParseError: syntax error: line 1, column 0`.
+    """
 
 
 def unified_pair(models, vision_name, projector_name):
@@ -47,20 +45,55 @@ def select_pair(d):
     d.tap(text='Importar',package={PACKAGE})
     d.tap(text='Importar GGUF',contains=True,package={PACKAGE})
     d.wait(lambda:has_package(d.ui(),PICKERS),'SAF aberto')
-    # Navigate the actual document provider, never inject an import intent.
-    for _ in range(6):
-        xml=d.ui()
-        if position(xml,text=MODEL.name,package=PICKERS) and not any(position(xml,text=t,package=PICKERS) for t in ('Open from','Abrir de')):break
-        if not any(position(xml,text=t,package=PICKERS) for t in ('Open from','Abrir de')):
-            d.tap(desc='Show roots',package=PICKERS,optional=True)
-        d.select_downloads();time.sleep(1)
-    # Recent can include UI-dump XML, so select only the two actual GGUFs.
-    from android_checks import select_exact_documents
+    # Navega o provedor de documentos de verdade, nunca injeta um intent de importação.
+    #
+    # O laço antigo tocava "Show roots" até SEIS vezes e lia a gaveta no meio da
+    # animação; a rodada 36325432837 perdeu a fase `attachments-detach` assim: o
+    # seletor foi embora com o par já importado (o aplicativo abriu "Importando
+    # modelo") e o harness ainda procurou a lista numa tela que não existia mais —
+    # "SmolVLM-256M-Instruct-Q8_0.gguf não está na lista do seletor (''/'')".
+    # Agora é UMA navegação, a mesma já provada nas fases de anexo, e o estado do
+    # seletor é conferido antes de marcar.
+    from android_checks import abrir_pasta_de_downloads, select_exact_documents
+    abrir_pasta_de_downloads(d)
+    if not has_package(d.ui(),PICKERS):
+        raise AssertionError('o seletor do sistema fechou durante a navegação até Downloads; '
+                             'a seleção não chegou a ser feita')
+    # O seletor de "Recentes" pode listar XML de dump de interface: marca só os dois GGUFs.
     d.tap(desc='List view',package=PICKERS,optional=True)
-    select_exact_documents(d,[MODEL.name,PROJ.name])
+    try:
+        select_exact_documents(d,[MODEL.name,PROJ.name])
+    except AssertionError as erro:
+        # Seleção confirmada pelo próprio aplicativo: se o par unificado PERSISTIU com
+        # estes dois arquivos, o que falhou foi a leitura da tela do harness, não a
+        # importação. Isso é registrado como está — nunca presumido.
+        def par_unificado():
+            return next((m for m in d.read_json('models.json',optional=True)
+                         if m.get('multimodal') is True and m.get('mmprojPath')==m.get('path')
+                         and (m.get('capability')=='VISION_SINGLE_GGUF'
+                              or m.get('fileName') in (MODEL.name,PROJ.name)
+                              or (m.get('path') or '').endswith(MODEL.name))), None)
+        par, limite = None, time.monotonic()+90
+        while par is None and time.monotonic()<limite:
+            par = par_unificado()
+            if par is None:time.sleep(1)
+        if par is None:
+            raise
+        Path('evidence/pair-selection-confirmed-by-app.txt').write_text(
+            f'o seletor saiu da tela antes da marcação ({erro}); o aplicativo PERSISTIU o par '
+            f'unificado {par.get("fileName")!r} com projetor {Path(par.get("mmprojPath") or "").name!r}\n')
+        return
     d.capture('saf-two-selected.png')
     # Select is the toolbar action. Do not hit a row's accessibility Open icon.
-    d.tap(text='Select',package=PICKERS)
+    # O aplicativo pode assumir a seleção assim que os DOIS arquivos ficam marcados:
+    # na rodada 36325432837 o seletor saiu da tela com o par já importado (o app
+    # abriu "Importando modelo" e subiu o serviço de cálculo). Tocar em Select é o
+    # caminho normal; se o seletor já saiu, quem prova a importação é a espera do
+    # progresso logo abaixo — e o caso fica registrado, nunca presumido.
+    if not d.tap(text='Select',package=PICKERS,optional=True) and not has_package(d.ui(),PICKERS):
+        Path('evidence/pair-selection-select-missing.txt').write_text(
+            'o seletor saiu da tela antes do toque em Select; a importação é conferida '
+            'pelo progresso do próprio aplicativo, em vez de presumida\n')
     observer=getattr(d,'progress_observer',None)
     if observer:
         # Actual worker events prove the SAF result reached the app; do not block

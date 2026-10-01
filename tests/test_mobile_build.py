@@ -14,6 +14,9 @@ from mobile_manifest import enforce_min_sdk
 
 
 def test_actual_manifest_minimum_and_payload_preservation():
+    if not (ROOT/'.cache/gguf/GGUF-Chat.apk').is_file():
+        pytest.skip('APK original verificado ausente; scripts/fetch_original.py baixa')
+
     with zipfile.ZipFile(ROOT/'.cache/gguf/GGUF-Chat.apk') as z:
         original=z.read('AndroidManifest.xml')
     patched=enforce_min_sdk(original)

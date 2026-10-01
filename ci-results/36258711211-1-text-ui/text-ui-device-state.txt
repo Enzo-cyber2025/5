@@ -1,0 +1,229 @@
+$ adb shell logcat -d -b crash
+
+
+$ adb shell logcat -d -s AndroidRuntime:V GGUFTextTest:V GGUFThinking:V GGUFSearch:V GGUFImages:V
+--------- beginning of main
+09-26 17:34:36.271   943   943 I AndroidRuntime: VM exiting with result code 0, cleanup skipped.
+09-26 17:34:49.843  2201  2201 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-26 17:34:49.851  2201  2201 I AndroidRuntime: Using default boot image
+09-26 17:34:49.852  2201  2201 I AndroidRuntime: Leaving lock profiling enabled
+09-26 17:34:50.200  2201  2201 D AndroidRuntime: Calling main entry com.android.commands.svc.Svc
+09-26 17:34:50.202  2201  2201 D AndroidRuntime: Shutting down VM
+09-26 17:35:11.041  3168  3168 I GGUFTextTest: TEXT_RENDER_START sdk=35
+09-26 17:35:11.054  3168  3168 I GGUFTextTest: TEXT_RENDER_SOURCE apk=/data/app/~~L3IiH76DOKilRTuDidAlVg==/com.ggufchat.app-kP2iI2Nn2aFBWte8Yi2S8g==/base.apk via=createPackageContext
+09-26 17:35:11.192  3168  3168 I GGUFTextTest: TEXT_RENDER_LOADER dalvik.system.PathClassLoader
+09-26 17:35:11.202  3168  3168 I GGUFThinking: GGUF_THINKING_PANEL attached=1
+09-26 17:35:11.202  3168  3168 I GGUFThinking: GGUF_THINKING_UPGRADE column_children=2
+09-26 17:35:11.204  3168  3168 I GGUFSearch: GGUF_SEARCH_PANEL shown=1 provider=Wikipédia hits=2 error=0
+09-26 17:35:11.204  3168  3168 I GGUFSearch: GGUF_SEARCH_PANEL shown=1 provider=nenhum hits=0 error=1
+09-26 17:35:11.205  3168  3168 I GGUFTextTest: TEXT_RENDER_PASS inline=ok;codigo=python;raciocinio=ok;fontes=ok;parsers=ok
+09-26 17:35:12.147  3239  3239 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-26 17:35:12.153  3239  3239 I AndroidRuntime: Using default boot image
+09-26 17:35:12.155  3239  3239 I AndroidRuntime: Leaving lock profiling enabled
+09-26 17:35:12.311  3239  3239 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-26 17:35:13.556  3239  3239 D AndroidRuntime: Shutting down VM
+09-26 17:35:14.571  3300  3300 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-26 17:35:14.582  3300  3300 I AndroidRuntime: Using default boot image
+09-26 17:35:14.582  3300  3300 I AndroidRuntime: Leaving lock profiling enabled
+09-26 17:35:14.681  3300  3300 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-26 17:35:15.771  3300  3300 D AndroidRuntime: Shutting down VM
+
+$ adb shell dumpsys package com.ggufchat.texttest | head -60
+Domain verification status:
+
+Key Set Manager:
+  [com.ggufchat.texttest]
+      Signing KeySets: 60
+
+Packages:
+  Package [com.ggufchat.texttest] (95da913):
+    appId=10210
+    pkg=Package{8c19798 com.ggufchat.texttest}
+    codePath=/data/app/~~CfKAFMJorzEus09np6vwXw==/com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==
+    resourcePath=/data/app/~~CfKAFMJorzEus09np6vwXw==/com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==
+    legacyNativeLibraryDir=/data/app/~~CfKAFMJorzEus09np6vwXw==/com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==/lib
+    extractNativeLibs=true
+    primaryCpuAbi=null
+    secondaryCpuAbi=null
+    cpuAbiOverride=null
+    versionCode=0 minSdk=28 targetSdk=35
+    minExtensionVersions=[]
+    versionName=null
+    hiddenApiEnforcementPolicy=2
+    usesNonSdkApi=false
+    splits=[base]
+    apkSigningVersion=4
+    flags=[ HAS_CODE ALLOW_CLEAR_USER_DATA ALLOW_BACKUP ]
+    privateFlags=[ PRIVATE_FLAG_ACTIVITIES_RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION ALLOW_AUDIO_PLAYBACK_CAPTURE PRIVATE_FLAG_ALLOW_NATIVE_HEAP_POINTER_TAGGING ]
+    forceQueryable=false
+    queriesPackages=[com.ggufchat.app]
+    scannedAsStoppedSystemApp=false
+    supportsScreens=[small, medium, large, xlarge, resizeable, anyDensity]
+    timeStamp=2026-09-26 17:35:07
+    lastUpdateTime=2026-09-26 17:35:08
+    installerPackageName=null
+    installerPackageUid=-1
+    initiatingPackageName=com.android.shell
+    originatingPackageName=null
+    packageSource=1
+    loadingProgress=100%
+    loadingCompletedTime=2026-09-26 17:35:08
+    appMetadataFilePath=null
+    appMetadataSource=0
+    signatures=PackageSignatures{e2e0bf1 version:4, signatures:[eb14713c], past signatures:[]}
+    installPermissionsFixed=false
+    pkgFlags=[ HAS_CODE ALLOW_CLEAR_USER_DATA ALLOW_BACKUP ]
+    privatePkgFlags=[ PRIVATE_FLAG_ACTIVITIES_RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION ALLOW_AUDIO_PLAYBACK_CAPTURE PRIVATE_FLAG_ALLOW_NATIVE_HEAP_POINTER_TAGGING ]
+    apexModuleName=null
+    User 0: ceDataInode=499760 deDataInode=278968 installed=true hidden=false suspended=false distractionFlags=0 stopped=false notLaunched=false enabled=0 instant=false virtual=false quarantined=false
+      installReason=0
+      dataDir=/data/user/0/com.ggufchat.texttest
+      firstInstallTime=2026-09-26 17:35:08
+      uninstallReason=0
+      overlay paths:
+        /product/overlay/EmulationPixel5/EmulationPixel5Overlay.apk
+        /product/overlay/NavigationBarModeGestural/NavigationBarModeGesturalOverlay.apk
+      legacy overlay paths:
+        /product/overlay/EmulationPixel5/EmulationPixel5Overlay.apk
+        /product/overlay/NavigationBarModeGestural/NavigationBarModeGesturalOverlay.apk
+      runtime permissions:
+
+Queries:
+
+$ adb shell dumpsys activity activities | grep -iE "texttest|ResumedActivity"
+* Task{fce32b4 #8 type=standard A=10210:com.ggufchat.texttest U=0 visible=true visibleRequested=true mode=fullscreen translucent=false sz=1}
+    topResumedActivity=ActivityRecord{d7f3e08 u0 com.ggufchat.texttest/.TextActivity t8}
+    * Hist  #0: ActivityRecord{d7f3e08 u0 com.ggufchat.texttest/.TextActivity t8}
+      packageName=com.ggufchat.texttest processName=com.ggufchat.texttest
+      app=ProcessRecord{e7e665f 3168:com.ggufchat.texttest/u0a210}
+      Intent { flg=0x10000000 cmp=com.ggufchat.texttest/.TextActivity }
+      rootOfTask=true task=Task{fce32b4 #8 type=standard A=10210:com.ggufchat.texttest}
+      taskAffinity=10210:com.ggufchat.texttest
+      mActivityComponent=com.ggufchat.texttest/.TextActivity
+      baseDir=/data/app/~~CfKAFMJorzEus09np6vwXw==/com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==/base.apk
+      dataDir=/data/user/0/com.ggufchat.texttest
+      windows=[Window{fd24aa2 u0 com.ggufchat.texttest/com.ggufchat.texttest.TextActivity}]
+    Resumed: ActivityRecord{d7f3e08 u0 com.ggufchat.texttest/.TextActivity t8}
+  ResumedActivity: ActivityRecord{d7f3e08 u0 com.ggufchat.texttest/.TextActivity t8}
+  topDisplayFocusedRootTask=Task{fce32b4 #8 type=standard A=10210:com.ggufchat.texttest}
+  deepestLastOrientationSource=ActivityRecord{d7f3e08 u0 com.ggufchat.texttest/.TextActivity t8}
+  mCurrentFocus=Window{fd24aa2 u0 com.ggufchat.texttest/com.ggufchat.texttest.TextActivity}
+  mFocusedApp=ActivityRecord{d7f3e08 u0 com.ggufchat.texttest/.TextActivity t8}
+  mObscuringWindow=Window{fd24aa2 u0 com.ggufchat.texttest/com.ggufchat.texttest.TextActivity}
+      mPreferredTopFocusableRootTask=Task{fce32b4 #8 type=standard A=10210:com.ggufchat.texttest}
+      mLastFocusedRootTask=Task{fce32b4 #8 type=standard A=10210:com.ggufchat.texttest}
+      * Task{fce32b4 #8 type=standard A=10210:com.ggufchat.texttest U=0 visible=true visibleRequested=true mode=fullscreen translucent=false sz=1}
+        * ActivityRecord{d7f3e08 u0 com.ggufchat.texttest/.TextActivity t8}
+    mFocusedWindow=Window{fd24aa2 u0 com.ggufchat.texttest/com.ggufchat.texttest.TextActivity}
+    mTopFullscreenOpaqueWindowState=Window{fd24aa2 u0 com.ggufchat.texttest/com.ggufchat.texttest.TextActivity}
+    mSystemBarColorApps={ActivityRecord{d7f3e08 u0 com.ggufchat.texttest/.TextActivity t8}}
+    mNavBarColorWindowCandidate=Window{fd24aa2 u0 com.ggufchat.texttest/com.ggufchat.texttest.TextActivity}
+    mNavBarBackgroundWindowCandidate=Window{fd24aa2 u0 com.ggufchat.texttest/com.ggufchat.texttest.TextActivity}
+      Window{fd24aa2 u0 com.ggufchat.texttest/com.ggufchat.texttest.TextActivity}
+      Window{fd24aa2 u0 com.ggufchat.texttest/com.ggufchat.texttest.TextActivity}:
+        mControlTarget=Window{fd24aa2 u0 com.ggufchat.texttest/com.ggufchat.texttest.TextActivity}
+        mControlTarget=Window{fd24aa2 u0 com.ggufchat.texttest/com.ggufchat.texttest.TextActivity}
+        mControlTarget=Window{fd24aa2 u0 com.ggufchat.texttest/com.ggufchat.texttest.TextActivity}
+        (fullscreen) Task{fce32b4 #8 type=standard A=10210:com.ggufchat.texttest}
+  VisibleActivityProcess:[ ProcessRecord{e7e665f 3168:com.ggufchat.texttest/u0a210}]
+
+$ adb shell logcat -d | grep -iE "texttest|GGUFTextTest|AndroidRuntime|FATAL" | tail -200
+09-26 17:34:36.271   943   943 I AndroidRuntime: VM exiting with result code 0, cleanup skipped.
+09-26 17:34:49.843  2201  2201 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-26 17:34:49.851  2201  2201 I AndroidRuntime: Using default boot image
+09-26 17:34:49.852  2201  2201 I AndroidRuntime: Leaving lock profiling enabled
+09-26 17:34:50.200  2201  2201 D AndroidRuntime: Calling main entry com.android.commands.svc.Svc
+09-26 17:34:50.202  2201  2201 D AndroidRuntime: Shutting down VM
+09-26 17:35:08.383   554   609 V BackupManagerService: [UserID:0] restoreAtInstall pkg=com.ggufchat.texttest token=2 restoreSet=0
+09-26 17:35:09.815   554   609 I AppsFilter: interaction: PackageSetting{b98920b com.android.microdroid.empty_payload/10194} -> PackageSetting{c2a9808 com.ggufchat.texttest/10210} BLOCKED
+09-26 17:35:09.959   554  3068 I ActivityManager: Force stopping com.ggufchat.texttest appid=10210 user=0: from pid 3159
+09-26 17:35:09.968   554  3068 I AppsFilter: interaction: PackageSetting{b98920b com.android.microdroid.empty_payload/10194} -> PackageSetting{c2a9808 com.ggufchat.texttest/10210} BLOCKED
+09-26 17:35:10.038   554   890 I SdkSandboxManager: No SDKs used. Skipping SDK data reconcilation for CallingInfo{mUid=10210, mPackageName='com.ggufchat.texttest, mAppProcessToken='null'}
+09-26 17:35:10.045   554   862 I AppWidgetServiceImpl: Updating package stopped masked state for uid 10210 package com.ggufchat.texttest isStopped true
+09-26 17:35:10.113   554   876 D ShortcutService: adding package: com.ggufchat.texttest userId0
+09-26 17:35:10.113   554   876 D ShortcutService: handlePackageAdded: com.ggufchat.texttest user=0
+09-26 17:35:10.113   554   876 D ShortcutService: rescanPackageIfNeeded 0@com.ggufchat.texttest, forceRescan=true , isNewApp=true
+09-26 17:35:10.113   554   876 D ShortcutService: Package com.ggufchat.texttest has 0 manifest shortcut(s), and 0 share target(s)
+09-26 17:35:10.132  1102  1102 D CarrierSvcBindHelper: onPackageAdded: com.ggufchat.texttest
+09-26 17:35:10.149   554   554 I AppsFilter: interaction: PackageSetting{481b1aa com.android.microdroid.empty_payload/10194} -> PackageSetting{2d6a19b com.ggufchat.texttest/10210} BLOCKED
+09-26 17:35:10.158  1102  1307 D ImsResolver: maybeAddedImsService, packageName: com.ggufchat.texttest
+09-26 17:35:10.166   554  2658 V SplashScreenExceptionList: SplashScreen checking exception for package com.ggufchat.texttest (target sdk:35) -> false
+09-26 17:35:10.173   554  2658 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=com.ggufchat.texttest/.TextActivity} with LAUNCH_MULTIPLE from uid 2000 (BAL_ALLOW_PERMISSION) result code=0
+09-26 17:35:10.189   554   991 I AppsFilter: interaction: PackageSetting{481b1aa com.android.microdroid.empty_payload/10194} -> PackageSetting{95da913 com.ggufchat.texttest/10210} BLOCKED
+09-26 17:35:10.198  1149  1149 I TopTaskTracker: onTaskMovedToFront: (moved taskInfo to front) taskId=8, baseIntent=Intent { flg=0x10000000 cmp=com.ggufchat.texttest/.TextActivity }
+09-26 17:35:10.226  1102  1102 D CarrierSvcBindHelper: onHandleForceStop: [com.ggufchat.texttest]
+09-26 17:35:10.232   914   945 V WindowManagerShell: Transition requested (#17): android.os.BinderProxy@d9ca3cb TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=8 displayId=0 isRunning=true baseIntent=Intent { flg=0x10000000 cmp=com.ggufchat.texttest/.TextActivity } baseActivity=ComponentInfo{com.ggufchat.texttest/com.ggufchat.texttest.TextActivity} topActivity=ComponentInfo{com.ggufchat.texttest/com.ggufchat.texttest.TextActivity} origActivity=null realActivity=ComponentInfo{com.ggufchat.texttest/com.ggufchat.texttest.TextActivity} numActivities=1 lastActiveTime=67888 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{android.window.IWindowContainerToken$Stub$Proxy@f9bc7a8} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 136 - 0, 0) topActivityInfo=ActivityInfo{1962c1 com.ggufchat.texttest.TextActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isSleeping=false locusId=null displayAreaFeatureId=1 isTopActivityTransparent=false appCompatTaskInfo=AppCompatTaskInfo { topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= falseisLetterboxEducationEnabled= true isLetterboxDoubleTapEnabled= false topActivityEligibleForUserAspectRatioButton= false topActivityBoundsLetterboxed= false isFromLetterboxDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=1080 topActivityLetterboxHeight=2340 isUserFullscreenOverrideEnabled=false isSystemFullscreenOverrideEnabled=false cameraCompatTaskInfo=CameraCompatTaskInfo { cameraCompatControlState=hidden freeformCameraCompatMode=inactive}}}, pipTask = null, remoteTransition = null, displayChange = null, flags = 0, debugId = 17 }
+09-26 17:35:10.352   554   585 I ActivityManager: Start proc 3168:com.ggufchat.texttest/u0a210 for next-top-activity {com.ggufchat.texttest/com.ggufchat.texttest.TextActivity}
+09-26 17:35:10.359  3168  3168 I ufchat.texttest: Using CollectorTypeCMC GC.
+09-26 17:35:10.364  3168  3168 W ufchat.texttest: Unexpected CPU variant for x86: x86_64.
+09-26 17:35:10.364  3168  3168 W ufchat.texttest: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, goldmont-without-sha-xsaves, tremont, kabylake, default
+09-26 17:35:10.365  3168  3168 E ufchat.texttest: Not starting debugger since process cannot load the jdwp agent.
+09-26 17:35:10.389   554   862 I AppWidgetServiceImpl: Updating package stopped masked state for uid 10210 package com.ggufchat.texttest isStopped false
+09-26 17:35:10.481   554  3068 D CoreBackPreview: Window{8577725 u0 Splash Screen com.ggufchat.texttest}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@43a4b7f, mPriority=0, mIsAnimationCallback=false}
+09-26 17:35:10.489   554   876 D ShortcutService: changing package: com.ggufchat.texttest userId0
+09-26 17:35:10.489   554   876 D ShortcutService: handlePackageChanged: com.ggufchat.texttest user=0
+09-26 17:35:10.489   554   876 D ShortcutService: rescanPackageIfNeeded 0@com.ggufchat.texttest, forceRescan=true , isNewApp=true
+09-26 17:35:10.489   554   876 D ShortcutService: Package com.ggufchat.texttest has 0 manifest shortcut(s), and 0 share target(s)
+09-26 17:35:10.833   554   573 V WindowManager: Sent Transition (#17) createdAt=09-26 17:35:10.080 via request=TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=8 displayId=0 isRunning=true baseIntent=Intent { flg=0x10000000 cmp=com.ggufchat.texttest/.TextActivity } baseActivity=ComponentInfo{com.ggufchat.texttest/com.ggufchat.texttest.TextActivity} topActivity=ComponentInfo{com.ggufchat.texttest/com.ggufchat.texttest.TextActivity} origActivity=null realActivity=ComponentInfo{com.ggufchat.texttest/com.ggufchat.texttest.TextActivity} numActivities=1 lastActiveTime=67888 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{RemoteToken{e7de710 Task{fce32b4 #8 type=standard A=10210:com.ggufchat.texttest}}} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 136 - 0, 0) topActivityInfo=ActivityInfo{e627209 com.ggufchat.texttest.TextActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isSleeping=false locusId=null displayAreaFeatureId=1 isTopActivityTransparent=false appCompatTaskInfo=AppCompatTaskInfo { topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= falseisLetterboxEducationEnabled= true isLetterboxDoubleTapEnabled= false topActivityEligibleForUserAspectRatioButton= false topActivityBoundsLetterboxed= false isFromLetterboxDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=1080 topActivityLetterboxHeight=2340 isUserFullscreenOverrideEnabled=false isSystemFullscreenOverrideEnabled=false cameraCompatTaskInfo=CameraCompatTaskInfo { cameraCompatControlState=hidden freeformCameraCompatMode=inactive}}}, pipTask = null, remoteTransition = null, displayChange = null, flags = 0, debugId = 17 }
+09-26 17:35:10.833   554   573 V WindowManager:         {WCT{RemoteToken{e7de710 Task{fce32b4 #8 type=standard A=10210:com.ggufchat.texttest}}} m=OPEN f=NONE leash=Surface(name=Task=8)/@0x30124a4 sb=Rect(0, 0 - 1080, 2340) eb=Rect(0, 0 - 1080, 2340) d=0 taskParent=-1},
+09-26 17:35:10.888  3168  3168 W ziparchive: Unable to open '/data/app/~~CfKAFMJorzEus09np6vwXw==/com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==/base.dm': No such file or directory
+09-26 17:35:10.889  3168  3168 W ziparchive: Unable to open '/data/app/~~CfKAFMJorzEus09np6vwXw==/com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==/base.dm': No such file or directory
+09-26 17:35:10.889  3168  3168 D nativeloader: Configuring clns-7 for other apk /data/app/~~CfKAFMJorzEus09np6vwXw==/com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==/base.apk. target_sdk_version=35, uses_libraries=, library_path=/data/app/~~CfKAFMJorzEus09np6vwXw==/com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==/lib/x86_64, permitted_path=/data:/mnt/expand:/data/user/0/com.ggufchat.texttest
+09-26 17:35:11.041  3168  3168 I GGUFTextTest: TEXT_RENDER_START sdk=35
+09-26 17:35:11.054  3168  3168 I GGUFTextTest: TEXT_RENDER_SOURCE apk=/data/app/~~L3IiH76DOKilRTuDidAlVg==/com.ggufchat.app-kP2iI2Nn2aFBWte8Yi2S8g==/base.apk via=createPackageContext
+09-26 17:35:11.052  3168  3168 W ufchat.texttest: type=1400 audit(0.0:47): avc:  denied  { read } for  name="u:object_r:incremental_prop:s0" dev="tmpfs" ino=218 scontext=u:r:untrusted_app:s0:c210,c256,c512,c768 tcontext=u:object_r:incremental_prop:s0 tclass=file permissive=0 app=com.ggufchat.texttest
+09-26 17:35:11.052  3168  3168 W ufchat.texttest: type=1400 audit(0.0:48): avc:  denied  { read } for  name="filesystems" dev="proc" ino=4026532076 scontext=u:r:untrusted_app:s0:c210,c256,c512,c768 tcontext=u:object_r:proc_filesystems:s0 tclass=file permissive=0 app=com.ggufchat.texttest
+09-26 17:35:11.131  1102  1102 D CarrierSvcBindHelper: onPackageModified: com.ggufchat.texttest
+09-26 17:35:11.160   916   916 I SafetyLabelChangedBroadcastReceiver: received broadcast packageName: com.ggufchat.texttest, current user: UserHandle{0}, packageChangeEvent: NEW_INSTALL, intent user: UserHandle{0}
+09-26 17:35:11.192  3168  3168 I GGUFTextTest: TEXT_RENDER_LOADER dalvik.system.PathClassLoader
+09-26 17:35:11.205  3168  3168 I GGUFTextTest: TEXT_RENDER_PASS inline=ok;codigo=python;raciocinio=ok;fontes=ok;parsers=ok
+09-26 17:35:11.206  1102  1307 D ImsResolver: maybeAddedImsService, packageName: com.ggufchat.texttest
+09-26 17:35:11.241   554  1007 D CoreBackPreview: Window{fd24aa2 u0 com.ggufchat.texttest/com.ggufchat.texttest.TextActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@8626f0, mPriority=0, mIsAnimationCallback=false}
+09-26 17:35:11.407  1425  1425 I AiAiEcho: AppFetcherImplV2 updateApps package:[com.ggufchat.texttest], userId:[0], reason:[package is added.].
+09-26 17:35:11.417  1149  1186 D SessionCommitReceiver: Removing PromiseIcon for package: com.ggufchat.texttest, install reason: 0, alreadyAddedPromiseIcon: false
+09-26 17:35:11.540  1149  1186 D PackageUpdatedTask: Package updated: mOp=ADD packages=[com.ggufchat.texttest]
+09-26 17:35:11.612  1425  1425 I AiAiEcho: AppFetcherImpl onPackageChanged com.ggufchat.texttest.
+09-26 17:35:11.625  1425  1976 I AiAiEcho: AppIndexer Package:[com.ggufchat.texttest] UserProfile:[0] Enabled:[true].
+09-26 17:35:11.625  1425  1976 I AiAiEcho: AppFetcherImplV2 updateApps package:[com.ggufchat.texttest], userId:[0], reason:[package is updated.].
+09-26 17:35:11.664  1149  1186 D BaseIconCache: Default icon returned for com.ggufchat.texttest
+09-26 17:35:11.790   554  2509 D CoreBackPreview: Window{8577725 u0 Splash Screen com.ggufchat.texttest EXITING}: Setting back callback null
+09-26 17:35:11.791   554  2509 W InputManager-JNI: Input channel object '8577725 Splash Screen com.ggufchat.texttest (client)' was disposed without first being removed with the input manager!
+09-26 17:35:11.830   554   573 W ziparchive: Unable to open '/data/app/~~CfKAFMJorzEus09np6vwXw==/com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==/base.dm': No such file or directory
+09-26 17:35:11.847   554   679 I ImeTracker: com.ggufchat.texttest:ee0b58a6: onRequestHide at ORIGIN_SERVER reason HIDE_UNSPECIFIED_WINDOW fromUser false
+09-26 17:35:11.847   554   679 I ImeTracker: com.ggufchat.texttest:ee0b58a6: onCancelled at PHASE_SERVER_SHOULD_HIDE
+09-26 17:35:11.873   554   573 I ActivityTaskManager: Displayed com.ggufchat.texttest/.TextActivity for user 0: +1s729ms
+09-26 17:35:11.953  1331  1331 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1986 onStartInput(EditorInfo{EditorInfo{packageName=com.ggufchat.texttest, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
+09-26 17:35:11.955   554  2532 W PackageConfigPersister: App-specific configuration not found for packageName: com.ggufchat.texttest and userId: 0
+09-26 17:35:12.122  1149  1186 D PackageUpdatedTask: Package updated: mOp=UPDATE packages=[com.ggufchat.texttest]
+09-26 17:35:12.147  3239  3239 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-26 17:35:12.153  3239  3239 I AndroidRuntime: Using default boot image
+09-26 17:35:12.155  3239  3239 I AndroidRuntime: Leaving lock profiling enabled
+09-26 17:35:12.166  1149  1186 W AllAppsList: updatePromiseInstallInfo: no Activities matched updated package, removing all apps from package=com.ggufchat.texttest
+09-26 17:35:12.311  3239  3239 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-26 17:35:12.571  1230  2364 I FontLog : Package com.ggufchat.texttest has no metadata [CONTEXT service_id=132 ]
+09-26 17:35:12.611  1519  3129 I Blockstore: [DataStoreImpl] Clearing Blockstore Data for package com.ggufchat.texttest [CONTEXT service_id=258 ]
+09-26 17:35:13.556  3239  3239 D AndroidRuntime: Shutting down VM
+09-26 17:35:14.571  3300  3300 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-26 17:35:14.582  3300  3300 I AndroidRuntime: Using default boot image
+09-26 17:35:14.582  3300  3300 I AndroidRuntime: Leaving lock profiling enabled
+09-26 17:35:14.681  3300  3300 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-26 17:35:15.771  3300  3300 D AndroidRuntime: Shutting down VM
+09-26 17:35:17.183  3377  3381 I artd    : Dex parent of /data/app/~~CfKAFMJorzEus09np6vwXw==/com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==/base.apk is not writable: Permission denied
+09-26 17:35:17.188  3377  3381 I artd    : GetBestInfo checking odex in dalvik-cache (/data/dalvik-cache/x86_64/data@app@~~CfKAFMJorzEus09np6vwXw==@com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==@base.apk@classes.dex)
+09-26 17:35:17.191  3377  3381 I artd    : Loading /data/dalvik-cache/x86_64/data@app@~~CfKAFMJorzEus09np6vwXw==@com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==@base.apk@classes.dex with executable: 0
+09-26 17:35:17.191  3377  3381 I artd    : OatFileAssistant test for existing oat file /data/dalvik-cache/x86_64/data@app@~~CfKAFMJorzEus09np6vwXw==@com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==@base.apk@classes.dex: File /data/dalvik-cache/x86_64/data@app@~~CfKAFMJorzEus09np6vwXw==@com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==@base.apk@classes.vdex does not exist.
+09-26 17:35:17.191  3377  3381 I artd    : GetBestInfo checking odex next to the dex file (/data/app/~~CfKAFMJorzEus09np6vwXw==/com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==/oat/x86_64/base.odex)
+09-26 17:35:17.191  3377  3381 I artd    : Loading /data/app/~~CfKAFMJorzEus09np6vwXw==/com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==/oat/x86_64/base.odex with executable: 0
+09-26 17:35:17.191  3377  3381 I artd    : OatFileAssistant test for existing oat file /data/app/~~CfKAFMJorzEus09np6vwXw==/com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==/oat/x86_64/base.odex: File /data/app/~~CfKAFMJorzEus09np6vwXw==/com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==/oat/x86_64/base.vdex does not exist.
+09-26 17:35:17.191  3377  3381 I artd    : GetBestInfo checking vdex in dalvik-cache (/data/dalvik-cache/x86_64/data@app@~~CfKAFMJorzEus09np6vwXw==@com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==@base.apk@classes.vdex)
+09-26 17:35:17.191  3377  3381 I artd    : unable to open vdex file /data/dalvik-cache/x86_64/data@app@~~CfKAFMJorzEus09np6vwXw==@com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==@base.apk@classes.vdex: File /data/dalvik-cache/x86_64/data@app@~~CfKAFMJorzEus09np6vwXw==@com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==@base.apk@classes.vdex does not exist.
+09-26 17:35:17.191  3377  3381 I artd    : OatFileAssistant test for existing oat file /data/dalvik-cache/x86_64/data@app@~~CfKAFMJorzEus09np6vwXw==@com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==@base.apk@classes.vdex: File /data/dalvik-cache/x86_64/data@app@~~CfKAFMJorzEus09np6vwXw==@com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==@base.apk@classes.vdex does not exist.
+09-26 17:35:17.191  3377  3381 I artd    : GetBestInfo checking vdex next to the dex file (/data/app/~~CfKAFMJorzEus09np6vwXw==/com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==/oat/x86_64/base.vdex)
+09-26 17:35:17.191  3377  3381 I artd    : unable to open vdex file /data/app/~~CfKAFMJorzEus09np6vwXw==/com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==/oat/x86_64/base.vdex: File /data/app/~~CfKAFMJorzEus09np6vwXw==/com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==/oat/x86_64/base.vdex does not exist.
+09-26 17:35:17.191  3377  3381 I artd    : OatFileAssistant test for existing oat file /data/app/~~CfKAFMJorzEus09np6vwXw==/com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==/oat/x86_64/base.vdex: File /data/app/~~CfKAFMJorzEus09np6vwXw==/com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==/oat/x86_64/base.vdex does not exist.
+09-26 17:35:17.191  3377  3381 I artd    : GetBestInfo checking dm (/data/app/~~CfKAFMJorzEus09np6vwXw==/com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==/base.dm)
+09-26 17:35:17.191  3377  3381 W ziparchive: Unable to open '/data/app/~~CfKAFMJorzEus09np6vwXw==/com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==/base.dm': No such file or directory
+09-26 17:35:17.191  3377  3381 I artd    : OatFileAssistant test for existing oat file /data/app/~~CfKAFMJorzEus09np6vwXw==/com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==/base.dm: I/O error
+09-26 17:35:17.191  3377  3381 I artd    : GetBestInfo checking dm (/data/app/~~CfKAFMJorzEus09np6vwXw==/com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==/base.dm)
+09-26 17:35:17.191  3377  3381 W ziparchive: Unable to open '/data/app/~~CfKAFMJorzEus09np6vwXw==/com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==/base.dm': No such file or directory
+09-26 17:35:17.191  3377  3381 I artd    : OatFileAssistant test for existing oat file /data/app/~~CfKAFMJorzEus09np6vwXw==/com.ggufchat.texttest-to-ojqfbahHBYdNZBeCIZA==/base.dm: I/O error

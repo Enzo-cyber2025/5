@@ -17,7 +17,7 @@ from build_apk import rebuild_zip, verify_alignment, verify_payload
 from patch_dex import PATCHES, patch_bytes
 from patch_smali import GENERATE, MODEL_PICKER_METHOD, MODEL_PICKER_FILTER, patch_model_picker, apply
 from android_checks import (PACKAGE, PICKERS, assistant_reply, fusion, generation_completed,
-                            gpu_offloaded, has_package, imported, position)
+                            gpu_offloaded, has_package, imported, position, unified_vision)
 
 PICKER = '''<hierarchy><node package="com.google.android.documentsui" text="Images" enabled="true" bounds="[0,0][30,30]"/>
 <node package="com.google.android.documentsui" text="RECENT FILES" enabled="true" bounds="[0,30][90,60]"/>
@@ -63,6 +63,42 @@ def test_fusion_missing_wrong_projector_fails(value):
     data[0]["mmprojPath"] = value
     with pytest.raises(AssertionError):
         fusion(data, "vision.gguf", "mmproj.gguf")
+
+
+def unificado():
+    """O par como a importação ATUAL entrega: um GGUF físico, sem projetor solto."""
+    return [{"id": "u", "fileName": "abc-unified.gguf", "path": "/models/abc-unified.gguf",
+             "mmprojPath": "/models/abc-unified.gguf", "multimodal": True,
+             "capability": "VISION_SINGLE_GGUF"}]
+
+
+def test_unified_vision_accepts_the_single_physical_file_the_app_writes():
+    unidade = unified_vision(unificado())
+    assert unidade["id"] == "u" and unidade["path"] == unidade["mmprojPath"]
+
+
+@pytest.mark.parametrize("data", [
+    [],                                              # biblioteca vazia
+    models(),                                        # formato legado: dois registros
+    [{"id": "x", "path": "/x", "mmprojPath": None, "multimodal": False}],   # o FAIL real
+    [{"id": "x", "path": "/x", "mmprojPath": "/x", "multimodal": True,
+      "capability": "IMAGE_TOKENS_ONLY"}],           # marcado multimodal sem pesos de visão
+])
+def test_unified_vision_rejects_anything_that_is_not_one_unified_pair(data):
+    with pytest.raises(AssertionError):
+        unified_vision(data)
+
+
+def test_pair_import_proves_the_app_unified_the_two_files(tmp_path):
+    """Duas seleções separadas não vinculam nada — o teste tem que exigir a do app.
+
+    Rodada 36258711211: o caminho antigo (importar o GGUF de visão e depois o
+    projetor) deixou `mmprojPath: null`, `multimodal: false` e derrubou a fase do
+    emulador. O que vale é a unificação atômica registrada pelo aplicativo.
+    """
+    harness = (ROOT / "scripts/test_android.py").read_text()
+    assert "GGUF_PHYSICAL_UNIFICATION_OK" in harness
+    assert "select_exact_documents(self, [vision.name, projector.name])" in harness
 
 
 @pytest.mark.parametrize("data", [[], {}, [{"fileName": "vision.gguf"}], models() + [models()[0]]])
@@ -380,6 +416,13 @@ def test_send_can_preserve_backend_preload_logs(tmp_path, monkeypatch):
     monkeypatch.setattr(d, 'adb', lambda *a: commands.append(a))
     monkeypatch.setattr(d, 'shell', lambda c: None)
     monkeypatch.setattr(d, 'tap', lambda **k: None)
+    # O envio confere o foco do campo antes de digitar: a tela de mentira responde
+    # com o campo focado e o botão Enviar, sem tocar no adb de verdade.
+    monkeypatch.setattr(d, 'ui', lambda: '<hierarchy><node package="com.ggufchat.app" '
+                        'class="android.widget.EditText" text="" focused="true" enabled="true" '
+                        'bounds="[0,0][10,10]" /><node package="com.ggufchat.app" '
+                        'class="android.widget.Button" text="Enviar" enabled="true" '
+                        'bounds="[0,0][10,10]" /></hierarchy>')
     d.send('Hello', clear_log=False)
     assert not commands
     d.send('Hello')
@@ -661,11 +704,21 @@ def test_image_crops_are_not_source_image_count():
 
 
 def test_exact_saf_selection_ignores_recent_diagnostic_xml():
+    """A seleção casa só os nomes pedidos, com a coordenada FRESCA de cada linha.
+
+    O toque simples é o gesto provado na pasta Downloads (rodada 34978739703, "2
+    selected"): o XML de diagnóstico que um dump deixa na pasta não pode ser
+    confundido com documento escolhido, e a barra de seleção muda a altura das
+    linhas — a segunda marcação tem de usar a altura NOVA, não a velha. O caminho
+    do dedo preso fica provado em `test_harness_helpers` (toque simples primeiro,
+    toque longo quando ele não marca).
+    """
     from android_checks import select_exact_documents
 
     class Picker:
         def __init__(self):
             self.selected = []
+            self.gestos = []
 
         def ui(self):
             names = ['gguf-test-ui.xml', 'model.gguf', 'projector.gguf']
@@ -675,15 +728,22 @@ def test_exact_saf_selection_ignores_recent_diagnostic_xml():
             for i, name in enumerate(names):
                 top = i * 100 + (12 if self.selected else 0)
                 rows.append(
-                    f'<node resource-id="com.android.documentsui:id/item_root" selected="{str(name in self.selected).lower()}" '
+                    f'<node resource-id="com.google.android.documentsui:id/item_root" selected="{str(name in self.selected).lower()}" '
                     f'bounds="[0,{top}][720,{top+40}]">'
-                    f'<node text="{name}" enabled="true" package="com.android.documentsui" bounds="[80,{top}][600,{top+40}]"/></node>')
-            return '<hierarchy>' + ''.join(rows) + f'<node text="{len(self.selected)} selected" enabled="true" package="com.android.documentsui" bounds="[0,0][100,40]"/></hierarchy>'
+                    f'<node text="{name}" enabled="true" package="com.google.android.documentsui" bounds="[80,{top}][600,{top+40}]"/></node>')
+            return '<hierarchy>' + ''.join(rows) + f'<node text="{len(self.selected)} selected" enabled="true" package="com.google.android.documentsui" bounds="[0,0][100,40]"/></hierarchy>'
 
-        def shell(self, command):
-            expected = 'input tap 48 120' if not self.selected else 'input tap 48 232'
-            assert command == expected
-            self.selected.append('model.gguf' if not self.selected else 'projector.gguf')
+        def shell(self, command, check=True):
+            tokens = command.split()
+            self.gestos.append(command)
+            if tokens[:2] == ['input', 'tap']:
+                # A linha andou quando a barra de seleção apareceu: Y tem de ser o novo.
+                esperado = 120 + (12 if self.selected else 0) + 100 * len(self.selected)
+                assert int(tokens[3]) == esperado, f'coordenada velha da linha: {command}'
+                self.selected.append(['model.gguf', 'projector.gguf'][len(self.selected)])
+            else:
+                raise AssertionError(f'a pasta Downloads marca por toque: {command}')
+            return ''
 
         def tap(self, *, text, package):
             raise AssertionError('A selection gesture must not open a document')
@@ -694,3 +754,7 @@ def test_exact_saf_selection_ignores_recent_diagnostic_xml():
     picker = Picker()
     select_exact_documents(picker, ['model.gguf', 'projector.gguf'])
     assert picker.selected == ['model.gguf', 'projector.gguf']
+    # O XML de diagnóstico na pasta não pode ser confundido com documento escolhido.
+    assert 'gguf-test-ui.xml' not in picker.selected
+    # Nenhum gesto abriu documento (`.tap` reprova) e todos usaram coordenada fresca.
+    assert picker.gestos == ['input tap 48 120', 'input tap 48 232'], picker.gestos

@@ -106,7 +106,7 @@ def test_patches_and_native_bounds(tmp_path):
     assert 'GGUF_PROJECTOR_BATCH2' in s and 'if(paired && !e->strict_device)' in s
     assert s.index('pair.consumed(chunk)')>s.index('result=mtmd_helper_decode_image_chunk')
     assert 'std::memcmp(embd,mtmd_get_output_embd' in s
-    assert 'cp.n_batch=128; cp.n_ubatch=32;' in s
+    assert 'cp.n_batch=prefill_batch; cp.n_ubatch=prefill_ubatch;' in s
 
 
 def test_timing_gate_excludes_instrumentation_and_requires_both_pairs(tmp_path):

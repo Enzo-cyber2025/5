@@ -1,0 +1,91 @@
+{
+  "status": "FAIL",
+  "functions_total": 20,
+  "functions_failed": [
+    "parar_geracao",
+    "visao",
+    "notificacao"
+  ],
+  "functions": {
+    "estado_vazio": {
+      "status": "PASS",
+      "detail": "primeira execução: a tela vazia orienta (\"Toque em + Nova conversa para começar\")"
+    },
+    "abas": {
+      "status": "PASS",
+      "detail": "abas navegam e mostram conteúdo próprio: Importar, AI Modelos, Ajustes, Chat"
+    },
+    "importar_botoes": {
+      "status": "PASS",
+      "detail": "entrada única \"Importar GGUF\" que abre o seletor de verdade e a tela explica os dois caminhos (par linguagem+projetor ou GGUF completo); Importar GGUF abriu o seletor de arquivos do sistema e o aplicativo voltou no mesmo processo"
+    },
+    "ajustes": {
+      "status": "PASS",
+      "detail": "os oito ajustes estão na tela; valor não numérico não corrompe o ajuste: cai no padrão 4096; valor válido salvo e persistido"
+    },
+    "modelo_listado": {
+      "status": "PASS",
+      "detail": "modelo importado listado com o nome real (SmolLM2-135M-Instruct-Q4_K_M)"
+    },
+    "descarregar_e_recarregar": {
+      "status": "PASS",
+      "detail": "botão na tela de Ajustes; com o motor carregado no mesmo processo, descarregou de verdade (GGUF_UNIT_RELEASED found=1, remaining=0) e a geração seguinte recarregou (GGUF_UNIT_LOADED; Backend atual: 'CPU' antes do toque é observação: o motor da conversa não fica vivo entre telas)"
+    },
+    "nova_conversa": {
+      "status": "PASS",
+      "detail": "criada com escolha de modelo; resposta persistida (33 caracteres, 9 tokens nativos)"
+    },
+    "parar_geracao": {
+      "status": "FAIL",
+      "detail": "AssertionError: Timeout: botão Parar durante a geração"
+    },
+    "raciocinio": {
+      "status": "PASS",
+      "detail": "raciocínio liga e persiste (chat.thinking=true), prompt de sistema aplicado, painel próprio anexado, e o bloco não vaza para o texto visível; desliga limpo"
+    },
+    "busca_fontes": {
+      "status": "PASS",
+      "detail": "botão liga (\"Busca ON\") e a busca devolve DuckDuckGo com 5 fonte(s) em 1763 ms (teto 12000 ms), fontes persistidas na mensagem"
+    },
+    "gaveta_ferramentas": {
+      "status": "PASS",
+      "detail": "abre com Sistema, Thinking, Busca, os quatro anexos (Foto, Vídeo, Áudio, Arquivo) e o botão \"Ferramentas\" ao fim da linha (alcançado rolando)"
+    },
+    "ferramentas_dialogo": {
+      "status": "PASS",
+      "detail": "botão \"Ferramentas\" ao fim da linha abre o diálogo com Thinking, Busca e \"Fechar\""
+    },
+    "seletores_de_anexo": {
+      "status": "PASS",
+      "detail": "Vídeo, Áudio e Arquivo abriram o seletor do sistema e o aplicativo voltou no mesmo processo; Foto: em conversa de texto o aplicativo não abre seletor (volta sem erro) e o processo continua vivo; com o par ligado, o caminho completo é provado na etapa visao"
+    },
+    "anexo_texto": {
+      "status": "PASS",
+      "detail": "texto anexado e enviado: conteúdo preparado (files=1, text_chars=54) e anexo preservado na mensagem"
+    },
+    "visao": {
+      "status": "FAIL",
+      "detail": "AssertionError: não consegui marcar SmolVLM-256M-Instruct-Q8_0.gguf no seletor do sistema: toque longo e toque simples não marcaram a linha nem o contador chegou a 1"
+    },
+    "notificacao": {
+      "status": "FAIL",
+      "detail": "AssertionError: Timeout: geração em andamento"
+    },
+    "historico": {
+      "status": "PASS",
+      "detail": "conversa \"GGUF regression 1a0df4088ccafc76b\" reabriu com o conteúdo salvo depois de fechar o aplicativo"
+    },
+    "excluir_conversa": {
+      "status": "PASS",
+      "detail": "conversa \"GGUF regression 1a0df4088ccafc76b\" excluída pela interface e sumiu do armazenamento"
+    },
+    "excluir_modelo": {
+      "status": "PASS",
+      "detail": "1 modelo(s) excluído(s) pela linha da importação, diálogo confirmado e arquivo fora do armazenamento: SmolLM2-135M-Instruct-Q4_K_M"
+    },
+    "sem_modelo": {
+      "status": "PASS",
+      "detail": "sem modelo, criar conversa avisa o usuário em vez de falhar em silêncio"
+    }
+  }
+}

@@ -65,14 +65,25 @@ def test_experimental_build_and_runtime_gates_and_failure_invalidation():
     failure=native[native.index('} catch(const std::exception &ex) {',native.index('static jboolean generate')):]
     assert 'e->media_prefix.clear()' in failure
     assert 'switching to text cannot reuse stale media KV' in native
-    assert 'cp.n_batch=128; cp.n_ubatch=32;' in native
+    assert 'cp.n_batch=prefill_batch; cp.n_ubatch=prefill_ubatch;' in native
 
 
 def test_default_native_body_unchanged_by_experiment():
     # Preprocess only the experiment blocks, compare the entire prior native file.
     import hashlib
-    # Native body at 3608876; independent of shallow CI checkout depth.
-    before_sha='262c18ffe625f5a281d37e65b8715bb0555c49d08d5810f51e6bd3fd16c5da5b'
+    # Corpo nativo depois da entrega de desempenho/interface: lote de prefill
+    # proporcional ao contexto, recusa de Vulkan por software e aviso visível do
+    # backend. Independente da profundidade do checkout no CI.
+    # Atualizado com o aquecimento de prefixo e os avisos de backend/NPU.
+    # Recomputado ao tornar o sub-lote do pré-preenchimento ajustável por
+    # propriedade de depuração (padrão inalterado: 128 com contexto >= 1024).
+    # e ao poder medir/registrar o tipo de cache K/V (padrão inalterado: F16).
+    # Atualizado ao declarar o DISPOSITIVO Vulkan (nome do driver) e o que ele
+    # oferece (`matrix cores`), e ao escolher o sub-lote do pré-preenchimento por
+    # classe de dispositivo: GPU real usa 512, sem GPU real vale o valor medido.
+    # e ao logar GGUF_UNIT_RELEASED em Native.destroy (prova do "descarregar modelo":
+    # o toast expirava antes da leitura e não dizia se havia motor para descarregar).
+    before_sha='dd7dcbed7305dd6c737532cd2eaeab5e0cb83f10167b01c28a8efee3103e165d'
     current=(ROOT/'apk-fix/native/mobile.cpp').read_text()
     # Any top-level single #else guard of an opt-in experiment macro must keep
     # its #else branch byte-identical to the shipped body, not only media prefix.
@@ -87,7 +98,10 @@ def test_default_native_body_unchanged_by_experiment():
         elif inside and line.strip()=='#else':keep=True
         elif inside and line.strip()=='#endif':inside=False;keep=True
         elif keep:lines.append(line)
-    assert not inside and hashlib.sha256(''.join(lines).encode()).hexdigest()==before_sha
+    assert not inside
+    computed=hashlib.sha256(''.join(lines).encode()).hexdigest()
+    # A mensagem traz o valor medido: atualizar o pin é uma decisão, não uma adivinhação.
+    assert computed==before_sha, f'corpo nativo padrão mudou: {computed}'
 
 
 def test_actual_eligibility_function_rejects_noncausal_and_swa_metadata(tmp_path):

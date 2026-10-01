@@ -1,0 +1,1817 @@
+--------- beginning of main
+09-26 21:36:08.874  8400  8400 I om.ggufchat.app: Using CollectorTypeCMC GC.
+09-26 21:36:08.881  8400  8400 W om.ggufchat.app: Unexpected CPU variant for x86: x86_64.
+09-26 21:36:08.881  8400  8400 W om.ggufchat.app: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, goldmont-without-sha-xsaves, tremont, kabylake, default
+09-26 21:36:08.884  8400  8400 E om.ggufchat.app: Not starting debugger since process cannot load the jdwp agent.
+09-26 21:36:08.887  8400  8400 D nativeloader: Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok
+09-26 21:36:08.936  8400  8400 D CompatChangeReporter: Compat change id reported: 242716250; UID 10209; state: ENABLED
+09-26 21:36:08.941  8400  8400 W ziparchive: Unable to open '/data/app/~~HXbW1V4oXPholdPXeIVmfA==/com.ggufchat.app-ntJqRh2yAZWNl9tHOUp5Ng==/base.dm': No such file or directory
+09-26 21:36:08.941  8400  8400 W ziparchive: Unable to open '/data/app/~~HXbW1V4oXPholdPXeIVmfA==/com.ggufchat.app-ntJqRh2yAZWNl9tHOUp5Ng==/base.dm': No such file or directory
+09-26 21:36:09.002  8400  8400 D nativeloader: Configuring clns-7 for other apk /data/app/~~HXbW1V4oXPholdPXeIVmfA==/com.ggufchat.app-ntJqRh2yAZWNl9tHOUp5Ng==/base.apk. target_sdk_version=34, uses_libraries=, library_path=/data/app/~~HXbW1V4oXPholdPXeIVmfA==/com.ggufchat.app-ntJqRh2yAZWNl9tHOUp5Ng==/lib/x86_64:/data/app/~~HXbW1V4oXPholdPXeIVmfA==/com.ggufchat.app-ntJqRh2yAZWNl9tHOUp5Ng==/base.apk!/lib/x86_64, permitted_path=/data:/mnt/expand:/data/user/0/com.ggufchat.app
+09-26 21:36:09.008  8400  8400 V GraphicsEnvironment: Currently set values for:
+09-26 21:36:09.008  8400  8400 V GraphicsEnvironment:   angle_gl_driver_selection_pkgs=[]
+09-26 21:36:09.008  8400  8400 V GraphicsEnvironment:   angle_gl_driver_selection_values=[]
+09-26 21:36:09.008  8400  8400 V GraphicsEnvironment: Global.Settings values are invalid: number of packages: 0, number of values: 0
+09-26 21:36:09.008  8400  8400 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+09-26 21:36:09.031  8400  8400 D CompatChangeReporter: Compat change id reported: 247079863; UID 10209; state: ENABLED
+09-26 21:36:09.041  8400  8400 I GGUFOffgridUi: GGUF_OFFGRID_UI screen=MainActivity views=15 mono=1 radius_dp=8 accent=emerald
+09-26 21:36:09.048  8400  8400 I GGUFOffgridUi: GGUF_OFFGRID_UI screen=MainActivity views=22 mono=1 radius_dp=8 accent=emerald
+09-26 21:36:09.048  8400  8400 I GGUFOffgridUi: GGUF_OFFGRID_UI tabs=3 active=0 bottom_bar=1
+09-26 21:36:09.053  8400  8400 W HWUI    : Unknown dataspace 0
+09-26 21:36:09.077  8400  8412 I EGL_emulation: Opening libGLESv1_CM_emulation.so
+09-26 21:36:09.078  8400  8412 I EGL_emulation: Opening libGLESv2_emulation.so
+09-26 21:36:09.099  8400  8412 W HWUI    : Failed to choose config with EGL_SWAP_BEHAVIOR_PRESERVED, retrying without...
+09-26 21:36:09.106  8400  8412 W HWUI    : Failed to initialize 101010-2 format, error = EGL_SUCCESS
+09-26 21:36:09.134  8400  8412 I Gralloc4: mapper 4.x is not supported
+09-26 21:36:10.695  8400  8412 D EGL_emulation: app_time_stats: avg=285.47ms min=15.58ms max=964.84ms count=5
+09-26 21:36:13.889  8400  8400 D AutofillManager: Fill dialog is enabled:false, hints=[password, passwordAuto, creditCardNumber, creditCardSecurityCode, creditCardExpirationDate]
+09-26 21:36:13.903  8400  8400 I GGUFOffgridUi: GGUF_OFFGRID_UI screen=ChatActivity views=39 mono=1 radius_dp=8 accent=emerald
+09-26 21:36:13.904  8400  8400 I GGUFWarmup: GGUF_WARMUP_WATCHER attached=1
+09-26 21:36:13.906  8400  8478 I GGUFNativeStderr: Emulator-only GGML_VK_VISIBLE_DEVICES=0; software Vulkan is not hardware acceleration
+09-26 21:36:13.910  8400  8478 E platform: Failed to open rendernode: No such file or directory
+09-26 21:36:13.920  8400  8478 D vulkan  : searching for layers in '/data/app/~~HXbW1V4oXPholdPXeIVmfA==/com.ggufchat.app-ntJqRh2yAZWNl9tHOUp5Ng==/lib/x86_64'
+09-26 21:36:13.921  8400  8478 D vulkan  : searching for layers in '/data/app/~~HXbW1V4oXPholdPXeIVmfA==/com.ggufchat.app-ntJqRh2yAZWNl9tHOUp5Ng==/base.apk!/lib/x86_64'
+09-26 21:36:13.921  8400  8478 I GGUFNativeStderr: Vulkan loader API 1.3.0; bundled ggml Vulkan requires >= 1.2
+09-26 21:36:13.923  8400  8478 D nativeloader: Load /data/app/~~HXbW1V4oXPholdPXeIVmfA==/com.ggufchat.app-ntJqRh2yAZWNl9tHOUp5Ng==/lib/x86_64/libggufdiagnostics.so using ns clns-7 from class loader (caller=/data/app/~~HXbW1V4oXPholdPXeIVmfA==/com.ggufchat.app-ntJqRh2yAZWNl9tHOUp5Ng==/base.apk): ok
+09-26 21:36:13.924  8400  8478 D nativeloader: Load /data/app/~~HXbW1V4oXPholdPXeIVmfA==/com.ggufchat.app-ntJqRh2yAZWNl9tHOUp5Ng==/lib/x86_64/libggufcpu.so using ns clns-7 from class loader (caller=/data/app/~~HXbW1V4oXPholdPXeIVmfA==/com.ggufchat.app-ntJqRh2yAZWNl9tHOUp5Ng==/base.apk): ok
+09-26 21:36:13.935  8400  8478 D nativeloader: Load /data/app/~~HXbW1V4oXPholdPXeIVmfA==/com.ggufchat.app-ntJqRh2yAZWNl9tHOUp5Ng==/lib/x86_64/libaijni.so using ns clns-7 from class loader (caller=/data/app/~~HXbW1V4oXPholdPXeIVmfA==/com.ggufchat.app-ntJqRh2yAZWNl9tHOUp5Ng==/base.apk): ok
+09-26 21:36:13.936  8400  8478 I GGUFDispatch: GGUF_CPU_DISPATCH library=aijni
+09-26 21:36:13.948  8400  8400 D AutofillManager: notifyViewReadyInner:1073741824
+09-26 21:36:14.001  8400  8479 I GGUFNativeStderr: s_glBindAttribLocation: bind attrib 0 name inPosition
+09-26 21:36:14.002  8400  8479 I GGUFNativeStderr: s_glBindAttribLocation: bind attrib 1 name inColor
+09-26 21:36:14.002  8400  8479 I GGUFNativeStderr: s_glBindAttribLocation: bind attrib 2 name inCircleEdge
+09-26 21:36:14.015  8400  8479 I GGUFNativeStderr: s_glBindAttribLocation: bind attrib 0 name position
+09-26 21:36:14.015  8400  8479 I GGUFNativeStderr: s_glBindAttribLocation: bind attrib 1 name color
+09-26 21:36:14.016  8400  8479 I GGUFNativeStderr: s_glBindAttribLocation: bind attrib 2 name localCoord
+09-26 21:36:14.021  8400  8478 I GGUFChatNative: GGUF_MEMORY_TELEMETRY file_bytes=105454432 available=4282843136 mmap=1 policy=actual_allocator
+09-26 21:36:14.093  8400  8478 I GGUFNativeStderr: ggml_vulkan: Found 1 Vulkan devices:
+09-26 21:36:14.095  8400  8478 I GGUFNativeStderr: ggml_vulkan: 0 = llvmpipe (LLVM 21.0.0, 256 bits) (llvmpipe) | uma: 0 | fp16: 0 | bf16: 0 | fp4: 0 | warp size: 8 | shared memory: 32768 | int dot: 0 | matrix cores: none
+09-26 21:36:14.095  8400  8478 I GGUFNativeStderr: ggml_vulkan: Warning: Device type is CPU. This is probably not the device you want.
+09-26 21:36:14.223  8400  8400 D VRI[MainActivity]: visibilityChanged oldVisibility=true newVisibility=false
+09-26 21:36:14.329  8400  8478 I GGUFChatNative: GGUF_STRICT_VULKAN requested_layers=-1 effective_layers=all weights=all tensor_cpu_fallback=blocked host_orchestration=CPU
+09-26 21:36:14.336  8400  8478 I GGUFNativeStderr: llama_model_loader: loaded meta data with 37 key-value pairs and 272 tensors from /data/user/0/com.ggufchat.app/files/models/1790458445750_SmolLM2-135M-Instruct-Q4_K_M.gguf (version GGUF V3 (latest))
+09-26 21:36:14.336  8400  8478 I GGUFNativeStderr: llama_model_loader: Dumping metadata keys/values. Note: KV overrides do not apply in this output.
+09-26 21:36:14.336  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv   0:                       general.architecture str              = llama
+09-26 21:36:14.336  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv   1:                               general.type str              = model
+09-26 21:36:14.336  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv   2:                               general.name str              = Smollm2 135M 8k Lc100K Mix1 Ep2
+09-26 21:36:14.336  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv   3:                       general.organization str              = HuggingFaceTB
+09-26 21:36:14.336  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv   4:                           general.finetune str              = 8k-lc100k-mix1-ep2
+09-26 21:36:14.336  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv   5:                           general.basename str              = smollm2
+09-26 21:36:14.336  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv   6:                         general.size_label str              = 135M
+09-26 21:36:14.336  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv   7:                            general.license str              = apache-2.0
+09-26 21:36:14.336  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv   8:                          general.languages arr[str,1]       = ["en"]
+09-26 21:36:14.336  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv   9:                          llama.block_count u32              = 30
+09-26 21:36:14.336  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv  10:                       llama.context_length u32              = 8192
+09-26 21:36:14.336  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv  11:                     llama.embedding_length u32              = 576
+09-26 21:36:14.336  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv  12:                  llama.feed_forward_length u32              = 1536
+09-26 21:36:14.336  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv  13:                 llama.attention.head_count u32              = 9
+09-26 21:36:14.336  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv  14:              llama.attention.head_count_kv u32              = 3
+09-26 21:36:14.336  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv  15:                       llama.rope.freq_base f32              = 100000.000000
+09-26 21:36:14.336  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv  16:     llama.attention.layer_norm_rms_epsilon f32              = 0.000010
+09-26 21:36:14.336  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv  17:                          general.file_type u32              = 15
+09-26 21:36:14.336  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv  18:                           llama.vocab_size u32              = 49152
+09-26 21:36:14.336  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv  19:                 llama.rope.dimension_count u32              = 64
+09-26 21:36:14.336  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv  20:            tokenizer.ggml.add_space_prefix bool             = false
+09-26 21:36:14.336  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv  21:               tokenizer.ggml.add_bos_token bool             = false
+09-26 21:36:14.336  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv  22:                       tokenizer.ggml.model str              = gpt2
+09-26 21:36:14.336  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv  23:                         tokenizer.ggml.pre str              = smollm
+09-26 21:36:14.341  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv  24:                      tokenizer.ggml.tokens arr[str,49152]   = ["<|endoftext|>", "<|im_start|>", "<|...
+09-26 21:36:14.343  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv  25:                  tokenizer.ggml.token_type arr[i32,49152]   = [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, ...
+09-26 21:36:14.348  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv  26:                      tokenizer.ggml.merges arr[str,48900]   = ["Ġ t", "Ġ a", "i n", "h e", "Ġ Ġ...
+09-26 21:36:14.348  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv  27:                tokenizer.ggml.bos_token_id u32              = 1
+09-26 21:36:14.348  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv  28:                tokenizer.ggml.eos_token_id u32              = 2
+09-26 21:36:14.348  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv  29:            tokenizer.ggml.unknown_token_id u32              = 0
+09-26 21:36:14.348  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv  30:            tokenizer.ggml.padding_token_id u32              = 2
+09-26 21:36:14.348  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv  31:                    tokenizer.chat_template str              = {% for message in messages %}{% if lo...
+09-26 21:36:14.348  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv  32:               general.quantization_version u32              = 2
+09-26 21:36:14.348  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv  33:                      quantize.imatrix.file str              = /models_out/SmolLM2-135M-Instruct-GGU...
+09-26 21:36:14.348  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv  34:                   quantize.imatrix.dataset str              = /training_dir/calibration_datav3.txt
+09-26 21:36:14.348  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv  35:             quantize.imatrix.entries_count i32              = 210
+09-26 21:36:14.348  8400  8478 I GGUFNativeStderr: llama_model_loader: - kv  36:              quantize.imatrix.chunks_count i32              = 141
+09-26 21:36:14.348  8400  8478 I GGUFNativeStderr: llama_model_loader: - type  f32:   61 tensors
+09-26 21:36:14.348  8400  8478 I GGUFNativeStderr: llama_model_loader: - type q5_0:  166 tensors
+09-26 21:36:14.348  8400  8478 I GGUFNativeStderr: llama_model_loader: - type q8_0:   15 tensors
+09-26 21:36:14.348  8400  8478 I GGUFNativeStderr: llama_model_loader: - type q4_K:   16 tensors
+09-26 21:36:14.348  8400  8478 I GGUFNativeStderr: llama_model_loader: - type q6_K:   14 tensors
+09-26 21:36:14.348  8400  8478 I GGUFNativeStderr: print_info: file format = GGUF V3 (latest)
+09-26 21:36:14.348  8400  8478 I GGUFNativeStderr: print_info: file type   = Q4_K - Medium
+09-26 21:36:14.348  8400  8478 I GGUFNativeStderr: print_info: file size   = 98.87 MiB (6.17 BPW) 
+09-26 21:36:14.348  8400  8478 I GGUFNativeStderr: llama_prepare_model_devices: using device Vulkan0 (llvmpipe (LLVM 21.0.0, 256 bits)) (unknown id) - 15989 MiB free
+09-26 21:36:14.373  8400  8478 I GGUFNativeStderr: init_tokenizer: initializing tokenizer for type 2
+09-26 21:36:14.387  8400  8478 I GGUFNativeStderr: load: 0 unused tokens
+09-26 21:36:14.389  8400  8478 I GGUFNativeStderr: load: control token:     15 '<jupyter_script>' is not marked as EOG
+09-26 21:36:14.390  8400  8478 I GGUFNativeStderr: load: control token:      7 '<gh_stars>' is not marked as EOG
+09-26 21:36:14.390  8400  8478 I GGUFNativeStderr: load: control token:      5 '<file_sep>' is not marked as EOG
+09-26 21:36:14.392  8400  8478 I GGUFNativeStderr: load: control token:     12 '<jupyter_text>' is not marked as EOG
+09-26 21:36:14.392  8400  8478 I GGUFNativeStderr: load: control token:     10 '<issue_closed>' is not marked as EOG
+09-26 21:36:14.392  8400  8478 I GGUFNativeStderr: load: control token:     11 '<jupyter_start>' is not marked as EOG
+09-26 21:36:14.392  8400  8478 I GGUFNativeStderr: load: control token:      1 '<|im_start|>' is not marked as EOG
+09-26 21:36:14.393  8400  8478 I GGUFNativeStderr: load: control token:      9 '<issue_comment>' is not marked as EOG
+09-26 21:36:14.393  8400  8478 I GGUFNativeStderr: load: control token:      8 '<issue_start>' is not marked as EOG
+09-26 21:36:14.394  8400  8478 I GGUFNativeStderr: load: control token:     13 '<jupyter_code>' is not marked as EOG
+09-26 21:36:14.395  8400  8478 I GGUFNativeStderr: load: control token:      3 '<repo_name>' is not marked as EOG
+09-26 21:36:14.395  8400  8478 I GGUFNativeStderr: load: control token:      6 '<filename>' is not marked as EOG
+09-26 21:36:14.396  8400  8478 I GGUFNativeStderr: load: control token:     14 '<jupyter_output>' is not marked as EOG
+09-26 21:36:14.396  8400  8478 I GGUFNativeStderr: load: control token:     16 '<empty_output>' is not marked as EOG
+09-26 21:36:14.402  8400  8478 I GGUFNativeStderr: load: printing all EOG tokens:
+09-26 21:36:14.402  8400  8478 I GGUFNativeStderr: load:   - 0 ('<|endoftext|>')
+09-26 21:36:14.402  8400  8478 I GGUFNativeStderr: load:   - 2 ('<|im_end|>')
+09-26 21:36:14.402  8400  8478 I GGUFNativeStderr: load:   - 4 ('<reponame>')
+09-26 21:36:14.402  8400  8478 I GGUFNativeStderr: load: special tokens cache size = 17
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: load: token to piece cache size = 0.3170 MB
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: arch                  = llama
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: vocab_only            = 0
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: no_alloc              = 0
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: n_ctx_train           = 8192
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: n_embd_inp            = 576
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: n_embd                = 576
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: n_embd_out            = 576
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: n_layer               = 30
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: n_layer_all           = 30
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: n_head                = 9
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: n_head_kv             = 3
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: n_rot                 = 64
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: n_swa                 = 0
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: is_swa_any            = 0
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: non_causal_type       = 0
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: n_embd_head_k         = 64
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: n_embd_head_v         = 64
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: n_gqa                 = 3
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: n_embd_k_gqa          = 192
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: n_embd_v_gqa          = 192
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: f_norm_eps            = 0.0e+00
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: f_norm_rms_eps        = 1.0e-05
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: f_clamp_kqv           = 0.0e+00
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: f_max_alibi_bias      = 0.0e+00
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: f_logit_scale         = 0.0e+00
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: f_attn_scale          = 0.0e+00
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: f_attn_value_scale    = 0.0000
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: n_ff                  = 1536
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: n_expert              = 0
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: n_expert_used         = 0
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: n_expert_groups       = 0
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: n_group_used          = 0
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: causal attn           = 1
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: pooling type          = -1
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: rope type             = 0
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: rope scaling          = linear
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: freq_base_train       = 100000.0
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: freq_scale_train      = 1
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: n_ctx_orig_yarn       = 8192
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: rope_yarn_log_mul     = 0.0000
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: rope_finetuned        = unknown
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: model type            = 256M
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: model params          = 134.52 M
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: general.name          = Smollm2 135M 8k Lc100K Mix1 Ep2
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: vocab type            = BPE
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: n_vocab               = 49152
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: n_merges              = 48900
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: BOS token             = 1 '<|im_start|>'
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: EOS token             = 2 '<|im_end|>'
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: EOT token             = 2 '<|im_end|>'
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: UNK token             = 0 '<|endoftext|>'
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: PAD token             = 2 '<|im_end|>'
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: LF token              = 198 'Ċ'
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: FIM REP token         = 4 '<reponame>'
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: EOG token             = 0 '<|endoftext|>'
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: EOG token             = 2 '<|im_end|>'
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: EOG token             = 4 '<reponame>'
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: print_info: max token length      = 162
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: load_tensors: loading model tensors, this can take a while... (load_mode = mmap)
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: load_tensors: layer   0 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.410  8400  8478 I GGUFNativeStderr: load_tensors: layer   1 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: load_tensors: layer   2 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: load_tensors: layer   3 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: load_tensors: layer   4 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: load_tensors: layer   5 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: load_tensors: layer   6 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: load_tensors: layer   7 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: load_tensors: layer   8 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: load_tensors: layer   9 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: load_tensors: layer  10 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: load_tensors: layer  11 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: load_tensors: layer  12 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: load_tensors: layer  13 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: load_tensors: layer  14 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: load_tensors: layer  15 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: load_tensors: layer  16 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: load_tensors: layer  17 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: load_tensors: layer  18 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: load_tensors: layer  19 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: load_tensors: layer  20 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: load_tensors: layer  21 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: load_tensors: layer  22 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: load_tensors: layer  23 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: load_tensors: layer  24 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: load_tensors: layer  25 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: load_tensors: layer  26 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: load_tensors: layer  27 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: load_tensors: layer  28 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: load_tensors: layer  29 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: load_tensors: layer  30 assigned to device Vulkan0, is_swa = 0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor token_embd.weight
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: tensor token_embd.weight (28 MiB q8_0) buffer type overridden to Vulkan0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor output_norm.weight
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: tensor output_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor output.weight
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor token_embd.weight
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: tensor token_embd.weight (28 MiB q8_0) buffer type overridden to Vulkan0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_norm.weight
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: tensor blk.0.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_qkv.weight
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_q.weight
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: tensor blk.0.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_k.weight
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: tensor blk.0.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_v.weight
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: tensor blk.0.attn_v.weight (0 MiB q8_0) buffer type overridden to Vulkan0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_q.bias
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_k.bias
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_v.bias
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_output.weight
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: tensor blk.0.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_output.bias
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_norm.weight
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: tensor blk.0.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_gate.weight
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: tensor blk.0.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_down.weight
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: tensor blk.0.ffn_down.weight (0 MiB q6_K) buffer type overridden to Vulkan0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_up.weight
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: tensor blk.0.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_gate.bias
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_down.bias
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_up.bias
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_norm.weight
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: tensor blk.1.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_qkv.weight
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_q.weight
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: tensor blk.1.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_k.weight
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: tensor blk.1.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_v.weight
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: tensor blk.1.attn_v.weight (0 MiB q8_0) buffer type overridden to Vulkan0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_q.bias
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_k.bias
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_v.bias
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_output.weight
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: tensor blk.1.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_output.bias
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_norm.weight
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: tensor blk.1.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.411  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_gate.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.1.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_down.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.1.ffn_down.weight (0 MiB q6_K) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_up.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.1.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_gate.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_down.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_up.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_norm.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.2.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_qkv.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_q.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.2.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_k.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.2.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_v.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.2.attn_v.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_q.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_k.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_v.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_output.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.2.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_output.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_norm.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.2.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_gate.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.2.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_down.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.2.ffn_down.weight (0 MiB q4_K) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_up.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.2.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_gate.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_down.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_up.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_norm.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.3.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_qkv.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_q.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.3.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_k.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.3.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_v.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.3.attn_v.weight (0 MiB q8_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_q.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_k.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_v.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_output.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.3.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_output.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_norm.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.3.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_gate.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.3.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_down.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.3.ffn_down.weight (0 MiB q6_K) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_up.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.3.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_gate.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_down.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_up.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_norm.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.4.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_qkv.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_q.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.4.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_k.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.4.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_v.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.4.attn_v.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_q.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_k.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_v.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_output.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.4.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_output.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_norm.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.4.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_gate.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.4.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_down.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.4.ffn_down.weight (0 MiB q4_K) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_up.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.4.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_gate.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_down.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_up.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_norm.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.5.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_qkv.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_q.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.5.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_k.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.5.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_v.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.5.attn_v.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_q.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_k.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_v.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_output.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.5.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_output.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_norm.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.5.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_gate.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.5.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_down.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.5.ffn_down.weight (0 MiB q4_K) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_up.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.5.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_gate.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_down.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_up.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_norm.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.6.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_qkv.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_q.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.6.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_k.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.6.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_v.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.6.attn_v.weight (0 MiB q8_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_q.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_k.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_v.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_output.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.6.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_output.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_norm.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.6.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_gate.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.6.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_down.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.6.ffn_down.weight (0 MiB q6_K) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_up.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.6.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_gate.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_down.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_up.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_norm.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.7.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_qkv.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_q.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.7.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_k.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.7.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_v.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.7.attn_v.weight (0 MiB q8_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_q.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_k.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_v.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_output.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.7.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_output.bias
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_norm.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.7.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_gate.weight
+09-26 21:36:14.412  8400  8478 I GGUFNativeStderr: tensor blk.7.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_down.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.7.ffn_down.weight (0 MiB q6_K) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_up.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.7.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_gate.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_down.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_up.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_norm.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.8.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_qkv.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_q.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.8.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_k.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.8.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_v.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.8.attn_v.weight (0 MiB q8_0) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_q.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_k.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_v.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_output.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.8.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_output.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_norm.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.8.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_gate.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.8.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_down.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.8.ffn_down.weight (0 MiB q6_K) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_up.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.8.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_gate.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_down.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_up.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_norm.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.9.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_qkv.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_q.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.9.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_k.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.9.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_v.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.9.attn_v.weight (0 MiB q8_0) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_q.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_k.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_v.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_output.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.9.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_output.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_norm.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.9.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_gate.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.9.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_down.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.9.ffn_down.weight (0 MiB q6_K) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_up.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.9.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_gate.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_down.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_up.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_norm.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.10.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_qkv.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_q.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.10.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_k.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.10.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_v.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.10.attn_v.weight (0 MiB q8_0) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_q.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_k.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_v.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_output.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.10.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_output.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_norm.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.10.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_gate.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.10.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_down.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.10.ffn_down.weight (0 MiB q6_K) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_up.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.10.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_gate.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_down.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_up.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_norm.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.11.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_qkv.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_q.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.11.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_k.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.11.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_v.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.11.attn_v.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_q.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_k.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_v.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_output.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.11.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_output.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_norm.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.11.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_gate.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.11.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_down.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.11.ffn_down.weight (0 MiB q4_K) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_up.weight
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: tensor blk.11.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_gate.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_down.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_up.bias
+09-26 21:36:14.413  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_norm.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.12.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_qkv.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_q.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.12.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_k.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.12.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_v.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.12.attn_v.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_q.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_k.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_v.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_output.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.12.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_output.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.ffn_norm.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.12.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.ffn_gate.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.12.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.ffn_down.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.12.ffn_down.weight (0 MiB q4_K) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.ffn_up.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.12.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.ffn_gate.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.ffn_down.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.ffn_up.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_norm.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.13.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_qkv.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_q.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.13.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_k.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.13.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_v.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.13.attn_v.weight (0 MiB q8_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_q.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_k.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_v.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_output.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.13.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_output.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.ffn_norm.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.13.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.ffn_gate.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.13.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.ffn_down.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.13.ffn_down.weight (0 MiB q6_K) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.ffn_up.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.13.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.ffn_gate.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.ffn_down.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.ffn_up.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_norm.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.14.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_qkv.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_q.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.14.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_k.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.14.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_v.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.14.attn_v.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_q.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_k.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_v.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_output.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.14.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_output.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.ffn_norm.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.14.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.ffn_gate.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.14.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.ffn_down.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.14.ffn_down.weight (0 MiB q4_K) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.ffn_up.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.14.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.ffn_gate.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.ffn_down.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.ffn_up.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_norm.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.15.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_qkv.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_q.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.15.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_k.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.15.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_v.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.15.attn_v.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_q.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_k.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_v.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_output.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.15.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_output.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.ffn_norm.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.15.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.ffn_gate.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.15.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.ffn_down.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.15.ffn_down.weight (0 MiB q4_K) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.ffn_up.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.15.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.ffn_gate.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.ffn_down.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.ffn_up.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_norm.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.16.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_qkv.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_q.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.16.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_k.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.16.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_v.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.16.attn_v.weight (0 MiB q8_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_q.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_k.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_v.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_output.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.16.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_output.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.ffn_norm.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.16.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.ffn_gate.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.16.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.ffn_down.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.16.ffn_down.weight (0 MiB q6_K) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.ffn_up.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.16.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.ffn_gate.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.ffn_down.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.ffn_up.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_norm.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.17.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_qkv.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_q.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.17.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_k.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.17.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_v.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.17.attn_v.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_q.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_k.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_v.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_output.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.17.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_output.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.ffn_norm.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.17.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.ffn_gate.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.17.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.ffn_down.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.17.ffn_down.weight (0 MiB q4_K) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.ffn_up.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.17.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.ffn_gate.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.ffn_down.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.ffn_up.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_norm.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.18.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_qkv.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_q.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.18.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_k.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.18.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_v.weight
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: tensor blk.18.attn_v.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_q.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_k.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_v.bias
+09-26 21:36:14.414  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_output.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: tensor blk.18.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_output.bias
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.ffn_norm.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: tensor blk.18.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.ffn_gate.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: tensor blk.18.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.ffn_down.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: tensor blk.18.ffn_down.weight (0 MiB q4_K) buffer type overridden to Vulkan0
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.ffn_up.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: tensor blk.18.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.ffn_gate.bias
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.ffn_down.bias
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.ffn_up.bias
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_norm.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: tensor blk.19.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_qkv.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_q.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: tensor blk.19.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_k.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: tensor blk.19.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_v.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: tensor blk.19.attn_v.weight (0 MiB q8_0) buffer type overridden to Vulkan0
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_q.bias
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_k.bias
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_v.bias
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_output.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: tensor blk.19.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_output.bias
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.ffn_norm.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: tensor blk.19.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.ffn_gate.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: tensor blk.19.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.ffn_down.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: tensor blk.19.ffn_down.weight (0 MiB q6_K) buffer type overridden to Vulkan0
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.ffn_up.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: tensor blk.19.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.ffn_gate.bias
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.ffn_down.bias
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.ffn_up.bias
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_norm.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: tensor blk.20.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_qkv.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_q.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: tensor blk.20.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_k.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: tensor blk.20.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_v.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: tensor blk.20.attn_v.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_q.bias
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_k.bias
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_v.bias
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_output.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: tensor blk.20.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_output.bias
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.20.ffn_norm.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: tensor blk.20.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.20.ffn_gate.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: tensor blk.20.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.20.ffn_down.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_q.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: tensor blk.22.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_k.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: tensor blk.22.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_v.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: tensor blk.22.attn_v.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_q.bias
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_k.bias
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_v.bias
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_output.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: tensor blk.22.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_output.bias
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.22.ffn_norm.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: tensor blk.22.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.22.ffn_gate.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: tensor blk.22.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.22.ffn_down.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: tensor blk.22.ffn_down.weight (0 MiB q4_K) buffer type overridden to Vulkan0
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.22.ffn_up.weight
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: tensor blk.22.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.22.ffn_gate.bias
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.22.ffn_down.bias
+09-26 21:36:14.415  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.22.ffn_up.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_norm.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.23.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_qkv.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_q.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.23.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_k.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.23.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_v.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.23.attn_v.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_q.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_k.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_v.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_output.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.23.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_output.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.ffn_norm.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.23.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.ffn_gate.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.23.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.ffn_down.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.23.ffn_down.weight (0 MiB q4_K) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.ffn_up.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.23.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.ffn_gate.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.ffn_down.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.ffn_up.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_norm.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.24.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_qkv.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_q.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.24.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_k.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.24.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_v.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.24.attn_v.weight (0 MiB q8_0) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_q.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_k.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_v.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_output.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.24.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_output.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.ffn_norm.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.24.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.ffn_gate.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.24.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.ffn_down.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.24.ffn_down.weight (0 MiB q6_K) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.ffn_up.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.24.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.ffn_gate.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.ffn_down.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.ffn_up.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_norm.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.25.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_qkv.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_q.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.25.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_k.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.25.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_v.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.25.attn_v.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_q.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_k.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_v.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_output.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.25.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_output.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.ffn_norm.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.25.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.ffn_gate.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.25.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.ffn_down.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.25.ffn_down.weight (0 MiB q4_K) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.ffn_up.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.25.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.ffn_gate.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.ffn_down.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.ffn_up.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_norm.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.26.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_qkv.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_q.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.26.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_k.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.26.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_v.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.26.attn_v.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_q.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_k.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_v.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_output.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.26.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_output.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.ffn_norm.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.26.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.ffn_gate.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.26.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.ffn_down.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.26.ffn_down.weight (0 MiB q4_K) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.ffn_up.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.26.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.ffn_gate.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.ffn_down.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.ffn_up.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_norm.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.27.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_qkv.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_q.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.27.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_k.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.27.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_v.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.27.attn_v.weight (0 MiB q8_0) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_q.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_k.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_v.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_output.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.27.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_output.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.ffn_norm.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.27.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.ffn_gate.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.27.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.ffn_down.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.27.ffn_down.weight (0 MiB q6_K) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.ffn_up.weight
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: tensor blk.27.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.ffn_gate.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.ffn_down.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.ffn_up.bias
+09-26 21:36:14.416  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_norm.weight
+09-26 21:36:14.417  8400  8478 I GGUFNativeStderr: tensor blk.28.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.419  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_qkv.weight
+09-26 21:36:14.419  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_q.weight
+09-26 21:36:14.419  8400  8478 I GGUFNativeStderr: tensor blk.28.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.419  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_k.weight
+09-26 21:36:14.419  8400  8478 I GGUFNativeStderr: tensor blk.28.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.419  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_v.weight
+09-26 21:36:14.419  8400  8478 I GGUFNativeStderr: tensor blk.28.attn_v.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.419  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_q.bias
+09-26 21:36:14.419  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_k.bias
+09-26 21:36:14.419  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_v.bias
+09-26 21:36:14.419  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_output.weight
+09-26 21:36:14.419  8400  8478 I GGUFNativeStderr: tensor blk.28.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.419  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_output.bias
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.ffn_norm.weight
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: tensor blk.28.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.ffn_gate.weight
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: tensor blk.28.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.ffn_down.weight
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: tensor blk.28.ffn_down.weight (0 MiB q4_K) buffer type overridden to Vulkan0
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.ffn_up.weight
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: tensor blk.28.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.ffn_gate.bias
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.ffn_down.bias
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.ffn_up.bias
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_norm.weight
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: tensor blk.29.attn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_qkv.weight
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_q.weight
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: tensor blk.29.attn_q.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_k.weight
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: tensor blk.29.attn_k.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_v.weight
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: tensor blk.29.attn_v.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_q.bias
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_k.bias
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_v.bias
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_output.weight
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: tensor blk.29.attn_output.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_output.bias
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.ffn_norm.weight
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: tensor blk.29.ffn_norm.weight (0 MiB f32) buffer type overridden to Vulkan0
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor rope_freqs.weight
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.ffn_gate.weight
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: tensor blk.29.ffn_gate.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.ffn_down.weight
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: tensor blk.29.ffn_down.weight (0 MiB q4_K) buffer type overridden to Vulkan0
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.ffn_up.weight
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: tensor blk.29.ffn_up.weight (0 MiB q5_0) buffer type overridden to Vulkan0
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.ffn_gate.bias
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.ffn_down.bias
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.ffn_up.bias
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_q.scale
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_k.scale
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_v.scale
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_output.scale
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_gate.scale
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_down.scale
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_up.scale
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_q.input_scale
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_k.input_scale
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_v.input_scale
+09-26 21:36:14.420  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.attn_output.input_scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_gate.input_scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_down.input_scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.0.ffn_up.input_scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_q.scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_k.scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_v.scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_output.scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_gate.scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_down.scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_up.scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_q.input_scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_k.input_scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_v.input_scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.attn_output.input_scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_gate.input_scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_down.input_scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.1.ffn_up.input_scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_q.scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_k.scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_v.scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_output.scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_gate.scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_down.scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_up.scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_q.input_scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_k.input_scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_v.input_scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.attn_output.input_scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_gate.input_scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_down.input_scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.2.ffn_up.input_scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_q.scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_k.scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_v.scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_output.scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_gate.scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_down.scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_up.scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_q.input_scale
+09-26 21:36:14.421  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_k.input_scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_v.input_scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.attn_output.input_scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_gate.input_scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_down.input_scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.3.ffn_up.input_scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_q.scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_k.scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_v.scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_output.scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_gate.scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_down.scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_up.scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_q.input_scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_k.input_scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_v.input_scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.attn_output.input_scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_gate.input_scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_down.input_scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.4.ffn_up.input_scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_q.scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_k.scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_v.scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_output.scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_gate.scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_down.scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_up.scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_q.input_scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_k.input_scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_v.input_scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.attn_output.input_scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_gate.input_scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_down.input_scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.5.ffn_up.input_scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_q.scale
+09-26 21:36:14.422  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_k.scale
+09-26 21:36:14.423  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_v.scale
+09-26 21:36:14.423  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_output.scale
+09-26 21:36:14.423  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_gate.scale
+09-26 21:36:14.423  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_down.scale
+09-26 21:36:14.423  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_up.scale
+09-26 21:36:14.423  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_q.input_scale
+09-26 21:36:14.423  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_k.input_scale
+09-26 21:36:14.423  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_v.input_scale
+09-26 21:36:14.423  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.attn_output.input_scale
+09-26 21:36:14.423  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_gate.input_scale
+09-26 21:36:14.423  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_down.input_scale
+09-26 21:36:14.423  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.6.ffn_up.input_scale
+09-26 21:36:14.423  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_q.scale
+09-26 21:36:14.423  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_k.scale
+09-26 21:36:14.423  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_v.scale
+09-26 21:36:14.423  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_output.scale
+09-26 21:36:14.423  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_gate.scale
+09-26 21:36:14.423  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_down.scale
+09-26 21:36:14.423  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_up.scale
+09-26 21:36:14.423  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_q.input_scale
+09-26 21:36:14.423  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_k.input_scale
+09-26 21:36:14.426  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_v.input_scale
+09-26 21:36:14.426  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.attn_output.input_scale
+09-26 21:36:14.426  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_gate.input_scale
+09-26 21:36:14.426  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_down.input_scale
+09-26 21:36:14.426  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.7.ffn_up.input_scale
+09-26 21:36:14.426  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_q.scale
+09-26 21:36:14.426  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_k.scale
+09-26 21:36:14.426  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_v.scale
+09-26 21:36:14.426  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_output.scale
+09-26 21:36:14.426  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_gate.scale
+09-26 21:36:14.426  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_down.scale
+09-26 21:36:14.426  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_up.scale
+09-26 21:36:14.426  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_q.input_scale
+09-26 21:36:14.426  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_k.input_scale
+09-26 21:36:14.426  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_v.input_scale
+09-26 21:36:14.426  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.attn_output.input_scale
+09-26 21:36:14.426  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_gate.input_scale
+09-26 21:36:14.426  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_down.input_scale
+09-26 21:36:14.426  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.8.ffn_up.input_scale
+09-26 21:36:14.426  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_q.scale
+09-26 21:36:14.426  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_k.scale
+09-26 21:36:14.426  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_v.scale
+09-26 21:36:14.426  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_output.scale
+09-26 21:36:14.426  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_gate.scale
+09-26 21:36:14.426  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_down.scale
+09-26 21:36:14.426  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_up.scale
+09-26 21:36:14.426  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_q.input_scale
+09-26 21:36:14.426  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_k.input_scale
+09-26 21:36:14.426  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_v.input_scale
+09-26 21:36:14.426  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.attn_output.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_gate.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_down.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.9.ffn_up.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_q.scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_k.scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_v.scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_output.scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_gate.scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_down.scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_up.scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_q.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_k.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_v.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.attn_output.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_gate.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_down.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.10.ffn_up.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_q.scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_k.scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_v.scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_output.scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_gate.scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_down.scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_up.scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_q.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_k.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_v.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.attn_output.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_gate.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_down.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.11.ffn_up.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_q.scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_k.scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_v.scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_output.scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.ffn_gate.scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.ffn_down.scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.ffn_up.scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_q.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_k.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_v.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.attn_output.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.ffn_gate.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.ffn_down.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.12.ffn_up.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_q.scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_k.scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_v.scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_output.scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.ffn_gate.scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.ffn_down.scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.ffn_up.scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_q.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_k.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_v.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.attn_output.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.ffn_gate.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.ffn_down.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.13.ffn_up.input_scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_q.scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_k.scale
+09-26 21:36:14.427  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_v.scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_output.scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.ffn_gate.scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.ffn_down.scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.ffn_up.scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_q.input_scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_k.input_scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_v.input_scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.attn_output.input_scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.ffn_gate.input_scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.ffn_down.input_scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.14.ffn_up.input_scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_q.scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_k.scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_v.scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_output.scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.ffn_gate.scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.ffn_down.scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.ffn_up.scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_q.input_scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_k.input_scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_v.input_scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.attn_output.input_scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.ffn_gate.input_scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.ffn_down.input_scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.15.ffn_up.input_scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_q.scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_k.scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_v.scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_output.scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.ffn_gate.scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.ffn_down.scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.ffn_up.scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_q.input_scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_k.input_scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_v.input_scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.attn_output.input_scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.ffn_gate.input_scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.ffn_down.input_scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.16.ffn_up.input_scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_q.scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_k.scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_v.scale
+09-26 21:36:14.428  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_output.scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.ffn_gate.scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.ffn_down.scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.ffn_up.scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_q.input_scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_k.input_scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_v.input_scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.attn_output.input_scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.ffn_gate.input_scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.ffn_down.input_scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.17.ffn_up.input_scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_q.scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_k.scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_v.scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_output.scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.ffn_gate.scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.ffn_down.scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.ffn_up.scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_q.input_scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_k.input_scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_v.input_scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.attn_output.input_scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.ffn_gate.input_scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.ffn_down.input_scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.18.ffn_up.input_scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_q.scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_k.scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_v.scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_output.scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.ffn_gate.scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.ffn_down.scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.ffn_up.scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_q.input_scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_k.input_scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_v.input_scale
+09-26 21:36:14.429  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.attn_output.input_scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.ffn_gate.input_scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.ffn_down.input_scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.19.ffn_up.input_scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_q.scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_k.scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_v.scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_output.scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.20.ffn_gate.scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.20.ffn_down.scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.20.ffn_up.scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_q.input_scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_k.input_scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_v.input_scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.20.attn_output.input_scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.20.ffn_gate.input_scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.20.ffn_down.input_scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.20.ffn_up.input_scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_q.scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_k.scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_v.scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_output.scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.21.ffn_gate.scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.21.ffn_down.scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.21.ffn_up.scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_q.input_scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_k.input_scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_v.input_scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.21.attn_output.input_scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.21.ffn_gate.input_scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.21.ffn_down.input_scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.21.ffn_up.input_scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_q.scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_k.scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_v.scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_output.scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.22.ffn_gate.scale
+09-26 21:36:14.430  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.22.ffn_down.scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.22.ffn_up.scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_q.input_scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_k.input_scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_v.input_scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.22.attn_output.input_scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.22.ffn_gate.input_scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.22.ffn_down.input_scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.22.ffn_up.input_scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_q.scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_k.scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_v.scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_output.scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.ffn_gate.scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.ffn_down.scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.ffn_up.scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_q.input_scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_k.input_scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_v.input_scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.attn_output.input_scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.ffn_gate.input_scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.ffn_down.input_scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.23.ffn_up.input_scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_q.scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_k.scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_v.scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_output.scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.ffn_gate.scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.ffn_down.scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.ffn_up.scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_q.input_scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_k.input_scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_v.input_scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.attn_output.input_scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.ffn_gate.input_scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.ffn_down.input_scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.24.ffn_up.input_scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_q.scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_k.scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_v.scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_output.scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.ffn_gate.scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.ffn_down.scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.ffn_up.scale
+09-26 21:36:14.431  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_q.input_scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_k.input_scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_v.input_scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.attn_output.input_scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.ffn_gate.input_scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.ffn_down.input_scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.25.ffn_up.input_scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_q.scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_k.scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_v.scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_output.scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.ffn_gate.scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.ffn_down.scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.ffn_up.scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_q.input_scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_k.input_scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_v.input_scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.attn_output.input_scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.ffn_gate.input_scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.ffn_down.input_scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.26.ffn_up.input_scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_q.scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_k.scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_v.scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_output.scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.ffn_gate.scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.ffn_down.scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.ffn_up.scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_q.input_scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_k.input_scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_v.input_scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.attn_output.input_scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.ffn_gate.input_scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.ffn_down.input_scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.27.ffn_up.input_scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_q.scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_k.scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_v.scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_output.scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.ffn_gate.scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.ffn_down.scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.ffn_up.scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_q.input_scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_k.input_scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_v.input_scale
+09-26 21:36:14.432  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.attn_output.input_scale
+09-26 21:36:14.433  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.ffn_gate.input_scale
+09-26 21:36:14.433  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.ffn_down.input_scale
+09-26 21:36:14.433  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.28.ffn_up.input_scale
+09-26 21:36:14.433  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_q.scale
+09-26 21:36:14.433  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_k.scale
+09-26 21:36:14.433  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_v.scale
+09-26 21:36:14.433  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_output.scale
+09-26 21:36:14.433  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.ffn_gate.scale
+09-26 21:36:14.433  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.ffn_down.scale
+09-26 21:36:14.433  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.ffn_up.scale
+09-26 21:36:14.433  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_q.input_scale
+09-26 21:36:14.433  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_k.input_scale
+09-26 21:36:14.433  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_v.input_scale
+09-26 21:36:14.433  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.attn_output.input_scale
+09-26 21:36:14.433  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.ffn_gate.input_scale
+09-26 21:36:14.433  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.ffn_down.input_scale
+09-26 21:36:14.433  8400  8478 I GGUFNativeStderr: create_tensor: loading tensor blk.29.ffn_up.input_scale
+09-26 21:36:14.447  8400  8478 I GGUFNativeStderr: done_getting_tensors: tensor 'token_embd.weight' (q8_0) (and 0 others) cannot be used with preferred buffer type Vulkan_Host, using Vulkan0 instead
+09-26 21:36:14.453  8400  8478 I MESA    : on_vkAllocateMemory: has alloc flags
+09-26 21:36:14.453  8400  8478 I MESA    : allocateCoherentMemory: has alloc flags
+09-26 21:36:14.454  8400  8478 I GGUFNativeStderr: load_tensors: offloading output layer to GPU
+09-26 21:36:14.454  8400  8478 I GGUFNativeStderr: load_tensors: offloading 29 repeating layers to GPU
+09-26 21:36:14.454  8400  8478 I GGUFNativeStderr: load_tensors: offloaded 31/31 layers to GPU
+09-26 21:36:14.454  8400  8478 I GGUFNativeStderr: load_tensors:      Vulkan0 model buffer size =    98.87 MiB
+09-26 21:36:14.568  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.576  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.612  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.615  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.637  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.639  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.643  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.647  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.652  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.654  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.657  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.663  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.665  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.670  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.674  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.678  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.681  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.684  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.690  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.692  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.696  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.699  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.702  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.707  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.710  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.714  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.716  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.719  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.724  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.726  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.729  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.733  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.737  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.740  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.744  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.750  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.752  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.757  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.761  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.766  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.768  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.771  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.775  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.777  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.781  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.785  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.790  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.793  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.797  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.802  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.804  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.809  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.815  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.818  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.823  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.826  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.831  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.833  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.838  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.843  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.846  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.851  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.855  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.861  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.863  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.867  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.873  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.875  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.879  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.882  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.888  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.896  8400  8478 I GGUFNativeStderr: .
+09-26 21:36:14.896  8400  8478 I GGUFNativeStderr: 
+09-26 21:36:14.896  8400  8478 I GGUFChatNative: GGUF_MODEL_ALL_LAYERS loaded=31 total=31 tensor_cpu_fallback=blocked
+09-26 21:36:14.896  8400  8478 I GGUFChatNative: GGUF_CPU_THREADS requested=2 available=2 capacities=0 resolved=2
+09-26 21:36:14.896  8400  8478 I GGUFNativeStderr: llama_context: constructing llama_context
+09-26 21:36:14.896  8400  8478 I GGUFNativeStderr: llama_context: n_seq_max             = 1
+09-26 21:36:14.896  8400  8478 I GGUFNativeStderr: llama_context: n_ctx                 = 1024
+09-26 21:36:14.896  8400  8478 I GGUFNativeStderr: llama_context: n_ctx_seq             = 1024
+09-26 21:36:14.896  8400  8478 I GGUFNativeStderr: llama_context: n_batch               = 256
+09-26 21:36:14.896  8400  8478 I GGUFNativeStderr: llama_context: n_ubatch              = 128
+09-26 21:36:14.896  8400  8478 I GGUFNativeStderr: llama_context: causal_attn           = 1
+09-26 21:36:14.896  8400  8478 I GGUFNativeStderr: llama_context: flash_attn            = auto
+09-26 21:36:14.896  8400  8478 I GGUFNativeStderr: llama_context: kv_unified            = false
+09-26 21:36:14.896  8400  8478 I GGUFNativeStderr: llama_context: freq_base             = 100000.0
+09-26 21:36:14.896  8400  8478 I GGUFNativeStderr: llama_context: freq_scale            = 1
+09-26 21:36:14.896  8400  8478 I GGUFNativeStderr: llama_context: n_rs_seq              = 0
+09-26 21:36:14.896  8400  8478 I GGUFNativeStderr: llama_context: n_outputs_max         = 1
+09-26 21:36:14.896  8400  8478 I GGUFNativeStderr: llama_context: n_outputs_max_per_seq = 1
+09-26 21:36:14.896  8400  8478 I GGUFNativeStderr: llama_context: n_ctx_seq (1024) < n_ctx_train (8192) -- the full capacity of the model will not be utilized
+09-26 21:36:14.897  8400  8478 I GGUFNativeStderr: set_abort_callback: call
+09-26 21:36:14.898  8400  8478 I MESA    : on_vkAllocateMemory: has alloc flags
+09-26 21:36:14.898  8400  8478 I MESA    : allocateCoherentMemory: has alloc flags
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_context: Vulkan_Host  output buffer size =     0.19 MiB
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_kv_cache: layer   0: dev = Vulkan0
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_kv_cache: layer   1: dev = Vulkan0
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_kv_cache: layer   2: dev = Vulkan0
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_kv_cache: layer   3: dev = Vulkan0
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_kv_cache: layer   4: dev = Vulkan0
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_kv_cache: layer   5: dev = Vulkan0
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_kv_cache: layer   6: dev = Vulkan0
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_kv_cache: layer   7: dev = Vulkan0
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_kv_cache: layer   8: dev = Vulkan0
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_kv_cache: layer   9: dev = Vulkan0
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_kv_cache: layer  10: dev = Vulkan0
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_kv_cache: layer  11: dev = Vulkan0
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_kv_cache: layer  12: dev = Vulkan0
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_kv_cache: layer  13: dev = Vulkan0
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_kv_cache: layer  14: dev = Vulkan0
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_kv_cache: layer  15: dev = Vulkan0
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_kv_cache: layer  16: dev = Vulkan0
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_kv_cache: layer  17: dev = Vulkan0
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_kv_cache: layer  18: dev = Vulkan0
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_kv_cache: layer  19: dev = Vulkan0
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_kv_cache: layer  20: dev = Vulkan0
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_kv_cache: layer  21: dev = Vulkan0
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_kv_cache: layer  22: dev = Vulkan0
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_kv_cache: layer  23: dev = Vulkan0
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_kv_cache: layer  24: dev = Vulkan0
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_kv_cache: layer  25: dev = Vulkan0
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_kv_cache: layer  26: dev = Vulkan0
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_kv_cache: layer  27: dev = Vulkan0
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_kv_cache: layer  28: dev = Vulkan0
+09-26 21:36:14.899  8400  8478 I GGUFNativeStderr: llama_kv_cache: layer  29: dev = Vulkan0
+09-26 21:36:14.900  8400  8478 I MESA    : on_vkAllocateMemory: has alloc flags
+09-26 21:36:14.900  8400  8478 I MESA    : allocateCoherentMemory: has alloc flags
+09-26 21:36:14.900  8400  8478 I GGUFNativeStderr: llama_kv_cache:    Vulkan0 KV buffer size =    22.50 MiB
+09-26 21:36:14.928  8400  8478 I GGUFNativeStderr: llama_kv_cache: size =   22.50 MiB (  1024 cells,  30 layers,  1/1 seqs), K (f16):   11.25 MiB, V (f16):   11.25 MiB
+09-26 21:36:14.928  8400  8478 I GGUFNativeStderr: llama_kv_cache: attn_rot_k = 0, n_embd_head_k_all = 64
+09-26 21:36:14.928  8400  8478 I GGUFNativeStderr: llama_kv_cache: attn_rot_v = 0, n_embd_head_k_all = 64
+09-26 21:36:14.928  8400  8478 I GGUFNativeStderr: llama_context: enumerating backends
+09-26 21:36:14.928  8400  8478 I GGUFNativeStderr: llama_context: backend_ptrs.size() = 2
+09-26 21:36:14.928  8400  8478 I GGUFNativeStderr: sched_reserve: reserving ...
+09-26 21:36:14.928  8400  8478 I GGUFNativeStderr: sched_reserve: max_nodes = 2176
+09-26 21:36:14.929  8400  8478 I GGUFNativeStderr: sched_reserve: reserving full memory module
+09-26 21:36:14.929  8400  8478 I GGUFNativeStderr: sched_reserve: worst-case: n_tokens = 128, n_seqs = 1, n_outputs = 1
+09-26 21:36:14.929  8400  8478 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =    1, n_seqs =  1, n_outputs =    1
+09-26 21:36:14.930  8400  8478 I GGUFNativeStderr: resolve_fused_ops: Flash Attention enabled
+09-26 21:36:14.930  8400  8478 I GGUFNativeStderr: resolve_fused_ops: resolving fused DeepSeek V4 HC support:
+09-26 21:36:14.930  8400  8478 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =    1, n_seqs =  1, n_outputs =    1
+09-26 21:36:14.931  8400  8478 I GGUFNativeStderr: resolve_fused_ops: fused DeepSeek V4 HC pre enabled
+09-26 21:36:14.931  8400  8478 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =    1, n_seqs =  1, n_outputs =    1
+09-26 21:36:14.932  8400  8478 I GGUFNativeStderr: resolve_fused_ops: fused DeepSeek V4 HC comb enabled
+09-26 21:36:14.932  8400  8478 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =    1, n_seqs =  1, n_outputs =    1
+09-26 21:36:14.933  8400  8478 I GGUFNativeStderr: resolve_fused_ops: fused DeepSeek V4 HC post enabled
+09-26 21:36:14.933  8400  8478 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =  128, n_seqs =  1, n_outputs =    1
+09-26 21:36:14.934  8400  8478 I MESA    : on_vkAllocateMemory: has alloc flags
+09-26 21:36:14.934  8400  8478 I MESA    : allocateCoherentMemory: has alloc flags
+09-26 21:36:14.935  8400  8478 I MESA    : on_vkAllocateMemory: has alloc flags
+09-26 21:36:14.935  8400  8478 I MESA    : allocateCoherentMemory: has alloc flags
+09-26 21:36:14.936  8400  8478 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =    1, n_seqs =  1, n_outputs =    1
+09-26 21:36:14.937  8400  8478 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =  128, n_seqs =  1, n_outputs =    1
+09-26 21:36:14.938  8400  8478 I GGUFNativeStderr: sched_reserve:    Vulkan0 compute buffer size =     3.07 MiB
+09-26 21:36:14.938  8400  8478 I GGUFNativeStderr: sched_reserve: Vulkan_Host compute buffer size =     0.53 MiB
+09-26 21:36:14.938  8400  8478 I GGUFNativeStderr: sched_reserve: graph nodes  = 936
+09-26 21:36:14.938  8400  8478 I GGUFNativeStderr: sched_reserve: graph splits = 1
+09-26 21:36:14.938  8400  8478 I GGUFNativeStderr: sched_reserve: reserve took 10.06 ms, sched copies = 1
+09-26 21:36:14.938  8400  8478 I GGUFChatNative: GGUF_CONTEXT_TUNING batch=256 ubatch=128 threads=2 prefix_cache_supported=1 prefill_policy=larger_lots kv=f16 fa_requested=auto
+09-26 21:36:14.938  8400  8478 I GGUFChatNative: GGUF_BACKEND_EXECUTION backend=vulkan layers=31 total=31
+09-26 21:36:14.938  8400  8478 I GGUFChatNative: GGUF_BACKEND_NOTICE "GPU (Vulkan, camadas 31/31)"
+09-26 21:36:14.938  8400  8478 I GGUFChatNative: GGUF_NPU_PROBE identity="ro.soc.model=ranchu|ro.hardware=ranchu|ro.soc.manufacturer=AOSP" soc=desconhecido npu=unknown_or_absent backend=none reason=nenhum backend de NPU embarcado
+09-26 21:36:14.938  8400  8478 I GGUFChatNative: GGUF_UNIT_LOADED language=Vulkan layers=31 projector=none npu_notice=1 strict_device=1
+09-26 21:36:14.938  8400  8478 I GGUFChatNative: model loaded: n_ctx=1024 projector=none
+09-26 21:36:14.938  8400  8477 W om.ggufchat.app: Long monitor contention with owner model-preload (8478) at long com.ggufchat.app.EngineManager.load(java.lang.String, java.lang.String, int, int, int, boolean)(EngineManager.java:44) waiters=0 in long com.ggufchat.app.EngineManager.currentHandle() for 771ms
+09-26 21:36:15.189  8400  8477 I GGUFSystem: GGUF_SYSTEM_PROMPT_APPLIED scope=global chars=107 sha256=dde45e87ea07db0b49bcddd022d4f41a452610560d9af636571c26d16a4bcd04
+09-26 21:36:15.195  8400  8477 I MESA    : on_vkAllocateMemory: has alloc flags
+09-26 21:36:15.195  8400  8477 I MESA    : allocateCoherentMemory: has alloc flags
+09-26 21:36:15.537  8400  8412 D EGL_emulation: app_time_stats: avg=125.66ms min=17.69ms max=578.55ms count=12
+09-26 21:36:21.181  8400  8404 I om.ggufchat.app: NativeAlloc concurrent mark compact GC freed 2555KB AllocSpace bytes, 5(100KB) LOS objects, 49% free, 2570KB/5141KB, paused 33.283ms,636us total 83.301ms
+09-26 21:36:24.017  8400  8477 I MESA    : on_vkAllocateMemory: has alloc flags
+09-26 21:36:24.017  8400  8477 I MESA    : allocateCoherentMemory: has alloc flags
+09-26 21:36:24.202  8400  8400 I ImeTracker: com.ggufchat.app:4b558d62: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser true
+09-26 21:36:24.204  8400  8400 D InputMethodManager: showSoftInput() view=android.widget.EditText{cbb3484 VFED..CL. .F.P..ID 218,0-691,163 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+09-26 21:36:24.206  8400  8400 I AssistStructure: Flattened final assist data: 2040 bytes, containing 1 windows, 14 views
+09-26 21:36:24.231  8400  8412 D EGL_emulation: app_time_stats: avg=785.09ms min=13.43ms max=8373.02ms count=11
+09-26 21:36:24.456  8400  8400 D InsetsController: show(ime(), fromIme=true)
+09-26 21:36:24.478  8400  8590 W InteractionJankMonitor: Initializing without READ_DEVICE_CONFIG permission. enabled=true, interval=1, missedFrameThreshold=3, frameTimeThreshold=64, package=com.ggufchat.app
+09-26 21:36:24.528  8400  8400 I ImeTracker: com.ggufchat.app:4b558d62: onShown
+09-26 21:36:25.266  8400  8412 D EGL_emulation: app_time_stats: avg=252.47ms min=52.54ms max=400.75ms count=4
+09-26 21:36:25.328  8400  8477 I GGUFChatNative: GGUF_WARMUP input_tokens=51 prefilled=51 reused_tokens=0 gpu=1 aborted=0
+09-26 21:36:25.328  8400  8477 I GGUFWarmup: GGUF_WARMUP_UI ok=1 chars=159
+09-26 21:36:26.754  8400  8412 D EGL_emulation: app_time_stats: avg=495.76ms min=490.24ms max=500.57ms count=3
+09-26 21:36:27.767  8400  8412 D EGL_emulation: app_time_stats: avg=57.85ms min=10.39ms max=151.40ms count=15
+09-26 21:36:29.090  8400  8412 D EGL_emulation: app_time_stats: avg=74.35ms min=13.61ms max=433.90ms count=15
+09-26 21:36:29.281  8400  8632 I GGUFSystem: GGUF_SYSTEM_PROMPT_APPLIED scope=global chars=107 sha256=dde45e87ea07db0b49bcddd022d4f41a452610560d9af636571c26d16a4bcd04
+09-26 21:36:30.113  8400  8412 D EGL_emulation: app_time_stats: avg=511.12ms min=498.51ms max=523.73ms count=2
+09-26 21:36:31.480  8400  8632 I GGUFChatNative: GGUF_WARMUP input_tokens=65 prefilled=65 reused_tokens=48 gpu=1 aborted=0
+09-26 21:36:31.480  8400  8632 I GGUFWarmup: GGUF_WARMUP_TEXT ok=1 chars=39
+09-26 21:36:31.607  8400  8412 D EGL_emulation: app_time_stats: avg=497.95ms min=494.97ms max=502.69ms count=3
+09-26 21:36:32.607  8400  8412 D EGL_emulation: app_time_stats: avg=499.96ms min=497.46ms max=502.46ms count=2
+09-26 21:36:32.818  8400  8400 I GGUFBackendNotice: GGUF_BACKEND_NOTICE_UI GPU (Vulkan, camadas 31/31)
+09-26 21:36:32.821  8400  8400 I GGUFThinking: GGUF_THINKING_UPGRADE column_children=1
+09-26 21:36:32.871  8400  8400 I ImeTracker: com.ggufchat.app:adf6eabb: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+09-26 21:36:32.878  8400  8400 D InsetsController: hide(ime(), fromIme=true)
+09-26 21:36:32.973  8400  8666 I GGUFSystem: GGUF_SYSTEM_PROMPT_APPLIED scope=global chars=107 sha256=dde45e87ea07db0b49bcddd022d4f41a452610560d9af636571c26d16a4bcd04
+09-26 21:36:32.992  8400  8666 I GGUFInference: GGUF_CONTENT_PREPARED files=0 images=0 text_chars=0
+09-26 21:36:32.999  8400  8400 I ImeTracker: com.ggufchat.app:5b5a5083: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_ON_ANIMATION_STATE_CHANGED fromUser false
+09-26 21:36:33.001  8400  8400 I ImeTracker: com.ggufchat.app:adf6eabb: onHidden
+09-26 21:36:33.001  8400  8666 I GGUFNativeStderr: set_sampler: seq_id = 0, sampler = 0x7b22e2e33af0
+09-26 21:36:33.015  8400  8666 I GGUFChatNative: GGUF_GPU_SAMPLING requested=1 attached=1
+09-26 21:36:33.025  8400  8666 I GGUFNativeStderr: sched_reserve: reserving ...
+09-26 21:36:33.053  8400  8666 I GGUFNativeStderr: sched_reserve: max_nodes = 2202
+09-26 21:36:33.096  8400  8666 I GGUFNativeStderr: sched_reserve: reserving full memory module
+09-26 21:36:33.100  8400  8666 I GGUFNativeStderr: sched_reserve: worst-case: n_tokens = 128, n_seqs = 1, n_outputs = 1
+09-26 21:36:33.100  8400  8666 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =  128, n_seqs =  1, n_outputs =    1
+09-26 21:36:33.131  8400  8666 I MESA    : on_vkAllocateMemory: has alloc flags
+09-26 21:36:33.132  8400  8666 I MESA    : allocateCoherentMemory: has alloc flags
+09-26 21:36:33.133  8400  8666 I MESA    : on_vkAllocateMemory: has alloc flags
+09-26 21:36:33.133  8400  8666 I MESA    : allocateCoherentMemory: has alloc flags
+09-26 21:36:33.153  8400  8666 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =    1, n_seqs =  1, n_outputs =    1
+09-26 21:36:33.155  8400  8666 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =  128, n_seqs =  1, n_outputs =    1
+09-26 21:36:33.163  8400  8666 I GGUFNativeStderr: sched_reserve:    Vulkan0 compute buffer size =     3.07 MiB
+09-26 21:36:33.164  8400  8666 I GGUFNativeStderr: sched_reserve: Vulkan_Host compute buffer size =     0.53 MiB
+09-26 21:36:33.164  8400  8666 I GGUFNativeStderr: sched_reserve: graph nodes  = 961
+09-26 21:36:33.164  8400  8666 I GGUFNativeStderr: sched_reserve: graph splits = 1
+09-26 21:36:33.164  8400  8666 I GGUFNativeStderr: sched_reserve: reserve took 110.57 ms, sched copies = 1
+09-26 21:36:33.193  8400  8666 I MESA    : on_vkAllocateMemory: has alloc flags
+09-26 21:36:33.193  8400  8666 I MESA    : allocateCoherentMemory: has alloc flags
+09-26 21:36:33.586  8400  8666 I GGUFChatNative: GGUF_PROMPT_CACHE input_tokens=65 reused_tokens=64 evaluated_tokens=1 media=0
+09-26 21:36:33.732  8400  8400 I GGUFUiTiming: GGUF_UI_FIRST_TEXT send_to_first_ui_ns=914752831
+09-26 21:36:33.766  8400  8412 D EGL_emulation: app_time_stats: avg=193.07ms min=47.41ms max=366.33ms count=6
+09-26 21:36:34.849  8400  8400 E FrameTracker: force finish cuj, time out: J<IME_INSETS_SHOW_ANIMATION::0@0@com.ggufchat.app>
+09-26 21:36:34.850  8400  8400 W FrameTracker: Missed SF frame:UNKNOWN: 66, 31163, 0, CUJ=J<IME_INSETS_SHOW_ANIMATION::0@0@com.ggufchat.app>
+09-26 21:36:34.913  8400  8412 D EGL_emulation: app_time_stats: avg=104.48ms min=18.99ms max=183.26ms count=10
+09-26 21:36:35.966  8400  8412 D EGL_emulation: app_time_stats: avg=113.42ms min=45.15ms max=183.44ms count=9
+09-26 21:36:37.036  8400  8412 D EGL_emulation: app_time_stats: avg=133.70ms min=69.90ms max=187.26ms count=8
+09-26 21:36:38.093  8400  8412 D EGL_emulation: app_time_stats: avg=114.64ms min=30.60ms max=174.90ms count=9
+09-26 21:36:39.111  8400  8400 I ImeTracker: com.ggufchat.app:4185b563: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser true
+09-26 21:36:39.111  8400  8400 D InputMethodManager: showSoftInput() view=android.widget.EditText{cbb3484 VFED..CL. .F.P.... 218,0-593,163 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+09-26 21:36:39.182  8400  8412 D EGL_emulation: app_time_stats: avg=136.03ms min=39.40ms max=210.32ms count=8
+09-26 21:36:39.354  8400  8400 D InsetsController: show(ime(), fromIme=true)
+09-26 21:36:39.428  8400  8400 I ImeTracker: com.ggufchat.app:4185b563: onShown
+09-26 21:36:40.336  8400  8412 D EGL_emulation: app_time_stats: avg=133.15ms min=33.90ms max=253.85ms count=8
+09-26 21:36:41.370  8400  8412 D EGL_emulation: app_time_stats: avg=121.15ms min=20.73ms max=203.37ms count=8
+09-26 21:36:42.453  8400  8412 D EGL_emulation: app_time_stats: avg=111.85ms min=15.31ms max=204.52ms count=9
+09-26 21:36:43.276  8400  8400 E FrameTracker: force finish cuj, time out: J<IME_INSETS_HIDE_ANIMATION::1@0@com.ggufchat.app>
+09-26 21:36:43.276  8400  8400 W FrameTracker: Missed App frame:UNKNOWN: 10, 31830, 0, CUJ=J<IME_INSETS_HIDE_ANIMATION::1@0@com.ggufchat.app>
+09-26 21:36:43.276  8400  8400 W FrameTracker: Missed SF frame:UNKNOWN: 10, 31830, 0, CUJ=J<IME_INSETS_HIDE_ANIMATION::1@0@com.ggufchat.app>
+09-26 21:36:43.527  8400  8412 D EGL_emulation: app_time_stats: avg=148.75ms min=31.07ms max=269.06ms count=7
+09-26 21:36:44.553  8400  8412 D EGL_emulation: app_time_stats: avg=125.24ms min=52.10ms max=199.11ms count=8
+09-26 21:36:45.557  8400  8412 D EGL_emulation: app_time_stats: avg=167.28ms min=99.30ms max=224.92ms count=6
+09-26 21:36:46.608  8400  8412 D EGL_emulation: app_time_stats: avg=150.13ms min=60.44ms max=209.18ms count=7
+09-26 21:36:47.679  8400  8412 D EGL_emulation: app_time_stats: avg=123.99ms min=73.63ms max=186.10ms count=8
+09-26 21:36:48.722  8400  8412 D EGL_emulation: app_time_stats: avg=130.35ms min=65.80ms max=188.87ms count=8
+09-26 21:36:49.731  8400  8400 E FrameTracker: force finish cuj, time out: J<IME_INSETS_SHOW_ANIMATION::0@0@com.ggufchat.app>
+09-26 21:36:49.888  8400  8412 D EGL_emulation: app_time_stats: avg=133.51ms min=23.27ms max=217.39ms count=8
+09-26 21:36:50.895  8400  8412 D EGL_emulation: app_time_stats: avg=125.77ms min=63.06ms max=228.23ms count=8
+09-26 21:36:52.028  8400  8412 D EGL_emulation: app_time_stats: avg=140.70ms min=53.46ms max=217.94ms count=8
+09-26 21:36:53.153  8400  8412 D EGL_emulation: app_time_stats: avg=160.64ms min=73.40ms max=204.67ms count=7
+09-26 21:36:53.798  8400  8404 I om.ggufchat.app: Background concurrent mark compact GC freed 2305KB AllocSpace bytes, 0(0B) LOS objects, 49% free, 2772KB/5544KB, paused 82us,757us total 194.123ms
+09-26 21:36:54.175  8400  8412 D EGL_emulation: app_time_stats: avg=145.98ms min=57.64ms max=205.78ms count=7
+09-26 21:36:55.188  8400  8412 D EGL_emulation: app_time_stats: avg=97.23ms min=22.84ms max=200.95ms count=10
+09-26 21:36:56.283  8400  8412 D EGL_emulation: app_time_stats: avg=119.78ms min=54.86ms max=194.87ms count=9
+09-26 21:36:57.312  8400  8412 D EGL_emulation: app_time_stats: avg=82.30ms min=21.81ms max=206.24ms count=11
+09-26 21:36:58.366  8400  8412 D EGL_emulation: app_time_stats: avg=150.59ms min=63.79ms max=217.00ms count=7
+09-26 21:36:59.396  8400  8412 D EGL_emulation: app_time_stats: avg=121.66ms min=27.09ms max=178.52ms count=8
+09-26 21:37:00.436  8400  8412 D EGL_emulation: app_time_stats: avg=98.53ms min=41.96ms max=199.65ms count=10
+09-26 21:37:01.440  8400  8412 D EGL_emulation: app_time_stats: avg=121.94ms min=38.87ms max=197.17ms count=8
+09-26 21:37:01.882  8400  8666 I GGUFChatNative: GGUF_NATIVE_COMPLETE tokens=128 reason=length projector=0
+09-26 21:37:01.884  8400  8666 I GGUFNativeStderr: set_sampler: seq_id = 0, sampler = 0x0
+09-26 21:37:01.884  8400  8666 I GGUFChatNative: GGUF_HOST_WORKER_CPU available=1 thread_cpu_ns=18775112408
+09-26 21:37:01.884  8400  8666 I GGUFChatNative: GGUF_STRICT_VULKAN_RESULT enabled=1 submitted_graphs=128 submitted_math_nodes=75904 blocked=0 host_orchestration=CPU
+09-26 21:37:01.884  8400  8666 I GGUFChatNative: GGUF_GPU_SAMPLING_RESULT backend_selected=128 emitted=128
+09-26 21:37:01.884  8400  8666 I GGUFChatNative: GGUF_VULKAN_DELIVERY token_only_export=1 overlap_submissions=126 first_text_immediate=1
+09-26 21:37:01.884  8400  8666 I GGUFChatNative: GGUF_RESPONSE_LATENCY first_token_ns=736042863 prompt_tokens=65 reused_tokens=64
+09-26 21:37:01.884  8400  8666 I GGUFChatNative: GGUF_GENERATION_STATS tokens=128 decode_ns=28153025276 prefill_ns=729443703 callbacks=128 success=1
+09-26 21:37:01.884  8400  8666 I GGUFStats: GGUF_GENERATION_STATS tokens=128 decode_ns=28153025276 prefill_ns=729443703 tokens_s=4.547 first_token_ns=736042863 prompt_tokens=65 reused_tokens=64 completed=1 version=3
+09-26 21:37:01.884  8400  8666 I System.out: GGUF_REPAIR_GENERATION_OK
+09-26 21:37:02.088  8400  8666 I GGUFReplyNotice: GGUF_NOTICE_STATS progress_updates=5 skipped_screen_off=0
+09-26 21:37:02.088  8400  8666 I GGUFReplyNotice: GGUF_REPLY_NOTICE suppressed=screen_active
+09-26 21:37:02.089  8400  8400 I GGUFThinking: GGUF_THINKING_UPGRADE column_children=1
+09-26 21:37:02.089  8400  8400 I GGUFThinking: GGUF_THINKING_UPGRADE column_children=2
+09-26 21:37:02.173  8400  8400 I GGUFReplyNotice: GGUF_REPLY_SERVICE_DESTROYED
+09-26 21:37:02.696  8400  8412 D EGL_emulation: app_time_stats: avg=93.21ms min=18.61ms max=448.95ms count=12
+09-26 21:37:03.710  8400  8412 D EGL_emulation: app_time_stats: avg=82.62ms min=8.89ms max=424.93ms count=11
+09-26 21:37:04.711  8400  8412 D EGL_emulation: app_time_stats: avg=500.52ms min=499.82ms max=501.23ms count=2
+09-26 21:37:06.226  8400  8412 D EGL_emulation: app_time_stats: avg=504.93ms min=498.29ms max=517.03ms count=3
+09-26 21:37:07.227  8400  8412 D EGL_emulation: app_time_stats: avg=500.32ms min=500.01ms max=500.63ms count=2
+09-26 21:37:07.811  8400  8400 I ImeTracker: com.ggufchat.app:b1727472: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser true
+09-26 21:37:07.811  8400  8400 D InputMethodManager: showSoftInput() view=android.widget.EditText{cbb3484 VFED..CL. .F.P.... 218,0-691,163 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+09-26 21:37:07.813  8400  8400 D InsetsController: show(ime(), fromIme=true)
+09-26 21:37:07.813  8400  8400 I ImeTracker: com.ggufchat.app:b1727472: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+09-26 21:37:08.726  8400  8412 D EGL_emulation: app_time_stats: avg=499.71ms min=498.97ms max=500.35ms count=3
+09-26 21:37:09.850  8400  8412 D EGL_emulation: app_time_stats: avg=374.54ms min=123.83ms max=499.93ms count=3
+09-26 21:37:10.862  8400  8412 D EGL_emulation: app_time_stats: avg=59.82ms min=13.83ms max=127.59ms count=14
+09-26 21:37:11.918  8400  8412 D EGL_emulation: app_time_stats: avg=55.65ms min=13.44ms max=200.15ms count=15
+09-26 21:37:12.689  8400  8925 I GGUFSystem: GGUF_SYSTEM_PROMPT_APPLIED scope=global chars=107 sha256=dde45e87ea07db0b49bcddd022d4f41a452610560d9af636571c26d16a4bcd04
+09-26 21:37:12.695  8400  8925 I GGUFNativeStderr: sched_reserve: reserving ...
+09-26 21:37:12.699  8400  8925 I GGUFNativeStderr: sched_reserve: max_nodes = 2176
+09-26 21:37:12.734  8400  8925 I GGUFNativeStderr: sched_reserve: reserving full memory module
+09-26 21:37:12.735  8400  8925 I GGUFNativeStderr: sched_reserve: worst-case: n_tokens = 128, n_seqs = 1, n_outputs = 1
+09-26 21:37:12.735  8400  8925 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =  128, n_seqs =  1, n_outputs =    1
+09-26 21:37:12.739  8400  8925 I MESA    : on_vkAllocateMemory: has alloc flags
+09-26 21:37:12.739  8400  8925 I MESA    : allocateCoherentMemory: has alloc flags
+09-26 21:37:12.740  8400  8925 I MESA    : on_vkAllocateMemory: has alloc flags
+09-26 21:37:12.740  8400  8925 I MESA    : allocateCoherentMemory: has alloc flags
+09-26 21:37:12.740  8400  8925 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =    1, n_seqs =  1, n_outputs =    1
+09-26 21:37:12.742  8400  8925 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =  128, n_seqs =  1, n_outputs =    1
+09-26 21:37:12.744  8400  8925 I GGUFNativeStderr: sched_reserve:    Vulkan0 compute buffer size =     3.07 MiB
+09-26 21:37:12.744  8400  8925 I GGUFNativeStderr: sched_reserve: Vulkan_Host compute buffer size =     0.53 MiB
+09-26 21:37:12.744  8400  8925 I GGUFNativeStderr: sched_reserve: graph nodes  = 936
+09-26 21:37:12.744  8400  8925 I GGUFNativeStderr: sched_reserve: graph splits = 1
+09-26 21:37:12.744  8400  8925 I GGUFNativeStderr: sched_reserve: reserve took 44.29 ms, sched copies = 1
+09-26 21:37:13.079  8400  8412 D EGL_emulation: app_time_stats: avg=96.52ms min=21.77ms max=384.07ms count=11
+09-26 21:37:14.569  8400  8412 D EGL_emulation: app_time_stats: avg=496.51ms min=490.36ms max=500.75ms count=3
+09-26 21:37:15.646  8400  8412 D EGL_emulation: app_time_stats: avg=538.35ms min=506.83ms max=569.86ms count=2
+09-26 21:37:16.405  8400  8400 I GGUFThinking: GGUF_THINKING_UPGRADE column_children=1
+09-26 21:37:16.435  8400  8400 I ImeTracker: com.ggufchat.app:3d4d605b: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+09-26 21:37:16.616  8400  8958 I GGUFSystem: GGUF_SYSTEM_PROMPT_APPLIED scope=global chars=107 sha256=dde45e87ea07db0b49bcddd022d4f41a452610560d9af636571c26d16a4bcd04
+09-26 21:37:16.650  8400  8958 I GGUFInference: GGUF_CONTENT_PREPARED files=0 images=0 text_chars=0
+09-26 21:37:16.704  8400  8400 D InsetsController: hide(ime(), fromIme=true)
+09-26 21:37:16.869  8400  8412 D EGL_emulation: app_time_stats: avg=237.93ms min=84.04ms max=436.50ms count=5
+09-26 21:37:16.875  8400  8400 I ImeTracker: com.ggufchat.app:a55376ad: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_ON_ANIMATION_STATE_CHANGED fromUser false
+09-26 21:37:16.875  8400  8400 I ImeTracker: com.ggufchat.app:3d4d605b: onHidden
+09-26 21:37:18.076  8400  8412 D EGL_emulation: app_time_stats: avg=95.40ms min=23.42ms max=440.17ms count=11
+09-26 21:37:18.829  8400  8925 I GGUFChatNative: GGUF_WARMUP input_tokens=213 prefilled=213 reused_tokens=192 gpu=1 aborted=0
+09-26 21:37:18.829  8400  8925 I GGUFWarmup: GGUF_WARMUP_TEXT ok=1 chars=39
+09-26 21:37:18.830  8400  8958 I GGUFNativeStderr: set_sampler: seq_id = 0, sampler = 0x7b22e2e3a370
+09-26 21:37:18.831  8400  8958 I GGUFChatNative: GGUF_GPU_SAMPLING requested=1 attached=1
+09-26 21:37:18.837  8400  8958 I GGUFNativeStderr: sched_reserve: reserving ...
+09-26 21:37:18.841  8400  8958 I GGUFNativeStderr: sched_reserve: max_nodes = 2202
+09-26 21:37:18.855  8400  8958 I GGUFNativeStderr: sched_reserve: reserving full memory module
+09-26 21:37:18.855  8400  8958 I GGUFNativeStderr: sched_reserve: worst-case: n_tokens = 128, n_seqs = 1, n_outputs = 1
+09-26 21:37:18.855  8400  8958 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =  128, n_seqs =  1, n_outputs =    1
+09-26 21:37:18.861  8400  8958 I MESA    : on_vkAllocateMemory: has alloc flags
+09-26 21:37:18.861  8400  8958 I MESA    : allocateCoherentMemory: has alloc flags
+09-26 21:37:18.862  8400  8958 I MESA    : on_vkAllocateMemory: has alloc flags
+09-26 21:37:18.862  8400  8958 I MESA    : allocateCoherentMemory: has alloc flags
+09-26 21:37:18.863  8400  8958 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =    1, n_seqs =  1, n_outputs =    1
+09-26 21:37:18.864  8400  8958 I GGUFNativeStderr: graph_reserve: reserving a graph for ubatch with n_tokens =  128, n_seqs =  1, n_outputs =    1
+09-26 21:37:18.865  8400  8958 I GGUFNativeStderr: sched_reserve:    Vulkan0 compute buffer size =     3.07 MiB
+09-26 21:37:18.865  8400  8958 I GGUFNativeStderr: sched_reserve: Vulkan_Host compute buffer size =     0.53 MiB
+09-26 21:37:18.865  8400  8958 I GGUFNativeStderr: sched_reserve: graph nodes  = 961
+09-26 21:37:18.865  8400  8958 I GGUFNativeStderr: sched_reserve: graph splits = 1
+09-26 21:37:18.865  8400  8958 I GGUFNativeStderr: sched_reserve: reserve took 24.26 ms, sched copies = 1
+09-26 21:37:18.875  8400  8958 I GGUFChatNative: GGUF_PROMPT_CACHE input_tokens=213 reused_tokens=212 evaluated_tokens=1 media=0
+09-26 21:37:19.026  8400  8400 I GGUFUiTiming: GGUF_UI_FIRST_TEXT send_to_first_ui_ns=2622788820
+09-26 21:37:19.109  8400  8412 D EGL_emulation: app_time_stats: avg=344.41ms min=58.02ms max=501.05ms count=3
+09-26 21:37:20.156  8400  8412 D EGL_emulation: app_time_stats: avg=112.89ms min=28.93ms max=226.69ms count=9
+09-26 21:37:21.171  8400  8412 D EGL_emulation: app_time_stats: avg=76.16ms min=19.05ms max=202.50ms count=12
+09-26 21:37:22.049  8400  8400 I ImeTracker: com.ggufchat.app:3068889: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser true
+09-26 21:37:22.049  8400  8400 D InputMethodManager: showSoftInput() view=android.widget.EditText{cbb3484 VFED..CL. .F.P.... 218,0-593,163 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+09-26 21:37:22.186  8400  8412 D EGL_emulation: app_time_stats: avg=126.89ms min=57.41ms max=182.44ms count=8
+09-26 21:37:22.346  8400  8400 D InsetsController: show(ime(), fromIme=true)
+09-26 21:37:22.440  8400  8400 I ImeTracker: com.ggufchat.app:3068889: onShown
+09-26 21:37:22.509  8400  8400 W FrameTracker: Missed App frame:JANK_APP_DEADLINE_MISSED, 37384, 0, CUJ=J<IME_INSETS_HIDE_ANIMATION::1@0@com.ggufchat.app>
+09-26 21:37:23.252  8400  8412 D EGL_emulation: app_time_stats: avg=118.38ms min=66.77ms max=246.50ms count=9
+09-26 21:37:24.355  8400  8412 D EGL_emulation: app_time_stats: avg=85.99ms min=21.04ms max=226.84ms count=12
+09-26 21:37:25.381  8400  8412 D EGL_emulation: app_time_stats: avg=142.49ms min=55.06ms max=187.31ms count=7
+09-26 21:37:26.443  8400  8412 D EGL_emulation: app_time_stats: avg=118.04ms min=69.35ms max=212.51ms count=9
+09-26 21:37:27.605  8400  8412 D EGL_emulation: app_time_stats: avg=97.45ms min=21.17ms max=202.67ms count=11
+09-26 21:37:28.732  8400  8412 D EGL_emulation: app_time_stats: avg=101.88ms min=23.68ms max=210.83ms count=10
+09-26 21:37:29.803  8400  8412 D EGL_emulation: app_time_stats: avg=74.44ms min=15.70ms max=287.43ms count=12
+09-26 21:37:30.803  8400  8412 D EGL_emulation: app_time_stats: avg=166.66ms min=92.57ms max=194.41ms count=6
+09-26 21:37:31.811  8400  8412 D EGL_emulation: app_time_stats: avg=111.93ms min=22.20ms max=223.73ms count=9
+09-26 21:37:32.693  8400  8400 E FrameTracker: force finish cuj, time out: J<IME_INSETS_SHOW_ANIMATION::0@0@com.ggufchat.app>
+09-26 21:37:32.693  8400  8400 W FrameTracker: Missed App frame:UNKNOWN: 10, 38486, 0, CUJ=J<IME_INSETS_SHOW_ANIMATION::0@0@com.ggufchat.app>
+09-26 21:37:32.693  8400  8400 W FrameTracker: Missed SF frame:UNKNOWN: 10, 38486, 0, CUJ=J<IME_INSETS_SHOW_ANIMATION::0@0@com.ggufchat.app>
+09-26 21:37:32.812  8400  8412 D EGL_emulation: app_time_stats: avg=89.03ms min=27.86ms max=198.91ms count=10
+09-26 21:37:33.882  8400  8412 D EGL_emulation: app_time_stats: avg=126.13ms min=20.85ms max=199.68ms count=8
+09-26 21:37:34.928  8400  8412 D EGL_emulation: app_time_stats: avg=90.10ms min=30.95ms max=216.65ms count=11
+09-26 21:37:35.929  8400  8412 D EGL_emulation: app_time_stats: avg=137.15ms min=70.29ms max=247.84ms count=7
+09-26 21:37:36.952  8400  8412 D EGL_emulation: app_time_stats: avg=90.19ms min=32.79ms max=196.34ms count=11
+09-26 21:37:37.098  8400  8404 W om.ggufchat.app: Cleared Reference was only reachable from finalizer (only reported once)
+09-26 21:37:37.169  8400  8404 I om.ggufchat.app: Background concurrent mark compact GC freed 2672KB AllocSpace bytes, 0(0B) LOS objects, 49% free, 2769KB/5538KB, paused 169us,551us total 144.024ms
+09-26 21:37:37.965  8400  8412 D EGL_emulation: app_time_stats: avg=126.50ms min=62.99ms max=229.04ms count=8
+09-26 21:37:39.009  8400  8412 D EGL_emulation: app_time_stats: avg=82.11ms min=21.37ms max=197.24ms count=11
+09-26 21:37:40.014  8400  8412 D EGL_emulation: app_time_stats: avg=87.82ms min=18.86ms max=158.39ms count=10
+09-26 21:37:41.133  8400  8412 D EGL_emulation: app_time_stats: avg=118.29ms min=20.37ms max=208.70ms count=9
+09-26 21:37:42.149  8400  8412 D EGL_emulation: app_time_stats: avg=145.02ms min=58.27ms max=201.92ms count=7
+09-26 21:37:43.208  8400  8412 D EGL_emulation: app_time_stats: avg=151.20ms min=72.29ms max=199.13ms count=7
+09-26 21:37:44.369  8400  8412 D EGL_emulation: app_time_stats: avg=87.15ms min=14.15ms max=165.85ms count=12
+09-26 21:37:45.395  8400  8412 D EGL_emulation: app_time_stats: avg=120.05ms min=21.49ms max=182.25ms count=8
+09-26 21:37:46.592  8400  8412 D EGL_emulation: app_time_stats: avg=103.68ms min=17.06ms max=336.50ms count=10
+09-26 21:37:47.649  8400  8412 D EGL_emulation: app_time_stats: avg=132.11ms min=63.22ms max=201.07ms count=8
+09-26 21:37:48.760  8400  8412 D EGL_emulation: app_time_stats: avg=93.14ms min=20.06ms max=195.40ms count=11
+09-26 21:37:49.767  8400  8412 D EGL_emulation: app_time_stats: avg=125.82ms min=57.25ms max=285.44ms count=8
+09-26 21:37:50.785  8400  8958 I GGUFChatNative: GGUF_NATIVE_COMPLETE tokens=127 reason=eog projector=0
+09-26 21:37:50.787  8400  8958 I GGUFNativeStderr: set_sampler: seq_id = 0, sampler = 0x0
+09-26 21:37:50.787  8400  8958 I GGUFChatNative: GGUF_HOST_WORKER_CPU available=1 thread_cpu_ns=18511962772
+09-26 21:37:50.788  8400  8958 I GGUFChatNative: GGUF_STRICT_VULKAN_RESULT enabled=1 submitted_graphs=128 submitted_math_nodes=75904 blocked=0 host_orchestration=CPU
+09-26 21:37:50.788  8400  8958 I GGUFChatNative: GGUF_GPU_SAMPLING_RESULT backend_selected=128 emitted=127
+09-26 21:37:50.788  8400  8958 I GGUFChatNative: GGUF_VULKAN_DELIVERY token_only_export=1 overlap_submissions=126 first_text_immediate=1
+09-26 21:37:50.788  8400  8958 I GGUFChatNative: GGUF_RESPONSE_LATENCY first_token_ns=216325543 prompt_tokens=213 reused_tokens=212
+09-26 21:37:50.788  8400  8958 I GGUFChatNative: GGUF_GENERATION_STATS tokens=127 decode_ns=31766242149 prefill_ns=191005048 callbacks=127 success=1
+09-26 21:37:50.788  8400  8958 I GGUFStats: GGUF_GENERATION_STATS tokens=127 decode_ns=31766242149 prefill_ns=191005048 tokens_s=3.998 first_token_ns=216325543 prompt_tokens=213 reused_tokens=212 completed=1 version=3
+09-26 21:37:50.788  8400  8958 I System.out: GGUF_REPAIR_GENERATION_OK
+09-26 21:37:50.795  8400  8958 I GGUFReplyNotice: GGUF_NOTICE_STATS progress_updates=6 skipped_screen_off=0
+09-26 21:37:50.799  8400  8958 I GGUFReplyNotice: GGUF_REPLY_NOTICE suppressed=screen_active
+09-26 21:37:50.805  8400  8400 I GGUFThinking: GGUF_THINKING_UPGRADE column_children=1
+09-26 21:37:50.805  8400  8400 I GGUFThinking: GGUF_THINKING_UPGRADE column_children=2
+09-26 21:37:50.806  8400  8400 I GGUFThinking: GGUF_THINKING_UPGRADE column_children=1
+09-26 21:37:50.806  8400  8400 I GGUFThinking: GGUF_THINKING_UPGRADE column_children=2
+09-26 21:37:50.840  8400  8412 D EGL_emulation: app_time_stats: avg=78.44ms min=21.22ms max=185.73ms count=11
+09-26 21:37:50.851  8400  8400 I GGUFReplyNotice: GGUF_REPLY_SERVICE_DESTROYED
+09-26 21:37:51.903  8400  8412 D EGL_emulation: app_time_stats: avg=100.20ms min=12.13ms max=439.25ms count=10
+09-26 21:37:52.931  8400  8412 D EGL_emulation: app_time_stats: avg=257.02ms min=44.64ms max=504.61ms count=4
+09-26 21:37:54.429  8400  8412 D EGL_emulation: app_time_stats: avg=499.32ms min=495.09ms max=503.25ms count=3

@@ -1,0 +1,193 @@
+name: Android text UI, attachments and search on the emulator
+on:
+  push:
+    branches: [arena/01a0d024-5]
+    # Tudo que entra no APK candidato ou no harness: sem esta lista completa um
+    # push que mudasse só o nativo (ou só um teste) não rodava o emulador.
+    paths:
+      # Só o que este fluxo consome: ele mesmo, o script do emulador e o que entra
+      # no APK/harness. Editar outro workflow não muda o aplicativo.
+      - .github/workflows/text-ui.yml
+      - .github/emulator-text-ui.sh
+      - apk-fix/**
+      - tests/**
+      - scripts/**
+      - ci/**
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: text-ui-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  emulator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    # Aquecimento de prefixo no APK candidato e etapas experimentais de medição
+    # (GPU pedida, aquecimento ligado e desligado na mesma rodada). As etapas
+    # extras não mudam nenhum critério de aprovação; elas existem para medir.
+    env:
+      GGUF_EXPERIMENT_WARMUP: '1'
+      GGUF_EXPERIMENT_SUITE: '1'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Use the Android SDK already installed on the hosted runner
+        run: |
+          test -d "$ANDROID_HOME"
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
+          set +o pipefail
+          yes | "$SDKMANAGER" --licenses > /tmp/android-licenses.log
+          set -o pipefail
+      - name: Pinned tools, verified original APK and native toolchain
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p evidence
+          python3 -m venv .venv
+          .venv/bin/pip install -r requirements-test.txt numpy==2.2.6 tqdm==4.67.1 pyyaml==6.0.2
+          bash scripts/fetch_tools.sh
+          python3 scripts/fetch_original.py
+          sdkmanager 'ndk;28.2.13676358' 'platforms;android-35' 'build-tools;35.0.0'
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/28.2.13676358" >> "$GITHUB_ENV"
+          sudo apt-get update -qq
+          sudo apt-get install -y ninja-build glslc libvulkan-dev
+          git clone --depth 1 --branch vulkan-sdk-1.4.357.0 https://github.com/KhronosGroup/Vulkan-Headers .cache/vulkan-sdk
+          test "$(git -C .cache/vulkan-sdk rev-parse HEAD)" = e3b1eec08173d6b825cd3ac88c885a63b621504a
+          git clone --depth 1 --branch vulkan-sdk-1.4.357.0 https://github.com/KhronosGroup/SPIRV-Headers .cache/spirv-headers
+          test "$(git -C .cache/spirv-headers rev-parse HEAD)" = 29981f65241605e08b0ede4cfeb999fe3b723c6a
+          cmake -S .cache/spirv-headers -B .cache/spirv-build -DCMAKE_INSTALL_PREFIX="$PWD/.cache/spirv-install"
+          cmake --install .cache/spirv-build
+          mkdir -p .cache/vulkan-headers
+          cp -r .cache/vulkan-sdk/include/. .cache/vulkan-headers/
+      - uses: actions/cache@v4
+        id: native-cache
+        with:
+          path: |
+            .cache/llama-mobile
+            .cache/mobile/arm64-v8a
+            .cache/mobile/x86_64
+          key: native-v041-ndk28-v2-${{ runner.os }}-${{ hashFiles('apk-fix/native/**', 'apk-fix/*.py', 'ci/mobile-models.sh') }}-${{ github.run_id }}
+          restore-keys: native-v041-ndk28-v2-${{ runner.os }}-
+      - name: Compile the real native stack, helper Java and patched DEX
+        env:
+          APKTOOL_JAR: .cache/tools/package/lib/apktool.jar
+          GGUF_REUSE_TESTED_NATIVE: '0'
+        run: bash ci/log_step.sh mobile-build python3 apk-fix/build_mobile.py
+      - name: Keep compiled native objects for later runs
+        if: steps.native-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            .cache/llama-mobile
+            .cache/mobile/arm64-v8a
+            .cache/mobile/x86_64
+          key: native-v041-ndk28-v2-${{ runner.os }}-${{ hashFiles('apk-fix/native/**', 'apk-fix/*.py', 'ci/mobile-models.sh') }}-${{ github.run_id }}
+      - name: Disposable signature and real payload receipt
+        run: |
+          mkdir -p .cache/arena-text evidence
+          keytool -genkeypair -keystore .cache/arena-text/test.p12 -storetype PKCS12 -storepass android -keypass android -alias test -keyalg RSA -keysize 2048 -validity 2 -dname 'CN=Disposable text UI acceptance, O=NOT FOR RELEASE'
+          SIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          "$SIGNER" sign --ks .cache/arena-text/test.p12 --ks-pass pass:android --key-pass pass:android --out .cache/arena-text/candidate.apk dist/GGUF-Chat-mobile-unsigned.apk
+          "$SIGNER" verify --verbose --print-certs .cache/arena-text/candidate.apk > evidence/physical-text-ui-signature.txt
+          python3 - <<'PY'
+          import hashlib, json, subprocess, zipfile
+          from pathlib import Path
+          def payload(p):
+              with zipfile.ZipFile(p) as z:
+                  return {n: hashlib.sha256(z.read(n)).hexdigest() for n in z.namelist() if not n.startswith('META-INF/')}
+          original, candidate = payload('.cache/gguf/GGUF-Chat.apk'), payload('.cache/arena-text/candidate.apk')
+          changed = sorted(n for n in original if original[n] != candidate.get(n))
+          Path('evidence/physical-text-ui-build.json').write_text(json.dumps(dict(
+              status='UNSIGNED_CANDIDATE_SIGNED_WITH_DISPOSABLE_TEST_KEY_NOT_RELEASE',
+              candidate_sha256=hashlib.sha256(Path('.cache/arena-text/candidate.apk').read_bytes()).hexdigest(),
+              changed_payload_entries=changed,
+              native={n: v for n, v in candidate.items() if n.startswith('lib/')},
+              rebuilt_native_receipt=json.loads(Path('dist/mobile-build.json').read_text()),
+              source_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
+              release=False), indent=2))
+          assert 'classes.dex' in changed, 'o DEX corrigido não chegou ao candidato'
+          assert 'AndroidManifest.xml' in changed, 'o manifesto corrigido não chegou ao candidato'
+          print('changed entries:', len(changed))
+          PY
+      - name: Models, fixtures and disposable emulator graphics stack
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Cada etapa vai por ci/log_step.sh: o log do job não é legível para
+          # todos os clientes, mas as anotações do check run são. Sem isso uma
+          # falha aqui exige adivinhar qual dos passos quebrou.
+          bash ci/log_step.sh models bash ci/mobile-models.sh
+          bash ci/log_step.sh test-input bash scripts/build_test_input.sh
+          bash ci/log_step.sh code-fixture bash scripts/build_code_test.sh
+          bash ci/log_step.sh text-fixture bash scripts/build_text_test.sh
+          sudo chmod a+rw /dev/kvm
+          bash ci/log_step.sh vulkan-stack bash ci/prepare_vulkan.sh
+      - uses: reactivecircus/android-emulator-runner@v2
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GGUF_MOBILE_VULKAN: '1'
+          GGUF_TEST_APK: .cache/arena-text/candidate.apk
+          GGUF_OUTPUT_APK: .cache/arena-text/candidate.apk
+          GGUF_TEST_MODEL: .cache/mobile-models/SmolLM2-135M-Instruct-Q4_K_M.gguf
+          # Par de visão (o mesmo que ci/mobile-models.sh baixa e confere): sem ele,
+          # "visão" seria SKIP declarado na varredura; com ele, imagem de ponta a ponta.
+          GGUF_TEST_VISION: .cache/mobile-models/SmolVLM-256M-Instruct-Q8_0.gguf
+          GGUF_TEST_MMPROJ: .cache/mobile-models/mmproj-SmolVLM-256M-Instruct-Q8_0.gguf
+          GGUF_TEST_STRICT_GPU: '1'
+          GGUF_EVIDENCE: evidence
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_5
+          ram-size: 6144M
+          heap-size: 1024M
+          disk-size: 8192M
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -gpu host -feature Vulkan -noaudio -no-boot-anim -camera-back emulated -camera-front emulated
+          script: bash .github/emulator-text-ui.sh
+      - name: Local gates on the same sources (suite, sintaxe nativa, javac)
+        if: always()
+        run: |
+          # O mesmo estado de fontes que o CI compila: o build deixa o checkout
+          # do llama.cpp com os patches aplicados; os testes comparam com o
+          # upstream, então ele volta ao estado do HEAD antes de rodar.
+          git -C .cache/llama-mobile restore --source=HEAD --worktree . || true
+          # Pelo log_step: o log do job não é alcançável de todo cliente, mas a
+          # anotação do check run é. O texto também vai para a evidência publicada,
+          # então uma reprovação aqui é legível depois.
+          set +e
+          bash ci/log_step.sh local-gates bash -c '
+            .venv/bin/python scripts/check_native_syntax.py &&
+            .venv/bin/python scripts/check_java_compile.py &&
+            (undef=$(.venv/bin/python -m pyflakes scripts tests apk-fix |
+              grep -E "undefined name|undefined local" || true);
+              if [ -n "$undef" ]; then printf "%s\n" "$undef"; exit 1; fi) &&
+            .venv/bin/python -m pytest tests/ -q -p no:cacheprovider'
+          status=$?
+          # O texto vai para a evidência publicada antes de reprovar o passo: uma
+          # rodada vermelha precisa deixar o motivo legível.
+          cp .cache/ci-logs/local-gates.log evidence/local-gates.txt
+          exit $status
+      - name: Publish bounded evidence to this session branch only
+        if: always()
+        run: bash ci/publish_text_evidence.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: text-ui-emulator-evidence
+          path: |
+            evidence/
+            dist/mobile-build.json
+            .cache/ci-logs/
+          retention-days: 14

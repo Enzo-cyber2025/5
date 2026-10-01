@@ -67,6 +67,9 @@ def test_native_fallback_sampler_and_measurement_contract_preserved():
     assert 'llama_sampler_accept(sampler.get(),t);backend_sampled++;' in s
     assert 'else t=llama_sampler_sample(sampler.get(),e->ctx,-1)' in s
     assert 'llama_sampler_init_dist(seed)' in s
-    assert 'cp.n_batch=128; cp.n_ubatch=32;' in s
+    assert 'cp.n_batch=prefill_batch; cp.n_ubatch=prefill_ubatch;' in s
     assert s.index('emitted++;pending+=piece(vocab,t);') < s.index('decode_and_deliver(e->layers>0,emitted==1,has_next')
-    assert 'llama_synchronize(e->ctx);\n        decode_started=Clock::now();' in s
+    # O dreno do prefill continua antes da contagem de decodificação; a checagem
+    # de logits da última posição (CPU) entra entre os dois e por isso a ordem é
+    # conferida por posição, não por texto colado.
+    assert s.index('llama_synchronize(e->ctx);') < s.index('decode_started=Clock::now();decoding=true;')

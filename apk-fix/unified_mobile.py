@@ -42,8 +42,14 @@ def patch_unified_ui(app):
     s=s.replace('O projetor multimodal (mmproj) \\u00e9 detectado e vinculado automaticamente ao modelo de vis\\u00e3o.', 'Selecione juntos um GGUF e seu mmproj compat\\u00edvel para salvar um modelo \\u00fanico com \\ud83d\\udc41. Sem projetor, o modelo fica sem olho.')
     p.write_text(s)
     p=app/'Settings.smali';s=p.read_text();start=s.index('.method public static gpuLayers(');end=s.index('.end method',start)
-    part=s[start:end];assert 'const/4 v2, 0x0' in part
-    s=s[:start]+part.replace('const/4 v2, 0x0','const/16 v2, 0x63')+s[end:];p.write_text(s)
+    part=s[start:end]
+    # GPU primeiro. Qualquer que seja o padrão do APK base (-1 automático ou 0 CPU),
+    # o aplicativo entrega 99 = o modelo inteiro na GPU. Quem decide de verdade é a
+    # política nativa: sem GPU utilizável (ou sem espaço para o modelo inteiro) ela
+    # executa na CPU e diz isso na tela; offload parcial silencioso não existe.
+    assert ('const/4 v2, -0x1' in part) != ('const/4 v2, 0x0' in part), 'padrão de GPU inesperado no APK base'
+    part=re.sub(r'const/4 v2, (?:-0x1|0x0)', 'const/16 v2, 0x63', part, count=1)
+    s=s[:start]+part+s[end:];p.write_text(s)
     # GPU load is strict. An explicit CPU choice still works, but a failed GPU
     # request must not retry silently with CPU and masquerade as GPU success.
     p=app/'EngineManager.smali';s=p.read_text()

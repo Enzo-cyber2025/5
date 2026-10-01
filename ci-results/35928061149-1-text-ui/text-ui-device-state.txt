@@ -1,0 +1,416 @@
+$ adb shell logcat -d -b crash
+--------- beginning of crash
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: FATAL EXCEPTION: main
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: Process: com.ggufchat.texttest, PID: 2330
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: java.lang.RuntimeException: Unable to start activity ComponentInfo{com.ggufchat.texttest/com.ggufchat.texttest.TextActivity}: java.lang.RuntimeException: java.lang.AssertionError: painel de raciocínio ausente no histórico
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.ActivityThread.performLaunchActivity(ActivityThread.java:4048)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.ActivityThread.handleLaunchActivity(ActivityThread.java:4235)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.servertransaction.LaunchActivityItem.execute(LaunchActivityItem.java:112)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.servertransaction.TransactionExecutor.executeNonLifecycleItem(TransactionExecutor.java:174)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.servertransaction.TransactionExecutor.executeTransactionItems(TransactionExecutor.java:109)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.servertransaction.TransactionExecutor.execute(TransactionExecutor.java:81)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2636)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.os.Handler.dispatchMessage(Handler.java:107)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.os.Looper.loopOnce(Looper.java:232)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.os.Looper.loop(Looper.java:317)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.ActivityThread.main(ActivityThread.java:8705)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at java.lang.reflect.Method.invoke(Native Method)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:580)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:886)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: Caused by: java.lang.RuntimeException: java.lang.AssertionError: painel de raciocínio ausente no histórico
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at com.ggufchat.texttest.TextActivity.onCreate(TextActivity.java:168)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.Activity.performCreate(Activity.java:9002)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.Activity.performCreate(Activity.java:8980)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.Instrumentation.callActivityOnCreate(Instrumentation.java:1526)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.ActivityThread.performLaunchActivity(ActivityThread.java:4030)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	... 13 more
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: Caused by: java.lang.AssertionError: painel de raciocínio ausente no histórico
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at com.ggufchat.texttest.TextActivity.require(TextActivity.java:193)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at com.ggufchat.texttest.TextActivity.onCreate(TextActivity.java:127)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	... 17 more
+
+$ adb shell logcat -d -s AndroidRuntime:V GGUFTextTest:V GGUFThinking:V GGUFSearch:V GGUFImages:V
+--------- beginning of main
+09-23 22:36:10.801   940   940 I AndroidRuntime: VM exiting with result code 0, cleanup skipped.
+09-23 22:36:27.446  2330  2330 I GGUFTextTest: TEXT_RENDER_START sdk=35
+09-23 22:36:27.475  2330  2330 I GGUFTextTest: TEXT_RENDER_SOURCE apk=/data/app/~~msuGA7da2Y9aDNsq1oZRng==/com.ggufchat.app-nuKw7hQaJZMyqSrRKxeMzg==/base.apk via=createPackageContext
+09-23 22:36:27.793  2330  2330 I GGUFTextTest: TEXT_RENDER_LOADER dalvik.system.PathClassLoader
+09-23 22:36:27.815  2330  2330 I GGUFThinking: GGUF_THINKING_PANEL attached=1
+09-23 22:36:27.815  2330  2330 I GGUFThinking: GGUF_THINKING_UPGRADE column_children=2
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: TEXT_RENDER_FAIL
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: java.lang.AssertionError: painel de raciocínio ausente no histórico
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at com.ggufchat.texttest.TextActivity.require(TextActivity.java:193)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at com.ggufchat.texttest.TextActivity.onCreate(TextActivity.java:127)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at android.app.Activity.performCreate(Activity.java:9002)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at android.app.Activity.performCreate(Activity.java:8980)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at android.app.Instrumentation.callActivityOnCreate(Instrumentation.java:1526)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at android.app.ActivityThread.performLaunchActivity(ActivityThread.java:4030)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at android.app.ActivityThread.handleLaunchActivity(ActivityThread.java:4235)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at android.app.servertransaction.LaunchActivityItem.execute(LaunchActivityItem.java:112)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at android.app.servertransaction.TransactionExecutor.executeNonLifecycleItem(TransactionExecutor.java:174)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at android.app.servertransaction.TransactionExecutor.executeTransactionItems(TransactionExecutor.java:109)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at android.app.servertransaction.TransactionExecutor.execute(TransactionExecutor.java:81)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2636)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at android.os.Handler.dispatchMessage(Handler.java:107)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at android.os.Looper.loopOnce(Looper.java:232)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at android.os.Looper.loop(Looper.java:317)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at android.app.ActivityThread.main(ActivityThread.java:8705)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at java.lang.reflect.Method.invoke(Native Method)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:580)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:886)
+09-23 22:36:27.816  2330  2330 D AndroidRuntime: Shutting down VM
+--------- beginning of crash
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: FATAL EXCEPTION: main
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: Process: com.ggufchat.texttest, PID: 2330
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: java.lang.RuntimeException: Unable to start activity ComponentInfo{com.ggufchat.texttest/com.ggufchat.texttest.TextActivity}: java.lang.RuntimeException: java.lang.AssertionError: painel de raciocínio ausente no histórico
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.ActivityThread.performLaunchActivity(ActivityThread.java:4048)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.ActivityThread.handleLaunchActivity(ActivityThread.java:4235)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.servertransaction.LaunchActivityItem.execute(LaunchActivityItem.java:112)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.servertransaction.TransactionExecutor.executeNonLifecycleItem(TransactionExecutor.java:174)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.servertransaction.TransactionExecutor.executeTransactionItems(TransactionExecutor.java:109)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.servertransaction.TransactionExecutor.execute(TransactionExecutor.java:81)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2636)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.os.Handler.dispatchMessage(Handler.java:107)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.os.Looper.loopOnce(Looper.java:232)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.os.Looper.loop(Looper.java:317)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.ActivityThread.main(ActivityThread.java:8705)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at java.lang.reflect.Method.invoke(Native Method)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:580)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:886)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: Caused by: java.lang.RuntimeException: java.lang.AssertionError: painel de raciocínio ausente no histórico
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at com.ggufchat.texttest.TextActivity.onCreate(TextActivity.java:168)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.Activity.performCreate(Activity.java:9002)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.Activity.performCreate(Activity.java:8980)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.Instrumentation.callActivityOnCreate(Instrumentation.java:1526)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.ActivityThread.performLaunchActivity(ActivityThread.java:4030)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	... 13 more
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: Caused by: java.lang.AssertionError: painel de raciocínio ausente no histórico
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at com.ggufchat.texttest.TextActivity.require(TextActivity.java:193)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at com.ggufchat.texttest.TextActivity.onCreate(TextActivity.java:127)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	... 17 more
+09-23 22:36:28.870  2377  2377 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-23 22:36:28.881  2377  2377 I AndroidRuntime: Using default boot image
+09-23 22:36:28.881  2377  2377 I AndroidRuntime: Leaving lock profiling enabled
+09-23 22:36:29.418  2377  2377 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-23 22:36:31.343  2377  2377 D AndroidRuntime: Shutting down VM
+09-23 22:36:33.565  2540  2540 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-23 22:36:33.569  2540  2540 I AndroidRuntime: Using default boot image
+09-23 22:36:33.573  2540  2540 I AndroidRuntime: Leaving lock profiling enabled
+09-23 22:36:33.818  2540  2540 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-23 22:36:37.145  2540  2540 D AndroidRuntime: Shutting down VM
+09-23 22:36:39.376  2884  2884 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-23 22:36:39.384  2884  2884 I AndroidRuntime: Using default boot image
+09-23 22:36:39.384  2884  2884 I AndroidRuntime: Leaving lock profiling enabled
+09-23 22:36:39.667  2884  2884 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-23 22:36:41.122  2884  2884 D AndroidRuntime: Shutting down VM
+09-23 22:36:43.392  3151  3151 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-23 22:36:43.404  3151  3151 I AndroidRuntime: Using default boot image
+09-23 22:36:43.404  3151  3151 I AndroidRuntime: Leaving lock profiling enabled
+09-23 22:36:43.595  3151  3151 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-23 22:36:44.835  3151  3151 D AndroidRuntime: Shutting down VM
+09-23 22:36:47.232  3284  3284 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-23 22:36:47.241  3284  3284 I AndroidRuntime: Using default boot image
+09-23 22:36:47.241  3284  3284 I AndroidRuntime: Leaving lock profiling enabled
+09-23 22:36:47.389  3284  3284 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-23 22:36:48.485  3284  3284 D AndroidRuntime: Shutting down VM
+09-23 22:36:50.472  3507  3507 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-23 22:36:50.477  3507  3507 I AndroidRuntime: Using default boot image
+09-23 22:36:50.477  3507  3507 I AndroidRuntime: Leaving lock profiling enabled
+09-23 22:36:50.685  3507  3507 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-23 22:36:51.769  3507  3507 D AndroidRuntime: Shutting down VM
+09-23 22:36:53.819  3643  3643 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-23 22:36:53.825  3643  3643 I AndroidRuntime: Using default boot image
+09-23 22:36:53.825  3643  3643 I AndroidRuntime: Leaving lock profiling enabled
+09-23 22:36:53.948  3643  3643 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-23 22:36:56.592  3643  3643 D AndroidRuntime: Shutting down VM
+09-23 22:36:58.567  3733  3733 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-23 22:36:58.571  3733  3733 I AndroidRuntime: Using default boot image
+09-23 22:36:58.571  3733  3733 I AndroidRuntime: Leaving lock profiling enabled
+09-23 22:36:58.697  3733  3733 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-23 22:36:59.845  3733  3733 D AndroidRuntime: Shutting down VM
+09-23 22:37:01.817  3792  3792 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-23 22:37:01.822  3792  3792 I AndroidRuntime: Using default boot image
+09-23 22:37:01.822  3792  3792 I AndroidRuntime: Leaving lock profiling enabled
+09-23 22:37:01.903  3792  3792 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-23 22:37:02.928  3792  3792 D AndroidRuntime: Shutting down VM
+09-23 22:37:04.919  3880  3880 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-23 22:37:04.922  3880  3880 I AndroidRuntime: Using default boot image
+09-23 22:37:04.922  3880  3880 I AndroidRuntime: Leaving lock profiling enabled
+09-23 22:37:05.059  3880  3880 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-23 22:37:06.284  3880  3880 D AndroidRuntime: Shutting down VM
+09-23 22:37:08.355  3955  3955 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-23 22:37:08.360  3955  3955 I AndroidRuntime: Using default boot image
+09-23 22:37:08.360  3955  3955 I AndroidRuntime: Leaving lock profiling enabled
+09-23 22:37:08.516  3955  3955 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-23 22:37:09.644  3955  3955 D AndroidRuntime: Shutting down VM
+09-23 22:37:11.951  4004  4004 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-23 22:37:11.959  4004  4004 I AndroidRuntime: Using default boot image
+09-23 22:37:11.959  4004  4004 I AndroidRuntime: Leaving lock profiling enabled
+09-23 22:37:12.206  4004  4004 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-23 22:37:13.320  4004  4004 D AndroidRuntime: Shutting down VM
+
+$ adb shell dumpsys package com.ggufchat.texttest | head -60
+Domain verification status:
+
+Key Set Manager:
+  [com.ggufchat.texttest]
+      Signing KeySets: 60
+
+Packages:
+  Package [com.ggufchat.texttest] (a9e926b):
+    appId=10210
+    pkg=Package{b567a1 com.ggufchat.texttest}
+    codePath=/data/app/~~6X6U8HfuNRKQRwDj00K9lQ==/com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==
+    resourcePath=/data/app/~~6X6U8HfuNRKQRwDj00K9lQ==/com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==
+    legacyNativeLibraryDir=/data/app/~~6X6U8HfuNRKQRwDj00K9lQ==/com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==/lib
+    extractNativeLibs=true
+    primaryCpuAbi=null
+    secondaryCpuAbi=null
+    cpuAbiOverride=null
+    versionCode=0 minSdk=28 targetSdk=35
+    minExtensionVersions=[]
+    versionName=null
+    hiddenApiEnforcementPolicy=2
+    usesNonSdkApi=false
+    splits=[base]
+    apkSigningVersion=4
+    flags=[ HAS_CODE ALLOW_CLEAR_USER_DATA ALLOW_BACKUP ]
+    privateFlags=[ PRIVATE_FLAG_ACTIVITIES_RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION ALLOW_AUDIO_PLAYBACK_CAPTURE PRIVATE_FLAG_ALLOW_NATIVE_HEAP_POINTER_TAGGING ]
+    forceQueryable=false
+    queriesPackages=[com.ggufchat.app]
+    scannedAsStoppedSystemApp=false
+    supportsScreens=[small, medium, large, xlarge, resizeable, anyDensity]
+    timeStamp=2026-09-23 22:36:20
+    lastUpdateTime=2026-09-23 22:36:25
+    installerPackageName=null
+    installerPackageUid=-1
+    initiatingPackageName=com.android.shell
+    originatingPackageName=null
+    packageSource=1
+    loadingProgress=100%
+    loadingCompletedTime=2026-09-23 22:36:25
+    appMetadataFilePath=null
+    appMetadataSource=0
+    signatures=PackageSignatures{a565dc6 version:4, signatures:[fd4d4140], past signatures:[]}
+    installPermissionsFixed=false
+    pkgFlags=[ HAS_CODE ALLOW_CLEAR_USER_DATA ALLOW_BACKUP ]
+    privatePkgFlags=[ PRIVATE_FLAG_ACTIVITIES_RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION ALLOW_AUDIO_PLAYBACK_CAPTURE PRIVATE_FLAG_ALLOW_NATIVE_HEAP_POINTER_TAGGING ]
+    apexModuleName=null
+    User 0: ceDataInode=492164 deDataInode=278904 installed=true hidden=false suspended=false distractionFlags=0 stopped=false notLaunched=false enabled=0 instant=false virtual=false quarantined=false
+      installReason=0
+      dataDir=/data/user/0/com.ggufchat.texttest
+      firstInstallTime=2026-09-23 22:36:25
+      uninstallReason=0
+      overlay paths:
+        /product/overlay/EmulationPixel5/EmulationPixel5Overlay.apk
+        /product/overlay/NavigationBarModeGestural/NavigationBarModeGesturalOverlay.apk
+      legacy overlay paths:
+        /product/overlay/EmulationPixel5/EmulationPixel5Overlay.apk
+        /product/overlay/NavigationBarModeGestural/NavigationBarModeGesturalOverlay.apk
+      runtime permissions:
+
+Queries:
+
+$ adb shell dumpsys activity activities | grep -iE "texttest|ResumedActivity"
+topResumedActivity=ActivityRecord{12aad2f u0 com.google.android.apps.nexuslauncher/.NexusLauncherActivity t7}
+  ResumedActivity: ActivityRecord{12aad2f u0 com.google.android.apps.nexuslauncher/.NexusLauncherActivity t7}
+
+$ adb shell logcat -d | grep -iE "texttest|GGUFTextTest|AndroidRuntime|FATAL" | tail -200
+09-23 22:36:10.801   940   940 I AndroidRuntime: VM exiting with result code 0, cleanup skipped.
+09-23 22:36:25.852   556   611 V BackupManagerService: [UserID:0] restoreAtInstall pkg=com.ggufchat.texttest token=2 restoreSet=0
+09-23 22:36:26.204   556   611 I AppsFilter: interaction: PackageSetting{deff288 com.android.microdroid.empty_payload/10193} -> PackageSetting{7e6e945 com.ggufchat.texttest/10210} BLOCKED
+09-23 22:36:26.490   556  1002 I ActivityManager: Force stopping com.ggufchat.texttest appid=10210 user=0: from pid 2311
+09-23 22:36:26.506   556  1002 I AppsFilter: interaction: PackageSetting{deff288 com.android.microdroid.empty_payload/10193} -> PackageSetting{7e6e945 com.ggufchat.texttest/10210} BLOCKED
+09-23 22:36:26.851   556   572 V SplashScreenExceptionList: SplashScreen checking exception for package com.ggufchat.texttest (target sdk:35) -> false
+09-23 22:36:26.870   556   572 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=com.ggufchat.texttest/.TextActivity} with LAUNCH_MULTIPLE from uid 2000 (BAL_ALLOW_PERMISSION) result code=0
+09-23 22:36:26.872   914   961 V WindowManagerShell: Transition requested (#8): android.os.BinderProxy@4ff9f75 TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=8 displayId=0 isRunning=true baseIntent=Intent { flg=0x10000000 cmp=com.ggufchat.texttest/.TextActivity } baseActivity=ComponentInfo{com.ggufchat.texttest/com.ggufchat.texttest.TextActivity} topActivity=ComponentInfo{com.ggufchat.texttest/com.ggufchat.texttest.TextActivity} origActivity=null realActivity=ComponentInfo{com.ggufchat.texttest/com.ggufchat.texttest.TextActivity} numActivities=1 lastActiveTime=48555 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{android.window.IWindowContainerToken$Stub$Proxy@ceabb0a} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 136 - 0, 0) topActivityInfo=ActivityInfo{8aadf7b com.ggufchat.texttest.TextActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isSleeping=false locusId=null displayAreaFeatureId=1 isTopActivityTransparent=false appCompatTaskInfo=AppCompatTaskInfo { topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= falseisLetterboxEducationEnabled= true isLetterboxDoubleTapEnabled= false topActivityEligibleForUserAspectRatioButton= false topActivityBoundsLetterboxed= false isFromLetterboxDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=1080 topActivityLetterboxHeight=2340 isUserFullscreenOverrideEnabled=false isSystemFullscreenOverrideEnabled=false cameraCompatTaskInfo=CameraCompatTaskInfo { cameraCompatControlState=hidden freeformCameraCompatMode=inactive}}}, pipTask = null, remoteTransition = null, displayChange = null, flags = 0, debugId = 8 }
+09-23 22:36:26.922   556  1884 D CoreBackPreview: Window{3e6f563 u0 Splash Screen com.ggufchat.texttest}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@b331baf, mPriority=0, mIsAnimationCallback=false}
+09-23 22:36:26.959   556   588 I ActivityManager: Start proc 2330:com.ggufchat.texttest/u0a210 for next-top-activity {com.ggufchat.texttest/com.ggufchat.texttest.TextActivity}
+09-23 22:36:27.164  2330  2330 I ufchat.texttest: Using CollectorTypeCMC GC.
+09-23 22:36:27.164  2330  2330 W ufchat.texttest: Unexpected CPU variant for x86: x86_64.
+09-23 22:36:27.164  2330  2330 W ufchat.texttest: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, goldmont-without-sha-xsaves, tremont, kabylake, default
+09-23 22:36:27.174  2330  2330 E ufchat.texttest: Not starting debugger since process cannot load the jdwp agent.
+09-23 22:36:27.214  2330  2330 W ziparchive: Unable to open '/data/app/~~6X6U8HfuNRKQRwDj00K9lQ==/com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==/base.dm': No such file or directory
+09-23 22:36:27.214  2330  2330 W ziparchive: Unable to open '/data/app/~~6X6U8HfuNRKQRwDj00K9lQ==/com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==/base.dm': No such file or directory
+09-23 22:36:27.216  2330  2330 D nativeloader: Configuring clns-7 for other apk /data/app/~~6X6U8HfuNRKQRwDj00K9lQ==/com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==/base.apk. target_sdk_version=35, uses_libraries=, library_path=/data/app/~~6X6U8HfuNRKQRwDj00K9lQ==/com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==/lib/x86_64, permitted_path=/data:/mnt/expand:/data/user/0/com.ggufchat.texttest
+09-23 22:36:27.372   556   578 I AppsFilter: interaction: PackageSetting{6c2a3ba com.android.microdroid.empty_payload/10193} -> PackageSetting{a9e926b com.ggufchat.texttest/10210} BLOCKED
+09-23 22:36:27.446  2330  2330 I GGUFTextTest: TEXT_RENDER_START sdk=35
+09-23 22:36:27.475  2330  2330 I GGUFTextTest: TEXT_RENDER_SOURCE apk=/data/app/~~msuGA7da2Y9aDNsq1oZRng==/com.ggufchat.app-nuKw7hQaJZMyqSrRKxeMzg==/base.apk via=createPackageContext
+09-23 22:36:27.460  2330  2330 W ufchat.texttest: type=1400 audit(0.0:39): avc:  denied  { read } for  name="u:object_r:incremental_prop:s0" dev="tmpfs" ino=218 scontext=u:r:untrusted_app:s0:c210,c256,c512,c768 tcontext=u:object_r:incremental_prop:s0 tclass=file permissive=0 app=com.ggufchat.texttest
+09-23 22:36:27.472  2330  2330 W ufchat.texttest: type=1400 audit(0.0:40): avc:  denied  { read } for  name="filesystems" dev="proc" ino=4026532076 scontext=u:r:untrusted_app:s0:c210,c256,c512,c768 tcontext=u:object_r:proc_filesystems:s0 tclass=file permissive=0 app=com.ggufchat.texttest
+09-23 22:36:27.522   556   577 E AppHibernationService: Package com.ggufchat.texttest is not installed for user 0
+09-23 22:36:27.525   556   577 E AppHibernationService: Package com.ggufchat.texttest is not installed for any user
+09-23 22:36:27.530   556   577 E AppHibernationService: Package com.ggufchat.texttest is not installed for user 0
+09-23 22:36:27.530   556   577 E AppHibernationService: Package com.ggufchat.texttest is not installed for any user
+09-23 22:36:27.570  1190  1190 I TopTaskTracker: onTaskMovedToFront: (moved taskInfo to front) taskId=8, baseIntent=Intent { flg=0x10000000 cmp=com.ggufchat.texttest/.TextActivity }
+09-23 22:36:27.612   556   575 V WindowManager: Sent Transition (#8) createdAt=09-23 22:36:26.823 via request=TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=8 displayId=0 isRunning=true baseIntent=Intent { flg=0x10000000 cmp=com.ggufchat.texttest/.TextActivity } baseActivity=ComponentInfo{com.ggufchat.texttest/com.ggufchat.texttest.TextActivity} topActivity=ComponentInfo{com.ggufchat.texttest/com.ggufchat.texttest.TextActivity} origActivity=null realActivity=ComponentInfo{com.ggufchat.texttest/com.ggufchat.texttest.TextActivity} numActivities=1 lastActiveTime=48555 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{RemoteToken{cd13fd0 Task{5d12515 #8 type=standard A=10210:com.ggufchat.texttest}}} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 136 - 0, 0) topActivityInfo=ActivityInfo{169bbc9 com.ggufchat.texttest.TextActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isSleeping=false locusId=null displayAreaFeatureId=1 isTopActivityTransparent=false appCompatTaskInfo=AppCompatTaskInfo { topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= falseisLetterboxEducationEnabled= true isLetterboxDoubleTapEnabled= false topActivityEligibleForUserAspectRatioButton= false topActivityBoundsLetterboxed= false isFromLetterboxDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=1080 topActivityLetterboxHeight=2340 isUserFullscreenOverrideEnabled=false isSystemFullscreenOverrideEnabled=false cameraCompatTaskInfo=CameraCompatTaskInfo { cameraCompatControlState=hidden freeformCameraCompatMode=inactive}}}, pipTask = null, remoteTransition = null, displayChange = null, flags = 0, debugId = 8 }
+09-23 22:36:27.612   556   575 V WindowManager:         {WCT{RemoteToken{cd13fd0 Task{5d12515 #8 type=standard A=10210:com.ggufchat.texttest}}} m=OPEN f=NONE leash=Surface(name=Task=8)/@0xbeceaf6 sb=Rect(0, 0 - 1080, 2340) eb=Rect(0, 0 - 1080, 2340) d=0 taskParent=-1},
+09-23 22:36:27.793  2330  2330 I GGUFTextTest: TEXT_RENDER_LOADER dalvik.system.PathClassLoader
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: TEXT_RENDER_FAIL
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: java.lang.AssertionError: painel de raciocínio ausente no histórico
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at com.ggufchat.texttest.TextActivity.require(TextActivity.java:193)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at com.ggufchat.texttest.TextActivity.onCreate(TextActivity.java:127)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at android.app.Activity.performCreate(Activity.java:9002)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at android.app.Activity.performCreate(Activity.java:8980)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at android.app.Instrumentation.callActivityOnCreate(Instrumentation.java:1526)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at android.app.ActivityThread.performLaunchActivity(ActivityThread.java:4030)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at android.app.ActivityThread.handleLaunchActivity(ActivityThread.java:4235)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at android.app.servertransaction.LaunchActivityItem.execute(LaunchActivityItem.java:112)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at android.app.servertransaction.TransactionExecutor.executeNonLifecycleItem(TransactionExecutor.java:174)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at android.app.servertransaction.TransactionExecutor.executeTransactionItems(TransactionExecutor.java:109)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at android.app.servertransaction.TransactionExecutor.execute(TransactionExecutor.java:81)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2636)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at android.os.Handler.dispatchMessage(Handler.java:107)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at android.os.Looper.loopOnce(Looper.java:232)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at android.os.Looper.loop(Looper.java:317)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at android.app.ActivityThread.main(ActivityThread.java:8705)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at java.lang.reflect.Method.invoke(Native Method)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:580)
+09-23 22:36:27.815  2330  2330 E GGUFTextTest: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:886)
+09-23 22:36:27.816  2330  2330 E TransactionExecutor: tId:292074283     LaunchActivityItem{activityToken=android.os.BinderProxy@695269c,intent=Intent { flg=0x10000000 cmp=com.ggufchat.texttest/.TextActivity },ident=120753868,info=ActivityInfo{5b2178e com.ggufchat.texttest.TextActivity},curConfig={1.0 310mcc260mnc [en_US] ldltr sw393dp w393dp h851dp 440dpi nrml long port finger qwerty/v/v -nav/h winConfig={ mBounds=Rect(0, 0 - 1080, 2340) mAppBounds=Rect(0, 0 - 1080, 2340) mMaxBounds=Rect(0, 0 - 1080, 2340) mDisplayRotation=ROTATION_0 mWindowingMode=fullscreen mActivityType=undefined mAlwaysOnTop=undefined mRotation=ROTATION_0} as.3 s.47 fontWeightAdjustment=0},overrideConfig={1.0 310mcc260mnc [en_US] ldltr sw393dp w393dp h851dp 440dpi nrml long port finger qwerty/v/v -nav/h winConfig={ mBounds=Rect(0, 0 - 1080, 2340) mAppBounds=Rect(0, 0 - 1080, 2340) mMaxBounds=Rect(0, 0 - 1080, 2340) mDisplayRotation=ROTATION_0 mWindowingMode=fullscreen mActivityType=standard mAlwaysOnTop=undefined mRotation=ROTATION_0} as.3 s.3 fontWeightAdjustment=0},deviceId=0,referrer=com.android.shell,procState=19,state=null,persistentState=null,pendingResults=null,pendingNewIntents=null,sceneTransitionInfo=null,profilerInfo=null,assistToken=android.os.BinderProxy@c6c5d53,shareableActivityToken=android.os.BinderProxy@fc53690,activityWindowInfo=ActivityWindowInfo{isEmbedded=false, taskBounds=Rect(0, 0 - 1080, 2340), taskFragmentBounds=Rect(0, 0 - 1080, 2340)}}
+09-23 22:36:27.816  2330  2330 E TransactionExecutor: tId:292074283     Target activity: com.ggufchat.texttest.TextActivity
+09-23 22:36:27.816  2330  2330 D AndroidRuntime: Shutting down VM
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: FATAL EXCEPTION: main
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: Process: com.ggufchat.texttest, PID: 2330
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: java.lang.RuntimeException: Unable to start activity ComponentInfo{com.ggufchat.texttest/com.ggufchat.texttest.TextActivity}: java.lang.RuntimeException: java.lang.AssertionError: painel de raciocínio ausente no histórico
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.ActivityThread.performLaunchActivity(ActivityThread.java:4048)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.ActivityThread.handleLaunchActivity(ActivityThread.java:4235)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.servertransaction.LaunchActivityItem.execute(LaunchActivityItem.java:112)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.servertransaction.TransactionExecutor.executeNonLifecycleItem(TransactionExecutor.java:174)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.servertransaction.TransactionExecutor.executeTransactionItems(TransactionExecutor.java:109)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.servertransaction.TransactionExecutor.execute(TransactionExecutor.java:81)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2636)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.os.Handler.dispatchMessage(Handler.java:107)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.os.Looper.loopOnce(Looper.java:232)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.os.Looper.loop(Looper.java:317)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.ActivityThread.main(ActivityThread.java:8705)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at java.lang.reflect.Method.invoke(Native Method)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:580)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:886)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: Caused by: java.lang.RuntimeException: java.lang.AssertionError: painel de raciocínio ausente no histórico
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at com.ggufchat.texttest.TextActivity.onCreate(TextActivity.java:168)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.Activity.performCreate(Activity.java:9002)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.Activity.performCreate(Activity.java:8980)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.Instrumentation.callActivityOnCreate(Instrumentation.java:1526)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at android.app.ActivityThread.performLaunchActivity(ActivityThread.java:4030)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	... 13 more
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: Caused by: java.lang.AssertionError: painel de raciocínio ausente no histórico
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at com.ggufchat.texttest.TextActivity.require(TextActivity.java:193)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	at com.ggufchat.texttest.TextActivity.onCreate(TextActivity.java:127)
+09-23 22:36:27.818  2330  2330 E AndroidRuntime: 	... 17 more
+09-23 22:36:27.850   556  1039 E ActivityManager: App crashed on incremental package com.ggufchat.texttest which is 100% loaded.
+09-23 22:36:27.854   556  1039 W ActivityTaskManager:   Force finishing activity com.ggufchat.texttest/.TextActivity
+09-23 22:36:27.991   556  1201 I ActivityManager: Process com.ggufchat.texttest (pid 2330) has died: fg  TOP 
+09-23 22:36:28.356   556   578 W ActivityTaskManager: Activity top resumed state loss timeout for ActivityRecord{7328ecc u0 com.ggufchat.texttest/.TextActivity t8 f} isExiting}
+09-23 22:36:28.870  2377  2377 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-23 22:36:28.881  2377  2377 I AndroidRuntime: Using default boot image
+09-23 22:36:28.881  2377  2377 I AndroidRuntime: Leaving lock profiling enabled
+09-23 22:36:28.885   556   575 V WindowManager:         {WCT{RemoteToken{cd13fd0 Task{5d12515 #8 type=standard A=10210:com.ggufchat.texttest}}} m=CLOSE f=NONE leash=Surface(name=Task=8)/@0xbeceaf6 sb=Rect(0, 0 - 1080, 2340) eb=Rect(0, 0 - 1080, 2340) d=0 taskParent=-1},
+09-23 22:36:28.918   556  1002 D CoreBackPreview: Window{3e6f563 u0 Splash Screen com.ggufchat.texttest EXITING}: Setting back callback null
+09-23 22:36:28.930   556  2290 W InputManager-JNI: Input channel object '3e6f563 Splash Screen com.ggufchat.texttest (client)' was disposed without first being removed with the input manager!
+09-23 22:36:29.418  2377  2377 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-23 22:36:29.559  1454  1454 I AiAiEcho: AppFetcherImplV2 updateApps package:[com.ggufchat.texttest], userId:[0], reason:[package is added.].
+09-23 22:36:30.246   556   888 I SdkSandboxManager: No SDKs used. Skipping SDK data reconcilation for CallingInfo{mUid=10210, mPackageName='com.ggufchat.texttest, mAppProcessToken='null'}
+09-23 22:36:30.975   556   861 I AppWidgetServiceImpl: Updating package stopped masked state for uid 10210 package com.ggufchat.texttest isStopped false
+09-23 22:36:30.975   556   861 I AppWidgetServiceImpl: Updating package stopped masked state for uid 10210 package com.ggufchat.texttest isStopped false
+09-23 22:36:31.141   556   876 D ShortcutService: adding package: com.ggufchat.texttest userId0
+09-23 22:36:31.141   556   876 D ShortcutService: handlePackageAdded: com.ggufchat.texttest user=0
+09-23 22:36:31.141   556   876 D ShortcutService: rescanPackageIfNeeded 0@com.ggufchat.texttest, forceRescan=true , isNewApp=true
+09-23 22:36:31.141   556   876 D ShortcutService: Package com.ggufchat.texttest has 0 manifest shortcut(s), and 0 share target(s)
+09-23 22:36:31.267   556   556 I AppsFilter: interaction: PackageSetting{6c2a3ba com.android.microdroid.empty_payload/10193} -> PackageSetting{a9e926b com.ggufchat.texttest/10210} BLOCKED
+09-23 22:36:31.343  2377  2377 D AndroidRuntime: Shutting down VM
+09-23 22:36:31.916  1089  1089 D CarrierSvcBindHelper: onPackageAdded: com.ggufchat.texttest
+09-23 22:36:31.999  1089  1285 D ImsResolver: maybeAddedImsService, packageName: com.ggufchat.texttest
+09-23 22:36:32.005  1089  1089 D CarrierSvcBindHelper: onHandleForceStop: [com.ggufchat.texttest]
+09-23 22:36:32.366  1454  1454 I AiAiEcho: AppFetcherImpl onPackageChanged com.ggufchat.texttest.
+09-23 22:36:32.371  1454  2263 I AiAiEcho: AppIndexer Package:[com.ggufchat.texttest] UserProfile:[0] Enabled:[true].
+09-23 22:36:32.371  1454  2263 I AiAiEcho: AppFetcherImplV2 updateApps package:[com.ggufchat.texttest], userId:[0], reason:[package is updated.].
+09-23 22:36:33.424   917   917 I SafetyLabelChangedBroadcastReceiver: received broadcast packageName: com.ggufchat.texttest, current user: UserHandle{0}, packageChangeEvent: NEW_INSTALL, intent user: UserHandle{0}
+09-23 22:36:33.565  2540  2540 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-23 22:36:33.569  2540  2540 I AndroidRuntime: Using default boot image
+09-23 22:36:33.573  2540  2540 I AndroidRuntime: Leaving lock profiling enabled
+09-23 22:36:33.631  1190  1221 D PackageUpdatedTask: Package updated: mOp=ADD packages=[com.ggufchat.texttest]
+09-23 22:36:33.701  1190  1221 D BaseIconCache: Default icon returned for com.ggufchat.texttest
+09-23 22:36:33.818  2540  2540 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-23 22:36:33.838   556   876 D ShortcutService: changing package: com.ggufchat.texttest userId0
+09-23 22:36:33.954   556   876 D ShortcutService: handlePackageChanged: com.ggufchat.texttest user=0
+09-23 22:36:33.954   556   876 D ShortcutService: rescanPackageIfNeeded 0@com.ggufchat.texttest, forceRescan=true , isNewApp=true
+09-23 22:36:33.954   556   876 D ShortcutService: Package com.ggufchat.texttest has 0 manifest shortcut(s), and 0 share target(s)
+09-23 22:36:35.533  1190  1221 D PackageUpdatedTask: Package updated: mOp=UPDATE packages=[com.ggufchat.texttest]
+09-23 22:36:35.553  1190  1221 W AllAppsList: updatePromiseInstallInfo: no Activities matched updated package, removing all apps from package=com.ggufchat.texttest
+09-23 22:36:35.595  1089  1089 D CarrierSvcBindHelper: onPackageModified: com.ggufchat.texttest
+09-23 22:36:35.726  1089  1285 D ImsResolver: maybeAddedImsService, packageName: com.ggufchat.texttest
+09-23 22:36:35.759  1190  1221 D SessionCommitReceiver: Removing PromiseIcon for package: com.ggufchat.texttest, install reason: 0, alreadyAddedPromiseIcon: false
+09-23 22:36:37.145  2540  2540 D AndroidRuntime: Shutting down VM
+09-23 22:36:38.084   914   925 W ndroid.systemui: ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~6X6U8HfuNRKQRwDj00K9lQ==/com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==/base.apk' with 2 weak references
+09-23 22:36:39.376  2884  2884 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-23 22:36:39.384  2884  2884 I AndroidRuntime: Using default boot image
+09-23 22:36:39.384  2884  2884 I AndroidRuntime: Leaving lock profiling enabled
+09-23 22:36:39.667  2884  2884 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-23 22:36:40.894  1231  2946 I FontLog : Package com.ggufchat.texttest has no metadata [CONTEXT service_id=132 ]
+09-23 22:36:41.122  2884  2884 D AndroidRuntime: Shutting down VM
+09-23 22:36:41.331  1590  2565 I Blockstore: [DataStoreImpl] Clearing Blockstore Data for package com.ggufchat.texttest [CONTEXT service_id=258 ]
+09-23 22:36:43.392  3151  3151 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-23 22:36:43.404  3151  3151 I AndroidRuntime: Using default boot image
+09-23 22:36:43.404  3151  3151 I AndroidRuntime: Leaving lock profiling enabled
+09-23 22:36:43.595  3151  3151 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-23 22:36:44.835  3151  3151 D AndroidRuntime: Shutting down VM
+09-23 22:36:47.232  3284  3284 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-23 22:36:47.241  3284  3284 I AndroidRuntime: Using default boot image
+09-23 22:36:47.241  3284  3284 I AndroidRuntime: Leaving lock profiling enabled
+09-23 22:36:47.389  3284  3284 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-23 22:36:48.485  3284  3284 D AndroidRuntime: Shutting down VM
+09-23 22:36:50.472  3507  3507 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-23 22:36:50.477  3507  3507 I AndroidRuntime: Using default boot image
+09-23 22:36:50.477  3507  3507 I AndroidRuntime: Leaving lock profiling enabled
+09-23 22:36:50.685  3507  3507 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-23 22:36:51.769  3507  3507 D AndroidRuntime: Shutting down VM
+09-23 22:36:53.819  3643  3643 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-23 22:36:53.825  3643  3643 I AndroidRuntime: Using default boot image
+09-23 22:36:53.825  3643  3643 I AndroidRuntime: Leaving lock profiling enabled
+09-23 22:36:53.948  3643  3643 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-23 22:36:56.592  3643  3643 D AndroidRuntime: Shutting down VM
+09-23 22:36:58.567  3733  3733 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-23 22:36:58.571  3733  3733 I AndroidRuntime: Using default boot image
+09-23 22:36:58.571  3733  3733 I AndroidRuntime: Leaving lock profiling enabled
+09-23 22:36:58.697  3733  3733 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-23 22:36:59.845  3733  3733 D AndroidRuntime: Shutting down VM
+09-23 22:37:01.817  3792  3792 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-23 22:37:01.822  3792  3792 I AndroidRuntime: Using default boot image
+09-23 22:37:01.822  3792  3792 I AndroidRuntime: Leaving lock profiling enabled
+09-23 22:37:01.903  3792  3792 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-23 22:37:02.928  3792  3792 D AndroidRuntime: Shutting down VM
+09-23 22:37:04.919  3880  3880 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-23 22:37:04.922  3880  3880 I AndroidRuntime: Using default boot image
+09-23 22:37:04.922  3880  3880 I AndroidRuntime: Leaving lock profiling enabled
+09-23 22:37:05.059  3880  3880 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-23 22:37:06.284  3880  3880 D AndroidRuntime: Shutting down VM
+09-23 22:37:08.355  3955  3955 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-23 22:37:08.360  3955  3955 I AndroidRuntime: Using default boot image
+09-23 22:37:08.360  3955  3955 I AndroidRuntime: Leaving lock profiling enabled
+09-23 22:37:08.516  3955  3955 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-23 22:37:09.644  3955  3955 D AndroidRuntime: Shutting down VM
+09-23 22:37:11.951  4004  4004 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-23 22:37:11.959  4004  4004 I AndroidRuntime: Using default boot image
+09-23 22:37:11.959  4004  4004 I AndroidRuntime: Leaving lock profiling enabled
+09-23 22:37:12.206  4004  4004 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-23 22:37:13.320  4004  4004 D AndroidRuntime: Shutting down VM
+09-23 22:37:15.627  4072  4074 I artd    : Dex parent of /data/app/~~6X6U8HfuNRKQRwDj00K9lQ==/com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==/base.apk is not writable: Permission denied
+09-23 22:37:15.628  4072  4074 I artd    : GetBestInfo checking odex in dalvik-cache (/data/dalvik-cache/x86_64/data@app@~~6X6U8HfuNRKQRwDj00K9lQ==@com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==@base.apk@classes.dex)
+09-23 22:37:15.628  4072  4074 I artd    : Loading /data/dalvik-cache/x86_64/data@app@~~6X6U8HfuNRKQRwDj00K9lQ==@com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==@base.apk@classes.dex with executable: 0
+09-23 22:37:15.628  4072  4074 I artd    : OatFileAssistant test for existing oat file /data/dalvik-cache/x86_64/data@app@~~6X6U8HfuNRKQRwDj00K9lQ==@com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==@base.apk@classes.dex: File /data/dalvik-cache/x86_64/data@app@~~6X6U8HfuNRKQRwDj00K9lQ==@com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==@base.apk@classes.vdex does not exist.
+09-23 22:37:15.628  4072  4074 I artd    : GetBestInfo checking odex next to the dex file (/data/app/~~6X6U8HfuNRKQRwDj00K9lQ==/com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==/oat/x86_64/base.odex)
+09-23 22:37:15.628  4072  4074 I artd    : Loading /data/app/~~6X6U8HfuNRKQRwDj00K9lQ==/com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==/oat/x86_64/base.odex with executable: 0
+09-23 22:37:15.628  4072  4074 I artd    : OatFileAssistant test for existing oat file /data/app/~~6X6U8HfuNRKQRwDj00K9lQ==/com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==/oat/x86_64/base.odex: File /data/app/~~6X6U8HfuNRKQRwDj00K9lQ==/com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==/oat/x86_64/base.vdex does not exist.
+09-23 22:37:15.628  4072  4074 I artd    : GetBestInfo checking vdex in dalvik-cache (/data/dalvik-cache/x86_64/data@app@~~6X6U8HfuNRKQRwDj00K9lQ==@com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==@base.apk@classes.vdex)
+09-23 22:37:15.628  4072  4074 I artd    : unable to open vdex file /data/dalvik-cache/x86_64/data@app@~~6X6U8HfuNRKQRwDj00K9lQ==@com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==@base.apk@classes.vdex: File /data/dalvik-cache/x86_64/data@app@~~6X6U8HfuNRKQRwDj00K9lQ==@com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==@base.apk@classes.vdex does not exist.
+09-23 22:37:15.628  4072  4074 I artd    : OatFileAssistant test for existing oat file /data/dalvik-cache/x86_64/data@app@~~6X6U8HfuNRKQRwDj00K9lQ==@com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==@base.apk@classes.vdex: File /data/dalvik-cache/x86_64/data@app@~~6X6U8HfuNRKQRwDj00K9lQ==@com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==@base.apk@classes.vdex does not exist.
+09-23 22:37:15.628  4072  4074 I artd    : GetBestInfo checking vdex next to the dex file (/data/app/~~6X6U8HfuNRKQRwDj00K9lQ==/com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==/oat/x86_64/base.vdex)
+09-23 22:37:15.628  4072  4074 I artd    : unable to open vdex file /data/app/~~6X6U8HfuNRKQRwDj00K9lQ==/com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==/oat/x86_64/base.vdex: File /data/app/~~6X6U8HfuNRKQRwDj00K9lQ==/com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==/oat/x86_64/base.vdex does not exist.
+09-23 22:37:15.628  4072  4074 I artd    : OatFileAssistant test for existing oat file /data/app/~~6X6U8HfuNRKQRwDj00K9lQ==/com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==/oat/x86_64/base.vdex: File /data/app/~~6X6U8HfuNRKQRwDj00K9lQ==/com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==/oat/x86_64/base.vdex does not exist.
+09-23 22:37:15.628  4072  4074 I artd    : GetBestInfo checking dm (/data/app/~~6X6U8HfuNRKQRwDj00K9lQ==/com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==/base.dm)
+09-23 22:37:15.628  4072  4074 W ziparchive: Unable to open '/data/app/~~6X6U8HfuNRKQRwDj00K9lQ==/com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==/base.dm': No such file or directory
+09-23 22:37:15.628  4072  4074 I artd    : OatFileAssistant test for existing oat file /data/app/~~6X6U8HfuNRKQRwDj00K9lQ==/com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==/base.dm: I/O error
+09-23 22:37:15.628  4072  4074 I artd    : GetBestInfo checking dm (/data/app/~~6X6U8HfuNRKQRwDj00K9lQ==/com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==/base.dm)
+09-23 22:37:15.628  4072  4074 W ziparchive: Unable to open '/data/app/~~6X6U8HfuNRKQRwDj00K9lQ==/com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==/base.dm': No such file or directory
+09-23 22:37:15.628  4072  4074 I artd    : OatFileAssistant test for existing oat file /data/app/~~6X6U8HfuNRKQRwDj00K9lQ==/com.ggufchat.texttest-lXDq4pPFR5RsCfYjITm0wg==/base.dm: I/O error

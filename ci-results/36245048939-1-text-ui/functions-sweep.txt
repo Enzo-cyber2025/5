@@ -1,0 +1,21 @@
+varredura funcional: 20 funções, 15 PASS, 1 SKIP, 4 FAIL
+PASS estado_vazio: primeira execução: a tela vazia orienta ("Toque em + Nova conversa para começar")
+PASS abas: abas navegam e mostram conteúdo próprio: Importar, AI Modelos, Ajustes, Chat
+PASS importar_botoes: entrada única "Importar GGUF" que abre o seletor de verdade e a tela explica os dois caminhos (par linguagem+projetor ou GGUF completo); Importar GGUF abriu o seletor de arquivos do sistema e o aplicativo voltou no mesmo processo
+PASS ajustes: os oito ajustes estão na tela; valor não numérico não corrompe o ajuste: cai no padrão 4096; valor válido salvo e persistido
+PASS modelo_listado: modelo importado listado com o nome real (SmolLM2-135M-Instruct-Q4_K_M)
+FAIL descarregar_e_recarregar: AssertionError: logo depois de gerar, a tela de Ajustes diz que não há modelo carregado ("Backend atual: None")
+PASS nova_conversa: criada com escolha de modelo; resposta persistida (33 caracteres, 9 tokens nativos)
+FAIL parar_geracao: AssertionError: Timeout: botão Parar durante a geração
+PASS raciocinio: raciocínio liga e persiste (chat.thinking=true), prompt de sistema aplicado, painel próprio anexado, e o bloco não vaza para o texto visível; desliga limpo
+PASS busca_fontes: botão liga ("Busca ON") e a busca devolve DuckDuckGo com 5 fonte(s) em 2118 ms (teto 12000 ms), fontes persistidas na mensagem
+PASS gaveta_ferramentas: abre com Sistema, Thinking, Busca, os quatro anexos (Foto, Vídeo, Áudio, Arquivo) e o botão "Ferramentas" ao fim da linha (alcançado rolando)
+PASS ferramentas_dialogo: botão "Ferramentas" ao fim da linha abre o diálogo com Thinking, Busca e "Fechar"
+FAIL seletores_de_anexo: AssertionError: botão Arquivo não encontrado na tela; visíveis: ['‹', 'GGUF regression 1a0ddfc15761863bc', 'SmolLM2-135M-Instruct-Q4_K_M', 'The capital of Japan is Tokyo.', 'Resposta', '16.8 tokens/s · 7 tokens', 'Velocidade da resposta', 'O que foi pesquisado · DuckDuckGo · 5 fonte(s) · 2118 ms', 'O que foi pesquisado', 'Consulta: Reply in English: What is the capital of Japan?', 'Consulta pesquisada', '[1] Capital of Japan - Wikipedia', 'Fonte 1', 'The capital of Japan is Tokyo. [1][2][3] Throughout history, the national capital of Japan has been in locations other than Tokyo. The oldest capital is Nara.']
+PASS anexo_texto: texto anexado e enviado: conteúdo preparado (files=1, text_chars=54) e anexo preservado na mensagem
+SKIP visao: sem par visão/mmproj neste runner: seleção, pré-processamento e leitura de imagem não podem ser provados — e não serão aprovados por omissão
+FAIL notificacao: AssertionError: Timeout: geração em andamento
+PASS historico: conversa "GGUF regression 1a0ddff5cc5b257cc" reabriu com o conteúdo salvo depois de fechar o aplicativo
+PASS excluir_conversa: conversa "GGUF regression 1a0ddff5cc5b257cc" excluída pela interface e sumiu do armazenamento
+PASS excluir_modelo: excluído pela linha da importação, diálogo confirmado e arquivo fora do armazenamento
+PASS sem_modelo: sem modelo, criar conversa avisa o usuário em vez de falhar em silêncio

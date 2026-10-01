@@ -180,11 +180,15 @@ public final class Attachments {
         try {
             JSONObject state=AttachmentStore.read(context,chatId);JSONArray items=state.getJSONArray("items");int pending=0;
             for(int i=0;i<items.length();i++)if(items.getJSONObject(i).optInt("message",-1)<0)pending++;
-            String error=state.optString("error","");boolean copying=busy(chatId);
+            String error=state.optString("error","");boolean copying=busy(chatId);int images=0;
+            for(int i=0;i<items.length();i++)if(Images.isImage(items.getJSONObject(i)))images++;
             status.setVisibility(items.length()>0||copying||!error.isEmpty()?View.VISIBLE:View.GONE);
-            status.setText(pending+" anexo(s) pendente(s) · "+(items.length()-pending)+" enviado(s)"+(copying?" · importando…":!error.isEmpty()?" · aviso":""));
+            status.setText(pending+" anexo(s) pendente(s) · "+(items.length()-pending)+" enviado(s)"
+                +(images>0?" · "+images+" imagem(ns)": "")
+                +(copying?" · importando…":!error.isEmpty()?" · aviso":""));
             if(camera!=null){camera.setEnabled(multimodal());camera.setAlpha(multimodal()?1f:0.5f);}
         } catch(Exception e){status.setVisibility(View.VISIBLE);status.setText("Falha ao ler anexos — toque para detalhes");}
+        Images.refresh(activity);
     }
     private void showList() {
         try {
@@ -214,6 +218,7 @@ public final class Attachments {
             catch(Exception e){toast("Não foi possível alterar a leitura: "+e.getMessage());}
         });
         if(pending)dialog.setNeutralButton("Remover",(d,w)->{try{AttachmentStore.remove(context,chatId,id);refresh();}catch(Exception e){toast(e.getMessage());}});
+        else if(Images.isImage(item))dialog.setNeutralButton("Desanexar imagem",(d,w)->Images.detach(activity,id));
         dialog.show();
     }
     public static boolean prepareSend(Activity a) {

@@ -1,0 +1,75 @@
+mobile.cpp: 0 erro(s)
+cpu_probe.cpp: 0 erro(s)
+nativo: sintaxe ok (mobile.cpp, cpu_probe.cpp) com stubs de jni/android
+java: compila (40 arquivos, --release 8, javac=/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-1/x64/bin/javac)
+........................................................................ [ 13%]
+.....................s..............ssssssssssssssssssssssssssssssssssss [ 27%]
+sss..................s.................................................. [ 41%]
+............s..............ss....................s...................... [ 54%]
+........s..........s...........................................F........ [ 68%]
+........................................................................ [ 82%]
+....................................................s.s.s............... [ 96%]
+................ss..                                                     [100%]
+=================================== FAILURES ===================================
+______________________ test_self_test_is_not_a_fake_pass _______________________
+
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-0/test_self_test_is_not_a_fake_p0')
+
+    @pytest.mark.skipif(not SELF_TEST.is_file(), reason='autoteste ausente')
+    def test_self_test_is_not_a_fake_pass(tmp_path):
+        """Se o teto for quebrado, o autoteste precisa reprovar — senão não vale nada."""
+        javac = shutil.which('javac')
+        if not javac:
+            pytest.skip('sem javac neste host')
+        broken = (tmp_path / 'broken').mkdir(parents=True) or (tmp_path / 'broken')
+        package = broken / 'com/ggufchat/app'
+        package.mkdir(parents=True)
+        # Mesmo teste, orçamento sabotado: a fatia passa a ignorar o restante.
+        text = BUDGET.read_text().replace(
+            'return Math.min(remaining, Math.max(Math.min(configured, remaining), Math.min(MIN_MS, remaining)));',
+            'return configured;')
+        (package / 'SearchBudget.java').write_text(text)
+        shutil.copyfile(JAVA / 'SearchNotice.java', package / 'SearchNotice.java')
+        shutil.copyfile(SELF_TEST, package / 'SearchBudgetSelfTest.java')
+        classes = tmp_path / 'classes'
+        classes.mkdir()
+        compiled = subprocess.run([javac, '-d', str(classes), str(package / 'SearchBudget.java'),
+                                   str(package / 'SearchNotice.java'),
+                                   str(package / 'SearchBudgetSelfTest.java')], capture_output=True, text=True)
+        assert compiled.returncode == 0, compiled.stderr
+        java = shutil.which('java') or str(Path(javac).with_name('java'))
+        result = subprocess.run([java, '-cp', str(classes), 'com.ggufchat.app.SearchBudgetSelfTest'],
+                                capture_output=True, text=True, timeout=120)
+>       assert result.returncode != 0 and 'FAIL' in result.stdout, result.stdout
+E       AssertionError: PASS fatia nunca excede o restante nem o pedido
+E         PASS abaixo do mínimo útil a fatia é zero
+E         PASS conexão+leitura cabem no restante
+E         PASS quatro tentativas cabem no orçamento (gastou 400 ms)
+E         PASS expirado não abre nova fatia
+E         PASS DNS/conexão/sem rota interrompem a cadeia
+E         PASS quatro timeouts terminam dentro do teto (levou 399 ms)
+E         PASS aviso declara o motivo e a ausência de fontes (BUSCA NA WEB INDISPONÍVEL NESTA RESPOSTA (orçamento de 12000 ms esgotado). Não há resultados de busca para citar: responda com seu próprio conhecimento e diga que não pesquisou na web.)
+E         PASS aviso sem motivo ainda é explícito
+E         PASS texto de resultados não é confundido com aviso
+E         SEARCH_BUDGET_OK
+E         
+E       assert (0 != 0)
+E        +  where 0 = CompletedProcess(args=['/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-1/x64/bin/java', '-cp', '/tmp/pytest-of-...viso sem motivo ainda é explícito\nPASS texto de resultados não é confundido com aviso\nSEARCH_BUDGET_OK\n', stderr='').returncode
+
+tests/test_search_budget.py:80: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_search_budget.py::test_self_test_is_not_a_fake_pass - AssertionError: PASS fatia nunca excede o restante nem o pedido
+  PASS abaixo do mínimo útil a fatia é zero
+  PASS conexão+leitura cabem no restante
+  PASS quatro tentativas cabem no orçamento (gastou 400 ms)
+  PASS expirado não abre nova fatia
+  PASS DNS/conexão/sem rota interrompem a cadeia
+  PASS quatro timeouts terminam dentro do teto (levou 399 ms)
+  PASS aviso declara o motivo e a ausência de fontes (BUSCA NA WEB INDISPONÍVEL NESTA RESPOSTA (orçamento de 12000 ms esgotado). Não há resultados de busca para citar: responda com seu próprio conhecimento e diga que não pesquisou na web.)
+  PASS aviso sem motivo ainda é explícito
+  PASS texto de resultados não é confundido com aviso
+  SEARCH_BUDGET_OK
+  
+assert (0 != 0)
+ +  where 0 = CompletedProcess(args=['/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-1/x64/bin/java', '-cp', '/tmp/pytest-of-...viso sem motivo ainda é explícito\nPASS texto de resultados não é confundido com aviso\nSEARCH_BUDGET_OK\n', stderr='').returncode
+1 failed, 471 passed, 52 skipped in 36.00s

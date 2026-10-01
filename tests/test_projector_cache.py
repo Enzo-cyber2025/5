@@ -97,7 +97,7 @@ def test_native_retains_positions_and_separates_verification_from_speed():
     assert 'std::memcmp(embd,mtmd_get_output_embd' in s
     assert 'GGUF_VERIFY_IMAGE_EMBED_CACHE' in s and 'verification=%d' in s
     assert 'mtmd_helper_decode_image_chunk(e->projector,e->ctx,chunk,embd,past,0' in s
-    assert 'cp.n_batch=128; cp.n_ubatch=32;' in s
+    assert 'cp.n_batch=prefill_batch; cp.n_ubatch=prefill_ubatch;' in s
     assert 'e->image_cache.clear();' in s[s.index('} catch(const std::exception &ex)'):]
 
 def test_patch_is_idempotent_and_rejects_stale_implementation(tmp_path):

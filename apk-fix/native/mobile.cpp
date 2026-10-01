@@ -14,6 +14,8 @@
 #include <limits>
 #include "strict_vulkan.h"
 #include "model_offload.h"
+#include "npu_policy.h"
+#include "device_caps.h"
 #if defined(GGUF_EXPERIMENT_EXPANDED_WEIGHTS) || defined(GGUF_EXPERIMENT_REPACKED_WEIGHTS)
 #include "expanded_weights.h"
 #endif
@@ -37,6 +39,8 @@
 #include <locale>
 #include <stdexcept>
 #include <sys/stat.h>
+#include <sys/system_properties.h>
+#include <cctype>
 #include <cstdio>
 #include <cstring>
 #include <climits>
@@ -48,6 +52,9 @@ struct Engine {
     llama_context *ctx=nullptr;
     mtmd_context *projector=nullptr;
     std::atomic<bool> cancel{false};
+    // Um pedido de geração real tem prioridade sobre o aquecimento de prompt:
+    // entre blocos, o aquecimento cede a vez em vez de atrasar o usuário.
+    std::atomic<bool> generate_requested{false};
     std::mutex mutex;
     std::string error;
     int layers=0;
@@ -123,6 +130,101 @@ static std::string piece(const llama_vocab *v,llama_token t) {
     if(n<0) throw std::runtime_error("Falha ao decodificar token");
     return std::string(large.data(),n);
 }
+// Um driver Vulkan por software (Lavapipe/llvmpipe/SwiftShader) roda na CPU com
+// a sobrecarga de um driver completo: o offload para ele é mensuravelmente mais
+// lento do que usar a CPU direto. Este aplicativo recusa esse dispositivo em vez
+// de fingir aceleração, registra o motivo e mantém a CPU. Um teste pode forçar o
+// comportamento antigo com debug.gguf.allow_software_vulkan=1.
+static std::string g_backend_notice;
+// Motivo de uma carga com GPU que falhou. A política do aplicativo é preferir a
+// GPU e, se o modelo não couber nela por inteiro, executar na CPU — dizendo isso
+// na tela, em vez de cair para a CPU em silêncio.
+static std::string g_gpu_load_error;
+// O que o driver Vulkan ofereceu, capturado da linha que o backend imprime.
+// Sem isso, a única resposta possível seria "Vulkan" — e no Galaxy A55 o
+// usuário quer saber se a Xclipse 530 está lá e se as matrizes cooperativas
+// (o caminho rápido de pré-preenchimento em GPU AMD) estão disponíveis.
+static DeviceCaps g_device_caps;
+
+static bool debug_flag(const char *name) {
+    char value[PROP_VALUE_MAX]={0};
+    int length=__system_property_get(name,value);
+    return length==1&&value[0]=='1';
+}
+
+/** Propriedade de depuração com valor inteiro (0 = ausente ou inválida). */
+static long debug_int(const char *name,long fallback) {
+    char value[PROP_VALUE_MAX]={0};
+    if(__system_property_get(name,value)<=0 || !value[0]) return fallback;
+    char *end=nullptr;
+    long parsed=std::strtol(value,&end,10);
+    if(end==value) return fallback;
+    return parsed;
+}
+
+static std::string lower(std::string value) {
+    for(char &c:value)c=(char)std::tolower((unsigned char)c);
+    return value;
+}
+
+static bool software_vulkan_device(ggml_backend_dev_t device,std::string *description) {
+    const char *text=device?ggml_backend_dev_description(device):nullptr;
+    std::string value=text?text:"";
+    if(description)*description=value;
+    std::string folded=lower(value);
+    for(const char *needle:{"llvmpipe","lavapipe","softpipe","swiftshader","swrast","software rasterizer"})
+        if(folded.find(needle)!=std::string::npos)return true;
+    return false;
+}
+
+static bool allow_software_vulkan() { return debug_flag("debug.gguf.allow_software_vulkan"); }
+
+// Nome do dispositivo que EXECUTA, como o driver o reporta — no Galaxy A55
+// (Exynos 1480) é a "Xclipse 530". O aviso da tela passa a dizer QUAL GPU está
+// sendo usada, em vez de só "Vulkan": em aparelho de GPU real, o usuário vê o
+// nome; no emulador de CI, vê o rasterizador por software. O texto do driver
+// costuma trazer detalhes entre parênteses ("llvmpipe (LLVM 21.0.0, 256 bits)"):
+// o aviso fica com a primeira parte e no máximo 48 caracteres.
+static std::string device_short_name(const char *description) {
+    std::string value = description ? description : "";
+    const size_t detail = value.find(" (");
+    if (detail != std::string::npos) value = value.substr(0, detail);
+    if (value.size() > 48) value = value.substr(0, 45) + "...";
+    return value.empty() ? std::string("dispositivo sem nome") : value;
+}
+
+// NPU do aparelho: presente ou não, e se existe backend compatível NESTE binário.
+// A classificação é um cabeçalho puro, compilado e testado no host; o Android
+// só entrega as strings de identificação do SoC.
+static std::string soc_identity() {
+    const struct { const char *property; } keys[] = {
+        {"ro.soc.model"}, {"ro.board.platform"}, {"ro.hardware"}, {"ro.soc.manufacturer"}};
+    std::string joined;
+    for (const auto &key : keys) {
+        char value[PROP_VALUE_MAX]={0};
+        if (__system_property_get(key.property,value)<=0 || !value[0]) continue;
+        if (!joined.empty()) joined += "|";
+        joined += std::string(key.property) + "=" + value;
+    }
+    return joined;
+}
+static void probe_npu() {
+    const std::string identity=soc_identity();
+    const NpuAssessment assessment=npu_assess(identity.c_str());
+    LOG("GGUF_NPU_PROBE identity=\"%s\" soc=%s npu=%s backend=%s reason=%s",
+        identity.c_str(),assessment.soc[0]?assessment.soc:"desconhecido",
+        assessment.npu_present?"present":"unknown_or_absent",
+        assessment.backend[0]?assessment.backend:"none",
+        assessment.backend[0]?"":GGUF_NPU_BACKEND_REASON);
+    if (assessment.npu_present && !assessment.backend[0]) {
+        // Sem promessa de aceleração: o aviso diz que a NPU existe e que este
+        // binário não tem como usá-la.
+        const std::string line=std::string("NPU ") + assessment.soc
+            + " presente, sem backend compatível neste binário (" + GGUF_NPU_BACKEND_REASON + ")";
+        g_backend_notice = g_backend_notice.empty() ? line : g_backend_notice + " · " + line;
+    }
+}
+
 static int generation_threads(int requested) {
     cpu_set_t allowed;CPU_ZERO(&allowed);
     std::vector<int> capacities;int available=0;
@@ -138,10 +240,16 @@ static int generation_threads(int requested) {
     LOG("GGUF_CPU_THREADS requested=%d available=%d capacities=%zu resolved=%d",requested,available,capacities.size(),result);
     return result;
 }
+extern "C" JNIEXPORT jstring JNICALL Java_com_ggufchat_app_BackendNotice_read(JNIEnv *env,jclass) {
+    if(g_backend_notice.empty())return nullptr;
+    return env->NewStringUTF(g_backend_notice.c_str());
+}
+
 extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *env,jclass,jstring path,jstring proj,jint context,jint threads,jint layers,jboolean mmap) {
+    // Fora do try: o catch também precisa saber se o usuário pediu GPU.
+    const int requested_layers=layers;
     try {
-        create_error.clear();loaded_gpu_layers=0;reported_total_layers=0;ggml_backend_gguf_strict_reset();
-        const int requested_layers=layers;
+        create_error.clear();g_backend_notice.clear();loaded_gpu_layers=0;reported_total_layers=0;ggml_backend_gguf_strict_reset();
         if(layers!=0) layers=INT_MAX; // Vulkan mode is all layers, never partial CPU inference.
         auto model_path=utf8(env,path), projector_path=utf8(env,proj);
         if(projector_path=="null") projector_path.clear();
@@ -174,6 +282,13 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
                 if(offload && std::sscanf(offload,"offloaded %d/%d layers to GPU",&n,&total)==2) {
                     loaded_gpu_layers=n;reported_total_layers=total;
                 }
+                const DeviceCaps caps=device_caps_parse(text);
+                if(!caps.matrix_cores.empty()) {
+                    g_device_caps=caps;
+                    LOG("GGUF_DEVICE_CAPS device=\"%s\" uma=%s fp16=%s int_dot=%s warp=%s shared=%s matrix_cores=%s",
+                        caps.device.c_str(),caps.uma.c_str(),caps.fp16.c_str(),caps.int_dot.c_str(),
+                        caps.warp_size.c_str(),caps.shared_memory.c_str(),caps.matrix_cores.c_str());
+                }
                 __android_log_write(level==GGML_LOG_LEVEL_ERROR?ANDROID_LOG_ERROR:ANDROID_LOG_INFO,"GGUFNativeStderr",text);
             },nullptr);
             llama_backend_init();
@@ -186,6 +301,24 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
         else {
             vulkan_devices[0]=ggml_backend_dev_by_name("Vulkan0");
             if(!vulkan_devices[0]) throw std::runtime_error("Vulkan indisponível. Nenhum fallback automático para CPU foi feito.");
+            std::string description;
+            if(software_vulkan_device(vulkan_devices[0],&description)&&!allow_software_vulkan()) {
+                // Offload pedido, dispositivo sem GPU real: mantém a CPU, com o
+                // pedido registrado e um aviso visível no aplicativo.
+                // `mp.n_gpu_layers` também volta a zero: sem isso o carregador
+                // ainda anuncia "offloaded N/N layers to GPU" por causa do pedido
+                // (INT_MAX), e a execução ficava ambígua entre CPU e rasterizador.
+                layers=0;
+                mp.n_gpu_layers=0;
+                mp.devices=no_accelerators;
+                vulkan_devices[0]=nullptr;
+                e->strict_device=nullptr;
+                g_backend_notice="CPU (Vulkan por software ignorado: "+description+")";
+                LOG("GGUF_VULKAN_SOFTWARE_DEVICE description=\"%s\" action=cpu_fallback requested_layers=%d reason=software_driver_is_slower_than_cpu",
+                    description.c_str(),requested_layers);
+                LOG("GGUF_BACKEND_EXECUTION backend=cpu reason=software_vulkan_refused description=\"%s\"",description.c_str());
+                LOG("GGUF_BACKEND_NOTICE \"%s\"",g_backend_notice.c_str());
+            } else {
             mp.devices=vulkan_devices;
             e->strict_device=vulkan_devices[0];
             // Include token embeddings and other weights normally left on CPU.
@@ -193,6 +326,7 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
             mp.tensor_buft_overrides=e->gpu_weights;
             mp.split_mode=LLAMA_SPLIT_MODE_NONE;
             LOG("GGUF_STRICT_VULKAN requested_layers=%d effective_layers=all weights=all tensor_cpu_fallback=blocked host_orchestration=CPU",requested_layers);
+            }
         }
         StrictVulkanScope strict(e->strict_device);
         e->model=llama_model_load_from_file(model_path.c_str(),mp);
@@ -221,19 +355,51 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
                 (long long)std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now()-repack_started).count());
         } else LOG("GGUF_REPACKED_WEIGHTS enabled=0");
 #endif
-        auto cp=llama_context_default_params(); cp.n_ctx=context; cp.n_batch=128; cp.n_ubatch=32;
-        // This JNI emits one sequence and requests logits ONLY for its final
-        // token. Reserve one output row, not n_batch unused vocabulary rows.
-        // Encoder/diffusion architectures keep upstream output requirements.
-        if(e->strict_device && !llama_model_has_encoder(e->model) && !llama_model_is_diffusion(e->model))cp.n_outputs_max=1;
+        // Lotes maiores: o prompt entra em menos submissões ao backend, o que
+        // encurta o caminho até o primeiro token. Sem efeito por token, portanto
+        // sem mudar a taxa de decodificação nem o resultado gerado.
+        const uint32_t prefill_batch=context>=2048?512:(context>=1024?256:128);
+        // Sub-lote do pré-preenchimento: é o parâmetro que decide quantos tokens o
+        // backend processa por submissão. Sem GPU real (emulador com rasterizador
+        // por software, ou CPU escolhida), vale o valor medido neste CI; com GPU
+        // real executando — o caso do Galaxy A55 com a Xclipse 530 — vale o padrão
+        // do próprio llama.cpp (512), limitado pelo lote. Nada disso é promessa:
+        // o valor em uso vai para o log e para o aviso da tela.
+        const bool real_gpu_request = layers!=0 && e->strict_device!=nullptr
+            && !software_vulkan_device(e->strict_device,nullptr);
+        uint32_t prefill_ubatch = real_gpu_request
+            ? std::min<uint32_t>(prefill_batch,512u)
+            : (context>=1024?128:64);
+        // Ajustável por propriedade porque é ela que o aparelho permite mudar
+        // (variável de ambiente não chega ao processo do aplicativo).
+        long tuned=debug_int("debug.gguf.prefill_ubatch",0);
+        if(tuned>=32 && tuned<=1024) prefill_ubatch=(uint32_t)tuned;
+        auto cp=llama_context_default_params(); cp.n_ctx=context;
+        cp.n_batch=prefill_batch; cp.n_ubatch=prefill_ubatch;
+        // Cache K/V: o padrão continua F16. A propriedade de depuração permite
+        // MEDIR no mesmo aparelho um cache quantizado (Q8_0), que troca um pouco
+        // de precisão por banda de memória — e é a banda que limita a decodificação
+        // onde não há GPU real. O llama.cpp liga a atenção flash sozinho quando o
+        // cache V é quantizado. Nada muda de padrão sem ganho medido, e o valor
+        // usado aparece no log (ajuste medido sem registro não vale nada).
+        const long kv_tuned=debug_int("debug.gguf.kv_type",0);
+        if(kv_tuned==1 || kv_tuned==8) { cp.type_k=(ggml_type)kv_tuned; cp.type_v=(ggml_type)kv_tuned; }
+        // Este JNI amostra uma única posição: a do último token do prompt e,
+        // depois, a de cada token decodificado. Reservar uma linha de saída vale
+        // também para a CPU — sem isso o contexto aloca n_batch linhas do
+        // vocabulário que ninguém lê. Codificadores/difusão mantêm o padrão.
+        if(!llama_model_has_encoder(e->model) && !llama_model_is_diffusion(e->model))cp.n_outputs_max=1;
         cp.n_threads=cp.n_threads_batch=generation_threads(threads);
         cp.abort_callback=[](void *p){return static_cast<Engine*>(p)->cancel.load();}; cp.abort_callback_data=e.get();
         e->ctx=llama_init_from_model(e->model,cp);
         if(!e->ctx) throw std::runtime_error("Não foi possível criar contexto: reduza o contexto/modelo");
         e->cache_supported=!llama_model_is_recurrent(e->model) && !llama_model_is_hybrid(e->model)
             && !llama_model_has_encoder(e->model) && !llama_model_is_diffusion(e->model);
-        LOG("GGUF_CONTEXT_TUNING batch=%u ubatch=%u threads=%d prefix_cache_supported=%d",
-            llama_n_batch(e->ctx),llama_n_ubatch(e->ctx),cp.n_threads,(int)e->cache_supported);
+        LOG("GGUF_CONTEXT_TUNING batch=%u ubatch=%u threads=%d prefix_cache_supported=%d prefill_policy=larger_lots kv=%s fa_requested=%s",
+            llama_n_batch(e->ctx),llama_n_ubatch(e->ctx),cp.n_threads,(int)e->cache_supported,
+            ggml_type_name(cp.type_k),llama_flash_attn_type_name(cp.flash_attn_type));
+        LOG("GGUF_DEVICE_TUNING gpu_request=%d real_gpu=%d ubatch_class=\"%s\"",
+            (int)(layers!=0),(int)real_gpu_request,real_gpu_request?"gpu_real":(layers!=0?"sem_gpu_real":"cpu_escolhida"));
         if(!projector_path.empty()) {
             auto vp=mtmd_context_params_default(); vp.use_gpu=layers!=0; vp.n_threads=cp.n_threads; vp.print_timings=false; vp.warmup=false; vp.device=layers!=0?vulkan_devices[0]:nullptr;
             e->projector=mtmd_init_from_file(projector_path.c_str(),e->model,vp);
@@ -242,16 +408,62 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
             if(projector_path==model_path) LOG("GGUF_SINGLE_FILE_LOADED same_path=1");
             LOG("GGUF_PROJECTOR_LOADED vision=%d audio=%d",mtmd_support_vision(e->projector),mtmd_support_audio(e->projector));
         }
-        LOG("GGUF_UNIT_LOADED language=%s layers=%d projector=%s",e->layers>0?"Vulkan":"CPU",e->layers,
-            e->projector?(e->layers>0?"Vulkan":"CPU"):"none");
+        // Quem executa de verdade: o dispositivo Vulkan estrito é o único caminho
+        // em que as camadas foram para uma GPU. Sem ele, mesmo com o pedido de GPU,
+        // a execução é na CPU (recusa declarada ou modelo sem camadas na GPU).
+        const bool gpu_executes=(e->layers>0 && e->strict_device!=nullptr);
+        if(gpu_executes) {
+            g_gpu_load_error.clear();
+            const std::string device_name=device_short_name(ggml_backend_dev_description(e->strict_device));
+            LOG("GGUF_BACKEND_EXECUTION backend=vulkan layers=%d total=%d device=\"%s\" ubatch=%u",
+                e->layers,reported_total_layers,device_name.c_str(),llama_n_ubatch(e->ctx));
+            if(g_backend_notice.empty()) {
+                const std::string extras=device_caps_summary(g_device_caps);
+                g_backend_notice="GPU (Vulkan, "+device_name+", camadas "+std::to_string(e->layers)+"/"+std::to_string(reported_total_layers)
+                    +(extras.empty()?"":", "+extras)+")";
+                LOG("GGUF_BACKEND_NOTICE \"%s\"",g_backend_notice.c_str());
+            }
+        } else if(requested_layers!=0 && !g_gpu_load_error.empty()) {
+            // Preferência por GPU, sem offload parcial silencioso: o modelo inteiro
+            // não coube, então a execução é na CPU e o motivo fica visível.
+            LOG("GGUF_BACKEND_EXECUTION backend=cpu reason=gpu_load_failed");
+            if(g_backend_notice.empty()) {
+                g_backend_notice="CPU (a GPU não comportou o modelo inteiro; offload parcial recusado por política: "+g_gpu_load_error+")";
+                LOG("GGUF_BACKEND_NOTICE \"%s\"",g_backend_notice.c_str());
+            }
+            g_gpu_load_error.clear();
+        } else if(requested_layers!=0) {
+            LOG("GGUF_BACKEND_EXECUTION backend=cpu reason=requested_gpu_not_used");
+            if(g_backend_notice.empty()) {
+                g_backend_notice="CPU (modelo carregado sem camadas na GPU)";
+                LOG("GGUF_BACKEND_NOTICE \"%s\"",g_backend_notice.c_str());
+            }
+            g_gpu_load_error.clear();
+        } else {
+            LOG("GGUF_BACKEND_EXECUTION backend=cpu reason=cpu_choice");
+            g_gpu_load_error.clear();
+        }
+        probe_npu();
+        const char *execution=gpu_executes?"Vulkan":"CPU";
+        LOG("GGUF_UNIT_LOADED language=%s layers=%d projector=%s npu_notice=%d strict_device=%d",
+            execution,e->layers,e->projector?execution:"none",(int)!g_backend_notice.empty(),(int)(e->strict_device!=nullptr));
         LOG("model loaded: n_ctx=%u projector=%s",llama_n_ctx(e->ctx),e->projector?"loaded":"none");
         std::lock_guard<std::mutex> guard(registry_mutex); auto id=next_handle++; engines[id]=e; return id;
-    } catch(const std::exception &ex) { create_error=ex.what(); if(*ggml_backend_gguf_strict_error())create_error=ggml_backend_gguf_strict_error(); LOG("Create failed: %s",create_error.c_str()); return 0; }
+    } catch(const std::exception &ex) {
+        create_error=ex.what(); if(*ggml_backend_gguf_strict_error())create_error=ggml_backend_gguf_strict_error();
+        // Guardar o motivo para a segunda tentativa (que o aplicativo faz com
+        // camadas=0): sem isso a queda para a CPU ficaria sem explicação na tela.
+        if(requested_layers!=0) g_gpu_load_error=create_error;
+        LOG("Create failed: %s",create_error.c_str()); return 0; }
 }
 extern "C" JNIEXPORT void JNICALL Java_com_ggufchat_app_Native_destroy(JNIEnv*,jclass,jlong h) {
-    std::shared_ptr<Engine> old;
-    { std::lock_guard<std::mutex> g(registry_mutex); auto i=engines.find(h); if(i!=engines.end()) { old=i->second; engines.erase(i); } }
+    std::shared_ptr<Engine> old; size_t remaining=0;
+    { std::lock_guard<std::mutex> g(registry_mutex); auto i=engines.find(h); if(i!=engines.end()) { old=i->second; engines.erase(i); } remaining=engines.size(); }
     if(old) old->cancel=true; // an in-flight generation retains ownership until it exits
+    // O botão "Descarregar modelo da memória" chama isto. O log diz se HAVIA motor
+    // para descarregar: sem esta linha, "descarregou" e "não havia nada carregado"
+    // ficavam com a mesma aparência na tela, e a prova virava um toast que expira.
+    LOG("GGUF_UNIT_RELEASED found=%d remaining=%zu handle=%lld",(int)(old!=nullptr),remaining,(long long)h);
 }
 extern "C" JNIEXPORT void JNICALL Java_com_ggufchat_app_Native_abort(JNIEnv*,jclass,jlong h) { auto e=get(h); if(e) e->cancel=true; }
 extern "C" JNIEXPORT jstring JNICALL Java_com_ggufchat_app_Native_lastError(JNIEnv *env,jclass,jlong h) {
@@ -325,7 +537,11 @@ struct BackendSamplerBinding {
     }
 };
 static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat temp,jfloat top_p,jfloat top_k,jfloat min_p,jfloat repeat,jint last_n,jint seed,jobject callback,jobjectArray images) {
-    auto e=get(h);if(!e)return false; std::lock_guard<std::mutex> lock(e->mutex); if(!images)e->cancel=false;e->error.clear();
+    auto e=get(h);if(!e)return false;
+    // Sinaliza a chegada antes de disputar o mutex: o aquecimento de prompt, que
+    // roda em outra thread, cede a vez entre blocos em vez de atrasar o usuário.
+    e->generate_requested.store(true);
+    std::lock_guard<std::mutex> lock(e->mutex); if(!images)e->cancel=false;e->error.clear();
     StrictVulkanScope strict(e->strict_device);
     jmethodID on_token=nullptr,on_done=nullptr; jclass clazz=nullptr;
     using Clock=std::chrono::steady_clock;
@@ -627,6 +843,12 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
         // (sampling would wait for the same work anyway), so the decode-only
         // footer never charges prompt GPU work to response-token throughput.
         llama_synchronize(e->ctx);
+        // O contexto foi criado com uma única linha de saída. Se o backend não
+        // expuser os logits da última posição, o certo é falhar alto em vez de
+        // amostrar lixo; no caminho Vulkan quem amostra é a GPU, que informa o
+        // token por outro canal, e ali esta checagem não se aplica.
+        if(!binding.attached && !e->strict_device && llama_get_logits_ith(e->ctx,-1)==nullptr)
+            throw std::runtime_error("Sem logits para a última posição do prompt; geração interrompida em vez de amostrar lixo");
         decode_started=Clock::now();decoding=true;
         int limit=std::min<int>(predict,llama_n_ctx(e->ctx)-input_size);
         const char *reason="length";
@@ -712,8 +934,81 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
     }
     if(on_done && !env->ExceptionCheck()) env->CallVoidMethod(callback,on_done,(jboolean)ok);
     if(clazz)env->DeleteLocalRef(clazz);
+    // A geração terminou: o aquecimento de prompt volta a poder trabalhar.
+    e->generate_requested.store(false);
     return ok && !env->ExceptionCheck();
 }
+// Aquecimento de prompt: preenche o KV com o prefixo que o próximo envio vai
+// reutilizar (bloco system, no caso do primeiro envio de uma conversa). O custo
+// não desaparece; ele sai da frente do usuário e vai para o tempo ocioso da tela,
+// enquanto ele lê ou digita. Nenhum logit é produzido (máscara zerada) e nenhum
+// token de saída é consumido: o resultado gerado não muda.
+extern "C" JNIEXPORT jboolean JNICALL Java_com_ggufchat_app_ResponseWarmup_nativeWarmup(JNIEnv *env,jclass,jlong h,jstring prompt) {
+    auto e=get(h);
+    if(!e || !e->ctx || !e->model) return false;
+    if(debug_flag("debug.gguf.disable_warmup")) { LOG("GGUF_WARMUP_SKIPPED reason=property"); return false; }
+    try {
+        auto vocab=llama_model_get_vocab(e->model);
+        auto text=utf8(env,prompt);
+        auto input=tokens(vocab,text);
+        // Nunca aquecer estado recorrente/híbrido (o KV não é reutilizável) nem um
+        // prefixo que não caberia no contexto.
+        if(!e->cache_supported || input.size()<2 || input.size()+1>=(size_t)llama_n_ctx(e->ctx)) {
+            LOG("GGUF_WARMUP_SKIPPED reason=cache_or_context tokens=%zu supported=%d",input.size(),(int)e->cache_supported);
+            return false;
+        }
+        if(e->generate_requested.load()) { LOG("GGUF_WARMUP_SKIPPED reason=send_antes"); return false; }
+        StrictVulkanScope strict(e->strict_device);
+        size_t reuse=0, done=0;
+        // Bloco curto de propósito: a decodificação não é interrompível, então o
+        // pedaço máximo que o aquecimento pode segurar o motor é o que um envio
+        // concorrente esperaria. 16 tokens ≈ meio segundo no aparelho de referência.
+        const size_t chunk=std::min<size_t>(llama_n_batch(e->ctx),16);
+        {
+            std::lock_guard<std::mutex> lock(e->mutex);
+            auto memory=llama_get_memory(e->ctx);
+            reuse=reusable_prefix(e->cached_tokens,input,e->cache_supported,
+                llama_memory_seq_pos_min(memory,0),llama_memory_seq_pos_max(memory,0));
+            if(reuse && !llama_memory_seq_rm(memory,0,reuse,-1)) reuse=0;
+            if(!reuse) {llama_memory_clear(memory,true);e->cached_tokens.clear();}
+            else e->cached_tokens.resize(reuse);
+            done=reuse;
+        }
+        bool aborted=false;
+        for(size_t at=reuse;at<input.size();at+=chunk) {
+            // Um envio real tem prioridade: entre blocos o aquecimento para e o
+            // que já foi decodificado continua válido como prefixo.
+            if(e->generate_requested.load() || e->cancel.load()) { aborted=true; break; }
+            std::lock_guard<std::mutex> lock(e->mutex);
+            if(e->generate_requested.load() || e->cancel.load()) { aborted=true; break; }
+            auto count=std::min(chunk,input.size()-at);
+            auto batch=llama_batch_get_one(input.data()+at,count);
+            std::vector<int8_t> mask(count,0); // só o KV: projeção de vocabulário é desperdício aqui
+            batch.logits=mask.data();
+            if(llama_decode(e->ctx,batch)!=0) {
+                e->cached_tokens.clear();
+                LOG("GGUF_WARMUP_FAILED reason=decode at=%zu",at);
+                return false;
+            }
+            e->cached_tokens.insert(e->cached_tokens.end(),input.begin()+at,input.begin()+at+count);
+            done+=count;
+        }
+        {
+            // Drenar aqui o trabalho assíncrono do último bloco: a geração faria
+            // exatamente esta espera antes do primeiro token, e é essa espera que
+            // sai da frente do usuário. Segura o mutex pelo tempo de um bloco.
+            std::lock_guard<std::mutex> lock(e->mutex);
+            llama_synchronize(e->ctx);
+        }
+        LOG("GGUF_WARMUP input_tokens=%zu prefilled=%zu reused_tokens=%zu gpu=%d aborted=%d",
+            input.size(),done,reuse,(int)(e->layers>0 && e->strict_device!=nullptr),(int)aborted);
+        return done>reuse;
+    } catch(const std::exception &ex) {
+        LOG("GGUF_WARMUP_FAILED reason=%s",ex.what());
+        return false;
+    }
+}
+
 extern "C" JNIEXPORT jboolean JNICALL Java_com_ggufchat_app_Native_generate(JNIEnv *env,jclass,jlong h,jstring prompt,jint predict,jfloat temp,jfloat top_p,jfloat top_k,jfloat min_p,jfloat repeat,jint last_n,jint seed,jobject callback) {
     return generate(env,h,prompt,predict,temp,top_p,top_k,min_p,repeat,last_n,seed,callback,nullptr);
 }
