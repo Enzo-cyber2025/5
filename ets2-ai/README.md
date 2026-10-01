@@ -1,10 +1,11 @@
 # ETS2-AI — piloto automático para Euro Truck Simulator 2 (celular ↔ PC)
 
 > **Downloads (IA já treinada dentro de ambos):**
-> - APK: https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.3.2/ETS2-AI-mobile.apk
-> - EXE: https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.3.2/ETS2-AI-bridge.exe
+> - APK: https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.4.0/ETS2-AI-mobile.apk
+> - EXE: https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.4.0/ETS2-AI-bridge.exe
+> - Modelo PyTorch (`.pt`): https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.4.0/ets2ai-v0.4.0.pt
 >
-> **v0.3.2 — UI nova + offline garantido.** A IA treinada dirige caminhão num simulador com
+> **v0.4.0 — IA de 51.715 parâmetros + GPU 2×T4 + USB plug-and-play.** A IA treinada dirige caminhão num simulador com
 > a mesma física do jogo-alvo, gerencia combustível, sono e entregas, roda no
 > **APK do celular** (inferência 100% em Java, sem dependências) e entrega os
 > comandos ao **PC Windows** por TCP, onde o bridge injeta **teclas reais**
@@ -69,12 +70,32 @@ Você pediu para insistir na NPU. O resultado da investigação, com fontes:
    terceiro consegue: CPU (float) e GPU (Vulkan/OpenCL via delegates).
 
 **O que o projeto faz com isso:** o APK roda a política em **Java puro
-(CPU)** — para uma rede 12→24→24→3, isso custa **microssegundos** por
+(CPU)** — para a rede atual (13→128×4→3), isso custa **microssegundos** por
 decisão; NPU seria overkill. Mesmo assim, o CI **já exporta os `.tflite`**
 (float32 e int8) validados contra o numpy, e o app traz a tela
 **"NPU" (Diagnóstico)** que mostra no seu aparelho exatamente o que existe
 de aceleradores/runtimes. Se a Samsung liberar o acesso (ou você trocar de
 chip), o modelo está pronto para plugar num delegate.
+
+## Modelo PyTorch (`.pt`)
+
+Além do Java (APK), do `.tflite` e do bridge, os mesmos pesos treinados saem
+também em **`ets2ai-v0.4.0.pt`** (TorchScript, auto-contido, 213 KB) —
+gerado por `ets2ai/ets2ai/export_pt.py`, que grava o arquivo só depois de
+confirmar paridade numérica com o numpy (max diff < 1e-5 em 2.048 entradas
+aleatórias). Carregar e usar em qualquer lugar com PyTorch instalado:
+
+```python
+import torch
+m = torch.jit.load("ets2ai-v0.4.0.pt")          # não precisa do código do repo
+m.eval()
+x = torch.zeros(1, 13)                          # [speed, lane_offset, ..., radar_dist]
+steer, throttle, brake = m(x)[0].tolist()       # ações da IA
+```
+
+Metadados embutidos no arquivo: `m.n_params` (51.715), `m.loss` (0.008568),
+`m.features` (13 entradas), `m.actions` (steer/throttle/brake). Teste de
+regressão em `tests/test_export_pt.py` (pula onde não há torch).
 
 ## Arquitetura
 
