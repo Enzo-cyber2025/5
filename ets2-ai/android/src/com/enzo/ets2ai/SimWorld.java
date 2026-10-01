@@ -281,6 +281,9 @@ public final class SimWorld {
             if (dDock < 600f && t.speed < 2.0f)
                 return new float[] { cmd[0], Math.max(cmd[1], 0.35f), 0f }; // creep
         }
+        // anti-stall: nunca parar fora da linha (motor ligando = speed 0)
+        if (t.speed < 0.6f && dDock > 4f)
+            return new float[] { cmd[0], Math.max(cmd[1], 0.35f), 0f };
         return cmd;
     }
 

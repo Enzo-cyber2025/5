@@ -306,4 +306,9 @@ jobs:
       - name: Publica na release ets2-ai-v0.4.2
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload ets2-ai-v0.4.2 ets2-ai/artifacts/ets2ai-v0.4.2.pt --clobber
+        run: |
+          gh release view ets2-ai-v0.4.2 >/dev/null 2>&1 || \
+            gh release create ets2-ai-v0.4.2 \
+              --title "ETS2-AI v0.4.2 — 295.103 parametros, float64, especialista perfeito" \
+              --notes "Modelo .pt (PyTorch TorchScript): 295.103 params, float64, paridade numpy verificada (<1e-5). Os demais assets chegam pelo job de release."
+          gh release upload ets2-ai-v0.4.2 ets2-ai/artifacts/ets2ai-v0.4.2.pt --clobber

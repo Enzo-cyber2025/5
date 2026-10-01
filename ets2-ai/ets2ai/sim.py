@@ -281,6 +281,10 @@ def governor(road, truck, cmd):
             return (cmd[0], 0.0, 1.0)               # hold at the line
         if d_dock < 600.0 and truck.speed < 2.0:
             return (cmd[0], max(cmd[1], 0.35), 0.0)  # creep: never stall short
+    # anti-stall: nunca parar fora da linha de entrega. Todo job comeca do
+    # zero (motor ligando) e a rede pode nao ter visto speed~0 no treino.
+    if truck.speed < 0.6 and d_dock > 4.0:
+        return (cmd[0], max(cmd[1], 0.35), 0.0)
     return cmd
 
 
