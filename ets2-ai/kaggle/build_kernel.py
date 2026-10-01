@@ -22,12 +22,13 @@ import json as _json
 import os as _os
 
 _OUT = _os.environ.get("KAGGLE_WORKING_DIR", ".")
+_DTYPE = np.float64 if _os.environ.get("ETS2AI_F64") == "1" else np.float32
 print("[kaggle] gerando dados do especialista (estradas aleatorias)...")
 _xtr, _ytr, _xva, _yva = generate()
-_xtr = np.asarray(_xtr, dtype=np.float32); _ytr = np.asarray(_ytr, dtype=np.float32)
-_xva = np.asarray(_xva, dtype=np.float32); _yva = np.asarray(_yva, dtype=np.float32)
+_xtr = np.asarray(_xtr, dtype=_DTYPE); _ytr = np.asarray(_ytr, dtype=_DTYPE)
+_xva = np.asarray(_xva, dtype=_DTYPE); _yva = np.asarray(_yva, dtype=_DTYPE)
 print(f"[kaggle] treino {_xtr.shape} | val {_xva.shape} | "
-      f"arquitetura 13-128-128-128-128-3 (~50k params)")
+      f"arquitetura 13-128-128-128-128-3 (~50k params) | dtype {_DTYPE.__name__}")
 
 _gpus = []
 _TRAIN_GPU = False
@@ -39,6 +40,11 @@ except Exception:
 
 if _tf is not None and len(_gpus) >= 1:
     # ---------------- GPU PATH (Kaggle 2x T4, MirroredStrategy) ----------------
+    # GPU treina em float32 de proposito: a T4 roda FP64 a 1/32 da velocidade
+    # e o ganho de perda e nulo (o residuo e estrutural, nao numerico).
+    if _DTYPE == np.float64:
+        print("[kaggle] ETS2AI_F64=1 ignorado no caminho GPU (T4: FP64 = 1/32 "
+              "da velocidade); use o caminho numpy/CPU para float64")
     print(f"[kaggle] GPU detectada: {len(_gpus)}x {_gpus[0][1]} — treinando com "
           f"tf.distribute.MirroredStrategy (todas as GPUs)")
     _strategy = _tf.distribute.MirroredStrategy()
@@ -57,8 +63,9 @@ if _tf is not None and len(_gpus) >= 1:
     _TRAIN_GPU = True
 else:
     # ---------------- CPU fallback (identical math) ----------------
-    print("[kaggle] sem GPU — treinando em numpy (CPU)")
-    _layers, _hist = train(_xtr, _ytr, epochs=400, x_val=_xva, y_val=_yva)
+    print(f"[kaggle] sem GPU — treinando em numpy (CPU, {_DTYPE.__name__})")
+    _layers, _hist = train(_xtr, _ytr, epochs=400, x_val=_xva, y_val=_yva,
+                           dtype=_DTYPE)
 
 _loss_tr = mse(forward(_xtr, _layers), _ytr)
 _loss_va = mse(forward(_xva, _layers), _yva)
@@ -70,13 +77,15 @@ print(f"[kaggle] circuito fechado: {_agg['finish_rate']*100:.0f}% rotas, "
       f"radares {_agg['radar_compliance']*100:.0f}%, dock {_agg['dock_rate']*100:.0f}%")
 
 save_weights(_os.path.join(_OUT, "model-weights.json"), _layers,
-             model_meta(epochs=400, samples=int(len(_xtr) + len(_xva)), loss=_loss_va))
+             model_meta(epochs=400, samples=int(len(_xtr) + len(_xva)), loss=_loss_va,
+                        dtype="float64" if _DTYPE == np.float64 else None))
 with open(_os.path.join(_OUT, "metrics.json"), "w", encoding="utf-8") as _f:
     _json.dump({"mse_train": _loss_tr, "mse_val": _loss_va,
                 "loss_target": LOSS_TARGET, "closed_loop": _agg,
-                "trained_on_gpu": _TRAIN_GPU, "n_gpus": len(_gpus)}, _f, indent=2)
+                "trained_on_gpu": _TRAIN_GPU, "n_gpus": len(_gpus),
+                "dtype": _DTYPE.__name__}, _f, indent=2)
 print(f"[kaggle] saida: model-weights.json + metrics.json (gpu={_TRAIN_GPU}, "
-      f"ngpus={len(_gpus)})")
+      f"ngpus={len(_gpus)}, dtype={_DTYPE.__name__})")
 """
 
 

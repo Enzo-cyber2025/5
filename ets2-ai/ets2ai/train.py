@@ -56,18 +56,23 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--epochs", type=int, default=350)
     ap.add_argument("--out", default=str(Path(__file__).resolve().parent.parent / "artifacts"))
+    ap.add_argument("--dtype", choices=["float32", "float64"], default="float32",
+                    help="float32 = deploy (bit-identico ao CI/APK/EXE); "
+                         "float64 = experimento de precisao (numpy/CPU)")
     args = ap.parse_args()
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
+    dtype = {"float32": np.float32, "float64": np.float64}[args.dtype]
 
     print("[1/4] gerando dados do especialista (estradas aleatorias)...")
     x_train, y_train, x_val, y_val = generate()
     print(f"      treino {x_train.shape}  val {x_val.shape}")
 
-    print("[2/4] treinando MLP 12-24-24-3 (tanh, Adam)...")
+    print(f"[2/4] treinando MLP {N_IN}-{'-'.join(str(h) for h in HIDDEN)}-{N_OUT} "
+          f"(tanh, Adam, {args.dtype})...")
     layers, hist = train(x_train, y_train, epochs=args.epochs,
-                         x_val=x_val, y_val=y_val)
+                         x_val=x_val, y_val=y_val, dtype=dtype)
 
     loss_tr = mse(forward(x_train, layers), y_train)
     loss_va = mse(forward(x_val, layers), y_val)
@@ -83,7 +88,8 @@ def main():
 
     print("[4/4] exportando pesos...")
     meta = model_meta(epochs=args.epochs, samples=int(len(x_train) + len(x_val)),
-                      loss=loss_va)
+                      loss=loss_va,
+                      dtype=args.dtype if args.dtype != "float32" else None)
     save_weights(out / "model-weights.json", layers, meta)
     (out / "metrics.json").write_text(json.dumps({
         "meta": meta,

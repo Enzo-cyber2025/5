@@ -11,14 +11,16 @@ import numpy as np
 from .contract import N_IN, N_OUT, HIDDEN, SEED, LOSS_TARGET, model_meta
 
 
-def init_layers(rng):
+def init_layers(rng, dtype=np.float32):
     """He initialisation for tanh layers; returns [(W,b), ...]."""
     sizes = [N_IN] + list(HIDDEN) + [N_OUT]
     layers = []
     for i in range(len(sizes) - 1):
         fan_in, fan_out = sizes[i], sizes[i + 1]
-        w = rng.standard_normal((fan_in, fan_out)).astype(np.float32) * np.sqrt(1.0 / fan_in)
-        b = np.zeros(fan_out, dtype=np.float32)
+        # cast DEPOIS da multiplicacao: com NEP 50 (numpy>=2), float32 * np.float64
+        # promoveria para float64 — era o comportamento antigo por acidente.
+        w = (rng.standard_normal((fan_in, fan_out)) * np.sqrt(1.0 / fan_in)).astype(dtype)
+        b = np.zeros(fan_out, dtype=dtype)
         layers.append((w, b))
     return layers
 
@@ -26,10 +28,11 @@ def init_layers(rng):
 def forward(x, layers, keep=None):
     """Forward pass. x: (N, N_IN) or (N_IN,). tanh hidden, linear output.
 
+    Precision follows the weights (float32 deploy / float64 experiment).
     `keep` (optional) receives intermediate activations for backprop.
     Returns activations of the output layer.
     """
-    a = np.atleast_2d(np.asarray(x, dtype=np.float32))
+    a = np.atleast_2d(np.asarray(x, dtype=layers[0][0].dtype))
     last = len(layers) - 1
     for i, (w, b) in enumerate(layers):
         z = a @ w + b
@@ -40,8 +43,13 @@ def forward(x, layers, keep=None):
 
 
 def mse(pred, target):
-    return float(np.mean((np.asarray(pred, dtype=np.float32)
-                          - np.asarray(target, dtype=np.float32)) ** 2))
+    """MSE na precisao nativa dos inputs (float32 fica float32; float64
+    conserva a faixa ~1e-308 — usado pelo modo --dtype float64)."""
+    p = np.asarray(pred)
+    t = np.asarray(target)
+    if p.dtype != t.dtype:
+        p, t = p.astype(np.float64), t.astype(np.float64)
+    return float(np.mean((p - t) ** 2))
 
 
 class Adam:
@@ -65,17 +73,23 @@ class Adam:
 
 
 def train(x, y, epochs=400, batch=512, lr=2e-3, seed=SEED, verbose=True,
-          x_val=None, y_val=None, start_layers=None):
+          x_val=None, y_val=None, start_layers=None, dtype=np.float32):
     """Train the MLP on (x, y) with Adam + MSE. Returns (layers, history).
 
     start_layers: optional [(W,b), ...] to continue training from existing
     weights (DAgger finetuning) instead of initialising from scratch.
+    dtype: np.float32 (deploy, default — bit-identico ao historico) ou
+    np.float64 (experimento de precisao; GPU T4 roda FP64 a 1/32 da
+    velocidade, por isso o modo fica no numpy/CPU).
     """
     rng = np.random.default_rng(seed)
-    layers = start_layers if start_layers is not None else init_layers(rng)
+    layers = start_layers if start_layers is not None else init_layers(rng, dtype)
     opt = Adam(layers, lr=lr)
-    x = np.asarray(x, dtype=np.float32)
-    y = np.asarray(y, dtype=np.float32)
+    x = np.asarray(x, dtype=dtype)
+    y = np.asarray(y, dtype=dtype)
+    if x_val is not None:
+        x_val = np.asarray(x_val, dtype=dtype)
+        y_val = np.asarray(y_val, dtype=dtype)
     n = len(x)
     history = []
     best = (np.inf, None)

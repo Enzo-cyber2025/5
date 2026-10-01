@@ -49,8 +49,8 @@ def clamp_action(steer, throttle, brake):
             max(0.0, min(1.0, brake)))
 
 
-def model_meta(epochs=None, samples=None, loss=None):
-    return {
+def model_meta(epochs=None, samples=None, loss=None, dtype=None):
+    meta = {
         "features": FEATURES,
         "actions": ACTIONS,
         "hidden": HIDDEN,
@@ -60,6 +60,9 @@ def model_meta(epochs=None, samples=None, loss=None):
         "samples": samples,
         "final_loss": loss,
     }
+    if dtype is not None:  # float32 (deploy) nao registra: mantem o JSON igual
+        meta["dtype"] = dtype
+    return meta
 
 
 def save_weights(path, layer_weights, meta):

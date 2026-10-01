@@ -53,8 +53,8 @@ def clamp_action(steer, throttle, brake):
             max(0.0, min(1.0, brake)))
 
 
-def model_meta(epochs=None, samples=None, loss=None):
-    return {
+def model_meta(epochs=None, samples=None, loss=None, dtype=None):
+    meta = {
         "features": FEATURES,
         "actions": ACTIONS,
         "hidden": HIDDEN,
@@ -64,6 +64,9 @@ def model_meta(epochs=None, samples=None, loss=None):
         "samples": samples,
         "final_loss": loss,
     }
+    if dtype is not None:  # float32 (deploy) nao registra: mantem o JSON igual
+        meta["dtype"] = dtype
+    return meta
 
 
 def save_weights(path, layer_weights, meta):
@@ -573,14 +576,14 @@ import numpy as np
 
 
 
-def init_layers(rng):
+def init_layers(rng, dtype=np.float32):
     """He initialisation for tanh layers; returns [(W,b), ...]."""
     sizes = [N_IN] + list(HIDDEN) + [N_OUT]
     layers = []
     for i in range(len(sizes) - 1):
         fan_in, fan_out = sizes[i], sizes[i + 1]
-        w = rng.standard_normal((fan_in, fan_out)).astype(np.float32) * np.sqrt(1.0 / fan_in)
-        b = np.zeros(fan_out, dtype=np.float32)
+        w = rng.standard_normal((fan_in, fan_out)).astype(dtype) * np.sqrt(1.0 / fan_in)
+        b = np.zeros(fan_out, dtype=dtype)
         layers.append((w, b))
     return layers
 
@@ -588,10 +591,11 @@ def init_layers(rng):
 def forward(x, layers, keep=None):
     """Forward pass. x: (N, N_IN) or (N_IN,). tanh hidden, linear output.
 
+    Precision follows the weights (float32 deploy / float64 experiment).
     `keep` (optional) receives intermediate activations for backprop.
     Returns activations of the output layer.
     """
-    a = np.atleast_2d(np.asarray(x, dtype=np.float32))
+    a = np.atleast_2d(np.asarray(x, dtype=layers[0][0].dtype))
     last = len(layers) - 1
     for i, (w, b) in enumerate(layers):
         z = a @ w + b
@@ -602,8 +606,13 @@ def forward(x, layers, keep=None):
 
 
 def mse(pred, target):
-    return float(np.mean((np.asarray(pred, dtype=np.float32)
-                          - np.asarray(target, dtype=np.float32)) ** 2))
+    """MSE na precisao nativa dos inputs (float32 fica float32; float64
+    conserva a faixa ~1e-308 — usado pelo modo --dtype float64)."""
+    p = np.asarray(pred)
+    t = np.asarray(target)
+    if p.dtype != t.dtype:
+        p, t = p.astype(np.float64), t.astype(np.float64)
+    return float(np.mean((p - t) ** 2))
 
 
 class Adam:
@@ -627,17 +636,23 @@ class Adam:
 
 
 def train(x, y, epochs=400, batch=512, lr=2e-3, seed=SEED, verbose=True,
-          x_val=None, y_val=None, start_layers=None):
+          x_val=None, y_val=None, start_layers=None, dtype=np.float32):
     """Train the MLP on (x, y) with Adam + MSE. Returns (layers, history).
 
     start_layers: optional [(W,b), ...] to continue training from existing
     weights (DAgger finetuning) instead of initialising from scratch.
+    dtype: np.float32 (deploy, default — bit-identico ao historico) ou
+    np.float64 (experimento de precisao; GPU T4 roda FP64 a 1/32 da
+    velocidade, por isso o modo fica no numpy/CPU).
     """
     rng = np.random.default_rng(seed)
-    layers = start_layers if start_layers is not None else init_layers(rng)
+    layers = start_layers if start_layers is not None else init_layers(rng, dtype)
     opt = Adam(layers, lr=lr)
-    x = np.asarray(x, dtype=np.float32)
-    y = np.asarray(y, dtype=np.float32)
+    x = np.asarray(x, dtype=dtype)
+    y = np.asarray(y, dtype=dtype)
+    if x_val is not None:
+        x_val = np.asarray(x_val, dtype=dtype)
+        y_val = np.asarray(y_val, dtype=dtype)
     n = len(x)
     history = []
     best = (np.inf, None)
@@ -763,18 +778,23 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--epochs", type=int, default=350)
     ap.add_argument("--out", default=str(Path(__file__).resolve().parent.parent / "artifacts"))
+    ap.add_argument("--dtype", choices=["float32", "float64"], default="float32",
+                    help="float32 = deploy (bit-identico ao CI/APK/EXE); "
+                         "float64 = experimento de precisao (numpy/CPU)")
     args = ap.parse_args()
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
+    dtype = {"float32": np.float32, "float64": np.float64}[args.dtype]
 
     print("[1/4] gerando dados do especialista (estradas aleatorias)...")
     x_train, y_train, x_val, y_val = generate()
     print(f"      treino {x_train.shape}  val {x_val.shape}")
 
-    print("[2/4] treinando MLP 12-24-24-3 (tanh, Adam)...")
+    print(f"[2/4] treinando MLP {N_IN}-{'-'.join(str(h) for h in HIDDEN)}-{N_OUT} "
+          f"(tanh, Adam, {args.dtype})...")
     layers, hist = train(x_train, y_train, epochs=args.epochs,
-                         x_val=x_val, y_val=y_val)
+                         x_val=x_val, y_val=y_val, dtype=dtype)
 
     loss_tr = mse(forward(x_train, layers), y_train)
     loss_va = mse(forward(x_val, layers), y_val)
@@ -790,7 +810,8 @@ def main():
 
     print("[4/4] exportando pesos...")
     meta = model_meta(epochs=args.epochs, samples=int(len(x_train) + len(x_val)),
-                      loss=loss_va)
+                      loss=loss_va,
+                      dtype=args.dtype if args.dtype != "float32" else None)
     save_weights(out / "model-weights.json", layers, meta)
     (out / "metrics.json").write_text(json.dumps({
         "meta": meta,
@@ -818,12 +839,13 @@ import json as _json
 import os as _os
 
 _OUT = _os.environ.get("KAGGLE_WORKING_DIR", ".")
+_DTYPE = np.float64 if _os.environ.get("ETS2AI_F64") == "1" else np.float32
 print("[kaggle] gerando dados do especialista (estradas aleatorias)...")
 _xtr, _ytr, _xva, _yva = generate()
-_xtr = np.asarray(_xtr, dtype=np.float32); _ytr = np.asarray(_ytr, dtype=np.float32)
-_xva = np.asarray(_xva, dtype=np.float32); _yva = np.asarray(_yva, dtype=np.float32)
+_xtr = np.asarray(_xtr, dtype=_DTYPE); _ytr = np.asarray(_ytr, dtype=_DTYPE)
+_xva = np.asarray(_xva, dtype=_DTYPE); _yva = np.asarray(_yva, dtype=_DTYPE)
 print(f"[kaggle] treino {_xtr.shape} | val {_xva.shape} | "
-      f"arquitetura 13-128-128-128-128-3 (~50k params)")
+      f"arquitetura 13-128-128-128-128-3 (~50k params) | dtype {_DTYPE.__name__}")
 
 _gpus = []
 _TRAIN_GPU = False
@@ -835,6 +857,11 @@ except Exception:
 
 if _tf is not None and len(_gpus) >= 1:
     # ---------------- GPU PATH (Kaggle 2x T4, MirroredStrategy) ----------------
+    # GPU treina em float32 de proposito: a T4 roda FP64 a 1/32 da velocidade
+    # e o ganho de perda e nulo (o residuo e estrutural, nao numerico).
+    if _DTYPE == np.float64:
+        print("[kaggle] ETS2AI_F64=1 ignorado no caminho GPU (T4: FP64 = 1/32 "
+              "da velocidade); use o caminho numpy/CPU para float64")
     print(f"[kaggle] GPU detectada: {len(_gpus)}x {_gpus[0][1]} — treinando com "
           f"tf.distribute.MirroredStrategy (todas as GPUs)")
     _strategy = _tf.distribute.MirroredStrategy()
@@ -853,8 +880,9 @@ if _tf is not None and len(_gpus) >= 1:
     _TRAIN_GPU = True
 else:
     # ---------------- CPU fallback (identical math) ----------------
-    print("[kaggle] sem GPU — treinando em numpy (CPU)")
-    _layers, _hist = train(_xtr, _ytr, epochs=400, x_val=_xva, y_val=_yva)
+    print(f"[kaggle] sem GPU — treinando em numpy (CPU, {_DTYPE.__name__})")
+    _layers, _hist = train(_xtr, _ytr, epochs=400, x_val=_xva, y_val=_yva,
+                           dtype=_DTYPE)
 
 _loss_tr = mse(forward(_xtr, _layers), _ytr)
 _loss_va = mse(forward(_xva, _layers), _yva)
@@ -866,11 +894,13 @@ print(f"[kaggle] circuito fechado: {_agg['finish_rate']*100:.0f}% rotas, "
       f"radares {_agg['radar_compliance']*100:.0f}%, dock {_agg['dock_rate']*100:.0f}%")
 
 save_weights(_os.path.join(_OUT, "model-weights.json"), _layers,
-             model_meta(epochs=400, samples=int(len(_xtr) + len(_xva)), loss=_loss_va))
+             model_meta(epochs=400, samples=int(len(_xtr) + len(_xva)), loss=_loss_va,
+                        dtype="float64" if _DTYPE == np.float64 else None))
 with open(_os.path.join(_OUT, "metrics.json"), "w", encoding="utf-8") as _f:
     _json.dump({"mse_train": _loss_tr, "mse_val": _loss_va,
                 "loss_target": LOSS_TARGET, "closed_loop": _agg,
-                "trained_on_gpu": _TRAIN_GPU, "n_gpus": len(_gpus)}, _f, indent=2)
+                "trained_on_gpu": _TRAIN_GPU, "n_gpus": len(_gpus),
+                "dtype": _DTYPE.__name__}, _f, indent=2)
 print(f"[kaggle] saida: model-weights.json + metrics.json (gpu={_TRAIN_GPU}, "
-      f"ngpus={len(_gpus)})")
+      f"ngpus={len(_gpus)}, dtype={_DTYPE.__name__})")
 
