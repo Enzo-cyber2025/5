@@ -275,3 +275,22 @@ jobs:
             --notes "$NOTES" \
             ets2-ai/.cache/release/* 2>/dev/null || \
           gh release upload ets2-ai-v0.4.0 ets2-ai/.cache/release/* --clobber
+
+  pt-export:
+    name: Exporta .pt (PyTorch) para a release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: Dependencias (torch CPU + numpy)
+        run: |
+          python3 -m pip install --quiet numpy
+          python3 -m pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Exporta .pt com paridade numpy verificada
+        run: |
+          cd ets2-ai
+          python3 -m ets2ai.export_pt --weights artifacts/model-weights.json --out artifacts/ets2ai-v0.4.0.pt
+      - name: Publica na release ets2-ai-v0.4.0
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload ets2-ai-v0.4.0 ets2-ai/artifacts/ets2ai-v0.4.0.pt --clobber
