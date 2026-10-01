@@ -8,7 +8,7 @@ de gravar.
 
 Uso:
     python -m ets2ai.export_pt --weights artifacts/model-weights.json \
-        --out artifacts/ets2ai-v0.4.2.pt
+        --out artifacts/ets2ai-v0.4.3.pt
 """
 import argparse
 import json
@@ -116,7 +116,7 @@ def export(weights_path, out_path, n_check=2048, seed=7):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--weights", default="artifacts/model-weights.json")
-    ap.add_argument("--out", default="artifacts/ets2ai-v0.4.2.pt")
+    ap.add_argument("--out", default="artifacts/ets2ai-v0.4.3.pt")
     args = ap.parse_args()
     raise SystemExit(export(args.weights, args.out))
 

@@ -22,7 +22,8 @@ import json as _json
 import os as _os
 
 _OUT = _os.environ.get("KAGGLE_WORKING_DIR", ".")
-_DTYPE = np.float64 if _os.environ.get("ETS2AI_F64") == "1" else np.float32
+_DTYPE = np.float32 if _os.environ.get("ETS2AI_F32") == "1" else np.float64
+_EPOCHS = int(_os.environ.get("ETS2AI_EPOCHS", "60"))
 _n_params = (N_IN * HIDDEN[0] + HIDDEN[0]
              + sum(HIDDEN[i] * HIDDEN[i + 1] + HIDDEN[i + 1] for i in range(len(HIDDEN) - 1))
              + HIDDEN[-1] * N_OUT + N_OUT)
@@ -32,7 +33,7 @@ _xtr = np.asarray(_xtr, dtype=_DTYPE); _ytr = np.asarray(_ytr, dtype=_DTYPE)
 _xva = np.asarray(_xva, dtype=_DTYPE); _yva = np.asarray(_yva, dtype=_DTYPE)
 print(f"[kaggle] treino {_xtr.shape} | val {_xva.shape} | "
       f"arquitetura {N_IN}-{'-'.join(str(_h) for _h in HIDDEN)}-{N_OUT} "
-      f"({_n_params:,} params) | dtype {_DTYPE.__name__}")
+      f"({_n_params:,} params) | dtype {_DTYPE.__name__} | epochs {_EPOCHS}")
 
 _gpus = []
 _TRAIN_GPU = False
@@ -43,32 +44,37 @@ except Exception:
     _tf = None
 
 if _tf is not None and len(_gpus) >= 1:
-    # ---------------- GPU PATH (Kaggle 2x T4, MirroredStrategy) ----------------
-    # GPU treina em float32 de proposito: a T4 roda FP64 a 1/32 da velocidade
-    # e o ganho de perda e nulo (o residuo e estrutural, nao numerico).
+    # ---------------- GPU PATH (Kaggle 2x T4, MirroredStrategy, FP64) ----------------
+    # FP64 e o padrao desde a v0.4.3 (exigencia do usuario). A T4 roda FP64 a
+    # 1/32 da velocidade do FP32 — para optar por FP32: ETS2AI_F32=1.
+    import math as _math
     if _DTYPE == np.float64:
-        print("[kaggle] ETS2AI_F64=1 ignorado no caminho GPU (T4: FP64 = 1/32 "
-              "da velocidade); use o caminho numpy/CPU para float64")
+        _tf.keras.backend.set_floatx("float64")
     print(f"[kaggle] GPU detectada: {len(_gpus)}x {_gpus[0][1]} — treinando com "
-          f"tf.distribute.MirroredStrategy (todas as GPUs)")
+          f"tf.distribute.MirroredStrategy (todas as GPUs), {_DTYPE.__name__}")
     _strategy = _tf.distribute.MirroredStrategy()
     with _strategy.scope():
         _model = _tf.keras.Sequential()
-        _model.add(_tf.keras.Input(shape=(13,)))
+        _model.add(_tf.keras.Input(shape=(N_IN,)))
         for _h in HIDDEN:
             _model.add(_tf.keras.layers.Dense(_h, activation="tanh"))
-        _model.add(_tf.keras.layers.Dense(3, activation="linear"))
-        _model.compile(_tf.keras.optimizers.Adam(learning_rate=2e-3), loss="mse")
-    _model.fit(_xtr, _ytr, epochs=400, batch_size=512, verbose=2)
+        _model.add(_tf.keras.layers.Dense(N_OUT, activation="linear"))
+        _lr = 2e-3
+        _model.compile(_tf.keras.optimizers.Adam(learning_rate=_lr), loss="mse")
+    _sched = _tf.keras.callbacks.LearningRateScheduler(
+        lambda e, lr: _lr * (0.05 + 0.95 * 0.5 * (1.0 + _math.cos(_math.pi * e / max(1, _EPOCHS)))),
+        verbose=0)
+    _model.fit(_xtr, _ytr, epochs=_EPOCHS, batch_size=2048,
+               validation_data=(_xva, _yva), verbose=2, callbacks=[_sched])
     _w = _model.get_weights()
-    _layers = [(np.asarray(_w[2 * i], dtype=np.float32),
-                np.asarray(_w[2 * i + 1], dtype=np.float32))
+    _layers = [(np.asarray(_w[2 * i], dtype=_DTYPE),
+                np.asarray(_w[2 * i + 1], dtype=_DTYPE))
                for i in range(len(_w) // 2)]
     _TRAIN_GPU = True
 else:
     # ---------------- CPU fallback (identical math) ----------------
     print(f"[kaggle] sem GPU — treinando em numpy (CPU, {_DTYPE.__name__})")
-    _layers, _hist = train(_xtr, _ytr, epochs=400, x_val=_xva, y_val=_yva,
+    _layers, _hist = train(_xtr, _ytr, epochs=_EPOCHS, x_val=_xva, y_val=_yva,
                            dtype=_DTYPE)
 
 _loss_tr = mse(forward(_xtr, _layers), _ytr)
@@ -81,7 +87,7 @@ print(f"[kaggle] circuito fechado: {_agg['finish_rate']*100:.0f}% rotas, "
       f"radares {_agg['radar_compliance']*100:.0f}%, dock {_agg['dock_rate']*100:.0f}%")
 
 save_weights(_os.path.join(_OUT, "model-weights.json"), _layers,
-             model_meta(epochs=400, samples=int(len(_xtr) + len(_xva)), loss=_loss_va,
+             model_meta(epochs=_EPOCHS, samples=int(len(_xtr) + len(_xva)), loss=_loss_va,
                         dtype="float64" if _DTYPE == np.float64 else None))
 with open(_os.path.join(_OUT, "metrics.json"), "w", encoding="utf-8") as _f:
     _json.dump({"mse_train": _loss_tr, "mse_val": _loss_va,

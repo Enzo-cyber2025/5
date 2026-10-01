@@ -54,7 +54,9 @@ def closed_loop_eval(layers, n_roads=N_VAL_ROADS, seed=777):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--epochs", type=int, default=350)
+    ap.add_argument("--epochs", type=int, default=60,
+                    help="60 epocas x ~1M amostras = mesmo orcamento de otimizacao "
+                         "das 400 x 120k das versoes anteriores")
     ap.add_argument("--out", default=str(Path(__file__).resolve().parent.parent / "artifacts"))
     ap.add_argument("--dtype", choices=["float32", "float64"], default="float64",
                     help="float64 = canônico (desde v0.4.1, exigência do usuário); "

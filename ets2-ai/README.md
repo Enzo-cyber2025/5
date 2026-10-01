@@ -1,11 +1,11 @@
 # ETS2-AI — piloto automático para Euro Truck Simulator 2 (celular ↔ PC)
 
 > **Downloads (IA já treinada dentro de ambos):**
-> - APK: https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.4.2/ETS2-AI-mobile.apk
-> - EXE: https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.4.2/ETS2-AI-bridge.exe
-> - Modelo PyTorch (`.pt`): https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.4.2/ets2ai-v0.4.2.pt
+> - APK: https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.4.3/ETS2-AI-mobile.apk
+> - EXE: https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.4.3/ETS2-AI-bridge.exe
+> - Modelo PyTorch (`.pt`): https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.4.3/ets2ai-v0.4.3.pt
 >
-> **v0.4.2 — IA de 295.103 parâmetros em float64, especialista perfeito + GPU 2×T4 + USB plug-and-play.** A IA treinada dirige caminhão num simulador com
+> **v0.4.3 — IA de 505.291 parâmetros (196×14, estreita e profunda), FP64, 1M+ amostras, pipeline de treino Kaggle 2×T4 + GPU 2×T4 + USB plug-and-play.** A IA treinada dirige caminhão num simulador com
 > a mesma física do jogo-alvo, gerencia combustível, sono e entregas, roda no
 > **APK do celular** (inferência 100% em Java, sem dependências) e entrega os
 > comandos ao **PC Windows** por TCP, onde o bridge injeta **teclas reais**
@@ -73,7 +73,7 @@ Você pediu para insistir na NPU. O resultado da investigação, com fontes:
    terceiro consegue: CPU (float) e GPU (Vulkan/OpenCL via delegates).
 
 **O que o projeto faz com isso:** o APK roda a política em **Java puro
-(CPU)** — para a rede atual (13→330-330-290-290→3), isso custa **microssegundos** por
+(CPU)** — para a rede atual (13→196×14→3), isso custa **microssegundos** por
 decisão; NPU seria overkill. Mesmo assim, o CI **já exporta os `.tflite`**
 (float32 e int8) validados contra o numpy, e o app traz a tela
 **"NPU" (Diagnóstico)** que mostra no seu aparelho exatamente o que existe
@@ -83,7 +83,7 @@ chip), o modelo está pronto para plugar num delegate.
 ## Modelo PyTorch (`.pt`)
 
 Além do Java (APK), do `.tflite` e do bridge, os mesmos pesos treinados saem
-também em **`ets2ai-v0.4.2.pt`** (TorchScript, auto-contido, ~1,2 MB) —
+também em **`ets2ai-v0.4.3.pt`** (TorchScript, auto-contido, ~1,2 MB) —
 gerado por `ets2ai/ets2ai/export_pt.py`, que grava o arquivo só depois de
 confirmar paridade numérica com o numpy (max diff < 1e-5 em 2.048 entradas
 aleatórias). Carregar e usar em qualquer lugar com PyTorch instalado:
@@ -96,7 +96,7 @@ x = torch.zeros(1, 13)                          # [speed, lane_offset, ..., rada
 steer, throttle, brake = m(x)[0].tolist()       # ações da IA
 ```
 
-Metadados embutidos no arquivo: `m.n_params` (295.103), `m.loss` (0.008602),
+Metadados embutidos no arquivo: `m.n_params` (505.291), `m.loss` (0.008602),
 `m.features` (13 entradas), `m.actions` (steer/throttle/brake). Teste de
 regressão em `tests/test_export_pt.py` (pula onde não há torch).
 
@@ -123,6 +123,7 @@ de verdade (verificado por teste) e float64 é explícito.
 | 51.715 params, float64, especialista com ruído | 0,008987 | 0,003166 |
 | 150.203 params, float64, especialista com ruído | 0,008790 | 0,001020 |
 | **295.103 params, float64, especialista perfeito (v0.4.2)** | **0,008602** | 0,001595 |
+| 505.291 params (196×14), FP64, 1,01M amostras (v0.4.3) | número oficial na release | — |
 
 Quatro configurações — capacidade 5,7×, precisão dobrada, ruído removido —
 e a validação fica na mesma faixa (0,0086–0,0090): **este é o mínimo
@@ -136,7 +137,7 @@ desvio do GPS 0,15 m, dock/faixa/radares 100%.
 
 **O que o float64 não faz:** a loss não despenca. O resíduo (~0,0086) é
 **estrutural** — o especialista tem travas duras (abastecer, dormir, frear
-no radar, creep do dock) que uma rede suave de 295.103 parâmetros aproxima
+no radar, creep do dock) que uma rede suave de 505.291 parâmetros aproxima
 mas não cruza de forma exata; não é ruído numérico. Loss de 1e-41 exigiria
 memorizar as descontinuidades com rede lisa — não acontece em nenhuma
 precisão. Na T4 do Kaggle o FP64 roda a 1/32 da velocidade, então o kernel
@@ -233,13 +234,14 @@ Para ativar (1 minuto):
 O kernel é montado por `ets2-ai/kaggle/build_kernel.py` (auto-contido) e
 orquestrado por `ets2-ai/kaggle/push.py`.
 
-**GPU 2× T4 (v0.4.0):** o job do CI empurra o kernel com `--gpu`. No Kaggle,
-o kernel detecta as GPUs e treina com `tf.distribute.MirroredStrategy`
-(**as duas T4 em paralelo** — `trained_on_gpu: true`, `n_gpus: 2` na saída).
-Sem GPU, o mesmo kernel roda em numpy (CPU) com matemática idêntica. Os pesos
-do Kaggle passam pelos mesmos gates (loss, circuito fechado, radares, dock)
-antes de serem aprovados. Adicione também `KAGGLE_USERNAME` (seu usuário)
-nos secrets — alguns recursos do `kaggle` CLI ainda o exigem.
+**GPU 2× T4 (v0.4.3):** o job `kaggle-train` do CI **empurra o kernel,
+aguarda a execucao nas 2×T4 (MirroredStrategy, FP64), baixa os pesos
+treinados, valida com os mesmos gates e commita como pesos canonicos** —
+a release inteira é construída a partir do treino da GPU. Sem o secret
+`KAGGLE_KEY`, o mesmo job treina localmente (determinístico) para o
+pipeline nunca parar. Para forçar o treino na GPU a qualquer momento:
+Actions → *ETS2-AI build* → **Run workflow** → marcar **"Forcar treino
+nas 2x T4 do Kaggle"**. O link do notebook ativo aparece no log do job.
 
 ### Rodar manualmente no Kaggle (sem secrets)
 
@@ -248,8 +250,8 @@ Kaggle em 4 passos (conta precisa de telefone verificado):
 
 1. Abra **kaggle.com → Code → New Notebook**;
 2. Settings → Accelerator → **GPU T4 x2**;
-3. Cole o conteúdo de `kaggle/kernel-ets2ai-v0.4.2.py` numa célula
-   (ou importe `kaggle/kernel-ets2ai-v0.4.2.ipynb` via File → Import);
+3. Cole o conteúdo de `kaggle/kernel-ets2ai-v0.4.3.py` numa célula
+   (ou importe `kaggle/kernel-ets2ai-v0.4.3.ipynb` via File → Import);
 4. **Run All** — procure `[kaggle] GPU detectada: 2x` no log e, no final,
    `gpu=True, ngpus=2` + circuito fechado. O notebook é 100% auto-contido
    (gera os próprios dados; nada do repo é necessário).

@@ -33,7 +33,7 @@ ACTIONS = ["steer", "throttle", "brake"]
 N_OUT = len(ACTIONS)
 
 # MLP architecture (part of the wire format).
-HIDDEN = [330, 330, 290, 290]   # 295,103 parameters (300k-class, user spec v0.4.2)
+HIDDEN = [196] * 14    # 505,291 parameters — narrow & deep (user spec v0.4.3)
 SEED = 20260930  # deterministic training across runs/CI
 
 # Reporting target demanded by the project brief.

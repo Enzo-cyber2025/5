@@ -11,8 +11,8 @@ import numpy as np
 from .contract import N_IN, N_OUT
 from .sim import Road, expert, run_episode
 
-N_TRAIN_ROADS = 26
-N_VAL_ROADS = 7
+N_TRAIN_ROADS = 220     # v0.4.3: >1M training samples (user spec)
+N_VAL_ROADS = 15
 NOISE = 0.0            # v0.4.2: especialista perfeito (antes 0.020 humano)
 ROAD_SEED = 31337
 

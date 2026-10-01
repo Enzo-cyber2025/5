@@ -77,14 +77,20 @@ def main():
     r = sh("kaggle", "kernels", "push", "-p", kdir)
     print(r.stdout or r.stderr)
     if r.returncode != 0:
+        # descobre o username real da conta do token (kernels list --mine)
+        r2 = sh("kaggle", "kernels", "list", "--mine", "--page-size", "5")
+        out2 = (r2.stdout or "") + (r2.stderr or "")
+        print("[kaggle] kernels list --mine:", out2.strip()[:400])
         print(f"::warning::kaggle kernels push falhou: {r.stderr.strip()[:300]}")
         return 1
 
-    print(f"[kaggle] kernel empurrado: {slug} — aguardando execucao...")
+    print(f"[kaggle] kernel empurrado: {slug}")
+    print(f"[kaggle] notebook ativo: https://www.kaggle.com/code/{slug}")
+    print("[kaggle] aguardando execucao (GPU T4 x2, FP64)...")
     deadline = time.time() + args.timeout
     status = "unknown"
     while time.time() < deadline:
-        time.sleep(15)
+        time.sleep(30)
         r = sh("kaggle", "kernels", "status", slug)
         out = (r.stdout + r.stderr).lower()
         if "complete" in out and "notcomplete" not in out and "running" not in out:
@@ -93,7 +99,8 @@ def main():
         if "error" in out or "cancel" in out:
             status = "error"
             break
-        print(f"[kaggle] status: {out.strip()[:120]}")
+        if (int(deadline - time.time()) % 300) < 30:
+            print(f"[kaggle] status: {out.strip()[:120]}")
     if status != "complete":
         print(f"::warning::kernel nao concluiu a tempo (status: {status})")
         return 1
@@ -117,7 +124,8 @@ def main():
     print(f"[kaggle] pesos validados: loss {loss:.5f} | "
           f"{agg['finish_rate']*100:.0f}% rotas | {agg['in_lane_pct']*100:.0f}% faixa | "
           f"radares {agg['radar_compliance']*100:.0f}%")
-    ok = loss <= LOSS_TARGET and agg["finish_rate"] >= 2 / 3 and agg["in_lane_pct"] > 0.95
+    ok = (loss <= LOSS_TARGET and agg["finish_rate"] >= 2 / 3
+          and agg["in_lane_pct"] > 0.95 and agg["dock_rate"] >= 2 / 3)
     print("[kaggle] GATES: " + ("OK — treino no Kaggle reproduz a qualidade" if ok
                                 else "FALHOU — mantendo pesos do treino local"))
     return 0 if ok else 1
