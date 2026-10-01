@@ -257,7 +257,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: ets2-ai/.cache/rel
-      - name: Publica release ets2-ai-v0.3.0
+      - name: Publica release ets2-ai-v0.3.1
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -268,8 +268,8 @@ jobs:
           cp ets2-ai/artifacts/model-weights.json ets2-ai/.cache/release/
           cp ets2-ai/artifacts/metrics.json ets2-ai/.cache/release/
           NOTES="$(python3 -c "import json;m=json.load(open('ets2-ai/artifacts/metrics.json'));c=m['closed_loop'];print(f\"MSE validacao: {m['mse_val']:.5f} (meta <= {m['loss_target']}) | circuito fechado: {c['finish_rate']*100:.0f}% rotas, {c['in_lane_pct']*100:.0f}% faixa, {c['avg_speed_kmh']:.0f} km/h, radares {c['radar_compliance']*100:.0f}%, lat max {c['max_lat_accel']:.2f} m/s2 (tombamento {3.6})\")")"
-          gh release create ets2-ai-v0.3.0 \
-            --title "ETS2-AI v0.3.0 — automacao total: missao completa, dock preciso, engine auto, bench" \
+          gh release create ets2-ai-v0.3.1 \
+            --title "ETS2-AI v0.3.1 — dialogo de entrega ('Onde voce precisa dele?'), estacionamento, habilidade aleatoria" \
             --notes "$NOTES" \
             ets2-ai/.cache/release/* 2>/dev/null || \
-          gh release upload ets2-ai-v0.3.0 ets2-ai/.cache/release/* --clobber
+          gh release upload ets2-ai-v0.3.1 ets2-ai/.cache/release/* --clobber

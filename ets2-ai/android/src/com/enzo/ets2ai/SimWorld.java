@@ -33,6 +33,21 @@ public final class SimWorld {
 
     public static final float[] LOOKAHEAD = { 8f, 18f, 40f, 90f, 170f };
 
+    /** Missoes/dialogos (espelho de ets2ai/mission.py). */
+    public static final String[] DELIVERY_DIALOG = {
+        "Entregar no pátio", "Onde você precisa dele?", "Cancelar" };
+    public static final String[] SKILLS = {
+        "ADR", "Cargas Frágeis", "Distâncias Longas", "Cargas de Alto Valor",
+        "Economia de Combustível", "Comboios Pesados" };
+    public static final int SKILL_EVERY_N_JOBS = 2;
+
+    public static int deliverySelection() {
+        for (int i = 0; i < DELIVERY_DIALOG.length; i++)
+            if (DELIVERY_DIALOG[i].toLowerCase().contains("onde você precisa"))
+                return i;
+        return 0;
+    }
+
     /** Road: piecewise constant curvature; integrated centreline samples. */
     public static final class Road {
         public final float[] sx, sy, ss;      // samples every 2 m
@@ -298,9 +313,31 @@ public final class SimWorld {
                 } else if ("sleep".equals(event)) {
                     truck.fatigue = 0f;
                     truck.money -= SLEEP_HOTEL_EUR;
-                } else if ("unload".equals(event)) {
-                    jobsDone++;                 // cargo delivered + loaded
-                    newRoute();                 // dispatcher picks, engine starts
+                } else if ("dock".equals(event)) {
+                    int idx = deliverySelection();          // dialogo do jogo
+                    event = "menu";
+                    eventTimer = 2.0f;
+                    eventText = "Menu: '" + DELIVERY_DIALOG[idx] + "' (setas + Enter)";
+                    return;
+                } else if ("menu".equals(event)) {          // estacionar
+                    truck.money += jobPay;
+                    jobsDone++;
+                    event = "park";
+                    eventTimer = 1.2f;
+                    eventText = "Estacionado — freio de mão";
+                    return;
+                } else if ("park".equals(event)) {          // job concluido
+                    if (jobsDone % SKILL_EVERY_N_JOBS == 0) {
+                        int sk = rng.nextInt(SKILLS.length);   // ALEATORIA
+                        event = "skill";
+                        eventTimer = 1.5f;
+                        eventText = "Nova habilidade (aleatória): " + SKILLS[sk];
+                        return;
+                    }
+                    newRoute();
+                    return;
+                } else if ("skill".equals(event)) {
+                    newRoute();
                     return;
                 } else if ("engine".equals(event)) {
                     eventText = "";
@@ -331,12 +368,9 @@ public final class SimWorld {
             return;
         }
         if (truck.s >= road.length - 10f && truck.speed < 0.8f) {
-            float pay = jobPay > 0f ? jobPay : truck.drivenKm * JOB_PAY_PER_KM;
-            truck.money += pay;
-            event = "unload";
-            eventTimer = 3.0f;
-            eventText = String.format(Locale.US,
-                    "No dock: descarrega e carrega (T)… +%d EUR", (int) pay);
+            event = "dock";
+            eventTimer = 2.0f;
+            eventText = "Área de entrega: parado — abrindo diálogo (T)…";
         }
     }
 }

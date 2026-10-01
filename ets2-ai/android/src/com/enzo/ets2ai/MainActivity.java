@@ -468,10 +468,10 @@ public final class MainActivity extends Activity {
                         bridge.lastRttMs, bridge.answered);
             }
             String line = String.format(Locale.US,
-                    "%s | %d km/h | faixa %.0f%% | EUR %.0f | entrega %.1f km%s%s",
+                    "%s | %d km/h | faixa %.0f%% | EUR %.0f | jobs %d | entrega %.1f km%s",
                     src, Math.round(t.speed * 3.6f), world.inLanePct * 100f, t.money,
-                    world.jobLeftKm(), world.crashed ? " | BATER!" : "",
-                    world.jobLabel.length() > 0 ? " | " + world.jobLabel : "");
+                    world.jobsDone, world.jobLeftKm(),
+                    world.crashed ? " | BATER!" : "");
             setStatus(line);
 
             // fuel / fatigue bars (right edge)

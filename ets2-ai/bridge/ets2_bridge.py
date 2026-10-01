@@ -31,6 +31,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from ets2ai import sim                                    # noqa: E402
+from ets2ai import mission as mission_mod                 # noqa: E402
 from ets2ai.contract import load_weights, clamp_action    # noqa: E402
 from ets2ai.model import forward                          # noqa: E402
 
@@ -39,12 +40,18 @@ PHONE_TIMEOUT_S = 0.5      # sem resposta do celular por isso = failover local
 
 # Teclas enviadas (scan codes). ETS2 vem com setas para dirigir por padrao.
 KEYMAP = {"left": 0x4B, "right": 0x4D, "accel": 0x48, "brake": 0x50}
-# Macros da missao (scan code, nome) — liga motor, engate do reboque/carga.
+# Macros da missao (scan code, nome) — liga motor, carga, menus do jogo.
 # Ajuste se seus binds forem diferentes (ver ets2-ai/README.md).
 MACROS = {
-    "engine": (0x12, "E (ligar motor)"),
-    "dock":   (0x14, "T (carregar/descarregar)"),
+    "engine":     (0x12, "E (ligar motor)"),
+    "dock":       (0x14, "T (carregar/descarregar)"),
+    "ok":         (0x1C, "Enter (confirmar)"),
+    "down":       (0x50, "Baixo (navegar menu)"),
+    "park_brake": (0x34, ". (freio de estacionamento)"),
 }
+# Setas/Enter etc. sao teclas EXTENDIDAS no Windows: sem a flag, viram
+# teclado numerico (bug real de injecao — corrigido abaixo).
+EXTENDED_KEYS = {0x48, 0x4B, 0x4D, 0x50, 0x52, 0x53, 0x1C, 0x34}
 
 
 def load_policy():
@@ -155,6 +162,14 @@ class PhoneLink(threading.Thread):
 # ---------------------------------------------------------------------------
 # Windows keyboard injection (SendInput, scan codes)
 # ---------------------------------------------------------------------------
+def press_menu(injector, keys):
+    """Presses a menu key sequence (['down', 'ok'] etc.) with small pauses."""
+    for k in keys:
+        scan, name = MACROS[k]
+        injector.tap(scan, name)
+        time.sleep(0.15)
+
+
 class KeyInjector:
     def __init__(self, window_substring, enabled):
         self.enabled = enabled and sys.platform == "win32"
@@ -171,6 +186,7 @@ class KeyInjector:
         INPUT_KEYBOARD = 1
         KEYEVENTF_SCANCODE = 0x0008
         KEYEVENTF_KEYUP = 0x0002
+        KEYEVENTF_EXTENDEDKEY = 0x0001
         class _KBD(ctypes.Structure):
             _fields_ = [("wVk", ctypes.c_ushort), ("wScan", ctypes.c_ushort),
                         ("dwFlags", ctypes.c_ulong), ("time", ctypes.c_ulong),
@@ -178,8 +194,10 @@ class KeyInjector:
         class _INPUT(ctypes.Structure):
             _fields_ = [("type", ctypes.c_ulong), ("ki", _KBD)]
         extra = ctypes.c_ulong(0)
-        ki = _KBD(0, scan, KEYEVENTF_SCANCODE | (KEYEVENTF_KEYUP if up else 0),
-                  0, ctypes.pointer(extra))
+        flags = KEYEVENTF_SCANCODE | (KEYEVENTF_KEYUP if up else 0)
+        if scan in EXTENDED_KEYS:
+            flags |= KEYEVENTF_EXTENDEDKEY
+        ki = _KBD(0, scan, flags, 0, ctypes.pointer(extra))
         inp = _INPUT(INPUT_KEYBOARD, ki)
         n = self.user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(inp))
         return n == 1
@@ -455,19 +473,42 @@ def run_headless(layers, port, injector, phone_only):
                 if phase["name"] != "drive":
                     phase["t"] -= sim.DT
                     if phase["t"] <= 0:
-                        if phase["name"] == "dock":
+                        if phase["name"] == "engine":         # motor ligado
+                            phase = {"name": "drive", "t": 0.0}
+                        elif phase["name"] == "dock":         # dialogo do jogo
+                            idx = mission_mod.delivery_selection()
+                            print("[menu] " + " | ".join(mission_mod.DELIVERY_DIALOG))
+                            print(f"[menu] selecionando: "
+                                  f"'{mission_mod.DELIVERY_DIALOG[idx]}'")
+                            press_menu(injector, mission_mod.menu_key_sequence(idx))
+                            phase = {"name": "menu", "t": 1.5}
+                        elif phase["name"] == "menu":         # estacionar
+                            injector.tap(*MACROS["park_brake"])
                             money += best.pay_eur
                             jobs += 1
-                            print(f"[job] entrega #{jobs} concluida: +{best.pay_eur:.0f} EUR "
-                                  f"(total {money:.0f} EUR)")
+                            print(f"[park] estacionado — entrega #{jobs}: "
+                                  f"+{best.pay_eur:.0f} EUR (total {money:.0f} EUR)")
+                            if jobs % mission_mod.SKILL_EVERY_N_JOBS == 0:
+                                sk = mission_mod.pick_random_skill(rng)
+                                print("[skill] " + " | ".join(mission_mod.SKILLS))
+                                print(f"[skill] escolhida (aleatoria): "
+                                      f"{mission_mod.SKILLS[sk]}")
+                                press_menu(injector, mission_mod.menu_key_sequence(sk))
+                                phase = {"name": "skill", "t": 1.5}
+                            else:
+                                best, _ = dispatch_mod.pick_best(rng, sim.Road, 3)
+                                road = sim.Road.random(best.road_seed)
+                                truck = sim.Truck(road, s=5.0, offset=0.0, speed=0.0)
+                                phase = {"name": "engine", "t": 1.5}
+                                injector.tap(*MACROS["engine"])
+                                print(f"[job] proximo: {best.label()} [melhor de 3]")
+                        elif phase["name"] == "skill":        # nova habilidade
                             best, _ = dispatch_mod.pick_best(rng, sim.Road, 3)
                             road = sim.Road.random(best.road_seed)
                             truck = sim.Truck(road, s=5.0, offset=0.0, speed=0.0)
                             phase = {"name": "engine", "t": 1.5}
                             injector.tap(*MACROS["engine"])
                             print(f"[job] proximo: {best.label()} [melhor de 3]")
-                        else:                                # engine pronto
-                            phase = {"name": "drive", "t": 0.0}
                     continue
                 job_left = max(0.0, (road.length - truck.s) / 1000.0)
                 link.send_state(road, truck, job_left)
@@ -501,9 +542,9 @@ def run_headless(layers, port, injector, phone_only):
                     injector.tap(*MACROS["engine"])
                 d_dock = (road.length - 6.0) - truck.s
                 if d_dock <= 4.0 and truck.speed < 0.6:
-                    phase = {"name": "dock", "t": 3.0}
+                    phase = {"name": "dock", "t": 2.0}
                     injector.tap(*MACROS["dock"])
-                    print("[dock] parada precisa — descarregando/carregando...")
+                    print("[dock] parada precisa na area de entrega — abrindo dialogo...")
             if now - last_print > 2.0:
                 last_print = now
                 print(f"[leve] {src:16s} {truck.speed*3.6:5.1f} km/h "

@@ -1,8 +1,8 @@
 # ETS2-AI — piloto automático para Euro Truck Simulator 2 (celular ↔ PC)
 
 > **Downloads (IA já treinada dentro de ambos):**
-> - APK: https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.3.0/ETS2-AI-mobile.apk
-> - EXE: https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.3.0/ETS2-AI-bridge.exe
+> - APK: https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.3.1/ETS2-AI-mobile.apk
+> - EXE: https://github.com/Enzo-cyber2025/5/releases/download/ets2-ai-v0.3.1/ETS2-AI-bridge.exe
 >
 > **v0.3.0 — automação total da missão.** A IA treinada dirige caminhão num simulador com
 > a mesma física do jogo-alvo, gerencia combustível, sono e entregas, roda no
@@ -40,7 +40,9 @@ confere que os pesos batem com os commitados, tolerância 1e-5).
 | Regras de abastecer/dormir/entregas/dinheiro | ✅ real (regras sobre telemetria — não precisa de ML) |
 | **Dispatcher: escolhe a melhor rota de 3 ofertas** (EUR/km líquido − combustível − hotel − curvas) | ✅ real (`ets2ai/dispatch.py` + `Dispatcher.java`) |
 | **Teclado Bluetooth**: o celular aparece como teclado HID real no PC | ✅ API pública `BluetoothHidDevice` (Android 9+) |
-| **Missão completa**: liga motor (E) → dirige → para no dock → carrega (T) → dispatcher escolhe o próximo trabalho → repete | ✅ app, bridge e testes |
+| **Missão completa**: liga motor (E) → dirige → para na área de entrega → seleciona **"Onde você precisa dele?"** no diálogo (setas + Enter) → estaciona (freio de mão) → carrega (T) → dispatcher escolhe o próximo trabalho → repete | ✅ app, bridge e testes |
+| **Habilidades ao subir de nível** | ✅ escolha **aleatória** por design (ADR, Cargas Frágeis, Distâncias Longas…) |
+| **Injeção de teclas corrigida** | ✅ setas/Enter com flag `EXTENDEDKEY` (sem isso o Windows interpretaria teclado numérico) |
 | **Motor de inferência auto-selecionado** | ✅ benchmark interno escolhe o mais rápido (Java/TFLite/GPU/NNAPI) e mostra no HUD |
 | **Benchmark de backends no aparelho** (Java / TFLite CPU / GPU / NNAPI-rota-pública-para-NPU) | ✅ medidas reais no seu A55, botão BACKEND |
 | APK Android com a IA + HUD + diagnóstico NPU | ✅ sai do CI assinado |
