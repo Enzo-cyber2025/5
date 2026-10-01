@@ -97,6 +97,40 @@ Metadados embutidos no arquivo: `m.n_params` (51.715), `m.loss` (0.008568),
 `m.features` (13 entradas), `m.actions` (steer/throttle/brake). Teste de
 regressão em `tests/test_export_pt.py` (pula onde não há torch).
 
+## E float64? (o teto real de precisão)
+
+O treino padrão roda em float32 — a precisão do deploy (APK/EXE/TFLite/.pt).
+Para o experimento de precisão existe `--dtype float64`:
+
+```
+python -m ets2ai.train --epochs 400 --dtype float64 --out artifacts-f64
+```
+
+Tudo em double nativo (pesos, entradas, alvos, loss). Curiosidade honesta:
+até a v0.4.0 o treino já rodava em float64 **por acidente** — o NEP 50 do
+numpy ≥ 2 promove `float32 * np.float64` para float64, e a inicialização
+He multiplicava por um escalar float64. Corrigido: agora float32 é float32
+de verdade (verificado por teste) e float64 é explícito.
+
+**Resultado medido (400 épocas, mesma semente, mesmas estradas):**
+
+| | float32 (deploy) | float64 |
+|---|---|---|
+| MSE validação | **0,008568** | 0,008987 |
+| MSE treino | 0,003979 | 0,003166 |
+| Circuito fechado | dock 100%, faixa 100%, radares 100% | dock 100%, faixa 100%, radares 100% |
+
+Float64 decorou mais o treino (loss menor) e **generalizou pior** (val
+4,9% maior) — precisão extra não vira loss menor.
+
+**O que o float64 não faz:** a loss não despenca. O resíduo (~0,0086) é
+**estrutural** — o especialista tem travas duras (abastecer, dormir, frear
+no radar, creep do dock) que uma rede suave de 51.715 parâmetros aproxima
+mas não cruza de forma exata; não é ruído numérico. Loss de 1e-41 exigiria
+memorizar as descontinuidades com rede lisa — não acontece em nenhuma
+precisão. Na T4 do Kaggle o FP64 roda a 1/32 da velocidade, então o kernel
+GPU fica em float32 de propósito; float64 é para CPU/numpy.
+
 ## Arquitetura
 
 ```
