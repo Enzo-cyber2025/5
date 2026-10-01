@@ -279,17 +279,30 @@ jobs:
   pt-export:
     name: Exporta .pt (PyTorch) para a release
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
       - name: Dependencias (torch CPU + numpy)
         run: |
-          python3 -m pip install --quiet numpy
-          python3 -m pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu
+          set -x
+          python3 -m pip install --retries 5 --timeout 120 --quiet numpy
+          python3 -m pip install --retries 5 --timeout 120 --quiet torch --index-url https://download.pytorch.org/whl/cpu
       - name: Exporta .pt com paridade numpy verificada
         run: |
           cd ets2-ai
-          python3 -m ets2ai.export_pt --weights artifacts/model-weights.json --out artifacts/ets2ai-v0.4.1.pt
+          python3 -m ets2ai.export_pt --weights artifacts/model-weights.json --out artifacts/ets2ai-v0.4.1.pt 2>&1 | tee ../.cache_pt.log
+          exit ${PIPESTATUS[0]}
+      - name: Diagnostico (commita logs no repo em caso de falha)
+        if: failure()
+        run: |
+          set +e
+          mkdir -p ci-logs/${{ github.run_id }}-pt
+          cp .cache_pt.log ci-logs/${{ github.run_id }}-pt/log.txt 2>/dev/null || echo "sem log" > ci-logs/${{ github.run_id }}-pt/log.txt
+          git config user.name "ci-diag"; git config user.email "ci-diag@users.noreply.github.com"
+          git add ci-logs || true
+          git commit -m "diag: pt-export run ${{ github.run_id }} [skip ci]" || true
+          git push || true
+          exit 1
       - name: Publica na release ets2-ai-v0.4.1
         env:
           GH_TOKEN: ${{ github.token }}
