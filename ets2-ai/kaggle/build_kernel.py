@@ -23,12 +23,16 @@ import os as _os
 
 _OUT = _os.environ.get("KAGGLE_WORKING_DIR", ".")
 _DTYPE = np.float64 if _os.environ.get("ETS2AI_F64") == "1" else np.float32
+_n_params = (N_IN * HIDDEN[0] + HIDDEN[0]
+             + sum(HIDDEN[i] * HIDDEN[i + 1] + HIDDEN[i + 1] for i in range(len(HIDDEN) - 1))
+             + HIDDEN[-1] * N_OUT + N_OUT)
 print("[kaggle] gerando dados do especialista (estradas aleatorias)...")
 _xtr, _ytr, _xva, _yva = generate()
 _xtr = np.asarray(_xtr, dtype=_DTYPE); _ytr = np.asarray(_ytr, dtype=_DTYPE)
 _xva = np.asarray(_xva, dtype=_DTYPE); _yva = np.asarray(_yva, dtype=_DTYPE)
 print(f"[kaggle] treino {_xtr.shape} | val {_xva.shape} | "
-      f"arquitetura 13-128-128-128-128-3 (~50k params) | dtype {_DTYPE.__name__}")
+      f"arquitetura {N_IN}-{'-'.join(str(_h) for _h in HIDDEN)}-{N_OUT} "
+      f"({_n_params:,} params) | dtype {_DTYPE.__name__}")
 
 _gpus = []
 _TRAIN_GPU = False

@@ -5,6 +5,7 @@ reproduced on the CI runner and re-implemented bit-for-bit in Java on the
 phone and in TFLite. Deterministic under SEED.
 """
 import json
+import math
 from pathlib import Path
 import numpy as np
 
@@ -73,14 +74,15 @@ class Adam:
 
 
 def train(x, y, epochs=400, batch=512, lr=2e-3, seed=SEED, verbose=True,
-          x_val=None, y_val=None, start_layers=None, dtype=np.float32):
+          x_val=None, y_val=None, start_layers=None, dtype=np.float32,
+          schedule="cosine"):
     """Train the MLP on (x, y) with Adam + MSE. Returns (layers, history).
 
     start_layers: optional [(W,b), ...] to continue training from existing
     weights (DAgger finetuning) instead of initialising from scratch.
-    dtype: np.float32 (deploy, default — bit-identico ao historico) ou
-    np.float64 (experimento de precisao; GPU T4 roda FP64 a 1/32 da
-    velocidade, por isso o modo fica no numpy/CPU).
+    dtype: np.float32 (deploy rapido) ou np.float64 (experimento de precisao).
+    schedule: "cosine" decai lr de `lr` ate 5% de `lr` ao longo das epocas
+    (deterministico, ajuda a fechar a loss); None mantem lr constante.
     """
     rng = np.random.default_rng(seed)
     layers = start_layers if start_layers is not None else init_layers(rng, dtype)
@@ -94,6 +96,8 @@ def train(x, y, epochs=400, batch=512, lr=2e-3, seed=SEED, verbose=True,
     history = []
     best = (np.inf, None)
     for epoch in range(epochs):
+        if schedule == "cosine":
+            opt.lr = lr * (0.05 + 0.95 * 0.5 * (1.0 + math.cos(math.pi * epoch / epochs)))
         idx = rng.permutation(n)
         for s in range(0, n, batch):
             sel = idx[s:s + batch]

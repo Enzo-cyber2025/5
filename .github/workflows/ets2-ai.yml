@@ -13,7 +13,7 @@ jobs:
   train-verify:
     name: Retreino deterministico + testes de qualidade
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
@@ -259,7 +259,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: ets2-ai/.cache/rel
-      - name: Publica release ets2-ai-v0.4.0
+      - name: Publica release ets2-ai-v0.4.1
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -270,11 +270,11 @@ jobs:
           cp ets2-ai/artifacts/model-weights.json ets2-ai/.cache/release/
           cp ets2-ai/artifacts/metrics.json ets2-ai/.cache/release/
           NOTES="$(python3 -c "import json;m=json.load(open('ets2-ai/artifacts/metrics.json'));c=m['closed_loop'];print(f\"MSE validacao: {m['mse_val']:.5f} (meta <= {m['loss_target']}) | circuito fechado: {c['finish_rate']*100:.0f}% rotas, {c['in_lane_pct']*100:.0f}% faixa, {c['avg_speed_kmh']:.0f} km/h, radares {c['radar_compliance']*100:.0f}%, lat max {c['max_lat_accel']:.2f} m/s2 (tombamento {3.6})\")")"
-          gh release create ets2-ai-v0.4.0 \
-            --title "ETS2-AI v0.4.0 — IA de 50k parametros treinavel nas 2x T4 do Kaggle, EXE sem terminal com UI completa, APK Material + USB auto" \
+          gh release create ets2-ai-v0.4.1 \
+            --title "ETS2-AI v0.4.1 — IA de 150.203 parametros (float64) treinavel nas 2x T4 do Kaggle, EXE sem terminal com UI completa, APK Material + USB auto" \
             --notes "$NOTES" \
             ets2-ai/.cache/release/* 2>/dev/null || \
-          gh release upload ets2-ai-v0.4.0 ets2-ai/.cache/release/* --clobber
+          gh release upload ets2-ai-v0.4.1 ets2-ai/.cache/release/* --clobber
 
   pt-export:
     name: Exporta .pt (PyTorch) para a release
@@ -289,8 +289,8 @@ jobs:
       - name: Exporta .pt com paridade numpy verificada
         run: |
           cd ets2-ai
-          python3 -m ets2ai.export_pt --weights artifacts/model-weights.json --out artifacts/ets2ai-v0.4.0.pt
-      - name: Publica na release ets2-ai-v0.4.0
+          python3 -m ets2ai.export_pt --weights artifacts/model-weights.json --out artifacts/ets2ai-v0.4.1.pt
+      - name: Publica na release ets2-ai-v0.4.1
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload ets2-ai-v0.4.0 ets2-ai/artifacts/ets2ai-v0.4.0.pt --clobber
+        run: gh release upload ets2-ai-v0.4.1 ets2-ai/artifacts/ets2ai-v0.4.1.pt --clobber

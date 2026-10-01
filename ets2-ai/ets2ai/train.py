@@ -12,7 +12,7 @@ import numpy as np
 
 from . import sim
 from .contract import (N_IN, N_OUT, HIDDEN, SEED, LOSS_TARGET, FEATURES,
-                       ACTIONS, model_meta, save_weights)
+                       ACTIONS, model_meta, save_weights, save_device_format)
 from .data import generate, N_VAL_ROADS, ROAD_SEED
 from .model import train, forward, mse
 from .sim import Road, run_episode
@@ -56,9 +56,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--epochs", type=int, default=350)
     ap.add_argument("--out", default=str(Path(__file__).resolve().parent.parent / "artifacts"))
-    ap.add_argument("--dtype", choices=["float32", "float64"], default="float32",
-                    help="float32 = deploy (bit-identico ao CI/APK/EXE); "
-                         "float64 = experimento de precisao (numpy/CPU)")
+    ap.add_argument("--dtype", choices=["float32", "float64"], default="float64",
+                    help="float64 = canônico (desde v0.4.1, exigência do usuário); "
+                         "float32 = modo rápido/deploy-check")
     args = ap.parse_args()
 
     out = Path(args.out)
@@ -69,8 +69,11 @@ def main():
     x_train, y_train, x_val, y_val = generate()
     print(f"      treino {x_train.shape}  val {x_val.shape}")
 
+    n_params = (N_IN * HIDDEN[0] + HIDDEN[0]
+                + sum(HIDDEN[i] * HIDDEN[i + 1] + HIDDEN[i + 1] for i in range(len(HIDDEN) - 1))
+                + HIDDEN[-1] * N_OUT + N_OUT)
     print(f"[2/4] treinando MLP {N_IN}-{'-'.join(str(h) for h in HIDDEN)}-{N_OUT} "
-          f"(tanh, Adam, {args.dtype})...")
+          f"({n_params:,} params, tanh, Adam+cosine, {args.dtype})...")
     layers, hist = train(x_train, y_train, epochs=args.epochs,
                          x_val=x_val, y_val=y_val, dtype=dtype)
 
@@ -91,6 +94,7 @@ def main():
                       loss=loss_va,
                       dtype=args.dtype if args.dtype != "float32" else None)
     save_weights(out / "model-weights.json", layers, meta)
+    save_device_format(out / "model-weights.txt", layers, meta)
     (out / "metrics.json").write_text(json.dumps({
         "meta": meta,
         "mse_train": loss_tr,

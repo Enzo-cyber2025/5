@@ -278,7 +278,7 @@ public final class SimWorld {
             float vAllow = (float) Math.sqrt(2f * MAX_BRAKE * Math.max(0f, dDock - 2f));
             if (t.speed > vAllow + 0.3f) return new float[] { cmd[0], 0f, 1f };
             if (dDock <= 1.5f) return new float[] { cmd[0], 0f, 1f };   // hold
-            if (dDock < 170f && t.speed < 0.6f)
+            if (dDock < 600f && t.speed < 2.0f)
                 return new float[] { cmd[0], Math.max(cmd[1], 0.35f), 0f }; // creep
         }
         return cmd;

@@ -37,7 +37,7 @@ ACTIONS = ["steer", "throttle", "brake"]
 N_OUT = len(ACTIONS)
 
 # MLP architecture (part of the wire format).
-HIDDEN = [128, 128, 128, 128]   # ~50k parameters (51,715)
+HIDDEN = [240, 240, 200, 200]   # 150,203 parameters (~150k, user spec v0.4.1)
 SEED = 20260930  # deterministic training across runs/CI
 
 # Reporting target demanded by the project brief.
@@ -571,6 +571,7 @@ reproduced on the CI runner and re-implemented bit-for-bit in Java on the
 phone and in TFLite. Deterministic under SEED.
 """
 import json
+import math
 from pathlib import Path
 import numpy as np
 
@@ -582,7 +583,9 @@ def init_layers(rng, dtype=np.float32):
     layers = []
     for i in range(len(sizes) - 1):
         fan_in, fan_out = sizes[i], sizes[i + 1]
-        w = rng.standard_normal((fan_in, fan_out)).astype(dtype) * np.sqrt(1.0 / fan_in)
+        # cast DEPOIS da multiplicacao: com NEP 50 (numpy>=2), float32 * np.float64
+        # promoveria para float64 — era o comportamento antigo por acidente.
+        w = (rng.standard_normal((fan_in, fan_out)) * np.sqrt(1.0 / fan_in)).astype(dtype)
         b = np.zeros(fan_out, dtype=dtype)
         layers.append((w, b))
     return layers
@@ -636,14 +639,15 @@ class Adam:
 
 
 def train(x, y, epochs=400, batch=512, lr=2e-3, seed=SEED, verbose=True,
-          x_val=None, y_val=None, start_layers=None, dtype=np.float32):
+          x_val=None, y_val=None, start_layers=None, dtype=np.float32,
+          schedule="cosine"):
     """Train the MLP on (x, y) with Adam + MSE. Returns (layers, history).
 
     start_layers: optional [(W,b), ...] to continue training from existing
     weights (DAgger finetuning) instead of initialising from scratch.
-    dtype: np.float32 (deploy, default — bit-identico ao historico) ou
-    np.float64 (experimento de precisao; GPU T4 roda FP64 a 1/32 da
-    velocidade, por isso o modo fica no numpy/CPU).
+    dtype: np.float32 (deploy rapido) ou np.float64 (experimento de precisao).
+    schedule: "cosine" decai lr de `lr` ate 5% de `lr` ao longo das epocas
+    (deterministico, ajuda a fechar a loss); None mantem lr constante.
     """
     rng = np.random.default_rng(seed)
     layers = start_layers if start_layers is not None else init_layers(rng, dtype)
@@ -657,6 +661,8 @@ def train(x, y, epochs=400, batch=512, lr=2e-3, seed=SEED, verbose=True,
     history = []
     best = (np.inf, None)
     for epoch in range(epochs):
+        if schedule == "cosine":
+            opt.lr = lr * (0.05 + 0.95 * 0.5 * (1.0 + math.cos(math.pi * epoch / epochs)))
         idx = rng.permutation(n)
         for s in range(0, n, batch):
             sel = idx[s:s + batch]
@@ -778,9 +784,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--epochs", type=int, default=350)
     ap.add_argument("--out", default=str(Path(__file__).resolve().parent.parent / "artifacts"))
-    ap.add_argument("--dtype", choices=["float32", "float64"], default="float32",
-                    help="float32 = deploy (bit-identico ao CI/APK/EXE); "
-                         "float64 = experimento de precisao (numpy/CPU)")
+    ap.add_argument("--dtype", choices=["float32", "float64"], default="float64",
+                    help="float64 = canônico (desde v0.4.1, exigência do usuário); "
+                         "float32 = modo rápido/deploy-check")
     args = ap.parse_args()
 
     out = Path(args.out)
@@ -791,8 +797,11 @@ def main():
     x_train, y_train, x_val, y_val = generate()
     print(f"      treino {x_train.shape}  val {x_val.shape}")
 
+    n_params = (N_IN * HIDDEN[0] + HIDDEN[0]
+                + sum(HIDDEN[i] * HIDDEN[i + 1] + HIDDEN[i + 1] for i in range(len(HIDDEN) - 1))
+                + HIDDEN[-1] * N_OUT + N_OUT)
     print(f"[2/4] treinando MLP {N_IN}-{'-'.join(str(h) for h in HIDDEN)}-{N_OUT} "
-          f"(tanh, Adam, {args.dtype})...")
+          f"({n_params:,} params, tanh, Adam+cosine, {args.dtype})...")
     layers, hist = train(x_train, y_train, epochs=args.epochs,
                          x_val=x_val, y_val=y_val, dtype=dtype)
 
@@ -813,6 +822,7 @@ def main():
                       loss=loss_va,
                       dtype=args.dtype if args.dtype != "float32" else None)
     save_weights(out / "model-weights.json", layers, meta)
+    save_device_format(out / "model-weights.txt", layers, meta)
     (out / "metrics.json").write_text(json.dumps({
         "meta": meta,
         "mse_train": loss_tr,
@@ -840,12 +850,16 @@ import os as _os
 
 _OUT = _os.environ.get("KAGGLE_WORKING_DIR", ".")
 _DTYPE = np.float64 if _os.environ.get("ETS2AI_F64") == "1" else np.float32
+_n_params = (N_IN * HIDDEN[0] + HIDDEN[0]
+             + sum(HIDDEN[i] * HIDDEN[i + 1] + HIDDEN[i + 1] for i in range(len(HIDDEN) - 1))
+             + HIDDEN[-1] * N_OUT + N_OUT)
 print("[kaggle] gerando dados do especialista (estradas aleatorias)...")
 _xtr, _ytr, _xva, _yva = generate()
 _xtr = np.asarray(_xtr, dtype=_DTYPE); _ytr = np.asarray(_ytr, dtype=_DTYPE)
 _xva = np.asarray(_xva, dtype=_DTYPE); _yva = np.asarray(_yva, dtype=_DTYPE)
 print(f"[kaggle] treino {_xtr.shape} | val {_xva.shape} | "
-      f"arquitetura 13-128-128-128-128-3 (~50k params) | dtype {_DTYPE.__name__}")
+      f"arquitetura {N_IN}-{'-'.join(str(_h) for _h in HIDDEN)}-{N_OUT} "
+      f"({_n_params:,} params) | dtype {_DTYPE.__name__}")
 
 _gpus = []
 _TRAIN_GPU = False

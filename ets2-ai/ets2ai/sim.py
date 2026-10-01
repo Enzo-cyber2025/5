@@ -279,7 +279,7 @@ def governor(road, truck, cmd):
             return (cmd[0], 0.0, 1.0)
         if d_dock <= 1.5:
             return (cmd[0], 0.0, 1.0)               # hold at the line
-        if d_dock < 170.0 and truck.speed < 0.6:
+        if d_dock < 600.0 and truck.speed < 2.0:
             return (cmd[0], max(cmd[1], 0.35), 0.0)  # creep: never stall short
     return cmd
 
@@ -393,7 +393,7 @@ def run_episode(road, policy, seed=0, max_steps=7000, noise=0.0,
             in_lane += 1
         if (abs(offset) > ROAD_HALF
                 or (truck.speed < 0.3 and steps > 60
-                    and (road.length - truck.s) > 170.0)):
+                    and (road.length - truck.s) > 300.0)):
             off_road += 1
             break
         # career rules (identical in the app): refuel / sleep
