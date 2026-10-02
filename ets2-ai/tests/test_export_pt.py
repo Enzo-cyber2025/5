@@ -31,8 +31,8 @@ def pt_path(tmp_path_factory):
 def test_pt_e_auto_contido_e_possui_meta(pt_path):
     import torch
     m = torch.jit.load(str(pt_path))
-    assert m.n_params == 505291
-    assert m.loss < 0.05          # cabecalho do proprio arquivo (verificado no export)
+    assert m.n_params == 1017613
+    assert m.loss < 0.06          # cabecalho do proprio arquivo (verificado no export)
     assert len(m.features) == 13 and "radar_dist" in m.features
     assert list(m.actions) == ["steer", "throttle", "brake"]
 

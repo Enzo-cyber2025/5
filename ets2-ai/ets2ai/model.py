@@ -73,6 +73,23 @@ class Adam:
                 p -= self.lr * m_hat / (np.sqrt(v_hat) + self.eps)
 
 
+def train_step(layers, opt, x, y):
+    """Um passo de minibatch (Adam + MSE). Usado por train() e pelo treino
+    em fluxo (train.py --stream-samples) — fonte unica da matematica."""
+    acts = []
+    out = forward(x, layers, keep=acts)
+    err = out - y                                  # (B, N_OUT)
+    grads = [None] * len(layers)
+    delta = (2.0 / (len(x) * N_OUT)) * err         # dMSE/dz_out (linear)
+    for li in range(len(layers) - 1, -1, -1):
+        a_prev = x if li == 0 else acts[li - 1]
+        grads[li] = (a_prev.T @ delta, delta.sum(axis=0))
+        if li > 0:
+            delta = (delta @ layers[li][0].T) * (1 - acts[li - 1] ** 2)
+    opt.step(layers, grads)
+    return float(np.mean((out - y) ** 2))
+
+
 def train(x, y, epochs=400, batch=512, lr=2e-3, seed=SEED, verbose=True,
           x_val=None, y_val=None, start_layers=None, dtype=np.float32,
           schedule="cosine"):
@@ -101,17 +118,7 @@ def train(x, y, epochs=400, batch=512, lr=2e-3, seed=SEED, verbose=True,
         idx = rng.permutation(n)
         for s in range(0, n, batch):
             sel = idx[s:s + batch]
-            acts = []
-            out = forward(x[sel], layers, keep=acts)
-            err = out - y[sel]                       # (B, N_OUT)
-            grads = [None] * len(layers)
-            delta = (2.0 / (len(sel) * N_OUT)) * err  # dMSE/dz_out (linear)
-            for li in range(len(layers) - 1, -1, -1):
-                a_prev = x[sel] if li == 0 else acts[li - 1]
-                grads[li] = (a_prev.T @ delta, delta.sum(axis=0))
-                if li > 0:
-                    delta = (delta @ layers[li][0].T) * (1 - acts[li - 1] ** 2)
-            opt.step(layers, grads)
+            train_step(layers, opt, x[sel], y[sel])
         tr = mse(forward(x, layers), y)
         va = mse(forward(x_val, layers), y_val) if x_val is not None else None
         history.append((tr, va))

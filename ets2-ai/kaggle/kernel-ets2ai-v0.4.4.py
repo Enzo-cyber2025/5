@@ -37,7 +37,7 @@ ACTIONS = ["steer", "throttle", "brake"]
 N_OUT = len(ACTIONS)
 
 # MLP architecture (part of the wire format).
-HIDDEN = [196] * 14    # 505,291 parameters — narrow & deep (user spec v0.4.3)
+HIDDEN = [290] * 13    # 1,017,613 parameters — narrow & deep (user spec v0.4.4)
 SEED = 20260930  # deterministic training across runs/CI
 
 # Reporting target demanded by the project brief.
@@ -642,6 +642,23 @@ class Adam:
                 p -= self.lr * m_hat / (np.sqrt(v_hat) + self.eps)
 
 
+def train_step(layers, opt, x, y):
+    """Um passo de minibatch (Adam + MSE). Usado por train() e pelo treino
+    em fluxo (train.py --stream-samples) — fonte unica da matematica."""
+    acts = []
+    out = forward(x, layers, keep=acts)
+    err = out - y                                  # (B, N_OUT)
+    grads = [None] * len(layers)
+    delta = (2.0 / (len(x) * N_OUT)) * err         # dMSE/dz_out (linear)
+    for li in range(len(layers) - 1, -1, -1):
+        a_prev = x if li == 0 else acts[li - 1]
+        grads[li] = (a_prev.T @ delta, delta.sum(axis=0))
+        if li > 0:
+            delta = (delta @ layers[li][0].T) * (1 - acts[li - 1] ** 2)
+    opt.step(layers, grads)
+    return float(np.mean((out - y) ** 2))
+
+
 def train(x, y, epochs=400, batch=512, lr=2e-3, seed=SEED, verbose=True,
           x_val=None, y_val=None, start_layers=None, dtype=np.float32,
           schedule="cosine"):
@@ -670,17 +687,7 @@ def train(x, y, epochs=400, batch=512, lr=2e-3, seed=SEED, verbose=True,
         idx = rng.permutation(n)
         for s in range(0, n, batch):
             sel = idx[s:s + batch]
-            acts = []
-            out = forward(x[sel], layers, keep=acts)
-            err = out - y[sel]                       # (B, N_OUT)
-            grads = [None] * len(layers)
-            delta = (2.0 / (len(sel) * N_OUT)) * err  # dMSE/dz_out (linear)
-            for li in range(len(layers) - 1, -1, -1):
-                a_prev = x[sel] if li == 0 else acts[li - 1]
-                grads[li] = (a_prev.T @ delta, delta.sum(axis=0))
-                if li > 0:
-                    delta = (delta @ layers[li][0].T) * (1 - acts[li - 1] ** 2)
-            opt.step(layers, grads)
+            train_step(layers, opt, x[sel], y[sel])
         tr = mse(forward(x, layers), y)
         va = mse(forward(x_val, layers), y_val) if x_val is not None else None
         history.append((tr, va))
@@ -786,11 +793,60 @@ def closed_loop_eval(layers, n_roads=N_VAL_ROADS, seed=777):
     return agg, rows
 
 
+def train_stream(samples, batch=1024, lr=2e-3, seed=SEED, dtype=np.float64,
+                 verbose=True, val_every=2_000_000):
+    """Treino em FLUXO: amostras geradas na hora pelo simulador vetorizado
+    (ets2ai.vector_gen) — todas unicas, orcamento em # de amostras (nao em
+    epocas). Deterministico sob `seed`; cosine LR ao longo do orcamento;
+    restaura os melhores pesos de validacao (val fixa, semente 999)."""
+    import math as _math
+    from . import vector_gen
+    from .model import Adam, forward, init_layers, mse, train_step
+
+    rng = np.random.default_rng(seed)
+    layers = init_layers(rng, dtype)
+    opt = Adam(layers, lr=lr)
+    xv, yv = vector_gen.val_set(seed=999, dtype=dtype)
+    total_steps = max(1, samples // batch)
+    step = 0
+    consumed = 0
+    last_val = 0
+    best = (np.inf, [(w.copy(), b.copy()) for (w, b) in layers])
+    for x, y in vector_gen.stream(seed, n_trucks=3072, dtype=dtype):
+        if consumed >= samples:
+            break
+        perm = rng.permutation(len(x))
+        for s0 in range(0, len(x), batch):
+            sel = perm[s0:s0 + batch]
+            if len(sel) < 16:
+                continue
+            opt.lr = lr * (0.05 + 0.95 * 0.5 *
+                           (1.0 + _math.cos(_math.pi * step / total_steps)))
+            train_step(layers, opt, x[sel], y[sel])
+            step += 1
+            consumed += len(sel)
+            if consumed >= samples:
+                break
+        if consumed - last_val >= val_every or consumed >= samples:
+            va = mse(forward(xv, layers), yv)
+            if va < best[0]:
+                best = (va, [(w.copy(), b.copy()) for (w, b) in layers])
+            if verbose:
+                print(f"      fluxo: {consumed:,} amostras | val {va:.5f}", flush=True)
+            last_val = consumed
+    layers = best[1]
+    return layers, consumed, best[0]
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--epochs", type=int, default=60,
                     help="60 epocas x ~1M amostras = mesmo orcamento de otimizacao "
                          "das 400 x 120k das versoes anteriores")
+    ap.add_argument("--stream-samples", type=int, default=0,
+                    help="treino em fluxo com N amostras unicas geradas na hora "
+                         "(simulador vetorizado); 0 = modo estatico (epocas)")
+    ap.add_argument("--batch", type=int, default=512)
     ap.add_argument("--out", default=str(Path(__file__).resolve().parent.parent / "artifacts"))
     ap.add_argument("--dtype", choices=["float32", "float64"], default="float64",
                     help="float64 = canônico (desde v0.4.1, exigência do usuário); "
@@ -801,23 +857,31 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     dtype = {"float32": np.float32, "float64": np.float64}[args.dtype]
 
-    print("[1/4] gerando dados do especialista (estradas aleatorias)...")
-    x_train, y_train, x_val, y_val = generate()
-    print(f"      treino {x_train.shape}  val {x_val.shape}")
-
     n_params = (N_IN * HIDDEN[0] + HIDDEN[0]
                 + sum(HIDDEN[i] * HIDDEN[i + 1] + HIDDEN[i + 1] for i in range(len(HIDDEN) - 1))
                 + HIDDEN[-1] * N_OUT + N_OUT)
-    print(f"[2/4] treinando MLP {N_IN}-{'-'.join(str(h) for h in HIDDEN)}-{N_OUT} "
-          f"({n_params:,} params, tanh, Adam+cosine, {args.dtype})...")
-    layers, hist = train(x_train, y_train, epochs=args.epochs,
-                         x_val=x_val, y_val=y_val, dtype=dtype)
-
-    loss_tr = mse(forward(x_train, layers), y_train)
-    loss_va = mse(forward(x_val, layers), y_val)
-    mae_va = float(np.mean(np.abs(forward(x_val, layers) - y_val)))
-    print(f"      MSE treino {loss_tr:.5f} | MSE validacao {loss_va:.5f} "
-          f"(meta <= {LOSS_TARGET}) | MAE val {mae_va:.5f}")
+    if args.stream_samples > 0:
+        print(f"[1/4] treino em FLUXO: {args.stream_samples:,} amostras unicas "
+              f"geradas na hora (simulador vetorizado, milhares de caminhoes)...")
+        layers, consumed, loss_va = train_stream(
+            args.stream_samples, batch=args.batch, dtype=dtype)
+        n_samples = consumed
+        loss_tr, mae_va = None, None
+        print(f"      MSE validacao (fluxo) {loss_va:.5f} (meta <= {LOSS_TARGET})")
+    else:
+        print("[1/4] gerando dados do especialista (estradas aleatorias)...")
+        x_train, y_train, x_val, y_val = generate()
+        print(f"      treino {x_train.shape}  val {x_val.shape}")
+        n_samples = int(len(x_train) + len(x_val))
+        print(f"[2/4] treinando MLP {N_IN}-{'-'.join(str(h) for h in HIDDEN)}-{N_OUT} "
+              f"({n_params:,} params, tanh, Adam+cosine, {args.dtype})...")
+        layers, hist = train(x_train, y_train, epochs=args.epochs,
+                             x_val=x_val, y_val=y_val, dtype=dtype)
+        loss_tr = mse(forward(x_train, layers), y_train)
+        loss_va = mse(forward(x_val, layers), y_val)
+        mae_va = float(np.mean(np.abs(forward(x_val, layers) - y_val)))
+        print(f"      MSE treino {loss_tr:.5f} | MSE validacao {loss_va:.5f} "
+              f"(meta <= {LOSS_TARGET}) | MAE val {mae_va:.5f}")
 
     print("[3/4] avaliacao em circuito fechado (estradas ineditas)...")
     agg, rows = closed_loop_eval(layers)
@@ -826,7 +890,8 @@ def main():
           f"vel media {agg['avg_speed_kmh']:.0f} km/h")
 
     print("[4/4] exportando pesos...")
-    meta = model_meta(epochs=args.epochs, samples=int(len(x_train) + len(x_val)),
+    meta = model_meta(epochs=args.epochs if args.stream_samples == 0 else None,
+                      samples=n_samples,
                       loss=loss_va,
                       dtype=args.dtype if args.dtype != "float32" else None)
     save_weights(out / "model-weights.json", layers, meta)
@@ -848,27 +913,255 @@ def main():
     return 0 if ok else 1
 
 
+# ===== ets2ai/vector_gen.py =====
+"""Vectorized batch data generator (v0.4.4).
+
+Same expert law as ets2ai/sim.py (pure-pursuit + predictive speed + dock
+profile + radar braking), but simulates B trucks on B independent roads in
+parallel with numpy — orders of magnitude more samples/s than the scalar
+sim. This is what makes "billions of samples" a streaming reality instead
+of a 128 GB impossibility: samples are generated on the fly, all unique.
+
+State is path-relative (s, offset, heading_error, speed) — an exact
+reformulation of the scalar (x, y, heading)+projection loop while
+|offset| (<= 4.6 m) is far below the curve radius (>= 83 m).
+
+Used by `train.py --stream-samples` and by the Kaggle kernel (2x T4).
+"""
+import numpy as np
+
+# ---- physics (identical to sim.py) ----
+DT = 0.1
+WHEELBASE = 4.0
+MAX_STEER = 0.6
+MAX_ACCEL = 1.8
+MAX_BRAKE = 3.2
+DRAG = 0.030
+LAT_ACCEL_ROLLOVER = 3.6
+ROLLOVER_MARGIN = 0.82
+V_MAX = 36.0
+RADAR_SLOW = 0.95
+RADAR_BRAKE = 2.6
+SPEED_LIMIT = 25.0
+PURE_PURSUIT_D = 12.0
+LOOKAHEAD = (8.0, 18.0, 40.0, 90.0, 170.0)
+FUEL_BURN_IDLE = 0.000012
+FUEL_BURN_FULL = 0.000160
+FATIGUE_RATE = 1.0 / (11 * 3600)
+DOCK_DECEL = 1.6
+DOCK_LINE = 6.0          # stop line: length - 6 m
+OVERSAMPLE_DOCK_M = 150.0
+OVERSAMPLE_REPS = 4      # matches data.py _oversample_dock
+
+# ---- vector roads ----
+SEG_LEN = 150.0
+N_SEG = 72               # ~10.8 km routes (scalar avg ~9.6 km)
+MAX_CURV = 0.012
+P_STRAIGHT = 0.35
+N_RADARS = 8
+
+CHUNK_ROWS = 262_144     # rows per yielded chunk (~16 MB float32)
+
+
+def _make_roads(rng, n):
+    """Vector roads: curvature (n, N_SEG), radar positions (n, N_RADARS)."""
+    curv = rng.uniform(-MAX_CURV, MAX_CURV, (n, N_SEG)).astype(np.float64)
+    straight = rng.random((n, N_SEG)) < P_STRAIGHT
+    curv[straight] = 0.0
+    # radars: first at 700 m, then every U(1500, 2800) — like sim.py
+    radars = np.full((n, N_RADARS), np.inf)
+    pos = np.full(n, 700.0)
+    for r in range(N_RADARS):
+        radars[:, r] = pos
+        pos = pos + rng.uniform(1500.0, 2800.0, n)
+    length = SEG_LEN * N_SEG
+    radars[radars > length - 150.0] = np.inf
+    return curv, radars, length
+
+
+def _speed_profile(curv):
+    """Allowed speed at each segment START, planning against curves the way
+    the scalar expert does: only within its ~260 m lookahead horizon
+    (upcoming_curves max_dist). With SEG_LEN=150 that is the next 2 segments."""
+    a_lat = LAT_ACCEL_ROLLOVER * ROLLOVER_MARGIN
+    with np.errstate(divide="ignore"):
+        vc = np.where(np.abs(curv) > 1e-6,
+                      np.sqrt(a_lat / np.maximum(np.abs(curv), 1e-9)), V_MAX)
+    vc = np.minimum(vc, V_MAX)
+    vs = vc.copy()
+    # constraint from the NEXT segment's start (150 m away, 12 m brake margin)
+    nxt = np.sqrt(np.pad(vc, ((0, 0), (0, 1)), mode="edge")[:, 1:] ** 2
+                  + 2.0 * RADAR_BRAKE * max(0.0, SEG_LEN - 12.0))
+    vs = np.minimum(vs, nxt)
+    return vs
+
+
+class _Fleet:
+    """B trucks stepping in lockstep on B roads."""
+
+    def __init__(self, rng, n):
+        self.n = n
+        self.curv, self.radars, self.length = _make_roads(rng, n)
+        self.vs = _speed_profile(self.curv)
+        self.reset(rng)
+
+    def reset(self, rng):
+        n = self.n
+        # posicoes iniciais ALEATORIAS ao longo da estrada: a frota fica
+        # permanentemente misturada (como episodios independentes do escalar)
+        self.s = rng.uniform(5.0, self.length - 600.0, n)
+        self.offset = rng.uniform(-2.0, 2.0, n)
+        idx = np.clip((self.s / SEG_LEN).astype(np.int64), 0, N_SEG - 1)
+        v_allow0 = self.vs[np.arange(n), idx]
+        self.speed = np.minimum(rng.uniform(8.0, 22.0, n), v_allow0)
+        self.hdg_err = rng.uniform(-0.25, 0.25, n)
+        self.steer_pos = np.zeros(n)
+        self.fuel = np.ones(n)
+        self.fatigue = np.zeros(n)
+
+    def _kappa_at(self, s):
+        idx = np.clip((s / SEG_LEN).astype(np.int64), 0, N_SEG - 1)
+        return self.curv[np.arange(self.n), idx], idx
+
+    def step_expert(self):
+        """One DT step: expert actions + truck physics. Returns (feats, acts)."""
+        n = self.n
+        ar = np.arange(n)
+        k_now, idx = self._kappa_at(self.s)
+        # --- pure pursuit steering ---
+        alpha = np.arctan2(-self.offset, PURE_PURSUIT_D) - self.hdg_err
+        steer = np.clip(2.0 * np.sin(alpha), -1.0, 1.0)
+        # --- speed target: curves (backward profile), dock, radar, fatigue ---
+        seg_start = idx * SEG_LEN
+        v_next = self.vs[ar, np.minimum(idx + 1, N_SEG - 1)]
+        d_next = seg_start + SEG_LEN - self.s
+        v_allow = np.sqrt(v_next ** 2 + 2.0 * RADAR_BRAKE * np.maximum(0.0, d_next - 12.0))
+        a_lat = LAT_ACCEL_ROLLOVER * ROLLOVER_MARGIN
+        v_curve_now = np.where(np.abs(k_now) > 1e-6,
+                               np.sqrt(a_lat / np.maximum(np.abs(k_now), 1e-9)), V_MAX)
+        v_target = np.minimum(np.minimum(V_MAX, v_curve_now), v_allow)
+        # dock profile
+        d_dock = (self.length - DOCK_LINE) - self.s
+        v_target = np.minimum(v_target, np.sqrt(2.0 * DOCK_DECEL * np.maximum(0.0, d_dock)))
+        # radar
+        d_radar = np.min(np.where(self.radars > self.s[:, None],
+                                  self.radars - self.s[:, None], np.inf), axis=1)
+        d_radar = np.minimum(d_radar, 500.0)
+        v_radar = SPEED_LIMIT * RADAR_SLOW
+        brake_dist = np.maximum(0.0, self.speed ** 2 - v_radar ** 2) / (2.0 * RADAR_BRAKE) + 25.0
+        v_target = np.where(d_radar < brake_dist, np.minimum(v_target, v_radar), v_target)
+        # fatigue easing
+        v_target = v_target * (1.0 - 0.08 * self.fatigue)
+        v_target = np.where(v_target < 0.4, 0.0, v_target)
+        dv = v_target - self.speed
+        throttle = np.clip(dv / 1.8, 0.0, 1.0)
+        brake = np.clip(-dv / 2.6, 0.0, 1.0)
+        # --- features (contract, in order) ---
+        feats = np.empty((n, 13))
+        feats[:, 0] = self.speed / 25.0
+        feats[:, 1] = self.offset / 3.5
+        feats[:, 2] = self.hdg_err / 0.6
+        for j, d in enumerate(LOOKAHEAD):
+            feats[:, 3 + j] = self._kappa_at(self.s + d)[0] / 0.05
+        feats[:, 8] = SPEED_LIMIT / 25.0
+        feats[:, 9] = self.fuel
+        feats[:, 10] = self.fatigue
+        feats[:, 11] = np.minimum((self.length - self.s) / 1000.0, 20.0) / 20.0
+        feats[:, 12] = d_radar / 500.0
+        acts = np.stack([steer, throttle, brake], axis=1)
+        # --- truck physics (path-relative, same law as Truck.step) ---
+        self.steer_pos += np.clip(steer - self.steer_pos, -0.15, 0.15)
+        wheel = self.steer_pos * MAX_STEER
+        ds = self.speed * np.cos(self.hdg_err) * DT
+        self.hdg_err += (self.speed / WHEELBASE) * np.tan(wheel) * DT \
+            - self.speed * np.cos(self.hdg_err) * k_now * DT
+        self.offset += self.speed * np.sin(self.hdg_err) * DT
+        self.s += ds
+        self.speed = np.maximum(0.0, self.speed +
+                                (throttle * MAX_ACCEL - brake * MAX_BRAKE
+                                 - DRAG * self.speed) * DT)
+        self.fuel = np.maximum(0.0, self.fuel - DT *
+                               (FUEL_BURN_IDLE + throttle * (FUEL_BURN_FULL - FUEL_BURN_IDLE)))
+        self.fatigue = np.minimum(1.0, self.fatigue + DT * FATIGUE_RATE)
+        return feats, acts
+
+    def alive(self):
+        return (self.s < self.length - DOCK_LINE) & (np.abs(self.offset) <= 4.6)
+
+
+def stream(seed, n_trucks=3072, dtype=np.float32):
+    """Yields (x, y) chunks of fresh expert demonstrations, forever.
+    Deterministic under `seed`. All samples unique (roads regenerate)."""
+    rng = np.random.default_rng(seed)
+    fleet = _Fleet(rng, n_trucks)
+    buf_x, buf_y = [], []
+    rows = 0
+    while True:
+        feats, acts = fleet.step_expert()
+        alive = fleet.alive()
+        if alive.any():
+            fx, ay = feats[alive], acts[alive]
+            dock_mask = ((fleet.length - DOCK_LINE) - fleet.s[alive]) < OVERSAMPLE_DOCK_M
+            if dock_mask.any():
+                fx = np.concatenate([fx] + [fx[dock_mask]] * (OVERSAMPLE_REPS - 1))
+                ay = np.concatenate([ay] + [ay[dock_mask]] * (OVERSAMPLE_REPS - 1))
+            buf_x.append(fx.astype(dtype))
+            buf_y.append(ay.astype(dtype))
+            rows += len(fx)
+        if (~alive).any():
+            # restart the finished trucks at random positions (mixed fleet)
+            done = np.where(~alive)[0]
+            r2 = np.random.default_rng(rng.integers(0, 2**63))
+            fleet.s[done] = r2.uniform(5.0, fleet.length - 600.0, len(done))
+            fleet.offset[done] = r2.uniform(-2.0, 2.0, len(done))
+            idx = np.clip((fleet.s[done] / SEG_LEN).astype(np.int64), 0, N_SEG - 1)
+            fleet.speed[done] = np.minimum(r2.uniform(8.0, 22.0, len(done)),
+                                           fleet.vs[done, idx])
+            fleet.hdg_err[done] = r2.uniform(-0.25, 0.25, len(done))
+            fleet.steer_pos[done] = 0.0
+            fleet.fuel[done] = 1.0
+            fleet.fatigue[done] = 0.0
+            # fresh roads for the restarted trucks
+            c2, r2r, _ = _make_roads(np.random.default_rng(rng.integers(0, 2**63)), len(done))
+            fleet.curv[done] = c2
+            fleet.radars[done] = r2r
+            fleet.vs[done] = _speed_profile(c2)
+        if rows >= CHUNK_ROWS:
+            yield np.concatenate(buf_x), np.concatenate(buf_y)
+            buf_x, buf_y, rows = [], [], 0
+
+
+def val_set(seed=999, n_trucks=384, max_rows=131072, dtype=np.float32):
+    """Fixed validation set from a held-out stream (different seed)."""
+    gen = stream(seed, n_trucks=n_trucks, dtype=dtype)
+    x, y = next(gen)
+    return x[:max_rows], y[:max_rows]
 
 
 # ---------------------------------------------------------------------------
 # Kaggle runner footer (appended by build_kernel.py — do not edit here)
+# v0.4.4: treino em FLUXO com o simulador vetorizado — orcamento de AMOSTRAS
+# (1 bilhao por padrao, FP32 nas T4; FP64 via ETS2AI_F64=1 com orcamento menor)
 # ---------------------------------------------------------------------------
 import json as _json
+import math as _math
 import os as _os
+import time as _time
 
 _OUT = _os.environ.get("KAGGLE_WORKING_DIR", ".")
-_DTYPE = np.float32 if _os.environ.get("ETS2AI_F32") == "1" else np.float64
+_F64 = _os.environ.get("ETS2AI_F64") == "1"
+_DTYPE = np.float64 if _F64 else np.float32
+_SAMPLES = int(_os.environ.get("ETS2AI_SAMPLES", "1000000000"))
+_MAX_SEC = float(_os.environ.get("ETS2AI_MAX_SECONDS", "10800"))
+_BATCH = int(_os.environ.get("ETS2AI_BATCH", "4096" if not _F64 else "1024"))
 _EPOCHS = int(_os.environ.get("ETS2AI_EPOCHS", "60"))
 _n_params = (N_IN * HIDDEN[0] + HIDDEN[0]
              + sum(HIDDEN[i] * HIDDEN[i + 1] + HIDDEN[i + 1] for i in range(len(HIDDEN) - 1))
              + HIDDEN[-1] * N_OUT + N_OUT)
-print("[kaggle] gerando dados do especialista (estradas aleatorias)...")
-_xtr, _ytr, _xva, _yva = generate()
-_xtr = np.asarray(_xtr, dtype=_DTYPE); _ytr = np.asarray(_ytr, dtype=_DTYPE)
-_xva = np.asarray(_xva, dtype=_DTYPE); _yva = np.asarray(_yva, dtype=_DTYPE)
-print(f"[kaggle] treino {_xtr.shape} | val {_xva.shape} | "
-      f"arquitetura {N_IN}-{'-'.join(str(_h) for _h in HIDDEN)}-{N_OUT} "
-      f"({_n_params:,} params) | dtype {_DTYPE.__name__} | epochs {_EPOCHS}")
+print(f"[kaggle] arquitetura {N_IN}-{'-'.join(str(_h) for _h in HIDDEN)}-{N_OUT} "
+      f"({_n_params:,} params) | dtype {_DTYPE.__name__} | batch {_BATCH}")
+print(f"[kaggle] orcamento: {_SAMPLES:,} amostras em fluxo (unicas) | "
+      f"teto {_MAX_SEC/3600:.1f} h")
 
 _gpus = []
 _TRAIN_GPU = False
@@ -879,56 +1172,104 @@ except Exception:
     _tf = None
 
 if _tf is not None and len(_gpus) >= 1:
-    # ---------------- GPU PATH (Kaggle 2x T4, MirroredStrategy, FP64) ----------------
-    # FP64 e o padrao desde a v0.4.3 (exigencia do usuario). A T4 roda FP64 a
-    # 1/32 da velocidade do FP32 — para optar por FP32: ETS2AI_F32=1.
-    import math as _math
+    # ---------------- GPU PATH (2x T4, MirroredStrategy, fluxo) ----------------
     if _DTYPE == np.float64:
         _tf.keras.backend.set_floatx("float64")
-    print(f"[kaggle] GPU detectada: {len(_gpus)}x {_gpus[0][1]} — treinando com "
+    print(f"[kaggle] GPU detectada: {len(_gpus)}x {_gpus[0][1]} — "
           f"tf.distribute.MirroredStrategy (todas as GPUs), {_DTYPE.__name__}")
+    _total_steps = max(1, _SAMPLES // _BATCH)
+    _pi = _tf.constant(_math.pi, _tf.float32)
+
+    class _CosineFloor(_tf.keras.optimizers.schedules.LearningRateSchedule):
+        def __init__(self, base, total):
+            super().__init__()
+            self.base = base
+            self.total = total
+        def __call__(self, step):
+            f = _tf.minimum(_tf.cast(step, _tf.float32) / self.total, 1.0)
+            return self.base * (0.05 + 0.95 * 0.5 * (1.0 + _tf.cos(_pi * f)))
+
     _strategy = _tf.distribute.MirroredStrategy()
     with _strategy.scope():
         _model = _tf.keras.Sequential()
         _model.add(_tf.keras.Input(shape=(N_IN,)))
         for _h in HIDDEN:
-            _model.add(_tf.keras.layers.Dense(_h, activation="tanh"))
-        _model.add(_tf.keras.layers.Dense(N_OUT, activation="linear"))
-        _lr = 2e-3
-        _model.compile(_tf.keras.optimizers.Adam(learning_rate=_lr), loss="mse")
-    _sched = _tf.keras.callbacks.LearningRateScheduler(
-        lambda e, lr: _lr * (0.05 + 0.95 * 0.5 * (1.0 + _math.cos(_math.pi * e / max(1, _EPOCHS)))),
-        verbose=0)
-    _model.fit(_xtr, _ytr, epochs=_EPOCHS, batch_size=2048,
-               validation_data=(_xva, _yva), verbose=2, callbacks=[_sched])
+            _model.add(_tf.keras.layers.Dense(
+                _h, activation="tanh", kernel_initializer="he_normal"))
+        _model.add(_tf.keras.layers.Dense(
+            N_OUT, activation="linear", kernel_initializer="he_normal"))
+        _model.compile(_tf.keras.optimizers.Adam(learning_rate=_CosineFloor(2e-3, _total_steps)), loss="mse")
+    _xva, _yva = val_set(seed=999)
+    _t0 = _time.time()
+    _consumed = 0
+    _best_val = float("inf")
+    _best_w = None
+    _last_val = 0
+    print("[kaggle] gerando dados em fluxo e treinando...")
+    for _x, _y in stream(SEED, n_trucks=3072):
+        if _consumed >= _SAMPLES or (_time.time() - _t0) > _MAX_SEC:
+            break
+        for _s0 in range(0, len(_x), _BATCH):
+            _mb_x = _x[_s0:_s0 + _BATCH]
+            _mb_y = _y[_s0:_s0 + _BATCH]
+            if len(_mb_x) < 64:
+                continue
+            _model.train_on_batch(_mb_x.astype(_DTYPE), _mb_y.astype(_DTYPE))
+            _consumed += len(_mb_x)
+            if _consumed >= _SAMPLES or (_time.time() - _t0) > _MAX_SEC:
+                break
+        if _consumed - _last_val >= 20_000_000 or _consumed >= _SAMPLES                 or (_time.time() - _t0) > _MAX_SEC:
+            _va = float(_model.evaluate(_xva.astype(_DTYPE), _yva.astype(_DTYPE),
+                                        verbose=0, batch_size=8192))
+            if _va < _best_val:
+                _best_val = _va
+                _best_w = _model.get_weights()
+            _h_elapsed = (_time.time() - _t0) / 3600
+            print(f"[kaggle] {_consumed:,} amostras | val {_va:.5f} "
+                  f"(melhor {_best_val:.5f}) | {_h_elapsed:.2f} h", flush=True)
+            _last_val = _consumed
+    if _best_w is not None:
+        _model.set_weights(_best_w)          # restaura os melhores pesos
     _w = _model.get_weights()
     _layers = [(np.asarray(_w[2 * i], dtype=_DTYPE),
                 np.asarray(_w[2 * i + 1], dtype=_DTYPE))
                for i in range(len(_w) // 2)]
     _TRAIN_GPU = True
+    _loss_tr = None
+    _loss_va = _best_val
 else:
-    # ---------------- CPU fallback (identical math) ----------------
-    print(f"[kaggle] sem GPU — treinando em numpy (CPU, {_DTYPE.__name__})")
+    # ---------------- CPU fallback (deterministico, estatico) ----------------
+    print(f"[kaggle] sem GPU — treinando em numpy (CPU, {_DTYPE.__name__}, "
+          f"dataset estatico)")
+    _xtr, _ytr, _xva, _yva = generate()
+    _xtr = np.asarray(_xtr, dtype=_DTYPE); _ytr = np.asarray(_ytr, dtype=_DTYPE)
+    _xva = np.asarray(_xva, dtype=_DTYPE); _yva = np.asarray(_yva, dtype=_DTYPE)
+    print(f"[kaggle] treino {_xtr.shape} | val {_xva.shape}")
     _layers, _hist = train(_xtr, _ytr, epochs=_EPOCHS, x_val=_xva, y_val=_yva,
                            dtype=_DTYPE)
+    _consumed = int(len(_xtr) + len(_xva))
+    _loss_tr = mse(forward(_xtr, _layers), _ytr)
+    _loss_va = mse(forward(_xva, _layers), _yva)
 
-_loss_tr = mse(forward(_xtr, _layers), _ytr)
-_loss_va = mse(forward(_xva, _layers), _yva)
-print(f"[kaggle] MSE treino {_loss_tr:.5f} | validacao {_loss_va:.5f} (meta <= {LOSS_TARGET})")
+print(f"[kaggle] MSE validacao {_loss_va:.5f} (meta <= {LOSS_TARGET}) | "
+      f"amostras consumidas: {_consumed:,}")
 
 _agg, _rows = closed_loop_eval(_layers, n_roads=5)
 print(f"[kaggle] circuito fechado: {_agg['finish_rate']*100:.0f}% rotas, "
       f"{_agg['in_lane_pct']*100:.0f}% faixa, {_agg['avg_speed_kmh']:.0f} km/h, "
-      f"radares {_agg['radar_compliance']*100:.0f}%, dock {_agg['dock_rate']*100:.0f}%")
+      f"{_agg['radar_compliance']*100:.0f}% radares, {_agg['dock_rate']*100:.0f}% dock")
 
 save_weights(_os.path.join(_OUT, "model-weights.json"), _layers,
-             model_meta(epochs=_EPOCHS, samples=int(len(_xtr) + len(_xva)), loss=_loss_va,
+             model_meta(epochs=None, samples=int(_consumed), loss=_loss_va,
                         dtype="float64" if _DTYPE == np.float64 else None))
 with open(_os.path.join(_OUT, "metrics.json"), "w", encoding="utf-8") as _f:
     _json.dump({"mse_train": _loss_tr, "mse_val": _loss_va,
                 "loss_target": LOSS_TARGET, "closed_loop": _agg,
                 "trained_on_gpu": _TRAIN_GPU, "n_gpus": len(_gpus),
-                "dtype": _DTYPE.__name__}, _f, indent=2)
+                "samples_consumed": int(_consumed),
+                "dtype": _DTYPE.__name__,
+                "streaming": bool(_TRAIN_GPU)}, _f, indent=2)
 print(f"[kaggle] saida: model-weights.json + metrics.json (gpu={_TRAIN_GPU}, "
-      f"ngpus={len(_gpus)}, dtype={_DTYPE.__name__})")
+      f"ngpus={len(_gpus)}, dtype={_DTYPE.__name__}, "
+      f"amostras={_consumed:,}, streaming={_TRAIN_GPU})")
 

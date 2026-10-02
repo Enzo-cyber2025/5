@@ -11,29 +11,35 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 PKG = HERE.parent / "ets2ai"
-MODULES = ["contract.py", "sim.py", "model.py", "data.py", "train.py"]
+MODULES = ["contract.py", "sim.py", "model.py", "data.py", "train.py",
+           "vector_gen.py"]
 
 FOOTER = """
 
 # ---------------------------------------------------------------------------
 # Kaggle runner footer (appended by build_kernel.py — do not edit here)
+# v0.4.4: treino em FLUXO com o simulador vetorizado — orcamento de AMOSTRAS
+# (1 bilhao por padrao, FP32 nas T4; FP64 via ETS2AI_F64=1 com orcamento menor)
 # ---------------------------------------------------------------------------
 import json as _json
+import math as _math
 import os as _os
+import time as _time
 
 _OUT = _os.environ.get("KAGGLE_WORKING_DIR", ".")
-_DTYPE = np.float32 if _os.environ.get("ETS2AI_F32") == "1" else np.float64
+_F64 = _os.environ.get("ETS2AI_F64") == "1"
+_DTYPE = np.float64 if _F64 else np.float32
+_SAMPLES = int(_os.environ.get("ETS2AI_SAMPLES", "1000000000"))
+_MAX_SEC = float(_os.environ.get("ETS2AI_MAX_SECONDS", "10800"))
+_BATCH = int(_os.environ.get("ETS2AI_BATCH", "4096" if not _F64 else "1024"))
 _EPOCHS = int(_os.environ.get("ETS2AI_EPOCHS", "60"))
 _n_params = (N_IN * HIDDEN[0] + HIDDEN[0]
              + sum(HIDDEN[i] * HIDDEN[i + 1] + HIDDEN[i + 1] for i in range(len(HIDDEN) - 1))
              + HIDDEN[-1] * N_OUT + N_OUT)
-print("[kaggle] gerando dados do especialista (estradas aleatorias)...")
-_xtr, _ytr, _xva, _yva = generate()
-_xtr = np.asarray(_xtr, dtype=_DTYPE); _ytr = np.asarray(_ytr, dtype=_DTYPE)
-_xva = np.asarray(_xva, dtype=_DTYPE); _yva = np.asarray(_yva, dtype=_DTYPE)
-print(f"[kaggle] treino {_xtr.shape} | val {_xva.shape} | "
-      f"arquitetura {N_IN}-{'-'.join(str(_h) for _h in HIDDEN)}-{N_OUT} "
-      f"({_n_params:,} params) | dtype {_DTYPE.__name__} | epochs {_EPOCHS}")
+print(f"[kaggle] arquitetura {N_IN}-{'-'.join(str(_h) for _h in HIDDEN)}-{N_OUT} "
+      f"({_n_params:,} params) | dtype {_DTYPE.__name__} | batch {_BATCH}")
+print(f"[kaggle] orcamento: {_SAMPLES:,} amostras em fluxo (unicas) | "
+      f"teto {_MAX_SEC/3600:.1f} h")
 
 _gpus = []
 _TRAIN_GPU = False
@@ -44,58 +50,107 @@ except Exception:
     _tf = None
 
 if _tf is not None and len(_gpus) >= 1:
-    # ---------------- GPU PATH (Kaggle 2x T4, MirroredStrategy, FP64) ----------------
-    # FP64 e o padrao desde a v0.4.3 (exigencia do usuario). A T4 roda FP64 a
-    # 1/32 da velocidade do FP32 — para optar por FP32: ETS2AI_F32=1.
-    import math as _math
+    # ---------------- GPU PATH (2x T4, MirroredStrategy, fluxo) ----------------
     if _DTYPE == np.float64:
         _tf.keras.backend.set_floatx("float64")
-    print(f"[kaggle] GPU detectada: {len(_gpus)}x {_gpus[0][1]} — treinando com "
+    print(f"[kaggle] GPU detectada: {len(_gpus)}x {_gpus[0][1]} — "
           f"tf.distribute.MirroredStrategy (todas as GPUs), {_DTYPE.__name__}")
+    _total_steps = max(1, _SAMPLES // _BATCH)
+    _pi = _tf.constant(_math.pi, _tf.float32)
+
+    class _CosineFloor(_tf.keras.optimizers.schedules.LearningRateSchedule):
+        def __init__(self, base, total):
+            super().__init__()
+            self.base = base
+            self.total = total
+        def __call__(self, step):
+            f = _tf.minimum(_tf.cast(step, _tf.float32) / self.total, 1.0)
+            return self.base * (0.05 + 0.95 * 0.5 * (1.0 + _tf.cos(_pi * f)))
+
     _strategy = _tf.distribute.MirroredStrategy()
     with _strategy.scope():
         _model = _tf.keras.Sequential()
         _model.add(_tf.keras.Input(shape=(N_IN,)))
         for _h in HIDDEN:
-            _model.add(_tf.keras.layers.Dense(_h, activation="tanh"))
-        _model.add(_tf.keras.layers.Dense(N_OUT, activation="linear"))
-        _lr = 2e-3
-        _model.compile(_tf.keras.optimizers.Adam(learning_rate=_lr), loss="mse")
-    _sched = _tf.keras.callbacks.LearningRateScheduler(
-        lambda e, lr: _lr * (0.05 + 0.95 * 0.5 * (1.0 + _math.cos(_math.pi * e / max(1, _EPOCHS)))),
-        verbose=0)
-    _model.fit(_xtr, _ytr, epochs=_EPOCHS, batch_size=2048,
-               validation_data=(_xva, _yva), verbose=2, callbacks=[_sched])
+            _model.add(_tf.keras.layers.Dense(
+                _h, activation="tanh", kernel_initializer="he_normal"))
+        _model.add(_tf.keras.layers.Dense(
+            N_OUT, activation="linear", kernel_initializer="he_normal"))
+        _model.compile(_tf.keras.optimizers.Adam(learning_rate=_CosineFloor(2e-3, _total_steps)), loss="mse")
+    _xva, _yva = val_set(seed=999)
+    _t0 = _time.time()
+    _consumed = 0
+    _best_val = float("inf")
+    _best_w = None
+    _last_val = 0
+    print("[kaggle] gerando dados em fluxo e treinando...")
+    for _x, _y in stream(SEED, n_trucks=3072):
+        if _consumed >= _SAMPLES or (_time.time() - _t0) > _MAX_SEC:
+            break
+        for _s0 in range(0, len(_x), _BATCH):
+            _mb_x = _x[_s0:_s0 + _BATCH]
+            _mb_y = _y[_s0:_s0 + _BATCH]
+            if len(_mb_x) < 64:
+                continue
+            _model.train_on_batch(_mb_x.astype(_DTYPE), _mb_y.astype(_DTYPE))
+            _consumed += len(_mb_x)
+            if _consumed >= _SAMPLES or (_time.time() - _t0) > _MAX_SEC:
+                break
+        if _consumed - _last_val >= 20_000_000 or _consumed >= _SAMPLES \
+                or (_time.time() - _t0) > _MAX_SEC:
+            _va = float(_model.evaluate(_xva.astype(_DTYPE), _yva.astype(_DTYPE),
+                                        verbose=0, batch_size=8192))
+            if _va < _best_val:
+                _best_val = _va
+                _best_w = _model.get_weights()
+            _h_elapsed = (_time.time() - _t0) / 3600
+            print(f"[kaggle] {_consumed:,} amostras | val {_va:.5f} "
+                  f"(melhor {_best_val:.5f}) | {_h_elapsed:.2f} h", flush=True)
+            _last_val = _consumed
+    if _best_w is not None:
+        _model.set_weights(_best_w)          # restaura os melhores pesos
     _w = _model.get_weights()
     _layers = [(np.asarray(_w[2 * i], dtype=_DTYPE),
                 np.asarray(_w[2 * i + 1], dtype=_DTYPE))
                for i in range(len(_w) // 2)]
     _TRAIN_GPU = True
+    _loss_tr = None
+    _loss_va = _best_val
 else:
-    # ---------------- CPU fallback (identical math) ----------------
-    print(f"[kaggle] sem GPU — treinando em numpy (CPU, {_DTYPE.__name__})")
+    # ---------------- CPU fallback (deterministico, estatico) ----------------
+    print(f"[kaggle] sem GPU — treinando em numpy (CPU, {_DTYPE.__name__}, "
+          f"dataset estatico)")
+    _xtr, _ytr, _xva, _yva = generate()
+    _xtr = np.asarray(_xtr, dtype=_DTYPE); _ytr = np.asarray(_ytr, dtype=_DTYPE)
+    _xva = np.asarray(_xva, dtype=_DTYPE); _yva = np.asarray(_yva, dtype=_DTYPE)
+    print(f"[kaggle] treino {_xtr.shape} | val {_xva.shape}")
     _layers, _hist = train(_xtr, _ytr, epochs=_EPOCHS, x_val=_xva, y_val=_yva,
                            dtype=_DTYPE)
+    _consumed = int(len(_xtr) + len(_xva))
+    _loss_tr = mse(forward(_xtr, _layers), _ytr)
+    _loss_va = mse(forward(_xva, _layers), _yva)
 
-_loss_tr = mse(forward(_xtr, _layers), _ytr)
-_loss_va = mse(forward(_xva, _layers), _yva)
-print(f"[kaggle] MSE treino {_loss_tr:.5f} | validacao {_loss_va:.5f} (meta <= {LOSS_TARGET})")
+print(f"[kaggle] MSE validacao {_loss_va:.5f} (meta <= {LOSS_TARGET}) | "
+      f"amostras consumidas: {_consumed:,}")
 
 _agg, _rows = closed_loop_eval(_layers, n_roads=5)
 print(f"[kaggle] circuito fechado: {_agg['finish_rate']*100:.0f}% rotas, "
       f"{_agg['in_lane_pct']*100:.0f}% faixa, {_agg['avg_speed_kmh']:.0f} km/h, "
-      f"radares {_agg['radar_compliance']*100:.0f}%, dock {_agg['dock_rate']*100:.0f}%")
+      f"{_agg['radar_compliance']*100:.0f}% radares, {_agg['dock_rate']*100:.0f}% dock")
 
 save_weights(_os.path.join(_OUT, "model-weights.json"), _layers,
-             model_meta(epochs=_EPOCHS, samples=int(len(_xtr) + len(_xva)), loss=_loss_va,
+             model_meta(epochs=None, samples=int(_consumed), loss=_loss_va,
                         dtype="float64" if _DTYPE == np.float64 else None))
 with open(_os.path.join(_OUT, "metrics.json"), "w", encoding="utf-8") as _f:
     _json.dump({"mse_train": _loss_tr, "mse_val": _loss_va,
                 "loss_target": LOSS_TARGET, "closed_loop": _agg,
                 "trained_on_gpu": _TRAIN_GPU, "n_gpus": len(_gpus),
-                "dtype": _DTYPE.__name__}, _f, indent=2)
+                "samples_consumed": int(_consumed),
+                "dtype": _DTYPE.__name__,
+                "streaming": bool(_TRAIN_GPU)}, _f, indent=2)
 print(f"[kaggle] saida: model-weights.json + metrics.json (gpu={_TRAIN_GPU}, "
-      f"ngpus={len(_gpus)}, dtype={_DTYPE.__name__})")
+      f"ngpus={len(_gpus)}, dtype={_DTYPE.__name__}, "
+      f"amostras={_consumed:,}, streaming={_TRAIN_GPU})")
 """
 
 
