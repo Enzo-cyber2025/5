@@ -52,7 +52,7 @@ def closed_loop_eval(layers, n_roads=N_VAL_ROADS, seed=777):
     return agg, rows
 
 
-def train_stream(samples, batch=1024, lr=2e-3, seed=SEED, dtype=np.float64,
+def train_stream(samples, batch=1024, lr=5e-4, seed=SEED, dtype=np.float64,
                  verbose=True, val_every=2_000_000):
     """Treino em FLUXO: amostras geradas na hora pelo simulador vetorizado
     (ets2ai.vector_gen) — todas unicas, orcamento em # de amostras (nao em

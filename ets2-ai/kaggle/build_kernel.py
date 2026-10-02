@@ -31,7 +31,7 @@ _F64 = _os.environ.get("ETS2AI_F64") == "1"
 _DTYPE = np.float64 if _F64 else np.float32
 _SAMPLES = int(_os.environ.get("ETS2AI_SAMPLES", "1000000000"))
 _MAX_SEC = float(_os.environ.get("ETS2AI_MAX_SECONDS", "10800"))
-_BATCH = int(_os.environ.get("ETS2AI_BATCH", "4096" if not _F64 else "1024"))
+_BATCH = int(_os.environ.get("ETS2AI_BATCH", "16384" if not _F64 else "1024"))
 _EPOCHS = int(_os.environ.get("ETS2AI_EPOCHS", "60"))
 _n_params = (N_IN * HIDDEN[0] + HIDDEN[0]
              + sum(HIDDEN[i] * HIDDEN[i + 1] + HIDDEN[i + 1] for i in range(len(HIDDEN) - 1))
@@ -76,7 +76,7 @@ if _tf is not None and len(_gpus) >= 1:
                 _h, activation="tanh", kernel_initializer="he_normal"))
         _model.add(_tf.keras.layers.Dense(
             N_OUT, activation="linear", kernel_initializer="he_normal"))
-        _model.compile(_tf.keras.optimizers.Adam(learning_rate=_CosineFloor(2e-3, _total_steps)), loss="mse")
+        _model.compile(_tf.keras.optimizers.Adam(learning_rate=_CosineFloor(5e-4, _total_steps)), loss="mse")
     _xva, _yva = val_set(seed=999)
     _t0 = _time.time()
     _consumed = 0

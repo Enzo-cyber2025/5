@@ -612,6 +612,22 @@ def forward(x, layers, keep=None):
     return a
 
 
+def mse_forward(layers, x, y, batch=65536):
+    """MSE do forward em LOTES (o conjunto inteiro de ~1M x 290 em float64
+    nao cabe na RAM de uma vez)."""
+    x = np.asarray(x)
+    y = np.asarray(y)
+    tot = 0.0
+    n = 0
+    for s in range(0, len(x), batch):
+        xb, yb = x[s:s + batch], y[s:s + batch]
+        p = forward(xb, layers)
+        d = (p.astype(np.float64) - yb.astype(np.float64)) ** 2
+        tot += float(d.sum())
+        n += d.size
+    return tot / max(1, n)
+
+
 def mse(pred, target):
     """MSE na precisao nativa dos inputs (float32 fica float32; float64
     conserva a faixa ~1e-308 — usado pelo modo --dtype float64)."""
@@ -659,7 +675,7 @@ def train_step(layers, opt, x, y):
     return float(np.mean((out - y) ** 2))
 
 
-def train(x, y, epochs=400, batch=512, lr=2e-3, seed=SEED, verbose=True,
+def train(x, y, epochs=400, batch=512, lr=5e-4, seed=SEED, verbose=True,
           x_val=None, y_val=None, start_layers=None, dtype=np.float32,
           schedule="cosine"):
     """Train the MLP on (x, y) with Adam + MSE. Returns (layers, history).
@@ -688,8 +704,8 @@ def train(x, y, epochs=400, batch=512, lr=2e-3, seed=SEED, verbose=True,
         for s in range(0, n, batch):
             sel = idx[s:s + batch]
             train_step(layers, opt, x[sel], y[sel])
-        tr = mse(forward(x, layers), y)
-        va = mse(forward(x_val, layers), y_val) if x_val is not None else None
+        tr = mse_forward(layers, x, y)
+        va = mse_forward(layers, x_val, y_val) if x_val is not None else None
         history.append((tr, va))
         if va is not None and va < best[0]:
             best = (va, [(w.copy(), b.copy()) for (w, b) in layers])
@@ -793,7 +809,7 @@ def closed_loop_eval(layers, n_roads=N_VAL_ROADS, seed=777):
     return agg, rows
 
 
-def train_stream(samples, batch=1024, lr=2e-3, seed=SEED, dtype=np.float64,
+def train_stream(samples, batch=1024, lr=5e-4, seed=SEED, dtype=np.float64,
                  verbose=True, val_every=2_000_000):
     """Treino em FLUXO: amostras geradas na hora pelo simulador vetorizado
     (ets2ai.vector_gen) — todas unicas, orcamento em # de amostras (nao em
@@ -1024,7 +1040,10 @@ class _Fleet:
         return self.curv[np.arange(self.n), idx], idx
 
     def step_expert(self):
-        """One DT step: expert actions + truck physics. Returns (feats, acts)."""
+        """One DT step: expert actions + GOVERNOR overlay + truck physics.
+        (v0.4.4: o dataset escalar grava acoes POS-governador — freios fortes
+        das curvas/radares/dock. Sem esse overlay a rede profunda nao quebra
+        o platou de 'prever a media'.) Returns (feats, governed_acts)."""
         n = self.n
         ar = np.arange(n)
         k_now, idx = self._kappa_at(self.s)
@@ -1068,15 +1087,38 @@ class _Fleet:
         feats[:, 10] = self.fatigue
         feats[:, 11] = np.minimum((self.length - self.s) / 1000.0, 20.0) / 20.0
         feats[:, 12] = d_radar / 500.0
-        acts = np.stack([steer, throttle, brake], axis=1)
+        # --- governor overlay (mirrors sim.governor; MAX_BRAKE budget) ---
+        # curve starts within 260 m: current seg, next, next-next
+        worst_gov = np.full(n, np.inf)
+        for off in (0, 1, 2):
+            j = np.clip(idx + off, 0, N_SEG - 1)
+            k = self.curv[ar, j]
+            d = np.maximum(0.0, j * SEG_LEN - self.s)
+            ok = (np.abs(k) > 1e-6) & (d <= 260.0)
+            vc = np.sqrt(a_lat / np.maximum(np.abs(k), 1e-9))
+            va = np.sqrt(vc ** 2 + 2.0 * MAX_BRAKE * np.maximum(0.0, d - 8.0))
+            worst_gov = np.where(ok, np.minimum(worst_gov, va), worst_gov)
+        # dock governor
+        v_allow_dock = np.sqrt(2.0 * MAX_BRAKE * np.maximum(0.0, d_dock - 2.0))
+        full_brake = ((worst_gov < np.inf) & (self.speed > worst_gov + 0.3)) \
+            | ((d_dock > 0) & (d_dock < 600.0) & (self.speed > v_allow_dock + 0.3))
+        hold = (d_dock > 0) & (d_dock <= 1.5)
+        creep = (d_dock > 0) & (d_dock < 600.0) & (self.speed < 2.0)
+        anti_stall = (self.speed < 0.6) & (d_dock > 4.0)
+        g_steer = steer
+        g_throttle = np.where(full_brake | hold, 0.0, throttle)
+        g_brake = np.where(full_brake | hold, 1.0, brake)
+        g_throttle = np.where(creep | anti_stall, np.maximum(g_throttle, 0.35), g_throttle)
+        g_brake = np.where(creep | anti_stall, 0.0, g_brake)
+        acts = np.stack([g_steer, g_throttle, g_brake], axis=1)
         # --- truck physics (path-relative, same law as Truck.step) ---
-        self.steer_pos += np.clip(steer - self.steer_pos, -0.15, 0.15)
+        steer_cmd, throttle, brake = g_steer, g_throttle, g_brake
+        self.steer_pos += np.clip(steer_cmd - self.steer_pos, -0.15, 0.15)
         wheel = self.steer_pos * MAX_STEER
-        ds = self.speed * np.cos(self.hdg_err) * DT
         self.hdg_err += (self.speed / WHEELBASE) * np.tan(wheel) * DT \
             - self.speed * np.cos(self.hdg_err) * k_now * DT
         self.offset += self.speed * np.sin(self.hdg_err) * DT
-        self.s += ds
+        self.s += self.speed * np.cos(self.hdg_err) * DT
         self.speed = np.maximum(0.0, self.speed +
                                 (throttle * MAX_ACCEL - brake * MAX_BRAKE
                                  - DRAG * self.speed) * DT)
@@ -1153,7 +1195,7 @@ _F64 = _os.environ.get("ETS2AI_F64") == "1"
 _DTYPE = np.float64 if _F64 else np.float32
 _SAMPLES = int(_os.environ.get("ETS2AI_SAMPLES", "1000000000"))
 _MAX_SEC = float(_os.environ.get("ETS2AI_MAX_SECONDS", "10800"))
-_BATCH = int(_os.environ.get("ETS2AI_BATCH", "4096" if not _F64 else "1024"))
+_BATCH = int(_os.environ.get("ETS2AI_BATCH", "16384" if not _F64 else "1024"))
 _EPOCHS = int(_os.environ.get("ETS2AI_EPOCHS", "60"))
 _n_params = (N_IN * HIDDEN[0] + HIDDEN[0]
              + sum(HIDDEN[i] * HIDDEN[i + 1] + HIDDEN[i + 1] for i in range(len(HIDDEN) - 1))
@@ -1198,7 +1240,7 @@ if _tf is not None and len(_gpus) >= 1:
                 _h, activation="tanh", kernel_initializer="he_normal"))
         _model.add(_tf.keras.layers.Dense(
             N_OUT, activation="linear", kernel_initializer="he_normal"))
-        _model.compile(_tf.keras.optimizers.Adam(learning_rate=_CosineFloor(2e-3, _total_steps)), loss="mse")
+        _model.compile(_tf.keras.optimizers.Adam(learning_rate=_CosineFloor(5e-4, _total_steps)), loss="mse")
     _xva, _yva = val_set(seed=999)
     _t0 = _time.time()
     _consumed = 0

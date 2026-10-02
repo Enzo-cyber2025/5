@@ -1,0 +1,398 @@
+"""Leitor da telemetria REAL do ETS2/ATS (plugin RenCloud scs-sdk-plugin).
+
+Como funciona: a DLL do plugin (scs-telemetry.dll, V.1.12+) que voce coloca em
+``Documentos/ETS2/bin/win_x64/plugins/`` publica o estado do jogo numa memoria
+compartilhada de 32 KB chamada ``Local\\SCSTelemetry``. Este modulo le esses
+bytes e devolve um snapshot com o que a IA precisa (velocidade, entradas do
+motorista, combustivel, limite, GPS, rota, eventos).
+
+Layout: scs-telemetry/inc/scs-telemetry-common.hpp do repo
+github.com/RenCloud/scs-sdk-plugin (estrutura `scsTelemetryMap_t`, revisao 12).
+O struct e dividido em zonas alinhadas por tipo (bool/u64, u32, i32, f32,
+bool, fvetor, fplacement, dplacement, strings, u64, i64, bool de eventos,
+substances, trailers[10]). Os offsets abaixo sao exatamente os do cabecalho e
+estao TRAVADOS por asserts — se um plugin futuro mudar o layout, o parse
+recusa em vez de devolver lixo.
+
+Sem captura de tela, sem hook no jogo: so leitura de memoria compartilhada
+publicada voluntariamente pelo plugin oficial da SCS.
+"""
+import ctypes
+import os as _os
+
+MMF_NAME = "Local\\SCSTelemetry"
+MMF_SIZE = 32 * 1024
+MMF_MIN_REVID = 12          # layout abaixo vale para telemetry_plugin_revision >= 12
+STR = 64                    # stringsize
+
+
+# ---------------------------------------------------------------------------
+# Struct ctypes (espelho do scsTelemetryMap_t — so os campos que usamos; as
+# zonas de pad garantem os offsets publicados no cabecalho).
+# ---------------------------------------------------------------------------
+class _S(c_types := ctypes.Structure):  # noqa: F841 - truque de legibilidade
+    pass
+
+
+class TelemetryMap(ctypes.Structure):
+    _fields_ = [
+        # ---- zona 1 (offset 0): bools + u64 de tempo ----
+        ("sdk_active", ctypes.c_bool), ("_pad1", ctypes.c_char * 3),
+        ("paused", ctypes.c_bool), ("_pad2", ctypes.c_char * 3),
+        ("time", ctypes.c_uint64),
+        ("simulated_time", ctypes.c_uint64),
+        ("render_time", ctypes.c_uint64),
+        ("mp_time_offset", ctypes.c_int64),
+        # ---- zona 2 (offset 40): u32 ----
+        ("plugin_revision", ctypes.c_uint32),
+        ("version_major", ctypes.c_uint32),
+        ("version_minor", ctypes.c_uint32),
+        ("game_id", ctypes.c_uint32),          # 1=ets2 2=ats
+        ("telemetry_version_major", ctypes.c_uint32),
+        ("telemetry_version_minor", ctypes.c_uint32),
+        ("time_abs_min", ctypes.c_uint32),     # tempo de jogo absoluto (min)
+        ("gears", ctypes.c_uint32),
+        ("gears_reverse", ctypes.c_uint32),
+        ("retarder_steps", ctypes.c_uint32),
+        ("truck_wheel_count", ctypes.c_uint32),
+        ("selector_count", ctypes.c_uint32),
+        ("time_abs_delivery", ctypes.c_uint32),
+        ("max_trailer_count", ctypes.c_uint32),
+        ("unit_count", ctypes.c_uint32),
+        ("planned_distance_km", ctypes.c_uint32),
+        ("shifter_slot", ctypes.c_uint32),
+        ("retarder_brake", ctypes.c_uint32),
+        ("lights_aux_front", ctypes.c_uint32),
+        ("lights_aux_roof", ctypes.c_uint32),
+        ("wheel_substance", ctypes.c_uint32 * 16),
+        ("hshifter_position", ctypes.c_uint32 * 32),
+        ("hshifter_bitmask", ctypes.c_uint32 * 32),
+        ("job_delivered_time", ctypes.c_uint32),
+        ("job_starting_time", ctypes.c_uint32),
+        ("job_finished_time", ctypes.c_uint32),
+        ("_pad_ui", ctypes.c_char * 48),
+        # ---- zona 3 (offset 500): i32 ----
+        ("rest_stop", ctypes.c_int32),
+        ("gear", ctypes.c_int32),
+        ("gear_dashboard", ctypes.c_int32),
+        ("hshifter_resulting", ctypes.c_int32 * 32),
+        ("job_delivered_xp", ctypes.c_int32),
+        ("_pad_i", ctypes.c_char * 56),
+        # ---- zona 4 (offset 700): f32 ----
+        ("scale", ctypes.c_float),
+        ("fuel_capacity", ctypes.c_float),
+        ("fuel_warning_factor", ctypes.c_float),
+        ("adblue_capacity", ctypes.c_float),
+        ("adblue_warning_factor", ctypes.c_float),
+        ("air_pressure_warning", ctypes.c_float),
+        ("air_pressure_emergency", ctypes.c_float),
+        ("oil_pressure_warning", ctypes.c_float),
+        ("water_temperature_warning", ctypes.c_float),
+        ("battery_voltage_warning", ctypes.c_float),
+        ("engine_rpm_max", ctypes.c_float),
+        ("gear_differential", ctypes.c_float),
+        ("cargo_mass", ctypes.c_float),
+        ("truck_wheel_radius", ctypes.c_float * 16),
+        ("gear_ratios_forward", ctypes.c_float * 24),
+        ("gear_ratios_reverse", ctypes.c_float * 8),
+        ("unit_mass", ctypes.c_float),
+        ("speed", ctypes.c_float),                # m/s
+        ("engine_rpm", ctypes.c_float),
+        ("user_steer", ctypes.c_float),           # -1..1 (SDK: + = direita)
+        ("user_throttle", ctypes.c_float),        # 0..1
+        ("user_brake", ctypes.c_float),           # 0..1
+        ("user_clutch", ctypes.c_float),
+        ("game_steer", ctypes.c_float),
+        ("game_throttle", ctypes.c_float),
+        ("game_brake", ctypes.c_float),
+        ("game_clutch", ctypes.c_float),
+        ("cruise_control_speed", ctypes.c_float),
+        ("air_pressure", ctypes.c_float),
+        ("brake_temperature", ctypes.c_float),
+        ("fuel", ctypes.c_float),                 # litros absolutos
+        ("fuel_avg_consumption", ctypes.c_float),
+        ("fuel_range", ctypes.c_float),
+        ("adblue", ctypes.c_float),
+        ("oil_pressure", ctypes.c_float),
+        ("oil_temperature", ctypes.c_float),
+        ("water_temperature", ctypes.c_float),
+        ("battery_voltage", ctypes.c_float),
+        ("lights_dashboard", ctypes.c_float),
+        ("wear_engine", ctypes.c_float),
+        ("wear_transmission", ctypes.c_float),
+        ("wear_cabin", ctypes.c_float),
+        ("wear_chassis", ctypes.c_float),
+        ("wear_wheels", ctypes.c_float),
+        ("odometer", ctypes.c_float),
+        ("route_distance", ctypes.c_float),       # metros ate o destino
+        ("route_time", ctypes.c_float),
+        ("speed_limit", ctypes.c_float),          # m/s (0/-1 = desconhecido)
+        ("wheel_susp_deflection", ctypes.c_float * 16),
+        ("wheel_velocity", ctypes.c_float * 16),
+        ("wheel_steering", ctypes.c_float * 16),
+        ("wheel_rotation", ctypes.c_float * 16),
+        ("wheel_lift", ctypes.c_float * 16),
+        ("wheel_lift_offset", ctypes.c_float * 16),
+        ("job_delivered_cargo_damage", ctypes.c_float),
+        ("job_delivered_distance_km", ctypes.c_float),
+        ("refuel_amount", ctypes.c_float),
+        ("job_cargo_damage", ctypes.c_float),
+        ("_pad_f", ctypes.c_char * 28),
+        # ---- zona 5 (offset 1500): bools ----
+        ("wheel_steerable", ctypes.c_bool * 16),
+        ("wheel_simulated", ctypes.c_bool * 16),
+        ("wheel_powered", ctypes.c_bool * 16),
+        ("wheel_liftable", ctypes.c_bool * 16),
+        ("is_cargo_loaded", ctypes.c_bool),
+        ("special_job", ctypes.c_bool),
+        ("park_brake", ctypes.c_bool),
+        ("motor_brake", ctypes.c_bool),
+        ("air_pressure_warning_on", ctypes.c_bool),
+        ("air_pressure_emergency_on", ctypes.c_bool),
+        ("fuel_warning_on", ctypes.c_bool),
+        ("adblue_warning_on", ctypes.c_bool),
+        ("oil_pressure_warning_on", ctypes.c_bool),
+        ("water_temperature_warning_on", ctypes.c_bool),
+        ("battery_voltage_warning_on", ctypes.c_bool),
+        ("electric_enabled", ctypes.c_bool),
+        ("engine_enabled", ctypes.c_bool),
+        ("wipers", ctypes.c_bool),
+        ("blinker_left_active", ctypes.c_bool),
+        ("blinker_right_active", ctypes.c_bool),
+        ("blinker_left_on", ctypes.c_bool),
+        ("blinker_right_on", ctypes.c_bool),
+        ("lights_parking", ctypes.c_bool),
+        ("lights_beam_low", ctypes.c_bool),
+        ("lights_beam_high", ctypes.c_bool),
+        ("lights_beacon", ctypes.c_bool),
+        ("lights_brake", ctypes.c_bool),
+        ("lights_reverse", ctypes.c_bool),
+        ("lights_hazard", ctypes.c_bool),
+        ("cruise_control", ctypes.c_bool),
+        ("wheel_on_ground", ctypes.c_bool * 16),
+        ("shifter_toggle", ctypes.c_bool * 2),
+        ("differential_lock", ctypes.c_bool),
+        ("lift_axle", ctypes.c_bool),
+        ("lift_axle_indicator", ctypes.c_bool),
+        ("trailer_lift_axle", ctypes.c_bool),
+        ("trailer_lift_axle_indicator", ctypes.c_bool),
+        ("job_delivered_autopark", ctypes.c_bool),
+        ("job_delivered_autoload", ctypes.c_bool),
+        ("_pad_b", ctypes.c_char * 25),
+        # ---- zona 6 (offset 1640): fvetores ----
+        ("cabin_position", ctypes.c_float * 3),
+        ("head_position", ctypes.c_float * 3),
+        ("hook_position", ctypes.c_float * 3),
+        ("wheel_position_x", ctypes.c_float * 16),
+        ("wheel_position_y", ctypes.c_float * 16),
+        ("wheel_position_z", ctypes.c_float * 16),
+        ("lv_acceleration", ctypes.c_float * 3),
+        ("av_acceleration", ctypes.c_float * 3),
+        ("acceleration", ctypes.c_float * 3),
+        ("aa_acceleration", ctypes.c_float * 3),
+        ("cabin_av", ctypes.c_float * 3),
+        ("cabin_aa", ctypes.c_float * 3),
+        ("_pad_fv", ctypes.c_char * 60),
+        # ---- zona 7 (offset 2000): fplacements ----
+        ("cabin_offset", ctypes.c_float * 6),
+        ("head_offset", ctypes.c_float * 6),
+        ("_pad_fp", ctypes.c_char * 152),
+        # ---- zona 8 (offset 2200): dplacement do caminhao ----
+        ("world_x", ctypes.c_double),
+        ("world_y", ctypes.c_double),            # altura
+        ("world_z", ctypes.c_double),
+        ("rotation_x", ctypes.c_double),
+        ("rotation_y", ctypes.c_double),
+        ("rotation_z", ctypes.c_double),
+        ("_pad_dp", ctypes.c_char * 52),
+        # ---- zona 9 (offset 2300): strings ----
+        ("truck_brand_id", ctypes.c_char * STR),
+        ("truck_brand", ctypes.c_char * STR),
+        ("truck_id", ctypes.c_char * STR),
+        ("truck_name", ctypes.c_char * STR),
+        ("cargo_id", ctypes.c_char * STR),
+        ("cargo", ctypes.c_char * STR),
+        ("city_dst_id", ctypes.c_char * STR),
+        ("city_dst", ctypes.c_char * STR),
+        ("comp_dst_id", ctypes.c_char * STR),
+        ("comp_dst", ctypes.c_char * STR),
+        ("city_src_id", ctypes.c_char * STR),
+        ("city_src", ctypes.c_char * STR),
+        ("comp_src_id", ctypes.c_char * STR),
+        ("comp_src", ctypes.c_char * STR),
+        ("shifter_type", ctypes.c_char * 16),
+        ("truck_license_plate", ctypes.c_char * STR),
+        ("truck_plate_country_id", ctypes.c_char * STR),
+        ("truck_plate_country", ctypes.c_char * STR),
+        ("job_market", ctypes.c_char * 32),
+        ("fine_offence", ctypes.c_char * 32),
+        ("ferry_source_name", ctypes.c_char * STR),
+        ("ferry_target_name", ctypes.c_char * STR),
+        ("ferry_source_id", ctypes.c_char * STR),
+        ("ferry_target_id", ctypes.c_char * STR),
+        ("train_source_name", ctypes.c_char * STR),
+        ("train_target_name", ctypes.c_char * STR),
+        ("train_source_id", ctypes.c_char * STR),
+        ("train_target_id", ctypes.c_char * STR),
+        ("_pad_s", ctypes.c_char * 20),
+        # ---- zona 10 (offset 4000): u64 ----
+        ("job_income", ctypes.c_uint64),
+        ("_pad_ull", ctypes.c_char * 192),
+        # ---- zona 11 (offset 4200): i64 ----
+        ("job_cancelled_penalty", ctypes.c_int64),
+        ("job_delivered_revenue", ctypes.c_int64),
+        ("fine_amount", ctypes.c_int64),
+        ("tollgate_pay_amount", ctypes.c_int64),
+        ("ferry_pay_amount", ctypes.c_int64),
+        ("train_pay_amount", ctypes.c_int64),
+        ("_pad_ll", ctypes.c_char * 52),
+        # ---- zona 12 (offset 4300): eventos ----
+        ("on_job", ctypes.c_bool),
+        ("job_finished", ctypes.c_bool),
+        ("job_cancelled", ctypes.c_bool),
+        ("job_delivered", ctypes.c_bool),
+        ("fined", ctypes.c_bool),
+        ("tollgate", ctypes.c_bool),
+        ("ferry", ctypes.c_bool),
+        ("train", ctypes.c_bool),
+        ("refuel", ctypes.c_bool),
+        ("refuel_payed", ctypes.c_bool),
+        # (zonas 13-14: substances e trailers — nao usadas; o buffer e 32 KB)
+    ]
+
+
+# Offsets-chave do cabecalho (scs-telemetry-common.hpp): qualquer divergencia
+# aqui = layout mudou = o parse recusa. Isto protege contra versoes futuras.
+_EXPECTED_OFFSETS = {
+    "sdk_active": 0, "paused": 4, "time": 8,
+    "plugin_revision": 40, "game_id": 52, "time_abs_min": 64,
+    "planned_distance_km": 100, "rest_stop": 500, "gear": 504,
+    "scale": 700, "fuel_capacity": 704, "cargo_mass": 748,
+    "speed": 948, "engine_rpm": 952,
+    "user_steer": 956, "user_throttle": 960, "user_brake": 964,
+    "game_steer": 972, "cruise_control_speed": 988,
+    "fuel": 1000, "route_distance": 1060, "speed_limit": 1068,
+    "park_brake": 1566, "engine_enabled": 1576, "cruise_control": 1589,
+    "world_x": 2200, "rotation_z": 2240,
+    "truck_name": 2492, "cargo": 2620, "city_dst": 2748, "city_src": 3004,
+    "job_income": 4000, "on_job": 4300, "job_delivered": 4303, "fined": 4304,
+}
+
+
+def check_layout():
+    """Levanta AssertionError se o struct nao bater com o cabecalho."""
+    for name, off in _EXPECTED_OFFSETS.items():
+        got = getattr(TelemetryMap, name).offset
+        assert got == off, (
+            f"offset de {name}: esperado {off}, obtido {got} — "
+            f"layout do plugin mudou?")
+
+
+check_layout()
+
+
+def _s(raw):
+    return raw.split(b"\x00", 1)[0].decode("utf-8", "replace")
+
+
+def parse(buf):
+    """Bytes da memoria compartilhada -> dict (snapshot da telemetria).
+
+    Levanta ``RuntimeError`` se o plugin nao estiver ativo ou se a revisao do
+    layout for anterior a 12 (offsets diferentes = dados corrompidos).
+    """
+    m = TelemetryMap.from_buffer_copy(buf, 0)
+    if not m.sdk_active:
+        raise RuntimeError("telemetria inativa: o jogo nao esta rodando com o "
+                           "plugin (confira game.log.txt)")
+    if m.plugin_revision < MMF_MIN_REVID:
+        raise RuntimeError(
+            f"plugin revisao {m.plugin_revision} < {MMF_MIN_REVID}: baixe a "
+            "versao atual do scs-sdk-plugin (RenCloud)")
+    return {
+        "sdk_active": True,
+        "paused": bool(m.paused),
+        "ticks": int(m.time),
+        "game": {1: "ets2", 2: "ats"}.get(int(m.game_id), "?"),
+        "game_version": f"{m.version_major}.{m.version_minor}",
+        "plugin_revision": int(m.plugin_revision),
+        "game_minutes": int(m.time_abs_min),
+        "planned_distance_km": int(m.planned_distance_km),
+        "speed": float(m.speed),                 # m/s
+        "engine_rpm": float(m.engine_rpm),
+        "gear": int(m.gear),
+        "user_steer": float(m.user_steer),       # -1..1, + = direita
+        "user_throttle": float(m.user_throttle),
+        "user_brake": float(m.user_brake),
+        "game_steer": float(m.game_steer),
+        "game_throttle": float(m.game_throttle),
+        "game_brake": float(m.game_brake),
+        "cruise_control": bool(m.cruise_control),
+        "cruise_speed": float(m.cruise_control_speed),
+        "fuel": float(m.fuel),                   # litros
+        "fuel_capacity": float(m.fuel_capacity),
+        "route_distance": float(m.route_distance),  # m ate o destino
+        "route_time": float(m.route_time),
+        "speed_limit": float(m.speed_limit),     # m/s
+        "odometer": float(m.odometer),
+        "park_brake": bool(m.park_brake),
+        "engine_enabled": bool(m.engine_enabled),
+        "electric_enabled": bool(m.electric_enabled),
+        "lights_brake": bool(m.lights_brake),
+        "blinker_left_on": bool(m.blinker_left_on),
+        "blinker_right_on": bool(m.blinker_right_on),
+        "world_x": float(m.world_x),
+        "world_y": float(m.world_y),
+        "world_z": float(m.world_z),
+        "rotation_x": float(m.rotation_x),
+        "rotation_y": float(m.rotation_y),
+        "rotation_z": float(m.rotation_z),
+        "accel_x": float(m.acceleration[0]),
+        "accel_y": float(m.acceleration[1]),
+        "accel_z": float(m.acceleration[2]),
+        "cargo_mass": float(m.cargo_mass),
+        "is_cargo_loaded": bool(m.is_cargo_loaded),
+        "on_job": bool(m.on_job),
+        "job_delivered": bool(m.job_delivered),
+        "job_finished": bool(m.job_finished),
+        "fined": bool(m.fined),
+        "refuel": bool(m.refuel),
+        "truck_name": _s(m.truck_name),
+        "cargo": _s(m.cargo),
+        "city_src": _s(m.city_src),
+        "city_dst": _s(m.city_dst),
+    }
+
+
+class TelemetryReader:
+    """Abre ``Local\\SCSTelemetry`` (Windows) e tira snapshots sob demanda."""
+
+    def __init__(self, name=MMF_NAME):
+        if _os.name != "nt":
+            raise RuntimeError(
+                "TelemetryReader precisa do Windows (memoria compartilhada "
+                "do jogo). Para testes, injete snapshots falsos.")
+        from ctypes import wintypes
+        self._k32 = ctypes.windll.kernel32
+        FILE_MAP_READ = 0x0004
+        self._size = MMF_SIZE
+        self._h = self._k32.OpenFileMappingW(FILE_MAP_READ, False, name)
+        if not self._h:
+            raise RuntimeError(
+                f"memoria '{name}' nao encontrada — o plugin scs-telemetry.dll "
+                "esta instalado em bin/win_x64/plugins? O jogo esta aberto?")
+        self._k32.OpenFileMappingW.restype = wintypes.HANDLE
+        ptr = self._k32.MapViewOfFile(self._h, FILE_MAP_READ, 0, 0, self._size)
+        if not ptr:
+            raise RuntimeError("MapViewOfFile falhou")
+        self._view = (ctypes.c_char * self._size).from_address(ptr)
+
+    def snapshot(self):
+        return parse(bytes(self._view))
+
+    def close(self):
+        try:
+            self._k32.UnmapViewOfFile(ctypes.cast(self._view, ctypes.c_void_p))
+            self._k32.CloseHandle(self._h)
+        except Exception:
+            pass

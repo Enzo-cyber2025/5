@@ -43,6 +43,22 @@ def forward(x, layers, keep=None):
     return a
 
 
+def mse_forward(layers, x, y, batch=65536):
+    """MSE do forward em LOTES (o conjunto inteiro de ~1M x 290 em float64
+    nao cabe na RAM de uma vez)."""
+    x = np.asarray(x)
+    y = np.asarray(y)
+    tot = 0.0
+    n = 0
+    for s in range(0, len(x), batch):
+        xb, yb = x[s:s + batch], y[s:s + batch]
+        p = forward(xb, layers)
+        d = (p.astype(np.float64) - yb.astype(np.float64)) ** 2
+        tot += float(d.sum())
+        n += d.size
+    return tot / max(1, n)
+
+
 def mse(pred, target):
     """MSE na precisao nativa dos inputs (float32 fica float32; float64
     conserva a faixa ~1e-308 — usado pelo modo --dtype float64)."""
@@ -90,7 +106,7 @@ def train_step(layers, opt, x, y):
     return float(np.mean((out - y) ** 2))
 
 
-def train(x, y, epochs=400, batch=512, lr=2e-3, seed=SEED, verbose=True,
+def train(x, y, epochs=400, batch=512, lr=5e-4, seed=SEED, verbose=True,
           x_val=None, y_val=None, start_layers=None, dtype=np.float32,
           schedule="cosine"):
     """Train the MLP on (x, y) with Adam + MSE. Returns (layers, history).
@@ -119,8 +135,8 @@ def train(x, y, epochs=400, batch=512, lr=2e-3, seed=SEED, verbose=True,
         for s in range(0, n, batch):
             sel = idx[s:s + batch]
             train_step(layers, opt, x[sel], y[sel])
-        tr = mse(forward(x, layers), y)
-        va = mse(forward(x_val, layers), y_val) if x_val is not None else None
+        tr = mse_forward(layers, x, y)
+        va = mse_forward(layers, x_val, y_val) if x_val is not None else None
         history.append((tr, va))
         if va is not None and va < best[0]:
             best = (va, [(w.copy(), b.copy()) for (w, b) in layers])

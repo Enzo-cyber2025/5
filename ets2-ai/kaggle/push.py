@@ -34,28 +34,49 @@ def sh(*args, **kw):
     return subprocess.run([str(a) for a in args], capture_output=True, text=True, **kw)
 
 
+def _discover_username():
+    """Username da conta do token (CLI 2.x autentica sem username, mas o push
+    exige owner/slug). Descoberta: kernels list --mine (o owner aparece no ref
+    de cada kernel)."""
+    import re
+    r = sh("kaggle", "kernels", "list", "--mine", "--page-size", "20")
+    out = (r.stdout or "") + (r.stderr or "")
+    m = re.search(r"([A-Za-z0-9_-]+)/([A-Za-z0-9_-]+)\s", out)
+    if m:
+        print(f"[kaggle] username descoberto via kernels list --mine: {m.group(1)}")
+        return m.group(1)
+    return None
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--timeout", type=int, default=900)
     ap.add_argument("--epochs", type=int, default=320)
     ap.add_argument("--gpu", action="store_true",
-                    help="executar o kernel com GPU do Kaggle (nota: o modelo "
-                         "treina em ~2 min de CPU; GPU gasta cota a toa)")
+                    help="executar o kernel com GPU T4 x2 do Kaggle")
     args = ap.parse_args()
 
-    user = os.environ.get("KAGGLE_USERNAME", "").strip()
     key = os.environ.get("KAGGLE_KEY", "").strip()
-    if not key:
+    token = os.environ.get("KAGGLE_API_TOKEN", "").strip() or key
+    user = os.environ.get("KAGGLE_USERNAME", "").strip()
+    if not token:
         print("::warning::Secret KAGGLE_KEY nao configurado.")
         print("Para treinar no Kaggle: repo Settings > Secrets and variables > Actions >")
         print("  KAGGLE_KEY = seu token (kaggle.com > Settings > API > Create)")
         print("O token NUNCA deve ser colado em chat/commit — apenas em secrets.")
         return 2
+    # CLI 2.x: autenticacao por ACCESS TOKEN (Bearer); KAGGLE_USERNAME/KEY
+    # legado nao funciona mais. O mesmo valor do secret alimenta os dois.
+    os.environ["KAGGLE_API_TOKEN"] = token
     if not user:
-        # tokens novos (KGAT_...) podem autenticar sozinhos; CLI antigo exige
-        # usuario — tentamos e registramos o resultado para diagnostico.
-        print("[kaggle] KAGGLE_USERNAME ausente: tentando autenticacao somente-token")
-        os.environ["KAGGLE_USERNAME"] = "kaggle"   # placeholder; CLI novo ignora
+        print("[kaggle] KAGGLE_USERNAME ausente: derivando do token...")
+        user = _discover_username() or ""
+    if not user:
+        print("::warning::Nao foi possivel descobrir o username do token.")
+        print("Crie o secret KAGGLE_USERNAME (seu usuario Kaggle) ou rode um")
+        print("notebook qualquer na conta uma vez (kernels list --mine).")
+        return 2
+    os.environ["KAGGLE_USERNAME"] = user
 
     kdir = ROOT / ".cache" / "kaggle-kernel"
     kdir.mkdir(parents=True, exist_ok=True)
@@ -65,12 +86,13 @@ def main():
     slug = f"{user}/{SLUG_SUFFIX}"
     (kdir / "kernel-metadata.json").write_text(json.dumps({
         "id": slug,
-        "title": "ets2ai-train",
+        "title": "ets2ai-train",   # deve resolver no mesmo slug do id
         "code_file": "kernel.py",
         "language": "python",
         "kernel_type": "script",
         "is_private": "true",
         "enable_gpu": "true" if args.gpu else "false",
+        "machine_shape": "NvidiaTeslaT4" if args.gpu else "",
         "enable_internet": "false",
     }), encoding="utf-8")
 

@@ -117,11 +117,12 @@ jobs:
           with open(os.environ["GITHUB_OUTPUT"], "a") as f:
               f.write(f"source={src}\n")
           PY
-      - name: Treino nas 2x T4 do Kaggle (MirroredStrategy, FP64)
+      - name: Treino nas 2x T4 do Kaggle (MirroredStrategy, FP32 fluxo 1B)
         if: steps.fonte.outputs.source == 'kaggle'
         env:
           KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
           KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_KEY }}
         run: |
           pip install --retries 5 --timeout 90 kaggle
           cd ets2-ai
@@ -129,14 +130,17 @@ jobs:
           code=${PIPESTATUS[0]}
           if [ "$code" != "0" ]; then
             echo "::warning::Kaggle falhou — caindo para treino local deterministico"
+            echo "WEIGHTS_SOURCE=local-fallback" >> "$GITHUB_ENV"
             python -m ets2ai.train --stream-samples 80000000 --batch 1024 --dtype float32 --out artifacts
           else
+            echo "WEIGHTS_SOURCE=kaggle-2xT4" >> "$GITHUB_ENV"
             cp .cache/kaggle-out/model-weights.json artifacts/
             cp .cache/kaggle-out/metrics.json artifacts/ 2>/dev/null || true
           fi
       - name: Treino local deterministico (sem secret Kaggle)
         if: steps.fonte.outputs.source == 'local'
         run: |
+          echo "WEIGHTS_SOURCE=local-stream" >> "$GITHUB_ENV"
           cd ets2-ai
           python -m ets2ai.train --stream-samples 80000000 --batch 1024 --dtype float32 --out artifacts 2>&1 | tee ../.cache_train.log
           exit ${PIPESTATUS[0]}
@@ -151,7 +155,7 @@ jobs:
           from ets2ai.train import closed_loop_eval
           layers, meta = load_weights("artifacts/model-weights.json")
           agg, rows = closed_loop_eval(layers)
-          print(f"fonte={('${{ steps.fonte.outputs.source }}')} | loss {meta['final_loss']:.6f} (meta {LOSS_TARGET})")
+          print(f"fonte=${WEIGHTS_SOURCE:-?} | loss {meta['final_loss']:.6f} (meta {LOSS_TARGET})")
           print(f"finish {agg['finish_rate']*100:.0f}% | dock {agg['dock_rate']*100:.0f}% | "
                 f"faixa {agg['in_lane_pct']*100:.1f}% | radares {agg['radar_compliance']*100:.0f}% | "
                 f"stop erro {agg['mean_stop_error_m']:.2f} m")
@@ -166,7 +170,7 @@ jobs:
                "mse_val": meta["final_loss"],
                "loss_target": LOSS_TARGET,
                "closed_loop": agg, "closed_loop_rows": rows,
-               "weights_source": "${{ steps.fonte.outputs.source }}"}
+               "weights_source": "${{ env.WEIGHTS_SOURCE }}"}
           json.dump(m, open("artifacts/metrics.json", "w"), indent=2)
           save_device_format("artifacts/model-weights.txt", layers, meta)
           print("GATES OK — pesos aprovados")

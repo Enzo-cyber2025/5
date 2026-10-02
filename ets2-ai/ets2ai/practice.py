@@ -1,0 +1,560 @@
+"""Modo PRATICA: a IA aprende e dirige no ETS2 REAL.
+
+Esta e a resposta para "fazer a IA praticar no ETS2": um loop que roda ao
+lado do jogo lendo a telemetria REAL (plugin RenCloud scs-sdk-plugin) e,
+dependendo do modo:
+
+  record  — VOCE dirige; o loop aprende o mapa da estrada (linha central +
+            curvaturas a frente, coisa que o SDK nao da) e grava
+            estado->comando REAIS para finetune (formato ets2ai-rec,v1).
+            Na 1a passada o mapa e construido; da 2a em diante as features
+            ficam completas e tudo vira dado de treino.
+
+  shadow  — VOCE dirige; a IA calcula o que faria e nao injeta NADA. Serve
+            para (a) conferir que os sinais do mapa estao certos (veredicto
+            "ESPELHADO?" no HUD) e (b) medir a divergencia antes de deixar
+            a IA no volante.
+
+  drive   — A IA DIRIGE (injeta as setas/Espaco via SendInput; ESC = kill).
+            Se voce encostar no volante/teclado, o loop detecta a
+            intervencao, solta as teclas e grava a correcao humana
+            (DAgger) — e depois volta a dirigir.
+
+Depois de uma sessao:  python -m ets2ai.finetune --recordings sessao.csv
+A cada sessao o mapa melhora e o finetune adapta a rede — e literalmente
+a IA "praticando" no jogo de verdade. Sem captura de tela, sem mexer no
+jogo: so telemetria + teclas.
+
+Uso (no Windows, com o ETS2 aberto):
+    python -m ets2ai.practice record --map practice/mapa.json
+    python -m ets2ai.practice shadow --map practice/mapa.json
+    python -m ets2ai.practice drive --map practice/mapa.json \
+        --inject --window "Euro Truck" --rec practice/sessao1.csv
+"""
+import argparse
+import math
+import time
+from pathlib import Path
+
+import numpy as np
+
+from . import sim, telemetry
+from .contract import load_weights, clamp_action
+from .keys import KeyInjector, Recorder
+from .model import forward
+from .roadmap import RoadMap, detect_frame, wrap
+
+TICK = 0.05               # 20 Hz (a telemetria atualiza por frame do jogo)
+COURSE_WIN_M = 6.0        # janela do curso por deslocamento
+STALE_S = 1.0             # telemetria congelada por isso = solta as teclas
+REC_MIN_COVERAGE = 3      # minimo de curvaturas a frente p/ gravar linha
+UNKNOWN_CAP = 8.0         # teto de velocidade (m/s) em estrada sem mapa
+OVERRIDE_RESUME_S = 1.5   # humano soltou os controles por isto = IA volta
+FATIGUE_MIN = 660.0       # ~11 h de jogo ate fatigue=1 (como o sim)
+BASE_WEIGHTS = Path(__file__).resolve().parent.parent / "artifacts" / "model-weights.json"
+
+
+# ---------------------------------------------------------------------------
+# Features do contrato a partir de telemetria + mapa
+# ---------------------------------------------------------------------------
+def features_from(sn, road_map, course, job_minutes):
+    """Monta as 13 features do contrato (mesma ordem/escala do sim).
+
+    Retorna (features, meta) — meta carrega o que o HUD e o governador
+    precisam (offset, heading_error, curvaturas, cobertura do mapa).
+    """
+    speed = max(0.0, sn["speed"])
+    fuel_cap = sn.get("fuel_capacity") or 600.0
+    fuel = min(1.0, max(0.0, sn["fuel"] / fuel_cap)) if fuel_cap > 1.0 else 1.0
+    limit = sn.get("speed_limit") or 0.0
+    if limit < 0.5:
+        limit = 25.0
+    limit = min(limit, 25.0)
+    meta = {"located": False, "coverage": 0, "offset": 0.0,
+            "heading_error": 0.0, "curvs": [None] * 5}
+    curv_feat = [0.0] * 5
+    if course is not None:
+        loc = road_map.locate(sn["world_x"], sn["world_z"], course)
+        if loc is not None:
+            idx, offset, tangent = loc
+            he = wrap(course - tangent)
+            curvs = road_map.curvatures_ahead(idx, course)
+            meta.update(located=True, offset=offset, heading_error=he,
+                        curvs=curvs, idx=idx,
+                        coverage=sum(c is not None for c in curvs))
+            curv_feat = [(c if c is not None else 0.0) / 0.05 for c in curvs]
+    route_km = max(0.0, sn.get("route_distance", 0.0)) / 1000.0
+    feat = [
+        min(speed, 50.0) / 25.0,
+        max(-2.0, min(2.0, meta["offset"] / 3.5)),
+        max(-2.0, min(2.0, meta["heading_error"] / 0.6)),
+        *[max(-2.0, min(2.0, c)) for c in curv_feat],
+        limit / 25.0,
+        fuel,
+        min(1.0, max(0.0, job_minutes) / FATIGUE_MIN),
+        min(route_km, 20.0) / 20.0,
+        1.0,                      # radar: SDK nao expoe — "sem radar a frente"
+    ]
+    return feat, meta
+
+
+# ---------------------------------------------------------------------------
+# Governador (porta do sim.governor para o mundo real)
+# ---------------------------------------------------------------------------
+def governor_real(speed, meta, route_distance_m, cmd, limit_mps):
+    """ESC por curvatura + teto de limite + aproximação do dock + anti-stall.
+
+    route_distance_m: metros ate o destino (navigation). <=0 = sem rota.
+    """
+    # 1. curva a frente que exige menos velocidade do que da pra frear
+    if meta["located"]:
+        worst = None
+        for d, k in zip(sim.LOOKAHEAD, meta["curvs"]):
+            if k is None or abs(k) < 1e-6:
+                continue
+            v_curve = math.sqrt(sim.GOVERNOR_LIMIT / abs(k))
+            v_allow = math.sqrt(v_curve ** 2 +
+                                2.0 * sim.MAX_BRAKE * max(0.0, d - 8.0))
+            worst = v_allow if worst is None else min(worst, v_allow)
+        if worst is not None and speed > worst:
+            return (cmd[0], 0.0, 1.0)
+    # 2. respeito ao limite da via (o modelo ve o limite; o governador garante)
+    if speed > limit_mps + 2.0:
+        return (cmd[0], 0.0, 0.85)
+    # 3. aproximacao do destino: nunca carregar velocidade ate a entrega
+    if 0.0 < route_distance_m < 600.0:
+        v_allow = math.sqrt(2.0 * sim.MAX_BRAKE * max(0.0, route_distance_m - 2.0))
+        if speed > v_allow + 0.3:
+            return (cmd[0], 0.0, 1.0)
+        if route_distance_m <= 2.0:
+            return (cmd[0], 0.0, 1.0)                 # para na linha
+        if speed < 2.0:
+            return (cmd[0], max(cmd[1], 0.35), 0.0)   # creep final
+    # 4. anti-stall (nunca parar no meio da estrada)
+    if speed < 0.6 and (route_distance_m <= 0.0 or route_distance_m > 30.0):
+        return (cmd[0], max(cmd[1], 0.35), 0.0)
+    # 5. estrada desconhecida: devagar ate o mapa cobrir
+    if not meta["located"] and speed > UNKNOWN_CAP:
+        return (cmd[0], 0.0, 1.0)
+    if meta["located"] and meta["coverage"] < REC_MIN_COVERAGE and speed > UNKNOWN_CAP:
+        return (cmd[0], 0.0, 1.0)
+    return cmd
+
+
+# ---------------------------------------------------------------------------
+# O loop de pratica
+# ---------------------------------------------------------------------------
+class PracticeLoop:
+    """Loop principal: telemetria -> mapa/features -> politica -> teclas/gravacao.
+
+    `source`: funcao que devolve um snapshot (TelemetryReader.snapshot ou um
+    simulado nos testes). `policy_fn`: (features) -> (steer, throttle, brake)
+    — por padrao a rede neural; testes podem injetar um controlador.
+    """
+
+    def __init__(self, mode, road_map, source, layers=None, injector=None,
+                 recorder=None, map_path=None, policy_fn=None,
+                 tick=TICK, clock=time.monotonic, sleep=time.sleep, log=print):
+        assert mode in ("record", "drive", "shadow")
+        self.mode = mode
+        self.road_map = road_map
+        self.source = source
+        self.layers = layers
+        self.injector = injector
+        self.recorder = recorder
+        self.map_path = map_path
+        self.policy_fn = policy_fn or self._nn_policy
+        self.tick = tick
+        self.clock = clock
+        self.sleep = sleep
+        self.log = log
+        self.stop = False
+        # estado
+        self._trail = []            # [(wx, wz)] janela do curso
+        self._trail_d = 0.0
+        self._course = None
+        self._pending = []          # gravacoes aguardando a calibracao do frame
+        self._cal_pts, self._cal_steer = [], []
+        self._last_ticks, self._ticks_t = None, 0.0
+        self._job_start_min = None
+        self._override_hold = 0.0   # ate quando o humano manda (drive)
+        self._human_active = False
+        self._exp_steer = 0.0       # input esperado (rampa do jogo)
+        self._exp_thr = 0.0
+        self._exp_brk = 0.0
+        self._obs_steer = 0.0       # input observado (suavizado p/ PWM)
+        self._obs_thr = 0.0
+        self._obs_brk = 0.0
+        self._sm_steer = 0.0        # esperado suavizado
+        self._sm_thr = 0.0
+        self._sm_brk = 0.0
+        self._dev_ticks = 0
+        self._last_human_t = 0.0
+        self._shadow_n, self._shadow_dot = 0, 0.0
+        self._shadow_ai, self._shadow_h = 0.0, 0.0
+        self._last_hud = 0.0
+        self._last_save = 0.0
+        self.rows = 0
+        self.n_steps = 0
+        self.speed_max = 0.0
+
+    # ------------------------------------------------------------------ #
+    def _nn_policy(self, feat):
+        o = forward(np.asarray(feat, dtype=np.float32), self.layers)[0]
+        return clamp_action(float(o[0]), float(o[1]), float(o[2]))
+
+    def _update_course(self, sn):
+        """Curso (direcao do deslocamento) numa janela de ~6 m."""
+        wx, wz = sn["world_x"], sn["world_z"]
+        if not self._trail:
+            self._trail = [(wx, wz)]
+            return None
+        lx, lz = self._trail[-1]
+        d = math.hypot(wx - lx, wz - lz)
+        if d < 0.15:
+            return self._course
+        self._trail.append((wx, wz))
+        self._trail_d += d
+        while len(self._trail) > 2:
+            dx = self._trail[1][0] - self._trail[0][0]
+            dz = self._trail[1][1] - self._trail[0][1]
+            if self._trail_d - math.hypot(dx, dz) >= COURSE_WIN_M:
+                self._trail.pop(0)
+                self._trail_d -= math.hypot(dx, dz)
+            else:
+                break
+        ax, az = self._trail[0]
+        if math.hypot(wx - ax, wz - az) >= 3.0:
+            self._course = math.atan2(wz - az, wx - ax)
+        return self._course
+
+    def _calibrate(self, sn):
+        """Coleta dirigida ate travar a reflexao do frame do jogo."""
+        if self.road_map.frame.locked or len(self.road_map.x) > 0:
+            return
+        if abs(sn["speed"]) < 1.0:
+            return
+        if self._cal_pts and math.hypot(sn["world_x"] - self._cal_pts[-1][0],
+                                        sn["world_z"] - self._cal_pts[-1][1]) < 2.5:
+            return
+        self._cal_pts.append((sn["world_x"], sn["world_z"]))
+        self._cal_steer.append(sn["user_steer"])
+        if len(self._cal_pts) >= 40 and len(self._cal_pts) % 20 == 0:
+            f, q = detect_frame(self._cal_pts, self._cal_steer)
+            if f.locked:
+                self.road_map.frame = f
+                self.log(f"[calibra] frame travado (z_flip={f.z_flip}, "
+                         f"confianca {q:.2f}) — despejando {len(self._pending)} "
+                         f"pontos pendentes no mapa")
+                for (wx, wz, hd, v) in self._pending:
+                    self.road_map.record(wx, wz, hd, v)
+                self._pending = []
+
+    def _record_row(self, feat, cmd, override, src):
+        if self.recorder is not None:
+            self.recorder.write(feat, cmd, override, src)
+            self.rows += 1
+
+    # ------------------------------------------------------------------ #
+    def step(self, sn, now):
+        """Um tick do loop. Retorna dict de estado para o HUD/testes."""
+        self.n_steps += 1
+        out = {"telemetry": True, "stale": False, "cmd": None,
+               "source": self.mode, "feat": None, "meta": None}
+        # telemetria viva? (ticks do jogo congelando = menu/pausa)
+        if sn["ticks"] != self._last_ticks:
+            self._last_ticks = sn["ticks"]
+            self._ticks_t = now
+        elif now - self._ticks_t > STALE_S and not sn.get("paused"):
+            out.update(telemetry=False, stale=True)
+        if sn.get("paused"):
+            out.update(telemetry=False, stale=False, paused=True)
+        if not out["telemetry"]:
+            if self.injector is not None:
+                self.injector.release_all()
+            return out
+        self.speed_max = max(self.speed_max, sn["speed"])
+        course = self._update_course(sn)
+        self._calibrate(sn)
+        # minutos de trabalho (para fatigue)
+        if sn.get("on_job") and self._job_start_min is None:
+            self._job_start_min = sn["game_minutes"]
+        if not sn.get("on_job"):
+            self._job_start_min = None
+        job_min = (sn["game_minutes"] - self._job_start_min) \
+            if self._job_start_min is not None else 0.0
+        # mapa: em record/shadow o HUMANO refina a linha central (dado bom);
+        # em drive a IA so ESTENDE o mapa onde ele nao existe — nunca deixa
+        # a propria oscilacao virar "centro da pista" (espiral de erro).
+        if course is not None and sn["speed"] > 0.5:
+            loc_now = self.road_map.locate(sn["world_x"], sn["world_z"], course)
+            if self.road_map.frame.locked or len(self.road_map.x) > 0:
+                if self.mode == "drive":
+                    if loc_now is None:
+                        self.road_map.record(sn["world_x"], sn["world_z"],
+                                             course, sn["speed"])
+                else:
+                    good = loc_now is None or abs(loc_now[1]) < 0.5
+                    if good:
+                        self.road_map.record(sn["world_x"], sn["world_z"],
+                                             course, sn["speed"])
+            else:
+                self._pending.append((sn["world_x"], sn["world_z"], course,
+                                      sn["speed"]))
+                if len(self._pending) > 1200 and len(self._pending) % 400 == 0:
+                    self.log("[pratica] AVISO: frame do jogo ainda nao "
+                             "calibrado (dirija COM CURVAS por ~1 min); o "
+                             "mapa comeca depois disso")
+        feat, meta = features_from(sn, self.road_map, course, job_min)
+        out["feat"], out["meta"] = feat, meta
+        limit = sn.get("speed_limit") or 25.0
+        if limit < 0.5:
+            limit = 25.0
+        route_m = sn.get("route_distance", 0.0) if sn.get("on_job") else 0.0
+        # ---- por modo ----
+        if self.mode == "record":
+            self._maybe_record(feat, meta, sn, speed_min=0.5)
+            out["source"] = "voce (gravando)"
+        elif self.mode == "shadow":
+            cmd = self.policy_fn(feat)
+            self._shadow_update(cmd, sn)
+            self._maybe_record(feat, meta, sn, speed_min=0.5)
+            out["cmd"], out["source"] = cmd, "IA (sombra, sem injecao)"
+        else:  # drive
+            cmd = self.policy_fn(feat)
+            self._human_detect(sn, cmd, now)
+            if self._human_active or (now < self._override_hold):
+                if self.injector is not None:
+                    self.injector.release_all()
+                self._maybe_record(feat, meta, sn, speed_min=0.5,
+                                   override=True, src="H")
+                out["source"] = "HUMANO no comando (DAgger)"
+            else:
+                cmd = governor_real(sn["speed"], meta, route_m, cmd, limit)
+                if self.injector is not None:
+                    if sn.get("park_brake") and sn["speed"] < 0.5:
+                        self.injector.release_all()
+                    else:
+                        self.injector.update(*cmd)
+                out["cmd"], out["source"] = cmd, "IA"
+        out["sn"] = sn
+        return out
+
+    def _maybe_record(self, feat, meta, sn, speed_min, override=False, src="M"):
+        if self.recorder is None or sn["speed"] < speed_min:
+            return
+        if not meta["located"] or meta["coverage"] < REC_MIN_COVERAGE:
+            return
+        cmd = (sn["user_steer"], sn["user_throttle"], sn["user_brake"])
+        self._record_row(feat, cmd, 1 if (override or self.mode == "record")
+                         else 0, src if override else "M")
+
+    def _shadow_update(self, cmd, sn):
+        if sn["speed"] > 2.0:
+            self._shadow_n += 1
+            h = sn["user_steer"]
+            if abs(h) + abs(cmd[0]) > 0.05:      # ignora trechos "mortos"
+                self._shadow_dot += cmd[0] * h
+                self._shadow_ai += cmd[0] * cmd[0]
+                self._shadow_h += h * h
+
+    def shadow_verdict(self):
+        if self._shadow_n < 60:
+            return "aguardando dirigida (volte ao volante)"
+        denom = math.sqrt(self._shadow_ai * self._shadow_h)
+        if denom < 1e-6:
+            return "pouca curva para julgar (dirija trechos com curvas)"
+        agree = self._shadow_dot / denom          # cosseno -1..1
+        if agree < -0.3:
+            return ("ATENCAO: IA e voce discordam de direcao — frame possivelmente"
+                    " ESPELHADO. Rode 'record' por 1-2 min e mande o mapa de novo.")
+        return f"sinais OK (concordancia {agree*100:.0f}%)"
+
+    def _human_detect(self, sn, cmd, now):
+        """Detecta intervencao humana comparando o input do jogo com o
+        esperado — esperado = teclas da IA passadas PELA RAMPA do jogo
+        (o volante do ETS2 nao salta: sobe ~2.5/s, solta ~3.5/s). Sem isso,
+        uma tecla recem-pressionada parece "humano contrariando a IA".
+        """
+        inj = self.injector
+        t_steer = t_thr = t_brk = 0.0
+        if inj is not None:
+            if "left" in inj.down:
+                t_steer = -1.0
+            elif "right" in inj.down:
+                t_steer = 1.0
+            t_thr = 1.0 if "accel" in inj.down else 0.0
+            t_brk = 1.0 if "brake" in inj.down else 0.0
+        dt = self.tick
+
+        def ramp(cur, tgt, up=2.5, dn=3.5):
+            r = (up if abs(tgt) > abs(cur) or
+                 (tgt != 0 and cur != 0 and (cur > 0) != (tgt > 0)) else dn)
+            return cur + max(-r * dt, min(r * dt, tgt - cur))
+
+        self._exp_steer = ramp(self._exp_steer, t_steer)
+        self._exp_thr = ramp(self._exp_thr, t_thr, 2.0, 3.0)
+        self._exp_brk = ramp(self._exp_brk, t_brk, 2.0, 3.0)
+        # suaviza observado e esperado: o volante real pulsa (PWM das setas)
+        a = 0.3
+        self._obs_steer += a * (sn["user_steer"] - self._obs_steer)
+        self._obs_thr += a * (sn["user_throttle"] - self._obs_thr)
+        self._obs_brk += a * (sn["user_brake"] - self._obs_brk)
+        self._sm_steer += a * (self._exp_steer - self._sm_steer)
+        self._sm_thr += a * (self._exp_thr - self._sm_thr)
+        self._sm_brk += a * (self._exp_brk - self._sm_brk)
+        dev = (abs(self._obs_steer - self._sm_steer) > 0.5 or
+               (self._sm_brk < 0.3 and self._obs_brk > 0.5) or
+               (self._sm_thr < 0.3 and self._obs_thr > 0.55) or
+               (self._sm_brk > 0.5 and self._obs_thr > 0.55))
+        if dev:
+            self._dev_ticks += 1
+        else:
+            self._dev_ticks = 0
+        if self._dev_ticks >= 8:            # ~0.4 s seguidos = intervencao
+            if not self._human_active:
+                self.log("[pratica] humano no volante — IA solta o volante "
+                         "e grava a correcao (DAgger)")
+            self._human_active = True
+            self._last_human_t = now
+        elif self._human_active and now - self._last_human_t > OVERRIDE_RESUME_S:
+            self._human_active = False
+            self._override_hold = now + 0.5
+
+    # ------------------------------------------------------------------ #
+    def run(self, max_seconds=None, hud_every=2.0):
+        self.log(f"[pratica] modo {self.mode.upper()} | mapa: "
+                 f"{self.road_map.stats()}")
+        if self.mode == "record":
+            self.log("[pratica] VOCE dirige: 1a passada aprende a estrada; "
+                     "da 2a em diante grava dados de treino. Ctrl+C sai.")
+        elif self.mode == "shadow":
+            self.log("[pratica] VOCE dirige; a IA so observa (sem injecao).")
+        else:
+            self.log("[pratica] IA DIRIGINDO. ESC = kill switch. Encoste no "
+                     "teclado para corrigir (vira dado DAgger).")
+        t0 = self.clock()
+        last = t0
+        try:
+            while not self.stop:
+                now = self.clock()
+                while now - last >= self.tick:
+                    last += self.tick
+                    sn = self.source()
+                    if sn is None:
+                        continue
+                    try:
+                        st = self.step(sn, now)
+                    except RuntimeError as e:      # telemetria inativa
+                        self.log(f"[pratica] {e}")
+                        self.sleep(1.0)
+                        continue
+                    if now - self._last_hud > hud_every:
+                        self._last_hud = now
+                        self._hud(st, now)
+                    if now - self._last_save > 60.0 and self.map_path:
+                        self._last_save = now
+                        self.road_map.save(self.map_path)
+                if max_seconds and now - t0 > max_seconds:
+                    break
+                self.sleep(max(0.0, self.tick * 0.2))
+        except KeyboardInterrupt:
+            self.log("[pratica] Ctrl+C — encerrando e salvando...")
+        finally:
+            if self.injector is not None:
+                self.injector.release_all()
+            if self.map_path:
+                self.road_map.save(self.map_path)
+                self.log(f"[pratica] mapa salvo em {self.map_path}")
+            if self.recorder is not None:
+                n = self.recorder.close()
+                self.log(f"[pratica] {n} linhas em {self.recorder.path} -> "
+                         f"python -m ets2ai.finetune --recordings {self.recorder.path}")
+        return {"rows": self.rows, "speed_max": self.speed_max,
+                "map": self.road_map.stats(),
+                "shadow": self.shadow_verdict() if self.mode == "shadow" else None}
+
+    def _hud(self, st, now):
+        sn = st.get("sn")
+        if sn is None:
+            return
+        meta = st.get("meta") or {}
+        line = (f"[{self.mode}] {sn['speed']*3.6:5.1f} km/h | "
+                f"offset {meta.get('offset', 0.0):+5.2f} m | "
+                f"hdg {math.degrees(meta.get('heading_error', 0.0)):+5.1f}° | "
+                f"mapa {meta.get('coverage', 0)}/5 | {st['source']}")
+        if self.mode == "drive" and not meta.get("located"):
+            line += " | SEM MAPA AQUI — devagar (rode 'record' nesta estrada)"
+        if self.mode == "shadow" and self._shadow_n >= 60:
+            line += f" | {self.shadow_verdict()}"
+        self.log(line)
+
+
+# ---------------------------------------------------------------------------
+# Entrada (linha de comando e pelo bridge/exe)
+# ---------------------------------------------------------------------------
+def run(mode, map_path="practice/mapa.json", rec_path=None, inject=False,
+        window="Euro Truck", weights=BASE_WEIGHTS, max_seconds=None,
+        _source=None, _policy=None, _clock=None, _sleep=None):
+    """Monta e roda o loop de pratica (usado pelo CLI e pelo bridge --ets2)."""
+    map_path = Path(map_path)
+    road_map = RoadMap.load(map_path) if map_path.exists() else RoadMap()
+    layers = None
+    if mode in ("drive", "shadow"):
+        layers, meta = load_weights(weights)
+        print(f"[pesos] {weights} (val_loss {meta['final_loss']:.5f})")
+    source = _source
+    if source is None:
+        try:
+            reader = telemetry.TelemetryReader()
+        except RuntimeError as e:
+            raise SystemExit(
+                f"[pratica] {e}\n"
+                "[pratica] Veja ets2-ai/PRATICA.md (passo 0: plugin RenCloud "
+                "em bin/win_x64/plugins e o jogo ABERTO).")
+        source = reader.snapshot
+    injector = KeyInjector(window, inject) if (mode == "drive" and inject) else None
+    if inject and mode == "drive":
+        print(f"[inject] alvo: janela '{window}' | ESC = kill switch")
+    recorder = Recorder(rec_path) if rec_path else None
+    loop = PracticeLoop(mode, road_map, source, layers=layers,
+                        injector=injector, recorder=recorder,
+                        map_path=map_path, policy_fn=_policy,
+                        clock=_clock or time.monotonic,
+                        sleep=_sleep or time.sleep)
+    try:
+        return loop.run(max_seconds=max_seconds)
+    finally:
+        if source is not None and hasattr(source, "__self__") and \
+                hasattr(source.__self__, "close"):
+            source.__self__.close()
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(
+        description="ETS2-AI pratica: aprendizado e direcao no ETS2 real",
+        formatter_class=argparse.RawDescriptionHelpFormatter, epilog=__doc__)
+    ap.add_argument("modo", choices=["record", "shadow", "drive"])
+    ap.add_argument("--map", default="practice/mapa.json",
+                    help="arquivo do mapa de pista aprendido")
+    ap.add_argument("--rec", default=None,
+                    help="CSV de gravacao p/ finetune (ets2ai-rec,v1)")
+    ap.add_argument("--inject", action="store_true",
+                    help="injetar teclas REAIS no jogo (so com 'drive')")
+    ap.add_argument("--window", default="Euro Truck",
+                    help="parte do titulo da janela do ETS2")
+    ap.add_argument("--weights", default=str(BASE_WEIGHTS))
+    ap.add_argument("--segundos", type=float, default=None,
+                    help="encerrar apos N segundos (testes)")
+    args = ap.parse_args(argv)
+    if args.rec is None and args.modo in ("record", "shadow"):
+        stamp = time.strftime("%Y%m%d-%H%M%S")
+        args.rec = f"practice/{args.modo}-{stamp}.csv"
+        print(f"[pratica] gravando automaticamente em {args.rec}")
+    return run(args.modo, map_path=args.map, rec_path=args.rec,
+               inject=args.inject, window=args.window,
+               weights=Path(args.weights), max_seconds=args.segundos)
+
+
+if __name__ == "__main__":
+    main()

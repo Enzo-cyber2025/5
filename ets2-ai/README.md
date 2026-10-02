@@ -315,6 +315,24 @@ Você **não precisa dirigir** para gerar dados de treino:
    (SCS SDK) com as do simulador — gravar 5–10 min de direção normal sua
    basta para calibrar escalas/offsets.
 
+## Praticar no ETS2 real (v0.4.4) — IMPLEMENTADO
+
+O caminho do aprendizado no jogo de verdade está pronto (passo a passo em
+**[PRATICA.md](PRATICA.md)**):
+
+1. **`record`** — você dirige com o plugin de telemetria RenCloud instalado;
+   a IA **aprende a estrada** (linha central + curvaturas à frente — o que o
+   SDK não dá) e grava estado→comando reais.
+2. **`shadow`** — você dirige, a IA observa e dá veredito de sinais
+   (detecta mapa espelhado antes de qualquer risco).
+3. **`drive`** — a IA dirige no jogo real (setas por SendInput, volante em
+   PWM, ESC mata); sua intervenção vira dado DAgger automaticamente.
+4. **`finetune`** — minutos de correções valem milhares de km: adapta a rede
+   base (Kaggle, 1B de amostras sintéticas) à sua estrada/caminhão/estilo.
+
+Zero captura de tela; funciona em qualquer mapa/mod (a estrada é aprendida,
+não extraída). O `.exe` do CI já traz os modos: `ETS2-AI-bridge.exe --ets2 record`.
+
 ## Roadmap para o ETS2 real
 
 1. **Telemetria**: plugin do SCS SDK (DLL `scs-telemetry`, documentação
@@ -332,11 +350,15 @@ Você **não precisa dirigir** para gerar dados de treino:
 
 ```
 ets2-ai/
-├── ets2ai/            # núcleo numpy: sim, dados, modelo, treino, contrato, tflite
+├── ets2ai/            # núcleo numpy: sim, dados, modelo, treino, contrato,
+│                      #   tflite, telemetria (RenCloud), roadmap (mapa aprendido),
+│                      #   practice (loop de prática no jogo real), keys (SendInput)
 ├── android/           # app (Java puro, sem Gradle): build_apk.sh, check_java.sh
 ├── bridge/            # ets2_bridge.py (vira ETS2-AI-bridge.exe no CI)
-├── tests/             # 10 testes: paridade, protocolo TCP, circuito fechado
+├── tests/             # 58 testes: paridade, protocolo, circuito fechado,
+│                      #   telemetria, mapa de pista, prática ponta a ponta
 ├── artifacts/         # pesos + métricas (commitados; CI confere reprodutibilidade)
+├── PRATICA.md         # guia: fazer a IA praticar no ETS2 real
 └── README.md
 ```
 

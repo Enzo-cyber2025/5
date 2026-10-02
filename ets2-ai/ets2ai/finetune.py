@@ -1,14 +1,15 @@
 """Finetune the committed policy on real recordings (DAgger corrections).
 
 Why this exists: the base policy is trained purely on the synthetic expert
-(you drive 0 km). To adapt it to the *real* ETS2, the bridge's --record mode
-captures state->command pairs while EITHER (a) you drive normally for a few
-minutes (calibration) or (b) the AI drives and you only intervene when it
-errs (DAgger: minutes of corrections >> thousands of km of raw driving).
+(you drive 0 km). To adapt it to the *real* ETS2, the practice mode
+(ets2ai.practice / bridge --ets2) captures state->command pairs while EITHER
+(a) you drive normally for a few minutes (record; calibration + mapa) or
+(b) the AI drives and you only intervene when it errs (drive; DAgger:
+minutes of corrections >> thousands of km of raw driving).
 
 Recording format (written by bridge/ets2_bridge.py --record):
     line 1: ets2ai-rec,v1
-    then:   12 normalized features,steer,throttle,brake,override,source
+    then:   13 normalized features,steer,throttle,brake,override,source
             (override=1 marks a HUMAN correction — weighted higher here)
 
 Quality gates (the finetuned model is only usable if ALL pass):

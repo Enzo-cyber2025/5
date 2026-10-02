@@ -15,9 +15,16 @@ Uso:
     python ets2_bridge.py                    # janela demo, IA local ou celular
     python ets2_bridge.py --inject --window "Euro Truck"   # injeta teclas reais
 
-Nota ETS2 real: a injeção de teclas é a parte pronta. Para dirigir o jogo de
-verdade falta a telemetria do jogo (plugin SCS SDK), que alimentaria o estado
-no lugar do demo — ponto de integracao documentado no README.
+  5. Com --ets2 MODO, PRATICA no jogo REAL: le a telemetria do plugin
+     RenCloud (scs-telemetry.dll), aprende o mapa da estrada dirigindo
+     (record), avalia os sinais (shadow) e dirige com DAgger (drive).
+     Passo a passo completo em ets2-ai/PRATICA.md.
+
+Uso:
+    python ets2_bridge.py                    # janela demo, IA local ou celular
+    python ets2_bridge.py --inject --window "Euro Truck"   # injeta teclas reais
+    python ets2_bridge.py --ets2 record      # pratica: VOCE dirige, IA aprende
+    python ets2_bridge.py --ets2 drive --inject --window "Euro Truck"  # IA dirige
 """
 import argparse
 import math
@@ -35,24 +42,11 @@ from ets2ai import sim                                    # noqa: E402
 from ets2ai import mission as mission_mod                 # noqa: E402
 from ets2ai.contract import load_weights, clamp_action    # noqa: E402
 from ets2ai.model import forward                          # noqa: E402
+from ets2ai.keys import (KEYMAP, MACROS, EXTENDED_KEYS,   # noqa: E402,F401
+                         press_menu, KeyInjector, Recorder)
 
 DEFAULT_PORT = 7777
 PHONE_TIMEOUT_S = 0.5      # sem resposta do celular por isso = failover local
-
-# Teclas enviadas (scan codes). ETS2 vem com setas para dirigir por padrao.
-KEYMAP = {"left": 0x4B, "right": 0x4D, "accel": 0x48, "brake": 0x50}
-# Macros da missao (scan code, nome) — liga motor, carga, menus do jogo.
-# Ajuste se seus binds forem diferentes (ver ets2-ai/README.md).
-MACROS = {
-    "engine":     (0x12, "E (ligar motor)"),
-    "dock":       (0x14, "T (carregar/descarregar)"),
-    "ok":         (0x1C, "Enter (confirmar)"),
-    "down":       (0x50, "Baixo (navegar menu)"),
-    "park_brake": (0x34, ". (freio de estacionamento)"),
-}
-# Setas/Enter etc. sao teclas EXTENDIDAS no Windows: sem a flag, viram
-# teclado numerico (bug real de injecao — corrigido abaixo).
-EXTENDED_KEYS = {0x48, 0x4B, 0x4D, 0x50, 0x52, 0x53, 0x1C, 0x34}
 
 
 def load_policy():
@@ -158,138 +152,6 @@ class PhoneLink(threading.Thread):
             return "127.0.0.1"
         finally:
             s.close()
-
-
-# ---------------------------------------------------------------------------
-# Windows keyboard injection (SendInput, scan codes)
-# ---------------------------------------------------------------------------
-def press_menu(injector, keys):
-    """Presses a menu key sequence (['down', 'ok'] etc.) with small pauses."""
-    for k in keys:
-        scan, name = MACROS[k]
-        injector.tap(scan, name)
-        time.sleep(0.15)
-
-
-class KeyInjector:
-    def __init__(self, window_substring, enabled):
-        self.enabled = enabled and sys.platform == "win32"
-        self.window_substring = window_substring
-        self.down = set()
-        if self.enabled:
-            import ctypes
-            self.ct = ctypes
-            self.user32 = ctypes.windll.user32
-            self.kernel32 = ctypes.windll.kernel32
-        self.kill = False
-
-    def _keybd(self, scan, up):
-        INPUT_KEYBOARD = 1
-        KEYEVENTF_SCANCODE = 0x0008
-        KEYEVENTF_KEYUP = 0x0002
-        KEYEVENTF_EXTENDEDKEY = 0x0001
-        class _KBD(ctypes.Structure):
-            _fields_ = [("wVk", ctypes.c_ushort), ("wScan", ctypes.c_ushort),
-                        ("dwFlags", ctypes.c_ulong), ("time", ctypes.c_ulong),
-                        ("dwExtraInfo", ctypes.POINTER(ctypes.c_ulong))]
-        class _INPUT(ctypes.Structure):
-            _fields_ = [("type", ctypes.c_ulong), ("ki", _KBD)]
-        extra = ctypes.c_ulong(0)
-        flags = KEYEVENTF_SCANCODE | (KEYEVENTF_KEYUP if up else 0)
-        if scan in EXTENDED_KEYS:
-            flags |= KEYEVENTF_EXTENDEDKEY
-        ki = _KBD(0, scan, flags, 0, ctypes.pointer(extra))
-        inp = _INPUT(INPUT_KEYBOARD, ki)
-        n = self.user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(inp))
-        return n == 1
-
-    def _target_is_foreground(self):
-        fg = self.user32.GetForegroundWindow()
-        length = 512
-        buf = ctypes.create_unicode_buffer(length)
-        self.user32.GetWindowTextW(fg, buf, length)
-        title = buf.value
-        if self.window_substring.lower() in title.lower():
-            return True
-        return False
-
-    def update(self, steer, throttle, brake):
-        """Map continuous commands to key presses (bang-bang with hysteresis)."""
-        if not self.enabled:
-            return
-        # kill switch: ESC pressed at any time stops injection for good
-        if self.user32.GetAsyncKeyState(0x1B) & 0x8000:
-            self.kill = True
-        if self.kill:
-            self.release_all()
-            return
-        want = set()
-        if steer < -0.25:
-            want.add("left")
-        if steer > 0.25:
-            want.add("right")
-        if throttle > 0.30:
-            want.add("accel")
-        if brake > 0.30:
-            want.add("brake")
-        if not self._target_is_foreground():
-            want = set()          # nao injeta fora da janela alvo
-        for k in self.down - want:
-            self._keybd(KEYMAP[k], True)
-            self.down.discard(k)
-        for k in want - self.down:
-            self._keybd(KEYMAP[k], False)
-            self.down.add(k)
-
-    def tap(self, scan, name=""):
-        """One-shot keypress (down 60 ms, up) for mission macros."""
-        if not self.enabled:
-            print(f"[macro] {name or hex(scan)} (injecao desligada — apenas sim)")
-            return
-        self._keybd(scan, False)
-        time.sleep(0.06)
-        self._keybd(scan, True)
-        if name:
-            print(f"[macro] {name}")
-
-    def release_all(self):
-        if not self.enabled:
-            return
-        for k in list(self.down):
-            self._keybd(KEYMAP[k], True)
-            self.down.discard(k)
-
-
-# ---------------------------------------------------------------------------
-# Recorder (DAgger): state->command log consumable by ets2ai.finetune
-# ---------------------------------------------------------------------------
-class Recorder:
-    """CSV writer: normalized 12 features + 3 commands + override flag + source.
-
-    source: L=IA local | P=IA celular | H=correcao humana (override=1) | M=manual
-    """
-    def __init__(self, path):
-        self.path = Path(path)
-        self.f = open(self.path, "w", encoding="utf-8")
-        self.f.write("ets2ai-rec,v1\n")
-        self.n = 0
-        self.overrides = 0
-
-    def write(self, feat, cmd, override, src):
-        vals = [f"{v:.6f}" for v in feat] + [f"{v:.6f}" for v in cmd]
-        vals.append(str(int(override)))
-        vals.append(src)
-        self.f.write(",".join(vals) + "\n")
-        self.n += 1
-        if override:
-            self.overrides += 1
-        if self.n % 50 == 0:
-            self.f.flush()
-
-    def close(self):
-        if not self.f.closed:
-            self.f.close()
-        return self.n
 
 
 # ---------------------------------------------------------------------------
@@ -745,6 +607,14 @@ def main():
                     help="a IA roda SO no celular; sem conexao o caminhao freia")
     ap.add_argument("--bench", action="store_true",
                     help="medir o custo de CPU do bridge (prova do impacto no FPS)")
+    ap.add_argument("--ets2", choices=["record", "shadow", "drive"],
+                    metavar="MODO",
+                    help="PRATICA no ETS2 REAL (telemetria RenCloud): "
+                         "record=voce dirige e a IA aprende a estrada | "
+                         "shadow=IA observa e da o veredicto de sinais | "
+                         "drive=IA dirige (use --inject)")
+    ap.add_argument("--map", default="practice/mapa.json",
+                    help="mapa de pista aprendido (modo --ets2)")
     args = ap.parse_args()
 
     if args.inject and sys.platform != "win32":
@@ -752,6 +622,16 @@ def main():
 
     if args.bench:
         run_bench()
+        return
+    if args.ets2:
+        from ets2ai import practice
+        rec = args.record or None
+        if rec is None and args.ets2 in ("record", "shadow"):
+            import time as _t
+            rec = f"practice/{args.ets2}-{_t.strftime('%Y%m%d-%H%M%S')}.csv"
+            print(f"[pratica] gravando automaticamente em {rec}")
+        practice.run(args.ets2, map_path=args.map, rec_path=rec,
+                     inject=args.inject, window=args.window)
         return
     layers = None if (args.sem_janela and args.somente_celular) else load_policy()
     injector = KeyInjector(args.window, args.inject)
