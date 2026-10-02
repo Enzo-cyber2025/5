@@ -1,0 +1,26 @@
+=== kaggle-train run 37036733336 fonte kaggle ===
+--- kaggle log
+[kaggle] KAGGLE_USERNAME ausente: tentando autenticacao somente-token
+$ kaggle kernels push -p /home/runner/work/5/5/ets2-ai/.cache/kaggle-kernel
+Kernel must be specified in the form of '{username}/{kernel-slug}' or '{username}/{kernel-slug}/{version}'
+
+$ kaggle kernels list --mine --page-size 5
+[kaggle] kernels list --mine: Authentication required to call the Kaggle API.
+
+First, you will need a Kaggle account. You can sign up at
+  https://www.kaggle.com/account/login
+
+Recommended: log in with OAuth via a web-based authorization flow.
+No token to manage; credentials are cached locally for you.
+    kaggle auth login
+
+If you'd rather not use OAuth, generate an API token at
+  https://www.kaggle.com/settings/api  (click "
+::warning::kaggle kernels push falhou: Kernel must be specified in the form of '{username}/{kernel-slug}' or '{username}/{kernel-slug}/{version}'
+--- train log
+--- quality log
+fonte=kaggle | loss 0.064634 (meta 0.15)
+finish 0% | dock 0% | faixa 57.9% | radares 0% | stop erro 0.00 m
+Traceback (most recent call last):
+  File "<stdin>", line 12, in <module>
+AssertionError: dock/finish baixos
