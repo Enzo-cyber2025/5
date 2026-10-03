@@ -33,7 +33,8 @@ jobs:
       - name: Testes (pytest)
         run: |
           cd ets2-ai
-          pytest tests/ -q
+          pytest tests/ -q 2>&1 | tee ../.cache_pytest.log
+          exit ${PIPESTATUS[0]}
       - name: Gates nos pesos commitados (circuito fechado)
         run: |
           cd ets2-ai
@@ -77,6 +78,7 @@ jobs:
           git config user.name "ci-diag"; git config user.email "ci-diag@users.noreply.github.com"
           git add ci-logs || true
           git commit -m "diag: train-verify run ${{ github.run_id }} [skip ci]" || true
+          git pull --rebase --autostash origin arena/01a0f37d-5 || true
           git push || true
           exit 1
 
