@@ -13,22 +13,20 @@ tela, sem mexer no jogo: só o plugin oficial de telemetria da SCS + teclas.
    teclado <──(SendInput, volante PWM)───────────────────┴── rede 290×13
 ```
 
-## 0) Requisitos (uma vez só)
+## 0) Requisitos (uma vez só) — PLUG & PLAY
 
 1. **ETS2 original 64-bit** (Steam) no Windows.
-2. **Plugin de telemetria RenCloud** (scs-sdk-plugin, V.1.12+):
-   - Baixe o `scs-telemetry.dll` (x64) em
-     <https://github.com/RenCloud/scs-sdk-plugin/releases>;
-   - Copie para `Documentos\Euro Truck Simulator 2\bin\win_x64\plugins\`
-     (crie a pasta `plugins` se não existir);
-   - Abra o ETS2 e confira em `Documentos\Euro Truck Simulator 2\game.log.txt`
-     a linha `telemetry plugin` — sem erro.
-3. **Python + bridge**: no PC do jogo, com o repo (ou o `ETS2-AI-bridge.exe`
-   do release — os modos de prática já estão embutidos):
-   ```
-   cd ets2-ai
-   python -m ets2ai.practice record
-   ```
+2. **Nada de DLL na mão**: o `ETS2-AI-bridge.exe` (v0.4.5+) já embute a DLL
+   de telemetria (plugin RenCloud, licença MIT) e **instala sozinho** na
+   pasta do jogo na primeira vez que você roda um modo de prática — ele
+   acha o ETS2 pelo registro do Steam. Se quiser, force o caminho com
+   `--game-dir`. (A DLL também é open source: RenCloud/scs-sdk-plugin.)
+3. **Celular no cabo USB** (opcional, para a IA rodar no aparelho): o .exe
+   também embute o `adb` e cria o túnel `adb reverse` sozinho — no app toque
+   **BRIDGE → AUTO** e conecta (sem digitar IP, sem Wi-Fi). Requer
+   "Depuração USB" ativada uma única vez no aparelho.
+4. Rodar: `ETS2-AI-bridge.exe --ets2 record` (ou
+   `python -m ets2ai.practice record` com o repo).
 
 > Como funciona por dentro: `ets2ai/telemetry.py` lê os 32 KB de
 > `Local\SCSTelemetry` (layout oficial do plugin, offsets travados por
@@ -98,6 +96,23 @@ python -m ets2ai.finetune --recordings practice/record-*.csv practice/drive-*.cs
 Cada ciclo record → drive → finetune deixa a IA melhor **na sua estrada, no
 seu caminhão, no seu estilo**. O mapa cresce sozinho conforme você dirige
 rotas novas (a IA estende o mapa onde ele não existe).
+
+## Praticar SEM o meu PC rodando o jogo — o que é possível (honesto)
+
+O **jogo** precisa existir em algum lugar: ETS2 é pago, Windows, sem
+servidor dedicado/headless e sem build para nuvem pública. As opções reais:
+
+| Opção | Custo | Como fica |
+|---|---|---|
+| **Seu PC** (recomendado) | já tem | Tudo plug & play: .exe instala a DLL, `adb reverse` conecta o celular no cabo, o modo prática aprende dirigindo |
+| **PC na nuvem com GPU** (Shadow, Azure NV, Paperspace...) | ~R$ 50-150/mês | Você instala Steam+ETS2 lá e roda o MESMO `.exe` (a DLL auto-instala). A prática acontece na VM; você só assiste/controla por streaming |
+| **"ETS2 grátis na nuvem"** | — | **Não existe**: jogo pago, DRM do Steam, sem versão headless. Qualquer promessa disso é pirataria |
+
+O que **já** roda 100% na nuvem de graça é o **treino em massa**: a cadeia
+de sessões 2×T4 do Kaggle (workflow `ets2-ai-chain.yml`) acumula amostras
+até passar de **100 bilhões** sem tocar no seu PC — ver `CHAIN.md`. A
+prática no jogo (record/shadow/drive) é o complemento que adapta a rede à
+sua estrada real em minutos, por DAgger.
 
 ## Perguntas frequentes
 

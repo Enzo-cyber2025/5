@@ -262,6 +262,28 @@ public final class MainActivity extends Activity {
         bridgeStatus = "AUTO: procurando o PC (USB/Wi-Fi)...";
         new Thread(new Runnable() {
             public void run() {
+                // 1) CABO USB: o bridge roda 'adb reverse' sozinho — o
+                // localhost do aparelho tunela direto pro PC (zero config).
+                try {
+                    Socket sk = new Socket();
+                    sk.connect(new InetSocketAddress("127.0.0.1", 7777), 250);
+                    sk.close();
+                    runOnUiThread(new Runnable() {
+                        public void run() {
+                            bridgeStatus = "AUTO: cabo USB (adb reverse)!";
+                            bridge = new BridgeClient("127.0.0.1", 7777, net,
+                                    new BridgeClient.Listener() {
+                                public void onStatus(final String st) {
+                                    runOnUiThread(new Runnable() {
+                                        public void run() { bridgeStatus = st; }
+                                    });
+                                }
+                            });
+                            new Thread(bridge).start();
+                        }
+                    });
+                    return;
+                } catch (Exception ignored) { }
                 List<String> prefixes = new ArrayList<String>();
                 try {
                     Enumeration<NetworkInterface> nis = NetworkInterface.getNetworkInterfaces();

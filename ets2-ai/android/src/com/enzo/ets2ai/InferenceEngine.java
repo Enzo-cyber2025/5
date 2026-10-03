@@ -62,8 +62,9 @@ public final class InferenceEngine {
         double bestUs = measure(best);
         byte[] model = readAsset(ctx, "ets2ai-float32.tflite");
         if (model != null) {
-            String[] names = { "TFLite CPU", "TFLite GPU", "TFLite+NNAPI" };
-            String[] delegates = { null, "gpu", "nnapi" };
+            String[] names = { "TFLite CPU", "TFLite GPU", "TFLite GPU (Vulkan)",
+                               "TFLite GPU (OpenCL)", "TFLite+NNAPI" };
+            String[] delegates = { null, "gpu", "gpu-vulkan", "gpu-cl", "nnapi" };
             for (int i = 0; i < delegates.length; i++) {
                 TfliteNet n = buildTflite(model, delegates[i], names[i]);
                 if (n == null) continue;
@@ -121,9 +122,23 @@ public final class InferenceEngine {
             Class<?> optionsCls = Class.forName("org.tensorflow.lite.Interpreter$Options");
             Object options = optionsCls.getDeclaredConstructor().newInstance();
             optionsCls.getMethod("setNumThreads", int.class).invoke(options, 2);
-            if ("gpu".equals(delegate)) {
-                dele = Class.forName("org.tensorflow.lite.gpu.GpuDelegate")
-                        .getDeclaredConstructor().newInstance();
+            if (delegate != null && delegate.startsWith("gpu")) {
+                boolean forced = delegate.length() > 3;   // "gpu-vulkan"/"gpu-cl"
+                Class<?> gpuCls = Class.forName("org.tensorflow.lite.gpu.GpuDelegate");
+                Object opts = forced ? forceGpuOptions(delegate.substring(4)) : null;
+                if (forced && opts == null) return null;  // runtime sem setForceBackend
+                if (opts != null) {
+                    for (Constructor<?> c : gpuCls.getConstructors()) {
+                        Class<?>[] ps = c.getParameterTypes();
+                        if (ps.length == 1 && ps[0].isInstance(opts)) {
+                            dele = c.newInstance(opts);
+                            break;
+                        }
+                    }
+                    if (dele == null) return null;
+                } else {
+                    dele = gpuCls.getDeclaredConstructor().newInstance();
+                }
             } else if ("nnapi".equals(delegate)) {
                 dele = Class.forName("org.tensorflow.lite.nnapi.NnApiDelegate")
                         .getDeclaredConstructor().newInstance();
@@ -148,6 +163,36 @@ public final class InferenceEngine {
                     interpreter.getClass().getMethod("close").invoke(interpreter);
                 } catch (Exception ignored) { }
             }
+            return null;
+        }
+    }
+
+
+    /** Options com backend FORCADO (VULKAN/OPENCL) via reflection; null se o
+     *  runtime nao suportar setForceBackend (o caminho 'auto' segue valendo).
+     *  Rota Vulkan pedida pelo usuario: GPU do aparelho via driver Vulkan. */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static Object forceGpuOptions(String backend) {
+        Class<?> optsCls;
+        try {
+            optsCls = Class.forName("org.tensorflow.lite.gpu.GpuDelegateFactory$Options");
+        } catch (Throwable t) {
+            try {
+                optsCls = Class.forName("org.tensorflow.lite.gpu.GpuDelegate$Options");
+            } catch (Throwable t2) {
+                return null;
+            }
+        }
+        try {
+            Class<?> enumCls = Class.forName(
+                    "org.tensorflow.lite.gpu.GpuDelegateFactory$Options$GpuBackend");
+            Object opts = optsCls.getDeclaredConstructor().newInstance();
+            Object be = Enum.valueOf(
+                    (Class<? extends Enum>) enumCls.asSubclass(Enum.class),
+                    backend.toUpperCase(java.util.Locale.US));
+            optsCls.getMethod("setForceBackend", enumCls).invoke(opts, be);
+            return opts;
+        } catch (Throwable t) {
             return null;
         }
     }

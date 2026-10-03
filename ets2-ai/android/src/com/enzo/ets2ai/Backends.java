@@ -53,7 +53,7 @@ public final class Backends {
                 if (!tflitePresent()) {
                     sb.append("2) TensorFlow Lite: runtime nao embutido neste APK\n");
                     sb.append("   (build sem runtime TFLite; inferência segue em Java)\n");
-                    sb.append("3) GPU delegate: idem\n");
+                    sb.append("3) GPU auto/Vulkan/OpenCL: idem\n");
                     sb.append("4) NNAPI (rota publica p/ NPU): idem\n");
                 } else {
                     byte[] model = readAsset(ctx, "ets2ai-float32.tflite");
@@ -61,15 +61,19 @@ public final class Backends {
                         sb.append("2) TensorFlow Lite: modelo .tflite ausente nos assets\n");
                     } else {
                         sb.append(runTflite("2) TFLite CPU (XNNPACK)", model, null, feat));
-                        sb.append(runTflite("3) TFLite GPU delegate", model, "gpu", feat));
-                        sb.append(runTflite("4) TFLite + NNAPI (rota publica p/ NPU)",
+                        sb.append(runTflite("3) TFLite GPU (auto)", model, "gpu", feat));
+                        sb.append(runTflite("4) TFLite GPU VULKAN (forcado)",
+                                model, "gpu-vulkan", feat));
+                        sb.append(runTflite("5) TFLite GPU OPENCL (forcado)",
+                                model, "gpu-cl", feat));
+                        sb.append(runTflite("6) TFLite + NNAPI (rota publica p/ NPU)",
                                 model, "nnapi", feat));
                     }
                 }
                 sb.append("----------------------------------------\n");
                 sb.append("Veredito NPU: a NPU do Exynos 1480 nao e\n");
                 sb.append("programavel por apps terceiros (SDK Samsung\n");
-                sb.append("fechado; NNAPI depreciado). Se o item 4 mostrar\n");
+                sb.append("fechado; NNAPI depreciado). Se os itens 4/5/6 mostrarem\n");
                 sb.append("um acelerador real, ele foi medido — nao estimado.\n");
                 final String text = sb.toString();
                 android.os.Handler h = new android.os.Handler(ctx.getMainLooper());
@@ -114,9 +118,25 @@ public final class Backends {
             setThreads.invoke(options, 2);
 
             Object dele = null;
-            if ("gpu".equals(delegate)) {
+            if (delegate != null && delegate.startsWith("gpu")) {
+                boolean forced = delegate.length() > 3;
                 Class<?> gpuCls = Class.forName("org.tensorflow.lite.gpu.GpuDelegate");
-                dele = gpuCls.getDeclaredConstructor().newInstance();
+                Object gopts = forced ? forceGpuOptions(delegate.substring(4)) : null;
+                if (forced && gopts == null)
+                    throw new IllegalStateException("runtime sem setForceBackend");
+                if (gopts != null) {
+                    for (Constructor<?> c : gpuCls.getConstructors()) {
+                        Class<?>[] ps = c.getParameterTypes();
+                        if (ps.length == 1 && ps[0].isInstance(gopts)) {
+                            dele = c.newInstance(gopts);
+                            break;
+                        }
+                    }
+                    if (dele == null)
+                        throw new IllegalStateException("sem ctor GpuDelegate(Options)");
+                } else {
+                    dele = gpuCls.getDeclaredConstructor().newInstance();
+                }
             } else if ("nnapi".equals(delegate)) {
                 Class<?> nnCls = Class.forName("org.tensorflow.lite.nnapi.NnApiDelegate");
                 dele = nnCls.getDeclaredConstructor().newInstance();
@@ -159,6 +179,35 @@ public final class Backends {
                     interpreter.getClass().getMethod("close").invoke(interpreter);
                 } catch (Exception ignored) { }
             }
+        }
+    }
+
+
+    /** Options com backend FORCADO (VULKAN/OPENCL) via reflection (ver
+     *  InferenceEngine.forceGpuOptions — mesma escada de compatibilidade). */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static Object forceGpuOptions(String backend) {
+        Class<?> optsCls;
+        try {
+            optsCls = Class.forName("org.tensorflow.lite.gpu.GpuDelegateFactory$Options");
+        } catch (Throwable t) {
+            try {
+                optsCls = Class.forName("org.tensorflow.lite.gpu.GpuDelegate$Options");
+            } catch (Throwable t2) {
+                return null;
+            }
+        }
+        try {
+            Class<?> enumCls = Class.forName(
+                    "org.tensorflow.lite.gpu.GpuDelegateFactory$Options$GpuBackend");
+            Object opts = optsCls.getDeclaredConstructor().newInstance();
+            Object be = Enum.valueOf(
+                    (Class<? extends Enum>) enumCls.asSubclass(Enum.class),
+                    backend.toUpperCase(java.util.Locale.US));
+            optsCls.getMethod("setForceBackend", enumCls).invoke(opts, be);
+            return opts;
+        } catch (Throwable t) {
+            return null;
         }
     }
 

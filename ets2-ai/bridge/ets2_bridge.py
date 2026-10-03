@@ -49,6 +49,70 @@ DEFAULT_PORT = 7777
 PHONE_TIMEOUT_S = 0.5      # sem resposta do celular por isso = failover local
 
 
+# ---------------------------------------------------------------------------
+# Plug & play USB: 'adb reverse' tunela o localhost do celular direto pro
+# bridge — o app conecta em 127.0.0.1:7777 SEM digitar IP e sem Wi-Fi.
+# (requer 'Depuracao USB' ligada no aparelho, uma unica vez)
+# ---------------------------------------------------------------------------
+def find_adb():
+    cands = []
+    if hasattr(sys, "_MEIPASS"):
+        cands.append(Path(sys._MEIPASS) / "adb.exe")
+    here = Path(__file__).resolve().parent
+    cands += [here / "adb.exe", here.parent / "tools" / "adb.exe"]
+    for c in cands:
+        if c.exists():
+            return str(c)
+    return "adb"                      # ultima chance: PATH do sistema
+
+
+def usb_plug_and_play(port, quiet=False):
+    """Tunela todos os celulares conectados por cabo (adb reverse)."""
+    import subprocess
+    adb = find_adb()
+    try:
+        r = subprocess.run([adb, "devices"], capture_output=True, text=True,
+                           timeout=10)
+    except Exception:
+        if not quiet:
+            print("[usb] adb indisponivel — plug&play por cabo desligado "
+                  "(Wi-Fi/AUTO continua funcionando)")
+        return False
+    devs = [ln.split("\t")[0] for ln in (r.stdout or "").splitlines()
+            if "\tdevice" in ln]
+    if not devs:
+        if not quiet:
+            print("[usb] nenhum celular no cabo. Conecte o cabo USB (com "
+                  "'Depuracao USB' ligada no aparelho) e toque BRIDGE > AUTO "
+                  "no app — conecta sozinho, sem IP.")
+        return False
+    ok = 0
+    for d in devs:
+        try:
+            subprocess.run([adb, "-s", d, "reverse", f"tcp:{port}", f"tcp:{port}"],
+                           capture_output=True, text=True, timeout=10)
+            ok += 1
+        except Exception:
+            pass
+    if ok and not quiet:
+        print(f"[usb] plug&play ATIVO: {ok} aparelho(s) no cabo — no app, "
+              f"toque BRIDGE > AUTO (conecta via 127.0.0.1 automaticamente)")
+    return ok > 0
+
+
+class UsbKeeper(threading.Thread):
+    """Re-aplica o tunel a cada 15 s: plugar o cabo DEPOIS tambem funciona."""
+
+    def __init__(self, port):
+        super().__init__(daemon=True)
+        self.port = port
+
+    def run(self):
+        while True:
+            usb_plug_and_play(self.port, quiet=True)
+            time.sleep(15.0)
+
+
 def load_policy():
     cands = []
     if hasattr(sys, "_MEIPASS"):
@@ -639,7 +703,10 @@ def main():
         print(f"[inject] alvo: janela com '{args.window}' no titulo | ESC = kill switch")
     print("[info] este bridge NUNCA captura a tela do jogo — estado vem da "
           "telemetria/demo (0% de GPU/CPU do ETS2)")
-    print(f"[rede] no celular: botao BRIDGE -> IP {PhoneLink.local_ip()} porta {args.port}")
+    print(f"[rede] no celular: botao BRIDGE -> AUTO (cabo USB conecta sozinho) "
+          f"ou IP {PhoneLink.local_ip()} porta {args.port}")
+    usb_plug_and_play(args.port)
+    UsbKeeper(args.port).start()
     if args.sem_janela:
         run_headless(layers, args.port, injector, args.somente_celular)
         return

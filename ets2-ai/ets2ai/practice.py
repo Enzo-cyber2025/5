@@ -33,6 +33,7 @@ Uso (no Windows, com o ETS2 aberto):
 """
 import argparse
 import math
+import os
 import time
 from pathlib import Path
 
@@ -494,11 +495,36 @@ class PracticeLoop:
         self.log(line)
 
 
+def _try_install_plugin(game_dir=None, auto=True):
+    """Instala a DLL de telemetria embutida na pasta do jogo (Windows)."""
+    if os.name != "nt" or not auto:
+        return None
+    try:
+        already = telemetry.plugin_installed(game_dir)
+        if already is not None:
+            return already
+        dll = telemetry.find_bundled_dll()
+        if dll is None:
+            return None
+        for gd in telemetry.game_install_dirs(game_dir):
+            if (gd / "bin" / "win_x64").exists():
+                dst = telemetry.install_plugin(gd, dll)
+                print(f"[pratica] telemetria AUTO-INSTALADA: {dst} "
+                      "(plugin RenCloud, MIT) — reinicie o ETS2 se ele "
+                      "estiver aberto")
+                return gd
+        print("[pratica] pasta do ETS2 nao encontrada — use --game-dir")
+    except Exception as e:
+        print(f"[pratica] auto-install da telemetria falhou: {e}")
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Entrada (linha de comando e pelo bridge/exe)
 # ---------------------------------------------------------------------------
 def run(mode, map_path="practice/mapa.json", rec_path=None, inject=False,
         window="Euro Truck", weights=BASE_WEIGHTS, max_seconds=None,
+        game_dir=None, auto_install=True,
         _source=None, _policy=None, _clock=None, _sleep=None):
     """Monta e roda o loop de pratica (usado pelo CLI e pelo bridge --ets2)."""
     map_path = Path(map_path)
@@ -512,10 +538,18 @@ def run(mode, map_path="practice/mapa.json", rec_path=None, inject=False,
         try:
             reader = telemetry.TelemetryReader()
         except RuntimeError as e:
-            raise SystemExit(
-                f"[pratica] {e}\n"
-                "[pratica] Veja ets2-ai/PRATICA.md (passo 0: plugin RenCloud "
-                "em bin/win_x64/plugins e o jogo ABERTO).")
+            # PLUG & PLAY: a DLL de telemetria (MIT, RenCloud) vem DENTRO do
+            # .exe — se o jogo estiver instalado, instala sozinho e tenta de
+            # novo. O usuario nao baixa/instala DLL nenhuma na mao.
+            _try_install_plugin(game_dir, auto_install)
+            try:
+                reader = telemetry.TelemetryReader()
+            except RuntimeError:
+                raise SystemExit(
+                    f"[pratica] {e}\n"
+                    "[pratica] Nao achei o ETS2 para auto-instalar a telemetria. "
+                    "Use --game-dir 'C:\\...\\Euro Truck Simulator 2' (a DLL "
+                    "vem embutida; sem download). Veja PRATICA.md.")
         source = reader.snapshot
     injector = KeyInjector(window, inject) if (mode == "drive" and inject) else None
     if inject and mode == "drive":
@@ -550,6 +584,10 @@ def main(argv=None):
     ap.add_argument("--weights", default=str(BASE_WEIGHTS))
     ap.add_argument("--segundos", type=float, default=None,
                     help="encerrar apos N segundos (testes)")
+    ap.add_argument("--game-dir", default=None,
+                    help="pasta de instalacao do ETS2 (auto-detecta via Steam)")
+    ap.add_argument("--no-auto-install", action="store_true",
+                    help="nao auto-instalar a DLL de telemetria embutida")
     args = ap.parse_args(argv)
     if args.rec is None and args.modo in ("record", "shadow"):
         stamp = time.strftime("%Y%m%d-%H%M%S")
@@ -557,7 +595,8 @@ def main(argv=None):
         print(f"[pratica] gravando automaticamente em {args.rec}")
     return run(args.modo, map_path=args.map, rec_path=args.rec,
                inject=args.inject, window=args.window,
-               weights=Path(args.weights), max_seconds=args.segundos)
+               weights=Path(args.weights), max_seconds=args.segundos,
+               game_dir=args.game_dir, auto_install=not args.no_auto_install)
 
 
 if __name__ == "__main__":

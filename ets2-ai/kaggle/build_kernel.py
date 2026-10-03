@@ -49,6 +49,26 @@ try:
 except Exception:
     _tf = None
 
+# ---- cadeia: retoma do checkpoint do dataset ets2ai-checkpoint ----
+_cum_prev = 0
+_resume_w = None
+if _os.environ.get("ETS2AI_RESUME", "1") not in ("0", "false", "0"):
+    for _d in ("/kaggle/input/ets2ai-checkpoint", ".cache/checkpoint"):
+        _w = _os.path.join(_d, "model-weights.json")
+        if _os.path.exists(_w):
+            try:
+                _m = _json.load(open(_w, encoding="utf-8"))["meta"]
+                _cum_prev = int(_m.get("samples", 0) or 0)
+                _resume_w = _w
+            except Exception:
+                pass
+            break
+if _resume_w:
+    print(f"[kaggle] CHECKPOINT: {_resume_w} — retomando de "
+          f"{_cum_prev:,} amostras acumuladas")
+else:
+    print("[kaggle] sem checkpoint — comecando do zero (seed fixa do repo)")
+
 if _tf is not None and len(_gpus) >= 1:
     # ---------------- GPU PATH (2x T4, MirroredStrategy, fluxo) ----------------
     if _DTYPE == np.float64:
@@ -77,14 +97,26 @@ if _tf is not None and len(_gpus) >= 1:
         _model.add(_tf.keras.layers.Dense(
             N_OUT, activation="linear", kernel_initializer="he_normal"))
         _model.compile(_tf.keras.optimizers.Adam(learning_rate=_CosineFloor(5e-4, _total_steps)), loss="mse")
+        if _resume_w is not None:
+            _rl, _rmeta = load_weights(_resume_w)
+            for _i, _l in enumerate(_model.layers):
+                _l.set_weights((np.asarray(_rl[_i][0], dtype=_DTYPE),
+                                np.asarray(_rl[_i][1], dtype=_DTYPE)))
+            print(f"[kaggle] pesos restaurados (val anterior "
+                  f"{_rmeta.get('final_loss', float('nan')):.5f}); Adam "
+                  f"renovado com cosine 5e-4 — warm restart padrao")
     _xva, _yva = val_set(seed=999)
     _t0 = _time.time()
     _consumed = 0
     _best_val = float("inf")
     _best_w = None
     _last_val = 0
+    _data_seed = SEED if _resume_w is None else (SEED + _cum_prev)
+    if _resume_w is not None:
+        print(f"[kaggle] seed de dados desta sessao: {_data_seed} "
+              f"(estradas/caminhoes novos; validacao fixa p/ comparabilidade)")
     print("[kaggle] gerando dados em fluxo e treinando...")
-    for _x, _y in stream(SEED, n_trucks=3072):
+    for _x, _y in stream(_data_seed, n_trucks=3072):
         if _consumed >= _SAMPLES or (_time.time() - _t0) > _MAX_SEC:
             break
         for _s0 in range(0, len(_x), _BATCH):
@@ -138,19 +170,22 @@ print(f"[kaggle] circuito fechado: {_agg['finish_rate']*100:.0f}% rotas, "
       f"{_agg['in_lane_pct']*100:.0f}% faixa, {_agg['avg_speed_kmh']:.0f} km/h, "
       f"{_agg['radar_compliance']*100:.0f}% radares, {_agg['dock_rate']*100:.0f}% dock")
 
+_cum_total = _cum_prev + int(_consumed)
 save_weights(_os.path.join(_OUT, "model-weights.json"), _layers,
-             model_meta(epochs=None, samples=int(_consumed), loss=_loss_va,
+             model_meta(epochs=None, samples=_cum_total, loss=_loss_va,
                         dtype="float64" if _DTYPE == np.float64 else None))
 with open(_os.path.join(_OUT, "metrics.json"), "w", encoding="utf-8") as _f:
     _json.dump({"mse_train": _loss_tr, "mse_val": _loss_va,
                 "loss_target": LOSS_TARGET, "closed_loop": _agg,
                 "trained_on_gpu": _TRAIN_GPU, "n_gpus": len(_gpus),
                 "samples_consumed": int(_consumed),
+                "cumulative_samples": _cum_total,
+                "resumed_from": _cum_prev,
                 "dtype": _DTYPE.__name__,
                 "streaming": bool(_TRAIN_GPU)}, _f, indent=2)
 print(f"[kaggle] saida: model-weights.json + metrics.json (gpu={_TRAIN_GPU}, "
       f"ngpus={len(_gpus)}, dtype={_DTYPE.__name__}, "
-      f"amostras={_consumed:,}, streaming={_TRAIN_GPU})")
+      f"sessao={_consumed:,}, ACUMULADO={_cum_total:,}, streaming={_TRAIN_GPU})")
 """
 
 

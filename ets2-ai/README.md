@@ -180,6 +180,12 @@ distância da entrega. **Saídas (3):** volante, acelerador, freio. Detalhe em
    PC pela rede, **TECLADO BT** = o celular vira um **teclado Bluetooth
    real** no PC (pareie o PC com o celular antes, nas configurações).
 
+### Bridge (PC) — plug & play (v0.4.5)
+
+O `.exe` embute: pesos da IA, **DLL de telemetria (RenCloud, MIT) com
+auto-instalação** na pasta do jogo e **adb** para o celular conectar **por
+cabo USB** (BRIDGE → AUTO, sem IP). Zero downloads, zero configuração.
+
 ### Bridge (PC) — leve por construção
 **O projeto NUNCA captura a tela do jogo** (0% de GPU/CPU do ETS2): o estado
 vem da telemetria/demo. Para PC fraco (Pentium N5030 / 4 GB RAM):
@@ -315,7 +321,14 @@ Você **não precisa dirigir** para gerar dados de treino:
    (SCS SDK) com as do simulador — gravar 5–10 min de direção normal sua
    basta para calibrar escalas/offsets.
 
-## Praticar no ETS2 real (v0.4.4) — IMPLEMENTADO
+## Cadeia de treino 100 BILHÕES de amostras (v0.4.5) — automática
+
+O workflow `ets2-ai-chain.yml` encadeia sessões de ~11,5 h nas 2× T4 do
+Kaggle que **retomam do checkpoint** (dataset privado) e acumulam amostras
+até passar de **100 bilhões** (~250 milhões de km simulados) — contador ao
+vivo em `CHAIN.md`. Sem tocar no PC do usuário; cota gratuita do Kaggle.
+
+## Praticar no ETS2 real (v0.4.4+) — IMPLEMENTADO
 
 O caminho do aprendizado no jogo de verdade está pronto (passo a passo em
 **[PRATICA.md](PRATICA.md)**):

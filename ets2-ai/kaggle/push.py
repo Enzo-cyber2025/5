@@ -29,6 +29,9 @@ sys.path.insert(0, str(ROOT))
 SLUG_SUFFIX = "ets2ai-train"
 
 
+_user = ["enzoaimv"]
+
+
 def sh(*args, **kw):
     print("$", " ".join(str(a) for a in args), flush=True)
     return subprocess.run([str(a) for a in args], capture_output=True, text=True, **kw)
@@ -48,6 +51,164 @@ def _discover_username():
     return None
 
 
+CKPT_SLUG = "ets2ai-checkpoint"
+CHAIN_TARGET = 100_000_000_000          # 100 bilhoes de AMOSTRAS acumuladas
+
+
+def _ck_dir():
+    d = ROOT / ".cache" / "kaggle-ckpt"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def _dataset_exists(user):
+    r = sh("kaggle", "datasets", "list", "--mine", "--page-size", "50")
+    return f"{user}/{CKPT_SLUG}".lower() in (r.stdout + r.stderr).lower()
+
+
+def _write_ds_metadata(d):
+    (d / "dataset-metadata.json").write_text(json.dumps({
+        "id": f"{_user[0]}/{CKPT_SLUG}",
+        "title": CKPT_SLUG,
+        "is_private": "true",
+        "licenses": [{"name": "CC0-1.0"}],
+    }), encoding="utf-8")
+
+
+def _seed_checkpoint(user):
+    """Cria o dataset de checkpoint com os pesos canonicos atuais."""
+    d = _ck_dir()
+    src = ROOT / "artifacts" / "model-weights.json"
+    if not src.exists():
+        print("[chain] sem pesos canonicos para semear o checkpoint")
+        return False
+    import shutil
+    shutil.copyfile(src, d / "model-weights.json")
+    m = ROOT / "artifacts" / "metrics.json"
+    if m.exists():
+        shutil.copyfile(m, d / "metrics.json")
+    _write_ds_metadata(d)
+    r = sh("kaggle", "datasets", "create", "-p", d)
+    print(r.stdout or r.stderr)
+    return r.returncode == 0
+
+
+def _version_checkpoint(user, msg):
+    d = _ck_dir()
+    _write_ds_metadata(d)
+    r = sh("kaggle", "datasets", "version", "-p", d, "-m", msg)
+    print(r.stdout or r.stderr)
+    return r.returncode == 0
+
+
+def chain(user):
+    """Empurra a proxima sessao da cadeia (NAO espera: sessao de ~12 h)."""
+    global _user
+    _user = user
+    if not _dataset_exists(user):
+        print(f"[chain] dataset {user}/{CKPT_SLUG} nao existe — semeando...")
+        if not _seed_checkpoint(user):
+            print("::warning::falha ao criar o dataset de checkpoint")
+            return 1
+    kdir = ROOT / ".cache" / "kaggle-kernel"
+    kdir.mkdir(parents=True, exist_ok=True)
+    sys.path.insert(0, str(HERE))
+    import build_kernel
+    (kdir / "kernel.py").write_text(build_kernel.build(), encoding="utf-8")
+    (kdir / "kernel-metadata.json").write_text(json.dumps({
+        "id": f"{user}/{SLUG_SUFFIX}",
+        "title": "ets2ai-train",
+        "code_file": "kernel.py",
+        "language": "python",
+        "kernel_type": "script",
+        "is_private": "true",
+        "enable_gpu": "true",
+        "machine_shape": "NvidiaTeslaT4",
+        "enable_internet": "false",
+        "dataset_sources": [f"{user}/{CKPT_SLUG}"],
+    }), encoding="utf-8")
+    r = sh("kaggle", "kernels", "push", "-p", kdir)
+    print(r.stdout or r.stderr)
+    if r.returncode != 0:
+        out = (r.stdout + r.stderr).lower()
+        if "quota" in out or "limit" in out:
+            print("[chain] sem cota de GPU agora — a proxima janela agendada "
+                  "tenta de novo (automatico)")
+            return 0
+        return 1
+    print(f"[chain] SESSAO EMPURRADA: https://www.kaggle.com/code/{user}/{SLUG_SUFFIX}")
+    print("[chain] ~12 h de 2x T4; a colheita acontece na proxima janela "
+          "agendada (--harvest)")
+    return 0
+
+
+def harvest(user):
+    """Baixa a sessao anterior; se os gates passarem, versiona o checkpoint.
+
+    Escreve .cache/cumulative.txt com o total acumulado (ou 'RUNNING' se a
+    sessao ainda estiver rodando, 'NONE' se nao houver saida nova).
+    """
+    global _user
+    _user = user
+    slug = f"{user}/{SLUG_SUFFIX}"
+    r = sh("kaggle", "kernels", "status", slug)
+    out = (r.stdout + r.stderr).lower()
+    if "running" in out or "queued" in out:
+        print(f"[harvest] sessao anterior ainda em execucao — colheremos depois")
+        (ROOT / ".cache").mkdir(exist_ok=True)
+        (ROOT / ".cache" / "cumulative.txt").write_text("RUNNING\n")
+        return 0
+    outdir = ROOT / ".cache" / "kaggle-out"
+    outdir.mkdir(parents=True, exist_ok=True)
+    r = sh("kaggle", "kernels", "output", slug, "-p", outdir)
+    print(r.stdout or r.stderr)
+    weights = outdir / "model-weights.json"
+    if r.returncode != 0 or not weights.exists():
+        print("[harvest] sem saida para colher")
+        (ROOT / ".cache" / "cumulative.txt").write_text("NONE\n")
+        return 0
+    import json as _j
+    metrics = outdir / "metrics.json"
+    cum = 0
+    if metrics.exists():
+        try:
+            cum = int(_j.loads(metrics.read_text())["cumulative_samples"])
+        except Exception:
+            cum = 0
+    if cum <= 0:
+        try:
+            cum = int(_j.loads(weights.read_text())["meta"]["samples"])
+        except Exception:
+            cum = 0
+    print(f"[harvest] acumulado ate agora: {cum:,} amostras "
+          f"({cum / CHAIN_TARGET * 100:.1f}% de {CHAIN_TARGET:,})")
+    # gates (mesmo padrao do fluxo principal)
+    import numpy as np
+    from ets2ai.contract import load_weights, LOSS_TARGET
+    from ets2ai.train import closed_loop_eval
+    layers, meta = load_weights(weights)
+    loss = meta["final_loss"]
+    agg, _ = closed_loop_eval(layers, n_roads=3)
+    print(f"[harvest] loss {loss:.5f} | {agg['finish_rate']*100:.0f}% rotas | "
+          f"{agg['in_lane_pct']*100:.1f}% faixa | dock {agg['dock_rate']*100:.0f}%")
+    ok = (loss <= LOSS_TARGET and agg["finish_rate"] >= 2 / 3
+          and agg["in_lane_pct"] > 0.95 and agg["dock_rate"] >= 2 / 3)
+    (ROOT / ".cache" / "cumulative.txt").write_text(f"{cum}\n")
+    if not ok:
+        print("::warning::gates FALHARAM — checkpoint NAO versionado "
+              "(a proxima sessao retoma do ultimo ponto bom)")
+        return 1
+    import shutil
+    d = _ck_dir()
+    shutil.copyfile(weights, d / "model-weights.json")
+    if metrics.exists():
+        shutil.copyfile(metrics, d / "metrics.json")
+    if not _version_checkpoint(user, f"cadeia: {cum:,} amostras acumuladas"):
+        return 1
+    print(f"[harvest] checkpoint versionado: {user}/{CKPT_SLUG} ({cum:,})")
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--timeout", type=int, default=900)
@@ -56,6 +217,13 @@ def main():
                     help="executar o kernel com GPU T4 x2 do Kaggle")
     ap.add_argument("--slug-only", action="store_true",
                     help="imprime user/slug do kernel e sai (nao empurra)")
+    ap.add_argument("--chain", action="store_true",
+                    help="CADEIA 100B: garante o dataset de checkpoint, empurra"
+                         " o kernel (sessao longa) e sai SEM esperar (a colheita"
+                         " e feita com --harvest)")
+    ap.add_argument("--harvest", action="store_true",
+                    help="colhe a sessao anterior (se completa), valida os gates"
+                         " e versiona o dataset de checkpoint")
     args = ap.parse_args()
 
     key = os.environ.get("KAGGLE_KEY", "").strip()
@@ -83,6 +251,11 @@ def main():
     if args.slug_only:
         print(f"{user}/{SLUG_SUFFIX}")
         return 0
+
+    if args.harvest:
+        return harvest(user)
+    if args.chain:
+        return chain(user)
 
     kdir = ROOT / ".cache" / "kaggle-kernel"
     kdir.mkdir(parents=True, exist_ok=True)

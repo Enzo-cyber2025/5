@@ -368,13 +368,33 @@ jobs:
       - name: Dependencias
         run: |
           pip install --retries 5 --timeout 90 pyinstaller==6.11.1 numpy==2.2.6
-      - name: Empacota o bridge (pesos embutidos)
+      - name: Baixa telemetria (DLL RenCloud, MIT) + adb (plug&play USB)
+        shell: pwsh
+        run: |
+          # DLL de telemetria do plugin oficial (MIT, github.com/RenCloud/scs-sdk-plugin)
+          curl.exe -fsSL --retry 3 -o scs.zip https://github.com/RenCloud/scs-sdk-plugin/releases/download/V.1.12.1/release_v_1_12_1.zip
+          Expand-Archive scs.zip -DestinationPath scs-dist -Force
+          $dll = Get-ChildItem scs-dist -Recurse -Filter scs-telemetry*.dll | Where-Object { $_.FullName -match 'x64' } | Select-Object -First 1
+          if (-not $dll) { $dll = Get-ChildItem scs-dist -Recurse -Filter scs-telemetry*.dll | Select-Object -First 1 }
+          Copy-Item $dll.FullName ets2-ai/bridge/scs-telemetry.dll
+          # adb (platform-tools, Apache-2.0): tunel USB 'adb reverse' no bridge
+          curl.exe -fsSL --retry 3 -o ptools.zip https://dl.google.com/android/repository/platform-tools-latest-windows.zip
+          Expand-Archive ptools.zip -DestinationPath ptools -Force
+          Copy-Item ptools/platform-tools/adb.exe ets2-ai/bridge/
+          Copy-Item ptools/platform-tools/AdbWinApi.dll ets2-ai/bridge/
+          Copy-Item ptools/platform-tools/AdbWinUSBApi.dll ets2-ai/bridge/
+          Get-ChildItem ets2-ai/bridge
+      - name: Empacota o bridge (pesos + telemetria + adb embutidos)
         shell: pwsh
         run: |
           cd ets2-ai
           pyinstaller --onefile --noconsole --name ETS2-AI-bridge `
             --paths . `
             --add-data "artifacts/model-weights.json;artifacts" `
+            --add-data "bridge/scs-telemetry.dll;." `
+            --add-data "bridge/adb.exe;." `
+            --add-data "bridge/AdbWinApi.dll;." `
+            --add-data "bridge/AdbWinUSBApi.dll;." `
             --hidden-import ets2ai `
             bridge/ets2_bridge.py
       - name: Smoke test (importa e carrega pesos)
@@ -404,7 +424,7 @@ jobs:
       - name: Exporta .pt com paridade numpy verificada
         run: |
           cd ets2-ai
-          python3 -m ets2ai.export_pt --weights artifacts/model-weights.json --out artifacts/ets2ai-v0.4.4.pt 2>&1 | tee ../.cache_pt.log
+          python3 -m ets2ai.export_pt --weights artifacts/model-weights.json --out artifacts/ets2ai-v0.4.5.pt 2>&1 | tee ../.cache_pt.log
           exit ${PIPESTATUS[0]}
       - name: Diagnostico (commita logs no repo em caso de falha)
         if: failure()
@@ -418,15 +438,15 @@ jobs:
           git pull --rebase --autostash origin arena/01a0f37d-5 || true
           git push || true
           exit 1
-      - name: Publica na release ets2-ai-v0.4.4
+      - name: Publica na release ets2-ai-v0.4.5
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view ets2-ai-v0.4.4 >/dev/null 2>&1 || \
-            gh release create ets2-ai-v0.4.4 \
+          gh release view ets2-ai-v0.4.5 >/dev/null 2>&1 || \
+            gh release create ets2-ai-v0.4.5 \
               --title "ETS2-AI v0.4.4 — 1.017.613 parametros (13-290x13-3), treino em fluxo de 1 bilhao de amostras nas 2x T4" \
               --notes "ETS2-AI v0.4.4 - 1.017.613 params (13-290x13-3), treino em fluxo 1B de amostras nas 2x T4. Modelo .pt (TorchScript) com paridade numpy verificada. Os demais assets chegam pelo job de release."
-          gh release upload ets2-ai-v0.4.4 ets2-ai/artifacts/ets2ai-v0.4.4.pt --clobber
+          gh release upload ets2-ai-v0.4.5 ets2-ai/artifacts/ets2ai-v0.4.5.pt --clobber
 
   release:
     name: Release com APK + EXE + TFLite
@@ -440,7 +460,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: ets2-ai/.cache/rel
-      - name: Publica release ets2-ai-v0.4.4
+      - name: Publica release ets2-ai-v0.4.5
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -463,12 +483,12 @@ jobs:
           PY
           )"
           echo "NOTES: $NOTES"
-          gh release view ets2-ai-v0.4.4 >/dev/null 2>&1 || \
-            gh release create ets2-ai-v0.4.4 \
+          gh release view ets2-ai-v0.4.5 >/dev/null 2>&1 || \
+            gh release create ets2-ai-v0.4.5 \
               --title "ETS2-AI v0.4.4 - 1.017.613 parametros, treino 1 bilhao de amostras nas 2x T4 (loss 0.00600, circuito fechado 100%)" \
               --notes "$NOTES"
-          gh release upload ets2-ai-v0.4.4 ets2-ai/.cache/release/* --clobber
-          gh release view ets2-ai-v0.4.4 --json assets --jq '.assets[].name'
+          gh release upload ets2-ai-v0.4.5 ets2-ai/.cache/release/* --clobber
+          gh release view ets2-ai-v0.4.5 --json assets --jq '.assets[].name'
       - name: Diagnostico (commita log no repo em caso de falha)
         if: failure()
         run: |

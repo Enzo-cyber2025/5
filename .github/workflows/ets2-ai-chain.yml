@@ -1,0 +1,144 @@
+name: ETS2-AI cadeia 100B (sessoes 2xT4 encadeadas)
+
+# TREINO EM ESCALA: sessoes Kaggle de ~11,5 h nas 2x T4 que RETOMAM do
+# checkpoint (dataset privado enzoaimv/ets2ai-checkpoint) e acumulam
+# amostras ate passar de 100 BILHOES. Cada janela:
+#   1. COLHE a sessao anterior (se completa) — valida gates, versiona o
+#      checkpoint e promove os pesos ao repo se melhoraram;
+#   2. EMPURRA a proxima sessao (se a meta ainda nao foi atingida).
+# Roda seg + qui (cron) e a cada push neste arquivo. 2 sessoes/week ~ 23 h
+# de GPU = dentro da cota gratuita do Kaggle (30 h/week).
+
+on:
+  schedule:
+    - cron: "0 8 * * 1,4"
+  push:
+    branches: [arena/01a0f37d-5]
+    paths: ['.github/workflows/ets2-ai-chain.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  step:
+    name: Colhe sessao anterior + empurra a proxima
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: arena/01a0f37d-5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Dependencias
+        run: pip install --retries 5 --timeout 90 numpy==2.2.6 kaggle
+      - name: Colhe a sessao anterior (se completa)
+        id: harvest
+        env:
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_KEY }}
+        run: |
+          set +e
+          cd ets2-ai
+          python kaggle/push.py --harvest 2>&1 | tee ../.cache_harvest.log
+          echo "exit=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+          set -e
+      - name: Promove pesos melhores + atualiza o contador da cadeia
+        env:
+          HARVEST_EXIT: ${{ steps.harvest.outputs.exit }}
+        run: |
+          cd ets2-ai
+          CUM=$(cat .cache/cumulative.txt 2>/dev/null || echo 0)
+          echo "acumulado: $CUM"
+          if ! [[ "$CUM" =~ ^[0-9]+$ ]]; then
+            echo "sem colheita numerica (status: $CUM) — so o contador nao muda"
+            exit 0
+          fi
+          PROMOVED=0
+          if [ "$HARVEST_EXIT" = "0" ] && [ -f .cache/kaggle-out/model-weights.json ]; then
+            python3 - <<'PY'
+            import json
+            from pathlib import Path
+            new = json.load(open(".cache/kaggle-out/metrics.json"))
+            try:
+                cur = json.load(open("artifacts/metrics.json"))
+            except Exception:
+                cur = {"mse_val": 9.9}
+            if new["mse_val"] < cur.get("mse_val", 9.9):
+                import shutil
+                shutil.copyfile(".cache/kaggle-out/model-weights.json",
+                                "artifacts/model-weights.json")
+                shutil.copyfile(".cache/kaggle-out/metrics.json",
+                                "artifacts/metrics.json")
+                print(f"[chain] pesos PROMOVIDOS: val {new['mse_val']:.5f} "
+                      f"(era {cur.get('mse_val', float('nan')):.5f})")
+                Path("/tmp/promoted").write_text("1")
+            else:
+                print("[chain] pesos atuais continuam melhores — sem promocao")
+            PY
+            [ -f /tmp/promoted ] && PROMOVED=1
+          fi
+          python3 - <<PY
+          from pathlib import Path
+          cum = $CUM
+          pct = cum / 100_000_000_000 * 100
+          md = f"""# Cadeia de treino 100B — contador ao vivo
+
+          | metrica | valor |
+          |---|---|
+          | amostras acumuladas | **{cum:,}** |
+          | % da meta (100 bilhoes) | **{pct:.1f}%** |
+          | km simulados equivalentes | ~{cum * 2.5 / 1000:,.0f} km |
+          | sessao media | 2x T4, ~11,5 h, FP32 em fluxo |
+
+          Cada janela (seg/qui) colhe a sessao anterior, versiona o checkpoint
+          privado (Kaggle) e empurra a proxima. Totalmente automatico.
+          """
+          Path("CHAIN.md").write_text(md, encoding="utf-8")
+          PY
+          git config user.name "ets2ai-chain"; git config user.email "chain@users.noreply.github.com"
+          git add CHAIN.md artifacts
+          if git diff --cached --quiet; then
+            echo "nada mudou"
+          elif [ "$PROMOVED" = "1" ]; then
+            git commit -m "cadeia 100B: $CUM amostras acumuladas — pesos melhores promovidos (dispara builds)"
+            git pull --rebase --autostash origin arena/01a0f37d-5 || true
+            git push
+          else
+            git commit -m "cadeia 100B: $CUM amostras acumuladas [skip ci]"
+            git pull --rebase --autostash origin arena/01a0f37d-5 || true
+            git push
+          fi
+      - name: Empurra a proxima sessao (meta de 100 bilhoes)
+        env:
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_KEY }}
+        run: |
+          CUM=$(cat ets2-ai/.cache/cumulative.txt 2>/dev/null || echo 0)
+          if ! [[ "$CUM" =~ ^[0-9]+$ ]]; then
+            echo "sessao anterior ainda rodando ou sem saida — nao empurro outra"
+            exit 0
+          fi
+          if [ "$CUM" -ge 100000000000 ]; then
+            echo "META ATINGIDA: $CUM amostras acumuladas"
+            exit 0
+          fi
+          cd ets2-ai
+          ETS2AI_SAMPLES=15000000000 ETS2AI_MAX_SECONDS=41400 \
+            python kaggle/push.py --chain 2>&1 | tee ../.cache_chain.log
+          exit ${PIPESTATUS[0]}
+      - name: Diagnostico (logs em caso de falha)
+        if: failure()
+        run: |
+          git config user.name "ci-diag"; git config user.email "ci-diag@users.noreply.github.com"
+          mkdir -p ci-logs/chain-${{ github.run_id }}
+          { echo "=== chain run ${{ github.run_id }} ==="
+            echo "--- harvest"; cat .cache_harvest.log 2>/dev/null
+            echo "--- chain"; cat .cache_chain.log 2>/dev/null; } \
+            > ci-logs/chain-${{ github.run_id }}/log.txt
+          git add ci-logs || true
+          git commit -m "diag: chain run ${{ github.run_id }} [skip ci]" || true
+          git pull --rebase --autostash origin arena/01a0f37d-5 || true
+          git push || true
+          exit 1

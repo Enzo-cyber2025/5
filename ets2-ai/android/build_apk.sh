@@ -45,9 +45,9 @@ D8_INPUTS=$(find "$OUT/classes" -name '*.class')
 if [ "${TFLITE_AAR:-0}" = "1" ]; then
   mkdir -p "$OUT/tflite" "$OUT/apklib/lib/arm64-v8a" "$OUT/apklib/lib/armeabi-v7a"
   if curl -fsSL --retry 3 --max-time 180 -o "$OUT/tflite/tflite.aar" \
-      https://repo1.maven.org/maven2/org/tensorflow/tensorflow-lite/2.14.0/tensorflow-lite-2.14.0.aar \
+      https://repo1.maven.org/maven2/org/tensorflow/tensorflow-lite/2.17.0/tensorflow-lite-2.17.0.aar \
      && curl -fsSL --retry 3 --max-time 180 -o "$OUT/tflite/tflite-gpu.aar" \
-      https://repo1.maven.org/maven2/org/tensorflow/tensorflow-lite-gpu/2.14.0/tensorflow-lite-gpu-2.14.0.aar; then
+      https://repo1.maven.org/maven2/org/tensorflow/tensorflow-lite-gpu/2.17.0/tensorflow-lite-gpu-2.17.0.aar; then
     ok=1
     (cd "$OUT/tflite" && unzip -oq tflite.aar classes.jar -d core) || ok=0
     (cd "$OUT/tflite" && unzip -oq tflite-gpu.aar classes.jar -d gpu) || ok=0

@@ -19,6 +19,9 @@ publicada voluntariamente pelo plugin oficial da SCS.
 """
 import ctypes
 import os as _os
+import shutil
+import sys
+from pathlib import Path
 
 MMF_NAME = "Local\\SCSTelemetry"
 MMF_SIZE = 32 * 1024
@@ -396,3 +399,92 @@ class TelemetryReader:
             self._k32.CloseHandle(self._h)
         except Exception:
             pass
+
+
+# ---------------------------------------------------------------------------
+# Auto-instalacao do plugin (plug & play: o .exe ja embute a DLL — MIT,
+# github.com/RenCloud/scs-sdk-plugin — e copia pra pasta do jogo sozinho).
+# ---------------------------------------------------------------------------
+ETS2_APPID = "227300"          # Steam app id do Euro Truck Simulator 2
+DLL_NAME = "scs-telemetry.dll"
+
+
+def _steam_libraries(steam_path):
+    """Pastas de biblioteca do Steam (libraryfolders.vdf)."""
+    libs = [str(steam_path)]
+    vdf = Path(steam_path) / "steamapps" / "libraryfolders.vdf"
+    try:
+        for ln in vdf.read_text(encoding="utf-8", errors="replace").splitlines():
+            ln = ln.strip()
+            if ln.startswith('"path"'):
+                p = ln.split('"')[3].replace("\\\\", "\\")
+                if p and p not in libs:
+                    libs.append(p)
+    except Exception:
+        pass
+    return libs
+
+
+def game_install_dirs(extra=None):
+    """Diretorios candidatos de instalacao do ETS2 (ordem de preferencia)."""
+    out = []
+    if extra:
+        out.append(Path(extra))
+    if _os.name == "nt":
+        steam = None
+        try:
+            import winreg
+            for hive, key in ((winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam"),
+                              (winreg.HKEY_LOCAL_MACHINE,
+                               r"SOFTWARE\WOW6432Node\Valve\Steam")):
+                try:
+                    with winreg.OpenKey(hive, key) as k:
+                        steam, _ = winreg.QueryValueEx(k, "SteamPath")
+                    break
+                except OSError:
+                    continue
+        except Exception:
+            steam = None
+        libs = []
+        if steam:
+            libs += _steam_libraries(steam)
+        libs += [r"C:\Program Files (x86)\Steam", r"C:\Program Files\Steam"]
+        for lib in libs:
+            out.append(Path(lib) / "steamapps" / "common" / "Euro Truck Simulator 2")
+    return out
+
+
+def plugin_dll_path(game_dir):
+    return Path(game_dir) / "bin" / "win_x64" / "plugins" / DLL_NAME
+
+
+def find_bundled_dll():
+    """DLL empacotada no .exe (PyInstaller) ou no repo (tools/)."""
+    cands = []
+    if hasattr(sys, "_MEIPASS"):
+        cands.append(Path(sys._MEIPASS) / DLL_NAME)
+    here = Path(__file__).resolve().parent
+    cands += [here.parent / "tools" / DLL_NAME, here.parent.parent / "tools" / DLL_NAME]
+    for c in cands:
+        if c.exists():
+            return c
+    return None
+
+
+def install_plugin(game_dir, dll_src=None):
+    """Copia a DLL (MIT, RenCloud) para a pasta de plugins do jogo."""
+    dll_src = Path(dll_src) if dll_src else find_bundled_dll()
+    if dll_src is None or not dll_src.exists():
+        raise RuntimeError("DLL de telemetria nao encontrada no pacote")
+    dst = plugin_dll_path(game_dir)
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(dll_src, dst)
+    return dst
+
+
+def plugin_installed(game_dir=None):
+    """Pasta do jogo onde o plugin ja esta instalado (None se nao estiver)."""
+    for gd in game_install_dirs(game_dir):
+        if plugin_dll_path(gd).exists():
+            return gd
+    return None
