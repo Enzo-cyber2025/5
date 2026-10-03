@@ -475,19 +475,22 @@ jobs:
           import json
           m = json.load(open('ets2-ai/artifacts/metrics.json'))
           c = m['closed_loop']
+          print("ETS2-AI v0.4.5 - APK teclado Bluetooth + bridge PC + IA de direcao.")
+          print("Novidades: EXE com DLL de telemetria EMBUTIDA (auto-instala na pasta do jogo) e adb plug & play (tunel USB reaplicado a cada 15 s); APK com TensorFlow Lite 2.17.0 e benchmark de backends (CPU / GPU auto / VULKAN / OPENCL / NNAPI); cadeia de treino rumo a 100 bilhoes de amostras no Kaggle (contador em ets2-ai/CHAIN.md, status em ets2-ai/STATUS.md).")
           print(f"MSE validacao: {m['mse_val']:.5f} (meta <= {m['loss_target']}) | "
                 f"fonte dos pesos: {m.get('weights_source', '?')} | circuito fechado: "
                 f"{c['finish_rate']*100:.0f}% rotas, dock {c['dock_rate']*100:.0f}%, "
                 f"{c['in_lane_pct']*100:.0f}% faixa, radares {c['radar_compliance']*100:.0f}% | "
                 f"{m['meta']['samples']:,} amostras de treino")
+          print("Como usar: ets2-ai/PRATICA.md (cabo USB, teclado Bluetooth, qualquer mapa/mods; como praticar sem deixar o PC ligado).")
           PY
           )"
           echo "NOTES: $NOTES"
+          TITLE="ETS2-AI v0.4.5 — plug & play USB, GPU (Vulkan) no APK, telemetria sem instalar DLL, cadeia 100B no Kaggle"
           gh release view ets2-ai-v0.4.5 >/dev/null 2>&1 || \
-            gh release create ets2-ai-v0.4.5 \
-              --title "ETS2-AI v0.4.4 - 1.017.613 parametros, treino 1 bilhao de amostras nas 2x T4 (loss 0.00600, circuito fechado 100%)" \
-              --notes "$NOTES"
+            gh release create ets2-ai-v0.4.5 --title "$TITLE" --notes "$NOTES"
           gh release upload ets2-ai-v0.4.5 ets2-ai/.cache/release/* --clobber
+          gh release edit ets2-ai-v0.4.5 --title "$TITLE" --notes "$NOTES" || true
           gh release view ets2-ai-v0.4.5 --json assets --jq '.assets[].name'
       - name: Diagnostico (commita log no repo em caso de falha)
         if: failure()
