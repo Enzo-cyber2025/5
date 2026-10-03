@@ -501,7 +501,7 @@ jobs:
           PY
           )"
           echo "NOTES: $NOTES"
-          TITLE="ETS2-AI v0.4.6 — plug & play USB, GPU (Vulkan) no APK, telemetria sem instalar DLL, cadeia 100B no Kaggle"
+          TITLE="ETS2-AI v0.4.6 — IA na mesma velocidade com a tela bloqueada; plug & play USB; controles padrao ETS2; cadeia 500B de amostras"
           gh release view ets2-ai-v0.4.6 >/dev/null 2>&1 || \
             gh release create ets2-ai-v0.4.6 --title "$TITLE" --notes "$NOTES"
           gh release upload ets2-ai-v0.4.6 ets2-ai/.cache/release/* --clobber
