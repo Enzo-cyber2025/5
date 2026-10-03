@@ -24,6 +24,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   step:
@@ -53,6 +54,7 @@ jobs:
       - name: Promove pesos melhores + atualiza o contador da cadeia
         env:
           HARVEST_EXIT: ${{ steps.harvest.outputs.exit }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           cd ets2-ai
           python3 - <<'PY'
@@ -113,6 +115,11 @@ jobs:
             git commit -m "cadeia 500B: $CUM amostras acumuladas [skip ci]"
             git pull --rebase --autostash origin arena/01a0f37d-5 || true
             git push
+          fi
+          if [ "$PROMOTED" = "1" ]; then
+            echo "pesos promovidos — disparando o build da release (commits do GITHUB_TOKEN nao disparam workflows)"
+            gh workflow run ets2-ai.yml --ref arena/01a0f37d-5 \
+              || echo "::warning::build nao disparado — rode manualmente"
           fi
       - name: Empurra a proxima sessao (meta de 500 bilhoes)
         env:

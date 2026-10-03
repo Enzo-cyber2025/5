@@ -114,7 +114,19 @@ def chain(user):
     kdir.mkdir(parents=True, exist_ok=True)
     sys.path.insert(0, str(HERE))
     import build_kernel
-    (kdir / "kernel.py").write_text(build_kernel.build(), encoding="utf-8")
+    src = build_kernel.build()
+    # O kernel roda no Kaggle SEM estas variaveis de ambiente — assamos o
+    # orcamento da cadeia DENTRO do script (a sessao de 11,5 h so acontece
+    # se o teto de amostras/tempo vier gravado, nao do env do runner).
+    _samples = int(os.environ.get("ETS2AI_SAMPLES", "15000000000"))
+    _max_sec = float(os.environ.get("ETS2AI_MAX_SECONDS", "41400"))
+    src = src.replace('_os.environ.get("ETS2AI_SAMPLES", "1000000000")',
+                      str(_samples))
+    src = src.replace('_os.environ.get("ETS2AI_MAX_SECONDS", "10800")',
+                      str(_max_sec))
+    print(f"[chain] orcamento gravado no kernel: {_samples:,} amostras, "
+          f"{_max_sec/3600:.1f} h")
+    (kdir / "kernel.py").write_text(src, encoding="utf-8")
     (kdir / "kernel-metadata.json").write_text(json.dumps({
         "id": f"{user}/{SLUG_SUFFIX}",
         "title": "ets2ai-train",
@@ -281,7 +293,19 @@ def main():
     kdir.mkdir(parents=True, exist_ok=True)
     sys.path.insert(0, str(HERE))
     import build_kernel
-    (kdir / "kernel.py").write_text(build_kernel.build(), encoding="utf-8")
+    src = build_kernel.build()
+    # O kernel roda no Kaggle SEM estas variaveis de ambiente — assamos o
+    # orcamento da cadeia DENTRO do script (a sessao de 11,5 h so acontece
+    # se o teto de amostras/tempo vier gravado, nao do env do runner).
+    _samples = int(os.environ.get("ETS2AI_SAMPLES", "15000000000"))
+    _max_sec = float(os.environ.get("ETS2AI_MAX_SECONDS", "41400"))
+    src = src.replace('_os.environ.get("ETS2AI_SAMPLES", "1000000000")',
+                      str(_samples))
+    src = src.replace('_os.environ.get("ETS2AI_MAX_SECONDS", "10800")',
+                      str(_max_sec))
+    print(f"[chain] orcamento gravado no kernel: {_samples:,} amostras, "
+          f"{_max_sec/3600:.1f} h")
+    (kdir / "kernel.py").write_text(src, encoding="utf-8")
     slug = f"{user}/{SLUG_SUFFIX}"
     (kdir / "kernel-metadata.json").write_text(json.dumps({
         "id": slug,
