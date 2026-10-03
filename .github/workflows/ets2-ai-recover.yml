@@ -4,7 +4,7 @@ name: ETS2-AI recupera pesos do Kaggle (sem retreinar)
 # sanidade e commita os pesos canonicos. O commit final (sem [skip ci])
 # dispara o pipeline principal, que ve pesos bons ("committed") e vai
 # DIRETO para os builds (APK, EXE, TFLite, .pt) e a release.
-# Trigger: push que mexa SOMENTE neste arquivo (bump do comentario abaixo).
+# Trigger: push que mexa SOMENTE neste arquivo. Bump v2 (pesos do run 37067861506).
 
 on:
   push:
