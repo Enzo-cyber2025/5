@@ -27,7 +27,10 @@ def test_expert_docks_precisely():
     road = Road.random(60606)
     m = run_episode(road, lambda r, t, j, rng: expert(r, t, j), seed=3)
     assert m["docked"], m
-    assert abs(m["stop_error_m"]) < 2.5, m     # creep para na linha (1.5 m)
+    # perfil sonoro do governador mira parar 4 m ANTES da linha (o perfil
+    # antigo, mirando a linha com folga de 0,3 m/s, atravessava em ~1/3 das
+    # estradas); janela do dock: 0 < erro <= 4 m, nunca negativo.
+    assert 0.0 < m["stop_error_m"] <= 4.0, m
 
 
 def test_policy_parks_at_the_dock():

@@ -271,16 +271,23 @@ def governor(road, truck, cmd):
             worst = v_allow
     if worst is not None and truck.speed > worst:
         return (cmd[0], 0.0, 1.0)  # full brake: safety over comfort
-    # dock governor: never carry speed into the loading dock (full distance)
+    # dock governor: never carry speed into the loading dock (full distance).
+    # Perfil SONORO: mira parar 4 m ANTES da linha (margem real de frenagem
+    # em passos discretos — o perfil antigo d-2 com folga de 0,3 m/s deixava
+    # chegar a ~5 m/s a 3 m da linha = atravessava), hold a 2,0 m e, se a
+    # linha for atravessada, freio total: a rede nunca decide "acelerar de
+    # volta" sozinha (bug real do v0.4.4: overshoot a 4,8 m/s).
     d_dock = (road.length - 6.0) - truck.s
     if 0.0 < d_dock < 600.0:
-        v_allow = math.sqrt(2.0 * MAX_BRAKE * max(0.0, d_dock - 2.0))
-        if truck.speed > v_allow + 0.3:
+        v_allow = math.sqrt(2.0 * MAX_BRAKE * max(0.0, d_dock - 4.0))
+        if truck.speed > v_allow:
             return (cmd[0], 0.0, 1.0)
         if d_dock <= 1.5:
             return (cmd[0], 0.0, 1.0)               # hold at the line
-        if d_dock < 600.0 and truck.speed < 2.0:
+        if truck.speed < 2.0:
             return (cmd[0], max(cmd[1], 0.35), 0.0)  # creep: never stall short
+    elif -50.0 < d_dock <= 0.0:
+        return (cmd[0], 0.0, 1.0)                   # cruzou a linha: freia
     # anti-stall: nunca parar fora da linha de entrega. Todo job comeca do
     # zero (motor ligando) e a rede pode nao ter visto speed~0 no treino.
     if truck.speed < 0.6 and d_dock > 4.0:

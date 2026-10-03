@@ -127,9 +127,9 @@ class _Fleet:
         v_curve_now = np.where(np.abs(k_now) > 1e-6,
                                np.sqrt(a_lat / np.maximum(np.abs(k_now), 1e-9)), V_MAX)
         v_target = np.minimum(np.minimum(V_MAX, v_curve_now), v_allow)
-        # dock profile
+        # dock profile (sonoro: mira 4 m antes da linha, como sim.governor)
         d_dock = (self.length - DOCK_LINE) - self.s
-        v_target = np.minimum(v_target, np.sqrt(2.0 * DOCK_DECEL * np.maximum(0.0, d_dock)))
+        v_target = np.minimum(v_target, np.sqrt(2.0 * DOCK_DECEL * np.maximum(0.0, d_dock - 4.0)))
         # radar
         d_radar = np.min(np.where(self.radars > self.s[:, None],
                                   self.radars - self.s[:, None], np.inf), axis=1)
@@ -166,10 +166,11 @@ class _Fleet:
             vc = np.sqrt(a_lat / np.maximum(np.abs(k), 1e-9))
             va = np.sqrt(vc ** 2 + 2.0 * MAX_BRAKE * np.maximum(0.0, d - 8.0))
             worst_gov = np.where(ok, np.minimum(worst_gov, va), worst_gov)
-        # dock governor
-        v_allow_dock = np.sqrt(2.0 * MAX_BRAKE * np.maximum(0.0, d_dock - 2.0))
+        # dock governor (espelha sim.governor: mira d-4, hold 2,0, freio pos-linha)
+        v_allow_dock = np.sqrt(2.0 * MAX_BRAKE * np.maximum(0.0, d_dock - 4.0))
         full_brake = ((worst_gov < np.inf) & (self.speed > worst_gov + 0.3)) \
-            | ((d_dock > 0) & (d_dock < 600.0) & (self.speed > v_allow_dock + 0.3))
+            | ((d_dock > 0) & (d_dock < 600.0) & (self.speed > v_allow_dock)) \
+            | ((d_dock <= 0) & (d_dock > -50.0))
         hold = (d_dock > 0) & (d_dock <= 1.5)
         creep = (d_dock > 0) & (d_dock < 600.0) & (self.speed < 2.0)
         anti_stall = (self.speed < 0.6) & (d_dock > 4.0)

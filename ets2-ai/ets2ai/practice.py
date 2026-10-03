@@ -122,14 +122,18 @@ def governor_real(speed, meta, route_distance_m, cmd, limit_mps):
     if speed > limit_mps + 2.0:
         return (cmd[0], 0.0, 0.85)
     # 3. aproximacao do destino: nunca carregar velocidade ate a entrega
+    #    (perfil sonoro igual sim.governor: mira 4 m antes, hold 2,0 m,
+    #     freio total mesmo se cruzar a linha)
     if 0.0 < route_distance_m < 600.0:
-        v_allow = math.sqrt(2.0 * sim.MAX_BRAKE * max(0.0, route_distance_m - 2.0))
-        if speed > v_allow + 0.3:
+        v_allow = math.sqrt(2.0 * sim.MAX_BRAKE * max(0.0, route_distance_m - 4.0))
+        if speed > v_allow:
             return (cmd[0], 0.0, 1.0)
-        if route_distance_m <= 2.0:
+        if route_distance_m <= 1.5:
             return (cmd[0], 0.0, 1.0)                 # para na linha
         if speed < 2.0:
             return (cmd[0], max(cmd[1], 0.35), 0.0)   # creep final
+    elif -50.0 < route_distance_m <= 0.0:
+        return (cmd[0], 0.0, 1.0)                     # cruzou: freia
     # 4. anti-stall (nunca parar no meio da estrada)
     if speed < 0.6 and (route_distance_m <= 0.0 or route_distance_m > 30.0):
         return (cmd[0], max(cmd[1], 0.35), 0.0)
