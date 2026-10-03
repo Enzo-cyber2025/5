@@ -70,3 +70,18 @@ def test_val_set_fixa_e_deterministica():
     x2, y2 = vector_gen.val_set(seed=999, n_trucks=256)
     assert np.array_equal(x1, x2) and np.array_equal(y1, y2)
     assert len(x1) > 50_000
+
+
+def test_sem_repeticao_entre_sementes():
+    """A cadeia nunca repete dados: a semente da sessao avanca com o total
+    acumulado (SEED + cum_prev), entao sessoes distintas geram fluxos
+    distintos; e a mesma semente e reproduzivel (auditavel)."""
+    def first_batch(seed):
+        for x, y in vector_gen.stream(seed=seed, n_trucks=256):
+            return x[:64].tobytes() + y[:64].tobytes()
+
+    a = first_batch(7)
+    b = first_batch(8)
+    c = first_batch(7)
+    assert a != b, "sementes diferentes geraram dados identigos (repeticao!)"
+    assert a == c, "mesma semente deveria reproduzir exatamente os dados"

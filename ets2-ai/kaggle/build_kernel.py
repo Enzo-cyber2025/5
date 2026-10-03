@@ -25,6 +25,7 @@ import json as _json
 import math as _math
 import os as _os
 import time as _time
+import hashlib as _hashlib
 
 _OUT = _os.environ.get("KAGGLE_WORKING_DIR", ".")
 _F64 = _os.environ.get("ETS2AI_F64") == "1"
@@ -115,10 +116,15 @@ if _tf is not None and len(_gpus) >= 1:
     if _resume_w is not None:
         print(f"[kaggle] seed de dados desta sessao: {_data_seed} "
               f"(estradas/caminhoes novos; validacao fixa p/ comparabilidade)")
+    _fp = None   # impressao digital do 1o lote: prova que os dados sao novos
     print("[kaggle] gerando dados em fluxo e treinando...")
     for _x, _y in stream(_data_seed, n_trucks=3072):
         if _consumed >= _SAMPLES or (_time.time() - _t0) > _MAX_SEC:
             break
+        if _fp is None:
+            _fp = _hashlib.sha256(
+                np.ascontiguousarray(_x[:512]).tobytes()
+                + np.ascontiguousarray(_y[:512]).tobytes()).hexdigest()[:16]
         for _s0 in range(0, len(_x), _BATCH):
             _mb_x = _x[_s0:_s0 + _BATCH]
             _mb_y = _y[_s0:_s0 + _BATCH]
@@ -181,6 +187,8 @@ with open(_os.path.join(_OUT, "metrics.json"), "w", encoding="utf-8") as _f:
                 "samples_consumed": int(_consumed),
                 "cumulative_samples": _cum_total,
                 "resumed_from": _cum_prev,
+                "data_seed": int(_data_seed),
+                "data_fingerprint": _fp or "",
                 "dtype": _DTYPE.__name__,
                 "streaming": bool(_TRAIN_GPU)}, _f, indent=2)
 print(f"[kaggle] saida: model-weights.json + metrics.json (gpu={_TRAIN_GPU}, "

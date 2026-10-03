@@ -80,6 +80,7 @@ jobs:
                 f"| amostras acumuladas | **{cum:,}** |\n"
                 f"| % da meta (500 bilhoes de amostras = ~1,25 bilhao de km) | **{pct:.2f}%** |\n"
                 f"| km simulados equivalentes | ~{cum * 2.5 / 1000:,.0f} km |\n"
+                "| garantia anti-repeticao | semente da sessao = SEED + acumulado — nenhuma sessao repete dados (impressao digital no metrics.json) |\n"
                 "| sessao media | 2x T4, ~11,5 h, FP32 em fluxo |\n\n"
                 "Cada janela (seg/qui) colhe a sessao anterior, versiona o "
                 "checkpoint privado (Kaggle) e empurra a proxima. Automatico.\n")

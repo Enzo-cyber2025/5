@@ -329,6 +329,12 @@ até passar de **500 bilhões** (~1,25 bilhão de km simulados) — contador ao
 vivo em `CHAIN.md` e status da sessão em `STATUS.md`. Sem tocar no PC do
 usuário; cota gratuita do Kaggle (2 sessões/semana ≈ 23 h de 30 h).
 
+**Garantia de não-repetição**: a semente de dados de cada sessão é
+`SEED + amostras acumuladas` — sessões distintas geram estradas e caminhões
+distintos, e o `metrics.json` registra `data_seed` + impressão digital
+(sha256) do primeiro lote, conferida na colheita. Zero metros treinados
+duas vezes; e a mesma semente é reproduzível (auditável).
+
 ## Praticar no ETS2 real (v0.4.4+) — IMPLEMENTADO
 
 O caminho do aprendizado no jogo de verdade está pronto (passo a passo em

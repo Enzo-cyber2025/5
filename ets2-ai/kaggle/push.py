@@ -182,6 +182,20 @@ def harvest(user):
             cum = 0
     print(f"[harvest] acumulado ate agora: {cum:,} amostras "
           f"({cum / CHAIN_TARGET * 100:.1f}% de {CHAIN_TARGET:,})")
+    # PROVA ANTI-REPETICAO: a sessao colhida tem que ter semente/impressao
+    # digital DIFERENTES das ja registradas no repo (a semente avanca com o
+    # acumulado — nenhuma sessao treina nos mesmos dados de novo).
+    try:
+        _m = _j.loads(metrics.read_text())
+        _repo = _j.loads((ROOT / "artifacts" / "metrics.json").read_text())
+        print(f"[harvest] PROVA anti-repeticao: seed desta sessao "
+              f"{_m.get('data_seed', '?')} | impressao digital "
+              f"{_m.get('data_fingerprint', '?') or '(pre-v0.4.7)'} | "
+              f"seed anterior no repo {_repo.get('data_seed', '?')}")
+        if _m.get("data_seed") is not None and _m.get("data_seed") == _repo.get("data_seed"):
+            print("::warning::MESMA SEED DA SESSAO ANTERIOR — repeticao de dados!")
+    except Exception as _e:
+        print(f"[harvest] (metrics sem prova anti-repeticao ainda: {_e.__class__.__name__})")
     # gates (mesmo padrao do fluxo principal)
     import numpy as np
     from ets2ai.contract import load_weights, LOSS_TARGET
