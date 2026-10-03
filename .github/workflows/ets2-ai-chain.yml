@@ -49,54 +49,46 @@ jobs:
           HARVEST_EXIT: ${{ steps.harvest.outputs.exit }}
         run: |
           cd ets2-ai
-          CUM=$(cat .cache/cumulative.txt 2>/dev/null || echo 0)
-          echo "acumulado: $CUM"
-          if ! [[ "$CUM" =~ ^[0-9]+$ ]]; then
-            echo "sem colheita numerica (status: $CUM) — so o contador nao muda"
-            exit 0
-          fi
-          PROMOVED=0
-          if [ "$HARVEST_EXIT" = "0" ] && [ -f .cache/kaggle-out/model-weights.json ]; then
-            python3 - <<'PY'
-            import json
-            from pathlib import Path
-            new = json.load(open(".cache/kaggle-out/metrics.json"))
-            try:
-                cur = json.load(open("artifacts/metrics.json"))
-            except Exception:
-                cur = {"mse_val": 9.9}
-            if new["mse_val"] < cur.get("mse_val", 9.9):
-                import shutil
-                shutil.copyfile(".cache/kaggle-out/model-weights.json",
-                                "artifacts/model-weights.json")
-                shutil.copyfile(".cache/kaggle-out/metrics.json",
-                                "artifacts/metrics.json")
-                print(f"[chain] pesos PROMOVIDOS: val {new['mse_val']:.5f} "
-                      f"(era {cur.get('mse_val', float('nan')):.5f})")
-                Path("/tmp/promoted").write_text("1")
-            else:
-                print("[chain] pesos atuais continuam melhores — sem promocao")
-            PY
-            [ -f /tmp/promoted ] && PROMOVED=1
-          fi
-          python3 - <<PY
+          python3 - <<'PY'
+          import os
           from pathlib import Path
-          cum = $CUM
+          cum_raw = Path(".cache/cumulative.txt").read_text().strip()
+          if not cum_raw.isdigit():
+              print(f"sem colheita numerica ({cum_raw}) — contador nao muda")
+              raise SystemExit(0)
+          cum = int(cum_raw)
+          if (os.environ.get("HARVEST_EXIT") == "0"
+                  and Path(".cache/kaggle-out/model-weights.json").exists()):
+              import json, shutil
+              new = json.load(open(".cache/kaggle-out/metrics.json"))
+              try:
+                  cur = json.load(open("artifacts/metrics.json"))
+              except Exception:
+                  cur = {"mse_val": 9.9}
+              if new["mse_val"] < cur.get("mse_val", 9.9):
+                  shutil.copyfile(".cache/kaggle-out/model-weights.json",
+                                  "artifacts/model-weights.json")
+                  shutil.copyfile(".cache/kaggle-out/metrics.json",
+                                  "artifacts/metrics.json")
+                  Path("/tmp/promoted").write_text("1")
+                  print(f"[chain] pesos PROMOVIDOS: val {new['mse_val']:.5f}")
+              else:
+                  print("[chain] pesos atuais continuam melhores")
           pct = cum / 100_000_000_000 * 100
-          md = f"""# Cadeia de treino 100B — contador ao vivo
-
-          | metrica | valor |
-          |---|---|
-          | amostras acumuladas | **{cum:,}** |
-          | % da meta (100 bilhoes) | **{pct:.1f}%** |
-          | km simulados equivalentes | ~{cum * 2.5 / 1000:,.0f} km |
-          | sessao media | 2x T4, ~11,5 h, FP32 em fluxo |
-
-          Cada janela (seg/qui) colhe a sessao anterior, versiona o checkpoint
-          privado (Kaggle) e empurra a proxima. Totalmente automatico.
-          """
+          md = ("# Cadeia de treino 100B — contador ao vivo\n\n"
+                "| metrica | valor |\n|---|---|\n"
+                f"| amostras acumuladas | **{cum:,}** |\n"
+                f"| % da meta (100 bilhoes) | **{pct:.1f}%** |\n"
+                f"| km simulados equivalentes | ~{cum * 2.5 / 1000:,.0f} km |\n"
+                "| sessao media | 2x T4, ~11,5 h, FP32 em fluxo |\n\n"
+                "Cada janela (seg/qui) colhe a sessao anterior, versiona o "
+                "checkpoint privado (Kaggle) e empurra a proxima. Automatico.\n")
           Path("CHAIN.md").write_text(md, encoding="utf-8")
+          print(f"[chain] CHAIN.md atualizado: {cum:,} ({pct:.1f}%)")
           PY
+          CUM=$(cat .cache/cumulative.txt)
+          PROMOVED=0
+          if [ -f /tmp/promoted ]; then PROMOVED=1; fi
           git config user.name "ets2ai-chain"; git config user.email "chain@users.noreply.github.com"
           git add CHAIN.md artifacts
           if git diff --cached --quiet; then

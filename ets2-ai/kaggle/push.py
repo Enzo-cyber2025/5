@@ -198,6 +198,12 @@ def harvest(user):
         print("::warning::gates FALHARAM — checkpoint NAO versionado "
               "(a proxima sessao retoma do ultimo ponto bom)")
         return 1
+    if not _dataset_exists(user):
+        # normal na primeira janela: o --chain cria o dataset na sequencia
+        print("[harvest] dataset de checkpoint ainda nao existe — sera "
+              "criado pelo --chain agora; pesos validados ficam em "
+              ".cache/kaggle-out")
+        return 0
     import shutil
     d = _ck_dir()
     shutil.copyfile(weights, d / "model-weights.json")
