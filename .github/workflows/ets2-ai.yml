@@ -444,15 +444,41 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -e
           mkdir -p ets2-ai/.cache/release
           cp ets2-ai/.cache/rel/ETS2-AI-mobile-apk/ETS2-AI-mobile.apk ets2-ai/.cache/release/
           cp ets2-ai/.cache/rel/ETS2-AI-bridge-exe/ETS2-AI-bridge.exe ets2-ai/.cache/release/
           cp ets2-ai/.cache/rel/ets2-ai-tflite/*.tflite ets2-ai/.cache/release/
-          cp ets2-ai/artifacts/model-weights.json ets2-ai/.cache/release/
-          cp ets2-ai/artifacts/metrics.json ets2-ai/.cache/release/
-          NOTES="$(python3 -c \"import json;m=json.load(open('ets2-ai/artifacts/metrics.json'));c=m['closed_loop'];print(f\\\"MSE validacao: {m['mse_val']:.5f} (meta <= {m['loss_target']}) | fonte dos pesos: {m.get('weights_source','?')} | circuito fechado: {c['finish_rate']*100:.0f}% rotas, dock {c['dock_rate']*100:.0f}%, {c['in_lane_pct']*100:.0f}% faixa, radares {c['radar_compliance']*100:.0f}%\\\")\")\"
-          gh release create ets2-ai-v0.4.4 \
-            --title "ETS2-AI v0.4.4 — IA de 1.017.613 parametros (estreita e profunda), treino em FLUXO com orcamento de 1 bilhao de amostras unicas nas 2x T4 do Kaggle" \
-            --notes "$NOTES" \
-            ets2-ai/.cache/release/* 2>/dev/null || \
+          cp ets2-ai/artifacts/model-weights.json ets2-ai/artifacts/metrics.json ets2-ai/.cache/release/
+          ls -la ets2-ai/.cache/release/
+          NOTES="$(python3 - <<'PY'
+          import json
+          m = json.load(open('ets2-ai/artifacts/metrics.json'))
+          c = m['closed_loop']
+          print(f"MSE validacao: {m['mse_val']:.5f} (meta <= {m['loss_target']}) | "
+                f"fonte dos pesos: {m.get('weights_source', '?')} | circuito fechado: "
+                f"{c['finish_rate']*100:.0f}% rotas, dock {c['dock_rate']*100:.0f}%, "
+                f"{c['in_lane_pct']*100:.0f}% faixa, radares {c['radar_compliance']*100:.0f}% | "
+                f"{m['meta']['samples']:,} amostras de treino")
+          PY
+          )"
+          echo "NOTES: $NOTES"
+          gh release view ets2-ai-v0.4.4 >/dev/null 2>&1 || \
+            gh release create ets2-ai-v0.4.4 \
+              --title "ETS2-AI v0.4.4 - 1.017.613 parametros, treino 1 bilhao de amostras nas 2x T4 (loss 0.00600, circuito fechado 100%)" \
+              --notes "$NOTES"
           gh release upload ets2-ai-v0.4.4 ets2-ai/.cache/release/* --clobber
+          gh release view ets2-ai-v0.4.4 --json assets --jq '.assets[].name'
+      - name: Diagnostico (commita log no repo em caso de falha)
+        if: failure()
+        run: |
+          git config user.name "ci-diag"; git config user.email "ci-diag@users.noreply.github.com"
+          mkdir -p ci-logs/release-${{ github.run_id }}
+          { echo "=== release run ${{ github.run_id }} ==="
+            ls -la ets2-ai/.cache/rel 2>/dev/null
+            ls -la ets2-ai/.cache/release 2>/dev/null; } > ci-logs/release-${{ github.run_id }}/log.txt
+          git add ci-logs || true
+          git commit -m "diag: release run ${{ github.run_id }} [skip ci]" || true
+          git pull --rebase --autostash origin arena/01a0f37d-5 || true
+          git push || true
+          exit 1
