@@ -120,6 +120,40 @@ jobs:
           ETS2AI_SAMPLES=15000000000 ETS2AI_MAX_SECONDS=41400 \
             python kaggle/push.py --chain 2>&1 | tee ../.cache_chain.log
           exit ${PIPESTATUS[0]}
+      - name: Status ao vivo da sessao Kaggle (committa STATUS.md)
+        if: always()
+        env:
+          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_KEY }}
+        run: |
+          cd ets2-ai
+          ST=$(kaggle kernels status enzoaimv/ets2ai-train 2>&1 | tr '\n' ' ' | sed 's/  */ /g' | sed 's/^ //;s/ $//')
+          echo "[status] $ST"
+          CUM=$(tr -d '\n' < .cache/cumulative.txt 2>/dev/null || true)
+          [ -z "$CUM" ] && CUM="sem colheita"
+          WHEN=$(date -u '+%Y-%m-%d %H:%M UTC')
+          cat > STATUS.md <<MD
+          # Sessao Kaggle ao vivo — cadeia 100B
+
+          | campo | valor |
+          |---|---|
+          | kernel | enzoaimv/ets2ai-train |
+          | status | $ST |
+          | amostras acumuladas (ultima colheita) | $CUM |
+          | meta | 100.000.000.000 amostras (~250 milhoes de km) |
+          | janelas | seg e qui, 08:00 UTC — colhe, promove e empurra sozinho |
+          | atualizado | $WHEN |
+
+          Fonte: API do Kaggle consultada pelo workflow da cadeia em cada janela.
+          MD
+          git config user.name "ets2ai-chain"; git config user.email "chain@users.noreply.github.com"
+          git add STATUS.md
+          if git diff --cached --quiet; then
+            echo "status sem mudanca"
+          else
+            git commit -m "status kaggle ao vivo [skip ci]"
+            git pull --rebase --autostash origin arena/01a0f37d-5 || true
+            git push
+          fi
       - name: Diagnostico (logs em caso de falha)
         if: failure()
         run: |
