@@ -12,6 +12,10 @@ name: ETS2-AI cadeia 500B (sessoes 2xT4 encadeadas)
 on:
   schedule:
     - cron: "0 8 * * 1,4"
+    # colheita extra da 1a sessao da cadeia 500B (sab 04/10/2026):
+    # 06:30 UTC = ~1h apos o fim da sessao de 11,5 h; 08:30 = reserva
+    - cron: "30 6 4 10 *"
+    - cron: "30 8 4 10 *"
   push:
     branches: [arena/01a0f37d-5]
     paths: ['.github/workflows/ets2-ai-chain.yml']
@@ -110,8 +114,13 @@ jobs:
         run: |
           CUM=$(cat ets2-ai/.cache/cumulative.txt 2>/dev/null || echo 0)
           if ! [[ "$CUM" =~ ^[0-9]+$ ]]; then
-            echo "sessao anterior ainda rodando ou sem saida — nao empurro outra"
-            exit 0
+            if [ "$CUM" = "NONE" ]; then
+              echo "sessao anterior sem saida (erro?) — empurrando nova de qualquer jeito (retoma do ultimo checkpoint bom)"
+              CUM=0
+            else
+              echo "sessao anterior ainda rodando — nao empurro outra"
+              exit 0
+            fi
           fi
           if [ "$CUM" -ge 500000000000 ]; then
             echo "META ATINGIDA: $CUM amostras acumuladas"
