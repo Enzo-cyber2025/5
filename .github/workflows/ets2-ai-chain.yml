@@ -74,11 +74,11 @@ jobs:
                   print(f"[chain] pesos PROMOVIDOS: val {new['mse_val']:.5f}")
               else:
                   print("[chain] pesos atuais continuam melhores")
-          pct = cum / 100_000_000_000 * 100
-          md = ("# Cadeia de treino 100B — contador ao vivo\n\n"
+          pct = cum / 500_000_000_000 * 100
+          md = ("# Cadeia de treino 500B — contador ao vivo\n\n"
                 "| metrica | valor |\n|---|---|\n"
                 f"| amostras acumuladas | **{cum:,}** |\n"
-                f"| % da meta (100 bilhoes) | **{pct:.1f}%** |\n"
+                f"| % da meta (500 bilhoes de amostras = ~1,25 bilhao de km) | **{pct:.2f}%** |\n"
                 f"| km simulados equivalentes | ~{cum * 2.5 / 1000:,.0f} km |\n"
                 "| sessao media | 2x T4, ~11,5 h, FP32 em fluxo |\n\n"
                 "Cada janela (seg/qui) colhe a sessao anterior, versiona o "

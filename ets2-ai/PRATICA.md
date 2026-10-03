@@ -25,6 +25,14 @@ tela, sem mexer no jogo: só o plugin oficial de telemetria da SCS + teclas.
    também embute o `adb` e cria o túnel `adb reverse` sozinho — no app toque
    **BRIDGE → AUTO** e conecta (sem digitar IP, sem Wi-Fi). Requer
    "Depuração USB" ativada uma única vez no aparelho.
+   - **Tela bloqueada? Sem problema** (v0.4.6+): enquanto o bridge ou o
+     teclado BT está ativo, o app sobe um serviço em 1º plano (wake lock
+     parcial + Wi-Fi em alto desempenho) — a IA roda na **mesma velocidade**
+     com a tela ligada ou bloqueada, e a notificação mostra **cmd/s e RTT ao
+     vivo** (com botão Encerrar). Trave a tela e confira: o contador de
+     comandos continua subindo no mesmo ritmo. Na 1ª vez o Android pergunta
+     se você quer isentar o app da otimização de bateria — recomendo aceitar
+     (fabricantes como a Samsung são agressivos com apps em 2º plano).
 4. Rodar: `ETS2-AI-bridge.exe --ets2 record` (ou
    `python -m ets2ai.practice record` com o repo).
 
@@ -110,7 +118,8 @@ servidor dedicado/headless e sem build para nuvem pública. As opções reais:
 
 O que **já** roda 100% na nuvem de graça é o **treino em massa**: a cadeia
 de sessões 2×T4 do Kaggle (workflow `ets2-ai-chain.yml`) acumula amostras
-até passar de **100 bilhões** sem tocar no seu PC — ver `CHAIN.md`. A
+até passar de **500 bilhões** (~1,25 bilhão de km) sem tocar no seu PC —
+ver `CHAIN.md` (contador) e `STATUS.md` (sessão ao vivo). A
 prática no jogo (record/shadow/drive) é o complemento que adapta a rede à
 sua estrada real em minutos, por DAgger.
 

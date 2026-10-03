@@ -321,12 +321,13 @@ Você **não precisa dirigir** para gerar dados de treino:
    (SCS SDK) com as do simulador — gravar 5–10 min de direção normal sua
    basta para calibrar escalas/offsets.
 
-## Cadeia de treino 100 BILHÕES de amostras (v0.4.5) — automática
+## Cadeia de treino 500 BILHÕES de amostras (v0.4.5+) — automática
 
 O workflow `ets2-ai-chain.yml` encadeia sessões de ~11,5 h nas 2× T4 do
 Kaggle que **retomam do checkpoint** (dataset privado) e acumulam amostras
-até passar de **100 bilhões** (~250 milhões de km simulados) — contador ao
-vivo em `CHAIN.md`. Sem tocar no PC do usuário; cota gratuita do Kaggle.
+até passar de **500 bilhões** (~1,25 bilhão de km simulados) — contador ao
+vivo em `CHAIN.md` e status da sessão em `STATUS.md`. Sem tocar no PC do
+usuário; cota gratuita do Kaggle (2 sessões/semana ≈ 23 h de 30 h).
 
 ## Praticar no ETS2 real (v0.4.4+) — IMPLEMENTADO
 

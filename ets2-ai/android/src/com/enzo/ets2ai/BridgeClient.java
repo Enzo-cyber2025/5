@@ -30,6 +30,10 @@ public final class BridgeClient implements Runnable {
 
     public volatile float lastRttMs = -1f;
     public volatile long answered = 0;
+    /** Velocidade da IA em tempo real: comandos por segundo (janela de 1 s). */
+    public volatile float hz = 0f;
+    private long hzMark = 0L;
+    private int hzCount = 0;
 
     public BridgeClient(String host, int port, NeuralNet net, Listener listener) {
         this.host = host;
@@ -98,6 +102,15 @@ public final class BridgeClient implements Runnable {
             float[] raw = net.forward(f);
             float[] cmd = NeuralNet.clampAction(raw[0], raw[1], raw[2]);
             answered++;
+            long nowMs = System.currentTimeMillis();
+            if (hzMark == 0L) hzMark = nowMs;
+            hzCount++;
+            long dtHz = nowMs - hzMark;
+            if (dtHz >= 1000L) {
+                hz = hzCount * 1000f / dtHz;
+                hzCount = 0;
+                hzMark = nowMs;
+            }
             lastRttMs = System.currentTimeMillis() - tSend;
             return "C," + cmd[0] + "," + cmd[1] + "," + cmd[2] + "," + tSend;
         } catch (Exception e) {

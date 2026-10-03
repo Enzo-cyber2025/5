@@ -52,7 +52,7 @@ def _discover_username():
 
 
 CKPT_SLUG = "ets2ai-checkpoint"
-CHAIN_TARGET = 100_000_000_000          # 100 bilhoes de AMOSTRAS acumuladas
+CHAIN_TARGET = 500_000_000_000          # 500 bilhoes de AMOSTRAS acumuladas (~1,25 bi de km)
 
 
 def _ck_dir():
@@ -224,7 +224,7 @@ def main():
     ap.add_argument("--slug-only", action="store_true",
                     help="imprime user/slug do kernel e sai (nao empurra)")
     ap.add_argument("--chain", action="store_true",
-                    help="CADEIA 100B: garante o dataset de checkpoint, empurra"
+                    help="CADEIA 500B: garante o dataset de checkpoint, empurra"
                          " o kernel (sessao longa) e sai SEM esperar (a colheita"
                          " e feita com --harvest)")
     ap.add_argument("--harvest", action="store_true",

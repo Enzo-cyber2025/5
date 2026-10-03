@@ -210,6 +210,7 @@ public final class MainActivity extends Activity {
             bridge.stop();
             bridge = null;
             bridgeStatus = "bridge desconectado";
+            syncKeepAlive();
             return;
         }
         LinearLayout box = new LinearLayout(this);
@@ -243,6 +244,7 @@ public final class MainActivity extends Activity {
                             }
                         });
                         new Thread(bridge).start();
+                        KeepAlive.begin(MainActivity.this, "Bridge " + h + ":" + p, bridge);
                     }
                 })
                 .setNegativeButton("Cancelar", null)
@@ -280,6 +282,8 @@ public final class MainActivity extends Activity {
                                 }
                             });
                             new Thread(bridge).start();
+                            KeepAlive.begin(MainActivity.this,
+                                    "Bridge AUTO: cabo USB (tela pode bloquear)", bridge);
                         }
                     });
                     return;
@@ -342,6 +346,8 @@ public final class MainActivity extends Activity {
                             }
                         });
                         new Thread(bridge).start();
+                        KeepAlive.begin(MainActivity.this,
+                                "Bridge AUTO: " + host + " (tela pode bloquear)", bridge);
                     }
                 });
             }
@@ -357,6 +363,7 @@ public final class MainActivity extends Activity {
             btKeyboard.stop();
             btKeyboard = null;
             btStatus = "teclado BT desligado";
+            syncKeepAlive();
             return;
         }
         if (checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)
@@ -367,7 +374,16 @@ public final class MainActivity extends Activity {
         }
         btKeyboard = new BtKeyboard(new BtKeyboard.Listener() {
             public void onStatus(final String s) {
-                runOnUiThread(new Runnable() { public void run() { btStatus = "BT: " + s; } });
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        btStatus = "BT: " + s;
+                        if (s.startsWith("TECLADO CONECTADO")
+                                || s.startsWith("teclado desconectado")
+                                || s.startsWith("servico HID caiu")) {
+                            syncKeepAlive();
+                        }
+                    }
+                });
             }
         });
         btKeyboard.start(this);
@@ -436,6 +452,23 @@ public final class MainActivity extends Activity {
         runOnUiThread(new Runnable() {
             public void run() { status.setText(s); }
         });
+    }
+
+    /** Mantem o servico de tela-bloqueada ativo enquanto bridge ou teclado
+     *  BT estiverem em uso: a IA roda na MESMA velocidade com a tela
+     *  bloqueada (wake lock parcial + Wi-Fi em alto desempenho). */
+    private void syncKeepAlive() {
+        boolean btOn = btKeyboard != null && btKeyboard.isReady();
+        boolean brOn = bridge != null;
+        if (brOn && btOn) {
+            KeepAlive.begin(this, "Bridge + teclado BT", bridge);
+        } else if (brOn) {
+            KeepAlive.begin(this, "Bridge: IA dirigindo no PC", bridge);
+        } else if (btOn) {
+            KeepAlive.begin(this, "Teclado BT: IA ativa", null);
+        } else {
+            KeepAlive.end(this);
+        }
     }
 
     // ------------------------------------------------------------------
@@ -719,8 +752,8 @@ public final class MainActivity extends Activity {
             SimWorld.Truck t = world.truck;
             String src = (world.aiEnabled ? "IA/" + engineName : "MANUAL");
             if (bridge != null) {
-                src += String.format(Locale.US, " | BRIDGE RTT %.0f ms (%d cmds)",
-                        bridge.lastRttMs, bridge.answered);
+                src += String.format(Locale.US, " | BRIDGE %.0f cmd/s | RTT %.0f ms (%d cmds)",
+                        bridge.hz, bridge.lastRttMs, bridge.answered);
             }
             String line = String.format(Locale.US,
                     "%s | faixa %.0f%% | EUR %.0f | jobs %d | entrega %.1f km%s",
