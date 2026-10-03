@@ -112,7 +112,10 @@ if _tf is not None and len(_gpus) >= 1:
     _best_val = float("inf")
     _best_w = None
     _last_val = 0
-    _data_seed = SEED if _resume_w is None else (SEED + _cum_prev)
+    # +1 fecha o furo do caso-limite: com checkpoint vazio (cum=0) a sessao
+    # usaria SEED puro — os MESMOS dados do treino ORIGINAL (v0.4.4). Com
+    # SEED+1+cum nenhuma sessao da cadeia jamais colide, nem a primeira.
+    _data_seed = SEED + 1 + _cum_prev
     if _resume_w is not None:
         print(f"[kaggle] seed de dados desta sessao: {_data_seed} "
               f"(estradas/caminhoes novos; validacao fixa p/ comparabilidade)")

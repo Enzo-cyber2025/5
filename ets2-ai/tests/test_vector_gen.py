@@ -85,3 +85,18 @@ def test_sem_repeticao_entre_sementes():
     c = first_batch(7)
     assert a != b, "sementes diferentes geraram dados identigos (repeticao!)"
     assert a == c, "mesma semente deveria reproduzir exatamente os dados"
+
+
+def test_primeira_sessao_nao_colide_com_treino_original():
+    """Furo corrigido (v0.4.7): com checkpoint vazio (cum=0) a 1a sessao da
+    cadeia usava SEED puro — os MESMOS dados do treino original. Agora toda
+    sessao usa SEED+1+cum: nem a primeira repete o treino original."""
+    def first_batch(seed):
+        for x, y in vector_gen.stream(seed=seed, n_trucks=256):
+            return x[:32].tobytes()
+
+    original = first_batch(20260930)            # treino original (SEED puro)
+    primeira = first_batch(20260930 + 1 + 0)    # 1a sessao da cadeia
+    segunda = first_batch(20260930 + 1 + 1_000_000_000)
+    assert original != primeira, "1a sessao colidiu com o treino original!"
+    assert original != segunda and primeira != segunda
