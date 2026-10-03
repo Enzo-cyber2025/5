@@ -1,3 +1,5 @@
+<!-- build: pesos promovidos pela cadeia (mse 0.005954) — dispara release com a IA nova -->
+
 # Cadeia de treino 500B — contador ao vivo
 
 | metrica | valor |
