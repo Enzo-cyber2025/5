@@ -10,6 +10,7 @@ name: ETS2-AI cadeia 500B (sessoes 2xT4 encadeadas)
 # de GPU = dentro da cota gratuita do Kaggle (30 h/week).
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: "0 8 * * 1,4"
     # colheita extra da 1a sessao da cadeia 500B (sab 04/10/2026):
@@ -84,6 +85,11 @@ jobs:
                 f"| amostras acumuladas | **{cum:,}** |\n"
                 f"| % da meta (500 bilhoes de amostras = ~1,25 bilhao de km) | **{pct:.2f}%** |\n"
                 f"| km simulados equivalentes | ~{cum * 2.5 / 1000:,.0f} km |\n"
+                + (f"| certificado 1 BILHAO de km (400 bi de amostras) | "
+                   f"**SIM** |\n" if cum >= 400_000_000_000 else
+                   f"| certificado 1 BILHAO de km (400 bi de amostras) | "
+                   f"ainda nao — faltam {400_000_000_000 - cum:,} amostras "
+                   f"(~{(400_000_000_000 - cum) * 2.5 / 1000:,.0f} km) |\n")
                 "| garantia anti-repeticao | semente da sessao = SEED + acumulado — nenhuma sessao repete dados (impressao digital no metrics.json) |\n"
                 "| sessao media | 2x T4, ~11,5 h, FP32 em fluxo |\n\n"
                 "Cada janela (seg/qui) colhe a sessao anterior, versiona o "
