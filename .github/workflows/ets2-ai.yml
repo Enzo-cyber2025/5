@@ -459,8 +459,8 @@ jobs:
         run: |
           gh release view ets2-ai-v0.4.6 >/dev/null 2>&1 || \
             gh release create ets2-ai-v0.4.6 \
-              --title "ETS2-AI v0.4.4 — 1.017.613 parametros (13-290x13-3), treino em fluxo de 1 bilhao de amostras nas 2x T4" \
-              --notes "ETS2-AI v0.4.4 - 1.017.613 params (13-290x13-3), treino em fluxo 1B de amostras nas 2x T4. Modelo .pt (TorchScript) com paridade numpy verificada. Os demais assets chegam pelo job de release."
+              --title "ETS2-AI v0.4.6 — IA na mesma velocidade com a tela bloqueada; plug & play USB; controles padrao ETS2; cadeia 500B" \
+              --notes "ETS2-AI v0.4.6 - APK: servico em 1o plano (wake lock + Wi-Fi alto desempenho) mantem a IA na MESMA velocidade com a tela bloqueada (cmd/s ao vivo na notificacao); teclado BT com as setas (padrao ETS2); EXE com DLL embutida + adb plug & play; cadeia rumo a 500 bilhoes de amostras no Kaggle."
           gh release upload ets2-ai-v0.4.6 ets2-ai/artifacts/ets2ai-v0.4.6.pt --clobber
 
   release:
