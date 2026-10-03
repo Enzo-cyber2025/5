@@ -54,6 +54,8 @@ def main():
     ap.add_argument("--epochs", type=int, default=320)
     ap.add_argument("--gpu", action="store_true",
                     help="executar o kernel com GPU T4 x2 do Kaggle")
+    ap.add_argument("--slug-only", action="store_true",
+                    help="imprime user/slug do kernel e sai (nao empurra)")
     args = ap.parse_args()
 
     key = os.environ.get("KAGGLE_KEY", "").strip()
@@ -77,6 +79,10 @@ def main():
         print("notebook qualquer na conta uma vez (kernels list --mine).")
         return 2
     os.environ["KAGGLE_USERNAME"] = user
+
+    if args.slug_only:
+        print(f"{user}/{SLUG_SUFFIX}")
+        return 0
 
     kdir = ROOT / ".cache" / "kaggle-kernel"
     kdir.mkdir(parents=True, exist_ok=True)

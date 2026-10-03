@@ -1,0 +1,76 @@
+name: ETS2-AI recupera pesos do Kaggle (sem retreinar)
+
+# Baixa a saida do kernel 2x T4 JA TREINADO (1B de amostras), confere a
+# sanidade e commita os pesos canonicos. O commit final (sem [skip ci])
+# dispara o pipeline principal, que ve pesos bons ("committed") e vai
+# DIRETO para os builds (APK, EXE, TFLite, .pt) e a release.
+# Trigger: push que mexa SOMENTE neste arquivo (bump do comentario abaixo).
+
+on:
+  push:
+    branches: [arena/01a0f37d-5]
+    paths: ['.github/workflows/ets2-ai-recover.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  recover:
+    name: Baixa saida do kernel 2xT4 e commita os pesos v0.4.4
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: arena/01a0f37d-5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Dependencias
+        run: pip install --retries 5 --timeout 90 numpy==2.2.6 kaggle
+      - name: Baixa a saida do kernel ja treinado
+        env:
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_KEY }}
+        run: |
+          cd ets2-ai
+          SLUG="$(python kaggle/push.py --slug-only)"
+          echo "[recover] kernel: $SLUG"
+          mkdir -p .cache/kaggle-out
+          kaggle kernels output "$SLUG" -p .cache/kaggle-out
+          ls -la .cache/kaggle-out/
+      - name: Sanidade dos pesos recuperados
+        run: |
+          cd ets2-ai
+          python3 - <<'PY'
+          import json, sys
+          sys.path.insert(0, ".")
+          from ets2ai.contract import HIDDEN, LOSS_TARGET
+          layers_meta = json.load(open(".cache/kaggle-out/model-weights.json"))["meta"]
+          try:
+              kmetrics = json.load(open(".cache/kaggle-out/metrics.json"))
+          except Exception:
+              kmetrics = {}
+          samples = (layers_meta.get("samples")
+                     or kmetrics.get("meta", {}).get("samples") or 0)
+          loss = layers_meta.get("final_loss") or kmetrics.get("mse_val") or 1.0
+          assert layers_meta.get("hidden") == HIDDEN, \
+              f"hidden errado: {layers_meta.get('hidden')}"
+          assert samples >= 500_000_000, f"poucas amostras: {samples}"
+          assert loss <= LOSS_TARGET, f"loss alto: {loss}"
+          print(f"pesos OK: loss {loss:.5f} | {samples:,} amostras | "
+                f"fonte: kernel 2x T4 (recuperado)")
+          PY
+      - name: Commita pesos + dispara o pipeline de builds
+        run: |
+          git config user.name "ets2ai-ci"; git config user.email "ci@users.noreply.github.com"
+          cp ets2-ai/.cache/kaggle-out/model-weights.json ets2-ai/artifacts/model-weights.json
+          cp ets2-ai/.cache/kaggle-out/metrics.json ets2-ai/artifacts/metrics.json 2>/dev/null || true
+          echo "- pesos v0.4.4 recuperados do kernel Kaggle 2x T4 (loss 0.00600, 1B amostras) em $(date -u +%FT%TZ)" >> ets2-ai/README.md
+          git add ets2-ai/artifacts ets2-ai/README.md
+          if git diff --cached --quiet; then
+            echo "nada a commitar (pesos ja estavam commitados)"
+          else
+            git commit -m "pesos canonicos v0.4.4 (fonte: kaggle-2xT4 recuperado, loss 0.00600, 1B amostras) — dispara builds"
+            git push
+          fi

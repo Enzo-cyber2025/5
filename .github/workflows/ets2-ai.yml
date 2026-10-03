@@ -10,6 +10,10 @@ on:
         description: 'Forcar treino nas 2x T4 do Kaggle (requer secret KAGGLE_KEY)'
         type: boolean
         default: false
+      recover_kernel:
+        description: 'Recuperar a saida do kernel Kaggle JA TREINADO (sem retreinar)'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -92,6 +96,7 @@ jobs:
         env:
           KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
           FORCE_KAGGLE: ${{ inputs.force_kaggle }}
+          RECOVER_KERNEL: ${{ inputs.recover_kernel }}
         run: |
           python3 - <<'PY'
           import json, os, sys
@@ -99,6 +104,7 @@ jobs:
           from ets2ai.contract import HIDDEN, LOSS_TARGET
           key = os.environ.get("KAGGLE_KEY", "").strip()
           force = str(os.environ.get("FORCE_KAGGLE", "")).lower() in ("true", "1")
+          recover = str(os.environ.get("RECOVER_KERNEL", "")).lower() in ("true", "1")
           try:
               m = json.load(open("ets2-ai/artifacts/model-weights.json"))["meta"]
               committed_ok = (m.get("hidden") == HIDDEN
@@ -106,7 +112,9 @@ jobs:
                               and m["final_loss"] <= LOSS_TARGET)
           except Exception:
               committed_ok = False
-          if key and (force or not committed_ok):
+          if recover and key:
+              src = "recover"
+          elif key and (force or not committed_ok):
               src = "kaggle"
           elif committed_ok:
               src = "committed"
@@ -116,7 +124,26 @@ jobs:
                 f"secret KAGGLE_KEY={'presente' if key else 'AUSENTE'} | force={force}")
           with open(os.environ["GITHUB_OUTPUT"], "a") as f:
               f.write(f"source={src}\n")
+          if src == "committed":
+              with open(os.environ["GITHUB_ENV"], "a") as f:
+                  f.write("WEIGHTS_SOURCE=committed\n")
           PY
+      - name: Recupera saida do kernel Kaggle ja treinado (sem retreinar)
+        if: steps.fonte.outputs.source == 'recover'
+        env:
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_KEY }}
+        run: |
+          pip install --retries 5 --timeout 90 kaggle
+          cd ets2-ai
+          SLUG="$(python kaggle/push.py --slug-only)"
+          echo "[recover] kernel: $SLUG"
+          kaggle kernels output "$SLUG" -p .cache/kaggle-out > ../.cache_kaggle.log 2>&1
+          cat ../.cache_kaggle.log
+          ls -la .cache/kaggle-out/
+          cp .cache/kaggle-out/model-weights.json artifacts/
+          cp .cache/kaggle-out/metrics.json artifacts/ 2>/dev/null || true
+          echo "WEIGHTS_SOURCE=kaggle-2xT4-recuperado" >> "$GITHUB_ENV"
       - name: Treino nas 2x T4 do Kaggle (MirroredStrategy, FP32 fluxo 1B)
         if: steps.fonte.outputs.source == 'kaggle'
         env:
@@ -149,13 +176,13 @@ jobs:
           cd ets2-ai
           set -o pipefail
           python - <<'PY' 2>&1 | tee ../.cache_quality.log
-          import json, sys
+          import json, os, sys
           sys.path.insert(0, ".")
           from ets2ai.contract import load_weights, LOSS_TARGET, save_device_format
           from ets2ai.train import closed_loop_eval
           layers, meta = load_weights("artifacts/model-weights.json")
           agg, rows = closed_loop_eval(layers)
-          print(f"fonte=${WEIGHTS_SOURCE:-?} | loss {meta['final_loss']:.6f} (meta {LOSS_TARGET})")
+          print(f"fonte={os.environ.get('WEIGHTS_SOURCE', '?')} | loss {meta['final_loss']:.6f} (meta {LOSS_TARGET})")
           print(f"finish {agg['finish_rate']*100:.0f}% | dock {agg['dock_rate']*100:.0f}% | "
                 f"faixa {agg['in_lane_pct']*100:.1f}% | radares {agg['radar_compliance']*100:.0f}% | "
                 f"stop erro {agg['mean_stop_error_m']:.2f} m")
@@ -183,7 +210,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "pesos inalterados — nada a commitar"
           else
-            git commit -m "pesos canonicos v0.4.3 (fonte: ${{ steps.fonte.outputs.source }}) [skip ci]"
+            git commit -m "pesos canonicos v0.4.4 (fonte: ${{ steps.fonte.outputs.source }}) [skip ci]"
             git push
           fi
       - uses: actions/upload-artifact@v4
@@ -395,7 +422,7 @@ jobs:
           gh release view ets2-ai-v0.4.4 >/dev/null 2>&1 || \
             gh release create ets2-ai-v0.4.4 \
               --title "ETS2-AI v0.4.4 — 1.017.613 parametros (13-290x13-3), treino em fluxo de 1 bilhao de amostras nas 2x T4" \
-              --notes "Modelo .pt (PyTorch TorchScript): 505.291 params, FP64, paridade numpy verificada (<1e-5). Os demais assets chegam pelo job de release."
+              --notes "ETS2-AI v0.4.4 - 1.017.613 params (13-290x13-3), treino em fluxo 1B de amostras nas 2x T4. Modelo .pt (TorchScript) com paridade numpy verificada. Os demais assets chegam pelo job de release."
           gh release upload ets2-ai-v0.4.4 ets2-ai/artifacts/ets2ai-v0.4.4.pt --clobber
 
   release:
