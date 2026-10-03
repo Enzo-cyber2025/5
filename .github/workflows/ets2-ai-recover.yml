@@ -4,7 +4,7 @@ name: ETS2-AI recupera pesos do Kaggle (sem retreinar)
 # sanidade e commita os pesos canonicos. O commit final (sem [skip ci])
 # dispara o pipeline principal, que ve pesos bons ("committed") e vai
 # DIRETO para os builds (APK, EXE, TFLite, .pt) e a release.
-# Trigger: push que mexa SOMENTE neste arquivo. Bump v2 (pesos do run 37067861506).
+# Trigger: push que mexa SOMENTE neste arquivo. Bump v3 (slug multilinha).
 
 on:
   push:
@@ -33,11 +33,18 @@ jobs:
           KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
           KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_KEY }}
         run: |
+          set -o pipefail
           cd ets2-ai
-          SLUG="$(python kaggle/push.py --slug-only)"
+          python kaggle/push.py --slug-only 2>&1 | tee ../.cache_slug.log
+          # o push.py imprime mensagens ANTES do slug: pega SO a ultima linha
+          SLUG="$(tail -1 ../.cache_slug.log | tr -d '[:space:]')"
+          if ! echo "$SLUG" | grep -qE '^[A-Za-z0-9_-]+/[A-Za-z0-9_-]+$'; then
+            echo "::warning::slug nao descoberto — fallback para o slug conhecido"
+            SLUG="enzoaimv/ets2ai-train"
+          fi
           echo "[recover] kernel: $SLUG"
           mkdir -p .cache/kaggle-out
-          kaggle kernels output "$SLUG" -p .cache/kaggle-out
+          kaggle kernels output "$SLUG" -p .cache/kaggle-out 2>&1 | tee ../.cache_kaggle.log
           ls -la .cache/kaggle-out/
       - name: Sanidade dos pesos recuperados
         run: |
@@ -74,3 +81,16 @@ jobs:
             git commit -m "pesos canonicos v0.4.4 (fonte: kaggle-2xT4 recuperado, loss 0.00600, 1B amostras) — dispara builds"
             git push
           fi
+      - name: Diagnostico (commita log no repo em caso de falha)
+        if: failure()
+        run: |
+          git config user.name "ci-diag"; git config user.email "ci-diag@users.noreply.github.com"
+          mkdir -p ci-logs/recover-${{ github.run_id }}
+          { echo "=== recover run ${{ github.run_id }} ==="
+            echo "--- slug"; cat .cache_slug.log 2>/dev/null
+            echo "--- kaggle"; cat .cache_kaggle.log 2>/dev/null; } \
+            > ci-logs/recover-${{ github.run_id }}/log.txt
+          git add ci-logs || true
+          git commit -m "diag: recover run ${{ github.run_id }} [skip ci]" || true
+          git push || true
+          exit 1
