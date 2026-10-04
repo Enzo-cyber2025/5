@@ -1,5 +1,3 @@
-<!-- verificacao: build limpo com os pesos promovidos (mse 0.005954) -->
-
 # Cadeia de treino 500B — contador ao vivo
 
 | metrica | valor |
@@ -11,4 +9,4 @@
 | garantia anti-repeticao | semente da sessao = SEED + acumulado — nenhuma sessao repete dados (impressao digital no metrics.json) |
 | sessao media | 2x T4, ~11,5 h, FP32 em fluxo |
 
-Cada janela (seg/qui) colhe a sessao anterior, versiona o checkpoint privado (Kaggle) e empurra a proxima. Automatico.
+Cada janela (seg/qui/sab) colhe a sessao anterior, versiona o checkpoint privado (Kaggle) e empurra a proxima. Automatico.
