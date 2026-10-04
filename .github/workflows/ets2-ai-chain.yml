@@ -198,10 +198,14 @@ jobs:
             python kaggle/push.py --chain 2>&1 | tee ../.cache_chain.log
           rc=${PIPESTATUS[0]}
           WAITH=$(grep -o 'CHAIN_WAIT_H=[0-9.]*' ../.cache_chain.log 2>/dev/null | tail -1 | cut -d= -f2)
+          SKIPN=$(grep -c 'CHAIN_SKIP=running' ../.cache_chain.log 2>/dev/null || true)
           if [ -n "$WAITH" ]; then
             echo "empurrou=wait" >> "$GITHUB_OUTPUT"
             echo "wait_h=$WAITH" >> "$GITHUB_OUTPUT"
-            echo "governador de cota: sem orcamento esta semana — retry em ${WAITH}h"
+            echo "governador de cota: sem orcamento de GPU — retry em ${WAITH}h"
+          elif [ "$SKIPN" -ge 1 ]; then
+            echo "empurrou=retry" >> "$GITHUB_OUTPUT"
+            echo "sessao ja ativa (outro ciclo empurrou?) — proximo ciclo confere"
           elif [ "$rc" = "0" ]; then
             echo "empurrou=1" >> "$GITHUB_OUTPUT"
           fi
@@ -292,7 +296,9 @@ jobs:
   proximo-ciclo:
     name: Dispara o proximo ciclo (colheita automatica)
     needs: [step, aguarda-c]
-    if: always() && needs.step.result == 'success' && (needs.step.outputs.empurrou == '1' || needs.step.outputs.empurrou == 'retry' || needs.step.outputs.empurrou == 'wait') && needs.step.outputs.meta != '1'
+    # IMORTAL: dispara mesmo se o passo falhar (backoff abaixo). So para
+    # quando a meta de 500 bilhoes (1,25 bi de km) e atingida (meta=1).
+    if: always() && needs.step.outputs.meta != '1'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -300,6 +306,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          if [ "${{ needs.step.result }}" != "success" ]; then
+            echo "passo falhou — backoff de 5 min e tenta de novo"
+            sleep 300
+          fi
           gh api repos/Enzo-cyber2025/5/actions/workflows/374074831/dispatches \
             -f ref=arena/01a0f37d-5
-          echo "[cadeia] proximo ciclo agendado — a cadeia se perpetua sozinha (dispatch por ID: nome de arquivo so resolve na branch default)"
+          echo "[cadeia] proximo ciclo agendado — a cadeia so para nos 1,25 bilhao de km (dispatch por ID)"

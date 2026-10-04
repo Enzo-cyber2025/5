@@ -209,16 +209,37 @@ if _tf is not None and len(_gpus) >= 1:
     _loss_tr = None
     _loss_va = _best_val
 else:
-    # ---------------- CPU fallback (deterministico, estatico) ----------------
+    # ---------------- CPU fallback (FLUXO: dados novos, mesma regra de seed) ----------------
+    # Quando a cota de GPU do Kaggle acaba, a cadeia empurra sessoes CPU:
+    # mesmas sementes/impressao digital, dados 100% novos — so mais lentos.
     print(f"[kaggle] sem GPU — treinando em numpy (CPU, {_DTYPE.__name__}, "
-          f"dataset estatico)")
-    _xtr, _ytr, _xva, _yva = generate()
-    _xtr = np.asarray(_xtr, dtype=_DTYPE); _ytr = np.asarray(_ytr, dtype=_DTYPE)
-    _xva = np.asarray(_xva, dtype=_DTYPE); _yva = np.asarray(_yva, dtype=_DTYPE)
-    print(f"[kaggle] treino {_xtr.shape} | val {_xva.shape}")
+          f"dados em fluxo)")
+    _data_seed = SEED + 1 + _cum_prev
+    _fp = None
+    _t0c = _time.time()
+    _xs, _ys = [], []
+    _n_rows = 0
+    _gen_cap = int(_SAMPLES * 0.5) if _SAMPLES < 10**12 else 400_000_000
+    for _x, _y in stream(_data_seed, n_trucks=3072):
+        if _fp is None:
+            _fp = _hashlib.sha256(
+                np.ascontiguousarray(_x[:512]).tobytes()
+                + np.ascontiguousarray(_y[:512]).tobytes()).hexdigest()[:16]
+        _xs.append(np.asarray(_x, dtype=_DTYPE))
+        _ys.append(np.asarray(_y, dtype=_DTYPE))
+        _n_rows += len(_x)
+        if _n_rows >= _gen_cap or (_time.time() - _t0c) > _MAX_SEC * 0.55:
+            break
+    _xall = np.concatenate(_xs); _yall = np.concatenate(_ys)
+    del _xs, _ys
+    _nva = max(200, int(0.15 * len(_xall)))
+    _xtr, _ytr = _xall[:-_nva], _yall[:-_nva]
+    _xva, _yva = _xall[-_nva:], _yall[-_nva:]
+    print(f"[kaggle] treino {_xtr.shape} | val {_xva.shape} | "
+          f"geracao {(_time.time() - _t0c)/60:.1f} min")
     _layers, _hist = train(_xtr, _ytr, epochs=_EPOCHS, x_val=_xva, y_val=_yva,
                            dtype=_DTYPE)
-    _consumed = int(len(_xtr) + len(_xva))
+    _consumed = int(len(_xall))
     _loss_tr = mse(forward(_xtr, _layers), _ytr)
     _loss_va = mse(forward(_xva, _layers), _yva)
 

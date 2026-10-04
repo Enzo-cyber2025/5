@@ -335,6 +335,13 @@ distintos, e o `metrics.json` registra `data_seed` + impressão digital
 (sha256) do primeiro lote, conferida na colheita. Zero metros treinados
 duas vezes; e a mesma semente é reproduzível (auditável).
 
+**CPU fallback:** quando as ~30 h/sem de GPU do Kaggle acabam, a cadeia
+empurra sessões **CPU** (mesma semente/impressão digital, dados novos em
+fluxo, até 11,5 h) e treina nelas até a cota de GPU voltar — o governador
+conta só GPU no teto de 28,5 h. O ciclo é imortal: falhas ganham backoff e
+a cadeia só para ao cruzar 500 bilhões de amostras (1,25 bi de km), quando
+emite o `CERTIFICADO.md`.
+
 **Próxima alavanca (a validar):** precisão mista (FP16 nos tensor cores da
 T4) numa sessão-canário curta antes de virar padrão da cadeia — potencial
 de mais ~2× em cima do pipeline. Só entra depois de provada (gates no
