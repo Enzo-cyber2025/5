@@ -54,8 +54,15 @@ except Exception:
 _cum_prev = 0
 _resume_w = None
 if _os.environ.get("ETS2AI_RESUME", "1") not in ("0", "false", "0"):
-    for _d in ("/kaggle/input/ets2ai-checkpoint", ".cache/checkpoint"):
-        _w = _os.path.join(_d, "model-weights.json")
+    try:
+        print("[kaggle] inputs anexados:", _os.listdir("/kaggle/input"))
+    except Exception:
+        pass
+    import glob as _glob
+    _cands = sorted(_glob.glob("/kaggle/input/**/model-weights.json",
+                               recursive=True)) \
+        + [".cache/checkpoint/model-weights.json"]
+    for _w in _cands:
         if _os.path.exists(_w):
             try:
                 _m = _json.load(open(_w, encoding="utf-8"))["meta"]
@@ -63,7 +70,8 @@ if _os.environ.get("ETS2AI_RESUME", "1") not in ("0", "false", "0"):
                 _resume_w = _w
             except Exception:
                 pass
-            break
+            if _resume_w:
+                break
 if _resume_w:
     print(f"[kaggle] CHECKPOINT: {_resume_w} — retomando de "
           f"{_cum_prev:,} amostras acumuladas")

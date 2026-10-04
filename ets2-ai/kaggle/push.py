@@ -239,6 +239,8 @@ def harvest(user):
             cum = 0
     print(f"[harvest] acumulado ate agora: {cum:,} amostras "
           f"({cum / CHAIN_TARGET * 100:.1f}% de {CHAIN_TARGET:,})")
+    _rds = sh("kaggle", "datasets", "status", f"{user}/{CKPT_SLUG}")
+    print("[harvest] checkpoint dataset:", (_rds.stdout or _rds.stderr).strip()[:200])
     # PROVA ANTI-REPETICAO: a sessao colhida tem que ter semente/impressao
     # digital DIFERENTES das ja registradas no repo (a semente avanca com o
     # acumulado — nenhuma sessao treina nos mesmos dados de novo).

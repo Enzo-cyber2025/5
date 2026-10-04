@@ -145,7 +145,8 @@ jobs:
           fi
           if [ "$PROMOTED" = "1" ]; then
             echo "pesos promovidos — disparando o build da release (commits do GITHUB_TOKEN nao disparam workflows)"
-            gh workflow run ets2-ai.yml --ref arena/01a0f37d-5 \
+            gh api repos/Enzo-cyber2025/5/actions/workflows/371510957/dispatches \
+            -f ref=arena/01a0f37d-5 \
               || echo "::warning::build nao disparado — rode manualmente"
           fi
       - name: Empurra a proxima sessao (meta de 500 bilhoes)
@@ -281,5 +282,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh workflow run ets2-ai-chain.yml --ref arena/01a0f37d-5
-          echo "[cadeia] proximo ciclo agendado — a cadeia se perpetua sozinha (cron nao dispara fora da branch default)"
+          gh api repos/Enzo-cyber2025/5/actions/workflows/374074831/dispatches \
+            -f ref=arena/01a0f37d-5
+          echo "[cadeia] proximo ciclo agendado — a cadeia se perpetua sozinha (dispatch por ID: nome de arquivo so resolve na branch default)"
