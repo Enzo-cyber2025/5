@@ -138,7 +138,7 @@ def hand_policy(feat):
 
 
 def make_loop(mode, game, road_map, injector=None, recorder=None,
-              policy=hand_policy, map_path=None, human=False):
+              policy=hand_policy, map_path=None, human=False, phone=None):
     clock = SimClock()
     state = {"offsets": [], "speeds": []}
 
@@ -154,8 +154,8 @@ def make_loop(mode, game, road_map, injector=None, recorder=None,
 
     loop = PracticeLoop(mode, road_map, source, injector=injector,
                         recorder=recorder, map_path=map_path,
-                        policy_fn=policy, clock=clock, sleep=SimSleep(clock),
-                        log=lambda *a, **k: None)
+                        policy_fn=policy, phone=phone, clock=clock,
+                        sleep=SimSleep(clock), log=lambda *a, **k: None)
     return loop, state
 
 
@@ -378,3 +378,44 @@ def test_shadow_veredito_espelhado():
     loop.source = human_source
     res = loop.run(max_seconds=25.0)
     assert "ESPELHADO" in res["shadow"], res["shadow"]
+
+
+def test_drive_com_celular_como_cerebro():
+    """O APK roda a IA: a pratica manda o estado (protocolo S) e o comando
+    vem do celular — sem celular, cai na politica local sem falhar."""
+    import math as _math
+    from ets2ai.roadmap import RoadMap
+    road = GENTLE_ROAD
+    m = RoadMap()
+    x0, y0 = road.samples[0][:2]
+    x1, y1 = road.samples[30][:2]
+    m.record(x1, y1, _math.atan2(y1 - y0, x1 - x0), 18.0)
+    game = FakeGame(road, s=5.0, speed=12.0)
+
+    class FakePhone:
+        connected = True
+        sent = []
+
+        def send_fields(self, **kw):
+            self.sent.append(kw)
+
+        def wait_cmd(self, timeout):
+            return (0.05, 0.9, 0.0)
+
+    ph = FakePhone()
+    loop, st = make_loop("drive", game, m, phone=ph, policy=lambda f: (9, 9, 9))
+    out = loop.step(game.snapshot(), 0.1)
+    assert len(ph.sent) >= 1, "estado nao foi enviado ao celular"
+    kw = ph.sent[-1]
+    # campos do protocolo S presentes e em unidades crus (m/s, m, rad)
+    assert 0.0 <= kw["speed"] <= 50.0 and -10 < kw["offset"] < 10
+    assert len(kw["curvs"]) == 5 and 0 < kw["limit"] <= 25.0
+    # comando usado veio do CELULAR (0.05/0.9), nao da politica local (9,9,9)
+    assert out["cmd"] is not None and abs(out["cmd"][0] - 0.05) < 1e-6
+    # pedais passam pelo governor_real (ajuste de velocidade) — so faixa valida
+    assert 0.0 <= out["cmd"][1] <= 1.0 and 0.0 <= out["cmd"][2] <= 1.0
+    # sem celular conectado: politica local assume (sem excecao)
+    ph.connected = False
+    loop2, _ = make_loop("drive", game, m, policy=lambda f: (0.1, 0.5, 0.0))
+    loop2.phone = ph
+    loop2.step(game.snapshot(), 0.2)   # nao deve lancar

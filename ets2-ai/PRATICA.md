@@ -71,6 +71,13 @@ entre a IA e você:
 
 ## 3) `drive` — a IA dirige de verdade
 
+> **IA no CELULAR (revisado v0.4.6+):** no modo real, se o APK estiver
+> conectado (BRIDGE → AUTO), a IA roda **no celular** (GPU/TFLite) — o PC
+> só lê a telemetria e injeta as teclas. Sem celular, a IA local do PC
+> assume automaticamente. O cabo USB (túnel adb) também funciona aqui.
+
+## 3) `drive` — a IA dirige de verdade
+
 ```
 python -m ets2ai.practice drive --inject --window "Euro Truck"
 ```

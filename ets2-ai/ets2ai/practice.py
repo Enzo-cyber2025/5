@@ -158,7 +158,7 @@ class PracticeLoop:
     """
 
     def __init__(self, mode, road_map, source, layers=None, injector=None,
-                 recorder=None, map_path=None, policy_fn=None,
+                 recorder=None, map_path=None, policy_fn=None, phone=None,
                  tick=TICK, clock=time.monotonic, sleep=time.sleep, log=print):
         assert mode in ("record", "drive", "shadow")
         self.mode = mode
@@ -166,6 +166,7 @@ class PracticeLoop:
         self.source = source
         self.layers = layers
         self.injector = injector
+        self.phone = phone
         self.recorder = recorder
         self.map_path = map_path
         self.policy_fn = policy_fn or self._nn_policy
@@ -207,6 +208,34 @@ class PracticeLoop:
     def _nn_policy(self, feat):
         o = forward(np.asarray(feat, dtype=np.float32), self.layers)[0]
         return clamp_action(float(o[0]), float(o[1]), float(o[2]))
+
+    def _phone_or_local(self, feat, sn, meta):
+        """IA no CELULAR (GPU/TFLite do APK) via protocolo S; sem resposta
+        a tempo cai na IA local do PC — e sem pesos, freia (seguro)."""
+        ph = self.phone
+        if ph is not None and getattr(ph, "connected", False):
+            try:
+                ph.send_fields(
+                    speed=max(0.0, sn["speed"]),
+                    offset=meta.get("offset", 0.0),
+                    hdg=meta.get("heading_error", 0.0),
+                    curvs=meta.get("curvs", [None] * 5),
+                    limit=min(sn.get("speed_limit") or 25.0, 25.0),
+                    fuel=min(1.0, max(0.0, (sn.get("fuel") or 0.0)
+                                      / ((sn.get("fuel_capacity") or 600.0)
+                                         or 600.0))),
+                    fatigue=min(1.0, max(0.0, (self._job_min or 0.0)
+                                         / FATIGUE_MIN)),
+                    job_km=max(0.0, sn.get("route_distance", 0.0)) / 1000.0)
+                cmd = ph.wait_cmd(0.30)
+                if cmd is not None:
+                    return clamp_action(*cmd), "celular"
+            except Exception:
+                pass
+        # sem celular: politica local (IA numpy do PC — ou a politica de teste)
+        if self.layers is not None or self.policy_fn is not self._nn_policy:
+            return self.policy_fn(feat), "pc"
+        return (0.0, 0.0, 0.8), "freio"      # sem IA disponivel: para
 
     def _update_course(self, sn):
         """Curso (direcao do deslocamento) numa janela de ~6 m."""
@@ -288,6 +317,7 @@ class PracticeLoop:
             self._job_start_min = None
         job_min = (sn["game_minutes"] - self._job_start_min) \
             if self._job_start_min is not None else 0.0
+        self._job_min = job_min
         # mapa: em record/shadow o HUMANO refina a linha central (dado bom);
         # em drive a IA so ESTENDE o mapa onde ele nao existe — nunca deixa
         # a propria oscilacao virar "centro da pista" (espiral de erro).
@@ -321,12 +351,12 @@ class PracticeLoop:
             self._maybe_record(feat, meta, sn, speed_min=0.5)
             out["source"] = "voce (gravando)"
         elif self.mode == "shadow":
-            cmd = self.policy_fn(feat)
+            cmd, ai_src = self._phone_or_local(feat, sn, meta)
             self._shadow_update(cmd, sn)
             self._maybe_record(feat, meta, sn, speed_min=0.5)
             out["cmd"], out["source"] = cmd, "IA (sombra, sem injecao)"
         else:  # drive
-            cmd = self.policy_fn(feat)
+            cmd, ai_src = self._phone_or_local(feat, sn, meta)
             self._human_detect(sn, cmd, now)
             if self._human_active or (now < self._override_hold):
                 if self.injector is not None:
@@ -524,7 +554,7 @@ def _try_install_plugin(game_dir=None, auto=True):
 # ---------------------------------------------------------------------------
 def run(mode, map_path="practice/mapa.json", rec_path=None, inject=False,
         window="Euro Truck", weights=BASE_WEIGHTS, max_seconds=None,
-        game_dir=None, auto_install=True,
+        game_dir=None, auto_install=True, phone=None,
         _source=None, _policy=None, _clock=None, _sleep=None):
     """Monta e roda o loop de pratica (usado pelo CLI e pelo bridge --ets2)."""
     map_path = Path(map_path)
@@ -557,7 +587,7 @@ def run(mode, map_path="practice/mapa.json", rec_path=None, inject=False,
     recorder = Recorder(rec_path) if rec_path else None
     loop = PracticeLoop(mode, road_map, source, layers=layers,
                         injector=injector, recorder=recorder,
-                        map_path=map_path, policy_fn=_policy,
+                        map_path=map_path, policy_fn=_policy, phone=phone,
                         clock=_clock or time.monotonic,
                         sleep=_sleep or time.sleep)
     try:

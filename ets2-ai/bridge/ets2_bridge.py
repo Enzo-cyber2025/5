@@ -206,6 +206,35 @@ class PhoneLink(threading.Thread):
         except Exception:
             pass
 
+    def send_fields(self, speed, offset, hdg, curvs, limit, fuel,
+                    fatigue, job_km, radar=150.0):
+        """Estado da PRATICA (ETS2 real) no mesmo protocolo S do APK:
+        o celular roda a IA (GPU/TFLite) e devolve C,steer,throttle,brake."""
+        if not self.connected or not hasattr(self, "_conn"):
+            return
+        try:
+            ts = time.time()
+            msg = ("S," + ",".join([
+                f"{speed:.4f}", f"{offset:.4f}", f"{hdg:.4f}",
+                ",".join(f"{float(c or 0.0):.6f}" for c in curvs),
+                f"{limit:.2f}", f"{fuel:.4f}", f"{fatigue:.4f}",
+                f"{job_km:.4f}", f"{float(radar):.2f}",
+                f"{int(ts*1000)}"]) + "\n")
+            self._conn.sendall(msg.encode("utf-8"))
+        except Exception:
+            pass
+
+    def wait_cmd(self, timeout=0.30):
+        """Espera um comando fresco do celular; None se nao vier a tempo."""
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            cmd = self.latest_cmd
+            if cmd is not None and time.time() - self.last_recv < 0.5:
+                self.latest_cmd = None        # consome
+                return cmd[0], cmd[1], cmd[2]
+            time.sleep(0.002)
+        return None
+
     @staticmethod
     def local_ip():
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -694,8 +723,25 @@ def main():
             import time as _t
             rec = f"practice/{args.ets2}-{_t.strftime('%Y%m%d-%H%M%S')}.csv"
             print(f"[pratica] gravando automaticamente em {rec}")
-        practice.run(args.ets2, map_path=args.map, rec_path=rec,
-                     inject=args.inject, window=args.window)
+        # PLUG & PLAY tambem na pratica: cabo USB -> tunel adb reverse
+        usb_plug_and_play(args.port)
+        UsbKeeper(args.port).start()
+        if args.ets2 in ("drive", "shadow"):
+            # CELULAR COMO CEREBRO: a IA roda no APK (GPU/TFLite) e devolve
+            # os comandos; o PC so le a telemetria e injeta as teclas.
+            # Sem celular conectado, cai na IA local do PC (numpy).
+            link = PhoneLink(args.port)
+            link.start()
+            print(f"[pratica] IA no CELULAR: conecte o APK (BRIDGE -> AUTO) "
+                  f"em tcp://127.0.0.1:{args.port} (cabo USB) ou "
+                  f"{PhoneLink.local_ip()}:{args.port} — sem celular, a IA "
+                  "local do PC assume")
+            practice.run(args.ets2, map_path=args.map, rec_path=rec,
+                         inject=args.inject, window=args.window,
+                         phone=link)
+        else:
+            practice.run(args.ets2, map_path=args.map, rec_path=rec,
+                         inject=args.inject, window=args.window)
         return
     layers = None if (args.sem_janela and args.somente_celular) else load_policy()
     injector = KeyInjector(args.window, args.inject)
