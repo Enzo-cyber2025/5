@@ -81,8 +81,15 @@ jobs:
               if new["mse_val"] < cur.get("mse_val", 9.9):
                   shutil.copyfile(".cache/kaggle-out/model-weights.json",
                                   "artifacts/model-weights.json")
-                  shutil.copyfile(".cache/kaggle-out/metrics.json",
-                                  "artifacts/metrics.json")
+                  # enriquece o metrics da cadeia com as chaves que o repo
+                  # espera (meta/target_met/weights_source) ANTES de copiar
+                  _wm = json.load(open(".cache/kaggle-out/model-weights.json"))["meta"]
+                  new["meta"] = _wm
+                  new["target_met"] = bool(
+                      new["mse_val"] <= new.get("loss_target", 0.15))
+                  new["weights_source"] = "cadeia-kaggle"
+                  json.dump(new, open("artifacts/metrics.json", "w"),
+                            indent=2)
                   Path("/tmp/promoted").write_text("1")
                   print(f"[chain] pesos PROMOVIDOS: val {new['mse_val']:.5f}")
               else:

@@ -24,5 +24,49 @@
   "data_seed": 20260931,
   "data_fingerprint": "01819f1f44b87ac8",
   "dtype": "float32",
-  "streaming": true
+  "streaming": true,
+  "meta": {
+    "features": [
+      "speed",
+      "lane_offset",
+      "heading_error",
+      "curv_1",
+      "curv_2",
+      "curv_3",
+      "curv_4",
+      "curv_5",
+      "speed_limit",
+      "fuel",
+      "fatigue",
+      "job_dist",
+      "radar_dist"
+    ],
+    "actions": [
+      "steer",
+      "throttle",
+      "brake"
+    ],
+    "hidden": [
+      290,
+      290,
+      290,
+      290,
+      290,
+      290,
+      290,
+      290,
+      290,
+      290,
+      290,
+      290,
+      290
+    ],
+    "seed": 20260930,
+    "loss_target": 0.15,
+    "epochs": null,
+    "samples": 12513164941,
+    "final_loss": 0.004322516731917858
+  },
+  "target_met": true,
+  "weights_source": "cadeia-kaggle"
 }

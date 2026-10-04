@@ -216,8 +216,12 @@ save_weights(_os.path.join(_OUT, "model-weights.json"), _layers,
              model_meta(epochs=None, samples=_cum_total, loss=_loss_va,
                         dtype="float64" if _DTYPE == np.float64 else None))
 with open(_os.path.join(_OUT, "metrics.json"), "w", encoding="utf-8") as _f:
+    _mw = model_meta(epochs=None, samples=_cum_total, loss=_loss_va,
+                     dtype="float64" if _DTYPE == np.float64 else None)
     _json.dump({"mse_train": _loss_tr, "mse_val": _loss_va,
                 "loss_target": LOSS_TARGET, "closed_loop": _agg,
+                "target_met": bool(_loss_va <= LOSS_TARGET),
+                "weights_source": "kaggle-chain", "meta": _mw,
                 "trained_on_gpu": _TRAIN_GPU, "n_gpus": len(_gpus),
                 "samples_consumed": int(_consumed),
                 "cumulative_samples": _cum_total,
