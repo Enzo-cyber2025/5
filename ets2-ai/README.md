@@ -335,6 +335,11 @@ distintos, e o `metrics.json` registra `data_seed` + impressão digital
 (sha256) do primeiro lote, conferida na colheita. Zero metros treinados
 duas vezes; e a mesma semente é reproduzível (auditável).
 
+**Próxima alavanca (a validar):** precisão mista (FP16 nos tensor cores da
+T4) numa sessão-canário curta antes de virar padrão da cadeia — potencial
+de mais ~2× em cima do pipeline. Só entra depois de provada (gates no
+circuito fechado).
+
 ## Praticar no ETS2 real (v0.4.4+) — IMPLEMENTADO
 
 O caminho do aprendizado no jogo de verdade está pronto (passo a passo em
