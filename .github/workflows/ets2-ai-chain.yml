@@ -246,8 +246,8 @@ jobs:
     steps:
       - name: Espera
         run: |
-          if [ "${{ needs.step.outputs.empurrou }}" = "retry" ]; then sleep 120
-          elif [ "${{ needs.step.outputs.empurrou }}" = "wait" ]; then sleep 350
+          if [ "${{ needs.step.outputs.empurrou }}" = "retry" ]; then sleep 21000
+          elif [ "${{ needs.step.outputs.empurrou }}" = "wait" ]; then sleep 20900
           else sleep 350; fi
   aguarda-b:
     name: Aguarda a sessao Kaggle terminar (2/3)
