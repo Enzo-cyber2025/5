@@ -325,9 +325,9 @@ Você **não precisa dirigir** para gerar dados de treino:
 
 O workflow `ets2-ai-chain.yml` encadeia sessões de ~11,5 h nas 2× T4 do
 Kaggle que **retomam do checkpoint** (dataset privado) e acumulam amostras
-até passar de **500 bilhões** (~1,25 bilhão de km simulados) — contador ao
+até passar de **500 bilhões** (~1,25 bilhão de km simulados; treino *pipelined* — a CPU gera o próximo lote enquanto a T4 treina o atual) — contador ao
 vivo em `CHAIN.md` e status da sessão em `STATUS.md`. Sem tocar no PC do
-usuário; cota gratuita do Kaggle (2 sessões/semana ≈ 23 h de 30 h).
+usuário; cota gratuita do Kaggle (3 sessões/semana — seg/qui/sab — ≈ 29,5 h de 30 h; sábado com sessão curta de 6,5 h).
 
 **Garantia de não-repetição**: a semente de dados de cada sessão é
 `SEED + amostras acumuladas` — sessões distintas geram estradas e caminhões

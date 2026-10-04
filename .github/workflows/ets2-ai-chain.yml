@@ -7,13 +7,14 @@ name: ETS2-AI cadeia 500B (sessoes 2xT4 encadeadas)
 #   1. COLHE a sessao anterior (se completa) — valida gates, versiona o
 #      checkpoint e promove os pesos ao repo se melhoraram;
 #   2. EMPURRA a proxima sessao (se a meta ainda nao foi atingida).
-# Roda seg + qui (cron) e a cada push neste arquivo. 2 sessoes/week ~ 23 h
+# Roda seg/qui/sab (cron) e a cada push neste arquivo. 3 sessoes/week ~ 29,5 h
 # de GPU = dentro da cota gratuita do Kaggle (30 h/week).
 
 on:
   workflow_dispatch:
   schedule:
     - cron: "0 8 * * 1,4"
+    - cron: "0 8 * * 6"
     # colheita extra da 1a sessao da cadeia 500B (sab 04/10/2026):
     # 06:30 UTC = ~1h apos o fim da sessao de 11,5 h; 08:30 = reserva
     - cron: "30 6 4 10 *"
@@ -95,7 +96,7 @@ jobs:
                    f"(~{(400_000_000_000 - cum) * 2.5 / 1000:,.0f} km) |\n")
                 + "| garantia anti-repeticao | semente da sessao = SEED + acumulado — nenhuma sessao repete dados (impressao digital no metrics.json) |\n"
                 "| sessao media | 2x T4, ~11,5 h, FP32 em fluxo |\n\n"
-                "Cada janela (seg/qui) colhe a sessao anterior, versiona o "
+                "Cada janela (seg/qui/sab) colhe a sessao anterior, versiona o "
                 "checkpoint privado (Kaggle) e empurra a proxima. Automatico.\n")
           Path("CHAIN.md").write_text(md, encoding="utf-8")
           print(f"[chain] CHAIN.md atualizado: {cum:,} ({pct:.1f}%)")
@@ -141,7 +142,9 @@ jobs:
             exit 0
           fi
           cd ets2-ai
-          ETS2AI_SAMPLES=15000000000 ETS2AI_MAX_SECONDS=41400 \
+          SEC=41400
+          if [ "$(date -u +%u)" = "6" ]; then SEC=23400; fi   # sab: 6,5 h (cota 30 h/sem)
+          ETS2AI_SAMPLES=15000000000 ETS2AI_MAX_SECONDS=$SEC \
             python kaggle/push.py --chain 2>&1 | tee ../.cache_chain.log
           exit ${PIPESTATUS[0]}
       - name: Status ao vivo da sessao Kaggle (committa STATUS.md)
@@ -164,7 +167,7 @@ jobs:
           | status | $ST |
           | amostras acumuladas (ultima colheita) | $CUM |
           | meta | 500.000.000.000 amostras (~1,25 bilhao de km simulados) |
-          | janelas | seg e qui, 08:00 UTC — colhe, promove e empurra sozinho |
+          | janelas | seg, qui e sab, 08:00 UTC — colhe, promove e empurra sozinho |
           | atualizado | $WHEN |
 
           Fonte: API do Kaggle consultada pelo workflow da cadeia em cada janela.

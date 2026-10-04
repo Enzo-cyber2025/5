@@ -120,8 +120,32 @@ if _tf is not None and len(_gpus) >= 1:
         print(f"[kaggle] seed de dados desta sessao: {_data_seed} "
               f"(estradas/caminhoes novos; validacao fixa p/ comparabilidade)")
     _fp = None   # impressao digital do 1o lote: prova que os dados sao novos
-    print("[kaggle] gerando dados em fluxo e treinando...")
-    for _x, _y in stream(_data_seed, n_trucks=3072):
+    # PIPELINE: a CPU gera o proximo lote ENQUANTO a GPU treina o atual.
+    # Mesma sequencia de dados (stream intacto — determinismo e impressao
+    # digital preservados); o ganho vem de sobrepor geracao e treino
+    # (antes: g+t por lote; agora: max(g,t) por lote).
+    import queue as _queue
+    import threading as _threading
+    _q = _queue.Queue(maxsize=2)
+    _ERR = object()
+
+    def _produce():
+        try:
+            for _cx, _cy in stream(_data_seed, n_trucks=3072):
+                _q.put((_cx, _cy))
+            _q.put(None)
+        except BaseException as _e:
+            _q.put((_ERR, _e))
+
+    _threading.Thread(target=_produce, daemon=True).start()
+    print("[kaggle] gerando dados em fluxo e treinando (pipelined)...")
+    while True:
+        _item = _q.get()
+        if _item is None:
+            break
+        if isinstance(_item, tuple) and len(_item) == 2 and _item[0] is _ERR:
+            raise _item[1]
+        _x, _y = _item
         if _consumed >= _SAMPLES or (_time.time() - _t0) > _MAX_SEC:
             break
         if _fp is None:
