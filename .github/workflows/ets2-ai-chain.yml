@@ -178,7 +178,14 @@ jobs:
           ETS2AI_SAMPLES=15000000000 ETS2AI_MAX_SECONDS=$SEC \
             python kaggle/push.py --chain 2>&1 | tee ../.cache_chain.log
           rc=${PIPESTATUS[0]}
-          if [ "$rc" = "0" ]; then echo "empurrou=1" >> "$GITHUB_OUTPUT"; fi
+          WAITH=$(grep -o 'CHAIN_WAIT_H=[0-9.]*' ../.cache_chain.log 2>/dev/null | tail -1 | cut -d= -f2)
+          if [ -n "$WAITH" ]; then
+            echo "empurrou=wait" >> "$GITHUB_OUTPUT"
+            echo "wait_h=$WAITH" >> "$GITHUB_OUTPUT"
+            echo "governador de cota: sem orcamento esta semana — retry em ${WAITH}h"
+          elif [ "$rc" = "0" ]; then
+            echo "empurrou=1" >> "$GITHUB_OUTPUT"
+          fi
           exit $rc
       - name: Status ao vivo da sessao Kaggle (committa STATUS.md)
         if: always()
@@ -207,6 +214,7 @@ jobs:
           MD
           git config user.name "ets2ai-chain"; git config user.email "chain@users.noreply.github.com"
           git add STATUS.md
+          git add .chain-sessions.json 2>/dev/null || true   # ledger do governador de cota
           if git diff --cached --quiet; then
             echo "status sem mudanca"
           else
@@ -231,18 +239,19 @@ jobs:
   aguarda-a:
     name: Aguarda a sessao Kaggle terminar (1/3)
     needs: step
-    if: needs.step.result == 'success' && (needs.step.outputs.empurrou == '1' || needs.step.outputs.empurrou == 'retry')
+    if: needs.step.result == 'success' && (needs.step.outputs.empurrou == '1' || needs.step.outputs.empurrou == 'retry' || needs.step.outputs.empurrou == 'wait')
     runs-on: ubuntu-latest
     timeout-minutes: 358
     steps:
       - name: Espera
         run: |
           if [ "${{ needs.step.outputs.empurrou }}" = "retry" ]; then sleep 120
+          elif [ "${{ needs.step.outputs.empurrou }}" = "wait" ]; then sleep 350
           else sleep 350; fi
   aguarda-b:
     name: Aguarda a sessao Kaggle terminar (2/3)
     needs: [step, aguarda-a]
-    if: needs.step.result == 'success' && needs.step.outputs.empurrou == '1' && needs.step.outputs.sec == '41400'
+    if: needs.step.result == 'success' && (needs.step.outputs.empurrou == 'wait' || (needs.step.outputs.empurrou == '1' && needs.step.outputs.sec == '41400'))
     runs-on: ubuntu-latest
     timeout-minutes: 358
     steps:
@@ -251,7 +260,7 @@ jobs:
   aguarda-c:
     name: Aguarda a sessao Kaggle terminar (3/3)
     needs: [step, aguarda-b]
-    if: always() && needs.step.result == 'success' && (needs.step.outputs.empurrou == '1' || needs.step.outputs.empurrou == 'retry')
+    if: always() && needs.step.result == 'success' && (needs.step.outputs.empurrou == '1' || needs.step.outputs.empurrou == 'retry' || needs.step.outputs.empurrou == 'wait')
     runs-on: ubuntu-latest
     timeout-minutes: 358
     steps:
@@ -264,7 +273,7 @@ jobs:
   proximo-ciclo:
     name: Dispara o proximo ciclo (colheita automatica)
     needs: [step, aguarda-c]
-    if: always() && needs.step.result == 'success' && (needs.step.outputs.empurrou == '1' || needs.step.outputs.empurrou == 'retry') && needs.step.outputs.meta != '1'
+    if: always() && needs.step.result == 'success' && (needs.step.outputs.empurrou == '1' || needs.step.outputs.empurrou == 'retry' || needs.step.outputs.empurrou == 'wait') && needs.step.outputs.meta != '1'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

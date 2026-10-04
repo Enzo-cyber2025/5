@@ -101,8 +101,31 @@ def _version_checkpoint(user, msg):
     return r.returncode == 0
 
 
+LEDGER = ROOT / ".chain-sessions.json"
+WEEK_CAP_H = 28.5          # teto semanal com folga vs 30 h do Kaggle
+
+
+def _week_ledger():
+    """(horas orcadas nos ultimos 7 dias, entrada mais antiga na janela)."""
+    import time as _t
+    try:
+        ent = json.loads(LEDGER.read_text())
+    except Exception:
+        return 0.0, None
+    now = _t.time()
+    ent = [e for e in ent if now - e.get("t", 0) < 7 * 86400]
+    used = sum(e.get("sec", 0) for e in ent) / 3600.0
+    oldest = min((e["t"] for e in ent), default=None)
+    return used, oldest
+
+
 def chain(user):
-    """Empurra a proxima sessao da cadeia (NAO espera: sessao de ~12 h)."""
+    """Empurra a proxima sessao da cadeia (NAO espera: sessao de ~12 h).
+
+    Governador de cota: soma o orcamento das sessoes dos ultimos 7 dias
+    (ledger .chain-sessions.json) e nunca deixa a semana passar de
+    WEEK_CAP_H horas. Sem orcamento suficiente, imprime CHAIN_WAIT_H=N
+    (horas ate tentar de novo) e sai 0 — o workflow agenda o retry."""
     global _user
     _user = user
     if not _dataset_exists(user):
@@ -114,12 +137,27 @@ def chain(user):
     kdir.mkdir(parents=True, exist_ok=True)
     sys.path.insert(0, str(HERE))
     import build_kernel
+    used_h, oldest = _week_ledger()
+    requested_h = float(os.environ.get("ETS2AI_MAX_SECONDS", "41400")) / 3600.0
+    remaining_h = WEEK_CAP_H - used_h
+    if remaining_h < 2.0:
+        import time as _t
+        wait_h = 12.0 if oldest is None else \
+            max(1.0, (oldest + 7 * 86400 - _t.time()) / 3600.0 + 1.0)
+        wait_h = min(wait_h, 11.5)
+        print(f"CHAIN_WAIT_H={wait_h:.1f}")
+        print(f"[chain] governador de cota: {used_h:.1f} h nos ultimos 7 dias, "
+              f"restam {remaining_h:.1f} h — aguardando {wait_h:.1f} h")
+        return 0
+    budget_sec = int(min(requested_h, remaining_h) * 3600)
+    print(f"[chain] governador de cota: {used_h:.1f} h nos ultimos 7 dias | "
+          f"sessao de {budget_sec/3600:.1f} h (pedido {requested_h:.1f} h)")
     src = build_kernel.build()
     # O kernel roda no Kaggle SEM estas variaveis de ambiente — assamos o
     # orcamento da cadeia DENTRO do script (a sessao de 11,5 h so acontece
     # se o teto de amostras/tempo vier gravado, nao do env do runner).
     _samples = int(os.environ.get("ETS2AI_SAMPLES", "15000000000"))
-    _max_sec = float(os.environ.get("ETS2AI_MAX_SECONDS", "41400"))
+    _max_sec = budget_sec
     src = src.replace('_os.environ.get("ETS2AI_SAMPLES", "1000000000")',
                       str(_samples))
     src = src.replace('_os.environ.get("ETS2AI_MAX_SECONDS", "10800")',
@@ -148,6 +186,13 @@ def chain(user):
                   "tenta de novo (automatico)")
             return 0
         return 1
+    import time as _t
+    try:
+        ent = json.loads(LEDGER.read_text()) if LEDGER.exists() else []
+    except Exception:
+        ent = []
+    ent.append({"t": _t.time(), "sec": budget_sec})
+    LEDGER.write_text(json.dumps(ent[-40:], indent=1), encoding="utf-8")
     print(f"[chain] SESSAO EMPURRADA: https://www.kaggle.com/code/{user}/{SLUG_SUFFIX}")
     print("[chain] ~12 h de 2x T4; a colheita acontece na proxima janela "
           "agendada (--harvest)")
@@ -293,12 +338,27 @@ def main():
     kdir.mkdir(parents=True, exist_ok=True)
     sys.path.insert(0, str(HERE))
     import build_kernel
+    used_h, oldest = _week_ledger()
+    requested_h = float(os.environ.get("ETS2AI_MAX_SECONDS", "41400")) / 3600.0
+    remaining_h = WEEK_CAP_H - used_h
+    if remaining_h < 2.0:
+        import time as _t
+        wait_h = 12.0 if oldest is None else \
+            max(1.0, (oldest + 7 * 86400 - _t.time()) / 3600.0 + 1.0)
+        wait_h = min(wait_h, 11.5)
+        print(f"CHAIN_WAIT_H={wait_h:.1f}")
+        print(f"[chain] governador de cota: {used_h:.1f} h nos ultimos 7 dias, "
+              f"restam {remaining_h:.1f} h — aguardando {wait_h:.1f} h")
+        return 0
+    budget_sec = int(min(requested_h, remaining_h) * 3600)
+    print(f"[chain] governador de cota: {used_h:.1f} h nos ultimos 7 dias | "
+          f"sessao de {budget_sec/3600:.1f} h (pedido {requested_h:.1f} h)")
     src = build_kernel.build()
     # O kernel roda no Kaggle SEM estas variaveis de ambiente — assamos o
     # orcamento da cadeia DENTRO do script (a sessao de 11,5 h so acontece
     # se o teto de amostras/tempo vier gravado, nao do env do runner).
     _samples = int(os.environ.get("ETS2AI_SAMPLES", "15000000000"))
-    _max_sec = float(os.environ.get("ETS2AI_MAX_SECONDS", "41400"))
+    _max_sec = budget_sec
     src = src.replace('_os.environ.get("ETS2AI_SAMPLES", "1000000000")',
                       str(_samples))
     src = src.replace('_os.environ.get("ETS2AI_MAX_SECONDS", "10800")',
