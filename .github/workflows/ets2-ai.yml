@@ -213,8 +213,9 @@ jobs:
           if git diff --cached --quiet; then
             echo "pesos inalterados — nada a commitar"
           else
-            git commit -m "pesos canonicos v0.4.4 (fonte: ${{ steps.fonte.outputs.source }}) [skip ci]"
-            git push
+            git commit -m "pesos canonicos (fonte: ${{ steps.fonte.outputs.source }}) [skip ci]"
+            git pull --rebase --autostash origin arena/01a0f37d-5 || true
+            git push || { git pull --rebase --autostash origin arena/01a0f37d-5 || true; git push; }
           fi
       - uses: actions/upload-artifact@v4
         with:
