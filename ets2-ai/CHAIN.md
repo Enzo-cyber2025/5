@@ -1,14 +1,11 @@
-<!-- rebuild final: IA 12,5B + paridade f64 -->
-<!-- rebuild: pesos 12,5B (mse 0.004323) -->
-<!-- build: pesos da cadeia 12,5B (mse 0.004323) -->
 # Cadeia de treino 500B — contador ao vivo
 
 | metrica | valor |
 |---|---|
-| amostras acumuladas | **12,513,164,941** |
-| % da meta (500 bilhoes de amostras = ~1,25 bilhao de km) | **2.50%** |
-| km simulados equivalentes | ~31,282,912 km |
-| certificado 1 BILHAO de km (400 bi de amostras) | ainda nao — faltam 387,486,835,059 amostras (~968,717,088 km) |
+| amostras acumuladas | **12,981,325,251** |
+| % da meta (500 bilhoes de amostras = ~1,25 bilhao de km) | **2.60%** |
+| km simulados equivalentes | ~32,453,313 km |
+| certificado 1 BILHAO de km (400 bi de amostras) | ainda nao — faltam 387,018,674,749 amostras (~967,546,687 km) |
 | garantia anti-repeticao | semente da sessao = SEED + acumulado — nenhuma sessao repete dados (impressao digital no metrics.json) |
 | sessao media | 2x T4, ~11,5 h, FP32 em fluxo |
 
