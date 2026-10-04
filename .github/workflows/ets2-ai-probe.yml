@@ -1,0 +1,112 @@
+name: ETS2-AI sonda de checkpoint (dataset Kaggle anexado?)
+
+# Sonda diagnostica: empurra um kernel MINUSCULO (sem GPU, ~30 s) com a
+# MESMA configuracao de dataset_sources das sessoes da cadeia e reporta
+# como o checkpoint e montado em /kaggle/input. Responde de forma
+# definitiva por que as sessoes nao estao retomando os pesos.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [arena/01a0f37d-5]
+    paths: ['.github/workflows/ets2-ai-probe.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  sonda:
+    name: Empurra kernel-sonda e le o resultado
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: arena/01a0f37d-5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Dependencias
+        run: pip install --retries 5 --timeout 90 kaggle
+      - name: Sonda
+        env:
+          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_KEY }}
+        run: |
+          cd ets2-ai
+          python3 - <<'PY'
+          import json, os, subprocess, time
+          from pathlib import Path
+
+          d = Path(".cache/probe"); d.mkdir(parents=True, exist_ok=True)
+          (d / "probe.py").write_text('''
+          import glob, json, os
+          out = []
+          try:
+              out.append("listdir /kaggle/input: " + str(os.listdir("/kaggle/input")))
+          except Exception as e:
+              out.append("listdir falhou: " + repr(e))
+          hits = glob.glob("/kaggle/input/**/model-weights.json", recursive=True)
+          out.append("glob model-weights.json: " + str(hits))
+          for h in hits:
+              try:
+                  m = json.load(open(h))["meta"]
+                  out.append(f"OK {h}: samples={m.get('samples')} loss={m.get('final_loss')}")
+              except Exception as e:
+                  out.append(f"ilegivel {h}: {e!r}")
+          if not hits:
+              # varredura completa para achar onde (se) os arquivos montaram
+              everything = glob.glob("/kaggle/input/**", recursive=True)
+              out.append("conteudo completo (primeiros 40): " + str(everything[:40]))
+          open("/kaggle/working/probe-result.txt", "w").write("\\n".join(out))
+          print("\\n".join(out))
+          ''')
+          meta = {
+              "id": "enzoaimv/ets2ai-probe",
+              "title": "ets2ai-probe",
+              "code_file": "probe.py",
+              "language": "python",
+              "kernel_type": "script",
+              "is_private": "true",
+              "enable_gpu": "false",
+              "enable_internet": "false",
+              "dataset_sources": ["enzoaimv/ets2ai-checkpoint"],
+          }
+          (d / "kernel-metadata.json").write_text(json.dumps(meta))
+          r = subprocess.run(["kaggle", "kernels", "push", "-p", str(d)],
+                             capture_output=True, text=True)
+          print(r.stdout or r.stderr)
+          if r.returncode != 0:
+              raise SystemExit(1)
+          status = "unknown"
+          for _ in range(40):
+              time.sleep(12)
+              s = subprocess.run(["kaggle", "kernels", "status",
+                                  "enzoaimv/ets2ai-probe"],
+                                 capture_output=True, text=True)
+              out = (s.stdout + s.stderr).lower()
+              if "complete" in out and "notcomplete" not in out and "running" not in out:
+                  status = "complete"; break
+              if "error" in out:
+                  status = "error"; break
+          print("status final da sonda:", status)
+          if status != "complete":
+              raise SystemExit("sonda nao concluiu: " + status)
+          o = Path(".cache/probe-out"); o.mkdir(exist_ok=True)
+          r = subprocess.run(["kaggle", "kernels", "output",
+                              "enzoaimv/ets2ai-probe", "-p", str(o)],
+                             capture_output=True, text=True)
+          print(r.stdout or r.stderr)
+          res = (o / "probe-result.txt")
+          print("=== RESULTADO DA SONDA ===")
+          print(res.read_text() if res.exists() else "(sem resultado)")
+          PY
+      - name: Salva resultado no repo
+        run: |
+          git config user.name "ci-diag"; git config user.email "ci-diag@users.noreply.github.com"
+          mkdir -p ci-logs/probe
+          cp ets2-ai/.cache/probe-out/probe-result.txt ci-logs/probe/resultado.txt 2>/dev/null \
+            || echo "sem saida" > ci-logs/probe/resultado.txt
+          git add ci-logs/probe || true
+          git commit -m "sonda: como o checkpoint monta no Kaggle [skip ci]" || true
+          git pull --rebase --autostash origin arena/01a0f37d-5 || true
+          git push || true
