@@ -102,6 +102,7 @@ def export(weights_path, out_path, n_check=2048, seed=7):
     if max_diff > 5e-5:
         raise SystemExit(f"FALHA paridade numpy x torch: max diff {max_diff:.3e}")
 
+    model.float()   # restaura: o ARQUIVO sai em float32 (deploy)
     scripted = torch.jit.script(model)
     scripted.save(str(out_path))
 
