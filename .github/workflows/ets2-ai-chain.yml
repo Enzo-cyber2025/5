@@ -50,12 +50,23 @@ jobs:
         env:
           KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
           KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_KEY }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set +e
           cd ets2-ai
           python kaggle/push.py --harvest 2>&1 | tee ../.cache_harvest.log
-          echo "exit=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+          RC=${PIPESTATUS[0]}
+          echo "exit=$RC" >> "$GITHUB_OUTPUT"
           set -e
+          # publica o checkpoint na release: as proximas sessoes baixam dele
+          # (o dataset do Kaggle NAO esta montando — provado por sonda).
+          # So com gates VERDES — retomar de pesos ruins propagaria o erro.
+          if [ "$RC" = "0" ] && [ -f .cache/kaggle-out/model-weights.json ]; then
+            cp .cache/kaggle-out/model-weights.json /tmp/checkpoint-chain.json
+            gh release upload ets2-ai-v0.4.6 /tmp/checkpoint-chain.json --clobber \
+              && echo "[harvest] checkpoint-chain.json na release (resume garantido)" \
+              || echo "::warning::falha ao publicar checkpoint na release"
+          fi
       - name: Promove pesos melhores + atualiza o contador da cadeia
         env:
           HARVEST_EXIT: ${{ steps.harvest.outputs.exit }}

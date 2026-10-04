@@ -76,7 +76,26 @@ if _resume_w:
     print(f"[kaggle] CHECKPOINT: {_resume_w} — retomando de "
           f"{_cum_prev:,} amostras acumuladas")
 else:
-    print("[kaggle] sem checkpoint — comecando do zero (seed fixa do repo)")
+    # O dataset de checkpoint NAO esta montando (provado por sonda: input
+    # vazio) — baixa o checkpoint da release do GitHub. As sessoes da cadeia
+    # retomam de onde pararam; se nem isso der, comeca do zero (dados novos
+    # de qualquer forma, seed = SEED+1+acumulado).
+    try:
+        import urllib.request as _urlreq
+        _os.makedirs(".cache/checkpoint", exist_ok=True)
+        _dst = ".cache/checkpoint/model-weights.json"
+        print("[kaggle] baixando checkpoint da release do GitHub...", flush=True)
+        _urlreq.urlretrieve(
+            "https://github.com/Enzo-cyber2025/5/releases/download/"
+            "ets2-ai-v0.4.6/checkpoint-chain.json", _dst)
+        _m = _json.load(open(_dst, encoding="utf-8"))["meta"]
+        _cum_prev = int(_m.get("samples", 0) or 0)
+        _resume_w = _dst
+        print(f"[kaggle] CHECKPOINT REMOTO OK: retomando de "
+              f"{_cum_prev:,} amostras acumuladas")
+    except Exception as _e:
+        print(f"[kaggle] sem checkpoint remoto ({_e.__class__.__name__}) "
+              f"— comecando do zero (seed fixa do repo)")
 
 if _tf is not None and len(_gpus) >= 1:
     # ---------------- GPU PATH (2x T4, MirroredStrategy, fluxo) ----------------

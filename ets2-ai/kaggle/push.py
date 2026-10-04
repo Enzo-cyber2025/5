@@ -174,7 +174,7 @@ def chain(user):
         "is_private": "true",
         "enable_gpu": "true",
         "machine_shape": "NvidiaTeslaT4",
-        "enable_internet": "false",
+        "enable_internet": "true",   # baixa o checkpoint da release (dataset nao monta)
         "dataset_sources": [f"{user}/{CKPT_SLUG}"],
     }), encoding="utf-8")
     r = sh("kaggle", "kernels", "push", "-p", kdir)
@@ -378,7 +378,7 @@ def main():
         "is_private": "true",
         "enable_gpu": "true" if args.gpu else "false",
         "machine_shape": "NvidiaTeslaT4" if args.gpu else "",
-        "enable_internet": "false",
+        "enable_internet": "true",   # baixa o checkpoint da release (dataset nao monta)
     }), encoding="utf-8")
 
     r = sh("kaggle", "kernels", "push", "-p", kdir)
