@@ -32,6 +32,10 @@ jobs:
     name: Colhe sessao anterior + empurra a proxima
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    outputs:
+      empurrou: ${{ steps.empurra.outputs.empurrou }}
+      sec: ${{ steps.empurra.outputs.sec }}
+      meta: ${{ steps.empurra.outputs.meta }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -144,6 +148,7 @@ jobs:
               || echo "::warning::build nao disparado — rode manualmente"
           fi
       - name: Empurra a proxima sessao (meta de 500 bilhoes)
+        id: empurra
         env:
           KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
           KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_KEY }}
@@ -155,19 +160,25 @@ jobs:
               CUM=0
             else
               echo "sessao anterior ainda rodando — nao empurro outra"
+              echo "empurrou=retry" >> "$GITHUB_OUTPUT"
               exit 0
             fi
           fi
           if [ "$CUM" -ge 500000000000 ]; then
             echo "META ATINGIDA: $CUM amostras acumuladas"
+            echo "empurrou=0" >> "$GITHUB_OUTPUT"
+            echo "meta=1" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           cd ets2-ai
           SEC=41400
           if [ "$(date -u +%u)" = "6" ]; then SEC=23400; fi   # sab: 6,5 h (cota 30 h/sem)
+          echo "sec=$SEC" >> "$GITHUB_OUTPUT"
           ETS2AI_SAMPLES=15000000000 ETS2AI_MAX_SECONDS=$SEC \
             python kaggle/push.py --chain 2>&1 | tee ../.cache_chain.log
-          exit ${PIPESTATUS[0]}
+          rc=${PIPESTATUS[0]}
+          if [ "$rc" = "0" ]; then echo "empurrou=1" >> "$GITHUB_OUTPUT"; fi
+          exit $rc
       - name: Status ao vivo da sessao Kaggle (committa STATUS.md)
         if: always()
         env:
@@ -202,6 +213,52 @@ jobs:
             git pull --rebase --autostash origin arena/01a0f37d-5 || true
             git push
           fi
+  aguarda-a:
+    name: Aguarda a sessao Kaggle terminar (1/3)
+    needs: step
+    if: needs.step.result == 'success' && (needs.step.outputs.empurrou == '1' || needs.step.outputs.empurrou == 'retry')
+    runs-on: ubuntu-latest
+    timeout-minutes: 358
+    steps:
+      - name: Espera
+        run: |
+          if [ "${{ needs.step.outputs.empurrou }}" = "retry" ]; then sleep 120
+          else sleep 350; fi
+  aguarda-b:
+    name: Aguarda a sessao Kaggle terminar (2/3)
+    needs: [step, aguarda-a]
+    if: needs.step.result == 'success' && needs.step.outputs.empurrou == '1' && needs.step.outputs.sec == '41400'
+    runs-on: ubuntu-latest
+    timeout-minutes: 358
+    steps:
+      - name: Espera
+        run: sleep 350
+  aguarda-c:
+    name: Aguarda a sessao Kaggle terminar (3/3)
+    needs: [step, aguarda-b]
+    if: always() && needs.step.result == 'success' && (needs.step.outputs.empurrou == '1' || needs.step.outputs.empurrou == 'retry')
+    runs-on: ubuntu-latest
+    timeout-minutes: 358
+    steps:
+      - name: Margem final
+        run: |
+          if [ "${{ needs.step.outputs.empurrou }}" = "retry" ]; then S=10
+          elif [ "${{ needs.step.outputs.sec }}" = "41400" ]; then S=15
+          else S=65; fi
+          sleep $S
+  proximo-ciclo:
+    name: Dispara o proximo ciclo (colheita automatica)
+    needs: [step, aguarda-c]
+    if: always() && needs.step.result == 'success' && (needs.step.outputs.empurrou == '1' || needs.step.outputs.empurrou == 'retry') && needs.step.outputs.meta != '1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Self-dispatch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run ets2-ai-chain.yml --ref arena/01a0f37d-5
+          echo "[cadeia] proximo ciclo agendado — a cadeia se perpetua sozinha (cron nao dispara fora da branch default)"
       - name: Diagnostico (logs em caso de falha)
         if: failure()
         run: |
