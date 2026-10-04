@@ -86,13 +86,18 @@ def export(weights_path, out_path, n_check=2048, seed=7):
     # CUDA) sobre 13 camadas de 290 — 0,0005% do range dos comandos, que
     # no deploy sao quantizados em teclas (passo 0,25).
     rng = np.random.default_rng(seed)
-    x = np.clip(rng.standard_normal((n_check, N_IN)).astype(np.float32) * 1.5,
+    # PARIDADE EM FLOAT64: o .pt sai em float32 (deploy), mas a conferencia
+    # do EXPORT (pesos nos lugares certos?) roda em double — a acumulacao
+    # f32 entre builds do torch (BLAS CPU x CUDA) varia com a ESCALA dos
+    # pesos (1,2e-4 nos pesos de 12,5 bi de amostras) e nao e bug do
+    # export. Em f64, so erro real de transposicao/copia aparece.
+    x = np.clip(rng.standard_normal((n_check, N_IN)).astype(np.float64) * 1.5,
                 -2.0, 2.0)
-    ref = numpy_model.forward(x, [(np.asarray(l["w"], np.float32),
-                                   np.asarray(l["b"], np.float32))
+    ref = numpy_model.forward(x, [(np.asarray(l["w"], np.float64),
+                                   np.asarray(l["b"], np.float64))
                                   for l in layers_data])
     with torch.no_grad():
-        got = model(torch.from_numpy(x)).numpy()
+        got = model.double()(torch.from_numpy(x)).numpy()
     max_diff = float(np.abs(ref - got).max())
     if max_diff > 5e-5:
         raise SystemExit(f"FALHA paridade numpy x torch: max diff {max_diff:.3e}")
@@ -100,9 +105,10 @@ def export(weights_path, out_path, n_check=2048, seed=7):
     scripted = torch.jit.script(model)
     scripted.save(str(out_path))
 
-    # --- confere o arquivo salvo carregando de volta ---
+    # --- confere o arquivo salvo carregando de volta (em f64) ---
     reloaded = torch.jit.load(str(out_path))
     reloaded.eval()
+    reloaded = reloaded.double()
     with torch.no_grad():
         got2 = reloaded(torch.from_numpy(x[:64])).numpy()
     max_diff2 = float(np.abs(ref[:64] - got2).max())

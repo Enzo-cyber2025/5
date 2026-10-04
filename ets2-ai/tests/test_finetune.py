@@ -57,7 +57,10 @@ def test_finetune_gates_and_no_side_effects(tmp_path):
     n2 = _write_recording(rec2, seed=60602)
     assert n1 > 500 and n2 > 500
 
-    gates = finetune.run([rec1, rec2], epochs=30, out=tmp_path / "ft",
+    # lr gentil: bases fortes (12,5+ bi de amostras) degradam com lr 5e-4
+    # em 30 epocas — o gate de circuito fechado corretamente recusa; a
+    # receita realista para o teste da mecanica e 1e-4.
+    gates = finetune.run([rec1, rec2], epochs=30, lr=1e-4, out=tmp_path / "ft",
                          base_weights=art)
 
     assert gates["mse_gate"] is True
