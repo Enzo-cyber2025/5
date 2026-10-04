@@ -194,7 +194,7 @@ jobs:
           SEC=41400
           if [ "$(date -u +%u)" = "6" ]; then SEC=23400; fi   # sab: 6,5 h (cota 30 h/sem)
           echo "sec=$SEC" >> "$GITHUB_OUTPUT"
-          ETS2AI_SAMPLES=15000000000 ETS2AI_MAX_SECONDS=$SEC \
+          ETS2AI_SAMPLES=30000000000 ETS2AI_MAX_SECONDS=$SEC \
             python kaggle/push.py --chain 2>&1 | tee ../.cache_chain.log
           rc=${PIPESTATUS[0]}
           WAITH=$(grep -o 'CHAIN_WAIT_H=[0-9.]*' ../.cache_chain.log 2>/dev/null | tail -1 | cut -d= -f2)
