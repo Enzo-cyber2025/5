@@ -1,3 +1,4 @@
+<!-- rebuild: pesos 12,5B (mse 0.004323) -->
 <!-- build: pesos da cadeia 12,5B (mse 0.004323) -->
 # Cadeia de treino 500B — contador ao vivo
 
