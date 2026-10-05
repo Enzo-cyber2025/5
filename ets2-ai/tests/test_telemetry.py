@@ -145,3 +145,53 @@ def test_cascata_de_descoberta_ordem(tmp_path, monkeypatch):
     assert got[0] == game                     # --game-dir primeiro
     assert ordem == ["processo", "discos", "rastros"]
     assert any("repack" not in str(p) or p == game for p in got)
+
+
+def test_caminho_do_jogo_busca_uma_vez_e_salva(tmp_path, monkeypatch):
+    """Cache do caminho: a busca completa roda UMA vez; depois usa o salvo
+    (sem varrer de novo) e so atualiza o estado. Jogo mudou de lugar?
+    Refaz a busca UMA vez e atualiza o arquivo."""
+    import json
+    import ets2ai.telemetry as t
+    game = tmp_path / "g"
+    (game / "bin" / "win_x64").mkdir(parents=True)
+    calls = {"n": 0}
+
+    def fake_dirs(extra=None):
+        calls["n"] += 1
+        return [game]
+
+    monkeypatch.setattr(t, "game_install_dirs", fake_dirs)
+    sf = tmp_path / "state.json"
+
+    got = t.resolve_game_dir(log=None, state_file=sf)
+    assert got == game and calls["n"] == 1            # buscou 1 vez
+    st = json.loads(sf.read_text())
+    assert st["game_dir"] == str(game) and st["runs"] == 1
+
+    got2 = t.resolve_game_dir(log=None, state_file=sf)
+    assert got2 == game and calls["n"] == 1           # NAO buscou de novo
+    st2 = json.loads(sf.read_text())
+    assert st2["runs"] == 2                           # estado atualizado
+
+    # jogo movido: caminho salvo morreu -> busca de novo UMA vez
+    import shutil
+    shutil.rmtree(game)
+    game2 = tmp_path / "g2"
+    (game2 / "bin" / "win_x64").mkdir(parents=True)
+    monkeypatch.setattr(t, "game_install_dirs",
+                        lambda extra=None: [game2])
+    got3 = t.resolve_game_dir(log=None, state_file=sf)
+    assert got3 == game2
+    st3 = json.loads(sf.read_text())
+    assert st3["game_dir"] == str(game2) and st3["runs"] == 1
+
+
+def test_note_state_atualiza_cada_execucao(tmp_path):
+    import ets2ai.telemetry as t
+    sf = tmp_path / "state.json"
+    t.save_game_state({"game_dir": "X"}, sf)
+    t.note_state(state_file=sf, telemetry="mem:1.55", mode="drive")
+    st = t.load_game_state(sf)
+    assert st["game_dir"] == "X" and st["telemetry"] == "mem:1.55"
+    assert st["mode"] == "drive" and "last_seen" in st

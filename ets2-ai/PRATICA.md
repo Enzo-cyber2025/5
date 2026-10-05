@@ -98,7 +98,11 @@ teclado vira correção DAgger.
   rastros do jogo** (atalhos .lnk da Área de Trabalho/Menu Iniciar e
   entradas de desinstalação do registro) > **config padrão**. O parser do
   `controls.sii` também entende **aliases** de perfis antigos
-  (`input k_left \`keyboard.a?0\``).
+  (`input k_left \`keyboard.a?0\``). A busca completa roda **UMA vez** e o
+  caminho fica salvo em `ets2-ai-state.json` (ao lado do .exe): nas
+  execuções seguintes ele é usado direto (sem varrer disco de novo) e o
+  estado é atualizado a cada execução (telemetria usada, modo, nº de
+  execuções). Se o jogo mudar de lugar, refaz a busca uma única vez.
 - **Joystick/volante/gamepad**: todos os controles são vigiados (DirectInput
   + XInput, sem instalar nada). Como a IA só injeta teclas, qualquer
   movimento de eixo/botão de um controle = humano intervindo — a IA solta o

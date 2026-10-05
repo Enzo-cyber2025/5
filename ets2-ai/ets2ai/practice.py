@@ -689,24 +689,28 @@ class PracticeLoop:
 
 
 def _try_install_plugin(game_dir=None, auto=True):
-    """Instala a DLL de telemetria embutida na pasta do jogo (Windows)."""
+    """Instala a DLL de telemetria embutida na pasta do jogo (Windows).
+
+    A pasta do jogo vem do CACHE (resolve_game_dir): busca completa so na
+    1a execucao; depois usa o caminho salvo em ets2-ai-state.json."""
     if os.name != "nt" or not auto:
         return None
     try:
-        already = telemetry.plugin_installed(game_dir)
-        if already is not None:
-            return already
+        gd = telemetry.resolve_game_dir(extra=game_dir, log=print)
+        if gd is None:
+            print("[pratica] pasta do ETS2 nao encontrada — use --game-dir "
+                  "UMA vez (o caminho fica salvo)")
+            return None
+        if telemetry.plugin_dll_path(gd).exists():
+            return gd
         dll = telemetry.find_bundled_dll()
         if dll is None:
-            return None
-        for gd in telemetry.game_install_dirs(game_dir):
-            if (gd / "bin" / "win_x64").exists():
-                dst = telemetry.install_plugin(gd, dll)
-                print(f"[pratica] telemetria AUTO-INSTALADA: {dst} "
-                      "(plugin RenCloud, MIT) — reinicie o ETS2 se ele "
-                      "estiver aberto")
-                return gd
-        print("[pratica] pasta do ETS2 nao encontrada — use --game-dir")
+            return gd
+        dst = telemetry.install_plugin(gd, dll)
+        print(f"[pratica] telemetria AUTO-INSTALADA: {dst} "
+              "(plugin RenCloud, MIT) — reinicie o ETS2 se ele estiver "
+              "aberto")
+        return gd
     except Exception as e:
         print(f"[pratica] auto-install da telemetria falhou: {e}")
     return None
@@ -735,6 +739,11 @@ def run(mode, map_path="practice/mapa.json", rec_path=None, inject=False,
             source = mreader.snapshot
             log(f"[telemetria] SEM DLL — leitura de memoria do processo "
                 f"(pack '{mreader.version}')")
+            try:
+                telemetry.note_state(telemetry=f"mem:{mreader.version}",
+                                     mode=mode)
+            except Exception:
+                pass
         except RuntimeError as e:
             if telemetry_mode == "mem":
                 raise SystemExit(f"[telemetria] sem DLL indisponivel: {e}")
@@ -743,6 +752,10 @@ def run(mode, map_path="practice/mapa.json", rec_path=None, inject=False,
     if source is None:
         try:
             reader = telemetry.TelemetryReader()
+            try:
+                telemetry.note_state(telemetry="dll", mode=mode)
+            except Exception:
+                pass
         except RuntimeError as e:
             # PLUG & PLAY: a DLL de telemetria (MIT, RenCloud) vem DENTRO do
             # .exe — se o jogo estiver instalado, instala sozinho e tenta de

@@ -18,6 +18,7 @@ Sem captura de tela, sem hook no jogo: so leitura de memoria compartilhada
 publicada voluntariamente pelo plugin oficial da SCS.
 """
 import ctypes
+import json as _json
 import os as _os
 import shutil
 import sys
@@ -724,6 +725,86 @@ def _scan_common_roots():
             except Exception:
                 continue
     return hits
+
+
+_STATE_FILENAME = "ets2-ai-state.json"
+
+
+def _state_file(state_file=None):
+    """Arquivo de estado ao lado do .exe (CWD)."""
+    return Path(state_file) if state_file else Path(_STATE_FILENAME)
+
+
+def load_game_state(state_file=None):
+    try:
+        return _json.loads(_state_file(state_file).read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def save_game_state(st, state_file=None):
+    try:
+        p = _state_file(state_file)
+        tmp = p.with_suffix(".tmp")
+        tmp.write_text(_json.dumps(st, indent=1, ensure_ascii=False),
+                       encoding="utf-8")
+        tmp.replace(p)
+        return True
+    except Exception:
+        return False
+
+
+def note_state(state_file=None, **kw):
+    """Atualiza o estado a CADA execucao (telemetria usada, modo, etc.)."""
+    import time as _time
+    st = load_game_state(state_file)
+    st.update(kw)
+    st["last_seen"] = _time.time()
+    save_game_state(st, state_file)
+
+
+def resolve_game_dir(extra=None, log=None, state_file=None, force=False):
+    """Caminho do jogo COM CACHE: a busca completa (processo > Steam > TODOS
+    os discos > rastros > padrao) roda UMA unica vez e o resultado e salvo
+    em ets2-ai-state.json (ao lado do .exe). Nas execucoes seguintes usa o
+    caminho salvo direto — sem varrer disco de novo — e so atualiza o
+    estado (last_seen/runs). Se o caminho salvo deixar de existir (jogo
+    movido/desinstalado), refaz a busca UMA vez e atualiza o arquivo."""
+    import time as _time
+    st = load_game_state(state_file)
+    gd = st.get("game_dir")
+    if not force and gd and dir_looks_like_game(gd):
+        st["last_seen"] = _time.time()
+        st["runs"] = int(st.get("runs", 0)) + 1
+        save_game_state(st, state_file)
+        if log:
+            log(f"[jogo] caminho SALVO (sem busca): {gd} "
+                f"[{st.get('found_by', '?')}, usado {st['runs']}x]")
+        return Path(gd)
+    cand, found_by = None, "busca"
+    for d in game_install_dirs(extra):
+        if dir_looks_like_game(d):
+            cand = d
+            if extra and Path(extra) == d:
+                found_by = "--game-dir"
+            elif _running_game_root() == d:
+                found_by = "processo rodando"
+            break
+    if cand is None:
+        if log:
+            log("[jogo] ETS2 nao encontrado — passe --game-dir UMA vez; o "
+                "caminho fica salvo e nao busca mais")
+        return None
+    novo = {"game_dir": str(cand), "found_by": found_by,
+            "found_at": _time.time(), "last_seen": _time.time(), "runs": 1}
+    for k in ("telemetry", "pack", "mode"):        # preserva o resto
+        if k in st:
+            novo[k] = st[k]
+    save_game_state(novo, state_file)
+    if log:
+        log(f"[jogo] ACHADO ({found_by}): {cand} — salvo em "
+            f"{_STATE_FILENAME}; proximas execucoes NAO buscam de novo")
+    return cand
 
 
 def game_install_dirs(extra=None):
