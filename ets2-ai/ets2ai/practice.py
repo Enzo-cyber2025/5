@@ -41,7 +41,7 @@ import numpy as np
 
 from . import sim, telemetry
 from .contract import load_weights, clamp_action
-from .keys import KeyInjector, Recorder, MACROS
+from .keys import KeyInjector, Recorder, load_keymap
 from . import memtelemetry
 from .model import forward
 from .roadmap import RoadMap, detect_frame, wrap
@@ -161,7 +161,7 @@ class PracticeLoop:
     def __init__(self, mode, road_map, source, layers=None, injector=None,
                  recorder=None, map_path=None, policy_fn=None, phone=None,
                  tick=TICK, clock=time.monotonic, sleep=time.sleep, log=print,
-                 foreign_keys=None, stop_event=None):
+                 foreign_keys=None, stop_event=None, macros=None):
         assert mode in ("record", "drive", "shadow")
         self.mode = mode
         self.road_map = road_map
@@ -186,6 +186,12 @@ class PracticeLoop:
         self._last_ticks, self._ticks_t = None, 0.0
         self._job_start_min = None
         self._override_hold = 0.0   # ate quando o humano manda (drive)
+        self.macros = macros or {}  # teclas ORIGINAIS do jogo (controls.sii)
+        self._signal = None         # None | "left" | "right" (seta acesa)
+        self._last_signal_t = -1e9
+        self._last_pit_t = -1e9     # aviso (combustivel/sono): 30 s
+        self._last_ok_t = -1e9      # Enter de confirmacao: 10 s
+        self._parked_at_dest = False
         self._cold_t0 = None        # arranque frio: quando parou (drive)
         self._last_macro_t = -1e9
         self._fk_ticks = 0          # teclas fisicas estranhas seguidas
@@ -382,6 +388,17 @@ class PracticeLoop:
                 out["source"] = "HUMANO no comando (DAgger)"
             else:
                 self._cold_start(sn, now)
+                self._maybe_signal(meta, sn, now)
+                self._pit_crew(sn, now, job_min)
+                # chegou ao destino: freia ate parar e PUXA O FREIAO DE MAO
+                if 0.0 < route_m <= 1.5 and sn["speed"] < 0.5:
+                    if not self._parked_at_dest:
+                        self._parked_at_dest = True
+                        if self.injector is not None:
+                            self.injector.tap(*self.macros.get(
+                                "park_brake", (0x39, "freio de mao")))
+                        self.log("[pratica] destino: parado — freio de mao "
+                                 "PUXADO e setas apagadas")
                 # mapa ainda vazio: assume MODERADO (11 m/s ~ 40 km/h) ate
                 # se situar (40 pontos de estrada) — a tomada continua
                 # IMEDIATA, so nao acelera tudo no escuro.
@@ -429,6 +446,76 @@ class PracticeLoop:
                     " ESPELHADO. Rode 'record' por 1-2 min e mande o mapa de novo.")
         return f"sinais OK (concordancia {agree*100:.0f}%)"
 
+    def _maybe_signal(self, meta, sn, now):
+        """DAR SETA antes de curvas (teclas ORIGINAIS do jogo). Acende ~60 m
+        antes de curva forte (raio < ~300 m) e apaga quando a estrada
+        endireita — respeitando o auto-cancel do proprio jogo."""
+        curvs = [c for c in (meta.get("curvs") or []) if c is not None]
+        want = None
+        for c in curvs:
+            if abs(c) > 0.0035:
+                want = "right" if c > 0 else "left"
+                break
+        if want == self._signal or now - self._last_signal_t < 1.0:
+            return
+        prev, self._signal = self._signal, want
+        self._last_signal_t = now
+        if self.injector is None:
+            return
+
+        def ind(side):
+            return self.macros.get(
+                f"ind_{side}", (0x1A if side == "left" else 0x1B,
+                                f"seta {side}"))
+
+        if want is not None and prev is None:          # acende
+            self.injector.tap(*ind(want))
+            self.log(f"[pratica] SETA {want.upper()} (curva a frente)")
+        elif want is not None and prev is not None:    # trocou o lado
+            self.injector.tap(*ind(prev))              # apaga a antiga
+        elif want is None and prev is not None:        # endireitou: apaga
+            known = "blinker_left_on" in sn
+            lit = bool(sn.get("blinker_left_on")) or \
+                bool(sn.get("blinker_right_on"))
+            if not known or lit:   # jogo NAO cancelou sozinho (ou nao sei)
+                self.injector.tap(*ind(prev))
+
+    def _pit_crew(self, sn, now, job_min):
+        """ABASTECER e DORMIR (parado no lugar certo, tecla de confirmar).
+
+        Combustivel: < 15% -> avisa; parado 1,5 s em posto (o jogo mostra o
+        dialogo) -> confirma 'abastecer'. Sono: rest_stop=1 ou 9 h de
+        trabalho -> avisa; parado em descanso -> confirma 'dormir'.
+        Precisa de telemetria com fuel/rest_stop (DLL ou pack completo)."""
+        fuel = sn.get("fuel")
+        cap = sn.get("fuel_capacity") or 0.0
+        frac = (fuel / cap) if (fuel is not None and cap > 1.0) else None
+        if frac is not None and frac < 0.15 and now - self._last_pit_t > 30:
+            self.log(f"[pratica] COMBUSTIVEL {frac*100:.0f}% — pare em um "
+                     "posto; a IA confirma o abastecimento")
+            self._last_pit_t = now
+        tired = bool(sn.get("rest_stop")) or job_min > 9.0 * 60.0
+        if tired and now - self._last_pit_t > 30:
+            self.log("[pratica] SONO — pare em uma area de descanso; a IA "
+                     "confirma o sono (Enter)")
+            self._last_pit_t = now
+        if self._parked_at_dest:
+            return
+        if sn["speed"] > 0.3 or now - self._last_ok_t < 10 \
+                or self.injector is None:
+            return
+        # parado: confirma o dialogo do jogo (abastecer / dormir)
+        if frac is not None and frac < 0.90:
+            self.log("[pratica] parado com tanque baixo — confirmando "
+                     "abastecimento (Enter)")
+            self.injector.tap(*self.macros.get("ok", (0x1C, "Enter")))
+            self._last_ok_t = now
+        elif sn.get("rest_stop"):
+            self.log("[pratica] parado em descanso — confirmando sono "
+                     "(Enter)")
+            self.injector.tap(*self.macros.get("ok", (0x1C, "Enter")))
+            self._last_ok_t = now
+
     def _cold_start(self, sn, now):
         """TOMADA IMEDIATA: caminhao parado? A IA liga o motor e solta o
         freio de mao SOZINHA (macros E e .) — nao espera o humano.
@@ -449,9 +536,11 @@ class PracticeLoop:
             return
         self._last_macro_t = now
         if not sn.get("engine_enabled", True) or parado > 6.0:
-            self.injector.tap(*MACROS["engine"])
+            self.injector.tap(*self.macros.get(
+                "engine", (0x12, "E (ligar motor)")))
         if sn.get("park_brake"):
-            self.injector.tap(*MACROS["park_brake"])
+            self.injector.tap(*self.macros.get(
+                "park_brake", (0x39, "freio de mao")))
 
     def _human_detect(self, sn, cmd, now):
         """Detecta intervencao humana comparando o input do jogo com o
@@ -664,7 +753,11 @@ def run(mode, map_path="practice/mapa.json", rec_path=None, inject=False,
                     "Use --game-dir 'C:\\...\\Euro Truck Simulator 2' (a DLL "
                     "vem embutida; sem download). Veja PRATICA.md.")
         source = reader.snapshot
-    injector = KeyInjector(window, inject) if (mode == "drive" and inject) else None
+    keymap, macros, ksrc = load_keymap()
+    log(f"[teclas] mapeadas do jogo: {ksrc} | "
+        f"WASD={sorted(hex(v) for v in keymap.values())}")
+    injector = (KeyInjector(window, inject, keymap=keymap)
+                if (mode == "drive" and inject) else None)
     if inject and mode == "drive":
         log(f"[inject] alvo: janela '{window}' | ESC = kill switch")
     recorder = Recorder(rec_path) if rec_path else None
@@ -672,7 +765,7 @@ def run(mode, map_path="practice/mapa.json", rec_path=None, inject=False,
                         injector=injector, recorder=recorder,
                         map_path=map_path, policy_fn=_policy, phone=phone,
                         clock=_clock or time.monotonic,
-                        sleep=_sleep or time.sleep, log=log,
+                        sleep=_sleep or time.sleep, log=log, macros=macros,
                         foreign_keys=(injector.foreign_keys_down
                                       if injector is not None else None),
                         stop_event=stop_event)

@@ -89,6 +89,23 @@ assume moderada (~40 km/h) até se situar (~40 pontos de estrada), depois
 acelera até o limite. ESC continua sendo o kill switch e encostar no
 teclado vira correção DAgger.
 
+## 2d) Teclas ORIGINAIS do jogo + USB
+
+- **Mapeamento original**: o bridge lê o `controls.sii` do SEU perfil
+  (`Documents\Euro Truck Simulator 2\profiles\<id>\`) e usa as teclas que
+  o jogo realmente espera — dsteerleft/dsteerright/dforward/dbackward,
+  parkingbrake, engine, lblinker/rblinker. Sem o arquivo (ou bind faltando),
+  cai no padrão **WASD** (W/S/A/D, E motor, espaço freio de mão, [ ] setas).
+  No log aparece `[teclas] mapeadas do jogo: <caminho>`.
+- **Setas**: a IA acende a seta ~60 m antes de curvas fortes (raio < ~300 m)
+  e apaga ao endireitar (respeitando o auto-cancel do próprio jogo).
+- **Freio de mão**: puxado ao parar no destino; solto sozinho no arranque.
+- **Abastecer / dormir**: com telemetria completa (DLL ou pack de offsets
+  com fuel/rest_stop): tanque < 15% ou sono — a IA avisa, e parada no posto/
+  descanso confirma o diálogo com Enter.
+- **Conexão**: **somente cabo USB** (Depuração USB) — túnel `adb reverse`,
+  localhost, zero rede/internet. `--rede` abre para Wi-Fi só como exceção.
+
 ## 3) `drive` — a IA dirige de verdade
 
 > **IA no CELULAR (revisado v0.4.6+):** no modo real, se o APK estiver

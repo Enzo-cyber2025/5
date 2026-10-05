@@ -452,7 +452,8 @@ def test_tomada_imediata_arranque_frio():
         t += 0.05
         loop.step(loop.source(), t)
     assert any("motor" in t for t in inj.taps), inj.taps
-    assert any("estacionamento" in t for t in inj.taps), inj.taps
+    assert any("freio de mao" in t or "estacionamento" in t
+               for t in inj.taps), inj.taps
     # contra o freio de mao a IA NAO acelera (solta as teclas)
     assert inj.down == set()
     # freio de mao solto + motor ligado -> IA acelera sozinha
@@ -529,3 +530,90 @@ def test_stop_event_para_a_pratica():
     loop.run(max_seconds=30)
     assert calls["n"] <= 10, calls["n"]        # parou logo, nao rodou 30 s
     assert inj.down == set()                   # teclas soltas
+
+
+# --------------------------------------------------------------------------- #
+# teclas ORIGINAIS: seta, freio de mao, abastecer, dormir
+# --------------------------------------------------------------------------- #
+MACS = {"engine": (0x12, "E (ligar motor)"),
+        "park_brake": (0x39, "freio de mao"),
+        "ind_left": (0x1A, "seta ESQUERDA"),
+        "ind_right": (0x1B, "seta DIREITA"),
+        "ok": (0x1C, "Enter (confirmar)")}
+
+
+def test_seta_antes_de_curva_e_apaga_ao_endireitar():
+    m = RoadMap()
+    game = FakeGame(GENTLE_ROAD, s=5.0, speed=12.0)
+    inj = FakeInjector()
+    loop, st = make_loop("drive", game, m, injector=inj,
+                         policy=lambda f: (0.0, 0.6, 0.0))
+    loop.macros = MACS
+    sn = game.snapshot()                      # sem blinker_*: desconhecido
+    curva = {"curvs": [0.006, 0.004, None, None, None]}
+    reta = {"curvs": [0.0001, 0.0, None, None, None]}
+    loop._maybe_signal(curva, sn, 1.0)        # acende DIREITA
+    assert inj.taps == ["seta DIREITA"]
+    loop._maybe_signal(curva, sn, 2.0)        # ja acesa: nada
+    assert inj.taps == ["seta DIREITA"]
+    loop._maybe_signal(reta, sn, 3.0)         # endireitou: apaga
+    assert inj.taps == ["seta DIREITA", "seta DIREITA"]
+    loop._maybe_signal(curva, sn, 4.0)        # curva p/ ESQUERDA agora
+    curva_esq = {"curvs": [-0.007, 0.0, None, None, None]}
+    inj.taps.clear(); loop._signal = None
+    loop._maybe_signal(curva_esq, sn, 5.0)
+    assert inj.taps == ["seta ESQUERDA"]
+    # auto-cancel do JOGO: blinkers ambos False -> NAO bate de novo
+    sn2 = dict(sn, blinker_left_on=False, blinker_right_on=False)
+    loop._maybe_signal(reta, sn2, 6.0)
+    assert inj.taps == ["seta ESQUERDA"]      # nada: jogo ja apagou
+
+
+def test_freio_de_mao_puxado_no_destino():
+    m = RoadMap()
+    game = FakeGame(GENTLE_ROAD, s=5.0, speed=0.2)
+    _snap = game.snapshot
+    game.snapshot = lambda: dict(_snap(), route_distance=1.0)
+    inj = FakeInjector()
+    loop, st = make_loop("drive", game, m, injector=inj,
+                         policy=lambda f: (0.0, 0.0, 0.0))
+    loop.macros = MACS
+    for i in range(3):
+        loop.step(loop.source(), 0.05 * (i + 1))
+    assert inj.taps.count("freio de mao") == 1     # puxou UMA vez
+    assert loop._parked_at_dest
+
+
+def test_pit_crew_abastece_combustivel_baixo():
+    m = RoadMap()
+    game = FakeGame(GENTLE_ROAD, s=5.0, speed=0.0)
+    _snap = game.snapshot
+    game.snapshot = lambda: dict(_snap(), fuel=30.0, fuel_capacity=600.0,
+                                 route_distance=99999.0)
+    inj = FakeInjector()
+    loop, st = make_loop("drive", game, m, injector=inj,
+                         policy=lambda f: (0.0, 0.3, 0.0))
+    loop.macros = MACS
+    loop.step(loop.source(), 0.05)
+    assert "Enter (confirmar)" in inj.taps       # confirmou abastecer
+    # tanque cheio: parado NAO confirma nada
+    inj.taps.clear()
+    game.snapshot = lambda: dict(_snap(), fuel=500.0, fuel_capacity=600.0,
+                                 route_distance=99999.0)
+    loop._last_pit_t = -1e9
+    loop.step(loop.source(), 0.5)
+    assert inj.taps == []
+
+
+def test_pit_crew_confirma_sono_no_descanso():
+    m = RoadMap()
+    game = FakeGame(GENTLE_ROAD, s=5.0, speed=0.0)
+    _snap = game.snapshot
+    game.snapshot = lambda: dict(_snap(), fuel=500.0, fuel_capacity=600.0,
+                                 rest_stop=1, route_distance=99999.0)
+    inj = FakeInjector()
+    loop, st = make_loop("drive", game, m, injector=inj,
+                         policy=lambda f: (0.0, 0.3, 0.0))
+    loop.macros = MACS
+    loop.step(loop.source(), 0.05)
+    assert "Enter (confirmar)" in inj.taps       # confirmou dormir

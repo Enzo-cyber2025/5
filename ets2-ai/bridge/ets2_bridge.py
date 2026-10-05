@@ -103,9 +103,10 @@ def usb_plug_and_play(port, quiet=False):
 class UsbKeeper(threading.Thread):
     """Re-aplica o tunel a cada 15 s: plugar o cabo DEPOIS tambem funciona."""
 
-    def __init__(self, port):
+    def __init__(self, port, host="127.0.0.1"):
         super().__init__(daemon=True)
         self.port = port
+        self.host = host          # 127.0.0.1 = so cabo USB (tunel adb)
 
     def run(self):
         while True:
@@ -142,9 +143,10 @@ def policy_cmd(layers, road, truck, job_left_km):
 class PhoneLink(threading.Thread):
     """Accepts one phone; feeds states; collects commands."""
 
-    def __init__(self, port):
+    def __init__(self, port, host="127.0.0.1"):
         super().__init__(daemon=True)
         self.port = port
+        self.host = host          # 127.0.0.1 = so cabo USB (tunel adb)
         self.latest_cmd = None        # (steer, throttle, brake, t_sent)
         self.last_recv = 0.0
         self.rtt_ms = -1.0
@@ -154,9 +156,11 @@ class PhoneLink(threading.Thread):
     def run(self):
         srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        srv.bind(("0.0.0.0", self.port))
+        srv.bind((self.host, self.port))
         srv.listen(1)
-        self.log.append(f"aguardando celular em tcp://{self.local_ip()}:{self.port}")
+        onde = (f"tcp://{self.local_ip()}:{self.port}" if self.host == "0.0.0.0"
+                else f"cabo USB (tunel adb) -> tcp://127.0.0.1:{self.port}")
+        self.log.append(f"aguardando celular em {onde}")
         while True:
             conn, addr = srv.accept()
             conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
@@ -250,12 +254,12 @@ class PhoneLink(threading.Thread):
 # ---------------------------------------------------------------------------
 # Tkinter demo window (same physics as the phone)
 # ---------------------------------------------------------------------------
-def run_demo(layers, port, injector, record_path=None):
+def run_demo(layers, port, injector, record_path=None, host="127.0.0.1"):
     import tkinter as tk
 
     road = sim.Road.random(20260930)
     truck = sim.Truck(road, s=5.0, offset=0.0, speed=15.0)
-    link = PhoneLink(port)
+    link = PhoneLink(port, host)
     link.start()
     rec = Recorder(record_path) if record_path else None
     state = {"ai": True, "source": "local", "km": 0.0, "msg": ""}
@@ -544,7 +548,7 @@ def _start_button_state(phone_connected, running):
 
 
 def run_gui(port, window, inject, telemetry_mode, weights=None,
-            map_path="practice/mapa.json"):
+            map_path="practice/mapa.json", host="127.0.0.1"):
     """UI grafica do bridge: status do celular + botao COMEÇAR.
 
     O botao so habilita (verde) quando o CELULAR esta conectado — a IA roda
@@ -569,7 +573,7 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
     def log(msg):
         logs.append(str(msg))
 
-    link = PhoneLink(port)
+    link = PhoneLink(port, host)
     link.start()
     usb_plug_and_play(port)
     UsbKeeper(port).start()
@@ -578,7 +582,9 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
                      fg="white", bg="#101018")
     title.pack(pady=(14, 2))
     sub = tk.Label(root, text="a IA roda no CELULAR (GPU) — o PC le a "
-                              "telemetria e injeta as teclas",
+                              "telemetria e injeta as teclas | conexao: "
+                              + ("cabo USB" if host == "127.0.0.1"
+                                 else "rede (IP)"),
                    font=("Segoe UI", 9), fg="#8A8A9E", bg="#101018")
     sub.pack()
 
@@ -593,8 +599,10 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
                          font=("Segoe UI", 12, "bold"), fg="#B9B9C9",
                          bg="#16161F", anchor="w")
     phone_lbl.pack(fill="x", pady=(10, 0), padx=(0, 12))
-    phone_sub = tk.Label(card, text=f"no APK: CONECTAR (USB) ou "
-                                    f"{PhoneLink.local_ip()}:{port}",
+    _onde = (f"no APK: botao CONECTAR com o CABO USB (Depuracao USB "
+             f"ligada) — porta {port}" if host == "127.0.0.1"
+             else f"no APK: CONECTAR ou IP {PhoneLink.local_ip()}:{port}")
+    phone_sub = tk.Label(card, text=_onde,
                          font=("Segoe UI", 9), fg="#8A8A9E", bg="#16161F",
                          anchor="w", justify="left")
     phone_sub.pack(fill="x", padx=(0, 12), pady=(0, 12))
@@ -672,7 +680,7 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
         logbox.config(state="disabled")
         root.after(300, tick)
 
-    log("[info] rode o APK e toque em CONECTAR (cabo USB liga sozinho)")
+    log("[info] rode o APK e toque em CONECTAR — so CABO USB, sem internet")
     log(f"[info] telemetria: {telemetry_mode} | injecao: "
         f"{'LIGADA' if inject else 'desligada'}")
     tick()
@@ -681,7 +689,7 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
     root.mainloop()
 
 
-def run_headless(layers, port, injector, phone_only):
+def run_headless(layers, port, injector, phone_only, host="127.0.0.1"):
     """Modo leve para PC fraco (Pentium N5030/4 GB): sem janela, sem render,
     sem captura de tela (o projeto NUNCA captura tela — estado vem da
     telemetria/demo). Missao completa: liga motor -> dirige (IA) -> para no
@@ -693,7 +701,7 @@ def run_headless(layers, port, injector, phone_only):
     best, _offers = dispatch_mod.pick_best(rng, sim.Road, 3)
     road = sim.Road.random(best.road_seed)
     truck = sim.Truck(road, s=5.0, offset=0.0, speed=0.0)
-    link = PhoneLink(port)
+    link = PhoneLink(port, host)
     link.start()
     money = 0.0
     jobs = 0
@@ -846,6 +854,9 @@ def main():
                     help="modo leve: sem janela (PC fraco); Ctrl+C sai")
     ap.add_argument("--demo", action="store_true",
                     help="abre a CENA DEMO antiga (so visualizacao offline)")
+    ap.add_argument("--rede", action="store_true",
+                    help="conexao por rede/Wi-Fi (excecao): o padrao e SO "
+                         "cabo USB (tunel adb), sem internet")
     ap.add_argument("--somente-celular", action="store_true",
                     help="a IA roda SO no celular; sem conexao o caminhao freia")
     ap.add_argument("--bench", action="store_true",
@@ -887,12 +898,13 @@ def main():
             # CELULAR COMO CEREBRO: a IA roda no APK (GPU/TFLite) e devolve
             # os comandos; o PC so le a telemetria e injeta as teclas.
             # Sem celular conectado, cai na IA local do PC (numpy).
-            link = PhoneLink(args.port)
+            link = PhoneLink(args.port,
+                             "0.0.0.0" if args.rede else "127.0.0.1")
             link.start()
-            print(f"[pratica] IA no CELULAR: conecte o APK (BRIDGE -> AUTO) "
-                  f"em tcp://127.0.0.1:{args.port} (cabo USB) ou "
-                  f"{PhoneLink.local_ip()}:{args.port} — sem celular, a IA "
-                  "local do PC assume")
+            print(f"[pratica] IA no CELULAR: no APK toque CONECTAR com o "
+                  f"CABO USB (Depuração USB) — porta {args.port}"
+                  + (f"; rede: {PhoneLink.local_ip()}" if args.rede else "")
+                  + " — sem celular, a IA local do PC assume")
             tmode = "mem" if args.no_dll else args.telemetry
             practice.run(args.ets2, map_path=args.map, rec_path=rec,
                          inject=args.inject, window=args.window,
@@ -914,19 +926,23 @@ def main():
     usb_plug_and_play(args.port)
     UsbKeeper(args.port).start()
     if args.sem_janela:
-        run_headless(layers, args.port, injector, args.somente_celular)
+        run_headless(layers, args.port, injector, args.somente_celular,
+                     host=_host)
         return
+    _host = "0.0.0.0" if args.rede else "127.0.0.1"
     if args.demo:
         if args.record:
             print(f"[rec] gravando em {args.record} — use as SETAS para "
                   "corrigir a IA; as correcoes viram dados de treino (DAgger)")
-        run_demo(layers, args.port, injector, record_path=args.record)
+        run_demo(layers, args.port, injector, record_path=args.record,
+                 host=_host)
         return
     # padrao: UI de controle com botao COMEÇAR (cinza ate o celular conectar).
     # Injecao LIGADA: o clique no botao e o consentimento explicito (ESC no
     # jogo continua sendo o kill switch e so injeta com o ETS2 em 1o plano).
     tmode = "mem" if args.no_dll else args.telemetry
-    run_gui(args.port, args.window, True, tmode)
+    _host = "0.0.0.0" if args.rede else "127.0.0.1"
+    run_gui(args.port, args.window, True, tmode, host=_host)
 
 
 if __name__ == "__main__":

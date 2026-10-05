@@ -4,12 +4,128 @@ Compartilhado pelo bridge (demo/APK) e pelo modo pratica (ets2ai.practice):
 mesmo mapeamento de teclas, mesmos macros de missao, mesmo formato de
 gravacao (ets2ai-rec,v1) consumido por ets2ai.finetune.
 """
+import os
 import sys
 import time
 from pathlib import Path
 
-# Teclas enviadas (scan codes). ETS2 vem com setas para dirigir por padrao.
-KEYMAP = {"left": 0x4B, "right": 0x4D, "accel": 0x48, "brake": 0x50}
+# Teclas enviadas (scan codes). PADRAO = WASD (pedido do usuario); em
+# tempo de execucao load_keymap() le o controls.sii do JOGO e usa as teclas
+# que o perfil do jogador realmente tem configuradas (mapeamento original).
+KEYMAP = {"left": 0x1E, "right": 0x20, "accel": 0x11, "brake": 0x1F}
+
+# tokens SCS (controls.sii) -> scan code
+SII_TOKENS = {
+    **{c: sc for c, sc in zip("abcdefghijklmnopqrstuvwxyz",
+        [0x1E, 0x30, 0x2E, 0x20, 0x12, 0x21, 0x22, 0x23, 0x17, 0x24,
+         0x25, 0x26, 0x32, 0x31, 0x18, 0x19, 0x10, 0x13, 0x1F, 0x14,
+         0x16, 0x2F, 0x11, 0x2D, 0x15, 0x2C])},
+    **{str(d): 0x02 + i for i, d in enumerate([1, 2, 3, 4, 5, 6, 7, 8, 9, 0])},
+    "larrow": 0x4B, "rarrow": 0x4D, "uarrow": 0x48, "darrow": 0x50,
+    "space": 0x39, "esc": 0x01, "enter": 0x1C, "return": 0x1C,
+    "tab": 0x0F, "caps": 0x3A, "lctrl": 0x1D, "rctrl": 0x9D,
+    "lshift": 0x2A, "rshift": 0x36, "lalt": 0x38, "ralt": 0xB8,
+    "lbracket": 0x1A, "rbracket": 0x1B, "comma": 0x33, "period": 0x34,
+    "slash": 0x35, "semicolon": 0x27, "apostrophe": 0x28, "grave": 0x29,
+    "backslash": 0x2B, "minus": 0x0C, "equal": 0x0D, "backspace": 0x0E,
+    "num0": 0x52, "num1": 0x4F, "num2": 0x50, "num3": 0x51, "num4": 0x4B,
+    "num5": 0x4C, "num6": 0x4D, "num7": 0x47, "num8": 0x48, "num9": 0x49,
+    "numplus": 0x4E, "numminus": 0x4A, "numenter": 0xE0, "numperiod": 0x53,
+    "numslash": 0xB5, "numstar": 0x37,
+}
+_MODIFIERS = {"lctrl", "rctrl", "lshift", "rshift", "lalt", "ralt"}
+
+# mix do controls.sii -> (nome logico, papel)
+SII_MIXES = {
+    "dsteerleft": "left", "dsteerright": "right",
+    "dforward": "accel", "dbackward": "brake",
+    "engine": "engine", "parkingbrake": "park_brake",
+    "lblinker": "ind_left", "rblinker": "ind_right",
+    "activate": "ok", "attach": "dock",
+}
+
+
+def _sii_profiles():
+    """Pastas de perfil do ETS2 (Documents; OneDrive tambem)."""
+    import os
+    home = os.path.expanduser("~")
+    for docs in (os.path.join(home, "Documents"),
+                 os.path.join(home, "OneDrive", "Documents"),
+                 os.path.join(home, "OneDrive", "Documentos"),
+                 os.path.join(home, "Documentos")):
+        base = os.path.join(docs, "Euro Truck Simulator 2")
+        for sub in ("profiles", "steam_profiles"):
+            d = os.path.join(base, sub)
+            if os.path.isdir(d):
+                for prof in os.listdir(d):
+                    yield os.path.join(d, prof, "controls.sii")
+
+
+def _parse_sii(text):
+    """'mix nome `expressao`' -> {nome_logico: scan}. Prefere teclas SIMPLES
+    (letras/digitos) quando o bind tem alternativas (ex.: seta | A)."""
+    import re
+    out = {}
+    for m in re.finditer(r'mix\s+(\w+)\s+`([^`]*)`', text):
+        name, expr = m.group(1), m.group(2)
+        logical = SII_MIXES.get(name)
+        if logical is None:
+            continue
+        keys = re.findall(r'keyboard\.(\w+)\?\d', expr)
+        keys = [k.lower() for k in keys if k.lower() in SII_TOKENS
+                and k.lower() not in _MODIFIERS]
+        if not keys:
+            continue
+        # ordem de preferencia: letra/digito (WASD) > resto
+        keys.sort(key=lambda k: not (k.isalnum() and len(k) == 1))
+        out[logical] = SII_TOKENS[keys[0]]
+    return out
+
+
+def load_keymap(docs_root=None):
+    """Mapeia as configuracoes ORIGINAIS do jogo (controls.sii do perfil).
+
+    Retorna (keymap, macros, origem). Sem controls.sii (ou bind faltando)
+    usa o padrao WASD. keymap = {left,right,accel,brake}; macros = pares
+    (scan, nome) para engine/park_brake/ind_left/ind_right/ok/dock.
+    """
+    keymap = dict(KEYMAP)
+    found = {}
+    src = "padrao WASD"
+    if docs_root is not None:                     # teste injeta um .sii
+        import re as _re
+        best = None
+        for f in Path(docs_root).rglob("controls.sii"):
+            best = f                      # rglob: pega o ultimo
+        if best is not None:
+            found = _parse_sii(best.read_text(encoding="utf-8",
+                                              errors="replace"))
+            src = best.name
+    else:
+        best_t, best_f = -1.0, None
+        for f in _sii_profiles():
+            try:
+                t = os.path.getmtime(f)
+            except OSError:
+                continue
+            if t > best_t:
+                best_t, best_f = t, f
+        if best_f is not None:
+            found = _parse_sii(best_f.read_text(encoding="utf-8",
+                                                errors="replace"))
+            src = str(best_f)
+    for k in keymap:
+        if found.get(k):
+            keymap[k] = found[k]
+    names = {"engine": "E (ligar motor)", "park_brake": "freio de mao",
+             "ind_left": "seta ESQUERDA", "ind_right": "seta DIREITA",
+             "ok": "Enter (confirmar)", "dock": "T (carregar/descarregar)"}
+    default_scan = {"engine": 0x12, "park_brake": 0x39,
+                    "ind_left": 0x1A, "ind_right": 0x1B,
+                    "ok": 0x1C, "dock": 0x14}
+    macros = {k: (found.get(k) or default_scan[k], v)
+              for k, v in names.items()}
+    return keymap, macros, src
 # Macros da missao (scan code, nome) — liga motor, carga, menus do jogo.
 MACROS = {
     "engine":     (0x12, "E (ligar motor)"),
@@ -60,9 +176,10 @@ class KeyInjector:
     So injeta se a janela alvo estiver em primeiro plano.
     """
 
-    def __init__(self, window_substring, enabled):
+    def __init__(self, window_substring, enabled, keymap=None):
         self.enabled = enabled and sys.platform == "win32"
         self.window_substring = window_substring
+        self.keymap = keymap or KEYMAP
         self.down = set()
         self.kill = False
         self.phase = 0
@@ -114,10 +231,10 @@ class KeyInjector:
         if not self._target_is_foreground():
             want = set()          # nao injeta fora da janela alvo
         for k in self.down - want:
-            self._keybd(KEYMAP[k], True)
+            self._keybd(self.keymap[k], True)
             self.down.discard(k)
         for k in want - self.down:
-            self._keybd(KEYMAP[k], False)
+            self._keybd(self.keymap[k], False)
             self.down.add(k)
 
     def tap(self, scan, name=""):
@@ -140,7 +257,7 @@ class KeyInjector:
         if not self.enabled:
             return set()
         out = set()
-        for name, scan in KEYMAP.items():
+        for name, scan in self.keymap.items():
             vk = self.user32.MapVirtualKeyW(scan, 1)   # VSC -> VK
             if self.user32.GetAsyncKeyState(vk) & 0x8000 and \
                     name not in self.down:
@@ -151,7 +268,7 @@ class KeyInjector:
         if not self.enabled:
             return
         for k in list(self.down):
-            self._keybd(KEYMAP[k], True)
+            self._keybd(self.keymap[k], True)
             self.down.discard(k)
 
 

@@ -179,7 +179,7 @@ public final class MainActivity extends Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         rlp.topMargin = 8;
         row.setLayoutParams(rlp);
-        row.addView(styledButton("BRIDGE (IP MANUAL)", 0xFF8E5BF2, new Runnable() {
+        row.addView(styledButton("IP (AVANCADO)", 0xFF8E5BF2, new Runnable() {
             public void run() { showBridgeDialog(); }
         }));
         row.addView(styledButton("TECLADO BT", 0xFF5B6B8C, new Runnable() {
@@ -188,8 +188,9 @@ public final class MainActivity extends Activity {
         root.addView(row);
 
         TextView foot = new TextView(this);
-        foot.setText("A tela pode bloquear (a notificacao mostra os comandos/s). "
-                + "No PC: ETS2-AI-bridge.exe -> botao COMECAR.");
+        foot.setText("Conexao: SO cabo USB (Depuracao USB). A tela pode bloquear "
+                + "(a notificacao mostra os comandos/s). No PC: "
+                + "ETS2-AI-bridge.exe -> botao COMECAR.");
         foot.setTextColor(0xFF5A5A68);
         foot.setTextSize(10);
         foot.setGravity(Gravity.CENTER);
@@ -271,8 +272,8 @@ public final class MainActivity extends Activity {
             statusTitle.setText("DESCONECTADO");
             statusTitle.setTextColor(0xFFB9B9C9);
             statusDetail.setText(bridge == null
-                    ? "toque em CONECTAR (cabo USB liga sozinho)"
-                    : "procurando o PC / reconectando...");
+                    ? "toque em CONECTAR — so o CABO USB, sem internet"
+                    : "procurando o PC pelo cabo / reconectando...");
         }
         status.setText(bridgeStatus.length() > 0 ? bridgeStatus : btStatus);
         uiPoll.postDelayed(new Runnable() {
@@ -331,89 +332,38 @@ public final class MainActivity extends Activity {
                 .show();
     }
 
-    /** Procura o PC sozinho: sub-redes do aparelho + faixas tipicas de
-     *  ancoragem USB (tethering). Cabo USB + 'Ancoragem USB' ligada = rede. */
+    /** Conecta SO pelo CABO USB: o bridge roda 'adb reverse' no PC e o
+     *  localhost deste aparelho tunela direto (zero rede, zero internet).
+     *  Tenta por alguns segundos — espete o cabo e a conexao cai sozinha. */
     private void autoConnectBridge() {
         if (net == null) return;
         if (bridge != null) { bridge.stop(); bridge = null; }
-        bridgeStatus = "AUTO: procurando o PC (USB/Wi-Fi)...";
+        bridgeStatus = "USB: procurando o PC pelo cabo (5 s)...";
         new Thread(new Runnable() {
             public void run() {
-                // 1) CABO USB: o bridge roda 'adb reverse' sozinho — o
-                // localhost do aparelho tunela direto pro PC (zero config).
-                try {
-                    Socket sk = new Socket();
-                    sk.connect(new InetSocketAddress("127.0.0.1", 7777), 250);
-                    sk.close();
-                    runOnUiThread(new Runnable() {
-                        public void run() {
-                            bridgeStatus = "AUTO: cabo USB (adb reverse)!";
-                            bridge = new BridgeClient("127.0.0.1", 7777, net,
-                                    new BridgeClient.Listener() {
-                                public void onStatus(final String st) {
-                                    runOnUiThread(new Runnable() {
-                                        public void run() { bridgeStatus = st; }
-                                    });
-                                }
-                            });
-                            new Thread(bridge).start();
-                            KeepAlive.begin(MainActivity.this,
-                                    "Bridge AUTO: cabo USB (tela pode bloquear)", bridge);
-                        }
-                    });
-                    return;
-                } catch (Exception ignored) { }
-                List<String> prefixes = new ArrayList<String>();
-                try {
-                    Enumeration<NetworkInterface> nis = NetworkInterface.getNetworkInterfaces();
-                    while (nis.hasMoreElements()) {
-                        NetworkInterface ni = nis.nextElement();
-                        for (java.net.InterfaceAddress ia : ni.getInterfaceAddresses()) {
-                            String ip = ia.getAddress().getHostAddress();
-                            if (ip != null && ip.contains("."))
-                                prefixes.add(ip.substring(0, ip.lastIndexOf('.')));
-                        }
-                    }
-                } catch (Exception ignored) { }
-                String[] tether = { "192.168.42", "192.168.43", "192.168.44",
-                                    "192.168.45", "192.168.46" };
-                for (String t : tether) if (!prefixes.contains(t)) prefixes.add(t);
-
-                ExecutorService pool = Executors.newFixedThreadPool(24);
-                List<Future<String>> futures = new ArrayList<Future<String>>();
-                for (final String pre : prefixes) {
-                    for (int i = 1; i <= 254; i++) {
-                        final String host = pre + "." + i;
-                        futures.add(pool.submit(new java.util.concurrent.Callable<String>() {
-                            public String call() {
-                                try {
-                                    Socket sk = new Socket();
-                                    sk.connect(new InetSocketAddress(host, 7777), 150);
-                                    sk.close();
-                                    return host;
-                                } catch (Exception e) { return null; }
-                            }
-                        }));
+                Socket sk = null;
+                boolean okUsb = false;
+                for (int i = 0; i < 10 && !okUsb; i++) {
+                    try {
+                        sk = new Socket();
+                        sk.connect(new InetSocketAddress("127.0.0.1", 7777), 400);
+                        sk.close();
+                        okUsb = true;
+                    } catch (Exception e) {
+                        try { Thread.sleep(500); } catch (Exception ignored) { }
                     }
                 }
-                String found = null;
-                try {
-                    for (Future<String> f : futures) {
-                        String h = f.get();
-                        if (h != null) { found = h; break; }
-                    }
-                } catch (Exception ignored) { }
-                pool.shutdownNow();
-                final String host = found;
+                final boolean usb = okUsb;
                 runOnUiThread(new Runnable() {
                     public void run() {
-                        if (host == null) {
-                            bridgeStatus = "AUTO: PC nao encontrado — confira o bridge "
-                                    + "e a 'Ancoragem USB'";
+                        if (!usb) {
+                            bridgeStatus = "USB: PC nao achado — espete o CABO e "
+                                    + "ligue a 'Depuracao USB' no celular";
                             return;
                         }
-                        bridgeStatus = "AUTO: PC encontrado em " + host + "!";
-                        bridge = new BridgeClient(host, 7777, net, new BridgeClient.Listener() {
+                        bridgeStatus = "USB: cabo OK (tunel adb)!";
+                        bridge = new BridgeClient("127.0.0.1", 7777, net,
+                                new BridgeClient.Listener() {
                             public void onStatus(final String st) {
                                 runOnUiThread(new Runnable() {
                                     public void run() { bridgeStatus = st; }
@@ -422,7 +372,8 @@ public final class MainActivity extends Activity {
                         });
                         new Thread(bridge).start();
                         KeepAlive.begin(MainActivity.this,
-                                "Bridge AUTO: " + host + " (tela pode bloquear)", bridge);
+                                "Bridge USB: IA dirigindo (tela pode bloquear)",
+                                bridge);
                     }
                 });
             }
