@@ -93,10 +93,11 @@ teclado vira correção DAgger.
 
 - **Versões alternativas (repacks tipo optijuegos)**: a pasta do jogo é
   achada **sem depender do Steam**, em cascata: `--game-dir` > processo
-  rodando > Steam > **varredura de TODOS os arquivos de TODOS os discos
-  fixos** (com poda de pastas de sistema e teto de tempo) > **último caso:
-  rastros do jogo** (atalhos .lnk da Área de Trabalho/Menu Iniciar e
-  entradas de desinstalação do registro) > **config padrão**. O parser do
+  rodando > Steam > **varredura LITERAL do disco todo** (TODAS as pastas de
+  TODOS os discos locais — fixos e pen drive — sem excluir nada, nem
+  pastas de sistema/ocultas; teto de 10 min só contra travamento) >
+  **último caso: rastros do jogo** (atalhos .lnk e registro de
+  desinstalação) > **config padrão**. O parser do
   `controls.sii` também entende **aliases** de perfis antigos
   (`input k_left \`keyboard.a?0\``). A busca completa roda **UMA vez** e o
   caminho fica salvo em `ets2-ai-state.json` (ao lado do .exe): nas

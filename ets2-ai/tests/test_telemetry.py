@@ -195,3 +195,16 @@ def test_note_state_atualiza_cada_execucao(tmp_path):
     st = t.load_game_state(sf)
     assert st["game_dir"] == "X" and st["telemetry"] == "mem:1.55"
     assert st["mode"] == "drive" and "last_seen" in st
+
+
+def test_varredura_LITERAL_sem_excluir_nada(tmp_path):
+    """LITERALMENTE o disco todo: pastas de sistema, ocultas e '$' tambem
+    sao varridas — jogo escondido em qualquer lugar e achado."""
+    from ets2ai.telemetry import _iter_game_roots
+    game = tmp_path / "Windows" / "System32" / "drivers" / "ETS2Oculto"
+    (game / "bin" / "win_x64").mkdir(parents=True)
+    (game / "bin" / "win_x64" / "eurotrucks2.exe").write_bytes(b"x")
+    oculto = tmp_path / ".pasta_oculta" / "$coisa"
+    oculto.mkdir(parents=True)
+    achou = list(_iter_game_roots([tmp_path], budget_s=30, log=None))
+    assert achou == [game]

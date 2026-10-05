@@ -496,16 +496,15 @@ def _running_game_root():
         return None
 
 
-def _iter_game_roots(starts, budget_s=180.0, log=None, now=None):
-    """Varredura COMPLETA: caminha TODOS os diretorios a partir de `starts`
-    procurando bin/win_x64/eurotrucks2.exe (layout = instalacao, qualquer
-    origem). Poda pastas de sistema, respeita um teto de tempo e loga o
-    progresso. Generator: usa pouco RAM (streaming)."""
+def _iter_game_roots(starts, budget_s=600.0, log=None, now=None):
+    """Varredura LITERAL do disco todo: caminha TODOS os diretorios a
+    partir de `starts` procurando bin/win_x64/eurotrucks2.exe — SEM excluir
+    pasta nenhuma (nem Windows, nem ocultas, nem de sistema). O unico freio
+    e o teto de tempo (anti-travamento; 10 min) e erros de permissao (o SO
+    nao deixa ler). Roda UMA vez so — o resultado e cacheado. Generator:
+    streaming, pouca RAM."""
     import time as _time
     t0 = (now or _time.monotonic)()
-    skip = {"windows", "$recycle.bin", "system volume information",
-            "programdata", "node_modules", "__pycache__", ".git",
-            "winxsx", "driverstore", "windowsapps"}
     queue = list(starts)
     seen = set()
     n_dir = 0
@@ -527,26 +526,22 @@ def _iter_game_roots(starts, budget_s=180.0, log=None, now=None):
             for sub in _os.scandir(d):
                 if not sub.is_dir(follow_symlinks=False):
                     continue
-                name = sub.name.lower()
-                if name in skip:
-                    continue
                 child = Path(sub.path)
-                if name == "bin":
+                if sub.name.lower() == "bin":
                     w64 = child / "win_x64"
                     if w64.is_dir() and (w64 / "eurotrucks2.exe").exists():
                         if log:
                             log(f"[busca] ACHOU: {child.parent}")
                         yield child.parent
                         return                # um jogo basta
-                if name.startswith(".") or name.startswith("$"):
-                    continue
                 queue.append(child)
         except OSError:
             continue
 
 
 def _all_fixed_drives():
-    """Todas as UNIDADES FIXAS do PC (A:..Z:) — sem pendrive/CD."""
+    """Todos os discos LOCAIS do PC (A:..Z:): fixos E pen drive/removivel
+    (jogo portable pode estar em qualquer um). Sem CD-ROM/rede (travariam)."""
     if _os.name != "nt":
         return []
     out = []
@@ -558,7 +553,8 @@ def _all_fixed_drives():
             if not (bits >> i) & 1:
                 continue
             letter = chr(65 + i) + ":\\"
-            if k32.GetDriveTypeW(letter) == 3:      # DRIVE_FIXED
+            dt = k32.GetDriveTypeW(letter)
+            if dt in (2, 3):            # 2=removivel (USB), 3=fixo
                 out.append(Path(letter))
         if out:
             return out
@@ -567,12 +563,13 @@ def _all_fixed_drives():
     return [Path(c + ":\\") for c in "CDEFG"]     # plano B
 
 
-def _scan_all_disks(log=print, budget_s=180.0):
-    """Busca por TODOS os arquivos de TODOS os discos fixos."""
+def _scan_all_disks(log=print, budget_s=600.0):
+    """Busca LITERAL no disco todo: todos os arquivos/pastas de todos os
+    discos locais (fixos + pen drive), sem excluir nada."""
     drives = _all_fixed_drives()
     if log:
-        log(f"[busca] varredura completa em: "
-            f"{', '.join(str(d) for d in drives)}")
+        log(f"[busca] varredura LITERAL do disco todo em: "
+            f"{', '.join(str(d) for d in drives)} (sem excluir pastas)")
     return list(_iter_game_roots(drives, budget_s=budget_s, log=log))
 
 
