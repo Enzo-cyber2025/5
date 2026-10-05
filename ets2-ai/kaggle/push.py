@@ -140,6 +140,19 @@ def chain(user):
     kdir.mkdir(parents=True, exist_ok=True)
     sys.path.insert(0, str(HERE))
     import build_kernel
+    # CIRCUIT BREAKER: 3 colheitas seguidas sem saida = algo quebrado;
+    # pausa de 6 h em vez de crash-loop de empurros (noite 04/10: 9x)
+    try:
+        _streak = int(json.loads(
+            (ROOT / ".chain-health.json").read_text())["none_streak"])
+    except Exception:
+        _streak = 0
+    if _streak >= 3:
+        print("CHAIN_WAIT_H=6.0")
+        print(f"[chain] CIRCUIT BREAKER: {_streak} colheitas sem saida — "
+              "pausa de 6 h para diagnostico (log em ci-logs/chain-last/)")
+        return 0
+
     # anti-push-duplicado: se ja existe sessao ativa, nao empurra outra
     rst = sh("kaggle", "kernels", "status", f"{user}/{SLUG_SUFFIX}")
     rst_out = (rst.stdout + rst.stderr).lower()
@@ -170,10 +183,13 @@ def chain(user):
     # se o teto de amostras/tempo vier gravado, nao do env do runner).
     _samples = int(os.environ.get("ETS2AI_SAMPLES", "15000000000"))
     _max_sec = budget_sec
+    _pipeline = os.environ.get("ETS2AI_PIPELINE", "0")
     src = src.replace('_os.environ.get("ETS2AI_SAMPLES", "1000000000")',
                       str(_samples))
     src = src.replace('_os.environ.get("ETS2AI_MAX_SECONDS", "10800")',
                       str(_max_sec))
+    src = src.replace('_os.environ.get("ETS2AI_PIPELINE", "0")',
+                      f'"{_pipeline}"')
     print(f"[chain] orcamento gravado no kernel: {_samples:,} amostras, "
           f"{_max_sec/3600:.1f} h")
     (kdir / "kernel.py").write_text(src, encoding="utf-8")
@@ -231,6 +247,22 @@ def chain(user):
     return 0
 
 
+HEALTH = ROOT / ".chain-health.json"
+
+
+def _bump_health(delta):
+    """none_streak += delta (0 = reseta). Persistido via git (STATUS step)."""
+    try:
+        d = json.loads(HEALTH.read_text())
+    except Exception:
+        d = {"none_streak": 0}
+    d["none_streak"] = 0 if delta == 0 else int(d.get("none_streak", 0)) + delta
+    try:
+        HEALTH.write_text(json.dumps(d))
+    except Exception:
+        pass
+
+
 def harvest(user):
     """Baixa a sessao anterior; se os gates passarem, versiona o checkpoint.
 
@@ -255,6 +287,7 @@ def harvest(user):
     if r.returncode != 0 or not weights.exists():
         print("[harvest] sem saida para colher")
         (ROOT / ".cache" / "cumulative.txt").write_text("NONE\n")
+        _bump_health(+1)
         return 0
     import json as _j
     metrics = outdir / "metrics.json"
@@ -299,6 +332,7 @@ def harvest(user):
     ok = (loss <= LOSS_TARGET and agg["finish_rate"] >= 2 / 3
           and agg["in_lane_pct"] > 0.95 and agg["dock_rate"] >= 2 / 3)
     (ROOT / ".cache" / "cumulative.txt").write_text(f"{cum}\n")
+    _bump_health(0)
     if not ok:
         print("::warning::gates FALHARAM — checkpoint NAO versionado "
               "(a proxima sessao retoma do ultimo ponto bom)")
@@ -372,6 +406,19 @@ def main():
     kdir.mkdir(parents=True, exist_ok=True)
     sys.path.insert(0, str(HERE))
     import build_kernel
+    # CIRCUIT BREAKER: 3 colheitas seguidas sem saida = algo quebrado;
+    # pausa de 6 h em vez de crash-loop de empurros (noite 04/10: 9x)
+    try:
+        _streak = int(json.loads(
+            (ROOT / ".chain-health.json").read_text())["none_streak"])
+    except Exception:
+        _streak = 0
+    if _streak >= 3:
+        print("CHAIN_WAIT_H=6.0")
+        print(f"[chain] CIRCUIT BREAKER: {_streak} colheitas sem saida — "
+              "pausa de 6 h para diagnostico (log em ci-logs/chain-last/)")
+        return 0
+
     # anti-push-duplicado: se ja existe sessao ativa, nao empurra outra
     rst = sh("kaggle", "kernels", "status", f"{user}/{SLUG_SUFFIX}")
     rst_out = (rst.stdout + rst.stderr).lower()
@@ -402,10 +449,13 @@ def main():
     # se o teto de amostras/tempo vier gravado, nao do env do runner).
     _samples = int(os.environ.get("ETS2AI_SAMPLES", "15000000000"))
     _max_sec = budget_sec
+    _pipeline = os.environ.get("ETS2AI_PIPELINE", "0")
     src = src.replace('_os.environ.get("ETS2AI_SAMPLES", "1000000000")',
                       str(_samples))
     src = src.replace('_os.environ.get("ETS2AI_MAX_SECONDS", "10800")',
                       str(_max_sec))
+    src = src.replace('_os.environ.get("ETS2AI_PIPELINE", "0")',
+                      f'"{_pipeline}"')
     print(f"[chain] orcamento gravado no kernel: {_samples:,} amostras, "
           f"{_max_sec/3600:.1f} h")
     (kdir / "kernel.py").write_text(src, encoding="utf-8")

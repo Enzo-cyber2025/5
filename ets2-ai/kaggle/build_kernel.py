@@ -147,32 +147,41 @@ if _tf is not None and len(_gpus) >= 1:
         print(f"[kaggle] seed de dados desta sessao: {_data_seed} "
               f"(estradas/caminhoes novos; validacao fixa p/ comparabilidade)")
     _fp = None   # impressao digital do 1o lote: prova que os dados sao novos
-    # PIPELINE: a CPU gera o proximo lote ENQUANTO a GPU treina o atual.
-    # Mesma sequencia de dados (stream intacto — determinismo e impressao
-    # digital preservados); o ganho vem de sobrepor geracao e treino
-    # (antes: g+t por lote; agora: max(g,t) por lote).
-    import queue as _queue
-    import threading as _threading
-    _q = _queue.Queue(maxsize=2)
-    _ERR = object()
+    # PIPELINE (opcional, ETS2AI_PIPELINE=1): a CPU gera o proximo lote
+    # enquanto a GPU treina. DESLIGADO por padrao — a sessao 3 (pipeline)
+    # rendeu 468M contra 11,5B da sessao 2 (sequencial); sequencial e o
+    # caminho comprovado ate um canario provar o contrario.
+    if _os.environ.get("ETS2AI_PIPELINE", "0") == "1":
+        import queue as _queue
+        import threading as _threading
+        _q = _queue.Queue(maxsize=2)
+        _ERR = object()
 
-    def _produce():
-        try:
-            for _cx, _cy in stream(_data_seed, n_trucks=3072):
-                _q.put((_cx, _cy))
-            _q.put(None)
-        except BaseException as _e:
-            _q.put((_ERR, _e))
+        def _produce():
+            try:
+                for _cx, _cy in stream(_data_seed, n_trucks=3072):
+                    _q.put((_cx, _cy))
+                _q.put(None)
+            except BaseException as _e:
+                _q.put((_ERR, _e))
 
-    _threading.Thread(target=_produce, daemon=True).start()
-    print("[kaggle] gerando dados em fluxo e treinando (pipelined)...")
-    while True:
-        _item = _q.get()
-        if _item is None:
-            break
-        if isinstance(_item, tuple) and len(_item) == 2 and _item[0] is _ERR:
-            raise _item[1]
-        _x, _y = _item
+        _threading.Thread(target=_produce, daemon=True).start()
+
+        def _chunks():
+            while True:
+                _item = _q.get()
+                if _item is None:
+                    return
+                if isinstance(_item, tuple) and len(_item) == 2 \
+                        and _item[0] is _ERR:
+                    raise _item[1]
+                yield _item
+        print("[kaggle] gerando dados em fluxo e treinando (pipelined)...")
+    else:
+        def _chunks():
+            yield from stream(_data_seed, n_trucks=3072)
+        print("[kaggle] gerando dados em fluxo e treinando (sequencial)...")
+    for _x, _y in _chunks():
         if _consumed >= _SAMPLES or (_time.time() - _t0) > _MAX_SEC:
             break
         if _fp is None:
@@ -219,7 +228,10 @@ else:
     _t0c = _time.time()
     _xs, _ys = [], []
     _n_rows = 0
-    _gen_cap = int(_SAMPLES * 0.5) if _SAMPLES < 10**12 else 400_000_000
+    # TETO DE RAM: 40M linhas ~ 5 GB de pico (Kaggle CPU ~ 15 GB). O cap
+    # antigo estava INVERTIDO e pedia bilhoes de linhas — matava a sessao
+    # em ~13 min (crash-loop de 9 empurros na noite 04/10).
+    _gen_cap = min(int(_SAMPLES), 40_000_000)
     for _x, _y in stream(_data_seed, n_trucks=3072):
         if _fp is None:
             _fp = _hashlib.sha256(
@@ -237,7 +249,8 @@ else:
     _xva, _yva = _xall[-_nva:], _yall[-_nva:]
     print(f"[kaggle] treino {_xtr.shape} | val {_xva.shape} | "
           f"geracao {(_time.time() - _t0c)/60:.1f} min")
-    _layers, _hist = train(_xtr, _ytr, epochs=_EPOCHS, x_val=_xva, y_val=_yva,
+    _ep_cpu = max(3, _EPOCHS // 10)   # CPU: 6 epocas bastam (fallback)
+    _layers, _hist = train(_xtr, _ytr, epochs=_ep_cpu, x_val=_xva, y_val=_yva,
                            dtype=_DTYPE)
     _consumed = int(len(_xall))
     _loss_tr = mse(forward(_xtr, _layers), _ytr)

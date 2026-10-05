@@ -110,7 +110,7 @@ public final class MainActivity extends Activity {
         title.setTypeface(Typeface.DEFAULT_BOLD);
         title.setTextSize(15);
         titleRow.addView(title);
-        titleRow.addView(chip("OFFLINE", 0xFF00A884));
+        titleRow.addView(chip("DEMO", 0xFF8A8A9E));
         engineChip = chip(engineName, 0xFF2F7BFF);
         titleRow.addView(engineChip);
         panel.addView(titleRow);
@@ -121,6 +121,26 @@ public final class MainActivity extends Activity {
         status.setTextSize(11);
         status.setPadding(0, 8, 0, 0);
         panel.addView(status);
+
+        // A funcao REAL do app: conectar no ETS2 do PC e ser o cerebro da IA.
+        // (O cenario animado la embaixo e so a DEMO offline de visualizacao.)
+        Button connect = styledButton("CONECTAR AO ETS2", 0xFF00A884, new Runnable() {
+            public void run() { autoConnectBridge(); }
+        });
+        LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        clp.topMargin = 10;
+        connect.setLayoutParams(clp);
+        panel.addView(connect);
+        TextView hint = new TextView(this);
+        hint.setText("O caminhao animado abaixo e so a DEMO offline. A IA de verdade "
+                + "roda NESTE aparelho e controla o ETS2 no seu PC: rode o "
+                + "ETS2-AI-bridge.exe no PC, conecte o cabo USB e toque acima "
+                + "(ou BRIDGE). Funciona com a tela bloqueada.");
+        hint.setTextColor(0xFFB9B9C9);
+        hint.setTextSize(10);
+        hint.setPadding(0, 8, 0, 0);
+        panel.addView(hint);
 
         FrameLayout.LayoutParams plp = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,

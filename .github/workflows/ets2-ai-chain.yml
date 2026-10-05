@@ -238,6 +238,11 @@ jobs:
           git config user.name "ets2ai-chain"; git config user.email "chain@users.noreply.github.com"
           git add STATUS.md
           git add .chain-sessions.json 2>/dev/null || true   # ledger do governador de cota
+          git add .chain-health.json 2>/dev/null || true     # circuit breaker
+          mkdir -p ../ci-logs/chain-last
+          cp ../.cache_harvest.log ../ci-logs/chain-last/harvest.log 2>/dev/null || true
+          cp ../.cache_chain.log ../ci-logs/chain-last/chain.log 2>/dev/null || true
+          git add ../ci-logs/chain-last 2>/dev/null || true  # log da colheita (diagnostico)
           if git diff --cached --quiet; then
             echo "status sem mudanca"
           else
