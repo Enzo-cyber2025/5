@@ -41,7 +41,8 @@ import numpy as np
 
 from . import sim, telemetry
 from .contract import load_weights, clamp_action
-from .keys import KeyInjector, Recorder
+from .keys import KeyInjector, Recorder, MACROS
+from . import memtelemetry
 from .model import forward
 from .roadmap import RoadMap, detect_frame, wrap
 
@@ -159,7 +160,8 @@ class PracticeLoop:
 
     def __init__(self, mode, road_map, source, layers=None, injector=None,
                  recorder=None, map_path=None, policy_fn=None, phone=None,
-                 tick=TICK, clock=time.monotonic, sleep=time.sleep, log=print):
+                 tick=TICK, clock=time.monotonic, sleep=time.sleep, log=print,
+                 foreign_keys=None):
         assert mode in ("record", "drive", "shadow")
         self.mode = mode
         self.road_map = road_map
@@ -184,6 +186,11 @@ class PracticeLoop:
         self._last_ticks, self._ticks_t = None, 0.0
         self._job_start_min = None
         self._override_hold = 0.0   # ate quando o humano manda (drive)
+        self._cold_t0 = None        # arranque frio: quando parou (drive)
+        self._last_macro_t = -1e9
+        self._fk_ticks = 0          # teclas fisicas estranhas seguidas
+        self._no_frame_needed = False   # telemetria sem input do jogo (mem)
+        self.foreign_keys = foreign_keys or None
         self._human_active = False
         self._exp_steer = 0.0       # input esperado (rampa do jogo)
         self._exp_thr = 0.0
@@ -264,6 +271,8 @@ class PracticeLoop:
 
     def _calibrate(self, sn):
         """Coleta dirigida ate travar a reflexao do frame do jogo."""
+        if self._no_frame_needed:
+            return          # memoria nativa: nao existe espelho a calibrar
         if self.road_map.frame.locked or len(self.road_map.x) > 0:
             return
         if abs(sn["speed"]) < 1.0:
@@ -308,6 +317,11 @@ class PracticeLoop:
                 self.injector.release_all()
             return out
         self.speed_max = max(self.speed_max, sn["speed"])
+        if sn.get("user_steer") is None:
+            # leitor sem DLL (memoria): coordenadas NATIVAS do jogo — nao ha
+            # reflexao de frame p/ calibrar; e os inputs do jogador nao vem
+            # pela telemetria (deteccao de humano e por teclas fisicas).
+            self._no_frame_needed = True
         course = self._update_course(sn)
         self._calibrate(sn)
         # minutos de trabalho (para fatigue)
@@ -323,7 +337,8 @@ class PracticeLoop:
         # a propria oscilacao virar "centro da pista" (espiral de erro).
         if course is not None and sn["speed"] > 0.5:
             loc_now = self.road_map.locate(sn["world_x"], sn["world_z"], course)
-            if self.road_map.frame.locked or len(self.road_map.x) > 0:
+            if (self.road_map.frame.locked or len(self.road_map.x) > 0
+                    or self._no_frame_needed):
                 if self.mode == "drive":
                     if loc_now is None:
                         self.road_map.record(sn["world_x"], sn["world_z"],
@@ -365,6 +380,13 @@ class PracticeLoop:
                                    override=True, src="H")
                 out["source"] = "HUMANO no comando (DAgger)"
             else:
+                self._cold_start(sn, now)
+                # mapa ainda vazio: assume MODERADO (11 m/s ~ 40 km/h) ate
+                # se situar (40 pontos de estrada) — a tomada continua
+                # IMEDIATA, so nao acelera tudo no escuro.
+                if not (self.road_map.frame.locked
+                        or len(self.road_map.x) >= 40):
+                    limit = min(limit, 11.0)
                 cmd = governor_real(sn["speed"], meta, route_m, cmd, limit)
                 if self.injector is not None:
                     if sn.get("park_brake") and sn["speed"] < 0.5:
@@ -380,14 +402,15 @@ class PracticeLoop:
             return
         if not meta["located"] or meta["coverage"] < REC_MIN_COVERAGE:
             return
-        cmd = (sn["user_steer"], sn["user_throttle"], sn["user_brake"])
+        cmd = (sn.get("user_steer") or 0.0, sn.get("user_throttle") or 0.0,
+               sn.get("user_brake") or 0.0)
         self._record_row(feat, cmd, 1 if (override or self.mode == "record")
                          else 0, src if override else "M")
 
     def _shadow_update(self, cmd, sn):
         if sn["speed"] > 2.0:
             self._shadow_n += 1
-            h = sn["user_steer"]
+            h = sn.get("user_steer") or 0.0
             if abs(h) + abs(cmd[0]) > 0.05:      # ignora trechos "mortos"
                 self._shadow_dot += cmd[0] * h
                 self._shadow_ai += cmd[0] * cmd[0]
@@ -405,12 +428,54 @@ class PracticeLoop:
                     " ESPELHADO. Rode 'record' por 1-2 min e mande o mapa de novo.")
         return f"sinais OK (concordancia {agree*100:.0f}%)"
 
+    def _cold_start(self, sn, now):
+        """TOMADA IMEDIATA: caminhao parado? A IA liga o motor e solta o
+        freio de mao SOZINHA (macros E e .) — nao espera o humano.
+        Uma tentativa a cada 2.5 s; se apos 6 s parado nao andou, toca o
+        motor de novo (cobrir telemetria sem engine_enabled)."""
+        if sn["speed"] >= 0.5:
+            self._cold_t0 = None
+            return
+        if self._cold_t0 is None:
+            self._cold_t0 = now
+            if self.mode == "drive":
+                self.log("[pratica] caminhao parado: IA ligando o motor e "
+                         "soltando o freio de mao sozinha (tomada imediata)")
+        parado = now - self._cold_t0
+        if parado < 0.8 or now - self._last_macro_t < 2.5:
+            return
+        if self.injector is None:
+            return
+        self._last_macro_t = now
+        if not sn.get("engine_enabled", True) or parado > 6.0:
+            self.injector.tap(*MACROS["engine"])
+        if sn.get("park_brake"):
+            self.injector.tap(*MACROS["park_brake"])
+
     def _human_detect(self, sn, cmd, now):
         """Detecta intervencao humana comparando o input do jogo com o
         esperado — esperado = teclas da IA passadas PELA RAMPA do jogo
         (o volante do ETS2 nao salta: sobe ~2.5/s, solta ~3.5/s). Sem isso,
         uma tecla recem-pressionada parece "humano contrariando a IA".
         """
+        if sn.get("user_steer") is None:
+            # telemetria sem DLL: os inputs do jogador nao vem do jogo —
+            # humano = tecla fisica de direcao que NAO fomos nos que
+            # injetamos (SendInput tambem acorda o estado async; por isso
+            # descontamos as nossas).
+            fk = self.foreign_keys() if self.foreign_keys else set()
+            self._fk_ticks = self._fk_ticks + 1 if fk else 0
+            if self._fk_ticks >= 3:
+                if not self._human_active:
+                    self.log("[pratica] humano no volante — IA solta o "
+                             "volante e grava a correcao (DAgger)")
+                self._human_active = True
+                self._last_human_t = now
+            elif self._human_active and \
+                    now - self._last_human_t > OVERRIDE_RESUME_S:
+                self._human_active = False
+                self._override_hold = now + 0.5
+            return
         inj = self.injector
         t_steer = t_thr = t_brk = 0.0
         if inj is not None:
@@ -466,8 +531,9 @@ class PracticeLoop:
         elif self.mode == "shadow":
             self.log("[pratica] VOCE dirige; a IA so observa (sem injecao).")
         else:
-            self.log("[pratica] IA DIRIGINDO. ESC = kill switch. Encoste no "
-                     "teclado para corrigir (vira dado DAgger).")
+            self.log("[pratica] IA DIRIGINDO IMEDIATAMENTE: liga o motor e "
+                     "solta o freio de mao sozinha. ESC = kill switch; "
+                     "encoste no teclado para corrigir (vira dado DAgger).")
         t0 = self.clock()
         last = t0
         try:
@@ -554,7 +620,7 @@ def _try_install_plugin(game_dir=None, auto=True):
 # ---------------------------------------------------------------------------
 def run(mode, map_path="practice/mapa.json", rec_path=None, inject=False,
         window="Euro Truck", weights=BASE_WEIGHTS, max_seconds=None,
-        game_dir=None, auto_install=True, phone=None,
+        game_dir=None, auto_install=True, phone=None, telemetry_mode="auto",
         _source=None, _policy=None, _clock=None, _sleep=None):
     """Monta e roda o loop de pratica (usado pelo CLI e pelo bridge --ets2)."""
     map_path = Path(map_path)
@@ -564,6 +630,18 @@ def run(mode, map_path="practice/mapa.json", rec_path=None, inject=False,
         layers, meta = load_weights(weights)
         print(f"[pesos] {weights} (val_loss {meta['final_loss']:.5f})")
     source = _source
+    if source is None and telemetry_mode in ("mem", "auto"):
+        # 1a via: LEITURA DE MEMORIA — nao instala NADA na pasta do jogo.
+        try:
+            mreader = memtelemetry.MemTelemetry()
+            source = mreader.snapshot
+            print(f"[telemetria] SEM DLL — leitura de memoria do processo "
+                  f"(pack '{mreader.version}')")
+        except RuntimeError as e:
+            if telemetry_mode == "mem":
+                raise SystemExit(f"[telemetria] sem DLL indisponivel: {e}")
+            print(f"[telemetria] leitura de memoria nao validou: {e}")
+            print("[telemetria] usando a via DLL embutida (auto-install)")
     if source is None:
         try:
             reader = telemetry.TelemetryReader()
@@ -589,7 +667,9 @@ def run(mode, map_path="practice/mapa.json", rec_path=None, inject=False,
                         injector=injector, recorder=recorder,
                         map_path=map_path, policy_fn=_policy, phone=phone,
                         clock=_clock or time.monotonic,
-                        sleep=_sleep or time.sleep)
+                        sleep=_sleep or time.sleep,
+                        foreign_keys=(injector.foreign_keys_down
+                                      if injector is not None else None))
     try:
         return loop.run(max_seconds=max_seconds)
     finally:

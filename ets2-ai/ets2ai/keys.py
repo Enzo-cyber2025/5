@@ -131,6 +131,22 @@ class KeyInjector:
         if name:
             print(f"[macro] {name}")
 
+    def foreign_keys_down(self):
+        """Teclas de direcao FISICAS pressionadas que NAO foram injetadas
+        por nos. SendInput tambem altera o estado async — por isso
+        descontamos as nossas. Usado para detectar o humano no volante
+        quando a telemetria nao expoe os inputs do jogo (leitor de
+        memoria sem DLL)."""
+        if not self.enabled:
+            return set()
+        out = set()
+        for name, scan in KEYMAP.items():
+            vk = self.user32.MapVirtualKeyW(scan, 1)   # VSC -> VK
+            if self.user32.GetAsyncKeyState(vk) & 0x8000 and \
+                    name not in self.down:
+                out.add(name)
+        return out
+
     def release_all(self):
         if not self.enabled:
             return

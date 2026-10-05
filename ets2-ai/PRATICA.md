@@ -69,6 +69,26 @@ entre a IA e você:
 - `ESPELHADO` → rode `record` de novo em trechos com curvas (a calibração
   vai corrigir) antes de deixar a IA dirigir.
 
+## 2b) Telemetria: duas vias (`--telemetry`)
+
+| via | como | quando |
+|---|---|---|
+| `mem` (`--no-dll`) | LEITURA de memoria do processo — **não instala NADA** na pasta do jogo | offsets da sua versão no pacote `ets2-mem-offsets.json` (ao lado do .exe, editável sem recompilar) |
+| `dll` | plugin SDK oficial (RenCloud, MIT) **embutido no .exe** com auto-install invisível | sempre funciona; é o padrão quando `mem` não valida |
+| `auto` (padrão) | tenta `mem` primeiro; se não validar, usa a `dll` embutida | recomendado |
+
+O leitor `mem` precisa de `speed + world_x + world_z` no pacote para dirigir;
+campos que faltam ganham padrões seguros, e a detecção de humano usa as
+teclas FÍSICAS do teclado (não a telemetria).
+
+## 2c) Tomada imediata (`drive`)
+
+A IA assume **no primeiro tick** — caminhão parado? Ela liga o motor (E),
+solta o freio de mão (.) sozinha e arranca. Com o mapa ainda vazio ela
+assume moderada (~40 km/h) até se situar (~40 pontos de estrada), depois
+acelera até o limite. ESC continua sendo o kill switch e encostar no
+teclado vira correção DAgger.
+
 ## 3) `drive` — a IA dirige de verdade
 
 > **IA no CELULAR (revisado v0.4.6+):** no modo real, se o APK estiver

@@ -76,11 +76,17 @@ class FakeInjector:
         self.down = set()
         self.kill = False
         self.phase = 0
+        self.taps = []          # macros tocadas (engine/park_brake/...)
+        self.last_cmd = None
 
     def update(self, steer, throttle, brake):
         from ets2ai.keys import key_decisions, PWM_PHASES
         self.down = key_decisions(steer, throttle, brake, self.phase)
         self.phase = (self.phase + 1) % PWM_PHASES
+        self.last_cmd = (steer, throttle, brake)
+
+    def tap(self, scan, name=""):
+        self.taps.append(name or hex(scan))
 
     def release_all(self):
         self.down = set()
@@ -419,3 +425,82 @@ def test_drive_com_celular_como_cerebro():
     loop2, _ = make_loop("drive", game, m, policy=lambda f: (0.1, 0.5, 0.0))
     loop2.phone = ph
     loop2.step(game.snapshot(), 0.2)   # nao deve lancar
+
+
+# --------------------------------------------------------------------------- #
+# TOMADA IMEDIATA + telemetria sem DLL (leitura de memoria)
+# --------------------------------------------------------------------------- #
+def test_tomada_imediata_arranque_frio():
+    """Caminhao PARADO com freio de mao e motor desligado: a IA assume no
+    1o tick (fonte 'IA'), liga o motor e solta o freio de mao SOZINHA."""
+    road = GENTLE_ROAD
+    m = RoadMap()
+    game = FakeGame(road, s=5.0, speed=0.0)
+    st_ = {"pb": True, "eng": False}
+    _orig_snap = game.snapshot
+    game.snapshot = lambda: dict(_orig_snap(), park_brake=st_["pb"],
+                                 engine_enabled=st_["eng"])
+    inj = FakeInjector()
+    loop, st = make_loop("drive", game, m, injector=inj,
+                         policy=lambda f: (0.0, 0.9, 0.0))
+    # 1o tick: parado, motor off — ja e IA no comando (nao espera humano)
+    out = loop.step(loop.source(), 0.05)
+    assert out["source"] == "IA"
+    # ~1 s parado: macros de arranque disparam (motor + freio de mao)
+    t = 0.05
+    for i in range(24):
+        t += 0.05
+        loop.step(loop.source(), t)
+    assert any("motor" in t for t in inj.taps), inj.taps
+    assert any("estacionamento" in t for t in inj.taps), inj.taps
+    # contra o freio de mao a IA NAO acelera (solta as teclas)
+    assert inj.down == set()
+    # freio de mao solto + motor ligado -> IA acelera sozinha
+    st_.update(pb=False, eng=True)
+    t += 0.05
+    out = loop.step(loop.source(), t)
+    assert inj.last_cmd is not None and inj.last_cmd[1] > 0.0, out
+
+
+def test_mapa_vazio_teto_prudente():
+    """Mapa vazio: a IA assume IMEDIATAMENTE mas moderada (freia acima de
+    11 m/s mesmo com limite 25) — nunca acelera tudo no escuro."""
+    road = GENTLE_ROAD
+    m = RoadMap()                     # vazio: sem frame, sem pontos
+    game = FakeGame(road, s=5.0, speed=16.0)   # 16 m/s > 11+2
+    inj = FakeInjector()
+    loop, st = make_loop("drive", game, m, injector=inj,
+                         policy=lambda f: (0.0, 1.0, 0.0))
+    out = loop.step(game.snapshot(), 0.05)
+    assert out["cmd"] is not None and out["cmd"][2] >= 0.8   # freou
+
+
+def test_humano_por_tecla_fisica_sem_dll():
+    """Telemetria sem input do jogo (leitor de memoria): humano detectado
+    pelas teclas FISICAS que nao fomos nos — IA solta e volta depois."""
+    road = GENTLE_ROAD
+    m = RoadMap()
+    game = FakeGame(road, s=5.0, speed=10.0)
+    inj = FakeInjector()
+
+    _orig_snap = game.snapshot
+    game.snapshot = lambda: dict(_orig_snap(), user_steer=None,
+                                 user_throttle=None, user_brake=None)
+    fk = {"hold": False}
+    loop, st = make_loop("drive", game, m, injector=inj,
+                         policy=lambda f: (0.0, 0.6, 0.0))
+    loop.foreign_keys = lambda: ({"accel"} if fk["hold"] else set())
+    # humano pisa no acelerador: 3+ ticks -> IA solta
+    fk["hold"] = True
+    t = 0.0
+    for i in range(5):
+        t += 0.05
+        out = loop.step(loop.source(), t)
+    assert out["source"].startswith("HUMANO")
+    assert inj.down == set()
+    # humano soltou: apos OVERRIDE_RESUME_S a IA volta
+    fk["hold"] = False
+    for i in range(14):
+        t += 0.2
+        out = loop.step(loop.source(), t)
+    assert out["source"] == "IA", out["source"]

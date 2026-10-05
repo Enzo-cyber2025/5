@@ -1,0 +1,22 @@
+{
+  "_leia": [
+    "Pacote de offsets da telemetria por LEITURA DE MEMORIA (sem DLL no jogo).",
+    "Este arquivo pode ser EDITADO ao lado do .exe (copia externa) para dar",
+    "suporte a uma versao nova do ETS2 SEM recompilar nada. Formato de cada",
+    "campo: 'offsets' = cadeia de ponteiros apos o modulo base (em decimal),",
+    "'tipo' = f32|f64|u8|u32, 'unidade' = mps|kmh|auto.",
+    "Campos que faltam ganham padroes seguros; o leitor so aceita o pack se",
+    "speed + world_x + world_z (o minimo para dirigir) forem legiveis e sanos."
+  ],
+  "versoes": {
+    "1.40.3.3s-64b-exemplo": {
+      "nota": "EXEMPLO PUBLICO (tabela CE de 2021, so speed/cruise). Sem",
+      "world_x/world_z este pack NAO dirige — serve de modelo do formato.",
+      "modulo": "eurotrucks2.exe",
+      "base": "eurotrucks2.exe+24670320",
+      "campos": {
+        "speed": {"offsets": [4320, 312], "tipo": "f32", "unidade": "auto"}
+      }
+    }
+  }
+}

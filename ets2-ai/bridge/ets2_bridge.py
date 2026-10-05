@@ -708,6 +708,13 @@ def main():
                          "drive=IA dirige (use --inject)")
     ap.add_argument("--map", default="practice/mapa.json",
                     help="mapa de pista aprendido (modo --ets2)")
+    ap.add_argument("--telemetry", default="auto",
+                    choices=["auto", "mem", "dll"],
+                    help="telemetria: mem = SO leitura de memoria (sem DLL "
+                         "nenhuma no jogo); dll = plugin embutido; auto = "
+                         "mem primeiro, DLL embutida como reserva (padrao)")
+    ap.add_argument("--no-dll", action="store_true",
+                    help="atalho para --telemetry mem (nunca instala DLL)")
     args = ap.parse_args()
 
     if args.inject and sys.platform != "win32":
@@ -736,12 +743,15 @@ def main():
                   f"em tcp://127.0.0.1:{args.port} (cabo USB) ou "
                   f"{PhoneLink.local_ip()}:{args.port} — sem celular, a IA "
                   "local do PC assume")
+            tmode = "mem" if args.no_dll else args.telemetry
             practice.run(args.ets2, map_path=args.map, rec_path=rec,
                          inject=args.inject, window=args.window,
-                         phone=link)
+                         phone=link, telemetry_mode=tmode)
         else:
+            tmode = "mem" if args.no_dll else args.telemetry
             practice.run(args.ets2, map_path=args.map, rec_path=rec,
-                         inject=args.inject, window=args.window)
+                         inject=args.inject, window=args.window,
+                         telemetry_mode=tmode)
         return
     layers = None if (args.sem_janela and args.somente_celular) else load_policy()
     injector = KeyInjector(args.window, args.inject)
