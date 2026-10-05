@@ -52,8 +52,10 @@ import android.content.pm.PackageManager;
  */
 public final class MainActivity extends Activity {
 
-    private GameView game;
     private TextView status;
+    private TextView statusTitle, statusDetail;
+    private View statusDot;
+    private android.os.Handler uiPoll;
     private NeuralNet net;
     private InferenceEngine.Net engine;
     private String engineName = "Java CPU";
@@ -74,7 +76,6 @@ public final class MainActivity extends Activity {
         } catch (Exception e) {
             net = null;
         }
-        game = new GameView(this, net);
         if (net != null) {
             new Thread(new Runnable() {
                 public void run() {
@@ -90,98 +91,125 @@ public final class MainActivity extends Activity {
             }).start();
         }
 
-        FrameLayout root = new FrameLayout(this);
-        root.addView(game, new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-
-        LinearLayout panel = new LinearLayout(this);
-        panel.setOrientation(LinearLayout.VERTICAL);
-        GradientDrawable panelBg = new GradientDrawable();
-        panelBg.setColor(0xCC16161F);
-        panelBg.setCornerRadius(18f);
-        panel.setBackgroundDrawable(panelBg);
-        panel.setPadding(16, 10, 16, 12);
+        // ---- painel de status: o app indica se esta CONECTADO ao PC ----
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setBackgroundColor(0xFF101018);
+        root.setPadding(24, 44, 24, 24);
 
         LinearLayout titleRow = new LinearLayout(this);
         titleRow.setOrientation(LinearLayout.HORIZONTAL);
+        titleRow.setGravity(Gravity.CENTER_VERTICAL);
         TextView title = new TextView(this);
         title.setText("ETS2-AI");
         title.setTextColor(Color.WHITE);
         title.setTypeface(Typeface.DEFAULT_BOLD);
-        title.setTextSize(15);
+        title.setTextSize(18);
         titleRow.addView(title);
-        titleRow.addView(chip("DEMO", 0xFF8A8A9E));
         engineChip = chip(engineName, 0xFF2F7BFF);
         titleRow.addView(engineChip);
-        panel.addView(titleRow);
+        root.addView(titleRow);
 
-        status = new TextView(this);
-        status.setTextColor(0xFFE6E6F0);
-        status.setTypeface(Typeface.MONOSPACE);
-        status.setTextSize(11);
-        status.setPadding(0, 8, 0, 0);
-        panel.addView(status);
-
-        // A funcao REAL do app: conectar no ETS2 do PC e ser o cerebro da IA.
-        // (O cenario animado la embaixo e so a DEMO offline de visualizacao.)
-        Button connect = styledButton("CONECTAR AO ETS2", 0xFF00A884, new Runnable() {
-            public void run() { autoConnectBridge(); }
-        });
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setGravity(Gravity.CENTER_HORIZONTAL);
+        GradientDrawable cardBg = new GradientDrawable();
+        cardBg.setColor(0xFF16161F);
+        cardBg.setCornerRadius(22f);
+        card.setBackgroundDrawable(cardBg);
+        card.setPadding(24, 30, 24, 24);
         LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        clp.topMargin = 10;
-        connect.setLayoutParams(clp);
-        panel.addView(connect);
-        TextView hint = new TextView(this);
-        hint.setText("O caminhao animado abaixo e so a DEMO offline. A IA de verdade "
-                + "roda NESTE aparelho e controla o ETS2 no seu PC: rode o "
-                + "ETS2-AI-bridge.exe no PC, conecte o cabo USB e toque acima "
-                + "(ou BRIDGE). Funciona com a tela bloqueada.");
-        hint.setTextColor(0xFFB9B9C9);
-        hint.setTextSize(10);
-        hint.setPadding(0, 8, 0, 0);
-        panel.addView(hint);
+        clp.topMargin = 28;
+        card.setLayoutParams(clp);
 
-        FrameLayout.LayoutParams plp = new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
-                Gravity.TOP | Gravity.START);
-        plp.setMargins(12, 12, 12, 12);
-        root.addView(panel, plp);
+        statusDot = new View(this);
+        GradientDrawable dotBg = new GradientDrawable();
+        dotBg.setShape(GradientDrawable.OVAL);
+        dotBg.setColor(0xFF4A4A55);
+        statusDot.setBackgroundDrawable(dotBg);
+        LinearLayout.LayoutParams dlp = new LinearLayout.LayoutParams(64, 64);
+        dlp.gravity = Gravity.CENTER_HORIZONTAL;
+        statusDot.setLayoutParams(dlp);
+        card.addView(statusDot);
 
-        HorizontalScrollView scroll = new HorizontalScrollView(this);
-        scroll.setHorizontalScrollBarEnabled(false);
-        scroll.setBackgroundColor(0x88101420);
-        LinearLayout bar = new LinearLayout(this);
-        bar.setOrientation(LinearLayout.HORIZONTAL);
-        bar.setGravity(Gravity.CENTER_VERTICAL);
-        bar.setPadding(10, 8, 10, 10);
-        scroll.addView(bar);
-        bar.addView(styledButton("IA", 0xFF2F7BFF, new Runnable() {
-            public void run() { game.world.aiEnabled = !game.world.aiEnabled; }
-        }));
-        bar.addView(styledButton("ROTA", 0xFF00A884, new Runnable() {
-            public void run() { game.world.newRoute(); }
-        }));
-        bar.addView(styledButton("VEL", 0xFFF2A93B, new Runnable() {
-            public void run() { game.cycleSpeed(); }
-        }));
-        bar.addView(styledButton("BRIDGE", 0xFF8E5BF2, new Runnable() {
+        statusTitle = new TextView(this);
+        statusTitle.setText("DESCONECTADO");
+        statusTitle.setTextColor(0xFFB9B9C9);
+        statusTitle.setTypeface(Typeface.DEFAULT_BOLD);
+        statusTitle.setTextSize(24);
+        statusTitle.setGravity(Gravity.CENTER);
+        card.addView(statusTitle, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        statusDetail = new TextView(this);
+        statusDetail.setText("toque em CONECTAR — a IA roda NESTE aparelho");
+        statusDetail.setTextColor(0xFF8A8A9E);
+        statusDetail.setTextSize(12);
+        statusDetail.setGravity(Gravity.CENTER);
+        statusDetail.setPadding(0, 8, 0, 0);
+        card.addView(statusDetail, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        status = new TextView(this);
+        status.setTextColor(0xFF6A6A78);
+        status.setTypeface(Typeface.MONOSPACE);
+        status.setTextSize(9);
+        status.setGravity(Gravity.CENTER);
+        status.setMinLines(2);
+        status.setPadding(0, 10, 0, 0);
+        card.addView(status, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        root.addView(card);
+
+        Button connect = styledButton("CONECTAR", 0xFF00A884, new Runnable() {
+            public void run() { autoConnectBridge(); }
+        });
+        LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        blp.topMargin = 18;
+        connect.setLayoutParams(blp);
+        root.addView(connect);
+
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        rlp.topMargin = 8;
+        row.setLayoutParams(rlp);
+        row.addView(styledButton("BRIDGE (IP MANUAL)", 0xFF8E5BF2, new Runnable() {
             public void run() { showBridgeDialog(); }
         }));
-        bar.addView(styledButton("NPU", 0xFFE85D75, new Runnable() {
-            public void run() { showNpuDialog(); }
-        }));
-        bar.addView(styledButton("BACKEND", 0xFF3AA8C1, new Runnable() {
-            public void run() { showBackendDialog(); }
-        }));
-        bar.addView(styledButton("TECLADO BT", 0xFF5B6B8C, new Runnable() {
+        row.addView(styledButton("TECLADO BT", 0xFF5B6B8C, new Runnable() {
             public void run() { showBtDialog(); }
         }));
-        root.addView(scroll, new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT,
-                Gravity.BOTTOM));
+        root.addView(row);
 
-        setContentView(root);
+        TextView foot = new TextView(this);
+        foot.setText("A tela pode bloquear (a notificacao mostra os comandos/s). "
+                + "No PC: ETS2-AI-bridge.exe -> botao COMECAR.");
+        foot.setTextColor(0xFF5A5A68);
+        foot.setTextSize(10);
+        foot.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams flp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        flp.topMargin = 16;
+        root.addView(foot, flp);
+
+        ScrollView wrap = new ScrollView(this);
+        wrap.setBackgroundColor(0xFF101018);
+        wrap.setFillViewport(true);
+        wrap.addView(root, new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        setContentView(wrap);
+
+        // indicador ao vivo: conectado? latencia? comandos/s?
+        uiPoll = new android.os.Handler();
+        uiPoll.postDelayed(new Runnable() {
+            public void run() { pollStatus(); }
+        }, 500);
     }
 
     private TextView chip(String text, int color) {
@@ -223,6 +251,33 @@ public final class MainActivity extends Activity {
         lp.setMargins(6, 0, 6, 0);
         b.setLayoutParams(lp);
         return b;
+    }
+
+    private void pollStatus() {
+        boolean conn = bridge != null && bridge.connected;
+        GradientDrawable dg = (GradientDrawable) statusDot.getBackground();
+        if (conn) {
+            dg.setColor(0xFF00E5A8);
+            statusTitle.setText("CONECTADO");
+            statusTitle.setTextColor(0xFF00E5A8);
+            String d = String.format(Locale.US,
+                    "IA dirigindo  •  %d comandos  •  %.0f cmd/s",
+                    bridge.answered, bridge.hz);
+            if (bridge.lastRttMs > 0f)
+                d += String.format(Locale.US, "  •  %.0f ms", bridge.lastRttMs);
+            statusDetail.setText(d);
+        } else {
+            dg.setColor(0xFF4A4A55);
+            statusTitle.setText("DESCONECTADO");
+            statusTitle.setTextColor(0xFFB9B9C9);
+            statusDetail.setText(bridge == null
+                    ? "toque em CONECTAR (cabo USB liga sozinho)"
+                    : "procurando o PC / reconectando...");
+        }
+        status.setText(bridgeStatus.length() > 0 ? bridgeStatus : btStatus);
+        uiPoll.postDelayed(new Runnable() {
+            public void run() { pollStatus(); }
+        }, 500);
     }
 
     private void showBridgeDialog() {

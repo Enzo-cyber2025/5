@@ -161,7 +161,7 @@ class PracticeLoop:
     def __init__(self, mode, road_map, source, layers=None, injector=None,
                  recorder=None, map_path=None, policy_fn=None, phone=None,
                  tick=TICK, clock=time.monotonic, sleep=time.sleep, log=print,
-                 foreign_keys=None):
+                 foreign_keys=None, stop_event=None):
         assert mode in ("record", "drive", "shadow")
         self.mode = mode
         self.road_map = road_map
@@ -191,6 +191,7 @@ class PracticeLoop:
         self._fk_ticks = 0          # teclas fisicas estranhas seguidas
         self._no_frame_needed = False   # telemetria sem input do jogo (mem)
         self.foreign_keys = foreign_keys or None
+        self.stop_event = stop_event      # GUI: botao PARAR
         self._human_active = False
         self._exp_steer = 0.0       # input esperado (rampa do jogo)
         self._exp_thr = 0.0
@@ -525,6 +526,8 @@ class PracticeLoop:
     def run(self, max_seconds=None, hud_every=2.0):
         self.log(f"[pratica] modo {self.mode.upper()} | mapa: "
                  f"{self.road_map.stats()}")
+        if self.stop_event is not None:
+            self.stop_event.clear()
         if self.mode == "record":
             self.log("[pratica] VOCE dirige: 1a passada aprende a estrada; "
                      "da 2a em diante grava dados de treino. Ctrl+C sai.")
@@ -537,7 +540,8 @@ class PracticeLoop:
         t0 = self.clock()
         last = t0
         try:
-            while not self.stop:
+            while not self.stop and not (self.stop_event is not None
+                                         and self.stop_event.is_set()):
                 now = self.clock()
                 while now - last >= self.tick:
                     last += self.tick
@@ -621,6 +625,7 @@ def _try_install_plugin(game_dir=None, auto=True):
 def run(mode, map_path="practice/mapa.json", rec_path=None, inject=False,
         window="Euro Truck", weights=BASE_WEIGHTS, max_seconds=None,
         game_dir=None, auto_install=True, phone=None, telemetry_mode="auto",
+        log=print, stop_event=None,
         _source=None, _policy=None, _clock=None, _sleep=None):
     """Monta e roda o loop de pratica (usado pelo CLI e pelo bridge --ets2)."""
     map_path = Path(map_path)
@@ -628,20 +633,20 @@ def run(mode, map_path="practice/mapa.json", rec_path=None, inject=False,
     layers = None
     if mode in ("drive", "shadow"):
         layers, meta = load_weights(weights)
-        print(f"[pesos] {weights} (val_loss {meta['final_loss']:.5f})")
+        log(f"[pesos] {weights} (val_loss {meta['final_loss']:.5f})")
     source = _source
     if source is None and telemetry_mode in ("mem", "auto"):
         # 1a via: LEITURA DE MEMORIA — nao instala NADA na pasta do jogo.
         try:
             mreader = memtelemetry.MemTelemetry()
             source = mreader.snapshot
-            print(f"[telemetria] SEM DLL — leitura de memoria do processo "
-                  f"(pack '{mreader.version}')")
+            log(f"[telemetria] SEM DLL — leitura de memoria do processo "
+                f"(pack '{mreader.version}')")
         except RuntimeError as e:
             if telemetry_mode == "mem":
                 raise SystemExit(f"[telemetria] sem DLL indisponivel: {e}")
-            print(f"[telemetria] leitura de memoria nao validou: {e}")
-            print("[telemetria] usando a via DLL embutida (auto-install)")
+            log(f"[telemetria] leitura de memoria nao validou: {e}")
+            log("[telemetria] usando a via DLL embutida (auto-install)")
     if source is None:
         try:
             reader = telemetry.TelemetryReader()
@@ -661,15 +666,16 @@ def run(mode, map_path="practice/mapa.json", rec_path=None, inject=False,
         source = reader.snapshot
     injector = KeyInjector(window, inject) if (mode == "drive" and inject) else None
     if inject and mode == "drive":
-        print(f"[inject] alvo: janela '{window}' | ESC = kill switch")
+        log(f"[inject] alvo: janela '{window}' | ESC = kill switch")
     recorder = Recorder(rec_path) if rec_path else None
     loop = PracticeLoop(mode, road_map, source, layers=layers,
                         injector=injector, recorder=recorder,
                         map_path=map_path, policy_fn=_policy, phone=phone,
                         clock=_clock or time.monotonic,
-                        sleep=_sleep or time.sleep,
+                        sleep=_sleep or time.sleep, log=log,
                         foreign_keys=(injector.foreign_keys_down
-                                      if injector is not None else None))
+                                      if injector is not None else None),
+                        stop_event=stop_event)
     try:
         return loop.run(max_seconds=max_seconds)
     finally:

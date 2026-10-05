@@ -30,6 +30,8 @@ public final class BridgeClient implements Runnable {
 
     public volatile float lastRttMs = -1f;
     public volatile long answered = 0;
+    /** TRUE com o socket aberto ao bridge (indicador da UI). */
+    public volatile boolean connected = false;
     /** Velocidade da IA em tempo real: comandos por segundo (janela de 1 s). */
     public volatile float hz = 0f;
     private long hzMark = 0L;
@@ -44,6 +46,7 @@ public final class BridgeClient implements Runnable {
 
     public void stop() {
         running = false;
+        connected = false;
         try {
             if (socket != null) socket.close();
         } catch (Exception ignored) { }
@@ -57,6 +60,7 @@ public final class BridgeClient implements Runnable {
                 socket = new Socket();
                 socket.connect(new InetSocketAddress(host, port), 4000);
                 socket.setTcpNoDelay(true);
+                connected = true;
                 post("CONECTADO " + host + ":" + port);
                 BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
                 OutputStream out = socket.getOutputStream();
@@ -68,8 +72,10 @@ public final class BridgeClient implements Runnable {
                         out.flush();
                     }
                 }
+                connected = false;
                 post("desconectado (bridge caiu)");
             } catch (Exception e) {
+                connected = false;
                 post("erro: " + e.getClass().getSimpleName() + " — tentando de novo em 3 s");
             }
             try {

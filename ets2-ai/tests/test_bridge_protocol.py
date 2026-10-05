@@ -87,3 +87,20 @@ def test_local_policy_drives_for_bridge():
         if truck.s >= road.length - 10 or abs(truck.offset) > sim.ROAD_HALF:
             break
     assert in_lane / steps > 0.9
+
+
+def test_botao_comecar_cinza_sem_celular():
+    """UI do .exe: COMEÇAR so habilita com o CELULAR conectado (a IA roda
+    no APK); cinza/travado sem celular; PARAR enquanto dirige."""
+    import importlib.util as _ilu
+    from pathlib import Path as _P
+    _bp = _P(__file__).resolve().parents[1] / "bridge" / "ets2_bridge.py"
+    _spec = _ilu.spec_from_file_location("ets2_bridge_gui", _bp)
+    _mod = _ilu.module_from_spec(_spec)
+    _spec.loader.exec_module(_mod)
+    st = _mod._start_button_state
+    assert st(False, False) == ("disabled", "COMEÇAR (conecte o celular)",
+                                "#3A3A45")     # CINZA sem celular
+    assert st(True, False) == ("normal", "COMEÇAR", "#00A884")
+    assert st(False, True) == ("normal", "PARAR", "#E85D75")
+    assert st(True, True) == ("normal", "PARAR", "#E85D75")

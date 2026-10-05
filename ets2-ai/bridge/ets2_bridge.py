@@ -533,6 +533,154 @@ def run_demo(layers, port, injector, record_path=None):
               f"python -m ets2ai.finetune --recordings {rec.path}")
 
 
+def _start_button_state(phone_connected, running):
+    """Regra do botao COMEÇAR (UI): cinza/travado enquanto o celular NAO
+    esta conectado — a IA roda no APK. Verde com celular; PARAR ao rodar."""
+    if running:
+        return ("normal", "PARAR", "#E85D75")
+    if phone_connected:
+        return ("normal", "COMEÇAR", "#00A884")
+    return ("disabled", "COMEÇAR (conecte o celular)", "#3A3A45")
+
+
+def run_gui(port, window, inject, telemetry_mode, weights=None,
+            map_path="practice/mapa.json"):
+    """UI grafica do bridge: status do celular + botao COMEÇAR.
+
+    O botao so habilita (verde) quando o CELULAR esta conectado — a IA roda
+    no APK (GPU); o PC le a telemetria e injeta as teclas. Cinza = sem
+    celular. Ao comecar, vira PARAR (para a pratica e solta as teclas).
+    """
+    import threading
+    import tkinter as tk
+    from collections import deque
+    from ets2ai import practice
+
+    root = tk.Tk()
+    root.title("ETS2-AI bridge")
+    root.configure(bg="#101018")
+    root.geometry("560x430")
+    root.minsize(520, 400)
+
+    state = {"running": False, "thread": None, "error": ""}
+    stop_event = threading.Event()
+    logs = deque(maxlen=200)
+
+    def log(msg):
+        logs.append(str(msg))
+
+    link = PhoneLink(port)
+    link.start()
+    usb_plug_and_play(port)
+    UsbKeeper(port).start()
+
+    title = tk.Label(root, text="ETS2-AI bridge", font=("Segoe UI", 16, "bold"),
+                     fg="white", bg="#101018")
+    title.pack(pady=(14, 2))
+    sub = tk.Label(root, text="a IA roda no CELULAR (GPU) — o PC le a "
+                              "telemetria e injeta as teclas",
+                   font=("Segoe UI", 9), fg="#8A8A9E", bg="#101018")
+    sub.pack()
+
+    # ---- cartao de status do celular ----
+    card = tk.Frame(root, bg="#16161F", highlightthickness=0)
+    card.pack(fill="x", padx=18, pady=10)
+    dot = tk.Canvas(card, width=26, height=26, bg="#16161F",
+                    highlightthickness=0)
+    dot_id = dot.create_oval(4, 4, 22, 22, fill="#4A4A55", outline="")
+    dot.pack(side="left", padx=(16, 10), pady=12)
+    phone_lbl = tk.Label(card, text="Celular: aguardando conexão...",
+                         font=("Segoe UI", 12, "bold"), fg="#B9B9C9",
+                         bg="#16161F", anchor="w")
+    phone_lbl.pack(fill="x", pady=(10, 0), padx=(0, 12))
+    phone_sub = tk.Label(card, text=f"no APK: CONECTAR (USB) ou "
+                                    f"{PhoneLink.local_ip()}:{port}",
+                         font=("Segoe UI", 9), fg="#8A8A9E", bg="#16161F",
+                         anchor="w", justify="left")
+    phone_sub.pack(fill="x", padx=(0, 12), pady=(0, 12))
+
+    # ---- botao COMEÇAR / PARAR ----
+    def on_start():
+        if state["running"]:
+            stop_event.set()
+            return
+        state["error"] = ""
+        btn.config(state="disabled", text="INICIANDO...", bg="#2F7BFF")
+
+        def worker():
+            try:
+                practice.run("drive", map_path=map_path, inject=inject,
+                             window=window, phone=link,
+                             telemetry_mode=telemetry_mode,
+                             log=log, stop_event=stop_event,
+                             weights=weights or practice.BASE_WEIGHTS)
+            except SystemExit as e:
+                state["error"] = str(e)
+                log(str(e))
+            except Exception as e:                       # noqa: BLE001
+                state["error"] = f"{type(e).__name__}: {e}"
+                log(state["error"])
+            finally:
+                state["running"] = False
+
+        state["running"] = True
+        stop_event.clear()
+        state["thread"] = threading.Thread(target=worker, daemon=True)
+        state["thread"].start()
+
+    btn = tk.Button(root, text="COMEÇAR", font=("Segoe UI", 15, "bold"),
+                    fg="white", bg="#00A884", activebackground="#00C497",
+                    activeforeground="white", relief="flat", cursor="hand2",
+                    padx=20, pady=10, command=on_start)
+    btn.pack(fill="x", padx=18, pady=(4, 6))
+
+    logbox = tk.Text(root, height=12, bg="#0C0C12", fg="#9FE8C9",
+                     insertbackground="white", font=("Consolas", 9),
+                     relief="flat", state="disabled", wrap="word")
+    logbox.pack(fill="both", expand=True, padx=18, pady=(4, 12))
+    hint = tk.Label(root, text="ESC no jogo = kill switch | encostar no "
+                               "teclado = correção (DAgger)",
+                    font=("Segoe UI", 8), fg="#6A6A78", bg="#101018")
+    hint.pack(pady=(0, 10))
+
+    def tick():
+        conn = link.connected
+        if state["running"]:
+            dot.itemconfig(dot_id, fill="#F2A93B")
+            phone_lbl.config(
+                text=f"Celular: {'CONECTADO' if conn else 'SEM celular — IA do PC'}"
+                     f"  |  dirigindo..."
+                + (f"  {link.rtt_ms:.0f} ms" if conn and link.rtt_ms > 0 else ""),
+                fg="#F2A93B")
+        elif conn:
+            dot.itemconfig(dot_id, fill="#00A884")
+            phone_lbl.config(text=f"Celular: CONECTADO"
+                                  + (f"  ({link.rtt_ms:.0f} ms)"
+                                     if link.rtt_ms > 0 else ""),
+                             fg="#00E5A8")
+        else:
+            dot.itemconfig(dot_id, fill="#4A4A55")
+            phone_lbl.config(text="Celular: NÃO conectado — botão travado",
+                             fg="#B9B9C9")
+        # botao: cinza/travado sem celular; PARAR ao rodar (regra testada)
+        st_, txt_, bg_ = _start_button_state(conn, state["running"])
+        btn.config(state=st_, text=txt_, bg=bg_,
+                   disabledforeground="#CFCFD8")
+        logbox.config(state="normal")
+        logbox.delete("1.0", "end")
+        logbox.insert("1.0", "\n".join(list(logs)[-12:]))
+        logbox.config(state="disabled")
+        root.after(300, tick)
+
+    log("[info] rode o APK e toque em CONECTAR (cabo USB liga sozinho)")
+    log(f"[info] telemetria: {telemetry_mode} | injecao: "
+        f"{'LIGADA' if inject else 'desligada'}")
+    tick()
+    root.protocol("WM_DELETE_WINDOW", lambda: (stop_event.set(),
+                                               root.destroy()))
+    root.mainloop()
+
+
 def run_headless(layers, port, injector, phone_only):
     """Modo leve para PC fraco (Pentium N5030/4 GB): sem janela, sem render,
     sem captura de tela (o projeto NUNCA captura tela — estado vem da
@@ -696,6 +844,8 @@ def main():
                     help="gravar estados+comandos para finetune (DAgger)")
     ap.add_argument("--sem-janela", action="store_true",
                     help="modo leve: sem janela (PC fraco); Ctrl+C sai")
+    ap.add_argument("--demo", action="store_true",
+                    help="abre a CENA DEMO antiga (so visualizacao offline)")
     ap.add_argument("--somente-celular", action="store_true",
                     help="a IA roda SO no celular; sem conexao o caminhao freia")
     ap.add_argument("--bench", action="store_true",
@@ -766,10 +916,17 @@ def main():
     if args.sem_janela:
         run_headless(layers, args.port, injector, args.somente_celular)
         return
-    if args.record:
-        print(f"[rec] gravando em {args.record} — use as SETAS para corrigir a IA; "
-              "as correcoes viram dados de treino (DAgger)")
-    run_demo(layers, args.port, injector, record_path=args.record)
+    if args.demo:
+        if args.record:
+            print(f"[rec] gravando em {args.record} — use as SETAS para "
+                  "corrigir a IA; as correcoes viram dados de treino (DAgger)")
+        run_demo(layers, args.port, injector, record_path=args.record)
+        return
+    # padrao: UI de controle com botao COMEÇAR (cinza ate o celular conectar).
+    # Injecao LIGADA: o clique no botao e o consentimento explicito (ESC no
+    # jogo continua sendo o kill switch e so injeta com o ETS2 em 1o plano).
+    tmode = "mem" if args.no_dll else args.telemetry
+    run_gui(args.port, args.window, True, tmode)
 
 
 if __name__ == "__main__":

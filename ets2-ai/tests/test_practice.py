@@ -504,3 +504,28 @@ def test_humano_por_tecla_fisica_sem_dll():
         t += 0.2
         out = loop.step(loop.source(), t)
     assert out["source"] == "IA", out["source"]
+
+
+def test_stop_event_para_a_pratica():
+    """O botao PARAR da GUI (stop_event) encerra o loop e solta as teclas."""
+    import threading
+    import time
+    m = RoadMap()
+    game = FakeGame(GENTLE_ROAD, s=5.0, speed=10.0)
+    inj = FakeInjector()
+    ev = threading.Event()
+    calls = {"n": 0}
+
+    def src():
+        calls["n"] += 1
+        if calls["n"] > 6:
+            ev.set()                      # "usuario clicou PARAR"
+        return game.snapshot()
+
+    loop = PracticeLoop("drive", m, src, injector=inj,
+                        policy_fn=lambda f: (0.0, 0.6, 0.0),
+                        clock=time.monotonic, sleep=lambda s: None,
+                        log=lambda *a, **k: None, stop_event=ev)
+    loop.run(max_seconds=30)
+    assert calls["n"] <= 10, calls["n"]        # parou logo, nao rodou 30 s
+    assert inj.down == set()                   # teclas soltas
