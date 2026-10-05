@@ -100,8 +100,8 @@ def test_botao_comecar_cinza_sem_celular():
     _spec.loader.exec_module(_mod)
     st = _mod._start_button_state
     assert st(False, False) == ("disabled", "COMEÇAR (conecte o celular)",
-                                "#3A3A45")     # CINZA sem celular
-    assert st(True, False) == ("normal", "COMEÇAR", "#00A884")
+                                "#3A4150")     # CINZA sem celular
+    assert st(True, False) == ("normal", "COMEÇAR", "#00C48C")
     assert st(False, True) == ("normal", "PARAR", "#E85D75")
     assert st(True, True) == ("normal", "PARAR", "#E85D75")
 
@@ -119,3 +119,27 @@ def test_phonelink_so_usb_por_padrao():
     assert pl.host == "127.0.0.1"             # SO USB (adb reverse)
     pl2 = _mod.PhoneLink(7777, host="0.0.0.0")
     assert pl2.host == "0.0.0.0"              # modo rede explicito
+
+
+def test_cabo_simples_sem_porta_e_sem_debug():
+    """Modo cabo simples: MTP (sem Depuracao USB, SEM porta TCP) conta como
+    celular conectado; IA roda no PC. pywin32 ausente (Linux) = None, sem
+    estourar."""
+    import importlib.util as _ilu
+    from pathlib import Path as _P
+    sys.path.insert(0, str(_P(__file__).resolve().parents[1]))
+    from ets2ai import mtp as _mtp
+    assert _mtp.phone_name_via_mtp() is None        # Linux: cai suave
+    bp = _P(__file__).resolve().parents[1] / "bridge" / "ets2_bridge.py"
+    spec = _ilu.spec_from_file_location("ets2_bridge_mtp", bp)
+    mod = _ilu.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    st = mod._start_button_state
+    assert st(True, False)[0] == "normal"           # MTP/adb = verde
+    assert st(False, False)[0] == "disabled"        # sem celular = cinza
+    # PhoneLink so existe quando ha tunel adb (localhost); sem adb, nenhuma
+    # porta e criada — run_gui nao instancia PhoneLink ate detectar adb.
+    assert mod.PhoneLink(7777).host == "127.0.0.1"
+    # resumo de teclas: padrao WASD quando nao ha controls.sii
+    keys, src = mod._keymap_summary()
+    assert "A/D" in keys and "W/S" in keys and "padrao" in src

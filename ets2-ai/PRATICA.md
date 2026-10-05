@@ -120,8 +120,15 @@ teclado vira correção DAgger.
 - **Abastecer / dormir**: com telemetria completa (DLL ou pack de offsets
   com fuel/rest_stop): tanque < 15% ou sono — a IA avisa, e parada no posto/
   descanso confirma o diálogo com Enter.
-- **Conexão**: **somente cabo USB** (Depuração USB) — túnel `adb reverse`,
-  localhost, zero rede/internet. `--rede` abre para Wi-Fi só como exceção.
+- **Conexão**: dois modos, ambos só cabo (zero internet):
+  - **Cabo simples (padrão, zero configuração)**: espete o cabo USB com o
+    celular em "Transferir arquivos" — **sem Depuração USB e SEM porta TCP
+    criada**. A IA roda no PC e o APK mostra CONECTADO ao detectar o cabo.
+    O botão BUSCAR (sempre visível, independe da conexão) localiza o jogo
+    (busca completa 1×, depois usa o caminho salvo) e mostra as teclas.
+  - **Túnel adb (opcional)**: com Depuração USB ligada, o cérebro (GPU) pode
+    rodar no celular — túnel `adb reverse` em localhost (nada na rede).
+    `--rede` abre para Wi-Fi só como exceção.
 
 ## 3) `drive` — a IA dirige de verdade
 

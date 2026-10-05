@@ -385,7 +385,7 @@ jobs:
           python-version: '3.11'
       - name: Dependencias
         run: |
-          pip install --retries 5 --timeout 90 pyinstaller==6.11.1 numpy==2.2.6
+          pip install --retries 5 --timeout 90 pyinstaller==6.11.1 numpy==2.2.6 pywin32==308
       - name: Baixa telemetria (DLL RenCloud, MIT) + adb (plug&play USB)
         shell: pwsh
         run: |

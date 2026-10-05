@@ -54,6 +54,9 @@ PHONE_TIMEOUT_S = 0.5      # sem resposta do celular por isso = failover local
 # bridge — o app conecta em 127.0.0.1:7777 SEM digitar IP e sem Wi-Fi.
 # (requer 'Depuracao USB' ligada no aparelho, uma unica vez)
 # ---------------------------------------------------------------------------
+_NO_WINDOW = 0x08000000 if sys.platform == "win32" else 0   # CREATE_NO_WINDOW
+
+
 def find_adb():
     cands = []
     if hasattr(sys, "_MEIPASS"):
@@ -72,7 +75,7 @@ def usb_plug_and_play(port, quiet=False):
     adb = find_adb()
     try:
         r = subprocess.run([adb, "devices"], capture_output=True, text=True,
-                           timeout=10)
+                           timeout=10, creationflags=_NO_WINDOW)
     except Exception:
         if not quiet:
             print("[usb] adb indisponivel — plug&play por cabo desligado "
@@ -90,7 +93,8 @@ def usb_plug_and_play(port, quiet=False):
     for d in devs:
         try:
             subprocess.run([adb, "-s", d, "reverse", f"tcp:{port}", f"tcp:{port}"],
-                           capture_output=True, text=True, timeout=10)
+                           capture_output=True, text=True, timeout=10,
+                           creationflags=_NO_WINDOW)
             ok += 1
         except Exception:
             pass
@@ -538,82 +542,153 @@ def run_demo(layers, port, injector, record_path=None, host="127.0.0.1"):
 
 
 def _start_button_state(phone_connected, running):
-    """Regra do botao COMEÇAR (UI): cinza/travado enquanto o celular NAO
-    esta conectado — a IA roda no APK. Verde com celular; PARAR ao rodar."""
+    """Regra do botao COMEÇAR (UI): cinza/travado sem celular (cabo simples
+    MTP ou tunel adb); verde com celular; PARAR ao rodar."""
     if running:
         return ("normal", "PARAR", "#E85D75")
     if phone_connected:
-        return ("normal", "COMEÇAR", "#00A884")
-    return ("disabled", "COMEÇAR (conecte o celular)", "#3A3A45")
+        return ("normal", "COMEÇAR", "#00C48C")
+    return ("disabled", "COMEÇAR (conecte o celular)", "#3A4150")
+
+
+def _keymap_summary():
+    """Resumo das teclas que serao usadas (do controls.sii ou padrao)."""
+    from ets2ai.keys import load_keymap, SII_TOKENS
+    km, _macros, src = load_keymap()
+    rev = {v: k for k, v in SII_TOKENS.items()}
+    toks = {k: rev.get(v, "?").upper() for k, v in km.items()}
+    origem = "controls.sii do jogo" if "controls" in src else "padrao WASD"
+    return (f"{toks['left']}/{toks['right']} volante  ·  "
+            f"{toks['accel']}/{toks['brake']} pedais  ({origem})", src)
 
 
 def run_gui(port, window, inject, telemetry_mode, weights=None,
             map_path="practice/mapa.json", host="127.0.0.1"):
-    """UI grafica do bridge: status do celular + botao COMEÇAR.
+    """UI grafica do bridge — sem nenhum terminal por tras.
 
-    O botao so habilita (verde) quando o CELULAR esta conectado — a IA roda
-    no APK (GPU); o PC le a telemetria e injeta as teclas. Cinza = sem
-    celular. Ao comecar, vira PARAR (para a pratica e solta as teclas).
+    Celular: CABO SIMPLES (MTP, sem Depuracao USB, SEM portas TCP — a IA
+    roda no PC e o APK mostra CONECTADO) ou tunel adb (cerebro no celular,
+    localhost) se a depuracao estiver ligada. Botao BUSCAR (sempre visivel,
+    independente da conexao) localiza o jogo no disco (com cache: busca
+    completa so 1x) e mostra as teclas mapeadas.
     """
     import threading
     import tkinter as tk
     from collections import deque
     from ets2ai import practice
+    from ets2ai import telemetry as tele
+    from ets2ai import mtp as mtp_mod
+
+    BG, CARD, FG = "#0E1116", "#171C26", "#E8ECF3"
+    MUT, ACC, OKC = "#8A93A6", "#2F7BFF", "#00C48C"
 
     root = tk.Tk()
-    root.title("ETS2-AI bridge")
-    root.configure(bg="#101018")
-    root.geometry("560x430")
-    root.minsize(520, 400)
+    root.title("ETS2-AI")
+    root.configure(bg=BG)
+    root.geometry("620x600")
+    root.minsize(560, 540)
 
-    state = {"running": False, "thread": None, "error": ""}
+    state = {"running": False, "thread": None, "mtp": None,
+             "link": None, "searching": False}
     stop_event = threading.Event()
-    logs = deque(maxlen=200)
+    logs = deque(maxlen=400)
 
     def log(msg):
         logs.append(str(msg))
 
-    link = PhoneLink(port, host)
-    link.start()
-    usb_plug_and_play(port)
-    UsbKeeper(port).start()
+    def card():
+        return tk.Frame(root, bg=CARD, padx=18, pady=14)
 
-    title = tk.Label(root, text="ETS2-AI bridge", font=("Segoe UI", 16, "bold"),
-                     fg="white", bg="#101018")
-    title.pack(pady=(14, 2))
-    sub = tk.Label(root, text="a IA roda no CELULAR (GPU) — o PC le a "
-                              "telemetria e injeta as teclas | conexao: "
-                              + ("cabo USB" if host == "127.0.0.1"
-                                 else "rede (IP)"),
-                   font=("Segoe UI", 9), fg="#8A8A9E", bg="#101018")
-    sub.pack()
+    # ---------- cartao: celular ----------
+    ph = card()
+    ph.pack(fill="x", padx=16, pady=(16, 8))
+    dot = tk.Canvas(ph, width=22, height=22, bg=CARD, highlightthickness=0)
+    dot_id = dot.create_oval(3, 3, 19, 19, fill="#4A5160", outline="")
+    dot.pack(side="left", padx=(0, 12))
+    phone_lbl = tk.Label(ph, text="Celular: procurando...",
+                         font=("Segoe UI", 13, "bold"), fg=FG, bg=CARD,
+                         anchor="w")
+    phone_lbl.pack(fill="x")
+    phone_sub = tk.Label(ph, text="espete o CABO USB (modo 'Transferir "
+                                  "arquivos') — sem Depuracao USB, sem "
+                                  "portas TCP",
+                         font=("Segoe UI", 9), fg=MUT, bg=CARD, anchor="w",
+                         justify="left", wraplength=480)
+    phone_sub.pack(fill="x", pady=(2, 0))
 
-    # ---- cartao de status do celular ----
-    card = tk.Frame(root, bg="#16161F", highlightthickness=0)
-    card.pack(fill="x", padx=18, pady=10)
-    dot = tk.Canvas(card, width=26, height=26, bg="#16161F",
-                    highlightthickness=0)
-    dot_id = dot.create_oval(4, 4, 22, 22, fill="#4A4A55", outline="")
-    dot.pack(side="left", padx=(16, 10), pady=12)
-    phone_lbl = tk.Label(card, text="Celular: aguardando conexão...",
-                         font=("Segoe UI", 12, "bold"), fg="#B9B9C9",
-                         bg="#16161F", anchor="w")
-    phone_lbl.pack(fill="x", pady=(10, 0), padx=(0, 12))
-    _onde = (f"no APK: botao CONECTAR com o CABO USB (Depuracao USB "
-             f"ligada) — porta {port}" if host == "127.0.0.1"
-             else f"no APK: CONECTAR ou IP {PhoneLink.local_ip()}:{port}")
-    phone_sub = tk.Label(card, text=_onde,
-                         font=("Segoe UI", 9), fg="#8A8A9E", bg="#16161F",
-                         anchor="w", justify="left")
-    phone_sub.pack(fill="x", padx=(0, 12), pady=(0, 12))
+    # ---------- cartao: jogo + BUSCAR ----------
+    gm = card()
+    gm.pack(fill="x", padx=16, pady=8)
+    glbl = tk.Label(gm, text="Jogo (inputs)", font=("Segoe UI", 13, "bold"),
+                    fg=FG, bg=CARD)
+    glbl.pack(anchor="w")
+    game_path = tk.Label(gm, text="ainda nao procurado — toque em BUSCAR",
+                         font=("Consolas", 9), fg=MUT, bg=CARD, anchor="w",
+                         justify="left", wraplength=500)
+    game_path.pack(fill="x", pady=(6, 0))
+    game_keys = tk.Label(gm, text="", font=("Segoe UI", 9), fg=MUT, bg=CARD,
+                         anchor="w", justify="left", wraplength=500)
+    game_keys.pack(fill="x")
+    brow = tk.Frame(gm, bg=CARD)
+    brow.pack(fill="x", pady=(10, 0))
 
-    # ---- botao COMEÇAR / PARAR ----
+    def do_search(force):
+        if state["searching"]:
+            return
+        state["searching"] = True
+        b1.config(state="disabled", text="PROCURANDO...")
+        b2.config(state="disabled")
+
+        def worker():
+            gd = tele.resolve_game_dir(log=log, force=force)
+            try:
+                keys, _src = _keymap_summary()
+            except Exception:
+                keys = ""
+            state["searching"] = False
+            state["game"] = str(gd) if gd else None
+            root.after(0, lambda: _show(gd, keys))
+
+        def _show(gd, keys):
+            if gd is not None:
+                st = tele.load_game_state()
+                game_path.config(text=str(gd), fg=FG)
+                extra = (f"achado por: {st.get('found_by', '?')}  ·  "
+                         f"usado {st.get('runs', 1)}x "
+                         f"(busca completa so 1x)")
+                game_keys.config(text=f"{keys}\n{extra}", fg=MUT)
+                log(f"[jogo] {gd}")
+            else:
+                game_path.config(
+                    text="ETS2 NAO encontrado — use --game-dir UMA vez "
+                         "(o caminho fica salvo)", fg="#E85D75")
+            b1.config(state="normal", text="BUSCAR")
+            b2.config(state="normal")
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    b1 = tk.Button(brow, text="BUSCAR", font=("Segoe UI", 10, "bold"),
+                   fg="white", bg=ACC, activebackground="#4C8DFF",
+                   activeforeground="white", relief="flat", cursor="hand2",
+                   padx=18, pady=7, command=lambda: do_search(False))
+    b1.pack(side="left")
+    b2 = tk.Button(brow, text="BUSCAR DE NOVO (ignora o salvo)",
+                   font=("Segoe UI", 9), fg=FG, bg="#232B3A",
+                   activebackground="#2C3547", activeforeground="white",
+                   relief="flat", cursor="hand2", padx=14, pady=7,
+                   command=lambda: do_search(True))
+    b2.pack(side="left", padx=(10, 0))
+
+    # ---------- botao COMEÇAR ----------
     def on_start():
         if state["running"]:
             stop_event.set()
             return
-        state["error"] = ""
-        btn.config(state="disabled", text="INICIANDO...", bg="#2F7BFF")
+        btn.config(state="disabled", text="INICIANDO...", bg=ACC)
+        link = (state["link"] if (state["link"]
+                                  and state["link"].connected) else None)
+        modo = "IA no CELULAR" if link else "IA no PC (cabo simples)"
+        log(f"[começar] {modo} | telemetria: {telemetry_mode}")
 
         def worker():
             try:
@@ -623,11 +698,9 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
                              log=log, stop_event=stop_event,
                              weights=weights or practice.BASE_WEIGHTS)
             except SystemExit as e:
-                state["error"] = str(e)
                 log(str(e))
             except Exception as e:                       # noqa: BLE001
-                state["error"] = f"{type(e).__name__}: {e}"
-                log(state["error"])
+                log(f"ERRO: {type(e).__name__}: {e}")
             finally:
                 state["running"] = False
 
@@ -637,52 +710,78 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
         state["thread"].start()
 
     btn = tk.Button(root, text="COMEÇAR", font=("Segoe UI", 15, "bold"),
-                    fg="white", bg="#00A884", activebackground="#00C497",
-                    activeforeground="white", relief="flat", cursor="hand2",
-                    padx=20, pady=10, command=on_start)
-    btn.pack(fill="x", padx=18, pady=(4, 6))
+                    fg="white", bg=OKC, activebackground="#2BE0A8",
+                    activeforeground="#0B3B2C", relief="flat", cursor="hand2",
+                    padx=20, pady=11, command=on_start)
+    btn.pack(fill="x", padx=16, pady=(10, 8))
 
-    logbox = tk.Text(root, height=12, bg="#0C0C12", fg="#9FE8C9",
+    # ---------- log ----------
+    logbox = tk.Text(root, height=10, bg="#0A0D12", fg="#9FE8C9",
                      insertbackground="white", font=("Consolas", 9),
                      relief="flat", state="disabled", wrap="word")
-    logbox.pack(fill="both", expand=True, padx=18, pady=(4, 12))
-    hint = tk.Label(root, text="ESC no jogo = kill switch | encostar no "
-                               "teclado = correção (DAgger)",
-                    font=("Segoe UI", 8), fg="#6A6A78", bg="#101018")
-    hint.pack(pady=(0, 10))
+    logbox.pack(fill="both", expand=True, padx=16, pady=(0, 6))
+    hint = tk.Label(root, text="ESC no jogo = kill switch  ·  encostar no "
+                               "teclado/controle = correção (DAgger)",
+                    font=("Segoe UI", 8), fg="#5A6478", bg=BG)
+    hint.pack(pady=(0, 12))
+
+    # ---------- deteccoes em fundo (MTP + adb) ----------
+    def detect():
+        """Celular via cabo: MTP (sem depuracao) ou tunel adb (com)."""
+        try:
+            state["mtp"] = mtp_mod.phone_name_via_mtp()
+        except Exception:
+            state["mtp"] = None
+        try:
+            if usb_plug_and_play(port, quiet=True) and state["link"] is None:
+                link = PhoneLink(port, host)
+                link.start()
+                state["link"] = link
+                log("[usb] Depuracao USB detectada: tunel adb ativo "
+                    "(cerebro no celular disponivel)")
+        except Exception:
+            pass
+        root.after(2500, detect)
 
     def tick():
-        conn = link.connected
+        mtp, link = state["mtp"], state["link"]
+        conn = (link is not None and link.connected)
         if state["running"]:
             dot.itemconfig(dot_id, fill="#F2A93B")
-            phone_lbl.config(
-                text=f"Celular: {'CONECTADO' if conn else 'SEM celular — IA do PC'}"
-                     f"  |  dirigindo..."
-                + (f"  {link.rtt_ms:.0f} ms" if conn and link.rtt_ms > 0 else ""),
-                fg="#F2A93B")
+            phone_lbl.config(text="Dirigindo  ·  " +
+                             ("celular-cerebro" if conn else "IA no PC"),
+                             fg="#F2A93B")
         elif conn:
-            dot.itemconfig(dot_id, fill="#00A884")
-            phone_lbl.config(text=f"Celular: CONECTADO"
-                                  + (f"  ({link.rtt_ms:.0f} ms)"
-                                     if link.rtt_ms > 0 else ""),
-                             fg="#00E5A8")
+            dot.itemconfig(dot_id, fill=OKC)
+            phone_lbl.config(text="Celular CONECTADO (tunel adb — IA no "
+                                  "celular)", fg=OKC)
+            phone_sub.config(text=f"localhost:{port}  ·  "
+                             + (f"RTT {link.rtt_ms:.0f} ms"
+                                if link.rtt_ms > 0 else "tunel ativo"))
+        elif mtp:
+            dot.itemconfig(dot_id, fill=OKC)
+            phone_lbl.config(text=f"Celular CONECTADO — {mtp}", fg=OKC)
+            phone_sub.config(text="cabo USB simples (sem Depuracao, sem "
+                                  "portas): a IA roda no PC e o APK mostra "
+                                  "CONECTADO")
         else:
-            dot.itemconfig(dot_id, fill="#4A4A55")
+            dot.itemconfig(dot_id, fill="#4A5160")
             phone_lbl.config(text="Celular: NÃO conectado — botão travado",
-                             fg="#B9B9C9")
-        # botao: cinza/travado sem celular; PARAR ao rodar (regra testada)
-        st_, txt_, bg_ = _start_button_state(conn, state["running"])
+                             fg=MUT)
+        st_, txt_, bg_ = _start_button_state(conn or bool(mtp),
+                                             state["running"])
         btn.config(state=st_, text=txt_, bg=bg_,
-                   disabledforeground="#CFCFD8")
+                   disabledforeground="#C9D1E0")
         logbox.config(state="normal")
         logbox.delete("1.0", "end")
-        logbox.insert("1.0", "\n".join(list(logs)[-12:]))
+        logbox.insert("1.0", "\n".join(list(logs)[-11:]))
         logbox.config(state="disabled")
-        root.after(300, tick)
+        root.after(400, tick)
 
-    log("[info] rode o APK e toque em CONECTAR — so CABO USB, sem internet")
-    log(f"[info] telemetria: {telemetry_mode} | injecao: "
-        f"{'LIGADA' if inject else 'desligada'}")
+    log("[info] BUSCAR localiza o jogo (busca completa 1x, depois usa o "
+        "salvo)")
+    log(f"[info] telemetria: {telemetry_mode} | ESC = kill switch")
+    detect()
     tick()
     root.protocol("WM_DELETE_WINDOW", lambda: (stop_event.set(),
                                                root.destroy()))

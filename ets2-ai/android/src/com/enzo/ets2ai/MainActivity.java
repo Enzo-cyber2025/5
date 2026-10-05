@@ -40,6 +40,9 @@ import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
 import android.Manifest;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.BatteryManager;
 import android.content.pm.PackageManager;
 
 /**
@@ -254,8 +257,22 @@ public final class MainActivity extends Activity {
         return b;
     }
 
+    /** Cabo USB espetado? (estado da bateria — sem permissao, sem socket,
+     *  sem Depuracao USB. Funciona em qualquer aparelho.) */
+    private boolean usbCablePlugged() {
+        try {
+            Intent i = registerReceiver(null,
+                    new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+            int plugged = i.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
+            return plugged == BatteryManager.BATTERY_PLUGGED_USB;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     private void pollStatus() {
         boolean conn = bridge != null && bridge.connected;
+        boolean usb = !conn && usbCablePlugged();
         GradientDrawable dg = (GradientDrawable) statusDot.getBackground();
         if (conn) {
             dg.setColor(0xFF00E5A8);
@@ -267,13 +284,18 @@ public final class MainActivity extends Activity {
             if (bridge.lastRttMs > 0f)
                 d += String.format(Locale.US, "  •  %.0f ms", bridge.lastRttMs);
             statusDetail.setText(d);
+        } else if (usb) {
+            dg.setColor(0xFF00E5A8);
+            statusTitle.setText("CONECTADO");
+            statusTitle.setTextColor(0xFF00E5A8);
+            statusDetail.setText("cabo USB (sem Depuracao, sem portas) — "
+                    + "a IA roda no PC; detalhes na janela do PC");
         } else {
             dg.setColor(0xFF4A4A55);
             statusTitle.setText("DESCONECTADO");
             statusTitle.setTextColor(0xFFB9B9C9);
-            statusDetail.setText(bridge == null
-                    ? "toque em CONECTAR — so o CABO USB, sem internet"
-                    : "procurando o PC pelo cabo / reconectando...");
+            statusDetail.setText("espete o CABO USB (modo 'Transferir "
+                    + "arquivos') — conecta sozinho, sem configurar nada");
         }
         status.setText(bridgeStatus.length() > 0 ? bridgeStatus : btStatus);
         uiPoll.postDelayed(new Runnable() {
