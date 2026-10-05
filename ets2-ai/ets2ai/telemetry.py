@@ -425,11 +425,127 @@ def _steam_libraries(steam_path):
     return libs
 
 
+def game_root_from_exe(exe_path):
+    """.../bin/win_x64/eurotrucks2.exe -> raiz da instalacao (None se o
+    layout nao bater). Serve pra Steam, repack (optijuegos), portable...
+    Parseia como caminho WINDOWS (PureWindowsPath) — independe do SO."""
+    from pathlib import PureWindowsPath
+    try:
+        p = PureWindowsPath(str(exe_path))
+        if p.parent.name.lower() == "win_x64" and \
+                p.parent.parent.name.lower() == "bin":
+            return Path(str(p.parent.parent.parent))
+    except Exception:
+        pass
+    return None
+
+
+def dir_looks_like_game(p):
+    """Pasta com bin/win_x64 = instalacao do ETS2 (qualquer origem)."""
+    try:
+        return (Path(p) / "bin" / "win_x64").is_dir()
+    except Exception:
+        return False
+
+
+def _running_game_root():
+    """Raiz do jogo pelo PROCESSO rodando — funciona pra QUALQUER origem
+    (Steam, repack tipo optijuegos, portable). None se nao achar."""
+    if _os.name != "nt":
+        return None
+    try:
+        from ctypes import wintypes
+        k32 = ctypes.windll.kernel32
+        TH32CS_SNAPPROCESS = 0x2
+
+        class _PE(ctypes.Structure):
+            _fields_ = [("dwSize", ctypes.c_ulong), ("cntUsage", ctypes.c_ulong),
+                        ("th32ProcessID", ctypes.c_ulong),
+                        ("th32DefaultHeapID", ctypes.POINTER(ctypes.c_ulong)),
+                        ("th32ModuleID", ctypes.c_ulong),
+                        ("cntThreads", ctypes.c_ulong),
+                        ("th32ParentProcessID", ctypes.c_ulong),
+                        ("pcPriClassBase", ctypes.c_long),
+                        ("dwFlags", ctypes.c_ulong),
+                        ("szExeFile", ctypes.c_char * 260)]
+        snap = k32.CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)
+        pe = _PE(); pe.dwSize = ctypes.sizeof(_PE)
+        pid = None
+        ok = k32.Process32First(snap, ctypes.byref(pe))
+        while ok:
+            if pe.szExeFile.decode(errors="ignore").lower() == "eurotrucks2.exe":
+                pid = pe.th32ProcessID
+                break
+            ok = k32.Process32Next(snap, ctypes.byref(pe))
+        k32.CloseHandle(snap)
+        if pid is None:
+            return None
+        PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+        h = k32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+        if not h:
+            return None
+        buf = ctypes.create_unicode_buffer(1024)
+        size = wintypes.DWORD(1024)
+        root = None
+        if k32.QueryFullProcessImageNameW(h, 0, buf, ctypes.byref(size)):
+            root = game_root_from_exe(buf.value)
+        k32.CloseHandle(h)
+        return root
+    except Exception:
+        return None
+
+
+def _scan_common_roots():
+    """Varredura rapida por instalacoes ALTERNATIVAS (repacks tipo
+    optijuegos): pastas de jogos comuns em todos os drives fixos, ate
+    profundidade 3 (filtrando pelo nome: euro/ets2/truck)."""
+    if _os.name != "nt":
+        return []
+    import glob as _glob
+    hits, seen = [], set()
+    home = Path.home()
+    bases = [home / "Desktop", home / "Downloads", home / "Documents",
+             Path(r"C:\Games"), Path(r"C:\Jogos"), Path(r"C:\Program Files"),
+             Path(r"C:\Program Files (x86)"), Path("C:/"), Path("D:/"),
+             Path("E:/"), Path("F:/"), Path(r"D:\Games"), Path(r"D:\Jogos")]
+
+    def _try(d):
+        if d in seen:
+            return
+        seen.add(d)
+        if dir_looks_like_game(d):
+            hits.append(Path(d))
+            return
+        try:                              # 1 nivel a mais (repack aninhado)
+            for sub in _os.scandir(d):
+                if sub.is_dir() and dir_looks_like_game(sub.path):
+                    hits.append(Path(sub.path))
+        except OSError:
+            pass
+
+    for base in bases:
+        for pat in (str(base / "*"), str(base / "*" / "*")):
+            try:
+                for d in _glob.glob(pat):
+                    dl = d.lower()
+                    if "euro" in dl or "ets2" in dl or "truck" in dl:
+                        _try(d)
+            except Exception:
+                continue
+    return hits
+
+
 def game_install_dirs(extra=None):
-    """Diretorios candidatos de instalacao do ETS2 (ordem de preferencia)."""
+    """Diretorios candidatos de instalacao do ETS2 (ordem de preferencia):
+    --game-dir explicito > PROCESSO rodando (qualquer origem) > Steam >
+    varredura de pastas comuns (repacks)."""
     out = []
     if extra:
         out.append(Path(extra))
+    if _os.name == "nt":
+        run_root = _running_game_root()
+        if run_root is not None:
+            out.append(run_root)
     if _os.name == "nt":
         steam = None
         try:
@@ -451,6 +567,9 @@ def game_install_dirs(extra=None):
         libs += [r"C:\Program Files (x86)\Steam", r"C:\Program Files\Steam"]
         for lib in libs:
             out.append(Path(lib) / "steamapps" / "common" / "Euro Truck Simulator 2")
+    for gd in _scan_common_roots():          # repacks (optijuegos etc.)
+        if gd not in out:
+            out.append(gd)
     return out
 
 

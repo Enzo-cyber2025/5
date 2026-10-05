@@ -70,3 +70,22 @@ def test_reader_fora_do_windows():
         pytest.skip("so faz sentido fora do Windows")
     with pytest.raises(RuntimeError):
         T.TelemetryReader()
+
+
+def test_game_root_de_exe_repack():
+    """Versoes alternativas (repack optijuegos): caminho do processo ->
+    raiz da instalacao, independente de Steam/registro."""
+    from ets2ai.telemetry import game_root_from_exe
+    exe = r"D:\Jogos\ETS2.Repack-OptiJuegos\bin\win_x64\eurotrucks2.exe"
+    assert game_root_from_exe(exe) == Path(r"D:\Jogos\ETS2.Repack-OptiJuegos")
+    exe2 = r"C:\Steam\steamapps\common\Euro Truck Simulator 2\bin\win_x64\eurotrucks2.exe"
+    assert game_root_from_exe(exe2) == Path(
+        r"C:\Steam\steamapps\common\Euro Truck Simulator 2")
+    assert game_root_from_exe(r"C:\random\eurotrucks2.exe") is None
+
+
+def test_dir_looks_like_game(tmp_path):
+    from ets2ai.telemetry import dir_looks_like_game
+    (tmp_path / "bin" / "win_x64").mkdir(parents=True)
+    assert dir_looks_like_game(tmp_path) is True
+    assert dir_looks_like_game(tmp_path / "nao_existe") is False

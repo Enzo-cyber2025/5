@@ -62,21 +62,35 @@ def _sii_profiles():
 
 
 def _parse_sii(text):
-    """'mix nome `expressao`' -> {nome_logico: scan}. Prefere teclas SIMPLES
-    (letras/digitos) quando o bind tem alternativas (ex.: seta | A)."""
+    """controls.sii -> {nome_logico: scan}.
+
+    Entende tambem ALIASES (`input k_left \`keyboard.a?0\`"), usados por
+    perfis antigos e versoes alternativas do jogo: o mix referencia o alias
+    (`mix dsteerleft \`k_left?0\`") e o token real vive na linha do alias.
+    Bind sem tecla de teclado (so joystick/wheel) NAO mapeia — a injecao
+    continua com a tecla padrao daquela acao.
+    """
     import re
+    aliases = {}
+    for m in re.finditer(r'input\s+(\w+)\s+`([^`]*)`', text):
+        toks = re.findall(r'keyboard\.(\w+)\?\d', m.group(2))
+        toks = [t.lower() for t in toks if t.lower() in SII_TOKENS
+                and t.lower() not in _MODIFIERS]
+        if toks:
+            aliases[m.group(1)] = toks
     out = {}
     for m in re.finditer(r'mix\s+(\w+)\s+`([^`]*)`', text):
         name, expr = m.group(1), m.group(2)
         logical = SII_MIXES.get(name)
         if logical is None:
             continue
-        keys = re.findall(r'keyboard\.(\w+)\?\d', expr)
-        keys = [k.lower() for k in keys if k.lower() in SII_TOKENS
-                and k.lower() not in _MODIFIERS]
+        keys = [k.lower() for k in re.findall(r'keyboard\.(\w+)\?\d', expr)
+                if k.lower() in SII_TOKENS and k.lower() not in _MODIFIERS]
+        for ref in re.findall(r'(\w+)\?\d', expr):      # alias?0
+            keys += aliases.get(ref, [])
         if not keys:
             continue
-        # ordem de preferencia: letra/digito (WASD) > resto
+        keys = list(dict.fromkeys(keys))                   # dedup, ordem
         keys.sort(key=lambda k: not (k.isalnum() and len(k) == 1))
         out[logical] = SII_TOKENS[keys[0]]
     return out

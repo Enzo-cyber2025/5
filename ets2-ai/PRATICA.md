@@ -91,6 +91,12 @@ teclado vira correção DAgger.
 
 ## 2d) Teclas ORIGINAIS do jogo + USB
 
+- **Versões alternativas (repacks tipo optijuegos)**: a pasta do jogo é
+  achada **sem depender do Steam** — pelo processo rodando (caminho real do
+  eurotrucks2.exe) ou varredura de pastas comuns (Desktop/Downloads/C:\Games/
+  D:\Jogos/...). A auto-instalação da telemetria funciona igual; `--game-dir`
+  continua como override manual. O parser do `controls.sii` também entende
+  **aliases** de perfis antigos (`input k_left \`keyboard.a?0\``).
 - **Mapeamento original**: o bridge lê o `controls.sii` do SEU perfil
   (`Documents\Euro Truck Simulator 2\profiles\<id>\`) e usa as teclas que
   o jogo realmente espera — dsteerleft/dsteerright/dforward/dbackward,

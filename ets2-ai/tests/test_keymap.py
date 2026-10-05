@@ -43,3 +43,40 @@ def test_fallback_wasd_sem_controls_sii(tmp_path):
     # macros fallback existem para todos os papéis
     for k in ("engine", "park_brake", "ind_left", "ind_right", "ok", "dock"):
         assert k in macros and len(macros[k]) == 2
+
+
+def test_parseia_aliases_de_perfis_alternativos(tmp_path):
+    """Perfis antigos/alternativos usam ALIASES: o mix referencia o alias e
+    a tecla real vive na linha 'input'."""
+    sample = """
+input k_left `keyboard.a?0`
+input k_right `keyboard.d?0`
+mix dsteerleft `k_left?0`
+mix dsteerright `k_right?0`
+mix dforward `keyboard.w?0`
+"""
+    prof = tmp_path / "profiles" / "XYZ"
+    prof.mkdir(parents=True)
+    (prof / "controls.sii").write_text(sample, encoding="utf-8")
+    km, macros, src = load_keymap(str(tmp_path))
+    assert "controls.sii" in src
+    assert km["left"] == SII_TOKENS["a"]
+    assert km["right"] == SII_TOKENS["d"]
+    assert km["accel"] == SII_TOKENS["w"]
+    assert km["brake"] == 0x1F        # bind ausente: padrao DA ACAO
+
+
+def test_bind_somente_joystick_mantem_tecla_padrao(tmp_path):
+    """Bind exclusivo de volante/joystick (sem teclado) nao mapeia — a
+    injecao continua com a tecla padrao daquela acao."""
+    sample = """
+mix dsteerleft `joy.x?0`
+mix dforward `joy.b6?0`
+mix parkingbrake `keyboard.space?0`
+"""
+    prof = tmp_path / "profiles" / "JOY"
+    prof.mkdir(parents=True)
+    (prof / "controls.sii").write_text(sample, encoding="utf-8")
+    km, macros, src = load_keymap(str(tmp_path))
+    assert km["left"] == 0x1E and km["accel"] == 0x11    # padrao
+    assert macros["park_brake"][0] == SII_TOKENS["space"]  # mapeado
