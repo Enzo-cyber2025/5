@@ -89,3 +89,59 @@ def test_dir_looks_like_game(tmp_path):
     (tmp_path / "bin" / "win_x64").mkdir(parents=True)
     assert dir_looks_like_game(tmp_path) is True
     assert dir_looks_like_game(tmp_path / "nao_existe") is False
+
+
+def test_varredura_completa_todos_os_discos(tmp_path):
+    """Busca em TODOS os arquivos/pastas: acha o jogo em qualquer lugar
+    (repack com nome qualquer), podando pastas de sistema."""
+    from ets2ai.telemetry import _iter_game_roots
+    game = tmp_path / "Downloads" / "ETS2.Repack.OptiJuegos"   # nome qq
+    (game / "bin" / "win_x64").mkdir(parents=True)
+    (game / "bin" / "win_x64" / "eurotrucks2.exe").write_bytes(b"x")
+    (tmp_path / "Windows" / "System32").mkdir(parents=True)
+    (tmp_path / "$RECYCLE.BIN").mkdir()
+    (tmp_path / "System Volume Information").mkdir()
+    achou = list(_iter_game_roots([tmp_path], budget_s=30, log=None))
+    assert achou == [game]
+
+
+def test_extrai_caminho_do_atalho_lnk():
+    """Ultimo caso: atalho .lnk (bytes) -> caminho do eurotrucks2.exe."""
+    from ets2ai.telemetry import _paths_from_lnk
+    BS = chr(92)
+    path = BS.join(["D:", "Jogos", "Meu ETS2", "bin", "win_x64",
+                    "eurotrucks2.exe"])
+    assert _paths_from_lnk(b"x" * 30 + path.encode("latin-1")) == [path]
+    w = path.encode("utf-16-le")
+    assert _paths_from_lnk(b"x" * 7 + w) == [path]
+    assert _paths_from_lnk(b"nada aqui") == []
+
+
+def test_cascata_de_descoberta_ordem(tmp_path, monkeypatch):
+    """Ordem: --game-dir > processo > Steam > TODOS os discos > rastros do
+    jogo (.lnk/registro) > config PADRAO. Simulada com stubs."""
+    import ets2ai.telemetry as t
+    game = tmp_path / "repack"
+    (game / "bin" / "win_x64").mkdir(parents=True)
+    ordem = []
+
+    def fake_scan_all(log=print, budget_s=1.0):
+        ordem.append("discos")
+        return []
+
+    def fake_hints():
+        ordem.append("rastros")
+        return []
+
+    def fake_running():
+        ordem.append("processo")
+        return None
+
+    monkeypatch.setattr(t, "_scan_all_disks", fake_scan_all)
+    monkeypatch.setattr(t, "_game_hints", fake_hints)
+    monkeypatch.setattr(t, "_running_game_root", fake_running)
+    monkeypatch.setattr(t, "_os", type("M", (), {"name": "nt"}))
+    got = t.game_install_dirs(str(game))
+    assert got[0] == game                     # --game-dir primeiro
+    assert ordem == ["processo", "discos", "rastros"]
+    assert any("repack" not in str(p) or p == game for p in got)

@@ -617,3 +617,41 @@ def test_pit_crew_confirma_sono_no_descanso():
     loop.macros = MACS
     loop.step(loop.source(), 0.05)
     assert "Enter (confirmar)" in inj.taps       # confirmou dormir
+
+
+def test_humano_por_joystick_ou_volante_sem_dll():
+    """Controles (volante/joystick/gamepad): mover eixos ou apertar botoes
+    entrega o volante ao humano — mesmo sem tecla de teclado."""
+    m = RoadMap()
+    game = FakeGame(GENTLE_ROAD, s=5.0, speed=10.0)
+    inj = FakeInjector()
+
+    class FakeWheel:
+        def __init__(self):
+            self.move = False
+
+        def human_active(self):
+            return self.move
+
+    wheel = FakeWheel()
+    loop, st = make_loop("drive", game, m, injector=inj,
+                         policy=lambda f: (0.0, 0.6, 0.0))
+    _snap = game.snapshot
+    game.snapshot = lambda: dict(_snap(), user_steer=None,
+                                 user_throttle=None, user_brake=None)
+    loop.foreign_keys = lambda: set()
+    loop.joystick = wheel
+    # IA dirigindo...
+    out = loop.step(loop.source(), 0.05)
+    assert out["source"] == "IA"
+    # humano gira o VOLANTE: IA solta na hora
+    wheel.move = True
+    for i in range(4):
+        out = loop.step(loop.source(), 0.05 * (i + 2))
+    assert out["source"].startswith("HUMANO")
+    assert inj.down == set()
+    # humano soltou: IA volta
+    wheel.move = False
+    for i in range(14):
+        out = loop.step(loop.source(), 2.0 + 0.2 * i)
+    assert out["source"] == "IA"

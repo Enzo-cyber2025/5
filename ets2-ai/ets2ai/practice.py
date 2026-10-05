@@ -42,6 +42,7 @@ import numpy as np
 from . import sim, telemetry
 from .contract import load_weights, clamp_action
 from .keys import KeyInjector, Recorder, load_keymap
+from .joy import JoystickMonitor
 from . import memtelemetry
 from .model import forward
 from .roadmap import RoadMap, detect_frame, wrap
@@ -161,7 +162,8 @@ class PracticeLoop:
     def __init__(self, mode, road_map, source, layers=None, injector=None,
                  recorder=None, map_path=None, policy_fn=None, phone=None,
                  tick=TICK, clock=time.monotonic, sleep=time.sleep, log=print,
-                 foreign_keys=None, stop_event=None, macros=None):
+                 foreign_keys=None, stop_event=None, macros=None,
+                 joystick=None):
         assert mode in ("record", "drive", "shadow")
         self.mode = mode
         self.road_map = road_map
@@ -187,6 +189,7 @@ class PracticeLoop:
         self._job_start_min = None
         self._override_hold = 0.0   # ate quando o humano manda (drive)
         self.macros = macros or {}  # teclas ORIGINAIS do jogo (controls.sii)
+        self.joystick = joystick    # volante/joystick: humano no controle
         self._signal = None         # None | "left" | "right" (seta acesa)
         self._last_signal_t = -1e9
         self._last_pit_t = -1e9     # aviso (combustivel/sono): 30 s
@@ -554,7 +557,8 @@ class PracticeLoop:
             # injetamos (SendInput tambem acorda o estado async; por isso
             # descontamos as nossas).
             fk = self.foreign_keys() if self.foreign_keys else set()
-            self._fk_ticks = self._fk_ticks + 1 if fk else 0
+            joy = self.joystick.human_active() if self.joystick else False
+            self._fk_ticks = self._fk_ticks + 1 if (fk or joy) else 0
             if self._fk_ticks >= 3:
                 if not self._human_active:
                     self.log("[pratica] humano no volante — IA solta o "
@@ -753,6 +757,11 @@ def run(mode, map_path="practice/mapa.json", rec_path=None, inject=False,
                     "Use --game-dir 'C:\\...\\Euro Truck Simulator 2' (a DLL "
                     "vem embutida; sem download). Veja PRATICA.md.")
         source = reader.snapshot
+    joystick = JoystickMonitor()
+    _devs = joystick.describe()
+    if _devs:
+        log(f"[joystick] controles vigiados: {_devs} — mexer neles "
+            "entrega o volante ao humano")
     keymap, macros, ksrc = load_keymap()
     log(f"[teclas] mapeadas do jogo: {ksrc} | "
         f"WASD={sorted(hex(v) for v in keymap.values())}")
@@ -766,6 +775,7 @@ def run(mode, map_path="practice/mapa.json", rec_path=None, inject=False,
                         map_path=map_path, policy_fn=_policy, phone=phone,
                         clock=_clock or time.monotonic,
                         sleep=_sleep or time.sleep, log=log, macros=macros,
+                        joystick=joystick,
                         foreign_keys=(injector.foreign_keys_down
                                       if injector is not None else None),
                         stop_event=stop_event)

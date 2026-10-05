@@ -495,6 +495,197 @@ def _running_game_root():
         return None
 
 
+def _iter_game_roots(starts, budget_s=180.0, log=None, now=None):
+    """Varredura COMPLETA: caminha TODOS os diretorios a partir de `starts`
+    procurando bin/win_x64/eurotrucks2.exe (layout = instalacao, qualquer
+    origem). Poda pastas de sistema, respeita um teto de tempo e loga o
+    progresso. Generator: usa pouco RAM (streaming)."""
+    import time as _time
+    t0 = (now or _time.monotonic)()
+    skip = {"windows", "$recycle.bin", "system volume information",
+            "programdata", "node_modules", "__pycache__", ".git",
+            "winxsx", "driverstore", "windowsapps"}
+    queue = list(starts)
+    seen = set()
+    n_dir = 0
+    while queue:
+        d = queue.pop()
+        if d in seen:
+            continue
+        seen.add(d)
+        n_dir += 1
+        if n_dir % 20000 == 0 and log:
+            log(f"[busca] {n_dir} pastas em {(_time.monotonic()-t0):.0f}s"
+                f" (restam {len(queue)})")
+        if (_time.monotonic() - t0) > budget_s:
+            if log:
+                log(f"[busca] teto de {budget_s:.0f}s atingido apos "
+                    f"{n_dir} pastas")
+            return
+        try:
+            for sub in _os.scandir(d):
+                if not sub.is_dir(follow_symlinks=False):
+                    continue
+                name = sub.name.lower()
+                if name in skip:
+                    continue
+                child = Path(sub.path)
+                if name == "bin":
+                    w64 = child / "win_x64"
+                    if w64.is_dir() and (w64 / "eurotrucks2.exe").exists():
+                        if log:
+                            log(f"[busca] ACHOU: {child.parent}")
+                        yield child.parent
+                        return                # um jogo basta
+                if name.startswith(".") or name.startswith("$"):
+                    continue
+                queue.append(child)
+        except OSError:
+            continue
+
+
+def _all_fixed_drives():
+    """Todas as UNIDADES FIXAS do PC (A:..Z:) — sem pendrive/CD."""
+    if _os.name != "nt":
+        return []
+    out = []
+    try:
+        import ctypes as _ct
+        k32 = _ct.windll.kernel32
+        bits = k32.GetLogicalDrives()
+        for i in range(26):
+            if not (bits >> i) & 1:
+                continue
+            letter = chr(65 + i) + ":\\"
+            if k32.GetDriveTypeW(letter) == 3:      # DRIVE_FIXED
+                out.append(Path(letter))
+        if out:
+            return out
+    except Exception:
+        pass
+    return [Path(c + ":\\") for c in "CDEFG"]     # plano B
+
+
+def _scan_all_disks(log=print, budget_s=180.0):
+    """Busca por TODOS os arquivos de TODOS os discos fixos."""
+    drives = _all_fixed_drives()
+    if log:
+        log(f"[busca] varredura completa em: "
+            f"{', '.join(str(d) for d in drives)}")
+    return list(_iter_game_roots(drives, budget_s=budget_s, log=log))
+
+
+def _game_hints():
+    """ULTIMO CASO: analisa onde o JOGO deixa rastros — atalhos (.lnk da
+    Area de Trabalho/Menu Iniciar) e entradas de desinstalacao do registro
+    (repacks costumam se registrar). Retorna raizes candidatas."""
+    out = []
+    if _os.name != "nt":
+        return out
+    # 1) atalhos .lnk apontando para eurotrucks2.exe
+    try:
+        import glob as _glob
+        home = Path.home()
+        pats = [str(home / "Desktop" / "*.lnk"),
+                str(home / "OneDrive" / "Desktop" / "*.lnk"),
+                r"C:\ProgramData\Microsoft\Windows\Start Menu"
+                r"\Programs\**\*.lnk",
+                str(home / "AppData" / "Roaming" / "Microsoft" / "Windows"
+                    / "Start Menu" / "Programs" / "**" / "*.lnk")]
+        for pat in pats:
+            for f in _glob.glob(pat, recursive=True):
+                try:
+                    data = Path(f).read_bytes()
+                except OSError:
+                    continue
+                for path in _paths_from_lnk(data):
+                    root = game_root_from_exe(path)
+                    if root is not None and root not in out:
+                        out.append(root)
+    except Exception:
+        pass
+    # 2) registro: entradas de desinstalacao (DisplayName/InstallLocation)
+    try:
+        import winreg
+        bases = [(winreg.HKEY_LOCAL_MACHINE,
+                  r"Software\Microsoft\Windows\CurrentVersion\Uninstall"),
+                 (winreg.HKEY_LOCAL_MACHINE,
+                  r"Software\Wow6432Node\Microsoft\Windows\CurrentVersion"
+                  r"\Uninstall"),
+                 (winreg.HKEY_CURRENT_USER,
+                  r"Software\Microsoft\Windows\CurrentVersion\Uninstall")]
+        for hive, path in bases:
+            try:
+                key = winreg.OpenKey(hive, path)
+            except OSError:
+                continue
+            i = 0
+            while True:
+                try:
+                    sub = winreg.EnumKey(key, i); i += 1
+                except OSError:
+                    break
+                try:
+                    with winreg.OpenKey(key, sub) as k:
+                        vals = {}
+                        for v in ("DisplayName", "InstallLocation",
+                                  "DisplayIcon", "UninstallString"):
+                            try:
+                                vals[v] = winreg.QueryValueEx(k, v)[0]
+                            except OSError:
+                                pass
+                        blob = " ".join(str(v) for v in vals.values()).lower()
+                        if "euro truck" not in blob and "ets2" not in blob:
+                            continue
+                        for cand in (vals.get("InstallLocation"),
+                                     vals.get("DisplayIcon"),
+                                     vals.get("UninstallString")):
+                            if not cand:
+                                continue
+                            root = game_root_from_exe(str(cand))
+                            if root is None and ":" in str(cand):
+                                d = Path(str(cand).split('"')[0]
+                                         if '"' in str(cand) else str(cand))
+                                root = d if dir_looks_like_game(d) else None
+                            if root is not None and root not in out:
+                                out.append(root)
+                except OSError:
+                    continue
+    except Exception:
+        pass
+    return out
+
+
+def _paths_from_lnk(data):
+    """Extrai caminhos ...eurotrucks2.exe dos bytes de um atalho .lnk
+    (paths ficam em ANSI e UTF-16 dentro do binario)."""
+    import re
+    out = []
+    for m in re.finditer(rb"[A-Za-z]:[\\/][\x20-\x7e]{2,220}?eurotrucks2"
+                         rb"\.exe", data, re.I):
+        out.append(m.group(0).decode("latin-1"))
+    for off in (0, 1):                       # UTF-16: alinhamento par/impar
+        try:
+            t = data[off:].decode("utf-16-le", errors="ignore")
+        except Exception:
+            continue
+        for m in re.finditer(r"[A-Za-z]:[\\/][\x20-\x7e]{2,220}?eurotrucks2"
+                             r"\.exe", t, re.I):
+            out.append(m.group(0))
+    return out
+
+
+def _default_locations():
+    """Config PADRAO (ultimo recurso): lugares mais comuns."""
+    home = Path.home()
+    return [Path(r"C:\Program Files\Euro Truck Simulator 2"),
+            Path(r"C:\Program Files (x86)\Euro Truck Simulator 2"),
+            home / "Desktop" / "Euro Truck Simulator 2",
+            home / "Downloads" / "Euro Truck Simulator 2",
+            Path(r"C:\Games"), Path(r"C:\Jogos"),
+            Path(r"D:\Games"), Path(r"D:\Jogos")]
+
+
 def _scan_common_roots():
     """Varredura rapida por instalacoes ALTERNATIVAS (repacks tipo
     optijuegos): pastas de jogos comuns em todos os drives fixos, ate
@@ -567,7 +758,14 @@ def game_install_dirs(extra=None):
         libs += [r"C:\Program Files (x86)\Steam", r"C:\Program Files\Steam"]
         for lib in libs:
             out.append(Path(lib) / "steamapps" / "common" / "Euro Truck Simulator 2")
-    for gd in _scan_common_roots():          # repacks (optijuegos etc.)
+    if _os.name == "nt":
+        for gd in _scan_all_disks():         # TODOS os discos/arquivos
+            if gd not in out:
+                out.append(gd)
+        for gd in _game_hints():             # ultimo caso: rastros do jogo
+            if gd not in out:
+                out.append(gd)
+    for gd in _default_locations():          # config padrao (fim da linha)
         if gd not in out:
             out.append(gd)
     return out

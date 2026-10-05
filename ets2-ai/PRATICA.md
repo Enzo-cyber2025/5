@@ -92,11 +92,17 @@ teclado vira correção DAgger.
 ## 2d) Teclas ORIGINAIS do jogo + USB
 
 - **Versões alternativas (repacks tipo optijuegos)**: a pasta do jogo é
-  achada **sem depender do Steam** — pelo processo rodando (caminho real do
-  eurotrucks2.exe) ou varredura de pastas comuns (Desktop/Downloads/C:\Games/
-  D:\Jogos/...). A auto-instalação da telemetria funciona igual; `--game-dir`
-  continua como override manual. O parser do `controls.sii` também entende
-  **aliases** de perfis antigos (`input k_left \`keyboard.a?0\``).
+  achada **sem depender do Steam**, em cascata: `--game-dir` > processo
+  rodando > Steam > **varredura de TODOS os arquivos de TODOS os discos
+  fixos** (com poda de pastas de sistema e teto de tempo) > **último caso:
+  rastros do jogo** (atalhos .lnk da Área de Trabalho/Menu Iniciar e
+  entradas de desinstalação do registro) > **config padrão**. O parser do
+  `controls.sii` também entende **aliases** de perfis antigos
+  (`input k_left \`keyboard.a?0\``).
+- **Joystick/volante/gamepad**: todos os controles são vigiados (DirectInput
+  + XInput, sem instalar nada). Como a IA só injeta teclas, qualquer
+  movimento de eixo/botão de um controle = humano intervindo — a IA solta o
+  volante na hora e grava a correção (funciona até na telemetria sem DLL).
 - **Mapeamento original**: o bridge lê o `controls.sii` do SEU perfil
   (`Documents\Euro Truck Simulator 2\profiles\<id>\`) e usa as teclas que
   o jogo realmente espera — dsteerleft/dsteerright/dforward/dbackward,
