@@ -203,3 +203,5 @@ sua estrada real em minutos, por DAgger.
 > Nota de build (retrigger): job Treino do build 37364256906 foi cancelado na fila sem iniciar nenhum passo (testes verdes no mesmo commit); este build repete o mesmo conteudo.
 
 > Nota: builds 19:34/19:55/20:10 foram cancelados pelo incidente GitHub Actions (runners; 0 passos executados). Retry.
+
+> Retry 2 do incidente Actions (jobs ganhando runners gradualmente: Treino/EXE/TFLite OK na tentativa anterior).
