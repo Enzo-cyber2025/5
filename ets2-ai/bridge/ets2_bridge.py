@@ -144,6 +144,50 @@ def policy_cmd(layers, road, truck, job_left_km):
 # ---------------------------------------------------------------------------
 # TCP server: phone is the brain
 # ---------------------------------------------------------------------------
+class MtpPhoneLink:
+    """Ponte PC->APK por ARQUIVOS no celular (MTP): a IA roda no APK.
+
+    Mesma interface do PhoneLink (connected/start/send_fields/wait_cmd) —
+    o loop de pratica nem sabe que embaixo nao ha socket: so arquivos no
+    cabo USB. SEM porta TCP, SEM Depuracao USB, SEM internet."""
+
+    def __init__(self):
+        self.connected = False
+        self.rtt_ms = -1.0
+        self._ch = None
+
+    def start(self):                      # mesma API do PhoneLink
+        from ets2ai.mtp import MtpChannel, MtpError
+        try:
+            ch = MtpChannel()
+            ch.open()
+            self._ch = ch
+            self.connected = True
+            print("[usb] ponte por ARQUIVOS ativa: cabo simples, IA no APK "
+                  "(sem porta TCP, sem Depuracao USB)")
+        except (MtpError, Exception) as e:
+            self.connected = False
+            print(f"[usb] ponte por arquivos indisponivel: {e}")
+
+    def send_fields(self, speed=0.0, offset=0.0, hdg=0.0, curvs=None,
+                    limit=25.0, fuel=0.0, fatigue=0.0, job_km=0.0, **_kw):
+        if not self.connected:
+            return
+        curvs = [0.0 if c is None else float(c) for c in (curvs or [0.0] * 5)]
+        self._ch.send_state((float(speed), float(offset), float(hdg),
+                             curvs, float(limit), float(fuel),
+                             float(fatigue), float(job_km), 150.0))
+
+    def wait_cmd(self, timeout=0.30):
+        if not self.connected:
+            return None
+        try:
+            self._ch.poll_cmd()
+            return self._ch.fresh_cmd()
+        except Exception:
+            return None
+
+
 class PhoneLink(threading.Thread):
     """Accepts one phone; feeds states; collects commands."""
 
@@ -589,7 +633,7 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
     root.minsize(560, 540)
 
     state = {"running": False, "thread": None, "mtp": None,
-             "link": None, "searching": False}
+             "link": None, "mlink": None, "searching": False}
     stop_event = threading.Event()
     logs = deque(maxlen=400)
 
@@ -687,7 +731,12 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
         btn.config(state="disabled", text="INICIANDO...", bg=ACC)
         link = (state["link"] if (state["link"]
                                   and state["link"].connected) else None)
-        modo = "IA no CELULAR" if link else "IA no PC (cabo simples)"
+        if link is None:
+            ml = state.get("mlink")
+            if ml is not None and ml.connected:
+                link = ml
+        modo = ("IA no CELULAR" if link else
+                "aguardando celular (BUSCAR ja funciona sem celular)")
         log(f"[começar] {modo} | telemetria: {telemetry_mode}")
 
         def worker():
@@ -741,6 +790,17 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
                     "(cerebro no celular disponivel)")
         except Exception:
             pass
+        # cabo SIMPLES (sem Depuracao): IA no APK por ARQUIVOS (MTP) —
+        # nenhuma porta TCP; so se ainda nao ha tunel adb
+        try:
+            if state["mlink"] is None and state["link"] is None and mtp:
+                mlink = MtpPhoneLink()
+                mlink.start()
+                state["mlink"] = mlink
+                if mlink.connected:
+                    log("[usb] cabo simples: IA no APK por arquivos (MTP)")
+        except Exception:
+            pass
         root.after(2500, detect)
 
     def tick():
@@ -760,10 +820,12 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
                                 if link.rtt_ms > 0 else "tunel ativo"))
         elif mtp:
             dot.itemconfig(dot_id, fill=OKC)
+            ml = state.get("mlink")
+            via = ("IA no APK por arquivos (cabo simples, sem porta TCP)"
+                   if (ml is not None and ml.connected)
+                   else "IA no APK por arquivos — abrindo ponte MTP...")
             phone_lbl.config(text=f"Celular CONECTADO — {mtp}", fg=OKC)
-            phone_sub.config(text="cabo USB simples (sem Depuracao, sem "
-                                  "portas): a IA roda no PC e o APK mostra "
-                                  "CONECTADO")
+            phone_sub.config(text=via)
         else:
             dot.itemconfig(dot_id, fill="#4A5160")
             phone_lbl.config(text="Celular: NÃO conectado — botão travado",

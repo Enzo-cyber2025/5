@@ -143,3 +143,79 @@ def test_cabo_simples_sem_porta_e_sem_debug():
     # resumo de teclas: padrao WASD quando nao ha controls.sii
     keys, src = mod._keymap_summary()
     assert "A/D" in keys and "W/S" in keys and "padrao" in src
+
+
+class _FakeStorage:
+    """'Celular' em memoria: {arquivo: conteudo} + marca de modificacao."""
+
+    def __init__(self):
+        self.files = {}
+        self.marks = {}
+
+    def write(self, name, text):
+        self.files[name] = text
+        self.marks[name] = object()
+
+    def read(self, name, seen_mark=None, timeout=0.0):
+        if name not in self.files:
+            return None, seen_mark
+        mark = self.marks[name]
+        if seen_mark is mark:
+            return None, mark           # inalterado
+        return self.files[name], mark
+
+
+def test_ponte_por_arquivos_ia_no_apk():
+    """Cabo simples (MTP): PC escreve estado.txt, 'APK' responde
+    comando.txt, PC le — a IA roda no celular SEM porta TCP nenhuma."""
+    import importlib.util as _ilu
+    from pathlib import Path as _P
+    from ets2ai.mtp import MtpChannel
+    st = _FakeStorage()
+    ch = MtpChannel(storage=st)
+    # PC -> celular: estado com seq
+    seq = ch.send_state((12.0, 0.3, 0.01, [0.001, 0.0, 0.0, 0.0, 0.0],
+                         22.0, 0.9, 0.1, 42.0, 150.0))
+    line = st.files["estado.txt"].strip()
+    assert line.startswith(f"S,{seq},12.0000,") and "0.001000" in line
+    # 'APK' (FileBridge): le estado, roda a IA, escreve comando
+    p = line.split(",")
+    cmd_line = f"C,{p[1]},0.0500,0.9000,0.0000"
+    st.write("comando.txt", cmd_line + "\n")
+    # PC <- celular
+    got = ch.poll_cmd()
+    assert got is not None and got[0] == 0.05 and got[3] == seq
+    assert ch.fresh_cmd() == (0.05, 0.9, 0.0)
+    # resposta VELHA (seq atrasada demais) nao vale
+    st.write("comando.txt", f"C,{seq - 10},0.1,0.1,0.0\n")
+    ch._cmd_t -= 5.0                    # envelhece o comando atual
+    ch.poll_cmd()
+    assert ch.fresh_cmd() is None
+    # arquivo inalterado: read devolve None e o canal mantem o ultimo
+    n = ch.poll_cmd()
+    assert n is not None
+
+
+def test_mtp_phone_link_adapter():
+    """MtpPhoneLink: mesma interface do PhoneLink — o loop de pratica
+    conversa com o 'celular' sem saber que o canal e arquivo."""
+    import importlib.util as _ilu
+    from pathlib import Path as _P
+    bp = _P(__file__).resolve().parents[1] / "bridge" / "ets2_bridge.py"
+    spec = _ilu.spec_from_file_location("ets2_bridge_mtpl", bp)
+    mod = _ilu.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    from ets2ai.mtp import MtpChannel
+    link = mod.MtpPhoneLink()
+    link._ch = MtpChannel(storage=_FakeStorage())
+    link.connected = True
+    link.send_fields(speed=10.0, offset=0.2, hdg=0.0,
+                     curvs=[0.0, None, 0.0, 0.0, 0.0], limit=20.0,
+                     fuel=0.5, fatigue=0.0, job_km=1.0)
+    st = link._ch.storage
+    seq = link._ch._seq
+    st.write("comando.txt", f"C,{seq},-0.02,0.80,0.00\n")
+    assert link.wait_cmd(0.05) == (-0.02, 0.8, 0.0)
+    # sem resposta: None (loop de pratica cai na politica local/PC)
+    link._ch._cmd_t -= 5.0
+    assert link.wait_cmd(0.05) is None
