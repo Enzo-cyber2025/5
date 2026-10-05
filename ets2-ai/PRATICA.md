@@ -195,3 +195,5 @@ sua estrada real em minutos, por DAgger.
   1M parâmetros por tick (~1 ms) — provado pelo `--bench` do bridge.
 - **A IA dirige mal no início da estrada nova** — normal: sem mapa não há
   offset/curvatura; ela anda devagar (30 km/h) até você gravar uma passada.
+
+> Nota de build (retrigger): job Treino do build 37364256906 foi cancelado na fila sem iniciar nenhum passo (testes verdes no mesmo commit); este build repete o mesmo conteudo.
