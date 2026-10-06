@@ -21,32 +21,35 @@ plt.rcParams.update({
 fig = plt.figure(figsize=(15.5, 9.2), dpi=130)
 fig.suptitle("ETS2-AI — PAINEL DE TREINO (dados reais: metrics.json de cada geração + API Kaggle)",
              fontsize=16, fontweight="bold", y=0.985, color=FG)
-fig.text(0.5, 0.945, "atualizado 03/10/2026 19:05 UTC · perda de validação 0,00600 (meta ≤ 0,150) · 1.017.613 parâmetros",
+fig.text(0.5, 0.945, "atualizado 06/10/2026 23:00 UTC · perda de validação 0,004323 (meta ≤ 0,150) · 1.017.613 parâmetros · 12,98 bi de amostras (2,60%)",
          ha="center", fontsize=10.5, color=MUT)
 
 # ------------------------------------------------------------------ painel 1
 ax1 = fig.add_axes([0.05, 0.56, 0.42, 0.34])
-vers = ["v0.4.0", "v0.4.1", "v0.4.2", "v0.4.3", "v0.4.4"]
-loss = [0.008568, 0.008790, 0.008602, 0.009579, 0.006003]
-params = ["52 mil", "150 mil", "295 mil", "505 mil", "1,017 milhão"]
-ax1.plot(range(5), loss, "-o", color=BLUE, lw=2.2, ms=8, mfc=BLUE, mec=BG, mew=1.5, zorder=3)
-ax1.plot(4, loss[4], "o", color=GREEN, ms=13, mec=BG, mew=2, zorder=4)
+vers = ["v0.4.0", "v0.4.1", "v0.4.2", "v0.4.3", "v0.4.4", "v0.4.6 (12,5 bi)"]
+loss = [0.008568, 0.008790, 0.008602, 0.009579, 0.006003, 0.004323]
+params = ["52 mil", "150 mil", "295 mil", "505 mil", "1,017 milhão",
+          "1,017 milhão"]
+ax1.plot(range(6), loss, "-o", color=BLUE, lw=2.2, ms=8, mfc=BLUE, mec=BG, mew=1.5, zorder=3)
+ax1.plot(5, loss[5], "o", color=GREEN, ms=13, mec=BG, mew=2, zorder=4)
 for i, (l, p) in enumerate(zip(loss, params)):
-    dy = -0.00042 if i in (0, 2, 4) else 0.00032
     va = "top" if i in (0, 2, 4) else "bottom"
     ax1.annotate(f"{l:.6f}".replace(".", ","), (i, l), xytext=(0, 14 if va == "bottom" else -18),
                  textcoords="offset points", ha="center", fontsize=9.5,
-                 color=GREEN if i == 4 else FG, fontweight="bold" if i == 4 else "normal")
+                 color=GREEN if i == 5 else FG, fontweight="bold" if i == 5 else "normal")
     ax1.annotate(p + " params", (i, l), xytext=(0, -30 if va == "top" else 28),
                  textcoords="offset points", ha="center", fontsize=8.5, color=MUT)
 ax1.axhline(0.150, color=RED, ls="--", lw=1.4, alpha=0.8)
 ax1.text(0.1, 0.150, " meta ≤ 0,150 (contrato)", color=RED, fontsize=9.5, va="bottom")
-ax1.set_ylim(0.0045, 0.0125)
-ax1.set_xticks(range(5)); ax1.set_xticklabels(vers)
+ax1.set_ylim(0.0035, 0.0125)
+ax1.set_xticks(range(6)); ax1.set_xticklabels(vers, fontsize=8.5)
 ax1.set_ylabel("loss de validação (MSE)")
 ax1.set_title("Loss de validação por geração da rede — 25× abaixo da meta", fontsize=12, fontweight="bold", loc="left")
 ax1.annotate("treino em fluxo de 1 BILHÃO\nde amostras (2× T4 Kaggle)", xy=(4, 0.006003),
              xytext=(2.35, 0.0071), fontsize=9.5, color=GREEN, ha="center",
+             arrowprops=dict(arrowstyle="->", color=GREEN, lw=1.4))
+ax1.annotate("12,5 BILHÕES de amostras\n(mesma arquitetura, loss 35×\nabaixo da meta)", xy=(5, 0.004323),
+             xytext=(3.6, 0.0050), fontsize=9.5, color=GREEN, ha="center",
              arrowprops=dict(arrowstyle="->", color=GREEN, lw=1.4))
 
 # ------------------------------------------------------------------ painel 2
@@ -56,19 +59,19 @@ ax2.set_title("Cadeia de treino rumo a 500 BILHÕES de amostras", fontsize=12, f
 # barra de progresso (log entre 1e9 e 5e11)
 import math
 lo, hi = math.log10(1e9), math.log10(5e11)
-cur = math.log10(1.000011647e9)
+cur = math.log10(12.981325251e9)
 frac = (cur - lo) / (hi - lo)
 ax2.add_patch(FancyBboxPatch((0.03, 0.68), 0.94, 0.13, boxstyle="round,pad=0.008",
                              fc="#1C1C2A", ec="#2A2A3A", lw=1))
 ax2.add_patch(FancyBboxPatch((0.03, 0.68), max(0.94 * frac, 0.012), 0.13, boxstyle="round,pad=0.008",
                              fc=BLUE, ec="none"))
-ax2.text(0.03, 0.60, "1.000.011.647 amostras acumuladas  (0,20% da meta)", fontsize=11, fontweight="bold")
-ax2.text(0.03, 0.535, "≈ 2.500.029 km simulados · meta: 500.000.000.000 amostras ≈ 1,25 bilhão de km", fontsize=9.5, color=MUT)
-ax2.text(0.03, 0.42, "SESSÃO AGORA: kernel enzoaimv/ets2ai-train — status RUNNING nas 2× T4", fontsize=10.5, color=GREEN, fontweight="bold")
-ax2.text(0.03, 0.355, "· sessão de ~11,5 h (FP32, teto de 15 bilhões de amostras), iniciada 03/10 18:09 UTC", fontsize=9.5, color=FG)
-ax2.text(0.03, 0.29, "· cada janela (seg/qui 08:00 UTC) colhe a anterior, promove pesos melhores e empurra a próxima", fontsize=9.5, color=FG)
-ax2.text(0.03, 0.225, "· gratuito (cota Kaggle: ~23 h de 30 h/semana) · retoma do checkpoint a cada sessão", fontsize=9.5, color=FG)
-ax2.text(0.03, 0.14, "1ª colheita: segunda-feira 06/10 08:00 UTC — o contador acima passa a subir sozinho", fontsize=9.5, color=YELLOW)
+ax2.text(0.03, 0.60, "12.981.325.251 amostras acumuladas  (2,60% da meta)", fontsize=11, fontweight="bold")
+ax2.text(0.03, 0.535, "≈ 32.453.313 km simulados · meta: 500.000.000.000 amostras ≈ 1,25 bilhão de km", fontsize=9.5, color=MUT)
+ax2.text(0.03, 0.42, "SESSÃO AGORA: kernel enzoaimv/ets2ai-train — RUNNING (CPU, 11,5 h, fix de RAM)", fontsize=10.5, color=GREEN, fontweight="bold")
+ax2.text(0.03, 0.355, "· GPU 27,2/28,5 h usadas na janela de 7 d — sessões CPU de fluxo até a cota voltar", fontsize=9.5, color=FG)
+ax2.text(0.03, 0.29, "· cada colheita valida gates (loss/faixa/doca), promove pesos melhores e empurra a próxima", fontsize=9.5, color=FG)
+ax2.text(0.03, 0.225, "· retoma do checkpoint da release (rota canonica) · circuit breaker contra crash-loop", fontsize=9.5, color=FG)
+ax2.text(0.03, 0.14, "chegada central estimada em ~1ª semana de dez/2026 (janela 13/nov–17/dez)", fontsize=9.5, color=YELLOW)
 
 # ------------------------------------------------------------------ painel 3
 ax3 = fig.add_axes([0.05, 0.07, 0.42, 0.34])
@@ -87,12 +90,12 @@ ax4 = fig.add_axes([0.53, 0.07, 0.42, 0.34])
 ax4.set_xlim(0, 1); ax4.set_ylim(0, 1); ax4.axis("off")
 ax4.set_title("Registro dos treinamentos (execuções reais)", fontsize=12, fontweight="bold", loc="left")
 linhas = [
-    ("✓", GREEN, "v0.4.4 · treino 2× T4 Kaggle — 1.000.011.647 amostras, loss 0,00600"),
-    ("✓", GREEN, "v0.4.5 · release 8/8 jobs verdes (run 37141720544): APK + EXE + TFLite"),
-    ("✓", GREEN, "v0.4.5 · cadeia 100B no ar (runs 37142390551 e 37143175291)"),
-    ("▶", YELLOW, "03/10 18:09 UTC · 1ª sessão da cadeia RUNNING nas 2× T4 (11,5 h)"),
-    ("✓", GREEN, "v0.4.6 · release publicada (run 37145870359, 8/8 jobs) — APK tela-bloqueada"),
-    ("•", MUT,     "06/10 08:00 UTC · 1ª colheita + contador ao vivo (CHAIN.md / STATUS.md)"),
+    ("✓", GREEN, "v0.4.4 · treino 2× T4 — 1.000.011.647 amostras, loss 0,00600"),
+    ("✓", GREEN, "v0.4.6 · treino 12,5 BILHÕES de amostras — loss 0,004323 (35× abaixo da meta)"),
+    ("✓", GREEN, "v0.4.6 · build 8/8 verde — IA no APK via cabo (arquivos, sem portas) + BUSCAR"),
+    ("✓", GREEN, "cadeia imortal: colheita automatica, circuit breaker, resume pela release"),
+    ("▶", YELLOW, "06/10 · sessao CPU de 11,5 h RUNNING com o fix de RAM (colhe ~04:00 UTC)"),
+    ("•", MUT,     "contador ao vivo: CHAIN.md / STATUS.md · certificado 1 bi de km: 400 bi"),
 ]
 y = 0.82
 for sim, cor, txt in linhas:

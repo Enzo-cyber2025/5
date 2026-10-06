@@ -585,13 +585,43 @@ def run_demo(layers, port, injector, record_path=None, host="127.0.0.1"):
               f"python -m ets2ai.finetune --recordings {rec.path}")
 
 
-def _start_button_state(phone_connected, running):
-    """Regra do botao COMEÇAR (UI): cinza/travado sem celular (cabo simples
-    MTP ou tunel adb); verde com celular; PARAR ao rodar."""
+def _pick_brain(local_ok, phone_connected):
+    """Quem dirige: PC primeiro (GPU 0%, ~0,1% CPU); celular (cabo/arquivos
+    ou tunel adb) so se o PC nao der conta. '', 'local' ou 'phone'."""
+    if local_ok:
+        return "local"
+    return "phone" if phone_connected else ""
+
+
+def _local_ai_ok(cmd_s, need_hz=20.0, max_cpu_pct_of_core=4.0):
+    """A IA local e 'barata o bastante' se, rodando a need_hz, usar menos de
+    max_cpu_pct_of_core% de UM nucleo (N5030 tem 4 -> <1% do total)."""
+    return cmd_s >= need_hz * 100.0 / max_cpu_pct_of_core   # >= 500/s
+
+
+def _bench_local_ai(layers, seconds=0.5):
+    """Inferencias/segundo da politica local (caminho real policy_cmd)."""
+    road = sim.Road.random(42)
+    truck = sim.Truck(road, s=5.0, offset=0.0, speed=15.0)
+    t0 = time.time()
+    n = 0
+    while time.time() - t0 < seconds:
+        for _ in range(50):
+            policy_cmd(layers, road, truck, 1.0)
+            n += 1
+    return n / (time.time() - t0)
+
+
+def _start_button_state(phone_connected, running, local_ok=False):
+    """Regra do botao COMEÇAR (UI): a IA roda no PC (GPU 0%, ~0,1% CPU) —
+    botao liberado SEM celular. Sem IA local, exige celular (cabo MTP ou
+    tunel adb). PARAR ao rodar."""
     if running:
         return ("normal", "PARAR", "#E85D75")
-    if phone_connected:
-        return ("normal", "COMEÇAR", "#00C48C")
+    if local_ok or phone_connected:
+        txt = "COMEÇAR (IA no PC)" if (local_ok and not phone_connected) \
+            else "COMEÇAR"
+        return ("normal", txt, "#00C48C")
     return ("disabled", "COMEÇAR (conecte o celular)", "#3A4150")
 
 
@@ -633,7 +663,8 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
     root.minsize(560, 540)
 
     state = {"running": False, "thread": None, "mtp": None,
-             "link": None, "mlink": None, "searching": False}
+             "link": None, "mlink": None, "searching": False,
+             "local_ok": False, "local_cmd_s": 0.0}
     stop_event = threading.Event()
     logs = deque(maxlen=400)
 
@@ -735,8 +766,15 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
             ml = state.get("mlink")
             if ml is not None and ml.connected:
                 link = ml
-        modo = ("IA no CELULAR" if link else
-                "aguardando celular (BUSCAR ja funciona sem celular)")
+        # PC PRIMEIRO: a IA local e numpy puro (GPU 0%, <1% CPU, ~85 MB) —
+        # se a maquina da conta (sempre da), o celular fica opcional e a
+        # resposta sai SEM atraso nenhum. Celular so se o PC nao der conta.
+        brain = _pick_brain(state["local_ok"], link is not None)
+        if brain == "local":
+            link = None
+        modo = {"local": "IA no PC (GPU 0%, <1% CPU, zero atraso)",
+                "phone": "IA no CELULAR (cabo)"}.get(
+                    brain, "sem IA (pesos ausentes e sem celular)")
         log(f"[começar] {modo} | telemetria: {telemetry_mode}")
 
         def worker():
@@ -821,17 +859,29 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
         elif mtp:
             dot.itemconfig(dot_id, fill=OKC)
             ml = state.get("mlink")
-            via = ("IA no APK por arquivos (cabo simples, sem porta TCP)"
+            via = ("APK conectado (painel + backup via arquivos)"
+                   if state["local_ok"]
+                   else "IA no APK por arquivos (cabo simples, sem porta TCP)"
                    if (ml is not None and ml.connected)
                    else "IA no APK por arquivos — abrindo ponte MTP...")
             phone_lbl.config(text=f"Celular CONECTADO — {mtp}", fg=OKC)
             phone_sub.config(text=via)
+        elif state["local_ok"]:
+            dot.itemconfig(dot_id, fill=OKC)
+            phone_lbl.config(text="IA no PC pronta — celular OPCIONAL "
+                                  f"({state['local_cmd_s']:,.0f} inf/s, "
+                                  "GPU 0%)", fg=OKC)
+            phone_sub.config(text="a IA roda no .exe: 0% de GPU, <1% de "
+                                  "CPU, ~85 MB, zero atraso — o celular "
+                                  "(cabo) e so painel/backup")
         else:
             dot.itemconfig(dot_id, fill="#4A5160")
             phone_lbl.config(text="Celular: NÃO conectado — botão travado",
                              fg=MUT)
-        st_, txt_, bg_ = _start_button_state(conn or bool(mtp),
-                                             state["running"])
+        mtp_ok = bool(state.get("mlink") and state["mlink"].connected)
+        st_, txt_, bg_ = _start_button_state(
+            conn or mtp or mtp_ok, state["running"],
+            local_ok=state["local_ok"])
         btn.config(state=st_, text=txt_, bg=bg_,
                    disabledforeground="#C9D1E0")
         logbox.config(state="normal")
@@ -840,9 +890,28 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
         logbox.config(state="disabled")
         root.after(400, tick)
 
+    def bench_local():
+        """IA no PC: numpy puro — GPU 0%. Mede NESTA maquina se da conta
+        (limite: <4% de 1 nucleo a 20 Hz = <1% do N5030 inteiro)."""
+        try:
+            layers = load_policy()
+            cmd_s = _bench_local_ai(layers, seconds=0.5)
+            state["local_cmd_s"] = cmd_s
+            state["local_ok"] = _local_ai_ok(cmd_s)
+            if state["local_ok"]:
+                log(f"[ia-pc] IA roda no PC: {cmd_s:,.0f} inf/s — GPU 0%, "
+                    "<1% CPU, ~85 MB (celular OPCIONAL, zero atraso)")
+            else:
+                log(f"[ia-pc] maquina nao deu conta ({cmd_s:,.0f} inf/s) — "
+                    "IA no CELULAR via cabo (sem depuracao)")
+        except Exception as e:
+            log(f"[ia-pc] pesos indisponiveis ({e.__class__.__name__}) — "
+                "IA no CELULAR via cabo (sem depuracao)")
+
     log("[info] BUSCAR localiza o jogo (busca completa 1x, depois usa o "
         "salvo)")
     log(f"[info] telemetria: {telemetry_mode} | ESC = kill switch")
+    threading.Thread(target=bench_local, daemon=True).start()
     detect()
     tick()
     root.protocol("WM_DELETE_WINDOW", lambda: (stop_event.set(),

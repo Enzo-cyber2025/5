@@ -219,3 +219,39 @@ def test_mtp_phone_link_adapter():
     # sem resposta: None (loop de pratica cai na politica local/PC)
     link._ch._cmd_t -= 5.0
     assert link.wait_cmd(0.05) is None
+
+
+def test_ia_no_pc_primeiro_com_orcamento():
+    """PC PRIMEIRO: numpy puro = GPU 0% e <1% CPU — se a maquina da conta,
+    o celular fica OPCIONAL (botao liberado SEM celular). Celular so se o
+    PC nao der conta (ou pesos ausentes)."""
+    import importlib.util as _ilu
+    from pathlib import Path as _P
+    bp = _P(__file__).resolve().parents[1] / "bridge" / "ets2_bridge.py"
+    spec = _ilu.spec_from_file_location("ets2_bridge_pc1", bp)
+    mod = _ilu.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+
+    # limiar: <4% de 1 nucleo a 20 Hz  =>  >= 500 inf/s
+    assert mod._local_ai_ok(500.0) is True
+    assert mod._local_ai_ok(4999.0) is True
+    assert mod._local_ai_ok(499.0) is False
+
+    # quem dirige: PC primeiro; celular so sem PC
+    assert mod._pick_brain(True, False) == "local"
+    assert mod._pick_brain(True, True) == "local"        # PC ganha
+    assert mod._pick_brain(False, True) == "phone"
+    assert mod._pick_brain(False, False) == ""
+
+    # botao: IA local OK => liberado SEM celular
+    st = mod._start_button_state
+    assert st(False, False, local_ok=True) == ("normal", "COMEÇAR (IA no PC)",
+                                               "#00C48C")
+    assert st(False, False, local_ok=False)[0] == "disabled"
+    assert st(True, False, local_ok=False)[0] == "normal"
+
+    # benchmark real da politica local: rapido de verdade (GPU 0%)
+    layers = mod.load_policy()
+    cmd_s = mod._bench_local_ai(layers, seconds=0.15)
+    assert cmd_s > 300, cmd_s            # sandbox: milhares/s
+    assert mod._local_ai_ok(cmd_s) is True

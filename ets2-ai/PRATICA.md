@@ -135,6 +135,12 @@ teclado vira correção DAgger.
   - **Túnel adb (opcional)**: com Depuração USB ligada, o cérebro (GPU) pode
     rodar no celular — túnel `adb reverse` em localhost (nada na rede).
     `--rede` abre para Wi-Fi só como exceção.
+  - **IA no PC (PADRÃO, PC primeiro)**: a política local é numpy puro —
+    **0% de GPU** (nem toca), **<1% da CPU** do N5030 (medido na abertura:
+    ≥500 inferências/s), ~85 MB de RAM (a IA em si: 4,6 MB) e **zero
+    atraso**. Com isso o botão COMEÇAR fica liberado **sem celular** — o
+    APK conectado vira painel/backup. O celular só assume se o PC não
+    der conta (pesos ausentes ou máquina muito lenta).
 
 ## 3) `drive` — a IA dirige de verdade
 
