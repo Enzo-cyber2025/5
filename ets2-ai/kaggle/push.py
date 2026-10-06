@@ -304,8 +304,15 @@ def harvest(user):
             cum = 0
     print(f"[harvest] acumulado ate agora: {cum:,} amostras "
           f"({cum / CHAIN_TARGET * 100:.1f}% de {CHAIN_TARGET:,})")
-    _rds = sh("kaggle", "datasets", "status", f"{user}/{CKPT_SLUG}")
-    print("[harvest] checkpoint dataset:", (_rds.stdout or _rds.stderr).strip()[:200])
+    # checkpoint vivo = RELEASE (checkpoint-chain.json); dataset Kaggle e
+    # rota morta ("Invalid Owner Id" + dataset NAO monta no kernel) — so
+    # best-effort, nunca derruba a colheita.
+    try:
+        _rds = sh("kaggle", "datasets", "status", f"{user}/{CKPT_SLUG}")
+        print("[harvest] checkpoint dataset (best-effort):",
+              (_rds.stdout or _rds.stderr).strip()[:120])
+    except Exception:
+        pass
     # PROVA ANTI-REPETICAO: a sessao colhida tem que ter semente/impressao
     # digital DIFERENTES das ja registradas no repo (a semente avanca com o
     # acumulado — nenhuma sessao treina nos mesmos dados de novo).
@@ -337,20 +344,24 @@ def harvest(user):
         print("::warning::gates FALHARAM — checkpoint NAO versionado "
               "(a proxima sessao retoma do ultimo ponto bom)")
         return 1
-    if not _dataset_exists(user):
-        # normal na primeira janela: o --chain cria o dataset na sequencia
-        print("[harvest] dataset de checkpoint ainda nao existe — sera "
-              "criado pelo --chain agora; pesos validados ficam em "
-              ".cache/kaggle-out")
-        return 0
-    import shutil
-    d = _ck_dir()
-    shutil.copyfile(weights, d / "model-weights.json")
-    if metrics.exists():
-        shutil.copyfile(metrics, d / "metrics.json")
-    if not _version_checkpoint(user, f"cadeia: {cum:,} amostras acumuladas"):
-        return 1
-    print(f"[harvest] checkpoint versionado: {user}/{CKPT_SLUG} ({cum:,})")
+    # versionamento no dataset Kaggle: BEST-EFFORT (a rota canonica e a
+    # RELEASE — checkpoint-chain.json — publicada pelo workflow). Falhar
+    # aqui NAO derruba a colheita nem conta como "sem saida".
+    try:
+        if _dataset_exists(user):
+            import shutil
+            d = _ck_dir()
+            shutil.copyfile(weights, d / "model-weights.json")
+            if metrics.exists():
+                shutil.copyfile(metrics, d / "metrics.json")
+            if _version_checkpoint(user, f"cadeia: {cum:,} amostras acumuladas"):
+                print(f"[harvest] checkpoint versionado: {user}/{CKPT_SLUG} "
+                      f"({cum:,})")
+    except Exception as _e:
+        print(f"[harvest] dataset Kaggle indisponivel (best-effort, ok): "
+              f"{_e.__class__.__name__}")
+    print("[harvest] pesos validados: .cache/kaggle-out + checkpoint na "
+          "release (rota canonica)")
     return 0
 
 
