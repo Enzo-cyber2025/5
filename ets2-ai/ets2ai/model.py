@@ -43,6 +43,35 @@ def forward(x, layers, keep=None):
     return a
 
 
+def make_forward_fast(layers):
+    """Forward de 1 amostra SEM alocacoes por chamada.
+
+    O loop de pratica do PC chama a rede 20x/s; forward() aloca ~15 arrays
+    temporarios por chamada (atleast_2d, a@w+b, tanh) — em CPU fraca
+    (Pentium N5030 + build PyInstaller) isso domina o custo. Aqui: buffers
+    PRE-ALOCADOS + np.dot(..., out=) + tanh in-place = zero realocacoes.
+    Mesma matematica (tanh hidden, linear output), float32.
+
+    Retorna funcao f(x13) -> array(3,) (acao crua)."""
+    ws = [np.ascontiguousarray(w, dtype=np.float32) for w, _b in layers]
+    bs = [np.ascontiguousarray(np.asarray(b, dtype=np.float32).reshape(-1))
+          for _w, b in layers]
+    bufs = [np.empty_like(b) for b in bs]
+    last = len(ws) - 1
+
+    def fwd(x):
+        cur = np.asarray(x, dtype=np.float32).reshape(-1)
+        for i in range(len(ws)):
+            out = bufs[i]
+            np.dot(cur, ws[i], out=out)
+            out += bs[i]
+            if i != last:
+                np.tanh(out, out=out)
+            cur = out
+        return cur
+    return fwd
+
+
 def mse_forward(layers, x, y, batch=65536):
     """MSE do forward em LOTES (o conjunto inteiro de ~1M x 290 em float64
     nao cabe na RAM de uma vez)."""

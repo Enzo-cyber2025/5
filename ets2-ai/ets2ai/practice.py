@@ -42,6 +42,7 @@ import numpy as np
 from . import sim, telemetry
 from .contract import load_weights, clamp_action
 from .keys import KeyInjector, Recorder, load_keymap
+from .model import make_forward_fast
 from .joy import JoystickMonitor
 from . import memtelemetry
 from .model import forward
@@ -168,11 +169,12 @@ class PracticeLoop:
         self.mode = mode
         self.road_map = road_map
         self.source = source
-        self.layers = layers
         self.injector = injector
         self.phone = phone
         self.recorder = recorder
         self.map_path = map_path
+        self.layers = layers
+        self._fast_fwd = make_forward_fast(layers) if layers else None
         self.policy_fn = policy_fn or self._nn_policy
         self.tick = tick
         self.clock = clock
@@ -223,7 +225,13 @@ class PracticeLoop:
 
     # ------------------------------------------------------------------ #
     def _nn_policy(self, feat):
-        o = forward(np.asarray(feat, dtype=np.float32), self.layers)[0]
+        # CAMINHO RAPIDO: buffers pre-alocados (zero alocacao por tick) —
+        # <1% de CPU no N5030. Cai no forward() classico se nao houver.
+        if self._fast_fwd is not None:
+            o = self._fast_fwd(feat)
+        else:
+            o = forward(np.asarray(feat, dtype=np.float32),
+                        self.layers)[0]
         return clamp_action(float(o[0]), float(o[1]), float(o[2]))
 
     def _phone_or_local(self, feat, sn, meta):

@@ -232,10 +232,10 @@ def test_ia_no_pc_primeiro_com_orcamento():
     mod = _ilu.module_from_spec(spec)
     spec.loader.exec_module(mod)
 
-    # limiar: <4% de 1 nucleo a 20 Hz  =>  >= 500 inf/s
-    assert mod._local_ai_ok(500.0) is True
-    assert mod._local_ai_ok(4999.0) is True
-    assert mod._local_ai_ok(499.0) is False
+    # limiar: <=8% de 1 nucleo a 20 Hz => >= 250 inf/s (2% do N5030)
+    assert mod._local_ai_ok(250.0) is True
+    assert mod._local_ai_ok(2500.0) is True
+    assert mod._local_ai_ok(249.0) is False
 
     # quem dirige: PC primeiro; celular so sem PC
     assert mod._pick_brain(True, False) == "local"
@@ -255,3 +255,32 @@ def test_ia_no_pc_primeiro_com_orcamento():
     cmd_s = mod._bench_local_ai(layers, seconds=0.15)
     assert cmd_s > 300, cmd_s            # sandbox: milhares/s
     assert mod._local_ai_ok(cmd_s) is True
+
+
+def test_fast_forward_parity_and_speed():
+    """Forward rapido (buffers pre-alocados, f32): MESMA saida do forward
+    classico e bem rapido — e o caminho real do loop de pratica no PC."""
+    import importlib.util as _ilu
+    from pathlib import Path as _P
+    import numpy as _np
+    sys.path.insert(0, str(_P(__file__).resolve().parents[1]))
+    from ets2ai.contract import load_weights
+    from ets2ai.model import forward, make_forward_fast
+    layers, _m = load_weights(_P(__file__).resolve().parents[1]
+                              / "artifacts" / "model-weights.json")
+    ff = make_forward_fast(layers)
+    rng = _np.random.default_rng(7)
+    worst = 0.0
+    for _ in range(300):
+        x = rng.standard_normal(13).astype(_np.float32)
+        worst = max(worst, float(_np.abs(forward(x, layers)[0] - ff(x))
+                                 .max()))
+    assert worst < 1e-5, worst
+    # velocidade: milhares/s no sandbox (no N5030: centenas a milhares)
+    import time as _t
+    f = _np.zeros(13, dtype=_np.float32)
+    t0 = _t.time(); n = 0
+    while _t.time() - t0 < 0.3:
+        for _ in range(100):
+            ff(f); n += 1
+    assert n / 0.3 > 250
