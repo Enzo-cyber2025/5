@@ -66,9 +66,8 @@ public final class MainActivity extends Activity {
     private BridgeClient bridge;
     private String bridgeStatus = "";
     private BtKeyboard btKeyboard;
+    private FileBridge fileBridge;
     private String btStatus = "";
-    private Thread mtpThread = null;
-    private MtpWorker mtpWorker = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -169,7 +168,23 @@ public final class MainActivity extends Activity {
         root.addView(card);
 
         Button files = styledButton("PERMITIR ARQUIVOS (IA NO CELULAR)", 0xFFF2A93B, new Runnable() {
-            public void run() { MtpWorker.requestPermission(MainActivity.this); }
+            public void run() {
+                if (android.os.Build.VERSION.SDK_INT >= 30
+                        && !android.os.Environment.isExternalStorageManager()) {
+                    try {
+                        startActivity(new android.content.Intent(
+                                android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+                                android.net.Uri.parse("package:" + getPackageName())));
+                    } catch (Exception e) {
+                        try {
+                            startActivity(new android.content.Intent(
+                                    android.provider.Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION));
+                        } catch (Exception ignored) { }
+                    }
+                } else {
+                    bridgeStatus = "acesso a arquivos ja concedido";
+                }
+            }
         });
         LinearLayout.LayoutParams flp2 = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -178,7 +193,7 @@ public final class MainActivity extends Activity {
         root.addView(files);
 
         Button connect = styledButton("CONECTAR", 0xFF00A884, new Runnable() {
-            public void run() { autoConnectBridge(); }
+            public void run() { connectAll(); }
         });
         LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -283,7 +298,8 @@ public final class MainActivity extends Activity {
 
     private void pollStatus() {
         boolean conn = bridge != null && bridge.connected;
-        boolean usb = !conn && usbCablePlugged();
+        boolean file = fileBridge != null && fileBridge.answered > 0;
+        boolean usb = !conn && !file && usbCablePlugged();
         GradientDrawable dg = (GradientDrawable) statusDot.getBackground();
         if (conn) {
             dg.setColor(0xFF00E5A8);
@@ -295,28 +311,19 @@ public final class MainActivity extends Activity {
             if (bridge.lastRttMs > 0f)
                 d += String.format(Locale.US, "  •  %.0f ms", bridge.lastRttMs);
             statusDetail.setText(d);
-        } else if (usb) {
-            // IA RODANDO NESTE APARELHO via arquivos pelo cabo (sem
-            // Depuracao USB, sem portas TCP).
-            if (mtpWorker == null && net != null
-                    && MtpWorker.hasPermission(this)) {
-                mtpWorker = new MtpWorker(net);
-                mtpThread = new Thread(mtpWorker);
-                mtpThread.start();
-                KeepAlive.begin(this, "IA no aparelho via cabo (tela pode "
-                        + "bloquear)", null);
-            }
+        } else if (file) {
             dg.setColor(0xFF00E5A8);
             statusTitle.setText("CONECTADO");
             statusTitle.setTextColor(0xFF00E5A8);
-            if (mtpWorker != null && MtpWorker.hasPermission(this)) {
-                statusDetail.setText(String.format(Locale.US,
-                        "IA rodando NESTE aparelho  •  %d comandos  •  %.1f cmd/s",
-                        mtpWorker.answered, mtpWorker.hz));
-            } else {
-                statusDetail.setText("conceda o acesso a arquivos (1 vez) "
-                        + "para a IA rodar NESTE aparelho via cabo");
-            }
+            statusDetail.setText(String.format(Locale.US,
+                    "IA rodando NESTE aparelho (arquivos/USB)  •  %d comandos"
+                    + "  •  %.1f cmd/s", fileBridge.answered, fileBridge.hz));
+        } else if (usb) {
+            dg.setColor(0xFF00E5A8);
+            statusTitle.setText("CONECTADO");
+            statusTitle.setTextColor(0xFF00E5A8);
+            statusDetail.setText("cabo USB (sem Depuracao, sem portas) — "
+                    + "a IA roda no PC; detalhes na janela do PC");
         } else {
             dg.setColor(0xFF4A4A55);
             statusTitle.setText("DESCONECTADO");
@@ -379,6 +386,26 @@ public final class MainActivity extends Activity {
                     }
                 })
                 .show();
+    }
+
+    /** CONECTAR: ponte por ARQUIVOS no cabo (IA no APK, sem porta TCP e
+     *  sem Depuracao USB) + tunel adb em paralelo, se a Depuracao estiver
+     *  ligada. A que responder primeiro e a que vale. */
+    private void connectAll() {
+        if (net == null) return;
+        if (fileBridge == null) {
+            fileBridge = new FileBridge(this, net, new FileBridge.Listener() {
+                public void onStatus(final String s) {
+                    runOnUiThread(new Runnable() {
+                        public void run() { bridgeStatus = "arquivo: " + s; }
+                    });
+                }
+            });
+            new Thread(fileBridge).start();
+            KeepAlive.begin(this,
+                    "Bridge arquivo: IA no APK (tela pode bloquear)", null);
+        }
+        autoConnectBridge();      // tunel adb (opcional, se houver depuracao)
     }
 
     /** Conecta SO pelo CABO USB: o bridge roda 'adb reverse' no PC e o

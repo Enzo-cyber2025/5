@@ -123,14 +123,14 @@ teclado vira correção DAgger.
 - **Conexão**: dois modos, ambos só cabo (zero internet):
   - **Cabo simples (padrão, zero configuração)**: espete o cabo USB com o
     celular em "Transferir arquivos" — **sem Depuração USB e SEM porta TCP
-    criada**. **A IA roda no CELULAR**: o PC escreve o estado em
-    `Download/ets2ai-s{n}.txt` (via MTP), o APK roda a rede e responde
-    `ets2ai-c{n}.txt` — nomes únicos por troca (zero cache), ~2-4 trocas/s
-    com o PC reenviando o último comando a 20 Hz entre atualizações; se um
-    comando atrasar, a IA local do PC assume no lugar (fallback suave, sem
-    travar). No APK: conceda "acesso a todos os arquivos" 1× (botão
-    PERMITIR ARQUIVOS). O botão BUSCAR (sempre visível, independe da
-    conexão) localiza o jogo (busca completa 1×, depois usa o salvo) e
+    criada**. **A IA roda no CELULAR**: o PC escreve `estado.txt` na pasta
+    `ETS2AI` do celular (via MTP), o APK roda a rede e responde
+    `comando.txt` (nº de sequência dentro do arquivo + detecção de mudança
+    — sem problema de cache; comandos velhos são descartados); o tunel adb
+    (opcional, se a Depuração estiver ligada) roda em paralelo e o que
+    responder primeiro vale. No APK: conceda "acesso a todos os arquivos"
+    1× (botão PERMITIR ARQUIVOS). O botão BUSCAR (sempre visível, independe
+    da conexão) localiza o jogo (busca completa 1×, depois usa o salvo) e
     mostra as teclas.
   - **Túnel adb (opcional)**: com Depuração USB ligada, o cérebro (GPU) pode
     rodar no celular — túnel `adb reverse` em localhost (nada na rede).
