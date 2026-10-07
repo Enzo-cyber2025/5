@@ -409,29 +409,38 @@ jobs:
           New-Item -ItemType Directory -Force ets2-ai/bridge/dlls | Out-Null
           foreach ($repo in @("RenCloud/scs-sdk-plugin", "nlhans/ets2-sdk-plugin")) {
             $short = if ($repo -like "RenCloud*") { "rencloud" } else { "nlhans" }
-            $rels = gh api "repos/$repo/releases" --paginate --jq '.[] | .tag_name as $t | .assets[] | select(.name | test("source"; "i") | not) | "\($t)`t\(.browser_download_url)"'
+            $rels = gh api "repos/$repo/releases" --paginate --jq '.[] | .tag_name as $t | .assets[] | select(.name | test("source"; "i") | not) | "\($t)|\(.browser_download_url)"'
+            if (-not $rels) { Write-Host "::warning::gh api nao listou releases de $repo" }
             foreach ($line in $rels) {
-              $parts = $line -split "`t"
+              $parts = $line -split '\|'
               $tag = $parts[0]; $url = $parts[1]
               if (-not $url) { continue }
               $tagdir = ($tag -replace '[^A-Za-z0-9._-]', '_')
               Write-Host "banco: $short $tag"
               curl.exe -fsSL --retry 3 -o rel.zip $url
-              if (-not (Test-Path rel.zip)) { continue }
+              if (-not (Test-Path rel.zip)) { Write-Host "::warning::sem download: $tag"; continue }
               Expand-Archive rel.zip -DestinationPath relx -Force
-              Get-ChildItem relx -Recurse -Filter *telemetry*.dll | ForEach-Object {
-                $arch = if ($_.FullName -match 'x64|win64|amd64') { "x64" } else { "x86" }
-                $dst = "ets2-ai/bridge/dlls/$short/$tagdir/$arch"
-                New-Item -ItemType Directory -Force $dst | Out-Null
-                Copy-Item $_.FullName "$dst/scs-telemetry.dll" -Force
+              foreach ($arch in @('x64','x86')) {
+                $is64 = [bool]($arch -eq 'x64')
+                $dll = Get-ChildItem relx -Recurse -Filter *telemetry*.dll | Where-Object {
+                  ($_.Name -notmatch 'demo|csharp|client') -and
+                  (([bool]($_.FullName -match 'x64|win64|amd64')) -eq $is64)
+                } | Sort-Object { if ($_.Name -like 'scs-telemetry*') {0}
+                                  elseif ($_.Name -like 'ets2-telemetry*') {1} else {2} } |
+                  Select-Object -First 1
+                if ($dll) {
+                  $dst = "ets2-ai/bridge/dlls/$short/$tagdir/$arch"
+                  New-Item -ItemType Directory -Force $dst | Out-Null
+                  Copy-Item $dll.FullName "$dst/scs-telemetry.dll" -Force
+                }
               }
-              Remove-Item relx -Recurse -Force -ErrorAction SilentlyContinue
-              Remove-Item rel.zip -Force -ErrorAction SilentlyContinue
+              Remove-Item relx, rel.zip -Recurse -Force -ErrorAction SilentlyContinue
             }
           }
           $n = (Get-ChildItem ets2-ai/bridge/dlls -Recurse -Filter *.dll | Measure-Object).Count
           Write-Host "BANCO: $n DLLs de telemetria embutidas"
-          if ($n -lt 8) { Write-Host "::warning::banco pequeno ($n DLLs) — checar downloads" }
+          if ($n -eq 0) { throw "banco de DLLs vazio — downloads falharam" }
+          if ($n -lt 12) { Write-Host "::warning::banco pequeno ($n DLLs) — checar downloads" }
           # DLL unica (legado/fallback): a mais recente
           curl.exe -fsSL --retry 3 -o scs.zip https://github.com/RenCloud/scs-sdk-plugin/releases/download/V.1.12.1/release_v_1_12_1.zip
           Expand-Archive scs.zip -DestinationPath scs-dist -Force
