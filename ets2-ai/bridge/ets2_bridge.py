@@ -27,6 +27,7 @@ Uso:
     python ets2_bridge.py --ets2 drive --inject --window "Euro Truck"  # IA dirige
 """
 import argparse
+import json
 import math
 import os
 import socket
@@ -895,6 +896,34 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
                    command=do_verify_dll)
     bv.pack(side="left", padx=(10, 0))
 
+    def do_autoteste():
+        """Diagnostico completo na maquina do usuario: roda o MESMO
+        autoteste da validacao do CI e loga cada passo (o log diz
+        exatamente o que esta errado — cole no suporte)."""
+        if state.get("dll_busy"):
+            return
+        state["dll_busy"] = True
+        ba.config(state="disabled", text="TESTANDO...")
+        log("[autoteste] rodando diagnostico completo nesta maquina...")
+
+        def worker():
+            try:
+                out = str(Path.cwd() / "autoteste-resultado.json")
+                run_autoteste(saida=out, log=log)
+            except Exception as e:
+                log(f"[autoteste] erro: {e.__class__.__name__}: {e}")
+            state["dll_busy"] = False
+            root.after(0, lambda: ba.config(state="normal",
+                                            text="AUTOTESTE (diagnóstico)"))
+        threading.Thread(target=worker, daemon=True).start()
+
+    ba = tk.Button(brow2, text="AUTOTESTE (diagnóstico)",
+                   font=("Segoe UI", 9), fg=FG, bg="#232B3A",
+                   activebackground="#2C3547", activeforeground="white",
+                   relief="flat", cursor="hand2", padx=12, pady=7,
+                   command=do_autoteste)
+    ba.pack(side="left", padx=(10, 0))
+
     # ---------- botao COMEÇAR ----------
     def on_start():
         if state["running"]:
@@ -1210,6 +1239,149 @@ def run_headless(layers, port, injector, phone_only, host="127.0.0.1"):
         injector.release_all()
 
 
+def run_autoteste(game_dir=None, saida=None, log=print):
+    """Autoteste completo do bridge (botao AUTOTESTE e --autoteste):
+
+      1. banco de DLLs embutidas (todas as releases oficiais);
+      2. descoberta do jogo (caminho salvo -> processo -> Steam -> varredura
+         LITERAL do disco; --game-dir atalha);
+      3. analise do jogo (arquitetura + versao) + instalacao da DLL IDEAL;
+      4. verificacao por hash SHA-256 (corrompida? ausente? versao certa?);
+      5. TELEMETRIA REAL (Windows): um "jogo falso" cria a memoria
+         compartilhada Local\\SCSTelemetry EXATAMENTE como o plugin faz no
+         processo do jogo — e o bridge tem que ler e bater os valores;
+      6. politica: pesos oficiais (+ nano destilada) e o bench.
+
+    Escreve o resultado em JSON (--saida) e devolve True se nada falhou.
+    A validacao Windows do CI roda isto dentro de um Windows de verdade.
+    """
+    from ets2ai import telemetry as tele
+    steps = []
+
+    def step(name, ok, detail=""):
+        st = "PASS" if ok else "FAIL"
+        steps.append({"step": name, "status": st, "detail": str(detail)[:300]})
+        log(f"[autoteste] {st}: {name}" + (f" — {detail}" if detail else ""))
+        return ok
+
+    res = {"so": sys.platform, "python": sys.version.split()[0],
+           "exe_empacotado": bool(hasattr(sys, "_MEIPASS")), "steps": []}
+    log(f"[autoteste] bridge {sys.platform} · python "
+        f"{sys.version.split()[0]} · "
+        f"{'exe empacotado' if res['exe_empacotado'] else 'rodando do repo'}")
+
+    # 1) banco de DLLs
+    avail = tele.available_dlls()
+    tags = sorted({f"{r} {t}" for (r, t, _a) in avail})
+    res["banco_dlls"] = len(avail)
+    step("banco de DLLs embutidas",
+         len(avail) > 0 or tele.find_bundled_dll() is not None,
+         f"{len(avail)} DLLs" + (f": {', '.join(tags)}" if tags else
+                                 " (banco ausente — DLL unica embutida)"))
+
+    # 2) descoberta do jogo
+    gd = None
+    try:
+        gd = tele.resolve_game_dir(extra=game_dir, log=log)
+    except Exception as e:
+        log(f"[autoteste] descoberta falhou: {e.__class__.__name__}")
+    res["game_dir"] = str(gd) if gd else None
+    step("descoberta do jogo", gd is not None,
+         str(gd) if gd else "jogo nao achado (varredura completa ja rodou?)")
+
+    # 3) analise + instalacao da DLL ideal
+    if gd is not None:
+        try:
+            r = tele.ensure_plugin(log=log, game_dir=gd)
+        except Exception as e:
+            r = None
+            log(f"[autoteste] instalacao falhou: {e.__class__.__name__}: {e}")
+        res["dll_instalada"] = bool(r)
+        if r:
+            res.update(dll_repo=r.get("repo"), dll_tag=r.get("tag"),
+                       dll_arch=r.get("arch"), dll=str(r.get("dll")),
+                       jogo_versao=r.get("version"))
+        step("analise + instalacao da DLL ideal", bool(r),
+             (f"{r.get('repo')} {r.get('tag')} ({r.get('arch')}) p/ ETS2 "
+              f"{r.get('version')}") if r else "veja o log acima")
+
+        # 4) verificacao por hash
+        try:
+            v = tele.verify_plugin(log=log, game_dir=gd, repair=True)
+            res["verificacao"] = v.get("status")
+            step("verificacao da DLL (hash SHA-256)",
+                 v.get("status") == "ok",
+                 f"{v.get('status')}"
+                 + (" — reparada" if v.get("reparada") else ""))
+        except Exception as e:
+            step("verificacao da DLL (hash SHA-256)", False,
+                 f"{e.__class__.__name__}: {e}")
+    else:
+        steps.append({"step": "analise + instalacao da DLL ideal",
+                      "status": "SKIP", "detail": "sem jogo"})
+
+    # 5) telemetria REAL (jogo falso na memoria compartilhada)
+    if sys.platform == "win32":
+        try:
+            _frame, stop = tele.start_fake_game()
+            try:
+                snap = tele.TelemetryReader().snapshot()
+                ok = (snap.get("sdk_active")
+                      and abs(snap["speed"] - 17.5) < 1e-3
+                      and abs(snap["fuel"] - 380.5) < 1e-3
+                      and abs(snap["user_steer"] - 0.25) < 1e-3
+                      and snap.get("on_job")
+                      and snap.get("game") == "ets2")
+                res["telemetria"] = "PASS" if ok else "FAIL"
+                step("telemetria REAL (memoria do jogo falso)", ok,
+                     f"speed={snap.get('speed')} fuel={snap.get('fuel')} "
+                     f"steer={snap.get('user_steer')} jogo={snap.get('game')}")
+            finally:
+                stop()
+        except Exception as e:
+            res["telemetria"] = "FAIL"
+            step("telemetria REAL (memoria do jogo falso)", False,
+                 f"{e.__class__.__name__}: {str(e)[:150]}")
+    else:
+        res["telemetria"] = "SKIP"
+        steps.append({"step": "telemetria REAL (memoria do jogo falso)",
+                      "status": "SKIP", "detail": "so em Windows"})
+
+    # 6) politicas (oficial + nano) e bench
+    try:
+        layers = load_policy()
+        cmd_s = _bench_local_ai(layers, seconds=0.3)
+        res["oficial_inf_s"] = round(cmd_s, 1)
+        step("politica oficial (bench)", cmd_s >= 50, f"{cmd_s:,.0f} inf/s")
+    except SystemExit as e:
+        step("politica oficial (bench)", False, str(e)[:150])
+    try:
+        nano = load_nano()
+        if nano is not None:
+            s2 = _bench_local_ai(nano[0], seconds=0.2)
+            res["nano_inf_s"] = round(s2, 1)
+            step("politica destilada nano (bench)", s2 >= 2000,
+                 f"{s2:,.0f} inf/s")
+    except Exception as e:
+        step("politica destilada nano (bench)", False,
+             f"{e.__class__.__name__}: {e}")
+
+    res["steps"] = steps
+    res["pass"] = all(s["status"] != "FAIL" for s in steps)
+    if saida:
+        try:
+            Path(saida).write_text(json.dumps(res, indent=2, ensure_ascii=False),
+                                   encoding="utf-8")
+            log(f"[autoteste] relatorio: {saida}")
+        except OSError as e:
+            log(f"[autoteste] nao consegui escrever {saida}: {e}")
+    n_ok = sum(1 for s in steps if s["status"] == "PASS")
+    n_fail = sum(1 for s in steps if s["status"] == "FAIL")
+    log(f"[autoteste] RESULTADO: {'PASS' if res['pass'] else 'FAIL'} "
+        f"({n_ok} ok / {n_fail} falha / {len(steps) - n_ok - n_fail} skip)")
+    return res["pass"]
+
+
 def run_bench():
     """Prova o custo do bridge: 10 s do loop leve medindo CPU do processo."""
     import os
@@ -1261,6 +1433,15 @@ def main():
                     help="a IA roda SO no celular; sem conexao o caminhao freia")
     ap.add_argument("--bench", action="store_true",
                     help="medir o custo de CPU do bridge (prova do impacto no FPS)")
+    ap.add_argument("--autoteste", action="store_true",
+                    help="autoteste completo (banco de DLLs, jogo, DLL "
+                         "ideal, telemetria REAL, politicas) e sai; usa "
+                         "--saida para o relatorio JSON")
+    ap.add_argument("--game-dir", metavar="DIR", default=None,
+                    help="pasta do ETS2 (atalho p/ autoteste/instalacao; "
+                         "sem isto, descobre sozinho varrendo o disco)")
+    ap.add_argument("--saida", metavar="ARQ", default=None,
+                    help="arquivo JSON do resultado do --autoteste")
     ap.add_argument("--ets2", choices=["record", "shadow", "drive"],
                     metavar="MODO",
                     help="PRATICA no ETS2 REAL (telemetria RenCloud): "
@@ -1281,6 +1462,9 @@ def main():
     if args.inject and sys.platform != "win32":
         print("[aviso] --inject so funciona no Windows; rodando sem injecao.")
 
+    if args.autoteste:
+        ok = run_autoteste(game_dir=args.game_dir, saida=args.saida)
+        return 0 if ok else 1
     if args.bench:
         run_bench()
         return

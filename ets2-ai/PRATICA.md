@@ -36,6 +36,19 @@ tela, sem mexer no jogo: só o plugin oficial de telemetria da SCS + teclas.
    Primeiro o bridge tenta a **leitura de memória** (sem DLL nenhuma no
    jogo); o plugin é o plano B automático para versões sem pack de offsets
    (jogos mais antigos que 1.46 podem não validar no leitor — o log avisa).
+   **Qualquer ETS2, garantido por rotação**: se o jogo estiver rodando e a
+   DLL escolhida não for aceita (SDK incompatível), o bridge **troca
+   sozinho para a próxima release do banco** a cada ~2 min e mostra as
+   linhas do `game.log.txt` do próprio jogo explicando o motivo — reinicie
+   o jogo quando o log pedir. O botão **AUTOTESTE (diagnóstico)** roda na
+   sua máquina o mesmo teste completo da validação do CI (banco, descoberta,
+   análise, DLL ideal, verificação, telemetria real, políticas) e grava
+   `autoteste-resultado.json` — se algo não funcionar, é só mandar o log.
+   E no CI todo build é **validado num Windows real**: o exe roda o
+   autoteste contra instalações falsas do jogo em 5 versões (1.22 x86,
+   1.35, 1.41, 1.45, 1.53) e só publica release se a DLL certa for
+   instalada em cada uma **e** a telemetria real (memória compartilhada do
+   "jogo falso") for lida com os valores batendo.
 3. **Celular no cabo USB** (opcional, para a IA rodar no aparelho): o .exe
    também embute o `adb` e cria o túnel `adb reverse` sozinho — no app toque
    **BRIDGE → AUTO** e conecta (sem digitar IP, sem Wi-Fi). Requer

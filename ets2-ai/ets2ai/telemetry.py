@@ -982,17 +982,22 @@ def game_version(game_dir):
     return (int(m.group(1)), int(m.group(2))) if m else None
 
 
-def pick_dll(version, arch, available):
+def pick_dll(version, arch, available, exclude=()):
     """(repo, tag) da DLL IDEAL: a release mais nova que suporta a versao
     do jogo (banco em ordem mais-nova-primeiro). Versao desconhecida = a
-    mais nova; jogo mais antigo que tudo = a mais antiga disponivel."""
+    mais nova; jogo mais antigo que tudo = a mais antiga disponivel.
+
+    exclude: {(repo, tag), ...} ja tentadas sem sucesso (ROTACAO: o jogo
+    pode recusar a DLL escolhida — SDK incompativel — e a proxima release
+    do banco e a candidata natural)."""
+    ex = set(exclude or ())
     for repo, tag, min_ver in DLL_BANK:
-        if (repo, tag, arch) not in available:
+        if (repo, tag, arch) not in available or (repo, tag) in ex:
             continue
         if version is None or min_ver <= version:
             return (repo, tag)
     for repo, tag, _min in reversed(DLL_BANK):   # jogo pre-historico
-        if (repo, tag, arch) in available:
+        if (repo, tag, arch) in available and (repo, tag) not in ex:
             return (repo, tag)
     return None
 
@@ -1006,7 +1011,7 @@ def _sha256(path):
     return h.hexdigest()
 
 
-def _ideal_dll(game_dir, log):
+def _ideal_dll(game_dir, log, exclude=()):
     """Analisa o jogo (arquitetura + versao) e devolve a DLL embutida ideal:
     (path, {repo, tag, arch, version}). Cai na DLL unica legada se o banco
     nao vier no pacote."""
@@ -1014,7 +1019,7 @@ def _ideal_dll(game_dir, log):
     ver = game_version(game_dir)
     vs = f"{ver[0]}.{ver[1]}" if ver else "desconhecida"
     avail = available_dlls()
-    pick = pick_dll(ver, arch, avail)
+    pick = pick_dll(ver, arch, avail, exclude=exclude)
     if pick is not None:
         src = avail[(pick[0], pick[1], arch)]
         meta = {"repo": pick[0], "tag": pick[1], "arch": arch, "version": vs}
@@ -1028,6 +1033,97 @@ def _ideal_dll(game_dir, log):
     log(f"[dll] jogo analisado: ETS2 {vs} ({arch}) — DLL ideal: "
         f"{meta['repo']} {meta['tag']}")
     return src, meta
+
+
+def game_process_running():
+    """O processo do ETS2 esta rodando agora? (publica)."""
+    return _running_game_root() is not None
+
+
+def start_fake_game(fields=None, name=MMF_NAME, size=None):
+    """Cria a memoria compartilhada Local\\SCSTelemetry com um quadro
+    VALIDO — um "jogo falso": exatamente o que o plugin faz dentro do
+    processo do jogo. Usado pelo --autoteste (e pela validacao Windows do
+    CI) para provar o caminho REAL de telemetria (CreateFileMappingW de um
+    processo -> OpenFileMapping no nosso) sem precisar do jogo.
+
+    Retorna (frame_dict, stop). stop() fecha e libera a memoria.
+    """
+    if _os.name != "nt":
+        raise RuntimeError("start_fake_game exige Windows")
+    import ctypes
+    k32 = ctypes.windll.kernel32
+    size = int(size or MMF_SIZE)
+    PAGE_READWRITE = 0x04
+    FILE_MAP_ALL_ACCESS = 0xF001F
+    h = k32.CreateFileMappingW(ctypes.c_void_p(-1), None, PAGE_READWRITE,
+                               0, size, name)
+    if not h:
+        raise RuntimeError("CreateFileMappingW falhou")
+    ptr = k32.MapViewOfFile(h, FILE_MAP_ALL_ACCESS, 0, 0, size)
+    if not ptr:
+        k32.CloseHandle(h)
+        raise RuntimeError("MapViewOfFile falhou")
+    m = TelemetryMap()
+    m.sdk_active = True
+    m.paused = False
+    m.time = 123456
+    m.plugin_revision = 15              # V.1.12.x (parse exige >= 12)
+    m.game_id = 1                       # ets2
+    m.version_major, m.version_minor = 1, 53
+    m.speed = 17.5
+    m.fuel = 380.5
+    m.fuel_capacity = 600.0
+    m.user_steer, m.user_throttle, m.user_brake = 0.25, 0.5, 0.0
+    m.route_distance = 12500.0
+    m.speed_limit = 22.22
+    m.on_job = True
+    m.engine_enabled = True
+    m.park_brake = False
+    m.world_x, m.world_z = 1000.5, -2000.25
+    for k, v in (fields or {}).items():
+        setattr(m, k, v)
+    ctypes.memmove(ptr, ctypes.byref(m), min(ctypes.sizeof(m), size))
+
+    def stop():
+        try:
+            k32.UnmapViewOfFile(ctypes.c_void_p(ptr))
+            k32.CloseHandle(h)
+        except Exception:
+            pass
+    return m, stop
+
+
+def game_log_hints():
+    """Ultimas linhas sobre plugins/telemetria do game.log.txt do JOGO (o
+    ETS2 escreve ali por que carregou ou abandonou a DLL — SDK velho/novo
+    demais, arquitetura errada etc). E o diagnostico mais honesto: a
+    palavra e do proprio jogo."""
+    import re as _re
+    if _os.name != "nt":
+        return []
+    home = Path.home()
+    logs = []
+    for docs in (home / "Documents", home / "OneDrive" / "Documents",
+                 home / "Documentos", home / "OneDrive" / "Documentos"):
+        for prof in ("", "steam_profiles", "profiles"):
+            base = docs / "Euro Truck Simulator 2" / prof
+            if base.is_dir():
+                lg = base / "game.log.txt"
+                try:
+                    if lg.exists():
+                        logs.append((lg.stat().st_mtime, lg))
+                except OSError:
+                    pass
+    if not logs:
+        return []
+    _lg = max(logs, key=lambda x: x[0])[1]
+    try:
+        lines = _lg.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return []
+    pat = _re.compile(r"plugin|telemetry|sdk", _re.IGNORECASE)
+    return [l.strip() for l in lines if pat.search(l)][-12:]
 
 
 def verify_plugin(log=print, game_dir=None, repair=True):
@@ -1078,7 +1174,8 @@ def verify_plugin(log=print, game_dir=None, repair=True):
     return {"status": status, "reparada": False, **meta}
 
 
-def ensure_plugin(log=print, game_dir=None, force=False):
+def ensure_plugin(log=print, game_dir=None, force=False,
+                   exclude=()):
     """Instalacao 100% AUTOMATICA da telemetria (nada manual):
 
     1. acha a pasta do jogo (caminho salvo -> processo rodando -> Steam ->
@@ -1101,8 +1198,10 @@ def ensure_plugin(log=print, game_dir=None, force=False):
     if not dir_looks_like_game(gd):
         log(f"[dll] {gd} nao tem bin/win_x64 — ignorando")
         return None
-    dll_src, meta = _ideal_dll(gd, log)
+    dll_src, meta = _ideal_dll(gd, log, exclude=exclude)
     if dll_src is None:
+        log("[dll] banco esgotado para este jogo (todas as releases ja "
+            "foram tentadas)")
         return None
     dst = plugin_dll_path(gd, meta["arch"])
     h_src = _sha256(dll_src)

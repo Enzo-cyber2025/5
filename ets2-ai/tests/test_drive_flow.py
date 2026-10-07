@@ -234,7 +234,7 @@ def test_acquire_reinstala_telemetria_durante_a_espera(monkeypatch):
 
     installs = {"n": 0}
 
-    def fake_install(game_dir=None, auto=True, log=print):
+    def fake_install(game_dir=None, auto=True, log=print, exclude=()):
         installs["n"] += 1
         return None
     monkeypatch.setattr(practice.memtelemetry, "MemTelemetry", boom)

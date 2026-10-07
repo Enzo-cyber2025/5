@@ -696,17 +696,19 @@ class PracticeLoop:
         self.log(line)
 
 
-def _try_install_plugin(game_dir=None, auto=True, log=print):
+def _try_install_plugin(game_dir=None, auto=True, log=print, exclude=()):
     """Telemetria 100% AUTOMATICA: instala a DLL embutida na pasta do jogo.
 
     Nada manual: a pasta vem do CACHE -> processo rodando -> Steam ->
     VARREDURA LITERAL do disco todo (a mesma descoberta dos controles).
-    Delega para telemetry.ensure_plugin (idempotente, verifica a copia)."""
+    Delega para telemetry.ensure_plugin (idempotente, verifica a copia).
+    exclude = {(repo, tag)} ja tentadas: instala a PROXIMA release
+    (rotacao p/ QUALQUER ETS2). Retorna o dict do ensure_plugin ou None."""
     if os.name != "nt" or not auto:
         return None
     try:
-        r = telemetry.ensure_plugin(log=log, game_dir=game_dir)
-        return Path(r["game_dir"]) if r else None
+        return telemetry.ensure_plugin(log=log, game_dir=game_dir,
+                                       exclude=exclude)
     except Exception as e:
         log(f"[pratica] auto-install da telemetria falhou: {e}")
     return None
@@ -726,6 +728,8 @@ def _acquire_source(mode, telemetry_mode, log, stop_event=None,
     """
     deadline = time.monotonic() + max(0.0, float(wait_game))
     last_install_try = 0.0        # re-tenta o auto-install a cada ~60 s
+    last_rotate = 0.0             # rotacao de release: no max. 1 a cada 2 min
+    tried = set()                 # {(repo, tag)} ja instaladas nesta sessao
     last_err = ""
     attempt = 0
     while True:
@@ -762,7 +766,28 @@ def _acquire_source(mode, telemetry_mode, log, stop_event=None,
                 now = time.monotonic()
                 if (telemetry_mode == "auto" and now - last_install_try > 60.0):
                     last_install_try = now
-                    _try_install_plugin(game_dir, auto_install, log=log)
+                    # ROTACAO (QUALQUER ETS2): jogo RODANDO mas a MMF nao
+                    # apareceu -> a DLL escolhida nao foi aceita (SDK
+                    # incompativel). Instala a PROXIMA release do banco e
+                    # pede o restart (o plugin carrega na abertura).
+                    exclude = set(tried)
+                    run_ok = telemetry.game_process_running()
+                    if run_ok and tried and now - last_rotate > 120.0:
+                        exclude = set(tried)
+                        log("[dll] jogo rodando sem telemetria — girando "
+                            f"para a proxima release (ja tentadas: "
+                            f"{', '.join(sorted(t for _r, t in tried))})")
+                    r = _try_install_plugin(game_dir, auto_install, log=log,
+                                            exclude=exclude)
+                    if r:
+                        tried.add((r.get("repo"), r.get("tag")))
+                        if len(tried) > 1:
+                            last_rotate = now
+                            log(f"[dll] RELEASE TROCADA: {r.get('repo')} "
+                                f"{r.get('tag')} instalada — REINICIE o "
+                                "ETS2 para carregar a nova DLL")
+                            for hint in telemetry.game_log_hints()[-4:]:
+                                log(f"[game.log] {hint[:160]}")
                     try:
                         reader = telemetry.TelemetryReader()
                         try:
