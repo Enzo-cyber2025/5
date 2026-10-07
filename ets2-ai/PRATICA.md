@@ -135,12 +135,21 @@ teclado vira correção DAgger.
   - **Túnel adb (opcional)**: com Depuração USB ligada, o cérebro (GPU) pode
     rodar no celular — túnel `adb reverse` em localhost (nada na rede).
     `--rede` abre para Wi-Fi só como exceção.
-  - **IA no PC (PADRÃO, PC primeiro)**: a política local é numpy puro —
-    **0% de GPU** (nem toca), **<1% da CPU** do N5030 (medido na abertura:
-    ≥500 inferências/s), ~85 MB de RAM (a IA em si: 4,6 MB) e **zero
-    atraso**. Com isso o botão COMEÇAR fica liberado **sem celular** — o
-    APK conectado vira painel/backup. O celular só assume se o PC não
-    der conta (pesos ausentes ou máquina muito lenta).
+  - **IA no PC (PADRÃO, PC primeiro — escada honesta)**: a política local é
+    numpy puro — **0% de GPU** (nem toca) e **zero atraso**. Na abertura o
+    exe MEDE a máquina (no caminho real) e sobe a escada:
+    1. **rede oficial** (290×13, 1,02 M params): se rodar a ≥250 inf/s
+       (≤8% de 1 núcleo a 20 Hz), ela dirige no PC (~85 MB de RAM);
+    2. **rede DESTILADA (nano)**: se a oficial não couber (caso do
+       Pentium N5030, ~208 inf/s = 9,6% de 1 núcleo), o exe tenta a nano —
+       ~28 mil parâmetros (36× menor, cabe no cache L2), **destilada da
+       oficial na mesma distribuição de treino** (relatório de fidelidade
+       em `distill-report.json` na release; malha fechada equivalente).
+       Precisa medir ≥2.000 inf/s = **≤1% de 1 núcleo = 0,25% do N5030**;
+    3. **celular via cabo** (arquivos MTP, sem depuração, sem porta TCP):
+       só se nem a nano couber.
+    Com 1 ou 2 o botão COMEÇAR fica liberado **sem celular** — o APK
+    conectado vira painel/backup. Os números aparecem no log `[ia-pc]`.
 
 ## 3) `drive` — a IA dirige de verdade
 

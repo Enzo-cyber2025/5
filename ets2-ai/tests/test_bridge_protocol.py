@@ -284,3 +284,54 @@ def test_fast_forward_parity_and_speed():
         for _ in range(100):
             ff(f); n += 1
     assert n / 0.3 > 250
+
+
+def test_escada_ia_no_pc_oficial_nano_celular():
+    """Escada honesta do 'IA no PC' (medida NA MAQUINA, no caminho real):
+    rede OFICIAL (>=250 inf/s) -> rede DESTILADA nano (>=2000 inf/s =
+    <=1% de 1 nucleo a 20 Hz) -> celular via cabo."""
+    import importlib.util as _ilu
+    from pathlib import Path as _P
+    bp = _P(__file__).resolve().parents[1] / "bridge" / "ets2_bridge.py"
+    spec = _ilu.spec_from_file_location("ets2_bridge_pc3", bp)
+    mod = _ilu.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+
+    big, nano = [("big",)], [("nano",)]
+    nano_pack = (nano, {"nano": True, "distill": {"mse_stream": 0.002}},
+                 "model-nano.json")
+    calls = {"n": 0}
+    logs = []
+
+    def bench_fraco(layers, seconds=0.5):
+        calls["n"] += 1
+        return 208.0 if calls["n"] == 1 else 5000.0   # N5030: oficial nao cabe
+
+    mod._bench_local_ai = bench_fraco
+    mod.load_policy = lambda: big
+    mod.load_nano = lambda: nano_pack
+    layers, wpath, kind, s = mod._choose_local_policy(log=logs.append)
+    assert (kind, s) == ("nano", 5000.0) and layers is nano
+    assert wpath == "model-nano.json"
+    assert any("oficial" in l for l in logs)          # logou o motivo da queda
+
+    # maquina forte: oficial cabe -> NEM mede a nano
+    calls["n"] = 0
+
+    def bench_forte(layers, seconds=0.5):
+        calls["n"] += 1
+        return 9000.0 if calls["n"] == 1 else 1.0
+    mod._bench_local_ai = bench_forte
+    layers, wpath, kind, s = mod._choose_local_policy(log=logs.append)
+    assert (kind, layers, wpath) == ("oficial", big, None)
+    assert calls["n"] == 1
+
+    # tudo fraco (nano tambem nao coube): celular
+    mod._bench_local_ai = lambda layers, seconds=0.5: 100.0
+    layers, wpath, kind, s = mod._choose_local_policy(log=logs.append)
+    assert kind is None and layers is None and s == 0.0
+
+    # build sem nano (gate reprovado): oficial fraca -> celular
+    mod.load_nano = lambda: None
+    layers, wpath, kind, s = mod._choose_local_policy(log=logs.append)
+    assert kind is None and wpath is None

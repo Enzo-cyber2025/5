@@ -206,6 +206,15 @@ jobs:
           print("GATES OK — pesos aprovados")
           PY
           cp artifacts/model-weights.txt android/assets/model-weights.txt
+      - name: Destila rede nano (IA no PC fraco — imita a oficial)
+        continue-on-error: true   # nano e melhoria: sem ela o PC cai no celular
+        run: |
+          cd ets2-ai
+          set -o pipefail
+          python -m ets2ai.distill --weights artifacts/model-weights.json \
+              --out artifacts/model-nano.json \
+              --report artifacts/distill-report.json \
+            2>&1 | tee ../.cache_distill.log
       - name: Commita pesos canonicos [skip ci]
         run: |
           git config user.name "ets2ai-ci"; git config user.email "ci@users.noreply.github.com"
@@ -223,6 +232,8 @@ jobs:
           path: |
             ets2-ai/artifacts/model-weights.json
             ets2-ai/artifacts/metrics.json
+            ets2-ai/artifacts/model-nano.json
+            ets2-ai/artifacts/distill-report.json
       - name: Diagnostico (commita logs no repo em caso de falha)
         if: failure()
         run: |
@@ -406,16 +417,24 @@ jobs:
         shell: pwsh
         run: |
           cd ets2-ai
-          pyinstaller --onefile --noconsole --name ETS2-AI-bridge `
-            --paths . `
-            --add-data "artifacts/model-weights.json;artifacts" `
-            --add-data "bridge/scs-telemetry.dll;." `
-            --add-data "ets2ai/mem_offsets.json;ets2ai" `
-            --add-data "bridge/adb.exe;." `
-            --add-data "bridge/AdbWinApi.dll;." `
-            --add-data "bridge/AdbWinUSBApi.dll;." `
-            --hidden-import ets2ai `
-            bridge/ets2_bridge.py
+          $pyargs = @('--onefile','--noconsole','--name','ETS2-AI-bridge',
+            '--paths','.',
+            '--add-data','artifacts/model-weights.json;artifacts')
+          if (Test-Path artifacts/model-nano.json) {
+            $pyargs += @('--add-data','artifacts/model-nano.json;artifacts')
+            Write-Host "nano DESTILADA embutida no exe (IA no PC fraco)"
+          } else {
+            Write-Host "sem nano (gate da destilacao reprovado) — PC fraco cai no celular"
+          }
+          $pyargs += @(
+            '--add-data','bridge/scs-telemetry.dll;.',
+            '--add-data','ets2ai/mem_offsets.json;ets2ai',
+            '--add-data','bridge/adb.exe;.',
+            '--add-data','bridge/AdbWinApi.dll;.',
+            '--add-data','bridge/AdbWinUSBApi.dll;.',
+            '--hidden-import','ets2ai',
+            'bridge/ets2_bridge.py')
+          pyinstaller @pyargs
       - name: Smoke test (importa e carrega pesos)
         shell: pwsh
         run: |
@@ -443,7 +462,7 @@ jobs:
       - name: Exporta .pt com paridade numpy verificada
         run: |
           cd ets2-ai
-          python3 -m ets2ai.export_pt --weights artifacts/model-weights.json --out artifacts/ets2ai-v0.4.6.pt 2>&1 | tee ../.cache_pt.log
+          python3 -m ets2ai.export_pt --weights artifacts/model-weights.json --out artifacts/ets2ai-v0.4.7.pt 2>&1 | tee ../.cache_pt.log
           exit ${PIPESTATUS[0]}
       - name: Diagnostico (commita logs no repo em caso de falha)
         if: failure()
@@ -457,15 +476,15 @@ jobs:
           git pull --rebase --autostash origin arena/01a0f37d-5 || true
           git push || true
           exit 1
-      - name: Publica na release ets2-ai-v0.4.6
+      - name: Publica na release ets2-ai-v0.4.7
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view ets2-ai-v0.4.6 >/dev/null 2>&1 || \
-            gh release create ets2-ai-v0.4.6 \
-              --title "ETS2-AI v0.4.6 — IA na mesma velocidade com a tela bloqueada; plug & play USB; controles padrao ETS2; cadeia 500B" \
-              --notes "ETS2-AI v0.4.6 - APK: servico em 1o plano (wake lock + Wi-Fi alto desempenho) mantem a IA na MESMA velocidade com a tela bloqueada (cmd/s ao vivo na notificacao); teclado BT com as setas (padrao ETS2); EXE com DLL embutida + adb plug & play; cadeia rumo a 500 bilhoes de amostras no Kaggle."
-          gh release upload ets2-ai-v0.4.6 ets2-ai/artifacts/ets2ai-v0.4.6.pt --clobber
+          gh release view ets2-ai-v0.4.7 >/dev/null 2>&1 || \
+            gh release create ets2-ai-v0.4.7 \
+              --title "ETS2-AI v0.4.7 — IA no PC ate no N5030 (rede destilada); plug & play USB; controles padrao ETS2; cadeia 500B" \
+              --notes "ETS2-AI v0.4.7 - APK: servico em 1o plano (wake lock + Wi-Fi alto desempenho) mantem a IA na MESMA velocidade com a tela bloqueada (cmd/s ao vivo na notificacao); teclado BT com as setas (padrao ETS2); EXE com DLL embutida + adb plug & play; cadeia rumo a 500 bilhoes de amostras no Kaggle."
+          gh release upload ets2-ai-v0.4.7 ets2-ai/artifacts/ets2ai-v0.4.7.pt --clobber
 
   release:
     name: Release com APK + EXE + TFLite
@@ -479,7 +498,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: ets2-ai/.cache/rel
-      - name: Publica release ets2-ai-v0.4.6
+      - name: Publica release ets2-ai-v0.4.7
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -489,13 +508,16 @@ jobs:
           cp ets2-ai/.cache/rel/ETS2-AI-bridge-exe/ETS2-AI-bridge.exe ets2-ai/.cache/release/
           cp ets2-ai/.cache/rel/ets2-ai-tflite/*.tflite ets2-ai/.cache/release/
           cp ets2-ai/artifacts/model-weights.json ets2-ai/artifacts/metrics.json ets2-ai/.cache/release/
+          if [ -f ets2-ai/artifacts/model-nano.json ]; then
+            cp ets2-ai/artifacts/model-nano.json ets2-ai/.cache/release/
+          fi
           ls -la ets2-ai/.cache/release/
           NOTES="$(python3 - <<'PY'
           import json
           m = json.load(open('ets2-ai/artifacts/metrics.json'))
           c = m['closed_loop']
-          print("ETS2-AI v0.4.6 - APK teclado Bluetooth + bridge PC + IA de direcao.")
-          print("Novidades: IA na MESMA velocidade com a tela bloqueada (servico em 1o plano: wake lock parcial + Wi-Fi alto desempenho; notificacao mostra cmd/s e RTT ao vivo, com botao Encerrar); teclado BT emula as setas = controles padrao do ETS2; EXE com DLL de telemetria EMBUTIDA (auto-instala) e adb plug & play; GPU por Vulkan (TFLite 2.17.0, benchmark CPU/GPU-auto/VULKAN/OPENCL/NNAPI); cadeia de treino rumo a 500 bilhoes de amostras no Kaggle (contador em ets2-ai/CHAIN.md, status em ets2-ai/STATUS.md).")
+          print("ETS2-AI v0.4.7 - APK teclado Bluetooth + bridge PC + IA de direcao.")
+          print("Novidades: IA no PC por padrao com ESCADA HONESTA medida na sua maquina — rede oficial (290x13) se couber no orcamento (<1% do N5030); senao rede DESTILADA (nano, ~28 mil parametros, imita a oficial; fidelidade no distill-report.json da release); senao celular via cabo (arquivos MTP, sem depuracao, sem delay). GPU sempre 0% no PC (numpy puro). Teclado BT emula as setas = controles padrao do ETS2; EXE com DLL de telemetria EMBUTIDA (auto-instala) e adb plug & play; GPU por Vulkan no celular (TFLite 2.17.0); cadeia de treino rumo a 500 bilhoes de amostras no Kaggle (contador em ets2-ai/CHAIN.md, status em ets2-ai/STATUS.md).")
           print(f"MSE validacao: {m['mse_val']:.5f} (meta <= {m['loss_target']}) | "
                 f"fonte dos pesos: {m.get('weights_source', '?')} | circuito fechado: "
                 f"{c['finish_rate']*100:.0f}% rotas, dock {c['dock_rate']*100:.0f}%, "
@@ -505,12 +527,12 @@ jobs:
           PY
           )"
           echo "NOTES: $NOTES"
-          TITLE="ETS2-AI v0.4.6 — IA na mesma velocidade com a tela bloqueada; plug & play USB; controles padrao ETS2; cadeia 500B de amostras"
-          gh release view ets2-ai-v0.4.6 >/dev/null 2>&1 || \
-            gh release create ets2-ai-v0.4.6 --title "$TITLE" --notes "$NOTES"
-          gh release upload ets2-ai-v0.4.6 ets2-ai/.cache/release/* --clobber
-          gh release edit ets2-ai-v0.4.6 --title "$TITLE" --notes "$NOTES" || true
-          gh release view ets2-ai-v0.4.6 --json assets --jq '.assets[].name'
+          TITLE="ETS2-AI v0.4.7 — IA no PC ate no N5030 (rede destilada se a oficial nao couber); plug & play USB; cadeia 500B de amostras"
+          gh release view ets2-ai-v0.4.7 >/dev/null 2>&1 || \
+            gh release create ets2-ai-v0.4.7 --title "$TITLE" --notes "$NOTES"
+          gh release upload ets2-ai-v0.4.7 ets2-ai/.cache/release/* --clobber
+          gh release edit ets2-ai-v0.4.7 --title "$TITLE" --notes "$NOTES" || true
+          gh release view ets2-ai-v0.4.7 --json assets --jq '.assets[].name'
       - name: Diagnostico (commita log no repo em caso de falha)
         if: failure()
         run: |

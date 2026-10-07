@@ -134,6 +134,29 @@ def load_policy():
                      "ou use o .exe do CI (pesos embutidos).")
 
 
+def load_nano():
+    """Rede DESTILADA (nano) p/ PC fraco — opcional (embutida no .exe).
+
+    Retorna (layers, meta, path) ou None se o build nao trouxer (gate da
+    destilacao reprovado ou pesos oficiais novos sem nano redestilada).
+    """
+    cands = []
+    if hasattr(sys, "_MEIPASS"):
+        cands.append(Path(sys._MEIPASS) / "artifacts" / "model-nano.json")
+    here = Path(__file__).resolve().parent
+    cands += [here.parent / "artifacts" / "model-nano.json"]
+    for c in cands:
+        if c.exists():
+            try:
+                layers, meta = load_weights(c)
+            except Exception:
+                return None
+            if not meta.get("nano"):
+                return None
+            return layers, meta, c
+    return None
+
+
 _FF_CACHE = {}
 
 
@@ -627,6 +650,39 @@ def _bench_local_ai(layers, seconds=0.5):
     return n / (time.time() - t0)
 
 
+_NANO_MIN_INF_S = 2000.0   # 20 Hz / 2000 = 1% de 1 nucleo = 0,25% do N5030
+
+
+def _choose_local_policy(log=print):
+    """Escada honesta do 'IA no PC' (tudo medido NESTA maquina, no caminho
+    real — nunca prometido no papel):
+      1. rede OFICIAL (290x13) se couber no orcamento (>= 250 inf/s);
+      2. rede DESTILADA (nano, ~28 mil params, imita a oficial) se couber
+         com FOLGA (>= 2000 inf/s = <=1% de 1 nucleo a 20 Hz);
+      3. senao, celular via cabo (arquivos MTP, sem depuracao).
+    Retorna (layers, weights_path|None, kind|None, inf_s).
+    """
+    try:
+        official = load_policy()
+    except SystemExit:
+        official = None
+    if official is not None:
+        s = _bench_local_ai(official, seconds=0.5)
+        if _local_ai_ok(s):
+            return official, None, "oficial", s
+        log(f"[ia-pc] rede oficial: {s:,.0f} inf/s "
+            f"(~{20.0 / s * 100:.1f}% de 1 nucleo a 20 Hz) — acima do "
+            "orcamento de 1% do N5030")
+    nano = load_nano()
+    if nano is not None:
+        nlayers, _nmeta, npath = nano
+        s = _bench_local_ai(nlayers, seconds=0.5)
+        if s >= _NANO_MIN_INF_S:
+            return nlayers, str(npath), "nano", s
+        log(f"[ia-pc] rede destilada: {s:,.0f} inf/s — tambem nao coube")
+    return None, None, None, 0.0
+
+
 def _start_button_state(phone_connected, running, local_ok=False):
     """Regra do botao COMEÇAR (UI): a IA roda no PC (GPU 0%, ~0,1% CPU) —
     botao liberado SEM celular. Sem IA local, exige celular (cabo MTP ou
@@ -679,7 +735,8 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
 
     state = {"running": False, "thread": None, "mtp": None,
              "link": None, "mlink": None, "searching": False,
-             "local_ok": False, "local_cmd_s": 0.0}
+             "local_ok": False, "local_cmd_s": 0.0,
+             "local_kind": None, "local_weights": None}
     stop_event = threading.Event()
     logs = deque(maxlen=400)
 
@@ -787,9 +844,12 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
         brain = _pick_brain(state["local_ok"], link is not None)
         if brain == "local":
             link = None
+        local_weights = state.get("local_weights") if brain == "local" else None
         modo = {"local": "IA no PC (GPU 0%, <1% CPU, zero atraso)",
                 "phone": "IA no CELULAR (cabo)"}.get(
                     brain, "sem IA (pesos ausentes e sem celular)")
+        if brain == "local" and state.get("local_kind") == "nano":
+            modo = "IA no PC via rede DESTILADA (GPU 0%, <1% CPU, zero atraso)"
         log(f"[começar] {modo} | telemetria: {telemetry_mode}")
 
         def worker():
@@ -798,7 +858,8 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
                              window=window, phone=link,
                              telemetry_mode=telemetry_mode,
                              log=log, stop_event=stop_event,
-                             weights=weights or practice.BASE_WEIGHTS)
+                             weights=local_weights or weights
+                             or practice.BASE_WEIGHTS)
             except SystemExit as e:
                 log(str(e))
             except Exception as e:                       # noqa: BLE001
@@ -883,7 +944,10 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
             phone_sub.config(text=via)
         elif state["local_ok"]:
             dot.itemconfig(dot_id, fill=OKC)
-            phone_lbl.config(text="IA no PC pronta — celular OPCIONAL "
+            tag = ("IA no PC pronta (rede destilada)"
+                   if state.get("local_kind") == "nano"
+                   else "IA no PC pronta")
+            phone_lbl.config(text=f"{tag} — celular OPCIONAL "
                                   f"({state['local_cmd_s']:,.0f} inf/s, "
                                   "GPU 0%)", fg=OKC)
             phone_sub.config(text="a IA roda no .exe: 0% de GPU, <1% de "
@@ -906,21 +970,30 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
         root.after(400, tick)
 
     def bench_local():
-        """IA no PC: numpy puro — GPU 0%. Mede NESTA maquina se da conta
-        (limite: <4% de 1 nucleo a 20 Hz = <1% do N5030 inteiro)."""
+        """IA no PC: numpy puro — GPU 0%. Mede NESTA maquina quem dirige:
+        rede OFICIAL -> rede DESTILADA (nano) -> celular (cabo)."""
         try:
-            layers = load_policy()
-            cmd_s = _bench_local_ai(layers, seconds=0.5)
+            layers, wpath, kind, cmd_s = _choose_local_policy(log)
             state["local_cmd_s"] = cmd_s
-            state["local_ok"] = _local_ai_ok(cmd_s)
-            if state["local_ok"]:
+            state["local_weights"] = wpath
+            state["local_kind"] = kind
+            state["local_ok"] = kind is not None
+            if kind == "oficial":
                 pct = 20.0 / cmd_s * 100.0
                 log(f"[ia-pc] IA roda no PC: {cmd_s:,.0f} inf/s — GPU 0%, "
                     f"~{pct:.1f}% de 1 nucleo (~{pct/4:.1f}% do N5030), "
                     "~85 MB (celular OPCIONAL, zero atraso)")
+            elif kind == "nano":
+                pct = 20.0 / cmd_s * 100.0
+                d = (load_nano() or (None, {}, None))[1].get("distill", {})
+                log(f"[ia-pc] IA no PC com a rede DESTILADA: {cmd_s:,.0f} "
+                    f"inf/s (~{pct:.2f}% de 1 nucleo = ~{pct/4:.2f}% do "
+                    "N5030), GPU 0% — a oficial (290x13) nao coube; a nano "
+                    f"imita a oficial (erro medio {d.get('mse_stream', 0):.4f}, "
+                    "malha fechada equivalente) — celular OPCIONAL, zero atraso")
             else:
-                log(f"[ia-pc] maquina nao deu conta ({cmd_s:,.0f} inf/s < "
-                    "250) — IA no CELULAR via cabo (sem depuracao)")
+                log("[ia-pc] maquina nao deu conta — IA no CELULAR via cabo "
+                    "(sem depuracao)")
         except Exception as e:
             log(f"[ia-pc] pesos indisponiveis ({e.__class__.__name__}) — "
                 "IA no CELULAR via cabo (sem depuracao)")
@@ -1172,11 +1245,17 @@ def main():
           f"ou IP {PhoneLink.local_ip()} porta {args.port}")
     usb_plug_and_play(args.port)
     UsbKeeper(args.port).start()
+    _host = "0.0.0.0" if args.rede else "127.0.0.1"
     if args.sem_janela:
+        if layers is not None:
+            # escada PC-primeiro: oficial -> destilada (nano) -> celular
+            layers, _wpath, kind, s = _choose_local_policy()
+            if kind == "nano":
+                print(f"[ia-pc] modo leve usa a rede DESTILADA ({s:,.0f} "
+                      "inf/s) — a oficial nao coube no orcamento")
         run_headless(layers, args.port, injector, args.somente_celular,
                      host=_host)
         return
-    _host = "0.0.0.0" if args.rede else "127.0.0.1"
     if args.demo:
         if args.record:
             print(f"[rec] gravando em {args.record} — use as SETAS para "

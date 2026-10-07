@@ -1,0 +1,80 @@
+{
+  "mse_stream": 0.0023803794756531715,
+  "p999_steer_stream": 0.20287995040416718,
+  "max_dsteer_stream": 0.3874408006668091,
+  "max_dbrake_stream": 0.851338803768158,
+  "sign_ok_stream": 1.0,
+  "mse_box_real": 0.016526617109775543,
+  "p999_steer_box": 0.6202432513237,
+  "max_dsteer_box": 1.114509105682373,
+  "sign_ok_box": 0.9977461447212337,
+  "mse_vs_expert_nano": 0.003820679383352399,
+  "mse_vs_expert_teacher": 0.002695646369829774,
+  "closed_loop_teacher": {
+    "roads": 6,
+    "finish_rate": 1.0,
+    "in_lane_pct": 0.9997607487120216,
+    "avg_speed_kmh": 81.0496329915267,
+    "km_total": 56.530302280366634,
+    "radar_compliance": 1.0,
+    "radar_passes": 26,
+    "max_lat_accel": 3.1873973645111167,
+    "gps_mean_abs_offset_m": 0.16713146534808634,
+    "dock_rate": 1.0,
+    "mean_stop_error_m": 2.571770893776678,
+    "top_speed_kmh": 90.40908500442123
+  },
+  "closed_loop_nano": {
+    "roads": 6,
+    "finish_rate": 1.0,
+    "in_lane_pct": 0.9997651904133265,
+    "avg_speed_kmh": 79.53088881540674,
+    "km_total": 56.52201363116656,
+    "radar_compliance": 1.0,
+    "radar_passes": 26,
+    "max_lat_accel": 3.187256344005014,
+    "gps_mean_abs_offset_m": 0.13245481084857166,
+    "dock_rate": 1.0,
+    "mean_stop_error_m": 2.571770893776678,
+    "top_speed_kmh": 88.72530813045799
+  },
+  "closed_loop_equiv": true,
+  "closed_loop_quality": true,
+  "train_seconds": 650.0,
+  "train_val_mse": 0.008339201575703574,
+  "config": {
+    "n_stream": 400000,
+    "n_box_real": 80000,
+    "n_box_sim": 40000,
+    "val_stream": 32768,
+    "val_box": 16384,
+    "eval_stream": 65536,
+    "eval_box": 16384,
+    "epochs": 240,
+    "hidden": [
+      160,
+      160
+    ],
+    "cl_roads": 6
+  },
+  "gate_ok": true,
+  "gate_reasons": [],
+  "teacher": {
+    "hidden": [
+      290,
+      290,
+      290,
+      290,
+      290,
+      290,
+      290,
+      290,
+      290,
+      290,
+      290,
+      290,
+      290
+    ],
+    "final_loss": 0.004322516731917858
+  }
+}
