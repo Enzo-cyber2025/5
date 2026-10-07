@@ -34,6 +34,7 @@ _SAMPLES = int(_os.environ.get("ETS2AI_SAMPLES", "1000000000"))
 _MAX_SEC = float(_os.environ.get("ETS2AI_MAX_SECONDS", "10800"))
 _BATCH = int(_os.environ.get("ETS2AI_BATCH", "16384" if not _F64 else "1024"))
 _EPOCHS = int(_os.environ.get("ETS2AI_EPOCHS", "60"))
+_t0k = _time.time()   # orcamento conta do INICIO do processo (setup incluso)
 _n_params = (N_IN * HIDDEN[0] + HIDDEN[0]
              + sum(HIDDEN[i] * HIDDEN[i + 1] + HIDDEN[i + 1] for i in range(len(HIDDEN) - 1))
              + HIDDEN[-1] * N_OUT + N_OUT)
@@ -134,7 +135,7 @@ if _tf is not None and len(_gpus) >= 1:
                   f"{_rmeta.get('final_loss', float('nan')):.5f}); Adam "
                   f"renovado com cosine 5e-4 — warm restart padrao")
     _xva, _yva = val_set(seed=999)
-    _t0 = _time.time()
+    _t0 = _t0k   # (era _time.time(): nao contava o setup)
     _consumed = 0
     _best_val = float("inf")
     _best_w = None
@@ -182,7 +183,7 @@ if _tf is not None and len(_gpus) >= 1:
             yield from stream(_data_seed, n_trucks=3072)
         print("[kaggle] gerando dados em fluxo e treinando (sequencial)...")
     for _x, _y in _chunks():
-        if _consumed >= _SAMPLES or (_time.time() - _t0) > _MAX_SEC:
+        if _consumed >= _SAMPLES or (_time.time() - _t0) > max(60.0, _MAX_SEC - 480):
             break
         if _fp is None:
             _fp = _hashlib.sha256(
@@ -195,10 +196,10 @@ if _tf is not None and len(_gpus) >= 1:
                 continue
             _model.train_on_batch(_mb_x.astype(_DTYPE), _mb_y.astype(_DTYPE))
             _consumed += len(_mb_x)
-            if _consumed >= _SAMPLES or (_time.time() - _t0) > _MAX_SEC:
+            if _consumed >= _SAMPLES or (_time.time() - _t0) > max(60.0, _MAX_SEC - 480):
                 break
         if _consumed - _last_val >= 20_000_000 or _consumed >= _SAMPLES \
-                or (_time.time() - _t0) > _MAX_SEC:
+                or (_time.time() - _t0) > max(60.0, _MAX_SEC - 480):
             _va = float(_model.evaluate(_xva.astype(_DTYPE), _yva.astype(_DTYPE),
                                         verbose=0, batch_size=8192))
             if _va < _best_val:
@@ -240,7 +241,7 @@ else:
         _xs.append(np.asarray(_x, dtype=_DTYPE))
         _ys.append(np.asarray(_y, dtype=_DTYPE))
         _n_rows += len(_x)
-        if _n_rows >= _gen_cap or (_time.time() - _t0c) > _MAX_SEC * 0.55:
+        if _n_rows >= _gen_cap or (_time.time() - _t0k) > _MAX_SEC * 0.45:
             break
     _xall = np.concatenate(_xs); _yall = np.concatenate(_ys)
     del _xs, _ys
@@ -250,8 +251,11 @@ else:
     print(f"[kaggle] treino {_xtr.shape} | val {_xva.shape} | "
           f"geracao {(_time.time() - _t0c)/60:.1f} min")
     _ep_cpu = max(3, _EPOCHS // 10)   # CPU: 6 epocas bastam (fallback)
+    _train_budget = max(60.0, _MAX_SEC - (_time.time() - _t0k) - 480)
+    print(f"[kaggle] treino CPU com teto de {_train_budget/60:.0f} min "
+          f"(restante do orcamento)")
     _layers, _hist = train(_xtr, _ytr, epochs=_ep_cpu, x_val=_xva, y_val=_yva,
-                           dtype=_DTYPE)
+                           dtype=_DTYPE, max_sec=_train_budget)
     _consumed = int(len(_xall))
     _loss_tr = mse(forward(_xtr, _layers), _ytr)
     _loss_va = mse(forward(_xva, _layers), _yva)

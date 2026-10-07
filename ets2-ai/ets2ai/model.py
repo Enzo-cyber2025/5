@@ -6,6 +6,7 @@ phone and in TFLite. Deterministic under SEED.
 """
 import json
 import math
+import time
 from pathlib import Path
 import numpy as np
 
@@ -137,7 +138,7 @@ def train_step(layers, opt, x, y):
 
 def train(x, y, epochs=400, batch=512, lr=5e-4, seed=SEED, verbose=True,
           x_val=None, y_val=None, start_layers=None, dtype=np.float32,
-          schedule="cosine"):
+          schedule="cosine", max_sec=None):
     """Train the MLP on (x, y) with Adam + MSE. Returns (layers, history).
 
     start_layers: optional [(W,b), ...] to continue training from existing
@@ -145,6 +146,10 @@ def train(x, y, epochs=400, batch=512, lr=5e-4, seed=SEED, verbose=True,
     dtype: np.float32 (deploy rapido) ou np.float64 (experimento de precisao).
     schedule: "cosine" decai lr de `lr` ate 5% de `lr` ao longo das epocas
     (deterministico, ajuda a fechar a loss); None mantem lr constante.
+    max_sec: TETO DE TEMPO em segundos (fallback CPU do kernel Kaggle: a
+    sessao tem que terminar dentro do orcamento — a epoca em curso acaba,
+    as seguintes sao cortadas e os melhores pesos de validacao valem).
+    None = sem teto (deterministico por epocas, como sempre foi).
     """
     rng = np.random.default_rng(seed)
     layers = start_layers if start_layers is not None else init_layers(rng, dtype)
@@ -157,7 +162,14 @@ def train(x, y, epochs=400, batch=512, lr=5e-4, seed=SEED, verbose=True,
     n = len(x)
     history = []
     best = (np.inf, None)
+    _t_start = time.monotonic()
     for epoch in range(epochs):
+        if max_sec is not None and time.monotonic() - _t_start > max_sec:
+            if verbose:
+                print(f"[train] teto de tempo ({max_sec:.0f} s) na epoca "
+                      f"{epoch} — encerrando com os melhores pesos",
+                      flush=True)
+            break
         if schedule == "cosine":
             opt.lr = lr * (0.05 + 0.95 * 0.5 * (1.0 + math.cos(math.pi * epoch / epochs)))
         idx = rng.permutation(n)

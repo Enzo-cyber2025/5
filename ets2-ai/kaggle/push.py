@@ -171,10 +171,10 @@ def chain(user):
               f"7 dias | sessao GPU de {budget_sec/3600:.1f} h")
     else:
         # GPU esgotada: SESSAO CPU ate a cota voltar (CPU nao conta no teto;
-    # 5,5 h — kernel CPU cancelado pelo Kaggle em ~5,8 h na noite 06/10)
+    # 5,25 h — margem p/ setup+avaliacao+save (sessao CPU morta em ~5,8 h)
         import time as _t
         wait_s = (oldest + 7 * 86400 - _t.time()) if oldest else 4 * 3600
-        budget_sec = int(min(5.5 * 3600, max(2 * 3600, wait_s)))
+        budget_sec = int(min(5.25 * 3600, max(2 * 3600, wait_s)))
         kind = "cpu"
         print(f"[chain] GPU esgotada ({used_h:.1f} h nos ultimos 7 dias) — "
               f"SESSAO CPU de {budget_sec/3600:.1f} h (treina ate a GPU voltar)")
@@ -449,10 +449,10 @@ def main():
               f"7 dias | sessao GPU de {budget_sec/3600:.1f} h")
     else:
         # GPU esgotada: SESSAO CPU ate a cota voltar (CPU nao conta no teto;
-    # 5,5 h — kernel CPU cancelado pelo Kaggle em ~5,8 h na noite 06/10)
+    # 5,25 h — margem p/ setup+avaliacao+save (sessao CPU morta em ~5,8 h)
         import time as _t
         wait_s = (oldest + 7 * 86400 - _t.time()) if oldest else 4 * 3600
-        budget_sec = int(min(5.5 * 3600, max(2 * 3600, wait_s)))
+        budget_sec = int(min(5.25 * 3600, max(2 * 3600, wait_s)))
         kind = "cpu"
         print(f"[chain] GPU esgotada ({used_h:.1f} h nos ultimos 7 dias) — "
               f"SESSAO CPU de {budget_sec/3600:.1f} h (treina ate a GPU voltar)")

@@ -858,6 +858,7 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
                              window=window, phone=link,
                              telemetry_mode=telemetry_mode,
                              log=log, stop_event=stop_event,
+                             wait_game=900.0,      # pode clicar antes do jogo
                              weights=local_weights or weights
                              or practice.BASE_WEIGHTS)
             except SystemExit as e:
@@ -883,8 +884,9 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
                      insertbackground="white", font=("Consolas", 9),
                      relief="flat", state="disabled", wrap="word")
     logbox.pack(fill="both", expand=True, padx=16, pady=(0, 6))
-    hint = tk.Label(root, text="ESC no jogo = kill switch  ·  encostar no "
-                               "teclado/controle = correção (DAgger)",
+    hint = tk.Label(root, text="IA só age com o jogo em TELA CHEIA  ·  ESC "
+                               "= kill switch  ·  encostar no teclado = "
+                               "correção (DAgger)",
                     font=("Segoe UI", 8), fg="#5A6478", bg=BG)
     hint.pack(pady=(0, 12))
 
@@ -1001,6 +1003,8 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
     log("[info] BUSCAR localiza o jogo (busca completa 1x, depois usa o "
         "salvo)")
     log(f"[info] telemetria: {telemetry_mode} | ESC = kill switch")
+    log("[info] fluxo: COMEÇAR pode ser clicado ANTES de abrir o jogo — a "
+        "IA espera o ETS2 (ate 15 min) e so AGE com ele em TELA CHEIA")
     threading.Thread(target=bench_local, daemon=True).start()
     detect()
     tick()

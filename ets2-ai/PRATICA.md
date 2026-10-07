@@ -153,10 +153,16 @@ teclado vira correção DAgger.
 
 ## 3) `drive` — a IA dirige de verdade
 
-> **IA no CELULAR (revisado v0.4.6+):** no modo real, se o APK estiver
-> conectado (BRIDGE → AUTO), a IA roda **no celular** (GPU/TFLite) — o PC
-> só lê a telemetria e injeta as teclas. Sem celular, a IA local do PC
-> assume automaticamente. O cabo USB (túnel adb) também funciona aqui.
+> **Fluxo v0.4.8 (COMEÇAR → tela cheia):** o botão COMEÇAR pode ser clicado
+> **antes** de abrir o jogo — a IA fica **esperando o ETS2 por até 15 min**
+> (log: "aguardando o ETS2 abrir...") em vez de fechar na hora. Quando a
+> telemetria aparece, a IA **só começa a agir com o jogo em TELA CHEIA**
+> (janela cobrindo o monitor e em 1º plano): fora dela, todas as teclas
+> ficam soltas e o log mostra o motivo — é o consentimento para a IA
+> assumir o volante. ESC continua sendo o kill switch. Se a DLL de
+> telemetria acabou de ser auto-instalada, **reinicie o jogo** uma vez.
+> Quem dirige: rede oficial no PC → rede destilada (nano) no PC → celular
+> via cabo (escada medida na sua máquina, ver seção 2).
 
 ## 3) `drive` — a IA dirige de verdade
 

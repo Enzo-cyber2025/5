@@ -153,12 +153,23 @@ MACROS = {
 EXTENDED_KEYS = {0x48, 0x4B, 0x4D, 0x50, 0x52, 0x53, 0x1C, 0x34}
 
 # Modulacao do volante por densidade de pulso: a tecla de seta e pressionada
-# em `duty*PWM_PHASES` de cada PWM_PHASES chamadas (resolucao 1/8 a 20 Hz =
+# em `duty*PWM_PHASES` de cada PWM_PHASES chamadas (resolucao 1/8 a 20 Hz = 
 # ciclo de 2.5 Hz). Segurar a seta no ETS2 = esterco MAXIMO (~0.6 rad nas
 # rodas): demais para curvas suaves. Com PWM, |steer| vira o tempo medio de
 # tecla pressionada e o caminhao faz curvas proporcionais.
 PWM_PHASES = 8
 STEER_DEADBAND = 0.03
+
+
+def rect_is_fullscreen(win, mon, tol=16):
+    """A janela cobre o monitor inteiro (tolerancia em px)?
+
+    Consentimento para a IA agir: so com o jogo em TELA CHEIA (janela
+    maximizada com barra de titulo nao engana — o rect fica menor que o
+    monitor). Usado pelo KeyInjector antes de QUALQUER tecla.
+    """
+    return (win[0] <= mon[0] + tol and win[1] <= mon[1] + tol
+            and win[2] >= mon[2] - tol and win[3] >= mon[3] - tol)
 
 
 def key_decisions(steer, throttle, brake, phase):
@@ -187,16 +198,20 @@ class KeyInjector:
     """Envia comandos continuos como teclas (bang-bang com histerese).
 
     ESC = kill switch permanente (release tudo e para de injetar).
-    So injeta se a janela alvo estiver em primeiro plano.
+    So injeta com a janela alvo em 1o plano E em TELA CHEIA (cobrindo o
+    monitor) — fora disso solta todas as teclas e espera (a IA "começa a
+    atuar" quando o jogo entra em tela cheia).
     """
 
-    def __init__(self, window_substring, enabled, keymap=None):
+    def __init__(self, window_substring, enabled, keymap=None, log=None):
         self.enabled = enabled and sys.platform == "win32"
         self.window_substring = window_substring
         self.keymap = keymap or KEYMAP
+        self.log = log or print
         self.down = set()
         self.kill = False
         self.phase = 0
+        self._gate = None       # ultimo estado do consentimento (tela cheia)
         if self.enabled:
             import ctypes
             self.ct = ctypes
@@ -231,6 +246,48 @@ class KeyInjector:
         self.user32.GetWindowTextW(fg, buf, 512)
         return self.window_substring.lower() in buf.value.lower()
 
+    def _gate_ok(self, announce=True):
+        """Consentimento para injetar: janela alvo em 1o PLANO e em TELA
+        CHEIA (cobrindo o monitor inteiro). Fora disso a IA fica parada com
+        as teclas soltas — e o usuario ve o motivo no log."""
+        if not self.enabled:
+            return False
+        ct, user32 = self.ct, self.user32
+        ok = False
+        fg = user32.GetForegroundWindow()
+        if fg:
+            buf = ct.create_unicode_buffer(512)
+            user32.GetWindowTextW(fg, buf, 512)
+            if self.window_substring.lower() in buf.value.lower():
+
+                class _RECT(ct.Structure):
+                    _fields_ = [("l", ct.c_long), ("t", ct.c_long),
+                                ("r", ct.c_long), ("b", ct.c_long)]
+
+                wr = _RECT()
+                if user32.GetWindowRect(fg, ct.byref(wr)):
+                    mon = user32.MonitorFromWindow(fg, 2)  # NEAREST
+                    if mon:
+
+                        class _MI(ct.Structure):
+                            _fields_ = [("cb", ct.c_ulong), ("mon", _RECT),
+                                        ("work", _RECT), ("flags", ct.c_ulong)]
+
+                        mi = _MI()
+                        mi.cb = ct.sizeof(_MI)
+                        if user32.GetMonitorInfoW(mon, ct.byref(mi)):
+                            ok = rect_is_fullscreen(
+                                (wr.l, wr.t, wr.r, wr.b),
+                                (mi.mon.l, mi.mon.t, mi.mon.r, mi.mon.b))
+        if announce and ok != self._gate:
+            self._gate = ok
+            if ok:
+                self.log("[inject] jogo em TELA CHEIA — IA assumindo o volante")
+            else:
+                self.log("[inject] fora da TELA CHEIA — teclas soltas; a IA "
+                         "só age com o jogo em tela cheia (e em 1º plano)")
+        return ok
+
     def update(self, steer, throttle, brake):
         """Mapeia comandos continuos em teclas (volante PWM, pedais on/off)."""
         if not self.enabled:
@@ -242,8 +299,8 @@ class KeyInjector:
             return
         want = key_decisions(steer, throttle, brake, self.phase)
         self.phase = (self.phase + 1) % PWM_PHASES
-        if not self._target_is_foreground():
-            want = set()          # nao injeta fora da janela alvo
+        if not self._gate_ok():
+            want = set()          # fora da tela cheia: nenhuma tecla
         for k in self.down - want:
             self._keybd(self.keymap[k], True)
             self.down.discard(k)
@@ -255,6 +312,10 @@ class KeyInjector:
         """Tecla unica (60 ms) para macros de missao."""
         if not self.enabled:
             print(f"[macro] {name or hex(scan)} (injecao desligada — apenas sim)")
+            return
+        if not self._gate_ok(announce=False):
+            self.log(f"[inject] macro '{name or hex(scan)}' ignorada — "
+                     "jogo nao esta em TELA CHEIA")
             return
         self._keybd(scan, False)
         time.sleep(0.06)

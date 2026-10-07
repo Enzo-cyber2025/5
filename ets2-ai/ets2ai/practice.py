@@ -696,7 +696,7 @@ class PracticeLoop:
         self.log(line)
 
 
-def _try_install_plugin(game_dir=None, auto=True):
+def _try_install_plugin(game_dir=None, auto=True, log=print):
     """Instala a DLL de telemetria embutida na pasta do jogo (Windows).
 
     A pasta do jogo vem do CACHE (resolve_game_dir): busca completa so na
@@ -704,10 +704,10 @@ def _try_install_plugin(game_dir=None, auto=True):
     if os.name != "nt" or not auto:
         return None
     try:
-        gd = telemetry.resolve_game_dir(extra=game_dir, log=print)
+        gd = telemetry.resolve_game_dir(extra=game_dir, log=log)
         if gd is None:
-            print("[pratica] pasta do ETS2 nao encontrada — use --game-dir "
-                  "UMA vez (o caminho fica salvo)")
+            log("[pratica] pasta do ETS2 nao encontrada — use --game-dir "
+                "UMA vez (o caminho fica salvo)")
             return None
         if telemetry.plugin_dll_path(gd).exists():
             return gd
@@ -715,24 +715,103 @@ def _try_install_plugin(game_dir=None, auto=True):
         if dll is None:
             return gd
         dst = telemetry.install_plugin(gd, dll)
-        print(f"[pratica] telemetria AUTO-INSTALADA: {dst} "
-              "(plugin RenCloud, MIT) — reinicie o ETS2 se ele estiver "
-              "aberto")
+        log(f"[pratica] telemetria AUTO-INSTALADA: {dst} "
+            "(plugin RenCloud, MIT) — reinicie o ETS2 se ele estiver "
+            "aberto")
         return gd
     except Exception as e:
-        print(f"[pratica] auto-install da telemetria falhou: {e}")
+        log(f"[pratica] auto-install da telemetria falhou: {e}")
     return None
 
 
 # ---------------------------------------------------------------------------
 # Entrada (linha de comando e pelo bridge/exe)
 # ---------------------------------------------------------------------------
+def _acquire_source(mode, telemetry_mode, log, stop_event=None,
+                    wait_game=45.0, game_dir=None, auto_install=True):
+    """Telemetria com ESPERA pelo jogo (corrige o 'iniciando e parou').
+
+    O usuario pode clicar COMEÇAR ANTES de abrir o ETS2: o loop fica vivo
+    (PARAR funciona) e comeca quando a telemetria aparecer. Ordem: leitura
+    de MEMORIA (sem DLL) -> DLL embutida (auto-install 1x). Desiste com
+    SystemExit apos `wait_game` segundos sem telemetria.
+    """
+    deadline = time.monotonic() + max(0.0, float(wait_game))
+    dll_installed = False
+    last_err = ""
+    attempt = 0
+    while True:
+        attempt += 1
+        if telemetry_mode in ("mem", "auto"):
+            # 1a via: LEITURA DE MEMORIA — nao instala NADA no jogo.
+            try:
+                mreader = memtelemetry.MemTelemetry()
+                log("[telemetria] SEM DLL — leitura de memoria do processo "
+                    f"(pack '{mreader.version}')")
+                try:
+                    telemetry.note_state(telemetry=f"mem:{mreader.version}",
+                                         mode=mode)
+                except Exception:
+                    pass
+                return mreader.snapshot
+            except RuntimeError as e:
+                last_err = str(e)
+                if telemetry_mode == "auto":
+                    log("[telemetria] memoria nao validou — tentando a DLL "
+                        "embutida")
+        if telemetry_mode in ("dll", "auto"):
+            # 2a via: DLL de telemetria (MIT, RenCloud) EMBUTIDA no .exe —
+            # plug & play: instala sozinha na pasta do jogo (1x) se preciso.
+            try:
+                reader = telemetry.TelemetryReader()
+                try:
+                    telemetry.note_state(telemetry="dll", mode=mode)
+                except Exception:
+                    pass
+                return reader.snapshot
+            except RuntimeError as e:
+                last_err = str(e)
+                if not dll_installed and telemetry_mode == "auto":
+                    dll_installed = True
+                    _try_install_plugin(game_dir, auto_install, log=log)
+                    try:
+                        reader = telemetry.TelemetryReader()
+                        try:
+                            telemetry.note_state(telemetry="dll", mode=mode)
+                        except Exception:
+                            pass
+                        return reader.snapshot
+                    except RuntimeError as e2:
+                        last_err = (f"{e2} (DLL instalada agora — se o jogo "
+                                    "ja estava aberto, REINICIE o jogo)")
+        if time.monotonic() >= deadline:
+            raise SystemExit(
+                "[telemetria] sem telemetria apos "
+                f"{max(0.0, float(wait_game)):.0f} s esperando o jogo. "
+                f"Ultimo motivo: {last_err[:200]}\n"
+                "[pratica] Abra o ETS2 (ou REINICIE se a DLL acabou de ser "
+                "instalada) e clique COMEÇAR de novo. Se o jogo nao for "
+                "achado: --game-dir 'C:\\...\\Euro Truck Simulator 2'. "
+                "Veja PRATICA.md.")
+        if stop_event is not None and stop_event.is_set():
+            raise SystemExit("[pratica] PARAR clicado enquanto aguardava o jogo")
+        if attempt == 1 or attempt % 5 == 0:
+            log("[telemetria] aguardando o ETS2 abrir... "
+                f"({int(deadline - time.monotonic())} s restantes | "
+                f"{last_err[:90]})")
+        time.sleep(3.0)
+
+
 def run(mode, map_path="practice/mapa.json", rec_path=None, inject=False,
         window="Euro Truck", weights=BASE_WEIGHTS, max_seconds=None,
         game_dir=None, auto_install=True, phone=None, telemetry_mode="auto",
-        log=print, stop_event=None,
+        log=print, stop_event=None, wait_game=45.0,
         _source=None, _policy=None, _clock=None, _sleep=None):
-    """Monta e roda o loop de pratica (usado pelo CLI e pelo bridge --ets2)."""
+    """Monta e roda o loop de pratica (usado pelo CLI e pelo bridge --ets2).
+
+    wait_game: segundos esperando o ETS2/telemetria aparecer antes de
+    desistir (a GUI usa 900 — pode clicar COMEÇAR antes de abrir o jogo).
+    """
     map_path = Path(map_path)
     road_map = RoadMap.load(map_path) if map_path.exists() else RoadMap()
     layers = None
@@ -740,44 +819,10 @@ def run(mode, map_path="practice/mapa.json", rec_path=None, inject=False,
         layers, meta = load_weights(weights)
         log(f"[pesos] {weights} (val_loss {meta['final_loss']:.5f})")
     source = _source
-    if source is None and telemetry_mode in ("mem", "auto"):
-        # 1a via: LEITURA DE MEMORIA — nao instala NADA na pasta do jogo.
-        try:
-            mreader = memtelemetry.MemTelemetry()
-            source = mreader.snapshot
-            log(f"[telemetria] SEM DLL — leitura de memoria do processo "
-                f"(pack '{mreader.version}')")
-            try:
-                telemetry.note_state(telemetry=f"mem:{mreader.version}",
-                                     mode=mode)
-            except Exception:
-                pass
-        except RuntimeError as e:
-            if telemetry_mode == "mem":
-                raise SystemExit(f"[telemetria] sem DLL indisponivel: {e}")
-            log(f"[telemetria] leitura de memoria nao validou: {e}")
-            log("[telemetria] usando a via DLL embutida (auto-install)")
     if source is None:
-        try:
-            reader = telemetry.TelemetryReader()
-            try:
-                telemetry.note_state(telemetry="dll", mode=mode)
-            except Exception:
-                pass
-        except RuntimeError as e:
-            # PLUG & PLAY: a DLL de telemetria (MIT, RenCloud) vem DENTRO do
-            # .exe — se o jogo estiver instalado, instala sozinho e tenta de
-            # novo. O usuario nao baixa/instala DLL nenhuma na mao.
-            _try_install_plugin(game_dir, auto_install)
-            try:
-                reader = telemetry.TelemetryReader()
-            except RuntimeError:
-                raise SystemExit(
-                    f"[pratica] {e}\n"
-                    "[pratica] Nao achei o ETS2 para auto-instalar a telemetria. "
-                    "Use --game-dir 'C:\\...\\Euro Truck Simulator 2' (a DLL "
-                    "vem embutida; sem download). Veja PRATICA.md.")
-        source = reader.snapshot
+        source = _acquire_source(mode, telemetry_mode, log,
+                                 stop_event=stop_event, wait_game=wait_game,
+                                 game_dir=game_dir, auto_install=auto_install)
     joystick = JoystickMonitor()
     _devs = joystick.describe()
     if _devs:
@@ -786,10 +831,11 @@ def run(mode, map_path="practice/mapa.json", rec_path=None, inject=False,
     keymap, macros, ksrc = load_keymap()
     log(f"[teclas] mapeadas do jogo: {ksrc} | "
         f"WASD={sorted(hex(v) for v in keymap.values())}")
-    injector = (KeyInjector(window, inject, keymap=keymap)
+    injector = (KeyInjector(window, inject, keymap=keymap, log=log)
                 if (mode == "drive" and inject) else None)
     if inject and mode == "drive":
-        log(f"[inject] alvo: janela '{window}' | ESC = kill switch")
+        log(f"[inject] alvo: janela '{window}' | a IA so AGE com o jogo em "
+            "TELA CHEIA (e em 1º plano) | ESC = kill switch")
     recorder = Recorder(rec_path) if rec_path else None
     loop = PracticeLoop(mode, road_map, source, layers=layers,
                         injector=injector, recorder=recorder,
