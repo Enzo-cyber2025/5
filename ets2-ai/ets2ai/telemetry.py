@@ -869,8 +869,9 @@ def game_install_dirs(extra=None, log=None, literal_scan=True):
     return out
 
 
-def plugin_dll_path(game_dir):
-    return Path(game_dir) / "bin" / "win_x64" / "plugins" / DLL_NAME
+def plugin_dll_path(game_dir, arch="x64"):
+    sub = "win_x64" if arch == "x64" else "win_x86"
+    return Path(game_dir) / "bin" / sub / "plugins" / DLL_NAME
 
 
 def find_bundled_dll():
@@ -905,44 +906,220 @@ def plugin_installed(game_dir=None):
     return None
 
 
+# --------------------------------------------------------------------------- #
+# BANCO DE DLLs: TODAS as releases do plugin oficial (MIT) embutidas no .exe
+# (CI baixa cada release de github.com/RenCloud/scs-sdk-plugin — sucessor —
+# e de github.com/nlhans/ets2-sdk-plugin — original — em bridge/dlls/).
+# Ordem: MAIS NOVA primeiro. min = menor versao do ETS2 com que a release
+# funciona (o plugin valida o SDK do jogo ao carregar: DLL nova demais em
+# jogo antigo — ou vice-versa — e recusada pelo jogo).
+DLL_BANK = [
+    # (repo, tag da release, versao minima do jogo suportada)
+    ("rencloud", "V.1.12.1", (1, 46)),   # SDK 1.14 + fix race; 1.46 -> atual
+    ("rencloud", "V.1.12", (1, 46)),     # SDK 1.14, offsets novos
+    ("rencloud", "V.1.11.1", (1, 45)),   # SDK 1.14
+    ("rencloud", "V.1.11", (1, 41)),     # SDK 1.13
+    ("rencloud", "V.1.10.6", (1, 36)),   # SDK 1.12
+    ("rencloud", "V.1.10.5", (1, 36)),
+    ("rencloud", "V.1.10.4", (1, 36)),
+    ("rencloud", "v.1.9.0", (1, 32)),    # 1a release RenCloud (2019)
+    ("nlhans", "revision_5_rel_1_4_0", (1, 17)),   # SDK 1.5 (2015)
+    ("nlhans", "revision_4_rel_1_3_0", (1, 17)),
+    ("nlhans", "revision_3_rel_1_2_1", (1, 10)),   # +build 64-bit
+    ("nlhans", "revision_3", (1, 10)),
+    ("nlhans", "revision_2", (1, 10)),
+    ("nlhans", "revision_1", (1, 10)),
+]
+
+
+def dll_dirs():
+    """Raizes do banco de DLLs (embutidas no .exe pelo PyInstaller)."""
+    out = []
+    if hasattr(sys, "_MEIPASS"):
+        out.append(Path(sys._MEIPASS) / "dlls")
+    here = Path(__file__).resolve().parent
+    out += [here.parent / "bridge" / "dlls", here.parent.parent / "bridge"
+            / "dlls"]
+    return [d for d in out if d.is_dir()]
+
+
+def available_dlls():
+    """{(repo, tag, arquitetura): Path} de TODAS as DLLs embutidas."""
+    out = {}
+    for root in dll_dirs():
+        for dll in root.glob("*/*/*/scs-telemetry.dll"):
+            repo, tag, arch = (dll.relative_to(root).parts + ("", "", ""))[:3]
+            if arch in ("x64", "x86"):
+                out[(repo, tag, arch)] = dll
+    return out
+
+
+def game_arch(game_dir):
+    """x64 (bin/win_x64) ou x86 (bin/win_x86 — jogos muito antigos)."""
+    gd = Path(game_dir)
+    if (gd / "bin" / "win_x64").is_dir():
+        return "x64"
+    if (gd / "bin" / "win_x86").is_dir():
+        return "x86"
+    return None
+
+
+def game_version(game_dir):
+    """Versao do jogo pelo steam.inf (ex.: 'exe_version_info=1.53.0.4s')
+    -> (major, minor), ou None se nao conseguir ler."""
+    import re
+    try:
+        text = (Path(game_dir) / "steam.inf").read_text(
+            encoding="utf-8", errors="replace")
+    except OSError:
+        return None
+    m = re.search(r"exe_version_info\s*=\s*(\d+)\.(\d+)", text)
+    if not m:
+        m = re.search(r"(?:PatchVersion|version)\D*(\d+)\.(\d+)", text,
+                      re.IGNORECASE)
+    if not m:
+        m = re.search(r"(\d+)\.(\d+)\.\d+", text)
+    return (int(m.group(1)), int(m.group(2))) if m else None
+
+
+def pick_dll(version, arch, available):
+    """(repo, tag) da DLL IDEAL: a release mais nova que suporta a versao
+    do jogo (banco em ordem mais-nova-primeiro). Versao desconhecida = a
+    mais nova; jogo mais antigo que tudo = a mais antiga disponivel."""
+    for repo, tag, min_ver in DLL_BANK:
+        if (repo, tag, arch) not in available:
+            continue
+        if version is None or min_ver <= version:
+            return (repo, tag)
+    for repo, tag, _min in reversed(DLL_BANK):   # jogo pre-historico
+        if (repo, tag, arch) in available:
+            return (repo, tag)
+    return None
+
+
+def _sha256(path):
+    import hashlib
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _ideal_dll(game_dir, log):
+    """Analisa o jogo (arquitetura + versao) e devolve a DLL embutida ideal:
+    (path, {repo, tag, arch, version}). Cai na DLL unica legada se o banco
+    nao vier no pacote."""
+    arch = game_arch(game_dir) or "x64"
+    ver = game_version(game_dir)
+    vs = f"{ver[0]}.{ver[1]}" if ver else "desconhecida"
+    avail = available_dlls()
+    pick = pick_dll(ver, arch, avail)
+    if pick is not None:
+        src = avail[(pick[0], pick[1], arch)]
+        meta = {"repo": pick[0], "tag": pick[1], "arch": arch, "version": vs}
+    else:
+        src = find_bundled_dll()
+        if src is None:
+            log("[dll] nenhuma DLL de telemetria vem embutida neste pacote")
+            return None, None
+        meta = {"repo": "rencloud", "tag": "V.1.12.1 (unica embutida)",
+                "arch": arch, "version": vs}
+    log(f"[dll] jogo analisado: ETS2 {vs} ({arch}) — DLL ideal: "
+        f"{meta['repo']} {meta['tag']}")
+    return src, meta
+
+
+def verify_plugin(log=print, game_dir=None, repair=True):
+    """VERIFICACAO da DLL instalada: existe? bate o hash SHA-256 com a DLL
+    ideal embutida (corrompida/truncada = hash diferente de TODAS as DLLs do
+    banco)? Com repair=True, reinstala a ideal sozinho se algo estiver errado.
+
+    Retorna {status: ok|ausente|corrompida|versao_diferente|sem_jogo,
+            reparada: bool, ...detalhes}.
+    """
+    gd = game_dir if game_dir is not None else resolve_game_dir(log=log)
+    if gd is None or not dir_looks_like_game(gd):
+        log("[verificar] jogo nao encontrado — nada para verificar")
+        return {"status": "sem_jogo", "reparada": False}
+    gd = Path(gd)
+    src, meta = _ideal_dll(gd, log)
+    if src is None:
+        return {"status": "sem_dll_no_pacote", "reparada": False}
+    dst = plugin_dll_path(gd, meta["arch"])
+    status = "ok"
+    if not dst.exists():
+        status = "ausente"
+        log(f"[verificar] DLL AUSENTE no jogo ({dst})")
+    else:
+        h_dst, h_src = _sha256(dst), _sha256(src)
+        if h_dst == h_src:
+            log(f"[verificar] DLL OK — {meta['repo']} {meta['tag']} "
+                f"({meta['arch']}), hash confere")
+            return {"status": "ok", "reparada": False, "dll": str(dst),
+                    **meta}
+        bank_hashes = {_sha256(p) for (r, t, a), p in available_dlls().items()
+                       if a == meta["arch"]}
+        if h_dst in bank_hashes:
+            status = "versao_diferente"
+            log("[verificar] DLL de OUTRA release esta instalada "
+                f"(ideal para este jogo: {meta['repo']} {meta['tag']})")
+        else:
+            status = "corrompida"
+            log("[verificar] DLL CORROMPIDA/alterada — hash nao bate com "
+                "nenhuma DLL oficial embutida")
+    if repair:
+        r = ensure_plugin(log=log, game_dir=gd)
+        if r and r.get("agora_instalou"):
+            log("[verificar] DLL reparada automaticamente (ideal "
+                "reinstalada)")
+            return {"status": status, "reparada": True, **r}
+        log("[verificar] reparo falhou — veja o log acima")
+    return {"status": status, "reparada": False, **meta}
+
+
 def ensure_plugin(log=print, game_dir=None, force=False):
     """Instalacao 100% AUTOMATICA da telemetria (nada manual):
 
     1. acha a pasta do jogo (caminho salvo -> processo rodando -> Steam ->
        VARREDURA LITERAL do disco todo, igual a descoberta dos controles);
-    2. copia a DLL RenCloud (MIT) EMBUTIDA no .exe para
-       <jogo>/bin/win_x64/plugins/  (local oficial do plugin);
-    3. confere tamanho e retorna o estado.
+    2. ANALISA o jogo: arquitetura (win_x64/win_x86) + versao (steam.inf)
+       e escolhe a DLL IDEAL entre TODAS as releases oficiais embutidas
+       no .exe (banco DLL_BANK: RenCloud + nlhans);
+    3. copia para <jogo>/bin/win_<arq>/plugins/ (local oficial do plugin)
+       e confere o hash SHA-256 da copia.
 
-    Idempotente e barata quando o caminho ja esta salvo. Retorna dict
-    {game_dir, dll, agora_instalou} ou None se o jogo nao foi achado.
+    Idempotente (hash igual = nao reescreve) e barata quando o caminho ja
+    esta salvo. Retorna {game_dir, dll, agora_instalou, repo, tag, arch,
+    version} ou None se o jogo nao foi achado.
     """
-    gd = game_dir or resolve_game_dir(log=log, force=force)
+    gd = game_dir if game_dir is not None else resolve_game_dir(log=log,
+                                                                force=force)
     if gd is None:
         return None
     gd = Path(gd)
     if not dir_looks_like_game(gd):
         log(f"[dll] {gd} nao tem bin/win_x64 — ignorando")
         return None
-    dll_src = find_bundled_dll()
+    dll_src, meta = _ideal_dll(gd, log)
     if dll_src is None:
-        log("[dll] DLL nao vem embutida neste pacote (build do repo?)")
         return None
-    dst = plugin_dll_path(gd)
-    want = dll_src.stat().st_size
-    if dst.exists() and dst.stat().st_size == want:
+    dst = plugin_dll_path(gd, meta["arch"])
+    h_src = _sha256(dll_src)
+    if dst.exists() and _sha256(dst) == h_src:
         return {"game_dir": str(gd), "dll": str(dst),
-                "agora_instalou": False}
+                "agora_instalou": False, **meta}
     try:
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(dll_src, dst)
     except OSError as e:
         log(f"[dll] falhou ao instalar em {dst}: {e}")
         return None
-    ok = dst.exists() and dst.stat().st_size == want
-    if not ok:
-        log(f"[dll] instalada mas verificacao falhou: {dst}")
+    if not dst.exists() or _sha256(dst) != h_src:
+        log(f"[dll] instalada mas o hash nao confere: {dst}")
         return None
-    log(f"[dll] telemetria AUTO-INSTALADA: {dst} — se o ETS2 estiver "
-        "aberto, REINICIE o jogo 1x (o plugin carrega na abertura)")
-    return {"game_dir": str(gd), "dll": str(dst), "agora_instalou": True}
+    log(f"[dll] telemetria AUTO-INSTALADA: {dst} ({meta['repo']} "
+        f"{meta['tag']}, {meta['arch']}) — se o ETS2 estiver aberto, "
+        "REINICIE o jogo 1x (o plugin carrega na abertura)")
+    return {"game_dir": str(gd), "dll": str(dst), "agora_instalou": True,
+            **meta}

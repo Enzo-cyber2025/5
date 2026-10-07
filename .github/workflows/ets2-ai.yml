@@ -397,10 +397,42 @@ jobs:
       - name: Dependencias
         run: |
           pip install --retries 5 --timeout 90 pyinstaller==6.11.1 numpy==2.2.6 pywin32==308
-      - name: Baixa telemetria (DLL RenCloud, MIT) + adb (plug&play USB)
+      - name: Baixa telemetria (TODAS as releases do plugin, MIT) + adb
         shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          # DLL de telemetria do plugin oficial (MIT, github.com/RenCloud/scs-sdk-plugin)
+          # BANCO DE DLLs: TODAS as releases do plugin oficial de telemetria
+          # (MIT) — RenCloud/scs-sdk-plugin (sucessor) + nlhans/ets2-sdk-plugin
+          # (original) — em bridge/dlls/<repo>/<tag>/<arquitetura>/.
+          # O .exe ANALISA o jogo (steam.inf + win_x64/x86) e instala a ideal.
+          New-Item -ItemType Directory -Force ets2-ai/bridge/dlls | Out-Null
+          foreach ($repo in @("RenCloud/scs-sdk-plugin", "nlhans/ets2-sdk-plugin")) {
+            $short = if ($repo -like "RenCloud*") { "rencloud" } else { "nlhans" }
+            $rels = gh api "repos/$repo/releases" --paginate --jq '.[] | .tag_name as $t | .assets[] | select(.name | test("source"; "i") | not) | "\($t)`t\(.browser_download_url)"'
+            foreach ($line in $rels) {
+              $parts = $line -split "`t"
+              $tag = $parts[0]; $url = $parts[1]
+              if (-not $url) { continue }
+              $tagdir = ($tag -replace '[^A-Za-z0-9._-]', '_')
+              Write-Host "banco: $short $tag"
+              curl.exe -fsSL --retry 3 -o rel.zip $url
+              if (-not (Test-Path rel.zip)) { continue }
+              Expand-Archive rel.zip -DestinationPath relx -Force
+              Get-ChildItem relx -Recurse -Filter *telemetry*.dll | ForEach-Object {
+                $arch = if ($_.FullName -match 'x64|win64|amd64') { "x64" } else { "x86" }
+                $dst = "ets2-ai/bridge/dlls/$short/$tagdir/$arch"
+                New-Item -ItemType Directory -Force $dst | Out-Null
+                Copy-Item $_.FullName "$dst/scs-telemetry.dll" -Force
+              }
+              Remove-Item relx -Recurse -Force -ErrorAction SilentlyContinue
+              Remove-Item rel.zip -Force -ErrorAction SilentlyContinue
+            }
+          }
+          $n = (Get-ChildItem ets2-ai/bridge/dlls -Recurse -Filter *.dll | Measure-Object).Count
+          Write-Host "BANCO: $n DLLs de telemetria embutidas"
+          if ($n -lt 8) { Write-Host "::warning::banco pequeno ($n DLLs) — checar downloads" }
+          # DLL unica (legado/fallback): a mais recente
           curl.exe -fsSL --retry 3 -o scs.zip https://github.com/RenCloud/scs-sdk-plugin/releases/download/V.1.12.1/release_v_1_12_1.zip
           Expand-Archive scs.zip -DestinationPath scs-dist -Force
           $dll = Get-ChildItem scs-dist -Recurse -Filter scs-telemetry*.dll | Where-Object { $_.FullName -match 'x64' } | Select-Object -First 1
@@ -425,6 +457,13 @@ jobs:
             Write-Host "nano DESTILADA embutida no exe (IA no PC fraco)"
           } else {
             Write-Host "sem nano (gate da destilacao reprovado) — PC fraco cai no celular"
+          }
+          $bank = Get-ChildItem bridge/dlls -Recurse -Filter *.dll -ErrorAction SilentlyContinue
+          if ($bank) {
+            $pyargs += @('--add-data','bridge/dlls;dlls')
+            Write-Host "BANCO de DLLs de telemetria embutido: $($bank.Count) arquivos (todas as releases)"
+          } else {
+            Write-Host "::warning::banco de DLLs vazio — só a DLL única será embutida"
           }
           $pyargs += @(
             '--add-data','bridge/scs-telemetry.dll;.',
@@ -462,7 +501,7 @@ jobs:
       - name: Exporta .pt com paridade numpy verificada
         run: |
           cd ets2-ai
-          python3 -m ets2ai.export_pt --weights artifacts/model-weights.json --out artifacts/ets2ai-v0.4.9.pt 2>&1 | tee ../.cache_pt.log
+          python3 -m ets2ai.export_pt --weights artifacts/model-weights.json --out artifacts/ets2ai-v0.4.10.pt 2>&1 | tee ../.cache_pt.log
           exit ${PIPESTATUS[0]}
       - name: Diagnostico (commita logs no repo em caso de falha)
         if: failure()
@@ -476,15 +515,15 @@ jobs:
           git pull --rebase --autostash origin arena/01a0f37d-5 || true
           git push || true
           exit 1
-      - name: Publica na release ets2-ai-v0.4.9
+      - name: Publica na release ets2-ai-v0.4.10
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view ets2-ai-v0.4.9 >/dev/null 2>&1 || \
-            gh release create ets2-ai-v0.4.9 \
-              --title "ETS2-AI v0.4.9 — telemetria 100% automatica (DLL auto-instalada com varredura do disco); IA so age em TELA CHEIA; cadeia 500B" \
-              --notes "ETS2-AI v0.4.9 - APK: servico em 1o plano (wake lock + Wi-Fi alto desempenho) mantem a IA na MESMA velocidade com a tela bloqueada (cmd/s ao vivo na notificacao); teclado BT com as setas (padrao ETS2); EXE com DLL embutida + adb plug & play; cadeia rumo a 500 bilhoes de amostras no Kaggle."
-          gh release upload ets2-ai-v0.4.9 ets2-ai/artifacts/ets2ai-v0.4.9.pt --clobber
+          gh release view ets2-ai-v0.4.10 >/dev/null 2>&1 || \
+            gh release create ets2-ai-v0.4.10 \
+              --title "ETS2-AI v0.4.10 — TODAS as DLLs de telemetria embutidas + botoes INSTALAR (varre tudo, analisa o jogo) e VERIFICAR (repara); cadeia 500B" \
+              --notes "ETS2-AI v0.4.10 - APK: servico em 1o plano (wake lock + Wi-Fi alto desempenho) mantem a IA na MESMA velocidade com a tela bloqueada (cmd/s ao vivo na notificacao); teclado BT com as setas (padrao ETS2); EXE com DLL embutida + adb plug & play; cadeia rumo a 500 bilhoes de amostras no Kaggle."
+          gh release upload ets2-ai-v0.4.10 ets2-ai/artifacts/ets2ai-v0.4.10.pt --clobber
 
   release:
     name: Release com APK + EXE + TFLite
@@ -498,7 +537,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: ets2-ai/.cache/rel
-      - name: Publica release ets2-ai-v0.4.9
+      - name: Publica release ets2-ai-v0.4.10
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -516,8 +555,8 @@ jobs:
           import json
           m = json.load(open('ets2-ai/artifacts/metrics.json'))
           c = m['closed_loop']
-          print("ETS2-AI v0.4.9 - APK teclado Bluetooth + bridge PC + IA de direcao.")
-          print("Novidades: telemetria 100% AUTOMATICA — o .exe instala o plugin sozinho na pasta do jogo (varredura LITERAL do disco inteiro, igual a descoberta dos controles; na abertura, no BUSCAR e no COMECAR; jogo aberto = reinicie 1x). Sem --game-dir, sem passo manual. A IA so AGE com o jogo em TELA CHEIA (fora dela as teclas ficam soltas; ESC continua sendo o kill switch); COMECAR pode ser clicado ANTES de abrir o jogo — a IA espera o ETS2 por ate 15 min em vez de fechar (fim do \"iniciando e parou\"). IA no PC por padrao com ESCADA HONESTA medida na sua maquina — rede oficial (290x13) se couber no orcamento (<1% do N5030); senao rede DESTILADA (nano, ~28 mil parametros, imita a oficial; fidelidade no distill-report.json da release); senao celular via cabo (arquivos MTP, sem depuracao, sem delay). GPU sempre 0% no PC (numpy puro). Teclado BT emula as setas = controles padrao do ETS2; EXE com DLL de telemetria EMBUTIDA (auto-instala) e adb plug & play; GPU por Vulkan no celular (TFLite 2.17.0); cadeia de treino rumo a 500 bilhoes de amostras no Kaggle (contador em ets2-ai/CHAIN.md, status em ets2-ai/STATUS.md).")
+          print("ETS2-AI v0.4.10 - APK teclado Bluetooth + bridge PC + IA de direcao.")
+          print("Novidades: TODAS as releases do plugin de telemetria (RenCloud + nlhans, MIT) EMBUTIDAS no .exe — botao INSTALAR TELEMETRIA varre TODO o armazenamento, acha a pasta certa, ANALISA o jogo (arquitetura + versao) e instala a DLL ideal sozinho; botao VERIFICAR DLL confere o hash SHA-256 (corrompida/ausente/versao errada) e REPARA automaticamente; instalacao automatica tambem na abertura, no BUSCAR e no COMECAR. Sem passo manual, sem --game-dir. A IA so AGE com o jogo em TELA CHEIA (fora dela as teclas ficam soltas; ESC continua sendo o kill switch); COMECAR pode ser clicado ANTES de abrir o jogo — a IA espera o ETS2 por ate 15 min em vez de fechar (fim do \"iniciando e parou\"). IA no PC por padrao com ESCADA HONESTA medida na sua maquina — rede oficial (290x13) se couber no orcamento (<1% do N5030); senao rede DESTILADA (nano, ~28 mil parametros, imita a oficial; fidelidade no distill-report.json da release); senao celular via cabo (arquivos MTP, sem depuracao, sem delay). GPU sempre 0% no PC (numpy puro). Teclado BT emula as setas = controles padrao do ETS2; EXE com DLL de telemetria EMBUTIDA (auto-instala) e adb plug & play; GPU por Vulkan no celular (TFLite 2.17.0); cadeia de treino rumo a 500 bilhoes de amostras no Kaggle (contador em ets2-ai/CHAIN.md, status em ets2-ai/STATUS.md).")
           print(f"MSE validacao: {m['mse_val']:.5f} (meta <= {m['loss_target']}) | "
                 f"fonte dos pesos: {m.get('weights_source', '?')} | circuito fechado: "
                 f"{c['finish_rate']*100:.0f}% rotas, dock {c['dock_rate']*100:.0f}%, "
@@ -527,12 +566,12 @@ jobs:
           PY
           )"
           echo "NOTES: $NOTES"
-          TITLE="ETS2-AI v0.4.9 — telemetria 100% AUTOMATICA (o exe instala sozinho na pasta do jogo, varrendo o disco); IA so AGE em TELA CHEIA; cadeia 500B de amostras"
-          gh release view ets2-ai-v0.4.9 >/dev/null 2>&1 || \
-            gh release create ets2-ai-v0.4.9 --title "$TITLE" --notes "$NOTES"
-          gh release upload ets2-ai-v0.4.9 ets2-ai/.cache/release/* --clobber
-          gh release edit ets2-ai-v0.4.9 --title "$TITLE" --notes "$NOTES" || true
-          gh release view ets2-ai-v0.4.9 --json assets --jq '.assets[].name'
+          TITLE="ETS2-AI v0.4.10 — TODAS as releases do plugin de telemetria EMBUTIDAS; botao INSTALAR varre o disco + analisa o jogo + instala a DLL ideal; botao VERIFICAR confere hash e repara; cadeia 500B de amostras"
+          gh release view ets2-ai-v0.4.10 >/dev/null 2>&1 || \
+            gh release create ets2-ai-v0.4.10 --title "$TITLE" --notes "$NOTES"
+          gh release upload ets2-ai-v0.4.10 ets2-ai/.cache/release/* --clobber
+          gh release edit ets2-ai-v0.4.10 --title "$TITLE" --notes "$NOTES" || true
+          gh release view ets2-ai-v0.4.10 --json assets --jq '.assets[].name'
       - name: Diagnostico (commita log no repo em caso de falha)
         if: failure()
         run: |

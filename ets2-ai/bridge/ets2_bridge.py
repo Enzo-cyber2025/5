@@ -736,7 +736,8 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
     state = {"running": False, "thread": None, "mtp": None,
              "link": None, "mlink": None, "searching": False,
              "local_ok": False, "local_cmd_s": 0.0,
-             "local_kind": None, "local_weights": None}
+             "local_kind": None, "local_weights": None,
+             "dll_busy": False}
     stop_event = threading.Event()
     logs = deque(maxlen=400)
 
@@ -837,6 +838,62 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
                    relief="flat", cursor="hand2", padx=14, pady=7,
                    command=lambda: do_search(True))
     b2.pack(side="left", padx=(10, 0))
+
+    # ---------- telemetria: instalar (varre tudo) + verificar ----------
+    brow2 = tk.Frame(gm, bg=CARD)
+    brow2.pack(fill="x", pady=(8, 0))
+
+    def do_install_dll():
+        """Botao dedicado: varre TODO o armazenamento, acha a pasta certa,
+        ANALISA o jogo (arquitetura + versao) e instala a DLL ideal de
+        todas as releases oficiais embutidas — sem intervencao humana."""
+        if state.get("dll_busy"):
+            return
+        state["dll_busy"] = True
+        bi.config(state="disabled", text="INSTALANDO (varrendo tudo)...")
+
+        def worker():
+            try:
+                tele.ensure_plugin(log=log, force=True)  # varredura LITERAL
+            except Exception as e:
+                log(f"[dll] erro na instalacao: {e.__class__.__name__}: {e}")
+            state["dll_busy"] = False
+            root.after(0, lambda: bi.config(
+                state="normal", text="INSTALAR TELEMETRIA (varre tudo)"))
+        threading.Thread(target=worker, daemon=True).start()
+
+    def do_verify_dll():
+        """Botao dedicado: verifica a DLL instalada (hash SHA-256 contra a
+        ideal embutida; corrompida/ausente/versao errada) e REPARA sozinho."""
+        if state.get("dll_busy"):
+            return
+        state["dll_busy"] = True
+        bv.config(state="disabled", text="VERIFICANDO...")
+
+        def worker():
+            try:
+                r = tele.verify_plugin(log=log, repair=True)
+                log(f"[verificar] resultado: {r.get('status')}"
+                    + (" — REPARADA" if r.get("reparada") else ""))
+            except Exception as e:
+                log(f"[verificar] erro: {e.__class__.__name__}: {e}")
+            state["dll_busy"] = False
+            root.after(0, lambda: bv.config(
+                state="normal", text="VERIFICAR DLL (repara)"))
+        threading.Thread(target=worker, daemon=True).start()
+
+    bi = tk.Button(brow2, text="INSTALAR TELEMETRIA (varre tudo)",
+                   font=("Segoe UI", 9, "bold"), fg="white", bg="#7C5CFF",
+                   activebackground="#9B7DFF", activeforeground="white",
+                   relief="flat", cursor="hand2", padx=12, pady=7,
+                   command=do_install_dll)
+    bi.pack(side="left")
+    bv = tk.Button(brow2, text="VERIFICAR DLL (repara)",
+                   font=("Segoe UI", 9), fg=FG, bg="#232B3A",
+                   activebackground="#2C3547", activeforeground="white",
+                   relief="flat", cursor="hand2", padx=12, pady=7,
+                   command=do_verify_dll)
+    bv.pack(side="left", padx=(10, 0))
 
     # ---------- botao COMEÇAR ----------
     def on_start():

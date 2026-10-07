@@ -16,19 +16,26 @@ tela, sem mexer no jogo: só o plugin oficial de telemetria da SCS + teclas.
 ## 0) Requisitos (uma vez só) — PLUG & PLAY
 
 1. **ETS2 original 64-bit** (Steam) no Windows.
-2. **Zero passo manual (v0.4.9)**: o `ETS2-AI-bridge.exe` já embute a DLL
-   de telemetria (plugin RenCloud, licença MIT) e **instala sozinho na
-   pasta do jogo** — na **abertura do .exe**, no botão **BUSCAR** e ao
-   clicar **COMEÇAR**. Ele acha o ETS2 em cascata: caminho salvo →
-   **jogo aberto (processo)** → registro do Steam → **varredura LITERAL do
-   disco todo** (a mesma descoberta dos controles, sem excluir pasta
-   nenhuma) → rastros/atalhos. Se a varredura não achar, ela não repete
-   sozinha (só no BUSCAR DE NOVO), mas a detecção por processo continua
-   viva: **abra o jogo e toque BUSCAR**. `--game-dir` continua existindo
-   só como exceção do CLI. Se o jogo já estava aberto na instalação,
-   **reinicie-o 1×** (o plugin carrega na abertura). Primeiro o bridge
-   tenta a **leitura de memória** (sem DLL nenhuma no jogo); o plugin é o
-   plano B automático para versões sem pack de offsets.
+2. **Zero passo manual (v0.4.10) — banco com TODAS as DLLs**: o
+   `ETS2-AI-bridge.exe` embute **todas as releases oficiais** do plugin de
+   telemetria (MIT): **RenCloud** V.1.9.0→V.1.12.1 **+ nlhans** (original,
+   jogos antigos), x64 e x86. A instalação é **100% automática** e acontece
+   na **abertura do .exe**, no botão **BUSCAR**, no **COMEÇAR** e — sob
+   demanda — no botão dedicado **INSTALAR TELEMETRIA (varre tudo)**, que
+   varre **todo o armazenamento** (sem excluir pasta nenhuma, igual à
+   descoberta dos controles), acha a pasta certa, **analisa o jogo**
+   (arquitetura `win_x64`/`win_x86` + versão pelo `steam.inf`) e instala a
+   **DLL ideal** para aquela versão (jogo 1.45 → V.1.11.1; 1.41–1.44 →
+   V.1.11; 1.36–1.40 → V.1.10.6; 1.32–1.35 → V.1.9.0; ≤1.31 → nlhans;
+   1.46+ → V.1.12.1). O botão **VERIFICAR DLL** confere o **hash SHA-256**
+   da DLL instalada contra a ideal embutida: corrompida, ausente ou versão
+   errada → **repara sozinho**. Se a varredura não achar o jogo, ela não
+   repete sozinha (só no BUSCAR DE NOVO), mas a detecção por processo
+   continua viva: **abra o jogo e toque BUSCAR**. Se o jogo já estava
+   aberto na instalação, **reinicie-o 1×** (o plugin carrega na abertura).
+   Primeiro o bridge tenta a **leitura de memória** (sem DLL nenhuma no
+   jogo); o plugin é o plano B automático para versões sem pack de offsets
+   (jogos mais antigos que 1.46 podem não validar no leitor — o log avisa).
 3. **Celular no cabo USB** (opcional, para a IA rodar no aparelho): o .exe
    também embute o `adb` e cria o túnel `adb reverse` sozinho — no app toque
    **BRIDGE → AUTO** e conecta (sem digitar IP, sem Wi-Fi). Requer
