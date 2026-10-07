@@ -442,9 +442,12 @@ def game_root_from_exe(exe_path):
 
 
 def dir_looks_like_game(p):
-    """Pasta com bin/win_x64 = instalacao do ETS2 (qualquer origem)."""
+    """Pasta com bin/win_x64 OU bin/win_x86 = instalacao do ETS2 (qualquer
+    origem). x86 conta: ETS2 32-bit (ex.: 1.22 em PCs antigos) e jogo de
+    verdade tambem."""
     try:
-        return (Path(p) / "bin" / "win_x64").is_dir()
+        q = Path(p) / "bin"
+        return (q / "win_x64").is_dir() or (q / "win_x86").is_dir()
     except Exception:
         return False
 
@@ -770,6 +773,28 @@ def resolve_game_dir(extra=None, log=None, state_file=None, force=False):
     import time as _time
     st = load_game_state(state_file)
     gd = st.get("game_dir")
+    if extra is not None:
+        # CAMINHO EXPLICITO (--game-dir) SEMPRE VENCE — nem o cache salvo
+        # pode sobrescrever o consentimento do usuario: com 2 instalacoes
+        # (ou o CI validando varias pastas na mesma maquina) o caminho
+        # dado e o caminho usado, ponto.
+        ex = Path(extra)
+        if dir_looks_like_game(ex):
+            if str(ex) != str(gd or ""):
+                novo = {"game_dir": str(ex), "found_by": "--game-dir",
+                        "found_at": _time.time(), "last_seen": _time.time(),
+                        "runs": 1}
+                for k in ("telemetry", "pack", "mode"):
+                    if k in st:
+                        novo[k] = st[k]
+                save_game_state(novo, state_file)
+                if log:
+                    log(f"[jogo] caminho EXPLICITO (--game-dir): {ex} — "
+                        "cache atualizado para ele")
+            return ex
+        if log:
+            log(f"[jogo] --game-dir {ex} nao parece o ETS2 (sem "
+                "bin/win_x64) — seguindo com a descoberta normal")
     if not force and gd and dir_looks_like_game(gd):
         st["last_seen"] = _time.time()
         st["runs"] = int(st.get("runs", 0)) + 1

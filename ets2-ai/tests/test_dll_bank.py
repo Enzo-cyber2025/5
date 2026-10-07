@@ -268,3 +268,51 @@ def test_ensure_plugin_uac_negado_nao_instala(tmp_path, bank, monkeypatch):
     r = T.ensure_plugin(log=msgs.append, game_dir=game)
     assert r is None
     assert any("NEGADA" in m for m in msgs)
+
+
+# --------------------------------------------------------------------------- #
+# v0.4.12 fix: --game-dir EXPLICITO sempre vence o CACHE salvo no cwd
+# (reproduz o bug do CI: 7 ETS2s validados na mesma maquina e todos os
+# casos depois do primeiro analisavam o jogo do primeiro caso)
+# --------------------------------------------------------------------------- #
+def test_game_dir_explicito_vence_cache_salvo(tmp_path, bank, monkeypatch):
+    import importlib.util as ilu
+    monkeypatch.setattr(T, "find_bundled_dll", lambda: None)
+    # cwd compartilhado = onde ets2-ai-state.json e salvo (igual ao CI)
+    shared = tmp_path / "shared-cwd"
+    shared.mkdir()
+    monkeypatch.chdir(shared)
+
+    casos = [("1.61", "exe_version_info=1.61.1.1s\n", "V.1.12.1"),
+             ("1.45", "exe_version_info=1.45.1.1s\n", "V.1.11.1"),
+             ("1.41", "exe_version_info=1.41.2.1s\n", "V.1.11")]
+    ultimo = None
+    for v, inf, want in casos:
+        g = _game(tmp_path, inf)
+        ultimo = g
+        # passo 2 do autoteste (bridge): resolve com extra EXPLICITO
+        got = T.resolve_game_dir(extra=g)
+        assert str(got) == str(g), \
+            f"ETS2 {v}: cache redirecionou para {got} em vez de {g}"
+        # passo 3: instala a DLL ideal DESTE jogo (nao a do anterior)
+        r = T.ensure_plugin(log=lambda m: None, game_dir=g)
+        assert r is not None and r["tag"] == want, \
+            f"ETS2 {v}: escolheu {r and r['tag']}, esperado {want}"
+        assert str(g) in r["dll"], f"ETS2 {v}: instalou fora do --game-dir"
+    # o cache existe (ultimo explicito) e e usado por quem NAO passa caminho
+    assert (shared / "ets2-ai-state.json").exists()
+    st = T.load_game_state(shared / "ets2-ai-state.json")
+    assert st["game_dir"] == str(ultimo)             # ultimo explicito
+    r = T.ensure_plugin(log=lambda m: None)           # game_dir=None
+    assert r is not None and r["tag"] == "V.1.11"     # analisa o 1.41
+
+
+def test_game_dir_invalido_cai_na_descoberta(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    # caminho explicito que NAO parece jogo -> descoberta normal (cache)
+    g = _game(tmp_path, "exe_version_info=1.41.2.1s\n")
+    r = T.resolve_game_dir(extra=tmp_path / "nao-existe")
+    assert str(r) == str(g) or r is None   # achou o jogo ou nada — nunca
+    # o caminho invalido NAO entra no cache
+    st = T.load_game_state()
+    assert st.get("game_dir") != str(tmp_path / "nao-existe")

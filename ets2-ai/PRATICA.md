@@ -307,3 +307,20 @@ sua estrada real em minutos, por DAgger.
   do jogo mostram AVISO DO SDK na inicializacao — o jogador precisa
   clicar OK/Permitir (comportamento do proprio jogo, nao nosso).
 - Suite: 126 passed, 1 skipped.
+
+### v0.4.12 fix (2º commit do ciclo) — validacao-windows x CI
+
+A 1a rodada do v0.4.12 falhou no job validacao-windows: todos os casos
+escolhiam a DLL do 1o jogo. Duas causas, ambas bugs REAIS (nao so no CI):
+
+1. **O cache (ets2-ai-state.json) sobrescrevia o --game-dir explicito**:
+   quem passa um caminho na mao (ou o CI valida 7 pastas na mesma
+   maquina) recebia o jogo do cache anterior. Agora o caminho EXPLICITO
+   sempre vence (e atualiza o cache para ele).
+2. **Jogo x86 (32 bits) nao era reconhecido como jogo**: bin/win_x86
+   agora conta como instalacao valida no dir_looks_like_game.
+
+Reproduzido localmente o loop exato do CI (cwd compartilhado, 7 jogos):
+7/7 OK (1.61, 1.58, 1.53 -> V.1.12.1; 1.45 -> V.1.11.1; 1.41 -> V.1.11;
+1.35 -> v.1.9.0; 1.22 x86 -> nlhans revision_5_rel_1_4_0). Suite: 128
+passed, 1 skipped (+2 testes de regressao do cache/--game-dir e x86).
