@@ -1124,7 +1124,9 @@ def game_log_hints():
         lines = _lg.read_text(encoding="utf-8", errors="replace").splitlines()
     except OSError:
         return []
-    pat = _re.compile(r"plugin|telemetry|sdk", _re.IGNORECASE)
+    pat = _re.compile(
+        r"plugin|telemetry|sdk|vcruntime|msvcp|loadlibrary|visual c\+\+",
+        _re.IGNORECASE)
     return [l.strip() for l in lines if pat.search(l)][-12:]
 
 
@@ -1176,6 +1178,69 @@ def verify_plugin(log=print, game_dir=None, repair=True):
     return {"status": status, "reparada": False, **meta}
 
 
+def _elevated_copy(src, dst, log=print, timeout_s=90.0):
+    """Copia COM PERMISSAO DE ADMINISTRADOR (UAC) — pastas protegidas
+    como C:\\Program Files (x86)\\Steam so aceitam gravacao elevada.
+
+    Copia a origem para o temp (caminho curto/gravavel), pede elevacao ao
+    Windows (ShellExecuteEx "runas": powershell que so faz New-Item +
+    Copy-Item) e espera terminar. Devolve True se o arquivo chegou."""
+    if _os.name != "nt":
+        return False
+    import ctypes
+    import tempfile
+    src, dst = Path(src), Path(dst)
+    tmp = Path(tempfile.gettempdir()) / "ets2ai-scs-telemetry.dll"
+    try:
+        shutil.copyfile(src, tmp)
+    except OSError as e:
+        log(f"[dll] copia para temp falhou: {e}")
+        return False
+
+    def q(p):                          # aspas simples PS (' vira '')
+        return str(p).replace("'", "''")
+
+    ps = (f"New-Item -ItemType Directory -Force -Path '{q(dst.parent)}' | "
+          f"Out-Null; Copy-Item -LiteralPath '{q(tmp)}' "
+          f"-Destination '{q(dst)}' -Force")
+
+    class _SEE(ctypes.Structure):      # SHELLEXECUTEINFOW (x64 ok)
+        _fields_ = [("cbSize", ctypes.c_ulong), ("fMask", ctypes.c_ulong),
+                    ("hwnd", ctypes.c_void_p), ("lpVerb", ctypes.c_wchar_p),
+                    ("lpFile", ctypes.c_wchar_p),
+                    ("lpParameters", ctypes.c_wchar_p),
+                    ("lpDirectory", ctypes.c_wchar_p),
+                    ("nShow", ctypes.c_int), ("hInstApp", ctypes.c_void_p),
+                    ("lpIDList", ctypes.c_void_p),
+                    ("lpClass", ctypes.c_wchar_p),
+                    ("hkeyClass", ctypes.c_void_p),
+                    ("dwHotKey", ctypes.c_ulong),
+                    ("hIcon", ctypes.c_void_p),
+                    ("hProcess", ctypes.c_void_p)]
+
+    sei = _SEE()
+    sei.cbSize = ctypes.sizeof(_SEE)
+    sei.fMask = 0x40 | 0x100          # NOCLOSEPROCESS | NOASYNC
+    sei.lpVerb = "runas"              # pede administrador (UAC)
+    sei.lpFile = "powershell.exe"
+    sei.lpParameters = (f'-NoProfile -ExecutionPolicy Bypass -Command "{ps}"')
+    sei.nShow = 0                      # SW_HIDE
+    if not ctypes.windll.shell32.ShellExecuteExW(ctypes.byref(sei)):
+        log("[dll] pedido de administrador RECUSADO (botao NAO) — o "
+            "Windows nao deixa gravar nesta pasta sem elevacao")
+        return False
+    if sei.hProcess:
+        ms = int(timeout_s * 1000)
+        while ms > 0:
+            rc = ctypes.windll.kernel32.WaitForSingleObject(
+                ctypes.c_void_p(sei.hProcess), 1000)
+            if rc != 0x102:            # saiu (0x102 = WAIT_TIMEOUT)
+                break
+            ms -= 1000
+        ctypes.windll.kernel32.CloseHandle(ctypes.c_void_p(sei.hProcess))
+    return dst.exists()
+
+
 def ensure_plugin(log=print, game_dir=None, force=False,
                    exclude=()):
     """Instalacao 100% AUTOMATICA da telemetria (nada manual):
@@ -1209,10 +1274,24 @@ def ensure_plugin(log=print, game_dir=None, force=False,
     h_src = _sha256(dll_src)
     if dst.exists() and _sha256(dst) == h_src:
         return {"game_dir": str(gd), "dll": str(dst),
-                "agora_instalou": False, **meta}
+                "agora_instalou": False, "elevado": False, **meta}
+    elevado = False
     try:
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(dll_src, dst)
+    except PermissionError:
+        # PASTA PROTEGIDA (C:\\Program Files (x86)\\Steam...): gravar ali
+        # exige administrador. Pede ao Windows (UAC) — clique SIM 1x.
+        log("[dll] pasta do jogo e PROTEGIDA (Program Files) — o Windows "
+            "vai pedir PERMISSAO DE ADMINISTRADOR para instalar a "
+            "telemetria: clique SIM")
+        if not _elevated_copy(dll_src, dst, log):
+            log("[dll] PERMISSAO DE ADMINISTRADOR NEGADA — DLL nao "
+                "instalada. Clique de novo em INSTALAR TELEMETRIA e "
+                "ACEITE o pedido do Windows (a pasta do jogo exige "
+                "administrador)")
+            return None
+        elevado = True
     except OSError as e:
         log(f"[dll] falhou ao instalar em {dst}: {e}")
         return None
@@ -1223,4 +1302,4 @@ def ensure_plugin(log=print, game_dir=None, force=False,
         f"{meta['tag']}, {meta['arch']}) — se o ETS2 estiver aberto, "
         "REINICIE o jogo 1x (o plugin carrega na abertura)")
     return {"game_dir": str(gd), "dll": str(dst), "agora_instalou": True,
-            **meta}
+            "elevado": elevado, **meta}

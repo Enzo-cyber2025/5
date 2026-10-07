@@ -46,7 +46,8 @@ def test_game_arch(tmp_path):
 def test_pick_dll_por_versao_do_jogo():
     avail = {(r, t, a) for r, t, _ in T.DLL_BANK for a in ("x64", "x86")}
     mapa = {
-        (1, 53): "V.1.12.1", (1, 46): "V.1.12.1", (1, 45): "V.1.11.1",
+        (1, 61): "V.1.12.1", (1, 58): "V.1.12.1", (1, 53): "V.1.12.1",
+        (1, 46): "V.1.12.1", (1, 45): "V.1.11.1",
         (1, 42): "V.1.11", (1, 41): "V.1.11", (1, 37): "V.1.10.6",
         (1, 36): "V.1.10.6", (1, 33): "v.1.9.0", (1, 32): "v.1.9.0",
         (1, 20): "revision_5_rel_1_4_0", (1, 17): "revision_5_rel_1_4_0",
@@ -212,7 +213,8 @@ def test_run_autoteste_no_repo(tmp_path, monkeypatch):
     out = tmp_path / "autoteste.json"
     logs = []
     ok = mod.run_autoteste(game_dir=str(game), saida=str(out), log=logs.append)
-    assert ok is True, "\n".join(logs)
+    assert ok["pass"] is True, "\n".join(logs)
+    assert ok["arquivo"] == str(out)
     import json
     r = json.loads(out.read_text(encoding="utf-8"))
     assert r["dll_tag"] == "V.1.11" and r["dll_arch"] == "x64"
@@ -220,3 +222,49 @@ def test_run_autoteste_no_repo(tmp_path, monkeypatch):
     assert r["telemetria"] == "SKIP"            # Linux; no CI Windows = PASS
     assert r["oficial_inf_s"] >= 50
     assert any("PASS" in l for l in logs)
+
+
+# --------------------------------------------------------------------------- #
+# v0.4.12: pasta protegida (Program Files) -> PERMISSAO DE ADMINISTRADOR (UAC)
+# --------------------------------------------------------------------------- #
+def test_ensure_plugin_eleva_quando_pasta_protegida(tmp_path, bank,
+                                                     monkeypatch):
+    """Copia normal negada (PermissionError) -> pede administrador (UAC)
+    aceito -> DLL instalada mesmo assim."""
+    monkeypatch.setattr(T, "find_bundled_dll", lambda: None)
+    game = _game(tmp_path, "exe_version_info=1.53.0.4s\n")
+    real_copy = T.shutil.copyfile
+
+    def bloqueada(src, dst):
+        if str(dst).startswith(str(game)):    # pasta do jogo e protegida
+            raise PermissionError(13, "Acesso negado (Program Files)")
+        return real_copy(src, dst)            # copia p/ temp segue ok
+
+    monkeypatch.setattr(T.shutil, "copyfile", bloqueada)
+
+    def uac_aceita(src, dst, log=print, timeout_s=90.0):
+        real_copy(src, dst)                   # powershell elevado copiou
+        return True
+
+    monkeypatch.setattr(T, "_elevated_copy", uac_aceita)
+    msgs = []
+    r = T.ensure_plugin(log=msgs.append, game_dir=game)
+    dst = game / "bin" / "win_x64" / "plugins" / "scs-telemetry.dll"
+    assert r and r["agora_instalou"] is True and r["elevado"] is True
+    assert dst.read_bytes() == b"DLL-rencloud-V.1.12.1"
+    assert any("ADMINISTRADOR" in m for m in msgs)     # avisa ANTES do UAC
+
+
+def test_ensure_plugin_uac_negado_nao_instala(tmp_path, bank, monkeypatch):
+    """Usuario clica NAO no UAC -> nao instala e o log diz o que fazer."""
+    monkeypatch.setattr(T, "find_bundled_dll", lambda: None)
+    game = _game(tmp_path, "exe_version_info=1.53.0.4s\n")
+    monkeypatch.setattr(T.shutil, "copyfile",
+                        lambda s, d: (_ for _ in ()).throw(
+                            PermissionError(13, "Acesso negado")))
+    monkeypatch.setattr(T, "_elevated_copy",
+                        lambda *a, **k: False)         # clicou NAO
+    msgs = []
+    r = T.ensure_plugin(log=msgs.append, game_dir=game)
+    assert r is None
+    assert any("NEGADA" in m for m in msgs)

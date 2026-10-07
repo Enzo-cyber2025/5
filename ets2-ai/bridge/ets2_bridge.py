@@ -739,11 +739,15 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
              "local_ok": False, "local_cmd_s": 0.0,
              "local_kind": None, "local_weights": None,
              "dll_busy": False}
-    stop_event = threading.Event()
     logs = deque(maxlen=400)
+    stop_event = threading.Event()
 
     def log(msg):
         logs.append(str(msg))
+        _log_tee(msg)     # ets2-ai-log.txt ao lado do .exe (v0.4.12)
+
+    log(f"[sessao] v0.4.12 — log completo salvo em {_LOG_PATH} "
+        "(envie este arquivo se algo falhar)")
 
     def card():
         return tk.Frame(root, bg=CARD, padx=18, pady=14)
@@ -908,8 +912,9 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
 
         def worker():
             try:
-                out = str(Path.cwd() / "autoteste-resultado.json")
-                run_autoteste(saida=out, log=log)
+                out = str(_exe_dir() / "autoteste-resultado.json")
+                res = run_autoteste(saida=out, log=log)
+                root.after(0, lambda: _show_autoteste(res or {}, out))
             except Exception as e:
                 log(f"[autoteste] erro: {e.__class__.__name__}: {e}")
             state["dll_busy"] = False
@@ -1239,6 +1244,111 @@ def run_headless(layers, port, injector, phone_only, host="127.0.0.1"):
         injector.release_all()
 
 
+# ---------------------------------------------------------------------------
+# Diagnostico que o usuario ACHA e ENVIA (v0.4.12): tudo ao lado do .exe
+# ---------------------------------------------------------------------------
+def _exe_dir():
+    """Pasta fixa e facil de achar: ao lado do .exe (ou cwd no repo)."""
+    try:
+        if getattr(sys, "frozen", False):
+            return Path(sys.executable).resolve().parent
+    except Exception:
+        pass
+    return Path.cwd()
+
+
+_LOG_PATH = _exe_dir() / "ets2-ai-log.txt"
+
+
+def _log_tee(msg):
+    """Cada linha do log tambem vai para ets2-ai-log.txt ao lado do .exe —
+    e esse arquivo que o usuario manda no chat quando algo falha."""
+    try:
+        if _LOG_PATH.exists() and _LOG_PATH.stat().st_size > 262144:
+            _LOG_PATH.unlink()               # recomeca (teto 256 KB)
+        with _LOG_PATH.open("a", encoding="utf-8") as f:
+            f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {msg}\n")
+    except Exception:
+        pass                                  # log nunca derruba o bridge
+
+
+def _crash_dump(exc):
+    """Erro fatal vira arquivo + janela — nada morre em silencio."""
+    try:
+        import traceback
+        p = _exe_dir() / "ets2-ai-erro.txt"
+        p.write_text(f"{time.strftime('%Y-%m-%d %H:%M:%S')}\n"
+                     f"ETS2-AI bridge v0.4.12\n\n{traceback.format_exc()}",
+                     encoding="utf-8")
+        try:
+            import tkinter.messagebox as _mb
+            _mb.showerror("ETS2-AI — erro",
+                          f"{exc.__class__.__name__}: {exc}\n\n"
+                          f"Detalhes salvos em:\n{p}\n\n"
+                          "Envie este arquivo no chat para o conserto.")
+        except Exception:
+            pass
+    except Exception:
+        pass
+
+
+def _show_autoteste(res, path):
+    """Janela com o resultado do AUTOTESTE + botao COPIAR (cola no chat)."""
+    import tkinter as tk
+    top = tk.Toplevel()
+    top.title("AUTOTESTE — resultado")
+    top.configure(bg="#14141C")
+    top.geometry("760x540")
+    ok = bool(res.get("pass"))
+    tk.Label(top, font=("Segoe UI", 12, "bold"), bg="#14141C",
+             fg="#7ED957" if ok else "#FF6B6B",
+             text="TUDO OK — telemetria e DLL funcionando" if ok else
+             "FALHOU — clique COPIAR RESULTADO e cole no chat").pack(
+                 fill="x", padx=16, pady=(12, 4))
+    body = json.dumps(res, ensure_ascii=False, indent=1, sort_keys=True)
+    linhas = [f"{s.get('status', '?'):5} {s.get('step', '')}: "
+              f"{s.get('detail', '')}" for s in (res.get("steps") or [])]
+    txt = tk.Text(top, bg="#10151F", fg="#C9D1E0", relief="flat",
+                  font=("Consolas", 9), wrap="word")
+    txt.insert("1.0", "\n".join(linhas) + "\n\n" + body)
+    txt.configure(state="disabled")
+    txt.pack(fill="both", expand=True, padx=16, pady=8)
+    st = tk.Label(top, text=f"salvo em: {path}", bg="#14141C", fg="#8B8BA3",
+                  font=("Segoe UI", 8), anchor="w")
+    st.pack(fill="x", padx=16)
+    bar = tk.Frame(top, bg="#14141C")
+    bar.pack(fill="x", padx=16, pady=(4, 12))
+
+    def copiar():
+        top.clipboard_clear()
+        top.clipboard_append(body)
+        top.update_idletasks()           # segura o clipboard apos fechar
+        st.config(text="COPIADO! Agora cole no chat (Ctrl+V) e envie",
+                  fg="#7ED957")
+
+    def abrir_pasta():
+        try:
+            import os
+            os.startfile(str(Path(path).parent))
+        except Exception:
+            pass
+
+    for label, cmd in (("COPIAR RESULTADO (enviar no chat)", copiar),
+                       ("ABRIR PASTA DO ARQUIVO", abrir_pasta)):
+        tk.Button(bar, text=label, command=cmd,
+                  font=("Segoe UI", 9, "bold"), fg="white", bg="#7C5CFF",
+                  activebackground="#9B7DFF", activeforeground="white",
+                  relief="flat", cursor="hand2", padx=12, pady=6).pack(
+                      side="left")
+    tk.Button(bar, text="FECHAR", command=top.destroy,
+              font=("Segoe UI", 9), fg="#E8ECF3", bg="#232B3A",
+              activebackground="#2C3547", activeforeground="white",
+              relief="flat", cursor="hand2", padx=12, pady=6).pack(
+                  side="right")
+    top.attributes("-topmost", True)
+    top.after(300, lambda: top.attributes("-topmost", False))
+
+
 def run_autoteste(game_dir=None, saida=None, log=print):
     """Autoteste completo do bridge (botao AUTOTESTE e --autoteste):
 
@@ -1252,7 +1362,8 @@ def run_autoteste(game_dir=None, saida=None, log=print):
          processo do jogo — e o bridge tem que ler e bater os valores;
       6. politica: pesos oficiais (+ nano destilada) e o bench.
 
-    Escreve o resultado em JSON (--saida) e devolve True se nada falhou.
+    Escreve o resultado em JSON (padrao: ao lado do .exe) e devolve
+    o DICT do resultado (res['pass'] = True se nada falhou).
     A validacao Windows do CI roda isto dentro de um Windows de verdade.
     """
     from ets2ai import telemetry as tele
@@ -1374,6 +1485,8 @@ def run_autoteste(game_dir=None, saida=None, log=print):
 
     res["steps"] = steps
     res["pass"] = all(s["status"] != "FAIL" for s in steps)
+    saida = saida or str(_exe_dir() / "autoteste-resultado.json")
+    res["arquivo"] = str(saida)
     if saida:
         try:
             Path(saida).write_text(json.dumps(res, indent=2, ensure_ascii=False),
@@ -1385,7 +1498,7 @@ def run_autoteste(game_dir=None, saida=None, log=print):
     n_fail = sum(1 for s in steps if s["status"] == "FAIL")
     log(f"[autoteste] RESULTADO: {'PASS' if res['pass'] else 'FAIL'} "
         f"({n_ok} ok / {n_fail} falha / {len(steps) - n_ok - n_fail} skip)")
-    return res["pass"]
+    return res
 
 
 def run_bench():
@@ -1469,8 +1582,8 @@ def main():
         print("[aviso] --inject so funciona no Windows; rodando sem injecao.")
 
     if args.autoteste:
-        ok = run_autoteste(game_dir=args.game_dir, saida=args.saida)
-        return 0 if ok else 1
+        res = run_autoteste(game_dir=args.game_dir, saida=args.saida)
+        return 0 if res and res.get("pass") else 1
     if args.bench:
         run_bench()
         return
@@ -1542,4 +1655,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except SystemExit:
+        raise
+    except Exception as _e:   # nada morre em silencio (v0.4.12)
+        _crash_dump(_e)
+        raise

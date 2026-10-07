@@ -268,3 +268,42 @@ sua estrada real em minutos, por DAgger.
 > Nota: builds 19:34/19:55/20:10 foram cancelados pelo incidente GitHub Actions (runners; 0 passos executados). Retry.
 
 > Retry 2 do incidente Actions (jobs ganhando runners gradualmente: Treino/EXE/TFLite OK na tentativa anterior).
+
+## v0.4.11 — QUALQUER ETS2 (validada no CI, build 37680919405, 9/9 jobs)
+
+- **Rotacao automatica de DLL**: jogo rodando sem telemetria = o jogo
+  recusou o SDK → o bridge instala a PROXIMA release do banco a cada
+  ~2 min e loga o motivo lido do `game.log.txt` do jogo.
+- **Autoteste ponta a ponta** (botao GUI + CLI `--autoteste`): banco,
+  descoberta, analise, DLL ideal, hash, TELEMETRIA REAL (jogo falso cria
+  a memoria compartilhada `Local\SCSTelemetry` como o plugin faz).
+- **Job validacao-windows no CI**: baixa o .exe do build, monta ETS2s
+  falsos e roda o autoteste exigindo a DLL certa + telemetria em cada.
+  Fix da 1a tentativa (13 s): exe `--noconsole` = GUI → pwsh `& exe`
+  nao espera → `Start-Process -Wait -PassThru` + `$p.ExitCode`.
+- QEMU descartado: runners do GitHub nao tem KVM (TCG = imagem de
+  ~20 GB, boot 30-60 min); `windows-latest` e Windows REAL, melhor.
+
+## v0.4.12 — DLL em pasta protegida + diagnostico que o usuario ENVIA
+
+- **CAUSA RAIZ do "nao funciona" no PC real**: ETS2 do Steam fica em
+  `C:\Program Files (x86)\Steam\...` — pasta PROTEGIDA; a copia da DLL
+  falhava com PermissionError e so logava uma linha. Agora o bridge
+  pede **PERMISSAO DE ADMINISTRADOR ao Windows (UAC)**: 1 clique em SIM
+  e um powershell elevado instala a DLL no lugar oficial
+  (`_elevated_copy` via ShellExecuteEx "runas"). Recusou = log explica
+  o que fazer.
+- **AUTOTESTE com janela de resultado + botao COPIAR RESULTADO**
+  (cola o JSON no chat) e ABRIR PASTA; salva `autoteste-resultado.json`
+  AO LADO DO .exe (nao mais no cwd qualquer).
+- **Log de sessao**: tudo ([jogo]/[dll]/[autoteste]) vai para
+  `ets2-ai-log.txt` ao lado do .exe (teto 256 KB).
+- **Crash dump**: qualquer erro fatal gera `ets2-ai-erro.txt` + janela
+  avisando onde esta — nada morre em silencio.
+- **CI ate o ETS2 ATUAL**: casos 1.61 (17/set/2026) e 1.58 no
+  validacao-windows (7 versoes: 1.22 x86 → 1.61); contagem dinamica.
+- Descobertas da pesquisa: RenCloud V.1.12.1 continua sendo a release
+  mais recente do plugin e FUNCIONA no 1.57+ (forum SCS); versoes novas
+  do jogo mostram AVISO DO SDK na inicializacao — o jogador precisa
+  clicar OK/Permitir (comportamento do proprio jogo, nao nosso).
+- Suite: 126 passed, 1 skipped.
