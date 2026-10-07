@@ -746,7 +746,7 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
         logs.append(str(msg))
         _log_tee(msg)     # ets2-ai-log.txt ao lado do .exe (v0.4.12)
 
-    log(f"[sessao] v0.4.12 — log completo salvo em {_LOG_PATH} "
+    log(f"[sessao] v0.4.13 — log completo salvo em {_LOG_PATH} "
         "(envie este arquivo se algo falhar)")
 
     def card():
@@ -1109,12 +1109,34 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
                 tele.ensure_plugin(log=log)
         except Exception:
             pass
+        # PRIMEIRA EXECUCAO: autoteste automatico + janela de resultado —
+        # se algo falhar o usuario so clica COPIAR RESULTADO e cola no chat
+        try:
+            if state.get("primeira_execucao") and sys.platform == "win32":
+                state["primeira_execucao"] = False
+                log("[autoteste] primeira execucao: diagnostico "
+                    "automatico completo (alguns segundos)...")
+                res = run_autoteste(log=log)
+                out = str(_exe_dir() / "autoteste-resultado.json")
+                root.after(0, lambda: _show_autoteste(res or {}, out))
+        except Exception as e:
+            log(f"[autoteste] erro no diagnostico da 1a execucao: "
+                f"{e.__class__.__name__}: {e}")
 
     log("[info] BUSCAR localiza o jogo (busca completa 1x, depois usa o "
         "salvo)")
     log(f"[info] telemetria: {telemetry_mode} | ESC = kill switch")
     log("[info] fluxo: COMEÇAR pode ser clicado ANTES de abrir o jogo — a "
         "IA espera o ETS2 (ate 15 min) e so AGE com ele em TELA CHEIA")
+    # PRIMEIRA EXECUCAO (v0.4.13): sem jogo salvo ainda -> o app se
+    # autodiagnostica sozinho (busca + instala DLL + autoteste + janela
+    # com o resultado e o botao COPIAR). O usuario nao precisa saber NADA.
+    try:
+        state["primeira_execucao"] = \
+            not tele.load_game_state().get("game_dir")
+    except Exception:
+        state["primeira_execucao"] = False
+
     threading.Thread(target=bench_local, daemon=True).start()
     detect()
     tick()
@@ -1278,7 +1300,7 @@ def _crash_dump(exc):
         import traceback
         p = _exe_dir() / "ets2-ai-erro.txt"
         p.write_text(f"{time.strftime('%Y-%m-%d %H:%M:%S')}\n"
-                     f"ETS2-AI bridge v0.4.12\n\n{traceback.format_exc()}",
+                     f"ETS2-AI bridge v0.4.13\n\n{traceback.format_exc()}",
                      encoding="utf-8")
         try:
             import tkinter.messagebox as _mb
@@ -1349,6 +1371,21 @@ def _show_autoteste(res, path):
     top.after(300, lambda: top.attributes("-topmost", False))
 
 
+def _vc_runtime_check():
+    """A DLL do plugin precisa do Visual C++ Redistributable (vcruntime140).
+    Checa as runtimes x64 (System32) e x86 (SysWOW64) do Windows.
+    Devolve [] se tudo ok, lista com o que falta, ou None fora do Windows."""
+    if sys.platform != "win32":
+        return None
+    miss = []
+    for arch, pasta in (("x64", "System32"), ("x86", "SysWOW64")):
+        base = Path("C:/Windows") / pasta
+        if not any((base / f).exists() for f in
+                   ("vcruntime140.dll", "msvcr110.dll")):
+            miss.append(arch)
+    return miss
+
+
 def run_autoteste(game_dir=None, saida=None, log=print):
     """Autoteste completo do bridge (botao AUTOTESTE e --autoteste):
 
@@ -1370,7 +1407,7 @@ def run_autoteste(game_dir=None, saida=None, log=print):
     steps = []
 
     def step(name, ok, detail=""):
-        st = "PASS" if ok else "FAIL"
+        st = "SKIP" if ok is None else ("PASS" if ok else "FAIL")
         steps.append({"step": name, "status": st, "detail": str(detail)[:300]})
         log(f"[autoteste] {st}: {name}" + (f" — {detail}" if detail else ""))
         return ok
@@ -1394,6 +1431,24 @@ def run_autoteste(game_dir=None, saida=None, log=print):
         res["banco_dlls"] = -1
         step("banco de DLLs embutidas", False,
              f"{e.__class__.__name__}: {e}")
+
+    # 1.5) Visual C++ Redistributable (a DLL do plugin precisa dele; se
+    # faltar, o JOGO carrega a DLL e falha em silencio no game.log.txt)
+    try:
+        miss = _vc_runtime_check()
+        if miss is None:
+            step("visual c++ (runtime do plugin)", None, "SKIP (so Windows)")
+        elif miss:
+            res["vc_faltando"] = miss
+            step("visual c++ (runtime do plugin)", False,
+                 "faltando para " + " e ".join(miss) + " — instale o "
+                 "Visual C++ Redistributable: "
+                 "https://aka.ms/vs/17/release/vc_redist.x64.exe")
+        else:
+            step("visual c++ (runtime do plugin)", True, "x64 e x86 ok")
+    except Exception as e:
+        step("visual c++ (runtime do plugin)", None,
+             f"SKIP ({e.__class__.__name__})")
 
     # 2) descoberta do jogo
     gd = None

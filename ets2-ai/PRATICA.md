@@ -324,3 +324,19 @@ Reproduzido localmente o loop exato do CI (cwd compartilhado, 7 jogos):
 7/7 OK (1.61, 1.58, 1.53 -> V.1.12.1; 1.45 -> V.1.11.1; 1.41 -> V.1.11;
 1.35 -> v.1.9.0; 1.22 x86 -> nlhans revision_5_rel_1_4_0). Suite: 128
 passed, 1 skipped (+2 testes de regressao do cache/--game-dir e x86).
+
+## v0.4.13 — o app se autodiagnostica (1a execucao) + VC++ + LEIA-ME
+
+- **Primeira execucao = assistente automatico**: sem jogo salvo no
+  ets2-ai-state.json, o app roda SOZINHO na abertura: busca do jogo →
+  instalacao da telemetria (UAC se pasta protegida) → AUTOTESTE →
+  janela de resultado com botao COPIAR RESULTADO. O usuario nao
+  precisa saber qual botao apertar; se algo falhar, so copiar/colar.
+- **Step "visual c++" no autoteste**: a DLL do plugin precisa do VC++
+  Redistributable; se faltar (x64 e/ou x86), o autoteste reprova com o
+  link de instalacao (aka.ms/vs/17/release/vc_redist.x64.exe) — antes
+  era falha silenciosa no game.log.txt do jogo.
+- **LEIA-ME.txt em portugues publicado na release** (5 passos + o que
+  enviar quando algo falhar + link do VC++).
+- step() do autoteste agora suporta SKIP (ok=None).
+- Suite: 128 passed, 1 skipped.
