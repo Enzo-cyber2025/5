@@ -830,7 +830,9 @@ def game_install_dirs(extra=None, log=None, literal_scan=True):
     so as vias baratas — processo rodando, Steam, rastros, padrao."""
     out = []
     if extra:
+        # caminho EXPLICITO: atalho total — nada de varrer disco/processos
         out.append(Path(extra))
+        return out
     if _os.name == "nt":
         run_root = _running_game_root()
         if run_root is not None:

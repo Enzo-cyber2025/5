@@ -142,7 +142,11 @@ def test_cascata_de_descoberta_ordem(tmp_path, monkeypatch):
     monkeypatch.setattr(t, "_running_game_root", fake_running)
     monkeypatch.setattr(t, "_os", type("M", (), {"name": "nt"}))
     got = t.game_install_dirs(str(game))
-    assert got[0] == game                     # --game-dir primeiro
+    # --game-dir = ATALHO TOTAL: so o caminho explicito, sem sondar mais nada
+    # (v0.4.11: antes sondava processo/discos/rastros mesmo com caminho dado)
+    assert got == [game]
+    got2 = t.game_install_dirs()              # sem extra: cascata completa
+    assert game not in got2                   # stubs vazios: nada a achar
     assert ordem == ["processo", "discos", "rastros"]
     assert any("repack" not in str(p) or p == game for p in got)
 

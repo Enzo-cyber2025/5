@@ -487,7 +487,10 @@ jobs:
         shell: pwsh
         run: |
           cd ets2-ai
-          dist/ETS2-AI-bridge.exe --help
+          # exe e --noconsole: `& exe` nao espera → Start-Process -Wait
+          $p = Start-Process -FilePath (Resolve-Path "dist/ETS2-AI-bridge.exe").Path `
+            -ArgumentList "--help" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "smoke test: exit $($p.ExitCode)" }
       - uses: actions/upload-artifact@v4
         with:
           name: ETS2-AI-bridge-exe
@@ -524,12 +527,24 @@ jobs:
             $g = "C:\fake\ets2-$($c.v)"
             New-Item -ItemType Directory -Force "$g\bin\$($c.arch)" | Out-Null
             Set-Content -Path "$g\steam.inf" -Value $c.inf -Encoding ascii
-            & dist\ETS2-AI-bridge.exe --autoteste --game-dir $g --saida "C:\fake\res-$($c.v).json"
-            if ($LASTEXITCODE -ne 0) {
-              Write-Host "::error::autoteste FALHOU no ETS2 $($c.v) ($($c.arch))"
+            # exe e --noconsole (GUI): `& exe` NAO espera o processo voltar
+            # ($LASTEXITCODE ficaria $null) → Start-Process -Wait -PassThru.
+            $exe = (Resolve-Path "dist\ETS2-AI-bridge.exe").Path
+            $p = Start-Process -FilePath $exe `
+              -ArgumentList "--autoteste","--game-dir",$g,"--saida","C:\fake\res-$($c.v).json" `
+              -Wait -PassThru
+            if ($p.ExitCode -ne 0) {
+              Write-Host "::error::autoteste FALHOU no ETS2 $($c.v) ($($c.arch)) — exit $($p.ExitCode)"
               $fails++
             }
+            if (-not (Test-Path "C:\fake\res-$($c.v).json")) {
+              Write-Host "::error::exe nao escreveu res-$($c.v).json (excecao antes do fim?)"
+              $fails++
+              continue
+            }
             $r = Get-Content "C:\fake\res-$($c.v).json" -Raw | ConvertFrom-Json
+            Write-Host "===== ETS2 $($c.v) ($($c.arch)) ====="
+            $r.steps | ForEach-Object { Write-Host ("  {0,-6} {1} {2}" -f $_.status, $_.step, $_.detail) }
             if ($r.dll_tag -ne $c.want) {
               Write-Host "::error::ETS2 $($c.v): escolheu '$($r.dll_tag)', esperado '$($c.want)'"
               $fails++

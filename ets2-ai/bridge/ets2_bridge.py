@@ -1271,13 +1271,18 @@ def run_autoteste(game_dir=None, saida=None, log=print):
         f"{'exe empacotado' if res['exe_empacotado'] else 'rodando do repo'}")
 
     # 1) banco de DLLs
-    avail = tele.available_dlls()
-    tags = sorted({f"{r} {t}" for (r, t, _a) in avail})
-    res["banco_dlls"] = len(avail)
-    step("banco de DLLs embutidas",
-         len(avail) > 0 or tele.find_bundled_dll() is not None,
-         f"{len(avail)} DLLs" + (f": {', '.join(tags)}" if tags else
-                                 " (banco ausente — DLL unica embutida)"))
+    try:
+        avail = tele.available_dlls()
+        tags = sorted({f"{r} {t}" for (r, t, _a) in avail})
+        res["banco_dlls"] = len(avail)
+        step("banco de DLLs embutidas",
+             len(avail) > 0 or tele.find_bundled_dll() is not None,
+             f"{len(avail)} DLLs" + (f": {', '.join(tags)}" if tags else
+                                     " (banco ausente — DLL unica)"))
+    except Exception as e:
+        res["banco_dlls"] = -1
+        step("banco de DLLs embutidas", False,
+             f"{e.__class__.__name__}: {e}")
 
     # 2) descoberta do jogo
     gd = None
@@ -1353,8 +1358,9 @@ def run_autoteste(game_dir=None, saida=None, log=print):
         cmd_s = _bench_local_ai(layers, seconds=0.3)
         res["oficial_inf_s"] = round(cmd_s, 1)
         step("politica oficial (bench)", cmd_s >= 50, f"{cmd_s:,.0f} inf/s")
-    except SystemExit as e:
-        step("politica oficial (bench)", False, str(e)[:150])
+    except (SystemExit, Exception) as e:
+        step("politica oficial (bench)", False,
+             f"{e.__class__.__name__}: {str(e)[:130]}")
     try:
         nano = load_nano()
         if nano is not None:
