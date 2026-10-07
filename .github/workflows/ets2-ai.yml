@@ -648,7 +648,8 @@ jobs:
 
           Visual C++ (SO se o AUTOTESTE reclamar):
             https://aka.ms/vs/17/release/vc_redist.x64.exe
-          LEIAME          ls -la ets2-ai/.cache/release/
+          LEIAME
+          ls -la ets2-ai/.cache/release/
           NOTES="$(python3 - <<'PY'
           import json
           m = json.load(open('ets2-ai/artifacts/metrics.json'))
