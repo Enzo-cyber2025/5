@@ -157,7 +157,7 @@ def test_caminho_do_jogo_busca_uma_vez_e_salva(tmp_path, monkeypatch):
     (game / "bin" / "win_x64").mkdir(parents=True)
     calls = {"n": 0}
 
-    def fake_dirs(extra=None):
+    def fake_dirs(extra=None, log=None, literal_scan=True):
         calls["n"] += 1
         return [game]
 
@@ -180,7 +180,8 @@ def test_caminho_do_jogo_busca_uma_vez_e_salva(tmp_path, monkeypatch):
     game2 = tmp_path / "g2"
     (game2 / "bin" / "win_x64").mkdir(parents=True)
     monkeypatch.setattr(t, "game_install_dirs",
-                        lambda extra=None: [game2])
+                        lambda extra=None, log=None, literal_scan=True:
+                        [game2])
     got3 = t.resolve_game_dir(log=None, state_file=sf)
     assert got3 == game2
     st3 = json.loads(sf.read_text())

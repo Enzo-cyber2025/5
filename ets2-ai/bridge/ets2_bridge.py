@@ -788,27 +788,39 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
 
         def worker():
             gd = tele.resolve_game_dir(log=log, force=force)
+            dll = None
+            if gd is not None:
+                # AUTO-INSTALL da telemetria junto com a busca: nada manual.
+                try:
+                    dll = tele.ensure_plugin(log=log, game_dir=gd)
+                except Exception as e:
+                    log(f"[dll] auto-install falhou: {e.__class__.__name__}")
             try:
                 keys, _src = _keymap_summary()
             except Exception:
                 keys = ""
             state["searching"] = False
             state["game"] = str(gd) if gd else None
-            root.after(0, lambda: _show(gd, keys))
+            root.after(0, lambda: _show(gd, keys, dll))
 
-        def _show(gd, keys):
+        def _show(gd, keys, dll=None):
             if gd is not None:
                 st = tele.load_game_state()
                 game_path.config(text=str(gd), fg=FG)
                 extra = (f"achado por: {st.get('found_by', '?')}  ·  "
                          f"usado {st.get('runs', 1)}x "
                          f"(busca completa so 1x)")
+                if dll:
+                    extra += ("\ntelemetria AUTO-INSTALADA no jogo"
+                              if dll.get("agora_instalou")
+                              else "\ntelemetria pronta (plugin no lugar)")
                 game_keys.config(text=f"{keys}\n{extra}", fg=MUT)
                 log(f"[jogo] {gd}")
             else:
                 game_path.config(
-                    text="ETS2 NAO encontrado — use --game-dir UMA vez "
-                         "(o caminho fica salvo)", fg="#E85D75")
+                    text="ETS2 NAO encontrado — ABRA o jogo e toque BUSCAR "
+                         "(instantâneo) ou BUSCAR DE NOVO (varredura "
+                         "completa)", fg="#E85D75")
             b1.config(state="normal", text="BUSCAR")
             b2.config(state="normal")
 
@@ -999,6 +1011,13 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
         except Exception as e:
             log(f"[ia-pc] pesos indisponiveis ({e.__class__.__name__}) — "
                 "IA no CELULAR via cabo (sem depuracao)")
+        # telemetria: instalacao AUTOMATICA na abertura (cache -> processo
+        # -> Steam -> varredura LITERAL do disco; nada manual, nunca)
+        try:
+            if sys.platform == "win32":
+                tele.ensure_plugin(log=log)
+        except Exception:
+            pass
 
     log("[info] BUSCAR localiza o jogo (busca completa 1x, depois usa o "
         "salvo)")

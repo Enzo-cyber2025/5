@@ -129,3 +129,121 @@ def test_train_respeita_teto_de_tempo():
                          max_sec=0.05)
     assert len(hist) < 500                  # cortou: orcamento manda
     assert len(layers) == 14                # arquitetura oficial intacta
+
+
+# --------------------------------------------------------------------------- #
+# telemetria 100% automatica (DLL auto-instalada pelo .exe, nada manual)
+# --------------------------------------------------------------------------- #
+def _fake_game(tmp_path):
+    game = tmp_path / "ETS2"
+    (game / "bin" / "win_x64").mkdir(parents=True)
+    return game
+
+
+def test_ensure_plugin_instala_e_eh_idempotente(tmp_path, monkeypatch):
+    from ets2ai import telemetry
+    game = _fake_game(tmp_path)
+    fake_dll = tmp_path / "scs-telemetry.dll"
+    fake_dll.write_bytes(b"PLUGIN-FAKE-123")
+    monkeypatch.setattr(telemetry, "find_bundled_dll", lambda: fake_dll)
+
+    r1 = telemetry.ensure_plugin(log=lambda m: None, game_dir=game)
+    dst = game / "bin" / "win_x64" / "plugins" / "scs-telemetry.dll"
+    assert r1["agora_instalou"] is True
+    assert dst.read_bytes() == b"PLUGIN-FAKE-123"     # local OFICIAL do plugin
+    mtime = dst.stat().st_mtime_ns
+
+    r2 = telemetry.ensure_plugin(log=lambda m: None, game_dir=game)
+    assert r2["agora_instalou"] is False              # ja estava no lugar
+    assert dst.stat().st_mtime_ns == mtime            # nao reescreveu
+
+
+def test_ensure_plugin_pasta_que_nao_e_jogo(tmp_path, monkeypatch):
+    from ets2ai import telemetry
+    fake_dll = tmp_path / "scs-telemetry.dll"
+    fake_dll.write_bytes(b"X")
+    monkeypatch.setattr(telemetry, "find_bundled_dll", lambda: fake_dll)
+    r = telemetry.ensure_plugin(log=lambda m: None,
+                                game_dir=tmp_path / "nao_e_jogo")
+    assert r is None
+
+
+def test_cache_negativo_pula_varredura_literal(tmp_path, monkeypatch):
+    """Varredura completa que nao achou o jogo NAO repete sozinha — mas as
+    vias baratas continuam (literal_scan=False) e o BUSCAR DE NOVO (force)
+    refaz tudo."""
+    from ets2ai import telemetry
+    calls = []
+
+    def fake_gid(extra=None, log=None, literal_scan=True):
+        calls.append(literal_scan)
+        return []                        # nao acha nada
+    monkeypatch.setattr(telemetry, "game_install_dirs", fake_gid)
+    st = tmp_path / "state.json"
+
+    assert telemetry.resolve_game_dir(log=lambda m: None, state_file=st) is None
+    assert calls == [True]               # 1a vez: varredura literal roda
+    saved = telemetry.load_game_state(st)
+    assert "scan_failed_at" in saved     # registrou a varredura vazia
+
+    assert telemetry.resolve_game_dir(log=lambda m: None, state_file=st) is None
+    assert calls == [True, False]        # 2a vez: so vias baratas
+
+    telemetry.resolve_game_dir(log=lambda m: None, state_file=st, force=True)
+    assert calls == [True, False, True]  # force refaz a literal
+
+
+def test_cache_negativo_desbloqueia_achando_pelo_processo(tmp_path, monkeypatch):
+    """Com o jogo ABERTO a deteccao por processo acha mesmo depois de uma
+    varredura vazia (e limpa o cache negativo)."""
+    from ets2ai import telemetry
+    game = _fake_game(tmp_path)
+    n = {"i": 0}
+
+    def fake_gid(extra=None, log=None, literal_scan=True):
+        n["i"] += 1
+        return [str(game)] if n["i"] > 1 else []
+    monkeypatch.setattr(telemetry, "game_install_dirs", fake_gid)
+    st = tmp_path / "state.json"
+    assert telemetry.resolve_game_dir(state_file=st) is None
+    got = telemetry.resolve_game_dir(state_file=st)      # 2a: processo achou
+    assert Path(got) == game
+    saved = telemetry.load_game_state(st)
+    assert saved.get("game_dir") == str(game)
+    assert "scan_failed_at" not in saved                  # limpou
+
+
+def test_acquire_reinstala_telemetria_durante_a_espera(monkeypatch):
+    """Enquanto espera o jogo, o auto-install da DLL e re-tentado (a cada
+    ~60 s) em vez de desistir na primeira."""
+    import types
+
+    class _Clock:                       # relogio falso: 30 s por sleep
+        def __init__(self):
+            self.t = 1000.0
+
+        def monotonic(self):
+            return self.t
+
+        def sleep(self, s):
+            self.t += 30.0
+    clock = _Clock()
+
+    def boom():
+        raise RuntimeError("processo ets2.exe nao encontrado")
+
+    installs = {"n": 0}
+
+    def fake_install(game_dir=None, auto=True, log=print):
+        installs["n"] += 1
+        return None
+    monkeypatch.setattr(practice.memtelemetry, "MemTelemetry", boom)
+    monkeypatch.setattr(practice.telemetry, "TelemetryReader", boom)
+    monkeypatch.setattr(practice, "_try_install_plugin", fake_install)
+    monkeypatch.setattr(practice, "time",
+                        types.SimpleNamespace(monotonic=clock.monotonic,
+                                              sleep=clock.sleep))
+    with pytest.raises(SystemExit):
+        practice._acquire_source("drive", "auto", lambda m: None,
+                                 wait_game=300)
+    assert installs["n"] >= 3           # tentou varias vezes (300 s falsos)

@@ -697,28 +697,16 @@ class PracticeLoop:
 
 
 def _try_install_plugin(game_dir=None, auto=True, log=print):
-    """Instala a DLL de telemetria embutida na pasta do jogo (Windows).
+    """Telemetria 100% AUTOMATICA: instala a DLL embutida na pasta do jogo.
 
-    A pasta do jogo vem do CACHE (resolve_game_dir): busca completa so na
-    1a execucao; depois usa o caminho salvo em ets2-ai-state.json."""
+    Nada manual: a pasta vem do CACHE -> processo rodando -> Steam ->
+    VARREDURA LITERAL do disco todo (a mesma descoberta dos controles).
+    Delega para telemetry.ensure_plugin (idempotente, verifica a copia)."""
     if os.name != "nt" or not auto:
         return None
     try:
-        gd = telemetry.resolve_game_dir(extra=game_dir, log=log)
-        if gd is None:
-            log("[pratica] pasta do ETS2 nao encontrada — use --game-dir "
-                "UMA vez (o caminho fica salvo)")
-            return None
-        if telemetry.plugin_dll_path(gd).exists():
-            return gd
-        dll = telemetry.find_bundled_dll()
-        if dll is None:
-            return gd
-        dst = telemetry.install_plugin(gd, dll)
-        log(f"[pratica] telemetria AUTO-INSTALADA: {dst} "
-            "(plugin RenCloud, MIT) — reinicie o ETS2 se ele estiver "
-            "aberto")
-        return gd
+        r = telemetry.ensure_plugin(log=log, game_dir=game_dir)
+        return Path(r["game_dir"]) if r else None
     except Exception as e:
         log(f"[pratica] auto-install da telemetria falhou: {e}")
     return None
@@ -737,7 +725,7 @@ def _acquire_source(mode, telemetry_mode, log, stop_event=None,
     SystemExit apos `wait_game` segundos sem telemetria.
     """
     deadline = time.monotonic() + max(0.0, float(wait_game))
-    dll_installed = False
+    last_install_try = 0.0        # re-tenta o auto-install a cada ~60 s
     last_err = ""
     attempt = 0
     while True:
@@ -771,8 +759,9 @@ def _acquire_source(mode, telemetry_mode, log, stop_event=None,
                 return reader.snapshot
             except RuntimeError as e:
                 last_err = str(e)
-                if not dll_installed and telemetry_mode == "auto":
-                    dll_installed = True
+                now = time.monotonic()
+                if (telemetry_mode == "auto" and now - last_install_try > 60.0):
+                    last_install_try = now
                     _try_install_plugin(game_dir, auto_install, log=log)
                     try:
                         reader = telemetry.TelemetryReader()
@@ -790,9 +779,9 @@ def _acquire_source(mode, telemetry_mode, log, stop_event=None,
                 f"{max(0.0, float(wait_game)):.0f} s esperando o jogo. "
                 f"Ultimo motivo: {last_err[:200]}\n"
                 "[pratica] Abra o ETS2 (ou REINICIE se a DLL acabou de ser "
-                "instalada) e clique COMEÇAR de novo. Se o jogo nao for "
-                "achado: --game-dir 'C:\\...\\Euro Truck Simulator 2'. "
-                "Veja PRATICA.md.")
+                "instalada — o plugin carrega na abertura do jogo) e clique "
+                "COMEÇAR de novo. A instalacao e AUTOMATICA (varredura do "
+                "disco); --game-dir so e excecao do CLI.")
         if stop_event is not None and stop_event.is_set():
             raise SystemExit("[pratica] PARAR clicado enquanto aguardava o jogo")
         if attempt == 1 or attempt % 5 == 0:

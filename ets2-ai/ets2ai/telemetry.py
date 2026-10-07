@@ -778,8 +778,17 @@ def resolve_game_dir(extra=None, log=None, state_file=None, force=False):
             log(f"[jogo] caminho SALVO (sem busca): {gd} "
                 f"[{st.get('found_by', '?')}, usado {st['runs']}x]")
         return Path(gd)
+    # CACHE NEGATIVO: a varredura LITERAL que ja rodou e nao achou NAO
+    # repete sozinha (so com force=True, o BUSCAR DE NOVO) — mas as vias
+    # BARATAS (jogo aberto, Steam, --game-dir) continuam vivas sempre.
+    cheap_only = bool(st.get("scan_failed_at")) and not force
+    if cheap_only and log:
+        log("[jogo] varredura completa anterior nao achou o ETS2 — usando "
+            "deteccao rapida (jogo aberto/Steam); BUSCAR DE NOVO refaz a "
+            "varredura do disco todo")
     cand, found_by = None, "busca"
-    for d in game_install_dirs(extra):
+    for d in game_install_dirs(extra, log=(None if cheap_only else log),
+                               literal_scan=not cheap_only):
         if dir_looks_like_game(d):
             cand = d
             if extra and Path(extra) == d:
@@ -788,9 +797,17 @@ def resolve_game_dir(extra=None, log=None, state_file=None, force=False):
                 found_by = "processo rodando"
             break
     if cand is None:
+        # registra a varredura vazia: proximas execucoes pulam os 10 min de
+        # busca (a descoberta por PROCESSO continua viva: basta abrir o jogo)
+        novo = dict(st)
+        novo["scan_failed_at"] = _time.time()
+        for k in ("game_dir", "found_by", "found_at", "last_seen", "runs"):
+            novo.pop(k, None)
+        save_game_state(novo, state_file)
         if log:
-            log("[jogo] ETS2 nao encontrado — passe --game-dir UMA vez; o "
-                "caminho fica salvo e nao busca mais")
+            log("[jogo] ETS2 NAO encontrado — ABRA o jogo e toque BUSCAR "
+                "(deteccao por processo e instantanea) ou BUSCAR DE NOVO "
+                "(varredura completa do disco todo)")
         return None
     novo = {"game_dir": str(cand), "found_by": found_by,
             "found_at": _time.time(), "last_seen": _time.time(), "runs": 1}
@@ -804,10 +821,13 @@ def resolve_game_dir(extra=None, log=None, state_file=None, force=False):
     return cand
 
 
-def game_install_dirs(extra=None):
+def game_install_dirs(extra=None, log=None, literal_scan=True):
     """Diretorios candidatos de instalacao do ETS2 (ordem de preferencia):
     --game-dir explicito > PROCESSO rodando (qualquer origem) > Steam >
-    varredura de pastas comuns (repacks)."""
+    VARREDURA LITERAL do disco todo (sem excluir nada) > rastros > padrao.
+
+    literal_scan=False: pula a varredura de 10 min (cache negativo) e usa
+    so as vias baratas — processo rodando, Steam, rastros, padrao."""
     out = []
     if extra:
         out.append(Path(extra))
@@ -836,8 +856,8 @@ def game_install_dirs(extra=None):
         libs += [r"C:\Program Files (x86)\Steam", r"C:\Program Files\Steam"]
         for lib in libs:
             out.append(Path(lib) / "steamapps" / "common" / "Euro Truck Simulator 2")
-    if _os.name == "nt":
-        for gd in _scan_all_disks():         # TODOS os discos/arquivos
+    if _os.name == "nt" and literal_scan:
+        for gd in _scan_all_disks(log=log or print):   # TODOS os discos
             if gd not in out:
                 out.append(gd)
         for gd in _game_hints():             # ultimo caso: rastros do jogo
@@ -883,3 +903,46 @@ def plugin_installed(game_dir=None):
         if plugin_dll_path(gd).exists():
             return gd
     return None
+
+
+def ensure_plugin(log=print, game_dir=None, force=False):
+    """Instalacao 100% AUTOMATICA da telemetria (nada manual):
+
+    1. acha a pasta do jogo (caminho salvo -> processo rodando -> Steam ->
+       VARREDURA LITERAL do disco todo, igual a descoberta dos controles);
+    2. copia a DLL RenCloud (MIT) EMBUTIDA no .exe para
+       <jogo>/bin/win_x64/plugins/  (local oficial do plugin);
+    3. confere tamanho e retorna o estado.
+
+    Idempotente e barata quando o caminho ja esta salvo. Retorna dict
+    {game_dir, dll, agora_instalou} ou None se o jogo nao foi achado.
+    """
+    gd = game_dir or resolve_game_dir(log=log, force=force)
+    if gd is None:
+        return None
+    gd = Path(gd)
+    if not dir_looks_like_game(gd):
+        log(f"[dll] {gd} nao tem bin/win_x64 — ignorando")
+        return None
+    dll_src = find_bundled_dll()
+    if dll_src is None:
+        log("[dll] DLL nao vem embutida neste pacote (build do repo?)")
+        return None
+    dst = plugin_dll_path(gd)
+    want = dll_src.stat().st_size
+    if dst.exists() and dst.stat().st_size == want:
+        return {"game_dir": str(gd), "dll": str(dst),
+                "agora_instalou": False}
+    try:
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(dll_src, dst)
+    except OSError as e:
+        log(f"[dll] falhou ao instalar em {dst}: {e}")
+        return None
+    ok = dst.exists() and dst.stat().st_size == want
+    if not ok:
+        log(f"[dll] instalada mas verificacao falhou: {dst}")
+        return None
+    log(f"[dll] telemetria AUTO-INSTALADA: {dst} — se o ETS2 estiver "
+        "aberto, REINICIE o jogo 1x (o plugin carrega na abertura)")
+    return {"game_dir": str(gd), "dll": str(dst), "agora_instalou": True}

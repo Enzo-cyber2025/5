@@ -16,11 +16,19 @@ tela, sem mexer no jogo: só o plugin oficial de telemetria da SCS + teclas.
 ## 0) Requisitos (uma vez só) — PLUG & PLAY
 
 1. **ETS2 original 64-bit** (Steam) no Windows.
-2. **Nada de DLL na mão**: o `ETS2-AI-bridge.exe` (v0.4.5+) já embute a DLL
-   de telemetria (plugin RenCloud, licença MIT) e **instala sozinho** na
-   pasta do jogo na primeira vez que você roda um modo de prática — ele
-   acha o ETS2 pelo registro do Steam. Se quiser, force o caminho com
-   `--game-dir`. (A DLL também é open source: RenCloud/scs-sdk-plugin.)
+2. **Zero passo manual (v0.4.9)**: o `ETS2-AI-bridge.exe` já embute a DLL
+   de telemetria (plugin RenCloud, licença MIT) e **instala sozinho na
+   pasta do jogo** — na **abertura do .exe**, no botão **BUSCAR** e ao
+   clicar **COMEÇAR**. Ele acha o ETS2 em cascata: caminho salvo →
+   **jogo aberto (processo)** → registro do Steam → **varredura LITERAL do
+   disco todo** (a mesma descoberta dos controles, sem excluir pasta
+   nenhuma) → rastros/atalhos. Se a varredura não achar, ela não repete
+   sozinha (só no BUSCAR DE NOVO), mas a detecção por processo continua
+   viva: **abra o jogo e toque BUSCAR**. `--game-dir` continua existindo
+   só como exceção do CLI. Se o jogo já estava aberto na instalação,
+   **reinicie-o 1×** (o plugin carrega na abertura). Primeiro o bridge
+   tenta a **leitura de memória** (sem DLL nenhuma no jogo); o plugin é o
+   plano B automático para versões sem pack de offsets.
 3. **Celular no cabo USB** (opcional, para a IA rodar no aparelho): o .exe
    também embute o `adb` e cria o túnel `adb reverse` sozinho — no app toque
    **BRIDGE → AUTO** e conecta (sem digitar IP, sem Wi-Fi). Requer
