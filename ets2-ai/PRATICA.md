@@ -433,3 +433,13 @@ falso. Suite: 130 passed, 1 skipped.
   fronteira 1.36/1.35, magic/fonte no parse. Suite: 133 passed, 1 skip.
 - Arquitetura devida ao RenCloud/scs-sdk-plugin (MIT), que nos inspirou
   e cujo layout de memoria mantemos compativel.
+
+## v0.4.19 — DLL universal como arquivo na release + guarda de exports
+
+- A DLL UNIVERSAL propria (v0.4.18) agora tambem e publicada como ASSET
+  da release: scs-telemetry-universal-x64.dll e -x86.dll (o bridge
+  instala sozinho; os arquivos sao para quem quer usar/inspecionar).
+- CI: dumpbin /exports confere que a DLL compilada EXPORTA
+  scs_telemetry_init (pega regressao do tipo "/DEF ignorado = DLL sem
+  exports" que o jogo recusaria em silencio).
+- LEIA-ME atualizado (telemetria universal incluida de fabrica).
