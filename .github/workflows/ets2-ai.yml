@@ -613,7 +613,7 @@ jobs:
 
   validacao-windows:
     name: Validacao Windows REAL (exe + DLL ideal + telemetria ponta a ponta)
-    needs: [windows-exe]
+    needs: [windows-exe, windows-exe-x86]
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
