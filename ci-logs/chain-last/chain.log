@@ -10,12 +10,5 @@ Starting upload for file model-weights.json
 Upload successful: model-weights.json (21MB)
 Dataset creation error: Invalid Owner Id
 
-$ kaggle kernels status enzoaimv/ets2ai-train
-[chain] GPU esgotada (27.2 h nos ultimos 7 dias) — SESSAO CPU de 5.5 h (treina ate a GPU voltar)
-[chain] orcamento gravado no kernel: 30,000,000,000 amostras, 5.5 h
-$ kaggle kernels push -p /home/runner/work/5/5/ets2-ai/.cache/kaggle-kernel
-The following are not valid dataset sources and could not be added to the kernel: ['enzoaimv/ets2ai-checkpoint']
-Kernel version 18 successfully pushed.  Please check progress at https://www.kaggle.com/code/enzoaimv/ets2ai-train
-
-[chain] SESSAO EMPURRADA: https://www.kaggle.com/code/enzoaimv/ets2ai-train
-[chain] ~12 h de 2x T4; a colheita acontece na proxima janela agendada (--harvest)
+CHAIN_WAIT_H=6.0
+[chain] CIRCUIT BREAKER: 3 colheitas sem saida — pausa de 6 h para diagnostico (log em ci-logs/chain-last/)
