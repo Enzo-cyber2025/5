@@ -380,12 +380,21 @@ class TelemetryReader:
         self._k32 = ctypes.windll.kernel32
         FILE_MAP_READ = 0x0004
         self._size = MMF_SIZE
+        # ANTES de chamar: sem restype/argtypes o ctypes assume int 32-bit e
+        # TRUNCA ponteiros/handles 64-bit (enderecos altos do Windows 64-bit
+        # viram lixo — bug real: telemetria nunca conectava em algumas maquinas)
+        self._k32.OpenFileMappingW.restype = wintypes.HANDLE
+        self._k32.OpenFileMappingW.argtypes = [
+            wintypes.DWORD, wintypes.BOOL, wintypes.LPCWSTR]
+        self._k32.MapViewOfFile.restype = ctypes.c_void_p
+        self._k32.MapViewOfFile.argtypes = [
+            wintypes.HANDLE, wintypes.DWORD, wintypes.DWORD, wintypes.DWORD,
+            ctypes.c_size_t]
         self._h = self._k32.OpenFileMappingW(FILE_MAP_READ, False, name)
         if not self._h:
             raise RuntimeError(
                 f"memoria '{name}' nao encontrada — o plugin scs-telemetry.dll "
                 "esta instalado em bin/win_x64/plugins? O jogo esta aberto?")
-        self._k32.OpenFileMappingW.restype = wintypes.HANDLE
         ptr = self._k32.MapViewOfFile(self._h, FILE_MAP_READ, 0, 0, self._size)
         if not ptr:
             raise RuntimeError("MapViewOfFile falhou")
@@ -1091,6 +1100,27 @@ def game_process_running():
     return _running_game_root() is not None
 
 
+def mmf_exists(name=MMF_NAME):
+    """True se a memoria compartilhada do plugin existir — ou seja, o jogo
+    REAL esta aberto com a telemetria ATIVA (o melhor cenario possivel)."""
+    if _os.name != "nt":
+        return False
+    try:
+        import ctypes
+        from ctypes import wintypes
+        k32 = ctypes.windll.kernel32
+        k32.OpenFileMappingW.restype = wintypes.HANDLE
+        k32.OpenFileMappingW.argtypes = [
+            wintypes.DWORD, wintypes.BOOL, wintypes.LPCWSTR]
+        h = k32.OpenFileMappingW(0x0004, False, name)      # FILE_MAP_READ
+        if h:
+            k32.CloseHandle(h)
+            return True
+    except Exception:
+        pass
+    return False
+
+
 def start_fake_game(fields=None, name=MMF_NAME, size=None):
     """Cria a memoria compartilhada Local\\SCSTelemetry com um quadro
     VALIDO — um "jogo falso": exatamente o que o plugin faz dentro do
@@ -1103,10 +1133,35 @@ def start_fake_game(fields=None, name=MMF_NAME, size=None):
     if _os.name != "nt":
         raise RuntimeError("start_fake_game exige Windows")
     import ctypes
+    from ctypes import wintypes
     k32 = ctypes.windll.kernel32
     size = int(size or MMF_SIZE)
     PAGE_READWRITE = 0x04
     FILE_MAP_ALL_ACCESS = 0xF001F
+    FILE_MAP_READ = 0x0004
+    # restype/argtypes ANTES das chamadas: sem eles o ctypes trunca
+    # ponteiros 64-bit (causa do access violation 0x...31AA0000)
+    k32.OpenFileMappingW.restype = wintypes.HANDLE
+    k32.OpenFileMappingW.argtypes = [
+        wintypes.DWORD, wintypes.BOOL, wintypes.LPCWSTR]
+    k32.CreateFileMappingW.restype = wintypes.HANDLE
+    k32.CreateFileMappingW.argtypes = [
+        wintypes.HANDLE, ctypes.c_void_p, wintypes.DWORD, wintypes.DWORD,
+        wintypes.DWORD, wintypes.LPCWSTR]
+    k32.MapViewOfFile.restype = ctypes.c_void_p
+    k32.MapViewOfFile.argtypes = [
+        wintypes.HANDLE, wintypes.DWORD, wintypes.DWORD, wintypes.DWORD,
+        ctypes.c_size_t]
+    # JOGO REAL ABERTO? A memoria do plugin JA existe — JAMAIS sobrescrever
+    # (CreateFileMappingW em nome existente reusa o mapeamento DELE e o
+    # frame falso corromperia a telemetria real / access violation).
+    hexistente = k32.OpenFileMappingW(FILE_MAP_READ, False, name)
+    if hexistente:
+        k32.CloseHandle(hexistente)
+        raise RuntimeError(
+            f"memoria '{name}' JA EXISTE — o jogo REAL esta aberto com o "
+            "plugin ATIVO: leia a telemetria real (TelemetryReader) em vez "
+            "de criar o jogo falso")
     h = k32.CreateFileMappingW(ctypes.c_void_p(-1), None, PAGE_READWRITE,
                                0, size, name)
     if not h:

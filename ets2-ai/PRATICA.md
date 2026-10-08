@@ -383,3 +383,30 @@ passed, 1 skipped (+2 testes de regressao do cache/--game-dir e x86).
   "alguns segundos" e parecia travado.
 - LEIA-ME: nota para repack (optijuegos e afins).
 - Suite: 130 passed, 1 skipped.
+
+## v0.4.17 — bug do ponteiro truncado (causa historica do "nao funciona")
+
+O autoteste do usuario (Windows 11, repack OptiJuegos em Downloads) revelou:
+DLL instalada CERTA (pasta certa, hash ok, VC++ ok) mas "telemetria REAL:
+access violation writing 0x...31AA0000". Causa raiz — ctypes em 64 bits:
+
+1. **Leitor REAL (TelemetryReader)**: MapViewOfFile sem restype → ctypes
+   assume retorno int 32-bit e TRUNCA ponteiros 64-bit (enderecos altos
+   viram lixo). No leitor, o restype do OpenFileMappingW era setado DEPOIS
+   da chamada (handle tambem truncado). Em maquinas cujo Windows mapeia a
+   view em endereco alto, A TELEMETRIA REAL NUNCA CONECTAVA — mesmo com a
+   DLL perfeita. Provavel causa do "ainda nao funciona" desde o inicio.
+2. **Jogo falso (start_fake_game)**: mesmo truncamento — access violation
+   ao ESCREVER o frame (0x...31AA0000 = endereco truncado).
+3. **Jogo real aberto**: CreateFileMappingW em nome EXISTENTE reusa o
+   mapeamento do plugin real — o frame falso sobrescreveria a telemetria
+   do jogo de verdade. Agora start_fake_game SE RECUSA se a memoria ja
+   existe; o passo 5 do autoteste detecta (mmf_exists) e le a TELEMETRIA
+   REAL do jogo aberto (teste melhor que o falso).
+4. **COPIAR RESULTADO nao copiava**: clipboard do Tk exige update() para
+   consolidar no Windows; agora confere (clipboard_get) e, se nao deu,
+   mostra o caminho do arquivo.
+
+Fixes: restype/argtypes declarados ANTES de todas as chamadas
+(OpenFileMappingW/CreateFileMappingW/MapViewOfFile) no leitor e no jogo
+falso. Suite: 130 passed, 1 skipped.

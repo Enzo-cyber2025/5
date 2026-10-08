@@ -746,7 +746,7 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
         logs.append(str(msg))
         _log_tee(msg)     # ets2-ai-log.txt ao lado do .exe (v0.4.12)
 
-    log(f"[sessao] v0.4.16 — log completo salvo em {_LOG_PATH} "
+    log(f"[sessao] v0.4.17 — log completo salvo em {_LOG_PATH} "
         "(envie este arquivo se algo falhar)")
 
     def card():
@@ -1304,7 +1304,7 @@ def _crash_dump(exc):
         import traceback
         p = _exe_dir() / "ets2-ai-erro.txt"
         p.write_text(f"{time.strftime('%Y-%m-%d %H:%M:%S')}\n"
-                     f"ETS2-AI bridge v0.4.16\n\n{traceback.format_exc()}",
+                     f"ETS2-AI bridge v0.4.17\n\n{traceback.format_exc()}",
                      encoding="utf-8")
         try:
             import tkinter.messagebox as _mb
@@ -1346,11 +1346,19 @@ def _show_autoteste(res, path):
     bar.pack(fill="x", padx=16, pady=(4, 12))
 
     def copiar():
-        top.clipboard_clear()
-        top.clipboard_append(body)
-        top.update_idletasks()           # segura o clipboard apos fechar
-        st.config(text="COPIADO! Agora cole no chat (Ctrl+V) e envie",
-                  fg="#7ED957")
+        ok = False
+        try:
+            top.clipboard_clear()
+            top.clipboard_append(body)
+            top.update()   # consolida a troca no Windows (sem isto o
+                           # conteudo se perde ao fechar a janela)
+            ok = top.clipboard_get().strip() == body.strip()
+        except Exception:
+            ok = False
+        st.config(text=("COPIADO! Agora cole no chat (Ctrl+V) e envie"
+                        if ok else
+                        "Nao deu para copiar — abra o arquivo: " + str(path)),
+                  fg="#7ED957" if ok else "#FFB84D")
 
     def abrir_pasta():
         try:
@@ -1505,21 +1513,33 @@ def run_autoteste(game_dir=None, saida=None, log=print):
     # 5) telemetria REAL (jogo falso na memoria compartilhada)
     if sys.platform == "win32":
         try:
-            _frame, stop = tele.start_fake_game()
-            try:
+            if tele.mmf_exists():
+                # JOGO REAL ABERTO com o plugin ATIVO: a memoria do jogo
+                # existe — le a TELEMETRIA DE VERDADE (teste melhor que o
+                # falso; nunca sobrescreve a memoria do jogo)
                 snap = tele.TelemetryReader().snapshot()
-                ok = (snap.get("sdk_active")
-                      and abs(snap["speed"] - 17.5) < 1e-3
-                      and abs(snap["fuel"] - 380.5) < 1e-3
-                      and abs(snap["user_steer"] - 0.25) < 1e-3
-                      and snap.get("on_job")
-                      and snap.get("game") == "ets2")
+                ok = bool(snap.get("sdk_active")) and \
+                    snap.get("game") == "ets2"
                 res["telemetria"] = "PASS" if ok else "FAIL"
-                step("telemetria REAL (memoria do jogo falso)", ok,
+                step("telemetria REAL (do JOGO ABERTO)", ok,
                      f"speed={snap.get('speed')} fuel={snap.get('fuel')} "
                      f"steer={snap.get('user_steer')} jogo={snap.get('game')}")
-            finally:
-                stop()
+            else:
+                _frame, stop = tele.start_fake_game()
+                try:
+                    snap = tele.TelemetryReader().snapshot()
+                    ok = (snap.get("sdk_active")
+                          and abs(snap["speed"] - 17.5) < 1e-3
+                          and abs(snap["fuel"] - 380.5) < 1e-3
+                          and abs(snap["user_steer"] - 0.25) < 1e-3
+                          and snap.get("on_job")
+                          and snap.get("game") == "ets2")
+                    res["telemetria"] = "PASS" if ok else "FAIL"
+                    step("telemetria REAL (memoria do jogo falso)", ok,
+                         f"speed={snap.get('speed')} fuel={snap.get('fuel')} "
+                         f"steer={snap.get('user_steer')} jogo={snap.get('game')}")
+                finally:
+                    stop()
         except Exception as e:
             res["telemetria"] = "FAIL"
             step("telemetria REAL (memoria do jogo falso)", False,
