@@ -316,3 +316,42 @@ def test_game_dir_invalido_cai_na_descoberta(tmp_path, monkeypatch):
     # o caminho invalido NAO entra no cache
     st = T.load_game_state()
     assert st.get("game_dir") != str(tmp_path / "nao-existe")
+
+
+# --------------------------------------------------------------------------- #
+# v0.4.15: com 2+ instalacoes, o JOGO ABERTO manda sobre o cache salvo
+# (a DLL tem que ir para o jogo que o usuario esta jogando)
+# --------------------------------------------------------------------------- #
+def test_jogo_rodando_vence_cache_de_outra_instalacao(tmp_path, monkeypatch):
+    jogo_antigo = _game(tmp_path, "exe_version_info=1.41.2.1s\n")
+    jogo_da_vez = _game(tmp_path, "exe_version_info=1.61.1.1s\n")
+    monkeypatch.chdir(tmp_path)
+    # cache aponta para a instalacao antiga
+    T.save_game_state({"game_dir": str(jogo_antigo), "found_by": "steam",
+                       "found_at": 1.0, "last_seen": 1.0, "runs": 5})
+    # ... mas o processo rodando e o 1.61 (outra instalacao)
+    monkeypatch.setattr(T, "_running_game_root", lambda: jogo_da_vez)
+    monkeypatch.setattr(T, "_os", type("M", (), {"name": "nt"}))
+    msgs = []
+    got = T.resolve_game_dir(log=msgs.append)
+    assert str(got) == str(jogo_da_vez)
+    assert any("ABERTO" in m for m in msgs)
+    st = T.load_game_state()
+    assert st["game_dir"] == str(jogo_da_vez)      # cache corrigido
+
+    # sem jogo rodando: o cache (agora o certo) e usado normalmente
+    monkeypatch.setattr(T, "_running_game_root", lambda: None)
+    got2 = T.resolve_game_dir(log=lambda m: None)
+    assert str(got2) == str(jogo_da_vez)
+
+
+def test_jogo_rodando_igual_ao_cache_nao_reescreve(tmp_path, monkeypatch):
+    jogo = _game(tmp_path, "exe_version_info=1.53.0.4s\n")
+    monkeypatch.chdir(tmp_path)
+    T.save_game_state({"game_dir": str(jogo), "found_by": "steam",
+                       "found_at": 1.0, "last_seen": 1.0, "runs": 7})
+    monkeypatch.setattr(T, "_running_game_root", lambda: jogo)
+    monkeypatch.setattr(T, "_os", type("M", (), {"name": "nt"}))
+    got = T.resolve_game_dir(log=lambda m: None)
+    assert str(got) == str(jogo)
+    assert T.load_game_state()["runs"] == 8        # so incrementou

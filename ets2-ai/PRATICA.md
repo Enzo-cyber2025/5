@@ -356,3 +356,13 @@ passed, 1 skipped (+2 testes de regressao do cache/--game-dir e x86).
 - **Autoteste reporta a maquina**: versao do Windows + 32/64-bit do
   processo (vai no COPIAR RESULTADO — diagnostico sem palpite).
 - Suite: 128 passed, 1 skipped.
+
+## v0.4.15 — o jogo ABERTO manda sobre o cache (DLL na instalacao certa)
+
+- Sintoma relatado pelo usuario: "nao instala a telemetria (e nao e a
+  correta)". Causa provavel: com 2+ instalacoes do ETS2 no PC (Steam +
+  repack), o cache salvava UMA e a DLL era instalada nela para sempre —
+  mesmo quando o usuario jogava a OUTRA. Agora o processo rodando
+  (eurotrucks2.exe) tem prioridade absoluta: se o jogo aberto esta em
+  outra pasta, o cache e corrigido na hora e a DLL vai para o jogo da
+  vez. +2 testes de regressao; suite: 130 passed, 1 skipped.

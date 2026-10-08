@@ -795,6 +795,27 @@ def resolve_game_dir(extra=None, log=None, state_file=None, force=False):
         if log:
             log(f"[jogo] --game-dir {ex} nao parece o ETS2 (sem "
                 "bin/win_x64) — seguindo com a descoberta normal")
+    # O JOGO ABERTO MANDA (v0.4.15): com 2+ instalacoes no PC (Steam +
+    # repack), o cache podia ficar preso na copia ERRADA e a DLL era
+    # instalada num jogo que ninguem esta jogando. O processo rodando
+    # (eurotrucks2.exe) e sempre o jogo da vez — cache atualiza para ele.
+    if _os.name == "nt" and not force:
+        run_root = _running_game_root()
+        if run_root is not None and dir_looks_like_game(run_root) \
+                and str(run_root) != str(gd or ""):
+            novo = {"game_dir": str(run_root),
+                    "found_by": "processo rodando",
+                    "found_at": _time.time(), "last_seen": _time.time(),
+                    "runs": 1}
+            for k in ("telemetry", "pack", "mode"):
+                if k in st:
+                    novo[k] = st[k]
+            save_game_state(novo, state_file)
+            if log:
+                log(f"[jogo] ETS2 ABERTO em {run_root} — este e o jogo da "
+                    f"vez (cache apontava para {gd or 'nada'}; a DLL sera "
+                    "instalada NESTE)")
+            return run_root
     if not force and gd and dir_looks_like_game(gd):
         st["last_seen"] = _time.time()
         st["runs"] = int(st.get("runs", 0)) + 1
