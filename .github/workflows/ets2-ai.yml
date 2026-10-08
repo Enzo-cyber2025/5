@@ -397,22 +397,26 @@ jobs:
       - name: Dependencias
         run: |
           pip install --retries 5 --timeout 90 pyinstaller==6.11.1 numpy==2.2.6 pywin32==308
-      - name: Compila DLL UNIVERSAL de telemetria (ets2ai, x64 + x86)
+      - uses: ilammy/msvc-dev-cmd@v1        # MSVC no PATH (vswhere robusto)
+        with:
+          arch: x64
+      - name: Compila DLL UNIVERSAL x64 (ets2ai)
         shell: cmd
         run: |
-          rem VS 2022 do runner (Enterprise; Community de reserva; vswhere de ultima)
-          set "VSPATH=C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
-          if not exist "%VSPATH%\VC\Auxiliary\Build\vcvars64.bat" set "VSPATH=C:\Program Files\Microsoft Visual Studio\2022\Community"
-          if not exist "%VSPATH%\VC\Auxiliary\Build\vcvars64.bat" for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -property installationPath`) do set "VSPATH=%%i"
-          if not exist "%VSPATH%\VC\Auxiliary\Build\vcvars64.bat" exit /b 1
-          mkdir ets2-ai\bridge\dlls\ets2ai\universal\x64 ets2-ai\bridge\dlls\ets2ai\universal\x86
-          call "%VSPATH%\VC\Auxiliary\Build\vcvars64.bat" || exit /b 1
+          mkdir ets2-ai\bridge\dlls\ets2ai\universal\x64 2>nul
           cl /nologo /LD /O2 /W3 /DUNICODE ets2-ai\ets2ai\universal_plugin.c /DEF:ets2-ai\ets2ai\universal.def /Fe:ets2-ai\bridge\dlls\ets2ai\universal\x64\scs-telemetry.dll /link kernel32.lib user32.lib || exit /b 1
-          call "%VSPATH%\VC\Auxiliary\Build\vcvarsx86.bat" || exit /b 1
-          cl /nologo /LD /O2 /W3 /DUNICODE ets2-ai\ets2ai\universal_plugin.c /DEF:ets2-ai\ets2ai\universal.def /Fe:ets2-ai\bridge\dlls\ets2ai\universal\x86\scs-telemetry.dll /link kernel32.lib user32.lib || exit /b 1
           if not exist ets2-ai\bridge\dlls\ets2ai\universal\x64\scs-telemetry.dll exit /b 1
+          dir /b ets2-ai\bridge\dlls\ets2ai\universal\x64
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: amd64_x86                     # cross: gera 32-bit do host 64
+      - name: Compila DLL UNIVERSAL x86 (ets2ai)
+        shell: cmd
+        run: |
+          mkdir ets2-ai\bridge\dlls\ets2ai\universal\x86 2>nul
+          cl /nologo /LD /O2 /W3 /DUNICODE ets2-ai\ets2ai\universal_plugin.c /DEF:ets2-ai\ets2ai\universal.def /Fe:ets2-ai\bridge\dlls\ets2ai\universal\x86\scs-telemetry.dll /link kernel32.lib user32.lib || exit /b 1
           if not exist ets2-ai\bridge\dlls\ets2ai\universal\x86\scs-telemetry.dll exit /b 1
-          dir /b ets2-ai\bridge\dlls\ets2ai\universal\x64 ets2-ai\bridge\dlls\ets2ai\universal\x86
+          dir /b ets2-ai\bridge\dlls\ets2ai\universal\x86
       - name: Baixa telemetria (TODAS as releases do plugin, MIT) + adb
         shell: pwsh
         env:
@@ -532,22 +536,26 @@ jobs:
       - name: Dependencias
         run: |
           pip install --retries 5 --timeout 90 pyinstaller==6.11.1 numpy==2.2.6 pywin32==308
-      - name: Compila DLL UNIVERSAL de telemetria (ets2ai, x64 + x86)
+      - uses: ilammy/msvc-dev-cmd@v1        # MSVC no PATH (vswhere robusto)
+        with:
+          arch: x64
+      - name: Compila DLL UNIVERSAL x64 (ets2ai)
         shell: cmd
         run: |
-          rem VS 2022 do runner (Enterprise; Community de reserva; vswhere de ultima)
-          set "VSPATH=C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
-          if not exist "%VSPATH%\VC\Auxiliary\Build\vcvars64.bat" set "VSPATH=C:\Program Files\Microsoft Visual Studio\2022\Community"
-          if not exist "%VSPATH%\VC\Auxiliary\Build\vcvars64.bat" for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -property installationPath`) do set "VSPATH=%%i"
-          if not exist "%VSPATH%\VC\Auxiliary\Build\vcvars64.bat" exit /b 1
-          mkdir ets2-ai\bridge\dlls\ets2ai\universal\x64 ets2-ai\bridge\dlls\ets2ai\universal\x86
-          call "%VSPATH%\VC\Auxiliary\Build\vcvars64.bat" || exit /b 1
+          mkdir ets2-ai\bridge\dlls\ets2ai\universal\x64 2>nul
           cl /nologo /LD /O2 /W3 /DUNICODE ets2-ai\ets2ai\universal_plugin.c /DEF:ets2-ai\ets2ai\universal.def /Fe:ets2-ai\bridge\dlls\ets2ai\universal\x64\scs-telemetry.dll /link kernel32.lib user32.lib || exit /b 1
-          call "%VSPATH%\VC\Auxiliary\Build\vcvarsx86.bat" || exit /b 1
-          cl /nologo /LD /O2 /W3 /DUNICODE ets2-ai\ets2ai\universal_plugin.c /DEF:ets2-ai\ets2ai\universal.def /Fe:ets2-ai\bridge\dlls\ets2ai\universal\x86\scs-telemetry.dll /link kernel32.lib user32.lib || exit /b 1
           if not exist ets2-ai\bridge\dlls\ets2ai\universal\x64\scs-telemetry.dll exit /b 1
+          dir /b ets2-ai\bridge\dlls\ets2ai\universal\x64
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: amd64_x86                     # cross: gera 32-bit do host 64
+      - name: Compila DLL UNIVERSAL x86 (ets2ai)
+        shell: cmd
+        run: |
+          mkdir ets2-ai\bridge\dlls\ets2ai\universal\x86 2>nul
+          cl /nologo /LD /O2 /W3 /DUNICODE ets2-ai\ets2ai\universal_plugin.c /DEF:ets2-ai\ets2ai\universal.def /Fe:ets2-ai\bridge\dlls\ets2ai\universal\x86\scs-telemetry.dll /link kernel32.lib user32.lib || exit /b 1
           if not exist ets2-ai\bridge\dlls\ets2ai\universal\x86\scs-telemetry.dll exit /b 1
-          dir /b ets2-ai\bridge\dlls\ets2ai\universal\x64 ets2-ai\bridge\dlls\ets2ai\universal\x86
+          dir /b ets2-ai\bridge\dlls\ets2ai\universal\x86
       - name: Baixa telemetria (TODAS as releases do plugin, MIT) + adb
         shell: pwsh
         env:
