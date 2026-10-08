@@ -340,3 +340,19 @@ passed, 1 skipped (+2 testes de regressao do cache/--game-dir e x86).
   enviar quando algo falhar + link do VC++).
 - step() do autoteste agora suporta SKIP (ok=None).
 - Suite: 128 passed, 1 skipped.
+
+## v0.4.14 — EXE 32-bit + blindagem dos erros de uso mais comuns
+
+- **ETS2-AI-bridge-x86.exe**: build 32-bit (Python x86 + numpy 2.2.6
+  win32) publicado junto do x64 — para Windows antigo 32-bit (o unico
+  cenario em que o exe x64 nem abre; cobre ETS2 x86 antigo no PC velho).
+  O CI valida o x86 tambem (autoteste do exe 32-bit em Windows real).
+- **LEIA-ME atualizado**: EXTRAIR do ZIP antes de abrir (rodar de dentro
+  do ZIP perde o estado), SmartScreen ("Windows protegeu seu PC" →
+  Mais informacoes → Executar assim mesmo) e o exe x86.
+- **Link da PROVA nas notas da release**: URL do run que validou ESTA
+  build (exe inteiro contra 7 versoes do ETS2 + o 32-bit) — no lugar do
+  QEMU, que e tecnicamente impossivel nos runners (sem KVM).
+- **Autoteste reporta a maquina**: versao do Windows + 32/64-bit do
+  processo (vai no COPIAR RESULTADO — diagnostico sem palpite).
+- Suite: 128 passed, 1 skipped.

@@ -746,7 +746,7 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
         logs.append(str(msg))
         _log_tee(msg)     # ets2-ai-log.txt ao lado do .exe (v0.4.12)
 
-    log(f"[sessao] v0.4.13 — log completo salvo em {_LOG_PATH} "
+    log(f"[sessao] v0.4.14 — log completo salvo em {_LOG_PATH} "
         "(envie este arquivo se algo falhar)")
 
     def card():
@@ -1300,7 +1300,7 @@ def _crash_dump(exc):
         import traceback
         p = _exe_dir() / "ets2-ai-erro.txt"
         p.write_text(f"{time.strftime('%Y-%m-%d %H:%M:%S')}\n"
-                     f"ETS2-AI bridge v0.4.13\n\n{traceback.format_exc()}",
+                     f"ETS2-AI bridge v0.4.14\n\n{traceback.format_exc()}",
                      encoding="utf-8")
         try:
             import tkinter.messagebox as _mb
@@ -1414,6 +1414,13 @@ def run_autoteste(game_dir=None, saida=None, log=print):
 
     res = {"so": sys.platform, "python": sys.version.split()[0],
            "exe_empacotado": bool(hasattr(sys, "_MEIPASS")), "steps": []}
+    try:                       # info da maquina (v0.4.14): vai no COPIAR
+        import platform as _pl
+        res["processo"] = _pl.architecture()[0]     # 32bit/64bit do .exe
+        if sys.platform == "win32":
+            res["windows"] = " ".join(str(x) for x in _pl.win32_ver()[:3])
+    except Exception:
+        pass
     log(f"[autoteste] bridge {sys.platform} · python "
         f"{sys.version.split()[0]} · "
         f"{'exe empacotado' if res['exe_empacotado'] else 'rodando do repo'}")
