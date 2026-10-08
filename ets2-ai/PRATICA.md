@@ -410,3 +410,26 @@ access violation writing 0x...31AA0000". Causa raiz — ctypes em 64 bits:
 Fixes: restype/argtypes declarados ANTES de todas as chamadas
 (OpenFileMappingW/CreateFileMappingW/MapViewOfFile) no leitor e no jogo
 falso. Suite: 130 passed, 1 skipped.
+
+## v0.4.18 — DLL de telemetria UNIVERSAL (produzida por nos)
+
+- **ets2ai/universal_plugin.c**: plugin de telemetria PROPRIE, ~400 linhas
+  de C puro (Win32 + SDK oficial SCS), que elimina a matrix de releases
+  para 1.36+: registra TODOS os canais da era truck.* e o JOGO ativa os
+  que conhecer (canal inexistente so falha o registro — inofensivo). O
+  jogo pode atualizar para qualquer versao futura que a MESMA DLL
+  continua funcionando (a interface 1.00/1.01 do SDK nunca mudou desde
+  1.36).
+- Escreve na MESMA memoria (Local\SCSTelemetry) no MESMO layout do
+  leitor (TelemetryMap), com MAGIC proprio no offset 1472 ("AUI1") — o
+  parse() reporta a origem ("fonte": ets2ai-universal | oficial).
+- Compilada no CI (MSVC, x64 + x86) e embutida no banco como
+  ets2ai/universal — PRIMEIRA escolha para 1.36+; jogos < 1.36 e
+  reserva de rotacao seguem no banco oficial (RenCloud + nlhans, MIT).
+- on_job: evento configuration "job" (atributos vazios = fim) +
+  gameplay job.delivered/cancelled — mesma semantica do RenCloud.
+- Testes: anti-drift (offsets do C tem que bater EXATAMENTE com os da
+  TelemetryMap — se qualquer lado mudar, o teste obriga a sincronizar),
+  fronteira 1.36/1.35, magic/fonte no parse. Suite: 133 passed, 1 skip.
+- Arquitetura devida ao RenCloud/scs-sdk-plugin (MIT), que nos inspirou
+  e cujo layout de memoria mantemos compativel.

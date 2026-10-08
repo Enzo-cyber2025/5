@@ -27,6 +27,8 @@ from pathlib import Path
 MMF_NAME = "Local\\SCSTelemetry"
 MMF_SIZE = 32 * 1024
 MMF_MIN_REVID = 12          # layout abaixo vale para telemetry_plugin_revision >= 12
+UNIVERSAL_MAGIC = 0x31495541   # "AUI1": frame escrito pela DLL UNIVERSAL ets2ai
+                               # (offset 1472 = _pad_f; RenCloud deixa zero)
 STR = 64                    # stringsize
 
 
@@ -313,8 +315,11 @@ def parse(buf):
         raise RuntimeError(
             f"plugin revisao {m.plugin_revision} < {MMF_MIN_REVID}: baixe a "
             "versao atual do scs-sdk-plugin (RenCloud)")
+    fonte = "ets2ai-universal" if int.from_bytes(
+        bytes(m._pad_f[:4]), "little") == UNIVERSAL_MAGIC else "oficial"
     return {
         "sdk_active": True,
+        "fonte": fonte,
         "paused": bool(m.paused),
         "ticks": int(m.time),
         "game": {1: "ets2", 2: "ats"}.get(int(m.game_id), "?"),
@@ -975,6 +980,10 @@ def plugin_installed(game_dir=None):
 # jogo antigo — ou vice-versa — e recusada pelo jogo).
 DLL_BANK = [
     # (repo, tag da release, versao minima do jogo suportada)
+    # DLL UNIVERSAL NOSSA (ets2ai/universal_plugin.c, compilada no CI):
+    # 1 DLL para TODAS as versoes 1.36+ — registra todos os canais da era
+    # truck.* e o jogo ativa os que conhecer. Jogos < 1.36: banco oficial.
+    ("ets2ai", "universal", (1, 36)),
     ("rencloud", "V.1.12.1", (1, 46)),   # SDK 1.14 + fix race; 1.46 -> atual
     ("rencloud", "V.1.12", (1, 46)),     # SDK 1.14, offsets novos
     ("rencloud", "V.1.11.1", (1, 45)),   # SDK 1.14
