@@ -477,7 +477,10 @@ def _running_game_root():
         pid = None
         ok = k32.Process32First(snap, ctypes.byref(pe))
         while ok:
-            if pe.szExeFile.decode(errors="ignore").lower() == "eurotrucks2.exe":
+            # eurotrucks2.exe = Steam/repack; ets2.exe = alguns lancadores
+            # de repack (o caminho do processo continua validando a pasta)
+            if pe.szExeFile.decode(errors="ignore").lower() in (
+                    "eurotrucks2.exe", "ets2.exe"):
                 pid = pe.th32ProcessID
                 break
             ok = k32.Process32Next(snap, ctypes.byref(pe))

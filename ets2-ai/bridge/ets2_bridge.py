@@ -746,7 +746,7 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
         logs.append(str(msg))
         _log_tee(msg)     # ets2-ai-log.txt ao lado do .exe (v0.4.12)
 
-    log(f"[sessao] v0.4.15 — log completo salvo em {_LOG_PATH} "
+    log(f"[sessao] v0.4.16 — log completo salvo em {_LOG_PATH} "
         "(envie este arquivo se algo falhar)")
 
     def card():
@@ -1115,7 +1115,11 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
             if state.get("primeira_execucao") and sys.platform == "win32":
                 state["primeira_execucao"] = False
                 log("[autoteste] primeira execucao: diagnostico "
-                    "automatico completo (alguns segundos)...")
+                    "automatico completo...")
+                log("[autoteste] na 1a vez a VARREDURA DO DISCO INTEIRO "
+                    "pode levar alguns MINUTOS (repack/sem Steam e assim "
+                    "que acha) — nao feche o app, o progresso aparece "
+                    "aqui embaixo")
                 res = run_autoteste(log=log)
                 out = str(_exe_dir() / "autoteste-resultado.json")
                 root.after(0, lambda: _show_autoteste(res or {}, out))
@@ -1300,7 +1304,7 @@ def _crash_dump(exc):
         import traceback
         p = _exe_dir() / "ets2-ai-erro.txt"
         p.write_text(f"{time.strftime('%Y-%m-%d %H:%M:%S')}\n"
-                     f"ETS2-AI bridge v0.4.15\n\n{traceback.format_exc()}",
+                     f"ETS2-AI bridge v0.4.16\n\n{traceback.format_exc()}",
                      encoding="utf-8")
         try:
             import tkinter.messagebox as _mb

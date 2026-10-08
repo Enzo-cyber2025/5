@@ -366,3 +366,20 @@ passed, 1 skipped (+2 testes de regressao do cache/--game-dir e x86).
   (eurotrucks2.exe) tem prioridade absoluta: se o jogo aberto esta em
   outra pasta, o cache e corrigido na hora e a DLL vai para o jogo da
   vez. +2 testes de regressao; suite: 130 passed, 1 skipped.
+
+## v0.4.16 — caso OPTIJUEGOS no CI (repack portatil, jogo ABERTO)
+
+- Usuario usa a versao do OPTIJUEGOS (repack portatil, sem Steam; hoje
+  esses repacks sao 1.50-1.61 pre-instalados, rodam pelo
+  eurotrucks2.exe em bin/win_x64 — igual ao Steam por dentro).
+- **Novo caso no validacao-windows**: duas instalacoes (Steam 1.61 fake
+  + repack 1.45 em C:\Juegos), cache ENVENENADO apontando para a do
+  Steam, e o jogo do repack ABERTO (processo eurotrucks2.exe de
+  verdade, cmd renomeado oculto). O exe tem que: seguir o jogo aberto
+  (nao o cache), analisar o repack e instalar a DLL certa dele.
+- `_running_game_root` aceita tambem "ets2.exe" (lancadores de repack).
+- Mensagem da 1a execucao honesta: a varredura do disco inteiro (sem
+  Steam nao ha atalho) pode levar ALGUNS MINUTOS — antes dizia
+  "alguns segundos" e parecia travado.
+- LEIA-ME: nota para repack (optijuegos e afins).
+- Suite: 130 passed, 1 skipped.
