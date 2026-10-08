@@ -404,7 +404,7 @@ jobs:
         shell: cmd
         run: |
           mkdir ets2-ai\bridge\dlls\ets2ai\universal\x64 2>nul
-          cl /nologo /LD /O2 /W3 /DUNICODE ets2-ai\ets2ai\universal_plugin.c /DEF:ets2-ai\ets2ai\universal.def /Fe:ets2-ai\bridge\dlls\ets2ai\universal\x64\scs-telemetry.dll /link kernel32.lib user32.lib || exit /b 1
+          cl /nologo /LD /O2 /W3 /utf-8 /DUNICODE ets2-ai\ets2ai\universal_plugin.c /Fe:ets2-ai\bridge\dlls\ets2ai\universal\x64\scs-telemetry.dll /link /DEF:ets2-ai\ets2ai\universal.def kernel32.lib user32.lib || exit /b 1
           if not exist ets2-ai\bridge\dlls\ets2ai\universal\x64\scs-telemetry.dll exit /b 1
           dir /b ets2-ai\bridge\dlls\ets2ai\universal\x64
       - uses: ilammy/msvc-dev-cmd@v1
@@ -414,7 +414,7 @@ jobs:
         shell: cmd
         run: |
           mkdir ets2-ai\bridge\dlls\ets2ai\universal\x86 2>nul
-          cl /nologo /LD /O2 /W3 /DUNICODE ets2-ai\ets2ai\universal_plugin.c /DEF:ets2-ai\ets2ai\universal.def /Fe:ets2-ai\bridge\dlls\ets2ai\universal\x86\scs-telemetry.dll /link kernel32.lib user32.lib || exit /b 1
+          cl /nologo /LD /O2 /W3 /utf-8 /DUNICODE ets2-ai\ets2ai\universal_plugin.c /Fe:ets2-ai\bridge\dlls\ets2ai\universal\x86\scs-telemetry.dll /link /DEF:ets2-ai\ets2ai\universal.def kernel32.lib user32.lib || exit /b 1
           if not exist ets2-ai\bridge\dlls\ets2ai\universal\x86\scs-telemetry.dll exit /b 1
           dir /b ets2-ai\bridge\dlls\ets2ai\universal\x86
       - name: Baixa telemetria (TODAS as releases do plugin, MIT) + adb
@@ -543,7 +543,7 @@ jobs:
         shell: cmd
         run: |
           mkdir ets2-ai\bridge\dlls\ets2ai\universal\x64 2>nul
-          cl /nologo /LD /O2 /W3 /DUNICODE ets2-ai\ets2ai\universal_plugin.c /DEF:ets2-ai\ets2ai\universal.def /Fe:ets2-ai\bridge\dlls\ets2ai\universal\x64\scs-telemetry.dll /link kernel32.lib user32.lib || exit /b 1
+          cl /nologo /LD /O2 /W3 /utf-8 /DUNICODE ets2-ai\ets2ai\universal_plugin.c /Fe:ets2-ai\bridge\dlls\ets2ai\universal\x64\scs-telemetry.dll /link /DEF:ets2-ai\ets2ai\universal.def kernel32.lib user32.lib || exit /b 1
           if not exist ets2-ai\bridge\dlls\ets2ai\universal\x64\scs-telemetry.dll exit /b 1
           dir /b ets2-ai\bridge\dlls\ets2ai\universal\x64
       - uses: ilammy/msvc-dev-cmd@v1
@@ -553,7 +553,7 @@ jobs:
         shell: cmd
         run: |
           mkdir ets2-ai\bridge\dlls\ets2ai\universal\x86 2>nul
-          cl /nologo /LD /O2 /W3 /DUNICODE ets2-ai\ets2ai\universal_plugin.c /DEF:ets2-ai\ets2ai\universal.def /Fe:ets2-ai\bridge\dlls\ets2ai\universal\x86\scs-telemetry.dll /link kernel32.lib user32.lib || exit /b 1
+          cl /nologo /LD /O2 /W3 /utf-8 /DUNICODE ets2-ai\ets2ai\universal_plugin.c /Fe:ets2-ai\bridge\dlls\ets2ai\universal\x86\scs-telemetry.dll /link /DEF:ets2-ai\ets2ai\universal.def kernel32.lib user32.lib || exit /b 1
           if not exist ets2-ai\bridge\dlls\ets2ai\universal\x86\scs-telemetry.dll exit /b 1
           dir /b ets2-ai\bridge\dlls\ets2ai\universal\x86
       - name: Baixa telemetria (TODAS as releases do plugin, MIT) + adb

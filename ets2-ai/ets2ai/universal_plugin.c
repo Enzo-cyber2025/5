@@ -208,25 +208,24 @@ static void SCS_CDECL on_channel(const scs_string_t name, const scs_u32_t index,
     (void)name; (void)index;
     if (!g_map || !value) return;
     const size_t off = (size_t)(uintptr_t)context;
-    switch (value->type) {
-    case SCS_VALUE_TYPE_bool:
-        put_bool(off, value->value.value_bool != 0); break;
-    case SCS_VALUE_TYPE_s32:
-        put_i32(off, value->value.value_s32); break;
-    case SCS_VALUE_TYPE_u32:
-        put_u32(off, value->value.value_u32); break;
-    case SCS_VALUE_TYPE_float:
-        put_f32(off, value->value.value_float); break;
-    case SCS_VALUE_TYPE_dplacement:
-        put_f64(OFF_WORLD_X, value->value.value_dplacement.position.x);
-        put_f64(OFF_WORLD_Y, value->value.value_dplacement.position.y);
-        put_f64(OFF_WORLD_Z, value->value.value_dplacement.position.z);
-        put_f32(OFF_ROT_X,   value->value.value_dplacement.orientation.heading);
-        put_f32(OFF_ROT_Y,   value->value.value_dplacement.orientation.pitch);
-        put_f32(OFF_ROT_Z,   value->value.value_dplacement.orientation.roll);
-        break;
-    default: break;                              /* tipos nao usados pela IA */
-    }
+    /* OBS: os SCS_VALUE_TYPE_* do SDK sao VARIABLES const — em C nao podem
+     * ser case (so constante inteira). Compara com os valores literais. */
+    if (value->type == SCS_VALUE_TYPE_bool)
+        put_bool(off, value->value_bool != 0);
+    else if (value->type == SCS_VALUE_TYPE_s32)
+        put_i32(off, value->value_s32);
+    else if (value->type == SCS_VALUE_TYPE_u32)
+        put_u32(off, value->value_u32);
+    else if (value->type == SCS_VALUE_TYPE_float)
+        put_f32(off, value->value_float);
+    else if (value->type == SCS_VALUE_TYPE_dplacement) {
+        put_f64(OFF_WORLD_X, value->value_dplacement.position.x);
+        put_f64(OFF_WORLD_Y, value->value_dplacement.position.y);
+        put_f64(OFF_WORLD_Z, value->value_dplacement.position.z);
+        put_f32(OFF_ROT_X,   value->value_dplacement.orientation.heading);
+        put_f32(OFF_ROT_Y,   value->value_dplacement.orientation.pitch);
+        put_f32(OFF_ROT_Z,   value->value_dplacement.orientation.roll);
+    }                                             /* outros tipos: ignora */
 }
 
 /* ---- callbacks de EVENTO ------------------------------------------------ */
@@ -266,6 +265,7 @@ static void SCS_CDECL on_configuration(const scs_event_t event,
             if (lstrcmpA(a->name, "fuel.capacity") == 0 &&
                 a->value.type == SCS_VALUE_TYPE_float)
                 put_f32(OFF_FUEL_CAP, a->value.value_float);
+            (void)a; /* value_float: union anonima do scs_value_t (direto) */
         }
     }
 }
@@ -355,7 +355,7 @@ __declspec(dllexport) scs_result_t SCS_CDECL scs_telemetry_init(
                                 on_channel, (scs_context_t)canais[i].off);
 
     ulog("[universal] ETS2-AI telemetry ATIVA (" UNIVERSAL_TAG
-         ") — 1 DLL para TODAS as versoes (1.36+); layout com magic proprio; "
+         ") - 1 DLL para TODAS as versoes (1.36+); layout com magic proprio; "
          "veja game-ets2ai-telemetry.log na raiz do jogo");
     return SCS_RESULT_ok;
 }
