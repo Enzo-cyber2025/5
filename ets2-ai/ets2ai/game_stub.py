@@ -159,7 +159,7 @@ class SDKHost:
     def feed(self, name, value):
         cb = self.canais.get(name)
         if cb:
-            cb(name.encode(), U32_NIL, ct.byref(value), cb[1])
+            cb[0](name.encode(), U32_NIL, ct.byref(value), cb[1])
 
     def frame_start(self, sim_ms):
         ev = self.eventos.get(EVENT_FRAME_START)
