@@ -231,7 +231,7 @@ def main():
             json.dumps(extra, indent=1, ensure_ascii=False), encoding="utf-8")
 
     try:
-        _run(args, log, escrever)
+        _run(args, log, escrever, linhas)
     except Exception:
         import traceback
         tb = traceback.format_exc()
@@ -267,7 +267,7 @@ def _achar_plugin(game_root):
                        + " ; ".join(str(c) for c in candidatos))
 
 
-def _run(args, log, escrever):
+def _run(args, log, escrever, linhas):
     # PyInstaller onefile: __file__ aponta p/ o dir TEMPORARIO de extracao
     # (_MEIPASS) — o lugar do jogo (e da DLL) e o dir do .exe.
     if getattr(sys, "frozen", False):
