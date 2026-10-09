@@ -726,7 +726,11 @@ def _acquire_source(mode, telemetry_mode, log, stop_event=None,
     de MEMORIA (sem DLL) -> DLL embutida (auto-install 1x). Desiste com
     SystemExit apos `wait_game` segundos sem telemetria.
     """
-    deadline = time.monotonic() + max(0.0, float(wait_game))
+    # wait_game=None: ESPERA SEM PRAZO — a GUI usa isto (o usuario clica
+    # COMEÇAR, abre o jogo quando quiser e a IA comeca sozinha; o botao
+    # NUNCA desiste so porque o jogo ainda nao esta aberto)
+    deadline = None if wait_game is None else \
+        time.monotonic() + max(0.0, float(wait_game))
     last_install_try = 0.0        # re-tenta o auto-install a cada ~60 s
     last_rotate = 0.0             # rotacao de release: no max. 1 a cada 2 min
     tried = set()                 # {(repo, tag)} ja instaladas nesta sessao
@@ -798,7 +802,7 @@ def _acquire_source(mode, telemetry_mode, log, stop_event=None,
                     except RuntimeError as e2:
                         last_err = (f"{e2} (DLL instalada agora — se o jogo "
                                     "ja estava aberto, REINICIE o jogo)")
-        if time.monotonic() >= deadline:
+        if deadline is not None and time.monotonic() >= deadline:
             raise SystemExit(
                 "[telemetria] sem telemetria apos "
                 f"{max(0.0, float(wait_game)):.0f} s esperando o jogo. "
@@ -809,9 +813,11 @@ def _acquire_source(mode, telemetry_mode, log, stop_event=None,
                 "disco); --game-dir so e excecao do CLI.")
         if stop_event is not None and stop_event.is_set():
             raise SystemExit("[pratica] PARAR clicado enquanto aguardava o jogo")
-        if attempt == 1 or attempt % 5 == 0:
-            log("[telemetria] aguardando o ETS2 abrir... "
-                f"({int(deadline - time.monotonic())} s restantes | "
+        if attempt == 1 or attempt % (20 if deadline is None else 5) == 0:
+            prazo = ("SEM PRAZO — abra o jogo quando quiser (o botao PARAR "
+                     "cancela)" if deadline is None else
+                     f"{int(deadline - time.monotonic())} s restantes")
+            log(f"[telemetria] aguardando o ETS2 abrir... ({prazo} | "
                 f"{last_err[:90]})")
         time.sleep(3.0)
 
@@ -819,12 +825,14 @@ def _acquire_source(mode, telemetry_mode, log, stop_event=None,
 def run(mode, map_path="practice/mapa.json", rec_path=None, inject=False,
         window="Euro Truck", weights=BASE_WEIGHTS, max_seconds=None,
         game_dir=None, auto_install=True, phone=None, telemetry_mode="auto",
-        log=print, stop_event=None, wait_game=45.0,
+        log=print, stop_event=None, wait_game=45.0, on_source=None,
         _source=None, _policy=None, _clock=None, _sleep=None):
     """Monta e roda o loop de pratica (usado pelo CLI e pelo bridge --ets2).
 
     wait_game: segundos esperando o ETS2/telemetria aparecer antes de
-    desistir (a GUI usa 900 — pode clicar COMEÇAR antes de abrir o jogo).
+    desistir; None = ESPERA SEM PRAZO (a GUI usa None — pode clicar
+    COMEÇAR antes de abrir o jogo e a IA comeca sozinha quando ele abrir).
+    on_source: callback 1x quando a telemetria conecta (GUI muda o botao).
     """
     map_path = Path(map_path)
     road_map = RoadMap.load(map_path) if map_path.exists() else RoadMap()
@@ -837,6 +845,11 @@ def run(mode, map_path="practice/mapa.json", rec_path=None, inject=False,
         source = _acquire_source(mode, telemetry_mode, log,
                                  stop_event=stop_event, wait_game=wait_game,
                                  game_dir=game_dir, auto_install=auto_install)
+    if on_source is not None:            # GUI: jogo ABRIU -> botao muda
+        try:
+            on_source()
+        except Exception:
+            pass
     joystick = JoystickMonitor()
     _devs = joystick.describe()
     if _devs:

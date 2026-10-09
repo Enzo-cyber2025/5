@@ -684,10 +684,13 @@ def _choose_local_policy(log=print):
     return None, None, None, 0.0
 
 
-def _start_button_state(phone_connected, running, local_ok=False):
+def _start_button_state(phone_connected, running, local_ok=False,
+                        waiting=False):
     """Regra do botao COMEÇAR (UI): a IA roda no PC (GPU 0%, ~0,1% CPU) —
     botao liberado SEM celular. Sem IA local, exige celular (cabo MTP ou
-    tunel adb). PARAR ao rodar."""
+    tunel adb). Rodando: ESPERA o jogo abrir (sem prazo) e depois PARAR."""
+    if running and waiting:
+        return ("normal", "ESPERANDO O JOGO…  (clique p/ PARAR)", "#F2A93B")
     if running:
         return ("normal", "PARAR", "#E85D75")
     if local_ok or phone_connected:
@@ -746,7 +749,7 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
         logs.append(str(msg))
         _log_tee(msg)     # ets2-ai-log.txt ao lado do .exe (v0.4.12)
 
-    log(f"[sessao] v0.4.19 — log completo salvo em {_LOG_PATH} "
+    log(f"[sessao] v0.4.20 — log completo salvo em {_LOG_PATH} "
         "(envie este arquivo se algo falhar)")
 
     def card():
@@ -961,7 +964,10 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
                              window=window, phone=link,
                              telemetry_mode=telemetry_mode,
                              log=log, stop_event=stop_event,
-                             wait_game=900.0,      # pode clicar antes do jogo
+                             wait_game=None,   # ESPERA SEM PRAÇO: clique,
+                             # abra o jogo quando quiser e a IA comeca sozinha
+                             on_source=lambda: state.__setitem__(
+                                 "waiting_game", False),
                              weights=local_weights or weights
                              or practice.BASE_WEIGHTS)
             except SystemExit as e:
@@ -970,8 +976,10 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
                 log(f"ERRO: {type(e).__name__}: {e}")
             finally:
                 state["running"] = False
+                state["waiting_game"] = False
 
         state["running"] = True
+        state["waiting_game"] = True      # botao: ESPERANDO O JOGO...
         stop_event.clear()
         state["thread"] = threading.Thread(target=worker, daemon=True)
         state["thread"].start()
@@ -1027,9 +1035,13 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
         conn = (link is not None and link.connected)
         if state["running"]:
             dot.itemconfig(dot_id, fill="#F2A93B")
-            phone_lbl.config(text="Dirigindo  ·  " +
-                             ("celular-cerebro" if conn else "IA no PC"),
-                             fg="#F2A93B")
+            if state.get("waiting_game"):
+                phone_lbl.config(text="Esperando o jogo abrir  ·  "
+                                 "a IA começa sozinha", fg="#F2A93B")
+            else:
+                phone_lbl.config(text="Dirigindo  ·  " +
+                                 ("celular-cerebro" if conn else "IA no PC"),
+                                 fg="#F2A93B")
         elif conn:
             dot.itemconfig(dot_id, fill=OKC)
             phone_lbl.config(text="Celular CONECTADO (tunel adb — IA no "
@@ -1065,7 +1077,8 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
         mtp_ok = bool(state.get("mlink") and state["mlink"].connected)
         st_, txt_, bg_ = _start_button_state(
             conn or mtp or mtp_ok, state["running"],
-            local_ok=state["local_ok"])
+            local_ok=state["local_ok"],
+            waiting=state.get("waiting_game"))
         btn.config(state=st_, text=txt_, bg=bg_,
                    disabledforeground="#C9D1E0")
         logbox.config(state="normal")
@@ -1130,8 +1143,9 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
     log("[info] BUSCAR localiza o jogo (busca completa 1x, depois usa o "
         "salvo)")
     log(f"[info] telemetria: {telemetry_mode} | ESC = kill switch")
-    log("[info] fluxo: COMEÇAR pode ser clicado ANTES de abrir o jogo — a "
-        "IA espera o ETS2 (ate 15 min) e so AGE com ele em TELA CHEIA")
+    log("[info] fluxo: clique COMEÇAR ANTES de abrir o jogo — a IA espera "
+        "o ETS2 ABRIR SEM PRAÇO (botao fica ESPERANDO O JOGO...) e comeca "
+        "sozinha; so AGE com ele em TELA CHEIA")
     # PRIMEIRA EXECUCAO (v0.4.13): sem jogo salvo ainda -> o app se
     # autodiagnostica sozinho (busca + instala DLL + autoteste + janela
     # com o resultado e o botao COPIAR). O usuario nao precisa saber NADA.
@@ -1304,7 +1318,7 @@ def _crash_dump(exc):
         import traceback
         p = _exe_dir() / "ets2-ai-erro.txt"
         p.write_text(f"{time.strftime('%Y-%m-%d %H:%M:%S')}\n"
-                     f"ETS2-AI bridge v0.4.19\n\n{traceback.format_exc()}",
+                     f"ETS2-AI bridge v0.4.20\n\n{traceback.format_exc()}",
                      encoding="utf-8")
         try:
             import tkinter.messagebox as _mb

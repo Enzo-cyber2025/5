@@ -443,3 +443,17 @@ falso. Suite: 130 passed, 1 skipped.
   scs_telemetry_init (pega regressao do tipo "/DEF ignorado = DLL sem
   exports" que o jogo recusaria em silencio).
 - LEIA-ME atualizado (telemetria universal incluida de fabrica).
+
+## v0.4.20 — COMEÇAR espera o jogo abrir SEM PRAÇO
+
+- Pedido do usuario: "clico COMECAR, abro o jogo, e comeca — o botao
+  nao pode parar so porque o jogo nao esta aberto". Antes: a GUI esperava
+  15 min e DESISTIA ("clique COMECAR de novo").
+- Agora: wait_game=None na GUI = espera INDEFINIDA e silenciosa (log a
+  cada ~60 s, sem contagem regressiva). O botao fica laranja
+  "ESPERANDO O JOGO... (clique p/ PARAR)"; quando o jogo abre e a
+  telemetria conecta (on_source), vira "PARAR" e a IA comeca sozinha —
+  e so AGE com o jogo em TELA CHEIA (gate inalterado).
+- CLI --ets2 continua com wait_game=45 s (terminal tem retorno).
+- Testes: espera infinita NUNCA desiste (relogio falso avanca milenios;
+  sai so por PARAR) + estados do botao. Suite: 135 passed, 1 skipped.

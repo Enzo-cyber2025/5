@@ -247,3 +247,47 @@ def test_acquire_reinstala_telemetria_durante_a_espera(monkeypatch):
         practice._acquire_source("drive", "auto", lambda m: None,
                                  wait_game=300)
     assert installs["n"] >= 3           # tentou varias vezes (300 s falsos)
+
+
+# --------------------------------------------------------------------------- #
+# v0.4.20: COMEÇAR espera o jogo SEM PRAÇO (wait_game=None) — nunca desiste
+# --------------------------------------------------------------------------- #
+def test_acquire_source_sem_prazo_nunca_desiste(monkeypatch):
+    """wait_game=None: mesmo com o relogio avancando MILENIOS, o loop
+    continua esperando (so sai por PARAR). Nada de 'clique COMEÇAR de
+    novo'."""
+    def boom():
+        raise RuntimeError("processo ets2.exe nao encontrado")
+
+    monkeypatch.setattr(practice.memtelemetry, "MemTelemetry", boom)
+    monkeypatch.setattr(practice.telemetry, "TelemetryReader", boom)
+    monkeypatch.setattr(practice, "_try_install_plugin",
+                        lambda *a, **k: None)
+    monkeypatch.setattr(practice.time, "sleep", lambda s: None)
+    t = {"v": 1_000_000.0}
+    monkeypatch.setattr(practice.time, "monotonic",
+                        lambda: (t.__setitem__("v", t["v"] + 1000.0)
+                                 or t["v"]))
+    ev = threading.Event()
+    ev.set()                                  # PARAR ja clicado
+    with pytest.raises(SystemExit) as ei:
+        practice._acquire_source("drive", "auto", lambda m: None,
+                                 stop_event=ev, wait_game=None)
+    assert "PARAR" in str(ei.value)           # saiu por PARAR, NAO por timeout
+    assert "sem telemetria" not in str(ei.value)
+
+
+def test_botao_esperando_o_jogo():
+    import importlib.util as ilu
+    bp = Path(__file__).resolve().parents[1] / "bridge" / "ets2_bridge.py"
+    spec = ilu.spec_from_file_location("ets2_bridge_btn", bp)
+    mod = ilu.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    st, txt, bg = mod._start_button_state(False, True, local_ok=True,
+                                          waiting=True)
+    assert st == "normal" and "ESPERANDO O JOGO" in txt and "PARAR" in txt
+    st2, txt2, _ = mod._start_button_state(False, True, local_ok=True,
+                                           waiting=False)
+    assert txt2 == "PARAR"                    # jogo abriu -> dirigindo
+    st3, txt3, _ = mod._start_button_state(False, False, local_ok=True)
+    assert "COMEÇAR" in txt3
