@@ -155,11 +155,16 @@ typedef void (*scs_telemetry_channel_callback_t)(
 typedef scs_result_t (*scs_telemetry_register_for_event_t)(
     const scs_event_t event, const scs_telemetry_event_callback_t callback,
     const scs_context_t context);
+typedef scs_result_t (*scs_telemetry_unregister_from_event_t)(
+    const scs_event_t event);
 typedef scs_result_t (*scs_telemetry_register_for_channel_t)(
     const scs_string_t name, const scs_u32_t index,
     const scs_value_type_t type, const scs_u32_t flags,
     const scs_telemetry_channel_callback_t callback,
     const scs_context_t context);
+typedef scs_result_t (*scs_telemetry_unregister_from_channel_t)(
+    const scs_string_t name, const scs_u32_t index,
+    const scs_value_type_t type);
 
 typedef struct {
     scs_string_t game_name;
@@ -171,10 +176,17 @@ typedef struct {
     scs_log_t    log;
 } scs_sdk_init_params_v100_t;
 
+/* ORDEM EXATA do header do SDK (scssdk_telemetry.h): common,
+ * register_for_event, unregister_from_event, register_for_channel,
+ * unregister_from_channel — OMITIR os unregister desloca o offset do
+ * register_for_channel e a DLL chamaria a funcao ERRADA do jogo (bug
+ * real: canais nunca registrados com o jogo de verdade). */
 typedef struct {
     scs_sdk_init_params_v100_t common;
-    scs_telemetry_register_for_event_t    register_for_event;
-    scs_telemetry_register_for_channel_t  register_for_channel;
+    scs_telemetry_register_for_event_t      register_for_event;
+    scs_telemetry_unregister_from_event_t   unregister_from_event;
+    scs_telemetry_register_for_channel_t    register_for_channel;
+    scs_telemetry_unregister_from_channel_t unregister_from_channel;
 } scs_telemetry_init_params_v100_t;              /* 1.01 = typedef da 1.00 */
 
 /* ---- estado global ------------------------------------------------------ */

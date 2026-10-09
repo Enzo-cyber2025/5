@@ -457,3 +457,28 @@ falso. Suite: 130 passed, 1 skipped.
 - CLI --ets2 continua com wait_game=45 s (terminal tem retorno).
 - Testes: espera infinita NUNCA desiste (relogio falso avanca milenios;
   sai so por PARAR) + estados do botao. Suite: 135 passed, 1 skipped.
+
+## v0.4.21 — PROVA DE DIREÇÃO no CI + fix de ABI na DLL universal
+
+- **Fix critico na DLL universal**: o struct de init do SDK tem 5
+  ponteiros (register/unregister de event e channel) — os 2 unregister
+  estavam omitidos e o register_for_channel lia o offset ERRADO (chamava
+  unregister_from_event do jogo). Com o jogo REAL a DLL nunca registraria
+  canais (MMF zerada). Corrigido na ordem exata do header
+  (scssdk_telemetry.h) — descoberto ao construir a prova abaixo.
+- **job prova-de-direcao (CI)**: um JOGO-SUBSTITUTO (ets2ai/game_stub.py,
+  empacotado como eurotrucks2.exe numa pasta estilo OptiJuegos em
+  C:\Juegos) que: carrega a DLL universal pela ABI REAL do SDK
+  (scs_telemetry_init 1.00 + register_for_channel), abre janela em TELA
+  CHEIA e roda fisica de caminhao que responde as teclas via
+  GetAsyncKeyState. O MESMO .exe da release roda em modo drive com
+  --inject: le a MMF, decide e INJETA as teclas (SendInput) — o jogo le
+  as teclas e o caminhao ANDA. O job EXIGE: magic AUI1 na MMF escrita
+  pela DLL, valores batendo com a fisica, >=8 canais registrados e
+  distancia >= 50 m com vmax >= 5 m/s — a IA literalmente ASSUME o
+  volante. Release so publica com a prova passando.
+- Baixar o repack OptiJuegos (jogo cracked) no CI: NAO — pirataria; a
+  prova cobre todos os mecanismos reais (DLL pela ABI, MMF, tela cheia,
+  SendInput, loop de decisao) sem o jogo pago.
+- Anti-drift triplo: offsets C <-> TelemetryMap <-> game_stub num teste.
+- Suite: 136 passed, 1 skipped.

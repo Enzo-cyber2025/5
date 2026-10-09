@@ -431,3 +431,27 @@ def test_parse_marca_fonte_universal_pelo_magic():
     m2.game_id = 1
     snap2 = T.parse(bytes(m2))
     assert snap2["fonte"] == "oficial"     # sem magic = plugin oficial
+
+
+# --------------------------------------------------------------------------- #
+# v0.4.21: PROVA DE DIRECAO — jogo-substituto (game_stub.py) com a ABI real
+# --------------------------------------------------------------------------- #
+def test_game_stub_abi_e_offsets():
+    """O jogo-substituto do CI tem que falar a MESMA ABI do SDK (struct de
+    init com os 5 ponteiros = 64 bytes em x64) e os MESMOS offsets da
+    TelemetryMap (anti-drift triplo: C <-> leitor <-> stub)."""
+    import ctypes as ct
+    import importlib.util as ilu
+    bp = Path(__file__).resolve().parents[1] / "ets2ai" / "game_stub.py"
+    spec = ilu.spec_from_file_location("game_stub_t", bp)
+    gs = ilu.module_from_spec(spec)
+    spec.loader.exec_module(gs)
+    assert ct.sizeof(gs.InitParams) == 64
+    for campo, off in (("speed", gs.OFF_SPEED), ("fuel", gs.OFF_FUEL),
+                       ("user_steer", gs.OFF_STEER),
+                       ("route_distance", gs.OFF_ROUTE),
+                       ("speed_limit", gs.OFF_LIMIT),
+                       ("world_x", gs.OFF_WORLD_X),
+                       ("world_z", gs.OFF_WORLD_Z)):
+        assert getattr(T.TelemetryMap, campo).offset == off, campo
+    assert gs.UNIVERSAL_MAGIC == T.UNIVERSAL_MAGIC
