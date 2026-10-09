@@ -162,16 +162,17 @@ class SDKHost:
 
 def mmf_probe():
     """Le a MMF crua (offsets do layout) — a PROVA de que a DLL escreveu."""
-    k32 = ct.windll.kernel32
+    k32 = ct.WinDLL("kernel32", use_last_error=True)
     k32.OpenFileMappingW.restype = ct.c_void_p
     h = k32.OpenFileMappingW(0x0004, False, "Local\\SCSTelemetry")
     if not h:
-        return None
+        return {"erro": f"OpenFileMappingW falhou (err={ct.get_last_error()})"}
     k32.MapViewOfFile.restype = ct.c_void_p
     p = k32.MapViewOfFile(h, 0x0004, 0, 0, 32768)
     if not p:
+        err = ct.get_last_error()
         k32.CloseHandle(h)
-        return None
+        return {"erro": f"MapViewOfFile falhou (err={err})"}
     raw = (ct.c_char * 32768).from_address(p)[:]
     k32.UnmapViewOfFile(ct.c_void_p(p))
     k32.CloseHandle(ct.c_void_p(h))
@@ -279,7 +280,7 @@ def _run(args, log, escrever):
           "route": 25000.0}
     t0 = time.monotonic()
     dt = 1.0 / 30.0
-    mmf_ok, mmf_match = False, False
+    probe = {"ok": False, "match": False, "fail": None, "last": -10.0}
 
     def tick():
         el = time.monotonic() - t0
@@ -322,17 +323,26 @@ def _run(args, log, escrever):
                               % 1.0, 0.0, 0.0))
         sdk.feed("truck.navigation.distance", v_float(st["route"]))
         sdk.feed("truck.navigation.speed.limit", v_float(22.22))
-        # PROVA da DLL (magic AUI1 + valores batendo) — depois de 6 s
-        if el > 6.0 and not mmf_ok:
+        # PROVA da DLL (magic AUI1 + valores batendo) — a partir de 6 s,
+        # no maximo 1x a cada 2 s (dict evita closure/UnboundLocalError)
+        if el > 6.0 and not probe["ok"] and el - probe["last"] >= 2.0:
+            probe["last"] = el
             m = mmf_probe()
-            if m:
-                mmf_ok = (m["magic"] == UNIVERSAL_MAGIC)
-                mmf_match = (abs(m["speed"] - st["speed"]) < 0.5
-                             and abs(m["fuel"] - st["fuel"]) < 5.0)
+            if m and "erro" in m:
+                probe["fail"] = m["erro"]
+                log(f"[stub] MMF probe FALHOU: {m['erro']}")
+            elif m:
+                probe["ok"] = (m["magic"] == UNIVERSAL_MAGIC)
+                probe["match"] = (abs(m["speed"] - st["speed"]) < 0.5
+                                  and abs(m["fuel"] - st["fuel"]) < 5.0)
+                probe["fail"] = None
                 log(f"[stub] MMF probe: magic=0x{m['magic']:08X} "
                     f"speed={m['speed']:.2f} fuel={m['fuel']:.1f} "
                     f"(fisica: {st['speed']:.2f} / {st['fuel']:.1f}) "
-                    f"→ dll_ok={mmf_ok} match={mmf_match}")
+                    f"→ dll_ok={probe['ok']} match={probe['match']}")
+            else:
+                probe["fail"] = "probe devolveu None"
+                log("[stub] MMF probe devolveu None")
         # painel (so com janela)
         if root is not None:
             cv.delete("all")
@@ -353,8 +363,9 @@ def _run(args, log, escrever):
                      max_speed_mps=round(st["vmax"], 2),
                      teclas_tracao=st["thr"], teclas_volante=st["str"],
                      canais_dll=len(sdk.canais),
-                     mmf_magic_ok=bool(mmf_ok),
-                     mmf_valores_ok=bool(mmf_match),
+                     mmf_magic_ok=bool(probe["ok"]),
+                     mmf_valores_ok=bool(probe["match"]),
+                     mmf_erro=probe["fail"],
                      log=linhas[-60:])
             log("[stub] fim — resultado gravado")
             return True
