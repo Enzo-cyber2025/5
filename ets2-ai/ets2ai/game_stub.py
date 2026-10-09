@@ -183,32 +183,88 @@ def mmf_probe():
     }
 
 
+class _Sink:
+    """PyInstaller --noconsole: stdout/stderr podem ser None — print em
+    None = AttributeError = morte instantânea. Este sink engole tudo."""
+
+    def write(self, *_a, **_k):
+        return 0
+
+    def flush(self):
+        pass
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--segundos", type=float, default=90.0)
     ap.add_argument("--saida", required=True)
+    ap.add_argument("--headless", action="store_true",
+                    help="sem janela (smoke da DLL/ABI; a prova usa janela)")
     args = ap.parse_args()
+
+    if sys.stdout is None:
+        sys.stdout = _Sink()
+    if sys.stderr is None:
+        sys.stderr = _Sink()
 
     linhas = []
 
     def log(m):
         linhas.append(str(m))
-        print(m, file=sys.stderr, flush=True)
+        try:
+            print(m, file=sys.stderr, flush=True)
+        except Exception:
+            pass
 
-    here = Path(__file__).resolve().parent
-    game_root = here                        # .../gamedata/game_stub.py
+    def escrever(**extra):
+        Path(args.saida).write_text(
+            json.dumps(extra, indent=1, ensure_ascii=False), encoding="utf-8")
+
+    try:
+        _run(args, log, escrever)
+    except Exception:
+        import traceback
+        tb = traceback.format_exc()
+        log("[stub] ERRO FATAL:\n" + tb)
+        escrever(dist_m=0.0, max_speed_mps=0.0, teclas_tracao=0,
+                 teclas_volante=0, canais_dll=0, mmf_magic_ok=False,
+                 mmf_valores_ok=False, erro=tb, log=linhas[-60:])
+        return 1
+    return 0
+
+
+def _run(args, log, escrever):
+    # PyInstaller onefile: __file__ aponta p/ o dir TEMPORARIO de extracao
+    # (_MEIPASS) — o lugar do jogo (e da DLL) e o dir do .exe.
+    if getattr(sys, "frozen", False):
+        game_root = Path(sys.executable).resolve().parent
+    else:
+        game_root = Path(__file__).resolve().parent
     plugin = game_root / "bin" / "win_x64" / "plugins" / "scs-telemetry.dll"
+    if not plugin.exists():
+        raise RuntimeError(f"DLL nao encontrada: {plugin}")
+    log(f"[stub] jogo em {game_root}")
+    log(f"[stub] DLL: {plugin}")
     sdk = SDKHost(plugin, log)
 
     # ---- janela TELA CHEIA (titulo com "Euro Truck" p/ o injetor) ----- #
-    import tkinter as tk
-    root = tk.Tk()
-    root.title("Euro Truck Simulator 2 Opti (prova ETS2-AI)")
-    root.attributes("-fullscreen", True)
-    cv = tk.Canvas(root, bg="#1d3b2a", highlightthickness=0)
-    cv.pack(fill="both", expand=True)
-    root.update_idletasks()
-    root.focus_force()
+    root = None
+    if not args.headless:
+        try:
+            import tkinter as tk
+            root = tk.Tk()
+            root.title("Euro Truck Simulator 2 Opti (prova ETS2-AI)")
+            root.attributes("-fullscreen", True)
+            cv = tk.Canvas(root, bg="#1d3b2a", highlightthickness=0)
+            cv.pack(fill="both", expand=True)
+            root.update_idletasks()
+            root.focus_force()
+            log("[stub] janela TELA CHEIA aberta (gate do injetor pode passar)")
+        except Exception as e:                 # sem display? smoke headless
+            log(f"[stub] sem janela ({e}) — rodando HEADLESS")
+            root = None
+    else:
+        log("[stub] modo headless (sem janela)")
 
     user32 = ct.windll.user32
     VK = {"left": 0x25, "up": 0x26, "right": 0x27, "down": 0x28,
@@ -277,40 +333,50 @@ def main():
                     f"speed={m['speed']:.2f} fuel={m['fuel']:.1f} "
                     f"(fisica: {st['speed']:.2f} / {st['fuel']:.1f}) "
                     f"→ dll_ok={mmf_ok} match={mmf_match}")
-        # painel
-        cv.delete("all")
-        cv.create_text(60, 40, anchor="w", fill="white",
-                       font=("Consolas", 16, "bold"),
-                       text=f"JOGO SUBSTITUTO (ABI real do SDK)  "
-                            f"{el:5.1f}s  dist {st['dist']:.0f} m  "
-                            f"{st['speed']*3.6:5.1f} km/h")
-        cv.create_text(60, 80, anchor="w", fill="#9FE8C9",
-                       font=("Consolas", 12),
-                       text=f"canais registrados pela DLL: "
-                            f"{len(sdk.canais)} | eventos: "
-                            f"{len(sdk.eventos)}")
-        cv.create_rectangle(60, 140, 60 + st["speed"] * 24, 170,
-                            fill="#00C48C", width=0)
+        # painel (so com janela)
+        if root is not None:
+            cv.delete("all")
+            cv.create_text(60, 40, anchor="w", fill="white",
+                           font=("Consolas", 16, "bold"),
+                           text=f"JOGO SUBSTITUTO (ABI real do SDK)  "
+                                f"{el:5.1f}s  dist {st['dist']:.0f} m  "
+                                f"{st['speed']*3.6:5.1f} km/h")
+            cv.create_text(60, 80, anchor="w", fill="#9FE8C9",
+                           font=("Consolas", 12),
+                           text=f"canais registrados pela DLL: "
+                                f"{len(sdk.canais)} | eventos: "
+                                f"{len(sdk.eventos)}")
+            cv.create_rectangle(60, 140, 60 + st["speed"] * 24, 170,
+                                fill="#00C48C", width=0)
         if el >= args.segundos:
-            resultado = {"dist_m": round(st["dist"], 1),
-                         "max_speed_mps": round(st["vmax"], 2),
-                         "teclas_tracao": st["thr"],
-                         "teclas_volante": st["str"],
-                         "canais_dll": len(sdk.canais),
-                         "mmf_magic_ok": bool(mmf_ok),
-                         "mmf_valores_ok": bool(mmf_match),
-                         "log": linhas[-60:]}
-            Path(args.saida).write_text(
-                json.dumps(resultado, indent=1, ensure_ascii=False),
-                encoding="utf-8")
+            escrever(dist_m=round(st["dist"], 1),
+                     max_speed_mps=round(st["vmax"], 2),
+                     teclas_tracao=st["thr"], teclas_volante=st["str"],
+                     canais_dll=len(sdk.canais),
+                     mmf_magic_ok=bool(mmf_ok),
+                     mmf_valores_ok=bool(mmf_match),
+                     log=linhas[-60:])
+            log("[stub] fim — resultado gravado")
+            return True
+        return False
+
+    def loop_tk():
+        if tick():
             root.destroy()
             return
-        root.after(int(dt * 1000), tick)
+        root.after(int(dt * 1000), loop_tk)
 
-    tick()
-    root.mainloop()
-    print("fim do jogo-substituto", file=sys.stderr)
+    if root is not None:
+        loop_tk()
+        root.mainloop()
+    else:
+        while not tick():
+            time.sleep(dt)
+    try:
+        print("fim do jogo-substituto", file=sys.stderr)
+    except Exception:
+        pass
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

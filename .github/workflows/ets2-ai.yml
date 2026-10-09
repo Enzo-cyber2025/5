@@ -852,13 +852,17 @@ jobs:
           Start-Sleep -Seconds 8
           # 2) o BRIDGE (o MESMO exe da release) em modo drive com injecao —
           #    log completo capturado (stdout valido via redirecionamento)
-          Set-Content "C:\Juegos\run-bridge.cmd" ("@echo off`r`n`"" + $exe + "`" --ets2 drive --inject --window `"Euro Truck`" > C:\Juegos\bridge.log 2>&1")
-          $p = Start-Process cmd -ArgumentList "/c","C:\Juegos\run-bridge.cmd" -PassThru
+          $p = Start-Process -FilePath $exe `
+            -ArgumentList "--ets2","drive","--inject","--window","Euro Truck" `
+            -WorkingDirectory "C:\Juegos" `
+            -RedirectStandardOutput "C:\Juegos\bridge.log" `
+            -RedirectStandardError "C:\Juegos\bridge.err" -PassThru
           if (-not $game.WaitForExit(180000)) { Stop-Process -Id $game.Id -Force }
           Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
-          Stop-Process -Name cmd -Force -ErrorAction SilentlyContinue
           Write-Host "=== bridge.log (ultimas 45) ==="
           Get-Content "C:\Juegos\bridge.log" -Tail 45 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $_" }
+          Write-Host "=== bridge.err (ultimas 15) ==="
+          Get-Content "C:\Juegos\bridge.err" -Tail 15 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $_" }
           if (-not (Test-Path "C:\Juegos\resultado.json")) {
             Write-Host "=== jogo.err ==="; Get-Content "C:\Juegos\jogo.err" -ErrorAction SilentlyContinue
             throw "o jogo-substituto nao terminou" }
@@ -885,6 +889,7 @@ jobs:
             C:/Juegos/resultado.json
             C:/Juegos/smoke.json
             C:/Juegos/bridge.log
+            C:/Juegos/bridge.err
             C:/Juegos/jogo.err
             C:/Juegos/smoke.err
             C:/Juegos/ets2-ai-state.json
