@@ -455,3 +455,26 @@ def test_game_stub_abi_e_offsets():
                        ("world_z", gs.OFF_WORLD_Z)):
         assert getattr(T.TelemetryMap, campo).offset == off, campo
     assert gs.UNIVERSAL_MAGIC == T.UNIVERSAL_MAGIC
+
+
+def test_game_stub_init_params_packing():
+    """A construcao do struct de init tem que casar com os campos COM
+    padding (v0.4.21: log caia no _pad e estourava TypeError antes de
+    chamar a DLL — congelado aqui para nunca mais)."""
+    import ctypes as ct
+    import importlib.util as ilu
+    bp = Path(__file__).resolve().parents[1] / "ets2ai" / "game_stub.py"
+    spec = ilu.spec_from_file_location("game_stub_p", bp)
+    gs = ilu.module_from_spec(spec)
+    spec.loader.exec_module(gs)
+    p = gs.InitParams(
+        game_name=b"Euro Truck Simulator 2", game_id=b"eurotrucks2",
+        game_version=(1 << 16) | 45, _pad=0,
+        log=gs.LOG_FN(lambda *a: None),
+        register_for_event=gs.REG_EVENT(lambda *a: 0),
+        unregister_from_event=gs.UNREG_EVENT(lambda e: 0),
+        register_for_channel=gs.REG_CHANNEL(lambda *a: 0),
+        unregister_from_channel=gs.UNREG_CHANNEL(lambda *a: 0))
+    assert p.game_version == ((1 << 16) | 45)
+    assert p.game_id == b"eurotrucks2"
+    assert ct.sizeof(gs.InitParams) == 64

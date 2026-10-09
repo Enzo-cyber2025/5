@@ -121,8 +121,13 @@ class SDKHost:
             ct.c_uint32, ct.POINTER(InitParams)]
         dll.scs_telemetry_init.restype = ct.c_int
         params = InitParams(
-            b"Euro Truck Simulator 2", b"eurotrucks2", (1 << 16) | 45,
-            self._log_c, self._re_c, self._ue_c, self._rc_c, self._uc_c)
+            game_name=b"Euro Truck Simulator 2", game_id=b"eurotrucks2",
+            game_version=(1 << 16) | 45, _pad=0,
+            log=self._log_c,
+            register_for_event=self._re_c,
+            unregister_from_event=self._ue_c,
+            register_for_channel=self._rc_c,
+            unregister_from_channel=self._uc_c)
         rc = dll.scs_telemetry_init(SCS_TELEMETRY_VERSION_1_00,
                                     ct.byref(params))
         if rc != 0:
