@@ -53,30 +53,33 @@ class SCSValue(ct.Structure):
                 ("data", ct.c_char * 40)]         # union (48 bytes no total)
 
 
+def _v(tipo, raw):
+    """Empacota valor cru no union via memmove — campo c_char de struct
+    devolve bytes IMUTAVEL (copia), slice-assign estoura TypeError."""
+    v = SCSValue(); v.type = tipo
+    ct.memmove(ct.addressof(v) + 8, raw, len(raw))   # +8: type/pad
+    return v
+
+
 def v_float(x):
-    v = SCSValue(); v.type = VALUE_FLOAT
-    v.data[:4] = struct.pack("<f", float(x)); return v
+    return _v(VALUE_FLOAT, struct.pack("<f", float(x)))
 
 
 def v_bool(b):
-    v = SCSValue(); v.type = VALUE_BOOL
-    v.data[0] = 1 if b else 0; return v
+    return _v(VALUE_BOOL, b"\x01" if b else b"\x00")
 
 
 def v_s32(n):
-    v = SCSValue(); v.type = VALUE_S32
-    v.data[:4] = struct.pack("<i", int(n)); return v
+    return _v(VALUE_S32, struct.pack("<i", int(n)))
 
 
 def v_u32(n):
-    v = SCSValue(); v.type = VALUE_U32
-    v.data[:4] = struct.pack("<I", int(n) & 0xFFFFFFFF); return v
+    return _v(VALUE_U32, struct.pack("<I", int(n) & 0xFFFFFFFF))
 
 
 def v_dplacement(x, y, z, heading, pitch, roll):
-    v = SCSValue(); v.type = VALUE_DPLACEMENT
-    v.data[:36] = struct.pack("<dddfff", x, y, z, heading, pitch, roll)
-    return v
+    return _v(VALUE_DPLACEMENT,
+              struct.pack("<dddfff", x, y, z, heading, pitch, roll))
 
 
 CHANNEL_CB = ct.CFUNCTYPE(None, ct.c_char_p, ct.c_uint32,
