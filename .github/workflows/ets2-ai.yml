@@ -822,7 +822,24 @@ jobs:
             ets2-ai/ets2ai/game_stub.py
           if (-not (Test-Path "$g\bin\win_x64\eurotrucks2.exe")) { throw "eurotrucks2.exe nao gerado" }
 
-      - name: Abre o JOGO e o BRIDGE (drive) — a IA tem que assumir e dirigir
+      - name: Smoke do jogo-substituto (DLL universal pela ABI real, isolado)
+        shell: pwsh
+        run: |
+          $g = "C:\Juegos\Euro Truck Simulator 2 Opti\gamedata"
+          $jogo = "$g\bin\win_x64\eurotrucks2.exe"
+          $p = Start-Process -FilePath $jogo -ArgumentList "--segundos","14","--saida","C:\Juegos\smoke.json" -WorkingDirectory $g -RedirectStandardError "C:\Juegos\smoke.err" -PassThru
+          if (-not $p.WaitForExit(60000)) { Stop-Process -Id $p.Id -Force; throw "jogo-substituto travou no smoke" }
+          if (-not (Test-Path "C:\Juegos\smoke.json")) {
+            Write-Host "=== smoke.err ==="; Get-Content "C:\Juegos\smoke.err" -ErrorAction SilentlyContinue
+            throw "jogo-substituto morreu antes de escrever o smoke.json" }
+          $s = Get-Content "C:\Juegos\smoke.json" -Raw | ConvertFrom-Json
+          $s.log | ForEach-Object { Write-Host "  $_" }
+          if (-not $s.mmf_magic_ok) { Write-Host "::error::SMOKE: DLL universal nao escreveu a MMF (magic AUI1 ausente)"; exit 1 }
+          if (-not $s.mmf_valores_ok) { Write-Host "::error::SMOKE: valores da MMF nao batem com a fisica"; exit 1 }
+          if ([int]$s.canais_dll -lt 8) { Write-Host "::error::SMOKE: poucos canais ($($s.canais_dll))"; exit 1 }
+          Write-Host "SMOKE OK: DLL universal carregada pela ABI real, $(( $s.canais_dll)) canais, MMF com magic AUI1 e valores certos"
+
+      - name: PROVA — abre o JOGO e o BRIDGE (drive) — a IA tem que assumir e dirigir
         shell: pwsh
         run: |
           $g = "C:\Juegos\Euro Truck Simulator 2 Opti\gamedata"
@@ -830,19 +847,24 @@ jobs:
           # 1) o JOGO SOBE: processo eurotrucks2.exe real, carrega a DLL
           #    universal pela ABI do SDK, janela TELA CHEIA, MMF no ar
           $game = Start-Process -FilePath "$g\bin\win_x64\eurotrucks2.exe" `
-            -ArgumentList "--segundos","100","--saida","C:\Juegos\resultado.json" `
-            -WorkingDirectory $g -PassThru
+            -ArgumentList "--segundos","110","--saida","C:\Juegos\resultado.json" `
+            -WorkingDirectory $g -RedirectStandardError "C:\Juegos\jogo.err" -PassThru
           Start-Sleep -Seconds 8
-          # 2) o BRIDGE (o MESMO exe da release) entra em modo drive com
-          #    injecao de teclas — SEM --game-dir: descoberta pelo processo
-          #    rodando, igual no PC do usuario
-          $p = Start-Process -FilePath $exe `
-            -ArgumentList "--ets2","drive","--inject","--window","Euro Truck" `
-            -WorkingDirectory "C:\Juegos" -PassThru
-          if (-not $game.WaitForExit(170000)) { Stop-Process -Id $game.Id -Force }
+          # 2) o BRIDGE (o MESMO exe da release) em modo drive com injecao —
+          #    log completo capturado (stdout valido via redirecionamento)
+          Set-Content "C:\Juegos\run-bridge.cmd" ("@echo off`r`n`"" + $exe + "`" --ets2 drive --inject --window `"Euro Truck`" > C:\Juegos\bridge.log 2>&1")
+          $p = Start-Process cmd -ArgumentList "/c","C:\Juegos\run-bridge.cmd" -PassThru
+          if (-not $game.WaitForExit(180000)) { Stop-Process -Id $game.Id -Force }
           Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
-          if (-not (Test-Path "C:\Juegos\resultado.json")) { throw "o jogo-substituto nao terminou" }
+          Stop-Process -Name cmd -Force -ErrorAction SilentlyContinue
+          Write-Host "=== bridge.log (ultimas 45) ==="
+          Get-Content "C:\Juegos\bridge.log" -Tail 45 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $_" }
+          if (-not (Test-Path "C:\Juegos\resultado.json")) {
+            Write-Host "=== jogo.err ==="; Get-Content "C:\Juegos\jogo.err" -ErrorAction SilentlyContinue
+            throw "o jogo-substituto nao terminou" }
           $r = Get-Content "C:\Juegos\resultado.json" -Raw | ConvertFrom-Json
+          Write-Host "=== resultado do jogo-substituto ==="
+          $r | ConvertTo-Json -Depth 4 | Write-Host
           $r.log | Select-Object -Last 14 | ForEach-Object { Write-Host "  $_" }
           if (-not $r.mmf_magic_ok) {
             Write-Host "::error::DLL universal NAO escreveu a MMF (magic AUI1 ausente — ABI?)"; exit 1 }
@@ -853,6 +875,20 @@ jobs:
           if ([double]$r.dist_m -lt 50 -or [double]$r.max_speed_mps -lt 5) {
             Write-Host "::error::a IA NAO dirigiu (dist=$($r.dist_m) m, vmax=$($r.max_speed_mps) m/s)"; exit 1 }
           Write-Host ("PROVA DE DIRECAO: a IA ASSUMIU o volante e dirigiu {0} m (max {1} km/h) — DLL universal carregada pela ABI real ({2} canais), teclas SendInput lidas pelo jogo, tela cheia OK" -f $r.dist_m, [math]::Round($r.max_speed_mps*3.6,1), $r.canais_dll)
+
+      - name: Diagnostico (upload dos logs da prova)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prova-de-direcao-diag
+          path: |
+            C:/Juegos/resultado.json
+            C:/Juegos/smoke.json
+            C:/Juegos/bridge.log
+            C:/Juegos/jogo.err
+            C:/Juegos/smoke.err
+            C:/Juegos/ets2-ai-state.json
+          if-no-files-found: ignore
 
   pt-export:
     name: Exporta .pt (PyTorch) para a release
