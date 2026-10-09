@@ -234,6 +234,30 @@ def main():
     return 0
 
 
+def _achar_plugin(game_root):
+    """Acha a DLL universal: empacotado, o exe fica DENTRO de
+    bin\\win_x64 (plugin ao lado, em .\\plugins); no modo dev, o script
+    esta na raiz do jogo (bin\\win_x64\\plugins abaixo)."""
+    base = (Path(sys.executable) if getattr(sys, "frozen", False)
+            else Path(__file__).resolve()).parent
+    candidatos = [
+        base / "plugins" / "scs-telemetry.dll",                   # empacotado
+        base / "bin" / "win_x64" / "plugins" / "scs-telemetry.dll",  # dev
+    ]
+    for cima in range(1, 5):                    # repack: sobe ate achar
+        try:
+            raiz = base.parents[cima]
+        except IndexError:
+            break
+        candidatos.append(raiz / "bin" / "win_x64" / "plugins"
+                          / "scs-telemetry.dll")
+    for c in candidatos:
+        if c.exists():
+            return c
+    raise RuntimeError("DLL nao encontrada; tentei: "
+                       + " ; ".join(str(c) for c in candidatos))
+
+
 def _run(args, log, escrever):
     # PyInstaller onefile: __file__ aponta p/ o dir TEMPORARIO de extracao
     # (_MEIPASS) — o lugar do jogo (e da DLL) e o dir do .exe.
@@ -241,9 +265,7 @@ def _run(args, log, escrever):
         game_root = Path(sys.executable).resolve().parent
     else:
         game_root = Path(__file__).resolve().parent
-    plugin = game_root / "bin" / "win_x64" / "plugins" / "scs-telemetry.dll"
-    if not plugin.exists():
-        raise RuntimeError(f"DLL nao encontrada: {plugin}")
+    plugin = _achar_plugin(game_root)
     log(f"[stub] jogo em {game_root}")
     log(f"[stub] DLL: {plugin}")
     sdk = SDKHost(plugin, log)

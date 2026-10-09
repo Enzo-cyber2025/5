@@ -835,7 +835,7 @@ jobs:
           $s = Get-Content "C:\Juegos\smoke.json" -Raw | ConvertFrom-Json
           $s.log | ForEach-Object { Write-Host "  $_" }
           # diagnostico CURTO dentro da anotacao (e o resumo do passo)
-          $erro1 = if ($s.erro) { ($s.erro -split "`n")[0] } else { "" }
+          $erro1 = if ($s.erro) { (($s.erro -split "`n" | Where-Object { $_.Trim() } | Select-Object -Last 1)) } else { "" }
           $log8  = ($s.log | Select-Object -First 8) -join " | "
           $diag  = "canais=$($s.canais_dll) dist=$($s.dist_m) mmf_erro=$($s.mmf_erro) erro=$erro1"
           "## Smoke do jogo-substituto`n``````text`n$($s.log -join "`n")`n``````" | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
@@ -875,7 +875,7 @@ jobs:
           Write-Host "=== resultado do jogo-substituto ==="
           $r | ConvertTo-Json -Depth 4 | Write-Host
           $r.log | Select-Object -Last 14 | ForEach-Object { Write-Host "  $_" }
-          $erro1 = if ($r.erro) { ($r.erro -split "`n")[0] } else { "" }
+          $erro1 = if ($r.erro) { (($r.erro -split "`n" | Where-Object { $_.Trim() } | Select-Object -Last 1)) } else { "" }
           $log8  = ($r.log | Select-Object -First 8) -join " | "
           $diag  = "canais=$($r.canais_dll) dist=$($r.dist_m) vmax=$($r.max_speed_mps) mmf_erro=$($r.mmf_erro) erro=$erro1"
           "## Prova de direcao — jogo-substituto`n``````text`n$($r.log -join "`n")`n``````" | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
