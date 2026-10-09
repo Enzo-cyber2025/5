@@ -81,8 +81,9 @@ def v_dplacement(x, y, z, heading, pitch, roll):
 
 CHANNEL_CB = ct.CFUNCTYPE(None, ct.c_char_p, ct.c_uint32,
                           ct.POINTER(SCSValue), ct.c_void_p)
+EVENT_CB = ct.CFUNCTYPE(None, ct.c_uint32, ct.c_void_p, ct.c_void_p)
 LOG_FN = ct.CFUNCTYPE(None, ct.c_uint32, ct.c_char_p)
-REG_EVENT = ct.CFUNCTYPE(ct.c_int, ct.c_uint32, CHANNEL_CB, ct.c_void_p)
+REG_EVENT = ct.CFUNCTYPE(ct.c_int, ct.c_uint32, EVENT_CB, ct.c_void_p)
 REG_CHANNEL = ct.CFUNCTYPE(ct.c_int, ct.c_char_p, ct.c_uint32, ct.c_uint32,
                            ct.c_uint32, CHANNEL_CB, ct.c_void_p)
 UNREG_EVENT = ct.CFUNCTYPE(ct.c_int, ct.c_uint32)
@@ -162,7 +163,7 @@ class SDKHost:
         if ev:
             info = struct.pack("<IIQQ", 0, 0, sim_ms, sim_ms)
             buf = ct.create_string_buffer(info, len(info))
-            ev[0](EVENT_FRAME_START, buf, ev[1])
+            ev[0](EVENT_FRAME_START, ct.cast(buf, ct.c_void_p), ev[1])
 
 
 def mmf_probe():
