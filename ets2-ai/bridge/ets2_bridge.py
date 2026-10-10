@@ -1689,11 +1689,25 @@ def main():
         return
     if args.ets2:
         from ets2ai import practice
+
+        def _cli_log(msg):
+            """CLI do exe --noconsole: print nao existe (stdout None) —
+            log vai p/ o STDERR (o CI redireciona) e para o MESMO arquivo
+            de sessao da GUI (ets2-ai-log.txt ao lado do .exe)."""
+            try:
+                print(msg, file=sys.stderr, flush=True)
+            except Exception:
+                pass
+            try:
+                _log_tee(msg)
+            except Exception:
+                pass
+
         rec = args.record or None
         if rec is None and args.ets2 in ("record", "shadow"):
             import time as _t
             rec = f"practice/{args.ets2}-{_t.strftime('%Y%m%d-%H%M%S')}.csv"
-            print(f"[pratica] gravando automaticamente em {rec}")
+            _cli_log(f"[pratica] gravando automaticamente em {rec}")
         # PLUG & PLAY tambem na pratica: cabo USB -> tunel adb reverse
         usb_plug_and_play(args.port)
         UsbKeeper(args.port).start()
@@ -1704,19 +1718,19 @@ def main():
             link = PhoneLink(args.port,
                              "0.0.0.0" if args.rede else "127.0.0.1")
             link.start()
-            print(f"[pratica] IA no CELULAR: no APK toque CONECTAR com o "
-                  f"CABO USB (Depuração USB) — porta {args.port}"
-                  + (f"; rede: {PhoneLink.local_ip()}" if args.rede else "")
-                  + " — sem celular, a IA local do PC assume")
+            _cli_log(f"[pratica] IA no CELULAR: no APK toque CONECTAR com o "
+                     f"CABO USB (Depuração USB) — porta {args.port}"
+                     + (f"; rede: {PhoneLink.local_ip()}" if args.rede else "")
+                     + " — sem celular, a IA local do PC assume")
             tmode = "mem" if args.no_dll else args.telemetry
             practice.run(args.ets2, map_path=args.map, rec_path=rec,
                          inject=args.inject, window=args.window,
-                         phone=link, telemetry_mode=tmode)
+                         phone=link, telemetry_mode=tmode, log=_cli_log)
         else:
             tmode = "mem" if args.no_dll else args.telemetry
             practice.run(args.ets2, map_path=args.map, rec_path=rec,
                          inject=args.inject, window=args.window,
-                         telemetry_mode=tmode)
+                         telemetry_mode=tmode, log=_cli_log)
         return
     layers = None if (args.sem_janela and args.somente_celular) else load_policy()
     injector = KeyInjector(args.window, args.inject)
