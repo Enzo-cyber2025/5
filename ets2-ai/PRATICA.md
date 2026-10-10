@@ -482,3 +482,15 @@ falso. Suite: 130 passed, 1 skipped.
   SendInput, loop de decisao) sem o jogo pago.
 - Anti-drift triplo: offsets C <-> TelemetryMap <-> game_stub num teste.
 - Suite: 136 passed, 1 skipped.
+
+## v0.4.22 — carimbo de versão no AUTOTESTE (o "qual exe você está usando?")
+
+- O AUTOTESTE agora mostra **a versão do exe na 1ª linha** do relatório
+  (e no autoteste-resultado.json). Versões <= 0.4.20 tinham o bug do
+  SendInput (struct INPUT incompleta = nenhuma tecla chegava ao jogo) —
+  se o seu relatório não diz "v0.4.22", baixe o exe novo da release.
+- v0.4.21 (robusta, tudo provado no CI em Windows real): PROVA DE
+  DIRECAO verde — jogo-substituto com ABI real do SDK carrega a DLL
+  universal, e o MESMO exe da release assume o volante e dirige (teclas
+  SendInput reais movem o caminhao; 4 bugs de produto achados pela
+  prova: ABI da DLL, freio eterno sem job, SendInput, launch assist).

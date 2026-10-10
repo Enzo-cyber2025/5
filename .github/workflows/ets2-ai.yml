@@ -880,7 +880,7 @@ jobs:
           #    log completo capturado (stdout valido via redirecionamento)
           # --window default do bridge JA e "Euro Truck" (bate com o titulo
           # do stub); sem ele nao sobra argumento com espaco para o
-          # PowerShell quebrar (v0.4.21: "Euro Truck" virava 2 args e o
+          # PowerShell quebrar (v0.4.22: "Euro Truck" virava 2 args e o
           # argparse do bridge morria com "unrecognized arguments: Truck")
           $p = Start-Process -FilePath $exe `
             -ArgumentList "--ets2","drive","--inject" `
@@ -975,7 +975,7 @@ jobs:
       - name: Exporta .pt com paridade numpy verificada
         run: |
           cd ets2-ai
-          python3 -m ets2ai.export_pt --weights artifacts/model-weights.json --out artifacts/ets2ai-v0.4.21.pt 2>&1 | tee ../.cache_pt.log
+          python3 -m ets2ai.export_pt --weights artifacts/model-weights.json --out artifacts/ets2ai-v0.4.22.pt 2>&1 | tee ../.cache_pt.log
           exit ${PIPESTATUS[0]}
       - name: Diagnostico (commita logs no repo em caso de falha)
         if: failure()
@@ -989,15 +989,15 @@ jobs:
           git pull --rebase --autostash origin arena/01a0f37d-5 || true
           git push || true
           exit 1
-      - name: Publica na release ets2-ai-v0.4.21
+      - name: Publica na release ets2-ai-v0.4.22
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view ets2-ai-v0.4.21 >/dev/null 2>&1 || \
-            gh release create ets2-ai-v0.4.21 \
-              --title "ETS2-AI v0.4.21 — QUALQUER ETS2: rotacao automatica de DLL + autoteste; validado no CI em Windows REAL (7 versoes: 1.22 ate 1.61 + telemetria); cadeia 500B" \
-              --notes "ETS2-AI v0.4.21 - APK: servico em 1o plano (wake lock + Wi-Fi alto desempenho) mantem a IA na MESMA velocidade com a tela bloqueada (cmd/s ao vivo na notificacao); teclado BT com as setas (padrao ETS2); EXE com DLL embutida + adb plug & play; cadeia rumo a 500 bilhoes de amostras no Kaggle."
-          gh release upload ets2-ai-v0.4.21 ets2-ai/artifacts/ets2ai-v0.4.21.pt --clobber
+          gh release view ets2-ai-v0.4.22 >/dev/null 2>&1 || \
+            gh release create ets2-ai-v0.4.22 \
+              --title "ETS2-AI v0.4.22 — QUALQUER ETS2: rotacao automatica de DLL + autoteste; validado no CI em Windows REAL (7 versoes: 1.22 ate 1.61 + telemetria); cadeia 500B" \
+              --notes "ETS2-AI v0.4.22 - APK: servico em 1o plano (wake lock + Wi-Fi alto desempenho) mantem a IA na MESMA velocidade com a tela bloqueada (cmd/s ao vivo na notificacao); teclado BT com as setas (padrao ETS2); EXE com DLL embutida + adb plug & play; cadeia rumo a 500 bilhoes de amostras no Kaggle."
+          gh release upload ets2-ai-v0.4.22 ets2-ai/artifacts/ets2ai-v0.4.22.pt --clobber
 
   release:
     name: Release com APK + EXE + TFLite
@@ -1011,7 +1011,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: ets2-ai/.cache/rel
-      - name: Publica release ets2-ai-v0.4.21
+      - name: Publica release ets2-ai-v0.4.22
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -1028,7 +1028,7 @@ jobs:
             cp ets2-ai/artifacts/model-nano.json ets2-ai/.cache/release/
           fi
           cat > ets2-ai/.cache/release/LEIA-ME.txt <<'LEIAME'
-          ETS2-AI v0.4.21 — COMO USAR (5 passos)
+          ETS2-AI v0.4.22 — COMO USAR (5 passos)
 
           1) Baixe o ETS2-AI-bridge.exe DESTA release. Nao precisa instalar.
              Windows 32-bit (PC bem antigo)? Use o ETS2-AI-bridge-x86.exe.
@@ -1071,8 +1071,8 @@ jobs:
           import json, os
           m = json.load(open('ets2-ai/artifacts/metrics.json'))
           c = m['closed_loop']
-          print("ETS2-AI v0.4.21 - APK teclado Bluetooth + bridge PC + IA de direcao.")
-          print("Novidades: PROVA DE DIRECAO no CI — um jogo-substituto com a ABI real do SDK carrega a DLL universal, abre TELA CHEIA e a IA do proprio .exe ASSUME o volante (teclas SendInput reais movem o caminhao); DLL UNIVERSAL PROPRIA (ets2ai) — 1 unica DLL de telemetria para TODO ETS2 1.36+ (inclui versoes futuras; codigo aberto no repo, compilada no CI para x64 e x86, layout com magic proprio AUI1); versoes < 1.36 e reserva: banco oficial de 14 releases (RenCloud + nlhans, MIT) — se a DLL escolhida nao for aceita pelo jogo, o bridge TROCA SOZINHO para a proxima release do banco (rotacao) e mostra o motivo do game.log.txt; validacao AUTOMATICA no CI em Windows REAL: o exe roda o autoteste contra 7 versoes do jogo (1.22 x86, 1.35, 1.41, 1.45, 1.53, 1.58, 1.61 — a ATUAL) com telemetria REAL (memoria compartilhada do jogo falso) — release so publica se tudo passar; botao AUTOTESTE (diagnostico) na GUI. Todas as releases do plugin (RenCloud + nlhans, MIT) embutidas no .exe — botao INSTALAR TELEMETRIA varre TODO o armazenamento, acha a pasta certa, ANALISA o jogo (arquitetura + versao) e instala a DLL ideal sozinho; botao VERIFICAR DLL confere o hash SHA-256 (corrompida/ausente/versao errada) e REPARA automaticamente; instalacao automatica tambem na abertura, no BUSCAR e no COMECAR. Sem passo manual, sem --game-dir. A IA so AGE com o jogo em TELA CHEIA (fora dela as teclas ficam soltas; ESC continua sendo o kill switch); COMECAR pode ser clicado ANTES de abrir o jogo — a IA espera o ETS2 por ate 15 min em vez de fechar (fim do \"iniciando e parou\"). IA no PC por padrao com ESCADA HONESTA medida na sua maquina — rede oficial (290x13) se couber no orcamento (<1% do N5030); senao rede DESTILADA (nano, ~28 mil parametros, imita a oficial; fidelidade no distill-report.json da release); senao celular via cabo (arquivos MTP, sem depuracao, sem delay). GPU sempre 0% no PC (numpy puro). Teclado BT emula as setas = controles padrao do ETS2; EXE com DLL de telemetria EMBUTIDA (auto-instala) e adb plug & play; GPU por Vulkan no celular (TFLite 2.17.0); cadeia de treino rumo a 500 bilhoes de amostras no Kaggle (contador em ets2-ai/CHAIN.md, status em ets2-ai/STATUS.md). NOVIDADES v0.4.21: pasta do jogo PROTEGIDA (C:\\Program Files) nao e mais barreira — o Windows pede PERMISSAO DE ADMINISTRADOR 1x para instalar a DLL (clique SIM); ao abrir o jogo pode aparecer o AVISO DO SDK de telemetria do proprio ETS2 — clique OK/Permitir (e do jogo, pode aparecer toda inicializacao); AUTOTESTE abre agora uma janela com o resultado e o botao COPIAR RESULTADO (cole no chat para o suporte) e salva autoteste-resultado.json AO LADO DO .exe; tudo o que acontece fica em ets2-ai-log.txt ao lado do .exe e qualquer erro fatal gera ets2-ai-erro.txt com janela avisando; validacao no CI estendida ate o ETS2 ATUAL (1.61, 17/set/2026).")
+          print("ETS2-AI v0.4.22 - APK teclado Bluetooth + bridge PC + IA de direcao.")
+          print("BAIXE ESTA VERSAO se voce usou qualquer anterior: o bug do SendInput (struct INPUT incompleta) fazia a IA 'assumir o volante' SEM INJETAR NENHUMA TECLA — o caminhao nao andava; agora o AUTOTESTE mostra a VERSAO do exe na 1a linha do relatorio. PROVA DE DIRECAO no CI — um jogo-substituto com a ABI real do SDK carrega a DLL universal, abre TELA CHEIA e a IA do proprio .exe ASSUME o volante (teclas SendInput reais movem o caminhao); DLL UNIVERSAL PROPRIA (ets2ai) — 1 unica DLL de telemetria para TODO ETS2 1.36+ (inclui versoes futuras; codigo aberto no repo, compilada no CI para x64 e x86, layout com magic proprio AUI1); versoes < 1.36 e reserva: banco oficial de 14 releases (RenCloud + nlhans, MIT) — se a DLL escolhida nao for aceita pelo jogo, o bridge TROCA SOZINHO para a proxima release do banco (rotacao) e mostra o motivo do game.log.txt; validacao AUTOMATICA no CI em Windows REAL: o exe roda o autoteste contra 7 versoes do jogo (1.22 x86, 1.35, 1.41, 1.45, 1.53, 1.58, 1.61 — a ATUAL) com telemetria REAL (memoria compartilhada do jogo falso) — release so publica se tudo passar; botao AUTOTESTE (diagnostico) na GUI. Todas as releases do plugin (RenCloud + nlhans, MIT) embutidas no .exe — botao INSTALAR TELEMETRIA varre TODO o armazenamento, acha a pasta certa, ANALISA o jogo (arquitetura + versao) e instala a DLL ideal sozinho; botao VERIFICAR DLL confere o hash SHA-256 (corrompida/ausente/versao errada) e REPARA automaticamente; instalacao automatica tambem na abertura, no BUSCAR e no COMECAR. Sem passo manual, sem --game-dir. A IA so AGE com o jogo em TELA CHEIA (fora dela as teclas ficam soltas; ESC continua sendo o kill switch); COMECAR pode ser clicado ANTES de abrir o jogo — a IA espera o ETS2 por ate 15 min em vez de fechar (fim do \"iniciando e parou\"). IA no PC por padrao com ESCADA HONESTA medida na sua maquina — rede oficial (290x13) se couber no orcamento (<1% do N5030); senao rede DESTILADA (nano, ~28 mil parametros, imita a oficial; fidelidade no distill-report.json da release); senao celular via cabo (arquivos MTP, sem depuracao, sem delay). GPU sempre 0% no PC (numpy puro). Teclado BT emula as setas = controles padrao do ETS2; EXE com DLL de telemetria EMBUTIDA (auto-instala) e adb plug & play; GPU por Vulkan no celular (TFLite 2.17.0); cadeia de treino rumo a 500 bilhoes de amostras no Kaggle (contador em ets2-ai/CHAIN.md, status em ets2-ai/STATUS.md). NOVIDADES v0.4.22: pasta do jogo PROTEGIDA (C:\\Program Files) nao e mais barreira — o Windows pede PERMISSAO DE ADMINISTRADOR 1x para instalar a DLL (clique SIM); ao abrir o jogo pode aparecer o AVISO DO SDK de telemetria do proprio ETS2 — clique OK/Permitir (e do jogo, pode aparecer toda inicializacao); AUTOTESTE abre agora uma janela com o resultado e o botao COPIAR RESULTADO (cole no chat para o suporte) e salva autoteste-resultado.json AO LADO DO .exe; tudo o que acontece fica em ets2-ai-log.txt ao lado do .exe e qualquer erro fatal gera ets2-ai-erro.txt com janela avisando; validacao no CI estendida ate o ETS2 ATUAL (1.61, 17/set/2026).")
           print(f"MSE validacao: {m['mse_val']:.5f} (meta <= {m['loss_target']}) | "
                 f"fonte dos pesos: {m.get('weights_source', '?')} | circuito fechado: "
                 f"{c['finish_rate']*100:.0f}% rotas, dock {c['dock_rate']*100:.0f}%, "
@@ -1088,12 +1088,12 @@ jobs:
           PY
           )"
           echo "NOTES: $NOTES"
-          TITLE="ETS2-AI v0.4.21 — QUALQUER ETS2: se o jogo recusar a DLL, o exe gira pelo banco ate aceitar; validacao automatica em Windows real no CI; botao AUTOTESTE; cadeia 500B de amostras"
-          gh release view ets2-ai-v0.4.21 >/dev/null 2>&1 || \
-            gh release create ets2-ai-v0.4.21 --title "$TITLE" --notes "$NOTES"
-          gh release upload ets2-ai-v0.4.21 ets2-ai/.cache/release/* --clobber
-          gh release edit ets2-ai-v0.4.21 --title "$TITLE" --notes "$NOTES" || true
-          gh release view ets2-ai-v0.4.21 --json assets --jq '.assets[].name'
+          TITLE="ETS2-AI v0.4.22 — QUALQUER ETS2: se o jogo recusar a DLL, o exe gira pelo banco ate aceitar; validacao automatica em Windows real no CI; botao AUTOTESTE; cadeia 500B de amostras"
+          gh release view ets2-ai-v0.4.22 >/dev/null 2>&1 || \
+            gh release create ets2-ai-v0.4.22 --title "$TITLE" --notes "$NOTES"
+          gh release upload ets2-ai-v0.4.22 ets2-ai/.cache/release/* --clobber
+          gh release edit ets2-ai-v0.4.22 --title "$TITLE" --notes "$NOTES" || true
+          gh release view ets2-ai-v0.4.22 --json assets --jq '.assets[].name'
       - name: Diagnostico (commita log no repo em caso de falha)
         if: failure()
         run: |
