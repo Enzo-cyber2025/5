@@ -30,6 +30,20 @@ jobs:
           python-version: '3.11'
       - name: Dependencias
         run: pip install --retries 5 --timeout 90 numpy==2.2.6 pytest==9.1.1
+      - name: Parse-check dos scripts PowerShell (erro de sintaxe vira anotacao)
+        shell: pwsh
+        run: |
+          $falhou = $false
+          Get-ChildItem ets2-ai/scripts/*.ps1 | ForEach-Object {
+            $errs = $null
+            $null = [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$null, [ref]$errs)
+            if ($errs) {
+              $falhou = $true
+              $errs | ForEach-Object { Write-Host ("::error file={0},line={1}::PowerShell parse: {2}" -f $_.Extent.File, $_.Extent.StartLineNumber, $_.Message) }
+            } else { Write-Host ("parse OK: " + $_.Name) }
+          }
+          if ($falhou) { exit 1 }
+
       - name: Testes (pytest)
         run: |
           cd ets2-ai
@@ -926,46 +940,7 @@ jobs:
       - name: PROVA DE TRABALHO — ciclo completo (acoplar reboque + balsa + entrega)
         shell: pwsh
         run: |
-          $g = "C:\Juegos\Euro Truck Simulator 2 Opti\gamedata"
-          $exe = (Resolve-Path "dist\ETS2-AI-bridge.exe").Path
-          $env:PYTHONUNBUFFERED = "1"
-          # o JOGO com o CICLO DE TRABALHO: reboque a acoplar (T), rota
-          # com BALSA (embarque por Enter + travessia) e doca no final
-          $game = Start-Process -FilePath "$g\bin\win_x64\eurotrucks2.exe" `
-            -ArgumentList "--segundos","560","--trabalho","--saida","C:\Juegos\trabalho.json" `
-            -WorkingDirectory $g -RedirectStandardError "C:\Juegos\trabalho.err" -PassThru
-          Start-Sleep -Seconds 8
-          $p = Start-Process -FilePath $exe `
-            -ArgumentList "--ets2","drive","--inject" `
-            -WorkingDirectory "C:\Juegos" `
-            -RedirectStandardOutput "C:\Juegos\bridge2.log" `
-            -RedirectStandardError "C:\Juegos\bridge2.err" -PassThru
-          $wsh = New-Object -ComObject WScript.Shell
-          1..8 | ForEach-Object { Start-Sleep -Seconds 2
-            $null = $wsh.AppActivate("Euro Truck Simulator 2 Opti") }
-          if (-not $game.WaitForExit(600000)) { Stop-Process -Id $game.Id -Force }
-          Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
-          if (-not (Test-Path "C:\Juegos\trabalho.json")) {
-            $e = (Get-Content "C:\Juegos\trabalho.err" -Raw -ErrorAction SilentlyContinue) -replace "`n"," | "
-            Write-Host "::error::TRABALHO: o jogo nao terminou; stderr: $e"; exit 1 }
-          $t = Get-Content "C:\Juegos\trabalho.json" -Raw | ConvertFrom-Json
-          Write-Host "=== resultado do trabalho ==="
-          $t | ConvertTo-Json -Depth 4 | Write-Host
-          $t.log | Select-Object -Last 12 | ForEach-Object { Write-Host "  $_" }
-          $diag = "fase=$($t.fase) acoplou=$($t.acoplou) balsa=$($t.pegou_balsa) entregou=$($t.entregou) T=$($t.teclas_T) Enter=$($t.teclas_enter) dist=$($t.dist_m) mmf_erro=$($t.mmf_erro) erro=$($t.erro)"
-          if (-not $t.acoplou)  { Write-Host "::error::TRABALHO: nao acoplou o reboque | $diag"; exit 1 }
-          if (-not $t.pegou_balsa) { Write-Host "::error::TRABALHO: nao pegou a balsa | $diag"; exit 1 }
-          if (-not $t.entregou) { Write-Host "::error::TRABALHO: nao entregou | $diag"; exit 1 }
-          if ([int]$t.teclas_T -lt 1 -or [int]$t.teclas_enter -lt 1) {
-            Write-Host "::error::TRABALHO: faltaram as teclas de interacao | $diag"; exit 1 }
-          if ([double]$t.dist_m -lt 100) {
-            Write-Host "::error::TRABALHO: andou pouco | $diag"; exit 1 }
-          if (-not $t.mmf_magic_ok -or -not $t.mmf_valores_ok) {
-            Write-Host "::error::TRABALHO: MMF invalida | $diag"; exit 1 }
-          if ([int]$t.canais_dll -lt 8) {
-            Write-Host "::error::TRABALHO: poucos canais | $diag"; exit 1 }
-          Write-Host ("PROVA DE TRABALHO: ciclo COMPLETO — acoplou o reboque (T), EMBARCOU na balsa (Enter), "
-            + "cruzou e ENTREGOU na doca — {0} m dirigidos pela IA, GPS seguido, teclas reais" -f $t.dist_m)
+          & "ets2-ai/scripts/prova-trabalho.ps1"
 
       - name: Diagnostico (commita logs da prova no repo)
         if: failure()
