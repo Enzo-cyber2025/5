@@ -877,8 +877,12 @@ jobs:
           Start-Sleep -Seconds 8
           # 2) o BRIDGE (o MESMO exe da release) em modo drive com injecao —
           #    log completo capturado (stdout valido via redirecionamento)
+          # --window default do bridge JA e "Euro Truck" (bate com o titulo
+          # do stub); sem ele nao sobra argumento com espaco para o
+          # PowerShell quebrar (v0.4.21: "Euro Truck" virava 2 args e o
+          # argparse do bridge morria com "unrecognized arguments: Truck")
           $p = Start-Process -FilePath $exe `
-            -ArgumentList "--ets2","drive","--inject","--window","Euro Truck" `
+            -ArgumentList "--ets2","drive","--inject" `
             -WorkingDirectory "C:\Juegos" `
             -RedirectStandardOutput "C:\Juegos\bridge.log" `
             -RedirectStandardError "C:\Juegos\bridge.err" -PassThru
