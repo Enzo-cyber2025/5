@@ -194,6 +194,41 @@ def key_decisions(steer, throttle, brake, phase):
     return want
 
 
+# ---- SendInput: structs FIÉIS ao winuser.h ----------------------------- #
+# BUG REAL (v0.4.21, achado pela PROVA DE DIRECAO no CI): a INPUT antiga
+# declarava so type+KBDINPUT sem a UNION completa — sizeof dava 32 em x64
+# em vez de 40, e o SendInput FALHA SILENCIOSAMENTE com cbSize errado
+# (nenhuma tecla chegava ao jogo; a IA "assumia" e nada acontecia).
+import ctypes as _ct
+
+
+# DWORD/LONG do Windows = 4 bytes SEMPRE (c_ulong no Linux e 8 — LP64;
+# por isso c_uint32/c_int32 explicitos: o tamanho bate em QUALquer SO)
+class _KBDINPUT(_ct.Structure):
+    _fields_ = [("wVk", _ct.c_ushort), ("wScan", _ct.c_ushort),
+                ("dwFlags", _ct.c_uint32), ("time", _ct.c_uint32),
+                ("dwExtraInfo", _ct.c_void_p)]
+
+
+class _MOUSEINPUT(_ct.Structure):
+    _fields_ = [("dx", _ct.c_int32), ("dy", _ct.c_int32),
+                ("mouseData", _ct.c_uint32), ("dwFlags", _ct.c_uint32),
+                ("time", _ct.c_uint32), ("dwExtraInfo", _ct.c_void_p)]
+
+
+class _HARDWAREINPUT(_ct.Structure):
+    _fields_ = [("uMsg", _ct.c_uint32), ("wParamL", _ct.c_ushort),
+                ("wParamH", _ct.c_ushort)]
+
+
+class _INPUTUNION(_ct.Union):
+    _fields_ = [("mi", _MOUSEINPUT), ("ki", _KBDINPUT), ("hi", _HARDWAREINPUT)]
+
+
+class _INPUT(_ct.Structure):
+    _fields_ = [("type", _ct.c_ulong), ("union", _INPUTUNION)]
+
+
 class KeyInjector:
     """Envia comandos continuos como teclas (bang-bang com histerese).
 
@@ -223,21 +258,19 @@ class KeyInjector:
         KEYEVENTF_SCANCODE = 0x0008
         KEYEVENTF_KEYUP = 0x0002
         KEYEVENTF_EXTENDEDKEY = 0x0001
-
-        class _KBD(self.ct.Structure):
-            _fields_ = [("wVk", self.ct.c_ushort), ("wScan", self.ct.c_ushort),
-                        ("dwFlags", self.ct.c_ulong), ("time", self.ct.c_ulong),
-                        ("dwExtraInfo", self.ct.POINTER(self.ct.c_ulong))]
-
-        class _INPUT(self.ct.Structure):
-            _fields_ = [("type", self.ct.c_ulong), ("ki", _KBD)]
         extra = self.ct.c_ulong(0)
         flags = KEYEVENTF_SCANCODE | (KEYEVENTF_KEYUP if up else 0)
         if scan in EXTENDED_KEYS:
             flags |= KEYEVENTF_EXTENDEDKEY
-        ki = _KBD(0, scan, flags, 0, self.ct.pointer(extra))
-        inp = _INPUT(INPUT_KEYBOARD, ki)
-        n = self.user32.SendInput(1, self.ct.byref(inp), self.ct.sizeof(inp))
+        ki = _KBDINPUT(0, scan, flags, 0, None)
+        inp = _INPUT(INPUT_KEYBOARD, _INPUTUNION(ki=ki))
+        n = self.user32.SendInput(1, self.ct.byref(inp),
+                                  self.ct.sizeof(_INPUT))
+        if n != 1 and not getattr(self, "_sendfail_logged", False):
+            self._sendfail_logged = True
+            self.log("[inject] SendInput FALHOU (retornou 0) — nenhuma tecla "
+                     "chega ao jogo; verifique sizeof(INPUT) "
+                     f"={self.ct.sizeof(_INPUT)}")
         return n == 1
 
     def _target_is_foreground(self):

@@ -313,3 +313,18 @@ def test_governor_sem_rota_nao_freia_para_sempre():
     # rota REAL longe: dirigir normal
     steer, thr, brk = governor_real(0.0, meta, 25000.0, (0.0, 0.8, 0.0), 25.0)
     assert thr >= 0.35 and brk == 0.0, (thr, brk)
+
+
+def test_sendinput_input_struct_fiel_windows():
+    """v0.4.21 (prova de direcao): a INPUT do SendInput sem a UNION
+    completa dava sizeof 32 em x64 (o certo sao 40) — SendInput falha
+    SILENCIOSAMENTE com cbSize errado e NENHUMA tecla chega ao jogo
+    (a IA 'assumia o volante' e o caminhao nao andava). Congelado."""
+    import ctypes as ct
+    import sys as _sys
+    _sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from ets2ai.keys import _INPUT, _KBDINPUT, _INPUTUNION
+    esperado = 40 if ct.sizeof(ct.c_void_p) == 8 else 28
+    assert ct.sizeof(_INPUT) == esperado, ct.sizeof(_INPUT)
+    assert ct.sizeof(_KBDINPUT) == (24 if ct.sizeof(ct.c_void_p) == 8 else 20)
+    assert ct.sizeof(_INPUTUNION) >= ct.sizeof(_KBDINPUT)
