@@ -886,8 +886,16 @@ jobs:
             -WorkingDirectory "C:\Juegos" `
             -RedirectStandardOutput "C:\Juegos\bridge.log" `
             -RedirectStandardError "C:\Juegos\bridge.err" -PassThru
+          # a janela do JOGO precisa estar em 1o PLANO para o gate do
+          # injetor abrir (Windows nao deixa processo novo roubar o foco) —
+          # AppActivate simula o usuario clicando na janela do jogo
+          $wsh = New-Object -ComObject WScript.Shell
+          1..8 | ForEach-Object { Start-Sleep -Seconds 2
+            $null = $wsh.AppActivate("Euro Truck Simulator 2 Opti") }
           if (-not $game.WaitForExit(180000)) { Stop-Process -Id $game.Id -Force }
           Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+          Write-Host "=== ets2-ai-log.txt (sessao do bridge, ultimas 50) ==="
+          Get-Content "dist\\ets2-ai-log.txt" -Tail 50 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $_" }
           Write-Host "=== bridge.log (ultimas 45) ==="
           Get-Content "C:\Juegos\bridge.log" -Tail 45 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $_" }
           Write-Host "=== bridge.err (ultimas 15) ==="
@@ -919,8 +927,9 @@ jobs:
         run: |
           set +e
           mkdir -p "ci-logs/${{ github.run_id }}-prova"
-          for f in smokeA.json smokeA.err smoke.json smoke.err resultado.json jogo.err bridge.log bridge.err ets2-ai-state.json; do
+          for f in smokeA.json smokeA.err smoke.json smoke.err resultado.json jogo.err bridge.log bridge.err ets2-ai-state.json ets2-ai-log.txt; do
             cp "/c/Juegos/$f" "ci-logs/${{ github.run_id }}-prova/$f" 2>/dev/null || true
+          cp "dist/ets2-ai-log.txt" "ci-logs/${{ github.run_id }}-prova/" 2>/dev/null || true
           done
           git config user.name "ci-diag"; git config user.email "ci-diag@users.noreply.github.com"
           git add ci-logs || true
