@@ -494,3 +494,19 @@ falso. Suite: 130 passed, 1 skipped.
   universal, e o MESMO exe da release assume o volante e dirige (teclas
   SendInput reais movem o caminhao; 4 bugs de produto achados pela
   prova: ABI da DLL, freio eterno sem job, SendInput, launch assist).
+
+## v0.4.23 — PROVA DE TRABALHO (ciclo completo no CI)
+
+- Novo step no CI: o jogo-substituto roda com `--trabalho` (reboque a
+  acoplar, rota com BALSA e doca no final) e a IA do MESMO exe da release
+  tem que fazer o ciclo inteiro: chegar no reboque, ACOPAR (T), seguir o
+  GPS ate o porto, EMBARCAR na balsa (Enter), cruzar e ENTREGAR.
+- DLL universal: atributos `ferry.*` do config do job ligam a flag balsa
+  (offset 4306) — no jogo real o trabalho com travessia maritima avisa
+  assim; evento de gameplay `ferry` tambem liga.
+- practice.py `_job_flow`: sem reboque + no alvo + parado -> T; job com
+  balsa + no porto + parado -> Enter. Tudo por tecla REAL (SendInput).
+- GPS sem job: route_distance e respeitado quando o jogo reporta um alvo
+  real (buscar o reboque) — antes o caminhao passava direto.
+- Encaixe do reboque no jogo real: a manobra de RE (dar re ate encostar)
+  ainda e feita pelo jogador; a IA faz a aproximacao e aperta T.

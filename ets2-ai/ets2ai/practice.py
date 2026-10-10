@@ -388,7 +388,12 @@ class PracticeLoop:
         limit = sn.get("speed_limit") or 25.0
         if limit < 0.5:
             limit = 25.0
-        route_m = sn.get("route_distance", 0.0) if sn.get("on_job") else None
+        # rota do GPS: valida COM job (destino) OU sem job quando o jogo
+        # reporta um alvo real (caminhao proprio: buscar/acoplar o reboque;
+        # sem alvo de verdade o jogo reporta ~0 -> None)
+        route_m = sn.get("route_distance", 0.0)
+        if route_m is not None and route_m <= 1.0 and not sn.get("on_job"):
+            route_m = None
         # ---- por modo ----
         if self.mode == "record":
             self._maybe_record(feat, meta, sn, speed_min=0.5)
@@ -408,6 +413,7 @@ class PracticeLoop:
                                    override=True, src="H")
                 out["source"] = "HUMANO no comando (DAgger)"
             else:
+                self._job_flow(sn, now)
                 self._cold_start(sn, now)
                 self._maybe_signal(meta, sn, now)
                 self._pit_crew(sn, now, job_min)
@@ -537,6 +543,31 @@ class PracticeLoop:
                      "(Enter)")
             self.injector.tap(*self.macros.get("ok", (0x1C, "Enter")))
             self._last_ok_t = now
+
+    def _job_flow(self, sn, now):
+        """CICLO DE TRABALHO por tecla REAL (guiado pela telemetria):
+
+        - caminhao PROPRIo sem reboque (sem job) + chegou no alvo + parado:
+          ACOPA o reboque (T) — o jogo real aceita o encaixe nesta hora;
+        - rota com BALSA (job config ferry.*) + no porto + parado:
+          confirma o embarque (Enter) — o jogo real abre o dialogo do porto.
+        """
+        if self.mode != "drive" or self.injector is None:
+            return
+        rm = sn.get("route_distance")
+        if rm is None or rm >= 25.0 or sn["speed"] >= 0.5:
+            return
+        if now - self._last_macro_t < 3.0:
+            return
+        if not sn.get("on_job"):
+            self._last_macro_t = now
+            self.injector.tap(*self.macros.get(
+                "dock", (0x14, "T (acoplar reboque)")))
+            self.log("[trabalho] caminhao proprio: ACOPANDO o reboque (T)")
+        elif sn.get("ferry"):
+            self._last_macro_t = now
+            self.injector.tap(*self.macros.get("ok", (0x1C, "Enter")))
+            self.log("[trabalho] balsa na rota: EMBARCANDO (Enter)")
 
     def _cold_start(self, sn, now):
         """TOMADA IMEDIATA: caminhao parado? A IA liga o motor e solta o

@@ -108,6 +108,19 @@ class InitParams(ct.Structure):
     ]
 
 
+class NamedValue(ct.Structure):
+    """scs_named_value_t (x64): name + pad + value (48 B) — termina com
+    name == NULL."""
+    _fields_ = [("name", ct.c_char_p), ("_pad", ct.c_uint32),
+                ("value", SCSValue)]
+
+
+class ConfigEvent(ct.Structure):
+    """scs_telemetry_configuration_t: id + atributos."""
+    _fields_ = [("id", ct.c_char_p),
+                ("attributes", ct.POINTER(NamedValue))]
+
+
 class SDKHost:
     """Lado "jogo" do contrato: registra o que a DLL pedir e alimenta."""
 
@@ -161,6 +174,35 @@ class SDKHost:
         if cb:
             cb[0](name.encode(), U32_NIL, ct.byref(value), cb[1])
 
+    def config(self, cid, attrs=()):
+        """Evento de CONFIGURACAO (id + atributos) — e assim que o jogo
+        real avisa trabalho novo (cargo, balsa.source/target...)."""
+        ev = self.eventos.get(EVENT_CONFIGURATION)
+        if not ev:
+            return
+        arr = (NamedValue * (len(attrs) + 1))()
+        for i, (n, v) in enumerate(attrs):
+            arr[i].name = n.encode()
+            arr[i].value = v
+        arr[len(attrs)].name = None
+        ce = ConfigEvent(cid.encode(), arr)
+        ev[0](EVENT_CONFIGURATION, ct.cast(ct.byref(ce), ct.c_void_p),
+              ev[1])
+
+    def gameplay(self, gid):
+        """Evento de GAMEPLAY (fined/tollgate/ferry/job.delivered...)."""
+        ev = self.eventos.get(EVENT_GAMEPLAY)
+        if ev:
+            ce = ConfigEvent(gid.encode(), None)
+            ev[0](EVENT_GAMEPLAY, ct.cast(ct.byref(ce), ct.c_void_p),
+                  ev[1])
+
+    def pause(self, on):
+        """paused/resumed — a travessia da balsa e um 'cutscene' do jogo."""
+        ev = self.eventos.get(EVENT_PAUSED if on else EVENT_STARTED)
+        if ev:
+            ev[0](EVENT_PAUSED if on else EVENT_STARTED, None, ev[1])
+
     def frame_start(self, sim_ms):
         ev = self.eventos.get(EVENT_FRAME_START)
         if ev:
@@ -210,6 +252,9 @@ def main():
     ap.add_argument("--saida", required=True)
     ap.add_argument("--headless", action="store_true",
                     help="sem janela (smoke da DLL/ABI; a prova usa janela)")
+    ap.add_argument("--trabalho", action="store_true",
+                    help="ciclo de TRABALHO: acoplar reboque (T) -> balsa "
+                         "(Enter) -> entrega — a IA tem que fazer TUDO")
     args = ap.parse_args()
 
     if sys.stdout is None:
@@ -313,6 +358,14 @@ def _run(args, log, escrever, linhas):
     dt = 1.0 / 30.0
     probe = {"ok": False, "match": False, "fail": None, "last": -10.0}
     started_sent = False
+    # ---- ciclo de TRABALHO (v0.4.23) --------------------------------- #
+    # fases: acoplar (reboque a 60 m) -> balsa (porto a +350 m) ->
+    # cruzando (cutscene 3 s, teleporta +2000) -> entrega (doca a +300 m)
+    VK_T, VK_ENTER = 0x54, 0x0D          # VIRTUAL keys (GetAsyncKeyState)
+    trb = {"fase": "acoplar" if args.trabalho else None,
+           "x_reboque": 60.0, "x_porto": 410.0, "x_doca": 2710.0,
+           "acoplou": False, "balsa": False, "entregou": False,
+           "cruzando_t0": None, "tT": 0, "tEnter": 0}
 
     def tick():
         el = time.monotonic() - t0
@@ -344,12 +397,50 @@ def _run(args, log, escrever, linhas):
             st["thr"] += 1
         if esq or dir_:
             st["str"] += 1
+        # ---- ciclo de TRABALHO: a IA interage (T/Enter) pelas teclas --- #
+        if trb["fase"] is not None:
+            trb["tT"] += 1 if key(VK_T) else 0
+            trb["tEnter"] += 1 if key(VK_ENTER) else 0
+            alvo = {"acoplar": trb["x_reboque"], "balsa": trb["x_porto"],
+                    "cruzando": trb["x_porto"],
+                    "entrega": trb["x_doca"], "fim": trb["x_doca"]}[trb["fase"]]
+            st["route"] = max(0.0, alvo - st["x"])
+            if trb["fase"] == "acoplar" and key(VK_T) \
+                    and st["route"] < 12.0 and st["speed"] < 2.0:
+                trb["acoplou"] = True
+                trb["fase"] = "balsa"
+                sdk.config("job", [("cargo", v_u32(1)),
+                                   ("ferry.source", v_u32(1)),
+                                   ("ferry.target", v_u32(1))])
+                log("[stub] REBOQUE ACOPADO (T) — trabalho aceito: rota "
+                    "com BALSA; GPS -> porto")
+            elif trb["fase"] == "balsa" and key(VK_ENTER) \
+                    and st["route"] < 12.0 and st["speed"] < 0.5:
+                trb["fase"] = "cruzando"
+                trb["cruzando_t0"] = el
+                sdk.pause(True)
+                log("[stub] EMBARCOU na balsa (Enter) — travessia...")
+            elif trb["fase"] == "cruzando" and el - trb["cruzando_t0"] > 3.0:
+                trb["balsa"] = True
+                trb["fase"] = "entrega"
+                st["x"] += 2000.0                     # teleporta p/ o outro lado
+                sdk.gameplay("ferry")
+                sdk.pause(False)
+                log("[stub] balsa CRUZADA — GPS -> doca de entrega")
+            elif trb["fase"] == "entrega" and st["route"] < 8.0 \
+                    and st["speed"] < 0.5:
+                trb["entregou"] = True
+                trb["fase"] = "fim"
+                sdk.gameplay("job.delivered")
+                log("[stub] TRABALHO ENTREGUE — job.delivered")
         # integracao simples
         if acel:
             st["speed"] += 2.2 * dt
         if freio:
             st["speed"] -= 4.0 * dt
         st["speed"] = max(0.0, min(st["speed"] - 0.25 * dt, 25.0))
+        if trb["fase"] == "cruzando":
+            st["speed"] = 0.0                    # a bordo: sem acelerador
         if st["speed"] > 0.05:
             st["heading"] += steer * 0.55 * dt * min(1.0, st["speed"] / 6)
             dx = st["speed"] * dt
@@ -409,7 +500,11 @@ def _run(args, log, escrever, linhas):
             cv.create_rectangle(60, 140, 60 + st["speed"] * 24, 170,
                                 fill="#00C48C", width=0)
         if el >= args.segundos:
-            escrever(dist_m=round(st["dist"], 1),
+            escrever(trabalho=bool(args.trabalho),
+                     acoplou=trb["acoplou"], pegou_balsa=trb["balsa"],
+                     entregou=trb["entregou"], fase=trb["fase"],
+                     teclas_T=trb["tT"], teclas_enter=trb["tEnter"],
+                     dist_m=round(st["dist"], 1),
                      max_speed_mps=round(st["vmax"], 2),
                      teclas_tracao=st["thr"], teclas_volante=st["str"],
                      canais_dll=len(sdk.canais),

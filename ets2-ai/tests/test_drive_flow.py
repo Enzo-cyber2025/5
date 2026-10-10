@@ -345,3 +345,55 @@ def test_governor_launch_assist_cobre_o_vale_da_rede():
     # acima do vale a rede manda sozinha (0.32 em 2.0 m/s) — sem piso
     _, thr, brk = governor_real(2.0, meta, None, (0.0, 0.32, 0.0), 11.0)
     assert abs(thr - 0.32) < 1e-9 and brk == 0.0
+
+
+def test_job_flow_acopla_e_embarca():
+    """v0.4.23: caminhao proprio parado no alvo SEM job -> T (acoplar);
+    com job e rota com balsa -> Enter (embarcar). Nada fora disso."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from ets2ai.practice import PracticeLoop
+    taps = []
+    class Inj:
+        def tap(self, scan, name=""):
+            taps.append(scan)
+        def release_all(self):
+            pass
+    loop = PracticeLoop.__new__(PracticeLoop)
+    loop.mode = "drive"
+    loop.injector = Inj()
+    loop.macros = {"dock": (0x14, "T"), "ok": (0x1C, "Enter")}
+    loop._last_macro_t = -1e9
+    loop.log = lambda *a, **k: None
+    # sem job, no reboque, parado -> T
+    loop._job_flow({"route_distance": 10.0, "speed": 0.0, "on_job": False}, 0.0)
+    assert taps[-1] == 0x14
+    # longe do alvo -> nada
+    n = len(taps)
+    loop._job_flow({"route_distance": 200.0, "speed": 0.0, "on_job": False}, 10.0)
+    assert len(taps) == n
+    # com job + balsa, no porto -> Enter
+    loop._job_flow({"route_distance": 8.0, "speed": 0.2, "on_job": True,
+                    "ferry": True}, 20.0)
+    assert taps[-1] == 0x1C
+    # com job SEM balsa -> nada (so conduz)
+    n = len(taps)
+    loop._job_flow({"route_distance": 8.0, "speed": 0.2, "on_job": True,
+                    "ferry": False}, 30.0)
+    assert len(taps) == n
+
+
+def test_game_stub_offsets_ferry_e_on_job():
+    """anti-drift: os offsets do stub (ferry/on_job) = TelemetryMap."""
+    import ctypes as ct
+    import importlib.util as ilu
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from ets2ai.telemetry import TelemetryMap
+    bp = Path(__file__).resolve().parents[1] / "ets2ai" / "game_stub.py"
+    spec = ilu.spec_from_file_location("game_stub_o", bp)
+    gs = ilu.module_from_spec(spec)
+    spec.loader.exec_module(gs)
+    assert ct.sizeof(gs.NamedValue) == (64 if ct.sizeof(ct.c_void_p) == 8
+                                        else 56)
+    assert TelemetryMap.ferry.offset == 4306
+    assert TelemetryMap.on_job.offset == 4300

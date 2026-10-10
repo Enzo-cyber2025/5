@@ -61,6 +61,7 @@
 #define OFF_ROT_X     2224    /* f32 heading (0..1 = 0..360) */
 #define OFF_ROT_Y     2232    /* f32 pitch */
 #define OFF_ROT_Z     2240    /* f32 roll */
+#define OFF_FERRY       4306  /* evento gameplay/config: rota com balsa */
 #define OFF_ON_JOB    4300    /* bool */
 
 #define UNIVERSAL_MAGIC 0x31495541u          /* "AUI1" little-endian */
@@ -271,6 +272,13 @@ static void SCS_CDECL on_configuration(const scs_event_t event,
         const int tem_atributos =
             (cfg->attributes && cfg->attributes->name != NULL);
         put_bool(OFF_ON_JOB, tem_atributos);
+        /* trabalho com balsa: o GPS leva ao porto — a IA precisa saber */
+        for (const scs_named_value_t *a = cfg->attributes;
+             a && a->name != NULL; ++a) {
+            if (lstrcmpA(a->name, "ferry.source") == 0 ||
+                lstrcmpA(a->name, "ferry.target") == 0)
+                put_bool(OFF_FERRY, 1);
+        }
     } else if (lstrcmpA(cfg->id, "truck") == 0) {
         for (const scs_named_value_t *a = cfg->attributes;
              a && a->name != NULL; ++a) {
@@ -289,9 +297,12 @@ static void SCS_CDECL on_gameplay(const scs_event_t event,
     if (!g_map || !event_info) return;
     const scs_telemetry_configuration_t *ev =
         (const scs_telemetry_configuration_t *)event_info;
-    if (ev->id && (lstrcmpA(ev->id, "job.delivered") == 0 ||
-                   lstrcmpA(ev->id, "job.cancelled") == 0))
+    if (!ev->id) return;
+    if (lstrcmpA(ev->id, "job.delivered") == 0 ||
+        lstrcmpA(ev->id, "job.cancelled") == 0)
         put_bool(OFF_ON_JOB, 0);
+    else if (lstrcmpA(ev->id, "ferry") == 0)
+        put_bool(OFF_FERRY, 1);            /* embarcou na balsa */
 }
 
 /* ---- inicializacao (chamada pelo JOGO) ---------------------------------- */
