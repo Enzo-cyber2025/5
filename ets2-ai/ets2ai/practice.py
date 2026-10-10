@@ -142,9 +142,13 @@ def governor_real(speed, meta, route_distance_m, cmd, limit_mps):
     elif route_distance_m is not None and \
             -50.0 < route_distance_m <= 0.0:
         return (cmd[0], 0.0, 1.0)                     # cruzou: freia
-    # 4. anti-stall (nunca parar no meio da estrada) — SEM ROTA (None)
-    #    também dirige (devagar): a IA nao fica presa segurando o freio
-    if speed < 0.6 and (route_distance_m is None or
+    # 4. anti-stall + LAUNCH (nunca parar/engasgar no meio da estrada) —
+    #    piso de acelerador ate 2.0 m/s: a rede tem um VALE de arranque
+    #    entre ~0.5-1.5 m/s (throttle ~0.15, abaixo do gatilho da tecla)
+    #    herdado do sim, onde o lancamento era papel do anti-stall — sem
+    #    o piso o caminhao oscila preso a ~2 km/h para sempre (provado na
+    #    PROVA DE DIRECAO do CI). Acima de 2.0 a rede assume (thr 0.32+).
+    if speed < 2.0 and (route_distance_m is None or
                         route_distance_m <= 0.0 or route_distance_m > 30.0):
         return (cmd[0], max(cmd[1], 0.35), 0.0)
     # 5. estrada desconhecida: devagar ate o mapa cobrir

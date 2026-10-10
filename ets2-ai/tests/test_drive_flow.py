@@ -328,3 +328,20 @@ def test_sendinput_input_struct_fiel_windows():
     assert ct.sizeof(_INPUT) == esperado, ct.sizeof(_INPUT)
     assert ct.sizeof(_KBDINPUT) == (24 if ct.sizeof(ct.c_void_p) == 8 else 20)
     assert ct.sizeof(_INPUTUNION) >= ct.sizeof(_KBDINPUT)
+
+
+def test_governor_launch_assist_cobre_o_vale_da_rede():
+    """v0.4.21: a rede tem um vale de arranque (~0.5-1.5 m/s, thr ~0.15
+    abaixo do gatilho da tecla) — sem piso o caminhao oscila preso a
+    ~2 km/h (provado na prova de direcao do CI). O anti-stall agora
+    sustenta throttle 0.35 ate 2.0 m/s, onde a rede assume (thr 0.32+)."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from ets2ai.practice import governor_real
+    meta = {"located": False, "curvs": [None] * 8, "coverage": 0}
+    for v in (0.0, 0.6, 1.0, 1.5, 1.99):
+        _, thr, brk = governor_real(v, meta, None, (0.0, 0.0, 0.0), 11.0)
+        assert thr >= 0.35 and brk == 0.0, (v, thr, brk)
+    # acima do vale a rede manda sozinha (0.32 em 2.0 m/s) — sem piso
+    _, thr, brk = governor_real(2.0, meta, None, (0.0, 0.32, 0.0), 11.0)
+    assert abs(thr - 0.32) < 1e-9 and brk == 0.0
