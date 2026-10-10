@@ -128,7 +128,10 @@ def governor_real(speed, meta, route_distance_m, cmd, limit_mps):
     # 3. aproximacao do destino: nunca carregar velocidade ate a entrega
     #    (perfil sonoro igual sim.governor: mira 4 m antes, hold 2,0 m,
     #     freio total mesmo se cruzar a linha)
-    if 0.0 < route_distance_m < 600.0:
+    # route_distance_m None = SEM ROTA/job: o velho 0.0 caia no elif
+    # "cruzou: freia" e a IA segurava o freio PARA SEMPRE sem job ativo
+    # (o anti-stall nunca rodava — retorno antecipado).
+    if route_distance_m is not None and 0.0 < route_distance_m < 600.0:
         v_allow = math.sqrt(2.0 * sim.MAX_BRAKE * max(0.0, route_distance_m - 4.0))
         if speed > v_allow:
             return (cmd[0], 0.0, 1.0)
@@ -136,10 +139,13 @@ def governor_real(speed, meta, route_distance_m, cmd, limit_mps):
             return (cmd[0], 0.0, 1.0)                 # para na linha
         if speed < 2.0:
             return (cmd[0], max(cmd[1], 0.35), 0.0)   # creep final
-    elif -50.0 < route_distance_m <= 0.0:
+    elif route_distance_m is not None and \
+            -50.0 < route_distance_m <= 0.0:
         return (cmd[0], 0.0, 1.0)                     # cruzou: freia
-    # 4. anti-stall (nunca parar no meio da estrada)
-    if speed < 0.6 and (route_distance_m <= 0.0 or route_distance_m > 30.0):
+    # 4. anti-stall (nunca parar no meio da estrada) — SEM ROTA (None)
+    #    também dirige (devagar): a IA nao fica presa segurando o freio
+    if speed < 0.6 and (route_distance_m is None or
+                        route_distance_m <= 0.0 or route_distance_m > 30.0):
         return (cmd[0], max(cmd[1], 0.35), 0.0)
     # 5. estrada desconhecida: devagar ate o mapa cobrir
     if not meta["located"] and speed > UNKNOWN_CAP:
@@ -378,7 +384,7 @@ class PracticeLoop:
         limit = sn.get("speed_limit") or 25.0
         if limit < 0.5:
             limit = 25.0
-        route_m = sn.get("route_distance", 0.0) if sn.get("on_job") else 0.0
+        route_m = sn.get("route_distance", 0.0) if sn.get("on_job") else None
         # ---- por modo ----
         if self.mode == "record":
             self._maybe_record(feat, meta, sn, speed_min=0.5)
@@ -402,7 +408,8 @@ class PracticeLoop:
                 self._maybe_signal(meta, sn, now)
                 self._pit_crew(sn, now, job_min)
                 # chegou ao destino: freia ate parar e PUXA O FREIAO DE MAO
-                if 0.0 < route_m <= 1.5 and sn["speed"] < 0.5:
+                if route_m is not None and 0.0 < route_m <= 1.5 \
+                        and sn["speed"] < 0.5:
                     if not self._parked_at_dest:
                         self._parked_at_dest = True
                         if self.injector is not None:

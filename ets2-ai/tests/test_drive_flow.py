@@ -291,3 +291,25 @@ def test_botao_esperando_o_jogo():
     assert txt2 == "PARAR"                    # jogo abriu -> dirigindo
     st3, txt3, _ = mod._start_button_state(False, False, local_ok=True)
     assert "COMEÇAR" in txt3
+
+
+def test_governor_sem_rota_nao_freia_para_sempre():
+    """v0.4.21 (prova de direcao): SEM job ativo a rota era 0.0 e o
+    governor interpretava como 'cruzou a chegada' -> freio 1.0 PARA
+    SEMPRE (a IA assumia o volante e so segurava o freio). Agora sem
+    rota = None -> anti-stall dirige devagar; freio so com rota REAL."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from ets2ai.practice import governor_real
+    meta = {"located": False, "curvs": [None] * 8, "coverage": 0}
+    cmd = (0.0, 0.0, 0.0)
+    # SEM rota (None), parado: tem que acelerar (anti-stall), NAO frear
+    steer, thr, brk = governor_real(0.0, meta, None, cmd, 11.0)
+    assert thr >= 0.35 and brk == 0.0, (thr, brk)
+    # rota REAL cruzada (0.0 com job): continua freando (comportamento
+    # original preservado)
+    steer, thr, brk = governor_real(0.0, meta, 0.0, cmd, 11.0)
+    assert brk == 1.0, brk
+    # rota REAL longe: dirigir normal
+    steer, thr, brk = governor_real(0.0, meta, 25000.0, (0.0, 0.8, 0.0), 25.0)
+    assert thr >= 0.35 and brk == 0.0, (thr, brk)
