@@ -919,7 +919,8 @@ jobs:
           if ([int]$r.canais_dll -lt 8) {
             Write-Host "::error::PROVA: poucos canais | $diag"; exit 1 }
           if ([double]$r.dist_m -lt 50 -or [double]$r.max_speed_mps -lt 5) {
-            Write-Host "::error::PROVA: a IA NAO dirigiu | $diag"; exit 1 }
+            $blog = (Get-Content "C:\Juegos\bridge.log" -Tail 6 -ErrorAction SilentlyContinue) -join " | "
+            Write-Host "::error::PROVA: a IA NAO dirigiu | $diag | bridge: $blog"; exit 1 }
           Write-Host ("PROVA DE DIRECAO: a IA ASSUMIU o volante e dirigiu {0} m (max {1} km/h) — DLL universal carregada pela ABI real ({2} canais), teclas SendInput lidas pelo jogo, tela cheia OK" -f $r.dist_m, [math]::Round($r.max_speed_mps*3.6,1), $r.canais_dll)
 
       - name: Diagnostico (commita logs da prova no repo)
@@ -935,8 +936,11 @@ jobs:
           git config user.name "ci-diag"; git config user.email "ci-diag@users.noreply.github.com"
           git add ci-logs || true
           git commit -m "diag: prova-de-direcao run ${{ github.run_id }} [skip ci]" || true
-          git pull --rebase --autostash origin arena/01a0f37d-5 || true
-          git push || true
+          for i in 1 2 3 4 5; do
+            git pull --rebase --autostash origin arena/01a0f37d-5 || true
+            git push && break
+            sleep 10
+          done
           exit 1
 
       - name: Diagnostico (upload dos logs da prova)

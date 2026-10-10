@@ -312,9 +312,20 @@ def _run(args, log, escrever, linhas):
     t0 = time.monotonic()
     dt = 1.0 / 30.0
     probe = {"ok": False, "match": False, "fail": None, "last": -10.0}
+    started_sent = False
 
     def tick():
         el = time.monotonic() - t0
+        # o jogo REAL dispara o evento `started` ao entrar no gameplay — a
+        # DLL escreve paused=1 no init (jogo no menu) e SO ZERA com started.
+        # Sem isso a MMF fica "pausada" e a IA (corretamente) nao dirige.
+        nonlocal started_sent
+        if not started_sent and el > 0.7:
+            ev = sdk.eventos.get(EVENT_STARTED)
+            if ev:
+                ev[0](EVENT_STARTED, None, ev[1])
+            started_sent = True
+            log("[stub] evento started disparado (gameplay) — paused=0")
         # jogo em TELA CHEIA reafirma o 1o PLANO (o bridge so injeta com a
         # janela alvo em foco — no CI nada garante quem esta na frente;
         # SetForegroundWindow pelo processo DONO da janela e permitido)
