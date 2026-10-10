@@ -869,6 +869,7 @@ jobs:
         run: |
           $g = "C:\Juegos\Euro Truck Simulator 2 Opti\gamedata"
           $exe = (Resolve-Path "dist\ETS2-AI-bridge.exe").Path
+          $env:PYTHONUNBUFFERED = "1"   # logs vivos (kill -force nao perde)
           # 1) o JOGO SOBE: processo eurotrucks2.exe real, carrega a DLL
           #    universal pela ABI do SDK, janela TELA CHEIA, MMF no ar
           $game = Start-Process -FilePath "$g\bin\win_x64\eurotrucks2.exe" `

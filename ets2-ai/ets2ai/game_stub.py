@@ -315,6 +315,14 @@ def _run(args, log, escrever, linhas):
 
     def tick():
         el = time.monotonic() - t0
+        # jogo em TELA CHEIA reafirma o 1o PLANO (o bridge so injeta com a
+        # janela alvo em foco — no CI nada garante quem esta na frente;
+        # SetForegroundWindow pelo processo DONO da janela e permitido)
+        if root is not None and int(el * 1000) % 2000 < 40:
+            try:
+                user32.SetForegroundWindow(root.winfo_id())
+            except Exception:
+                pass
         # input do "motorista" (a IA do bridge injeta exatamente estas)
         acel = key(VK["up"]) or key(VK["w"])
         freio = key(VK["down"]) or key(VK["s"])
