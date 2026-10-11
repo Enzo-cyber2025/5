@@ -365,7 +365,8 @@ def _run(args, log, escrever, linhas):
     trb = {"fase": "acoplar" if args.trabalho else None,
            "x_reboque": 60.0, "x_porto": 410.0, "x_doca": 2710.0,
            "acoplou": False, "balsa": False, "entregou": False,
-           "cruzando_t0": None, "tT": 0, "tEnter": 0}
+           "cruzando_t0": None, "tT": 0, "tEnter": 0,
+           "dialogo": False, "ent_dialogo": 0, "prev_enter": False}
 
     def tick():
         el = time.monotonic() - t0
@@ -414,12 +415,29 @@ def _run(args, log, escrever, linhas):
                                    ("ferry.target", v_u32(1))])
                 log("[stub] REBOQUE ACOPADO (T) — trabalho aceito: rota "
                     "com BALSA; GPS -> porto")
-            elif trb["fase"] == "balsa" and key(VK_ENTER) \
-                    and st["route"] < 12.0 and st["speed"] < 0.5:
-                trb["fase"] = "cruzando"
-                trb["cruzando_t0"] = el
-                sdk.pause(True)
-                log("[stub] EMBARCOU na balsa (Enter) — travessia...")
+            elif trb["fase"] == "balsa":
+                # PORTO REAL: entrar na area com o caminhao parado abre o
+                # DIALOGO da balsa e o jogo PAUSA (evento paused -> MMF)
+                if not trb["dialogo"] and st["route"] < 25.0 \
+                        and st["speed"] < 0.5:
+                    trb["dialogo"] = True
+                    sdk.pause(True)
+                    log("[stub] PORTO: dialogo da balsa ABERTO — jogo "
+                        "PAUSADO; a IA tem que REAGIR e confirmar")
+                pressed = key(VK_ENTER)
+                # conta BORDA (a pressao durar varios ticks = 1 so Enter)
+                if trb["dialogo"] and pressed and not trb["prev_enter"]:
+                    # 1o Enter: seleciona/confirmar destino; 2o Enter:
+                    # embarque (paga) — igual ao dialogo real do jogo
+                    trb["ent_dialogo"] += 1
+                    if trb["ent_dialogo"] >= 2:
+                        trb["dialogo"] = False
+                        trb["fase"] = "cruzando"
+                        trb["cruzando_t0"] = el
+                        sdk.pause(False)
+                        log("[stub] EMBARCOU: 2x Enter no dialogo "
+                            "(jogo despausou) — travessia...")
+                trb["prev_enter"] = pressed
             elif trb["fase"] == "cruzando" and el - trb["cruzando_t0"] > 3.0:
                 trb["balsa"] = True
                 trb["fase"] = "entrega"
@@ -439,8 +457,8 @@ def _run(args, log, escrever, linhas):
         if freio:
             st["speed"] -= 4.0 * dt
         st["speed"] = max(0.0, min(st["speed"] - 0.25 * dt, 25.0))
-        if trb["fase"] == "cruzando":
-            st["speed"] = 0.0                    # a bordo: sem acelerador
+        if trb["fase"] == "cruzando" or trb["dialogo"]:
+            st["speed"] = 0.0        # a bordo / dialogo aberto: parado
         if st["speed"] > 0.05:
             st["heading"] += steer * 0.55 * dt * min(1.0, st["speed"] / 6)
             dx = st["speed"] * dt
@@ -502,6 +520,8 @@ def _run(args, log, escrever, linhas):
         if el >= args.segundos:
             escrever(trabalho=bool(args.trabalho),
                      acoplou=trb["acoplou"], pegou_balsa=trb["balsa"],
+                     dialogo_abriu=trb["ent_dialogo"] > 0,
+                     ent_dialogo=trb["ent_dialogo"],
                      entregou=trb["entregou"], fase=trb["fase"],
                      teclas_T=trb["tT"], teclas_enter=trb["tEnter"],
                      dist_m=round(st["dist"], 1),

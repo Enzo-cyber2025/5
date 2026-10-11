@@ -510,3 +510,21 @@ falso. Suite: 130 passed, 1 skipped.
   real (buscar o reboque) — antes o caminhao passava direto.
 - Encaixe do reboque no jogo real: a manobra de RE (dar re ate encostar)
   ainda e feita pelo jogador; a IA faz a aproximacao e aperta T.
+
+## v0.4.24 — embarque na balsa de LOOP FECHADO (dialogo real)
+
+- "Embarcar nao e so Enter" (observacao do usuario): certo — o jogo abre
+  um DIALOGO no porto e PAUSA. Agora a IA reage ao estado REAL: quando a
+  telemetria mostra paused=1 com balsa pendente perto do porto, confirma
+  em etapas — Enter (destino), Enter (embarque/pagamento) e, se o dialogo
+  persistir, Baixo+Enter (selecao). Quando a pausa sai, embarcou.
+- Joguinho substituto agora simula o dialogo REAL: entra na area do porto
+  parado -> dialogo ABRE e o jogo PAUSA (evento paused pela ABI real);
+  so embarca com 2x Enter; o gate do CI exige ent_dialogo >= 2.
+- ferry agora significa "travessia PENDENTE": o evento de gameplay ferry
+  (travessia concluida) CONSOME a flag — a IA nao fica apertando Enter na
+  doca de entrega depois de cruzar.
+- Com o jogo PAUSADO (qualquer dialogo/mapa) a IA solta as teclas de
+  direcao e espera — nao dirige no vacuo.
+- Cap de seguranca: se o dialogo nao fechar em 6 passos, a IA para de
+  insistir e avisa no log (o usuario confirma manualmente e ela retoma).

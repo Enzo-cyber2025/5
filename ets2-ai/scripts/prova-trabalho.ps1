@@ -35,11 +35,12 @@ $t = Get-Content "C:\Juegos\trabalho.json" -Raw | ConvertFrom-Json
 Write-Host "=== resultado do trabalho ==="
 $t | ConvertTo-Json -Depth 4 | Write-Host
 $t.log | Select-Object -Last 12 | ForEach-Object { Write-Host "  $_" }
-$diag = "fase=$($t.fase) acoplou=$($t.acoplou) balsa=$($t.pegou_balsa) entregou=$($t.entregou) T=$($t.teclas_T) Enter=$($t.teclas_enter) dist=$($t.dist_m)"
+$diag = "fase=$($t.fase) acoplou=$($t.acoplou) balsa=$($t.pegou_balsa) entregou=$($t.entregou) dialogo=$($t.ent_dialogo) T=$($t.teclas_T) Enter=$($t.teclas_enter) dist=$($t.dist_m)"
 if (-not $t.acoplou) { Write-Host "::error::TRABALHO: nao acoplou o reboque | $diag"; exit 1 }
 if (-not $t.pegou_balsa) { Write-Host "::error::TRABALHO: nao pegou a balsa | $diag"; exit 1 }
 if (-not $t.entregou) { Write-Host "::error::TRABALHO: nao entregou | $diag"; exit 1 }
 if ([int]$t.teclas_T -lt 1 -or [int]$t.teclas_enter -lt 1) { Write-Host "::error::TRABALHO: faltaram as teclas de interacao | $diag"; exit 1 }
+if ([int]$t.ent_dialogo -lt 2) { Write-Host "::error::TRABALHO: o dialogo da balsa nao foi confirmado (precisa de 2x Enter com o jogo PAUSADO) | $diag"; exit 1 }
 if ([double]$t.dist_m -lt 100) { Write-Host "::error::TRABALHO: andou pouco | $diag"; exit 1 }
 if (-not $t.mmf_magic_ok -or -not $t.mmf_valores_ok) { Write-Host "::error::TRABALHO: MMF invalida | $diag"; exit 1 }
 if ([int]$t.canais_dll -lt 8) { Write-Host "::error::TRABALHO: poucos canais | $diag"; exit 1 }

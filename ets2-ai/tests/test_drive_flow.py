@@ -348,8 +348,10 @@ def test_governor_launch_assist_cobre_o_vale_da_rede():
 
 
 def test_job_flow_acopla_e_embarca():
-    """v0.4.23: caminhao proprio parado no alvo SEM job -> T (acoplar);
-    com job e rota com balsa -> Enter (embarcar). Nada fora disso."""
+    """v0.4.24: caminhao proprio parado no alvo SEM job -> T (acoplar);
+    com job e rota com balsa no porto -> Enter (acionar o porto);
+    DIALOGO aberto (jogo PAUSADO) com balsa -> Enter #1, Enter #2 e,
+    se persistir, Baixo+Enter. Pausa SEM balsa -> NENHUMA tecla."""
     import sys
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from ets2ai.practice import PracticeLoop
@@ -362,8 +364,11 @@ def test_job_flow_acopla_e_embarca():
     loop = PracticeLoop.__new__(PracticeLoop)
     loop.mode = "drive"
     loop.injector = Inj()
-    loop.macros = {"dock": (0x14, "T"), "ok": (0x1C, "Enter")}
+    loop.macros = {"dock": (0x14, "T"), "ok": (0x1C, "Enter"),
+                   "down": (0x50, "Baixo")}
     loop._last_macro_t = -1e9
+    loop._ferry_steps = 0
+    loop._parked_at_dest = False
     loop.log = lambda *a, **k: None
     # sem job, no reboque, parado -> T
     loop._job_flow({"route_distance": 10.0, "speed": 0.0, "on_job": False}, 0.0)
@@ -372,14 +377,48 @@ def test_job_flow_acopla_e_embarca():
     n = len(taps)
     loop._job_flow({"route_distance": 200.0, "speed": 0.0, "on_job": False}, 10.0)
     assert len(taps) == n
-    # com job + balsa, no porto -> Enter
+    # com job + balsa, no porto, jogo RODANDO -> Enter (aciona o porto)
     loop._job_flow({"route_distance": 8.0, "speed": 0.2, "on_job": True,
                     "ferry": True}, 20.0)
     assert taps[-1] == 0x1C
-    # com job SEM balsa -> nada (so conduz)
+    # DIALOGO ABERTO: jogo pausado + balsa + perto do porto -> Enter #1
+    loop._job_flow({"route_distance": 8.0, "speed": 0.0, "on_job": True,
+                    "ferry": True, "paused": True}, 21.5)
+    assert taps[-1] == 0x1C and loop._ferry_steps == 1
+    # Enter #2 (cadencia 1 s)
+    loop._job_flow({"route_distance": 8.0, "speed": 0.0, "on_job": True,
+                    "ferry": True, "paused": True}, 23.0)
+    assert taps[-1] == 0x1C and loop._ferry_steps == 2
+    # dialogo PERSISTE -> Baixo + Enter (selecao de destino)
+    loop._job_flow({"route_distance": 8.0, "speed": 0.0, "on_job": True,
+                    "ferry": True, "paused": True}, 24.5)
+    assert taps[-2:] == [0x50, 0x1C] and loop._ferry_steps == 3
+    # persiste MESMO: passos 4, 5, 6 (Baixo+Enter) e PARA no 6
+    for tt in (26.0, 27.5, 29.5):
+        loop._job_flow({"route_distance": 8.0, "speed": 0.0, "on_job": True,
+                        "ferry": True, "paused": True}, tt)
+    assert loop._ferry_steps == 6
+    n = len(taps)
+    # 7a tentativa: DESISTE (log unico) e nao aperta mais nada
+    loop._job_flow({"route_distance": 8.0, "speed": 0.0, "on_job": True,
+                    "ferry": True, "paused": True}, 31.0)
+    assert loop._ferry_steps == 7 and len(taps) == n
+    loop._job_flow({"route_distance": 8.0, "speed": 0.0, "on_job": True,
+                    "ferry": True, "paused": True}, 40.0)
+    assert len(taps) == n, "cap: nao pode apertar mais nada"
+    # jogo despausou -> zera os passos
+    loop._job_flow({"route_distance": 300.0, "speed": 0.0, "on_job": True,
+                    "ferry": True, "paused": False}, 30.0)
+    assert loop._ferry_steps == 0
+    # PAUSA sem balsa (mapa/menu) -> NENHUMA tecla
+    n = len(taps)
+    loop._job_flow({"route_distance": 8.0, "speed": 0.0, "on_job": True,
+                    "ferry": False, "paused": True}, 40.0)
+    assert len(taps) == n
+    # com job SEM balsa, sem pausa -> nada (so conduz)
     n = len(taps)
     loop._job_flow({"route_distance": 8.0, "speed": 0.2, "on_job": True,
-                    "ferry": False}, 30.0)
+                    "ferry": False}, 50.0)
     assert len(taps) == n
 
 

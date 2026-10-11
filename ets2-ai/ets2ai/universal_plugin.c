@@ -299,10 +299,13 @@ static void SCS_CDECL on_gameplay(const scs_event_t event,
         (const scs_telemetry_configuration_t *)event_info;
     if (!ev->id) return;
     if (lstrcmpA(ev->id, "job.delivered") == 0 ||
-        lstrcmpA(ev->id, "job.cancelled") == 0)
+        lstrcmpA(ev->id, "job.cancelled") == 0) {
         put_bool(OFF_ON_JOB, 0);
+        put_bool(OFF_FERRY, 0);            /* job acabou: sem travessia */
+    }
     else if (lstrcmpA(ev->id, "ferry") == 0)
-        put_bool(OFF_FERRY, 1);            /* embarcou na balsa */
+        /* travessia CONCLUIDA: consome a flag (ferry = PENDENTE) */
+        put_bool(OFF_FERRY, 0);
 }
 
 /* ---- inicializacao (chamada pelo JOGO) ---------------------------------- */

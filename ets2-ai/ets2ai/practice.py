@@ -209,6 +209,7 @@ class PracticeLoop:
         self._parked_at_dest = False
         self._cold_t0 = None        # arranque frio: quando parou (drive)
         self._last_macro_t = -1e9
+        self._ferry_steps = 0       # dialogo do porto: passos ja enviados
         self._fk_ticks = 0          # teclas fisicas estranhas seguidas
         self._no_frame_needed = False   # telemetria sem input do jogo (mem)
         self.foreign_keys = foreign_keys or None
@@ -414,6 +415,14 @@ class PracticeLoop:
                 out["source"] = "HUMANO no comando (DAgger)"
             else:
                 self._job_flow(sn, now)
+                if sn.get("paused"):
+                    # dialogo/mapa aberto: o jogo esta PAUSADO — dirigir nao
+                    # faz nada; solta as teclas e espera o dialogo fechar
+                    self.injector.release_all()
+                    out["cmd"] = (0.0, 0.0, 1.0)
+                    out["source"] = "dialogo do jogo (pausado)"
+                    out["sn"] = sn
+                    return out
                 self._cold_start(sn, now)
                 self._maybe_signal(meta, sn, now)
                 self._pit_crew(sn, now, job_min)
@@ -547,14 +556,53 @@ class PracticeLoop:
     def _job_flow(self, sn, now):
         """CICLO DE TRABALHO por tecla REAL (guiado pela telemetria):
 
-        - caminhao PROPRIo sem reboque (sem job) + chegou no alvo + parado:
-          ACOPA o reboque (T) — o jogo real aceita o encaixe nesta hora;
-        - rota com BALSA (job config ferry.*) + no porto + parado:
-          confirma o embarque (Enter) — o jogo real abre o dialogo do porto.
+        - caminhao PROPRIo sem reboque (sem job) + no alvo + parado:
+          ACOPA o reboque (T);
+        - rota com BALSA: no porto o jogo abre um DIALOGO e o jogo PAUSA
+          (telemetria paused=1). A IA reage ao estado REAL do jogo:
+          Enter (confirmar) -> Enter (embarque/pagamento) -> se o dialogo
+          PERSISTIR, Baixo+Enter (variante com selecao de destino). Quando
+          a pausa sai, o dialogo fechou (embarcou) e a conducao continua.
         """
         if self.mode != "drive" or self.injector is None:
             return
+        # teleporte pos-balsa: destino novo -> permite freio de mao de novo
         rm = sn.get("route_distance")
+        if rm is not None and rm > 100.0:
+            self._parked_at_dest = False
+        # 1) DIALOGO ABERTO: jogo pausado COM balsa na rota e perto do porto
+        if sn.get("paused") and sn.get("ferry") \
+                and rm is not None and rm < 60.0:
+            if now - self._last_macro_t < 1.0:
+                return
+            if self._ferry_steps >= 6:
+                # dialogo teimoso (ou nao e o dialogo da balsa): para de
+                # insistir e avisa — confirmar manualmente; a IA retoma
+                if self._ferry_steps == 6:
+                    self._ferry_steps = 7
+                    self.log("[balsa] dialogo NAO fechou apos 6 passos — "
+                             "confirme manualmente (a IA segue depois)")
+                return
+            self._last_macro_t = now
+            self._ferry_steps += 1
+            if self._ferry_steps <= 2:
+                self.injector.tap(*self.macros.get(
+                    "ok", (0x1C, "Enter")))
+                self.log("[balsa] dialogo do porto ABERTO (jogo pausado):"
+                         " Enter #%d" % self._ferry_steps)
+            else:
+                self.injector.tap(*self.macros.get(
+                    "down", (0x50, "Baixo")))
+                self.injector.tap(*self.macros.get(
+                    "ok", (0x1C, "Enter")))
+                self.log("[balsa] dialogo persiste: Baixo + Enter"
+                         " (selecao de destino)")
+            return
+        # 2) jogo voltou a rodar: zera o passo a passo do dialogo
+        if self._ferry_steps and not sn.get("paused"):
+            self.log("[balsa] jogo despausou — dialogo fechado (%d passos)"
+                     % self._ferry_steps)
+            self._ferry_steps = 0
         if rm is None or rm >= 25.0 or sn["speed"] >= 0.5:
             return
         if now - self._last_macro_t < 3.0:
@@ -565,9 +613,11 @@ class PracticeLoop:
                 "dock", (0x14, "T (acoplar reboque)")))
             self.log("[trabalho] caminhao proprio: ACOPANDO o reboque (T)")
         elif sn.get("ferry"):
+            # porto alcancado: o dialogo abre SOZINHO ao entrar na area
+            # (o jogo pausa); se nao abrir, o Enter aciona o porto
             self._last_macro_t = now
             self.injector.tap(*self.macros.get("ok", (0x1C, "Enter")))
-            self.log("[trabalho] balsa na rota: EMBARCANDO (Enter)")
+            self.log("[trabalho] balsa na rota: acionando o porto (Enter)")
 
     def _cold_start(self, sn, now):
         """TOMADA IMEDIATA: caminhao parado? A IA liga o motor e solta o
