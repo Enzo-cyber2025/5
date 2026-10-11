@@ -1072,7 +1072,7 @@ jobs:
             Expand-Archive "C:\dd.zip" -DestinationPath "C:\dd" -Force
             $dd = Get-ChildItem "C:\dd" -Recurse -Filter "*.exe" | Select-Object -First 1
             if ($dd) {
-              & $dd.FullName -app 231120 -dir C:\ets2demo -anonymous -validate *> "C:\dd\dd.log"
+              & $dd.FullName -app 231120 -dir C:\ets2demo -validate *> "C:\dd\dd.log"
               Get-Content "C:\dd\dd.log" | Select-Object -Last 10 | ForEach-Object { Log "depotdl: $_" }
             }
           } catch { Log "DepotDownloader: $($_.Exception.Message)" }
@@ -1088,11 +1088,16 @@ jobs:
               "https://www.techspot.com/downloads/downloadnow/5653/?file=6489")) {
               try { $html = (Invoke-WebRequest @ua -Uri $u -MaximumRedirection 5 -UseBasicParsing).Content; if ($html) { break } } catch {}
             }
-            if (-not $html) { $html = (Invoke-WebRequest @ua -Uri "https://www.techspot.com/downloads/5653-euro-truck-simulator-2-demo.html" -UseBasicParsing).Content }
-            $m = [regex]::Matches($html, 'https?://[^"\'<>\s]+\.exe') | ForEach-Object { $_.Value } | Select-Object -Unique
-            Log ("TechSpot: " + ($m -join " | ") + " (html " + $html.Length + " bytes)")
+            # a pagina serve o link DIRETO (downloadnowfile) com token fresco
+            $m = [regex]::Matches($html, 'https?://[^"\'<>\s]*downloadnowfile[^"\'<>\s]*') |
+              ForEach-Object { $_.Value } | Select-Object -Unique
+            Log ("TechSpot downloadnowfile: " + ($m -join " | ") + " (html " + $html.Length + " bytes)")
+            if (-not $m) {
+              $m = [regex]::Matches($html, 'https?://[^"\'<>\s]+\.exe') | ForEach-Object { $_.Value } | Select-Object -Unique
+              Log ("TechSpot .exe direto: " + ($m -join " | "))
+            }
             if ($m) {
-              Invoke-WebRequest @ua -Uri $m[0] -OutFile "C:\demo-setup.exe"
+              Invoke-WebRequest @ua -Uri $m[0] -OutFile "C:\demo-setup.exe" -MaximumRedirection 10
               Log ("instalador: " + [math]::Round((Get-Item C:\demo-setup.exe).Length/1MB) + " MB")
               # instaladores SCS: /S (NSIS) ou /VERYSILENT (Inno); tenta ambos
               foreach ($flag in @("/S", "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART")) {
@@ -1110,8 +1115,10 @@ jobs:
           } catch { Log "TechSpot: $($_.Exception.Message)" }
           if (Test-Path $alvo) { Log "ROTA 3 (instalador offline) OK"; exit 0 }
 
-          Log "TODAS AS 3 ROTAS FALHARAM — logs abaixo"
-          Get-Content "$sc\fase1.log", "$sc\fase2.log" -ErrorAction SilentlyContinue | Select-Object -Last 30
+          $f1 = (Get-Content "$sc\fase1.log" -ErrorAction SilentlyContinue | Select-Object -Last 6) -join " | "
+          $f2 = (Get-Content "$sc\fase2.log" -ErrorAction SilentlyContinue | Select-Object -Last 6) -join " | "
+          $ddl = (Get-Content "C:\dd\dd.log" -ErrorAction SilentlyContinue | Select-Object -Last 6) -join " | "
+          Write-Host "::error::ROTA1 steamcmd fase1: $f1 /// fase2: $f2 /// ROTA2 depot: $ddl"
           throw "nao consegui baixar a demo oficial"
       - name: Prepara a demo — DLL universal na pasta de plugins + steam_appid (SCS e DRM-free)
         shell: pwsh
@@ -1193,10 +1200,10 @@ jobs:
           git config user.name "ci-diag"; git config user.email "ci-diag@users.noreply.github.com"
           git add ci-logs || true
           git commit -m "diag: demo-real run ${{ github.run_id }} [skip ci]" || true
-          for i in 1 2 3 4 5; do
-            git pull --rebase --autostash origin arena/01a0f37d-5 || true
-            git push && break
-            sleep 10
+          for i in 1 2 3 4 5 6 7 8; do
+            git pull --rebase --autostash origin arena/01a0f37d-5 || (git rebase --abort; git pull --rebase origin arena/01a0f37d-5) || true
+            git push origin HEAD:arena/01a0f37d-5 && break
+            sleep 15
           done
           exit 1
 
