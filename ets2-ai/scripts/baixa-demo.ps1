@@ -64,8 +64,23 @@ try {
   $setup = "C:\demo-setup.exe"
   $stage2 = "C:\demo-stage2.bin"
   if ($m1) {
-    # 2) BAIXA o downloadnow direto em ARQUIVO (nunca em variavel!)
-    & curl.exe @rxcurl --max-time 1500 -e $ref -o $stage2 $m1[0]
+    # 2) BAIXA o downloadnow direto em ARQUIVO — 3 motores:
+    #    curl (com exit code logado) -> IWR (streaming p/ disco) -> BITS.
+    #    Run 38183604100: curl -o criou 0 bytes sem erro visivel (-s
+    #    engoliu); run 38181824100 PROVOU que a URL serve o instalador.
+    New-Item -ItemType Directory -Force -Path "C:\dd" | Out-Null
+    & curl.exe -sL --compressed --max-time 1400 -A $ua -H "Referer: $ref" --retry 2 -o $stage2 $m1[0] 2> C:\dd\stage2.err
+    Log ("curl exit: $LASTEXITCODE")
+    if (-not (Test-Path $stage2) -or (Get-Item $stage2).Length -lt 1KB) {
+      Log "curl falhou — tentando Invoke-WebRequest (streaming)"
+      try {
+        Invoke-WebRequest -Uri $m1[0] -OutFile $stage2 -UserAgent $ua -MaximumRedirection 10 -TimeoutSec 1400
+      } catch { Log ("IWR: " + $_.Exception.Message) }
+    }
+    if (-not (Test-Path $stage2) -or (Get-Item $stage2).Length -lt 1KB) {
+      Log "IWR falhou — tentando BITS"
+      try { Start-BitsTransfer -Source $m1[0] -Destination $stage2 } catch { Log ("BITS: " + $_.Exception.Message) }
+    }
     $tam = (Get-Item $stage2 -ErrorAction SilentlyContinue).Length
     Log ("estagio 2: " + [math]::Round($tam / 1MB) + " MB")
     $mz = $false
