@@ -580,3 +580,21 @@ falso. Suite: 130 passed, 1 skipped.
   cabine -> VOCÊ dirige ate a balsa e embarca (a IA solta quando voce
   mexe nos controles) -> feche o jogo e me mande jogo-replay.json. A
   partir dai o CI testa a IA contra o SEU jogo em toda build.
+
+## v0.4.28 — PROVA DEMO REAL: o ETS2 OFICIAL no CI, sem o usuario rodar nada
+
+- A SCS distribui uma DEMO oficial gratuita do ETS2 (Steam AppID 231120,
+  Free on Demand, mesmo binario bin/win_x64/eurotrucks2.exe, versao
+  1.40.4.8 — coberta pela DLL universal, que suporta 1.36+).
+- Novo job `demo-real` no CI (Windows de verdade): baixa a demo oficial
+  com steamcmd ANONIMO (app_license_request concede a licenca Free on
+  Demand sem conta Steam), instala a DLL universal na pasta de plugins
+  do jogo REAL, roda o AUTOTESTE contra a demo (descoberta + analise de
+  versao + DLL ideal + hash), SOBE o eurotrucks2.exe OFICIAL
+  (steam_appid.txt — SCS e DRM-free) e le a memoria compartilhada
+  Local\SCSTelemetry criada pela NOSSA DLL dentro do processo REAL.
+- Gates: jogo baixado + autoteste pass + MMF viva com game=ets2 e
+  fonte=ets2ai-universal + versao real do binario no relatorio.
+- 1a viagem com continue-on-error (descoberta): se algo do jogo real
+  surpreender (GPU de software, dialogo de 1a execucao), o diagnostico
+  commita game.log.txt + log da DLL e a proxima rodada ajusta.
