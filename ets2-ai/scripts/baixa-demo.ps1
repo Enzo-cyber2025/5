@@ -41,19 +41,17 @@ try {
 if (Test-Path $alvo) { Log "ROTA 2 (DepotDownloader) OK"; exit 0 }
 
 # ---- ROTA 3: instalador OFFLINE da demo (TechSpot, freeware SCS) ----
-# Fluxo do token (o evp expira e e por visitante):
-#   1. pagina da demo  ->  link downloadnow/5653/?evp=<fresco>
-#   2. pagina downloadnow  ->  link downloadnowfile/5653/?evp=<outro>
-#   3. downloadnowfile  ->  instalador .exe (542 MB, v1.40.4.8)
+# Run 38181824100: o URL downloadnow JA REDIRECIONA pro instalador —
+# capturar o stdout do curl numa variavel deu OOM (542 MB no buffer do
+# PowerShell). Agora o curl escreve DIRETO em arquivo e a gente checa
+# se veio binario MZ (instalador) ou HTML (pagina com o proximo link).
 try {
   $ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
   $ref = "https://www.techspot.com/downloads/5653-euro-truck-simulator-2-demo.html"
-  # --compressed: Cloudflare pode forcAR gzip (167 KB de bytes sem decode
-  # no run 38174907081 — regex nao casava NADA, nem .exe)
-  $rxcurl = @("-sL", "--compressed", "--max-time", "90", "-A", $ua)
+  $rxcurl = @("-sL", "--compressed", "-A", $ua)
 
-  # 1) pagina da demo -> URL downloadnow com evp FRESCO
-  $pag = & curl.exe @rxcurl -H "Referer: https://www.techspot.com/" $ref 2>$null
+  # 1) pagina da demo -> URL downloadnow com evp (provado no run anterior)
+  $pag = & curl.exe @rxcurl --max-time 90 -H "Referer: https://www.techspot.com/" $ref 2>$null
   $txtp = $pag -join " "
   Log ("pagina da demo: " + $txtp.Length + " chars")
   $rxnow = "https?://[^" + '"' + "'" + "<>\s]*downloadnow/5653/[^" + '"' + "'" + "<>\s]*"
@@ -61,37 +59,44 @@ try {
   if (-not $m1) {
     $m1 = [regex]::Matches($txtp, "/downloads/downloadnow/5653/[^" + '"' + "'" + "<>\s]*") | ForEach-Object { "https://www.techspot.com" + $_.Value } | Select-Object -Unique
   }
-  Log ("downloadnow (evp fresco): " + ($m1 -join " | "))
+  Log ("downloadnow: " + ($m1 -join " | "))
 
-  # 2) pagina downloadnow -> link DIRETO downloadnowfile
-  $html = ""
+  $setup = "C:\demo-setup.exe"
+  $stage2 = "C:\demo-stage2.bin"
   if ($m1) {
-    $html = & curl.exe @rxcurl -H "Referer: $ref" $m1[0] 2>$null
+    # 2) BAIXA o downloadnow direto em ARQUIVO (nunca em variavel!)
+    & curl.exe @rxcurl --max-time 1500 -e $ref -o $stage2 $m1[0]
+    $tam = (Get-Item $stage2 -ErrorAction SilentlyContinue).Length
+    Log ("estagio 2: " + [math]::Round($tam / 1MB) + " MB")
+    $mz = $false
+    if ($tam -gt 2) {
+      $fs = [System.IO.File]::OpenRead($stage2)
+      $b2 = New-Object byte[] 2
+      $n = $fs.Read($b2, 0, 2); $fs.Close()
+      $mz = ($n -eq 2 -and $b2[0] -eq 0x4D -and $b2[1] -eq 0x5A)
+    }
+    if ($mz -and $tam -gt 1MB) {
+      Log "estagio 2 E o instalador (MZ) — baixado!"
+      Move-Item $stage2 $setup -Force
+    } else {
+      # HTML (ou MZ minusculo): procura o link DIRETO
+      if ($tam -lt 5MB) {
+        $txt = [System.IO.File]::ReadAllText($stage2)
+        $rx = "https?://[^" + '"' + "'" + "<>\s]*downloadnowfile[^" + '"' + "'" + "<>\s]*"
+        $m = [regex]::Matches($txt, $rx) | ForEach-Object { $_.Value } | Select-Object -Unique
+        if (-not $m) {
+          $rx2 = "https?://[^" + '"' + "'" + "<>\s]+\.exe"
+          $m = [regex]::Matches($txt, $rx2) | ForEach-Object { $_.Value } | Select-Object -Unique
+        }
+        Log ("links no estagio 2: " + ($m -join " | "))
+        if ($m) {
+          & curl.exe @rxcurl --max-time 1500 -e $ref -o $setup $m[0]
+        }
+      }
+    }
   }
-  if (-not $html) {
-    # fallback: URL antiga com evp vencido (as vezes ainda serve)
-    $html = & curl.exe @rxcurl -H "Referer: $ref" "https://www.techspot.com/downloads/downloadnow/5653/?file=6489" 2>$null
-  }
-  $txt = $html -join " "
-  Log ("pagina downloadnow: " + $txt.Length + " chars")
-  $rx = "https?://[^" + '"' + "'" + "<>\s]*downloadnowfile[^" + '"' + "'" + "<>\s]*"
-  $m = [regex]::Matches($txt, $rx) | ForEach-Object { $_.Value } | Select-Object -Unique
-  if (-not $m) {
-    $rx2 = "https?://[^" + '"' + "'" + "<>\s]+\.exe"
-    $m = [regex]::Matches($txt, $rx2) | ForEach-Object { $_.Value } | Select-Object -Unique
-    Log ("TechSpot .exe direto: " + ($m -join " | "))
-  } else {
-    Log ("TechSpot downloadnowfile: " + ($m -join " | "))
-  }
-  if (-not $m -and $txt.Length -gt 0) {
-    # DEBUG: primeiros chars + menções a download (descoberta iterativa)
-    Log ("HTML head: " + $txt.Substring(0, [math]::Min(600, $txt.Length)))
-    $downs = [regex]::Matches($txt, "[a-zA-Z0-9/_.:-]{0,60}download[a-zA-Z0-9/_.?=-]{0,80}") | ForEach-Object { $_.Value } | Select-Object -Unique -First 12
-    Log ("mencoes a download: " + ($downs -join " | "))
-  }
-  if ($m) {
-    & curl.exe -sL --compressed --max-time 1500 -A $ua -e $ref -o "C:\demo-setup.exe" $m[0]
-    Log ("instalador: " + [math]::Round((Get-Item C:\demo-setup.exe -ErrorAction SilentlyContinue).Length / 1MB) + " MB")
+  if (Test-Path $setup) {
+    Log ("instalador: " + [math]::Round((Get-Item $setup).Length / 1MB) + " MB")
     # instaladores SCS: /S (NSIS) ou /VERYSILENT (Inno); tenta ambos
     foreach ($flag in @("/S", "/VERYSILENT")) {
       $p = Start-Process -FilePath "C:\demo-setup.exe" -ArgumentList $flag -Wait -PassThru
