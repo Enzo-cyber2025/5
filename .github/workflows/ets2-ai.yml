@@ -1041,30 +1041,78 @@ jobs:
         with:
           name: ets2ai-universal-dlls
           path: dlls
-      - name: Baixa a DEMO OFICIAL do ETS2 (SCS, freeware, AppID 231120) com steamcmd anonimo
+      - name: Baixa a DEMO OFICIAL do ETS2 (SCS, freeware, AppID 231120) — 3 rotas
         shell: pwsh
         run: |
+          $alvo = "C:\ets2demo\bin\win_x64\eurotrucks2.exe"
+          New-Item -ItemType Directory -Force -Path "C:\ets2demo" | Out-Null
+          function Log($m) { Write-Host ("[demo] " + $m) }
+
+          # ---- ROTA 1: steamcmd anonimo em 2 FASES (licenca, depois update)
+          # (app_license_request em execucao SEPARADA do app_update — a
+          # licenca Free on Demand precisa de uma sessao propria)
           $sc = "C:\steamcmd"
           New-Item -ItemType Directory -Force -Path $sc | Out-Null
-          Invoke-WebRequest "https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip" -OutFile "$sc\steamcmd.zip"
-          Expand-Archive "$sc\steamcmd.zip" -DestinationPath $sc -Force
-          $alvo = "C:\ets2demo\bin\win_x64\eurotrucks2.exe"
-          # app_license_request concede a licenca Free-on-Demand sem conta
-          # Steam (truque documentado); 4 tentativas (1a pode ser self-update)
-          foreach ($licenca in @("+app_license_request 231120",
-                                 "+app_license_request 231120", "", "")) {
-            $a = @("+force_install_dir", "C:\ets2demo", "+login", "anonymous")
-            if ($licenca) { $a += $licenca.Split(" ") }
-            $a += @("+app_update", "231120", "validate", "+quit")
-            & "$sc\steamcmd.exe" @a *> "$sc\steamcmd.log"
-            if (Test-Path $alvo) { break }
-          }
-          if (-not (Test-Path $alvo)) {
-            Get-Content "$sc\steamcmd.log" -Tail 40 -ErrorAction SilentlyContinue
-            throw "steamcmd NAO baixou a demo oficial (231120)"
-          }
-          $gb = [math]::Round((Get-ChildItem C:\ets2demo -Recurse -ErrorAction SilentlyContinue | Measure-Object Length -Sum).Sum/1GB, 2)
-          Write-Host ("DEMO OFICIAL do ETS2 baixada (" + $gb + " GB): bin/win_x64/eurotrucks2.exe")
+          try {
+            Invoke-WebRequest "https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip" -OutFile "$sc\steamcmd.zip"
+            Expand-Archive "$sc\steamcmd.zip" -DestinationPath $sc -Force
+            & "$sc\steamcmd.exe" +login anonymous +app_license_request 231120 +quit *> "$sc\fase1.log"
+            Get-Content "$sc\fase1.log" | Select-Object -Last 6 | ForEach-Object { Log "steamcmd fase1: $_" }
+            & "$sc\steamcmd.exe" +force_install_dir C:\ets2demo +login anonymous +app_update 231120 validate +quit *> "$sc\fase2.log"
+            Get-Content "$sc\fase2.log" | Select-Object -Last 8 | ForEach-Object { Log "steamcmd fase2: $_" }
+          } catch { Log "steamcmd: $($_.Exception.Message)" }
+          if (Test-Path $alvo) { Log "ROTA 1 (steamcmd) OK"; exit 0 }
+
+          # ---- ROTA 2: DepotDownloader (anonimo; baixa pelo GitHub)
+          try {
+            $rel = Invoke-RestMethod "https://api.github.com/repos/SteamRE/DepotDownloader/releases/latest"
+            $asset = $rel.assets | Where-Object { $_.name -match "x64.*\.zip$" -and $_.name -notmatch "osx|linux" } | Select-Object -First 1
+            Log "DepotDownloader: $($asset.name)"
+            Invoke-WebRequest $asset.browser_download_url -OutFile "C:\dd.zip"
+            Expand-Archive "C:\dd.zip" -DestinationPath "C:\dd" -Force
+            $dd = Get-ChildItem "C:\dd" -Recurse -Filter "*.exe" | Select-Object -First 1
+            if ($dd) {
+              & $dd.FullName -app 231120 -dir C:\ets2demo -anonymous -validate *> "C:\dd\dd.log"
+              Get-Content "C:\dd\dd.log" | Select-Object -Last 10 | ForEach-Object { Log "depotdl: $_" }
+            }
+          } catch { Log "DepotDownloader: $($_.Exception.Message)" }
+          if (Test-Path $alvo) { Log "ROTA 2 (DepotDownloader) OK"; exit 0 }
+
+          # ---- ROTA 3: instalador OFFLINE da demo (TechSpot, freeware SCS)
+          try {
+            $ua = @{ "UserAgent" = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+                     "Referer" = "https://www.techspot.com/downloads/5653-euro-truck-simulator-2-demo.html" }
+            $html = ""
+            foreach ($u in @(
+              "https://www.techspot.com/downloads/downloadnow/5653/?evp=be74c2e849e2f76652741e2a8a90963f&file=6489",
+              "https://www.techspot.com/downloads/downloadnow/5653/?file=6489")) {
+              try { $html = (Invoke-WebRequest @ua -Uri $u -MaximumRedirection 5 -UseBasicParsing).Content; if ($html) { break } } catch {}
+            }
+            if (-not $html) { $html = (Invoke-WebRequest @ua -Uri "https://www.techspot.com/downloads/5653-euro-truck-simulator-2-demo.html" -UseBasicParsing).Content }
+            $m = [regex]::Matches($html, 'https?://[^"\'<>\s]+\.exe') | ForEach-Object { $_.Value } | Select-Object -Unique
+            Log ("TechSpot: " + ($m -join " | ") + " (html " + $html.Length + " bytes)")
+            if ($m) {
+              Invoke-WebRequest @ua -Uri $m[0] -OutFile "C:\demo-setup.exe"
+              Log ("instalador: " + [math]::Round((Get-Item C:\demo-setup.exe).Length/1MB) + " MB")
+              # instaladores SCS: /S (NSIS) ou /VERYSILENT (Inno); tenta ambos
+              foreach ($flag in @("/S", "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART")) {
+                $p = Start-Process -FilePath "C:\demo-setup.exe" -ArgumentList $flag.Split(" ") -Wait -PassThru
+                if (Test-Path $alvo) { break }
+                Get-ChildItem "C:\Program Files*", "$env:LOCALAPPDATA\Programs" -Recurse -Filter "eurotrucks2.exe" -ErrorAction SilentlyContinue |
+                  Select-Object -First 1 | ForEach-Object {
+                    New-Item -ItemType Directory -Force "C:\ets2demo\bin\win_x64" | Out-Null
+                    Copy-Item $_.DirectoryName "C:\ets2demo\bin" -Recurse -Force
+                    Copy-Item (Split-Path $_.DirectoryName -Parent)\*.* "C:\ets2demo\" -Force -ErrorAction SilentlyContinue
+                  }
+                if (Test-Path $alvo) { break }
+              }
+            }
+          } catch { Log "TechSpot: $($_.Exception.Message)" }
+          if (Test-Path $alvo) { Log "ROTA 3 (instalador offline) OK"; exit 0 }
+
+          Log "TODAS AS 3 ROTAS FALHARAM — logs abaixo"
+          Get-Content "$sc\fase1.log", "$sc\fase2.log" -ErrorAction SilentlyContinue | Select-Object -Last 30
+          throw "nao consegui baixar a demo oficial"
       - name: Prepara a demo — DLL universal na pasta de plugins + steam_appid (SCS e DRM-free)
         shell: pwsh
         run: |
@@ -1139,7 +1187,7 @@ jobs:
         run: |
           set +e
           mkdir -p "ci-logs/${{ github.run_id }}-demo"
-          for f in autoteste-real.json autoteste-real.log demo-mmf.json /c/steamcmd/steamcmd.log /c/ets2demo/game.log.txt /c/ets2demo/game-ets2ai-telemetry.log; do
+          for f in autoteste-real.json autoteste-real.log demo-mmf.json /c/steamcmd/fase1.log /c/steamcmd/fase2.log /c/dd/dd.log /c/ets2demo/game.log.txt /c/ets2demo/game-ets2ai-telemetry.log; do
             cp "$f" "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           done
           git config user.name "ci-diag"; git config user.email "ci-diag@users.noreply.github.com"
