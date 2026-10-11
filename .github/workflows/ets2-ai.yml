@@ -948,9 +948,10 @@ jobs:
         run: |
           set +e
           mkdir -p "ci-logs/${{ github.run_id }}-prova"
-          for f in smokeA.json smokeA.err smoke.json smoke.err resultado.json jogo.err trabalho.json trabalho.err bridge.log bridge.err bridge2.log bridge2.err ets2-ai-state.json ets2-ai-log.txt; do
+          for f in smokeA.json smokeA.err smoke.json smoke.err resultado.json jogo.err trabalho.json trabalho.err bridge.log bridge.err bridge2.log bridge2.err ets2-ai-state.json ets2-ai-log.txt ets2-ai-erro.txt; do
             cp "/c/Juegos/$f" "ci-logs/${{ github.run_id }}-prova/$f" 2>/dev/null || true
           cp "dist/ets2-ai-log.txt" "ci-logs/${{ github.run_id }}-prova/" 2>/dev/null || true
+            cp "dist/ets2-ai-erro.txt" "ci-logs/${{ github.run_id }}-prova/" 2>/dev/null || true
           done
           git config user.name "ci-diag"; git config user.email "ci-diag@users.noreply.github.com"
           git add ci-logs || true

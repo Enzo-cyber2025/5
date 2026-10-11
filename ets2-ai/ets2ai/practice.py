@@ -342,6 +342,13 @@ class PracticeLoop:
         if sn.get("paused"):
             out.update(telemetry=False, stale=False, paused=True)
         if not out["telemetry"]:
+            if out.get("paused"):
+                # DIALOGO/menu do jogo (balsa, mapa...): a IA nao dirige,
+                # mas o CICLO DE TRABALHO reage (confirmar embarque etc.)
+                if self.mode == "drive" and self.injector is not None:
+                    self._job_flow(sn, now)
+                out["source"] = "dialogo do jogo (pausado)"
+            out["sn"] = sn          # HUD visivel tambem pausado/stale
             if self.injector is not None:
                 self.injector.release_all()
             return out
@@ -415,14 +422,6 @@ class PracticeLoop:
                 out["source"] = "HUMANO no comando (DAgger)"
             else:
                 self._job_flow(sn, now)
-                if sn.get("paused"):
-                    # dialogo/mapa aberto: o jogo esta PAUSADO — dirigir nao
-                    # faz nada; solta as teclas e espera o dialogo fechar
-                    self.injector.release_all()
-                    out["cmd"] = (0.0, 0.0, 1.0)
-                    out["source"] = "dialogo do jogo (pausado)"
-                    out["sn"] = sn
-                    return out
                 self._cold_start(sn, now)
                 self._maybe_signal(meta, sn, now)
                 self._pit_crew(sn, now, job_min)

@@ -436,3 +436,48 @@ def test_game_stub_offsets_ferry_e_on_job():
                                         else 56)
     assert TelemetryMap.ferry.offset == 4306
     assert TelemetryMap.on_job.offset == 4300
+
+
+def test_step_pausado_ainda_confirma_balsa():
+    """v0.4.24 fix: com o jogo PAUSADO (dialogo do porto aberto), o step()
+    tem que rodar o _job_flow (Enter do dialogo) — antes o gate de pausa
+    retornava cedo DEMAIS e a IA ficava presa no porto sem confirmar
+    (run 38129944659: dialogo=1, Enter=1, balsa nunca pegue)."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from ets2ai.practice import PracticeLoop
+    from ets2ai.telemetry import parse, TelemetryMap
+    from ets2ai.contract import load_weights
+    layers, _ = load_weights("artifacts/model-weights.json")
+    import ctypes as ct
+    buf = bytearray(ct.sizeof(TelemetryMap))
+    m = TelemetryMap.from_buffer(buf)
+    m.sdk_active = True
+    m.plugin_revision = 12
+    sn = parse(bytes(buf))
+    sn.update({"paused": True, "speed": 0.0, "fuel": 100.0,
+               "fuel_capacity": 600.0, "speed_limit": 22.22,
+               "route_distance": 8.0, "on_job": True, "ferry": True,
+               "engine_enabled": True, "user_steer": 0.0,
+               "user_throttle": 0.0, "user_brake": 0.0,
+               "world_x": 0.0, "world_z": 0.0})
+    taps = []
+    class Inj:
+        keymap = {"up": 0x11, "left": 0x1e, "right": 0x20}
+        down = set(); enabled = True
+        def tap(self, scan, name=""): taps.append(scan)
+        def release_all(self): pass
+        def update(self, *a): pass
+        def foreign_keys_down(self): return set()
+    class RoadMap:
+        x = []; frame = type("F", (), {"locked": False})()
+    loop = PracticeLoop("drive", RoadMap(), lambda: sn, layers=layers,
+                        injector=Inj(), log=lambda *a, **k: None)
+    loop._last_macro_t = -1e9
+    loop._ferry_steps = 0
+    out = loop.step(dict(sn), 100.0)
+    assert out.get("paused") and out["source"] == "dialogo do jogo (pausado)"
+    assert out.get("sn") is not None, "HUD precisa do sn (log muto enganou)"
+    assert 0x1C in taps, "o dialogo da balsa tem que ser confirmado mesmo pausado"
+    out = loop.step(dict(sn), 101.5)
+    assert taps.count(0x1C) >= 2, "segundo Enter (embarque) tambem com o jogo pausado"

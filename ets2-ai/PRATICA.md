@@ -528,3 +528,15 @@ falso. Suite: 130 passed, 1 skipped.
   direcao e espera — nao dirige no vacuo.
 - Cap de seguranca: se o dialogo nao fechar em 6 passos, a IA para de
   insistir e avisa no log (o usuario confirma manualmente e ela retoma).
+
+### v0.4.24 fix (run 38129944659) — preso no porto sem confirmar
+
+- CAUSA RAIZ: o gate de pausa ORIGINAL do step() retornava cedo demais —
+  com o dialogo do porto aberto (jogo pausado) o _job_flow NUNCA rodava,
+  entao a IA nunca apertava o 2o Enter (dialogo=1, balsa nunca pegue).
+  Agora o gate chama o _job_flow (e o HUD mostra "dialogo do jogo
+  (pausado)" em vez de silenciar — o log mudo parecia congelamento).
+- _crash_dump: traceback no STDERR antes de qualquer janela; janela so
+  no modo grafico — no CI/CLI a janela modal congelava o processo com o
+  erro preso dentro (ninguem clica num runner).
+- diag do CI copia ets2-ai-erro.txt (dist) — antes o traceback se perdia.

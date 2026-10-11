@@ -1315,21 +1315,32 @@ def _log_tee(msg):
 
 
 def _crash_dump(exc):
-    """Erro fatal vira arquivo + janela — nada morre em silencio."""
+    """Erro fatal vira arquivo + STDERR + janela — nada morre em silencio.
+
+    O stderr vem ANTES da janela: a janela e modal (bloqueia ate clicar)
+    e no CI/CLI ninguem clica — sem isso o processo congelava com o
+    traceback preso dentro dele (run 38129944659)."""
+    import traceback, sys as _sys
     try:
-        import traceback
+        print(traceback.format_exc(), file=_sys.stderr, flush=True)
+    except Exception:
+        pass
+    try:
         p = _exe_dir() / "ets2-ai-erro.txt"
         p.write_text(f"{time.strftime('%Y-%m-%d %H:%M:%S')}\n"
                      f"ETS2-AI bridge v{APP_VERSION}\n\n{traceback.format_exc()}",
                      encoding="utf-8")
-        try:
-            import tkinter.messagebox as _mb
-            _mb.showerror("ETS2-AI — erro",
-                          f"{exc.__class__.__name__}: {exc}\n\n"
-                          f"Detalhes salvos em:\n{p}\n\n"
-                          "Envie este arquivo no chat para o conserto.")
-        except Exception:
-            pass
+        # janela SO no modo grafico (double-click): CLI --ets2 / CI nao
+        # tem quem clique — a janela modal congelaria o processo
+        if "--ets2" not in _sys.argv:
+            try:
+                import tkinter.messagebox as _mb
+                _mb.showerror("ETS2-AI — erro",
+                              f"{exc.__class__.__name__}: {exc}\n\n"
+                              f"Detalhes salvos em:\n{p}\n\n"
+                              "Envie este arquivo no chat para o conserto.")
+            except Exception:
+                pass
     except Exception:
         pass
 
