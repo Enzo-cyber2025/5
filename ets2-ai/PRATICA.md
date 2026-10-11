@@ -551,3 +551,15 @@ falso. Suite: 130 passed, 1 skipped.
   ets2-ai-log.txt com balsa/trem e distancia do alvo — se o SEU jogo
   pedir outra sequencia, o log mostra exatamente o que aconteceu e a
   sequencia e ajustada na hora.
+
+### v0.4.26 — PORTO: modo aproximacao de manobra (rampa + deck)
+
+- Pesquisa no jogo REAL confirmou: ~40% dos portos exigem DIRIGIR pela
+  rampa pra dentro da balsa/trem e estacionar na ancora (Dover-Calais,
+  Escandinavia, Eurotunel; forum SCS + Steam + trucksim wiki). O dialogo
+  em si: Enter -> selecao de destino (1 ou varios) -> confirmar — a
+  escada Enter/Enter/Baixo+Enter da v0.4.24 ja cobre.
+- Faltava a MANOBRA: com travessia pendente e <250 m do alvo, limite
+  cai para 16 km/h (4,5 m/s) — rampa e deck a 40 km/h derrubam a carga.
+- No PC real o log novo (v0.4.25) mostra PAUSOU/RETOMOU com balsa/trem:
+  se o jogo pedir outra coisa, o log diz exatamente o que houve.

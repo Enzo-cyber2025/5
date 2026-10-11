@@ -35,7 +35,7 @@ import sys
 import threading
 import time
 
-APP_VERSION = "0.4.25"   # aparece no log de sessao E na 1a linha do AUTOTESTE
+APP_VERSION = "0.4.26"   # aparece no log de sessao E na 1a linha do AUTOTESTE
 from pathlib import Path
 
 import numpy as np

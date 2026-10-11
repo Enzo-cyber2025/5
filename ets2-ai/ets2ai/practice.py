@@ -403,6 +403,13 @@ class PracticeLoop:
         route_m = sn.get("route_distance", 0.0)
         if route_m is not None and route_m <= 1.0 and not sn.get("on_job"):
             route_m = None
+        # PORTO com travessia pendente (balsa/trem): APROXIMACAO DE MANOBRA.
+        # No jogo REAL ~40% dos portos exigem dirigir pela RAMPA pra dentro
+        # da balsa/trem e estacionar na ancora (Dover-Calais, Escandinavia,
+        # Eurotunel) — rampa e deck a 40 km/h = caminhao no chao. Cap 16 km/h.
+        if (sn.get("ferry") or sn.get("train")) \
+                and route_m is not None and route_m < 250.0:
+            limit = min(limit, 4.5)
         # ---- por modo ----
         if self.mode == "record":
             self._maybe_record(feat, meta, sn, speed_min=0.5)
