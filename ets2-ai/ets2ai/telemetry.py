@@ -367,6 +367,7 @@ def parse(buf):
         "fined": bool(m.fined),
         "refuel": bool(m.refuel),
         "ferry": bool(m.ferry),
+        "train": bool(m.train),
         "truck_name": _s(m.truck_name),
         "cargo": _s(m.cargo),
         "city_src": _s(m.city_src),

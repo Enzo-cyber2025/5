@@ -369,6 +369,7 @@ def test_job_flow_acopla_e_embarca():
     loop._last_macro_t = -1e9
     loop._ferry_steps = 0
     loop._parked_at_dest = False
+    loop._pause_logged = False
     loop.log = lambda *a, **k: None
     # sem job, no reboque, parado -> T
     loop._job_flow({"route_distance": 10.0, "speed": 0.0, "on_job": False}, 0.0)
@@ -420,6 +421,15 @@ def test_job_flow_acopla_e_embarca():
     loop._job_flow({"route_distance": 8.0, "speed": 0.2, "on_job": True,
                     "ferry": False}, 50.0)
     assert len(taps) == n
+    # TREM (Eurotunel): train=True -> MESMA sequencia do porto (Enter)
+    loop._ferry_steps = 0
+    loop._job_flow({"route_distance": 8.0, "speed": 0.2, "on_job": True,
+                    "train": True, "ferry": False}, 60.0)
+    assert taps[-1] == 0x1C, "trem: aciona o embarque com Enter"
+    # TREM + dialogo aberto (pausado) -> confirma igual balsa
+    loop._job_flow({"route_distance": 8.0, "speed": 0.0, "on_job": True,
+                    "train": True, "ferry": False, "paused": True}, 61.5)
+    assert taps[-1] == 0x1C and loop._ferry_steps == 1
 
 
 def test_game_stub_offsets_ferry_e_on_job():
@@ -435,6 +445,7 @@ def test_game_stub_offsets_ferry_e_on_job():
     assert ct.sizeof(gs.NamedValue) == (64 if ct.sizeof(ct.c_void_p) == 8
                                         else 56)
     assert TelemetryMap.ferry.offset == 4306
+    assert TelemetryMap.train.offset == 4307
     assert TelemetryMap.on_job.offset == 4300
 
 
@@ -475,6 +486,7 @@ def test_step_pausado_ainda_confirma_balsa():
                         injector=Inj(), log=lambda *a, **k: None)
     loop._last_macro_t = -1e9
     loop._ferry_steps = 0
+    loop._pause_logged = False
     out = loop.step(dict(sn), 100.0)
     assert out.get("paused") and out["source"] == "dialogo do jogo (pausado)"
     assert out.get("sn") is not None, "HUD precisa do sn (log muto enganou)"

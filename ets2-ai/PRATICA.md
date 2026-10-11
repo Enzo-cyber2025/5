@@ -540,3 +540,14 @@ falso. Suite: 130 passed, 1 skipped.
   no modo grafico — no CI/CLI a janela modal congelava o processo com o
   erro preso dentro (ninguem clica num runner).
 - diag do CI copia ets2-ai-erro.txt (dist) — antes o traceback se perdia.
+
+### v0.4.25 — TREM (Eurotunel) + diagnostico fino do embarque
+
+- Travessia agora cobre balsa (ferry.*) E TREM (train.*): Calais<->Dover
+  pelo tunel usa o MESMO fluxo de dialogo (jogo pausa -> Enter -> Enter
+  -> Baixo+Enter se persistir). DLL liga train no offset 4307 pelos
+  atributos do job; evento gameplay "train" consome (embarcou).
+- Log fino no PC real: cada transicao PAUSOU/RETOMOU sai no
+  ets2-ai-log.txt com balsa/trem e distancia do alvo — se o SEU jogo
+  pedir outra sequencia, o log mostra exatamente o que aconteceu e a
+  sequencia e ajustada na hora.

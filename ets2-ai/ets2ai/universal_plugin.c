@@ -62,6 +62,7 @@
 #define OFF_ROT_Y     2232    /* f32 pitch */
 #define OFF_ROT_Z     2240    /* f32 roll */
 #define OFF_FERRY       4306  /* evento gameplay/config: rota com balsa */
+#define OFF_TRAIN       4307  /* idem TREM (Eurotunel) */
 #define OFF_ON_JOB    4300    /* bool */
 
 #define UNIVERSAL_MAGIC 0x31495541u          /* "AUI1" little-endian */
@@ -278,6 +279,9 @@ static void SCS_CDECL on_configuration(const scs_event_t event,
             if (lstrcmpA(a->name, "ferry.source") == 0 ||
                 lstrcmpA(a->name, "ferry.target") == 0)
                 put_bool(OFF_FERRY, 1);
+            if (lstrcmpA(a->name, "train.source") == 0 ||
+                lstrcmpA(a->name, "train.target") == 0)
+                put_bool(OFF_TRAIN, 1);   /* Eurotunel: embarque no trem */
         }
     } else if (lstrcmpA(cfg->id, "truck") == 0) {
         for (const scs_named_value_t *a = cfg->attributes;
@@ -302,10 +306,13 @@ static void SCS_CDECL on_gameplay(const scs_event_t event,
         lstrcmpA(ev->id, "job.cancelled") == 0) {
         put_bool(OFF_ON_JOB, 0);
         put_bool(OFF_FERRY, 0);            /* job acabou: sem travessia */
+        put_bool(OFF_TRAIN, 0);
     }
     else if (lstrcmpA(ev->id, "ferry") == 0)
         /* travessia CONCLUIDA: consome a flag (ferry = PENDENTE) */
         put_bool(OFF_FERRY, 0);
+    else if (lstrcmpA(ev->id, "train") == 0)
+        put_bool(OFF_TRAIN, 0);            /* trem embarcado/concluido */
 }
 
 /* ---- inicializacao (chamada pelo JOGO) ---------------------------------- */

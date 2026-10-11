@@ -210,6 +210,7 @@ class PracticeLoop:
         self._cold_t0 = None        # arranque frio: quando parou (drive)
         self._last_macro_t = -1e9
         self._ferry_steps = 0       # dialogo do porto: passos ja enviados
+        self._pause_logged = False  # log fino: transicao pausa/retomada
         self._fk_ticks = 0          # teclas fisicas estranhas seguidas
         self._no_frame_needed = False   # telemetria sem input do jogo (mem)
         self.foreign_keys = foreign_keys or None
@@ -557,20 +558,31 @@ class PracticeLoop:
 
         - caminhao PROPRIo sem reboque (sem job) + no alvo + parado:
           ACOPA o reboque (T);
-        - rota com BALSA: no porto o jogo abre um DIALOGO e o jogo PAUSA
-          (telemetria paused=1). A IA reage ao estado REAL do jogo:
-          Enter (confirmar) -> Enter (embarque/pagamento) -> se o dialogo
-          PERSISTIR, Baixo+Enter (variante com selecao de destino). Quando
-          a pausa sai, o dialogo fechou (embarcou) e a conducao continua.
+        - rota com BALSA (ferry.*) ou TREM/Eurotunel (train.*): no porto o
+          jogo abre um DIALOGO e o jogo PAUSA (telemetria paused=1). A IA
+          reage ao estado REAL do jogo: Enter (confirmar) -> Enter
+          (embarque/pagamento) -> se o dialogo PERSISTIR, Baixo+Enter
+          (variante com selecao de destino). Quando a pausa sai, o dialogo
+          fechou (embarcou) e a conducao continua. Cada transicao de pausa
+          e LOGADA — no jogo real o log mostra exatamente o que aconteceu.
         """
         if self.mode != "drive" or self.injector is None:
             return
+        travessia = sn.get("ferry") or sn.get("train")
         # teleporte pos-balsa: destino novo -> permite freio de mao de novo
         rm = sn.get("route_distance")
         if rm is not None and rm > 100.0:
             self._parked_at_dest = False
-        # 1) DIALOGO ABERTO: jogo pausado COM balsa na rota e perto do porto
-        if sn.get("paused") and sn.get("ferry") \
+        # 1) DIALOGO ABERTO: jogo pausado COM travessia pendente no porto
+        if sn.get("paused"):
+            if not self._pause_logged:
+                self._pause_logged = True
+                self.log("[travessia] jogo PAUSOU (dialogo do jogo aberto) "
+                         "| balsa=%s trem=%s | %.0f m do alvo"
+                         % (sn.get("ferry"), sn.get("train"), rm or 0.0))
+        else:
+            self._pause_logged = False
+        if sn.get("paused") and travessia \
                 and rm is not None and rm < 60.0:
             if now - self._last_macro_t < 1.0:
                 return
@@ -599,7 +611,7 @@ class PracticeLoop:
             return
         # 2) jogo voltou a rodar: zera o passo a passo do dialogo
         if self._ferry_steps and not sn.get("paused"):
-            self.log("[balsa] jogo despausou — dialogo fechado (%d passos)"
+            self.log("[travessia] jogo RETOMOU — dialogo fechado (%d passos)"
                      % self._ferry_steps)
             self._ferry_steps = 0
         if rm is None or rm >= 25.0 or sn["speed"] >= 0.5:
@@ -611,7 +623,7 @@ class PracticeLoop:
             self.injector.tap(*self.macros.get(
                 "dock", (0x14, "T (acoplar reboque)")))
             self.log("[trabalho] caminhao proprio: ACOPANDO o reboque (T)")
-        elif sn.get("ferry"):
+        elif travessia:
             # porto alcancado: o dialogo abre SOZINHO ao entrar na area
             # (o jogo pausa); se nao abrir, o Enter aciona o porto
             self._last_macro_t = now
