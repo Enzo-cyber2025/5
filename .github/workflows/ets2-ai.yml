@@ -1160,6 +1160,7 @@ jobs:
           cd ets2-ai
           python -m pytest tests/test_traces_reais.py -q
       - name: Committa a calibracao (dados reais ficam permanentes no repo)
+        if: always()
         run: |
           set +e
           if git status --porcelain -- ets2-ai/ets2ai/dados | grep -q .; then

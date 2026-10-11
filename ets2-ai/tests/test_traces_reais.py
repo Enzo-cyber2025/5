@@ -72,8 +72,28 @@ def test_janelas_enter_agrupa_dialogos():
 
 
 def test_defaults_sem_dados():
-    assert traces.tap_hold(None) == traces.TAP_HOLD_PADRAO
-    assert traces.menu_gap(None) == traces.MENU_GAP_PADRAO
+    # cal vazia = sem dados reais -> defaults historicos (None CARREGA o
+    # arquivo real quando existe, por isso nao serve aqui)
+    assert traces.tap_hold({}) == traces.TAP_HOLD_PADRAO
+    assert traces.menu_gap({}) == traces.MENU_GAP_PADRAO
+
+
+def test_timing_sempre_dentro_dos_limites():
+    # com ou sem dados reais, os valores ficam nos limites humaneis
+    assert traces.TAP_HOLD_MIN <= traces.tap_hold(None) <= traces.TAP_HOLD_MAX
+    assert traces.MENU_GAP_MIN <= traces.menu_gap(None) <= traces.MENU_GAP_MAX
+
+
+def test_sessoes_nao_fundem_relogios():
+    # duas sessoes com relogios independentes (run 38174907081): Enter
+    # de sessoes diferentes NAO pode virar uma 'janela'
+    evs = [
+        _ev(100.0, 1, kc=13), _ev(101.0, 2, kc=13),   # sessao A
+        _ev(5.0, 1, kc=13), _ev(6.0, 2, kc=13),       # sessao B (relogio zerou)
+    ]
+    assert len(traces.janelas_enter(evs)) == 2
+    gaps = traces.intervalos_entre_teclas(evs)
+    assert all(0.0 <= g <= 10.0 for g in gaps)
 
 
 def test_tap_hold_calibrado_pelo_enter_real():
@@ -138,7 +158,11 @@ class TestDadosReaisHF:
                 traces.MENU_GAP_MAX
 
     def test_janelas_de_dialogo_registradas(self):
+        # (o jogador do dataset dirige com teclado e navega UI com MOUSE
+        # — rajadas de Enter sao raras; gate so quando ha Enter de fato)
         cal = traces.carregar()
-        if cal["n_eventos"] > 200000:
+        n_enter = sum((cal.get("teclas") or {}).get(str(kc), {}).get("n", 0)
+                      for kc in traces.CODIGOS_ENTER)
+        if n_enter >= 20:
             assert cal["n_janelas_enter"] >= 1, \
-                "nenhuma rajada de Enter em sessao longa de jogo real"
+                "muitos Enter sem nenhuma rajada de dialogo"

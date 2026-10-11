@@ -31,6 +31,9 @@ SESSOES = [
     "2026_05_03_12_23_04",
     "2026_05_03_15_19_25",
     "2026_05_03_17_12_22",
+    "2026_05_03_20_32_57",
+    "2026_05_04_06_19_43",
+    "2026_05_04_07_58_00",
 ]
 SAIDA = AQUI.parent / "ets2ai" / "dados" / traces.ARQUIVO
 CACHE = pathlib.Path("/tmp/traces-hf")
@@ -76,6 +79,7 @@ class HTTPRange:
         self.url = url
         self.pos = 0
         self.len = None
+        self.closed = False   # pyarrow exige (run 38174907081)
 
     def _head_len(self):
         req = urllib.request.Request(self.url, method="HEAD",

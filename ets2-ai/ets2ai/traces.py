@@ -134,31 +134,59 @@ def holds_por_tecla(eventos):
     return holds
 
 
+def _split_sessoes(eventos):
+    """Sepora sessoes: o relogio de cada uma comeca do zero — qualquer
+    salto PARA TRAS no tempo = sessao nova (run 38174907081 mostrou que
+    fundir sessoes cria 'janelas' falsas com tempos de relogios dife-
+    rentes)."""
+    out, atual, anterior = [], [], None
+    for ev in eventos:
+        t = ev.get("time")
+        if t is None:
+            continue
+        if anterior is not None and t < anterior:
+            out.append(atual)
+            atual = []
+        atual.append(ev)
+        anterior = t
+    if atual:
+        out.append(atual)
+    return out
+
+
 def intervalos_entre_teclas(eventos):
-    """Intervalos (s) entre eventos de teclado consecutivos (qualquer tecla)."""
-    tempos = [float(ev["time"]) for ev in eventos if ev.get("keyCode") is not None]
-    return [b - a for a, b in zip(tempos, tempos[1:]) if 0.0 <= b - a <= 10.0]
+    """Intervalos (s) entre eventos de teclado consecutivos (por sessao)."""
+    ivs = []
+    for sess in _split_sessoes(eventos):
+        tempos = [float(ev["time"]) for ev in sess
+                  if ev.get("keyCode") is not None]
+        ivs += [b - a for a, b in zip(tempos, tempos[1:])
+                if 0.0 <= b - a <= 10.0]
+    return ivs
 
 
 def janelas_enter(eventos, gap_max=3.0):
     """Sequencias de Enter em rajada (dialogos do jogo — balsa/trem/frete).
 
     Retorna listas com os TEMPOS de cada Enter de cada janela — e o
-    comportamento REAL de um humano navegando dialogs do ETS2.
+    comportamento REAL de um humano navegando dialogs do ETS2. Por
+    sessao (relogios nao se misturam).
     """
-    enters = [float(ev["time"]) for ev in eventos
-              if ev.get("keyCode") is not None
-              and int(ev["keyCode"]) in CODIGOS_ENTER]
-    janelas, atual = [], []
-    for t in enters:
-        if atual and t - atual[-1] > gap_max:
-            if len(atual) >= 2:
-                janelas.append(atual)
-            atual = []
-        atual.append(t)
-    if len(atual) >= 2:
-        janelas.append(atual)
-    return janelas
+    js = []
+    for sess in _split_sessoes(eventos):
+        enters = [float(ev["time"]) for ev in sess
+                  if ev.get("keyCode") is not None
+                  and int(ev["keyCode"]) in CODIGOS_ENTER]
+        atual = []
+        for t in enters:
+            if atual and t - atual[-1] > gap_max:
+                if len(atual) >= 2:
+                    js.append(atual)
+                atual = []
+            atual.append(t)
+        if len(atual) >= 2:
+            js.append(atual)
+    return js
 
 
 def calibrar(eventos):
