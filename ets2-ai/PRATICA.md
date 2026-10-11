@@ -563,3 +563,20 @@ falso. Suite: 130 passed, 1 skipped.
   cai para 16 km/h (4,5 m/s) — rampa e deck a 40 km/h derrubam a carga.
 - No PC real o log novo (v0.4.25) mostra PAUSOU/RETOMOU com balsa/trem:
   se o jogo pedir outra coisa, o log diz exatamente o que houve.
+
+## v0.4.27 — REPLAY: o jogo REAL do usuario vira teste do CI
+
+- O exe agora grava `jogo-replay.json` ao lado de ets2-ai-log.txt em toda
+  sessao drive: a linha do tempo da telemetria REAL (paused, ferry, train,
+  route, speed — mudancas de estado ou 2x/s). NAO contem nada do jogo,
+  so numeros — pode mandar no chat.
+- Por que: nenhuma maquina de CI do mundo tem GPU/DirectX (nem QEMU —
+  emula CPU, nao video), entao o ETS2 real so roda no PC do usuario. Com
+  o replay, o COMPORTAMENTO REAL do jogo dele vira teste permanente:
+  `tests/test_ferry_replay.py` reexecuta a IA contra a gravacao e exige
+  (1) confirmar TODOS os dialogos de travessia, (2) no maximo 6 passos
+  por dialogo, (3) zero Enter depois que a travessia conclui.
+- Como gravar a sua balsa: abra o exe v0.4.27 -> COMEÇAR -> entre na
+  cabine -> VOCÊ dirige ate a balsa e embarca (a IA solta quando voce
+  mexe nos controles) -> feche o jogo e me mande jogo-replay.json. A
+  partir dai o CI testa a IA contra o SEU jogo em toda build.

@@ -174,7 +174,7 @@ class PracticeLoop:
                  recorder=None, map_path=None, policy_fn=None, phone=None,
                  tick=TICK, clock=time.monotonic, sleep=time.sleep, log=print,
                  foreign_keys=None, stop_event=None, macros=None,
-                 joystick=None):
+                 joystick=None, timeline_path=None):
         assert mode in ("record", "drive", "shadow")
         self.mode = mode
         self.road_map = road_map
@@ -211,6 +211,12 @@ class PracticeLoop:
         self._last_macro_t = -1e9
         self._ferry_steps = 0       # dialogo do porto: passos ja enviados
         self._pause_logged = False  # log fino: transicao pausa/retomada
+        # REPLAY (v0.4.27): linha do tempo da telemetria REAL — o usuario
+        # joga (ex.: embarca na balsa) e o arquivo vira teste fixo no CI
+        self._tl_path = timeline_path
+        self._tl = []
+        self._tl_t = -1e9
+        self._tl_key = None
         self._fk_ticks = 0          # teclas fisicas estranhas seguidas
         self._no_frame_needed = False   # telemetria sem input do jogo (mem)
         self.foreign_keys = foreign_keys or None
@@ -329,9 +335,39 @@ class PracticeLoop:
             self.rows += 1
 
     # ------------------------------------------------------------------ #
+    def _save_timeline(self):
+        """Escreve o replay da telemetria REAL (jogo-replay.json)."""
+        if not (self._tl_path and self._tl):
+            return
+        try:
+            import json as _json
+            from pathlib import Path as _P
+            _P(self._tl_path).write_text(
+                _json.dumps({"versao": 1, "eventos": self._tl},
+                            ensure_ascii=False), encoding="utf-8")
+            self.log(f"[replay] telemetria REAL salva em {self._tl_path} "
+                     f"— envie este arquivo para virar teste no CI")
+        except Exception:
+            pass
+
     def step(self, sn, now):
         """Um tick do loop. Retorna dict de estado para o HUD/testes."""
         self.n_steps += 1
+        if self._tl_path is not None:
+            key = (sn.get("paused"), sn.get("on_job"), sn.get("ferry"),
+                   sn.get("train"))
+            if key != self._tl_key or now - self._tl_t >= 2.0:
+                self._tl_key = key
+                self._tl_t = now
+                self._tl.append({
+                    "t": round(now, 2),
+                    "speed": round(float(sn.get("speed") or 0.0), 2),
+                    "route": (round(float(sn["route_distance"]), 1)
+                              if sn.get("route_distance") is not None else None),
+                    "paused": bool(sn.get("paused")),
+                    "on_job": bool(sn.get("on_job")),
+                    "ferry": bool(sn.get("ferry")),
+                    "train": bool(sn.get("train"))})
         out = {"telemetry": True, "stale": False, "cmd": None,
                "source": self.mode, "feat": None, "meta": None}
         # telemetria viva? (ticks do jogo congelando = menu/pausa)
@@ -779,6 +815,7 @@ class PracticeLoop:
         finally:
             if self.injector is not None:
                 self.injector.release_all()
+            self._save_timeline()
             if self.map_path:
                 self.road_map.save(self.map_path)
                 self.log(f"[pratica] mapa salvo em {self.map_path}")
@@ -936,7 +973,8 @@ def run(mode, map_path="practice/mapa.json", rec_path=None, inject=False,
         window="Euro Truck", weights=BASE_WEIGHTS, max_seconds=None,
         game_dir=None, auto_install=True, phone=None, telemetry_mode="auto",
         log=print, stop_event=None, wait_game=45.0, on_source=None,
-        _source=None, _policy=None, _clock=None, _sleep=None):
+        timeline_path=None, _source=None, _policy=None, _clock=None,
+        _sleep=None):
     """Monta e roda o loop de pratica (usado pelo CLI e pelo bridge --ets2).
 
     wait_game: segundos esperando o ETS2/telemetria aparecer antes de
@@ -982,7 +1020,7 @@ def run(mode, map_path="practice/mapa.json", rec_path=None, inject=False,
                         joystick=joystick,
                         foreign_keys=(injector.foreign_keys_down
                                       if injector is not None else None),
-                        stop_event=stop_event)
+                        stop_event=stop_event, timeline_path=timeline_path)
     try:
         return loop.run(max_seconds=max_seconds)
     finally:

@@ -35,7 +35,7 @@ import sys
 import threading
 import time
 
-APP_VERSION = "0.4.26"   # aparece no log de sessao E na 1a linha do AUTOTESTE
+APP_VERSION = "0.4.27"   # aparece no log de sessao E na 1a linha do AUTOTESTE
 from pathlib import Path
 
 import numpy as np
@@ -963,6 +963,8 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
         def worker():
             try:
                 practice.run("drive", map_path=map_path, inject=inject,
+                             timeline_path=str(_LOG_PATH.parent
+                                               / "jogo-replay.json"),
                              window=window, phone=link,
                              telemetry_mode=telemetry_mode,
                              log=log, stop_event=stop_event,
@@ -1740,12 +1742,16 @@ def main():
             tmode = "mem" if args.no_dll else args.telemetry
             practice.run(args.ets2, map_path=args.map, rec_path=rec,
                          inject=args.inject, window=args.window,
-                         phone=link, telemetry_mode=tmode, log=_cli_log)
+                         phone=link, telemetry_mode=tmode, log=_cli_log,
+                         timeline_path=str(_LOG_PATH.parent
+                                           / "jogo-replay.json"))
         else:
             tmode = "mem" if args.no_dll else args.telemetry
             practice.run(args.ets2, map_path=args.map, rec_path=rec,
                          inject=args.inject, window=args.window,
-                         telemetry_mode=tmode, log=_cli_log)
+                         telemetry_mode=tmode, log=_cli_log,
+                         timeline_path=str(_LOG_PATH.parent
+                                           / "jogo-replay.json"))
         return
     layers = None if (args.sem_janela and args.somente_celular) else load_policy()
     injector = KeyInjector(args.window, args.inject)
