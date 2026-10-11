@@ -351,7 +351,7 @@ class KeyInjector:
                      "jogo nao esta em TELA CHEIA")
             return
         self._keybd(scan, False)
-        time.sleep(0.06)
+        time.sleep(self.tap_hold)
         self._keybd(scan, True)
         if name:
             print(f"[macro] {name}")

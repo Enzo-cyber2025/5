@@ -23,39 +23,48 @@ if (Test-Path $alvo) { Log "ROTA 1 (steamcmd) OK"; exit 0 }
 # ---- ROTA 2: DepotDownloader (GitHub, tenta anonimo) ----
 try {
   $rel = Invoke-RestMethod "https://api.github.com/repos/SteamRE/DepotDownloader/releases/latest"
-  $asset = $rel.assets | Where-Object { $_.name -match "x64" -and $_.name -match "zip" -and $_.name -notmatch "osx|linux" } | Select-Object -First 1
+  $asset = $rel.assets | Where-Object { $_.name -match "x64" -and $_.name -match "zip" -and $_.name -notmatch "osx|macos|linux" } | Select-Object -First 1
   Log ("DepotDownloader: " + $asset.name)
   Invoke-WebRequest $asset.browser_download_url -OutFile "C:\dd.zip"
   Expand-Archive "C:\dd.zip" -DestinationPath "C:\dd" -Force
   $dd = Get-ChildItem "C:\dd" -Recurse -Filter "*.exe" | Select-Object -First 1
   if ($dd) {
+    Log ("exe: " + $dd.FullName)
     & $dd.FullName -app 231120 -dir C:\ets2demo -validate *> "C:\dd\dd.log"
-    Get-Content "C:\dd\dd.log" -ErrorAction SilentlyContinue | Select-Object -Last 10 | ForEach-Object { Log ("depotdl: " + $_) }
+    $cod = $LASTEXITCODE
+    Log ("DepotDownloader exit: $cod")
+    Get-Content "C:\dd\dd.log" -ErrorAction SilentlyContinue | Select-Object -Last 15 | ForEach-Object { Log ("depotdl: " + $_) }
+  } else {
+    Log "DepotDownloader: nenhum exe no zip"
   }
 } catch { Log ("DepotDownloader: " + $_.Exception.Message) }
 if (Test-Path $alvo) { Log "ROTA 2 (DepotDownloader) OK"; exit 0 }
 
 # ---- ROTA 3: instalador OFFLINE da demo (TechSpot, freeware SCS) ----
 try {
-  $ua = @{ "UserAgent" = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"; "Referer" = "https://www.techspot.com/downloads/5653-euro-truck-simulator-2-demo.html" }
+  $ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+  $ref = "https://www.techspot.com/downloads/5653-euro-truck-simulator-2-demo.html"
   $html = ""
   foreach ($u in @(
     "https://www.techspot.com/downloads/downloadnow/5653/?evp=be74c2e849e2f76652741e2a8a90963f&file=6489",
     "https://www.techspot.com/downloads/downloadnow/5653/?file=6489")) {
-    try { $html = (Invoke-WebRequest @ua -Uri $u -MaximumRedirection 5 -UseBasicParsing).Content; if ($html) { break } } catch {}
+    # curl.exe REAL (IWR voltou corpo vazio do Azure no run 38173553504)
+    $html = & curl.exe -sL --max-time 60 -A $ua -H "Referer: $ref" $u 2>$null
+    if ($html) { break }
   }
+  $txt = $html -join " "
   # link DIRETO (downloadnowfile) com token fresco — regex em aspas duplas
-  $rx = "https?://[^""'<>\s]*downloadnowfile[^""'<>\s]*"
-  $m = [regex]::Matches($html, $rx) | ForEach-Object { $_.Value } | Select-Object -Unique
-  Log ("TechSpot downloadnowfile: " + ($m -join " | ") + " (html " + $html.Length + " bytes)")
+  $rx = "https?://[^" + '"' + "'" + "<>\s]*downloadnowfile[^" + '"' + "'" + "<>\s]*"
+  $m = [regex]::Matches($txt, $rx) | ForEach-Object { $_.Value } | Select-Object -Unique
+  Log ("TechSpot downloadnowfile: " + ($m -join " | ") + " (html " + $txt.Length + " chars)")
   if (-not $m) {
-    $rx2 = "https?://[^""'<>\s]+\.exe"
-    $m = [regex]::Matches($html, $rx2) | ForEach-Object { $_.Value } | Select-Object -Unique
+    $rx2 = "https?://[^" + '"' + "'" + "<>\s]+\.exe"
+    $m = [regex]::Matches($txt, $rx2) | ForEach-Object { $_.Value } | Select-Object -Unique
     Log ("TechSpot .exe direto: " + ($m -join " | "))
   }
   if ($m) {
-    Invoke-WebRequest @ua -Uri $m[0] -OutFile "C:\demo-setup.exe" -MaximumRedirection 10
-    Log ("instalador: " + [math]::Round((Get-Item C:\demo-setup.exe).Length / 1MB) + " MB")
+    & curl.exe -sL --max-time 1500 -A $ua -e $ref -o "C:\demo-setup.exe" $m[0]
+    Log ("instalador: " + [math]::Round((Get-Item C:\demo-setup.exe -ErrorAction SilentlyContinue).Length / 1MB) + " MB")
     # instaladores SCS: /S (NSIS) ou /VERYSILENT (Inno); tenta ambos
     foreach ($flag in @("/S", "/VERYSILENT")) {
       $p = Start-Process -FilePath "C:\demo-setup.exe" -ArgumentList $flag -Wait -PassThru
