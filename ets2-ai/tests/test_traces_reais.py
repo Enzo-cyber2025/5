@@ -166,3 +166,14 @@ class TestDadosReaisHF:
         if n_enter >= 20:
             assert cal["n_janelas_enter"] >= 1, \
                 "muitos Enter sem nenhuma rajada de dialogo"
+
+
+def test_injetor_tem_timing_definido_em_toda_plataforma():
+    """Run 38185348122: keys.py commitado pela metade — tap() usava
+    self.tap_hold sem o __init__ definir -> AttributeError no exe real
+    (no Linux enabled=False retornava antes e o teste nao pegava)."""
+    from ets2ai.keys import KeyInjector
+    inj = KeyInjector("Euro Truck", enabled=False)
+    assert hasattr(inj, "tap_hold") and 0.04 <= inj.tap_hold <= 0.12
+    assert hasattr(inj, "menu_gap") and 0.05 <= inj.menu_gap <= 0.60
+    assert hasattr(inj, "tap_gap") and inj.tap_gap >= 0.03

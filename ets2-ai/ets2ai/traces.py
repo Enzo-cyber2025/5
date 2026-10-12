@@ -37,7 +37,10 @@ from pathlib import Path
 
 TAP_HOLD_PADRAO = 0.06     # 60 ms (valor historico, sem dados reais)
 MENU_GAP_PADRAO = 0.15     # 150 ms (valor historico, sem dados reais)
-TAP_HOLD_MIN, TAP_HOLD_MAX = 0.03, 0.30
+# tap de macro = pressao MOMENTANEA (a calibracao real tem holds de
+# DIRECAO de 2-5 s — clamp apertado; run 38185348122: tap de 300 ms
+# deixou o Enter 'sempre pressionado' entre taps e a prova travou)
+TAP_HOLD_MIN, TAP_HOLD_MAX = 0.04, 0.12
 MENU_GAP_MIN, MENU_GAP_MAX = 0.05, 0.60
 HOLD_MAX = 5.0             # pares acima disso = tecla presa/afk, descarta
 

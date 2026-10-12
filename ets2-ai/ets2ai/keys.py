@@ -9,6 +9,8 @@ import sys
 import time
 from pathlib import Path
 
+from . import traces as _traces
+
 # Teclas enviadas (scan codes). PADRAO = WASD (pedido do usuario); em
 # tempo de execucao load_keymap() le o controls.sii do JOGO e usa as teclas
 # que o perfil do jogador realmente tem configuradas (mapeamento original).
@@ -247,6 +249,18 @@ class KeyInjector:
         self.kill = False
         self.phase = 0
         self._gate = None       # ultimo estado do consentimento (tela cheia)
+        # Timing calibrado por TRACES REAIS de ETS2 (dataset HF publico;
+        # ver ets2ai.traces). Sem os dados: 60/150 ms (valores historicos).
+        # INCONDICIONAL (antes do if enabled): atributos existem em toda
+        # plataforma — o run 38185348122 quebrou a prova com AttributeError
+        # porque tap() usava self.tap_hold sem o __init__ definir.
+        _cal = _traces.carregar()
+        self.tap_hold = _traces.tap_hold(_cal)
+        self.menu_gap = _traces.menu_gap(_cal)
+        # gap com a tecla SOLTA apos cada tap: garante que o jogo ve a
+        # BORDA de subida mesmo com taps consecutivos (a prova contou
+        # 7813 ticks de Enter baixo porque a tecla nunca 'subiu')
+        self.tap_gap = 0.05
         if self.enabled:
             import ctypes
             self.ct = ctypes
@@ -342,7 +356,7 @@ class KeyInjector:
             self.down.add(k)
 
     def tap(self, scan, name=""):
-        """Tecla unica (60 ms) para macros de missao."""
+        """Tecla unica (hold calibrado pelos traces reais) p/ macros."""
         if not self.enabled:
             print(f"[macro] {name or hex(scan)} (injecao desligada — apenas sim)")
             return
@@ -381,11 +395,16 @@ class KeyInjector:
 
 
 def press_menu(injector, keys):
-    """Sequencia de menu (['down','ok'] etc.) com pausas curtas."""
+    """Sequencia de menu (['down','ok'] etc.) com pausas curtas.
+
+    O intervalo entre teclas vem dos TRACES REAIS (p50 das rajadas de
+    Enter de um humano no ETS2) quando ets2ai/dados/traces-hf.json existe.
+    """
+    gap = getattr(injector, "menu_gap", _traces.MENU_GAP_PADRAO)
     for k in keys:
         scan, name = MACROS[k]
         injector.tap(scan, name)
-        time.sleep(0.15)
+        time.sleep(gap)
 
 
 class Recorder:
