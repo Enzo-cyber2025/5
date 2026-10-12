@@ -111,10 +111,27 @@ try {
           $m = [regex]::Matches($txt, $rx2) | ForEach-Object { $_.Value } | Select-Object -Unique
         }
         Log ("links no estagio 2: " + ($m -join " | "))
+        if (-not $m) {
+          # o CI recebe variante da pagina sem o link (run 38259230709):
+          # tenta SEM --compressed e SEM Referer; e dumpa o head no log
+          $h2 = & curl.exe -sL --max-time 90 -A $ua $url2 2>$null
+          $t2 = $h2 -join " "
+          Log ("variante sem compressed/referer: " + $t2.Length + " chars")
+          $m = [regex]::Matches($t2, $rx) | ForEach-Object { $_.Value } | Select-Object -Unique
+          if (-not $m) {
+            $m = [regex]::Matches($t2, $rx2) | ForEach-Object { $_.Value } | Select-Object -Unique
+          }
+          Log ("links na variante: " + ($m -join " | "))
+          if (-not $m) {
+            Log ("HEAD estagio2: " + $txt.Substring(0, [math]::Min(500, $txt.Length)))
+            $hrefs = [regex]::Matches($txt, "href=[^ >]{10,90}") | ForEach-Object { $_.Value } | Select-Object -Unique -First 10
+            Log ("hrefs: " + ($hrefs -join " | "))
+          }
+        }
         if ($m) {
           $url3 = @($m)[0]
           Log ("URL do arquivo: " + $url3)
-          & curl.exe @rxcurl --max-time 1500 -e $ref -o $setup $url3
+          & curl.exe -sL --max-time 1500 -A $ua -e $ref -o $setup $url3
         }
       }
     }

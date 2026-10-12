@@ -1139,6 +1139,7 @@ jobs:
         run: |
           set +e
           mkdir -p "ci-logs/${{ github.run_id }}-demo"
+          cp /c/demo-stage2.bin "ci-logs/${{ github.run_id }}-demo/stage2.html" 2>/dev/null || true
           for f in autoteste-real.json autoteste-real.log demo-mmf.json /c/steamcmd/fase1.log /c/steamcmd/fase2.log /c/dd/dd.log /c/dd/stage2.err /c/ets2demo/game.log.txt /c/ets2demo/game-ets2ai-telemetry.log; do
             cp "$f" "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           done
