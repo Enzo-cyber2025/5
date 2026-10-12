@@ -104,8 +104,14 @@ try {
       # HTML (ou MZ minusculo): procura o link DIRETO
       if ($tam -lt 5MB) {
         $txt = [System.IO.File]::ReadAllText($stage2)
+        # run 38262706763: o href e RELATIVO (/downloads/downloadnowfile/...)
+        # com &amp; codificado — regex absoluta nao casava NADA
         $rx = "https?://[^" + '"' + "'" + "<>\s]*downloadnowfile[^" + '"' + "'" + "<>\s]*"
         $m = [regex]::Matches($txt, $rx) | ForEach-Object { $_.Value } | Select-Object -Unique
+        if (-not $m) {
+          $rxrel = "/downloads/downloadnowfile/5653/[^" + '"' + "'" + "<>\s]*"
+          $m = [regex]::Matches($txt, $rxrel) | ForEach-Object { "https://www.techspot.com" + ($_.Value -replace "&amp;", "&") } | Select-Object -Unique
+        }
         if (-not $m) {
           $rx2 = "https?://[^" + '"' + "'" + "<>\s]+\.exe"
           $m = [regex]::Matches($txt, $rx2) | ForEach-Object { $_.Value } | Select-Object -Unique
@@ -118,6 +124,9 @@ try {
           $t2 = $h2 -join " "
           Log ("variante sem compressed/referer: " + $t2.Length + " chars")
           $m = [regex]::Matches($t2, $rx) | ForEach-Object { $_.Value } | Select-Object -Unique
+          if (-not $m) {
+            $m = [regex]::Matches($t2, $rxrel) | ForEach-Object { "https://www.techspot.com" + ($_.Value -replace "&amp;", "&") } | Select-Object -Unique
+          }
           if (-not $m) {
             $m = [regex]::Matches($t2, $rx2) | ForEach-Object { $_.Value } | Select-Object -Unique
           }
