@@ -68,7 +68,9 @@ try {
   # host: h'. @() forca array: @($m1)[0] e a URL inteira.
   $url2 = @($m1)[0]
   Log ("URL do estagio 2: " + $url2)
-  if ($url2) {
+  if (Test-Path $setup) {
+    Log "instalador CACHEADO (actions/cache) — pulando downloads"
+  } elseif ($url2) {
     # 2) BAIXA o downloadnow direto em ARQUIVO — 3 motores:
     #    curl (com exit code logado) -> IWR (streaming p/ disco) -> BITS.
     #    Run 38183604100: curl -o criou 0 bytes sem erro visivel (-s
@@ -137,19 +139,71 @@ try {
             Log ("hrefs: " + ($hrefs -join " | "))
           }
         }
-        if ($m) {
+        if ($m -and -not (Test-Path $setup)) {
           $url3 = @($m)[0]
           Log ("URL do arquivo: " + $url3)
-          & curl.exe -sL --max-time 1500 -A $ua -e $ref -o $setup $url3
+          $w3 = & curl.exe -sSL --compressed --max-time 1500 -A $ua -e $ref --retry 3 -w "%{http_code} %{size_download} %{content_type}" -o $setup $url3 2> C:\dd\setup.err
+          Log ("setup curl exit: $LASTEXITCODE | $w3")
+          $r3 += " | setup: $LASTEXITCODE $w3"
         }
       }
     }
   }
   if (Test-Path $setup) {
-    Log ("instalador: " + [math]::Round((Get-Item $setup).Length / 1MB) + " MB")
+    $tamS = (Get-Item $setup).Length
+    Log ("instalador: " + [math]::Round($tamS / 1MB) + " MB")
+    # diagnostico do PE: machine type (run 38280133452: 5689 MB baixados
+    # mas 'not a valid application for this OS platform')
+    try {
+      $fs = [System.IO.File]::OpenRead($setup)
+      $hdr = New-Object byte[] 64
+      $null = $fs.Read($hdr, 0, 64); $fs.Close()
+      $hex = ($hdr[0..15] | ForEach-Object { $_.ToString("X2") }) -join " "
+      $peOff = [BitConverter]::ToInt32($hdr, 0x3C)
+      Log ("header: " + $hex + " | PE offset: " + $peOff)
+      if ($peOff -gt 0 -and $peOff -lt 1000) {
+        $fs = [System.IO.File]::OpenRead($setup)
+        $pes = New-Object byte[] 6
+        $fs.Position = $peOff; $null = $fs.Read($pes, 0, 6); $fs.Close()
+        $mach = [BitConverter]::ToUInt16($pes, 4)
+        $arq = @{ 0x8664 = "x64"; 0x14c = "x86"; 0xAA64 = "ARM64"; 0x1c0 = "ARM" }[[int]$mach]
+        Log ("PE machine: 0x" + $mach.ToString("X4") + " (" + ($arq ?? "?") + ")")
+        $r3 += " | PE=" + $mach.ToString("X4")
+      }
+    } catch { Log ("PE diag: " + $_.Exception.Message) }
+    # HEAD: download veio completo?
+    try {
+      $cl = & curl.exe -sI -A $ua -e $ref $url3 2>$null | Select-String -Pattern "Content-Length:\s*(\d+)"
+      if ($cl) {
+        $esperado = [int64]$cl.Matches[0].Groups[1].Value
+        if ($esperado -gt $tamS) {
+          Log ("TRUNCADO: esperado $esperado, baixado $tamS — retomando")
+          & curl.exe -sSL --compressed --max-time 1500 -A $ua -e $ref --retry 3 -C - -o $setup $url3
+          Log ("resume exit: $LASTEXITCODE | agora: " + [math]::Round((Get-Item $setup).Length / 1MB) + " MB")
+        } else {
+          Log ("completo: Content-Length $esperado = baixado $tamS")
+        }
+      }
+    } catch {}
+    # fallback: extrair com 7-Zip (SFX/Inno — 7z abre a maioria)
+    $sz7 = "C:\Program Files\7-Zip\7z.exe"
+    if (Test-Path $sz7) {
+      Log "tentando extrair com 7-Zip..."
+      & $sz7 x -y -o"C:\demo-extract" $setup *> "C:\dd\7z.log"
+      Log ("7z exit: $LASTEXITCODE")
+      Get-Content "C:\dd\7z.log" -ErrorAction SilentlyContinue | Select-Object -Last 8 | ForEach-Object { Log ("7z: " + $_) }
+      $exe7 = Get-ChildItem "C:\demo-extract" -Recurse -Filter "eurotrucks2.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+      if ($exe7) {
+        Log ("7z achou o jogo: " + $exe7.FullName)
+        New-Item -ItemType Directory -Force "C:\ets2demo\bin\win_x64" | Out-Null
+        $raiz7 = Split-Path (Split-Path $exe7.FullName -Parent) -Parent
+        Copy-Item (Join-Path $raiz7 "*") "C:\ets2demo\" -Recurse -Force -ErrorAction SilentlyContinue
+        $r3 += " | 7z extraiu"
+      }
+    }
     # instaladores SCS: /S (NSIS) ou /VERYSILENT (Inno); tenta ambos
     foreach ($flag in @("/S", "/VERYSILENT")) {
-      $p = Start-Process -FilePath "C:\demo-setup.exe" -ArgumentList $flag -Wait -PassThru
+      try { $p = Start-Process -FilePath "C:\demo-setup.exe" -ArgumentList $flag -Wait -PassThru } catch { Log ("Start-Process: " + $_.Exception.Message); break }
       if (Test-Path $alvo) { break }
       $found = Get-ChildItem "C:\Program Files\Euro Truck Simulator 2 Demo", "C:\Program Files (x86)\Euro Truck Simulator 2 Demo", "$env:LOCALAPPDATA\Programs" -Recurse -Filter "eurotrucks2.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
       if ($found) {
