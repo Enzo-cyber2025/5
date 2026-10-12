@@ -63,25 +63,30 @@ try {
 
   $setup = "C:\demo-setup.exe"
   $stage2 = "C:\demo-stage2.bin"
-  if ($m1) {
+  # GOTCHA PowerShell: com 1 match so, $m1 e STRING e $m1[0] = 1o
+  # CARACTERE ('h' de https://) — run 38255906101: 'Could not resolve
+  # host: h'. @() forca array: @($m1)[0] e a URL inteira.
+  $url2 = @($m1)[0]
+  Log ("URL do estagio 2: " + $url2)
+  if ($url2) {
     # 2) BAIXA o downloadnow direto em ARQUIVO — 3 motores:
     #    curl (com exit code logado) -> IWR (streaming p/ disco) -> BITS.
     #    Run 38183604100: curl -o criou 0 bytes sem erro visivel (-s
     #    engoliu); run 38181824100 PROVOU que a URL serve o instalador.
     New-Item -ItemType Directory -Force -Path "C:\dd" | Out-Null
-    $w = & curl.exe -sSL --compressed --max-time 1400 -A $ua -H "Referer: $ref" --retry 2 -w "%{http_code} %{size_download} %{url_effective}" -o $stage2 $m1[0] 2> C:\dd\stage2.err
+    $w = & curl.exe -sSL --compressed --max-time 1400 -A $ua -H "Referer: $ref" --retry 2 -w "%{http_code} %{size_download} %{url_effective}" -o $stage2 $url2 2> C:\dd\stage2.err
     Log ("curl exit: $LASTEXITCODE | $w")
     $r3 = "curl=$LASTEXITCODE $w"
     if (-not (Test-Path $stage2) -or (Get-Item $stage2).Length -lt 1KB) {
       Log "curl falhou — tentando Invoke-WebRequest (streaming)"
       try {
-        Invoke-WebRequest -Uri $m1[0] -OutFile $stage2 -UserAgent $ua -MaximumRedirection 10 -TimeoutSec 1400
+        Invoke-WebRequest -Uri $url2 -OutFile $stage2 -UserAgent $ua -MaximumRedirection 10 -TimeoutSec 1400
         $r3 += " | IWR ok"
       } catch { Log ("IWR: " + $_.Exception.Message); $r3 += " | IWR: " + $_.Exception.Message }
     }
     if (-not (Test-Path $stage2) -or (Get-Item $stage2).Length -lt 1KB) {
       Log "IWR falhou — tentando BITS"
-      try { Start-BitsTransfer -Source $m1[0] -Destination $stage2; $r3 += " | BITS ok" } catch { Log ("BITS: " + $_.Exception.Message); $r3 += " | BITS: " + $_.Exception.Message }
+      try { Start-BitsTransfer -Source $url2 -Destination $stage2; $r3 += " | BITS ok" } catch { Log ("BITS: " + $_.Exception.Message); $r3 += " | BITS: " + $_.Exception.Message }
     }
     $tam = (Get-Item $stage2 -ErrorAction SilentlyContinue).Length
     Log ("estagio 2: " + [math]::Round($tam / 1MB) + " MB")
@@ -107,7 +112,9 @@ try {
         }
         Log ("links no estagio 2: " + ($m -join " | "))
         if ($m) {
-          & curl.exe @rxcurl --max-time 1500 -e $ref -o $setup $m[0]
+          $url3 = @($m)[0]
+          Log ("URL do arquivo: " + $url3)
+          & curl.exe @rxcurl --max-time 1500 -e $ref -o $setup $url3
         }
       }
     }
