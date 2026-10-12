@@ -192,13 +192,37 @@ try {
       & $sz7 x -y -o"C:\demo-extract" $setup *> "C:\dd\7z.log"
       Log ("7z exit: $LASTEXITCODE")
       Get-Content "C:\dd\7z.log" -ErrorAction SilentlyContinue | Select-Object -Last 8 | ForEach-Object { Log ("7z: " + $_) }
+      Log "arquivos extraidos:"
+      Get-ChildItem "C:\demo-extract" -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object { Log ("  " + $_.Name + " (" + [math]::Round($_.Length / 1MB) + " MB)") }
+      # jogo direto no zip?
       $exe7 = Get-ChildItem "C:\demo-extract" -Recurse -Filter "eurotrucks2.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
       if ($exe7) {
-        Log ("7z achou o jogo: " + $exe7.FullName)
+        Log ("7z achou o JOGO: " + $exe7.FullName)
         New-Item -ItemType Directory -Force "C:\ets2demo\bin\win_x64" | Out-Null
         $raiz7 = Split-Path (Split-Path $exe7.FullName -Parent) -Parent
         Copy-Item (Join-Path $raiz7 "*") "C:\ets2demo\" -Recurse -Force -ErrorAction SilentlyContinue
-        $r3 += " | 7z extraiu"
+        $r3 += " | 7z extraiu o JOGO"
+      } else {
+        # o zip traz o INSTALADOR — roda ele (run 38283415971: 4 arquivos,
+        # nenhum era o jogo; provavelmente setup.exe + bins)
+        $inst = Get-ChildItem "C:\demo-extract" -Recurse -Include *.exe -ErrorAction SilentlyContinue |
+          Where-Object { $_.Name -match "euro|setup|install|ets2|demo" } | Select-Object -First 1
+        if (-not $inst) {
+          $inst = Get-ChildItem "C:\demo-extract" -Recurse -Include *.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+        }
+        $msi = Get-ChildItem "C:\demo-extract" -Recurse -Include *.msi -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($inst) {
+          Log ("instalador extraido: " + $inst.FullName + " (" + [math]::Round($inst.Length / 1MB) + " MB)")
+          foreach ($flag in @("/S", "/VERYSILENT", "/S /D=C:\ets2demo")) {
+            try { $null = Start-Process -FilePath $inst.FullName -ArgumentList $flag -Wait -PassThru } catch { Log ("inst: " + $_.Exception.Message) }
+            if (Test-Path $alvo) { break }
+          }
+          $r3 += " | rodou " + $inst.Name
+        } elseif ($msi) {
+          Log ("msi: " + $msi.FullName)
+          $null = Start-Process msiexec -ArgumentList ("/i", "`"$($msi.FullName)`"", "/qn", "INSTALLDIR=C:\ets2demo") -Wait -PassThru
+          $r3 += " | msiexec"
+        }
       }
     }
     # instaladores SCS: /S (NSIS) ou /VERYSILENT (Inno); tenta ambos
