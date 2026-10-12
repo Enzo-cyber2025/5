@@ -69,17 +69,19 @@ try {
     #    Run 38183604100: curl -o criou 0 bytes sem erro visivel (-s
     #    engoliu); run 38181824100 PROVOU que a URL serve o instalador.
     New-Item -ItemType Directory -Force -Path "C:\dd" | Out-Null
-    & curl.exe -sL --compressed --max-time 1400 -A $ua -H "Referer: $ref" --retry 2 -o $stage2 $m1[0] 2> C:\dd\stage2.err
-    Log ("curl exit: $LASTEXITCODE")
+    $w = & curl.exe -sSL --compressed --max-time 1400 -A $ua -H "Referer: $ref" --retry 2 -w "%{http_code} %{size_download} %{url_effective}" -o $stage2 $m1[0] 2> C:\dd\stage2.err
+    Log ("curl exit: $LASTEXITCODE | $w")
+    $r3 = "curl=$LASTEXITCODE $w"
     if (-not (Test-Path $stage2) -or (Get-Item $stage2).Length -lt 1KB) {
       Log "curl falhou — tentando Invoke-WebRequest (streaming)"
       try {
         Invoke-WebRequest -Uri $m1[0] -OutFile $stage2 -UserAgent $ua -MaximumRedirection 10 -TimeoutSec 1400
-      } catch { Log ("IWR: " + $_.Exception.Message) }
+        $r3 += " | IWR ok"
+      } catch { Log ("IWR: " + $_.Exception.Message); $r3 += " | IWR: " + $_.Exception.Message }
     }
     if (-not (Test-Path $stage2) -or (Get-Item $stage2).Length -lt 1KB) {
       Log "IWR falhou — tentando BITS"
-      try { Start-BitsTransfer -Source $m1[0] -Destination $stage2 } catch { Log ("BITS: " + $_.Exception.Message) }
+      try { Start-BitsTransfer -Source $m1[0] -Destination $stage2; $r3 += " | BITS ok" } catch { Log ("BITS: " + $_.Exception.Message); $r3 += " | BITS: " + $_.Exception.Message }
     }
     $tam = (Get-Item $stage2 -ErrorAction SilentlyContinue).Length
     Log ("estagio 2: " + [math]::Round($tam / 1MB) + " MB")
@@ -136,5 +138,10 @@ if (Test-Path $alvo) { Log "ROTA 3 (instalador offline) OK"; exit 0 }
 $f1 = (Get-Content "$sc\fase1.log" -ErrorAction SilentlyContinue | Select-Object -Last 5) -join " | "
 $f2 = (Get-Content "$sc\fase2.log" -ErrorAction SilentlyContinue | Select-Object -Last 5) -join " | "
 $ddl = (Get-Content "C:\dd\dd.log" -ErrorAction SilentlyContinue | Select-Object -Last 5) -join " | "
-Write-Host ("::error::ROTA1 steamcmd fase1: " + $f1 + " /// fase2: " + $f2 + " /// ROTA2 depot: " + $ddl)
+$s2 = Get-Item "C:\demo-stage2.bin" -ErrorAction SilentlyContinue
+$r3 += " | stage2=" + $(if ($s2) { "$([math]::Round($s2.Length / 1KB)) KB" } else { "inexistente" })
+$errS2 = (Get-Content "C:\dd\stage2.err" -ErrorAction SilentlyContinue | Select-Object -First 3) -join " / "
+if ($errS2) { $r3 += " | err: " + $errS2 }
+if ($r3.Length -gt 700) { $r3 = $r3.Substring(0, 700) }
+Write-Host ("::error::ROTA1 fase2: " + $f2 + " /// ROTA2: " + $ddl + " /// ROTA3: " + $r3)
 throw "nao consegui baixar a demo oficial"
