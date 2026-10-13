@@ -76,12 +76,49 @@ try {
     #    Run 38183604100: curl -o criou 0 bytes sem erro visivel (-s
     #    engoliu); run 38181824100 PROVOU que a URL serve o instalador.
     New-Item -ItemType Directory -Force -Path "C:\dd" | Out-Null
-    # --speed-limit/-time: se cair abaixo de 2 MB/s por 90 s, aborta e o
-    # retry pega uma conexao nova (a velocidade do CDN varia MUITO entre
-    # runs: 5,7 GB em 6 min no run 38280133452 vs >45 min no 38385937916)
-    $w = & curl.exe -sSL --compressed --max-time 4200 --speed-limit 2097152 --speed-time 90 -A $ua -H "Referer: $ref" --retry 3 -w "%{http_code} %{size_download} %{url_effective}" -o $stage2 $url2 2> C:\dd\stage2.err
-    Log ("curl exit: $LASTEXITCODE | $w")
-    $r3 = "curl=$LASTEXITCODE $w"
+    # v12: DOWNLOAD PARALELO POR RANGES — o CDN entrega ~2 MB/s por
+    # conexao (runs 38385937916/38394298922 morreram no timeout); com 12
+    # conexoes o ZIP de 5,97 GB cai de ~50 min para ~6 min.
+    $head = & curl.exe -sIL --max-time 30 -A $ua -H "Referer: $ref" $url2 2>$null
+    $tamRemoto = 0
+    foreach ($ln in $head) {
+      if ($ln -match "(?i)^content-length:\s*(\d+)") { $tamRemoto = [int64]$Matches[1] }
+    }
+    $aceitaRange = (($head -join " ") -match "(?i)accept-ranges:\s*bytes")
+    Log ("HEAD: $tamRemoto bytes | ranges: $aceitaRange")
+    $r3 = ""
+    if ($aceitaRange -and $tamRemoto -gt 500MB) {
+      $n = 12
+      $parte = [math]::Floor($tamRemoto / $n)
+      $procs = @()
+      for ($k = 0; $k -lt $n; $k++) {
+        $ini = $k * $parte
+        $fim = $tamRemoto - 1
+        if ($k -lt ($n - 1)) { $fim = $ini + $parte - 1 }
+        $procs += Start-Process -FilePath "curl.exe" -ArgumentList @("-sL","-A",$ua,"-H","Referer: $ref","--max-time","2400","-r","$ini-$fim","-o","C:\dd\part$k.bin",$url2) -PassThru -WindowStyle Hidden
+      }
+      Log ("12 ranges lancados ($parte bytes cada)...")
+      $procs | Wait-Process -Timeout 2500 -ErrorAction SilentlyContinue
+      $procs | Where-Object { -not $_.HasExited } | Stop-Process -Force -ErrorAction SilentlyContinue
+      $tamSoma = 0
+      foreach ($k in 0..($n - 1)) {
+        $f = Get-Item "C:\dd\part$k.bin" -ErrorAction SilentlyContinue
+        if ($f) { $tamSoma += $f.Length }
+      }
+      Log ("soma das partes: $tamSoma de $tamRemoto")
+      if ($tamSoma -eq $tamRemoto) {
+        $lista = (0..($n - 1) | ForEach-Object { "C:\dd\part$_.bin" }) -join "+"
+        cmd /c "copy /b $lista C:\demo-stage2.bin" *> $null
+        $r3 = "paralelo OK"
+      } else {
+        Log "paralelo incompleto — remontando com o curl simples"
+      }
+    }
+    if (-not (Test-Path $stage2) -or (Get-Item $stage2).Length -lt 1KB) {
+      $w = & curl.exe -sSL --max-time 3000 --speed-limit 2097152 --speed-time 90 -A $ua -H "Referer: $ref" --retry 2 -w "%{http_code} %{size_download} %{url_effective}" -o $stage2 $url2 2> C:\dd\stage2.err
+      Log ("curl simples exit: $LASTEXITCODE | $w")
+      $r3 = "curl=$LASTEXITCODE $w"
+    }
     if (-not (Test-Path $stage2) -or (Get-Item $stage2).Length -lt 1KB) {
       Log "curl falhou — tentando Invoke-WebRequest (streaming)"
       try {
