@@ -95,16 +95,32 @@ try {
     if ($aceitaRange -and $tamRemoto -gt 500MB) {
       $n = 12
       $parte = [math]::Floor($tamRemoto / $n)
-      $procs = @()
-      for ($k = 0; $k -lt $n; $k++) {
-        $ini = $k * $parte
-        $fim = $tamRemoto - 1
-        if ($k -lt ($n - 1)) { $fim = $ini + $parte - 1 }
-        $procs += Start-Process -FilePath "curl.exe" -ArgumentList @("-sL","-A",$ua,"-H","Referer: $ref","--max-time","2400","-r","$ini-$fim","-o","C:\dd\part$k.bin",$url2) -PassThru -WindowStyle Hidden
+      # v16: ORCAMENTO — para de lancar rodadas novas no minuto 200 para
+      # o save do cache (upload de ~6 GB) + extracao + boot caberem no
+      # timeout de 360. Partes baixadas ficam no cache (progresso salvo).
+      $orcamento = (Get-Date).AddMinutes(200)
+      # v15: ate 4 RODADAS — so refaz as partes que falharam/estolaram
+      # (speed-limit aborta conexao lenta; parte boa fica no disco)
+      for ($rodada = 1; $rodada -le 4; $rodada++) {
+        if ((Get-Date) -gt $orcamento) { Log "orcamento de partes esgotado — progresso fica no cache"; break }
+        $procs = @()
+        $faltando = @()
+        for ($k = 0; $k -lt $n; $k++) {
+          $ini = $k * $parte
+          $fim = $tamRemoto - 1
+          if ($k -lt ($n - 1)) { $fim = $ini + $parte - 1 }
+          $esperado = $fim - $ini + 1
+          $f = Get-Item "C:\dd\part$k.bin" -ErrorAction SilentlyContinue
+          if ($f -and $f.Length -eq $esperado) { continue }
+          $faltando += $k
+          if ($f) { Remove-Item $f.FullName -Force }
+          $procs += Start-Process -FilePath "curl.exe" -ArgumentList @("-sL","-A",$ua,"-H","Referer: $ref","--max-time","2400","--speed-limit","524288","--speed-time","120","-r","$ini-$fim","-o","C:\dd\part$k.bin",$url2) -PassThru -WindowStyle Hidden
+        }
+        if (-not $faltando) { Log "todas as 12 partes completas (rodada $rodada)"; break }
+        Log ("rodada $rodada baixando partes: " + ($faltando -join ","))
+        $procs | Wait-Process -Timeout 2500 -ErrorAction SilentlyContinue
+        $procs | Where-Object { -not $_.HasExited } | Stop-Process -Force -ErrorAction SilentlyContinue
       }
-      Log ("12 ranges lancados ($parte bytes cada)...")
-      $procs | Wait-Process -Timeout 2500 -ErrorAction SilentlyContinue
-      $procs | Where-Object { -not $_.HasExited } | Stop-Process -Force -ErrorAction SilentlyContinue
       $tamSoma = 0
       foreach ($k in 0..($n - 1)) {
         $f = Get-Item "C:\dd\part$k.bin" -ErrorAction SilentlyContinue

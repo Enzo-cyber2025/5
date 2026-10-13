@@ -1064,20 +1064,21 @@ jobs:
         with:
           name: ets2ai-universal-dlls
           path: dlls
-      - name: Cache do instalador da demo (5,7 GB — evita re-download)
+      - name: Cache das PARTES do instalador (progresso incremental entre runs)
         uses: actions/cache/restore@v4
         with:
-          path: C:\demo-setup.exe
-          key: ets2demo-installer-v1
+          path: C:\dd
+          key: ets2demo-parts-v16-${{ github.run_id }}
+          restore-keys: ets2demo-parts-v16-
       - name: Baixa a DEMO OFICIAL do ETS2 (SCS, freeware, AppID 231120) — 3 rotas
         shell: pwsh
         run: ets2-ai/scripts/baixa-demo.ps1
-      - name: Salva o instalador no cache (mesmo com o job falhando)
+      - name: Salva as PARTES no cache (progresso nunca se perde)
         if: always()
         uses: actions/cache/save@v4
         with:
-          path: C:\demo-setup.exe
-          key: ets2demo-installer-v1
+          path: C:\dd
+          key: ets2demo-parts-v16-${{ github.run_id }}
       - name: Prepara a demo — DLL universal na pasta de plugins + steam_appid (SCS e DRM-free)
         shell: pwsh
         run: |
