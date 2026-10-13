@@ -79,13 +79,18 @@ try {
     # v12: DOWNLOAD PARALELO POR RANGES — o CDN entrega ~2 MB/s por
     # conexao (runs 38385937916/38394298922 morreram no timeout); com 12
     # conexoes o ZIP de 5,97 GB cai de ~50 min para ~6 min.
-    $head = & curl.exe -sIL --max-time 30 -A $ua -H "Referer: $ref" $url2 2>$null
+    # v14: probe REAL de range — o header accept-ranges do HEAD some atras
+    # de Cloudflare e o paralelo nunca ligava (runs v12/v13: curl simples
+    # a ~1 MB/s). Um GET de 1 byte (r 0-0) responde 206 se ranges existem
+    # e o content-range traz o tamanho TOTAL.
+    $codeprobe = & curl.exe -s -D C:\dd\probe.h -o C:\dd\probe.bin -r 0-0 -w "%{http_code}" -A $ua -H "Referer: $ref" --max-time 40 $url2 2>$null
+    $aceitaRange = ("$codeprobe" -eq "206")
     $tamRemoto = 0
-    foreach ($ln in $head) {
-      if ($ln -match "(?i)^content-length:\s*(\d+)") { $tamRemoto = [int64]$Matches[1] }
+    $ph = Get-Content C:\dd\probe.h -ErrorAction SilentlyContinue
+    foreach ($ln in $ph) {
+      if ("$ln" -match "(?i)^content-range:\s*bytes\s+0-0/(\d+)") { $tamRemoto = [int64]$Matches[1] }
     }
-    $aceitaRange = (($head -join " ") -match "(?i)accept-ranges:\s*bytes")
-    Log ("HEAD: $tamRemoto bytes | ranges: $aceitaRange")
+    Log ("probe: HTTP $codeprobe | total $tamRemoto bytes | ranges: $aceitaRange")
     $r3 = ""
     if ($aceitaRange -and $tamRemoto -gt 500MB) {
       $n = 12
