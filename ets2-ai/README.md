@@ -398,3 +398,8 @@ CI: `.github/workflows/ets2-ai.yml` — 6 jobs: retreino verificável, paridade
 Java, TFLite, APK assinado, EXE Windows, release.
 - pesos v0.4.4 recuperados do kernel Kaggle 2x T4 (loss 0.00600, 1B amostras) em 2026-10-03T13:28:49Z
 - pipeline v0.4.4 disparado manualmente (2026-10-03T13:32:16Z)
+
+## demo-real v10 (out/2026)
+Run 38283415971: download TechSpot OK (5,97 GB), 7-Zip extraiu o ZIP
+com o instalador oficial da demo. v10 extrai, instala e sobe o jogo.
+
