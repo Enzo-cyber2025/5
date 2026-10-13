@@ -76,7 +76,10 @@ try {
     #    Run 38183604100: curl -o criou 0 bytes sem erro visivel (-s
     #    engoliu); run 38181824100 PROVOU que a URL serve o instalador.
     New-Item -ItemType Directory -Force -Path "C:\dd" | Out-Null
-    $w = & curl.exe -sSL --compressed --max-time 1400 -A $ua -H "Referer: $ref" --retry 2 -w "%{http_code} %{size_download} %{url_effective}" -o $stage2 $url2 2> C:\dd\stage2.err
+    # --speed-limit/-time: se cair abaixo de 2 MB/s por 90 s, aborta e o
+    # retry pega uma conexao nova (a velocidade do CDN varia MUITO entre
+    # runs: 5,7 GB em 6 min no run 38280133452 vs >45 min no 38385937916)
+    $w = & curl.exe -sSL --compressed --max-time 4200 --speed-limit 2097152 --speed-time 90 -A $ua -H "Referer: $ref" --retry 3 -w "%{http_code} %{size_download} %{url_effective}" -o $stage2 $url2 2> C:\dd\stage2.err
     Log ("curl exit: $LASTEXITCODE | $w")
     $r3 = "curl=$LASTEXITCODE $w"
     if (-not (Test-Path $stage2) -or (Get-Item $stage2).Length -lt 1KB) {

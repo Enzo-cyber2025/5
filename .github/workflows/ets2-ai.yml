@@ -1045,7 +1045,9 @@ jobs:
     name: PROVA DEMO REAL — ETS2 OFICIAL (demo SCS) carregando a DLL universal no processo de verdade
     needs: [windows-exe]
     runs-on: windows-latest
-    timeout-minutes: 45
+    timeout-minutes: 90   # run 38385937916: download lento (~2 MB/s) nao
+                          # cabia em 45 min — timeout cancelou com o job
+                          # no meio do ZIP de 5,97 GB
     continue-on-error: true   # 1a viagem: descoberta — nao bloqueia a release
     steps:
       - uses: actions/checkout@v5
