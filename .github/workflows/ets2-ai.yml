@@ -1131,7 +1131,9 @@ jobs:
           # falha do Mesa NUNCA impedir o boot/forense.
           try {
             $mesa = "C:\mesa3d.7z"
-            curl.exe -sSL --retry 3 -o $mesa "https://github.com/pal1000/mesa-dist-win/releases/download/26.2.4/mesa3d-26.2.4-release-mingw.7z"
+            # v24: build MSVC — depende so do VC++ redist (que o autoteste ja
+            # verificou instalado); mingw pode exigir libgcc/libstdc++ ausentes
+            curl.exe -sSL --retry 3 -o $mesa "https://github.com/pal1000/mesa-dist-win/releases/download/26.2.4/mesa3d-26.2.4-release-msvc.7z"
             $sz7 = "C:\Program Files\7-Zip\7z.exe"
             if (-not (Test-Path $sz7)) { $sz7 = "7z.exe" }
             $tam = (Get-Item $mesa -ErrorAction SilentlyContinue).Length
@@ -1148,6 +1150,19 @@ jobs:
               Write-Host ("opengl32.dll escolhida: " + $gl64.FullName + " (" + [math]::Round($gl64.Length/1MB,1) + " MB)")
               Copy-Item (Join-Path $gl64.DirectoryName "*") $wdir -Force
               Get-ChildItem $wdir -Filter "*.dll" | Select-Object Name, Length | Format-Table -AutoSize | Out-String | Write-Host
+              # AUTOTESTE de carga: carrega a opengl32.dll e a libgallium_wgl.dll
+              # NO PROCESSO do pwsh (x64) — se faltar dependencia, a mensagem
+              # exata aparece AQUI em vez de 'failed to initialize' do jogo.
+              foreach ($dll in @("opengl32.dll", "libgallium_wgl.dll")) {
+                $p = Join-Path $wdir $dll
+                try {
+                  $h = [System.Runtime.InteropServices.NativeLibrary]::Load($p)
+                  Write-Host "carga OK: $dll"
+                  [System.Runtime.InteropServices.NativeLibrary]::Free($h)
+                } catch { Write-Host "CARGA FALHOU: $dll -> $($_.Exception.Message)" }
+              }
+              $env:GALLIUM_DRIVER = "llvmpipe"
+              $env:LIBGL_ALWAYS_SOFTWARE = "1"
             } else {
               Write-Host "AVISO: mesa nao baixou/7z ausente — seguindo SEM llvmpipe (forense vai mostrar)"
             }
