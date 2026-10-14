@@ -1165,12 +1165,59 @@ jobs:
               # v25: pode ser que o jogo carregue opengl32.dll com
               # LOAD_LIBRARY_SEARCH_SYSTEM32 (anti-hijack) e IGNORE a dll
               # local — entao INSTALAMOS a llvmpipe no System32 (VM descartavel).
+              # v26: copia ARQUIVO POR ARQUIVO — so os da Mesa; pulando os da MS
+              # (d3d10warp em uso matou a copia inteira na 38609267690 antes de
+              # chegar na opengl32, que vem depois em ordem alfabetica)
+              $mesaDlls = @("opengl32.dll","libgallium_wgl.dll","libEGL.dll","libGLESv1_CM.dll","libGLESv2.dll","libglapi.dll","vulkan_lvp.dll","vulkan_dzn.dll","va.dll","va_win32.dll")
+              foreach ($f in $mesaDlls) {
+                $orig = Join-Path $gl64.DirectoryName $f
+                if (-not (Test-Path $orig)) { continue }
+                $dst = "C:\Windows\System32\$f"
+                try {
+                  if (Test-Path $dst) { takeown /f $dst | Out-Null; icacls $dst /grant "Administrators:F" | Out-Null }
+                  Copy-Item $orig $dst -Force
+                  $mesaLog += "System32 OK: $f"
+                } catch { $mesaLog += "System32 PULOU: $f -> $($_.Exception.Message)" }
+              }
+              # AUTOTESTE WGL: cria um contexto OpenGL de verdade com as dlls da
+              # Mesa (LoadLibrary explicita + P/Invoke) e le GL_VERSION — decide
+              # de uma vez se llvmpipe funciona no runner.
               try {
-                takeown /f "C:\Windows\System32\opengl32.dll" | Out-Null
-                icacls "C:\Windows\System32\opengl32.dll" /grant "Administrators:F" | Out-Null
-                Copy-Item (Join-Path $gl64.DirectoryName "*") "C:\Windows\System32\" -Force
-                $mesaLog += "mesa instalada no System32 (opengl32 + irmaas)"
-              } catch { $mesaLog += "System32 install falhou: $($_.Exception.Message)" }
+                $null = [System.Runtime.InteropServices.NativeLibrary]::Load((Join-Path $wdir "opengl32.dll"))
+                Add-Type -TypeDefinition @"
+                using System;
+                using System.Runtime.InteropServices;
+                public class GLTest {
+                  [StructLayout(LayoutKind.Sequential)]
+                  public struct PFD { public ushort nSize, nVersion; public uint dwFlags; public byte iPixelType, cColorBits, cRedBits, cRedShift, cGreenBits, cGreenShift, cBlueBits, cBlueShift, cAlphaBits, cAlphaShift, cAccumBits, cAccumRedBits, cAccumGreenBits, cAccumBlueBits, cAccumAlphaBits, cDepthBits, cStencilBits, cAuxBuffers, iLayerType, bReserved; public uint dwLayerMask, dwVisibleMask, dwDamageMask; }
+                  [DllImport("user32.dll")] public static extern IntPtr GetDC(IntPtr hWnd);
+                  [DllImport("gdi32.dll")] public static extern int ChoosePixelFormat(IntPtr hdc, ref PFD pfd);
+                  [DllImport("gdi32.dll")] public static extern bool SetPixelFormat(IntPtr hdc, int ipf, ref PFD pfd);
+                  [DllImport("opengl32.dll")] public static extern IntPtr wglCreateContext(IntPtr hdc);
+                  [DllImport("opengl32.dll")] public static extern bool wglMakeCurrent(IntPtr hdc, IntPtr hrc);
+                  [DllImport("opengl32.dll")] public static extern IntPtr wglGetProcAddress(string n);
+                  [UnmanagedFunctionPointer(CallingConvention.Winapi)] public delegate IntPtr GS(uint n);
+                  public static string Run() {
+                    IntPtr hdc = GetDC(IntPtr.Zero);
+                    var p = new PFD();
+                    p.nSize = (ushort)Marshal.SizeOf(typeof(PFD)); p.nVersion = 1;
+                    p.dwFlags = 0x25; p.iPixelType = 0; p.cColorBits = 24; p.cDepthBits = 24; p.cStencilBits = 8;
+                    int pf = ChoosePixelFormat(hdc, ref p);
+                    if (pf == 0) return "ChoosePixelFormat=0 (err " + Marshal.GetLastWin32Error() + ")";
+                    if (!SetPixelFormat(hdc, pf, ref p)) return "SetPixelFormat falhou (err " + Marshal.GetLastWin32Error() + ")";
+                    IntPtr hrc = wglCreateContext(hdc);
+                    if (hrc == IntPtr.Zero) return "wglCreateContext=NULL (err " + Marshal.GetLastWin32Error() + ")";
+                    if (!wglMakeCurrent(hdc, hrc)) return "wglMakeCurrent falhou (err " + Marshal.GetLastWin32Error() + ")";
+                    IntPtr pg = wglGetProcAddress("glGetString");
+                    if (pg == IntPtr.Zero) return "wglGetProcAddress(glGetString)=NULL";
+                    var gs = (GS)Marshal.GetDelegateForFunctionPointer(pg, typeof(GS));
+                    IntPtr v = gs(0x1F02);
+                    return "WGL OK — GL_VERSION = " + Marshal.PtrToStringAnsi(v);
+                  }
+                }
+                "@
+                $mesaLog += [GLTest]::Run()
+              } catch { $mesaLog += "teste WGL falhou: $($_.Exception.Message)" }
               $mesaLog | Out-File "$PWD\mesa-load.log" -Encoding utf8
               $mesaLog | Write-Host
               $env:GALLIUM_DRIVER = "llvmpipe"
