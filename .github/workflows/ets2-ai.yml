@@ -1249,8 +1249,9 @@ jobs:
                   time.sleep(1)
           sys.exit(1)
           '@ | Set-Content probe_mmf.py -Encoding UTF8
-          function Boot([string]$exe2, [string]$wdir2, [string]$tag, [string[]]$extra) {
+          function Boot([string]$exe2, [string]$wdir2, [string]$tag, [string[]]$extra, [string]$driver) {
             Write-Host "=== boot $tag ==="
+            if ($driver) { $env:GALLIUM_DRIVER = $driver } else { Remove-Item Env:\GALLIUM_DRIVER -ErrorAction SilentlyContinue }
             $g = Start-Process -FilePath $exe2 -WorkingDirectory $wdir2 -ArgumentList $extra -PassThru
             $wsh = New-Object -ComObject WScript.Shell
             1..90 | ForEach-Object {
@@ -1261,25 +1262,41 @@ jobs:
               if ($g.HasExited) { return }
               if ($_ -ge 6) { $null = $wsh.AppActivate("Euro Truck"); $wsh.SendKeys("~") }
             }
-            Write-Host "vivo apos ~7,5 min ($tag): $(-not $g.HasExited)"
+            # v29: game.log POR TENTATIVA (cada boot sobrescreve o Documents!)
+            $tagFile = "game-log-" + ($tag -replace "[^a-zA-Z0-9]", "-") + ".txt"
+            Copy-Item (Join-Path $docs "game.log.txt") "$PWD\$tagFile" -Force -ErrorAction SilentlyContinue
+            Write-Host "vivo apos ~7,5 min ($tag): $(-not $g.HasExited) — $tagFile salvo"
             return (-not $g.HasExited)
           }
           # v22: o seletor oficial de renderer e a FLAG de linha de comando: -rdevice gl
-          $vivo = Boot $exe $wdir "x64 -rdevice gl" @("-rdevice gl")
+          $mmfOk = { Test-Path "$PWD\demo-mmf-viva.json" }
+          $vivo = Boot $exe $wdir "x64 rdevice gl" @("-rdevice gl") $null
           $x86exe = "C:\ets2demo\bin\win_x86\eurotrucks2.exe"
-          if (-not $vivo -and -not (Test-Path "$PWD\demo-mmf-viva.json") -and (Test-Path $x86exe)) {
-            # v28: se a demo trouxer build x86, tenta com as dlls x86 da Mesa
+          if (-not $vivo -and -not (& $mmfOk) -and (Test-Path $x86exe)) {
+            # v28/v29: a demo TEM build x86 e o renderer OpenGL SO EXISTE nela
+            # (run 38629712186: x64 falha LIMPO em 20 ms; x86 CRASHA 0xc0000005
+            #  — ou seja, RODA codigo GL de verdade com as dlls da Mesa!)
             $w86 = "C:\ets2demo\bin\win_x86"
             $gl86 = Get-ChildItem "C:\mesa3d" -Recurse -Filter "opengl32.dll" -ErrorAction SilentlyContinue |
               Where-Object { $_.FullName -match "x86" } | Select-Object -First 1
             if ($gl86) { Copy-Item (Join-Path $gl86.DirectoryName "*") $w86 -Force }
-            $vivo = Boot $x86exe $w86 "x86 -rdevice gl" @("-rdevice gl")
+            # a) llvmpipe (GL por CPU direto)
+            $vivo = Boot $x86exe $w86 "x86 gl llvmpipe" @("-rdevice gl") "llvmpipe"
+            # b) zink (GL 4.6 em cima de Vulkan por CPU — lavapipe; esquiva
+            #    bugs do llvmpipe x86 com o renderer de 2021)
+            if (-not $vivo -and -not (& $mmfOk)) {
+              $vivo = Boot $x86exe $w86 "x86 gl zink" @("-rdevice gl") "zink"
+            }
           }
           if (-not $vivo -and -not (Test-Path "$PWD\demo-mmf-viva.json")) {
             Write-Host "=== FORENSE do crash ==="
             $f = @()
             $f += "=== Documents game.log.txt (80 finais) ==="
             $f += (Get-Content (Join-Path $docs "game.log.txt") -Tail 80 -ErrorAction SilentlyContinue)
+            $f += "=== game.log POR TENTATIVA (ultimas 25 linhas de cada) ==="
+            $f += (Get-ChildItem "$PWD\game-log-*.txt" -ErrorAction SilentlyContinue | ForEach-Object {
+              @("----- $($_.Name) -----") + (Get-Content $_.FullName -Tail 25 -ErrorAction SilentlyContinue)
+            })
             $f += "=== mesa-load.log ==="
             $f += (Get-Content "$PWD\mesa-load.log" -ErrorAction SilentlyContinue)
             $f += "=== dlls ao lado do exe (wdir) ==="
@@ -1294,8 +1311,8 @@ jobs:
             $f += (Get-WinEvent -FilterHashtable @{LogName="Application"; Id=1001} -MaxEvents 2 -ErrorAction SilentlyContinue | ForEach-Object { $_.TimeCreated.ToString("s") + " :: " + ($_.Message -replace "`r`n"," | ") })
             $f | Out-File "$PWD\boot-forensics.txt" -Encoding utf8
             $f | Select-Object -First 60 | Write-Host
-            # tentativa 2: -nointro
-            $vivo = Boot $exe $wdir "retry rdevice gl -nointro" @("-rdevice gl -nointro")
+            # ultima tentativa: x64 -nointro
+            $vivo = Boot $exe $wdir "x64 rdevice gl nointro" @("-rdevice gl -nointro") $null
           }
           # ---------- VEREDITO (v28): honesto e sem quebrar o job ----------
           # A demo 1.40.4.8 da SCS e DX11-ONLY (o binario nao traz o subsistema
@@ -1387,6 +1404,7 @@ jobs:
           cp boot-forensics.txt "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp demo-real-resultado.json "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp demo-mmf-viva.json "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
+          cp game-log-*.txt "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp "/c/Users/runneradmin/Documents/Euro Truck Simulator 2/game.log.txt" "ci-logs/${{ github.run_id }}-demo/documents-game.log.txt" 2>/dev/null || true
           for f in autoteste-real.json autoteste-real.log demo-mmf.json /c/steamcmd/fase1.log /c/steamcmd/fase2.log /c/dd/dd.log /c/dd/stage2.err mesa-load.log /c/dd/setup.err /c/dd/7z.log /c/dd/mesa-7z.log /c/ets2demo/game.log.txt /c/ets2demo/game-ets2ai-telemetry.log; do
             cp "$f" "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
