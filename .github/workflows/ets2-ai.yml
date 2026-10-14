@@ -1064,6 +1064,11 @@ jobs:
         with:
           name: ets2ai-universal-dlls
           path: dlls
+      - name: Cache do instalador COMPLETO (5,56 GiB ja baixado numa run anterior!)
+        uses: actions/cache/restore@v4
+        with:
+          path: C:\demo-setup.exe
+          key: ets2demo-installer-v1
       - name: Cache das PARTES do instalador (progresso incremental entre runs)
         uses: actions/cache/restore@v4
         with:
