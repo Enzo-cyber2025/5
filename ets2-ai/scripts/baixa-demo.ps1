@@ -274,8 +274,26 @@ try {
         $msi = Get-ChildItem "C:\demo-extract" -Recurse -Include *.msi -ErrorAction SilentlyContinue | Select-Object -First 1
         if ($inst) {
           Log ("instalador extraido: " + $inst.FullName + " (" + [math]::Round($inst.Length / 1MB) + " MB)")
-          foreach ($flag in @("/S", "/VERYSILENT", "/S /D=C:\ets2demo")) {
-            try { $null = Start-Process -FilePath $inst.FullName -ArgumentList $flag -Wait -PassThru } catch { Log ("inst: " + $_.Exception.Message) }
+          # v18 (v15 local): o ESD da SCS e Inno Setup (irmaos .bin) — o
+          # '/S' abre GUI INVISIVEL que trava PRA SEMPRE (run 38448907089:
+          # 6 h de hang). /VERYSILENT com /DIR primeiro, TIMEOUT com kill
+          # e exit code logado em TODA tentativa.
+          $flags = @('/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /DIR="C:\ets2demo"', "/S")
+          foreach ($flag in $flags) {
+            Log ("rodando instalador com: $flag")
+            $tlim = 1500
+            if ($flag -eq "/S") { $tlim = 300 }
+            try {
+              $p = Start-Process -FilePath $inst.FullName -ArgumentList $flag -PassThru
+              $p | Wait-Process -Timeout $tlim -ErrorAction SilentlyContinue
+              if (-not $p.HasExited) {
+                Log ("instalador NAO saiu em $tlim s — matando processo")
+                Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+                Get-Process | Where-Object { $_.Name -like "euro_truck*" } | Stop-Process -Force -ErrorAction SilentlyContinue
+              } else {
+                Log ("instalador exit: $($p.ExitCode)")
+              }
+            } catch { Log ("inst: " + $_.Exception.Message) }
             if (Test-Path $alvo) { break }
           }
           $r3 += " | rodou " + $inst.Name
