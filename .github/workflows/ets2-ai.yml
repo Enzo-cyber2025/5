@@ -1137,11 +1137,17 @@ jobs:
             $tam = (Get-Item $mesa -ErrorAction SilentlyContinue).Length
             Write-Host "mesa 7z baixado: $tam bytes"
             if ($tam -and $tam -gt 10MB -and (Test-Path $sz7)) {
-              & $sz7 x $mesa "-oC:\mesa3d" -y x64 *> "C:\dd\mesa-7z.log"
+              & $sz7 x $mesa "-oC:\mesa3d" -y *> "C:\dd\mesa-7z.log"
               Write-Host "7z mesa exit: $LASTEXITCODE"
-              Copy-Item "C:\mesa3d\x64\*" $wdir -Force -ErrorAction SilentlyContinue
-              $gl = Get-ChildItem $wdir | Where-Object { $_.Name -match "opengl32|gallium|gl" } | ForEach-Object { $_.Name + " (" + [math]::Round($_.Length/1MB,1) + "MB)" }
-              Write-Host ("DLLs de OpenGL no wdir: " + ($gl -join ", "))
+              # v23: NAO filtrar por 'x64' (layout incerto) — achar a opengl32.dll
+              # de 64 bits RECURSIVAMENTE e copiar a PASTA INTEIRA dela (llvmpipe
+              # so funciona com as dlls irmas, ex.: libgallium_wgl.dll, juntas).
+              $gl64 = Get-ChildItem "C:\mesa3d" -Recurse -Filter "opengl32.dll" |
+                Where-Object { $_.FullName -match "x64|64" } | Sort-Object Length -Descending | Select-Object -First 1
+              if (-not $gl64) { $gl64 = Get-ChildItem "C:\mesa3d" -Recurse -Filter "opengl32.dll" | Sort-Object Length -Descending | Select-Object -First 1 }
+              Write-Host ("opengl32.dll escolhida: " + $gl64.FullName + " (" + [math]::Round($gl64.Length/1MB,1) + " MB)")
+              Copy-Item (Join-Path $gl64.DirectoryName "*") $wdir -Force
+              Get-ChildItem $wdir -Filter "*.dll" | Select-Object Name, Length | Format-Table -AutoSize | Out-String | Write-Host
             } else {
               Write-Host "AVISO: mesa nao baixou/7z ausente — seguindo SEM llvmpipe (forense vai mostrar)"
             }
@@ -1167,6 +1173,8 @@ jobs:
             $f = @()
             $f += "=== Documents game.log.txt (80 finais) ==="
             $f += (Get-Content (Join-Path $docs "game.log.txt") -Tail 80 -ErrorAction SilentlyContinue)
+            $f += "=== dlls ao lado do exe (wdir) ==="
+            $f += (Get-ChildItem $wdir -Filter "*.dll" -ErrorAction SilentlyContinue | ForEach-Object { $_.Name + " " + [math]::Round($_.Length/1MB,1) + "MB" })
             $f += "=== game.log.txt ao lado do exe ==="
             $f += (Get-Content (Join-Path $wdir "game.log.txt") -Tail 40 -ErrorAction SilentlyContinue)
             $f += "=== diretorio crash ==="
