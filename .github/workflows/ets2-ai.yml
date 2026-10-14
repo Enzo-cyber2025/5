@@ -1378,7 +1378,7 @@ jobs:
           Write-Host "=== game-ets2ai-telemetry.log (log da NOSSA DLL no jogo real) ==="
           Get-Content "C:\ets2demo\game-ets2ai-telemetry.log" -Tail 25 -ErrorAction SilentlyContinue
       - name: Diagnostico (commita logs da demo real no repo)
-        if: failure()
+        if: always()
         shell: bash
         run: |
           set +e
