@@ -1106,15 +1106,55 @@ jobs:
       - name: SOBE o ETS2 REAL (demo oficial) — a DLL no processo de verdade
         shell: pwsh
         run: |
-          $game = Start-Process -FilePath "C:\ets2demo\bin\win_x64\eurotrucks2.exe" -WorkingDirectory "C:\ets2demo\bin\win_x64" -PassThru
-          $wsh = New-Object -ComObject WScript.Shell
-          1..30 | ForEach-Object {
-            Start-Sleep -Seconds 4
-            $null = $wsh.AppActivate("Euro Truck")
-            $wsh.SendKeys("~")    # dispensa aviso do SDK / dialogos de 1a execucao
+          $exe = "C:\ets2demo\bin\win_x64\eurotrucks2.exe"
+          $wdir = "C:\ets2demo\bin\win_x64"
+          $docs = Join-Path $env:USERPROFILE "Documents\Euro Truck Simulator 2"
+          # v19: perfil + config low-spec ANTES do boot (o jogo nao cria nada se
+          # morrer no init; sem isso nao ha game.log para ler DEPOIS)
+          New-Item -ItemType Directory -Force -Path $docs | Out-Null
+          @'
+          uset r_fullscreen "0"
+          uset r_mode "800x600"
+          uset r_msaa "0"
+          uset r_scale "0.25"
+          uset g_console "0"
+          uset g_developer "0"
+          uset t_verbosity "0"
+          uset s_mix_frequency "0"
+          '@ | Set-Content (Join-Path $docs "config.cfg") -Encoding ascii
+          function Boot([string]$tag, [string[]]$extra) {
+            Write-Host "=== boot $tag ==="
+            $g = Start-Process -FilePath $exe -WorkingDirectory $wdir -ArgumentList $extra -PassThru
+            $wsh = New-Object -ComObject WScript.Shell
+            1..40 | ForEach-Object {
+              Start-Sleep -Seconds 5
+              if ($g.HasExited) { return }
+              if ($_ -ge 6) { $null = $wsh.AppActivate("Euro Truck"); $wsh.SendKeys("~") }
+            }
+            Write-Host "vivo apos ~3,3 min ($tag): $(-not $g.HasExited)"
+            return (-not $g.HasExited)
           }
-          if ($game.HasExited) { throw "o jogo REAL saiu sozinho (crash?) — ver game.log.txt no diagnostico" }
-          Write-Host "jogo REAL vivo apos 2 min de boot"
+          $vivo = Boot "padrao+config low-spec" @()
+          if (-not $vivo) {
+            Write-Host "=== FORENSE do crash ==="
+            $f = @()
+            $f += "=== Documents game.log.txt (80 finais) ==="
+            $f += (Get-Content (Join-Path $docs "game.log.txt") -Tail 80 -ErrorAction SilentlyContinue)
+            $f += "=== game.log.txt ao lado do exe ==="
+            $f += (Get-Content (Join-Path $wdir "game.log.txt") -Tail 40 -ErrorAction SilentlyContinue)
+            $f += "=== diretorio crash ==="
+            $f += (Get-ChildItem (Join-Path $docs "crash") -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name)
+            $f += "=== Event Log: Application Error 1000 (3 ultimos) ==="
+            $f += (Get-WinEvent -FilterHashtable @{LogName="Application"; Id=1000} -MaxEvents 3 -ErrorAction SilentlyContinue | ForEach-Object { $_.TimeCreated.ToString("s") + " :: " + ($_.Message -replace "`r`n"," | ") })
+            $f += "=== Event Log: WER 1001 (2 ultimos) ==="
+            $f += (Get-WinEvent -FilterHashtable @{LogName="Application"; Id=1001} -MaxEvents 2 -ErrorAction SilentlyContinue | ForEach-Object { $_.TimeCreated.ToString("s") + " :: " + ($_.Message -replace "`r`n"," | ") })
+            $f | Out-File "$PWD\boot-forensics.txt" -Encoding utf8
+            $f | Select-Object -First 60 | Write-Host
+            # tentativa 2: -nointro
+            $vivo = Boot "retry -nointro" @("-nointro")
+            if (-not $vivo) { throw "o jogo REAL saiu sozinho NAS DUAS tentativas — boot-forensics.txt commitado pelo diagnostico" }
+          }
+          Write-Host "jogo REAL vivo apos o boot"
       - name: MMF do processo REAL (parser do repo lendo a telemetria da demo)
         shell: pwsh
         run: |
@@ -1159,6 +1199,8 @@ jobs:
           set +e
           mkdir -p "ci-logs/${{ github.run_id }}-demo"
           cp /c/demo-stage2.bin "ci-logs/${{ github.run_id }}-demo/stage2.html" 2>/dev/null || true
+          cp boot-forensics.txt "ci-logs/38568095013-demo/" 2>/dev/null || true
+          cp "/c/Users/runneradmin/Documents/Euro Truck Simulator 2/game.log.txt" "ci-logs/38568095013-demo/documents-game.log.txt" 2>/dev/null || true
           for f in autoteste-real.json autoteste-real.log demo-mmf.json /c/steamcmd/fase1.log /c/steamcmd/fase2.log /c/dd/dd.log /c/dd/stage2.err /c/dd/setup.err /c/dd/7z.log /c/ets2demo/game.log.txt /c/ets2demo/game-ets2ai-telemetry.log; do
             cp "$f" "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           done
