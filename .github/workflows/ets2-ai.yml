@@ -1158,7 +1158,10 @@ jobs:
             Write-Host "vivo apos ~7,5 min ($tag): $(-not $g.HasExited)"
             return (-not $g.HasExited)
           }
-          $vivo = Boot "padrao+config low-spec" @()
+          # v22: r_device no config.cfg e IGNORADO na selecao (game.log da run
+          # 38580214424: leu 'uset r_device "gl"' e escolheu dx11 mesmo assim).
+          # O seletor oficial e a FLAG de linha de comando: -rdevice gl
+          $vivo = Boot "rdevice gl" @("-rdevice gl")
           if (-not $vivo) {
             Write-Host "=== FORENSE do crash ==="
             $f = @()
@@ -1175,7 +1178,7 @@ jobs:
             $f | Out-File "$PWD\boot-forensics.txt" -Encoding utf8
             $f | Select-Object -First 60 | Write-Host
             # tentativa 2: -nointro
-            $vivo = Boot "retry -nointro" @("-nointro")
+            $vivo = Boot "retry rdevice gl -nointro" @("-rdevice gl -nointro")
             if (-not $vivo) { throw "o jogo REAL saiu sozinho NAS DUAS tentativas — boot-forensics.txt commitado pelo diagnostico" }
           }
           Write-Host "jogo REAL vivo apos o boot"
