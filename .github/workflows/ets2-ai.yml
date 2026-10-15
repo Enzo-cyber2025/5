@@ -1115,7 +1115,7 @@ jobs:
           # llvmpipe (OpenGL 4.x por CPU, dll drop-in do mesa-dist-win).
           New-Item -ItemType Directory -Force -Path $docs | Out-Null
           @'
-          uset r_device "gl"
+          uset r_device "dx11"
           uset r_fullscreen "0"
           uset r_mode "800x600"
           uset r_msaa "0"
@@ -1236,6 +1236,31 @@ jobs:
                     } else { $mesaLog += "dxvk: pasta $($pair[0]) nao achada" }
                   }
                 } else { $mesaLog += "dxvk nao baixou ($tamD)" }
+                # v33: o jogo carrega d3d11.dll do SYSTEM32 (anti-hijack — o
+                # dxvk.log local ficou VAZIO na 38737171323 e o device falhou
+                # "at detection stage" com o adapter do DXVK achado via dxgi).
+                # Entao o DXVK vai PARA DENTRO do System32/SysWOW64 (renomeando
+                # o original .bak — VM descartavel).
+                $dxvkDirs = Get-ChildItem "C:\dxvk" -Recurse -Directory -ErrorAction SilentlyContinue
+                $d64 = $dxvkDirs | Where-Object { $_.Name -eq "x64" } | Select-Object -First 1
+                $d32 = $dxvkDirs | Where-Object { $_.Name -eq "x32" } | Select-Object -First 1
+                foreach ($map in @(@($d64, "C:\Windows\System32"), @($d32, "C:\Windows\SysWOW64"))) {
+                  if (-not $map[0]) { continue }
+                  foreach ($d in @("d3d11.dll", "dxgi.dll")) {
+                    $fd = Join-Path $map[0].FullName $d
+                    if (-not (Test-Path $fd)) { continue }
+                    $dst = Join-Path $map[1] $d
+                    try {
+                      if (Test-Path $dst) {
+                        takeown /f $dst | Out-Null
+                        icacls $dst /grant "Administrators:F" | Out-Null
+                        Move-Item $dst "$dst.bak" -Force
+                      }
+                      Copy-Item $fd $dst -Force
+                      $mesaLog += "dxvk sistema: $dst (original .bak)"
+                    } catch { $mesaLog += "dxvk sistema PULOU: $dst -> $($_.Exception.Message)" }
+                  }
+                }
               } catch { $mesaLog += "dxvk falhou: $($_.Exception.Message)" }
               # AUTOTESTE WGL: cria um contexto OpenGL de verdade com as dlls da
               # Mesa (LoadLibrary explicita + P/Invoke) e le GL_VERSION — decide
