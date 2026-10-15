@@ -1208,8 +1208,11 @@ jobs:
                 } else { $mesaLog += "SEM dlls/x86/scs-telemetry.dll no artefato" }
               } catch { $mesaLog += "plugins x86: $($_.Exception.Message)" }
               # ICD do lavapipe para o zink (GL em cima de Vulkan por CPU)
-              $icd = Get-ChildItem "C:\mesa3d" -Recurse -Filter "*lvp*.json" -ErrorAction SilentlyContinue | Where-Object { $_.FullName -match "x86" } | Select-Object -First 1
-              if (-not $icd) { $icd = Get-ChildItem "C:\mesa3d" -Recurse -Filter "*lvp*.json" -ErrorAction SilentlyContinue | Select-Object -First 1 }
+              # v31: 'x86' casa com 'x86_64'! A run 38660147576 usou o ICD de 64
+              # bits (lvp_icd.x86_64.json) no processo 32-bit do zink = doomed.
+              # Para processo 32-bit o ICD certo e o i686.
+              $icd = Get-ChildItem "C:\mesa3d" -Recurse -Filter "*lvp*.json" -ErrorAction SilentlyContinue | Where-Object { $_.Name -match "i686" } | Select-Object -First 1
+              if (-not $icd) { $icd = Get-ChildItem "C:\mesa3d" -Recurse -Filter "*lvp*.json" -ErrorAction SilentlyContinue | Where-Object { $_.Name -match "x86" -and $_.Name -notmatch "x86_64|x64" } | Select-Object -First 1 }
               if ($icd) { $mesaLog += ("ICD lvp: " + $icd.FullName); $env:MESA_LVP_ICD = $icd.FullName }
               # AUTOTESTE WGL: cria um contexto OpenGL de verdade com as dlls da
               # Mesa (LoadLibrary explicita + P/Invoke) e le GL_VERSION — decide
@@ -1250,6 +1253,55 @@ jobs:
           "@
                 $mesaLog += [GLTest]::Run()
               } catch { $mesaLog += "teste WGL falhou: $($_.Exception.Message)" }
+              # v31: SONDA WGL 32-BIT — o autoteste acima roda no pwsh x64; o
+              # jogo que falha e o de 32 bits. Compila um exe x86 (csc do .NET
+              # Framework) que carrega opengl32.dll PELO NOME (resolucao
+              # KnownDLL -> SysWOW64, igual o jogo faz) e cria contexto GL.
+              try {
+                @'
+              using System;
+              using System.Runtime.InteropServices;
+              public class GLTest32 {
+              [StructLayout(LayoutKind.Sequential)]
+              public struct PFD { public ushort nSize, nVersion; public uint dwFlags; public byte iPixelType, cColorBits, cRedBits, cRedShift, cGreenBits, cGreenShift, cBlueBits, cBlueShift, cAlphaBits, cAlphaShift, cAccumBits, cAccumRedBits, cAccumGreenBits, cAccumBlueBits, cAccumAlphaBits, cDepthBits, cStencilBits, cAuxBuffers, iLayerType, bReserved; public uint dwLayerMask, dwVisibleMask, dwDamageMask; }
+              [DllImport("kernel32.dll", SetLastError=true, CharSet=CharSet.Unicode)] public static extern IntPtr LoadLibraryW(string f);
+              [DllImport("user32.dll")] public static extern IntPtr GetDC(IntPtr hWnd);
+              [DllImport("gdi32.dll")] public static extern int ChoosePixelFormat(IntPtr hdc, ref PFD pfd);
+              [DllImport("gdi32.dll")] public static extern bool SetPixelFormat(IntPtr hdc, int ipf, ref PFD pfd);
+              [DllImport("opengl32.dll")] public static extern IntPtr wglCreateContext(IntPtr hdc);
+              [DllImport("opengl32.dll")] public static extern bool wglMakeCurrent(IntPtr hdc, IntPtr hrc);
+              [DllImport("opengl32.dll")] public static extern IntPtr wglGetProcAddress(string n);
+              [UnmanagedFunctionPointer(CallingConvention.Winapi)] public delegate IntPtr GS(uint n);
+              public static int Main() {
+              IntPtr h = LoadLibraryW("opengl32.dll");
+              if (h == IntPtr.Zero) { Console.WriteLine("32bit LoadLibrary(opengl32) FALHOU err=" + Marshal.GetLastWin32Error()); return 1; }
+              IntPtr hdc = GetDC(IntPtr.Zero);
+              var p = new PFD();
+              p.nSize = (ushort)Marshal.SizeOf(typeof(PFD)); p.nVersion = 1;
+              p.dwFlags = 0x25; p.iPixelType = 0; p.cColorBits = 32; p.cAlphaBits = 8; p.cDepthBits = 24; p.cStencilBits = 8;
+              int pf = ChoosePixelFormat(hdc, ref p);
+              if (pf == 0) { Console.WriteLine("32bit ChoosePixelFormat(32bpp+alpha)=0 err=" + Marshal.GetLastWin32Error()); return 1; }
+              if (!SetPixelFormat(hdc, pf, ref p)) { Console.WriteLine("32bit SetPixelFormat falhou err=" + Marshal.GetLastWin32Error()); return 1; }
+              IntPtr hrc = wglCreateContext(hdc);
+              if (hrc == IntPtr.Zero) { Console.WriteLine("32bit wglCreateContext=NULL err=" + Marshal.GetLastWin32Error()); return 1; }
+              if (!wglMakeCurrent(hdc, hrc)) { Console.WriteLine("32bit wglMakeCurrent falhou err=" + Marshal.GetLastWin32Error()); return 1; }
+              IntPtr pg = wglGetProcAddress("glGetString");
+              if (pg == IntPtr.Zero) { Console.WriteLine("32bit wglGetProcAddress(glGetString)=NULL"); return 1; }
+              var gs = (GS)Marshal.GetDelegateForFunctionPointer(pg, typeof(GS));
+              Console.WriteLine("32bit WGL OK - GL_VERSION = " + Marshal.PtrToStringAnsi(gs(0x1F02)));
+              return 0;
+              }
+              }
+          '@ | Set-Content "$PWD\gltest32.cs" -Encoding UTF8
+                $csc = "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+                if (Test-Path $csc) {
+                  & $csc /nologo /platform:x86 /out:"$PWD\gltest32.exe" "$PWD\gltest32.cs" 2>&1 | ForEach-Object { $mesaLog += ("csc: " + $_) }
+                  if (Test-Path "$PWD\gltest32.exe") {
+                    $out32 = & "$PWD\gltest32.exe" 2>&1
+                    $mesaLog += @("exit32=" + $LASTEXITCODE) + @($out32)
+                  } else { $mesaLog += "gltest32.exe nao compilou" }
+                } else { $mesaLog += "csc nao encontrado" }
+              } catch { $mesaLog += "sonda 32bit falhou: $($_.Exception.Message)" }
               $mesaLog | Out-File "$PWD\mesa-load.log" -Encoding utf8
               $mesaLog | Write-Host
               $env:GALLIUM_DRIVER = "llvmpipe"
@@ -1320,6 +1372,11 @@ jobs:
               if ($env:MESA_LVP_ICD) { $env:VK_ICD_FILENAMES = $env:MESA_LVP_ICD }
               $vivo = Boot $x86exe $w86 "x86 gl zink" @("-rdevice gl") "zink"
             }
+            # v31: -safe = low-res windowed com tudo off (a "save option" do
+            # launcher oficial) — pixel format mais simples possivel
+            if (-not $vivo -and -not (& $mmfOk)) {
+              $vivo = Boot $x86exe $w86 "x86 gl safe llvmpipe" @("-rdevice gl", "-safe") "llvmpipe"
+            }
           }
           if (-not $vivo -and -not (Test-Path "$PWD\demo-mmf-viva.json")) {
             Write-Host "=== FORENSE do crash ==="
@@ -1330,6 +1387,13 @@ jobs:
             $f += (Get-ChildItem "$PWD\game-log-*.txt" -ErrorAction SilentlyContinue | ForEach-Object {
               @("----- $($_.Name) -----") + (Get-Content $_.FullName -Tail 25 -ErrorAction SilentlyContinue)
             })
+            $f += "=== imports de renderer nos exes (prova definitiva) ==="
+            foreach ($e in @("C:\ets2demo\bin\win_x64\eurotrucks2.exe", "C:\ets2demo\bin\win_x86\eurotrucks2.exe")) {
+              try {
+                $txt = [System.Text.Encoding]::ASCII.GetString([System.IO.File]::ReadAllBytes($e))
+                $f += ((Split-Path $e -Leaf) + " " + (Split-Path (Split-Path $e) -Leaf) + ": opengl32=" + $txt.Contains("opengl32") + " wglCreateContext=" + $txt.Contains("wglCreateContext") + " glGetString=" + $txt.Contains("glGetString") + " d3d11=" + $txt.Contains("d3d11") + " D3D11CreateDevice=" + $txt.Contains("D3D11CreateDevice") + " dxgi=" + $txt.Contains("dxgi"))
+              } catch { $f += ($e + ": erro " + $_.Exception.Message) }
+            }
             $f += "=== mesa-load.log ==="
             $f += (Get-Content "$PWD\mesa-load.log" -ErrorAction SilentlyContinue)
             $f += "=== dlls ao lado do exe (wdir) ==="
