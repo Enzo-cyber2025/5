@@ -1179,6 +1179,38 @@ jobs:
                   $mesaLog += "System32 OK: $f"
                 } catch { $mesaLog += "System32 PULOU: $f -> $($_.Exception.Message)" }
               }
+              # v30: opengl32.dll e KnownDLL — a copia na pasta do app e IGNORADA
+              # pelo loader; o processo x86 resolve KnownDLLs na SysWOW64. Se a
+              # demo tem build x86 (TEM — e nela o renderer OpenGL EXISTE), a
+              # Mesa x86 precisa estar NA SysWOW64. Espelha o truque do System32.
+              $gl86b = Get-ChildItem "C:\mesa3d" -Recurse -Filter "opengl32.dll" -ErrorAction SilentlyContinue |
+                Where-Object { $_.FullName -match "x86" -and $_.FullName -notmatch "x64" } | Select-Object -First 1
+              if ($gl86b) {
+                $mesaLog += ("mesa x86: " + $gl86b.DirectoryName)
+                foreach ($f in $mesaDlls) {
+                  $orig = Join-Path $gl86b.DirectoryName $f
+                  if (-not (Test-Path $orig)) { continue }
+                  $dst = "C:\Windows\SysWOW64\$f"
+                  try {
+                    if (Test-Path $dst) { takeown /f $dst | Out-Null; icacls $dst /grant "Administrators:F" | Out-Null }
+                    Copy-Item $orig $dst -Force
+                    $mesaLog += "SysWOW64 OK: $f"
+                  } catch { $mesaLog += "SysWOW64 PULOU: $f -> $($_.Exception.Message)" }
+                }
+              } else { $mesaLog += "mesa x86 NAO encontrada no pacote" }
+              # DLL universal x86 nos plugins do build x86 (sem isso o jogo x86
+              # nao teria telemetria NEM se bootar)
+              try {
+                New-Item -ItemType Directory -Force -Path "C:\ets2demo\bin\win_x86\plugins" | Out-Null
+                if (Test-Path "dlls/x86/scs-telemetry.dll") {
+                  Copy-Item "dlls/x86/scs-telemetry.dll" "C:\ets2demo\bin\win_x86\plugins\scs-telemetry.dll" -Force
+                  $mesaLog += "DLL universal x86 em win_x86\plugins"
+                } else { $mesaLog += "SEM dlls/x86/scs-telemetry.dll no artefato" }
+              } catch { $mesaLog += "plugins x86: $($_.Exception.Message)" }
+              # ICD do lavapipe para o zink (GL em cima de Vulkan por CPU)
+              $icd = Get-ChildItem "C:\mesa3d" -Recurse -Filter "*lvp*.json" -ErrorAction SilentlyContinue | Where-Object { $_.FullName -match "x86" } | Select-Object -First 1
+              if (-not $icd) { $icd = Get-ChildItem "C:\mesa3d" -Recurse -Filter "*lvp*.json" -ErrorAction SilentlyContinue | Select-Object -First 1 }
+              if ($icd) { $mesaLog += ("ICD lvp: " + $icd.FullName); $env:MESA_LVP_ICD = $icd.FullName }
               # AUTOTESTE WGL: cria um contexto OpenGL de verdade com as dlls da
               # Mesa (LoadLibrary explicita + P/Invoke) e le GL_VERSION — decide
               # de uma vez se llvmpipe funciona no runner.
@@ -1285,6 +1317,7 @@ jobs:
             # b) zink (GL 4.6 em cima de Vulkan por CPU — lavapipe; esquiva
             #    bugs do llvmpipe x86 com o renderer de 2021)
             if (-not $vivo -and -not (& $mmfOk)) {
+              if ($env:MESA_LVP_ICD) { $env:VK_ICD_FILENAMES = $env:MESA_LVP_ICD }
               $vivo = Boot $x86exe $w86 "x86 gl zink" @("-rdevice gl") "zink"
             }
           }
@@ -1301,6 +1334,10 @@ jobs:
             $f += (Get-Content "$PWD\mesa-load.log" -ErrorAction SilentlyContinue)
             $f += "=== dlls ao lado do exe (wdir) ==="
             $f += (Get-ChildItem $wdir -Filter "*.dll" -ErrorAction SilentlyContinue | ForEach-Object { $_.Name + " " + [math]::Round($_.Length/1MB,1) + "MB" })
+            $f += "=== Mesa na SysWOW64 (x86) ==="
+            $f += (Get-ChildItem "C:\Windows\SysWOW64" -Filter "*.dll" -ErrorAction SilentlyContinue | Where-Object { $_.Name -match "gallium|opengl32|vulkan_lvp|libEGL" } | ForEach-Object { $_.Name + " " + [math]::Round($_.Length/1MB,1) + "MB " + $_.LastWriteTime.ToString("s") })
+            $f += "=== dlls em win_x86 do jogo ==="
+            $f += (Get-ChildItem "C:\ets2demo\bin\win_x86" -Filter "*.dll" -ErrorAction SilentlyContinue | ForEach-Object { $_.Name + " " + [math]::Round($_.Length/1MB,1) + "MB" })
             $f += "=== game.log.txt ao lado do exe ==="
             $f += (Get-Content (Join-Path $wdir "game.log.txt") -Tail 40 -ErrorAction SilentlyContinue)
             $f += "=== diretorio crash ==="
