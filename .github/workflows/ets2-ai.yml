@@ -1214,6 +1214,29 @@ jobs:
               $icd = Get-ChildItem "C:\mesa3d" -Recurse -Filter "*lvp*.json" -ErrorAction SilentlyContinue | Where-Object { $_.Name -match "i686" } | Select-Object -First 1
               if (-not $icd) { $icd = Get-ChildItem "C:\mesa3d" -Recurse -Filter "*lvp*.json" -ErrorAction SilentlyContinue | Where-Object { $_.Name -match "x86" -and $_.Name -notmatch "x86_64|x64" } | Select-Object -First 1 }
               if ($icd) { $mesaLog += ("ICD lvp: " + $icd.FullName); $env:MESA_LVP_ICD = $icd.FullName }
+              # v32: DXVK — d3d11.dll/dxgi.dll LOCAIS traduzem d3d11 para Vulkan,
+              # e o Vulkan roda NO CPU (lavapipe da Mesa). E o caminho dx11
+              # NATIVO do jogo — o preferido dele — sem depender de EnumAdapters
+              # de GPU. ETS2 e titulo DXVK-comprovado (Proton/Linux roda assim).
+              try {
+                $dxvk = "C:\dxvk.tar.gz"
+                curl.exe -sSL --retry 3 -o $dxvk "https://github.com/doitsujin/dxvk/releases/download/v3.1.1/dxvk-3.1.1.tar.gz"
+                $tamD = (Get-Item $dxvk -ErrorAction SilentlyContinue).Length
+                Write-Host "dxvk baixado: $tamD bytes"
+                if ($tamD -and $tamD -gt 3MB) {
+                  New-Item -ItemType Directory -Force -Path "C:\dxvk" | Out-Null
+                  tar -xf $dxvk -C C:\dxvk 2>&1 | ForEach-Object { Write-Host "tar: $_" }
+                  foreach ($pair in @(@("x64", $wdir), @("x32", "C:\ets2demo\bin\win_x86"))) {
+                    $dsrc = Get-ChildItem "C:\dxvk" -Recurse -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq $pair[0] } | Select-Object -First 1
+                    if ($dsrc) {
+                      foreach ($d in @("d3d11.dll", "dxgi.dll", "d3d10core.dll", "d3d9.dll")) {
+                        $fd = Join-Path $dsrc.FullName $d
+                        if (Test-Path $fd) { Copy-Item $fd $pair[1] -Force; $mesaLog += "dxvk $($pair[0]): $d" }
+                      }
+                    } else { $mesaLog += "dxvk: pasta $($pair[0]) nao achada" }
+                  }
+                } else { $mesaLog += "dxvk nao baixou ($tamD)" }
+              } catch { $mesaLog += "dxvk falhou: $($_.Exception.Message)" }
               # AUTOTESTE WGL: cria um contexto OpenGL de verdade com as dlls da
               # Mesa (LoadLibrary explicita + P/Invoke) e le GL_VERSION — decide
               # de uma vez se llvmpipe funciona no runner.
@@ -1349,31 +1372,38 @@ jobs:
             # v29: game.log POR TENTATIVA (cada boot sobrescreve o Documents!)
             $tagFile = "game-log-" + ($tag -replace "[^a-zA-Z0-9]", "-") + ".txt"
             Copy-Item (Join-Path $docs "game.log.txt") "$PWD\$tagFile" -Force -ErrorAction SilentlyContinue
+            Copy-Item (Join-Path $wdir2 "dxvk.log") ("$PWD\dxvk-log-" + ($tag -replace "[^a-zA-Z0-9]", "-") + ".txt") -Force -ErrorAction SilentlyContinue
             Write-Host "vivo apos ~7,5 min ($tag): $(-not $g.HasExited) — $tagFile salvo"
             return (-not $g.HasExited)
           }
-          # v22: o seletor oficial de renderer e a FLAG de linha de comando: -rdevice gl
           $mmfOk = { Test-Path "$PWD\demo-mmf-viva.json" }
-          $vivo = Boot $exe $wdir "x64 rdevice gl" @("-rdevice gl") $null
           $x86exe = "C:\ets2demo\bin\win_x86\eurotrucks2.exe"
+          $w86 = "C:\ets2demo\bin\win_x86"
+          # v32: 1) DXVK + lavapipe (dx11 NATIVO do jogo, Vulkan por CPU)
+          $icd64 = Get-ChildItem "C:\mesa3d" -Recurse -Filter "*lvp*.json" -ErrorAction SilentlyContinue | Where-Object { $_.Name -match "x86_64|x64" } | Select-Object -First 1
+          if ($icd64 -and (Test-Path (Join-Path $wdir "d3d11.dll"))) {
+            $env:VK_ICD_FILENAMES = $icd64.FullName
+            $vivo = Boot $exe $wdir "x64 dx11 dxvk lavapipe" @("-nointro") $null
+          }
+          if (-not $vivo -and -not (& $mmfOk) -and (Test-Path $x86exe) -and $env:MESA_LVP_ICD -and (Test-Path (Join-Path $w86 "d3d11.dll"))) {
+            $env:VK_ICD_FILENAMES = $env:MESA_LVP_ICD
+            $vivo = Boot $x86exe $w86 "x86 dx11 dxvk lavapipe" @("-nointro") $null
+          }
+          Remove-Item Env:\VK_ICD_FILENAMES -ErrorAction SilentlyContinue
+          # 2) fallbacks OpenGL (os exes importam opengl32 — provado nos imports)
+          if (-not $vivo -and -not (& $mmfOk)) {
+            $vivo = Boot $exe $wdir "x64 rdevice gl" @("-rdevice gl") $null
+          }
           if (-not $vivo -and -not (& $mmfOk) -and (Test-Path $x86exe)) {
-            # v28/v29: a demo TEM build x86 e o renderer OpenGL SO EXISTE nela
-            # (run 38629712186: x64 falha LIMPO em 20 ms; x86 CRASHA 0xc0000005
-            #  — ou seja, RODA codigo GL de verdade com as dlls da Mesa!)
-            $w86 = "C:\ets2demo\bin\win_x86"
             $gl86 = Get-ChildItem "C:\mesa3d" -Recurse -Filter "opengl32.dll" -ErrorAction SilentlyContinue |
-              Where-Object { $_.FullName -match "x86" } | Select-Object -First 1
+              Where-Object { $_.FullName -match "x86" -and $_.FullName -notmatch "x86_64" } | Select-Object -First 1
             if ($gl86) { Copy-Item (Join-Path $gl86.DirectoryName "*") $w86 -Force }
-            # a) llvmpipe (GL por CPU direto)
             $vivo = Boot $x86exe $w86 "x86 gl llvmpipe" @("-rdevice gl") "llvmpipe"
-            # b) zink (GL 4.6 em cima de Vulkan por CPU — lavapipe; esquiva
-            #    bugs do llvmpipe x86 com o renderer de 2021)
             if (-not $vivo -and -not (& $mmfOk)) {
               if ($env:MESA_LVP_ICD) { $env:VK_ICD_FILENAMES = $env:MESA_LVP_ICD }
               $vivo = Boot $x86exe $w86 "x86 gl zink" @("-rdevice gl") "zink"
             }
-            # v31: -safe = low-res windowed com tudo off (a "save option" do
-            # launcher oficial) — pixel format mais simples possivel
+            # -safe = low-res windowed com tudo off (a "save option" do launcher)
             if (-not $vivo -and -not (& $mmfOk)) {
               $vivo = Boot $x86exe $w86 "x86 gl safe llvmpipe" @("-rdevice gl", "-safe") "llvmpipe"
             }
@@ -1506,6 +1536,7 @@ jobs:
           cp demo-real-resultado.json "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp demo-mmf-viva.json "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp game-log-*.txt "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
+          cp dxvk-log-*.txt "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp "/c/Users/runneradmin/Documents/Euro Truck Simulator 2/game.log.txt" "ci-logs/${{ github.run_id }}-demo/documents-game.log.txt" 2>/dev/null || true
           for f in autoteste-real.json autoteste-real.log demo-mmf.json /c/steamcmd/fase1.log /c/steamcmd/fase2.log /c/dd/dd.log /c/dd/stage2.err mesa-load.log /c/dd/setup.err /c/dd/7z.log /c/dd/mesa-7z.log /c/ets2demo/game.log.txt /c/ets2demo/game-ets2ai-telemetry.log; do
             cp "$f" "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
