@@ -131,11 +131,14 @@ def chain(user):
     (horas ate tentar de novo) e sai 0 — o workflow agenda o retry."""
     global _user
     _user = user
+    # v40: o dataset de checkpoint e BEST-EFFORT (o kernel baixa o checkpoint
+    # da RELEASE; o create no Kaggle falha com "Invalid Owner Id" e isso
+    # NUNCA mais pode impedir o empurra da sessao — foram 106 ciclos mortos
+    # por esse return 1, com as T4 paradas)
     if not _dataset_exists(user):
-        print(f"[chain] dataset {user}/{CKPT_SLUG} nao existe — semeando...")
+        print(f"[chain] dataset {user}/{CKPT_SLUG} nao existe — best-effort...")
         if not _seed_checkpoint(user):
-            print("::warning::falha ao criar o dataset de checkpoint")
-            return 1
+            print("::warning::dataset de checkpoint indisponivel — sessao usara a release como checkpoint")
     kdir = ROOT / ".cache" / "kaggle-kernel"
     kdir.mkdir(parents=True, exist_ok=True)
     sys.path.insert(0, str(HERE))
