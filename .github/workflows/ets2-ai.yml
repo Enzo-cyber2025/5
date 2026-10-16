@@ -1386,6 +1386,11 @@ jobs:
           '@ | Set-Content probe_mmf.py -Encoding UTF8
           function Boot([string]$exe2, [string]$wdir2, [string]$tag, [string[]]$extra, [string]$driver, [int]$maxIter = 36) {
             Write-Host "=== boot $tag (janela $([math]::Round($maxIter*5/60,1)) min) ==="
+            # v39: nenhum jogo sobrevive entre boots — cada Boot antigo deixava
+            # um eurotrucks2.exe vivo (com lavapipe rodando) e eles se
+            # empilhavam no core 1 ate matar o runner por starvation
+            Get-Process eurotrucks2 -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+            Start-Sleep -Seconds 2
             if ($driver) { $env:GALLIUM_DRIVER = $driver } else { Remove-Item Env:\GALLIUM_DRIVER -ErrorAction SilentlyContinue }
             $prazo = (Get-Date).AddSeconds(5 * $maxIter + 60)
             $g = Start-Process -FilePath $exe2 -WorkingDirectory $wdir2 -ArgumentList $extra -PassThru
@@ -1452,7 +1457,14 @@ jobs:
             $tagFile = "game-log-" + ($tag -replace "[^a-zA-Z0-9]", "-") + ".txt"
             Copy-Item (Join-Path $docs "game.log.txt") "$PWD\$tagFile" -Force -ErrorAction SilentlyContinue
             Copy-Item (Join-Path $wdir2 "dxvk.log") ("$PWD\dxvk-log-" + ($tag -replace "[^a-zA-Z0-9]", "-") + ".txt") -Force -ErrorAction SilentlyContinue
-            Write-Host "vivo apos ~7,5 min ($tag): $(-not $g.HasExited) — $tagFile salvo"
+            Write-Host "vivo no fim da janela ($tag): $(-not $g.HasExited) — $tagFile salvo"
+            # v39: MATA o jogo ao sair do Boot — antes cada boot deixava o
+            # processo vivo e os jogos se ACUMULAVAM (v38: 6 h de SOBE e
+            # timeout com 'runner lost communication')
+            if (-not $g.HasExited) {
+              try { Stop-Process -Id $g.Id -Force -ErrorAction SilentlyContinue } catch { }
+              try { $g.WaitForExit(15000) | Out-Null } catch { }
+            }
             return (-not $g.HasExited)
           }
           $mmfOk = { Test-Path "$PWD\demo-mmf-viva.json" }
