@@ -1391,7 +1391,14 @@ jobs:
             $g = Start-Process -FilePath $exe2 -WorkingDirectory $wdir2 -ArgumentList $extra -PassThru
             # v37: jogo em BELOW NORMAL — o jogo+DXVK saturavam os 2 vCPUs e
             # dilatavam os timers do pwsh (SOBE de 2h+ na 38820370102)
+            # v38: ALEM da prioridade, o jogo fica PRESO A 1 NUCLEO (affinity
+            # core 1) — as runs 38788296880/38820370102 MORRERAM com "hosted
+            # runner lost communication (CPU starvation)": jogo+lavapipe comiam
+            # os 2 vCPUs e matavam o proprio agente do runner. 1 core pro jogo,
+            # 1 core pro runner/pwsh/probe. Jogo a meio caminho de velocidade —
+            # nao precisamos de fps, precisamos da MMF viva.
             try { $g.PriorityClass = "BelowNormal" } catch { }
+            try { $g.ProcessorAffinity = [IntPtr]2 } catch { }
             # v34: SEM AppActivate/SendKeys — SendKeys em janela congelada (jogo
             # renderizando por CPU) BLOQUEIA PARA SEMPRE (run 38747734730: SOBE
             # parado 4h+). E o probe e em pwsh PURO (abrir a MMF custa ~0;
@@ -1455,11 +1462,11 @@ jobs:
           $icd64 = Get-ChildItem "C:\mesa3d" -Recurse -Filter "*lvp*.json" -ErrorAction SilentlyContinue | Where-Object { $_.Name -match "x86_64|x64" } | Select-Object -First 1
           if ($icd64 -and (Test-Path (Join-Path $wdir "d3d11.dll"))) {
             $env:VK_ICD_FILENAMES = $icd64.FullName
-            $vivo = Boot $exe $wdir "x64 dx11 dxvk lavapipe" @("-nointro") $null 240
+            $vivo = Boot $exe $wdir "x64 dx11 dxvk lavapipe" @("-nointro") $null 144
           }
           if (-not $vivo -and -not (& $mmfOk) -and (Test-Path $x86exe) -and $env:MESA_LVP_ICD -and (Test-Path (Join-Path $w86 "d3d11.dll"))) {
             $env:VK_ICD_FILENAMES = $env:MESA_LVP_ICD
-            $vivo = Boot $x86exe $w86 "x86 dx11 dxvk lavapipe" @("-nointro") $null 240
+            $vivo = Boot $x86exe $w86 "x86 dx11 dxvk lavapipe" @("-nointro") $null 144
           }
           Remove-Item Env:\VK_ICD_FILENAMES -ErrorAction SilentlyContinue
           # 2) fallbacks OpenGL (os exes importam opengl32 — provado nos imports)
