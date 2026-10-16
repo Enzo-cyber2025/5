@@ -1389,6 +1389,9 @@ jobs:
             if ($driver) { $env:GALLIUM_DRIVER = $driver } else { Remove-Item Env:\GALLIUM_DRIVER -ErrorAction SilentlyContinue }
             $prazo = (Get-Date).AddSeconds(5 * $maxIter + 60)
             $g = Start-Process -FilePath $exe2 -WorkingDirectory $wdir2 -ArgumentList $extra -PassThru
+            # v37: jogo em BELOW NORMAL — o jogo+DXVK saturavam os 2 vCPUs e
+            # dilatavam os timers do pwsh (SOBE de 2h+ na 38820370102)
+            try { $g.PriorityClass = "BelowNormal" } catch { }
             # v34: SEM AppActivate/SendKeys — SendKeys em janela congelada (jogo
             # renderizando por CPU) BLOQUEIA PARA SEMPRE (run 38747734730: SOBE
             # parado 4h+). E o probe e em pwsh PURO (abrir a MMF custa ~0;
@@ -1396,7 +1399,7 @@ jobs:
             $dllCarregada = $false
             1..$maxIter | ForEach-Object {
               Start-Sleep -Seconds 5
-              if ($g.HasExited) { return }
+              if ($g.HasExited) { break }
               # v36: probe NATIVO pwsh — zero python no loop (python custa ~35 s
               # com a CPU engolida pelo jogo+DXVK e dilatava o boot em HORAS).
               # Le a MMF direto: magic AUI1 (offset 1472) so e escrito pela
@@ -1425,7 +1428,7 @@ jobs:
                        versao = "$vmaj.$vmin"; paused = [bool]$paused; sdk = [bool]$sdk;
                        time_avancando = $true } | ConvertTo-Json | Out-File "$PWD\demo-mmf-viva.json" -Encoding utf8
                     Write-Host "  [mmf] PROVA VIVA: frame de telemetria FLUINDO no processo real ($tag, v$vmaj.$vmin)"
-                    $acc.Dispose(); return
+                    $acc.Dispose(); break
                   }
                   if ($magic -eq 0x31495541) {
                     @{ ok = $false; mmf_existe = $true; magic_nosso = $true; time_parado = $true } | ConvertTo-Json | Out-File "$PWD\demo-mmf-parcial.json" -Encoding utf8
@@ -1435,8 +1438,8 @@ jobs:
                   $acc.Dispose()
                 } catch { }
               }
-              if (Test-Path "$PWD\demo-mmf-viva.json") { Write-Host "  [mmf] PROVA VIVA capturada no boot $tag"; return }
-              if ((Get-Date) -gt $prazo) { Write-Host "  prazo do boot $tag (dll carregada: $dllCarregada)"; return }
+              if (Test-Path "$PWD\demo-mmf-viva.json") { Write-Host "  [mmf] PROVA VIVA capturada no boot $tag"; break }
+              if ((Get-Date) -gt $prazo) { Write-Host "  prazo do boot $tag (dll carregada: $dllCarregada)"; break }
             }
             # v29: game.log POR TENTATIVA (cada boot sobrescreve o Documents!)
             $tagFile = "game-log-" + ($tag -replace "[^a-zA-Z0-9]", "-") + ".txt"
