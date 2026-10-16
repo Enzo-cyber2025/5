@@ -763,13 +763,15 @@ def run_gui(port, window, inject, telemetry_mode, weights=None,
     dot = tk.Canvas(ph, width=22, height=22, bg=CARD, highlightthickness=0)
     dot_id = dot.create_oval(3, 3, 19, 19, fill="#4A5160", outline="")
     dot.pack(side="left", padx=(0, 12))
-    phone_lbl = tk.Label(ph, text="Celular: procurando...",
+    phone_lbl = tk.Label(ph, text="Celular (OPCIONAL): não precisa — a IA "
+                                   "roda 100% no PC",
                          font=("Segoe UI", 13, "bold"), fg=FG, bg=CARD,
                          anchor="w")
     phone_lbl.pack(fill="x")
-    phone_sub = tk.Label(ph, text="espete o CABO USB (modo 'Transferir "
-                                  "arquivos') — sem Depuracao USB, sem "
-                                  "portas TCP",
+    phone_sub = tk.Label(ph, text="PODE IGNORAR ESTE CARTÃO: toque COMEÇAR "
+                                  "lá embaixo e a IA do PC assume o volante. "
+                                  "(celular = só um painel extra via cabo USB "
+                                  "'Transferir arquivos', sem Depuração USB)",
                          font=("Segoe UI", 9), fg=MUT, bg=CARD, anchor="w",
                          justify="left", wraplength=480)
     phone_sub.pack(fill="x", pady=(2, 0))
