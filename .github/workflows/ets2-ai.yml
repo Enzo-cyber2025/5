@@ -748,11 +748,30 @@ jobs:
               $cases += @{ v=$v; inf="exe_version_info=$v.2.1s"; arch='win_x86'; want='revision_1' }
             }
           }
+          # BETAS e casos hostis (v41): build de branch temporaria da Steam
+          # (temporary_X), sufixo de beta, versao FUTURA, steam.inf AUSENTE e
+          # steam.inf ILEGIVEL — o exe tem que escolher a DLL certa (ou a
+          # universal, que registra canais por NOME e serve p/ qualquer beta
+          # 1.36+, inclusive futuras) e o autoteste tem que passar igual.
+          $cases += @(
+            @{ v='1.62-beta-futura';  inf='exe_version_info=1.62.0.1s';  arch='win_x64'; want='universal' },
+            @{ v='1.46-com-sufixo-b'; inf='exe_version_info=1.46.1.1b';  arch='win_x64'; want='universal' },
+            @{ v='1.40-temp-branch';  inf='exe_version_info=1.40.0.4s';  arch='win_x64'; want='universal' },
+            @{ v='1.37-open-beta';    inf='exe_version_info=1.37.0.6s';  arch='win_x64'; want='universal' },
+            @{ v='1.34-beta-antiga';  inf='PatchVersion=1.34.0.4;';      arch='win_x64'; want='v.1.9.0' },
+            @{ v='1.16-beta-x86';     inf='exe_version_info=1.16.1.1b';  arch='win_x86'; want='revision_3_rel_1_2_1' },
+            @{ v='sem-steam-inf';     inf=$null;                          arch='win_x64'; want='universal' },
+            @{ v='steam-inf-ilegivel';inf='version=etsdois beta';         arch='win_x86'; want='universal' }
+          )
           $fails = 0
           foreach ($c in $cases) {
             $g = "C:\fake\ets2-$($c.v)"
             New-Item -ItemType Directory -Force "$g\bin\$($c.arch)" | Out-Null
-            Set-Content -Path "$g\steam.inf" -Value $c.inf -Encoding ascii
+            if ($null -ne $c.inf) {
+              Set-Content -Path "$g\steam.inf" -Value $c.inf -Encoding ascii
+            } else {
+              Remove-Item "$g\steam.inf" -Force -ErrorAction SilentlyContinue
+            }
             # exe e --noconsole (GUI): `& exe` NAO espera o processo voltar
             # ($LASTEXITCODE ficaria $null) → Start-Process -Wait -PassThru.
             $exe = (Resolve-Path "dist\ETS2-AI-bridge.exe").Path
@@ -834,7 +853,7 @@ jobs:
             }
           }
           if ($fails -gt 0) { exit 1 }
-          Write-Host ("VALIDACAO WINDOWS REAL: {0}/{0} versoes OK (TODAS: 1.0 ate 1.61) + EXE 32-bit + caso OPTIJUEGOS com o jogo ABERTO" -f $cases.Count)
+          Write-Host ("VALIDACAO WINDOWS REAL: {0}/{0} versoes OK (TODAS: 1.0 ate 1.61 + BETAS: futuras, sufixo b, branches temporarias, steam.inf ausente/ilegivel) + EXE 32-bit + caso OPTIJUEGOS com o jogo ABERTO" -f $cases.Count)
 
   prova-de-direcao:
     name: PROVA DE DIRECAO (a IA ASSUME o volante — jogo com ABI real + teclas reais + tela cheia)
@@ -1775,7 +1794,7 @@ jobs:
           m = json.load(open('ets2-ai/artifacts/metrics.json'))
           c = m['closed_loop']
           print("ETS2-AI v0.4.29 - IA de direcao 100% NO EXE (sem celular; APK e so um painel opcional).")
-          print("BAIXE ESTA VERSAO se voce usou qualquer anterior: o bug do SendInput (struct INPUT incompleta) fazia a IA 'assumir o volante' SEM INJETAR NENHUMA TECLA — o caminhao nao andava; agora o AUTOTESTE mostra a VERSAO do exe na 1a linha do relatorio. PROVA DE DIRECAO no CI — um jogo-substituto com a ABI real do SDK carrega a DLL universal, abre TELA CHEIA e a IA do proprio .exe ASSUME o volante (teclas SendInput reais movem o caminhao); DLL UNIVERSAL PROPRIA (ets2ai) — 1 unica DLL de telemetria para TODO ETS2 1.36+ (inclui versoes futuras; codigo aberto no repo, compilada no CI para x64 e x86, layout com magic proprio AUI1); versoes < 1.36 e reserva: banco oficial de 14 releases (RenCloud + nlhans, MIT) — se a DLL escolhida nao for aceita pelo jogo, o bridge TROCA SOZINHO para a proxima release do banco (rotacao) e mostra o motivo do game.log.txt; validacao AUTOMATICA no CI em Windows REAL: o exe roda o autoteste contra TODAS as 62 versoes principais do jogo (1.0 a 1.61 — incluindo a ATUAL e as x86 antigas), uma a uma, com telemetria REAL (memoria compartilhada do jogo falso) — release so publica se tudo passar; botao AUTOTESTE (diagnostico) na GUI. Todas as releases do plugin (RenCloud + nlhans, MIT) embutidas no .exe — botao INSTALAR TELEMETRIA varre TODO o armazenamento, acha a pasta certa, ANALISA o jogo (arquitetura + versao) e instala a DLL ideal sozinho; botao VERIFICAR DLL confere o hash SHA-256 (corrompida/ausente/versao errada) e REPARA automaticamente; instalacao automatica tambem na abertura, no BUSCAR e no COMECAR. Sem passo manual, sem --game-dir. A IA so AGE com o jogo em TELA CHEIA (fora dela as teclas ficam soltas; ESC continua sendo o kill switch); COMECAR pode ser clicado ANTES de abrir o jogo — a IA espera o ETS2 por ate 15 min em vez de fechar (fim do \"iniciando e parou\"). IA no PC por padrao com ESCADA HONESTA medida na sua maquina — rede oficial (290x13) se couber no orcamento (<1% do N5030); senao rede DESTILADA (nano, ~28 mil parametros, imita a oficial; fidelidade no distill-report.json da release); senao celular via cabo (arquivos MTP, sem depuracao, sem delay). GPU sempre 0% no PC (numpy puro). Teclado BT emula as setas = controles padrao do ETS2; EXE com DLL de telemetria EMBUTIDA (auto-instala) e adb plug & play; GPU por Vulkan no celular (TFLite 2.17.0); cadeia de treino rumo a 500 bilhoes de amostras no Kaggle (contador em ets2-ai/CHAIN.md, status em ets2-ai/STATUS.md). NOVIDADES v0.4.29: pasta do jogo PROTEGIDA (C:\\Program Files) nao e mais barreira — o Windows pede PERMISSAO DE ADMINISTRADOR 1x para instalar a DLL (clique SIM); ao abrir o jogo pode aparecer o AVISO DO SDK de telemetria do proprio ETS2 — clique OK/Permitir (e do jogo, pode aparecer toda inicializacao); AUTOTESTE abre agora uma janela com o resultado e o botao COPIAR RESULTADO (cole no chat para o suporte) e salva autoteste-resultado.json AO LADO DO .exe; tudo o que acontece fica em ets2-ai-log.txt ao lado do .exe e qualquer erro fatal gera ets2-ai-erro.txt com janela avisando; validacao no CI estendida ate o ETS2 ATUAL (1.61, 17/set/2026).")
+          print("BAIXE ESTA VERSAO se voce usou qualquer anterior: o bug do SendInput (struct INPUT incompleta) fazia a IA 'assumir o volante' SEM INJETAR NENHUMA TECLA — o caminhao nao andava; agora o AUTOTESTE mostra a VERSAO do exe na 1a linha do relatorio. PROVA DE DIRECAO no CI — um jogo-substituto com a ABI real do SDK carrega a DLL universal, abre TELA CHEIA e a IA do proprio .exe ASSUME o volante (teclas SendInput reais movem o caminhao); DLL UNIVERSAL PROPRIA (ets2ai) — 1 unica DLL de telemetria para TODO ETS2 1.36+ (inclui versoes futuras; codigo aberto no repo, compilada no CI para x64 e x86, layout com magic proprio AUI1); versoes < 1.36 e reserva: banco oficial de 14 releases (RenCloud + nlhans, MIT) — se a DLL escolhida nao for aceita pelo jogo, o bridge TROCA SOZINHO para a proxima release do banco (rotacao) e mostra o motivo do game.log.txt; validacao AUTOMATICA no CI em Windows REAL: o exe roda o autoteste contra TODAS as 62 versoes principais do jogo (1.0 a 1.61) + BETAS (versoes futuras, sufixo de beta, branches temporarias da Steam, steam.inf ausente/ilegivel), uma a uma, com telemetria REAL (memoria compartilhada do jogo falso) — release so publica se tudo passar; botao AUTOTESTE (diagnostico) na GUI. Todas as releases do plugin (RenCloud + nlhans, MIT) embutidas no .exe — botao INSTALAR TELEMETRIA varre TODO o armazenamento, acha a pasta certa, ANALISA o jogo (arquitetura + versao) e instala a DLL ideal sozinho; botao VERIFICAR DLL confere o hash SHA-256 (corrompida/ausente/versao errada) e REPARA automaticamente; instalacao automatica tambem na abertura, no BUSCAR e no COMECAR. Sem passo manual, sem --game-dir. A IA so AGE com o jogo em TELA CHEIA (fora dela as teclas ficam soltas; ESC continua sendo o kill switch); COMECAR pode ser clicado ANTES de abrir o jogo — a IA espera o ETS2 por ate 15 min em vez de fechar (fim do \"iniciando e parou\"). IA no PC por padrao com ESCADA HONESTA medida na sua maquina — rede oficial (290x13) se couber no orcamento (<1% do N5030); senao rede DESTILADA (nano, ~28 mil parametros, imita a oficial; fidelidade no distill-report.json da release); senao celular via cabo (arquivos MTP, sem depuracao, sem delay). GPU sempre 0% no PC (numpy puro). Teclado BT emula as setas = controles padrao do ETS2; EXE com DLL de telemetria EMBUTIDA (auto-instala) e adb plug & play; GPU por Vulkan no celular (TFLite 2.17.0); cadeia de treino rumo a 500 bilhoes de amostras no Kaggle (contador em ets2-ai/CHAIN.md, status em ets2-ai/STATUS.md). NOVIDADES v0.4.29: pasta do jogo PROTEGIDA (C:\\Program Files) nao e mais barreira — o Windows pede PERMISSAO DE ADMINISTRADOR 1x para instalar a DLL (clique SIM); ao abrir o jogo pode aparecer o AVISO DO SDK de telemetria do proprio ETS2 — clique OK/Permitir (e do jogo, pode aparecer toda inicializacao); AUTOTESTE abre agora uma janela com o resultado e o botao COPIAR RESULTADO (cole no chat para o suporte) e salva autoteste-resultado.json AO LADO DO .exe; tudo o que acontece fica em ets2-ai-log.txt ao lado do .exe e qualquer erro fatal gera ets2-ai-erro.txt com janela avisando; validacao no CI estendida ate o ETS2 ATUAL (1.61, 17/set/2026).")
           print(f"MSE validacao: {m['mse_val']:.5f} (meta <= {m['loss_target']}) | "
                 f"fonte dos pesos: {m.get('weights_source', '?')} | circuito fechado: "
                 f"{c['finish_rate']*100:.0f}% rotas, dock {c['dock_rate']*100:.0f}%, "
