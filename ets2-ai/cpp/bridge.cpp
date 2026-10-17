@@ -143,7 +143,7 @@ static bool load_res(const wchar_t* name, ResData* out) {
 struct BankDll { std::string repo, tag, arch; ResData data; };
 static std::vector<BankDll> g_bank;
 static int g_res_total = 0;
-static BOOL WINAPI info_cb(HMODULE, LPWSTR type, LPWSTR name, LONG_PTR) {
+static BOOL WINAPI info_cb(HMODULE, LPCWSTR type, LPWSTR name, LONG_PTR) {
   ++g_res_total;
   if (g_res_total <= 8) {
     std::wstring n = IS_INTRESOURCE(name) ? L"(numerico)" : name;
