@@ -41,6 +41,10 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <cstdarg>
+#include <cctype>
+#include <cwctype>
+#include <cwchar>
 
 #pragma comment(lib, "user32.lib")
 #pragma comment(lib, "shell32.lib")
