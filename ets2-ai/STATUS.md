@@ -4,9 +4,9 @@
 |---|---|
 | kernel | enzoaimv/ets2ai-train |
 | status | enzoaimv/ets2ai-train has status "KernelWorkerStatus.QUEUED" |
-| amostras acumuladas (ultima colheita) | 18893836176 |
+| amostras acumuladas (ultima colheita) | RUNNING |
 | meta | 500.000.000.000 amostras (~1,25 bilhao de km simulados) |
 | janelas | seg, qui e sab, 08:00 UTC — colhe, promove e empurra sozinho |
-| atualizado | 2026-10-17 12:25 UTC |
+| atualizado | 2026-10-17 12:33 UTC |
 
 Fonte: API do Kaggle consultada pelo workflow da cadeia em cada janela.
