@@ -1,0 +1,5 @@
+bridge.cpp
+ets2-ai\cpp\bridge.cpp(1188): error C2664: 'BOOL EnumResourceNamesW(HMODULE,LPCWSTR,ENUMRESNAMEPROCW,LONG_PTR)': cannot convert argument 3 from 'BOOL (__cdecl *)(HMODULE,LPWSTR,LPWSTR,LONG_PTR)' to 'ENUMRESNAMEPROCW'
+ets2-ai\cpp\bridge.cpp(1188): note: None of the functions with this name in scope match the target type
+C:\Program Files (x86)\Windows Kits\10\\include\10.0.26100.0\\um\libloaderapi.h(628): note: see declaration of 'EnumResourceNamesW'
+ets2-ai\cpp\bridge.cpp(1188): note: while trying to match the argument list '(nullptr, LPWSTR, overloaded-function, int)'
