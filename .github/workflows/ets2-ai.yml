@@ -1112,6 +1112,10 @@ jobs:
           if ($fails -gt 0) { exit 1 }
           Write-Host ("VALIDACAO C++ (exe PURO): {0}/{0} versoes OK (1.22 ate 1.61) + EXE 32-bit + caso OPTIJUEGOS com o jogo ABERTO" -f $cases.Count)
 
+      - uses: actions/checkout@v5
+        if: failure()
+        with:
+          ref: arena/01a0f37d-5
       - name: Diagnostico da matriz C++ (commita resultados por versao)
         if: failure()
         shell: bash
