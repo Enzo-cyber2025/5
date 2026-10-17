@@ -1,0 +1,31 @@
+cl : Command line warning D9024 : unrecognized source file type 'ets2-ai\cpp\bridge.rc', object file assumed
+bridge.cpp
+ets2-ai\cpp\bridge.cpp(24): warning C4005: 'UNICODE': macro redefinition
+ets2-ai\cpp\bridge.cpp(24): note: 'UNICODE' previously declared on the command line
+ets2-ai\cpp\bridge.cpp(25): warning C4005: '_UNICODE': macro redefinition
+ets2-ai\cpp\bridge.cpp(25): note: '_UNICODE' previously declared on the command line
+ets2-ai\cpp\bridge.cpp(165): error C2664: 'BOOL EnumResourceNamesW(HMODULE,LPCWSTR,ENUMRESNAMEPROCW,LONG_PTR)': cannot convert argument 3 from 'BOOL (__stdcall *)(HMODULE,LPWSTR,LPWSTR,LONG_PTR)' to 'ENUMRESNAMEPROCW'
+ets2-ai\cpp\bridge.cpp(165): note: None of the functions with this name in scope match the target type
+C:\Program Files (x86)\Windows Kits\10\\include\10.0.26100.0\\um\libloaderapi.h(628): note: see declaration of 'EnumResourceNamesW'
+ets2-ai\cpp\bridge.cpp(165): note: while trying to match the argument list '(nullptr, LPWSTR, overloaded-function, int)'
+ets2-ai\cpp\bridge.cpp(848): error C2672: 'std::max': no matching overloaded function found
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.51.36231\include\utility(88): note: could be '_Ty std::max(std::initializer_list<_Elem>)'
+ets2-ai\cpp\bridge.cpp(848): note: '_Ty std::max(std::initializer_list<_Elem>)': expects 1 arguments - 2 provided
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.51.36231\include\utility(85): note: or       '_Ty std::max(std::initializer_list<_Elem>,_Pr)'
+ets2-ai\cpp\bridge.cpp(848): note: '_Ty std::max(std::initializer_list<_Elem>,_Pr)': could not deduce template argument for 'std::initializer_list<_Elem>' from 'double'
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.51.36231\include\utility(77): note: or       'const _Ty &std::max(const _Ty &,const _Ty &) noexcept(<expr>)'
+ets2-ai\cpp\bridge.cpp(848): note: 'const _Ty &std::max(const _Ty &,const _Ty &) noexcept(<expr>)': template parameter '_Ty' is ambiguous
+ets2-ai\cpp\bridge.cpp(848): note: could be 'float'
+ets2-ai\cpp\bridge.cpp(848): note: or       'double'
+ets2-ai\cpp\bridge.cpp(848): note: 'const _Ty &std::max(const _Ty &,const _Ty &) noexcept(<expr>)': could not deduce template argument for 'const _Ty &' from 'float'
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.51.36231\include\utility(67): note: or       'const _Ty &std::max(const _Ty &,const _Ty &,_Pr) noexcept(<expr>)'
+ets2-ai\cpp\bridge.cpp(848): note: 'const _Ty &std::max(const _Ty &,const _Ty &,_Pr) noexcept(<expr>)': expects 3 arguments - 2 provided
+ets2-ai\cpp\bridge.cpp(848): error C2672: 'std::min': no matching overloaded function found
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.51.36231\include\utility(112): note: could be '_Ty std::min(std::initializer_list<_Elem>)'
+ets2-ai\cpp\bridge.cpp(848): note: '_Ty std::min(std::initializer_list<_Elem>)': could not deduce template argument for 'std::initializer_list<_Elem>' from 'double'
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.51.36231\include\utility(109): note: or       '_Ty std::min(std::initializer_list<_Elem>,_Pr)'
+ets2-ai\cpp\bridge.cpp(848): note: '_Ty std::min(std::initializer_list<_Elem>,_Pr)': expects 2 arguments - 1 provided
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.51.36231\include\utility(101): note: or       'const _Ty &std::min(const _Ty &,const _Ty &) noexcept(<expr>)'
+ets2-ai\cpp\bridge.cpp(848): note: 'const _Ty &std::min(const _Ty &,const _Ty &) noexcept(<expr>)': expects 2 arguments - 1 provided
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.51.36231\include\utility(91): note: or       'const _Ty &std::min(const _Ty &,const _Ty &,_Pr) noexcept(<expr>)'
+ets2-ai\cpp\bridge.cpp(848): note: 'const _Ty &std::min(const _Ty &,const _Ty &,_Pr) noexcept(<expr>)': expects 3 arguments - 1 provided
