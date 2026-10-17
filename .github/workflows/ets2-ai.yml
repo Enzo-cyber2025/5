@@ -808,12 +808,17 @@ jobs:
           Get-ChildItem $root -Recurse -Filter scs-telemetry.dll | ForEach-Object {
             $rel = $_.FullName.Substring($root.Length + 1) -split '\\'
             if ($rel.Count -ge 4) {
-              Add-Content $rc ('"DLL~{0}~{1}~{2}" RCDATA "{3}"' -f $rel[0], $rel[1], $rel[2], $_.FullName)
+              # rc.exe interpreta '\a'/'\5' como escapes C em caminhos —
+              # barra NORMAL no caminho dentro do .rc
+              $fp = $_.FullName -replace '\\', '/'
+              Add-Content $rc ('"DLL~{0}~{1}~{2}" RCDATA "{3}"' -f $rel[0], $rel[1], $rel[2], $fp)
             }
           }
-          Add-Content $rc ('"WEIGHTS_OFFICIAL" RCDATA "{0}"' -f (Resolve-Path ets2-ai/cpp/model-weights.txt).Path)
+          $w1 = ((Resolve-Path ets2-ai/cpp/model-weights.txt).Path) -replace '\\', '/'
+          Add-Content $rc ('"WEIGHTS_OFFICIAL" RCDATA "{0}"' -f $w1)
           if (Test-Path ets2-ai/cpp/model-nano.txt) {
-            Add-Content $rc ('"WEIGHTS_NANO" RCDATA "{0}"' -f (Resolve-Path ets2-ai/cpp/model-nano.txt).Path)
+            $w2 = ((Resolve-Path ets2-ai/cpp/model-nano.txt).Path) -replace '\\', '/'
+            Add-Content $rc ('"WEIGHTS_NANO" RCDATA "{0}"' -f $w2)
           }
           Write-Host "bridge.rc: $((Get-Content $rc | Measure-Object -Line).Lines) recursos"
           Get-Content $rc | Select-Object -First 4
