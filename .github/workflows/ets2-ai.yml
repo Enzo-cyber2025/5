@@ -822,7 +822,9 @@ jobs:
         shell: cmd
         run: |
           mkdir dist-cpp 2>nul
-          cl /nologo /EHsc /O2 /std:c++17 /W3 /utf-8 /DUNICODE /D_UNICODE ets2-ai\cpp\bridge.cpp ets2-ai\cpp\bridge.rc /Fe:dist-cpp\ETS2-AI-bridge.exe /link user32.lib shell32.lib advapi32.lib > build-x64.log 2>&1
+          rc /nologo /fo ets2-ai\cpp\bridge.res ets2-ai\cpp\bridge.rc
+          if errorlevel 1 exit /b 1
+          cl /nologo /EHsc /O2 /std:c++17 /W3 /utf-8 ets2-ai\cpp\bridge.cpp ets2-ai\cpp\bridge.res /Fe:dist-cpp\ETS2-AI-bridge.exe /link user32.lib shell32.lib advapi32.lib > build-x64.log 2>&1
           if errorlevel 1 type build-x64.log & if errorlevel 1 exit /b 1
           if not exist dist-cpp\ETS2-AI-bridge.exe exit /b 1
           dist-cpp\ETS2-AI-bridge.exe --bench >> build-x64.log 2>&1
@@ -834,7 +836,9 @@ jobs:
         shell: cmd
         run: |
           mkdir dist-cpp-x86 2>nul
-          cl /nologo /EHsc /O2 /std:c++17 /W3 /utf-8 /DUNICODE /D_UNICODE ets2-ai\cpp\bridge.cpp ets2-ai\cpp\bridge.rc /Fe:dist-cpp-x86\ETS2-AI-bridge-x86.exe /link user32.lib shell32.lib advapi32.lib > build-x86.log 2>&1
+          rc /nologo /fo ets2-ai\cpp\bridge-x86.res ets2-ai\cpp\bridge.rc
+          if errorlevel 1 exit /b 1
+          cl /nologo /EHsc /O2 /std:c++17 /W3 /utf-8 ets2-ai\cpp\bridge.cpp ets2-ai\cpp\bridge-x86.res /Fe:dist-cpp-x86\ETS2-AI-bridge-x86.exe /link user32.lib shell32.lib advapi32.lib > build-x86.log 2>&1
           if errorlevel 1 type build-x86.log & if errorlevel 1 exit /b 1
           if not exist dist-cpp-x86\ETS2-AI-bridge-x86.exe exit /b 1
           dist-cpp-x86\ETS2-AI-bridge-x86.exe --bench >> build-x86.log 2>&1

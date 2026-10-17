@@ -142,7 +142,7 @@ static bool load_res(const wchar_t* name, ResData* out) {
 }
 struct BankDll { std::string repo, tag, arch; ResData data; };
 static std::vector<BankDll> g_bank;
-static BOOL WINAPI enum_cb(HMODULE mod, LPWSTR type, LPWSTR name,
+static BOOL WINAPI enum_cb(HMODULE mod, LPCWSTR type, LPWSTR name,
                            LONG_PTR lparam) {
   std::wstring n = IS_INTRESOURCE(name) ? L"" : name;
   if (n.rfind(L"DLL:", 0) == 0) {
@@ -845,7 +845,8 @@ static int run_drive(bool inject, const std::wstring& window_sub,
     if (limit < 0.5) limit = 25.0;
     limit = std::min(limit, 25.0);
     double fuel = s.fuel_cap > 1.0
-      ? std::min(1.0, std::max(0.0, s.fuel / s.fuel_cap)) : 1.0;
+      ? std::min(1.0, std::max(0.0, (double)s.fuel / s.fuel_cap))
+      : 1.0;
     double route_km = s.route > 0 ? s.route / 1000.0 : 0.0;
     feat[0] = (float)(std::min(speed, 50.0) / 25.0);
     feat[1] = 0; feat[2] = 0;
