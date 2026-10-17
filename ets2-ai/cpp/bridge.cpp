@@ -1174,8 +1174,13 @@ int main() {
   if (drive) return run_drive(inject, window, game_dir);
   if (benchm) {
     load_bank(); load_nets();
-    logf("oficial: %.0f inf/s | nano: %.0f inf/s",
-         bench(g_official, 0.3), bench(g_nano, 0.2));
+    if (!g_official.loaded || g_bank.empty()) {
+      logf("[bench] FALHOU: pesos=%d banco=%d (recurso nao embutido?)",
+           (int)g_official.loaded, (int)g_bank.size());
+      return 2;
+    }
+    logf("oficial: %.0f inf/s | nano: %.0f inf/s | banco: %d DLLs",
+         bench(g_official, 0.3), bench(g_nano, 0.2), (int)g_bank.size());
     return 0;
   }
   return run_gui();

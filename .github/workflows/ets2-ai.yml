@@ -1112,6 +1112,25 @@ jobs:
           if ($fails -gt 0) { exit 1 }
           Write-Host ("VALIDACAO C++ (exe PURO): {0}/{0} versoes OK (1.22 ate 1.61) + EXE 32-bit + caso OPTIJUEGOS com o jogo ABERTO" -f $cases.Count)
 
+      - name: Diagnostico da matriz C++ (commita resultados por versao)
+        if: failure()
+        shell: bash
+        run: |
+          set +e
+          mkdir -p "ci-logs/${{ github.run_id }}-matriz-cpp"
+          cp /c/fake/res-cpp-*.json "ci-logs/${{ github.run_id }}-matriz-cpp/" 2>/dev/null || true
+          cp /c/fake/res-x86.json "ci-logs/${{ github.run_id }}-matriz-cpp/res-x86-cpp.json" 2>/dev/null || true
+          cp /c/fake/res-repack.json "ci-logs/${{ github.run_id }}-matriz-cpp/res-repack-cpp.json" 2>/dev/null || true
+          git config user.name "ci-diag"; git config user.email "ci-diag@users.noreply.github.com"
+          git add ci-logs || true
+          git commit -m "diag: matriz C++ run ${{ github.run_id }} [skip ci]" || true
+          for i in 1 2 3 4 5; do
+            git pull --rebase --autostash origin arena/01a0f37d-5 || true
+            git push && break
+            sleep 10
+          done
+          exit 1
+
   prova-de-direcao:
     name: PROVA DE DIRECAO (a IA ASSUME o volante — jogo com ABI real + teclas reais + tela cheia)
     needs: [windows-exe, exe-cpp]
