@@ -145,10 +145,10 @@ static std::vector<BankDll> g_bank;
 static BOOL WINAPI enum_cb(HMODULE mod, LPCWSTR type, LPWSTR name,
                            LONG_PTR lparam) {
   std::wstring n = IS_INTRESOURCE(name) ? L"" : name;
-  if (n.rfind(L"DLL:", 0) == 0) {
-    // nome do recurso: "DLL:<repo>:<tag>:<arch>"
+  if (n.rfind(L"DLL~", 0) == 0) {
+    // nome do recurso: "DLL~<repo>~<tag>~<arch>" ('~' e seguro no rc.exe)
     std::string full = wide2utf8(n.substr(4));
-    size_t a = full.find(':'), b = full.find(':', a + 1);
+    size_t a = full.find('~'), b = full.find('~', a + 1);
     if (a != std::string::npos && b != std::string::npos) {
       BankDll d;
       d.repo = full.substr(0, a);
