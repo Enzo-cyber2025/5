@@ -773,8 +773,9 @@ jobs:
       - name: Pesos em formato texto (oficial + nano, bit-identicos)
         shell: bash
         run: |
+          pip install --retries 5 --timeout 90 numpy
           cd ets2-ai
-          python - <<'PY'
+          python - <<'PY' 2>&1 | tee pesos.log
           import json, sys
           sys.path.insert(0, ".")
           def dump(path, layers, nin, nout, hidden):
@@ -800,6 +801,7 @@ jobs:
       - name: Gera bridge.rc (recursos — banco de DLLs + pesos)
         shell: pwsh
         run: |
+          Start-Transcript -Path rc-gen.log -Force
           $root = (Resolve-Path ets2-ai/bridge/dlls).Path
           $rc = "ets2-ai/cpp/bridge.rc"
           Set-Content $rc "#include <windows.h>"
@@ -815,13 +817,16 @@ jobs:
           }
           Write-Host "bridge.rc: $((Get-Content $rc | Measure-Object -Line).Lines) recursos"
           Get-Content $rc | Select-Object -First 4
+          Stop-Transcript
       - name: Compila EXE C++ x64
         shell: cmd
         run: |
           mkdir dist-cpp 2>nul
-          cl /nologo /EHsc /O2 /std:c++17 /W3 /utf-8 /DUNICODE /D_UNICODE ets2-ai\cpp\bridge.cpp ets2-ai\cpp\bridge.rc /Fe:dist-cpp\ETS2-AI-bridge.exe /link user32.lib shell32.lib advapi32.lib || exit /b 1
+          cl /nologo /EHsc /O2 /std:c++17 /W3 /utf-8 /DUNICODE /D_UNICODE ets2-ai\cpp\bridge.cpp ets2-ai\cpp\bridge.rc /Fe:dist-cpp\ETS2-AI-bridge.exe /link user32.lib shell32.lib advapi32.lib > build-x64.log 2>&1
+          if errorlevel 1 type build-x64.log & if errorlevel 1 exit /b 1
           if not exist dist-cpp\ETS2-AI-bridge.exe exit /b 1
-          dist-cpp\ETS2-AI-bridge.exe --bench || exit /b 1
+          dist-cpp\ETS2-AI-bridge.exe --bench >> build-x64.log 2>&1
+          if errorlevel 1 type build-x64.log & if errorlevel 1 exit /b 1
       - uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: amd64_x86
@@ -829,9 +834,29 @@ jobs:
         shell: cmd
         run: |
           mkdir dist-cpp-x86 2>nul
-          cl /nologo /EHsc /O2 /std:c++17 /W3 /utf-8 /DUNICODE /D_UNICODE ets2-ai\cpp\bridge.cpp ets2-ai\cpp\bridge.rc /Fe:dist-cpp-x86\ETS2-AI-bridge-x86.exe /link user32.lib shell32.lib advapi32.lib || exit /b 1
+          cl /nologo /EHsc /O2 /std:c++17 /W3 /utf-8 /DUNICODE /D_UNICODE ets2-ai\cpp\bridge.cpp ets2-ai\cpp\bridge.rc /Fe:dist-cpp-x86\ETS2-AI-bridge-x86.exe /link user32.lib shell32.lib advapi32.lib > build-x86.log 2>&1
+          if errorlevel 1 type build-x86.log & if errorlevel 1 exit /b 1
           if not exist dist-cpp-x86\ETS2-AI-bridge-x86.exe exit /b 1
-          dist-cpp-x86\ETS2-AI-bridge-x86.exe --bench || exit /b 1
+          dist-cpp-x86\ETS2-AI-bridge-x86.exe --bench >> build-x86.log 2>&1
+          if errorlevel 1 type build-x86.log & if errorlevel 1 exit /b 1
+      - name: Diagnostico do build C++ (commita logs no repo)
+        if: failure()
+        shell: bash
+        run: |
+          set +e
+          mkdir -p "ci-logs/${{ github.run_id }}-cpp"
+          for f in build-x64.log build-x86.log rc-gen.log ets2-ai/pesos.log; do
+            cp "$f" "ci-logs/${{ github.run_id }}-cpp/" 2>/dev/null || true
+          done
+          git config user.name "ci-diag"; git config user.email "ci-diag@users.noreply.github.com"
+          git add ci-logs || true
+          git commit -m "diag: build C++ run ${{ github.run_id }} [skip ci]" || true
+          for i in 1 2 3 4 5; do
+            git pull --rebase --autostash origin arena/01a0f37d-5 || true
+            git push && break
+            sleep 10
+          done
+          exit 1
       - uses: actions/upload-artifact@v4
         with:
           name: ETS2-AI-bridge-cpp
