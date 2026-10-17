@@ -142,6 +142,15 @@ static bool load_res(const wchar_t* name, ResData* out) {
 }
 struct BankDll { std::string repo, tag, arch; ResData data; };
 static std::vector<BankDll> g_bank;
+static int g_res_total = 0;
+static BOOL WINAPI info_cb(HMODULE, LPWSTR type, LPWSTR name, LONG_PTR) {
+  ++g_res_total;
+  if (g_res_total <= 8) {
+    std::wstring n = IS_INTRESOURCE(name) ? L"(numerico)" : name;
+    logf("[info] RCDATA: %ls", n.c_str());
+  }
+  return TRUE;
+}
 static BOOL WINAPI enum_cb(HMODULE mod, LPCWSTR type, LPWSTR name,
                            LONG_PTR lparam) {
   std::wstring n = IS_INTRESOURCE(name) ? L"" : name;
@@ -1155,7 +1164,8 @@ int main() {
   int argc = 0;
   LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
   std::wstring game_dir, saida, window = L"Euro Truck";
-  bool autoteste = false, drive = false, inject = false, benchm = false;
+  bool autoteste = false, drive = false, inject = false, benchm = false,
+    infom = false;
   for (int i = 1; i < argc; ++i) {
     std::wstring a = argv[i];
     auto next = [&]() -> std::wstring {
@@ -1163,6 +1173,7 @@ int main() {
     };
     if (a == L"--autoteste") autoteste = true;
     else if (a == L"--bench") benchm = true;
+    else if (a == L"--info") infom = true;
     else if (a == L"--ets2") { std::wstring m = next(); drive = m == L"drive"; }
     else if (a == L"--inject") inject = true;
     else if (a == L"--game-dir") game_dir = next();
@@ -1172,6 +1183,22 @@ int main() {
   LocalFree(argv);
   if (autoteste) return run_autoteste(game_dir, saida);
   if (drive) return run_drive(inject, window, game_dir);
+  if (infom) {
+    load_bank(); load_nets();
+    EnumResourceNamesW(nullptr, RT_RCDATA, info_cb, 0);
+    logf("[info] RCDATA total: %d | banco parseado: %d DLLs | pesos: %s",
+         g_res_total, (int)g_bank.size(),
+         g_official.loaded ? "OK" : "AUSENTES");
+    for (size_t i = 0; i < g_bank.size() && i < 4; ++i)
+      logf("[info] banco[%d] = %s %s (%s)", (int)i,
+           g_bank[i].repo.c_str(), g_bank[i].tag.c_str(),
+           g_bank[i].arch.c_str());
+    if (g_official.loaded)
+      logf("[info] rede: %d-%d ocultas, %d saidas",
+           g_official.nin, (int)g_official.hidden.size(),
+           g_official.nout);
+    return 0;
+  }
   if (benchm) {
     load_bank(); load_nets();
     if (!g_official.loaded || g_bank.empty()) {

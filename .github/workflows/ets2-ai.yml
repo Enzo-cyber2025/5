@@ -834,6 +834,8 @@ jobs:
           if errorlevel 1 type rc-x64.log & if errorlevel 1 exit /b 1
           cl /nologo /EHsc /O2 /std:c++17 /W3 /utf-8 ets2-ai\cpp\bridge.cpp /Fe:dist-cpp\ETS2-AI-bridge.exe /link user32.lib shell32.lib advapi32.lib gdi32.lib ets2-ai\cpp\bridge.res > build-x64.log 2>&1
           if errorlevel 1 type build-x64.log & if errorlevel 1 exit /b 1
+          dist-cpp\ETS2-AI-bridge.exe --info > build-info-x64.log 2>&1
+          if errorlevel 1 type build-info-x64.log & if errorlevel 1 exit /b 1
           if not exist dist-cpp\ETS2-AI-bridge.exe exit /b 1
           dist-cpp\ETS2-AI-bridge.exe --bench >> build-x64.log 2>&1
           if errorlevel 1 type build-x64.log & if errorlevel 1 exit /b 1
@@ -848,6 +850,8 @@ jobs:
           if errorlevel 1 type rc-x86.log & if errorlevel 1 exit /b 1
           cl /nologo /EHsc /O2 /std:c++17 /W3 /utf-8 ets2-ai\cpp\bridge.cpp /Fe:dist-cpp-x86\ETS2-AI-bridge-x86.exe /link user32.lib shell32.lib advapi32.lib gdi32.lib ets2-ai\cpp\bridge-x86.res > build-x86.log 2>&1
           if errorlevel 1 type build-x86.log & if errorlevel 1 exit /b 1
+          dist-cpp-x86\ETS2-AI-bridge-x86.exe --info > build-info-x86.log 2>&1
+          if errorlevel 1 type build-info-x86.log & if errorlevel 1 exit /b 1
           if not exist dist-cpp-x86\ETS2-AI-bridge-x86.exe exit /b 1
           dist-cpp-x86\ETS2-AI-bridge-x86.exe --bench >> build-x86.log 2>&1
           if errorlevel 1 type build-x86.log & if errorlevel 1 exit /b 1
@@ -873,6 +877,22 @@ jobs:
         with:
           name: ETS2-AI-bridge-cpp
           path: dist-cpp/ETS2-AI-bridge.exe
+      - name: Info do build (commita SEMPRE — tamanhos + recursos do exe)
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          mkdir -p "ci-logs/${{ github.run_id }}-cpp"
+          ls -la dist-cpp dist-cpp-x86 > "ci-logs/${{ github.run_id }}-cpp/exe-tamanhos.txt" 2>&1
+          cp build-info-x64.log build-info-x86.log "ci-logs/${{ github.run_id }}-cpp/" 2>/dev/null || true
+          git config user.name "ci-diag"; git config user.email "ci-diag@users.noreply.github.com"
+          git add ci-logs || true
+          git commit -m "info: build C++ run ${{ github.run_id }} [skip ci]" || true
+          for i in 1 2 3 4 5; do
+            git pull --rebase --autostash origin arena/01a0f37d-5 || true
+            git push && break
+            sleep 10
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: ETS2-AI-bridge-cpp-x86
@@ -909,20 +929,45 @@ jobs:
           # (a release certa daquela versao) e ler TELEMETRIA REAL (um
           # "jogo falso" cria a memoria compartilhada Local\SCSTelemetry
           # exatamente como o plugin faz no processo do jogo).
-          $cases = @(
-            @{ v='1.61'; inf='exe_version_info=1.61.1.1s';  arch='win_x64'; want='universal' },
-            @{ v='1.58'; inf='exe_version_info=1.58.2.1s';  arch='win_x64'; want='universal' },
-            @{ v='1.53'; inf='exe_version_info=1.53.0.4s';  arch='win_x64'; want='universal' },
-            @{ v='1.45'; inf='exe_version_info=1.45.1.1s';  arch='win_x64'; want='universal' },
-            @{ v='1.41'; inf='exe_version_info=1.41.2.1s';  arch='win_x64'; want='universal' },
-            @{ v='1.35'; inf='PatchVersion=1.35.2.2;';      arch='win_x64'; want='v.1.9.0' },
-            @{ v='1.22'; inf='exe_version_info=1.22.2.1s';  arch='win_x86'; want='revision_5_rel_1_4_0' }
+          # TODAS as versoes do ETS2 — 1.0 ate 1.61 (62 versoes principais),
+          # uma a uma, + BETAS e casos hostis. A DLL esperada segue a MESMA
+          # tabela que o exe usa em producao (DLL_BANK).
+          $cases = @()
+          foreach ($i in 0..61) {
+            $v = "1.$i"
+            if ($i -ge 36) {
+              $cases += @{ v=$v; inf="exe_version_info=$v.2.1s"; arch='win_x64'; want='universal' }
+            } elseif ($i -ge 32) {
+              $cases += @{ v=$v; inf="PatchVersion=$v.2.2;"; arch='win_x64'; want='v.1.9.0' }
+            } elseif ($i -ge 17) {
+              $cases += @{ v=$v; inf="exe_version_info=$v.2.1s"; arch='win_x86'; want='revision_5_rel_1_4_0' }
+            } elseif ($i -ge 10) {
+              $cases += @{ v=$v; inf="exe_version_info=$v.2.1s"; arch='win_x86'; want='revision_3_rel_1_2_1' }
+            } else {
+              $cases += @{ v=$v; inf="exe_version_info=$v.2.1s"; arch='win_x86'; want='revision_1' }
+            }
+          }
+          # BETAS e casos hostis: build de branch temporaria, sufixo de beta,
+          # versao FUTURA, steam.inf AUSENTE e ILEGIVEL.
+          $cases += @(
+            @{ v='1.62-beta-futura';  inf='exe_version_info=1.62.0.1s';  arch='win_x64'; want='universal' },
+            @{ v='1.46-com-sufixo-b'; inf='exe_version_info=1.46.1.1b';  arch='win_x64'; want='universal' },
+            @{ v='1.40-temp-branch';  inf='exe_version_info=1.40.0.4s';  arch='win_x64'; want='universal' },
+            @{ v='1.37-open-beta';    inf='exe_version_info=1.37.0.6s';  arch='win_x64'; want='universal' },
+            @{ v='1.34-beta-antiga';  inf='PatchVersion=1.34.0.4;';      arch='win_x64'; want='v.1.9.0' },
+            @{ v='1.16-beta-x86';     inf='exe_version_info=1.16.1.1b';  arch='win_x86'; want='revision_3_rel_1_2_1' },
+            @{ v='sem-steam-inf';     inf=$null;                          arch='win_x64'; want='universal' },
+            @{ v='steam-inf-ilegivel';inf='version=etsdois beta';         arch='win_x86'; want='universal' }
           )
           $fails = 0
           foreach ($c in $cases) {
             $g = "C:\fake\ets2-$($c.v)"
             New-Item -ItemType Directory -Force "$g\bin\$($c.arch)" | Out-Null
-            Set-Content -Path "$g\steam.inf" -Value $c.inf -Encoding ascii
+            if ($null -ne $c.inf) {
+              Set-Content -Path "$g\steam.inf" -Value $c.inf -Encoding ascii
+            } else {
+              Remove-Item "$g\steam.inf" -Force -ErrorAction SilentlyContinue
+            }
             # exe e --noconsole (GUI): `& exe` NAO espera o processo voltar
             # ($LASTEXITCODE ficaria $null) → Start-Process -Wait -PassThru.
             $exe = (Resolve-Path "dist\ETS2-AI-bridge.exe").Path
@@ -1004,7 +1049,7 @@ jobs:
             }
           }
           if ($fails -gt 0) { exit 1 }
-          Write-Host ("VALIDACAO WINDOWS REAL: {0}/{0} versoes OK (1.22 ate 1.61) + EXE 32-bit + caso OPTIJUEGOS com o jogo ABERTO" -f $cases.Count)
+          Write-Host ("VALIDACAO WINDOWS REAL: {0}/{0} versoes OK (TODAS: 1.0 ate 1.61 + BETAS) + EXE 32-bit + caso OPTIJUEGOS com o jogo ABERTO" -f $cases.Count)
 
       - name: Matriz C++ (as MESMAS versoes + betas no exe C++ puro)
         shell: pwsh
@@ -1015,20 +1060,45 @@ jobs:
           # (a release certa daquela versao) e ler TELEMETRIA REAL (um
           # "jogo falso" cria a memoria compartilhada Local\SCSTelemetry
           # exatamente como o plugin faz no processo do jogo).
-          $cases = @(
-            @{ v='1.61'; inf='exe_version_info=1.61.1.1s';  arch='win_x64'; want='universal' },
-            @{ v='1.58'; inf='exe_version_info=1.58.2.1s';  arch='win_x64'; want='universal' },
-            @{ v='1.53'; inf='exe_version_info=1.53.0.4s';  arch='win_x64'; want='universal' },
-            @{ v='1.45'; inf='exe_version_info=1.45.1.1s';  arch='win_x64'; want='universal' },
-            @{ v='1.41'; inf='exe_version_info=1.41.2.1s';  arch='win_x64'; want='universal' },
-            @{ v='1.35'; inf='PatchVersion=1.35.2.2;';      arch='win_x64'; want='v.1.9.0' },
-            @{ v='1.22'; inf='exe_version_info=1.22.2.1s';  arch='win_x86'; want='revision_5_rel_1_4_0' }
+          # TODAS as versoes do ETS2 — 1.0 ate 1.61 (62 versoes principais),
+          # uma a uma, + BETAS e casos hostis. A DLL esperada segue a MESMA
+          # tabela que o exe usa em producao (DLL_BANK).
+          $cases = @()
+          foreach ($i in 0..61) {
+            $v = "1.$i"
+            if ($i -ge 36) {
+              $cases += @{ v=$v; inf="exe_version_info=$v.2.1s"; arch='win_x64'; want='universal' }
+            } elseif ($i -ge 32) {
+              $cases += @{ v=$v; inf="PatchVersion=$v.2.2;"; arch='win_x64'; want='v.1.9.0' }
+            } elseif ($i -ge 17) {
+              $cases += @{ v=$v; inf="exe_version_info=$v.2.1s"; arch='win_x86'; want='revision_5_rel_1_4_0' }
+            } elseif ($i -ge 10) {
+              $cases += @{ v=$v; inf="exe_version_info=$v.2.1s"; arch='win_x86'; want='revision_3_rel_1_2_1' }
+            } else {
+              $cases += @{ v=$v; inf="exe_version_info=$v.2.1s"; arch='win_x86'; want='revision_1' }
+            }
+          }
+          # BETAS e casos hostis: build de branch temporaria, sufixo de beta,
+          # versao FUTURA, steam.inf AUSENTE e ILEGIVEL.
+          $cases += @(
+            @{ v='1.62-beta-futura';  inf='exe_version_info=1.62.0.1s';  arch='win_x64'; want='universal' },
+            @{ v='1.46-com-sufixo-b'; inf='exe_version_info=1.46.1.1b';  arch='win_x64'; want='universal' },
+            @{ v='1.40-temp-branch';  inf='exe_version_info=1.40.0.4s';  arch='win_x64'; want='universal' },
+            @{ v='1.37-open-beta';    inf='exe_version_info=1.37.0.6s';  arch='win_x64'; want='universal' },
+            @{ v='1.34-beta-antiga';  inf='PatchVersion=1.34.0.4;';      arch='win_x64'; want='v.1.9.0' },
+            @{ v='1.16-beta-x86';     inf='exe_version_info=1.16.1.1b';  arch='win_x86'; want='revision_3_rel_1_2_1' },
+            @{ v='sem-steam-inf';     inf=$null;                          arch='win_x64'; want='universal' },
+            @{ v='steam-inf-ilegivel';inf='version=etsdois beta';         arch='win_x86'; want='universal' }
           )
           $fails = 0
           foreach ($c in $cases) {
             $g = "C:\fake\ets2-$($c.v)"
             New-Item -ItemType Directory -Force "$g\bin\$($c.arch)" | Out-Null
-            Set-Content -Path "$g\steam.inf" -Value $c.inf -Encoding ascii
+            if ($null -ne $c.inf) {
+              Set-Content -Path "$g\steam.inf" -Value $c.inf -Encoding ascii
+            } else {
+              Remove-Item "$g\steam.inf" -Force -ErrorAction SilentlyContinue
+            }
             # exe e --noconsole (GUI): `& exe` NAO espera o processo voltar
             # ($LASTEXITCODE ficaria $null) → Start-Process -Wait -PassThru.
             $exe = (Resolve-Path "dist-cpp\ETS2-AI-bridge.exe").Path
@@ -1110,7 +1180,7 @@ jobs:
             }
           }
           if ($fails -gt 0) { exit 1 }
-          Write-Host ("VALIDACAO C++ (exe PURO): {0}/{0} versoes OK (1.22 ate 1.61) + EXE 32-bit + caso OPTIJUEGOS com o jogo ABERTO" -f $cases.Count)
+          Write-Host ("VALIDACAO C++ (exe PURO): {0}/{0} versoes OK (TODAS: 1.0 ate 1.61 + BETAS) + EXE 32-bit + caso OPTIJUEGOS com o jogo ABERTO" -f $cases.Count)
 
       - uses: actions/checkout@v5
         if: failure()
@@ -1411,7 +1481,7 @@ jobs:
         run: |
           gh release view ets2-ai-v0.4.29 >/dev/null 2>&1 || \
             gh release create ets2-ai-v0.4.29 \
-              --title "ETS2-AI v0.4.29 — QUALQUER ETS2: rotacao automatica de DLL + autoteste; validado no CI em Windows REAL (7 versoes: 1.22 ate 1.61 + telemetria); cadeia 500B" \
+              --title "ETS2-AI v0.4.29 — QUALQUER ETS2: rotacao automatica de DLL + autoteste; validado no CI em Windows REAL (TODAS as 62 versoes principais 1.0 a 1.61 + BETAS + telemetria); cadeia 500B" \
               --notes "ETS2-AI v0.4.29 - APK: servico em 1o plano (wake lock + Wi-Fi alto desempenho) mantem a IA na MESMA velocidade com a tela bloqueada (cmd/s ao vivo na notificacao); teclado BT com as setas (padrao ETS2); EXE com DLL embutida + adb plug & play; cadeia rumo a 500 bilhoes de amostras no Kaggle."
           gh release upload ets2-ai-v0.4.29 ets2-ai/artifacts/ets2ai-v0.4.29.pt --clobber
 
