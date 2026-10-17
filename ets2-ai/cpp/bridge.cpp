@@ -140,6 +140,12 @@ static bool load_res(const wchar_t* name, ResData* out) {
   out->size = SizeofResource(nullptr, r);
   return out->ptr && out->size;
 }
+// rc.exe GUARDA nomes-string com ASPAS e MAIUSCULADOS — FindResource por
+// nome nunca acha. Por isso o banco usa IDs NUMERICOS: 101 = manifesto
+// ("repo tag arch id" por linha, ids 110+), 102 = pesos oficiais, 103 nano.
+static bool load_res_id(int id, ResData* out) {
+  return load_res(MAKEINTRESOURCEW(id), out);
+}
 struct BankDll { std::string repo, tag, arch; ResData data; };
 static std::vector<BankDll> g_bank;
 static int g_res_total = 0;
@@ -171,7 +177,19 @@ static BOOL WINAPI enum_cb(HMODULE mod, LPCWSTR type, LPWSTR name,
 }
 static void load_bank() {
   if (!g_bank.empty()) return;
-  EnumResourceNamesW(nullptr, RT_RCDATA, enum_cb, 0);
+  ResData man;
+  if (!load_res_id(101, &man)) return;
+  std::istringstream ss(std::string((const char*)man.ptr, man.size));
+  std::string repo, tag, arch;
+  int id;
+  while (ss >> repo >> tag >> arch >> id) {
+    ResData rd;
+    if (load_res_id(id, &rd)) {
+      BankDll d;
+      d.repo = repo; d.tag = tag; d.arch = arch; d.data = rd;
+      g_bank.push_back(d);
+    }
+  }
 }
 
 // =======================================================================
@@ -664,14 +682,14 @@ struct Net {
 static Net g_official, g_nano;
 static void load_nets() {
   ResData rd;
-  if (load_res(L"WEIGHTS_OFFICIAL", &rd))
+  if (load_res_id(102, &rd))
     g_official.load(std::string((const char*)rd.ptr, rd.size));
   else {
     std::ifstream f(exe_dir() + L"\\model-weights.txt");
     if (f) { std::stringstream ss; ss << f.rdbuf();
              g_official.load(ss.str()); }
   }
-  if (load_res(L"WEIGHTS_NANO", &rd))
+  if (load_res_id(103, &rd))
     g_nano.load(std::string((const char*)rd.ptr, rd.size));
 }
 static double bench(const Net& n, double seconds) {

@@ -802,26 +802,36 @@ jobs:
         shell: pwsh
         run: |
           Start-Transcript -Path rc-gen.log -Force
+          # IDs NUMERICOS: rc.exe guarda nomes-string com ASPAS e
+          # MAIUSCULADOS (FindResource por nome nao acha). 101 = manifesto,
+          # 102 = pesos oficiais, 103 = nano, 110+ = DLLs do banco.
+          # Caminhos com BARRA NORMAL (rc interpreta \a como escape C).
           $root = (Resolve-Path ets2-ai/bridge/dlls).Path
           $rc = "ets2-ai/cpp/bridge.rc"
+          $man = "ets2-ai/cpp/manifest.txt"
           Set-Content $rc "#include <windows.h>"
+          $w1 = ((Resolve-Path ets2-ai/cpp/model-weights.txt).Path) -replace '\\', '/'
+          Add-Content $rc "102 RCDATA `"$w1`""
+          if (Test-Path ets2-ai/cpp/model-nano.txt) {
+            $w2 = ((Resolve-Path ets2-ai/cpp/model-nano.txt).Path) -replace '\\', '/'
+            Add-Content $rc "103 RCDATA `"$w2`""
+          }
+          $id = 110
+          $lines = @()
           Get-ChildItem $root -Recurse -Filter scs-telemetry.dll | ForEach-Object {
             $rel = $_.FullName.Substring($root.Length + 1) -split '\\'
             if ($rel.Count -ge 4) {
-              # rc.exe interpreta '\a'/'\5' como escapes C em caminhos —
-              # barra NORMAL no caminho dentro do .rc
               $fp = $_.FullName -replace '\\', '/'
-              Add-Content $rc ('"DLL~{0}~{1}~{2}" RCDATA "{3}"' -f $rel[0], $rel[1], $rel[2], $fp)
+              Add-Content $rc "$id RCDATA `"$fp`""
+              $lines += "$($rel[0]) $($rel[1]) $($rel[2]) $id"
+              $id++
             }
           }
-          $w1 = ((Resolve-Path ets2-ai/cpp/model-weights.txt).Path) -replace '\\', '/'
-          Add-Content $rc ('"WEIGHTS_OFFICIAL" RCDATA "{0}"' -f $w1)
-          if (Test-Path ets2-ai/cpp/model-nano.txt) {
-            $w2 = ((Resolve-Path ets2-ai/cpp/model-nano.txt).Path) -replace '\\', '/'
-            Add-Content $rc ('"WEIGHTS_NANO" RCDATA "{0}"' -f $w2)
-          }
-          Write-Host "bridge.rc: $((Get-Content $rc | Measure-Object -Line).Lines) recursos"
-          Get-Content $rc | Select-Object -First 4
+          $lines | Set-Content $man
+          $mf = ((Resolve-Path $man).Path) -replace '\\', '/'
+          Add-Content $rc "101 RCDATA `"$mf`""
+          Write-Host "bridge.rc: $((Get-Content $rc | Measure-Object -Line).Lines) recursos / $($lines.Count) DLLs"
+          Get-Content $man | Select-Object -First 4
           Stop-Transcript
       - uses: ilammy/msvc-dev-cmd@v1
         with:
