@@ -2,4 +2,16 @@
 $ kaggle kernels list --mine --page-size 20
 [kaggle] username descoberto via kernels list --mine: enzoaimv
 $ kaggle kernels status enzoaimv/ets2ai-train
-[harvest] sessao anterior ainda em execucao — colheremos depois
+$ kaggle kernels output enzoaimv/ets2ai-train -p /home/runner/work/5/5/ets2-ai/.cache/kaggle-out
+Output file downloaded to /home/runner/work/5/5/ets2-ai/.cache/kaggle-out/.cache/checkpoint/model-weights.json
+Output file downloaded to /home/runner/work/5/5/ets2-ai/.cache/kaggle-out/metrics.json
+Output file downloaded to /home/runner/work/5/5/ets2-ai/.cache/kaggle-out/model-weights.json
+Kernel log downloaded to /home/runner/work/5/5/ets2-ai/.cache/kaggle-out/ets2ai-train.log 
+
+[harvest] acumulado ate agora: 19,138,580,156 amostras (3.8% de 500,000,000,000)
+$ kaggle datasets status enzoaimv/ets2ai-checkpoint
+[harvest] checkpoint dataset (best-effort): 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/datasets.DatasetApiService/GetDatasetStatus
+[harvest] PROVA anti-repeticao: seed desta sessao 13001586182 | impressao digital 48513fdd12177ca7 | seed anterior no repo ?
+[harvest] loss 0.00571 | 100% rotas | 100.0% faixa | dock 100%
+$ kaggle datasets list --mine --page-size 50
+[harvest] pesos validados: .cache/kaggle-out + checkpoint na release (rota canonica)
