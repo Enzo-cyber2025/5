@@ -47,6 +47,10 @@ GATED_PROBES = [
 
 HF_NAME_RE = r"(?i)(^|_)(hf|hugging|hub|llama|gemma|transformer)s?(_|$)"
 
+# Set by --reveal-names for PRIVATE local runs only. Never enable it in CI on
+# this repository: the logs and commits of a public repo are public.
+REVEAL = False
+
 
 def classify(token: str) -> str:
     """Describe the token format without revealing it."""
@@ -114,6 +118,10 @@ def report_whoami(status: int, data: object) -> dict:
         return {}
 
     say("  VERDICT: token ACCEPTED (200).")
+    if REVEAL:
+        bullet("account name", data.get("name", "?"))
+        bullet("fullname", data.get("fullname", "?"))
+        bullet("email", data.get("email", "<not exposed>"))
     bullet("account type", data.get("type", "?"))
     bullet("plan", data.get("plan", "?"))
     bullet("isPro", data.get("isPro", "?"))
@@ -125,7 +133,8 @@ def report_whoami(status: int, data: object) -> dict:
     bullet("orgs (count only, names withheld)", len(orgs))
     for idx, org in enumerate(orgs, 1):
         if isinstance(org, dict):
-            say(f"      org[{idx}] type={org.get('type', '?')} "
+            label = org.get("name", "?") if REVEAL else "<name withheld>"
+            say(f"      org[{idx}] name={label} type={org.get('type', '?')} "
                 f"isEnterprise={org.get('isEnterprise', '?')}")
 
     auth = data.get("auth") or {}
@@ -161,8 +170,9 @@ def report_owned(name: str, token: str) -> None:
         for idx, item in enumerate(data[:12], 1):
             if not isinstance(item, dict):
                 continue
-            # Shape only: library/pipeline/tags, never the repo name.
-            say(f"      {kind[:-1]}[{idx}] private={bool(item.get('private'))} "
+            # Shape only by default: library/pipeline/tags, never the repo name.
+            rid = f" id={item.get('id')}" if REVEAL else ""
+            say(f"      {kind[:-1]}[{idx}]{rid} private={bool(item.get('private'))} "
                 f"gated={item.get('gated')} library={item.get('library_name')} "
                 f"pipeline={item.get('pipeline_tag')} "
                 f"downloads={item.get('downloads')} likes={item.get('likes')}")
@@ -365,7 +375,28 @@ def main() -> int:
                         help="use the toJSON(secrets)/toJSON(vars) contexts")
     parser.add_argument("--named-inventory", action="store_true",
                         help="use SECRET_NAMES/VAR_NAMES mapped onto S01../V01.. env vars")
+    parser.add_argument("--token-file",
+                        help="read the token from this file (local private runs; keeps it "
+                             "out of shell history and of the process list)")
+    parser.add_argument("--reveal-names", action="store_true",
+                        help="PRIVATE LOCAL USE ONLY: also print account name, org names and "
+                             "repo ids. Never use this in CI on a public repository.")
     args = parser.parse_args()
+
+    global REVEAL
+    REVEAL = args.reveal_names
+    if REVEAL:
+        say("!! --reveal-names is ON: identity and repo names WILL be printed.")
+        say("!! Safe only on a private/local run. Public logs would expose them.")
+        say("")
+
+    if args.token_file:
+        try:
+            with open(args.token_file, encoding="utf-8") as fh:
+                os.environ[args.env] = fh.read().strip()
+        except OSError as exc:
+            say(f"could not read --token-file: {exc}")
+            return 2
 
     if not (args.inventory or args.named_inventory):
         token = (os.environ.get(args.env) or "").strip()
