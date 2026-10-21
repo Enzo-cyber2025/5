@@ -18,6 +18,7 @@ import gzip
 import io
 import json
 import os
+import re
 import sys
 import urllib.error
 import urllib.parse
@@ -190,14 +191,116 @@ def report_write(token: str, name: str) -> None:
     say("  uploads/deletes are possible with this token; 'read' means download only.")
 
 
+HF_NAME_RE = r"(?i)(^|_)(hf|hugging|hub|llama|gemma|transformer)(s)?(_|$)"
+
+
+def inventory(secrets_json: str, vars_json: str) -> tuple[list[tuple[str, str]], list[str]]:
+    """Enumerate every secret/variable available to the job.
+
+    `toJSON(secrets)` hands the runner the real values (log masking only affects
+    what is printed), so a token stored under an unexpected name is still found.
+    Returns (candidates, notes). A candidate is (name, value); only names whose
+    value actually looks like an HF token are kept, so unrelated credentials are
+    never sent to a third party just to see what happens.
+    """
+    notes: list[str] = []
+    candidates: list[tuple[str, str]] = []
+
+    def load(blob: str, what: str) -> dict:
+        if not blob.strip():
+            notes.append(f"{what}: context is empty (none available to this job)")
+            return {}
+        try:
+            data = json.loads(blob)
+        except json.JSONDecodeError as exc:
+            notes.append(f"{what}: unparsable ({exc})")
+            return {}
+        if not isinstance(data, dict):
+            notes.append(f"{what}: unexpected shape {type(data).__name__}")
+            return {}
+        return data
+
+    secrets = load(secrets_json, "secrets")
+    variables = load(vars_json, "vars")
+
+    if secrets:
+        notes.append(f"secrets defined and visible to this job: {len(secrets)}")
+        for name in sorted(secrets):
+            value = str(secrets[name] or "")
+            looks_hf = value.startswith("hf_")
+            name_hints = bool(re.search(HF_NAME_RE, name))
+            notes.append(
+                f"  secret {name:<30} length={len(value):<3} "
+                f"value_starts_with_hf_={'yes' if looks_hf else 'no'} "
+                f"name_looks_hf={'yes' if name_hints else 'no'}"
+            )
+            if looks_hf or (name_hints and 20 <= len(value) <= 80):
+                candidates.append((name, value))
+    if variables:
+        notes.append(f"variables visible to this job: {len(variables)}")
+        for name in sorted(variables):
+            value = str(variables[name] or "")
+            looks_hf = value.startswith("hf_")
+            notes.append(
+                f"  var    {name:<30} length={len(value):<3} "
+                f"value_starts_with_hf_={'yes' if looks_hf else 'no'}"
+            )
+            if looks_hf:
+                notes.append(
+                    f"  WARNING: {name} holds an HF-looking token in a VARIABLE, "
+                    "not a secret - variables are readable by anyone with repo access."
+                )
+                candidates.append((name, value))
+
+    if not secrets and not variables:
+        notes.append("Nothing at all is exposed to this job: no repo secret, no variable.")
+    return candidates, notes
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--env", default="HF_TOKEN_VALUE")
     parser.add_argument("--label", default="")
+    parser.add_argument(
+        "--inventory",
+        action="store_true",
+        help="enumerate every secret/variable visible to the job instead of "
+        "reading one fixed environment variable",
+    )
     args = parser.parse_args()
 
-    token = (os.environ.get(args.env) or "").strip()
-    label = args.label or args.env
+    if args.inventory:
+        candidates, notes = inventory(
+            os.environ.get("SECRETS_JSON", ""), os.environ.get("VARS_JSON", "")
+        )
+        say("=" * 72)
+        say("Inventory of secrets/variables visible to this job")
+        say("=" * 72)
+        for line in notes:
+            say(line)
+        say("")
+        if not candidates:
+            say("RESULT: no Hugging Face token is configured for this repository.")
+            say("        Nothing to authenticate, nothing to access.")
+            return 0
+        say(f"HF-looking candidates: {[name for name, _ in candidates]}")
+        failed = 0
+        for idx, (name, value) in enumerate(candidates, 1):
+            say("")
+            say("#" * 72)
+            say(f"# Candidate {idx}/{len(candidates)}: secret/variable '{name}'")
+            say("#" * 72)
+            os.environ["HF_TOKEN_VALUE"] = value
+            rc = run_probe(label=name)
+            failed += 1 if rc != 0 else 0
+        return 0 if failed == 0 else 1
+
+    return run_probe(label=args.label or args.env, env=args.env)
+
+
+def run_probe(label: str, env: str = "HF_TOKEN_VALUE") -> int:
+    """Validate one token and report what it can reach."""
+    token = (os.environ.get(env) or "").strip()
 
     say("=" * 72)
     say("Hugging Face secret probe - no token material is printed")
