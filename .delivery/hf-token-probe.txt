@@ -1,5 +1,5 @@
-run       : 39667936585 (276fad7a782a87202794e0a9e34e3f6aef743dfb)
-generated : 2026-10-21T20:10:16Z
+run       : 39668203300 (b81d9946e95689df88b5b84e0764814e5bc40720)
+generated : 2026-10-21T20:12:10Z
 
 ========================================================================
 Inventory of secrets/variables (individually referenced names)
@@ -163,6 +163,22 @@ RESULT: no Hugging Face token is configured under the names probed.
   - GET /api/models?limit=1 without a token: HTTP 200 -> public API readable
   Conclusion: as soon as a token is added to the secrets, this probe can
   authenticate it and report what it reaches.
+
+########################################################################
+# Dry run of the authenticated path (placeholder, NOT a real token)
+########################################################################
+========================================================================
+Hugging Face secret probe - no token material is printed
+========================================================================
+
+[1] Secret under test: DRY_RUN_TOKEN placeholder
+  - length: 37
+  - format: classic token (hf_...)
+  - charset ok: True
+
+[2] Authenticated identity check  (GET /api/whoami-v2)
+  - HTTP status: 401
+  VERDICT: token REJECTED (401). Revoked, expired, or not a valid token.
 
 No token, but the named targets can still be looked up anonymously:
 
