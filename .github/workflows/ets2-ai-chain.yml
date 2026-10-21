@@ -8,7 +8,7 @@ name: ETS2-AI cadeia 500B (sessoes 2xT4 encadeadas)
 #      checkpoint e promove os pesos ao repo se melhoraram;
 #   2. EMPURRA a proxima sessao (se a meta ainda nao foi atingida).
 # Roda seg/qui/sab (cron) e a cada push neste arquivo. 3 sessoes/week ~ 29,5 h
-# v40 (2026-10-16): dataset best-effort + breaker resetado — sessao extra disparada agora
+# v41 (2026-10-21): harvest acha checkpoint em .cache/checkpoint/ (kernel ERROR ainda e colhivel) + amostras REAIS da demo no kernel — ciclo disparado agora
 # de GPU = dentro da cota gratuita do Kaggle (30 h/week).
 
 on:
