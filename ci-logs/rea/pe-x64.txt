@@ -1,0 +1,185 @@
+Microsoft (R) COFF/PE Dumper Version 14.51.36260.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+
+Dump of file C:\ets2demo\bin\win_x64\eurotrucks2.exe
+
+PE signature found
+
+File Type: EXECUTABLE IMAGE
+
+FILE HEADER VALUES
+            8664 machine (x64)
+               7 number of sections
+        60AE81BD time date stamp Wed May 26 17:13:33 2021
+               0 file pointer to symbol table
+               0 number of symbols
+              F0 size of optional header
+              22 characteristics
+                   Executable
+                   Application can handle large (>2GB) addresses
+
+OPTIONAL HEADER VALUES
+             20B magic # (PE32+)
+           14.23 linker version
+         11BA800 size of code
+          7BE000 size of initialized data
+               0 size of uninitialized data
+         10CA7C8 entry point (00000001410CA7C8)
+            1000 base of code
+       140000000 image base (0000000140000000 to 000000014197CFFF)
+            1000 section alignment
+             200 file alignment
+            6.00 operating system version
+            0.00 image version
+            6.00 subsystem version
+               0 Win32 version
+         197D000 size of image
+             400 size of headers
+         190B3F7 checksum
+               2 subsystem (Windows GUI)
+            8160 DLL characteristics
+                   High Entropy Virtual Addresses
+                   Dynamic base
+                   NX compatible
+                   Terminal Server Aware
+          100000 size of stack reserve
+            1000 size of stack commit
+        10000000 size of heap reserve
+            1000 size of heap commit
+               0 loader flags
+              10 number of directories
+         15E9200 [     510] RVA [size] of Export Directory
+         15E9710 [     17C] RVA [size] of Import Directory
+         18B3000 [   6F138] RVA [size] of Resource Directory
+         17D1000 [   CD668] RVA [size] of Exception Directory
+         1905800 [    1A40] RVA [size] of Certificates Directory
+         1923000 [   59E2C] RVA [size] of Base Relocation Directory
+         14E5FB0 [      54] RVA [size] of Debug Directory
+               0 [       0] RVA [size] of Architecture Directory
+               0 [       0] RVA [size] of Global Pointer Directory
+         14E6118 [      28] RVA [size] of Thread Storage Directory
+         14E6010 [     108] RVA [size] of Load Configuration Directory
+               0 [       0] RVA [size] of Bound Import Directory
+         11BC000 [    1700] RVA [size] of Import Address Table Directory
+               0 [       0] RVA [size] of Delay Import Directory
+               0 [       0] RVA [size] of COM Descriptor Directory
+               0 [       0] RVA [size] of Reserved Directory
+
+
+SECTION HEADER #1
+   .text name
+ 11BA784 virtual size
+    1000 virtual address (0000000140001000 to 00000001411BB783)
+ 11BA800 size of raw data
+     400 file pointer to raw data (00000400 to 011BABFF)
+       0 file pointer to relocation table
+       0 file pointer to line numbers
+       0 number of relocations
+       0 number of line numbers
+60000020 flags
+         Code
+         Execute Read
+
+SECTION HEADER #2
+  .rdata name
+  432EC6 virtual size
+ 11BC000 virtual address (00000001411BC000 to 00000001415EEEC5)
+  433000 size of raw data
+ 11BAC00 file pointer to raw data (011BAC00 to 015EDBFF)
+       0 file pointer to relocation table
+       0 file pointer to line numbers
+       0 number of relocations
+       0 number of line numbers
+40000040 flags
+         Initialized Data
+         Read Only
+
+  Debug Directories
+
+        Time Type        Size      RVA  Pointer
+    -------- ------- -------- -------- --------
+    60AE81BD cv            A7 014EBCA4  14EA8A4    Format: RSDS, {50670FAB-7A2C-4966-8F65-FAE7A38CD64F}, 1, d:\buildbot\slaves\win_slave\final_build_ets2_140_windows_bin_final_x64\build\prism\obj\x64\eurotrucks\Final\eurotrucks\exe_ets\eurotrucks.pdb
+    60AE81BD feat          14 014EBD4C  14EA94C    Counts: Pre-VC++ 11.00=0, C/C++=2968, /GS=398, /sdl=0, guardN=392
+    60AE81BD coffgrp      408 014EBD60  14EA960    4C544347 (LTCG)
+
+SECTION HEADER #3
+   .data name
+  1E11D4 virtual size
+ 15EF000 virtual address (00000001415EF000 to 00000001417D01D3)
+  16DE00 size of raw data
+ 15EDC00 file pointer to raw data (015EDC00 to 0175B9FF)
+       0 file pointer to relocation table
+       0 file pointer to line numbers
+       0 number of relocations
+       0 number of line numbers
+C0000040 flags
+         Initialized Data
+         Read Write
+
+SECTION HEADER #4
+  .pdata name
+   CD668 virtual size
+ 17D1000 virtual address (00000001417D1000 to 000000014189E667)
+   CD800 size of raw data
+ 175BA00 file pointer to raw data (0175BA00 to 018291FF)
+       0 file pointer to relocation table
+       0 file pointer to line numbers
+       0 number of relocations
+       0 number of line numbers
+40000040 flags
+         Initialized Data
+         Read Only
+
+SECTION HEADER #5
+  _RDATA name
+   13308 virtual size
+ 189F000 virtual address (000000014189F000 to 00000001418B2307)
+   13400 size of raw data
+ 1829200 file pointer to raw data (01829200 to 0183C5FF)
+       0 file pointer to relocation table
+       0 file pointer to line numbers
+       0 number of relocations
+       0 number of line numbers
+40000040 flags
+         Initialized Data
+         Read Only
+
+SECTION HEADER #6
+   .rsrc name
+   6F138 virtual size
+ 18B3000 virtual address (00000001418B3000 to 0000000141922137)
+   6F200 size of raw data
+ 183C600 file pointer to raw data (0183C600 to 018AB7FF)
+       0 file pointer to relocation table
+       0 file pointer to line numbers
+       0 number of relocations
+       0 number of line numbers
+40000040 flags
+         Initialized Data
+         Read Only
+
+SECTION HEADER #7
+  .reloc name
+   59E2C virtual size
+ 1923000 virtual address (0000000141923000 to 000000014197CE2B)
+   5A000 size of raw data
+ 18AB800 file pointer to raw data (018AB800 to 019057FF)
+       0 file pointer to relocation table
+       0 file pointer to line numbers
+       0 number of relocations
+       0 number of line numbers
+42000040 flags
+         Initialized Data
+         Discardable
+         Read Only
+
+  Summary
+
+      1E2000 .data
+       CE000 .pdata
+      433000 .rdata
+       5A000 .reloc
+       70000 .rsrc
+     11BB000 .text
+       14000 _RDATA
