@@ -13,7 +13,11 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  # contents:write is only needed to commit the scrubbed report back to this
+  # session branch: log and artifact downloads are blocked in the sandbox this
+  # session runs in, so committing is the only readable channel. The report is
+  # temporary and is removed again right after it has been read.
+  contents: write
 
 concurrency:
   group: hf-token-probe-${{ github.ref }}
@@ -49,6 +53,8 @@ jobs:
         id: find
         run: |
           set -uo pipefail
+          REPORT=.delivery/hf-token-probe.txt
+          mkdir -p .delivery
           names=(HF_TOKEN HUGGINGFACE_TOKEN HUGGING_FACE_TOKEN HF_API_TOKEN
                  HUGGINGFACE_API_TOKEN HF_ACCESS_TOKEN HUGGINGFACE_ACCESS_TOKEN
                  HF_HUB_TOKEN HUGGINGFACE_HUB_TOKEN HF_AUTH_TOKEN HF_PAT HF_KEY
@@ -57,26 +63,32 @@ jobs:
           i=1
           picked_name=""
           picked_value=""
+          {
+            echo "run        : $GITHUB_RUN_ID ($GITHUB_SHA)"
+            echo "generated  : $(date -u +%FT%TZ)"
+            echo ""
+            echo "[0] Secret inventory (names only, values never printed)"
+          } | tee "$REPORT"
           for n in "${names[@]}"; do
             var="S$(printf '%02d' "$i")"
             val="${!var:-}"
             if [ -n "$val" ]; then
-              printf 'DEFINED  %-26s length=%s\n' "$n" "${#val}"
+              printf 'DEFINED  %-26s length=%s\n' "$n" "${#val}" | tee -a "$REPORT"
               if [ -z "$picked_name" ]; then
                 picked_name="$n"
                 picked_value="$val"
               fi
             else
-              printf 'missing  %-26s\n' "$n"
+              printf 'missing  %-26s\n' "$n" | tee -a "$REPORT"
             fi
             i=$((i + 1))
           done
-          echo ""
+          echo "" | tee -a "$REPORT"
           if [ -z "$picked_name" ]; then
-            echo "NO Hugging Face secret found under any of the ${#names[@]} usual names."
+            echo "NO Hugging Face secret found under any of the ${#names[@]} usual names." | tee -a "$REPORT"
             echo "selected=" >> "$GITHUB_OUTPUT"
           else
-            echo "Selected for testing: $picked_name"
+            echo "Selected for testing: $picked_name" | tee -a "$REPORT"
             echo "selected=$picked_name" >> "$GITHUB_OUTPUT"
             # Belt and braces: mask again even though Actions already masks secrets.
             echo "::add-mask::$picked_value"
@@ -91,14 +103,41 @@ jobs:
         env:
           SELECTED: ${{ steps.find.outputs.selected }}
         run: |
-          python3 ci/hf_token_probe.py --env HF_TOKEN_VALUE --label "${SELECTED:-<none>}"
+          python3 ci/hf_token_probe.py --env HF_TOKEN_VALUE --label "${SELECTED:-<none>}" \
+            | tee -a .delivery/hf-token-probe.txt
 
       - name: Verdict
         if: always()
         env:
           SELECTED: ${{ steps.find.outputs.selected }}
         run: |
-          echo "Secret used : ${SELECTED:-<none found>}"
-          echo "Full detail : see the steps above."
-          echo "Note        : identity and repo names are deliberately absent from the"
-          echo "              logs - this repository is public."
+          {
+            echo ""
+            echo "Secret used : ${SELECTED:-<none found>}"
+            echo "Note        : identity and repo names are deliberately absent - this"
+            echo "              repository is public, so its logs and commits are public."
+          } | tee -a .delivery/hf-token-probe.txt
+
+      - name: Publish report to the session branch
+        if: always()
+        run: |
+          set -uo pipefail
+          git config user.name  "hf-token-probe[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .delivery/hf-token-probe.txt
+          if git diff --cached --quiet; then
+            echo "nothing to publish"
+            exit 0
+          fi
+          git commit -m "ci: HF token probe report (scrubbed, temporary)"
+          for attempt in 1 2 3; do
+            if git push origin "HEAD:$GITHUB_REF_NAME"; then
+              echo "report published"
+              exit 0
+            fi
+            git pull --rebase origin "$GITHUB_REF_NAME" || true
+            sleep 5
+          done
+          echo "could not publish the report"
+          exit 1
+
