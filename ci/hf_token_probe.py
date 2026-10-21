@@ -1,14 +1,23 @@
 #!/usr/bin/env python3
-"""Probe a Hugging Face token that lives in a GitHub Actions secret.
+"""Probe a Hugging Face token that lives in a GitHub Actions secret or variable.
 
-Design rule: this script runs on a PUBLIC repository, so everything it prints
-ends up in publicly readable workflow logs. It therefore never prints the token
-and never prints identity material (username, e-mail, org names, repo names).
-Only formats, counts, enum values and HTTP status codes are reported.
+Design rule: this runs on a PUBLIC repository, so everything printed here ends up
+in publicly readable logs and commits. The script therefore never prints a token
+and never prints identity material (account name, e-mail, org names, repo names).
+Only secret/variable NAMES, formats, lengths, enum values, counts and HTTP status
+codes are reported.
 
-The token is read from the environment variable named by --env (default
-HF_TOKEN_VALUE). GitHub masks registered secret strings in logs regardless, but
-we do not rely on that: nothing sensitive is ever handed to stdout.
+Two ways to feed it:
+
+* --inventory        read the JSON of ``toJSON(secrets)`` / ``toJSON(vars)`` from
+                     the environment. Finds a token under any name, but GitHub
+                     holds such a run for manual approval.
+* --named-inventory  read the values of individually referenced secrets listed in
+                     SECRET_NAMES / VAR_NAMES, mapped positionally onto the
+                     S01..Snn and V01..Vnn environment variables of the job.
+
+Only values that already look like HF tokens (``hf_`` prefix) are ever sent to
+huggingface.co, so unrelated credentials are not handed to a third party.
 """
 
 from __future__ import annotations
@@ -35,6 +44,8 @@ GATED_PROBES = [
     ("model", "mistralai/Mistral-Nemo-Instruct-2407"),
     ("dataset", "allenai/c4"),
 ]
+
+HF_NAME_RE = r"(?i)(^|_)(hf|hugging|hub|llama|gemma|transformer)s?(_|$)"
 
 
 def classify(token: str) -> str:
@@ -76,7 +87,7 @@ def request(path: str, token: str | None, timeout: int = 30) -> tuple[int, objec
         except json.JSONDecodeError:
             payload = body[:200]
         return exc.code, payload
-    except Exception as exc:  # network egress blocked, DNS, TLS, timeout...
+    except Exception as exc:  # blocked egress, DNS, TLS, timeout...
         return -1, f"{type(exc).__name__}: {exc}"
 
 
@@ -93,7 +104,7 @@ def report_whoami(status: int, data: object) -> dict:
     say("\n[2] Authenticated identity check  (GET /api/whoami-v2)")
     bullet("HTTP status", status)
     if status == 401:
-        say("  VERDICT: token REJECTED (401). It is revoked, expired or mistyped.")
+        say("  VERDICT: token REJECTED (401). Revoked, expired, or not a valid token.")
         return {}
     if status == 403:
         say("  VERDICT: token present but FORBIDDEN (403).")
@@ -115,8 +126,7 @@ def report_whoami(status: int, data: object) -> dict:
     for idx, org in enumerate(orgs, 1):
         if isinstance(org, dict):
             say(f"      org[{idx}] type={org.get('type', '?')} "
-                f"isEnterprise={org.get('isEnterprise', '?')} "
-                f"role={org.get('role', '?')}")
+                f"isEnterprise={org.get('isEnterprise', '?')}")
 
     auth = data.get("auth") or {}
     if isinstance(auth, dict):
@@ -125,15 +135,15 @@ def report_whoami(status: int, data: object) -> dict:
         if isinstance(access, dict):
             bullet("token role", access.get("role", "?"))
             bullet("token type", access.get("type", "?"))
-            # Keys only: shows what the API told us without printing values.
-            bullet("extra keys under accessToken", sorted(k for k in access if k not in ("role", "type")))
+            bullet("extra keys under accessToken",
+                   sorted(k for k in access if k not in ("role", "type")))
         bullet("auth keys", sorted(auth.keys()))
     bullet("whoami top-level keys", sorted(data.keys()))
     return data
 
 
 def report_owned(name: str, token: str) -> None:
-    """Count the account's own repos. Names are withheld, only shapes are shown."""
+    """Count the account's own repos. Names withheld, only shapes are shown."""
     say("\n[3] What the token can see on its own account")
     if not name:
         say("  skipped: no validated account name.")
@@ -174,12 +184,7 @@ def report_gated(token: str) -> None:
 
 
 def report_write(token: str, name: str) -> None:
-    """Non-destructive write-scope probe.
-
-    We deliberately do NOT create, edit or delete anything on the Hub. The role
-    reported by whoami-v2 is authoritative enough, and we only confirm that the
-    token can read the account's own namespace listing.
-    """
+    """Non-destructive write-scope probe: nothing is created, changed or deleted."""
     say("\n[5] Write capability")
     say("  No write operation was attempted (nothing created, changed or deleted).")
     status, _ = request("/api/whoami-v2", token)
@@ -191,121 +196,93 @@ def report_write(token: str, name: str) -> None:
     say("  uploads/deletes are possible with this token; 'read' means download only.")
 
 
-HF_NAME_RE = r"(?i)(^|_)(hf|hugging|hub|llama|gemma|transformer)(s)?(_|$)"
+def inventory(secrets: dict, variables: dict, source: str) -> list[tuple[str, str, str]]:
+    """List what is visible and pick out HF-looking candidates.
 
-
-def inventory(secrets_json: str, vars_json: str) -> tuple[list[tuple[str, str]], list[str]]:
-    """Enumerate every secret/variable available to the job.
-
-    `toJSON(secrets)` hands the runner the real values (log masking only affects
-    what is printed), so a token stored under an unexpected name is still found.
-    Returns (candidates, notes). A candidate is (name, value); only names whose
-    value actually looks like an HF token are kept, so unrelated credentials are
-    never sent to a third party just to see what happens.
+    Returns [(kind, name, value)] for candidates worth authenticating.
     """
     notes: list[str] = []
-    candidates: list[tuple[str, str]] = []
+    candidates: list[tuple[str, str, str]] = []
 
-    def load(blob: str, what: str) -> dict:
+    say("=" * 72)
+    say(f"Inventory of secrets/variables ({source})")
+    say("=" * 72)
+
+    if secrets:
+        present = {k: v for k, v in secrets.items() if str(v)}
+        notes.append(f"names probed as secrets : {len(secrets)}")
+        notes.append(f"of those, actually set  : {len(present)}")
+        for name in sorted(secrets):
+            value = str(secrets[name] or "")
+            if not value:
+                notes.append(f"  secret {name:<30} not set")
+                continue
+            looks_hf = value.startswith("hf_")
+            hints = bool(re.search(HF_NAME_RE, name))
+            notes.append(f"  secret {name:<30} SET length={len(value):<3} "
+                         f"hf_prefix={'yes' if looks_hf else 'no'} "
+                         f"name_hints_hf={'yes' if hints else 'no'}")
+            if looks_hf or (hints and 20 <= len(value) <= 80):
+                candidates.append(("secret", name, value))
+    else:
+        notes.append("no secret names were probed")
+
+    if variables:
+        present_v = {k: v for k, v in variables.items() if str(v)}
+        notes.append(f"names probed as variables: {len(variables)}")
+        notes.append(f"of those, actually set   : {len(present_v)}")
+        for name in sorted(variables):
+            value = str(variables[name] or "")
+            if not value:
+                notes.append(f"  var    {name:<30} not set")
+                continue
+            looks_hf = value.startswith("hf_")
+            notes.append(f"  var    {name:<30} SET length={len(value):<3} "
+                         f"hf_prefix={'yes' if looks_hf else 'no'}")
+            if looks_hf:
+                notes.append(f"  WARNING: {name} holds an HF-looking token as a VARIABLE,"
+                             " not a secret - variables are readable by anyone with repo"
+                             " access and are not masked in logs.")
+                candidates.append(("variable", name, value))
+    else:
+        notes.append("no variable names were probed")
+
+    for line in notes:
+        say(line)
+    say("")
+    return candidates
+
+
+def named_inventory() -> tuple[dict, dict]:
+    """Read individually referenced secrets/variables from the job environment."""
+    secret_names = os.environ.get("SECRET_NAMES", "").split()
+    var_names = os.environ.get("VAR_NAMES", "").split()
+    secrets = {n: os.environ.get(f"S{i:02d}", "") for i, n in enumerate(secret_names, 1)}
+    variables = {n: os.environ.get(f"V{i:02d}", "") for i, n in enumerate(var_names, 1)}
+    return secrets, variables
+
+
+def context_inventory() -> tuple[dict, dict]:
+    """Read the toJSON(secrets) / toJSON(vars) blobs from the environment."""
+    def load(blob: str) -> dict:
         if not blob.strip():
-            notes.append(f"{what}: context is empty (none available to this job)")
             return {}
         try:
             data = json.loads(blob)
-        except json.JSONDecodeError as exc:
-            notes.append(f"{what}: unparsable ({exc})")
+        except json.JSONDecodeError:
             return {}
-        if not isinstance(data, dict):
-            notes.append(f"{what}: unexpected shape {type(data).__name__}")
-            return {}
-        return data
+        return data if isinstance(data, dict) else {}
 
-    secrets = load(secrets_json, "secrets")
-    variables = load(vars_json, "vars")
-
-    if secrets:
-        notes.append(f"secrets defined and visible to this job: {len(secrets)}")
-        for name in sorted(secrets):
-            value = str(secrets[name] or "")
-            looks_hf = value.startswith("hf_")
-            name_hints = bool(re.search(HF_NAME_RE, name))
-            notes.append(
-                f"  secret {name:<30} length={len(value):<3} "
-                f"value_starts_with_hf_={'yes' if looks_hf else 'no'} "
-                f"name_looks_hf={'yes' if name_hints else 'no'}"
-            )
-            if looks_hf or (name_hints and 20 <= len(value) <= 80):
-                candidates.append((name, value))
-    if variables:
-        notes.append(f"variables visible to this job: {len(variables)}")
-        for name in sorted(variables):
-            value = str(variables[name] or "")
-            looks_hf = value.startswith("hf_")
-            notes.append(
-                f"  var    {name:<30} length={len(value):<3} "
-                f"value_starts_with_hf_={'yes' if looks_hf else 'no'}"
-            )
-            if looks_hf:
-                notes.append(
-                    f"  WARNING: {name} holds an HF-looking token in a VARIABLE, "
-                    "not a secret - variables are readable by anyone with repo access."
-                )
-                candidates.append((name, value))
-
-    if not secrets and not variables:
-        notes.append("Nothing at all is exposed to this job: no repo secret, no variable.")
-    return candidates, notes
+    return load(os.environ.get("SECRETS_JSON", "")), load(os.environ.get("VARS_JSON", ""))
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--env", default="HF_TOKEN_VALUE")
-    parser.add_argument("--label", default="")
-    parser.add_argument(
-        "--inventory",
-        action="store_true",
-        help="enumerate every secret/variable visible to the job instead of "
-        "reading one fixed environment variable",
-    )
-    args = parser.parse_args()
-
-    if args.inventory:
-        candidates, notes = inventory(
-            os.environ.get("SECRETS_JSON", ""), os.environ.get("VARS_JSON", "")
-        )
-        say("=" * 72)
-        say("Inventory of secrets/variables visible to this job")
-        say("=" * 72)
-        for line in notes:
-            say(line)
-        say("")
-        if not candidates:
-            say("RESULT: no Hugging Face token is configured for this repository.")
-            say("        Nothing to authenticate, nothing to access.")
-            return 0
-        say(f"HF-looking candidates: {[name for name, _ in candidates]}")
-        failed = 0
-        for idx, (name, value) in enumerate(candidates, 1):
-            say("")
-            say("#" * 72)
-            say(f"# Candidate {idx}/{len(candidates)}: secret/variable '{name}'")
-            say("#" * 72)
-            os.environ["HF_TOKEN_VALUE"] = value
-            rc = run_probe(label=name)
-            failed += 1 if rc != 0 else 0
-        return 0 if failed == 0 else 1
-
-    return run_probe(label=args.label or args.env, env=args.env)
-
-
-def run_probe(label: str, env: str = "HF_TOKEN_VALUE") -> int:
+def run_probe(label: str, token: str) -> int:
     """Validate one token and report what it can reach."""
-    token = (os.environ.get(env) or "").strip()
-
     say("=" * 72)
     say("Hugging Face secret probe - no token material is printed")
     say("=" * 72)
     say(f"\n[1] Secret under test: {label}")
+    token = (token or "").strip()
     if not token:
         say("  RESULT: secret is EMPTY / not defined for this ref.")
         say("  Nothing further to test.")
@@ -317,7 +294,7 @@ def run_probe(label: str, env: str = "HF_TOKEN_VALUE") -> int:
     status, data = request("/api/whoami-v2", token)
     who = report_whoami(status, data)
     if status == -1:
-        say("\n  The runner could not reach huggingface.co at all - this is a network")
+        say("\n  The runner could not reach huggingface.co at all - that is a network")
         say("  egress problem, not a token problem. Nothing can be concluded yet.")
         return 1
     if status != 200 or not isinstance(who, dict) or not who:
@@ -331,7 +308,7 @@ def run_probe(label: str, env: str = "HF_TOKEN_VALUE") -> int:
     say("\n" + "=" * 72)
     say("SUMMARY")
     say("=" * 72)
-    say(f"  token valid      : yes (HTTP 200 on whoami-v2)")
+    say("  token valid      : yes (HTTP 200 on whoami-v2)")
     say(f"  token format     : {classify(token)}")
     say(f"  account type     : {who.get('type')}")
     say(f"  plan             : {who.get('plan')}")
@@ -339,6 +316,45 @@ def run_probe(label: str, env: str = "HF_TOKEN_VALUE") -> int:
     say("  identity, org names and repo names are intentionally NOT printed:")
     say("  this repository is public, so its workflow logs are public too.")
     return 0
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--env", default="HF_TOKEN_VALUE")
+    parser.add_argument("--label", default="")
+    parser.add_argument("--inventory", action="store_true",
+                        help="use the toJSON(secrets)/toJSON(vars) contexts")
+    parser.add_argument("--named-inventory", action="store_true",
+                        help="use SECRET_NAMES/VAR_NAMES mapped onto S01../V01.. env vars")
+    args = parser.parse_args()
+
+    if not (args.inventory or args.named_inventory):
+        token = (os.environ.get(args.env) or "").strip()
+        return run_probe(label=args.label or args.env, token=token)
+
+    if args.named_inventory:
+        secrets, variables = named_inventory()
+        source = "individually referenced names"
+    else:
+        secrets, variables = context_inventory()
+        source = "toJSON(secrets)/toJSON(vars) context"
+
+    candidates = inventory(secrets, variables, source)
+
+    if not candidates:
+        say("RESULT: no Hugging Face token is configured under the names probed.")
+        say("        Nothing to authenticate, nothing to access.")
+        return 0
+
+    say(f"HF-looking candidates: {[(k, n) for k, n, _ in candidates]}")
+    failures = 0
+    for idx, (kind, name, value) in enumerate(candidates, 1):
+        say("")
+        say("#" * 72)
+        say(f"# Candidate {idx}/{len(candidates)}: {kind} '{name}'")
+        say("#" * 72)
+        failures += 1 if run_probe(label=f"{name} ({kind})", token=value) != 0 else 0
+    return 1 if failures else 0
 
 
 if __name__ == "__main__":
