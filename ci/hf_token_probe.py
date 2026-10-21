@@ -70,10 +70,17 @@ def classify(token: str) -> str:
     return "string that does not look like an HF token"
 
 
-def request(path: str, token: str | None, timeout: int = 30) -> tuple[int, object]:
-    """GET a HF endpoint. Returns (status, parsed_json_or_text)."""
-    url = f"{HF}{path}"
+def request(path: str, token: str | None, timeout: int = 30,
+            absolute: bool = False, nbytes: int = 0) -> tuple[int, object]:
+    """GET a HF endpoint. Returns (status, parsed_json_or_text).
+
+    absolute=True allows the sibling datasets-server host. nbytes>0 sends a Range
+    header so a file-access probe costs one byte instead of a whole weight file.
+    """
+    url = path if absolute else f"{HF}{path}"
     req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept-Encoding": "gzip"})
+    if nbytes:
+        req.add_header("Range", f"bytes=0-{nbytes - 1}")
     if token:
         req.add_header("Authorization", f"Bearer {token}")
     try:
@@ -183,19 +190,49 @@ def report_owned(name: str, token: str) -> None:
                 f"downloads={item.get('downloads')} likes={item.get('likes')}")
 
 
+def pick_file(meta: object) -> str:
+    """Choose the cheapest file that proves gate access."""
+    siblings = (meta or {}).get("siblings") if isinstance(meta, dict) else None
+    names = [x.get("rfilename") for x in (siblings or [])
+             if isinstance(x, dict) and x.get("rfilename")]
+    for preferred in ("config.json", "README.md", "dataset_infos.json",
+                      ".gitattributes", "tokenizer_config.json"):
+        if preferred in names:
+            return preferred
+    return names[0] if names else ""
+
+
 def report_gated(token: str) -> None:
-    """Probe a few well-known gated repos. Only status codes are printed."""
-    say("\n[4] Gated-repo access probe (status codes only)")
+    """Probe gated repos by fetching a FILE, not its metadata.
+
+    Metadata endpoints answer 200 anonymously even for gated repos, so they prove
+    nothing. Each probe therefore fetches one byte of a real file twice - once
+    anonymously and once authenticated - and the difference is the verdict.
+    """
+    say("\n[4] Gated-repo access probe (file fetch, anonymous vs authenticated)")
+    say("  Metadata is public even for gated repos, so only a FILE fetch proves access.")
     for kind, repo in GATED_PROBES:
-        status, _ = request(f"/api/{kind}s/{urllib.parse.quote(repo)}", token)
-        meaning = {
-            200: "ACCESS GRANTED",
-            401: "not authenticated / gate not accepted",
-            403: "gate requested but NOT granted for this account",
-            404: "hidden from this account (treated as not granted)",
-            -1: "request never reached huggingface.co",
-        }.get(status, f"unexpected status {status}")
-        bullet(f"{kind} {repo}", f"HTTP {status} -> {meaning}")
+        plural = f"{kind}s"
+        status, meta = request(f"/api/{plural}/{urllib.parse.quote(repo)}", token)
+        gate = meta.get("gated") if isinstance(meta, dict) else "?"
+        fname = pick_file(meta)
+        if not fname:
+            bullet(repo, f"metadata HTTP {status} gated={gate} | no file listed to probe")
+            continue
+        path = f"/{repo}/resolve/main/{urllib.parse.quote(fname)}"
+        anon, _ = request(path, None, nbytes=1)
+        auth, _ = request(path, token, nbytes=1)
+        if gate in (False, "false", None) and anon == 200:
+            verdict = "NOT actually gated - open to everyone, proves nothing"
+        elif auth == 200 and anon != 200:
+            verdict = "ACCESS GRANTED - the token passes the gate"
+        elif auth == 200 and anon == 200:
+            verdict = "open file, gate not enforced on it"
+        elif auth in (401, 403):
+            verdict = "DENIED - gate not approved for this account"
+        else:
+            verdict = "inconclusive"
+        bullet(repo, f"gated={gate} | file anon HTTP {anon} vs auth HTTP {auth} -> {verdict}")
 
 
 def report_write(token: str, name: str) -> None:
@@ -383,6 +420,118 @@ def report_target(token: str | None, target: str, me: str = "") -> None:
                 bullet(f"own {kind} matching '{target}'", f"HTTP {status}")
 
 
+def report_target_deep(token: str | None, target: str, kind: str = "datasets") -> None:
+    """Describe the CONTENTS of a matched repo, structurally.
+
+    File names, column names and the repo id are withheld unless --reveal-names:
+    on a public repo those would disclose what a private dataset actually holds.
+    Counts, sizes, shapes and timestamps are reported instead.
+    """
+    say(f"\n[8] Deep probe of '{target}' ({kind}) - structure only")
+    q = urllib.parse.urlencode({"search": target, "limit": "50", "full": "true"})
+    status, data = request(f"/api/{kind}?{q}", token)
+    if status != 200 or not isinstance(data, list):
+        say(f"  could not locate it (HTTP {status})")
+        return
+    matches = [d for d in data if isinstance(d, dict)
+               and str(d.get("id", "")).split("/")[-1].lower() == target.lower()]
+    if not matches:
+        say("  no exact name match to probe")
+        return
+    for m in matches:
+        rid = str(m.get("id"))
+        owner = rid.split("/")[0]
+        say(f"  match: owner namespace {'=' + owner if REVEAL else 'WITHHELD (private repo)'}"
+            f" | private={bool(m.get('private'))}")
+        enc = urllib.parse.quote(rid)
+        st, meta = request(f"/api/{kind}/{enc}", token)
+        if st != 200 or not isinstance(meta, dict):
+            bullet("metadata", f"HTTP {st}")
+            continue
+        bullet("metadata", f"HTTP {st}")
+        bullet("private / gated / disabled",
+               f"{meta.get('private')} / {meta.get('gated')} / {meta.get('disabled')}")
+        bullet("lastModified", meta.get("lastModified"))
+        bullet("commit sha", str(meta.get("sha"))[:12])
+        bullet("downloads / likes", f"{meta.get('downloads')} / {meta.get('likes')}")
+        bullet("tags", len(meta.get("tags") or []))
+        card = meta.get("cardData")
+        bullet("cardData", sorted(card.keys()) if isinstance(card, dict) else card)
+        sibs = [x.get("rfilename") for x in (meta.get("siblings") or [])
+                if isinstance(x, dict) and x.get("rfilename")]
+        bullet("files declared in metadata", len(sibs))
+
+        # Real tree with sizes.
+        st, tree = request(f"/api/{kind}/{enc}/tree/main?recursive=true&expand=true", token)
+        if st == 200 and isinstance(tree, list):
+            files = [t for t in tree if isinstance(t, dict) and t.get("type") == "file"]
+            dirs = [t for t in tree if isinstance(t, dict) and t.get("type") == "directory"]
+            exts: dict[str, int] = {}
+            total = 0
+            biggest = 0
+            for f in files:
+                name = str(f.get("path") or "")
+                ext = name.rsplit(".", 1)[-1].lower() if "." in name else "<no ext>"
+                exts[ext] = exts.get(ext, 0) + 1
+                size = int(f.get("size") or 0)
+                total += size
+                biggest = max(biggest, size)
+            bullet("tree", f"HTTP {st} | {len(files)} files | {len(dirs)} directories")
+            bullet("extensions", dict(sorted(exts.items(), key=lambda kv: -kv[1])))
+            bullet("total bytes", f"{total} ({total / 1e6:.2f} MB)")
+            bullet("largest file", f"{biggest} ({biggest / 1e6:.2f} MB)")
+            if REVEAL:
+                for f in files[:40]:
+                    say(f"      {f.get('path')} ({f.get('size')} bytes)")
+        else:
+            bullet("tree", f"HTTP {st} (not readable)")
+
+        # Splits / rows / columns from the datasets-server sibling API.
+        st, info = request(
+            f"https://datasets-server.huggingface.co/info?dataset={enc}",
+            token, absolute=True)
+        if st == 200 and isinstance(info, dict):
+            di = info.get("dataset_info")
+            if isinstance(di, list):
+                for conf in di:
+                    cname = conf.get("config_name") if REVEAL else "<config name withheld>"
+                    feats = conf.get("features") or []
+                    splits = conf.get("splits") or []
+                    bullet(f"datasets-server config {cname}",
+                           f"{len(feats)} columns | {len(splits)} splits")
+                    types: dict[str, int] = {}
+                    for f in feats:
+                        if isinstance(f, dict):
+                            t = str(f.get("type"))[:40]
+                            types[t] = types.get(t, 0) + 1
+                    bullet("column types", types)
+                    for sp in splits:
+                        if isinstance(sp, dict):
+                            sname = sp.get("name") if REVEAL else "<split name withheld>"
+                            say(f"      split {sname}: rows={sp.get('num_examples') or sp.get('num_rows')}")
+                    if REVEAL:
+                        for f in feats[:60]:
+                            if isinstance(f, dict):
+                                say(f"      column: {f.get('name')} : {f.get('type')}")
+            else:
+                bullet("datasets-server info", f"HTTP {st} but unexpected shape")
+        else:
+            bullet("datasets-server info", f"HTTP {st}")
+
+        st, size = request(
+            f"https://datasets-server.huggingface.co/size?dataset={enc}",
+            token, absolute=True)
+        if st == 200 and isinstance(size, dict):
+            ds = size.get("size", {})
+            if isinstance(ds, dict):
+                bullet("datasets-server size",
+                       f"dataset={ds.get('dataset')} rows={ds.get('rows')} "
+                       f"downloaded_size={ds.get('downloaded_size')} "
+                       f"in_memory={ds.get('in_memory_size')}")
+        else:
+            bullet("datasets-server size", f"HTTP {st}")
+
+
 def report_egress() -> None:
     """Prove the runner can reach huggingface.co, even with no token to test.
 
@@ -436,6 +585,8 @@ def run_probe(label: str, token: str) -> int:
     report_write(token, account)
     for target in TARGETS:
         report_target(token, target, me=account)
+        report_target_deep(token, target, "datasets")
+        report_target_deep(token, target, "models")
 
     say("\n" + "=" * 72)
     say("SUMMARY")
