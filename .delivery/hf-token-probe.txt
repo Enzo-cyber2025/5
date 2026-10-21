@@ -1,35 +1,68 @@
-run        : 39663220739 (e9dc309e48bd43d181ed07d362037bb62be33e28)
-generated  : 2026-10-21T19:37:21Z
+run       : 39664932354 (d9883b1e7d471b1563e58d774e0559b88b5d0d62)
+generated : 2026-10-21T19:49:45Z
 
-[0] Secret inventory (names only, values never printed)
-missing  HF_TOKEN                  
-missing  HUGGINGFACE_TOKEN         
-missing  HUGGING_FACE_TOKEN        
-missing  HF_API_TOKEN              
-missing  HUGGINGFACE_API_TOKEN     
-missing  HF_ACCESS_TOKEN           
-missing  HUGGINGFACE_ACCESS_TOKEN  
-missing  HF_HUB_TOKEN              
-missing  HUGGINGFACE_HUB_TOKEN     
-missing  HF_AUTH_TOKEN             
-missing  HF_PAT                    
-missing  HF_KEY                    
-missing  HF_SECRET                 
-missing  HUGGINGFACE_SECRET        
-missing  HF_READ_TOKEN             
-missing  HF_WRITE_TOKEN            
-missing  HF_FINE_GRAINED_TOKEN     
-missing  HF_UPLOAD_TOKEN           
-
-NO Hugging Face secret found under any of the 18 usual names.
 ========================================================================
-Hugging Face secret probe - no token material is printed
+Inventory of secrets/variables (individually referenced names)
 ========================================================================
+names probed as secrets : 40
+of those, actually set  : 0
+  secret ARENA_HF_TOKEN                 not set
+  secret HF                             not set
+  secret HF_ACCESS_TOKEN                not set
+  secret HF_API_KEY                     not set
+  secret HF_API_TOKEN                   not set
+  secret HF_AUTH_TOKEN                  not set
+  secret HF_DOWNLOAD_TOKEN              not set
+  secret HF_FINE_GRAINED_TOKEN          not set
+  secret HF_GGUF_TOKEN                  not set
+  secret HF_HUB_TOKEN                   not set
+  secret HF_INTEGRATION_TOKEN           not set
+  secret HF_KEY                         not set
+  secret HF_LLAMA_TOKEN                 not set
+  secret HF_MODEL_TOKEN                 not set
+  secret HF_PAT                         not set
+  secret HF_PRIVATE_TOKEN               not set
+  secret HF_READ_TOKEN                  not set
+  secret HF_SECRET                      not set
+  secret HF_SECRET_TOKEN                not set
+  secret HF_TOKEN                       not set
+  secret HF_TOKEN_2                     not set
+  secret HF_TOKEN_SECRET                not set
+  secret HF_UPLOAD_TOKEN                not set
+  secret HF_USER_TOKEN                  not set
+  secret HF_WRITE_TOKEN                 not set
+  secret HUB_TOKEN                      not set
+  secret HUGGINGFACE                    not set
+  secret HUGGINGFACE_ACCESS_TOKEN       not set
+  secret HUGGINGFACE_API_KEY            not set
+  secret HUGGINGFACE_API_TOKEN          not set
+  secret HUGGINGFACE_AUTH_TOKEN         not set
+  secret HUGGINGFACE_HUB_TOKEN          not set
+  secret HUGGINGFACE_KEY                not set
+  secret HUGGINGFACE_PAT                not set
+  secret HUGGINGFACE_SECRET             not set
+  secret HUGGINGFACE_TOKEN              not set
+  secret HUGGING_FACE_TOKEN             not set
+  secret LLAMA_TOKEN                    not set
+  secret SECRET_HF_TOKEN                not set
+  secret TOKEN_HF                       not set
+names probed as variables: 12
+of those, actually set   : 0
+  var    HF_API_TOKEN                   not set
+  var    HF_CACHE                       not set
+  var    HF_ENDPOINT                    not set
+  var    HF_HUB_TOKEN                   not set
+  var    HF_MODEL                       not set
+  var    HF_MODEL_ID                    not set
+  var    HF_REPO                        not set
+  var    HF_TOKEN                       not set
+  var    HF_USER                        not set
+  var    HF_USERNAME                    not set
+  var    HUGGINGFACE_TOKEN              not set
+  var    HUGGINGFACE_USER               not set
 
-[1] Secret under test: <none>
-  RESULT: secret is EMPTY / not defined for this ref.
-  Nothing further to test.
+RESULT: no Hugging Face token is configured under the names probed.
+        Nothing to authenticate, nothing to access.
 
-Secret used : <none found>
-Note        : identity and repo names are deliberately absent - this
-              repository is public, so its logs and commits are public.
+Note: identity, org names and repo names are deliberately absent -
+      this repository is public.
