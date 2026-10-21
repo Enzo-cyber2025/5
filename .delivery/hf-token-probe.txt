@@ -1,5 +1,5 @@
-run       : 39664932354 (d9883b1e7d471b1563e58d774e0559b88b5d0d62)
-generated : 2026-10-21T19:49:45Z
+run       : 39665186404 (0e877d13db9d909175bcd636a7bbe490b31d61b3)
+generated : 2026-10-21T19:51:10Z
 
 ========================================================================
 Inventory of secrets/variables (individually referenced names)
@@ -63,6 +63,12 @@ of those, actually set   : 0
 
 RESULT: no Hugging Face token is configured under the names probed.
         Nothing to authenticate, nothing to access.
+
+[6] Egress check (unauthenticated, so the harness is proven ready)
+  - GET /api/whoami-v2 without a token: HTTP 401 -> reachable, and correctly rejects an anonymous caller
+  - GET /api/models?limit=1 without a token: HTTP 200 -> public API readable
+  Conclusion: as soon as a token is added to the secrets, this probe can
+  authenticate it and report what it reaches.
 
 Note: identity, org names and repo names are deliberately absent -
       this repository is public.
