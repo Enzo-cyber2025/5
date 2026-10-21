@@ -419,9 +419,21 @@ static Discovery discover_game(const std::wstring& hint,
 // versao + instalacao da DLL
 // =======================================================================
 static bool parse_version(const std::wstring& steam_inf, int* maj, int* min) {
-  std::ifstream f(steam_inf);
+  std::ifstream f(steam_inf, std::ios::binary);
   std::string ln, txt;
   while (std::getline(f, ln)) txt += ln + "\n";
+  // BOM: UTF-8 (EF BB BF) e UTF-16LE (FF FE) — tira antes de parsear
+  if (txt.size() >= 3 && (unsigned char)txt[0] == 0xEF &&
+      (unsigned char)txt[1] == 0xBB && (unsigned char)txt[2] == 0xBF)
+    txt = txt.substr(3);
+  else if (txt.size() >= 2 && (unsigned char)txt[0] == 0xFF &&
+           (unsigned char)txt[1] == 0xFE) {
+    std::string u8;
+    for (size_t i = 2; i + 1 < txt.size(); i += 2)
+      if (txt[i] != '\r' && txt[i] != '\n' || txt[i] == '\n')
+        u8 += (char)txt[i];
+    txt = u8;
+  }
   *maj = *min = -1;
   auto scan = [&](const char* key) -> bool {
     size_t p = txt.find(key);
@@ -606,6 +618,15 @@ struct Net {
   std::vector<std::vector<float>> W;   // [layer] fan_in x fan_out
   std::vector<std::vector<float>> B;   // [layer] fan_out
   bool loaded = false;
+private:
+  mutable std::vector<float> buf_a, buf_t;
+public:
+  void reserve_bufs() {
+    buf_a.assign((size_t)nin, 0.0f);
+    size_t m = 1;
+    for (auto& b : B) m = std::max(m, b.size());
+    buf_t.assign(m, 0.0f);
+  }
   bool load(const std::string& text) {
     std::istringstream ss(text);
     std::string head;
@@ -658,22 +679,27 @@ struct Net {
       fan_in = fan_out;
     }
     loaded = true;
+    reserve_bufs();
     return true;
   }
-  // tanh ocultas, saida linear -> [steer, throttle, brake]
+  // tanh ocultas, saida linear -> [steer, throttle, brake].
+  // PERF: buffers PRE-ALOCADOS (membro) — zero alocacao por chamada; o
+  // loop interno e contiguous (amigavel a auto-vetorizacao /O2 /arch:AVX2).
   void forward(const float x[13], float out[3]) const {
-    std::vector<float> a(x, x + nin), t;
+    for (int i = 0; i < nin; ++i) buf_a[(size_t)i] = x[i];
+    float* a = buf_a.data();
     for (size_t L = 0; L < W.size(); ++L) {
-      int fo = (int)B[L].size();
-      t.assign((size_t)fo, 0.0f);
-      for (size_t i = 0; i < a.size(); ++i)
-        for (int j = 0; j < fo; ++j)
-          t[(size_t)j] += a[i] * W[L][(size_t)i * fo + j];
-      for (int j = 0; j < fo; ++j) {
-        t[(size_t)j] += B[L][(size_t)j];
-        if (L + 1 < W.size())
-          t[(size_t)j] = tanhf(t[(size_t)j]);
+      const int fo = (int)B[L].size();
+      const float* w = W[L].data();
+      float* t = buf_t.data();
+      for (int j = 0; j < fo; ++j) t[j] = B[L][(size_t)j];
+      for (int i = 0; i < (L == 0 ? nin : (int)B[L - 1].size()); ++i) {
+        const float ai = a[i];
+        const float* wr = w + (size_t)i * fo;
+        for (int j = 0; j < fo; ++j) t[j] += ai * wr[j];
       }
+      if (L + 1 < W.size())
+        for (int j = 0; j < fo; ++j) t[j] = tanhf(t[j]);
       a = t;
     }
     out[0] = a[0]; out[1] = a[1]; out[2] = a[2];
@@ -850,7 +876,18 @@ static int run_drive(bool inject, const std::wstring& window_sub,
   double last_macro = -1e9, cold_t0 = -1e9;
   bool parked_at_dest = false;
   auto t_start = std::chrono::steady_clock::now();
-  long long ticks = 0;
+  long long ticks = 0, rows = 0;
+  // AMOSTRAS REAIS: CSV no formato do finetune (ets2ai-rec,v1) —
+  // 13 features + 3 comandos + override + origem (A = IA no exe)
+  std::wstring csv_path = exe_dir() + L"\\amostras-reais.csv";
+  FILE* csv = nullptr;
+  _wfopen_s(&csv, csv_path.c_str(), L"w");
+  if (csv) {
+    fprintf(csv, "ets2ai-rec,v1\n");
+    fprintf(csv, "speed,lane_offset,heading_error,curv_1,curv_2,curv_3,"
+                 "curv_4,curv_5,speed_limit,fuel,fatigue,job_dist,radar_dist,"
+                 "steer,throttle,brake,override,src\n");
+  }
   for (;;) {
     Snap s = parse((const unsigned char*)mmf.view);
     double now = std::chrono::duration<double>(
@@ -918,11 +955,23 @@ static int run_drive(bool inject, const std::wstring& window_sub,
       logf("[pratica] %lld ticks | %.1f m/s | cmd %.2f/%.2f/%.2f | %s",
            ticks, speed, steer, throttle, brake,
            inj.gate ? "TELA CHEIA (dirigindo)" : "esperando tela cheia");
+    // grava a amostra REAL (jogo de verdade) — a 5 Hz (a cada 6 ticks)
+    if (csv && ticks % 6 == 0 && speed >= 0.0) {
+      fprintf(csv, "%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,"
+                   "%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,0,A\n",
+              feat[0], feat[1], feat[2], feat[3], feat[4], feat[5],
+              feat[6], feat[7], feat[8], feat[9], feat[10], feat[11],
+              feat[12], steer, throttle, brake);
+      ++rows;
+      if (rows % 100 == 0) fflush(csv);
+    }
     if (inj.kill) break;
     Sleep(33);   // ~30 Hz
   }
   inj.release_all();
-  logf("[pratica] sessao encerrada (%lld ticks)", ticks);
+  if (csv) { fflush(csv); fclose(csv); }
+  logf("[pratica] sessao encerrada (%lld ticks, %lld AMOSTRAS REAIS em "
+       "%ls)", ticks, rows, csv_path.c_str());
   return 0;
 }
 

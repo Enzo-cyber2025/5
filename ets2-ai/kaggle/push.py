@@ -287,7 +287,15 @@ def harvest(user):
     outdir.mkdir(parents=True, exist_ok=True)
     r = sh("kaggle", "kernels", "output", slug, "-p", outdir)
     print(r.stdout or r.stderr)
+    # v41: o kernel salva o CHECKPOINT EM STREAMING em .cache/checkpoint/
+    # (e morre em ERROR no fim do orcamento) — o output parcial TEM os
+    # pesos, so que NAO na raiz. Procuremos em QUALQUER profundidade.
     weights = outdir / "model-weights.json"
+    if not weights.exists():
+        cands = sorted(outdir.rglob("model-weights.json"))
+        if cands:
+            weights = cands[0]
+            print(f"[harvest] checkpoint fora da raiz: {weights.relative_to(outdir)}")
     if r.returncode != 0 or not weights.exists():
         print("[harvest] sem saida para colher")
         (ROOT / ".cache" / "cumulative.txt").write_text("NONE\n")
@@ -295,6 +303,10 @@ def harvest(user):
         return 0
     import json as _j
     metrics = outdir / "metrics.json"
+    if not metrics.exists():
+        mc = sorted(outdir.rglob("metrics.json"))
+        if mc:
+            metrics = mc[0]
     cum = 0
     if metrics.exists():
         try:

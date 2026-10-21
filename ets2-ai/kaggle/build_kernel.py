@@ -43,6 +43,28 @@ print(f"[kaggle] arquitetura {N_IN}-{'-'.join(str(_h) for _h in HIDDEN)}-{N_OUT}
 print(f"[kaggle] orcamento: {_SAMPLES:,} amostras em fluxo (unicas) | "
       f"teto {_MAX_SEC/3600:.1f} h")
 
+# ---- AMOSTRAS REAIS (injetadas pelo build) ----
+# _REAL_B64 entra aqui (gzip+base64 das colheitas da demo OFICIAL do ETS2).
+_real_xy = None
+_real_used = 0
+try:
+    if "_REAL_B64" in dir():
+        import base64 as _b64, gzip as _gzip
+        _txt = _gzip.decompress(_b64.b64decode(_REAL_B64)).decode("utf-8")
+        _rx, _ry = [], []
+        for _ln in _txt.splitlines():
+            _p = [float(v) for v in _ln.split(",")]
+            if len(_p) >= 16:
+                _rx.append(_p[:13])
+                _ry.append(_p[13:16])
+        if _rx:
+            _real_xy = (np.asarray(_rx, dtype=np.float32),
+                        np.asarray(_ry, dtype=np.float32))
+            print(f"[kaggle] AMOSTRAS REAIS do ETS2 demo em uso: "
+                  f"{len(_rx):,} linhas (1 lote real a cada 50)")
+except Exception as _e:
+    print("[kaggle] amostras reais indisponiveis:", _e)
+
 _gpus = []
 _TRAIN_GPU = False
 try:
@@ -182,9 +204,18 @@ if _tf is not None and len(_gpus) >= 1:
         def _chunks():
             yield from stream(_data_seed, n_trucks=3072)
         print("[kaggle] gerando dados em fluxo e treinando (sequencial)...")
+    _chunk_n = 0
     for _x, _y in _chunks():
         if _consumed >= _SAMPLES or (_time.time() - _t0) > max(60.0, _MAX_SEC - 480):
             break
+        _chunk_n += 1
+        if _real_xy is not None and _chunk_n % 50 == 0:
+            # LOTE REAL: dados colhidos do ETS2 demo OFICIAL (jogo de verdade)
+            _idx = np.random.randint(0, len(_real_xy[0]),
+                                     size=min(_BATCH, len(_real_xy[0])))
+            _model.train_on_batch(_real_xy[0][_idx].astype(_DTYPE),
+                                  _real_xy[1][_idx].astype(_DTYPE))
+            _real_used += len(_idx)
         if _fp is None:
             _fp = _hashlib.sha256(
                 np.ascontiguousarray(_x[:512]).tobytes()
@@ -287,10 +318,43 @@ with open(_os.path.join(_OUT, "metrics.json"), "w", encoding="utf-8") as _f:
                 "data_fingerprint": _fp or "",
                 "dtype": _DTYPE.__name__,
                 "streaming": bool(_TRAIN_GPU)}, _f, indent=2)
+if _real_used:
+    print(f"[kaggle] lotes REAIS treinados: {_real_used:,} amostras do jogo")
 print(f"[kaggle] saida: model-weights.json + metrics.json (gpu={_TRAIN_GPU}, "
       f"ngpus={len(_gpus)}, dtype={_DTYPE.__name__}, "
       f"sessao={_consumed:,}, ACUMULADO={_cum_total:,}, streaming={_TRAIN_GPU})")
 """
+
+
+def real_samples_b64(limit_b=400_000):
+    """Amostras REAIS do ETS2 demo (ets2ai/dados/demo-real/*.csv) embutidas
+    no script do kernel como gzip+base64 (limite do Kaggle: ~1 MB de script;
+    cap em ~400 KB b64). Retorna "" se ainda nao houver colheita."""
+    import base64
+    import gzip
+    csvs = sorted((PKG / "dados" / "demo-real").glob("*.csv"))
+    if not csvs:
+        return ""
+    rows = []
+    for f in csvs:
+        for ln in f.read_text(encoding="utf-8", errors="replace").splitlines():
+            p = ln.strip().split(",")
+            if len(p) == 18:            # 13 feat + 3 cmd + override + src
+                try:
+                    rows.append(",".join(v for v in p[:17]))
+                except Exception:
+                    pass
+    if not rows:
+        return ""
+    blob = ("\n".join(rows)).encode("utf-8")
+    b64 = base64.b64encode(gzip.compress(blob, 9)).decode("ascii")
+    while len(b64) > limit_b and rows:   # corta as mais antigas
+        rows = rows[len(rows) // 4:]
+        blob = ("\n".join(rows)).encode("utf-8")
+        b64 = base64.b64encode(gzip.compress(blob, 9)).decode("ascii")
+    print(f"[build_kernel] AMOSTRAS REAIS embutidas: {len(rows)} linhas "
+          f"({len(b64) / 1024:.0f} KB b64) de {len(csvs)} colheitas")
+    return b64
 
 
 def strip_local_imports(src):
@@ -336,7 +400,12 @@ def build() -> str:
                 "    ROAD_HALF=ROAD_HALF, LANE_HALF=LANE_HALF, DT=DT,\n"
                 ")\n")
     parts.append(FOOTER)
-    return "\n".join(parts)
+    out = "\n".join(parts)
+    rb64 = real_samples_b64()
+    if rb64:
+        out = out.replace("# ---- AMOSTRAS REAIS (injetadas pelo build) ----",
+                          "_REAL_B64 = \"" + rb64 + "\"")
+    return out
 
 
 if __name__ == "__main__":
