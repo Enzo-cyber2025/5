@@ -1928,6 +1928,74 @@ jobs:
           done
           exit 0
 
+  rea-ets2:
+    name: ENGENHARIA REVERSA (REA) — binarios REAIS da demo oficial do ETS2
+    runs-on: windows-latest
+    timeout-minutes: 90
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: arena/01a0f37d-5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Cache do instalador da demo (5,7 GB)
+        uses: actions/cache/restore@v4
+        with:
+          path: C:\demo-setup.exe
+          key: ets2demo-installer-v1
+      - name: Baixa a DEMO OFICIAL do ETS2 (SCS, freeware, AppID 231120) — 3 rotas
+        shell: pwsh
+        run: ets2-ai/scripts/baixa-demo.ps1
+      - name: Salva o instalador no cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: C:\demo-setup.exe
+          key: ets2demo-installer-v1
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      - name: REA — PE headers + imports dos exes REAIS (dumpbin)
+        shell: pwsh
+        run: |
+          $r = "ci-logs/rea"
+          New-Item -ItemType Directory -Force $r | Out-Null
+          foreach ($pair in @(@("x64", "C:\ets2demo\bin\win_x64\eurotrucks2.exe"),
+                              @("x86", "C:\ets2demo\bin\win_x86\eurotrucks2.exe"))) {
+            $tag = $pair[0]; $e = $pair[1]
+            if (-not (Test-Path $e)) { Write-Host "::warning::$tag ausente"; continue }
+            dumpbin /headers $e > "$r\pe-$tag.txt" 2>&1
+            dumpbin /imports $e > "$r\imports-$tag.txt" 2>&1
+            Write-Host "$tag : $((Get-Item $e).Length/1MB) MB — PE+imports em ci-logs/rea"
+          }
+          # DLLs de telemetria do banco: exports (o que o jogo carrega)
+          $bankDll = "dlls/x64/scs-telemetry.dll"
+          if (-not (Test-Path $bankDll)) {
+            New-Item -ItemType Directory -Force dlls | Out-Null
+            Copy-Item "C:\ets2demo\bin\win_x64\plugins\scs-telemetry.dll" $bankDll -ErrorAction SilentlyContinue
+          }
+          if (Test-Path $bankDll) { dumpbin /exports $bankDll > "$r\dll-exports.txt" 2>&1 }
+      - name: REA — strings, canais do SDK, opcoes de linha de comando, .scs
+        shell: pwsh
+        run: |
+          python ets2-ai/scripts/rea_ets2.py --demo C:\ets2demo --out ci-logs/rea
+          Get-Content ci-logs/rea/relatorio.md -TotalCount 40
+      - name: Commita o relatorio REA no repo
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          git config user.name "ci-rea"; git config user.email "ci-rea@users.noreply.github.com"
+          git add ci-logs/rea || true
+          git commit -m "rea: engenharia reversa da demo oficial (run ${{ github.run_id }}) [skip ci]" || true
+          for i in 1 2 3 4 5; do
+            git pull --rebase --autostash origin arena/01a0f37d-5 || true
+            git push && break
+            sleep 10
+          done
+
   traces-hf:
     name: TREINO alimentado por ETS2 REAL (traces HF publicos)
     runs-on: ubuntu-latest
