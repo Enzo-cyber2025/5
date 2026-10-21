@@ -503,6 +503,17 @@ def main() -> int:
         say("RESULT: no Hugging Face token is configured under the names probed.")
         say("        Nothing to authenticate, nothing to access.")
         report_egress()
+
+        # Dry run of the authenticated path with a placeholder that is not a real
+        # credential, so the branch that will run once a token exists is proven
+        # end to end before anyone has to hand over a secret.
+        dry = os.environ.get("DRY_RUN_TOKEN", "").strip()
+        if dry:
+            say("")
+            say("#" * 72)
+            say("# Dry run of the authenticated path (placeholder, NOT a real token)")
+            say("#" * 72)
+            run_probe(label="DRY_RUN_TOKEN placeholder", token=dry)
         say("")
         say("No token, but the named targets can still be looked up anonymously:")
         for target in TARGETS:
