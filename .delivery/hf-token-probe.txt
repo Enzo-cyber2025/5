@@ -1,5 +1,5 @@
-run       : 39666350430 (5c0ee725a83192ef27bd09fdc5178be58ad5f998)
-generated : 2026-10-21T19:59:20Z
+run       : 39667936585 (276fad7a782a87202794e0a9e34e3f6aef743dfb)
+generated : 2026-10-21T20:10:16Z
 
 ========================================================================
 Inventory of secrets/variables (individually referenced names)
@@ -8,62 +8,152 @@ control: secrets.GITHUB_TOKEN visible to this job : YES (length=377)
          -> the secrets context resolves here, so 'not set' below is a
             real absence, not a permission or ref quirk.
 
-names probed as secrets : 40
+names probed as secrets : 120
 of those, actually set  : 0
+  secret ACCESS_TOKEN                   not set
+  secret ACTIONS_HF_TOKEN               not set
+  secret AI_TOKEN                       not set
+  secret API_KEY                        not set
+  secret API_TOKEN                      not set
   secret ARENA_HF_TOKEN                 not set
+  secret ARENA_TOKEN                    not set
+  secret BEARER_TOKEN                   not set
+  secret CI_HF_TOKEN                    not set
+  secret ENZOCYBER_HF_TOKEN             not set
+  secret ENZO_HF                        not set
+  secret ENZO_HF_PAT                    not set
+  secret ENZO_HF_TOKEN                  not set
+  secret ENZO_HUGGINGFACE_TOKEN         not set
+  secret ENZO_TOKEN                     not set
+  secret GEMMA_TOKEN                    not set
+  secret GGUF_TOKEN                     not set
+  secret GITHUB_HF_TOKEN                not set
   secret HF                             not set
+  secret HFTOKEN                        not set
   secret HF_ACCESS_TOKEN                not set
+  secret HF_ACCOUNT_TOKEN               not set
+  secret HF_ADMIN_TOKEN                 not set
+  secret HF_API                         not set
   secret HF_API_KEY                     not set
+  secret HF_API_SECRET                  not set
   secret HF_API_TOKEN                   not set
   secret HF_AUTH_TOKEN                  not set
+  secret HF_BEARER                      not set
+  secret HF_BEARER_TOKEN                not set
+  secret HF_CREDENTIALS                 not set
+  secret HF_CREDS                       not set
+  secret HF_DATASET_TOKEN               not set
+  secret HF_DEFAULT_TOKEN               not set
+  secret HF_DEPLOY_TOKEN                not set
+  secret HF_DEV_TOKEN                   not set
   secret HF_DOWNLOAD_TOKEN              not set
   secret HF_FINE_GRAINED_TOKEN          not set
   secret HF_GGUF_TOKEN                  not set
+  secret HF_GITHUB_TOKEN                not set
+  secret HF_HUB_ACCESS_TOKEN            not set
+  secret HF_HUB_API_TOKEN               not set
   secret HF_HUB_TOKEN                   not set
+  secret HF_HUGGING_TOKEN               not set
   secret HF_INTEGRATION_TOKEN           not set
   secret HF_KEY                         not set
+  secret HF_KEYS                        not set
   secret HF_LLAMA_TOKEN                 not set
+  secret HF_LOGIN                       not set
+  secret HF_LOGIN_TOKEN                 not set
+  secret HF_MAIN_TOKEN                  not set
+  secret HF_MASTER_TOKEN                not set
+  secret HF_MODELS_TOKEN                not set
   secret HF_MODEL_TOKEN                 not set
+  secret HF_NAMESPACE_TOKEN             not set
   secret HF_PAT                         not set
+  secret HF_PERSONAL_TOKEN              not set
+  secret HF_PRIMARY_TOKEN               not set
+  secret HF_PRIVATE                     not set
   secret HF_PRIVATE_TOKEN               not set
+  secret HF_PROD_TOKEN                  not set
+  secret HF_PUBLISH_TOKEN               not set
+  secret HF_PULL_TOKEN                  not set
+  secret HF_PUSH_TOKEN                  not set
   secret HF_READ_TOKEN                  not set
+  secret HF_REPO_TOKEN                  not set
+  secret HF_ROOT_TOKEN                  not set
   secret HF_SECRET                      not set
   secret HF_SECRET_TOKEN                not set
+  secret HF_SESSION                     not set
+  secret HF_SPACES_TOKEN                not set
+  secret HF_SPACE_TOKEN                 not set
   secret HF_TOKEN                       not set
+  secret HF_TOKEN1                      not set
+  secret HF_TOKEN2                      not set
+  secret HF_TOKEN_1                     not set
   secret HF_TOKEN_2                     not set
+  secret HF_TOKEN_ARENA                 not set
+  secret HF_TOKEN_CI                    not set
+  secret HF_TOKEN_NEW                   not set
+  secret HF_TOKEN_OLD                   not set
   secret HF_TOKEN_SECRET                not set
+  secret HF_TOKEN_V2                    not set
+  secret HF_UPLOAD                      not set
   secret HF_UPLOAD_TOKEN                not set
+  secret HF_USERNAME_TOKEN              not set
   secret HF_USER_TOKEN                  not set
   secret HF_WRITE_TOKEN                 not set
   secret HUB_TOKEN                      not set
   secret HUGGINGFACE                    not set
+  secret HUGGINGFACETOKEN               not set
   secret HUGGINGFACE_ACCESS_TOKEN       not set
   secret HUGGINGFACE_API_KEY            not set
   secret HUGGINGFACE_API_TOKEN          not set
   secret HUGGINGFACE_AUTH_TOKEN         not set
+  secret HUGGINGFACE_CREDS              not set
   secret HUGGINGFACE_HUB_TOKEN          not set
   secret HUGGINGFACE_KEY                not set
   secret HUGGINGFACE_PAT                not set
   secret HUGGINGFACE_SECRET             not set
   secret HUGGINGFACE_TOKEN              not set
+  secret HUGGINGFACE_TOKEN_SECRET       not set
   secret HUGGING_FACE_TOKEN             not set
+  secret HUGGING_TOKEN                  not set
+  secret LLAMA_HF_TOKEN                 not set
   secret LLAMA_TOKEN                    not set
+  secret LLM_TOKEN                      not set
+  secret ML_TOKEN                       not set
+  secret MODEL_TOKEN                    not set
+  secret MY_HF_TOKEN                    not set
+  secret PERSONAL_HF_TOKEN              not set
+  secret SECRET                         not set
   secret SECRET_HF_TOKEN                not set
+  secret SLA1                           not set
+  secret SLA1_HF_TOKEN                  not set
+  secret SLA1_TOKEN                     not set
+  secret SLA_TOKEN                      not set
+  secret SPACES_TOKEN                   not set
+  secret TOKEN                          not set
   secret TOKEN_HF                       not set
-names probed as variables: 12
+names probed as variables: 22
 of those, actually set   : 0
   var    HF_API_TOKEN                   not set
   var    HF_CACHE                       not set
+  var    HF_DATASET                     not set
   var    HF_ENDPOINT                    not set
+  var    HF_HUB_ENDPOINT                not set
   var    HF_HUB_TOKEN                   not set
   var    HF_MODEL                       not set
   var    HF_MODEL_ID                    not set
+  var    HF_MODEL_NAME                  not set
+  var    HF_NAMESPACE                   not set
+  var    HF_ORG                         not set
   var    HF_REPO                        not set
+  var    HF_REPO_ID                     not set
+  var    HF_SPACE                       not set
+  var    HF_TARGET                      not set
   var    HF_TOKEN                       not set
   var    HF_USER                        not set
   var    HF_USERNAME                    not set
   var    HUGGINGFACE_TOKEN              not set
   var    HUGGINGFACE_USER               not set
+  var    SLA1                           not set
+  var    SLA1_REPO                      not set
 
 RESULT: no Hugging Face token is configured under the names probed.
         Nothing to authenticate, nothing to access.
@@ -74,5 +164,24 @@ RESULT: no Hugging Face token is configured under the names probed.
   Conclusion: as soon as a token is added to the secrets, this probe can
   authenticate it and report what it reaches.
 
-Note: identity, org names and repo names are deliberately absent -
+No token, but the named targets can still be looked up anonymously:
+
+[7] Named target probe: 'sla1'
+  mode: ANONYMOUS - no token available
+  - models search: HTTP 200 | 1 hits | 0 exact name match | 1 public | 0 private
+      public: sla1234566788/porra downloads=0 likes=0 gated=False pipeline=None
+  - namespace 'sla1' owns models: 0
+  - GET /api/models/sla1: HTTP 401
+  - datasets search: HTTP 200 | 0 hits | 0 exact name match | 0 public | 0 private
+  - namespace 'sla1' owns datasets: 0
+  - GET /api/datasets/sla1: HTTP 401
+  - spaces search: HTTP 200 | 4 hits | 0 exact name match | 4 public | 0 private
+      public: sla1k/First_agent_template downloads=None likes=0 gated=None pipeline=None
+      public: sla1k/Final_Assignment_Template downloads=None likes=0 gated=None pipeline=None
+      public: Sla-124643/Cognitrack downloads=None likes=0 gated=None pipeline=None
+      public: fadsnhfsdaj/happy-sla1 downloads=None likes=0 gated=None pipeline=None
+  - namespace 'sla1' owns spaces: 0
+  - GET /api/spaces/sla1: HTTP 404
+
+Note: account identity and PRIVATE repo ids are deliberately absent -
       this repository is public.
