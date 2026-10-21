@@ -4,10 +4,14 @@ name: HF token probe
 # or variables, does it authenticate, and what can it reach - including the Hub
 # resource the owner asked about by name ('sla1')?
 #
-# Everything printed is scrubbed. No token value, no account name, no e-mail, no
-# org names. Ids of PUBLIC Hub repos may be printed because they are world-readable
+# Results are read from the job log, NOT committed to the repository: this repo is
+# public, so a committed report about the owner's Hugging Face account would be
+# permanent and indexed, whereas the log is transient. Hence contents:read only.
+#
+# Printed output is scrubbed. No token value, no account name, no e-mail, no org
+# names. Ids of PUBLIC Hub repos may be printed because they are world-readable
 # anyway; ids of PRIVATE repos are withheld, since those would expose their owner
-# namespace in this public repository's logs and commits.
+# namespace.
 #
 # Secrets are referenced one by one instead of serialised with toJSON(secrets):
 # bulk-serialising them makes GitHub hold the run for manual approval, and this
@@ -22,7 +26,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: hf-token-probe-${{ github.ref }}
@@ -38,8 +42,8 @@ jobs:
       # inventory is a real absence rather than a false negative.
       CTRL_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # Deliberately not a real credential: a well-formed placeholder that lets
-      # the authenticated branch be proven end to end (expect HTTP 401) before
-      # anyone has to hand over a secret.
+      # the authenticated branch be proven end to end (expect HTTP 401) when no
+      # real token exists. Skipped as soon as one is found.
       DRY_RUN_TOKEN: "hf_DRYRUN0000000000000000000000000000"
       SECRET_NAMES: "HF_TOKEN HF_TOKEN_1 HF_TOKEN1 HF_TOKEN_2 HF_TOKEN2 HF_TOKEN_V2 HF_TOKEN_NEW HF_TOKEN_OLD HUGGINGFACE_TOKEN HUGGING_FACE_TOKEN HUGGINGFACE_API_TOKEN HF_API_TOKEN HF_ACCESS_TOKEN HUGGINGFACE_ACCESS_TOKEN HF_AUTH_TOKEN HUGGINGFACE_AUTH_TOKEN HF_HUB_TOKEN HUGGINGFACE_HUB_TOKEN HUB_TOKEN HF_PAT HUGGINGFACE_PAT HF_FINE_GRAINED_TOKEN HF_KEY HUGGINGFACE_KEY HF_API_KEY HUGGINGFACE_API_KEY HF_SECRET HUGGINGFACE_SECRET HF_SECRET_TOKEN SECRET_HF_TOKEN TOKEN_HF HF HUGGINGFACE HFTOKEN HUGGINGFACETOKEN HF_API HF_READ_TOKEN HF_WRITE_TOKEN HF_UPLOAD_TOKEN HF_PUSH_TOKEN HF_DOWNLOAD_TOKEN HF_DEPLOY_TOKEN HF_MODEL_TOKEN HF_MODELS_TOKEN HF_PRIVATE_TOKEN HF_USER_TOKEN HF_USERNAME_TOKEN HF_INTEGRATION_TOKEN HF_SPACE_TOKEN HF_SPACES_TOKEN SPACES_TOKEN HF_DATASET_TOKEN HF_LLAMA_TOKEN LLAMA_TOKEN LLAMA_HF_TOKEN GGUF_TOKEN HF_GGUF_TOKEN GEMMA_TOKEN HF_REPO_TOKEN HF_NAMESPACE_TOKEN HF_ACCOUNT_TOKEN HF_LOGIN HF_LOGIN_TOKEN HF_CREDENTIALS HF_CREDS HUGGINGFACE_CREDS HF_BEARER HF_BEARER_TOKEN BEARER_TOKEN HF_SESSION ENZO_HF_TOKEN ENZO_TOKEN ENZO_HF ENZO_HUGGINGFACE_TOKEN ENZOCYBER_HF_TOKEN ENZO_HF_PAT SLA1 SLA1_TOKEN SLA_TOKEN SLA1_HF_TOKEN TOKEN SECRET API_TOKEN API_KEY ACCESS_TOKEN MODEL_TOKEN LLM_TOKEN AI_TOKEN ML_TOKEN HF_TOKEN_SECRET HUGGINGFACE_TOKEN_SECRET HF_API_SECRET HF_PRIVATE HF_KEYS ARENA_HF_TOKEN ARENA_TOKEN HF_TOKEN_ARENA CI_HF_TOKEN HF_TOKEN_CI ACTIONS_HF_TOKEN MY_HF_TOKEN PERSONAL_HF_TOKEN HF_PERSONAL_TOKEN HF_MAIN_TOKEN HF_PRIMARY_TOKEN HF_MASTER_TOKEN HF_ROOT_TOKEN HF_ADMIN_TOKEN HF_PROD_TOKEN HF_DEV_TOKEN HF_DEFAULT_TOKEN HF_GITHUB_TOKEN GITHUB_HF_TOKEN HF_HUGGING_TOKEN HUGGING_TOKEN HF_HUB_API_TOKEN HF_HUB_ACCESS_TOKEN HF_UPLOAD HF_PUBLISH_TOKEN HF_PULL_TOKEN"
       VAR_NAMES: "HF_TOKEN HUGGINGFACE_TOKEN HF_API_TOKEN HF_HUB_TOKEN HF_MODEL HF_MODEL_ID HF_MODEL_NAME HF_REPO HF_REPO_ID HF_NAMESPACE HF_USER HF_USERNAME HUGGINGFACE_USER HF_ENDPOINT HF_TARGET SLA1 SLA1_REPO HF_CACHE HF_SPACE HF_ORG HF_DATASET HF_HUB_ENDPOINT"
@@ -191,39 +195,7 @@ jobs:
       - name: Inventory secrets and variables, test any HF token, probe target
         run: |
           set -uo pipefail
-          mkdir -p .delivery
-          REPORT=.delivery/hf-token-probe.txt
-          {
-            echo "run       : $GITHUB_RUN_ID ($GITHUB_SHA)"
-            echo "generated : $(date -u +%FT%TZ)"
-            echo ""
-          } > "$REPORT"
-          python3 ci/hf_token_probe.py --named-inventory --target sla1 2>&1 | tee -a "$REPORT"
-          {
-            echo ""
-            echo "Note: account identity and PRIVATE repo ids are deliberately absent -"
-            echo "      this repository is public."
-          } | tee -a "$REPORT"
-
-      - name: Publish report to the session branch
-        if: always()
-        run: |
-          set -uo pipefail
-          git config user.name  "hf-token-probe[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .delivery/hf-token-probe.txt
-          if git diff --cached --quiet; then
-            echo "nothing to publish"
-            exit 0
-          fi
-          git commit -m "ci: HF token probe report (scrubbed, temporary)"
-          for attempt in 1 2 3; do
-            if git push origin "HEAD:$GITHUB_REF_NAME"; then
-              echo "report published"
-              exit 0
-            fi
-            git pull --rebase origin "$GITHUB_REF_NAME" || true
-            sleep 5
-          done
-          echo "could not publish the report"
-          exit 1
+          python3 ci/hf_token_probe.py --named-inventory --target sla1
+          echo ""
+          echo "Note: account identity and PRIVATE repo ids are deliberately absent -"
+          echo "      this repository is public, so its logs are public too."
