@@ -276,6 +276,29 @@ def context_inventory() -> tuple[dict, dict]:
     return load(os.environ.get("SECRETS_JSON", "")), load(os.environ.get("VARS_JSON", ""))
 
 
+def report_egress() -> None:
+    """Prove the runner can reach huggingface.co, even with no token to test.
+
+    Without this, 'no token found' would leave open the question of whether the
+    harness itself works once a token is added.
+    """
+    say("\n[6] Egress check (unauthenticated, so the harness is proven ready)")
+    status, data = request("/api/whoami-v2", None)
+    if status == 401:
+        bullet("GET /api/whoami-v2 without a token", "HTTP 401 -> reachable, "
+               "and correctly rejects an anonymous caller")
+    elif status == -1:
+        bullet("GET /api/whoami-v2 without a token", "FAILED -> the runner cannot "
+               "reach huggingface.co either; fix egress before trusting any verdict")
+    else:
+        bullet("GET /api/whoami-v2 without a token", f"HTTP {status} (unexpected)")
+    status, data = request("/api/models?limit=1", None)
+    bullet("GET /api/models?limit=1 without a token",
+           f"HTTP {status} -> {'public API readable' if status == 200 else 'not readable'}")
+    say("  Conclusion: as soon as a token is added to the secrets, this probe can")
+    say("  authenticate it and report what it reaches.")
+
+
 def run_probe(label: str, token: str) -> int:
     """Validate one token and report what it can reach."""
     say("=" * 72)
@@ -344,6 +367,7 @@ def main() -> int:
     if not candidates:
         say("RESULT: no Hugging Face token is configured under the names probed.")
         say("        Nothing to authenticate, nothing to access.")
+        report_egress()
         return 0
 
     say(f"HF-looking candidates: {[(k, n) for k, n, _ in candidates]}")
