@@ -1,0 +1,104 @@
+name: HF token probe
+
+# One-off diagnostic: does an HF access token exist in this repo's secrets, does
+# it authenticate, and what can it see? It prints formats, counts and HTTP status
+# codes only - never the token, never account/org/repo names, because this repo
+# is public and so are its Actions logs.
+on:
+  push:
+    branches: [arena/de730b27-5]
+    paths:
+      - '.github/workflows/hf-token-probe.yml'
+      - 'ci/hf_token_probe.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hf-token-probe-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      S01: ${{ secrets.HF_TOKEN }}
+      S02: ${{ secrets.HUGGINGFACE_TOKEN }}
+      S03: ${{ secrets.HUGGING_FACE_TOKEN }}
+      S04: ${{ secrets.HF_API_TOKEN }}
+      S05: ${{ secrets.HUGGINGFACE_API_TOKEN }}
+      S06: ${{ secrets.HF_ACCESS_TOKEN }}
+      S07: ${{ secrets.HUGGINGFACE_ACCESS_TOKEN }}
+      S08: ${{ secrets.HF_HUB_TOKEN }}
+      S09: ${{ secrets.HUGGINGFACE_HUB_TOKEN }}
+      S10: ${{ secrets.HF_AUTH_TOKEN }}
+      S11: ${{ secrets.HF_PAT }}
+      S12: ${{ secrets.HF_KEY }}
+      S13: ${{ secrets.HF_SECRET }}
+      S14: ${{ secrets.HUGGINGFACE_SECRET }}
+      S15: ${{ secrets.HF_READ_TOKEN }}
+      S16: ${{ secrets.HF_WRITE_TOKEN }}
+      S17: ${{ secrets.HF_FINE_GRAINED_TOKEN }}
+      S18: ${{ secrets.HF_UPLOAD_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Which candidate secrets are defined (values never printed)
+        id: find
+        run: |
+          set -uo pipefail
+          names=(HF_TOKEN HUGGINGFACE_TOKEN HUGGING_FACE_TOKEN HF_API_TOKEN
+                 HUGGINGFACE_API_TOKEN HF_ACCESS_TOKEN HUGGINGFACE_ACCESS_TOKEN
+                 HF_HUB_TOKEN HUGGINGFACE_HUB_TOKEN HF_AUTH_TOKEN HF_PAT HF_KEY
+                 HF_SECRET HUGGINGFACE_SECRET HF_READ_TOKEN HF_WRITE_TOKEN
+                 HF_FINE_GRAINED_TOKEN HF_UPLOAD_TOKEN)
+          i=1
+          picked_name=""
+          picked_value=""
+          for n in "${names[@]}"; do
+            var="S$(printf '%02d' "$i")"
+            val="${!var:-}"
+            if [ -n "$val" ]; then
+              printf 'DEFINED  %-26s length=%s\n' "$n" "${#val}"
+              if [ -z "$picked_name" ]; then
+                picked_name="$n"
+                picked_value="$val"
+              fi
+            else
+              printf 'missing  %-26s\n' "$n"
+            fi
+            i=$((i + 1))
+          done
+          echo ""
+          if [ -z "$picked_name" ]; then
+            echo "NO Hugging Face secret found under any of the ${#names[@]} usual names."
+            echo "selected=" >> "$GITHUB_OUTPUT"
+          else
+            echo "Selected for testing: $picked_name"
+            echo "selected=$picked_name" >> "$GITHUB_OUTPUT"
+            # Belt and braces: mask again even though Actions already masks secrets.
+            echo "::add-mask::$picked_value"
+            {
+              echo "HF_TOKEN_VALUE<<__probe_eof__"
+              printf '%s\n' "$picked_value"
+              echo "__probe_eof__"
+            } >> "$GITHUB_ENV"
+          fi
+
+      - name: Test the token against huggingface.co
+        env:
+          SELECTED: ${{ steps.find.outputs.selected }}
+        run: |
+          python3 ci/hf_token_probe.py --env HF_TOKEN_VALUE --label "${SELECTED:-<none>}"
+
+      - name: Verdict
+        if: always()
+        env:
+          SELECTED: ${{ steps.find.outputs.selected }}
+        run: |
+          echo "Secret used : ${SELECTED:-<none found>}"
+          echo "Full detail : see the steps above."
+          echo "Note        : identity and repo names are deliberately absent from the"
+          echo "              logs - this repository is public."
