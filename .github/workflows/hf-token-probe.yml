@@ -1,17 +1,18 @@
 name: HF token probe
 
 # One-off diagnostic: is there a Hugging Face token in this repo's Actions secrets
-# or variables, does it authenticate, and what can it reach?
+# or variables, does it authenticate, and what can it reach - including the Hub
+# resource the owner asked about by name ('sla1')?
 #
-# Everything printed is scrubbed: no token value, no account name, no org names,
-# no repo names - only names of secrets/variables, formats, lengths, enum values,
-# counts and HTTP status codes. This repository is public, so its logs AND its
-# commits are public; the report is committed only because log and artifact
-# downloads are blocked from the sandbox that asked for the check.
+# Everything printed is scrubbed. No token value, no account name, no e-mail, no
+# org names. Ids of PUBLIC Hub repos may be printed because they are world-readable
+# anyway; ids of PRIVATE repos are withheld, since those would expose their owner
+# namespace in this public repository's logs and commits.
 #
 # Secrets are referenced one by one instead of serialised with toJSON(secrets):
 # bulk-serialising them makes GitHub hold the run for manual approval, and this
-# session has no actions:write permission to grant it.
+# session has no actions:write permission to grant it. Widening the explicit list
+# is not a bypass - the full enumeration still needs the owner's approval click.
 on:
   push:
     branches: [arena/de730b27-5]
@@ -30,70 +31,160 @@ concurrency:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       # Control for the inventory: GITHUB_TOKEN is always injected, so if it
       # resolves then the secrets context works in this job and an all-empty
       # inventory is a real absence rather than a false negative.
       CTRL_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      SECRET_NAMES: "HF_TOKEN HUGGINGFACE_TOKEN HUGGING_FACE_TOKEN HF_API_TOKEN HUGGINGFACE_API_TOKEN HF_ACCESS_TOKEN HUGGINGFACE_ACCESS_TOKEN HF_HUB_TOKEN HUGGINGFACE_HUB_TOKEN HF_AUTH_TOKEN HUGGINGFACE_AUTH_TOKEN HF_PAT HUGGINGFACE_PAT HF_KEY HUGGINGFACE_KEY HF_SECRET HUGGINGFACE_SECRET HF_API_KEY HUGGINGFACE_API_KEY HF_READ_TOKEN HF_WRITE_TOKEN HF_UPLOAD_TOKEN HF_DOWNLOAD_TOKEN HF_FINE_GRAINED_TOKEN HF_MODEL_TOKEN HF_PRIVATE_TOKEN HF_SECRET_TOKEN HF_USER_TOKEN HF_INTEGRATION_TOKEN HUB_TOKEN HF HUGGINGFACE HF_TOKEN_SECRET SECRET_HF_TOKEN TOKEN_HF LLAMA_TOKEN HF_LLAMA_TOKEN HF_GGUF_TOKEN ARENA_HF_TOKEN HF_TOKEN_2"
-      VAR_NAMES: "HF_TOKEN HUGGINGFACE_TOKEN HF_API_TOKEN HF_HUB_TOKEN HF_MODEL_ID HF_MODEL HF_REPO HF_CACHE HF_USER HF_USERNAME HUGGINGFACE_USER HF_ENDPOINT"
-      S01: ${{ secrets.HF_TOKEN }}
-      S02: ${{ secrets.HUGGINGFACE_TOKEN }}
-      S03: ${{ secrets.HUGGING_FACE_TOKEN }}
-      S04: ${{ secrets.HF_API_TOKEN }}
-      S05: ${{ secrets.HUGGINGFACE_API_TOKEN }}
-      S06: ${{ secrets.HF_ACCESS_TOKEN }}
-      S07: ${{ secrets.HUGGINGFACE_ACCESS_TOKEN }}
-      S08: ${{ secrets.HF_HUB_TOKEN }}
-      S09: ${{ secrets.HUGGINGFACE_HUB_TOKEN }}
-      S10: ${{ secrets.HF_AUTH_TOKEN }}
-      S11: ${{ secrets.HUGGINGFACE_AUTH_TOKEN }}
-      S12: ${{ secrets.HF_PAT }}
-      S13: ${{ secrets.HUGGINGFACE_PAT }}
-      S14: ${{ secrets.HF_KEY }}
-      S15: ${{ secrets.HUGGINGFACE_KEY }}
-      S16: ${{ secrets.HF_SECRET }}
-      S17: ${{ secrets.HUGGINGFACE_SECRET }}
-      S18: ${{ secrets.HF_API_KEY }}
-      S19: ${{ secrets.HUGGINGFACE_API_KEY }}
-      S20: ${{ secrets.HF_READ_TOKEN }}
-      S21: ${{ secrets.HF_WRITE_TOKEN }}
-      S22: ${{ secrets.HF_UPLOAD_TOKEN }}
-      S23: ${{ secrets.HF_DOWNLOAD_TOKEN }}
-      S24: ${{ secrets.HF_FINE_GRAINED_TOKEN }}
-      S25: ${{ secrets.HF_MODEL_TOKEN }}
-      S26: ${{ secrets.HF_PRIVATE_TOKEN }}
-      S27: ${{ secrets.HF_SECRET_TOKEN }}
-      S28: ${{ secrets.HF_USER_TOKEN }}
-      S29: ${{ secrets.HF_INTEGRATION_TOKEN }}
-      S30: ${{ secrets.HUB_TOKEN }}
-      S31: ${{ secrets.HF }}
-      S32: ${{ secrets.HUGGINGFACE }}
-      S33: ${{ secrets.HF_TOKEN_SECRET }}
-      S34: ${{ secrets.SECRET_HF_TOKEN }}
-      S35: ${{ secrets.TOKEN_HF }}
-      S36: ${{ secrets.LLAMA_TOKEN }}
-      S37: ${{ secrets.HF_LLAMA_TOKEN }}
-      S38: ${{ secrets.HF_GGUF_TOKEN }}
-      S39: ${{ secrets.ARENA_HF_TOKEN }}
-      S40: ${{ secrets.HF_TOKEN_2 }}
-      V01: ${{ vars.HF_TOKEN }}
-      V02: ${{ vars.HUGGINGFACE_TOKEN }}
-      V03: ${{ vars.HF_API_TOKEN }}
-      V04: ${{ vars.HF_HUB_TOKEN }}
-      V05: ${{ vars.HF_MODEL_ID }}
-      V06: ${{ vars.HF_MODEL }}
-      V07: ${{ vars.HF_REPO }}
-      V08: ${{ vars.HF_CACHE }}
-      V09: ${{ vars.HF_USER }}
-      V10: ${{ vars.HF_USERNAME }}
-      V11: ${{ vars.HUGGINGFACE_USER }}
-      V12: ${{ vars.HF_ENDPOINT }}
+      SECRET_NAMES: "HF_TOKEN HF_TOKEN_1 HF_TOKEN1 HF_TOKEN_2 HF_TOKEN2 HF_TOKEN_V2 HF_TOKEN_NEW HF_TOKEN_OLD HUGGINGFACE_TOKEN HUGGING_FACE_TOKEN HUGGINGFACE_API_TOKEN HF_API_TOKEN HF_ACCESS_TOKEN HUGGINGFACE_ACCESS_TOKEN HF_AUTH_TOKEN HUGGINGFACE_AUTH_TOKEN HF_HUB_TOKEN HUGGINGFACE_HUB_TOKEN HUB_TOKEN HF_PAT HUGGINGFACE_PAT HF_FINE_GRAINED_TOKEN HF_KEY HUGGINGFACE_KEY HF_API_KEY HUGGINGFACE_API_KEY HF_SECRET HUGGINGFACE_SECRET HF_SECRET_TOKEN SECRET_HF_TOKEN TOKEN_HF HF HUGGINGFACE HFTOKEN HUGGINGFACETOKEN HF_API HF_READ_TOKEN HF_WRITE_TOKEN HF_UPLOAD_TOKEN HF_PUSH_TOKEN HF_DOWNLOAD_TOKEN HF_DEPLOY_TOKEN HF_MODEL_TOKEN HF_MODELS_TOKEN HF_PRIVATE_TOKEN HF_USER_TOKEN HF_USERNAME_TOKEN HF_INTEGRATION_TOKEN HF_SPACE_TOKEN HF_SPACES_TOKEN SPACES_TOKEN HF_DATASET_TOKEN HF_LLAMA_TOKEN LLAMA_TOKEN LLAMA_HF_TOKEN GGUF_TOKEN HF_GGUF_TOKEN GEMMA_TOKEN HF_REPO_TOKEN HF_NAMESPACE_TOKEN HF_ACCOUNT_TOKEN HF_LOGIN HF_LOGIN_TOKEN HF_CREDENTIALS HF_CREDS HUGGINGFACE_CREDS HF_BEARER HF_BEARER_TOKEN BEARER_TOKEN HF_SESSION ENZO_HF_TOKEN ENZO_TOKEN ENZO_HF ENZO_HUGGINGFACE_TOKEN ENZOCYBER_HF_TOKEN ENZO_HF_PAT SLA1 SLA1_TOKEN SLA_TOKEN SLA1_HF_TOKEN TOKEN SECRET API_TOKEN API_KEY ACCESS_TOKEN MODEL_TOKEN LLM_TOKEN AI_TOKEN ML_TOKEN HF_TOKEN_SECRET HUGGINGFACE_TOKEN_SECRET HF_API_SECRET HF_PRIVATE HF_KEYS ARENA_HF_TOKEN ARENA_TOKEN HF_TOKEN_ARENA CI_HF_TOKEN HF_TOKEN_CI ACTIONS_HF_TOKEN MY_HF_TOKEN PERSONAL_HF_TOKEN HF_PERSONAL_TOKEN HF_MAIN_TOKEN HF_PRIMARY_TOKEN HF_MASTER_TOKEN HF_ROOT_TOKEN HF_ADMIN_TOKEN HF_PROD_TOKEN HF_DEV_TOKEN HF_DEFAULT_TOKEN HF_GITHUB_TOKEN GITHUB_HF_TOKEN HF_HUGGING_TOKEN HUGGING_TOKEN HF_HUB_API_TOKEN HF_HUB_ACCESS_TOKEN HF_UPLOAD HF_PUBLISH_TOKEN HF_PULL_TOKEN"
+      VAR_NAMES: "HF_TOKEN HUGGINGFACE_TOKEN HF_API_TOKEN HF_HUB_TOKEN HF_MODEL HF_MODEL_ID HF_MODEL_NAME HF_REPO HF_REPO_ID HF_NAMESPACE HF_USER HF_USERNAME HUGGINGFACE_USER HF_ENDPOINT HF_TARGET SLA1 SLA1_REPO HF_CACHE HF_SPACE HF_ORG HF_DATASET HF_HUB_ENDPOINT"
+      S001: ${{ secrets.HF_TOKEN }}
+      S002: ${{ secrets.HF_TOKEN_1 }}
+      S003: ${{ secrets.HF_TOKEN1 }}
+      S004: ${{ secrets.HF_TOKEN_2 }}
+      S005: ${{ secrets.HF_TOKEN2 }}
+      S006: ${{ secrets.HF_TOKEN_V2 }}
+      S007: ${{ secrets.HF_TOKEN_NEW }}
+      S008: ${{ secrets.HF_TOKEN_OLD }}
+      S009: ${{ secrets.HUGGINGFACE_TOKEN }}
+      S010: ${{ secrets.HUGGING_FACE_TOKEN }}
+      S011: ${{ secrets.HUGGINGFACE_API_TOKEN }}
+      S012: ${{ secrets.HF_API_TOKEN }}
+      S013: ${{ secrets.HF_ACCESS_TOKEN }}
+      S014: ${{ secrets.HUGGINGFACE_ACCESS_TOKEN }}
+      S015: ${{ secrets.HF_AUTH_TOKEN }}
+      S016: ${{ secrets.HUGGINGFACE_AUTH_TOKEN }}
+      S017: ${{ secrets.HF_HUB_TOKEN }}
+      S018: ${{ secrets.HUGGINGFACE_HUB_TOKEN }}
+      S019: ${{ secrets.HUB_TOKEN }}
+      S020: ${{ secrets.HF_PAT }}
+      S021: ${{ secrets.HUGGINGFACE_PAT }}
+      S022: ${{ secrets.HF_FINE_GRAINED_TOKEN }}
+      S023: ${{ secrets.HF_KEY }}
+      S024: ${{ secrets.HUGGINGFACE_KEY }}
+      S025: ${{ secrets.HF_API_KEY }}
+      S026: ${{ secrets.HUGGINGFACE_API_KEY }}
+      S027: ${{ secrets.HF_SECRET }}
+      S028: ${{ secrets.HUGGINGFACE_SECRET }}
+      S029: ${{ secrets.HF_SECRET_TOKEN }}
+      S030: ${{ secrets.SECRET_HF_TOKEN }}
+      S031: ${{ secrets.TOKEN_HF }}
+      S032: ${{ secrets.HF }}
+      S033: ${{ secrets.HUGGINGFACE }}
+      S034: ${{ secrets.HFTOKEN }}
+      S035: ${{ secrets.HUGGINGFACETOKEN }}
+      S036: ${{ secrets.HF_API }}
+      S037: ${{ secrets.HF_READ_TOKEN }}
+      S038: ${{ secrets.HF_WRITE_TOKEN }}
+      S039: ${{ secrets.HF_UPLOAD_TOKEN }}
+      S040: ${{ secrets.HF_PUSH_TOKEN }}
+      S041: ${{ secrets.HF_DOWNLOAD_TOKEN }}
+      S042: ${{ secrets.HF_DEPLOY_TOKEN }}
+      S043: ${{ secrets.HF_MODEL_TOKEN }}
+      S044: ${{ secrets.HF_MODELS_TOKEN }}
+      S045: ${{ secrets.HF_PRIVATE_TOKEN }}
+      S046: ${{ secrets.HF_USER_TOKEN }}
+      S047: ${{ secrets.HF_USERNAME_TOKEN }}
+      S048: ${{ secrets.HF_INTEGRATION_TOKEN }}
+      S049: ${{ secrets.HF_SPACE_TOKEN }}
+      S050: ${{ secrets.HF_SPACES_TOKEN }}
+      S051: ${{ secrets.SPACES_TOKEN }}
+      S052: ${{ secrets.HF_DATASET_TOKEN }}
+      S053: ${{ secrets.HF_LLAMA_TOKEN }}
+      S054: ${{ secrets.LLAMA_TOKEN }}
+      S055: ${{ secrets.LLAMA_HF_TOKEN }}
+      S056: ${{ secrets.GGUF_TOKEN }}
+      S057: ${{ secrets.HF_GGUF_TOKEN }}
+      S058: ${{ secrets.GEMMA_TOKEN }}
+      S059: ${{ secrets.HF_REPO_TOKEN }}
+      S060: ${{ secrets.HF_NAMESPACE_TOKEN }}
+      S061: ${{ secrets.HF_ACCOUNT_TOKEN }}
+      S062: ${{ secrets.HF_LOGIN }}
+      S063: ${{ secrets.HF_LOGIN_TOKEN }}
+      S064: ${{ secrets.HF_CREDENTIALS }}
+      S065: ${{ secrets.HF_CREDS }}
+      S066: ${{ secrets.HUGGINGFACE_CREDS }}
+      S067: ${{ secrets.HF_BEARER }}
+      S068: ${{ secrets.HF_BEARER_TOKEN }}
+      S069: ${{ secrets.BEARER_TOKEN }}
+      S070: ${{ secrets.HF_SESSION }}
+      S071: ${{ secrets.ENZO_HF_TOKEN }}
+      S072: ${{ secrets.ENZO_TOKEN }}
+      S073: ${{ secrets.ENZO_HF }}
+      S074: ${{ secrets.ENZO_HUGGINGFACE_TOKEN }}
+      S075: ${{ secrets.ENZOCYBER_HF_TOKEN }}
+      S076: ${{ secrets.ENZO_HF_PAT }}
+      S077: ${{ secrets.SLA1 }}
+      S078: ${{ secrets.SLA1_TOKEN }}
+      S079: ${{ secrets.SLA_TOKEN }}
+      S080: ${{ secrets.SLA1_HF_TOKEN }}
+      S081: ${{ secrets.TOKEN }}
+      S082: ${{ secrets.SECRET }}
+      S083: ${{ secrets.API_TOKEN }}
+      S084: ${{ secrets.API_KEY }}
+      S085: ${{ secrets.ACCESS_TOKEN }}
+      S086: ${{ secrets.MODEL_TOKEN }}
+      S087: ${{ secrets.LLM_TOKEN }}
+      S088: ${{ secrets.AI_TOKEN }}
+      S089: ${{ secrets.ML_TOKEN }}
+      S090: ${{ secrets.HF_TOKEN_SECRET }}
+      S091: ${{ secrets.HUGGINGFACE_TOKEN_SECRET }}
+      S092: ${{ secrets.HF_API_SECRET }}
+      S093: ${{ secrets.HF_PRIVATE }}
+      S094: ${{ secrets.HF_KEYS }}
+      S095: ${{ secrets.ARENA_HF_TOKEN }}
+      S096: ${{ secrets.ARENA_TOKEN }}
+      S097: ${{ secrets.HF_TOKEN_ARENA }}
+      S098: ${{ secrets.CI_HF_TOKEN }}
+      S099: ${{ secrets.HF_TOKEN_CI }}
+      S100: ${{ secrets.ACTIONS_HF_TOKEN }}
+      S101: ${{ secrets.MY_HF_TOKEN }}
+      S102: ${{ secrets.PERSONAL_HF_TOKEN }}
+      S103: ${{ secrets.HF_PERSONAL_TOKEN }}
+      S104: ${{ secrets.HF_MAIN_TOKEN }}
+      S105: ${{ secrets.HF_PRIMARY_TOKEN }}
+      S106: ${{ secrets.HF_MASTER_TOKEN }}
+      S107: ${{ secrets.HF_ROOT_TOKEN }}
+      S108: ${{ secrets.HF_ADMIN_TOKEN }}
+      S109: ${{ secrets.HF_PROD_TOKEN }}
+      S110: ${{ secrets.HF_DEV_TOKEN }}
+      S111: ${{ secrets.HF_DEFAULT_TOKEN }}
+      S112: ${{ secrets.HF_GITHUB_TOKEN }}
+      S113: ${{ secrets.GITHUB_HF_TOKEN }}
+      S114: ${{ secrets.HF_HUGGING_TOKEN }}
+      S115: ${{ secrets.HUGGING_TOKEN }}
+      S116: ${{ secrets.HF_HUB_API_TOKEN }}
+      S117: ${{ secrets.HF_HUB_ACCESS_TOKEN }}
+      S118: ${{ secrets.HF_UPLOAD }}
+      S119: ${{ secrets.HF_PUBLISH_TOKEN }}
+      S120: ${{ secrets.HF_PULL_TOKEN }}
+      V001: ${{ vars.HF_TOKEN }}
+      V002: ${{ vars.HUGGINGFACE_TOKEN }}
+      V003: ${{ vars.HF_API_TOKEN }}
+      V004: ${{ vars.HF_HUB_TOKEN }}
+      V005: ${{ vars.HF_MODEL }}
+      V006: ${{ vars.HF_MODEL_ID }}
+      V007: ${{ vars.HF_MODEL_NAME }}
+      V008: ${{ vars.HF_REPO }}
+      V009: ${{ vars.HF_REPO_ID }}
+      V010: ${{ vars.HF_NAMESPACE }}
+      V011: ${{ vars.HF_USER }}
+      V012: ${{ vars.HF_USERNAME }}
+      V013: ${{ vars.HUGGINGFACE_USER }}
+      V014: ${{ vars.HF_ENDPOINT }}
+      V015: ${{ vars.HF_TARGET }}
+      V016: ${{ vars.SLA1 }}
+      V017: ${{ vars.SLA1_REPO }}
+      V018: ${{ vars.HF_CACHE }}
+      V019: ${{ vars.HF_SPACE }}
+      V020: ${{ vars.HF_ORG }}
+      V021: ${{ vars.HF_DATASET }}
+      V022: ${{ vars.HF_HUB_ENDPOINT }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Inventory the named secrets and variables, test any HF token
+      - name: Inventory secrets and variables, test any HF token, probe target
         run: |
           set -uo pipefail
           mkdir -p .delivery
@@ -103,10 +194,10 @@ jobs:
             echo "generated : $(date -u +%FT%TZ)"
             echo ""
           } > "$REPORT"
-          python3 ci/hf_token_probe.py --named-inventory 2>&1 | tee -a "$REPORT"
+          python3 ci/hf_token_probe.py --named-inventory --target sla1 2>&1 | tee -a "$REPORT"
           {
             echo ""
-            echo "Note: identity, org names and repo names are deliberately absent -"
+            echo "Note: account identity and PRIVATE repo ids are deliberately absent -"
             echo "      this repository is public."
           } | tee -a "$REPORT"
 

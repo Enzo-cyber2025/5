@@ -47,6 +47,11 @@ GATED_PROBES = [
 
 HF_NAME_RE = r"(?i)(^|_)(hf|hugging|hub|llama|gemma|transformer)s?(_|$)"
 
+# Targets the owner asked about by name. Probed both anonymously (public
+# discovery, needs no token) and authenticated (what the token can reach).
+DEFAULT_TARGETS = ["sla1"]
+TARGETS: list[str] = list(DEFAULT_TARGETS)
+
 # Set by --reveal-names for PRIVATE local runs only. Never enable it in CI on
 # this repository: the logs and commits of a public repo are public.
 REVEAL = False
@@ -280,11 +285,16 @@ def inventory(secrets: dict, variables: dict, source: str) -> list[tuple[str, st
 
 
 def named_inventory() -> tuple[dict, dict]:
-    """Read individually referenced secrets/variables from the job environment."""
+    """Read individually referenced secrets/variables from the job environment.
+
+    SECRET_NAMES / VAR_NAMES list the real names in order; the job maps them
+    positionally onto S001..Snnn and V001..Vnnn (three digits, so the sweep can
+    grow past 99 names without changing this contract).
+    """
     secret_names = os.environ.get("SECRET_NAMES", "").split()
     var_names = os.environ.get("VAR_NAMES", "").split()
-    secrets = {n: os.environ.get(f"S{i:02d}", "") for i, n in enumerate(secret_names, 1)}
-    variables = {n: os.environ.get(f"V{i:02d}", "") for i, n in enumerate(var_names, 1)}
+    secrets = {n: os.environ.get(f"S{i:03d}", "") for i, n in enumerate(secret_names, 1)}
+    variables = {n: os.environ.get(f"V{i:03d}", "") for i, n in enumerate(var_names, 1)}
     return secrets, variables
 
 
@@ -300,6 +310,77 @@ def context_inventory() -> tuple[dict, dict]:
         return data if isinstance(data, dict) else {}
 
     return load(os.environ.get("SECRETS_JSON", "")), load(os.environ.get("VARS_JSON", ""))
+
+
+def report_target(token: str | None, target: str, me: str = "") -> None:
+    """Look for a Hub resource named `target`.
+
+    Runs anonymously too, so public discovery does not depend on a token. Ids of
+    PUBLIC matches are printed - they are world-readable by definition, so naming
+    them leaks nothing. Ids of PRIVATE matches are withheld: a private id would
+    expose its owner namespace in this public repo's logs.
+    """
+    say(f"\n[7] Named target probe: '{target}'")
+    say(f"  mode: {'authenticated' if token else 'ANONYMOUS - no token available'}")
+    if not target:
+        say("  skipped: empty target")
+        return
+
+    quoted = urllib.parse.quote(target)
+    for kind in ("models", "datasets", "spaces"):
+        q = urllib.parse.urlencode({"search": target, "limit": "50", "full": "true"})
+        status, data = request(f"/api/{kind}?{q}", token)
+        if status != 200 or not isinstance(data, list):
+            bullet(f"{kind} search", f"HTTP {status}")
+            continue
+        exact = [d for d in data if isinstance(d, dict)
+                 and str(d.get("id", "")).split("/")[-1].lower() == target.lower()]
+        public = [d for d in data if isinstance(d, dict) and not d.get("private")]
+        private = [d for d in data if isinstance(d, dict) and d.get("private")]
+        bullet(f"{kind} search", f"HTTP {status} | {len(data)} hits | "
+               f"{len(exact)} exact name match | {len(public)} public | {len(private)} private")
+        for item in public[:15]:
+            say(f"      public: {item.get('id')} downloads={item.get('downloads')} "
+                f"likes={item.get('likes')} gated={item.get('gated')} "
+                f"pipeline={item.get('pipeline_tag')}")
+        if private:
+            say(f"      {len(private)} private hit(s): ids WITHHELD (a private id would"
+                " reveal its owner namespace in these public logs)")
+
+        # Is `target` itself a namespace (user or org) owning repos?
+        q2 = urllib.parse.urlencode({"author": target, "limit": "50", "full": "true"})
+        status2, data2 = request(f"/api/{kind}?{q2}", token)
+        if status2 == 200 and isinstance(data2, list):
+            bullet(f"namespace '{target}' owns {kind}", len(data2))
+            for item in data2[:15]:
+                if not isinstance(item, dict):
+                    continue
+                shown = item.get("id") if not item.get("private") else "<private id withheld>"
+                say(f"      {shown} downloads={item.get('downloads')} "
+                    f"gated={item.get('gated')}")
+        else:
+            bullet(f"namespace '{target}' owns {kind}", f"HTTP {status2}")
+
+        # Bare id (no namespace) - HF rejects these, but the status is informative.
+        status3, _ = request(f"/api/{kind}/{quoted}", token)
+        bullet(f"GET /api/{kind}/{target}", f"HTTP {status3}")
+
+    # Does the account itself own anything named like the target?
+    if me:
+        for kind in ("models", "datasets", "spaces"):
+            q = urllib.parse.urlencode({"author": me, "search": target,
+                                        "limit": "50", "full": "true"})
+            status, data = request(f"/api/{kind}?{q}", token)
+            if status == 200 and isinstance(data, list):
+                shown = [d.get("id") for d in data
+                         if isinstance(d, dict) and not d.get("private")]
+                hidden = sum(1 for d in data if isinstance(d, dict) and d.get("private"))
+                bullet(f"own {kind} matching '{target}'",
+                       f"{len(data)} ({len(shown)} public, {hidden} private)")
+                for sid in shown[:15]:
+                    say(f"      {sid}")
+            else:
+                bullet(f"own {kind} matching '{target}'", f"HTTP {status}")
 
 
 def report_egress() -> None:
@@ -353,6 +434,8 @@ def run_probe(label: str, token: str) -> int:
     report_owned(account, token)
     report_gated(token)
     report_write(token, account)
+    for target in TARGETS:
+        report_target(token, target, me=account)
 
     say("\n" + "=" * 72)
     say("SUMMARY")
@@ -374,17 +457,22 @@ def main() -> int:
     parser.add_argument("--inventory", action="store_true",
                         help="use the toJSON(secrets)/toJSON(vars) contexts")
     parser.add_argument("--named-inventory", action="store_true",
-                        help="use SECRET_NAMES/VAR_NAMES mapped onto S01../V01.. env vars")
+                        help="use SECRET_NAMES/VAR_NAMES mapped onto S001../V001.. env vars")
     parser.add_argument("--token-file",
                         help="read the token from this file (local private runs; keeps it "
                              "out of shell history and of the process list)")
+    parser.add_argument("--target", action="append", default=None,
+                        help="Hub resource name to look for (repeatable). Defaults to "
+                             "'sla1'. Probed anonymously as well as authenticated.")
     parser.add_argument("--reveal-names", action="store_true",
                         help="PRIVATE LOCAL USE ONLY: also print account name, org names and "
                              "repo ids. Never use this in CI on a public repository.")
     args = parser.parse_args()
 
-    global REVEAL
+    global REVEAL, TARGETS
     REVEAL = args.reveal_names
+    if args.target:
+        TARGETS = [t.strip() for t in args.target if t.strip()]
     if REVEAL:
         say("!! --reveal-names is ON: identity and repo names WILL be printed.")
         say("!! Safe only on a private/local run. Public logs would expose them.")
@@ -415,6 +503,10 @@ def main() -> int:
         say("RESULT: no Hugging Face token is configured under the names probed.")
         say("        Nothing to authenticate, nothing to access.")
         report_egress()
+        say("")
+        say("No token, but the named targets can still be looked up anonymously:")
+        for target in TARGETS:
+            report_target(None, target)
         return 0
 
     say(f"HF-looking candidates: {[(k, n) for k, n, _ in candidates]}")
