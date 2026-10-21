@@ -208,6 +208,22 @@ def inventory(secrets: dict, variables: dict, source: str) -> list[tuple[str, st
     say(f"Inventory of secrets/variables ({source})")
     say("=" * 72)
 
+    # Control: proves the secrets context actually resolves in this job, so an
+    # all-empty inventory cannot be a false negative. GITHUB_TOKEN is always
+    # injected; only its presence and length are reported, never its value.
+    ctrl = os.environ.get("CTRL_GITHUB_TOKEN")
+    if ctrl is None:
+        say("control: not run (CTRL_GITHUB_TOKEN not provided)")
+    elif ctrl:
+        say(f"control: secrets.GITHUB_TOKEN visible to this job : YES (length={len(ctrl)})")
+        say("         -> the secrets context resolves here, so 'not set' below is a")
+        say("            real absence, not a permission or ref quirk.")
+    else:
+        say("control: secrets.GITHUB_TOKEN visible to this job : NO")
+        say("         -> the secrets context is NOT resolving in this job, so an")
+        say("            empty inventory below would be INCONCLUSIVE.")
+    say("")
+
     if secrets:
         present = {k: v for k, v in secrets.items() if str(v)}
         notes.append(f"names probed as secrets : {len(secrets)}")
