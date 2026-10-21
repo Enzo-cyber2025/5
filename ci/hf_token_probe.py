@@ -158,6 +158,24 @@ def report_whoami(status: int, data: object) -> dict:
             bullet("token type", access.get("type", "?"))
             bullet("extra keys under accessToken",
                    sorted(k for k in access if k not in ("role", "type")))
+            bullet("token createdAt", access.get("createdAt", "?"))
+            bullet("token displayName",
+                   access.get("displayName") if REVEAL else "<withheld: user-chosen label>")
+            fg = access.get("fineGrained")
+            if isinstance(fg, dict):
+                say("  fine-grained permission set (what this token may actually do):")
+                for scope in sorted(fg):
+                    val = fg[scope]
+                    if isinstance(val, list):
+                        # Scoped repo ids would name private repos: count them only.
+                        say(f"      {scope}: {len(val)} item(s) "
+                            f"{'-> ' + ', '.join(map(str, val[:20])) if REVEAL else '(ids withheld)'}")
+                    elif isinstance(val, dict):
+                        say(f"      {scope}: {json.dumps(val, sort_keys=True)[:300]}")
+                    else:
+                        say(f"      {scope}: {val}")
+            elif fg is not None:
+                bullet("fineGrained", str(fg)[:200])
         bullet("auth keys", sorted(auth.keys()))
     bullet("whoami top-level keys", sorted(data.keys()))
     return data
@@ -420,6 +438,53 @@ def report_target(token: str | None, target: str, me: str = "") -> None:
                 bullet(f"own {kind} matching '{target}'", f"HTTP {status}")
 
 
+def report_owned_deep(token: str, name: str, kind: str = "datasets") -> None:
+    """Structural description of every repo the account owns.
+
+    Answers 'check all the datasets' without naming them: ids of private repos
+    stay withheld because this repository, and therefore its logs, are public.
+    """
+    if not name:
+        return
+    say(f"\n[9] Every owned {kind} (structure only, ids withheld)")
+    q = urllib.parse.urlencode({"author": name, "full": "true", "limit": "1000"})
+    status, data = request(f"/api/{kind}?{q}", token)
+    if status != 200 or not isinstance(data, list) or not data:
+        say(f"  nothing to describe (HTTP {status})")
+        return
+    for idx, item in enumerate(data, 1):
+        if not isinstance(item, dict):
+            continue
+        rid = str(item.get("id") or "")
+        label = rid if (REVEAL or not item.get("private")) else "<private id withheld>"
+        say(f"  {kind[:-1]}[{idx}] {label}")
+        enc = urllib.parse.quote(rid)
+        st, tree = request(f"/api/{kind}/{enc}/tree/main?recursive=true&expand=true", token)
+        if st == 200 and isinstance(tree, list):
+            files = [t for t in tree if isinstance(t, dict) and t.get("type") == "file"]
+            dirs = [t for t in tree if isinstance(t, dict) and t.get("type") == "directory"]
+            exts: dict[str, int] = {}
+            total = biggest = 0
+            for f in files:
+                pname = str(f.get("path") or "")
+                ext = pname.rsplit(".", 1)[-1].lower() if "." in pname else "<no ext>"
+                exts[ext] = exts.get(ext, 0) + 1
+                size = int(f.get("size") or 0)
+                total += size
+                biggest = max(biggest, size)
+            say(f"      files={len(files)} dirs={len(dirs)} "
+                f"total={total / 1e6:.2f} MB largest={biggest / 1e6:.2f} MB")
+            say(f"      extensions={dict(sorted(exts.items(), key=lambda kv: -kv[1]))}")
+            say(f"      private={bool(item.get('private'))} gated={item.get('gated')} "
+                f"downloads={item.get('downloads')} likes={item.get('likes')}")
+            say(f"      lastModified={item.get('lastModified')} sha={str(item.get('sha'))[:12]}")
+            if REVEAL:
+                for f in files[:60]:
+                    say(f"        {f.get('path')} ({f.get('size')} bytes)")
+        else:
+            say(f"      tree not readable (HTTP {st})")
+
+
 def report_target_deep(token: str | None, target: str, kind: str = "datasets") -> None:
     """Describe the CONTENTS of a matched repo, structurally.
 
@@ -581,6 +646,8 @@ def run_probe(label: str, token: str) -> int:
 
     account = str(who.get("name") or "")
     report_owned(account, token)
+    report_owned_deep(token, account, "datasets")
+    report_owned_deep(token, account, "models")
     report_gated(token)
     report_write(token, account)
     for target in TARGETS:
