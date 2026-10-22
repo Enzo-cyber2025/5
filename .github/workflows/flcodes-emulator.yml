@@ -128,16 +128,20 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -uo pipefail
           pr="${{ github.event.pull_request.number }}"
-          if [ -z "$pr" ]; then
-            pr="$(gh pr list --head "$GITHUB_REF_NAME" --json number -q '.[0].number' 2>/dev/null || true)"
-          fi
+          [ -n "$pr" ] || pr="$(gh pr list --head "$GITHUB_REF_NAME" --json number -q '.[0].number' 2>/dev/null || true)"
           [ -n "$pr" ] || exit 0
           {
             echo "### emulator job failed"
-            echo '```'
-            tail -40 "$RUNNER_TEMP/build.log" 2>/dev/null || echo "(no build log)"
-            echo '```'
+            echo
+            echo "\`\`\`"
+            ls -la "$RUNNER_TEMP" 2>&1 | head -30
+            echo "--- env.log ---"
+            cat "$RUNNER_TEMP/env.log" 2>&1 | head -30
+            echo "--- build.log ---"
+            cat "$RUNNER_TEMP/build.log" 2>&1 | head -60
+            echo "\`\`\`"
           } > "$RUNNER_TEMP/comment.md"
           gh pr comment "$pr" --body-file "$RUNNER_TEMP/comment.md" || true
 
@@ -167,8 +171,12 @@ jobs:
         run: |
           set -uo pipefail
           bash family-link-codes/tools/fetch_familylink_apk.sh \
-            --out "$RUNNER_TEMP/familylink" 2>&1 | tee "$RUNNER_TEMP/fetch.log"
-          test -s "$RUNNER_TEMP/familylink/base.apk"
+            --out "$RUNNER_TEMP/familylink" > "$RUNNER_TEMP/fetch.txt" 2>&1 || true
+          cat "$RUNNER_TEMP/fetch.txt"
+          test -s "$RUNNER_TEMP/familylink/base.apk" || {
+            echo "::error title=apk-fetch::$(tail -c 800 "$RUNNER_TEMP/fetch.txt" | tr '\n' '|')"
+            exit 1
+          }
 
       - name: Unpack and locate the secret's home (REA, static)
         run: |
@@ -261,8 +269,19 @@ jobs:
           {
             echo "### Family Link real: desempacotado e testado sem root"
             echo
-            for f in fetch package badging backup-flags; do
-              [ -s "$RUNNER_TEMP/$f.txt" ] && { echo "**$f**"; echo '```'; cat "$RUNNER_TEMP/$f.txt"; echo '```'; }
+            if [ ! -s "$RUNNER_TEMP/scan.txt" ]; then
+              echo "**the job stopped early, here is everything it produced**"
+              echo '```'
+              ls -la "$RUNNER_TEMP" 2>&1 | head -20
+              for f in "$RUNNER_TEMP"/*.log "$RUNNER_TEMP"/*.txt; do
+                [ -s "$f" ] || continue
+                echo "--- $(basename "$f") ---"
+                tail -40 "$f"
+              done
+              echo '```'
+            fi
+            for f in fetch.txt package.txt badging.txt backup-flags.txt; do
+              [ -s "$RUNNER_TEMP/$f" ] && { echo "**$f**"; echo '```'; cat "$RUNNER_TEMP/$f"; echo '```'; }
             done
             echo "**apk scan (top findings)**"
             echo '```'
