@@ -8,6 +8,21 @@ starting with ``AL`` is *not* the Android one).
 This module only *finds* candidates. It never contacts Google, so it works
 offline on a saved payload, a HAR capture, an app data dump or a pasted
 snippet.
+
+Reverse engineering sources that are handled explicitly, because a real dump
+almost never has the secret sitting in plain UTF-8:
+
+* raw text, JSON (including the XSSI prefix) and JSON arrays (protobuf-ish
+  responses such as ``["AI..."]``);
+* ``\\uXXXX`` escaped strings and percent encoded strings;
+* hex encoded runs;
+* base64 runs inside a larger blob (also ``base64:`` prefixed values);
+* UTF-16 dumps (XML prefs, Windows captures) - decoded by the file reader in
+  ``rea``;
+* zip containers: APK, JAR, CRX, plain ``.zip``.
+
+If the payload carries an *encrypted* secret (the client derives the code
+locally) the extractor says so instead of inventing a key.
 """
 
 from __future__ import annotations
@@ -29,6 +44,7 @@ __all__ = [
     "CHROMEBOOK_PREFIX",
     "classify_secret",
     "mask_secret",
+    "printable",
     "looks_like_secret",
     "extract_from_text",
     "extract_from_json",
@@ -48,6 +64,29 @@ _BASE32_SECRET_RE = re.compile(r"(?<![A-Z2-7=])[A-Z2-7]{16,}={0,6}(?![A-Za-z0-7]
 _JSON_KEY_RE = re.compile(
     r"(shared|secret|seed|totp|otp|passcode|accesscode|parentcode)", re.IGNORECASE
 )
+_HEX_RUN_RE = re.compile(r"(?<![0-9a-fA-F])[0-9a-fA-F]{26,}(?![0-9a-fA-F])")
+_B64_RUN_RE = re.compile(r"[A-Za-z0-9+/]{32,}={0,2}")
+# One or more backslashes per escape: a body inside a HAR (JSON in JSON) keeps
+# the backslash escaped, so the file has \\u0041 instead of \u0041.
+_UNICODE_ESCAPE_RUN_RE = re.compile(r"(?:\\+u[0-9a-fA-F]{4}|\\+x[0-9a-fA-F]{2})+")
+_ENCRYPTED_KEY_RE = re.compile(
+    r"([A-Za-z_]*(?:encrypted|wrapped|sealed|cipher)[A-Za-z_]*"
+    r"(?:secret|seed|key|code)[A-Za-z_]*"
+    r"|(?:secret|seed|key|code)[A-Za-z_]*(?:encrypted|cipher|wrapped)[A-Za-z_]*)",
+    re.IGNORECASE,
+)
+_MAX_DERIVED_RUNS = 400
+_CONTROL_RE = re.compile(r"[\x00-\x08\x0b-\x1f\x7f]")
+
+
+def printable(text: str, limit: int = 160) -> str:
+    """Make a context snippet safe to print: control bytes become a middle dot.
+
+    Binary dumps (LevelDB, SQLite) contain NULs around the secret; printing them
+    raw turns the terminal output into garbage.
+    """
+    cleaned = _CONTROL_RE.sub("·", text).replace("\n", " ").replace("\r", " ").strip()
+    return cleaned[:limit]
 
 
 @dataclass
@@ -148,6 +187,86 @@ def _candidate_from_value(value: str, source: str, context: str) -> SeedCandidat
     return None
 
 
+def _decode_escaped_runs(text: str) -> str:
+    """Turn ``\\u0041``, ``\\\\u0041`` and ``\\x41`` runs back into characters.
+
+    Any number of backslashes is accepted, so payloads that were JSON encoded
+    more than once (a HAR stores the response body as a JSON string) still
+    decode to the secret.
+    """
+
+    def _decode(match: re.Match) -> str:
+        run = match.group(0)
+        out = []
+        index = 0
+        while index < len(run):
+            while index < len(run) and run[index] == "\\":
+                index += 1
+            if index >= len(run):  # pragma: no cover - trailing backslashes
+                break
+            marker = run[index]
+            if marker == "u":
+                out.append(chr(int(run[index + 1 : index + 5], 16)))
+                index += 5
+            elif marker == "x":
+                out.append(chr(int(run[index + 1 : index + 3], 16)))
+                index += 3
+            else:  # pragma: no cover - the regex only matches u/x markers
+                out.append(marker)
+                index += 1
+        return "".join(out)
+
+    return _UNICODE_ESCAPE_RUN_RE.sub(_decode, text)
+
+
+def derived_blobs(text: str) -> list:
+    """Return ``[(label, decoded_text)]`` for the encodings seen in dumps."""
+    blobs: list = []
+    if "\\u" in text or "\\x" in text:
+        blobs.append(("unicode-escaped", _decode_escaped_runs(text)))
+    if "%" in text:
+        decoded = urllib.parse.unquote(text)
+        if decoded != text:
+            blobs.append(("percent-encoded", decoded))
+            twice = urllib.parse.unquote(decoded)
+            if twice != decoded:  # double encoded (%2541 -> %41 -> A)
+                blobs.append(("percent-encoded", twice))
+
+    for index, match in enumerate(_HEX_RUN_RE.finditer(text)):
+        if index >= _MAX_DERIVED_RUNS:
+            break
+        run = match.group(0)
+        if len(run) % 2:
+            run = run[:-1]
+        try:
+            decoded = bytes.fromhex(run).decode("latin-1")
+        except ValueError:
+            continue
+        if looks_like_secret(decoded.strip()):
+            blobs.append(("hex", decoded))
+
+    for index, match in enumerate(_B64_RUN_RE.finditer(text)):
+        if index >= _MAX_DERIVED_RUNS:
+            break
+        decoded = _decode_maybe_base64(match.group(0))
+        if decoded:
+            blobs.append(("base64", decoded))
+    return blobs
+
+
+def encrypted_hint(text: str) -> str | None:
+    """Return the name of an encrypted-secret field, if the payload has one.
+
+    After the September 2024 change the web client receives a wrapped value
+    instead of the shared secret; reporting that honestly is more useful than
+    returning no candidate at all.
+    """
+    if not text:
+        return None
+    match = _ENCRYPTED_KEY_RE.search(text)
+    return match.group(1) if match else None
+
+
 def extract_from_text(text: str, source: str = "text") -> list:
     """Find every secret-looking token in a blob of text."""
     if not text:
@@ -161,19 +280,13 @@ def extract_from_text(text: str, source: str = "text") -> list:
         seen.add(candidate.secret)
         found.append(candidate)
 
-    for match in _SECRET_RE.finditer(text):
-        secret = match.group(0)
-        if not looks_like_secret(secret):
-            continue
-        start = max(0, match.start() - 40)
-        add(
-            SeedCandidate(
-                secret=secret,
-                kind=classify_secret(secret),
-                source=source,
-                context=text[start : match.end() + 20].replace("\n", " "),
-            )
-        )
+    for candidate in _scan_plain_text(text, source):
+        add(candidate)
+
+    for label, blob in derived_blobs(text):
+        for candidate in _scan_plain_text(blob, source):
+            candidate.context = printable(f"{candidate.context} [{label}]")
+            add(candidate)
 
     for match in _OTP_AUTH_RE.finditer(text):
         uri = match.group(0)
@@ -190,6 +303,25 @@ def extract_from_text(text: str, source: str = "text") -> list:
                 )
             )
 
+    return found
+
+
+def _scan_plain_text(text: str, source: str) -> list:
+    """Literal scan: the secret pattern as it appears in the text."""
+    found = []
+    for match in _SECRET_RE.finditer(text):
+        secret = match.group(0)
+        if not looks_like_secret(secret):
+            continue
+        start = max(0, match.start() - 40)
+        found.append(
+            SeedCandidate(
+                secret=secret,
+                kind=classify_secret(secret),
+                source=source,
+                context=printable(text[start : match.end() + 20]),
+            )
+        )
     return found
 
 

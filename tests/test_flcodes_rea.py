@@ -184,6 +184,90 @@ def test_report_never_contains_the_secret(tmp_path):
     assert ANDROID_SECRET not in path.read_text()
 
 
+def test_harvest_decodes_escaped_hex_and_base64(tmp_path):
+    import base64
+
+    variants = {
+        "unicode.json": json.dumps({"seed": "".join("\\u%04x" % ord(c) for c in ANDROID_SECRET)}),
+        "percent.txt": "".join("%%%02X" % ord(c) for c in ANDROID_SECRET),
+        "hex.txt": ANDROID_SECRET.encode().hex(),
+        "b64.json": json.dumps({"blob": base64.b64encode(ANDROID_SECRET.encode()).decode()}),
+    }
+    for name, content in variants.items():
+        (tmp_path / name).write_text(content)
+    harvest = rea.harvest_files([tmp_path])
+    assert {c.secret for c in harvest.candidates} == {ANDROID_SECRET}
+    labels = " ".join(c.context for c in harvest.candidates)
+    assert any(tag in labels for tag in ("unicode-escaped", "percent-encoded", "hex", "base64"))
+
+
+def test_har_scanned_as_a_file_decodes_double_escaped_secret(tmp_path):
+    # A HAR stores the response body as a JSON string, so the body escapes get
+    # escaped again: the file holds \\\\u0041 where the body had \\u0041.
+    escaped = "".join("\\u%04x" % ord(c) for c in ANDROID_SECRET)
+    body = ")]}'\n" + json.dumps([["familyLinkAppConfig", [[None, escaped]]]])
+    har = {"log": {"entries": [
+        {"request": {"url": "https://familylink.google.com/config"},
+         "response": {"content": {"text": body}}}
+    ]}}
+    path = tmp_path / "capture.har"
+    path.write_text(json.dumps(har))
+
+    from_file = rea.harvest_files([path])
+    assert from_file.best is not None and from_file.best.secret == ANDROID_SECRET
+    assert "unicode-escaped" in from_file.best.context
+
+    from_har = rea.harvest_har(path)
+    assert from_har.best.secret == ANDROID_SECRET
+
+
+def test_double_percent_encoded_secret_is_decoded():
+    once = "".join("%%%02X" % ord(c) for c in ANDROID_SECRET)
+    twice = once.replace("%", "%25")
+    harvest = rea.harvest_text(twice)
+    assert harvest.best is not None and harvest.best.secret == ANDROID_SECRET
+
+
+def test_harvest_reads_utf16_zip_gzip_and_leveldb(tmp_path):
+    import gzip
+    import zipfile
+
+    first = "AIreveng-prefs-secret.aaaa1111"
+    second = "AIreveng-apk-secret.bbbb2222"
+    third = "AIreveng-gzip-secret.cccc3333"
+    fourth = "AIreveng-ldb-secret.dddd4444"
+
+    prefs = f'<?xml version="1.0" encoding="utf-16"?><map><string name="k">{first}</string></map>'
+    (tmp_path / "prefs.xml").write_bytes(prefs.encode("utf-16"))
+    with zipfile.ZipFile(tmp_path / "dump.apk", "w") as archive:
+        archive.writestr("assets/config.json", json.dumps({"parentAccessCode": second}))
+    (tmp_path / "log.gz").write_bytes(gzip.compress(f"lixo {third}".encode()))
+    (tmp_path / "005.ldb").write_bytes(b"\x00\x01" + fourth.encode() + b"\x00\xff")
+
+    harvest = rea.harvest_files([tmp_path])
+    found = {c.secret: c.source for c in harvest.candidates}
+    assert set(found) == {first, second, third, fourth}
+    assert any("!" in source for source in found.values())  # zip member name
+
+    # a corrupt container is reported, never fatal
+    (tmp_path / "broken.zip").write_bytes(b"PK\x03\x04nada")
+    again = rea.harvest_files([tmp_path / "broken.zip"])
+    assert again.candidates == [] and again.notes
+
+
+def test_encrypted_secret_is_reported_not_guessed(tmp_path):
+    payload = json.dumps(
+        {"familyLinkAppConfig": {"parentAccessCode": {"encryptedSharedSecret": "Q2lwaGVydGV4dA=="}}}
+    )
+    harvest = rea.harvest_text(payload, source="post-patch")
+    assert harvest.candidates == []
+    assert any("encryptedSharedSecret" in note for note in harvest.notes)
+
+    path = tmp_path / "payload.json"
+    path.write_text(payload)
+    assert any("encrypted" in note for note in rea.harvest_files([path]).notes)
+
+
 def test_secure_delete_removes_the_file(tmp_path):
     path = tmp_path / "codes.csv"
     path.write_text("code\n123456\n")

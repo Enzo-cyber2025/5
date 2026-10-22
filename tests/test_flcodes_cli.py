@@ -317,3 +317,91 @@ def test_web_allow_embed_only_relaxes_the_frame_policy(tmp_path):
     finally:
         server.shutdown()
         server.server_close()
+
+
+# ---------------------------------------------------------------------- verify
+def _store_two_keys(home: Path) -> tuple:
+    first = run_cli("keys", "add", SECRET, "--label", "um", home=home)
+    second = run_cli("keys", "add", "AItest-only-second-key.klmnop", "--label", "dois", home=home)
+    assert first.returncode == second.returncode == 0
+    return SECRET, "AItest-only-second-key.klmnop"
+
+
+def test_verify_confirms_the_key_that_google_used(tmp_path):
+    home = tmp_path / "home"
+    first, second = _store_two_keys(home)
+    moment = 1_792_684_800
+    observed = codes_mod.generate_code(second, moment + 120).code
+
+    result = run_cli("verify", "--code", observed, "--at", str(moment), home=home)
+    assert result.returncode == 0, result.stderr + result.stdout
+    assert "CONFIRMADO" in result.stdout
+    assert "key dois" in result.stdout
+    assert "key um" in result.stdout and "não confirmado" in result.stdout
+    assert first not in result.stdout and second not in result.stdout
+
+    reports = list((home / "output").glob("verify-*.json"))
+    assert len(reports) == 1
+    document = json.loads(reports[0].read_text())
+    assert document["confirmed"] is True
+    assert document["confirmed_labels"] == ["dois"]
+    assert first not in reports[0].read_text()
+
+
+def test_verify_rejects_a_code_that_was_not_produced_by_the_key(tmp_path):
+    home = tmp_path / "home"
+    _store_two_keys(home)
+    result = run_cli("verify", "--code", "000000", "--at", "1792684800", home=home)
+    assert result.returncode == 1
+    assert "não confirmado" in result.stdout
+
+    shown = run_cli("verify", "--code", "000000", "--at", "1792684800", "--json", home=home)
+    document = json.loads(shown.stdout)
+    assert document["confirmed"] is False
+    assert all(not key["confirmed"] for key in document["keys"])
+
+
+def test_verify_tolerance_explains_a_clock_offset(tmp_path):
+    home = tmp_path / "home"
+    first, _second = _store_two_keys(home)
+    moment = 1_792_684_800
+    previous_hour_code = codes_mod.generate_code(first, moment - 3600).code
+
+    strict = run_cli("verify", "--code", previous_hour_code, "--at", str(moment), home=home)
+    assert strict.returncode == 1
+
+    tolerant = run_cli(
+        "verify", "--code", previous_hour_code, "--at", str(moment), "--tolerance-hours", "1",
+        home=home,
+    )
+    assert tolerant.returncode == 0
+    assert "+/-1h" in tolerant.stdout or "-1h" in tolerant.stdout
+
+
+def test_verify_reads_a_file_and_needs_an_observation(tmp_path):
+    home = tmp_path / "home"
+    first, _second = _store_two_keys(home)
+    moment = 1_792_684_800
+    rows = [
+        {"timestamp": moment, "code": codes_mod.generate_code(first, moment).code},
+        {"timestamp": moment + 3600, "code": codes_mod.generate_code(first, moment + 3600).code},
+    ]
+    path = tmp_path / "obs.json"
+    path.write_text(json.dumps(rows))
+    result = run_cli("verify", "--file", str(path), "--id", "nada", home=home)
+    assert result.returncode == 1  # unknown id
+    listing = run_cli("keys", "list", home=home).stdout
+    first_id = first_id_from_listing(listing, "um")
+    result = run_cli("verify", "--file", str(path), "--id", first_id, home=home)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "2/2" in result.stdout
+
+    no_observation = run_cli("verify", home=home)
+    assert no_observation.returncode == 2
+
+
+def first_id_from_listing(listing: str, label: str) -> str:
+    for line in listing.splitlines():
+        if line.rstrip().endswith(label):
+            return line.split()[1]
+    raise AssertionError(f"label {label} not in listing")

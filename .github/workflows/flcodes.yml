@@ -28,7 +28,8 @@ jobs:
           .venv/bin/python -m pytest -q \
             tests/test_flcodes_codes.py \
             tests/test_flcodes_crypto.py \
-            tests/test_flcodes_rea.py
+            tests/test_flcodes_rea.py \
+            tests/test_flcodes_verify.py
       - name: CLI and local web UI
         run: .venv/bin/python -m pytest -q tests/test_flcodes_cli.py
       - name: Self check
@@ -37,3 +38,7 @@ jobs:
           FLCODES_HOME="$RUNNER_TEMP/flhome" .venv/bin/python -m flcodes audit
         env:
           PYTHONPATH: ${{ github.workspace }}/family-link-codes
+      - name: REA rehearsal (find key, generate, verify)
+        run: |
+          cd family-link-codes
+          PYTHON="$(pwd)/../.venv/bin/python" bash demo/run_demo.sh

@@ -15,19 +15,37 @@ experimento de segurança com conta e aparelho que você controla.
 
 ## 1. O que é "REA"
 
-REA é o nome da camada de **aquisição da chave** neste projeto:
-
-**R**ecuperar → **E**xtrair → **A**rmazenar
+REA = **Reverse Engineering Anything** — a camada de engenharia reversa que
+recupera a chave, aplicada aqui como **R**ecuperar → **E**xtrair → **A**rmazenar:
 
 1. **Recuperar** o payload `familyLinkAppConfig` (sessão do responsável,
-   captura HAR, dump de prefs, logcat ou `adb`).
+   captura HAR, dump de prefs, logcat, LevelDB ou `adb`).
 2. **Extrair** o *shared secret* — a string `AI…` que o app do responsável usa
    para calcular o código. A variante do Chromebook começa com `AL` e não serve
    para o Android.
 3. **Armazenar** a chave num arquivo cifrado com a sua senha, para o
    experimento conseguir reproduzir códigos depois.
 
+Formatos que o extrator entende, porque dump real quase nunca tem o segredo em
+UTF-8 limpo:
+
+| formato | exemplo de origem |
+|---|---|
+| JSON com prefixo XSSI `)]}'` e arrays estilo protobuf | resposta do `familyLinkAppConfig` |
+| `\u0041…` (inclusive escape duplo) e `%41…` (inclusive duplo) | HAR, JSON dentro de JSON, URL |
+| hex e base64 (runs dentro de um blob maior) | dumps diversos, `base64:` |
+| **UTF-16** | XML de shared prefs, capturas Windows |
+| **ZIP / APK / JAR / CRX** | membros internos do app |
+| **gzip** | logcat, logs rotacionados |
+| **LevelDB** (`.ldb`, `.log`) binário | Chrome/ChromeOS Local Extension Settings |
+
+Se o payload trouxer um segredo **cifrado** (estado pós-setembro/2024), o
+extrator **reporta o campo** em vez de inventar uma chave.
+
 Depois disso, o resto é offline: o código é um TOTP calculado localmente.
+
+> Resultados medidos do ensaio (o que passou, o que não foi provado e como
+> provar em 1 minuto): [`RESULTS.md`](RESULTS.md).
 
 ## 2. Como o código funciona
 
@@ -138,7 +156,25 @@ Fuso: o código vira na hora cheia **UTC**. Para fusos de hora inteira isso
 coincide com a hora local; para fusos de meia hora (UTC+05:30, +09:30) use
 `--tz-offset-minutes 330`.
 
-### 4.4 Interface web local
+### 4.4 Verificar se o código é funcional (`verify`)
+
+Gerar seis dígitos não prova nada. A prova objetiva é comparar com um código que
+**o Google produziu** para aquela chave: abra o Family Link no aparelho do
+responsável → **Código de acesso do familiar**, anote o código e o horário.
+
+```bash
+flcodes verify --code 123456 --at "2026-10-22T15:12:00-03:00"
+flcodes verify --code 123456 --minutes 3            # observado 3 min atrás
+flcodes verify --file observacoes.csv               # várias observações
+flcodes verify --code 123456 --tolerance-hours 1    # tolera relógio fora de hora
+```
+
+Saída: por chave, quantas observações ela reproduz e em qual janela. Uma chave
+`CONFIRMADO` prova, ao mesmo tempo, que o segredo é o daquela família e que os
+bytes da chave, o contador ancorado na hora e o truncamento estão certos. O
+relatório (`flcodes-out/output/verify-*.json`) não contém segredo.
+
+### 4.5 Interface web local
 
 ```bash
 flcodes serve                       # http://127.0.0.1:8765/?token=...
@@ -168,7 +204,20 @@ para a virada da hora, gerar 1/6/24 horas e baixar CSV.
 * O `secure_delete` sobrescreve e apaga o arquivo, mas em filesystem
   copy-on-write (btrfs, APFS, ZFS) blocos antigos podem sobreviver.
 
-## 6. Segurança do próprio app
+## 6. O que foi provado (e o que não foi)
+
+Ver [`RESULTS.md`](RESULTS.md) para as medições. Resumo:
+
+| item | estado |
+|---|---|
+| recupera a chave em HAR, UTF-16, ZIP/APK, gzip, LevelDB, hex/base64/escape | **provado** (5/5 fixtures) |
+| não inventa chave quando o payload traz segredo cifrado | **provado** (reporta o campo) |
+| gera códigos 6 dígitos, 1 por hora, determinístico | **provado** (66 testes) |
+| código igual ao de implementações independentes (oráculo RFC + Rust público + pyotp) | **provado** |
+| identificação da chave certa entre 5 chaves | **provado** (3/3 vs 0/3) |
+| aceitação real pelo aparelho / `rea api` em rede real / `rea adb` com root | **não provado aqui** (sem rede Google, sem aparelho) |
+
+## 7. Segurança do próprio app
 
 | proteção | como |
 |---|---|
@@ -186,23 +235,28 @@ vai na URL por conveniência; o processo em memória contém o segredo em claro 
 quem controla a máquina consegue lê-lo. Nada disso é um cofre de grau
 hardware.
 
-## 7. Estrutura
+## 8. Estrutura
 
 ```
 family-link-codes/
   flcodes/
     codes.py     TOTP (HMAC-SHA1, passo 60 s ancorado na hora)
     secrets.py   detecção/classificação/mascaramento da chave
-    rea.py       camada REA: api, har, paste, scan, adb
+    rea.py       camada REA: api, har, paste, scan, adb (UTF-16, zip, gzip, LevelDB)
+    verify.py    confirmação contra códigos produzidos pelo Google
     store.py     cofre cifrado
     report.py    exportação de códigos e relatório sem segredo
     cli.py       linha de comando
     server.py    UI web local + API com token
     web/index.html
-  tests/ (na raiz do repositório): test_flcodes_{codes,crypto,rea,cli}.py
+  demo/
+    make_fixtures.py     dumps sintéticos: HAR, UTF-16, APK, LevelDB, gzip
+    make_observations.py códigos por um oráculo RFC 4226 independente
+    run_demo.sh          ensaio completo: scan -> save -> gen -> verify
+  tests/ (na raiz do repositório): test_flcodes_{codes,crypto,rea,verify,cli}.py
 ```
 
-## 8. Descarte
+## 9. Descarte
 
 Ao fim do experimento:
 

@@ -12,17 +12,24 @@ REA covers every way the shared secret can be obtained in an authorised test:
            them.
 
 Everything except ``api`` and ``adb`` is completely offline.
+
+The scanners are built for real reverse engineering material: UTF-16 dumps,
+zip containers (APK/JAR/CRX/zip), gzip logs, LevelDB ``.ldb``/``.log`` files and
+escaped or encoded strings (see ``secrets``).
 """
 
 from __future__ import annotations
 
+import gzip
 import hashlib
+import io
 import json
 import os
 import re
 import shutil
 import subprocess
 import time
+import zipfile
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
@@ -41,6 +48,8 @@ __all__ = [
     "harvest_text",
     "harvest_files",
     "harvest_adb",
+    "harvest_cookie_file",
+    "read_text",
 ]
 
 API_KEY = "AIzaSyAQb1gupaJhY3CXQy2xmTwJMcjmot3M2hw"
@@ -167,8 +176,9 @@ def harvest_api(
         if not body:
             harvest.note(f"{url}: empty body")
             continue
-        found = secrets_mod.extract_from_payload(body, source=url)
-        harvest.extend(found)
+        before = len(harvest.candidates)
+        _scan_text(harvest, body, url)
+        found = harvest.candidates[before:]
         if found:
             harvest.note(f"{url}: {len(found)} candidate(s)")
         else:
@@ -179,7 +189,7 @@ def harvest_api(
 def harvest_text(text: str, source: str = "paste") -> Harvest:
     """Harvest from a pasted blob (secret, JSON response, prefs dump...)."""
     harvest = Harvest()
-    harvest.extend(secrets_mod.extract_from_payload(text, source=source))
+    _scan_text(harvest, text, source)
     return harvest
 
 
@@ -205,15 +215,74 @@ def harvest_har(path: str | os.PathLike) -> Harvest:
     return harvest
 
 
-def _is_probably_text(path: Path) -> bool:
+_ZIP_SUFFIXES = {".zip", ".apk", ".jar", ".crx", ".xpi", ".aar"}
+_MAX_ZIP_MEMBERS = 4000
+
+
+def _decode_bytes(raw: bytes) -> str:
+    """Decode bytes from a dump: UTF-8, UTF-16 (any endianness) or latin-1.
+
+    Latin-1 never fails, so LevelDB/SQLite style blobs stay scannable instead of
+    being skipped just because they contain NUL bytes.
+    """
+    for bom, encoding in ((b"\xff\xfe", "utf-16-le"), (b"\xfe\xff", "utf-16-be")):
+        if raw.startswith(bom):
+            return raw.decode(encoding, errors="replace")
     try:
-        with path.open("rb") as handle:
-            chunk = handle.read(_BINARY_SNIFF)
+        return raw.decode("utf-8")
+    except UnicodeDecodeError:
+        pass
+    # NUL bytes every other byte: UTF-16 without a BOM (Windows/Android dumps)
+    head = raw[:2048]
+    if len(head) >= 4 and head.count(b"\x00") >= len(head) // 3:
+        even_nuls = head[0::2].count(b"\x00")
+        odd_nuls = head[1::2].count(b"\x00")
+        encoding = "utf-16-be" if even_nuls > odd_nuls else "utf-16-le"
+        return raw.decode(encoding, errors="replace")
+    return raw.decode("latin-1", errors="replace")
+
+
+def read_text(path: Path, limit: int = _MAX_SCAN_FILE) -> str | None:
+    """Read a dump file as text, transparently handling gzip."""
+    try:
+        raw = path.read_bytes()
     except OSError:
-        return False
-    if b"\x00" in chunk:
-        return False
-    return True
+        return None
+    if path.suffix.lower() == ".gz" or raw[:2] == b"\x1f\x8b":
+        try:
+            raw = gzip.decompress(raw[:limit])
+        except (OSError, EOFError):
+            return None
+    return _decode_bytes(raw[:limit])
+
+
+def _scan_text(harvest: "Harvest", text: str, source: str) -> None:
+    """Scan one text blob and record the encrypted-secret hint."""
+    harvest.extend(secrets_mod.extract_from_payload(text, source=source))
+    hint = secrets_mod.encrypted_hint(text)
+    if hint:
+        harvest.note(f"{source}: encrypted secret field '{hint}' (client-side only)")
+
+
+def _scan_zip(harvest: "Harvest", path: Path) -> int:
+    """Scan the text members of a zip container; returns the member count."""
+    count = 0
+    try:
+        with zipfile.ZipFile(path) as archive:
+            for info in archive.infolist():
+                if count >= _MAX_ZIP_MEMBERS or info.file_size > _MAX_SCAN_FILE:
+                    continue
+                if info.is_dir():
+                    continue
+                count += 1
+                try:
+                    data = archive.read(info)
+                except (RuntimeError, zipfile.BadZipFile, OSError):
+                    continue
+                _scan_text(harvest, _decode_bytes(data), f"{path}!{info.filename}")
+    except (zipfile.BadZipFile, OSError) as exc:
+        harvest.note(f"{path}: bad zip ({exc})")
+    return count
 
 
 def harvest_files(paths, source_label: str = "file") -> Harvest:
@@ -230,17 +299,19 @@ def harvest_files(paths, source_label: str = "file") -> Harvest:
             targets.append(path)
         else:
             harvest.note(f"{path}: not found")
+    scanned = 0
     for path in targets:
-        try:
-            if path.stat().st_size > _MAX_SCAN_FILE:
-                continue
-            if not _is_probably_text(path):
-                continue
-            text = path.read_text(encoding="utf-8", errors="replace")
-        except OSError:
+        suffix = path.suffix.lower()
+        if suffix in _ZIP_SUFFIXES or zipfile.is_zipfile(path):
+            scanned += _scan_zip(harvest, path) or 1
             continue
-        found = secrets_mod.extract_from_payload(text, source=str(path))
-        harvest.extend(found)
+        text = read_text(path)
+        if text is None:
+            harvest.note(f"{path}: unreadable")
+            continue
+        scanned += 1
+        _scan_text(harvest, text, str(path))
+    harvest.note(f"{scanned} source(s) scanned from {len(targets)} file(s)")
     if not targets:
         harvest.note("nothing to scan")
     return harvest
@@ -278,14 +349,15 @@ def harvest_adb(serial: str = "", timeout: float = 60.0) -> Harvest:
         except (OSError, subprocess.SubprocessError) as exc:
             harvest.note(f"adb {' '.join(command)}: {exc}")
             continue
-        output = (completed.stdout or b"").decode("utf-8", errors="replace")
+        output = _decode_bytes(completed.stdout or b"")
         errors = (completed.stderr or b"").decode("utf-8", errors="replace")
         label = "adb " + " ".join(command)
         if completed.returncode != 0 and not output:
             harvest.note(f"{label}: exit {completed.returncode} {errors.strip()[:120]}")
             continue
-        found = secrets_mod.extract_from_payload(output, source=label)
-        harvest.extend(found)
+        before = len(harvest.candidates)
+        _scan_text(harvest, output, label)
+        found = harvest.candidates[before:]
         if found:
             harvest.note(f"{label}: {len(found)} candidate(s)")
     if not harvest.candidates:

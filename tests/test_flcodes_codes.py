@@ -55,6 +55,34 @@ def test_matches_oracle_across_hour_boundaries():
         assert codes.generate_code(SEED, moment).code == oracle(SEED, moment)
 
 
+def reference_fl_codegen_gui(secret: str, timestamp_s: int) -> str:
+    """Transcription of the public Rust implementation (fl_codegen_gui).
+
+    It works in milliseconds, wraps the counter in an i32 and masks the sign
+    bit, so it is a genuinely different code path from the generator here.
+    """
+    timestamp_ms = timestamp_s * 1000
+    validity_ms = 3600 * 1000
+    interval = timestamp_ms // validity_ms
+    interval_beginning_ms = interval * validity_ms
+    adjusted = interval_beginning_ms // 60_000
+    digest = hmac.new(secret.encode(), adjusted.to_bytes(8, "big"), hashlib.sha1).digest()
+    offset = digest[-1] & 0xF
+    value = int.from_bytes(digest[offset:offset + 4], "big")
+    if value >= 2 ** 31:
+        value -= 2 ** 32
+    value &= 0x7FFFFFFF
+    return f"{value % 1_000_000:06d}"
+
+
+def test_equals_the_public_reference_implementation():
+    rng = random.Random(7)
+    moments = [rng.randrange(1_600_000_000, 1_850_000_000) for _ in range(300)]
+    moments += [1_700_002_800, 1_700_002_799, 1_700_005_999, 1_700_006_000, 4_102_444_800]
+    for moment in moments:
+        assert codes.generate_code(SEED, moment).code == reference_fl_codegen_gui(SEED, moment)
+
+
 def test_code_is_stable_inside_the_hour_and_changes_on_the_hour():
     start = 1_700_002_800
     codes_in_hour = {codes.generate_code(SEED, start + offset).code for offset in range(0, 3600, 137)}

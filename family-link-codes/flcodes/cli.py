@@ -11,7 +11,7 @@ import sys
 import time
 from pathlib import Path
 
-from . import __version__, codes as codes_mod, rea, report, secrets as secrets_mod
+from . import __version__, codes as codes_mod, rea, report, secrets as secrets_mod, verify as verify_mod
 from .store import Store, StoreError, default_store_path
 
 EXIT_OK = 0
@@ -130,12 +130,17 @@ def cmd_rea(args) -> int:
     if args.save or args.save_all:
         store = _open_store(args)
         chosen = harvest.candidates if args.save_all else ([harvest.best] if harvest.best else [])
-        for candidate in chosen:
+        for index, candidate in enumerate(chosen):
             if candidate is None:
                 continue
+            # keep labels distinguishable when several candidates are saved
+            if args.label and len(chosen) > 1:
+                label = f"{args.label}-{index + 1}"
+            else:
+                label = args.label or f"{candidate.kind}-{_now_iso()}"
             record = store.add_seed(
                 secret=candidate.secret,
-                label=args.label or f"{candidate.kind}-{_now_iso()}",
+                label=label,
                 kind=candidate.kind,
                 source=candidate.source,
                 notes=candidate.context[:200],
@@ -326,6 +331,110 @@ def cmd_stream(args) -> int:
     return EXIT_OK
 
 
+def cmd_verify(args) -> int:
+    """Check generated codes against codes Google actually produced."""
+    observations = []
+    if args.file:
+        text = (
+            Path(args.file).read_text(encoding="utf-8", errors="replace")
+            if args.file != "-"
+            else sys.stdin.read()
+        )
+        observations = verify_mod.parse_observations(text)
+    if args.code:
+        if args.at:
+            timestamp = codes_mod.parse_timestamp(args.at)
+        else:
+            timestamp = time.time() - max(0, args.minutes) * 60
+        observations.append(verify_mod.Observation(args.code, timestamp, note="cli"))
+    if not observations:
+        _print("error: no observation given (use --code/--at or --file)", file=sys.stderr)
+        return EXIT_USAGE
+
+    store = _open_store(args)
+    if args.secret:
+        keys = [{"secret": secrets_mod.normalize_secret(args.secret), "label": "cli", "id": ""}]
+    else:
+        seeds = store.load().get("seeds", [])
+        if not seeds:
+            raise StoreError("no stored key: run `flcodes rea ... --save` first")
+        if args.id:
+            seeds = [seed for seed in seeds if seed["id"] == args.id]
+            if not seeds:
+                raise StoreError(f"unknown seed id: {args.id}")
+        keys = [
+            {"secret": seed["secret"], "label": seed["label"], "id": seed["id"]}
+            for seed in seeds
+        ]
+
+    verifications = verify_mod.verify_keys(
+        keys,
+        observations,
+        tolerance_hours=args.tolerance_hours,
+        encoding=args.encoding,
+    )
+    # with --json the machine readable document is the only thing on stdout
+    human = sys.stderr if args.json else sys.stdout
+
+    for verification in verifications:
+        state = "CONFIRMADO" if verification.confirmed else "não confirmado"
+        _print(
+            f"key {verification.label} ({verification.seed_id or 'sem id'}): "
+            f"{verification.matched}/{verification.total} - {state}",
+            file=human,
+        )
+        for result in verification.results if (verification.matched or args.verbose) else []:
+            marker = "ok  " if result.matched else "fail"
+            drift = (
+                f" (deslocamento de {result.delta_hours:+d}h)"
+                if result.matched and result.delta_hours
+                else ""
+            )
+            _print(
+                f"  [{marker}] observado {result.observation.code} em "
+                f"{_human_window_ts(result.observation.timestamp)} -> "
+                f"gerado {result.expected}{drift}",
+                file=human,
+            )
+
+    confirmed = [v for v in verifications if v.confirmed]
+    _print(file=human)
+    if confirmed:
+        _print(
+            "confirmado: a chave "
+            f"{confirmed[0].label} reproduz todos os códigos observados "
+            "(mesma chave, mesmo algoritmo e mesma janela de hora).",
+            file=human,
+        )
+    else:
+        _print(
+            "não confirmado: nenhuma chave reproduziu o código observado. "
+            "Confira o horário da observação, o fuso e tente --tolerance-hours 1.",
+            file=human,
+        )
+
+    if args.json:
+        _print(
+            json.dumps(
+                verify_mod.report_document(verifications, observations, args.tolerance_hours),
+                indent=2,
+            )
+        )
+    if not args.no_report:
+        document = verify_mod.report_document(
+            verifications, observations, args.tolerance_hours
+        )
+        path = _out_dir(args) / f"verify-{_now_iso()}.json"
+        report.write_json(document, path)
+        _print(f"report: {path} (sem segredo)", file=human)
+    return EXIT_OK if confirmed else EXIT_ERROR
+
+
+def _human_window_ts(timestamp: float) -> str:
+    moment = _dt.datetime.fromtimestamp(timestamp).astimezone()
+    return moment.strftime("%Y-%m-%d %H:%M %Z")
+
+
 def cmd_serve(args) -> int:
     from .server import serve
 
@@ -496,6 +605,33 @@ def build_parser() -> argparse.ArgumentParser:
     stream_parser.add_argument("--out", help="save every new code to a file")
     stream_parser.add_argument("--format", choices=("auto", "csv", "jsonl"), default="csv")
 
+    verify_parser = sub.add_parser(
+        "verify", help="compare generated codes with codes Google produced"
+    )
+    verify_parser.add_argument("--code", help="observed six digit code")
+    verify_parser.add_argument("--at", help="when the code was observed (ISO or epoch)")
+    verify_parser.add_argument(
+        "--minutes",
+        type=float,
+        default=0.0,
+        help="the code was observed this many minutes ago (default: now)",
+    )
+    verify_parser.add_argument(
+        "--file", help="CSV (timestamp,code) or JSON observations, '-' for stdin"
+    )
+    verify_parser.add_argument(
+        "--tolerance-hours",
+        type=int,
+        default=0,
+        help="accept a match one hour before/after (clock skew)",
+    )
+    verify_parser.add_argument("--encoding", choices=("auto", "raw", "base32"), default="auto")
+    verify_parser.add_argument("--id", help="only verify this stored key")
+    verify_parser.add_argument("--secret", help="verify a secret directly")
+    verify_parser.add_argument("--json", action="store_true")
+    verify_parser.add_argument("-v", "--verbose", action="store_true", help="detail every key")
+    verify_parser.add_argument("--no-report", action="store_true")
+
     serve_parser = sub.add_parser("serve", help="local web UI")
     serve_parser.add_argument("--host", default="127.0.0.1")
     serve_parser.add_argument("--port", type=int, default=8765)
@@ -520,6 +656,7 @@ def main(argv: list | None = None) -> int:
         "keys": cmd_keys,
         "gen": cmd_gen,
         "stream": cmd_stream,
+        "verify": cmd_verify,
         "serve": cmd_serve,
         "audit": cmd_audit,
     }
