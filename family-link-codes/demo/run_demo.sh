@@ -31,7 +31,7 @@ echo "== 3. stored keys (masked) =="
 "$python" -m flcodes keys list
 
 echo
-echo "== 4. generate three hours (2026-10-22 16:00Z..19:00Z) =="
+echo "== 4. generate three codes (TTL comes from the captured config) =="
 "$python" -m flcodes gen --label demo-1 --time 1792684800 --count 3 --json 2>/dev/null \
   | "$python" -c 'import json,sys; [print(r["code"], "|", r["valid_from_utc"], "->", r["valid_to_utc"]) for r in json.load(sys.stdin)]'
 

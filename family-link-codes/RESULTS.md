@@ -1,130 +1,138 @@
 # Resultados do ensaio — REA (Reverse Engineering Anything)
 
-Data: 2026-10-22. Chaves usadas aqui são **fictícias** (`AItest-only-…`), criadas
-só para o ensaio. Nenhuma conta real foi acessada.
+Data: 2026-10-22. Chaves aqui são **fictícias** (`AItest-only-…`) ou o vetor
+público de teste do Chromium. Nenhuma conta real foi acessada.
 
-## 1. Resposta direta às três perguntas
+## 0. Resposta direta
 
-| pergunta | resposta | como foi medido |
+| pergunta | estado |
+|---|---|
+| **Acha os caminhos?** | **Sim** — 7 candidatos com proveniência (`paths list`), descoberta a partir de captura real (`paths discover`) sem inventar host+caminho, e teste HTTP com status/tamanho/segredo (`paths check`). Verificação de rede real contra o Google: **não executada aqui** (bloqueio de rede do sandbox). |
+| **Gera códigos?** | **Sim**, 6 dígitos, por balde de TTL. |
+| **Funcionam no Family Link?** | **Igualdade com o app oficial: PROVADA** — os 5 vetores do Chromium, que foram *gerados no app Family Link do Android*, são reproduzidos 5/5. **Aceitação no firmware do aparelho: não provada aqui** (sem aparelho). |
+
+## 1. A prova mais forte: vetores do app oficial
+
+O Chromium embute, em
+`chrome/browser/ash/child_accounts/parent_access_code/parent_access_test_utils.cc`,
+códigos "generated in Family Link Android app" com o config
+`shared_secret = AIfVJHITSar8keeq3779V70dWiS1xbPv8g`, `access_code_ttl = 600 s`,
+`clock_drift_tolerance = 300 s`:
+
+| esperado (app Google) | instante | flcodes (TTL 600 s) | flcodes (TTL 3600 s) |
+|---|---|---|---|
+| 734261 | 2019-01-08 16:58:07 PST | **734261** | 182975 |
+| 472150 | 2019-01-14 15:35:05 PST | **472150** | 673233 |
+| 204984 | 2019-01-14 15:42:49 PST | **204984** | 673233 |
+| 157758 | 2019-01-14 15:53:01 PST | **157758** | 673233 |
+| 524186 | 2019-01-14 16:00:00 PST | **524186** | **524186** |
+
+**5/5 com 600 s; 1/5 com 1 h.** Isso corrigiu uma premissa errada da primeira
+versão desta ferramenta: o código **não** vale sempre uma hora. A validade vem
+do config (`access_code_ttl`, entre 60 s e 3600 s) e precisa ser usada; a
+única coincidência é quando o instante cai exatamente na virada.
+
+Implementado: TTL por chave (lido de `access_code_ttl`/`accessCodeTtl`), TTL
+descobrível a partir de uma observação (`discover_validity`), e aviso explícito
+quando dois TTLs explicam a mesma amostra (600 s e 300 s são indistinguíveis com
+uma amostra só).
+
+## 2. Caminhos (endpoints)
+
+`flcodes paths list` — candidatos com a origem da informação:
+
+| endpoint | tipo | por quê |
 |---|---|---|
-| **O app busca a chave?** | **Sim** — 5 de 5 formatos de dump recuperados; o formato pós-patch (segredo cifrado) é **detectado e reportado**, não inventado | `rea scan` sobre fixtures reais de REA (HAR, UTF-16, APK, LevelDB, gzip) |
-| **Gera códigos?** | **Sim** — 6 dígitos, 1 por hora, janela de 1 h, determinístico | `gen`, `gen --day`, `stream`; 66 testes |
-| **Os códigos são funcionais?** | **Igualdade com uma implementação independente: provada.** **Aceitação real pelo Google: NÃO provada neste ambiente** — exigia rede/telefone, que o sandbox bloqueia | `verify` contra códigos produzidos por `pyotp` (biblioteca independente) e transcrição da implementação pública em Rust |
+| `familylink.googleapis.com/v1/familyLinkAppConfig` | app-config | documentado no write-up público (filtro DevTools `familyLinkAppConfig`) |
+| `kidsmanagement-pa.clients6.google.com/kidsmanagement/v1/familyLinkAppConfig` | app-config | mesma família de hosts do painel web |
+| `kidsmanagement-pa.googleapis.com/kidsmanagement/v1/familyLinkAppConfig` | app-config | host alternativo |
+| `familylink.google.com/` | web-app | HTML + bundles JS contêm o caminho |
+| `…/kidsmanagement/v1/families/mine/members` | session-check | valida a sessão antes da caça |
+| `file:///var/lib/whitelist/preferences` | chromeos-policy | política `ParentAccessCodeConfig` no Local State |
+| `file:///home/chronos/Local State` | chromeos-policy | idem, usuário logado |
 
-A frase "funcional" tem dois sentidos e é importante não confundi-los:
+`flcodes paths discover --file captura.har` ranqueia o que a captura mostra
+(`app-config` acima de `session-check`, lixo de analytics descartado) e **não**
+monta combinações inexistentes — bug corrigido no ensaio (antes ele produzia
+`familylink.googleapis.com/kidsmanagement/...`). `paths check` faz GET só
+quando pedido e reporta `status`, `bytes`, presença de segredo ou do campo
+cifrado.
 
-1. **Reproduz o que o Google mostra** → provado contra *duas* implementações
-   independentes (oráculo RFC 4226 escrito à mão, transcrição do Rust público,
-   e `pyotp` no ensaio). Se o algoritmo estivesse errado, nenhuma delas
-   concordaria.
-2. **O aparelho aceita o código** → só se prova **no aparelho** ou com um código
-   lido do app do responsável. Isso está automatizado no comando `verify`, e
-   leva 1 minuto na sua máquina (§4).
+Rede real: `curl https://familylink.googleapis.com/…` responde `http=000` neste
+sandbox (política de rede), então **`paths check`/`rea api` não foram exercitados
+contra o Google**. Os testes usam stub local (200/401, corpo com segredo,
+caminho aninhado).
 
-## 2. Busca da chave — resultados por formato
-
-`flcodes rea scan /tmp/rea-demo/dumps --save --save-all` (fixtures geradas por
-`make_fixtures.py`):
+## 3. Busca da chave — formatos
 
 ```
-[android] AIte…ij (len 35)  <- familylink.har   ('\n[["familyLinkAppConfig", [[null, "AItest-only-REA-demo-key…")   [unicode-escaped]
-[android] AIte…ij (len 35)  <- prefs.xml        (ding="utf-16"?><map><string name="seed">AItest-only-REA-pref-key…)
-[android] AIte…ij (len 35)  <- app-dump.apk!assets/family_link.json  ($.parentAccessCode (key match))
-[android] AIte…ij (len 35)  <- 000005.ldb       (··ÿAItest-only-REA-ldb1-key.abcdefghij·þ)
-[android] AIte…ij (len 35)  <- logcat.gz        (I/fl: seed=AItest-only-REA-gz11-key.abcdefghij)
+[android] AIte…ij (len 35)  <- familylink.har   (…"sharedSecret": "AItest-only-REA-demo-key…")
+[android] AIte…ij (len 35)  <- prefs.xml        (UTF-16: <string name="seed">…)
+[android] AIte…ij (len 35)  <- app-dump.apk!assets/family_link.json
+[android] AIte…ij (len 35)  <- 000005.ldb       (LevelDB binário)
+[android] AIte…ij (len 35)  <- logcat.gz        (gzip)
 note: post-patch.json: encrypted secret field 'encryptedSharedSecret' (client-side only)
 ```
 
-| formato | como é tratado | resultado |
-|---|---|---|
-| HAR / JSON com prefixo XSSI `)]}'` | parse + varredura estrutural | achou |
-| string com escape `\u0041…`, inclusive **escape duplo** (JSON dentro de JSON) | decodificação de 1+ barras invertidas | achou |
-| `%41%49…` e duplo (`%2541…`) | unquote em até 2 níveis | achou |
-| hex (`4149…`) e base64 (run dentro de blob) | decodificação de runs, com limite | achou |
-| XML de prefs em **UTF-16** | leitura com BOM/endianness | achou |
-| **APK/JAR/CRX/ZIP** | varredura de membros internos | achou |
-| **gzip** de logcat | descompressão transparente | achou |
-| **LevelDB** (`.ldb`, `.log`) binário | decodificação latin-1 (não descarta NUL) | achou |
-| payload **pós-patch** (segredo cifrado) | detecta `encryptedSharedSecret` e avisa | não inventa chave |
+E o config vem junto: `ttl=600s` gravado na chave (`extra={'validity': 600,
+'drift': 300}`).
 
-**Falha encontrada no próprio ensaio e corrigida:** o HAR não era lido como
-arquivo porque o corpo embutido tem escape duplo (`\\u0041`). Corrigido em
-`secrets._decode_escaped_runs`, com teste de regressão
-(`test_har_scanned_as_a_file_decodes_double_escaped_secret`). Também corrigidos:
-contexto impresso com bytes NUL (agora `printable()`) e rótulos repetidos ao
-salvar vários candidatos.
+Falhas encontradas no ensaio e corrigidas: HAR com escape duplo não detectado;
+`access_code_ttl` perdido porque o corpo era JSON dentro de string (agora há
+recursão de JSON embutido, com profundidade contada só para JSON aninhado);
+contexto com bytes NUL; rótulos repetidos; servidor web com cache eterno do
+cofre.
 
-## 3. Geração e verificação
-
-```
-$ flcodes gen --label rea-demo-1 --time 1792684800 --count 3
-843355 | 2026-10-22T16:00Z -> 17:00Z
-969812 | 2026-10-22T17:00Z -> 18:00Z
-704543 | 2026-10-22T18:00Z -> 19:00Z
-```
-
-Códigos equivalentes gerados por `pyotp` (implementação independente,
-`interval=60`, contador na hora cheia) e verificados:
-
-```
-$ flcodes verify --file observations.csv
-key rea-demo-1 (58677a59dd8b): 3/3 - CONFIRMADO
-  [ok  ] observado 843355 em 2026-10-22 16:05 UTC -> gerado 843355
-  [ok  ] observado 969812 em 2026-10-22 17:05 UTC -> gerado 969812
-  [ok  ] observado 704543 em 2026-10-22 18:05 UTC -> gerado 704543
-key rea-demo-2 (86370587fa3d): 0/3 - não confirmado
-key rea-demo-3 (26f0ae53bb2d): 0/3 - não confirmado
-key rea-demo-4 (1cd34af58956): 0/3 - não confirmado
-key rea-demo-5 (29fe8c64ae59): 0/3 - não confirmado
-
-confirmado: a chave rea-demo-1 reproduz todos os códigos observados …
-```
-
-Isso mostra duas coisas: a chave certa entre 5 é identificada, e chaves erradas
-**não** passam (nenhum falso positivo em 15 comparações).
-
-## 4. Como provar a funcionalidade real (1 minuto, sua máquina)
-
-Requisitos: conta de responsável autorizada e um código que o Google mostre.
-
-1. Abra o Family Link no aparelho do responsável (ou
-   `familylink.google.com`) → **Código de acesso do familiar**. Anote o código e
-   o horário (o minuto exato não importa, a hora sim).
-2. `flcodes verify --code 123456 --at "2026-10-22T15:12:00-03:00"`
-3. `CONFIRMADO` ⇒ a chave e o algoritmo são funcionais. Se falhar, rode com
-   `--tolerance-hours 1` para descartar relógio dessincronizado; se ainda
-   falhar, a chave não é a daquele responsável.
-
-Teste final (o único que prova aceitação): com o aparelho supervisionado
-**offline**, digite o código gerado para a hora atual em "Acesso dos pais".
-
-Aquisição real da chave na sua máquina (não possível no sandbox):
+## 4. Ensaio completo reproduzível
 
 ```bash
-flcodes rea api --cookie-file ~/cookies.txt --save    # sessão do responsável
-flcodes rea har ~/Downloads/familylink.har --save     # captura do DevTools
-flcodes rea adb --save                                # aparelho com root/run-as
+bash family-link-codes/demo/run_demo.sh
 ```
 
-Neste sandbox `curl https://familylink.googleapis.com/…` responde `http=000`
-(rede bloqueada por política), então a etapa `api` não pôde ser executada aqui —
-está registrada como **não testada em rede real**, não como aprovada.
+Saída (resumo):
 
-## 5. Cobertura de testes (66)
+```
+== 2. REA: find the shared secret ==       5 fontes + aviso do campo cifrado
+== 3. stored keys (masked) ==              demo-1 … 600s  AIte…ij  demo-1
+== 4. generate three codes ==              843355 / 203648 / 096046 (janelas de 10 min)
+== 5. observations (oráculo Chromium) ==
+== 6. verify ==                            key demo-1: 3/3 CONFIRMADO, ttl 600s
+                                           demo-2..5: 0/3 não confirmado
+== 7. negative control ==                  correctly rejected (exit 1)
+```
+
+## 5. O que ainda NÃO está provado
+
+* **Aceitação pelo firmware do aparelho supervisionado** — precisa de aparelho
+  real. É o único passo que falta e ele é do usuário: ver §6.
+* `paths check` / `rea api` contra os endpoints do Google (rede bloqueada aqui;
+  e desde 09/2024 a maioria das contas não recebe mais o segredo no cliente web).
+* `rea adb` em aparelho real (sem root/`run-as` o Android bloqueia).
+* Estabilidade futura do esquema (TTL e política podem mudar).
+
+## 6. Como fechar a prova em 1 minuto (na sua máquina)
+
+1. Family Link no aparelho do responsável → **Código de acesso do familiar**;
+   anote o código e o horário.
+2. `flcodes verify --code 123456 --at "2026-10-22T16:12:00-03:00"`
+   → `CONFIRMADO` e o TTL usado. Se der `ambíguo`, repita com outro horário.
+3. No aparelho supervisionado **offline**, digite o código atual em
+   "Acesso dos pais" — esse é o teste de aceitação final.
+
+## 7. Cobertura de testes (92)
+
+```bash
+pytest -q tests/test_flcodes_*.py    # 92 passed
+```
+
+(`pytest -q` na raiz do repositório também coleta os testes de outro projeto
+daquele repo, que exigem `jdk4py`; não têm relação com esta ferramenta.)
 
 | arquivo | o que fixa |
 |---|---|
-| `test_flcodes_codes.py` | oráculo RFC 4226 independente (400 instantes), **equivalência com a implementação pública em Rust**, bordas de hora, fuso de meia hora, normalização de segredo |
-| `test_flcodes_crypto.py` | ChaCha20-Poly1305 contra RFC 8439 (2.3.2, 2.5.2, 2.8.2) e contra `cryptography`; scrypt; cofre: senha errada, adulteração, `0600`, dedupe, export/import |
-| `test_flcodes_rea.py` | HAR, XSSI, escape simples/duplo, percent duplo, hex, base64, UTF-16, ZIP/APK, gzip, LevelDB, hint de segredo cifrado, mascaramento, relatório sem segredo |
-| `test_flcodes_verify.py` | confirmação, rejeição, múltiplas observações, tolerância de relógio, seleção entre chaves, parsing CSV/JSON |
-| `test_flcodes_cli.py` | CLI ponta a ponta em subprocesso, códigos de saída, relatórios, UI web (401/429/400/HEAD, CSP, `--allow-embed`), `verify` |
-
-## 6. O que continua NÃO provado
-
-* Aceitação do código pelo firmware do aparelho supervisionado (impossível sem
-  aparelho real).
-* `rea api` contra os endpoints do Google (rede bloqueada aqui; e desde 09/2024
-  o segredo não é mais enviado ao cliente web na maioria das contas).
-* `rea adb` em aparelho real (sem root/`run-as` não há leitura de dados do app).
-* Estabilidade do esquema de TOTP de 60 s/hora em versões futuras do Family Link.
+| `test_flcodes_codes.py` | **5 vetores oficiais do app Android**; guarda contra voltar ao TTL de 1 h; oráculo RFC 4226 independente; equivalência com a implementação Rust pública; descoberta de TTL e ambiguidade |
+| `test_flcodes_crypto.py` | ChaCha20-Poly1305 vs RFC 8439 e `cryptography`; cofre (senha, adulteração, `0600`, recarga por mtime) |
+| `test_flcodes_rea.py` | HAR/XSSI, escape simples e duplo, percent duplo, hex, base64, UTF-16, ZIP/APK, gzip, LevelDB, TTL+drift no config, campo cifrado |
+| `test_flcodes_endpoints.py` | lista com proveniência, descoberta sem inventar hosts, JS bundle vs ruído, `check` 200/401/arquivo local |
+| `test_flcodes_verify.py` | confirmação/rejeição, TTL descoberto, ambiguidade, drift, seleção entre chaves |
+| `test_flcodes_cli.py` | CLI ponta a ponta, `paths`, TTL no `rea`/`gen`/`verify`, UI web (401/429/400/HEAD, CSP, TTL) |

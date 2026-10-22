@@ -14,23 +14,25 @@ import pathlib
 import sys
 
 SECRET = "AItest-only-REA-demo-key.abcdefghij"  # FAKE, demo only
-HOUR = 1_792_684_800  # 2026-10-22T16:00:00Z
+START = 1_792_684_800  # 2026-10-22T16:00:00Z
+TTL = 600  # the config says 600 s, not one hour
 
 
-def totp_hour(secret: str, hour_start: int, delta_seconds: int = 300) -> str:
-    """The code valid during the hour that starts at ``hour_start``."""
-    counter = hour_start // 60
+def totp_bucket(secret: str, timestamp: int, validity: int = TTL) -> str:
+    """Chromium's Authenticator::Generate: bucket start / 60 s, HMAC-SHA1, 6 digits."""
+    bucket = (timestamp // validity) * validity
+    counter = bucket // 60
     digest = hmac.new(secret.encode(), counter.to_bytes(8, "big"), hashlib.sha1).digest()
     offset = digest[-1] & 0x0F
     value = int.from_bytes(digest[offset:offset + 4], "big") & 0x7FFFFFFF
     return f"{value % 1_000_000:06d}"
 
 
-def build(path: pathlib.Path, hours: int = 3) -> pathlib.Path:
+def build(path: pathlib.Path, buckets: int = 3) -> pathlib.Path:
     rows = []
-    for index in range(hours):
-        start = HOUR + index * 3600
-        rows.append({"timestamp": start + 300, "code": totp_hour(SECRET, start), "note": "oraculo RFC 4226"})
+    for index in range(buckets):
+        moment = START + index * TTL + 120
+        rows.append({"timestamp": moment, "code": totp_bucket(SECRET, moment), "note": "oraculo Chromium/RFC 4226"})
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=["timestamp", "code", "note"])
         writer.writeheader()

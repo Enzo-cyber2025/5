@@ -150,7 +150,8 @@
     document.getElementById("window").textContent =
       "válido de " + formatLocal(code.valid_from) + " a " + formatLocal(code.valid_to) + " (local)";
     document.getElementById("activeName").textContent =
-      payload.label + (payload.kind ? " · " + payload.kind : "");
+      payload.label + (payload.kind ? " · " + payload.kind : "") +
+      (payload.validity ? " · ttl " + payload.validity + "s" : "");
     tick();
   }
 
@@ -187,7 +188,8 @@
       var title = document.createElement("div");
       title.textContent = key.label + (key.active ? " (ativa)" : "");
       var detail = document.createElement("small");
-      detail.textContent = key.kind + " · " + key.masked + " · id " + key.id;
+      detail.textContent = key.kind + " · " + key.masked +
+        (key.validity ? " · ttl " + key.validity + "s" : "") + " · id " + key.id;
       info.appendChild(title);
       info.appendChild(detail);
       var button = document.createElement("button");

@@ -225,6 +225,8 @@ class Store:
         source: str = "",
         notes: str = "",
         seed_id: str | None = None,
+        validity: int | None = None,
+        drift: int | None = None,
     ) -> dict:
         """Store a secret and return the created record."""
         payload = self.load()
@@ -243,6 +245,10 @@ class Store:
             "notes": notes,
             "created_at": int(time.time()),
         }
+        if validity:
+            record["validity"] = int(validity)
+        if drift:
+            record["drift"] = int(drift)
         payload.setdefault("seeds", []).append(record)
         if not payload.get("active_id"):
             payload["active_id"] = record["id"]
@@ -306,6 +312,8 @@ class Store:
                     source=entry.get("source", "import"),
                     notes=entry.get("notes", ""),
                     seed_id=entry.get("id") if overwrite else None,
+                    validity=entry.get("validity"),
+                    drift=entry.get("drift"),
                 )
             )
         return imported

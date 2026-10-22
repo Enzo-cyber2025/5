@@ -1,21 +1,32 @@
 """Family Link parent access code generation.
 
 The "parent access code" that Google Family Link shows in the parent app (and
-that unlocks a supervised device offline) is a time based one time password:
+that unlocks a supervised device offline) is a time based one time password.
+The authoritative implementation is Chromium's
+`chrome/browser/ash/child_accounts/parent_access_code/authenticator.cc`, which
+is what a Chromebook uses to validate the code:
 
-* key          = the shared secret, used as **raw key bytes**;
-* hash         = HMAC-SHA1;
-* counter      = the number of 60 second steps since the epoch, **anchored to
-                  the hour** (the counter only changes on the hour);
-* truncation   = RFC 4226 dynamic truncation, result mod 1e6, zero padded.
+* key          = the shared secret, used as **raw key bytes** (not base32);
+* hash         = HMAC-SHA1 over the big endian 64 bit counter;
+* bucket       = ``timestamp // code_validity`` (code validity comes from the
+                 config as ``access_code_ttl``, between 60 s and 3600 s);
+* counter      = the bucket start divided by the 1 minute granularity, so a code
+                 never changes inside its bucket;
+* truncation   = RFC 4226 dynamic truncation, result mod 1e6, zero padded to 6.
 
-Because the counter is anchored to the hour, one code stays valid for the
-whole hour, which is the behaviour observed in the Family Link app and
-documented by the public `fl_codegen_gui` reference implementation.
+So the code does **not** always last an hour: it lasts ``access_code_ttl``
+seconds (600 s in Chromium's own test data, which was generated with the Family
+Link Android app). The bucket boundaries are epoch based, so they land on
+multiples of the TTL; use ``offset_minutes`` only for half hour timezones.
 
-Hour alignment is computed on the epoch, so every timezone whose UTC offset is
-a whole number of hours shares the same boundaries. `offset_minutes` shifts the
-alignment for the half hour timezones (UTC+05:30, UTC+09:30, ...).
+``CODE_VALIDITY_SECONDS`` (the fallback used when no config is available) is
+3600 s, because that is what recent reports of the live app show; Chromium's own
+fallback is 600 s (``kDefaultCodeValidity``), and the five access codes the
+Android app itself generated in Chromium's test data use 600 s. Neither number
+is authoritative: the real value is whatever the config says, so always prefer
+the ``validity`` extracted from the payload, and use :func:`discover_validity`
+when comparing against a code seen in the app (a single sample cannot tell
+600 s from 300 s). When in doubt, ask the app: ``flcodes verify --code ...``.
 """
 
 from __future__ import annotations
@@ -39,10 +50,20 @@ __all__ = [
     "code_window",
     "codes_for_day",
     "parse_timestamp",
+    "check_validity",
+    "discover_validity",
+    "MIN_VALIDITY_SECONDS",
+    "MAX_VALIDITY_SECONDS",
+    "PLAUSIBLE_VALIDITIES",
 ]
 
 CODE_VALIDITY_SECONDS = 3600
 CODE_GRANULARITY_SECONDS = 60
+#: Range accepted by Chromium's AccessCodeConfig (60 s .. 3600 s).
+MIN_VALIDITY_SECONDS = 60
+MAX_VALIDITY_SECONDS = 3600
+#: Values worth trying when the real TTL is unknown.
+PLAUSIBLE_VALIDITIES = tuple(range(60, MAX_VALIDITY_SECONDS + 1, 60))
 
 _BASE32_RE = re.compile(r"^[A-Z2-7]+=*$")
 _OTP_AUTH_RE = re.compile(r"^otpauth://totp/[^?]*\?(.*)$", re.IGNORECASE)
@@ -56,6 +77,7 @@ class FamilyLinkCode:
     valid_from: int
     valid_to: int
     counter: int
+    validity: int = CODE_VALIDITY_SECONDS
 
     @property
     def seconds_remaining(self) -> int:
@@ -67,6 +89,7 @@ class FamilyLinkCode:
             "valid_from": self.valid_from,
             "valid_to": self.valid_to,
             "counter": self.counter,
+            "validity": self.validity,
         }
 
 
@@ -133,16 +156,33 @@ def secret_key(secret: str, encoding: str = "auto") -> bytes:
     return value.encode("utf-8")
 
 
-def _hour_start(timestamp: float, offset_minutes: int = 0) -> int:
-    """Epoch second where the hour (on a clock at ``offset_minutes``) begins."""
+def check_validity(validity: int) -> int:
+    """Validate a code validity (TTL) in seconds, like Chromium does."""
+    try:
+        value = int(validity)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"invalid code validity: {validity!r}") from exc
+    if not MIN_VALIDITY_SECONDS <= value <= MAX_VALIDITY_SECONDS:
+        raise ValueError(
+            f"code validity must be between {MIN_VALIDITY_SECONDS} and "
+            f"{MAX_VALIDITY_SECONDS} seconds, got {value}"
+        )
+    return value
+
+
+def _bucket_start(timestamp: float, offset_minutes: int = 0, validity: int = CODE_VALIDITY_SECONDS) -> int:
+    """Epoch second where the bucket (on a clock at ``offset_minutes``) begins."""
     shift = offset_minutes * 60
-    return (int(timestamp) + shift) // CODE_VALIDITY_SECONDS * CODE_VALIDITY_SECONDS - shift
+    return (int(timestamp) + shift) // validity * validity - shift
 
 
-def code_window(timestamp: float, offset_minutes: int = 0) -> tuple:
+def code_window(
+    timestamp: float, offset_minutes: int = 0, validity: int = CODE_VALIDITY_SECONDS
+) -> tuple:
     """Return ``(valid_from, valid_to)`` epoch seconds for the given moment."""
-    start = _hour_start(timestamp, offset_minutes)
-    return start, start + CODE_VALIDITY_SECONDS
+    validity = check_validity(validity)
+    start = _bucket_start(timestamp, offset_minutes, validity)
+    return start, start + validity
 
 
 def generate_code(
@@ -150,12 +190,14 @@ def generate_code(
     timestamp: float | None = None,
     offset_minutes: int = 0,
     encoding: str = "auto",
+    validity: int = CODE_VALIDITY_SECONDS,
 ) -> FamilyLinkCode:
     """Generate the parent access code valid at ``timestamp`` (default: now)."""
     if timestamp is None:
         timestamp = _dt.datetime.now(_dt.timezone.utc).timestamp()
+    validity = check_validity(validity)
     key = secret_key(secret, encoding=encoding)
-    valid_from, valid_to = code_window(timestamp, offset_minutes)
+    valid_from, valid_to = code_window(timestamp, offset_minutes, validity)
     counter = valid_from // CODE_GRANULARITY_SECONDS
     digest = hmac.new(key, counter.to_bytes(8, "big"), hashlib.sha1).digest()
     offset = digest[-1] & 0x0F
@@ -165,6 +207,7 @@ def generate_code(
         valid_from=valid_from,
         valid_to=valid_to,
         counter=counter,
+        validity=validity,
     )
 
 
@@ -174,20 +217,60 @@ def codes_for_day(
     tz: _dt.tzinfo | None = None,
     offset_minutes: int = 0,
     encoding: str = "auto",
+    validity: int = CODE_VALIDITY_SECONDS,
 ) -> list:
-    """Return ``[(local datetime, FamilyLinkCode), ...]`` for every hour of ``day``."""
+    """Return ``[(local datetime, FamilyLinkCode), ...]`` for every bucket of ``day``."""
+    validity = check_validity(validity)
     tzinfo = tz or _dt.datetime.now().astimezone().tzinfo
     start = _dt.datetime.combine(day, _dt.time(0, 0), tzinfo=tzinfo)
     end = start + _dt.timedelta(days=1)
     start_ts = start.timestamp()
     end_ts = end.timestamp()
     result = []
-    cursor = (int(start_ts) // CODE_VALIDITY_SECONDS) * CODE_VALIDITY_SECONDS
+    cursor = _bucket_start(start_ts, offset_minutes, validity)
     while cursor < end_ts:
-        code = generate_code(secret, cursor, offset_minutes=offset_minutes, encoding=encoding)
+        code = generate_code(
+            secret,
+            cursor,
+            offset_minutes=offset_minutes,
+            encoding=encoding,
+            validity=validity,
+        )
         result.append((_dt.datetime.fromtimestamp(cursor, tzinfo), code))
-        cursor += CODE_VALIDITY_SECONDS
+        cursor += validity
     return result
+
+
+def discover_validity(
+    secret: str,
+    observations,
+    encoding: str = "auto",
+    offset_minutes: int = 0,
+    candidates=None,
+) -> list:
+    """Return the code validities that reproduce every ``(code, timestamp)`` pair.
+
+    When the TTL that came from the config is wrong (or missing), this finds the
+    real one from a single code read in the parent app, which is how the 600 s
+    value in Chromium's own test data is reproduced.
+    """
+    candidates = tuple(candidates or PLAUSIBLE_VALIDITIES)
+    matches = []
+    for validity in candidates:
+        try:
+            validity = check_validity(validity)
+        except ValueError:
+            continue
+        if all(
+            generate_code(
+                secret, timestamp, offset_minutes=offset_minutes, encoding=encoding,
+                validity=validity,
+            ).code
+            == str(code).strip()
+            for code, timestamp in observations
+        ):
+            matches.append(validity)
+    return matches
 
 
 def parse_timestamp(value: str) -> float:

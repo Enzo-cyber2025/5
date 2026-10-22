@@ -405,3 +405,149 @@ def first_id_from_listing(listing: str, label: str) -> str:
         if line.rstrip().endswith(label):
             return line.split()[1]
     raise AssertionError(f"label {label} not in listing")
+
+
+# ----------------------------------------------------------------------- paths
+def test_paths_list_shows_provenance(tmp_path):
+    result = run_cli("paths", "list", home=tmp_path)
+    assert result.returncode == 0
+    assert "familyLinkAppConfig" in result.stdout
+    assert "chromeos-policy" in result.stdout
+    assert "flcodes paths discover" in result.stdout
+
+
+def test_paths_discover_from_a_capture(tmp_path):
+    capture = tmp_path / "capture.txt"
+    capture.write_text(
+        'fetch("https://kidsmanagement-pa.clients6.google.com/kidsmanagement/v1/families/mine/members")\n'
+        'fetch("https://familylink.googleapis.com/v1/familyLinkAppConfig?alt=json")'
+    )
+    result = run_cli("paths", "discover", "--file", str(capture), home=tmp_path)
+    assert result.returncode == 0, result.stderr
+    assert "app-config" in result.stdout
+    assert "rea api --url" in result.stdout
+    assert "familyLinkAppConfig" in result.stdout
+
+    reports = list((tmp_path / "output").glob("paths-*.json"))
+    assert len(reports) == 1
+    document = json.loads(reports[0].read_text())
+    assert document["command"] == "paths discover"
+    assert any("familyLinkAppConfig" in entry["url"] for entry in document["endpoints"])
+
+
+def test_paths_discover_without_candidates_fails(tmp_path):
+    empty = tmp_path / "empty.txt"
+    empty.write_text("nada aqui")
+    result = run_cli("paths", "discover", "--file", str(empty), home=tmp_path)
+    assert result.returncode == 1
+    assert "no endpoint candidate" in result.stdout
+
+
+def test_paths_check_reports_unreachable_endpoint(tmp_path):
+    result = run_cli(
+        "paths", "check", "--url", "http://127.0.0.1:9/none", "--sapisid", "S",
+        "--timeout", "1", home=tmp_path,
+    )
+    assert result.returncode == 1
+    assert "[---]" in result.stdout or "[0]" in result.stdout
+
+
+# ------------------------------------------------------------------ TTL / gen
+def test_rea_save_keeps_the_ttl_and_gen_uses_it(tmp_path):
+    home = tmp_path / "home"
+    home.mkdir(parents=True)
+    payload = json.dumps(
+        {
+            "familyLinkAppConfig": {
+                "parentAccessCode": {
+                    "sharedSecret": SECRET,
+                    "accessCodeTtl": 600,
+                    "clockDriftTolerance": 300,
+                }
+            }
+        }
+    )
+    capture = home / "config.json"
+    capture.write_text(payload)
+
+    saved = run_cli("rea", "scan", str(capture), "--save", "--label", "ttl", home=home)
+    assert saved.returncode == 0, saved.stderr
+    assert "ttl=600s" in saved.stdout
+    assert "600s" in run_cli("keys", "list", home=home).stdout
+
+    moment = 1_792_684_800
+    generated = run_cli("gen", "--label", "ttl", "--time", str(moment), "--json", home=home)
+    record = json.loads(generated.stdout)
+    assert record["validity"] == 600
+    assert record["code"] == codes_mod.generate_code(SECRET, moment, validity=600).code
+
+    # --validity overrides the stored one
+    forced = run_cli(
+        "gen", "--label", "ttl", "--time", str(moment), "--validity", "3600", "--json", home=home
+    )
+    assert json.loads(forced.stdout)["validity"] == 3600
+
+    invalid = run_cli("gen", "--label", "ttl", "--validity", "59", home=home)
+    assert invalid.returncode == 1 and "between 60 and 3600" in invalid.stderr
+
+
+def test_keys_add_accepts_a_ttl(tmp_path):
+    home = tmp_path / "home"
+    added = run_cli("keys", "add", SECRET, "--label", "x", "--validity", "600", home=home)
+    assert added.returncode == 0, added.stderr
+    assert "600s" in run_cli("keys", "list", home=home).stdout
+
+
+def test_verify_discovers_the_ttl_when_none_is_stored(tmp_path):
+    home = tmp_path / "home"
+    # key stored without a TTL; the observation comes from a 600 s config
+    run_cli("keys", "add", SECRET, "--label", "sem-ttl", home=home, extra_env=None)
+    moment = 1_792_684_800 + 120
+    observed = codes_mod.generate_code(SECRET, moment, validity=600).code
+
+    # a sample inside the second half of a bucket tells 600 s from 300 s:
+    # both TTLs agree on [0, 300) of the bucket and disagree on [300, 600)
+    moments = [moment, moment + 280, moment + 600 + 120, moment + 1200 + 300]
+    rows = [
+        {"timestamp": stamp, "code": codes_mod.generate_code(SECRET, stamp, validity=600).code}
+        for stamp in moments
+    ]
+    path = tmp_path / "obs.json"
+    path.write_text(json.dumps(rows))
+
+    result = run_cli("verify", "--file", str(path), home=home)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "ttl 600s (descoberto)" in result.stdout
+    assert observed  # silence an unused variable lint
+
+
+def test_web_respects_the_stored_ttl(tmp_path):
+    store = Store(path=tmp_path / "store.json", passphrase=PASSPHRASE)
+    store.add_seed(SECRET, label="ttl", kind="android", validity=600)
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(store, "tok"))
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    base = f"http://127.0.0.1:{server.server_address[1]}"
+    try:
+        status, body, _headers = call(base, "/api/code", token="tok")
+        assert status == 200
+        document = json.loads(body)
+        assert document["validity"] == 600
+        assert document["valid_to"] - document["valid_from"] == 600
+
+        status, body, _headers = call(
+            base, "/api/generate", token="tok", method="POST",
+            body={"timestamp": 1_792_684_800, "count": 2},
+        )
+        rows = json.loads(body)["rows"]
+        assert [row["validity"] for row in rows] == [600, 600]
+        assert rows[1]["valid_from"] - rows[0]["valid_from"] == 600
+
+        status, body, _headers = call(
+            base, "/api/generate", token="tok", method="POST",
+            body={"timestamp": 1_792_684_800, "validity": 30},
+        )
+        assert status == 400
+    finally:
+        server.shutdown()
+        server.server_close()

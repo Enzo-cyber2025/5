@@ -11,7 +11,15 @@ import sys
 import time
 from pathlib import Path
 
-from . import __version__, codes as codes_mod, rea, report, secrets as secrets_mod, verify as verify_mod
+from . import (
+    __version__,
+    codes as codes_mod,
+    endpoints as endpoints_mod,
+    rea,
+    report,
+    secrets as secrets_mod,
+    verify as verify_mod,
+)
 from .store import Store, StoreError, default_store_path
 
 EXIT_OK = 0
@@ -70,26 +78,33 @@ def _store_summary(store: Store) -> dict:
 
 
 def _resolve_secret(args, store: Store) -> tuple:
-    """Return ``(secret, label, seed_id)`` from the CLI arguments or the store."""
+    """Return ``(secret, label, seed_id, validity)`` for the CLI arguments."""
+    validity = getattr(args, "validity", None)
     if getattr(args, "secret", None):
         secret = secrets_mod.normalize_secret(args.secret)
-        return secret, args.label or "cli", ""
+        return secret, args.label or "cli", "", validity
     payload = store.load()
     seeds = payload.get("seeds", [])
     if not seeds:
         raise StoreError("no stored key: run `flcodes rea ... --save` or `flcodes keys add`")
     if getattr(args, "id", None):
-        for seed in seeds:
-            if seed["id"] == args.id:
-                return seed["secret"], seed["label"], seed["id"]
-        raise StoreError(f"unknown seed id: {args.id}")
-    if getattr(args, "label", None):
-        for seed in seeds:
-            if seed["label"] == args.label:
-                return seed["secret"], seed["label"], seed["id"]
-        raise StoreError(f"unknown label: {args.label}")
-    active = store.active_seed()
-    return active["secret"], active["label"], active["id"]
+        matches = [seed for seed in seeds if seed["id"] == args.id]
+        if not matches:
+            raise StoreError(f"unknown seed id: {args.id}")
+    elif getattr(args, "label", None):
+        matches = [seed for seed in seeds if seed["label"] == args.label]
+        if not matches:
+            raise StoreError(f"unknown label: {args.label}")
+    else:
+        active = store.active_seed()
+        matches = [active] if active else []
+    seed = matches[0]
+    return (
+        seed["secret"],
+        seed["label"],
+        seed["id"],
+        validity or seed.get("validity"),
+    )
 
 
 # ------------------------------------------------------------------- commands
@@ -144,9 +159,14 @@ def cmd_rea(args) -> int:
                 kind=candidate.kind,
                 source=candidate.source,
                 notes=candidate.context[:200],
+                validity=(candidate.extra or {}).get("validity"),
+                drift=(candidate.extra or {}).get("drift"),
             )
             saved.append(record)
-            _print(f"saved: id={record['id']} kind={record['kind']} file={store.path}")
+            extra = ""
+            if record.get("validity"):
+                extra = f" ttl={record['validity']}s"
+            _print(f"saved: id={record['id']} kind={record['kind']}{extra} file={store.path}")
         store_summary = _store_summary(store)
         if not chosen:
             _print("nothing to save: no candidate found")
@@ -175,8 +195,10 @@ def cmd_keys(args) -> int:
     if args.action == "list":
         for seed in store.list_seeds():
             active = "*" if store.load().get("active_id") == seed["id"] else "-"
+            ttl = f"{seed['validity']}s" if seed.get("validity") else "auto"
             _print(
-                f"{active} {seed['id']:<12} {seed['kind']:<10} {seed['masked']:<26} {seed['label']}"
+                f"{active} {seed['id']:<12} {seed['kind']:<10} {ttl:<6} "
+                f"{seed['masked']:<26} {seed['label']}"
             )
         if not store.list_seeds():
             _print("store is empty")
@@ -206,6 +228,7 @@ def cmd_keys(args) -> int:
             label=args.label or "manual",
             kind=args.kind or secrets_mod.classify_secret(secret),
             source="cli",
+            validity=args.validity,
         )
         _print(f"saved: id={record['id']} kind={record['kind']} file={store.path}")
         return EXIT_OK
@@ -253,9 +276,16 @@ def _validate_secret(secret: str) -> list:
 
 def cmd_gen(args) -> int:
     store = _open_store(args)
-    secret, label, seed_id = _resolve_secret(args, store)
+    secret, label, seed_id, validity = _resolve_secret(args, store)
+    if validity is None:
+        _print(
+            f"note: ttl {codes_mod.CODE_VALIDITY_SECONDS}s is a fallback, the key "
+            "carries no TTL; confirm with `flcodes verify --code ...`.",
+            file=sys.stderr,
+        )
     encoding = args.encoding
     offset = args.tz_offset_minutes or 0
+    validity = codes_mod.check_validity(validity or codes_mod.CODE_VALIDITY_SECONDS)
 
     if args.day:
         day = _dt.date.fromisoformat(args.day)
@@ -264,6 +294,7 @@ def cmd_gen(args) -> int:
             day,
             offset_minutes=offset,
             encoding=encoding,
+            validity=validity,
         )
         records = [
             report.code_record(code, label=label, seed_id=seed_id)
@@ -276,9 +307,9 @@ def cmd_gen(args) -> int:
         count = max(1, args.count)
         records = []
         for index in range(count):
-            moment = timestamp + index * codes_mod.CODE_VALIDITY_SECONDS
+            moment = timestamp + index * validity
             code = codes_mod.generate_code(
-                secret, moment, offset_minutes=offset, encoding=encoding
+                secret, moment, offset_minutes=offset, encoding=encoding, validity=validity
             )
             records.append(report.code_record(code, label=label, seed_id=seed_id))
             if args.json:
@@ -287,9 +318,12 @@ def cmd_gen(args) -> int:
                 _print(f"{_human_window(code)}  {code.code}  (label={label})")
             else:
                 _print(code.code)
-        first = codes_mod.generate_code(secret, timestamp, offset_minutes=offset, encoding=encoding)
+        first = codes_mod.generate_code(
+            secret, timestamp, offset_minutes=offset, encoding=encoding, validity=validity
+        )
         _print(
-            f"valid {_human_window(first)} · {_remaining(first, timestamp)}s remaining",
+            f"valid {_human_window(first)} · {_remaining(first, timestamp)}s remaining "
+            f"· ttl {validity}s",
             file=sys.stderr,
         )
 
@@ -303,8 +337,9 @@ def cmd_gen(args) -> int:
 
 def cmd_stream(args) -> int:
     store = _open_store(args)
-    secret, label, _seed_id = _resolve_secret(args, store)
+    secret, label, _seed_id, validity = _resolve_secret(args, store)
     offset = args.tz_offset_minutes or 0
+    validity = codes_mod.check_validity(validity or codes_mod.CODE_VALIDITY_SECONDS)
     _print(f"streaming codes for {label} (Ctrl+C to stop)")
     stop = {"flag": False}
 
@@ -315,7 +350,9 @@ def cmd_stream(args) -> int:
     last_window = None
     while not stop["flag"]:
         now = time.time()
-        code = codes_mod.generate_code(secret, now, offset_minutes=offset, encoding=args.encoding)
+        code = codes_mod.generate_code(
+            secret, now, offset_minutes=offset, encoding=args.encoding, validity=validity
+        )
         if code.counter != last_window:
             stamp = _dt.datetime.now().strftime("%H:%M:%S")
             _print(f"{stamp}  {code.code}  valid until {_human_window(code).split('–')[1]}")
@@ -329,6 +366,89 @@ def cmd_stream(args) -> int:
                 )
         time.sleep(min(2.0, max(0.5, code.seconds_remaining)))
     return EXIT_OK
+
+
+def cmd_paths(args) -> int:
+    """List, discover or check the endpoints that deliver the app config."""
+    if args.action == "list":
+        for endpoint in endpoints_mod.known_endpoints():
+            _print(f"[{endpoint.kind}] {endpoint.url}")
+            _print(f"    {endpoint.why}")
+        _print()
+        _print("discover the real paths from your own capture:")
+        _print("  flcodes paths discover --file ~/Downloads/familylink.har")
+        _print("  flcodes paths check --sapisid <cookie> --url <endpoint>")
+        return EXIT_OK
+
+    if args.action == "discover":
+        text = ""
+        if args.file:
+            text = (
+                Path(args.file).read_text(encoding="utf-8", errors="replace")
+                if args.file != "-"
+                else sys.stdin.read()
+            )
+        else:
+            text = sys.stdin.read()
+        found = endpoints_mod.discover(text, source=args.file or "stdin")
+        if not found:
+            _print("no endpoint candidate found in the input")
+            return EXIT_ERROR
+        for endpoint in found:
+            _print(f"[{endpoint.kind}] score={endpoint.score} {endpoint.url}")
+            _print(f"    {endpoint.why}")
+        configs = [endpoint for endpoint in found if endpoint.kind == "app-config"]
+        if configs:
+            _print()
+            _print("most promising (app config):")
+            for endpoint in configs[:3]:
+                _print(f"  flcodes rea api --url '{endpoint.url}' --cookie-file cookies.txt --save")
+        if not args.no_report:
+            document = {
+                "tool": "flcodes",
+                "command": "paths discover",
+                "source": args.file or "stdin",
+                "endpoints": [endpoint.as_dict() for endpoint in found],
+            }
+            path = _out_dir(args) / f"paths-{_now_iso()}.json"
+            report.write_json(document, path)
+            _print(f"report: {path}")
+        return EXIT_OK
+
+    if args.action == "check":
+        targets = args.url or [entry["url"] for entry in endpoints_mod.KNOWN_ENDPOINTS]
+        sapisid = args.sapisid or ""
+        if getattr(args, "cookie_file", None):
+            sapisid = rea.harvest_cookie_file(args.cookie_file)
+        if not sapisid and not args.cookie:
+            _print(
+                "warning: no session given (--sapisid/--cookie-file); "
+                "endpoints will answer 401/403",
+                file=sys.stderr,
+            )
+        ok = False
+        for url in targets:
+            result = endpoints_mod.check(
+                url, sapisid=sapisid, cookie=args.cookie or "", timeout=args.timeout
+            )
+            line = f"[{result.get('status') or '---'}] {url}"
+            if result.get("bytes"):
+                line += f" ({result['bytes']} bytes"
+                if result.get("secrets"):
+                    line += f", {result['secrets']} secret(s) {result.get('kinds')}"
+                elif result.get("encrypted_hint"):
+                    line += f", encrypted secret field '{result['encrypted_hint']}'"
+                line += ")"
+            if result.get("error"):
+                line += f" - {result['error']}"
+            _print(line)
+            for extra in result.get("paths", [])[:5]:
+                _print(f"    path in body: {extra}")
+            if result.get("status") == 200:
+                ok = True
+        return EXIT_OK if ok else EXIT_ERROR
+
+    raise SystemExit(EXIT_USAGE)
 
 
 def cmd_verify(args) -> int:
@@ -363,7 +483,13 @@ def cmd_verify(args) -> int:
             if not seeds:
                 raise StoreError(f"unknown seed id: {args.id}")
         keys = [
-            {"secret": seed["secret"], "label": seed["label"], "id": seed["id"]}
+            {
+                "secret": seed["secret"],
+                "label": seed["label"],
+                "id": seed["id"],
+                "validity": seed.get("validity"),
+                "drift": seed.get("drift"),
+            }
             for seed in seeds
         ]
 
@@ -372,15 +498,23 @@ def cmd_verify(args) -> int:
         observations,
         tolerance_hours=args.tolerance_hours,
         encoding=args.encoding,
+        drift=args.drift,
+        discover=not args.no_discover,
     )
     # with --json the machine readable document is the only thing on stdout
     human = sys.stderr if args.json else sys.stdout
 
     for verification in verifications:
         state = "CONFIRMADO" if verification.confirmed else "não confirmado"
+        ttl = f", ttl {verification.validity}s"
+        if verification.validity_discovered:
+            ttl += " (descoberto)"
+        if verification.ambiguous:
+            options = ", ".join(f"{value}s" for value in verification.validity_candidates)
+            ttl += f" (ambíguo: {options}; use --validity)"
         _print(
             f"key {verification.label} ({verification.seed_id or 'sem id'}): "
-            f"{verification.matched}/{verification.total} - {state}",
+            f"{verification.matched}/{verification.total} - {state}{ttl}",
             file=human,
         )
         for result in verification.results if (verification.matched or args.verbose) else []:
@@ -450,18 +584,24 @@ def cmd_audit(args) -> int:
         if not condition:
             failures.append(name)
 
-    # TOTP determinism and hour anchoring
+    # TOTP determinism and window anchoring
     secret = "AItest-only-secret-value.0"
     hour = 1_700_002_800  # exact hour boundary
+    ttl = codes_mod.CODE_VALIDITY_SECONDS
     first = codes_mod.generate_code(secret, hour)
-    second = codes_mod.generate_code(secret, hour + 3599)
-    check("code is stable inside the hour", first.code == second.code)
-    third = codes_mod.generate_code(secret, hour + 3600)
-    check("code changes on the hour", first.code != third.code)
+    second = codes_mod.generate_code(secret, hour + ttl - 1)
+    check("code is stable inside a window", first.code == second.code)
+    third = codes_mod.generate_code(secret, hour + ttl)
+    check("code changes on the boundary", first.code != third.code)
     check("code is six digits", len(first.code) == 6 and first.code.isdigit())
     check(
-        "window is one hour",
+        "window equals the configured ttl",
         first.valid_to - first.valid_from == codes_mod.CODE_VALIDITY_SECONDS,
+    )
+    ten = codes_mod.generate_code(secret, hour, validity=600)
+    check(
+        "a different ttl gives a different window",
+        (ten.valid_to - ten.valid_from, ten.code) != (3600, first.code),
     )
 
     # Crypto known answer (RFC 8439 2.8.2)
@@ -568,6 +708,7 @@ def build_parser() -> argparse.ArgumentParser:
     add_parser.add_argument("--label")
     add_parser.add_argument("--kind", choices=("android", "chromebook", "unknown"))
     add_parser.add_argument("--allow-unknown", action="store_true")
+    add_parser.add_argument("--validity", type=int, help="code validity (TTL) in seconds")
     add_parser.add_argument("--force", action="store_true")
     rm_parser = keys_sub.add_parser("rm", help="delete a key")
     rm_parser.add_argument("id")
@@ -594,6 +735,11 @@ def build_parser() -> argparse.ArgumentParser:
     gen_parser.add_argument("--day", help="generate every hour of YYYY-MM-DD")
     gen_parser.add_argument("--count", type=int, default=1, help="number of hours")
     gen_parser.add_argument("--tz-offset-minutes", type=int, default=0)
+    gen_parser.add_argument(
+        "--validity",
+        type=int,
+        help="code validity (TTL) in seconds, 60..3600 (default: from the key or 3600)",
+    )
     gen_parser.add_argument("--json", action="store_true", help="print JSON records")
     gen_parser.add_argument("--out", help="save codes to a file")
     gen_parser.add_argument("--format", choices=("auto", "csv", "jsonl"), default="auto")
@@ -602,8 +748,24 @@ def build_parser() -> argparse.ArgumentParser:
     stream_parser = sub.add_parser("stream", help="live code with the hourly rollover")
     stream_parser.add_argument("--encoding", choices=("auto", "raw", "base32"), default="auto")
     stream_parser.add_argument("--tz-offset-minutes", type=int, default=0)
+    stream_parser.add_argument("--validity", type=int, help="code validity (TTL) in seconds")
     stream_parser.add_argument("--out", help="save every new code to a file")
     stream_parser.add_argument("--format", choices=("auto", "csv", "jsonl"), default="csv")
+
+    paths_parser = sub.add_parser(
+        "paths", help="list, discover or check the app config endpoints"
+    )
+    paths_sub = paths_parser.add_subparsers(dest="action", required=True)
+    paths_sub.add_parser("list", help="show the known endpoints and their provenance")
+    discover_parser = paths_sub.add_parser("discover", help="find endpoints in a capture")
+    discover_parser.add_argument("--file", help="HAR/HTML/logcat/JS, '-' for stdin")
+    discover_parser.add_argument("--no-report", action="store_true")
+    check_parser = paths_sub.add_parser("check", help="request the endpoints and report")
+    check_parser.add_argument("--url", action="append", help="endpoint to check (repeatable)")
+    check_parser.add_argument("--sapisid", help="SAPISID cookie of the parent session")
+    check_parser.add_argument("--cookie-file", help="cookies.txt with SAPISID")
+    check_parser.add_argument("--cookie", help="extra cookie header")
+    check_parser.add_argument("--timeout", type=float, default=15.0)
 
     verify_parser = sub.add_parser(
         "verify", help="compare generated codes with codes Google produced"
@@ -626,6 +788,22 @@ def build_parser() -> argparse.ArgumentParser:
         help="accept a match one hour before/after (clock skew)",
     )
     verify_parser.add_argument("--encoding", choices=("auto", "raw", "base32"), default="auto")
+    verify_parser.add_argument(
+        "--validity",
+        type=int,
+        help="code validity (TTL) in seconds; auto-detected when the code does not match",
+    )
+    verify_parser.add_argument(
+        "--drift",
+        type=int,
+        default=0,
+        help="clock drift tolerance in seconds (Chromium allows up to 1800)",
+    )
+    verify_parser.add_argument(
+        "--no-discover",
+        action="store_true",
+        help="do not try to discover the code validity",
+    )
     verify_parser.add_argument("--id", help="only verify this stored key")
     verify_parser.add_argument("--secret", help="verify a secret directly")
     verify_parser.add_argument("--json", action="store_true")
@@ -657,6 +835,7 @@ def main(argv: list | None = None) -> int:
         "gen": cmd_gen,
         "stream": cmd_stream,
         "verify": cmd_verify,
+        "paths": cmd_paths,
         "serve": cmd_serve,
         "audit": cmd_audit,
     }

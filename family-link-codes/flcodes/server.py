@@ -204,6 +204,7 @@ def make_handler(store: Store, token: str, allow_embed: bool = False):
                         "label": seed["label"],
                         "kind": seed["kind"],
                         "masked": secrets_mod.mask_secret(seed["secret"]),
+                        "validity": seed.get("validity"),
                         "active": seed["id"] == active_id,
                     }
                     for seed in payload.get("seeds", [])
@@ -216,7 +217,13 @@ def make_handler(store: Store, token: str, allow_embed: bool = False):
                 except StoreError as exc:
                     self._error(404, str(exc))
                     return
-                code = codes_mod.generate_code(seed["secret"])
+                try:
+                    validity = seed.get("validity")
+                    code = codes_mod.generate_code(seed["secret"], validity=validity or
+                                                   codes_mod.CODE_VALIDITY_SECONDS)
+                except ValueError as exc:
+                    self._error(400, str(exc))
+                    return
                 body = {"label": seed["label"], "kind": seed["kind"]}
                 body.update(code.as_dict())
                 self._json(200, body)
@@ -238,11 +245,19 @@ def make_handler(store: Store, token: str, allow_embed: bool = False):
                     self._error(400, "missing secret")
                     return
                 label = str(body.get("label") or "web")
+                validity = body.get("validity")
+                if validity is not None:
+                    try:
+                        validity = codes_mod.check_validity(validity)
+                    except ValueError as exc:
+                        self._error(400, str(exc))
+                        return
                 record = store.add_seed(
                     secret=secret,
                     label=label,
                     kind=secrets_mod.classify_secret(secret),
                     source="web",
+                    validity=validity,
                 )
                 self._json(200, {"id": record["id"], "label": record["label"]})
                 return
@@ -278,12 +293,21 @@ def make_handler(store: Store, token: str, allow_embed: bool = False):
                 if encoding not in ("auto", "raw", "base32"):
                     self._error(400, "invalid encoding")
                     return
+                try:
+                    validity = codes_mod.check_validity(
+                        body.get("validity") or seed.get("validity")
+                        or codes_mod.CODE_VALIDITY_SECONDS
+                    )
+                except ValueError as exc:
+                    self._error(400, str(exc))
+                    return
                 rows = []
                 for index in range(count):
                     code = codes_mod.generate_code(
                         seed["secret"],
-                        timestamp + index * codes_mod.CODE_VALIDITY_SECONDS,
+                        timestamp + index * validity,
                         encoding=encoding,
+                        validity=validity,
                     )
                     rows.append(report.code_record(code, label=seed["label"], seed_id=seed["id"]))
                 self._json(200, {"rows": rows})

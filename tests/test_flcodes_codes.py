@@ -83,6 +83,90 @@ def test_equals_the_public_reference_implementation():
         assert codes.generate_code(SEED, moment).code == reference_fl_codegen_gui(SEED, moment)
 
 
+# --------------------------------------------------------------------------
+# Official known-answer vectors. Chromium ships these in
+# chrome/browser/ash/child_accounts/parent_access_code/parent_access_test_utils.cc
+# and states they were "generated in Family Link Android app", i.e. they are
+# output of Google's own client for this config (secret, TTL 600 s, drift 300 s).
+# --------------------------------------------------------------------------
+CHROMIUM_SECRET = "AIfVJHITSar8keeq3779V70dWiS1xbPv8g"  # public test fixture
+CHROMIUM_TTL = 600
+CHROMIUM_VECTORS = (
+    ("2019-01-08 16:58:07", "734261"),
+    ("2019-01-14 15:35:05", "472150"),
+    ("2019-01-14 15:42:49", "204984"),
+    ("2019-01-14 15:53:01", "157758"),
+    ("2019-01-14 16:00:00", "524186"),
+)
+
+
+def _pst(text: str) -> float:
+    """PST (UTC-8) epoch for a Chromium test timestamp (January, no DST)."""
+    moment = dt.datetime.strptime(text, "%Y-%m-%d %H:%M:%S").replace(
+        tzinfo=dt.timezone(dt.timedelta(hours=-8))
+    )
+    return moment.timestamp()
+
+
+def test_reproduces_codes_generated_by_the_family_link_android_app():
+    for text, expected in CHROMIUM_VECTORS:
+        code = codes.generate_code(CHROMIUM_SECRET, _pst(text), validity=CHROMIUM_TTL)
+        assert code.code == expected, f"{text} expected {expected}, got {code.code}"
+
+
+def test_the_hour_assumption_would_break_those_codes():
+    # Regression guard: hardcoding a 3600 s TTL silently breaks the real codes.
+    mismatches = [
+        codes.generate_code(CHROMIUM_SECRET, _pst(text), validity=3600).code != expected
+        for text, expected in CHROMIUM_VECTORS
+    ]
+    assert sum(mismatches) >= 3
+
+
+def test_discover_validity_finds_the_configured_ttl():
+    pairs = [(code, _pst(text)) for text, code in CHROMIUM_VECTORS]
+    assert codes.discover_validity(CHROMIUM_SECRET, pairs) == [600]
+
+
+def test_a_single_observation_cannot_pin_the_ttl():
+    # 600 s boundaries are a subset of 300 s ones, and any TTL whose bucket
+    # starts at the same second fits a single sample: the tool must report the
+    # ambiguity instead of pretending to know the TTL.
+    moment = _pst("2019-01-14 15:35:05")
+    pairs = [(codes.generate_code(CHROMIUM_SECRET, moment, validity=600).code, moment)]
+    candidates = codes.discover_validity(CHROMIUM_SECRET, pairs)
+    assert 600 in candidates
+    assert len(candidates) > 2  # several TTLs reproduce the same sample
+
+
+def test_observations_in_different_buckets_pin_the_ttl():
+    # codes taken 10 minutes apart only fit a 600 s bucket
+    first = _pst("2019-01-14 15:35:05")
+    pairs = [
+        (codes.generate_code(CHROMIUM_SECRET, first, validity=600).code, first),
+        (codes.generate_code(CHROMIUM_SECRET, first + 600, validity=600).code, first + 600),
+        (codes.generate_code(CHROMIUM_SECRET, first + 1200, validity=600).code, first + 1200),
+    ]
+    assert codes.discover_validity(CHROMIUM_SECRET, pairs) == [600]
+
+
+def test_validity_range_is_enforced_like_chromium():
+    assert codes.check_validity(60) == 60
+    assert codes.check_validity(3600) == 3600
+    for bad in (59, 3601, 0, -1, "abc", None):
+        with pytest.raises(ValueError):
+            codes.check_validity(bad)
+
+
+def test_bucket_windows_follow_the_ttl():
+    moment = 1_792_684_800 + 601  # inside the second 600 s bucket
+    code = codes.generate_code(SEED, moment, validity=600)
+    assert code.valid_from == 1_792_684_800 + 600
+    assert code.valid_to == code.valid_from + 600
+    assert code.validity == 600
+    assert code.as_dict()["validity"] == 600
+
+
 def test_code_is_stable_inside_the_hour_and_changes_on_the_hour():
     start = 1_700_002_800
     codes_in_hour = {codes.generate_code(SEED, start + offset).code for offset in range(0, 3600, 137)}
@@ -186,6 +270,6 @@ def test_timestamp_parsing_accepts_epoch_and_iso():
 def test_code_record_is_json_safe_and_never_holds_the_secret():
     code = codes.generate_code(SEED, 1_700_000_000)
     record = code.as_dict()
-    assert set(record) == {"code", "valid_from", "valid_to", "counter"}
+    assert set(record) == {"code", "valid_from", "valid_to", "counter", "validity"}
     assert SEED not in repr(record)
     assert isinstance(code.seconds_remaining, int)

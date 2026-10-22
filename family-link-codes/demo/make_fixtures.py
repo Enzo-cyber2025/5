@@ -23,7 +23,20 @@ def build(out: pathlib.Path) -> pathlib.Path:
     # 1) HAR shaped like the familylink.google.com config call: XSSI prefix,
     #    protobuf style array and the secret escaped as \uXXXX
     escaped = "".join("\\u%04x" % ord(char) for char in SECRET)
-    body = ")]}'\n" + json.dumps([["familyLinkAppConfig", [[None, escaped]]]])
+    # Same shape as Chromium's ParentAccessCodeConfig: the secret travels with
+    # its own code validity and clock drift tolerance. The secret itself is
+    # escaped, as it is inside a JSON string.
+    body = ")]}'\n" + json.dumps(
+        {
+            "familyLinkAppConfig": {
+                "parentAccessCode": {
+                    "sharedSecret": escaped,
+                    "accessCodeTtl": 600,
+                    "clockDriftTolerance": 300,
+                }
+            }
+        }
+    )
     har = {
         "log": {
             "entries": [

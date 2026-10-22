@@ -47,23 +47,43 @@ Depois disso, o resto é offline: o código é um TOTP calculado localmente.
 > Resultados medidos do ensaio (o que passou, o que não foi provado e como
 > provar em 1 minuto): [`RESULTS.md`](RESULTS.md).
 
-## 2. Como o código funciona
+## 2. Como o código funciona (fonte: implementação oficial)
+
+A referência não é um blog: é o código que o **Chromebook usa para validar** o
+código de acesso parental —
+`chrome/browser/ash/child_accounts/parent_access_code/authenticator.cc`
+(Chromium, licença BSD). Ele define:
 
 | item | valor |
 |---|---|
-| chave | **bytes da string** do shared secret (não é base32) |
-| hash | HMAC-SHA1 |
-| passo | 60 s, porém **ancorado na hora cheia** |
-| truncamento | RFC 4226 (offset dinâmico) |
-| dígitos | 6, módulo 1 000 000 |
+| chave | **bytes da string** do `shared_secret` (não é base32) |
+| hash | HMAC-SHA1 sobre o contador de 64 bits big endian |
+| balde | `timestamp // code_validity`, com `code_validity` = `access_code_ttl` do config (**60 s a 3600 s**) |
+| contador | início do balde dividido pela granularidade de **1 minuto** |
+| truncamento | RFC 4226 (offset dinâmico), módulo 1 000 000 |
+| dígitos | 6 |
+| validação | aceita o código se bater em qualquer minuto dentro de `± clock_drift_tolerance` (0 a 1800 s) |
 
-Consequência prática: **um código vale a hora inteira** e vira na hora cheia —
-é por isso que o código do Family Link funciona sem internet e continua válido
-enquanto o relógio não muda de hora.
+**O TTL não é fixo.** Ele vem no mesmo payload que carrega o segredo
+(`shared_secret`, `access_code_ttl`, `clock_drift_tolerance`). O app Android
+tem exibido códigos que viram de hora em hora, mas os dados de teste do próprio
+Chromium (gerados com o app Family Link do Android) usam **600 s**:
 
-O cálculo foi conferido contra um oráculo independente (TOTP com `interval=60`
-iniciado na hora cheia) e contra o vetor conhecido do RFC 8439 para a cifra.
-Ver `tests/test_flcodes_codes.py`.
+| código gerado pelo app Android | instante (PST) | nosso resultado |
+|---|---|---|
+| 734261 | 2019-01-08 16:58:07 | 734261 |
+| 472150 | 2019-01-14 15:35:05 | 472150 |
+| 204984 | 2019-01-14 15:42:49 | 204984 |
+| 157758 | 2019-01-14 15:53:01 | 157758 |
+| 524186 | 2019-01-14 16:00:00 | 524186 |
+
+Os cinco vetores são reproduzidos **5/5 com TTL 600 s** e falham com TTL de
+1 hora — é por isso que o TTL é sempre lido do config (ou descoberto pelo
+`verify`) e nunca presumido. Ver `tests/test_flcodes_codes.py`.
+
+`flcodes verify` ainda aceita qualquer TTL e, se nenhum for informado, descobre
+o valor a partir de um código visto no app (com aviso quando dois TTLs
+explicam a mesma amostra — 600 s e 300 s são indistinguíveis numa amostra só).
 
 ## 3. Instalação
 
@@ -92,6 +112,19 @@ python -m pytest -q tests/test_flcodes_codes.py tests/test_flcodes_crypto.py \
 ```
 
 ## 4. Uso — passo a passo
+
+### 4.0 Descobrir os caminhos (endpoints)
+
+```bash
+flcodes paths list                         # candidatos + de onde a informação veio
+flcodes paths discover --file ~/Downloads/familylink.har   # acha os paths reais
+flcodes paths check --cookie-file ~/cookies.txt            # testa cada um
+```
+
+`paths discover` lê um HAR/HTML/logcat/JS e ranqueia os endpoints que podem
+entregar o config (nome `familyLinkAppConfig` pontua mais), sem inventar
+combinações de host+caminho que não existem. `paths check` mostra código HTTP,
+tamanho, e se o corpo trouxe segredo ou o campo cifrado.
 
 ### 4.1 Obter a chave (REA)
 
@@ -141,8 +174,15 @@ senha vem de `FLCODES_PASSPHRASE` ou é pedida no terminal; **nunca** é gravada
 
 ### 4.3 Gerar e salvar códigos
 
+O TTL efetivo vem da chave salva (`access_code_ttl` do config). Para forçar:
+
 ```bash
-flcodes gen                                   # código da hora atual
+flcodes gen --validity 600 --time 2026-10-22T16:05:00-03:00
+```
+
+```bash
+flcodes gen                                   # código atual (TTL da chave)
+flcodes gen --validity 600                    # força 10 minutos
 flcodes gen --time 2026-10-22T15:00:00-03:00  # hora específica
 flcodes gen --time 1792000000 --count 6       # 6 horas seguidas
 flcodes gen --day 2026-10-22                  # as 24 horas do dia
@@ -152,9 +192,9 @@ flcodes gen --secret 'AI...' --encoding raw    # sem usar o cofre
 flcodes stream --out ao-vivo.csv               # acompanha a virada da hora
 ```
 
-Fuso: o código vira na hora cheia **UTC**. Para fusos de hora inteira isso
-coincide com a hora local; para fusos de meia hora (UTC+05:30, +09:30) use
-`--tz-offset-minutes 330`.
+Fuso: os baldes são alinhados ao **epoch UTC** no múltiplo do TTL (com TTL de
+3600 s a virada é na hora cheia; com 600 s, a cada 10 minutos). Para fusos de
+meia hora (UTC+05:30, +09:30) use `--tz-offset-minutes 330`.
 
 ### 4.4 Verificar se o código é funcional (`verify`)
 
@@ -171,7 +211,7 @@ flcodes verify --code 123456 --tolerance-hours 1    # tolera relógio fora de ho
 
 Saída: por chave, quantas observações ela reproduz e em qual janela. Uma chave
 `CONFIRMADO` prova, ao mesmo tempo, que o segredo é o daquela família e que os
-bytes da chave, o contador ancorado na hora e o truncamento estão certos. O
+bytes da chave, o contador do balde, o TTL e o truncamento estão certos. O
 relatório (`flcodes-out/output/verify-*.json`) não contém segredo.
 
 ### 4.5 Interface web local
@@ -197,8 +237,12 @@ para a virada da hora, gerar 1/6/24 horas e baixar CSV.
 * `rea api` depende do cookie `SAPISID` de uma sessão válida do responsável.
 * `rea adb` só funciona com root, `run-as` ou build de depuração; sem isso o
   Android bloqueia a leitura dos dados do app.
-* O código vale para o **fuso do servidor** ancorado na hora cheia; relógio
-  errado no aparelho invalida o código (o Family Link compara janelas).
+* Relógio errado no aparelho invalida o código: a validação aceita apenas
+  `± clock_drift_tolerance` (0 a 1800 s) ao redor do instante. Use
+  `flcodes verify --drift 300` para simular essa tolerância.
+* O TTL pode ser 600 s, 3600 s ou outro valor do intervalo 60–3600 s; usar o
+  valor errado gera código que o aparelho não aceita. Sempre que possível leia
+  `access_code_ttl` do payload.
 * Não há garantia de que uma versão futura do Family Link mantenha o esquema
   de TOTP de 60 s/hora. Este app é de experimento, não de produção.
 * O `secure_delete` sobrescreve e apaga o arquivo, mas em filesystem
@@ -214,6 +258,9 @@ Ver [`RESULTS.md`](RESULTS.md) para as medições. Resumo:
 | não inventa chave quando o payload traz segredo cifrado | **provado** (reporta o campo) |
 | gera códigos 6 dígitos, 1 por hora, determinístico | **provado** (66 testes) |
 | código igual ao de implementações independentes (oráculo RFC + Rust público + pyotp) | **provado** |
+| **código igual ao gerado pelo app Family Link do Android** (5 vetores oficiais do Chromium) | **provado** (TTL 600 s) |
+| TTL lido do config e descoberto por observação | **provado** |
+| caminhos descobertos de um HAR e testados por HTTP | **provado** (stub local; rede Google bloqueada aqui) |
 | identificação da chave certa entre 5 chaves | **provado** (3/3 vs 0/3) |
 | aceitação real pelo aparelho / `rea api` em rede real / `rea adb` com root | **não provado aqui** (sem rede Google, sem aparelho) |
 
@@ -240,10 +287,11 @@ hardware.
 ```
 family-link-codes/
   flcodes/
-    codes.py     TOTP (HMAC-SHA1, passo 60 s ancorado na hora)
+    codes.py     TOTP (HMAC-SHA1, balde de TTL, granularidade de 60 s)
     secrets.py   detecção/classificação/mascaramento da chave
     rea.py       camada REA: api, har, paste, scan, adb (UTF-16, zip, gzip, LevelDB)
     verify.py    confirmação contra códigos produzidos pelo Google
+    endpoints.py caminhos candidatos + descoberta em capturas
     store.py     cofre cifrado
     report.py    exportação de códigos e relatório sem segredo
     cli.py       linha de comando

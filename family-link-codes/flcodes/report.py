@@ -52,6 +52,7 @@ def code_record(
         "valid_from_utc": iso(code.valid_from),
         "valid_to_utc": iso(code.valid_to),
         "counter": code.counter,
+        "validity": getattr(code, "validity", None),
         "generated_at_utc": iso(now),
     }
 
@@ -76,6 +77,7 @@ def save_codes(records, path: str | os.PathLike, fmt: str = "auto", append: bool
             "valid_from",
             "valid_to",
             "counter",
+            "validity",
             "generated_at_utc",
         ]
         exists = target.exists() and target.stat().st_size > 0

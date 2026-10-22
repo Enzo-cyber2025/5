@@ -193,12 +193,23 @@ def test_harvest_decodes_escaped_hex_and_base64(tmp_path):
         "hex.txt": ANDROID_SECRET.encode().hex(),
         "b64.json": json.dumps({"blob": base64.b64encode(ANDROID_SECRET.encode()).decode()}),
     }
+    expected = {
+        "unicode.json": "unicode-escaped",
+        "percent.txt": "percent-encoded",
+        "hex.txt": "hex",
+        "b64.json": "base64",
+    }
     for name, content in variants.items():
         (tmp_path / name).write_text(content)
+
+    for name, encoding in expected.items():
+        single = rea.harvest_files([tmp_path / name])
+        assert single.best is not None, name
+        assert single.best.secret == ANDROID_SECRET, name
+        assert single.best.encoding == encoding, name
+
     harvest = rea.harvest_files([tmp_path])
     assert {c.secret for c in harvest.candidates} == {ANDROID_SECRET}
-    labels = " ".join(c.context for c in harvest.candidates)
-    assert any(tag in labels for tag in ("unicode-escaped", "percent-encoded", "hex", "base64"))
 
 
 def test_har_scanned_as_a_file_decodes_double_escaped_secret(tmp_path):
@@ -215,7 +226,7 @@ def test_har_scanned_as_a_file_decodes_double_escaped_secret(tmp_path):
 
     from_file = rea.harvest_files([path])
     assert from_file.best is not None and from_file.best.secret == ANDROID_SECRET
-    assert "unicode-escaped" in from_file.best.context
+    assert from_file.best.encoding == "unicode-escaped"
 
     from_har = rea.harvest_har(path)
     assert from_har.best.secret == ANDROID_SECRET
@@ -226,6 +237,59 @@ def test_double_percent_encoded_secret_is_decoded():
     twice = once.replace("%", "%25")
     harvest = rea.harvest_text(twice)
     assert harvest.best is not None and harvest.best.secret == ANDROID_SECRET
+
+
+def test_harvest_keeps_the_code_ttl_next_to_the_secret():
+    # Chromium's ParentAccessCodeConfig shape: secret + access_code_ttl + drift
+    payload = json.dumps(
+        {
+            "ParentAccessCodeConfig": {
+                "current_config": {
+                    "shared_secret": ANDROID_SECRET,
+                    "access_code_ttl": 600,
+                    "clock_drift_tolerance": 300,
+                }
+            }
+        }
+    )
+    harvest = rea.harvest_text(payload, source="chromeos-policy")
+    best = harvest.best
+    assert best.secret == ANDROID_SECRET
+    assert best.extra == {"validity": 600, "drift": 300}
+    assert secrets_mod.config_validity(harvest.candidates) == 600
+
+
+def test_harvest_reads_the_ttl_inside_a_nested_har_body(tmp_path):
+    import base64 as _base64
+
+    escaped = "".join("\\u%04x" % ord(c) for c in ANDROID_SECRET)
+    body = ")]}'\n" + json.dumps(
+        {
+            "familyLinkAppConfig": {
+                "parentAccessCode": {
+                    "sharedSecret": escaped,
+                    "accessCodeTtl": 1800,
+                    "clockDriftTolerance": 120,
+                }
+            }
+        }
+    )
+    path = tmp_path / "capture.har"
+    path.write_text(json.dumps({"log": {"entries": [
+        {"request": {"url": "https://familylink.google.com/x"},
+         "response": {"content": {"text": body}}}
+    ]}}))
+    harvest = rea.harvest_files([path])
+    assert harvest.best.secret == ANDROID_SECRET
+    assert harvest.best.extra == {"validity": 1800, "drift": 120}
+    assert _base64  # keep the import used by the module docstring examples
+
+
+def test_invalid_ttl_next_to_a_secret_is_ignored():
+    payload = json.dumps({"shared_secret": ANDROID_SECRET, "access_code_ttl": 5})
+    harvest = rea.harvest_text(payload)
+    assert harvest.best.secret == ANDROID_SECRET
+    assert harvest.best.extra == {}
 
 
 def test_harvest_reads_utf16_zip_gzip_and_leveldb(tmp_path):

@@ -1,19 +1,24 @@
 """Objective functional check: does the generated code equal a real one?
 
 Generating six digits proves nothing by itself. The only offline proof that the
-key and the algorithm are right is a **code that Google actually produced** for
-that key: read the parent access code in the Family Link app (parent phone) or
-on the child device's lock screen, note the minute, and compare.
+key, the algorithm and the *code validity* are right is a **code that Google
+actually produced** for that key: read the parent access code in the Family Link
+app (parent phone) or on the child device's lock screen, note the minute, and
+compare.
 
-`verify` does exactly that comparison for every stored key and reports which one
-reproduces the observation. A match proves:
+`verify` mirrors Chromium's own validation loop
+(`Authenticator::ValidateInRange`): it walks generation timestamps at the 1
+minute granularity inside ``+/- drift`` around the observation and accepts a
+match there. When the code validity (TTL) is unknown or wrong, it is discovered
+from the observation itself (:func:`flcodes.codes.discover_validity`), which is
+how the 600 s value in Google's own test data is reproduced.
+
+A match proves:
 
 * the shared secret is the right one for that family;
-* the key bytes, the hour anchored counter and the truncation are right;
-* the clock of this machine is aligned with Google's (within the tolerance).
-
-A mismatch proves the opposite, and the report says which window was expected
-so a clock skew can be ruled out with ``--tolerance-hours``.
+* the key bytes, the bucket counter and the truncation are right;
+* the code validity in use is the one Google uses;
+* the clock of this machine is aligned with Google's (within the drift).
 """
 
 from __future__ import annotations
@@ -60,8 +65,14 @@ class ObservationResult:
     observation: Observation
     expected: str
     matched: bool
-    delta_hours: int = 0
+    delta_seconds: int = 0
     window: tuple = ()
+    validity: int = codes_mod.CODE_VALIDITY_SECONDS
+
+    @property
+    def delta_hours(self) -> int:
+        """Whole hours of clock offset that the match needed (0 when exact)."""
+        return int(self.delta_seconds // 3600)
 
     def as_dict(self) -> dict:
         return {
@@ -69,7 +80,8 @@ class ObservationResult:
             "observed_code": self.observation.code,
             "expected_code": self.expected,
             "matched": self.matched,
-            "delta_hours": self.delta_hours,
+            "delta_seconds": self.delta_seconds,
+            "validity": self.validity,
             "window_start_utc": _iso(self.window[0]) if self.window else None,
             "window_end_utc": _iso(self.window[1]) if self.window else None,
             "note": self.observation.note,
@@ -81,6 +93,14 @@ class KeyVerification:
     label: str
     seed_id: str
     results: list = field(default_factory=list)
+    validity: int = codes_mod.CODE_VALIDITY_SECONDS
+    validity_discovered: bool = False
+    validity_candidates: list = field(default_factory=list)
+
+    @property
+    def ambiguous(self) -> bool:
+        """More than one TTL reproduces the observations (e.g. 600 and 300)."""
+        return len(self.validity_candidates) > 1
 
     @property
     def matched(self) -> int:
@@ -102,6 +122,10 @@ class KeyVerification:
             "matched": self.matched,
             "total": self.total,
             "confirmed": self.confirmed,
+            "validity": self.validity,
+            "validity_discovered": self.validity_discovered,
+            "validity_candidates": list(self.validity_candidates),
+            "ambiguous": self.ambiguous,
             "results": [result.as_dict() for result in self.results],
         }
 
@@ -163,6 +187,54 @@ def parse_observations(text: str) -> list:
     return observations
 
 
+def _result_for(
+    secret: str,
+    observation: Observation,
+    validity: int,
+    drift: int,
+    encoding: str,
+    offset_minutes: int,
+) -> ObservationResult:
+    """Validate one observation exactly like Chromium's ValidateInRange does."""
+    expected = codes_mod.generate_code(
+        secret,
+        observation.timestamp,
+        offset_minutes=offset_minutes,
+        encoding=encoding,
+        validity=validity,
+    )
+    result = ObservationResult(
+        observation=observation,
+        expected=expected.code,
+        matched=expected.code == observation.code,
+        window=(expected.valid_from, expected.valid_to),
+        validity=validity,
+    )
+    if result.matched or drift <= 0:
+        return result
+    # Walk generation timestamps inside +/- drift at the 1 minute granularity.
+    drift = min(int(drift), 1800)
+    start = int(observation.timestamp) - drift
+    end = int(observation.timestamp) + drift
+    cursor = (start // codes_mod.CODE_GRANULARITY_SECONDS) * codes_mod.CODE_GRANULARITY_SECONDS
+    while cursor <= end:
+        candidate = codes_mod.generate_code(
+            secret,
+            cursor,
+            offset_minutes=offset_minutes,
+            encoding=encoding,
+            validity=validity,
+        )
+        if candidate.code == observation.code:
+            result.matched = True
+            result.delta_seconds = int(cursor - observation.timestamp)
+            result.expected = candidate.code
+            result.window = (candidate.valid_from, candidate.valid_to)
+            return result
+        cursor += codes_mod.CODE_GRANULARITY_SECONDS
+    return result
+
+
 def verify_key(
     secret: str,
     observations,
@@ -171,41 +243,58 @@ def verify_key(
     tolerance_hours: int = 0,
     encoding: str = "auto",
     offset_minutes: int = 0,
+    validity: int | None = None,
+    drift: int = 0,
+    discover: bool = True,
 ) -> KeyVerification:
     """Compare every observation against this key."""
-    verification = KeyVerification(label=label or "key", seed_id=seed_id)
-    tolerance = max(0, int(tolerance_hours))
-    for observation in observations:
-        expected = codes_mod.generate_code(
-            secret, observation.timestamp, offset_minutes=offset_minutes, encoding=encoding
+    observations = list(observations)
+    if validities := ([validity] if validity else []):
+        validity = validities[0]
+    used = codes_mod.check_validity(validity or codes_mod.CODE_VALIDITY_SECONDS)
+    # a legacy hour based tolerance is just a large clock drift
+    drift = max(int(drift), int(tolerance_hours) * 3600)
+
+    results = [
+        _result_for(secret, observation, used, drift, encoding, offset_minutes)
+        for observation in observations
+    ]
+    verification = KeyVerification(
+        label=label or "key", seed_id=seed_id, results=results, validity=used
+    )
+
+    if discover and results and not all(result.matched for result in results):
+        pairs = [(observation.code, observation.timestamp) for observation in observations]
+        candidates = codes_mod.discover_validity(
+            secret, pairs, encoding=encoding, offset_minutes=offset_minutes
         )
-        result = ObservationResult(
-            observation=observation,
-            expected=expected.code,
-            matched=expected.code == observation.code,
-            window=(expected.valid_from, expected.valid_to),
-        )
-        if not result.matched and tolerance:
-            for delta in range(1, tolerance + 1):
-                for sign in (-1, 1):
-                    shifted = codes_mod.generate_code(
-                        secret,
-                        observation.timestamp + sign * delta * codes_mod.CODE_VALIDITY_SECONDS,
-                        offset_minutes=offset_minutes,
-                        encoding=encoding,
-                    )
-                    if shifted.code == observation.code:
-                        result.matched = True
-                        result.delta_hours = sign * delta
-                        break
-                if result.matched:
-                    break
-        verification.results.append(result)
+        verification.validity_candidates = candidates
+        if used in candidates:
+            # the configured TTL already fits: never "discover" a divisor of it
+            verification.validity_candidates = [used]
+        elif len(candidates) == 1:
+            used = candidates[0]
+            verification.validity = used
+            verification.validity_discovered = True
+            verification.results = [
+                _result_for(secret, observation, used, drift, encoding, offset_minutes)
+                for observation in observations
+            ]
+        elif candidates:
+            # several TTLs fit the same observations; report, do not guess
+            used = candidates[0]
+            verification.validity = used
+            verification.validity_discovered = True
+            verification.results = [
+                _result_for(secret, observation, used, drift, encoding, offset_minutes)
+                for observation in observations
+            ]
     return verification
 
 
-def verify_keys(keys, observations, tolerance_hours: int = 0, encoding: str = "auto") -> list:
-    """Verify a sequence of ``{"secret", "label", "id"}`` dicts."""
+def verify_keys(keys, observations, tolerance_hours: int = 0, encoding: str = "auto",
+                drift: int = 0, discover: bool = True) -> list:
+    """Verify a sequence of ``{"secret", "label", "id", "validity"}`` dicts."""
     return [
         verify_key(
             key["secret"],
@@ -214,12 +303,15 @@ def verify_keys(keys, observations, tolerance_hours: int = 0, encoding: str = "a
             seed_id=key.get("id", ""),
             tolerance_hours=tolerance_hours,
             encoding=encoding,
+            validity=key.get("validity"),
+            drift=drift if drift else int(key.get("drift") or 0),
+            discover=discover,
         )
         for key in keys
     ]
 
 
-def report_document(verifications, observations, tolerance_hours: int = 0) -> dict:
+def report_document(verifications, observations, tolerance_hours: int = 0, drift: int = 0) -> dict:
     """Secret-free report of a verification run."""
     confirmed = [v for v in verifications if v.confirmed]
     return {
@@ -227,6 +319,7 @@ def report_document(verifications, observations, tolerance_hours: int = 0) -> di
         "command": "verify",
         "created_at_utc": _dt.datetime.now(_dt.timezone.utc).isoformat(),
         "tolerance_hours": tolerance_hours,
+        "drift_seconds": drift,
         "observations": len(observations),
         "confirmed_labels": [v.label for v in confirmed],
         "confirmed": bool(confirmed),

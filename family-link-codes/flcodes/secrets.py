@@ -69,6 +69,21 @@ _B64_RUN_RE = re.compile(r"[A-Za-z0-9+/]{32,}={0,2}")
 # One or more backslashes per escape: a body inside a HAR (JSON in JSON) keeps
 # the backslash escaped, so the file has \\u0041 instead of \u0041.
 _UNICODE_ESCAPE_RUN_RE = re.compile(r"(?:\\+u[0-9a-fA-F]{4}|\\+x[0-9a-fA-F]{2})+")
+_TTL_KEYS = (
+    "access_code_ttl",
+    "accessCodeTtl",
+    "code_validity",
+    "codeValidity",
+    "validity",
+    "ttl",
+    "accessCodeValiditySeconds",
+)
+_DRIFT_KEYS = (
+    "clock_drift_tolerance",
+    "clockDriftTolerance",
+    "clockDrift",
+    "drift",
+)
 _ENCRYPTED_KEY_RE = re.compile(
     r"([A-Za-z_]*(?:encrypted|wrapped|sealed|cipher)[A-Za-z_]*"
     r"(?:secret|seed|key|code)[A-Za-z_]*"
@@ -76,6 +91,8 @@ _ENCRYPTED_KEY_RE = re.compile(
     re.IGNORECASE,
 )
 _MAX_DERIVED_RUNS = 400
+#: How many times JSON may be nested inside JSON strings (HAR in HAR in ...).
+MAX_EMBED_DEPTH = 4
 _CONTROL_RE = re.compile(r"[\x00-\x08\x0b-\x1f\x7f]")
 
 
@@ -98,6 +115,7 @@ class SeedCandidate:
     source: str = ""
     context: str = ""
     extra: dict = field(default_factory=dict)
+    encoding: str = "raw"
 
     @property
     def masked(self) -> str:
@@ -108,6 +126,7 @@ class SeedCandidate:
             "kind": self.kind,
             "source": self.source,
             "context": self.context,
+            "encoding": self.encoding,
             "masked": self.masked,
         }
         if reveal:
@@ -173,16 +192,40 @@ def _decode_maybe_base64(value: str) -> str | None:
 
 
 def _candidate_from_value(value: str, source: str, context: str) -> SeedCandidate | None:
-    text = urllib.parse.unquote(value).strip().strip("\"'")
+    """Decode one field value and, if it hides a secret, return a candidate.
+
+    Order matters: a JSON field can hold the secret raw, escaped (``\\u0041``,
+    as the API returns it), percent encoded or base64 wrapped.
+    """
+    raw_value = value.strip().strip("\"'")
+    text = urllib.parse.unquote(raw_value)
     if looks_like_secret(text):
-        return SeedCandidate(secret=text, kind=classify_secret(text), source=source, context=context)
+        encoding = "raw" if text == raw_value else "percent-encoded"
+        return SeedCandidate(
+            secret=text,
+            kind=classify_secret(text),
+            source=source,
+            context=context,
+            encoding=encoding,
+        )
+    if "\\" in text:
+        decoded_escapes = _decode_escaped_runs(text).strip().strip("\"'")
+        if looks_like_secret(decoded_escapes):
+            return SeedCandidate(
+                secret=decoded_escapes,
+                kind=classify_secret(decoded_escapes),
+                source=source,
+                context=context,
+                encoding="unicode-escaped",
+            )
     decoded = _decode_maybe_base64(text)
     if decoded:
         return SeedCandidate(
             secret=decoded,
             kind=classify_secret(decoded),
             source=source,
-            context=f"{context} (base64)",
+            context=context,
+            encoding="base64",
         )
     return None
 
@@ -285,7 +328,7 @@ def extract_from_text(text: str, source: str = "text") -> list:
 
     for label, blob in derived_blobs(text):
         for candidate in _scan_plain_text(blob, source):
-            candidate.context = printable(f"{candidate.context} [{label}]")
+            candidate.encoding = label
             add(candidate)
 
     for match in _OTP_AUTH_RE.finditer(text):
@@ -325,28 +368,88 @@ def _scan_plain_text(text: str, source: str) -> list:
     return found
 
 
-def extract_from_json(payload: Any, source: str = "json", path: str = "$") -> list:
-    """Walk a decoded JSON document and collect secret candidates."""
+def _config_extras(payload: dict) -> dict:
+    """Pick the code validity and clock tolerance that sit next to a secret.
+
+    Chromium's ``AccessCodeConfig`` serialises as ``shared_secret`` +
+    ``access_code_ttl`` + ``clock_drift_tolerance`` (60..3600 and 0..1800 s);
+    the API payloads use camelCase variants.
+    """
+    extras = {}
+    for key in _TTL_KEYS:
+        if key in payload:
+            try:
+                value = int(payload[key])
+            except (TypeError, ValueError):
+                continue
+            if 60 <= value <= 3600:
+                extras["validity"] = value
+                break
+    for key in _DRIFT_KEYS:
+        if key in payload:
+            try:
+                value = int(payload[key])
+            except (TypeError, ValueError):
+                continue
+            if 0 <= value <= 1800:
+                extras["drift"] = value
+                break
+    return extras
+
+
+def _looks_like_json(text: str) -> bool:
+    stripped = text.lstrip()
+    if stripped.startswith(")]}'"):
+        return True
+    return bool(stripped) and stripped[0] in "{[" and len(stripped) < 4 * 1024 * 1024
+
+
+def extract_from_json(
+    payload: Any, source: str = "json", path: str = "$", depth: int = 0
+) -> list:
+    # ``depth`` counts *embedded* JSON levels only; structural nesting (a HAR is
+    # log > entries > n > response > content > text) must not consume it.
+    """Walk a decoded JSON document and collect secret candidates.
+
+    A capture frequently nests JSON inside a string (a HAR stores the response
+    body as a JSON string), so strings that look like JSON are parsed and
+    walked again. Without that, the secret is found by the text scanner but the
+    ``access_code_ttl`` that travels with it is lost.
+    """
     found: list = []
     if isinstance(payload, dict):
+        extras = _config_extras(payload)
         for key, value in payload.items():
             child_path = f"{path}.{key}"
             if isinstance(value, str):
                 candidate = _candidate_from_value(value, source, child_path)
+                if candidate is not None and extras:
+                    candidate.extra.update(extras)
                 if candidate is not None:
                     if _JSON_KEY_RE.search(str(key)):
                         candidate.kind = classify_secret(candidate.secret)
                         candidate.context = f"{child_path} (key match)"
                     found.append(candidate)
-                elif _JSON_KEY_RE.search(str(key)) and value:
+                    continue
+                if _looks_like_json(value) and depth < MAX_EMBED_DEPTH:
+                    try:
+                        embedded = parse_json_payload(value)
+                    except ValueError:
+                        embedded = None
+                    if embedded is not None:
+                        found.extend(
+                            extract_from_json(embedded, source, child_path, depth + 1)
+                        )
+                        continue
+                if _JSON_KEY_RE.search(str(key)) and value:
                     nested = _candidate_from_value(str(value), source, child_path)
                     if nested is not None:
                         found.append(nested)
             else:
-                found.extend(extract_from_json(value, source, child_path))
+                found.extend(extract_from_json(value, source, child_path, depth))
     elif isinstance(payload, list):
         for index, value in enumerate(payload):
-            found.extend(extract_from_json(value, source, f"{path}[{index}]"))
+            found.extend(extract_from_json(value, source, f"{path}[{index}]", depth))
     elif isinstance(payload, str):
         found.extend(extract_from_text(payload, source))
     return found
@@ -390,13 +493,26 @@ def extract_from_payload(text: str, source: str = "payload") -> list:
         found.extend(extract_from_json(payload, source))
     found.extend(extract_from_text(text, source))
     unique: list = []
-    seen: set = set()
+    by_secret: dict = {}
     for candidate in found:
-        if candidate.secret in seen:
+        existing = by_secret.get(candidate.secret)
+        if existing is None:
+            by_secret[candidate.secret] = candidate
+            unique.append(candidate)
             continue
-        seen.add(candidate.secret)
-        unique.append(candidate)
+        # keep the first candidate but never lose config metadata found later
+        for key, value in candidate.extra.items():
+            existing.extra.setdefault(key, value)
     return unique
+
+
+def config_validity(candidates: Iterable) -> int | None:
+    """Return the first code validity found among the candidates."""
+    for candidate in candidates or []:
+        validity = (candidate.extra or {}).get("validity")
+        if validity:
+            return int(validity)
+    return None
 
 
 def dedupe(candidates: Iterable) -> list:
