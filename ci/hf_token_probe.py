@@ -71,7 +71,9 @@ def classify(token: str) -> str:
 
 
 def request(path: str, token: str | None, timeout: int = 30,
-            absolute: bool = False, nbytes: int = 0) -> tuple[int, object]:
+            absolute: bool = False, nbytes: int = 0,
+            byte_range: tuple[int, int] | None = None, raw: bool = False
+            ) -> tuple[int, object]:
     """GET a HF endpoint. Returns (status, parsed_json_or_text).
 
     absolute=True allows the sibling datasets-server host. nbytes>0 sends a Range
@@ -81,6 +83,8 @@ def request(path: str, token: str | None, timeout: int = 30,
     req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept-Encoding": "gzip"})
     if nbytes:
         req.add_header("Range", f"bytes=0-{nbytes - 1}")
+    elif byte_range:
+        req.add_header("Range", f"bytes={byte_range[0]}-{byte_range[1]}")
     if token:
         req.add_header("Authorization", f"Bearer {token}")
     try:
@@ -88,6 +92,8 @@ def request(path: str, token: str | None, timeout: int = 30,
             raw = resp.read()
             if resp.headers.get("Content-Encoding") == "gzip":
                 raw = gzip.GzipFile(fileobj=io.BytesIO(raw)).read()
+            if raw:
+                return resp.status, raw
             body = raw.decode("utf-8", "replace")
             try:
                 return resp.status, json.loads(body)
@@ -597,6 +603,151 @@ def report_target_deep(token: str | None, target: str, kind: str = "datasets") -
             bullet("datasets-server size", f"HTTP {st}")
 
 
+def inventory_remote_zip(url: str, token: str, size: int) -> None:
+    """List a remote ZIP's contents by reading only its central directory.
+
+    A ZIP stores its entry table at the END of the file, so the whole archive
+    never has to be downloaded: one Range request for the tail locates the End Of
+    Central Directory record, a second fetches the table itself. For a multi-GB
+    archive this costs tens of kilobytes instead of gigabytes.
+    """
+    tail_len = min(size, 66_000)
+    st, tail = request(url, token, byte_range=(size - tail_len, size - 1), raw=True)
+    if st not in (200, 206) or not isinstance(tail, bytes):
+        bullet("tail fetch", f"HTTP {st} - cannot read the central directory")
+        return
+    eocd = tail.rfind(b"PK\x05\x06")
+    if eocd < 0:
+        bullet("EOCD", "not found - not a plain ZIP, or it is split/spanned")
+        return
+    total = int.from_bytes(tail[eocd + 10:eocd + 12], "little")
+    cd_size = int.from_bytes(tail[eocd + 12:eocd + 16], "little")
+    cd_off = int.from_bytes(tail[eocd + 16:eocd + 20], "little")
+
+    # ZIP64 carries the real values when the 32-bit fields are saturated.
+    if total == 0xFFFF or cd_off == 0xFFFFFFFF or cd_size == 0xFFFFFFFF:
+        loc = tail.rfind(b"PK\x06\x07")
+        say("  ZIP64 in use")
+        if loc >= 0:
+            z64_off = int.from_bytes(tail[loc + 8:loc + 16], "little")
+            st64, z64 = request(url, token, byte_range=(z64_off, z64_off + 55), raw=True)
+            if st64 in (200, 206) and isinstance(z64, bytes) and z64[:4] == b"PK\x06\x06":
+                total = int.from_bytes(z64[32:40], "little")
+                cd_size = int.from_bytes(z64[40:48], "little")
+                cd_off = int.from_bytes(z64[48:56], "little")
+
+    if cd_size <= 0 or cd_off < 0:
+        bullet("central directory", f"unusable (size={cd_size} offset={cd_off})")
+        return
+    say(f"  central directory: offset={cd_off} size={cd_size} entries={total}")
+    st, cd = request(url, token, byte_range=(cd_off, cd_off + cd_size - 1), raw=True)
+    if st not in (200, 206) or not isinstance(cd, bytes):
+        bullet("central directory fetch", f"HTTP {st}")
+        return
+
+    exts: dict[str, int] = {}
+    ext_bytes: dict[str, int] = {}
+    n = 0
+    biggest = ("", 0)
+    pos = 0
+    while pos + 46 <= len(cd) and cd[pos:pos + 4] == b"PK\x01\x02":
+        name_len = int.from_bytes(cd[pos + 28:pos + 30], "little")
+        extra_len = int.from_bytes(cd[pos + 30:pos + 32], "little")
+        cmt_len = int.from_bytes(cd[pos + 32:pos + 34], "little")
+        usize = int.from_bytes(cd[pos + 24:pos + 28], "little")
+        csize = int.from_bytes(cd[pos + 20:pos + 24], "little")
+        name = cd[pos + 46:pos + 46 + name_len].decode("utf-8", "replace")
+        if usize == 0xFFFFFFFF:  # ZIP64 extra field carries the real size
+            ex = cd[pos + 46 + name_len:pos + 46 + name_len + extra_len]
+            i = 0
+            while i + 4 <= len(ex):
+                hid = int.from_bytes(ex[i:i + 2], "little")
+                hsz = int.from_bytes(ex[i + 2:i + 4], "little")
+                if hid == 0x0001 and hsz >= 8:
+                    usize = int.from_bytes(ex[i + 4:i + 12], "little")
+                    break
+                i += 4 + hsz
+        n += 1
+        low = name.lower()
+        ext = low.rsplit(".", 1)[-1] if "." in low.rsplit("/", 1)[-1] else "<dir/no ext>"
+        exts[ext] = exts.get(ext, 0) + 1
+        ext_bytes[ext] = ext_bytes.get(ext, 0) + usize
+        if usize > biggest[1]:
+            biggest = (name, usize)
+        pos += 46 + name_len + extra_len + cmt_len
+
+    bullet("entries parsed", n)
+    bullet("uncompressed total", f"{sum(ext_bytes.values()) / 1e9:.3f} GB")
+    bullet("by extension (count)", dict(sorted(exts.items(), key=lambda kv: -kv[1])[:25]))
+    bullet("by extension (uncompressed GB)",
+           {k: round(v / 1e9, 3) for k, v in
+            sorted(ext_bytes.items(), key=lambda kv: -kv[1])[:15]})
+    pe = [e for e in exts if e in ("dll", "exe", "sys", "ocx", "cpl")]
+    bullet("Windows PE binaries present", f"{sorted(pe)}" if pe else "NONE")
+    weights = [e for e in exts if e in ("gguf", "safetensors", "bin", "pt", "pth",
+                                        "onnx", "tflite", "ckpt", "msgpack", "h5")]
+    bullet("model-weight-looking files present", f"{sorted(weights)}" if weights else "NONE")
+    bullet("largest entry", f"{biggest[1] / 1e9:.3f} GB "
+           f"{biggest[0] if REVEAL else '(name withheld)'}")
+    if REVEAL:
+        say("  full listing:")
+        pos = 0
+        shown = 0
+        while pos + 46 <= len(cd) and cd[pos:pos + 4] == b"PK\x01\x02" and shown < 200:
+            name_len = int.from_bytes(cd[pos + 28:pos + 30], "little")
+            extra_len = int.from_bytes(cd[pos + 30:pos + 32], "little")
+            cmt_len = int.from_bytes(cd[pos + 32:pos + 34], "little")
+            usize = int.from_bytes(cd[pos + 24:pos + 28], "little")
+            name = cd[pos + 46:pos + 46 + name_len].decode("utf-8", "replace")
+            say(f"      {name}  {usize} bytes")
+            shown += 1
+            pos += 46 + name_len + extra_len + cmt_len
+
+
+def report_archives(token: str, target: str, kind: str = "datasets") -> None:
+    """Inventory the archives inside the target repo without downloading them."""
+    say(f"\n[10] Archive inventory of '{target}' (central directory only, no download)")
+    q = urllib.parse.urlencode({"search": target, "limit": "50", "full": "true"})
+    st, data = request(f"/api/{kind}?{q}", token)
+    if st != 200 or not isinstance(data, list):
+        say(f"  cannot locate the repo (HTTP {st})")
+        return
+    matches = [d for d in data if isinstance(d, dict)
+               and str(d.get("id", "")).split("/")[-1].lower() == target.lower()]
+    if not matches:
+        say("  no exact name match")
+        return
+    rid = str(matches[0]["id"])
+    enc = urllib.parse.quote(rid)
+    st, tree = request(f"/api/{kind}/{enc}/tree/main?recursive=true&expand=true", token)
+    if st != 200 or not isinstance(tree, list):
+        say(f"  tree not readable (HTTP {st})")
+        return
+    for entry in tree:
+        if not isinstance(entry, dict) or entry.get("type") != "file":
+            continue
+        path = str(entry.get("path") or "")
+        size = int(entry.get("size") or 0)
+        low = path.lower()
+        label = path if REVEAL else f"<{low.rsplit('.', 1)[-1]} file, name withheld>"
+        if low.endswith(".zip"):
+            say(f"  ZIP {label} ({size / 1e9:.3f} GB)")
+            inventory_remote_zip(f"/{kind}/{enc}/resolve/main/{urllib.parse.quote(path)}",
+                                 token, size)
+        elif low.endswith((".7z", ".rar")):
+            # 7z/RAR keep their header at the end too, but the format needs a real
+            # parser; report what is cheap and say so honestly.
+            st2, head = request(f"/{kind}/{enc}/resolve/main/{urllib.parse.quote(path)}",
+                                token, nbytes=6, raw=True)
+            sig = head[:6] if isinstance(head, bytes) else b""
+            is7z = sig == b"7z\xbc\xaf\'\x1c"
+            bullet(f"{low.rsplit('.', 1)[-1].upper()} {label}",
+                   f"{size / 1e9:.3f} GB | signature={'valid 7z' if is7z else 'not 7z'} | "
+                   "listing needs a full download or the 7z binary, not attempted")
+        else:
+            bullet(label, f"{size} bytes (not an archive)")
+
+
 def report_egress() -> None:
     """Prove the runner can reach huggingface.co, even with no token to test.
 
@@ -654,6 +805,7 @@ def run_probe(label: str, token: str) -> int:
         report_target(token, target, me=account)
         report_target_deep(token, target, "datasets")
         report_target_deep(token, target, "models")
+        report_archives(token, target, "datasets")
 
     say("\n" + "=" * 72)
     say("SUMMARY")
