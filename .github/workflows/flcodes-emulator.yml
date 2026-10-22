@@ -8,6 +8,11 @@ name: flcodes emulator
 # android:allowBackup="true" and writes a Family Link shaped config into its own
 # SharedPreferences. Everything after that is the production path:
 #   flcodes device info -> device apk -> apk scan -> device backup -> abe scan
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
 on:
   push:
     paths:
@@ -110,6 +115,24 @@ jobs:
             bash family-link-codes/tools/emulator_no_root_test.sh \
               --package com.flcodes.selftest --expect AItest-only \
               --work "$RUNNER_TEMP/flcodes-emulator"
+
+      - name: Report the failure on the PR (logs are not readable otherwise)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pr="${{ github.event.pull_request.number }}"
+          if [ -z "$pr" ]; then
+            pr="$(gh pr list --head "$GITHUB_REF_NAME" --json number -q '.[0].number' 2>/dev/null || true)"
+          fi
+          [ -n "$pr" ] || exit 0
+          {
+            echo "### emulator job failed"
+            echo '```'
+            tail -40 "$RUNNER_TEMP/build.log" 2>/dev/null || echo "(no build log)"
+            echo '```'
+          } > "$RUNNER_TEMP/comment.md"
+          gh pr comment "$pr" --body-file "$RUNNER_TEMP/comment.md" || true
 
       - name: Collect artifacts
         if: always()
