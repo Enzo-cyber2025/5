@@ -1,0 +1,115 @@
+# Build and run the emulator core on ARM64, two independent ways.
+#
+# Why this exists: the ARM64 emitter cannot be validated by inspection. A wrong
+# encoding still looks like a plausible 32-bit word; what settles it is emitting
+# into an executable page and running it. That requires an aarch64 host or a
+# user-mode emulator, so the emit-and-execute harness is run on both, and the
+# final step of each job asserts that code really executed rather than skipped.
+#
+# Two jobs rather than one because they fail differently: a native runner proves
+# behaviour on real hardware, QEMU proves it without needing an ARM64 runner to
+# be available. If only one survives a platform change, the other still gates.
+
+name: emu ARM64
+
+on:
+  push:
+    branches:
+      - arena/de730b27-5
+    paths:
+      - 'emu/**'
+      - '.github/workflows/emu-arm64.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emu-arm64-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native:
+    name: native aarch64 runner
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Confirm the runner really is aarch64
+        run: |
+          set -euo pipefail
+          arch="$(uname -m)"
+          echo "uname -m = $arch"
+          test "$arch" = aarch64 || { echo "runner is not aarch64"; exit 1; }
+
+      - name: Build
+        working-directory: emu
+        run: make test_ptc test_x86 test_emit_exec
+
+      - name: Run the suite
+        working-directory: emu
+        run: |
+          set -euo pipefail
+          ./test_ptc
+          ./test_x86
+          ./test_emit_exec | tee /tmp/emit.log
+
+      - name: Assert generated code actually executed
+        run: |
+          set -euo pipefail
+          grep -q "EXECUTED ON aarch64" /tmp/emit.log || {
+            echo "the harness skipped instead of executing ARM64 code."
+            echo "a skip is not a pass - this job must fail."
+            exit 1
+          }
+
+  qemu:
+    name: aarch64 under QEMU user-mode
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Install the cross toolchain and qemu-user-static
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            gcc-aarch64-linux-gnu qemu-user-static
+
+      - name: Cross-compile statically for aarch64
+        working-directory: emu
+        run: |
+          set -euo pipefail
+          CC=aarch64-linux-gnu-gcc
+          FLAGS="-std=c11 -Wall -Wextra -Wshadow -Werror -O2 -static"
+          $CC $FLAGS -o /tmp/t_ptc   test_ptc.c ptc.c
+          $CC $FLAGS -o /tmp/t_x86   test_x86_decode.c x86_decode.c
+          $CC $FLAGS -o /tmp/t_emit  test_emit_exec.c
+
+      - name: Confirm the binaries are aarch64 ELF
+        run: |
+          set -euo pipefail
+          file /tmp/t_emit | tee /tmp/file.log
+          grep -qi "ARM aarch64" /tmp/file.log || {
+            echo "cross-compile did not produce an aarch64 binary"; exit 1; }
+
+      - name: Run the suite under qemu-aarch64
+        run: |
+          set -euo pipefail
+          qemu-aarch64-static /tmp/t_ptc
+          qemu-aarch64-static /tmp/t_x86
+          qemu-aarch64-static /tmp/t_emit | tee /tmp/emit.log
+
+      - name: Assert generated code actually executed
+        run: |
+          set -euo pipefail
+          grep -q "EXECUTED ON aarch64" /tmp/emit.log || {
+            echo "QEMU ran the suite but no ARM64 code was executed."
+            echo "a skip is not a pass - this job must fail."
+            exit 1
+          }
