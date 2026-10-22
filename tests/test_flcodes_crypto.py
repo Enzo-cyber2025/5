@@ -115,6 +115,18 @@ def test_store_roundtrip_hides_the_secret_on_disk(tmp_path):
     assert listed[0]["masked"].startswith("AIt")
 
 
+def test_store_reloads_when_the_file_changes_on_disk(tmp_path):
+    # a long running server must see keys added by another process
+    reader = Store(path=tmp_path / "store.json", passphrase="pass")
+    assert reader.list_seeds() == []
+
+    writer = Store(path=tmp_path / "store.json", passphrase="pass")
+    record = writer.add_seed("AItest-only-hot-reload.1", label="cli")
+
+    assert [seed["id"] for seed in reader.list_seeds()] == [record["id"]]
+    assert reader.load()["seeds"][0]["label"] == "cli"
+
+
 def test_store_requires_the_right_passphrase(tmp_path):
     store = _store(tmp_path, "correct horse")
     store.add_seed("AItest-only-secret.1", label="x")

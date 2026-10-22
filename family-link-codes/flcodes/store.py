@@ -75,6 +75,7 @@ class Store:
         self.path = Path(path).expanduser() if path else default_store_path()
         self._passphrase = passphrase
         self._payload: dict | None = None
+        self._mtime: int | None = None
 
     # ---------------------------------------------------------------- helpers
     @property
@@ -85,6 +86,13 @@ class Store:
 
     def _empty_payload(self) -> dict:
         return {"seeds": [], "active_id": None, "updated_at": int(time.time())}
+
+    def _current_mtime(self) -> int | None:
+        """Modification time of the store file, or None when it does not exist."""
+        try:
+            return self.path.stat().st_mtime_ns
+        except OSError:
+            return None
 
     def _read_container(self) -> dict | None:
         if not self.path.exists():
@@ -107,12 +115,18 @@ class Store:
 
     # ------------------------------------------------------------------- api
     def load(self) -> dict:
-        """Decrypt and return the payload (empty payload when no file yet)."""
-        if self._payload is not None:
+        """Decrypt and return the payload (empty payload when no file yet).
+
+        The file is re-read when it changed on disk, so a long running server
+        sees keys added by the CLI in another process.
+        """
+        mtime = self._current_mtime()
+        if self._payload is not None and mtime == self._mtime:
             return self._payload
         container = self._read_container()
         if container is None:
             self._payload = self._empty_payload()
+            self._mtime = mtime
             return self._payload
         if container.get("format") != FORMAT:
             raise StoreError(f"unexpected store format: {container.get('format')!r}")
@@ -138,6 +152,7 @@ class Store:
             self._payload = json.loads(plaintext.decode("utf-8"))
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
             raise StoreError(f"corrupt store payload: {exc}") from exc
+        self._mtime = mtime
         return self._payload
 
     def save(self) -> None:
@@ -167,6 +182,7 @@ class Store:
             "ciphertext": base64.b64encode(ciphertext).decode("ascii"),
         }
         self._write_container(container)
+        self._mtime = self._current_mtime()
 
     # --------------------------------------------------------------- secrets
     def list_seeds(self) -> list:
