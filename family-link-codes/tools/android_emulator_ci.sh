@@ -127,8 +127,17 @@ adb shell wm size
 
 step "4. the APK"
 if [[ "$BUILD_SELFTEST" == "1" ]]; then
-  bash "$HERE/tools/build_test_apk.sh" --out "$WORK/selftest.apk" \
-       --secret "AItest-only-emulator-key" || fail "the selftest APK did not build"
+  echo "tools present: $(command -v zip || echo NO-zip) $(command -v keytool || echo NO-keytool) $(command -v javac || echo NO-javac)"
+  {
+    set -x
+    bash "$HERE/tools/build_test_apk.sh" --out "$WORK/selftest.apk" \
+         --secret "AItest-only-emulator-key"
+  } > "$WORK/build.log" 2>&1
+  BUILD_STATUS=$?
+  set +x
+  echo "build exit: $BUILD_STATUS"
+  tail -25 "$WORK/build.log"
+  [[ $BUILD_STATUS -eq 0 && -s "$WORK/selftest.apk" ]] || fail "the selftest APK did not build"
   APK="$WORK/selftest.apk"
 fi
 [[ -s "$APK" ]] || fail "no APK at $APK"
