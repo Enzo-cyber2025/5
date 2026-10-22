@@ -2,7 +2,8 @@
 # Fetch the newest REAL Family Link APK (no self-built copy) for analysis.
 #
 # Strategies, in order, each one validated before it is accepted:
-#   1. apkeep (EFF, APKPure backend, anonymous)     - release binary from GitHub
+#   1. apkeep against Google Play (official store, anonymous session)
+#   2. apkeep against APKPure (third-party mirror, dangers acknowledged)
 #   2. Aptoide public API (no account)              - JSON with a direct path
 #   3. APKPure direct download endpoint             - plain HTTP
 #   4. APKMirror uploads page                       - scraped, last resort
@@ -89,7 +90,6 @@ unpack_if_bundle() {  # XAPK/APKS -> base.apk + splits
 try_apkeep() {
   local bin="$OUT/apkeep"
   if [[ ! -x "$bin" ]]; then
-    # the releases ship plain binaries: apkeep-x86_64-unknown-linux-gnu
     local url
     url="$(gh api repos/EFForg/apkeep/releases/latest \
             --jq '[.assets[] | select(.name == "apkeep-x86_64-unknown-linux-gnu") | .browser_download_url] | .[0]' \
@@ -106,7 +106,32 @@ try_apkeep() {
   fi
   log "apkeep: $($bin --version 2>&1 | head -1)"
   rm -f ./*.apk ./*.xapk ./*.apks
-  "$bin" -a "$PACKAGE" -d apk-pure . >&2 || return 1
+  # APKPure is a mirror: apkeep requires the risk to be acknowledged explicitly
+  "$bin" -a "$PACKAGE" -d apk-pure -o 'acknowledge_dangers=true' . >&2 || return 1
+  local produced
+  produced="$(ls -t *.apk *.xapk *.apks 2>/dev/null | head -1)"
+  [[ -n "$produced" ]] || return 1
+  unpack_if_bundle "$produced"
+}
+
+ensure_apkeep() {
+  local bin="$OUT/apkeep"
+  [[ -x "$bin" ]] && return 0
+  local url
+  url="$(gh api repos/EFForg/apkeep/releases/latest \
+          --jq '[.assets[] | select(.name == "apkeep-x86_64-unknown-linux-gnu") | .browser_download_url] | .[0]' \
+          2>/dev/null || true)"
+  url="$(printf '%s' "$url" | head -1 | tr -d '[:space:]')"
+  [[ "$url" =~ ^https:// ]] || { log "apkeep: asset not found"; return 1; }
+  curl -fsSL --retry 2 -o "$bin" "$url" || return 1
+  chmod +x "$bin" || return 1
+}
+
+try_gplay() {
+  ensure_apkeep || return 1
+  log "apkeep: official store, anonymous session"
+  rm -f ./*.apk ./*.xapk ./*.apks
+  "$OUT/apkeep" -a "$PACKAGE" -d google-play . >&2 || return 1
   local produced
   produced="$(ls -t *.apk *.xapk *.apks 2>/dev/null | head -1)"
   [[ -n "$produced" ]] || return 1
@@ -165,7 +190,7 @@ try_apkmirror() {
 }
 
 FOUND=""
-for strategy in try_apkeep try_aptoide try_apkpure try_apkmirror; do
+for strategy in try_gplay try_apkeep try_aptoide try_apkpure try_apkmirror; do
   log "strategy: $strategy"
   set +e
   candidate="$($strategy)"

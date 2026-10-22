@@ -107,24 +107,27 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          set -uo pipefail
+          set +e +o pipefail
           pr="${{ github.event.pull_request.number }}"
-          [ -n "$pr" ] || pr="$(gh pr list --head "$GITHUB_REF_NAME" --json number -q '.[0].number' 2>/dev/null || true)"
+          [ -n "$pr" ] || pr="$(gh pr list --head "$GITHUB_REF_NAME" --json number -q '.[0].number' 2>/dev/null)"
           [ -n "$pr" ] || exit 0
+          W="$RUNNER_TEMP/flcodes-emulator"
           {
             echo "### emulator job failed"
             echo
-            echo "\`\`\`"
-            ls -la "$RUNNER_TEMP" 2>&1 | head -30
-            echo "--- env.log ---"
-            cat "$RUNNER_TEMP/env.log" 2>&1 | head -30
-            echo "--- help.log ---"
-            cat "$RUNNER_TEMP/help.log" 2>&1 | head -20
-            echo "--- build.log ---"
-            cat "$RUNNER_TEMP/build.log" 2>&1 | head -80
-            echo "\`\`\`"
-          } > "$RUNNER_TEMP/comment.md"
-          gh pr comment "$pr" --body-file "$RUNNER_TEMP/comment.md" || true
+            echo '```'
+            echo "--- \$RUNNER_TEMP ---"
+            ls -la "$RUNNER_TEMP" 2>&1 | head -20
+            echo "--- flcodes-emulator ---"
+            ls -la "$W" 2>&1 | head -20
+            for f in "$W"/*.txt "$W"/*.log "$RUNNER_TEMP"/*.log "$RUNNER_TEMP"/*.txt; do
+              [ -s "$f" ] || continue
+              echo "--- $(basename "$f") ---"
+              tail -30 "$f"
+            done
+            echo '```'
+          } > "$RUNNER_TEMP/comment.md" 2>/dev/null
+          gh pr comment "$pr" --body-file "$RUNNER_TEMP/comment.md"
 
       - name: Collect artifacts
         if: always()
