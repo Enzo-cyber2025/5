@@ -1,7 +1,8 @@
 CC      ?= gcc
-FIXTURE ?= /tmp/emu_fixture.exe
+FIXTURE     ?= /tmp/emu_fixture.exe
+FIXTURE_DLL ?= /tmp/emu_guest.dll
 CFLAGS  ?= -std=c11 -Wall -Wextra -Wshadow -Werror -O2 -g
-TARGETS  = test_ptc test_x86 test_pe test_emit_exec pe_info
+TARGETS  = test_ptc test_x86 test_pe test_sweep test_emit_exec pe_info prewarm
 
 all: test
 
@@ -11,6 +12,18 @@ test: $(TARGETS)
 	./test_x86
 	@echo
 	./test_pe
+	@echo
+	./test_sweep
+	@echo
+	@# End to end: the guest image goes to disk and the driver has to report a
+	@# percentage and a remaining-time estimate. Asserted, not just printed.
+	@./test_sweep --write-fixture $(FIXTURE_DLL) --exports > /dev/null
+	@./prewarm --idle-ms 1 --max-seconds 30 $(FIXTURE_DLL) > $(FIXTURE_DLL).prewarm
+	@grep -q 'remaining ~' $(FIXTURE_DLL).prewarm
+	@grep -q 'blocks discovered:' $(FIXTURE_DLL).prewarm
+	@grep -q 'translated and cached:' $(FIXTURE_DLL).prewarm
+	@grep -q '2 export(s)' $(FIXTURE_DLL).prewarm
+	@echo "prewarm end to end: percentage and remaining time reported for a real file"
 	@echo
 	@# End to end: the fixture goes to disk and the CLI has to report what is in
 	@# it. Asserted rather than printed, so a broken pe_info fails the suite.
@@ -35,6 +48,16 @@ test_x86: test_x86_decode.c x86_decode.c x86_decode.h
 test_pe: test_pe_load.c pe_load.c pe_load.h
 	$(CC) $(CFLAGS) -o $@ test_pe_load.c pe_load.c
 
+# The sweep links the decoder, the PE parser, the cache and the encoder seed:
+# it is the first component that uses all of them together.
+test_sweep: test_sweep.c sweep.c sweep.h pe_load.c ptc.c x86_decode.c a64_emit.c
+	$(CC) $(CFLAGS) -o $@ test_sweep.c sweep.c pe_load.c ptc.c x86_decode.c a64_emit.c
+
+# The pre-translation driver: sweeps real files and reports percentage plus
+# remaining time, modelling the screen-off window as a resumable time budget.
+prewarm: prewarm.c sweep.c pe_load.c ptc.c x86_decode.c a64_emit.c
+	$(CC) $(CFLAGS) -o $@ prewarm.c sweep.c pe_load.c ptc.c x86_decode.c a64_emit.c
+
 # The emit-and-execute harness is ISA-guarded at compile time; on a non-aarch64
 # host it still builds and checks the encodings, but runs nothing.
 # Reads a PE from disk and reports it. Parsing only: it never maps the image,
@@ -46,6 +69,7 @@ test_emit_exec: test_emit_exec.c
 	$(CC) $(CFLAGS) -o $@ test_emit_exec.c
 
 clean:
-	rm -f $(TARGETS) *.o *.ptc *.ptc.tmp.* $(FIXTURE) $(FIXTURE).report
+	rm -f $(TARGETS) *.o *.ptc *.ptc.tmp.* $(FIXTURE) $(FIXTURE).report \
+	      $(FIXTURE_DLL) $(FIXTURE_DLL).prewarm
 
 .PHONY: all test clean

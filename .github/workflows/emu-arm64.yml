@@ -293,3 +293,125 @@ jobs:
             echo "a Windows binary is tracked in this repository"; exit 1
           fi
           echo "no .exe/.dll/.msi tracked - ok"
+
+  prewarm-real:
+    name: pre-translation sweep over a real exe and its DLLs
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        working-directory: emu
+        run: make test_sweep pe_info prewarm
+
+      - name: Run the sweep suite
+        working-directory: emu
+        run: |
+          set -euo pipefail
+          ./test_sweep | tail -2
+
+      - name: Download a real executable and its DLLs
+        run: |
+          set -uo pipefail
+          # HandBrake 1.11.2, GPL-2.0, from a tag-pinned release. The x86_64
+          # Windows zip ships the executable alongside the DLLs it loads, which
+          # is the shape under test: an exe and its real DLLs, not a synthetic
+          # fixture. Downloaded on an ephemeral runner, parsed only, never
+          # committed and never redistributed.
+          #
+          # HandBrake publishes a minisign .sig rather than a sha256, so the
+          # byte length declared by the release metadata is fetched through the
+          # API and asserted against a value pinned here, and the digest is
+          # computed and published so it can be pinned next.
+          tag="1.11.2"
+          name="HandBrake-${tag}-x86_64-Win_GUI.zip"
+          PINNED_SIZE="34937681"
+          url="https://github.com/HandBrake/HandBrake/releases/download/${tag}/${name}"
+          # gh is preinstalled and authenticated on hosted runners, so the
+          # release metadata comes from the API without a hand-rolled parse.
+          declared=$(gh api "repos/HandBrake/HandBrake/releases/tags/${tag}" \
+            --jq ".assets[] | select(.name==\"${name}\") | .size")
+          echo "declared by release metadata: ${declared}"
+          if [ -z "$declared" ]; then
+            echo "::error title=release-metadata-missing::asset ${name} not found in tag ${tag}"
+            exit 1
+          fi
+          if [ "$declared" != "$PINNED_SIZE" ]; then
+            echo "::error title=release-changed::declared ${declared} != pinned ${PINNED_SIZE}; re-pin deliberately"
+            exit 1
+          fi
+          if ! curl -fsSL -o /tmp/hb.zip "$url"; then
+            echo "::error title=download-failed::${url}"
+            exit 1
+          fi
+          actual=$(stat -c %s /tmp/hb.zip)
+          echo "downloaded: ${actual} bytes"
+          if [ "$actual" != "$declared" ]; then
+            echo "::error title=size-mismatch::downloaded ${actual}, declared ${declared}"
+            exit 1
+          fi
+          digest=$(sha256sum /tmp/hb.zip | awk '{print $1}')
+          echo "sha256: ${digest}"
+          echo "::notice title=handbrake-sha256::${digest} size=${actual} - pin this value in the workflow"
+
+      - name: Enumerate the modules in the bundle
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/hb
+          unzip -q -o /tmp/hb.zip -d /tmp/hb
+          find /tmp/hb -type f \( -iname '*.exe' -o -iname '*.dll' \) \
+            | sort > /tmp/mods.list
+          echo "executables: $(find /tmp/hb -type f -iname '*.exe' | wc -l)"
+          echo "dlls:        $(find /tmp/hb -type f -iname '*.dll' | wc -l)"
+          echo "total bytes: $(du -sb /tmp/hb | cut -f1)"
+          test -s /tmp/mods.list || { echo "::error title=no-modules::nothing to sweep"; exit 1; }
+          head -20 /tmp/mods.list
+
+      - name: Pre-translate with a closing idle window
+        run: |
+          set -uo pipefail
+          # A short window makes the sweep yield often, so the percentage and the
+          # remaining-time estimate are exercised the way they would be on a
+          # device whose idle window keeps closing and reopening.
+          xargs -a /tmp/mods.list -d '\n' \
+            ./emu/prewarm --idle-ms 250 --max-seconds 900 --cache /tmp/hb.ptc \
+            > /tmp/prewarm.log 2>&1
+          rc=$?
+          tail -45 /tmp/prewarm.log
+          if [ "$rc" -ne 0 ]; then
+            flat=$(tr '\n' ' ' < /tmp/prewarm.log | tr -s ' ' | tail -c 900)
+            echo "::error title=prewarm-failed rc=${rc}::${flat}"
+          fi
+          exit $rc
+
+      - name: Report the measurement
+        if: always()
+        run: |
+          set -uo pipefail
+          if [ ! -f /tmp/prewarm.log ]; then echo "no log"; exit 0; fi
+          {
+            echo "### pre-translation sweep over a real bundle"
+            echo '```'
+            grep -E '^  (ok|skip|queued) ' /tmp/prewarm.log | head -40
+            echo '```'
+            echo '```'
+            sed -n '/pre-translation summary/,/^cache records/p' /tmp/prewarm.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          mods=$(grep -cE '^  ok ' /tmp/prewarm.log || true)
+          skipped=$(grep -cE '^  skip ' /tmp/prewarm.log || true)
+          summary=$(sed -n '/pre-translation summary/,/^cache records/p' /tmp/prewarm.log \
+                    | tr '\n' '|' | tr -s ' ' | head -c 2800)
+          echo "::notice title=prewarm-measured::modules_ok=${mods} skipped=${skipped} :: ${summary}"
+
+      - name: Confirm nothing downloaded entered the repository
+        run: |
+          set -euo pipefail
+          if git ls-files | grep -qiE '\.(exe|dll|msi|zip)$'; then
+            echo "a Windows binary or archive is tracked in this repository"; exit 1
+          fi
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "the worktree is dirty after the sweep:"; git status --porcelain; exit 1
+          fi
+          echo "repository clean - ok"

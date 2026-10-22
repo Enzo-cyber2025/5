@@ -334,6 +334,91 @@ static pe_status walk_sections(pec *c, pe_image *o, size_t sec_off,
     return PE_OK;
 }
 
+/* ---- export table ------------------------------------------------------ */
+
+/* A forwarder is detected by its RVA falling inside the export directory
+ * itself: the loader treats such an entry as a "DllName.Function" string rather
+ * than as code. Treating one as code would send a sweep into the middle of a
+ * string table, so it is flagged instead. */
+static pe_status walk_exports(pec *c, pe_image *o)
+{
+    uint32_t dir_rva = o->dir_rva[PE_DIR_EXPORT];
+    uint32_t dir_size = o->dir_size[PE_DIR_EXPORT];
+    size_t   pos, aof, aon, aoo;
+    uint32_t nnames, base, i;
+    int      mapped = 0;
+
+    if (dir_rva == 0) { o->has_exports = 0; return PE_OK; }
+    o->has_exports = 1;
+
+    pos = pe_rva_to_off(o, dir_rva, c->len, &mapped);
+    if (!mapped) { o->detail = "export directory RVA maps to no section";
+                   return PE_MALFORMED; }
+    if (!fits(c, pos, 40)) {
+        o->detail = "export directory truncated";
+        return PE_TRUNCATED;
+    }
+    base   = rd32(c->b + pos + 16u);
+    nnames = rd32(c->b + pos + 24u);
+    aof    = rd32(c->b + pos + 28u);   /* AddressOfFunctions */
+    aon    = rd32(c->b + pos + 32u);   /* AddressOfNames */
+    aoo    = rd32(c->b + pos + 36u);   /* AddressOfNameOrdinals */
+
+    if (nnames == 0) return PE_OK;      /* ordinal-only image: nothing named */
+
+    {   /* all three arrays must be reachable before any of them is walked */
+        int m1 = 0, m2 = 0, m3 = 0;
+        size_t of = pe_rva_to_off(o, aof, c->len, &m1);
+        size_t on = pe_rva_to_off(o, aon, c->len, &m2);
+        size_t oo = pe_rva_to_off(o, aoo, c->len, &m3);
+        if (!m1 || !m2 || !m3) {
+            o->detail = "an export array RVA maps to no section";
+            return PE_MALFORMED;
+        }
+        /* remember them; the loop below re-derives them per index for bounds */
+        o->num_exports = 0;
+        for (i = 0; i < nnames; i++) {
+            uint32_t name_rva, ord, frva;
+            long     n;
+            int      nm = 0;
+            size_t   name_off;
+
+            if (!fits(c, on + (size_t)i * 4u, 4) ||
+                !fits(c, oo + (size_t)i * 2u, 2)) {
+                o->detail = "export name or ordinal array runs past end of image";
+                return PE_TRUNCATED;
+            }
+            name_rva = rd32(c->b + on + (size_t)i * 4u);
+            ord      = (uint32_t)rd16(c->b + oo + (size_t)i * 2u);
+
+            if (!fits(c, of + (size_t)ord * 4u, 4)) {
+                o->detail = "export function array runs past end of image";
+                return PE_TRUNCATED;
+            }
+            frva = rd32(c->b + of + (size_t)ord * 4u);
+
+            name_off = pe_rva_to_off(o, name_rva, c->len, &nm);
+            if (!nm) { o->detail = "export name RVA maps to no section";
+                       return PE_MALFORMED; }
+            n = slen(c, name_off);
+            if (n < 0) { o->detail = "export name is not NUL-terminated inside the image";
+                         return PE_MALFORMED; }
+
+            if (o->num_exports >= PE_EXPORT_MAX) { o->exports_truncated = 1; break; }
+            {
+                pe_export_fn *e = &o->exports[o->num_exports++];
+                e->name    = (const char *)(c->b + name_off);
+                e->ordinal = (uint16_t)(base + ord);
+                /* A forwarder's RVA points inside the export directory. */
+                e->forwarded = (frva >= dir_rva && dir_size != 0 &&
+                                frva < dir_rva + dir_size) ? 1 : 0;
+                e->rva = e->forwarded ? 0u : frva;
+            }
+        }
+    }
+    return PE_OK;
+}
+
 /* ---- top level --------------------------------------------------------- */
 
 pe_status pe_load(const void *img, size_t len, pe_image *out)
@@ -463,6 +548,8 @@ pe_status pe_load(const void *img, size_t len, pe_image *out)
 
     {
         pe_status st = walk_imports(&c, out);
+        if (st != PE_OK) return st;
+        st = walk_exports(&c, out);
         if (st != PE_OK) return st;
     }
 

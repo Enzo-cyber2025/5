@@ -62,7 +62,7 @@ typedef enum {
 #define PE_SUBSYS_CUI     3u
 
 /* Data directory indices. */
-#define PE_DIR_EXPORT     0
+#define PE_DIR_EXPORT     0   /* a DLL's exports are its entry points */
 #define PE_DIR_IMPORT     1
 #define PE_DIR_RESOURCE   2
 #define PE_DIR_EXCEPTION  3
@@ -89,6 +89,7 @@ typedef enum {
 #define PE_DLL_MAX        64
 #define PE_FUNC_MAX      512
 #define PE_NAME_MAX       64   /* truncation is reported, never overflowed */
+#define PE_EXPORT_MAX    512
 
 typedef struct {
     char     name[9];        /* PE names are 8 bytes and not NUL-terminated */
@@ -109,6 +110,18 @@ typedef struct {
     int         by_ordinal;
     int         name_truncated;
 } pe_import_func;
+
+/* One exported function. For a DLL these are the entry points a pre-translation
+ * sweep has to start from: an .exe has one entry point, a DLL has as many as it
+ * exports, and starting only from DllMain would leave most of the code
+ * undiscovered. name is NULL for an ordinal-only export. */
+typedef struct {
+    const char *name;
+    uint32_t    rva;          /* 0 or inside the image: forwarders point at a
+                               * string instead of code, flagged below */
+    uint16_t    ordinal;
+    int         forwarded;    /* export forwards to another DLL; rva is a name */
+} pe_export_fn;
 
 typedef struct {
     const char *dll_name;    /* references the image buffer */
@@ -136,6 +149,7 @@ typedef struct {
      * the ones a translator has to act on */
     uint32_t dir_rva[PE_DIR_COUNT];
     uint32_t dir_size[PE_DIR_COUNT];
+    int      has_exports;
     int      has_imports;
     int      has_relocs;
     int      has_tls;           /* TLS callbacks run BEFORE the entry point */
@@ -148,6 +162,11 @@ typedef struct {
     uint32_t   num_sections;
     pe_section sections[PE_SCN_MAX];
     int        sections_truncated;  /* more than PE_SCN_MAX: count is capped */
+
+    /* exports */
+    uint32_t     num_exports;
+    pe_export_fn exports[PE_EXPORT_MAX];
+    int          exports_truncated;
 
     /* imports */
     uint32_t       num_dlls;

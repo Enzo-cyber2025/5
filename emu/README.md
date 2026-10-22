@@ -212,13 +212,93 @@ afirma que nenhum `.exe`/`.dll`/`.msi` está rastreado no repositório.
 **147 checks, 0 falhas**, limpo sob `-Wall -Wextra -Wshadow -Werror` e sob
 ASan+UBSan. Suite total do projeto: 52 + 194 + 147 + 6 = **399 checks**.
 
+### Feito — varredura de pré-tradução (`sweep.c`, `sweep.h`, `prewarm.c`)
+
+Marco 2b. É a parte realizável do pedido "pré-traduzir com a tela apagada". Num
+Android real a janela é um job do `WorkManager` com `setRequiresDeviceIdle(true)`
+(ou um foreground service); o trabalho útil dentro dela é esta varredura: partir
+dos pontos de entrada, seguir o código alcançável, decodificar em blocos básicos,
+traduzir o que pode ser traduzido e gravar no cache persistente — para que, quando
+o app for usado, os blocos já estejam lá.
+
+**Não substitui o JIT.** Saltos indiretos, código gerado em runtime e
+automodificação não são conhecíveis estaticamente; continuam sendo traduzidos
+durante a execução. A varredura aquece o cache.
+
+Duas propriedades valem mais que velocidade, e ambas são testadas:
+
+- **Interrompível e retomável.** A janela de ociosidade termina sem aviso: a tela
+  acende, o aparelho esquenta, a bateria cai, o SO retoma o job. Uma varredura que
+  não sabe parar e continuar depois é inútil nessa janela, e uma que recomeça do
+  zero desperdiça justamente o motivo de rodar em background. `sweep_run()`
+  retorna quando o callback pede, o estado fica no job, e a chamada seguinte
+  continua exatamente de onde parou — **nenhum bloco é decodificado duas vezes**. O
+  teste compara uma execução em fatias contra uma ininterrupta e exige contadores
+  idênticos, incluindo `decode_calls` e o conteúdo do cache.
+- **Nunca grava uma tradução que não tem.** Guardar um placeholder para um bloco
+  que não pôde ser traduzido seria pior do que não guardar nada: o cache devolveria
+  um acerto depois, o emulador executaria código que não corresponde aos bytes do
+  guest, e nada a jusante detectaria. Blocos sem tradução correta são contados e
+  reportados, jamais cacheados. Quatro blocos não traduzíveis são assertidos como
+  *miss*.
+
+**Descoberta é travessia recursiva, não varredura linear.** Varrer x86 linearmente
+produz instruções plausíveis em offsets que são o meio de outra instrução ou de um
+dado, e aquecer o cache com isso seria gravar ficção. Seguindo ramos diretos a
+partir de pontos de entrada reais, só se decodifica em endereços que o fluxo de
+controle realmente alcança. O custo é honesto e reportado: um salto indireto
+termina o bloco e seu alvo entra na conta de não resolvidos. O teste afirma que os
+três endereços de padding entre funções **não** têm bloco — uma varredura linear os
+decodificaria — e que um `C3` colocado numa seção não executável nunca é tocado.
+
+**DLLs são varridas a partir das exports**, não só do `DllMain`: um `.exe` tem um
+ponto de entrada, uma DLL tem tantos quantos exporta. Por isso o leitor de PE
+ganhou a tabela de exports, com forwarder detectado (um forwarder aponta para uma
+string, não para código; tratá-lo como código mandaria a varredura para o meio de
+uma tabela de nomes).
+
+**Porcentagem e tempo restante.** `prewarm` imprime ambos, e é explícito sobre o
+que não sabe. Durante a descoberta o denominador cresce à medida que a worklist é
+drenada, então a porcentagem é **provisória e pode andar para trás** — marcada com
+`~` e com a razão impressa, em vez de ser suavizada. Durante a tradução a contagem
+de blocos é conhecida e o número é exato. O tempo restante é extrapolado da taxa
+observada na fase atual e assume que o trabalho que falta custa o que o trabalho
+feito custou; blocos variam de tamanho e alguns caminhos recusam de imediato, então
+é uma estimativa e está rotulada como tal. O teste exige monotonicidade na fase
+exata, `provisional` ligado na fase provisória, 100% e ETA zero no fim, e um ETA
+não nulo observado enquanto ainda restava trabalho.
+
+**O que o número de cobertura significa hoje.** Um bloco só é cacheado quando
+existe uma tradução ARM64 provavelmente correta para ele. O emissor atual cobre
+três instruções (`a64_emit.c`), e o único bloco cuja tradução é demonstravelmente
+correta sem um modelo de registradores e flags é o bloco de um único `C3`: o `RET`
+do ARM64 tem o mesmo significado e não toca estado algum. Portanto a fração
+"traduzido" mede **quanto do emissor está construído**, não quanto do binário seria
+pré-traduzível. Está dito assim na saída do `prewarm`, para o número não ser lido
+como mais do que é.
+
+**74 checks, 0 falhas**, limpo sob `-Wall -Wextra -Wshadow -Werror` e sob
+ASan+UBSan sem vazamentos. Suite do projeto: 52 + 194 + 147 + 74 + 6 = **473**.
+
+No CI, o job `prewarm-real` baixa um bundle Windows x86-64 genuíno (HandBrake
+1.11.2, GPL-2.0, tag pinada; o tamanho em bytes declarado pelos metadados do
+release é buscado via API e comparado com um valor pinado, e o sha256 é calculado e
+publicado como anotação para ser pinado em seguida), enumera todo `.exe` e `.dll`
+do pacote e roda a varredura com uma janela ociosa curta, para que a porcentagem e
+o tempo restante sejam exercitados como seriam num aparelho cuja janela fecha e
+reabre. Módulos que o leitor recusa (32 bits, ARM, gerenciado) são reportados com o
+motivo e pulados, e o resto continua. Nada é commitado: um passo final afirma que o
+repositório segue sem binários e com o worktree limpo.
+
 ### Não feito
 
 Lifter (IR a partir do que o decodificador já entrega), emissor ARM64 além das
-três instruções do harness, loader de ELF, mapeamento real da imagem em memória
-com relocações aplicadas, resolução de imports, camada de syscalls/Win32,
-D3D→Vulkan, varredura estática em background, e o app Android em si. VEX/EVEX e
-`0x67` seguem recusados por design até serem modelados.
+três instruções de `a64_emit.c`, loader de ELF, mapeamento real da imagem em
+memória com relocações aplicadas, resolução de imports e de API sets, camada de
+syscalls/Win32, D3D→Vulkan, e o app Android em si — inclusive a ligação desta
+varredura ao `WorkManager` e ao estado real de tela apagada, que hoje é modelada
+como um orçamento de tempo retomável. VEX/EVEX e `0x67` seguem recusados por
+design até serem modelados.
 
 Ler um `.exe` e saber do que ele precisa não é traduzi-lo. Entre este marco e
 executar um binário real estão, no mínimo: estado de CPU (registradores e flags),
@@ -264,6 +344,19 @@ No leitor de PE, todos encontrados por execução e não por revisão:
 - Um teste lia `buffer + RVA` para demonstrar que RVA não é offset, sem checar
   limites — e o RVA era maior que a imagem inteira. O próprio teste estourava o
   heap para provar que o parser não deveria estourar.
+
+Na varredura:
+
+- O callback de parada do teste era consultado **antes** do primeiro bloco e pedia
+  parada sempre, então a varredura não fazia nada — corretamente, era o que ele
+  estava pedindo — e o laço do teste girou 100 mil vezes por 210 segundos. O motor
+  estava certo; a semântica do callback no teste estava errada. O laço ganhou um
+  detector de "retomada sem progresso", para uma regressão no protocolo de parada
+  falhar em milissegundos e não depois de cem mil tentativas.
+- Os RVAs dos nomes na tabela de exports estavam escritos à mão (`0x203C`,
+  `0x2042`) ao lado dos offsets calculados que ninguém usava. O compilador apontou
+  as duas variáveis gravadas e não lidas, o que era o sintoma de que o valor real e
+  o valor chutado podiam divergir em silêncio.
 
 ## Limitação deste ambiente
 
