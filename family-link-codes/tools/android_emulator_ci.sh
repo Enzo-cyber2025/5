@@ -44,7 +44,8 @@ export PATH="$SDK/platform-tools:$SDK/emulator:$SDK/cmdline-tools/latest/bin:$PA
 # let avdmanager use its default location (~/.android/avd); pointing
 # ANDROID_AVD_HOME somewhere else makes the emulator look for a .ini that
 # avdmanager never writes there
-unset ANDROID_AVD_HOME || true
+export ANDROID_AVD_HOME="$WORK/avd"
+mkdir -p "$ANDROID_AVD_HOME"
 
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
 export PYTHONPATH="$HERE${PYTHONPATH:+:$PYTHONPATH}"
@@ -54,9 +55,17 @@ export FLCODES_PASSPHRASE="${FLCODES_PASSPHRASE:-emulator}"
 fail() { echo "FAILED: $*"; exit 1; }
 step() { echo; echo "===== $* ====="; }
 
-trap 'status=$?; echo "--- exit $status ---"; ls -la "$WORK" 2>/dev/null | head -30' EXIT
+trap 'status=$?; echo "--- exit $status ---"; ls -la "$WORK" 2>/dev/null | head -30; tail -25 "$WORK/emulator.log" 2>/dev/null' EXIT
 
 step "0. environment"
+if [[ -n "${CI:-}" ]] && command -v apt-get >/dev/null; then
+  echo "installing the libraries the bundled QEMU needs"
+  sudo apt-get update -qq >/dev/null 2>&1 || true
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
+    libpulse0 libnss3 libx11-6 libxcomposite1 libxcursor1 libxi6 libxtst6 \
+    libasound2 libgbm1 libxdamage1 libxrandr2 libglu1-mesa >/dev/null 2>&1 \
+    || echo "(apt install had errors; continuing)"
+fi
 ls "$SDK" || fail "no SDK at $SDK"
 SDKMANAGER="$(command -v sdkmanager || find "$SDK" -maxdepth 5 -type f -name sdkmanager | head -1)"
 AVDMANAGER="$(command -v avdmanager || find "$SDK" -maxdepth 5 -type f -name avdmanager | head -1)"
@@ -83,12 +92,14 @@ fi
 ls "$SDK/system-images/android-$API/$TAG/$ABI" | head -5
 
 step "2. create the AVD"
-echo no | "$AVDMANAGER" create avd -n ciflcodes -k "system-images;android-$API;$TAG;$ABI" -d pixel --force \
-  || fail "avdmanager failed"
-"$EMULATOR" -list-avds
-AVD_INI="$(find "$HOME/.android/avd" "$WORK/avd" -maxdepth 2 -name 'ciflcodes.ini' 2>/dev/null | head -1)"
-echo "avd ini: ${AVD_INI:-not found}"
-[[ -n "$AVD_INI" ]] || fail "the AVD was not created"
+echo no | "$AVDMANAGER" create avd -n ciflcodes \
+  -k "system-images;android-$API;$TAG;$ABI" -d pixel \
+  -p "$ANDROID_AVD_HOME/ciflcodes.avd" --force || fail "avdmanager failed"
+echo "avd dir: $(ls -d "$ANDROID_AVD_HOME"/* 2>/dev/null)"
+AVD_INI="$(find "$ANDROID_AVD_HOME" "$HOME/.android/avd" -maxdepth 2 -name '*.ini' 2>/dev/null | head -3)"
+echo "avd ini files: ${AVD_INI:-none}"
+"$EMULATOR" -list-avds || true
+[[ -d "$ANDROID_AVD_HOME/ciflcodes.avd" ]] || fail "the AVD directory was not created"
 
 step "3. boot the emulator (QEMU)"
 "$EMULATOR" -avd ciflcodes -no-window -no-audio -no-boot-anim \

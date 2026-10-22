@@ -123,7 +123,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: flcodes-emulator
-          path: ${{ runner.temp }}/emulator/
+          path: |
+            ${{ runner.temp }}/emulator/
+            ${{ runner.temp }}/emulator/emulator.log
           if-no-files-found: warn
 
   real-family-link:
