@@ -106,6 +106,10 @@ read_profile() {  # read_profile <uid> <label>
   local uid="$1" label="$2" line=""
   switch_to "$uid"
   echo "--- $label (user $uid) ---"
+  adb shell am force-stop --user "$uid" "$PACKAGE" >/dev/null 2>&1
+  adb logcat -c >/dev/null 2>&1
+  adb shell am start --user "$uid" -n "$PACKAGE/.Main" >/dev/null 2>&1
+  sleep 10
   # Is the app installed *for that profile*?
   adb shell pm list packages --user "$uid" 2>/dev/null | grep "$PACKAGE" \
     | tee "$WORK/installed-$label.txt"
@@ -114,6 +118,12 @@ read_profile() {  # read_profile <uid> <label>
     | tee "$WORK/process-$label.txt" || true
   # The app stamps its own uid into the config it writes; logcat is per user.
   line="$(adb logcat -d -s System.out:* 2>/dev/null | grep "flcodes-selftest: uid" | tail -1)"
+  if [[ -z "$line" ]]; then
+    # the activity may have been relaunched by the system: try once more
+    adb shell am start --user "$uid" -n "$PACKAGE/.Main" >/dev/null 2>&1
+    sleep 8
+    line="$(adb logcat -d -s System.out:* 2>/dev/null | grep "flcodes-selftest: uid" | tail -1)"
+  fi
   echo "$line" | tee "$WORK/log-$label.txt"
   adb shell run-as "$PACKAGE" cat shared_prefs/familylink_preferences.xml 2>&1 \
     | tee "$WORK/prefs-$label.xml"
@@ -167,6 +177,11 @@ step "5. verdict"
 [[ -n "$PARENT_KEY" ]] || die "the app never ran in the parent profile (see log-parent.txt)"
 [[ -n "$CHILD_KEY" ]] || die "the app never ran in the child profile (see log-child.txt)"
 [[ "$PARENT_KEY" != "$CHILD_KEY" ]] || die "both profiles report the same uid: they are not separate accounts"
+PARENT_EXPECTED="$((PARENT_ID * 100000 + 10130))"
+CHILD_EXPECTED="$((CHILD_ID * 100000 + 10130))"
+echo "expected uid: parent $PARENT_EXPECTED, child $CHILD_EXPECTED"
+[[ "$PARENT_KEY" == "$PARENT_EXPECTED" ]] || die "the parent key came from uid $PARENT_KEY, not $PARENT_EXPECTED"
+[[ "$CHILD_KEY" == "$CHILD_EXPECTED" ]] || die "the child key came from uid $CHILD_KEY, not $CHILD_EXPECTED"
 grep -q "$PACKAGE" "$WORK/installed-parent.txt" || die "not installed for the parent profile"
 grep -q "$PACKAGE" "$WORK/installed-child.txt" || die "not installed for the child profile"
 echo "PASS: two profiles (users 10 and 11), the app installed in both, each one"
