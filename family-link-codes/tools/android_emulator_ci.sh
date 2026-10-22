@@ -40,8 +40,11 @@ exec > >(tee -a "$LOG") 2>&1
 
 export ANDROID_SDK_ROOT="$SDK"
 export ANDROID_HOME="$SDK"
-export ANDROID_AVD_HOME="$WORK/avd"
 export PATH="$SDK/platform-tools:$SDK/emulator:$SDK/cmdline-tools/latest/bin:$PATH"
+# let avdmanager use its default location (~/.android/avd); pointing
+# ANDROID_AVD_HOME somewhere else makes the emulator look for a .ini that
+# avdmanager never writes there
+unset ANDROID_AVD_HOME || true
 
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
 export PYTHONPATH="$HERE${PYTHONPATH:+:$PYTHONPATH}"
@@ -55,26 +58,34 @@ trap 'status=$?; echo "--- exit $status ---"; ls -la "$WORK" 2>/dev/null | head 
 
 step "0. environment"
 ls "$SDK" || fail "no SDK at $SDK"
-"$SDK/emulator/emulator" -version 2>&1 | head -3
+EMULATOR="$(command -v emulator || find "$SDK" -maxdepth 3 -type f -name emulator | head -1)"
+AVDMANAGER="$(command -v avdmanager || find "$SDK" -maxdepth 5 -type f -name avdmanager | head -1)"
+SDKMANAGER="$(command -v sdkmanager || find "$SDK" -maxdepth 5 -type f -name sdkmanager | head -1)"
+echo "emulator=$EMULATOR"; echo "avdmanager=$AVDMANAGER"; echo "sdkmanager=$SDKMANAGER"
+[[ -x "$EMULATOR" ]] || fail "no emulator binary"
+"$EMULATOR" -version 2>&1 | head -3
 adb version | head -2
 ls /dev/kvm 2>&1 || echo "no /dev/kvm (software emulation, slow)"
 
 step "1. system image"
 if [[ ! -d "$SDK/system-images/android-$API/$TAG/$ABI" ]]; then
-  yes | sdkmanager --licenses >/dev/null 2>&1 || true
-  sdkmanager "system-images;android-$API;$TAG;$ABI" >/dev/null || fail "cannot install the system image"
+  yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
+  "$SDKMANAGER" "system-images;android-$API;$TAG;$ABI" >/dev/null || fail "cannot install the system image"
 fi
 ls "$SDK/system-images/android-$API/$TAG/$ABI" | head -5
 
 step "2. create the AVD"
-echo no | avdmanager create avd -n ciflcodes -k "system-images;android-$API;$TAG;$ABI" -d pixel --force \
+echo no | "$AVDMANAGER" create avd -n ciflcodes -k "system-images;android-$API;$TAG;$ABI" -d pixel --force \
   || fail "avdmanager failed"
-grep -E "hw.ramSize|disk.dataPartition" "$ANDROID_AVD_HOME/ciflcodes.avd/config.ini" || true
+"$EMULATOR" -list-avds
+AVD_INI="$(find "$HOME/.android/avd" "$WORK/avd" -maxdepth 2 -name 'ciflcodes.ini' 2>/dev/null | head -1)"
+echo "avd ini: ${AVD_INI:-not found}"
+[[ -n "$AVD_INI" ]] || fail "the AVD was not created"
 
 step "3. boot the emulator (QEMU)"
-"$SDK/emulator/emulator" -avd ciflcodes -no-window -no-audio -no-boot-anim \
+"$EMULATOR" -avd ciflcodes -no-window -no-audio -no-boot-anim \
   -no-snapshot -gpu swiftshader_indirect -camera-back none -camera-front none \
-  -accel auto -memory 2048 -cores 2 -wipe-data -verbose > "$WORK/emulator.log" 2>&1 &
+  -accel auto -memory 2048 -cores 2 -wipe-data > "$WORK/emulator.log" 2>&1 &
 EMULATOR_PID=$!
 echo "emulator pid $EMULATOR_PID (log: $WORK/emulator.log)"
 
