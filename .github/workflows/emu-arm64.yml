@@ -259,6 +259,31 @@ jobs:
           echo "--- what a real binary needs from the host ---"
           grep -E '^(imports:|  [A-Za-z].* - )' /tmp/real.report
 
+      - name: Publish what the real binary actually needs
+        if: always()
+        run: |
+          set -uo pipefail
+          if [ ! -f /tmp/real.report ]; then echo "no report to publish"; exit 0; fi
+          {
+            echo "### pe_info on a real shipped Windows executable"
+            echo '```'
+            grep -E '^(file|status|machine|format|kind|entry|managed|sections|directories|imports):' /tmp/real.report
+            echo '```'
+            echo "#### the DLLs it imports"
+            echo '```'
+            grep -E '^  [A-Za-z].* - ' /tmp/real.report
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+          # Annotations are the one channel readable back through the repository
+          # API, so the measured result survives even where job logs cannot be
+          # fetched. A job that asserts without reporting leaves the answer
+          # locked inside a log.
+          counts=$(grep -E '^(status|machine|format|managed|imports):' /tmp/real.report \
+                   | tr '\n' ' ' | tr -s ' ' | head -c 900)
+          dlls=$(grep -E '^  [A-Za-z].* - ' /tmp/real.report \
+                 | tr '\n' ' ' | tr -s ' ' | head -c 3000)
+          echo "::notice title=real-binary-measured::${counts} :: DLLS: ${dlls}"
+
       - name: Confirm no Windows binary entered the repository
         run: |
           set -euo pipefail
