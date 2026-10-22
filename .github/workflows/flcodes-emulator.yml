@@ -138,9 +138,13 @@ jobs:
             echo
             echo "exit: $(cat "$RUNNER_TEMP/two-status.txt" 2>/dev/null || echo '?')"
             echo
-            for f in users.txt scan-parent.txt scan-child.txt isolation.txt stdout.txt; do
-              [ -s "$T/$f" ] && { echo "**$f**"; echo '```'; head -30 "$T/$f"; echo '```'; }
+            for f in users.txt prefs-parent.xml prefs-child.xml scan-parent.txt scan-child.txt isolation.txt; do
+              [ -s "$T/$f" ] && { echo "**$f**"; echo '```'; head -20 "$T/$f"; echo '```'; }
             done
+            echo "**stdout.txt**"
+            echo '```'
+            head -80 "$T/stdout.txt" 2>/dev/null || echo "(no output)"
+            echo '```' 
             echo "**two.log (tail)**"
             echo '```'
             tail -40 "$T/two.log" 2>/dev/null || echo "(no log)"

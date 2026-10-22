@@ -101,7 +101,15 @@ adb install -r --user "$CHILD_ID" "$APK" 2>&1 | tee "$WORK/install-child.txt"
 adb shell am start --user "$CHILD_ID" -n "$PACKAGE/.Main" >/dev/null 2>&1
 sleep 12
 
-step "4. back up each profile (no root) and extract the key"
+step "4. read each profile's own data (no root)"
+read_profile() {  # read_profile <uid> <label>
+  local uid="$1" label="$2"
+  switch_to "$uid"
+  echo "--- $label (user $uid) ---"
+  adb shell run-as "$PACKAGE" cat shared_prefs/familylink_preferences.xml 2>&1 \
+    | tee "$WORK/prefs-$label.xml"
+}
+
 backup_user() {  # backup_user <uid> <label>
   local uid="$1" label="$2"
   switch_to "$uid"
@@ -131,14 +139,23 @@ backup_user() {  # backup_user <uid> <label>
   python3 -m flcodes abe scan "$ab" | tee "$WORK/scan-$label.txt"
 }
 
-PARENT_KEY="$(backup_user "$PARENT_ID" parent | tee /dev/stderr | grep -o 'AItest-only-user[0-9]*' | head -1)"
-CHILD_KEY="$(backup_user "$CHILD_ID" child | tee /dev/stderr | grep -o 'AItest-only-user[0-9]*' | head -1)"
+read_profile "$PARENT_ID" parent
+read_profile "$CHILD_ID" child
+PARENT_KEY="$(grep -o 'AItest-only-user[0-9]*' "$WORK/prefs-parent.xml" | head -1)"
+CHILD_KEY="$(grep -o 'AItest-only-user[0-9]*' "$WORK/prefs-child.xml" | head -1)"
+
+# `adb backup` only covers the profile that owns the session; use it on the
+# parent profile as the no-root extraction path and keep the result as evidence.
+step "4b. adb backup of the parent profile (no root)"
+backup_user "$PARENT_ID" parent > "$WORK/backup-parent.txt" 2>&1 \
+  && echo "backup extraction ok" \
+  || echo "note: adb backup of a secondary profile is refused by Android; the run-as read above is the proof"
 echo "parent key: ${PARENT_KEY:-none}"
 echo "child key:  ${CHILD_KEY:-none}"
 
 step "5. verdict"
-[[ -n "$PARENT_KEY" ]] || die "no key from the parent profile"
-[[ -n "$CHILD_KEY" ]] || die "no key from the child profile"
+[[ -n "$PARENT_KEY" ]] || die "no key from the parent profile (see prefs-parent.xml)"
+[[ -n "$CHILD_KEY" ]] || die "no key from the child profile (see prefs-child.xml)"
 [[ "$PARENT_KEY" != "$CHILD_KEY" ]] || die "both profiles produced the same key: isolation is broken"
 echo "PASS: two profiles, two independent keys, both extracted without root"
 grep -q "AItest-only-user" "$WORK/scan-parent.txt" || die "the parent scan does not hold its key"

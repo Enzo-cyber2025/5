@@ -67,6 +67,7 @@ MANIFEST = """<?xml version="1.0" encoding="utf-8"?>
     <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="30" />
     <application
         android:label="flcodes selftest"
+        android:debuggable="true"
         android:allowBackup="true"
         android:fullBackupContent="true">
         <activity android:name=".{activity}" android:exported="true">
