@@ -187,25 +187,50 @@ jobs:
 
       - name: Download a pinned real x86-64 Windows executable
         run: |
-          set -euo pipefail
+          # Not set -e: every failure below has to say which one it was, through
+          # an annotation, because job logs are not readable from everywhere.
+          set -uo pipefail
           # ripgrep 14.1.1, MIT/Apache-2.0, from its own project release.
           # Chosen because it is a genuine shipped Windows executable with a
           # real import table, it is small, the release is pinned by tag, and it
           # publishes a .sha256 beside the asset - so the download is verified
           # rather than trusted. It is used only as a parse target on an
           # ephemeral runner, and is never committed or redistributed.
+          # The published .sha256 is Windows CertUtil output, not sha256sum
+          # format - it is three lines, and the hash is the middle one:
+          #   SHA256 hash of <name>:
+          #   <64 hex>
+          #   CertUtil: -hashfile command completed successfully.
+          # Reading field 1 gets the literal word "SHA256", which is what made
+          # this step fail the first time. So the hash is extracted by pattern,
+          # and independently pinned here: three values have to agree, meaning a
+          # swapped asset fails even if its checksum file were swapped with it.
+          PINNED="d0f534024c42afd6cb4d38907c25cd2b249b79bbe6cc1dbee8e3e37c2b6e25a1"
           base="https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-x86_64-pc-windows-msvc.zip"
-          curl -fsSL -o /tmp/rg.zip "$base"
-          curl -fsSL -o /tmp/rg.zip.sha256 "$base.sha256"
-          expected=$(awk '{print $1}' /tmp/rg.zip.sha256)
+          curl -fsSL -o /tmp/rg.zip "$base" || {
+            echo "::error title=download-failed::could not fetch the release zip"; exit 1; }
+          curl -fsSL -o /tmp/rg.zip.sha256 "$base.sha256" || {
+            echo "::error title=download-failed::could not fetch the checksum file"; exit 1; }
+          echo "--- published checksum file, verbatim ---"
+          cat /tmp/rg.zip.sha256
+          published=$(grep -oE '[0-9a-fA-F]{64}' /tmp/rg.zip.sha256 | head -1)
           actual=$(sha256sum /tmp/rg.zip | awk '{print $1}')
-          echo "expected $expected"
-          echo "actual   $actual"
-          test -n "$expected" || { echo "empty checksum file"; exit 1; }
-          test "$expected" = "$actual" || {
-            echo "checksum mismatch - refusing to parse an unverified download"
+          echo "pinned     $PINNED"
+          echo "published  $published"
+          echo "actual     $actual"
+          if [ -z "$published" ]; then
+            echo "::error title=checksum-unreadable::no 64-hex token found in the published checksum file"
             exit 1
-          }
+          fi
+          if [ "$published" != "$PINNED" ]; then
+            echo "::error title=checksum-pin-mismatch::published=$published pinned=$PINNED"
+            exit 1
+          fi
+          if [ "$actual" != "$PINNED" ]; then
+            echo "::error title=checksum-mismatch::downloaded file digests to $actual, expected $PINNED"
+            exit 1
+          fi
+          echo "verified: the download matches both the published digest and the pin"
 
       - name: Inspect the real executable
         run: |
@@ -219,7 +244,11 @@ jobs:
       - name: Assert the report describes a real native x86-64 binary
         run: |
           set -euo pipefail
-          fail() { echo "ASSERTION FAILED: $1"; exit 1; }
+          fail() {
+            echo "ASSERTION FAILED: $1"
+            echo "::error title=real-binary-assertion::$1"
+            exit 1
+          }
           grep -q 'status:    PE_OK'      /tmp/real.report || fail "did not parse"
           grep -q 'x64 (AMD64)'           /tmp/real.report || fail "not reported as x86-64"
           grep -q 'PE32+ (64-bit)'        /tmp/real.report || fail "not reported as PE32+"
