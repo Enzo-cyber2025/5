@@ -1,0 +1,39 @@
+name: flcodes
+
+# The tool is a throwaway experiment artifact: this workflow only proves that
+# the algorithm, the cipher, the key extraction and the CLI/UI behave.
+on:
+  push:
+    paths:
+      - 'family-link-codes/**'
+      - 'tests/test_flcodes_*.py'
+      - '.github/workflows/flcodes.yml'
+  workflow_dispatch:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install test tools
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install --quiet --upgrade pip
+          .venv/bin/pip install --quiet pytest cryptography
+      - name: Algorithm, cipher, key extraction
+        run: |
+          .venv/bin/python -m pytest -q \
+            tests/test_flcodes_codes.py \
+            tests/test_flcodes_crypto.py \
+            tests/test_flcodes_rea.py
+      - name: CLI and local web UI
+        run: .venv/bin/python -m pytest -q tests/test_flcodes_cli.py
+      - name: Self check
+        run: |
+          cd family-link-codes
+          FLCODES_HOME="$RUNNER_TEMP/flhome" .venv/bin/python -m flcodes audit
+        env:
+          PYTHONPATH: ${{ github.workspace }}/family-link-codes

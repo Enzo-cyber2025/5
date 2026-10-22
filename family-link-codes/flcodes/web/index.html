@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>flcodes — Family Link codes</title>
+<style>
+  :root {
+    --bg:#0b0f14; --panel:#141b23; --line:#233040; --text:#e6edf5;
+    --muted:#8ba0b5; --accent:#5eead4; --warn:#fbbf24; --err:#f87171;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; min-height:100vh; background:radial-gradient(1200px 600px at 50% -10%, #16303a 0%, var(--bg) 55%);
+    color:var(--text); font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    display:flex; flex-direction:column; align-items:center; padding:32px 16px 64px;
+  }
+  h1 { font-size:20px; margin:0 0 4px; letter-spacing:.2px; }
+  .sub { color:var(--muted); font-size:13px; margin-bottom:24px; text-align:center; max-width:620px; }
+  .card {
+    width:100%; max-width:620px; background:var(--panel); border:1px solid var(--line);
+    border-radius:14px; padding:20px; margin-bottom:16px;
+  }
+  .label { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.08em; }
+  .code { font:600 56px/1.1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.12em; margin:8px 0 4px; }
+  .bar { height:4px; background:#1f2a36; border-radius:99px; overflow:hidden; margin:12px 0 8px; }
+  .bar > div { height:100%; width:100%; background:linear-gradient(90deg,#2dd4bf,#5eead4); transition:width .5s linear; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .row > * { flex:0 0 auto; }
+  input, select, button {
+    background:#0f151c; color:var(--text); border:1px solid var(--line);
+    border-radius:8px; padding:8px 10px; font:inherit;
+  }
+  button { cursor:pointer; background:#12403c; border-color:#1f6f66; color:#d7fff8; }
+  button:hover { background:#15514c; }
+  button.ghost { background:#111921; border-color:var(--line); color:var(--muted); }
+  .keys { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+  .key {
+    display:flex; justify-content:space-between; gap:12px; align-items:center;
+    border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:#101820;
+  }
+  .key.active { border-color:#2dd4bf55; box-shadow:0 0 0 1px #2dd4bf33 inset; }
+  .key small { color:var(--muted); display:block; font-size:11px; }
+  code.mono, .mono { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  table { width:100%; border-collapse:collapse; margin-top:8px; font-size:13px; }
+  th, td { text-align:left; padding:6px 4px; border-bottom:1px solid #1c2836; }
+  th { color:var(--muted); font-weight:500; font-size:11px; text-transform:uppercase; letter-spacing:.06em; }
+  .status { min-height:20px; font-size:12px; color:var(--muted); margin-top:10px; }
+  .status.err { color:var(--err); }
+  .warn { color:var(--warn); }
+  a { color:var(--accent); }
+</style>
+</head>
+<body>
+  <h1>flcodes</h1>
+  <p class="sub">
+    Geração de códigos de acesso parental para testes autorizados. A chave secreta
+    fica no servidor local e nunca é enviada para o navegador.
+  </p>
+
+  <div class="card">
+    <div class="label">chave ativa</div>
+    <div id="activeName" class="mono" style="margin-top:4px">—</div>
+    <div class="code" id="code">------</div>
+    <div class="bar"><div id="progress"></div></div>
+    <div class="row" style="justify-content:space-between;color:var(--muted);font-size:12px">
+      <span id="window">—</span>
+      <span id="remaining">—</span>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <button id="copy">Copiar código</button>
+      <button class="ghost" id="refresh">Atualizar</button>
+    </div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div class="card">
+    <div class="label">chaves salvas (mascaradas)</div>
+    <div class="keys" id="keys"></div>
+    <div class="row" style="margin-top:14px">
+      <input id="newSecret" type="password" placeholder="colar chave secreta (AI...)" style="flex:1 1 220px">
+      <input id="newLabel" placeholder="rótulo" style="flex:0 1 140px">
+      <button id="addKey">Salvar</button>
+    </div>
+    <div class="status" id="storeStatus"></div>
+  </div>
+
+  <div class="card">
+    <div class="label">gerar por horário</div>
+    <div class="row" style="margin-top:10px">
+      <input id="when" type="datetime-local" step="3600">
+      <select id="howMany">
+        <option value="1">1 hora</option>
+        <option value="6">6 horas</option>
+        <option value="24">24 horas</option>
+      </select>
+      <button id="generate">Gerar</button>
+      <button class="ghost" id="download">Baixar CSV</button>
+    </div>
+    <table id="table" hidden>
+      <thead><tr><th>janela local</th><th>código</th><th>UTC</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+<script>
+(function () {
+  "use strict";
+  var params = new URLSearchParams(location.search);
+  var token = params.get("token") || "";
+  if (token) {
+    // keep the token out of the address bar and history
+    history.replaceState(null, "", location.pathname);
+  }
+  var active = null;
+  var current = null;
+  var rows = [];
+
+  function headers(extra) {
+    var base = {"X-Token": token};
+    if (extra) { for (var k in extra) base[k] = extra[k]; }
+    return base;
+  }
+
+  function say(node, message, isError) {
+    node.textContent = message || "";
+    node.className = "status" + (isError ? " err" : "");
+  }
+
+  function api(path, options) {
+    return fetch(path, options).then(function (response) {
+      return response.json().catch(function () { return {}; }).then(function (body) {
+        if (!response.ok) throw new Error(body.error || ("HTTP " + response.status));
+        return body;
+      });
+    });
+  }
+
+  function pad(value) { return String(value).padStart(2, "0"); }
+
+  function formatLocal(seconds) {
+    var date = new Date(seconds * 1000);
+    return pad(date.getHours()) + ":" + pad(date.getMinutes());
+  }
+
+  function renderCode(payload) {
+    var code = payload.code;
+    current = code;
+    document.getElementById("code").textContent = code.code;
+    document.getElementById("window").textContent =
+      "válido de " + formatLocal(code.valid_from) + " a " + formatLocal(code.valid_to) + " (local)";
+    document.getElementById("activeName").textContent =
+      payload.label + (payload.kind ? " · " + payload.kind : "");
+    tick();
+  }
+
+  function tick() {
+    if (!current) return;
+    var now = Date.now() / 1000;
+    var total = current.valid_to - current.valid_from;
+    var left = Math.max(0, current.valid_to - now);
+    document.getElementById("progress").style.width = Math.max(0, Math.min(100, (left / total) * 100)) + "%";
+    var minutes = Math.floor(left / 60);
+    var seconds = Math.floor(left % 60);
+    document.getElementById("remaining").textContent =
+      "renova em " + pad(minutes) + ":" + pad(seconds);
+    if (left <= 0) { loadCurrent(); }
+  }
+
+  function loadCurrent() {
+    return api("/api/code", {headers: headers()}).then(renderCode).catch(function (error) {
+      say(document.getElementById("status"), error.message, true);
+    });
+  }
+
+  function renderKeys(keys) {
+    var container = document.getElementById("keys");
+    container.innerHTML = "";
+    if (!keys.length) {
+      container.innerHTML = '<div style="color:var(--muted);font-size:13px">nenhuma chave salva</div>';
+      return;
+    }
+    keys.forEach(function (key) {
+      var item = document.createElement("div");
+      item.className = "key" + (key.active ? " active" : "");
+      var info = document.createElement("div");
+      var title = document.createElement("div");
+      title.textContent = key.label + (key.active ? " (ativa)" : "");
+      var detail = document.createElement("small");
+      detail.textContent = key.kind + " · " + key.masked + " · id " + key.id;
+      info.appendChild(title);
+      info.appendChild(detail);
+      var button = document.createElement("button");
+      button.className = "ghost";
+      button.textContent = "Usar";
+      button.addEventListener("click", function () {
+        api("/api/select", {method: "POST", headers: headers({"Content-Type": "application/json"}),
+          body: JSON.stringify({id: key.id})}).then(function () {
+          loadKeys(); loadCurrent();
+        }).catch(function (error) { say(document.getElementById("status"), error.message, true); });
+      });
+      item.appendChild(info);
+      item.appendChild(button);
+      container.appendChild(item);
+    });
+  }
+
+  function loadKeys() {
+    return api("/api/keys", {headers: headers()}).then(function (body) {
+      renderKeys(body.keys);
+      if (!active && body.active) { active = body.active; }
+    }).catch(function (error) {
+      say(document.getElementById("status"), error.message, true);
+    });
+  }
+
+  function renderTable() {
+    var table = document.getElementById("table");
+    var body = table.querySelector("tbody");
+    body.innerHTML = "";
+    rows.forEach(function (row) {
+      var tr = document.createElement("tr");
+      var when = document.createElement("td");
+      when.textContent = formatLocal(row.valid_from) + " – " + formatLocal(row.valid_to);
+      var code = document.createElement("td");
+      code.className = "mono";
+      code.textContent = row.code;
+      var utc = document.createElement("td");
+      utc.className = "mono";
+      utc.style.color = "var(--muted)";
+      utc.textContent = new Date(row.valid_from * 1000).toISOString().slice(11, 16) + "Z";
+      tr.appendChild(when); tr.appendChild(code); tr.appendChild(utc);
+      body.appendChild(tr);
+    });
+    table.hidden = rows.length === 0;
+  }
+
+  document.getElementById("copy").addEventListener("click", function () {
+    if (!current) return;
+    navigator.clipboard.writeText(current.code).then(function () {
+      say(document.getElementById("status"), "código copiado");
+    });
+  });
+  document.getElementById("refresh").addEventListener("click", loadCurrent);
+
+  document.getElementById("addKey").addEventListener("click", function () {
+    var secret = document.getElementById("newSecret").value.trim();
+    var label = document.getElementById("newLabel").value.trim();
+    if (!secret) { return; }
+    api("/api/keys", {method: "POST", headers: headers({"Content-Type": "application/json"}),
+      body: JSON.stringify({secret: secret, label: label})}).then(function (body) {
+      document.getElementById("newSecret").value = "";
+      document.getElementById("newLabel").value = "";
+      say(document.getElementById("storeStatus"), "chave salva (id " + body.id + ")");
+      loadKeys(); loadCurrent();
+    }).catch(function (error) { say(document.getElementById("storeStatus"), error.message, true); });
+  });
+
+  document.getElementById("generate").addEventListener("click", function () {
+    var when = document.getElementById("when").value;
+    var count = parseInt(document.getElementById("howMany").value, 10) || 1;
+    var timestamp = when ? new Date(when).getTime() / 1000 : Date.now() / 1000;
+    api("/api/generate", {method: "POST", headers: headers({"Content-Type": "application/json"}),
+      body: JSON.stringify({timestamp: timestamp, count: count})}).then(function (body) {
+      rows = body.rows;
+      renderTable();
+    }).catch(function (error) { say(document.getElementById("status"), error.message, true); });
+  });
+
+  document.getElementById("download").addEventListener("click", function () {
+    if (!rows.length) { return; }
+    var lines = ["valid_from_utc,valid_to_utc,code,label"];
+    rows.forEach(function (row) {
+      lines.push([new Date(row.valid_from * 1000).toISOString(),
+                  new Date(row.valid_to * 1000).toISOString(),
+                  row.code, JSON.stringify(row.label || "")].join(","));
+    });
+    var blob = new Blob([lines.join("\n") + "\n"], {type: "text/csv"});
+    var link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "family-link-codes.csv";
+    link.click();
+    URL.revokeObjectURL(link.href);
+  });
+
+  var now = new Date();
+  now.setMinutes(0, 0, 0);
+  document.getElementById("when").value =
+    now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate()) +
+    "T" + pad(now.getHours()) + ":00";
+
+  loadKeys().then(loadCurrent);
+  setInterval(tick, 1000);
+})();
+</script>
+</body>
+</html>
