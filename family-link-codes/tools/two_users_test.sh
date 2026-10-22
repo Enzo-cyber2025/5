@@ -73,23 +73,38 @@ echo "parent user: $PARENT_ID   child user: $CHILD_ID"
 adb shell pm list users | tee "$WORK/users.txt"
 
 step "3. install in both profiles and launch"
-run_as_user() {  # run_as_user <uid> <command...>
-  local uid="$1"; shift
-  adb shell "$@" 2>&1
+# A secondary user starts locked; `am start-user -w` starts it and waits, then a
+# swipe/keyguard dismissal finishes the unlock. Without RUNNING_UNLOCKED the
+# profile cannot write data and `adb backup` comes back empty.
+switch_to() {  # switch_to <uid>
+  local uid="$1" state=""
+  adb shell am start-user -w "$uid" >/dev/null 2>&1
+  adb shell am switch-user "$uid" >/dev/null 2>&1
+  adb shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1
+  adb shell wm dismiss-keyguard >/dev/null 2>&1
+  for _ in $(seq 1 15); do
+    state="$(adb shell am get-started-user-state "$uid" 2>/dev/null | tr -d '\r')"
+    [[ "$state" == *"UNLOCKED"* ]] && break
+    adb shell input swipe 540 1700 540 500 >/dev/null 2>&1
+    adb shell input keyevent 82 >/dev/null 2>&1
+    sleep 3
+  done
+  echo "user $uid: ${state:-unknown} (current: $(adb shell am get-current-user | tr -d '\r'))"
 }
-adb shell am switch-user "$PARENT_ID" >/dev/null 2>&1; sleep 8
+
+switch_to "$PARENT_ID"
 adb install -r --user "$PARENT_ID" "$APK" 2>&1 | tee "$WORK/install-parent.txt"
 adb shell am start --user "$PARENT_ID" -n "$PACKAGE/.Main" >/dev/null 2>&1
-sleep 10
-adb shell am switch-user "$CHILD_ID" >/dev/null 2>&1; sleep 8
+sleep 12
+switch_to "$CHILD_ID"
 adb install -r --user "$CHILD_ID" "$APK" 2>&1 | tee "$WORK/install-child.txt"
 adb shell am start --user "$CHILD_ID" -n "$PACKAGE/.Main" >/dev/null 2>&1
-sleep 10
+sleep 12
 
 step "4. back up each profile (no root) and extract the key"
 backup_user() {  # backup_user <uid> <label>
   local uid="$1" label="$2"
-  adb shell am switch-user "$uid" >/dev/null 2>&1; sleep 8
+  switch_to "$uid"
   echo "active user: $(adb shell am get-current-user | tr -d '\r')"
   local ab="$WORK/$label.ab"
   rm -f "$ab"
@@ -103,7 +118,14 @@ backup_user() {  # backup_user <uid> <label>
   done
   wait $pid 2>/dev/null || true
   ls -l "$ab" 2>&1 | tee "$WORK/size-$label.txt"
-  [[ -s "$ab" ]] || die "empty backup for $label"
+  if [[ ! -s "$ab" ]]; then
+    echo "empty backup for $label; device state follows"
+    adb shell am get-started-user-state "$uid" || true
+    adb shell dumpsys user | head -20 | tee "$WORK/users-state.txt"
+    adb logcat -d -s BackupManager:* BackupConfirm:* 2>/dev/null | tail -20 | tee "$WORK/logcat-$label.txt"
+    python3 "$HERE/tools/ui.py" dump > "$WORK/ui-$label.xml" 2>/dev/null || true
+    die "empty backup for $label"
+  fi
   python3 -m flcodes abe extract "$ab" --out "$WORK/extracted-$label" > "$WORK/extract-$label.txt" 2>&1 \
     || die "extraction failed for $label"
   python3 -m flcodes abe scan "$ab" | tee "$WORK/scan-$label.txt"
