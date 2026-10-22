@@ -1603,6 +1603,10 @@ jobs:
           print("MMF existe (DLL carregada) mas sem frame: " + err)
           sys.exit(0)
           '@ | Set-Content probe_mmf.py -Encoding UTF8
+          # v43: LIMITE GLOBAL do SOBE — as runs 39643747249/39663277050
+          # morreram NO SOBE (5-6 h) e o passo IA DIRIGINDO (o payload!)
+          # nunca rodou. 170 min garante ~2 h de janela para o DRIVE.
+          $limiteSobe = (Get-Date).AddMinutes(170)
           function Boot([string]$exe2, [string]$wdir2, [string]$tag, [string[]]$extra, [string]$driver, [int]$maxIter = 36) {
             Write-Host "=== boot $tag (janela $([math]::Round($maxIter*5/60,1)) min) ==="
             # v39: nenhum jogo sobrevive entre boots — cada Boot antigo deixava
@@ -1651,6 +1655,7 @@ jobs:
                   $gid = $acc.ReadUInt32(56)
                   if (-not $dllCarregada) {
                     Write-Host "  [mmf] MMF EXISTE (sdk=$sdk rev=$rev game=$gid magic=$('0x{0:X}' -f $magic)) — a DLL esta NO PROCESSO REAL do jogo ($tag)"
+                    Set-Content "$PWD\combo-vencedor.txt" $tag -Encoding ascii
                     $dllCarregada = $true
                   }
                   if ($magic -eq 0x31495541 -and $t1 -ne $t2) {
@@ -1671,6 +1676,7 @@ jobs:
               }
               if (Test-Path "$PWD\demo-mmf-viva.json") { Write-Host "  [mmf] PROVA VIVA capturada no boot $tag"; break }
               if ((Get-Date) -gt $prazo) { Write-Host "  prazo do boot $tag (dll carregada: $dllCarregada)"; break }
+              if ((Get-Date) -gt $limiteSobe) { Write-Host "  LIMITE GLOBAL do SOBE (170 min) — deixando janela para o DRIVE"; break }
             }
             # v29: game.log POR TENTATIVA (cada boot sobrescreve o Documents!)
             $tagFile = "game-log-" + ($tag -replace "[^a-zA-Z0-9]", "-") + ".txt"
@@ -1839,10 +1845,17 @@ jobs:
           $wdir = "C:\ets2demo\bin\win_x64"
           $gexe = "$wdir\eurotrucks2.exe"
           if (-not (Test-Path $gexe)) { Write-Host "::warning::exe da demo ausente — pulando direcao"; exit 0 }
-          # mesmo cenario vencedor do SOBE: DXVK + lavapipe (dx11 nativo por CPU)
-          $icd64 = Get-ChildItem "C:\mesa3d" -Recurse -Filter "*lvp*.json" -ErrorAction SilentlyContinue |
-            Where-Object { $_.Name -match "x86_64|x64" } | Select-Object -First 1
-          if ($icd64) { $env:VK_ICD_FILENAMES = $icd64.FullName }
+          # v43: usa o COMBO VENCEDOR descoberto pelo SOBE (se houver)
+          $combo = "x64 dx11 dxvk lavapipe"
+          if (Test-Path "combo-vencedor.txt") { $combo = (Get-Content "combo-vencedor.txt" -Raw).Trim() }
+          Write-Host "combo escolhido para dirigir: $combo"
+          if ($combo -match "gl") {
+            $env:GALLIUM_DRIVER = "llvmpipe"; $env:LIBGL_ALWAYS_SOFTWARE = "1"
+          } else {
+            $icd64 = Get-ChildItem "C:\mesa3d" -Recurse -Filter "*lvp*.json" -ErrorAction SilentlyContinue |
+              Where-Object { $_.Name -match "x86_64|x64" } | Select-Object -First 1
+            if ($icd64) { $env:VK_ICD_FILENAMES = $icd64.FullName }
+          }
           $g = Start-Process -FilePath $gexe -WorkingDirectory $wdir -ArgumentList "-nointro" -PassThru
           try { $g.PriorityClass = "BelowNormal" } catch { }
           try { $g.ProcessorAffinity = [IntPtr]2 } catch { }
@@ -1897,10 +1910,16 @@ jobs:
         shell: pwsh
         run: |
           Stop-Process -Name eurotrucks2 -Force -ErrorAction SilentlyContinue
-          Write-Host "=== game.log.txt (30 finais) ==="
-          Get-Content "C:\ets2demo\game.log.txt" -Tail 30 -ErrorAction SilentlyContinue
+          # v43: o jogo escreve game.log.txt no DOCUMENTS (nao na pasta dele —
+          # bug das runs anteriores: lia o caminho errado e nao mostrava nada)
+          $docs = Join-Path $env:USERPROFILE "Documents\Euro Truck Simulator 2"
+          Write-Host "=== game.log.txt (40 finais — $docs) ==="
+          Get-Content "$docs\game.log.txt" -Tail 40 -ErrorAction SilentlyContinue
           Write-Host "=== game-ets2ai-telemetry.log (log da NOSSA DLL no jogo real) ==="
+          Get-Content "$docs\game-ets2ai-telemetry.log" -Tail 25 -ErrorAction SilentlyContinue
           Get-Content "C:\ets2demo\game-ets2ai-telemetry.log" -Tail 25 -ErrorAction SilentlyContinue
+          Copy-Item "C:\ets2demo\steam.inf" "$PWD\demo-steam.inf" -Force -ErrorAction SilentlyContinue
+          Copy-Item "$docs\game.log.txt" "$PWD\game-log-final.txt" -Force -ErrorAction SilentlyContinue
       - name: Diagnostico (commita logs da demo real no repo)
         if: always()
         shell: bash
