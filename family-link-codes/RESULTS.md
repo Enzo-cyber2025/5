@@ -169,6 +169,85 @@ encaminha `tcp:127.0.0.1:5555`, espera `sys.boot_completed`, roda `device info`,
 `device apk` e `device backup --scan --save`, e falha se o segredo não sair. Usa
 KVM quando existe e cai para TCG quando não existe.
 
+## 4c. Emulador Android (QEMU) no GitHub Actions — executado
+
+O sandbox de desenvolvimento não tem QEMU, imagem nem KVM; o GitHub Actions tem
+os três. O workflow `flcodes-emulator.yml` sobe **Android 11 (API 30, x86_64)**
+com KVM (boot em ~26 s) e roda o pipeline inteiro. Resultado real do job
+`emulator` (run 39846471546, verde):
+
+```
+$ adb install -r selftest.apk          # app de teste: allowBackup=true, grava o config
+$ python3 -m flcodes device info       # props + pacotes, sem root
+$ python3 -m flcodes device apk        # pull do APK instalado (leitura pública)
+$ python3 -m flcodes apk scan base.apk
+private-dir: /data/data/com.flcodes.selftest/...
+prefs:       sp/familylink_preferences.xml
+config-key:  sharedSecret, accessCodeTtl, clockDriftTolerance, parentAccessCode
+
+$ adb backup -f com.flcodes.selftest.ab -noapk com.flcodes.selftest   # diálogo aceito via uiautomator
+$ ls -l com.flcodes.selftest.ab
+-rw-r----- 1 runner runner 1235 ... com.flcodes.selftest.ab
+
+$ python3 -m flcodes abe info com.flcodes.selftest.ab
+version 5 · compressed=True · encryption=none · payload at 24
+apps: com.flcodes.selftest
+
+$ python3 -m flcodes abe scan com.flcodes.selftest.ab --save --label emulator
+extracted 2 file(s) from com.flcodes.selftest
+[android] AIte…ey (len 24)  <- …/apps/com.flcodes.selftest/sp/familylink_preferences.xml
+saved: id=2b4d8338828e kind=android ttl=600s
+
+$ python3 -m flcodes gen --label emulator --json
+{"code": "502849", "valid_from": 1792699200, "validity": 600, ...}
+```
+
+Prova de que **não houve root** em nenhum passo, do mesmo run:
+
+```
+$ adb shell ls /data/data/com.flcodes.selftest
+ls: /data/data/com.flcodes.selftest: Permission denied
+$ adb shell ls /data/data/com.flcodes.selftest/shared_prefs
+ls: /data/data/com.flcodes.selftest/shared_prefs: Permission denied
+```
+
+O diretório privado existe, é inacessível ao adb — e ainda assim a chave saiu,
+porque quem escreveu o container foi o **aparelho** após o diálogo de backup.
+
+### Achado do aparelho real
+
+O Android grava o JSON **escapado** dentro do XML de SharedPreferences
+(`{&quot;parentAccessCode&quot;:…}`). Na primeira execução a chave saiu sem o
+TTL; corrigido com `html.unescape` antes de percorrer o JSON embutido, e há
+teste (`test_shared_preferences_xml_keeps_the_ttl`).
+
+### Family Link real: o que o CI consegue e o que não consegue
+
+O job `real-family-link` tenta, nesta ordem: `FLCODES_APK_URL` (sua cópia),
+Google Play via `apkeep` (login anônimo), APKPure via `apkeep`, API JSON do
+APKPure, Aptoide e APKMirror. No runner, **todas falham**:
+
+| fonte | resultado |
+|---|---|
+| Google Play anônimo | `Could not log in to Google Play. Invalid payload` (Google bloqueia sessão anônima) |
+| APKPure via apkeep 1.1.0 | imprime "Downloading…" e não grava arquivo |
+| API pureapk.com | sem `download_url` |
+| Aptoide | `404` (o app não está lá) |
+| APKMirror | download exige POST com token da página |
+
+Conclusão honesta: **o APK do Family Link não é obtível de fonte pública sem
+credenciais**. Com a sua cópia, o job roda o mesmo pipeline nela:
+
+```bash
+gh secret set FLCODES_APK_URL --repo Enzo-cyber2025/5   # URL do seu APK
+gh workflow run flcodes-emulator.yml
+```
+
+O job baixa, verifica o assinante (`apksigner --print-certs`), desempacota com
+`flcodes apk scan`, instala no emulador, puxa de volta, faz `adb backup`, extrai
+e reporta — sem root. Sem conta logada no aparelho o app não grava o config, e o
+job diz isso em vez de fingir.
+
 ## 5. O que ainda NÃO está provado
 
 * **Aceitação pelo firmware do aparelho supervisionado** — precisa de aparelho
@@ -193,10 +272,10 @@ KVM quando existe e cai para TCG quando não existe.
 3. No aparelho supervisionado **offline**, digite o código atual em
    "Acesso dos pais" — esse é o teste de aceitação final.
 
-## 7. Cobertura de testes (111)
+## 7. Cobertura de testes (112)
 
 ```bash
-pytest -q tests/test_flcodes_*.py    # 111 passed
+pytest -q tests/test_flcodes_*.py    # 112 passed
 ```
 
 (`pytest -q` na raiz do repositório também coleta os testes de outro projeto

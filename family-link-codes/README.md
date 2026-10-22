@@ -277,16 +277,27 @@ python demo/make_device_fixture.py --out /tmp/flcodes-demo/device
 flcodes abe scan /tmp/flcodes-demo/device/familylink.ab
 ```
 
-Para testar de verdade em emulador, com QEMU (na sua máquina — veja §4b do
-`RESULTS.md` sobre por que isso não roda no sandbox de desenvolvimento):
+**Testado em Android real no GitHub Actions** (`flcodes-emulator.yml`): o job
+sobe Android 11 (x86_64, KVM) e executa exatamente os comandos acima. Evidência
+do run verde em `RESULTS.md` §4c — incluindo `adb shell ls /data/data/...` dando
+`Permission denied`, ou seja, sem root em nenhum passo.
+
+Localmente, com uma imagem Android x86_64 na mão:
 
 ```bash
-tools/qemu_android_test.sh --image /caminho/android-x86_64.qcow2 \
-    --package com.google.android.apps.familylink --mem 4096
+tools/android_emulator_ci.sh --api 30                 # app de teste
+tools/android_emulator_ci.sh --apk FamilyLink.apk \
+    --package com.google.android.apps.familylink       # o app real
+tools/qemu_android_test.sh --image /caminho/img.qcow2 # QEMU genérico
 ```
 
-O script sobe a imagem sem janela, espera o `adbd`, roda `device info`,
-`device apk`, `device backup --scan` e falha se o segredo não sair.
+Para rodar o app real no CI, aponte uma cópia sua do APK (o Google Play bloqueia
+sessão anônima e os espelhos não servem Family Link):
+
+```bash
+gh secret set FLCODES_APK_URL --repo Enzo-cyber2025/5
+gh workflow run flcodes-emulator.yml
+```
 
 ## 5. Limitações conhecidas (o que quebra e por quê)
 
