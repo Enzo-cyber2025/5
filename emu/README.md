@@ -96,10 +96,75 @@ ausente do disco, ISA de host/guest estrangeiro, corrupção, truncamento, magic
 inválida, re-tradução substituindo em vez de duplicar, save idempotente, e 5000
 blocos recarregados e conferidos byte a byte.
 
+### Feito — decodificador x86-64 (`x86_decode.c`, `x86_decode.h`)
+
+Marco 1. Comprimento e estrutura, do zero, para o modo de 64 bits: prefixos,
+REX, mapas de 1 e 2 bytes, e os mapas de 3 bytes `0F 38` e `0F 3A` (ambos com
+cobertura total de comprimento — `38` é sempre ModRM sem imediato, `3A` é sempre
+ModRM + imm8), ModRM, SIB, deslocamento, imediato e endereçamento RIP-relativo.
+
+A regra de projeto é **nunca deduzir**. O que não está modelado retorna
+`X86_UNSUPPORTED`; o que é ilegal em 64 bits retorna `X86_INVALID`; buffer curto
+retorna `X86_NEED_MORE`. Um tradutor que recebe qualquer um dos três deve
+interpretar o passo ou abortar o bloco — jamais avançar PC por um comprimento
+chutado, porque um comprimento errado dessincroniza o fluxo inteiro e nada a
+jusante detecta.
+
+Recusado de propósito, em vez de aproximado:
+
+- **VEX (`C4`/`C5`) e EVEX (`62`)** — exigem seu próprio modelo de prefixo.
+  Nota: eles reutilizam os slots de LES/LDS/BOUND, então a checagem tem que vir
+  **antes** da tabela; caso contrário seriam reportados como ilegais quando são
+  apenas não modelados, e o chamador abortaria um bloco que deveria interpretar.
+- **`0x67` (address-size override)** — endereçamento de 32 bits muda as regras de
+  deslocamento para `rm==6` e `SIB base==5`. Devolver um comprimento calculado
+  sob a regra de 64 bits seria um chute, então reporta `UNSUPPORTED`.
+
+`X86_OK` com `mnemonic == NULL` é um estado real e útil: "o comprimento é
+confiável, a semântica ainda não foi levantada". É o que um tradutor precisa para
+delimitar blocos básicos antes de saber levantar cada instrução.
+
+Imediatos aritméticos são reportados como **bits crus**: se a instrução os
+estende depende do opcode (GRP1 `/3` estende, `MOV r8,imm8` não, `PUSH Iz`
+estende). Decidir isso nesta camada seria duplicar semântica por opcode dentro do
+decodificador de comprimento, então a extensão fica para o lifter. Só `rel8` e
+`rel32` são inerentemente assinados, e esses vêm estendidos.
+
+`make test` → **52 + 194 checks, 0 failures**, limpo sob
+`-Wall -Wextra -Wshadow -Werror`. Cada comprimento nos testes foi derivado à mão
+das regras de encoding, não lido de volta do decodificador — senão um erro de
+tabela apareceria como uma resposta errada autoconsistente. Coberto: 50+
+encodings com comprimento esperado, decomposição de REX, SIB `base=5` com
+`mod=00` (que é `disp32` absoluto e **não** RIP-relativo — errar isso corrompe
+silenciosamente todo endereço absoluto em código PIC), alvo RIP-relativo,
+classificação de fluxo de controle (`FF /2`, `C3`, `74`, `E9`), LOCK e REP, REX
+ignorado quando seguido de prefixo legado, GRP3 com e sem imediato, `imm64`
+exigindo REX.W, mnemônicos, decodificação em fluxo de um prólogo de 8
+instruções consumindo exatamente todos os bytes, teto de 15 bytes, e a garantia
+de que `out` é limpo mesmo em falha (um chamador que reutiliza o struct nunca vê
+um `len` obsoleto).
+
 ### Não feito
 
-Decodificador x86-64, IR, emissor ARM64, loader de PE/ELF, camada de syscalls,
-D3D→Vulkan, e o app Android em si.
+Lifter (IR a partir do que o decodificador já entrega), emissor ARM64, loader de
+PE/ELF, camada de syscalls, D3D→Vulkan, varredura estática em background, e o app
+Android em si. VEX/EVEX e `0x67` seguem recusados por design até serem modelados.
+
+### O que os testes pegaram durante o desenvolvimento
+
+Registrado porque é o argumento por trás de escrever os testes primeiro:
+
+- `0x9A` (CALLF Ap) estava marcado como válido — eu tinha zerado a linha
+  `0x90-0x9F` inteira por preguiça em vez de conferir opcode a opcode.
+- `RET imm16` e `RETF imm16` quebraram quando uma edição por índice de linha
+  removeu `case I_W:` do switch em silêncio. Cobertura foi adicionada para os
+  **dois** usuários do caso, não só o que falhou.
+- VEX/EVEX retornavam `INVALID` em vez de `UNSUPPORTED` por ordem de checagem.
+- O cabeçalho prometia imediato sinalizado que a implementação não entregava, e
+  a promessa estava errada: a extensão é específica de opcode.
+- Duas expectativas erradas eram dos próprios testes (o NOP multibyte canônico é
+  6 bytes, não 7; e a asserção de extensão de sinal testava um caso onde a
+  extensão não se aplica).
 
 ## Limitação deste ambiente
 
