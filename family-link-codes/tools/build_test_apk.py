@@ -114,12 +114,16 @@ def main(argv=None) -> int:
         print(f"no Android SDK at {sdk}", file=sys.stderr)
         return 2
     build_tools = newest(sdk / "build-tools", "*")
-    platforms = sorted((sdk / "platforms").glob("android-*"))
+    # prefer a stable platform (android-30 .. android-35) over betas/previews
+    stable = [path for path in sorted((sdk / "platforms").glob("android-*"))
+              if path.name.count("-") == 1 and path.name.split("-")[1].isdigit()]
+    platforms = stable or sorted((sdk / "platforms").glob("android-*"))
     if not build_tools or not platforms:
         print(f"SDK at {sdk} has no build-tools or platforms", file=sys.stderr)
         return 2
-    android_jar = platforms[-1] / "android.jar"
-    print(f"build-tools: {build_tools.name}   platform: {platforms[-1].name}")
+    platform = platforms[-1]
+    android_jar = platform / "android.jar"
+    print(f"build-tools: {build_tools.name}   platform: {platform.name}")
 
     work = Path(tempfile.mkdtemp(prefix="flcodes-apk-"))
     try:
@@ -129,11 +133,9 @@ def main(argv=None) -> int:
         dex = work / "dex"
         classes.mkdir()
         dex.mkdir()
-        (work / "res" / "values").mkdir(parents=True)
         (work / "AndroidManifest.xml").write_text(
             MANIFEST.format(package=PACKAGE, activity=ACTIVITY)
         )
-        (work / "res" / "values" / "strings.xml").write_text(STRINGS)
         (src / "Main.java").write_text(JAVA.replace("__SECRET__", args.secret))
 
         run(["javac", "-source", "8", "-target", "8", "-nowarn",
@@ -145,10 +147,9 @@ def main(argv=None) -> int:
 
         apk = work / "base.apk"
         if (build_tools / "aapt2").exists():
-            run([build_tools / "aapt2", "compile", "--dir", work / "res",
-                 "-o", work / "res.zip"], "aapt2 compile")
+            # the label is a literal in the manifest, so no resources are needed
             run([build_tools / "aapt2", "link", "-o", apk, "-I", android_jar,
-                 "--manifest", work / "AndroidManifest.xml", "-R", work / "res.zip",
+                 "--manifest", work / "AndroidManifest.xml",
                  "--min-sdk-version", "21", "--target-sdk-version", "30"], "aapt2 link")
         else:
             run([build_tools / "aapt", "package", "-f", "-M", work / "AndroidManifest.xml",
