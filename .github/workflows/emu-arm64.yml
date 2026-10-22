@@ -329,6 +329,7 @@ jobs:
           # so a changed release fails loudly instead of silently sweeping
           # something else.
           PINNED_SIZE="34937681"
+          PINNED_SHA256="a8b9e38b085da2ed7309868bdf8b49a900453946d25d58612071957f21eebd27"
           url="https://github.com/HandBrake/HandBrake/releases/download/${tag}/${name}"
           curl -fsSL -o /tmp/hb.zip "$url"
           rc=$?
@@ -344,7 +345,12 @@ jobs:
           fi
           digest=$(sha256sum /tmp/hb.zip | awk '{print $1}')
           echo "sha256: ${digest}"
-          echo "::notice title=handbrake-sha256::${digest} size=${actual} - pin this value in the workflow"
+          echo "::notice title=handbrake-sha256::${digest} size=${actual}"
+          if [ "$digest" != "$PINNED_SHA256" ]; then
+            echo "::error title=digest-mismatch::downloaded ${digest}, pinned ${PINNED_SHA256}"
+            exit 1
+          fi
+          echo "verified: size and digest both match the pinned release"
 
       - name: Enumerate the modules in the bundle
         run: |
@@ -401,10 +407,21 @@ jobs:
       - name: Confirm nothing downloaded entered the repository
         run: |
           set -euo pipefail
-          if git ls-files | grep -qiE '\.(exe|dll|msi|zip)$'; then
-            echo "a Windows binary or archive is tracked in this repository"; exit 1
-          fi
+          # The question is whether this job left anything behind, so the test is
+          # a comparison against HEAD rather than an extension scan. This
+          # repository tracked an unrelated .zip before this project existed, and
+          # scanning for archives flagged that file instead of answering the
+          # question - a check that fails for the wrong reason hides the right one.
           if [ -n "$(git status --porcelain)" ]; then
-            echo "the worktree is dirty after the sweep:"; git status --porcelain; exit 1
+            echo "the sweep left something in the checkout:"
+            git status --porcelain
+            exit 1
           fi
-          echo "repository clean - ok"
+          if git ls-files | grep -qiE '\.(exe|dll|msi)$'; then
+            echo "a Windows executable or library is tracked in this repository"
+            git ls-files | grep -iE '\.(exe|dll|msi)$' | head
+            exit 1
+          fi
+          echo "archives tracked by the repository, none added by this job:"
+          git ls-files | grep -iE '\.zip$' || echo "  none"
+          echo "ok: the sweep left the checkout untouched and no Windows binary is tracked"
