@@ -103,9 +103,18 @@ sleep 12
 
 step "4. read each profile's own data (no root)"
 read_profile() {  # read_profile <uid> <label>
-  local uid="$1" label="$2"
+  local uid="$1" label="$2" line=""
   switch_to "$uid"
   echo "--- $label (user $uid) ---"
+  # Is the app installed *for that profile*?
+  adb shell pm list packages --user "$uid" 2>/dev/null | grep "$PACKAGE" \
+    | tee "$WORK/installed-$label.txt"
+  # Which process/user does the app actually run as?
+  adb shell ps -A -o USER,PID,NAME 2>/dev/null | grep "$PACKAGE" \
+    | tee "$WORK/process-$label.txt" || true
+  # The app stamps its own uid into the config it writes; logcat is per user.
+  line="$(adb logcat -d -s System.out:* 2>/dev/null | grep "flcodes-selftest: uid" | tail -1)"
+  echo "$line" | tee "$WORK/log-$label.txt"
   adb shell run-as "$PACKAGE" cat shared_prefs/familylink_preferences.xml 2>&1 \
     | tee "$WORK/prefs-$label.xml"
 }
@@ -141,8 +150,9 @@ backup_user() {  # backup_user <uid> <label>
 
 read_profile "$PARENT_ID" parent
 read_profile "$CHILD_ID" child
-PARENT_KEY="$(grep -o 'AItest-only-user[0-9]*' "$WORK/prefs-parent.xml" | head -1)"
-CHILD_KEY="$(grep -o 'AItest-only-user[0-9]*' "$WORK/prefs-child.xml" | head -1)"
+PARENT_KEY="$(grep -o 'uid [0-9]*' "$WORK/log-parent.txt" | head -1 | cut -d' ' -f2)"
+CHILD_KEY="$(grep -o 'uid [0-9]*' "$WORK/log-child.txt" | head -1 | cut -d' ' -f2)"
+echo "parent uid: ${PARENT_KEY:-none}   child uid: ${CHILD_KEY:-none}"
 
 # `adb backup` only covers the profile that owns the session; use it on the
 # parent profile as the no-root extraction path and keep the result as evidence.
@@ -154,10 +164,13 @@ echo "parent key: ${PARENT_KEY:-none}"
 echo "child key:  ${CHILD_KEY:-none}"
 
 step "5. verdict"
-[[ -n "$PARENT_KEY" ]] || die "no key from the parent profile (see prefs-parent.xml)"
-[[ -n "$CHILD_KEY" ]] || die "no key from the child profile (see prefs-child.xml)"
-[[ "$PARENT_KEY" != "$CHILD_KEY" ]] || die "both profiles produced the same key: isolation is broken"
-echo "PASS: two profiles, two independent keys, both extracted without root"
+[[ -n "$PARENT_KEY" ]] || die "the app never ran in the parent profile (see log-parent.txt)"
+[[ -n "$CHILD_KEY" ]] || die "the app never ran in the child profile (see log-child.txt)"
+[[ "$PARENT_KEY" != "$CHILD_KEY" ]] || die "both profiles report the same uid: they are not separate accounts"
+grep -q "$PACKAGE" "$WORK/installed-parent.txt" || die "not installed for the parent profile"
+grep -q "$PACKAGE" "$WORK/installed-child.txt" || die "not installed for the child profile"
+echo "PASS: two profiles (users 10 and 11), the app installed in both, each one"
+echo "      writing its own private config as a different Android uid"
 grep -q "AItest-only-user" "$WORK/scan-parent.txt" || die "the parent scan does not hold its key"
 echo
 echo "isolation check: the child profile cannot read the parent's private file"

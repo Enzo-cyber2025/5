@@ -138,7 +138,7 @@ jobs:
             echo
             echo "exit: $(cat "$RUNNER_TEMP/two-status.txt" 2>/dev/null || echo '?')"
             echo
-            for f in users.txt prefs-parent.xml prefs-child.xml scan-parent.txt scan-child.txt isolation.txt; do
+            for f in users.txt installed-parent.txt installed-child.txt process-parent.txt process-child.txt log-parent.txt log-child.txt prefs-parent.xml scan-parent.txt isolation.txt; do
               [ -s "$T/$f" ] && { echo "**$f**"; echo '```'; head -20 "$T/$f"; echo '```'; }
             done
             echo "**stdout.txt**"
