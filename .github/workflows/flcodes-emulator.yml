@@ -78,31 +78,6 @@ jobs:
           sudo udevadm trigger --name-match=kvm
           ls -l /dev/kvm
 
-      - name: Build the test APK (allowBackup=true, writes the config)
-        run: |
-          set -uo pipefail
-          export ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}"
-          {
-            echo "SDK=$ANDROID_SDK_ROOT"
-            ls "$ANDROID_SDK_ROOT/build-tools" || true
-            ls "$ANDROID_SDK_ROOT/platforms" || true
-            command -v javac && javac -version || echo "javac: MISSING"
-            echo "JAVA_HOME=${JAVA_HOME:-unset}"
-          } 2>&1 | tee "$RUNNER_TEMP/env.log" || true
-          echo "marker: about to build"
-          ls -l family-link-codes/tools/build_test_apk.sh
-          bash family-link-codes/tools/build_test_apk.sh --help > "$RUNNER_TEMP/help.log" 2>&1
-          echo "marker: help exited $?"
-          if ! bash family-link-codes/tools/build_test_apk.sh \
-                 --out "$RUNNER_TEMP/selftest.apk" --secret AItest-only-emulator-key \
-                 > "$RUNNER_TEMP/build.log" 2>&1; then
-            echo "=== env ==="; cat "$RUNNER_TEMP/env.log" || true
-            echo "=== build ==="; cat "$RUNNER_TEMP/build.log" || true
-            echo "::error title=apk-build::$(tail -c 900 "$RUNNER_TEMP/build.log" 2>/dev/null | tr '\n' '|')"
-            exit 1
-          fi
-          tail -3 "$RUNNER_TEMP/build.log"
-
       - name: Boot the emulator and run the no-root pipeline
         uses: reactivecircus/android-emulator-runner@v2
         env:
@@ -119,7 +94,7 @@ jobs:
           script: |
             set -uo pipefail
             trap 'status=$?; echo "::error title=emulator-step::exit $status";                   tail -25 "$RUNNER_TEMP/flcodes-emulator/"*.txt 2>/dev/null | head -60;                   adb logcat -d -s BackupManager:* BackupConfirm:* 2>/dev/null | tail -30' EXIT
-            adb install -r "$RUNNER_TEMP/selftest.apk"
+            adb install -r "$RUNNER_TEMP/selftest.apk" 2>&1 | tee "$W/install.txt"
             adb shell am start -n com.flcodes.selftest/.Main
             sleep 5
             adb shell run-as com.flcodes.selftest ls shared_prefs 2>/dev/null || true

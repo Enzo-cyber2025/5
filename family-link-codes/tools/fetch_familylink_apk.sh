@@ -89,25 +89,26 @@ unpack_if_bundle() {  # XAPK/APKS -> base.apk + splits
 try_apkeep() {
   local bin="$OUT/apkeep"
   if [[ ! -x "$bin" ]]; then
+    # the releases ship plain binaries: apkeep-x86_64-unknown-linux-gnu
     local url
     url="$(gh api repos/EFForg/apkeep/releases/latest \
-            --jq '[.assets[] | select(.name | endswith("x86_64-unknown-linux-musl.tar.gz")) | .browser_download_url] | .[0]' \
+            --jq '[.assets[] | select(.name == "apkeep-x86_64-unknown-linux-gnu") | .browser_download_url] | .[0]' \
             2>/dev/null || true)"
     url="$(printf '%s' "$url" | head -1 | tr -d '[:space:]')"
     if [[ ! "$url" =~ ^https:// ]]; then
-      log "apkeep: could not resolve the release asset ($url)"
+      log "apkeep: could not resolve the release asset (got '$url')"
       return 1
     fi
-    curl -fsSL --retry 2 -o "$OUT/apkeep.tgz" "$url" || return 1
-    mkdir -p "$OUT/apkeep-bin"
-    tar -xzf "$OUT/apkeep.tgz" -C "$OUT/apkeep-bin" || return 1
-    find "$OUT/apkeep-bin" -type f -name 'apkeep*' -exec cp {} "$bin" \; || return 1
+    log "apkeep: downloading $url"
+    curl -fsSL --retry 2 -o "$bin" "$url" || return 1
     chmod +x "$bin" || return 1
+    "$bin" --version >> "$OUT/apkeep-version.txt" 2>&1 || true
   fi
-  rm -f ./*.apk ./*.xapk
+  log "apkeep: $($bin --version 2>&1 | head -1)"
+  rm -f ./*.apk ./*.xapk ./*.apks
   "$bin" -a "$PACKAGE" -d apk-pure . >&2 || return 1
   local produced
-  produced="$(ls -t *.apk *.xapk 2>/dev/null | head -1)"
+  produced="$(ls -t *.apk *.xapk *.apks 2>/dev/null | head -1)"
   [[ -n "$produced" ]] || return 1
   unpack_if_bundle "$produced"
 }
@@ -115,7 +116,8 @@ try_apkeep() {
 try_aptoide() {
   local meta
   meta="$(curl -fsSL --retry 2 -A "Mozilla/5.0" \
-      "https://ws75.aptoide.com/api/7/app/get/package_name=$PACKAGE" 2>/dev/null)" || return 1
+      "https://ws75.aptoide.com/api/7/app/get/package_name=$PACKAGE" 2>"$OUT/aptoide.err")" \
+      || { log "aptoide: request failed: $(tail -2 "$OUT/aptoide.err" | tr '\n' ' ')"; return 1; }
   local path version
   path="$(printf '%s' "$meta" | python3 -c '
 import json, sys
