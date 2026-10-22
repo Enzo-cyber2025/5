@@ -1636,7 +1636,7 @@ jobs:
             if ($driver) { $env:GALLIUM_DRIVER = $driver } else { Remove-Item Env:\GALLIUM_DRIVER -ErrorAction SilentlyContinue }
             $prazo = (Get-Date).AddSeconds(5 * $maxIter + 60)
             $g = Start-Process -FilePath $exe2 -WorkingDirectory $wdir2 -ArgumentList $extra -PassThru
-            Trace "boot $tag: pid $($g.Id)"
+            Trace "boot ${tag}: pid $($g.Id)"
             # v37: jogo em BELOW NORMAL — o jogo+DXVK saturavam os 2 vCPUs e
             # dilatavam os timers do pwsh (SOBE de 2h+ na 38820370102)
             # v38: ALEM da prioridade, o jogo fica PRESO A 1 NUCLEO (affinity
