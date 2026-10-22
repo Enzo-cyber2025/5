@@ -34,9 +34,15 @@ import android.app.Activity;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 
-/** Writes the Family Link shaped config into this app's private prefs. */
+/**
+ * Writes the Family Link shaped config into this app's private prefs.
+ *
+ * The secret carries the Android user id, so a backup taken while user A is
+ * active can be told apart from one taken while user B is active: that is how
+ * the two-account test proves the extraction targets the right profile.
+ */
 public class Main extends Activity {
-    private static final String SECRET = "__SECRET__";
+    private static final String SECRET = "__SECRET__" + android.os.Process.myUid();
     private static final String CONFIG =
         "{\\"parentAccessCode\\":{\\"sharedSecret\\":\\"" + SECRET + "\\","
         + "\\"accessCodeTtl\\":600,\\"clockDriftTolerance\\":300}}";
@@ -46,7 +52,8 @@ public class Main extends Activity {
         super.onCreate(state);
         SharedPreferences prefs = getSharedPreferences("familylink_preferences", MODE_PRIVATE);
         prefs.edit().putString("family_link_app_config", CONFIG).commit();
-        System.out.println("flcodes-selftest: wrote " + CONFIG.length() + " bytes");
+        System.out.println("flcodes-selftest: uid " + android.os.Process.myUid()
+            + " wrote " + CONFIG.length() + " bytes");
         finish();
     }
 }

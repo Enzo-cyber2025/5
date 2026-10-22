@@ -90,6 +90,18 @@ jobs:
           status=$?
           echo "$status" > "$RUNNER_TEMP/emulator-status.txt"
           exit "$status"
+      - name: Two accounts (parent and child profiles on the same device)
+        env:
+          FLCODES_PASSPHRASE: two
+        run: |
+          set +e
+          export ANDROID_SERIAL="$(adb devices | awk 'NR>1 && $2=="device" {print $1; exit}')"
+          bash family-link-codes/tools/two_users_test.sh \
+            --work "$RUNNER_TEMP/two" --apk "$RUNNER_TEMP/emulator/selftest.apk" \
+            --package com.flcodes.selftest
+          echo "$?" > "$RUNNER_TEMP/two-status.txt"
+          exit 0
+
       - name: Report on the PR
         if: always()
         env:
@@ -100,6 +112,7 @@ jobs:
           [ -n "$pr" ] || pr="$(gh pr list --head "$GITHUB_REF_NAME" --json number -q '.[0].number' 2>/dev/null)"
           [ -n "$pr" ] || exit 0
           W="$RUNNER_TEMP/emulator"
+          T="$RUNNER_TEMP/two"
           {
             echo "### Emulador Android (QEMU): selftest, sem root"
             echo
@@ -116,6 +129,17 @@ jobs:
             echo '```'
             tail -40 "$W/run.log" 2>/dev/null || echo "(no log)"
             echo '```'
+            echo "### Duas contas (perfis parent/child no mesmo aparelho)"
+            echo
+            echo "exit: $(cat "$RUNNER_TEMP/two-status.txt" 2>/dev/null || echo '?')"
+            echo
+            for f in users.txt scan-parent.txt scan-child.txt isolation.txt; do
+              [ -s "$T/$f" ] && { echo "**$f**"; echo '```'; head -25 "$T/$f"; echo '```'; }
+            done
+            echo "**two.log (tail)**"
+            echo '```'
+            tail -40 "$T/two.log" 2>/dev/null || echo "(no log)"
+            echo '```'
           } > "$RUNNER_TEMP/comment.md"
           gh pr comment "$pr" --body-file "$RUNNER_TEMP/comment.md"
       - name: Store the evidence
@@ -125,6 +149,7 @@ jobs:
           name: flcodes-emulator
           path: |
             ${{ runner.temp }}/emulator/
+            ${{ runner.temp }}/two/
             ${{ runner.temp }}/emulator/emulator.log
           if-no-files-found: warn
 
@@ -250,4 +275,120 @@ jobs:
             ${{ runner.temp }}/real/
             ${{ runner.temp }}/scan.json
             ${{ runner.temp }}/scan.txt
+          if-no-files-found: warn
+
+  play-store:
+    name: Play Store (QEMU) - download, extract without root, two accounts
+    runs-on: ubuntu-latest
+    needs: unit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Are there Play Store credentials?
+        id: creds
+        env:
+          EMAIL: ${{ secrets.FLCODES_GPLAY_EMAIL }}
+          PASSWORD: ${{ secrets.FLCODES_GPLAY_PASSWORD }}
+        run: |
+          if [ -n "$EMAIL" ] && [ -n "$PASSWORD" ]; then
+            echo "have=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "have=no" >> "$GITHUB_OUTPUT"
+            echo "::warning title=no-credentials::set FLCODES_GPLAY_EMAIL and FLCODES_GPLAY_PASSWORD to a throwaway Google account; Google blocks anonymous Play Store sessions, so the APK cannot be downloaded without one"
+          fi
+
+      - name: Enable KVM (falls back to software emulation)
+        if: steps.creds.outputs.have == 'yes'
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          ls -l /dev/kvm || true
+
+      - name: Sign in, install Family Link, extract the APK without root
+        if: steps.creds.outputs.have == 'yes'
+        env:
+          FLCODES_GPLAY_EMAIL: ${{ secrets.FLCODES_GPLAY_EMAIL }}
+          FLCODES_GPLAY_PASSWORD: ${{ secrets.FLCODES_GPLAY_PASSWORD }}
+          FLCODES_PASSPHRASE: store
+        run: |
+          set +e
+          bash family-link-codes/tools/play_store_reap.sh --work "$RUNNER_TEMP/store" --api 30
+          echo "$?" > "$RUNNER_TEMP/store-status.txt"
+          exit 0
+
+      - name: Two accounts on the device (parent / child profiles)
+        if: steps.creds.outputs.have == 'yes'
+        run: |
+          set +e
+          export ANDROID_SERIAL="$(adb devices | awk 'NR>1 && $2=="device" {print $1; exit}')"
+          APK="$(cat "$RUNNER_TEMP/store/apk-path.txt" 2>/dev/null)"
+          if [ -n "$APK" ] && [ -s "$APK" ]; then
+            bash family-link-codes/tools/two_users_test.sh \
+              --work "$RUNNER_TEMP/two" --apk "$APK" \
+              --package com.google.android.apps.familylink
+            echo "$?" > "$RUNNER_TEMP/two-status.txt"
+          else
+            echo "no store APK: skipping the two-account run" > "$RUNNER_TEMP/two-status.txt"
+          fi
+          exit 0
+
+      - name: Summarise on the PR
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e +o pipefail
+          pr="${{ github.event.pull_request.number }}"
+          [ -n "$pr" ] || pr="$(gh pr list --head "$GITHUB_REF_NAME" --json number -q '.[0].number' 2>/dev/null)"
+          [ -n "$pr" ] || exit 0
+          S="$RUNNER_TEMP/store"
+          T="$RUNNER_TEMP/two"
+          {
+            echo "### Play Store (QEMU): APK real, sem root, duas contas"
+            echo
+            if [ "${{ steps.creds.outputs.have }}" != "yes" ]; then
+              echo "Sem credenciais: \`FLCODES_GPLAY_EMAIL\` e \`FLCODES_GPLAY_PASSWORD\` não configurados."
+              echo
+              echo "O Google bloqueia sessão anônima na Play Store, então o download não é"
+              echo "possível sem uma conta. Configure os dois secrets (conta descartável) e"
+              echo "rode \`gh workflow run flcodes-emulator.yml\`."
+            else
+              echo "exit: $(cat "$RUNNER_TEMP/store-status.txt" 2>/dev/null || echo '?')"
+              echo
+              for f in version.txt pm-path.txt backup-size.txt abe-info.txt apk-sha256.txt apk-scan.txt; do
+                [ -s "$S/$f" ] && { echo "**$f**"; echo '```'; head -30 "$S/$f"; echo '```'; }
+              done
+              echo "**store.log (tail)**"
+              echo '```'
+              tail -40 "$S/store.log" 2>/dev/null || echo "(no log)"
+              echo '```'
+              echo "### Duas contas (parent / child)"
+              echo
+              echo "exit: $(cat "$RUNNER_TEMP/two-status.txt" 2>/dev/null || echo '?')"
+              echo
+              for f in users.txt scan-parent.txt scan-child.txt isolation.txt; do
+                [ -s "$T/$f" ] && { echo "**$f**"; echo '```'; head -25 "$T/$f"; echo '```'; }
+              done
+              echo "**two.log (tail)**"
+              echo '```'
+              tail -40 "$T/two.log" 2>/dev/null || echo "(no log)"
+              echo '```'
+            fi
+          } > "$RUNNER_TEMP/comment.md"
+          gh pr comment "$pr" --body-file "$RUNNER_TEMP/comment.md"
+
+      - name: Store the evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flcodes-play-store
+          path: |
+            ${{ runner.temp }}/store/
+            ${{ runner.temp }}/two/
           if-no-files-found: warn
