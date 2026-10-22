@@ -32,6 +32,7 @@ import sys
 import urllib.error
 import urllib.parse
 import urllib.request
+import zlib
 
 HF = "https://huggingface.co"
 UA = "ci/hf-token-probe (github actions)"
@@ -646,6 +647,112 @@ def report_target_deep(token: str | None, target: str, kind: str = "datasets") -
             bullet("datasets-server size", f"HTTP {st}")
 
 
+PE_MACHINE = {
+    0x014C: "x86 (i386)",
+    0x8664: "x64 (AMD64)",
+    0xAA64: "ARM64",
+    0x01C4: "ARMNT (ARM32)",
+    0x01C0: "ARM",
+    0x0200: "IA64",
+}
+
+
+def parse_pe_head(buf: bytes) -> dict | None:
+    """Read the PE header fields that settle the merge/port questions.
+
+    Nothing here is decompilation: these are the same fields `file(1)` reports.
+    The decisive one is the CLR data directory (index 14) - a non-zero RVA means
+    a .NET assembly, which is the only kind of DLL any merge tool can fold into
+    an EXE. Its absence means native code, loaded by name at run time.
+    """
+    if len(buf) < 64 or buf[:2] != b"MZ":
+        return None
+    e_lfanew = int.from_bytes(buf[0x3C:0x40], "little")
+    if e_lfanew <= 0 or e_lfanew + 24 > len(buf):
+        return None
+    if buf[e_lfanew:e_lfanew + 4] != b"PE\x00\x00":
+        return None
+    coff = e_lfanew + 4
+    machine = int.from_bytes(buf[coff:coff + 2], "little")
+    sections = int.from_bytes(buf[coff + 2:coff + 4], "little")
+    chars = int.from_bytes(buf[coff + 18:coff + 20], "little")
+    opt = coff + 20
+    magic = int.from_bytes(buf[opt:opt + 2], "little")
+    pe32plus = magic == 0x20B
+    base = opt + (112 if pe32plus else 96)          # start of data directories
+    clr_rva = 0
+    if base + 14 * 8 + 4 <= len(buf):
+        clr_rva = int.from_bytes(buf[base + 14 * 8:base + 14 * 8 + 4], "little")
+    subsystem = int.from_bytes(buf[opt + 68:opt + 70], "little") if opt + 70 <= len(buf) else 0
+    return {
+        "machine": PE_MACHINE.get(machine, f"0x{machine:04x}"),
+        "format": "PE32+" if pe32plus else ("PE32" if magic == 0x10B else f"magic 0x{magic:x}"),
+        "kind": "DLL" if chars & 0x2000 else "EXE",
+        "dotnet": clr_rva != 0,
+        "subsystem": {2: "GUI", 3: "console"}.get(subsystem, str(subsystem)),
+        "sections": sections,
+    }
+
+
+def inflate_prefix(comp: bytes, method: int, need: int = 1400) -> bytes:
+    """Recover the first bytes of a ZIP entry without downloading the entry."""
+    if method == 0:
+        return comp[:need * 2]
+    if method != 8:
+        return b""                                    # not deflate: not handled
+    try:
+        return zlib.decompressobj(-15).decompress(comp, need * 4)
+    except zlib.error:
+        return b""
+
+
+def inspect_pe_entries(url: str, token: str, entries: list) -> None:
+    """Fetch ~8 KB per PE entry and report its header. ~100 KB for a whole game."""
+    if not entries:
+        return
+    say("  PE header inspection (local header + inflated prefix, ~8 KB each):")
+    results = []
+    for idx, (name, method, lho, usize) in enumerate(entries[:24], 1):
+        label = name if REVEAL else f"<PE {idx}/{min(len(entries), 24)}, name withheld>"
+        if lho == 0xFFFFFFFF:
+            say(f"    - {label}: ZIP64 local offset unresolved, skipped")
+            continue
+        st, blk = request(url, token, byte_range=(lho, lho + 8191), as_bytes=True)
+        if st not in (200, 206) or not isinstance(blk, bytes) or len(blk) < 30:
+            say(f"    - {label}: HTTP {st}, header not read")
+            continue
+        if blk[:4] != b"PK\x03\x04":
+            say(f"    - {label}: local file header not found")
+            continue
+        nlen = int.from_bytes(blk[26:28], "little")
+        elen = int.from_bytes(blk[28:30], "little")
+        head = inflate_prefix(blk[30 + nlen + elen:], method)
+        info = parse_pe_head(head)
+        if not info:
+            say(f"    - {label}: method={method}, {len(head)} bytes inflated - "
+                f"no PE signature")
+            continue
+        results.append(info)
+        say(f"    - {label}: {info['kind']} {info['machine']} {info['format']} "
+            f"subsystem={info['subsystem']} sections={info['sections']} -> "
+            f"{'MANAGED (.NET)' if info['dotnet'] else 'NATIVE (no CLR directory)'}")
+    if not results:
+        return
+    managed = [r for r in results if r["dotnet"]]
+    bullet("inspected", f"{len(results)} PE file(s): {len(managed)} .NET, "
+           f"{len(results) - len(managed)} native")
+    bullet("machine types present", sorted({r["machine"] for r in results}))
+    if not managed:
+        say("  VERDICT (measured, not assumed):")
+        say("    - No .NET assembly here. ILMerge, ILRepack, Costura and dotPeek all")
+        say("      operate on .NET metadata. For native PE there is no tool that folds")
+        say("      separate DLLs into one working EXE: the OS loader resolves each by")
+        say("      name at run time, and the exports are not relocatable.")
+    if not any("ARM64" in r["machine"] or "ARM" in r["machine"] for r in results):
+        say("    - No ARM binary present. 'Recompile for ARM64' means recompiling")
+        say("      SOURCE, and this archive contains binaries, not source.")
+
+
 def inventory_remote_zip(url: str, token: str, size: int) -> None:
     """List a remote ZIP's contents by reading only its central directory.
 
@@ -690,6 +797,7 @@ def inventory_remote_zip(url: str, token: str, size: int) -> None:
 
     exts: dict[str, int] = {}
     ext_bytes: dict[str, int] = {}
+    pe_entries: list = []
     n = 0
     biggest = ("", 0)
     pos = 0
@@ -699,17 +807,29 @@ def inventory_remote_zip(url: str, token: str, size: int) -> None:
         cmt_len = int.from_bytes(cd[pos + 32:pos + 34], "little")
         usize = int.from_bytes(cd[pos + 24:pos + 28], "little")
         csize = int.from_bytes(cd[pos + 20:pos + 24], "little")
+        method = int.from_bytes(cd[pos + 10:pos + 12], "little")
+        lho = int.from_bytes(cd[pos + 42:pos + 46], "little")
         name = cd[pos + 46:pos + 46 + name_len].decode("utf-8", "replace")
-        if usize == 0xFFFFFFFF:  # ZIP64 extra field carries the real size
+        # ZIP64 stores, in order, whichever of these three saturated to all-ones.
+        if 0xFFFFFFFF in (usize, csize, lho):
             ex = cd[pos + 46 + name_len:pos + 46 + name_len + extra_len]
+            vals: list = []
             i = 0
             while i + 4 <= len(ex):
                 hid = int.from_bytes(ex[i:i + 2], "little")
                 hsz = int.from_bytes(ex[i + 2:i + 4], "little")
-                if hid == 0x0001 and hsz >= 8:
-                    usize = int.from_bytes(ex[i + 4:i + 12], "little")
+                if hid == 0x0001:
+                    vals = [int.from_bytes(ex[i + 4 + k * 8:i + 12 + k * 8], "little")
+                            for k in range(hsz // 8)]
                     break
                 i += 4 + hsz
+            k = 0
+            if usize == 0xFFFFFFFF and k < len(vals):
+                usize = vals[k]; k += 1
+            if csize == 0xFFFFFFFF and k < len(vals):
+                csize = vals[k]; k += 1
+            if lho == 0xFFFFFFFF and k < len(vals):
+                lho = vals[k]; k += 1
         n += 1
         low = name.lower()
         ext = low.rsplit(".", 1)[-1] if "." in low.rsplit("/", 1)[-1] else "<dir/no ext>"
@@ -717,6 +837,8 @@ def inventory_remote_zip(url: str, token: str, size: int) -> None:
         ext_bytes[ext] = ext_bytes.get(ext, 0) + usize
         if usize > biggest[1]:
             biggest = (name, usize)
+        if ext in ("dll", "exe", "sys", "ocx", "cpl"):
+            pe_entries.append((name, method, lho, usize))
         pos += 46 + name_len + extra_len + cmt_len
 
     bullet("entries parsed", n)
@@ -730,6 +852,7 @@ def inventory_remote_zip(url: str, token: str, size: int) -> None:
     weights = [e for e in exts if e in ("gguf", "safetensors", "bin", "pt", "pth",
                                         "onnx", "tflite", "ckpt", "msgpack", "h5")]
     bullet("model-weight-looking files present", f"{sorted(weights)}" if weights else "NONE")
+    inspect_pe_entries(url, token, pe_entries)
     bullet("largest entry", f"{biggest[1] / 1e9:.3f} GB "
            f"{biggest[0] if REVEAL else '(name withheld)'}")
     if REVEAL:
