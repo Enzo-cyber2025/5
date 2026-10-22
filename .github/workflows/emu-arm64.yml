@@ -32,6 +32,7 @@ jobs:
   native:
     name: native aarch64 runner
     runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -66,6 +67,7 @@ jobs:
   qemu:
     name: aarch64 under QEMU user-mode
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -74,23 +76,32 @@ jobs:
         with:
           platforms: arm64
 
-      - name: Install the cross toolchain and qemu-user-static
+      - name: Install the cross toolchain
         run: |
           set -euo pipefail
+          export DEBIAN_FRONTEND=noninteractive
           sudo apt-get update
           # libc6-dev-arm64-cross is named explicitly because -static needs the
-          # arm64 libc.a, and recommends are not being skipped by accident here:
-          # a missing static libc shows up later as a confusing link error.
-          sudo apt-get install -y \
-            gcc-aarch64-linux-gnu libc6-dev-arm64-cross qemu-user-static
+          # arm64 libc.a; a missing static libc otherwise surfaces much later as
+          # a confusing link error.
+          #
+          # qemu-user-static is deliberately NOT installed here. setup-qemu-action
+          # has already registered the binfmt handlers, and installing the distro
+          # package registers them a second time - which is what hung this step for
+          # ten minutes. Executing an aarch64 ELF directly goes through binfmt.
+          sudo apt-get install -y --no-install-recommends \
+            gcc-aarch64-linux-gnu libc6-dev-arm64-cross
 
       - name: Report the cross toolchain
         run: |
           set -uo pipefail
           aarch64-linux-gnu-gcc --version | head -1
-          qemu-aarch64-static --version | head -1
-          echo "static libc present:"
+          echo "static libc:"
           ls -l /usr/aarch64-linux-gnu/lib/libc.a || echo "  MISSING libc.a"
+          echo "binfmt handlers registered:"
+          ls /proc/sys/fs/binfmt_misc/ 2>/dev/null || echo "  none visible"
+          echo "explicit qemu binary:"
+          command -v qemu-aarch64-static || echo "  not on PATH (binfmt will be used)"
 
       - name: Cross-compile statically for aarch64
         working-directory: emu
@@ -126,12 +137,22 @@ jobs:
           grep -qi "ARM aarch64" /tmp/file.log || {
             echo "cross-compile did not produce an aarch64 binary"; exit 1; }
 
-      - name: Run the suite under qemu-aarch64
+      - name: Run the suite under QEMU
         run: |
           set -euo pipefail
-          qemu-aarch64-static /tmp/t_ptc
-          qemu-aarch64-static /tmp/t_x86
-          qemu-aarch64-static /tmp/t_emit | tee /tmp/emit.log
+          # Prefer an explicit qemu binary when one exists; otherwise execute the
+          # aarch64 ELF directly and let binfmt_misc dispatch it. Either way the
+          # code really runs on an emulated aarch64 CPU.
+          run_arm64() {
+            if command -v qemu-aarch64-static >/dev/null 2>&1; then
+              qemu-aarch64-static "$@"
+            else
+              "$@"
+            fi
+          }
+          run_arm64 /tmp/t_ptc
+          run_arm64 /tmp/t_x86
+          run_arm64 /tmp/t_emit | tee /tmp/emit.log
 
       - name: Assert generated code actually executed
         run: |
