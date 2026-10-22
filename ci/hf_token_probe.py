@@ -72,7 +72,7 @@ def classify(token: str) -> str:
 
 def request(path: str, token: str | None, timeout: int = 30,
             absolute: bool = False, nbytes: int = 0,
-            byte_range: tuple[int, int] | None = None, raw: bool = False
+            byte_range: tuple[int, int] | None = None, as_bytes: bool = False
             ) -> tuple[int, object]:
     """GET a HF endpoint. Returns (status, parsed_json_or_text).
 
@@ -89,12 +89,12 @@ def request(path: str, token: str | None, timeout: int = 30,
         req.add_header("Authorization", f"Bearer {token}")
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
-            raw = resp.read()
+            payload = resp.read()
             if resp.headers.get("Content-Encoding") == "gzip":
-                raw = gzip.GzipFile(fileobj=io.BytesIO(raw)).read()
-            if raw:
-                return resp.status, raw
-            body = raw.decode("utf-8", "replace")
+                payload = gzip.GzipFile(fileobj=io.BytesIO(payload)).read()
+            if as_bytes:
+                return resp.status, payload
+            body = payload.decode("utf-8", "replace")
             try:
                 return resp.status, json.loads(body)
             except json.JSONDecodeError:
@@ -105,12 +105,52 @@ def request(path: str, token: str | None, timeout: int = 30,
             raw = gzip.GzipFile(fileobj=io.BytesIO(raw)).read()
         body = raw.decode("utf-8", "replace")
         try:
-            payload = json.loads(body)
+            parsed = json.loads(body)
         except json.JSONDecodeError:
-            payload = body[:200]
-        return exc.code, payload
+            parsed = {"error": body[:120]}
+        return exc.code, parsed
     except Exception as exc:  # blocked egress, DNS, TLS, timeout...
         return -1, f"{type(exc).__name__}: {exc}"
+
+
+SAFE_ERROR_HINTS = (
+    ("invalid username or password", "invalid-credentials"),
+    ("invalid credentials", "invalid-credentials"),
+    ("not authenticated", "not-authenticated"),
+    ("must be logged in", "login-required"),
+    ("unauthorized", "unauthorized"),
+    ("forbidden", "forbidden"),
+    ("gated", "gated"),
+    ("not found", "not-found"),
+    ("rate limit", "rate-limited"),
+    ("internal server error", "server-error"),
+    ("bad request", "bad-request"),
+)
+
+
+def classify_error(data: object) -> str:
+    """Reduce an API error body to a fixed label instead of echoing it.
+
+    Printing the server's own message is a leak vector: an error string can carry
+    the account name or other identity data, and this repository's logs are public.
+    A closed vocabulary of labels keeps the diagnostics without the exposure.
+    """
+    msg = ""
+    if isinstance(data, dict):
+        for key in ("error", "message", "error_description"):
+            value = data.get(key)
+            if isinstance(value, str) and value:
+                msg = value
+                break
+    elif isinstance(data, str):
+        msg = data
+    if not msg:
+        return "<no error message>"
+    low = msg.lower()
+    for needle, label in SAFE_ERROR_HINTS:
+        if needle in low:
+            return f"{label} ({len(msg)} chars)"
+    return f"<unrecognised error message withheld, {len(msg)} chars>"
 
 
 def say(*args: object) -> None:
@@ -132,7 +172,10 @@ def report_whoami(status: int, data: object) -> dict:
         say("  VERDICT: token present but FORBIDDEN (403).")
         return {}
     if status != 200 or not isinstance(data, dict):
-        say(f"  VERDICT: could not validate. Response head: {str(data)[:160]!r}")
+        say(f"  VERDICT: could not validate (HTTP {status}). "
+            f"error={classify_error(data)}")
+        say("  Neither the response body nor the server's own error text is printed:")
+        say("  both can carry the account name, and these logs are public.")
         return {}
 
     say("  VERDICT: token ACCEPTED (200).")
@@ -612,7 +655,7 @@ def inventory_remote_zip(url: str, token: str, size: int) -> None:
     archive this costs tens of kilobytes instead of gigabytes.
     """
     tail_len = min(size, 66_000)
-    st, tail = request(url, token, byte_range=(size - tail_len, size - 1), raw=True)
+    st, tail = request(url, token, byte_range=(size - tail_len, size - 1), as_bytes=True)
     if st not in (200, 206) or not isinstance(tail, bytes):
         bullet("tail fetch", f"HTTP {st} - cannot read the central directory")
         return
@@ -630,7 +673,7 @@ def inventory_remote_zip(url: str, token: str, size: int) -> None:
         say("  ZIP64 in use")
         if loc >= 0:
             z64_off = int.from_bytes(tail[loc + 8:loc + 16], "little")
-            st64, z64 = request(url, token, byte_range=(z64_off, z64_off + 55), raw=True)
+            st64, z64 = request(url, token, byte_range=(z64_off, z64_off + 55), as_bytes=True)
             if st64 in (200, 206) and isinstance(z64, bytes) and z64[:4] == b"PK\x06\x06":
                 total = int.from_bytes(z64[32:40], "little")
                 cd_size = int.from_bytes(z64[40:48], "little")
@@ -640,7 +683,7 @@ def inventory_remote_zip(url: str, token: str, size: int) -> None:
         bullet("central directory", f"unusable (size={cd_size} offset={cd_off})")
         return
     say(f"  central directory: offset={cd_off} size={cd_size} entries={total}")
-    st, cd = request(url, token, byte_range=(cd_off, cd_off + cd_size - 1), raw=True)
+    st, cd = request(url, token, byte_range=(cd_off, cd_off + cd_size - 1), as_bytes=True)
     if st not in (200, 206) or not isinstance(cd, bytes):
         bullet("central directory fetch", f"HTTP {st}")
         return
@@ -738,7 +781,7 @@ def report_archives(token: str, target: str, kind: str = "datasets") -> None:
             # 7z/RAR keep their header at the end too, but the format needs a real
             # parser; report what is cheap and say so honestly.
             st2, head = request(f"/{kind}/{enc}/resolve/main/{urllib.parse.quote(path)}",
-                                token, nbytes=6, raw=True)
+                                token, nbytes=6, as_bytes=True)
             sig = head[:6] if isinstance(head, bytes) else b""
             is7z = sig == b"7z\xbc\xaf\'\x1c"
             bullet(f"{low.rsplit('.', 1)[-1].upper()} {label}",
