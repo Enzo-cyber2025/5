@@ -57,4 +57,9 @@ else
 fi
 
 echo
+echo "== 8. no-root path: adb backup container -> extract -> key =="
+"$python" demo/make_device_fixture.py --out "$work/device" >/dev/null
+"$python" -m flcodes abe scan "$work/device/familylink.ab" --label device-fixture
+
+echo
 echo "artifacts under: $work"

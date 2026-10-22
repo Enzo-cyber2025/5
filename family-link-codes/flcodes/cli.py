@@ -13,7 +13,10 @@ from pathlib import Path
 
 from . import (
     __version__,
+    abe as abe_mod,
+    apk as apk_mod,
     codes as codes_mod,
+    device as device_mod,
     endpoints as endpoints_mod,
     rea,
     report,
@@ -132,6 +135,11 @@ def cmd_rea(args) -> int:
     else:  # pragma: no cover - argparse validates the choices
         raise SystemExit(EXIT_USAGE)
 
+    return _finish_harvest(args, harvest, args.source)
+
+
+def _finish_harvest(args, harvest, source_label: str) -> int:
+    """Print, optionally save and report one acquisition result."""
     for candidate in harvest.candidates:
         _print(
             f"[{candidate.kind}] {candidate.masked}  <- {candidate.source}"
@@ -182,9 +190,9 @@ def cmd_rea(args) -> int:
                 {"id": record["id"], "label": record["label"], "kind": record["kind"]}
                 for record in saved
             ],
-            extra={"source": args.source, "command": "rea"},
+            extra={"source": source_label, "command": "rea"},
         )
-        path = _out_dir(args) / f"rea-{args.source}-{_now_iso()}.json"
+        path = _out_dir(args) / f"rea-{source_label}-{_now_iso()}.json"
         report.write_json(document, path)
         _print(f"report: {path} (secrets masked)")
     return EXIT_OK if harvest.candidates or not args.save else EXIT_ERROR
@@ -447,6 +455,191 @@ def cmd_paths(args) -> int:
             if result.get("status") == 200:
                 ok = True
         return EXIT_OK if ok else EXIT_ERROR
+
+    raise SystemExit(EXIT_USAGE)
+
+
+def cmd_abe(args) -> int:
+    """Inspect, extract or scan an ``adb backup`` container (no root needed)."""
+    path = Path(args.file)
+    if not path.is_file():
+        _print(f"no such file: {path}", file=sys.stderr)
+        return EXIT_ERROR
+    if not abe_mod.is_android_backup(path):
+        _print(f"{path} is not an Android backup (missing 'ANDROID BACKUP' magic)", file=sys.stderr)
+        return EXIT_ERROR
+    try:
+        header = abe_mod.parse_header(path)
+    except abe_mod.BackupError as exc:
+        _print(f"bad header: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+    _print(
+        f"version {header.version} · compressed={header.compressed} · "
+        f"encryption={header.encryption} · payload at {header.payload_offset}"
+    )
+
+    if args.action == "info":
+        try:
+            apps = abe_mod.list_apps(path, password=args.password)
+        except abe_mod.BackupError as exc:
+            _print(f"cannot list: {exc}", file=sys.stderr)
+            return EXIT_ERROR
+        _print(f"apps: {', '.join(apps) if apps else '(none)'}")
+        if args.json:
+            _print(json.dumps({"header": header.as_dict(), "apps": apps}, indent=2))
+        return EXIT_OK
+
+    if args.action == "extract":
+        try:
+            result = abe_mod.extract(path, args.out, password=args.password, only=args.only)
+        except abe_mod.BackupError as exc:
+            _print(f"extract failed: {exc}", file=sys.stderr)
+            return EXIT_ERROR
+        _print(
+            f"extracted {len(result.members)} file(s) from {len(result.apps)} app(s) "
+            f"into {args.out}"
+        )
+        for app in result.apps:
+            _print(f"  app: {app}")
+        for note in result.notes:
+            _print(f"note: {note}")
+        return EXIT_OK if result.members else EXIT_ERROR
+
+    import tempfile
+
+    with tempfile.TemporaryDirectory(prefix="flcodes-abe-") as temporary:
+        try:
+            result = abe_mod.extract(path, temporary, password=args.password, only=args.only)
+        except abe_mod.BackupError as exc:
+            _print(f"extract failed: {exc}", file=sys.stderr)
+            return EXIT_ERROR
+        _print(
+            f"extracted {len(result.members)} file(s) from "
+            f"{', '.join(result.apps) if result.apps else 'no app'}"
+        )
+        harvest = rea.harvest_files([temporary], source_label="adb backup")
+        harvest.notes[:0] = [f"backup: {note}" for note in result.notes]
+    return _finish_harvest(args, harvest, "backup")
+
+
+def cmd_apk(args) -> int:
+    """Unpack an APK and point at where the app keeps the secret (static REA)."""
+    try:
+        report_doc = apk_mod.scan_apk(args.file)
+    except (OSError, ValueError) as exc:
+        _print(f"cannot scan: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+    if args.json:
+        _print(json.dumps(report_doc.as_dict(), indent=2, ensure_ascii=False))
+        return EXIT_OK
+    _print(f"apk: {report_doc.path} ({report_doc.entries} entries)")
+    if report_doc.package_guess:
+        _print(f"package (guess): {report_doc.package_guess}")
+    _print(f"scanned: {', '.join(report_doc.scanned[:8])}"
+           + (" …" if len(report_doc.scanned) > 8 else ""))
+    for label, values in apk_mod.ordered_findings(report_doc):
+        limit = 6 if label == "url" else 15
+        _print()
+        _print(f"{label}:")
+        for value in values[:limit]:
+            _print(f"  {value}")
+        if len(values) > limit:
+            _print(f"  … {len(values) - limit} more")
+    endpoints = apk_mod.interesting_endpoints(report_doc)
+    if endpoints:
+        _print()
+        _print("config endpoints seen in the apk:")
+        for endpoint in endpoints[:8]:
+            _print(f"  [{endpoint['kind']}] {endpoint['url']}")
+    if report_doc.native_libs:
+        abis = sorted({lib.split("/")[1] for lib in report_doc.native_libs if lib.count("/") > 1})
+        _print()
+        _print(f"native libs: {len(report_doc.native_libs)} ({', '.join(abis)})")
+    if report_doc.allow_backup is not None:
+        _print(f"allowBackup mentioned: {report_doc.allow_backup}")
+    for note in report_doc.notes:
+        _print(f"note: {note}")
+    _print()
+    _print("next:")
+    _print("  adb backup -f familylink.ab com.google.android.apps.familylink   # confirm on the phone")
+    _print("  flcodes abe scan familylink.ab --save --label parent")
+    return EXIT_OK
+
+
+def cmd_device(args) -> int:
+    """No-root device workflow: inspect, pull the APK, take an adb backup."""
+    try:
+        device_mod.adb_path()
+    except RuntimeError as exc:
+        _print(str(exc), file=sys.stderr)
+        return EXIT_ERROR
+    serial = getattr(args, "serial", "") or ""
+
+    if args.action == "info":
+        info = device_mod.info(serial=serial)
+        for key, value in info.props.items():
+            _print(f"{key}: {value}")
+        _print(f"family link packages: {', '.join(info.packages) or '(none)'}")
+        for path in info.apk_paths:
+            _print(f"  apk: {path}")
+        for note in info.notes:
+            _print(f"note: {note}")
+        if args.json:
+            _print(json.dumps(info.as_dict(), indent=2))
+        return EXIT_OK if info.packages else EXIT_ERROR
+
+    if args.action == "apk":
+        info = device_mod.info(serial=serial)
+        package = args.package or (info.packages[0] if info.packages else "")
+        if not package:
+            _print("Family Link not found on this device", file=sys.stderr)
+            return EXIT_ERROR
+        paths = [
+            line.split(":", 1)[1]
+            for line in device_mod.run(
+                ["shell", "pm", "path", package], serial=serial
+            ).stdout.decode("utf-8", "replace").splitlines()
+            if line.startswith("package:")
+        ]
+        out_dir = Path(args.out)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        pulled = []
+        for remote in paths:
+            local = out_dir / Path(remote).name
+            completed = device_mod.run(["pull", remote, str(local)], serial=serial)
+            if completed.returncode == 0 and local.exists():
+                pulled.append(str(local))
+                _print(f"pulled {remote} -> {local}")
+            else:
+                _print(f"failed: {remote}", file=sys.stderr)
+        if not pulled:
+            return EXIT_ERROR
+        _print()
+        _print("now scan it (no root, no install):")
+        for local in pulled[:1]:
+            _print(f"  flcodes apk scan '{local}'")
+        return EXIT_OK
+
+    if args.action == "backup":
+        package = args.package or device_mod.FAMILY_LINK_PACKAGES[0]
+        _print("the phone will ask for confirmation — accept it on the device")
+        result = device_mod.backup(
+            package, args.out, serial=serial, include_apk=args.with_apk,
+            timeout=args.timeout,
+        )
+        _print(f"adb backup: {result['bytes']} bytes in {result['seconds']}s")
+        if not result["ok"]:
+            _print(f"failed: {result.get('reason')}", file=sys.stderr)
+            if result.get("stderr"):
+                _print(result["stderr"], file=sys.stderr)
+            return EXIT_ERROR
+        _print(f"header: {result.get('header')}")
+        if args.scan:
+            args.file = args.out
+            args.only = package
+            args.save_all = False
+            return cmd_abe(args)
+        return EXIT_OK
 
     raise SystemExit(EXIT_USAGE)
 
@@ -820,6 +1013,65 @@ def build_parser() -> argparse.ArgumentParser:
         help="allow framing the page (needed only behind a preview proxy)",
     )
 
+    abe_parser = sub.add_parser(
+        "abe", help="Android backups (the no-root way into the app's private files)"
+    )
+    abe_sub = abe_parser.add_subparsers(dest="action", required=True)
+    abe_info = abe_sub.add_parser("info", help="header + packages inside the backup")
+    abe_info.add_argument("file")
+    abe_info.add_argument("--password", help="backup password (only when encrypted)")
+    abe_info.add_argument("--json", action="store_true")
+    abe_extract = abe_sub.add_parser("extract", help="extract the tar payload")
+    abe_extract.add_argument("file")
+    abe_extract.add_argument("--out", required=True, help="destination directory")
+    abe_extract.add_argument("--password")
+    abe_extract.add_argument("--only", help="keep a single package")
+    abe_scan = abe_sub.add_parser("scan", help="extract in a temp dir and hunt for the key")
+    abe_scan.add_argument("file")
+    abe_scan.add_argument("--password")
+    abe_scan.add_argument("--only", help="keep a single package")
+    abe_scan.add_argument("--save", action="store_true", help="save the best candidate")
+    abe_scan.add_argument("--save-all", action="store_true")
+    abe_scan.add_argument("--label")
+    abe_scan.add_argument("--no-report", action="store_true")
+    abe_scan.add_argument("--out-dir")
+
+    apk_parser = sub.add_parser(
+        "apk", help="unpack an APK and point at where the app keeps the secret"
+    )
+    apk_sub = apk_parser.add_subparsers(dest="action", required=True)
+    apk_scan = apk_sub.add_parser("scan", help="static scan: private dirs, field names, endpoints")
+    apk_scan.add_argument("file")
+    apk_scan.add_argument("--json", action="store_true")
+
+    device_parser = sub.add_parser(
+        "device", help="no-root device workflow over adb (info, apk, backup)"
+    )
+    device_sub = device_parser.add_subparsers(dest="action", required=True)
+    for name, help_text in (
+        ("info", "properties, connected device and the Family Link packages"),
+        ("apk", "pull the installed APK splits (world readable) without root"),
+        ("backup", "run adb backup for the app and optionally scan it"),
+    ):
+        child = device_sub.add_parser(name, help=help_text)
+        child.add_argument("--serial", help="adb serial (when several devices are attached)")
+        child.add_argument("--json", action="store_true")
+        if name == "apk":
+            child.add_argument("--package")
+            child.add_argument("--out", default="out/apk")
+        if name == "backup":
+            child.add_argument("--package", default="com.google.android.apps.familylink")
+            child.add_argument("--out", default="out/familylink.ab")
+            child.add_argument("--with-apk", action="store_true")
+            child.add_argument("--timeout", type=float, default=600.0)
+            child.add_argument("--scan", action="store_true", help="scan the backup afterwards")
+            child.add_argument("--save", action="store_true")
+            child.add_argument("--save-all", action="store_true")
+            child.add_argument("--label")
+            child.add_argument("--no-report", action="store_true")
+            child.add_argument("--password")
+            child.add_argument("--out-dir")
+
     sub.add_parser("audit", help="run the built-in self checks")
     return parser
 
@@ -836,6 +1088,9 @@ def main(argv: list | None = None) -> int:
         "stream": cmd_stream,
         "verify": cmd_verify,
         "paths": cmd_paths,
+        "abe": cmd_abe,
+        "apk": cmd_apk,
+        "device": cmd_device,
         "serve": cmd_serve,
         "audit": cmd_audit,
     }

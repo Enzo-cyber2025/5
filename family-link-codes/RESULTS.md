@@ -101,13 +101,87 @@ Saída (resumo):
 == 7. negative control ==                  correctly rejected (exit 1)
 ```
 
+## 4b. Sem root: onde a chave mora (REA estático + dinâmico)
+
+**Onde mora:** `/data/data/com.google.android.apps.familylink/shared_prefs/*.xml`
+no aparelho do **responsável** (e `databases/` se houver cache). No aparelho da
+criança não há chave: a validação é do servidor.
+
+**Como chegar sem root:** `adb backup` — o arquivo é escrito pelo aparelho após
+o diálogo de confirmação, sem root e sem `run-as`.
+
+Resultado do pipeline com um container `.ab` real (fixture escrita byte a byte
+no mesmo formato de `com.android.server.backup`):
+
+```
+$ flcodes abe info /tmp/flcodes-demo/device/familylink.ab
+version 5 · compressed=True · encryption=none · payload at 24
+apps: com.google.android.apps.familylink
+
+$ flcodes abe scan /tmp/flcodes-demo/device/familylink.ab --save --label parent
+extracted 3 file(s) from com.google.android.apps.familylink
+[android] AIte…ey (len 30)  <- …/f/shared_prefs/familylink_preferences.xml  ($.parentAccessCode.sharedSecret (key match))
+saved: id=… kind=android ttl=600s
+```
+
+Container cifrado (`adb backup -k`): PBKDF2-SHA1 (10 000 rounds) → blob do
+master key → AES-256-CBC → zlib → tar. Senha errada dá
+`master key checksum mismatch`; senha ausente dá erro explícito. AES e PBKDF2
+conferidos contra FIPS-197 e contra `cryptography` (`tests/test_flcodes_abe.py`).
+
+O que o `flcodes apk scan` extrai de um APK real (rodado no `appteste.apk` de
+4 089 entradas deste repositório, 20 MB, ~1,2 s):
+
+```
+apk: ../appteste.apk (4089 entries)
+package (guess): app.aptoide.com
+root-hint: /su, /su/, Superuser        backup-flag: allowBackup
+native libs: 8 (arm64-v8a, armeabi-v7a, x86, x86_64)
+note: no config field names in plain text: the strings are probably obfuscated…
+```
+
+Para o Family Link, os campos procurados são `sharedSecret`, `accessCodeTtl`,
+`clockDriftTolerance`, `parentAccessCode`, além de `/data/data/<pkg>` e dos
+endpoints de config.
+
+### QEMU: por que não rodou aqui
+
+Este sandbox **não executa** o teste em emulador:
+
+* não existe pacote de QEMU no sistema (`apt-get download qemu-system-x86` →
+  "Unable to locate package", e `deb.debian.org` responde `000`, sem `apt`);
+* `dl.google.com` (imagens do SDK) está bloqueado pela política de rede;
+* não há `/dev/kvm`, e a máquina tem 2 vCPUs / 3 GB de RAM (TCG puro);
+* binário de QEMU até existe no GitHub (`ziglang/qemu-static`, 10.1.2.2, 62 MB),
+  mas sem **imagem de sistema Android** ele não sobe nada — e é a imagem que
+  não está acessível.
+
+Então o teste de dispositivo foi feito nesta equivalência estrita:
+
+| camada | como foi exercitada aqui |
+|---|---|
+| `adb` (devices/getprop/pm/pull/backup) | binário `adb` falso que responde como um aparelho real e **escreve um `.ab` de verdade** (`tests/test_flcodes_device.py`) |
+| container `.ab` | fixtures reais, claro e cifrado, + extração e varredura ponta a ponta |
+| emulador Android | **não executado**; `tools/qemu_android_test.sh` faz isso na sua máquina |
+
+O script (`tools/qemu_android_test.sh`) sobe a imagem com `-display none`,
+encaminha `tcp:127.0.0.1:5555`, espera `sys.boot_completed`, roda `device info`,
+`device apk` e `device backup --scan --save`, e falha se o segredo não sair. Usa
+KVM quando existe e cai para TCG quando não existe.
+
 ## 5. O que ainda NÃO está provado
 
 * **Aceitação pelo firmware do aparelho supervisionado** — precisa de aparelho
   real. É o único passo que falta e ele é do usuário: ver §6.
 * `paths check` / `rea api` contra os endpoints do Google (rede bloqueada aqui;
   e desde 09/2024 a maioria das contas não recebe mais o segredo no cliente web).
-* `rea adb` em aparelho real (sem root/`run-as` o Android bloqueia).
+* `rea adb` com root em aparelho real.
+* **QEMU/emulador Android**: sem QEMU, imagem ou KVM neste sandbox; o runner está
+  pronto e o fluxo `adb` equivalente foi provado com um `adb` simulado que gera o
+  mesmo container.
+* `adb backup` em aparelho real: o diálogo precisa ser aceito e, se o pacote
+  declarar `allowBackup=false`, o container vem vazio — limite do Android, não
+  do extrator.
 * Estabilidade futura do esquema (TTL e política podem mudar).
 
 ## 6. Como fechar a prova em 1 minuto (na sua máquina)
@@ -119,10 +193,10 @@ Saída (resumo):
 3. No aparelho supervisionado **offline**, digite o código atual em
    "Acesso dos pais" — esse é o teste de aceitação final.
 
-## 7. Cobertura de testes (92)
+## 7. Cobertura de testes (111)
 
 ```bash
-pytest -q tests/test_flcodes_*.py    # 92 passed
+pytest -q tests/test_flcodes_*.py    # 111 passed
 ```
 
 (`pytest -q` na raiz do repositório também coleta os testes de outro projeto
@@ -136,3 +210,5 @@ daquele repo, que exigem `jdk4py`; não têm relação com esta ferramenta.)
 | `test_flcodes_endpoints.py` | lista com proveniência, descoberta sem inventar hosts, JS bundle vs ruído, `check` 200/401/arquivo local |
 | `test_flcodes_verify.py` | confirmação/rejeição, TTL descoberto, ambiguidade, drift, seleção entre chaves |
 | `test_flcodes_cli.py` | CLI ponta a ponta, `paths`, TTL no `rea`/`gen`/`verify`, UI web (401/429/400/HEAD, CSP, TTL) |
+| `test_flcodes_abe.py` | FIPS-197 + `cryptography`, cabeçalho, `--password`, zlib, cifrado e claro, path traversal, container vazio, `apk scan` |
+| `test_flcodes_device.py` | `adb` simulado: info, pull dos splits, `adb backup` real, varredura + `keys`/`gen` com TTL, e prova de que nenhum comando usa root |

@@ -152,6 +152,8 @@ flcodes rea scan ~/dumps/familylink/ --save
 flcodes rea adb --serial R58M123ABC --save
 ```
 
+E o caminho **sem root**, que é o que funciona em aparelho de fábrica — §4.6.
+
 O comando mostra apenas a chave **mascarada** (`AIte…ij (len 33)`) e grava um
 relatório em `flcodes-out/output/rea-*.json` que **nunca** contém o segredo.
 
@@ -227,6 +229,65 @@ exigem `X-Token`, há limite de 10 falhas por minuto, CSP sem recursos externos
 e `Cache-Control: no-store`. A página permite copiar o código, ver a contagem
 para a virada da hora, gerar 1/6/24 horas e baixar CSV.
 
+### 4.6 Sem root: onde a chave mora e como chegar nela
+
+Três perguntas, três respostas obtidas sem root:
+
+**1. Onde a chave mora?** No aparelho do **responsável**, em
+`/data/data/com.google.android.apps.familylink/shared_prefs/*.xml` (e no
+`databases/`, se houver cache). No aparelho da criança ela não existe: quem
+valida é o servidor. `flcodes apk scan` mostra isso no APK que você tiver:
+
+```bash
+flcodes apk scan FamilyLink.apk
+# private-dir: /data/data/com.google.android.apps.familylink/...
+# prefs:       shared_prefs/... · config-key: sharedSecret, accessCodeTtl
+# config endpoints: [app-config] https://kidsmanagement-pa.clients6.google.com/...
+```
+
+**2. Como ler essa pasta sem root?** Com `adb backup`: quem escreve o arquivo é
+o **aparelho**, depois que você confirma o diálogo na tela — não há root nem
+`run-as` em nenhum passo.
+
+```bash
+flcodes device info                    # modelo, Android, pacotes do Family Link
+flcodes device apk  --out out/apk      # puxa os APKs instalados (leitura pública)
+flcodes device backup --out out/familylink.ab --scan --save --label pai
+#   o celular vai pedir confirmação; aceite na tela
+```
+
+O container `.ab` não é zip. `flcodes abe` implementa o formato inteiro
+(cabeçalho, PBKDF2-SHA1, AES-256-CBC, zlib, tar) em Python puro:
+
+```bash
+flcodes abe info    out/familylink.ab
+flcodes abe extract out/familylink.ab --out out/unpacked
+flcodes abe scan    out/familylink.ab --password SUA_SENHA --save
+```
+
+Se o backup vier vazio, o app declara `android:allowBackup="false"` — aí **não
+existe** caminho sem root, e o `abe` diz isso em vez de inventar. Nesse caso o
+caminho é o aparelho do responsável (que costuma permitir) ou uma captura de
+rede feita por você.
+
+Para exercitar o pipeline sem aparelho:
+
+```bash
+python demo/make_device_fixture.py --out /tmp/flcodes-demo/device
+flcodes abe scan /tmp/flcodes-demo/device/familylink.ab
+```
+
+Para testar de verdade em emulador, com QEMU (na sua máquina — veja §4b do
+`RESULTS.md` sobre por que isso não roda no sandbox de desenvolvimento):
+
+```bash
+tools/qemu_android_test.sh --image /caminho/android-x86_64.qcow2 \
+    --package com.google.android.apps.familylink --mem 4096
+```
+
+O script sobe a imagem sem janela, espera o `adbd`, roda `device info`,
+`device apk`, `device backup --scan` e falha se o segredo não sair.
+
 ## 5. Limitações conhecidas (o que quebra e por quê)
 
 * **O Google fechou o caminho do site em setembro de 2024**: a resposta de
@@ -256,11 +317,14 @@ Ver [`RESULTS.md`](RESULTS.md) para as medições. Resumo:
 |---|---|
 | recupera a chave em HAR, UTF-16, ZIP/APK, gzip, LevelDB, hex/base64/escape | **provado** (5/5 fixtures) |
 | não inventa chave quando o payload traz segredo cifrado | **provado** (reporta o campo) |
-| gera códigos 6 dígitos, 1 por hora, determinístico | **provado** (66 testes) |
+| gera códigos 6 dígitos, determinístico, no balde do TTL | **provado** (111 testes) |
 | código igual ao de implementações independentes (oráculo RFC + Rust público + pyotp) | **provado** |
 | **código igual ao gerado pelo app Family Link do Android** (5 vetores oficiais do Chromium) | **provado** (TTL 600 s) |
 | TTL lido do config e descoberto por observação | **provado** |
 | caminhos descobertos de um HAR e testados por HTTP | **provado** (stub local; rede Google bloqueada aqui) |
+| container `adb backup` lido/decifrado/extraído (sem root) | **provado** (AES/PBKDF2 contra FIPS-197 e `cryptography`) |
+| fluxo `device info/apk/backup` sem root | **provado** com `adb` simulado e container real |
+| mesmo fluxo em **emulador QEMU** | **não executado aqui** (sem qemu/imagem/KVM no sandbox) — `tools/qemu_android_test.sh` |
 | identificação da chave certa entre 5 chaves | **provado** (3/3 vs 0/3) |
 | aceitação real pelo aparelho / `rea api` em rede real / `rea adb` com root | **não provado aqui** (sem rede Google, sem aparelho) |
 
@@ -292,6 +356,10 @@ family-link-codes/
     rea.py       camada REA: api, har, paste, scan, adb (UTF-16, zip, gzip, LevelDB)
     verify.py    confirmação contra códigos produzidos pelo Google
     endpoints.py caminhos candidatos + descoberta em capturas
+    abe.py       containers adb backup (cabeçalho, AES-256-CBC, zlib, tar)
+    aes.py       AES puro em Python (só o necessário para o ABE)
+    apk.py       desempacota o APK e aponta onde a chave mora
+    device.py    fluxo sem root: info, pull do APK, adb backup
     store.py     cofre cifrado
     report.py    exportação de códigos e relatório sem segredo
     cli.py       linha de comando
