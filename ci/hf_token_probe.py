@@ -798,6 +798,9 @@ def inventory_remote_zip(url: str, token: str, size: int) -> None:
     exts: dict[str, int] = {}
     ext_bytes: dict[str, int] = {}
     pe_entries: list = []
+    abis: set = set()
+    dex = 0
+    v1_sig = False
     n = 0
     biggest = ("", 0)
     pos = 0
@@ -839,6 +842,13 @@ def inventory_remote_zip(url: str, token: str, size: int) -> None:
             biggest = (name, usize)
         if ext in ("dll", "exe", "sys", "ocx", "cpl"):
             pe_entries.append((name, method, lho, usize))
+        abi = re.match(r"(?:.*/)?lib/([^/]+)/.+\Z", name)
+        if abi:
+            abis.add(abi.group(1))
+        if ext == "dex":
+            dex += 1
+        if low.startswith("meta-inf/") and ext in ("rsa", "dsa", "ec"):
+            v1_sig = True
         pos += 46 + name_len + extra_len + cmt_len
 
     bullet("entries parsed", n)
@@ -853,6 +863,30 @@ def inventory_remote_zip(url: str, token: str, size: int) -> None:
                                         "onnx", "tflite", "ckpt", "msgpack", "h5")]
     bullet("model-weight-looking files present", f"{sorted(weights)}" if weights else "NONE")
     inspect_pe_entries(url, token, pe_entries)
+    if dex or abis or v1_sig:
+        # The APK Signing Block sits immediately before the central directory and
+        # ends with size_of_block(8) + the magic "APK Sig Block 42"(16). Reading
+        # those 24 bytes proves a v2/v3 signature without fetching the file.
+        blk_st, blk = request(url, token, byte_range=(cd_off - 24, cd_off - 1),
+                              as_bytes=True)
+        v2_sig = (blk_st in (200, 206) and isinstance(blk, bytes)
+                  and blk[8:24] == b"APK Sig Block 42")
+        say("  Android package structure:")
+        bullet("classes*.dex", dex)
+        bullet("native ABI directories", sorted(abis) if abis else "NONE (no lib/ entries)")
+        bullet("v1 signature (META-INF/*.RSA)", "present" if v1_sig else "absent")
+        bullet("v2/v3 signature (APK Signing Block)", "present" if v2_sig else "absent")
+        if abis:
+            if "arm64-v8a" in abis:
+                say("  -> carries lib/arm64-v8a/: has ARM64 native code, so it can run")
+                say("     natively on a 64-bit ARM phone.")
+            else:
+                say(f"  -> native code for {sorted(abis)} ONLY: no arm64-v8a, so on a")
+                say("     64-bit ARM phone the native library will fail to load.")
+        else:
+            say("  -> no lib/ entries at all: no native code, so the ABI does not")
+            say("     matter - ART runs the DEX on any architecture.")
+
     bullet("largest entry", f"{biggest[1] / 1e9:.3f} GB "
            f"{biggest[0] if REVEAL else '(name withheld)'}")
     if REVEAL:
@@ -896,8 +930,10 @@ def report_archives(token: str, target: str, kind: str = "datasets") -> None:
         size = int(entry.get("size") or 0)
         low = path.lower()
         label = path if REVEAL else f"<{low.rsplit('.', 1)[-1]} file, name withheld>"
-        if low.endswith(".zip"):
-            say(f"  ZIP {label} ({size / 1e9:.3f} GB)")
+        if low.endswith((".zip", ".apk", ".jar", ".aar", ".xapk", ".whl")):
+            # An APK is a ZIP; so are JAR, AAR and wheel. Same reader applies.
+            kind_label = low.rsplit(".", 1)[-1].upper()
+            say(f"  {kind_label} {label} ({size / 1e9:.3f} GB)")
             inventory_remote_zip(f"/{kind}/{enc}/resolve/main/{urllib.parse.quote(path)}",
                                  token, size)
         elif low.endswith((".7z", ".rar")):
