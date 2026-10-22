@@ -144,11 +144,86 @@ instruções consumindo exatamente todos os bytes, teto de 15 bytes, e a garanti
 de que `out` é limpo mesmo em falha (um chamador que reutiliza o struct nunca vê
 um `len` obsoleto).
 
+### Feito — leitor de imagens PE (`pe_load.c`, `pe_load.h`, `pe_info.c`)
+
+Marco 2a. Um tradutor não executa um `.exe` que não consegue carregar, e é no
+diretório de imports que as "DLLs reais" aparecem: é a lista de funções externas
+que o guest espera que existam, e cada uma é um buraco que o tradutor precisa
+preencher com uma implementação nativa ou uma ponte. Enumerar essa lista é a
+primeira medição honesta de quanto trabalho um binário específico realmente dá.
+
+Cobre cabeçalhos DOS/NT/COFF, optional header PE32 e PE32+, tabela de seções, os
+16 diretórios de dados e o diretório de imports percorrido até o fim — nomes e
+ordinais, agrupados por DLL. `pe_info` lê um arquivo do disco e imprime o
+relatório.
+
+Duas distinções fáceis de inverter, tratadas de propósito:
+
+- **RVA não é deslocamento de arquivo.** Os diretórios de dados são endereços
+  virtuais relativos e precisam ser mapeados pela tabela de seções, porque
+  `VirtualAddress` e `PointerToRawData` diferem em arquivos reais por causa de
+  alinhamento. Um parser que use RVA como offset funciona por acaso em algumas
+  imagens e lê lixo em outras. Os fixtures aqui são construídos com os dois
+  valores deliberadamente diferentes, e um teste afirma que ler o diretório de
+  imports no RVA como se fosse offset **não** encontra os descritores.
+- **`OriginalFirstThunk` não é `FirstThunk`.** A ILT guarda os nomes como estão
+  no arquivo; a IAT tem o mesmo formato, mas o loader do SO a sobrescreve com os
+  endereços resolvidos — é por ela que o guest chama. Os nomes vêm da ILT, com
+  fallback para a IAT apenas quando `OriginalFirstThunk` é zero. Nos fixtures a
+  IAT é preenchida com thunks zerados: um parser que lesse `FirstThunk`
+  reportaria zero funções importadas, e as contagens esperadas falhariam.
+
+O diretório 4 (SECURITY / tabela de certificados) é um deslocamento de arquivo,
+não um RVA — a única exceção, e tratá-lo como as outras aponta para fora dos
+dados pretendidos.
+
+Recusado em vez de aproximado, com o motivo em `detail`: imagem **gerenciada**
+(diretório CLR presente ⇒ contém IL, não código de máquina, e um tradutor de CPU
+não tem o que traduzir), **32 bits** (PE32), **máquina que não é x86-64**
+(inclusive ARM64, que já é a arquitetura hospedeira — "traduzi-la" não significa
+nada) e tabela de seções acima do limite interno (a tabela é o que torna o
+mapeamento de RVA correto, então uma tabela cortada invalida qualquer lookup). Em
+todos esses casos os campos de cabeçalho já lidos continuam preenchidos: "o que é
+este arquivo" é útil mesmo quando "carregue-o" não é.
+
+Tratado como entrada não confiável. Nenhuma conversão de ponteiro para struct em
+parte alguma: os campos são lidos por accessors little-endian explícitos que
+recebem um offset verificado, porque converter um buffer em struct assume tanto o
+padding do compilador quanto que o buffer é tão longo quanto o struct declara — e
+para entrada não confiável a segunda suposição é exatamente a que não se pode
+fazer. Nomes apontam para dentro do buffer do chamador, e só depois de confirmado
+que existe um NUL antes do fim da imagem; um nome sem terminador é
+`PE_MALFORMED`, nunca um ponteiro para memória não terminada que estouraria num
+`strlen` posterior.
+
+`pe_info` apenas lê e reporta: nada aqui mapeia a imagem como imagem, aplica
+relocações, resolve um import ou executa um byte dela.
+
+**Validação contra um binário real.** Fixtures escritos pelo mesmo entendimento
+que escreveu o parser provam menos do que parecem — um equívoco aparece nos dois
+e se cancela. Por isso o job `real-binary` no Actions baixa um executável Windows
+x86-64 genuíno (ripgrep 14.1.1, MIT/Apache-2.0, release pinado por tag, com
+`.sha256` publicado ao lado do asset e verificado **antes** do parse), roda o
+`pe_info` sobre ele e afirma que o relatório diz `PE_OK`, `x64 (AMD64)`, `PE32+`,
+não gerenciado, com `kernel32.dll` e uma enumeração de imports não vazia. O
+binário vive em `/tmp` de um runner efêmero: nunca é commitado, e um passo final
+afirma que nenhum `.exe`/`.dll`/`.msi` está rastreado no repositório.
+
+**147 checks, 0 falhas**, limpo sob `-Wall -Wextra -Wshadow -Werror` e sob
+ASan+UBSan. Suite total do projeto: 52 + 194 + 147 + 6 = **399 checks**.
+
 ### Não feito
 
-Lifter (IR a partir do que o decodificador já entrega), emissor ARM64, loader de
-PE/ELF, camada de syscalls, D3D→Vulkan, varredura estática em background, e o app
-Android em si. VEX/EVEX e `0x67` seguem recusados por design até serem modelados.
+Lifter (IR a partir do que o decodificador já entrega), emissor ARM64 além das
+três instruções do harness, loader de ELF, mapeamento real da imagem em memória
+com relocações aplicadas, resolução de imports, camada de syscalls/Win32,
+D3D→Vulkan, varredura estática em background, e o app Android em si. VEX/EVEX e
+`0x67` seguem recusados por design até serem modelados.
+
+Ler um `.exe` e saber do que ele precisa não é traduzi-lo. Entre este marco e
+executar um binário real estão, no mínimo: estado de CPU (registradores e flags),
+o lifter, o emissor, o mapeamento com relocações, e uma ponte para cada função
+importada — que é o trabalho que o Wine faz, e não o de um dynarec.
 
 ### O que os testes pegaram durante o desenvolvimento
 
@@ -166,13 +241,42 @@ Registrado porque é o argumento por trás de escrever os testes primeiro:
   6 bytes, não 7; e a asserção de extensão de sinal testava um caso onde a
   extensão não se aplica).
 
+No leitor de PE, todos encontrados por execução e não por revisão:
+
+- `e_lfanew` era escrito no offset `0x7C` em vez de `0x3C`, dentro do cabeçalho
+  DOS de 64 bytes. Todo leitor via zero ali e a imagem parecia não ter cabeçalho
+  PE nenhum — o parse morria antes de preencher qualquer campo.
+- O construtor de fixture recebia o spec por `const` e o copiava, então os
+  offsets que ele descobria (descritores, terminador, nome da DLL) nunca voltavam
+  para o chamador. Cada teste de corrupção estaria patcheando o offset 0 e
+  parecendo significativo sem testar nada.
+- `strcmp` com ponteiro NULL: o teste seguiu adiante depois de um parse falho e
+  dereferenciou campos nunca preenchidos. Um crash aponta uma linha, não uma
+  expectativa — por isso o arquivo ganhou `seq()` e um guard `parsed()` que
+  interrompe o teste em vez de continuar.
+- Sem o thunk terminador quando o nome longo estava ativo, a varredura seguia
+  para os thunks da DLL seguinte e contava 6 em vez de 4. O parser estava certo
+  em continuar: um terminador ausente é justamente o que ele não pode inventar.
+- "Nome de DLL sem NUL" era testado sobrescrevendo 12 bytes de um nome de 12
+  caracteres — o NUL no índice 12 ficava intacto, e o padding zerado logo depois
+  terminaria qualquer varredura mesmo assim. O caminho só é alcançável com um
+  fixture construído para isso: o nome tem que ser os últimos bytes do arquivo.
+- Um teste lia `buffer + RVA` para demonstrar que RVA não é offset, sem checar
+  limites — e o RVA era maior que a imagem inteira. O próprio teste estourava o
+  heap para provar que o parser não deveria estourar.
+
 ## Limitação deste ambiente
 
 **Não é possível gerar um APK aqui.** Não há NDK, `javac`, `aapt2`, `zipalign`
 nem `apksigner`; há apenas `gcc/g++ 12.2` para x86-64 host, `make` e `python3`.
 O núcleo nativo é compilável e testável para o host (a lógica de cache,
-decodificação e IR é independente de arquitetura); a emissão de código ARM64 pode
-ser escrita e verificada por round-trip de assembler, mas não executada aqui.
+decodificação, o leitor de PE e o IR são independentes de arquitetura).
+
+A emissão ARM64 **não** pode ser executada neste sandbox — mas pode no CI. O
+workflow `emu ARM64` roda o harness de emitir-e-executar de duas formas
+independentes, num runner aarch64 nativo e sob QEMU user-mode num runner x86-64,
+e os dois jobs falham se a linha `EXECUTED ON aarch64` não aparecer: um skip não
+pode passar por verde.
 
 Nota: `apk-fix/build_apk.py` no repo **não** constrói um APK do zero — ele repara
 e assina um APK existente, com `ORIGINAL_APK_SHA256` fixado. Não serve como base

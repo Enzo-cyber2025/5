@@ -45,7 +45,7 @@ jobs:
 
       - name: Build
         working-directory: emu
-        run: make test_ptc test_x86 test_emit_exec
+        run: make test_ptc test_x86 test_pe test_emit_exec
 
       - name: Run the suite
         working-directory: emu
@@ -53,6 +53,7 @@ jobs:
           set -euo pipefail
           ./test_ptc
           ./test_x86
+          ./test_pe
           ./test_emit_exec | tee /tmp/emit.log
 
       - name: Assert generated code actually executed
@@ -120,6 +121,7 @@ jobs:
           {
             build /tmp/t_ptc  test_ptc.c ptc.c &&
             build /tmp/t_x86  test_x86_decode.c x86_decode.c &&
+            build /tmp/t_pe   test_pe_load.c pe_load.c &&
             build /tmp/t_emit test_emit_exec.c
           } > /tmp/build.log 2>&1
           rc=$?
@@ -152,6 +154,7 @@ jobs:
           }
           run_arm64 /tmp/t_ptc
           run_arm64 /tmp/t_x86
+          run_arm64 /tmp/t_pe
           run_arm64 /tmp/t_emit | tee /tmp/emit.log
 
       - name: Assert generated code actually executed
@@ -162,3 +165,77 @@ jobs:
             echo "a skip is not a pass - this job must fail."
             exit 1
           }
+
+  real-binary:
+    name: pe_info against a real shipped executable
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the parser and the inspector
+        working-directory: emu
+        run: make test_pe pe_info
+
+      - name: Inspect the synthetic fixture
+        working-directory: emu
+        run: |
+          set -euo pipefail
+          ./test_pe --write-fixture /tmp/emu_fixture.exe > /dev/null
+          ./pe_info /tmp/emu_fixture.exe | head -20
+          ./test_pe | tail -2
+
+      - name: Download a pinned real x86-64 Windows executable
+        run: |
+          set -euo pipefail
+          # ripgrep 14.1.1, MIT/Apache-2.0, from its own project release.
+          # Chosen because it is a genuine shipped Windows executable with a
+          # real import table, it is small, the release is pinned by tag, and it
+          # publishes a .sha256 beside the asset - so the download is verified
+          # rather than trusted. It is used only as a parse target on an
+          # ephemeral runner, and is never committed or redistributed.
+          base="https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-x86_64-pc-windows-msvc.zip"
+          curl -fsSL -o /tmp/rg.zip "$base"
+          curl -fsSL -o /tmp/rg.zip.sha256 "$base.sha256"
+          expected=$(awk '{print $1}' /tmp/rg.zip.sha256)
+          actual=$(sha256sum /tmp/rg.zip | awk '{print $1}')
+          echo "expected $expected"
+          echo "actual   $actual"
+          test -n "$expected" || { echo "empty checksum file"; exit 1; }
+          test "$expected" = "$actual" || {
+            echo "checksum mismatch - refusing to parse an unverified download"
+            exit 1
+          }
+
+      - name: Inspect the real executable
+        run: |
+          set -euo pipefail
+          unzip -o -q /tmp/rg.zip -d /tmp/rg
+          exe=$(find /tmp/rg -name 'rg.exe' | head -1)
+          test -n "$exe" || { echo "rg.exe not found in the archive"; exit 1; }
+          echo "inspecting $exe ($(stat -c %s "$exe") bytes)"
+          ./emu/pe_info "$exe" | tee /tmp/real.report
+
+      - name: Assert the report describes a real native x86-64 binary
+        run: |
+          set -euo pipefail
+          fail() { echo "ASSERTION FAILED: $1"; exit 1; }
+          grep -q 'status:    PE_OK'      /tmp/real.report || fail "did not parse"
+          grep -q 'x64 (AMD64)'           /tmp/real.report || fail "not reported as x86-64"
+          grep -q 'PE32+ (64-bit)'        /tmp/real.report || fail "not reported as PE32+"
+          grep -q 'managed:   no'         /tmp/real.report || fail "reported as managed"
+          grep -q 'kernel32.dll'          /tmp/real.report || fail "no kernel32.dll import"
+          grep -Eq 'imports:   [1-9][0-9]* DLL\(s\), [1-9][0-9]* function' /tmp/real.report \
+            || fail "import enumeration came back empty"
+          echo "--- what a real binary needs from the host ---"
+          grep -E '^(imports:|  [A-Za-z].* - )' /tmp/real.report
+
+      - name: Confirm no Windows binary entered the repository
+        run: |
+          set -euo pipefail
+          # The download lives in /tmp and must never be committed. This is
+          # asserted rather than assumed.
+          if git ls-files | grep -qiE '\.(exe|dll|msi)$'; then
+            echo "a Windows binary is tracked in this repository"; exit 1
+          fi
+          echo "no .exe/.dll/.msi tracked - ok"
