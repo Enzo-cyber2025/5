@@ -94,18 +94,41 @@ path = pathlib.Path(sys.argv[1])
 path.write_text(path.read_text().replace("__SECRET__", sys.argv[2]))
 PY
 
-javac --release 8 -bootclasspath "$PLATFORM/android.jar" -d "$WORK/classes" \
-      "$SRC/Main.java" 2>&1 | grep -v "bootstrap class path" || true
-[[ -f "$WORK/classes/com/flcodes/selftest/Main.class" ]] || { echo "javac failed" >&2; exit 1; }
+# `--release` cannot be combined with -bootclasspath, so pin source/target.
+set +e
+javac -source 8 -target 8 -bootclasspath "$PLATFORM/android.jar" \
+      -nowarn -d "$WORK/classes" "$SRC/Main.java" > "$WORK/javac.log" 2>&1
+JAVAC_STATUS=$?
+set -e
+if [[ ! -f "$WORK/classes/com/flcodes/selftest/Main.class" ]]; then
+  echo "javac failed (exit $JAVAC_STATUS):" >&2
+  cat "$WORK/javac.log" >&2
+  echo "::error title=javac::$(tail -2 "$WORK/javac.log" | tr '\n' ' ')"
+  exit 1
+fi
 
 "$BUILD_TOOLS/d8" --lib "$PLATFORM/android.jar" --min-api 21 \
     --output "$WORK/dex" $(find "$WORK/classes" -name '*.class')
 
 APK="$WORK/base.apk"
+mkdir -p "$WORK/res/values"
+cat > "$WORK/res/values/strings.xml" <<'XML'
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">flcodes selftest</string>
+</resources>
+XML
 if [[ -x "$BUILD_TOOLS/aapt2" ]]; then
+  "$BUILD_TOOLS/aapt2" compile --dir "$WORK/res" -o "$WORK/res.zip" > "$WORK/aapt2.log" 2>&1
   "$BUILD_TOOLS/aapt2" link -o "$APK" -I "$PLATFORM/android.jar" \
-      --manifest "$WORK/AndroidManifest.xml" \
-      --min-sdk-version 21 --target-sdk-version 30
+      --manifest "$WORK/AndroidManifest.xml" -R "$WORK/res.zip" \
+      --min-sdk-version 21 --target-sdk-version 30 >> "$WORK/aapt2.log" 2>&1
+  if [[ ! -f "$APK" ]]; then
+    echo "aapt2 link failed:" >&2
+    cat "$WORK/aapt2.log" >&2
+    echo "::error title=aapt2::$(tail -2 "$WORK/aapt2.log" | tr '\n' ' ')"
+    exit 1
+  fi
 else
   "$BUILD_TOOLS/aapt" package -f -M "$WORK/AndroidManifest.xml" \
       -I "$PLATFORM/android.jar" -F "$APK"

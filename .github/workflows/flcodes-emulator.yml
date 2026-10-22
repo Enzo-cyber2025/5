@@ -75,8 +75,17 @@ jobs:
 
       - name: Build the test APK (allowBackup=true, writes the config)
         run: |
-          bash family-link-codes/tools/build_test_apk.sh \
-            --out "$RUNNER_TEMP/selftest.apk" --secret AItest-only-emulator-key
+          set -o pipefail
+          export ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}"
+          if ! bash family-link-codes/tools/build_test_apk.sh \
+                 --out "$RUNNER_TEMP/selftest.apk" --secret AItest-only-emulator-key \
+                 2>&1 | tee "$RUNNER_TEMP/build.log"; then
+            # annotations are readable even when the raw log is not
+            while IFS= read -r line; do
+              echo "::error title=apk-build::$line"
+            done < <(tail -5 "$RUNNER_TEMP/build.log")
+            exit 1
+          fi
 
       - name: Boot the emulator and run the no-root pipeline
         uses: reactivecircus/android-emulator-runner@v2
@@ -92,7 +101,8 @@ jobs:
             -camera-back none -camera-front none -no-snapshot
           disable-animations: true
           script: |
-            set -euo pipefail
+            set -uo pipefail
+            trap 'status=$?; echo "::error title=emulator-step::exit $status";                   tail -25 "$RUNNER_TEMP/flcodes-emulator/"*.txt 2>/dev/null | head -60;                   adb logcat -d -s BackupManager:* BackupConfirm:* 2>/dev/null | tail -30' EXIT
             adb install -r "$RUNNER_TEMP/selftest.apk"
             adb shell am start -n com.flcodes.selftest/.Main
             sleep 5
