@@ -82,15 +82,22 @@ jobs:
         run: |
           set -o pipefail
           export ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}"
+          {
+            echo "SDK=$ANDROID_SDK_ROOT"
+            ls "$ANDROID_SDK_ROOT/build-tools" 2>&1 | tail -3
+            ls "$ANDROID_SDK_ROOT/platforms" 2>&1 | tail -3
+            command -v javac && javac -version 2>&1
+            command -v zip
+          } | tee "$RUNNER_TEMP/env.log"
           if ! bash family-link-codes/tools/build_test_apk.sh \
                  --out "$RUNNER_TEMP/selftest.apk" --secret AItest-only-emulator-key \
-                 2>&1 | tee "$RUNNER_TEMP/build.log"; then
-            # annotations are readable even when the raw log is not
-            while IFS= read -r line; do
-              echo "::error title=apk-build::$line"
-            done < <(tail -5 "$RUNNER_TEMP/build.log")
+                 > "$RUNNER_TEMP/build.log" 2>&1; then
+            tail -40 "$RUNNER_TEMP/env.log" >&2 || true
+            tail -40 "$RUNNER_TEMP/build.log" >&2 || true
+            echo "::error title=apk-build::$(tail -c 900 "$RUNNER_TEMP/build.log" | tr '\n' '|')"
             exit 1
           fi
+          tail -3 "$RUNNER_TEMP/build.log"
 
       - name: Boot the emulator and run the no-root pipeline
         uses: reactivecircus/android-emulator-runner@v2
