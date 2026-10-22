@@ -1864,13 +1864,14 @@ jobs:
           # le a telemetria, decide e INJETA teclas reais — gravando cada
           # amostra em amostras-reais.csv (dados de TREINO do jogo de verdade)
           $bridge = (Resolve-Path "dist-cpp\ETS2-AI-bridge.exe").Path
+          $env:ETS2AI_ESPERA_MIN = "100"   # v44: boot por CPU e LENTO ate o init do plugin
           $p = Start-Process -FilePath $bridge `
             -ArgumentList "--ets2","drive","--inject" `
             -WorkingDirectory $wdir `
             -RedirectStandardOutput "C:\ets2demo\bridge-cpp.log" `
             -RedirectStandardError "C:\ets2demo\bridge-cpp.err" -PassThru
-          Write-Host "IA C++ dirigindo o ETS2 REAL por ate 22 min (jogo a <1 fps por CPU)..."
-          $null = $p.WaitForExit(1320000)
+          Write-Host "IA C++ no ETS2 REAL: ate 100 min esperando a MMF + 22 min dirigindo (jogo a <1 fps por CPU)..."
+          $null = $p.WaitForExit(7320000)
           if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue }
           if (-not $g.HasExited) { Stop-Process -Id $g.Id -Force -ErrorAction SilentlyContinue }
           Start-Sleep -Seconds 3

@@ -842,10 +842,17 @@ static int run_drive(bool inject, const std::wstring& window_sub,
        "sem APK, sem rede", bench(g_official, 0.2));
   logf("[inject] alvo: janela com '%ls' no titulo | ESC = kill switch",
        inj.window_sub.c_str());
-  // espera o jogo abrir (ate 15 min) — COMEÇAR pode vir ANTES do jogo
+  // espera o jogo abrir — COMEÇAR pode vir ANTES do jogo. Default 15 min;
+  // ETS2AI_ESPERA_MIN estica (a demo no CI renderiza por CPU e o boot do
+  // jogo ate o init do plugin pode levar bem mais que 15 min).
+  int espera_min = 15;
+  if (const char* e = getenv("ETS2AI_ESPERA_MIN")) {
+    int v = atoi(e);
+    if (v > 0) espera_min = v;
+  }
   Mmf mmf;
   auto deadline = std::chrono::steady_clock::now() +
-                  std::chrono::minutes(15);
+                  std::chrono::minutes(espera_min);
   bool announced = false;
   while (!mmf.open(false)) {
     if (std::chrono::steady_clock::now() > deadline) {
