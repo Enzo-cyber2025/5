@@ -134,7 +134,11 @@ try_gplay() {
   "$OUT/apkeep" -a "$PACKAGE" -d google-play . >&2 || return 1
   local produced
   produced="$(ls -t *.apk *.xapk *.apks 2>/dev/null | head -1)"
-  [[ -n "$produced" ]] || return 1
+  if [[ -z "$produced" ]]; then
+    log "apkeep: nothing downloaded; available versions follow"
+    "$OUT/apkeep" -l -a "$PACKAGE" -o 'arch=x86_64' 2>&1 | head -8 | sed 's/^/  /' >&2 || true
+    return 1
+  fi
   unpack_if_bundle "$produced"
 }
 
@@ -189,13 +193,22 @@ try_apkmirror() {
   return 1
 }
 
+try_user_url() {
+  local url="${FLCODES_APK_URL:-}"
+  [[ -n "$url" ]] || return 1
+  log "using FLCODES_APK_URL"
+  curl -fsSL --retry 2 -A "Mozilla/5.0" -o "user.apk" "$url" || return 1
+  unpack_if_bundle user.apk
+}
+
 FOUND=""
-for strategy in try_gplay try_apkeep try_aptoide try_apkpure try_apkmirror; do
+for strategy in try_user_url try_gplay try_apkeep try_aptoide try_apkpure try_apkmirror; do
   log "strategy: $strategy"
   set +e
   candidate="$($strategy)"
   status=$?
   set -e
+  log "files now: $(ls -1 2>/dev/null | tr '\n' ' ')"
   if [[ $status -ne 0 || -z "$candidate" ]]; then
     log "$strategy: no download"
     continue

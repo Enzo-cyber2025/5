@@ -1,13 +1,21 @@
 name: flcodes emulator
 
-# Runs the no-root acquisition against a real Android device: an x86_64
-# emulator booted with KVM on a GitHub runner. There is no QEMU/emulator in the
-# development sandbox, so this is where the device side actually gets proven.
+# Device-side proof for flcodes. The development sandbox has no QEMU, no Android
+# image and no KVM, so the emulator (which is QEMU) runs here.
 #
-# The test app (built here, tools/build_test_apk.sh) declares
-# android:allowBackup="true" and writes a Family Link shaped config into its own
-# SharedPreferences. Everything after that is the production path:
-#   flcodes device info -> device apk -> apk scan -> device backup -> abe scan
+# Two device jobs:
+#   * emulator          - the pipeline against an app we build here, so the
+#                         secret actually appears and the whole chain can pass:
+#                         build -> install -> apk scan -> adb backup -> abe scan
+#                         -> keys -> gen.
+#   * real-family-link  - the same pipeline against the newest published Family
+#                         Link APK (no self-built copy). Without a signed-in
+#                         account the app never writes its config, so this job
+#                         reports what it found instead of pretending.
+#
+# Set the repository secret FLCODES_APK_URL to a URL that serves the real APK
+# (your own copy) and the real job uses it before trying the mirrors.
+
 permissions:
   contents: read
   pull-requests: write
@@ -56,7 +64,7 @@ jobs:
           bash demo/run_demo.sh
 
   emulator:
-    name: Android emulator (QEMU), selftest app, no root
+    name: emulator (QEMU) - selftest app, no root
     runs-on: ubuntu-latest
     needs: unit
     steps:
@@ -71,76 +79,51 @@ jobs:
             | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-          ls -l /dev/kvm || true
-
-      - name: Signer of the downloaded APK (provenance check)
+          ls -l /dev/kvm || echo "no /dev/kvm: TCG, slow"
+      - name: Boot, install, back up and extract without root
+        env:
+          FLCODES_PASSPHRASE: emulator
         run: |
           set +e
-          SDK="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}"
-          APKSIGNER="$(find "$SDK/build-tools" -name apksigner | sort -V | tail -1)"
-          "$APKSIGNER" verify --print-certs "$RUNNER_TEMP/familylink/base.apk" \
-            | tee "$RUNNER_TEMP/certs.txt" | head -10
-
-      - name: Boot the real app and extract it without root
-        env:
-          FLCODES_PASSPHRASE: real
-        run: |
           bash family-link-codes/tools/android_emulator_ci.sh \
-            --work "$RUNNER_TEMP/real" --api 30 \
-            --apk "$RUNNER_TEMP/familylink/base.apk" \
-            --package com.google.android.apps.familylink --expect AIte \
-            || echo "exit=$? (expected without a signed-in account)" > "$RUNNER_TEMP/real-status.txt"
-
-      - name: Summarise on the PR
+            --work "$RUNNER_TEMP/emulator" --api 30
+          status=$?
+          echo "$status" > "$RUNNER_TEMP/emulator-status.txt"
+          exit "$status"
+      - name: Report on the PR
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          set -uo pipefail
+          set +e +o pipefail
           pr="${{ github.event.pull_request.number }}"
-          [ -n "$pr" ] || pr="$(gh pr list --head "$GITHUB_REF_NAME" --json number -q '.[0].number' 2>/dev/null || true)"
+          [ -n "$pr" ] || pr="$(gh pr list --head "$GITHUB_REF_NAME" --json number -q '.[0].number' 2>/dev/null)"
           [ -n "$pr" ] || exit 0
+          W="$RUNNER_TEMP/emulator"
           {
-            echo "### Family Link real: desempacotado e testado sem root"
+            echo "### Emulador Android (QEMU): selftest, sem root"
             echo
-            if [ ! -s "$RUNNER_TEMP/scan.txt" ]; then
-              echo "**the job stopped early, here is everything it produced**"
-              echo '```'
-              ls -la "$RUNNER_TEMP" 2>&1 | head -20
-              for f in "$RUNNER_TEMP"/*.log "$RUNNER_TEMP"/*.txt; do
-                [ -s "$f" ] || continue
-                echo "--- $(basename "$f") ---"
-                tail -40 "$f"
-              done
-              echo '```'
-            fi
-            for f in fetch.txt package.txt badging.txt backup-flags.txt; do
-              [ -s "$RUNNER_TEMP/$f" ] && { echo "**$f**"; echo '```'; cat "$RUNNER_TEMP/$f"; echo '```'; }
+            echo "exit: $(cat "$RUNNER_TEMP/emulator-status.txt" 2>/dev/null || echo '?')"
+            echo
+            for f in abe-info.txt tree.txt abe-scan.txt backup-size.txt private-dir.txt shared-prefs.txt code.json; do
+              [ -s "$W/$f" ] && { echo "**$f**"; echo '```'; head -25 "$W/$f"; echo '```'; }
             done
-            echo "**apk scan (top findings)**"
+            echo "**apk scan**"
             echo '```'
-            head -45 "$RUNNER_TEMP/scan.txt" 2>/dev/null || echo "(no scan)"
+            head -30 "$W/apk-scan.txt" 2>/dev/null || echo "(no scan)"
             echo '```'
-            for f in abe-info.txt tree.txt private-dir.txt shared-prefs.txt backup-size.txt abe-scan.txt certs.txt; do
-              [ -s "$RUNNER_TEMP/real/$f" ] && { echo "**$f**"; echo '```'; head -30 "$RUNNER_TEMP/real/$f"; echo '```'; }
-            done
             echo "**run.log (tail)**"
             echo '```'
-            tail -45 "$RUNNER_TEMP/real/run.log" 2>/dev/null || echo "(no log)"
-            echo '```' 
-          } > "$RUNNER_TEMP/summary.md"
-          gh pr comment "$pr" --body-file "$RUNNER_TEMP/summary.md" || true
-
+            tail -40 "$W/run.log" 2>/dev/null || echo "(no log)"
+            echo '```'
+          } > "$RUNNER_TEMP/comment.md"
+          gh pr comment "$pr" --body-file "$RUNNER_TEMP/comment.md"
       - name: Store the evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: flcodes-real-family-link
-          path: |
-            ${{ runner.temp }}/familylink/
-            ${{ runner.temp }}/real/
-            ${{ runner.temp }}/scan.json
-            ${{ runner.temp }}/scan.txt
+          name: flcodes-emulator
+          path: ${{ runner.temp }}/emulator/
           if-no-files-found: warn
 
   real-family-link:
@@ -154,14 +137,16 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Fetch the newest published Family Link APK (official store first)
+      - name: Fetch the newest published Family Link APK
         env:
           GH_TOKEN: ${{ github.token }}
+          FLCODES_APK_URL: ${{ secrets.FLCODES_APK_URL }}
         run: |
           set +e
           bash family-link-codes/tools/fetch_familylink_apk.sh \
             --out "$RUNNER_TEMP/familylink" > "$RUNNER_TEMP/fetch.txt" 2>&1
           cat "$RUNNER_TEMP/fetch.txt"
+          ls -la "$RUNNER_TEMP/familylink"
           test -s "$RUNNER_TEMP/familylink/base.apk" || exit 1
 
       - name: Unpack and locate the secret's home (REA, static)
@@ -179,8 +164,8 @@ jobs:
           "$AAPT" dump xmltree --file AndroidManifest.xml "$APK" 2>/dev/null \
             | grep -iE "allowBackup|fullBackupContent|dataExtractionRules" \
             > "$RUNNER_TEMP/backup-flags.txt"
-          sha256sum "$APK" | tee "$RUNNER_TEMP/sha256.txt"
-          ls -l "$APK" | tee -a "$RUNNER_TEMP/scan.txt"
+          sha256sum "$APK" > "$RUNNER_TEMP/sha256.txt"
+          cat "$RUNNER_TEMP/package.txt" "$RUNNER_TEMP/backup-flags.txt" "$RUNNER_TEMP/sha256.txt"
           exit 0
 
       - name: Signer of the downloaded APK (provenance)
@@ -198,7 +183,7 @@ jobs:
             | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-          ls -l /dev/kvm || true
+          ls -l /dev/kvm || echo "no /dev/kvm: TCG, slow"
 
       - name: Boot the real app and take it apart without root
         env:
@@ -209,7 +194,7 @@ jobs:
             --work "$RUNNER_TEMP/real" --api 30 \
             --apk "$RUNNER_TEMP/familylink/base.apk" \
             --package com.google.android.apps.familylink --expect AIte
-          echo "exit=$?" > "$RUNNER_TEMP/real-status.txt"
+          echo "$?" > "$RUNNER_TEMP/real-status.txt"
           exit 0
 
       - name: Summarise on the PR
@@ -223,9 +208,11 @@ jobs:
           [ -n "$pr" ] || exit 0
           W="$RUNNER_TEMP/real"
           {
-            echo "### Family Link real (APK publicado) - REA sem root"
+            echo "### Family Link real (APK publicado): REA sem root"
             echo
-            for f in fetch.txt package.txt badging.txt backup-flags.txt certs.txt; do
+            echo "exit: $(cat "$RUNNER_TEMP/real-status.txt" 2>/dev/null || echo '?')"
+            echo
+            for f in fetch.txt package.txt badging.txt backup-flags.txt certs.txt sha256.txt; do
               [ -s "$RUNNER_TEMP/$f" ] && { echo "**$f**"; echo '```'; head -20 "$RUNNER_TEMP/$f"; echo '```'; }
             done
             echo "**apk scan**"
