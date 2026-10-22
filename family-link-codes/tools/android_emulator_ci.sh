@@ -58,9 +58,17 @@ trap 'status=$?; echo "--- exit $status ---"; ls -la "$WORK" 2>/dev/null | head 
 
 step "0. environment"
 ls "$SDK" || fail "no SDK at $SDK"
-EMULATOR="$(command -v emulator || find "$SDK" -maxdepth 3 -type f -name emulator | head -1)"
-AVDMANAGER="$(command -v avdmanager || find "$SDK" -maxdepth 5 -type f -name avdmanager | head -1)"
 SDKMANAGER="$(command -v sdkmanager || find "$SDK" -maxdepth 5 -type f -name sdkmanager | head -1)"
+AVDMANAGER="$(command -v avdmanager || find "$SDK" -maxdepth 5 -type f -name avdmanager | head -1)"
+[[ -x "$SDKMANAGER" ]] || fail "no sdkmanager (install cmdline-tools)"
+EMULATOR="$(command -v emulator 2>/dev/null || find "$SDK" -maxdepth 3 -type f -name emulator 2>/dev/null | head -1)"
+if [[ ! -x "$EMULATOR" ]]; then
+  echo "the emulator package is not installed; installing it"
+  yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
+  "$SDKMANAGER" --install "platform-tools" "emulator" > "$WORK/sdkmanager.log" 2>&1 \
+    || { tail -20 "$WORK/sdkmanager.log"; fail "cannot install the emulator package"; }
+  EMULATOR="$SDK/emulator/emulator"
+fi
 echo "emulator=$EMULATOR"; echo "avdmanager=$AVDMANAGER"; echo "sdkmanager=$SDKMANAGER"
 [[ -x "$EMULATOR" ]] || fail "no emulator binary"
 "$EMULATOR" -version 2>&1 | head -3
