@@ -28,6 +28,7 @@ locally) the extractor says so instead of inventing a key.
 from __future__ import annotations
 
 import base64
+import html
 import binascii
 import json
 import re
@@ -197,7 +198,7 @@ def _candidate_from_value(value: str, source: str, context: str) -> SeedCandidat
     Order matters: a JSON field can hold the secret raw, escaped (``\\u0041``,
     as the API returns it), percent encoded or base64 wrapped.
     """
-    raw_value = value.strip().strip("\"'")
+    raw_value = html.unescape(value).strip().strip("\"'")
     text = urllib.parse.unquote(raw_value)
     if looks_like_secret(text):
         encoding = "raw" if text == raw_value else "percent-encoded"
@@ -398,7 +399,7 @@ def _config_extras(payload: dict) -> dict:
 
 
 def _looks_like_json(text: str) -> bool:
-    stripped = text.lstrip()
+    stripped = html.unescape(text).lstrip()
     if stripped.startswith(")]}'"):
         return True
     return bool(stripped) and stripped[0] in "{[" and len(stripped) < 4 * 1024 * 1024
@@ -491,6 +492,22 @@ def extract_from_payload(text: str, source: str = "payload") -> list:
         payload = None
     if payload is not None:
         found.extend(extract_from_json(payload, source))
+    else:
+        # SharedPreferences XML escapes the JSON that holds the config:
+        # {&quot;parentAccessCode&quot;:{&quot;sharedSecret&quot;:...}}. Unescape
+        # first, then walk any embedded JSON so the TTL comes along too.
+        unescaped = html.unescape(text)
+        if _looks_like_json(unescaped.strip()):
+            try:
+                found.extend(extract_from_json(parse_json_payload(unescaped), source))
+            except ValueError:
+                pass
+        else:
+            for chunk in re.findall(r"\{[^{}]{20,4096}\}", unescaped):
+                try:
+                    found.extend(extract_from_json(parse_json_payload(chunk), source))
+                except ValueError:
+                    continue
     found.extend(extract_from_text(text, source))
     unique: list = []
     by_secret: dict = {}

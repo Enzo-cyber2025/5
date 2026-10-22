@@ -355,3 +355,17 @@ def test_code_saving_persists_csv_and_jsonl(tmp_path):
     assert json.loads(jsonl_path.read_text().splitlines()[0])["code"] == code.code
     with pytest.raises(ValueError):
         report.save_codes([record], tmp_path / "x.txt", fmt="xml")
+
+
+def test_shared_preferences_xml_keeps_the_ttl():
+    """Android escapes the JSON inside SharedPreferences (found on a device)."""
+    xml = (
+        "<map><string name=\"family_link_app_config\">"
+        "{&quot;parentAccessCode&quot;:{&quot;sharedSecret&quot;:&quot;AItest-only-escaped-key&quot;,"
+        "&quot;accessCodeTtl&quot;:600,&quot;clockDriftTolerance&quot;:300}}"
+        "</string></map>"
+    )
+    candidates = secrets_mod.extract_from_payload(xml, source="prefs.xml")
+    assert [candidate.secret for candidate in candidates] == ["AItest-only-escaped-key"]
+    assert candidates[0].extra == {"validity": 600, "drift": 300}
+    assert secrets_mod.config_validity(candidates) == 600

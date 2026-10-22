@@ -149,9 +149,14 @@ jobs:
             --out "$RUNNER_TEMP/familylink" > "$RUNNER_TEMP/fetch.txt" 2>&1
           cat "$RUNNER_TEMP/fetch.txt"
           ls -la "$RUNNER_TEMP/familylink"
-          test -s "$RUNNER_TEMP/familylink/base.apk" || exit 1
+          if [ ! -s "$RUNNER_TEMP/familylink/base.apk" ]; then
+            echo "::warning title=no-apk::no public source served the APK; set FLCODES_APK_URL to your own copy"
+            echo "missing" > "$RUNNER_TEMP/apk-missing.txt"
+          fi
+          exit 0
 
       - name: Unpack and locate the secret's home (REA, static)
+        if: ${{ !cancelled() }}
         run: |
           set +e
           cd family-link-codes
@@ -192,6 +197,10 @@ jobs:
           FLCODES_PASSPHRASE: real
         run: |
           set +e
+          if [ ! -s "$RUNNER_TEMP/familylink/base.apk" ]; then
+            echo "no APK available: skipping the device run" > "$RUNNER_TEMP/real-status.txt"
+            exit 0
+          fi
           bash family-link-codes/tools/android_emulator_ci.sh \
             --work "$RUNNER_TEMP/real" --api 30 \
             --apk "$RUNNER_TEMP/familylink/base.apk" \

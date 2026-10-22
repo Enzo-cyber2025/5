@@ -5,8 +5,11 @@
 #   1. apkeep against Google Play (official store, anonymous session)
 #   2. apkeep against APKPure (third-party mirror, dangers acknowledged)
 #   2. Aptoide public API (no account)              - JSON with a direct path
-#   3. APKPure direct download endpoint             - plain HTTP
-#   4. APKMirror uploads page                       - scraped, last resort
+#   3. APKPure JSON API (pureapk.com)               - direct download_url
+#   4. APKPure download endpoint, Aptoide API       - plain HTTP
+#   5. APKMirror uploads page                       - gated, last resort
+#
+# Set FLCODES_APK_URL to your own copy of the real APK to skip all of this.
 #
 # Every candidate is unzipped and the package name is read from the binary
 # manifest; anything that is not com.google.android.apps.familylink is thrown
@@ -181,6 +184,50 @@ try_apkpure() {
   fi
 }
 
+try_apkpure_api() {
+  local json
+  json="$(curl -fsSL --retry 2 \
+      -H "x-cv: 3171503" -H "x-sv: 29" -H "x-abis: arm64-v8a,armeabi-v7a,armeabi" \
+      -H "x-g: 1" -H "x-l: en" -A "Dalvik/2.1.0 (Linux; U; Android 10)" \
+      "https://api.pureapk.com/m/v3/cms/app_version?hl=en&package_name=$PACKAGE" 2>"$OUT/api.err")" \
+      || { log "apkpure api: $(tail -1 "$OUT/api.err" | tr -d '\r')"; return 1; }
+  local url
+  url="$(printf '%s' "$json" | python3 -c '
+import json, sys
+try:
+    data = json.load(sys.stdin)
+except Exception:
+    sys.exit(1)
+def find(node):
+    if isinstance(node, dict):
+        for key in ("download_url", "downloadUrl"):
+            value = node.get(key)
+            if isinstance(value, str) and value.startswith("http"):
+                return value
+        for value in node.values():
+            found = find(value)
+            if found:
+                return found
+    elif isinstance(node, list):
+        for value in node:
+            found = find(value)
+            if found:
+                return found
+    return None
+print(find(data) or "")
+' 2>/dev/null)" || return 1
+  [[ "$url" =~ ^https?:// ]] || { log "apkpure api: no download_url"; return 1; }
+  log "apkpure api: $url"
+  curl -fsSL --retry 2 -A "Mozilla/5.0" -o "familylink-api.pkg" "$url" || return 1
+  if unzip -l familylink-api.pkg >/dev/null 2>&1; then
+    mv familylink-api.pkg familylink-api.xapk
+    unpack_if_bundle familylink-api.xapk
+  else
+    mv familylink-api.pkg familylink-api.apk
+    echo familylink-api.apk
+  fi
+}
+
 try_apkmirror() {
   local page="https://www.apkmirror.com/uploads/?appcategory=family-link"
   local html
@@ -202,7 +249,7 @@ try_user_url() {
 }
 
 FOUND=""
-for strategy in try_user_url try_gplay try_apkeep try_aptoide try_apkpure try_apkmirror; do
+for strategy in try_user_url try_gplay try_apkeep try_apkpure_api try_aptoide try_apkpure try_apkmirror; do
   log "strategy: $strategy"
   set +e
   candidate="$($strategy)"
