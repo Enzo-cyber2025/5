@@ -78,18 +78,46 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            gcc-aarch64-linux-gnu qemu-user-static
+          # libc6-dev-arm64-cross is named explicitly because -static needs the
+          # arm64 libc.a, and recommends are not being skipped by accident here:
+          # a missing static libc shows up later as a confusing link error.
+          sudo apt-get install -y \
+            gcc-aarch64-linux-gnu libc6-dev-arm64-cross qemu-user-static
+
+      - name: Report the cross toolchain
+        run: |
+          set -uo pipefail
+          aarch64-linux-gnu-gcc --version | head -1
+          qemu-aarch64-static --version | head -1
+          echo "static libc present:"
+          ls -l /usr/aarch64-linux-gnu/lib/libc.a || echo "  MISSING libc.a"
 
       - name: Cross-compile statically for aarch64
         working-directory: emu
         run: |
-          set -euo pipefail
+          # Not set -e: the point of this step is to capture the compiler's own
+          # error text and publish it as an annotation. Job logs for a public
+          # repo cannot be read from every environment, and an annotation can,
+          # so a failure here has to explain itself through the API.
+          set -uo pipefail
           CC=aarch64-linux-gnu-gcc
           FLAGS="-std=c11 -Wall -Wextra -Wshadow -Werror -O2 -static"
-          $CC $FLAGS -o /tmp/t_ptc   test_ptc.c ptc.c
-          $CC $FLAGS -o /tmp/t_x86   test_x86_decode.c x86_decode.c
-          $CC $FLAGS -o /tmp/t_emit  test_emit_exec.c
+          build() {
+            echo "+ $CC $FLAGS -o $*"
+            $CC $FLAGS -o "$@"
+          }
+          {
+            build /tmp/t_ptc  test_ptc.c ptc.c &&
+            build /tmp/t_x86  test_x86_decode.c x86_decode.c &&
+            build /tmp/t_emit test_emit_exec.c
+          } > /tmp/build.log 2>&1
+          rc=$?
+          cat /tmp/build.log
+          if [ "$rc" -ne 0 ]; then
+            flat=$(tr '\n' ' ' < /tmp/build.log | tr -s ' ' | tail -c 900)
+            echo "::error title=cross-compile-failed rc=${rc}::${flat}"
+          fi
+          exit $rc
 
       - name: Confirm the binaries are aarch64 ELF
         run: |
