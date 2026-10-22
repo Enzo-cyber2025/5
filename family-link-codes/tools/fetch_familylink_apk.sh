@@ -2,9 +2,10 @@
 # Fetch the newest REAL Family Link APK (no self-built copy) for analysis.
 #
 # Strategies, in order, each one validated before it is accepted:
-#   1. apkeep (APKPure backend, anonymous)          - release binary from GitHub
-#   2. APKPure direct download endpoint             - plain HTTP
-#   3. APKMirror uploads page                       - scraped, last resort
+#   1. apkeep (EFF, APKPure backend, anonymous)     - release binary from GitHub
+#   2. Aptoide public API (no account)              - JSON with a direct path
+#   3. APKPure direct download endpoint             - plain HTTP
+#   4. APKMirror uploads page                       - scraped, last resort
 #
 # Every candidate is unzipped and the package name is read from the binary
 # manifest; anything that is not com.google.android.apps.familylink is thrown
@@ -89,19 +90,50 @@ try_apkeep() {
   local bin="$OUT/apkeep"
   if [[ ! -x "$bin" ]]; then
     local url
-    url="$(gh api repos/efyang/apkeep/releases/latest --jq '.assets[] | select(.name | test("x86_64-unknown-linux-musl.tar.gz$")) | .browser_download_url' 2>/dev/null | head -1)"
-    [[ -n "$url" ]] || return 1
-    curl -fsSL --retry 3 -o "$OUT/apkeep.tgz" "$url" || return 1
-    tar -xzf "$OUT/apkeep.tgz" -C "$OUT" || return 1
-    mv "$OUT"/apkeep* "$bin" 2>/dev/null || true
+    url="$(gh api repos/EFForg/apkeep/releases/latest \
+            --jq '[.assets[] | select(.name | endswith("x86_64-unknown-linux-musl.tar.gz")) | .browser_download_url] | .[0]' \
+            2>/dev/null || true)"
+    url="$(printf '%s' "$url" | head -1 | tr -d '[:space:]')"
+    if [[ ! "$url" =~ ^https:// ]]; then
+      log "apkeep: could not resolve the release asset ($url)"
+      return 1
+    fi
+    curl -fsSL --retry 2 -o "$OUT/apkeep.tgz" "$url" || return 1
+    mkdir -p "$OUT/apkeep-bin"
+    tar -xzf "$OUT/apkeep.tgz" -C "$OUT/apkeep-bin" || return 1
+    find "$OUT/apkeep-bin" -type f -name 'apkeep*' -exec cp {} "$bin" \; || return 1
     chmod +x "$bin" || return 1
   fi
-  rm -f "familylink.apk"
+  rm -f ./*.apk ./*.xapk
   "$bin" -a "$PACKAGE" -d apk-pure . >&2 || return 1
   local produced
-  produced="$(ls -t *.apk 2>/dev/null | head -1)"
+  produced="$(ls -t *.apk *.xapk 2>/dev/null | head -1)"
   [[ -n "$produced" ]] || return 1
   unpack_if_bundle "$produced"
+}
+
+try_aptoide() {
+  local meta
+  meta="$(curl -fsSL --retry 2 -A "Mozilla/5.0" \
+      "https://ws75.aptoide.com/api/7/app/get/package_name=$PACKAGE" 2>/dev/null)" || return 1
+  local path version
+  path="$(printf '%s' "$meta" | python3 -c '
+import json, sys
+data = json.load(sys.stdin)
+node = (data.get("nodes") or {}).get("meta") or {}
+file_info = node.get("file") or {}
+print(file_info.get("path") or "")
+' 2>/dev/null)" || return 1
+  version="$(printf '%s' "$meta" | python3 -c '
+import json, sys
+data = json.load(sys.stdin)
+node = (data.get("nodes") or {}).get("meta") or {}
+print(node.get("vername") or "")
+' 2>/dev/null || true)"
+  [[ -n "$path" ]] || { log "aptoide: no file path in the response"; return 1; }
+  log "aptoide: version $version -> $path"
+  curl -fsSL --retry 2 -A "Mozilla/5.0" -o "familylink-aptoide.apk" "$path" || return 1
+  unpack_if_bundle familylink-aptoide.apk
 }
 
 try_apkpure() {
@@ -131,7 +163,7 @@ try_apkmirror() {
 }
 
 FOUND=""
-for strategy in try_apkeep try_apkpure try_apkmirror; do
+for strategy in try_apkeep try_aptoide try_apkpure try_apkmirror; do
   log "strategy: $strategy"
   set +e
   candidate="$($strategy)"

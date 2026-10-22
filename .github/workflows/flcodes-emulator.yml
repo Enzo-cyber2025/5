@@ -89,6 +89,10 @@ jobs:
             command -v javac && javac -version || echo "javac: MISSING"
             echo "JAVA_HOME=${JAVA_HOME:-unset}"
           } 2>&1 | tee "$RUNNER_TEMP/env.log" || true
+          echo "marker: about to build"
+          ls -l family-link-codes/tools/build_test_apk.sh
+          bash family-link-codes/tools/build_test_apk.sh --help > "$RUNNER_TEMP/help.log" 2>&1
+          echo "marker: help exited $?"
           if ! bash family-link-codes/tools/build_test_apk.sh \
                  --out "$RUNNER_TEMP/selftest.apk" --secret AItest-only-emulator-key \
                  > "$RUNNER_TEMP/build.log" 2>&1; then
@@ -139,8 +143,10 @@ jobs:
             ls -la "$RUNNER_TEMP" 2>&1 | head -30
             echo "--- env.log ---"
             cat "$RUNNER_TEMP/env.log" 2>&1 | head -30
+            echo "--- help.log ---"
+            cat "$RUNNER_TEMP/help.log" 2>&1 | head -20
             echo "--- build.log ---"
-            cat "$RUNNER_TEMP/build.log" 2>&1 | head -60
+            cat "$RUNNER_TEMP/build.log" 2>&1 | head -80
             echo "\`\`\`"
           } > "$RUNNER_TEMP/comment.md"
           gh pr comment "$pr" --body-file "$RUNNER_TEMP/comment.md" || true
