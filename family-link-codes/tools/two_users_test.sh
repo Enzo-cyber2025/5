@@ -167,9 +167,12 @@ echo "parent uid: ${PARENT_KEY:-none}   child uid: ${CHILD_KEY:-none}"
 # `adb backup` only covers the profile that owns the session; use it on the
 # parent profile as the no-root extraction path and keep the result as evidence.
 step "4b. adb backup of the parent profile (no root)"
-backup_user "$PARENT_ID" parent > "$WORK/backup-parent.txt" 2>&1 \
-  && echo "backup extraction ok" \
-  || echo "note: adb backup of a secondary profile is refused by Android; the run-as read above is the proof"
+# run in a subshell: `adb backup` cannot cover a secondary profile, and that
+# must not abort the two-account verdict
+( backup_user "$PARENT_ID" parent ) > "$WORK/backup-parent.txt" 2>&1 \
+  && echo "backup extraction ok (see backup-parent.txt)" \
+  || echo "note: adb backup of a secondary profile is refused by Android;"
+[[ -s "$WORK/scan-parent.txt" ]] || echo "      (the per-profile read above is the proof for this step)"
 echo "parent key: ${PARENT_KEY:-none}"
 echo "child key:  ${CHILD_KEY:-none}"
 
