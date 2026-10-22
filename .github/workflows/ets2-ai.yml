@@ -1324,6 +1324,13 @@ jobs:
           if (-not $r.pass) { throw "autoteste falhou contra a demo real" }
       - name: SOBE o ETS2 REAL (demo oficial) — a DLL no processo de verdade
         shell: pwsh
+        # v45: timeout de STEP (imposto pelo RUNNER, nao pelo pwsh) — as runs
+        # 39643747249/39663277050/39702207995/39709758315/39828443013 mostraram
+        # que os limites INTERNOS (75/170 min) nao valem nada quando o pwsh esta
+        # com os timers dilatados por starvation: um unico Start-Sleep 5 estica
+        # por HORAS e o "if ((Get-Date) -gt $limite)" nunca roda. O runner mata
+        # o step em tempo REAL; os steps seguintes sao if: always().
+        timeout-minutes: 140
         run: |
           $exe = "C:\ets2demo\bin\win_x64\eurotrucks2.exe"
           $wdir = "C:\ets2demo\bin\win_x64"
@@ -1818,6 +1825,7 @@ jobs:
           }
           Write-Host "jogo REAL: engine oficial bootado ate o renderer (limite do hardware do CI)"
       - name: MMF do processo REAL (parser do repo lendo a telemetria da demo)
+        if: always()
         shell: pwsh
         run: |
           $m = $null
@@ -1866,9 +1874,19 @@ jobs:
             Write-Host "PROVA PARCIAL (limite de hardware): instalacao + engine + autoteste OK; renderer exige GPU"
           }
       - name: IA DIRIGINDO O JOGO REAL + COLHEITA DE AMOSTRAS (exe C++ puro)
+        if: always()
+        timeout-minutes: 125
         shell: pwsh
         run: |
           $ErrorActionPreference = "Continue"
+          # v45: varredura de zumbis — se o SOBE morreu no timeout com jogos
+          # vivos (e o runner nao os matou), eles comem o core 1 e matam este
+          # step por starvation tambem.
+          Get-Process eurotrucks2 -ErrorAction SilentlyContinue | ForEach-Object {
+            Write-Host "matando zumbi do SOBE: pid $($_.Id)"
+            taskkill /PID $_.Id /T /F 2>$null
+          }
+          Start-Sleep -Seconds 3
           $wdir = "C:\ets2demo\bin\win_x64"
           $gexe = "$wdir\eurotrucks2.exe"
           if (-not (Test-Path $gexe)) { Write-Host "::warning::exe da demo ausente — pulando direcao"; exit 0 }
