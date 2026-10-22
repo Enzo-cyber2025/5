@@ -95,11 +95,16 @@ jobs:
           FLCODES_PASSPHRASE: two
         run: |
           set +e
+          export PATH="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/platform-tools:$PATH"
+          adb devices
           export ANDROID_SERIAL="$(adb devices | awk 'NR>1 && $2=="device" {print $1; exit}')"
+          echo "serial: ${ANDROID_SERIAL:-none}"
+          mkdir -p "$RUNNER_TEMP/two"
           bash family-link-codes/tools/two_users_test.sh \
             --work "$RUNNER_TEMP/two" --apk "$RUNNER_TEMP/emulator/selftest.apk" \
-            --package com.flcodes.selftest
+            --package com.flcodes.selftest > "$RUNNER_TEMP/two/stdout.txt" 2>&1
           echo "$?" > "$RUNNER_TEMP/two-status.txt"
+          tail -40 "$RUNNER_TEMP/two/stdout.txt"
           exit 0
 
       - name: Report on the PR
@@ -133,8 +138,8 @@ jobs:
             echo
             echo "exit: $(cat "$RUNNER_TEMP/two-status.txt" 2>/dev/null || echo '?')"
             echo
-            for f in users.txt scan-parent.txt scan-child.txt isolation.txt; do
-              [ -s "$T/$f" ] && { echo "**$f**"; echo '```'; head -25 "$T/$f"; echo '```'; }
+            for f in users.txt scan-parent.txt scan-child.txt isolation.txt stdout.txt; do
+              [ -s "$T/$f" ] && { echo "**$f**"; echo '```'; head -30 "$T/$f"; echo '```'; }
             done
             echo "**two.log (tail)**"
             echo '```'
@@ -326,6 +331,9 @@ jobs:
         if: steps.creds.outputs.have == 'yes'
         run: |
           set +e
+          export PATH="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/platform-tools:$PATH"
+          mkdir -p "$RUNNER_TEMP/two"
+          adb devices
           export ANDROID_SERIAL="$(adb devices | awk 'NR>1 && $2=="device" {print $1; exit}')"
           APK="$(cat "$RUNNER_TEMP/store/apk-path.txt" 2>/dev/null)"
           if [ -n "$APK" ] && [ -s "$APK" ]; then
