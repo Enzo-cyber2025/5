@@ -516,7 +516,42 @@ static void test_pipeline(void)
         rs.host_addr = (uint64_t)(uintptr_t)dll_host;   /* the real host address */
         CHECK(tr_translate_run(exe.b + HDR_SIZE, 18u, exe_va, resolve_cb, &rs, &ox)
               == TR_OK, "exe did not translate once the import was resolved");
-        CHECK(ox.n == 6, "exe emitted %zu words on the ARM64 path", ox.n);
+        /* The word count depends on how many 16-bit chunks of the real host
+         * address happen to be non-zero, so asserting a fixed count would fail
+         * for a reason that is not a bug. Assert the shape, and reconstruct the
+         * constant from the emitted MOVZ/MOVK words to prove it round-trips. */
+        CHECK(ox.n >= 5u && ox.n <= 8u, "exe emitted %zu words, expected 5..8", ox.n);
+        if (ox.n >= 5u) {
+            size_t k;
+            uint64_t rebuilt = 0;
+            CHECK(ox.words[0] == a64_movz_x(1, 42), "mov rcx,42 -> 0x%08X",
+                  ox.words[0]);
+            CHECK(ox.words[ox.n - 3u] == a64_blr(16), "blr -> 0x%08X",
+                  ox.words[ox.n - 3u]);
+            CHECK(ox.words[ox.n - 2u] == a64_add_x_imm(0, 0, 1),
+                  "add rax,1 -> 0x%08X", ox.words[ox.n - 2u]);
+            CHECK(ox.words[ox.n - 1u] == a64_ret(), "ret -> 0x%08X",
+                  ox.words[ox.n - 1u]);
+            for (k = 1u; k + 3u < ox.n; k++) {
+                uint32_t w = ox.words[k];
+                unsigned rd = w & 31u;
+                uint16_t chunk = (uint16_t)((w >> 5) & 0xFFFFu);
+                unsigned hw = (w >> 21) & 3u;
+                CHECK(rd == 16u, "constant word %zu targets X%u, expected X16", k, rd);
+                if ((w & 0xFF800000u) == 0xD2800000u) {
+                    rebuilt = chunk;                       /* MOVZ: hw must be 0 */
+                    CHECK(hw == 0u, "MOVZ used hw=%u", hw);
+                } else if ((w & 0xFF800000u) == 0xF2800000u) {
+                    rebuilt |= (uint64_t)chunk << (hw * 16u);
+                } else {
+                    CHECK(0, "word %zu is neither MOVZ nor MOVK: 0x%08X", k, w);
+                }
+            }
+            CHECK(rebuilt == rs.host_addr,
+                  "emitted constant materialises 0x%llx, not the dll host address "
+                  "0x%llx - the call would jump somewhere else",
+                  (unsigned long long)rebuilt, (unsigned long long)rs.host_addr);
+        }
 
         /* Persist both translations, keyed by module identity and guest bytes. */
         CHECK(ptc_insert(cache, dll_mid, dll_va, DLL_CODE, (uint32_t)sizeof(DLL_CODE),

@@ -50,13 +50,35 @@ jobs:
       - name: Run the suite
         working-directory: emu
         run: |
-          set -euo pipefail
-          ./test_ptc
-          ./test_x86
-          ./test_pe
-          ./test_sweep
-          ./test_translate | tee /tmp/translate.log
-          ./test_emit_exec | tee /tmp/emit.log
+          set -uo pipefail
+          # Each binary gets its own timeout, and the trap names whichever one
+          # was running if the step dies. Without that, a hang in one test is
+          # indistinguishable from a hang in any other, and stdout is fully
+          # buffered into a pipe so a hung binary prints nothing at all.
+          trap 'echo "::error title=suite-interrupted::last started: $(cat /tmp/running.txt 2>/dev/null || echo unknown)"' EXIT
+          run_one() {
+            echo "$1" > /tmp/running.txt
+            timeout 120 "$1" > "/tmp/$(basename "$1").log" 2>&1
+            rc=$?
+            echo "" > /tmp/running.txt
+            cat "/tmp/$(basename "$1").log"
+            if [ "$rc" -eq 124 ]; then
+              echo "::error title=suite-hang::$(basename "$1") was still running after 120s"
+              exit 1
+            fi
+            if [ "$rc" -ne 0 ]; then
+              echo "::error title=suite-failure::$(basename "$1") exited ${rc}"
+              exit "$rc"
+            fi
+          }
+          run_one ./test_ptc
+          run_one ./test_x86
+          run_one ./test_pe
+          run_one ./test_sweep
+          run_one ./test_translate
+          run_one ./test_emit_exec
+          cp /tmp/test_translate.log /tmp/translate.log
+          cp /tmp/test_emit_exec.log /tmp/emit.log
 
       - name: Assert generated code actually executed
         run: |
@@ -153,7 +175,7 @@ jobs:
 
       - name: Run the suite under QEMU
         run: |
-          set -euo pipefail
+          set -uo pipefail
           # Prefer an explicit qemu binary when one exists; otherwise execute the
           # aarch64 ELF directly and let binfmt_misc dispatch it. Either way the
           # code really runs on an emulated aarch64 CPU.
@@ -164,12 +186,34 @@ jobs:
               "$@"
             fi
           }
-          run_arm64 /tmp/t_ptc
-          run_arm64 /tmp/t_x86
-          run_arm64 /tmp/t_pe
-          run_arm64 /tmp/t_sw
-          run_arm64 /tmp/t_tr | tee /tmp/translate.log
-          run_arm64 /tmp/t_emit | tee /tmp/emit.log
+          # Bounded and self-reporting for the same reason as the native job:
+          # under QEMU a hang is even less diagnosable, since the emulator is
+          # between the test and the kernel.
+          trap 'echo "::error title=suite-interrupted::last started: $(cat /tmp/running.txt 2>/dev/null || echo unknown)"' EXIT
+          run_one() {
+            echo "$1" > /tmp/running.txt
+            timeout 600 bash -c "$(declare -f run_arm64); run_arm64 $1" \
+              > "/tmp/$(basename "$1").log" 2>&1
+            rc=$?
+            echo "" > /tmp/running.txt
+            cat "/tmp/$(basename "$1").log"
+            if [ "$rc" -eq 124 ]; then
+              echo "::error title=suite-hang::$(basename "$1") was still running under QEMU after 600s"
+              exit 1
+            fi
+            if [ "$rc" -ne 0 ]; then
+              echo "::error title=suite-failure::$(basename "$1") exited ${rc} under QEMU"
+              exit "$rc"
+            fi
+          }
+          run_one /tmp/t_ptc
+          run_one /tmp/t_x86
+          run_one /tmp/t_pe
+          run_one /tmp/t_sw
+          run_one /tmp/t_tr
+          run_one /tmp/t_emit
+          cp /tmp/t_tr.log /tmp/translate.log
+          cp /tmp/t_emit.log /tmp/emit.log
 
       - name: Assert generated code actually executed
         run: |
