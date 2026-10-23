@@ -43,7 +43,9 @@
 #include <string.h>
 
 #if defined(__aarch64__)
+#include <signal.h>
 #include <sys/mman.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #endif
 
@@ -260,7 +262,60 @@ static uint64_t resolve_cb(uint64_t iat_va, void *user)
 
 /* --------------------------------------------------------------- ARM64 run */
 
+/* Progress marker. stdout is fully buffered when it is not a terminal, and a
+ * process that is killed for hanging flushes nothing, so a marker that is not
+ * flushed is indistinguishable from a stage that was never reached. */
+static void mark(const char *what)
+{
+    printf("  .. %s\n", what);
+    fflush(stdout);
+}
+
 #if defined(__aarch64__)
+/* Runs generated code in a forked child with an alarm and reads the result back
+ * through a pipe.
+ *
+ * Generated code is not trustworthy by definition - that is the entire reason
+ * this project pins encodings and executes them. A wrong word can hang or crash,
+ * and doing that inside the test process takes the whole suite down without
+ * saying which instruction was wrong, which is exactly what happened when this
+ * test first ran on real hardware. Isolating it turns a nine-minute mystery into
+ * a five-second diagnostic. */
+static int exec_generated(uint64_t (*fn)(void), uint64_t *out, int *timed_out,
+                          int *signo)
+{
+    int     fds[2];
+    pid_t   pid;
+    ssize_t got;
+    int     status = 0;
+
+    if (timed_out) *timed_out = 0;
+    if (signo) *signo = 0;
+    if (pipe(fds) != 0) return 0;
+    pid = fork();
+    if (pid < 0) { close(fds[0]); close(fds[1]); return 0; }
+    if (pid == 0) {
+        uint64_t r;
+        close(fds[0]);
+        alarm(5);                       /* default SIGALRM action kills us */
+        r = fn();
+        if (write(fds[1], &r, sizeof(r)) != (ssize_t)sizeof(r)) _exit(2);
+        close(fds[1]);
+        _exit(0);
+    }
+    close(fds[1]);
+    got = read(fds[0], out, sizeof(*out));
+    close(fds[0]);
+    waitpid(pid, &status, 0);
+    if (WIFSIGNALED(status)) {
+        if (signo) *signo = WTERMSIG(status);
+        if (timed_out) *timed_out = (WTERMSIG(status) == SIGALRM);
+        return 0;
+    }
+    return got == (ssize_t)sizeof(*out) && WIFEXITED(status) &&
+           WEXITSTATUS(status) == 0;
+}
+
 /* Maps an executable page, copies the words in, and maintains the caches. The
  * cache step is not optional on ARM64: the store went through the D-cache and
  * the fetch comes from the I-cache, so without it execution can see stale bytes
@@ -507,7 +562,9 @@ static void test_pipeline(void)
 #if defined(__aarch64__)
     {
         size_t map_len = 0;
-        void *dll_host = code_page(od.words, od.n, &map_len);
+        void *dll_host;
+        mark("mapping the translated dll");
+        dll_host = code_page(od.words, od.n, &map_len);
         CHECK(dll_host != NULL, "could not map an executable page for the dll");
         if (!dll_host) { ptc_free(cache); free(dll.b); free(exe.b); return; }
 
@@ -553,6 +610,7 @@ static void test_pipeline(void)
                   (unsigned long long)rebuilt, (unsigned long long)rs.host_addr);
         }
 
+        mark("translating the exe against the resolved import");
         /* Persist both translations, keyed by module identity and guest bytes. */
         CHECK(ptc_insert(cache, dll_mid, dll_va, DLL_CODE, (uint32_t)sizeof(DLL_CODE),
                          od.words, (uint32_t)(od.n * 4u), 0u) == 0,
@@ -563,20 +621,33 @@ static void test_pipeline(void)
         CHECK(ptc_insert(cache, exe_mid, exe_va, exe.b + HDR_SIZE, 18u,
                          ox.words, (uint32_t)(ox.n * 4u), 0u) == 0,
               "could not cache the exe block");
+        mark("saving the cache");
         saved = (ptc_save(cache, CACHE_PATH) == 0);
         CHECK(saved, "ptc_save failed");
 
+        mark("mapping and executing the translated exe");
         {
             uint64_t (*entry)(void) = (uint64_t (*)(void))
                 code_page(ox.words, ox.n, NULL);
             CHECK(entry != NULL, "could not map the executable entry page");
             if (entry) {
-                uint64_t r = entry();
-                CHECK(r == 46u, "entry() returned %llu, expected 46 (42+3+1)",
+                uint64_t r = 0;
+                int      to = 0, sig = 0, ok;
+                mark("calling the generated entry point (child, 5s alarm)");
+                ok = exec_generated(entry, &r, &to, &sig);
+                mark("the generated entry point returned control");
+                CHECK(ok, "executing the translated exe failed%s%s",
+                      to ? ": it did not terminate within 5s" : "",
+                      (!ok && !to && sig) ? ": killed by a signal" : "");
+                if (!ok && sig)
+                    printf("  terminated by signal %d%s\n", sig,
+                           to ? " (SIGALRM: the generated code never returned)" : "");
+                CHECK(ok && r == 46u, "entry() returned %llu, expected 46 (42+3+1)",
                       (unsigned long long)r);
-                printf("  EXECUTED ON aarch64: app.exe entry -> %llu, having called "
-                       "mini.dll!AddThree through its import table\n",
-                       (unsigned long long)r);
+                if (ok)
+                    printf("  EXECUTED ON aarch64: app.exe entry -> %llu, having called "
+                           "mini.dll!AddThree through its import table\n",
+                           (unsigned long long)r);
             }
         }
         ptc_free(cache);
@@ -610,12 +681,20 @@ static void test_pipeline(void)
                         code_page((const uint32_t *)host, ox.n, NULL);
                     CHECK(e2 != NULL, "could not map the reloaded code");
                     if (e2) {
-                        uint64_t r2 = e2();
-                        CHECK(r2 == 46u,
-                              "code loaded from the cache returned %llu, expected 46",
-                              (unsigned long long)r2);
-                        printf("  EXECUTED FROM CACHE: %llu with zero retranslation\n",
-                               (unsigned long long)r2);
+                        uint64_t r2 = 0;
+                        int to2 = 0, sig2 = 0;
+                        mark("executing the host code reloaded from the cache");
+                        if (exec_generated(e2, &r2, &to2, &sig2)) {
+                            CHECK(r2 == 46u,
+                                  "code loaded from the cache returned %llu, expected 46",
+                                  (unsigned long long)r2);
+                            printf("  EXECUTED FROM CACHE: %llu with zero retranslation\n",
+                                   (unsigned long long)r2);
+                        } else {
+                            CHECK(0, "cached host code did not run%s%s",
+                                  to2 ? ": it did not terminate within 5s" : "",
+                                  sig2 ? ": killed by a signal" : "");
+                        }
                     }
                 } else {
                     CHECK(0, "reloaded host code differs from what was translated");
