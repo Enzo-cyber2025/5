@@ -61,6 +61,62 @@ uint32_t a64_blr(unsigned rn);
 uint32_t a64_stp_frame_push(void);   /* STP X29, X30, [SP, #-16]! */
 uint32_t a64_ldp_frame_pop(void);    /* LDP X29, X30, [SP], #16  */
 
+/* ---- flag-setting forms, and the branches that consume them -------------- */
+
+/* ADD/SUB Xd, Xn, Xm - shifted register form, no shift. These do NOT set flags,
+ * which matters: x86 ADD and SUB always do, so a translation that emits these and
+ * then lets a conditional branch read the result would be reading flags nobody
+ * computed. The translator tracks that and refuses. */
+uint32_t a64_add_reg(unsigned rd, unsigned rn, unsigned rm);
+uint32_t a64_sub_reg(unsigned rd, unsigned rn, unsigned rm);
+
+/* SUBS - the flag-setting subtract. With Rd = XZR this is CMP. After it, NZCV maps
+ * exactly onto the flags an x86 CMP leaves behind:
+ *   N == SF, Z == ZF, V == OF, and C == NOT CF (AArch64 C is set when there is no
+ *   borrow, x86 CF is set when there is one).
+ * That equivalence is what makes the condition codes below usable directly. */
+uint32_t a64_subs_reg(unsigned rd, unsigned rn, unsigned rm);
+uint32_t a64_subs_imm(unsigned rd, unsigned rn, uint16_t imm12);
+
+/* ADDS with Rd = XZR is CMN, which is how `cmp r, -k` has to be rendered: an
+ * ARM64 subtract-immediate field is unsigned, so comparing against a negative
+ * constant is a comparison of the negation, not a negative immediate. */
+uint32_t a64_adds_imm(unsigned rd, unsigned rn, uint16_t imm12);
+
+/* ANDS Xd, Xn, Xm - with Rd = XZR this is TST, the counterpart of x86 TEST. */
+uint32_t a64_ands_reg(unsigned rd, unsigned rn, unsigned rm);
+
+/* Register alias for "discard the result, keep the flags". */
+#define A64_XZR 31u
+
+/* AArch64 condition codes, bits 3:0 of B.cond. */
+#define A64_EQ 0u   /* Z==1                -> x86 JE/JZ   */
+#define A64_NE 1u   /* Z==0                -> x86 JNE/JNZ */
+#define A64_HS 2u   /* C==1 (no borrow)    -> x86 JAE/JNB */
+#define A64_LO 3u   /* C==0 (borrow)       -> x86 JB/JNAE */
+#define A64_MI 4u   /* N==1                -> x86 JS      */
+#define A64_PL 5u   /* N==0                -> x86 JNS     */
+#define A64_VS 6u   /* V==1                -> x86 JO      */
+#define A64_VC 7u   /* V==0                -> x86 JNO     */
+#define A64_HI 8u   /* C==1 && Z==0        -> x86 JA      */
+#define A64_LS 9u   /* C==0 || Z==1        -> x86 JBE     */
+#define A64_GE 10u  /* N==V                -> x86 JGE/JNL */
+#define A64_LT 11u  /* N!=V                -> x86 JL/JNGE */
+#define A64_GT 12u  /* Z==0 && N==V        -> x86 JG      */
+#define A64_LE 13u  /* Z==1 || N!=V        -> x86 JLE     */
+
+/* Branches. words is a SIGNED offset in instructions, not bytes: B.cond carries a
+ * 19-bit field (about +-1 MiB) and B/BL a 26-bit one (about +-128 MiB). A target
+ * outside that range must be refused rather than truncated, because a truncated
+ * displacement branches somewhere plausible and wrong. */
+uint32_t a64_b_cond(unsigned cond, int32_t words);
+uint32_t a64_b(int32_t words);
+uint32_t a64_bl(int32_t words);
+
+/* Non-zero when words fits the branch's field, so the caller can refuse. */
+int a64_cond_range_ok(int32_t words);
+int a64_b_range_ok(int32_t words);
+
 /* Appends one instruction to a buffer. Returns 0 if it would not fit, and
  * writes nothing in that case: a partially appended instruction would be
  * executed as garbage rather than refused. */

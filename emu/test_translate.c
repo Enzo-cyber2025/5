@@ -13,13 +13,24 @@
  *
  * The guest program:
  *
- *   mini.dll  AddThree(rcx) -> rax        app.exe  entry() -> rax
- *     add rcx, 3                            mov rcx, 42
- *     mov rax, rcx                          call [rip -> IAT for AddThree]
- *     ret                                   add rax, 1
- *                                           ret
+ *   mini.dll  SumTo(rcx) -> rax             app.exe  entry() -> rax
+ *     xor rax, rax                            mov rcx, 5
+ *   loop:                                     call [rip -> IAT for SumTo]
+ *     add rax, rcx                            add rax, 1
+ *     sub rcx, 1                              ret
+ *     cmp rcx, 0
+ *     jnz loop
+ *     ret
  *
- * 42 + 3 + 1 = 46, asserted on real ARM64 hardware and under QEMU.
+ * SumTo(5) = 5+4+3+2+1 = 15, plus 1 in the executable, so entry() returns 16 -
+ * asserted on real ARM64 hardware and under QEMU, and again from the code reloaded
+ * out of the persistent cache. The loop runs five iterations, so a wrong comparison
+ * or a wrong branch direction changes the answer visibly instead of being off by
+ * one and passing by luck.
+ *
+ * mini.dll also exports AddThree (add rcx,3; mov rax,rcx; ret), a straight-line
+ * function with no flags and no branches, which is what the earlier milestone
+ * translated and what the sweep-style straight-line path is still checked against.
  *
  * What this proves and what it does not. It proves the whole pipeline works:
  * PE in, decode, translate, resolve the import to a host address, emit, execute,
@@ -79,11 +90,36 @@ static struct {
 #define HDR_SIZE   0x200u
 #define CACHE_PATH "/tmp/emu_translate.ptc"
 
-/* guest code: mini.dll!AddThree */
+/* guest code: mini.dll!AddThree - straight line, no flags, no branches */
 static const uint8_t DLL_CODE[] = {
     0x48, 0x83, 0xC1, 0x03,          /* add rcx, 3            */
     0x48, 0x89, 0xC8,                /* mov rax, rcx          */
     0xC3                             /* ret                   */
+};
+
+#define DLL_CODE2_RVA 0x1008u
+
+/* guest code: mini.dll!SumTo - rax = rcx + (rcx-1) + ... + 1
+ *
+ *   1008  48 31 C0        xor rax, rax
+ *   100B  48 01 C8        add rax, rcx      <- loop top, the backward target
+ *   100E  48 83 E9 01     sub rcx, 1
+ *   1012  48 83 F9 00     cmp rcx, 0
+ *   1016  75 F3           jnz 100B
+ *   1018  C3              ret
+ *
+ * This is the shape that flags and conditional branches exist for. Note that the
+ * ADD and the SUB both set flags on x86 and neither does in the translation; that
+ * is safe only because the JNZ reads the flags from the CMP immediately before it,
+ * which the translator checks rather than assumes.
+ */
+static const uint8_t DLL_CODE2[] = {
+    0x48, 0x31, 0xC0,
+    0x48, 0x01, 0xC8,
+    0x48, 0x83, 0xE9, 0x01,
+    0x48, 0x83, 0xF9, 0x00,
+    0x75, 0xF3,
+    0xC3
 };
 
 /* The IAT slot lives at the start of the executable's .rdata. */
@@ -185,27 +221,35 @@ static void write_headers(buf *o, int is_dll, uint32_t export_dir_rva,
 static buf build_dll(void)
 {
     buf o, rd;
-    size_t exp_dir, aof, aon, aoo, nameA, nameDll;
+    size_t exp_dir, aof, aon, aoo, nameA, nameB, nameDll;
     memset(&o, 0, sizeof(o)); memset(&rd, 0, sizeof(rd));
 
     exp_dir = btell(&rd); bzero(&rd, 40);
-    aof     = btell(&rd); bu32(&rd, TEXT_VA);          /* AddThree's RVA */
-    aon     = btell(&rd); bzero(&rd, 4);               /* patched below */
-    aoo     = btell(&rd); bu16(&rd, 0);
+    aof     = btell(&rd); bu32(&rd, TEXT_VA);          /* AddThree */
+                          bu32(&rd, DLL_CODE2_RVA);    /* SumTo    */
+    aon     = btell(&rd); bzero(&rd, 8);               /* patched below */
+    aoo     = btell(&rd); bu16(&rd, 0); bu16(&rd, 1);
     nameA   = btell(&rd); bstr(&rd, "AddThree");
+    nameB   = btell(&rd); bstr(&rd, "SumTo");
     nameDll = btell(&rd); bstr(&rd, "mini.dll");
-    bp32(&rd, aon, (uint32_t)(RDATA_VA + nameA));
+    /* Names are listed in ascending RVA of their functions, as the PE spec
+     * requires; both arrays are patched once every offset is known. */
+    bp32(&rd, aon + 0u, (uint32_t)(RDATA_VA + nameA));
+    bp32(&rd, aon + 4u, (uint32_t)(RDATA_VA + nameB));
     bp32(&rd, exp_dir + 12u, (uint32_t)(RDATA_VA + nameDll));  /* Name */
     bp32(&rd, exp_dir + 16u, 1u);                              /* Base */
-    bp32(&rd, exp_dir + 20u, 1u);                              /* NumberOfFunctions */
-    bp32(&rd, exp_dir + 24u, 1u);                              /* NumberOfNames */
+    bp32(&rd, exp_dir + 20u, 2u);                              /* NumberOfFunctions */
+    bp32(&rd, exp_dir + 24u, 2u);                              /* NumberOfNames */
     bp32(&rd, exp_dir + 28u, (uint32_t)(RDATA_VA + aof));
     bp32(&rd, exp_dir + 32u, (uint32_t)(RDATA_VA + aon));
     bp32(&rd, exp_dir + 36u, (uint32_t)(RDATA_VA + aoo));
 
     write_headers(&o, 1, RDATA_VA, 40u, 0u, 0u, (uint32_t)rd.len);
     bput(&o, DLL_CODE, sizeof(DLL_CODE));
-    bzero(&o, 0x200u - sizeof(DLL_CODE));
+    CHECK(sizeof(DLL_CODE) == DLL_CODE2_RVA - TEXT_VA,
+          "SumTo does not start where its export RVA says");
+    bput(&o, DLL_CODE2, sizeof(DLL_CODE2));
+    bzero(&o, 0x200u - sizeof(DLL_CODE) - sizeof(DLL_CODE2));
     bput(&o, rd.b, rd.len);
     bzero(&o, 0x200u - rd.len);
     bzero(&o, 0x200u);
@@ -225,7 +269,7 @@ static buf build_exe(void)
     iat   = btell(&rd); bu64(&rd, 0);          /* filled by the loader at run time */
     ilt   = btell(&rd); bu64(&rd, 0);          /* patched: -> IMAGE_IMPORT_BY_NAME */
                          bu64(&rd, 0);         /* terminator */
-    ibn   = btell(&rd); bu16(&rd, 0x0042); bstr(&rd, "AddThree");
+    ibn   = btell(&rd); bu16(&rd, 0x0042); bstr(&rd, "SumTo");
     nmDll = btell(&rd); bstr(&rd, "mini.dll");
     bzero(&rd, 8u - (btell(&rd) % 8u));        /* align the descriptor array */
     desc  = btell(&rd);
@@ -237,9 +281,13 @@ static buf build_exe(void)
     bzero(&rd, 20);                            /* terminating descriptor */
     bp32(&rd, ilt, (uint32_t)(RDATA_VA + ibn));
 
-    /* mov rcx, 42 ; call [rip -> IAT] ; add rax, 1 ; ret */
+    /* mov rcx, 5 ; call [rip -> IAT] ; add rax, 1 ; ret
+     * SumTo(5) = 5+4+3+2+1 = 15, and the executable adds 1, so entry() is 16.
+     * The loop runs five times, which is enough that a wrong comparison or a
+     * wrong branch direction gives a visibly different number rather than
+     * something off by one that could pass by luck. */
     code[0]=0x48; code[1]=0xC7; code[2]=0xC1;
-    code[3]=0x2A; code[4]=0x00; code[5]=0x00; code[6]=0x00;
+    code[3]=0x05; code[4]=0x00; code[5]=0x00; code[6]=0x00;
     /* The displacement is relative to the end of the call instruction, so it is
      * computed from the addresses rather than written by hand. */
     disp = (uint32_t)((IMAGE_BASE + EXE_IAT_RVA) - (EXE_CALL_VA + 6u));
@@ -286,7 +334,7 @@ static uint64_t resolve_cb(uint64_t iat_va, void *user)
  * appeared when the generated code was executed on real hardware.
  */
 static void check_exe_shape(const tr_output *o, uint64_t host_addr,
-                            const char *where)
+                            unsigned imm, const char *where)
 {
     size_t   k, first, last;
     uint64_t rebuilt = 0;
@@ -297,9 +345,8 @@ static void check_exe_shape(const tr_output *o, uint64_t host_addr,
     CHECK(o->words[0] == a64_stp_frame_push(),
           "%s: word 0 is 0x%08X, not the frame push", where, o->words[0]);
     CHECK(o->words[0] == 0xA9BF7BFDu, "%s: STP encoding drifted", where);
-    CHECK(o->words[1] == a64_movz_x(1, 42), "%s: mov rcx,42 -> 0x%08X",
+    CHECK(o->words[1] == a64_movz_x(1, imm), "%s: mov rcx,imm -> 0x%08X",
           where, o->words[1]);
-    CHECK(o->words[1] == 0xD2800541u, "%s: movz x1,#42 drifted", where);
     CHECK(o->words[o->n - 4u] == a64_blr(16), "%s: blr -> 0x%08X", where,
           o->words[o->n - 4u]);
     CHECK(o->words[o->n - 3u] == a64_add_x_imm(0, 0, 1),
@@ -426,7 +473,7 @@ static void test_images_are_real(void)
 
     CHECK(pd.is_dll == 1, "mini.dll not marked as a DLL");
     CHECK(px.is_dll == 0 && px.is_exe == 1, "app.exe not marked as an executable");
-    CHECK(pd.num_exports == 1, "dll exports %u, expected 1", pd.num_exports);
+    CHECK(pd.num_exports == 2, "dll exports %u, expected 2", pd.num_exports);
     CHECK(pd.exports[0].name && strcmp(pd.exports[0].name, "AddThree") == 0,
           "export name '%s'", pd.exports[0].name ? pd.exports[0].name : "(null)");
     CHECK(pd.exports[0].rva == TEXT_VA, "export rva %08x", pd.exports[0].rva);
@@ -435,7 +482,7 @@ static void test_images_are_real(void)
     CHECK(px.num_dlls == 1, "exe imports from %u dll(s), expected 1", px.num_dlls);
     CHECK(px.dlls[0].dll_name && strcmp(px.dlls[0].dll_name, "mini.dll") == 0,
           "imported dll '%s'", px.dlls[0].dll_name ? px.dlls[0].dll_name : "(null)");
-    CHECK(px.funcs[0].name && strcmp(px.funcs[0].name, "AddThree") == 0,
+    CHECK(px.funcs[0].name && strcmp(px.funcs[0].name, "SumTo") == 0,
           "imported function '%s'", px.funcs[0].name ? px.funcs[0].name : "(null)");
     CHECK(px.dlls[0].iat_rva == EXE_IAT_RVA, "IAT rva %08x, expected %08x",
           px.dlls[0].iat_rva, EXE_IAT_RVA);
@@ -506,7 +553,7 @@ static void test_translation(void)
           o.guest_insns);
     /* frame push + movz x1 + movz x16 + movk x16 + blr + add + frame pop + ret */
     CHECK(o.n == 8, "exe emitted %zu words, expected 8", o.n);
-    check_exe_shape(&o, rs.host_addr, "synthetic target");
+    check_exe_shape(&o, rs.host_addr, 5u, "synthetic target");
 
     /* A run containing no call gets no frame record: the DLL neither calls nor
      * needs X30 preserved, so pushing one would be code that does nothing. */
@@ -516,6 +563,158 @@ static void test_translation(void)
           o.n);
 
     free(dll.b); free(exe.b);
+}
+
+static void test_function_translation(void)
+{
+    tr_func f;
+    tr_status st;
+
+    printf("a real loop: flags, a conditional branch, and a backward target\n");
+    st = tr_translate_function(DLL_CODE2, sizeof(DLL_CODE2),
+                               IMAGE_BASE + DLL_CODE2_RVA, NULL, NULL, &f);
+    CHECK(st == TR_OK, "SumTo returned %s: %s", tr_status_name(st),
+          f.detail ? f.detail : "?");
+    CHECK(f.insns == 6, "translated %u instructions, expected 6", f.insns);
+    CHECK(f.guest_bytes == sizeof(DLL_CODE2), "consumed %u of %zu bytes",
+          f.guest_bytes, sizeof(DLL_CODE2));
+    CHECK(f.branches == 1, "branches %u, expected 1", f.branches);
+    CHECK(f.backwards == 1, "backward branches %u, expected 1 - that is the loop",
+          f.backwards);
+    CHECK(f.needs_frame == 0, "a call-free function was given a frame record");
+    CHECK(f.n == 6, "emitted %zu words, expected 6", f.n);
+    if (f.n == 6) {
+        /* Every word checked against a value derived independently of the
+         * translator, including the branch displacement: the jnz sits at word 4
+         * and the loop top at word 1, so the offset is -3 instructions. */
+        CHECK(f.words[0] == 0xD2800000u, "xor rax,rax -> 0x%08X, expected MOVZ X0,#0",
+              f.words[0]);
+        CHECK(f.words[1] == 0x8B010000u, "add rax,rcx -> 0x%08X, expected ADD X0,X0,X1",
+              f.words[1]);
+        CHECK(f.words[2] == 0xD1000421u, "sub rcx,1 -> 0x%08X, expected SUB X1,X1,#1",
+              f.words[2]);
+        CHECK(f.words[3] == 0xF100003Fu, "cmp rcx,0 -> 0x%08X, expected SUBS XZR,X1,#0",
+              f.words[3]);
+        CHECK(f.words[4] == 0x54FFFFA1u, "jnz loop -> 0x%08X, expected B.NE -3",
+              f.words[4]);
+        CHECK(f.words[5] == 0xD65F03C0u, "ret -> 0x%08X", f.words[5]);
+        /* Decode the branch back out rather than trusting the constant above. */
+        {
+            uint32_t w = f.words[4];
+            int32_t  imm = (int32_t)((w >> 5) & 0x7FFFFu);
+            if (imm >= 0x40000) imm -= 0x80000;
+            CHECK((w & 0xFu) == A64_NE, "branch condition %u, expected NE", w & 0xFu);
+            CHECK(imm == -3, "branch offset %d words, expected -3", imm);
+            CHECK(4 + imm == 1, "branch does not land on the loop top");
+        }
+    }
+
+    printf("flags are only read where this translator produced them\n");
+    {
+        /* add rax,1 ; jz +2 ; ret  -- the jz would read flags that x86 set but
+         * the emitted ADD did not. */
+        /* disp 0, so the jz targets the RET and stays inside the buffer: a
+         * displacement of 2 would leave the function and be refused for that
+         * reason first, never reaching the flag check under test. */
+        static const uint8_t bad[] = { 0x48,0x83,0xC0,0x01, 0x74,0x00, 0xC3 };
+        st = tr_translate_function(bad, sizeof(bad), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_UNSUPPORTED, "jz after a plain add returned %s",
+              tr_status_name(st));
+        CHECK(f.detail && strstr(f.detail, "flags") != NULL,
+              "detail '%s' does not say the problem is flags", f.detail ? f.detail : "?");
+    }
+    {
+        /* jmp 6 ; cmp rax,0 ; jz 2 -- the jmp targets the jz itself, so on that
+         * path the flags would come from wherever the jmp came from. */
+        static const uint8_t bad[] = { 0xEB,0x04, 0x48,0x83,0xF8,0x00, 0x74,0xFA,
+                                       0xC3 };
+        st = tr_translate_function(bad, sizeof(bad), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_UNSUPPORTED, "a branch onto a jz returned %s",
+              tr_status_name(st));
+        CHECK(f.detail && strstr(f.detail, "targets a conditional") != NULL,
+              "detail '%s' does not explain the guarded case", f.detail ? f.detail : "?");
+    }
+    {
+        /* cmp rax,0 ; jp 0 ; ret -- AArch64 has no parity flag at all. */
+        static const uint8_t bad[] = { 0x48,0x83,0xF8,0x00, 0x7A,0x00, 0xC3 };
+        st = tr_translate_function(bad, sizeof(bad), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_UNSUPPORTED, "jp returned %s", tr_status_name(st));
+        CHECK(f.detail && strstr(f.detail, "parity") != NULL,
+              "detail '%s' does not say parity is the reason", f.detail ? f.detail : "?");
+    }
+
+    printf("structural refusals\n");
+    {
+        static const uint8_t out[] = { 0x48,0x83,0xF8,0x00, 0x74,0x02, 0xEB,0x7F,
+                                       0xC3 };
+        st = tr_translate_function(out, sizeof(out), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_UNSUPPORTED, "a branch leaving the function returned %s",
+              tr_status_name(st));
+        CHECK(f.detail && strstr(f.detail, "leaves the function") != NULL,
+              "detail '%s'", f.detail ? f.detail : "?");
+    }
+    {
+        static const uint8_t noret[] = { 0x48,0x83,0xC0,0x01 };
+        st = tr_translate_function(noret, sizeof(noret), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_UNSUPPORTED, "a function with no RET returned %s",
+              tr_status_name(st));
+        CHECK(f.detail && strstr(f.detail, "without a RET") != NULL,
+              "detail '%s'", f.detail ? f.detail : "?");
+    }
+    {
+        /* xor rax, rcx: a real two-operand xor, not the zeroing idiom. */
+        static const uint8_t x[] = { 0x48,0x31,0xC8, 0xC3 };
+        st = tr_translate_function(x, sizeof(x), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_UNSUPPORTED, "xor with two operands returned %s",
+              tr_status_name(st));
+    }
+    {
+        /* add rsp, rax: RSP implies a guest stack model that does not exist. */
+        static const uint8_t r[] = { 0x48,0x01,0xC4, 0xC3 };
+        st = tr_translate_function(r, sizeof(r), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_UNSUPPORTED, "using RSP returned %s", tr_status_name(st));
+        CHECK(f.detail && strstr(f.detail, "mapped set") != NULL,
+              "detail '%s'", f.detail ? f.detail : "?");
+    }
+
+    printf("cmp against a negative constant becomes CMN, not a negative SUBS\n");
+    {
+        static const uint8_t g[] = { 0x48,0x83,0xF8,0xFB, 0x74,0x00, 0xC3 };
+        st = tr_translate_function(g, sizeof(g), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_OK, "cmp rax,-5 returned %s: %s", tr_status_name(st),
+              f.detail ? f.detail : "?");
+        CHECK(f.n == 3, "emitted %zu words, expected 3", f.n);
+        if (f.n == 3) {
+            CHECK(f.words[0] == a64_adds_imm(A64_XZR, 0, 5),
+                  "cmp rax,-5 -> 0x%08X, expected CMN 0x%08X", f.words[0],
+                  a64_adds_imm(A64_XZR, 0, 5));
+            CHECK(f.words[0] == 0xB100141Fu, "CMN encoding drifted");
+            CHECK(f.words[1] == a64_b_cond(A64_EQ, 1), "jz -> 0x%08X", f.words[1]);
+            CHECK(f.words[2] == 0xD65F03C0u, "ret -> 0x%08X", f.words[2]);
+        }
+    }
+    {
+        /* test rax,rax ; jz +0 ; ret -> TST then B.EQ */
+        static const uint8_t g[] = { 0x48,0x85,0xC0, 0x74,0x00, 0xC3 };
+        st = tr_translate_function(g, sizeof(g), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_OK, "test/jz returned %s: %s", tr_status_name(st),
+              f.detail ? f.detail : "?");
+        CHECK(f.n == 3 && f.words[0] == 0xEA00001Fu,
+              "test rax,rax -> 0x%08X, expected TST 0xEA00001F",
+              f.n ? f.words[0] : 0u);
+        CHECK(f.n == 3 && (f.words[1] & 0xFu) == A64_EQ,
+              "jz condition is %u, expected EQ", f.n ? (f.words[1] & 0xFu) : 99u);
+    }
+    {
+        /* An unconditional forward jmp must emit B, not B.cond. */
+        static const uint8_t g[] = { 0x48,0x31,0xC0, 0xEB,0x00, 0xC3 };
+        st = tr_translate_function(g, sizeof(g), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_OK, "xor/jmp/ret returned %s", tr_status_name(st));
+        CHECK(f.n == 3 && f.words[1] == a64_b(1), "jmp -> 0x%08X, expected B +1",
+              f.n ? f.words[1] : 0u);
+        CHECK(f.branches == 1 && f.backwards == 0,
+              "forward jmp counted as backward");
+    }
 }
 
 static void test_unsupported_is_refused(void)
@@ -649,7 +848,7 @@ static void test_pipeline(void)
         rs.host_addr = (uint64_t)(uintptr_t)dll_host;   /* the real host address */
         CHECK(tr_translate_run(exe.b + HDR_SIZE, 18u, exe_va, resolve_cb, &rs, &ox)
               == TR_OK, "exe did not translate once the import was resolved");
-        check_exe_shape(&ox, rs.host_addr, "real host address");
+        check_exe_shape(&ox, rs.host_addr, 5u, "real host address");
         verdict.exe_words = ox.n;
         verdict.rebuilt_matches = 1;
 
@@ -690,7 +889,7 @@ static void test_pipeline(void)
                 if (!ok && sig)
                     printf("  terminated by signal %d%s\n", sig,
                            to ? " (SIGALRM: the generated code never returned)" : "");
-                CHECK(ok && r == 46u, "entry() returned %llu, expected 46 (42+3+1)",
+                CHECK(ok && r == 16u, "entry() returned %llu, expected 16 (SumTo(5)=15, then +1)",
                       (unsigned long long)r);
                 if (ok)
                     printf("  EXECUTED ON aarch64: app.exe entry -> %llu, having called "
@@ -735,8 +934,8 @@ static void test_pipeline(void)
                         if (exec_generated(e2, &r2, &to2, &sig2)) {
                             verdict.cached_ok = 1;
                             verdict.cached_result = r2;
-                            CHECK(r2 == 46u,
-                                  "code loaded from the cache returned %llu, expected 46",
+                            CHECK(r2 == 16u,
+                                  "code loaded from the cache returned %llu, expected 16",
                                   (unsigned long long)r2);
                             printf("  EXECUTED FROM CACHE: %llu with zero retranslation\n",
                                    (unsigned long long)r2);
@@ -771,7 +970,7 @@ static void test_pipeline(void)
     rs.host_addr = 0x00000000DEADB000ULL;
     CHECK(tr_translate_run(exe.b + HDR_SIZE, 18u, exe_va, resolve_cb, &rs, &ox)
           == TR_OK, "exe did not translate");
-    check_exe_shape(&ox, rs.host_addr, "bytes-only host");
+    check_exe_shape(&ox, rs.host_addr, 5u, "bytes-only host");
     verdict.exe_words = ox.n;
     verdict.rebuilt_matches = 1;
 
@@ -822,6 +1021,7 @@ int main(void)
     printf("=== exe + dll translation, end to end ===\n");
     test_images_are_real();
     test_translation();
+    test_function_translation();
     test_unsupported_is_refused();
     test_pipeline();
 #if defined(__aarch64__)

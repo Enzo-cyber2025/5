@@ -3,6 +3,7 @@
 #include "a64_emit.h"
 #include "x86_decode.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 #define HOST_RAX 0u      /* guest RAX -> X0 */
@@ -218,4 +219,537 @@ tr_status tr_translate_run(const uint8_t *code, size_t code_len,
 
     out->detail = "guest code ended without a RET";
     return TR_UNSUPPORTED;
+}
+
+/* ========================================================================
+ * Whole-function translation with control flow.
+ * ======================================================================== */
+
+typedef enum {
+    P_MOV_IMM, P_MOV_REG, P_ZERO, P_ADD_REG, P_SUB_REG, P_ADD_IMM, P_SUB_IMM,
+    P_CMP_REG, P_CMP_IMM, P_TEST_REG, P_JCC, P_JMP, P_CALL_IAT, P_RET
+} plan_op;
+
+typedef struct {
+    plan_op  op;
+    uint64_t guest_va;
+    uint32_t off;          /* byte offset into the guest buffer */
+    uint32_t guest_len;
+    unsigned rd, rn, rm;   /* host registers */
+    uint64_t const_val;    /* MOV_IMM value, or the resolved host call target */
+    int64_t  delta;        /* effective signed immediate for ADD/SUB/CMP imm */
+    unsigned cond;         /* AArch64 condition code, for P_JCC */
+    uint64_t target_va;    /* P_JCC and P_JMP */
+    int      sets_flags;   /* leaves NZCV matching an x86 CMP */
+    uint32_t words;        /* emitted size, fixed before layout */
+    uint32_t word_at;      /* assigned by layout */
+} plan;
+
+/* Guest register -> host register. RSP and RBP are refused: using them implies a
+ * guest stack model, and inventing one silently would be worse than refusing. */
+static int map_guest_reg(unsigned field, int extended, unsigned *host)
+{
+    static const signed char tbl[16] = {
+        0, 1, 2, 3, -1, -1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13
+    };
+    unsigned g = (field & 7u) | (extended ? 8u : 0u);
+    if (g > 15u || tbl[g] < 0) return 0;
+    *host = (unsigned)tbl[g];
+    return 1;
+}
+
+/* The 14 conditions that map exactly onto AArch64 after a SUBS/ANDS. JP and JNP
+ * are refused rather than dropped: AArch64 has no parity flag, so there is no
+ * condition code that means the same thing, and picking one would be a guess. */
+static int jcc_cond(unsigned nibble, unsigned *cond)
+{
+    switch (nibble) {
+    case 0x4u: *cond = A64_EQ; return 1;   /* JE/JZ   */
+    case 0x5u: *cond = A64_NE; return 1;   /* JNE/JNZ */
+    case 0x2u: *cond = A64_LO; return 1;   /* JB/JNAE */
+    case 0x3u: *cond = A64_HS; return 1;   /* JAE/JNB */
+    case 0x6u: *cond = A64_LS; return 1;   /* JBE     */
+    case 0x7u: *cond = A64_HI; return 1;   /* JA      */
+    case 0xCu: *cond = A64_LT; return 1;   /* JL/JNGE */
+    case 0xDu: *cond = A64_GE; return 1;   /* JGE/JNL */
+    case 0xEu: *cond = A64_LE; return 1;   /* JLE     */
+    case 0xFu: *cond = A64_GT; return 1;   /* JG      */
+    case 0x8u: *cond = A64_MI; return 1;   /* JS      */
+    case 0x9u: *cond = A64_PL; return 1;   /* JNS     */
+    case 0x0u: *cond = A64_VS; return 1;   /* JO      */
+    case 0x1u: *cond = A64_VC; return 1;   /* JNO     */
+    default:   return 0;                   /* JP, JNP */
+    }
+}
+
+static uint32_t const_words(uint64_t v)
+{
+    uint32_t n = 1u;
+    unsigned sh;
+    for (sh = 16u; sh < 64u; sh += 16u)
+        if ((v >> sh) & 0xFFFFu) n++;
+    return n;
+}
+
+static int pushf(tr_func *o, uint32_t insn)
+{
+    if (o->n >= TRF_MAX_WORDS) { o->detail = "output word buffer full"; return 0; }
+    o->words[o->n++] = insn;
+    return 1;
+}
+
+static int emit_const_f(tr_func *o, unsigned rd, uint64_t v)
+{
+    unsigned sh;
+    if (!pushf(o, a64_movz_x(rd, (uint16_t)(v & 0xFFFFu)))) return 0;
+    for (sh = 16u; sh < 64u; sh += 16u) {
+        uint16_t chunk = (uint16_t)((v >> sh) & 0xFFFFu);
+        if (chunk) { if (!pushf(o, a64_movk_x(rd, chunk, sh))) return 0; }
+    }
+    return 1;
+}
+
+/* Plans one guest instruction: decides the operation, the registers, and how many
+ * ARM64 words it will emit. No emission happens here, so the layout pass has sizes
+ * before any displacement is needed. */
+static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
+                          uint64_t base_va, tr_resolve_fn resolve, void *user,
+                          plan *p, tr_func *out)
+{
+    x86_insn   in;
+    x86_status st;
+    uint64_t   va = base_va + off;
+    int        is_grp1;
+
+    memset(p, 0, sizeof(*p));
+    p->off = off;
+    p->guest_va = va;
+
+    st = x86_decode(code + off, code_len - off, va, &in);
+    if (st == X86_NEED_MORE) { out->detail = "function ends mid-instruction";
+                               return TR_INVALID; }
+    if (st == X86_INVALID)   { out->detail = "not a legal 64-bit instruction";
+                               return TR_INVALID; }
+    if (st == X86_UNSUPPORTED) { out->detail = "decoder does not model this encoding";
+                               return TR_UNSUPPORTED; }
+    if (in.len == 0 || off + in.len > code_len) {
+        out->detail = "decoder returned an unusable length";
+        return TR_INVALID;
+    }
+    p->guest_len = in.len;
+
+    if (in.p66 || in.p67 || in.pf2 || in.pf3 || in.lock || in.seg ||
+        (in.flags & X86F_REP) != 0) {
+        out->detail = "a prefix that changes meaning is present";
+        return TR_UNSUPPORTED;
+    }
+    if (in.op_len != 1 && !(in.map == 1 && in.op_len == 2)) {
+        out->detail = "three-byte opcode maps are outside the subset";
+        return TR_UNSUPPORTED;
+    }
+
+    /* ---- two-byte map: 0F 8x is the rel32 form of Jcc ---- */
+    if (in.map == 1) {
+        if (in.op[0] >= 0x80u && in.op[0] <= 0x8Fu) {
+            if (!jcc_cond(in.op[0] & 0xFu, &p->cond)) {
+                out->detail = "JP/JNP: AArch64 has no parity flag";
+                return TR_UNSUPPORTED;
+            }
+            p->op = P_JCC;
+            p->target_va = va + in.len + (uint64_t)(int64_t)in.imm;
+            p->words = 1u;
+            return TR_OK;
+        }
+        out->detail = "two-byte opcode outside the subset";
+        return TR_UNSUPPORTED;
+    }
+
+    is_grp1 = (in.op[0] == 0x83 || in.op[0] == 0x81);
+
+    if (in.op[0] == 0xC3 && in.rex == 0 && in.mod == 0) {
+        p->op = P_RET; p->words = 1u; return TR_OK;
+    }
+    if (in.op[0] == 0xEB || in.op[0] == 0xE9) {
+        p->op = P_JMP;
+        p->target_va = va + in.len + (uint64_t)(int64_t)in.imm;
+        p->words = 1u;
+        return TR_OK;
+    }
+    if (in.op[0] >= 0x70u && in.op[0] <= 0x7Fu) {
+        if (!jcc_cond(in.op[0] & 0xFu, &p->cond)) {
+            out->detail = "JP/JNP: AArch64 has no parity flag";
+            return TR_UNSUPPORTED;
+        }
+        p->op = P_JCC;
+        p->target_va = va + in.len + (uint64_t)(int64_t)in.imm;
+        p->words = 1u;
+        return TR_OK;
+    }
+    if (in.op[0] == 0xFF && in.reg == 2 && (in.flags & X86F_CALL)) {
+        uint64_t iat_va = va + in.len + (uint64_t)(int64_t)in.disp;
+        uint64_t host;
+        if ((in.flags & X86F_RIP_REL) && in.rip_rel_target != iat_va) {
+            out->detail = "RIP-relative target disagrees with the decoder";
+            return TR_INVALID;
+        }
+        if (in.mod != 0 || in.rm != 5) {
+            out->detail = "call target is not a RIP-relative import slot";
+            return TR_UNSUPPORTED;
+        }
+        host = resolve ? resolve(iat_va, user) : 0;
+        if (host == 0) {
+            out->iat_va = iat_va;
+            out->detail = "no host address known for this import slot yet";
+            return TR_NEEDS_TARGET;
+        }
+        p->op = P_CALL_IAT;
+        p->const_val = host;
+        p->words = const_words(host) + 1u;
+        return TR_OK;
+    }
+    if (in.op[0] == 0xC7 && in.rex_w && in.mod == 3 && in.reg == 0) {
+        if (!map_guest_reg(in.rm, in.rex_b, &p->rd)) {
+            out->detail = "mov imm: register outside the mapped set";
+            return TR_UNSUPPORTED;
+        }
+        p->op = P_MOV_IMM;
+        p->const_val = (uint64_t)(int64_t)(int32_t)in.imm;
+        p->words = const_words(p->const_val);
+        return TR_OK;
+    }
+    if (in.op[0] == 0x89 && in.rex_w && in.mod == 3) {
+        if (!map_guest_reg(in.rm, in.rex_b, &p->rd) ||
+            !map_guest_reg(in.reg, in.rex_r, &p->rn)) {
+            out->detail = "mov reg: register outside the mapped set";
+            return TR_UNSUPPORTED;
+        }
+        p->op = P_MOV_REG; p->words = 1u; return TR_OK;
+    }
+    if (in.op[0] == 0x31 && in.rex_w && in.mod == 3) {
+        /* Only the zeroing idiom. A real two-operand xor needs the value AND the
+         * flags it sets, and modelling half of it would be a guess. */
+        unsigned a, b;
+        if ((in.rm | (in.rex_b ? 8u : 0u)) != (in.reg | (in.rex_r ? 8u : 0u))) {
+            out->detail = "xor with two different operands is outside the subset";
+            return TR_UNSUPPORTED;
+        }
+        if (!map_guest_reg(in.rm, in.rex_b, &a) || !map_guest_reg(in.reg, in.rex_r, &b)) {
+            out->detail = "xor: register outside the mapped set";
+            return TR_UNSUPPORTED;
+        }
+        p->op = P_ZERO; p->rd = a; p->words = 1u; return TR_OK;
+    }
+    if (in.op[0] == 0x01 && in.rex_w && in.mod == 3) {
+        if (!map_guest_reg(in.rm, in.rex_b, &p->rd) ||
+            !map_guest_reg(in.reg, in.rex_r, &p->rn)) {
+            out->detail = "add reg: register outside the mapped set";
+            return TR_UNSUPPORTED;
+        }
+        p->op = P_ADD_REG; p->words = 1u; return TR_OK;
+    }
+    if (in.op[0] == 0x29 && in.rex_w && in.mod == 3) {
+        if (!map_guest_reg(in.rm, in.rex_b, &p->rd) ||
+            !map_guest_reg(in.reg, in.rex_r, &p->rn)) {
+            out->detail = "sub reg: register outside the mapped set";
+            return TR_UNSUPPORTED;
+        }
+        p->op = P_SUB_REG; p->words = 1u; return TR_OK;
+    }
+    if (in.op[0] == 0x39 && in.rex_w && in.mod == 3) {
+        if (!map_guest_reg(in.rm, in.rex_b, &p->rn) ||
+            !map_guest_reg(in.reg, in.rex_r, &p->rm)) {
+            out->detail = "cmp reg: register outside the mapped set";
+            return TR_UNSUPPORTED;
+        }
+        p->op = P_CMP_REG; p->sets_flags = 1; p->words = 1u; return TR_OK;
+    }
+    if (in.op[0] == 0x85 && in.rex_w && in.mod == 3) {
+        if (!map_guest_reg(in.rm, in.rex_b, &p->rn) ||
+            !map_guest_reg(in.reg, in.rex_r, &p->rm)) {
+            out->detail = "test: register outside the mapped set";
+            return TR_UNSUPPORTED;
+        }
+        p->op = P_TEST_REG; p->sets_flags = 1; p->words = 1u; return TR_OK;
+    }
+    if (is_grp1 && in.rex_w && in.mod == 3 &&
+        (in.reg == 0 || in.reg == 5 || in.reg == 7)) {
+        int64_t value = (in.op[0] == 0x83) ? (int64_t)(int8_t)in.imm
+                                           : (int64_t)(int32_t)in.imm;
+        if (!map_guest_reg(in.rm, in.rex_b, &p->rd)) {
+            out->detail = "grp1: register outside the mapped set";
+            return TR_UNSUPPORTED;
+        }
+        if (in.reg == 0) {          /* ADD */
+            p->op = P_ADD_IMM; p->delta = value;
+        } else if (in.reg == 5) {   /* SUB */
+            p->op = P_SUB_IMM; p->delta = -value;
+        } else {                    /* CMP */
+            p->op = P_CMP_IMM; p->delta = value; p->sets_flags = 1;
+        }
+        /* The ARM64 immediate field is unsigned 12 bits, so the signed effect has
+         * to fit in either direction. Outside that, a scratch register and a
+         * register-form op would be needed; refusing is honest. */
+        {
+            /* p->delta is already the signed arithmetic effect: the opcode was
+             * applied when it was planned, so a SUB stored the negated immediate.
+             * Deciding the ARM64 form from the sign here is correct precisely
+             * because the operation was settled earlier and independently. */
+            if (p->delta > 0xFFF || p->delta < -0xFFF) {
+                out->detail = "immediate does not fit in 12 bits";
+                return TR_UNSUPPORTED;
+            }
+        }
+        p->words = 1u;
+        return TR_OK;
+    }
+
+    out->detail = "instruction is outside the translated subset";
+    return TR_UNSUPPORTED;
+}
+
+tr_status tr_translate_function(const uint8_t *code, size_t code_len,
+                                uint64_t guest_va, tr_resolve_fn resolve,
+                                void *user, tr_func *out)
+{
+    plan     plans[TRF_MAX_INSN];
+    uint8_t *seen = NULL;
+    uint32_t stack[TRF_MAX_INSN];
+    size_t   sp = 0, nplans = 0, i, j;
+    uint32_t cursor;
+    int      order_changed = 1;
+
+    if (!out) return TR_INVALID;
+    memset(out, 0, sizeof(*out));
+    out->detail = "ok";
+    if (!code || code_len == 0 || code_len > (1u << 20)) {
+        out->detail = "guest buffer absent or implausibly large";
+        return TR_INVALID;
+    }
+    seen = calloc(code_len, 1u);
+    if (!seen) { out->detail = "out of memory"; return TR_INVALID; }
+
+    /* ---- pass 1: discover and plan, following direct branches ---- */
+    stack[sp++] = 0u;
+    seen[0] = 1u;
+    while (sp) {
+        uint32_t off = stack[--sp];
+        plan p;
+        tr_status st = plan_one(code, code_len, off, guest_va, resolve, user,
+                                &p, out);
+        if (st != TR_OK) { free(seen); return st; }
+        if (nplans >= TRF_MAX_INSN) {
+            out->detail = "more instructions than TRF_MAX_INSN";
+            free(seen);
+            return TR_OVERFLOW;
+        }
+        plans[nplans++] = p;
+
+        /* Successors. This is the part that decides whether a whole function is
+         * discovered or only its first instruction: every instruction that is not
+         * an unconditional terminator also falls through, and a conditional branch
+         * falls through AND branches. Getting this wrong does not fail loudly - it
+         * produces a translation of a prefix that looks complete. */
+        if (p.op == P_RET) {
+            /* ends this path */
+        } else if (p.op == P_JMP) {
+            uint64_t t = p.target_va;
+            if (t < guest_va || t - guest_va >= code_len) {
+                out->detail = "unconditional branch leaves the function";
+                free(seen); return TR_UNSUPPORTED;
+            }
+            if (!seen[t - guest_va]) {
+                if (sp >= TRF_MAX_INSN) {
+                    out->detail = "worklist overflow"; free(seen); return TR_OVERFLOW;
+                }
+                seen[t - guest_va] = 1u;
+                stack[sp++] = (uint32_t)(t - guest_va);
+            }
+        } else {
+            uint32_t next = off + p.guest_len;
+            if (p.op == P_JCC) {
+                uint64_t t = p.target_va;
+                if (t < guest_va || t - guest_va >= code_len) {
+                    out->detail = "conditional branch leaves the function";
+                    free(seen); return TR_UNSUPPORTED;
+                }
+                if (!seen[t - guest_va]) {
+                    if (sp >= TRF_MAX_INSN) {
+                        out->detail = "worklist overflow"; free(seen); return TR_OVERFLOW;
+                    }
+                    seen[t - guest_va] = 1u;
+                    stack[sp++] = (uint32_t)(t - guest_va);
+                }
+            }
+            if (next >= code_len) {
+                /* A function whose last instruction is not a RET has no return, so
+                 * translating it would emit code that runs off the end. */
+                out->detail = "function ends without a RET";
+                free(seen);
+                return TR_UNSUPPORTED;
+            }
+            if (!seen[next]) {
+                if (sp >= TRF_MAX_INSN) {
+                    out->detail = "worklist overflow"; free(seen); return TR_OVERFLOW;
+                }
+                seen[next] = 1u;
+                stack[sp++] = next;
+            }
+        }
+    }
+    free(seen);
+
+    /* ---- sort by guest address so layout and adjacency are both in order ---- */
+    while (order_changed) {
+        order_changed = 0;
+        for (i = 1; i < nplans; i++) {
+            if (plans[i - 1].off > plans[i].off) {
+                plan t = plans[i - 1];
+                plans[i - 1] = plans[i];
+                plans[i] = t;
+                order_changed = 1;
+            }
+        }
+    }
+
+    /* ---- flag liveness: a conditional branch may only read flags that this
+     * translator actually produced, immediately before it ---- */
+    for (i = 0; i < nplans; i++) {
+        if (plans[i].op != P_JCC) continue;
+        if (i == 0 || !plans[i - 1].sets_flags ||
+            plans[i - 1].off + plans[i - 1].guest_len != plans[i].off) {
+            out->detail = "a conditional branch would read flags this translator "
+                          "did not produce: it must be preceded immediately by a "
+                          "modelled CMP or TEST";
+            return TR_UNSUPPORTED;
+        }
+        for (j = 0; j < nplans; j++) {
+            if ((plans[j].op == P_JCC || plans[j].op == P_JMP) &&
+                plans[j].target_va == plans[i].guest_va) {
+                out->detail = "a branch targets a conditional branch, so the flags "
+                              "it reads would come from elsewhere";
+                return TR_UNSUPPORTED;
+            }
+        }
+    }
+
+    for (i = 0; i < nplans; i++)
+        if (plans[i].op == P_CALL_IAT) out->needs_frame = 1;
+
+    /* ---- pass 2: layout. Sizes are already fixed, so one pass is enough. ---- */
+    cursor = out->needs_frame ? 1u : 0u;
+    for (i = 0; i < nplans; i++) {
+        plans[i].word_at = cursor;
+        cursor += plans[i].words;
+        if (plans[i].op == P_RET && out->needs_frame) cursor += 1u;
+    }
+    if (cursor + (out->needs_frame ? 1u : 0u) > TRF_MAX_WORDS) {
+        out->detail = "translation exceeds TRF_MAX_WORDS";
+        return TR_OVERFLOW;
+    }
+
+    /* ---- pass 3: emit ---- */
+    if (out->needs_frame && !pushf(out, a64_stp_frame_push())) return TR_OVERFLOW;
+
+    for (i = 0; i < nplans; i++) {
+        const plan *p = &plans[i];
+        out->insns++;
+        out->guest_bytes += p->guest_len;
+
+        switch (p->op) {
+        case P_MOV_IMM:
+            if (!emit_const_f(out, p->rd, p->const_val)) return TR_OVERFLOW;
+            break;
+        case P_MOV_REG:
+            if (!pushf(out, a64_mov_reg(p->rd, p->rn))) return TR_OVERFLOW;
+            break;
+        case P_ZERO:
+            if (!pushf(out, a64_movz_x(p->rd, 0))) return TR_OVERFLOW;
+            break;
+        case P_ADD_REG:
+            if (!pushf(out, a64_add_reg(p->rd, p->rd, p->rn))) return TR_OVERFLOW;
+            break;
+        case P_SUB_REG:
+            if (!pushf(out, a64_sub_reg(p->rd, p->rd, p->rn))) return TR_OVERFLOW;
+            break;
+        case P_ADD_IMM:
+        case P_SUB_IMM:
+            if (p->delta >= 0) {
+                if (!pushf(out, a64_add_x_imm(p->rd, p->rd, (uint16_t)p->delta)))
+                    return TR_OVERFLOW;
+            } else {
+                if (!pushf(out, a64_sub_x_imm(p->rd, p->rd, (uint16_t)(-p->delta))))
+                    return TR_OVERFLOW;
+            }
+            break;
+        case P_CMP_REG:
+            if (!pushf(out, a64_subs_reg(A64_XZR, p->rn, p->rm))) return TR_OVERFLOW;
+            break;
+        case P_CMP_IMM:
+            /* cmp r, k is SUBS XZR, r, k. A negative k has no subtract-immediate
+             * encoding, so it becomes CMN, which is ADDS XZR, r, -k: the same
+             * comparison, and the flags come out identical. */
+            if (p->delta >= 0) {
+                if (!pushf(out, a64_subs_imm(A64_XZR, p->rd, (uint16_t)p->delta)))
+                    return TR_OVERFLOW;
+            } else {
+                if (!pushf(out, a64_adds_imm(A64_XZR, p->rd, (uint16_t)(-p->delta))))
+                    return TR_OVERFLOW;
+            }
+            break;
+        case P_TEST_REG:
+            if (!pushf(out, a64_ands_reg(A64_XZR, p->rn, p->rm))) return TR_OVERFLOW;
+            break;
+        case P_JCC:
+        case P_JMP: {
+            uint32_t tgt_word = 0;
+            int found = 0;
+            for (j = 0; j < nplans; j++) {
+                if (plans[j].guest_va == p->target_va) { tgt_word = plans[j].word_at; found = 1; break; }
+            }
+            if (!found) { out->detail = "branch target was not planned"; return TR_INVALID; }
+            {
+                int32_t delta = (int32_t)tgt_word - (int32_t)p->word_at;
+                if (p->op == P_JCC) {
+                    out->branches++;
+                    if (delta < 0) out->backwards++;
+                    if (!a64_cond_range_ok(delta)) {
+                        out->detail = "conditional branch displacement exceeds 19 bits";
+                        return TR_OVERFLOW;
+                    }
+                    if (!pushf(out, a64_b_cond(p->cond, delta))) return TR_OVERFLOW;
+                } else {
+                    out->branches++;
+                    if (delta < 0) out->backwards++;
+                    if (!a64_b_range_ok(delta)) {
+                        out->detail = "branch displacement exceeds 26 bits";
+                        return TR_OVERFLOW;
+                    }
+                    if (!pushf(out, a64_b(delta))) return TR_OVERFLOW;
+                }
+            }
+            break;
+        }
+        case P_CALL_IAT:
+            if (!emit_const_f(out, HOST_SCRATCH, p->const_val)) return TR_OVERFLOW;
+            if (!pushf(out, a64_blr(HOST_SCRATCH))) return TR_OVERFLOW;
+            break;
+        case P_RET:
+            if (out->needs_frame && !pushf(out, a64_ldp_frame_pop())) return TR_OVERFLOW;
+            if (!pushf(out, a64_ret())) return TR_OVERFLOW;
+            break;
+        default:
+            out->detail = "internal: unplanned operation reached emission";
+            return TR_INVALID;
+        }
+    }
+
+    if (out->n != cursor) {
+        /* Layout and emission disagreeing means a size was counted differently
+         * from how it was emitted, which would put every later branch at the
+         * wrong displacement. Detecting it here is cheap; finding it by executing
+         * wrong code is not. */
+        out->detail = "internal: emitted word count disagrees with the layout";
+        return TR_INVALID;
+    }
+    return TR_OK;
 }

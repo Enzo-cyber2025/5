@@ -114,10 +114,10 @@ jobs:
             && die "the pipeline reported a skip on an aarch64 runner"
           grep -q "EXECUTED ON aarch64" /tmp/translate.log \
             || die "the translated exe never ran on this aarch64 runner"
-          grep -q "entry -> 46" /tmp/translate.log \
-            || die "the translated exe did not return 46 (42 + 3 from the DLL + 1)"
-          grep -q "EXECUTED FROM CACHE: 46" /tmp/translate.log \
-            || die "host code reloaded from the cache did not return 46"
+          grep -q "entry -> 16" /tmp/translate.log \
+            || die "the translated exe did not return 16 (SumTo(5)=15 from the DLL, then +1)"
+          grep -q "EXECUTED FROM CACHE: 16" /tmp/translate.log \
+            || die "host code reloaded from the cache did not return 16"
           echo "verified on real aarch64 hardware:"
           grep -E "EXECUTED (ON aarch64|FROM CACHE)" /tmp/translate.log
 
@@ -273,10 +273,10 @@ jobs:
             && die "the pipeline reported a skip under QEMU"
           grep -q "EXECUTED ON aarch64" /tmp/translate.log \
             || die "the translated exe never ran under QEMU"
-          grep -q "entry -> 46" /tmp/translate.log \
-            || die "the translated exe did not return 46 under QEMU"
-          grep -q "EXECUTED FROM CACHE: 46" /tmp/translate.log \
-            || die "host code reloaded from the cache did not return 46 under QEMU"
+          grep -q "entry -> 16" /tmp/translate.log \
+            || die "the translated exe did not return 16 under QEMU"
+          grep -q "EXECUTED FROM CACHE: 16" /tmp/translate.log \
+            || die "host code reloaded from the cache did not return 16 under QEMU"
           echo "verified under QEMU user-mode:"
           grep -E "EXECUTED (ON aarch64|FROM CACHE)" /tmp/translate.log
 

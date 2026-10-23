@@ -399,10 +399,81 @@ errada minha apareceu: `0xDEADB000` tem `0xDEAD` nos bits 31:16, não 47:32, ent
 **80 checks, 0 falhas.** Suite do projeto: 52 + 194 + 147 + 74 + 80 + 6 = **553**,
 tudo limpo sob `-Wall -Wextra -Wshadow -Werror` e ASan+UBSan sem vazamentos.
 
+### Feito — flags, comparação e desvio condicional (`tr_translate_function`)
+
+Marco 4. Sem isto nenhum laço e nenhum `if` traduz, que é o que separa "chamadas
+lineares" de código real. Uma função inteira agora é traduzida seguindo o fluxo de
+controle, não apenas uma linha reta até o primeiro `RET`.
+
+O programa de demonstração passou a ter um laço de verdade:
+
+```
+mini.dll  SumTo(rcx) -> rax        app.exe  entry() -> rax
+  xor rax, rax                       mov rcx, 5
+loop:                                call [rip -> IAT de SumTo]
+  add rax, rcx                       add rax, 1
+  sub rcx, 1                         ret
+  cmp rcx, 0
+  jnz loop
+  ret
+```
+
+`SumTo(5) = 15`, mais 1 no executável → **16**. Cinco iterações de propósito: uma
+comparação errada ou uma direção de desvio errada muda o resultado de forma visível,
+em vez de dar um "off by one" que poderia passar por sorte.
+
+**O mapeamento de flags é exato, não aproximado — mas só onde vale.** Depois de um
+`SUBS` do AArch64, `N` é o `SF` do x86, `Z` é o `ZF`, `V` é o `OF`, e `C` é a
+**negação** de `CF` (AArch64 liga C quando *não* houve borrow; x86 liga CF quando
+houve). É por isso que os códigos de condição podem ser usados diretamente, e que
+`cmp r, -k` tem que virar `CMN` (`ADDS` com XZR) em vez de um `SUBS` com imediato
+negativo — o campo imediato do ARM64 não é assinado. 14 das 16 condições são
+cobertas; **`JP`/`JNP` são recusadas**, porque o AArch64 não tem flag de paridade e
+escolher um código de condição seria um chute.
+
+**A armadilha central: x86 liga flags em quase toda instrução aritmética; ARM64 só
+nas formas com sufixo S.** Emitir um `ADD` comum onde o guest tinha um `add` e
+depois deixar um desvio condicional ler o resultado seria ler flags que ninguém
+calculou. Então o tradutor rastreia qual instrução deixou flags utilizáveis, e um
+desvio condicional só é aceito quando a instrução **imediatamente anterior, contígua
+no fluxo guest**, é um `CMP` ou `TEST` modelado. Duas guardas a mais seguem do mesmo
+raciocínio: um desvio cujo alvo é o próprio desvio condicional é recusado (as flags
+viriam de outro lugar), e `add`/`sub`/`xor` emitem a forma que **não** liga flags —
+correto justamente porque nada a jusante tem permissão de lê-las.
+
+**Três passadas**, porque o deslocamento de um desvio não existe até que o tamanho
+emitido de cada instrução esteja fixo: planejar e contar, dispor endereços, emitir.
+O tamanho em words ARM64 não depende do alvo do desvio, então o layout não precisa
+de iteração até ponto fixo. Se no fim a contagem emitida divergir do layout, é erro
+interno e não silêncio — uma divergência colocaria **todo** desvio seguinte no
+deslocamento errado.
+
+**`RSP` e `RBP` são recusados** como operandos: usá-los implica um modelo de pilha
+do guest, e inventar um em silêncio seria pior do que recusar. O mapa de
+registradores agora cobre 14 (RAX,RCX,RDX,RBX→X0..X3, RSI,RDI→X4,X5, R8..R15→X6..X13),
+com REX.B/REX.R respeitados.
+
+Recusado também: desvio que sai da função, função que termina sem `RET` (traduzir
+isso emitiria código que sai do fim), `xor` com dois operandos diferentes (o idioma
+de zerar é seguro; um xor real precisa do valor *e* das flags), e qualquer prefixo
+que mude significado (`66`, `67`, `F2`, `F3`, `LOCK`, segmento, `REP`).
+
+Os 15 encodings ARM64 (MOVZ, MOVK, ADD/SUB imediato, ADD/SUB/SUBS/ANDS/ADDS
+registrador, MOV, BLR, RET, STP, LDP, B, B.cond) são pinados contra valores
+derivados à mão **e** conferidos por decomposição independente em Python, campo por
+campo. Foi assim que dois erros meus de aritmética apareceram (`tst x0,x0` tem
+`rn=0`, e `b.ne -13` é `0x54FFFE61`, não o `0x54FFFF3A` que decodifica para -7) —
+em ambos o encoder estava certo.
+
+**150 checks, 0 falhas** neste teste.
+
 ### Não feito
 
-Lifter completo (flags e branches condicionais, operandos de memória, pilha, todos
-os 16 registradores, SIMD), emissor ARM64 além das seis formas de `translate.c`, loader de ELF, mapeamento real da imagem em
+Operandos de memória além do slot de import RIP-relativo, **modelo de pilha do
+guest** (e portanto `push`/`pop`, `call` direto interno, prólogos reais e
+desenrolar de exceções/SEH), SIMD, as flags que o subconjunto não produz (paridade,
+ajuste, e flags de `mul`/`div`/rotação/shift), relocações aplicadas, resolução de
+imports em escala e a ponte Win32/API-set para cada função importada, loader de ELF, mapeamento real da imagem em
 memória com relocações aplicadas, resolução de imports e de API sets, camada de
 syscalls/Win32, D3D→Vulkan, e o app Android em si — inclusive a ligação desta
 varredura ao `WorkManager` e ao estado real de tela apagada, que hoje é modelada
@@ -456,6 +527,13 @@ No leitor de PE, todos encontrados por execução e não por revisão:
 
 Na tradução:
 
+- A descoberta de sucessores só empurrava alvos para `JCC`/`JMP` e **não seguia o
+  fluxo sequencial** para as demais instruções, então uma função de 6 instruções
+  traduzia 1 e reportava `TR_OK`. Não falha alto: produz a tradução de um prefixo
+  que parece completa. O contador de instruções foi o que entregou.
+- Uma fixture de teste de flags usava `jz +2`, cujo alvo caía fora do buffer, então
+  a recusa "sai da função" disparava antes da checagem de flags que o teste queria
+  exercer — o teste passaria pelo motivo errado.
 - O `RET` final voltava para o meio da própria função: `CALL`/`RET` x86 usam a
   pilha, `BLR`/`RET` ARM64 usam o link register, e X30 não era preservado através
   da chamada. Laço infinito, invisível por inspeção, visível só em hardware real.
