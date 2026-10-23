@@ -2,7 +2,7 @@ CC      ?= gcc
 FIXTURE     ?= /tmp/emu_fixture.exe
 FIXTURE_DLL ?= /tmp/emu_guest.dll
 CFLAGS  ?= -std=c11 -Wall -Wextra -Wshadow -Werror -O2 -g
-TARGETS  = test_ptc test_x86 test_pe test_sweep test_emit_exec pe_info prewarm
+TARGETS  = test_ptc test_x86 test_pe test_sweep test_translate test_emit_exec pe_info prewarm
 
 all: test
 
@@ -35,6 +35,8 @@ test: $(TARGETS)
 	@grep -q 'GetProcAddress' $(FIXTURE).report
 	@echo "pe_info end to end: fixture parsed, kernel32.dll and user32.dll imports reported"
 	@echo
+	./test_translate
+	@echo
 	./test_emit_exec
 
 test_ptc: test_ptc.c ptc.c ptc.h
@@ -57,6 +59,12 @@ test_sweep: test_sweep.c sweep.c sweep.h pe_load.c ptc.c x86_decode.c a64_emit.c
 # remaining time, modelling the screen-off window as a resumable time budget.
 prewarm: prewarm.c sweep.c pe_load.c ptc.c x86_decode.c a64_emit.c
 	$(CC) $(CFLAGS) -o $@ prewarm.c sweep.c pe_load.c ptc.c x86_decode.c a64_emit.c
+
+# The end-to-end pipeline: PE exe and DLL in, decoded, translated, resolved,
+# emitted, executed on ARM64, persisted and reloaded from the cache.
+test_translate: test_translate.c translate.c pe_load.c ptc.c x86_decode.c a64_emit.c
+	$(CC) $(CFLAGS) -o $@ test_translate.c translate.c pe_load.c ptc.c \
+	      x86_decode.c a64_emit.c
 
 # The emit-and-execute harness is ISA-guarded at compile time; on a non-aarch64
 # host it still builds and checks the encodings, but runs nothing.

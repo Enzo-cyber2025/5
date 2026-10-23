@@ -19,6 +19,34 @@ uint32_t a64_ret(void)
     return 0xD65F03C0u;
 }
 
+uint32_t a64_movk_x(unsigned rd, uint16_t imm16, unsigned shift)
+{
+    /* sf=1 opc=11 -> 0xF2800000, hw (shift/16) at bits 22:21 */
+    unsigned hw = (shift / 16u) & 3u;
+    return 0xF2800000u | (hw << 21) | ((uint32_t)imm16 << 5) |
+           (uint32_t)(rd & 31u);
+}
+
+uint32_t a64_mov_reg(unsigned rd, unsigned rm)
+{
+    /* ORR (shifted register): sf=1 opc=010 shift=00 N=0 Rm imm6=0 Rn=ZR Rd,
+     * which is the canonical encoding of MOV Xd, Xm. */
+    return 0xAA0003E0u | ((uint32_t)(rm & 31u) << 16) | (uint32_t)(rd & 31u);
+}
+
+uint32_t a64_sub_x_imm(unsigned rd, unsigned rn, uint16_t imm12)
+{
+    /* sf=1 op=1 S=0 shift=00 -> 0xD1000000 */
+    return 0xD1000000u | ((uint32_t)imm12 << 10) |
+           ((uint32_t)(rn & 31u) << 5) | (uint32_t)(rd & 31u);
+}
+
+uint32_t a64_blr(unsigned rn)
+{
+    /* BLR Rn: 0xD63F0000 | Rn<<5 */
+    return 0xD63F0000u | ((uint32_t)(rn & 31u) << 5);
+}
+
 int a64_emit(uint32_t *buf, size_t cap, size_t *len, uint32_t insn)
 {
     if (!buf || !len || *len + 1u > cap) return 0;

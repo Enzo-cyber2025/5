@@ -28,6 +28,22 @@ uint32_t a64_add_x_imm(unsigned rd, unsigned rn, uint16_t imm12);
 /* RET - return to the address in X30. */
 uint32_t a64_ret(void);
 
+/* MOVK Xd, #imm16, LSL #shift - keep, replacing 16 bits. Together with MOVZ
+ * this materialises any 64-bit constant in at most four instructions, which is
+ * how a translator loads a resolved host address without a literal pool.
+ * shift must be 0, 16, 32 or 48. */
+uint32_t a64_movk_x(unsigned rd, uint16_t imm16, unsigned shift);
+
+/* MOV Xd, Xm - the register form, which ARM64 encodes as ORR Xd, Xm, XZR. */
+uint32_t a64_mov_reg(unsigned rd, unsigned rm);
+
+/* SUB Xd, Xn, #imm12 - needed because a negative ADD immediate has no encoding. */
+uint32_t a64_sub_x_imm(unsigned rd, unsigned rn, uint16_t imm12);
+
+/* BLR Xn - call the address in a register, the shape an indirect call through
+ * an import table takes once the address is resolved. */
+uint32_t a64_blr(unsigned rn);
+
 /* Appends one instruction to a buffer. Returns 0 if it would not fit, and
  * writes nothing in that case: a partially appended instruction would be
  * executed as garbage rather than refused. */

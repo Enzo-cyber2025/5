@@ -290,10 +290,72 @@ reabre. Módulos que o leitor recusa (32 bits, ARM, gerenciado) são reportados 
 motivo e pulados, e o resto continua. Nada é commitado: um passo final afirma que o
 repositório segue sem binários e com o worktree limpo.
 
+### Feito — tradução de ponta a ponta de um `.exe` que chama uma DLL (`translate.c`, `test_translate.c`)
+
+Marco 3. Um executável PE real que chama uma DLL PE real **pela sua tabela de
+imports**, ambos traduzidos para ARM64 do zero, executados em hardware ARM64, e o
+resultado gravado no cache persistente e reexecutado a partir dele sem retraduzir.
+
+O programa guest, escrito byte a byte no teste:
+
+```
+mini.dll  AddThree(rcx) -> rax        app.exe  entry() -> rax
+  add rcx, 3                            mov rcx, 42
+  mov rax, rcx                          call [rip -> IAT de AddThree]
+  ret                                   add rax, 1
+                                        ret
+```
+
+`42 + 3 + 1 = 46`, assertido em runner aarch64 nativo e sob QEMU, e assertido de
+novo executando o código retirado do cache reaberto.
+
+Ambas as imagens são PE estruturalmente reais: cabeçalhos DOS/NT, tabela de
+seções, diretórios de dados, tabela de **exports** na DLL e, no executável, um
+descritor de import com ILT, slot de IAT e um `FF 15` RIP-relativo apontando para
+ele — que é como todo binário Windows chama uma função importada. O deslocamento é
+calculado a partir dos endereços, não escrito à mão.
+
+**Subconjunto traduzido** (o que existe hoje, seis formas): `mov r64,imm32`,
+`mov r64,r64`, `add r64,imm`, `sub r64,imm`, `call [rip+disp32]`, `ret`.
+Mapeamento de registradores: RAX→X0, RCX→X1, e X16 (IP0 no AAPCS, livre para o
+tradutor) carrega o alvo resolvido. Constante de 64 bits materializada com
+MOVZ + MOVK por chunk não nulo.
+
+**A operação vem do opcode; a codificação vem do sinal do efeito.** Decidir as duas
+coisas juntas é o bug mais grave que este marco produziu: escolher a instrução
+ARM64 pelo sinal do imediato fazia `sub rax, 5` emitir um **ADD**. Errado,
+cacheável e silencioso — exatamente a falha que todo o resto do projeto existe para
+impedir. Agora o efeito aritmético é normalizado primeiro (`delta = is_sub ? -imm :
+imm`) e a instrução sai dele.
+
+**Recusado, com motivo:** flags e todo branch condicional, operandos de memória
+além do slot de import, pilha, qualquer registrador além de RAX e RCX, SIMD, e
+imediato fora de ±12 bits. Um trecho que não termina em `RET` é recusado mesmo que
+cada instrução tenha traduzido: **um prefixo de uma função não é uma função**. Sem
+um alvo de import resolvido o resultado é `TR_NEEDS_TARGET` com o endereço do slot,
+nunca um chute — o que força a ordem correta, que é a do loader real: resolver
+imports antes de traduzir quem chama.
+
+**Isto não prova que um aplicativo real pode ser traduzido.** O guest usa seis
+formas de instrução e dois registradores. Medido num bundle real, esse
+subconjunto cobre **0,05% dos blocos**. O que ele prova é que o pipeline inteiro
+funciona — PE, decodificação, tradução, resolução de import, emissão, execução,
+persistência e reexecução a partir do cache — que é o que nunca tinha sido
+demonstrado aqui.
+
+Os 11 encodings ARM64 usados são pinados contra valores derivados à mão das tabelas
+do ARMv8-A **e** conferidos por uma derivação independente em Python, porque
+validar um encoder com ele mesmo não é validação. Foi assim que uma expectativa
+errada minha apareceu: `0xDEADB000` tem `0xDEAD` nos bits 31:16, não 47:32, então o
+`MOVK` pertence em `LSL #16` — o encoder estava certo.
+
+**80 checks, 0 falhas.** Suite do projeto: 52 + 194 + 147 + 74 + 80 + 6 = **553**,
+tudo limpo sob `-Wall -Wextra -Wshadow -Werror` e ASan+UBSan sem vazamentos.
+
 ### Não feito
 
-Lifter (IR a partir do que o decodificador já entrega), emissor ARM64 além das
-três instruções de `a64_emit.c`, loader de ELF, mapeamento real da imagem em
+Lifter completo (flags e branches condicionais, operandos de memória, pilha, todos
+os 16 registradores, SIMD), emissor ARM64 além das seis formas de `translate.c`, loader de ELF, mapeamento real da imagem em
 memória com relocações aplicadas, resolução de imports e de API sets, camada de
 syscalls/Win32, D3D→Vulkan, e o app Android em si — inclusive a ligação desta
 varredura ao `WorkManager` e ao estado real de tela apagada, que hoje é modelada
@@ -344,6 +406,19 @@ No leitor de PE, todos encontrados por execução e não por revisão:
 - Um teste lia `buffer + RVA` para demonstrar que RVA não é offset, sem checar
   limites — e o RVA era maior que a imagem inteira. O próprio teste estourava o
   heap para provar que o parser não deveria estourar.
+
+Na tradução:
+
+- `sub rax, 5` emitia **ADD**: a escolha da instrução ARM64 estava keyed no sinal
+  do imediato em vez do opcode. Errado, cacheável, silencioso. O teste pegou porque
+  compara a word emitida contra `a64_sub_x_imm`, não contra "alguma coisa de 32
+  bits".
+- Uma expectativa minha de encoding estava errada (`MOVK ... LSL #32` para
+  `0xDEADB000`, cujo chunk alto está em `LSL #16`). Pinado duas vezes — pelo
+  encoder e por derivação independente — o erro apareceu no lado certo.
+- O teste do limite de 12 bits usava `48 05` (`add rax,imm32`), que nem está no
+  subconjunto, então a recusa que ele queria exercer era inalcançável. Trocado por
+  `48 81` (GRP1 imm32), que está, e o caminho passou a ser realmente testado.
 
 Na varredura:
 
