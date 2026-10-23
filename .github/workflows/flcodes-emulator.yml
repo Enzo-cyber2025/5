@@ -440,7 +440,7 @@ jobs:
       - name: Dependencies
         run: |
           set -e
-          pip install -r family-link-codes/requirements.txt
+          python3 -m pip install --quiet pytest cryptography
       - name: Enable KVM
         run: |
           set -e
