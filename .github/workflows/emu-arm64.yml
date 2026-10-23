@@ -87,36 +87,21 @@ jobs:
         if: always()
         run: |
           set -uo pipefail
-          # A separate step with its own shell, because whatever stopped the suite
-          # step also stopped the annotation it was meant to emit: running.txt was
-          # never cleared, so the shell died inside the timeout rather than after
-          # it. Nothing in this step can be prevented by that.
+          # A separate step with its own shell: whatever stopped the suite step
+          # also stopped the annotation it was meant to emit, so the diagnostic
+          # cannot live in the same shell as the thing it diagnoses.
           echo "last binary started: $(cat /tmp/running.txt 2>/dev/null || echo none)"
           for f in /tmp/test_*.log /tmp/t_*.log; do
             [ -f "$f" ] || continue
             n=$(basename "$f")
             echo "--- $n ---"
+            grep -E '^VERDICT|^  FAIL|^  EXECUTED|^  terminated' "$f" || true
             tail -4 "$f"
-            short=$(tail -4 "$f" | tr '\n' ';' | tr -d '%\r' | tr -s ' ' | cut -c1-400)
-            echo "::notice title=log-${n}::${short}"
-          done
-
-      - name: Report where the suite stopped
-        if: always()
-        run: |
-          set -uo pipefail
-          # A separate step with its own shell, because whatever stopped the suite
-          # step also stopped the annotation it was meant to emit: running.txt was
-          # never cleared, so the shell died inside the timeout rather than after
-          # it. Nothing in this step can be prevented by that.
-          echo "last binary started: $(cat /tmp/running.txt 2>/dev/null || echo none)"
-          for f in /tmp/test_*.log /tmp/t_*.log; do
-            [ -f "$f" ] || continue
-            n=$(basename "$f")
-            echo "--- $n ---"
-            tail -4 "$f"
-            short=$(tail -4 "$f" | tr '\n' ';' | tr -d '%\r' | tr -s ' ' | cut -c1-400)
-            echo "::notice title=log-${n}::${short}"
+            # VERDICT first: a truncated annotation must still carry the answer.
+            verdict=$(grep -E '^VERDICT' "$f" | head -1 | tr -d '%\r' | cut -c1-300)
+            fails=$(grep -E '^  FAIL' "$f" | head -6 | tr '\n' ';' | tr -d '%\r' | tr -s ' ' | cut -c1-600)
+            lastm=$(grep -E '^  \.\.' "$f" | tail -1 | tr -d '%\r' | cut -c1-150)
+            echo "::notice title=log-${n}::${verdict} || LASTMARK: ${lastm} || FAILS: ${fails}"
           done
 
       - name: Assert generated code actually executed
@@ -256,6 +241,27 @@ jobs:
           run_one /tmp/t_emit
           cp /tmp/t_tr.log /tmp/translate.log
           cp /tmp/t_emit.log /tmp/emit.log
+
+      - name: Report where the suite stopped
+        if: always()
+        run: |
+          set -uo pipefail
+          # A separate step with its own shell: whatever stopped the suite step
+          # also stopped the annotation it was meant to emit, so the diagnostic
+          # cannot live in the same shell as the thing it diagnoses.
+          echo "last binary started: $(cat /tmp/running.txt 2>/dev/null || echo none)"
+          for f in /tmp/test_*.log /tmp/t_*.log; do
+            [ -f "$f" ] || continue
+            n=$(basename "$f")
+            echo "--- $n ---"
+            grep -E '^VERDICT|^  FAIL|^  EXECUTED|^  terminated' "$f" || true
+            tail -4 "$f"
+            # VERDICT first: a truncated annotation must still carry the answer.
+            verdict=$(grep -E '^VERDICT' "$f" | head -1 | tr -d '%\r' | cut -c1-300)
+            fails=$(grep -E '^  FAIL' "$f" | head -6 | tr '\n' ';' | tr -d '%\r' | tr -s ' ' | cut -c1-600)
+            lastm=$(grep -E '^  \.\.' "$f" | tail -1 | tr -d '%\r' | cut -c1-150)
+            echo "::notice title=log-${n}::${verdict} || LASTMARK: ${lastm} || FAILS: ${fails}"
+          done
 
       - name: Assert generated code actually executed
         run: |

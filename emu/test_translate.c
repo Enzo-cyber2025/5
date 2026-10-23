@@ -51,6 +51,21 @@
 
 static int checks, failures;
 
+/* Facts about the ARM64 run, collected so main can print them as one compact
+ * VERDICT line. A CI annotation is truncated, and a tail of the log is truncated
+ * twice over; a single line at the end survives both. Without it the only
+ * evidence available was the last four lines, which named the failure but not the
+ * word that caused it. */
+static struct {
+    size_t   exe_words;
+    int      rebuilt_matches;
+    int      first_ok, first_timed_out, first_sig;
+    uint64_t first_result;
+    int      cached_ok, cached_timed_out, cached_sig;
+    uint64_t cached_result;
+    int      executed_at_all;
+} verdict;
+
 #define CHECK(cond, ...) do { \
     checks++; \
     if (!(cond)) { failures++; printf("  FAIL %s:%d: ", __FILE__, __LINE__); \
@@ -579,6 +594,7 @@ static void test_pipeline(void)
          * address happen to be non-zero, so asserting a fixed count would fail
          * for a reason that is not a bug. Assert the shape, and reconstruct the
          * constant from the emitted MOVZ/MOVK words to prove it round-trips. */
+        verdict.exe_words = ox.n;
         CHECK(ox.n >= 5u && ox.n <= 8u, "exe emitted %zu words, expected 5..8", ox.n);
         if (ox.n >= 5u) {
             size_t k;
@@ -606,6 +622,7 @@ static void test_pipeline(void)
                     CHECK(0, "word %zu is neither MOVZ nor MOVK: 0x%08X", k, w);
                 }
             }
+            verdict.rebuilt_matches = (rebuilt == rs.host_addr);
             CHECK(rebuilt == rs.host_addr,
                   "emitted constant materialises 0x%llx, not the dll host address "
                   "0x%llx - the call would jump somewhere else",
@@ -637,6 +654,11 @@ static void test_pipeline(void)
                 int      to = 0, sig = 0, ok;
                 mark("calling the generated entry point (child, 5s alarm)");
                 ok = exec_generated(entry, &r, &to, &sig);
+                verdict.executed_at_all = 1;
+                verdict.first_ok = ok;
+                verdict.first_timed_out = to;
+                verdict.first_sig = sig;
+                verdict.first_result = r;
                 mark("the generated entry point returned control");
                 CHECK(ok, "executing the translated exe failed%s%s",
                       to ? ": it did not terminate within 5s" : "",
@@ -687,12 +709,16 @@ static void test_pipeline(void)
                         int to2 = 0, sig2 = 0;
                         mark("executing the host code reloaded from the cache");
                         if (exec_generated(e2, &r2, &to2, &sig2)) {
+                            verdict.cached_ok = 1;
+                            verdict.cached_result = r2;
                             CHECK(r2 == 46u,
                                   "code loaded from the cache returned %llu, expected 46",
                                   (unsigned long long)r2);
                             printf("  EXECUTED FROM CACHE: %llu with zero retranslation\n",
                                    (unsigned long long)r2);
                         } else {
+                            verdict.cached_timed_out = to2;
+                            verdict.cached_sig = sig2;
                             CHECK(0, "cached host code did not run%s%s",
                                   to2 ? ": it did not terminate within 5s" : "",
                                   sig2 ? ": killed by a signal" : "");
@@ -721,6 +747,24 @@ static void test_pipeline(void)
     rs.host_addr = 0x00000000DEADB000ULL;
     CHECK(tr_translate_run(exe.b + HDR_SIZE, 18u, exe_va, resolve_cb, &rs, &ox)
           == TR_OK, "exe did not translate");
+    /* Fill the verdict off ARM64 too, so the line means the same thing on every
+     * host instead of reporting zeros that were never measured. */
+    verdict.exe_words = ox.n;
+    {
+        size_t k; uint64_t rebuilt = 0;
+        for (k = 1u; k + 3u < ox.n; k++) {
+            uint32_t w = ox.words[k];
+            uint16_t chunk = (uint16_t)((w >> 5) & 0xFFFFu);
+            unsigned hw = (w >> 21) & 3u;
+            if ((w & 0xFF800000u) == 0xD2800000u) rebuilt = chunk;
+            else if ((w & 0xFF800000u) == 0xF2800000u)
+                rebuilt |= (uint64_t)chunk << (hw * 16u);
+        }
+        verdict.rebuilt_matches = (rebuilt == rs.host_addr);
+        CHECK(verdict.rebuilt_matches,
+              "emitted constant materialises 0x%llx, not 0x%llx",
+              (unsigned long long)rebuilt, (unsigned long long)rs.host_addr);
+    }
     CHECK(ptc_insert(cache, dll_mid, dll_va, DLL_CODE, (uint32_t)sizeof(DLL_CODE),
                      od.words, (uint32_t)(od.n * 4u), 0u) == 0,
           "could not cache the dll block");
@@ -770,6 +814,21 @@ int main(void)
     test_translation();
     test_unsupported_is_refused();
     test_pipeline();
+#if defined(__aarch64__)
+    printf("VERDICT arch=aarch64 exe_words=%zu const_ok=%d first=%s/%llu(to=%d,sig=%d) "
+           "cached=%s/%llu(to=%d,sig=%d)\n",
+           verdict.exe_words, verdict.rebuilt_matches,
+           verdict.first_ok ? "ok" : "FAIL",
+           (unsigned long long)verdict.first_result, verdict.first_timed_out,
+           verdict.first_sig,
+           verdict.cached_ok ? "ok" : "FAIL",
+           (unsigned long long)verdict.cached_result, verdict.cached_timed_out,
+           verdict.cached_sig);
+#else
+    printf("VERDICT arch=other exe_words=%zu const_ok=%d first=n/a cached=n/a "
+           "(translation and cache round trip checked as bytes only)\n",
+           verdict.exe_words, verdict.rebuilt_matches);
+#endif
     printf("\n%d checks, %d failure(s)\n", checks, failures);
     return failures ? 1 : 0;
 }
