@@ -1,0 +1,77 @@
+[19:01:18] SOBE inicio
+[19:01:18] mesa 7z: 70257286 bytes
+[19:01:24] dxvk tar.gz: 10310666 bytes
+[19:01:24] tar dxvk inicio
+[19:01:25] tar dxvk fim rc=0
+[19:01:25] copias dxvk jogo inicio
+[19:01:25] copias dxvk jogo fim
+[19:01:25] dxvk system32 inicio
+[19:01:25] dxvk system32 fim
+[19:01:25] vulkan loader antes: x64=False x86=False
+[19:01:25] instalando VulkanRT via winget
+[19:01:26] vulkanrt: The term 'winget' is not recognized as a name of a cmdlet, function, script file, or executable program.
+Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
+[19:01:26] vktest inicio
+[19:01:30] vktest run (VK_ICD=C:\mesa3d\x64\lvp_icd.x86_64.json)
+[19:01:30] vk: vk: vulkan-1.dll AUSENTE (loader) err=126
+[19:01:30] wgl64 inicio
+[19:01:30] wgl64 csc inicio
+[19:01:30] wgl64 csc fim
+[19:01:30] wgl64 run inicio
+[19:01:31] wgl64 run fim exit=-1073741819
+[19:01:31] wgl32 csc inicio
+[19:01:31] wgl32 csc fim
+[19:01:31] wgl32 run inicio
+[19:01:33] wgl32 run fim exit=-1073741819
+[19:01:33] boot x64 dx11 dxvk lavapipe inicio
+[19:01:35] boot x64 dx11 dxvk lavapipe: pid 6160
+[19:01:40] boot x64 dx11 dxvk lavapipe iter 1/120 vivo=True cpu=0.6 thr=14
+[19:01:40] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[19:01:45] boot x64 dx11 dxvk lavapipe iter 2/120 vivo=True cpu=0.7 thr=14
+[19:01:45] probe mmf (iter 2): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[19:01:50] boot x64 dx11 dxvk lavapipe iter 3/120 vivo=True cpu=0.8 thr=14
+[19:01:50] probe mmf (iter 3): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[19:01:55] boot x64 dx11 dxvk lavapipe iter 4/120 vivo=False cpu=-1 thr=0
+[19:01:55] boot x64 dx11 dxvk lavapipe FIM vivo=False
+[19:01:55] boot x86 dx11 dxvk lavapipe inicio
+[19:01:57] boot x86 dx11 dxvk lavapipe: pid 6404
+[19:02:02] boot x86 dx11 dxvk lavapipe iter 1/48 vivo=True cpu=0.6 thr=15
+[19:02:02] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[19:02:07] boot x86 dx11 dxvk lavapipe iter 2/48 vivo=False cpu=-1 thr=0
+[19:02:07] boot x86 dx11 dxvk lavapipe FIM vivo=False
+[19:02:07] boot x64 rdevice gl inicio
+[19:02:09] boot x64 rdevice gl: pid 5648
+[19:02:14] boot x64 rdevice gl iter 1/30 vivo=True cpu=0.5 thr=15
+[19:02:14] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[19:02:19] boot x64 rdevice gl iter 2/30 vivo=True cpu=0.5 thr=15
+[19:02:19] probe mmf (iter 2): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[19:02:24] boot x64 rdevice gl iter 3/30 vivo=True cpu=0.6 thr=15
+[19:02:24] probe mmf (iter 3): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[19:02:29] boot x64 rdevice gl iter 4/30 vivo=False cpu=-1 thr=0
+[19:02:29] boot x64 rdevice gl FIM vivo=False
+[19:02:29] boot x86 gl llvmpipe inicio
+[19:02:31] boot x86 gl llvmpipe: pid 8036
+[19:02:36] boot x86 gl llvmpipe iter 1/30 vivo=True cpu=0.6 thr=15
+[19:02:36] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[19:02:41] boot x86 gl llvmpipe iter 2/30 vivo=False cpu=-1 thr=0
+[19:02:41] boot x86 gl llvmpipe FIM vivo=False
+[19:02:41] boot x86 gl zink inicio
+[19:02:43] boot x86 gl zink: pid 1560
+[19:02:48] boot x86 gl zink iter 1/30 vivo=False cpu=-1 thr=0
+[19:02:48] boot x86 gl zink FIM vivo=False
+[19:02:48] boot x86 gl safe llvmpipe inicio
+[19:02:50] boot x86 gl safe llvmpipe: pid 6456
+[19:02:55] boot x86 gl safe llvmpipe iter 1/30 vivo=True cpu=0.5 thr=15
+[19:02:55] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[19:03:00] boot x86 gl safe llvmpipe iter 2/30 vivo=False cpu=-1 thr=0
+[19:03:00] boot x86 gl safe llvmpipe FIM vivo=False
+[19:03:01] boot x64 rdevice gl nointro inicio
+[19:03:03] boot x64 rdevice gl nointro: pid 2144
+[19:03:08] boot x64 rdevice gl nointro iter 1/30 vivo=True cpu=0.5 thr=15
+[19:03:08] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[19:03:13] boot x64 rdevice gl nointro iter 2/30 vivo=True cpu=0.5 thr=15
+[19:03:13] probe mmf (iter 2): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[19:03:18] boot x64 rdevice gl nointro iter 3/30 vivo=True cpu=0.6 thr=15
+[19:03:18] probe mmf (iter 3): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[19:03:23] boot x64 rdevice gl nointro iter 4/30 vivo=False cpu=-1 thr=0
+[19:03:23] boot x64 rdevice gl nointro FIM vivo=False
