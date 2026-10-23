@@ -467,18 +467,23 @@ jobs:
           FLCODES_HOME="$RUNNER_TEMP/realapps/home" \
             bash family-link-codes/tools/real_apps_test.sh \
               --work "$RUNNER_TEMP/realapps" --third-party "$GITHUB_WORKSPACE/appteste.apk" \
-              > "$RUNNER_TEMP/realapps/stdout.txt" 2>&1
-          echo "$?" > "$RUNNER_TEMP/realapps-status.txt"
-          cat "$RUNNER_TEMP/realapps/stdout.txt"
+              2>&1 | tee "$RUNNER_TEMP/realapps/stdout.txt"
+          echo "${PIPESTATUS[0]}" > "$RUNNER_TEMP/realapps-status.txt"
       - name: Fail when the pipeline could not process a real APK
         run: |
           set -e
           status="$(cat "$RUNNER_TEMP/realapps-status.txt" 2>/dev/null || echo missing)"
           echo "exit: $status"
-          test "$status" = "0"
-          ls -l "$RUNNER_TEMP"/realapps/*.apk
-          grep -q "real APKs processed: 0" "$RUNNER_TEMP/realapps/stdout.txt" && {
-            echo "no real APK was processed"; exit 1; }
+          echo "--- files ---"
+          ls -la "$RUNNER_TEMP/realapps" || true
+          echo "--- stdout (tail) ---"
+          tail -40 "$RUNNER_TEMP/realapps/stdout.txt" || true
+          test "$status" = "0" || { echo "the pipeline reported failure"; exit 1; }
+          shopt -s nullglob
+          apks=("$RUNNER_TEMP"/realapps/*.apk "$RUNNER_TEMP"/realapps/pulled/*.apk)
+          shopt -u nullglob
+          [ "${#apks[@]}" -gt 0 ] || { echo "no real APK was processed"; exit 1; }
+          printf '%s\n' "${apks[@]}"
           echo "real APKs were unpacked without root"
       - name: Report on the PR
         if: always()
@@ -505,7 +510,7 @@ jobs:
             done
             echo "**stdout.txt (tail)**"
             echo '```'
-            tail -60 "$R/stdout.txt" 2>/dev/null || echo "(no output)"
+            { tail -80 "$R/stdout.txt" 2>/dev/null || echo "(no output)"; }
             echo '```'
           } > "$RUNNER_TEMP/comment.md"
           gh pr comment "$pr" --body-file "$RUNNER_TEMP/comment.md"
