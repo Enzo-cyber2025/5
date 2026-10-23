@@ -396,7 +396,7 @@ validar um encoder com ele mesmo não é validação. Foi assim que uma expectat
 errada minha apareceu: `0xDEADB000` tem `0xDEAD` nos bits 31:16, não 47:32, então o
 `MOVK` pertence em `LSL #16` — o encoder estava certo.
 
-**80 checks, 0 falhas.** Suite do projeto: 52 + 194 + 147 + 74 + 80 + 6 = **553**,
+**80 checks, 0 falhas.** Suite do projeto: 52 + 194 + 147 + 74 + 156 + 6 = **629**,
 tudo limpo sob `-Wall -Wextra -Wshadow -Werror` e ASan+UBSan sem vazamentos.
 
 ### Feito — flags, comparação e desvio condicional (`tr_translate_function`)
@@ -465,7 +465,23 @@ campo. Foi assim que dois erros meus de aritmética apareceram (`tst x0,x0` tem
 `rn=0`, e `b.ne -13` é `0x54FFFE61`, não o `0x54FFFF3A` que decodifica para -7) —
 em ambos o encoder estava certo.
 
-**150 checks, 0 falhas** neste teste.
+**Resultado medido**, idêntico no runner aarch64 nativo e sob QEMU user-mode, com o
+código recém-traduzido **e** com o código recarregado do cache persistente:
+
+```
+VERDICT arch=aarch64 exe_words=9 const_ok=1 first=ok/16(to=0,sig=0) cached=ok/16(to=0,sig=0)
+EXECUTED ON aarch64: app.exe entry -> 16, having called mini.dll!SumTo through its
+import table, five iterations of a loop driven by cmp/jnz
+EXECUTED FROM CACHE: 16 with zero retranslation
+```
+
+Ou seja: um `.exe` PE chamou uma função exportada por uma DLL PE através da sua
+tabela de imports, a DLL continha um laço de cinco iterações dirigido por
+`cmp`/`jnz`, tudo foi traduzido para ARM64 por este código, executou em hardware
+real e devolveu o valor certo — e o mesmo valor saiu do cache reaberto sem
+retraduzir uma instrução.
+
+**156 checks, 0 falhas** neste teste.
 
 ### Não feito
 
@@ -527,6 +543,15 @@ No leitor de PE, todos encontrados por execução e não por revisão:
 
 Na tradução:
 
+- **O import era resolvido por posição (`exports[0]`) em vez de por nome.** Quando
+  `SumTo` foi adicionado à DLL, o executável passou a chamar `AddThree` — e o
+  programa **não travou, não caiu e não produziu lixo**: rodou a função errada
+  corretamente e devolveu 9, que é `AddThree(5)+1`, um número plausível. Só o valor
+  esperado o pegou, e uma expectativa mais fraca não teria pegado. É o modo de falha
+  que mais vale registrar aqui: um loader que resolve por posição não falha, ele
+  executa outra coisa em silêncio. O teste agora casa o nome importado contra a
+  tabela de exports, como um loader real faz, e afirma que o RVA resolvido é o de
+  `SumTo` — não apenas que algo resolveu.
 - A descoberta de sucessores só empurrava alvos para `JCC`/`JMP` e **não seguia o
   fluxo sequencial** para as demais instruções, então uma função de 6 instruções
   traduzia 1 e reportava `TR_OK`. Não falha alto: produz a tradução de um prefixo
