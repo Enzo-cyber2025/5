@@ -55,7 +55,10 @@ jobs:
           # was running if the step dies. Without that, a hang in one test is
           # indistinguishable from a hang in any other, and stdout is fully
           # buffered into a pipe so a hung binary prints nothing at all.
-          trap 'echo "::error title=suite-interrupted::last started: $(cat /tmp/running.txt 2>/dev/null || echo unknown)"' EXIT
+          # Only fires when a binary was actually in flight: on a clean run
+          # running.txt is empty, and reporting an interruption that did not
+          # happen is a false alarm that trains everyone to ignore the real one.
+          trap 'b=$(cat /tmp/running.txt 2>/dev/null); if [ -n "$b" ]; then echo "::error title=suite-interrupted::last started: $b"; fi' EXIT
           run_one() {
             echo "$1" > /tmp/running.txt
             timeout 120 "$1" > "/tmp/$(basename "$1").log" 2>&1
@@ -210,7 +213,10 @@ jobs:
           # Bounded and self-reporting for the same reason as the native job:
           # under QEMU a hang is even less diagnosable, since the emulator is
           # between the test and the kernel.
-          trap 'echo "::error title=suite-interrupted::last started: $(cat /tmp/running.txt 2>/dev/null || echo unknown)"' EXIT
+          # Only fires when a binary was actually in flight: on a clean run
+          # running.txt is empty, and reporting an interruption that did not
+          # happen is a false alarm that trains everyone to ignore the real one.
+          trap 'b=$(cat /tmp/running.txt 2>/dev/null); if [ -n "$b" ]; then echo "::error title=suite-interrupted::last started: $b"; fi' EXIT
           run_one() {
             echo "$1" > /tmp/running.txt
             timeout 600 bash -c "$(declare -f run_arm64); run_arm64 $1" \

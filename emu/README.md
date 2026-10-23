@@ -336,6 +336,53 @@ um alvo de import resolvido o resultado é `TR_NEEDS_TARGET` com o endereço do 
 nunca um chute — o que força a ordem correta, que é a do loader real: resolver
 imports antes de traduzir quem chama.
 
+**O defeito que só a execução revelou.** `CALL`/`RET` do x86-64 usam a **pilha**;
+`BLR`/`RET` do AArch64 usam o **link register**. Mapear um no outro sem preservar
+X30 produz código errado no momento em que uma função chama *e* retorna — e errado
+da pior forma: o `BLR` sobrescreve X30 com o endereço da instrução seguinte, o
+`RET` do callee o consome corretamente, e então o `RET` do próprio chamador salta
+de volta para esse mesmo endereço e **entra em laço infinito**.
+
+Nada disso é visível por inspeção. Cada encoding da sequência estava correto, a
+desmontagem lia como o pretendido, e todas as asserções word-a-word passavam. Só
+apareceu quando o código gerado foi executado em hardware aarch64 real — que é
+exatamente o argumento pelo método de emitir-e-executar que este projeto usa. No
+CI o sintoma foi um job parado nove minutos num passo que leva milissegundos.
+
+Corrigido com um registro de quadro: `STP X29, X30, [SP, #-16]!` na entrada e
+`LDP X29, X30, [SP], #16` antes do `RET` final, apenas quando o trecho contém uma
+chamada (sem chamada, empurrar um quadro seria código que não faz nada). Os dois
+words foram derivados das formas pré- e pós-indexadas de STP/LDP e **decompostos
+campo a campo** numa verificação independente — `opc`, `L`, o `imm7` assinado como
+múltiplo de 8, `Rt2`, `Rn`, `Rt` — em vez de confiados por parecerem certos.
+
+Isto é um atalho válido para o subconjunto, **não** uma resposta geral, e o
+cabeçalho diz isso: um tradutor real precisa modelar a pilha do guest, porque código
+guest pode empurrar e desempurrar o endereço de retorno, inspecioná-lo e fazer
+unwind através dele. Mapear `call`/`ret` do guest no link register só funciona
+enquanto nada mais o toca.
+
+**Resultado medido**, idêntico no runner aarch64 nativo e sob QEMU user-mode:
+
+```
+VERDICT arch=aarch64 exe_words=9 const_ok=1 first=ok/46(to=0,sig=0) cached=ok/46(to=0,sig=0)
+EXECUTED ON aarch64: app.exe entry -> 46, having called mini.dll!AddThree through its import table
+EXECUTED FROM CACHE: 46 with zero retranslation
+```
+
+`exe_words=9` porque o endereço hospedeiro real tinha três chunks de 16 bits não
+nulos (prólogo + `MOVZ X1` + `MOVZ X16` + 2×`MOVK` + `BLR` + `ADD` + epílogo +
+`RET`). `const_ok=1` significa que a sequência `MOVZ`/`MOVK` emitida, relida e
+remontada pelo teste, reproduz exatamente o endereço hospedeiro da DLL — um chunk
+colocado na posição errada mandaria a chamada para outro lugar.
+
+Código gerado é executado num **processo filho com alarme de 5 s** e o resultado
+volta por um pipe. Foi isso que converteu o travamento de nove minutos num
+diagnóstico de cinco segundos dizendo "não terminou; morto por sinal". Código
+gerado não é confiável por definição — é justamente por isso que o projeto pina
+encodings e os executa — então um hang ou um crash dele não pode derrubar a suite
+sem dizer qual instrução era.
+
 **Isto não prova que um aplicativo real pode ser traduzido.** O guest usa seis
 formas de instrução e dois registradores. Medido num bundle real, esse
 subconjunto cobre **0,05% dos blocos**. O que ele prova é que o pipeline inteiro
@@ -409,6 +456,10 @@ No leitor de PE, todos encontrados por execução e não por revisão:
 
 Na tradução:
 
+- O `RET` final voltava para o meio da própria função: `CALL`/`RET` x86 usam a
+  pilha, `BLR`/`RET` ARM64 usam o link register, e X30 não era preservado através
+  da chamada. Laço infinito, invisível por inspeção, visível só em hardware real.
+  Corrigido com `STP`/`LDP` de quadro.
 - `sub rax, 5` emitia **ADD**: a escolha da instrução ARM64 estava keyed no sinal
   do imediato em vez do opcode. Errado, cacheável, silencioso. O teste pegou porque
   compara a word emitida contra `a64_sub_x_imm`, não contra "alguma coisa de 32
@@ -419,6 +470,24 @@ Na tradução:
 - O teste do limite de 12 bits usava `48 05` (`add rax,imm32`), que nem está no
   subconjunto, então a recusa que ele queria exercer era inalcançável. Trocado por
   `48 81` (GRP1 imm32), que está, e o caminho passou a ser realmente testado.
+
+Na infraestrutura de verificação:
+
+- Um job ARM64 ficou nove minutos num passo que leva milissegundos e não havia como
+  saber qual binário era: stdout para um pipe é totalmente bufferizado e um processo
+  morto por timeout não faz flush de nada. Cada binário ganhou `timeout` próprio, log
+  em arquivo, markers com `fflush` em cada estágio, e uma linha `VERDICT` única no
+  fim que sobrevive a qualquer truncamento.
+- O passo de diagnóstico **ele mesmo falhou** com exit 1 e não publicou nada. Um passo
+  cuja função é explicar uma falha não pode falhar: `set +e`, sem `pipefail`,
+  `exit 0` explícito.
+- A inserção textual do passo procurava a âncora desde o início do arquivo e a
+  encontrou duas vezes no mesmo job, deixando o outro sem nada. Inserção agora é
+  escopada à região de texto de cada job, e a contagem de passos é assertida **antes**
+  de commitar.
+- Duas vezes commitiei código que não compilava ou cujo passo de CI estava errado,
+  porque o build estava encadeado através de um pipe cujo exit status vinha do último
+  comando, não do compilador. Verificação de status explícita e gates antes do commit.
 
 Na varredura:
 
