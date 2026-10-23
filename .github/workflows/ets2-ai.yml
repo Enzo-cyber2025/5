@@ -1351,6 +1351,11 @@ jobs:
           }
           $sobeT0 = Get-Date
           Trace "SOBE inicio"
+          # v50: limite de threads ANTES DE TUDO — o vktest da v49 rodou SEM
+          # estas vars (setavam so antes dos boots) e o lavapipe 26.2.4 travou
+          # na criacao do instance (timeout 180s). Threads contidas desde o inicio.
+          $env:LP_NUM_THREADS = "1"
+          $env:GALLIUM_NUM_THREADS = "1"
           # v20: runner NAO tem GPU — dxgi lista ZERO adapters e o jogo morre
           # com "failed to initialize device! (dx11)" (game.log da run 38572211767).
           # Rota: renderer OPENGL (r_device "gl", ETS2 1.40 ainda tem) + Mesa
@@ -1564,6 +1569,8 @@ jobs:
               # com o ICD lvp, o caminho do jogo (dx11->DXVK->lavapipe) e viavel.
               try {
                 Trace "vktest inicio"
+                $vkExit = -2
+                $vkIcdPreferido = $null
           @'
               using System;
               using System.Runtime.InteropServices;
@@ -1631,14 +1638,67 @@ jobs:
                       Stop-Process -Id $pv.Id -Force -ErrorAction SilentlyContinue
                       Trace "vktest TIMEOUT 180s (lavapipe travou)"
                       $mesaLog += "vktest TIMEOUT 180s"
+                      $vkExit = -1
                     } else {
                       $vkOut = @(Get-Content "$PWD\vk.out" -ErrorAction SilentlyContinue) + @(Get-Content "$PWD\vk.err" -ErrorAction SilentlyContinue)
                       $mesaLog += @("vktest exit=" + $pv.ExitCode) + $vkOut
                       $vkOut | ForEach-Object { Trace "vk: $_" }
+                      $vkExit = $pv.ExitCode
+                      if ($vkExit -eq 0 -and $icdProbe) { $vkIcdPreferido = $icdProbe.FullName }
                     }
                   } else { Trace "vktest nao compilou" }
                 } else { Trace "csc ausente p/ vktest" }
               } catch { Trace "vktest FALHOU: $($_.Exception.Message)" }
+              # v50: FALLBACK DE MESA — a 26.2.4 congela na criacao do instance
+              # nesta VM (vktest timeout; o jogo fica VIVO com cpu congelada em
+              # 0.4 s = lavapipe em deadlock dentro do processo do jogo). Testar
+              # a linha anterior (25.3.6) SEM recopiar nada: o ICD json da 25.3.6
+              # aponta para a vulkan_lvp.dll DA PROPRIA pasta (o loader resolve
+              # library_path relativo ao diretorio do json).
+              if ($vkExit -ne 0) {
+                try {
+                  Trace "lavapipe 26.2.4 FALHOU (vkexit=$vkExit) — testando Mesa 25.3.6"
+                  curl.exe -sSL --retry 3 --max-time 240 -o C:\mesa253.7z "https://github.com/pal1000/mesa-dist-win/releases/download/25.3.6/mesa3d-25.3.6-release-msvc.7z"
+                  $t253 = (Get-Item C:\mesa253.7z -ErrorAction SilentlyContinue).Length
+                  Trace "mesa 25.3.6 7z: $t253 bytes"
+                  if ($t253 -and $t253 -gt 10MB -and (Test-Path $sz7)) {
+                    & $sz7 x C:\mesa253.7z "-oC:\mesa253" -y *> "C:\dd\mesa253-7z.log"
+                    Trace "7z 25.3.6 exit=$LASTEXITCODE"
+                    $icd253 = Get-ChildItem "C:\mesa253" -Recurse -Filter "*lvp*.json" -ErrorAction SilentlyContinue | Where-Object { $_.Name -match "x86_64|x64" } | Select-Object -First 1
+                    if ($icd253 -and (Test-Path "$PWD\vktest.exe")) {
+                      $env:VK_ICD_FILENAMES = $icd253.FullName
+                      Trace "vktest 25.3.6 run (VK_ICD=$($icd253.FullName))"
+                      $pv2 = Start-Process -FilePath "$PWD\vktest.exe" -RedirectStandardOutput "$PWD\vk2.out" -RedirectStandardError "$PWD\vk2.err" -PassThru
+                      if (-not $pv2.WaitForExit(180000)) {
+                        Stop-Process -Id $pv2.Id -Force -ErrorAction SilentlyContinue
+                        Trace "vktest 25.3.6 TIMEOUT 180s tambem"
+                        $mesaLog += "vktest 25.3.6 TIMEOUT"
+                      } else {
+                        $vkOut2 = @(Get-Content "$PWD\vk2.out" -ErrorAction SilentlyContinue) + @(Get-Content "$PWD\vk2.err" -ErrorAction SilentlyContinue)
+                        $mesaLog += @("vktest253 exit=" + $pv2.ExitCode) + $vkOut2
+                        $vkOut2 | ForEach-Object { Trace "vk253: $_" }
+                        if ($pv2.ExitCode -eq 0) {
+                          $vkIcdPreferido = $icd253.FullName
+                          Trace "MESA VENCEDORA: 25.3.6 — trocando dlls WGL do sistema"
+                          foreach ($arq253 in @(@("x64", "C:\Windows\System32"), @("x86", "C:\Windows\SysWOW64"))) {
+                            $dir253 = Get-ChildItem "C:\mesa253" -Recurse -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq $arq253[0] } | Select-Object -First 1
+                            if ($dir253) {
+                              foreach ($f253 in @("opengl32.dll", "libgallium_wgl.dll", "libEGL.dll", "libGLESv1_CM.dll", "libGLESv2.dll", "vulkan_lvp.dll", "vulkan_dzn.dll")) {
+                                $s253 = Join-Path $dir253.FullName $f253
+                                if (Test-Path $s253) { Copy-Item $s253 $arq253[1] -Force -ErrorAction SilentlyContinue }
+                              }
+                              Trace "dlls 25.3.6 ($($arq253[0])) copiadas para $($arq253[1])"
+                            }
+                          }
+                        }
+                      }
+                    } else { Trace "25.3.6: ICD ou vktest ausente" }
+                  } else { Trace "25.3.6 7z nao baixou ($t253)" }
+                } catch { Trace "fallback 25.3.6 FALHOU: $($_.Exception.Message)" }
+              }
+              # v50: persiste o ICD vencedor para o step DRIVE (steps nao
+              # compartilham variaveis)
+              if ($vkIcdPreferido) { Set-Content "$PWD\vk-icd.txt" $vkIcdPreferido -Encoding ascii; Trace "vk-icd.txt salvo: $vkIcdPreferido" }
               # v46: AUTOTESTE WGL x64 — agora em EXE SEPARADO (csc) com TIMEOUT:
               # a v44 congelou com o teste DENTRO do pwsh (NativeLibrary::Load da
               # Mesa + wglCreateContext llvmpipe no processo do pwsh = pwsh mudo
@@ -1929,12 +1989,24 @@ jobs:
           # estiver SUBINDO, o lavapipe esta compilando shaders e so precisa
           # de tempo; a v46 dava so 4 min.
           $icd64 = Get-ChildItem "C:\mesa3d" -Recurse -Filter "*lvp*.json" -ErrorAction SilentlyContinue | Where-Object { $_.Name -match "x86_64|x64" } | Select-Object -First 1
-          if ($icd64 -and (Test-Path (Join-Path $wdir "d3d11.dll"))) {
+          # v50: usa o ICD VENCEDOR do vktest (25.3.6 se a 26.2.4 travou)
+          if ($vkIcdPreferido) {
+            $env:VK_ICD_FILENAMES = $vkIcdPreferido
+            Trace "boot x64 usara ICD vencedor: $vkIcdPreferido"
+          } elseif ($icd64) {
             $env:VK_ICD_FILENAMES = $icd64.FullName
+          }
+          if ($vkIcdPreferido -or ($icd64 -and (Test-Path (Join-Path $wdir "d3d11.dll")))) {
             $vivo = Boot $exe $wdir "x64 dx11 dxvk lavapipe" @("-nointro") $null 120
           }
           if (-not $vivo -and -not (& $mmfOk) -and (Test-Path $x86exe) -and $env:MESA_LVP_ICD -and (Test-Path (Join-Path $w86 "d3d11.dll"))) {
-            $env:VK_ICD_FILENAMES = $env:MESA_LVP_ICD
+            # v50: x86 tambem prefere a 25.3.6 quando vencedora
+            if ($vkIcdPreferido) {
+              $icd86v = Get-ChildItem "C:\mesa253" -Recurse -Filter "*lvp*.json" -ErrorAction SilentlyContinue | Where-Object { $_.Name -match "i686" -or ($_.Name -match "x86" -and $_.Name -notmatch "x86_64|x64") } | Select-Object -First 1
+              if ($icd86v) { $env:VK_ICD_FILENAMES = $icd86v.FullName }
+            } else {
+              $env:VK_ICD_FILENAMES = $env:MESA_LVP_ICD
+            }
             $vivo = Boot $x86exe $w86 "x86 dx11 dxvk lavapipe" @("-nointro") $null 48
           }
           Remove-Item Env:\VK_ICD_FILENAMES -ErrorAction SilentlyContinue
@@ -2095,9 +2167,15 @@ jobs:
           if ($combo -match "gl") {
             $env:GALLIUM_DRIVER = "llvmpipe"; $env:LIBGL_ALWAYS_SOFTWARE = "1"
           } else {
-            $icd64 = Get-ChildItem "C:\mesa3d" -Recurse -Filter "*lvp*.json" -ErrorAction SilentlyContinue |
-              Where-Object { $_.Name -match "x86_64|x64" } | Select-Object -First 1
-            if ($icd64) { $env:VK_ICD_FILENAMES = $icd64.FullName }
+            # v50: usa o ICD vencedor salvo pelo SOBE (25.3.6 quando a 26.2.4 trava)
+            if (Test-Path "vk-icd.txt") {
+              $env:VK_ICD_FILENAMES = (Get-Content "vk-icd.txt" -Raw).Trim()
+              Write-Host "ICD vencedor do SOBE: $env:VK_ICD_FILENAMES"
+            } else {
+              $icd64 = Get-ChildItem "C:\mesa3d" -Recurse -Filter "*lvp*.json" -ErrorAction SilentlyContinue |
+                Where-Object { $_.Name -match "x86_64|x64" } | Select-Object -First 1
+              if ($icd64) { $env:VK_ICD_FILENAMES = $icd64.FullName }
+            }
           }
           $g = Start-Process -FilePath $gexe -WorkingDirectory $wdir -ArgumentList "-nointro" -PassThru
           try { $g.PriorityClass = "BelowNormal" } catch { }
