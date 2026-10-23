@@ -5,7 +5,7 @@
 #   tools/real_apps_test.sh --work /tmp/real-apps [--third-party /path/app.apk]
 #
 # Two targets:
-#   1. a Google system app from the image (Play Store by default): its APK lives
+#   1. a Google system app from the image (Play services by default): its APK lives
 #      in /system/priv-app and is world readable, so `adb pull` needs no root.
 #      This is a genuine, obfuscated, recent Google binary.
 #   2. an optional third-party APK (the Aptoide store copy that ships in this
@@ -18,7 +18,7 @@ set -uo pipefail
 
 WORK="${WORK:-/tmp/flcodes-real-apps}"
 THIRD_PARTY=""
-GOOGLE_PKG="com.android.vending"
+GOOGLE_PKG="com.google.android.gms"
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
 export PYTHONPATH="$HERE${PYTHONPATH:+:$PYTHONPATH}"
 export FLCODES_HOME="${FLCODES_HOME:-$WORK/home}"
@@ -73,15 +73,18 @@ fi
 
 step "2. a real third-party app: install, pull back, unpack"
 if [[ -n "$THIRD_PARTY" && -s "$THIRD_PARTY" ]]; then
+  adb shell pm list packages -3 2>/dev/null | sort > "$WORK/packages-before.txt"
   adb install -r "$THIRD_PARTY" 2>&1 | tail -3 | tee "$WORK/install-third-party.txt"
-  PKG="$(python3 - "$THIRD_PARTY" <<'PY'
-import re, sys, zipfile
-blob = zipfile.ZipFile(sys.argv[1]).read("AndroidManifest.xml")
-text = blob.decode("utf-16-le", errors="ignore") + blob.decode("latin-1", errors="ignore")
-match = re.search(r"((?:[a-z][a-z0-9_]*\.){2,}[a-z][a-z0-9_]*)", text)
-print(match.group(1) if match else "")
-PY
-)"
+  adb shell pm list packages -3 2>/dev/null | sort > "$WORK/packages-after.txt"
+  PKG=""
+  if [[ -n "$AAPT" ]]; then
+    PKG="$("$AAPT" dump packagename "$THIRD_PARTY" 2>/dev/null | tr -d '\r' | head -1)"
+  fi
+  if [[ -z "$PKG" ]]; then
+    # whatever appeared right after the install is the package
+    PKG="$(comm -13 "$WORK/packages-before.txt" "$WORK/packages-after.txt" \
+           | sed -n 's/^package://p' | head -1)"
+  fi
   echo "package: ${PKG:-unknown}"
   if [[ -n "$PKG" ]]; then
     adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || true

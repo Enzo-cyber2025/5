@@ -107,21 +107,6 @@ jobs:
           tail -40 "$RUNNER_TEMP/two/stdout.txt"
           exit 0
 
-      - name: Real vendor APKs, no root (a Google system app + a store app)
-        env:
-          FLCODES_PASSPHRASE: real
-        run: |
-          set +e
-          export PATH="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/platform-tools:$PATH"
-          export ANDROID_SERIAL="$(adb devices | awk 'NR>1 && $2=="device" {print $1; exit}')"
-          mkdir -p "$RUNNER_TEMP/realapps"
-          bash family-link-codes/tools/real_apps_test.sh \
-            --work "$RUNNER_TEMP/realapps" --third-party "$GITHUB_WORKSPACE/appteste.apk" \
-            > "$RUNNER_TEMP/realapps/stdout.txt" 2>&1
-          echo "$?" > "$RUNNER_TEMP/realapps-status.txt"
-          tail -30 "$RUNNER_TEMP/realapps/stdout.txt"
-          exit 0
-
       - name: Report on the PR
         if: always()
         env:
@@ -443,3 +428,90 @@ jobs:
             ${{ runner.temp }}/store/
             ${{ runner.temp }}/two/
           if-no-files-found: warn
+
+  real-apps:
+    name: real vendor APKs (Google-signed + store), no root
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Dependencies
+        run: |
+          set -e
+          pip install -r family-link-codes/requirements.txt
+      - name: Enable KVM
+        run: |
+          set -e
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Boot the emulator (Google APIs image)
+        env:
+          FLCODES_AVD_TAG: google_apis
+        run: |
+          set -e
+          export PATH="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/platform-tools:$PATH"
+          bash family-link-codes/tools/emulator_boot.sh 2>&1 | tail -40
+      - name: Run the REA pipeline on the real APKs
+        env:
+          FLCODES_PASSPHRASE: real
+        run: |
+          set +e
+          export PATH="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/platform-tools:$PATH"
+          export ANDROID_SERIAL="$(adb devices | awk 'NR>1 && $2=="device" {print $1; exit}')"
+          mkdir -p "$RUNNER_TEMP/realapps"
+          PYTHONPATH="$GITHUB_WORKSPACE/family-link-codes" \
+          FLCODES_HOME="$RUNNER_TEMP/realapps/home" \
+            bash family-link-codes/tools/real_apps_test.sh \
+              --work "$RUNNER_TEMP/realapps" --third-party "$GITHUB_WORKSPACE/appteste.apk" \
+              > "$RUNNER_TEMP/realapps/stdout.txt" 2>&1
+          echo "$?" > "$RUNNER_TEMP/realapps-status.txt"
+          cat "$RUNNER_TEMP/realapps/stdout.txt"
+      - name: Fail when the pipeline could not process a real APK
+        run: |
+          set -e
+          status="$(cat "$RUNNER_TEMP/realapps-status.txt" 2>/dev/null || echo missing)"
+          echo "exit: $status"
+          test "$status" = "0"
+          ls -l "$RUNNER_TEMP"/realapps/*.apk
+          grep -q "real APKs processed: 0" "$RUNNER_TEMP/realapps/stdout.txt" && {
+            echo "no real APK was processed"; exit 1; }
+          echo "real APKs were unpacked without root"
+      - name: Report on the PR
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e +o pipefail
+          pr="${{ github.event.pull_request.number }}"
+          [ -n "$pr" ] || pr="$(gh pr list --head "$GITHUB_REF_NAME" --json number -q '.[0].number' 2>/dev/null)"
+          [ -n "$pr" ] || exit 0
+          R="$RUNNER_TEMP/realapps"
+          {
+            echo "### APKs reais (Google assinado + app de loja), sem root"
+            echo
+            echo "exit: $(cat "$RUNNER_TEMP/realapps-status.txt" 2>/dev/null || echo '?')"
+            echo
+            for f in scan-google.txt certs-google.txt scan-third-party.txt \
+                     certs-third-party.txt abe-info-*.txt tree-*.txt scan-app.*.txt; do
+              [ -s "$R/$f" ] || continue
+              echo "**$(basename "$f")**"
+              echo '```'
+              head -30 "$R/$f"
+              echo '```'
+            done
+            echo "**stdout.txt (tail)**"
+            echo '```'
+            tail -60 "$R/stdout.txt" 2>/dev/null || echo "(no output)"
+            echo '```'
+          } > "$RUNNER_TEMP/comment.md"
+          gh pr comment "$pr" --body-file "$RUNNER_TEMP/comment.md"
+      - name: Upload the artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flcodes-real-apps
+          path: ${{ runner.temp }}/realapps/
