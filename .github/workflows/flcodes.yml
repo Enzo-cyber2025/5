@@ -1,5 +1,8 @@
 name: flcodes
 
+# Fast checks only (no device). The device side — emulator, Play Store, two
+# profiles — lives in flcodes-emulator.yml.
+#
 # The tool is a throwaway experiment artifact: this workflow only proves that
 # the algorithm, the cipher, the key extraction and the CLI/UI behave.
 on:
@@ -28,7 +31,7 @@ jobs:
       - name: Self check
         run: |
           cd family-link-codes
-          FLCODES_HOME="$RUNNER_TEMP/flhome" .venv/bin/python -m flcodes audit
+          FLCODES_HOME="$RUNNER_TEMP/flhome" ../.venv/bin/python -m flcodes audit
         env:
           PYTHONPATH: ${{ github.workspace }}/family-link-codes
       - name: REA rehearsal (find key, generate, verify)
