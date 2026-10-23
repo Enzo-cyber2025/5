@@ -333,55 +333,48 @@ static uint64_t resolve_cb(uint64_t iat_va, void *user)
  * caller instead of into the middle of the function, which is the defect that only
  * appeared when the generated code was executed on real hardware.
  */
-static void check_exe_shape(const tr_output *o, uint64_t host_addr,
+static void check_exe_shape(const uint32_t *words, size_t n, uint64_t host_addr,
                             unsigned imm, const char *where)
 {
-    size_t   k, first, last;
-    uint64_t rebuilt = 0;
-
-    CHECK(o->n >= 8u && o->n <= 12u, "%s: emitted %zu words, expected 8..12",
-          where, o->n);
-    if (o->n < 8u) return;
-    CHECK(o->words[0] == a64_stp_frame_push(),
-          "%s: word 0 is 0x%08X, not the frame push", where, o->words[0]);
-    CHECK(o->words[0] == 0xA9BF7BFDu, "%s: STP encoding drifted", where);
-    CHECK(o->words[1] == a64_movz_x(1, imm), "%s: mov rcx,imm -> 0x%08X",
-          where, o->words[1]);
-    CHECK(o->words[o->n - 4u] == a64_blr(16), "%s: blr -> 0x%08X", where,
-          o->words[o->n - 4u]);
-    CHECK(o->words[o->n - 3u] == a64_add_x_imm(0, 0, 1),
-          "%s: add rax,1 -> 0x%08X", where, o->words[o->n - 3u]);
-    CHECK(o->words[o->n - 3u] == 0x91000400u, "%s: add x0,x0,#1 drifted", where);
-    CHECK(o->words[o->n - 2u] == a64_ldp_frame_pop(),
-          "%s: word n-2 is 0x%08X, not the frame pop", where, o->words[o->n - 2u]);
-    CHECK(o->words[o->n - 2u] == 0xA8C17BFDu, "%s: LDP encoding drifted", where);
-    CHECK(o->words[o->n - 1u] == a64_ret(), "%s: ret -> 0x%08X", where,
-          o->words[o->n - 1u]);
-    CHECK(o->words[o->n - 1u] == 0xD65F03C0u, "%s: ret drifted", where);
-
-    first = 2u;
-    last  = o->n - 5u;
-    CHECK(last >= first, "%s: no constant words emitted for the call target", where);
-    for (k = first; k <= last && k < o->n; k++) {
-        uint32_t w = o->words[k];
-        unsigned rd = w & 31u;
-        uint16_t chunk = (uint16_t)((w >> 5) & 0xFFFFu);
-        unsigned hw = (w >> 21) & 3u;
-        CHECK(rd == 16u, "%s: constant word %zu targets X%u, expected X16",
-              where, k, rd);
-        if ((w & 0xFF800000u) == 0xD2800000u) {
-            rebuilt = chunk;
-            CHECK(hw == 0u, "%s: MOVZ used hw=%u", where, hw);
-        } else if ((w & 0xFF800000u) == 0xF2800000u) {
-            rebuilt |= (uint64_t)chunk << (hw * 16u);
-        } else {
-            CHECK(0, "%s: word %zu is neither MOVZ nor MOVK: 0x%08X", where, k, w);
+    CHECK(n >= 8u && n <= 12u, "%s: emitted %zu words, expected 8..12", where, n);
+    if (n < 8u) return;
+    CHECK(words[0] == a64_stp_frame_push(), "%s: word 0 is 0x%08X, not the frame push",
+          where, words[0]);
+    CHECK(words[0] == 0xA9BF7BFDu, "%s: STP encoding drifted", where);
+    CHECK(words[1] == a64_movz_x(1, imm), "%s: mov rcx,imm -> 0x%08X", where, words[1]);
+    CHECK(words[n - 4u] == a64_blr(16), "%s: blr -> 0x%08X", where, words[n - 4u]);
+    CHECK(words[n - 3u] == a64_add_x_imm(0, 0, 1), "%s: add rax,1 -> 0x%08X", where,
+          words[n - 3u]);
+    CHECK(words[n - 3u] == 0x91000400u, "%s: add x0,x0,#1 drifted", where);
+    CHECK(words[n - 2u] == a64_ldp_frame_pop(), "%s: word n-2 is 0x%08X, not the pop",
+          where, words[n - 2u]);
+    CHECK(words[n - 2u] == 0xA8C17BFDu, "%s: LDP encoding drifted", where);
+    CHECK(words[n - 1u] == a64_ret(), "%s: ret -> 0x%08X", where, words[n - 1u]);
+    CHECK(words[n - 1u] == 0xD65F03C0u, "%s: ret drifted", where);
+    {
+        size_t   k, first = 2u, last = n - 5u;
+        uint64_t rebuilt = 0;
+        CHECK(last >= first, "%s: no constant words emitted for the call target", where);
+        for (k = first; k <= last && k < n; k++) {
+            uint32_t w = words[k];
+            unsigned rd = w & 31u;
+            uint16_t chunk = (uint16_t)((w >> 5) & 0xFFFFu);
+            unsigned hw = (w >> 21) & 3u;
+            CHECK(rd == 16u, "%s: constant word %zu targets X%u, expected X16", where, k, rd);
+            if ((w & 0xFF800000u) == 0xD2800000u) {
+                rebuilt = chunk;
+                CHECK(hw == 0u, "%s: MOVZ used hw=%u", where, hw);
+            } else if ((w & 0xFF800000u) == 0xF2800000u) {
+                rebuilt |= (uint64_t)chunk << (hw * 16u);
+            } else {
+                CHECK(0, "%s: word %zu is neither MOVZ nor MOVK: 0x%08X", where, k, w);
+            }
         }
+        CHECK(rebuilt == host_addr,
+              "%s: the emitted constant materialises 0x%llx, not the call target "
+              "0x%llx - the call would go somewhere else",
+              where, (unsigned long long)rebuilt, (unsigned long long)host_addr);
     }
-    CHECK(rebuilt == host_addr,
-          "%s: the emitted constant materialises 0x%llx, not the call target "
-          "0x%llx - the call would go somewhere else",
-          where, (unsigned long long)rebuilt, (unsigned long long)host_addr);
 }
 
 /* --------------------------------------------------------------- ARM64 run */
@@ -553,7 +546,7 @@ static void test_translation(void)
           o.guest_insns);
     /* frame push + movz x1 + movz x16 + movk x16 + blr + add + frame pop + ret */
     CHECK(o.n == 8, "exe emitted %zu words, expected 8", o.n);
-    check_exe_shape(&o, rs.host_addr, 5u, "synthetic target");
+    check_exe_shape(o.words, o.n, rs.host_addr, 5u, "synthetic target");
 
     /* A run containing no call gets no frame record: the DLL neither calls nor
      * needs X30 preserved, so pushing one would be code that does nothing. */
@@ -800,32 +793,70 @@ static void test_unsupported_is_refused(void)
     }
 }
 
-/* Runs the whole pipeline: load, resolve, translate, execute, persist, reload. */
+/* Runs the whole pipeline: load, resolve by name, translate, execute, persist,
+ * reload and execute again.
+ *
+ * Resolution by name is not a detail. An earlier version of this test took
+ * exports[0] and the program still ran cleanly and still returned a plausible
+ * number - 9, which is AddThree(5)+1, the wrong function called correctly. Only
+ * the expected value caught it. A loader that resolves by position does not fail
+ * loudly, it silently runs something else. */
 static void test_pipeline(void)
 {
     buf dll = build_dll(), exe = build_exe();
     pe_image pd, px;
     ptc_cache *cache;
-    uint64_t dll_mid = 0, exe_mid = 0;
-    tr_output od, ox;
-    resolver  rs;
-    uint64_t  dll_va, exe_va, iat_va;
-    int       saved = 0;
+    uint64_t dll_mid = 0, exe_mid = 0, dll_va = 0, exe_va = 0, iat_va = 0;
+    uint32_t dll_off = 0, dll_rva = 0, exe_len = 18u;
+    const uint8_t *dll_code = NULL;
+    tr_func  fd, fx;
+    resolver rs;
+    uint32_t i, found = 0;
+    int      saved = 0;
 
     printf("the whole pipeline, ending in the persistent cache\n");
     mark("parsing both images");
 
-    CHECK(pe_load(dll.b, dll.len, &pd) == PE_OK, "dll parse");
-    CHECK(pe_load(exe.b, exe.len, &px) == PE_OK, "exe parse");
-    dll_va = pd.image_base + pd.exports[0].rva;
+    CHECK(pe_load(dll.b, dll.len, &pd) == PE_OK, "dll parse: %s",
+          pd.detail ? pd.detail : "?");
+    CHECK(pe_load(exe.b, exe.len, &px) == PE_OK, "exe parse: %s",
+          px.detail ? px.detail : "?");
+    if (px.num_dlls != 1 || !px.funcs[0].name) {
+        CHECK(0, "the executable has no named import to resolve");
+        free(dll.b); free(exe.b);
+        return;
+    }
     exe_va = px.image_base + px.entry_rva;
     iat_va = px.image_base + px.dlls[0].iat_rva;
 
-    mark("translating mini.dll!AddThree");
-    /* Translate the DLL first: a loader resolves imports before running code,
-     * which is what makes the call target a constant here. */
-    CHECK(tr_translate_run(DLL_CODE, sizeof(DLL_CODE), dll_va, NULL, NULL, &od)
-          == TR_OK, "dll did not translate");
+    mark("resolving the import by name, the way a loader does");
+    for (i = 0; i < pd.num_exports; i++) {
+        if (pd.exports[i].forwarded || !pd.exports[i].name) continue;
+        if (strcmp(pd.exports[i].name, px.funcs[0].name) == 0) {
+            dll_rva = pd.exports[i].rva;
+            dll_va  = pd.image_base + dll_rva;
+            dll_off = HDR_SIZE + (dll_rva - TEXT_VA);
+            found = 1;
+            break;
+        }
+    }
+    CHECK(found, "could not resolve import '%s' in mini.dll", px.funcs[0].name);
+    CHECK(dll_rva == DLL_CODE2_RVA,
+          "'%s' resolved to RVA %08x, expected SumTo at %08x - resolving by "
+          "position would call AddThree instead",
+          px.funcs[0].name, dll_rva, DLL_CODE2_RVA);
+    if (!found) { free(dll.b); free(exe.b); return; }
+    dll_code = dll.b + dll_off;
+
+    mark("translating mini.dll!SumTo, including its loop");
+    CHECK(tr_translate_function(dll_code, sizeof(DLL_CODE2), dll_va, NULL, NULL,
+                                &fd) == TR_OK,
+          "SumTo did not translate: %s", fd.detail ? fd.detail : "?");
+    CHECK(fd.n == 6, "SumTo emitted %zu words, expected 6", fd.n);
+    CHECK(fd.branches == 1 && fd.backwards == 1,
+          "SumTo reported %u branches, %u backwards - the loop is missing",
+          fd.branches, fd.backwards);
+    CHECK(fd.needs_frame == 0, "SumTo was given a frame record without a call");
 
     cache = ptc_create(PTC_ISA_AARCH64, PTC_ISA_X86_64, 4096u);
     CHECK(cache != NULL, "ptc_create failed");
@@ -834,74 +865,76 @@ static void test_pipeline(void)
                          ptc_hash_bytes(dll.b, dll.len), &dll_mid) == 0,
           "could not register mini.dll");
 
+    memset(&rs, 0, sizeof(rs));
+    rs.iat_guest_va = iat_va;
+
 #if defined(__aarch64__)
     {
-        size_t map_len = 0;
         void *dll_host;
         mark("mapping the translated dll");
-        dll_host = code_page(od.words, od.n, &map_len);
+        dll_host = code_page(fd.words, fd.n, NULL);
         CHECK(dll_host != NULL, "could not map an executable page for the dll");
         if (!dll_host) { ptc_free(cache); free(dll.b); free(exe.b); return; }
 
-        memset(&rs, 0, sizeof(rs));
-        rs.iat_guest_va = iat_va;
-        rs.host_addr = (uint64_t)(uintptr_t)dll_host;   /* the real host address */
-        CHECK(tr_translate_run(exe.b + HDR_SIZE, 18u, exe_va, resolve_cb, &rs, &ox)
-              == TR_OK, "exe did not translate once the import was resolved");
-        check_exe_shape(&ox, rs.host_addr, 5u, "real host address");
-        verdict.exe_words = ox.n;
+        mark("translating app.exe against the resolved import");
+        rs.host_addr = (uint64_t)(uintptr_t)dll_host;
+        CHECK(tr_translate_function(exe.b + HDR_SIZE, exe_len, exe_va, resolve_cb,
+                                    &rs, &fx) == TR_OK,
+              "exe did not translate once the import was resolved: %s",
+              fx.detail ? fx.detail : "?");
+        check_exe_shape(fx.words, fx.n, rs.host_addr, 5u, "real host address");
+        verdict.exe_words = fx.n;
         verdict.rebuilt_matches = 1;
 
-        mark("translating the exe against the resolved import");
-        /* Persist both translations, keyed by module identity and guest bytes. */
-        CHECK(ptc_insert(cache, dll_mid, dll_va, DLL_CODE, (uint32_t)sizeof(DLL_CODE),
-                         od.words, (uint32_t)(od.n * 4u), 0u) == 0,
-              "could not cache the dll block");
+        mark("persisting both translations");
+        CHECK(ptc_insert(cache, dll_mid, dll_va, dll_code, (uint32_t)sizeof(DLL_CODE2),
+                         fd.words, (uint32_t)(fd.n * 4u), 0u) == 0,
+              "could not cache the dll function");
         CHECK(ptc_add_module(cache, "app.exe", exe.len, 1u,
                              ptc_hash_bytes(exe.b, exe.len), &exe_mid) == 0,
               "could not register app.exe");
-        CHECK(ptc_insert(cache, exe_mid, exe_va, exe.b + HDR_SIZE, 18u,
-                         ox.words, (uint32_t)(ox.n * 4u), 0u) == 0,
-              "could not cache the exe block");
-        mark("saving the cache");
+        CHECK(ptc_insert(cache, exe_mid, exe_va, exe.b + HDR_SIZE, exe_len,
+                         fx.words, (uint32_t)(fx.n * 4u), 0u) == 0,
+              "could not cache the exe entry");
         saved = (ptc_save(cache, CACHE_PATH) == 0);
         CHECK(saved, "ptc_save failed");
+        ptc_free(cache);
+        cache = NULL;
 
         mark("mapping and executing the translated exe");
         {
             uint64_t (*entry)(void) = (uint64_t (*)(void))
-                code_page(ox.words, ox.n, NULL);
+                code_page(fx.words, fx.n, NULL);
             CHECK(entry != NULL, "could not map the executable entry page");
             if (entry) {
                 uint64_t r = 0;
-                int      to = 0, sig = 0, ok;
+                int to = 0, sig = 0, ok;
                 mark("calling the generated entry point (child, 5s alarm)");
                 ok = exec_generated(entry, &r, &to, &sig);
+                mark("the generated entry point returned control");
                 verdict.executed_at_all = 1;
                 verdict.first_ok = ok;
                 verdict.first_timed_out = to;
                 verdict.first_sig = sig;
                 verdict.first_result = r;
-                mark("the generated entry point returned control");
                 CHECK(ok, "executing the translated exe failed%s%s",
                       to ? ": it did not terminate within 5s" : "",
                       (!ok && !to && sig) ? ": killed by a signal" : "");
                 if (!ok && sig)
                     printf("  terminated by signal %d%s\n", sig,
                            to ? " (SIGALRM: the generated code never returned)" : "");
-                CHECK(ok && r == 16u, "entry() returned %llu, expected 16 (SumTo(5)=15, then +1)",
+                CHECK(ok && r == 16u,
+                      "entry() returned %llu, expected 16 (SumTo(5)=15, then +1)",
                       (unsigned long long)r);
                 if (ok)
                     printf("  EXECUTED ON aarch64: app.exe entry -> %llu, having called "
-                           "mini.dll!AddThree through its import table\n",
+                           "mini.dll!SumTo through its import table, five iterations "
+                           "of a loop driven by cmp/jnz\n",
                            (unsigned long long)r);
             }
         }
-        ptc_free(cache);
-        cache = NULL;
 
-        /* Now the point of persisting: reopen the cache and run the stored host
-         * code without translating anything again. */
+        mark("reloading the cache and running the stored host code");
         if (saved) {
             ptc_open_result why = PTC_OPEN_OK;
             ptc_cache *re = ptc_open(CACHE_PATH, PTC_ISA_AARCH64, PTC_ISA_X86_64, &why);
@@ -918,14 +951,13 @@ static void test_pipeline(void)
                       "reopened cache lost app.exe");
                 CHECK(rd_id == dll_mid && rx_id == exe_mid,
                       "module identities changed across the reopen");
-                host = ptc_lookup(re, rx_id, exe_va, exe.b + HDR_SIZE, 18u, &clen);
+                host = ptc_lookup(re, rx_id, exe_va, exe.b + HDR_SIZE, exe_len, &clen);
                 CHECK(host != NULL, "the exe block missed the reopened cache");
-                CHECK(clen == (uint32_t)(ox.n * 4u),
-                      "reloaded %u bytes of host code, expected %zu",
-                      clen, ox.n * 4u);
-                if (host && clen == ox.n * 4u && memcmp(host, ox.words, clen) == 0) {
+                CHECK(clen == (uint32_t)(fx.n * 4u),
+                      "reloaded %u bytes of host code, expected %zu", clen, fx.n * 4u);
+                if (host && clen == fx.n * 4u && memcmp(host, fx.words, clen) == 0) {
                     uint64_t (*e2)(void) = (uint64_t (*)(void))
-                        code_page((const uint32_t *)host, ox.n, NULL);
+                        code_page((const uint32_t *)host, fx.n, NULL);
                     CHECK(e2 != NULL, "could not map the reloaded code");
                     if (e2) {
                         uint64_t r2 = 0;
@@ -950,9 +982,11 @@ static void test_pipeline(void)
                 } else {
                     CHECK(0, "reloaded host code differs from what was translated");
                 }
-                host = ptc_lookup(re, rd_id, dll_va, DLL_CODE,
-                                  (uint32_t)sizeof(DLL_CODE), &clen);
-                CHECK(host != NULL, "the dll block missed the reopened cache");
+                host = ptc_lookup(re, rd_id, dll_va, dll_code,
+                                  (uint32_t)sizeof(DLL_CODE2), &clen);
+                CHECK(host != NULL, "the dll function missed the reopened cache");
+                CHECK(clen == (uint32_t)(fd.n * 4u),
+                      "reloaded %u bytes for the dll, expected %zu", clen, fd.n * 4u);
                 CHECK(ptc_record_count(re) == 2, "reopened cache holds %zu records",
                       ptc_record_count(re));
                 ptc_free(re);
@@ -961,44 +995,43 @@ static void test_pipeline(void)
         }
     }
 #else
-    (void)dll_mid; (void)exe_mid; (void)saved;
-    /* Off ARM64 the translations are still checked word for word, and the cache
-    * round trip is still checked as bytes - only execution is unavailable. */
     mark("translating app.exe against a synthetic host address");
-    memset(&rs, 0, sizeof(rs));
-    rs.iat_guest_va = iat_va;
     rs.host_addr = 0x00000000DEADB000ULL;
-    CHECK(tr_translate_run(exe.b + HDR_SIZE, 18u, exe_va, resolve_cb, &rs, &ox)
-          == TR_OK, "exe did not translate");
-    check_exe_shape(&ox, rs.host_addr, 5u, "bytes-only host");
-    verdict.exe_words = ox.n;
+    CHECK(tr_translate_function(exe.b + HDR_SIZE, exe_len, exe_va, resolve_cb, &rs,
+                                &fx) == TR_OK,
+          "exe did not translate: %s", fx.detail ? fx.detail : "?");
+    check_exe_shape(fx.words, fx.n, rs.host_addr, 5u, "bytes-only host");
+    verdict.exe_words = fx.n;
     verdict.rebuilt_matches = 1;
 
-    CHECK(ptc_insert(cache, dll_mid, dll_va, DLL_CODE, (uint32_t)sizeof(DLL_CODE),
-                     od.words, (uint32_t)(od.n * 4u), 0u) == 0,
-          "could not cache the dll block");
+    mark("saving the cache");
+    CHECK(ptc_insert(cache, dll_mid, dll_va, dll_code, (uint32_t)sizeof(DLL_CODE2),
+                     fd.words, (uint32_t)(fd.n * 4u), 0u) == 0,
+          "could not cache the dll function");
     CHECK(ptc_add_module(cache, "app.exe", exe.len, 1u,
                          ptc_hash_bytes(exe.b, exe.len), &exe_mid) == 0,
           "could not register app.exe");
-    CHECK(ptc_insert(cache, exe_mid, exe_va, exe.b + HDR_SIZE, 18u,
-                     ox.words, (uint32_t)(ox.n * 4u), 0u) == 0,
-          "could not cache the exe block");
-    mark("saving the cache");
+    CHECK(ptc_insert(cache, exe_mid, exe_va, exe.b + HDR_SIZE, exe_len,
+                     fx.words, (uint32_t)(fx.n * 4u), 0u) == 0,
+          "could not cache the exe entry");
     saved = (ptc_save(cache, CACHE_PATH) == 0);
     CHECK(saved, "ptc_save failed");
     if (saved) {
         ptc_open_result why = PTC_OPEN_OK;
-        ptc_cache *re;
-        mark("reopening the cache");
-        re = ptc_open(CACHE_PATH, PTC_ISA_AARCH64, PTC_ISA_X86_64, &why);
+        ptc_cache *re = ptc_open(CACHE_PATH, PTC_ISA_AARCH64, PTC_ISA_X86_64, &why);
         CHECK(re != NULL, "could not reopen the cache");
         if (re) {
             uint32_t clen = 0;
             const void *host = ptc_lookup(re, exe_mid, exe_va, exe.b + HDR_SIZE,
-                                          18u, &clen);
-            CHECK(host != NULL && clen == (uint32_t)(ox.n * 4u) &&
-                  memcmp(host, ox.words, clen) == 0,
+                                          exe_len, &clen);
+            CHECK(host != NULL && clen == (uint32_t)(fx.n * 4u) &&
+                  memcmp(host, fx.words, clen) == 0,
                   "the exe block did not survive the cache round trip as bytes");
+            host = ptc_lookup(re, dll_mid, dll_va, dll_code,
+                              (uint32_t)sizeof(DLL_CODE2), &clen);
+            CHECK(host != NULL && clen == (uint32_t)(fd.n * 4u) &&
+                  memcmp(host, fd.words, clen) == 0,
+                  "the dll function did not survive the cache round trip as bytes");
             CHECK(ptc_record_count(re) == 2, "reopened cache holds %zu records",
                   ptc_record_count(re));
             ptc_free(re);
