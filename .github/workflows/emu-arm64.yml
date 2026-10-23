@@ -83,6 +83,42 @@ jobs:
           cp /tmp/test_translate.log /tmp/translate.log
           cp /tmp/test_emit_exec.log /tmp/emit.log
 
+      - name: Report where the suite stopped
+        if: always()
+        run: |
+          set -uo pipefail
+          # A separate step with its own shell, because whatever stopped the suite
+          # step also stopped the annotation it was meant to emit: running.txt was
+          # never cleared, so the shell died inside the timeout rather than after
+          # it. Nothing in this step can be prevented by that.
+          echo "last binary started: $(cat /tmp/running.txt 2>/dev/null || echo none)"
+          for f in /tmp/test_*.log /tmp/t_*.log; do
+            [ -f "$f" ] || continue
+            n=$(basename "$f")
+            echo "--- $n ---"
+            tail -4 "$f"
+            short=$(tail -4 "$f" | tr '\n' ';' | tr -d '%\r' | tr -s ' ' | cut -c1-400)
+            echo "::notice title=log-${n}::${short}"
+          done
+
+      - name: Report where the suite stopped
+        if: always()
+        run: |
+          set -uo pipefail
+          # A separate step with its own shell, because whatever stopped the suite
+          # step also stopped the annotation it was meant to emit: running.txt was
+          # never cleared, so the shell died inside the timeout rather than after
+          # it. Nothing in this step can be prevented by that.
+          echo "last binary started: $(cat /tmp/running.txt 2>/dev/null || echo none)"
+          for f in /tmp/test_*.log /tmp/t_*.log; do
+            [ -f "$f" ] || continue
+            n=$(basename "$f")
+            echo "--- $n ---"
+            tail -4 "$f"
+            short=$(tail -4 "$f" | tr '\n' ';' | tr -d '%\r' | tr -s ' ' | cut -c1-400)
+            echo "::notice title=log-${n}::${short}"
+          done
+
       - name: Assert generated code actually executed
         run: |
           set -euo pipefail
