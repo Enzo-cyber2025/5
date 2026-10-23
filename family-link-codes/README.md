@@ -291,13 +291,37 @@ tools/android_emulator_ci.sh --apk FamilyLink.apk \
 tools/qemu_android_test.sh --image /caminho/img.qcow2 # QEMU genérico
 ```
 
-Para rodar o app real no CI, aponte uma cópia sua do APK (o Google Play bloqueia
-sessão anônima e os espelhos não servem Family Link):
+Para rodar o app real no CI há dois caminhos (o Google Play bloqueia sessão
+anônima e os espelhos não servem Family Link):
 
 ```bash
+# a) uma cópia sua do APK
 gh secret set FLCODES_APK_URL --repo Enzo-cyber2025/5
+
+# b) baixar da Play Store dentro do emulador (job play-store)
+gh secret set FLCODES_GPLAY_EMAIL --repo Enzo-cyber2025/5
+gh secret set FLCODES_GPLAY_PASSWORD --repo Enzo-cyber2025/5
 gh workflow run flcodes-emulator.yml
 ```
+
+No caminho (b) o APK é extraído **sem root** com `adb backup -apk` — a cópia em
+`/data/app` não é legível pelo adb — e o job publica o `apk scan` do binário real
+no PR.
+
+### Duas contas
+
+`tools/two_users_test.sh` cria dois perfis Android (parent/child), instala o app
+nos dois e prova que cada um grava o próprio config, sem root:
+
+```
+UserInfo{10:parent:400}   UserInfo{11:child:400}
+u10_a130  flcodes-selftest: uid 1010130 wrote 117 bytes
+u11_a130  flcodes-selftest: uid 1110130 wrote 117 bytes
+PASS: dois perfis, duas configurações privadas, uids diferentes
+```
+
+Contas Google em si não são criáveis por automação (telefone + anti-bot): as
+contas de pai e filho precisam ser suas.
 
 ## 5. Limitações conhecidas (o que quebra e por quê)
 

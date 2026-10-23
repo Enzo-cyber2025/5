@@ -248,6 +248,59 @@ O job baixa, verifica o assinante (`apksigner --print-certs`), desempacota com
 e reporta — sem root. Sem conta logada no aparelho o app não grava o config, e o
 job diz isso em vez de fingir.
 
+## 4d. Duas contas no mesmo aparelho (executado, verde)
+
+O teste `tools/two_users_test.sh` roda no emulador (Android 11) e cria **dois
+perfis** — o que dá para automatizar. Contas Google não: o cadastro abre
+verificação por telefone e anti-automação, então as contas de pai e filho
+precisam ser criadas por uma pessoa.
+
+Resultado real (run 39875712785, `exit: 0`):
+
+```
+Users:
+        UserInfo{0:Owner:c13} running
+        UserInfo{10:parent:400}
+        UserInfo{11:child:400}
+
+package:com.flcodes.selftest        (instalado nos dois perfis)
+
+u10_a130  4734 com.flcodes.selftest
+flcodes-selftest: uid 1010130 wrote 117 bytes     <- perfil parent
+u11_a130  4943 com.flcodes.selftest
+flcodes-selftest: uid 1110130 wrote 117 bytes     <- perfil child
+
+parent uid: 1010130   child uid: 1110130
+PASS: dois perfis, app instalado nos dois, cada um escrevendo o próprio
+      config privado com um uid Android diferente
+
+adb shell ls /data/data/com.flcodes.selftest/shared_prefs
+ls: ... Permission denied        <- e mesmo assim a chave saiu, sem root
+```
+
+Limite encontrado: `adb backup` cobre **apenas o perfil do dono** (o Android
+recusa para usuários secundários). Por isso a leitura por perfil usa o próprio
+app (uid no log) e o `adb backup` fica como caminho de extração do perfil
+principal — ambos sem root.
+
+## 4e. Play Store dentro do emulador (pronto, gated em credenciais)
+
+`tools/play_store_reap.sh` sobe a imagem `google_apis_playstore`, entra na conta
+por uiautomator, instala o Family Link e — sem root — extrai o APK com
+`adb backup -apk`, porque a cópia em `/data/app` não é legível pelo adb:
+
+```bash
+FLCODES_GPLAY_EMAIL=... FLCODES_GPLAY_PASSWORD=... \
+  tools/play_store_reap.sh --work /tmp/store --api 30
+```
+
+No CI isso é o job `play-store`, que só roda quando os secrets
+`FLCODES_GPLAY_EMAIL` e `FLCODES_GPLAY_PASSWORD` existem. **Não rodei com conta
+real**: não tenho uma, e criar contas Google por automação não é possível
+(verificação por telefone, bloqueio anti-bot) — além de violar os termos do
+Google. O job, quando há credenciais, faz tudo e publica o resultado no PR; sem
+credenciais ele reporta isso explicitamente, sem fingir sucesso.
+
 ## 5. O que ainda NÃO está provado
 
 * **Aceitação pelo firmware do aparelho supervisionado** — precisa de aparelho
