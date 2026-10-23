@@ -44,6 +44,23 @@ uint32_t a64_sub_x_imm(unsigned rd, unsigned rn, uint16_t imm12);
  * an import table takes once the address is resolved. */
 uint32_t a64_blr(unsigned rn);
 
+/* STP X29, X30, [SP, #-16]! and LDP X29, X30, [SP], #16 - the standard frame
+ * record push and pop.
+ *
+ * These exist because x86-64 CALL and RET use the stack while AArch64 BLR and RET
+ * use the link register. Translating one onto the other without preserving X30 is
+ * wrong the moment a function both calls and returns: the BLR overwrites X30 with
+ * the address of the next instruction, the callee's RET consumes it correctly, and
+ * then the caller's own RET jumps back into the middle of itself and never
+ * returns. That is an infinite loop, and it is invisible to inspection - it only
+ * shows up when the generated code is executed.
+ *
+ * This is a shortcut valid for the subset, not a general answer. A general
+ * translator has to model the guest stack, because guest code can push and pop the
+ * return address, inspect it, and unwind through it. */
+uint32_t a64_stp_frame_push(void);   /* STP X29, X30, [SP, #-16]! */
+uint32_t a64_ldp_frame_pop(void);    /* LDP X29, X30, [SP], #16  */
+
 /* Appends one instruction to a buffer. Returns 0 if it would not fit, and
  * writes nothing in that case: a partially appended instruction would be
  * executed as garbage rather than refused. */

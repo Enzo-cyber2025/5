@@ -47,6 +47,15 @@ uint32_t a64_blr(unsigned rn)
     return 0xD63F0000u | ((uint32_t)(rn & 31u) << 5);
 }
 
+/* Derived from the STP/LDP pre- and post-indexed forms, then decomposed field by
+ * field to check: opc=10 (64-bit), 101, V=0, L, imm7 as a signed multiple of 8,
+ * Rt2, Rn, Rt.
+ *   STP X29,X30,[SP,#-16]! : L=0, imm7 = -2 (0b1111110), Rt2=30, Rn=31, Rt=29
+ *   LDP X29,X30,[SP],#16   : L=1, imm7 = +2,               Rt2=30, Rn=31, Rt=29
+ * Both words are asserted in the test suite against these values. */
+uint32_t a64_stp_frame_push(void) { return 0xA9BF7BFDu; }
+uint32_t a64_ldp_frame_pop(void)  { return 0xA8C17BFDu; }
+
 int a64_emit(uint32_t *buf, size_t cap, size_t *len, uint32_t insn)
 {
     if (!buf || !len || *len + 1u > cap) return 0;

@@ -58,17 +58,44 @@ static int map_reg(const x86_insn *in, unsigned field, int is_rm,
     return 0;
 }
 
+/* Scans the run before emitting, for two facts the emitter cannot discover as it
+ * goes: whether any instruction is a call, which decides if a frame record has to
+ * be pushed, and whether the run ends on a RET at all. Emitting into a buffer and
+ * patching the front afterwards would be the alternative, and it is worse - a
+ * prologue that is inserted conditionally after the fact is easy to forget. */
+static int run_has_call(const uint8_t *code, size_t code_len, uint64_t guest_va)
+{
+    size_t pos = 0;
+    uint64_t va = guest_va;
+    while (pos < code_len) {
+        x86_insn in;
+        if (x86_decode(code + pos, code_len - pos, va, &in) != X86_OK || in.len == 0)
+            return 0;
+        if (in.op_len == 1 && in.op[0] == 0xC3 && in.rex == 0) return 0;
+        if (in.op_len == 1 && in.op[0] == 0xFF && in.reg == 2 &&
+            (in.flags & X86F_CALL) != 0)
+            return 1;
+        pos += in.len;
+        va  += in.len;
+    }
+    return 0;
+}
+
 tr_status tr_translate_run(const uint8_t *code, size_t code_len,
                            uint64_t guest_va, tr_resolve_fn resolve, void *user,
                            tr_output *out)
 {
     size_t   pos = 0;
     uint64_t va = guest_va;
+    int      needs_frame;
 
     if (!out) return TR_INVALID;
     memset(out, 0, sizeof(*out));
     out->detail = "ok";
     if (!code || code_len == 0) { out->detail = "no guest code"; return TR_INVALID; }
+
+    needs_frame = run_has_call(code, code_len, guest_va);
+    if (needs_frame && !push(out, a64_stp_frame_push())) return TR_OVERFLOW;
 
     while (pos < code_len) {
         x86_insn in;
@@ -90,6 +117,9 @@ tr_status tr_translate_run(const uint8_t *code, size_t code_len,
 
         /* ---- the subset, dispatched on what the decoder reported ---- */
         if (in.op_len == 1 && in.op[0] == 0xC3 && in.rex == 0) {
+            /* Pop the frame record before returning, or X30 is still whatever the
+             * last BLR left in it. */
+            if (needs_frame && !push(out, a64_ldp_frame_pop())) return TR_OVERFLOW;
             if (!push(out, a64_ret())) return TR_OVERFLOW;
             out->guest_insns++;
             out->guest_bytes += in.len;

@@ -86,23 +86,20 @@ jobs:
       - name: Report where the suite stopped
         if: always()
         run: |
-          set -uo pipefail
-          # A separate step with its own shell: whatever stopped the suite step
-          # also stopped the annotation it was meant to emit, so the diagnostic
-          # cannot live in the same shell as the thing it diagnoses.
-          echo "last binary started: $(cat /tmp/running.txt 2>/dev/null || echo none)"
-          for f in /tmp/test_*.log /tmp/t_*.log; do
+          set +e
+          # Deliberately unable to fail. This step exists to explain a failure, so
+          # a failure of its own is worse than useless - the previous version died
+          # with exit 1 and published nothing. set +e, no pipefail, explicit exit 0.
+          echo "last binary started: $(cat /tmp/running.txt 2>/dev/null)"
+          for f in /tmp/test_translate.log /tmp/t_tr.log; do
             [ -f "$f" ] || continue
-            n=$(basename "$f")
-            echo "--- $n ---"
-            grep -E '^VERDICT|^  FAIL|^  EXECUTED|^  terminated' "$f" || true
-            tail -4 "$f"
-            # VERDICT first: a truncated annotation must still carry the answer.
-            verdict=$(grep -E '^VERDICT' "$f" | head -1 | tr -d '%\r' | cut -c1-300)
-            fails=$(grep -E '^  FAIL' "$f" | head -6 | tr '\n' ';' | tr -d '%\r' | tr -s ' ' | cut -c1-600)
-            lastm=$(grep -E '^  \.\.' "$f" | tail -1 | tr -d '%\r' | cut -c1-150)
-            echo "::notice title=log-${n}::${verdict} || LASTMARK: ${lastm} || FAILS: ${fails}"
+            v=$(grep '^VERDICT' "$f" | head -1 | tr -d '%\r' | cut -c1-250)
+            lm=$(grep '^  \.\.' "$f" | tail -1 | tr -d '%\r' | cut -c1-120)
+            ex=$(grep '^  EXECUTED' "$f" | tr '\n' ';' | tr -d '%\r' | cut -c1-300)
+            fl=$(grep '^  FAIL' "$f" | head -5 | tr '\n' ';' | tr -d '%\r' | tr -s ' ' | cut -c1-700)
+            echo "::notice title=diag-$(basename "$f")::VERDICT[${v}] LASTMARK[${lm}] EXEC[${ex}] FAILS[${fl}]"
           done
+          exit 0
 
       - name: Assert generated code actually executed
         run: |
@@ -245,23 +242,20 @@ jobs:
       - name: Report where the suite stopped
         if: always()
         run: |
-          set -uo pipefail
-          # A separate step with its own shell: whatever stopped the suite step
-          # also stopped the annotation it was meant to emit, so the diagnostic
-          # cannot live in the same shell as the thing it diagnoses.
-          echo "last binary started: $(cat /tmp/running.txt 2>/dev/null || echo none)"
-          for f in /tmp/test_*.log /tmp/t_*.log; do
+          set +e
+          # Deliberately unable to fail. This step exists to explain a failure, so
+          # a failure of its own is worse than useless - the previous version died
+          # with exit 1 and published nothing. set +e, no pipefail, explicit exit 0.
+          echo "last binary started: $(cat /tmp/running.txt 2>/dev/null)"
+          for f in /tmp/test_translate.log /tmp/t_tr.log; do
             [ -f "$f" ] || continue
-            n=$(basename "$f")
-            echo "--- $n ---"
-            grep -E '^VERDICT|^  FAIL|^  EXECUTED|^  terminated' "$f" || true
-            tail -4 "$f"
-            # VERDICT first: a truncated annotation must still carry the answer.
-            verdict=$(grep -E '^VERDICT' "$f" | head -1 | tr -d '%\r' | cut -c1-300)
-            fails=$(grep -E '^  FAIL' "$f" | head -6 | tr '\n' ';' | tr -d '%\r' | tr -s ' ' | cut -c1-600)
-            lastm=$(grep -E '^  \.\.' "$f" | tail -1 | tr -d '%\r' | cut -c1-150)
-            echo "::notice title=log-${n}::${verdict} || LASTMARK: ${lastm} || FAILS: ${fails}"
+            v=$(grep '^VERDICT' "$f" | head -1 | tr -d '%\r' | cut -c1-250)
+            lm=$(grep '^  \.\.' "$f" | tail -1 | tr -d '%\r' | cut -c1-120)
+            ex=$(grep '^  EXECUTED' "$f" | tr '\n' ';' | tr -d '%\r' | cut -c1-300)
+            fl=$(grep '^  FAIL' "$f" | head -5 | tr '\n' ';' | tr -d '%\r' | tr -s ' ' | cut -c1-700)
+            echo "::notice title=diag-$(basename "$f")::VERDICT[${v}] LASTMARK[${lm}] EXEC[${ex}] FAILS[${fl}]"
           done
+          exit 0
 
       - name: Assert generated code actually executed
         run: |

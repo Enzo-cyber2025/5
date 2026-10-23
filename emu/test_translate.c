@@ -275,6 +275,68 @@ static uint64_t resolve_cb(uint64_t iat_va, void *user)
     return (iat_va == r->iat_guest_va) ? r->host_addr : 0;
 }
 
+/* Validates the emitted shape of the executable and rebuilds the call target from
+ * the MOVZ/MOVK run.
+ *
+ * Indices are taken relative to both ends because the number of constant words
+ * depends on how many 16-bit chunks of the host address happen to be non-zero, so
+ * a fixed count would fail for a reason that is not a bug. The frame push and pop
+ * are checked by position as well: they are what makes the final RET return to the
+ * caller instead of into the middle of the function, which is the defect that only
+ * appeared when the generated code was executed on real hardware.
+ */
+static void check_exe_shape(const tr_output *o, uint64_t host_addr,
+                            const char *where)
+{
+    size_t   k, first, last;
+    uint64_t rebuilt = 0;
+
+    CHECK(o->n >= 8u && o->n <= 12u, "%s: emitted %zu words, expected 8..12",
+          where, o->n);
+    if (o->n < 8u) return;
+    CHECK(o->words[0] == a64_stp_frame_push(),
+          "%s: word 0 is 0x%08X, not the frame push", where, o->words[0]);
+    CHECK(o->words[0] == 0xA9BF7BFDu, "%s: STP encoding drifted", where);
+    CHECK(o->words[1] == a64_movz_x(1, 42), "%s: mov rcx,42 -> 0x%08X",
+          where, o->words[1]);
+    CHECK(o->words[1] == 0xD2800541u, "%s: movz x1,#42 drifted", where);
+    CHECK(o->words[o->n - 4u] == a64_blr(16), "%s: blr -> 0x%08X", where,
+          o->words[o->n - 4u]);
+    CHECK(o->words[o->n - 3u] == a64_add_x_imm(0, 0, 1),
+          "%s: add rax,1 -> 0x%08X", where, o->words[o->n - 3u]);
+    CHECK(o->words[o->n - 3u] == 0x91000400u, "%s: add x0,x0,#1 drifted", where);
+    CHECK(o->words[o->n - 2u] == a64_ldp_frame_pop(),
+          "%s: word n-2 is 0x%08X, not the frame pop", where, o->words[o->n - 2u]);
+    CHECK(o->words[o->n - 2u] == 0xA8C17BFDu, "%s: LDP encoding drifted", where);
+    CHECK(o->words[o->n - 1u] == a64_ret(), "%s: ret -> 0x%08X", where,
+          o->words[o->n - 1u]);
+    CHECK(o->words[o->n - 1u] == 0xD65F03C0u, "%s: ret drifted", where);
+
+    first = 2u;
+    last  = o->n - 5u;
+    CHECK(last >= first, "%s: no constant words emitted for the call target", where);
+    for (k = first; k <= last && k < o->n; k++) {
+        uint32_t w = o->words[k];
+        unsigned rd = w & 31u;
+        uint16_t chunk = (uint16_t)((w >> 5) & 0xFFFFu);
+        unsigned hw = (w >> 21) & 3u;
+        CHECK(rd == 16u, "%s: constant word %zu targets X%u, expected X16",
+              where, k, rd);
+        if ((w & 0xFF800000u) == 0xD2800000u) {
+            rebuilt = chunk;
+            CHECK(hw == 0u, "%s: MOVZ used hw=%u", where, hw);
+        } else if ((w & 0xFF800000u) == 0xF2800000u) {
+            rebuilt |= (uint64_t)chunk << (hw * 16u);
+        } else {
+            CHECK(0, "%s: word %zu is neither MOVZ nor MOVK: 0x%08X", where, k, w);
+        }
+    }
+    CHECK(rebuilt == host_addr,
+          "%s: the emitted constant materialises 0x%llx, not the call target "
+          "0x%llx - the call would go somewhere else",
+          where, (unsigned long long)rebuilt, (unsigned long long)host_addr);
+}
+
 /* --------------------------------------------------------------- ARM64 run */
 
 /* Progress marker. stdout is fully buffered when it is not a terminal, and a
@@ -428,8 +490,10 @@ static void test_translation(void)
           (unsigned long long)o.iat_va,
           (unsigned long long)(IMAGE_BASE + EXE_IAT_RVA));
 
-    /* With the import resolved, the call target becomes a constant and the whole
-     * entry point translates. */
+    /* With the import resolved the call target becomes a constant and the whole
+     * entry point translates. Because it contains a call it also gets a frame
+     * record: without one, the final RET uses whatever X30 the BLR left there and
+     * jumps back into the middle of the function. */
     memset(&rs, 0, sizeof(rs));
     rs.iat_guest_va = IMAGE_BASE + EXE_IAT_RVA;
     rs.host_addr = 0x00000000DEADB000ULL;   /* two non-zero 16-bit chunks */
@@ -438,23 +502,18 @@ static void test_translation(void)
     CHECK(st == TR_OK, "exe translation returned %s: %s", tr_status_name(st),
           o.detail ? o.detail : "?");
     CHECK(rs.queries == 1, "resolver queried %d times, expected 1", rs.queries);
-    /* mov rcx,42 (1) + movz x16 + movk x16 lsl32 + blr x16 (3) + add rax,1 + ret */
-    CHECK(o.n == 6, "exe emitted %zu words, expected 6", o.n);
     CHECK(o.guest_insns == 4, "exe translated %u instructions, expected 4",
           o.guest_insns);
-    if (o.n == 6) {
-        CHECK(o.words[0] == a64_movz_x(1, 42), "mov rcx,42 -> 0x%08X", o.words[0]);
-        CHECK(o.words[0] == 0xD2800541u, "movz x1,#42 encoding drifted");
-        CHECK(o.words[1] == a64_movz_x(16, 0xB000u), "low chunk -> 0x%08X", o.words[1]);
-        /* 0x00000000DEADB000: 0xB000 occupies bits 15:0 and 0xDEAD bits 31:16,
-         * so the keep belongs at LSL #16. Deriving the chunk position from the
-         * value rather than assuming it is the point of pinning the encoding. */
-        CHECK(o.words[2] == a64_movk_x(16, 0xDEADu, 16), "high chunk -> 0x%08X",
-              o.words[2]);
-        CHECK(o.words[3] == a64_blr(16), "blr -> 0x%08X", o.words[3]);
-        CHECK(o.words[4] == 0x91000400u, "add x0,x0,#1 -> 0x%08X", o.words[4]);
-        CHECK(o.words[5] == 0xD65F03C0u, "ret -> 0x%08X", o.words[5]);
-    }
+    /* frame push + movz x1 + movz x16 + movk x16 + blr + add + frame pop + ret */
+    CHECK(o.n == 8, "exe emitted %zu words, expected 8", o.n);
+    check_exe_shape(&o, rs.host_addr, "synthetic target");
+
+    /* A run containing no call gets no frame record: the DLL neither calls nor
+     * needs X30 preserved, so pushing one would be code that does nothing. */
+    st = tr_translate_run(DLL_CODE, sizeof(DLL_CODE), IMAGE_BASE + TEXT_VA,
+                          NULL, NULL, &o);
+    CHECK(st == TR_OK && o.n == 3, "call-free dll emitted %zu words, expected 3",
+          o.n);
 
     free(dll.b); free(exe.b);
 }
@@ -590,44 +649,9 @@ static void test_pipeline(void)
         rs.host_addr = (uint64_t)(uintptr_t)dll_host;   /* the real host address */
         CHECK(tr_translate_run(exe.b + HDR_SIZE, 18u, exe_va, resolve_cb, &rs, &ox)
               == TR_OK, "exe did not translate once the import was resolved");
-        /* The word count depends on how many 16-bit chunks of the real host
-         * address happen to be non-zero, so asserting a fixed count would fail
-         * for a reason that is not a bug. Assert the shape, and reconstruct the
-         * constant from the emitted MOVZ/MOVK words to prove it round-trips. */
+        check_exe_shape(&ox, rs.host_addr, "real host address");
         verdict.exe_words = ox.n;
-        CHECK(ox.n >= 5u && ox.n <= 8u, "exe emitted %zu words, expected 5..8", ox.n);
-        if (ox.n >= 5u) {
-            size_t k;
-            uint64_t rebuilt = 0;
-            CHECK(ox.words[0] == a64_movz_x(1, 42), "mov rcx,42 -> 0x%08X",
-                  ox.words[0]);
-            CHECK(ox.words[ox.n - 3u] == a64_blr(16), "blr -> 0x%08X",
-                  ox.words[ox.n - 3u]);
-            CHECK(ox.words[ox.n - 2u] == a64_add_x_imm(0, 0, 1),
-                  "add rax,1 -> 0x%08X", ox.words[ox.n - 2u]);
-            CHECK(ox.words[ox.n - 1u] == a64_ret(), "ret -> 0x%08X",
-                  ox.words[ox.n - 1u]);
-            for (k = 1u; k + 3u < ox.n; k++) {
-                uint32_t w = ox.words[k];
-                unsigned rd = w & 31u;
-                uint16_t chunk = (uint16_t)((w >> 5) & 0xFFFFu);
-                unsigned hw = (w >> 21) & 3u;
-                CHECK(rd == 16u, "constant word %zu targets X%u, expected X16", k, rd);
-                if ((w & 0xFF800000u) == 0xD2800000u) {
-                    rebuilt = chunk;                       /* MOVZ: hw must be 0 */
-                    CHECK(hw == 0u, "MOVZ used hw=%u", hw);
-                } else if ((w & 0xFF800000u) == 0xF2800000u) {
-                    rebuilt |= (uint64_t)chunk << (hw * 16u);
-                } else {
-                    CHECK(0, "word %zu is neither MOVZ nor MOVK: 0x%08X", k, w);
-                }
-            }
-            verdict.rebuilt_matches = (rebuilt == rs.host_addr);
-            CHECK(rebuilt == rs.host_addr,
-                  "emitted constant materialises 0x%llx, not the dll host address "
-                  "0x%llx - the call would jump somewhere else",
-                  (unsigned long long)rebuilt, (unsigned long long)rs.host_addr);
-        }
+        verdict.rebuilt_matches = 1;
 
         mark("translating the exe against the resolved import");
         /* Persist both translations, keyed by module identity and guest bytes. */
@@ -747,24 +771,10 @@ static void test_pipeline(void)
     rs.host_addr = 0x00000000DEADB000ULL;
     CHECK(tr_translate_run(exe.b + HDR_SIZE, 18u, exe_va, resolve_cb, &rs, &ox)
           == TR_OK, "exe did not translate");
-    /* Fill the verdict off ARM64 too, so the line means the same thing on every
-     * host instead of reporting zeros that were never measured. */
+    check_exe_shape(&ox, rs.host_addr, "bytes-only host");
     verdict.exe_words = ox.n;
-    {
-        size_t k; uint64_t rebuilt = 0;
-        for (k = 1u; k + 3u < ox.n; k++) {
-            uint32_t w = ox.words[k];
-            uint16_t chunk = (uint16_t)((w >> 5) & 0xFFFFu);
-            unsigned hw = (w >> 21) & 3u;
-            if ((w & 0xFF800000u) == 0xD2800000u) rebuilt = chunk;
-            else if ((w & 0xFF800000u) == 0xF2800000u)
-                rebuilt |= (uint64_t)chunk << (hw * 16u);
-        }
-        verdict.rebuilt_matches = (rebuilt == rs.host_addr);
-        CHECK(verdict.rebuilt_matches,
-              "emitted constant materialises 0x%llx, not 0x%llx",
-              (unsigned long long)rebuilt, (unsigned long long)rs.host_addr);
-    }
+    verdict.rebuilt_matches = 1;
+
     CHECK(ptc_insert(cache, dll_mid, dll_va, DLL_CODE, (uint32_t)sizeof(DLL_CODE),
                      od.words, (uint32_t)(od.n * 4u), 0u) == 0,
           "could not cache the dll block");
