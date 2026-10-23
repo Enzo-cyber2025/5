@@ -1259,7 +1259,14 @@ jobs:
   demo-real:
     name: PROVA DEMO REAL — ETS2 OFICIAL (demo SCS) com DLL no processo + IA DIRIGINDO + AMOSTRAS REAIS
     needs: [windows-exe, exe-cpp]
-    runs-on: windows-latest
+    # v46: WINDOWS-2022 PINADO — windows-latest agora e windows-2025-vs2026 e
+    # o Mesa (llvmpipe) CONGELA na criacao de contexto WGL nessa imagem (run
+    # 39828443013: pwsh mudo por 5h53 logo apos o download do dxvk, ANTES de
+    # qualquer boot; as 4 runs "timeout 6h" de SOBE (v41-v44) travaram NO
+    # MESMO LUGAR — o jogo NUNCA chegou a rodar). Windows2022-Readme.md no
+    # actions/runner-images confirma a imagem ativa (20261012) — e a familia
+    # de imagem onde llvmpipe GL 4.6 ja funcionou (run 38623540416).
+    runs-on: windows-2022
     timeout-minutes: 360  # max do Actions. CDN varia de 16 MB/s (v9: 6 min)
                           # a <1 MB/s (v13: >190 min) — 360 cobre o pior caso
                           # com folga para cache+extracao+boot+MMF.
@@ -1462,7 +1469,14 @@ jobs:
               Trace "dxvk tar.gz: $tamD bytes"
                 if ($tamD -and $tamD -gt 3MB) {
                   New-Item -ItemType Directory -Force -Path "C:\dxvk" | Out-Null
-                  tar -xf $dxvk -C C:\dxvk 2>&1 | ForEach-Object { Write-Host "tar: $_" }
+                  # v46: tar via cmd com redirect p/ arquivo (sem pipe no pwsh —
+                  # a v44 congelou AQUI: console mudo de 18:20:59 ate o cancel
+                  # as 00:13) + trace antes/depois de CADA etapa do pre-boot.
+                  Trace "tar dxvk inicio"
+                  cmd /c "C:\Windows\System32\tar.exe -xf $dxvk -C C:\dxvk > tar.log 2>&1"
+                  Trace "tar dxvk fim rc=$LASTEXITCODE"
+                  Get-Content tar.log -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "tar: $_" }
+                  Trace "copias dxvk jogo inicio"
                   foreach ($pair in @(@("x64", $wdir), @("x32", "C:\ets2demo\bin\win_x86"))) {
                     $dsrc = Get-ChildItem "C:\dxvk" -Recurse -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq $pair[0] } | Select-Object -First 1
                     if ($dsrc) {
@@ -1472,12 +1486,14 @@ jobs:
                       }
                     } else { $mesaLog += "dxvk: pasta $($pair[0]) nao achada" }
                   }
+                  Trace "copias dxvk jogo fim"
                 } else { $mesaLog += "dxvk nao baixou ($tamD)" }
                 # v33: o jogo carrega d3d11.dll do SYSTEM32 (anti-hijack — o
                 # dxvk.log local ficou VAZIO na 38737171323 e o device falhou
                 # "at detection stage" com o adapter do DXVK achado via dxgi).
                 # Entao o DXVK vai PARA DENTRO do System32/SysWOW64 (renomeando
                 # o original .bak — VM descartavel).
+                Trace "dxvk system32 inicio"
                 $dxvkDirs = Get-ChildItem "C:\dxvk" -Recurse -Directory -ErrorAction SilentlyContinue
                 $d64 = $dxvkDirs | Where-Object { $_.Name -eq "x64" } | Select-Object -First 1
                 $d32 = $dxvkDirs | Where-Object { $_.Name -eq "x32" } | Select-Object -First 1
@@ -1498,46 +1514,70 @@ jobs:
                     } catch { $mesaLog += "dxvk sistema PULOU: $dst -> $($_.Exception.Message)" }
                   }
                 }
-              } catch { $mesaLog += "dxvk falhou: $($_.Exception.Message)" }
-              # AUTOTESTE WGL: cria um contexto OpenGL de verdade com as dlls da
-              # Mesa (LoadLibrary explicita + P/Invoke) e le GL_VERSION — decide
-              # de uma vez se llvmpipe funciona no runner.
+                Trace "dxvk system32 fim"
+              } catch { $mesaLog += "dxvk falhou: $($_.Exception.Message)"; Trace "dxvk bloco FALHOU: $($_.Exception.Message)" }
+              # v46: AUTOTESTE WGL x64 — agora em EXE SEPARADO (csc) com TIMEOUT:
+              # a v44 congelou com o teste DENTRO do pwsh (NativeLibrary::Load da
+              # Mesa + wglCreateContext llvmpipe no processo do pwsh = pwsh mudo
+              # por 5h53). Exe separado + WaitForExit(240s) + kill: no pior caso
+              # perde-se o diagnostico do GL, NUNCA mais o pipeline inteiro.
               try {
-                $null = [System.Runtime.InteropServices.NativeLibrary]::Load((Join-Path $wdir "opengl32.dll"))
-          Add-Type -TypeDefinition @"
-          using System;
-          using System.Runtime.InteropServices;
-          public class GLTest {
-            [StructLayout(LayoutKind.Sequential)]
-            public struct PFD { public ushort nSize, nVersion; public uint dwFlags; public byte iPixelType, cColorBits, cRedBits, cRedShift, cGreenBits, cGreenShift, cBlueBits, cBlueShift, cAlphaBits, cAlphaShift, cAccumBits, cAccumRedBits, cAccumGreenBits, cAccumBlueBits, cAccumAlphaBits, cDepthBits, cStencilBits, cAuxBuffers, iLayerType, bReserved; public uint dwLayerMask, dwVisibleMask, dwDamageMask; }
-            [DllImport("user32.dll")] public static extern IntPtr GetDC(IntPtr hWnd);
-            [DllImport("gdi32.dll")] public static extern int ChoosePixelFormat(IntPtr hdc, ref PFD pfd);
-            [DllImport("gdi32.dll")] public static extern bool SetPixelFormat(IntPtr hdc, int ipf, ref PFD pfd);
-            [DllImport("opengl32.dll")] public static extern IntPtr wglCreateContext(IntPtr hdc);
-            [DllImport("opengl32.dll")] public static extern bool wglMakeCurrent(IntPtr hdc, IntPtr hrc);
-            [DllImport("opengl32.dll")] public static extern IntPtr wglGetProcAddress(string n);
-            [UnmanagedFunctionPointer(CallingConvention.Winapi)] public delegate IntPtr GS(uint n);
-            public static string Run() {
+                Trace "wgl64 inicio"
+          @'
+              using System;
+              using System.Runtime.InteropServices;
+              public class GLTest64 {
+              [StructLayout(LayoutKind.Sequential)]
+              public struct PFD { public ushort nSize, nVersion; public uint dwFlags; public byte iPixelType, cColorBits, cRedBits, cRedShift, cGreenBits, cGreenShift, cBlueBits, cBlueShift, cAlphaBits, cAlphaShift, cAccumBits, cAccumRedBits, cAccumGreenBits, cAccumBlueBits, cAccumAlphaBits, cDepthBits, cStencilBits, cAuxBuffers, iLayerType, bReserved; public uint dwLayerMask, dwVisibleMask, dwDamageMask; }
+              [DllImport("kernel32.dll", SetLastError=true, CharSet=CharSet.Unicode)] public static extern IntPtr LoadLibraryW(string f);
+              [DllImport("user32.dll")] public static extern IntPtr GetDC(IntPtr hWnd);
+              [DllImport("gdi32.dll")] public static extern int ChoosePixelFormat(IntPtr hdc, ref PFD pfd);
+              [DllImport("gdi32.dll")] public static extern bool SetPixelFormat(IntPtr hdc, int ipf, ref PFD pfd);
+              [DllImport("opengl32.dll")] public static extern IntPtr wglCreateContext(IntPtr hdc);
+              [DllImport("opengl32.dll")] public static extern bool wglMakeCurrent(IntPtr hdc, IntPtr hrc);
+              [DllImport("opengl32.dll")] public static extern IntPtr wglGetProcAddress(string n);
+              [UnmanagedFunctionPointer(CallingConvention.Winapi)] public delegate IntPtr GS(uint n);
+              public static int Main(string[] a) {
+              string dll = a.Length > 0 ? a[0] : "opengl32.dll";
+              IntPtr h = LoadLibraryW(dll);
+              if (h == IntPtr.Zero) { Console.WriteLine("64bit LoadLibrary(" + dll + ") FALHOU err=" + Marshal.GetLastWin32Error()); return 1; }
               IntPtr hdc = GetDC(IntPtr.Zero);
               var p = new PFD();
               p.nSize = (ushort)Marshal.SizeOf(typeof(PFD)); p.nVersion = 1;
-              p.dwFlags = 0x25; p.iPixelType = 0; p.cColorBits = 24; p.cDepthBits = 24; p.cStencilBits = 8;
+              p.dwFlags = 0x25; p.iPixelType = 0; p.cColorBits = 32; p.cAlphaBits = 8; p.cDepthBits = 24; p.cStencilBits = 8;
               int pf = ChoosePixelFormat(hdc, ref p);
-              if (pf == 0) return "ChoosePixelFormat=0 (err " + Marshal.GetLastWin32Error() + ")";
-              if (!SetPixelFormat(hdc, pf, ref p)) return "SetPixelFormat falhou (err " + Marshal.GetLastWin32Error() + ")";
+              if (pf == 0) { Console.WriteLine("64bit ChoosePixelFormat=0 err=" + Marshal.GetLastWin32Error()); return 1; }
+              if (!SetPixelFormat(hdc, pf, ref p)) { Console.WriteLine("64bit SetPixelFormat falhou err=" + Marshal.GetLastWin32Error()); return 1; }
               IntPtr hrc = wglCreateContext(hdc);
-              if (hrc == IntPtr.Zero) return "wglCreateContext=NULL (err " + Marshal.GetLastWin32Error() + ")";
-              if (!wglMakeCurrent(hdc, hrc)) return "wglMakeCurrent falhou (err " + Marshal.GetLastWin32Error() + ")";
+              if (hrc == IntPtr.Zero) { Console.WriteLine("64bit wglCreateContext=NULL err=" + Marshal.GetLastWin32Error()); return 1; }
+              if (!wglMakeCurrent(hdc, hrc)) { Console.WriteLine("64bit wglMakeCurrent falhou err=" + Marshal.GetLastWin32Error()); return 1; }
               IntPtr pg = wglGetProcAddress("glGetString");
-              if (pg == IntPtr.Zero) return "wglGetProcAddress(glGetString)=NULL";
+              if (pg == IntPtr.Zero) { Console.WriteLine("64bit wglGetProcAddress(glGetString)=NULL"); return 1; }
               var gs = (GS)Marshal.GetDelegateForFunctionPointer(pg, typeof(GS));
-              IntPtr v = gs(0x1F02);
-              return "WGL OK — GL_VERSION = " + Marshal.PtrToStringAnsi(v);
-            }
-          }
-          "@
-                $mesaLog += [GLTest]::Run()
-              } catch { $mesaLog += "teste WGL falhou: $($_.Exception.Message)" }
+              Console.WriteLine("WGL OK - GL_VERSION = " + Marshal.PtrToStringAnsi(gs(0x1F02)));
+              return 0;
+              }
+              }
+          '@ | Set-Content "$PWD\gltest64.cs" -Encoding ASCII
+                $csc64 = "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+                if (Test-Path $csc64) {
+                  Trace "wgl64 csc inicio"
+                  & $csc64 /nologo /platform:x64 /out:"$PWD\gltest64.exe" "$PWD\gltest64.cs" 2>&1 | ForEach-Object { $mesaLog += ("csc64: " + $_) }
+                  Trace "wgl64 csc fim"
+                  if (Test-Path "$PWD\gltest64.exe") {
+                    Trace "wgl64 run inicio"
+                    $p64 = Start-Process -FilePath "$PWD\gltest64.exe" -ArgumentList ('"' + (Join-Path $wdir "opengl32.dll") + '"') -RedirectStandardOutput "$PWD\gl64.out" -RedirectStandardError "$PWD\gl64.err" -PassThru
+                    if (-not $p64.WaitForExit(240000)) {
+                      Stop-Process -Id $p64.Id -Force -ErrorAction SilentlyContinue
+                      $mesaLog += "WGL64 TIMEOUT 240s - llvmpipe congela neste runner/imagem"
+                      Trace "wgl64 TIMEOUT 240s (kill)"
+                    } else {
+                      $mesaLog += @("exit64=" + $p64.ExitCode) + @(Get-Content "$PWD\gl64.out" -ErrorAction SilentlyContinue) + @(Get-Content "$PWD\gl64.err" -ErrorAction SilentlyContinue)
+                      Trace "wgl64 run fim exit=$($p64.ExitCode)"
+                    }
+                  } else { $mesaLog += "gltest64.exe nao compilou"; Trace "wgl64 nao compilou" }
+                } else { $mesaLog += "csc64 nao encontrado"; Trace "wgl64 csc ausente" }
+              } catch { $mesaLog += "teste WGL64 falhou: $($_.Exception.Message)"; Trace "wgl64 FALHOU: $($_.Exception.Message)" }
               # v31: SONDA WGL 32-BIT — o autoteste acima roda no pwsh x64; o
               # jogo que falha e o de 32 bits. Compila um exe x86 (csc do .NET
               # Framework) que carrega opengl32.dll PELO NOME (resolucao
@@ -1580,12 +1620,24 @@ jobs:
           '@ | Set-Content "$PWD\gltest32.cs" -Encoding UTF8
                 $csc = "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
                 if (Test-Path $csc) {
+                  Trace "wgl32 csc inicio"
                   & $csc /nologo /platform:x86 /out:"$PWD\gltest32.exe" "$PWD\gltest32.cs" 2>&1 | ForEach-Object { $mesaLog += ("csc: " + $_) }
+                  Trace "wgl32 csc fim"
                   if (Test-Path "$PWD\gltest32.exe") {
-                    $out32 = & "$PWD\gltest32.exe" 2>&1
-                    $mesaLog += @("exit32=" + $LASTEXITCODE) + @($out32)
-                  } else { $mesaLog += "gltest32.exe nao compilou" }
-                } else { $mesaLog += "csc nao encontrado" }
+                    # v46: timeout tbm no 32-bit (& exe 2>&1 sem timeout = outro
+                    # congelamento potencial de horas)
+                    Trace "wgl32 run inicio"
+                    $p32 = Start-Process -FilePath "$PWD\gltest32.exe" -RedirectStandardOutput "$PWD\gl32.out" -RedirectStandardError "$PWD\gl32.err" -PassThru
+                    if (-not $p32.WaitForExit(240000)) {
+                      Stop-Process -Id $p32.Id -Force -ErrorAction SilentlyContinue
+                      $mesaLog += "WGL32 TIMEOUT 240s - llvmpipe 32bit congela neste runner/imagem"
+                      Trace "wgl32 TIMEOUT 240s (kill)"
+                    } else {
+                      $mesaLog += @("exit32=" + $p32.ExitCode) + @(Get-Content "$PWD\gl32.out" -ErrorAction SilentlyContinue) + @(Get-Content "$PWD\gl32.err" -ErrorAction SilentlyContinue)
+                      Trace "wgl32 run fim exit=$($p32.ExitCode)"
+                    }
+                  } else { $mesaLog += "gltest32.exe nao compilou"; Trace "wgl32 nao compilou" }
+                } else { $mesaLog += "csc nao encontrado"; Trace "wgl32 csc ausente" }
               } catch { $mesaLog += "sonda 32bit falhou: $($_.Exception.Message)" }
               $mesaLog | Out-File "$PWD\mesa-load.log" -Encoding utf8
               $mesaLog | Write-Host
