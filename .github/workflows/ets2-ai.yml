@@ -1463,7 +1463,7 @@ jobs:
               # de GPU. ETS2 e titulo DXVK-comprovado (Proton/Linux roda assim).
               try {
                 $dxvk = "C:\dxvk.tar.gz"
-                curl.exe -sSL --retry 3 --max-time 240 -o $dxvk "https://github.com/doitsujin/dxvk/releases/download/v3.1.1/dxvk-3.1.1.tar.gz"
+                curl.exe -sSL --retry 3 --max-time 240 -o $dxvk "https://github.com/doitsujin/dxvk/releases/download/v2.7.1/dxvk-2.7.1.tar.gz"
                 $tamD = (Get-Item $dxvk -ErrorAction SilentlyContinue).Length
                 Write-Host "dxvk baixado: $tamD bytes"
               Trace "dxvk tar.gz: $tamD bytes"
@@ -1542,6 +1542,7 @@ jobs:
               IntPtr h = LoadLibraryW(dll);
               if (h == IntPtr.Zero) { Console.WriteLine("64bit LoadLibrary(" + dll + ") FALHOU err=" + Marshal.GetLastWin32Error()); return 1; }
               IntPtr hdc = GetDC(IntPtr.Zero);
+              if (hdc == IntPtr.Zero) { Console.WriteLine("64bit GetDC(NULL)=0 — sessao do runner sem desktop (WGL indisponivel aqui, NAO e bug da Mesa)"); return 1; }
               var p = new PFD();
               p.nSize = (ushort)Marshal.SizeOf(typeof(PFD)); p.nVersion = 1;
               p.dwFlags = 0x25; p.iPixelType = 0; p.cColorBits = 32; p.cAlphaBits = 8; p.cDepthBits = 24; p.cStencilBits = 8;
@@ -1601,6 +1602,7 @@ jobs:
               IntPtr h = LoadLibraryW("opengl32.dll");
               if (h == IntPtr.Zero) { Console.WriteLine("32bit LoadLibrary(opengl32) FALHOU err=" + Marshal.GetLastWin32Error()); return 1; }
               IntPtr hdc = GetDC(IntPtr.Zero);
+              if (hdc == IntPtr.Zero) { Console.WriteLine("32bit GetDC(NULL)=0 — sessao do runner sem desktop (WGL indisponivel aqui, NAO e bug da Mesa)"); return 1; }
               var p = new PFD();
               p.nSize = (ushort)Marshal.SizeOf(typeof(PFD)); p.nVersion = 1;
               p.dwFlags = 0x25; p.iPixelType = 0; p.cColorBits = 32; p.cAlphaBits = 8; p.cDepthBits = 24; p.cStencilBits = 8;
@@ -1713,11 +1715,21 @@ jobs:
             $dllCarregada = $false
             1..$maxIter | ForEach-Object {
               Start-Sleep -Seconds 5
+              # v47: trace em TODA iteracao (a v46 morreu apos a iter 1 sem
+              # deixar rastro) + estatistica do processo: cpu acumulada
+              # SUBINDO = lavapipe/LLVM trabalhando (so precisa de janela
+              # maior); cpu CONGELADA com processo vivo = deadlock (plugin/
+              # render travado) — decisoes completamente diferentes.
+              $gp = $null
+              try { $gp = Get-Process -Id $g.Id -ErrorAction SilentlyContinue } catch { }
+              $cpuS = if ($gp) { [math]::Round($gp.CPU, 1) } else { "-1" }
+              $thrS = if ($gp) { $gp.Threads.Count } else { "0" }
+              Trace "boot $tag iter $_/$maxIter vivo=$(-not $g.HasExited) cpu=$cpuS thr=$thrS"
               if ($_ % 12 -eq 1) {
-                Trace "boot $tag iter $_/$maxIter vivo=$(-not $g.HasExited) elapsed=$([int]((Get-Date)-$sobeT0).TotalMinutes)min"
-                # game.log SALVO DURANTE o boot (antes so no fim — 6 h sem
-                # nenhum log commitado = forense cega)
+                # game.log + dxvk.log SALVOS DURANTE o boot (antes so no fim —
+                # e o fim nunca chegava; o dxvk.log diz se o Vulkan subiu)
                 Copy-Item (Join-Path $docs "game.log.txt") ("$PWD\game-log-" + ($tag -replace "[^a-zA-Z0-9]", "-") + ".txt") -Force -ErrorAction SilentlyContinue
+                Copy-Item (Join-Path $wdir2 "dxvk.log") ("$PWD\dxvk-log-" + ($tag -replace "[^a-zA-Z0-9]", "-") + ".txt") -Force -ErrorAction SilentlyContinue
               }
               if ($g.HasExited) { break }
               # v36: probe NATIVO pwsh — zero python no loop (python custa ~35 s
@@ -1757,7 +1769,7 @@ jobs:
                     @{ ok = $false; mmf_existe = $true; magic = ('0x{0:X}' -f $magic); sdk = $sdk } | ConvertTo-Json | Out-File "$PWD\demo-mmf-parcial.json" -Encoding utf8
                   }
                   $acc.Dispose()
-                } catch { }
+                } catch { Trace "probe mmf (iter $_): $($_.Exception.Message)" }
               }
               if (Test-Path "$PWD\demo-mmf-viva.json") { Write-Host "  [mmf] PROVA VIVA capturada no boot $tag"; break }
               if ((Get-Date) -gt $prazo) { Write-Host "  prazo do boot $tag (dll carregada: $dllCarregada)"; break }
@@ -1781,11 +1793,19 @@ jobs:
           $mmfOk = { Test-Path "$PWD\demo-mmf-viva.json" }
           $x86exe = "C:\ets2demo\bin\win_x86\eurotrucks2.exe"
           $w86 = "C:\ets2demo\bin\win_x86"
+          # v47: lavapipe contido — em VM de 2 vCPU a tempestade de threads do
+          # init do LLVM pode congelar a maquina inteira (jogo+agente+pwsh).
+          # 1 thread de raster = init mais lento porem PREVISIVEL.
+          $env:LP_NUM_THREADS = "1"
+          $env:GALLIUM_NUM_THREADS = "1"
           # v32: 1) DXVK + lavapipe (dx11 NATIVO do jogo, Vulkan por CPU)
+          # v47: janela do boot 1 = 120 iters (10 min): se o cpu= do trace
+          # estiver SUBINDO, o lavapipe esta compilando shaders e so precisa
+          # de tempo; a v46 dava so 4 min.
           $icd64 = Get-ChildItem "C:\mesa3d" -Recurse -Filter "*lvp*.json" -ErrorAction SilentlyContinue | Where-Object { $_.Name -match "x86_64|x64" } | Select-Object -First 1
           if ($icd64 -and (Test-Path (Join-Path $wdir "d3d11.dll"))) {
             $env:VK_ICD_FILENAMES = $icd64.FullName
-            $vivo = Boot $exe $wdir "x64 dx11 dxvk lavapipe" @("-nointro") $null 48
+            $vivo = Boot $exe $wdir "x64 dx11 dxvk lavapipe" @("-nointro") $null 120
           }
           if (-not $vivo -and -not (& $mmfOk) -and (Test-Path $x86exe) -and $env:MESA_LVP_ICD -and (Test-Path (Join-Path $w86 "d3d11.dll"))) {
             $env:VK_ICD_FILENAMES = $env:MESA_LVP_ICD
@@ -1961,7 +1981,7 @@ jobs:
           # le a telemetria, decide e INJETA teclas reais — gravando cada
           # amostra em amostras-reais.csv (dados de TREINO do jogo de verdade)
           $bridge = (Resolve-Path "dist-cpp\ETS2-AI-bridge.exe").Path
-          $env:ETS2AI_ESPERA_MIN = "100"   # v44: boot por CPU e LENTO ate o init do plugin
+          $env:ETS2AI_ESPERA_MIN = "45"    # v47: 45 min (a v46 esperou 100 e o jogo nunca passou do device; ciclo de feedback mais curto)
           $p = Start-Process -FilePath $bridge `
             -ArgumentList "--ets2","drive","--inject" `
             -WorkingDirectory $wdir `
