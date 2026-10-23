@@ -540,6 +540,7 @@ static void test_pipeline(void)
     int       saved = 0;
 
     printf("the whole pipeline, ending in the persistent cache\n");
+    mark("parsing both images");
 
     CHECK(pe_load(dll.b, dll.len, &pd) == PE_OK, "dll parse");
     CHECK(pe_load(exe.b, exe.len, &px) == PE_OK, "exe parse");
@@ -547,6 +548,7 @@ static void test_pipeline(void)
     exe_va = px.image_base + px.entry_rva;
     iat_va = px.image_base + px.dlls[0].iat_rva;
 
+    mark("translating mini.dll!AddThree");
     /* Translate the DLL first: a loader resolves imports before running code,
      * which is what makes the call target a constant here. */
     CHECK(tr_translate_run(DLL_CODE, sizeof(DLL_CODE), dll_va, NULL, NULL, &od)
@@ -713,6 +715,7 @@ static void test_pipeline(void)
     (void)dll_mid; (void)exe_mid; (void)saved;
     /* Off ARM64 the translations are still checked word for word, and the cache
     * round trip is still checked as bytes - only execution is unavailable. */
+    mark("translating app.exe against a synthetic host address");
     memset(&rs, 0, sizeof(rs));
     rs.iat_guest_va = iat_va;
     rs.host_addr = 0x00000000DEADB000ULL;
@@ -727,11 +730,14 @@ static void test_pipeline(void)
     CHECK(ptc_insert(cache, exe_mid, exe_va, exe.b + HDR_SIZE, 18u,
                      ox.words, (uint32_t)(ox.n * 4u), 0u) == 0,
           "could not cache the exe block");
+    mark("saving the cache");
     saved = (ptc_save(cache, CACHE_PATH) == 0);
     CHECK(saved, "ptc_save failed");
     if (saved) {
         ptc_open_result why = PTC_OPEN_OK;
-        ptc_cache *re = ptc_open(CACHE_PATH, PTC_ISA_AARCH64, PTC_ISA_X86_64, &why);
+        ptc_cache *re;
+        mark("reopening the cache");
+        re = ptc_open(CACHE_PATH, PTC_ISA_AARCH64, PTC_ISA_X86_64, &why);
         CHECK(re != NULL, "could not reopen the cache");
         if (re) {
             uint32_t clen = 0;

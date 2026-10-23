@@ -61,14 +61,17 @@ jobs:
             timeout 120 "$1" > "/tmp/$(basename "$1").log" 2>&1
             rc=$?
             echo "" > /tmp/running.txt
+            # The flushed markers are the whole diagnostic, and a step log is
+            # not readable from every environment, so they go into the annotation.
+            taillog=$(tail -c 900 "/tmp/$(basename "$1").log" | tr '\n' '|' | tr -s ' ')
             cat "/tmp/$(basename "$1").log"
             if [ "$rc" -eq 124 ]; then
-              echo "::error title=suite-hang::$(basename "$1") was still running after 120s"
+              echo "::error title=suite-hang::$(basename "$1") was still running after 120s. last output: ${taillog}"
               exit 1
             fi
             if [ "$rc" -ne 0 ]; then
-              echo "::error title=suite-failure::$(basename "$1") exited ${rc}"
-              exit "$rc"
+              echo "::error title=suite-failure::$(basename "$1") exited ${rc}. last output: ${taillog}"
+              exit 1
             fi
           }
           run_one ./test_ptc
@@ -196,14 +199,17 @@ jobs:
               > "/tmp/$(basename "$1").log" 2>&1
             rc=$?
             echo "" > /tmp/running.txt
+            # The flushed markers are the whole diagnostic, and a step log is
+            # not readable from every environment, so they go into the annotation.
+            taillog=$(tail -c 900 "/tmp/$(basename "$1").log" | tr '\n' '|' | tr -s ' ')
             cat "/tmp/$(basename "$1").log"
             if [ "$rc" -eq 124 ]; then
-              echo "::error title=suite-hang::$(basename "$1") was still running under QEMU after 600s"
+              echo "::error title=suite-hang::$(basename "$1") was still running under QEMU after 600s. last output: ${taillog}"
               exit 1
             fi
             if [ "$rc" -ne 0 ]; then
-              echo "::error title=suite-failure::$(basename "$1") exited ${rc} under QEMU"
-              exit "$rc"
+              echo "::error title=suite-failure::$(basename "$1") exited ${rc} under QEMU. last output: ${taillog}"
+              exit 1
             fi
           }
           run_one /tmp/t_ptc
