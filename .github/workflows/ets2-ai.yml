@@ -1516,6 +1516,110 @@ jobs:
                 }
                 Trace "dxvk system32 fim"
               } catch { $mesaLog += "dxvk falhou: $($_.Exception.Message)"; Trace "dxvk bloco FALHOU: $($_.Exception.Message)" }
+              # v48: VULKAN RUNTIME (loader) — o Windows Server NAO traz
+              # vulkan-1.dll e SEM o loader o DXVK nao funciona: o jogo morre
+              # na criacao do device (runs 39878440111/39992171040: game.log
+              # para em '[gfx] AGS not detected', processo exita em ~20 s).
+              # Instala via winget (KhronosGroup.VulkanRT, catalogo oficial).
+              try {
+                $vld64 = Test-Path "C:\Windows\System32\vulkan-1.dll"
+                $vld86 = Test-Path "C:\Windows\SysWOW64\vulkan-1.dll"
+                Trace "vulkan loader antes: x64=$vld64 x86=$vld86"
+                if (-not $vld64) {
+                  Trace "instalando VulkanRT via winget"
+                  winget install --id KhronosGroup.VulkanRT -e --silent --accept-package-agreements --accept-source-agreements 2>&1 | ForEach-Object { Trace "winget: $($_.Trim())" }
+                  $vld64 = Test-Path "C:\Windows\System32\vulkan-1.dll"
+                  $vld86 = Test-Path "C:\Windows\SysWOW64\vulkan-1.dll"
+                  Trace "vulkan loader depois: x64=$vld64 x86=$vld86"
+                  if (-not $vld64) {
+                    Trace "winget falhou — tentando choco"
+                    choco install -y vulkan-runtime 2>&1 | ForEach-Object { Trace "choco: $($_.Trim())" }
+                    $vld64 = Test-Path "C:\Windows\System32\vulkan-1.dll"
+                    Trace "vulkan loader pos-choco: x64=$vld64"
+                  }
+                }
+              } catch { Trace "vulkanrt: $($_.Exception.Message)" }
+              # v48: SONDA VULCAN COMPLETA em exe separado (csc): prova o stack
+              # inteiro loader -> ICD lavapipe -> device fisico SEM depender do
+              # jogo. Se vkCreateInstance + EnumeratePhysicalDevices funcionarem
+              # com o ICD lvp, o caminho do jogo (dx11->DXVK->lavapipe) e viavel.
+              try {
+                Trace "vktest inicio"
+          @'
+              using System;
+              using System.Runtime.InteropServices;
+              public class VkTest {
+              [DllImport("kernel32.dll", SetLastError=true, CharSet=CharSet.Ansi)] public static extern IntPtr LoadLibraryA(string f);
+              [DllImport("kernel32.dll", SetLastError=true, CharSet=CharSet.Ansi)] public static extern IntPtr GetProcAddress(IntPtr h, string n);
+              [UnmanagedFunctionPointer(CallingConvention.Winapi)] public delegate IntPtr GP(IntPtr instance, [MarshalAs(UnmanagedType.LPStr)] string name);
+              [UnmanagedFunctionPointer(CallingConvention.Winapi)] public delegate int CI(ref VkInstanceCreateInfo ci, IntPtr alloc, out IntPtr inst);
+              [UnmanagedFunctionPointer(CallingConvention.Winapi)] public delegate int EPD(IntPtr inst, ref uint count, IntPtr[] devices);
+              [UnmanagedFunctionPointer(CallingConvention.Winapi)] public delegate void GPD(IntPtr inst, uint dev, IntPtr props);
+              [UnmanagedFunctionPointer(CallingConvention.Winapi)] public delegate void DI(IntPtr inst);
+              [StructLayout(LayoutKind.Sequential)] public struct VkApplicationInfo { public int sType; public IntPtr pNext; public IntPtr pApplicationName; public uint applicationVersion; public IntPtr pEngineName; public uint engineVersion; public uint apiVersion; }
+              [StructLayout(LayoutKind.Sequential)] public struct VkInstanceCreateInfo { public int sType; public IntPtr pNext; public int flags; public IntPtr pApplicationInfo; public uint enabledLayerCount; public IntPtr ppEnabledLayerNames; public uint enabledExtensionCount; public IntPtr ppEnabledExtensionNames; }
+              public static int Main() {
+              IntPtr h = LoadLibraryA("vulkan-1.dll");
+              if (h == IntPtr.Zero) { Console.WriteLine("vk: vulkan-1.dll AUSENTE (loader) err=" + Marshal.GetLastWin32Error()); return 2; }
+              IntPtr gpa = GetProcAddress(h, "vkGetInstanceProcAddr");
+              if (gpa == IntPtr.Zero) { Console.WriteLine("vk: vkGetInstanceProcAddr nao achado"); return 2; }
+              GP gp = (GP)Marshal.GetDelegateForFunctionPointer(gpa, typeof(GP));
+              IntPtr pCI = gp(IntPtr.Zero, "vkCreateInstance");
+              if (pCI == IntPtr.Zero) { Console.WriteLine("vk: vkCreateInstance nao achado"); return 2; }
+              CI ci = (CI)Marshal.GetDelegateForFunctionPointer(pCI, typeof(CI));
+              VkApplicationInfo app = new VkApplicationInfo();
+              app.sType = 0; app.apiVersion = 0x403000;
+              VkInstanceCreateInfo ici = new VkInstanceCreateInfo();
+              ici.sType = 1; ici.pApplicationInfo = Marshal.AllocHGlobal(Marshal.SizeOf(app));
+              Marshal.StructureToPtr(app, ici.pApplicationInfo, false);
+              IntPtr inst;
+              int r = ci(ref ici, IntPtr.Zero, out inst);
+              Console.WriteLine("vkCreateInstance rc=" + r + (r == 0 ? " OK" : " FALHOU"));
+              if (r != 0) return 1;
+              uint n = 0;
+              IntPtr pEPD = gp(inst, "vkEnumeratePhysicalDevices");
+              EPD epd = (EPD)Marshal.GetDelegateForFunctionPointer(pEPD, typeof(EPD));
+              r = epd(inst, ref n, null);
+              Console.WriteLine("vkEnumeratePhysicalDevices(count) rc=" + r + " n=" + n);
+              if (n > 0) {
+              IntPtr[] devs = new IntPtr[n];
+              epd(inst, ref n, devs);
+              IntPtr pGPD = gp(inst, "vkGetPhysicalDeviceProperties");
+              GPD gpd = (GPD)Marshal.GetDelegateForFunctionPointer(pGPD, typeof(GPD));
+              IntPtr buf = Marshal.AllocHGlobal(8192);
+              gpd(inst, 0, buf);
+              string name = Marshal.PtrToStringAnsi(new IntPtr(buf.ToInt64() + 20));
+              Console.WriteLine("GPU[0]: " + name);
+              Marshal.FreeHGlobal(buf);
+              }
+              IntPtr pDI = gp(inst, "vkDestroyInstance");
+              DI di = (DI)Marshal.GetDelegateForFunctionPointer(pDI, typeof(DI));
+              di(inst);
+              Console.WriteLine("VULKAN OK - loader + ICD lavapipe funcionam");
+              return 0;
+              }
+              }
+          '@ | Set-Content "$PWD\vktest.cs" -Encoding ASCII
+                $cscV = "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+                if (Test-Path $cscV) {
+                  & $cscV /nologo /platform:x64 /out:"$PWD\vktest.exe" "$PWD\vktest.cs" 2>&1 | ForEach-Object { Trace "vk csc: $_" }
+                  if (Test-Path "$PWD\vktest.exe") {
+                    $icdProbe = Get-ChildItem "C:\mesa3d" -Recurse -Filter "*lvp*.json" -ErrorAction SilentlyContinue | Where-Object { $_.Name -match "x86_64|x64" } | Select-Object -First 1
+                    if ($icdProbe) { $env:VK_ICD_FILENAMES = $icdProbe.FullName }
+                    Trace "vktest run (VK_ICD=$env:VK_ICD_FILENAMES)"
+                    $pv = Start-Process -FilePath "$PWD\vktest.exe" -RedirectStandardOutput "$PWD\vk.out" -RedirectStandardError "$PWD\vk.err" -PassThru
+                    if (-not $pv.WaitForExit(180000)) {
+                      Stop-Process -Id $pv.Id -Force -ErrorAction SilentlyContinue
+                      Trace "vktest TIMEOUT 180s (lavapipe travou)"
+                      $mesaLog += "vktest TIMEOUT 180s"
+                    } else {
+                      $vkOut = @(Get-Content "$PWD\vk.out" -ErrorAction SilentlyContinue) + @(Get-Content "$PWD\vk.err" -ErrorAction SilentlyContinue)
+                      $mesaLog += @("vktest exit=" + $pv.ExitCode) + $vkOut
+                      $vkOut | ForEach-Object { Trace "vk: $_" }
+                    }
+                  } else { Trace "vktest nao compilou" }
+                } else { Trace "csc ausente p/ vktest" }
+              } catch { Trace "vktest FALHOU: $($_.Exception.Message)" }
               # v46: AUTOTESTE WGL x64 — agora em EXE SEPARADO (csc) com TIMEOUT:
               # a v44 congelou com o teste DENTRO do pwsh (NativeLibrary::Load da
               # Mesa + wglCreateContext llvmpipe no processo do pwsh = pwsh mudo
@@ -1713,21 +1817,24 @@ jobs:
             # parado 4h+). E o probe e em pwsh PURO (abrir a MMF custa ~0;
             # python so 1x quando ela existir).
             $dllCarregada = $false
-            1..$maxIter | ForEach-Object {
+            # v48: foreach de LINGUAGEM (nao ForEach-Object!) — o break dentro
+            # de ForEach-Object NAO e break de loop: ele PROPAGA e TERMINA O
+            # SCRIPT INTEIRO com exit 0 (provado nas runs 39878440111/39992171040:
+            # console acaba no '=== boot ===', sem 'boot FIM', sem veredito, sem
+            # proximos boots — e o step ainda da 'success'). foreach de linguagem
+            # usa break de verdade.
+            foreach ($i in 1..$maxIter) {
               Start-Sleep -Seconds 5
-              # v47: trace em TODA iteracao (a v46 morreu apos a iter 1 sem
-              # deixar rastro) + estatistica do processo: cpu acumulada
-              # SUBINDO = lavapipe/LLVM trabalhando (so precisa de janela
-              # maior); cpu CONGELADA com processo vivo = deadlock (plugin/
-              # render travado) — decisoes completamente diferentes.
+              # v47: trace em TODA iteracao + estatistica do processo: cpu
+              # acumulada SUBINDO = lavapipe/LLVM trabalhando; cpu CONGELADA
+              # com processo vivo = deadlock.
               $gp = $null
               try { $gp = Get-Process -Id $g.Id -ErrorAction SilentlyContinue } catch { }
               $cpuS = if ($gp) { [math]::Round($gp.CPU, 1) } else { "-1" }
               $thrS = if ($gp) { $gp.Threads.Count } else { "0" }
-              Trace "boot $tag iter $_/$maxIter vivo=$(-not $g.HasExited) cpu=$cpuS thr=$thrS"
-              if ($_ % 12 -eq 1) {
-                # game.log + dxvk.log SALVOS DURANTE o boot (antes so no fim —
-                # e o fim nunca chegava; o dxvk.log diz se o Vulkan subiu)
+              Trace "boot $tag iter $i/$maxIter vivo=$(-not $g.HasExited) cpu=$cpuS thr=$thrS"
+              if ($i % 12 -eq 1) {
+                # game.log + dxvk.log SALVOS DURANTE o boot
                 Copy-Item (Join-Path $docs "game.log.txt") ("$PWD\game-log-" + ($tag -replace "[^a-zA-Z0-9]", "-") + ".txt") -Force -ErrorAction SilentlyContinue
                 Copy-Item (Join-Path $wdir2 "dxvk.log") ("$PWD\dxvk-log-" + ($tag -replace "[^a-zA-Z0-9]", "-") + ".txt") -Force -ErrorAction SilentlyContinue
               }
@@ -1769,7 +1876,7 @@ jobs:
                     @{ ok = $false; mmf_existe = $true; magic = ('0x{0:X}' -f $magic); sdk = $sdk } | ConvertTo-Json | Out-File "$PWD\demo-mmf-parcial.json" -Encoding utf8
                   }
                   $acc.Dispose()
-                } catch { Trace "probe mmf (iter $_): $($_.Exception.Message)" }
+                } catch { Trace "probe mmf (iter $i): $($_.Exception.Message)" }
               }
               if (Test-Path "$PWD\demo-mmf-viva.json") { Write-Host "  [mmf] PROVA VIVA capturada no boot $tag"; break }
               if ((Get-Date) -gt $prazo) { Write-Host "  prazo do boot $tag (dll carregada: $dllCarregada)"; break }
