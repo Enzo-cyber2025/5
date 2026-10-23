@@ -1,0 +1,37 @@
+name: flcodes apk probe
+
+# Throwaway diagnostic: which public sources serve the Family Link APK to a
+# GitHub runner? Prints a table as a PR comment so the answer is readable.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probe
+        run: |
+          set +e
+          bash family-link-codes/tools/probe_apk_sources.sh > "$RUNNER_TEMP/table.txt" 2>&1
+          cat "$RUNNER_TEMP/table.txt"
+      - name: Publish
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          pr="$(gh pr list --head arena/085f9dfe-5 --json number -q '.[0].number')"
+          [ -n "$pr" ] || exit 0
+          {
+            echo "### probe de fontes do APK"
+            echo '```'
+            cat "$RUNNER_TEMP/table.txt"
+            echo '```'
+          } > "$RUNNER_TEMP/comment.md"
+          gh pr comment "$pr" --body-file "$RUNNER_TEMP/comment.md"
