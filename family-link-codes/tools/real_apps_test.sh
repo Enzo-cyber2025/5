@@ -18,7 +18,7 @@ set -uo pipefail
 
 WORK="${WORK:-/tmp/flcodes-real-apps}"
 THIRD_PARTY=""
-GOOGLE_PKG="com.google.android.gms"
+GOOGLE_CANDIDATES="com.google.android.gms com.android.vending com.google.android.webview com.android.chrome"
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
 export PYTHONPATH="$HERE${PYTHONPATH:+:$PYTHONPATH}"
 export FLCODES_HOME="${FLCODES_HOME:-$WORK/home}"
@@ -58,8 +58,17 @@ report_apk() {  # report_apk <file> <label>
 }
 
 step "1. a real Google binary from the system image, pulled without root"
-SYSTEM_PATH="$(adb shell pm path "$GOOGLE_PKG" 2>/dev/null | sed -n 's/^package://p' | head -1 | tr -d '\r')"
-echo "package: $GOOGLE_PKG"
+if [[ -z "${GOOGLE_PKG:-}" ]]; then
+  for candidate in $GOOGLE_CANDIDATES; do
+    if adb shell pm path "$candidate" 2>/dev/null | grep -q package:; then
+      GOOGLE_PKG="$candidate"; break
+    fi
+  done
+fi
+echo "google packages present: $(for c in $GOOGLE_CANDIDATES; do adb shell pm path "$c" 2>/dev/null | grep -q package: && printf '%s ' "$c"; done)"
+SYSTEM_PATH=""
+[[ -n "${GOOGLE_PKG:-}" ]] && SYSTEM_PATH="$(adb shell pm path "$GOOGLE_PKG" 2>/dev/null | sed -n 's/^package://p' | head -1 | tr -d '\r')"
+echo "package: ${GOOGLE_PKG:-none found}"
 echo "path on device: ${SYSTEM_PATH:-not found}"
 if [[ -n "$SYSTEM_PATH" ]]; then
   # /system and /product are readable; /data/app is not

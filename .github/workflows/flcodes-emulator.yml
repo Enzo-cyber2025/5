@@ -449,12 +449,11 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
       - name: Boot the emulator (Google APIs image)
-        env:
-          FLCODES_AVD_TAG: google_apis
         run: |
           set -e
           export PATH="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/platform-tools:$PATH"
-          bash family-link-codes/tools/emulator_boot.sh 2>&1 | tail -40
+          bash family-link-codes/tools/emulator_boot.sh \
+            --work "$RUNNER_TEMP/emu" --tag google_apis 2>&1 | tail -40
       - name: Run the REA pipeline on the real APKs
         env:
           FLCODES_PASSPHRASE: real
