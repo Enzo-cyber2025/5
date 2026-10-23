@@ -301,6 +301,62 @@ real**: não tenho uma, e criar contas Google por automação não é possível
 Google. O job, quando há credenciais, faz tudo e publica o resultado no PR; sem
 credenciais ele reporta isso explicitamente, sem fingir sucesso.
 
+## 4f. APKs reais de terceiros, sem root (executado, verde)
+
+Job `real-apps` (run [40030745582](https://github.com/Enzo-cyber2025/5/actions/runs/40030745582)),
+imagem `google_apis` no QEMU, nenhuma credencial usada.
+
+| alvo | origem | resultado |
+|---|---|---|
+| `com.google.android.gsf` (Google Services Framework) | `pm path` no `/system/priv-app`, `adb pull` sem root | APK de **93 MB**, 7972 entradas, assinado com a chave de plataforma AOSP (`CN=Android`) |
+| `cm.aptoide.pt` 9.22.5.3 | loja instalada por `adb install`, depois `flcodes device apk` | `base.apk` com **4089 entradas**, assinatura V2 verificada (SHA-256 `73534d45…`) |
+
+O que o `flcodes apk scan` tirou desses binários reais, sem desmontar nada:
+
+```
+com.google.android.gsf
+  config-key: sharedSecret, shared_secret
+  endpoint-hint: kidsmanagement, clients6.google.com
+  prefs: /data/data/com.google.android.gsf/shared_prefs/CheckinService.xml
+
+cm.aptoide.pt
+  backup-flag: allowBackup
+  root-hint: /su, Superuser
+  native libs: 8 (arm64-v8a, armeabi-v7a, x86, x86_64)
+```
+
+Isto prova três coisas que faltavam no relatório:
+
+1. **`adb pull` de APK de sistema sem root funciona** — a extração não depende de
+   root nem de credencial; o que depende é a leitura de `/data/data`.
+2. **O scanner roda em binários reais e obfuscados** (o Aptoide devolveu
+   `no config field names in plain text`, como esperado num APK comercial).
+3. **`adb backup` do Aptoide devolve um container vazio (47 bytes)** — app que
+   desliga backup não entrega dado nenhum. É exatamente o muro que o Family Link
+   coloca, e não é falha do extrator: `flcodes abe scan` diz "nothing to scan".
+
+O que este job **não** faz: processar o APK do Family Link. O binário do Family
+Link continua indisponível (ver 4e), então o que está provado aqui é o pipeline +
+a assinatura de um app Google real, não a chave daquele app.
+
+### O caminho do APK publicado: sondagem de fontes (outubro/2026)
+
+`tools/probe_apk_sources.sh` foi rodado **dentro do runner** (não do sandbox) e
+está no comentário do PR. Resultado bruto:
+
+| fonte | HTTP | nota |
+|---|---|---|
+| `play.google.com` (página) | 200 | HTML, sem link de download |
+| apkmirror (4 rotas), apkpure (4), apkfab, apkgk, aurora | 403 | Cloudflare / bloqueio de IP de datacenter |
+| apkcombo, apkcombo.app, apk.support, apkfollow | — | não resolvem DNS |
+| `pureapk` API | 200 | 36 bytes: sem `download_url` |
+
+Conclusão honesta: **nenhuma fonte pública entrega o APK para um IP de CI**, e a
+Play Store anônima está fechada. Restam os dois caminhos já implementados e
+gated em segredo: `FLCODES_APK_URL` (link direto seu) ou `FLCODES_GPLAY_*`
+(conta que já tem o app). Sem eles o job `real-family-link` é verde por *skip*,
+e diz isso no comentário.
+
 ## 5. O que ainda NÃO está provado
 
 * **Aceitação pelo firmware do aparelho supervisionado** — precisa de aparelho
