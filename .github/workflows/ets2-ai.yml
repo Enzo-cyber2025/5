@@ -1520,23 +1520,42 @@ jobs:
               # vulkan-1.dll e SEM o loader o DXVK nao funciona: o jogo morre
               # na criacao do device (runs 39878440111/39992171040: game.log
               # para em '[gfx] AGS not detected', processo exita em ~20 s).
-              # Instala via winget (KhronosGroup.VulkanRT, catalogo oficial).
+              # v49: instalador OFICIAL da LunarG direto (URL do manifest do
+              # pacote KhronosGroup.VulkanRT 1.4.363.0 no winget-pkgs) — a v48
+              # tentou winget, mas o Windows Server do runner NAO TEM winget.
+              # InstallerType exe, Silent: /S.
               try {
                 $vld64 = Test-Path "C:\Windows\System32\vulkan-1.dll"
                 $vld86 = Test-Path "C:\Windows\SysWOW64\vulkan-1.dll"
                 Trace "vulkan loader antes: x64=$vld64 x86=$vld86"
                 if (-not $vld64) {
-                  Trace "instalando VulkanRT via winget"
-                  winget install --id KhronosGroup.VulkanRT -e --silent --accept-package-agreements --accept-source-agreements 2>&1 | ForEach-Object { Trace "winget: $($_.Trim())" }
+                  Trace "baixando VulkanRT X64 installer (LunarG 1.4.363.0)"
+                  curl.exe -sSL --retry 3 --max-time 240 -o C:\vulkanrt-x64.exe "https://sdk.lunarg.com/sdk/download/1.4.363.0/windows/VulkanRT-X64-1.4.363.0-Installer.exe"
+                  $tV = (Get-Item C:\vulkanrt-x64.exe -ErrorAction SilentlyContinue).Length
+                  Trace "vulkanrt x64 installer: $tV bytes"
+                  if ($tV -and $tV -gt 1MB) {
+                    $pV = Start-Process -FilePath "C:\vulkanrt-x64.exe" -ArgumentList "/S" -PassThru
+                    if (-not $pV.WaitForExit(300000)) {
+                      Stop-Process -Id $pV.Id -Force -ErrorAction SilentlyContinue
+                      Trace "vulkanrt x64 install TIMEOUT 300s"
+                    } else { Trace "vulkanrt x64 install exit=$($pV.ExitCode)" }
+                  } else { Trace "vulkanrt x64 installer nao baixou ($tV)" }
+                  if (-not (Test-Path "C:\Windows\SysWOW64\vulkan-1.dll")) {
+                    Trace "baixando VulkanRT X86 installer (best effort)"
+                    curl.exe -sSL --retry 3 --max-time 240 -o C:\vulkanrt-x86.exe "https://sdk.lunarg.com/sdk/download/1.4.363.0/windows/VulkanRT-X86-1.4.363.0-Installer.exe"
+                    $tV86 = (Get-Item C:\vulkanrt-x86.exe -ErrorAction SilentlyContinue).Length
+                    Trace "vulkanrt x86 installer: $tV86 bytes"
+                    if ($tV86 -and $tV86 -gt 1MB) {
+                      $pV86 = Start-Process -FilePath "C:\vulkanrt-x86.exe" -ArgumentList "/S" -PassThru
+                      if (-not $pV86.WaitForExit(300000)) {
+                        Stop-Process -Id $pV86.Id -Force -ErrorAction SilentlyContinue
+                        Trace "vulkanrt x86 install TIMEOUT 300s"
+                      } else { Trace "vulkanrt x86 install exit=$($pV86.ExitCode)" }
+                    } else { Trace "vulkanrt x86 installer nao baixou ($tV86) — seguindo so com x64" }
+                  }
                   $vld64 = Test-Path "C:\Windows\System32\vulkan-1.dll"
                   $vld86 = Test-Path "C:\Windows\SysWOW64\vulkan-1.dll"
                   Trace "vulkan loader depois: x64=$vld64 x86=$vld86"
-                  if (-not $vld64) {
-                    Trace "winget falhou — tentando choco"
-                    choco install -y vulkan-runtime 2>&1 | ForEach-Object { Trace "choco: $($_.Trim())" }
-                    $vld64 = Test-Path "C:\Windows\System32\vulkan-1.dll"
-                    Trace "vulkan loader pos-choco: x64=$vld64"
-                  }
                 }
               } catch { Trace "vulkanrt: $($_.Exception.Message)" }
               # v48: SONDA VULCAN COMPLETA em exe separado (csc): prova o stack
