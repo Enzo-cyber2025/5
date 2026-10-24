@@ -357,8 +357,79 @@ gated em segredo: `FLCODES_APK_URL` (link direto seu) ou `FLCODES_GPLAY_*`
 (conta que já tem o app). Sem eles o job `real-family-link` é verde por *skip*,
 e diz isso no comentário.
 
+## 4g. O APK real do Family Link, obtido e aberto (executado)
+
+O binário entrou no CI sem credencial nenhuma, via `apkeep` + APKPure (`tools/fetch_familylink_apk.sh`),
+e foi validado antes de qualquer análise:
+
+| campo | valor |
+|---|---|
+| pacote | `com.google.android.apps.kids.familylink` |
+| versão | `2.104.0.2026w41.993639935` (versionCode 893507) |
+| SHA-256 do base | `ee2e1349858c504ad6d7a9d1f432a890d20fb7033d0b56a2b0c80369e7296102` |
+| tamanho | 14 046 602 B (base) + 18 splits = 19 peças |
+| assinatura | V3, `CN=unicorn, OU=Android, O=Google Inc.` — chave de publicação do Google |
+| minSdk / targetSdk | 29 / 37 |
+| ABIs | **só `armeabi-v7a`** (split `config.armeabi_v7a.apk`, 16 MB) |
+
+### O que a análise estática do binário real mostrou
+
+`tools/dex_hunt.py` (novo, coberto por teste) varreu `classes*.dex`:
+
+```
+== names the public write-ups mention ==
+parentAccessCode             0
+sharedSecret                 0
+accessCodeTtl                0
+clockDriftTolerance          0
+familyLinkAppConfig          0
+== every string that mentions the concept ==
+    1  GenerateParentAccessCode
+    1  GetParentAccessConfig
+    1  sun.misc.SharedSecrets      <- do java.base, ruído
+== RPC / message names ==
+GetFamilyLinkAppConfig
+com/google/android/apps/kids/familylink/...
+```
+
+Duas conclusões, ambas com número:
+
+1. **A feature continua no app** — os RPCs `GenerateParentAccessCode`,
+   `GetParentAccessConfig` e `GetFamilyLinkAppConfig` estão no dex.
+2. **Os nomes de campo dos write-ups públicos não estão mais lá** — zero
+   ocorrências de `parentAccessCode`, `sharedSecret`, `clockDriftTolerance`,
+   `familyLinkAppConfig`. Ou seja: na 2.104 o Google renomeou/ofuscou o config
+   local. Qualquer receita que procure essas strings no APK atual falha, e é por
+   isso que a chave **não** sai da análise estática desta versão.
+
+### O limite que apareceu no teste dinâmico
+
+```
+adb install-multiple (19 peças)
+Failure [INSTALL_FAILED_NO_MATCHING_ABIS: Failed to extract native libraries, res=-113]
+```
+
+O bundle publicado é **ARM-only** e o emulador do CI é x86_64. O emulador do
+Android SDK não executa imagem ARM em host x86 (não há `qemu-system-aarch64`
+para x86), então a metade dinâmica — instalar, abrir, fazer o pai entrar e ler
+`shared_prefs` — precisa de **um aparelho ARM real**. Isso está agora num portão
+explícito (`Gate - the real APK was actually analysed`): o job falha se o APK não
+for do Google, se o pacote estiver errado, ou se o dispositivo falhar por um
+motivo diferente de ABI; e passa com o motivo documentado quando é ABI.
+
+**Resumo honesto:** o APK real foi obtido e autenticado, o REA estático rodou
+nele, e a feature foi localizada pelos RPCs. A chave em si não sai por análise
+estática nesta versão (campos renomeados) nem por análise dinâmica no CI
+(binário ARM × emulador x86). O que falta é um aparelho ARM com a conta de pai.
+
 ## 5. O que ainda NÃO está provado
 
+* **A chave do app publicado (2.104)** — o APK real foi obtido e autenticado
+  (§4g), a feature foi achada pelos RPCs, mas os campos do config local estão
+  renomeados/ofuscados: não há string para ler estaticamente. Precisa de um
+  aparelho ARM com a conta de pai para o dump em runtime.
+* **Instalar o app publicado no CI** — o bundle é ARM-only e o emulador é
+  x86_64; sem imagem ARM o teste dinâmico não roda ali (§4g).
 * **Aceitação pelo firmware do aparelho supervisionado** — precisa de aparelho
   real. É o único passo que falta e ele é do usuário: ver §6.
 * `paths check` / `rea api` contra os endpoints do Google (rede bloqueada aqui;
