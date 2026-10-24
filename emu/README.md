@@ -483,6 +483,65 @@ retraduzir uma instrução.
 
 **156 checks, 0 falhas** neste teste.
 
+### Feito — medição da superfície de API: Vulkan contra Direct3D em números (`api_map.c`, `api_report.c`)
+
+A pergunta "um jogo em Vulkan precisa de menos tradução que um em DirectX?" mistura
+duas coisas que têm de ser separadas antes de poder ser respondida.
+
+**Tradução de CPU** cobre o código de máquina do próprio módulo. É x86-64 nos dois
+casos e **100% dele precisa ser traduzido de qualquer maneira**; o código de engine
+de um renderizador Vulkan não é, de alguma forma, ARM64. **Tradução de API** cobre o
+que o módulo chama para fora. Um jogo Direct3D precisa do D3D reimplementado sobre
+Vulkan e do bytecode de shader traduzido de DXBC/DXIL para SPIR-V — é o que DXVK e
+VKD3D-Proton são, e são centenas de milhares de linhas. Um jogo Vulkan não precisa
+de nenhum dos dois: seus shaders já são SPIR-V e sua API já existe no Android, então
+o que resta é um shim fino de loader redirecionando `vulkan-1.dll` para
+`libvulkan.so` e trocando a surface win32 por uma android. **A economia de Vulkan é
+real e grande, e está inteira na segunda categoria — não reduz a primeira em um
+byte.**
+
+`api_report` mede as duas. Por módulo, reporta os bytes de código próprio que exigem
+tradução de CPU e divide as funções importadas entre Direct3D, Vulkan, OpenGL,
+compiladores de shader, janela/apresentação, áudio, entrada, núcleo do Windows,
+DLLs de contrato API-set, bibliotecas de terceiros e o resto — com porcentagens, e
+uma linha `SUMMARY` que cabe inteira numa anotação de CI.
+
+**Medido em três aplicações reais**, baixadas no CI, pinadas por tamanho em bytes,
+parseadas apenas, nunca commitadas:
+
+| aplicação | módulos | DLLs | funcs | **código x86-64** | d3d | vulkan | gl | núcleo Win | api-set | dinâmica? |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Godot 4.7.2 win64 (MIT, Vulkan-first) | 2 | 42 | 580 | **107,5 MB** | 0,1% | **0,0%** | 0,0% | 68,7% | 3,6% | **sim** |
+| PPSSPP 1.20.4 x64 (GPL-2.0, D3D11 **e** Vulkan) | 1 | 23 | 512 | **14,3 MB** | **0,0%** | **0,0%** | 8,2% | 58,5% | 0,0% | **sim** |
+| PPSSPP 1.20.4 **ARM64** (controle) | 0 | — | — | 0 | — | — | — | — | — | — |
+
+**O resultado mais importante é o que invalida a própria pergunta feita desse
+jeito.** O Godot é um motor **Vulkan-first** e sua tabela de imports estática mostra
+**vulkan = 0,0%**. O PPSSPP tem backends **D3D11 e Vulkan** e mostra **d3d = 0,0% e
+vulkan = 0,0%**. Os dois são `dynamic=yes`: carregam o backend gráfico em runtime
+via `LoadLibrary`/`GetProcAddress`.
+
+Ou seja, **não se determina a API gráfica de um jogo pela tabela de imports
+estática.** O alerta de "limite inferior" que eu tinha embutido no relatório como
+uma ressalva de honestidade acabou sendo o **caso dominante**, não um caso de canto
+— e é exatamente o que backends que escolhem D3D ou Vulkan em runtime fazem.
+
+E o número que responde à pergunta de fato: **107,5 MB de código x86-64 no Godot e
+14,3 MB no PPSSPP precisam de tradução de CPU, independentemente da API gráfica.**
+Vulkan não reduz isso.
+
+**O caso de controle.** O build ARM64 nativo do *mesmo* PPSSPP foi **recusado nos
+três módulos**, com o motivo, e reportado como não precisando de tradução de CPU
+(`refused=3`, `parsed=0`, `code_bytes=0`). É assim que "já é a arquitetura
+hospedeira" aparece, e o job afirma isso em vez de deixar passar em silêncio.
+
+A limitação honesta está na saída, não em nota de rodapé: uma tabela de imports
+mostra apenas imports **estáticos**, então para um módulo com `LoadLibrary` ou
+`GetProcAddress` as porcentagens são um **limite inferior** e o relatório diz isso e
+conta quantas funções dessas existem.
+
+**71 checks** no classificador. Suite do projeto: **700**.
+
 ### Não feito
 
 Operandos de memória além do slot de import RIP-relativo, **modelo de pilha do
@@ -573,6 +632,21 @@ Na tradução:
 - O teste do limite de 12 bits usava `48 05` (`add rax,imm32`), que nem está no
   subconjunto, então a recusa que ele queria exercer era inalcançável. Trocado por
   `48 81` (GRP1 imm32), que está, e o caminho passou a ser realmente testado.
+
+Na medição da superfície de API:
+
+- O classificador foi apontado primeiro para a fixture do *sweep*, que não tem
+  tabela de imports nenhuma, e produziu um relatório vazio — a asserção falhou por
+  um motivo que não era culpa do classificador.
+- Depois afirmei uma porcentagem **inventada** (`25.0%`) em vez da divisão real da
+  fixture (60/40). As duas falharam alto, que é o motivo de assertir em vez de
+  imprimir.
+- Vários passos de CI que liam `$?` para decidir o que reportar morriam no primeiro
+  status não zero: o runner invoca `bash -e`, e `set -uo pipefail` **não desliga** o
+  errexit. `xargs` devolve 123 quando qualquer invocação falha, e `api_report`
+  devolve 1 quando algum módulo de um arquivo de quarenta arquivos é ilegível —
+  resultado normal, não falha da medição. Passos que inspecionam status agora dizem
+  `set +e` explicitamente.
 
 Na infraestrutura de verificação:
 
