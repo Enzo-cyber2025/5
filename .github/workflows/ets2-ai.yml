@@ -1999,6 +1999,46 @@ jobs:
                   }
                 } catch { Trace "mesa253 wgl: $($_.Exception.Message)" }
               }
+              # v56: CARTADA DO DRIVER DE VIDEO — o SetPixelFormat AV em DC de
+              # janela acontece com Mesa 26.2.4 E 25.3.6 (nao e regressao): o AV
+              # esta no caminho gdi32 -> win32k -> DRIVER DE VIDEO. A DXGI lista
+              # 2 adapters (provavel Hyper-V Video + WARP). Desativando o
+              # adapter de video "de verdade", o desktop cai no Microsoft Basic
+              # Render Driver (WARP) — que pode destravar o SetPixelFormat E
+              # fazer o engine achar um adapter utilizavel no dx11.
+              try {
+                $dispPnp = Get-PnpDevice -Class Display -ErrorAction SilentlyContinue | Where-Object { $_.Status -eq "OK" }
+                foreach ($dv in $dispPnp) { Trace "pnp display: $($dv.FriendlyName) [$($dv.InstanceId)]" }
+                if (-not $script:winWglOk -and $dispPnp) {
+                  $hv = $dispPnp | Where-Object { $_.FriendlyName -match "Hyper-V" } | Select-Object -First 1
+                  if (-not $hv) { $hv = $dispPnp | Select-Object -First 1 }
+                  if ($hv -and $hv.FriendlyName -notmatch "Basic Render") {
+                    Trace "desativando adapter de video: $($hv.FriendlyName)"
+                    Disable-PnpDevice -InstanceId $hv.InstanceId -Confirm:$false -ErrorAction Stop
+                    Start-Sleep -Seconds 8
+                    Trace "adapter desativado — desktop no Basic Render Driver agora?"
+                    Get-PnpDevice -Class Display -ErrorAction SilentlyContinue | ForEach-Object { Trace "pnp display pos: $($_.FriendlyName) [$($_.Status)]" }
+                    if (Test-Path "$PWD\winwgl.exe") {
+                      Trace "winwgl(pos-pnp) run inicio"
+                      $pjp = Start-Process -FilePath "$PWD\winwgl.exe" -RedirectStandardOutput "$PWD\winwglpnp.out" -RedirectStandardError "$PWD\winwglpnp.err" -PassThru
+                      if (-not $pjp.WaitForExit(120000)) {
+                        Stop-Process -Id $pjp.Id -Force -ErrorAction SilentlyContinue
+                        Trace "winwgl(pos-pnp) TIMEOUT 120s"
+                      } else {
+                        Trace "winwgl(pos-pnp) exit=$($pjp.ExitCode)"
+                        if ($pjp.ExitCode -eq 0) { $script:winWglOk = $true; Trace "VENCEDOR: SetPixelFormat vivo com o display driver trocado" }
+                      }
+                      @(Get-Content "$PWD\winwglpnp.out" -ErrorAction SilentlyContinue) + @(Get-Content "$PWD\winwglpnp.err" -ErrorAction SilentlyContinue) | ForEach-Object { Trace "winwglpnp: $_" }
+                    }
+                    # re-testa o WARP d3d11 tambem (a ordem dos adapters mudou)
+                    if (Test-Path "$PWD\warptest.exe") {
+                      $pwp = Start-Process -FilePath "$PWD\warptest.exe" -RedirectStandardOutput "$PWD\warppnp.out" -RedirectStandardError "$PWD\warppnp.err" -PassThru
+                      $null = $pwp.WaitForExit(120000)
+                      @(Get-Content "$PWD\warppnp.out" -ErrorAction SilentlyContinue) | ForEach-Object { Trace "warppnp: $_" }
+                    }
+                  } else { Trace "sem adapter Hyper-V p/ desativar (ou ja e Basic Render)" }
+                }
+              } catch { Trace "pnp/driver: $($_.Exception.Message)" }
               # v31: SONDA WGL 32-BIT — o autoteste acima roda no pwsh x64; o
               # jogo que falha e o de 32 bits. Compila um exe x86 (csc do .NET
               # Framework) que carrega opengl32.dll PELO NOME (resolucao
