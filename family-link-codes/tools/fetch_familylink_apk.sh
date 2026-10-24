@@ -87,6 +87,32 @@ accept() {  # accept <file>: true when it is the right package
   return 0
 }
 
+find_base_in() {  # find_base_in <dir>: the piece that is not a split
+  local dir="$1" apk badging split
+  # 1. the conventional name
+  [[ -f "$dir/base.apk" ]] && { realpath "$dir/base.apk"; return 0; }
+  # 2. ask the manifest: a config split carries split='config.<something>'
+  local aapt
+  aapt="$(find "${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/build-tools" \
+            -name aapt2 2>/dev/null | sort -V | tail -1)"
+  if [[ -n "$aapt" ]]; then
+    for apk in "$dir"/*.apk; do
+      badging="$("$aapt" dump badging "$apk" 2>/dev/null | head -1)"
+      split="$(printf '%s' "$badging" | sed -n "s/.* split='\([^']*\)'.*/\1/p")"
+      if [[ -n "$badging" && -z "$split" ]]; then
+        realpath "$apk"; return 0
+      fi
+    done
+  fi
+  # 3. apkeep names the base after the package
+  for apk in "$dir"/*.apk; do
+    case "$(basename "$apk")" in
+      "$PACKAGE"*.apk|"$PACKAGE_OLD"*.apk) realpath "$apk"; return 0 ;;
+    esac
+  done
+  return 1
+}
+
 unpack_if_bundle() {  # XAPK/APKS -> base.apk + splits, listed in splits.txt
   local file="$1"
   case "$file" in
@@ -95,18 +121,21 @@ unpack_if_bundle() {  # XAPK/APKS -> base.apk + splits, listed in splits.txt
       local dir="${file%.*}-unpacked"
       rm -rf "$dir"; mkdir -p "$dir"
       unzip -q -o "$file" -d "$dir" || return 1
+      find "$dir" -name '*.apk' | sed "s|$dir/|  piece in bundle: |" >&2
       local base
-      # the base is literally base.apk; a bare *.apk fallback would pick a
-      # config.<lang> split, which cannot be installed on its own
-      base="$(find "$dir" -name 'base.apk' | head -1)"
+      # a bare *.apk glob picks config.<lang> splits, which cannot install
+      # on their own; ask the manifest instead
+      base="$(find_base_in "$dir")" || base=""
       if [[ -z "$base" ]]; then
-        log "bundle has no base.apk; refusing (splits alone cannot install)"
+        log "bundle has no base piece; refusing (splits alone cannot install)"
         return 1
       fi
+      log "base piece: $(basename "$base")"
       # everything the installer needs: base first, then the splits
       {
-        printf '%s\n' "$(realpath "$base")"
-        find "$dir" -name '*.apk' ! -name 'base.apk' | sort | while read -r apk; do
+        printf '%s\n' "$base"
+        find "$dir" -name '*.apk' | sort | while read -r apk; do
+          [[ "$(realpath "$apk")" == "$base" ]] && continue
           realpath "$apk"
         done
       } > splits.txt
