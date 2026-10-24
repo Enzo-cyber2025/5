@@ -539,3 +539,147 @@ jobs:
           echo "archives tracked by the repository, none added by this job:"
           git ls-files | grep -iE '\.zip$' || echo "  none"
           echo "ok: the sweep left the checkout untouched and no Windows binary is tracked"
+
+  api-surface:
+    name: Vulkan vs Direct3D import surface on real applications
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the classifier
+        working-directory: emu
+        run: make test_api api_report
+
+      - name: Run the classifier suite
+        working-directory: emu
+        run: |
+          set -uo pipefail
+          ./test_api | tail -2
+          rc=${PIPESTATUS[0]}
+          if [ "$rc" -ne 0 ]; then
+            echo "::error title=api-suite::test_api exited ${rc}"
+            exit "$rc"
+          fi
+
+      - name: Download real applications with different graphics backends
+        run: |
+          set -uo pipefail
+          trap 'rc=$?; if [ "$rc" -ne 0 ]; then echo "::error title=download-step::exit=${rc} line=${LINENO}"; fi' EXIT
+          # Godot 4.7.2, MIT: a Vulkan-first engine.
+          # PPSSPP 1.20.4, GPL-2.0: carries BOTH a Direct3D 11 and a Vulkan
+          # backend, and also publishes a native Windows ARM64 build of the same
+          # application, which is the control case - that one needs no CPU
+          # translation at all and the loader must say so rather than try.
+          # All three are downloaded on an ephemeral runner, parsed only, never
+          # committed and never redistributed.
+          g_url="https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_win64.exe.zip"
+          g_size="86013866"
+          p_url="https://github.com/hrydgard/ppsspp/releases/download/v1.20.4/PPSSPP-v1.20.4-Windows-x64.zip"
+          p_size="20390334"
+          a_url="https://github.com/hrydgard/ppsspp/releases/download/v1.20.4/PPSSPP-v1.20.4-Windows-ARM64.zip"
+          a_size="20322129"
+          fetch() {
+            url="$1"; want="$2"; dest="$3"; label="$4"
+            curl -fsSL -o "$dest" "$url"
+            rc=$?
+            if [ "$rc" -ne 0 ]; then
+              echo "::error title=download-failed::${label} curl exit ${rc}"
+              exit 1
+            fi
+            got=$(stat -c %s "$dest")
+            if [ "$got" != "$want" ]; then
+              echo "::error title=size-mismatch::${label} downloaded ${got}, pinned ${want}"
+              exit 1
+            fi
+            echo "${label}: ${got} bytes  sha256=$(sha256sum "$dest" | cut -c1-64)"
+          }
+          fetch "$g_url" "$g_size" /tmp/godot.zip godot-win64
+          fetch "$p_url" "$p_size" /tmp/ppsspp-x64.zip ppsspp-x64
+          fetch "$a_url" "$a_size" /tmp/ppsspp-arm64.zip ppsspp-arm64
+
+      - name: Enumerate the PE modules in each
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/g /tmp/p64 /tmp/pa64
+          unzip -q -o /tmp/godot.zip -d /tmp/g
+          unzip -q -o /tmp/ppsspp-x64.zip -d /tmp/p64
+          unzip -q -o /tmp/ppsspp-arm64.zip -d /tmp/pa64
+          for d in g p64 pa64; do
+            find "/tmp/$d" -type f \( -iname '*.exe' -o -iname '*.dll' \) | sort > "/tmp/$d.list"
+            echo "$d: $(wc -l < /tmp/$d.list) PE file(s)"
+            head -6 "/tmp/$d.list"
+          done
+          test -s /tmp/g.list || { echo "::error title=no-modules::godot"; exit 1; }
+          test -s /tmp/p64.list || { echo "::error title=no-modules::ppsspp x64"; exit 1; }
+          test -s /tmp/pa64.list || { echo "::error title=no-modules::ppsspp arm64"; exit 1; }
+
+      - name: Measure each import surface
+        run: |
+          set -uo pipefail
+          xargs -a /tmp/g.list    -d '\n' ./emu/api_report > /tmp/godot.api 2>&1
+          echo "godot api_report exit=$?"
+          xargs -a /tmp/p64.list  -d '\n' ./emu/api_report > /tmp/p64.api 2>&1
+          echo "ppsspp x64 api_report exit=$?"
+          xargs -a /tmp/pa64.list -d '\n' ./emu/api_report > /tmp/pa64.api 2>&1
+          echo "ppsspp arm64 api_report exit=$?"
+          for f in godot p64 pa64; do
+            echo "===== $f ====="
+            grep -E '^SUMMARY|^=== TOTAL' "/tmp/$f.api"
+          done
+
+      - name: Assert the measurement says what the architecture claims
+        run: |
+          set -uo pipefail
+          die() { echo "$1"; echo "::error title=api-surface::$1"; exit 1; }
+          # A Vulkan-first engine must show Vulkan in its import surface.
+          grep -q 'vulkan=' /tmp/godot.api || die "no vulkan share reported for Godot"
+          v=$(grep '^SUMMARY' /tmp/godot.api | sed -n 's/.* vulkan=\([0-9.]*\)%.*/\1/p')
+          d=$(grep '^SUMMARY' /tmp/godot.api | sed -n 's/.* d3d=\([0-9.]*\)%.*/\1/p')
+          echo "Godot: vulkan=${v}% d3d=${d}%"
+          # The native ARM64 build of the SAME application must be refused, with the
+          # reason, and reported as needing no CPU translation. That is the control:
+          # it is what "already the host architecture" looks like.
+          grep -q 'REFUSED' /tmp/pa64.api || die "the ARM64 build was not refused"
+          grep -q 'CPU translation needed: NO' /tmp/pa64.api \
+            || die "the ARM64 build was not reported as needing no CPU translation"
+          grep -Eq 'refused=[1-9]' /tmp/pa64.api || die "no refusals counted for ARM64"
+          # Both x64 applications must have measurable code that needs translating,
+          # whatever graphics API they use. This is the number that answers the
+          # question: CPU translation does not depend on the graphics API.
+          for f in godot p64; do
+            grep -Eq 'code_bytes=[1-9]' "/tmp/$f.api" \
+              || die "$f reported no x86-64 code needing translation"
+          done
+
+      - name: Publish the percentages
+        if: always()
+        run: |
+          set +e
+          for f in godot p64 pa64; do
+            [ -f "/tmp/$f.api" ] || continue
+            sum=$(grep '^SUMMARY' "/tmp/$f.api" | head -1 | tr -d '%\r' | cut -c1-900)
+            ref=$(grep -c 'REFUSED' "/tmp/$f.api")
+            {
+              echo "### $f"
+              echo '```'
+              grep -E '^SUMMARY|^=== TOTAL' "/tmp/$f.api"
+              grep -E '^  own machine code|^  imported functions|^    [A-Za-z]' "/tmp/$f.api" | head -30
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::notice title=api-${f}::refused=${ref} ${sum}"
+          done
+          exit 0
+
+      - name: Confirm nothing downloaded entered the repository
+        run: |
+          set -euo pipefail
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "the measurement left something in the checkout:"
+            git status --porcelain
+            exit 1
+          fi
+          if git ls-files | grep -qiE '\.(exe|dll|msi)$'; then
+            echo "a Windows binary is tracked"; exit 1
+          fi
+          echo "ok: checkout untouched, no Windows binary tracked"

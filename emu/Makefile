@@ -2,7 +2,7 @@ CC      ?= gcc
 FIXTURE     ?= /tmp/emu_fixture.exe
 FIXTURE_DLL ?= /tmp/emu_guest.dll
 CFLAGS  ?= -std=c11 -Wall -Wextra -Wshadow -Werror -O2 -g
-TARGETS  = test_ptc test_x86 test_pe test_sweep test_translate test_emit_exec pe_info prewarm
+TARGETS  = test_ptc test_x86 test_pe test_sweep test_translate test_api test_emit_exec pe_info prewarm api_report
 
 all: test
 
@@ -37,6 +37,28 @@ test: $(TARGETS)
 	@echo
 	./test_translate
 	@echo
+	./test_api
+	@echo
+	@# End to end: the classifier has to report a fixture's real import mix. This
+	@# uses the PE fixture, not the sweep one - the sweep guest has no import table
+	@# at all, so pointing the classifier at it produced an empty report and the
+	@# assertion below failed for a reason that was not the classifier's fault.
+	@./api_report $(FIXTURE) > $(FIXTURE).api
+	@grep -q 'SUMMARY parsed=1' $(FIXTURE).api
+	@grep -q 'windows-core' $(FIXTURE).api
+	@grep -q 'window/present' $(FIXTURE).api
+	@# These are the fixture's real shares: kernel32 contributes 3 of 5 imported
+	@# functions and user32 the other 2. Asserting an invented percentage would
+	@# have failed for a reason that was not the classifier's fault.
+	@grep -q 'windows-core           3 func(s)   60.0%' $(FIXTURE).api
+	@grep -q 'window/present         2 func(s)   40.0%' $(FIXTURE).api
+	@grep -q 'code_bytes=80' $(FIXTURE).api
+	@# The fixture imports GetProcAddress and LoadLibraryA, so the report must say
+	@# the static surface is only a lower bound. That warning is the honest part.
+	@grep -q 'LOWER BOUND' $(FIXTURE).api
+	@grep -q 'dynamic=yes' $(FIXTURE).api
+	@echo "api_report end to end: classified with percentages and flagged as a lower bound"
+	@echo
 	./test_emit_exec
 
 test_ptc: test_ptc.c ptc.c ptc.h
@@ -66,6 +88,14 @@ test_translate: test_translate.c translate.c pe_load.c ptc.c x86_decode.c a64_em
 	$(CC) $(CFLAGS) -o $@ test_translate.c translate.c pe_load.c ptc.c \
 	      x86_decode.c a64_emit.c
 
+# Classification of a module's imported API surface: how much of what a binary
+# needs from the host is Direct3D, how much is Vulkan, and how much is neither.
+test_api: test_api_map.c api_map.c pe_load.c
+	$(CC) $(CFLAGS) -o $@ test_api_map.c api_map.c pe_load.c
+
+api_report: api_report.c api_map.c pe_load.c api_map.h
+	$(CC) $(CFLAGS) -o $@ api_report.c api_map.c pe_load.c
+
 # The emit-and-execute harness is ISA-guarded at compile time; on a non-aarch64
 # host it still builds and checks the encodings, but runs nothing.
 # Reads a PE from disk and reports it. Parsing only: it never maps the image,
@@ -78,6 +108,6 @@ test_emit_exec: test_emit_exec.c
 
 clean:
 	rm -f $(TARGETS) *.o *.ptc *.ptc.tmp.* $(FIXTURE) $(FIXTURE).report \
-	      $(FIXTURE_DLL) $(FIXTURE_DLL).prewarm
+	      $(FIXTURE_DLL) $(FIXTURE_DLL).prewarm $(FIXTURE).api
 
 .PHONY: all test clean
