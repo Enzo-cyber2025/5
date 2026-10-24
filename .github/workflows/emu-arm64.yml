@@ -50,7 +50,7 @@ jobs:
       - name: Run the suite
         working-directory: emu
         run: |
-          set -uo pipefail
+          set +e; set -uo pipefail
           # Each binary gets its own timeout, and the trap names whichever one
           # was running if the step dies. Without that, a hang in one test is
           # indistinguishable from a hang in any other, and stdout is fully
@@ -429,7 +429,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          set -uo pipefail
+          set +e; set -uo pipefail
           # Any failure here publishes its exit code and line number. A step that
           # dies somewhere unexpected is otherwise indistinguishable from one
           # that failed its own assertion, and adding handlers one command at a
@@ -616,13 +616,18 @@ jobs:
 
       - name: Measure each import surface
         run: |
-          set -uo pipefail
+          # set +e, not merely the absence of -e: the runner invokes bash -e, so a
+          # step that intends to handle non-zero statuses itself has to switch it
+          # off. api_report returns 1 when some file in the bundle is unreadable,
+          # which is normal for a 40-module application archive and is not a
+          # failure of the measurement. xargs reports that as 123.
+          set +e
           xargs -a /tmp/g.list    -d '\n' ./emu/api_report > /tmp/godot.api 2>&1
-          echo "godot api_report exit=$?"
+          echo "godot api_report exit=$? (123 = some module unreadable, expected)"
           xargs -a /tmp/p64.list  -d '\n' ./emu/api_report > /tmp/p64.api 2>&1
           echo "ppsspp x64 api_report exit=$?"
           xargs -a /tmp/pa64.list -d '\n' ./emu/api_report > /tmp/pa64.api 2>&1
-          echo "ppsspp arm64 api_report exit=$?"
+          echo "ppsspp arm64 api_report exit=$? (all refused is the correct result)"
           for f in godot p64 pa64; do
             echo "===== $f ====="
             grep -E '^SUMMARY|^=== TOTAL' "/tmp/$f.api"
@@ -630,7 +635,7 @@ jobs:
 
       - name: Assert the measurement says what the architecture claims
         run: |
-          set -uo pipefail
+          set +e
           die() { echo "$1"; echo "::error title=api-surface::$1"; exit 1; }
           # A Vulkan-first engine must show Vulkan in its import surface.
           grep -q 'vulkan=' /tmp/godot.api || die "no vulkan share reported for Godot"
