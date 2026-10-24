@@ -1404,6 +1404,59 @@ jobs:
             } else { Trace "csc ausente p/ warptest" }
             Trace "sonda warp fim warpOk=$warpOk"
           } catch { Trace "sonda warp FALHOU: $($_.Exception.Message)" }
+          # v54: DXGI EnumAdapters1 via vtable COM — o dx11 do jogo falha "at
+          # detection stage" com D3D11CreateDevice(WARP) FUNCIONANDO (sonda
+          # acima): ou a DXGI enumera ZERO adapters (engine nao acha ninguem)
+          # ou enumera o WARP e o engine o rejeita. Esta sonda diz qual.
+          try {
+            Trace "sonda dxgi-enum inicio"
+          @'
+          using System;
+          using System.Runtime.InteropServices;
+          public class DxgiEnum {
+          [DllImport("dxgi.dll")] public static extern int CreateDXGIFactory1(ref Guid riid, out IntPtr factory);
+          [UnmanagedFunctionPointer(CallingConvention.Winapi)] public delegate int EA(IntPtr f, int idx, out IntPtr adapter);
+          [UnmanagedFunctionPointer(CallingConvention.Winapi)] public delegate int GD(IntPtr a, IntPtr desc);
+          static void P(string m) { Console.WriteLine(m); Console.Out.Flush(); }
+          public static int Main() {
+          Guid iid = new Guid("770aae78-f26f-4dba-a829-253c83d1b387");
+          IntPtr f; int hr = CreateDXGIFactory1(ref iid, out f);
+          if (hr != 0) { P("factory hr=0x" + hr.ToString("X8")); return 1; }
+          P("stage1: factory ok");
+          IntPtr vt = Marshal.ReadIntPtr(f);
+          IntPtr pEA = Marshal.ReadIntPtr(vt, 12 * IntPtr.Size);
+          var ea = (EA)Marshal.GetDelegateForFunctionPointer(pEA, typeof(EA));
+          IntPtr ad; int i = 0;
+          while (ea(f, i, out ad) == 0) {
+          IntPtr vt2 = Marshal.ReadIntPtr(ad);
+          IntPtr pGD = Marshal.ReadIntPtr(vt2, 9 * IntPtr.Size);
+          var gd = (GD)Marshal.GetDelegateForFunctionPointer(pGD, typeof(GD));
+          IntPtr buf = Marshal.AllocHGlobal(1024);
+          gd(ad, buf);
+          P("adapter[" + i + "] = " + Marshal.PtrToStringUni(buf));
+          Marshal.FreeHGlobal(buf);
+          i++;
+          if (i > 8) break;
+          }
+          P("total adapters: " + i + (i == 0 ? " (ZERO — engine dx11 nao acha ninguem: explicacao da falha na deteccao)" : " (WARP visivel pro engine!)"));
+          return 0;
+          }
+          }
+          '@ | Set-Content "$PWD\dxgienum.cs" -Encoding ASCII
+            $cscE = "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+            if (Test-Path $cscE) {
+              & $cscE /nologo /platform:x64 /out:"$PWD\dxgienum.exe" "$PWD\dxgienum.cs" 2>&1 | ForEach-Object { Trace "enum csc: $_" }
+              if (Test-Path "$PWD\dxgienum.exe") {
+                $pe = Start-Process -FilePath "$PWD\dxgienum.exe" -RedirectStandardOutput "$PWD\enum.out" -RedirectStandardError "$PWD\enum.err" -PassThru
+                if (-not $pe.WaitForExit(60000)) {
+                  Stop-Process -Id $pe.Id -Force -ErrorAction SilentlyContinue
+                  Trace "dxgienum TIMEOUT 60s"
+                } else { Trace "dxgienum exit=$($pe.ExitCode)" }
+                @(Get-Content "$PWD\enum.out" -ErrorAction SilentlyContinue) + @(Get-Content "$PWD\enum.err" -ErrorAction SilentlyContinue) | ForEach-Object { Trace "enum: $_" }
+              } else { Trace "dxgienum.exe nao compilou" }
+            } else { Trace "csc ausente p/ dxgienum" }
+            Trace "sonda dxgi-enum fim"
+          } catch { Trace "sonda dxgi-enum FALHOU: $($_.Exception.Message)" }
           # v50: limite de threads ANTES DE TUDO — o vktest da v49 rodou SEM
           # estas vars (setavam so antes dos boots) e o lavapipe 26.2.4 travou
           # na criacao do instance (timeout 180s). Threads contidas desde o inicio.
@@ -1836,6 +1889,74 @@ jobs:
                   } else { $mesaLog += "gltest64.exe nao compilou"; Trace "wgl64 nao compilou" }
                 } else { $mesaLog += "csc64 nao encontrado"; Trace "wgl64 csc ausente" }
               } catch { $mesaLog += "teste WGL64 falhou: $($_.Exception.Message)"; Trace "wgl64 FALHOU: $($_.Exception.Message)" }
+              # v54: WGL em JANELA DE VERDADE — o teste acima usa o DC do
+              # DESKTOP e passa (v53: GL 4.2), mas o jogo falha o subsistema
+              # OpenGL em 16 ms. Diferenca: o jogo cria JANELA + GetDC(hwnd) +
+              # ChoosePixelFormat. Esta sonda replica exatamente esse caminho
+              # (estagios com Flush: mesmo travando, o .out mostra onde parou).
+              try {
+                Trace "wgl-janela inicio"
+          @'
+              using System;
+              using System.Runtime.InteropServices;
+              public class WinWglTest {
+              [StructLayout(LayoutKind.Sequential)]
+              public struct PFD { public ushort nSize, nVersion; public uint dwFlags; public byte iPixelType, cColorBits, cRedBits, cRedShift, cGreenBits, cGreenShift, cBlueBits, cBlueShift, cAlphaBits, cAlphaShift, cAccumBits, cAccumRedBits, cAccumGreenBits, cAccumBlueBits, cAccumAlphaBits, cDepthBits, cStencilBits, cAuxBuffers, iLayerType, bReserved; public uint dwLayerMask, dwVisibleMask, dwDamageMask; }
+              [DllImport("user32.dll", SetLastError=true, CharSet=CharSet.Unicode)] public static extern IntPtr CreateWindowExW(uint ex, string cls, string name, uint style, int x, int y, int w, int h, IntPtr parent, IntPtr menu, IntPtr inst, IntPtr param);
+              [DllImport("user32.dll")] public static extern IntPtr GetDC(IntPtr hWnd);
+              [DllImport("user32.dll")] public static extern bool DestroyWindow(IntPtr hWnd);
+              [DllImport("gdi32.dll")] public static extern int ChoosePixelFormat(IntPtr hdc, ref PFD pfd);
+              [DllImport("gdi32.dll")] public static extern bool SetPixelFormat(IntPtr hdc, int ipf, ref PFD pfd);
+              [DllImport("opengl32.dll")] public static extern IntPtr wglCreateContext(IntPtr hdc);
+              [DllImport("opengl32.dll")] public static extern bool wglMakeCurrent(IntPtr hdc, IntPtr hrc);
+              [DllImport("opengl32.dll")] public static extern IntPtr wglGetProcAddress(string n);
+              [UnmanagedFunctionPointer(CallingConvention.Winapi)] public delegate IntPtr GS(uint n);
+              static void P(string m) { Console.WriteLine(m); Console.Out.Flush(); }
+              public static int Main() {
+              IntPtr wnd = CreateWindowExW(0, "STATIC", "ets2ai-wgl", 0x10CF0000, 0, 0, 800, 600, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
+              if (wnd == IntPtr.Zero) { P("CreateWindowEx falhou err=" + Marshal.GetLastWin32Error()); return 1; }
+              P("stage1: janela criada hwnd=" + wnd);
+              IntPtr hdc = GetDC(wnd);
+              if (hdc == IntPtr.Zero) { P("stage2: GetDC(janela)=0"); return 1; }
+              P("stage2: GetDC(janela) ok");
+              var p = new PFD();
+              p.nSize = (ushort)Marshal.SizeOf(typeof(PFD)); p.nVersion = 1;
+              p.dwFlags = 0x25; p.iPixelType = 0; p.cColorBits = 32; p.cAlphaBits = 8; p.cDepthBits = 24; p.cStencilBits = 8;
+              int pf = ChoosePixelFormat(hdc, ref p);
+              if (pf == 0) { P("stage3: ChoosePixelFormat(janela)=0 err=" + Marshal.GetLastWin32Error() + " — E ESTA a diferenca pro jogo"); return 1; }
+              P("stage3: ChoosePixelFormat ok pf=" + pf);
+              if (!SetPixelFormat(hdc, pf, ref p)) { P("stage4: SetPixelFormat falhou err=" + Marshal.GetLastWin32Error()); return 1; }
+              P("stage4: SetPixelFormat ok");
+              IntPtr hrc = wglCreateContext(hdc);
+              if (hrc == IntPtr.Zero) { P("stage5: wglCreateContext=NULL err=" + Marshal.GetLastWin32Error()); return 1; }
+              P("stage5: wglCreateContext ok");
+              if (!wglMakeCurrent(hdc, hrc)) { P("stage6: wglMakeCurrent falhou err=" + Marshal.GetLastWin32Error()); return 1; }
+              P("stage6: wglMakeCurrent ok");
+              IntPtr pg = wglGetProcAddress("glGetString");
+              if (pg == IntPtr.Zero) { P("stage7: glGetString NULL"); return 1; }
+              var gs = (GS)Marshal.GetDelegateForFunctionPointer(pg, typeof(GS));
+              P("GL_VERSION(janela) = " + Marshal.PtrToStringAnsi(gs(0x1F02)));
+              P("WINDOW WGL OK - o caminho EXATO do jogo funciona");
+              DestroyWindow(wnd);
+              return 0;
+              }
+              }
+          '@ | Set-Content "$PWD\winwgl.cs" -Encoding ASCII
+                $cscJ = "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+                if (Test-Path $cscJ) {
+                  & $cscJ /nologo /platform:x64 /out:"$PWD\winwgl.exe" "$PWD\winwgl.cs" 2>&1 | ForEach-Object { Trace "winwgl csc: $_" }
+                  if (Test-Path "$PWD\winwgl.exe") {
+                    Trace "winwgl run inicio"
+                    $pj = Start-Process -FilePath "$PWD\winwgl.exe" -RedirectStandardOutput "$PWD\winwgl.out" -RedirectStandardError "$PWD\winwgl.err" -PassThru
+                    if (-not $pj.WaitForExit(120000)) {
+                      Stop-Process -Id $pj.Id -Force -ErrorAction SilentlyContinue
+                      Trace "winwgl TIMEOUT 120s"
+                    } else { Trace "winwgl exit=$($pj.ExitCode)" }
+                    @(Get-Content "$PWD\winwgl.out" -ErrorAction SilentlyContinue) + @(Get-Content "$PWD\winwgl.err" -ErrorAction SilentlyContinue) | ForEach-Object { Trace "winwgl: $_" }
+                  } else { Trace "winwgl.exe nao compilou" }
+                } else { Trace "csc ausente p/ winwgl" }
+                Trace "wgl-janela fim"
+              } catch { Trace "wgl-janela FALHOU: $($_.Exception.Message)" }
               # v31: SONDA WGL 32-BIT — o autoteste acima roda no pwsh x64; o
               # jogo que falha e o de 32 bits. Compila um exe x86 (csc do .NET
               # Framework) que carrega opengl32.dll PELO NOME (resolucao
@@ -2096,10 +2217,10 @@ jobs:
           } elseif ($icd64) {
             $env:VK_ICD_FILENAMES = $icd64.FullName
           }
-          if ($vkIcdPreferido -or ($icd64 -and (Test-Path (Join-Path $wdir "d3d11.dll")))) {
+          if (-not $warpOk -and ($vkIcdPreferido -or ($icd64 -and (Test-Path (Join-Path $wdir "d3d11.dll"))))) {
             $vivo = Boot $exe $wdir "x64 dx11 dxvk lavapipe" @("-nointro") $null 120
           }
-          if (-not $vivo -and -not (& $mmfOk) -and (Test-Path $x86exe) -and $env:MESA_LVP_ICD -and (Test-Path (Join-Path $w86 "d3d11.dll"))) {
+          if (-not $vivo -and -not (& $mmfOk) -and -not $warpOk -and (Test-Path $x86exe) -and $env:MESA_LVP_ICD -and (Test-Path (Join-Path $w86 "d3d11.dll"))) {
             # v50: x86 tambem prefere a 25.3.6 quando vencedora
             if ($vkIcdPreferido) {
               $icd86v = Get-ChildItem "C:\mesa253" -Recurse -Filter "*lvp*.json" -ErrorAction SilentlyContinue | Where-Object { $_.Name -match "i686" -or ($_.Name -match "x86" -and $_.Name -notmatch "x86_64|x64") } | Select-Object -First 1
@@ -2111,8 +2232,11 @@ jobs:
           }
           Remove-Item Env:\VK_ICD_FILENAMES -ErrorAction SilentlyContinue
           # 2) fallbacks OpenGL (os exes importam opengl32 — provado nos imports)
+          # v54: janela do GL x64 = 120 iters (10 min): se o llvmpipe renderizar,
+          # o init dos shaders por CPU demora — e este e O caminho (dx11 nativo
+          # falha na deteccao de adapter; WGL da Mesa funciona).
           if (-not $vivo -and -not (& $mmfOk)) {
-            $vivo = Boot $exe $wdir "x64 rdevice gl" @("-rdevice gl") $null 30
+            $vivo = Boot $exe $wdir "x64 rdevice gl" @("-rdevice gl") $null 120
           }
           if (-not $vivo -and -not (& $mmfOk) -and (Test-Path $x86exe)) {
             $gl86 = Get-ChildItem "C:\mesa3d" -Recurse -Filter "opengl32.dll" -ErrorAction SilentlyContinue |
