@@ -73,6 +73,55 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+      - name: Inventory of the real bundle (ABIs, pieces, size)
+        run: |
+          set +e
+          SDK="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}"
+          AAPT="$(find "$SDK/build-tools" -name aapt2 | sort -V | tail -1)"
+          OUT="$RUNNER_TEMP/inventory.txt"
+          {
+            echo "== pieces =="
+            while read -r piece; do
+              printf '%10s  %s  %s\n' "$(stat -c %s "$piece" 2>/dev/null)" \
+                "$(basename "$piece")" \
+                "$("$AAPT" dump badging "$piece" 2>/dev/null \
+                   | sed -n "s/.*native-code: '\\([^']*\\)'.*/abi=\\1/p" | head -1)"
+            done < "$RUNNER_TEMP/familylink/splits.txt"
+            echo
+            echo "== base native code =="
+            "$AAPT" dump badging "$RUNNER_TEMP/familylink/base.apk" 2>/dev/null | grep -E "native-code|sdkVersion|targetSdk" 
+            echo
+            echo "== device =="
+            adb shell getprop ro.product.cpu.abi 2>/dev/null
+            adb shell getprop ro.build.version.sdk 2>/dev/null
+          } | tee "$OUT"
+
+      - name: Strings hunt inside the real APK (is the config obfuscated?)
+        run: |
+          set +e
+          APK="$RUNNER_TEMP/familylink/base.apk"
+          D="$RUNNER_TEMP/strings"; mkdir -p "$D"
+          unzip -q -o "$APK" -d "$D/apk" 'classes*.dex' 'assets/*' 2>/dev/null
+          {
+            echo "== dex files =="
+            ls -lh "$D/apk"/classes*.dex 2>/dev/null | awk '{print $5, $9}'
+            echo
+            echo "== flutter engine present? =="
+            ls "$D/apk"/assets/flutter_assets 2>/dev/null | head -5
+            echo
+            echo "== field names of the parent-access-code config =="
+            for key in parentAccessCode sharedSecret shared_secret accessCodeTtl clockDriftTolerance familyLinkAppConfig family_link_app_config googleConfig parentAccessCodeConfig; do
+              n=$(grep -a -o "$key" "$D/apk"/classes*.dex 2>/dev/null | wc -l)
+              printf '%-28s %s\n' "$key" "$n"
+            done
+            echo
+            echo "== endpoint and API surface =="
+            for key in kidsmanagement families/mine parentaccess parent_access appblocking timeLimits; do
+              n=$(grep -a -o "$key" "$D/apk"/classes*.dex 2>/dev/null | wc -l)
+              printf '%-28s %s\n' "$key" "$n"
+            done
+          } | tee "$RUNNER_TEMP/strings.txt"
+
       - name: Enable KVM (falls back to software emulation)
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
@@ -249,6 +298,55 @@ jobs:
             > "$RUNNER_TEMP/certs.txt" 2>&1
           head -12 "$RUNNER_TEMP/certs.txt"
 
+      - name: Inventory of the real bundle (ABIs, pieces, size)
+        run: |
+          set +e
+          SDK="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}"
+          AAPT="$(find "$SDK/build-tools" -name aapt2 | sort -V | tail -1)"
+          OUT="$RUNNER_TEMP/inventory.txt"
+          {
+            echo "== pieces =="
+            while read -r piece; do
+              printf '%10s  %s  %s\n' "$(stat -c %s "$piece" 2>/dev/null)" \
+                "$(basename "$piece")" \
+                "$("$AAPT" dump badging "$piece" 2>/dev/null \
+                   | sed -n "s/.*native-code: '\\([^']*\\)'.*/abi=\\1/p" | head -1)"
+            done < "$RUNNER_TEMP/familylink/splits.txt"
+            echo
+            echo "== base native code =="
+            "$AAPT" dump badging "$RUNNER_TEMP/familylink/base.apk" 2>/dev/null | grep -E "native-code|sdkVersion|targetSdk" 
+            echo
+            echo "== device =="
+            adb shell getprop ro.product.cpu.abi 2>/dev/null
+            adb shell getprop ro.build.version.sdk 2>/dev/null
+          } | tee "$OUT"
+
+      - name: Strings hunt inside the real APK (is the config obfuscated?)
+        run: |
+          set +e
+          APK="$RUNNER_TEMP/familylink/base.apk"
+          D="$RUNNER_TEMP/strings"; mkdir -p "$D"
+          unzip -q -o "$APK" -d "$D/apk" 'classes*.dex' 'assets/*' 2>/dev/null
+          {
+            echo "== dex files =="
+            ls -lh "$D/apk"/classes*.dex 2>/dev/null | awk '{print $5, $9}'
+            echo
+            echo "== flutter engine present? =="
+            ls "$D/apk"/assets/flutter_assets 2>/dev/null | head -5
+            echo
+            echo "== field names of the parent-access-code config =="
+            for key in parentAccessCode sharedSecret shared_secret accessCodeTtl clockDriftTolerance familyLinkAppConfig family_link_app_config googleConfig parentAccessCodeConfig; do
+              n=$(grep -a -o "$key" "$D/apk"/classes*.dex 2>/dev/null | wc -l)
+              printf '%-28s %s\n' "$key" "$n"
+            done
+            echo
+            echo "== endpoint and API surface =="
+            for key in kidsmanagement families/mine parentaccess parent_access appblocking timeLimits; do
+              n=$(grep -a -o "$key" "$D/apk"/classes*.dex 2>/dev/null | wc -l)
+              printf '%-28s %s\n' "$key" "$n"
+            done
+          } | tee "$RUNNER_TEMP/strings.txt"
+
       - name: Enable KVM (falls back to software emulation)
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
@@ -266,10 +364,13 @@ jobs:
             echo "no APK available: skipping the device run" > "$RUNNER_TEMP/real-status.txt"
             exit 0
           fi
+          APK="$(cat "$RUNNER_TEMP/familylink/apk-path.txt" 2>/dev/null | tail -1)"
+          [ -s "$APK" ] || APK="$RUNNER_TEMP/familylink/base.apk"
+          PKG="$(cat "$RUNNER_TEMP/package.txt" 2>/dev/null | tr -d '\r' | head -1)"
+          [ -n "$PKG" ] || PKG=com.google.android.apps.kids.familylink
           bash family-link-codes/tools/android_emulator_ci.sh \
             --work "$RUNNER_TEMP/real" --api 30 \
-            --apk "$RUNNER_TEMP/familylink/base.apk" \
-            --package com.google.android.apps.familylink --expect AIte
+            --apk "$APK" --package "$PKG" --expect AIte
           echo "$?" > "$RUNNER_TEMP/real-status.txt"
           exit 0
 
@@ -292,7 +393,7 @@ jobs:
             echo '```'
             cat "$RUNNER_TEMP/probe.txt" 2>/dev/null || echo "(no probe)"
             echo '```'
-            for f in fetch.txt package.txt badging.txt backup-flags.txt certs.txt sha256.txt; do
+            for f in inventory.txt strings.txt fetch.txt package.txt badging.txt backup-flags.txt certs.txt sha256.txt; do
               [ -s "$RUNNER_TEMP/$f" ] && { echo "**$f**"; echo '```'; head -20 "$RUNNER_TEMP/$f"; echo '```'; }
             done
             echo "**apk scan**"
