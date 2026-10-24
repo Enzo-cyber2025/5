@@ -1,0 +1,118 @@
+[22:57:26] SOBE inicio
+[22:57:26] sonda warp/dxgi inicio (system32 virgem)
+[22:57:28] warptest run inicio
+[22:57:28] warptest exit=0
+[22:57:28] warp: stage0: GetDC(NULL)=16844673 (desktop ok)
+[22:57:28] warp: stage1: CreateDXGIFactory1 hr=0x00000000 (dxgi NATIVO vivo)
+[22:57:28] warp: stage2: D3D11CreateDevice(WARP) hr=0x00000000 featureLevel=45056
+[22:57:28] warp: stage3: WARP OK - D3D11 por CPU FUNCIONA nativamente nesta VM
+[22:57:28] sonda warp fim warpOk=True
+[22:57:28] sonda dxgi-enum inicio
+[22:57:28] dxgienum exit=0
+[22:57:28] enum: stage1: factory ok
+[22:57:28] enum: adapter[0] = ?A
+[22:57:28] enum: adapter[1] = ?A
+[22:57:28] enum: total adapters: 2 (WARP visivel pro engine!)
+[22:57:28] sonda dxgi-enum fim
+[22:57:29] mesa 7z: 70257286 bytes
+[22:57:34] dxvk tar.gz: 10310666 bytes
+[22:57:34] tar dxvk inicio
+[22:57:34] tar dxvk fim rc=0
+[22:57:34] copias dxvk jogo inicio
+[22:57:35] copias dxvk jogo fim
+[22:57:35] dxvk system32 PULADO — WARP vivo, System32 INTACTO
+[22:57:35] vulkan loader antes: x64=False x86=False
+[22:57:35] baixando VulkanRT X64 installer (LunarG 1.4.363.0)
+[22:57:35] vulkanrt x64 installer: 25699768 bytes
+[22:57:36] vulkanrt x64 install exit=0
+[22:57:36] vulkan loader depois: x64=True x86=True
+[22:57:36] vktest inicio
+[22:57:37] vktest lvp264 PULADO (WARP venceu)
+[22:57:37] vktest dzn264 PULADO (WARP venceu)
+[22:57:37] NENHUM ICD Vulkan passou — boots dx11 vao rodar com o ICD padrao (26.2.4)
+[22:57:37] wgl64 inicio
+[22:57:37] wgl64 csc inicio
+[22:57:37] wgl64 csc fim
+[22:57:37] wgl64 run inicio
+[22:57:37] wgl64 run fim exit=0
+[22:57:37] wgl-janela inicio
+[22:57:38] winwgl run inicio
+[22:57:38] winwgl exit=-1073741819
+[22:57:38] winwgl: stage1: janela criada hwnd=590114
+[22:57:38] winwgl: stage2: GetDC(janela) ok
+[22:57:38] winwgl: stage3: ChoosePixelFormat ok pf=63
+[22:57:38] winwgl: 
+[22:57:38] winwgl: Unhandled Exception: System.AccessViolationException: Attempted to read or write protected memory. This is often an indication that other memory is corrupt.
+[22:57:38] winwgl:    at WinWglTest.SetPixelFormatN(IntPtr hdc, Int32 ipf, IntPtr pfd)
+[22:57:38] winwgl:    at WinWglTest.Main()
+[22:57:38] wgl-janela fim winWglOk=False
+[22:57:38] winwgl falhou na 26.2.4 — baixando Mesa 25.3.6
+[22:57:39] mesa 25.3.6: 66716214 bytes
+[22:57:43] 7z 25.3.6 exit=0
+[22:57:43] 253w: C:\Windows\System32\opengl32.dll
+[22:57:43] 253w: C:\Windows\System32\libgallium_wgl.dll
+[22:57:43] 253w: C:\Windows\System32\libEGL.dll
+[22:57:43] 253w: C:\Windows\System32\libGLESv1_CM.dll
+[22:57:43] 253w: C:\Windows\System32\libGLESv2.dll
+[22:57:43] 253w: C:\Windows\SysWOW64\opengl32.dll
+[22:57:43] 253w: C:\Windows\SysWOW64\libgallium_wgl.dll
+[22:57:43] 253w: C:\Windows\SysWOW64\libEGL.dll
+[22:57:43] 253w: C:\Windows\SysWOW64\libGLESv1_CM.dll
+[22:57:43] 253w: C:\Windows\SysWOW64\libGLESv2.dll
+[22:57:43] winwgl(25.3.6) run inicio
+[22:57:43] winwgl(25.3.6) exit=-1073741819
+[22:57:43] winwgl253: stage1: janela criada hwnd=655650
+[22:57:43] winwgl253: stage2: GetDC(janela) ok
+[22:57:43] winwgl253: stage3: ChoosePixelFormat ok pf=43
+[22:57:43] winwgl253: 
+[22:57:43] winwgl253: Unhandled Exception: System.AccessViolationException: Attempted to read or write protected memory. This is often an indication that other memory is corrupt.
+[22:57:43] winwgl253:    at WinWglTest.SetPixelFormatN(IntPtr hdc, Int32 ipf, IntPtr pfd)
+[22:57:43] winwgl253:    at WinWglTest.Main()
+[22:57:43] wgl32 csc inicio
+[22:57:44] wgl32 csc fim
+[22:57:44] wgl32 run inicio
+[22:57:47] wgl32 run fim exit=0
+[22:57:47] WARP vivo — restaurando d3d11/dxgi NATIVOS e bootando SEM DXVK
+[22:57:47] boot x64 dx11 NATIVO WARP inicio
+[22:57:49] boot x64 dx11 NATIVO WARP: pid 1788
+[22:57:54] boot x64 dx11 NATIVO WARP iter 1/120 vivo=True cpu=0.8 thr=17
+[22:57:54] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[22:57:59] boot x64 dx11 NATIVO WARP iter 2/120 vivo=True cpu=0.9 thr=17
+[22:57:59] probe mmf (iter 2): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[22:58:04] boot x64 dx11 NATIVO WARP iter 3/120 vivo=True cpu=1 thr=17
+[22:58:04] probe mmf (iter 3): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[22:58:09] boot x64 dx11 NATIVO WARP iter 4/120 vivo=False cpu=-1 thr=0
+[22:58:09] boot x64 dx11 NATIVO WARP FIM vivo=False
+[22:58:09] boot nativo WARP nao deu MMF — recolocando DXVK p/ fallbacks
+[22:58:09] boot x64 rdevice gl inicio
+[22:58:11] boot x64 rdevice gl: pid 968
+[22:58:16] boot x64 rdevice gl iter 1/120 vivo=True cpu=0.6 thr=17
+[22:58:16] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[22:58:21] boot x64 rdevice gl iter 2/120 vivo=True cpu=0.8 thr=17
+[22:58:21] probe mmf (iter 2): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[22:58:26] boot x64 rdevice gl iter 3/120 vivo=False cpu=-1 thr=0
+[22:58:26] boot x64 rdevice gl FIM vivo=False
+[22:58:27] boot x86 gl llvmpipe inicio
+[22:58:29] boot x86 gl llvmpipe: pid 7284
+[22:58:34] boot x86 gl llvmpipe iter 1/30 vivo=True cpu=0.8 thr=17
+[22:58:34] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[22:58:39] boot x86 gl llvmpipe iter 2/30 vivo=False cpu=-1 thr=0
+[22:58:39] boot x86 gl llvmpipe FIM vivo=False
+[22:58:39] boot x86 gl zink inicio
+[22:58:41] boot x86 gl zink: pid 4064
+[22:58:46] boot x86 gl zink iter 1/30 vivo=False cpu=-1 thr=0
+[22:58:46] boot x86 gl zink FIM vivo=False
+[22:58:46] boot x86 gl safe llvmpipe inicio
+[22:58:48] boot x86 gl safe llvmpipe: pid 7764
+[22:58:53] boot x86 gl safe llvmpipe iter 1/30 vivo=True cpu=0.6 thr=17
+[22:58:53] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[22:58:58] boot x86 gl safe llvmpipe iter 2/30 vivo=False cpu=-1 thr=0
+[22:58:58] boot x86 gl safe llvmpipe FIM vivo=False
+[22:58:58] boot x64 rdevice gl nointro inicio
+[22:59:00] boot x64 rdevice gl nointro: pid 1136
+[22:59:05] boot x64 rdevice gl nointro iter 1/30 vivo=True cpu=0.7 thr=17
+[22:59:05] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[22:59:10] boot x64 rdevice gl nointro iter 2/30 vivo=True cpu=0.9 thr=17
+[22:59:10] probe mmf (iter 2): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[22:59:15] boot x64 rdevice gl nointro iter 3/30 vivo=False cpu=-1 thr=0
+[22:59:15] boot x64 rdevice gl nointro FIM vivo=False
