@@ -1,0 +1,106 @@
+[20:02:33] SOBE inicio
+[20:02:33] sonda warp/dxgi inicio (system32 virgem)
+[20:02:38] warptest run inicio
+[20:02:38] warptest exit=0
+[20:02:38] warp: stage0: GetDC(NULL)=100729043 (desktop ok)
+[20:02:38] warp: stage1: CreateDXGIFactory1 hr=0x00000000 (dxgi NATIVO vivo)
+[20:02:38] warp: stage2: D3D11CreateDevice(WARP) hr=0x00000000 featureLevel=45056
+[20:02:38] warp: stage3: WARP OK - D3D11 por CPU FUNCIONA nativamente nesta VM
+[20:02:38] sonda warp fim warpOk=True
+[20:02:39] mesa 7z: 70257286 bytes
+[20:02:44] dxvk tar.gz: 10310666 bytes
+[20:02:44] tar dxvk inicio
+[20:02:45] tar dxvk fim rc=0
+[20:02:45] copias dxvk jogo inicio
+[20:02:45] copias dxvk jogo fim
+[20:02:45] dxvk system32 PULADO — WARP vivo, System32 INTACTO
+[20:02:45] vulkan loader antes: x64=False x86=False
+[20:02:45] baixando VulkanRT X64 installer (LunarG 1.4.363.0)
+[20:02:45] vulkanrt x64 installer: 25699768 bytes
+[20:02:47] vulkanrt x64 install exit=0
+[20:02:47] vulkan loader depois: x64=True x86=True
+[20:02:47] vktest inicio
+[20:02:47] vktest lvp264 PULADO (WARP venceu)
+[20:02:47] vktest dzn264 PULADO (WARP venceu)
+[20:02:47] NENHUM ICD Vulkan passou — boots dx11 vao rodar com o ICD padrao (26.2.4)
+[20:02:47] wgl64 inicio
+[20:02:47] wgl64 csc inicio
+[20:02:48] wgl64 csc fim
+[20:02:48] wgl64 run inicio
+[20:02:49] wgl64 run fim exit=0
+[20:02:49] wgl32 csc inicio
+[20:02:49] wgl32 csc fim
+[20:02:49] wgl32 run inicio
+[20:02:56] wgl32 run fim exit=0
+[20:02:56] WARP vivo — restaurando d3d11/dxgi NATIVOS e bootando SEM DXVK
+[20:02:56] boot x64 dx11 NATIVO WARP inicio
+[20:02:58] boot x64 dx11 NATIVO WARP: pid 1108
+[20:03:03] boot x64 dx11 NATIVO WARP iter 1/120 vivo=True cpu=0.7 thr=17
+[20:03:03] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[20:03:08] boot x64 dx11 NATIVO WARP iter 2/120 vivo=True cpu=0.8 thr=17
+[20:03:08] probe mmf (iter 2): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[20:03:13] boot x64 dx11 NATIVO WARP iter 3/120 vivo=True cpu=1 thr=17
+[20:03:13] probe mmf (iter 3): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[20:03:18] boot x64 dx11 NATIVO WARP iter 4/120 vivo=True cpu=1.1 thr=17
+[20:03:18] probe mmf (iter 4): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[20:03:23] boot x64 dx11 NATIVO WARP iter 5/120 vivo=False cpu=-1 thr=0
+[20:03:23] boot x64 dx11 NATIVO WARP FIM vivo=False
+[20:03:23] boot nativo WARP nao deu MMF — recolocando DXVK p/ fallbacks
+[20:03:23] boot x64 dx11 dxvk lavapipe inicio
+[20:03:25] boot x64 dx11 dxvk lavapipe: pid 2984
+[20:03:30] boot x64 dx11 dxvk lavapipe iter 1/120 vivo=True cpu=0.7 thr=17
+[20:03:30] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[20:03:35] boot x64 dx11 dxvk lavapipe iter 2/120 vivo=True cpu=0.7 thr=17
+[20:03:35] probe mmf (iter 2): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[20:03:40] boot x64 dx11 dxvk lavapipe iter 3/120 vivo=True cpu=0.8 thr=17
+[20:03:40] probe mmf (iter 3): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[20:03:45] boot x64 dx11 dxvk lavapipe iter 4/120 vivo=False cpu=-1 thr=0
+[20:03:45] boot x64 dx11 dxvk lavapipe FIM vivo=False
+[20:03:45] boot x86 dx11 dxvk lavapipe inicio
+[20:03:47] boot x86 dx11 dxvk lavapipe: pid 2560
+[20:03:52] boot x86 dx11 dxvk lavapipe iter 1/48 vivo=True cpu=0.7 thr=17
+[20:03:52] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[20:03:57] boot x86 dx11 dxvk lavapipe iter 2/48 vivo=True cpu=0.8 thr=17
+[20:03:57] probe mmf (iter 2): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[20:04:02] boot x86 dx11 dxvk lavapipe iter 3/48 vivo=False cpu=-1 thr=0
+[20:04:02] boot x86 dx11 dxvk lavapipe FIM vivo=False
+[20:04:02] boot x64 rdevice gl inicio
+[20:04:04] boot x64 rdevice gl: pid 7344
+[20:04:09] boot x64 rdevice gl iter 1/30 vivo=True cpu=0.6 thr=17
+[20:04:09] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[20:04:14] boot x64 rdevice gl iter 2/30 vivo=True cpu=0.6 thr=17
+[20:04:14] probe mmf (iter 2): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[20:04:19] boot x64 rdevice gl iter 3/30 vivo=True cpu=0.7 thr=17
+[20:04:19] probe mmf (iter 3): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[20:04:24] boot x64 rdevice gl iter 4/30 vivo=True cpu=0.7 thr=17
+[20:04:24] probe mmf (iter 4): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[20:04:29] boot x64 rdevice gl iter 5/30 vivo=False cpu=-1 thr=0
+[20:04:29] boot x64 rdevice gl FIM vivo=False
+[20:04:29] boot x86 gl llvmpipe inicio
+[20:04:31] boot x86 gl llvmpipe: pid 7448
+[20:04:36] boot x86 gl llvmpipe iter 1/30 vivo=True cpu=0.7 thr=17
+[20:04:36] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[20:04:41] boot x86 gl llvmpipe iter 2/30 vivo=True cpu=0.8 thr=17
+[20:04:41] probe mmf (iter 2): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[20:04:46] boot x86 gl llvmpipe iter 3/30 vivo=False cpu=-1 thr=0
+[20:04:46] boot x86 gl llvmpipe FIM vivo=False
+[20:04:46] boot x86 gl zink inicio
+[20:04:48] boot x86 gl zink: pid 7980
+[20:04:53] boot x86 gl zink iter 1/30 vivo=False cpu=-1 thr=0
+[20:04:53] boot x86 gl zink FIM vivo=False
+[20:04:53] boot x86 gl safe llvmpipe inicio
+[20:04:55] boot x86 gl safe llvmpipe: pid 6808
+[20:05:00] boot x86 gl safe llvmpipe iter 1/30 vivo=True cpu=0.8 thr=17
+[20:05:00] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[20:05:05] boot x86 gl safe llvmpipe iter 2/30 vivo=False cpu=-1 thr=0
+[20:05:05] boot x86 gl safe llvmpipe FIM vivo=False
+[20:05:06] boot x64 rdevice gl nointro inicio
+[20:05:08] boot x64 rdevice gl nointro: pid 5472
+[20:05:13] boot x64 rdevice gl nointro iter 1/30 vivo=True cpu=0.6 thr=17
+[20:05:13] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[20:05:18] boot x64 rdevice gl nointro iter 2/30 vivo=True cpu=0.7 thr=17
+[20:05:18] probe mmf (iter 2): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[20:05:23] boot x64 rdevice gl nointro iter 3/30 vivo=True cpu=0.8 thr=17
+[20:05:23] probe mmf (iter 3): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[20:05:28] boot x64 rdevice gl nointro iter 4/30 vivo=False cpu=-1 thr=0
+[20:05:28] boot x64 rdevice gl nointro FIM vivo=False
