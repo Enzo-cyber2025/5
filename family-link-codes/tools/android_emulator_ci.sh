@@ -143,7 +143,14 @@ sha256sum "$APK"
 "$SDK/build-tools/"*/aapt2 dump packagename "$APK" 2>/dev/null | head -1 || true
 
 step "5. install and launch (no root)"
-adb install -r -g "$APK" || fail "install failed"
+SPLITS="$(dirname "$APK")/splits.txt"
+if [[ -s "$SPLITS" ]] && [[ "$(wc -l < "$SPLITS")" -gt 1 ]]; then
+  echo "split bundle: installing $(wc -l < "$SPLITS") pieces (base + splits)"
+  mapfile -t PIECES < "$SPLITS"
+  adb install-multiple -r -g "${PIECES[@]}" || fail "install-multiple failed"
+else
+  adb install -r -g "$APK" || fail "install failed"
+fi
 adb shell monkey -p "$PACKAGE" -c android.intent.category.LAUNCHER 1 2>&1 | tail -3 || true
 sleep 15
 adb shell dumpsys package "$PACKAGE" | grep -E "versionName|dataDir|flags=\[" | head -5 || true

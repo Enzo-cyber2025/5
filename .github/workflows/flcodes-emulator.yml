@@ -224,7 +224,9 @@ jobs:
           set +e
           cd family-link-codes
           export PYTHONPATH="$PWD"
-          APK="$RUNNER_TEMP/familylink/base.apk"
+          APK="$(cat "$RUNNER_TEMP/familylink/apk-path.txt" 2>/dev/null | tail -1)"
+          [ -s "$APK" ] || APK="$RUNNER_TEMP/familylink/base.apk"
+          echo "base apk: $APK"
           python3 -m flcodes apk scan "$APK" --json > "$RUNNER_TEMP/scan.json" 2>&1
           python3 -m flcodes apk scan "$APK" > "$RUNNER_TEMP/scan.txt" 2>&1
           SDK="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}"

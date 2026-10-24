@@ -87,7 +87,7 @@ accept() {  # accept <file>: true when it is the right package
   return 0
 }
 
-unpack_if_bundle() {  # XAPK/APKS -> base.apk + splits
+unpack_if_bundle() {  # XAPK/APKS -> base.apk + splits, listed in splits.txt
   local file="$1"
   case "$file" in
     *.xapk|*.apks|*.apkm)
@@ -96,12 +96,25 @@ unpack_if_bundle() {  # XAPK/APKS -> base.apk + splits
       rm -rf "$dir"; mkdir -p "$dir"
       unzip -q -o "$file" -d "$dir" || return 1
       local base
-      base="$(find "$dir" -maxdepth 2 -name 'base.apk' -o -maxdepth 2 -name '*.apk' | head -1)"
-      [[ -n "$base" ]] || return 1
-      find "$dir" -name '*.apk' | sed 's/^/  split: /' >&2
-      echo "$base"
+      # the base is literally base.apk; a bare *.apk fallback would pick a
+      # config.<lang> split, which cannot be installed on its own
+      base="$(find "$dir" -name 'base.apk' | head -1)"
+      if [[ -z "$base" ]]; then
+        log "bundle has no base.apk; refusing (splits alone cannot install)"
+        return 1
+      fi
+      # everything the installer needs: base first, then the splits
+      {
+        printf '%s\n' "$(realpath "$base")"
+        find "$dir" -name '*.apk' ! -name 'base.apk' | sort | while read -r apk; do
+          realpath "$apk"
+        done
+      } > splits.txt
+      while read -r apk; do log "  piece: $(basename "$apk")"; done < splits.txt
+      log "bundle pieces: $(wc -l < splits.txt)"
+      printf '%s\n' "$base"
       return 0 ;;
-    *) echo "$file"; return 0 ;;
+    *) : > splits.txt; echo "$file"; return 0 ;;
   esac
 }
 
