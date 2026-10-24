@@ -175,10 +175,30 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Which credentials are available (booleans only)
+        env:
+          APK_URL: ${{ secrets.FLCODES_APK_URL }}
+          GPLAY_EMAIL: ${{ secrets.FLCODES_GPLAY_EMAIL }}
+          GPLAY_PASSWORD: ${{ secrets.FLCODES_GPLAY_PASSWORD }}
+        run: |
+          set -e
+          {
+            echo "FLCODES_APK_URL set: $([ -n "${APK_URL:-}" ] && echo yes || echo no)"
+            echo "FLCODES_GPLAY_EMAIL set: $([ -n "${GPLAY_EMAIL:-}" ] && echo yes || echo no)"
+            echo "FLCODES_GPLAY_PASSWORD set: $([ -n "${GPLAY_PASSWORD:-}" ] && echo yes || echo no)"
+          } | tee "$RUNNER_TEMP/credentials.txt"
+
       - name: Probe which public sources serve the APK
         continue-on-error: true
+        env:
+          APK_URL: ${{ secrets.FLCODES_APK_URL }}
         run: |
           set +e
+          if [ -n "${APK_URL:-}" ]; then
+            echo "FLCODES_APK_URL is set: the mirror probe is not needed" \
+              | tee "$RUNNER_TEMP/probe.txt"
+            exit 0
+          fi
           bash family-link-codes/tools/probe_apk_sources.sh > "$RUNNER_TEMP/probe.txt" 2>&1
           cat "$RUNNER_TEMP/probe.txt"
 

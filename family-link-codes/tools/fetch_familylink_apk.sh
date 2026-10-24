@@ -22,7 +22,12 @@
 set -euo pipefail
 
 OUT="${TMPDIR:-/tmp}/familylink"
-PACKAGE="com.google.android.apps.familylink"
+# The app is published under two ids: the current one (kids.familylink, the app
+# that ships the parent-access-code feature) and the old one. Both are accepted
+# so a copy the user already has is never thrown away.
+PACKAGE="com.google.android.apps.kids.familylink"
+PACKAGE_OLD="com.google.android.apps.familylink"
+PACKAGE_HELPER="com.google.android.apps.kids.familylinkhelper"
 VERSION="latest"
 
 while [[ $# -gt 0 ]]; do
@@ -40,7 +45,16 @@ cd "$OUT"
 log() { echo "[fetch] $*" >&2; }
 
 package_of() {  # read the package name out of the binary manifest
-  python3 - "$1" <<'PY'
+  local apk="$1"
+  local aapt
+  aapt="$(find "${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/build-tools" \
+            -name aapt2 2>/dev/null | sort -V | tail -1)"
+  if [[ -n "$aapt" ]]; then
+    local name
+    name="$("$aapt" dump packagename "$apk" 2>/dev/null | tr -d '\r' | head -1)"
+    [[ -n "$name" ]] && { printf '%s\n' "$name"; return 0; }
+  fi
+  python3 - "$apk" <<'PY'
 import sys, zipfile, re
 path = sys.argv[1]
 try:
@@ -64,10 +78,11 @@ accept() {  # accept <file>: true when it is the right package
     log "$(basename "$file"): no package name (not an APK?)"
     return 1
   fi
-  if [[ "$name" != "$PACKAGE" ]]; then
-    log "$(basename "$file"): package is $name, wanted $PACKAGE"
-    return 1
-  fi
+  case "$name" in
+    "$PACKAGE"|"$PACKAGE_OLD"|"$PACKAGE_HELPER") ;;
+    *) log "$(basename "$file"): package is $name, not a Family Link package"
+       return 1 ;;
+  esac
   log "accepted $(basename "$file") ($(du -h "$file" | cut -f1), package $name)"
   return 0
 }
