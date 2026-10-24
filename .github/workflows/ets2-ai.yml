@@ -1907,6 +1907,7 @@ jobs:
               [DllImport("user32.dll")] public static extern bool DestroyWindow(IntPtr hWnd);
               [DllImport("gdi32.dll")] public static extern int ChoosePixelFormat(IntPtr hdc, ref PFD pfd);
               [DllImport("gdi32.dll")] public static extern bool SetPixelFormat(IntPtr hdc, int ipf, ref PFD pfd);
+              [DllImport("gdi32.dll", EntryPoint="SetPixelFormat")] public static extern bool SetPixelFormatN(IntPtr hdc, int ipf, IntPtr pfd);
               [DllImport("opengl32.dll")] public static extern IntPtr wglCreateContext(IntPtr hdc);
               [DllImport("opengl32.dll")] public static extern bool wglMakeCurrent(IntPtr hdc, IntPtr hrc);
               [DllImport("opengl32.dll")] public static extern IntPtr wglGetProcAddress(string n);
@@ -1925,8 +1926,10 @@ jobs:
               int pf = ChoosePixelFormat(hdc, ref p);
               if (pf == 0) { P("stage3: ChoosePixelFormat(janela)=0 err=" + Marshal.GetLastWin32Error() + " — E ESTA a diferenca pro jogo"); return 1; }
               P("stage3: ChoosePixelFormat ok pf=" + pf);
-              if (!SetPixelFormat(hdc, pf, ref p)) { P("stage4: SetPixelFormat falhou err=" + Marshal.GetLastWin32Error()); return 1; }
-              P("stage4: SetPixelFormat ok");
+              // v55: pfd=NULL e legal na Win32 (driver usa o descriptor interno)
+              if (!SetPixelFormatN(hdc, pf, IntPtr.Zero)) { P("stage4a: SetPixelFormat(pfd=NULL) falhou err=" + Marshal.GetLastWin32Error()); } else { P("stage4a: SetPixelFormat(pfd=NULL) OK"); }
+              if (!SetPixelFormat(hdc, pf, ref p)) { P("stage4: SetPixelFormat(pfd) falhou err=" + Marshal.GetLastWin32Error()); return 1; }
+              P("stage4: SetPixelFormat(pfd) ok");
               IntPtr hrc = wglCreateContext(hdc);
               if (hrc == IntPtr.Zero) { P("stage5: wglCreateContext=NULL err=" + Marshal.GetLastWin32Error()); return 1; }
               P("stage5: wglCreateContext ok");
@@ -1947,16 +1950,55 @@ jobs:
                   & $cscJ /nologo /platform:x64 /out:"$PWD\winwgl.exe" "$PWD\winwgl.cs" 2>&1 | ForEach-Object { Trace "winwgl csc: $_" }
                   if (Test-Path "$PWD\winwgl.exe") {
                     Trace "winwgl run inicio"
+                    $script:winWglOk = $false
                     $pj = Start-Process -FilePath "$PWD\winwgl.exe" -RedirectStandardOutput "$PWD\winwgl.out" -RedirectStandardError "$PWD\winwgl.err" -PassThru
                     if (-not $pj.WaitForExit(120000)) {
                       Stop-Process -Id $pj.Id -Force -ErrorAction SilentlyContinue
                       Trace "winwgl TIMEOUT 120s"
-                    } else { Trace "winwgl exit=$($pj.ExitCode)" }
+                    } else {
+                      Trace "winwgl exit=$($pj.ExitCode)"
+                      $script:winWglOk = ($pj.ExitCode -eq 0)
+                    }
                     @(Get-Content "$PWD\winwgl.out" -ErrorAction SilentlyContinue) + @(Get-Content "$PWD\winwgl.err" -ErrorAction SilentlyContinue) | ForEach-Object { Trace "winwgl: $_" }
                   } else { Trace "winwgl.exe nao compilou" }
                 } else { Trace "csc ausente p/ winwgl" }
-                Trace "wgl-janela fim"
+                Trace "wgl-janela fim winWglOk=$($script:winWglOk)"
               } catch { Trace "wgl-janela FALHOU: $($_.Exception.Message)" }
+              # v55: se o SetPixelFormat da Mesa 26.2.4 AV-ou, tenta a 25.3.6
+              # (troca o conjunto WGL do System32 e re-testa o caminho do jogo)
+              if (-not $script:winWglOk) {
+                try {
+                  Trace "winwgl falhou na 26.2.4 — baixando Mesa 25.3.6"
+                  curl.exe -sSL --retry 3 --max-time 240 -o C:\mesa253.7z "https://github.com/pal1000/mesa-dist-win/releases/download/25.3.6/mesa3d-25.3.6-release-msvc.7z"
+                  $t253w = (Get-Item C:\mesa253.7z -ErrorAction SilentlyContinue).Length
+                  Trace "mesa 25.3.6: $t253w bytes"
+                  if ($t253w -and $t253w -gt 10MB -and (Test-Path $sz7)) {
+                    & $sz7 x C:\mesa253.7z "-oC:\mesa253" -y *> "$PWD\mesa253-7z.log"
+                    Trace "7z 25.3.6 exit=$LASTEXITCODE"
+                    $d253x64 = Get-ChildItem "C:\mesa253" -Recurse -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq "x64" } | Select-Object -First 1
+                    $d253x86 = Get-ChildItem "C:\mesa253" -Recurse -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq "x86" } | Select-Object -First 1
+                    foreach ($par253 in @(@($d253x64, "C:\Windows\System32"), @($d253x86, "C:\Windows\SysWOW64"))) {
+                      if (-not $par253[0]) { continue }
+                      foreach ($f253w in @("opengl32.dll", "libgallium_wgl.dll", "libEGL.dll", "libGLESv1_CM.dll", "libGLESv2.dll")) {
+                        $s253w = Join-Path $par253[0].FullName $f253w
+                        if (Test-Path $s253w) { Copy-Item $s253w (Join-Path $par253[1] $f253w) -Force; Trace "253w: $($par253[1])\$f253w" }
+                      }
+                    }
+                    if (Test-Path "$PWD\winwgl.exe") {
+                      Trace "winwgl(25.3.6) run inicio"
+                      $pj253 = Start-Process -FilePath "$PWD\winwgl.exe" -RedirectStandardOutput "$PWD\winwgl253.out" -RedirectStandardError "$PWD\winwgl253.err" -PassThru
+                      if (-not $pj253.WaitForExit(120000)) {
+                        Stop-Process -Id $pj253.Id -Force -ErrorAction SilentlyContinue
+                        Trace "winwgl(25.3.6) TIMEOUT 120s"
+                      } else {
+                        Trace "winwgl(25.3.6) exit=$($pj253.ExitCode)"
+                        if ($pj253.ExitCode -eq 0) { $script:winWglOk = $true; Trace "VENCEDOR: Mesa 25.3.6 (SetPixelFormat sobrevive)" }
+                      }
+                      @(Get-Content "$PWD\winwgl253.out" -ErrorAction SilentlyContinue) + @(Get-Content "$PWD\winwgl253.err" -ErrorAction SilentlyContinue) | ForEach-Object { Trace "winwgl253: $_" }
+                    }
+                  }
+                } catch { Trace "mesa253 wgl: $($_.Exception.Message)" }
+              }
               # v31: SONDA WGL 32-BIT — o autoteste acima roda no pwsh x64; o
               # jogo que falha e o de 32 bits. Compila um exe x86 (csc do .NET
               # Framework) que carrega opengl32.dll PELO NOME (resolucao
@@ -2409,7 +2451,7 @@ jobs:
           # le a telemetria, decide e INJETA teclas reais — gravando cada
           # amostra em amostras-reais.csv (dados de TREINO do jogo de verdade)
           $bridge = (Resolve-Path "dist-cpp\ETS2-AI-bridge.exe").Path
-          $env:ETS2AI_ESPERA_MIN = "45"    # v47: 45 min (a v46 esperou 100 e o jogo nunca passou do device; ciclo de feedback mais curto)
+          $env:ETS2AI_ESPERA_MIN = "25"    # v55: 25 min (SOBE agora prova em ~3 min se o boot vive; ciclo de feedback curto)
           $p = Start-Process -FilePath $bridge `
             -ArgumentList "--ets2","drive","--inject" `
             -WorkingDirectory $wdir `
