@@ -350,11 +350,13 @@ jobs:
           [ -n "$PKG" ] || PKG=com.google.android.apps.kids.familylink
           echo "apk: $APK"
           echo "package: $PKG"
+          mkdir -p "$RUNNER_TEMP/real"
           bash family-link-codes/tools/real_two_profiles.sh \
             --work "$RUNNER_TEMP/real" --apk "$APK" \
-            --splits "$DIR/splits.txt" --package "$PKG" 2>&1 \
-            | tee "$RUNNER_TEMP/real/stdout.txt"
-          status=${PIPESTATUS[0]}
+            --splits "$DIR/splits.txt" --package "$PKG" \
+            > "$RUNNER_TEMP/real/stdout.txt" 2>&1
+          status=$?
+          tail -40 "$RUNNER_TEMP/real/stdout.txt"
           echo "$status" > "$RUNNER_TEMP/real-status.txt"
           if [ "$status" = "10" ]; then
             echo "abi-incompatible" > "$RUNNER_TEMP/real-abi.txt"
