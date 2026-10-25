@@ -1,0 +1,214 @@
+[14:33:35] SOBE inicio
+[14:33:35] sonda warp/dxgi inicio (system32 virgem)
+[14:33:37] warptest run inicio
+[14:33:37] warptest exit=0
+[14:33:37] warp: stage0: GetDC(NULL)=100729043 (desktop ok)
+[14:33:37] warp: stage1: CreateDXGIFactory1 hr=0x00000000 (dxgi NATIVO vivo)
+[14:33:37] warp: stage2: D3D11CreateDevice(WARP) hr=0x00000000 featureLevel=45056
+[14:33:37] warp: stage3: WARP OK - D3D11 por CPU FUNCIONA nativamente nesta VM
+[14:33:37] sonda warp fim warpOk=True
+[14:33:37] warpwin (janela+swapchain+present) inicio
+[14:33:37] warpwin cl: warpwin.c
+[14:33:43] warpwin exit=0 — SWAPCHAIN EM JANELA FUNCIONA (dx11 viavel E2E)
+[14:33:43] warpwin: stage1: CreateWindow hwnd=0000000000030198
+[14:33:43] warpwin: stage2: D3D11CreateDevice(WARP) hr=0x00000000 fl=45056
+[14:33:43] warpwin: stage3: CreateDXGIFactory1 hr=0x00000000
+[14:33:43] warpwin: stage4: CreateSwapChain hr=0x00000000
+[14:33:43] warpwin: stage5: Clear+Present hr=0x00000000 (dx11 EM JANELA ponta a ponta)
+[14:33:43] sonda dxgi-enum inicio
+[14:33:43] dxgienum exit=0
+[14:33:43] enum: stage1: factory ok
+[14:33:43] enum: adapter[0] = ?�
+[14:33:43] enum: adapter[1] = OO
+[14:33:43] enum: total adapters: 2 (WARP visivel pro engine!)
+[14:33:43] sonda dxgi-enum fim
+[14:33:44] mesa 7z: 70257286 bytes
+[14:33:48] dxvk tar.gz: 10310666 bytes
+[14:33:48] tar dxvk inicio
+[14:33:49] tar dxvk fim rc=0
+[14:33:49] copias dxvk jogo inicio
+[14:33:49] copias dxvk jogo fim
+[14:33:49] dxvk system32 PULADO — WARP vivo, System32 INTACTO
+[14:33:49] vulkan loader antes: x64=False x86=False
+[14:33:49] baixando VulkanRT X64 installer (LunarG 1.4.363.0)
+[14:33:49] vulkanrt x64 installer: 25699768 bytes
+[14:33:51] vulkanrt x64 install exit=0
+[14:33:51] vulkan loader depois: x64=True x86=True
+[14:33:51] vktest inicio
+[14:33:51] vktest lvp264 PULADO (WARP venceu)
+[14:33:51] vktest dzn264 PULADO (WARP venceu)
+[14:33:51] NENHUM ICD Vulkan passou — boots dx11 vao rodar com o ICD padrao (26.2.4)
+[14:33:51] wgl64 inicio
+[14:33:51] wgl64 csc inicio
+[14:33:51] wgl64 csc fim
+[14:33:51] wgl64 run inicio
+[14:33:53] wgl64 run fim exit=0
+[14:33:53] wgl-janela inicio
+[14:33:53] winwgl run inicio
+[14:33:54] winwgl exit=-1073741819
+[14:33:54] winwgl: stage1: janela criada hwnd=262520
+[14:33:54] winwgl: stage2: GetDC(janela) ok
+[14:33:54] winwgl: stage3: ChoosePixelFormat ok pf=63
+[14:33:54] winwgl: 
+[14:33:54] winwgl: Unhandled Exception: System.AccessViolationException: Attempted to read or write protected memory. This is often an indication that other memory is corrupt.
+[14:33:54] winwgl:    at WinWglTest.SetPixelFormatN(IntPtr hdc, Int32 ipf, IntPtr pfd)
+[14:33:54] winwgl:    at WinWglTest.Main()
+[14:33:54] wgl-janela fim winWglOk=False
+[14:33:54] winwgl falhou na 26.2.4 — baixando Mesa 25.3.6
+[14:33:54] mesa 25.3.6: 66716214 bytes
+[14:33:57] 7z 25.3.6 exit=0
+[14:33:57] 253w: C:\Windows\System32\opengl32.dll
+[14:33:57] 253w: C:\Windows\System32\libgallium_wgl.dll
+[14:33:57] 253w: C:\Windows\System32\libEGL.dll
+[14:33:57] 253w: C:\Windows\System32\libGLESv1_CM.dll
+[14:33:57] 253w: C:\Windows\System32\libGLESv2.dll
+[14:33:57] 253w: C:\Windows\SysWOW64\opengl32.dll
+[14:33:57] 253w: C:\Windows\SysWOW64\libgallium_wgl.dll
+[14:33:57] 253w: C:\Windows\SysWOW64\libEGL.dll
+[14:33:57] 253w: C:\Windows\SysWOW64\libGLESv1_CM.dll
+[14:33:57] 253w: C:\Windows\SysWOW64\libGLESv2.dll
+[14:33:57] winwgl(25.3.6) run inicio
+[14:33:58] winwgl(25.3.6) exit=-1073741819
+[14:33:58] winwgl253: stage1: janela criada hwnd=328056
+[14:33:58] winwgl253: stage2: GetDC(janela) ok
+[14:33:58] winwgl253: stage3: ChoosePixelFormat ok pf=43
+[14:33:58] winwgl253: 
+[14:33:58] winwgl253: Unhandled Exception: System.AccessViolationException: Attempted to read or write protected memory. This is often an indication that other memory is corrupt.
+[14:33:58] winwgl253:    at WinWglTest.SetPixelFormatN(IntPtr hdc, Int32 ipf, IntPtr pfd)
+[14:33:58] winwgl253:    at WinWglTest.Main()
+[14:33:59] pnp display: Microsoft Hyper-V Video [VMBUS\{DA0A7802-E377-4AAC-8E77-0558EB1073F8}\{5620E0C7-8062-4DCE-AEB7-520C7EF76171}]
+[14:33:59] desativando adapter de video: Microsoft Hyper-V Video
+[14:34:07] adapter desativado — desktop no Basic Render Driver agora?
+[14:34:08] pnp display pos: Microsoft Hyper-V Video [Error]
+[14:34:08] winwgl(pos-pnp) run inicio
+[14:34:08] winwgl(pos-pnp) exit=-1073741819
+[14:34:08] winwglpnp: stage1: janela criada hwnd=459242
+[14:34:08] winwglpnp: stage2: GetDC(janela) ok
+[14:34:08] winwglpnp: stage3: ChoosePixelFormat ok pf=43
+[14:34:08] winwglpnp: 
+[14:34:08] winwglpnp: Unhandled Exception: System.AccessViolationException: Attempted to read or write protected memory. This is often an indication that other memory is corrupt.
+[14:34:08] winwglpnp:    at WinWglTest.SetPixelFormatN(IntPtr hdc, Int32 ipf, IntPtr pfd)
+[14:34:08] winwglpnp:    at WinWglTest.Main()
+[14:34:08] warppnp: stage0: GetDC(NULL)=-2097086253 (desktop ok)
+[14:34:08] warppnp: stage1: CreateDXGIFactory1 hr=0x00000000 (dxgi NATIVO vivo)
+[14:34:08] warppnp: stage2: D3D11CreateDevice(WARP) hr=0x00000000 featureLevel=45056
+[14:34:08] warppnp: stage3: WARP OK - D3D11 por CPU FUNCIONA nativamente nesta VM
+[14:34:08] enum-pos-pnp: stage1: factory ok
+[14:34:08] enum-pos-pnp: adapter[0] = Oj
+[14:34:08] enum-pos-pnp: adapter[1] = Oj
+[14:34:08] enum-pos-pnp: total adapters: 2 (WARP visivel pro engine!)
+[14:34:08] warpwinpnp: stage1: CreateWindow hwnd=00000000000801EA
+[14:34:08] warpwinpnp: stage2: D3D11CreateDevice(WARP) hr=0x00000000 fl=45056
+[14:34:08] warpwinpnp: stage3: CreateDXGIFactory1 hr=0x00000000
+[14:34:08] warpwinpnp: stage4: CreateSwapChain hr=0x00000000
+[14:34:08] warpwinpnp: stage5: Clear+Present hr=0x00000000 (dx11 EM JANELA ponta a ponta)
+[14:34:08] wgl32 csc inicio
+[14:34:08] wgl32 csc fim
+[14:34:08] wgl32 run inicio
+[14:34:11] wgl32 run fim exit=0
+[14:34:11] WARP vivo — restaurando d3d11/dxgi NATIVOS e bootando SEM DXVK
+[14:34:11] DXVK removido da pasta do jogo: d3d11.dll
+[14:34:11] DXVK removido da pasta do jogo: dxgi.dll
+[14:34:11] DXVK removido da pasta do jogo: d3d10core.dll
+[14:34:11] DXVK removido da pasta do jogo: d3d9.dll
+[14:34:11] shim: compilando d3d11.dll (x64) em C:\ets2demo\bin\win_x64
+[14:34:11] shim: d3d11_real do System32 atual
+[14:34:11] shim: exports do real (51): CreateDirect3D11DeviceFromDXGIDevice,CreateDirect3D11SurfaceFromDXGISurface,D3D11CoreCreateDevice,D3D11CoreCreateLayeredDevice,D3D11CoreGetLayeredDeviceSize,D3D11CoreRegisterLayers,D3D11CreateDevice,D3D11CreateDeviceAndSwapChain,D3D11CreateDeviceForD3D12,D3D11On12CreateDevice,D3DKMTCloseAdapter,D3DKMTCreateAllocation,D3DKMTCreateContext,D3DKMTCreateDevice,D3DKMTCreateSynchronizationObject,D3DKMTDestroyAllocation,D3DKMTDestroyContext,D3DKMTDestroyDevice,D3DKMTDestroySynchronizationObject,D3DKMTEscape,D3DKMTGetContextSchedulingPriority,D3DKMTGetDeviceState,D3DKMTGetDisplayModeList,D3DKMTGetMultisampleMethodList,D3DKMTGetRuntimeData,D3DKMTGetSharedPrimaryHandle,D3DKMTLock,D3DKMTOpenAdapterFromHdc,D3DKMTOpenResource,D3DKMTPresent,D3DKMTQueryAdapterInfo,D3DKMTQueryAllocationResidency,D3DKMTQueryResourceInfo,D3DKMTRender,D3DKMTSetAllocationPriority,D3DKMTSetContextSchedulingPriority,D3DKMTSetDisplayMode,D3DKMTSetDisplayPrivateDriverFormat,D3DKMTSetGammaRamp,D3DKMTSetVidPnSourceOwner,D3DKMTSignalSynchronizationObject,D3DKMTUnlock,D3DKMTWaitForSynchronizationObject,D3DKMTWaitForVerticalBlankEvent,D3DPerformance_BeginEvent,D3DPerformance_EndEvent,D3DPerformance_GetStatus,D3DPerformance_SetMarker,EnableFeatureLevelUpgrade,OpenAdapter10,OpenAdapter10_2
+[14:34:11] shim cl: d3d11shim.c
+[14:34:11] shim cl: D:\a\5\5\d3d11shim.c(54): warning C4028: formal parameter 8 different from declaration
+[14:34:11] shim cl: D:\a\5\5\d3d11shim.c(55): warning C4028: formal parameter 9 different from declaration
+[14:34:11] shim cl: D:\a\5\5\d3d11shim.c(73): warning C4028: formal parameter 8 different from declaration
+[14:34:11] shim cl: D:\a\5\5\d3d11shim.c(74): warning C4028: formal parameter 10 different from declaration
+[14:34:11] shim cl: D:\a\5\5\d3d11shim.c(75): warning C4028: formal parameter 11 different from declaration
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol CreateDirect3D11DeviceFromDXGIDevice
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol CreateDirect3D11SurfaceFromDXGISurface
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3D11CoreCreateLayeredDevice
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3D11CoreGetLayeredDeviceSize
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3D11CoreRegisterLayers
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3D11CreateDeviceForD3D12
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3D11On12CreateDevice
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTCloseAdapter
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTCreateAllocation
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTCreateContext
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTCreateDevice
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTCreateSynchronizationObject
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTDestroyAllocation
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTDestroyContext
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTDestroyDevice
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTDestroySynchronizationObject
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTEscape
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTGetContextSchedulingPriority
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTGetDeviceState
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTGetDisplayModeList
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTGetMultisampleMethodList
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTGetRuntimeData
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTGetSharedPrimaryHandle
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTLock
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTOpenAdapterFromHdc
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTOpenResource
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTPresent
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTQueryAdapterInfo
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTQueryAllocationResidency
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTQueryResourceInfo
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTRender
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTSetAllocationPriority
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTSetContextSchedulingPriority
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTSetDisplayMode
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTSetDisplayPrivateDriverFormat
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTSetGammaRamp
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTSetVidPnSourceOwner
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTSignalSynchronizationObject
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTUnlock
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTWaitForSynchronizationObject
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DKMTWaitForVerticalBlankEvent
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DPerformance_BeginEvent
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DPerformance_EndEvent
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DPerformance_GetStatus
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol D3DPerformance_SetMarker
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol EnableFeatureLevelUpgrade
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol OpenAdapter10
+[14:34:11] shim cl: d3d11shim.def : error LNK2001: unresolved external symbol OpenAdapter10_2
+[14:34:11] shim cl: C:\ets2demo\bin\win_x64\d3d11.lib : fatal error LNK1120: 48 unresolved externals
+[14:34:11] shim: INSTALADO C:\ets2demo\bin\win_x64\d3d11.dll (+d3d11_real.dll)
+[14:34:11] shim exp: Dump of file C:\ets2demo\bin\win_x64\d3d11.dll
+[14:34:11] shim exp: C:\ets2demo\bin\win_x64\d3d11.dll : fatal error LNK1136: invalid or corrupt file
+[14:34:11] boot x64 dx11 SHIM WARP inicio
+[14:34:13] boot x64 dx11 SHIM WARP: pid 6440
+[14:34:18] boot x64 dx11 SHIM WARP iter 1/120 vivo=True cpu=0.8 thr=17
+[14:34:18] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[14:34:23] boot x64 dx11 SHIM WARP iter 2/120 vivo=True cpu=1 thr=17
+[14:34:23] probe mmf (iter 2): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[14:34:29] boot x64 dx11 SHIM WARP iter 3/120 vivo=False cpu=-1 thr=0
+[14:34:29] boot x64 dx11 SHIM WARP FIM vivo=False
+[14:34:29] shimlog AUSENTE — o jogo NAO carregou o d3d11.dll local
+[14:34:29] boot shim WARP nao deu MMF — recolocando DXVK p/ fallbacks
+[14:34:29] boot x64 rdevice gl inicio
+[14:34:31] boot x64 rdevice gl: pid 588
+[14:34:36] boot x64 rdevice gl iter 1/120 vivo=True cpu=0.8 thr=17
+[14:34:36] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[14:34:41] boot x64 rdevice gl iter 2/120 vivo=True cpu=1 thr=17
+[14:34:41] probe mmf (iter 2): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[14:34:46] boot x64 rdevice gl iter 3/120 vivo=False cpu=-1 thr=0
+[14:34:46] boot x64 rdevice gl FIM vivo=False
+[14:34:46] boot x86 gl llvmpipe inicio
+[14:34:48] boot x86 gl llvmpipe: pid 7964
+[14:34:53] boot x86 gl llvmpipe iter 1/30 vivo=True cpu=0.8 thr=17
+[14:34:53] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[14:34:58] boot x86 gl llvmpipe iter 2/30 vivo=False cpu=-1 thr=0
+[14:34:58] boot x86 gl llvmpipe FIM vivo=False
+[14:34:58] boot x86 gl zink inicio
+[14:35:00] boot x86 gl zink: pid 1028
+[14:35:05] boot x86 gl zink iter 1/30 vivo=False cpu=-1 thr=0
+[14:35:05] boot x86 gl zink FIM vivo=False
+[14:35:05] boot x86 gl safe llvmpipe inicio
+[14:35:07] boot x86 gl safe llvmpipe: pid 5928
+[14:35:12] boot x86 gl safe llvmpipe iter 1/30 vivo=False cpu=-1 thr=0
+[14:35:12] boot x86 gl safe llvmpipe FIM vivo=False
+[14:35:12] boot x64 rdevice gl nointro inicio
+[14:35:14] boot x64 rdevice gl nointro: pid 2296
+[14:35:19] boot x64 rdevice gl nointro iter 1/30 vivo=True cpu=0.8 thr=17
+[14:35:19] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[14:35:24] boot x64 rdevice gl nointro iter 2/30 vivo=True cpu=1.1 thr=17
+[14:35:24] probe mmf (iter 2): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[14:35:29] boot x64 rdevice gl nointro iter 3/30 vivo=False cpu=-1 thr=0
+[14:35:29] boot x64 rdevice gl nointro FIM vivo=False
