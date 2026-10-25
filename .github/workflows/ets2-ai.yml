@@ -2403,24 +2403,20 @@ jobs:
                 Trace "restaurado nativo: $rb"
               }
             }
-            # v66: CONTRATO NOVO — o dxgi do DXVK FICA na pasta do jogo (com o
-            # ICD lavapipe ele enumera a lavapipe e a lista [dxgi] do jogo sai
-            # NAO-VAZIA — provado na v46; lista vazia era o UNICO bloqueio das
-            # v63-v65: os 2 adapters nativos sao "Microsoft Basic Render
-            # Driver" vram=0 e o engine os rejeita). O d3d11 sai do DXVK e
-            # entra o NOSSO shim: device por WARP nativo — nunca mais o
-            # congelamento de criacao de device Vulkan da v46/v47.
-            $vkIcdX64 = Get-ChildItem "C:\mesa3d\x64" -Filter "lvp_icd*.json" -ErrorAction SilentlyContinue | Select-Object -First 1
-            if ($vkIcdX64) { $env:VK_ICD_FILENAMES = $vkIcdX64.FullName; Trace "ICD lvp x64 p/ o dxgi do DXVK listar a lavapipe: $($vkIcdX64.FullName)" }
-            else { Trace "ICD lvp x64 AUSENTE — dxgi do DXVK listara vazio" }
+            # v67: dxgi TBEM NOSSO — a v66 provou que dxgi do DXVK + d3d11
+            # nativo = E_FAIL no probe e CRASH no retry WARP (o runtime nativo
+            # exige o dxgi nativo). Contrato final: TUDO nativo (d3d11 shim
+            # WARP + dxgi shim lista-mentirosa), ZERO Vulkan/DXVK. O dxgishim
+            # delega TUDO ao dxgi real (transparente pro runtime d3d11) e so
+            # mente a VRAM no GetDesc dos adapters — a lista [dxgi] do jogo
+            # sai NAO-VAZIA (BRD com vram 0 era rejeitado pelo engine, v63-65).
+            Remove-Item Env:\VK_ICD_FILENAMES -ErrorAction SilentlyContinue
             $bin64 = "C:\ets2demo\bin\win_x64"
             try {
-              foreach ($dx in @("d3d11.dll","d3d10core.dll","d3d9.dll")) {
+              foreach ($dx in @("d3d11.dll","dxgi.dll","d3d10core.dll","d3d9.dll")) {
                 $dxp = Join-Path $bin64 $dx
                 if (Test-Path $dxp) { Remove-Item $dxp -Force; Trace "DXVK removido da pasta do jogo: $dx" }
               }
-              if (-not (Test-Path (Join-Path $bin64 "dxgi.dll"))) { Trace "AVISO: dxgi.dll do DXVK ausente — lista [dxgi] do jogo seguira vazia" }
-              else { Trace "dxgi do DXVK mantido na pasta do jogo (lista nao-vazia p/ o engine)" }
             } catch { Trace "limpeza DXVK falhou (seguimos): $($_.Exception.Message)" }
             # v57: SHIM d3d11 WARP — a causa-raiz do dx11: o engine cria o
             # device no adapter Hyper-V/tipo HARDWARE ("at detection stage")
@@ -2611,6 +2607,322 @@ jobs:
                   # invalido. Remove e segue SEM shim (nativo do System32).
                   Trace "shim: cl/link FALHOU (exit=$LASTEXITCODE) — removendo dll lixo, boot segue SEM shim"
                   Remove-Item "$bin64\d3d11.dll" -Force -ErrorAction SilentlyContinue
+                }
+                # v67: DXGISHIM — o dxgi tambem NOSSO. A v66 provou que dxgi do
+                # DXVK + d3d11 nativo = E_FAIL/crash; e as v63-v65 provaram que
+                # o engine rejeita os 2 adapters "Microsoft Basic Render
+                # Driver" (vram 0) — a lista [dxgi] sai vazia e o jogo morre
+                # ("failed to initialize device"). REA: o jogo so importa
+                # CreateDXGIFactory{,1,2} do dxgi e loga "Video memory by
+                # DXGI: %uMB" — este shim delega TUDO ao dxgi_real (System32,
+                # transparente inclusive pro runtime d3d11) e so MENTE a VRAM
+                # no GetDesc: 3 GB. Forwarders extras (o que o d3d11.dll do
+                # Windows importa do dxgi) via /export: no link — .def do MSVC
+                # NAO suporta forwarder (era o 48x LNK2001 da v61).
+                $dxgiRealCopy = "$bin64\dxgi_real.dll"
+                Copy-Item "C:\Windows\System32\dxgi.dll" $dxgiRealCopy -Force
+                Trace "dxgishim: dxgi_real.dll copiado do System32 atual"
+                @'
+                #define WIN32_LEAN_AND_MEAN
+                #include <windows.h>
+                #include <initguid.h>
+                #include <dxgi.h>
+                #include <stdio.h>
+                #include <wchar.h>
+                #include <share.h>
+                typedef HRESULT (WINAPI *PFN_CFact)(REFIID, void**);
+                typedef HRESULT (WINAPI *PFN_CFact1)(REFIID, void**);
+                typedef HRESULT (WINAPI *PFN_CFact2)(UINT, REFIID, void**);
+                static HMODULE g_real;
+                static PFN_CFact  g_f0;
+                static PFN_CFact1 g_f1;
+                static PFN_CFact2 g_f2;
+                static void LogLine(const char* fmt, ...) {
+                  static volatile LONG n = 0;
+                  char path[MAX_PATH + 32]; wchar_t wpath[MAX_PATH];
+                  HMODULE self = NULL; FILE* f; va_list ap;
+                  if (InterlockedIncrement((volatile LONG*)&n) > 4000) return;
+                  if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                                          GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                                          (LPCWSTR)LogLine, &self) || !self) return;
+                  if (!GetModuleFileNameW(self, wpath, MAX_PATH)) return;
+                  { wchar_t* s2 = wcsrchr(wpath, L'\\'); if (s2) s2[1] = 0; }
+                  if (!WideCharToMultiByte(CP_ACP, 0, wpath, -1, path, MAX_PATH, NULL, NULL)) return;
+                  lstrcatA(path, "dxgishim.log");
+                  f = _fsopen(path, "a", _SH_DENYNO);
+                  if (!f) return;
+                  va_start(ap, fmt); vfprintf(f, fmt, ap); va_end(ap);
+                  fprintf(f, "\n"); fclose(f);
+                }
+                static void InitReal(void) {
+                  wchar_t wpath[MAX_PATH]; HMODULE self = NULL;
+                  if (g_real) return;
+                  if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                                          GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                                          (LPCWSTR)InitReal, &self) || !self) return;
+                  if (!GetModuleFileNameW(self, wpath, MAX_PATH)) return;
+                  { wchar_t* s2 = wcsrchr(wpath, L'\\'); if (s2) s2[1] = 0; }
+                  lstrcatW(wpath, L"dxgi_real.dll");
+                  g_real = LoadLibraryW(wpath);
+                  if (g_real) {
+                    g_f0 = (PFN_CFact)GetProcAddress(g_real, "CreateDXGIFactory");
+                    g_f1 = (PFN_CFact1)GetProcAddress(g_real, "CreateDXGIFactory1");
+                    g_f2 = (PFN_CFact2)GetProcAddress(g_real, "CreateDXGIFactory2");
+                  }
+                  LogLine("init real=%p f0=%p f1=%p f2=%p",
+                          (void*)g_real, (void*)g_f0, (void*)g_f1, (void*)g_f2);
+                }
+                typedef struct AdapterWrap {
+                  const void** vtbl;
+                  IDXGIAdapter1* real;
+                  LONG refs;
+                } AdapterWrap;
+                static void MentaVram(DXGI_ADAPTER_DESC* d) {
+                  if (d->DedicatedVideoMemory == 0) d->DedicatedVideoMemory = (SIZE_T)3 << 30;
+                }
+                static HRESULT WINAPI AW_QueryInterface(AdapterWrap* self, REFIID riid, void** ppv) {
+                  if (!ppv) return E_POINTER;
+                  if (IsEqualGUID(riid, &IID_IUnknown) || IsEqualGUID(riid, &IID_IDXGIObject) ||
+                      IsEqualGUID(riid, &IID_IDXGIAdapter) || IsEqualGUID(riid, &IID_IDXGIAdapter1) ||
+                      IsEqualGUID(riid, &IID_IDXGIAdapter2)) {
+                    InterlockedIncrement(&self->refs); *ppv = self; return S_OK;
+                  }
+                  return self->real->lpVtbl->QueryInterface((IDXGIAdapter1*)self->real, riid, ppv);
+                }
+                static ULONG WINAPI AW_AddRef(AdapterWrap* self) {
+                  return (ULONG)InterlockedIncrement(&self->refs);
+                }
+                static ULONG WINAPI AW_Release(AdapterWrap* self) {
+                  if (InterlockedDecrement(&self->refs) == 0) {
+                    self->real->lpVtbl->Release((IDXGIAdapter1*)self->real);
+                    HeapFree(GetProcessHeap(), 0, self);
+                    return 0;
+                  }
+                  return (ULONG)self->refs;
+                }
+                static HRESULT WINAPI AW_SetPrivateData(AdapterWrap* self, REFGUID Name, UINT DataSize, const void* pData) {
+                  return self->real->lpVtbl->SetPrivateData((IDXGIAdapter1*)self->real, Name, DataSize, pData);
+                }
+                static HRESULT WINAPI AW_SetPrivateDataInterface(AdapterWrap* self, REFGUID Name, const IUnknown* pUnknown) {
+                  return self->real->lpVtbl->SetPrivateDataInterface((IDXGIAdapter1*)self->real, Name, pUnknown);
+                }
+                static HRESULT WINAPI AW_GetPrivateData(AdapterWrap* self, REFGUID Name, UINT* pDataSize, void* pData) {
+                  return self->real->lpVtbl->GetPrivateData((IDXGIAdapter1*)self->real, Name, pDataSize, pData);
+                }
+                static HRESULT WINAPI AW_GetParent(AdapterWrap* self, REFIID riid, void** ppParent) {
+                  return self->real->lpVtbl->GetParent((IDXGIAdapter1*)self->real, riid, ppParent);
+                }
+                static HRESULT WINAPI AW_EnumOutputs(AdapterWrap* self, UINT Output, IDXGIOutput** ppOutput) {
+                  HRESULT hr = self->real->lpVtbl->EnumOutputs((IDXGIAdapter1*)self->real, Output, ppOutput);
+                  LogLine("adapter EnumOutputs[%u] hr=0x%08x", Output, (unsigned)hr);
+                  return hr;
+                }
+                static HRESULT WINAPI AW_GetDesc(AdapterWrap* self, DXGI_ADAPTER_DESC* pDesc) {
+                  HRESULT hr = self->real->lpVtbl->GetDesc((IDXGIAdapter1*)self->real, pDesc);
+                  if (SUCCEEDED(hr) && pDesc) {
+                    LogLine("GetDesc '%ls' vram=%llu -> 3GB",
+                            pDesc->Description, (unsigned long long)pDesc->DedicatedVideoMemory);
+                    MentaVram(pDesc);
+                  }
+                  return hr;
+                }
+                static HRESULT WINAPI AW_CheckInterfaceSupport(AdapterWrap* self, REFGUID InterfaceName, LONGLONG* pUMDVersion) {
+                  return self->real->lpVtbl->CheckInterfaceSupport((IDXGIAdapter1*)self->real, InterfaceName, pUMDVersion);
+                }
+                static HRESULT WINAPI AW_GetDesc1(AdapterWrap* self, DXGI_ADAPTER_DESC1* pDesc) {
+                  HRESULT hr = self->real->lpVtbl->GetDesc1((IDXGIAdapter1*)self->real, pDesc);
+                  if (SUCCEEDED(hr) && pDesc) {
+                    LogLine("GetDesc1 '%ls' vram=%llu -> 3GB",
+                            pDesc->Description, (unsigned long long)pDesc->DedicatedVideoMemory);
+                    MentaVram((DXGI_ADAPTER_DESC*)pDesc);
+                  }
+                  return hr;
+                }
+                static HRESULT WINAPI AW_GetDesc2(AdapterWrap* self, DXGI_ADAPTER_DESC2* pDesc) {
+                  IDXGIAdapter2* a2 = NULL; HRESULT hr;
+                  hr = self->real->lpVtbl->QueryInterface((IDXGIAdapter1*)self->real, &IID_IDXGIAdapter2, (void**)&a2);
+                  if (FAILED(hr)) return hr;
+                  hr = a2->lpVtbl->GetDesc2(a2, pDesc);
+                  if (SUCCEEDED(hr) && pDesc) {
+                    LogLine("GetDesc2 '%ls' vram=%llu -> 3GB",
+                            pDesc->Description, (unsigned long long)pDesc->DedicatedVideoMemory);
+                    MentaVram((DXGI_ADAPTER_DESC*)pDesc);
+                  }
+                  a2->lpVtbl->Release(a2);
+                  return hr;
+                }
+                static const void* g_AWVtbl[12] = {
+                  (const void*)AW_QueryInterface, (const void*)AW_AddRef, (const void*)AW_Release,
+                  (const void*)AW_SetPrivateData, (const void*)AW_SetPrivateDataInterface, (const void*)AW_GetPrivateData,
+                  (const void*)AW_GetParent, (const void*)AW_EnumOutputs, (const void*)AW_GetDesc,
+                  (const void*)AW_CheckInterfaceSupport, (const void*)AW_GetDesc1, (const void*)AW_GetDesc2
+                };
+                static AdapterWrap* AW_New(IDXGIAdapter1* real) {
+                  AdapterWrap* w = (AdapterWrap*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(AdapterWrap));
+                  if (!w) { real->lpVtbl->Release(real); return NULL; }
+                  w->vtbl = g_AWVtbl; w->real = real; w->refs = 1;
+                  return w;
+                }
+                typedef struct FactoryWrap {
+                  const void** vtbl;
+                  IDXGIFactory1* real;
+                  LONG refs;
+                } FactoryWrap;
+                static HRESULT WINAPI FW_QueryInterface(FactoryWrap* self, REFIID riid, void** ppv) {
+                  if (!ppv) return E_POINTER;
+                  if (IsEqualGUID(riid, &IID_IUnknown) || IsEqualGUID(riid, &IID_IDXGIObject) ||
+                      IsEqualGUID(riid, &IID_IDXGIFactory) || IsEqualGUID(riid, &IID_IDXGIFactory1)) {
+                    InterlockedIncrement(&self->refs); *ppv = self; return S_OK;
+                  }
+                  return self->real->lpVtbl->QueryInterface((IDXGIFactory1*)self->real, riid, ppv);
+                }
+                static ULONG WINAPI FW_AddRef(FactoryWrap* self) {
+                  return (ULONG)InterlockedIncrement(&self->refs);
+                }
+                static ULONG WINAPI FW_Release(FactoryWrap* self) {
+                  if (InterlockedDecrement(&self->refs) == 0) {
+                    self->real->lpVtbl->Release((IDXGIFactory1*)self->real);
+                    HeapFree(GetProcessHeap(), 0, self);
+                    return 0;
+                  }
+                  return (ULONG)self->refs;
+                }
+                static HRESULT WINAPI FW_SetPrivateData(FactoryWrap* self, REFGUID Name, UINT DataSize, const void* pData) {
+                  return self->real->lpVtbl->SetPrivateData((IDXGIFactory1*)self->real, Name, DataSize, pData);
+                }
+                static HRESULT WINAPI FW_SetPrivateDataInterface(FactoryWrap* self, REFGUID Name, const IUnknown* pUnknown) {
+                  return self->real->lpVtbl->SetPrivateDataInterface((IDXGIFactory1*)self->real, Name, pUnknown);
+                }
+                static HRESULT WINAPI FW_GetPrivateData(FactoryWrap* self, REFGUID Name, UINT* pDataSize, void* pData) {
+                  return self->real->lpVtbl->GetPrivateData((IDXGIFactory1*)self->real, Name, pDataSize, pData);
+                }
+                static HRESULT WINAPI FW_GetParent(FactoryWrap* self, REFIID riid, void** ppParent) {
+                  return self->real->lpVtbl->GetParent((IDXGIFactory1*)self->real, riid, ppParent);
+                }
+                static HRESULT WINAPI FW_EnumAdapters(FactoryWrap* self, UINT Adapter, IDXGIAdapter** ppAdapter) {
+                  IDXGIAdapter1* ad = NULL; HRESULT hr; AdapterWrap* w;
+                  if (!ppAdapter) return E_POINTER;
+                  hr = self->real->lpVtbl->EnumAdapters1((IDXGIFactory1*)self->real, Adapter, &ad);
+                  if (hr != S_OK) { LogLine("EnumAdapters[%u] hr=0x%08x", Adapter, (unsigned)hr); return hr; }
+                  LogLine("EnumAdapters[%u] -> WRAP (vram mentida)", Adapter);
+                  w = AW_New(ad);
+                  if (!w) return E_OUTOFMEMORY;
+                  *ppAdapter = (IDXGIAdapter*)w;
+                  return S_OK;
+                }
+                static HRESULT WINAPI FW_MakeWindowAssociation(FactoryWrap* self, HWND WindowHandle, UINT Flags) {
+                  return self->real->lpVtbl->MakeWindowAssociation((IDXGIFactory1*)self->real, WindowHandle, Flags);
+                }
+                static HRESULT WINAPI FW_GetWindowAssociation(FactoryWrap* self, HWND* pWindowHandle) {
+                  return self->real->lpVtbl->GetWindowAssociation((IDXGIFactory1*)self->real, pWindowHandle);
+                }
+                static HRESULT WINAPI FW_CreateSwapChain(FactoryWrap* self, IUnknown* pDevice, DXGI_SWAP_CHAIN_DESC* pDesc, IDXGISwapChain** ppSwapChain) {
+                  LogLine("CreateSwapChain (forward pro real)");
+                  return self->real->lpVtbl->CreateSwapChain((IDXGIFactory1*)self->real, pDevice, pDesc, ppSwapChain);
+                }
+                static HRESULT WINAPI FW_CreateSoftwareAdapter(FactoryWrap* self, HMODULE Module, IDXGIAdapter** ppAdapter) {
+                  return self->real->lpVtbl->CreateSoftwareAdapter((IDXGIFactory1*)self->real, Module, ppAdapter);
+                }
+                static HRESULT WINAPI FW_EnumAdapters1(FactoryWrap* self, UINT Adapter, IDXGIAdapter1** ppAdapter) {
+                  IDXGIAdapter1* ad = NULL; HRESULT hr; AdapterWrap* w;
+                  if (!ppAdapter) return E_POINTER;
+                  hr = self->real->lpVtbl->EnumAdapters1((IDXGIFactory1*)self->real, Adapter, &ad);
+                  if (hr != S_OK) { LogLine("EnumAdapters1[%u] hr=0x%08x", Adapter, (unsigned)hr); return hr; }
+                  LogLine("EnumAdapters1[%u] -> WRAP (vram mentida)", Adapter);
+                  w = AW_New(ad);
+                  if (!w) return E_OUTOFMEMORY;
+                  *ppAdapter = (IDXGIAdapter1*)w;
+                  return S_OK;
+                }
+                static HRESULT WINAPI FW_IsCurrent(FactoryWrap* self) {
+                  return (HRESULT)self->real->lpVtbl->IsCurrent((IDXGIFactory1*)self->real);
+                }
+                static const void* g_FWVtbl[14] = {
+                  (const void*)FW_QueryInterface, (const void*)FW_AddRef, (const void*)FW_Release,
+                  (const void*)FW_SetPrivateData, (const void*)FW_SetPrivateDataInterface, (const void*)FW_GetPrivateData,
+                  (const void*)FW_GetParent, (const void*)FW_EnumAdapters, (const void*)FW_MakeWindowAssociation,
+                  (const void*)FW_GetWindowAssociation, (const void*)FW_CreateSwapChain, (const void*)FW_CreateSoftwareAdapter,
+                  (const void*)FW_EnumAdapters1, (const void*)FW_IsCurrent
+                };
+                static FactoryWrap* FW_New(IDXGIFactory1* real) {
+                  FactoryWrap* w = (FactoryWrap*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(FactoryWrap));
+                  if (!w) { real->lpVtbl->Release(real); return NULL; }
+                  w->vtbl = g_FWVtbl; w->real = real; w->refs = 1;
+                  return w;
+                }
+                static int EhBasico(REFIID riid) {
+                  return IsEqualGUID(riid, &IID_IUnknown) || IsEqualGUID(riid, &IID_IDXGIObject) ||
+                         IsEqualGUID(riid, &IID_IDXGIFactory) || IsEqualGUID(riid, &IID_IDXGIFactory1);
+                }
+                HRESULT WINAPI CreateDXGIFactory(REFIID riid, void** ppFactory) {
+                  IDXGIFactory1* rf = NULL; HRESULT hr; FactoryWrap* w;
+                  InitReal();
+                  if (!ppFactory) return E_POINTER;
+                  if (!g_f1) { if (g_f0) return g_f0(riid, ppFactory); return E_FAIL; }
+                  if (!EhBasico(riid)) { LogLine("CreateDXGIFactory: iid avancado — real direto"); return g_f0(riid, ppFactory); }
+                  hr = g_f1(&IID_IDXGIFactory1, (void**)&rf);
+                  if (FAILED(hr)) { LogLine("CreateDXGIFactory real hr=0x%08x", (unsigned)hr); return hr; }
+                  w = FW_New(rf);
+                  if (!w) return E_OUTOFMEMORY;
+                  LogLine("CreateDXGIFactory -> WRAP");
+                  *ppFactory = w;
+                  return S_OK;
+                }
+                HRESULT WINAPI CreateDXGIFactory1(REFIID riid, void** ppFactory) {
+                  IDXGIFactory1* rf = NULL; HRESULT hr; FactoryWrap* w;
+                  InitReal();
+                  if (!ppFactory) return E_POINTER;
+                  if (!g_f1) return E_FAIL;
+                  if (!EhBasico(riid)) { LogLine("CreateDXGIFactory1: iid avancado — real direto"); return g_f1(riid, ppFactory); }
+                  hr = g_f1(&IID_IDXGIFactory1, (void**)&rf);
+                  if (FAILED(hr)) { LogLine("CreateDXGIFactory1 real hr=0x%08x", (unsigned)hr); return hr; }
+                  w = FW_New(rf);
+                  if (!w) return E_OUTOFMEMORY;
+                  LogLine("CreateDXGIFactory1 -> WRAP");
+                  *ppFactory = w;
+                  return S_OK;
+                }
+                HRESULT WINAPI CreateDXGIFactory2(UINT Flags, REFIID riid, void** ppFactory) {
+                  IDXGIFactory1* rf = NULL; HRESULT hr; FactoryWrap* w;
+                  InitReal();
+                  if (!ppFactory) return E_POINTER;
+                  if (!g_f2 || !g_f1) { if (g_f2) return g_f2(Flags, riid, ppFactory); return E_FAIL; }
+                  if (!EhBasico(riid)) { LogLine("CreateDXGIFactory2: iid avancado — real direto"); return g_f2(Flags, riid, ppFactory); }
+                  hr = g_f1(&IID_IDXGIFactory1, (void**)&rf);
+                  if (FAILED(hr)) { LogLine("CreateDXGIFactory2 via f1 hr=0x%08x", (unsigned)hr); return hr; }
+                  w = FW_New(rf);
+                  if (!w) return E_OUTOFMEMORY;
+                  LogLine("CreateDXGIFactory2 -> WRAP (flags %u ignoradas)", Flags);
+                  *ppFactory = w;
+                  return S_OK;
+                }
+          '@ | Set-Content "$PWD\dxgishim.c" -Encoding ASCII
+                # forwarders do que o d3d11.dll do WINDOWS importa do dxgi — via
+                # /export: (o .def do MSVC nao faz forwarder — LNK2001 da v61)
+                $fwd = @(); $rawSec = @()
+                try {
+                  $emDxgi = $false
+                  foreach ($l in (& dumpbin /imports "C:\Windows\System32\d3d11.dll" 2>$null)) {
+                    if ($l -match '^\s*dxgi\.dll') { $emDxgi = $true; continue }
+                    if ($l -match '^\s*\S+\.dll') { $emDxgi = $false }
+                    if ($emDxgi -and $l.Trim()) { $rawSec += $l.Trim(); if ($l -match '^\s+([A-Za-z_][A-Za-z0-9_]*)\s*$') { $fwd += $Matches[1] } }
+                  }
+                } catch { Trace "dxgishim imports: dumpbin falhou: $($_.Exception.Message)" }
+                if ($rawSec.Count -gt 0) { Trace ("dxgishim: secao dxgi dos imports do d3d11.dll: " + (($rawSec | Select-Object -First 18) -join " | ")) }
+                $fwd = $fwd | Where-Object { $_ -notin @("CreateDXGIFactory","CreateDXGIFactory1","CreateDXGIFactory2") } | Select-Object -Unique
+                Trace ("dxgishim: d3d11.dll importa do dxgi alem dos meus 3: " + ($fwd -join ","))
+                if ($fwd.Count -gt 0) {
+                  $fwd | ForEach-Object { Add-Content "$PWD\dxgishim.c" ("#pragma comment(linker, \"/export:" + $_ + "=dxgi_real." + $_ + "\"") }
+                }
+                @("LIBRARY dxgi", "EXPORTS", "CreateDXGIFactory", "CreateDXGIFactory1", "CreateDXGIFactory2") | Set-Content "$PWD\dxgishim.def" -Encoding ASCII
+                Remove-Item "$bin64\dxgi.dll" -Force -ErrorAction SilentlyContinue
+                & cl /nologo /O2 /W3 /LD "$PWD\dxgishim.c" "/Fe:$bin64\dxgi.dll" "/IMPLIB:$bin64\dxgishim-implib.lib" /link "/DEF:$PWD\dxgishim.def" 2>&1 | ForEach-Object { Trace "dxgishim cl: $_" }
+                if (($LASTEXITCODE -eq 0) -and (Test-Path "$bin64\dxgi.dll")) {
+                  Trace "dxgishim: INSTALADO $bin64\dxgi.dll (+dxgi_real.dll) link exit=$LASTEXITCODE"
+                  & dumpbin /exports "$bin64\dxgi.dll" 2>$null | Where-Object { $_ -match 'CreateDXGI' } | ForEach-Object { Trace "dxgishim exp: $($_.Trim())" }
+                } else {
+                  Trace "dxgishim: cl/link FALHOU (exit=$LASTEXITCODE) — removendo dll lixo; dxgi ficara o NATIVO (lista vazia)"
+                  Remove-Item "$bin64\dxgi.dll" -Force -ErrorAction SilentlyContinue
                 }
               } else { Trace "shim: pasta $bin64 inexistente" }
             } catch { Trace "shim: FALHOU $($_.Exception.Message)" }
