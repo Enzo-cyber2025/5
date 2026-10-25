@@ -1278,6 +1278,40 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: "Preflight v59: here-string pwsh com '@ na coluna 0"
+        shell: bash
+        run: |
+          # v59: v57/v58 rodaram o SOBE ZERO vezes — um '@ | Set-Content
+          # indentado no YAML vira "White space is not allowed before the
+          # string terminator" no pwsh e o step INTEIRO morre sem executar
+          # uma unica linha (demo-real fica muda e o combo vira o default).
+          # Este guard valida em segundos (antes de baixar 5,7 GB) todos os
+          # blocos run: | dos dois workflows.
+          python -m pip install --quiet pyyaml >/dev/null 2>&1 || true
+          python - <<'PY'
+          import re
+          try:
+              import yaml
+          except ImportError:
+              raise SystemExit("pyyaml ausente no runner — instale antes (pip install pyyaml)")
+          bad = []
+          for wf in ('.github/workflows/ets2-ai.yml', '.github/workflows/ets2-ai-chain.yml'):
+              doc = yaml.safe_load(open(wf, encoding='utf-8'))
+              for jname, j in doc['jobs'].items():
+                  for step in j.get('steps', []):
+                      r = step.get('run')
+                      if not r:
+                          continue
+                      for i, ln in enumerate(r.split('\n'), 1):
+                          if re.match(r"^[ \t]+(?:'@|\"@)(?:\s|$)", ln):
+                              bad.append(f"{wf} {jname}/{step.get('name','?')} ps1:{i}: {ln.strip()[:50]}")
+          if bad:
+              print("HERE-STRINGS QUEBRADAS (terminador indentado = ParserError pwsh):")
+              for b in bad:
+                  print("  -", b)
+              raise SystemExit(1)
+          print("preflight heredoc OK: nenhum terminador '@ indentado")
+          PY
       - uses: actions/download-artifact@v4
         with:
           name: ETS2-AI-bridge-exe
@@ -1463,7 +1497,10 @@ jobs:
               }
               return SUCCEEDED(hr) ? 0 : 5;
             }
-            '@ | Set-Content "$PWD\warpwin.c" -Encoding ASCII
+          # v59: o '@ de fechamento DEVE ficar na coluna 0 do bloco run (base do
+          # YAML) — indentado vira "White space is not allowed before the string
+          # terminator" no pwsh e mata o step INTEIRO sem rodar nada (v57/v58).
+          '@ | Set-Content "$PWD\warpwin.c" -Encoding ASCII
             & cl /nologo /O2 /W3 "$PWD\warpwin.c" "/Fe:$PWD\warpwin.exe" /link 2>&1 | ForEach-Object { Trace "warpwin cl: $_" }
             if (Test-Path "$PWD\warpwin.exe") {
               $pww = Start-Process -FilePath "$PWD\warpwin.exe" -RedirectStandardOutput "$PWD\warpwin.out" -RedirectStandardError "$PWD\warpwin.err" -PassThru
@@ -2485,7 +2522,8 @@ jobs:
                   LogLine("Core: WARP hr=0x%08x", (unsigned)hr);
                   return hr;
                 }
-                '@ | Set-Content "$PWD\d3d11shim.c" -Encoding ASCII
+          # v59: fechamento na coluna 0 do bloco — indentado mata o parse (v57/v58)
+          '@ | Set-Content "$PWD\d3d11shim.c" -Encoding ASCII
                 $realDll = "$bin64\d3d11_real.dll"
                 if (Test-Path "C:\Windows\System32\d3d11.dll.bak") {
                   Copy-Item "C:\Windows\System32\d3d11.dll.bak" $realDll -Force
