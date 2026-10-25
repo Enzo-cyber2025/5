@@ -73,6 +73,12 @@ static const uint8_t CODE[] = {
     /* 1022 */ 0xC3                                       /* unreachable ret */
 };
 
+/* Test-only knob: make the export directory claim far more entries than its
+ * section can hold. That is how a parser bounding its reads against the file
+ * instead of the section fabricates exports out of whatever data follows, and how
+ * a sweep then queues entry points that are not code. */
+static int g_big_exports;
+
 #define VA_ENTRY   (IMAGE_BASE + 0x1000u)   /* a whole function, with a loop */
 #define VA_LOOP    (IMAGE_BASE + 0x100Au)   /* its backward branch target */
 #define VA_RET1    (IMAGE_BASE + 0x1017u)   /* the fall-through ret */
@@ -144,8 +150,8 @@ static buf build_guest(int with_exports)
             d[0] = 0;                              /* Characteristics */
             for (k = 0; k < 4; k++) d[12 + k] = (uint8_t)((RDATA_VA + nmDll) >> (8 * k));
             for (k = 0; k < 4; k++) d[16 + k] = (uint8_t)(1u >> (8 * k));   /* Base */
-            for (k = 0; k < 4; k++) d[20 + k] = (uint8_t)(2u >> (8 * k));   /* NumberOfFunctions */
-            for (k = 0; k < 4; k++) d[24 + k] = (uint8_t)(2u >> (8 * k));   /* NumberOfNames */
+            for (k = 0; k < 4; k++) d[20 + k] = (uint8_t)((g_big_exports ? 200u : 2u) >> (8 * k));
+            for (k = 0; k < 4; k++) d[24 + k] = (uint8_t)((g_big_exports ? 200u : 2u) >> (8 * k));
             for (k = 0; k < 4; k++) d[28 + k] = (uint8_t)((RDATA_VA + aof) >> (8 * k));
             for (k = 0; k < 4; k++) d[32 + k] = (uint8_t)((RDATA_VA + aon) >> (8 * k));
             for (k = 0; k < 4; k++) d[36 + k] = (uint8_t)((RDATA_VA + aoo) >> (8 * k));
@@ -596,6 +602,39 @@ static void test_progress_and_eta(void)
     rig_teardown(&r);
 }
 
+static void test_exports_past_section(void)
+{
+    buf f; pe_image im; pe_status st;
+
+    printf("an export array that does not fit its section is refused, not read on\n");
+    g_big_exports = 0;
+    f = build_guest(1);
+    st = pe_load(f.b, f.len, &im);
+    CHECK(st == PE_OK, "the baseline export fixture failed to parse: %s",
+          im.detail ? im.detail : "?");
+    CHECK(im.num_exports == 2, "baseline exports %u, expected 2", im.num_exports);
+    free(f.b);
+
+    /* Same image, but the directory claims 200 names while the array has room for
+     * a handful. Every entry past that would be read out of whatever file data
+     * follows. The reads stay inside the buffer, so nothing crashes - the parser
+     * would simply report exports the file never had, and a sweep would queue
+     * entry points that are not code. */
+    g_big_exports = 1;
+    f = build_guest(1);
+    st = pe_load(f.b, f.len, &im);
+    CHECK(st == PE_MALFORMED,
+          "an over-claimed export array returned %d (%s), expected PE_MALFORMED",
+          st, im.detail ? im.detail : "?");
+    CHECK(im.detail && strstr(im.detail, "past the section") != NULL,
+          "detail '%s' does not say the array left its section",
+          im.detail ? im.detail : "?");
+    CHECK(im.num_exports == 0,
+          "fabricated %u exports out of unrelated file data", im.num_exports);
+    free(f.b);
+    g_big_exports = 0;
+}
+
 static void test_refusals(void)
 {
     rig r;
@@ -673,6 +712,7 @@ int main(int argc, char **argv)
     test_exports_are_entry_points();
     test_interrupt_resume();
     test_progress_and_eta();
+    test_exports_past_section();
     test_refusals();
     printf("\n%d checks, %d failure(s)\n", checks, failures);
     return failures ? 1 : 0;

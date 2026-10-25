@@ -127,6 +127,35 @@ uint32_t pe_rva_to_off(const pe_image *im, uint32_t rva, size_t len, int *ok)
     return 0;
 }
 
+/* Bytes readable from rva before leaving the section that contains it.
+ *
+ * Every array walk in this file used to bound its reads against the length of the
+ * whole image. That is not sufficient: an array declared to run past the end of its
+ * own section will happily read the next section's file data, and for an export or
+ * thunk array that means inventing entries that do not exist in the image. The
+ * reads stay in bounds, so nothing crashes - the parser just reports exports or
+ * imports the file never had, and a pre-translation sweep then queues entry points
+ * that are not code. Bounding against the containing section turns that into a
+ * refusal. */
+static uint32_t sec_remaining(const pe_image *o, uint32_t rva, size_t len)
+{
+    uint32_t i;
+    for (i = 0; i < o->num_sections; i++) {
+        const pe_section *s = &o->sections[i];
+        uint32_t span, left;
+        if (s->virtual_size == 0) continue;
+        if (rva < s->virtual_addr) continue;
+        if (rva - s->virtual_addr >= s->virtual_size) continue;
+        span = s->raw_size < s->virtual_size ? s->raw_size : s->virtual_size;
+        if (rva - s->virtual_addr >= span) return 0;
+        left = span - (rva - s->virtual_addr);
+        if (s->raw_ptr > len) return 0;
+        if (left > len - s->raw_ptr) left = (uint32_t)(len - s->raw_ptr);
+        return left;
+    }
+    return 0;
+}
+
 /* ---- import table walk ------------------------------------------------- */
 
 /* Adds one imported function. Returns 0 when a cap was hit, so the caller can
@@ -164,13 +193,23 @@ static pe_status walk_thunks(pec *c, pe_image *o, const pe_import_dll *d,
         return PE_MALFORMED;
     }
 
-    for (;;) {
+    {   /* How far this thunk array may run before it leaves its own section. The
+         * base is computed once; recomputing it per thunk would also have meant
+         * reusing another mapping's ok-flag as scratch, which reads like a bug
+         * even when it is not one. */
+        uint32_t rem = sec_remaining(o, thunk_rva, c->len);
+        size_t   arr_base = pos;
+        for (;;) {
         uint64_t thunk;
         uint32_t name_rva;
         int      name_mapped = 0;
         size_t   name_off;
         long     n;
 
+        if ((uint64_t)(pos - arr_base) + step > rem) {
+            o->detail = "import thunk array runs past the section that contains it";
+            return PE_MALFORMED;
+        }
         if (!fits(c, pos, step)) {
             /* A thunk array that runs off the image without its zero
              * terminator is malformed, not merely short. */
@@ -208,6 +247,7 @@ static pe_status walk_thunks(pec *c, pe_image *o, const pe_import_dll *d,
         if (!add_func(o, (const char *)(c->b + name_off + 2u), 0, 0)) {
             o->imports_truncated = 1;
             return PE_OK;
+        }
         }
     }
 }
@@ -365,6 +405,23 @@ static pe_status walk_exports(pec *c, pe_image *o)
     aoo    = rd32(c->b + pos + 36u);   /* AddressOfNameOrdinals */
 
     if (nnames == 0) return PE_OK;      /* ordinal-only image: nothing named */
+
+    {   /* All three arrays must fit inside their own sections, not merely inside
+         * the file. Overflow past a section boundary is a malformed image, and
+         * reading on would fabricate exports. */
+        uint32_t nf = rd32(c->b + pos + 20u);
+        int m1 = 0, m2 = 0, m3 = 0;
+        pe_rva_to_off(o, aof, c->len, &m1);
+        pe_rva_to_off(o, aon, c->len, &m2);
+        pe_rva_to_off(o, aoo, c->len, &m3);
+        if (!m1 || !m2 || !m3 ||
+            (uint64_t)nf * 4u > sec_remaining(o, aof, c->len) ||
+            (uint64_t)nnames * 4u > sec_remaining(o, aon, c->len) ||
+            (uint64_t)nnames * 2u > sec_remaining(o, aoo, c->len)) {
+            o->detail = "an export array runs past the section that contains it";
+            return PE_MALFORMED;
+        }
+    }
 
     {   /* all three arrays must be reachable before any of them is walked */
         int m1 = 0, m2 = 0, m3 = 0;
