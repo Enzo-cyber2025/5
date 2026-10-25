@@ -1449,11 +1449,13 @@ jobs:
             @'
             #define WIN32_LEAN_AND_MEAN
             #include <windows.h>
+            #include <initguid.h>
             #include <d3d11.h>
             #include <dxgi.h>
             #include <stdio.h>
             #pragma comment(lib, "d3d11.lib")
             #pragma comment(lib, "dxgi.lib")
+            #pragma comment(lib, "user32.lib")
             static void P(const char* fmt, ...) {
               char b[512]; va_list a; va_start(a, fmt);
               _vsnprintf_s(b, sizeof(b), _TRUNCATE, fmt, a); va_end(a);
@@ -1472,7 +1474,7 @@ jobs:
                                      D3D11_SDK_VERSION, &dev, &fl, &ctx);
               P("stage2: D3D11CreateDevice(WARP) hr=0x%08x fl=%u", (unsigned)hr, (unsigned)fl);
               if (FAILED(hr)) return 2;
-              hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)&f);
+              hr = CreateDXGIFactory1(&IID_IDXGIFactory1, (void**)&f);
               P("stage3: CreateDXGIFactory1 hr=0x%08x", (unsigned)hr);
               if (FAILED(hr)) return 3;
               ZeroMemory(&sc, sizeof(sc));
@@ -1486,7 +1488,7 @@ jobs:
               {
                 ID3D11Texture2D* rt = NULL; ID3D11RenderTargetView* rtv = NULL;
                 float c[4] = { 0.2f, 0.4f, 0.8f, 1.0f };
-                if (SUCCEEDED(chain->lpVtbl->GetBuffer(chain, 0, __uuidof(ID3D11Texture2D), (void**)&rt))) {
+                if (SUCCEEDED(chain->lpVtbl->GetBuffer(chain, 0, &IID_ID3D11Texture2D, (void**)&rt))) {
                   if (SUCCEEDED(dev->lpVtbl->CreateRenderTargetView(dev, (ID3D11Resource*)rt, NULL, &rtv)))
                     ctx->lpVtbl->ClearRenderTargetView(ctx, rtv, c);
                 }
@@ -1497,10 +1499,10 @@ jobs:
               }
               return SUCCEEDED(hr) ? 0 : 5;
             }
-          # v59: o '@ de fechamento DEVE ficar na coluna 0 do bloco run (base do
-          # YAML) — indentado vira "White space is not allowed before the string
-          # terminator" no pwsh e mata o step INTEIRO sem rodar nada (v57/v58).
           '@ | Set-Content "$PWD\warpwin.c" -Encoding ASCII
+            # v59/v60: o '@ acima fica na coluna 0 do bloco run (indentado =
+            # ParserError pwsh); e comentarios pwsh ANTES do '@ viram codigo C
+            # (C1021) — por isso este aviso vive DEPOIS do fechamento.
             & cl /nologo /O2 /W3 "$PWD\warpwin.c" "/Fe:$PWD\warpwin.exe" /link 2>&1 | ForEach-Object { Trace "warpwin cl: $_" }
             if (Test-Path "$PWD\warpwin.exe") {
               $pww = Start-Process -FilePath "$PWD\warpwin.exe" -RedirectStandardOutput "$PWD\warpwin.out" -RedirectStandardError "$PWD\warpwin.err" -PassThru
@@ -2397,6 +2399,16 @@ jobs:
               }
             }
             Remove-Item Env:\VK_ICD_FILENAMES -ErrorAction SilentlyContinue
+            # v60: a mesa-load copia o DXVK p/ a PASTA DO JOGO antes de saber
+            # se o WARP venceu — e a v59 provou o estrago: com o d3d11 do DXVK
+            # local (sem ICD Vulkan) o jogo morre no "detection stage" sem
+            # listar adapter nenhum (game-log-x64-dx11-SHIM-WARP). "SEM DXVK"
+            # tem que valer pro win_x64 tambem — o dxgi NATIVO enumera 2
+            # adapters (provado na sonda) e o d3d11 local sera o NOSSO shim.
+            foreach ($dx in @("d3d11.dll","dxgi.dll","d3d10core.dll","d3d9.dll")) {
+              $dxp = Join-Path $bin64 $dx
+              if (Test-Path $dxp) { Remove-Item $dxp -Force; Trace "DXVK removido da pasta do jogo: $dx" }
+            }
             # v57: SHIM d3d11 WARP — a causa-raiz do dx11: o engine cria o
             # device no adapter Hyper-V/tipo HARDWARE ("at detection stage")
             # e NUNCA tenta WARP — mas D3D11CreateDevice(WARP) FUNCIONA aqui
@@ -2417,13 +2429,14 @@ jobs:
                 #include <d3d11.h>
                 #include <dxgi.h>
                 #include <stdio.h>
+                #include <share.h>
                 typedef HRESULT (WINAPI *PFN_RealCreateDevice)(
                     IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, UINT, const D3D_FEATURE_LEVEL*,
                     UINT, UINT, D3D_FEATURE_LEVEL*, ID3D11Device**, ID3D11DeviceContext**);
                 typedef HRESULT (WINAPI *PFN_RealDevSC)(
                     IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, UINT, const D3D_FEATURE_LEVEL*,
-                    UINT, UINT, D3D_FEATURE_LEVEL*, ID3D11Device**, ID3D11DeviceContext**,
-                    const DXGI_SWAP_CHAIN_DESC*, IDXGISwapChain**);
+                    UINT, UINT, DXGI_SWAP_CHAIN_DESC*, IDXGISwapChain**,
+                    D3D_FEATURE_LEVEL*, ID3D11Device**, ID3D11DeviceContext**);
                 static HMODULE g_real;
                 static PFN_RealCreateDevice g_dev, g_core;
                 static PFN_RealDevSC g_devsc;
@@ -2483,23 +2496,23 @@ jobs:
                 }
                 HRESULT WINAPI D3D11CreateDeviceAndSwapChain(IDXGIAdapter* pAdapter, D3D_DRIVER_TYPE DriverType,
                     HMODULE Software, UINT Flags, const D3D_FEATURE_LEVEL* pFeatureLevels,
-                    UINT FeatureLevels, UINT SDKVersion, D3D_FEATURE_LEVEL* pFeatureLevel,
-                    ID3D11Device** ppDevice, ID3D11DeviceContext** ppImmediateContext,
-                    const DXGI_SWAP_CHAIN_DESC* pSwapChainDesc, IDXGISwapChain** ppSwapChain) {
+                    UINT FeatureLevels, UINT SDKVersion, DXGI_SWAP_CHAIN_DESC* pSwapChainDesc,
+                    IDXGISwapChain** ppSwapChain, D3D_FEATURE_LEVEL* pFeatureLevel,
+                    ID3D11Device** ppDevice, ID3D11DeviceContext** ppImmediateContext) {
                   HRESULT hr;
                   InitReal();
                   if (!g_devsc) { LogLine("DevSC: sem ponteiro real"); return E_FAIL; }
                   LogLine("DevSC: adapter=%p type=%d flags=0x%x nfl=%u",
                           (void*)pAdapter, (int)DriverType, Flags, FeatureLevels);
                   hr = g_devsc(pAdapter, DriverType, Software, Flags, pFeatureLevels,
-                               FeatureLevels, SDKVersion, pFeatureLevel, ppDevice,
-                               ppImmediateContext, pSwapChainDesc, ppSwapChain);
+                               FeatureLevels, SDKVersion, pSwapChainDesc, ppSwapChain,
+                               pFeatureLevel, ppDevice, ppImmediateContext);
                   LogLine("DevSC: original hr=0x%08x", (unsigned)hr);
                   if (SUCCEEDED(hr)) return hr;
                   LogLine("DevSC: original FALHOU — RETRY WARP");
                   hr = g_devsc(NULL, D3D_DRIVER_TYPE_WARP, NULL, Flags, pFeatureLevels,
-                               FeatureLevels, SDKVersion, pFeatureLevel, ppDevice,
-                               ppImmediateContext, pSwapChainDesc, ppSwapChain);
+                               FeatureLevels, SDKVersion, pSwapChainDesc, ppSwapChain,
+                               pFeatureLevel, ppDevice, ppImmediateContext);
                   LogLine("DevSC: WARP hr=0x%08x", (unsigned)hr);
                   return hr;
                 }
@@ -2522,8 +2535,9 @@ jobs:
                   LogLine("Core: WARP hr=0x%08x", (unsigned)hr);
                   return hr;
                 }
-          # v59: fechamento na coluna 0 do bloco — indentado mata o parse (v57/v58)
           '@ | Set-Content "$PWD\d3d11shim.c" -Encoding ASCII
+                # v60: idem warpwin — fechamento na coluna 0; comentarios pwsh
+                # nunca ANTES do '@ (viram C). share.h entrou p/ _SH_DENYNO.
                 $realDll = "$bin64\d3d11_real.dll"
                 if (Test-Path "C:\Windows\System32\d3d11.dll.bak") {
                   Copy-Item "C:\Windows\System32\d3d11.dll.bak" $realDll -Force
@@ -2541,6 +2555,10 @@ jobs:
                 foreach ($en in $expNames) { if ($meus -notcontains $en) { $defL += "$en=d3d11_real.$en" } }
                 foreach ($mn in $meus) { if ($expNames -notcontains $mn) { $defL += $mn } }
                 $defL | Set-Content "$PWD\d3d11shim.def" -Encoding ASCII
+                # v60: limpa ANTES do cl — se o cl falhar, Test-Path nao pode
+                # "herdar" dll velha e cantar INSTALADO (exatamente o que
+                # mascarou a v59: DXVK local + cl falando = dll errada no boot)
+                Remove-Item "$bin64\d3d11.dll" -Force -ErrorAction SilentlyContinue
                 & cl /nologo /O2 /W3 /LD "$PWD\d3d11shim.c" "/Fe:$bin64\d3d11.dll" /link "/DEF:$PWD\d3d11shim.def" 2>&1 | ForEach-Object { Trace "shim cl: $_" }
                 if (Test-Path "$bin64\d3d11.dll") {
                   Trace "shim: INSTALADO $bin64\d3d11.dll (+d3d11_real.dll)"
