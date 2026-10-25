@@ -1,0 +1,181 @@
+[13:00:32] SOBE inicio
+[13:00:32] sonda warp/dxgi inicio (system32 virgem)
+[13:00:35] warptest run inicio
+[13:00:35] warptest exit=0
+[13:00:35] warp: stage0: GetDC(NULL)=100729043 (desktop ok)
+[13:00:35] warp: stage1: CreateDXGIFactory1 hr=0x00000000 (dxgi NATIVO vivo)
+[13:00:35] warp: stage2: D3D11CreateDevice(WARP) hr=0x00000000 featureLevel=45056
+[13:00:35] warp: stage3: WARP OK - D3D11 por CPU FUNCIONA nativamente nesta VM
+[13:00:35] sonda warp fim warpOk=True
+[13:00:35] warpwin (janela+swapchain+present) inicio
+[13:00:35] warpwin cl: warpwin.c
+[13:00:37] warpwin cl: D:\a\5\5\warpwin.c(26): error C4233: nonstandard extension used: '__uuidof' keyword only supported in C++, not C
+[13:00:37] warpwin cl: D:\a\5\5\warpwin.c(26): error C2059: syntax error: ','
+[13:00:37] warpwin cl: D:\a\5\5\warpwin.c(40): error C4233: nonstandard extension used: '__uuidof' keyword only supported in C++, not C
+[13:00:37] warpwin cl: D:\a\5\5\warpwin.c(40): error C2059: syntax error: ','
+[13:00:37] warpwin cl: D:\a\5\5\warpwin.c(46): error C2065: 'rtv': undeclared identifier
+[13:00:37] warpwin cl: D:\a\5\5\warpwin.c(46): error C2065: 'rtv': undeclared identifier
+[13:00:37] warpwin cl: D:\a\5\5\warpwin.c(46): error C2223: left of '->lpVtbl' must point to struct/union
+[13:00:37] warpwin cl: D:\a\5\5\warpwin.c(46): error C2065: 'rtv': undeclared identifier
+[13:00:37] warpwin cl: D:\a\5\5\warpwin.c(46): warning C4047: 'function': 'const IID *const ' differs in levels of indirection from 'int'
+[13:00:37] warpwin cl: D:\a\5\5\warpwin.c(46): warning C4024: 'function through pointer': different types for formal and actual parameter 3
+[13:00:37] warpwin cl: D:\a\5\5\warpwin.c(47): error C2065: 'rt': undeclared identifier
+[13:00:37] warpwin cl: D:\a\5\5\warpwin.c(47): error C2065: 'rt': undeclared identifier
+[13:00:37] warpwin cl: D:\a\5\5\warpwin.c(47): error C2223: left of '->lpVtbl' must point to struct/union
+[13:00:37] warpwin cl: D:\a\5\5\warpwin.c(47): error C2065: 'rt': undeclared identifier
+[13:00:37] warpwin cl: D:\a\5\5\warpwin.c(47): warning C4022: 'function through pointer': pointer mismatch for actual parameter 4
+[13:00:37] warpwin cl: D:\a\5\5\warpwin.c(49): error C2059: syntax error: 'return'
+[13:00:37] warpwin cl: D:\a\5\5\warpwin.c(50): error C2059: syntax error: '}'
+[13:00:37] warpwin cl: D:\a\5\5\warpwin.c(51): fatal error C1021: invalid preprocessor command 'v59'
+[13:00:38] warpwin.exe nao compilou
+[13:00:38] sonda dxgi-enum inicio
+[13:00:38] dxgienum exit=0
+[13:00:38] enum: stage1: factory ok
+[13:00:38] enum: adapter[0] = OE
+[13:00:38] enum: adapter[1] = OE
+[13:00:38] enum: total adapters: 2 (WARP visivel pro engine!)
+[13:00:38] sonda dxgi-enum fim
+[13:00:39] mesa 7z: 70257286 bytes
+[13:00:45] dxvk tar.gz: 10310666 bytes
+[13:00:45] tar dxvk inicio
+[13:00:45] tar dxvk fim rc=0
+[13:00:45] copias dxvk jogo inicio
+[13:00:45] copias dxvk jogo fim
+[13:00:45] dxvk system32 PULADO — WARP vivo, System32 INTACTO
+[13:00:45] vulkan loader antes: x64=False x86=False
+[13:00:45] baixando VulkanRT X64 installer (LunarG 1.4.363.0)
+[13:00:46] vulkanrt x64 installer: 25699768 bytes
+[13:00:46] vulkanrt x64 install exit=0
+[13:00:46] vulkan loader depois: x64=True x86=True
+[13:00:46] vktest inicio
+[13:00:47] vktest lvp264 PULADO (WARP venceu)
+[13:00:47] vktest dzn264 PULADO (WARP venceu)
+[13:00:47] NENHUM ICD Vulkan passou — boots dx11 vao rodar com o ICD padrao (26.2.4)
+[13:00:47] wgl64 inicio
+[13:00:47] wgl64 csc inicio
+[13:00:47] wgl64 csc fim
+[13:00:47] wgl64 run inicio
+[13:00:49] wgl64 run fim exit=0
+[13:00:49] wgl-janela inicio
+[13:00:49] winwgl run inicio
+[13:00:49] winwgl exit=-1073741819
+[13:00:49] winwgl: stage1: janela criada hwnd=327750
+[13:00:49] winwgl: stage2: GetDC(janela) ok
+[13:00:49] winwgl: stage3: ChoosePixelFormat ok pf=63
+[13:00:49] winwgl: 
+[13:00:49] winwgl: Unhandled Exception: System.AccessViolationException: Attempted to read or write protected memory. This is often an indication that other memory is corrupt.
+[13:00:49] winwgl:    at WinWglTest.SetPixelFormatN(IntPtr hdc, Int32 ipf, IntPtr pfd)
+[13:00:49] winwgl:    at WinWglTest.Main()
+[13:00:49] wgl-janela fim winWglOk=False
+[13:00:49] winwgl falhou na 26.2.4 — baixando Mesa 25.3.6
+[13:00:50] mesa 25.3.6: 66716214 bytes
+[13:00:53] 7z 25.3.6 exit=0
+[13:00:53] 253w: C:\Windows\System32\opengl32.dll
+[13:00:53] 253w: C:\Windows\System32\libgallium_wgl.dll
+[13:00:53] 253w: C:\Windows\System32\libEGL.dll
+[13:00:53] 253w: C:\Windows\System32\libGLESv1_CM.dll
+[13:00:53] 253w: C:\Windows\System32\libGLESv2.dll
+[13:00:53] 253w: C:\Windows\SysWOW64\opengl32.dll
+[13:00:53] 253w: C:\Windows\SysWOW64\libgallium_wgl.dll
+[13:00:53] 253w: C:\Windows\SysWOW64\libEGL.dll
+[13:00:53] 253w: C:\Windows\SysWOW64\libGLESv1_CM.dll
+[13:00:53] 253w: C:\Windows\SysWOW64\libGLESv2.dll
+[13:00:53] winwgl(25.3.6) run inicio
+[13:00:53] winwgl(25.3.6) exit=-1073741819
+[13:00:53] winwgl253: stage1: janela criada hwnd=393286
+[13:00:53] winwgl253: stage2: GetDC(janela) ok
+[13:00:53] winwgl253: stage3: ChoosePixelFormat ok pf=43
+[13:00:53] winwgl253: 
+[13:00:53] winwgl253: Unhandled Exception: System.AccessViolationException: Attempted to read or write protected memory. This is often an indication that other memory is corrupt.
+[13:00:53] winwgl253:    at WinWglTest.SetPixelFormatN(IntPtr hdc, Int32 ipf, IntPtr pfd)
+[13:00:53] winwgl253:    at WinWglTest.Main()
+[13:00:55] pnp display: Microsoft Hyper-V Video [VMBUS\{DA0A7802-E377-4AAC-8E77-0558EB1073F8}\{5620E0C7-8062-4DCE-AEB7-520C7EF76171}]
+[13:00:55] desativando adapter de video: Microsoft Hyper-V Video
+[13:01:03] adapter desativado — desktop no Basic Render Driver agora?
+[13:01:03] pnp display pos: Microsoft Hyper-V Video [Error]
+[13:01:03] winwgl(pos-pnp) run inicio
+[13:01:04] winwgl(pos-pnp) exit=-1073741819
+[13:01:04] winwglpnp: stage1: janela criada hwnd=197068
+[13:01:04] winwglpnp: stage2: GetDC(janela) ok
+[13:01:04] winwglpnp: stage3: ChoosePixelFormat ok pf=43
+[13:01:04] winwglpnp: 
+[13:01:04] winwglpnp: Unhandled Exception: System.AccessViolationException: Attempted to read or write protected memory. This is often an indication that other memory is corrupt.
+[13:01:04] winwglpnp:    at WinWglTest.SetPixelFormatN(IntPtr hdc, Int32 ipf, IntPtr pfd)
+[13:01:04] winwglpnp:    at WinWglTest.Main()
+[13:01:04] warppnp: stage0: GetDC(NULL)=687933334 (desktop ok)
+[13:01:04] warppnp: stage1: CreateDXGIFactory1 hr=0x00000000 (dxgi NATIVO vivo)
+[13:01:04] warppnp: stage2: D3D11CreateDevice(WARP) hr=0x00000000 featureLevel=45056
+[13:01:04] warppnp: stage3: WARP OK - D3D11 por CPU FUNCIONA nativamente nesta VM
+[13:01:04] enum-pos-pnp: stage1: factory ok
+[13:01:04] enum-pos-pnp: adapter[0] = O?
+[13:01:04] enum-pos-pnp: adapter[1] = O?
+[13:01:04] enum-pos-pnp: total adapters: 2 (WARP visivel pro engine!)
+[13:01:04] wgl32 csc inicio
+[13:01:04] wgl32 csc fim
+[13:01:04] wgl32 run inicio
+[13:01:07] wgl32 run fim exit=0
+[13:01:07] WARP vivo — restaurando d3d11/dxgi NATIVOS e bootando SEM DXVK
+[13:01:07] shim: compilando d3d11.dll (x64) em C:\ets2demo\bin\win_x64
+[13:01:07] shim: d3d11_real do System32 atual
+[13:01:07] shim: exports do real (51): CreateDirect3D11DeviceFromDXGIDevice,CreateDirect3D11SurfaceFromDXGISurface,D3D11CoreCreateDevice,D3D11CoreCreateLayeredDevice,D3D11CoreGetLayeredDeviceSize,D3D11CoreRegisterLayers,D3D11CreateDevice,D3D11CreateDeviceAndSwapChain,D3D11CreateDeviceForD3D12,D3D11On12CreateDevice,D3DKMTCloseAdapter,D3DKMTCreateAllocation,D3DKMTCreateContext,D3DKMTCreateDevice,D3DKMTCreateSynchronizationObject,D3DKMTDestroyAllocation,D3DKMTDestroyContext,D3DKMTDestroyDevice,D3DKMTDestroySynchronizationObject,D3DKMTEscape,D3DKMTGetContextSchedulingPriority,D3DKMTGetDeviceState,D3DKMTGetDisplayModeList,D3DKMTGetMultisampleMethodList,D3DKMTGetRuntimeData,D3DKMTGetSharedPrimaryHandle,D3DKMTLock,D3DKMTOpenAdapterFromHdc,D3DKMTOpenResource,D3DKMTPresent,D3DKMTQueryAdapterInfo,D3DKMTQueryAllocationResidency,D3DKMTQueryResourceInfo,D3DKMTRender,D3DKMTSetAllocationPriority,D3DKMTSetContextSchedulingPriority,D3DKMTSetDisplayMode,D3DKMTSetDisplayPrivateDriverFormat,D3DKMTSetGammaRamp,D3DKMTSetVidPnSourceOwner,D3DKMTSignalSynchronizationObject,D3DKMTUnlock,D3DKMTWaitForSynchronizationObject,D3DKMTWaitForVerticalBlankEvent,D3DPerformance_BeginEvent,D3DPerformance_EndEvent,D3DPerformance_GetStatus,D3DPerformance_SetMarker,EnableFeatureLevelUpgrade,OpenAdapter10,OpenAdapter10_2
+[13:01:07] shim cl: d3d11shim.c
+[13:01:07] shim cl: D:\a\5\5\d3d11shim.c(28): error C2065: '_SH_DENYNO': undeclared identifier
+[13:01:07] shim cl: D:\a\5\5\d3d11shim.c(53): warning C4028: formal parameter 8 different from declaration
+[13:01:07] shim cl: D:\a\5\5\d3d11shim.c(54): warning C4028: formal parameter 9 different from declaration
+[13:01:07] shim cl: D:\a\5\5\d3d11shim.c(72): warning C4028: formal parameter 8 different from declaration
+[13:01:07] shim cl: D:\a\5\5\d3d11shim.c(73): warning C4028: formal parameter 9 different from declaration
+[13:01:07] shim cl: D:\a\5\5\d3d11shim.c(73): warning C4028: formal parameter 10 different from declaration
+[13:01:07] shim cl: D:\a\5\5\d3d11shim.c(74): warning C4028: formal parameter 11 different from declaration
+[13:01:07] shim cl: D:\a\5\5\d3d11shim.c(74): warning C4028: formal parameter 12 different from declaration
+[13:01:07] shim cl: D:\a\5\5\d3d11shim.c(111): fatal error C1021: invalid preprocessor command 'v59'
+[13:01:07] shim: INSTALADO C:\ets2demo\bin\win_x64\d3d11.dll (+d3d11_real.dll)
+[13:01:07] shim exp: Dump of file C:\ets2demo\bin\win_x64\d3d11.dll
+[13:01:07] shim exp: Section contains the following exports for D3D11.DLL
+[13:01:07] shim exp: 18    0 0002CD20 D3D11CoreCreateDevice
+[13:01:07] shim exp: 22    1 0002CCC0 D3D11CreateDevice
+[13:01:07] shim exp: 23    2 0002CC80 D3D11CreateDeviceAndSwapChain
+[13:01:07] shim exp: 24    3 0002CD90 D3D11On12CreateDevice
+[13:01:07] boot x64 dx11 SHIM WARP inicio
+[13:01:09] boot x64 dx11 SHIM WARP: pid 2176
+[13:01:14] boot x64 dx11 SHIM WARP iter 1/120 vivo=True cpu=0.8 thr=17
+[13:01:14] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:01:19] boot x64 dx11 SHIM WARP iter 2/120 vivo=True cpu=0.9 thr=17
+[13:01:19] probe mmf (iter 2): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:01:24] boot x64 dx11 SHIM WARP iter 3/120 vivo=True cpu=0.9 thr=17
+[13:01:24] probe mmf (iter 3): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:01:29] boot x64 dx11 SHIM WARP iter 4/120 vivo=False cpu=-1 thr=0
+[13:01:29] boot x64 dx11 SHIM WARP FIM vivo=False
+[13:01:29] shimlog AUSENTE — o jogo NAO carregou o d3d11.dll local
+[13:01:29] boot shim WARP nao deu MMF — recolocando DXVK p/ fallbacks
+[13:01:29] boot x64 rdevice gl inicio
+[13:01:31] boot x64 rdevice gl: pid 964
+[13:01:36] boot x64 rdevice gl iter 1/120 vivo=True cpu=0.7 thr=17
+[13:01:36] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:01:41] boot x64 rdevice gl iter 2/120 vivo=True cpu=0.7 thr=17
+[13:01:41] probe mmf (iter 2): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:01:46] boot x64 rdevice gl iter 3/120 vivo=False cpu=-1 thr=0
+[13:01:46] boot x64 rdevice gl FIM vivo=False
+[13:01:46] boot x86 gl llvmpipe inicio
+[13:01:48] boot x86 gl llvmpipe: pid 5812
+[13:01:53] boot x86 gl llvmpipe iter 1/30 vivo=True cpu=0.9 thr=17
+[13:01:53] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:01:58] boot x86 gl llvmpipe iter 2/30 vivo=False cpu=-1 thr=0
+[13:01:58] boot x86 gl llvmpipe FIM vivo=False
+[13:01:58] boot x86 gl zink inicio
+[13:02:00] boot x86 gl zink: pid 2400
+[13:02:05] boot x86 gl zink iter 1/30 vivo=False cpu=-1 thr=0
+[13:02:05] boot x86 gl zink FIM vivo=False
+[13:02:05] boot x86 gl safe llvmpipe inicio
+[13:02:07] boot x86 gl safe llvmpipe: pid 7840
+[13:02:12] boot x86 gl safe llvmpipe iter 1/30 vivo=True cpu=0.7 thr=17
+[13:02:12] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:02:17] boot x86 gl safe llvmpipe iter 2/30 vivo=False cpu=-1 thr=0
+[13:02:17] boot x86 gl safe llvmpipe FIM vivo=False
+[13:02:18] boot x64 rdevice gl nointro inicio
+[13:02:20] boot x64 rdevice gl nointro: pid 1416
+[13:02:25] boot x64 rdevice gl nointro iter 1/30 vivo=True cpu=0.7 thr=17
+[13:02:25] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:02:30] boot x64 rdevice gl nointro iter 2/30 vivo=True cpu=0.8 thr=17
+[13:02:30] probe mmf (iter 2): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:02:35] boot x64 rdevice gl nointro iter 3/30 vivo=False cpu=-1 thr=0
+[13:02:35] boot x64 rdevice gl nointro FIM vivo=False
