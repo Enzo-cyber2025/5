@@ -365,6 +365,7 @@ jobs:
       - name: Gate - the real APK was actually analysed
         run: |
           set -e
+          exec > >(tee "$RUNNER_TEMP/gate.txt") 2>&1
           echo "static evidence:"
           test -s "$RUNNER_TEMP/package.txt" || { echo "no package name"; exit 1; }
           grep -q '^com.google.android.apps' "$RUNNER_TEMP/package.txt" \
@@ -437,10 +438,23 @@ jobs:
             for f in abe-info.txt tree.txt private-dir.txt shared-prefs.txt backup-size.txt abe-scan.txt; do
               [ -s "$W/$f" ] && { echo "**$f**"; echo '```'; head -25 "$W/$f"; echo '```'; }
             done
-            echo "**run.log (tail)**"
+            echo "**gate.txt**"
             echo '```'
-            tail -50 "$W/run.log" 2>/dev/null || echo "(no log)"
+            cat "$RUNNER_TEMP/gate.txt" 2>/dev/null || echo "(no verdict)"
             echo '```'
+            echo "**two profiles (head)**"
+            echo '```'
+            head -60 "$W/stdout.txt" 2>/dev/null || echo "(no output)"
+            echo '```'
+            echo "**two profiles (tail)**"
+            echo '```'
+            tail -70 "$W/stdout.txt" 2>/dev/null || echo "(no output)"
+            echo '```'
+            for f in users.txt install-parent.txt install-child.txt process-parent.txt \
+                     process-child.txt package-parent.txt privatedir-parent.txt \
+                     prefs-parent.txt backup-size.txt abe-scan.txt; do
+              [ -s "$W/$f" ] && { echo "**$f**"; echo '```'; head -20 "$W/$f"; echo '```'; }
+            done
           } > "$RUNNER_TEMP/summary.md"
           gh pr comment "$pr" --body-file "$RUNNER_TEMP/summary.md"
 
