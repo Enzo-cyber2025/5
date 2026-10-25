@@ -32,6 +32,14 @@ PACKAGE_HELPER="com.google.android.apps.kids.familylinkhelper"
 # published bundle is usually ARM-only, so this is what decides whether the app
 # can be *run* or only *inspected*
 ARCH="${FLCODES_ARCH:-arm64-v8a;armeabi-v7a;x86_64;x86}"
+# apkeep publishes one binary per host; asking for the x86_64 one on an aarch64
+# runner fails with "cannot execute binary file"
+case "$(uname -m)" in
+  aarch64|arm64) APKEEP_ASSET="apkeep-aarch64-unknown-linux-gnu" ;;
+  armv7l|armv7*) APKEEP_ASSET="apkeep-armv7-unknown-linux-gnueabihf" ;;
+  x86_64|amd64)  APKEEP_ASSET="apkeep-x86_64-unknown-linux-gnu" ;;
+  *)             APKEEP_ASSET="apkeep-x86_64-unknown-linux-gnu" ;;
+esac
 VERSION="latest"
 
 while [[ $# -gt 0 ]]; do
@@ -156,7 +164,7 @@ try_apkeep() {
   if [[ ! -x "$bin" ]]; then
     local url
     url="$(gh api repos/EFForg/apkeep/releases/latest \
-            --jq '[.assets[] | select(.name == "apkeep-x86_64-unknown-linux-gnu") | .browser_download_url] | .[0]' \
+            --jq "[.assets[] | select(.name == \"$APKEEP_ASSET\") | .browser_download_url] | .[0]" \
             2>/dev/null || true)"
     url="$(printf '%s' "$url" | head -1 | tr -d '[:space:]')"
     if [[ ! "$url" =~ ^https:// ]]; then
@@ -184,7 +192,7 @@ ensure_apkeep() {
   [[ -x "$bin" ]] && return 0
   local url
   url="$(gh api repos/EFForg/apkeep/releases/latest \
-          --jq '[.assets[] | select(.name == "apkeep-x86_64-unknown-linux-gnu") | .browser_download_url] | .[0]' \
+          --jq "[.assets[] | select(.name == \"$APKEEP_ASSET\") | .browser_download_url] | .[0]" \
           2>/dev/null || true)"
   url="$(printf '%s' "$url" | head -1 | tr -d '[:space:]')"
   [[ "$url" =~ ^https:// ]] || { log "apkeep: asset not found"; return 1; }
