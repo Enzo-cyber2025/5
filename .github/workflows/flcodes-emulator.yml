@@ -683,15 +683,21 @@ jobs:
           path: ${{ runner.temp }}/realapps/
 
   real-arm:
-    # The published bundle is ARM-only. On an x86 runner the SDK emulator has no
-    # arm64 system image to boot (it ships qemu-system-x86_64 only), so the one
-    # way to actually run the app is an ARM64 runner with KVM.
+    # The published bundle is ARM-only (no x86 split exists on the mirror), so
+    # running it needs an ARM guest. This job brings its own Android SDK: the
+    # ARM runner does not ship one.
     name: real APK on an ARM64 runner
     runs-on: ubuntu-24.04-arm
-    timeout-minutes: 120
+    timeout-minutes: 150
     needs: unit
+    env:
+      ANDROID_SDK_ROOT: ${{ github.workspace }}/../sdk
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -700,37 +706,54 @@ jobs:
           set -e
           python3 -m pip install --quiet pytest cryptography
           sudo apt-get update -qq
-          sudo apt-get install -y -qq libpulse0 libx11-6 libxcb1 libxdamage1 libxext6 \
-            libxfixes3 libxrender1 libxtst6 libnss3 libxkbfile1 2>/dev/null || true
-      - name: Is an ARM64 system image installable here?
-        id: availability
+          sudo apt-get install -y -qq unzip libpulse0 libx11-6 libxcb1 \
+            libxdamage1 libxext6 libxfixes3 libxrender1 libxtst6 libnss3 \
+            libxkbfile1 2>/dev/null || true
+      - name: Bring an Android SDK to this ARM host
+        id: sdk
         run: |
           set +e
           {
-          echo "host: $(uname -m) / $(nproc) cores"
-          ls -l /dev/kvm 2>/dev/null || echo "no /dev/kvm"
-          SDK="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}"
-          yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1
-          for image in "system-images;android-30;google_apis;arm64-v8a" \
-                       "system-images;android-31;google_apis;arm64-v8a" \
-                       "system-images;android-34;google_apis;arm64-v8a"; do
-            echo "== $image =="
-            "$SDK/cmdline-tools/latest/bin/sdkmanager" --list 2>/dev/null \
-              | grep -F "$image" | head -2
-          done
+          echo "host: $(uname -m), $(nproc) cores"
+          ls -l /dev/kvm 2>/dev/null || echo "no /dev/kvm (TCG only)"
+          SDK="$ANDROID_SDK_ROOT"
+          mkdir -p "$SDK/cmdline-tools"
+          if [ ! -x "$SDK/cmdline-tools/latest/bin/sdkmanager" ]; then
+            curl -fsSL -o /tmp/cmdline-tools.zip \
+              https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip \
+              || { echo "could not download cmdline-tools"; exit 0; }
+            unzip -q /tmp/cmdline-tools.zip -d /tmp/cmdline-tools
+            mv /tmp/cmdline-tools/cmdline-tools "$SDK/cmdline-tools/latest"
+          fi
+          echo "sdkmanager: $("$SDK/cmdline-tools/latest/bin/sdkmanager" --version 2>&1 | tail -1)"
           echo
-          echo "== emulator package for this host =="
-          echo "host: $(uname -m)"
-          ls "$SDK/emulator" 2>/dev/null | head -5 || echo "no emulator dir"
-          ls "$SDK/emulator/qemu/" 2>/dev/null || true
-          echo "== install the emulator package explicitly =="
-          "$SDK/cmdline-tools/latest/bin/sdkmanager" --install "emulator" 2>&1 | tail -8
-          echo "after: $(ls "$SDK/emulator/emulator" 2>/dev/null || echo missing)"
-          echo "== available system images for arm64 =="
+          echo "== is there an emulator build for linux-aarch64? =="
+          curl -fsSL https://dl.google.com/android/repository/repository2-3.xml -o /tmp/repo.xml \
+            && grep -o 'emulator-linux[^<"]*' /tmp/repo.xml | sort -u | head -10 \
+            || echo "(could not read the repository index)"
+          echo
+          echo "== arm64 system images offered to this host =="
+          yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1
           "$SDK/cmdline-tools/latest/bin/sdkmanager" --list 2>/dev/null \
-            | grep -E "^  system-images;android-(30|31|33|34|35);google_apis;arm64-v8a" | head -8
-          } > "$RUNNER_TEMP/availability.txt" 2>&1
-          cat "$RUNNER_TEMP/availability.txt"
+            | grep -E "system-images;android-(30|31|33|34);(google_apis|default);arm64-v8a" | head -8
+          } 2>&1 | tee "$RUNNER_TEMP/availability.txt"
+          if grep -q "emulator-linux_aarch64\|emulator-linux-aarch64" "$RUNNER_TEMP/availability.txt"; then
+            echo "emulator=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "emulator=no" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Install the SDK pieces (platform-tools, build-tools, emulator, image)
+        run: |
+          set +e
+          SDK="$ANDROID_SDK_ROOT"
+          SM="$SDK/cmdline-tools/latest/bin/sdkmanager"
+          [ -x "$SM" ] || { echo "no sdkmanager; nothing to install"; exit 0; }
+          yes | "$SM" --licenses >/dev/null 2>&1
+          "$SM" --install "platform-tools" "build-tools;34.0.0" 2>&1 | tail -3
+          "$SM" --install "emulator" 2>&1 | tail -5
+          echo "emulator binary: $(ls "$SDK/emulator/emulator" 2>/dev/null || echo missing)"
+          "$SM" --install "system-images;android-30;google_apis;arm64-v8a" 2>&1 | tail -4
+          ls "$SDK/system-images/android-30/google_apis/arm64-v8a" 2>/dev/null | head -5
       - name: Fetch the real APK (ARM bundle)
         env:
           GH_TOKEN: ${{ github.token }}
@@ -739,26 +762,28 @@ jobs:
           set +e
           bash family-link-codes/tools/fetch_familylink_apk.sh \
             --out "$RUNNER_TEMP/familylink" > "$RUNNER_TEMP/fetch.txt" 2>&1
-          cat "$RUNNER_TEMP/fetch.txt"
+          tail -20 "$RUNNER_TEMP/fetch.txt"
           tail -1 "$RUNNER_TEMP/familylink/apk-path.txt" 2>/dev/null
-          echo "---"
-      - name: Boot the ARM64 emulator (KVM on ARM)
+      - name: Boot the ARM64 emulator
         id: boot
         run: |
           set +e
-          export PATH="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/platform-tools:$PATH"
+          SDK="$ANDROID_SDK_ROOT"
+          export PATH="$SDK/platform-tools:$SDK/emulator:$PATH"
+          [ -x "$SDK/emulator/emulator" ] || { echo "boot=skip" >> "$GITHUB_OUTPUT"; \
+            echo "no emulator binary for linux-aarch64"; exit 0; }
           BOOT_TIMEOUT=2400 bash family-link-codes/tools/emulator_boot.sh \
             --work "$RUNNER_TEMP/emu-arm" --api 30 --tag google_apis \
             --abi arm64-v8a --timeout 2400 > "$RUNNER_TEMP/boot.txt" 2>&1
           status=$?
-          tail -25 "$RUNNER_TEMP/boot.txt"
-          echo "boot status: $status"
+          tail -20 "$RUNNER_TEMP/boot.txt"
           echo "boot=$status" >> "$GITHUB_OUTPUT"
       - name: Two profiles with the real APK on ARM
         if: steps.boot.outputs.boot == '0'
         run: |
           set +e
-          export PATH="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/platform-tools:$PATH"
+          SDK="$ANDROID_SDK_ROOT"
+          export PATH="$SDK/platform-tools:$PATH"
           export ANDROID_SERIAL="$(adb devices | awk 'NR>1 && $2=="device" {print $1; exit}')"
           mkdir -p "$RUNNER_TEMP/realarm"
           APK="$(tail -1 "$RUNNER_TEMP/familylink/apk-path.txt")"
@@ -780,35 +805,32 @@ jobs:
           [ -n "$pr" ] || exit 0
           W="$RUNNER_TEMP/realarm"
           {
-            echo "### APK real num guest ARM64 (QEMU/TCG)"
+            echo "### APK real num runner ARM64"
             echo
-            echo "host: $(uname -m) · /dev/kvm: $(ls /dev/kvm 2>/dev/null || echo none)"
-            echo "boot: $(cat "$RUNNER_TEMP/boot.txt" 2>/dev/null | grep -E "BOOTED|boot timeout|died|no emulator|installing system-images" | head -3 | tr '\n' ' ')"
-            echo "exit do teste: $(cat "$RUNNER_TEMP/realarm-status.txt" 2>/dev/null || echo 'n/a')"
-            echo
+            echo "boot: ${{ steps.boot.outputs.boot }} · exit do teste: $(cat "$RUNNER_TEMP/realarm-status.txt" 2>/dev/null || echo 'n/a')"
             if [ -s "$RUNNER_TEMP/availability.txt" ]; then
+              echo
               echo "**availability.txt**"
               echo '```'
-              tail -25 "$RUNNER_TEMP/availability.txt"
+              tail -22 "$RUNNER_TEMP/availability.txt"
               echo '```'
             fi
-            echo
             if [ -s "$RUNNER_TEMP/fetch.txt" ]; then
+              echo
               echo "**fetch.txt (tail)**"
               echo '```'
-              tail -25 "$RUNNER_TEMP/fetch.txt"
+              tail -12 "$RUNNER_TEMP/fetch.txt"
               echo '```'
             fi
-            echo
             for f in users.txt install-parent.txt install-child.txt process-parent.txt \
                      process-child.txt package-parent.txt privatedir-parent.txt prefs-parent.txt \
                      backup-size.txt abe-scan.txt; do
               [ -s "$W/$f" ] && { echo "**$f**"; echo '```'; head -20 "$W/$f"; echo '```'; }
             done
             if [ -s "$W/stdout.txt" ]; then
-              echo "**stdout.txt**"
+              echo "**stdout.txt (tail)**"
               echo '```'
-              tail -80 "$W/stdout.txt"
+              tail -60 "$W/stdout.txt"
               echo '```'
             fi
           } > "$RUNNER_TEMP/summary-arm.md"
@@ -822,4 +844,5 @@ jobs:
             ${{ runner.temp }}/realarm/
             ${{ runner.temp }}/boot.txt
             ${{ runner.temp }}/fetch.txt
+            ${{ runner.temp }}/availability.txt
           if-no-files-found: warn
