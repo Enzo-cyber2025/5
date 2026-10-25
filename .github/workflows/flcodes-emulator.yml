@@ -683,12 +683,12 @@ jobs:
           path: ${{ runner.temp }}/realapps/
 
   real-arm:
-    # The published bundle is ARM-only, so the only way to *run* it in CI is an
-    # ARM guest. There is no KVM for that on an x86 runner: it runs under TCG
-    # (pure emulation), which is slow, hence the generous timeout.
-    name: real APK on an ARM64 guest (QEMU TCG)
-    runs-on: ubuntu-latest
-    timeout-minutes: 150
+    # The published bundle is ARM-only. On an x86 runner the SDK emulator has no
+    # arm64 system image to boot (it ships qemu-system-x86_64 only), so the one
+    # way to actually run the app is an ARM64 runner with KVM.
+    name: real APK on an ARM64 runner
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 120
     needs: unit
     steps:
       - uses: actions/checkout@v4
@@ -706,6 +706,8 @@ jobs:
         id: availability
         run: |
           set +e
+          echo "host: $(uname -m) / $(nproc) cores"
+          ls -l /dev/kvm 2>/dev/null || echo "no /dev/kvm"
           SDK="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}"
           yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1
           for image in "system-images;android-30;google_apis;arm64-v8a" \
@@ -733,14 +735,14 @@ jobs:
             --out "$RUNNER_TEMP/familylink" > "$RUNNER_TEMP/fetch.txt" 2>&1
           cat "$RUNNER_TEMP/fetch.txt"
           tail -1 "$RUNNER_TEMP/familylink/apk-path.txt" 2>/dev/null
-      - name: Boot the ARM64 guest
+      - name: Boot the ARM64 emulator (KVM on ARM)
         id: boot
         run: |
           set +e
           export PATH="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/platform-tools:$PATH"
-          BOOT_TIMEOUT=3600 bash family-link-codes/tools/emulator_boot.sh \
+          BOOT_TIMEOUT=2400 bash family-link-codes/tools/emulator_boot.sh \
             --work "$RUNNER_TEMP/emu-arm" --api 30 --tag google_apis \
-            --abi arm64-v8a --accel off --timeout 3600 > "$RUNNER_TEMP/boot.txt" 2>&1
+            --abi arm64-v8a --timeout 2400 > "$RUNNER_TEMP/boot.txt" 2>&1
           status=$?
           tail -25 "$RUNNER_TEMP/boot.txt"
           echo "boot status: $status"
@@ -773,7 +775,7 @@ jobs:
           {
             echo "### APK real num guest ARM64 (QEMU/TCG)"
             echo
-            echo "qemu-system-aarch64 presente: ${{ steps.availability.outputs.arm64 }}"
+            echo "host: $(uname -m) · /dev/kvm: $(ls /dev/kvm 2>/dev/null || echo none)"
             echo "boot: $(cat "$RUNNER_TEMP/boot.txt" 2>/dev/null | grep -E "BOOTED|boot timeout|died|no emulator|installing system-images" | head -3 | tr '\n' ' ')"
             echo "exit do teste: $(cat "$RUNNER_TEMP/realarm-status.txt" 2>/dev/null || echo 'n/a')"
             echo
