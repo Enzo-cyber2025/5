@@ -2405,10 +2405,15 @@ jobs:
             # listar adapter nenhum (game-log-x64-dx11-SHIM-WARP). "SEM DXVK"
             # tem que valer pro win_x64 tambem — o dxgi NATIVO enumera 2
             # adapters (provado na sonda) e o d3d11 local sera o NOSSO shim.
-            foreach ($dx in @("d3d11.dll","dxgi.dll","d3d10core.dll","d3d9.dll")) {
-              $dxp = Join-Path $bin64 $dx
-              if (Test-Path $dxp) { Remove-Item $dxp -Force; Trace "DXVK removido da pasta do jogo: $dx" }
-            }
+            # v61: $bin64 ANTES do uso (v60 morreu em Join-Path $null aqui) e
+            # try/catch — limpeza falhando nao pode matar o step inteiro.
+            $bin64 = "C:\ets2demo\bin\win_x64"
+            try {
+              foreach ($dx in @("d3d11.dll","dxgi.dll","d3d10core.dll","d3d9.dll")) {
+                $dxp = Join-Path $bin64 $dx
+                if (Test-Path $dxp) { Remove-Item $dxp -Force; Trace "DXVK removido da pasta do jogo: $dx" }
+              }
+            } catch { Trace "limpeza DXVK falhou (seguimos): $($_.Exception.Message)" }
             # v57: SHIM d3d11 WARP — a causa-raiz do dx11: o engine cria o
             # device no adapter Hyper-V/tipo HARDWARE ("at detection stage")
             # e NUNCA tenta WARP — mas D3D11CreateDevice(WARP) FUNCIONA aqui
@@ -2420,7 +2425,6 @@ jobs:
             # Tudo em d3d11shim.log AO LADO DO EXE.
             $shimOk = $false
             try {
-              $bin64 = "C:\ets2demo\bin\win_x64"
               if (Test-Path $bin64) {
                 Trace "shim: compilando d3d11.dll (x64) em $bin64"
                 @'
