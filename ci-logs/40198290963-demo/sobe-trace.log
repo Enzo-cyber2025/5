@@ -1,0 +1,109 @@
+[13:49:05] SOBE inicio
+[13:49:05] sonda warp/dxgi inicio (system32 virgem)
+[13:49:08] warptest run inicio
+[13:49:08] warptest exit=0
+[13:49:08] warp: stage0: GetDC(NULL)=167839360 (desktop ok)
+[13:49:08] warp: stage1: CreateDXGIFactory1 hr=0x00000000 (dxgi NATIVO vivo)
+[13:49:08] warp: stage2: D3D11CreateDevice(WARP) hr=0x00000000 featureLevel=45056
+[13:49:08] warp: stage3: WARP OK - D3D11 por CPU FUNCIONA nativamente nesta VM
+[13:49:08] sonda warp fim warpOk=True
+[13:49:08] warpwin (janela+swapchain+present) inicio
+[13:49:08] warpwin cl: warpwin.c
+[13:49:15] warpwin exit=0 — SWAPCHAIN EM JANELA FUNCIONA (dx11 viavel E2E)
+[13:49:15] warpwin: stage1: CreateWindow hwnd=000000000004010A
+[13:49:15] warpwin: stage2: D3D11CreateDevice(WARP) hr=0x00000000 fl=45056
+[13:49:15] warpwin: stage3: CreateDXGIFactory1 hr=0x00000000
+[13:49:15] warpwin: stage4: CreateSwapChain hr=0x00000000
+[13:49:15] warpwin: stage5: Clear+Present hr=0x00000000 (dx11 EM JANELA ponta a ponta)
+[13:49:15] sonda dxgi-enum inicio
+[13:49:15] dxgienum exit=0
+[13:49:15] enum: stage1: factory ok
+[13:49:15] enum: adapter[0] = On
+[13:49:15] enum: adapter[1] = On
+[13:49:15] enum: total adapters: 2 (WARP visivel pro engine!)
+[13:49:15] sonda dxgi-enum fim
+[13:49:16] mesa 7z: 70257286 bytes
+[13:49:22] dxvk tar.gz: 10310666 bytes
+[13:49:22] tar dxvk inicio
+[13:49:23] tar dxvk fim rc=0
+[13:49:23] copias dxvk jogo inicio
+[13:49:23] copias dxvk jogo fim
+[13:49:23] dxvk system32 PULADO — WARP vivo, System32 INTACTO
+[13:49:23] vulkan loader antes: x64=False x86=False
+[13:49:23] baixando VulkanRT X64 installer (LunarG 1.4.363.0)
+[13:49:23] vulkanrt x64 installer: 25699768 bytes
+[13:49:27] vulkanrt x64 install exit=0
+[13:49:27] vulkan loader depois: x64=True x86=True
+[13:49:27] vktest inicio
+[13:49:27] vktest lvp264 PULADO (WARP venceu)
+[13:49:27] vktest dzn264 PULADO (WARP venceu)
+[13:49:27] NENHUM ICD Vulkan passou — boots dx11 vao rodar com o ICD padrao (26.2.4)
+[13:49:27] wgl64 inicio
+[13:49:27] wgl64 csc inicio
+[13:49:27] wgl64 csc fim
+[13:49:27] wgl64 run inicio
+[13:49:29] wgl64 run fim exit=0
+[13:49:29] wgl-janela inicio
+[13:49:29] winwgl run inicio
+[13:49:30] winwgl exit=-1073741819
+[13:49:30] winwgl: stage1: janela criada hwnd=459074
+[13:49:30] winwgl: stage2: GetDC(janela) ok
+[13:49:30] winwgl: stage3: ChoosePixelFormat ok pf=63
+[13:49:30] winwgl: 
+[13:49:30] winwgl: Unhandled Exception: System.AccessViolationException: Attempted to read or write protected memory. This is often an indication that other memory is corrupt.
+[13:49:30] winwgl:    at WinWglTest.SetPixelFormatN(IntPtr hdc, Int32 ipf, IntPtr pfd)
+[13:49:30] winwgl:    at WinWglTest.Main()
+[13:49:30] wgl-janela fim winWglOk=False
+[13:49:30] winwgl falhou na 26.2.4 — baixando Mesa 25.3.6
+[13:49:31] mesa 25.3.6: 66716214 bytes
+[13:49:35] 7z 25.3.6 exit=0
+[13:49:35] 253w: C:\Windows\System32\opengl32.dll
+[13:49:35] 253w: C:\Windows\System32\libgallium_wgl.dll
+[13:49:35] 253w: C:\Windows\System32\libEGL.dll
+[13:49:35] 253w: C:\Windows\System32\libGLESv1_CM.dll
+[13:49:35] 253w: C:\Windows\System32\libGLESv2.dll
+[13:49:35] 253w: C:\Windows\SysWOW64\opengl32.dll
+[13:49:35] 253w: C:\Windows\SysWOW64\libgallium_wgl.dll
+[13:49:35] 253w: C:\Windows\SysWOW64\libEGL.dll
+[13:49:35] 253w: C:\Windows\SysWOW64\libGLESv1_CM.dll
+[13:49:35] 253w: C:\Windows\SysWOW64\libGLESv2.dll
+[13:49:35] winwgl(25.3.6) run inicio
+[13:49:37] winwgl(25.3.6) exit=-1073741819
+[13:49:37] winwgl253: stage1: janela criada hwnd=524610
+[13:49:37] winwgl253: stage2: GetDC(janela) ok
+[13:49:37] winwgl253: stage3: ChoosePixelFormat ok pf=43
+[13:49:37] winwgl253: 
+[13:49:37] winwgl253: Unhandled Exception: System.AccessViolationException: Attempted to read or write protected memory. This is often an indication that other memory is corrupt.
+[13:49:37] winwgl253:    at WinWglTest.SetPixelFormatN(IntPtr hdc, Int32 ipf, IntPtr pfd)
+[13:49:37] winwgl253:    at WinWglTest.Main()
+[13:49:38] pnp display: Microsoft Hyper-V Video [VMBUS\{DA0A7802-E377-4AAC-8E77-0558EB1073F8}\{5620E0C7-8062-4DCE-AEB7-520C7EF76171}]
+[13:49:38] desativando adapter de video: Microsoft Hyper-V Video
+[13:49:46] adapter desativado — desktop no Basic Render Driver agora?
+[13:49:46] pnp display pos: Microsoft Hyper-V Video [Error]
+[13:49:46] winwgl(pos-pnp) run inicio
+[13:49:46] winwgl(pos-pnp) exit=-1073741819
+[13:49:46] winwglpnp: stage1: janela criada hwnd=328108
+[13:49:46] winwglpnp: stage2: GetDC(janela) ok
+[13:49:46] winwglpnp: stage3: ChoosePixelFormat ok pf=43
+[13:49:46] winwglpnp: 
+[13:49:46] winwglpnp: Unhandled Exception: System.AccessViolationException: Attempted to read or write protected memory. This is often an indication that other memory is corrupt.
+[13:49:46] winwglpnp:    at WinWglTest.SetPixelFormatN(IntPtr hdc, Int32 ipf, IntPtr pfd)
+[13:49:46] winwglpnp:    at WinWglTest.Main()
+[13:49:46] warppnp: stage0: GetDC(NULL)=1459685343 (desktop ok)
+[13:49:46] warppnp: stage1: CreateDXGIFactory1 hr=0x00000000 (dxgi NATIVO vivo)
+[13:49:46] warppnp: stage2: D3D11CreateDevice(WARP) hr=0x00000000 featureLevel=45056
+[13:49:46] warppnp: stage3: WARP OK - D3D11 por CPU FUNCIONA nativamente nesta VM
+[13:49:46] enum-pos-pnp: stage1: factory ok
+[13:49:46] enum-pos-pnp: adapter[0] = OW
+[13:49:46] enum-pos-pnp: adapter[1] = OW
+[13:49:46] enum-pos-pnp: total adapters: 2 (WARP visivel pro engine!)
+[13:49:47] warpwinpnp: stage1: CreateWindow hwnd=00000000000601AC
+[13:49:47] warpwinpnp: stage2: D3D11CreateDevice(WARP) hr=0x00000000 fl=45056
+[13:49:47] warpwinpnp: stage3: CreateDXGIFactory1 hr=0x00000000
+[13:49:47] warpwinpnp: stage4: CreateSwapChain hr=0x00000000
+[13:49:47] warpwinpnp: stage5: Clear+Present hr=0x00000000 (dx11 EM JANELA ponta a ponta)
+[13:49:47] wgl32 csc inicio
+[13:49:47] wgl32 csc fim
+[13:49:47] wgl32 run inicio
+[13:49:50] wgl32 run fim exit=0
+[13:49:50] WARP vivo — restaurando d3d11/dxgi NATIVOS e bootando SEM DXVK
