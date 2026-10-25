@@ -11,6 +11,7 @@ WORK="${WORK:-/tmp/flcodes-emu}"
 API="30"
 TAG="default"
 ABI="x86_64"
+ACCEL="auto"
 BOOT_TIMEOUT="${BOOT_TIMEOUT:-900}"
 SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
 
@@ -20,6 +21,7 @@ while [[ $# -gt 0 ]]; do
     --api) API="$2"; shift 2 ;;
     --tag) TAG="$2"; shift 2 ;;
     --abi) ABI="$2"; shift 2 ;;
+    --accel) ACCEL="$2"; shift 2 ;;
     --timeout) BOOT_TIMEOUT="$2"; shift 2 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
@@ -56,10 +58,14 @@ echo no | "$AVDMANAGER" create avd -n "$AVD" \
 
 # a Play Store image needs more RAM than the default
 RAM=2048; [[ "$TAG" == *playstore* ]] && RAM=3072
+# an ARM guest on an x86 host has no KVM: it runs under TCG, which is slow
+if [[ "$ABI" == arm* && "$ACCEL" == "auto" ]]; then ACCEL="off"; fi
+[[ "$ABI" == arm* ]] && RAM=3072
+echo "boot: abi $ABI, accel $ACCEL, ram $RAM"
 
 "$EMULATOR" -avd "$AVD" -no-window -no-audio -no-boot-anim -no-snapshot \
   -gpu swiftshader_indirect -camera-back none -camera-front none \
-  -accel auto -memory "$RAM" -cores 2 -wipe-data \
+  -accel "$ACCEL" -memory "$RAM" -cores 4 -wipe-data \
   > "$WORK/emulator.log" 2>&1 &
 EMULATOR_PID=$!
 echo "boot: pid $EMULATOR_PID, avd $AVD, image android-$API;$TAG;$ABI"

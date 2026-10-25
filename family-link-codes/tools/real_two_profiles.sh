@@ -85,7 +85,8 @@ switch_to() {
 }
 
 install_for() {  # install_for <uid> <label>
-  local uid="$1" label="$2" out="$WORK/install-$label.txt" status=0
+  local uid="$1" label="$2"
+  local out="$WORK/install-$label.txt" status=0
   switch_to "$uid" > "$WORK/state-$label.txt"
   cat "$WORK/state-$label.txt"
   if [[ -s "$SPLITS" ]] && [[ "$(wc -l < "$SPLITS")" -gt 1 ]]; then

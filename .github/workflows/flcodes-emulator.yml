@@ -681,3 +681,122 @@ jobs:
         with:
           name: flcodes-real-apps
           path: ${{ runner.temp }}/realapps/
+
+  real-arm:
+    # The published bundle is ARM-only, so the only way to *run* it in CI is an
+    # ARM guest. There is no KVM for that on an x86 runner: it runs under TCG
+    # (pure emulation), which is slow, hence the generous timeout.
+    name: real APK on an ARM64 guest (QEMU TCG)
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    needs: unit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Dependencies
+        run: |
+          set -e
+          python3 -m pip install --quiet pytest cryptography
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libpulse0 libx11-6 libxcb1 libxdamage1 libxext6 \
+            libxfixes3 libxrender1 libxtst6 libnss3 libxkbfile1 2>/dev/null || true
+      - name: Is an ARM64 system image installable here?
+        id: availability
+        run: |
+          set +e
+          SDK="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}"
+          yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1
+          for image in "system-images;android-30;google_apis;arm64-v8a" \
+                       "system-images;android-31;google_apis;arm64-v8a" \
+                       "system-images;android-34;google_apis;arm64-v8a"; do
+            echo "== $image =="
+            "$SDK/cmdline-tools/latest/bin/sdkmanager" --list 2>/dev/null \
+              | grep -F "$image" | head -2
+          done
+          echo
+          echo "== qemu binaries shipped with the emulator =="
+          ls "$SDK/emulator/qemu/linux-x86_64/" 2>/dev/null
+          if ls "$SDK/emulator/qemu/linux-x86_64/"qemu-system-aarch64 >/dev/null 2>&1; then
+            echo "arm64=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "arm64=no" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Fetch the real APK (ARM bundle)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FLCODES_APK_URL: ${{ secrets.FLCODES_APK_URL }}
+        run: |
+          set +e
+          bash family-link-codes/tools/fetch_familylink_apk.sh \
+            --out "$RUNNER_TEMP/familylink" > "$RUNNER_TEMP/fetch.txt" 2>&1
+          cat "$RUNNER_TEMP/fetch.txt"
+          tail -1 "$RUNNER_TEMP/familylink/apk-path.txt" 2>/dev/null
+      - name: Boot the ARM64 guest
+        id: boot
+        run: |
+          set +e
+          export PATH="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/platform-tools:$PATH"
+          BOOT_TIMEOUT=3600 bash family-link-codes/tools/emulator_boot.sh \
+            --work "$RUNNER_TEMP/emu-arm" --api 30 --tag google_apis \
+            --abi arm64-v8a --accel off --timeout 3600 > "$RUNNER_TEMP/boot.txt" 2>&1
+          status=$?
+          tail -25 "$RUNNER_TEMP/boot.txt"
+          echo "boot status: $status"
+          echo "boot=$status" >> "$GITHUB_OUTPUT"
+      - name: Two profiles with the real APK on ARM
+        if: steps.boot.outputs.boot == '0'
+        run: |
+          set +e
+          export PATH="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/platform-tools:$PATH"
+          export ANDROID_SERIAL="$(adb devices | awk 'NR>1 && $2=="device" {print $1; exit}')"
+          mkdir -p "$RUNNER_TEMP/realarm"
+          APK="$(tail -1 "$RUNNER_TEMP/familylink/apk-path.txt")"
+          bash family-link-codes/tools/real_two_profiles.sh \
+            --work "$RUNNER_TEMP/realarm" --apk "$APK" \
+            --splits "$RUNNER_TEMP/familylink/splits.txt" \
+            --package com.google.android.apps.kids.familylink \
+            > "$RUNNER_TEMP/realarm/stdout.txt" 2>&1
+          echo "$?" > "$RUNNER_TEMP/realarm-status.txt"
+          tail -40 "$RUNNER_TEMP/realarm/stdout.txt"
+      - name: Report on the PR
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e +o pipefail
+          pr="${{ github.event.pull_request.number }}"
+          [ -n "$pr" ] || pr="$(gh pr list --head "$GITHUB_REF_NAME" --json number -q '.[0].number' 2>/dev/null)"
+          [ -n "$pr" ] || exit 0
+          W="$RUNNER_TEMP/realarm"
+          {
+            echo "### APK real num guest ARM64 (QEMU/TCG)"
+            echo
+            echo "qemu-system-aarch64 presente: ${{ steps.availability.outputs.arm64 }}"
+            echo "boot: $(cat "$RUNNER_TEMP/boot.txt" 2>/dev/null | grep -E "BOOTED|boot timeout|died|no emulator|installing system-images" | head -3 | tr '\n' ' ')"
+            echo "exit do teste: $(cat "$RUNNER_TEMP/realarm-status.txt" 2>/dev/null || echo 'n/a')"
+            echo
+            for f in users.txt install-parent.txt install-child.txt process-parent.txt \
+                     process-child.txt package-parent.txt privatedir-parent.txt prefs-parent.txt \
+                     backup-size.txt abe-scan.txt; do
+              [ -s "$W/$f" ] && { echo "**$f**"; echo '```'; head -20 "$W/$f"; echo '```'; }
+            done
+            if [ -s "$W/stdout.txt" ]; then
+              echo "**stdout.txt**"
+              echo '```'
+              tail -80 "$W/stdout.txt"
+              echo '```'
+            fi
+          } > "$RUNNER_TEMP/summary-arm.md"
+          gh pr comment "$pr" --body-file "$RUNNER_TEMP/summary-arm.md"
+      - name: Upload the ARM evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flcodes-real-arm
+          path: |
+            ${{ runner.temp }}/realarm/
+            ${{ runner.temp }}/boot.txt
+            ${{ runner.temp }}/fetch.txt
+          if-no-files-found: warn
