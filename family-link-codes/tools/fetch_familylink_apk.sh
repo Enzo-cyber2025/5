@@ -81,8 +81,10 @@ try:
 except Exception:
     sys.exit(1)
 text = blob.decode("utf-16-le", errors="ignore") + blob.decode("latin-1", errors="ignore")
-match = re.search(r"((?:[a-z][a-z0-9_]*\.){2,}[a-z][a-z0-9_]*)", text)
-print(match.group(1) if match else "")
+# the string pool holds many identifiers; a package name is the com.* string with
+# the most dots ("android.accounts.action" and friends are not package names)
+candidates = [m for m in re.findall(r"\bcom(?:\.[a-z][a-z0-9_]*){2,}\b", text)]
+print(max(candidates, key=len) if candidates else "")
 PYEOF
 }
 

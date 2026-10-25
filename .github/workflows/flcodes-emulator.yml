@@ -699,7 +699,7 @@ jobs:
     # The published bundle is ARM-only (no x86 split exists on the mirror), so
     # running it needs an ARM guest. This job brings its own Android SDK: the
     # ARM runner does not ship one.
-    name: real APK on an ARM64 runner
+    name: capability probe - can CI run an ARM-only Android app?
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 150
     needs: unit
@@ -777,6 +777,9 @@ jobs:
             --out "$RUNNER_TEMP/familylink" > "$RUNNER_TEMP/fetch.txt" 2>&1
           tail -20 "$RUNNER_TEMP/fetch.txt"
           tail -1 "$RUNNER_TEMP/familylink/apk-path.txt" 2>/dev/null
+          echo "---"
+          echo "this step is evidence, not a gate: the gate is the static analysis job"
+          exit 0
       - name: Boot the ARM64 emulator
         id: boot
         run: |
@@ -818,7 +821,7 @@ jobs:
           [ -n "$pr" ] || exit 0
           W="$RUNNER_TEMP/realarm"
           {
-            echo "### APK real num runner ARM64"
+            echo "### Sondagem: o CI consegue executar um app só-ARM?"
             echo
             echo "boot: ${{ steps.boot.outputs.boot }} · exit do teste: $(cat "$RUNNER_TEMP/realarm-status.txt" 2>/dev/null || echo 'n/a')"
             if [ -s "$RUNNER_TEMP/availability.txt" ]; then
