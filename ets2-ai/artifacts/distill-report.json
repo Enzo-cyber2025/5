@@ -1,47 +1,47 @@
 {
-  "mse_stream": 0.0023546882439404726,
-  "p999_steer_stream": 0.26823002099990845,
-  "max_dsteer_stream": 0.3665787875652313,
-  "max_dbrake_stream": 0.8775812983512878,
+  "mse_stream": 0.002386794425547123,
+  "p999_steer_stream": 0.2021888941526413,
+  "max_dsteer_stream": 0.38914933800697327,
+  "max_dbrake_stream": 0.8526031970977783,
   "sign_ok_stream": 1.0,
-  "mse_box_real": 0.017268531024456024,
-  "p999_steer_box": 0.4697282314300537,
-  "max_dsteer_box": 0.882999062538147,
-  "sign_ok_box": 0.9990034877927254,
-  "mse_vs_expert_nano": 0.0038492900785058737,
-  "mse_vs_expert_teacher": 0.003346196608617902,
+  "mse_box_real": 0.016568507999181747,
+  "p999_steer_box": 0.6275705099105835,
+  "max_dsteer_box": 1.1177321672439575,
+  "sign_ok_box": 0.997864768683274,
+  "mse_vs_expert_nano": 0.003822748549282551,
+  "mse_vs_expert_teacher": 0.0026956461369991302,
   "closed_loop_teacher": {
     "roads": 6,
     "finish_rate": 1.0,
-    "in_lane_pct": 0.9699071843346979,
-    "avg_speed_kmh": 80.95227532530816,
-    "km_total": 56.581170306440036,
+    "in_lane_pct": 0.9997607709479732,
+    "avg_speed_kmh": 81.04572601273706,
+    "km_total": 56.531654928215346,
     "radar_compliance": 1.0,
     "radar_passes": 26,
-    "max_lat_accel": 3.175665778569022,
-    "gps_mean_abs_offset_m": 0.3003657109343759,
+    "max_lat_accel": 3.2026388690393253,
+    "gps_mean_abs_offset_m": 0.16714407696624292,
     "dock_rate": 1.0,
     "mean_stop_error_m": 2.571770893776678,
-    "top_speed_kmh": 90.37456858989076
+    "top_speed_kmh": 90.45560563786302
   },
   "closed_loop_nano": {
     "roads": 6,
     "finish_rate": 1.0,
-    "in_lane_pct": 0.9992103300803948,
-    "avg_speed_kmh": 80.33129567968344,
-    "km_total": 56.52636161263226,
+    "in_lane_pct": 0.9997657020028915,
+    "avg_speed_kmh": 79.35359298854904,
+    "km_total": 56.52226516028591,
     "radar_compliance": 1.0,
     "radar_passes": 26,
-    "max_lat_accel": 3.2314194881477567,
-    "gps_mean_abs_offset_m": 0.17707963392205897,
+    "max_lat_accel": 3.1738049291171304,
+    "gps_mean_abs_offset_m": 0.13540956488070088,
     "dock_rate": 1.0,
     "mean_stop_error_m": 2.571770893776678,
-    "top_speed_kmh": 89.59079883526799
+    "top_speed_kmh": 88.33024443354644
   },
-  "closed_loop_equiv": false,
+  "closed_loop_equiv": true,
   "closed_loop_quality": true,
-  "train_seconds": 1033.8,
-  "train_val_mse": 0.008326164661437464,
+  "train_seconds": 1040.3,
+  "train_val_mse": 0.008337447270539748,
   "config": {
     "n_stream": 400000,
     "n_box_real": 80000,
@@ -57,10 +57,8 @@
     ],
     "cl_roads": 6
   },
-  "gate_ok": false,
-  "gate_reasons": [
-    "malha fechada divergiu do professor"
-  ],
+  "gate_ok": true,
+  "gate_reasons": [],
   "teacher": {
     "hidden": [
       290,
@@ -77,6 +75,6 @@
       290,
       290
     ],
-    "final_loss": 0.004298556596040726
+    "final_loss": 0.004322516731917858
   }
 }

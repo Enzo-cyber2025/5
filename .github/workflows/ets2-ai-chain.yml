@@ -91,19 +91,44 @@ jobs:
               except Exception:
                   cur = {"mse_val": 9.9}
               if new["mse_val"] < cur.get("mse_val", 9.9):
-                  shutil.copyfile(".cache/kaggle-out/model-weights.json",
-                                  "artifacts/model-weights.json")
-                  # enriquece o metrics da cadeia com as chaves que o repo
-                  # espera (meta/target_met/weights_source) ANTES de copiar
-                  _wm = json.load(open(".cache/kaggle-out/model-weights.json"))["meta"]
-                  new["meta"] = _wm
-                  new["target_met"] = bool(
-                      new["mse_val"] <= new.get("loss_target", 0.15))
-                  new["weights_source"] = "cadeia-kaggle"
-                  json.dump(new, open("artifacts/metrics.json", "w"),
-                            indent=2)
-                  Path("/tmp/promoted").write_text("1")
-                  print(f"[chain] pesos PROMOVIDOS: val {new['mse_val']:.5f}")
+                  # v58: GATE ESTRITO = o MESMO do pytest
+                  # (test_policy_drives_closed_loop): roads 90210+k, seeds
+                  # 123+k, TODAS concluidas e MINIMO in_lane > 0.95.
+                  # A v57 provou que promover so pelo MSE (media em seeds
+                  # 777) degrada a direcao: pesos de 35,3 bi dirigiram com
+                  # 93% de faixa e quebraram TODOS os builds. O checkpoint
+                  # da cadeia continua versionado (treino segue), mas o
+                  # repo so recebe pesos que passam no gate do repo.
+                  import sys as _sys
+                  _sys.path.insert(0, ".")
+                  from ets2ai.contract import load_weights as _lw
+                  from ets2ai.sim import Road as _Road, run_episode as _run
+                  from ets2ai.train import policy_from_layers as _pfl
+                  _layers, _ = _lw(".cache/kaggle-out/model-weights.json")
+                  _pol = _pfl(_layers)
+                  _fins, _lanes = [], []
+                  for _k in range(3):
+                      _m = _run(_Road.random(90210 + _k), _pol, seed=123 + _k)
+                      _fins.append(_m["finished"])
+                      _lanes.append(_m["in_lane_pct"])
+                  _strict = all(_fins) and min(_lanes) > 0.95
+                  print(f"[chain] gate estrito pytest: fins={_fins} "
+                        f"lanes={[round(x, 4) for x in _lanes]} -> "
+                        f"{'PASS' if _strict else 'FALHOU — pesos NAO promovidos'}")
+                  if _strict:
+                      shutil.copyfile(".cache/kaggle-out/model-weights.json",
+                                      "artifacts/model-weights.json")
+                      # enriquece o metrics da cadeia com as chaves que o repo
+                      # espera (meta/target_met/weights_source) ANTES de copiar
+                      _wm = json.load(open(".cache/kaggle-out/model-weights.json"))["meta"]
+                      new["meta"] = _wm
+                      new["target_met"] = bool(
+                          new["mse_val"] <= new.get("loss_target", 0.15))
+                      new["weights_source"] = "cadeia-kaggle"
+                      json.dump(new, open("artifacts/metrics.json", "w"),
+                                indent=2)
+                      Path("/tmp/promoted").write_text("1")
+                      print(f"[chain] pesos PROMOVIDOS: val {new['mse_val']:.5f}")
               else:
                   print("[chain] pesos atuais continuam melhores")
           pct = cum / 500_000_000_000 * 100
