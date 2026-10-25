@@ -21,7 +21,13 @@ test: $(TARGETS)
 	@./prewarm --idle-ms 1 --max-seconds 30 $(FIXTURE_DLL) > $(FIXTURE_DLL).prewarm
 	@grep -q 'remaining ~' $(FIXTURE_DLL).prewarm
 	@grep -q 'blocks discovered:' $(FIXTURE_DLL).prewarm
-	@grep -q 'translated and cached:' $(FIXTURE_DLL).prewarm
+	@grep -q 'functions pre-translated:' $(FIXTURE_DLL).prewarm
+	@# The ranked refusal list is the point of this milestone: a coverage number
+	@# on its own is a dead end, and the same run has to say what is blocking.
+	@grep -q 'What is blocking the rest' $(FIXTURE_DLL).prewarm
+	@grep -q 'stopped at opcode FF' $(FIXTURE_DLL).prewarm
+	@grep -q 'refused: unsupported-opcode' $(FIXTURE_DLL).prewarm
+	@grep -q 'functions pre-translated:  *2  (66.67% of attempted)' $(FIXTURE_DLL).prewarm
 	@grep -q '2 export(s)' $(FIXTURE_DLL).prewarm
 	@echo "prewarm end to end: percentage and remaining time reported for a real file"
 	@echo
@@ -74,13 +80,15 @@ test_pe: test_pe_load.c pe_load.c pe_load.h
 
 # The sweep links the decoder, the PE parser, the cache and the encoder seed:
 # it is the first component that uses all of them together.
-test_sweep: test_sweep.c sweep.c sweep.h pe_load.c ptc.c x86_decode.c a64_emit.c
-	$(CC) $(CFLAGS) -o $@ test_sweep.c sweep.c pe_load.c ptc.c x86_decode.c a64_emit.c
+# The sweep drives the function translator, so it links the whole native core.
+CORE = pe_load.c ptc.c x86_decode.c a64_emit.c translate.c
+test_sweep: test_sweep.c sweep.c sweep.h $(CORE)
+	$(CC) $(CFLAGS) -o $@ test_sweep.c sweep.c $(CORE)
 
 # The pre-translation driver: sweeps real files and reports percentage plus
 # remaining time, modelling the screen-off window as a resumable time budget.
-prewarm: prewarm.c sweep.c pe_load.c ptc.c x86_decode.c a64_emit.c
-	$(CC) $(CFLAGS) -o $@ prewarm.c sweep.c pe_load.c ptc.c x86_decode.c a64_emit.c
+prewarm: prewarm.c sweep.c $(CORE)
+	$(CC) $(CFLAGS) -o $@ prewarm.c sweep.c $(CORE)
 
 # The end-to-end pipeline: PE exe and DLL in, decoded, translated, resolved,
 # emitted, executed on ARM64, persisted and reloaded from the cache.

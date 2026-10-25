@@ -15,6 +15,7 @@
 #include "sweep.h"
 
 #include "a64_emit.h"
+#include "translate.h"
 #include "x86_decode.h"
 
 #include <stdlib.h>
@@ -45,6 +46,15 @@ struct sweep_job {
     wl_entry *wl; size_t wl_n, wl_cap, wl_head;
     sweep_block *blocks; size_t nblocks, capblocks;
 
+    /* Entry points, kept separately from the discovery worklist because they are
+     * also the units of pre-translation. The worklist is consumed by discovery and
+     * would be empty by the time translation starts. */
+    struct { uint32_t mod; uint64_t va; } *entries;
+    size_t      nentries, capentries;
+
+    uint32_t    reason_hist[TRR_COUNT];
+    uint32_t    opcode_hist[4][256];
+
     sweep_phase phase;
     size_t      translate_idx;
     int         finished;
@@ -52,9 +62,10 @@ struct sweep_job {
     uint32_t entry_points;
     uint32_t indirect_unresolved;
     uint32_t decode_refusals;
-    uint32_t blocks_translated;
-    uint32_t blocks_untranslatable;
-    uint32_t blocks_stored;
+    uint32_t functions_attempted;
+    uint32_t functions_translated;
+    uint32_t functions_refused;
+    uint64_t host_code_bytes;
     uint64_t guest_bytes;
     uint64_t decode_calls;
 
@@ -119,6 +130,21 @@ static int wl_push(sweep_job *j, uint32_t mod, uint64_t va)
     j->wl[j->wl_n].mod = mod;
     j->wl[j->wl_n].va  = va;
     j->wl_n++;
+    return 1;
+}
+
+static int entry_push(sweep_job *j, uint32_t mod, uint64_t va)
+{
+    if (j->nentries + 1u > j->capentries) {
+        size_t nc = j->capentries ? j->capentries * 2u : 64u;
+        void  *ne = xrealloc(j->entries, nc * sizeof(*j->entries));
+        if (!ne) return 0;
+        j->entries = ne;
+        j->capentries = nc;
+    }
+    j->entries[j->nentries].mod = mod;
+    j->entries[j->nentries].va  = va;
+    j->nentries++;
     return 1;
 }
 
@@ -195,6 +221,7 @@ void sweep_free(sweep_job *j)
     if (!j) return;
     for (i = 0; i < j->nmods; i++) free(j->mods[i].visited);
     free(j->mods);
+    free(j->entries);
     free(j->wl);
     free(j->blocks);
     free(j);
@@ -246,12 +273,14 @@ int sweep_add_module(sweep_job *j, const char *name, uint64_t module_id,
     if (pe->entry_rva != 0) {
         if (wl_push(j, (uint32_t)(j->nmods - 1u), pe->image_base + pe->entry_rva))
             queued++;
+        entry_push(j, (uint32_t)(j->nmods - 1u), pe->image_base + pe->entry_rva);
     }
     for (i = 0; i < pe->num_exports; i++) {
         const pe_export_fn *e = &pe->exports[i];
         if (e->forwarded || e->rva == 0) continue;
         if (wl_push(j, (uint32_t)(j->nmods - 1u), pe->image_base + e->rva))
             queued++;
+        entry_push(j, (uint32_t)(j->nmods - 1u), pe->image_base + e->rva);
     }
     j->entry_points += queued;
     return (int)queued;
@@ -345,41 +374,119 @@ static void discover_one(sweep_job *j, uint32_t mi, uint64_t va)
 
 /* ----------------------------------------------------------- translation */
 
-/* Translates one block into host code, or returns 0 when it cannot.
+/* Pre-translates one FUNCTION, starting at an entry point.
  *
- * The only shape with a provably correct translation today is a block that is a
- * single 0xC3 RET: ARM64 RET has the same meaning, both return to the link
- * register / return address the caller set up, and no register or flag state is
- * touched. Everything else needs a lifter and a register allocation that do not
- * exist yet. Emitting a placeholder instead would not be a small shortcut - the
- * cache would later return a hit for it and the emulator would execute code that
- * has nothing to do with the guest bytes, with nothing to detect it. So the
- * honest result for those blocks is "not translated", counted and reported.
+ * The earlier version of this translated single basic blocks, and could only ever
+ * handle a block consisting of one bare RET: a block in isolation has no defined
+ * entry state and no way to leave, so there is nothing correct to emit for almost
+ * any of them. It reported 7 blocks translated out of 12770 on a real bundle,
+ * which measured the size of the shortcut rather than the state of the translator.
+ * A function is the smallest unit that is actually callable and cacheable.
+ *
+ * Imports are deliberately not resolved here. A pre-translation sweep runs before
+ * anything is loaded, so no host address exists for an imported function yet; a
+ * function that calls one is recorded as refused with TRR_NEEDS_TARGET rather than
+ * translated against a guess. Fixing that needs an indirection cell patched at
+ * load time, which is a runtime feature and not something a cache-warming pass can
+ * invent on its own.
  */
-static int translate_block(sweep_job *j, sweep_block *b)
+static int translate_entry(sweep_job *j, uint32_t mi, uint64_t va)
 {
-    const smod *m = &j->mods[b->module];
-    uint32_t    rva = (uint32_t)(b->guest_va - m->base);
-    uint32_t    within = 0;
+    smod    *m = &j->mods[mi];
+    uint32_t rva = (uint32_t)(va - m->base);
+    uint32_t within = 0;
     const pe_section *sec;
-    uint32_t    host[1];
-    size_t      hlen = 0;
+    tr_func  f;
+    tr_status st;
+    size_t   avail;
 
-    if (b->kind != BLK_RET || b->len != 1) return 0;
     sec = find_exec(m->pe, rva, &within);
-    if (!sec) return 0;
-    if (m->image[sec->raw_ptr + within] != 0xC3u) return 0;
+    if (!sec) {
+        j->reason_hist[TRR_LEAVES_FUNC]++;
+        j->functions_refused++;
+        return 0;
+    }
+    avail = (size_t)sec->raw_size - within;
+    if (avail == 0) {
+        j->reason_hist[TRR_NO_RET]++;
+        j->functions_refused++;
+        return 0;
+    }
 
-    if (!a64_emit(host, 1u, &hlen, a64_ret())) return 0;
-    if (hlen != 1u) return 0;
+    st = tr_translate_function(m->image + sec->raw_ptr + within, avail, va,
+                               NULL, NULL, &f);
+    if (st != TR_OK) {
+        tr_reason r = (f.reason < TRR_COUNT) ? f.reason : TRR_INTERNAL;
+        j->reason_hist[r]++;
+        if (f.fail_map < 4u)
+            j->opcode_hist[f.fail_map][f.fail_op[0]]++;
+        j->functions_refused++;
+        return 0;
+    }
+    if (f.n == 0 || f.extent == 0 || f.extent > avail) {
+        j->reason_hist[TRR_INTERNAL]++;
+        j->functions_refused++;
+        return 0;
+    }
 
     if (j->cache) {
-        if (ptc_insert(j->cache, m->module_id, b->guest_va,
-                       m->image + sec->raw_ptr + within, b->len,
-                       host, (uint32_t)(hlen * 4u), 0u) != 0)
+        /* Keyed on the whole extent, not on the sum of instruction lengths: a
+         * function with branches has gaps, and hashing only the instruction bytes
+         * would let two different functions with the same instructions collide. */
+        if (ptc_insert(j->cache, m->module_id, va,
+                       m->image + sec->raw_ptr + within, f.extent,
+                       f.words, (uint32_t)(f.n * 4u), 0u) != 0) {
+            j->reason_hist[TRR_INTERNAL]++;
+            j->functions_refused++;
             return 0;
+        }
     }
+    j->functions_translated++;
+    j->host_code_bytes += (uint64_t)f.n * 4u;
     return 1;
+}
+
+uint32_t sweep_reason_count(const sweep_job *j, tr_reason r)
+{
+    if (!j || r >= TRR_COUNT) return 0;
+    return j->reason_hist[r];
+}
+
+uint32_t sweep_top_opcode(const sweep_job *j, uint32_t rank,
+                          uint8_t *out_map, uint8_t *out_opcode)
+{
+    uint32_t best_map = 0, best_op = 0, best = 0, seen = 0;
+    uint8_t  taken_map[64];
+    uint8_t  taken_op[64];
+    uint32_t m, o, k;
+
+    if (!j) return 0;
+    if (rank >= 64u) return 0;
+    memset(taken_map, 0xFF, sizeof(taken_map));
+    memset(taken_op, 0xFF, sizeof(taken_op));
+
+    /* Selection by repeated maximum. The table is 1024 entries and the rank
+     * requested is small, so this is cheaper than sorting and has no allocation. */
+    for (k = 0; k <= rank; k++) {
+        best = 0;
+        for (m = 0; m < 4u; m++) {
+            for (o = 0; o < 256u; o++) {
+                uint32_t c = j->opcode_hist[m][o];
+                int dup = 0;
+                if (c == 0) continue;
+                for (seen = 0; seen < k; seen++)
+                    if (taken_map[seen] == m && taken_op[seen] == o) { dup = 1; break; }
+                if (dup) continue;
+                if (c > best) { best = c; best_map = m; best_op = o; }
+            }
+        }
+        if (best == 0) return 0;
+        taken_map[k] = (uint8_t)best_map;
+        taken_op[k] = (uint8_t)best_op;
+    }
+    if (out_map) *out_map = (uint8_t)best_map;
+    if (out_opcode) *out_opcode = (uint8_t)best_op;
+    return best;
 }
 
 /* ------------------------------------------------------------------- run */
@@ -405,18 +512,19 @@ int sweep_run(sweep_job *j, sweep_stop_fn stop, void *user)
     }
 
     if (j->phase == SWEEP_TRANSLATE) {
-        while (j->translate_idx < j->nblocks) {
-            sweep_block *b;
+        while (j->translate_idx < j->nentries) {
+            size_t e;
+            /* The stop check comes BEFORE the entry is consumed, matching the
+             * discovery loop. Consuming first and checking second loses an entry
+             * every time the window closes: the index has moved on, so the next
+             * resume skips a function that was never translated. That is silent
+             * work loss in exactly the component whose whole purpose is to survive
+             * being interrupted, and only the equivalence test against an
+             * uninterrupted run catches it. */
             if (stop && stop(user)) return 0;
-            b = &j->blocks[j->translate_idx++];
-            if (translate_block(j, b)) {
-                b->translated = 1;
-                b->stored = j->cache ? 1 : 0;
-                j->blocks_translated++;
-                if (b->stored) j->blocks_stored++;
-            } else {
-                j->blocks_untranslatable++;
-            }
+            e = j->translate_idx++;
+            j->functions_attempted++;
+            translate_entry(j, j->entries[e].mod, j->entries[e].va);
         }
         j->phase = SWEEP_DONE;
         j->finished = 1;
@@ -442,9 +550,10 @@ void sweep_get_progress(const sweep_job *j, sweep_progress *out)
     out->modules = (uint32_t)j->nmods;
     out->entry_points = j->entry_points;
     out->blocks = (uint32_t)j->nblocks;
-    out->blocks_translated = j->blocks_translated;
-    out->blocks_untranslatable = j->blocks_untranslatable;
-    out->blocks_stored = j->blocks_stored;
+    out->functions_attempted = j->functions_attempted;
+    out->functions_translated = j->functions_translated;
+    out->functions_refused = j->functions_refused;
+    out->host_code_bytes = j->host_code_bytes;
     out->indirect_unresolved = j->indirect_unresolved;
     out->decode_refusals = j->decode_refusals;
     out->guest_bytes = j->guest_bytes;

@@ -10,6 +10,27 @@
 #define HOST_RCX 1u      /* guest RCX -> X1 */
 #define HOST_SCRATCH 16u /* X16 / IP0: free for a translator to clobber */
 
+const char *tr_reason_name(tr_reason r)
+{
+    switch (r) {
+    case TRR_OK:            return "ok";
+    case TRR_UNSUPPORTED_OP:return "unsupported-opcode";
+    case TRR_DECODE:        return "decoder-refused";
+    case TRR_PREFIX:        return "prefix";
+    case TRR_REGISTER:      return "register-unmapped";
+    case TRR_IMM_RANGE:     return "immediate-too-large";
+    case TRR_FLAGS:         return "flags-not-produced";
+    case TRR_PARITY:        return "parity-flag";
+    case TRR_XOR_TWO:       return "xor-two-operands";
+    case TRR_LEAVES_FUNC:   return "branch-leaves-function";
+    case TRR_NO_RET:        return "no-ret";
+    case TRR_NEEDS_TARGET:  return "import-unresolved";
+    case TRR_OVERFLOW:      return "size-limit";
+    case TRR_INTERNAL:      return "internal";
+    default:                return "?";
+    }
+}
+
 const char *tr_status_name(tr_status s)
 {
     switch (s) {
@@ -326,25 +347,42 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
     p->guest_va = va;
 
     st = x86_decode(code + off, code_len - off, va, &in);
-    if (st == X86_NEED_MORE) { out->detail = "function ends mid-instruction";
+    out->fail_va = va;
+    out->fail_op_len = (code_len - off >= 3) ? 3u : (uint8_t)(code_len - off);
+    memcpy(out->fail_op, code + off, out->fail_op_len);
+    out->fail_map = 0;
+    if (st == X86_NEED_MORE) { out->reason = TRR_DECODE;
+                               out->detail = "function ends mid-instruction";
                                return TR_INVALID; }
-    if (st == X86_INVALID)   { out->detail = "not a legal 64-bit instruction";
+    if (st == X86_INVALID)   { out->reason = TRR_DECODE; out->detail = "not a legal 64-bit instruction";
                                return TR_INVALID; }
-    if (st == X86_UNSUPPORTED) { out->detail = "decoder does not model this encoding";
+    if (st == X86_UNSUPPORTED) { out->reason = TRR_DECODE; out->detail = "decoder does not model this encoding";
                                return TR_UNSUPPORTED; }
     if (in.len == 0 || off + in.len > code_len) {
-        out->detail = "decoder returned an unusable length";
+        out->reason = TRR_DECODE; out->detail = "decoder returned an unusable length";
         return TR_INVALID;
     }
     p->guest_len = in.len;
 
+    /* Record this instruction as the candidate culprit before anything below can
+     * refuse it. Every refusal path then reports the opcode the decoder really
+     * saw, including prefixes and the map, instead of the sweep having to guess
+     * which byte stopped the translation. */
+    out->fail_va = va;
+    out->fail_op_len = in.op_len;
+    out->fail_map = in.map;
+    out->fail_rex = in.rex;
+    out->fail_has_modrm = in.has_modrm;
+    out->fail_modrm = in.has_modrm ? in.modrm : 0;
+    memcpy(out->fail_op, in.op, sizeof(out->fail_op));
+
     if (in.p66 || in.p67 || in.pf2 || in.pf3 || in.lock || in.seg ||
         (in.flags & X86F_REP) != 0) {
-        out->detail = "a prefix that changes meaning is present";
+        out->reason = TRR_PREFIX; out->detail = "a prefix that changes meaning is present";
         return TR_UNSUPPORTED;
     }
     if (in.op_len != 1 && !(in.map == 1 && in.op_len == 2)) {
-        out->detail = "three-byte opcode maps are outside the subset";
+        out->reason = TRR_UNSUPPORTED_OP; out->detail = "three-byte opcode maps are outside the subset";
         return TR_UNSUPPORTED;
     }
 
@@ -352,7 +390,7 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
     if (in.map == 1) {
         if (in.op[0] >= 0x80u && in.op[0] <= 0x8Fu) {
             if (!jcc_cond(in.op[0] & 0xFu, &p->cond)) {
-                out->detail = "JP/JNP: AArch64 has no parity flag";
+                out->reason = TRR_PARITY; out->detail = "JP/JNP: AArch64 has no parity flag";
                 return TR_UNSUPPORTED;
             }
             p->op = P_JCC;
@@ -360,7 +398,7 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
             p->words = 1u;
             return TR_OK;
         }
-        out->detail = "two-byte opcode outside the subset";
+        out->reason = TRR_UNSUPPORTED_OP; out->detail = "two-byte opcode outside the subset";
         return TR_UNSUPPORTED;
     }
 
@@ -377,7 +415,7 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
     }
     if (in.op[0] >= 0x70u && in.op[0] <= 0x7Fu) {
         if (!jcc_cond(in.op[0] & 0xFu, &p->cond)) {
-            out->detail = "JP/JNP: AArch64 has no parity flag";
+            out->reason = TRR_PARITY; out->detail = "JP/JNP: AArch64 has no parity flag";
             return TR_UNSUPPORTED;
         }
         p->op = P_JCC;
@@ -389,17 +427,17 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
         uint64_t iat_va = va + in.len + (uint64_t)(int64_t)in.disp;
         uint64_t host;
         if ((in.flags & X86F_RIP_REL) && in.rip_rel_target != iat_va) {
-            out->detail = "RIP-relative target disagrees with the decoder";
+            out->reason = TRR_INTERNAL; out->detail = "RIP-relative target disagrees with the decoder";
             return TR_INVALID;
         }
         if (in.mod != 0 || in.rm != 5) {
-            out->detail = "call target is not a RIP-relative import slot";
+            out->reason = TRR_NEEDS_TARGET; out->detail = "call target is not a RIP-relative import slot";
             return TR_UNSUPPORTED;
         }
         host = resolve ? resolve(iat_va, user) : 0;
         if (host == 0) {
             out->iat_va = iat_va;
-            out->detail = "no host address known for this import slot yet";
+            out->reason = TRR_NEEDS_TARGET; out->detail = "no host address known for this import slot yet";
             return TR_NEEDS_TARGET;
         }
         p->op = P_CALL_IAT;
@@ -409,7 +447,7 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
     }
     if (in.op[0] == 0xC7 && in.rex_w && in.mod == 3 && in.reg == 0) {
         if (!map_guest_reg(in.rm, in.rex_b, &p->rd)) {
-            out->detail = "mov imm: register outside the mapped set";
+            out->reason = TRR_REGISTER; out->detail = "mov imm: register outside the mapped set";
             return TR_UNSUPPORTED;
         }
         p->op = P_MOV_IMM;
@@ -420,7 +458,7 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
     if (in.op[0] == 0x89 && in.rex_w && in.mod == 3) {
         if (!map_guest_reg(in.rm, in.rex_b, &p->rd) ||
             !map_guest_reg(in.reg, in.rex_r, &p->rn)) {
-            out->detail = "mov reg: register outside the mapped set";
+            out->reason = TRR_REGISTER; out->detail = "mov reg: register outside the mapped set";
             return TR_UNSUPPORTED;
         }
         p->op = P_MOV_REG; p->words = 1u; return TR_OK;
@@ -430,11 +468,11 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
          * flags it sets, and modelling half of it would be a guess. */
         unsigned a, b;
         if ((in.rm | (in.rex_b ? 8u : 0u)) != (in.reg | (in.rex_r ? 8u : 0u))) {
-            out->detail = "xor with two different operands is outside the subset";
+            out->reason = TRR_XOR_TWO; out->detail = "xor with two different operands is outside the subset";
             return TR_UNSUPPORTED;
         }
         if (!map_guest_reg(in.rm, in.rex_b, &a) || !map_guest_reg(in.reg, in.rex_r, &b)) {
-            out->detail = "xor: register outside the mapped set";
+            out->reason = TRR_REGISTER; out->detail = "xor: register outside the mapped set";
             return TR_UNSUPPORTED;
         }
         p->op = P_ZERO; p->rd = a; p->words = 1u; return TR_OK;
@@ -442,7 +480,7 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
     if (in.op[0] == 0x01 && in.rex_w && in.mod == 3) {
         if (!map_guest_reg(in.rm, in.rex_b, &p->rd) ||
             !map_guest_reg(in.reg, in.rex_r, &p->rn)) {
-            out->detail = "add reg: register outside the mapped set";
+            out->reason = TRR_REGISTER; out->detail = "add reg: register outside the mapped set";
             return TR_UNSUPPORTED;
         }
         p->op = P_ADD_REG; p->words = 1u; return TR_OK;
@@ -450,7 +488,7 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
     if (in.op[0] == 0x29 && in.rex_w && in.mod == 3) {
         if (!map_guest_reg(in.rm, in.rex_b, &p->rd) ||
             !map_guest_reg(in.reg, in.rex_r, &p->rn)) {
-            out->detail = "sub reg: register outside the mapped set";
+            out->reason = TRR_REGISTER; out->detail = "sub reg: register outside the mapped set";
             return TR_UNSUPPORTED;
         }
         p->op = P_SUB_REG; p->words = 1u; return TR_OK;
@@ -458,7 +496,7 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
     if (in.op[0] == 0x39 && in.rex_w && in.mod == 3) {
         if (!map_guest_reg(in.rm, in.rex_b, &p->rn) ||
             !map_guest_reg(in.reg, in.rex_r, &p->rm)) {
-            out->detail = "cmp reg: register outside the mapped set";
+            out->reason = TRR_REGISTER; out->detail = "cmp reg: register outside the mapped set";
             return TR_UNSUPPORTED;
         }
         p->op = P_CMP_REG; p->sets_flags = 1; p->words = 1u; return TR_OK;
@@ -466,7 +504,7 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
     if (in.op[0] == 0x85 && in.rex_w && in.mod == 3) {
         if (!map_guest_reg(in.rm, in.rex_b, &p->rn) ||
             !map_guest_reg(in.reg, in.rex_r, &p->rm)) {
-            out->detail = "test: register outside the mapped set";
+            out->reason = TRR_REGISTER; out->detail = "test: register outside the mapped set";
             return TR_UNSUPPORTED;
         }
         p->op = P_TEST_REG; p->sets_flags = 1; p->words = 1u; return TR_OK;
@@ -476,7 +514,7 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
         int64_t value = (in.op[0] == 0x83) ? (int64_t)(int8_t)in.imm
                                            : (int64_t)(int32_t)in.imm;
         if (!map_guest_reg(in.rm, in.rex_b, &p->rd)) {
-            out->detail = "grp1: register outside the mapped set";
+            out->reason = TRR_REGISTER; out->detail = "grp1: register outside the mapped set";
             return TR_UNSUPPORTED;
         }
         if (in.reg == 0) {          /* ADD */
@@ -495,7 +533,7 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
              * Deciding the ARM64 form from the sign here is correct precisely
              * because the operation was settled earlier and independently. */
             if (p->delta > 0xFFF || p->delta < -0xFFF) {
-                out->detail = "immediate does not fit in 12 bits";
+                out->reason = TRR_IMM_RANGE; out->detail = "immediate does not fit in 12 bits";
                 return TR_UNSUPPORTED;
             }
         }
@@ -503,7 +541,7 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
         return TR_OK;
     }
 
-    out->detail = "instruction is outside the translated subset";
+    out->reason = TRR_UNSUPPORTED_OP; out->detail = "instruction is outside the translated subset";
     return TR_UNSUPPORTED;
 }
 
@@ -520,13 +558,13 @@ tr_status tr_translate_function(const uint8_t *code, size_t code_len,
 
     if (!out) return TR_INVALID;
     memset(out, 0, sizeof(*out));
-    out->detail = "ok";
+    out->reason = TRR_UNSUPPORTED_OP; out->detail = "ok";
     if (!code || code_len == 0 || code_len > (1u << 20)) {
-        out->detail = "guest buffer absent or implausibly large";
+        out->reason = TRR_UNSUPPORTED_OP; out->detail = "guest buffer absent or implausibly large";
         return TR_INVALID;
     }
     seen = calloc(code_len, 1u);
-    if (!seen) { out->detail = "out of memory"; return TR_INVALID; }
+    if (!seen) { out->reason = TRR_UNSUPPORTED_OP; out->detail = "out of memory"; return TR_INVALID; }
 
     /* ---- pass 1: discover and plan, following direct branches ---- */
     stack[sp++] = 0u;
@@ -538,7 +576,7 @@ tr_status tr_translate_function(const uint8_t *code, size_t code_len,
                                 &p, out);
         if (st != TR_OK) { free(seen); return st; }
         if (nplans >= TRF_MAX_INSN) {
-            out->detail = "more instructions than TRF_MAX_INSN";
+            out->reason = TRR_OVERFLOW; out->detail = "more instructions than TRF_MAX_INSN";
             free(seen);
             return TR_OVERFLOW;
         }
@@ -554,12 +592,12 @@ tr_status tr_translate_function(const uint8_t *code, size_t code_len,
         } else if (p.op == P_JMP) {
             uint64_t t = p.target_va;
             if (t < guest_va || t - guest_va >= code_len) {
-                out->detail = "unconditional branch leaves the function";
+                out->reason = TRR_LEAVES_FUNC; out->detail = "unconditional branch leaves the function";
                 free(seen); return TR_UNSUPPORTED;
             }
             if (!seen[t - guest_va]) {
                 if (sp >= TRF_MAX_INSN) {
-                    out->detail = "worklist overflow"; free(seen); return TR_OVERFLOW;
+                    out->reason = TRR_OVERFLOW; out->detail = "worklist overflow"; free(seen); return TR_OVERFLOW;
                 }
                 seen[t - guest_va] = 1u;
                 stack[sp++] = (uint32_t)(t - guest_va);
@@ -569,12 +607,12 @@ tr_status tr_translate_function(const uint8_t *code, size_t code_len,
             if (p.op == P_JCC) {
                 uint64_t t = p.target_va;
                 if (t < guest_va || t - guest_va >= code_len) {
-                    out->detail = "conditional branch leaves the function";
+                    out->reason = TRR_LEAVES_FUNC; out->detail = "conditional branch leaves the function";
                     free(seen); return TR_UNSUPPORTED;
                 }
                 if (!seen[t - guest_va]) {
                     if (sp >= TRF_MAX_INSN) {
-                        out->detail = "worklist overflow"; free(seen); return TR_OVERFLOW;
+                        out->reason = TRR_OVERFLOW; out->detail = "worklist overflow"; free(seen); return TR_OVERFLOW;
                     }
                     seen[t - guest_va] = 1u;
                     stack[sp++] = (uint32_t)(t - guest_va);
@@ -583,13 +621,13 @@ tr_status tr_translate_function(const uint8_t *code, size_t code_len,
             if (next >= code_len) {
                 /* A function whose last instruction is not a RET has no return, so
                  * translating it would emit code that runs off the end. */
-                out->detail = "function ends without a RET";
+                out->reason = TRR_NO_RET; out->detail = "function ends without a RET";
                 free(seen);
                 return TR_UNSUPPORTED;
             }
             if (!seen[next]) {
                 if (sp >= TRF_MAX_INSN) {
-                    out->detail = "worklist overflow"; free(seen); return TR_OVERFLOW;
+                    out->reason = TRR_OVERFLOW; out->detail = "worklist overflow"; free(seen); return TR_OVERFLOW;
                 }
                 seen[next] = 1u;
                 stack[sp++] = next;
@@ -617,7 +655,7 @@ tr_status tr_translate_function(const uint8_t *code, size_t code_len,
         if (plans[i].op != P_JCC) continue;
         if (i == 0 || !plans[i - 1].sets_flags ||
             plans[i - 1].off + plans[i - 1].guest_len != plans[i].off) {
-            out->detail = "a conditional branch would read flags this translator "
+            out->reason = TRR_FLAGS; out->detail = "a conditional branch would read flags this translator "
                           "did not produce: it must be preceded immediately by a "
                           "modelled CMP or TEST";
             return TR_UNSUPPORTED;
@@ -625,15 +663,18 @@ tr_status tr_translate_function(const uint8_t *code, size_t code_len,
         for (j = 0; j < nplans; j++) {
             if ((plans[j].op == P_JCC || plans[j].op == P_JMP) &&
                 plans[j].target_va == plans[i].guest_va) {
-                out->detail = "a branch targets a conditional branch, so the flags "
+                out->reason = TRR_FLAGS; out->detail = "a branch targets a conditional branch, so the flags "
                               "it reads would come from elsewhere";
                 return TR_UNSUPPORTED;
             }
         }
     }
 
-    for (i = 0; i < nplans; i++)
+    for (i = 0; i < nplans; i++) {
+        uint32_t end = plans[i].off + plans[i].guest_len;
         if (plans[i].op == P_CALL_IAT) out->needs_frame = 1;
+        if (end > out->extent) out->extent = end;
+    }
 
     /* ---- pass 2: layout. Sizes are already fixed, so one pass is enough. ---- */
     cursor = out->needs_frame ? 1u : 0u;
@@ -643,7 +684,7 @@ tr_status tr_translate_function(const uint8_t *code, size_t code_len,
         if (plans[i].op == P_RET && out->needs_frame) cursor += 1u;
     }
     if (cursor + (out->needs_frame ? 1u : 0u) > TRF_MAX_WORDS) {
-        out->detail = "translation exceeds TRF_MAX_WORDS";
+        out->reason = TRR_OVERFLOW; out->detail = "translation exceeds TRF_MAX_WORDS";
         return TR_OVERFLOW;
     }
 
@@ -706,14 +747,14 @@ tr_status tr_translate_function(const uint8_t *code, size_t code_len,
             for (j = 0; j < nplans; j++) {
                 if (plans[j].guest_va == p->target_va) { tgt_word = plans[j].word_at; found = 1; break; }
             }
-            if (!found) { out->detail = "branch target was not planned"; return TR_INVALID; }
+            if (!found) { out->reason = TRR_INTERNAL; out->detail = "branch target was not planned"; return TR_INVALID; }
             {
                 int32_t delta = (int32_t)tgt_word - (int32_t)p->word_at;
                 if (p->op == P_JCC) {
                     out->branches++;
                     if (delta < 0) out->backwards++;
                     if (!a64_cond_range_ok(delta)) {
-                        out->detail = "conditional branch displacement exceeds 19 bits";
+                        out->reason = TRR_OVERFLOW; out->detail = "conditional branch displacement exceeds 19 bits";
                         return TR_OVERFLOW;
                     }
                     if (!pushf(out, a64_b_cond(p->cond, delta))) return TR_OVERFLOW;
@@ -721,7 +762,7 @@ tr_status tr_translate_function(const uint8_t *code, size_t code_len,
                     out->branches++;
                     if (delta < 0) out->backwards++;
                     if (!a64_b_range_ok(delta)) {
-                        out->detail = "branch displacement exceeds 26 bits";
+                        out->reason = TRR_OVERFLOW; out->detail = "branch displacement exceeds 26 bits";
                         return TR_OVERFLOW;
                     }
                     if (!pushf(out, a64_b(delta))) return TR_OVERFLOW;
@@ -738,7 +779,7 @@ tr_status tr_translate_function(const uint8_t *code, size_t code_len,
             if (!pushf(out, a64_ret())) return TR_OVERFLOW;
             break;
         default:
-            out->detail = "internal: unplanned operation reached emission";
+            out->reason = TRR_INTERNAL; out->detail = "internal: unplanned operation reached emission";
             return TR_INVALID;
         }
     }
@@ -748,7 +789,7 @@ tr_status tr_translate_function(const uint8_t *code, size_t code_len,
          * from how it was emitted, which would put every later branch at the
          * wrong displacement. Detecting it here is cheap; finding it by executing
          * wrong code is not. */
-        out->detail = "internal: emitted word count disagrees with the layout";
+        out->reason = TRR_INTERNAL; out->detail = "internal: emitted word count disagrees with the layout";
         return TR_INVALID;
     }
     return TR_OK;

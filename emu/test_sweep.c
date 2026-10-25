@@ -60,29 +60,26 @@ static int checks, failures;
  *                                                   reachable from the entry
  */
 static const uint8_t CODE[] = {
-    0x48, 0x89, 0x5C, 0x24, 0x08,
-    0xE8, 0x06, 0x00, 0x00, 0x00,
-    0xEB, 0x0A,
-    0x90, 0x90, 0x90, 0x90,
-    0x33, 0xC0,
-    0xC3,
-    0x90, 0x90, 0x90,
-    0x74, 0x04,
-    0xC3,
-    0x90, 0x90, 0x90,
-    0xFF, 0x25, 0x00, 0x00, 0x00, 0x00,
-    0xC3
+    /* 1000 */ 0x48, 0xC7, 0xC1, 0x05, 0x00, 0x00, 0x00,  /* mov rcx, 5      */
+    /* 1007 */ 0x48, 0x31, 0xC0,                          /* xor rax, rax    */
+    /* 100A */ 0x48, 0x01, 0xC8,                          /* add rax, rcx  <-loop */
+    /* 100D */ 0x48, 0x83, 0xE9, 0x01,                    /* sub rcx, 1      */
+    /* 1011 */ 0x48, 0x83, 0xF9, 0x00,                    /* cmp rcx, 0      */
+    /* 1015 */ 0x75, 0xF3,                                /* jnz 100A        */
+    /* 1017 */ 0xC3,                                      /* ret             */
+    /* 1018 */ 0xC3,                                      /* ret  <- export B */
+    /* 1019 */ 0x90, 0x90, 0x90,                          /* unreachable pad */
+    /* 101C */ 0xFF, 0x25, 0x00, 0x00, 0x00, 0x00,        /* jmp [rip+0] <- C */
+    /* 1022 */ 0xC3                                       /* unreachable ret */
 };
 
-#define VA_ENTRY   (IMAGE_BASE + 0x1000u)
-#define VA_CALLEE  (IMAGE_BASE + 0x1010u)
-#define VA_COND    (IMAGE_BASE + 0x1016u)
-#define VA_RET1    (IMAGE_BASE + 0x1018u)
-#define VA_IND     (IMAGE_BASE + 0x101Cu)
-#define VA_EXPORT  (IMAGE_BASE + 0x1022u)
-#define VA_PAD1    (IMAGE_BASE + 0x100Cu)
-#define VA_PAD2    (IMAGE_BASE + 0x1013u)
-#define VA_PAD3    (IMAGE_BASE + 0x1019u)
+#define VA_ENTRY   (IMAGE_BASE + 0x1000u)   /* a whole function, with a loop */
+#define VA_LOOP    (IMAGE_BASE + 0x100Au)   /* its backward branch target */
+#define VA_RET1    (IMAGE_BASE + 0x1017u)   /* the fall-through ret */
+#define VA_RET2    (IMAGE_BASE + 0x1018u)   /* export B: a bare ret */
+#define VA_IND     (IMAGE_BASE + 0x101Cu)   /* export C: indirect, refused */
+#define VA_PAD     (IMAGE_BASE + 0x1019u)   /* unreachable padding */
+#define VA_TAIL    (IMAGE_BASE + 0x1022u)   /* unreachable ret after the jmp */
 
 /* ------------------------------------------------------------ image writer */
 
@@ -125,7 +122,7 @@ static buf build_guest(int with_exports)
 
     if (with_exports) {
         exp_dir = btell(&rd); bzero(&rd, 40);
-        aof = btell(&rd); bu32(&rd, 0x1022u); bu32(&rd, 0x1018u);
+        aof = btell(&rd); bu32(&rd, 0x1018u); bu32(&rd, 0x101Cu);
         aon = btell(&rd); bzero(&rd, 8);            /* patched once names exist */
         aoo = btell(&rd); bu16(&rd, 0); bu16(&rd, 1);
         nmA = btell(&rd); bstr(&rd, "FuncA");
@@ -283,52 +280,39 @@ static void test_discovery(void)
 
     printf("recursive discovery from the entry point\n");
     CHECK(sweep_add_module(r.job, "test.exe", r.module_id, r.img.b, r.img.len,
-                           &r.pe) == 1,
-          "queued entry points != 1");
+                           &r.pe) == 1, "queued entry points != 1");
     CHECK(sweep_run(r.job, NULL, NULL) == 1, "run did not report completion");
     sweep_get_progress(r.job, &p);
 
     CHECK(p.phase == SWEEP_DONE, "phase %s", sweep_phase_name(p.phase));
-    CHECK(p.blocks == 5, "blocks %u, expected 5", p.blocks);
+    /* The entry block runs to its conditional branch, then the fall-through ret.
+     * The loop body is inside the first block, so it is not a block of its own. */
+    CHECK(p.blocks == 2, "blocks %u, expected 2", p.blocks);
     CHECK(p.entry_points == 1, "entry_points %u", p.entry_points);
-    CHECK(p.decode_calls == 8, "decode_calls %llu, expected 8",
+    CHECK(p.decode_calls == 7, "decode_calls %llu, expected 7",
           (unsigned long long)p.decode_calls);
-    /* 12 + 3 + 2 + 1 + 6. The nine padding bytes are excluded, which is the
-     * difference between recursive traversal and a linear scan. */
+    /* 23 bytes to the jnz, plus the 1-byte ret. The three padding bytes and the
+     * ret after the indirect jump are never reached. */
     CHECK(p.guest_bytes == 24, "guest_bytes %llu, expected 24",
           (unsigned long long)p.guest_bytes);
-    CHECK(p.indirect_unresolved == 1, "indirect_unresolved %u, expected 1",
-          p.indirect_unresolved);
-    CHECK(p.decode_refusals == 0, "decode_refusals %u, expected 0",
-          p.decode_refusals);
+    CHECK(p.decode_refusals == 0, "decode_refusals %u", p.decode_refusals);
 
     b = find_block(r.job, VA_ENTRY);
-    CHECK(b && b->len == 12 && b->kind == BLK_JUMP_DIRECT,
+    CHECK(b && b->len == 23 && b->kind == BLK_COND,
           "entry block: len=%u kind=%s", b ? b->len : 0,
           b ? sweep_block_kind_name(b->kind) : "(absent)");
-    b = find_block(r.job, VA_CALLEE);
-    CHECK(b && b->len == 3 && b->kind == BLK_RET,
-          "callee block: len=%u kind=%s", b ? b->len : 0,
-          b ? sweep_block_kind_name(b->kind) : "(absent)");
-    b = find_block(r.job, VA_COND);
-    CHECK(b && b->len == 2 && b->kind == BLK_COND,
-          "conditional block: len=%u kind=%s", b ? b->len : 0,
-          b ? sweep_block_kind_name(b->kind) : "(absent)");
     b = find_block(r.job, VA_RET1);
-    CHECK(b && b->len == 1 && b->kind == BLK_RET,
-          "single-byte ret block missing or wrong length");
-    b = find_block(r.job, VA_IND);
-    CHECK(b && b->len == 6 && b->kind == BLK_JUMP_INDIRECT,
-          "indirect block: len=%u kind=%s", b ? b->len : 0,
-          b ? sweep_block_kind_name(b->kind) : "(absent)");
+    CHECK(b && b->len == 1 && b->kind == BLK_RET, "fall-through ret missing");
 
-    /* The negative assertions: unreachable padding has no block, and neither
-     * does the export-only tail, which the entry point cannot reach. */
-    CHECK(find_block(r.job, VA_PAD1) == NULL, "padding at 100C was decoded");
-    CHECK(find_block(r.job, VA_PAD2) == NULL, "padding at 1013 was decoded");
-    CHECK(find_block(r.job, VA_PAD3) == NULL, "padding at 1019 was decoded");
-    CHECK(find_block(r.job, VA_EXPORT) == NULL,
-          "an export target was reached from the entry point of an exe");
+    /* Unreachable bytes must have no block: this is recursive traversal, not a
+     * linear scan, and the difference is exactly these addresses. */
+    CHECK(find_block(r.job, VA_LOOP) == NULL,
+          "the loop body was reported as a separate block");
+    CHECK(find_block(r.job, VA_PAD) == NULL, "padding was decoded");
+    CHECK(find_block(r.job, VA_TAIL) == NULL, "a ret after an indirect jmp was decoded");
+    CHECK(find_block(r.job, VA_IND) == NULL,
+          "an export-only address was reached without exports");
+    CHECK(find_block(r.job, VA_RET2) == NULL, "an export-only ret was reached");
 
     rig_teardown(&r);
 }
@@ -338,45 +322,45 @@ static void test_translation_and_cache(void)
     rig r; sweep_progress p;
     uint32_t code_len = 0;
     const void *host;
-    uint8_t ret_byte = 0xC3;
-    uint8_t three[3] = { 0x33, 0xC0, 0xC3 };
     rig_setup(&r, 0, "test.exe");
     sweep_add_module(r.job, "test.exe", r.module_id, r.img.b, r.img.len, &r.pe);
     sweep_run(r.job, NULL, NULL);
     sweep_get_progress(r.job, &p);
 
-    printf("only a provably correct translation is cached\n");
-    CHECK(p.blocks_translated == 1, "translated %u, expected exactly 1",
-          p.blocks_translated);
-    CHECK(p.blocks_untranslatable == 4, "untranslatable %u, expected 4",
-          p.blocks_untranslatable);
-    CHECK(p.blocks_stored == 1, "stored %u, expected 1", p.blocks_stored);
-    CHECK(ptc_record_count(r.cache) == 1,
-          "cache holds %zu records, expected 1 - something untranslatable was stored",
+    printf("a whole function is pre-translated and cached, not one block\n");
+    CHECK(p.functions_attempted == 1, "attempted %u functions, expected 1",
+          p.functions_attempted);
+    CHECK(p.functions_translated == 1, "translated %u, expected 1",
+          p.functions_translated);
+    CHECK(p.functions_refused == 0, "refused %u, expected 0", p.functions_refused);
+    CHECK(ptc_record_count(r.cache) == 1, "cache holds %zu records, expected 1",
           ptc_record_count(r.cache));
+    /* 7 words: mov rcx,5 / xor rax,rax / add / sub / cmp / b.ne / ret */
+    CHECK(p.host_code_bytes == 28, "host code %llu bytes, expected 28",
+          (unsigned long long)p.host_code_bytes);
 
-    host = ptc_lookup(r.cache, r.module_id, VA_RET1, &ret_byte, 1u, &code_len);
-    CHECK(host != NULL, "the one translated block missed the cache");
-    CHECK(code_len == 4u, "host code length %u, expected 4", code_len);
-    if (host && code_len == 4u) {
-        uint32_t word;
-        memcpy(&word, host, 4);
-        CHECK(word == a64_ret(), "host word 0x%08x != RET 0x%08x", word,
-              a64_ret());
-        CHECK(word == 0xD65F03C0u, "RET encoding drifted from 0xD65F03C0");
+    host = ptc_lookup(r.cache, r.module_id, VA_ENTRY, r.img.b + 0x200, 24u,
+                      &code_len);
+    CHECK(host != NULL, "the pre-translated function missed the cache");
+    CHECK(code_len == 28u, "host code length %u, expected 28", code_len);
+    if (host && code_len == 28u) {
+        const uint32_t *w = host;
+        CHECK(w[0] == 0xD28000A1u, "mov rcx,5 -> 0x%08X", w[0]);
+        CHECK(w[1] == 0xD2800000u, "xor rax,rax -> 0x%08X", w[1]);
+        CHECK(w[2] == 0x8B010000u, "add rax,rcx -> 0x%08X", w[2]);
+        CHECK(w[3] == 0xD1000421u, "sub rcx,1 -> 0x%08X", w[3]);
+        CHECK(w[4] == 0xF100003Fu, "cmp rcx,0 -> 0x%08X", w[4]);
+        /* jnz sits at word 5, the loop top at word 2: offset -3 */
+        CHECK(w[5] == 0x54FFFFA1u, "jnz loop -> 0x%08X, expected B.NE -3", w[5]);
+        CHECK(w[6] == 0xD65F03C0u, "ret -> 0x%08X", w[6]);
     }
 
-    /* The 3-byte block that also ends in RET must NOT be cached: translating it
-     * needs xor eax,eax, which needs a register and flag model. */
+    /* An address that is not a function entry must miss: the cache is keyed per
+     * entry point, and a hit in the middle of a function would be a lie. */
     code_len = 0;
-    host = ptc_lookup(r.cache, r.module_id, VA_CALLEE, three, 3u, &code_len);
-    CHECK(host == NULL,
-          "a block with no correct translation was served from the cache");
-
-    /* Nor may an address that was never a block at all. */
-    code_len = 0;
-    host = ptc_lookup(r.cache, r.module_id, VA_PAD1, &ret_byte, 1u, &code_len);
-    CHECK(host == NULL, "padding was served from the cache");
+    host = ptc_lookup(r.cache, r.module_id, VA_LOOP, r.img.b + 0x20A, 14u,
+                      &code_len);
+    CHECK(host == NULL, "a mid-function address was served from the cache");
 
     rig_teardown(&r);
 }
@@ -384,25 +368,43 @@ static void test_translation_and_cache(void)
 static void test_exports_are_entry_points(void)
 {
     rig r; sweep_progress p;
+    uint8_t top_map = 0xFF, top_op = 0;
     rig_setup(&r, 1, "testmod.dll");
 
-    printf("a DLL is swept from its exports, not only from DllMain\n");
-    CHECK(r.pe.num_exports == 2, "fixture exports %u, expected 2",
-          r.pe.num_exports);
+    printf("a DLL is swept from its exports, and refusals are accounted for\n");
+    CHECK(r.pe.num_exports == 2, "fixture exports %u, expected 2", r.pe.num_exports);
     CHECK(sweep_add_module(r.job, "testmod.dll", r.module_id, r.img.b, r.img.len,
-                           &r.pe) == 3,
-          "queued entry points != 3 (entry + 2 exports)");
+                           &r.pe) == 3, "queued entry points != 3");
     sweep_run(r.job, NULL, NULL);
     sweep_get_progress(r.job, &p);
 
     CHECK(p.entry_points == 3, "entry_points %u, expected 3", p.entry_points);
-    CHECK(p.blocks == 6, "blocks %u, expected 6", p.blocks);
-    CHECK(find_block(r.job, VA_EXPORT) != NULL,
-          "the export-only block was never discovered");
-    CHECK(p.blocks_translated == 2, "translated %u, expected 2",
-          p.blocks_translated);
+    CHECK(p.blocks == 4, "blocks %u, expected 4", p.blocks);
+    CHECK(p.indirect_unresolved == 1, "indirect_unresolved %u, expected 1",
+          p.indirect_unresolved);
+    CHECK(p.functions_attempted == 3, "attempted %u, expected 3",
+          p.functions_attempted);
+    /* The loop, and the bare ret. The indirect jump is refused. */
+    CHECK(p.functions_translated == 2, "translated %u, expected 2",
+          p.functions_translated);
+    CHECK(p.functions_refused == 1, "refused %u, expected 1", p.functions_refused);
     CHECK(ptc_record_count(r.cache) == 2, "cache holds %zu records, expected 2",
           ptc_record_count(r.cache));
+    CHECK(p.host_code_bytes == 32, "host code %llu bytes, expected 32 (28 + 4)",
+          (unsigned long long)p.host_code_bytes);
+
+    /* The refusal has to say what blocked it, or the coverage number is a dead
+     * end instead of a work queue. */
+    CHECK(sweep_reason_count(r.job, TRR_UNSUPPORTED_OP) == 1,
+          "unsupported-opcode refusals %u, expected 1",
+          sweep_reason_count(r.job, TRR_UNSUPPORTED_OP));
+    CHECK(sweep_reason_count(r.job, TRR_FLAGS) == 0, "a flags refusal was reported");
+    CHECK(sweep_top_opcode(r.job, 0, &top_map, &top_op) == 1,
+          "the top blocking opcode was not reported");
+    CHECK(top_map == 0 && top_op == 0xFFu,
+          "top blocking opcode %02X in map %u, expected FF in map 0", top_op, top_map);
+    CHECK(sweep_top_opcode(r.job, 1, &top_map, &top_op) == 0,
+          "a second blocking opcode was invented");
 
     rig_teardown(&r);
 }
@@ -444,7 +446,7 @@ static int stalled(const sweep_progress *prev, const sweep_progress *now)
 {
     return prev->blocks == now->blocks &&
            prev->percent_x10 == now->percent_x10 &&
-           prev->blocks_stored == now->blocks_stored &&
+           prev->functions_translated == now->functions_translated &&
            prev->phase == now->phase;
 }
 
@@ -501,10 +503,13 @@ static void test_interrupt_resume(void)
           (unsigned long long)pb.decode_calls, (unsigned long long)pa.decode_calls);
     CHECK(pb.guest_bytes == pa.guest_bytes, "guest_bytes differ: %llu vs %llu",
           (unsigned long long)pb.guest_bytes, (unsigned long long)pa.guest_bytes);
-    CHECK(pb.blocks_translated == pa.blocks_translated,
-          "translated differ: %u vs %u", pb.blocks_translated,
-          pa.blocks_translated);
-    CHECK(pb.blocks_stored == pa.blocks_stored, "stored differ");
+    CHECK(pb.functions_translated == pa.functions_translated,
+          "translated differ: %u vs %u", pb.functions_translated,
+              pa.functions_translated);
+    CHECK(pb.host_code_bytes == pa.host_code_bytes,
+          "host code bytes differ: %llu vs %llu",
+          (unsigned long long)pb.host_code_bytes,
+          (unsigned long long)pa.host_code_bytes);
     CHECK(pb.indirect_unresolved == pa.indirect_unresolved,
           "unresolved differ");
     CHECK(pb.decode_refusals == pa.decode_refusals, "refusals differ");
@@ -584,9 +589,9 @@ static void test_progress_and_eta(void)
           "no non-zero ETA was ever observed while work remained");
     CHECK(p.blocks_per_sec > 0.0, "final rate not computed");
 
-    printf("  final: %.1f%%  blocks=%u translated=%u untranslatable=%u  %.3fs\n",
-           (double)p.percent_x10 / 10.0, p.blocks, p.blocks_translated,
-           p.blocks_untranslatable, (double)p.elapsed_ns / 1e9);
+    printf("  final: %.1f%%  blocks=%u functions=%u/%u translated  %.3fs\n",
+           (double)p.percent_x10 / 10.0, p.blocks, p.functions_translated,
+           p.functions_attempted, (double)p.elapsed_ns / 1e9);
 
     rig_teardown(&r);
 }

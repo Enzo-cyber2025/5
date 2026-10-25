@@ -178,7 +178,7 @@ jobs:
             build /tmp/t_ptc  test_ptc.c ptc.c &&
             build /tmp/t_x86  test_x86_decode.c x86_decode.c &&
             build /tmp/t_pe   test_pe_load.c pe_load.c &&
-            build /tmp/t_sw   test_sweep.c sweep.c pe_load.c ptc.c x86_decode.c a64_emit.c &&
+            build /tmp/t_sw   test_sweep.c sweep.c pe_load.c ptc.c x86_decode.c a64_emit.c translate.c &&
             build /tmp/t_tr   test_translate.c translate.c pe_load.c ptc.c x86_decode.c a64_emit.c &&
             build /tmp/t_emit test_emit_exec.c
           } > /tmp/build.log 2>&1
@@ -517,6 +517,13 @@ jobs:
           summary=$(sed -n '/pre-translation summary/,/^cache records/p' /tmp/prewarm.log \
                     | tr '\n' '|' | tr -s ' ' | head -c 2800)
           echo "::notice title=prewarm-measured::modules_ok=${mods} skipped=${skipped} :: ${summary}"
+          # The ranked refusal list is the actual deliverable of this job. A
+          # coverage percentage says how far short the translator is; this says
+          # what to implement next, ordered by how many functions each unblocks.
+          block=$(grep -E 'stopped at opcode|refused: ' /tmp/prewarm.log \
+                  | head -14 | tr '\n' '|' | tr -d '%\r' | tr -s ' ' | cut -c1-1200)
+          cov=$(grep -E '^functions ' /tmp/prewarm.log | tr '\n' '|' | tr -s ' ')
+          echo "::notice title=prewarm-blocking::${cov} || BLOCKERS: ${block}"
 
       - name: Confirm nothing downloaded entered the repository
         run: |

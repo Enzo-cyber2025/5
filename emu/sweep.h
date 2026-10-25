@@ -42,6 +42,7 @@
 
 #include "pe_load.h"
 #include "ptc.h"
+#include "translate.h"
 
 typedef enum {
     SWEEP_DISCOVER = 0,   /* draining the worklist, decoding basic blocks */
@@ -80,10 +81,17 @@ typedef struct {
 
     uint32_t    modules;
     uint32_t    entry_points;
-    uint32_t    blocks;           /* discovered */
-    uint32_t    blocks_translated;
-    uint32_t    blocks_untranslatable;
-    uint32_t    blocks_stored;
+    uint32_t    blocks;           /* discovered, for measuring reachable code */
+
+    /* The unit of pre-translation is a FUNCTION, not a basic block: a block on its
+     * own has no entry state and no way to leave, so translating one in isolation
+     * produces something the cache can serve but nothing can call. Counting blocks
+     * is still how reachable code is measured, which is a different question from
+     * how much was pre-translated. */
+    uint32_t    functions_attempted;
+    uint32_t    functions_translated;
+    uint32_t    functions_refused;
+    uint64_t    host_code_bytes;  /* ARM64 bytes actually written to the cache */
     uint32_t    indirect_unresolved;
     uint32_t    decode_refusals;
     uint32_t    worklist_pending;
@@ -125,6 +133,15 @@ void sweep_get_progress(const sweep_job *j, sweep_progress *out);
 /* The discovered blocks, for inspection and testing. */
 uint32_t             sweep_block_count(const sweep_job *j);
 const sweep_block   *sweep_block_at(const sweep_job *j, uint32_t i);
+
+/* Refusal accounting. Over a real binary almost every function is refused, and
+ * the ranked list of why is what turns that from a dead end into a work queue. */
+uint32_t sweep_reason_count(const sweep_job *j, tr_reason r);
+
+/* The rank-th most common refused opcode, by map and byte. Returns its count, or
+ * 0 when there are not that many distinct ones. */
+uint32_t sweep_top_opcode(const sweep_job *j, uint32_t rank,
+                          uint8_t *out_map, uint8_t *out_opcode);
 
 const char *sweep_phase_name(sweep_phase p);
 const char *sweep_block_kind_name(block_kind k);

@@ -96,16 +96,62 @@ tr_status tr_translate_run(const uint8_t *code, size_t code_len,
 #define TRF_MAX_INSN   512u
 #define TRF_MAX_WORDS  2048u
 
+/* Why a translation was refused, as a code rather than only as prose.
+ *
+ * A pre-translation sweep over a real binary refuses almost everything, and
+ * "almost everything" is not actionable. With a reason code and the offending
+ * opcode recorded, the same result becomes a ranked list of what to implement
+ * next, ordered by how many functions each one unblocks. That list is the only
+ * honest way to plan towards full coverage, because guessing which instruction
+ * matters most is how a translator ends up implementing the wrong half.
+ */
+typedef enum {
+    TRR_OK = 0,
+    TRR_UNSUPPORTED_OP,   /* opcode outside the subset - the dominant case */
+    TRR_DECODE,           /* the length decoder itself refused */
+    TRR_PREFIX,           /* 66/67/F2/F3/LOCK/segment/REP changes the meaning */
+    TRR_REGISTER,         /* operand uses a register with no host mapping */
+    TRR_IMM_RANGE,        /* immediate does not fit an ARM64 12-bit field */
+    TRR_FLAGS,            /* a branch would read flags this translator did not set */
+    TRR_PARITY,           /* JP/JNP: AArch64 has no parity flag at all */
+    TRR_XOR_TWO,          /* xor with two different operands, not the zero idiom */
+    TRR_LEAVES_FUNC,      /* a branch targets outside the supplied buffer */
+    TRR_NO_RET,           /* the function never reaches a RET */
+    TRR_NEEDS_TARGET,     /* an import slot with no host address yet */
+    TRR_OVERFLOW,         /* more instructions or words than the limits allow */
+    TRR_INTERNAL,         /* the translator contradicted itself */
+    TRR_COUNT
+} tr_reason;
+
+const char *tr_reason_name(tr_reason r);
+
 typedef struct {
     uint32_t    words[TRF_MAX_WORDS];
     size_t      n;
     uint32_t    insns;             /* guest instructions translated */
-    uint32_t    guest_bytes;
+    uint32_t    guest_bytes;       /* sum of their lengths */
+    uint32_t    extent;            /* bytes from the entry to the last one planned.
+                                    * Not the same as guest_bytes when branches
+                                    * leave gaps, and it is the length a cache key
+                                    * has to cover. */
     uint32_t    branches;          /* conditional and unconditional */
     uint32_t    backwards;         /* of those, how many jump backwards: loops */
     int         needs_frame;       /* contains a call, so X30 must be preserved */
     uint64_t    iat_va;            /* set with TR_NEEDS_TARGET */
     const char *detail;
+
+    /* Valid only when the return status is not TR_OK: what was refused, and the
+     * guest instruction that caused it. Captured from the decode rather than
+     * reconstructed, so the opcode reported is the one the decoder saw, prefixes
+     * and all. */
+    tr_reason   reason;
+    uint64_t    fail_va;
+    uint8_t     fail_op[3];
+    uint8_t     fail_op_len;
+    uint8_t     fail_map;          /* 0=base, 1=0F, 2=0F38, 3=0F3A */
+    uint8_t     fail_rex;
+    uint8_t     fail_modrm;
+    int         fail_has_modrm;
 } tr_func;
 
 /* Translates a whole function starting at code[0], whose guest address is

@@ -24,6 +24,8 @@
 
 #include "sweep.h"
 
+#include "translate.h"
+
 #include "pe_load.h"
 #include "ptc.h"
 
@@ -85,13 +87,15 @@ static void print_progress(const sweep_progress *p, int window_closed)
     fflush(stdout);
 }
 
-static void print_summary(const sweep_progress *p, const ptc_cache *cache)
+static void print_summary(const sweep_progress *p, const ptc_cache *cache,
+                          const sweep_job *job)
 {
     char elapsed[32];
     double pct_t;
     fmt_duration(elapsed, sizeof(elapsed), p->elapsed_ns);
-    pct_t = p->blocks ? 100.0 * (double)p->blocks_translated / (double)p->blocks
-                      : 0.0;
+    pct_t = p->functions_attempted
+          ? 100.0 * (double)p->functions_translated / (double)p->functions_attempted
+          : 0.0;
 
     printf("\n--- pre-translation summary ---\n");
     printf("modules registered:        %u\n", p->modules);
@@ -99,9 +103,12 @@ static void print_summary(const sweep_progress *p, const ptc_cache *cache)
     printf("blocks discovered:         %u\n", p->blocks);
     printf("guest bytes decoded:       %llu\n", (unsigned long long)p->guest_bytes);
     printf("decode calls:              %llu\n", (unsigned long long)p->decode_calls);
-    printf("translated and cached:     %u  (%.2f%% of blocks)\n",
-           p->blocks_translated, pct_t);
-    printf("not translatable yet:      %u\n", p->blocks_untranslatable);
+    printf("functions attempted:       %u\n", p->functions_attempted);
+    printf("functions pre-translated:  %u  (%.2f%% of attempted)\n",
+           p->functions_translated, pct_t);
+    printf("functions refused:         %u\n", p->functions_refused);
+    printf("ARM64 code written:        %llu bytes\n",
+           (unsigned long long)p->host_code_bytes);
     printf("indirect branches unresolved: %u\n", p->indirect_unresolved);
     printf("decode refusals:           %u\n", p->decode_refusals);
     printf("elapsed:                   %s\n", elapsed);
@@ -109,14 +116,27 @@ static void print_summary(const sweep_progress *p, const ptc_cache *cache)
         printf("cache records:             %zu   code bytes: %zu\n",
                ptc_record_count(cache), ptc_code_bytes(cache));
 
-    printf("\nWhat the coverage number means: a block is cached only when a\n"
-           "provably correct ARM64 translation exists for it. Today that is a\n"
-           "block consisting of a single RET, so the fraction above is a\n"
-           "measure of how much of the emitter is built, not of how much of the\n"
-           "binary could ever be pre-translated. Blocks that could not be\n"
-           "translated are counted and deliberately NOT cached: a placeholder\n"
-           "would later be served as a cache hit and executed, and nothing\n"
-           "downstream could detect it.\n");
+    {
+        uint32_t rank;
+        printf("\nWhat the coverage number means: a function is cached only when a\n"
+               "provably correct ARM64 translation exists for all of it. Anything\n"
+               "else is counted and deliberately NOT cached, because a placeholder\n"
+               "would later be served as a cache hit and executed, and nothing\n"
+               "downstream could detect it.\n");
+        printf("\nWhat is blocking the rest, ranked - this is the work queue, not\n"
+               "a complaint:\n");
+        for (rank = 0; rank < 12; rank++) {
+            uint8_t m = 0, op = 0;
+            uint32_t c = sweep_top_opcode(job, rank, &m, &op);
+            if (!c) break;
+            printf("  %4u function(s) stopped at opcode %s%02X\n", c,
+                   m == 1 ? "0F " : (m == 2 ? "0F38 " : (m == 3 ? "0F3A " : "")), op);
+        }
+        for (rank = 0; rank < TRR_COUNT; rank++) {
+            uint32_t c = sweep_reason_count(job, (tr_reason)rank);
+            if (c) printf("  %4u refused: %s\n", c, tr_reason_name((tr_reason)rank));
+        }
+    }
     printf("Indirect branches (%u) are not knowable statically and stay cold;\n"
            "they are translated at run time. This warms the cache, it does not\n"
            "replace the JIT.\n", p->indirect_unresolved);
@@ -278,9 +298,9 @@ int main(int argc, char **argv)
     }
 
     sweep_get_progress(job, &prog);
-    print_summary(&prog, cache);
+    print_summary(&prog, cache, job);
 
-    if (cache_path && prog.blocks_stored > 0) {
+    if (cache_path && prog.functions_translated > 0) {
         if (ptc_save(cache, cache_path) == 0)
             printf("\ncache written to %s (%zu records)\n", cache_path,
                    ptc_record_count(cache));
