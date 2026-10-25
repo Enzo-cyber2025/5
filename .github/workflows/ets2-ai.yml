@@ -1540,11 +1540,16 @@ jobs:
           IntPtr ad; int i = 0;
           while (ea(f, i, out ad) == 0) {
           IntPtr vt2 = Marshal.ReadIntPtr(ad);
-          IntPtr pGD = Marshal.ReadIntPtr(vt2, 9 * IntPtr.Size);
+          IntPtr pGD = Marshal.ReadIntPtr(vt2, 8 * IntPtr.Size);
           var gd = (GD)Marshal.GetDelegateForFunctionPointer(pGD, typeof(GD));
           IntPtr buf = Marshal.AllocHGlobal(1024);
           gd(ad, buf);
-          P("adapter[" + i + "] = " + Marshal.PtrToStringUni(buf));
+          uint vendor = (uint)Marshal.ReadInt32(buf, 256);
+          uint devid  = (uint)Marshal.ReadInt32(buf, 260);
+          long vram   = Marshal.ReadInt64(buf, 272);
+          P("adapter[" + i + "] = " + Marshal.PtrToStringUni(buf) +
+            " | vendor=0x" + vendor.ToString("X") + " device=0x" + devid.ToString("X") +
+            " vram=" + (vram / (1024 * 1024)) + " MB");
           Marshal.FreeHGlobal(buf);
           i++;
           if (i > 8) break;
@@ -2436,11 +2441,11 @@ jobs:
                 #include <share.h>
                 typedef HRESULT (WINAPI *PFN_RealCreateDevice)(
                     IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, UINT, const D3D_FEATURE_LEVEL*,
-                    UINT, UINT, D3D_FEATURE_LEVEL*, ID3D11Device**, ID3D11DeviceContext**);
+                    UINT, UINT, ID3D11Device**, D3D_FEATURE_LEVEL*, ID3D11DeviceContext**);
                 typedef HRESULT (WINAPI *PFN_RealDevSC)(
                     IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, UINT, const D3D_FEATURE_LEVEL*,
-                    UINT, UINT, DXGI_SWAP_CHAIN_DESC*, IDXGISwapChain**,
-                    D3D_FEATURE_LEVEL*, ID3D11Device**, ID3D11DeviceContext**);
+                    UINT, UINT, const DXGI_SWAP_CHAIN_DESC*, IDXGISwapChain**,
+                    ID3D11Device**, D3D_FEATURE_LEVEL*, ID3D11DeviceContext**);
                 static HMODULE g_real;
                 static PFN_RealCreateDevice g_dev, g_core;
                 static PFN_RealDevSC g_devsc;
@@ -2481,28 +2486,29 @@ jobs:
                 }
                 HRESULT WINAPI D3D11CreateDevice(IDXGIAdapter* pAdapter, D3D_DRIVER_TYPE DriverType,
                     HMODULE Software, UINT Flags, const D3D_FEATURE_LEVEL* pFeatureLevels,
-                    UINT FeatureLevels, UINT SDKVersion, D3D_FEATURE_LEVEL* pFeatureLevel,
-                    ID3D11Device** ppDevice, ID3D11DeviceContext** ppImmediateContext) {
+                    UINT FeatureLevels, UINT SDKVersion, ID3D11Device** ppDevice,
+                    D3D_FEATURE_LEVEL* pFeatureLevel, ID3D11DeviceContext** ppImmediateContext) {
                   HRESULT hr;
                   InitReal();
                   if (!g_dev) { LogLine("CreateDevice: sem ponteiro real"); return E_FAIL; }
                   LogLine("CreateDevice: adapter=%p type=%d flags=0x%x nfl=%u",
                           (void*)pAdapter, (int)DriverType, Flags, FeatureLevels);
                   hr = g_dev(pAdapter, DriverType, Software, Flags, pFeatureLevels,
-                             FeatureLevels, SDKVersion, pFeatureLevel, ppDevice, ppImmediateContext);
-                  LogLine("CreateDevice: original hr=0x%08x", (unsigned)hr);
+                             FeatureLevels, SDKVersion, ppDevice, pFeatureLevel, ppImmediateContext);
+                  LogLine("CreateDevice: original hr=0x%08x (ppDevice=%p)", (unsigned)hr,
+                          (ppDevice ? (void*)*ppDevice : NULL));
                   if (SUCCEEDED(hr)) return hr;
                   LogLine("CreateDevice: original FALHOU — RETRY WARP");
                   hr = g_dev(NULL, D3D_DRIVER_TYPE_WARP, NULL, Flags, pFeatureLevels,
-                             FeatureLevels, SDKVersion, pFeatureLevel, ppDevice, ppImmediateContext);
+                             FeatureLevels, SDKVersion, ppDevice, pFeatureLevel, ppImmediateContext);
                   LogLine("CreateDevice: WARP hr=0x%08x", (unsigned)hr);
                   return hr;
                 }
                 HRESULT WINAPI D3D11CreateDeviceAndSwapChain(IDXGIAdapter* pAdapter, D3D_DRIVER_TYPE DriverType,
                     HMODULE Software, UINT Flags, const D3D_FEATURE_LEVEL* pFeatureLevels,
-                    UINT FeatureLevels, UINT SDKVersion, DXGI_SWAP_CHAIN_DESC* pSwapChainDesc,
-                    IDXGISwapChain** ppSwapChain, D3D_FEATURE_LEVEL* pFeatureLevel,
-                    ID3D11Device** ppDevice, ID3D11DeviceContext** ppImmediateContext) {
+                    UINT FeatureLevels, UINT SDKVersion, const DXGI_SWAP_CHAIN_DESC* pSwapChainDesc,
+                    IDXGISwapChain** ppSwapChain, ID3D11Device** ppDevice,
+                    D3D_FEATURE_LEVEL* pFeatureLevel, ID3D11DeviceContext** ppImmediateContext) {
                   HRESULT hr;
                   InitReal();
                   if (!g_devsc) { LogLine("DevSC: sem ponteiro real"); return E_FAIL; }
@@ -2510,32 +2516,33 @@ jobs:
                           (void*)pAdapter, (int)DriverType, Flags, FeatureLevels);
                   hr = g_devsc(pAdapter, DriverType, Software, Flags, pFeatureLevels,
                                FeatureLevels, SDKVersion, pSwapChainDesc, ppSwapChain,
-                               pFeatureLevel, ppDevice, ppImmediateContext);
-                  LogLine("DevSC: original hr=0x%08x", (unsigned)hr);
+                               ppDevice, pFeatureLevel, ppImmediateContext);
+                  LogLine("DevSC: original hr=0x%08x (ppDevice=%p chain=%p)", (unsigned)hr,
+                          (ppDevice ? (void*)*ppDevice : NULL), (ppSwapChain ? (void*)*ppSwapChain : NULL));
                   if (SUCCEEDED(hr)) return hr;
                   LogLine("DevSC: original FALHOU — RETRY WARP");
                   hr = g_devsc(NULL, D3D_DRIVER_TYPE_WARP, NULL, Flags, pFeatureLevels,
                                FeatureLevels, SDKVersion, pSwapChainDesc, ppSwapChain,
-                               pFeatureLevel, ppDevice, ppImmediateContext);
+                               ppDevice, pFeatureLevel, ppImmediateContext);
                   LogLine("DevSC: WARP hr=0x%08x", (unsigned)hr);
                   return hr;
                 }
                 HRESULT WINAPI D3D11CoreCreateDevice(IDXGIAdapter* pAdapter, D3D_DRIVER_TYPE DriverType,
                     HMODULE Software, UINT Flags, const D3D_FEATURE_LEVEL* pFeatureLevels,
-                    UINT FeatureLevels, UINT SDKVersion, D3D_FEATURE_LEVEL* pFeatureLevel,
-                    ID3D11Device** ppDevice, ID3D11DeviceContext** ppImmediateContext) {
+                    UINT FeatureLevels, UINT SDKVersion, ID3D11Device** ppDevice,
+                    D3D_FEATURE_LEVEL* pFeatureLevel, ID3D11DeviceContext** ppImmediateContext) {
                   HRESULT hr;
                   InitReal();
                   if (!g_core) { LogLine("Core: sem ponteiro real"); return E_FAIL; }
                   LogLine("Core: adapter=%p type=%d flags=0x%x nfl=%u",
                           (void*)pAdapter, (int)DriverType, Flags, FeatureLevels);
                   hr = g_core(pAdapter, DriverType, Software, Flags, pFeatureLevels,
-                              FeatureLevels, SDKVersion, pFeatureLevel, ppDevice, ppImmediateContext);
+                              FeatureLevels, SDKVersion, ppDevice, pFeatureLevel, ppImmediateContext);
                   LogLine("Core: original hr=0x%08x", (unsigned)hr);
                   if (SUCCEEDED(hr)) return hr;
                   LogLine("Core: original FALHOU — RETRY WARP");
                   hr = g_core(NULL, D3D_DRIVER_TYPE_WARP, NULL, Flags, pFeatureLevels,
-                              FeatureLevels, SDKVersion, pFeatureLevel, ppDevice, ppImmediateContext);
+                              FeatureLevels, SDKVersion, ppDevice, pFeatureLevel, ppImmediateContext);
                   LogLine("Core: WARP hr=0x%08x", (unsigned)hr);
                   return hr;
                 }
