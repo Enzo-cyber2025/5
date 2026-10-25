@@ -402,13 +402,18 @@ static int translate_entry(sweep_job *j, uint32_t mi, uint64_t va)
 
     sec = find_exec(m->pe, rva, &within);
     if (!sec) {
-        j->reason_hist[TRR_LEAVES_FUNC]++;
+        /* Reported separately from a branch leaving the buffer, because the two
+         * have completely different causes and completely different fixes. Lumping
+         * them together produced a histogram whose largest entry was ambiguous, and
+         * an ambiguous work queue is worse than none: it sends the next change at
+         * the wrong thing. It did exactly that here. */
+        j->reason_hist[TRR_NO_CODE]++;
         j->functions_refused++;
         return 0;
     }
     avail = (size_t)sec->raw_size - within;
     if (avail == 0) {
-        j->reason_hist[TRR_NO_RET]++;
+        j->reason_hist[TRR_NO_CODE]++;
         j->functions_refused++;
         return 0;
     }

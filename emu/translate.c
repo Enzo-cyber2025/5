@@ -23,6 +23,7 @@ const char *tr_reason_name(tr_reason r)
     case TRR_PARITY:        return "parity-flag";
     case TRR_XOR_TWO:       return "xor-two-operands";
     case TRR_LEAVES_FUNC:   return "branch-leaves-function";
+    case TRR_NO_CODE:       return "entry-not-in-code";
     case TRR_NO_RET:        return "no-ret";
     case TRR_NEEDS_TARGET:  return "import-unresolved";
     case TRR_OVERFLOW:      return "size-limit";

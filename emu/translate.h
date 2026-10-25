@@ -116,6 +116,7 @@ typedef enum {
     TRR_PARITY,           /* JP/JNP: AArch64 has no parity flag at all */
     TRR_XOR_TWO,          /* xor with two different operands, not the zero idiom */
     TRR_LEAVES_FUNC,      /* a branch targets outside the supplied buffer */
+    TRR_NO_CODE,          /* the entry point is not inside executable code at all */
     TRR_NO_RET,           /* the function never reaches a RET */
     TRR_NEEDS_TARGET,     /* an import slot with no host address yet */
     TRR_OVERFLOW,         /* more instructions or words than the limits allow */
