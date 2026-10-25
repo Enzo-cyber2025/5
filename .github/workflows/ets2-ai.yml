@@ -1329,6 +1329,7 @@ jobs:
           $r = Get-Content "autoteste-real.json" -Raw | ConvertFrom-Json
           $r.steps | ForEach-Object { Write-Host ("  " + $_.status + ": " + $_.step + " — " + $_.detail) }
           if (-not $r.pass) { throw "autoteste falhou contra a demo real" }
+      - uses: ilammy/msvc-dev-cmd@v1        # v57: cl/dumpbin no PATH p/ shim d3d11 + probe warpwin
       - name: SOBE o ETS2 REAL (demo oficial) — a DLL no processo de verdade
         shell: pwsh
         # v45: timeout de STEP (imposto pelo RUNNER, nao pelo pwsh) — as runs
@@ -1404,6 +1405,77 @@ jobs:
             } else { Trace "csc ausente p/ warptest" }
             Trace "sonda warp fim warpOk=$warpOk"
           } catch { Trace "sonda warp FALHOU: $($_.Exception.Message)" }
+          # v57: WARPWIN — o elo que FALTOU: WARP device foi provado (stage2),
+          # mas nunca provamos CreateSwapChain + Present EM JANELA (o jogo
+          # precisa disso; e o análogo dx11 do SetPixelFormat que AV-a no GL).
+          # C puro com cl (msvc-dev-cmd agora esta no PATH do job). Se ESTE
+          # passar, o caminho dx11 do jogo e viavel de ponta a ponta por CPU.
+          try {
+            Trace "warpwin (janela+swapchain+present) inicio"
+            @'
+            #define WIN32_LEAN_AND_MEAN
+            #include <windows.h>
+            #include <d3d11.h>
+            #include <dxgi.h>
+            #include <stdio.h>
+            #pragma comment(lib, "d3d11.lib")
+            #pragma comment(lib, "dxgi.lib")
+            static void P(const char* fmt, ...) {
+              char b[512]; va_list a; va_start(a, fmt);
+              _vsnprintf_s(b, sizeof(b), _TRUNCATE, fmt, a); va_end(a);
+              printf("%s\n", b); fflush(stdout);
+            }
+            int main(void) {
+              DXGI_SWAP_CHAIN_DESC sc; IDXGIFactory1* f = NULL; ID3D11Device* dev = NULL;
+              ID3D11DeviceContext* ctx = NULL; IDXGISwapChain* chain = NULL;
+              D3D_FEATURE_LEVEL fl = (D3D_FEATURE_LEVEL)0; HRESULT hr;
+              HWND w = CreateWindowExA(0, "STATIC", "warpwin", WS_OVERLAPPEDWINDOW,
+                                       0, 0, 640, 480, NULL, NULL, GetModuleHandleA(NULL), NULL);
+              P("stage1: CreateWindow hwnd=%p", (void*)w);
+              if (!w) return 1;
+              ShowWindow(w, SW_SHOWNORMAL);
+              hr = D3D11CreateDevice(NULL, D3D_DRIVER_TYPE_WARP, NULL, 0, NULL, 0,
+                                     D3D11_SDK_VERSION, &dev, &fl, &ctx);
+              P("stage2: D3D11CreateDevice(WARP) hr=0x%08x fl=%u", (unsigned)hr, (unsigned)fl);
+              if (FAILED(hr)) return 2;
+              hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)&f);
+              P("stage3: CreateDXGIFactory1 hr=0x%08x", (unsigned)hr);
+              if (FAILED(hr)) return 3;
+              ZeroMemory(&sc, sizeof(sc));
+              sc.BufferCount = 2; sc.BufferDesc.Width = 640; sc.BufferDesc.Height = 480;
+              sc.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+              sc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+              sc.OutputWindow = w; sc.SampleDesc.Count = 1; sc.Windowed = TRUE;
+              hr = f->lpVtbl->CreateSwapChain(f, (IUnknown*)dev, &sc, &chain);
+              P("stage4: CreateSwapChain hr=0x%08x", (unsigned)hr);
+              if (FAILED(hr)) return 4;
+              {
+                ID3D11Texture2D* rt = NULL; ID3D11RenderTargetView* rtv = NULL;
+                float c[4] = { 0.2f, 0.4f, 0.8f, 1.0f };
+                if (SUCCEEDED(chain->lpVtbl->GetBuffer(chain, 0, __uuidof(ID3D11Texture2D), (void**)&rt))) {
+                  if (SUCCEEDED(dev->lpVtbl->CreateRenderTargetView(dev, (ID3D11Resource*)rt, NULL, &rtv)))
+                    ctx->lpVtbl->ClearRenderTargetView(ctx, rtv, c);
+                }
+                hr = chain->lpVtbl->Present(chain, 0, 0);
+                P("stage5: Clear+Present hr=0x%08x (dx11 EM JANELA ponta a ponta)", (unsigned)hr);
+                if (rtv) rtv->lpVtbl->Release(rtv);
+                if (rt) rt->lpVtbl->Release(rt);
+              }
+              return SUCCEEDED(hr) ? 0 : 5;
+            }
+            '@ | Set-Content "$PWD\warpwin.c" -Encoding ASCII
+            & cl /nologo /O2 /W3 "$PWD\warpwin.c" "/Fe:$PWD\warpwin.exe" /link 2>&1 | ForEach-Object { Trace "warpwin cl: $_" }
+            if (Test-Path "$PWD\warpwin.exe") {
+              $pww = Start-Process -FilePath "$PWD\warpwin.exe" -RedirectStandardOutput "$PWD\warpwin.out" -RedirectStandardError "$PWD\warpwin.err" -PassThru
+              if (-not $pww.WaitForExit(120000)) {
+                Stop-Process -Id $pww.Id -Force -ErrorAction SilentlyContinue
+                Trace "warpwin TIMEOUT 120s"
+              } else {
+                Trace "warpwin exit=$($pww.ExitCode) $(if ($pww.ExitCode -eq 0) {'— SWAPCHAIN EM JANELA FUNCIONA (dx11 viavel E2E)'})"
+              }
+              @(Get-Content "$PWD\warpwin.out" -ErrorAction SilentlyContinue) + @(Get-Content "$PWD\warpwin.err" -ErrorAction SilentlyContinue) | ForEach-Object { Trace "warpwin: $_" }
+            } else { Trace "warpwin.exe nao compilou" }
+          } catch { Trace "warpwin: FALHOU $($_.Exception.Message)" }
           # v54: DXGI EnumAdapters1 via vtable COM — o dx11 do jogo falha "at
           # detection stage" com D3D11CreateDevice(WARP) FUNCIONANDO (sonda
           # acima): ou a DXGI enumera ZERO adapters (engine nao acha ninguem)
@@ -2036,6 +2108,18 @@ jobs:
                       $null = $pwp.WaitForExit(120000)
                       @(Get-Content "$PWD\warppnp.out" -ErrorAction SilentlyContinue) | ForEach-Object { Trace "warppnp: $_" }
                     }
+                    # v57: como ficou a lista de adapters APOS o disable? (e o
+                    # swapchain em janela com o novo dono do desktop?)
+                    if (Test-Path "$PWD\dxgienum.exe") {
+                      $pep = Start-Process -FilePath "$PWD\dxgienum.exe" -RedirectStandardOutput "$PWD\enumpnp.out" -RedirectStandardError "$PWD\enumpnp.err" -PassThru
+                      $null = $pep.WaitForExit(60000)
+                      @(Get-Content "$PWD\enumpnp.out" -ErrorAction SilentlyContinue) | ForEach-Object { Trace "enum-pos-pnp: $_" }
+                    }
+                    if (Test-Path "$PWD\warpwin.exe") {
+                      $pwp2 = Start-Process -FilePath "$PWD\warpwin.exe" -RedirectStandardOutput "$PWD\warpwinpnp.out" -RedirectStandardError "$PWD\warpwinpnp.err" -PassThru
+                      if (-not $pwp2.WaitForExit(120000)) { Stop-Process -Id $pwp2.Id -Force -ErrorAction SilentlyContinue }
+                      @(Get-Content "$PWD\warpwinpnp.out" -ErrorAction SilentlyContinue) + @(Get-Content "$PWD\warpwinpnp.err" -ErrorAction SilentlyContinue) | ForEach-Object { Trace "warpwinpnp: $_" }
+                    }
                   } else { Trace "sem adapter Hyper-V p/ desativar (ou ja e Basic Render)" }
                 }
               } catch { Trace "pnp/driver: $($_.Exception.Message)" }
@@ -2193,6 +2277,7 @@ jobs:
                 # game.log + dxvk.log SALVOS DURANTE o boot
                 Copy-Item (Join-Path $docs "game.log.txt") ("$PWD\game-log-" + ($tag -replace "[^a-zA-Z0-9]", "-") + ".txt") -Force -ErrorAction SilentlyContinue
                 Copy-Item (Join-Path $wdir2 "dxvk.log") ("$PWD\dxvk-log-" + ($tag -replace "[^a-zA-Z0-9]", "-") + ".txt") -Force -ErrorAction SilentlyContinue
+                Copy-Item (Join-Path $wdir2 "d3d11shim.log") ("$PWD\d3d11shim-" + ($tag -replace "[^a-zA-Z0-9]", "-") + ".txt") -Force -ErrorAction SilentlyContinue
               }
               if ($g.HasExited) { break }
               # v36: probe NATIVO pwsh — zero python no loop (python custa ~35 s
@@ -2242,6 +2327,7 @@ jobs:
             $tagFile = "game-log-" + ($tag -replace "[^a-zA-Z0-9]", "-") + ".txt"
             Copy-Item (Join-Path $docs "game.log.txt") "$PWD\$tagFile" -Force -ErrorAction SilentlyContinue
             Copy-Item (Join-Path $wdir2 "dxvk.log") ("$PWD\dxvk-log-" + ($tag -replace "[^a-zA-Z0-9]", "-") + ".txt") -Force -ErrorAction SilentlyContinue
+            Copy-Item (Join-Path $wdir2 "d3d11shim.log") ("$PWD\d3d11shim-" + ($tag -replace "[^a-zA-Z0-9]", "-") + ".txt") -Force -ErrorAction SilentlyContinue
             Write-Host "vivo no fim da janela ($tag): $(-not $g.HasExited) — $tagFile salvo"
             Trace "boot $tag FIM vivo=$(-not $g.HasExited)"
             # v39: MATA o jogo ao sair do Boot — antes cada boot deixava o
@@ -2274,10 +2360,181 @@ jobs:
               }
             }
             Remove-Item Env:\VK_ICD_FILENAMES -ErrorAction SilentlyContinue
+            # v57: SHIM d3d11 WARP — a causa-raiz do dx11: o engine cria o
+            # device no adapter Hyper-V/tipo HARDWARE ("at detection stage")
+            # e NUNCA tenta WARP — mas D3D11CreateDevice(WARP) FUNCIONA aqui
+            # (provado toda run desde a v53). DLL local tem prioridade sobre
+            # o System32 (mesmo mecanismo do deploy per-app do DXVK): nosso
+            # d3d11.dll ao lado do eurotrucks2.exe tenta os argumentos
+            # ORIGINAIS do jogo e, se falharem, refaz com (NULL, WARP).
+            # Demais exports: forwarders p/ d3d11_real.dll (copia do NATIVO).
+            # Tudo em d3d11shim.log AO LADO DO EXE.
+            $shimOk = $false
+            try {
+              $bin64 = "C:\ets2demo\bin\win_x64"
+              if (Test-Path $bin64) {
+                Trace "shim: compilando d3d11.dll (x64) em $bin64"
+                @'
+                #define WIN32_LEAN_AND_MEAN
+                #include <windows.h>
+                #include <d3d11.h>
+                #include <dxgi.h>
+                #include <stdio.h>
+                typedef HRESULT (WINAPI *PFN_RealCreateDevice)(
+                    IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, UINT, const D3D_FEATURE_LEVEL*,
+                    UINT, UINT, D3D_FEATURE_LEVEL*, ID3D11Device**, ID3D11DeviceContext**);
+                typedef HRESULT (WINAPI *PFN_RealDevSC)(
+                    IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, UINT, const D3D_FEATURE_LEVEL*,
+                    UINT, UINT, D3D_FEATURE_LEVEL*, ID3D11Device**, ID3D11DeviceContext**,
+                    const DXGI_SWAP_CHAIN_DESC*, IDXGISwapChain**);
+                static HMODULE g_real;
+                static PFN_RealCreateDevice g_dev, g_core;
+                static PFN_RealDevSC g_devsc;
+                static void LogLine(const char* fmt, ...) {
+                  static volatile LONG n = 0;
+                  char path[MAX_PATH + 32]; wchar_t wpath[MAX_PATH];
+                  HMODULE self = NULL; FILE* f; va_list ap;
+                  if (InterlockedIncrement((volatile LONG*)&n) > 3000) return;
+                  if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                                          GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                                          (LPCWSTR)LogLine, &self) || !self) return;
+                  if (!GetModuleFileNameW(self, wpath, MAX_PATH)) return;
+                  { wchar_t* s = wcsrchr(wpath, L'\\'); if (s) s[1] = 0; }
+                  if (!WideCharToMultiByte(CP_ACP, 0, wpath, -1, path, MAX_PATH, NULL, NULL)) return;
+                  lstrcatA(path, "d3d11shim.log");
+                  f = _fsopen(path, "a", _SH_DENYNO);
+                  if (!f) return;
+                  va_start(ap, fmt); vfprintf(f, fmt, ap); va_end(ap);
+                  fprintf(f, "\n"); fclose(f);
+                }
+                static void InitReal(void) {
+                  wchar_t wpath[MAX_PATH]; HMODULE self = NULL;
+                  if (g_real) return;
+                  if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                                          GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                                          (LPCWSTR)InitReal, &self) || !self) return;
+                  if (!GetModuleFileNameW(self, wpath, MAX_PATH)) return;
+                  { wchar_t* s = wcsrchr(wpath, L'\\'); if (s) s[1] = 0; }
+                  lstrcatW(wpath, L"d3d11_real.dll");
+                  g_real = LoadLibraryW(wpath);
+                  if (g_real) {
+                    g_dev  = (PFN_RealCreateDevice)GetProcAddress(g_real, "D3D11CreateDevice");
+                    g_devsc= (PFN_RealDevSC)GetProcAddress(g_real, "D3D11CreateDeviceAndSwapChain");
+                    g_core = (PFN_RealCreateDevice)GetProcAddress(g_real, "D3D11CoreCreateDevice");
+                  }
+                  LogLine("init real=%p D3D11CreateDevice=%p AndSwapChain=%p Core=%p",
+                          (void*)g_real, (void*)g_dev, (void*)g_devsc, (void*)g_core);
+                }
+                HRESULT WINAPI D3D11CreateDevice(IDXGIAdapter* pAdapter, D3D_DRIVER_TYPE DriverType,
+                    HMODULE Software, UINT Flags, const D3D_FEATURE_LEVEL* pFeatureLevels,
+                    UINT FeatureLevels, UINT SDKVersion, D3D_FEATURE_LEVEL* pFeatureLevel,
+                    ID3D11Device** ppDevice, ID3D11DeviceContext** ppImmediateContext) {
+                  HRESULT hr;
+                  InitReal();
+                  if (!g_dev) { LogLine("CreateDevice: sem ponteiro real"); return E_FAIL; }
+                  LogLine("CreateDevice: adapter=%p type=%d flags=0x%x nfl=%u",
+                          (void*)pAdapter, (int)DriverType, Flags, FeatureLevels);
+                  hr = g_dev(pAdapter, DriverType, Software, Flags, pFeatureLevels,
+                             FeatureLevels, SDKVersion, pFeatureLevel, ppDevice, ppImmediateContext);
+                  LogLine("CreateDevice: original hr=0x%08x", (unsigned)hr);
+                  if (SUCCEEDED(hr)) return hr;
+                  LogLine("CreateDevice: original FALHOU — RETRY WARP");
+                  hr = g_dev(NULL, D3D_DRIVER_TYPE_WARP, NULL, Flags, pFeatureLevels,
+                             FeatureLevels, SDKVersion, pFeatureLevel, ppDevice, ppImmediateContext);
+                  LogLine("CreateDevice: WARP hr=0x%08x", (unsigned)hr);
+                  return hr;
+                }
+                HRESULT WINAPI D3D11CreateDeviceAndSwapChain(IDXGIAdapter* pAdapter, D3D_DRIVER_TYPE DriverType,
+                    HMODULE Software, UINT Flags, const D3D_FEATURE_LEVEL* pFeatureLevels,
+                    UINT FeatureLevels, UINT SDKVersion, D3D_FEATURE_LEVEL* pFeatureLevel,
+                    ID3D11Device** ppDevice, ID3D11DeviceContext** ppImmediateContext,
+                    const DXGI_SWAP_CHAIN_DESC* pSwapChainDesc, IDXGISwapChain** ppSwapChain) {
+                  HRESULT hr;
+                  InitReal();
+                  if (!g_devsc) { LogLine("DevSC: sem ponteiro real"); return E_FAIL; }
+                  LogLine("DevSC: adapter=%p type=%d flags=0x%x nfl=%u",
+                          (void*)pAdapter, (int)DriverType, Flags, FeatureLevels);
+                  hr = g_devsc(pAdapter, DriverType, Software, Flags, pFeatureLevels,
+                               FeatureLevels, SDKVersion, pFeatureLevel, ppDevice,
+                               ppImmediateContext, pSwapChainDesc, ppSwapChain);
+                  LogLine("DevSC: original hr=0x%08x", (unsigned)hr);
+                  if (SUCCEEDED(hr)) return hr;
+                  LogLine("DevSC: original FALHOU — RETRY WARP");
+                  hr = g_devsc(NULL, D3D_DRIVER_TYPE_WARP, NULL, Flags, pFeatureLevels,
+                               FeatureLevels, SDKVersion, pFeatureLevel, ppDevice,
+                               ppImmediateContext, pSwapChainDesc, ppSwapChain);
+                  LogLine("DevSC: WARP hr=0x%08x", (unsigned)hr);
+                  return hr;
+                }
+                HRESULT WINAPI D3D11CoreCreateDevice(IDXGIAdapter* pAdapter, D3D_DRIVER_TYPE DriverType,
+                    HMODULE Software, UINT Flags, const D3D_FEATURE_LEVEL* pFeatureLevels,
+                    UINT FeatureLevels, UINT SDKVersion, D3D_FEATURE_LEVEL* pFeatureLevel,
+                    ID3D11Device** ppDevice, ID3D11DeviceContext** ppImmediateContext) {
+                  HRESULT hr;
+                  InitReal();
+                  if (!g_core) { LogLine("Core: sem ponteiro real"); return E_FAIL; }
+                  LogLine("Core: adapter=%p type=%d flags=0x%x nfl=%u",
+                          (void*)pAdapter, (int)DriverType, Flags, FeatureLevels);
+                  hr = g_core(pAdapter, DriverType, Software, Flags, pFeatureLevels,
+                              FeatureLevels, SDKVersion, pFeatureLevel, ppDevice, ppImmediateContext);
+                  LogLine("Core: original hr=0x%08x", (unsigned)hr);
+                  if (SUCCEEDED(hr)) return hr;
+                  LogLine("Core: original FALHOU — RETRY WARP");
+                  hr = g_core(NULL, D3D_DRIVER_TYPE_WARP, NULL, Flags, pFeatureLevels,
+                              FeatureLevels, SDKVersion, pFeatureLevel, ppDevice, ppImmediateContext);
+                  LogLine("Core: WARP hr=0x%08x", (unsigned)hr);
+                  return hr;
+                }
+                '@ | Set-Content "$PWD\d3d11shim.c" -Encoding ASCII
+                $realDll = "$bin64\d3d11_real.dll"
+                if (Test-Path "C:\Windows\System32\d3d11.dll.bak") {
+                  Copy-Item "C:\Windows\System32\d3d11.dll.bak" $realDll -Force
+                  Trace "shim: d3d11_real do .bak NATIVO"
+                } else {
+                  Copy-Item "C:\Windows\System32\d3d11.dll" $realDll -Force
+                  Trace "shim: d3d11_real do System32 atual"
+                }
+                $expNames = @(& dumpbin /exports $realDll 2>$null |
+                  Where-Object { $_ -match '^\s*\d+\s+[0-9A-Fa-f]+\s+[0-9A-Fa-f]+\s+(\w+)\s*$' } |
+                  ForEach-Object { $Matches[1] })
+                Trace ("shim: exports do real ($($expNames.Count)): " + ($expNames -join ","))
+                $meus = @("D3D11CreateDevice", "D3D11CreateDeviceAndSwapChain", "D3D11CoreCreateDevice")
+                $defL = @("LIBRARY d3d11", "EXPORTS")
+                foreach ($en in $expNames) { if ($meus -notcontains $en) { $defL += "$en=d3d11_real.$en" } }
+                foreach ($mn in $meus) { if ($expNames -notcontains $mn) { $defL += $mn } }
+                $defL | Set-Content "$PWD\d3d11shim.def" -Encoding ASCII
+                & cl /nologo /O2 /W3 /LD "$PWD\d3d11shim.c" "/Fe:$bin64\d3d11.dll" /link "/DEF:$PWD\d3d11shim.def" 2>&1 | ForEach-Object { Trace "shim cl: $_" }
+                if (Test-Path "$bin64\d3d11.dll") {
+                  Trace "shim: INSTALADO $bin64\d3d11.dll (+d3d11_real.dll)"
+                  & dumpbin /exports "$bin64\d3d11.dll" 2>$null | Where-Object { $_ -match 'D3D11' } | ForEach-Object { Trace "shim exp: $($_.Trim())" }
+                } else { Trace "shim: d3d11.dll NAO compilou — boot segue sem shim" }
+              } else { Trace "shim: pasta $bin64 inexistente" }
+            } catch { Trace "shim: FALHOU $($_.Exception.Message)" }
             $env:GALLIUM_DRIVER = "llvmpipe"; $env:LIBGL_ALWAYS_SOFTWARE = "1"
-            $vivo = Boot $exe $wdir "x64 dx11 NATIVO WARP" @("-nointro") $null 120
-            if (-not $vivo -and -not (& $mmfOk)) {
-              Trace "boot nativo WARP nao deu MMF — recolocando DXVK p/ fallbacks"
+            # config windowed: WARP em 2 vCPU — fullscreen exclusivo e risco a toa
+            try {
+              New-Item -ItemType Directory -Force $docs | Out-Null
+              $cfgP = Join-Path $docs "config.cfg"
+              if (-not (Test-Path $cfgP)) {
+                @('r_fullscreen "0"', 'uset r_fullscreen "0"') | Set-Content $cfgP -Encoding ascii
+                Trace "config.cfg windowed criado em $docs"
+              }
+            } catch { Trace "config.cfg: $($_.Exception.Message)" }
+            $vivo = Boot $exe $wdir "x64 dx11 SHIM WARP" @("-nointro", "-safe") $null 120
+            # v57: o shim loga TODA chamada — o log diz se o jogo carregou nosso
+            # d3d11.dll, o que pediu, e se o WARP aceitou. Sem log = o jogo
+            # carregou o d3d11 de OUTRO lugar (caminho absoluto?).
+            try {
+              $shimLogP = Join-Path $wdir "d3d11shim.log"
+              if (Test-Path $shimLogP) {
+                $shimRaw = Get-Content $shimLogP -Raw -ErrorAction SilentlyContinue
+                @(Get-Content $shimLogP -ErrorAction SilentlyContinue) | Select-Object -First 40 | ForEach-Object { Trace "shimlog: $_" }
+                if ($shimRaw -match "hr=0x00000000") { $shimOk = $true; Trace "SHIM VIVO: o jogo criou device pelo nosso d3d11" }
+                Copy-Item $shimLogP "$PWD\d3d11shim-boot1.txt" -Force
+              } else { Trace "shimlog AUSENTE — o jogo NAO carregou o d3d11.dll local" }
+            } catch { Trace "shimlog: $($_.Exception.Message)" }
+            if (-not $vivo -and -not (& $mmfOk) -and -not $shimOk) {
+              Trace "boot shim WARP nao deu MMF — recolocando DXVK p/ fallbacks"
               foreach ($mp in @(@($d64, "C:\Windows\System32"), @($d32, "C:\Windows\SysWOW64"))) {
                 if (-not $mp[0]) { continue }
                 foreach ($dd in @("d3d11.dll", "dxgi.dll")) {
@@ -2354,6 +2611,8 @@ jobs:
             $f += (Get-Content "$PWD\mesa-load.log" -ErrorAction SilentlyContinue)
             $f += "=== dlls ao lado do exe (wdir) ==="
             $f += (Get-ChildItem $wdir -Filter "*.dll" -ErrorAction SilentlyContinue | ForEach-Object { $_.Name + " " + [math]::Round($_.Length/1MB,1) + "MB" })
+            $f += "=== d3d11shim.log (chamadas do jogo no nosso d3d11.dll) ==="
+            $f += (Get-Content (Join-Path $wdir "d3d11shim.log") -Tail 40 -ErrorAction SilentlyContinue)
             $f += "=== Mesa na SysWOW64 (x86) ==="
             $f += (Get-ChildItem "C:\Windows\SysWOW64" -Filter "*.dll" -ErrorAction SilentlyContinue | Where-Object { $_.Name -match "gallium|opengl32|vulkan_lvp|libEGL" } | ForEach-Object { $_.Name + " " + [math]::Round($_.Length/1MB,1) + "MB " + $_.LastWriteTime.ToString("s") })
             $f += "=== dlls em win_x86 do jogo ==="
