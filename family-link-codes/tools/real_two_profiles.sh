@@ -24,6 +24,7 @@ export PYTHONPATH="$HERE${PYTHONPATH:+:$PYTHONPATH}"
 export FLCODES_HOME="${FLCODES_HOME:-$WORK/home}"
 export FLCODES_PASSPHRASE="${FLCODES_PASSPHRASE:-real}"
 mkdir -p "$WORK"
+exec > >(tee -a "$WORK/run.log") 2>&1
 
 while [[ $# -gt 0 ]]; do
   case "$1" in

@@ -328,6 +328,9 @@ jobs:
           FLCODES_PASSPHRASE: real
         run: |
           set +e
+          export PATH="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/platform-tools:$PATH"
+          export ANDROID_SERIAL="$(adb devices | awk 'NR>1 && $2=="device" {print $1; exit}')"
+          echo "serial: ${ANDROID_SERIAL:-none}"; adb devices
           # prefer the x86 build: that is the one this emulator can execute
           DIR=""
           if [ -s "$RUNNER_TEMP/familylink-x86/apk-path.txt" ]; then
@@ -349,8 +352,9 @@ jobs:
           echo "package: $PKG"
           bash family-link-codes/tools/real_two_profiles.sh \
             --work "$RUNNER_TEMP/real" --apk "$APK" \
-            --splits "$DIR/splits.txt" --package "$PKG"
-          status=$?
+            --splits "$DIR/splits.txt" --package "$PKG" 2>&1 \
+            | tee "$RUNNER_TEMP/real/stdout.txt"
+          status=${PIPESTATUS[0]}
           echo "$status" > "$RUNNER_TEMP/real-status.txt"
           if [ "$status" = "10" ]; then
             echo "abi-incompatible" > "$RUNNER_TEMP/real-abi.txt"
@@ -385,7 +389,7 @@ jobs:
             exit 0
           fi
           echo "the device run failed for another reason; that is a real failure"
-          tail -40 "$RUNNER_TEMP/real/run.log" 2>/dev/null || true
+          tail -40 "$RUNNER_TEMP/real/stdout.txt" 2>/dev/null || true
           exit 1
 
       - name: Summarise on the PR
