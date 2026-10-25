@@ -706,6 +706,7 @@ jobs:
         id: availability
         run: |
           set +e
+          {
           echo "host: $(uname -m) / $(nproc) cores"
           ls -l /dev/kvm 2>/dev/null || echo "no /dev/kvm"
           SDK="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}"
@@ -728,6 +729,8 @@ jobs:
           echo "== available system images for arm64 =="
           "$SDK/cmdline-tools/latest/bin/sdkmanager" --list 2>/dev/null \
             | grep -E "^  system-images;android-(30|31|33|34|35);google_apis;arm64-v8a" | head -8
+          } > "$RUNNER_TEMP/availability.txt" 2>&1
+          cat "$RUNNER_TEMP/availability.txt"
       - name: Fetch the real APK (ARM bundle)
         env:
           GH_TOKEN: ${{ github.token }}
@@ -782,6 +785,13 @@ jobs:
             echo "host: $(uname -m) · /dev/kvm: $(ls /dev/kvm 2>/dev/null || echo none)"
             echo "boot: $(cat "$RUNNER_TEMP/boot.txt" 2>/dev/null | grep -E "BOOTED|boot timeout|died|no emulator|installing system-images" | head -3 | tr '\n' ' ')"
             echo "exit do teste: $(cat "$RUNNER_TEMP/realarm-status.txt" 2>/dev/null || echo 'n/a')"
+            echo
+            if [ -s "$RUNNER_TEMP/availability.txt" ]; then
+              echo "**availability.txt**"
+              echo '```'
+              tail -25 "$RUNNER_TEMP/availability.txt"
+              echo '```'
+            fi
             echo
             if [ -s "$RUNNER_TEMP/fetch.txt" ]; then
               echo "**fetch.txt (tail)**"

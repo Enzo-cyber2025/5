@@ -58,15 +58,21 @@ log() { echo "[fetch] $*" >&2; }
 
 package_of() {  # read the package name out of the binary manifest
   local apk="$1"
-  local aapt
+  local aapt name
   aapt="$(find "${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/build-tools" \
             -name aapt2 2>/dev/null | sort -V | tail -1)"
   if [[ -n "$aapt" ]]; then
-    local name
-    name="$("$aapt" dump packagename "$apk" 2>/dev/null | tr -d '\r' | head -1)"
+    # badging is the reliable source; `dump packagename` has been seen to return
+    # an unrelated string on some build-tools revisions
+    name="$("$aapt" dump badging "$apk" 2>/dev/null \
+            | sed -n "s/^package: name='\([^']*\)'.*/\1/p" | head -1 | tr -d '\r')"
     [[ -n "$name" ]] && { printf '%s\n' "$name"; return 0; }
+    name="$("$aapt" dump packagename "$apk" 2>/dev/null | tr -d '\r' | head -1)"
+    case "$name" in
+      com.google.android.apps.*|com.flcodes.*) printf '%s\n' "$name"; return 0 ;;
+    esac
   fi
-  python3 - "$apk" <<'PY'
+  python3 - "$apk" <<'PYEOF'
 import sys, zipfile, re
 path = sys.argv[1]
 try:
@@ -74,11 +80,10 @@ try:
         blob = archive.read("AndroidManifest.xml")
 except Exception:
     sys.exit(1)
-# the manifest string pool stores the package as UTF-16
 text = blob.decode("utf-16-le", errors="ignore") + blob.decode("latin-1", errors="ignore")
 match = re.search(r"((?:[a-z][a-z0-9_]*\.){2,}[a-z][a-z0-9_]*)", text)
 print(match.group(1) if match else "")
-PY
+PYEOF
 }
 
 accept() {  # accept <file>: true when it is the right package
