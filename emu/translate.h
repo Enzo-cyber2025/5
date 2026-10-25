@@ -130,6 +130,12 @@ typedef struct {
     size_t      n;
     uint32_t    insns;             /* guest instructions translated */
     uint32_t    guest_bytes;       /* sum of their lengths */
+    /* Byte range actually planned, relative to code[0]. With a whole section as
+     * the buffer these are not 0 and extent: a function typically branches back
+     * into shared helpers that sit before its entry point, so the low end matters.
+     * They are what a cache key has to cover. */
+    uint32_t    lo_off;
+    uint32_t    hi_off;
     uint32_t    extent;            /* bytes from the entry to the last one planned.
                                     * Not the same as guest_bytes when branches
                                     * leave gaps, and it is the length a cache key
@@ -168,6 +174,22 @@ typedef struct {
 tr_status tr_translate_function(const uint8_t *code, size_t code_len,
                                 uint64_t guest_va, tr_resolve_fn resolve,
                                 void *user, tr_func *out);
+
+/* Same, but starting at code[start_off] while allowing branches anywhere inside
+ * the whole buffer.
+ *
+ * This exists because bounding a function to "from its entry to the end of the
+ * section" refuses almost every real one: compiled code branches backwards into
+ * shared helpers that sit before the entry point, and an export is frequently a
+ * thunk that jumps somewhere else entirely. Measured on a real application bundle,
+ * that bound alone refused 451 of 515 functions before a single instruction was
+ * even considered. Giving the translator the whole section and telling it where to
+ * start separates "this code is outside the module" from "this code is outside an
+ * arbitrary window I chose". */
+tr_status tr_translate_function_at(const uint8_t *code, size_t code_len,
+                                   uint64_t base_va, size_t start_off,
+                                   tr_resolve_fn resolve, void *user,
+                                   tr_func *out);
 
 const char *tr_status_name(tr_status s);
 

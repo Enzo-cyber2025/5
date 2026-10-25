@@ -549,6 +549,16 @@ tr_status tr_translate_function(const uint8_t *code, size_t code_len,
                                 uint64_t guest_va, tr_resolve_fn resolve,
                                 void *user, tr_func *out)
 {
+    return tr_translate_function_at(code, code_len, guest_va, 0u, resolve, user,
+                                    out);
+}
+
+tr_status tr_translate_function_at(const uint8_t *code, size_t code_len,
+                                   uint64_t base_va, size_t start_off,
+                                   tr_resolve_fn resolve, void *user,
+                                   tr_func *out)
+{
+    uint64_t guest_va = base_va;   /* address of code[0]; entry is start_off in */
     plan     plans[TRF_MAX_INSN];
     uint8_t *seen = NULL;
     uint32_t stack[TRF_MAX_INSN];
@@ -567,8 +577,13 @@ tr_status tr_translate_function(const uint8_t *code, size_t code_len,
     if (!seen) { out->reason = TRR_UNSUPPORTED_OP; out->detail = "out of memory"; return TR_INVALID; }
 
     /* ---- pass 1: discover and plan, following direct branches ---- */
-    stack[sp++] = 0u;
-    seen[0] = 1u;
+    if (start_off >= code_len) {
+        out->detail = "start offset is past the end of the buffer";
+        free(seen);
+        return TR_INVALID;
+    }
+    stack[sp++] = (uint32_t)start_off;
+    seen[start_off] = 1u;
     while (sp) {
         uint32_t off = stack[--sp];
         plan p;
@@ -670,10 +685,14 @@ tr_status tr_translate_function(const uint8_t *code, size_t code_len,
         }
     }
 
+    out->lo_off = plans[0].off;
+    out->hi_off = plans[0].off + plans[0].guest_len;
     for (i = 0; i < nplans; i++) {
         uint32_t end = plans[i].off + plans[i].guest_len;
         if (plans[i].op == P_CALL_IAT) out->needs_frame = 1;
         if (end > out->extent) out->extent = end;
+        if (plans[i].off < out->lo_off) out->lo_off = plans[i].off;
+        if (end > out->hi_off) out->hi_off = end;
     }
 
     /* ---- pass 2: layout. Sizes are already fixed, so one pass is enough. ---- */

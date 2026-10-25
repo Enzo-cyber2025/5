@@ -413,8 +413,12 @@ static int translate_entry(sweep_job *j, uint32_t mi, uint64_t va)
         return 0;
     }
 
-    st = tr_translate_function(m->image + sec->raw_ptr + within, avail, va,
-                               NULL, NULL, &f);
+    /* The whole section is the buffer and the entry point is where discovery
+     * starts. Bounding the buffer to the entry instead refuses any function that
+     * branches backwards into shared code, which is most of them. */
+    st = tr_translate_function_at(m->image + sec->raw_ptr, (size_t)sec->raw_size,
+                                  m->base + sec->virtual_addr, within,
+                                  NULL, NULL, &f);
     if (st != TR_OK) {
         tr_reason r = (f.reason < TRR_COUNT) ? f.reason : TRR_INTERNAL;
         j->reason_hist[r]++;
@@ -423,7 +427,7 @@ static int translate_entry(sweep_job *j, uint32_t mi, uint64_t va)
         j->functions_refused++;
         return 0;
     }
-    if (f.n == 0 || f.extent == 0 || f.extent > avail) {
+    if (f.n == 0 || f.hi_off <= f.lo_off || f.hi_off > (uint32_t)sec->raw_size) {
         j->reason_hist[TRR_INTERNAL]++;
         j->functions_refused++;
         return 0;
@@ -433,8 +437,13 @@ static int translate_entry(sweep_job *j, uint32_t mi, uint64_t va)
         /* Keyed on the whole extent, not on the sum of instruction lengths: a
          * function with branches has gaps, and hashing only the instruction bytes
          * would let two different functions with the same instructions collide. */
+        /* Keyed on the entry point, but hashed over exactly the bytes the
+         * function occupies. Those are not the same address once a function
+         * branches back before its own entry, and hashing the whole window from
+         * the section start would make unrelated code part of the identity. */
         if (ptc_insert(j->cache, m->module_id, va,
-                       m->image + sec->raw_ptr + within, f.extent,
+                       m->image + sec->raw_ptr + f.lo_off,
+                       f.hi_off - f.lo_off,
                        f.words, (uint32_t)(f.n * 4u), 0u) != 0) {
             j->reason_hist[TRR_INTERNAL]++;
             j->functions_refused++;
