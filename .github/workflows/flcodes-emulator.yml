@@ -266,6 +266,19 @@ jobs:
             while read -r piece; do
               printf '  %s\n' "$(basename "$piece")"
             done < "$RUNNER_TEMP/familylink-x86/splits.txt"
+            echo
+            echo "== is it really a different build? =="
+            sha256sum "$(tail -1 "$RUNNER_TEMP/familylink-x86/apk-path.txt")" \
+                      "$(tail -1 "$RUNNER_TEMP/familylink/apk-path.txt")" 2>/dev/null
+            if cmp -s "$(tail -1 "$RUNNER_TEMP/familylink-x86/apk-path.txt")" \
+                      "$(tail -1 "$RUNNER_TEMP/familylink/apk-path.txt")"; then
+              echo "SAME file: the mirror has no x86 variant, it serves the ARM bundle"
+            fi
+            echo "abi splits in the x86 request:"
+            grep -cE 'config\.(x86|x86_64|arm64_v8a|armeabi_v7a)\.apk' \
+              "$RUNNER_TEMP/familylink-x86/splits.txt" || true
+            grep -E 'config\.(x86|x86_64|arm64_v8a|armeabi_v7a)\.apk' \
+              "$RUNNER_TEMP/familylink-x86/splits.txt" ||               echo "  (none: no ABI split at all in this bundle)"
           fi
           exit 0
 

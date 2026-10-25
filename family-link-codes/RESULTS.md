@@ -422,14 +422,55 @@ nele, e a feature foi localizada pelos RPCs. A chave em si não sai por análise
 estática nesta versão (campos renomeados) nem por análise dinâmica no CI
 (binário ARM × emulador x86). O que falta é um aparelho ARM com a conta de pai.
 
+## 4h. Rodar o app publicado no CI: as quatro paredes medidas
+
+Tentamos, nesta ordem, tudo o que o GitHub Actions oferece. Cada linha é um run
+com número, não uma suposição.
+
+| tentativa | resultado |
+|---|---|
+| emulador x86_64 (padrão) + bundle publicado | `INSTALL_FAILED_NO_MATCHING_ABIS` — só existe split `armeabi-v7a` |
+| pedir variante x86 ao espelho (`apkeep -o arch=x86_64;x86`) | APKPure devolve **o mesmo arquivo** (SHA-256 idêntico), sem split x86 |
+| `system-images;android-30;google_apis;arm64-v8a` no runner x86 | o pacote `emulator` do SDK só traz `qemu-system-x86_64`; não há `qemu-system-aarch64` para rodar guest ARM em host x86 |
+| runner nativo **ARM64** (`ubuntu-24.04-arm`) com o SDK | o índice do Google só publica `emulator-linux_x64-*.zip`: **não existe emulador para linux-aarch64**. As imagens arm64 existem, o emulador que as boota não |
+
+Conclusão: **o app publicado não pode ser executado em nenhum runner hospedado
+pelo GitHub**. Ele pode ser baixado, autenticado e desmontado (é o que o §4g
+faz), mas a metade dinâmica — abrir, o pai entrar, ler o `shared_prefs` — exige
+hardware ARM real.
+
+### E as duas contas?
+
+Duas **contas Google** não podem ser criadas por automação (cadastro pede
+telefone e roda anti-bot) — isso já estava fora do escopo desde o começo. Duas
+**contas de teste** no sentido Android (perfis de usuário) rodam e passam, e
+foram provadas duas vezes: com o app de teste (§4d) e com um app real de loja
+(`cm.aptoide.pt`, §4f). O que não existe é um perfil Android que consiga
+*executar* o Family Link publicado no CI, pela tabela acima.
+
+### O caminho que resta, com o comando pronto
+
+Num aparelho ARM (qualquer celular Android) com a conta de pai já configurada:
+
+```bash
+adb backup -f familylink.ab com.google.android.apps.kids.familylink
+python3 -m flcodes abe scan familylink.ab --save --label parent
+python3 -m flcodes gen --label parent
+```
+
+`tools/qemu_android_test.sh` e `tools/two_users_test.sh` (perfis 10/11) rodam
+nesse aparelho, e `tools/real_two_profiles.sh` faz o mesmo com o APK publicado
+quando o hardware permite.
+
 ## 5. O que ainda NÃO está provado
 
 * **A chave do app publicado (2.104)** — o APK real foi obtido e autenticado
   (§4g), a feature foi achada pelos RPCs, mas os campos do config local estão
   renomeados/ofuscados: não há string para ler estaticamente. Precisa de um
   aparelho ARM com a conta de pai para o dump em runtime.
-* **Instalar o app publicado no CI** — o bundle é ARM-only e o emulador é
-  x86_64; sem imagem ARM o teste dinâmico não roda ali (§4g).
+* **Instalar o app publicado no CI** — quatro caminhos tentados e medidos
+  (§4h): o bundle é ARM-only, o espelho não tem variante x86, o SDK não traz
+  `qemu-system-aarch64` e **não existe emulador Android para linux-aarch64**.
 * **Aceitação pelo firmware do aparelho supervisionado** — precisa de aparelho
   real. É o único passo que falta e ele é do usuário: ver §6.
 * `paths check` / `rea api` contra os endpoints do Google (rede bloqueada aqui;
