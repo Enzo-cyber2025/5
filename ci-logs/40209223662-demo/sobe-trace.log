@@ -1,0 +1,200 @@
+[16:13:31] SOBE inicio
+[16:13:31] sonda warp/dxgi inicio (system32 virgem)
+[16:13:38] warptest run inicio
+[16:13:38] warptest exit=0
+[16:13:38] warp: stage0: GetDC(NULL)=-738130274 (desktop ok)
+[16:13:38] warp: stage1: CreateDXGIFactory1 hr=0x00000000 (dxgi NATIVO vivo)
+[16:13:38] warp: stage2: D3D11CreateDevice(WARP) hr=0x00000000 featureLevel=45056
+[16:13:38] warp: stage3: WARP OK - D3D11 por CPU FUNCIONA nativamente nesta VM
+[16:13:38] sonda warp fim warpOk=True
+[16:13:38] warpwin (janela+swapchain+present) inicio
+[16:13:38] warpwin cl: warpwin.c
+[16:13:51] warpwin exit=0 — SWAPCHAIN EM JANELA FUNCIONA (dx11 viavel E2E)
+[16:13:51] warpwin: stage1: CreateWindow hwnd=0000000000050098
+[16:13:51] warpwin: stage2: D3D11CreateDevice(WARP) hr=0x00000000 fl=45056
+[16:13:51] warpwin: stage3: CreateDXGIFactory1 hr=0x00000000
+[16:13:51] warpwin: stage4: CreateSwapChain hr=0x00000000
+[16:13:51] warpwin: stage5: Clear+Present hr=0x00000000 (dx11 EM JANELA ponta a ponta)
+[16:13:51] sonda dxgi-enum inicio
+[16:13:52] dxgienum exit=0
+[16:13:52] enum: stage1: factory ok
+[16:13:52] enum: adapter[0] = Microsoft Basic Render Driver | vendor=0x1414 device=0x8C vram=0 MB
+[16:13:52] enum: adapter[1] = Microsoft Basic Render Driver | vendor=0x1414 device=0x8C vram=0 MB
+[16:13:52] enum: total adapters: 2 (WARP visivel pro engine!)
+[16:13:52] sonda dxgi-enum fim
+[16:13:52] mesa 7z: 70257286 bytes
+[16:13:57] dxvk tar.gz: 10310666 bytes
+[16:13:57] tar dxvk inicio
+[16:13:59] tar dxvk fim rc=0
+[16:13:59] copias dxvk jogo inicio
+[16:13:59] copias dxvk jogo fim
+[16:13:59] dxvk system32 PULADO — WARP vivo, System32 INTACTO
+[16:13:59] vulkan loader antes: x64=False x86=False
+[16:13:59] baixando VulkanRT X64 installer (LunarG 1.4.363.0)
+[16:14:01] vulkanrt x64 installer: 25699768 bytes
+[16:14:03] vulkanrt x64 install exit=0
+[16:14:03] vulkan loader depois: x64=True x86=True
+[16:14:03] vktest inicio
+[16:14:03] vktest lvp264 PULADO (WARP venceu)
+[16:14:03] vktest dzn264 PULADO (WARP venceu)
+[16:14:03] NENHUM ICD Vulkan passou — boots dx11 vao rodar com o ICD padrao (26.2.4)
+[16:14:03] wgl64 inicio
+[16:14:03] wgl64 csc inicio
+[16:14:03] wgl64 csc fim
+[16:14:03] wgl64 run inicio
+[16:14:05] wgl64 run fim exit=0
+[16:14:05] wgl-janela inicio
+[16:14:05] winwgl run inicio
+[16:14:06] winwgl exit=-1073741819
+[16:14:06] winwgl: stage1: janela criada hwnd=721028
+[16:14:06] winwgl: stage2: GetDC(janela) ok
+[16:14:06] winwgl: stage3: ChoosePixelFormat ok pf=63
+[16:14:06] winwgl: 
+[16:14:06] winwgl: Unhandled Exception: System.AccessViolationException: Attempted to read or write protected memory. This is often an indication that other memory is corrupt.
+[16:14:06] winwgl:    at WinWglTest.SetPixelFormatN(IntPtr hdc, Int32 ipf, IntPtr pfd)
+[16:14:06] winwgl:    at WinWglTest.Main()
+[16:14:06] wgl-janela fim winWglOk=False
+[16:14:06] winwgl falhou na 26.2.4 — baixando Mesa 25.3.6
+[16:14:06] mesa 25.3.6: 66716214 bytes
+[16:14:10] 7z 25.3.6 exit=0
+[16:14:10] 253w: C:\Windows\System32\opengl32.dll
+[16:14:10] 253w: C:\Windows\System32\libgallium_wgl.dll
+[16:14:10] 253w: C:\Windows\System32\libEGL.dll
+[16:14:10] 253w: C:\Windows\System32\libGLESv1_CM.dll
+[16:14:10] 253w: C:\Windows\System32\libGLESv2.dll
+[16:14:10] 253w: C:\Windows\SysWOW64\opengl32.dll
+[16:14:10] 253w: C:\Windows\SysWOW64\libgallium_wgl.dll
+[16:14:10] 253w: C:\Windows\SysWOW64\libEGL.dll
+[16:14:10] 253w: C:\Windows\SysWOW64\libGLESv1_CM.dll
+[16:14:10] 253w: C:\Windows\SysWOW64\libGLESv2.dll
+[16:14:10] winwgl(25.3.6) run inicio
+[16:14:10] winwgl(25.3.6) exit=-1073741819
+[16:14:10] winwgl253: stage1: janela criada hwnd=786564
+[16:14:10] winwgl253: stage2: GetDC(janela) ok
+[16:14:10] winwgl253: stage3: ChoosePixelFormat ok pf=43
+[16:14:10] winwgl253: 
+[16:14:10] winwgl253: Unhandled Exception: System.AccessViolationException: Attempted to read or write protected memory. This is often an indication that other memory is corrupt.
+[16:14:10] winwgl253:    at WinWglTest.SetPixelFormatN(IntPtr hdc, Int32 ipf, IntPtr pfd)
+[16:14:10] winwgl253:    at WinWglTest.Main()
+[16:14:11] pnp display: Microsoft Hyper-V Video [VMBUS\{DA0A7802-E377-4AAC-8E77-0558EB1073F8}\{5620E0C7-8062-4DCE-AEB7-520C7EF76171}]
+[16:14:11] desativando adapter de video: Microsoft Hyper-V Video
+[16:14:20] adapter desativado — desktop no Basic Render Driver agora?
+[16:14:20] pnp display pos: Microsoft Hyper-V Video [Error]
+[16:14:20] winwgl(pos-pnp) run inicio
+[16:14:20] winwgl(pos-pnp) exit=-1073741819
+[16:14:20] winwglpnp: stage1: janela criada hwnd=393412
+[16:14:20] winwglpnp: stage2: GetDC(janela) ok
+[16:14:20] winwglpnp: stage3: ChoosePixelFormat ok pf=43
+[16:14:20] winwglpnp: 
+[16:14:20] winwglpnp: Unhandled Exception: System.AccessViolationException: Attempted to read or write protected memory. This is often an indication that other memory is corrupt.
+[16:14:20] winwglpnp:    at WinWglTest.SetPixelFormatN(IntPtr hdc, Int32 ipf, IntPtr pfd)
+[16:14:20] winwglpnp:    at WinWglTest.Main()
+[16:14:20] warppnp: stage0: GetDC(NULL)=-1593768022 (desktop ok)
+[16:14:20] warppnp: stage1: CreateDXGIFactory1 hr=0x00000000 (dxgi NATIVO vivo)
+[16:14:20] warppnp: stage2: D3D11CreateDevice(WARP) hr=0x00000000 featureLevel=45056
+[16:14:20] warppnp: stage3: WARP OK - D3D11 por CPU FUNCIONA nativamente nesta VM
+[16:14:20] enum-pos-pnp: stage1: factory ok
+[16:14:20] enum-pos-pnp: adapter[0] = Microsoft Basic Render Driver | vendor=0x1414 device=0x8C vram=0 MB
+[16:14:20] enum-pos-pnp: adapter[1] = Microsoft Basic Render Driver | vendor=0x1414 device=0x8C vram=0 MB
+[16:14:20] enum-pos-pnp: total adapters: 2 (WARP visivel pro engine!)
+[16:14:20] warpwinpnp: stage1: CreateWindow hwnd=00000000000700C4
+[16:14:20] warpwinpnp: stage2: D3D11CreateDevice(WARP) hr=0x00000000 fl=45056
+[16:14:20] warpwinpnp: stage3: CreateDXGIFactory1 hr=0x00000000
+[16:14:20] warpwinpnp: stage4: CreateSwapChain hr=0x00000000
+[16:14:20] warpwinpnp: stage5: Clear+Present hr=0x00000000 (dx11 EM JANELA ponta a ponta)
+[16:14:20] wgl32 csc inicio
+[16:14:20] wgl32 csc fim
+[16:14:20] wgl32 run inicio
+[16:14:26] wgl32 run fim exit=0
+[16:14:26] WARP vivo — restaurando d3d11/dxgi NATIVOS e bootando SEM DXVK
+[16:14:26] DXVK removido da pasta do jogo: d3d11.dll
+[16:14:26] DXVK removido da pasta do jogo: dxgi.dll
+[16:14:26] DXVK removido da pasta do jogo: d3d10core.dll
+[16:14:26] DXVK removido da pasta do jogo: d3d9.dll
+[16:14:26] shim: compilando d3d11.dll (x64) em C:\ets2demo\bin\win_x64
+[16:14:26] shim: d3d11_real do System32 atual
+[16:14:26] shim: exports do real (51): CreateDirect3D11DeviceFromDXGIDevice,CreateDirect3D11SurfaceFromDXGISurface,D3D11CoreCreateDevice,D3D11CoreCreateLayeredDevice,D3D11CoreGetLayeredDeviceSize,D3D11CoreRegisterLayers,D3D11CreateDevice,D3D11CreateDeviceAndSwapChain,D3D11CreateDeviceForD3D12,D3D11On12CreateDevice,D3DKMTCloseAdapter,D3DKMTCreateAllocation,D3DKMTCreateContext,D3DKMTCreateDevice,D3DKMTCreateSynchronizationObject,D3DKMTDestroyAllocation,D3DKMTDestroyContext,D3DKMTDestroyDevice,D3DKMTDestroySynchronizationObject,D3DKMTEscape,D3DKMTGetContextSchedulingPriority,D3DKMTGetDeviceState,D3DKMTGetDisplayModeList,D3DKMTGetMultisampleMethodList,D3DKMTGetRuntimeData,D3DKMTGetSharedPrimaryHandle,D3DKMTLock,D3DKMTOpenAdapterFromHdc,D3DKMTOpenResource,D3DKMTPresent,D3DKMTQueryAdapterInfo,D3DKMTQueryAllocationResidency,D3DKMTQueryResourceInfo,D3DKMTRender,D3DKMTSetAllocationPriority,D3DKMTSetContextSchedulingPriority,D3DKMTSetDisplayMode,D3DKMTSetDisplayPrivateDriverFormat,D3DKMTSetGammaRamp,D3DKMTSetVidPnSourceOwner,D3DKMTSignalSynchronizationObject,D3DKMTUnlock,D3DKMTWaitForSynchronizationObject,D3DKMTWaitForVerticalBlankEvent,D3DPerformance_BeginEvent,D3DPerformance_EndEvent,D3DPerformance_GetStatus,D3DPerformance_SetMarker,EnableFeatureLevelUpgrade,OpenAdapter10,OpenAdapter10_2
+[16:14:26] shim: imports estaticos do jogo em d3d11.dll (0): 
+[16:14:26] shim .def: LIBRARY d3d11 | EXPORTS | D3D11CreateDevice | D3D11CreateDeviceAndSwapChain | D3D11CoreCreateDevice
+[16:14:26] shim cl: d3d11shim.c
+[16:14:27] shim cl:    Creating library C:\ets2demo\bin\win_x64\d3d11.lib and object C:\ets2demo\bin\win_x64\d3d11.exp
+[16:14:27] shim: INSTALADO C:\ets2demo\bin\win_x64\d3d11.dll (+d3d11_real.dll) link exit=0
+[16:14:27] shim exp: Dump of file C:\ets2demo\bin\win_x64\d3d11.dll
+[16:14:27] shim exp: Section contains the following exports for d3d11.dll
+[16:14:27] shim exp: 1    0 00001000 D3D11CoreCreateDevice
+[16:14:27] shim exp: 2    1 00001170 D3D11CreateDevice
+[16:14:27] shim exp: 3    2 000012F0 D3D11CreateDeviceAndSwapChain
+[16:14:27] boot x64 dx11 SHIM WARP inicio
+[16:14:29] boot x64 dx11 SHIM WARP: pid 8008
+[16:14:34] boot x64 dx11 SHIM WARP iter 1/120 vivo=True cpu=0.5 thr=23
+[16:14:34] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:14:39] boot x64 dx11 SHIM WARP iter 2/120 vivo=True cpu=0.5 thr=23
+[16:14:39] probe mmf (iter 2): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:14:44] boot x64 dx11 SHIM WARP iter 3/120 vivo=True cpu=0.6 thr=23
+[16:14:44] probe mmf (iter 3): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:14:49] boot x64 dx11 SHIM WARP iter 4/120 vivo=True cpu=0.6 thr=23
+[16:14:49] probe mmf (iter 4): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:14:54] boot x64 dx11 SHIM WARP iter 5/120 vivo=True cpu=0.6 thr=23
+[16:14:54] probe mmf (iter 5): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:14:59] boot x64 dx11 SHIM WARP iter 6/120 vivo=True cpu=0.7 thr=22
+[16:14:59] probe mmf (iter 6): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:15:04] boot x64 dx11 SHIM WARP iter 7/120 vivo=True cpu=0.7 thr=22
+[16:15:04] probe mmf (iter 7): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:15:09] boot x64 dx11 SHIM WARP iter 8/120 vivo=False cpu=-1 thr=0
+[16:15:09] boot x64 dx11 SHIM WARP FIM vivo=False
+[16:15:09] shimlog: init real=00007FFD95B00000 D3D11CreateDevice=00007FFD95B4A660 AndSwapChain=00007FFD95B4A7E0 Core=00007FFD95B15FF0
+[16:15:09] shimlog: CreateDevice: adapter=0000000000000000 type=1 flags=0x0 nfl=1
+[16:15:09] shimlog: CreateDevice: original hr=0x00000001 (ppDevice=0000000000000000)
+[16:15:09] boot shim WARP nao deu MMF — recolocando DXVK p/ fallbacks
+[16:15:09] boot x64 rdevice gl inicio
+[16:15:11] boot x64 rdevice gl: pid 6524
+[16:15:16] boot x64 rdevice gl iter 1/120 vivo=True cpu=0.5 thr=23
+[16:15:16] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:15:21] boot x64 rdevice gl iter 2/120 vivo=True cpu=0.6 thr=23
+[16:15:21] probe mmf (iter 2): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:15:26] boot x64 rdevice gl iter 3/120 vivo=True cpu=0.7 thr=23
+[16:15:26] probe mmf (iter 3): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:15:31] boot x64 rdevice gl iter 4/120 vivo=True cpu=0.7 thr=23
+[16:15:31] probe mmf (iter 4): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:15:36] boot x64 rdevice gl iter 5/120 vivo=True cpu=0.8 thr=23
+[16:15:36] probe mmf (iter 5): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:15:41] boot x64 rdevice gl iter 6/120 vivo=True cpu=0.8 thr=23
+[16:15:41] probe mmf (iter 6): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:15:46] boot x64 rdevice gl iter 7/120 vivo=False cpu=-1 thr=0
+[16:15:46] boot x64 rdevice gl FIM vivo=False
+[16:15:46] boot x86 gl llvmpipe inicio
+[16:15:48] boot x86 gl llvmpipe: pid 2424
+[16:15:53] boot x86 gl llvmpipe iter 1/30 vivo=True cpu=0.5 thr=17
+[16:15:53] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:15:58] boot x86 gl llvmpipe iter 2/30 vivo=True cpu=0.6 thr=17
+[16:15:58] probe mmf (iter 2): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:16:03] boot x86 gl llvmpipe iter 3/30 vivo=True cpu=0.6 thr=17
+[16:16:03] probe mmf (iter 3): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:16:08] boot x86 gl llvmpipe iter 4/30 vivo=False cpu=-1 thr=0
+[16:16:08] boot x86 gl llvmpipe FIM vivo=False
+[16:16:08] boot x86 gl zink inicio
+[16:16:10] boot x86 gl zink: pid 5176
+[16:16:15] boot x86 gl zink iter 1/30 vivo=False cpu=-1 thr=0
+[16:16:15] boot x86 gl zink FIM vivo=False
+[16:16:15] boot x86 gl safe llvmpipe inicio
+[16:16:17] boot x86 gl safe llvmpipe: pid 8024
+[16:16:22] boot x86 gl safe llvmpipe iter 1/30 vivo=True cpu=0.6 thr=17
+[16:16:22] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:16:27] boot x86 gl safe llvmpipe iter 2/30 vivo=False cpu=-1 thr=0
+[16:16:27] boot x86 gl safe llvmpipe FIM vivo=False
+[16:16:28] boot x64 rdevice gl nointro inicio
+[16:16:30] boot x64 rdevice gl nointro: pid 7348
+[16:16:35] boot x64 rdevice gl nointro iter 1/30 vivo=True cpu=0.6 thr=23
+[16:16:35] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:16:40] boot x64 rdevice gl nointro iter 2/30 vivo=True cpu=0.7 thr=23
+[16:16:40] probe mmf (iter 2): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:16:45] boot x64 rdevice gl nointro iter 3/30 vivo=True cpu=0.7 thr=23
+[16:16:45] probe mmf (iter 3): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:16:50] boot x64 rdevice gl nointro iter 4/30 vivo=True cpu=0.8 thr=23
+[16:16:50] probe mmf (iter 4): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:16:55] boot x64 rdevice gl nointro iter 5/30 vivo=True cpu=0.9 thr=23
+[16:16:55] probe mmf (iter 5): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:17:00] boot x64 rdevice gl nointro iter 6/30 vivo=True cpu=0.9 thr=23
+[16:17:00] probe mmf (iter 6): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:17:05] boot x64 rdevice gl nointro iter 7/30 vivo=False cpu=-1 thr=0
+[16:17:05] boot x64 rdevice gl nointro FIM vivo=False
