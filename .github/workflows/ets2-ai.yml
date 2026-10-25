@@ -2403,21 +2403,24 @@ jobs:
                 Trace "restaurado nativo: $rb"
               }
             }
-            Remove-Item Env:\VK_ICD_FILENAMES -ErrorAction SilentlyContinue
-            # v60: a mesa-load copia o DXVK p/ a PASTA DO JOGO antes de saber
-            # se o WARP venceu — e a v59 provou o estrago: com o d3d11 do DXVK
-            # local (sem ICD Vulkan) o jogo morre no "detection stage" sem
-            # listar adapter nenhum (game-log-x64-dx11-SHIM-WARP). "SEM DXVK"
-            # tem que valer pro win_x64 tambem — o dxgi NATIVO enumera 2
-            # adapters (provado na sonda) e o d3d11 local sera o NOSSO shim.
-            # v61: $bin64 ANTES do uso (v60 morreu em Join-Path $null aqui) e
-            # try/catch — limpeza falhando nao pode matar o step inteiro.
+            # v66: CONTRATO NOVO — o dxgi do DXVK FICA na pasta do jogo (com o
+            # ICD lavapipe ele enumera a lavapipe e a lista [dxgi] do jogo sai
+            # NAO-VAZIA — provado na v46; lista vazia era o UNICO bloqueio das
+            # v63-v65: os 2 adapters nativos sao "Microsoft Basic Render
+            # Driver" vram=0 e o engine os rejeita). O d3d11 sai do DXVK e
+            # entra o NOSSO shim: device por WARP nativo — nunca mais o
+            # congelamento de criacao de device Vulkan da v46/v47.
+            $vkIcdX64 = Get-ChildItem "C:\mesa3d\x64" -Filter "lvp_icd*.json" -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($vkIcdX64) { $env:VK_ICD_FILENAMES = $vkIcdX64.FullName; Trace "ICD lvp x64 p/ o dxgi do DXVK listar a lavapipe: $($vkIcdX64.FullName)" }
+            else { Trace "ICD lvp x64 AUSENTE — dxgi do DXVK listara vazio" }
             $bin64 = "C:\ets2demo\bin\win_x64"
             try {
-              foreach ($dx in @("d3d11.dll","dxgi.dll","d3d10core.dll","d3d9.dll")) {
+              foreach ($dx in @("d3d11.dll","d3d10core.dll","d3d9.dll")) {
                 $dxp = Join-Path $bin64 $dx
                 if (Test-Path $dxp) { Remove-Item $dxp -Force; Trace "DXVK removido da pasta do jogo: $dx" }
               }
+              if (-not (Test-Path (Join-Path $bin64 "dxgi.dll"))) { Trace "AVISO: dxgi.dll do DXVK ausente — lista [dxgi] do jogo seguira vazia" }
+              else { Trace "dxgi do DXVK mantido na pasta do jogo (lista nao-vazia p/ o engine)" }
             } catch { Trace "limpeza DXVK falhou (seguimos): $($_.Exception.Message)" }
             # v57: SHIM d3d11 WARP — a causa-raiz do dx11: o engine cria o
             # device no adapter Hyper-V/tipo HARDWARE ("at detection stage")
@@ -2500,10 +2503,12 @@ jobs:
                   if (hr == S_OK && (!ppDevice || *ppDevice)) return hr;
                   LogLine("CreateDevice: original insuficiente (hr=0x%08x, probe ppDevice=%s) — RETRY WARP",
                           (unsigned)hr, ppDevice ? "pede device" : "NULL (probe)");
-                  LogLine("CreateDevice: original FALHOU — RETRY WARP");
                   hr = g_dev(NULL, D3D_DRIVER_TYPE_WARP, NULL, Flags, pFeatureLevels,
                              FeatureLevels, SDKVersion, ppDevice, pFeatureLevel, ppImmediateContext);
-                  LogLine("CreateDevice: WARP hr=0x%08x", (unsigned)hr);
+                  LogLine("CreateDevice: WARP hr=0x%08x flPedida=%u flObtida=%u",
+                          (unsigned)hr, (pFeatureLevels ? (unsigned)pFeatureLevels[0] : 0),
+                          (pFeatureLevel ? (unsigned)*pFeatureLevel : 0));
+                  if (hr == S_FALSE) { hr = S_OK; LogLine("CreateDevice: S_FALSE -> S_OK (WARP de FL menor)"); }
                   return hr;
                 }
                 HRESULT WINAPI D3D11CreateDeviceAndSwapChain(IDXGIAdapter* pAdapter, D3D_DRIVER_TYPE DriverType,
@@ -2523,11 +2528,13 @@ jobs:
                           (ppDevice ? (void*)*ppDevice : NULL), (ppSwapChain ? (void*)*ppSwapChain : NULL));
                   if (hr == S_OK && (!ppDevice || *ppDevice)) return hr;
                   LogLine("DevSC: original insuficiente (hr=0x%08x) — RETRY WARP", (unsigned)hr);
-                  LogLine("DevSC: original FALHOU — RETRY WARP");
                   hr = g_devsc(NULL, D3D_DRIVER_TYPE_WARP, NULL, Flags, pFeatureLevels,
                                FeatureLevels, SDKVersion, pSwapChainDesc, ppSwapChain,
                                ppDevice, pFeatureLevel, ppImmediateContext);
-                  LogLine("DevSC: WARP hr=0x%08x", (unsigned)hr);
+                  LogLine("DevSC: WARP hr=0x%08x flPedida=%u flObtida=%u",
+                          (unsigned)hr, (pFeatureLevels ? (unsigned)pFeatureLevels[0] : 0),
+                          (pFeatureLevel ? (unsigned)*pFeatureLevel : 0));
+                  if (hr == S_FALSE) { hr = S_OK; LogLine("DevSC: S_FALSE -> S_OK (WARP de FL menor)"); }
                   return hr;
                 }
                 HRESULT WINAPI D3D11CoreCreateDevice(IDXGIAdapter* pAdapter, D3D_DRIVER_TYPE DriverType,
@@ -2544,10 +2551,12 @@ jobs:
                   LogLine("Core: original hr=0x%08x", (unsigned)hr);
                   if (hr == S_OK && (!ppDevice || *ppDevice)) return hr;
                   LogLine("Core: original insuficiente (hr=0x%08x) — RETRY WARP", (unsigned)hr);
-                  LogLine("Core: original FALHOU — RETRY WARP");
                   hr = g_core(NULL, D3D_DRIVER_TYPE_WARP, NULL, Flags, pFeatureLevels,
                               FeatureLevels, SDKVersion, ppDevice, pFeatureLevel, ppImmediateContext);
-                  LogLine("Core: WARP hr=0x%08x", (unsigned)hr);
+                  LogLine("Core: WARP hr=0x%08x flPedida=%u flObtida=%u",
+                          (unsigned)hr, (pFeatureLevels ? (unsigned)pFeatureLevels[0] : 0),
+                          (pFeatureLevel ? (unsigned)*pFeatureLevel : 0));
+                  if (hr == S_FALSE) { hr = S_OK; LogLine("Core: S_FALSE -> S_OK (WARP de FL menor)"); }
                   return hr;
                 }
           '@ | Set-Content "$PWD\d3d11shim.c" -Encoding ASCII
