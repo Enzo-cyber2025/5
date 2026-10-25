@@ -249,6 +249,26 @@ jobs:
             > "$RUNNER_TEMP/certs.txt" 2>&1
           head -12 "$RUNNER_TEMP/certs.txt"
 
+      - name: Try to fetch an x86_64 build (so it can actually run here)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FLCODES_APK_URL: ${{ secrets.FLCODES_APK_URL }}
+          FLCODES_ARCH: x86_64;x86
+        run: |
+          set +e
+          bash family-link-codes/tools/fetch_familylink_apk.sh \
+            --out "$RUNNER_TEMP/familylink-x86" > "$RUNNER_TEMP/fetch-x86.txt" 2>&1
+          status=$?
+          cat "$RUNNER_TEMP/fetch-x86.txt"
+          echo "status: $status" | tee -a "$RUNNER_TEMP/fetch-x86.txt"
+          if [ -s "$RUNNER_TEMP/familylink-x86/apk-path.txt" ]; then
+            echo "x86 build available: $(tail -1 "$RUNNER_TEMP/familylink-x86/apk-path.txt")"
+            while read -r piece; do
+              printf '  %s\n' "$(basename "$piece")"
+            done < "$RUNNER_TEMP/familylink-x86/splits.txt"
+          fi
+          exit 0
+
       - name: Inventory of the real bundle (ABIs, pieces, size)
         run: |
           set +e
@@ -267,6 +287,14 @@ jobs:
             echo "== base native code =="
             "$AAPT" dump badging "$RUNNER_TEMP/familylink/base.apk" 2>/dev/null \
               | grep -E "native-code|sdkVersion|targetSdk"
+            echo
+            if [ -s "$RUNNER_TEMP/familylink-x86/splits.txt" ]; then
+              echo
+              echo "== x86 build pieces =="
+              while read -r piece; do
+                printf '%10s  %s\n' "$(stat -c %s "$piece" 2>/dev/null)" "$(basename "$piece")"
+              done < "$RUNNER_TEMP/familylink-x86/splits.txt"
+            fi
             echo
             echo "== device =="
             adb shell getprop ro.product.cpu.abi 2>/dev/null
@@ -288,25 +316,43 @@ jobs:
           sudo udevadm trigger --name-match=kvm
           ls -l /dev/kvm || echo "no /dev/kvm: TCG, slow"
 
-      - name: Boot the real app and take it apart without root
+      - name: Boot the emulator (x86_64, API 30)
+        run: |
+          set -e
+          export PATH="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/platform-tools:$PATH"
+          bash family-link-codes/tools/emulator_boot.sh \
+            --work "$RUNNER_TEMP/emu-real" --api 30 --tag default 2>&1 | tail -20
+
+      - name: Two profiles on the emulator, with the real APK
         env:
           FLCODES_PASSPHRASE: real
         run: |
           set +e
-          if [ ! -s "$RUNNER_TEMP/familylink/base.apk" ]; then
-            echo "no APK available: skipping the device run" > "$RUNNER_TEMP/real-status.txt"
+          # prefer the x86 build: that is the one this emulator can execute
+          DIR=""
+          if [ -s "$RUNNER_TEMP/familylink-x86/apk-path.txt" ]; then
+            DIR="$RUNNER_TEMP/familylink-x86"
+            echo "using the x86 build"
+          elif [ -s "$RUNNER_TEMP/familylink/apk-path.txt" ]; then
+            DIR="$RUNNER_TEMP/familylink"
+            echo "only the ARM build is available"
+          fi
+          if [ -z "$DIR" ]; then
+            echo "no-apk" > "$RUNNER_TEMP/real-status.txt"
+            echo "no APK available: skipping the device run"
             exit 0
           fi
-          APK="$(cat "$RUNNER_TEMP/familylink/apk-path.txt" 2>/dev/null | tail -1)"
-          [ -s "$APK" ] || APK="$RUNNER_TEMP/familylink/base.apk"
+          APK="$(tail -1 "$DIR/apk-path.txt")"
           PKG="$(cat "$RUNNER_TEMP/package.txt" 2>/dev/null | tr -d '\r' | head -1)"
           [ -n "$PKG" ] || PKG=com.google.android.apps.kids.familylink
-          bash family-link-codes/tools/android_emulator_ci.sh \
-            --work "$RUNNER_TEMP/real" --api 30 \
-            --apk "$APK" --package "$PKG" --expect AIte
+          echo "apk: $APK"
+          echo "package: $PKG"
+          bash family-link-codes/tools/real_two_profiles.sh \
+            --work "$RUNNER_TEMP/real" --apk "$APK" \
+            --splits "$DIR/splits.txt" --package "$PKG"
           status=$?
           echo "$status" > "$RUNNER_TEMP/real-status.txt"
-          if grep -q "INSTALL_FAILED_NO_MATCHING_ABIS" "$RUNNER_TEMP/real/run.log" 2>/dev/null; then
+          if [ "$status" = "10" ]; then
             echo "abi-incompatible" > "$RUNNER_TEMP/real-abi.txt"
             adb shell getprop ro.product.cpu.abi >> "$RUNNER_TEMP/real-abi.txt" 2>/dev/null
           fi
@@ -327,7 +373,7 @@ jobs:
           status="$(cat "$RUNNER_TEMP/real-status.txt" 2>/dev/null || echo missing)"
           echo "device run status: $status"
           if [ "$status" = "0" ]; then
-            echo "the device run completed: the key was recovered and a code generated"
+            echo "the device run completed: the app ran in two profiles without root"
             exit 0
           fi
           if [ -s "$RUNNER_TEMP/real-abi.txt" ]; then
@@ -363,11 +409,15 @@ jobs:
               echo "o emulador Android não roda imagem ARM em host x86."
             fi
             echo
+            echo "**credentials.txt**"
+            echo '```'
+            cat "$RUNNER_TEMP/credentials.txt" 2>/dev/null || echo "(not reported)"
+            echo '```'
             echo "**probe.txt**"
             echo '```'
             cat "$RUNNER_TEMP/probe.txt" 2>/dev/null || echo "(no probe)"
             echo '```'
-            for f in inventory.txt fetch.txt package.txt badging.txt backup-flags.txt certs.txt sha256.txt; do
+            for f in inventory.txt fetch-x86.txt fetch.txt package.txt badging.txt backup-flags.txt certs.txt sha256.txt; do
               [ -s "$RUNNER_TEMP/$f" ] && { echo "**$f**"; echo '```'; head -20 "$RUNNER_TEMP/$f"; echo '```'; }
             done
             if [ -s "$RUNNER_TEMP/strings.txt" ]; then

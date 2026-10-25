@@ -28,6 +28,10 @@ OUT="${TMPDIR:-/tmp}/familylink"
 PACKAGE="com.google.android.apps.kids.familylink"
 PACKAGE_OLD="com.google.android.apps.familylink"
 PACKAGE_HELPER="com.google.android.apps.kids.familylinkhelper"
+# which CPU architectures the bundle should cover; the CI emulator is x86_64, the
+# published bundle is usually ARM-only, so this is what decides whether the app
+# can be *run* or only *inspected*
+ARCH="${FLCODES_ARCH:-arm64-v8a;armeabi-v7a;x86_64;x86}"
 VERSION="latest"
 
 while [[ $# -gt 0 ]]; do
@@ -164,10 +168,11 @@ try_apkeep() {
     chmod +x "$bin" || return 1
     "$bin" --version >> "$OUT/apkeep-version.txt" 2>&1 || true
   fi
-  log "apkeep: $($bin --version 2>&1 | head -1)"
+  log "apkeep: $($bin --version 2>&1 | head -1), arch=$ARCH"
   rm -f ./*.apk ./*.xapk ./*.apks
   # APKPure is a mirror: apkeep requires the risk to be acknowledged explicitly
-  "$bin" -a "$PACKAGE" -d apk-pure -o 'acknowledge_dangers=true' . >&2 || return 1
+  "$bin" -a "$PACKAGE" -d apk-pure \
+    -o "acknowledge_dangers=true,arch=$ARCH" . >&2 || return 1
   local produced
   produced="$(ls -t *.apk *.xapk *.apks 2>/dev/null | head -1)"
   [[ -n "$produced" ]] || return 1
@@ -304,6 +309,15 @@ try_user_url() {
   curl -fsSL --retry 2 -A "Mozilla/5.0" -o "user.apk" "$url" || return 1
   unpack_if_bundle user.apk
 }
+
+if [[ -n "${FLCODES_LIST_ARCHS:-}" ]]; then
+  ensure_apkeep || exit 1
+  for arch in arm64-v8a armeabi-v7a x86_64 x86; do
+    echo "== arch $arch =="
+    "./apkeep" -l -a "$PACKAGE" -d apk-pure -o "arch=$arch" 2>&1 | head -6
+  done
+  exit 0
+fi
 
 FOUND=""
 for strategy in try_user_url try_gplay try_apkeep try_apkpure_api try_aptoide try_apkpure try_apkmirror; do
