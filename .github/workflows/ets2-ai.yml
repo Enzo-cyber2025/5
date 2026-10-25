@@ -2555,19 +2555,43 @@ jobs:
                   ForEach-Object { $Matches[1] })
                 Trace ("shim: exports do real ($($expNames.Count)): " + ($expNames -join ","))
                 $meus = @("D3D11CreateDevice", "D3D11CreateDeviceAndSwapChain", "D3D11CoreCreateDevice")
+                # v62: a v61 provou que forwardar TODOS os 48 exports do
+                # System32 no .def = 48x LNK2001 (o link nao aceita). E a REA
+                # ja dizia: o jogo carrega d3d11 via LoadLibrary RUNTIME — o
+                # .def so precisa dos simbolos que o jogo REALMENTE resolve:
+                # os 3 nossos + os imports estaticos do exe (se houver algum).
                 $defL = @("LIBRARY d3d11", "EXPORTS")
-                foreach ($en in $expNames) { if ($meus -notcontains $en) { $defL += "$en=d3d11_real.$en" } }
-                foreach ($mn in $meus) { if ($expNames -notcontains $mn) { $defL += $mn } }
+                foreach ($mn in $meus) { $defL += $mn }
+                $importsJogo = @()
+                try {
+                  $emD3d11 = $false
+                  foreach ($l in (& dumpbin /imports "$bin64\eurotrucks2.exe" 2>$null)) {
+                    if ($l -match '^\s*d3d11\.dll') { $emD3d11 = $true; continue }
+                    if ($l -match '^\s*\S+\.dll') { $emD3d11 = $false }
+                    if ($emD3d11 -and $l -match '^\s+([A-Za-z_]\w+)\s*$') { $importsJogo += $Matches[1] }
+                  }
+                } catch { Trace "shim imports: dumpbin falhou: $($_.Exception.Message)" }
+                Trace ("shim: imports estaticos do jogo em d3d11.dll (" + $importsJogo.Count + "): " + ($importsJogo -join ","))
+                foreach ($ij in $importsJogo) {
+                  if ($meus -notcontains $ij) { $defL += "$ij=d3d11_real.$ij" }
+                }
                 $defL | Set-Content "$PWD\d3d11shim.def" -Encoding ASCII
+                Trace ("shim .def: " + ($defL -join " | "))
                 # v60: limpa ANTES do cl — se o cl falhar, Test-Path nao pode
                 # "herdar" dll velha e cantar INSTALADO (exatamente o que
                 # mascarou a v59: DXVK local + cl falando = dll errada no boot)
                 Remove-Item "$bin64\d3d11.dll" -Force -ErrorAction SilentlyContinue
-                & cl /nologo /O2 /W3 /LD "$PWD\d3d11shim.c" "/Fe:$bin64\d3d11.dll" /link "/DEF:$PWD\d3d11shim.def" 2>&1 | ForEach-Object { Trace "shim cl: $_" }
-                if (Test-Path "$bin64\d3d11.dll") {
-                  Trace "shim: INSTALADO $bin64\d3d11.dll (+d3d11_real.dll)"
+                & cl /nologo /O2 /W3 /LD "$PWD\d3d11shim.c" "/Fe:$bin64\d3d11.dll" "/IMPLIB:$bin64\d3d11shim-implib.lib" /link "/DEF:$PWD\d3d11shim.def" 2>&1 | ForEach-Object { Trace "shim cl: $_" }
+                if (($LASTEXITCODE -eq 0) -and (Test-Path "$bin64\d3d11.dll")) {
+                  Trace "shim: INSTALADO $bin64\d3d11.dll (+d3d11_real.dll) link exit=$LASTEXITCODE"
                   & dumpbin /exports "$bin64\d3d11.dll" 2>$null | Where-Object { $_ -match 'D3D11' } | ForEach-Object { Trace "shim exp: $($_.Trim())" }
-                } else { Trace "shim: d3d11.dll NAO compilou — boot segue sem shim" }
+                } else {
+                  # v62: link falho deixou dll CORROMPIDA no lugar (LNK1136 no
+                  # dumpbin da v61) — LoadLibrary do jogo acharia arquivo
+                  # invalido. Remove e segue SEM shim (nativo do System32).
+                  Trace "shim: cl/link FALHOU (exit=$LASTEXITCODE) — removendo dll lixo, boot segue SEM shim"
+                  Remove-Item "$bin64\d3d11.dll" -Force -ErrorAction SilentlyContinue
+                }
               } else { Trace "shim: pasta $bin64 inexistente" }
             } catch { Trace "shim: FALHOU $($_.Exception.Message)" }
             $env:GALLIUM_DRIVER = "llvmpipe"; $env:LIBGL_ALWAYS_SOFTWARE = "1"
