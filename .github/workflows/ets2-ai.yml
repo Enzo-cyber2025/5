@@ -2497,7 +2497,8 @@ jobs:
                              FeatureLevels, SDKVersion, ppDevice, pFeatureLevel, ppImmediateContext);
                   LogLine("CreateDevice: original hr=0x%08x (ppDevice=%p)", (unsigned)hr,
                           (ppDevice ? (void*)*ppDevice : NULL));
-                  if (SUCCEEDED(hr)) return hr;
+                  if (SUCCEEDED(hr) && (!ppDevice || *ppDevice)) return hr;
+                  LogLine("CreateDevice: hr diz OK mas SEM device (S_FALSE do BRD) — RETRY WARP");
                   LogLine("CreateDevice: original FALHOU — RETRY WARP");
                   hr = g_dev(NULL, D3D_DRIVER_TYPE_WARP, NULL, Flags, pFeatureLevels,
                              FeatureLevels, SDKVersion, ppDevice, pFeatureLevel, ppImmediateContext);
@@ -2519,7 +2520,8 @@ jobs:
                                ppDevice, pFeatureLevel, ppImmediateContext);
                   LogLine("DevSC: original hr=0x%08x (ppDevice=%p chain=%p)", (unsigned)hr,
                           (ppDevice ? (void*)*ppDevice : NULL), (ppSwapChain ? (void*)*ppSwapChain : NULL));
-                  if (SUCCEEDED(hr)) return hr;
+                  if (SUCCEEDED(hr) && (!ppDevice || *ppDevice)) return hr;
+                  LogLine("DevSC: hr diz OK mas SEM device (S_FALSE do BRD) — RETRY WARP");
                   LogLine("DevSC: original FALHOU — RETRY WARP");
                   hr = g_devsc(NULL, D3D_DRIVER_TYPE_WARP, NULL, Flags, pFeatureLevels,
                                FeatureLevels, SDKVersion, pSwapChainDesc, ppSwapChain,
@@ -2539,7 +2541,8 @@ jobs:
                   hr = g_core(pAdapter, DriverType, Software, Flags, pFeatureLevels,
                               FeatureLevels, SDKVersion, ppDevice, pFeatureLevel, ppImmediateContext);
                   LogLine("Core: original hr=0x%08x", (unsigned)hr);
-                  if (SUCCEEDED(hr)) return hr;
+                  if (SUCCEEDED(hr) && (!ppDevice || *ppDevice)) return hr;
+                  LogLine("Core: hr diz OK mas SEM device — RETRY WARP");
                   LogLine("Core: original FALHOU — RETRY WARP");
                   hr = g_core(NULL, D3D_DRIVER_TYPE_WARP, NULL, Flags, pFeatureLevels,
                               FeatureLevels, SDKVersion, ppDevice, pFeatureLevel, ppImmediateContext);
