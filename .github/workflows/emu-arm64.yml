@@ -527,8 +527,8 @@ jobs:
           # Per-module entry-point accounting: this is what separates the dominant
           # refusal bucket into causes, which is the only way to know whether the
           # problem is the translator or the entry points being fed to it.
-          ent=$(grep -E '^    ENTRIES ' /tmp/prewarm.log | head -6 \
-                | tr '\n' '|' | tr -d '%\r' | tr -s ' ' | cut -c1-1400)
+          ent=$(grep -E '^    ENTRIES |^    [A-Za-z_(].*(NOT EXECUTABLE|IN NO SECTION|PAST RAW|first byte)' /tmp/prewarm.log \
+                | head -14 | tr '\n' '|' | tr -d '%\r' | tr -s ' ' | cut -c1-1800)
           sec=$(grep -E '^      \.' /tmp/prewarm.log | head -12 \
                 | tr '\n' '|' | tr -d '%\r' | tr -s ' ' | cut -c1-900)
           echo "::notice title=prewarm-entries::${ent} || SECTIONS: ${sec}"

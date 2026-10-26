@@ -385,7 +385,7 @@ static pe_status walk_exports(pec *c, pe_image *o)
     uint32_t dir_rva = o->dir_rva[PE_DIR_EXPORT];
     uint32_t dir_size = o->dir_size[PE_DIR_EXPORT];
     size_t   pos, aof, aon, aoo;
-    uint32_t nnames, base, i;
+    uint32_t nnames, nfuncs, base, i;
     int      mapped = 0;
 
     if (dir_rva == 0) { o->has_exports = 0; return PE_OK; }
@@ -399,6 +399,7 @@ static pe_status walk_exports(pec *c, pe_image *o)
         return PE_TRUNCATED;
     }
     base   = rd32(c->b + pos + 16u);
+    nfuncs = rd32(c->b + pos + 20u);
     nnames = rd32(c->b + pos + 24u);
     aof    = rd32(c->b + pos + 28u);   /* AddressOfFunctions */
     aon    = rd32(c->b + pos + 32u);   /* AddressOfNames */
@@ -409,13 +410,12 @@ static pe_status walk_exports(pec *c, pe_image *o)
     {   /* All three arrays must fit inside their own sections, not merely inside
          * the file. Overflow past a section boundary is a malformed image, and
          * reading on would fabricate exports. */
-        uint32_t nf = rd32(c->b + pos + 20u);
         int m1 = 0, m2 = 0, m3 = 0;
         pe_rva_to_off(o, aof, c->len, &m1);
         pe_rva_to_off(o, aon, c->len, &m2);
         pe_rva_to_off(o, aoo, c->len, &m3);
         if (!m1 || !m2 || !m3 ||
-            (uint64_t)nf * 4u > sec_remaining(o, aof, c->len) ||
+            (uint64_t)nfuncs * 4u > sec_remaining(o, aof, c->len) ||
             (uint64_t)nnames * 4u > sec_remaining(o, aon, c->len) ||
             (uint64_t)nnames * 2u > sec_remaining(o, aoo, c->len)) {
             o->detail = "an export array runs past the section that contains it";
@@ -448,6 +448,16 @@ static pe_status walk_exports(pec *c, pe_image *o)
             name_rva = rd32(c->b + on + (size_t)i * 4u);
             ord      = (uint32_t)rd16(c->b + oo + (size_t)i * 2u);
 
+            /* The ordinal indexes the function array, so it has to be inside the
+             * declared count. Without this, an ordinal read from a corrupt or
+             * misaligned ordinal array indexes past the function array but still
+             * inside .rdata, so every bounds check passes and the dword found
+             * there is reported as a function RVA. It is not out of bounds, it is
+             * simply not a function - which is worse, because nothing errors. */
+            if (ord >= nfuncs) {
+                o->detail = "export ordinal indexes past NumberOfFunctions";
+                return PE_MALFORMED;
+            }
             if (!fits(c, of + (size_t)ord * 4u, 4)) {
                 o->detail = "export function array runs past end of image";
                 return PE_TRUNCATED;

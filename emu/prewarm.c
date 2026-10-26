@@ -261,7 +261,8 @@ static void diagnose_module(const char *path, const uint8_t *img, size_t img_len
         /* Print the first few refusals in full; a real module can have hundreds
          * and repeating the same line proves nothing after the third. */
         if (shown < 8) {
-            snprintf(lbl, sizeof(lbl), "export[%u]", i);
+            snprintf(lbl, sizeof(lbl), "%s",
+                     im->exports[i].name ? im->exports[i].name : "(ordinal)");
             diagnose_entry(im, img, img_len, im->exports[i].rva, &d, lbl);
             shown++;
         } else {
