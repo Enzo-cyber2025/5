@@ -1312,6 +1312,37 @@ jobs:
               raise SystemExit(1)
           print("preflight heredoc OK: nenhum terminador '@ indentado")
           PY
+          # v68: a v67 morreu INTEIRA (step de 50 min, 0 linhas executadas) por
+          # UMA string mal-escapada (backslash-aspas NAO e escape do pwsh). Este
+          # bloco extrai TODO run block pwsh dos 2 workflows e valida o PARSE
+          # com o proprio pwsh do runner — falha o job em segundos, antes de
+          # baixar 5,6 GB de demo.
+          python - <<'PY'
+          import yaml, os
+          os.makedirs('pscheck', exist_ok=True)
+          n = 0
+          for wf in ('.github/workflows/ets2-ai.yml', '.github/workflows/ets2-ai-chain.yml'):
+              doc = yaml.safe_load(open(wf, encoding='utf-8'))
+              for jname, j in doc['jobs'].items():
+                  win = 'windows' in str(j.get('runs-on', ''))
+                  for step in j.get('steps', []):
+                      r = step.get('run')
+                      if not r:
+                          continue
+                      sh = str(step.get('shell', ''))
+                      if not ((sh and ('pwsh' in sh or 'powershell' in sh)) or (not sh and win)):
+                          continue
+                      n += 1
+                      open('pscheck/ps%d.ps1' % n, 'w', encoding='utf-8').write(r)
+          print('%d blocos pwsh extraidos p/ pscheck/' % n)
+          PY
+          rc=0
+          for f in pscheck/*.ps1; do
+            [ -f "$f" ] || continue
+            out=$(pwsh -NoProfile -Command '$e=$null; [void][System.Management.Automation.Language.Parser]::ParseFile($args[0],[ref]$null,[ref]$e); if($e){$e|ForEach-Object{$_.Extent.StartLineNumber.ToString()+": "+$_.Message}; exit 1}' "$f" 2>&1) || { echo "PARSE PWSH QUEBRADO em $f:"; echo "$out"; rc=1; }
+          done
+          rm -rf pscheck
+          exit $rc
       - uses: actions/download-artifact@v4
         with:
           name: ETS2-AI-bridge-exe
@@ -2905,21 +2936,26 @@ jobs:
                   foreach ($l in (& dumpbin /imports "C:\Windows\System32\d3d11.dll" 2>$null)) {
                     if ($l -match '^\s*dxgi\.dll') { $emDxgi = $true; continue }
                     if ($l -match '^\s*\S+\.dll') { $emDxgi = $false }
-                    if ($emDxgi -and $l.Trim()) { $rawSec += $l.Trim(); if ($l -match '^\s+([A-Za-z_][A-Za-z0-9_]*)\s*$') { $fwd += $Matches[1] } }
+                    if ($emDxgi -and $l.Trim()) {
+                      $t = $l.Trim(); $rawSec += $t
+                      # dumpbin: "hint NomeDaFuncao" (hint hex) ou so o nome
+                      if ($t -cmatch '^([A-Za-z_][A-Za-z0-9_]*)$') { $fwd += $t }
+                      elseif ($t -cmatch '^[0-9A-Fa-f]+\s+([A-Za-z_][A-Za-z0-9_]*)$') { $fwd += $Matches[1] }
+                    }
                   }
                 } catch { Trace "dxgishim imports: dumpbin falhou: $($_.Exception.Message)" }
                 if ($rawSec.Count -gt 0) { Trace ("dxgishim: secao dxgi dos imports do d3d11.dll: " + (($rawSec | Select-Object -First 18) -join " | ")) }
                 $fwd = $fwd | Where-Object { $_ -notin @("CreateDXGIFactory","CreateDXGIFactory1","CreateDXGIFactory2") } | Select-Object -Unique
                 Trace ("dxgishim: d3d11.dll importa do dxgi alem dos meus 3: " + ($fwd -join ","))
                 if ($fwd.Count -gt 0) {
-                  $fwd | ForEach-Object { Add-Content "$PWD\dxgishim.c" ("#pragma comment(linker, \"/export:" + $_ + "=dxgi_real." + $_ + "\"") }
+                  $fwd | ForEach-Object { Add-Content "$PWD\dxgishim.c" ('#pragma comment(linker, "/export:' + $_ + '=dxgi_real.' + $_ + '")') }
                 }
                 @("LIBRARY dxgi", "EXPORTS", "CreateDXGIFactory", "CreateDXGIFactory1", "CreateDXGIFactory2") | Set-Content "$PWD\dxgishim.def" -Encoding ASCII
                 Remove-Item "$bin64\dxgi.dll" -Force -ErrorAction SilentlyContinue
                 & cl /nologo /O2 /W3 /LD "$PWD\dxgishim.c" "/Fe:$bin64\dxgi.dll" "/IMPLIB:$bin64\dxgishim-implib.lib" /link "/DEF:$PWD\dxgishim.def" 2>&1 | ForEach-Object { Trace "dxgishim cl: $_" }
                 if (($LASTEXITCODE -eq 0) -and (Test-Path "$bin64\dxgi.dll")) {
                   Trace "dxgishim: INSTALADO $bin64\dxgi.dll (+dxgi_real.dll) link exit=$LASTEXITCODE"
-                  & dumpbin /exports "$bin64\dxgi.dll" 2>$null | Where-Object { $_ -match 'CreateDXGI' } | ForEach-Object { Trace "dxgishim exp: $($_.Trim())" }
+                  & dumpbin /exports "$bin64\dxgi.dll" 2>$null | Where-Object { $_ -match 'CreateDXGI|forwarder|ordinal' } | Select-Object -First 40 | ForEach-Object { Trace "dxgishim exp: $($_.Trim())" }
                 } else {
                   Trace "dxgishim: cl/link FALHOU (exit=$LASTEXITCODE) — removendo dll lixo; dxgi ficara o NATIVO (lista vazia)"
                   Remove-Item "$bin64\dxgi.dll" -Force -ErrorAction SilentlyContinue
