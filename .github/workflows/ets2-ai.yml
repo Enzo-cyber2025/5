@@ -2368,7 +2368,10 @@ jobs:
                 Copy-Item (Join-Path $wdir2 "dxvk.log") ("$PWD\dxvk-log-" + ($tag -replace "[^a-zA-Z0-9]", "-") + ".txt") -Force -ErrorAction SilentlyContinue
                 Copy-Item (Join-Path $wdir2 "d3d11shim.log") ("$PWD\d3d11shim-" + ($tag -replace "[^a-zA-Z0-9]", "-") + ".txt") -Force -ErrorAction SilentlyContinue
               }
-              if ($g.HasExited) { break }
+              if ($g.HasExited) {
+                Trace "boot $tag: processo SAIU na iter $i — ExitCode=$($g.ExitCode) (0xC0000005=crash; 0=limpo)"
+                break
+              }
               # v36: probe NATIVO pwsh — zero python no loop (python custa ~35 s
               # com a CPU engolida pelo jogo+DXVK e dilatava o boot em HORAS).
               # Le a MMF direto: magic AUI1 (offset 1472) so e escrito pela
@@ -2537,6 +2540,22 @@ jobs:
                   if (!g_dev) { LogLine("CreateDevice: sem ponteiro real"); return E_FAIL; }
                   LogLine("CreateDevice: adapter=%p type=%d flags=0x%x nfl=%u",
                           (void*)pAdapter, (int)DriverType, Flags, FeatureLevels);
+                  // v73: HARDWARE sem adapter aqui = BRD (Basic Render Driver) —
+                  // a v72 provou que o device BRD e CRIADO (FL 10_0, hr=S_OK) mas o
+                  // jogo morre SECO antes do swapchain: BRD hardware device nao
+                  // sobrevive a swapchain/Present sem monitor (o combo provado no
+                  // warpwin e WARP). WARP direto; original so se o WARP falhar.
+                  if (!pAdapter && DriverType == D3D_DRIVER_TYPE_HARDWARE) {
+                    LogLine("CreateDevice: HARDWARE sem adapter = BRD -> WARP direto");
+                    hr = g_dev(NULL, D3D_DRIVER_TYPE_WARP, NULL, Flags, pFeatureLevels,
+                               FeatureLevels, SDKVersion, ppDevice, pFeatureLevel, ppImmediateContext);
+                    LogLine("CreateDevice: WARP-direto hr=0x%08x flPedida=%u flObtida=%u",
+                            (unsigned)hr, (pFeatureLevels ? (unsigned)pFeatureLevels[0] : 0),
+                            (pFeatureLevel ? (unsigned)*pFeatureLevel : 0));
+                    if (hr == S_FALSE) { hr = S_OK; LogLine("CreateDevice: S_FALSE -> S_OK (WARP de FL menor)"); }
+                    if (hr == S_OK && (!ppDevice || *ppDevice)) return hr;
+                    LogLine("CreateDevice: WARP falhou — tentando o original");
+                  }
                   hr = g_dev(pAdapter, DriverType, Software, Flags, pFeatureLevels,
                              FeatureLevels, SDKVersion, ppDevice, pFeatureLevel, ppImmediateContext);
                   LogLine("CreateDevice: original hr=0x%08x (ppDevice=%p)", (unsigned)hr,
@@ -2562,6 +2581,22 @@ jobs:
                   if (!g_devsc) { LogLine("DevSC: sem ponteiro real"); return E_FAIL; }
                   LogLine("DevSC: adapter=%p type=%d flags=0x%x nfl=%u",
                           (void*)pAdapter, (int)DriverType, Flags, FeatureLevels);
+                  // v73: HARDWARE sem adapter aqui = BRD (Basic Render Driver) —
+                  // a v72 provou que o device BRD e CRIADO (FL 10_0, hr=S_OK) mas o
+                  // jogo morre SECO antes do swapchain: BRD hardware device nao
+                  // sobrevive a swapchain/Present sem monitor (o combo provado no
+                  // warpwin e WARP). WARP direto; original so se o WARP falhar.
+                  if (!pAdapter && DriverType == D3D_DRIVER_TYPE_HARDWARE) {
+                    LogLine("DevSC: HARDWARE sem adapter = BRD -> WARP direto");
+                    hr = g_devsc(NULL, D3D_DRIVER_TYPE_WARP, NULL, Flags, pFeatureLevels,
+                               FeatureLevels, SDKVersion, pSwapChainDesc, ppSwapChain,ppDevice, pFeatureLevel, ppImmediateContext);
+                    LogLine("DevSC: WARP-direto hr=0x%08x flPedida=%u flObtida=%u",
+                            (unsigned)hr, (pFeatureLevels ? (unsigned)pFeatureLevels[0] : 0),
+                            (pFeatureLevel ? (unsigned)*pFeatureLevel : 0));
+                    if (hr == S_FALSE) { hr = S_OK; LogLine("DevSC: S_FALSE -> S_OK (WARP de FL menor)"); }
+                    if (hr == S_OK && (!ppDevice || *ppDevice)) return hr;
+                    LogLine("DevSC: WARP falhou — tentando o original");
+                  }
                   hr = g_devsc(pAdapter, DriverType, Software, Flags, pFeatureLevels,
                                FeatureLevels, SDKVersion, pSwapChainDesc, ppSwapChain,
                                ppDevice, pFeatureLevel, ppImmediateContext);
@@ -2587,6 +2622,22 @@ jobs:
                   if (!g_core) { LogLine("Core: sem ponteiro real"); return E_FAIL; }
                   LogLine("Core: adapter=%p type=%d flags=0x%x nfl=%u",
                           (void*)pAdapter, (int)DriverType, Flags, FeatureLevels);
+                  // v73: HARDWARE sem adapter aqui = BRD (Basic Render Driver) —
+                  // a v72 provou que o device BRD e CRIADO (FL 10_0, hr=S_OK) mas o
+                  // jogo morre SECO antes do swapchain: BRD hardware device nao
+                  // sobrevive a swapchain/Present sem monitor (o combo provado no
+                  // warpwin e WARP). WARP direto; original so se o WARP falhar.
+                  if (!pAdapter && DriverType == D3D_DRIVER_TYPE_HARDWARE) {
+                    LogLine("Core: HARDWARE sem adapter = BRD -> WARP direto");
+                    hr = g_core(NULL, D3D_DRIVER_TYPE_WARP, NULL, Flags, pFeatureLevels,
+                               FeatureLevels, SDKVersion, ppDevice, pFeatureLevel, ppImmediateContext);
+                    LogLine("Core: WARP-direto hr=0x%08x flPedida=%u flObtida=%u",
+                            (unsigned)hr, (pFeatureLevels ? (unsigned)pFeatureLevels[0] : 0),
+                            (pFeatureLevel ? (unsigned)*pFeatureLevel : 0));
+                    if (hr == S_FALSE) { hr = S_OK; LogLine("Core: S_FALSE -> S_OK (WARP de FL menor)"); }
+                    if (hr == S_OK && (!ppDevice || *ppDevice)) return hr;
+                    LogLine("Core: WARP falhou — tentando o original");
+                  }
                   hr = g_core(pAdapter, DriverType, Software, Flags, pFeatureLevels,
                               FeatureLevels, SDKVersion, ppDevice, pFeatureLevel, ppImmediateContext);
                   LogLine("Core: original hr=0x%08x", (unsigned)hr);
@@ -2991,7 +3042,7 @@ jobs:
                 Trace "config.cfg windowed criado em $docs"
               }
             } catch { Trace "config.cfg: $($_.Exception.Message)" }
-            $vivo = Boot $exe $wdir "x64 dx11 SHIM WARP" @("-nointro", "-safe") $null 120
+            $vivo = Boot $exe $wdir "x64 dx11 SHIM WARP" @("-nointro") $null 120
             # v57: o shim loga TODA chamada — o log diz se o jogo carregou nosso
             # d3d11.dll, o que pediu, e se o WARP aceitou. Sem log = o jogo
             # carregou o d3d11 de OUTRO lugar (caminho absoluto?).
@@ -3011,6 +3062,13 @@ jobs:
                 Copy-Item $dlogP "$PWD\dxgishim-boot1.txt" -Force
               } else { Trace "dxgilog AUSENTE — o jogo NAO carregou nosso dxgi.dll" }
             } catch { Trace "dxgilog: $($_.Exception.Message)" }
+            try {
+              Get-WinEvent -FilterHashtable @{LogName="Application"; Id=1000} -MaxEvents 12 -ErrorAction SilentlyContinue |
+                Where-Object { $_.Message -match "win_x64" } | Select-Object -First 4 | ForEach-Object {
+                  $m = ($_.Message -replace "\s+", " ")
+                  Trace ("WER1000 x64: " + $_.TimeCreated.ToString("HH:mm:ss") + " " + $m.Substring(0, [Math]::Min(300, $m.Length)))
+                }
+            } catch { Trace "WER1000: $($_.Exception.Message)" }
             if (-not $vivo -and -not (& $mmfOk) -and -not $shimOk) {
               Trace "boot shim WARP nao deu MMF — recolocando DXVK p/ fallbacks"
               foreach ($mp in @(@($d64, "C:\Windows\System32"), @($d32, "C:\Windows\SysWOW64"))) {
@@ -3100,7 +3158,7 @@ jobs:
             $f += "=== diretorio crash ==="
             $f += (Get-ChildItem (Join-Path $docs "crash") -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name)
             $f += "=== Event Log: Application Error 1000 (3 ultimos) ==="
-            $f += (Get-WinEvent -FilterHashtable @{LogName="Application"; Id=1000} -MaxEvents 3 -ErrorAction SilentlyContinue | ForEach-Object { $_.TimeCreated.ToString("s") + " :: " + ($_.Message -replace "`r`n"," | ") })
+            $f += (Get-WinEvent -FilterHashtable @{LogName="Application"; Id=1000} -MaxEvents 15 -ErrorAction SilentlyContinue | ForEach-Object { $_.TimeCreated.ToString("s") + " :: " + ($_.Message -replace "`r`n"," | ") })
             $f += "=== Event Log: WER 1001 (2 ultimos) ==="
             $f += (Get-WinEvent -FilterHashtable @{LogName="Application"; Id=1001} -MaxEvents 2 -ErrorAction SilentlyContinue | ForEach-Object { $_.TimeCreated.ToString("s") + " :: " + ($_.Message -replace "`r`n"," | ") })
             $f | Out-File "$PWD\boot-forensics.txt" -Encoding utf8
