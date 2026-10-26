@@ -1337,11 +1337,23 @@ jobs:
           print('%d blocos pwsh extraidos p/ pscheck/' % n)
           PY
           rc=0
-          for f in pscheck/*.ps1; do
+          cat > pscheck/_parse.ps1 <<'EOF'
+          param([string]$p)
+          $e = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile($p, [ref]$null, [ref]$e)
+          if ($e) {
+            $e | ForEach-Object { "$($_.Extent.StartLineNumber): $($_.Message)" }
+            exit 1
+          }
+          exit 0
+          EOF
+          for f in pscheck/ps*.ps1; do
             [ -f "$f" ] || continue
-            # ParseFile exige path ABSOLUTO windows (o cwd do pwsh nao e o do bash)
+            # v70: pwsh -Command ENGOLE os args ($args chegava vazio = path
+            # invalido); -File passa parametros de verdade. E ParseFile exige
+            # path absoluto windows (cygpath), nao o relativo do bash.
             fp=$(cygpath -w "$f")
-            out=$(pwsh -NoProfile -Command '$e=$null; [void][System.Management.Automation.Language.Parser]::ParseFile($args[0],[ref]$null,[ref]$e); if($e){$e|ForEach-Object{$_.Extent.StartLineNumber.ToString()+": "+$_.Message}; exit 1}' "$fp" 2>&1) || { echo "PARSE PWSH QUEBRADO em $f:"; echo "$out"; rc=1; }
+            out=$(pwsh -NoProfile -File pscheck/_parse.ps1 "$fp" 2>&1) || { echo "PARSE PWSH QUEBRADO em $f:"; echo "$out"; rc=1; }
           done
           rm -rf pscheck
           exit $rc
