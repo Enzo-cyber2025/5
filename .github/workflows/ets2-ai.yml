@@ -1339,7 +1339,9 @@ jobs:
           rc=0
           for f in pscheck/*.ps1; do
             [ -f "$f" ] || continue
-            out=$(pwsh -NoProfile -Command '$e=$null; [void][System.Management.Automation.Language.Parser]::ParseFile($args[0],[ref]$null,[ref]$e); if($e){$e|ForEach-Object{$_.Extent.StartLineNumber.ToString()+": "+$_.Message}; exit 1}' "$f" 2>&1) || { echo "PARSE PWSH QUEBRADO em $f:"; echo "$out"; rc=1; }
+            # ParseFile exige path ABSOLUTO windows (o cwd do pwsh nao e o do bash)
+            fp=$(cygpath -w "$f")
+            out=$(pwsh -NoProfile -Command '$e=$null; [void][System.Management.Automation.Language.Parser]::ParseFile($args[0],[ref]$null,[ref]$e); if($e){$e|ForEach-Object{$_.Extent.StartLineNumber.ToString()+": "+$_.Message}; exit 1}' "$fp" 2>&1) || { echo "PARSE PWSH QUEBRADO em $f:"; echo "$out"; rc=1; }
           done
           rm -rf pscheck
           exit $rc
