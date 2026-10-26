@@ -2722,8 +2722,17 @@ jobs:
                   IDXGIAdapter1* real;
                   LONG refs;
                 } AdapterWrap;
+                // v72: vram 3GB NAO bastou (v71: GetDesc1 entregue e o engine
+                // rejeitou os 2 adapters SEM chamar EnumOutputs) — o filtro e a
+                // IDENTIDADE: vendor 0x1414 (Microsoft) + "Basic Render Driver"
+                // = adapter software. Mentimos a identidade INTEIRA.
                 static void MentaVram(DXGI_ADAPTER_DESC* d) {
                   if (d->DedicatedVideoMemory == 0) d->DedicatedVideoMemory = (SIZE_T)3 << 30;
+                  if (d->VendorId == 0x1414) {
+                    d->VendorId = 0x10DE;
+                    d->DeviceId = 0x2484;
+                    wcscpy(d->Description, L"NVIDIA GeForce RTX 3070");
+                  }
                 }
                 static HRESULT WINAPI AW_QueryInterface(AdapterWrap* self, REFIID riid, void** ppv) {
                   if (!ppv) return E_POINTER;
@@ -2776,9 +2785,11 @@ jobs:
                 static HRESULT WINAPI AW_GetDesc1(AdapterWrap* self, DXGI_ADAPTER_DESC1* pDesc) {
                   HRESULT hr = self->real->lpVtbl->GetDesc1((IDXGIAdapter1*)self->real, pDesc);
                   if (SUCCEEDED(hr) && pDesc) {
-                    LogLine("GetDesc1 '%ls' vram=%llu -> 3GB",
-                            pDesc->Description, (unsigned long long)pDesc->DedicatedVideoMemory);
+                    LogLine("GetDesc1 '%ls' vendor=0x%04x vram=%llu -> RTX3070/3GB",
+                            pDesc->Description, (unsigned)pDesc->VendorId,
+                            (unsigned long long)pDesc->DedicatedVideoMemory);
                     MentaVram((DXGI_ADAPTER_DESC*)pDesc);
+                    pDesc->Flags = 0;
                   }
                   return hr;
                 }
