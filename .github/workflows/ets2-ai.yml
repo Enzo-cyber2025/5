@@ -2728,8 +2728,7 @@ jobs:
                 static HRESULT WINAPI AW_QueryInterface(AdapterWrap* self, REFIID riid, void** ppv) {
                   if (!ppv) return E_POINTER;
                   if (IsEqualGUID(riid, &IID_IUnknown) || IsEqualGUID(riid, &IID_IDXGIObject) ||
-                      IsEqualGUID(riid, &IID_IDXGIAdapter) || IsEqualGUID(riid, &IID_IDXGIAdapter1) ||
-                      IsEqualGUID(riid, &IID_IDXGIAdapter2)) {
+                      IsEqualGUID(riid, &IID_IDXGIAdapter) || IsEqualGUID(riid, &IID_IDXGIAdapter1)) {
                     InterlockedIncrement(&self->refs); *ppv = self; return S_OK;
                   }
                   return self->real->lpVtbl->QueryInterface((IDXGIAdapter1*)self->real, riid, ppv);
@@ -2771,7 +2770,7 @@ jobs:
                   }
                   return hr;
                 }
-                static HRESULT WINAPI AW_CheckInterfaceSupport(AdapterWrap* self, REFGUID InterfaceName, LONGLONG* pUMDVersion) {
+                static HRESULT WINAPI AW_CheckInterfaceSupport(AdapterWrap* self, REFGUID InterfaceName, LARGE_INTEGER* pUMDVersion) {
                   return self->real->lpVtbl->CheckInterfaceSupport((IDXGIAdapter1*)self->real, InterfaceName, pUMDVersion);
                 }
                 static HRESULT WINAPI AW_GetDesc1(AdapterWrap* self, DXGI_ADAPTER_DESC1* pDesc) {
@@ -2783,18 +2782,13 @@ jobs:
                   }
                   return hr;
                 }
-                static HRESULT WINAPI AW_GetDesc2(AdapterWrap* self, DXGI_ADAPTER_DESC2* pDesc) {
-                  IDXGIAdapter2* a2 = NULL; HRESULT hr;
-                  hr = self->real->lpVtbl->QueryInterface((IDXGIAdapter1*)self->real, &IID_IDXGIAdapter2, (void**)&a2);
-                  if (FAILED(hr)) return hr;
-                  hr = a2->lpVtbl->GetDesc2(a2, pDesc);
-                  if (SUCCEEDED(hr) && pDesc) {
-                    LogLine("GetDesc2 '%ls' vram=%llu -> 3GB",
-                            pDesc->Description, (unsigned long long)pDesc->DedicatedVideoMemory);
-                    MentaVram((DXGI_ADAPTER_DESC*)pDesc);
-                  }
-                  a2->lpVtbl->Release(a2);
-                  return hr;
+                // GetDesc2 (slot 11): DXGI_ADAPTER_DESC2 e IID_IDXGIAdapter2 NAO
+                // existem no dxgi.h deste SDK (C2065/C2081 na v70) — e o engine
+                // 1.40 nao usa (probe = FL 10_0). Quem QI p/ IDXGIAdapter2 cai no
+                // QI forwarded e recebe o adapter REAL (GetDesc2 nativo).
+                static HRESULT WINAPI AW_GetDesc2(AdapterWrap* self, void* pDesc) {
+                  (void)self; (void)pDesc;
+                  return E_NOTIMPL;
                 }
                 static const void* g_AWVtbl[12] = {
                   (const void*)AW_QueryInterface, (const void*)AW_AddRef, (const void*)AW_Release,
@@ -2999,6 +2993,13 @@ jobs:
                 Copy-Item $shimLogP "$PWD\d3d11shim-boot1.txt" -Force
               } else { Trace "shimlog AUSENTE — o jogo NAO carregou o d3d11.dll local" }
             } catch { Trace "shimlog: $($_.Exception.Message)" }
+            try {
+              $dlogP = Join-Path $wdir "dxgishim.log"
+              if (Test-Path $dlogP) {
+                @(Get-Content $dlogP -ErrorAction SilentlyContinue) | Select-Object -First 40 | ForEach-Object { Trace "dxgilog: $_" }
+                Copy-Item $dlogP "$PWD\dxgishim-boot1.txt" -Force
+              } else { Trace "dxgilog AUSENTE — o jogo NAO carregou nosso dxgi.dll" }
+            } catch { Trace "dxgilog: $($_.Exception.Message)" }
             if (-not $vivo -and -not (& $mmfOk) -and -not $shimOk) {
               Trace "boot shim WARP nao deu MMF — recolocando DXVK p/ fallbacks"
               foreach ($mp in @(@($d64, "C:\Windows\System32"), @($d32, "C:\Windows\SysWOW64"))) {
@@ -3288,7 +3289,7 @@ jobs:
           cp sobe-trace.log "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp dxvk-log-*.txt "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp "/c/Users/runneradmin/Documents/Euro Truck Simulator 2/game.log.txt" "ci-logs/${{ github.run_id }}-demo/documents-game.log.txt" 2>/dev/null || true
-          for f in autoteste-real.json autoteste-real.log demo-mmf.json /c/steamcmd/fase1.log /c/steamcmd/fase2.log /c/dd/dd.log /c/dd/stage2.err mesa-load.log /c/dd/setup.err /c/dd/7z.log /c/dd/mesa-7z.log /c/ets2demo/game.log.txt /c/ets2demo/game-ets2ai-telemetry.log; do
+          for f in d3d11shim-boot1.txt dxgishim-boot1.txt autoteste-real.json autoteste-real.log demo-mmf.json /c/steamcmd/fase1.log /c/steamcmd/fase2.log /c/dd/dd.log /c/dd/stage2.err mesa-load.log /c/dd/setup.err /c/dd/7z.log /c/dd/mesa-7z.log /c/ets2demo/game.log.txt /c/ets2demo/game-ets2ai-telemetry.log; do
             cp "$f" "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           done
           git config user.name "ci-diag"; git config user.email "ci-diag@users.noreply.github.com"
