@@ -7,6 +7,6 @@
 | amostras acumuladas (ultima colheita) | RUNNING |
 | meta | 500.000.000.000 amostras (~1,25 bilhao de km simulados) |
 | janelas | seg, qui e sab, 08:00 UTC — colhe, promove e empurra sozinho |
-| atualizado | 2026-10-26 03:22 UTC |
+| atualizado | 2026-10-26 04:32 UTC |
 
 Fonte: API do Kaggle consultada pelo workflow da cadeia em cada janela.
