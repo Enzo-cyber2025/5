@@ -488,8 +488,8 @@ jobs:
           # remaining-time estimate are exercised the way they would be on a
           # device whose idle window keeps closing and reopening.
           xargs -a /tmp/mods.list -d '\n' \
-            ./emu/prewarm --idle-ms 250 --max-seconds 900 --cache /tmp/hb.ptc \
-            > /tmp/prewarm.log 2>&1
+            ./emu/prewarm --idle-ms 250 --max-seconds 900 --diagnose-entries \
+            --cache /tmp/hb.ptc > /tmp/prewarm.log 2>&1
           rc=$?
           tail -45 /tmp/prewarm.log
           if [ "$rc" -ne 0 ]; then
@@ -524,6 +524,14 @@ jobs:
                   | head -14 | tr '\n' '|' | tr -d '%\r' | tr -s ' ' | cut -c1-1200)
           cov=$(grep -E '^functions ' /tmp/prewarm.log | tr '\n' '|' | tr -s ' ')
           echo "::notice title=prewarm-blocking::${cov} || BLOCKERS: ${block}"
+          # Per-module entry-point accounting: this is what separates the dominant
+          # refusal bucket into causes, which is the only way to know whether the
+          # problem is the translator or the entry points being fed to it.
+          ent=$(grep -E '^    ENTRIES ' /tmp/prewarm.log | head -6 \
+                | tr '\n' '|' | tr -d '%\r' | tr -s ' ' | cut -c1-1400)
+          sec=$(grep -E '^      \.' /tmp/prewarm.log | head -12 \
+                | tr '\n' '|' | tr -d '%\r' | tr -s ' ' | cut -c1-900)
+          echo "::notice title=prewarm-entries::${ent} || SECTIONS: ${sec}"
 
       - name: Confirm nothing downloaded entered the repository
         run: |

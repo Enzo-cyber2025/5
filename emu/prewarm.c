@@ -36,6 +36,19 @@
 #include <time.h>
 
 #define MAX_IMAGE (256u * 1024u * 1024u)
+
+/* Why an entry point is not inside translatable code. Separate counters, because
+ * a module whose exports are data, a section the loader would not mark
+ * executable, and a section whose raw data is shorter than its virtual size all
+ * collapse into the sweep's single "not in code" refusal. */
+typedef struct {
+    uint32_t total;
+    uint32_t in_code;
+    uint32_t no_section;      /* the RVA is inside no section at all */
+    uint32_t not_executable;  /* inside a section not marked executable */
+    uint32_t past_raw;        /* inside an executable section's zero-filled tail */
+    uint32_t zero_bytes;      /* in code, but the first byte is 0x00 */
+} entry_diag;
 #define MAX_MODULES 256   /* a real application bundle can carry this many */
 
 static uint64_t now_ns(void)
@@ -176,6 +189,91 @@ static int read_file(const char *path, uint8_t **out, size_t *out_len,
     return 1;
 }
 
+/* Classifies one entry point against the module's own section table. This is the
+ * same test the sweep applies, spelled out, so that "not in code" stops being a
+ * single opaque bucket. */
+static void diagnose_entry(const pe_image *im, const uint8_t *img, size_t img_len,
+                           uint32_t rva, entry_diag *d, const char *label)
+{
+    uint32_t i;
+    d->total++;
+    for (i = 0; i < im->num_sections; i++) {
+        const pe_section *s = &im->sections[i];
+        if (s->virtual_size == 0 || rva < s->virtual_addr) continue;
+        if (rva - s->virtual_addr >= s->virtual_size) continue;
+        if (!(s->characteristics & PE_SCN_MEM_EXECUTE)) {
+            d->not_executable++;
+            printf("    %-22s rva=%08X  section %-9s NOT EXECUTABLE [0x%08X]\n",
+                   label, rva, s->name, s->characteristics);
+            return;
+        }
+        if (rva - s->virtual_addr >= s->raw_size) {
+            d->past_raw++;
+            printf("    %-22s rva=%08X  section %-9s PAST RAW DATA "
+                   "(raw %u < vsize %u)\n", label, rva, s->name, s->raw_size,
+                   s->virtual_size);
+            return;
+        }
+        {
+            size_t off = (size_t)s->raw_ptr + (rva - s->virtual_addr);
+            if (img && off < img_len && img[off] == 0x00) {
+                d->zero_bytes++;
+                printf("    %-22s rva=%08X  section %-9s first byte is 0x00\n",
+                       label, rva, s->name);
+                return;
+            }
+        }
+        d->in_code++;
+        return;
+    }
+    d->no_section++;
+    printf("    %-22s rva=%08X  IN NO SECTION\n", label, rva);
+}
+
+static void diagnose_module(const char *path, const uint8_t *img, size_t img_len,
+                            const pe_image *im)
+{
+    entry_diag d;
+    uint32_t i, shown = 0;
+    char lbl[24];
+    memset(&d, 0, sizeof(d));
+
+    printf("  --- %s ---\n", path);
+    printf("    %s %s  sections=%u  exports=%u%s\n",
+           im->is_dll ? "DLL" : "exe", pe_machine_name(im->machine),
+           im->num_sections, im->num_exports,
+           im->exports_truncated ? "  (CAPPED at PE_EXPORT_MAX)" : "");
+    for (i = 0; i < im->num_sections; i++) {
+        const pe_section *s = &im->sections[i];
+        printf("      %-9s va=%08X vsize=%08X raw=%08X/%08X %c%c%c%s\n",
+               s->name, s->virtual_addr, s->virtual_size, s->raw_ptr, s->raw_size,
+               (s->characteristics & PE_SCN_MEM_READ) ? 'R' : '-',
+               (s->characteristics & PE_SCN_MEM_WRITE) ? 'W' : '-',
+               (s->characteristics & PE_SCN_MEM_EXECUTE) ? 'X' : '-',
+               (s->characteristics & PE_SCN_CNT_CODE) ? " CODE" : "");
+    }
+    if (im->entry_rva) {
+        diagnose_entry(im, img, img_len, im->entry_rva, &d, "entry");
+        shown = 1;
+    }
+    for (i = 0; i < im->num_exports; i++) {
+        if (im->exports[i].forwarded || im->exports[i].rva == 0) continue;
+        /* Print the first few refusals in full; a real module can have hundreds
+         * and repeating the same line proves nothing after the third. */
+        if (shown < 8) {
+            snprintf(lbl, sizeof(lbl), "export[%u]", i);
+            diagnose_entry(im, img, img_len, im->exports[i].rva, &d, lbl);
+            shown++;
+        } else {
+            diagnose_entry(im, img, img_len, im->exports[i].rva, &d, "");
+        }
+    }
+    printf("    ENTRIES module=%s total=%u in_code=%u no_section=%u "
+           "not_executable=%u past_raw=%u zero_first_byte=%u exports=%u capped=%d\n",
+           path, d.total, d.in_code, d.no_section, d.not_executable, d.past_raw,
+           d.zero_bytes, im->num_exports, im->exports_truncated);
+}
+
 int main(int argc, char **argv)
 {
     const char *cache_path = NULL;
@@ -186,6 +284,7 @@ int main(int argc, char **argv)
     pe_image    pes[MAX_MODULES];
     int         npaths = 0, nmods = 0, i;
     unsigned    idle_ms = 250u, max_seconds = 600u;
+    int         diagnose = 0;
     ptc_cache  *cache = NULL;
     sweep_job  *job = NULL;
     sweep_progress prog;
@@ -198,6 +297,8 @@ int main(int argc, char **argv)
             cache_path = argv[++i];
         else if (strcmp(argv[i], "--idle-ms") == 0 && i + 1 < argc)
             idle_ms = (unsigned)strtoul(argv[++i], NULL, 10);
+        else if (strcmp(argv[i], "--diagnose-entries") == 0)
+            diagnose = 1;
         else if (strcmp(argv[i], "--max-seconds") == 0 && i + 1 < argc)
             max_seconds = (unsigned)strtoul(argv[++i], NULL, 10);
         else if (argv[i][0] == '-') {
@@ -213,7 +314,7 @@ int main(int argc, char **argv)
     if (npaths == 0) {
         fprintf(stderr,
                 "usage: prewarm [--cache <path>] [--idle-ms <n>] "
-                "[--max-seconds <n>] <file> [<file>...]\n");
+                "[--max-seconds <n>] [--diagnose-entries] <file> [<file>...]\n");
         return 1;
     }
 
@@ -246,6 +347,8 @@ int main(int argc, char **argv)
                paths[i], pes[nmods].is_dll ? "DLL" : "exe",
                pe_machine_name(pes[nmods].machine), pes[nmods].num_sections,
                pe_total_imports(&pes[nmods]), pes[nmods].num_exports);
+        if (diagnose)
+            diagnose_module(paths[i], imgs[nmods], lens[nmods], &pes[nmods]);
         nmods++;
     }
     if (nmods == 0) {

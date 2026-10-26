@@ -28,6 +28,11 @@ test: $(TARGETS)
 	@grep -q 'stopped at opcode FF' $(FIXTURE_DLL).prewarm
 	@grep -q 'refused: unsupported-opcode' $(FIXTURE_DLL).prewarm
 	@grep -q 'functions pre-translated:  *2  (66.67% of attempted)' $(FIXTURE_DLL).prewarm
+	@# The entry-point diagnosis is what separates "not in code" into causes, so
+	@# it is asserted too: a fixture whose three entry points are all real code has
+	@# to report exactly that.
+	@./prewarm --diagnose-entries --idle-ms 1 --max-seconds 30 $(FIXTURE_DLL) > $(FIXTURE_DLL).diag
+	@grep -q 'total=3 in_code=3 no_section=0 not_executable=0 past_raw=0 zero_first_byte=0' $(FIXTURE_DLL).diag
 	@grep -q '2 export(s)' $(FIXTURE_DLL).prewarm
 	@echo "prewarm end to end: percentage and remaining time reported for a real file"
 	@echo
@@ -116,6 +121,6 @@ test_emit_exec: test_emit_exec.c
 
 clean:
 	rm -f $(TARGETS) *.o *.ptc *.ptc.tmp.* $(FIXTURE) $(FIXTURE).report \
-	      $(FIXTURE_DLL) $(FIXTURE_DLL).prewarm $(FIXTURE).api
+	      $(FIXTURE_DLL) $(FIXTURE_DLL).prewarm $(FIXTURE_DLL).diag $(FIXTURE).api
 
 .PHONY: all test clean
