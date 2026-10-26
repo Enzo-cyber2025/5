@@ -159,7 +159,12 @@ unpack_if_bundle() {  # XAPK/APKS -> base.apk + splits, listed in splits.txt
         done
       } > splits.txt
       while read -r apk; do log "  piece: $(basename "$apk")"; done < splits.txt
-      log "bundle pieces: $(wc -l < splits.txt)"
+      # a second list without the ABI split: the app's own code is Java and runs
+      # on any ART, so on an x86 emulator the ARM native split is what blocks the
+      # install, not the app
+      grep -vE 'config\.(arm64_v8a|armeabi_v7a|armeabi|x86|x86_64)\.apk' splits.txt \
+        > splits-nolib.txt || true
+      log "bundle pieces: $(wc -l < splits.txt) (without the ABI split: $(wc -l < splits-nolib.txt))"
       printf '%s\n' "$base"
       return 0 ;;
     *) : > splits.txt; echo "$file"; return 0 ;;

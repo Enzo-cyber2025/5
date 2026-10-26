@@ -336,6 +336,20 @@ jobs:
           bash family-link-codes/tools/emulator_boot.sh \
             --work "$RUNNER_TEMP/emu-real" --api 30 --tag default 2>&1 | tail -20
 
+      - name: Does this image translate ARM code? (native bridge)
+        run: |
+          set +e
+          {
+            echo "abi: $(adb shell getprop ro.product.cpu.abi | tr -d '\r')"
+            echo "native.bridge: '$(adb shell getprop ro.dalvik.vm.native.bridge | tr -d '\r')'"
+            echo "native.bridge.exec: '$(adb shell getprop ro.enable.native.bridge.exec | tr -d '\r')'"
+            echo
+            echo "libhoudini / libnb on the device:"
+            adb shell 'ls /system/lib*/libhoudini.so /system/lib*/libnb.so /system/lib*/arm 2>/dev/null' \
+              | head -10
+            echo "(empty above means no ARM translation on this image)"
+          } | tee "$RUNNER_TEMP/nativebridge.txt"
+
       - name: Two profiles on the emulator, with the real APK
         env:
           FLCODES_PASSPHRASE: real
@@ -369,7 +383,23 @@ jobs:
             --splits "$DIR/splits.txt" --package "$PKG" \
             > "$RUNNER_TEMP/real/stdout.txt" 2>&1
           status=$?
-          tail -40 "$RUNNER_TEMP/real/stdout.txt"
+          # The app is Java/Kotlin: only the native split is ARM. Drop it and the
+          # rest of the bundle can install on x86, where the code actually runs.
+          if [ "$status" = "10" ] && [ -s "$DIR/splits-nolib.txt" ]; then
+            echo
+            echo "retrying without the ARM native split:" \
+                 "$(wc -l < "$DIR/splits-nolib.txt") pieces"
+            mv "$RUNNER_TEMP/real/stdout.txt" "$RUNNER_TEMP/real/stdout-abi.txt"
+            rm -rf "$RUNNER_TEMP/real"; mkdir -p "$RUNNER_TEMP/real"
+            bash family-link-codes/tools/real_two_profiles.sh \
+              --work "$RUNNER_TEMP/real" --apk "$APK" \
+              --splits "$DIR/splits-nolib.txt" --package "$PKG" \
+              > "$RUNNER_TEMP/real/stdout.txt" 2>&1
+            status=$?
+            echo "second attempt status: $status"
+            cp "$RUNNER_TEMP/real-abi.txt" "$RUNNER_TEMP/real/abi-first-attempt.txt" 2>/dev/null || true
+          fi
+          tail -45 "$RUNNER_TEMP/real/stdout.txt"
           echo "$status" > "$RUNNER_TEMP/real-status.txt"
           if [ "$status" = "10" ]; then
             echo "abi-incompatible" > "$RUNNER_TEMP/real-abi.txt"
@@ -422,7 +452,7 @@ jobs:
             echo "### Family Link real (APK publicado): REA sem root"
             echo
             echo "exit: $(cat "$RUNNER_TEMP/real-status.txt" 2>/dev/null || echo '?')"
-            if [ -s "$RUNNER_TEMP/real-abi.txt" ]; then
+            if [ -s "$RUNNER_TEMP/real-abi.txt" ] && [ ! -s "$RUNNER_TEMP/real/stdout-abi.txt" ]; then
               echo
               echo "**limite de ABI**: $(tr '\n' ' ' < "$RUNNER_TEMP/real-abi.txt")"
               echo "— o bundle publicado é armeabi-v7a e o emulador do CI é x86_64;"
@@ -453,6 +483,18 @@ jobs:
             for f in abe-info.txt tree.txt private-dir.txt shared-prefs.txt backup-size.txt abe-scan.txt; do
               [ -s "$W/$f" ] && { echo "**$f**"; echo '```'; head -25 "$W/$f"; echo '```'; }
             done
+            if [ -s "$RUNNER_TEMP/nativebridge.txt" ]; then
+              echo "**native bridge (ARM translation)**"
+              echo '```'
+              cat "$RUNNER_TEMP/nativebridge.txt"
+              echo '```'
+            fi
+            if [ -s "$W/stdout-abi.txt" ]; then
+              echo "**first attempt with the ARM native split (tail)**"
+              echo '```'
+              tail -12 "$W/stdout-abi.txt"
+              echo '```'
+            fi
             echo "**gate.txt**"
             echo '```'
             cat "$RUNNER_TEMP/gate.txt" 2>/dev/null || echo "(no verdict)"
