@@ -244,8 +244,10 @@ else
   adb install -r -g "$APK" > "$WORK/install-owner.txt" 2>&1 || true
 fi
 tail -2 "$WORK/install-owner.txt" 2>/dev/null
-adb shell pm list packages 2>/dev/null | grep -q "$PACKAGE" \
-  && echo "installed for the owner"
+# an app installed for another user is not automatically available to the owner
+adb shell pm install-existing --user 0 "$PACKAGE" >/dev/null 2>&1 || true
+adb shell pm list packages --user 0 2>/dev/null | grep -q "$PACKAGE" \
+  && echo "installed for the owner" || echo "NOT installed for the owner"
 # the app only creates its files once it runs: open it here before the backup,
 # otherwise the container is legitimately empty
 OWNER_ACTIVITY="$(resolve_launcher "$PACKAGE")"
