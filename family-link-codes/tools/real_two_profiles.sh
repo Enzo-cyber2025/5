@@ -237,6 +237,24 @@ fi
 tail -2 "$WORK/install-owner.txt" 2>/dev/null
 adb shell pm list packages 2>/dev/null | grep -q "$PACKAGE" \
   && echo "installed for the owner"
+# the app only creates its files once it runs: open it here before the backup,
+# otherwise the container is legitimately empty
+OWNER_ACTIVITY="$(resolve_launcher "$PACKAGE")"
+echo "launching for the owner: ${OWNER_ACTIVITY:-unresolved}"
+unshade
+if [[ -n "$OWNER_ACTIVITY" && "$OWNER_ACTIVITY" == */* ]]; then
+  adb shell am start -W -n "$OWNER_ACTIVITY" > "$WORK/launch-owner.txt" 2>&1
+else
+  adb shell monkey -p "$PACKAGE" -c android.intent.category.LAUNCHER 1 \
+    > "$WORK/launch-owner.txt" 2>&1 || true
+fi
+tail -3 "$WORK/launch-owner.txt"
+sleep 40
+ensure_app_focused "$PACKAGE" | tee "$WORK/focuscheck-owner.txt"
+adb exec-out screencap -p > "$WORK/screen-owner.png" 2>/dev/null
+python3 "$HERE/tools/screen_stats.py" "$WORK/screen-owner.png" --width 64 \
+  > "$WORK/screen-owner.txt" 2>&1
+head -6 "$WORK/screen-owner.txt"
 
 AB="$WORK/$PACKAGE-owner.ab"
 rm -f "$AB"

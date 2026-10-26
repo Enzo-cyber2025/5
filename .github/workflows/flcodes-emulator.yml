@@ -514,11 +514,12 @@ jobs:
             echo '```'
             tail -70 "$W/stdout.txt" 2>/dev/null || echo "(no output)"
             echo '```'
-            for f in screen-parent.txt screen-child.txt; do
+            for f in screen-owner.txt screen-parent.txt screen-child.txt; do
               [ -s "$W/$f" ] && { echo "**$f** (a tela do app, em texto)"; echo '```'; cat "$W/$f"; echo '```'; }
             done
             for f in users.txt install-parent.txt install-child.txt install-owner.txt \
-                     launch-parent.txt activity-parent.txt focus-parent.txt focuscheck-parent.txt \
+                     launch-parent.txt launch-owner.txt activity-parent.txt \
+                     focus-parent.txt focuscheck-parent.txt focuscheck-owner.txt \
                      uitext-parent.txt uitext-child.txt logcat-parent.txt \
                      package-parent.txt privatedir-parent.txt prefs-parent.txt \
                      backup-size.txt abe-scan.txt; do
