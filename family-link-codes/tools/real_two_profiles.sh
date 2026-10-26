@@ -163,8 +163,13 @@ launch_and_watch() {  # launch_and_watch <uid> <label> <activity>
   adb shell dumpsys package "$PACKAGE" 2>/dev/null \
     | grep -E "dataDir|userId=|versionName|flags=\[" | head -6 | tee "$WORK/package-$label.txt"
   echo "--- screen ---"
+  unshade
+  sleep 3
   adb exec-out screencap -p > "$WORK/screen-$label.png" 2>/dev/null
   ls -l "$WORK/screen-$label.png" 2>/dev/null
+  python3 "$HERE/tools/screen_stats.py" "$WORK/screen-$label.png" --width 72 \
+    > "$WORK/screen-$label.txt" 2>&1
+  head -6 "$WORK/screen-$label.txt"
   echo "--- UI text on screen (uiautomator) ---"
   adb shell uiautomator dump "/sdcard/ui-$label.xml" >/dev/null 2>&1
   adb pull "/sdcard/ui-$label.xml" "$WORK/ui-$label.xml" >/dev/null 2>&1
