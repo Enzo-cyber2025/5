@@ -434,10 +434,10 @@ com número, não uma suposição.
 | `system-images;android-30;google_apis;arm64-v8a` no runner x86 | o pacote `emulator` do SDK só traz `qemu-system-x86_64`; não há `qemu-system-aarch64` para rodar guest ARM em host x86 |
 | runner nativo **ARM64** (`ubuntu-24.04-arm`) com o SDK | o índice do Google só publica `emulator-linux_x64-*.zip`: **não existe emulador para linux-aarch64**. As imagens arm64 existem, o emulador que as boota não |
 
-Conclusão: **o app publicado não pode ser executado em nenhum runner hospedado
-pelo GitHub**. Ele pode ser baixado, autenticado e desmontado (é o que o §4g
-faz), mas a metade dinâmica — abrir, o pai entrar, ler o `shared_prefs` — exige
-hardware ARM real.
+Conclusão daquele momento: o bundle **com o split ARM** não instala em x86.
+O §4i mostra o jeito que funcionou: instalar o mesmo app **sem** esse split.
+
+
 
 ### E as duas contas?
 
@@ -462,15 +462,84 @@ python3 -m flcodes gen --label parent
 nesse aparelho, e `tools/real_two_profiles.sh` faz o mesmo com o APK publicado
 quando o hardware permite.
 
+## 4i. O app publicado RODANDO no CI, em dois perfis (executado, verde)
+
+Run [40393869779](https://github.com/Enzo-cyber2025/5/actions/runs/40393869779),
+imagem `google_apis` (API 30, com Google Play Services), sem root e sem
+credencial. O portão do job diz, literalmente:
+
+```
+device run status: 0
+the device run completed: the app ran in two profiles without root
+parent: the real app was the focused window on screen
+child:  the real app was the focused window on screen
+```
+
+### Como a parede de ABI foi derrubada
+
+O erro `INSTALL_FAILED_NO_MATCHING_ABIS` vinha do **split** `config.armeabi_v7a.apk`,
+não do app: o APK base já carrega as bibliotecas nativas e o split é uma cópia
+ARM para 32 bits. Instalando base + splits de idioma e **deixando o split ARM de
+fora**, o pacote instala em x86_64 — e o app roda:
+
+```
+install-parent.txt -> Success
+install-child.txt  -> Success
+launch-parent.txt  -> cmp=com.google.android.apps.kids.familylink/.flutter.standalone.HomeActivity
+activity-parent.txt-> mResumedActivity: ... .flutter.standalone.HomeActivity t1000004
+focuscheck-parent  -> focused: mCurrentFocus=Window{...familylink/...HomeActivity}
+```
+
+Duas descobertas que mudam o diagnóstico anterior:
+
+1. **O app publicado é Flutter** (`.../.flutter.standalone.HomeActivity`). A
+   lógica do código de acesso do responsável vive no lado Flutter/AOT, não nos
+   `classes*.dex` — e é por isso que os nomes de campo dos write-ups públicos
+   deram **zero** ocorrências no dex (§4g). A receita antiga (`familyLinkAppConfig`
+   no XML de shared_prefs) não descreve o app 2.104.
+2. **A imagem `default` não serve**: sem Google Play Services o app nem chega à
+   frente. Com `google_apis`, ele abre e fica em foco nos dois perfis.
+
+### A tela do app, lida dentro do CI
+
+O artefato com o PNG não pode sair do runner (o blob do GitHub não é alcançável
+daqui), então `tools/screen_stats.py` decodifica o PNG no próprio CI e publica
+estatística + arte ASCII no comentário do PR:
+
+```
+size: 1080x1920
+mean brightness: 229.9/255
+near-black pixels: 2.3%
+distinct colours (sampled): 1156
+verdict: real content on screen
+```
+
+E o desenho da tela aparece no comentário como texto — a primeira tela do
+Family Link, branca, com a ilustração central. `screen-parent.txt` e
+`screen-child.txt` são praticamente idênticos, como esperado: mesmo app, dois
+perfis.
+
+### E o container?
+
+`adb backup` do perfil dono devolve **47 bytes** (container válido e vazio) mesmo
+com o app aberto: antes do login o app simplesmente não escreve nada em
+`shared_prefs`. `flcodes abe scan` responde `nothing to scan` em vez de inventar
+sucesso. É a fronteira honesta que sobra: **a chave só existe depois que o pai
+entra**, e entrar exige uma conta Google.
+
+O que este run prova, então: o app real do Google instala, abre e ocupa a tela em
+**dois perfis** de um Android no CI, sem root, sem credencial e sem cópia
+sintética. O que ele não prova (e não pode, sem conta): que existe uma chave para
+ser lida.
+
 ## 5. O que ainda NÃO está provado
 
 * **A chave do app publicado (2.104)** — o APK real foi obtido e autenticado
   (§4g), a feature foi achada pelos RPCs, mas os campos do config local estão
   renomeados/ofuscados: não há string para ler estaticamente. Precisa de um
   aparelho ARM com a conta de pai para o dump em runtime.
-* **Instalar o app publicado no CI** — quatro caminhos tentados e medidos
-  (§4h): o bundle é ARM-only, o espelho não tem variante x86, o SDK não traz
-  `qemu-system-aarch64` e **não existe emulador Android para linux-aarch64**.
+* **Instalar o app publicado no CI** — resolvido no §4i: instalando sem o split
+  ARM, com a imagem `google_apis`, o app roda em dois perfis.
 * **Aceitação pelo firmware do aparelho supervisionado** — precisa de aparelho
   real. É o único passo que falta e ele é do usuário: ver §6.
 * `paths check` / `rea api` contra os endpoints do Google (rede bloqueada aqui;
