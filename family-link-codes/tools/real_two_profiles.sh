@@ -204,6 +204,15 @@ launch_and_watch() {  # launch_and_watch <uid> <label> <activity>
   else
     echo "(no UI dump)"
   fi
+  echo "--- native libraries the running app mapped ---"
+  pid="$(adb shell pidof --user "$uid" "$PACKAGE" 2>/dev/null | tr -d '\r' | awk '{print $1}')"
+  if [[ -n "$pid" ]]; then
+    adb shell "cat /proc/$pid/maps 2>/dev/null | grep -o '/[^ ]*\.so' | sort -u | head -12" \
+      | tee "$WORK/libs-$label.txt"
+    adb shell "ls /data/app/*/com.google.android.apps.kids.familylink*/lib/*/ 2>/dev/null | head -10"
+  else
+    echo "(no pid)"
+  fi
   echo "--- logcat: the app's own lines, crashes first ---"
   adb logcat -d 2>/dev/null \
     | grep -E "FATAL EXCEPTION|UnsatisfiedLink|dlopen|libnb|GoogleApi|gms|$PACKAGE" \

@@ -301,6 +301,18 @@ jobs:
             "$AAPT" dump badging "$RUNNER_TEMP/familylink/base.apk" 2>/dev/null \
               | grep -E "native-code|sdkVersion|targetSdk"
             echo
+            echo "== native libraries inside the base apk =="
+            unzip -l "$RUNNER_TEMP/familylink/base.apk" 2>/dev/null \
+              | grep -E "lib/" | awk '{print $1, $4}' | head -20
+            echo "count: $(unzip -l "$RUNNER_TEMP/familylink/base.apk" 2>/dev/null | grep -c 'lib/')"
+            echo
+            echo "== native libraries in the ABI split =="
+            ABI_SPLIT="$(grep -E 'config\.(arm64_v8a|armeabi_v7a)\.apk' \
+              "$RUNNER_TEMP/familylink/splits.txt" | head -1)"
+            echo "split: $(basename "$ABI_SPLIT" 2>/dev/null)"
+            [ -n "$ABI_SPLIT" ] && unzip -l "$ABI_SPLIT" 2>/dev/null \
+              | grep -E "lib/" | awk '{print $1, $4}' | head -20
+            echo
             if [ -s "$RUNNER_TEMP/familylink-x86/splits.txt" ]; then
               echo
               echo "== x86 build pieces =="
