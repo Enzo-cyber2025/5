@@ -68,6 +68,29 @@ CHILD_ID="$(create_user child)" || exit 1
 echo "parent user: $PARENT_ID   child user: $CHILD_ID"
 adb shell pm list users | tee "$WORK/users.txt"
 
+ensure_app_focused() {  # ensure_app_focused <pkg>
+  local pkg="$1" i focus=""
+  for i in $(seq 1 8); do
+    focus="$(adb shell dumpsys window 2>/dev/null | grep -m1 "mCurrentFocus=" | tr -d '\r')"
+    if [[ "$focus" == *"$pkg"* ]]; then
+      echo "focused: $focus"
+      return 0
+    fi
+    adb shell cmd statusbar collapse >/dev/null 2>&1
+    sleep 2
+    focus="$(adb shell dumpsys window 2>/dev/null | grep -m1 "mCurrentFocus=" | tr -d '\r')"
+    [[ "$focus" == *"$pkg"* ]] && { echo "focused: $focus"; return 0; }
+    if [[ "$focus" == *"NotificationShade"* ]]; then
+      # closing the shade, not the app: the app is not the focused window
+      adb shell input keyevent KEYCODE_BACK >/dev/null 2>&1
+    fi
+    adb shell wm dismiss-keyguard >/dev/null 2>&1
+    sleep 2
+  done
+  echo "not focused (last: $focus)"
+  return 1
+}
+
 unshade() {  # the notification shade steals focus and hides the app
   adb shell cmd statusbar collapse >/dev/null 2>&1
   adb shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1
@@ -85,8 +108,8 @@ switch_to() {
   for _ in $(seq 1 15); do
     state="$(adb shell am get-started-user-state "$uid" 2>/dev/null | tr -d '\r')"
     [[ "$state" == *"UNLOCKED"* ]] && break
-    adb shell input swipe 540 1700 540 500 >/dev/null 2>&1
     adb shell input keyevent 82 >/dev/null 2>&1
+    adb shell wm dismiss-keyguard >/dev/null 2>&1
     sleep 3
   done
   echo "user $uid: ${state:-unknown} (current: $(adb shell am get-current-user | tr -d '\r'))"
@@ -162,9 +185,10 @@ launch_and_watch() {  # launch_and_watch <uid> <label> <activity>
   echo "--- what the app declares (per user) ---"
   adb shell dumpsys package "$PACKAGE" 2>/dev/null \
     | grep -E "dataDir|userId=|versionName|flags=\[" | head -6 | tee "$WORK/package-$label.txt"
+  echo "--- focus check before the screenshot ---"
+  ensure_app_focused "$PACKAGE" | tee "$WORK/focuscheck-$label.txt"
   echo "--- screen ---"
-  unshade
-  sleep 3
+  sleep 2
   adb exec-out screencap -p > "$WORK/screen-$label.png" 2>/dev/null
   ls -l "$WORK/screen-$label.png" 2>/dev/null
   python3 "$HERE/tools/screen_stats.py" "$WORK/screen-$label.png" --width 72 \

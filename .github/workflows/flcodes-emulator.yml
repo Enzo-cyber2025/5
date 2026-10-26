@@ -424,6 +424,13 @@ jobs:
           echo "device run status: $status"
           if [ "$status" = "0" ]; then
             echo "the device run completed: the app ran in two profiles without root"
+            for label in parent child; do
+              if grep -q "focused:.*familylink" "$RUNNER_TEMP/real/focuscheck-$label.txt" 2>/dev/null; then
+                echo "$label: the real app was the focused window on screen"
+              else
+                echo "$label: installed, but did not come to the front"
+              fi
+            done
             exit 0
           fi
           if [ -s "$RUNNER_TEMP/real-abi.txt" ]; then
@@ -511,7 +518,7 @@ jobs:
               [ -s "$W/$f" ] && { echo "**$f** (a tela do app, em texto)"; echo '```'; cat "$W/$f"; echo '```'; }
             done
             for f in users.txt install-parent.txt install-child.txt install-owner.txt \
-                     launch-parent.txt activity-parent.txt focus-parent.txt \
+                     launch-parent.txt activity-parent.txt focus-parent.txt focuscheck-parent.txt \
                      uitext-parent.txt uitext-child.txt logcat-parent.txt \
                      package-parent.txt privatedir-parent.txt prefs-parent.txt \
                      backup-size.txt abe-scan.txt; do
