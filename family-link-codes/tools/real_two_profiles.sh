@@ -68,8 +68,16 @@ CHILD_ID="$(create_user child)" || exit 1
 echo "parent user: $PARENT_ID   child user: $CHILD_ID"
 adb shell pm list users | tee "$WORK/users.txt"
 
+unshade() {  # the notification shade steals focus and hides the app
+  adb shell cmd statusbar collapse >/dev/null 2>&1
+  adb shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1
+  adb shell wm dismiss-keyguard >/dev/null 2>&1
+  adb shell settings put system screen_off_timeout 2147483647 >/dev/null 2>&1
+}
+
 switch_to() {
   local uid="$1" state=""
+  unshade
   adb shell am start-user -w "$uid" >/dev/null 2>&1
   adb shell am switch-user "$uid" >/dev/null 2>&1
   adb shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1
@@ -128,9 +136,10 @@ launch_and_watch() {  # launch_and_watch <uid> <label> <activity>
   switch_to "$uid" | tee "$WORK/state-$label.txt"
   adb shell am force-stop --user "$uid" "$PACKAGE" >/dev/null 2>&1
   adb logcat -c >/dev/null 2>&1
+  unshade
   echo "launcher activity: ${activity:-unresolved}"
   if [[ -n "$activity" && "$activity" == */* ]]; then
-    adb shell am start --user "$uid" -n "$activity" > "$WORK/launch-$label.txt" 2>&1
+    adb shell am start -W --user "$uid" -n "$activity" > "$WORK/launch-$label.txt" 2>&1
   else
     adb shell monkey --user "$uid" -p "$PACKAGE" -c android.intent.category.LAUNCHER 1 \
       > "$WORK/launch-$label.txt" 2>&1 || true
@@ -143,6 +152,10 @@ launch_and_watch() {  # launch_and_watch <uid> <label> <activity>
   echo "--- process (which uid it runs as) ---"
   adb shell ps -A -o USER,PID,NAME 2>/dev/null | grep "$PACKAGE" \
     | tee "$WORK/process-$label.txt" || echo "(not running)"
+  echo "--- activity manager view ---"
+  adb shell dumpsys activity activities 2>/dev/null \
+    | grep -E "mResumedActivity|ResumedActivity|topResumedActivity" | head -3 \
+    | tee "$WORK/activity-$label.txt"
   echo "--- focused window ---"
   adb shell dumpsys window 2>/dev/null | grep -E "mCurrentFocus|mFocusedApp" | head -3 \
     | tee "$WORK/focus-$label.txt"
@@ -163,8 +176,10 @@ launch_and_watch() {  # launch_and_watch <uid> <label> <activity>
     echo "(no UI dump)"
   fi
   echo "--- logcat: the app's own lines, crashes first ---"
-  adb logcat -d 2>/dev/null | grep -E "FATAL|AndroidRuntime: |UnsatisfiedLink|dlopen|$PACKAGE" \
-    | head -25 | tee "$WORK/logcat-$label.txt" || true
+  adb logcat -d 2>/dev/null \
+    | grep -E "FATAL EXCEPTION|UnsatisfiedLink|dlopen|libnb|GoogleApi|gms|$PACKAGE" \
+    | grep -vE "PackageDexOptimizer|dex2oat|installd|BroadcastQueue|MediaProvider|PermissionMonitor" \
+    | head -30 | tee "$WORK/logcat-$label.txt" || true
 }
 
 ACTIVITY="$(resolve_launcher "$PACKAGE")"

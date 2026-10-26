@@ -329,12 +329,12 @@ jobs:
           sudo udevadm trigger --name-match=kvm
           ls -l /dev/kvm || echo "no /dev/kvm: TCG, slow"
 
-      - name: Boot the emulator (x86_64, API 30)
+      - name: Boot the emulator (x86_64, API 30, with Google Play services)
         run: |
           set -e
           export PATH="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/platform-tools:$PATH"
           bash family-link-codes/tools/emulator_boot.sh \
-            --work "$RUNNER_TEMP/emu-real" --api 30 --tag default 2>&1 | tail -20
+            --work "$RUNNER_TEMP/emu-real" --api 30 --tag google_apis 2>&1 | tail -20
 
       - name: Does this image translate ARM code? (native bridge)
         run: |
@@ -508,7 +508,7 @@ jobs:
             tail -70 "$W/stdout.txt" 2>/dev/null || echo "(no output)"
             echo '```'
             for f in users.txt install-parent.txt install-child.txt install-owner.txt \
-                     process-parent.txt process-child.txt focus-parent.txt \
+                     launch-parent.txt activity-parent.txt focus-parent.txt \
                      uitext-parent.txt uitext-child.txt logcat-parent.txt \
                      package-parent.txt privatedir-parent.txt prefs-parent.txt \
                      backup-size.txt abe-scan.txt; do
