@@ -2369,7 +2369,7 @@ jobs:
                 Copy-Item (Join-Path $wdir2 "d3d11shim.log") ("$PWD\d3d11shim-" + ($tag -replace "[^a-zA-Z0-9]", "-") + ".txt") -Force -ErrorAction SilentlyContinue
               }
               if ($g.HasExited) {
-                Trace "boot $tag: processo SAIU na iter $i — ExitCode=$($g.ExitCode) (0xC0000005=crash; 0=limpo)"
+                Trace "boot ${tag}: processo SAIU na iter $i — ExitCode=$($g.ExitCode) (0xC0000005=crash; 0=limpo)"
                 break
               }
               # v36: probe NATIVO pwsh — zero python no loop (python custa ~35 s
