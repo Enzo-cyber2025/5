@@ -507,9 +507,11 @@ jobs:
             echo '```'
             tail -70 "$W/stdout.txt" 2>/dev/null || echo "(no output)"
             echo '```'
-            for f in users.txt install-parent.txt install-child.txt process-parent.txt \
-                     process-child.txt package-parent.txt privatedir-parent.txt \
-                     prefs-parent.txt backup-size.txt abe-scan.txt; do
+            for f in users.txt install-parent.txt install-child.txt install-owner.txt \
+                     process-parent.txt process-child.txt focus-parent.txt \
+                     uitext-parent.txt uitext-child.txt logcat-parent.txt \
+                     package-parent.txt privatedir-parent.txt prefs-parent.txt \
+                     backup-size.txt abe-scan.txt; do
               [ -s "$W/$f" ] && { echo "**$f**"; echo '```'; head -20 "$W/$f"; echo '```'; }
             done
           } > "$RUNNER_TEMP/summary.md"
@@ -523,6 +525,8 @@ jobs:
           path: |
             ${{ runner.temp }}/familylink/
             ${{ runner.temp }}/real/
+            ${{ runner.temp }}/real/*.png
+            ${{ runner.temp }}/real/*.xml
             ${{ runner.temp }}/scan.json
             ${{ runner.temp }}/scan.txt
           if-no-files-found: warn

@@ -112,31 +112,65 @@ fi
 [[ "${install_status:-0}" == "0" ]] || die "install failed for a reason other than ABI"
 
 step "4. launch in both profiles and watch each uid"
-launch_and_watch() {  # launch_and_watch <uid> <label>
-  local uid="$1" label="$2"
+resolve_launcher() {  # resolve_launcher <pkg>
+  local pkg="$1" activity
+  activity="$(adb shell cmd package resolve-activity --brief \
+      -c android.intent.category.LAUNCHER "$pkg" 2>/dev/null | tr -d '\r' | tail -1)"
+  if [[ "$activity" != */* ]]; then
+    activity="$(adb shell dumpsys package "$pkg" 2>/dev/null \
+      | grep -o 'com\.google[^ ]*/[A-Za-z0-9_.$]*' | head -1 | tr -d '\r')"
+  fi
+  printf '%s' "$activity"
+}
+
+launch_and_watch() {  # launch_and_watch <uid> <label> <activity>
+  local uid="$1" label="$2" activity="$3"
   switch_to "$uid" | tee "$WORK/state-$label.txt"
   adb shell am force-stop --user "$uid" "$PACKAGE" >/dev/null 2>&1
   adb logcat -c >/dev/null 2>&1
-  adb shell monkey --user "$uid" -p "$PACKAGE" -c android.intent.category.LAUNCHER 1 \
-    > "$WORK/launch-$label.txt" 2>&1 || true
-  tail -2 "$WORK/launch-$label.txt"
-  sleep 20
+  echo "launcher activity: ${activity:-unresolved}"
+  if [[ -n "$activity" && "$activity" == */* ]]; then
+    adb shell am start --user "$uid" -n "$activity" > "$WORK/launch-$label.txt" 2>&1
+  else
+    adb shell monkey --user "$uid" -p "$PACKAGE" -c android.intent.category.LAUNCHER 1 \
+      > "$WORK/launch-$label.txt" 2>&1 || true
+  fi
+  tail -3 "$WORK/launch-$label.txt"
+  sleep 30
   echo "--- package installed for user $uid ---"
   adb shell pm list packages --user "$uid" 2>/dev/null | grep "$PACKAGE" \
     | tee "$WORK/installed-$label.txt" || echo "(not listed)"
   echo "--- process (which uid it runs as) ---"
   adb shell ps -A -o USER,PID,NAME 2>/dev/null | grep "$PACKAGE" \
     | tee "$WORK/process-$label.txt" || echo "(not running)"
-  echo "--- what the app writes, as far as a non-root shell can see ---"
+  echo "--- focused window ---"
+  adb shell dumpsys window 2>/dev/null | grep -E "mCurrentFocus|mFocusedApp" | head -3 \
+    | tee "$WORK/focus-$label.txt"
+  echo "--- what the app declares (per user) ---"
   adb shell dumpsys package "$PACKAGE" 2>/dev/null \
-    | grep -E "dataDir|userId=|versionName|flags=" | head -6 | tee "$WORK/package-$label.txt"
-  echo "--- logcat of the app (first interest lines) ---"
-  adb logcat -d 2>/dev/null | grep -iE "familylink|kids|fatal|AndroidRuntime" \
-    | head -20 | tee "$WORK/logcat-$label.txt" || true
+    | grep -E "dataDir|userId=|versionName|flags=\[" | head -6 | tee "$WORK/package-$label.txt"
+  echo "--- screen ---"
+  adb exec-out screencap -p > "$WORK/screen-$label.png" 2>/dev/null
+  ls -l "$WORK/screen-$label.png" 2>/dev/null
+  echo "--- UI text on screen (uiautomator) ---"
+  adb shell uiautomator dump "/sdcard/ui-$label.xml" >/dev/null 2>&1
+  adb pull "/sdcard/ui-$label.xml" "$WORK/ui-$label.xml" >/dev/null 2>&1
+  if [[ -s "$WORK/ui-$label.xml" ]]; then
+    grep -o 'text="[^"]\+"' "$WORK/ui-$label.xml" | sed 's/text="//; s/"$//' \
+      | head -25 | tee "$WORK/uitext-$label.txt"
+    grep -o 'package="[^"]\+"' "$WORK/ui-$label.xml" | sort -u | head -5
+  else
+    echo "(no UI dump)"
+  fi
+  echo "--- logcat: the app's own lines, crashes first ---"
+  adb logcat -d 2>/dev/null | grep -E "FATAL|AndroidRuntime: |UnsatisfiedLink|dlopen|$PACKAGE" \
+    | head -25 | tee "$WORK/logcat-$label.txt" || true
 }
 
-launch_and_watch "$PARENT_ID" parent
-launch_and_watch "$CHILD_ID" child
+ACTIVITY="$(resolve_launcher "$PACKAGE")"
+echo "resolved: ${ACTIVITY:-none}"
+launch_and_watch "$PARENT_ID" parent "$ACTIVITY"
+launch_and_watch "$CHILD_ID" child "$ACTIVITY"
 
 step "5. private data of the real app, without root"
 for pair in "$PARENT_ID:parent" "$CHILD_ID:child"; do
@@ -147,14 +181,27 @@ for pair in "$PARENT_ID:parent" "$CHILD_ID:child"; do
   adb shell ls -la "/data/data/$PACKAGE/shared_prefs" 2>&1 | head -5 | tee "$WORK/prefs-$label.txt"
 done
 
-step "6. can the device hand us the container at all?"
+step "6. the owner profile: the only one adb backup can reach"
+switch_to 0 >/dev/null 2>&1
+if [[ -s "$SPLITS" ]] && [[ "$(wc -l < "$SPLITS")" -gt 1 ]]; then
+  mapfile -t pieces < "$SPLITS"
+  adb install-multiple -r -g "${pieces[@]}" > "$WORK/install-owner.txt" 2>&1 \
+    || echo "(owner install failed; see install-owner.txt)"
+else
+  adb install -r -g "$APK" > "$WORK/install-owner.txt" 2>&1 || true
+fi
+tail -2 "$WORK/install-owner.txt" 2>/dev/null
+adb shell pm list packages 2>/dev/null | grep -q "$PACKAGE" \
+  && echo "installed for the owner"
+
 AB="$WORK/$PACKAGE-owner.ab"
 rm -f "$AB"
 ( adb backup -f "$AB" -noapk "$PACKAGE" > "$WORK/backup.log" 2>&1 ) &
 pid=$!
-for _ in $(seq 1 30); do
+for _ in $(seq 1 45); do
   [[ -s "$AB" ]] && break
-  python3 "$HERE/tools/accept_backup_dialog.py" --retries 1 --interval 1 >/dev/null 2>&1 || true
+  python3 "$HERE/tools/accept_backup_dialog.py" --retries 1 --interval 1 >/dev/null 2>&1 \
+    || python3 "$HERE/tools/accept_backup_dialog.py" >/dev/null 2>&1 || true
   sleep 2
 done
 wait $pid 2>/dev/null || true
@@ -163,7 +210,8 @@ if [[ -s "$AB" ]]; then
   python3 -m flcodes abe info "$AB" | tee "$WORK/abe-info.txt"
   python3 -m flcodes abe scan "$AB" 2>&1 | tee "$WORK/abe-scan.txt"
 else
-  echo "no container: the app refuses backup or the dialog was not accepted"
+  echo "empty container: the app declares allowBackup but the dialog was not"
+  echo "accepted, or the backup transport refused the request"
 fi
 
 step "7. verdict"
