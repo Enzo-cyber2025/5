@@ -357,6 +357,15 @@ def main():
         print("; ".join(slines[i:i+13]))
     except StopIteration:
         print("=== panic: nenhum ===")
+    # trace AHCI do QEMU (o que o controller disse)
+    try:
+        with open(os.path.join(outdir, "qtrace.log")) as f:
+            qtl = [l.rstrip() for l in f]
+        ah = [l for l in qtl if "ahci" in l.lower()]
+        print("=== ahci trace (%d eventos; ultimas 6) ===" % len(ah))
+        print("\n".join(ah[-6:]) if ah else "(nenhum)")
+    except Exception as e:
+        print("(sem qtrace: %s)" % e)
     # diag PCI por ultimo: as leituras cruas após 'laço principal'
     try:
         i = next(i for i, l in enumerate(slines) if "la" + "\u00e7" + "o principal" in l)
