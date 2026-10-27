@@ -271,8 +271,8 @@ def main():
         try:
             with open(serial) as f:
                 sl = f.read().splitlines()
-            print("--- serial (%d linhas; ultimas 6) ---" % len(sl))
-            print("\n".join(sl[-6:]))
+            print("--- serial (%d linhas; ultimas 4) ---" % len(sl))
+            print("\n".join(sl[-4:]))
         except Exception:
             pass
         # qtrace resumido por ultimo (annotations preservam o final)
@@ -290,33 +290,8 @@ def main():
             vlines = [l for l in lines if " v=" in l or l.startswith("v=")]
             print("=== qtrace: %d linhas; invalid=%d primeiros: %s" %
                   (len(lines), len(inv), " ".join(addr[:5])))
-            print("=== ultimas 10 linhas do trace ===")
-            print("\n".join(lines[-10:]))
-            print("=== ultimas 6 excecoes/irqs ===")
-            print("\n".join(vlines[-6:]))
-            # transicao kernel->lixo (fim do .kdata = 0x157D50; ativos apos)
-            def _ip(l):
-                i = l.find("IP=0018:")
-                if i < 0:
-                    return None
-                try:
-                    return int(l[i + 8:i + 24], 16)
-                except ValueError:
-                    return None
-            last_ok, first_bad = None, None
-            for l in lines:
-                if " v=" not in l:
-                    continue
-                ip = _ip(l)
-                if ip is None:
-                    continue
-                if ip < 0x157D50:
-                    last_ok = l.strip()
-                elif first_bad is None:
-                    first_bad = l.strip()
-            print("=== transicao (ultima ok | primeira no lixo) ===")
-            print(last_ok or "(nenhuma)")
-            print(first_bad or "(nenhuma)")
+            print("=== v ultimas 4 ===")
+            print("\n".join(vlines[-4:]))
         except Exception as e2:
             print("(sem qtrace: %s)" % e2)
         sys.stdout.flush()
