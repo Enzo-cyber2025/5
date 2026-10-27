@@ -438,6 +438,8 @@ net_dhcp:
         mov [dhcp_xid], eax
         mov r13d, 4
 .disc:
+        mov rdi, s_dhcp_tx
+        call k_log
         mov edi, 1                        ; DISCOVER
         call dhcp_xmit
         mov ebx, [uptime_ms]
@@ -449,10 +451,14 @@ net_dhcp:
         mov eax, [uptime_ms]
         cmp eax, ebx
         jb .wof
+        mov rdi, s_dhcp_to
+        call k_log
         dec r13d
         jnz .disc
         jmp .out
 .req:
+        mov rdi, s_dhcp_off
+        call k_log
         mov edi, 3                        ; REQUEST
         call dhcp_xmit
         mov ebx, [uptime_ms]
@@ -464,8 +470,12 @@ net_dhcp:
         mov eax, [uptime_ms]
         cmp eax, ebx
         jb .wack
+        mov rdi, s_dhcp_to
+        call k_log
         jmp .out
 .got:
+        mov rdi, s_dhcp_ok
+        call k_log
         mov eax, [dhcp_offer_ip]
         mov [net_ip], eax
         mov eax, [dhcp_server]
@@ -1213,3 +1223,9 @@ s_http_host:  db " HTTP/1.0", 10, "Host: ", 0
 s_http_tail:  db 10, "User-Agent: EnzoFox/1.0 (EnzoOS)", 10, 10, 0
 
 %endif
+
+section .kdata
+s_dhcp_tx:    db "[net] discover enviado", 0
+s_dhcp_off:   db "[net] oferta recebida", 0
+s_dhcp_to:    db "[net] sem resposta", 0
+s_dhcp_ok:    db "[net] ack recebido", 0
