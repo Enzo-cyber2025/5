@@ -74,7 +74,7 @@ page_is_free:
 k_mm_init:
         ; E820: soma RAM e acha o topo
         mov r8d, [boot_params + BP_E820N]
-        mov r9, [boot_params + BP_E820P]
+        mov r9d, [boot_params + BP_E820P]   ; ponteiro 32-bit (dword no BP)
         ; diag: count e ponteiro
         mov edi, r8d
         call k_log_hex

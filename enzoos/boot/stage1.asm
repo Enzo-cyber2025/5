@@ -347,13 +347,21 @@ section .s2 vstart=0x10200 follows=.text
         call serial_print
 
         ; ----------------------------------------------------------------
-        ; Parâmetros de boot em 0xE00
+        ; Parâmetros de boot em DS=0x1000:0x0E00 = linear 0x10E00
         ; ----------------------------------------------------------------
+        ; zera os 0x40 bytes do BP (dwords altos de campos u64 devem ser 0)
+        mov di, BP
+        xor eax, eax
+        mov cx, 16
+        cld
+.zbp:   mov [di], eax
+        add di, 4
+        dec cx
+        jnz .zbp
         mov dword [BP+0x00], 0x50423545       ; 'E5BP'
         mov dword [BP+0x04], 1
         mov eax, [vesa_lfb]
         mov [BP+0x08], eax
-        mov dword [BP+0x0C], 0
         movzx eax, word [vesa_w]
         mov [BP+0x10], eax
         movzx eax, word [vesa_h]
@@ -364,15 +372,19 @@ section .s2 vstart=0x10200 follows=.text
         mov [BP+0x1C], eax
         mov dword [BP+0x20], IMG_BASE
         mov dword [BP+0x24], CEFS_OFF
-        mov eax, [dword IMG_BASE+0x1E4]
-        mov [BP+0x28], eax
-        movzx eax, word [0x5F0]
+        ; count e820 e tamanho da imagem vivem na RAM baixa (linear 0x5F0 e
+        ; 0x101E4): com DS=0x1000, usar ES=0 para endereçar lineares < 64 KB
+        push es
+        xor ax, ax
+        mov es, ax
+        movzx eax, word [es:0x5F0]
         mov [BP+0x2C], eax
-        mov dword [BP+0x30], 0x600
+        mov eax, [es:dword 0x101E4]           ; linear IMG_BASE+0x1E4
+        mov [BP+0x28], eax
+        pop es
+        mov dword [BP+0x30], 0x600            ; ponteiro e820 (dword!)
         movzx eax, word [vesa_mode]
         mov [BP+0x34], eax
-        mov dword [BP+0x38], 0
-        mov dword [BP+0x3C], 0
 
         ; ----------------------------------------------------------------
         ; Modo protegido
