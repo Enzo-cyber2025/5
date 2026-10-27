@@ -154,13 +154,10 @@ def main():
         if (w, h) == (720, 400):
             print("MODO TEXTO 720x400: o boot nao chegou ao modo grafico")
             print("--- texto da tela (VGA 0xB8000) ---")
-            print(q.vga_text())
-            print("--- registradores ---")
-            print(q.hmp("info registers").get("return", "")[:600])
-            print("--- memoria 0x10200 (parte B esperada) ---")
-            print(q.hmp("xp /24bx 0x10200").get("return", ""))
-            print("--- memoria 0x10000 (parte A carregada) ---")
-            print(q.hmp("xp /16bx 0x10000").get("return", ""))
+            try:
+                print(q.vga_text())
+            except Exception:
+                pass
             with open(serial) as f:
                 s = f.read()
             print("--- serial (%d bytes) ---" % len(s))
@@ -262,8 +259,26 @@ def main():
         launch_menu_app(9)                 # MANDEL.ENZ
         q.sleep(4)
         q.shot("16-mandel", outdir)
+    except Exception:
+        import traceback
+        traceback.print_exc()
+        print("--- QEMU morreu no meio do teste; serial parcial: ---")
+        try:
+            with open(serial) as f:
+                print(f.read()[:2000])
+        except Exception:
+            pass
+        try:
+            q.quit()
+        except Exception:
+            q.proc.kill()
+        httpd.terminate()
+        sys.exit(1)
     finally:
-        q.quit()
+        try:
+            q.quit()
+        except Exception:
+            pass
         httpd.terminate()
 
     print("serial: %s" % serial)
