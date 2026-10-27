@@ -75,16 +75,11 @@ cksum_buf:
 ; eth_tx: rdi = MAC destino, esi = ethertype, rdx = payload, ecx = len
 ; -----------------------------------------------------------------------------
 eth_tx:
-        cli
         push rbx
         push r12
         push r13
         push r14
         push r15
-        push rdi
-        mov rdi, rdx
-        call k_log_hex
-        pop rdi
         mov r12, rdx
         mov r13d, ecx
         mov r14d, esi
@@ -115,44 +110,11 @@ eth_tx:
         add rax, 2
         mov rdi, rax
         mov rsi, r12
-        mov rcx, r13
-        push rdi
-        push rsi
-        push rcx
-        mov rdi, rcx
-        call k_log_hex
-        pop rcx
-        pop rsi
-        pop rdi
-.bcopy:
-        mov al, [rsi]
-        mov [rdi], al
-        inc rsi
-        inc rdi
-        dec rcx
-        test rcx, 63
-        jnz .nb
-        push rdi
-        push rsi
-        push rcx
-        mov rdi, rcx
-        call k_log_hex
-        pop rcx
-        pop rsi
-        pop rdi
-.nb:
-        dec rcx
-        jnz .bcopy
-        push rsi
-        push rdi
-        lea rdi, [rel s_eth_copied]
-        call k_log
-        pop rdi
-        pop rsi
+        mov rdx, r13
+        call k_memcpy
         mov edi, net_txbuf
         lea esi, [r13 + 14]
         call e1000_tx
-        sti
         pop r15
         pop r14
         pop r13
@@ -166,9 +128,6 @@ eth_tx:
 net_input:
         push rbx
         mov rbx, rdi
-        mov rdi, rsp
-        call k_log_hex
-        mov rdi, rbx
         movzx eax, word [rbx + 12]
         rol ax, 8
         cmp eax, 0x0806
@@ -194,9 +153,6 @@ net_input:
 arp_input:
         push rbx
         mov rbx, rdi
-        mov rdi, rsp
-        call k_log_hex
-        mov rdi, rbx
         movzx eax, word [rbx + 20]
         rol ax, 8
         cmp eax, 2                       ; resposta
@@ -277,8 +233,6 @@ arp_resolve:
         mov ebx, [uptime_ms]
         add ebx, 400
 .wait:
-        mov rdi, rsp
-        call k_log_hex
         call e1000_rx_poll
         cmp dword [arp_valid], 0
         je .chk
@@ -373,9 +327,7 @@ ip_input:
         push r13
         push r14
         push r15
-        mov rdi, rsp
-        call k_log_hex
-        mov rdi, rbx
+        mov rbx, rdi
         cmp byte [rbx + 14], 0x45
         jne .out
         movzx r12d, byte [rbx + 23]
@@ -493,8 +445,6 @@ net_dhcp:
         mov ebx, [uptime_ms]
         add ebx, 600
 .wof:
-        mov rdi, rsp
-        call k_log_hex
         call e1000_rx_poll
         cmp dword [dhcp_offer_ip], 0
         jne .req
@@ -553,8 +503,6 @@ net_dhcp:
 dhcp_xmit:
         push rbx
         mov ebx, edi
-        mov rdi, rsp
-        call k_log_hex
         lea rdi, [net_dhcppkt]
         mov esi, 300
         call k_memzero
@@ -1282,5 +1230,3 @@ s_dhcp_off:   db "[net] oferta recebida", 0
 s_dhcp_to:    db "[net] sem resposta", 0
 s_dhcp_ok:    db "[net] ack recebido", 0
 
-section .kdata
-s_eth_copied: db "[eth] payload copiado", 0
