@@ -345,11 +345,7 @@ def main():
     for tag in ["[ahci]", "[enzfs]", "[e1000]", "[net]"]:
         hits = [l for l in slines if tag in l]
         print("%-9s %s" % (tag + ":", hits[0] if hits else "(ausente)"))
-        if tag == "[ahci]" and hits:
-            i = slines.index(hits[0])
-            for l in slines[i+1:i+7]:
-                if l.startswith("0x"):
-                    print(l)
+
     # linhas do panic (vec/rip/cr2/dumps) — o que mais importa agora
     try:
         i = next(i for i, l in enumerate(slines) if "PANICO" in l)
@@ -372,9 +368,9 @@ def main():
         kw = [l for l in ah if ("write" in l or "cmd" in l.lower()
                                 or "command" in l or "error" in l.lower()
                                 or "dma" in l.lower())]
-        print("=== ahci trace (%d ev; ultimas 6 de %d chave) ==="
+        print("=== ahci trace (%d ev; ultimas 3 de %d chave) ==="
               % (len(ah), len(kw)))
-        print("\n".join(kw[-6:]) if kw else "(nenhum)")
+        print("\n".join(kw[-3:]) if kw else "(nenhum)")
     except Exception as e:
         print("(sem qtrace: %s)" % e)
     if not ok:
