@@ -25,15 +25,15 @@ k_gfx_init:
         mov rax, [boot_params + BP_LFB]
         mov [lfb], rax
         ; sombra (composição) e fundo da área de trabalho
-        mov rdi, [screen_w]
-        imul rdi, [screen_h]
+        mov edi, [screen_w]           ; dword! (evita ler screen_h junto)
+        imul edi, [screen_h]
         shl rdi, 2
         call k_alloc
         test rax, rax
         jz .fail
         mov [shadow], rax
-        mov rdi, [screen_w]
-        imul rdi, [screen_h]
+        mov edi, [screen_w]
+        imul edi, [screen_h]
         shl rdi, 2
         call k_alloc
         test rax, rax
@@ -46,9 +46,9 @@ k_gfx_init:
         mov rdi, msg_nofb
         call k_log
         ; diag: por que a alocação falhou?
-        mov rdi, [screen_w]
+        mov edi, [screen_w]
         call k_log_hex
-        mov rdi, [screen_h]
+        mov edi, [screen_h]
         call k_log_hex
         mov rdi, [heap_pages]
         call k_log_hex
@@ -363,7 +363,7 @@ render_desktop:
         push r12
         push rcx
         mov rdi, r8
-        mov rsi, [screen_w]
+        mov esi, [screen_w]           ; dword! (uma linha = screen_w dwords)
         mov edx, r9d
         call k_memset32
         pop rcx
@@ -938,7 +938,7 @@ k_panic:
         add rsi, rax
         mov rdi, [lfb]
         add rdi, rax
-        mov rdx, [screen_w]
+        mov edx, [screen_w]           ; dword!
         shl rdx, 2
         call k_memcpy
         inc r10d
