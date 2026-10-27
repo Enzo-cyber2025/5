@@ -40,10 +40,9 @@ jobs:
           if python3 tools/qmp_test.py release/enzos.iso screenshots/ release/disk.img > /tmp/qemu.log 2>&1; then
             tail -5 /tmp/qemu.log
           else
-            grep -nE "error|Error|ERRO|Traceback|RuntimeError|FileNotFound|FALHOU|failed|Exception" -A4 -B2 /tmp/qemu.log | head -80 | while IFS= read -r l; do
-              echo "::error::$l"
+            tail -50 /tmp/qemu.log | while IFS= read -r l; do
+              echo "::error::${l:0:220}"
             done
-            tail -30 /tmp/qemu.log > /tmp/qemu_tail.txt
             exit 1
           fi
 
