@@ -18,18 +18,7 @@ k_memcpy:
         cld
         cmp rcx, 32
         jb .bytes
-        ; alinha o destino em 16 bytes
-        mov rax, rdi
-        and al, 15
-        jz .sse
-        mov r9, 16
-        sub r9, rax
-        sub rcx, r9
-.head:
-        movsb
-        dec r9
-        jnz .head
-.sse:
+        ; movdqu tolera desalinhamento: sem prologo byte a byte
         mov rdx, rcx
         and rcx, -16
         shr rcx, 4
