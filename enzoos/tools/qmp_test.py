@@ -40,13 +40,14 @@ class Qmp:
     def __init__(self, iso, serial_path, disk=None):
         args = [QEMU, "-m", "2048", "-display", "none", "-qmp", "stdio",
                 "-machine", "q35", "-boot", "d",
+                "-device", "ahci,id=sata0",
                 "-drive", "id=cd0,if=none,format=raw,media=cdrom,file=" + iso,
-                "-device", "ide-cd,drive=cd0,bus=ahci0.0",
+                "-device", "ide-cd,drive=cd0,bus=sata0.0",
                 "-serial", "file:" + serial_path,
                 "-vga", "std", "-no-reboot"]
         if disk:
             args += ["-drive", "id=hd0,if=none,format=raw,file=" + disk,
-                     "-device", "ide-hd,drive=hd0,bus=ahci0.1"]
+                     "-device", "ide-hd,drive=hd0,bus=sata0.1"]
         args += ["-netdev", "user,id=n0",
                  "-device", "e1000,netdev=n0"]
         self.notes = []
