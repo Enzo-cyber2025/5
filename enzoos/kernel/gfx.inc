@@ -57,7 +57,6 @@ k_gfx_init:
         mov rdi, [lfb]
         call k_log_hex
 .hang:
-.hang2:
         hlt
         jmp .hang
 
@@ -963,6 +962,7 @@ k_panic:
 .hang:
         pop rbx
 .halt:
+.hang2:
         hlt
         jmp .halt
 
