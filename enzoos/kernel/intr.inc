@@ -139,6 +139,14 @@ exc_common:
         mov [exc_rsp0], rsp          ; rsp do momento da excecao
         mov rsp, 0x8C000             ; pilha de emergencia (dump/panic)
         PUSHAQ
+        ; replica o cabecalho (vec, err, rip) no frame novo
+        ; pilha antiga: [exc_rsp0]=err [exc_rsp0+8]=vec [exc_rsp0+16]=rip
+        mov rax, [exc_rsp0 + 8]
+        mov [rsp + 14*8], rax        ; vec verdadeiro
+        mov rax, [exc_rsp0]
+        mov [rsp + 15*8], rax        ; err
+        mov rax, [exc_rsp0 + 16]
+        mov [rsp + 16*8], rax        ; rip verdadeiro
         mov rdi, rsp
         cld
         call exc_handler
@@ -222,7 +230,7 @@ irq_handler:
 ; exc_handler — rdi = frame
 ; -----------------------------------------------------------------------------
 exc_handler:
-        mov rax, [rdi + 14*8]         ; vec
+        mov rax, [rdi + 14*8]         ; vec (replicado do frame do CPU)
         cmp rax, 14
         jne .no_pf
         ; página ausente: tenta paginação por demanda (swap)
@@ -238,7 +246,7 @@ exc_handler:
         jz .no_pf
         ret                            ; página restaurada — retoma
 .no_pf:
-        mov rdx, [rdi + 16*8]         ; rip
+        mov rdx, [rdi + 16*8]         ; rip verdadeiro
         mov rbx, [rdi + 14*8]         ; vec
         cmp dword [foreign_active], 0
         je .kernel_panic
