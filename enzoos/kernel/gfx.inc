@@ -867,14 +867,6 @@ k_panic:
         mov [panic_rip_val], rsi
         lea rdi, [rel panic_serial]
         call k_log
-        ; dump do fundo da pilha do kernel (frames profundos primeiro)
-        mov rsi, 0x8EF00
-.pd:
-        mov rdi, [rsi]
-        call k_log_hex
-        add rsi, 8
-        cmp rsi, 0x8F000
-        jb .pd
         ; diagnóstico pela serial: código da exceção e RIP
         mov edi, ebx
         call k_log_hex
@@ -892,6 +884,14 @@ k_panic:
         mov rsi, e1000_rxdesc + 16
         mov rdi, [rsi]
         call k_log_hex
+        ; dump do fundo da pilha do kernel (frames profundos primeiro)
+        mov rsi, 0x8EF00
+.pd:
+        mov rdi, [rsi]
+        call k_log_hex
+        add rsi, 8
+        cmp rsi, 0x8F000
+        jb .pd
         ; dump: 16 bytes da memória no RIP (somente se mapeável)
         mov rsi, [panic_rip_val]
         test rsi, rsi
