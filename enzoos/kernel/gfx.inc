@@ -45,6 +45,17 @@ k_gfx_init:
 .fail:
         mov rdi, msg_nofb
         call k_log
+        ; diag: por que a alocação falhou?
+        mov rdi, [screen_w]
+        call k_log_hex
+        mov rdi, [screen_h]
+        call k_log_hex
+        mov rdi, [heap_pages]
+        call k_log_hex
+        mov rdi, [bitmap_pages]
+        call k_log_hex
+        mov rdi, [lfb]
+        call k_log_hex
 .hang:
         hlt
         jmp .hang

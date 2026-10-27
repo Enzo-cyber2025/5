@@ -282,9 +282,9 @@ def main():
                 lines = f.read().decode(errors="replace").splitlines()
             inv = sum(1 for l in lines if "Invalid" in l)
             vlines = [l for l in lines if " v=" in l or l.startswith("v=")]
-            print("=== qtrace: %d linhas, invalid=%d; ultimas 8 excecoes ==="
+            print("=== qtrace: %d linhas, invalid=%d; ultimas 2 excecoes ==="
                   % (len(lines), inv))
-            print("\n".join(vlines[-8:]))
+            print("\n".join(vlines[-2:]))
         except Exception as e2:
             print("(sem qtrace: %s)" % e2)
         sys.stdout.flush()
@@ -323,9 +323,9 @@ def main():
             qlines = f.read().decode(errors="replace").splitlines()
         inv = sum(1 for l in qlines if "Invalid" in l)
         vlines = [l for l in qlines if " v=" in l or l.startswith("v=")]
-        print("=== qtrace: %d linhas; invalid=%d; ultimas 8 excecoes ==="
+        print("=== qtrace: %d linhas; invalid=%d; ultimas 2 excecoes ==="
               % (len(qlines), inv))
-        print("\n".join(vlines[-8:]))
+        print("\n".join(vlines[-2:]))
     except Exception as e:
         print("(sem qtrace: %s)" % e)
     if not ok:
