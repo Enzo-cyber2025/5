@@ -357,7 +357,14 @@ def main():
         print("; ".join(slines[i:i+13]))
     except StopIteration:
         print("=== panic: nenhum ===")
-    # trace AHCI do QEMU (o que o controller disse)
+    # diag PCI: as leituras cruas após 'laço principal'
+    try:
+        i = next(i for i, l in enumerate(slines) if "la" + "\u00e7" + "o principal" in l)
+        print("=== diag pci (00:1f.2 / 00:00.0 / dev2 / dev1) ===")
+        print(" ; ".join(slines[i+1:i+5]))
+    except StopIteration:
+        pass
+    # trace AHCI do QEMU por ultimo
     try:
         with open(os.path.join(outdir, "qtrace.log")) as f:
             qtl = [l.rstrip() for l in f]
@@ -365,18 +372,11 @@ def main():
         kw = [l for l in ah if ("write" in l or "cmd" in l.lower()
                                 or "command" in l or "error" in l.lower()
                                 or "dma" in l.lower())]
-        print("=== ahci trace (%d ev; ultimas 8 de %d chave) ==="
+        print("=== ahci trace (%d ev; ultimas 6 de %d chave) ==="
               % (len(ah), len(kw)))
-        print("\n".join(kw[-8:]) if kw else "(nenhum)")
+        print("\n".join(kw[-6:]) if kw else "(nenhum)")
     except Exception as e:
         print("(sem qtrace: %s)" % e)
-    # diag PCI por ultimo: as leituras cruas após 'laço principal'
-    try:
-        i = next(i for i, l in enumerate(slines) if "la" + "\u00e7" + "o principal" in l)
-        print("=== diag pci (00:1f.2 / 00:00.0 / dev2 / dev1) ===")
-        print(" ; ".join(slines[i+1:i+5]))
-    except StopIteration:
-        pass
     if not ok:
         sys.exit(1)
     print("OK: rede e1000+DHCP e ENZFS validados pelo serial.")
