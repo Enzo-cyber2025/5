@@ -39,13 +39,22 @@ k_ahci_init:
         ; liga o dispositivo
         mov edi, r12d
         call pci_io_enable
-        ; BAR5 = ABAR (registro 0x24)
+        ; BAR5 = ABAR (registro 0x24); diag: low e high
+        mov edi, r12d
+        add edi, 0x28
+        call pci_read32
+        mov rdi, rax
+        call k_log_hex
         mov edi, r12d
         add edi, 0x24
         call pci_read32
+        mov rdi, rax
+        call k_log_hex
         and eax, 0xFFFFFFF0
         mov eax, eax
         mov [ahci_abar], rax
+        mov rdi, rax
+        call k_log_hex
         ; porta implementada (registro PI @+0x0C)
         mov rbx, rax
         mov edx, [rbx + 0x0C]

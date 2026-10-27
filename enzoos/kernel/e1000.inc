@@ -34,9 +34,20 @@ k_e1000_init:
         ; BAR0 = MMIO
         mov edi, r12d
         call pci_read32                   ; registro 0 = BAR0
+        mov rdi, rax
+        call k_log_hex
+        mov edi, r12d
+        add edi, 4
+        call pci_read32                   ; registro 1 = BAR0 high
+        mov rdi, rax
+        call k_log_hex
+        mov edi, r12d
+        call pci_read32
         and eax, 0xFFFFFFF0
         mov eax, eax
         mov [e1000_base], rax
+        mov rdi, rax
+        call k_log_hex
         mov rbx, rax
         ; máscara todas as interrupções (trabalhamos com polling)
         mov dword [rbx + 0x00F8*1], 0xFFFFFFFF
