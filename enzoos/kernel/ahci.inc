@@ -68,6 +68,9 @@ k_ahci_init:
         and eax, 0x0F
         cmp eax, 3                  ; DET = dispositivo presente
         jne .next_port
+        mov eax, [r14 + 0x24]       ; PxSIG: EB140101 = ATAPI (CD)
+        cmp eax, 0xEB140101
+        je .next_port
         jmp .port_ok
 .next_port:
         inc r13d
