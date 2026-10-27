@@ -209,9 +209,12 @@ def main():
         q.shot("09-menu", outdir)
         q.key("esc")
         q.sleep(0.5)
+        q.shot("09b-menu-esc", outdir)   # bissec: menu fechou?
 
         # 10. informações do sistema
         q.key("i", "ctrl-alt")
+        q.sleep(0.4)
+        q.shot("09c-info-abriu", outdir)  # bissec: INFO abriu?
         q.sleep(1.5)
         q.shot("10-info", outdir)
 
@@ -261,13 +264,16 @@ def main():
         q.shot("16-mandel", outdir)
     except Exception:
         import traceback
-        traceback.print_exc()
         print("--- QEMU morreu no meio do teste; serial parcial: ---")
         try:
             with open(serial) as f:
-                print(f.read()[:2000])
+                print(f.read()[:4000])
         except Exception:
             pass
+        sys.stdout.flush()
+        traceback.print_exc()
+        sys.stderr.flush()
+        sys.stdout.flush()
         try:
             q.quit()
         except Exception:
