@@ -332,7 +332,7 @@ def main():
     try:
         i = next(i for i, l in enumerate(slines) if "PANICO" in l)
         print("=== panic ===")
-        print("; ".join(slines[i:i+6]))
+        print("; ".join(slines[i:i+13]))
     except StopIteration:
         print("=== panic: nenhum ===")
     # diag PCI por ultimo: as leituras cruas após 'laço principal'
