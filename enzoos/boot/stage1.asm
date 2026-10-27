@@ -89,7 +89,7 @@ start:
 .rdloop:
         mov eax, [0x7C00+0x1E4]
         sub eax, [done]
-        jz .rdfim
+        jbe .rdfim                 ; concluído também quando ultrapassa (CF)
         cmp eax, 32768
         jbe .rdsize_ok
         mov eax, 32768
