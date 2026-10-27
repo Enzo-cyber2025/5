@@ -303,15 +303,29 @@ def main():
     print("serial: %s" % serial)
     with open(serial) as f:
         log = f.read()
-    print("--- serial completo (%d bytes) ---" % len(log))
-    print(log[:6000])
-    # tail do trace do QEMU (-d int): exceções/triple faults do guest
+    slines = log.splitlines()
+    print("--- serial: %d linhas; ultimas 25 ---" % len(slines))
+    print("\n".join(slines[-25:]))
+    # resumo do trace do QEMU (-d int,guest_errors)
     try:
         qt = os.path.join(outdir, "qtrace.log")
         with open(qt, "rb") as f:
-            lines = f.read().decode(errors="replace").splitlines()
-        print("--- qtrace.log: %d linhas; ultimas 30 ---" % len(lines))
-        print("\n".join(lines[-30:]))
+            qlines = f.read().decode(errors="replace").splitlines()
+        inv = [l for l in qlines if "Invalid" in l]
+        addr = []
+        for l in inv:
+            for tok in l.replace(",", " ").split():
+                if tok.startswith("0x") and len(tok) >= 6:
+                    addr.append(tok)
+                    break
+        print("--- qtrace: %d linhas; invalid: %d; primeiros enderecos: %s ---"
+              % (len(qlines), len(inv), " ".join(addr[:8])))
+        # últimas exceções com vetor/cr2 (linhas v=...)
+        vlines = [l for l in qlines if " v=" in l or l.startswith("v=")]
+        print("--- qtrace: ultimas 15 excecoes ---")
+        print("\n".join(vlines[-15:]))
+        print("--- qtrace: ultimas 10 linhas ---")
+        print("\n".join(qlines[-10:]))
     except Exception as e:
         print("(sem qtrace: %s)" % e)
 
