@@ -853,6 +853,13 @@ k_panic:
         mov [panic_rip_val], rsi
         lea rdi, [rel panic_serial]
         call k_log
+        ; diagnóstico pela serial: código da exceção e RIP
+        mov edi, ebx
+        call k_log_hex
+        mov rdi, [panic_rip_val]
+        call k_log_hex
+        mov rdi, cr2
+        call k_log_hex
         cmp qword [shadow], 0
         je .hang
         call surf_use_shadow
