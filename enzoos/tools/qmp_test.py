@@ -342,6 +342,11 @@ def main():
     for tag in ["[ahci]", "[enzfs]", "[e1000]", "[net]"]:
         hits = [l for l in slines if tag in l]
         print("%-9s %s" % (tag + ":", hits[0] if hits else "(ausente)"))
+        if tag == "[ahci]" and hits:
+            i = slines.index(hits[0])
+            for l in slines[i+1:i+7]:
+                if l.startswith("0x"):
+                    print(l)
     # linhas do panic (vec/rip/cr2/dumps) — o que mais importa agora
     try:
         i = next(i for i, l in enumerate(slines) if "PANICO" in l)
