@@ -454,8 +454,8 @@ a20_check:
         mov word [es:0x0010], 0x4321
         cmp word [0x0000], 0x1234
         pop ds
-        jne a20_on
-        stc
+        je a20_on          ; intacto -> o wrap nao alcancou 0x0 -> A20 ligada
+        stc                ; mudou -> escrita em 0x100000 embrulhou -> A20 desligada
         ret
 a20_on:
         clc
