@@ -102,6 +102,19 @@ class Qmp:
         os.remove(ppm)
         print("captura: %s.png (%dx%d)" % (name, w, h))
 
+    def vga_text(self):
+        """lê o buffer de texto VGA (0xB8000) — mostra o que a BIOS escreveu"""
+        import re as _re
+        r = self.hmp("xp /2000xw 0xb8000")
+        words = _re.findall(r"0x([0-9a-f]{8})", r.get("return", ""))
+        chars = []
+        for w in words:
+            c = int(w, 16) & 0xFF
+            chars.append(chr(c) if 32 <= c < 127 else " ")
+        s = "".join(chars)
+        lines = [s[i:i + 80].rstrip() for i in range(0, len(s), 80)]
+        return "\n".join(l for l in lines if l)
+
     def quit(self):
         try:
             self.cmd("quit")
@@ -134,7 +147,16 @@ def main():
     try:
         # 1. boot -> área de trabalho com 3 janelas (DHCP+AHCI+swap no meio)
         q.sleep(8)
-        q.shot("01-desktop", outdir)
+        w, h = q.shot("01-desktop", outdir)
+        if (w, h) == (720, 400):
+            print("MODO TEXTO 720x400: o boot nao chegou ao modo grafico")
+            print("--- texto da tela (VGA 0xB8000) ---")
+            print(q.vga_text())
+            with open(serial) as f:
+                s = f.read()
+            print("--- serial (%d bytes) ---" % len(s))
+            print(s[:800])
+            sys.exit(1)
 
         # 2. novo terminal (focado)
         q.key("t", "ctrl-alt")
