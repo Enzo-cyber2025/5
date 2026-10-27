@@ -22,7 +22,15 @@ jobs:
           sudo apt-get install -y --no-install-recommends nasm qemu-system-x86
 
       - name: Build (kernel, apps, demos, ISO)
-        run: bash build.sh
+        run: |
+          if bash build.sh > /tmp/build.log 2>&1; then
+            tail -5 /tmp/build.log
+          else
+            grep -nE "error|Error|ERRO|Traceback|AssertionError|FATAL|failed" -B2 -A3 /tmp/build.log | head -60 | while IFS= read -r l; do
+              echo "::error::$l"
+            done
+            exit 1
+          fi
 
       - name: Autoteste estático (formatos PE/ELF/ZIP/AXML/CEFS/ENZ)
         run: python3 tools/selftest.py release/enzos.iso
