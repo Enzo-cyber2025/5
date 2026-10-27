@@ -322,6 +322,13 @@ def main():
                 "[hda]", "PANICO", "ERRO"]:
         hits = [l for l in slines if tag in l]
         print("%-9s %s" % (tag + ":", hits[0] if hits else "(ausente)"))
+    # diag PCI por ultimo: as leituras cruas após 'laço principal'
+    try:
+        i = next(i for i, l in enumerate(slines) if "la" + "\u00e7" + "o principal" in l)
+        print("=== diag pci (00:1f.2 / 00:00.0 / dev2 / dev1) ===")
+        print(" ; ".join(slines[i+1:i+5]))
+    except StopIteration:
+        pass
     if not ok:
         sys.exit(1)
     print("OK: rede e1000+DHCP e ENZFS validados pelo serial.")
