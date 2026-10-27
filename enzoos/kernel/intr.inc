@@ -302,22 +302,29 @@ k_intr_init:
         jb .fill
         lidt [idtr]
 
-        ; PIC: remapeia IRQs para 0x20..0x2F
+        ; PIC: remapeia IRQs para 0x20..0x2F (ICWs por controlador, em ordem)
         mov al, 0x11
         out 0x20, al
         out 0x80, al
-        mov al, 0x28
+        mov al, 0x20                  ; ICW2 master: base = vetor 32
+        out 0x21, al
+        out 0x80, al
+        mov al, 4                     ; ICW3 master: slave na IRQ2
+        out 0x21, al
+        out 0x80, al
+        mov al, 1                     ; ICW4: modo 8086
+        out 0x21, al
+        out 0x80, al
+        mov al, 0x11
         out 0xA0, al
         out 0x80, al
-        mov al, 4
-        out 0x21, al
-        out 0x80, al
-        mov al, 2
+        mov al, 0x28                  ; ICW2 slave: base = vetor 40
         out 0xA1, al
         out 0x80, al
-        mov al, 1
-        out 0x21, al
+        mov al, 2                     ; ICW3 slave: identidade 2
+        out 0xA1, al
         out 0x80, al
+        mov al, 1                     ; ICW4: modo 8086
         out 0xA1, al
         out 0x80, al
         ; máscara: habilita IRQ0 (PIT), IRQ1 (teclado), IRQ2 (cascata)
