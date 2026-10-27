@@ -1,0 +1,30 @@
+=== chain run 40485013804 ===
+--- harvest
+[kaggle] KAGGLE_USERNAME ausente: derivando do token...
+$ kaggle kernels list --mine --page-size 20
+[kaggle] username descoberto via kernels list --mine: account
+$ kaggle kernels status account/ets2ai-train
+$ kaggle kernels output account/ets2ai-train -p /home/runner/work/5/5/ets2-ai/.cache/kaggle-out
+Cannot access kernel 'account/ets2ai-train' (Permission 'kernels.get' was denied). The most likely cause is a wrong kernel slug. The benchmark_task_slug returned by get_benchmark_leaderboard differs from the actual kernel slug — use the slug from the notebook URL (kaggle.com/code/owner/KERNEL-SLUG), not from the leaderboard. It can also occur if the notebook is private.
+
+[harvest] sem saida para colher
+--- chain
+[kaggle] KAGGLE_USERNAME ausente: derivando do token...
+$ kaggle kernels list --mine --page-size 20
+[kaggle] username descoberto via kernels list --mine: account
+$ kaggle datasets list --mine --page-size 50
+[chain] dataset account/ets2ai-checkpoint nao existe — best-effort...
+$ kaggle datasets create -p /home/runner/work/5/5/ets2-ai/.cache/kaggle-ckpt
+Starting upload for file metrics.json
+
+::warning::dataset de checkpoint indisponivel — sessao usara a release como checkpoint
+$ kaggle kernels status account/ets2ai-train
+[chain] GPU esgotada (28.5 h nos ultimos 7 dias) — SESSAO CPU de 5.2 h (treina ate a GPU voltar)
+[chain] orcamento gravado no kernel: 30,000,000,000 amostras, 5.2 h
+$ kaggle kernels push -p /home/runner/work/5/5/ets2-ai/.cache/kaggle-kernel
+403 Client Error: Forbidden for url: https://api.kaggle.com/v1/kernels.KernelsApiService/SaveKernel
+
+You don't have access to this resource.
+If this is a competition, you may need to accept its rules first at
+  https://www.kaggle.com/competitions/<competition>/rules
+
