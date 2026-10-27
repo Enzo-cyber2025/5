@@ -66,6 +66,10 @@ k_main:
         call k_cpu_init
         mov rdi, s_b_cpu
         call k_log
+        mov rdi, s_b_cpu2
+        call k_log
+        mov rdi, s_b_cpu3
+        call k_log
         call k_mm_init
         mov rdi, s_b_mm
         call k_log
@@ -1067,6 +1071,8 @@ section .kdata
 ; =============================================================================
 s_banner:  db "EnzoOS 1.0 — kernel em Assembly x86-64", 0
 s_b_cpu:   db "[boot] cpu ok", 0
+s_b_cpu2:  db "[boot] cpu ok 2", 0
+s_b_cpu3:  db "[boot] cpu ok 3", 0
 s_b_mm:    db "[boot] mm ok", 0
 s_b_ps2:   db "[boot] ps2 ok", 0
 s_b_gfx:   db "[boot] gfx ok", 0

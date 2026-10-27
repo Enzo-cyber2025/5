@@ -303,8 +303,17 @@ def main():
     print("serial: %s" % serial)
     with open(serial) as f:
         log = f.read()
-    print("--- serial (ultimas linhas) ---")
-    print("\n".join(log.splitlines()[-16:]))
+    print("--- serial completo (%d bytes) ---" % len(log))
+    print(log[:6000])
+    # tail do trace do QEMU (-d int): exceções/triple faults do guest
+    try:
+        qt = os.path.join(outdir, "qtrace.log")
+        with open(qt, "rb") as f:
+            lines = f.read().decode(errors="replace").splitlines()
+        print("--- qtrace.log: %d linhas; ultimas 30 ---" % len(lines))
+        print("\n".join(lines[-30:]))
+    except Exception as e:
+        print("(sem qtrace: %s)" % e)
 
     # validações que devem fechar o CI em vermelho se quebrarem
     ok = True

@@ -95,6 +95,10 @@ k_mm_init:
         jmp .mm_next
 .mm_done:
         mov [ram_total], r10
+        push rdi
+        lea rdi, [rel s_mm_e820]
+        call k_log
+        pop rdi
         ; heap_top = min(topo, HEAP_MAX)
         mov rax, r11
         mov rcx, HEAP_MAX
@@ -128,6 +132,10 @@ k_mm_init:
         inc rcx
         jmp .mark
 .marked:
+        push rdi
+        lea rdi, [rel s_mm_bitmap]
+        call k_log
+        pop rdi
         ; reserva a zona de binários estrangeiros:
         ; [PE_BASE, 0x1D000000) = PE + ELF + 8 pilhas de 1 MB
         mov rax, [heap_top]
@@ -146,6 +154,8 @@ k_mm_init:
         dec rcx
         jmp .reserve
 .reserved:
+        lea rdi, [rel s_mm_end]
+        call k_log
         ret
 
 ; -----------------------------------------------------------------------------
@@ -291,5 +301,11 @@ heap_top:      dq 0
 heap_pages:    dq 0
 bitmap_bytes:  dq 0
 bitmap_pages:  dq 0
+
+
+section .kdata
+s_mm_e820:   db "[mm] e820 somado", 0
+s_mm_bitmap: db "[mm] bitmap pronto", 0
+s_mm_end:    db "[mm] reservas ok — mm_init completo", 0
 
 %endif
