@@ -382,7 +382,7 @@ section .s2 vstart=0x10200 follows=.text
         mov eax, cr0
         or eax, 1
         mov cr0, eax
-        jmp 0x08:pm_entry
+        jmp dword 0x08:pm_entry       ; offset 32-bit (sem isso trunca p/ 0x0xxx)
 
 ; ---------------------------------------------------------------------------
 ; rotinas 16-bit da parte B
