@@ -328,6 +328,15 @@ def main():
         ok = False
     print("=== serial (%d linhas; ultimas 8) ===" % len(slines))
     print("\n".join(slines[-8:]))
+    # marcadores do caminho dhcp (uma linha so, antes do cap)
+    print("=== marcadores ===")
+    print("eth_copiado=%d canarios_dhcp=%d canarios_eth=%d "
+          "canarios_e1000=%d ethlog=%d" % (
+              log.count("[eth] payload copiado"),
+              log.count("0x000000000008EFC"),
+              log.count("0x000000000013"),
+              log.count("0x000000000014"),
+              len([l for l in slines if "[eth]" in l])))
     # resumo por tags (o cap de annotations corta o meio do serial)
     print("=== resumo do boot ===")
     for tag in ["[ahci]", "[enzfs]", "[e1000]", "[net]"]:
