@@ -860,6 +860,12 @@ k_panic:
         call k_log_hex
         mov rdi, cr2
         call k_log_hex
+        ; dump: 16 bytes da memória no RIP (instruções reais na RAM)
+        mov rsi, [panic_rip_val]
+        mov rdi, [rsi - 8]
+        call k_log_hex
+        mov rdi, [rsi]
+        call k_log_hex
         cmp qword [shadow], 0
         je .hang
         call surf_use_shadow
