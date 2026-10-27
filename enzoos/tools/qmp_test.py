@@ -46,7 +46,7 @@ class Qmp:
                 "-device", "ide-cd,drive=cd0,bus=sata0.0",
                 "-serial", "file:" + serial_path,
                 "-vga", "std", "-no-reboot",
-                "-d", "int,guest_errors,cpu_reset",
+                "-d", "guest_errors",
                 "-D", qtrace]
         if disk:
             args += ["-drive", "id=hd0,if=none,format=raw,file=" + disk,

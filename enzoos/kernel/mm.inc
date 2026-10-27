@@ -192,6 +192,13 @@ k_alloc:
         mov r13, [heap_pages]
         sub r13, r12
         mov r14, [bitmap_pages]
+        ; diag
+        lea rdi, [rel s_ka_start]
+        call k_log
+        mov rdi, r12
+        call k_log_hex
+        mov rdi, [heap_pages]
+        call k_log_hex
 .next:
         cmp r14, r13
         ja .fail
@@ -216,6 +223,13 @@ k_alloc:
         mov rax, r14
         shl rax, 12
         add rax, HEAP_START
+        ; diag
+        push rax
+        lea rdi, [rel s_ka_ok]
+        call k_log
+        mov rdi, rax
+        call k_log_hex
+        pop rax
         jmp .done
 .advance:
         inc r14
@@ -235,6 +249,13 @@ k_alloc:
         mov r14, [bitmap_pages]
         jmp .next
 .fail2:
+        ; diag
+        lea rdi, [rel s_ka_fail]
+        call k_log
+        mov rdi, [heap_pages]
+        call k_log_hex
+        mov rdi, [bitmap_pages]
+        call k_log_hex
         xor rax, rax
 .done:
         pop r15
@@ -313,6 +334,12 @@ k_free_pages_count:
 
 section .kdata
 sw_retry:   dd 0
+section .kdata
+s_ka_start: db "[ka] varrendo npages:", 0
+s_ka_ok:    db "[ka] alocou em:", 0
+s_ka_fail:  db "[ka] FALHOU heap/bitmap pages:", 0
+ram_total2: dq 0
+
 ram_total:     dq 0
 heap_top:      dq 0
 heap_pages:    dq 0
