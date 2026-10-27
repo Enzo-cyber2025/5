@@ -46,7 +46,7 @@ class Qmp:
                 "-device", "ide-cd,drive=cd0,bus=sata0.0",
                 "-serial", "file:" + serial_path,
                 "-vga", "std", "-no-reboot",
-                "-d", "int,guest_errors,cpu_reset",
+                "-d", "int,guest_errors,cpu_reset,trace:ahci_*",
                 "-D", qtrace]
         if disk:
             args += ["-drive", "id=hd0,if=none,format=raw,file=" + disk,
@@ -295,6 +295,9 @@ def main():
             vlines = [l for l in lines if " v=" in l or l.startswith("v=")]
             print("=== qtrace: %d linhas; invalid=%d primeiros: %s" %
                   (len(lines), len(inv), " ".join(addr[:5])))
+            ah = [l for l in lines if "ahci" in l.lower()]
+            print("=== ahci trace ultimas 6 ===")
+            print("\n".join(ah[-6:]) if ah else "(nenhum)")
             print("=== v ultimas 2 ===")
             print("\n".join(vlines[-2:]))
         except Exception as e2:
