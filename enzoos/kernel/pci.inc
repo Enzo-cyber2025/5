@@ -83,19 +83,16 @@ pci_find_class:
         je .next_fn
         cmp eax, 0
         je .next_fn
-        ; lê classe (registro 8, parte alta)
+        ; lê classe (registro 8: [rev][progif][subclass][class])
         mov edi, r8d
         or edi, 8
         call pci_read32
-        shr eax, 16                 ; classe:subclass:progif
+        shr eax, 8                  ; eax = class:subclass:progif (24 bits)
         mov ecx, r12d
-        cmp ecx, 0xFF0000           ; progif 0xFF = qualquer
+        cmp cl, 0xFF                ; progif 0xFF = qualquer
         jne .exact
-        and eax, 0x00FFFF
-        and ecx, 0x00FFFF
-        cmp eax, ecx
-        je .found
-        jmp .next_fn
+        and eax, 0xFFFF00
+        and ecx, 0xFFFF00
 .exact:
         cmp eax, ecx
         je .found
