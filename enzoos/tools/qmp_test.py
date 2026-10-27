@@ -314,8 +314,8 @@ def main():
     if "[enzfs] volume montado" not in log:
         print("FALHOU: ENZFS nao montou o disco AHCI")
         ok = False
-    print("=== serial (%d linhas; ultimas 10) ===" % len(slines))
-    print("\n".join(slines[-10:]))
+    print("=== serial (%d linhas; ultimas 24) ===" % len(slines))
+    print("\n".join(slines[-24:]))
     # qtrace resumo por ultimo (annotations do CI preservam o final)
     try:
         qt = os.path.join(outdir, "qtrace.log")
