@@ -14,6 +14,7 @@ section .ktext
 pci_read32:
         mov edx, 0xCF8
         mov eax, edi
+        or eax, 0x80000000          ; bit 31 = enable (idempotente p/ diag)
         out dx, eax
         mov edx, 0xCFC
         in eax, dx
@@ -25,6 +26,7 @@ pci_read32:
 pci_write32:
         mov edx, 0xCF8
         mov eax, edi
+        or eax, 0x80000000          ; bit 31 = enable
         out dx, eax
         mov edx, 0xCFC
         mov eax, esi
