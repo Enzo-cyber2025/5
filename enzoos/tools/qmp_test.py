@@ -292,8 +292,8 @@ def main():
                   (len(lines), len(inv), " ".join(addr[:5])))
             print("=== ultimas 10 linhas do trace ===")
             print("\n".join(lines[-10:]))
-            print("=== ultimas 2 excecoes ===")
-            print("\n".join(vlines[-2:]))
+            print("=== ultimas 6 excecoes/irqs ===")
+            print("\n".join(vlines[-6:]))
         except Exception as e2:
             print("(sem qtrace: %s)" % e2)
         sys.stdout.flush()

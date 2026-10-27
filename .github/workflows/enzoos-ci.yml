@@ -61,6 +61,7 @@ jobs:
             enzoos/release/disk.img
 
       - name: Upload das capturas
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: screenshots
