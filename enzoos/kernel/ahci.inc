@@ -139,6 +139,20 @@ k_ahci_init:
 .ident_fail:
         mov rdi, s_ahci_ident_fail
         call k_log
+        ; diag da porta: PxCMD, PxCI, PxTFD, PxSERR, PxSSTS, PxIS
+        mov rax, [ahci_port]
+        mov rdi, [rax + 0x18]
+        call k_log_hex
+        mov rdi, [rax + 0x38]
+        call k_log_hex
+        mov rdi, [rax + 0x20]
+        call k_log_hex
+        mov rdi, [rax + 0x30]
+        call k_log_hex
+        mov rdi, [rax + 0x28]
+        call k_log_hex
+        mov rdi, [rax + 0x10]
+        call k_log_hex
         xor eax, eax
         mov [ahci_ok], eax
 .done:
