@@ -290,6 +290,8 @@ def main():
             vlines = [l for l in lines if " v=" in l or l.startswith("v=")]
             print("=== qtrace: %d linhas; invalid=%d primeiros: %s" %
                   (len(lines), len(inv), " ".join(addr[:5])))
+            print("=== ultimas 10 linhas do trace ===")
+            print("\n".join(lines[-10:]))
             print("=== ultimas 2 excecoes ===")
             print("\n".join(vlines[-2:]))
         except Exception as e2:

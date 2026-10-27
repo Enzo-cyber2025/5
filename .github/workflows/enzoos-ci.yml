@@ -64,7 +64,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: screenshots
-          path: enzoos/screenshots/*.png
+          path: |
+            enzoos/screenshots/*.png
+            enzoos/screenshots/qtrace.log
 
       - name: Upload do log serial
         if: always()
