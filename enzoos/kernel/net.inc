@@ -128,6 +128,9 @@ eth_tx:
 net_input:
         push rbx
         mov rbx, rdi
+        mov rdi, rsp
+        call k_log_hex
+        mov rdi, rbx
         movzx eax, word [rbx + 12]
         rol ax, 8
         cmp eax, 0x0806
@@ -153,6 +156,9 @@ net_input:
 arp_input:
         push rbx
         mov rbx, rdi
+        mov rdi, rsp
+        call k_log_hex
+        mov rdi, rbx
         movzx eax, word [rbx + 20]
         rol ax, 8
         cmp eax, 2                       ; resposta
@@ -233,6 +239,8 @@ arp_resolve:
         mov ebx, [uptime_ms]
         add ebx, 400
 .wait:
+        mov rdi, rsp
+        call k_log_hex
         call e1000_rx_poll
         cmp dword [arp_valid], 0
         je .chk
@@ -327,7 +335,9 @@ ip_input:
         push r13
         push r14
         push r15
-        mov rbx, rdi
+        mov rdi, rsp
+        call k_log_hex
+        mov rdi, rbx
         cmp byte [rbx + 14], 0x45
         jne .out
         movzx r12d, byte [rbx + 23]
@@ -445,6 +455,8 @@ net_dhcp:
         mov ebx, [uptime_ms]
         add ebx, 600
 .wof:
+        mov rdi, rsp
+        call k_log_hex
         call e1000_rx_poll
         cmp dword [dhcp_offer_ip], 0
         jne .req
@@ -503,6 +515,8 @@ net_dhcp:
 dhcp_xmit:
         push rbx
         mov ebx, edi
+        mov rdi, rsp
+        call k_log_hex
         lea rdi, [net_dhcppkt]
         mov esi, 300
         call k_memzero
