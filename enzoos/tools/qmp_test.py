@@ -49,6 +49,7 @@ class Qmp:
                      "-device", "ide-hd,drive=hd0,bus=ahci0.1"]
         args += ["-netdev", "user,id=n0",
                  "-device", "e1000,netdev=n0"]
+        self.notes = []
         self.proc = subprocess.Popen(
             args,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
@@ -58,10 +59,18 @@ class Qmp:
         self.cmd("qmp_capabilities")
 
     def readline(self):
-        line = self.proc.stdout.readline()
-        if not line:
-            raise RuntimeError("QEMU morreu")
-        return json.loads(line)
+        while True:
+            line = self.proc.stdout.readline()
+            if not line:
+                raise RuntimeError(
+                    "QEMU morreu. Output dele:\n" + "\n".join(self.notes))
+            s = line.decode(errors="replace").strip()
+            if not s:
+                continue
+            if not s.startswith("{"):
+                self.notes.append(s)      # aviso/erro do QEMU (não é JSON)
+                continue
+            return json.loads(s)
 
     def cmd(self, execute, **args):
         msg = {"execute": execute}
