@@ -882,6 +882,16 @@ k_panic:
         call k_log_hex
         mov rdi, cr2
         call k_log_hex
+        ; IDT[32] (timer) e primeiros descritores RX do e1000
+        mov rsi, idt_table + 32*16
+        mov rdi, [rsi]
+        call k_log_hex
+        mov rsi, e1000_rxdesc
+        mov rdi, [rsi]
+        call k_log_hex
+        mov rsi, e1000_rxdesc + 16
+        mov rdi, [rsi]
+        call k_log_hex
         ; dump: 16 bytes da memória no RIP (somente se mapeável)
         mov rsi, [panic_rip_val]
         test rsi, rsi
