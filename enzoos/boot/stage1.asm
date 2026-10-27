@@ -326,20 +326,20 @@ section .s2 vstart=0x10200 follows=.text
         jne err_vbe
         xor ax, ax
         mov es, ax
-        mov ax, [0x900+18]           ; XRes
+        mov ax, [es:0x9000+18]       ; XRes (buffer VBE em linear 0x9000)
         mov [vesa_w], ax
-        mov ax, [0x900+20]           ; YRes
+        mov ax, [es:0x9000+20]       ; YRes
         mov [vesa_h], ax
-        mov al, [0x900+25]           ; bpp
+        mov al, [es:0x9000+25]       ; bpp
         mov [vesa_bpp], al
-        mov ax, [0x900+16]           ; pitch
+        mov ax, [es:0x9000+16]       ; pitch
         test ax, ax
         jnz .pitch_ok
         mov ax, [vesa_w]
         shl ax, 2
 .pitch_ok:
         mov [vesa_pitch], ax
-        mov eax, [0x900+40]          ; PhysBasePtr
+        mov eax, [es:0x9000+40]      ; PhysBasePtr
         mov [vesa_lfb], eax
         mov ax, [found_mode]
         mov [vesa_mode], ax
