@@ -57,6 +57,7 @@ k_gfx_init:
         mov rdi, [lfb]
         call k_log_hex
 .hang:
+.hang2:
         hlt
         jmp .hang
 
@@ -860,23 +861,13 @@ draw_cursor:                       ; (edi, esi) = posição
 ; -----------------------------------------------------------------------------
 k_panic:
         push rbx
+        inc dword [panic_depth]
+        cmp dword [panic_depth], 2
+        jae .hang2                     ; panic dentro de panic: para
         mov ebx, edi
         mov [panic_rip_val], rsi
         lea rdi, [rel panic_serial]
         call k_log
-        ; diagnóstico pela serial: código da exceção e RIP
-        mov edi, ebx
-        call k_log_hex
-        mov rdi, [panic_rip_val]
-        call k_log_hex
-        mov rdi, cr2
-        call k_log_hex
-        ; dump: 16 bytes da memória no RIP (instruções reais na RAM)
-        mov rsi, [panic_rip_val]
-        mov rdi, [rsi - 8]
-        call k_log_hex
-        mov rdi, [rsi]
-        call k_log_hex
         ; dump do topo da pilha do kernel (enderecos de retorno)
         mov rsi, 0x8EFF8
 .pd:
@@ -885,6 +876,24 @@ k_panic:
         sub rsi, 8
         cmp rsi, 0x8EE00
         jae .pd
+        ; diagnóstico pela serial: código da exceção e RIP
+        mov edi, ebx
+        call k_log_hex
+        mov rdi, [panic_rip_val]
+        call k_log_hex
+        mov rdi, cr2
+        call k_log_hex
+        ; dump: 16 bytes da memória no RIP (somente se mapeável)
+        mov rsi, [panic_rip_val]
+        test rsi, rsi
+        jz .nodump
+        cmp rsi, 0x1000
+        jb .nodump
+        mov rdi, [rsi - 8]
+        call k_log_hex
+        mov rdi, [rsi]
+        call k_log_hex
+.nodump:
         cmp qword [shadow], 0
         je .hang
         call surf_use_shadow
@@ -982,6 +991,7 @@ tmp_y:     dd 0
 tmp_color: dd 0
 numbuf:    times 40 db 0
 panic_rip_val: dq 0
+panic_depth:   dd 0
 
 msg_nofb:   db "ERRO: sem memoria para o video", 0
 brand_str:  db "EnzoOS 1.0", 0
