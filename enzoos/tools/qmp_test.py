@@ -294,6 +294,29 @@ def main():
             print("\n".join(lines[-10:]))
             print("=== ultimas 6 excecoes/irqs ===")
             print("\n".join(vlines[-6:]))
+            # transicao kernel->lixo (fim do .kdata = 0x157D50; ativos apos)
+            def _ip(l):
+                i = l.find("IP=0018:")
+                if i < 0:
+                    return None
+                try:
+                    return int(l[i + 8:i + 24], 16)
+                except ValueError:
+                    return None
+            last_ok, first_bad = None, None
+            for l in lines:
+                if " v=" not in l:
+                    continue
+                ip = _ip(l)
+                if ip is None:
+                    continue
+                if ip < 0x157D50:
+                    last_ok = l.strip()
+                elif first_bad is None:
+                    first_bad = l.strip()
+            print("=== transicao (ultima ok | primeira no lixo) ===")
+            print(last_ok or "(nenhuma)")
+            print(first_bad or "(nenhuma)")
         except Exception as e2:
             print("(sem qtrace: %s)" % e2)
         sys.stdout.flush()
