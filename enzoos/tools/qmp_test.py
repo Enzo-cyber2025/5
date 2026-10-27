@@ -271,8 +271,13 @@ def main():
         try:
             with open(serial) as f:
                 sl = f.read().splitlines()
-            print("--- serial (%d linhas; ultimas 8) ---" % len(sl))
-            print("\n".join(sl[-8:]))
+            body = "\n".join(sl)
+            print("--- serial %d linhas; marcadores: eth_copiado=%d "
+                  "canarios_rx=%d" % (
+                      len(sl), body.count("[eth] payload copiado"),
+                      body.count("0x000000000008EF")))
+            print("--- ultimas 4 ---")
+            print("\n".join(sl[-4:]))
         except Exception:
             pass
         # qtrace resumido por ultimo (annotations preservam o final)
