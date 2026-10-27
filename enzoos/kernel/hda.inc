@@ -45,7 +45,7 @@ k_hda_init:
         mov edi, r12d
         call pci_read32                   ; BAR0 (MMIO)
         and eax, 0xFFFFFFF0
-        movzx rax, eax
+        mov eax, eax
         mov [hda_base], rax
         mov rbx, rax
         ; versão

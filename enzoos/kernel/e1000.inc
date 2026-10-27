@@ -35,7 +35,7 @@ k_e1000_init:
         mov edi, r12d
         call pci_read32                   ; registro 0 = BAR0
         and eax, 0xFFFFFFF0
-        movzx rax, eax
+        mov eax, eax
         mov [e1000_base], rax
         mov rbx, rax
         ; máscara todas as interrupções (trabalhamos com polling)

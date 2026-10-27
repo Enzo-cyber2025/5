@@ -44,7 +44,7 @@ k_ahci_init:
         add edi, 0x24
         call pci_read32
         and eax, 0xFFFFFFF0
-        movzx rax, eax
+        mov eax, eax
         mov [ahci_abar], rax
         ; porta implementada (registro PI @+0x0C)
         mov rbx, rax
