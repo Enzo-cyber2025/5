@@ -116,6 +116,12 @@ eth_tx:
         mov rsi, r12
         mov rdx, r13
         call k_memcpy
+        push rsi
+        push rdi
+        lea rdi, [rel s_eth_copied]
+        call k_log
+        pop rdi
+        pop rsi
         mov edi, net_txbuf
         lea esi, [r13 + 14]
         call e1000_tx
@@ -1247,3 +1253,6 @@ s_dhcp_tx:    db "[net] discover enviado", 0
 s_dhcp_off:   db "[net] oferta recebida", 0
 s_dhcp_to:    db "[net] sem resposta", 0
 s_dhcp_ok:    db "[net] ack recebido", 0
+
+section .kdata
+s_eth_copied: db "[eth] payload copiado", 0
