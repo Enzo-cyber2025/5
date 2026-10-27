@@ -304,8 +304,6 @@ def main():
     with open(serial) as f:
         log = f.read()
     slines = log.splitlines()
-    print("--- serial: %d linhas; ultimas 25 ---" % len(slines))
-    print("\n".join(slines[-25:]))
     # resumo do trace do QEMU (-d int,guest_errors)
     try:
         qt = os.path.join(outdir, "qtrace.log")
@@ -318,14 +316,11 @@ def main():
                 if tok.startswith("0x") and len(tok) >= 6:
                     addr.append(tok)
                     break
-        print("--- qtrace: %d linhas; invalid: %d; primeiros enderecos: %s ---"
-              % (len(qlines), len(inv), " ".join(addr[:8])))
-        # últimas exceções com vetor/cr2 (linhas v=...)
         vlines = [l for l in qlines if " v=" in l or l.startswith("v=")]
-        print("--- qtrace: ultimas 15 excecoes ---")
-        print("\n".join(vlines[-15:]))
-        print("--- qtrace: ultimas 10 linhas ---")
-        print("\n".join(qlines[-10:]))
+        print("=== qtrace: %d linhas; invalid=%d; primeiros: %s ==="
+              % (len(qlines), len(inv), " ".join(addr[:6])))
+        print("=== qtrace: ultimas 10 excecoes (v=/cr2) ===")
+        print("\n".join(vlines[-10:]))
     except Exception as e:
         print("(sem qtrace: %s)" % e)
 
@@ -338,8 +333,13 @@ def main():
         print("FALHOU: ENZFS nao montou o disco AHCI")
         ok = False
     if not ok:
+        # serial por ultimo: e o que as annotations do CI preservam
+        print("=== serial (%d linhas) ===" % len(slines))
+        print("\n".join(slines))
         sys.exit(1)
     print("OK: rede e1000+DHCP e ENZFS validados pelo serial.")
+    print("=== serial (%d linhas) ===" % len(slines))
+    print("\n".join(slines[-20:]))
 
 if __name__ == '__main__':
     main()
