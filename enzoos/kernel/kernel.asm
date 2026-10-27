@@ -64,21 +64,49 @@ k_main:
         mov rdi, s_banner
         call k_log
         call k_cpu_init
+        mov rdi, s_b_cpu
+        call k_log
         call k_mm_init
+        mov rdi, s_b_mm
+        call k_log
         call k_intr_init
         sti
         call k_ps2_init
+        mov rdi, s_b_ps2
+        call k_log
         call k_gfx_init
+        mov rdi, s_b_gfx
+        call k_log
         call k_cefs_init
+        mov rdi, s_b_cefs
+        call k_log
         call k_wm_init
+        mov rdi, s_b_wm
+        call k_log
         call k_hpet_init
+        mov rdi, s_b_hpet
+        call k_log
         call k_ahci_init
+        mov rdi, s_b_ahci
+        call k_log
         call k_enzfs_mount
+        mov rdi, s_b_enzfs
+        call k_log
         call k_swap_init
+        mov rdi, s_b_swap
+        call k_log
         call k_e1000_init
+        mov rdi, s_b_e1000
+        call k_log
         call k_net_init
+        mov rdi, s_b_net
+        call k_log
         call k_hda_init
+        mov rdi, s_b_hda
+        call k_log
         call k_rtc_read
+        mov rdi, s_b_rtc
+        call k_log
         call clock_update
         ; semente aleatória
         mov eax, [rtc_sec]
@@ -1038,6 +1066,20 @@ sys_shutdown:
 section .kdata
 ; =============================================================================
 s_banner:  db "EnzoOS 1.0 — kernel em Assembly x86-64", 0
+s_b_cpu:   db "[boot] cpu ok", 0
+s_b_mm:    db "[boot] mm ok", 0
+s_b_ps2:   db "[boot] ps2 ok", 0
+s_b_gfx:   db "[boot] gfx ok", 0
+s_b_cefs:  db "[boot] cefs ok", 0
+s_b_wm:    db "[boot] wm ok", 0
+s_b_hpet:  db "[boot] hpet ok", 0
+s_b_ahci:  db "[boot] ahci ok", 0
+s_b_enzfs: db "[boot] enzfs ok", 0
+s_b_swap:  db "[boot] swap ok", 0
+s_b_e1000: db "[boot] e1000 ok", 0
+s_b_net:   db "[boot] net ok", 0
+s_b_hda:   db "[boot] hda ok", 0
+s_b_rtc:   db "[boot] rtc ok — laço principal", 0
 s_app1:    db "TERMINAL.ENZ", 0
 s_app2:    db "INFO.ENZ", 0
 s_app3:    db "PLASMA.ENZ", 0

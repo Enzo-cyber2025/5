@@ -38,13 +38,16 @@ def ppm_to_png(src, dst):
 # ---------------------------------------------------------------------------
 class Qmp:
     def __init__(self, iso, serial_path, disk=None):
+        qtrace = serial_path.replace("serial.log", "qtrace.log")
         args = [QEMU, "-m", "2048", "-display", "none", "-qmp", "stdio",
                 "-machine", "q35", "-boot", "d",
                 "-device", "ahci,id=sata0",
                 "-drive", "id=cd0,if=none,format=raw,media=cdrom,file=" + iso,
                 "-device", "ide-cd,drive=cd0,bus=sata0.0",
                 "-serial", "file:" + serial_path,
-                "-vga", "std", "-no-reboot"]
+                "-vga", "std", "-no-reboot",
+                "-d", "int,guest_errors,cpu_reset",
+                "-D", qtrace]
         if disk:
             args += ["-drive", "id=hd0,if=none,format=raw,file=" + disk,
                      "-device", "ide-hd,drive=hd0,bus=sata0.1"]
@@ -270,6 +273,16 @@ def main():
                 print(f.read()[:4000])
         except Exception:
             pass
+        # tail do trace do QEMU (-d int): mostra a última exceção/triple fault
+        try:
+            qt = os.path.join(outdir, "qtrace.log")
+            with open(qt, "rb") as f:
+                data = f.read()
+            lines = data.decode(errors="replace").splitlines()
+            print("--- qtrace.log: %d linhas; ultimas 40 ---" % len(lines))
+            print("\n".join(lines[-40:]))
+        except Exception as e:
+            print("(sem qtrace: %s)" % e)
         sys.stdout.flush()
         traceback.print_exc()
         sys.stderr.flush()
