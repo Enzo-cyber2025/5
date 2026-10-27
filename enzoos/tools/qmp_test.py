@@ -318,10 +318,16 @@ def main():
     print("\n".join(slines[-8:]))
     # resumo por tags (o cap de annotations corta o meio do serial)
     print("=== resumo do boot ===")
-    for tag in ["[hpet]", "[ahci]", "[enzfs]", "[e1000]", "[net]",
-                "[hda]", "PANICO", "ERRO"]:
+    for tag in ["[ahci]", "[enzfs]", "[e1000]", "[net]"]:
         hits = [l for l in slines if tag in l]
         print("%-9s %s" % (tag + ":", hits[0] if hits else "(ausente)"))
+    # linhas do panic (vec/rip/cr2/dumps) — o que mais importa agora
+    try:
+        i = next(i for i, l in enumerate(slines) if "PANICO" in l)
+        print("=== panic ===")
+        print("; ".join(slines[i:i+6]))
+    except StopIteration:
+        print("=== panic: nenhum ===")
     # diag PCI por ultimo: as leituras cruas após 'laço principal'
     try:
         i = next(i for i, l in enumerate(slines) if "la" + "\u00e7" + "o principal" in l)
