@@ -114,8 +114,14 @@ eth_tx:
         add rax, 2
         mov rdi, rax
         mov rsi, r12
-        mov rdx, r13
-        call k_memcpy
+        mov rcx, r13
+.bcopy:
+        mov al, [rsi]
+        mov [rdi], al
+        inc rsi
+        inc rdi
+        dec rcx
+        jnz .bcopy
         push rsi
         push rdi
         lea rdi, [rel s_eth_copied]
