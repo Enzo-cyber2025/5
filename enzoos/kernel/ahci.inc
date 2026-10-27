@@ -48,6 +48,9 @@ k_ahci_init:
         mov [ahci_abar], rax
         ; porta implementada (registro PI @+0x0C)
         mov rbx, rax
+        ; GHC.AE = 1 (modo AHCI nativo) e limpa interrupcoes pendentes
+        or dword [rbx + 0x04], 1
+        mov dword [rbx + 0x08], 0xFFFFFFFF
         mov edx, [rbx + 0x0C]
         mov [ahci_pi], edx
         ; procura a primeira porta com disco
@@ -80,6 +83,8 @@ k_ahci_init:
         ; guarda a assinatura (PxSIG)
         mov eax, [r14 + 0x24]
         mov [ahci_sig], eax
+        ; limpa erros da porta (SERR: escreve 1s) e IRQ pendente
+        mov dword [r14 + 0x30], 0xFFFFFFFF
         ; para o motor antes de trocar os descritores
         mov edi, 100
         call ahci_stop

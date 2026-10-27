@@ -268,6 +268,12 @@ ip_send:
         mov r13d, esi
         mov r14, rdx
         mov r15d, ecx
+        ; broadcast: MAC ff:ff:ff:ff:ff:ff direto (ARP nao se aplica)
+        cmp r12d, 0xFFFFFFFF
+        jne .arp
+        mov rbx, net_bcast
+        jmp .have_mac
+.arp:
         mov edi, [net_gw]
         test edi, edi
         jnz .gw
@@ -277,6 +283,7 @@ ip_send:
         test rax, rax
         jz .out
         mov rbx, rax
+.have_mac:
         lea rdi, [net_iphdr]
         mov byte [rdi], 0x45
         mov byte [rdi + 1], 0
