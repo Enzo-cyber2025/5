@@ -265,27 +265,27 @@ def main():
         launch_menu_app(9)                 # MANDEL.ENZ
         q.sleep(4)
         q.shot("16-mandel", outdir)
-    except Exception:
-        import traceback
-        print("--- QEMU morreu no meio do teste; serial parcial: ---")
-        try:
-            with open(serial) as f:
-                print(f.read()[:4000])
-        except Exception:
-            pass
+    except Exception as e:
+        print("--- QEMU morreu no meio do teste: %s ---" % repr(e))
         # tail do trace do QEMU (-d int): mostra a última exceção/triple fault
         try:
             qt = os.path.join(outdir, "qtrace.log")
             with open(qt, "rb") as f:
-                data = f.read()
-            lines = data.decode(errors="replace").splitlines()
-            print("--- qtrace.log: %d linhas; ultimas 40 ---" % len(lines))
-            print("\n".join(lines[-40:]))
-        except Exception as e:
-            print("(sem qtrace: %s)" % e)
-        sys.stdout.flush()
-        traceback.print_exc()
-        sys.stderr.flush()
+                lines = f.read().decode(errors="replace").splitlines()
+            inv = sum(1 for l in lines if "Invalid" in l)
+            vlines = [l for l in lines if " v=" in l or l.startswith("v=")]
+            print("--- qtrace: %d linhas, invalid=%d; ultimas excecoes: ---"
+                  % (len(lines), inv))
+            print("\n".join(vlines[-6:]))
+        except Exception as e2:
+            print("(sem qtrace: %s)" % e2)
+        # serial por ultimo (annotations do CI preservam o final)
+        try:
+            with open(serial) as f:
+                print("--- serial parcial: ---")
+                print(f.read()[:5000])
+        except Exception:
+            pass
         sys.stdout.flush()
         try:
             q.quit()
