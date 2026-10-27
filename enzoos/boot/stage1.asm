@@ -136,6 +136,7 @@ start:
         int 0x13
         jmp .rdretry
 .rdok:
+        call bdot
         movzx eax, word [DAP+2]
         add [lba_cur], eax
         mov ecx, [secsize]
@@ -143,6 +144,8 @@ start:
         add [done], eax
         jmp .rdloop
 .rdfim:
+        mov si, msgB0
+        call bprint
         push word 0x1000
         push word 0x0200
         retf
@@ -176,9 +179,19 @@ bprint:
         ret
 
 msgA1:  db 13, 10, "EnzoOS", 0
+msgB0:  db " B", 0
 msgE1:  db " ERRO: imagem", 0
 msgE2:  db " ERRO: int13 LBA", 0
 msgE3:  db " ERRO: disco", 0
+
+bdot:
+        pusha
+        mov al, '.'
+        mov ah, 0x0E
+        mov bx, 7
+        int 0x10
+        popa
+        ret
 
 bdrv:    db 0
 tries:   db 0
