@@ -111,6 +111,23 @@ k_main:
         call k_rtc_read
         mov rdi, s_b_rtc
         call k_log
+        ; diag PCI: leituras cruas do config space (q35: 00:1f.2 = AHCI)
+        mov edi, 0x80000000 | (0 << 16) | (31 << 11) | (2 << 8)
+        call pci_read32
+        mov rdi, rax
+        call k_log_hex
+        mov edi, 0x80000000 | (0 << 16) | (0 << 11) | (0 << 8)
+        call pci_read32
+        mov rdi, rax
+        call k_log_hex
+        mov edi, 0x80000000 | (0 << 16) | (2 << 11) | (0 << 8)
+        call pci_read32
+        mov rdi, rax
+        call k_log_hex
+        mov edi, 0x80000000 | (0 << 16) | (1 << 11) | (0 << 8)
+        call pci_read32
+        mov rdi, rax
+        call k_log_hex
         call clock_update
         ; semente aleatória
         mov eax, [rtc_sec]
