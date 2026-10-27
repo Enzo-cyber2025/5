@@ -212,6 +212,10 @@ times 512-($-$$) db 0
 ; ---------------------------------------------------------------------------
 section .s2 vstart=0x10200 follows=.text
 
+        ; labels da parte B são offsets 16-bit com base 0x10000 — o far jump
+        ; só troca o CS; DS precisa acompanhar (senão lodsb lê 0x00xxx)
+        mov ax, 0x1000
+        mov ds, ax
         call serial_init
         mov si, msgB1
         call b2_print
