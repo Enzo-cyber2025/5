@@ -110,8 +110,10 @@ class Qmp:
         words = _re.findall(r"0x([0-9a-f]{8})", r.get("return", ""))
         chars = []
         for w in words:
-            c = int(w, 16) & 0xFF
-            chars.append(chr(c) if 32 <= c < 127 else " ")
+            v = int(w, 16)
+            for c in (v & 0xFFFF, (v >> 16) & 0xFFFF):
+                ch = c & 0xFF
+                chars.append(chr(ch) if 32 <= ch < 127 else " ")
         s = "".join(chars)
         lines = [s[i:i + 80].rstrip() for i in range(0, len(s), 80)]
         return "\n".join(l for l in lines if l)
