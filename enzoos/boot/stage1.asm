@@ -644,7 +644,7 @@ pm_entry:
         ; PD @0x92000..0x95FFF (2MB), extra @0x96000 (LFB >= 4GB)
         ; ----------------------------------------------------------------
         mov edi, 0x90000
-        mov ecx, 0x8000/4
+        mov ecx, 0x9000/4
         xor eax, eax
         cld
         rep stosd
@@ -663,7 +663,7 @@ pm_entry:
 .pg1g:                                  ; 512 páginas de 1GB = 0..512GB
         mov eax, ecx
         shl eax, 30
-        or eax, 0x81
+        or eax, 0x83                 ; RW|P|PS (sem RW: escrita em MMIO dava #PF)
         stosd
         mov eax, ecx
         shr eax, 2
@@ -701,6 +701,34 @@ pm_entry:
         stosd
         add ebx, 0x200000
         loop .fillpd
+        ; janela MMIO 64-bit (BARs acima de 4GB — ex.: ahci PCI do QEMU):
+        ; PDPT[4] -> PD@0x96000 (4..5GB), PDPT[5] -> PD@0x97000 (5..6GB)
+        mov dword [0x91000 + 4*8], 0x96003
+        mov dword [0x91000 + 4*8 + 4], 0
+        mov dword [0x91000 + 5*8], 0x97003
+        mov dword [0x91000 + 5*8 + 4], 0
+        mov edi, 0x96000
+        xor ebx, ebx                  ; 4GB..5GB: high=1, low=i*2MB
+        mov ecx, 512
+.fill_hi:
+        mov eax, ebx
+        or eax, 0x83
+        stosd
+        mov eax, 1
+        stosd
+        add ebx, 0x200000
+        loop .fill_hi
+        mov edi, 0x97000
+        mov ebx, 0x40000000           ; 5GB..6GB: high=1, low=0x40000000+i*2MB
+        mov ecx, 512
+.fill_hi2:
+        mov eax, ebx
+        or eax, 0x83
+        stosd
+        mov eax, 1
+        stosd
+        add ebx, 0x200000
+        loop .fill_hi2
 
 .pat_setup:
         mov ecx, 0x277                  ; PAT: entrada 4 = Write-Combining
@@ -773,9 +801,9 @@ pm_entry:
         mov edx, eax
         shl edx, 3
         add edi, edx
-        mov dword [edi], 0x96003
+        mov dword [edi], 0x98003
         mov dword [edi+4], 0
-        mov edi, 0x96000
+        mov edi, 0x98000
         mov ebx, esi
         and ebx, 0xC0000000
         mov ecx, 512
