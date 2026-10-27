@@ -80,6 +80,10 @@ eth_tx:
         push r13
         push r14
         push r15
+        push rdi
+        mov rdi, rdx
+        call k_log_hex
+        pop rdi
         mov r12, rdx
         mov r13d, ecx
         mov r14d, esi

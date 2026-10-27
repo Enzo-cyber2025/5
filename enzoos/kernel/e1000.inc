@@ -122,6 +122,12 @@ e1000_tx:
         push rbx
         push r12
         push r13
+        push rdi
+        push rsi
+        mov rdi, rsi
+        call k_log_hex
+        pop rsi
+        pop rdi
         cmp dword [e1000_ok], 0
         je .err
         mov rbx, rdi
