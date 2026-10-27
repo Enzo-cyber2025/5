@@ -271,19 +271,26 @@ def main():
         try:
             with open(serial) as f:
                 sl = f.read().splitlines()
-            print("--- serial (%d linhas; ultimas 14) ---" % len(sl))
-            print("\n".join(sl[-14:]))
+            print("--- serial (%d linhas; ultimas 6) ---" % len(sl))
+            print("\n".join(sl[-6:]))
         except Exception:
             pass
-        # qtrace por ultimo (annotations do CI preservam o final)
+        # qtrace resumido por ultimo (annotations preservam o final)
         try:
             qt = os.path.join(outdir, "qtrace.log")
             with open(qt, "rb") as f:
                 lines = f.read().decode(errors="replace").splitlines()
-            inv = sum(1 for l in lines if "Invalid" in l)
+            inv = [l for l in lines if "Invalid" in l]
+            addr = []
+            for l in inv:
+                for tok in l.replace(",", " ").split():
+                    if tok.startswith("0x") and len(tok) >= 6:
+                        addr.append(tok)
+                        break
             vlines = [l for l in lines if " v=" in l or l.startswith("v=")]
-            print("=== qtrace: %d linhas, invalid=%d; ultimas 2 excecoes ==="
-                  % (len(lines), inv))
+            print("=== qtrace: %d linhas; invalid=%d primeiros: %s" %
+                  (len(lines), len(inv), " ".join(addr[:5])))
+            print("=== ultimas 2 excecoes ===")
             print("\n".join(vlines[-2:]))
         except Exception as e2:
             print("(sem qtrace: %s)" % e2)
