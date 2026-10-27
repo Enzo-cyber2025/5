@@ -48,8 +48,8 @@ k_ahci_init:
         mov [ahci_abar], rax
         ; porta implementada (registro PI @+0x0C)
         mov rbx, rax
-        ; GHC.AE = 1 (modo AHCI nativo) e limpa interrupcoes pendentes
-        or dword [rbx + 0x04], 1
+        ; GHC.AE = bit 31 (bit 0 seria HR = hard reset!); limpa IS
+        or dword [rbx + 0x04], 0x80000000
         mov dword [rbx + 0x08], 0xFFFFFFFF
         mov edx, [rbx + 0x0C]
         mov [ahci_pi], edx
