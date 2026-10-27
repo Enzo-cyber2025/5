@@ -15,7 +15,7 @@ section .ktext
 ; -----------------------------------------------------------------------------
 k_cefs_init:
         push rbx
-        mov rax, [boot_params + BP_IMG]
+        mov eax, [boot_params + BP_IMG]   ; dword!
         mov ecx, [boot_params + BP_CEFS]
         add rax, rcx
         mov [cefs_base], rax
@@ -678,7 +678,7 @@ api_exit:
         call wnd_destroy
 .noclose:
         lea rax, [app_slots]
-        imul rax, [tmp_slot], A_SIZEOF
+        imul eax, [tmp_slot], A_SIZEOF   ; dword!
         mov dword [rax + A_USED], 0
         mov qword [rax + A_WND], 0
         mov qword [rax + A_ENTRY], 0

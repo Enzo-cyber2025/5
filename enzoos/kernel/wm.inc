@@ -193,8 +193,8 @@ wnd_destroy:
         dec dword [wnd_count]
         ; buffer
         mov rdi, [rbx + W_BUF]
-        mov rsi, [rbx + W_W]
-        imul rsi, [rbx + W_H]
+        mov esi, [rbx + W_W]           ; dword!
+        imul esi, [rbx + W_H]
         shl rsi, 2
         call k_free_bytes
         call wnd_damage

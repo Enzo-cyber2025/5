@@ -22,7 +22,7 @@ k_gfx_init:
         mov [screen_h], eax
         mov eax, [boot_params + BP_PITCH]
         mov [screen_pitch], eax
-        mov rax, [boot_params + BP_LFB]
+        mov eax, [boot_params + BP_LFB]   ; dword!
         mov [lfb], rax
         ; sombra (composição) e fundo da área de trabalho
         mov edi, [screen_w]           ; dword! (evita ler screen_h junto)
