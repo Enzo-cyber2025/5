@@ -101,6 +101,7 @@ class Qmp:
         w, h = ppm_to_png(ppm, png)
         os.remove(ppm)
         print("captura: %s.png (%dx%d)" % (name, w, h))
+        return w, h
 
     def vga_text(self):
         """lê o buffer de texto VGA (0xB8000) — mostra o que a BIOS escreveu"""
