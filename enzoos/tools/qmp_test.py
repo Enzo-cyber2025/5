@@ -362,8 +362,12 @@ def main():
         with open(os.path.join(outdir, "qtrace.log")) as f:
             qtl = [l.rstrip() for l in f]
         ah = [l for l in qtl if "ahci" in l.lower()]
-        print("=== ahci trace (%d eventos; ultimas 6) ===" % len(ah))
-        print("\n".join(ah[-6:]) if ah else "(nenhum)")
+        kw = [l for l in ah if ("write" in l or "cmd" in l.lower()
+                                or "command" in l or "error" in l.lower()
+                                or "dma" in l.lower())]
+        print("=== ahci trace (%d ev; ultimas 8 de %d chave) ==="
+              % (len(ah), len(kw)))
+        print("\n".join(kw[-8:]) if kw else "(nenhum)")
     except Exception as e:
         print("(sem qtrace: %s)" % e)
     # diag PCI por ultimo: as leituras cruas após 'laço principal'
