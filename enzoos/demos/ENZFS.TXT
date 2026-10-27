@@ -1,0 +1,11 @@
+ENZFS — o sistema de arquivos nativo do EnzoOS
+==============================================
+
+Este arquivo vive no disco SATA (AHCI), nao na ISO.
+Tudo que voce cria pelo app FILES aparece aqui e
+sobrevive ao reboot — leitura, escrita, mkdir, creat
+e unlink sao operacoes reais no disco.
+
+Superbloco (setor 0): magia ENZFS1.0, blocos de 4 KB,
+bitmap, tabela de inodes (64 B cada) e area de troca
+(swap) usada pelo demand paging do kernel.

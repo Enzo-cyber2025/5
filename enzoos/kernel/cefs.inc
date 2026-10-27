@@ -141,7 +141,11 @@ app_launch:
         mov r14, rax
         mov r13, rdx
         cmp dword [r14], CE_MAGIC
-        jne .badce
+        je .ce_ok
+        cmp dword [r14], 0x315A4E45         ; "ENZ1"
+        je .ce_ok
+        jmp .badce
+.ce_ok:
         cmp dword [r14 + CE_ISIZE], 0
         je .badce
         cmp dword [r14 + CE_ISIZE], 0x400000
@@ -178,6 +182,11 @@ app_launch:
         mov [rbx + A_IMG], rax
         mov [rbx + A_SIZE], r13
         mov edx, [rax + CE_ENTRY]
+        mov dword [rbx + A_FMT], 1
+        cmp dword [rax], 0x315A4E45         ; "ENZ1"?
+        jne .not_enz
+        call enz_build
+.not_enz:
         add rax, rdx
         mov [rbx + A_ENTRY], rax
         ; nome do app (header +28)
@@ -292,6 +301,7 @@ app_launch:
 ; -----------------------------------------------------------------------------
 app_dispatch:
         push rbx
+        push r12
         sub rsp, 48
         mov [rsp], rsi
         mov [rsp+16], rdx
@@ -304,16 +314,21 @@ app_dispatch:
         imul rbx, rdi, A_SIZEOF
         lea rax, [app_slots]
         add rbx, rax
-        mov rbx, [rbx + A_ENTRY]
-        test rbx, rbx
+        mov r12, [rbx + A_ENTRY]
+        test r12, r12
         jz .skip
+        mov rdi, [rbx + A_APITBL]
+        test rdi, rdi
+        jnz .have_tbl
         lea rdi, [api_table]
+.have_tbl:
         mov rsi, rsp
-        call rbx
+        call r12
 .skip:
         pop rax
         mov [cur_slot], rax
         add rsp, 48
+        pop r12
         pop rbx
         ret
 
@@ -339,7 +354,15 @@ wm_menu_refresh:
         lea rsi, [s_ext_ce]
         call k_strcasecmp
         test rax, rax
+        jz .isapp
+        lea rdi, [r8]
+        add rdi, rax
+        sub rdi, 4
+        lea rsi, [s_ext_enz]
+        call k_strcasecmp
+        test rax, rax
         jnz .next
+.isapp:
         cmp edx, 16
         jae .done
         lea rdi, [menu_names]
@@ -433,6 +456,19 @@ api_text:                         ; edi=x, esi=y, rdx=str, ecx=len, r8d=cor
         call api_use_win
         test rax, rax
         jz .done
+        test ecx, ecx
+        jnz .hlen
+        push rdi
+        push rsi
+        push rdx
+        push r8
+        call k_strlen
+        mov ecx, eax
+        pop r8
+        pop rdx
+        pop rsi
+        pop rdi
+.hlen:
         add edi, 1
         add esi, TITLE_H
         mov r13d, r8d
@@ -646,6 +682,15 @@ api_exit:
         mov dword [rax + A_USED], 0
         mov qword [rax + A_WND], 0
         mov qword [rax + A_ENTRY], 0
+        mov rdi, [rax + A_APITBL]
+        test rdi, rdi
+        jz .noapitbl
+        mov esi, [rax + A_APITBL_N]
+        inc esi
+        shl esi, 3
+        call k_free_bytes
+        mov qword [rax + A_APITBL], 0
+.noapitbl:
         mov rdi, [rax + A_IMG]
         mov rsi, [rax + A_SIZE]
         mov qword [rax + A_IMG], 0
@@ -657,6 +702,177 @@ api_exit:
 .nofree:
         pop rbx
         ret
+
+; ------------------------- renderização (gfx2) -------------------------------
+api_px:                           ; edi=x, esi=y, edx=cor RGB
+        call api_use_win
+        test rax, rax
+        jz .d
+        add edi, 1
+        add esi, TITLE_H
+        cmp edi, 0
+        jl .d
+        cmp esi, 0
+        jl .d
+        cmp edi, [api_cw]
+        jge .d
+        cmp esi, [api_ch]
+        jge .d
+        or edx, 0xFF000000
+        call g2_blend_px
+.d:
+        ret
+
+api_line:                         ; edi=x0, esi=y0, edx=x1, ecx=y1, r8d=cor
+        call api_use_win
+        test rax, rax
+        jz .d
+        add edi, 1
+        add esi, TITLE_H
+        add edx, 1
+        add ecx, TITLE_H
+        mov r9d, 0                ; (clip interno nas primitivas)
+        call g2_wu_line
+.d:
+        ret
+
+api_grad:                         ; edi=x, esi=y, edx=w, ecx=h, r8d=c0, r9d=c1
+        call api_use_win
+        test rax, rax
+        jz .d
+        add edi, 1
+        add esi, TITLE_H
+        call g2_grad
+.d:
+        ret
+
+api_round:                        ; edi=x, esi=y, edx=w, ecx=h, r8d=raio, r9d=cor
+        call api_use_win
+        test rax, rax
+        jz .d
+        add edi, 1
+        add esi, TITLE_H
+        or r9d, 0xFF000000
+        call g2_round_blend
+.d:
+        ret
+
+api_blend:                        ; edi=x, esi=y, edx=w, ecx=h, r8=src ARGB, r9d=passo
+        call api_use_win
+        test rax, rax
+        jz .d
+        add edi, 1
+        add esi, TITLE_H
+        call g2_win_blit
+.d:
+        ret
+
+; ------------------------- ENZFS ---------------------------------------------
+api_fs_open:                      ; rdi=caminho -> rax=ino ou -1
+        jmp e_path
+
+api_fs_list:                      ; edi=ino, esi=índice, rdx=buf -> tipo/0/-1
+        jmp e_list
+
+api_fs_read:                      ; edi=ino, rsi=dst, rdx=max -> bytes
+        push rdx
+        xor rdx, rdx
+        call e_read
+        pop rdx
+        cmp rax, rdx
+        jbe .ok
+        mov rax, rdx
+.ok:
+        ret
+
+api_fs_write:                     ; edi=ino, rsi=origem, rdx=len -> bytes/-1
+        push rdx
+        xor rdx, rdx
+        call e_write
+        pop rdx
+        ret
+
+api_fs_creat:                     ; rdi=caminho -> rax=ino novo ou -1
+        mov esi, 1
+        jmp e_creat
+
+api_fs_mkdir:                     ; rdi=caminho -> rax=ino ou -1
+        mov esi, 2
+        jmp e_creat
+
+api_fs_unlink:                    ; rdi=caminho -> rax=0/-1
+        jmp e_unlink
+
+; ------------------------- swap / tempo / rede -------------------------------
+api_swap_info:                    ; rdi=buf (8 dwords)
+        push rbx
+        push r12
+        mov rbx, rdi
+        mov eax, [sw_armed]
+        mov [rbx], eax
+        mov eax, [sw_out_ctr]
+        mov [rbx+4], eax
+        mov eax, [sw_in_ctr]
+        mov [rbx+8], eax
+        mov eax, [sw_fault_ctr]
+        mov [rbx+12], eax
+        ; varre os estados
+        xor ecx, ecx
+        xor r8d, r8d              ; em uso
+        xor r9d, r9d              ; removidas
+.scan:
+        cmp ecx, SW_NPAGES
+        jae .scan_done
+        cmp byte [sw_state + rcx], 1
+        jne .n1
+        inc r8d
+        jmp .nx
+.n1:
+        cmp byte [sw_state + rcx], 2
+        jne .nx
+        inc r9d
+.nx:
+        inc ecx
+        jmp .scan
+.scan_done:
+        mov [rbx+16], r8d
+        mov [rbx+20], r9d
+        mov eax, [sw_slots]
+        mov [rbx+24], eax
+        mov dword [rbx+28], SW_NPAGES
+        pop r12
+        pop rbx
+        ret
+
+api_swap_force:                   ; edi=n páginas -> rax=removidas
+        push rbx
+        xor ebx, ebx
+.l:
+        cmp ebx, edi
+        jae .done
+        call sw_page_out
+        test eax, eax
+        jz .done
+        inc ebx
+        jmp .l
+.done:
+        mov eax, ebx
+        pop rbx
+        ret
+
+api_hpet_ns:                      ; rdi=ponteiro u64
+        push r12
+        mov r12, rdi
+        call hpet_ns
+        mov [r12], rax
+        pop r12
+        ret
+
+api_net_get:                      ; rdi=url, rsi=dst, rdx=max -> bytes/erro
+        jmp http_get
+
+api_tone:                         ; edi=freq, esi=ms
+        jmp k_hda_tone
 
 api_beep:                         ; edi=freq, esi=ms
         jmp k_beep
@@ -682,6 +898,7 @@ app_slots: times MAX_APPS * A_SIZEOF db 0
 
 s_cefs_bad: db "CEFS: assinatura invalida", 0
 s_ext_ce:   db ".CE", 0
+s_ext_enz: db ".enz", 0
 tmp_w:    dd 480
 tmp_h:    dd 320
 tmp_wnd:  dq 0
@@ -708,5 +925,100 @@ api_table:
         dq api_exit
         dq api_beep
         dq api_self
+        dq api_px
+        dq api_line
+        dq api_grad
+        dq api_round
+        dq api_blend
+        dq api_fs_open
+        dq api_fs_list
+        dq api_fs_read
+        dq api_fs_write
+        dq api_fs_creat
+        dq api_fs_mkdir
+        dq api_fs_unlink
+        dq api_net_get
+        dq api_swap_info
+        dq api_swap_force
+        dq api_hpet_ns
+        dq api_tone
+
+; ---- tabela de exportações por nome (formato .ENZ) ----
+align 8
+k_exports:
+        dq n_rect,    api_rect
+        dq n_text,    api_text
+        dq n_blit,    api_blit
+        dq n_title,   api_title
+        dq n_uptime,  api_uptime
+        dq n_fopen,   api_file_open
+        dq n_fcount,  api_files_count
+        dq n_fname,   api_file_name
+        dq n_exec,    api_exec
+        dq n_conout,  api_conout_read
+        dq n_rand,    api_rand
+        dq n_inval,   api_invalidate
+        dq n_alloc,   api_alloc
+        dq n_free,    api_free
+        dq n_sysinfo, api_sysinfo
+        dq n_time,    api_time
+        dq n_exit,    api_exit
+        dq n_beep,    api_beep
+        dq n_self,    api_self
+        dq n_px,      api_px
+        dq n_line,    api_line
+        dq n_grad,    api_grad
+        dq n_round,   api_round
+        dq n_blend,   api_blend
+        dq n_fsopen,  api_fs_open
+        dq n_fslist,  api_fs_list
+        dq n_fsread,  api_fs_read
+        dq n_fswrite, api_fs_write
+        dq n_fscreat, api_fs_creat
+        dq n_fsmkdir, api_fs_mkdir
+        dq n_fsunlink, api_fs_unlink
+        dq n_netget,  api_net_get
+        dq n_swinfo,  api_swap_info
+        dq n_swforce, api_swap_force
+        dq n_hpet,    api_hpet_ns
+        dq n_tone,    api_tone
+        dq 0
+
+n_rect:   db "rect", 0
+n_text:   db "text", 0
+n_blit:   db "blit", 0
+n_title:  db "title", 0
+n_uptime: db "uptime", 0
+n_fopen:  db "file_open", 0
+n_fcount: db "files_count", 0
+n_fname:  db "file_name", 0
+n_exec:   db "exec", 0
+n_conout: db "conout_read", 0
+n_rand:   db "rand", 0
+n_inval:  db "invalidate", 0
+n_alloc:  db "alloc", 0
+n_free:   db "free", 0
+n_sysinfo: db "sysinfo", 0
+n_time:   db "time", 0
+n_exit:   db "exit", 0
+n_beep:   db "beep", 0
+n_self:   db "self", 0
+n_px:     db "px", 0
+n_line:   db "line", 0
+n_grad:   db "grad", 0
+n_round:  db "round", 0
+n_blend:  db "blend", 0
+n_fsopen: db "fs_open", 0
+n_fslist: db "fs_list", 0
+n_fsread: db "fs_read", 0
+n_fswrite: db "fs_write", 0
+n_fscreat: db "fs_creat", 0
+n_fsmkdir: db "fs_mkdir", 0
+n_fsunlink: db "fs_unlink", 0
+n_netget: db "net_get", 0
+n_swinfo: db "swap_info", 0
+n_swforce: db "swap_force", 0
+n_hpet:   db "hpet_ns", 0
+n_tone:   db "tone", 0
 
 %endif

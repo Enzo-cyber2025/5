@@ -391,6 +391,27 @@ render_desktop:
         lea rdx, [brand_str2]
         mov r13d, 0x2C4670
         call surf_text
+        ; ---- aurora (círculos suaves com alpha) ----
+        mov edi, -180
+        mov esi, 520
+        mov edx, 620
+        mov ecx, 0x14325A08
+        call g2_circle
+        mov edi, -60
+        mov esi, 640
+        mov edx, 460
+        mov ecx, 0x1E6B4FA0
+        call g2_circle
+        mov edi, 1024
+        mov esi, -220
+        mov edx, 700
+        mov ecx, 0x122D6BA8
+        call g2_circle
+        mov edi, 1180
+        mov esi, -120
+        mov edx, 520
+        mov ecx, 0x1660C8A8
+        call g2_circle
         ret
 
 ; draw_logo_scaled: rdi=x, rsi=y, edx=escala — desenha no desktop_bg
@@ -627,7 +648,14 @@ compose_if_dirty:
         call rect_intersects_dam
         test eax, eax
         jz .win_next
-        ; blit da janela para a sombra (gsurf = sombra)
+        ; sombra suave sob a janela
+        call surf_use_shadow
+        mov edi, [rbx + W_X]
+        mov esi, [rbx + W_Y]
+        mov edx, [rbx + W_W]
+        mov ecx, [rbx + W_H]
+        call g2_shadow
+        ; blit com cantos arredondados
         call surf_use_shadow
         mov r12, [rbx + W_BUF]
         mov r14d, [rbx + W_W]
@@ -636,7 +664,9 @@ compose_if_dirty:
         mov esi, [rbx + W_Y]
         mov edx, [rbx + W_W]
         mov ecx, [rbx + W_H]
-        call surf_blit
+        mov r8, r12
+        mov r9d, r14d
+        call g2_win_blit
 .win_next:
         mov rbx, [rbx + W_NEXT]
         jmp .win_loop

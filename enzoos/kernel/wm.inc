@@ -229,24 +229,27 @@ wnd_render_chrome:
         sub ecx, TITLE_H
         mov r14d, COL_PANEL
         call surf_fill
-        ; barra de título
+        ; barra de título em gradiente (nova renderização)
         xor edi, edi
         xor esi, esi
         mov edx, [rbx + W_W]
         mov ecx, TITLE_H
-        mov r14d, COL_TITLE_D
+        mov r8d, 0x0E1830                     ; topo
+        mov r9d, 0x13203C                     ; base
         cmp rbx, [wnd_top]
         jne .dim
-        mov r14d, COL_TITLE
+        mov r8d, 0x1C3B72                     ; janela ativa
+        mov r9d, 0x142A50
 .dim:
-        call surf_fill
-        ; faixa accent fina no topo da barra
+        call g2_grad
+        ; filete accent no topo
         xor edi, edi
         xor esi, esi
         mov edx, [rbx + W_W]
-        mov ecx, 3
-        mov r14d, COL_ACCENT
-        call surf_fill
+        mov ecx, 2
+        mov r8d, COL_ACCENT
+        mov r9d, 0x2D9CDB
+        call g2_grad
         ; título
         mov edi, 10
         mov esi, 10
@@ -256,18 +259,19 @@ wnd_render_chrome:
         lea rdx, [rbx + W_TITLE]
         mov r13d, COL_WHITE
         call surf_text
-        ; botão fechar
+        ; botão fechar (arredondado)
         mov edi, [rbx + W_W]
         sub edi, 22
         mov esi, 6
         mov edx, 16
         mov ecx, 16
-        mov r14d, 0x7A2E38
+        mov r8d, 5
+        mov r9d, 0xFF7A2E38
         cmp [hover_close], rbx
         jne .nohover
-        mov r14d, 0xB54552
+        mov r9d, 0xFFB54552
 .nohover:
-        call surf_fill
+        call g2_round_blend
         ; "x"
         mov edi, [rbx + W_W]
         sub edi, 18
@@ -397,20 +401,21 @@ draw_taskbar:
         cmp eax, [tb_y]
         jbe .skip
         call surf_use_shadow
-        ; fundo
+        ; fundo translúcido (deixa ver o que está atrás)
         mov edi, 0
         mov esi, [tb_y]
         mov edx, [screen_w]
         mov ecx, TASKBAR_H
-        mov r14d, 0x0D1524
-        call surf_fill
-        ; linha accent no topo
+        mov r8d, 0xD60D1524
+        call g2_blend_fill
+        ; linha accent em gradiente no topo
         mov edi, 0
         mov esi, [tb_y]
         mov edx, [screen_w]
         mov ecx, 2
-        mov r14d, COL_ACCENT
-        call surf_fill
+        mov r8d, COL_ACCENT
+        mov r9d, 0x2D9CDB
+        call g2_grad
         ; botão Início
         mov edi, 8
         mov esi, [tb_y]
@@ -419,16 +424,17 @@ draw_taskbar:
         mov [tmp_y], esi
         mov edx, 108
         mov ecx, 32
-        mov r14d, 0x18233B
+        mov r8d, 9
+        mov r9d, 0xFF18233B
         cmp dword [hover_start], 0
         je .st
-        mov r14d, 0x24365C
+        mov r9d, 0xFF24365C
 .st:
         cmp dword [menu_open], 0
         je .st2
-        mov r14d, 0x2D4570
+        mov r9d, 0xFF2D4570
 .st2:
-        call surf_fill
+        call g2_round_blend
         ; quadradinho accent
         mov edi, [tmp_x]
         add edi, 8
@@ -552,29 +558,39 @@ draw_menu:
         sub eax, 8
         sub eax, [menu_h]
         mov [menu_y], eax
-        ; painel
+        ; sombra do menu
         mov edi, 8
         mov esi, [menu_y]
         mov edx, 268
         mov ecx, [menu_h]
-        mov r14d, 0x121B2E
-        call surf_fill
-        ; borda
+        call g2_shadow
+        ; painel com cantos arredondados
         mov edi, 8
         mov esi, [menu_y]
         mov edx, 268
-        mov ecx, 2
-        mov r14d, COL_ACCENT
-        call surf_fill
-        ; rodapé
-        mov edi, 8
+        mov ecx, [menu_h]
+        mov r8d, 12
+        mov r9d, 0xF2121B2E
+        call g2_round_blend
+        ; filete accent
+        mov edi, 24
+        mov esi, [menu_y]
+        add esi, 4
+        mov edx, 4
+        mov ecx, [menu_h]
+        sub ecx, 8
+        mov r8d, COL_ACCENT
+        mov r9d, 0x2D9CDB
+        call g2_grad
+        ; rodapé translúcido
+        mov edi, 12
         mov esi, [menu_y]
         add esi, [menu_h]
-        sub esi, 22
-        mov edx, 268
-        mov ecx, 22
-        mov r14d, 0x0D1422
-        call surf_fill
+        sub esi, 24
+        mov edx, 260
+        mov ecx, 20
+        mov r8d, 0x600D1422
+        call g2_blend_fill
         mov edi, 20
         mov esi, [menu_y]
         add esi, [menu_h]

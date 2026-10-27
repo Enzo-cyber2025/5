@@ -24,11 +24,11 @@ jobs:
       - name: Build (kernel, apps, demos, ISO)
         run: bash build.sh
 
-      - name: Autoteste estático (formatos PE/ELF/ZIP/AXML/CEFS)
+      - name: Autoteste estático (formatos PE/ELF/ZIP/AXML/CEFS/ENZ)
         run: python3 tools/selftest.py release/enzos.iso
 
-      - name: Teste no QEMU + capturas de tela
-        run: python3 tools/qmp_test.py release/enzos.iso screenshots/
+      - name: Teste no QEMU (q35/AHCI/e1000) + capturas de tela
+        run: python3 tools/qmp_test.py release/enzos.iso screenshots/ release/disk.img
 
       - name: Resumo do serial
         if: always()
@@ -36,11 +36,13 @@ jobs:
           echo "=== serial.log ==="
           cat screenshots/serial.log || true
 
-      - name: Upload da ISO
+      - name: Upload da ISO + disco ENZFS
         uses: actions/upload-artifact@v4
         with:
           name: enzos-iso
-          path: enzoos/release/enzos.iso
+          path: |
+            enzoos/release/enzos.iso
+            enzoos/release/disk.img
 
       - name: Upload das capturas
         uses: actions/upload-artifact@v4

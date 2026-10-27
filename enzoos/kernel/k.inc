@@ -12,6 +12,10 @@
 %define PE_BASE_MAX  0x18000000
 %define ELF_BASE     0x18000000      ; imagens ELF (.run/.so)
 %define ELF_BASE_MAX 0x1C000000
+%define SWAP_SPAN   0x04000000      ; 64 MB do heap com páginas de 4 KB
+%define SW_NPAGES   16384
+%define SW_MAXSLOTS 8192
+%define SW_SLOTBM_BYTES 1024
 %define FSTACK_BASE  0x1C000000      ; pilhas de processos estrangeiros
 %define FSTACK_SIZE  0x00100000      ; 1 MB por processo
 
@@ -64,8 +68,10 @@
 %define A_ENTRY      24              ; qword
 %define A_NAME       32              ; char[20]
 %define A_WND        56              ; qword
-%define A_PRIV       56              ; (mesmo campo: janela) — priv fica no app
-%define A_SIZEOF     64
+%define A_APITBL     64              ; qword — tabela de imports .ENZ
+%define A_APITBL_N   72              ; dword
+%define A_FMT        76              ; dword (1 = .ce, 2 = .enz)
+%define A_SIZEOF     128
 
 ; ---- cabeçalho .ce (Certamente Executável) ---------------------------------
 %define CE_MAGIC     0x31304543      ; "CE01"

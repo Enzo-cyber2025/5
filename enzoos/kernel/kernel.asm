@@ -34,6 +34,7 @@ section .cehdr
 %include "intr.inc"
 %include "ps2.inc"
 %include "gfx.inc"
+%include "gfx2.inc"
 %include "wm.inc"
 %include "cefs.inc"
 %include "exec.inc"
@@ -41,6 +42,15 @@ section .cehdr
 %include "zip.inc"
 %include "pe.inc"
 %include "elf.inc"
+%include "pci.inc"
+%include "ahci.inc"
+%include "hpet.inc"
+%include "enzfs.inc"
+%include "swap.inc"
+%include "enz.inc"
+%include "e1000.inc"
+%include "net.inc"
+%include "hda.inc"
 
 ; =============================================================================
 section .ktext
@@ -61,6 +71,13 @@ k_main:
         call k_gfx_init
         call k_cefs_init
         call k_wm_init
+        call k_hpet_init
+        call k_ahci_init
+        call k_enzfs_mount
+        call k_swap_init
+        call k_e1000_init
+        call k_net_init
+        call k_hda_init
         call k_rtc_read
         call clock_update
         ; semente aleatória
@@ -1021,12 +1038,12 @@ sys_shutdown:
 section .kdata
 ; =============================================================================
 s_banner:  db "EnzoOS 1.0 — kernel em Assembly x86-64", 0
-s_app1:    db "TERMINAL.CE", 0
-s_app2:    db "INFO.CE", 0
-s_app3:    db "PLASMA.CE", 0
-s_app4:    db "PAINT.CE", 0
-s_app5:    db "CALC.CE", 0
-s_app6:    db "NOTAS.CE", 0
+s_app1:    db "TERMINAL.ENZ", 0
+s_app2:    db "INFO.ENZ", 0
+s_app3:    db "PLASMA.ENZ", 0
+s_app4:    db "PAINT.ENZ", 0
+s_app5:    db "CALC.ENZ", 0
+s_app6:    db "NOTAS.ENZ", 0
 
 mouse_last_btns: dd 0
 last_dispatch_ms: dd 0

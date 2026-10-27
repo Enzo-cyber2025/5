@@ -194,6 +194,20 @@ k_alloc:
         inc r14
         jmp .next
 .fail:
+        ; pressão de memória: tenta recuperar páginas via swap e repete
+        cmp dword [sw_armed], 0
+        je .fail2
+        cmp dword [sw_retry], 0
+        jne .fail2
+        mov dword [sw_retry], 1
+        mov edi, 64
+        call sw_reclaim
+        mov dword [sw_retry], 0
+        mov r13, [heap_pages]
+        sub r13, r12
+        mov r14, [bitmap_pages]
+        jmp .next
+.fail2:
         xor rax, rax
 .done:
         pop r15
@@ -209,20 +223,23 @@ k_alloc:
 k_free_n:
         push rbx
         push r12
+        push r13
         cmp rdi, HEAP_START
         jb .done
-        mov rax, rdi
-        sub rax, HEAP_START
-        shr rax, 12
+        mov r13, rdi
+        add r13, 4095
+        and r13, -4096               ; primeira página
         mov rbx, rsi
 .loop:
         test rbx, rbx
         jz .done
-        call mark_free
-        inc rax
+        mov rdi, r13
+        call sw_free_frame           ; desmapeia e devolve o frame da PTE
+        add r13, 4096
         dec rbx
         jmp .loop
 .done:
+        pop r13
         pop r12
         pop rbx
         ret
@@ -268,6 +285,7 @@ k_free_pages_count:
         ret
 
 section .kdata
+sw_retry:   dd 0
 ram_total:     dq 0
 heap_top:      dq 0
 heap_pages:    dq 0

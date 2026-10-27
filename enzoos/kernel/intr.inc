@@ -215,6 +215,22 @@ irq_handler:
 ; exc_handler — rdi = frame
 ; -----------------------------------------------------------------------------
 exc_handler:
+        mov rax, [rdi + 14*8]         ; vec
+        cmp rax, 14
+        jne .no_pf
+        ; página ausente: tenta paginação por demanda (swap)
+        mov rax, cr2
+        push rdi
+        push rdx
+        push rbx
+        call sw_fault
+        pop rbx
+        pop rdx
+        pop rdi
+        test eax, eax
+        jz .no_pf
+        ret                            ; página restaurada — retoma
+.no_pf:
         mov rdx, [rdi + 16*8]         ; rip
         mov rbx, [rdi + 14*8]         ; vec
         cmp dword [foreign_active], 0

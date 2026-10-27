@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 """qmp_test.py — bota o EnzoOS no QEMU via QMP, exercita o sistema
-(janelas, demos PE/ELF/APK, Ctrl+C, menu, apps) e tira capturas de tela.
+(janelas, demos PE/ELF/APK, Ctrl+C, menu, apps, ENZFS, EnzoFox com HTTP
+REAL pela placa e1000) e tira capturas de tela.
 
-Uso: qmp_test.py enzos.iso pasta_das_capturas/
+Uso: qmp_test.py enzos.iso pasta_das_capturas/ [disk.img]
 Requer: qemu-system-x86_64 no PATH. Sem dependências Python externas
 (PPM -> PNG é feito com zlib).
+
+Máquina: q35 — ISO e disco no AHCI, rede e1000 (user-net). Um servidor
+HTTP local na porta 8000 serve a página que o EnzoFox baixa
+(10.0.2.2:8000 no user-net é o host).
 """
 import json, os, subprocess, sys, time, zlib, struct
 
@@ -32,11 +37,20 @@ def ppm_to_png(src, dst):
 
 # ---------------------------------------------------------------------------
 class Qmp:
-    def __init__(self, iso, serial_path):
+    def __init__(self, iso, serial_path, disk=None):
+        args = [QEMU, "-m", "2048", "-display", "none", "-qmp", "stdio",
+                "-machine", "q35", "-boot", "d",
+                "-drive", "id=cd0,if=none,format=raw,media=cdrom,file=" + iso,
+                "-device", "ide-cd,drive=cd0,bus=ahci0.0",
+                "-serial", "file:" + serial_path,
+                "-vga", "std", "-no-reboot"]
+        if disk:
+            args += ["-drive", "id=hd0,if=none,format=raw,file=" + disk,
+                     "-device", "ide-hd,drive=hd0,bus=ahci0.1"]
+        args += ["-netdev", "user,id=n0",
+                 "-device", "e1000,netdev=n0"]
         self.proc = subprocess.Popen(
-            [QEMU, "-m", "2048", "-display", "none", "-qmp", "stdio",
-             "-cdrom", iso, "-serial", "file:" + serial_path,
-             "-vga", "std", "-no-reboot"],
+            args,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
         # saudação
@@ -86,19 +100,30 @@ class Qmp:
         self.proc.wait(timeout=10)
 
 # ---------------------------------------------------------------------------
+WEBROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        "webroot")
+
+
 def main():
     if len(sys.argv) < 3:
         print(__doc__)
         sys.exit(1)
     iso = sys.argv[1]
     outdir = sys.argv[2]
+    disk = sys.argv[3] if len(sys.argv) > 3 else None
     os.makedirs(outdir, exist_ok=True)
     serial = os.path.join(outdir, "serial.log")
 
-    q = Qmp(iso, serial)
+    # servidor HTTP que o EnzoFox vai baixar (10.0.2.2:8000 no user-net)
+    httpd = subprocess.Popen(
+        [sys.executable, "-m", "http.server", "8000", "--bind", "127.0.0.1"],
+        cwd=WEBROOT,
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    q = Qmp(iso, serial, disk)
     try:
-        # 1. boot -> área de trabalho com 3 janelas
-        q.sleep(5)
+        # 1. boot -> área de trabalho com 3 janelas (DHCP+AHCI+swap no meio)
+        q.sleep(8)
         q.shot("01-desktop", outdir)
 
         # 2. novo terminal (focado)
@@ -163,14 +188,60 @@ def main():
         print("aguardando o watchdog (ate 12 s)...")
         q.sleep(12)
         q.shot("12-watchdog", outdir)
+
+        # helper: abre o app N do menu Iniciar (0 = primeiro)
+        def launch_menu_app(idx):
+            q.key("m", "ctrl-alt")
+            q.sleep(0.8)
+            for _ in range(idx):
+                q.key("down")
+                q.sleep(0.15)
+            q.key("ret")
+            q.sleep(0.8)
+
+        # 13. FILES: navegador do ENZFS (disco AHCI persistente)
+        launch_menu_app(6)                 # FILES.ENZ (7º app da ISO)
+        q.sleep(2)
+        q.shot("13-files", outdir)
+
+        # 14. EnzoFox: HTTP REAL pela e1000 (10.0.2.2:8000 = host)
+        launch_menu_app(7)                 # FOX.ENZ
+        q.sleep(1.5)
+        q.key("ret")                       # Enter baixa a URL padrão
+        print("aguardando o HTTP (ate 10 s)...")
+        q.sleep(10)
+        q.shot("14-fox", outdir)
+
+        # 15. SysMon: swap, HPET, uptime
+        launch_menu_app(8)                 # SYSMON.ENZ
+        q.sleep(2)
+        q.shot("15-sysmon", outdir)
+
+        # 16. Mandelbrot: app escrito na linguagem ENZ (enzc.py)
+        launch_menu_app(9)                 # MANDEL.ENZ
+        q.sleep(4)
+        q.shot("16-mandel", outdir)
     finally:
         q.quit()
+        httpd.terminate()
 
     print("serial: %s" % serial)
     with open(serial) as f:
         log = f.read()
     print("--- serial (ultimas linhas) ---")
-    print("\n".join(log.splitlines()[-12:]))
+    print("\n".join(log.splitlines()[-16:]))
+
+    # validações que devem fechar o CI em vermelho se quebrarem
+    ok = True
+    if "[net] conectado via DHCP" not in log:
+        print("FALHOU: e1000/DHCP nao conectou (serial sem '[net] conectado')")
+        ok = False
+    if "[enzfs] volume montado" not in log:
+        print("FALHOU: ENZFS nao montou o disco AHCI")
+        ok = False
+    if not ok:
+        sys.exit(1)
+    print("OK: rede e1000+DHCP e ENZFS validados pelo serial.")
 
 if __name__ == '__main__':
     main()

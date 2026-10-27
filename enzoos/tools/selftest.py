@@ -274,15 +274,62 @@ def test_axml(axml):
     check(('application', 'label') in attrs, "label: %s" % attrs.get(('application', 'label')))
 
 # ---------------------------------------------------------------------------
+def test_enz(name, blob):
+    print("== %s (.enz) ==" % name)
+    check(blob[:4] == b'ENZ1', "assinatura ENZ1")
+    hdrsz = int.from_bytes(blob[4:6], 'little')
+    entry = int.from_bytes(blob[8:12], 'little')
+    isize = int.from_bytes(blob[12:16], 'little')
+    nimp = int.from_bytes(blob[16:20], 'little')
+    imp_off = int.from_bytes(blob[48:52], 'little')
+    sdk = int.from_bytes(blob[52:56], 'little')
+    check(hdrsz == 64, "hdrsz 64")
+    check(sdk == 2, "sdk 2")
+    check(isize > 0 and 64 + isize <= len(blob), "isize coerente (%d)" % isize)
+    check(entry < isize, "entry RVA dentro da imagem")
+    check(imp_off == 64 + isize, "imp_off = 64+isize")
+    check(nimp > 0, "imports > 0 (%d)" % nimp)
+    # strings de import após a imagem
+    imp = blob[imp_off:]
+    names = []
+    for _ in range(nimp):
+        z = imp.find(b'\0')
+        if z < 0:
+            break
+        names.append(imp[:z])
+        imp = imp[z+1:]
+    check(len(names) == nimp, "todas as strings de import presentes")
+    for n in names:
+        if n.decode('ascii', 'replace') not in ENZ_EXPORTS:
+            check(False, "import desconhecido: %r" % n)
+    check(blob[28] != 0, "nome do app presente")
+    w = int.from_bytes(blob[20:22], 'little')
+    h = int.from_bytes(blob[22:24], 'little')
+    check(w >= 160 and h >= 120, "janela %dx%d" % (w, h))
+
+
+# ordem exata de k_exports no kernel (índices 1..36)
+ENZ_EXPORTS = [
+    "rect", "text", "blit", "title", "uptime", "file_open", "files_count",
+    "file_name", "exec", "conout_read", "rand", "invalidate", "alloc", "free",
+    "sysinfo", "time", "exit", "beep", "self", "px", "line", "grad", "round",
+    "blend", "fs_open", "fs_list", "fs_read", "fs_write", "fs_creat",
+    "fs_mkdir", "fs_unlink", "net_get", "swap_info", "swap_force", "hpet_ns",
+    "tone",
+]
+
+
 def main():
     if len(sys.argv) < 2:
         print(__doc__)
         sys.exit(1)
     files, raw = test_iso(sys.argv[1])
     test_kernel(files['KERNEL.BIN'])
-    for name in ('TERMINAL.CE', 'INFO.CE', 'PAINT.CE', 'CALC.CE', 'NOTAS.CE', 'PLASMA.CE'):
+    apps = ('TERMINAL.ENZ', 'INFO.ENZ', 'PAINT.ENZ', 'CALC.ENZ', 'NOTAS.ENZ',
+            'PLASMA.ENZ', 'FILES.ENZ', 'FOX.ENZ', 'SYSMON.ENZ', 'MANDEL.ENZ')
+    for name in apps:
         if name in files:
-            test_ce(name, files[name])
+            test_enz(name, files[name])
         else:
             check(False, "%s ausente" % name)
     test_pe('DEMO.EXE', files['DEMO.EXE'], False)

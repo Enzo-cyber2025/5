@@ -1,0 +1,61 @@
+// =============================================================================
+//  mandel.enz — Conjunto de Mandelbrot na linguagem ENZ (ponto fixo 1/4096)
+//  Compilar:  python3 tools/enzc.py apps/mandel.enz obj/mandel.asm
+//  Gerar app: nasm + tools/mkenz.py  ->  MANDDEL.ENZ (com nome MANDDEL.ENZ)
+// =============================================================================
+int escala;
+int cores;
+int pal[32];
+
+void init() {
+    escala = 4096;
+    cores = 32;
+    // paleta: azul -> ciano -> branco
+    int i = 0;
+    while (i < 32) {
+        int r = i * 6;
+        int g = i * 7;
+        int b = 128 + i * 4;
+        if (i > 24) {
+            r = 200 + (i - 24) * 5;
+            g = 200 + (i - 24) * 6;
+            b = 230;
+        }
+        pal[i] = 0xFF000000 | (r << 16) | (g << 8) | b;
+        i = i + 1;
+    }
+}
+
+void paint() {
+    int y = 0;
+    while (y < win_h) {
+        int x = 0;
+        while (x < win_w) {
+            // c = (-2.2 .. 0.8) + i(-1.3 .. 1.3), em 1/4096
+            int cr = ((x * 3 * escala) / win_w) - (2 * escala + escala / 5);
+            int ci = ((y * 2 * escala) / win_h) - escala;
+            int zr = 0;
+            int zi = 0;
+            int i = 0;
+            int cor = 0xFF05070D;
+            while (i < cores) {
+                int zr2 = (zr * zr) / escala;
+                int zi2 = (zi * zi) / escala;
+                if (zr2 + zi2 > 4 * escala) {
+                    cor = pal[i];
+                    break;
+                }
+                int t = (((zr * zi) / escala) * 2) + ci;
+                zr = zr2 - zi2 + cr;
+                zi = t;
+                i = i + 1;
+            }
+            px(x, y, cor);
+            x = x + 1;
+        }
+        y = y + 1;
+    }
+    // legenda
+    rect(0, 0, 268, 22, 0xE014203C);
+    text(8, 6, "Mandelbrot — linguagem ENZ compilada (enzc.py)", 0xFFE8ECF4);
+}
