@@ -136,13 +136,20 @@ isr_ignore:
 
 ; frame: [14 regs][vec][err][rip][cs][rflags][rsp][ss]
 exc_common:
+        mov [exc_rsp0], rsp          ; rsp do momento da excecao
+        mov rsp, 0x8C000             ; pilha de emergencia (dump/panic)
         PUSHAQ
         mov rdi, rsp
         cld
         call exc_handler
         POPAQ
+        mov rsp, [exc_rsp0]
         add rsp, 16
         iretq
+
+section .kdata
+exc_rsp0: dq 0
+section .ktext
 
 irq_common:
         PUSHAQ

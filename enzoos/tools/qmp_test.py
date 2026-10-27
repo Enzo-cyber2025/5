@@ -271,8 +271,8 @@ def main():
         try:
             with open(serial) as f:
                 sl = f.read().splitlines()
-            print("--- serial (%d linhas; ultimas 4) ---" % len(sl))
-            print("\n".join(sl[-4:]))
+            print("--- serial (%d linhas; ultimas 12) ---" % len(sl))
+            print("\n".join(sl[-12:]))
         except Exception:
             pass
         # qtrace resumido por ultimo (annotations preservam o final)
@@ -290,8 +290,8 @@ def main():
             vlines = [l for l in lines if " v=" in l or l.startswith("v=")]
             print("=== qtrace: %d linhas; invalid=%d primeiros: %s" %
                   (len(lines), len(inv), " ".join(addr[:5])))
-            print("=== v ultimas 4 ===")
-            print("\n".join(vlines[-4:]))
+            print("=== v ultimas 2 ===")
+            print("\n".join(vlines[-2:]))
         except Exception as e2:
             print("(sem qtrace: %s)" % e2)
         sys.stdout.flush()

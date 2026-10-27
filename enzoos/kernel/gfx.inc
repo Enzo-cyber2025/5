@@ -877,6 +877,14 @@ k_panic:
         call k_log_hex
         mov rdi, [rsi]
         call k_log_hex
+        ; dump do topo da pilha do kernel (enderecos de retorno)
+        mov rsi, 0x8EFF8
+.pd:
+        mov rdi, [rsi]
+        call k_log_hex
+        sub rsi, 8
+        cmp rsi, 0x8EE00
+        jae .pd
         cmp qword [shadow], 0
         je .hang
         call surf_use_shadow
