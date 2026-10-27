@@ -112,7 +112,6 @@ eth_tx:
         mov [rax], dl
         mov [rax + 1], r14b
         add rax, 2
-        cli
         mov rdi, rax
         mov rsi, r12
         mov rdx, r13
@@ -123,7 +122,6 @@ eth_tx:
         call k_log
         pop rdi
         pop rsi
-        sti
         mov edi, net_txbuf
         lea esi, [r13 + 14]
         call e1000_tx

@@ -271,8 +271,8 @@ def main():
         try:
             with open(serial) as f:
                 sl = f.read().splitlines()
-            print("--- serial (%d linhas; ultimas 12) ---" % len(sl))
-            print("\n".join(sl[-12:]))
+            print("--- serial (%d linhas; ultimas 8) ---" % len(sl))
+            print("\n".join(sl[-8:]))
         except Exception:
             pass
         # qtrace resumido por ultimo (annotations preservam o final)
