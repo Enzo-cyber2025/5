@@ -136,8 +136,8 @@
 %define SP_F11      0x9A
 %define SP_F12      0x9B
 
-; boot params em 0xE00 (gravados pelo stage1)
-boot_params equ 0x0E00
+; boot params em linear 0x10E00 (stage1 parte B grava em DS=0x1000:0x0E00)
+boot_params equ 0x10E00
 
 ; ---- macros utilitárias ----------------------------------------------------
 %macro ZERO64 1

@@ -75,6 +75,11 @@ k_mm_init:
         ; E820: soma RAM e acha o topo
         mov r8d, [boot_params + BP_E820N]
         mov r9, [boot_params + BP_E820P]
+        ; diag: count e ponteiro
+        mov edi, r8d
+        call k_log_hex
+        mov rdi, r9
+        call k_log_hex
         xor r10, r10                  ; total RAM
         xor r11, r11                  ; topo da RAM
 .mm_next:
@@ -98,6 +103,10 @@ k_mm_init:
         push rdi
         lea rdi, [rel s_mm_e820]
         call k_log
+        mov rdi, r10                 ; diag: ram_total
+        call k_log_hex
+        mov rdi, r11                 ; diag: topo
+        call k_log_hex
         pop rdi
         ; heap_top = min(topo, HEAP_MAX)
         mov rax, r11
@@ -106,6 +115,12 @@ k_mm_init:
         jbe .min_ok
         mov rax, rcx
 .min_ok:
+        ; clamp defensivo: heap_top deve ficar sempre >= HEAP_START+1 MB
+        mov rcx, HEAP_START + 0x100000
+        cmp rax, rcx
+        jae .clamp_ok
+        mov rax, rcx
+.clamp_ok:
         mov [heap_top], rax
         ; páginas e bitmap
         mov rcx, rax
@@ -135,6 +150,8 @@ k_mm_init:
         push rdi
         lea rdi, [rel s_mm_bitmap]
         call k_log
+        mov rdi, [bitmap_bytes]      ; diag
+        call k_log_hex
         pop rdi
         ; reserva a zona de binários estrangeiros:
         ; [PE_BASE, 0x1D000000) = PE + ELF + 8 pilhas de 1 MB
