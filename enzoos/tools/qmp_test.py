@@ -305,25 +305,6 @@ def main():
     with open(serial) as f:
         log = f.read()
     slines = log.splitlines()
-    # resumo do trace do QEMU (-d int,guest_errors)
-    try:
-        qt = os.path.join(outdir, "qtrace.log")
-        with open(qt, "rb") as f:
-            qlines = f.read().decode(errors="replace").splitlines()
-        inv = [l for l in qlines if "Invalid" in l]
-        addr = []
-        for l in inv:
-            for tok in l.replace(",", " ").split():
-                if tok.startswith("0x") and len(tok) >= 6:
-                    addr.append(tok)
-                    break
-        vlines = [l for l in qlines if " v=" in l or l.startswith("v=")]
-        print("=== qtrace: %d linhas; invalid=%d; primeiros: %s ==="
-              % (len(qlines), len(inv), " ".join(addr[:6])))
-        print("=== qtrace: ultimas 10 excecoes (v=/cr2) ===")
-        print("\n".join(vlines[-10:]))
-    except Exception as e:
-        print("(sem qtrace: %s)" % e)
 
     # validações que devem fechar o CI em vermelho se quebrarem
     ok = True
@@ -333,14 +314,23 @@ def main():
     if "[enzfs] volume montado" not in log:
         print("FALHOU: ENZFS nao montou o disco AHCI")
         ok = False
+    print("=== serial (%d linhas; ultimas 10) ===" % len(slines))
+    print("\n".join(slines[-10:]))
+    # qtrace resumo por ultimo (annotations do CI preservam o final)
+    try:
+        qt = os.path.join(outdir, "qtrace.log")
+        with open(qt, "rb") as f:
+            qlines = f.read().decode(errors="replace").splitlines()
+        inv = sum(1 for l in qlines if "Invalid" in l)
+        vlines = [l for l in qlines if " v=" in l or l.startswith("v=")]
+        print("=== qtrace: %d linhas; invalid=%d; ultimas 8 excecoes ==="
+              % (len(qlines), inv))
+        print("\n".join(vlines[-8:]))
+    except Exception as e:
+        print("(sem qtrace: %s)" % e)
     if not ok:
-        # serial por ultimo: e o que as annotations do CI preservam
-        print("=== serial (%d linhas) ===" % len(slines))
-        print("\n".join(slines))
         sys.exit(1)
     print("OK: rede e1000+DHCP e ENZFS validados pelo serial.")
-    print("=== serial (%d linhas) ===" % len(slines))
-    print("\n".join(slines[-20:]))
 
 if __name__ == '__main__':
     main()
