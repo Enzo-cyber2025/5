@@ -116,11 +116,31 @@ eth_tx:
         mov rdi, rax
         mov rsi, r12
         mov rcx, r13
+        push rdi
+        push rsi
+        push rcx
+        mov rdi, rcx
+        call k_log_hex
+        pop rcx
+        pop rsi
+        pop rdi
 .bcopy:
         mov al, [rsi]
         mov [rdi], al
         inc rsi
         inc rdi
+        dec rcx
+        test rcx, 63
+        jnz .nb
+        push rdi
+        push rsi
+        push rcx
+        mov rdi, rcx
+        call k_log_hex
+        pop rcx
+        pop rsi
+        pop rdi
+.nb:
         dec rcx
         jnz .bcopy
         push rsi
