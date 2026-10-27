@@ -36,7 +36,16 @@ jobs:
         run: python3 tools/selftest.py release/enzos.iso
 
       - name: Teste no QEMU (q35/AHCI/e1000) + capturas de tela
-        run: python3 tools/qmp_test.py release/enzos.iso screenshots/ release/disk.img
+        run: |
+          if python3 tools/qmp_test.py release/enzos.iso screenshots/ release/disk.img > /tmp/qemu.log 2>&1; then
+            tail -5 /tmp/qemu.log
+          else
+            grep -nE "error|Error|ERRO|Traceback|RuntimeError|FileNotFound|FALHOU|failed|Exception" -A4 -B2 /tmp/qemu.log | head -80 | while IFS= read -r l; do
+              echo "::error::$l"
+            done
+            tail -30 /tmp/qemu.log > /tmp/qemu_tail.txt
+            exit 1
+          fi
 
       - name: Resumo do serial
         if: always()
