@@ -155,6 +155,12 @@ def main():
             print("MODO TEXTO 720x400: o boot nao chegou ao modo grafico")
             print("--- texto da tela (VGA 0xB8000) ---")
             print(q.vga_text())
+            print("--- registradores ---")
+            print(q.hmp("info registers").get("return", "")[:600])
+            print("--- memoria 0x10200 (parte B esperada) ---")
+            print(q.hmp("xp /24bx 0x10200").get("return", ""))
+            print("--- memoria 0x10000 (parte A carregada) ---")
+            print(q.hmp("xp /16bx 0x10000").get("return", ""))
             with open(serial) as f:
                 s = f.read()
             print("--- serial (%d bytes) ---" % len(s))
