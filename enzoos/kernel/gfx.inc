@@ -868,7 +868,7 @@ k_panic:
         lea rdi, [rel panic_serial]
         call k_log
         ; dump do fundo da pilha do kernel (frames profundos primeiro)
-        mov rsi, 0x8EF78
+        mov rsi, 0x8EF00
 .pd:
         mov rdi, [rsi]
         call k_log_hex
