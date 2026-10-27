@@ -314,20 +314,14 @@ def main():
     if "[enzfs] volume montado" not in log:
         print("FALHOU: ENZFS nao montou o disco AHCI")
         ok = False
-    print("=== serial (%d linhas; ultimas 24) ===" % len(slines))
-    print("\n".join(slines[-24:]))
-    # qtrace resumo por ultimo (annotations do CI preservam o final)
-    try:
-        qt = os.path.join(outdir, "qtrace.log")
-        with open(qt, "rb") as f:
-            qlines = f.read().decode(errors="replace").splitlines()
-        inv = sum(1 for l in qlines if "Invalid" in l)
-        vlines = [l for l in qlines if " v=" in l or l.startswith("v=")]
-        print("=== qtrace: %d linhas; invalid=%d; ultimas 2 excecoes ==="
-              % (len(qlines), inv))
-        print("\n".join(vlines[-2:]))
-    except Exception as e:
-        print("(sem qtrace: %s)" % e)
+    print("=== serial (%d linhas; ultimas 8) ===" % len(slines))
+    print("\n".join(slines[-8:]))
+    # resumo por tags (o cap de annotations corta o meio do serial)
+    print("=== resumo do boot ===")
+    for tag in ["[hpet]", "[ahci]", "[enzfs]", "[e1000]", "[net]",
+                "[hda]", "PANICO", "ERRO"]:
+        hits = [l for l in slines if tag in l]
+        print("%-9s %s" % (tag + ":", hits[0] if hits else "(ausente)"))
     if not ok:
         sys.exit(1)
     print("OK: rede e1000+DHCP e ENZFS validados pelo serial.")
