@@ -75,6 +75,7 @@ cksum_buf:
 ; eth_tx: rdi = MAC destino, esi = ethertype, rdx = payload, ecx = len
 ; -----------------------------------------------------------------------------
 eth_tx:
+        cli
         push rbx
         push r12
         push r13
@@ -131,6 +132,7 @@ eth_tx:
         mov edi, net_txbuf
         lea esi, [r13 + 14]
         call e1000_tx
+        sti
         pop r15
         pop r14
         pop r13
