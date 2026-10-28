@@ -880,6 +880,7 @@ clock_update:
 section .kdata
 wnd_top:     dq 0
 wnd_bottom:  dq 0
+wm_magic:    dd 0x13572468               ; assinatura p/ achar wnd_count por scan
 wnd_count:   dd 0
 wnd_array:   times MAX_WND * W_SIZE db 0
 

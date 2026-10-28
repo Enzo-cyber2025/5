@@ -244,10 +244,21 @@ def main():
         q.sleep(12)
         q.shot("12-watchdog", outdir)
 
-        WND_COUNT = 0x10D513
-        print("::notice::kern_hdr @1M = 0x%08X (CE01=0x31304543)" % q.kread32(0x100000))
-        print("::notice::kern_hdr @1M+0x1000 = 0x%08X" % q.kread32(0x101000))
-        print("::notice::wnd_count boot=%d" % q.kread32(WND_COUNT))
+        def find_wnd_count():
+            """procura 0x13572468 no kernel (0x100000..0x140000); wnd_count = magic+4"""
+            import re as _re
+            for base in range(0x100000, 0x140000, 0x1000):
+                r = q.hmp("xp /1024xw 0x%X" % base)
+                for m in _re.finditer(r"0x([0-9a-f]{8})", r.get("return", "")):
+                    v = int(m.group(1), 16)
+                    if v == 0x13572468:
+                        # posicao: conta quantos valores antes do match
+                        idx = len(_re.findall(r"0x[0-9a-f]{8}", r.get("return", "")[:m.start()]))
+                        return base + idx * 4 + 4
+            return 0
+        WND_COUNT = find_wnd_count()
+        print("::notice::wnd_count addr=0x%X (0=nao achou)" % WND_COUNT)
+        print("::notice::wnd_count boot=%d" % (q.kread32(WND_COUNT) if WND_COUNT else -1))
 
         # helper: abre o app N do menu Iniciar (0 = primeiro)
         def launch_menu_app(idx):
@@ -258,7 +269,7 @@ def main():
                 q.sleep(0.15)
             q.key("ret")
             q.sleep(0.8)
-            print("::notice::wnd_count apos launch(%d)=%d" % (idx, q.kread32(WND_COUNT)))
+            print("::notice::wnd_count apos launch(%d)=%d" % (idx, q.kread32(WND_COUNT) if WND_COUNT else -1))
 
         # 13. FILES: navegador do ENZFS (disco AHCI persistente)
         launch_menu_app(6)                 # FILES.ENZ (7º app da ISO)
