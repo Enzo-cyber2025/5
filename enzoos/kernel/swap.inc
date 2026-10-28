@@ -104,10 +104,8 @@ k_swap_init:
         inc r15d
         jmp .fill_pd_huge
 .pd_done:
-        mov rax, r14
-        or rax, 3
-        mov [r12], rax                      ; PDPT[0] = novo PD
         mov r13, r14
+        mov [sw_newpd], r13                 ; PD novo (ligado só no fim!)
         jmp .build_pts
 .mode_2m:
         ; já existe um PD — vamos apenas substituir as 32 primeiras entradas
@@ -157,6 +155,13 @@ k_swap_init:
         inc r15d
         jmp .pt_loop
 .pts_done:
+        ; liga o PD novo (modo 1 GB) — agora que as 32 PTs cobrem o heap
+        mov rax, [sw_newpd]
+        test rax, rax
+        jz .no_newpd
+        or rax, 3
+        mov [r12], rax
+.no_newpd:
         ; zera os arrays de estado
         lea rdi, [sw_state]
         mov esi, SW_NPAGES
@@ -547,6 +552,7 @@ s_sw_diag2: db "[swap] paginacao atual (PML4[0], PDPT[0], PD[2..4]):", 0
 s_sw_diag3: db "[swap] alocando PT #", 0
 sw_hdr:     times 512 db 0
 sw_armed:   dd 0
+sw_newpd:   dq 0
 sw_lba:     dd 0
 sw_slots:   dd 0
 sw_out_ctr: dd 0
