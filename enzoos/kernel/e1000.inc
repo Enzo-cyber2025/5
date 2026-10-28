@@ -100,44 +100,15 @@ k_e1000_init:
         mov dword [e1000_rx_next], 0
         mov dword [e1000_tx_next], 0
         mov dword [e1000_ok], 1
-.err:
-        mov rdi, s_tx_err
-        call k_log
-.err2:
-        mov rdi, s_tx_err2
-        call k_log
-        ; diag: ler de volta TCTL/TDBAL/TDH/TDT/RCTL/STATUS + descritor
-        ; (MMIO do e1000 so aceita acessos de 4 bytes — ler dwords!)
-        mov rax, [e1000_base]
-        push rax
-        mov edi, [rax + 0x0400]
-        call k_log_hex
-        pop rax
-        push rax
-        mov edi, [rax + 0x3800]
-        call k_log_hex
-        pop rax
-        push rax
-        mov edi, [rax + 0x3810]
-        call k_log_hex
-        pop rax
-        push rax
-        mov edi, [rax + 0x3818]
-        call k_log_hex
-        pop rax
-        push rax
-        mov edi, [rax + 0x0100]
-        call k_log_hex
-        pop rax
-        push rax
-        mov edi, [rax + 0x0008]
-        call k_log_hex
-        pop rax
-        mov edi, [e1000_txdesc + 8]
-        call k_log_hex
-        mov eax, -1
         mov rdi, s_e1000_ok
         call k_log
+        ; diag: estado do device apos a configuracao (reads de 4 bytes)
+        push rbx
+        mov edi, [rbx + 0x0008]     ; STATUS
+        call k_log_hex
+        mov edi, [rbx + 0x3820]     ; TXDCA?
+        call k_log_hex
+        pop rbx
 .done:
         pop r15
         pop r14
@@ -200,6 +171,37 @@ e1000_tx:
 .err2:
         mov rdi, s_tx_err2
         call k_log
+        ; diag: estado do TX apos o timeout (reads de 4 bytes no MMIO)
+        mov rax, [e1000_base]
+        push rax
+        mov edi, [rax + 0x3810]     ; TDH
+        call k_log_hex
+        pop rax
+        push rax
+        mov edi, [rax + 0x3818]     ; TDT
+        call k_log_hex
+        pop rax
+        push rax
+        mov edi, [rax + 0x3808]     ; TDLEN
+        call k_log_hex
+        pop rax
+        push rax
+        mov edi, [rax + 0x3800]     ; TDBAL
+        call k_log_hex
+        pop rax
+        push rax
+        mov edi, [rax + 0x0008]     ; STATUS
+        call k_log_hex
+        pop rax
+        ; descritor do slot: addr, lower(8-11), upper(12-15)
+        mov rdi, [e1000_txdesc + 0]
+        call k_log_hex
+        mov edi, [e1000_txdesc + 8]
+        call k_log_hex
+        mov edi, [e1000_txdesc + 12]
+        call k_log_hex
+        mov rdi, e1000_txdesc
+        call k_log_hex
         mov eax, -1
 .out:
         pop r13
