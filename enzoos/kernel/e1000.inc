@@ -38,6 +38,14 @@ k_e1000_init:
         mov eax, eax
         mov [e1000_base], rax
         mov rbx, rax
+        ; diag: BAR usado
+        push rax
+        mov rdi, s_bar_diag
+        call k_log
+        mov rdi, rax
+        call k_log_hex
+        pop rax
+        mov rbx, rax
         ; máscara todas as interrupções (trabalhamos com polling)
         mov dword [rbx + 0x00F8*1], 0xFFFFFFFF
         ; pega o MAC (RAL/RAH)
@@ -99,22 +107,33 @@ k_e1000_init:
         mov rdi, s_tx_err2
         call k_log
         ; diag: ler de volta TCTL/TDBAL/TDH/TDT/RCTL/STATUS + descritor
+        ; (MMIO do e1000 so aceita acessos de 4 bytes — ler dwords!)
         mov rax, [e1000_base]
-        mov rdi, [rax + 0x0400]
+        push rax
+        mov edi, [rax + 0x0400]
         call k_log_hex
-        mov rdi, [rax + 0x3800]
+        pop rax
+        push rax
+        mov edi, [rax + 0x3800]
         call k_log_hex
-        mov rdi, [rax + 0x3810]
+        pop rax
+        push rax
+        mov edi, [rax + 0x3810]
         call k_log_hex
-        mov rdi, [rax + 0x3818]
+        pop rax
+        push rax
+        mov edi, [rax + 0x3818]
         call k_log_hex
-        mov rdi, [rax + 0x0100]
+        pop rax
+        push rax
+        mov edi, [rax + 0x0100]
         call k_log_hex
-        mov rdi, [rax + 0x0008]
+        pop rax
+        push rax
+        mov edi, [rax + 0x0008]
         call k_log_hex
-        mov rdi, [e1000_txdesc + 0]
-        call k_log_hex
-        mov rdi, [e1000_txdesc + 8]
+        pop rax
+        mov edi, [e1000_txdesc + 8]
         call k_log_hex
         mov eax, -1
         mov rdi, s_e1000_ok
@@ -241,6 +260,7 @@ e1000_rx_poll:
 
 section .kdata
 s_tx_err:  db "[e1000] TX recusado (len/estado)", 0
+s_bar_diag: db "[e1000] BAR0:", 0
 s_tx_err2: db "[e1000] TX sem confirmacao DD", 0
 align 16
 e1000_rxdesc: times E1000_NDESC * 16 db 0
