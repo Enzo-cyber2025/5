@@ -1650,22 +1650,36 @@ jobs:
                   bc.Width = 16384; bc.Height = 16384;
                   P("warpwin2: s8 CreateTexture2D BC3 16384x16384 (FL10 max=8192)...");
                   hr = dev->lpVtbl->CreateTexture2D(dev, &bc, NULL, &bt);
-                  P("warpwin2: s8 hr=0x%08x (E_INVALIDARG esperado; fastfail = achado!)", (unsigned)hr);
-                  if (bt) bt->lpVtbl->Release(bt);
+                  P("warpwin2: s8 hr=0x%08x — WARP ACEITA 16k em FL 10_0 (v75 provou)", (unsigned)hr);
+                  if (bt) {
+                    ID3D11ShaderResourceView* srv = NULL;
+                    P("warpwin2: s8b CreateShaderResourceView 16k + draw com ela bindada...");
+                    hr = dev->lpVtbl->CreateShaderResourceView(dev, (ID3D11Resource*)bt, NULL, &srv);
+                    P("warpwin2: s8b srv hr=0x%08x", (unsigned)hr);
+                    if (srv) {
+                      ctx->lpVtbl->PSSetShaderResources(ctx, 0, 1, &srv);
+                      ctx->lpVtbl->Draw(ctx, 3, 0);
+                      P("warpwin2: s8b Draw com SRV 16k OK (nao foi aqui)");
+                      srv->lpVtbl->Release(srv);
+                    }
+                    bt->lpVtbl->Release(bt);
+                  }
                 }
                 {
                   D3D11_BUFFER_DESC bd; ID3D11Buffer* vb = NULL; D3D11_MAPPED_SUBRESOURCE mp;
                   float verts[9] = {0,0.5f,0.5f, 0.5f,-0.5f,0.5f, -0.5f,-0.5f,0.5f};
                   ZeroMemory(&bd, sizeof(bd));
-                  bd.ByteWidth = sizeof(verts); bd.Usage = D3D11_USAGE_DYNAMIC;
+                  bd.ByteWidth = 48; bd.Usage = D3D11_USAGE_DYNAMIC;
                   bd.BindFlags = D3D11_BIND_VERTEX_BUFFER; bd.CPUAccessFlags = 1;
                   P("warpwin2: s9 VB dynamic + Map...");
                   hr = dev->lpVtbl->CreateBuffer(dev, &bd, NULL, &vb);
-                  P("warpwin2: s9a hr=0x%08x", (unsigned)hr);
-                  hr = ctx->lpVtbl->Map(ctx, (ID3D11Resource*)vb, 0, D3D11_MAP_WRITE_DISCARD, 0, &mp);
-                  P("warpwin2: s9b Map hr=0x%08x", (unsigned)hr);
-                  if (SUCCEEDED(hr)) { CopyMemory(mp.pData, verts, sizeof(verts)); ctx->lpVtbl->Unmap(ctx, (ID3D11Resource*)vb, 0); }
-                  if (vb) vb->lpVtbl->Release(vb);
+                  P("warpwin2: s9a hr=0x%08x (vb=%p)", (unsigned)hr, (void*)vb);
+                  if (vb) {
+                    hr = ctx->lpVtbl->Map(ctx, (ID3D11Resource*)vb, 0, D3D11_MAP_WRITE_DISCARD, 0, &mp);
+                    P("warpwin2: s9b Map hr=0x%08x", (unsigned)hr);
+                    if (SUCCEEDED(hr)) { CopyMemory(mp.pData, verts, sizeof(verts)); ctx->lpVtbl->Unmap(ctx, (ID3D11Resource*)vb, 0); }
+                    vb->lpVtbl->Release(vb);
+                  }
                 }
                 {
                   WNDCLASSW wc; HWND hwnd; IDXGIDevice* xd = NULL; IDXGIAdapter* ad = NULL;
