@@ -102,6 +102,31 @@ wnd_create:
 .linked:
         mov [wnd_top], rbx
         inc dword [wnd_count]
+        ; diag: janela criada (titulo, total)
+        push rax
+        push rdi
+        push rsi
+        push rcx
+        push rdx
+        push r8
+        push r9
+        push r10
+        push r11
+        mov rdi, s_wnd_diag
+        call k_log
+        lea rdi, [rbx + W_TITLE]
+        call k_log
+        mov edi, [wnd_count]
+        call k_log_hex
+        pop r11
+        pop r10
+        pop r9
+        pop r8
+        pop rdx
+        pop rcx
+        pop rsi
+        pop rdi
+        pop rax
         call wnd_render_chrome
         mov edi, [rbx + W_X]
         mov esi, [rbx + W_Y]
@@ -191,6 +216,20 @@ wnd_destroy:
         push rbx
         call wnd_unlink
         dec dword [wnd_count]
+        push rax
+        push rdi
+        push rsi
+        push rcx
+        push rdx
+        mov rdi, s_wnd_diag2
+        call k_log
+        mov edi, [wnd_count]
+        call k_log_hex
+        pop rdx
+        pop rcx
+        pop rsi
+        pop rdi
+        pop rax
         ; buffer
         mov rdi, [rbx + W_BUF]
         mov esi, [rbx + W_W]           ; dword!
@@ -881,6 +920,8 @@ section .kdata
 wnd_top:     dq 0
 wnd_bottom:  dq 0
 wm_magic:    dd 0x13572468               ; assinatura p/ achar wnd_count por scan
+s_wnd_diag:  db "[wm] +janela:", 0
+s_wnd_diag2: db "[wm] -janela, total:", 0
 wnd_count:   dd 0
 wnd_array:   times MAX_WND * W_SIZE db 0
 
