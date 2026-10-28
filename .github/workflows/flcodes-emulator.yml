@@ -282,6 +282,25 @@ jobs:
           fi
           exit 0
 
+      - name: Dart/Flutter hunt inside libapp.so (the code the dex does not hold)
+        run: |
+          set +e
+          APK="$(cat "$RUNNER_TEMP/familylink/apk-path.txt" 2>/dev/null | tail -1)"
+          [ -s "$APK" ] || APK="$RUNNER_TEMP/familylink/base.apk"
+          ABI_SPLIT="$(grep -E 'config\.(arm64_v8a|armeabi_v7a)\.apk' \
+            "$RUNNER_TEMP/familylink/splits.txt" 2>/dev/null | head -1)"
+          echo "base: $APK"
+          echo "abi split: ${ABI_SPLIT:-(none)}"
+          python3 family-link-codes/tools/dart_snapshot_hunt.py "$APK" $ABI_SPLIT \
+            | tee "$RUNNER_TEMP/dart.txt"
+          echo
+          echo "== where are the .so files, exactly? =="
+          for f in "$APK" $ABI_SPLIT; do
+            [ -s "$f" ] || continue
+            echo "-- $(basename "$f")"
+            unzip -l "$f" 2>/dev/null | grep -E "lib/.*\.so" | awk '{print $1, $4}'
+          done
+
       - name: Inventory of the real bundle (ABIs, pieces, size)
         run: |
           set +e
@@ -486,7 +505,7 @@ jobs:
             echo '```'
             cat "$RUNNER_TEMP/probe.txt" 2>/dev/null || echo "(no probe)"
             echo '```'
-            for f in inventory.txt fetch-x86.txt fetch.txt package.txt badging.txt backup-flags.txt certs.txt sha256.txt; do
+            for f in dart.txt inventory.txt fetch-x86.txt fetch.txt package.txt badging.txt backup-flags.txt certs.txt sha256.txt; do
               [ -s "$RUNNER_TEMP/$f" ] && { echo "**$f**"; echo '```'; head -20 "$RUNNER_TEMP/$f"; echo '```'; }
             done
             if [ -s "$RUNNER_TEMP/strings.txt" ]; then
