@@ -175,11 +175,11 @@ k_ahci_init:
 ahci_stop:
         mov rax, [ahci_port]
         mov edx, [rax + 0x18]       ; PxCMD
-        and edx, 0xFFFFFFFE         ; ST = 0
+        and edx, 0xFFFFFFEE         ; ST = 0 e FRE = 0
         mov [rax + 0x18], edx
 .wait_cr:
         mov edx, [rax + 0x18]
-        test edx, 0x8000            ; CR?
+        test edx, 0xC000            ; CR | FR
         jz .ok
         dec edi
         jnz .wait_cr
@@ -216,22 +216,19 @@ ahci_do_cmd:
         mov eax, -1
         jmp .ret
 .ci_free:
-        ; ---- cabeçalho do comando (slot 0) ----
-        ; dw0: CFL=5 | W (bit 6 se escrita) | P (bit 7)
+        ; ---- cabeçalho do comando (slot 0, 32 bytes) ----
+        ; layout AHCICmdHdr: opts(0-1) PRDTL(2-3) PRDBC(4-7) CTBA(8-15)
         mov eax, 0x0005 | 0x0080
         test r8d, r8d
         jz .ro
         or eax, 0x0040
 .ro:
+        or eax, 0x00010000            ; PRDTL = 1
         mov [ahci_clb], eax
-        ; dw1: PRDTL = 1
-        mov dword [ahci_clb + 4], 1
-        ; dw2: PRDBC = 0
-        mov dword [ahci_clb + 8], 0
-        ; dw3/4: CTBA
+        mov dword [ahci_clb + 4], 0   ; PRDBC
         mov eax, ahci_ct
-        mov [ahci_clb + 12], eax
-        mov dword [ahci_clb + 16], 0
+        mov [ahci_clb + 8], eax       ; CTBA (baixo)
+        mov dword [ahci_clb + 12], 0  ; CTBA (alto)
         ; ---- CFIS (H2D register) ----
         mov r13, ahci_ct
         ; zera os 128 primeiros bytes (CFIS + ACMD)
