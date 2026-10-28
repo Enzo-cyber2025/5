@@ -84,7 +84,10 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=False,
-    console=False,               # janela gráfica; use --console para depurar
+    # Console ligado de propósito: bibliotecas nativas (PyTorch/OpenMP) escrevem
+    # em stdout/stderr e, sem console, o processo morre com 0xC0000005. O jogo
+    # esconde a janela do console quando ela é só dele (duplo clique).
+    console=True,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,

@@ -20,6 +20,33 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "src
 
 VERSION = "1.0.0"
 
+def _esconder_console_propria() -> None:
+    """Esconde a janela do console quando ela foi criada para o jogo.
+
+    Se você abriu o jogo por um terminal, o console é seu e fica visível; se
+    abriu com duplo clique, o console é só do jogo e é escondido.
+    """
+    if os.name != "nt" or not getattr(sys, "frozen", False):
+        return
+    if os.path.basename(sys.executable).lower() != "raceai2d.exe":
+        return                                  # RaceAI2D-console.exe mostra mesmo
+    try:
+        import ctypes
+        k32 = ctypes.windll.kernel32
+        k32.GetConsoleProcessList.argtypes = [ctypes.POINTER(ctypes.c_uint32),
+                                              ctypes.c_uint32]
+        k32.GetConsoleProcessList.restype = ctypes.c_uint32
+        k32.GetConsoleWindow.restype = ctypes.c_void_p
+        k32.ShowWindow.argtypes = [ctypes.c_void_p, ctypes.c_int]
+        k32.ShowWindow.restype = ctypes.c_int
+        n = ctypes.c_uint32(0)
+        k32.GetConsoleProcessList(ctypes.byref(n), 1)
+        if n.value <= 1:                        # ninguém mais usando: esconde
+            k32.ShowWindow(k32.GetConsoleWindow(), 0)
+    except Exception:
+        pass
+
+
 def _conserta_saida_nativa() -> None:
     """Em .exe de janela não existe console — e isso derruba bibliotecas nativas.
 
@@ -75,6 +102,7 @@ class _NullStream:
         return None
 
 
+_esconder_console_propria()
 _conserta_saida_nativa()
 
 # diagnóstico opcional: RACEAI_DIAG_LOG=caminho joga toda a saída num arquivo
@@ -352,6 +380,7 @@ def selftest() -> int:
 
 
 def main(argv=None) -> int:
+    print(f"[diag] main.py iniciado · argv={sys.argv[1:]}", flush=True)
     argv = sys.argv[1:] if argv is None else list(argv)
     hidden = handle_hidden_flags(argv)
     if hidden is not None:
