@@ -126,7 +126,7 @@ e1000_tx:
         add rdx, rax
         mov [rdx], rbx                      ; endereço
         mov [rdx + 8], r12w                 ; comprimento
-        mov byte [rdx + 11], 0x16           ; EOP | IFCS | RS
+        mov byte [rdx + 11], 0x0B           ; EOP(1) | IFCS(2) | RS(8)
         mov byte [rdx + 12], 0
         ; TDT++
         mov rax, [e1000_base]
