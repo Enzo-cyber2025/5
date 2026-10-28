@@ -501,6 +501,13 @@ net_dhcp:
         mov [net_mask], eax
         mov dword [arp_valid], 0
 .out:
+        ; diag: contadores de TX/RX do caminho DHCP
+        mov rdi, s_dhcp_diag
+        call k_log
+        mov edi, [net_pkts_tx]
+        call k_log_hex
+        mov edi, [net_pkts_rx]
+        call k_log_hex
         pop r13
         pop r12
         pop rbx
@@ -1233,6 +1240,7 @@ s_http_tail:  db 10, "User-Agent: EnzoFox/1.0 (EnzoOS)", 10, 10, 0
 
 section .kdata
 s_dhcp_tx:    db "[net] discover enviado", 0
+s_dhcp_diag:  db "[net] fim do DHCP: tx/rx:", 0
 s_dhcp_off:   db "[net] oferta recebida", 0
 s_dhcp_to:    db "[net] sem resposta", 0
 s_dhcp_ok:    db "[net] ack recebido", 0

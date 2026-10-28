@@ -92,8 +92,13 @@ k_e1000_init:
         mov dword [e1000_rx_next], 0
         mov dword [e1000_tx_next], 0
         mov dword [e1000_ok], 1
-        mov dword [net_pkts_rx], 0
-        mov dword [net_pkts_tx], 0
+.err:
+        mov rdi, s_tx_err
+        call k_log
+.err2:
+        mov rdi, s_tx_err2
+        call k_log
+        mov eax, -1
         mov rdi, s_e1000_ok
         call k_log
 .done:
@@ -127,7 +132,7 @@ e1000_tx:
         add rdx, rax
         mov [rdx], rbx                      ; endereço
         mov [rdx + 8], r12w                 ; comprimento
-        mov byte [rdx + 11], 0x0B           ; EOP | IFCS | RS
+        mov byte [rdx + 11], 0x16           ; EOP | IFCS | RS
         mov byte [rdx + 12], 0
         ; TDT++
         mov rax, [e1000_base]
@@ -153,7 +158,11 @@ e1000_tx:
         xor eax, eax
         jmp .out
 .err:
+        mov rdi, s_tx_err
+        call k_log
 .err2:
+        mov rdi, s_tx_err2
+        call k_log
         mov eax, -1
 .out:
         pop r13
@@ -213,6 +222,8 @@ e1000_rx_poll:
         ret
 
 section .kdata
+s_tx_err:  db "[e1000] TX recusado (len/estado)", 0
+s_tx_err2: db "[e1000] TX sem confirmacao DD", 0
 align 16
 e1000_rxdesc: times E1000_NDESC * 16 db 0
 e1000_txdesc: times E1000_NDESC * 16 db 0
