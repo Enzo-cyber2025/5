@@ -152,10 +152,22 @@ typedef struct {
      * reconstructed, so the opcode reported is the one the decoder saw, prefixes
      * and all. */
     tr_reason   reason;
+    /* How many instructions were planned successfully before the refusal. This is
+     * the field that makes the refusal mean something: 0 says the entry point's
+     * very first instruction is not in the subset, while a larger number says the
+     * function translated for a while and then met something - which is a
+     * different problem with a different fix, and in particular raises the
+     * question of whether discovery followed a branch into data that happens to
+     * lie inside the same section. Without it, "refused at opcode 00" cannot be
+     * told apart from "wandered into a jump table". */
+    uint32_t    fail_insns;
     uint64_t    fail_va;
     uint8_t     fail_op[3];
     uint8_t     fail_op_len;
     uint8_t     fail_map;          /* 0=base, 1=0F, 2=0F38, 3=0F3A */
+    int         fail_from_plan;    /* 1 when the refusal was raised after planning,
+                                    * so fail_op holds no opcode and must not be
+                                    * read as one */
     uint8_t     fail_rex;
     uint8_t     fail_modrm;
     int         fail_has_modrm;

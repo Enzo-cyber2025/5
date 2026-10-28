@@ -91,6 +91,13 @@ typedef struct {
     uint32_t    functions_attempted;
     uint32_t    functions_translated;
     uint32_t    functions_refused;
+    /* Refused at the entry point's first instruction, or after translating for a
+     * while. Different causes, different fixes: the first says the subset does not
+     * cover the prologue, the second says discovery reached something further in -
+     * possibly data lying inside a code section. */
+    uint32_t    refused_at_first_insn;
+    uint32_t    refused_deeper;
+    uint32_t    deepest_refusal;
     uint64_t    host_code_bytes;  /* ARM64 bytes actually written to the cache */
     uint32_t    indirect_unresolved;
     uint32_t    decode_refusals;

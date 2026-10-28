@@ -522,7 +522,7 @@ jobs:
           # what to implement next, ordered by how many functions each unblocks.
           block=$(grep -E 'stopped at opcode|refused: ' /tmp/prewarm.log \
                   | head -14 | tr '\n' '|' | tr -d '%\r' | tr -s ' ' | cut -c1-1200)
-          cov=$(grep -E '^functions ' /tmp/prewarm.log | tr '\n' '|' | tr -s ' ')
+          cov=$(grep -E '^functions |^  refused ' /tmp/prewarm.log | tr '\n' '|' | tr -s ' ')
           echo "::notice title=prewarm-blocking::${cov} || BLOCKERS: ${block}"
           # Per-module entry-point accounting: this is what separates the dominant
           # refusal bucket into causes, which is the only way to know whether the

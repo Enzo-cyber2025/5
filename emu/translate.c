@@ -331,6 +331,22 @@ static int emit_const_f(tr_func *o, unsigned rd, uint64_t v)
     return 1;
 }
 
+/* Points the failure record at a specific planned instruction.
+ *
+ * Refusals raised after planning used to leave the record holding whatever the last
+ * decode happened to be, so a histogram built from it named an opcode that no
+ * function actually contained. fail_from_plan is set so the sweep can tell the two
+ * apart instead of counting a stale opcode. */
+static void blame(tr_func *out, const plan *p, uint32_t depth)
+{
+    out->fail_insns = depth;
+    out->fail_va = p->guest_va;
+    out->fail_op_len = 0;
+    out->fail_map = 0;
+    out->fail_from_plan = 1;
+    memset(out->fail_op, 0, sizeof(out->fail_op));
+}
+
 /* Plans one guest instruction: decides the operation, the registers, and how many
  * ARM64 words it will emit. No emission happens here, so the layout pass has sizes
  * before any displacement is needed. */
@@ -364,6 +380,7 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
         return TR_INVALID;
     }
     p->guest_len = in.len;
+    out->fail_from_plan = 0;
 
     /* Record this instruction as the candidate culprit before anything below can
      * refuse it. Every refusal path then reports the opcode the decoder really
@@ -590,7 +607,15 @@ tr_status tr_translate_function_at(const uint8_t *code, size_t code_len,
         plan p;
         tr_status st = plan_one(code, code_len, off, guest_va, resolve, user,
                                 &p, out);
-        if (st != TR_OK) { free(seen); return st; }
+        if (st != TR_OK) {
+            /* nplans is how many instructions made it through, so it is exactly the
+             * depth at which this one failed. Zero means the entry point's first
+             * instruction is not in the subset; larger means the function translated
+             * for a while and then met something, which is a different problem. */
+            out->fail_insns = (uint32_t)nplans;
+            free(seen);
+            return st;
+        }
         if (nplans >= TRF_MAX_INSN) {
             out->reason = TRR_OVERFLOW; out->detail = "more instructions than TRF_MAX_INSN";
             free(seen);
@@ -609,6 +634,7 @@ tr_status tr_translate_function_at(const uint8_t *code, size_t code_len,
             uint64_t t = p.target_va;
             if (t < guest_va || t - guest_va >= code_len) {
                 out->reason = TRR_LEAVES_FUNC; out->detail = "unconditional branch leaves the function";
+                blame(out, &p, (uint32_t)nplans);
                 free(seen); return TR_UNSUPPORTED;
             }
             if (!seen[t - guest_va]) {
@@ -624,6 +650,7 @@ tr_status tr_translate_function_at(const uint8_t *code, size_t code_len,
                 uint64_t t = p.target_va;
                 if (t < guest_va || t - guest_va >= code_len) {
                     out->reason = TRR_LEAVES_FUNC; out->detail = "conditional branch leaves the function";
+                blame(out, &p, (uint32_t)nplans);
                     free(seen); return TR_UNSUPPORTED;
                 }
                 if (!seen[t - guest_va]) {
@@ -638,6 +665,7 @@ tr_status tr_translate_function_at(const uint8_t *code, size_t code_len,
                 /* A function whose last instruction is not a RET has no return, so
                  * translating it would emit code that runs off the end. */
                 out->reason = TRR_NO_RET; out->detail = "function ends without a RET";
+                blame(out, &p, (uint32_t)nplans);
                 free(seen);
                 return TR_UNSUPPORTED;
             }
@@ -671,16 +699,20 @@ tr_status tr_translate_function_at(const uint8_t *code, size_t code_len,
         if (plans[i].op != P_JCC) continue;
         if (i == 0 || !plans[i - 1].sets_flags ||
             plans[i - 1].off + plans[i - 1].guest_len != plans[i].off) {
-            out->reason = TRR_FLAGS; out->detail = "a conditional branch would read flags this translator "
+            out->reason = TRR_FLAGS;
+            out->detail = "a conditional branch would read flags this translator "
                           "did not produce: it must be preceded immediately by a "
                           "modelled CMP or TEST";
+            blame(out, &plans[i], (uint32_t)i);
             return TR_UNSUPPORTED;
         }
         for (j = 0; j < nplans; j++) {
             if ((plans[j].op == P_JCC || plans[j].op == P_JMP) &&
                 plans[j].target_va == plans[i].guest_va) {
-                out->reason = TRR_FLAGS; out->detail = "a branch targets a conditional branch, so the flags "
+                out->reason = TRR_FLAGS;
+                out->detail = "a branch targets a conditional branch, so the flags "
                               "it reads would come from elsewhere";
+                blame(out, &plans[j], (uint32_t)i);
                 return TR_UNSUPPORTED;
             }
         }

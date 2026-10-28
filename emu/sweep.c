@@ -54,6 +54,9 @@ struct sweep_job {
 
     uint32_t    reason_hist[TRR_COUNT];
     uint32_t    opcode_hist[4][256];
+    uint32_t    refused_at_first_insn;
+    uint32_t    refused_deeper;
+    uint32_t    deepest_refusal;
 
     sweep_phase phase;
     size_t      translate_idx;
@@ -427,8 +430,16 @@ static int translate_entry(sweep_job *j, uint32_t mi, uint64_t va)
     if (st != TR_OK) {
         tr_reason r = (f.reason < TRR_COUNT) ? f.reason : TRR_INTERNAL;
         j->reason_hist[r]++;
-        if (f.fail_map < 4u)
+        /* Count an opcode only when the refusal actually came from planning that
+         * instruction. Counting one for a later refusal attributes the failure to
+         * whatever was decoded last, which is how a histogram ends up naming an
+         * opcode no function contained - and then sends the next change after the
+         * wrong thing. */
+        if (!f.fail_from_plan && f.fail_map < 4u && f.fail_op_len > 0)
             j->opcode_hist[f.fail_map][f.fail_op[0]]++;
+        if (f.fail_insns == 0) j->refused_at_first_insn++;
+        else                   j->refused_deeper++;
+        if (f.fail_insns > j->deepest_refusal) j->deepest_refusal = f.fail_insns;
         j->functions_refused++;
         return 0;
     }
@@ -567,6 +578,9 @@ void sweep_get_progress(const sweep_job *j, sweep_progress *out)
     out->functions_attempted = j->functions_attempted;
     out->functions_translated = j->functions_translated;
     out->functions_refused = j->functions_refused;
+    out->refused_at_first_insn = j->refused_at_first_insn;
+    out->refused_deeper = j->refused_deeper;
+    out->deepest_refusal = j->deepest_refusal;
     out->host_code_bytes = j->host_code_bytes;
     out->indirect_unresolved = j->indirect_unresolved;
     out->decode_refusals = j->decode_refusals;

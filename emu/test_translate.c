@@ -636,6 +636,46 @@ static void test_function_translation(void)
               "detail '%s' does not say parity is the reason", f.detail ? f.detail : "?");
     }
 
+    printf("the failure record names the instruction that actually failed\n");
+    {
+        /* push rbp: refused on the very first instruction, so the depth is 0 and
+         * the opcode is real and worth counting. */
+        static const uint8_t g[] = { 0x55, 0xC3 };
+        st = tr_translate_function(g, sizeof(g), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_UNSUPPORTED, "push rbp returned %s", tr_status_name(st));
+        CHECK(f.fail_insns == 0, "depth %u, expected 0 - the first instruction failed",
+              f.fail_insns);
+        CHECK(f.fail_from_plan == 0, "a planning refusal claimed to come from a plan");
+        CHECK(f.fail_op_len > 0 && f.fail_op[0] == 0x55u,
+              "recorded opcode %02X, expected 55 (push rbp)", f.fail_op[0]);
+    }
+    {
+        /* add rax,1 ; jz 0 ; ret - refused by the flag-liveness rule, which fires
+         * after planning. The record must point at the branch and must NOT offer
+         * an opcode, because the branch is not what the subset lacks. */
+        static const uint8_t g[] = { 0x48,0x83,0xC0,0x01, 0x74,0x00, 0xC3 };
+        st = tr_translate_function(g, sizeof(g), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_UNSUPPORTED, "flags case returned %s", tr_status_name(st));
+        CHECK(f.reason == TRR_FLAGS, "reason %s, expected flags",
+              tr_reason_name(f.reason));
+        CHECK(f.fail_from_plan == 1,
+              "a post-planning refusal did not mark itself, so its stale opcode "
+              "would be counted as the cause");
+        CHECK(f.fail_insns == 1, "depth %u, expected 1 (the jz is the second plan)",
+              f.fail_insns);
+    }
+    {
+        /* A function that never reaches a RET is also refused after planning. */
+        static const uint8_t g[] = { 0x48,0x31,0xC0, 0x48,0x83,0xC0,0x01 };
+        st = tr_translate_function(g, sizeof(g), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_UNSUPPORTED, "no-RET case returned %s", tr_status_name(st));
+        CHECK(f.reason == TRR_NO_RET, "reason %s, expected no-ret",
+              tr_reason_name(f.reason));
+        CHECK(f.fail_from_plan == 1, "the no-RET refusal did not mark itself");
+        CHECK(f.fail_insns == 2, "depth %u, expected 2 planned instructions",
+              f.fail_insns);
+    }
+
     printf("structural refusals\n");
     {
         static const uint8_t out[] = { 0x48,0x83,0xF8,0x00, 0x74,0x02, 0xEB,0x7F,

@@ -411,6 +411,13 @@ static void test_exports_are_entry_points(void)
           "top blocking opcode %02X in map %u, expected FF in map 0", top_op, top_map);
     CHECK(sweep_top_opcode(r.job, 1, &top_map, &top_op) == 0,
           "a second blocking opcode was invented");
+    /* The indirect jump is the entry point's first instruction, so the refusal is
+     * at depth 0 and its opcode is real. If this ever reports a deeper refusal,
+     * discovery has wandered past the entry point. */
+    CHECK(p.refused_at_first_insn == 1, "refused at first instruction: %u, expected 1",
+          p.refused_at_first_insn);
+    CHECK(p.refused_deeper == 0, "refused deeper: %u, expected 0", p.refused_deeper);
+    CHECK(p.deepest_refusal == 0, "deepest refusal %u, expected 0", p.deepest_refusal);
 
     rig_teardown(&r);
 }

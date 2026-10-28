@@ -120,6 +120,10 @@ static void print_summary(const sweep_progress *p, const ptc_cache *cache,
     printf("functions pre-translated:  %u  (%.2f%% of attempted)\n",
            p->functions_translated, pct_t);
     printf("functions refused:         %u\n", p->functions_refused);
+    printf("  refused at the entry point's first instruction: %u\n",
+           p->refused_at_first_insn);
+    printf("  refused after translating further in:           %u (deepest: %u "
+           "instructions)\n", p->refused_deeper, p->deepest_refusal);
     printf("ARM64 code written:        %llu bytes\n",
            (unsigned long long)p->host_code_bytes);
     printf("indirect branches unresolved: %u\n", p->indirect_unresolved);
