@@ -95,6 +95,7 @@ def dml_probe(force: bool = False) -> tuple[bool, str, str]:
     env = dict(os.environ)
     if not getattr(sys, "frozen", False):
         env["PYTHONPATH"] = os.pathsep.join(p for p in sys.path if p)
+    env.pop("RACEAI_DIAG_LOG", None)   # o filho não deve escrever no mesmo log
     # limpa o cache antes de testar: se o processo filho travar, o que fica
     # gravado é justamente "não funcionou" (e não um resultado antigo)
     _write_status(False, "teste interrompido", "")
