@@ -239,6 +239,7 @@ ahci_do_cmd:
         mov dword [ahci_clb + 12], 0  ; CTBA (alto)
         ; ---- CFIS (H2D register) ----
         mov r13, ahci_ct
+        mov r14, rcx               ; salva o buffer (o loop abaixo usa rcx!)
         ; zera os 128 primeiros bytes (CFIS + ACMD)
         xor ecx, ecx
         xor eax, eax
@@ -273,7 +274,7 @@ ahci_do_cmd:
         shr eax, 8
         mov [r13 + 13], al          ; contagem 8:15
         ; ---- PRDT: uma entrada, buffer inteiro ----
-        mov rax, rcx                ; endereço do buffer (físico = virtual)
+        mov rax, r14                ; endereço do buffer (físico = virtual)
         mov [r13 + 128], rax        ; DBA
         mov dword [r13 + 136], 0
         mov eax, edx
