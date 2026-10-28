@@ -89,8 +89,10 @@ jobs:
           set +e
           mkdir -p ci-logs/${{ github.run_id }}-verify
           cp .cache_gates.log ci-logs/${{ github.run_id }}-verify/log.txt 2>/dev/null || echo "sem log" > ci-logs/${{ github.run_id }}-verify/log.txt
-          f=$(ls -S dumps/*.dmp 2>/dev/null | tail -1)
-          if [ -f "$f" ] && [ "$(stat -c%s "$f")" -lt 30000000 ]; then cp "$f" "ci-logs/${{ github.run_id }}-demo/" && echo "dump commitado: $f"; fi
+          for f in dump-x64-*.dmp; do
+            [ -f "$f" ] || continue
+            if [ "$(stat -c%s "$f")" -lt 30000000 ]; then cp "$f" "ci-logs/${{ github.run_id }}-demo/" && echo "dump commitado: $f"; fi
+          done
           git config user.name "ci-diag"; git config user.email "ci-diag@users.noreply.github.com"
           git add ci-logs || true
           git commit -m "diag: train-verify run ${{ github.run_id }} [skip ci]" || true
@@ -3413,7 +3415,7 @@ jobs:
               New-Item -Path $ld -Force | Out-Null
               Set-ItemProperty -Path $ld -Name DumpType -Value 1
               Set-ItemProperty -Path $ld -Name DumpFolder -Value "$PWD\dumps"
-              Set-ItemProperty -Path $ld -Name DumpCount -Value 2
+              Set-ItemProperty -Path $ld -Name DumpCount -Value 10
               Trace "WER LocalDumps ATIVO (minidump em $PWD\dumps)"
             } catch { Trace "LocalDumps: $($_.Exception.Message)" }
             $vivo = Boot $exe $wdir "x64 dx11 SHIM WARP" @("-nointro") $null 120
@@ -3447,14 +3449,24 @@ jobs:
               Start-Sleep -Seconds 3
               $dumps = Get-ChildItem "$PWD\dumps" -Filter "*.dmp" -ErrorAction SilentlyContinue
               if ($dumps) {
-                foreach ($d in $dumps) { Trace ("dump: " + $d.Name + " " + [math]::Round($d.Length/1MB,1) + " MB") }
+                foreach ($d in $dumps) {
+                  Trace ("dump: " + $d.Name + " " + [math]::Round($d.Length/1MB,1) + " MB")
+                  # v78: copia IMEDIATA com nome estavel — DumpCount=2 da v77
+                  # deixou os crashes x86 dos fallbacks GL ROTACIONAREM (apagar)
+                  # o dump x64 antes do diag; agora o dump do boot SHIM sobrevive
+                  Copy-Item $d.FullName ("$PWD\dump-x64-" + $d.Name) -Force
+                }
                 $cdb = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
                 if (-not $cdb) { $cdb = Get-ChildItem "C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe" -ErrorAction SilentlyContinue | Select-Object -First 1 }
                 if ($cdb) {
                   Trace "cdb encontrado: $($cdb.FullName)"
                   $d = $dumps | Sort-Object LastWriteTime | Select-Object -Last 1
-                  $out = & $cdb.FullName -z $d.FullName -c "kv; q" 2>&1
-                  $out | Select-Object -First 60 | ForEach-Object { Trace "cdb: $_" }
+                  # v78: .symfix+.reload puxa os SIMBOLOS publicos da Microsoft
+                  # (o runner tem internet) — a stack com nomes reais denuncia a
+                  # funcao exata dentro do D3D10Warp; 120 linhas (60 cortava ANTES
+                  # da stack)
+                  $out = & $cdb.FullName -z $d.FullName -c ".symfix; .reload; kv 40; q" 2>&1
+                  $out | Select-Object -First 120 | ForEach-Object { Trace "cdb: $_" }
                 } else { Trace "cdb AUSENTE no runner — dump sera commitado sem analise" }
               } else { Trace "nenhum dump gerado (WER nao capturou?)" }
             } catch { Trace "dumps: $($_.Exception.Message)" }
