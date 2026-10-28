@@ -35,6 +35,14 @@ jobs:
             exit 1
           fi
 
+      - name: Fingerprint do build (annotations)
+        run: |
+          echo "::notice::kernel_md5=$(md5sum obj/kernel.bin | cut -d' ' -f1)"
+          echo "::notice::iso_md5=$(md5sum release/enzos.iso | cut -d' ' -f1)"
+          echo "::notice::nasm_v=$(nasm -v | head -1)"
+          strings -a obj/kernel.bin | grep -m1 "nao achado" || echo "::notice::SEM_STRING_app_diag"
+          strings -a obj/kernel.bin | grep -m1 "janela" || echo "::notice::SEM_STRING_janela"
+
       - name: Autoteste estático (formatos PE/ELF/ZIP/AXML/CEFS/ENZ)
         run: python3 tools/selftest.py release/enzos.iso
 
