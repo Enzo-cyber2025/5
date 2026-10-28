@@ -72,40 +72,43 @@ def _dml_probe_in_process() -> tuple[bool, str, str]:
     return True, "ok", nome
 
 
-def dml_probe(force: bool = False) -> tuple[bool, str, str]:
-    """Descobre se o DirectML funciona **sem derrubar o jogo**.
+def _probe_command() -> list[str]:
+    if getattr(sys, "frozen", False):
+        return [sys.executable, "--dml-probe"]
+    return [sys.executable, "-c",
+            "from raceai.ai.backend import run_dml_probe_command as r; raise SystemExit(r())"]
 
-    Criar o dispositivo DirectML pode matar o processo (0xC0000005) em
-    máquinas sem driver utilizável — isso não é capturável em Python. Então,
-    quando o jogo está congelado (exe), o teste roda em um processo separado
-    (`RaceAI2D --dml-probe`) e o resultado fica em cache.
+
+def dml_probe(force: bool = False) -> tuple[bool, str, str]:
+    """Descobre se o DirectML funciona **sem derrubar quem chamou**.
+
+    Criar o dispositivo DirectML derruba o processo (0xC0000005) em máquinas
+    sem driver de vídeo utilizável — isso não é capturável com `try/except`.
+    Por isso o teste roda num processo descartável e o resultado fica em cache
+    (`.dml_status.json`), reaproveitado nas próximas execuções.
     """
     if dml_disabled():
         return False, "desligado por RACEAI_NO_DML", ""
     cache = _read_status()
     if cache and not force and cache.get("torch") == _torch_version() and cache.get("ok"):
         return True, cache.get("motivo", "em cache"), cache.get("nome", "")
-    ok, motivo, nome = False, "", ""
-    if getattr(sys, "frozen", False):
-        try:
-            proc = subprocess.run([sys.executable, "--dml-probe"], timeout=240,
-                                  stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                  text=True, errors="replace")
-            lines = (proc.stdout or "").splitlines()
-            ok = proc.returncode == 0 and any("DMLPROBE OK" in ln for ln in lines)
-            nome = next((ln.split(":", 1)[1].strip() for ln in lines
-                         if ln.startswith("DMLPROBE NAME:")), "")
-            motivo = next((ln.split(":", 1)[1].strip() for ln in lines
-                           if ln.startswith("DMLPROBE ERRO:")), "")
-            if not ok and not motivo:
-                motivo = f"código de saída {proc.returncode}"
-        except Exception as exc:
-            ok, motivo = False, f"não foi possível testar: {type(exc).__name__}"
-    else:
-        try:
-            ok, motivo, nome = _dml_probe_in_process()
-        except Exception as exc:
-            ok, motivo = False, f"{type(exc).__name__}: {exc}"
+    env = dict(os.environ)
+    if not getattr(sys, "frozen", False):
+        env["PYTHONPATH"] = os.pathsep.join(p for p in sys.path if p)
+    try:
+        proc = subprocess.run(_probe_command(), timeout=300,
+                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                              text=True, errors="replace", env=env)
+        lines = (proc.stdout or "").splitlines()
+        ok = proc.returncode == 0 and any("DMLPROBE OK" in ln for ln in lines)
+        nome = next((ln.split(":", 1)[1].strip() for ln in lines
+                     if ln.startswith("DMLPROBE NAME:")), "")
+        motivo = next((ln.split(":", 1)[1].strip() for ln in lines
+                       if ln.startswith("DMLPROBE ERRO:")), "")
+        if not ok and not motivo:
+            motivo = f"processo de teste saiu com {proc.returncode}"
+    except Exception as exc:
+        ok, nome, motivo = False, "", f"não foi possível testar: {type(exc).__name__}"
     _write_status(ok, motivo, nome)
     return ok, motivo, nome
 
@@ -136,14 +139,21 @@ def torch_available() -> bool:
 
 
 def list_devices(prefer: str = "auto") -> list[tuple[str, str]]:
-    """Devolve [(id, descrição)] dos backends disponíveis nesta máquina."""
+    """Devolve [(id, descrição)] dos backends disponíveis nesta máquina.
+
+    O teste do DirectML só roda quando ele pode ser escolhido (`auto` ou
+    `dml`): assim, quem usa CPU não espera o processo de teste.
+    """
     opts: list[tuple[str, str]] = [("cpu", "CPU (numpy — sempre disponível)")]
+    quer_dml = (prefer or "auto").lower() in ("auto", "dml")
     try:
         import torch
         opts.append(("torch-cpu", f"CPU (PyTorch {torch.__version__})"))
         if torch.cuda.is_available():
             opts.append(("cuda", f"CUDA — {torch.cuda.get_device_name(0)}"))
-        if dml_disabled():
+        if not quer_dml:
+            opts.append(("dml", "DirectML (não testado)"))
+        elif dml_disabled():
             opts.append(("dml", "DirectML desligado (RACEAI_NO_DML)"))
         else:
             ok, motivo, nome = dml_probe()

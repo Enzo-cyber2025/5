@@ -148,6 +148,13 @@ O arquivo `.pt` é um `torch.save({"state_dict": ..., "meta": ...})` com camadas
 
 O jogo tenta, nesta ordem: **CUDA → DirectML → torch CPU → numpy**.
 
+**Segurança primeiro:** criar o dispositivo DirectML derruba o processo
+(0xC0000005) em algumas máquinas sem driver de vídeo utilizável, e isso não é
+capaz de ser capturado por `try/except`. Por isso o jogo **não arrisca**: o
+teste do DirectML roda num processo separado (`RaceAI2D --dml-probe`) e o
+resultado fica em cache no arquivo `.dml_status.json`. Se o teste falhar, o
+jogo abre em CPU e segue funcionando normalmente.
+
 - No Windows com `torch-directml` instalado, a inferência roda na GPU Intel
   (UHD 605) via DirectX 12. O HUD mostra o backend ativo e o tempo de
   inferência; `--bench` compara todos os disponíveis.
@@ -271,6 +278,8 @@ saturação dos pneus e a última ação. Saída: `[esterço, acelerador]` em [-
 | Tudo lento no N5030 | população 60–120, `F` em 8x, `decision_interval` 5, geração de 30 s, pista curta |
 | GPU mais lenta que CPU | normal com poucos agentes; aumente a população ou volte para `--device cpu` |
 | "DirectML indisponível" | instale `torch-directml` (Windows) ou use CPU; rode `--bench` |
+| DirectML testado e recusado | o teste travou numa execução anterior — o jogo passou a usar CPU. Apague `.dml_status.json` ou use o botão **Retestar GPU** em Configurações |
+| Quero desligar a GPU | defina `RACEAI_NO_DML=1` (variável de ambiente) ou use `--device cpu` |
 | Modelo incompatível | o número de raios/observações mudou; treine de novo ou ajuste `--rays` |
 | Carros "grudados" no muro | a parede tem atrito; é esperado perder tempo, não velocidade instantânea |
 | Nada abre (exe de janela) | rode `RaceAI2D-console.exe` e/ou veja `raceai_erro.log` |

@@ -12,6 +12,10 @@ Requisitos: Windows 10/11 64-bit. Não é necessário instalar Python.
   `torch-directml`. O jogo detecta e usa automaticamente (o HUD mostra o
   backend). Verifique com `RaceAI2D-console.exe --bench`.
 - Se a GPU não for detectada, ele cai para CPU e continua funcionando.
+- O teste da GPU roda num processo separado (para um driver problemático não
+  derrubar o jogo). O resultado fica em `.dml_status.json`, ao lado do `.exe`.
+  Em Configurações há um botão **Retestar GPU** para refazer o teste.
+- Para desligar a GPU de vez: crie a variável de ambiente `RACEAI_NO_DML=1`.
 
 ## Primeiros passos
 
@@ -26,6 +30,8 @@ Requisitos: Windows 10/11 64-bit. Não é necessário instalar Python.
 
 - **Não abriu nada?** Rode `RaceAI2D-console.exe` (mostra os erros) e procure
   `raceai_erro.log` na pasta.
+- **Mods/modelos não aparecem?** Se o jogo estiver em *Arquivos de Programas*,
+  os arquivos ficam em `%LOCALAPPDATA%\RaceAI2D` (mods, modelos e config).
 - **Lento?** Diminua a população em Configurações e use pistas curtas.
 - **Quer treinar sem janela (mais rápido)?** O executável aceita
   `RaceAI2D-console.exe --headless-train 100 --pop 150 --track kartodromo`.

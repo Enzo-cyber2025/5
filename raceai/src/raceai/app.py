@@ -767,7 +767,10 @@ class App:
             save_model(out, self.trainer.policy, unflatten(self.trainer.policy, genome), meta)
             screen.message(f"ONNX exportado: {os.path.basename(out)}", GOOD)
         except Exception as exc:
-            screen.message(f"falha no ONNX: {exc}", BAD)
+            msg = str(exc)
+            if "onnx" in msg.lower() and ("module" in msg.lower() or "import" in msg.lower()):
+                msg = "pacote 'onnx' não instalado (pip install onnx)"
+            screen.message(f"falha no ONNX: {msg}", BAD)
 
     def list_model_files(self):
         out = []
