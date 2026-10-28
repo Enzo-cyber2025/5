@@ -26,7 +26,7 @@ def dml_disabled() -> bool:
 
 
 def _status_file() -> str:
-    from . import mods
+    from .. import mods                 # raceai.ai.backend -> raceai.mods
     return os.path.join(mods.writable_dir(), ".dml_status.json")
 
 
@@ -95,31 +95,50 @@ def dml_probe(force: bool = False) -> tuple[bool, str, str]:
     env = dict(os.environ)
     if not getattr(sys, "frozen", False):
         env["PYTHONPATH"] = os.pathsep.join(p for p in sys.path if p)
+    # limpa o cache antes de testar: se o processo filho travar, o que fica
+    # gravado é justamente "não funcionou" (e não um resultado antigo)
+    _write_status(False, "teste interrompido", "")
     try:
         proc = subprocess.run(_probe_command(), timeout=300,
                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                               text=True, errors="replace", env=env)
         lines = (proc.stdout or "").splitlines()
-        ok = proc.returncode == 0 and any("DMLPROBE OK" in ln for ln in lines)
+        saida_ok = proc.returncode == 0 and any("DMLPROBE OK" in ln for ln in lines)
         nome = next((ln.split(":", 1)[1].strip() for ln in lines
                      if ln.startswith("DMLPROBE NAME:")), "")
         motivo = next((ln.split(":", 1)[1].strip() for ln in lines
                        if ln.startswith("DMLPROBE ERRO:")), "")
-        if not ok and not motivo:
+        if not saida_ok and not motivo:
             motivo = f"processo de teste saiu com {proc.returncode}"
     except Exception as exc:
-        ok, nome, motivo = False, "", f"não foi possível testar: {type(exc).__name__}"
+        saida_ok, nome, motivo = False, "", f"não foi possível testar: {type(exc).__name__}"
+
+    # o filho também grava o resultado em arquivo — é o que vale no .exe de
+    # janela, onde não existe console para ler a saída
+    status = _read_status() or {}
+    if status.get("torch") == _torch_version() and status.get("motivo") != "teste interrompido":
+        ok = bool(status.get("ok"))
+        nome = status.get("nome", nome)
+        motivo = status.get("motivo", motivo) or motivo
+    else:
+        ok = saida_ok
     _write_status(ok, motivo, nome)
     return ok, motivo, nome
 
 
 def run_dml_probe_command() -> int:
-    """Executado como `RaceAI2D --dml-probe` (processo descartável)."""
+    """Executado como `RaceAI2D --dml-probe` (processo descartável).
+
+    O resultado vai para o arquivo de status **e** para a saída padrão: no
+    executável de janela não há console, então só o arquivo sobrevive.
+    """
     try:
         ok, motivo, nome = _dml_probe_in_process()
     except BaseException as exc:            # noqa: BLE001 - o chamador só lê a saída
+        _write_status(False, f"{type(exc).__name__}: {exc}", "")
         print(f"DMLPROBE ERRO: {type(exc).__name__}: {exc}", flush=True)
         return 1
+    _write_status(ok, motivo, nome)
     if ok:
         print(f"DMLPROBE NAME: {nome}", flush=True)
         print("DMLPROBE OK", flush=True)

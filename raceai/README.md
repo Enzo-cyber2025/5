@@ -12,6 +12,13 @@ piloto IA      ->  rede neural MLP: sensores -> [esterço, acelerador]
 treino         ->  algoritmo genético (elitismo + torneio + mutação gaussiana)
 ```
 
+
+## Download
+
+**Release `exe-windows`:** https://github.com/Enzo-cyber2025/5/releases/tag/exe-windows
+→ baixe `RaceAI2D-windows.zip`, descompacte **a pasta inteira** e rode
+`RaceAI2D\RaceAI2D.exe`.
+
 ## Sumário
 
 - [Como usar](#como-usar)

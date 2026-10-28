@@ -107,6 +107,10 @@ jobs:
           $env:RACEAI_NO_DML = ""
           .\dist\RaceAI2D\RaceAI2D-console.exe --bench --bench-agents 120 --bench-seconds 3 2>&1 | Tee-Object -Append build.log
           .\dist\RaceAI2D\RaceAI2D-console.exe --dml-probe 2>&1 | Tee-Object -Append build.log
+          # o .exe de janela (sem console) também precisa conseguir iniciar
+          .\dist\RaceAI2D\RaceAI2D.exe --selftest
+          Write-Output ("exe de janela exit={0}" -f $LASTEXITCODE) | Out-File -Append build.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Write-Output ("selftest exit={0}" -f $selftest) | Out-File -Append build.log
           exit $selftest
 

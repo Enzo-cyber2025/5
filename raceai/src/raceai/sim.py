@@ -34,7 +34,7 @@ class SimConfig:
     max_crashes: int = 40
     time_penalty: float = 0.08        # por segundo vivo
     offtrack_penalty: float = 1.2     # por segundo fora da pista
-    crash_penalty: float = 4.0        # por batida
+    crash_penalty: float = 4.0        # por batida (valores maiores deixam a população medrosa)
     finish_bonus_per_second: float = 40.0
     spawn_rows: int = 0               # 0 = automático
 
@@ -289,7 +289,9 @@ class Simulation:
         half_len = self.track.length * 0.5
         ds = np.where(ds > half_len, ds - self.track.length, ds)
         ds = np.where(ds < -half_len, ds + self.track.length, ds)
-        # nenhum carro anda mais do que alguns metros por passo: corta saltos
+        # nenhum carro anda mais do que alguns metros por passo: corta saltos.
+        # o fator 3x é de propósito: na linha de dentro de uma curva fechada o
+        # progresso na linha de centro avança mais rápido que o carro (legítimo)
         max_ds = np.maximum(f.speed * dt * 3.0 + 1.0, 2.0)
         ds = np.clip(ds, -max_ds, max_ds)
         ds = np.where(alive, ds, 0.0)

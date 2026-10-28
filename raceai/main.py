@@ -20,6 +20,27 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "src
 
 VERSION = "1.0.0"
 
+class _NullStream:
+    """Saída descartada: no executável de janela não existe console."""
+
+    def write(self, *args, **kwargs):
+        return 0
+
+    def flush(self):
+        return None
+
+    def isatty(self):
+        return False
+
+    def reconfigure(self, *args, **kwargs):
+        return None
+
+
+if sys.stdout is None:                  # pragma: no cover
+    sys.stdout = _NullStream()
+if sys.stderr is None:
+    sys.stderr = _NullStream()
+
 # Windows com saída redirecionada usa cp1252 e quebra em acentos/ setas.
 try:                                    # pragma: no cover
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -240,9 +261,13 @@ def selftest() -> int:
     while not sim.all_dead() and steps < int(8.0 / cfg.dt):
         if sim.should_decide():
             obs, idx = sim.observe()
-            sim.set_actions(np.zeros((len(idx), 2), dtype=np.float32), idx)
+            acelera = np.tile(np.array([[0.0, 1.0]], dtype=np.float32), (len(idx), 1))
+            sim.set_actions(acelera, idx)
         sim.step()
         steps += 1
+    if sim.fleet.max_s.max() < 5.0:
+        print(f"FALHA: o carro não andou (distância {sim.fleet.max_s.max():.1f} m)")
+        return 1
     print(f"física: {steps} passos, distância máxima {sim.fleet.max_s.max():.1f} m, "
           f"sem NaN: {not np.isnan(sim.fleet.x).any()}")
 

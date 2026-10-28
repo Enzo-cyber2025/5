@@ -1,5 +1,11 @@
 # RaceAI 2D — executável Windows
 
+## Download
+
+**Release `exe-windows`:** https://github.com/Enzo-cyber2025/5/releases/tag/exe-windows
+→ baixe `RaceAI2D-windows.zip`, descompacte **a pasta inteira** e rode
+`RaceAI2D\RaceAI2D.exe`.
+
 ## Instalação
 
 1. Descompacte **toda a pasta** deste ZIP (o `.exe` precisa das DLLs que estão

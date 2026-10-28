@@ -322,6 +322,24 @@ def test_torch_backend_when_available():
     assert tested >= 1, "torch está instalado mas nenhum backend funcionou"
 
 
+def test_dml_probe_grava_status():
+    """O teste da GPU precisa gravar o resultado em arquivo (exe sem console)."""
+    from raceai.ai import backend
+    from raceai import mods
+
+    path = backend._status_file()
+    assert path.startswith(mods.writable_dir()), path
+    try:
+        backend.dml_probe(force=True)
+        status = backend._read_status()
+        assert status is not None and "ok" in status, \
+            "nenhum resultado do DirectML foi gravado"
+    finally:
+        if os.path.isfile(path):
+            os.remove(path)
+    print(f"  status gravado em {os.path.basename(path)}")
+
+
 def test_resolve_device_ignora_dml_desligado():
     """Com RACEAI_NO_DML=1 o auto não pode escolher 'dml' (isso travava o jogo)."""
     from raceai.ai import backend
