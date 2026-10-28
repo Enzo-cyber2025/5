@@ -67,7 +67,13 @@ jobs:
               tail -c 20000 screenshots/serial.log
               echo '```'
             } > /tmp/prc.md
-            gh pr comment ${{ github.event.pull_request.number }} --repo "$GITHUB_REPOSITORY" --body-file /tmp/prc.md || true
+            PRN=$(gh pr view --repo "$GITHUB_REPOSITORY" --json number --jq .number 2>/dev/null || true)
+            if [ -n "$PRN" ]; then
+              gh pr comment "$PRN" --repo "$GITHUB_REPOSITORY" --body-file /tmp/prc.md || true
+            else
+              echo "sem PR aberto para o branch; serial abaixo:"
+              cat /tmp/prc.md
+            fi
           fi
 
       - name: Upload da ISO + disco ENZFS
