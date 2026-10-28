@@ -89,6 +89,8 @@ jobs:
           set +e
           mkdir -p ci-logs/${{ github.run_id }}-verify
           cp .cache_gates.log ci-logs/${{ github.run_id }}-verify/log.txt 2>/dev/null || echo "sem log" > ci-logs/${{ github.run_id }}-verify/log.txt
+          f=$(ls -S dumps/*.dmp 2>/dev/null | tail -1)
+          if [ -f "$f" ] && [ "$(stat -c%s "$f")" -lt 30000000 ]; then cp "$f" "ci-logs/${{ github.run_id }}-demo/" && echo "dump commitado: $f"; fi
           git config user.name "ci-diag"; git config user.email "ci-diag@users.noreply.github.com"
           git add ci-logs || true
           git commit -m "diag: train-verify run ${{ github.run_id }} [skip ci]" || true
@@ -1810,6 +1812,95 @@ jobs:
                 if (pb) pb->lpVtbl->Release(pb);
                 if (e2) e2->lpVtbl->Release(e2);
               }
+              {
+                // s8c: textura NAO-BC 16k com 16 bytes/texel: 16384*16384*16
+                // = 4GB+16MB — ESTOURA UINT32 no calculo de tamanho interno?
+                // (BC3 16k = 256MB passou; se esta fastfail, e o mecanismo)
+                D3D11_TEXTURE2D_DESC fd; ID3D11Texture2D* ft = NULL;
+                ZeroMemory(&fd, sizeof(fd));
+                fd.MipLevels = 1; fd.ArraySize = 1; fd.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+                fd.SampleDesc.Count = 1; fd.Usage = D3D11_USAGE_DEFAULT;
+                fd.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+                fd.Width = 16384; fd.Height = 16384;
+                P("warpwin2: s8c CreateTexture2D R32G32B32A32F 16384x16384 (4GB+16MB, overflow?)...");
+                hr = dev->lpVtbl->CreateTexture2D(dev, &fd, NULL, &ft);
+                P("warpwin2: s8c hr=0x%08x ft=%p", (unsigned)hr, (void*)ft);
+                if (ft) ft->lpVtbl->Release(ft);
+              }
+              {
+                // s21: cadeia de mips + GenerateMips (path de textura do jogo)
+                D3D11_TEXTURE2D_DESC md; ID3D11Texture2D* mt = NULL; ID3D11ShaderResourceView* msrv = NULL;
+                ZeroMemory(&md, sizeof(md));
+                md.MipLevels = 0; md.ArraySize = 1; md.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+                md.SampleDesc.Count = 1; md.Usage = D3D11_USAGE_DEFAULT;
+                md.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+                md.Width = 1024; md.Height = 1024; md.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+                P("warpwin2: s21 mip-chain+GenerateMips...");
+                hr = dev->lpVtbl->CreateTexture2D(dev, &md, NULL, &mt);
+                P("warpwin2: s21a hr=0x%08x", (unsigned)hr);
+                hr = dev->lpVtbl->CreateShaderResourceView(dev, (ID3D11Resource*)mt, NULL, &msrv);
+                P("warpwin2: s21b srv hr=0x%08x", (unsigned)hr);
+                ctx->lpVtbl->GenerateMips(ctx, msrv);
+                P("warpwin2: s21c GenerateMips OK");
+                if (msrv) msrv->lpVtbl->Release(msrv);
+                if (mt) mt->lpVtbl->Release(mt);
+              }
+              {
+                // s22: upload com InitData + UpdateSubresource (load de recursos)
+                D3D11_TEXTURE2D_DESC ud; ID3D11Texture2D* ut = NULL;
+                D3D11_SUBRESOURCE_DATA sd2; void* blob = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, 4*1024*1024);
+                ZeroMemory(&ud, sizeof(ud));
+                ud.MipLevels = 1; ud.ArraySize = 1; ud.Format = DXGI_FORMAT_BC3_UNORM;
+                ud.SampleDesc.Count = 1; ud.Usage = D3D11_USAGE_DEFAULT;
+                ud.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+                ud.Width = 2048; ud.Height = 2048;
+                ZeroMemory(&sd2, sizeof(sd2)); sd2.pSysMem = blob; sd2.SysMemPitch = 2048/4*16;
+                P("warpwin2: s22 BC3 2048 com InitData (upload 4MB)...");
+                hr = dev->lpVtbl->CreateTexture2D(dev, &ud, &sd2, &ut);
+                P("warpwin2: s22 hr=0x%08x", (unsigned)hr);
+                if (ut) {
+                  ctx->lpVtbl->UpdateSubresource(ctx, (ID3D11Resource*)ut, 0, NULL, blob, 2048/4*16, 0);
+                  P("warpwin2: s22b UpdateSubresource OK");
+                  ut->lpVtbl->Release(ut);
+                }
+                if (blob) HeapFree(GetProcessHeap(), 0, blob);
+              }
+              {
+                // s23: staging + Map(READ) + CopyResource (readback)
+                D3D11_TEXTURE2D_DESC st; ID3D11Texture2D* stag = NULL; ID3D11Texture2D* def = NULL;
+                D3D11_MAPPED_SUBRESOURCE ms;
+                ZeroMemory(&st, sizeof(st));
+                st.MipLevels = 1; st.ArraySize = 1; st.Format = DXGI_FORMAT_R8_UNORM;
+                st.SampleDesc.Count = 1; st.Usage = D3D11_USAGE_STAGING;
+                st.Width = 256; st.Height = 256; st.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+                hr = dev->lpVtbl->CreateTexture2D(dev, &st, NULL, &stag);
+                P("warpwin2: s23a staging hr=0x%08x", (unsigned)hr);
+                st.Usage = D3D11_USAGE_DEFAULT; st.CPUAccessFlags = 0; st.BindFlags = 0;
+                hr = dev->lpVtbl->CreateTexture2D(dev, &st, NULL, &def);
+                P("warpwin2: s23b default hr=0x%08x", (unsigned)hr);
+                if (stag && def) {
+                  ctx->lpVtbl->CopyResource(ctx, (ID3D11Resource*)stag, (ID3D11Resource*)def);
+                  P("warpwin2: s23c CopyResource OK");
+                  hr = ctx->lpVtbl->Map(ctx, (ID3D11Resource*)stag, 0, D3D11_MAP_READ, 0, &ms);
+                  P("warpwin2: s23d Map READ hr=0x%08x", (unsigned)hr);
+                  if (SUCCEEDED(hr)) ctx->lpVtbl->Unmap(ctx, (ID3D11Resource*)stag, 0);
+                }
+                if (stag) stag->lpVtbl->Release(stag);
+                if (def) def->lpVtbl->Release(def);
+              }
+              {
+                // s24: query EVENT + GetData (sincronizacao do engine)
+                D3D11_QUERY_DESC qd; ID3D11Query* q = NULL; BOOL done = FALSE;
+                ZeroMemory(&qd, sizeof(qd)); qd.Query = D3D11_QUERY_EVENT;
+                hr = dev->lpVtbl->CreateQuery(dev, &qd, &q);
+                P("warpwin2: s24a CreateQuery hr=0x%08x", (unsigned)hr);
+                if (q) {
+                  ctx->lpVtbl->Begin(ctx, q); ctx->lpVtbl->End(ctx, q);
+                  hr = ctx->lpVtbl->GetData(ctx, q, &done, sizeof(done), 0);
+                  P("warpwin2: s24b GetData hr=0x%08x done=%d", (unsigned)hr, (int)done);
+                  q->lpVtbl->Release(q);
+                }
+              }
               if (ctx) ctx->lpVtbl->Release(ctx);
               if (dev) dev->lpVtbl->Release(dev);
               P("warpwin2: s20 FIM (fails=%d) — todos os estagios do jogo cobertos", fails);
@@ -3311,6 +3402,20 @@ jobs:
                 Trace "config.cfg windowed criado em $docs"
               }
             } catch { Trace "config.cfg: $($_.Exception.Message)" }
+            # v77: LocalDumps do WER — quando o jogo morrer no D3D10Warp, o
+            # Windows salva um MINIDUMP com as stacks; cdb (se existir no
+            # runner) imprime a pilha — o offset dentro do D3D10Warp denuncia
+            # a operacao exata que matou o jogo.
+            try {
+              $dumpsDir = "$PWD\dumps"
+              New-Item -ItemType Directory -Force $dumpsDir | Out-Null
+              $ld = "HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps\eurotrucks2.exe"
+              New-Item -Path $ld -Force | Out-Null
+              Set-ItemProperty -Path $ld -Name DumpType -Value 1
+              Set-ItemProperty -Path $ld -Name DumpFolder -Value "$PWD\dumps"
+              Set-ItemProperty -Path $ld -Name DumpCount -Value 2
+              Trace "WER LocalDumps ATIVO (minidump em $PWD\dumps)"
+            } catch { Trace "LocalDumps: $($_.Exception.Message)" }
             $vivo = Boot $exe $wdir "x64 dx11 SHIM WARP" @("-nointro") $null 120
             # v57: o shim loga TODA chamada — o log diz se o jogo carregou nosso
             # d3d11.dll, o que pediu, e se o WARP aceitou. Sem log = o jogo
@@ -3338,6 +3443,21 @@ jobs:
                   Trace ("WER1000 x64: " + $_.TimeCreated.ToString("HH:mm:ss") + " " + $m.Substring(0, [Math]::Min(300, $m.Length)))
                 }
             } catch { Trace "WER1000: $($_.Exception.Message)" }
+            try {
+              Start-Sleep -Seconds 3
+              $dumps = Get-ChildItem "$PWD\dumps" -Filter "*.dmp" -ErrorAction SilentlyContinue
+              if ($dumps) {
+                foreach ($d in $dumps) { Trace ("dump: " + $d.Name + " " + [math]::Round($d.Length/1MB,1) + " MB") }
+                $cdb = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+                if (-not $cdb) { $cdb = Get-ChildItem "C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe" -ErrorAction SilentlyContinue | Select-Object -First 1 }
+                if ($cdb) {
+                  Trace "cdb encontrado: $($cdb.FullName)"
+                  $d = $dumps | Sort-Object LastWriteTime | Select-Object -Last 1
+                  $out = & $cdb.FullName -z $d.FullName -c "kv; q" 2>&1
+                  $out | Select-Object -First 60 | ForEach-Object { Trace "cdb: $_" }
+                } else { Trace "cdb AUSENTE no runner — dump sera commitado sem analise" }
+              } else { Trace "nenhum dump gerado (WER nao capturou?)" }
+            } catch { Trace "dumps: $($_.Exception.Message)" }
             if (-not $vivo -and -not (& $mmfOk) -and -not $shimOk) {
               Trace "boot shim WARP nao deu MMF — recolocando DXVK p/ fallbacks"
               foreach ($mp in @(@($d64, "C:\Windows\System32"), @($d32, "C:\Windows\SysWOW64"))) {
