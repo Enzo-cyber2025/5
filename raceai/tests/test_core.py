@@ -322,6 +322,21 @@ def test_torch_backend_when_available():
     assert tested >= 1, "torch está instalado mas nenhum backend funcionou"
 
 
+def test_resolve_device_ignora_dml_desligado():
+    """Com RACEAI_NO_DML=1 o auto não pode escolher 'dml' (isso travava o jogo)."""
+    from raceai.ai import backend
+
+    os.environ["RACEAI_NO_DML"] = "1"
+    try:
+        dev, desc = backend.resolve_device("auto")
+        assert dev != "dml", f"auto escolheu DirectML desligado ({desc})"
+        b = backend.create_backend(PolicySpec(obs_dim=6, hidden=(8,), act_dim=2), 4, "dml")
+        assert b.device_id != "dml", "create_backend entrou no DirectML desligado"
+        print(f"  auto -> {dev} · dml forçado caiu em {b.device_id}")
+    finally:
+        os.environ.pop("RACEAI_NO_DML", None)
+
+
 def test_trainer_generation_and_save():
     from raceai.trainer import Trainer
     trk = _track("kartodromo")

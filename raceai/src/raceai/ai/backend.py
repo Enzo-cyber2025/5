@@ -171,11 +171,12 @@ def resolve_device(prefer: str = "auto", verbose: bool = False) -> tuple[str, st
     """Escolhe o backend. Retorna (id, descrição)."""
     prefer = (prefer or "auto").lower()
     available = {k: v for k, v in list_devices(prefer)}
+    ruim = ("indisponível", "indisponible", "desligado", "não testado")
 
     def pick(candidates, fallback="cpu"):
         for c in candidates:
-            if c in available and "indisponível" not in available[c].lower() \
-                    and "indisponible" not in available[c].lower():
+            desc = available.get(c, "indisponível").lower()
+            if c in available and not any(x in desc for x in ruim):
                 return c
         return fallback
 
@@ -341,6 +342,11 @@ def create_backend(spec: PolicySpec, n_agents: int = 1, device_id: str = "auto")
     """Cria o melhor backend disponível para o device pedido."""
     if device_id in (None, "", "auto"):
         device_id, _ = resolve_device("auto")
+    if device_id == "dml":
+        # nunca arrisca: criar o dispositivo DirectML derruba o processo se o
+        # driver não colaborar, então só entra se o teste em cache passou
+        if not torch_available() or dml_disabled() or not dml_probe()[0]:
+            device_id = "torch-cpu" if torch_available() else "cpu"
     if device_id == "cpu" or device_id == "numpy":
         return NumpyBackend(spec, n_agents)
     if torch_available():

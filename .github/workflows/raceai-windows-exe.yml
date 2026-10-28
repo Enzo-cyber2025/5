@@ -104,6 +104,7 @@ jobs:
           $env:RACEAI_NO_DML = "1"
           .\dist\RaceAI2D\RaceAI2D-console.exe --selftest 2>&1 | Tee-Object -Append build.log
           $selftest = $LASTEXITCODE
+          $env:RACEAI_NO_DML = ""
           .\dist\RaceAI2D\RaceAI2D-console.exe --bench --bench-agents 120 --bench-seconds 3 2>&1 | Tee-Object -Append build.log
           .\dist\RaceAI2D\RaceAI2D-console.exe --dml-probe 2>&1 | Tee-Object -Append build.log
           Write-Output ("selftest exit={0}" -f $selftest) | Out-File -Append build.log
@@ -155,7 +156,7 @@ jobs:
           retention-days: 30
 
       - name: Publicar na release exe-windows
-        if: github.event_name == 'workflow_dispatch' && inputs.publish
+        if: (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && github.ref == 'refs/heads/arena/5d450bd0-5' && success())
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
