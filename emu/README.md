@@ -616,7 +616,61 @@ em tempo de chamada**, porque é a diferença entre "produzimos N traduções" e
 "conseguimos executar N traduções".
 
 **259 checks** no tradutor (eram 168), incluindo as guards verificadas lendo as
-permissões do mapeamento em `/proc/self/maps`. Suite do projeto: **819**.
+permissões do mapeamento em `/proc/self/maps`.
+
+Executado em ARM64 real e sob QEMU, com marcador próprio no CI:
+
+```
+EXECUTED ON aarch64: guest stack model - locals, exact stack arithmetic,
+push/pop agreement, and a runaway contained by a guard page
+```
+
+#### O que o modelo de pilha revelou em seguida
+
+Com o prólogo destravado, a medição no bundle real mudou de forma informativa:
+`refused_at_first_insn` caiu de **64 para 62** e apareceu
+**`refused_deeper: 2 (deepest: 1)`** com **`2 function(s) stopped at opcode E8`**.
+`E8` é `call rel32`. As duas entradas do `.exe` deixaram de morrer na primeira
+instrução — o `sub rsp, N` traduziu — e o bloqueio seguinte agora tem nome: uma
+chamada direta a outra função do guest.
+
+E isso deu a pista para os outros 62. Se `fail_op_len == 0`, `fail_insns == 0` e a
+razão é `unsupported-opcode`, então o `plan_one` **nunca rodou**: a recusa veio de
+uma guarda anterior ao passe 1. Reproduzido aqui — um buffer cuja primeira
+instrução é um `RET` simples, traduzível à vontade, devolve exatamente esse
+registro quando `code_len` passa do teto.
+
+Ou seja: os 62 **nunca foram 62 opcodes não suportados**. Eram 62 funções que o
+tradutor **nunca examinou**, porque a varredura entrega a seção de código inteira
+(commit `503979a`, e por bom motivo: limitar a função a uma janela recusa quase
+todas as reais) e a seção daquele módulo passava do teto de 1 MiB. A recusa
+carregava `TRR_UNSUPPORTED_OP`, o valor com que o registro é inicializado antes do
+passe 1 — indistinguível, num histograma, de uma função cuja primeira instrução
+realmente estava fora do subconjunto.
+
+Três correções:
+
+- **`TRR_BUFFER`**, uma razão que diz "o buffer foi rejeitado antes de decodificar
+  uma instrução". Setada no teto de tamanho, nos casos NULL e vazio, na alocação
+  das marcas e no `start_off` além do fim — que tinha o mesmo defeito e não setava
+  razão nenhuma.
+- O teto sobe de 1 MiB para **`TRF_MAX_CODE_BYTES` (256 MiB)**. O `.text` de um
+  módulo real chega a centenas de megabytes; um teto que o rejeita rejeita **todas**
+  as exportações do módulo.
+- As marcas de descoberta passam a **um bit por byte** do guest em vez de um byte.
+  O bitmap é um oitavo da seção, e é o que torna o teto maior pagável — ele é
+  alocado e liberado por ponto de entrada.
+
+`pushf` também passou a setar a razão, não só o detalhe: seus chamadores retornam
+`TR_OVERFLOW` diretamente e deixariam o sentinela no lugar, o mesmo defeito em outro
+caminho.
+
+Um teste fixa a granularidade do bitmap, que é onde uma regressão se esconderia:
+dez `push` de um byte compartilham um único byte do bitmap, e uma marca
+byte-granular perderia todos depois do primeiro — emitindo uma tradução **curta
+que ainda consiste de palavras válidas**.
+
+Suite do projeto: **832**.
 
 ### Não feito
 
@@ -783,6 +837,17 @@ No modelo de pilha do guest:
   não falhou. Nada lia `reason` quando o status era `TR_OK` — exatamente por isso
   valia corrigir: o primeiro chamador que lesse construiria um histograma contando
   sucessos como recusas.
+- O segundo maior balde de recusas num binário real — **62 pontos de entrada** —
+  era uma **etiqueta errada**, não uma instrução faltando. Todas as 62 eram
+  reportadas como `unsupported-opcode` sem opcode, sem profundidade e sem plano, e
+  a causa era um teto de tamanho de buffer anterior ao passe 1 que vazava o valor
+  inicial do registro. Sessenta e duas funções que o tradutor nunca olhou foram
+  reportadas como 62 que ele tinha examinado e achado fora do subconjunto. O que
+  expôs foi o próprio modelo de pilha: ao destravar o prólogo, as duas entradas do
+  `.exe` passaram a morrer **uma instrução depois**, e essa mudança de profundidade
+  é o que tornou visível que as outras 62 tinham profundidade zero *sem* opcode.
+  Um balde de recusa que mistura "não examinei" com "examinei e não sei traduzir"
+  manda o trabalho para o lugar errado.
 - Três expectativas erradas eram dos próprios testes, não do tradutor: contei as
   palavras emitidas esquecendo o registro de quadro. `push rax; pop rax` entre dois
   ajustes de RSP são 7 palavras, não 6; `push -1` são 9, e o `MOVZ` está no índice
