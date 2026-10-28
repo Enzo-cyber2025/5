@@ -98,6 +98,24 @@ k_e1000_init:
 .err2:
         mov rdi, s_tx_err2
         call k_log
+        ; diag: ler de volta TCTL/TDBAL/TDH/TDT/RCTL/STATUS + descritor
+        mov rax, [e1000_base]
+        mov rdi, [rax + 0x0400]
+        call k_log_hex
+        mov rdi, [rax + 0x3800]
+        call k_log_hex
+        mov rdi, [rax + 0x3810]
+        call k_log_hex
+        mov rdi, [rax + 0x3818]
+        call k_log_hex
+        mov rdi, [rax + 0x0100]
+        call k_log_hex
+        mov rdi, [rax + 0x0008]
+        call k_log_hex
+        mov rdi, [e1000_txdesc + 0]
+        call k_log_hex
+        mov rdi, [e1000_txdesc + 8]
+        call k_log_hex
         mov eax, -1
         mov rdi, s_e1000_ok
         call k_log
