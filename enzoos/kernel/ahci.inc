@@ -142,6 +142,8 @@ k_ahci_init:
 .ident_fail:
         mov rdi, s_ahci_ident_fail
         call k_log
+        mov edi, [ahci_fail_at]
+        call k_log_hex
         ; diag da porta: PxCMD, PxCI, PxTFD, PxSERR, PxSSTS, PxIS
         mov rax, [ahci_port]
         mov rdi, [rax + 0x18]
@@ -209,6 +211,7 @@ ahci_do_cmd:
         jz .ci_free
         dec ebx
         jnz .wait_ci
+        mov dword [ahci_fail_at], 1 ; esperando CI livre
         mov eax, -1
         jmp .ret
 .ci_free:
@@ -283,6 +286,7 @@ ahci_do_cmd:
         jz .chk_tfd
         dec ebx
         jnz .wait
+        mov dword [ahci_fail_at], 2 ; CI nao voltou a 0
         mov eax, -1
         jmp .ret
 .chk_tfd:
@@ -291,6 +295,7 @@ ahci_do_cmd:
         jz .ok
         dec ebx
         jnz .wait
+        mov dword [ahci_fail_at], 3 ; TFD com BSY/DRQ
         mov eax, -1
         jmp .ret
 .ok:
@@ -345,6 +350,7 @@ align 16
 ahci_ident: times 512 db 0          ; dados do IDENTIFY
 
 ahci_ok:      dd 0
+ahci_fail_at: dd 0
 ahci_ident_done: dd 0
 ahci_abar:    dq 0
 ahci_pi:      dd 0
