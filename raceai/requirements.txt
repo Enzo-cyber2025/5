@@ -1,0 +1,8 @@
+# Ambiente de execução (jogo e treinador)
+numpy>=1.24,<2.2
+pygame-ce>=2.4,<2.6
+
+# Inferência em GPU (Windows): PyTorch + DirectML (Intel/AMD/NVIDIA via DX12).
+# No Windows instale também (após o torch CPU):
+#   pip install --no-deps torch-directml
+# Sem eles o jogo continua funcionando em CPU (numpy) e salva/carrega .npz.

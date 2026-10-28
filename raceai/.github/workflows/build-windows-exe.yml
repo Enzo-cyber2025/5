@@ -1,0 +1,98 @@
+name: Build Windows EXE (RaceAI 2D)
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publicar na release 'exe-windows'"
+        type: boolean
+        default: true
+  push:
+    branches: ["arena/**"]
+    paths:
+      - "raceai/**"
+      - ".github/workflows/build-windows-exe.yml"
+      - "raceai.spec"
+      - "requirements.txt"
+      - "requirements-build.txt"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          architecture: "x64"
+
+      - name: Instalar PyTorch CPU + DirectML + dependências
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch==2.4.1 --index-url https://download.pytorch.org/whl/cpu
+          pip install --no-deps torch-directml==0.2.5.dev240914
+          pip install -r requirements-build.txt
+          pip install -r requirements.txt
+
+      - name: Mostrar versões e backends
+        run: |
+          python -c "import sys, numpy, pygame, torch; print('python', sys.version.split()[0]); print('numpy', numpy.__version__); print('pygame', pygame.__version__); print('torch', torch.__version__)"
+          python -c "import torch_directml; print('DirectML:', torch_directml.device_name(0))"
+
+      - name: Testes (núcleo + interface headless)
+        run: python tests/run_tests.py
+
+      - name: Build do executável (PyInstaller)
+        run: pyinstaller raceai.spec --noconfirm --clean
+
+      - name: Smoke test do executável
+        run: |
+          .\dist\RaceAI2D\RaceAI2D-console.exe --selftest
+          .\dist\RaceAI2D\RaceAI2D-console.exe --bench --bench-agents 120 --bench-seconds 3
+
+      - name: Empacotar (zip)
+        id: zip
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force -Path package | Out-Null
+          Copy-Item INSTALL.md package\  -ErrorAction SilentlyContinue
+          Copy-Item README.md package\   -ErrorAction SilentlyContinue
+          Copy-Item MODS.md package\     -ErrorAction SilentlyContinue
+          7z a -tzip -mx=5 -mmt=on "package\RaceAI2D-windows.zip" ".\dist\RaceAI2D\*"
+          $zip = Get-Item "package\RaceAI2D-windows.zip"
+          "size_mb={0}" -f [math]::Round($zip.Length/1MB,1) >> $env:GITHUB_OUTPUT
+          if ($zip.Length -gt 1900MB) {
+            Remove-Item "package\RaceAI2D-windows.zip"
+            7z a -tzip -mx=5 -mmt=on -v1900m "package\RaceAI2D-windows.zip" ".\dist\RaceAI2D\*"
+          }
+          Get-ChildItem package | Select-Object Name, @{n='MB';e={[math]::Round($_.Length/1MB,1)}}
+
+      - name: Artefato do build
+        uses: actions/upload-artifact@v4
+        with:
+          name: RaceAI2D-windows
+          path: package/*.zip*
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publicar na release exe-windows
+        if: github.event_name == 'workflow_dispatch' && inputs.publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $ErrorActionPreference = 'Continue'
+          gh release view exe-windows | Out-Null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create exe-windows --title "RaceAI 2D — executável Windows" --notes "Gerado automaticamente pelo workflow build-windows-exe.yml (branch $env:GITHUB_REF_NAME, commit $env:GITHUB_SHA)."
+          }
+          gh release upload exe-windows (Get-ChildItem package/*.zip*) --clobber
