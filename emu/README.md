@@ -540,15 +540,93 @@ mostra apenas imports **estáticos**, então para um módulo com `LoadLibrary` o
 `GetProcAddress` as porcentagens são um **limite inferior** e o relatório diz isso e
 conta quantas funções dessas existem.
 
-**71 checks** no classificador. Suite do projeto: **700**.
+**71 checks** no classificador.
+
+### Feito — modelo de pilha do guest (`gstack.c`, `gstack.h`)
+
+Este marco veio de uma medição, não de uma preferência. A varredura de um bundle
+real encontrou **64 pontos de entrada que são código de verdade** e traduziu
+**nenhum**, e os 64 foram recusados **na primeira instrução**. Dois deles — as
+entradas do `.exe` — foram recusados no opcode `0x83` com razão
+`register-unmapped`, que é `sub rsp, N`: o ajuste de quadro com que um prólogo
+real abre, recusado apenas porque RSP não tinha registrador hospedeiro.
+
+O RSP do guest mapeia para **X14** e o RBP para **X15**. Ambos são *callee-saved*
+na AAPCS, e isso é o motivo da escolha, não conveniência: uma tradução que usa a
+pilha os salva como registro de quadro, e uma função hospedeira alcançada por um
+import resolvido os preserva através da chamada **sem que nada seja emitido**.
+
+Eles **não** são o SP hospedeiro. AArch64 exige SP alinhado a 16 bytes em toda
+interface pública; x86-64 garante só 8. Compartilhar o SP transformaria cada
+ajuste ímpar do guest numa falha de alinhamento.
+
+**O endereço da arena não é embutido no código.** Quem chama o fornece em X14.
+Assim a tradução continua sendo função pura dos bytes do guest e permanece válida
+num cache que sobrevive ao processo — que é um dos três requisitos pedidos. Um
+teste afirma a consequência: uma tradução que só usa a pilha não materializa
+nenhuma constante absoluta.
+
+Passou a traduzir: `push`/`pop r64`, `push imm32`/`imm8`, `leave`, `sub`/`add rsp,
+imm`, qualquer movimento reg-reg envolvendo RSP ou RBP, e `mov` de/para
+`[rbp-disp]` e `[rsp+disp]`.
+
+Recusado em vez de mirado, cada caso com razão própria:
+
+- **deslocamento não-negativo a partir de RBP** — alcança o quadro do *chamador*
+  (RBP salvo, endereço de retorno, argumentos de pilha). Este modelo põe o
+  endereço de retorno em X30 e os argumentos em registradores, então ler ali
+  devolveria lixo da arena **com forma de valor**.
+- **deslocamento negativo a partir de RSP** — a *red zone* do SysV, não mapeada
+  abaixo da arena.
+- **`push rsp` e `pop rsp`** — o próprio x86 é ambíguo sobre se o valor empurrado
+  é o ponteiro pré- ou pós-decremento, e o `STR` pré-indexado do ARM64 responde o
+  contrário. Diferença de 8 bytes numa palavra que será lida depois.
+- **`ret imm16`** — desempilha argumentos e portanto muda o ponteiro de pilha do
+  chamador, que o epílogo restaura incondicionalmente.
+- **qualquer base que não seja RSP ou RBP** — ainda não existe modelo geral de
+  memória do guest, então dereferenciar através de RAX não tem para onde apontar.
+
+Duas codificações se parecem exatamente com uma base de pilha e não são, e ambas
+são verificadas explicitamente porque tratar qualquer uma como base lê a memória
+errada **sem sintoma visível**: `mod=00 rm=101` é RIP-relativo, não `[RBP]`; e
+`mod=00` com `SIB base=101` é um `disp32` absoluto **sem base nenhuma**. O
+decodificador entrega os dois como `sib_base == 5` / `rm == 5`, o mesmo valor que
+RBP tem.
+
+A arena fica entre **duas páginas `PROT_NONE`**. O confinamento vem do kernel, não
+de checagens emitidas: uma checagem custa instruções em cada `push`, e um laço que
+empilha a cada iteração derrota qualquer limite calculado uma vez. O caso
+desgarrado é **executado de propósito** na suíte — um laço que empilha para sempre
+tem que morrer na página de guarda.
+
+O epílogo restaura X14 e X15 aos valores de entrada, o que torna o ponteiro de
+pilha do guest **balanceado no retorno incondicionalmente**: qualquer ajuste que o
+guest tenha feito, um retorno antecipado não entrega um ponteiro torto ao
+chamador.
+
+O que isto **não** resolve, dito antes de ser descoberto: `call [rip+disp32]` emite
+`BLR` passando o estado de registradores do guest sem alteração. Isso é correto
+quando o destino é código do guest também traduzido, compartilhando este mapeamento
+— que é o que o teste de ponta a ponta exercita. **Não** é correto para uma função
+hospedeira de verdade, que espera argumentos em X0..X7 pela AAPCS enquanto o guest
+os deixou em RCX, RDX, R8, R9. Essa ponte é trabalho separado e não está feito.
+
+A varredura agora reporta quantas das funções traduzidas **precisam de uma arena
+em tempo de chamada**, porque é a diferença entre "produzimos N traduções" e
+"conseguimos executar N traduções".
+
+**259 checks** no tradutor (eram 168), incluindo as guards verificadas lendo as
+permissões do mapeamento em `/proc/self/maps`. Suite do projeto: **819**.
 
 ### Não feito
 
-Operandos de memória além do slot de import RIP-relativo, **modelo de pilha do
-guest** (e portanto `push`/`pop`, `call` direto interno, prólogos reais e
-desenrolar de exceções/SEH), SIMD, as flags que o subconjunto não produz (paridade,
-ajuste, e flags de `mul`/`div`/rotação/shift), relocações aplicadas, resolução de
-imports em escala e a ponte Win32/API-set para cada função importada, loader de ELF, mapeamento real da imagem em
+Operandos de memória **fora da pilha do guest** (o slot de import RIP-relativo e
+os locais em `[rbp-]`/`[rsp+]` são os únicos), `call rel32` direto para outra
+função do guest, desenrolar de exceções/SEH, SIMD, as flags que o subconjunto não
+produz (paridade, ajuste, e flags de `mul`/`div`/rotação/shift), a **ponte de
+convenção de chamada guest→hospedeiro** descrita acima, relocações aplicadas,
+resolução de imports em escala e a ponte Win32/API-set para cada função importada,
+loader de ELF, mapeamento real da imagem em
 memória com relocações aplicadas, resolução de imports e de API sets, camada de
 syscalls/Win32, D3D→Vulkan, e o app Android em si — inclusive a ligação desta
 varredura ao `WorkManager` e ao estado real de tela apagada, que hoje é modelada
@@ -678,6 +756,38 @@ Na varredura:
   `0x2042`) ao lado dos offsets calculados que ninguém usava. O compilador apontou
   as duas variáveis gravadas e não lidas, o que era o sintoma de que o valor real e
   o valor chutado podiam divergir em silêncio.
+
+No modelo de pilha do guest:
+
+- O helper que provocava a falha na página de guarda era chamado **duas vezes**:
+  uma na condição do `CHECK` e outra nos argumentos da mensagem. O macro avalia a
+  condição e, em caso de falha, também os argumentos — então cada asserção fazia
+  dois `fork()` e a mensagem reportava um sinal **diferente do que foi testado**.
+  Chamada agora é feita uma vez e guardada numa variável.
+- A mesma asserção falhava sob AddressSanitizer por um motivo que não era um bug
+  no código testado: o ASan intercepta `SIGSEGV`, imprime um relatório e sai com
+  código não-zero, então `WIFSIGNALED` é falso e o número do sinal nunca chega ao
+  pai. Perguntar "qual sinal chegou" tem resposta diferente por build; perguntar
+  "a escrita se completou" tem a mesma em todas. A propriedade de confinamento
+  passou a ser afirmada **diretamente**, lendo as permissões do mapeamento em
+  `/proc/self/maps` (`---p` nas duas guards, `rw-p` na região utilizável), em vez
+  de ser inferida de uma falha entregue a alguém.
+- `MAP_ANONYMOUS` fica atrás de `__USE_MISC`, que `-std=c11` desliga. Se a flag é
+  visível dependia de qual glibc o build usava: exposta na 2.39 do runner aarch64,
+  oculta na 2.36 daqui — o mesmo código compilava lá e falhava cá. Pedir o conjunto
+  de features explicitamente removeu a dependência, e isso expôs uma colisão
+  latente: o teste definia `static void bzero(buf*, size_t)` sobre o `bzero` POSIX,
+  que só não colidia enquanto a libc estivesse oculta.
+- Uma tradução **bem-sucedida** deixava `out->reason` no sentinela de antes do
+  passe 1, ou seja, um resultado que deu certo vinha rotulado com a razão pela qual
+  não falhou. Nada lia `reason` quando o status era `TR_OK` — exatamente por isso
+  valia corrigir: o primeiro chamador que lesse construiria um histograma contando
+  sucessos como recusas.
+- Três expectativas erradas eram dos próprios testes, não do tradutor: contei as
+  palavras emitidas esquecendo o registro de quadro. `push rax; pop rax` entre dois
+  ajustes de RSP são 7 palavras, não 6; `push -1` são 9, e o `MOVZ` está no índice
+  1 porque o índice 0 é o prólogo — a falha imprimiu `0xA9BF3FEE` e eu tinha
+  assertido sobre ele como se fosse a constante.
 
 ## Limitação deste ambiente
 

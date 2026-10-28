@@ -1,3 +1,11 @@
+/* MAP_ANONYMOUS lives behind __USE_MISC in glibc, which -std=c11 turns off. On
+ * glibc 2.36 it is hidden and this file does not compile; on the aarch64 runner's
+ * 2.39 it is exposed and it does, so the failure only ever appeared on one host.
+ * Asking for the default feature set removes the dependency. */
+#ifndef _DEFAULT_SOURCE
+#define _DEFAULT_SOURCE 1
+#endif
+
 /* Execute machine code this program wrote itself.
  *
  * This is the verification method for the ARM64 emitter, established before the

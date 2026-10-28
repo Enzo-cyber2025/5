@@ -7,6 +7,18 @@ TARGETS  = test_ptc test_x86 test_pe test_sweep test_translate test_api test_emi
 all: test
 
 test: $(TARGETS)
+	@# Compile the aarch64-only code paths on every host. They cannot EXECUTE here,
+	@# but they can be syntax-checked, and the difference matters: a -Wshadow error
+	@# in a helper inside #if defined(__aarch64__) reached CI as a failed build on
+	@# two runners instead of being caught locally in one second. Forcing the macro
+	@# compiles the guarded blocks against this host's headers, which is enough to
+	@# catch shadowing, undeclared identifiers and format mismatches in them.
+	@if [ "$$(uname -m)" != aarch64 ]; then \
+	   echo "syntax-checking the aarch64-only paths on a $$(uname -m) host"; \
+	   $(CC) $(CFLAGS) -D__aarch64__ -fsyntax-only test_translate.c test_emit_exec.c; \
+	 else \
+	   echo "host is aarch64: the guarded paths are compiled by the build above"; \
+	 fi
 	./test_ptc
 	@echo
 	./test_x86

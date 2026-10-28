@@ -1536,13 +1536,13 @@ static void test_guest_stack_translation(void)
 
 #if defined(__aarch64__)
 /* Appends MOVZ/MOVK for a 64-bit constant and returns the new length. */
-static size_t append_const(uint32_t *buf, size_t n, unsigned rd, uint64_t v)
+static size_t append_const(uint32_t *prog, size_t n, unsigned rd, uint64_t v)
 {
     unsigned sh;
-    buf[n++] = a64_movz_x(rd, (uint16_t)(v & 0xFFFFu));
+    prog[n++] = a64_movz_x(rd, (uint16_t)(v & 0xFFFFu));
     for (sh = 16u; sh < 64u; sh += 16u) {
         uint16_t c = (uint16_t)((v >> sh) & 0xFFFFu);
-        if (c) buf[n++] = a64_movk_x(rd, c, sh);
+        if (c) prog[n++] = a64_movk_x(rd, c, sh);
     }
     return n;
 }
