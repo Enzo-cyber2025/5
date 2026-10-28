@@ -13,6 +13,9 @@
 %ifndef SWAP_INC
 %define SWAP_INC
 
+; índice da primeira entrada do PD que cobre o heap (HEAP_START = 4 MB)
+%define SWAP_PD_BASE   (HEAP_START >> 21)
+
 section .ktext
 
 ; -----------------------------------------------------------------------------
@@ -73,14 +76,22 @@ k_swap_init:
         test rax, rax
         jz .off
         mov r14, rax                        ; novo PD
-        mov r15d, 32
+        ; [0, 4 MB) e [SWAP_PD_BASE+32, 1 GB): páginas grandes de 2 MB
+        ; (identidade); [4 MB, 68 MB) fica para as PTs do .pt_loop
+        mov r15d, 0
 .fill_pd_huge:
+        cmp r15d, 2
+        jb .pd_huge_set
+        cmp r15d, SWAP_PD_BASE + 32
+        jb .pd_huge_skip
         cmp r15d, 512
         jae .pd_done
+.pd_huge_set:
         mov eax, r15d
         shl eax, 21                         ; 2 MB
         or eax, 0x83
         mov [r14 + r15*8], rax
+.pd_huge_skip:
         inc r15d
         jmp .fill_pd_huge
 .pd_done:
@@ -121,10 +132,13 @@ k_swap_init:
         inc ecx
         cmp ecx, 512
         jb .fill
-        ; liga a PT no diretório
+        ; liga a PT no diretório — a PT #i cobre o heap a partir de
+        ; HEAP_START + i*2 MB, ou seja, a entrada SWAP_PD_BASE+i do PD
         mov rax, r14
         or rax, 3
-        mov [r13 + r15*8], rax
+        mov rdx, r15
+        add rdx, SWAP_PD_BASE
+        mov [r13 + rdx*8], rax
         inc r15d
         jmp .pt_loop
 .pts_done:
