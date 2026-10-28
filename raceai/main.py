@@ -47,10 +47,51 @@ def parse_args(argv=None):
                    help="atalho para --headless-train")
     p.add_argument("--out", default=os.path.join("modelos", "modelo.pt"))
     p.add_argument("--bench", action="store_true", help="mede o desempenho dos backends e sai")
+    p.add_argument("--debug-imports", action="store_true",
+                   help="mostra o traceback completo da importação de torch/DirectML e sai")
     p.add_argument("--bench-agents", type=int, default=120)
     p.add_argument("--bench-seconds", type=float, default=3.0)
     p.add_argument("--version", action="store_true")
     return p.parse_args(argv)
+
+
+def debug_imports() -> int:
+    """Imprime exatamente por que torch/DirectML não carregam (para depurar o exe)."""
+    import traceback
+
+    print(f"RaceAI 2D {VERSION} — diagnóstico de importação")
+    print(f"executável: {sys.executable}")
+    print(f"frozen: {getattr(sys, 'frozen', False)} · _MEIPASS: "
+          f"{getattr(sys, '_MEIPASS', '-')}")
+    print(f"sys.path: {sys.path[:6]}")
+    for mod in ("numpy", "pygame", "torch", "torch_directml", "onnx", "onnxruntime"):
+        try:
+            m = __import__(mod)
+            print(f"  OK     {mod} {getattr(m, '__version__', '')} -> {getattr(m, '__file__', '')}")
+        except Exception:
+            print(f"  FALHA  {mod}: {traceback.format_exc().strip().splitlines()[-1]}")
+            print("      " + "\n      ".join(traceback.format_exc().strip().splitlines()[-6:-1]))
+    try:
+        import torch
+
+        print("  torch.cuda disponível:", torch.cuda.is_available())
+        x = torch.zeros((2, 1, 4), dtype=torch.float32)
+        w = torch.zeros((2, 3, 4), dtype=torch.float32)
+        y = torch.matmul(x, w.transpose(1, 2))
+        print("  matmul em batch:", tuple(y.shape))
+    except Exception:
+        print("  FALHA no cálculo torch: " +
+              traceback.format_exc().strip().splitlines()[-1])
+    try:
+        import torch_directml
+
+        d = torch_directml.device()
+        t = torch.zeros((2, 2), device=d)
+        print("  DirectML ok:", d, "· tensor:", tuple(t.shape))
+    except Exception:
+        print("  DirectML indisponível: " +
+              traceback.format_exc().strip().splitlines()[-1])
+    return 0
 
 
 def bench(agents: int = 120, seconds: float = 3.0, track_name: str = "kartodromo",
@@ -222,6 +263,8 @@ def main(argv=None) -> int:
     if args.bench:
         return bench(args.bench_agents, args.bench_seconds,
                      args.track or "kartodromo", args.car or "gt")
+    if args.debug_imports:
+        return debug_imports()
 
     generations = args.headless_train or args.headless_generations
     if generations:

@@ -86,6 +86,7 @@ jobs:
         id: smoke
         run: |
           Write-Output "== FASE: smoke test ==" | Out-File -Append build.log
+          .\dist\RaceAI2D\RaceAI2D-console.exe --debug-imports 2>&1 | Tee-Object -Append build.log
           .\dist\RaceAI2D\RaceAI2D-console.exe --selftest 2>&1 | Tee-Object -Append build.log
           $selftest = $LASTEXITCODE
           .\dist\RaceAI2D\RaceAI2D-console.exe --bench --bench-agents 120 --bench-seconds 3 2>&1 | Tee-Object -Append build.log

@@ -49,11 +49,11 @@ try:
 except Exception:
     pass
 
+# Cuidado: excluir submódulos do torch quebra o import (NameError em SymInt etc.).
+# Só o que realmente não é usado entra aqui.
 excludes = [
     "matplotlib", "scipy", "PIL", "tkinter", "notebook", "IPython",
-    "pytest", "setuptools._distutils", "torchvision", "torchaudio",
-    "torch._dynamo", "torch._inductor", "torch.distributions",
-    "torch.testing", "torch.onnx._internal", "triton",
+    "pytest", "torchvision", "torchaudio",
 ]
 
 a = Analysis(
