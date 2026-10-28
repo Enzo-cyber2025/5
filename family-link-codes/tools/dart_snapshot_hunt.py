@@ -29,6 +29,9 @@ import zipfile
 PRINTABLE = re.compile(rb"[ -~]{5,}")
 
 CONCEPT = (
+    "ttlseconds",
+    "validity",
+    "secretid",
     "parentaccesscode",
     "parent_access_code",
     "accesscode",
@@ -134,7 +137,8 @@ def context_lines(text: str, span: int = 3) -> list[str]:
     return out
 
 
-KEY_HINTS = ("ttl", "valid", "drift", "secret", "expir", "interval", "code", "clock")
+# narrow on purpose: "code" alone matches thousands of unrelated identifiers
+KEY_HINTS = ("secret", "ttl", "drift", "accesscode", "parentaccess", "familylinkappconfig")
 
 
 def candidate_keys(text: str) -> list[str]:
