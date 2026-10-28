@@ -357,21 +357,8 @@ def main():
     if ahci_hex:
         print("diag: %s" % ahci_hex)
 
-    # linhas do panic (vec/rip/cr2/dumps) — o que mais importa agora
-    try:
-        i = next(i for i, l in enumerate(slines) if "PANICO" in l)
-        print("=== panic ===")
-        print("; ".join(slines[i:i+13]))
-    except StopIteration:
-        print("=== panic: nenhum ===")
-    # diag PCI: as leituras cruas após 'laço principal'
-    try:
-        i = next(i for i, l in enumerate(slines) if "la" + "\u00e7" + "o principal" in l)
-        print("=== diag pci (00:1f.2 / 00:00.0 / dev2 / dev1) ===")
-        print(" ; ".join(slines[i+1:i+5]))
-    except StopIteration:
-        pass
-    # trace AHCI do QEMU por ultimo
+    # trace AHCI do QEMU primeiro (o cap de annotations do GitHub mostra
+    # so as ~10 ultimas linhas do output — o bloco critico vem por ultimo)
     try:
         with open(os.path.join(outdir, "qtrace.log")) as f:
             qtl = [l.rstrip() for l in f]
@@ -381,7 +368,34 @@ def main():
         print("\n".join(kw[-8:]) if kw else "(nenhum)")
     except Exception as e:
         print("(sem qtrace: %s)" % e)
+    # diag PCI: as leituras cruas após 'laço principal'
+    try:
+        i = next(i for i, l in enumerate(slines) if "la" + "\u00e7" + "o principal" in l)
+        print("=== diag pci (00:1f.2 / 00:00.0 / dev2 / dev1) ===")
+        print(" ; ".join(slines[i+1:i+5]))
+    except StopIteration:
+        pass
+    # linhas do panic (vec/rip/cr2/dumps)
+    panic = ""
+    try:
+        i = next(i for i, l in enumerate(slines) if "PANICO" in l)
+        panic = slines[i] + " | " + (slines[i+1] if i+1 < len(slines) else "")
+    except StopIteration:
+        pass
+    # ===== bloco final: o que as annotations do CI vao mostrar =====
+    print("=== resumo do boot ===")
+    for tag in ["[enzfs]", "[e1000]", "[net]"]:
+        hits = [l for l in slines if tag in l]
+        print("%-9s %s" % (tag + ":", hits[0] if hits else "(ausente)"))
+    print("[ahci]:   %s" % ahci_line)
+    print("panic:    %s" % (panic[:160] if panic else "nenhum"))
+    print("=== serial (ultimas 4) ===")
+    print("\n".join(slines[-4:]))
     if not ok:
+        if "[net] conectado via DHCP" not in log:
+            print("FALHOU: e1000/DHCP nao conectou (serial sem '[net] conectado')")
+        if "[enzfs] volume montado" not in log:
+            print("FALHOU: ENZFS nao montou o disco AHCI")
         sys.exit(1)
     print("OK: rede e1000+DHCP e ENZFS validados pelo serial.")
 
