@@ -47,7 +47,7 @@ jobs:
 
       - name: Instalar PyTorch CPU 2.4.1 + DirectML + dependências
         run: |
-          Write-Output "== FASE: dependências =="
+          Write-Output "== FASE: dependências ==" | Out-File -Append build.log
           python -m pip install --upgrade pip
           pip install torch==2.4.1 --index-url https://download.pytorch.org/whl/cpu
           pip install --no-deps torch-directml==0.2.5.dev240914
@@ -58,13 +58,15 @@ jobs:
         run: |
           Write-Output "== FASE: versões ==" | Out-File -Append build.log
           python -c "import sys, numpy, pygame, torch; print('python', sys.version.split()[0]); print('numpy', numpy.__version__); print('pygame', pygame.__version__); print('torch', torch.__version__)" 2>&1 | Tee-Object -Append build.log
-          python -c "import torch_directml; print('DirectML ok:', torch_directml.device_name(0))" 2>&1 | Tee-Object -Append build.log
+          python -c "import torch_directml; print('DirectML ok:', torch_directml.device_name(0) or '(nome vazio)')" 2>&1 | Tee-Object -Append build.log
+          $env:PYTHONPATH = "src"
           python -c "from raceai.ai.backend import list_devices; [print('backend', k, '-', v) for k, v in list_devices()]" 2>&1 | Tee-Object -Append build.log
+          Remove-Item Env:\PYTHONPATH -ErrorAction SilentlyContinue
 
       - name: Testes (núcleo + interface headless)
         id: testes
         run: |
-          Write-Output "== FASE: testes =="
+          Write-Output "== FASE: testes ==" | Out-File -Append build.log
           python tests/run_tests.py 2>&1 | Tee-Object -Append build.log
           Write-Output ("exit={0}" -f $LASTEXITCODE) | Out-File -Append build.log
           exit $LASTEXITCODE
