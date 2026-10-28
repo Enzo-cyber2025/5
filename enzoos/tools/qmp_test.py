@@ -250,26 +250,28 @@ def main():
         # 13. FILES: navegador do ENZFS (disco AHCI persistente)
         launch_menu_app(6)                 # FILES.ENZ (7º app da ISO)
         q.sleep(2)
-        q.shot("13-files", outdir)
+        print("::notice::passo 13-files ok"); q.shot("13-files", outdir)
 
         # 14. EnzoFox: HTTP REAL pela e1000 (10.0.2.2:8000 = host)
         launch_menu_app(7)                 # FOX.ENZ
         q.sleep(1.5)
         q.key("ret")                       # Enter baixa a URL padrão
+        print("::notice::passo 14-fox: enter enviado, aguardando HTTP");
         print("aguardando o HTTP (ate 10 s)...")
         q.sleep(10)
-        q.shot("14-fox", outdir)
+        print("::notice::passo 14-fox shot"); q.shot("14-fox", outdir)
 
         # 15. SysMon: swap, HPET, uptime
         launch_menu_app(8)                 # SYSMON.ENZ
         q.sleep(2)
-        q.shot("15-sysmon", outdir)
+        print("::notice::passo 15-sysmon ok"); q.shot("15-sysmon", outdir)
 
         # 16. Mandelbrot: app escrito na linguagem ENZ (enzc.py)
         launch_menu_app(9)                 # MANDEL.ENZ
         q.sleep(4)
-        q.shot("16-mandel", outdir)
+        print("::notice::passo 16-mandel ok"); q.shot("16-mandel", outdir)
     except Exception as e:
+        print("::error::excecao no teste: %s" % repr(e)[:200])
         print("--- QEMU morreu no meio do teste: %s ---" % repr(e))
         # serial resumido
         try:
@@ -330,6 +332,17 @@ def main():
         except Exception as e3:
             print("(sem pcap no timeout: %s)" % e3)
         sys.stdout.flush()
+        try:
+            with open(serial) as f:
+                dlog = f.read()
+            for pat in ("[net] conectado", "[net] HTTP ok", "[hda]", "panic"):
+                hits = [l for l in dlog.splitlines() if pat in l]
+                for h in hits[-6:]:
+                    print("::notice::%s" % h[:200])
+            for h in dlog.splitlines()[-12:]:
+                print("::notice::tail %s" % h[:200])
+        except Exception:
+            pass
         try:
             q.quit()
         except Exception:
