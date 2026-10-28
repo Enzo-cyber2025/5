@@ -1270,7 +1270,11 @@ jobs:
     # MESMO LUGAR — o jogo NUNCA chegou a rodar). Windows2022-Readme.md no
     # actions/runner-images confirma a imagem ativa (20261012) — e a familia
     # de imagem onde llvmpipe GL 4.6 ja funcionou (run 38623540416).
-    runs-on: windows-2022
+    # v79: TROCADO para windows-latest (Server 2025 / WARP 26100) — o dump da
+    # v78 provou que o crash e fastfail (int 29h) NO JIT do D3D10Warp do 2022
+    # (20348) durante CDevice::CreatePixelShader de um shader do jogo. WARP
+    # mais novo = JIT com o bug corrigido.
+    runs-on: windows-latest
     timeout-minutes: 360  # max do Actions. CDN varia de 16 MB/s (v9: 6 min)
                           # a <1 MB/s (v13: >190 min) — 360 cobre o pior caso
                           # com folga para cache+extracao+boot+MMF.
@@ -1430,6 +1434,7 @@ jobs:
           # inteiras 3x SEM concluir 1 boot — sem rastro, sem diagnostico).
           # O trace e commitado pelo Diag e diz exatamente onde o tempo foi.
           $traceF = "$PWD\sobe-trace.log"
+          Trace ("SO build " + (Get-CimInstance Win32_OperatingSystem).BuildNumber + " — v79 windows-latest p/ WARP novo (crash v78 = fastfail no JIT do D3D10Warp 20348 em CreatePixelShader)")
           function Trace([string]$m) {
             Add-Content -Path $traceF -Value ("[{0}] {1}" -f (Get-Date -Format HH:mm:ss), $m) -ErrorAction SilentlyContinue
           }
