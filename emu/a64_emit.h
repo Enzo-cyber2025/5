@@ -113,6 +113,56 @@ uint32_t a64_b_cond(unsigned cond, int32_t words);
 uint32_t a64_b(int32_t words);
 uint32_t a64_bl(int32_t words);
 
+/* ---- load/store forms the guest stack model needs -------------------------
+ *
+ * Everything below is derived from the same field layout as the frame record
+ * above, and the derivation is checked against these two words, which have
+ * already been executed on aarch64 hardware:
+ *   a64_stp_pre(29, 30, 31, -16)  == 0xA9BF7BFD   STP X29,X30,[SP,#-16]!
+ *   a64_ldp_post(29, 30, 31, 16)  == 0xA8C17BFD   LDP X29,X30,[SP],#16
+ * Both assertions live in the test suite, so a change to the shared derivation
+ * breaks a test that names the hardware-proven constant rather than drifting.
+ *
+ * The guest stack pointer lives in a general register (X14), not in the host SP.
+ * Two reasons, both of which would otherwise cost correctness:
+ *   - AArch64 requires SP to be 16-byte aligned at every public interface, while
+ *     x86-64 only ever guarantees 8. Putting the guest RSP in the host SP would
+ *     make every odd-sized guest adjustment an alignment fault.
+ *   - X14 and X15 are callee-saved in the AAPCS, so a host function reached
+ *     through a resolved import preserves the guest stack pointer for free.
+ *     A translator-scratch register like X16/X17 would not survive the call.
+ */
+
+/* STP/LDP with a signed offset scaled by 8. mode: pre-index (writeback before
+ * the access) or post-index (writeback after). off must be a multiple of 8 in
+ * -512..504; a64_pair_range_ok reports that so the caller can refuse instead of
+ * emitting a wrapped displacement, which would address a different slot. */
+int      a64_pair_range_ok(int off);
+uint32_t a64_stp_pre(unsigned rt, unsigned rt2, unsigned rn, int off);
+uint32_t a64_ldp_post(unsigned rt, unsigned rt2, unsigned rn, int off);
+
+/* STR/LDR with a single register. pre-index is what `push` compiles to and
+ * post-index is what `pop` compiles to; the writeback is what advances the guest
+ * stack pointer, so push and pop cannot drift from the value they store.
+ * off is a signed byte count in -256..255. */
+int      a64_imm9_range_ok(int off);
+uint32_t a64_str_pre(unsigned rt, unsigned rn, int off);
+uint32_t a64_ldr_post(unsigned rt, unsigned rn, int off);
+
+/* STUR/LDUR - unscaled offset, the form a stack local needs. The scaled unsigned
+ * offset form only reaches non-negative displacements, and locals live at
+ * [rbp-8], [rbp-16], ... so the signed unscaled form is the one that works. */
+uint32_t a64_stur(unsigned rt, unsigned rn, int off);
+uint32_t a64_ldur(unsigned rt, unsigned rn, int off);
+
+/* The guest stack frame record: saves the caller's X14 (guest RSP) and X15
+ * (guest RBP). Saving them is what makes the guest stack pointer balanced at
+ * return even if the guest code returned early and never undid its own
+ * adjustment, and it is also what the AAPCS requires of a callee that uses
+ * callee-saved registers. */
+uint32_t a64_stp_gstack_push(void);   /* STP X14, X15, [SP, #-16]! */
+uint32_t a64_ldp_gstack_pop(void);    /* LDP X14, X15, [SP], #16   */
+
 /* Non-zero when words fits the branch's field, so the caller can refuse. */
 int a64_cond_range_ok(int32_t words);
 int a64_b_range_ok(int32_t words);

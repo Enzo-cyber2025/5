@@ -18,12 +18,29 @@
  *   call [rip+disp32]      (an indirect call through an import table)
  *   ret
  *
+ * Supported by tr_translate_function, guest stack model (see gstack.h):
+ *   push r64 | imm32 | imm8      (STR with pre-indexed writeback on X14)
+ *   pop  r64                     (LDR with post-indexed writeback)
+ *   leave                        (mov rsp,rbp; pop rbp)
+ *   sub/add rsp, imm             (the frame adjustment a real prologue opens with)
+ *   mov  rbp, rsp | rsp, rbp     (and any other reg-reg move involving them)
+ *   mov  [rbp-disp], r64         (a stack local store, LDUR)
+ *   mov  r64, [rbp-disp]         (a stack local load)
+ *   mov  [rsp+disp], r64         (and the load form)
+ *   mov  r64, [rsp+disp]
+ *
  * tr_translate_run is the earlier straight-line form and is kept because the sweep
  * uses it: it stops at the first RET and refuses any branch.
  *
- * Not supported, and refused: memory operands other than the RIP-relative import
- * slot, the stack and every instruction that touches it, RSP and RBP as operands,
- * SIMD, string and REP forms, and every prefix that changes meaning.
+ * Not supported, and refused: any memory operand whose base is not the guest
+ * stack pointer or frame pointer - there is still no general guest memory model,
+ * so a dereference through RAX or RCX has nowhere to point. Also refused: a
+ * non-negative RBP displacement, because that addresses the caller's frame
+ * (return address, incoming stack arguments) which this model does not lay out;
+ * a negative RSP displacement, which is the SysV red zone and is unmapped below
+ * the arena; `ret imm16`, which pops arguments and would leave the caller's
+ * stack pointer disagreeing with the guest's; SIMD, string and REP forms; and
+ * every prefix that changes meaning.
  *
  * ---- flags ----
  *
@@ -45,10 +62,29 @@
  * is one. That is why the condition codes below can be used directly, and why
  * CMP-with-a-negative-immediate has to become CMN instead of a negative SUBS.
  *
- * Register mapping: guest RAX,RCX,RDX,RBX -> X0..X3, RSI,RDI -> X4,X5, and
- * R8..R15 -> X6..X13. RSP and RBP are refused because using them implies a stack
- * model that does not exist. X16 (AAPCS IP0) holds a resolved call target and is
- * free for a translator to clobber between the load and the branch.
+ * Register mapping: guest RAX,RCX,RDX,RBX -> X0..X3, RSI,RDI -> X4,X5,
+ * R8..R15 -> X6..X13, guest RSP -> X14 and guest RBP -> X15. X16 (AAPCS IP0)
+ * holds a resolved call target, or an immediate being pushed, and is free for a
+ * translator to clobber between materialising it and using it.
+ *
+ * X14 and X15 are callee-saved in the AAPCS, so a translation that uses the
+ * guest stack saves and restores them as a frame record and a host callee
+ * preserves them across a resolved import for free. The record also makes the
+ * guest stack pointer balanced at return unconditionally: whatever adjustment
+ * the guest made, the epilogue puts X14 and X15 back to their entry values, so
+ * an early return cannot hand a skewed stack pointer to the caller.
+ *
+ * ---- what a resolved call does NOT do ----
+ *
+ * `call [rip+disp32]` emits BLR to the resolved host address, passing the
+ * guest's register state unchanged. That is correct when the callee is itself
+ * translated guest code sharing this mapping, which is what the pipeline test
+ * exercises. It is NOT correct for a real host function, which expects its
+ * arguments in X0..X7 by the AAPCS while the guest left them in RCX,RDX,R8,R9.
+ * Bridging that - moving guest argument registers into host ones, and marshalling
+ * guest stack arguments - is a separate piece of work and is not done here. It is
+ * stated rather than left to be discovered, because a call that runs and returns
+ * a plausible wrong value is the failure mode least likely to be traced back.
  */
 #ifndef TRANSLATE_H
 #define TRANSLATE_H
@@ -121,6 +157,13 @@ typedef enum {
     TRR_NEEDS_TARGET,     /* an import slot with no host address yet */
     TRR_OVERFLOW,         /* more instructions or words than the limits allow */
     TRR_INTERNAL,         /* the translator contradicted itself */
+    TRR_STACK,            /* a guest stack form this model does not lay out:
+                           * the caller's frame above RBP, the red zone below
+                           * RSP, or `ret imm16` */
+    TRR_GUEST_MEM,        /* a memory operand whose base is not the guest stack:
+                           * there is no general guest memory model, so a
+                           * dereference through a general register has nowhere
+                           * to point */
     TRR_COUNT
 } tr_reason;
 
@@ -144,6 +187,12 @@ typedef struct {
     uint32_t    branches;          /* conditional and unconditional */
     uint32_t    backwards;         /* of those, how many jump backwards: loops */
     int         needs_frame;       /* contains a call, so X30 must be preserved */
+    /* Uses the guest stack, so the caller must have X14 pointing into a gs_arena
+     * on entry. Distinct from needs_frame: a function can adjust its stack
+     * pointer without calling anything. The arena address is deliberately not
+     * part of the emitted code, so a translation stays a pure function of the
+     * guest bytes and remains valid in a cache that outlives the process. */
+    int         needs_gstack;
     uint64_t    iat_va;            /* set with TR_NEEDS_TARGET */
     const char *detail;
 

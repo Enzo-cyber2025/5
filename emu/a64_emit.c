@@ -53,8 +53,85 @@ uint32_t a64_blr(unsigned rn)
  *   STP X29,X30,[SP,#-16]! : L=0, imm7 = -2 (0b1111110), Rt2=30, Rn=31, Rt=29
  *   LDP X29,X30,[SP],#16   : L=1, imm7 = +2,               Rt2=30, Rn=31, Rt=29
  * Both words are asserted in the test suite against these values. */
-uint32_t a64_stp_frame_push(void) { return 0xA9BF7BFDu; }
-uint32_t a64_ldp_frame_pop(void)  { return 0xA8C17BFDu; }
+uint32_t a64_stp_frame_push(void) { return a64_stp_pre(29u, 30u, 31u, -16); }
+uint32_t a64_ldp_frame_pop(void)  { return a64_ldp_post(29u, 30u, 31u, 16); }
+
+/* ---- the shared load/store derivation ------------------------------------
+ *
+ * One field layout, six instructions. Writing them as six independent constants
+ * is how a wrong one survives review; writing them once and pinning the result
+ * against the two words already executed on hardware means a mistake in the
+ * layout breaks a named assertion instead of producing plausible garbage.
+ *
+ *   STP/LDP : opc[31:30]=10 (64-bit) 101[29:27] V=0[26] mode[25:23] L[22]
+ *             imm7[21:15] (signed, scaled by 8) Rt2[14:10] Rn[9:5] Rt[4:0]
+ *             mode 011 = pre-index, 001 = post-index
+ *   STR/LDR : size=11[31:30] 111[29:27] V=0[26] 00[25:24] opc[23:22]
+ *             imm9[20:12] (signed bytes) mode[11:10] Rn[9:5] Rt[4:0]
+ *             STR opc=00, LDR opc=01; mode 11 = pre-index, 01 = post-index,
+ *             00 = unscaled offset (STUR/LDUR)
+ */
+int a64_pair_range_ok(int off)
+{
+    return (off % 8) == 0 && off >= -512 && off <= 504;
+}
+
+int a64_imm9_range_ok(int off)
+{
+    return off >= -256 && off <= 255;
+}
+
+uint32_t a64_stp_pre(unsigned rt, unsigned rt2, unsigned rn, int off)
+{
+    uint32_t imm7 = (uint32_t)((off / 8) & 0x7F);
+    return (0x80000000u | 0x28000000u)          /* opc=10, 101 */
+         | (0x01800000u)                        /* V=0, mode=011 pre-index */
+         | (imm7 << 15) | ((uint32_t)(rt2 & 31u) << 10)
+         | ((uint32_t)(rn & 31u) << 5) | (uint32_t)(rt & 31u);
+}
+
+uint32_t a64_ldp_post(unsigned rt, unsigned rt2, unsigned rn, int off)
+{
+    uint32_t imm7 = (uint32_t)((off / 8) & 0x7F);
+    return (0x80000000u | 0x28000000u)          /* opc=10, 101 */
+         | (0x00800000u)                        /* V=0, mode=001 post-index */
+         | (0x00400000u)                        /* L=1 */
+         | (imm7 << 15) | ((uint32_t)(rt2 & 31u) << 10)
+         | ((uint32_t)(rn & 31u) << 5) | (uint32_t)(rt & 31u);
+}
+
+uint32_t a64_str_pre(unsigned rt, unsigned rn, int off)
+{
+    uint32_t imm9 = (uint32_t)(off & 0x1FF);
+    return 0xF8000000u                          /* size=11,111,V=0,00,STR */
+         | (imm9 << 12) | (0xC00u)              /* mode=11 pre-index */
+         | ((uint32_t)(rn & 31u) << 5) | (uint32_t)(rt & 31u);
+}
+
+uint32_t a64_ldr_post(unsigned rt, unsigned rn, int off)
+{
+    uint32_t imm9 = (uint32_t)(off & 0x1FF);
+    return 0xF8400000u                          /* size=11,111,V=0,00,LDR */
+         | (imm9 << 12) | (0x400u)              /* mode=01 post-index */
+         | ((uint32_t)(rn & 31u) << 5) | (uint32_t)(rt & 31u);
+}
+
+uint32_t a64_stur(unsigned rt, unsigned rn, int off)
+{
+    uint32_t imm9 = (uint32_t)(off & 0x1FF);
+    return 0xF8000000u                          /* mode=00 unscaled offset */
+         | (imm9 << 12) | ((uint32_t)(rn & 31u) << 5) | (uint32_t)(rt & 31u);
+}
+
+uint32_t a64_ldur(unsigned rt, unsigned rn, int off)
+{
+    uint32_t imm9 = (uint32_t)(off & 0x1FF);
+    return 0xF8400000u
+         | (imm9 << 12) | ((uint32_t)(rn & 31u) << 5) | (uint32_t)(rt & 31u);
+}
+
+uint32_t a64_stp_gstack_push(void) { return a64_stp_pre(14u, 15u, 31u, -16); }
+uint32_t a64_ldp_gstack_pop(void)  { return a64_ldp_post(14u, 15u, 31u, 16); }
 
 /* Shifted-register data processing: sf=1, then opc, then 01011 for ADD/SUB or
  * 01010 for the logical group, shift=00, N, Rm, imm6=0, Rn, Rd.

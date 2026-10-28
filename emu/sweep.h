@@ -98,6 +98,10 @@ typedef struct {
     uint32_t    refused_at_first_insn;
     uint32_t    refused_deeper;
     uint32_t    deepest_refusal;
+    /* Of the functions that did translate, how many use the guest stack and so
+     * need an arena in X14 at call time. Reported because it is the difference
+     * between "we produced N translations" and "we can run N translations". */
+    uint32_t    functions_needing_gstack;
     uint64_t    host_code_bytes;  /* ARM64 bytes actually written to the cache */
     uint32_t    indirect_unresolved;
     uint32_t    decode_refusals;

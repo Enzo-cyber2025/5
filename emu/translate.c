@@ -9,6 +9,8 @@
 #define HOST_RAX 0u      /* guest RAX -> X0 */
 #define HOST_RCX 1u      /* guest RCX -> X1 */
 #define HOST_SCRATCH 16u /* X16 / IP0: free for a translator to clobber */
+#define HOST_RSP     14u /* guest RSP -> X14, callee-saved in the AAPCS */
+#define HOST_RBP     15u /* guest RBP -> X15, likewise */
 
 const char *tr_reason_name(tr_reason r)
 {
@@ -28,6 +30,8 @@ const char *tr_reason_name(tr_reason r)
     case TRR_NEEDS_TARGET:  return "import-unresolved";
     case TRR_OVERFLOW:      return "size-limit";
     case TRR_INTERNAL:      return "internal";
+    case TRR_STACK:         return "guest-stack-form";
+    case TRR_GUEST_MEM:     return "memory-not-on-guest-stack";
     default:                return "?";
     }
 }
@@ -249,7 +253,9 @@ tr_status tr_translate_run(const uint8_t *code, size_t code_len,
 
 typedef enum {
     P_MOV_IMM, P_MOV_REG, P_ZERO, P_ADD_REG, P_SUB_REG, P_ADD_IMM, P_SUB_IMM,
-    P_CMP_REG, P_CMP_IMM, P_TEST_REG, P_JCC, P_JMP, P_CALL_IAT, P_RET
+    P_CMP_REG, P_CMP_IMM, P_TEST_REG, P_JCC, P_JMP, P_CALL_IAT, P_RET,
+    /* guest stack */
+    P_PUSH_REG, P_POP_REG, P_PUSH_IMM, P_LEAVE, P_ST_LOCAL, P_LD_LOCAL
 } plan_op;
 
 typedef struct {
@@ -267,12 +273,24 @@ typedef struct {
     uint32_t word_at;      /* assigned by layout */
 } plan;
 
-/* Guest register -> host register. RSP and RBP are refused: using them implies a
- * guest stack model, and inventing one silently would be worse than refusing. */
+/* Guest register -> host register.
+ *
+ * RSP and RBP used to be refused here, and that refusal was the single largest
+ * blocker measured on a real binary: every one of the 64 genuine code entry
+ * points in a real application bundle died at its first instruction, and the two
+ * .exe entries died specifically on `sub rsp, N` with reason register-unmapped.
+ * They now map to X14 and X15. Both are callee-saved in the AAPCS, which is not
+ * a coincidence but the reason for the choice: a function that uses the guest
+ * stack saves them as a frame record, and a host callee reached through a
+ * resolved import preserves them across the call without anything being emitted.
+ *
+ * They are NOT the host SP. See gstack.h for why: AArch64 requires 16-byte SP
+ * alignment at every public interface and x86-64 only guarantees 8. */
 static int map_guest_reg(unsigned field, int extended, unsigned *host)
 {
     static const signed char tbl[16] = {
-        0, 1, 2, 3, -1, -1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13
+        /* RAX RCX RDX RBX  RSP  RBP  RSI RDI  R8..R15 */
+        0, 1, 2, 3, 14, 15, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13
     };
     unsigned g = (field & 7u) | (extended ? 8u : 0u);
     if (g > 15u || tbl[g] < 0) return 0;
@@ -345,6 +363,55 @@ static void blame(tr_func *out, const plan *p, uint32_t depth)
     out->fail_map = 0;
     out->fail_from_plan = 1;
     memset(out->fail_op, 0, sizeof(out->fail_op));
+}
+
+/* Resolves a memory operand's base register, or returns 0 when the addressing
+ * form is not one this translator models. Only the guest stack pointer and frame
+ * pointer are accepted: there is no general guest memory model, so a dereference
+ * through RAX or RCX has nowhere to point and must be refused rather than aimed
+ * at a host address that happens to be in the register.
+ *
+ * Two encodings look exactly like a base register and are not, and treating
+ * either as one would read the wrong memory with no visible symptom:
+ *   - mod=00 rm=101 is RIP-relative in 64-bit mode, not [RBP]. The decoder
+ *     reports it with has_sib == 0 and disp_len == 4, which is indistinguishable
+ *     from a real base at a glance, so it is checked explicitly.
+ *   - mod=00 with SIB base=101 is an absolute disp32 with NO base register. It
+ *     arrives with sib_base == 5, the same value RBP has.
+ * REX.B also has to be honoured before comparing: rm=100 with REX.B is R12, not
+ * RSP, and rm=101 with REX.B is R13, not RBP. */
+static int mem_base_guest(const x86_insn *in, unsigned *guest_base)
+{
+    unsigned b;
+    if (!in->has_modrm || in->mod == 3) return 0;      /* register form */
+    if (in->has_sib) {
+        if (in->mod == 0 && in->sib_base == 5) return 0;   /* absolute disp32 */
+        if (in->sib_index != 4 || in->rex_x) return 0;     /* scaled index: not modelled */
+        if (in->sib_scale != 0) return 0;
+        b = (unsigned)in->sib_base | (in->rex_b ? 8u : 0u);
+    } else {
+        if (in->mod == 0 && in->rm == 5) return 0;         /* RIP-relative */
+        b = (unsigned)in->rm | (in->rex_b ? 8u : 0u);
+    }
+    if (b != 4u && b != 5u) return 0;      /* not RSP and not RBP */
+    *guest_base = b;
+    return 1;
+}
+
+/* Whether a plan uses the guest stack at all, which decides if the X14/X15 frame
+ * record has to be emitted. Reading the rd/rn/rm fields is safe because a plan is
+ * zero-initialised and neither X14 nor X15 is register 0. */
+static int plan_uses_gstack(const plan *p)
+{
+    switch (p->op) {
+    case P_PUSH_REG: case P_POP_REG: case P_PUSH_IMM:
+    case P_LEAVE: case P_ST_LOCAL: case P_LD_LOCAL:
+        return 1;
+    default: break;
+    }
+    return p->rd == HOST_RSP || p->rd == HOST_RBP ||
+           p->rn == HOST_RSP || p->rn == HOST_RBP ||
+           p->rm == HOST_RSP || p->rm == HOST_RBP;
 }
 
 /* Plans one guest instruction: decides the operation, the registers, and how many
@@ -424,6 +491,18 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
 
     if (in.op[0] == 0xC3 && in.rex == 0 && in.mod == 0) {
         p->op = P_RET; p->words = 1u; return TR_OK;
+    }
+    if (in.op[0] == 0xC2) {
+        /* RET imm16 pops arguments off the guest stack on its way out. This
+         * translator's epilogue restores X14 to its entry value unconditionally,
+         * which is right for a callee that does not change the caller's stack
+         * pointer and wrong for one that does. Refusing is the honest outcome:
+         * emitting a plain RET here would return with the caller's stack pointer
+         * 8 or 16 bytes off, and the caller would then read its own locals from
+         * the wrong addresses. */
+        out->reason = TRR_STACK;
+        out->detail = "ret imm16 pops arguments, which changes the caller's stack pointer";
+        return TR_UNSUPPORTED;
     }
     if (in.op[0] == 0xEB || in.op[0] == 0xE9) {
         p->op = P_JMP;
@@ -559,6 +638,119 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
         return TR_OK;
     }
 
+    /* ---- guest stack ----
+     *
+     * push/pop are single-byte opcodes with the register in the low three bits,
+     * extended by REX.B. Only REX.B is meaningful here, so a REX.R or REX.X on a
+     * push is a malformed encoding and is refused rather than ignored. */
+    if ((in.op[0] & 0xF8u) == 0x50u || (in.op[0] & 0xF8u) == 0x58u) {
+        unsigned g;
+        int is_push = (in.op[0] & 0xF8u) == 0x50u;
+        if (in.rex_r || in.rex_x) {
+            out->reason = TRR_UNSUPPORTED_OP;
+            out->detail = "push/pop carries a REX bit that has no meaning there";
+            return TR_UNSUPPORTED;
+        }
+        g = (unsigned)(in.op[0] & 7u) | (in.rex_b ? 8u : 0u);
+        /* PUSH RSP and POP RSP are refused deliberately, and this is the one
+         * place where a refusal is chosen over an encoding that would be
+         * plausible. `push rsp` is ambiguous in the x86 architecture itself: the
+         * value pushed is RSP after the decrement on implementations since the
+         * Pentium, while STR with pre-indexed writeback stores the value from
+         * before it. That is an 8-byte difference in a word that gets read back
+         * later. `pop rsp` would need ARM64's Rt == Rn post-index corner case to
+         * come out right. Neither is worth guessing at, and neither is common. */
+        if (g == 4u) {
+            out->reason = TRR_STACK;
+            out->detail = is_push
+                ? "push rsp: the pushed value is ambiguous between the pre- and "
+                  "post-decrement stack pointer"
+                : "pop rsp: would depend on an ARM64 writeback corner case";
+            return TR_UNSUPPORTED;
+        }
+        if (!map_guest_reg(g, 0, &p->rd)) {
+            out->reason = TRR_REGISTER;
+            out->detail = "push/pop: register outside the mapped set";
+            return TR_UNSUPPORTED;
+        }
+        p->op = is_push ? P_PUSH_REG : P_POP_REG;
+        p->words = 1u;
+        return TR_OK;
+    }
+
+    /* push imm32 / push imm8, sign-extended to 64 bits. The immediate is
+     * materialised in X16 and stored with the same pre-indexed writeback, so the
+     * stack pointer still advances by exactly 8. */
+    if (in.op[0] == 0x68 || in.op[0] == 0x6A) {
+        p->const_val = (in.op[0] == 0x6A)
+                     ? (uint64_t)(int64_t)(int8_t)in.imm
+                     : (uint64_t)(int64_t)(int32_t)in.imm;
+        p->op = P_PUSH_IMM;
+        p->words = const_words(p->const_val) + 1u;
+        return TR_OK;
+    }
+
+    /* leave == mov rsp,rbp ; pop rbp */
+    if (in.op[0] == 0xC9 && in.rex == 0) {
+        p->op = P_LEAVE; p->words = 2u; return TR_OK;
+    }
+
+    /* mov [rbp-disp], r64 / mov r64, [rbp-disp] and the RSP-relative forms.
+     * These are the local variable accesses; a real function's frame is made of
+     * almost nothing else. */
+    if ((in.op[0] == 0x89 || in.op[0] == 0x8B) && in.rex_w && in.has_modrm &&
+        in.mod != 3) {
+        unsigned gbase, vreg;
+        int64_t  d = in.disp;
+
+        if (!mem_base_guest(&in, &gbase)) {
+            out->reason = TRR_GUEST_MEM;
+            out->detail = "memory operand whose base is not the guest stack: "
+                          "there is no general guest memory model yet";
+            return TR_UNSUPPORTED;
+        }
+        if (!map_guest_reg(in.reg, in.rex_r, &vreg)) {
+            out->reason = TRR_REGISTER;
+            out->detail = "stack local: register outside the mapped set";
+            return TR_UNSUPPORTED;
+        }
+        /* Which displacements are legitimate depends on the base, and getting
+         * this wrong is silent:
+         *   - [rbp + non-negative] addresses the CALLER's frame: the saved frame
+         *     pointer above it, the return address, and any incoming stack
+         *     arguments. This model does not lay any of that out - the return
+         *     address lives in X30 and arguments arrive in registers - so
+         *     reading it would return arena garbage that looks like a value.
+         *   - [rsp - n] is the SysV red zone. Windows x64 has no red zone and
+         *     the arena has a PROT_NONE guard page below it, so this faults
+         *     rather than corrupting, but refusing says why. */
+        if (gbase == 5u && d >= 0) {
+            out->reason = TRR_STACK;
+            out->detail = "a non-negative RBP displacement reaches into the "
+                          "caller's frame, which this model does not lay out";
+            return TR_UNSUPPORTED;
+        }
+        if (gbase == 4u && d < 0) {
+            out->reason = TRR_STACK;
+            out->detail = "a negative RSP displacement is the red zone, which is "
+                          "unmapped below the guest stack arena";
+            return TR_UNSUPPORTED;
+        }
+        /* LDUR/STUR carry a signed 9-bit byte offset. Outside that a scratch
+         * register and a register-offset form would be needed. */
+        if (!a64_imm9_range_ok((int)d)) {
+            out->reason = TRR_IMM_RANGE;
+            out->detail = "stack displacement does not fit a signed 9-bit offset";
+            return TR_UNSUPPORTED;
+        }
+        p->rd = vreg;
+        p->rn = (gbase == 4u) ? HOST_RSP : HOST_RBP;
+        p->delta = d;
+        p->op = (in.op[0] == 0x89) ? P_ST_LOCAL : P_LD_LOCAL;
+        p->words = 1u;
+        return TR_OK;
+    }
+
     out->reason = TRR_UNSUPPORTED_OP; out->detail = "instruction is outside the translated subset";
     return TR_UNSUPPORTED;
 }
@@ -582,6 +774,7 @@ tr_status tr_translate_function_at(const uint8_t *code, size_t code_len,
     uint32_t stack[TRF_MAX_INSN];
     size_t   sp = 0, nplans = 0, i, j;
     uint32_t cursor;
+    uint32_t entry_words;      /* frame record words at entry and before each RET */
     int      order_changed = 1;
 
     if (!out) return TR_INVALID;
@@ -723,25 +916,36 @@ tr_status tr_translate_function_at(const uint8_t *code, size_t code_len,
     for (i = 0; i < nplans; i++) {
         uint32_t end = plans[i].off + plans[i].guest_len;
         if (plans[i].op == P_CALL_IAT) out->needs_frame = 1;
+        if (plan_uses_gstack(&plans[i])) out->needs_gstack = 1;
         if (end > out->extent) out->extent = end;
         if (plans[i].off < out->lo_off) out->lo_off = plans[i].off;
         if (end > out->hi_off) out->hi_off = end;
     }
 
     /* ---- pass 2: layout. Sizes are already fixed, so one pass is enough. ---- */
-    cursor = out->needs_frame ? 1u : 0u;
+    /* Two independent frame records may be needed, and both are one word: the
+     * X29/X30 pair for a translation that calls something, and the X14/X15 pair
+     * for one that uses the guest stack. Each RET has to undo both. */
+    entry_words = (out->needs_frame ? 1u : 0u) + (out->needs_gstack ? 1u : 0u);
+    cursor = entry_words;
     for (i = 0; i < nplans; i++) {
         plans[i].word_at = cursor;
         cursor += plans[i].words;
-        if (plans[i].op == P_RET && out->needs_frame) cursor += 1u;
+        if (plans[i].op == P_RET) cursor += entry_words;
     }
-    if (cursor + (out->needs_frame ? 1u : 0u) > TRF_MAX_WORDS) {
+    if (cursor + entry_words > TRF_MAX_WORDS) {
         out->reason = TRR_OVERFLOW; out->detail = "translation exceeds TRF_MAX_WORDS";
         return TR_OVERFLOW;
     }
 
     /* ---- pass 3: emit ---- */
+    /* Push order is X29/X30 first, then X14/X15, so the guest stack record ends
+     * up at [SP] and is popped first at every RET. Reversing that order here
+     * without reversing it below would restore the caller's link register with
+     * the guest stack pointer, and the code would return to an address that came
+     * off the guest stack - a jump somewhere plausible and wrong. */
     if (out->needs_frame && !pushf(out, a64_stp_frame_push())) return TR_OVERFLOW;
+    if (out->needs_gstack && !pushf(out, a64_stp_gstack_push())) return TR_OVERFLOW;
 
     for (i = 0; i < nplans; i++) {
         const plan *p = &plans[i];
@@ -822,11 +1026,47 @@ tr_status tr_translate_function_at(const uint8_t *code, size_t code_len,
             }
             break;
         }
+        case P_PUSH_REG:
+            /* STR with pre-indexed writeback: the store and the 8-byte advance of
+             * the guest stack pointer are one instruction, so they cannot drift
+             * apart the way a separate SUB followed by a scaled store could. */
+            if (!a64_imm9_range_ok(-8)) return TR_OVERFLOW;
+            if (!pushf(out, a64_str_pre(p->rd, HOST_RSP, -8))) return TR_OVERFLOW;
+            break;
+        case P_POP_REG:
+            if (!pushf(out, a64_ldr_post(p->rd, HOST_RSP, 8))) return TR_OVERFLOW;
+            break;
+        case P_PUSH_IMM:
+            /* The immediate has to be materialised somewhere before it can be
+             * stored. X16 is used and is safe: it is only ever live between being
+             * written and being consumed by the instruction immediately after,
+             * both here and at a resolved call. */
+            if (!emit_const_f(out, HOST_SCRATCH, p->const_val)) return TR_OVERFLOW;
+            if (!pushf(out, a64_str_pre(HOST_SCRATCH, HOST_RSP, -8))) return TR_OVERFLOW;
+            break;
+        case P_LEAVE:
+            /* mov rsp,rbp then pop rbp. The second instruction reads the memory
+             * the first just pointed at, which is exactly the x86 semantics. */
+            if (!pushf(out, a64_mov_reg(HOST_RSP, HOST_RBP))) return TR_OVERFLOW;
+            if (!pushf(out, a64_ldr_post(HOST_RBP, HOST_RSP, 8))) return TR_OVERFLOW;
+            break;
+        case P_ST_LOCAL:
+            if (!pushf(out, a64_stur(p->rd, p->rn, (int)p->delta))) return TR_OVERFLOW;
+            break;
+        case P_LD_LOCAL:
+            if (!pushf(out, a64_ldur(p->rd, p->rn, (int)p->delta))) return TR_OVERFLOW;
+            break;
         case P_CALL_IAT:
             if (!emit_const_f(out, HOST_SCRATCH, p->const_val)) return TR_OVERFLOW;
             if (!pushf(out, a64_blr(HOST_SCRATCH))) return TR_OVERFLOW;
             break;
         case P_RET:
+            /* Reverse of the prologue: the X14/X15 record was pushed last, so it
+             * is at [SP] and comes off first. Restoring X14 here is also what
+             * makes the guest stack pointer balanced at return regardless of how
+             * the guest code left it, so an early return cannot hand the caller a
+             * skewed stack pointer. */
+            if (out->needs_gstack && !pushf(out, a64_ldp_gstack_pop())) return TR_OVERFLOW;
             if (out->needs_frame && !pushf(out, a64_ldp_frame_pop())) return TR_OVERFLOW;
             if (!pushf(out, a64_ret())) return TR_OVERFLOW;
             break;
@@ -844,5 +1084,17 @@ tr_status tr_translate_function_at(const uint8_t *code, size_t code_len,
         out->reason = TRR_INTERNAL; out->detail = "internal: emitted word count disagrees with the layout";
         return TR_INVALID;
     }
+    /* Clear the refusal record on success. out->reason is initialised to
+     * TRR_UNSUPPORTED_OP before pass 1 so that an early return always has a
+     * reason to report, and leaving it there meant a translation that succeeded
+     * was still labelled with the reason it did not fail for. Nothing reads
+     * reason when the status is TR_OK today, which is exactly why it is worth
+     * fixing: the first caller that does would build a histogram out of
+     * successes counted as refusals. */
+    out->reason = TRR_OK;
+    out->fail_insns = 0;
+    out->fail_op_len = 0;
+    out->fail_from_plan = 0;
+    memset(out->fail_op, 0, sizeof(out->fail_op));
     return TR_OK;
 }

@@ -22,6 +22,9 @@ test: $(TARGETS)
 	@grep -q 'remaining ~' $(FIXTURE_DLL).prewarm
 	@grep -q 'blocks discovered:' $(FIXTURE_DLL).prewarm
 	@grep -q 'functions pre-translated:' $(FIXTURE_DLL).prewarm
+	@# A translation count on its own does not say whether the translations can be
+	@# run: the ones that use the guest stack need an arena in X14 at call time.
+	@grep -q 'needing a guest stack arena at call time:' $(FIXTURE_DLL).prewarm
 	@# The ranked refusal list is the point of this milestone: a coverage number
 	@# on its own is a dead end, and the same run has to say what is blocking.
 	@grep -q 'What is blocking the rest' $(FIXTURE_DLL).prewarm
@@ -97,9 +100,13 @@ prewarm: prewarm.c sweep.c $(CORE)
 
 # The end-to-end pipeline: PE exe and DLL in, decoded, translated, resolved,
 # emitted, executed on ARM64, persisted and reloaded from the cache.
-test_translate: test_translate.c translate.c pe_load.c ptc.c x86_decode.c a64_emit.c
+# The guest stack arena is part of the execution path, so the end-to-end test
+# links it: the tests provoke a real fault at the arena's guard page in a forked
+# child, which is the only way to show the containment is real rather than
+# assumed from the absence of a crash.
+test_translate: test_translate.c translate.c pe_load.c ptc.c x86_decode.c a64_emit.c gstack.c
 	$(CC) $(CFLAGS) -o $@ test_translate.c translate.c pe_load.c ptc.c \
-	      x86_decode.c a64_emit.c
+	      x86_decode.c a64_emit.c gstack.c
 
 # Classification of a module's imported API surface: how much of what a binary
 # needs from the host is Direct3D, how much is Vulkan, and how much is neither.

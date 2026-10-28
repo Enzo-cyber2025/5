@@ -57,6 +57,7 @@ struct sweep_job {
     uint32_t    refused_at_first_insn;
     uint32_t    refused_deeper;
     uint32_t    deepest_refusal;
+    uint32_t    functions_needing_gstack;
 
     sweep_phase phase;
     size_t      translate_idx;
@@ -467,6 +468,11 @@ static int translate_entry(sweep_job *j, uint32_t mi, uint64_t va)
         }
     }
     j->functions_translated++;
+    /* Counted separately because it is a fact about running the translation, not
+     * about producing it: each of these needs a guest stack arena mapped and its
+     * top in X14 before the first instruction executes. A cache full of
+     * translations is only runnable to the extent the runtime can supply that. */
+    if (f.needs_gstack) j->functions_needing_gstack++;
     j->host_code_bytes += (uint64_t)f.n * 4u;
     return 1;
 }
@@ -581,6 +587,7 @@ void sweep_get_progress(const sweep_job *j, sweep_progress *out)
     out->refused_at_first_insn = j->refused_at_first_insn;
     out->refused_deeper = j->refused_deeper;
     out->deepest_refusal = j->deepest_refusal;
+    out->functions_needing_gstack = j->functions_needing_gstack;
     out->host_code_bytes = j->host_code_bytes;
     out->indirect_unresolved = j->indirect_unresolved;
     out->decode_refusals = j->decode_refusals;
