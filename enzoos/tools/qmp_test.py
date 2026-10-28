@@ -110,6 +110,13 @@ class Qmp:
         print("captura: %s.png (%dx%d)" % (name, w, h))
         return w, h
 
+    def kread32(self, addr):
+        """le um dword da memoria do guest (kernel @ 0x100000)"""
+        r = self.hmp("xp /1xw 0x%X" % addr)
+        import re as _re
+        m = _re.search(r"0x([0-9a-f]{8})", r.get("return", ""))
+        return int(m.group(1), 16) if m else -1
+
     def vga_text(self):
         """lê o buffer de texto VGA (0xB8000) — mostra o que a BIOS escreveu"""
         import re as _re
@@ -237,6 +244,9 @@ def main():
         q.sleep(12)
         q.shot("12-watchdog", outdir)
 
+        WND_COUNT = 0x10D513
+        print("::notice::wnd_count boot=%d" % q.kread32(WND_COUNT))
+
         # helper: abre o app N do menu Iniciar (0 = primeiro)
         def launch_menu_app(idx):
             q.key("m", "ctrl-alt")
@@ -246,6 +256,7 @@ def main():
                 q.sleep(0.15)
             q.key("ret")
             q.sleep(0.8)
+            print("::notice::wnd_count apos launch(%d)=%d" % (idx, q.kread32(WND_COUNT)))
 
         # 13. FILES: navegador do ENZFS (disco AHCI persistente)
         launch_menu_app(6)                 # FILES.ENZ (7º app da ISO)
