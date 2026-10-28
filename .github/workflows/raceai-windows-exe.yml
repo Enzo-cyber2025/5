@@ -108,11 +108,15 @@ jobs:
           .\dist\RaceAI2D\RaceAI2D-console.exe --bench --bench-agents 120 --bench-seconds 3 2>&1 | Tee-Object -Append build.log
           .\dist\RaceAI2D\RaceAI2D-console.exe --dml-probe 2>&1 | Tee-Object -Append build.log
           # o .exe de janela (sem console) também precisa conseguir iniciar
+          $env:RACEAI_DIAG_LOG = "$pwd\diag_janela.log"
           .\dist\RaceAI2D\RaceAI2D.exe --selftest
-          Write-Output ("exe de janela exit={0}" -f $LASTEXITCODE) | Out-File -Append build.log
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $janela = $LASTEXITCODE
+          Write-Output ("exe de janela exit={0}" -f $janela) | Out-File -Append build.log
+          if (Test-Path diag_janela.log) { Get-Content diag_janela.log | Out-File -Append build.log }
+          if (Test-Path raceai_erro.log) { Get-Content raceai_erro.log | Out-File -Append build.log }
           Write-Output ("selftest exit={0}" -f $selftest) | Out-File -Append build.log
-          exit $selftest
+          if ($selftest -ne 0) { exit $selftest }
+          exit $janela
 
       - name: Empacotar (zip)
         run: |

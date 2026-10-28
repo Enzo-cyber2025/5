@@ -20,6 +20,45 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "src
 
 VERSION = "1.0.0"
 
+def _conserta_saida_nativa() -> None:
+    """Em .exe de janela não existe console — e isso derruba bibliotecas nativas.
+
+    Com `console=False`, os handles de stdout/stderr do processo são nulos.
+    Código C (PyTorch, OpenMP) que escreve neles mata o processo com
+    0xC0000005, sem que nenhum try/except do Python possa evitar. Aqui os
+    handles passam a apontar para um arquivo de log.
+    """
+    if os.name != "nt" or not getattr(sys, "frozen", False) or sys.stdout is not None:
+        return
+    try:
+        import ctypes
+        import tempfile
+
+        path = os.path.join(tempfile.gettempdir(), "raceai_console.log")
+        k32 = ctypes.windll.kernel32
+        k32.CreateFileW.argtypes = [ctypes.c_wchar_p, ctypes.c_uint32, ctypes.c_uint32,
+                                    ctypes.c_void_p, ctypes.c_uint32, ctypes.c_uint32,
+                                    ctypes.c_void_p]
+        k32.CreateFileW.restype = ctypes.c_void_p
+        h = k32.CreateFileW(path, 0x40000000, 0x00000003, None, 4, 0x80, None)
+        if not h or h == ctypes.c_void_p(-1).value:
+            return
+        k32.SetStdHandle.argtypes = [ctypes.c_uint32, ctypes.c_void_p]
+        k32.SetStdHandle(ctypes.c_uint32(0xFFFFFFF5), h)   # STD_OUTPUT_HANDLE
+        k32.SetStdHandle(ctypes.c_uint32(0xFFFFFFF4), h)   # STD_ERROR_HANDLE
+        crt = ctypes.CDLL("ucrtbase")
+        iob = crt.__acrt_iob_func
+        iob.argtypes = [ctypes.c_uint]
+        iob.restype = ctypes.c_void_p
+        freopen = crt.freopen
+        freopen.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_void_p]
+        freopen.restype = ctypes.c_void_p
+        freopen(path.encode("utf-8", "replace"), b"w", iob(1))
+        freopen(path.encode("utf-8", "replace"), b"w", iob(2))
+    except Exception:
+        pass                                  # nunca deixa o jogo morrer por isso
+
+
 class _NullStream:
     """Saída descartada: no executável de janela não existe console."""
 
@@ -35,6 +74,19 @@ class _NullStream:
     def reconfigure(self, *args, **kwargs):
         return None
 
+
+_conserta_saida_nativa()
+
+# diagnóstico opcional: RACEAI_DIAG_LOG=caminho joga toda a saída num arquivo
+# (é a única forma de ver o que o .exe de janela imprimiu)
+_diag = os.environ.get("RACEAI_DIAG_LOG", "").strip()
+if _diag:                               # pragma: no cover
+    try:
+        _diag_file = open(_diag, "w", encoding="utf-8", errors="replace", buffering=1)
+        sys.stdout = _diag_file
+        sys.stderr = _diag_file
+    except Exception:
+        pass
 
 if sys.stdout is None:                  # pragma: no cover
     sys.stdout = _NullStream()
@@ -249,6 +301,12 @@ def selftest() -> int:
         print("FALHA: nenhuma pista/carro válido")
         return 1
 
+    print("[diag] importando torch ...", flush=True)
+    try:
+        import torch
+        print(f"[diag] torch {torch.__version__} importado", flush=True)
+    except Exception as exc:
+        print(f"[diag] torch indisponível: {exc}", flush=True)
     dev, desc = resolve_device(os.environ.get("RACEAI_DEVICE", "auto"))
     print(f"backend escolhido: {dev} — {desc}")
     print("dispositivos:", ", ".join(f"{k}={v}" for k, v in list_devices()))
