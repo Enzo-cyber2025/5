@@ -60,7 +60,11 @@ wnd_create:
         mov r15d, ecx
         call wnd_find_free
         test rax, rax
-        jz .fail
+        jnz .have_slot
+        mov rdi, s_wnd_noslot
+        call k_log
+        jmp .fail
+.have_slot:
         mov rbx, rax
         ; buffer da janela
         mov rdi, r14
@@ -68,7 +72,11 @@ wnd_create:
         shl rdi, 2
         call k_alloc
         test rax, rax
-        jz .fail
+        jnz .have_buf
+        mov rdi, s_wnd_nomem
+        call k_log
+        jmp .fail
+.have_buf:
         mov [rbx + W_BUF], rax
         mov [rbx + W_X], r12d
         mov [rbx + W_Y], r13d
@@ -921,6 +929,8 @@ wnd_top:     dq 0
 wnd_bottom:  dq 0
 wm_magic:    dd 0x13572468               ; assinatura p/ achar wnd_count por scan
 s_wnd_diag:  db "[wm] +janela:", 0
+s_wnd_noslot: db "[wm] wnd_create: sem slot de janela", 10, 0
+s_wnd_nomem: db "[wm] wnd_create: sem memoria p/ buffer", 10, 0
 s_wnd_diag2: db "[wm] -janela, total:", 0
 wnd_count:   dd 0
 wnd_array:   times MAX_WND * W_SIZE db 0

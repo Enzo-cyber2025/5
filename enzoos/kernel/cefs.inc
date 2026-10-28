@@ -295,6 +295,8 @@ app_launch:
         mov rax, -4
         jmp .done
 .nowin:
+        mov rdi, s_al_nw
+        call k_log
         mov dword [rbx + A_USED], 0
         mov rdi, [img_ptr]
         mov rsi, r13
@@ -938,6 +940,7 @@ s_cefs_bad: db "CEFS: assinatura invalida", 0
 s_al_nf:  db "[app] nao achado: ", 0
 s_al_bc:  db "[app] formato invalido: ", 0
 s_al_nm:  db "[app] sem memoria", 10, 0
+s_al_nw:  db "[app] janela nao criada", 10, 0
 s_disp_diag: db "[wm] disp tipo/param/slot:", 0
 s_ext_ce:   db ".CE", 0
 s_ext_enz: db ".enz", 0
