@@ -294,6 +294,10 @@ jobs:
           echo "abi split: ${ABI_SPLIT:-(none)}"
           python3 family-link-codes/tools/dart_snapshot_hunt.py "$APK" $ABI_SPLIT \
             | tee "$RUNNER_TEMP/dart.txt"
+          python3 family-link-codes/tools/dart_snapshot_hunt.py "$APK" $ABI_SPLIT \
+            --strings-only > "$RUNNER_TEMP/dart-strings.txt" 2>&1
+          echo "--- concept strings ---"
+          cat "$RUNNER_TEMP/dart-strings.txt"
           echo
           echo
           echo "== every native blob in the bundle =="
@@ -514,6 +518,12 @@ jobs:
             echo '```'
             cat "$RUNNER_TEMP/probe.txt" 2>/dev/null || echo "(no probe)"
             echo '```'
+            if [ -s "$RUNNER_TEMP/dart-strings.txt" ]; then
+              echo "**dart-strings.txt** (as strings do snapshot Dart)"
+              echo '```'
+              cat "$RUNNER_TEMP/dart-strings.txt"
+              echo '```'
+            fi
             for f in dart.txt inventory.txt fetch-x86.txt fetch.txt package.txt badging.txt backup-flags.txt certs.txt sha256.txt; do
               [ -s "$RUNNER_TEMP/$f" ] && { echo "**$f**"; echo '```'; head -20 "$RUNNER_TEMP/$f"; echo '```'; }
             done

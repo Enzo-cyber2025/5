@@ -113,6 +113,27 @@ def strings_of(blob: bytes) -> list[str]:
     return [m.decode("ascii", "ignore") for m in PRINTABLE.findall(blob)]
 
 
+def context_lines(text: str, span: int = 3) -> list[str]:
+    """For each interesting string, the ones right after it in the table.
+
+    A snapshot keeps related keys next to each other, so the neighbours usually
+    reveal the rest of the JSON document the app reads and writes.
+    """
+    items = [line.strip() for line in text.splitlines()]
+    out: list[str] = []
+    for index, line in enumerate(items):
+        low = line.lower()
+        if not any(word in low for word in ("parentaccesscode", "sharedsecret",
+                                            "clockdrift", "familylinkappconfig",
+                                            "accesscode", "hmac")):
+            continue
+        if len(line) > 200:
+            continue
+        window = [item for item in items[index : index + span + 1] if item and len(item) < 120]
+        out.append(" | ".join(window[: span + 1]))
+    return out
+
+
 def hunt(apk: str, extra: list[str] | None = None) -> dict:
     """Scan the base APK and any extra APKs (the ABI split often holds the libs)."""
     report: dict = {"apk": apk, "sources": [apk], "libraries": [], "concept": {},
@@ -158,6 +179,7 @@ def hunt(apk: str, extra: list[str] | None = None) -> dict:
                                         "access code", "shared secret", "accesscode")):
             hits[line[:120]] = hits.get(line[:120], 0) + 1
     report["strings"] = dict(sorted(hits.items(), key=lambda kv: -kv[1])[:60])
+    report["context"] = sorted(set(context_lines(upper_all)))[:80]
     return report
 
 
@@ -207,6 +229,14 @@ def main(argv: list[str]) -> int:
     except Exception as error:  # noqa: BLE001 - a bad APK must not fail CI
         print(f"could not analyse {argv[1]}: {error}")
         return 1
+    if "--strings-only" in argv:
+        for text, count in report.get("strings", {}).items():
+            print(f"{count:>4}  {text}")
+        print()
+        print("== neighbours (the keys around them) ==")
+        for line in report.get("context", []):
+            print(line)
+        return 0
     print(render(report))
     if "--json" in argv:
         target = argv[argv.index("--json") + 1]

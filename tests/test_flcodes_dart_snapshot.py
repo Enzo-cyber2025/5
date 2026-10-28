@@ -111,3 +111,15 @@ def test_json_output(tmp_path):
 
     assert module.main(["dart_snapshot_hunt", str(apk), "--json", str(target)]) == 0
     assert "libraries" in target.read_text()
+
+
+def test_strings_only_lists_context(tmp_path, capsys):
+    module = load_module()
+    payload = (b"parentAccessCode\x00sharedSecret\x00accessCodeTtl\x00"
+               b"clockDriftTolerance\x00unrelated\x00")
+    apk = build_apk(tmp_path, {"lib/arm64-v8a/libapp.so": fake_elf(payload)})
+
+    assert module.main(["dart_snapshot_hunt", str(apk), "--strings-only"]) == 0
+    out = capsys.readouterr().out
+    assert "neighbours" in out
+    assert "parentAccessCode" in out
