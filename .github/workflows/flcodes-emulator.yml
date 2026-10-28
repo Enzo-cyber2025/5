@@ -317,6 +317,27 @@ jobs:
           unzip -l "$APK" 2>/dev/null | grep -E "flutter_assets|assets/" \
             | awk '{print $1, $4}' | head -12
 
+      - name: Recover the protobuf schema from the real binary
+        run: |
+          set +e
+          cd family-link-codes
+          export PYTHONPATH="$PWD"
+          APK="$(cat "$RUNNER_TEMP/familylink/apk-path.txt" 2>/dev/null | tail -1)"
+          [ -s "$APK" ] || APK="$RUNNER_TEMP/familylink/base.apk"
+          ABI_SPLIT="$(grep -E 'config\.(arm64_v8a|armeabi_v7a)\.apk' \
+            "$RUNNER_TEMP/familylink/splits.txt" 2>/dev/null | head -1)"
+          echo "base: $APK"
+          echo "split: ${ABI_SPLIT:-(none)}"
+          python3 -m flcodes proto apk "$APK" $ABI_SPLIT \
+            > "$RUNNER_TEMP/proto.txt" 2>&1
+          status=$?
+          echo "status: $status"
+          head -60 "$RUNNER_TEMP/proto.txt"
+          if [ "$status" != "0" ]; then
+            echo "no descriptor recovered; falling back to the raw string hunt"
+            python3 tools/dart_snapshot_hunt.py "$APK" $ABI_SPLIT --strings-only | head -40
+          fi
+
       - name: Inventory of the real bundle (ABIs, pieces, size)
         run: |
           set +e
@@ -532,6 +553,12 @@ jobs:
               echo "**dart-strings.txt** (as strings do snapshot Dart)"
               echo '```'
               cat "$RUNNER_TEMP/dart-strings.txt"
+              echo '```'
+            fi
+            if [ -s "$RUNNER_TEMP/proto.txt" ]; then
+              echo "**proto.txt** (o esquema, recuperado do binário)"
+              echo '```'
+              head -80 "$RUNNER_TEMP/proto.txt"
               echo '```'
             fi
             for f in dart.txt inventory.txt fetch-x86.txt fetch.txt package.txt badging.txt backup-flags.txt certs.txt sha256.txt; do

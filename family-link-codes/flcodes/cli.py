@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import datetime as _dt
 import json
 import os
@@ -16,6 +17,7 @@ from . import (
     abe as abe_mod,
     apk as apk_mod,
     codes as codes_mod,
+    proto as proto_mod,
     device as device_mod,
     endpoints as endpoints_mod,
     rea,
@@ -566,6 +568,57 @@ def cmd_apk(args) -> int:
     return EXIT_OK
 
 
+def cmd_proto(args) -> int:
+    """Read the protobuf schema out of the app, or decode a captured response."""
+    if args.action == "apk":
+        try:
+            descriptors = proto_mod.scan_apk(args.file, extras=list(args.extra or []))
+        except (OSError, ValueError) as exc:
+            _print(f"cannot scan: {exc}", file=sys.stderr)
+            return EXIT_ERROR
+        if not descriptors:
+            _print("no FileDescriptorProto mentioning the concept was found in "
+                   "the shared objects of this APK", file=sys.stderr)
+            return EXIT_ERROR
+        if args.json:
+            payload = [
+                {"name": item.name, "package": item.package,
+                 "messages": item.messages, "services": item.services}
+                for item in descriptors
+            ]
+            _print(json.dumps(payload, indent=2, ensure_ascii=False))
+            return EXIT_OK
+        for index, descriptor in enumerate(descriptors):
+            if index:
+                _print()
+            _print(proto_mod.describe(descriptor))
+        _print()
+        _print(f"{len(descriptors)} descriptor(s) recovered from the binary")
+        return EXIT_OK
+
+    if args.action == "decode":
+        raw = Path(args.file).read_bytes()
+        if args.base64:
+            raw = base64.b64decode(raw.strip())
+        lines = proto_mod.tree(raw, reveal=args.print_secret)
+        _print("\n".join(lines))
+        secrets = proto_mod.find_secret_fields(raw)
+        _print()
+        if secrets:
+            for path, value in secrets:
+                _print(f"secret-shaped field at {path}: "
+                       f"{proto_mod.mask(value)} (len {len(value)})")
+            if args.print_secret:
+                for _path, value in secrets:
+                    _print(f"secret: {value}")
+        else:
+            _print("no secret-shaped string in this message")
+        return EXIT_OK
+
+    _print("unknown action", file=sys.stderr)
+    return EXIT_USAGE
+
+
 def cmd_device(args) -> int:
     """No-root device workflow: inspect, pull the APK, take an adb backup."""
     try:
@@ -1044,6 +1097,24 @@ def build_parser() -> argparse.ArgumentParser:
     apk_scan.add_argument("file")
     apk_scan.add_argument("--json", action="store_true")
 
+    proto_parser = sub.add_parser(
+        "proto", help="recover the protobuf schema from an APK, decode a response"
+    )
+    proto_sub = proto_parser.add_subparsers(dest="action", required=True)
+    proto_apk = proto_sub.add_parser(
+        "apk", help="find the FileDescriptorProto embedded in the app's .so files"
+    )
+    proto_apk.add_argument("file")
+    proto_apk.add_argument("extra", nargs="*", help="more APKs (e.g. the ABI split)")
+    proto_apk.add_argument("--json", action="store_true")
+    proto_decode = proto_sub.add_parser(
+        "decode", help="decode a GetFamilyLinkAppConfigResponse (or any protobuf)"
+    )
+    proto_decode.add_argument("file")
+    proto_decode.add_argument("--base64", action="store_true", help="the file is base64")
+    proto_decode.add_argument("--print-secret", action="store_true",
+                              help="print the secret in the clear (default: masked)")
+
     device_parser = sub.add_parser(
         "device", help="no-root device workflow over adb (info, apk, backup)"
     )
@@ -1090,6 +1161,7 @@ def main(argv: list | None = None) -> int:
         "paths": cmd_paths,
         "abe": cmd_abe,
         "apk": cmd_apk,
+        "proto": cmd_proto,
         "device": cmd_device,
         "serve": cmd_serve,
         "audit": cmd_audit,
