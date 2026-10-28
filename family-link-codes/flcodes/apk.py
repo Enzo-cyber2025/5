@@ -38,7 +38,11 @@ STRING_PATTERNS = (
     ("prefs", re.compile(r"(?:shared_prefs|databases|files|no_backup)/[A-Za-z0-9_.\-]+"),
      "file names inside the private directory"),
     ("config-key", re.compile(r"(?:sharedSecret|shared_secret|accessCodeTtl|access_code_ttl|"
-                              r"clockDriftTolerance|clock_drift_tolerance|parentAccessCode)"),
+                              r"clockDriftTolerance|clock_drift_tolerance|parentAccessCode|"
+                              # the names the 2.105 Flutter build actually uses (RESULTS 4j)
+                              r"parentAccessCodeConfig|familyLinkAppConfig|FamilyLinkAppConfig|"
+                              r"ParentAccessCodeConfig|FAMILY_ACCESS_SECRET_[A-Z]+|"
+                              r"INVALID_SECRET_LENGTH)"),
      "field names that carry the key and its TTL"),
     ("backup-flag", re.compile(r"allowBackup|fullBackupContent|dataExtractionRules"),
      "whether adb backup (the no-root path) is allowed"),

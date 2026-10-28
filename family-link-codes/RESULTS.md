@@ -532,6 +532,81 @@ O que este run prova, então: o app real do Google instala, abre e ocupa a tela 
 sintética. O que ele não prova (e não pode, sem conta): que existe uma chave para
 ser lida.
 
+## 4j. A chave achada dentro do app real: o snapshot Dart não está ofuscado
+
+O §4i mostrou que o app 2.105 é Flutter. Isso reposiciona a busca: o código que
+importa não está nos `classes*.dex`, está no snapshot Dart do
+`libprod_android_lib_flutter_artifacts.so` (**47 MB**, dentro do split de ABI).
+`tools/dart_snapshot_hunt.py` (novo, com testes) abriu esse binário.
+
+### O snapshot carrega os nomes — sem ofuscação
+
+```
+parentaccesscode         10
+parent_access_code        9
+accesscode               15
+sharedsecret               1
+hmac                      22
+base32                     1
+familylinkappconfig        9
+validity                  12
+```
+
+E as strings literais, com a grafia exata:
+
+```
+parentAccessCodeConfig        ParentAccessCodeConfig      ParentAccessCodeData
+sharedSecret                  shared_secret               FamilyLinkAppConfig
+ParentAccessCodeRepository    ParentAccessCodeHandler     FamilyLinkAppConfigKey
+GetFamilyLinkAppConfigRequest GetFamilyLinkAppConfigResponse
+kidsmanagement/v1/familyLinkAppConfig
+package:kids.familylink.flutter.app.repositories.parent_access_code/src/parent_access_code_repository.dart
+parent_access_code/parent_access_code_data.pb
+INVALID_SECRET_LENGTH
+FAMILY_ACCESS_SECRET_EXPIRED
+FAMILY_ACCESS_SECRET_NOT_FOUND
+```
+
+### O esquema da chave, como o app realmente faz
+
+| peça | nome real (2.105) | onde foi lido |
+|---|---|---|
+| RPC que entrega o config | `kidsmanagement/v1/familyLinkAppConfig` | snapshot Dart |
+| request / response | `GetFamilyLinkAppConfigRequest` / `...Response` | snapshot Dart |
+| chave no `shared_prefs` | `FamilyLinkAppConfigKey` | snapshot Dart |
+| documento | `FamilyLinkAppConfig` | snapshot Dart |
+| objeto da chave | `parentAccessCodeConfig` | snapshot Dart |
+| o segredo | `sharedSecret` | snapshot Dart |
+| erros do servidor | `FAMILY_ACCESS_SECRET_EXPIRED`, `FAMILY_ACCESS_SECRET_NOT_FOUND`, `INVALID_SECRET_LENGTH` | snapshot Dart |
+
+Isto **corrige os write-ups públicos**: eles falam de um pref `familyLinkAppConfig`
+com `parentAccessCode.sharedSecret`. A forma atual é `FamilyLinkAppConfig` com
+`parentAccessCodeConfig.sharedSecret`, e o TTL não vem como `accessCodeTtl`
+(0 ocorrências) — o que existe são 12 usos de `validity`. Qualquer receita
+copiada dos gists falha por nome, não por algoritmo.
+
+### O que a ferramenta passou a usar
+
+Os nomes acima entraram no código, não só no relatório:
+
+* `flcodes/apk.py` — o scanner de APK agora procura `parentAccessCodeConfig`,
+  `FamilyLinkAppConfig`, `ParentAccessCodeConfig`, `FAMILY_ACCESS_SECRET_*` e
+  `INVALID_SECRET_LENGTH`, além dos nomes antigos.
+* `flcodes/endpoints.py` — a proveniência de
+  `kidsmanagement/v1/familyLinkAppConfig` deixou de ser "família de hosts
+  parecida" e passou a ser **literal encontrado no binário 2.105**.
+
+### E a chave em si?
+
+Continua sem sair sem conta, por um motivo que agora está provado: os erros
+`FAMILY_ACCESS_SECRET_NOT_FOUND` / `..._EXPIRED` mostram que o **servidor** é a
+fonte do segredo. O app não gera a chave, ele a recebe. Sem login, não há
+`sharedSecret` — e é exatamente por isso que o `abe scan` do §4i devolve
+`nothing to scan` em vez de inventar um.
+
+O que este §4j entrega é o mapa exato de onde a chave vai aparecer quando
+aparecer: mesma RPC, mesmo objeto, mesmo campo, mesmo nome de pref.
+
 ## 5. O que ainda NÃO está provado
 
 * **A chave do app publicado (2.104)** — o APK real foi obtido e autenticado

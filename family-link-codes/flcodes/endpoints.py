@@ -37,7 +37,9 @@ KNOWN_ENDPOINTS = (
     {
         "url": "https://kidsmanagement-pa.clients6.google.com/kidsmanagement/v1/familyLinkAppConfig",
         "kind": "app-config",
-        "why": "same API host family as the endpoints used by the web dashboard",
+        "why": "confirmed in the 2.105 APK: the Dart snapshot carries the literal "
+        "'kidsmanagement/v1/familyLinkAppConfig' plus GetFamilyLinkAppConfig(Request|Response); "
+        "same API host family as the endpoints used by the web dashboard",
     },
     {
         "url": "https://kidsmanagement-pa.googleapis.com/kidsmanagement/v1/familyLinkAppConfig",
