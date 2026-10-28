@@ -306,6 +306,29 @@ def main():
             print("\n".join(vlines[-2:]))
         except Exception as e2:
             print("(sem qtrace: %s)" % e2)
+        # pcap mesmo no timeout
+        try:
+            import struct as _st
+            with open(os.path.join(outdir, "traffic.pcap"), "rb") as f:
+                pd = f.read()
+            pkts = []
+            if pd[:4] in (b"\xd4\xc3\xb2\xa1", b"\xa1\xb2\xc3\xd4"):
+                off = 24
+                while off + 16 <= len(pd):
+                    ts, tu, incl, orig = _st.unpack_from("<IIII", pd, off)
+                    off += 16
+                    if off + incl > len(pd):
+                        break
+                    pkts.append(pd[off:off + incl])
+                    off += incl
+            with open(os.path.join(outdir, "traffic.txt"), "w") as f:
+                f.write("pcap timeout: %d pacotes\n" % len(pkts))
+                for i, p in enumerate(pkts[:24]):
+                    f.write("[%02d] %s et=0x%04x len=%d\n" %
+                            (i, "TX" if p[0:6] == b"\x52\x54\x00" else "RX",
+                             int.from_bytes(p[12:14], "big"), len(p)))
+        except Exception as e3:
+            print("(sem pcap no timeout: %s)" % e3)
         sys.stdout.flush()
         try:
             q.quit()

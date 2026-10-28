@@ -59,7 +59,13 @@ k_swap_init:
         mov rax, [r12]                      ; PDPT[0]
         mov r13, rax
         and r13, -4096         ; endereço do PD (modo 2MB)
-        test rax, 0x80                      ; PS -> página grande de 1GB
+        ; diag: PDPT e valor de PDPT[0]
+        push rax
+        mov rdi, r12
+        call k_log_hex
+        pop rdi
+        call k_log_hex
+        test rdi, 0x80                      ; PS -> página grande de 1GB
         jz .mode_2m
         ; ---- modo 1 GB: cria um PD novo ----
         mov edi, 4096
@@ -96,6 +102,11 @@ k_swap_init:
         jz .off
         mov r14, rax                        ; PT
         mov [sw_pts + r15*8], r14
+        ; diag: PT alocada + índice
+        mov rdi, r14
+        call k_log_hex
+        mov edi, r15d
+        call k_log_hex
         ; preenche identidade: HEAP_START + i*2MB + j*4KB
         xor ecx, ecx
 .fill:
