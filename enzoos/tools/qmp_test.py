@@ -356,6 +356,9 @@ def main():
     if "[enzfs] volume montado" not in log:
         print("FALHOU: ENZFS nao montou o disco AHCI")
         ok = False
+    if "[net] HTTP ok" not in log:
+        print("FALHOU: EnzoFox nao baixou a pagina (serial sem '[net] HTTP ok')")
+        ok = False
     print("=== serial (%d linhas; ultimas 8) ===" % len(slines))
     print("\n".join(slines[-8:]))
     # marcadores do caminho dhcp (uma linha so, antes do cap)

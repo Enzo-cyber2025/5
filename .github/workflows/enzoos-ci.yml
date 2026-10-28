@@ -86,9 +86,16 @@ jobs:
                 echo '```'
               fi
             } > /tmp/prc.md
+            cat /tmp/prc.md >> "$GITHUB_STEP_SUMMARY" || true
             PRN=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$BRANCH" --json number --jq ".[0].number" 2>/dev/null || true)
             if [ -n "$PRN" ]; then
-              gh pr comment "$PRN" --repo "$GITHUB_REPOSITORY" --body-file /tmp/prc.md || true
+              for i in 1 2 3 4 5; do
+                if gh pr comment "$PRN" --repo "$GITHUB_REPOSITORY" --body-file /tmp/prc.md; then
+                  break
+                fi
+                echo "comentario falhou (tentativa $i; rate limit?) — espera 90 s"
+                sleep 90
+              done
             else
               echo "sem PR aberto para o branch; serial abaixo:"
               cat /tmp/prc.md

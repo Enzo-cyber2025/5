@@ -1120,7 +1120,13 @@ http_get:
         jb .rx
 .full:
         call tcp_close
-        mov rax, r12
+        ; log de uma linha: bytes HTTP recebidos (para o canário do CI)
+        push rax
+        mov rdi, s_http_ok
+        call k_log
+        mov rdi, r12
+        call k_log_hex
+        pop rax
         jmp .out
 .err_nic:
         mov eax, -10
@@ -1228,6 +1234,7 @@ s_net_ok:     db "[net] conectado via DHCP (e1000)", 10, 0
 s_http_get:   db "GET ", 0
 s_http_host:  db " HTTP/1.0", 10, "Host: ", 0
 s_http_tail:  db 10, "User-Agent: EnzoFox/1.0 (EnzoOS)", 10, 10, 0
+s_http_ok:    db "[net] HTTP ok, bytes:", 0
 
 %endif
 
