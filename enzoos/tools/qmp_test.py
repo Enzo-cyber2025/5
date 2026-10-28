@@ -46,7 +46,7 @@ class Qmp:
                 "-device", "ide-cd,drive=cd0,bus=sata0.0",
                 "-serial", "file:" + serial_path,
                 "-vga", "std", "-no-reboot",
-                "-d", "int,guest_errors,cpu_reset,trace:ahci_*",
+                "-d", "int,guest_errors,cpu_reset,trace:ahci_*,trace:handle_*",
                 "-D", qtrace]
         if disk:
             args += ["-drive", "id=hd0,if=none,format=raw,file=" + disk,
@@ -376,7 +376,7 @@ def main():
         with open(os.path.join(outdir, "qtrace.log")) as f:
             qtl = [l.rstrip() for l in f]
         ah = [l for l in qtl if "ahci" in l.lower()]
-        kw = [l for l in ah if "[1]" in l and "read" not in l]
+        kw = [l for l in qtl if "[1]" in l and "read" not in l]
         print("=== trace porta[1] nao-reads (%d; ultimas 8) ===" % len(kw))
         print("\n".join(kw[-8:]) if kw else "(nenhum)")
     except Exception as e:
