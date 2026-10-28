@@ -43,8 +43,11 @@ jobs:
           if python3 tools/qmp_test.py release/enzos.iso screenshots/ release/disk.img > /tmp/qemu.log 2>&1; then
             tail -5 /tmp/qemu.log
           else
-            tail -60 /tmp/qemu.log | tac | while IFS= read -r l; do
+            grep -E "FALHOU|excecao no teste" /tmp/qemu.log | while IFS= read -r l; do
               echo "::error::${l:0:220}"
+            done
+            grep -E "\[net\]|\[hda\]|panic" screenshots/serial.log 2>/dev/null | tail -14 | while IFS= read -r l; do
+              echo "::notice::${l:0:220}"
             done
             exit 1
           fi
