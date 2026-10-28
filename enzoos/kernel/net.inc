@@ -245,6 +245,8 @@ arp_resolve:
         jb .wait
         dec r13d
         jnz .try
+        mov rdi, s_arp_fail
+        call k_log
         xor rax, rax
         jmp .out
 .have:
@@ -893,6 +895,8 @@ tcp_connect:
         cmp eax, ebx
         jb .w
         mov dword [tcp_state], 0
+        mov rdi, s_syn_fail
+        call k_log
         mov eax, -1
         jmp .out
 .ok:
@@ -1141,15 +1145,23 @@ http_get:
         pop rax
         jmp .out
 .err_nic:
+        mov rdi, s_http_e1
+        call k_log
         mov eax, -10
         jmp .out
 .err_url:
+        mov rdi, s_http_e2
+        call k_log
         mov eax, -11
         jmp .out
 .err_conn:
+        mov rdi, s_http_e3
+        call k_log
         mov eax, -12
         jmp .out
 .err_send:
+        mov rdi, s_http_e4
+        call k_log
         call tcp_close
         mov eax, -13
 .out:
@@ -1247,6 +1259,12 @@ s_http_get:   db "GET ", 0
 s_http_host:  db " HTTP/1.0", 10, "Host: ", 0
 s_http_tail:  db 10, "User-Agent: EnzoFox/1.0 (EnzoOS)", 10, 10, 0
 s_http_ok:    db "[net] HTTP ok, bytes:", 0
+s_http_e1:    db "[net] HTTP err: sem rede/IP", 10, 0
+s_http_e2:    db "[net] HTTP err: URL invalida", 10, 0
+s_http_e3:    db "[net] HTTP err: TCP nao conectou (SYN sem resposta)", 10, 0
+s_http_e4:    db "[net] HTTP err: envio do GET falhou", 10, 0
+s_arp_fail:   db "[net] ARP sem resposta (gateway nao resolveu)", 10, 0
+s_syn_fail:   db "[net] TCP: SYN sem resposta", 10, 0
 
 %endif
 
