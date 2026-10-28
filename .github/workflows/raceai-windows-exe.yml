@@ -90,14 +90,22 @@ jobs:
           Write-Output ("exit={0}" -f $LASTEXITCODE) | Out-File -Append build.log
           exit $LASTEXITCODE
 
+      - name: Diagnóstico de importação (informativo)
+        id: imports
+        continue-on-error: true
+        run: |
+          Write-Output "== FASE: imports ==" | Out-File -Append build.log
+          .\dist\RaceAI2D\RaceAI2D-console.exe --debug-imports 2>&1 | Tee-Object -Append build.log
+
       - name: Smoke test do executável
         id: smoke
         run: |
           Write-Output "== FASE: smoke test ==" | Out-File -Append build.log
-          .\dist\RaceAI2D\RaceAI2D-console.exe --debug-imports 2>&1 | Tee-Object -Append build.log
+          $env:RACEAI_NO_DML = "1"
           .\dist\RaceAI2D\RaceAI2D-console.exe --selftest 2>&1 | Tee-Object -Append build.log
           $selftest = $LASTEXITCODE
           .\dist\RaceAI2D\RaceAI2D-console.exe --bench --bench-agents 120 --bench-seconds 3 2>&1 | Tee-Object -Append build.log
+          .\dist\RaceAI2D\RaceAI2D-console.exe --dml-probe 2>&1 | Tee-Object -Append build.log
           Write-Output ("selftest exit={0}" -f $selftest) | Out-File -Append build.log
           exit $selftest
 
@@ -130,6 +138,17 @@ jobs:
           name: RaceAI2D-windows
           path: |
             raceai/package/*.zip*
+            raceai/build.log
+            .delivery/raceai-exe-build.json
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Artefato de logs (leve)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: raceai-build-log
+          path: |
             raceai/build.log
             .delivery/raceai-exe-build.json
           if-no-files-found: ignore
