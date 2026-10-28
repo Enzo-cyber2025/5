@@ -68,10 +68,6 @@ class App:
         pygame.display.set_caption("RaceAI 2D — treino de IA com gerações")
         flags = pygame.RESIZABLE | (pygame.FULLSCREEN if fullscreen else 0)
         self.screen = pygame.display.set_mode((width, height), flags)
-        try:
-            pygame.scrap.init()          # permite colar caminhos de arquivos
-        except Exception:
-            pass
         self.clock = pygame.time.Clock()
         self.renderer = Renderer(self.screen)
         self.camera = Camera(width, height, zoom=DEFAULT_SETTINGS["zoom_manual"])

@@ -48,11 +48,12 @@ jobs:
       - name: Instalar PyTorch CPU 2.4.1 + DirectML + dependências
         run: |
           Write-Output "== FASE: dependências ==" | Out-File -Append build.log
-          python -m pip install --upgrade pip
-          pip install torch==2.4.1 --index-url https://download.pytorch.org/whl/cpu
-          pip install --no-deps torch-directml==0.2.5.dev240914
-          pip install -r requirements-build.txt
-          pip install -r requirements.txt
+          python -m pip install --upgrade pip 2>&1 | Tee-Object -Append build.log
+          pip install torch==2.4.1 --index-url https://download.pytorch.org/whl/cpu 2>&1 | Tee-Object -Append build.log
+          pip install --no-deps torch-directml==0.2.5.dev240914 2>&1 | Tee-Object -Append build.log
+          pip install -r requirements-build.txt 2>&1 | Tee-Object -Append build.log
+          pip install -r requirements.txt 2>&1 | Tee-Object -Append build.log
+          python -c "import torch; print('torch ok', torch.__version__)" 2>&1 | Tee-Object -Append build.log
 
       - name: Versões e backends detectados
         run: |
@@ -67,7 +68,8 @@ jobs:
         id: testes
         run: |
           Write-Output "== FASE: testes ==" | Out-File -Append build.log
-          python tests/run_tests.py 2>&1 | Tee-Object -Append build.log
+          $env:PYTHONUNBUFFERED = "1"
+          python -u tests/run_tests.py 2>&1 | Tee-Object -Append build.log
           Write-Output ("exit={0}" -f $LASTEXITCODE) | Out-File -Append build.log
           exit $LASTEXITCODE
 

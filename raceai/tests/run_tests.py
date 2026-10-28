@@ -23,6 +23,30 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(HERE, "..", "src"))
 
 
+def _run_gui_subprocess() -> None:
+    """Roda o teste de interface em processo separado.
+
+    Um travamento do SDL (raro, mas possível em runners sem sessão gráfica)
+    derrubaria o processo inteiro — assim o núcleo continua sendo validado.
+    """
+    import subprocess
+
+    here = os.path.dirname(os.path.abspath(__file__))
+    env = dict(os.environ)
+    env.setdefault("SDL_VIDEODRIVER", "dummy")
+    env.setdefault("SDL_AUDIODRIVER", "dummy")
+    env["PYTHONUNBUFFERED"] = "1"
+    proc = subprocess.run([sys.executable, "-u", os.path.join(here, "test_gui.py")],
+                          cwd=here, env=env, timeout=600,
+                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                          text=True, errors="replace")
+    tail = "\n".join(proc.stdout.strip().splitlines()[-25:])
+    if tail:
+        print(tail)
+    if proc.returncode != 0:
+        raise RuntimeError(f"teste de interface falhou (código {proc.returncode})")
+
+
 def main(argv=None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     import test_core
@@ -30,11 +54,7 @@ def main(argv=None) -> int:
     tests = [(name, fn) for name, fn in sorted(vars(test_core).items())
              if name.startswith("test_") and callable(fn)]
     if "--core" not in argv:
-        try:
-            import test_gui
-            tests.append(("test_gui_smoke", test_gui.run_gui_smoke))
-        except Exception as exc:
-            print(f"[aviso] testes de interface desativados: {exc}")
+        tests.append(("test_gui_smoke", _run_gui_subprocess))
 
     failures = 0
     t_start = time.perf_counter()

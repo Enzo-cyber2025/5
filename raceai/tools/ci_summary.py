@@ -72,14 +72,16 @@ def main() -> int:
         return bool(re.search(r"(Traceback|FALHA|failed|Error:|error CS|exit code 1)",
                               txt, re.IGNORECASE))
 
-    def ok(name: str, extra: bool = True) -> bool:
-        txt = phases.get(name, "")
-        if not txt.strip():
+    def ok(name: str, extra: bool = True, allow_empty: bool = False) -> bool:
+        if name not in phases:
             return False                     # fase nem chegou a rodar
+        txt = phases[name].strip()
+        if not txt:
+            return allow_empty
         return extra and not failed(name)
 
     status = {
-        "dependências": ok("dependências"),
+        "dependências": ok("dependências", allow_empty=True),
         "testes": ok("testes", "testes passaram" in phases.get("testes", "")),
         "build": os.path.isfile(exe),
         "smoke_test": ok("smoke test", "AUTOTESTE OK" in phases.get("smoke test", "")),

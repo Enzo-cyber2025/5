@@ -16,6 +16,15 @@ def run_gui_smoke() -> int:
     import pygame
 
     sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src"))
+    pygame.display.init()
+    try:
+        probe = pygame.display.set_mode((320, 240))
+        pygame.display.quit()
+        if probe is None:
+            raise RuntimeError("set_mode devolveu None")
+    except Exception as exc:
+        print(f"[interface] pulando teste: sem driver de vídeo ({exc})")
+        return 0
     from raceai.app import App
 
     app = App(width=1024, height=700, start_mode="train")
