@@ -143,6 +143,17 @@ jobs:
             enzoos/screenshots/*.png
             enzoos/screenshots/qtrace.log
 
+      - name: Arquivar serial no branch (leitura externa)
+        if: always()
+        run: |
+          mkdir -p ci-logs
+          cp screenshots/serial.log ci-logs/serial-latest.txt 2>/dev/null || true
+          cp /tmp/qemu.log ci-logs/qemu-latest.log 2>/dev/null || true
+          git config user.name "ci-bot" && git config user.email "ci-bot@users.noreply.github.com"
+          git add ci-logs || true
+          git diff --cached --quiet || git commit -q -m "ci: serial do run ${{ github.run_id }} [skip ci]"
+          git push origin HEAD:${{ github.head_ref || github.ref_name }} 2>&1 | tail -1 || true
+
       - name: Upload do log serial
         if: always()
         uses: actions/upload-artifact@v4
