@@ -167,6 +167,7 @@ jobs:
   real-family-link:
     name: real Family Link APK - unpack and extract without root
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     needs: unit
     steps:
       - uses: actions/checkout@v4
@@ -382,6 +383,7 @@ jobs:
           } | tee "$RUNNER_TEMP/nativebridge.txt"
 
       - name: Two profiles on the emulator, with the real APK
+        timeout-minutes: 20
         env:
           FLCODES_PASSPHRASE: real
         run: |

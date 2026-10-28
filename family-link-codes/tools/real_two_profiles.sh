@@ -38,6 +38,13 @@ done
 step() { echo; echo "===== $* ====="; }
 die() { echo "FAILED: $*"; exit 1; }
 
+# Nothing here may block forever: a wedged adb call once burned an hour of CI.
+# `adb backup` is the one command that legitimately waits for a human, so it gets
+# its own longer budget and is never allowed to run unbounded.
+ADB_TIMEOUT="${ADB_TIMEOUT:-90}"
+adb() { command timeout "$ADB_TIMEOUT" adb "$@"; }
+adb_long() { command timeout "${ADB_BACKUP_TIMEOUT:-240}" adb "$@"; }
+
 [[ -n "${ANDROID_SERIAL:-}" ]] || export ANDROID_SERIAL="$(adb devices | awk 'NR>1 && $2=="device" {print $1; exit}')"
 [[ -n "${ANDROID_SERIAL:-}" ]] || die "no device (boot one with tools/emulator_boot.sh)"
 [[ -s "$APK" ]] || die "no APK at $APK"
@@ -70,7 +77,7 @@ adb shell pm list users | tee "$WORK/users.txt"
 
 ensure_app_focused() {  # ensure_app_focused <pkg>
   local pkg="$1" i focus=""
-  for i in $(seq 1 8); do
+  for i in $(seq 1 6); do
     focus="$(adb shell dumpsys window 2>/dev/null | grep -m1 "mCurrentFocus=" | tr -d '\r')"
     if [[ "$focus" == *"$pkg"* ]]; then
       echo "focused: $focus"
@@ -105,7 +112,7 @@ switch_to() {
   adb shell am switch-user "$uid" >/dev/null 2>&1
   adb shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1
   adb shell wm dismiss-keyguard >/dev/null 2>&1
-  for _ in $(seq 1 15); do
+  for _ in $(seq 1 10); do
     state="$(adb shell am get-started-user-state "$uid" 2>/dev/null | tr -d '\r')"
     [[ "$state" == *"UNLOCKED"* ]] && break
     adb shell input keyevent 82 >/dev/null 2>&1
@@ -269,7 +276,7 @@ head -6 "$WORK/screen-owner.txt"
 
 AB="$WORK/$PACKAGE-owner.ab"
 rm -f "$AB"
-( adb backup -f "$AB" -noapk "$PACKAGE" > "$WORK/backup.log" 2>&1 ) &
+( adb_long backup -f "$AB" -noapk "$PACKAGE" > "$WORK/backup.log" 2>&1 ) &
 pid=$!
 for _ in $(seq 1 45); do
   [[ -s "$AB" ]] && break
@@ -277,6 +284,11 @@ for _ in $(seq 1 45); do
     || python3 "$HERE/tools/accept_backup_dialog.py" >/dev/null 2>&1 || true
   sleep 2
 done
+for _ in $(seq 1 130); do
+  kill -0 $pid 2>/dev/null || break
+  sleep 2
+done
+kill -0 $pid 2>/dev/null && { echo "backup still running: killing it"; kill $pid 2>/dev/null; }
 wait $pid 2>/dev/null || true
 ls -l "$AB" 2>&1 | tee "$WORK/backup-size.txt"
 if [[ -s "$AB" ]]; then
