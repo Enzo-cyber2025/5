@@ -264,12 +264,26 @@ app_launch:
         mov rax, r12
         jmp .done
 .notfound:
+        push r15
+        mov rdi, s_al_nf
+        call k_log
+        mov rdi, r15
+        call k_log
+        pop r15
         mov rax, -1
         jmp .done
 .badce:
+        push r15
+        mov rdi, s_al_bc
+        call k_log
+        mov rdi, r15
+        call k_log
+        pop r15
         mov rax, -2
         jmp .done
 .nomem:
+        mov rdi, s_al_nm
+        call k_log
         mov rax, -3
         jmp .done
 .noslot:
@@ -921,6 +935,9 @@ lfb_wc_on: dd 0
 app_slots: times MAX_APPS * A_SIZEOF db 0
 
 s_cefs_bad: db "CEFS: assinatura invalida", 0
+s_al_nf:  db "[app] nao achado: ", 0
+s_al_bc:  db "[app] formato invalido: ", 0
+s_al_nm:  db "[app] sem memoria", 10, 0
 s_disp_diag: db "[wm] disp tipo/param/slot:", 0
 s_ext_ce:   db ".CE", 0
 s_ext_enz: db ".enz", 0

@@ -70,7 +70,7 @@ jobs:
           echo "::notice::http_go=$C3"
           echo "::notice::janelas_log=$C5"
           echo "::notice::serial_linhas=$(wc -l < $S 2>/dev/null || echo 0)"
-          grep -E "janela|wm] disp" $S 2>/dev/null | tail -8 | while IFS= read -r l; do
+          grep -E "janela|wm] disp|\[app\]" $S 2>/dev/null | tail -8 | while IFS= read -r l; do
             echo "::notice::${l:0:220}"
           done || true
 
