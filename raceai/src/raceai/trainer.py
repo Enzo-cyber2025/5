@@ -128,7 +128,7 @@ class Trainer:
     def restart(self, fresh: bool = False):
         if fresh:
             self.pop.random_population()
-        self.sim.reset()
+        self.sim.reset(rotation=self.pop.generation)
         self.backend.set_population(self.pop.as_layers())
         self.state.steps = 0
         self.state.sim_seconds = 0.0
@@ -238,7 +238,7 @@ class Trainer:
             self.pop.evolve()
             self.backend.set_population(self.pop.as_layers())
             self.state.generation = self.pop.generation
-        self.sim.reset()
+        self.sim.reset(rotation=self.pop.generation)
         self.state.steps = 0
         return stats
 

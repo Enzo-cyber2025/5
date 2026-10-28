@@ -273,6 +273,55 @@ def test_model_roundtrip():
             pass
 
 
+def test_torch_backend_when_available():
+    """Valida o caminho PyTorch (CPU/CUDA) comparando com o backend numpy.
+
+    O DirectML só é testado com RACEAI_TEST_DML=1 porque, em máquinas sem
+    driver de vídeo utilizável, o import pode derrubar o processo inteiro.
+    """
+    try:
+        import torch  # noqa: F401
+    except Exception as exc:
+        print(f"  (torch ausente: {type(exc).__name__} — pulando)")
+        return
+    from raceai.ai.backend import NumpyBackend, TorchBackend
+
+    spec = PolicySpec(obs_dim=8, hidden=(16, 8), act_dim=2)
+    genomes = [init_genome(spec, np.random.default_rng(i)) for i in range(6)]
+    obs = (np.random.default_rng(1).random((6, 8)).astype(np.float32) * 2 - 1)
+    idx = np.arange(6)
+    ref = NumpyBackend(spec, 6)
+    ref.set_population(genomes)
+    expected = ref.predict(obs, idx)
+
+    devices = ["torch-cpu"]
+    if torch.cuda.is_available():
+        devices.append("cuda")
+    if os.environ.get("RACEAI_TEST_DML", "").strip().lower() in ("1", "true", "yes"):
+        devices.append("dml")
+
+    tested = 0
+    for dev in devices:
+        try:
+            backend = TorchBackend(spec, 6, dev)
+        except Exception as exc:
+            print(f"  {dev}: indisponível ({type(exc).__name__}: {exc})")
+            continue
+        backend.set_population(genomes)
+        out = backend.predict(obs, idx)
+        assert out.shape == expected.shape, (dev, out.shape)
+        err = float(np.abs(out - expected).max())
+        assert err < 2e-3, f"{dev} divergiu do numpy em {err}"
+        # subconjunto fora de ordem (agentes vivos mudam a cada passo)
+        sub = np.array([3, 0, 5])
+        out2 = backend.predict(obs[sub], sub)
+        assert np.allclose(out2, expected[sub], atol=2e-3), f"{dev}: índices trocados"
+        print(f"  {dev}: ok (erro máx {err:.1e}, dispositivo "
+              f"{getattr(backend, 'device_desc', '')})")
+        tested += 1
+    assert tested >= 1, "torch está instalado mas nenhum backend funcionou"
+
+
 def test_trainer_generation_and_save():
     from raceai.trainer import Trainer
     trk = _track("kartodromo")

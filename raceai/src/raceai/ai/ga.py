@@ -57,7 +57,17 @@ class Population:
         self.best_generation = 0
         self.stagnation = 0
         self.sigma = float(self.cfg.mutation_sigma)
+        self._slices = self._layer_slices()
         self.random_population()
+
+    def _layer_slices(self) -> list[tuple[int, int]]:
+        slices = []
+        pos = 0
+        for shape in self.spec.shapes:
+            size = int(np.prod(shape))
+            slices.append((pos, pos + size))
+            pos += size
+        return slices
 
     # ------------------------------------------------------------------ #
     def random_population(self):
@@ -147,17 +157,28 @@ class Population:
         return (a * alpha + b * (1.0 - alpha)).astype(np.float32)
 
     def _mutate(self, genome: np.ndarray, boost: float = 1.0) -> np.ndarray:
-        sigma = self.sigma * boost
+        """Mutação gaussiana **relativa à escala dos pesos de cada camada**.
+
+        Ruído absoluto (sigma fixo) destrói camadas com pesos pequenos; aqui o
+        desvio é proporcional ao desvio-padrão da camada, com um piso ligado à
+        escala global para camadas que colapsaram (ex.: bias zerado).
+        """
         g = genome.copy()
         rate = float(np.clip(self.cfg.mutation_rate, 0.0, 1.0))
-        mask = self.rng.random(g.shape[0]) < rate
-        if mask.any():
-            g[mask] += (self.rng.normal(0.0, sigma, size=int(mask.sum()))
-                        .astype(np.float32))
+        global_std = max(float(g.std()), 1e-3)
+        for i0, i1 in self._slices:
+            seg = g[i0:i1]
+            layer_std = float(seg.std())
+            scale = self.sigma * boost * (layer_std + 0.15 * global_std)
+            mask = self.rng.random(seg.shape[0]) < rate
+            n_hit = int(mask.sum())
+            if n_hit:
+                seg[mask] += (self.rng.normal(0.0, scale, size=n_hit)
+                              .astype(np.float32))
         if self.cfg.reset_mutation_chance > 0:
             rmask = self.rng.random(g.shape[0]) < self.cfg.reset_mutation_chance
             if rmask.any():
-                g[rmask] = (self.rng.normal(0.0, 0.5, size=int(rmask.sum()))
+                g[rmask] = (self.rng.normal(0.0, global_std, size=int(rmask.sum()))
                             .astype(np.float32))
         np.clip(g, -8.0, 8.0, out=g)
         return g
@@ -193,7 +214,7 @@ class Population:
 
         # 4) sigma adaptativo
         if self.stagnation >= max(1, int(cfg.stagnation_limit)):
-            self.sigma = min(0.45, self.sigma * 1.5)
+            self.sigma = min(0.35, self.sigma * 1.5)
             self.stagnation = 0
         else:
             self.sigma = max(cfg.sigma_min, self.sigma * float(cfg.sigma_decay))

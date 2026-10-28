@@ -74,6 +74,14 @@ jobs:
           Write-Output ("exit={0}" -f $LASTEXITCODE) | Out-File -Append build.log
           exit $LASTEXITCODE
 
+      - name: Teste do DirectML dentro do pacote (informativo)
+        id: dml
+        continue-on-error: true
+        run: |
+          Write-Output "== FASE: directml ==" | Out-File -Append build.log
+          $env:RACEAI_TEST_DML = "1"
+          python -u -c "import sys; sys.path.insert(0, 'src'); import tests.test_core as t; t.test_torch_backend_when_available()" 2>&1 | Tee-Object -Append build.log
+
       - name: Build (PyInstaller)
         id: pyinstaller
         run: |

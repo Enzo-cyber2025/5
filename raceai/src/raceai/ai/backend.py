@@ -7,6 +7,7 @@ em batch — assim a GPU Intel UHD 605 recebe um kernel grande por camada.
 """
 from __future__ import annotations
 
+import os
 import time
 
 import numpy as np
@@ -14,6 +15,11 @@ import numpy as np
 from .policy import PolicySpec, genome_to_layers
 
 TORCH_IMPORT_ERROR = ""
+
+
+def dml_disabled() -> bool:
+    """Permite desligar o DirectML (RACEAI_NO_DML=1) se o driver travar."""
+    return os.environ.get("RACEAI_NO_DML", "").strip().lower() not in ("", "0", "false", "no")
 
 
 def torch_available() -> bool:
@@ -34,6 +40,9 @@ def list_devices(prefer: str = "auto") -> list[tuple[str, str]]:
         opts.append(("torch-cpu", f"CPU (PyTorch {torch.__version__})"))
         if torch.cuda.is_available():
             opts.append(("cuda", f"CUDA — {torch.cuda.get_device_name(0)}"))
+        if dml_disabled():
+            opts.append(("dml", "DirectML desligado por RACEAI_NO_DML"))
+            raise RuntimeError("dml desabilitado")
         try:
             import torch_directml
             d = torch_directml.device()
@@ -45,6 +54,7 @@ def list_devices(prefer: str = "auto") -> list[tuple[str, str]]:
             opts.append(("dml", f"DirectML (GPU) — {name}"))
         except Exception as exc:
             opts.append(("dml", f"DirectML indisponível ({type(exc).__name__})"))
+
     except Exception as exc:
         opts.append(("torch-cpu", f"PyTorch indisponível ({type(exc).__name__})"))
     return opts
@@ -179,8 +189,10 @@ class TorchBackend:
             for li in range(len(self.W)):
                 w_np = np.stack([np.asarray(l[li][0], dtype=np.float32) for l in layers])
                 b_np = np.stack([np.asarray(l[li][1], dtype=np.float32) for l in layers])
-                self.W[li].copy_(torch.from_numpy(w_np).to(self.device))
-                self.b[li].copy_(torch.from_numpy(b_np).to(self.device))[:, None, :]
+                self.W[li].copy_(torch.from_numpy(np.ascontiguousarray(w_np)).to(self.device))
+                # bias: (B, saida) -> (B, 1, saida) antes de copiar
+                b_t = torch.from_numpy(np.ascontiguousarray(b_np)).to(self.device).unsqueeze(1)
+                self.b[li].copy_(b_t)
 
     def predict(self, obs: np.ndarray, indices: np.ndarray | None = None) -> np.ndarray:
         torch = self.torch

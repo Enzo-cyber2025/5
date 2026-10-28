@@ -146,7 +146,7 @@ class Simulation:
         self.fleet.permute(perm)
         self.n_active = len(idx)
 
-    def reset(self, n_agents: int | None = None):
+    def reset(self, n_agents: int | None = None, rotation: int = 0):
         if n_agents is not None and n_agents != self.fleet.n:
             self.fleet = Fleet(n_agents)
             self.pending_actions = np.zeros((n_agents, 2), dtype=np.float32)
@@ -160,8 +160,11 @@ class Simulation:
         per_row = max(1, int((trk.half_widths[trk.start_index] * 2 - 3.0) // 3.2))
         rows = self.cfg.spawn_rows or math.ceil(n / per_row)
         for k in range(n):
-            row = k // per_row
-            col = k % per_row
+            # a posição no grid gira a cada geração: nenhum indivíduo fica
+            # sempre com o mesmo lugar (bom ou ruim) na largada
+            slot = (k + rotation) % n
+            row = slot // per_row
+            col = slot % per_row
             back = int(round((6.0 + row * 9.0) / trk.spacing))
             i = (trk.start_index - back) % trk.n
             half = trk.half_widths[i]
