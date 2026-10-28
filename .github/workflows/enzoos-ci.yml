@@ -42,6 +42,11 @@ jobs:
           echo "::notice::nasm_v=$(nasm -v | head -1)"
           strings -a obj/kernel.bin | grep -m1 "nao achado" || echo "::notice::SEM_STRING_app_diag"
           strings -a obj/kernel.bin | grep -m1 "janela" || echo "::notice::SEM_STRING_janela"
+          python3 - <<'EOF'
+d = open('release/enzos.iso','rb').read()
+print("::notice::iso_tem_janela=%s iso_tem_diagapp=%s iso_tem_magic=%s iso_sz=%d" % (
+    b'+janela' in d, b'nao achado' in d, b'\x68\x24\x57\x13' in d, len(d)))
+EOF
 
       - name: Autoteste estático (formatos PE/ELF/ZIP/AXML/CEFS/ENZ)
         run: python3 tools/selftest.py release/enzos.iso
