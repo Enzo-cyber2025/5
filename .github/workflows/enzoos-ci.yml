@@ -66,7 +66,10 @@ jobs:
           C1=$(grep -c "wm] disp" $S 2>/dev/null || echo 0)
           C3=$(grep -c "HTTP GET iniciado" $S 2>/dev/null || echo 0)
           C5=$(grep -c "janela" $S 2>/dev/null || echo 0)
-          echo "::notice::CONTADORES wm_disp=$C1 http_go=$C3 janelas=$C5"
+          echo "::notice::wm_disp=$C1"
+          echo "::notice::http_go=$C3"
+          echo "::notice::janelas_log=$C5"
+          echo "::notice::serial_linhas=$(wc -l < $S 2>/dev/null || echo 0)"
           grep -E "janela|wm] disp" $S 2>/dev/null | tail -8 | while IFS= read -r l; do
             echo "::notice::${l:0:220}"
           done || true
