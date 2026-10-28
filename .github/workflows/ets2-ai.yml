@@ -1560,6 +1560,261 @@ jobs:
               @(Get-Content "$PWD\warpwin.out" -ErrorAction SilentlyContinue) + @(Get-Content "$PWD\warpwin.err" -ErrorAction SilentlyContinue) | ForEach-Object { Trace "warpwin: $_" }
             } else { Trace "warpwin.exe nao compilou" }
           } catch { Trace "warpwin: FALHOU $($_.Exception.Message)" }
+          # v75: WARPWIN2 — a v74 provou (WER inline): o jogo cria o device
+          # WARP FL 10_0 com S_OK e morre com 0xC0000409 DENTRO do
+          # D3D10Warp.dll na sequencia seguinte (chamadas de vtable, invisiveis
+          # aos exports do shim). Esta sonda replica TUDO que o jogo faz depois
+          # do device, um estagio por vez com flush ANTES da chamada — o ultimo
+          # estagio logado antes da morte e o assassino. Inclui CS 4.0 (ha
+          # fastfail documentado no compilador de compute do d3d10warp).
+          try {
+            Trace "warpwin2 (bisect pos-device) inicio"
+            @'
+            #define WIN32_LEAN_AND_MEAN
+            #include <windows.h>
+            #include <initguid.h>
+            #include <d3d11.h>
+            #include <d3dcompiler.h>
+            #include <stdio.h>
+            #pragma comment(lib, "d3d11.lib")
+            #pragma comment(lib, "dxgi.lib")
+            #pragma comment(lib, "user32.lib")
+            #pragma comment(lib, "d3dcompiler.lib")
+            static void P(const char* fmt, ...) {
+              char b[512]; va_list a; va_start(a, fmt);
+              _vsnprintf_s(b, sizeof(b), _TRUNCATE, fmt, a); va_end(a);
+              printf("%s\n", b); fflush(stdout);
+            }
+            static const char* g_cs =
+              "RWByteAddressBuffer bab : register(u0);\n"
+              "[numthreads(4,4,1)]\n"
+              "void cs_main(uint3 id : SV_DispatchThreadID) { bab.Store(id.x * 4, id.x); }\n";
+            static const char* g_vs =
+              "float4 vs_main(float4 p : POSITION) : SV_Position { return p; }\n";
+            static const char* g_ps =
+              "float4 ps_main() : SV_Target { return float4(1,0,0,1); }\n";
+            int WINAPI wWinMain(HINSTANCE hI, HINSTANCE hP, PWSTR cl, int cs_)
+            {
+              ID3D11Device* dev = NULL; ID3D11DeviceContext* ctx = NULL;
+              D3D_FEATURE_LEVEL fl = D3D_FEATURE_LEVEL_10_0, got = 0;
+              HRESULT hr; int fails = 0;
+              (void)hI; (void)hP; (void)cl; (void)cs_;
+              P("warpwin2: s0 inicio");
+              hr = D3D11CreateDevice(NULL, D3D_DRIVER_TYPE_WARP, NULL, 0, &fl, 1,
+                                     D3D11_SDK_VERSION, &dev, &got, &ctx);
+              P("warpwin2: s1 WARP FL10_0 device hr=0x%08x got=0x%04x", (unsigned)hr, (unsigned)got);
+              if (FAILED(hr)) return 1;
+              {
+                ID3D11Texture2D* rt = NULL; ID3D11RenderTargetView* rtv = NULL;
+                D3D11_TEXTURE2D_DESC td; ZeroMemory(&td, sizeof(td));
+                td.Width = 800; td.Height = 600; td.MipLevels = 1; td.ArraySize = 1;
+                td.Format = DXGI_FORMAT_B8G8R8A8_UNORM; td.SampleDesc.Count = 1;
+                td.Usage = D3D11_USAGE_DEFAULT; td.BindFlags = D3D11_BIND_RENDER_TARGET;
+                P("warpwin2: s2 CreateTexture2D RT 800x600...");
+                hr = dev->lpVtbl->CreateTexture2D(dev, &td, NULL, &rt);
+                P("warpwin2: s2 hr=0x%08x", (unsigned)hr); if (FAILED(hr)) fails++;
+                P("warpwin2: s3 CreateRenderTargetView...");
+                hr = dev->lpVtbl->CreateRenderTargetView(dev, (ID3D11Resource*)rt, NULL, &rtv);
+                P("warpwin2: s3 hr=0x%08x", (unsigned)hr); if (FAILED(hr)) fails++;
+                {
+                  ID3D11Texture2D* ds = NULL; ID3D11DepthStencilView* dsv = NULL;
+                  D3D11_TEXTURE2D_DESC dd; ZeroMemory(&dd, sizeof(dd));
+                  dd.Width = 800; dd.Height = 600; dd.MipLevels = 1; dd.ArraySize = 1;
+                  dd.Format = DXGI_FORMAT_D24_UNORM_S8_UINT; dd.SampleDesc.Count = 1;
+                  dd.Usage = D3D11_USAGE_DEFAULT; dd.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+                  P("warpwin2: s4 CreateTexture2D D24S8...");
+                  hr = dev->lpVtbl->CreateTexture2D(dev, &dd, NULL, &ds);
+                  P("warpwin2: s4 hr=0x%08x", (unsigned)hr);
+                  P("warpwin2: s5 CreateDepthStencilView...");
+                  hr = dev->lpVtbl->CreateDepthStencilView(dev, (ID3D11Resource*)ds, NULL, &dsv);
+                  P("warpwin2: s5 hr=0x%08x", (unsigned)hr);
+                  P("warpwin2: s6 OMSetRenderTargets+Clear...");
+                  ctx->lpVtbl->OMSetRenderTargets(ctx, 1, &rtv, dsv);
+                  { float c[4] = {0.0f, 0.2f, 0.4f, 1.0f};
+                    ctx->lpVtbl->ClearRenderTargetView(ctx, rtv, c);
+                    ctx->lpVtbl->ClearDepthStencilView(ctx, dsv, 3, 1.0f, 0); }
+                  P("warpwin2: s6 OK");
+                  if (ds) ds->lpVtbl->Release(ds);
+                  if (dsv) dsv->lpVtbl->Release(dsv);
+                }
+                {
+                  D3D11_TEXTURE2D_DESC bc; ID3D11Texture2D* bt = NULL;
+                  ZeroMemory(&bc, sizeof(bc));
+                  bc.MipLevels = 1; bc.ArraySize = 1; bc.Format = DXGI_FORMAT_BC3_UNORM;
+                  bc.SampleDesc.Count = 1; bc.Usage = D3D11_USAGE_DEFAULT;
+                  bc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+                  bc.Width = 8192; bc.Height = 8192;
+                  P("warpwin2: s7 CreateTexture2D BC3 8192x8192...");
+                  hr = dev->lpVtbl->CreateTexture2D(dev, &bc, NULL, &bt);
+                  P("warpwin2: s7 hr=0x%08x", (unsigned)hr); if (bt) bt->lpVtbl->Release(bt);
+                  bc.Width = 16384; bc.Height = 16384;
+                  P("warpwin2: s8 CreateTexture2D BC3 16384x16384 (FL10 max=8192)...");
+                  hr = dev->lpVtbl->CreateTexture2D(dev, &bc, NULL, &bt);
+                  P("warpwin2: s8 hr=0x%08x (E_INVALIDARG esperado; fastfail = achado!)", (unsigned)hr);
+                  if (bt) bt->lpVtbl->Release(bt);
+                }
+                {
+                  D3D11_BUFFER_DESC bd; ID3D11Buffer* vb = NULL; D3D11_MAPPED_SUBRESOURCE mp;
+                  float verts[9] = {0,0.5f,0.5f, 0.5f,-0.5f,0.5f, -0.5f,-0.5f,0.5f};
+                  ZeroMemory(&bd, sizeof(bd));
+                  bd.ByteWidth = sizeof(verts); bd.Usage = D3D11_USAGE_DYNAMIC;
+                  bd.BindFlags = D3D11_BIND_VERTEX_BUFFER; bd.CPUAccessFlags = 1;
+                  P("warpwin2: s9 VB dynamic + Map...");
+                  hr = dev->lpVtbl->CreateBuffer(dev, &bd, NULL, &vb);
+                  P("warpwin2: s9a hr=0x%08x", (unsigned)hr);
+                  hr = ctx->lpVtbl->Map(ctx, (ID3D11Resource*)vb, 0, D3D11_MAP_WRITE_DISCARD, 0, &mp);
+                  P("warpwin2: s9b Map hr=0x%08x", (unsigned)hr);
+                  if (SUCCEEDED(hr)) { CopyMemory(mp.pData, verts, sizeof(verts)); ctx->lpVtbl->Unmap(ctx, (ID3D11Resource*)vb, 0); }
+                  if (vb) vb->lpVtbl->Release(vb);
+                }
+                {
+                  WNDCLASSW wc; HWND hwnd; IDXGIDevice* xd = NULL; IDXGIAdapter* ad = NULL;
+                  IDXGIFactory* fac = NULL; IDXGISwapChain* chain = NULL;
+                  DXGI_SWAP_CHAIN_DESC sd; RECT rc; IDXGISwapChain* flip = NULL;
+                  ZeroMemory(&wc, sizeof(wc));
+                  wc.lpfnWndProc = DefWindowProcW; wc.hInstance = GetModuleHandleW(NULL);
+                  wc.lpszClassName = L"warpwin2";
+                  RegisterClassW(&wc);
+                  rc.left = 0; rc.top = 0; rc.right = 800; rc.bottom = 600;
+                  AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
+                  hwnd = CreateWindowExW(0, L"warpwin2", L"warpwin2", WS_OVERLAPPEDWINDOW,
+                                         10, 10, rc.right - rc.left, rc.bottom - rc.top,
+                                         NULL, NULL, wc.hInstance, NULL);
+                  P("warpwin2: s10 janela hwnd=%p", (void*)hwnd);
+                  dev->lpVtbl->QueryInterface(dev, &IID_IDXGIDevice, (void**)&xd);
+                  xd->lpVtbl->GetAdapter(xd, &ad);
+                  ad->lpVtbl->GetParent(ad, &IID_IDXGIFactory, (void**)&fac);
+                  ZeroMemory(&sd, sizeof(sd));
+                  sd.BufferDesc.Width = 800; sd.BufferDesc.Height = 600;
+                  sd.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+                  sd.BufferDesc.RefreshRate.Numerator = 60; sd.BufferDesc.RefreshRate.Denominator = 1;
+                  sd.SampleDesc.Count = 1; sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+                  sd.BufferCount = 1; sd.OutputWindow = hwnd; sd.Windowed = TRUE;
+                  sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+                  P("warpwin2: s11 swapchain DISCARD (via device factory)...");
+                  hr = fac->lpVtbl->CreateSwapChain(fac, (IUnknown*)dev, &sd, &chain);
+                  P("warpwin2: s11 hr=0x%08x", (unsigned)hr);
+                  if (chain) {
+                    P("warpwin2: s12 Present DISCARD...");
+                    hr = chain->lpVtbl->Present(chain, 0, 0);
+                    P("warpwin2: s12 hr=0x%08x", (unsigned)hr);
+                    chain->lpVtbl->Release(chain);
+                  }
+                  sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL; sd.BufferCount = 2;
+                  P("warpwin2: s13 swapchain FLIP_SEQUENTIAL...");
+                  hr = fac->lpVtbl->CreateSwapChain(fac, (IUnknown*)dev, &sd, &flip);
+                  P("warpwin2: s13 hr=0x%08x", (unsigned)hr);
+                  if (flip) {
+                    P("warpwin2: s14 Present FLIP...");
+                    hr = flip->lpVtbl->Present(flip, 0, 0);
+                    P("warpwin2: s14 hr=0x%08x", (unsigned)hr);
+                    flip->lpVtbl->Release(flip);
+                  }
+                  if (fac) fac->lpVtbl->Release(fac);
+                  if (ad) ad->lpVtbl->Release(ad);
+                  if (xd) xd->lpVtbl->Release(xd);
+                  DestroyWindow(hwnd);
+                }
+                if (rt) rt->lpVtbl->Release(rt);
+                if (rtv) rtv->lpVtbl->Release(rtv);
+              }
+              {
+                ID3DBlob* csb = NULL; ID3DBlob* err = NULL; ID3D11ComputeShader* csh = NULL;
+                P("warpwin2: s15 D3DCompile CS 4.0...");
+                hr = D3DCompile(g_cs, (SIZE_T)lstrlenA(g_cs), NULL, NULL, NULL,
+                                "cs_main", "cs_4_0", 0, 0, &csb, &err);
+                P("warpwin2: s15 hr=0x%08x%s%s", (unsigned)hr,
+                  (err && FAILED(hr)) ? " ERRO: " : "",
+                  (err && FAILED(hr)) ? (const char*)err->lpVtbl->GetBufferPointer(err) : "");
+                if (SUCCEEDED(hr)) {
+                  ID3D11Buffer* bab = NULL; ID3D11UnorderedAccessView* uav = NULL;
+                  D3D11_BUFFER_DESC bd; D3D11_UNORDERED_ACCESS_VIEW_DESC ud;
+                  ZeroMemory(&bd, sizeof(bd));
+                  bd.ByteWidth = 1024; bd.Usage = D3D11_USAGE_DEFAULT;
+                  bd.BindFlags = D3D11_BIND_UNORDERED_ACCESS;
+                  bd.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS;
+                  hr = dev->lpVtbl->CreateBuffer(dev, &bd, NULL, &bab);
+                  P("warpwin2: s16a raw buffer hr=0x%08x", (unsigned)hr);
+                  ZeroMemory(&ud, sizeof(ud));
+                  ud.Format = DXGI_FORMAT_R32_TYPELESS;
+                  ud.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+                  ud.Buffer.FirstElement = 0; ud.Buffer.NumElements = 256;
+                  ud.Buffer.Flags = D3D11_BUFFER_UAV_FLAG_RAW;
+                  P("warpwin2: s16b CreateComputeShader (ComputeShaderTransformer?)...");
+                  hr = dev->lpVtbl->CreateComputeShader(dev, csb->lpVtbl->GetBufferPointer(csb),
+                                                        csb->lpVtbl->GetBufferSize(csb), NULL, &csh);
+                  P("warpwin2: s16b hr=0x%08x", (unsigned)hr);
+                  hr = dev->lpVtbl->CreateUnorderedAccessView(dev, (ID3D11Resource*)bab, &ud, &uav);
+                  P("warpwin2: s16c UAV raw hr=0x%08x", (unsigned)hr);
+                  P("warpwin2: s16d CSSetShader+Dispatch...");
+                  ctx->lpVtbl->CSSetShader(ctx, csh, NULL, 0);
+                  ctx->lpVtbl->CSSetUnorderedAccessViews(ctx, 0, 1, &uav, NULL);
+                  ctx->lpVtbl->Dispatch(ctx, 1, 1, 1);
+                  P("warpwin2: s16d OK");
+                  if (uav) uav->lpVtbl->Release(uav);
+                  if (bab) bab->lpVtbl->Release(bab);
+                  if (csh) csh->lpVtbl->Release(csh);
+                }
+                if (csb) csb->lpVtbl->Release(csb);
+                if (err) err->lpVtbl->Release(err);
+              }
+              {
+                ID3DBlob* vb_ = NULL; ID3DBlob* pb = NULL; ID3DBlob* e2 = NULL;
+                P("warpwin2: s17 D3DCompile vs_4_0/ps_4_0...");
+                hr = D3DCompile(g_vs, (SIZE_T)lstrlenA(g_vs), NULL, NULL, NULL,
+                                "vs_main", "vs_4_0", 0, 0, &vb_, &e2);
+                P("warpwin2: s17a vs hr=0x%08x", (unsigned)hr);
+                hr = D3DCompile(g_ps, (SIZE_T)lstrlenA(g_ps), NULL, NULL, NULL,
+                                "ps_main", "ps_4_0", 0, 0, &pb, &e2);
+                P("warpwin2: s17b ps hr=0x%08x", (unsigned)hr);
+                if (SUCCEEDED(hr) && vb_) {
+                  D3D11_INPUT_ELEMENT_DESC ie; ID3D11InputLayout* lay = NULL;
+                  ID3D11VertexShader* vsh = NULL; ID3D11PixelShader* psh = NULL;
+                  ZeroMemory(&ie, sizeof(ie));
+                  ie.SemanticName = "POSITION"; ie.Format = DXGI_FORMAT_R32G32B32_FLOAT;
+                  ie.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+                  P("warpwin2: s18 CreateInputLayout...");
+                  hr = dev->lpVtbl->CreateInputLayout(dev, &ie, 1,
+                      vb_->lpVtbl->GetBufferPointer(vb_), vb_->lpVtbl->GetBufferSize(vb_), &lay);
+                  P("warpwin2: s18 hr=0x%08x", (unsigned)hr);
+                  P("warpwin2: s19 CreateVertexShader+PixelShader+Draw...");
+                  dev->lpVtbl->CreateVertexShader(dev, vb_->lpVtbl->GetBufferPointer(vb_),
+                                                  vb_->lpVtbl->GetBufferSize(vb_), NULL, &vsh);
+                  dev->lpVtbl->CreatePixelShader(dev, pb->lpVtbl->GetBufferPointer(pb),
+                                                 pb->lpVtbl->GetBufferSize(pb), NULL, &psh);
+                  ctx->lpVtbl->IASetInputLayout(ctx, lay);
+                  ctx->lpVtbl->VSSetShader(ctx, vsh, NULL, 0);
+                  ctx->lpVtbl->PSSetShader(ctx, psh, NULL, 0);
+                  ctx->lpVtbl->IASetPrimitiveTopology(ctx, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+                  ctx->lpVtbl->Draw(ctx, 3, 0);
+                  P("warpwin2: s19 OK (draw completo no WARP FL 10_0)");
+                  if (lay) lay->lpVtbl->Release(lay);
+                  if (vsh) vsh->lpVtbl->Release(vsh);
+                  if (psh) psh->lpVtbl->Release(psh);
+                }
+                if (vb_) vb_->lpVtbl->Release(vb_);
+                if (pb) pb->lpVtbl->Release(pb);
+                if (e2) e2->lpVtbl->Release(e2);
+              }
+              if (ctx) ctx->lpVtbl->Release(ctx);
+              if (dev) dev->lpVtbl->Release(dev);
+              P("warpwin2: s20 FIM (fails=%d) — todos os estagios do jogo cobertos", fails);
+              return fails ? 3 : 0;
+            }
+          '@ | Set-Content "$PWD\warpwin2.c" -Encoding ASCII
+            & cl /nologo /O2 /W3 "$PWD\warpwin2.c" "/Fe:$PWD\warpwin2.exe" /link 2>&1 | ForEach-Object { Trace "warpwin2 cl: $_" }
+            if (Test-Path "$PWD\warpwin2.exe") {
+              $pw2 = Start-Process -FilePath "$PWD\warpwin2.exe" -RedirectStandardOutput "$PWD\warpwin2.out" -RedirectStandardError "$PWD\warpwin2.err" -PassThru -WindowStyle Hidden
+              if (-not $pw2.WaitForExit(120000)) {
+                Stop-Process -Id $pw2.Id -Force -ErrorAction SilentlyContinue
+                Trace "warpwin2 TIMEOUT 120s"
+              } else {
+                Trace "warpwin2 exit=$($pw2.ExitCode)"
+              }
+              @(Get-Content "$PWD\warpwin2.out" -ErrorAction SilentlyContinue) | ForEach-Object { Trace "warpwin2: $_" }
+              @(Get-Content "$PWD\warpwin2.err" -ErrorAction SilentlyContinue) | Select-Object -First 6 | ForEach-Object { Trace "warpwin2 err: $_" }
+            } else { Trace "warpwin2.exe nao compilou" }
+          } catch { Trace "warpwin2: FALHOU $($_.Exception.Message)" }
           # v54: DXGI EnumAdapters1 via vtable COM — o dx11 do jogo falha "at
           # detection stage" com D3D11CreateDevice(WARP) FUNCIONANDO (sonda
           # acima): ou a DXGI enumera ZERO adapters (engine nao acha ninguem)
