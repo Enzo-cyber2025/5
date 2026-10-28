@@ -245,6 +245,8 @@ def main():
         q.shot("12-watchdog", outdir)
 
         WND_COUNT = 0x10D513
+        print("::notice::kern_hdr @1M = 0x%08X (CE01=0x31304543)" % q.kread32(0x100000))
+        print("::notice::kern_hdr @1M+0x1000 = 0x%08X" % q.kread32(0x101000))
         print("::notice::wnd_count boot=%d" % q.kread32(WND_COUNT))
 
         # helper: abre o app N do menu Iniciar (0 = primeiro)
