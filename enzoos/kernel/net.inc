@@ -1009,6 +1009,10 @@ http_get:
         mov r15, rsi
         mov r14d, edx
         mov rbx, rdi
+        push rdi
+        mov rdi, s_http_go
+        call k_log
+        pop rdi
         cmp dword [e1000_ok], 0
         je .err_nic
         cmp dword [net_ip], 0
@@ -1259,6 +1263,7 @@ s_http_get:   db "GET ", 0
 s_http_host:  db " HTTP/1.0", 10, "Host: ", 0
 s_http_tail:  db 10, "User-Agent: EnzoFox/1.0 (EnzoOS)", 10, 10, 0
 s_http_ok:    db "[net] HTTP ok, bytes:", 0
+s_http_go:   db "[net] HTTP GET iniciado", 10, 0
 s_http_e1:    db "[net] HTTP err: sem rede/IP", 10, 0
 s_http_e2:    db "[net] HTTP err: URL invalida", 10, 0
 s_http_e3:    db "[net] HTTP err: TCP nao conectou (SYN sem resposta)", 10, 0

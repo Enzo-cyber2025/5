@@ -255,10 +255,21 @@ def main():
         # 14. EnzoFox: HTTP REAL pela e1000 (10.0.2.2:8000 = host)
         launch_menu_app(7)                 # FOX.ENZ
         q.sleep(1.5)
+        q.shot("14a-fox-inicial", outdir)
         q.key("ret")                       # Enter baixa a URL padrão
-        print("::notice::passo 14-fox: enter enviado, aguardando HTTP");
+        print("::notice::passo 14-fox: enter enviado, aguardando HTTP")
         print("aguardando o HTTP (ate 10 s)...")
         q.sleep(10)
+        try:
+            from PIL import Image
+            im = Image.open(os.path.join(outdir, "14a-fox-inicial.png")).convert("L")
+            px = list(im.getdata())
+            w, h = im.size
+            claros = sum(1 for p in px if p > 200)
+            escuros = sum(1 for p in px if p < 60)
+            print("::notice::fox-inicial %dx%d claros=%d escuros=%d" % (w, h, claros, escuros))
+        except Exception as e:
+            print("::notice::fox-inicial: sem PIL (%s)" % e)
         print("::notice::passo 14-fox shot"); q.shot("14-fox", outdir)
 
         # 15. SysMon: swap, HPET, uptime
