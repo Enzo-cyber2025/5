@@ -113,10 +113,12 @@ k_swap_init:
         jz .off
         mov r14, rax                        ; PT
         mov [sw_pts + r15*8], r14
-        ; diag: PT alocada + índice
-        mov rdi, r14
-        call k_log_hex
+        ; diag rotulado: [swap] PT <índice> <endereço>
+        mov rdi, s_sw_diag
+        call k_log
         mov edi, r15d
+        call k_log_hex
+        mov rdi, r14
         call k_log_hex
         ; preenche identidade: HEAP_START + i*2MB + j*4KB
         xor ecx, ecx
@@ -527,6 +529,7 @@ sw_free_frame:
         ret
 
 section .kdata
+s_sw_diag:  db "[swap] PT", 0
 sw_hdr:     times 512 db 0
 sw_armed:   dd 0
 sw_lba:     dd 0

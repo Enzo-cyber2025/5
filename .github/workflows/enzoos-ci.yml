@@ -73,6 +73,12 @@ jobs:
                 cat screenshots/traffic.txt
                 echo '```'
               fi
+              if [ -f screenshots/qtrace.log ]; then
+                echo "### excecoes do QEMU (-d int)"
+                echo '```'
+                grep -E " v=0[0-9a-f]" screenshots/qtrace.log | tail -8 || true
+                echo '```'
+              fi
             } > /tmp/prc.md
             PRN=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$BRANCH" --json number --jq ".[0].number" 2>/dev/null || true)
             if [ -n "$PRN" ]; then
