@@ -213,7 +213,7 @@ arp_resolve:
         mov r13d, 3
 .try:
         lea rdi, [net_arppkt]
-        mov dword [rdi], 0x00010800       ; htype=1, ptype=0x0800
+        mov dword [rdi], 0x00080100       ; htype=1, ptype=0x0800 (bytes 00 01 08 00)
         mov word [rdi + 4], 0x0406        ; hlen=6, plen=4
         mov word [rdi + 6], 0x0100        ; oper=1 (request)
         mov eax, [net_mac]
