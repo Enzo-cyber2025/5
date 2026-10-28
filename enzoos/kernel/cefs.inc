@@ -322,6 +322,29 @@ app_dispatch:
         jnz .have_tbl
         lea rdi, [api_table]
 .have_tbl:
+        ; diag: eventos init/tecla despachados (tipo, param, slot)
+        cmp qword [rsp], 1
+        je .dlog
+        cmp qword [rsp], 4
+        jne .dgo
+.dlog:
+        push rdi
+        push rsi
+        push rbx
+        push rax
+        mov rdi, s_disp_diag
+        call k_log
+        mov rdi, [rsp+32]          ; tipo
+        call k_log_hex
+        mov rdi, [rsp+48]          ; param a
+        call k_log_hex
+        mov edi, [cur_slot]
+        call k_log_hex
+        pop rax
+        pop rbx
+        pop rsi
+        pop rdi
+.dgo:
         mov rsi, rsp
         call r12
 .skip:
@@ -897,6 +920,7 @@ lfb_wc_on: dd 0
 app_slots: times MAX_APPS * A_SIZEOF db 0
 
 s_cefs_bad: db "CEFS: assinatura invalida", 0
+s_disp_diag: db "[wm] disp tipo/param/slot:", 0
 s_ext_ce:   db ".CE", 0
 s_ext_enz: db ".enz", 0
 tmp_w:    dd 480
