@@ -62,11 +62,15 @@ jobs:
       - name: Eventos wm (annotations)
         if: always()
         run: |
-          grep -A3 "wm] disp" screenshots/serial.log 2>/dev/null | tail -40 | while IFS= read -r l; do
+          S=screenshots/serial.log
+          C1=$(grep -c "wm] disp" $S 2>/dev/null || echo 0)
+          C2=$(grep -cE "0x000000000000000D$|0x0000000000000013$" $S 2>/dev/null || echo 0)
+          C3=$(grep -c "HTTP GET iniciado" $S 2>/dev/null || echo 0)
+          C4=$(grep -c "TCP nao conectou\|SYN sem resposta\|ARP sem resposta" $S 2>/dev/null || echo 0)
+          echo "::notice::CONTADORES wm_disp=$C1 key_enter=$C2 http_go=$C3 tcp_err=$C4"
+          echo "serial_linhas=$(wc -l < $S 2>/dev/null || echo 0)"
+          grep -A3 "wm] disp" $S 2>/dev/null | tail -30 | while IFS= read -r l; do
             echo "::notice::${l:0:220}"
-          done || true
-          grep -E "0x000000000000000D$|0x0000000000000013$" screenshots/serial.log 2>/dev/null | tail -6 | while IFS= read -r l; do
-            echo "::notice::KEY ${l:0:220}"
           done || true
 
       - name: Resumo do serial
