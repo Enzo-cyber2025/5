@@ -83,6 +83,7 @@ k_ahci_init:
         jmp .done
 .port_ok:
         mov [ahci_port], r14
+        mov dword [ahci_ok], 1       ; porta valida: do_cmd pode rodar
         ; guarda a assinatura (PxSIG)
         mov eax, [r14 + 0x24]
         mov [ahci_sig], eax
