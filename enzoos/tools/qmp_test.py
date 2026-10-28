@@ -345,6 +345,10 @@ def main():
     for tag in ["[ahci]", "[enzfs]", "[e1000]", "[net]"]:
         hits = [l for l in slines if tag in l]
         print("%-9s %s" % (tag + ":", hits[0] if hits else "(ausente)"))
+        if tag == "[ahci]" and hits:
+            i = slines.index(hits[0])
+            hx = [l for l in slines[i+1:i+8] if l.startswith("0x")]
+            print("diag: " + " ".join(hx[:6]))
 
     # linhas do panic (vec/rip/cr2/dumps) — o que mais importa agora
     try:
@@ -365,11 +369,9 @@ def main():
         with open(os.path.join(outdir, "qtrace.log")) as f:
             qtl = [l.rstrip() for l in f]
         ah = [l for l in qtl if "ahci" in l.lower()]
-        kw = [l for l in ah if ("write" in l or "cmd" in l.lower()
-                                or "command" in l or "error" in l.lower()
-                                or "dma" in l.lower())]
-        print("=== ahci trace (%d ev; ultimas 3 de %d chave) ==="
-              % (len(ah), len(kw)))
+        kw = [l for l in ah if "PxCI" in l or "TFD" in l
+              or "command" in l or "dma" in l.lower()]
+        print("=== trace PxCI/TFD (%d) ===" % len(kw))
         print("\n".join(kw[-3:]) if kw else "(nenhum)")
     except Exception as e:
         print("(sem qtrace: %s)" % e)
