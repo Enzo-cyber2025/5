@@ -115,6 +115,26 @@ k_hda_init:
         mov dword [hda_ok], 0
         mov rdi, s_hda_fail
         call k_log
+        ; diag: r12=dev, r13=GCAP/STATESTS, r14=vendor/device, r15=bar
+        mov r15d, r12d
+        and r15d, 0xFFFFFF00
+        or r15d, 0
+        call pci_read32
+        mov r14d, eax
+        mov rbx, [hda_base]
+        movzx r13d, word [rbx]
+        mov rdi, s_hda_diag
+        call k_log
+        mov rdi, r15
+        call k_log_hex
+        mov rdi, r14
+        call k_log_hex
+        mov rdi, rbx
+        call k_log_hex
+        mov rdi, r13
+        call k_log_hex
+        movzx edi, word [rbx + 0x0E]
+        call k_log_hex
 .done:
         pop r15
         pop r14
@@ -264,6 +284,7 @@ hda_pcm:  times 19200 db 0       ; 2 buffers de 9600 B
 
 s_hda_none: db "[hda] sem controladora de audio — tom via PC speaker", 10, 0
 s_hda_fail: db "[hda] init falhou — tom via PC speaker", 10, 0
+s_hda_diag:  db "[hda] diag (dev/ven/bar/gcap/statests):", 0
 s_hda_ok:   db "[hda] Intel HDA pronto (48 kHz, stream SD4)", 10, 0
 
 %endif

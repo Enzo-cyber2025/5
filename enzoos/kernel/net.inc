@@ -501,13 +501,6 @@ net_dhcp:
         mov [net_mask], eax
         mov dword [arp_valid], 0
 .out:
-        ; diag: contadores de TX/RX do caminho DHCP
-        mov rdi, s_dhcp_diag
-        call k_log
-        mov edi, [net_pkts_tx]
-        call k_log_hex
-        mov edi, [net_pkts_rx]
-        call k_log_hex
         pop r13
         pop r12
         pop rbx
