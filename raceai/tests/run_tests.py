@@ -12,6 +12,13 @@ import time
 import traceback
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+
+# Windows com saída redirecionada usa cp1252 e quebra em acentos/ setas.
+try:                                    # pragma: no cover
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(HERE, "..", "src"))
 

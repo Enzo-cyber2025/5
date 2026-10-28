@@ -104,6 +104,11 @@ jobs:
           }
           Get-ChildItem package | Select-Object Name, @{n='MB';e={[math]::Round($_.Length/1MB,1)}}
 
+      - name: Resumo do build (JSON)
+        id: resumo
+        if: always()
+        run: python tools/ci_summary.py
+
       - name: Artefato do build
         if: always()
         uses: actions/upload-artifact@v4
@@ -112,28 +117,12 @@ jobs:
           path: |
             raceai/package/*.zip*
             raceai/build.log
+            .delivery/raceai-exe-build.json
           if-no-files-found: ignore
           retention-days: 30
 
-      - name: Resumo do build (JSON)
-        id: resumo
-        if: always()
-        run: python tools/ci_summary.py
-
-      - name: Publicar resumo no repositório
-        if: always()
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f .delivery/raceai-exe-build.json
-          if (git diff --cached --quiet) { Write-Output "sem mudanças no resumo"; exit 0 }
-          git commit -m "CI: resumo do build do RaceAI2D.exe (run ${{ github.run_number }}) [skip ci]"
-          git pull --rebase origin ${{ github.ref_name }}
-          git push origin HEAD:${{ github.ref_name }}
-
       - name: Publicar na release exe-windows
         if: github.event_name == 'workflow_dispatch' && inputs.publish
-        working-directory: raceai
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -143,3 +132,15 @@ jobs:
             gh release create exe-windows --title "RaceAI 2D — executável Windows" --notes "Gerado automaticamente por .github/workflows/raceai-windows-exe.yml (branch $env:GITHUB_REF_NAME, commit $env:GITHUB_SHA)."
           }
           gh release upload exe-windows (Get-ChildItem package/*.zip*) --clobber
+
+      - name: Publicar resumo no repositório
+        if: always()
+        working-directory: ${{ github.workspace }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f .delivery/raceai-exe-build.json
+          if (git diff --cached --quiet) { Write-Output "sem mudancas no resumo"; exit 0 }
+          git commit -m "CI: resumo do build do RaceAI2D.exe (run ${{ github.run_number }}) [skip ci]"
+          git pull --rebase origin ${{ github.ref_name }}
+          git push origin HEAD:${{ github.ref_name }}
