@@ -323,9 +323,10 @@ app_dispatch:
         lea rdi, [api_table]
 .have_tbl:
         ; diag: eventos init/tecla despachados (tipo, param, slot)
-        cmp qword [rsp], 1
+        ; (atencao: ha um push rax extra do cur_slot antigo => payload em rsp+8)
+        cmp qword [rsp+8], 1
         je .dlog
-        cmp qword [rsp], 4
+        cmp qword [rsp+8], 4
         jne .dgo
 .dlog:
         push rdi
@@ -334,9 +335,9 @@ app_dispatch:
         push rax
         mov rdi, s_disp_diag
         call k_log
-        mov rdi, [rsp+32]          ; tipo
+        mov rdi, [rsp+40]          ; tipo (8 do push rax + 32 dos pushes)
         call k_log_hex
-        mov rdi, [rsp+48]          ; param a
+        mov rdi, [rsp+56]          ; param a
         call k_log_hex
         mov edi, [cur_slot]
         call k_log_hex
