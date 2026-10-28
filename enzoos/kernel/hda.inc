@@ -43,7 +43,8 @@ k_hda_init:
         mov edi, r12d
         call pci_io_enable
         mov edi, r12d
-        call pci_read32                   ; BAR0 (MMIO)
+        add edi, 0x10                     ; registro 0x10 = BAR0 (MMIO)
+        call pci_read32
         and eax, 0xFFFFFFF0
         mov eax, eax
         mov [hda_base], rax

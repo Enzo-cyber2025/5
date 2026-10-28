@@ -33,18 +33,11 @@ k_e1000_init:
         call pci_io_enable
         ; BAR0 = MMIO
         mov edi, r12d
-        call pci_read32                   ; registro 0 = BAR0
+        add edi, 0x10                     ; registro 0x10 = BAR0 (MMIO)
+        call pci_read32
         and eax, 0xFFFFFFF0
         mov eax, eax
         mov [e1000_base], rax
-        mov rbx, rax
-        ; diag: BAR usado
-        push rax
-        mov rdi, s_bar_diag
-        call k_log
-        mov rdi, rax
-        call k_log_hex
-        pop rax
         mov rbx, rax
         ; máscara todas as interrupções (trabalhamos com polling)
         mov dword [rbx + 0x00F8*1], 0xFFFFFFFF
@@ -102,13 +95,6 @@ k_e1000_init:
         mov dword [e1000_ok], 1
         mov rdi, s_e1000_ok
         call k_log
-        ; diag: estado do device apos a configuracao (reads de 4 bytes)
-        push rbx
-        mov edi, [rbx + 0x0008]     ; STATUS
-        call k_log_hex
-        mov edi, [rbx + 0x3820]     ; TXDCA?
-        call k_log_hex
-        pop rbx
 .done:
         pop r15
         pop r14
@@ -171,37 +157,6 @@ e1000_tx:
 .err2:
         mov rdi, s_tx_err2
         call k_log
-        ; diag: estado do TX apos o timeout (reads de 4 bytes no MMIO)
-        mov rax, [e1000_base]
-        push rax
-        mov edi, [rax + 0x3810]     ; TDH
-        call k_log_hex
-        pop rax
-        push rax
-        mov edi, [rax + 0x3818]     ; TDT
-        call k_log_hex
-        pop rax
-        push rax
-        mov edi, [rax + 0x3808]     ; TDLEN
-        call k_log_hex
-        pop rax
-        push rax
-        mov edi, [rax + 0x3800]     ; TDBAL
-        call k_log_hex
-        pop rax
-        push rax
-        mov edi, [rax + 0x0008]     ; STATUS
-        call k_log_hex
-        pop rax
-        ; descritor do slot: addr, lower(8-11), upper(12-15)
-        mov rdi, [e1000_txdesc + 0]
-        call k_log_hex
-        mov edi, [e1000_txdesc + 8]
-        call k_log_hex
-        mov edi, [e1000_txdesc + 12]
-        call k_log_hex
-        mov rdi, e1000_txdesc
-        call k_log_hex
         mov eax, -1
 .out:
         pop r13

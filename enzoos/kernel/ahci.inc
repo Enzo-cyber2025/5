@@ -134,19 +134,11 @@ k_ahci_init:
         or rax, rcx
 .have_cap:
         mov [ahci_sectors], rax
-        mov rbx, rax                ; salva capacidade (k_log clobbera rax)
         mov dword [ahci_ok], 1
         mov rdi, s_ahci_ok
         call k_log
         mov rdi, s_ahci_sectors
         call k_log
-        ; diag: word0 do IDENTIFY + capacidade + PRDBC do IDENTIFY
-        mov edi, [ahci_ident]
-        call k_log_hex
-        mov rdi, rbx
-        call k_log_hex
-        mov edi, [ahci_clb + 4]
-        call k_log_hex
         jmp .done
 .ident_fail:
         mov rdi, s_ahci_ident_fail

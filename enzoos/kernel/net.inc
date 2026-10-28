@@ -80,19 +80,6 @@ eth_tx:
         push r13
         push r14
         push r15
-        ; diag: quem esta transmitindo (ethertype/len/dst)
-        push rdi
-        push rsi
-        push rcx
-        mov rdi, s_eth_diag
-        call k_log
-        mov edi, esi
-        call k_log_hex
-        mov edi, ecx
-        call k_log_hex
-        pop rcx
-        pop rsi
-        pop rdi
         mov r12, rdx
         mov r13d, ecx
         mov r14d, esi
@@ -1243,7 +1230,6 @@ net_httpreq: times 512 db 0
 net_bcast: db 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF
 
 s_net_none:   db "[net] sem rede", 10, 0
-s_eth_diag:   db "[eth] tx: et/len:", 0
 s_net_nodhcp: db "[net] DHCP sem resposta", 10, 0
 s_net_ok:     db "[net] conectado via DHCP (e1000)", 10, 0
 s_http_get:   db "GET ", 0

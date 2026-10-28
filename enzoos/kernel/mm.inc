@@ -192,13 +192,6 @@ k_alloc:
         mov r13, [heap_pages]
         sub r13, r12
         mov r14, [bitmap_pages]
-        ; diag
-        lea rdi, [rel s_ka_start]
-        call k_log
-        mov rdi, r12
-        call k_log_hex
-        mov rdi, [heap_pages]
-        call k_log_hex
 .next:
         cmp r14, r13
         ja .fail
@@ -223,13 +216,6 @@ k_alloc:
         mov rax, r14
         shl rax, 12
         add rax, HEAP_START
-        ; diag
-        push rax
-        lea rdi, [rel s_ka_ok]
-        call k_log
-        mov rdi, rax
-        call k_log_hex
-        pop rax
         jmp .done
 .advance:
         inc r14
