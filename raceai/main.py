@@ -28,6 +28,14 @@ except Exception:
     pass
 
 
+def handle_hidden_flags(argv) -> int | None:
+    """Flags usadas por processos auxiliares (teste de DirectML)."""
+    if "--dml-probe" in argv:
+        from raceai.ai.backend import run_dml_probe_command
+        return run_dml_probe_command()
+    return None
+
+
 def parse_args(argv=None):
     p = argparse.ArgumentParser(description="RaceAI 2D", add_help=True)
     p.add_argument("--mode", default="menu", choices=["menu", "manual", "ia", "train"])
@@ -180,7 +188,9 @@ def resolve_asset(kind: str, name: str):
         return None
     if os.path.isfile(name):
         return name
-    for folder in (os.path.join(mods.assets_dir(), kind), os.path.join(mods.mods_dir(), kind)):
+    folders = [os.path.join(mods.assets_dir(), kind)]
+    folders += [os.path.join(d, kind) for d in mods.mods_dirs()]
+    for folder in folders:
         for ext in (".json", ""):
             p = os.path.join(folder, name + ext)
             if os.path.isfile(p):
@@ -259,6 +269,10 @@ def selftest() -> int:
 
 
 def main(argv=None) -> int:
+    argv = sys.argv[1:] if argv is None else list(argv)
+    hidden = handle_hidden_flags(argv)
+    if hidden is not None:
+        return hidden
     args = parse_args(argv)
     if args.version:
         print(f"RaceAI 2D {VERSION}")

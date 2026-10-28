@@ -7,7 +7,10 @@ em batch — assim a GPU Intel UHD 605 recebe um kernel grande por camada.
 """
 from __future__ import annotations
 
+import json
 import os
+import subprocess
+import sys
 import time
 
 import numpy as np
@@ -20,6 +23,106 @@ TORCH_IMPORT_ERROR = ""
 def dml_disabled() -> bool:
     """Permite desligar o DirectML (RACEAI_NO_DML=1) se o driver travar."""
     return os.environ.get("RACEAI_NO_DML", "").strip().lower() not in ("", "0", "false", "no")
+
+
+def _status_file() -> str:
+    from . import mods
+    return os.path.join(mods.writable_dir(), ".dml_status.json")
+
+
+def _torch_version() -> str:
+    try:
+        import torch
+        return str(torch.__version__)
+    except Exception:
+        return ""
+
+
+def _read_status() -> dict | None:
+    try:
+        with open(_status_file(), "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
+def _write_status(ok: bool, motivo: str, nome: str) -> None:
+    try:
+        with open(_status_file(), "w", encoding="utf-8") as f:
+            json.dump({"ok": bool(ok), "motivo": motivo, "nome": nome,
+                       "torch": _torch_version(),
+                       "em": time.strftime("%Y-%m-%d %H:%M:%S")}, f, ensure_ascii=False)
+    except Exception:
+        pass
+
+
+def _dml_probe_in_process() -> tuple[bool, str, str]:
+    """Cria o dispositivo e roda uma conta pequena (pode travar em drivers ruins)."""
+    import torch
+    import torch_directml
+    d = torch_directml.device()
+    t = torch.ones((8, 8), device=d)
+    total = float((t @ t).sum().item())          # sincroniza de verdade
+    if abs(total - 512.0) > 1e-3:
+        return False, f"resultado inesperado ({total})", ""
+    try:
+        nome = str(torch_directml.device_name(0))
+    except Exception:
+        nome = str(d)
+    return True, "ok", nome
+
+
+def dml_probe(force: bool = False) -> tuple[bool, str, str]:
+    """Descobre se o DirectML funciona **sem derrubar o jogo**.
+
+    Criar o dispositivo DirectML pode matar o processo (0xC0000005) em
+    máquinas sem driver utilizável — isso não é capturável em Python. Então,
+    quando o jogo está congelado (exe), o teste roda em um processo separado
+    (`RaceAI2D --dml-probe`) e o resultado fica em cache.
+    """
+    if dml_disabled():
+        return False, "desligado por RACEAI_NO_DML", ""
+    cache = _read_status()
+    if cache and not force and cache.get("torch") == _torch_version() and cache.get("ok"):
+        return True, cache.get("motivo", "em cache"), cache.get("nome", "")
+    ok, motivo, nome = False, "", ""
+    if getattr(sys, "frozen", False):
+        try:
+            proc = subprocess.run([sys.executable, "--dml-probe"], timeout=240,
+                                  stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                  text=True, errors="replace")
+            lines = (proc.stdout or "").splitlines()
+            ok = proc.returncode == 0 and any("DMLPROBE OK" in ln for ln in lines)
+            nome = next((ln.split(":", 1)[1].strip() for ln in lines
+                         if ln.startswith("DMLPROBE NAME:")), "")
+            motivo = next((ln.split(":", 1)[1].strip() for ln in lines
+                           if ln.startswith("DMLPROBE ERRO:")), "")
+            if not ok and not motivo:
+                motivo = f"código de saída {proc.returncode}"
+        except Exception as exc:
+            ok, motivo = False, f"não foi possível testar: {type(exc).__name__}"
+    else:
+        try:
+            ok, motivo, nome = _dml_probe_in_process()
+        except Exception as exc:
+            ok, motivo = False, f"{type(exc).__name__}: {exc}"
+    _write_status(ok, motivo, nome)
+    return ok, motivo, nome
+
+
+def run_dml_probe_command() -> int:
+    """Executado como `RaceAI2D --dml-probe` (processo descartável)."""
+    try:
+        ok, motivo, nome = _dml_probe_in_process()
+    except BaseException as exc:            # noqa: BLE001 - o chamador só lê a saída
+        print(f"DMLPROBE ERRO: {type(exc).__name__}: {exc}", flush=True)
+        return 1
+    if ok:
+        print(f"DMLPROBE NAME: {nome}", flush=True)
+        print("DMLPROBE OK", flush=True)
+        return 0
+    print(f"DMLPROBE ERRO: {motivo}", flush=True)
+    return 1
 
 
 def torch_available() -> bool:
@@ -41,19 +144,13 @@ def list_devices(prefer: str = "auto") -> list[tuple[str, str]]:
         if torch.cuda.is_available():
             opts.append(("cuda", f"CUDA — {torch.cuda.get_device_name(0)}"))
         if dml_disabled():
-            opts.append(("dml", "DirectML desligado por RACEAI_NO_DML"))
-            raise RuntimeError("dml desabilitado")
-        try:
-            import torch_directml
-            d = torch_directml.device()
-            name = str(d)
-            try:
-                name = torch_directml.device_name(0) or name
-            except Exception:
-                pass
-            opts.append(("dml", f"DirectML (GPU) — {name}"))
-        except Exception as exc:
-            opts.append(("dml", f"DirectML indisponível ({type(exc).__name__})"))
+            opts.append(("dml", "DirectML desligado (RACEAI_NO_DML)"))
+        else:
+            ok, motivo, nome = dml_probe()
+            if ok:
+                opts.append(("dml", f"DirectML (GPU) — {nome or 'privateuseone'}"))
+            else:
+                opts.append(("dml", f"DirectML indisponível ({motivo or 'falhou'})"))
 
     except Exception as exc:
         opts.append(("torch-cpu", f"PyTorch indisponível ({type(exc).__name__})"))

@@ -842,18 +842,22 @@ class App:
         y2 += 24
         slider(pygame.Rect(right.x, y2, 360, 24), "duração da geração (s)", "max_seconds", 10,
                180, 5, live="max_seconds")
-        y2 += 46
+        y2 += 42
         slider(pygame.Rect(right.x, y2, 360, 24), "passos entre decisões", "decision_interval",
                1, 10, 1, cast=int, live="decision_interval")
-        y2 += 46
+        y2 += 42
         slider(pygame.Rect(right.x, y2, 360, 24), "raios do sensor", "rays", 3, 15, 1,
                cast=int, restart=True)
-        y2 += 46
+        y2 += 42
         devices = [d[0] for d in list_devices()]
         dev_idx = devices.index(st["device"]) if st["device"] in devices else 0
         s.add(OptionCycle(pygame.Rect(right.x, y2, 360, 30), "backend de inferência", devices,
                           dev_idx, on_change=lambda v, i: self.change_device(v)))
-        y2 += 56
+        y2 += 38
+        s.add(Button(pygame.Rect(right.x, y2, 175, 32), "Retestar GPU", self.retest_gpu))
+        s.add(Label(pygame.Rect(right.x + 185, y2 + 7, 0, 0),
+                    "abre um processo à parte (não trava o jogo)", 14, ACCENT))
+        y2 += 42
         s.add(Label(pygame.Rect(right.x, y2, 0, 0), "VISUAL", 16, ACCENT))
         y2 += 24
         s.add(Toggle(pygame.Rect(right.x, y2, 360, 24), "mostrar HUD (H)", bool(st["show_hud"]),
@@ -864,18 +868,31 @@ class App:
         y2 += 32
         s.add(Toggle(pygame.Rect(right.x, y2, 360, 24), "raios do sensor (TAB)",
                      bool(st["draw_rays"]), lambda v: st.__setitem__("draw_rays", v)))
-        y2 += 46
+        y2 += 42
         slider(pygame.Rect(right.x, y2, 360, 24), "máx. carros desenhados", "max_draw", 5, 300,
                5, cast=int)
-        y2 += 46
+        y2 += 42
         slider(pygame.Rect(right.x, y2, 360, 24), "salvar automático (gerações)",
                "autosave_every", 0, 100, 5, cast=int)
-        y2 += 46
+        y2 += 42
         s.add(Button(pygame.Rect(right.x, y2, 175, 36), "Reiniciar treino",
                      lambda: (self.trainer.reset_training(), self.notify("treino reiniciado"))))
         s.add(Button(pygame.Rect(right.x + 185, y2, 175, 36), "Voltar",
                      lambda: self.goto("main")))
         return s
+
+    def retest_gpu(self):
+        """Refaz o teste do DirectML (processo separado) e aplica se funcionar."""
+        from .ai.backend import dml_probe
+
+        self.notify("testando DirectML, aguarde...", WARN)
+        ok, motivo, nome = dml_probe(force=True)
+        if ok:
+            self.notify(f"DirectML ok: {nome or 'GPU'}", GOOD)
+            self.change_device("dml")
+        else:
+            self.notify(f"DirectML indisponível ({motivo or 'falhou'})", WARN)
+            self._needs_rebuild = True
 
     def change_device(self, device_id: str):
         self.settings["device"] = device_id

@@ -13,6 +13,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass
 
 from .car import CarSpec
@@ -41,8 +42,48 @@ def mods_dir() -> str:
     return os.path.join(base_dir(), "mods")
 
 
+def _writable(path: str) -> bool:
+    try:
+        p = os.path.join(path, ".teste_escrita")
+        with open(p, "w", encoding="utf-8") as f:
+            f.write("1")
+        os.remove(p)
+        return True
+    except Exception:
+        return False
+
+
+def writable_dir() -> str:
+    """Pasta realmente gravável (ao lado do exe, ou %LOCALAPPDATA%\\RaceAI2D).
+
+    Se o jogo for instalado em "Arquivos de Programas", a pasta do executável
+    não aceita escrita — aí os mods/modelos/config vão para o perfil do usuário.
+    """
+    base = base_dir()
+    if _writable(base):
+        return base
+    app = (os.environ.get("LOCALAPPDATA") or os.environ.get("APPDATA")
+           or tempfile.gettempdir())
+    d = os.path.join(app, "RaceAI2D")
+    try:
+        os.makedirs(d, exist_ok=True)
+    except Exception:
+        pass
+    return d if _writable(d) else base
+
+
+def mods_dirs() -> list[str]:
+    """Todas as pastas de mods (exe + perfil do usuário), sem repetir."""
+    out, seen = [], set()
+    for d in (os.path.join(base_dir(), "mods"), os.path.join(writable_dir(), "mods")):
+        if d not in seen:
+            seen.add(d)
+            out.append(d)
+    return out
+
+
 def models_dir() -> str:
-    return os.path.join(base_dir(), "modelos")
+    return os.path.join(writable_dir(), "modelos")
 
 
 @dataclass
@@ -76,10 +117,12 @@ def _scan_folder(kind: str, folder: str, builtin: bool) -> list[ModItem]:
 def scan(kind: str) -> list[ModItem]:
     items = _scan_folder(kind, os.path.join(assets_dir(), kind), True)
     seen = {i.name for i in items}
-    for it in _scan_folder(kind, os.path.join(mods_dir(), kind), False):
-        if it.name in seen:
-            it.name += " (mod)"
-        items.append(it)
+    for folder in mods_dirs():
+        for it in _scan_folder(kind, os.path.join(folder, kind), False):
+            if it.name in seen:
+                it.name += " (mod)"
+            seen.add(it.name)
+            items.append(it)
     return items
 
 
@@ -109,7 +152,7 @@ def load_cars() -> list[ModItem]:
 
 def create_template(kind: str, name: str) -> str:
     """Cria um JSON de exemplo na pasta de mods (para você editar)."""
-    folder = os.path.join(mods_dir(), kind)
+    folder = os.path.join(writable_dir(), "mods", kind)
     os.makedirs(folder, exist_ok=True)
     safe = "".join(c for c in name.strip() if c.isalnum() or c in "-_ ") or "meu_mod"
     path = os.path.join(folder, f"{safe.replace(' ', '_').lower()}.json")
