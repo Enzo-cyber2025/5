@@ -376,10 +376,9 @@ def main():
         with open(os.path.join(outdir, "qtrace.log")) as f:
             qtl = [l.rstrip() for l in f]
         ah = [l for l in qtl if "ahci" in l.lower()]
-        kw = [l for l in ah if "[1]" in l and ("PxCI" in l or "TFD" in l
-              or "command" in l or "dma" in l.lower() or "write" in l)]
-        print("=== trace porta[1] (%d; ultimas 5) ===" % len(kw))
-        print("\n".join(kw[-5:]) if kw else "(nenhum)")
+        kw = [l for l in ah if "[1]" in l and "read" not in l]
+        print("=== trace porta[1] nao-reads (%d; ultimas 8) ===" % len(kw))
+        print("\n".join(kw[-8:]) if kw else "(nenhum)")
     except Exception as e:
         print("(sem qtrace: %s)" % e)
     if not ok:
