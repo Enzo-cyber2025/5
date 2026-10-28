@@ -352,13 +352,23 @@ def main():
     ok = True
     if "[net] conectado via DHCP" not in log:
         print("FALHOU: e1000/DHCP nao conectou (serial sem '[net] conectado')")
+        print("::error::DHCP nao conectou")
         ok = False
     if "[enzfs] volume montado" not in log:
         print("FALHOU: ENZFS nao montou o disco AHCI")
+        print("::error::ENZFS nao montou")
         ok = False
     if "[net] HTTP ok" not in log:
         print("FALHOU: EnzoFox nao baixou a pagina (serial sem '[net] HTTP ok')")
+        print("::error::HTTP do EnzoFox falhou")
         ok = False
+    # canarios via annotations (legiveis pela API mesmo com log bloqueado)
+    for pat in ("[net] conectado", "[net] HTTP ok", "[hda]", "panic"):
+        hits = [l for l in slines if pat in l]
+        for h in hits[-6:]:
+            print("::notice::%s" % h[:200])
+    for h in slines[-14:]:
+        print("::notice::tail %s" % h[:200])
     print("=== serial (%d linhas; ultimas 8) ===" % len(slines))
     print("\n".join(slines[-8:]))
     # marcadores do caminho dhcp (uma linha so, antes do cap)
