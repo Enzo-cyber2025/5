@@ -32,6 +32,19 @@ k_enzfs_mount:
         call ahci_read
         test eax, eax
         jnz .no
+        ; ---- diag: dwords lidos + PRDBC (bytes transferidos) ----
+        push rax
+        mov rdi, [enz_super]
+        call k_log_hex
+        mov rdi, [enz_super + 4]
+        call k_log_hex
+        mov rdi, [enz_super + 8]
+        call k_log_hex
+        mov rdi, [enz_super + 32]
+        call k_log_hex
+        mov edi, [ahci_clb + 4]
+        call k_log_hex
+        pop rax
         mov eax, [enz_super]
         cmp eax, 0x465A4E45        ; "ENZF" (mkfs: +0 "ENZFS1.0")
         jne .bad
