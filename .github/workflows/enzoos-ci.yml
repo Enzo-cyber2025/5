@@ -52,6 +52,13 @@ jobs:
             exit 1
           fi
 
+      - name: Canarios de rede (annotations)
+        if: always()
+        run: |
+          grep -E "HTTP|TCP|ARP|conectado|fox|FALHOU|excecao" screenshots/serial.log /tmp/qemu.log 2>/dev/null | tail -12 | while IFS= read -r l; do
+            echo "::notice::${l:0:220}"
+          done || true
+
       - name: Resumo do serial
         if: always()
         run: |
