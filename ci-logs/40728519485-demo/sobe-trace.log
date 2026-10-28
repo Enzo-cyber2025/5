@@ -1,0 +1,563 @@
+[16:55:52] SOBE inicio
+[16:55:52] sonda warp/dxgi inicio (system32 virgem)
+[16:55:54] warptest run inicio
+[16:55:54] warptest exit=0
+[16:55:54] warp: stage0: GetDC(NULL)=100729043 (desktop ok)
+[16:55:54] warp: stage1: CreateDXGIFactory1 hr=0x00000000 (dxgi NATIVO vivo)
+[16:55:54] warp: stage2: D3D11CreateDevice(WARP) hr=0x00000000 featureLevel=45056
+[16:55:54] warp: stage3: WARP OK - D3D11 por CPU FUNCIONA nativamente nesta VM
+[16:55:54] sonda warp fim warpOk=True
+[16:55:54] warpwin (janela+swapchain+present) inicio
+[16:55:54] warpwin cl: warpwin.c
+[16:56:01] warpwin exit=0 — SWAPCHAIN EM JANELA FUNCIONA (dx11 viavel E2E)
+[16:56:01] warpwin: stage1: CreateWindow hwnd=0000000000050050
+[16:56:01] warpwin: stage2: D3D11CreateDevice(WARP) hr=0x00000000 fl=45056
+[16:56:01] warpwin: stage3: CreateDXGIFactory1 hr=0x00000000
+[16:56:01] warpwin: stage4: CreateSwapChain hr=0x00000000
+[16:56:01] warpwin: stage5: Clear+Present hr=0x00000000 (dx11 EM JANELA ponta a ponta)
+[16:56:01] warpwin2 (bisect pos-device) inicio
+[16:56:01] warpwin2 cl: warpwin2.c
+[16:56:01] warpwin2 exit=-1073741819
+[16:56:01] warpwin2: warpwin2: s0 inicio
+[16:56:01] warpwin2: warpwin2: s1 WARP FL10_0 device hr=0x00000000 got=0xa000
+[16:56:01] warpwin2: warpwin2: s2 CreateTexture2D RT 800x600...
+[16:56:01] warpwin2: warpwin2: s2 hr=0x00000000
+[16:56:01] warpwin2: warpwin2: s3 CreateRenderTargetView...
+[16:56:01] warpwin2: warpwin2: s3 hr=0x00000000
+[16:56:01] warpwin2: warpwin2: s4 CreateTexture2D D24S8...
+[16:56:01] warpwin2: warpwin2: s4 hr=0x00000000
+[16:56:01] warpwin2: warpwin2: s5 CreateDepthStencilView...
+[16:56:01] warpwin2: warpwin2: s5 hr=0x00000000
+[16:56:01] warpwin2: warpwin2: s6 OMSetRenderTargets+Clear...
+[16:56:01] warpwin2: warpwin2: s6 OK
+[16:56:01] warpwin2: warpwin2: s7 CreateTexture2D BC3 8192x8192...
+[16:56:01] warpwin2: warpwin2: s7 hr=0x00000000
+[16:56:01] warpwin2: warpwin2: s8 CreateTexture2D BC3 16384x16384 (FL10 max=8192)...
+[16:56:01] warpwin2: warpwin2: s8 hr=0x00000000 (E_INVALIDARG esperado; fastfail = achado!)
+[16:56:01] warpwin2: warpwin2: s9 VB dynamic + Map...
+[16:56:01] warpwin2: warpwin2: s9a hr=0x80070057
+[16:56:01] sonda dxgi-enum inicio
+[16:56:02] dxgienum exit=0
+[16:56:02] enum: stage1: factory ok
+[16:56:02] enum: adapter[0] = Microsoft Basic Render Driver | vendor=0x1414 device=0x8C vram=0 MB
+[16:56:02] enum: adapter[1] = Microsoft Basic Render Driver | vendor=0x1414 device=0x8C vram=0 MB
+[16:56:02] enum: total adapters: 2 (WARP visivel pro engine!)
+[16:56:02] sonda dxgi-enum fim
+[16:56:02] mesa 7z: 70257286 bytes
+[16:56:06] dxvk tar.gz: 10310666 bytes
+[16:56:06] tar dxvk inicio
+[16:56:07] tar dxvk fim rc=0
+[16:56:07] copias dxvk jogo inicio
+[16:56:07] copias dxvk jogo fim
+[16:56:07] dxvk system32 PULADO — WARP vivo, System32 INTACTO
+[16:56:07] vulkan loader antes: x64=False x86=False
+[16:56:07] baixando VulkanRT X64 installer (LunarG 1.4.363.0)
+[16:56:08] vulkanrt x64 installer: 25699768 bytes
+[16:56:10] vulkanrt x64 install exit=0
+[16:56:10] vulkan loader depois: x64=True x86=True
+[16:56:10] vktest inicio
+[16:56:10] vktest lvp264 PULADO (WARP venceu)
+[16:56:10] vktest dzn264 PULADO (WARP venceu)
+[16:56:10] NENHUM ICD Vulkan passou — boots dx11 vao rodar com o ICD padrao (26.2.4)
+[16:56:10] wgl64 inicio
+[16:56:10] wgl64 csc inicio
+[16:56:10] wgl64 csc fim
+[16:56:10] wgl64 run inicio
+[16:56:12] wgl64 run fim exit=0
+[16:56:12] wgl-janela inicio
+[16:56:12] winwgl run inicio
+[16:56:13] winwgl exit=-1073741819
+[16:56:13] winwgl: stage1: janela criada hwnd=393606
+[16:56:13] winwgl: stage2: GetDC(janela) ok
+[16:56:13] winwgl: stage3: ChoosePixelFormat ok pf=63
+[16:56:13] winwgl: 
+[16:56:13] winwgl: Unhandled Exception: System.AccessViolationException: Attempted to read or write protected memory. This is often an indication that other memory is corrupt.
+[16:56:13] winwgl:    at WinWglTest.SetPixelFormatN(IntPtr hdc, Int32 ipf, IntPtr pfd)
+[16:56:13] winwgl:    at WinWglTest.Main()
+[16:56:13] wgl-janela fim winWglOk=False
+[16:56:13] winwgl falhou na 26.2.4 — baixando Mesa 25.3.6
+[16:56:13] mesa 25.3.6: 66716214 bytes
+[16:56:17] 7z 25.3.6 exit=0
+[16:56:17] 253w: C:\Windows\System32\opengl32.dll
+[16:56:17] 253w: C:\Windows\System32\libgallium_wgl.dll
+[16:56:17] 253w: C:\Windows\System32\libEGL.dll
+[16:56:17] 253w: C:\Windows\System32\libGLESv1_CM.dll
+[16:56:17] 253w: C:\Windows\System32\libGLESv2.dll
+[16:56:17] 253w: C:\Windows\SysWOW64\opengl32.dll
+[16:56:17] 253w: C:\Windows\SysWOW64\libgallium_wgl.dll
+[16:56:17] 253w: C:\Windows\SysWOW64\libEGL.dll
+[16:56:17] 253w: C:\Windows\SysWOW64\libGLESv1_CM.dll
+[16:56:17] 253w: C:\Windows\SysWOW64\libGLESv2.dll
+[16:56:17] winwgl(25.3.6) run inicio
+[16:56:17] winwgl(25.3.6) exit=-1073741819
+[16:56:17] winwgl253: stage1: janela criada hwnd=459142
+[16:56:17] winwgl253: stage2: GetDC(janela) ok
+[16:56:17] winwgl253: stage3: ChoosePixelFormat ok pf=43
+[16:56:17] winwgl253: 
+[16:56:17] winwgl253: Unhandled Exception: System.AccessViolationException: Attempted to read or write protected memory. This is often an indication that other memory is corrupt.
+[16:56:17] winwgl253:    at WinWglTest.SetPixelFormatN(IntPtr hdc, Int32 ipf, IntPtr pfd)
+[16:56:17] winwgl253:    at WinWglTest.Main()
+[16:56:19] pnp display: Microsoft Hyper-V Video [VMBUS\{DA0A7802-E377-4AAC-8E77-0558EB1073F8}\{5620E0C7-8062-4DCE-AEB7-520C7EF76171}]
+[16:56:19] desativando adapter de video: Microsoft Hyper-V Video
+[16:56:28] adapter desativado — desktop no Basic Render Driver agora?
+[16:56:28] pnp display pos: Microsoft Hyper-V Video [Error]
+[16:56:28] winwgl(pos-pnp) run inicio
+[16:56:28] winwgl(pos-pnp) exit=-1073741819
+[16:56:28] winwglpnp: stage1: janela criada hwnd=197014
+[16:56:28] winwglpnp: stage2: GetDC(janela) ok
+[16:56:28] winwglpnp: stage3: ChoosePixelFormat ok pf=43
+[16:56:28] winwglpnp: 
+[16:56:28] winwglpnp: Unhandled Exception: System.AccessViolationException: Attempted to read or write protected memory. This is often an indication that other memory is corrupt.
+[16:56:28] winwglpnp:    at WinWglTest.SetPixelFormatN(IntPtr hdc, Int32 ipf, IntPtr pfd)
+[16:56:28] winwglpnp:    at WinWglTest.Main()
+[16:56:28] warppnp: stage0: GetDC(NULL)=1124139400 (desktop ok)
+[16:56:28] warppnp: stage1: CreateDXGIFactory1 hr=0x00000000 (dxgi NATIVO vivo)
+[16:56:28] warppnp: stage2: D3D11CreateDevice(WARP) hr=0x00000000 featureLevel=45056
+[16:56:28] warppnp: stage3: WARP OK - D3D11 por CPU FUNCIONA nativamente nesta VM
+[16:56:28] enum-pos-pnp: stage1: factory ok
+[16:56:28] enum-pos-pnp: adapter[0] = Microsoft Basic Render Driver | vendor=0x1414 device=0x8C vram=0 MB
+[16:56:28] enum-pos-pnp: adapter[1] = Microsoft Basic Render Driver | vendor=0x1414 device=0x8C vram=0 MB
+[16:56:28] enum-pos-pnp: total adapters: 2 (WARP visivel pro engine!)
+[16:56:28] warpwinpnp: stage1: CreateWindow hwnd=0000000000040196
+[16:56:28] warpwinpnp: stage2: D3D11CreateDevice(WARP) hr=0x00000000 fl=45056
+[16:56:28] warpwinpnp: stage3: CreateDXGIFactory1 hr=0x00000000
+[16:56:28] warpwinpnp: stage4: CreateSwapChain hr=0x00000000
+[16:56:28] warpwinpnp: stage5: Clear+Present hr=0x00000000 (dx11 EM JANELA ponta a ponta)
+[16:56:28] wgl32 csc inicio
+[16:56:29] wgl32 csc fim
+[16:56:29] wgl32 run inicio
+[16:56:34] wgl32 run fim exit=0
+[16:56:34] WARP vivo — restaurando d3d11/dxgi NATIVOS e bootando SEM DXVK
+[16:56:34] DXVK removido da pasta do jogo: d3d11.dll
+[16:56:34] DXVK removido da pasta do jogo: dxgi.dll
+[16:56:34] DXVK removido da pasta do jogo: d3d10core.dll
+[16:56:34] DXVK removido da pasta do jogo: d3d9.dll
+[16:56:34] shim: compilando d3d11.dll (x64) em C:\ets2demo\bin\win_x64
+[16:56:34] shim: d3d11_real do System32 atual
+[16:56:34] shim: exports do real (51): CreateDirect3D11DeviceFromDXGIDevice,CreateDirect3D11SurfaceFromDXGISurface,D3D11CoreCreateDevice,D3D11CoreCreateLayeredDevice,D3D11CoreGetLayeredDeviceSize,D3D11CoreRegisterLayers,D3D11CreateDevice,D3D11CreateDeviceAndSwapChain,D3D11CreateDeviceForD3D12,D3D11On12CreateDevice,D3DKMTCloseAdapter,D3DKMTCreateAllocation,D3DKMTCreateContext,D3DKMTCreateDevice,D3DKMTCreateSynchronizationObject,D3DKMTDestroyAllocation,D3DKMTDestroyContext,D3DKMTDestroyDevice,D3DKMTDestroySynchronizationObject,D3DKMTEscape,D3DKMTGetContextSchedulingPriority,D3DKMTGetDeviceState,D3DKMTGetDisplayModeList,D3DKMTGetMultisampleMethodList,D3DKMTGetRuntimeData,D3DKMTGetSharedPrimaryHandle,D3DKMTLock,D3DKMTOpenAdapterFromHdc,D3DKMTOpenResource,D3DKMTPresent,D3DKMTQueryAdapterInfo,D3DKMTQueryAllocationResidency,D3DKMTQueryResourceInfo,D3DKMTRender,D3DKMTSetAllocationPriority,D3DKMTSetContextSchedulingPriority,D3DKMTSetDisplayMode,D3DKMTSetDisplayPrivateDriverFormat,D3DKMTSetGammaRamp,D3DKMTSetVidPnSourceOwner,D3DKMTSignalSynchronizationObject,D3DKMTUnlock,D3DKMTWaitForSynchronizationObject,D3DKMTWaitForVerticalBlankEvent,D3DPerformance_BeginEvent,D3DPerformance_EndEvent,D3DPerformance_GetStatus,D3DPerformance_SetMarker,EnableFeatureLevelUpgrade,OpenAdapter10,OpenAdapter10_2
+[16:56:34] shim: imports estaticos do jogo em d3d11.dll (0): 
+[16:56:34] shim .def: LIBRARY d3d11 | EXPORTS | D3D11CreateDevice | D3D11CreateDeviceAndSwapChain | D3D11CoreCreateDevice
+[16:56:34] shim cl: d3d11shim.c
+[16:56:34] shim cl:    Creating library C:\ets2demo\bin\win_x64\d3d11.lib and object C:\ets2demo\bin\win_x64\d3d11.exp
+[16:56:34] shim: INSTALADO C:\ets2demo\bin\win_x64\d3d11.dll (+d3d11_real.dll) link exit=0
+[16:56:34] shim exp: Dump of file C:\ets2demo\bin\win_x64\d3d11.dll
+[16:56:34] shim exp: Section contains the following exports for d3d11.dll
+[16:56:34] shim exp: 1    0 00001000 D3D11CoreCreateDevice
+[16:56:34] shim exp: 2    1 00001270 D3D11CreateDevice
+[16:56:34] shim exp: 3    2 00001510 D3D11CreateDeviceAndSwapChain
+[16:56:34] dxgishim: dxgi_real.dll copiado do System32 atual
+[16:56:34] dxgishim: secao dxgi dos imports do d3d11.dll: 180203E48 Import Address Table | 18024E1C8 Import Name Table | 0 time date stamp | 0 Index of first forwarder reference | 5 CreateDXGIFactory2
+[16:56:34] dxgishim: d3d11.dll importa do dxgi alem dos meus 3: 
+[16:56:34] dxgishim cl: dxgishim.c
+[16:56:35] dxgishim cl: D:\a\5\5\dxgishim.c(64): warning C4996: 'wcscpy': This function or variable may be unsafe. Consider using wcscpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+[16:56:35] dxgishim cl:    Creating library C:\ets2demo\bin\win_x64\dxgi.lib and object C:\ets2demo\bin\win_x64\dxgi.exp
+[16:56:35] dxgishim: INSTALADO C:\ets2demo\bin\win_x64\dxgi.dll (+dxgi_real.dll) link exit=0
+[16:56:35] dxgishim exp: 1 ordinal base
+[16:56:35] dxgishim exp: ordinal hint RVA      name
+[16:56:35] dxgishim exp: 1    0 00001570 CreateDXGIFactory
+[16:56:35] dxgishim exp: 2    1 00001680 CreateDXGIFactory1
+[16:56:35] dxgishim exp: 3    2 00001770 CreateDXGIFactory2
+[16:56:35] boot x64 dx11 SHIM WARP inicio
+[16:56:37] boot x64 dx11 SHIM WARP: pid 6884
+[16:56:42] boot x64 dx11 SHIM WARP iter 1/120 vivo=False cpu=-1 thr=0
+[16:56:42] boot x64 dx11 SHIM WARP: processo SAIU na iter 1 — ExitCode=-1073740791 (0xC0000005=crash; 0=limpo)
+[16:56:42] boot x64 dx11 SHIM WARP FIM vivo=False
+[16:56:42] shimlog: init real=00007FFAABCC0000 D3D11CreateDevice=00007FFAABD0A660 AndSwapChain=00007FFAABD0A7E0 Core=00007FFAABCD5FF0
+[16:56:42] shimlog: CreateDevice: adapter=0000000000000000 type=1 flags=0x0 nfl=1
+[16:56:42] shimlog: CreateDevice: HARDWARE sem adapter = BRD -> WARP direto
+[16:56:42] shimlog: CreateDevice: WARP-direto hr=0x00000001 flPedida=40960 flObtida=40960
+[16:56:42] shimlog: CreateDevice: S_FALSE -> S_OK (WARP de FL menor)
+[16:56:42] shimlog: CreateDevice: adapter=0000000000000000 type=1 flags=0x0 nfl=1
+[16:56:42] shimlog: CreateDevice: HARDWARE sem adapter = BRD -> WARP direto
+[16:56:42] shimlog: CreateDevice: WARP-direto hr=0x887a0004 flPedida=49408 flObtida=0
+[16:56:42] shimlog: CreateDevice: WARP falhou ? tentando o original
+[16:56:42] shimlog: CreateDevice: original hr=0x887a0004 (ppDevice=0000000000000000)
+[16:56:42] shimlog: CreateDevice: original insuficiente (hr=0x887a0004, probe ppDevice=pede device) ? RETRY WARP
+[16:56:42] shimlog: CreateDevice: WARP hr=0x887a0004 flPedida=49408 flObtida=0
+[16:56:42] shimlog: CreateDevice: adapter=0000000000000000 type=1 flags=0x0 nfl=1
+[16:56:42] shimlog: CreateDevice: HARDWARE sem adapter = BRD -> WARP direto
+[16:56:42] shimlog: CreateDevice: WARP-direto hr=0x887a0004 flPedida=49152 flObtida=0
+[16:56:42] shimlog: CreateDevice: WARP falhou ? tentando o original
+[16:56:42] shimlog: CreateDevice: original hr=0x887a0004 (ppDevice=0000000000000000)
+[16:56:42] shimlog: CreateDevice: original insuficiente (hr=0x887a0004, probe ppDevice=pede device) ? RETRY WARP
+[16:56:42] shimlog: CreateDevice: WARP hr=0x887a0004 flPedida=49152 flObtida=0
+[16:56:42] shimlog: CreateDevice: adapter=0000000000000000 type=1 flags=0x0 nfl=1
+[16:56:42] shimlog: CreateDevice: HARDWARE sem adapter = BRD -> WARP direto
+[16:56:42] shimlog: CreateDevice: WARP-direto hr=0x887a0004 flPedida=45312 flObtida=0
+[16:56:42] shimlog: CreateDevice: WARP falhou ? tentando o original
+[16:56:42] shimlog: CreateDevice: original hr=0x887a0004 (ppDevice=0000000000000000)
+[16:56:42] shimlog: CreateDevice: original insuficiente (hr=0x887a0004, probe ppDevice=pede device) ? RETRY WARP
+[16:56:42] shimlog: CreateDevice: WARP hr=0x887a0004 flPedida=45312 flObtida=0
+[16:56:42] shimlog: CreateDevice: adapter=0000000000000000 type=1 flags=0x0 nfl=1
+[16:56:42] shimlog: CreateDevice: HARDWARE sem adapter = BRD -> WARP direto
+[16:56:42] shimlog: CreateDevice: WARP-direto hr=0x887a0004 flPedida=45056 flObtida=0
+[16:56:42] shimlog: CreateDevice: WARP falhou ? tentando o original
+[16:56:42] shimlog: CreateDevice: original hr=0x887a0004 (ppDevice=0000000000000000)
+[16:56:42] shimlog: CreateDevice: original insuficiente (hr=0x887a0004, probe ppDevice=pede device) ? RETRY WARP
+[16:56:42] shimlog: CreateDevice: WARP hr=0x887a0004 flPedida=45056 flObtida=0
+[16:56:42] shimlog: CreateDevice: adapter=0000000000000000 type=1 flags=0x0 nfl=1
+[16:56:42] shimlog: CreateDevice: HARDWARE sem adapter = BRD -> WARP direto
+[16:56:42] shimlog: CreateDevice: WARP-direto hr=0x887a0004 flPedida=41216 flObtida=0
+[16:56:42] shimlog: CreateDevice: WARP falhou ? tentando o original
+[16:56:42] shimlog: CreateDevice: original hr=0x887a0004 (ppDevice=0000000000000000)
+[16:56:42] shimlog: CreateDevice: original insuficiente (hr=0x887a0004, probe ppDevice=pede device) ? RETRY WARP
+[16:56:42] shimlog: CreateDevice: WARP hr=0x887a0004 flPedida=41216 flObtida=0
+[16:56:42] SHIM VIVO: o jogo criou device pelo nosso d3d11
+[16:56:42] dxgilog: init real=00007FFAA8780000 f0=00007FFAA87A0740 f1=00007FFAA87A0930 f2=00007FFAA87A0820
+[16:56:42] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[16:56:42] dxgilog: CreateDXGIFactory2 -> WRAP (flags 0 ignoradas)
+[16:56:42] dxgilog: EnumAdapters1[0] -> WRAP (vram mentida)
+[16:56:42] dxgilog: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[16:56:42] dxgilog: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[16:56:42] dxgilog: EnumAdapters1[1] -> WRAP (vram mentida)
+[16:56:42] dxgilog: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[16:56:42] dxgilog: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[16:56:42] dxgilog: EnumAdapters1[2] hr=0x887a0002
+[16:56:42] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[16:56:42] dxgilog: EnumAdapters1[0] -> WRAP (vram mentida)
+[16:56:42] dxgilog: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[16:56:42] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[16:56:42] dxgilog: EnumAdapters1[0] -> WRAP (vram mentida)
+[16:56:42] dxgilog: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[16:56:42] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[16:56:42] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[16:56:42] dxgilog: EnumAdapters1[0] -> WRAP (vram mentida)
+[16:56:42] dxgilog: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[16:56:42] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[16:56:42] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[16:56:42] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[16:56:42] dxgilog: EnumAdapters1[0] -> WRAP (vram mentida)
+[16:56:42] dxgilog: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[16:56:42] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[16:56:42] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[16:56:42] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[16:56:42] dxgilog: EnumAdapters1[0] -> WRAP (vram mentida)
+[16:56:42] dxgilog: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[16:56:42] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[16:56:42] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[16:56:42] WER1000 x64: 16:56:38 Faulting application name: eurotrucks2.exe, version: 1.40.4.8, time stamp: 0x60ae81bd Faulting module name: D3D10Warp.dll, version: 26.2.4.0, time stamp: 0x6ac0962a Exception code: 0xc0000409 Fault offset: 0x00000000008bc329 Faulting process id: 0x1ae4 Faulting application start time: 0x01dd66fd4ba7
+[16:56:42] boot x64 rdevice gl inicio
+[16:56:44] boot x64 rdevice gl: pid 7372
+[16:56:49] boot x64 rdevice gl iter 1/120 vivo=True cpu=0.6 thr=25
+[16:56:49] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:56:54] boot x64 rdevice gl iter 2/120 vivo=True cpu=0.6 thr=25
+[16:56:54] probe mmf (iter 2): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:56:59] boot x64 rdevice gl iter 3/120 vivo=True cpu=0.6 thr=25
+[16:56:59] probe mmf (iter 3): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:57:04] boot x64 rdevice gl iter 4/120 vivo=True cpu=0.6 thr=25
+[16:57:04] probe mmf (iter 4): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:57:09] boot x64 rdevice gl iter 5/120 vivo=True cpu=0.6 thr=25
+[16:57:09] probe mmf (iter 5): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:57:14] boot x64 rdevice gl iter 6/120 vivo=True cpu=0.6 thr=25
+[16:57:14] probe mmf (iter 6): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:57:19] boot x64 rdevice gl iter 7/120 vivo=True cpu=0.6 thr=25
+[16:57:19] probe mmf (iter 7): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:57:24] boot x64 rdevice gl iter 8/120 vivo=True cpu=0.6 thr=25
+[16:57:24] probe mmf (iter 8): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:57:29] boot x64 rdevice gl iter 9/120 vivo=True cpu=0.6 thr=25
+[16:57:29] probe mmf (iter 9): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:57:34] boot x64 rdevice gl iter 10/120 vivo=True cpu=0.6 thr=25
+[16:57:34] probe mmf (iter 10): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:57:39] boot x64 rdevice gl iter 11/120 vivo=True cpu=0.6 thr=25
+[16:57:39] probe mmf (iter 11): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:57:44] boot x64 rdevice gl iter 12/120 vivo=True cpu=0.6 thr=23
+[16:57:44] probe mmf (iter 12): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:57:49] boot x64 rdevice gl iter 13/120 vivo=True cpu=0.6 thr=23
+[16:57:49] probe mmf (iter 13): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:57:54] boot x64 rdevice gl iter 14/120 vivo=True cpu=0.6 thr=23
+[16:57:54] probe mmf (iter 14): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:57:59] boot x64 rdevice gl iter 15/120 vivo=True cpu=0.6 thr=23
+[16:57:59] probe mmf (iter 15): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:58:04] boot x64 rdevice gl iter 16/120 vivo=True cpu=0.6 thr=23
+[16:58:04] probe mmf (iter 16): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:58:09] boot x64 rdevice gl iter 17/120 vivo=True cpu=0.6 thr=23
+[16:58:09] probe mmf (iter 17): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:58:14] boot x64 rdevice gl iter 18/120 vivo=True cpu=0.6 thr=23
+[16:58:14] probe mmf (iter 18): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:58:19] boot x64 rdevice gl iter 19/120 vivo=True cpu=0.6 thr=23
+[16:58:19] probe mmf (iter 19): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:58:24] boot x64 rdevice gl iter 20/120 vivo=True cpu=0.6 thr=23
+[16:58:24] probe mmf (iter 20): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:58:29] boot x64 rdevice gl iter 21/120 vivo=True cpu=0.6 thr=23
+[16:58:29] probe mmf (iter 21): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:58:34] boot x64 rdevice gl iter 22/120 vivo=True cpu=0.6 thr=23
+[16:58:34] probe mmf (iter 22): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:58:39] boot x64 rdevice gl iter 23/120 vivo=True cpu=0.6 thr=23
+[16:58:39] probe mmf (iter 23): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:58:44] boot x64 rdevice gl iter 24/120 vivo=True cpu=0.6 thr=23
+[16:58:44] probe mmf (iter 24): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:58:49] boot x64 rdevice gl iter 25/120 vivo=True cpu=0.6 thr=23
+[16:58:49] probe mmf (iter 25): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:58:54] boot x64 rdevice gl iter 26/120 vivo=True cpu=0.6 thr=23
+[16:58:54] probe mmf (iter 26): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:58:59] boot x64 rdevice gl iter 27/120 vivo=True cpu=0.6 thr=22
+[16:58:59] probe mmf (iter 27): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:59:04] boot x64 rdevice gl iter 28/120 vivo=True cpu=0.6 thr=22
+[16:59:04] probe mmf (iter 28): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:59:09] boot x64 rdevice gl iter 29/120 vivo=True cpu=0.6 thr=22
+[16:59:09] probe mmf (iter 29): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:59:14] boot x64 rdevice gl iter 30/120 vivo=True cpu=0.6 thr=22
+[16:59:14] probe mmf (iter 30): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:59:19] boot x64 rdevice gl iter 31/120 vivo=True cpu=0.6 thr=22
+[16:59:19] probe mmf (iter 31): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:59:24] boot x64 rdevice gl iter 32/120 vivo=True cpu=0.6 thr=22
+[16:59:24] probe mmf (iter 32): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:59:29] boot x64 rdevice gl iter 33/120 vivo=True cpu=0.6 thr=22
+[16:59:29] probe mmf (iter 33): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:59:34] boot x64 rdevice gl iter 34/120 vivo=True cpu=0.6 thr=22
+[16:59:34] probe mmf (iter 34): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:59:39] boot x64 rdevice gl iter 35/120 vivo=True cpu=0.6 thr=22
+[16:59:39] probe mmf (iter 35): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:59:44] boot x64 rdevice gl iter 36/120 vivo=True cpu=0.6 thr=22
+[16:59:44] probe mmf (iter 36): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:59:49] boot x64 rdevice gl iter 37/120 vivo=True cpu=0.6 thr=23
+[16:59:49] probe mmf (iter 37): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:59:54] boot x64 rdevice gl iter 38/120 vivo=True cpu=0.6 thr=23
+[16:59:54] probe mmf (iter 38): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[16:59:59] boot x64 rdevice gl iter 39/120 vivo=True cpu=0.6 thr=23
+[16:59:59] probe mmf (iter 39): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:00:04] boot x64 rdevice gl iter 40/120 vivo=True cpu=0.6 thr=23
+[17:00:04] probe mmf (iter 40): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:00:09] boot x64 rdevice gl iter 41/120 vivo=True cpu=0.6 thr=23
+[17:00:09] probe mmf (iter 41): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:00:14] boot x64 rdevice gl iter 42/120 vivo=True cpu=0.6 thr=23
+[17:00:14] probe mmf (iter 42): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:00:19] boot x64 rdevice gl iter 43/120 vivo=True cpu=0.6 thr=23
+[17:00:19] probe mmf (iter 43): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:00:24] boot x64 rdevice gl iter 44/120 vivo=True cpu=0.6 thr=23
+[17:00:24] probe mmf (iter 44): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:00:29] boot x64 rdevice gl iter 45/120 vivo=True cpu=0.6 thr=23
+[17:00:29] probe mmf (iter 45): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:00:34] boot x64 rdevice gl iter 46/120 vivo=True cpu=0.6 thr=23
+[17:00:34] probe mmf (iter 46): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:00:39] boot x64 rdevice gl iter 47/120 vivo=True cpu=0.6 thr=23
+[17:00:39] probe mmf (iter 47): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:00:44] boot x64 rdevice gl iter 48/120 vivo=True cpu=0.6 thr=23
+[17:00:44] probe mmf (iter 48): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:00:49] boot x64 rdevice gl iter 49/120 vivo=True cpu=0.6 thr=23
+[17:00:49] probe mmf (iter 49): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:00:54] boot x64 rdevice gl iter 50/120 vivo=True cpu=0.6 thr=23
+[17:00:54] probe mmf (iter 50): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:00:59] boot x64 rdevice gl iter 51/120 vivo=True cpu=0.6 thr=23
+[17:00:59] probe mmf (iter 51): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:01:04] boot x64 rdevice gl iter 52/120 vivo=True cpu=0.6 thr=23
+[17:01:04] probe mmf (iter 52): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:01:09] boot x64 rdevice gl iter 53/120 vivo=True cpu=0.6 thr=23
+[17:01:09] probe mmf (iter 53): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:01:14] boot x64 rdevice gl iter 54/120 vivo=True cpu=0.6 thr=21
+[17:01:14] probe mmf (iter 54): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:01:19] boot x64 rdevice gl iter 55/120 vivo=True cpu=0.6 thr=21
+[17:01:19] probe mmf (iter 55): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:01:24] boot x64 rdevice gl iter 56/120 vivo=True cpu=0.6 thr=21
+[17:01:24] probe mmf (iter 56): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:01:29] boot x64 rdevice gl iter 57/120 vivo=True cpu=0.6 thr=21
+[17:01:29] probe mmf (iter 57): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:01:34] boot x64 rdevice gl iter 58/120 vivo=True cpu=0.6 thr=21
+[17:01:34] probe mmf (iter 58): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:01:39] boot x64 rdevice gl iter 59/120 vivo=True cpu=0.6 thr=21
+[17:01:39] probe mmf (iter 59): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:01:44] boot x64 rdevice gl iter 60/120 vivo=True cpu=0.6 thr=23
+[17:01:44] probe mmf (iter 60): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:01:49] boot x64 rdevice gl iter 61/120 vivo=True cpu=0.6 thr=23
+[17:01:49] probe mmf (iter 61): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:01:54] boot x64 rdevice gl iter 62/120 vivo=True cpu=0.6 thr=23
+[17:01:54] probe mmf (iter 62): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:01:59] boot x64 rdevice gl iter 63/120 vivo=True cpu=0.6 thr=23
+[17:01:59] probe mmf (iter 63): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:02:04] boot x64 rdevice gl iter 64/120 vivo=True cpu=0.6 thr=23
+[17:02:04] probe mmf (iter 64): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:02:09] boot x64 rdevice gl iter 65/120 vivo=True cpu=0.6 thr=23
+[17:02:09] probe mmf (iter 65): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:02:14] boot x64 rdevice gl iter 66/120 vivo=True cpu=0.6 thr=23
+[17:02:14] probe mmf (iter 66): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:02:19] boot x64 rdevice gl iter 67/120 vivo=True cpu=0.6 thr=23
+[17:02:19] probe mmf (iter 67): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:02:24] boot x64 rdevice gl iter 68/120 vivo=True cpu=0.6 thr=23
+[17:02:24] probe mmf (iter 68): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:02:29] boot x64 rdevice gl iter 69/120 vivo=True cpu=0.6 thr=23
+[17:02:29] probe mmf (iter 69): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:02:34] boot x64 rdevice gl iter 70/120 vivo=True cpu=0.6 thr=23
+[17:02:34] probe mmf (iter 70): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:02:39] boot x64 rdevice gl iter 71/120 vivo=True cpu=0.6 thr=23
+[17:02:39] probe mmf (iter 71): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:02:44] boot x64 rdevice gl iter 72/120 vivo=True cpu=0.6 thr=23
+[17:02:44] probe mmf (iter 72): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:02:49] boot x64 rdevice gl iter 73/120 vivo=True cpu=0.6 thr=23
+[17:02:49] probe mmf (iter 73): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:02:54] boot x64 rdevice gl iter 74/120 vivo=True cpu=0.6 thr=23
+[17:02:54] probe mmf (iter 74): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:02:59] boot x64 rdevice gl iter 75/120 vivo=True cpu=0.6 thr=23
+[17:02:59] probe mmf (iter 75): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:03:04] boot x64 rdevice gl iter 76/120 vivo=True cpu=0.6 thr=23
+[17:03:04] probe mmf (iter 76): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:03:09] boot x64 rdevice gl iter 77/120 vivo=True cpu=0.6 thr=23
+[17:03:09] probe mmf (iter 77): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:03:14] boot x64 rdevice gl iter 78/120 vivo=True cpu=0.6 thr=23
+[17:03:14] probe mmf (iter 78): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:03:19] boot x64 rdevice gl iter 79/120 vivo=True cpu=0.6 thr=23
+[17:03:19] probe mmf (iter 79): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:03:24] boot x64 rdevice gl iter 80/120 vivo=True cpu=0.6 thr=23
+[17:03:24] probe mmf (iter 80): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:03:29] boot x64 rdevice gl iter 81/120 vivo=True cpu=0.6 thr=21
+[17:03:29] probe mmf (iter 81): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:03:34] boot x64 rdevice gl iter 82/120 vivo=True cpu=0.6 thr=21
+[17:03:34] probe mmf (iter 82): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:03:39] boot x64 rdevice gl iter 83/120 vivo=True cpu=0.6 thr=21
+[17:03:39] probe mmf (iter 83): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:03:44] boot x64 rdevice gl iter 84/120 vivo=True cpu=0.6 thr=21
+[17:03:44] probe mmf (iter 84): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:03:49] boot x64 rdevice gl iter 85/120 vivo=True cpu=0.6 thr=21
+[17:03:49] probe mmf (iter 85): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:03:54] boot x64 rdevice gl iter 86/120 vivo=True cpu=0.6 thr=21
+[17:03:54] probe mmf (iter 86): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:03:59] boot x64 rdevice gl iter 87/120 vivo=True cpu=0.6 thr=21
+[17:03:59] probe mmf (iter 87): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:04:04] boot x64 rdevice gl iter 88/120 vivo=True cpu=0.6 thr=21
+[17:04:04] probe mmf (iter 88): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:04:09] boot x64 rdevice gl iter 89/120 vivo=True cpu=0.6 thr=21
+[17:04:09] probe mmf (iter 89): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:04:14] boot x64 rdevice gl iter 90/120 vivo=True cpu=0.6 thr=21
+[17:04:14] probe mmf (iter 90): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:04:19] boot x64 rdevice gl iter 91/120 vivo=True cpu=0.6 thr=21
+[17:04:19] probe mmf (iter 91): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:04:24] boot x64 rdevice gl iter 92/120 vivo=True cpu=0.6 thr=21
+[17:04:24] probe mmf (iter 92): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:04:29] boot x64 rdevice gl iter 93/120 vivo=True cpu=0.6 thr=21
+[17:04:29] probe mmf (iter 93): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:04:34] boot x64 rdevice gl iter 94/120 vivo=True cpu=0.6 thr=21
+[17:04:34] probe mmf (iter 94): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:04:39] boot x64 rdevice gl iter 95/120 vivo=True cpu=0.6 thr=21
+[17:04:39] probe mmf (iter 95): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:04:44] boot x64 rdevice gl iter 96/120 vivo=True cpu=0.6 thr=21
+[17:04:44] probe mmf (iter 96): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:04:49] boot x64 rdevice gl iter 97/120 vivo=True cpu=0.6 thr=21
+[17:04:49] probe mmf (iter 97): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:04:54] boot x64 rdevice gl iter 98/120 vivo=True cpu=0.6 thr=21
+[17:04:54] probe mmf (iter 98): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:04:59] boot x64 rdevice gl iter 99/120 vivo=True cpu=0.6 thr=21
+[17:04:59] probe mmf (iter 99): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:05:04] boot x64 rdevice gl iter 100/120 vivo=True cpu=0.6 thr=21
+[17:05:04] probe mmf (iter 100): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:05:09] boot x64 rdevice gl iter 101/120 vivo=True cpu=0.6 thr=21
+[17:05:09] probe mmf (iter 101): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:05:14] boot x64 rdevice gl iter 102/120 vivo=True cpu=0.6 thr=21
+[17:05:14] probe mmf (iter 102): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:05:19] boot x64 rdevice gl iter 103/120 vivo=True cpu=0.6 thr=21
+[17:05:19] probe mmf (iter 103): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:05:24] boot x64 rdevice gl iter 104/120 vivo=True cpu=0.6 thr=21
+[17:05:24] probe mmf (iter 104): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:05:29] boot x64 rdevice gl iter 105/120 vivo=True cpu=0.6 thr=21
+[17:05:29] probe mmf (iter 105): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:05:34] boot x64 rdevice gl iter 106/120 vivo=True cpu=0.6 thr=21
+[17:05:34] probe mmf (iter 106): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:05:39] boot x64 rdevice gl iter 107/120 vivo=True cpu=0.6 thr=21
+[17:05:39] probe mmf (iter 107): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:05:44] boot x64 rdevice gl iter 108/120 vivo=True cpu=0.6 thr=21
+[17:05:44] probe mmf (iter 108): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:05:49] boot x64 rdevice gl iter 109/120 vivo=True cpu=0.6 thr=21
+[17:05:49] probe mmf (iter 109): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:05:54] boot x64 rdevice gl iter 110/120 vivo=True cpu=0.6 thr=21
+[17:05:54] probe mmf (iter 110): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:05:59] boot x64 rdevice gl iter 111/120 vivo=True cpu=0.6 thr=21
+[17:05:59] probe mmf (iter 111): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:06:04] boot x64 rdevice gl iter 112/120 vivo=True cpu=0.6 thr=21
+[17:06:04] probe mmf (iter 112): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:06:09] boot x64 rdevice gl iter 113/120 vivo=True cpu=0.6 thr=21
+[17:06:09] probe mmf (iter 113): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:06:14] boot x64 rdevice gl iter 114/120 vivo=True cpu=0.6 thr=21
+[17:06:14] probe mmf (iter 114): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:06:19] boot x64 rdevice gl iter 115/120 vivo=True cpu=0.6 thr=21
+[17:06:19] probe mmf (iter 115): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:06:24] boot x64 rdevice gl iter 116/120 vivo=True cpu=0.6 thr=21
+[17:06:24] probe mmf (iter 116): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:06:29] boot x64 rdevice gl iter 117/120 vivo=True cpu=0.6 thr=21
+[17:06:29] probe mmf (iter 117): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:06:34] boot x64 rdevice gl iter 118/120 vivo=True cpu=0.6 thr=21
+[17:06:34] probe mmf (iter 118): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:06:40] boot x64 rdevice gl iter 119/120 vivo=True cpu=0.6 thr=21
+[17:06:40] probe mmf (iter 119): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:06:45] boot x64 rdevice gl iter 120/120 vivo=True cpu=0.6 thr=23
+[17:06:45] probe mmf (iter 120): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:06:45] boot x64 rdevice gl FIM vivo=True
+[17:06:45] boot x86 gl llvmpipe inicio
+[17:06:47] boot x86 gl llvmpipe: pid 4468
+[17:06:52] boot x86 gl llvmpipe iter 1/30 vivo=True cpu=0.7 thr=17
+[17:06:52] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:06:57] boot x86 gl llvmpipe iter 2/30 vivo=False cpu=-1 thr=0
+[17:06:57] boot x86 gl llvmpipe: processo SAIU na iter 2 — ExitCode=-1073741819 (0xC0000005=crash; 0=limpo)
+[17:06:57] boot x86 gl llvmpipe FIM vivo=False
+[17:06:57] boot x86 gl zink inicio
+[17:06:59] boot x86 gl zink: pid 7448
+[17:07:04] boot x86 gl zink iter 1/30 vivo=False cpu=-1 thr=0
+[17:07:04] boot x86 gl zink: processo SAIU na iter 1 — ExitCode=-1073740791 (0xC0000005=crash; 0=limpo)
+[17:07:04] boot x86 gl zink FIM vivo=False
+[17:07:04] boot x86 gl safe llvmpipe inicio
+[17:07:06] boot x86 gl safe llvmpipe: pid 356
+[17:07:11] boot x86 gl safe llvmpipe iter 1/30 vivo=True cpu=0.7 thr=17
+[17:07:11] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:07:16] boot x86 gl safe llvmpipe iter 2/30 vivo=False cpu=-1 thr=0
+[17:07:16] boot x86 gl safe llvmpipe: processo SAIU na iter 2 — ExitCode=-1073741819 (0xC0000005=crash; 0=limpo)
+[17:07:16] boot x86 gl safe llvmpipe FIM vivo=False
+[17:07:16] boot x64 rdevice gl nointro inicio
+[17:07:18] boot x64 rdevice gl nointro: pid 800
+[17:07:23] boot x64 rdevice gl nointro iter 1/30 vivo=True cpu=0.6 thr=25
+[17:07:23] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:07:28] boot x64 rdevice gl nointro iter 2/30 vivo=True cpu=0.6 thr=25
+[17:07:28] probe mmf (iter 2): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:07:33] boot x64 rdevice gl nointro iter 3/30 vivo=True cpu=0.6 thr=25
+[17:07:33] probe mmf (iter 3): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:07:38] boot x64 rdevice gl nointro iter 4/30 vivo=True cpu=0.6 thr=25
+[17:07:38] probe mmf (iter 4): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:07:43] boot x64 rdevice gl nointro iter 5/30 vivo=True cpu=0.6 thr=25
+[17:07:43] probe mmf (iter 5): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:07:48] boot x64 rdevice gl nointro iter 6/30 vivo=True cpu=0.6 thr=25
+[17:07:48] probe mmf (iter 6): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:07:53] boot x64 rdevice gl nointro iter 7/30 vivo=True cpu=0.6 thr=25
+[17:07:53] probe mmf (iter 7): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:07:58] boot x64 rdevice gl nointro iter 8/30 vivo=True cpu=0.6 thr=25
+[17:07:58] probe mmf (iter 8): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:08:03] boot x64 rdevice gl nointro iter 9/30 vivo=True cpu=0.6 thr=25
+[17:08:03] probe mmf (iter 9): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:08:08] boot x64 rdevice gl nointro iter 10/30 vivo=True cpu=0.6 thr=25
+[17:08:08] probe mmf (iter 10): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:08:13] boot x64 rdevice gl nointro iter 11/30 vivo=True cpu=0.6 thr=25
+[17:08:13] probe mmf (iter 11): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:08:18] boot x64 rdevice gl nointro iter 12/30 vivo=True cpu=0.6 thr=23
+[17:08:18] probe mmf (iter 12): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:08:23] boot x64 rdevice gl nointro iter 13/30 vivo=True cpu=0.6 thr=23
+[17:08:23] probe mmf (iter 13): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:08:28] boot x64 rdevice gl nointro iter 14/30 vivo=True cpu=0.6 thr=23
+[17:08:28] probe mmf (iter 14): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:08:33] boot x64 rdevice gl nointro iter 15/30 vivo=True cpu=0.6 thr=23
+[17:08:33] probe mmf (iter 15): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:08:38] boot x64 rdevice gl nointro iter 16/30 vivo=True cpu=0.6 thr=23
+[17:08:38] probe mmf (iter 16): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:08:43] boot x64 rdevice gl nointro iter 17/30 vivo=True cpu=0.6 thr=23
+[17:08:43] probe mmf (iter 17): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:08:48] boot x64 rdevice gl nointro iter 18/30 vivo=True cpu=0.6 thr=23
+[17:08:48] probe mmf (iter 18): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:08:53] boot x64 rdevice gl nointro iter 19/30 vivo=True cpu=0.6 thr=23
+[17:08:53] probe mmf (iter 19): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:08:58] boot x64 rdevice gl nointro iter 20/30 vivo=True cpu=0.6 thr=23
+[17:08:58] probe mmf (iter 20): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:09:03] boot x64 rdevice gl nointro iter 21/30 vivo=True cpu=0.6 thr=23
+[17:09:03] probe mmf (iter 21): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:09:08] boot x64 rdevice gl nointro iter 22/30 vivo=True cpu=0.6 thr=23
+[17:09:08] probe mmf (iter 22): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:09:13] boot x64 rdevice gl nointro iter 23/30 vivo=True cpu=0.6 thr=23
+[17:09:13] probe mmf (iter 23): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:09:18] boot x64 rdevice gl nointro iter 24/30 vivo=True cpu=0.6 thr=23
+[17:09:18] probe mmf (iter 24): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:09:23] boot x64 rdevice gl nointro iter 25/30 vivo=True cpu=0.6 thr=23
+[17:09:23] probe mmf (iter 25): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:09:28] boot x64 rdevice gl nointro iter 26/30 vivo=True cpu=0.6 thr=23
+[17:09:28] probe mmf (iter 26): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:09:33] boot x64 rdevice gl nointro iter 27/30 vivo=True cpu=0.6 thr=22
+[17:09:33] probe mmf (iter 27): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:09:38] boot x64 rdevice gl nointro iter 28/30 vivo=True cpu=0.6 thr=22
+[17:09:38] probe mmf (iter 28): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:09:43] boot x64 rdevice gl nointro iter 29/30 vivo=True cpu=0.6 thr=22
+[17:09:43] probe mmf (iter 29): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:09:48] boot x64 rdevice gl nointro iter 30/30 vivo=True cpu=0.6 thr=22
+[17:09:48] probe mmf (iter 30): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[17:09:48] boot x64 rdevice gl nointro FIM vivo=True
