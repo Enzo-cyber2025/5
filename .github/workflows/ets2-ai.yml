@@ -3149,7 +3149,7 @@ jobs:
                 // = adapter software. Mentimos a identidade INTEIRA.
                 static void MentaVram(DXGI_ADAPTER_DESC* d) {
                   if (d->DedicatedVideoMemory == 0) d->DedicatedVideoMemory = (SIZE_T)3 << 30;
-                  if (d->VendorId == 0x1414) {
+                  if (d->VendorId == 0x1414 || d->VendorId == 0x10005) {
                     d->VendorId = 0x10DE;
                     d->DeviceId = 0x2484;
                     wcscpy(d->Description, L"NVIDIA GeForce RTX 3070");
@@ -3478,6 +3478,28 @@ jobs:
                 } else { Trace "cdb AUSENTE no runner — dump sera commitado sem analise" }
               } else { Trace "nenhum dump gerado (WER nao capturou?)" }
             } catch { Trace "dumps: $($_.Exception.Message)" }
+            # v81: HIBRIDO — o WARP morreu por bug DA MICROSOFT (dump v78:
+            # CreatePixelShader -> JIT do D3D10Warp 26.2.4.0 -> int 29h; mesmo
+            # binario no Server 2025 — v80 provou que trocar runner nao resolve).
+            # Terceiro caminho: d3d11 DO DXVK (lavapipe compila shaders com LLVM,
+            # SEM o bug do WARP) + dxgi NOSSO delegando pro dxgi DO DXVK (a lista
+            # [dxgi] continua NAO-VAZIA com identidade NVIDIA mentida; e o d3d11
+            # importa so CreateDXGIFactory2 do dxgi.dll da pasta — v70 provou).
+            try {
+              Trace "hibrido: montando d3d11-DXVK + dxgi-NOSSO->dxgi-DXVK"
+              Move-Item "$bin64\d3d11.dll" "$bin64\d3d11shim-warp.dll" -Force
+              Move-Item "$bin64\d3d11_real.dll" "$bin64\d3d11real-warp.dll" -Force -ErrorAction SilentlyContinue
+              if ($d64 -and (Test-Path (Join-Path $d64.FullName "d3d11.dll"))) {
+                Copy-Item (Join-Path $d64.FullName "d3d11.dll") "$bin64\d3d11.dll" -Force
+                Copy-Item (Join-Path $d64.FullName "dxgi.dll") "$bin64\dxgi_real.dll" -Force
+                $vkIcdX64 = Get-ChildItem "C:\mesa3d\x64" -Filter "lvp_icd*.json" -ErrorAction SilentlyContinue | Select-Object -First 1
+                if ($vkIcdX64) { $env:VK_ICD_FILENAMES = $vkIcdX64.FullName }
+                Trace "hibrido: dlls no lugar; ICD=$env:VK_ICD_FILENAMES"
+                $vivoH = Boot $exe $wdir "x64 dx11 HIBRIDO dxvk" @("-nointro") $null 120
+                Trace "hibrido: boot FIM vivo=$vivoH"
+                if ($vivoH) { $vivo = $true }
+              } else { Trace "hibrido: DXVK x64 ausente — pulando" }
+            } catch { Trace "hibrido: FALHOU $($_.Exception.Message)" }
             if (-not $vivo -and -not (& $mmfOk) -and -not $shimOk) {
               Trace "boot shim WARP nao deu MMF — recolocando DXVK p/ fallbacks"
               foreach ($mp in @(@($d64, "C:\Windows\System32"), @($d32, "C:\Windows\SysWOW64"))) {
