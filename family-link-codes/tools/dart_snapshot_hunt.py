@@ -134,6 +134,28 @@ def context_lines(text: str, span: int = 3) -> list[str]:
     return out
 
 
+KEY_HINTS = ("ttl", "valid", "drift", "secret", "expir", "interval", "code", "clock")
+
+
+def candidate_keys(text: str) -> list[str]:
+    """Short identifier-like strings around the concept: the JSON/proto keys.
+
+    A generated protobuf keeps its field names as literals, so the snapshot lists
+    them even though the code that uses them is compiled.
+    """
+    seen: set[str] = set()
+    for line in text.splitlines():
+        token = line.strip()
+        if not token or len(token) > 40:
+            continue
+        if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{2,39}", token):
+            continue
+        low = token.lower()
+        if any(hint in low for hint in KEY_HINTS):
+            seen.add(token)
+    return sorted(seen, key=lambda t: (len(t), t))
+
+
 def hunt(apk: str, extra: list[str] | None = None) -> dict:
     """Scan the base APK and any extra APKs (the ABI split often holds the libs)."""
     report: dict = {"apk": apk, "sources": [apk], "libraries": [], "concept": {},
@@ -180,6 +202,7 @@ def hunt(apk: str, extra: list[str] | None = None) -> dict:
             hits[line[:120]] = hits.get(line[:120], 0) + 1
     report["strings"] = dict(sorted(hits.items(), key=lambda kv: -kv[1])[:60])
     report["context"] = sorted(set(context_lines(upper_all)))[:80]
+    report["keys"] = candidate_keys(upper_all)
     return report
 
 
@@ -229,6 +252,10 @@ def main(argv: list[str]) -> int:
     except Exception as error:  # noqa: BLE001 - a bad APK must not fail CI
         print(f"could not analyse {argv[1]}: {error}")
         return 1
+    if "--keys" in argv:
+        for token in report.get("keys", []):
+            print(token)
+        return 0
     if "--strings-only" in argv:
         for text, count in report.get("strings", {}).items():
             print(f"{count:>4}  {text}")

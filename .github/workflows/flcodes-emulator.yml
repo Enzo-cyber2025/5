@@ -296,6 +296,10 @@ jobs:
             | tee "$RUNNER_TEMP/dart.txt"
           python3 family-link-codes/tools/dart_snapshot_hunt.py "$APK" $ABI_SPLIT \
             --strings-only > "$RUNNER_TEMP/dart-strings.txt" 2>&1
+          python3 family-link-codes/tools/dart_snapshot_hunt.py "$APK" $ABI_SPLIT \
+            --keys > "$RUNNER_TEMP/dart-keys.txt" 2>&1
+          echo "--- candidate keys ($(wc -l < "$RUNNER_TEMP/dart-keys.txt") tokens) ---"
+          grep -iE "secret|ttl|drift|valid|clock|acc" "$RUNNER_TEMP/dart-keys.txt" | head -40
           echo "--- concept strings ---"
           cat "$RUNNER_TEMP/dart-strings.txt"
           echo
@@ -518,6 +522,12 @@ jobs:
             echo '```'
             cat "$RUNNER_TEMP/probe.txt" 2>/dev/null || echo "(no probe)"
             echo '```'
+            if [ -s "$RUNNER_TEMP/dart-keys.txt" ]; then
+              echo "**dart-keys.txt** (chaves candidatas do protobuf/JSON)"
+              echo '```'
+              cat "$RUNNER_TEMP/dart-keys.txt"
+              echo '```'
+            fi
             if [ -s "$RUNNER_TEMP/dart-strings.txt" ]; then
               echo "**dart-strings.txt** (as strings do snapshot Dart)"
               echo '```'

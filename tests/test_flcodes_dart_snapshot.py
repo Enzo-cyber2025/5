@@ -123,3 +123,16 @@ def test_strings_only_lists_context(tmp_path, capsys):
     out = capsys.readouterr().out
     assert "neighbours" in out
     assert "parentAccessCode" in out
+
+
+def test_keys_mode_lists_identifier_tokens(tmp_path, capsys):
+    module = load_module()
+    payload = (b"sharedSecret\x00accessCodeTtl\x00ttlSeconds\x00"
+               b"Monday is a long sentence, not a key\x00")
+    apk = build_apk(tmp_path, {"lib/arm64-v8a/libapp.so": fake_elf(payload)})
+
+    assert module.main(["dart_snapshot_hunt", str(apk), "--keys"]) == 0
+    out = capsys.readouterr().out.split()
+    assert "sharedSecret" in out
+    assert "ttlSeconds" in out
+    assert not any("Monday" in token for token in out)
