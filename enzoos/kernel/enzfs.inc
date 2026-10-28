@@ -33,9 +33,9 @@ k_enzfs_mount:
         test eax, eax
         jnz .no
         mov eax, [enz_super]
-        cmp eax, 0x5A4E45          ; "ENZ" (primeira metade de ENZFS1.0)
+        cmp eax, 0x465A4E45        ; "ENZF" (mkfs: +0 "ENZFS1.0")
         jne .bad
-        cmp dword [enz_super + 4], 0x2E315346   ; "S1.0"
+        cmp dword [enz_super + 4], 0x302E3153   ; "S1.0"
         jne .bad
         ; limites suportados pelo cache
         mov eax, [enz_super + 12]  ; nblocks

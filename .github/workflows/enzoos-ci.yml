@@ -66,6 +66,12 @@ jobs:
               echo '```'
               tail -c 20000 screenshots/serial.log
               echo '```'
+              if [ -f screenshots/traffic.txt ]; then
+                echo "### trafego de rede (filter-dump)"
+                echo '```'
+                cat screenshots/traffic.txt
+                echo '```'
+              fi
             } > /tmp/prc.md
             PRN=$(gh pr view --repo "$GITHUB_REPOSITORY" --json number --jq .number 2>/dev/null || true)
             if [ -n "$PRN" ]; then

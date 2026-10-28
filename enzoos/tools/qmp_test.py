@@ -39,6 +39,7 @@ def ppm_to_png(src, dst):
 class Qmp:
     def __init__(self, iso, serial_path, disk=None):
         qtrace = serial_path.replace("serial.log", "qtrace.log")
+        pcap = serial_path.replace("serial.log", "traffic.pcap")
         args = [QEMU, "-m", "2048", "-display", "none", "-qmp", "stdio",
                 "-machine", "q35", "-boot", "d",
                 "-device", "ahci,id=sata0",
@@ -52,7 +53,10 @@ class Qmp:
             args += ["-drive", "id=hd0,if=none,format=raw,file=" + disk,
                      "-device", "ide-hd,drive=hd0,bus=sata0.1"]
         args += ["-netdev", "user,id=n0",
-                 "-device", "e1000,netdev=n0"]
+                 "-device", "e1000,netdev=n0",
+                 "-object", "filter-dump,id=fdump,netdev=n0,file=" + pcap,
+                 "-device", "intel-hda",
+                 "-device", "hda-duplex"]
         self.notes = []
         self.proc = subprocess.Popen(
             args,
@@ -382,6 +386,46 @@ def main():
         panic = slines[i] + " | " + (slines[i+1] if i+1 < len(slines) else "")
     except StopIteration:
         pass
+    # ===== pcap: o que realmente passou pela netdev (filter-dump) =====
+    try:
+        import struct as _st
+        with open(os.path.join(outdir, "traffic.pcap"), "rb") as f:
+            pd = f.read()
+        mag = pd[:4]
+        pkts = []
+        if mag in (b"\xd4\xc3\xb2\xa1", b"\xa1\xb2\xc3\xd4"):
+            off = 24
+            while off + 16 <= len(pd):
+                ts, tu, incl, orig = _st.unpack_from("<IIII", pd, off)
+                off += 16
+                if off + incl > len(pd):
+                    break
+                pkts.append(pd[off:off + incl])
+                off += incl
+        lines = []
+        for i, p in enumerate(pkts[:24]):
+            d = "TX" if p[0:6] == b"\x52\x54\x00" else "RX"
+            et = int.from_bytes(p[12:14], "big")
+            desc = "et=0x%04x len=%d" % (et, len(p))
+            if et == 0x0800 and len(p) >= 34:
+                src = ".".join(str(b) for b in p[26:30])
+                dst = ".".join(str(b) for b in p[30:34])
+                proto = p[23]
+                desc += " ip %s->%s p=%d" % (src, dst, proto)
+                if proto == 17 and len(p) >= 42:
+                    sp = int.from_bytes(p[34:36], "big")
+                    dp = int.from_bytes(p[36:38], "big")
+                    desc += " udp %d->%d" % (sp, dp)
+                    if 67 in (sp, dp) and len(p) >= 43:
+                        desc += " bootp op=%d" % p[42]
+            lines.append("[%02d] %s %s" % (i, d, desc))
+        print("=== pcap (%d pacotes; primeiros 24) ===" % len(pkts))
+        print("\n".join(lines) if lines else "(nenhum pacote)")
+        with open(os.path.join(outdir, "traffic.txt"), "w") as f:
+            f.write("pcap %d pacotes\n" % len(pkts) + "\n".join(lines) + "\n")
+    except Exception as e:
+        print("(sem pcap: %s)" % e)
+
     # ===== bloco final: o que as annotations do CI vao mostrar =====
     print("=== resumo do boot ===")
     for tag in ["[enzfs]", "[e1000]", "[net]"]:
