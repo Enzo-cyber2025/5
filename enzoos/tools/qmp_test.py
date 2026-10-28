@@ -342,13 +342,20 @@ def main():
               len([l for l in slines if "[eth]" in l])))
     # resumo por tags (o cap de annotations corta o meio do serial)
     print("=== resumo do boot ===")
-    for tag in ["[ahci]", "[enzfs]", "[e1000]", "[net]"]:
+    ahci_line = "(ausente)"
+    ahci_hex = ""
+    hits = [l for l in slines if "[ahci]" in l]
+    if hits:
+        ahci_line = hits[0]
+        i = slines.index(hits[0])
+        hx = [l for l in slines[i+1:i+8] if l.startswith("0x")]
+        ahci_hex = " ".join(hx[:6])
+    for tag in ["[enzfs]", "[e1000]", "[net]"]:
         hits = [l for l in slines if tag in l]
         print("%-9s %s" % (tag + ":", hits[0] if hits else "(ausente)"))
-        if tag == "[ahci]" and hits:
-            i = slines.index(hits[0])
-            hx = [l for l in slines[i+1:i+8] if l.startswith("0x")]
-            print("diag: " + " ".join(hx[:6]))
+    print("[ahci]:  %s" % ahci_line)
+    if ahci_hex:
+        print("diag: %s" % ahci_hex)
 
     # linhas do panic (vec/rip/cr2/dumps) — o que mais importa agora
     try:
