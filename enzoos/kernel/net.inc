@@ -764,8 +764,13 @@ tcp_input:
 .st2:
         cmp dword [tcp_state], 2
         jne .out
-        test r13b, 0x01                     ; FIN
-        jz .data
+        test r13b, 0x04                     ; RST — abandona
+        jnz .rst
+        cmp r14d, 0
+        jg .data
+        ; sem payload: FIN sozinho?
+        test r13b, 0x01
+        jz .out
         mov eax, [tcp_rseq]
         inc eax
         mov [tcp_ack], eax
@@ -775,10 +780,11 @@ tcp_input:
         xor edx, edx
         call tcp_tx
         jmp .out
+.rst:
+        mov dword [tcp_state], 0
+        jmp .out
 .data:
-        cmp r14d, 0
-        jle .out
-        ; copia para o anel
+        ; copia o payload para o anel
         xor ecx, ecx
 .put:
         cmp ecx, r14d
@@ -801,6 +807,11 @@ tcp_input:
         mov eax, [tcp_rseq]
         add eax, r14d
         mov [tcp_ack], eax
+        test r13b, 0x01                     ; FIN no mesmo segmento
+        jz .dack
+        inc dword [tcp_ack]                 ; o FIN consome 1 de seq
+        mov dword [tcp_state], 3
+.dack:
         mov edi, 0x10
         xor esi, esi
         xor edx, edx
@@ -871,6 +882,7 @@ tcp_connect:
         xor esi, esi
         xor edx, edx
         call tcp_tx
+        inc dword [tcp_seq]                ; o SYN consome 1 de seq
         mov ebx, [uptime_ms]
         add ebx, 1500
 .w:

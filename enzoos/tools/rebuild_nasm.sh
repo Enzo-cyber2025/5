@@ -92,7 +92,13 @@ cat > config/config.h <<'CFG'
 #include "unconfig.h"
 CFG
 
-# 4) build
+# 4) headers gerados por perl (pptok.h, warnings.h, ...) ANTES do build
+make perlreq -j1
+
+# 5) build (zlib interno do tarball)
+sed -i 's/@ZLIBINC@//g' Makefile
+sed -i 's|^ZLIB\t\t= @ZLIB@|ZLIB\t\t= $(ZLIBOBJ)|' Makefile
+sed -i 's|^ZLIBINC\t\t= $|ZLIBINC\t\t= -I./zlib|' Makefile
 make nasm -j"$(nproc)"
 install -m 755 nasm "$HOME/bin/nasm"
 "$HOME/bin/nasm" -v
