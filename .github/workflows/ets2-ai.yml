@@ -1434,10 +1434,13 @@ jobs:
           # inteiras 3x SEM concluir 1 boot — sem rastro, sem diagnostico).
           # O trace e commitado pelo Diag e diz exatamente onde o tempo foi.
           $traceF = "$PWD\sobe-trace.log"
-          Trace ("SO build " + (Get-CimInstance Win32_OperatingSystem).BuildNumber + " — v79 windows-latest p/ WARP novo (crash v78 = fastfail no JIT do D3D10Warp 20348 em CreatePixelShader)")
           function Trace([string]$m) {
             Add-Content -Path $traceF -Value ("[{0}] {1}" -f (Get-Date -Format HH:mm:ss), $m) -ErrorAction SilentlyContinue
           }
+          # v80: a linha do "SO build" ficava ANTES da function Trace (v79) —
+          # CommandNotFoundException com ErrorActionPreference=Stop matou o
+          # step inteiro antes de TUDO (nem sobe-trace.log nasceu).
+          Trace ("SO build " + (Get-CimInstance Win32_OperatingSystem).BuildNumber + " — v79 windows-latest p/ WARP novo (crash v78 = fastfail no JIT do D3D10Warp 20348 em CreatePixelShader)")
           $sobeT0 = Get-Date
           Trace "SOBE inicio"
           # v53: SONDA D3D11 WARP/DXGI ANTES DE QUALQUER TROCA NO SYSTEM32 —
