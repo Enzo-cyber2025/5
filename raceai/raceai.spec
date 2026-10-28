@@ -93,8 +93,30 @@ exe = EXE(
     icon="assets/icon.ico" if os.path.isfile("assets/icon.ico") else None,
 )
 
+# Segundo executável, com console: serve para depurar e para o CI
+# (o de janela não mostra print()).
+exe_console = EXE(
+    pyz,
+    a.scripts,
+    [],
+    exclude_binaries=True,
+    name="RaceAI2D-console",
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=False,
+    console=True,
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+    icon="assets/icon.ico" if os.path.isfile("assets/icon.ico") else None,
+)
+
 coll = COLLECT(
     exe,
+    exe_console,
     a.binaries,
     a.zipfiles,
     a.datas,
