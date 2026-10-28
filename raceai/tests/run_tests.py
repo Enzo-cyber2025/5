@@ -61,8 +61,13 @@ def _run_gui_subprocess() -> None:
             if out:
                 print("\n".join(out.splitlines()[-8:]))
             return
-        if code in CRASH_CODES or code < 0:
-            tried.append(f"{drv} (travou)")
+        low = out.lower()
+        transient = (code in CRASH_CODES or code < 0
+                     or "not available" in low
+                     or "no available video device" in low
+                     or "não disponível" in low)
+        if transient:
+            tried.append(f"{drv} ({'travou' if code in CRASH_CODES or code < 0 else 'indisponível'})")
             continue
         if out:
             print("\n".join(out.splitlines()[-25:]))

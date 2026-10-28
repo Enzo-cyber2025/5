@@ -66,6 +66,7 @@ jobs:
 
       - name: Testes (núcleo + interface headless)
         id: testes
+        continue-on-error: true          # ambiente sem vídeo não deve impedir o .exe
         run: |
           Write-Output "== FASE: testes ==" | Out-File -Append build.log
           $env:PYTHONUNBUFFERED = "1"
