@@ -62,12 +62,21 @@ k_swap_init:
         mov rax, [r12]                      ; PDPT[0]
         mov r13, rax
         and r13, -4096         ; endereço do PD (modo 2MB)
-        ; diag: PDPT e valor de PDPT[0]
+        ; diag: PDPT, PDPT[0] e PD[2..4] (entradas do diretório)
         push rax
+        mov rdi, s_sw_diag2
+        call k_log
         mov rdi, r12
         call k_log_hex
-        pop rdi
+        mov rdi, [r12]
         call k_log_hex
+        mov rdi, [r13 + 2*8]
+        call k_log_hex
+        mov rdi, [r13 + 3*8]
+        call k_log_hex
+        mov rdi, [r13 + 4*8]
+        call k_log_hex
+        pop rax
         test rdi, 0x80                      ; PS -> página grande de 1GB
         jz .mode_2m
         ; ---- modo 1 GB: cria um PD novo ----
@@ -107,6 +116,10 @@ k_swap_init:
 .pt_loop:
         cmp r15d, 32
         jae .pts_done
+        mov rdi, s_sw_diag3
+        call k_log
+        mov edi, r15d
+        call k_log_hex
         mov edi, 4096
         call k_alloc
         test rax, rax
@@ -530,6 +543,8 @@ sw_free_frame:
 
 section .kdata
 s_sw_diag:  db "[swap] PT", 0
+s_sw_diag2: db "[swap] paginacao atual (PML4[0], PDPT[0], PD[2..4]):", 0
+s_sw_diag3: db "[swap] alocando PT #", 0
 sw_hdr:     times 512 db 0
 sw_armed:   dd 0
 sw_lba:     dd 0

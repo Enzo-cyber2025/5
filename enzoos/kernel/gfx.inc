@@ -867,11 +867,17 @@ k_panic:
         mov [panic_rip_val], rsi
         lea rdi, [rel panic_serial]
         call k_log
-        ; diagnóstico pela serial: código da exceção e RIP
+        ; diagnóstico pela serial (rotulado): vec, RIP e CR2
+        lea rdi, [rel s_pv]
+        call k_log
         mov edi, ebx
         call k_log_hex
+        lea rdi, [rel s_prip]
+        call k_log
         mov rdi, [panic_rip_val]
         call k_log_hex
+        lea rdi, [rel s_pcr2]
+        call k_log
         mov rdi, cr2
         call k_log_hex
         ; IDT[32] (timer) e primeiros descritores RX do e1000
@@ -1011,6 +1017,9 @@ panic_msg_len equ $ - panic_msg - 1
 panic_rip:  db "RIP:", 0
 panic_rip_len equ $ - panic_rip - 1
 panic_serial: db "PANICO DO NUCLEO", 0
+s_pv:   db "vec:", 0
+s_prip: db "rip:", 0
+s_pcr2: db "cr2:", 0
 
 %include "../obj/font.inc"
 %include "../obj/cursor.inc"
