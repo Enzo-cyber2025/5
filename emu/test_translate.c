@@ -1732,6 +1732,95 @@ static void test_guest_stack_executes(void)
            "the arena was checked, nothing generated was run\n");
 }
 #endif
+/* ------------------------------------------------------- the buffer cap
+ *
+ * Recorded as its own section because of what it cost. Measured on a shipped
+ * application bundle, the second largest refusal bucket was 62 code entry points
+ * every one reported as `unsupported-opcode` with no opcode attributable. The
+ * cause was not an instruction at all: the sweep hands the translator a whole code
+ * section, the module's section was larger than the 1 MiB cap, and the refusal
+ * carried the reason the record is initialised to before pass 1. Those 62
+ * functions were never examined, and the histogram said they had been found
+ * unsupported - which sent the work at the wrong thing.
+ */
+static void test_buffer_cap_is_named(void)
+{
+    tr_func   f;
+    tr_status st;
+
+    printf("a buffer the translator refuses to examine says so, and does not "
+           "claim an opcode\n");
+
+    /* One byte past the old 1 MiB cap, holding nothing but a RET: the function is
+     * trivially translatable, so any refusal can only come from the cap. It must
+     * now translate, because a real module's code section is far larger than
+     * 1 MiB and rejecting it rejected every export in the module. */
+    {
+        size_t n = (1u << 20) + 4096u;
+        uint8_t *code = calloc(n, 1u);
+        CHECK(code != NULL, "could not allocate a %zu-byte buffer", n);
+        if (code) {
+            code[0] = 0xC3;
+            st = tr_translate_function(code, n, IMAGE_BASE, NULL, NULL, &f);
+            CHECK(st == TR_OK, "a bare RET in a %zu-byte section returned %s: %s",
+                  n, tr_status_name(st), f.detail ? f.detail : "?");
+            CHECK(f.insns == 1, "planned %u instructions, expected 1", f.insns);
+            free(code);
+        }
+    }
+
+    /* Past the current cap, the refusal must name the buffer - and must not reuse
+     * the reason that means "I decoded this and it is outside the subset". */
+    {
+        size_t n = (size_t)TRF_MAX_CODE_BYTES + 4096u;
+        uint8_t *code = calloc(n, 1u);
+        CHECK(code != NULL, "could not allocate a %zu-byte buffer", n);
+        if (code) {
+            code[0] = 0xC3;
+            st = tr_translate_function(code, n, IMAGE_BASE, NULL, NULL, &f);
+            CHECK(st == TR_INVALID, "an oversized buffer returned %s", tr_status_name(st));
+            CHECK(f.reason == TRR_BUFFER,
+                  "an oversized buffer was reported as %s: the same label a real "
+                  "unsupported instruction gets, which is what made 62 unexamined "
+                  "functions look like 62 unsupported opcodes",
+                  tr_reason_name(f.reason));
+            CHECK(f.fail_op_len == 0 && f.fail_insns == 0,
+                  "an unexamined buffer reported fail_op_len=%u fail_insns=%u",
+                  f.fail_op_len, f.fail_insns);
+            CHECK(f.detail && strstr(f.detail, "TRF_MAX_CODE_BYTES") != NULL,
+                  "detail '%s' does not name the limit", f.detail ? f.detail : "?");
+            free(code);
+        }
+    }
+
+    /* The other guard that runs before pass 1 had the same defect. */
+    {
+        static const uint8_t g[] = { 0xC3 };
+        st = tr_translate_function_at(g, sizeof(g), IMAGE_BASE, 99u, NULL, NULL, &f);
+        CHECK(st == TR_INVALID, "a start offset past the end returned %s",
+              tr_status_name(st));
+        CHECK(f.reason == TRR_BUFFER,
+              "reported as %s, expected code-buffer-rejected", tr_reason_name(f.reason));
+    }
+
+    /* Discovery marks are one BIT per guest byte. If the granularity were a byte,
+     * ten one-byte instructions sharing a bitmap byte would look already-seen
+     * after the first, discovery would stop, and the translation would be short -
+     * silently, because a prefix of a function still emits valid words. */
+    {
+        static const uint8_t g[] = {
+            0x50,0x50,0x50,0x50,0x50,0x50,0x50,0x50,0x50,0x50, 0xC3
+        };
+        st = tr_translate_function(g, sizeof(g), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_OK, "ten one-byte pushes then ret returned %s: %s",
+              tr_status_name(st), f.detail ? f.detail : "?");
+        CHECK(f.insns == 11, "planned %u of 11 instructions: discovery lost the ones "
+                             "that share a bitmap byte with an earlier one", f.insns);
+        CHECK(f.n == 13, "emitted %zu words, expected 13 (STP + 10 STR + LDP + RET)",
+              f.n);
+    }
+}
+
 
 int main(void)
 {
@@ -1743,6 +1832,7 @@ int main(void)
     test_guest_stack_arena();
     test_guest_stack_translation();
     test_guest_stack_executes();
+    test_buffer_cap_is_named();
     test_pipeline();
 #if defined(__aarch64__)
     printf("VERDICT arch=aarch64 exe_words=%zu const_ok=%d first=%s/%llu(to=%d,sig=%d) "

@@ -32,6 +32,7 @@ const char *tr_reason_name(tr_reason r)
     case TRR_INTERNAL:      return "internal";
     case TRR_STACK:         return "guest-stack-form";
     case TRR_GUEST_MEM:     return "memory-not-on-guest-stack";
+    case TRR_BUFFER:        return "code-buffer-rejected";
     default:                return "?";
     }
 }
@@ -333,7 +334,11 @@ static uint32_t const_words(uint64_t v)
 
 static int pushf(tr_func *o, uint32_t insn)
 {
-    if (o->n >= TRF_MAX_WORDS) { o->detail = "output word buffer full"; return 0; }
+    /* Sets the reason as well as the detail. The callers return TR_OVERFLOW
+     * directly, and without this the record would keep whatever reason the
+     * pre-pass-1 initialisation left in it. */
+    if (o->n >= TRF_MAX_WORDS) { o->reason = TRR_OVERFLOW;
+                                 o->detail = "output word buffer full"; return 0; }
     o->words[o->n++] = insn;
     return 1;
 }
@@ -347,6 +352,24 @@ static int emit_const_f(tr_func *o, unsigned rd, uint64_t v)
         if (chunk) { if (!pushf(o, a64_movk_x(rd, chunk, sh))) return 0; }
     }
     return 1;
+}
+
+/* Discovery marks, one BIT per guest byte rather than one byte per guest byte.
+ *
+ * The buffer is a whole code section, so a byte-per-entry array costs as much
+ * memory as the section itself, allocated and freed on every entry point. A
+ * shipped module's .text runs to hundreds of megabytes and a real bundle has
+ * hundreds of exports, so that is hundreds of megabytes of churn per function.
+ * The bitmap is an eighth of it and is the only reason the buffer cap could be
+ * raised to a size that does not reject real modules. */
+static int seen_get(const uint8_t *bm, uint32_t i)
+{
+    return (int)((bm[i >> 3] >> (i & 7u)) & 1u);
+}
+
+static void seen_set(uint8_t *bm, uint32_t i)
+{
+    bm[i >> 3] |= (uint8_t)(1u << (i & 7u));
 }
 
 /* Points the failure record at a specific planned instruction.
@@ -780,21 +803,35 @@ tr_status tr_translate_function_at(const uint8_t *code, size_t code_len,
     if (!out) return TR_INVALID;
     memset(out, 0, sizeof(*out));
     out->reason = TRR_UNSUPPORTED_OP; out->detail = "ok";
-    if (!code || code_len == 0 || code_len > (1u << 20)) {
-        out->reason = TRR_UNSUPPORTED_OP; out->detail = "guest buffer absent or implausibly large";
+    if (!code || code_len == 0 || code_len > TRF_MAX_CODE_BYTES) {
+        /* This used to report TRR_UNSUPPORTED_OP, the value the record is
+         * initialised to before pass 1, which made it indistinguishable in a
+         * histogram from a function whose first instruction really was outside
+         * the subset. Measured on a shipped bundle that mislabelling was the
+         * second largest refusal bucket: 62 code entry points, every one reported
+         * as an unsupported opcode with no opcode attributable, all of them in
+         * fact rejected here because the module's code section was larger than
+         * the old 1 MiB cap and was never examined at all. A function this
+         * translator never looked at is not a function it found unsupported. */
+        out->reason = TRR_BUFFER;
+        out->detail = !code ? "no guest code supplied"
+                    : code_len == 0 ? "guest buffer is empty"
+                    : "guest buffer is larger than TRF_MAX_CODE_BYTES";
         return TR_INVALID;
     }
-    seen = calloc(code_len, 1u);
-    if (!seen) { out->reason = TRR_UNSUPPORTED_OP; out->detail = "out of memory"; return TR_INVALID; }
+    seen = calloc((code_len + 7u) / 8u, 1u);
+    if (!seen) { out->reason = TRR_BUFFER; out->detail = "out of memory for the discovery marks";
+                 return TR_INVALID; }
 
     /* ---- pass 1: discover and plan, following direct branches ---- */
     if (start_off >= code_len) {
+        out->reason = TRR_BUFFER;   /* likewise: nothing was examined */
         out->detail = "start offset is past the end of the buffer";
         free(seen);
         return TR_INVALID;
     }
     stack[sp++] = (uint32_t)start_off;
-    seen[start_off] = 1u;
+    seen_set(seen, (uint32_t)start_off);
     while (sp) {
         uint32_t off = stack[--sp];
         plan p;
@@ -830,11 +867,11 @@ tr_status tr_translate_function_at(const uint8_t *code, size_t code_len,
                 blame(out, &p, (uint32_t)nplans);
                 free(seen); return TR_UNSUPPORTED;
             }
-            if (!seen[t - guest_va]) {
+            if (!seen_get(seen, (uint32_t)(t - guest_va))) {
                 if (sp >= TRF_MAX_INSN) {
                     out->reason = TRR_OVERFLOW; out->detail = "worklist overflow"; free(seen); return TR_OVERFLOW;
                 }
-                seen[t - guest_va] = 1u;
+                seen_set(seen, (uint32_t)(t - guest_va));
                 stack[sp++] = (uint32_t)(t - guest_va);
             }
         } else {
@@ -846,11 +883,11 @@ tr_status tr_translate_function_at(const uint8_t *code, size_t code_len,
                 blame(out, &p, (uint32_t)nplans);
                     free(seen); return TR_UNSUPPORTED;
                 }
-                if (!seen[t - guest_va]) {
+                if (!seen_get(seen, (uint32_t)(t - guest_va))) {
                     if (sp >= TRF_MAX_INSN) {
                         out->reason = TRR_OVERFLOW; out->detail = "worklist overflow"; free(seen); return TR_OVERFLOW;
                     }
-                    seen[t - guest_va] = 1u;
+                    seen_set(seen, (uint32_t)(t - guest_va));
                     stack[sp++] = (uint32_t)(t - guest_va);
                 }
             }
@@ -862,11 +899,11 @@ tr_status tr_translate_function_at(const uint8_t *code, size_t code_len,
                 free(seen);
                 return TR_UNSUPPORTED;
             }
-            if (!seen[next]) {
+            if (!seen_get(seen, next)) {
                 if (sp >= TRF_MAX_INSN) {
                     out->reason = TRR_OVERFLOW; out->detail = "worklist overflow"; free(seen); return TR_OVERFLOW;
                 }
-                seen[next] = 1u;
+                seen_set(seen, next);
                 stack[sp++] = next;
             }
         }

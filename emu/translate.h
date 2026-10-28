@@ -132,6 +132,13 @@ tr_status tr_translate_run(const uint8_t *code, size_t code_len,
 #define TRF_MAX_INSN   512u
 #define TRF_MAX_WORDS  2048u
 
+/* Largest guest buffer tr_translate_function_at will examine. The sweep hands it
+ * a whole code section, because bounding a function to a window refuses almost
+ * every real one; a shipped module's .text runs to hundreds of megabytes, so this
+ * has to be large enough to be irrelevant in practice and small enough to reject
+ * a nonsense length. */
+#define TRF_MAX_CODE_BYTES (256u << 20)
+
 /* Why a translation was refused, as a code rather than only as prose.
  *
  * A pre-translation sweep over a real binary refuses almost everything, and
@@ -164,6 +171,11 @@ typedef enum {
                            * there is no general guest memory model, so a
                            * dereference through a general register has nowhere
                            * to point */
+    TRR_BUFFER,           /* the buffer was rejected before a single instruction
+                           * was decoded: too large, or a start offset past its
+                           * end. Kept separate because it says the function was
+                           * never examined, which is not a statement about its
+                           * instructions and must not be counted as one. */
     TRR_COUNT
 } tr_reason;
 
