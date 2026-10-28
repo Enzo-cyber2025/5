@@ -295,12 +295,19 @@ jobs:
           python3 family-link-codes/tools/dart_snapshot_hunt.py "$APK" $ABI_SPLIT \
             | tee "$RUNNER_TEMP/dart.txt"
           echo
-          echo "== where are the .so files, exactly? =="
+          echo
+          echo "== every native blob in the bundle =="
           for f in "$APK" $ABI_SPLIT; do
             [ -s "$f" ] || continue
             echo "-- $(basename "$f")"
-            unzip -l "$f" 2>/dev/null | grep -E "lib/.*\.so" | awk '{print $1, $4}'
+            unzip -l "$f" 2>/dev/null \
+              | grep -E "lib/.*\.so|kernel_blob|snapshot|\.bin$" \
+              | awk '{print $1, $4}' | head -15
           done
+          echo
+          echo "== flutter assets in the base apk =="
+          unzip -l "$APK" 2>/dev/null | grep -E "flutter_assets|assets/" \
+            | awk '{print $1, $4}' | head -12
 
       - name: Inventory of the real bundle (ABIs, pieces, size)
         run: |

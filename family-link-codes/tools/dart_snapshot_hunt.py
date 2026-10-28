@@ -55,16 +55,28 @@ SYMBOL_HINTS = (
 )
 
 
-def dart_shared_objects(apk: str) -> dict[str, bytes]:
-    """The Flutter native libraries, wherever the bundle keeps them."""
+def native_objects(apk: str) -> dict[str, bytes]:
+    """Every .so plus the Flutter asset blobs, wherever the bundle keeps them.
+
+    The Dart snapshot is usually libapp.so, but it has also shipped inside the
+    ABI split, inside libflutter.so, or as assets/flutter_assets/kernel_blob.bin,
+    so nothing is assumed about the file name.
+    """
     out: dict[str, bytes] = {}
     with zipfile.ZipFile(apk) as archive:
         for name in archive.namelist():
-            if not name.startswith("lib/"):
+            if name.endswith("/"):
                 continue
             base = name.rsplit("/", 1)[-1]
-            if base in ("libapp.so", "libflutter.so", "libdartjni.so"):
-                out[name] = archive.read(name)
+            wanted = (
+                name.startswith("lib/") and base.endswith(".so")
+            ) or base in ("kernel_blob.bin", "isolate_snapshot_data",
+                          "vm_snapshot_data", "isolate_snapshot_instr")
+            if not wanted:
+                continue
+            if archive.getinfo(name).file_size > 64 * 1024 * 1024:
+                continue
+            out[name] = archive.read(name)
     return out
 
 
@@ -105,10 +117,10 @@ def hunt(apk: str, extra: list[str] | None = None) -> dict:
     """Scan the base APK and any extra APKs (the ABI split often holds the libs)."""
     report: dict = {"apk": apk, "sources": [apk], "libraries": [], "concept": {},
                     "symbols": {}, "notes": []}
-    libs = dart_shared_objects(apk)
+    libs = native_objects(apk)
     for other in extra or []:
         report["sources"].append(other)
-        for name, blob in dart_shared_objects(other).items():
+        for name, blob in native_objects(other).items():
             libs.setdefault(name, blob)
     if not libs:
         report["notes"].append("no lib/*.so in the base APK (they are probably in the ABI split)")
@@ -123,8 +135,9 @@ def hunt(apk: str, extra: list[str] | None = None) -> dict:
         entry["dart_sections"] = [{"name": s, "size": z} for (s, _o, z) in dart_sections]
         entry["is_dart_snapshot"] = bool(dart_sections)
         report["libraries"].append(entry)
-        if dart_sections or name.endswith("libapp.so"):
-            interested.append(name)
+        # search every native object we found: assuming a file name is how the
+        # first attempt looked inside the wrong library
+        interested.append(name)
 
     blob_all = b"".join(libs[n] for n in interested)
     text_all = "\n".join(strings_of(blob_all)).lower()
@@ -141,7 +154,8 @@ def hunt(apk: str, extra: list[str] | None = None) -> dict:
     for line in strings_of(blob_all):
         low = line.lower()
         if any(word in low for word in ("parentaccesscode", "sharedsecret", "clockdrift",
-                                        "familylinkappconfig", "parent_access_code")):
+                                        "familylinkappconfig", "parent_access_code",
+                                        "access code", "shared secret", "accesscode")):
             hits[line[:120]] = hits.get(line[:120], 0) + 1
     report["strings"] = dict(sorted(hits.items(), key=lambda kv: -kv[1])[:60])
     return report
