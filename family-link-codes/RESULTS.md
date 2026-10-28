@@ -607,6 +607,83 @@ fonte do segredo. O app não gera a chave, ele a recebe. Sem login, não há
 O que este §4j entrega é o mapa exato de onde a chave vai aparecer quando
 aparecer: mesma RPC, mesmo objeto, mesmo campo, mesmo nome de pref.
 
+## 4k. Esquema sem `.proto`: o Dart não embute descriptor, mas o decoder serve
+
+Três perguntas ficaram abertas no §4j: (1) dá para recuperar o **esquema
+protobuf** do binário? (2) dá para **decodificar** a resposta real do
+`GetFamilyLinkAppConfigResponse`? (3) a cadeia **resposta → segredo → código**
+fecha sozinha?
+
+### 1. O esquema: procura feita, resposta medida
+
+`flcodes proto apk` varre as bibliotecas do APK atrás de um `FileDescriptorProto`
+(o blob que compiladores protobuf embutem, com nome/campos/tipos). Rodei contra
+o APK real 2.105 no CI (run `40755122265`):
+
+```
+no FileDescriptorProto mentioning the concept was found in the shared objects of this APK
+```
+
+Resultado negativo, e agora explicado: **só os geradores C++, Java e Python
+embutem descriptor**. O Family Link 2.105 é Flutter — o código Dart gerado pelo
+`protoc` não carrega descriptor, então não há o que extrair. Não é falha do
+scanner; é uma propriedade do build. Insistir nesse caminho seria repetir o
+mesmo "não". O esquema continua vindo do §4j (nomes e estrutura no snapshot).
+
+### 2. O decoder: `flcodes proto`
+
+O que funciona sem descriptor é decodificar **pelo fio** — protobuf é
+autodescritivo na medida em que os campos carregam número e tipo:
+
+```bash
+flcodes proto decode capture.bin                 # árvore, segredos mascarados
+flcodes proto decode capture.b64 --base64        # corpo do HAR, como veio
+flcodes proto decode capture.bin --print-secret  # mostra o sharedSecret
+flcodes proto apk app.apk --json                 # o que houver de descriptor
+```
+
+Mascaramento é o padrão (`AIzaSy…45`) — captura de terceiro em log não vira
+chave exposta. `find_secret_fields` marca cada campo com cara de segredo por
+caminho (`field 1.field 1.field 1`), não só o primeiro.
+
+### 3. A cadeia toda, executada
+
+`tools/response_to_code.py` liga as duas pontas:
+
+```bash
+python3 family-link-codes/tools/response_to_code.py --response capture.bin
+python3 family-link-codes/tools/response_to_code.py --response capture.b64 --base64
+python3 family-link-codes/tools/response_to_code.py --synthetic   # sem captura
+```
+
+Ele decodifica, extrai o segredo, lê o TTL que vem ao lado dele na mesma
+mensagem, grava no cofre (AES, `0600`) e gera o código. Saída real do
+`--synthetic` (contra o gerador real, não um mock):
+
+```
+1 { 1 { 1 = "AIzaSy…01" <- secret-shaped  2 = 600 } ... }
+secret found at field 1.field 1.field 1: AIzaSy…01 (len 37)
+validity from the response: 600s
+stored: id=a570c33b1af7 kind=android ttl=600s label=from-response
+{ "code": "836605", "validity": 600, "valid_from": 1793216400, ... }
+PASS: a captured response yields a secret, and the secret yields a code
+```
+
+Ou seja: **o único elo que ainda depende do mundo real é a captura**. Tudo
+depois dela está provado, e o TTL da resposta é respeitado em vez de assumido.
+
+### 4. Onde isso deixa o pedido
+
+| elo | estado |
+|---|---|
+| algoritmo (HMAC-SHA1, janela de 600 s) | provado, 5/5 vetores oficiais |
+| app real 2.105 instalado e rodando, sem root | provado no CI, dois perfis |
+| esquema real (RPC/objeto/campo) | provado no snapshot Dart |
+| descriptor `.proto` dentro do APK | **não existe** (Dart não embute) e isso está medido |
+| decodificar a resposta | provado, `flcodes proto decode` |
+| resposta → segredo → código | provado, `response_to_code.py --synthetic` |
+| captura da resposta de uma conta real | **pendente**: precisa da sua conta (§6) |
+
 ## 5. O que ainda NÃO está provado
 
 * **A chave do app publicado (2.104)** — o APK real foi obtido e autenticado
@@ -630,6 +707,11 @@ aparecer: mesma RPC, mesmo objeto, mesmo campo, mesmo nome de pref.
 
 ## 6. Como fechar a prova em 1 minuto (na sua máquina)
 
+0. Capture a resposta de `kidsmanagement/v1/familyLinkAppConfig` (proxy no
+   caminho do app, ou HAR do inspetor do próprio app) e rode
+   `flcodes proto decode capture.bin --print-secret` — o `sharedSecret` sai
+   dali e `tools/response_to_code.py --response capture.bin` já entrega o
+   código. Sem captura, siga do passo 1.
 1. Family Link no aparelho do responsável → **Código de acesso do familiar**;
    anote o código e o horário.
 2. `flcodes verify --code 123456 --at "2026-10-22T16:12:00-03:00"`
@@ -637,10 +719,10 @@ aparecer: mesma RPC, mesmo objeto, mesmo campo, mesmo nome de pref.
 3. No aparelho supervisionado **offline**, digite o código atual em
    "Acesso dos pais" — esse é o teste de aceitação final.
 
-## 7. Cobertura de testes (112)
+## 7. Cobertura de testes (159)
 
 ```bash
-pytest -q tests/test_flcodes_*.py    # 112 passed
+pytest -q tests/test_flcodes_*.py    # 159 passed
 ```
 
 (`pytest -q` na raiz do repositório também coleta os testes de outro projeto
@@ -655,4 +737,7 @@ daquele repo, que exigem `jdk4py`; não têm relação com esta ferramenta.)
 | `test_flcodes_verify.py` | confirmação/rejeição, TTL descoberto, ambiguidade, drift, seleção entre chaves |
 | `test_flcodes_cli.py` | CLI ponta a ponta, `paths`, TTL no `rea`/`gen`/`verify`, UI web (401/429/400/HEAD, CSP, TTL) |
 | `test_flcodes_abe.py` | FIPS-197 + `cryptography`, cabeçalho, `--password`, zlib, cifrado e claro, path traversal, container vazio, `apk scan` |
+| `test_flcodes_proto.py` | varint/zigue-zague, `FileDescriptorProto` (numeração real dos campos), `scan_descriptors` ancorado em `.proto`, `mask`, `tree`, `find_secret_fields` |
+| `test_flcodes_dart_snapshot.py` | ELF `.so`, strings do snapshot, `--keys`/`--strings-only`, ruído vs conceito |
+| `test_flcodes_response_chain.py` | a cadeia inteira: resposta sintética → segredo → cofre → código; mascaramento por padrão; `--base64`; TTL vindo da resposta; resposta sem segredo reprova |
 | `test_flcodes_device.py` | `adb` simulado: info, pull dos splits, `adb backup` real, varredura + `keys`/`gen` com TTL, e prova de que nenhum comando usa root |
