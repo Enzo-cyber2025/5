@@ -34,10 +34,7 @@ jobs:
         with:
           msystem: MINGW64
           update: true
-          install: >-
-            mingw-w64-x86_64-gcc
-            make
-            zip
+          install: mingw-w64-x86_64-gcc make zip
 
       - name: Python embutido (para a IA em Python)
         shell: pwsh
@@ -49,11 +46,23 @@ jobs:
           Get-ChildItem raceai-cpp/python | Select-Object -First 12 -ExpandProperty Name
 
       - name: Compilar
+        id: compilar
         shell: msys2 {0}
         run: |
           cd raceai-cpp
-          make -j2 2>&1 | tail -40
-          ls -la build/
+          set +e
+          make -j2 > build.log 2>&1
+          echo "make_exit=$?" | tee -a build.log
+          tail -100 build.log
+          ls -la build/ | tee -a build.log
+          test -f build/raceai.exe
+
+      - name: Subir o log de compilação
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: raceai-cpp/build.log
 
       - name: Testes do núcleo e da interface
         shell: msys2 {0}
@@ -67,7 +76,7 @@ jobs:
           cd raceai-cpp
           ./build/raceai_pytest.exe python/python311.dll
 
-      - name: "Treino rápido (prova que evolui: loss cai)"
+      - name: "Treino rápido: a loss precisa cair"
         shell: msys2 {0}
         run: |
           cd raceai-cpp
@@ -77,16 +86,14 @@ jobs:
         shell: msys2 {0}
         run: |
           cd raceai-cpp
-          rm -rf package && mkdir -p package/RaceAI2D-C++
-          cp build/raceai.exe package/RaceAI2D-C++/
-          cp build/raceai_train.exe package/RaceAI2D-C++/
-          cp -r assets package/RaceAI2D-C++/
-          cp -r python package/RaceAI2D-C++/
+          rm -rf package
           mkdir -p package/RaceAI2D-C++/mods/tracks package/RaceAI2D-C++/mods/cars
           mkdir -p package/RaceAI2D-C++/modelos
-          cp README.md LEIA-ME.txt 2>/dev/null || true
-          cp ../raceai-cpp/README.md package/RaceAI2D-C++/LEIA-ME.txt 2>/dev/null || true
-          cp ../raceai-cpp/MODS.md package/RaceAI2D-C++/MODS.md 2>/dev/null || true
+          cp build/raceai.exe build/raceai_train.exe package/RaceAI2D-C++/
+          cp -r assets package/RaceAI2D-C++/
+          cp -r python package/RaceAI2D-C++/
+          cp README.md package/RaceAI2D-C++/LEIA-ME.txt
+          cp MODS.md package/RaceAI2D-C++/
           du -sh package/RaceAI2D-C++
           cd package && zip -qr RaceAI2D-C++-windows.zip RaceAI2D-C++
           ls -la
@@ -105,8 +112,14 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           $ErrorActionPreference = 'Continue'
+          $notas = @(
+            'Jogo em C++ puro (Win32 + GDI): IA em Python embutida, recompensa'
+            'ajustavel por sliders e HUD com loss e porcentagem de erro.',
+            '',
+            "Gerado por .github/workflows/raceai-cpp-windows.yml (branch $env:GITHUB_REF_NAME, commit $env:GITHUB_SHA)."
+          ) -join "`n"
           gh release view exe-cpp-windows | Out-Null
           if ($LASTEXITCODE -ne 0) {
-            gh release create exe-cpp-windows --title "RaceAI 2D (C++) — executável Windows" --notes "Jogo em C++ puro (Win32 + GDI). IA em Python embutida, recompensa ajustável por sliders, HUD com loss e erro %%.$([char]10)$([char]10)Gerado por .github/workflows/raceai-cpp-windows.yml (branch $env:GITHUB_REF_NAME, commit $env:GITHUB_SHA)."
+            gh release create exe-cpp-windows --title "RaceAI 2D (C++) - executavel Windows" --notes $notas
           }
           gh release upload exe-cpp-windows (Get-ChildItem raceai-cpp/package/*.zip) --clobber
