@@ -149,3 +149,64 @@ def test_the_script_publishes_both_secrets_without_printing_the_password(tmp_pat
     assert "gh secret set FLCODES_GPLAY_EMAIL --repo owner/repo" in calls
     assert "gh secret set FLCODES_GPLAY_PASSWORD --repo owner/repo" in calls
     assert GOOD[1] not in result.stdout + result.stderr
+
+
+PLAY_RUN = (pathlib.Path(__file__).resolve().parents[1] / "family-link-codes"
+            / "tools" / "play_run.sh")
+REAP = (pathlib.Path(__file__).resolve().parents[1] / "family-link-codes"
+        / "tools" / "play_store_reap.sh")
+
+
+def _run_play_run(tmp_path, env, *args):
+    import os
+    import subprocess
+
+    fake = tmp_path / "bin"
+    fake.mkdir(exist_ok=True)
+    calls = tmp_path / "calls.log"
+    (fake / "gh").write_text(
+        "#!/usr/bin/env bash\n"
+        f'echo "gh $*" >> {calls}\n'
+        'case "$1 $2" in\n'
+        '  "auth status") exit 0 ;;\n'
+        '  "repo view") echo "owner/repo" ;;\n'
+        '  "secret set") cat > /dev/null ;;\n'
+        '  "workflow run") exit 1 ;;\n'
+        'esac\nexit 0\n'
+    )
+    (fake / "gh").chmod(0o755)
+    full_env = dict(os.environ, PATH=f"{fake}:{os.environ['PATH']}", **env)
+    result = subprocess.run(["bash", str(PLAY_RUN), *args], env=full_env,
+                            capture_output=True, text=True, input="")
+    return result, (calls.read_text() if calls.exists() else "")
+
+
+def test_play_run_refuses_a_bad_pair_and_publishes_nothing(tmp_path):
+    result, calls = _run_play_run(tmp_path, {"FLCODES_GPLAY_EMAIL": "a@b.com",
+                                             "FLCODES_GPLAY_PASSWORD": "abc"})
+    assert result.returncode == 1
+    assert "secret set" not in calls
+    assert "nothing was published" in result.stderr
+
+
+def test_play_run_check_validates_without_publishing(tmp_path):
+    result, calls = _run_play_run(tmp_path, {"FLCODES_GPLAY_EMAIL": GOOD[0],
+                                             "FLCODES_GPLAY_PASSWORD": GOOD[1]}, "--check")
+    assert result.returncode == 0
+    assert "secret set" not in calls
+    assert "nothing was published" in result.stdout
+
+
+def test_play_run_without_credentials_says_what_to_set(tmp_path):
+    result, _calls = _run_play_run(tmp_path, {"FLCODES_GPLAY_EMAIL": "",
+                                              "FLCODES_GPLAY_PASSWORD": ""})
+    assert result.returncode == 1
+    assert "FLCODES_GPLAY_EMAIL" in result.stderr
+
+
+def test_the_reap_script_names_the_signin_wall():
+    """The four sign-in walls look alike in a screenshot; the script names them."""
+    text = REAP.read_text()
+    for needle in ("2-step verification", "wrong", "unusual", "disabled",
+                   "certified", "sign-in stopped at"):
+        assert needle in text

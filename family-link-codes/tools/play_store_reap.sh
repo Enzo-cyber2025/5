@@ -86,7 +86,24 @@ shot 05-after-email
 
 if ! ui wait "password|Enter your password" --timeout 60 >/dev/null 2>&1; then
   shot 06-no-password
-  die "the password field never appeared (2FA, wrong address, or a block screen)"
+  # Say *which* wall it was: the four screens look nothing alike but all of
+  # them stop the sign-in here.
+  DUMP="$WORK/ui-06-no-password.xml"
+  reason="the password field never appeared"
+  if grep -qiE "verify it.s you|verificar|2-step|two-step|authenticator|Get a verification code" "$DUMP" 2>/dev/null; then
+    reason="2-step verification: this account needs a code the emulator cannot receive"
+  elif grep -qiE "couldn.t find your google account|não foi possível encontrar|wrong password|senha incorreta" "$DUMP" 2>/dev/null; then
+    reason="the address or the password is wrong (the store said so, not me)"
+  elif grep -qiE "unusual activity|atividade suspeita|captcha|not a robot|recaptcha" "$DUMP" 2>/dev/null; then
+    reason="Google flagged the sign-in as unusual/bot: sign in once from a real device and retry in a day"
+  elif grep -qiE "This account has been disabled|desativada|suspended" "$DUMP" 2>/dev/null; then
+    reason="the account is disabled or suspended"
+  elif grep -qiE "Your device isn.t Play Protect certified|not certified" "$DUMP" 2>/dev/null; then
+    reason="the emulator image is not Play Protect certified"
+  fi
+  echo "sign-in stopped at: $reason"
+  echo "ui dump: $DUMP"
+  die "$reason"
 fi
 ui find "password|Enter your password" --click >/dev/null 2>&1
 ui type "$FLCODES_GPLAY_PASSWORD"

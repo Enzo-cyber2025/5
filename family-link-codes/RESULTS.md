@@ -335,7 +335,7 @@ bash family-link-codes/tools/setup_play_secrets.sh             # publica
 O script confere a forma do email e da senha, avisa quando a senha tem `$`,
 `` ` `` ou `\` (a causa nº 1 de "a conta funciona no navegador e falha no CI",
 porque o shell come antes do `gh`), grava com `gh secret set` e **nunca imprime
-a senha**. Testado com um `gh` simulado: 4 testes.
+a senha**. Testado com um `gh` simulado: 8 testes (os 4 do `setup_play_secrets.sh` e 4 do `play_run.sh`).
 
 ### Ordens de esforço (de `account howto`)
 
@@ -349,6 +349,24 @@ a senha**. Testado com um `gh` simulado: 4 testes.
    build publicado, já baixado e conferido por assinatura (`sha256 ee2e1349…`)
    sem credencial nenhuma; só o job `play-store` fica de fora, e ele **diz isso**
    no PR em vez de fingir sucesso.
+
+### Um comando do seu lado
+
+```bash
+read -r  FLCODES_GPLAY_EMAIL;    export FLCODES_GPLAY_EMAIL
+read -rs FLCODES_GPLAY_PASSWORD; export FLCODES_GPLAY_PASSWORD
+bash family-link-codes/tools/play_run.sh
+```
+
+Valida → publica os dois secrets → dispara o workflow (`gh workflow run`, ou um
+commit de uma linha em `family-link-codes/` quando o token não pode disparar) →
+acompanha o run e imprime o veredito do job `play-store`. `--check` valida sem
+publicar nada. A senha nunca é impressa nem vai para o disco.
+
+E quando o login para, `play_store_reap.sh` agora **diz qual parede foi**, em vez
+de um genérico "não achei a senha": 2SV, senha/endereço errado, atividade
+suspeita/captcha, conta desativada, ou imagem não certificada — cada uma com o
+dump de UI e o screenshot.
 
 ### Limite do meu lado
 
