@@ -3487,11 +3487,16 @@ jobs:
             # importa so CreateDXGIFactory2 do dxgi.dll da pasta — v70 provou).
             try {
               Trace "hibrido: montando d3d11-DXVK + dxgi-NOSSO->dxgi-DXVK"
+              # v82: $d64 so era definido no ramo nao-warpOk do setup dxvk
+              # (v81: "DXVK x64 ausente" com C:\dxvk extraido) — resolve na hora
+              $d64h = Get-ChildItem "C:\dxvk" -Recurse -Directory -ErrorAction SilentlyContinue |
+                Where-Object { $_.Name -eq "x64" } | Select-Object -First 1
+              Trace "hibrido: dxvk x64 em $($d64h.FullName)"
               Move-Item "$bin64\d3d11.dll" "$bin64\d3d11shim-warp.dll" -Force
               Move-Item "$bin64\d3d11_real.dll" "$bin64\d3d11real-warp.dll" -Force -ErrorAction SilentlyContinue
-              if ($d64 -and (Test-Path (Join-Path $d64.FullName "d3d11.dll"))) {
-                Copy-Item (Join-Path $d64.FullName "d3d11.dll") "$bin64\d3d11.dll" -Force
-                Copy-Item (Join-Path $d64.FullName "dxgi.dll") "$bin64\dxgi_real.dll" -Force
+              if ($d64h -and (Test-Path (Join-Path $d64h.FullName "d3d11.dll"))) {
+                Copy-Item (Join-Path $d64h.FullName "d3d11.dll") "$bin64\d3d11.dll" -Force
+                Copy-Item (Join-Path $d64h.FullName "dxgi.dll") "$bin64\dxgi_real.dll" -Force
                 $vkIcdX64 = Get-ChildItem "C:\mesa3d\x64" -Filter "lvp_icd*.json" -ErrorAction SilentlyContinue | Select-Object -First 1
                 if ($vkIcdX64) { $env:VK_ICD_FILENAMES = $vkIcdX64.FullName }
                 Trace "hibrido: dlls no lugar; ICD=$env:VK_ICD_FILENAMES"
