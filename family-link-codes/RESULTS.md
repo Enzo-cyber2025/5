@@ -352,6 +352,20 @@ a senha**. Testado com um `gh` simulado: 8 testes (os 4 do `setup_play_secrets.s
 
 ### Um comando do seu lado
 
+Um comando, na sua máquina (cria a conta, publica os secrets, dispara o job):
+
+```bash
+bash family-link-codes/tools/make_test_account.sh
+```
+
+Ele faz o próprio `venv` (PEP 668 não atrapalha), prefere o Chrome real, abre a
+janela, preenche o formulário e — se o Google pedir telefone — **espera você
+digitar o código**, que é a única forma legítima de passar dessa tela. Depois
+publica os dois secrets e dispara o `play-store` sozinho. `--no-publish` para
+parar antes do GitHub.
+
+Já existindo a conta, o caminho curto continua:
+
 ```bash
 read -r  FLCODES_GPLAY_EMAIL;    export FLCODES_GPLAY_EMAIL
 read -rs FLCODES_GPLAY_PASSWORD; export FLCODES_GPLAY_PASSWORD
@@ -784,6 +798,11 @@ Sorry, we could not create your Google Account.
 Next
 ```
 
+Repetido com **Chrome real** (canal `chrome`, perfil persistente) para tirar a
+dúvida do fingerprint: mesmo resultado, `blocked`, wizard recomeçando na tela 1.
+Ou seja, não é o Chromium embarcado — é a criação de conta a partir do IP do
+runner. Duas medidas independentes, mesma conclusão.
+
 ### O que a tentativa provou
 
 * não há captcha nesta tentativa: o wizard **aceita** nome, nascimento, usuário
@@ -809,6 +828,20 @@ valer, e a conta morreria no meio do experimento.
 | `gh secret set` / `gh workflow run` com o token da sessão | 403 |
 | conta sua, criada à mão, 2SV off, 1 login em celular real | **funciona** — é o que `play_run.sh` espera |
 | Cloud Identity Free no seu domínio (`users.insert`) | único caminho legítimo por API |
+
+Um comando, na sua máquina (cria a conta, publica os secrets, dispara o job):
+
+```bash
+bash family-link-codes/tools/make_test_account.sh
+```
+
+Ele faz o próprio `venv` (PEP 668 não atrapalha), prefere o Chrome real, abre a
+janela, preenche o formulário e — se o Google pedir telefone — **espera você
+digitar o código**, que é a única forma legítima de passar dessa tela. Depois
+publica os dois secrets e dispara o `play-store` sozinho. `--no-publish` para
+parar antes do GitHub.
+
+Já existindo a conta, o caminho curto continua:
 
 ```bash
 read -r  FLCODES_GPLAY_EMAIL;    export FLCODES_GPLAY_EMAIL
