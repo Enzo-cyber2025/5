@@ -104,6 +104,7 @@ struct ControlSettings {
 
 struct UiSettings {
     bool mostrar_raios = true;
+    bool modo3d = false;         // visão 2D de cima ou 3D dentro do carro
     bool mostrar_hud = true;
     bool seguir_melhor = true;
     bool pausado = false;

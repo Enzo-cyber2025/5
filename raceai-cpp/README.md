@@ -42,6 +42,7 @@ RaceAI2D-C++/
 | Tecla | Função |
 |-------|--------|
 | **`F2`** | **chave: alterna Corrida ↔ Treinamento** (mesmo app, sem voltar ao menu) |
+| **`F3`** | liga/desliga a visão 3D (câmera dentro do carro) |
 | Setas / WASD | dirigir (corrida) |
 | `R` | reinicia a corrida / zera o treino |
 | `C` | câmera livre ou seguindo o carro em foco |
@@ -66,6 +67,24 @@ evoluindo enquanto você está na corrida.
 | O que faz | você (ou uma rede) guia contra adversários | evolução genética treina uma rede |
 | Mostra | classificação, setores, delta, fantasma, minimapa | loss, erro %, geração, gráfico |
 | Controles | setas/WASD | sliders de recompensa e de população |
+
+### Visão 3D
+
+Além da visão de cima (2D), o jogo tem uma **visão 3D** com câmera atrás do
+carro: aperte **`F3`** ou clique na chave `2D | 3D` (fica ao lado da chave de
+modo). O 3D é um renderizador próprio, por software:
+
+- projeção perspectiva com recorte no plano próximo e ordenação das faces da
+  mais longe para a mais perto (algoritmo do pintor) — roda em processadores
+  fracos, sem placa de vídeo dedicada;
+- a pista é montada em tiras: asfalte, zebrada nas duas bordas, muro e grama;
+- árvores/cones de cenário são gerados ao longo do traçado;
+- o fantasma da sua melhor volta aparece como uma fita no chão;
+- cada carro é uma caixa com a cor do próprio modelo (o seu fica verde);
+- campo de visão e altura da câmera mudam com a velocidade.
+
+Pistas podem ter **elevação**: basta que `points` tenha três números por ponto
+`[x, y, z]` (com dois, o jogo assume terreno plano).
 
 ### Erros ao abrir
 

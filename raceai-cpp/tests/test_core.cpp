@@ -6,6 +6,7 @@
 #include <string>
 
 #include "../src/core/assets.hpp"
+#include "../src/core/render3d.hpp"
 #include "../src/core/py_driver.hpp"
 #include "../src/core/trainer.hpp"
 
@@ -257,6 +258,104 @@ static void t_fisica_avancada() {
     }
     CHECK(std::fabs(liso.r) < std::fabs(seco.r) || std::fabs(liso.slip_f) > std::fabs(seco.slip_f),
           "pista escorregadia não mudou o comportamento");
+}
+
+// -------------------------------------------------------- renderizador 3D
+static void t_render3d() {
+    Render3D r;
+    Camera3D cam;
+    cam.x = 0.0; cam.y = 0.0; cam.z = 2.0;
+    cam.yaw = 0.0; cam.pitch = 0.0;
+    cam.fov = 70.0;
+    r.set_camera(cam);
+    r.begin(800, 600);
+
+    // um ponto à frente da câmera aparece no meio da tela
+    double sx = 0.0, sy = 0.0;
+    CHECK(r.projetar(Vec3{20.0, 0.0, 2.0}, &sx, &sy), "ponto à frente não projetou");
+    CHECK(std::fabs(sx - 400.0) < 1.0, "centro horizontal errado: %.1f", sx);
+    CHECK(std::fabs(sy - 300.0) < 1.0, "centro vertical errado: %.1f", sy);
+
+    // um ponto à direita aparece à direita; acima, mais alto na tela
+    CHECK(r.projetar(Vec3{20.0, 5.0, 2.0}, &sx, &sy), "ponto à direita não projetou");
+    CHECK(sx > 400.0, "ponto à direita apareceu à esquerda: %.1f", sx);
+    CHECK(r.projetar(Vec3{20.0, 0.0, 6.0}, &sx, &sy), "ponto alto não projetou");
+    CHECK(sy < 300.0, "ponto alto apareceu embaixo: %.1f", sy);
+
+    // atrás da câmera não projeta
+    CHECK(!r.projetar(Vec3{-20.0, 0.0, 2.0}, &sx, &sy), "ponto atrás projetou");
+    CHECK(!r.projetar(Vec3{0.05, 0.0, 2.0}, &sx, &sy), "ponto no plano próximo projetou");
+
+    // o horizonte fica dentro da tela
+    const double h = r.horizonte_y();
+    CHECK(h > 0.0 && h < 600.0, "horizonte fora da tela: %.1f", h);
+
+    // algoritmo do pintor: o que está longe vem primeiro
+    r.begin(800, 600);
+    r.add_quad(Vec3{5.0, -1.0, 0.0}, Vec3{5.0, 1.0, 0.0}, Vec3{5.0, 1.0, 1.0},
+               Vec3{5.0, -1.0, 1.0}, 0xff0000);      // perto
+    r.add_quad(Vec3{80.0, -1.0, 0.0}, Vec3{80.0, 1.0, 0.0}, Vec3{80.0, 1.0, 1.0},
+               Vec3{80.0, -1.0, 1.0}, 0x00ff00);     // longe
+    std::vector<Face3D> faces = r.resolve();
+    CHECK(faces.size() == 2, "esperava 2 faces, veio %zu", faces.size());
+    if (faces.size() == 2) {
+        CHECK(faces[0].profundidade > faces[1].profundidade,
+              "ordem errada: %.1f deveria vir depois de %.1f", faces[0].profundidade,
+              faces[1].profundidade);
+        CHECK(faces[0].cor == 0x00ff00, "a face distante não é a verde");
+    }
+
+    // recorte: um quadrado atravessando a câmera ainda gera uma face válida
+    r.begin(800, 600);
+    r.add_quad(Vec3{-5.0, -2.0, 0.0}, Vec3{-5.0, 2.0, 0.0}, Vec3{10.0, 2.0, 0.0},
+               Vec3{10.0, -2.0, 0.0}, 0x123456);
+    std::vector<Face3D> rec = r.resolve();
+    CHECK(rec.size() == 1, "quadrado recortado desapareceu (%zu faces)", rec.size());
+    if (rec.size() == 1) {
+        CHECK(rec[0].valida(), "face recortada sem pontos suficientes");
+        for (size_t i = 0; i < rec[0].xs.size(); ++i)
+            CHECK(std::fabs(rec[0].xs[i]) < 100000 && std::fabs(rec[0].ys[i]) < 100000,
+                  "coordenada absurda depois do recorte: %d %d", rec[0].xs[i],
+                  rec[0].ys[i]);
+    }
+
+    // caixa e pirâmide geram faces
+    r.begin(800, 600);
+    r.add_box(Vec3{15.0, 0.0, 0.5}, 4.0, 1.8, 1.4, 0.3, 0xe0483a);
+    r.add_pyramid(Vec3{30.0, 6.0, 0.0}, 2.0, 6.0, 0x2f7d4f);
+    std::vector<Face3D> obj = r.resolve();
+    CHECK(obj.size() >= 8, "caixa/pirâmide geraram poucas faces: %zu", obj.size());
+
+    // a cena da pista: precisa gerar asfalto, muro e cenário
+    Track t;
+    std::string err;
+    REQUIRE(load_track("kartodromo", t, &err), "sem pista para o teste 3D: %s", err.c_str());
+    // câmera dentro da pista, olhando para a frente (como o jogo faz)
+    Camera3D cam_pista = cam;
+    cam_pista.x = t.center[0].x;
+    cam_pista.y = t.center[0].y;
+    cam_pista.z = 2.0;
+    cam_pista.yaw = t.heading[0];
+    Render3D cena;
+    cena.set_camera(cam_pista);
+    cena.begin(800, 600);
+    montar_cena_pista(cena, t, 0, 60);
+    std::vector<Face3D> pista = cena.resolve();
+    CHECK(pista.size() > 50, "cena 3D da pista pobre: %zu faces", pista.size());
+    for (const Face3D& f : pista) {
+        CHECK(f.valida(), "face inválida na cena");
+        for (size_t i = 0; i < f.xs.size(); ++i)
+            CHECK(std::fabs(f.xs[i]) < 200000, "coordenada fora de controle: %d", f.xs[i]);
+    }
+
+    // elevação: um ponto mais alto aparece mais alto na tela (mesma distância)
+    std::vector<double> ele(t.n(), 0.0);
+    for (size_t i = 0; i < ele.size(); ++i) ele[i] = 3.0 * std::sin(double(i) * 0.05);
+    Render3D c2;
+    c2.set_camera(cam_pista);
+    c2.begin(800, 600);
+    montar_cena_pista(c2, t, 0, 40, &ele);
+    CHECK(!c2.resolve().empty(), "cena com elevação ficou vazia");
 }
 
 // ------------------------------------------------------------- conteúdo
@@ -756,6 +855,7 @@ int main() {
     test("treino: gerações e determinismo", t_train);
     test("assets: pistas, carros e mods", t_assets);
     test("conteúdo: toda pista e todo carro são dirigíveis", t_conteudo);
+    test("renderizador 3D: projeção, recorte e ordem das faces", t_render3d);
     test("ia em python (ponte com o interpretador)", t_python);
 
     printf("\n%d testes passaram, %d falharam\n", passed, failed);

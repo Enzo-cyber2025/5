@@ -203,6 +203,7 @@ static const UINT CP_UTF8 = 65001;
 #endif
 #ifndef VK_F2
 #define VK_F2 0x71
+#define VK_F3 0x72
 #endif
 #ifndef WM_GETMINMAXINFO
 #define WM_GETMINMAXINFO 0x0024

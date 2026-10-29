@@ -26,6 +26,7 @@
 #include <vector>
 
 #include "app_state.hpp"
+#include "core/render3d.hpp"
 
 using namespace raceai;
 
@@ -37,6 +38,7 @@ static const int kTimer = 1;
 static HWND g_hwnd = nullptr;
 static HWND g_edita_python = nullptr;
 static HWND g_botao_chave = nullptr;
+static HWND g_botao_3d = nullptr;
 static HWND g_texto_metricas = nullptr;
 static HWND g_texto_corrida = nullptr;
 static HFONT g_fonte = nullptr;
@@ -147,12 +149,164 @@ enum {
     ID_EXEMPLO_PY, ID_NOVO, ID_ADD_MODELO, ID_AJUDA, ID_SAIR, ID_VOLTAR,
     ID_ABRIR_PY, ID_SALVAR_PY,
     ID_RECOMPENSA_PADRAO, ID_ZOOM_MAIS, ID_ZOOM_MENOS, ID_CHAVE_MODO,
-    ID_CHK_ABS, ID_CHK_TC, ID_ABRIR_MODS, ID_RECARR_MODS
+    ID_CHK_ABS, ID_CHK_TC, ID_ABRIR_MODS, ID_RECARR_MODS, ID_CHAVE_3D
 };
 
 // ------------------------------------------------------------------ canvas
 struct Camera { double x = 0.0, y = 0.0, z = 6.0; };
 static Camera g_cam;
+
+// ------------------------------------------------------------------ visão 3D
+static Camera3D g_cam3d;
+static bool g_cam3d_ok = false;
+
+// Junta os agentes visíveis (corrida ou treino) para a cena 3D.
+static void agentes_visiveis(std::vector<const Agent*>& agentes,
+                             std::vector<const CarSpec*>& specs) {
+    if (g_app.mode == Mode::Corrida && g_app.race.sim) {
+        for (int i = 0; i < g_app.race.sim->n(); ++i)
+            agentes.push_back(&g_app.race.sim->agents[i]);
+        specs.assign(agentes.size(), &g_app.car_cache_);
+    } else if (g_app.trainer) {
+        for (const auto& sh : g_app.trainer->shards)
+            for (int i = 0; i < sh->n(); ++i) {
+                agentes.push_back(&sh->agents[i]);
+                specs.push_back(&sh->specs[i]);
+            }
+    }
+}
+
+static uint32_t cor_hex(const std::string& hex, uint32_t padrao) {
+    if (hex.size() < 7 || hex[0] != '#') return padrao;
+    auto par = [&](int i) {
+        return uint32_t(std::stoul(hex.substr(size_t(i), 2), nullptr, 16));
+    };
+    return (par(1) << 16) | (par(3) << 8) | par(5);
+}
+
+static void pinta_cena3d(HDC hdc, int x0, int y0, int w, int h, const Track& trk) {
+    std::vector<const Agent*> agentes;
+    std::vector<const CarSpec*> specs;
+    agentes_visiveis(agentes, specs);
+    if (agentes.empty()) return;
+
+    const Agent* foco = agentes[size_t(g_foco) % agentes.size()];
+
+    // câmera atrás do carro em foco, com suavização (não "gruda" no carro)
+    double alvo_x = foco->car.x - std::cos(foco->car.heading) * 7.0;
+    double alvo_y = foco->car.y - std::sin(foco->car.heading) * 7.0;
+    if (!g_cam3d_ok) {
+        g_cam3d.x = alvo_x;
+        g_cam3d.y = alvo_y;
+        g_cam3d.z = 2.6;
+        g_cam3d.yaw = foco->car.heading;
+        g_cam3d_ok = true;
+    } else {
+        const double k = 0.12;
+        g_cam3d.x += (alvo_x - g_cam3d.x) * k;
+        g_cam3d.y += (alvo_y - g_cam3d.y) * k;
+        double dyaw = foco->car.heading - g_cam3d.yaw;
+        while (dyaw > 3.14159265358979) dyaw -= 2 * 3.14159265358979;
+        while (dyaw < -3.14159265358979) dyaw += 2 * 3.14159265358979;
+        g_cam3d.yaw += dyaw * k;
+    }
+    // quanto mais rápido, mais baixo e mais aberto (sensação de velocidade)
+    g_cam3d.z = 2.4 + std::min(1.6, foco->car.speed * 0.02);
+    g_cam3d.fov = 66.0 + std::min(16.0, foco->car.speed * 0.35);
+    g_cam3d.pitch = -0.05;
+    g_cam3d.longe = 700.0;
+
+    Render3D r;
+    r.set_camera(g_cam3d);
+    r.begin(w, h);
+
+    // cenário: pista, zebradas, muros, grama e árvores
+    montar_cena_pista(r, trk, foco->idx, 90);
+
+    // fantasma (melhor volta) como uma fita baixa no chão
+    if (g_app.mode == Mode::Corrida && g_app.race.fantasma_valido) {
+        const auto& f = g_app.race.fantasma;
+        for (size_t i = 1; i < f.size(); ++i) {
+            const double dx = f[i].first - f[i - 1].first;
+            const double dy = f[i].second - f[i - 1].second;
+            const double d = std::sqrt(dx * dx + dy * dy);
+            if (d < 0.001 || d > 4.0) continue;
+            const double nx = -dy / d * 0.35, ny = dx / d * 0.35;
+            r.add_quad(Vec3{f[i - 1].first - nx, f[i - 1].second - ny, 0.06},
+                       Vec3{f[i - 1].first + nx, f[i - 1].second + ny, 0.06},
+                       Vec3{f[i].first + nx, f[i].second + ny, 0.06},
+                       Vec3{f[i].first - nx, f[i].second - ny, 0.06}, 0x7CE6D2);
+        }
+    }
+
+    // carros
+    for (size_t k = 0; k < agentes.size(); ++k) {
+        const Agent* a = agentes[k];
+        const CarSpec* sp = specs[k];
+        const bool eh_foco = a == foco;
+        uint32_t cor = sp ? cor_hex(sp->body_color, 0xE0483A) : uint32_t(0xE0483A);
+        if (eh_foco) cor = 0x56D68C;
+        else if (!a->car.alive) cor = 0x5A5A60;
+        r.add_box(Vec3{a->car.x, a->car.y, 0.0},
+                  sp ? sp->length : 4.2, sp ? sp->width : 1.9, sp ? 1.25 : 1.25,
+                  a->car.heading, cor);
+    }
+
+    // ---- fundo: céu (faixas) e chão
+    const double hy = r.horizonte_y();
+    const int horizonte = y0 + int(std::max(0.0, std::min(double(h), hy)));
+    HBRUSH ceu1 = CreateSolidBrush(RGB(64, 96, 140));
+    HBRUSH ceu2 = CreateSolidBrush(RGB(96, 132, 176));
+    RECT rc1 = {x0, y0, x0 + w, horizonte};
+    FillRect(hdc, &rc1, ceu2);
+    RECT rc2 = {x0, y0, x0 + w, y0 + (horizonte - y0) / 3};
+    FillRect(hdc, &rc2, ceu1);
+    DeleteObject(ceu1);
+    DeleteObject(ceu2);
+    HBRUSH chao = CreateSolidBrush(RGB(30, 44, 32));
+    RECT rc3 = {x0, horizonte, x0 + w, y0 + h};
+    FillRect(hdc, &rc3, chao);
+    DeleteObject(chao);
+
+    // ---- polígonos (do mais longe para o mais perto)
+    std::vector<Face3D> faces = r.resolve();
+    for (const Face3D& f : faces) {
+        if (!f.valida()) continue;
+        std::vector<POINT> pts(f.xs.size());
+        for (size_t i = 0; i < f.xs.size(); ++i) {
+            pts[i].x = x0 + f.xs[i];
+            pts[i].y = y0 + f.ys[i];
+        }
+        const int rr = int((f.cor >> 16) & 0xFF), gg = int((f.cor >> 8) & 0xFF),
+                  bb = int(f.cor & 0xFF);
+        HBRUSH b = CreateSolidBrush(RGB(rr, gg, bb));
+        HPEN p = CreatePen(PS_SOLID, 1, RGB(rr, gg, bb));
+        HGDIOBJ ob = SelectObject(hdc, b);
+        HGDIOBJ op = SelectObject(hdc, p);
+        Polygon(hdc, pts.data(), int(pts.size()));
+        SelectObject(hdc, ob);
+        SelectObject(hdc, op);
+        DeleteObject(b);
+        DeleteObject(p);
+    }
+
+    // ---- velocímetro simples no canto (em 3D o HUD de cima faz menos sentido)
+    if (g_app.ui.mostrar_hud) {
+        char buf[64];
+        std::snprintf(buf, sizeof(buf), "%3.0f km/h", foco->car.speed * 3.6);
+        SetTextColor(hdc, RGB(235, 240, 248));
+        SetBkMode(hdc, TRANSPARENT);
+        HGDIOBJ of = SelectObject(hdc, g_fonte_titulo);
+        TextOutW(hdc, x0 + w - 190, y0 + h - 46, wide(buf).c_str(),
+                 int(std::string(buf).size()));
+        std::snprintf(buf, sizeof(buf), "%dª  %4.0f rpm",
+                      foco->car.gear, foco->car.rpm);
+        SelectObject(hdc, g_fonte);
+        TextOutW(hdc, x0 + w - 190, y0 + h - 22, wide(buf).c_str(),
+                 int(std::string(buf).size()));
+        SelectObject(hdc, of);
+    }
+}
 
 static void pinta_canvas(HDC hdc, int x0, int y0, int w, int h) {
     // fundo
@@ -165,6 +319,11 @@ static void pinta_canvas(HDC hdc, int x0, int y0, int w, int h) {
     if (g_app.mode == Mode::Corrida && g_app.race.sim) trk = &g_app.race.sim->track;
     else if (g_app.trainer) trk = &g_app.trainer->track;
     if (!trk || trk->n() < 4) return;
+
+    if (g_app.ui.modo3d) {
+        pinta_cena3d(hdc, x0, y0, w, h, *trk);
+        return;
+    }
 
     const double z = g_cam.z;
     const double cx = x0 + w * 0.5;
@@ -451,14 +610,15 @@ static void pinta_canvas(HDC hdc, int x0, int y0, int w, int h) {
 // ------------------------------------------------------------------ a chave
 // Um switch de verdade: duas metades ("Corrida" | "Treino") e um pino que
 // desliza para o lado ativo. Clicar em qualquer ponto alterna o modo.
-static void desenha_chave(HDC hdc, RECT rc, bool corrida) {
+static void desenha_chave(HDC hdc, RECT rc, bool esquerda, const wchar_t* txt_esq,
+                         const wchar_t* txt_dir, COLORREF cor_fundo, COLORREF cor_pino) {
     const int w = rc.right - rc.left, h = rc.bottom - rc.top;
     HDC mem = CreateCompatibleDC(hdc);
     HBITMAP bmp = CreateCompatibleBitmap(hdc, w, h);
     HGDIOBJ ob = SelectObject(mem, bmp);
 
     // fundo arredondado
-    HBRUSH fundo = CreateSolidBrush(corrida ? RGB(28, 62, 48) : RGB(30, 44, 66));
+    HBRUSH fundo = CreateSolidBrush(cor_fundo);
     HPEN borda = CreatePen(PS_SOLID, 1, RGB(90, 104, 124));
     HGDIOBJ ob2 = SelectObject(mem, fundo);
     HGDIOBJ op = SelectObject(mem, borda);
@@ -471,8 +631,8 @@ static void desenha_chave(HDC hdc, RECT rc, bool corrida) {
     // pino
     const int margem = 3;
     const int knob_w = w / 2 - margem;
-    const int kx = corrida ? margem : w / 2;
-    HBRUSH knob = CreateSolidBrush(corrida ? RGB(86, 214, 140) : RGB(96, 168, 255));
+    const int kx = esquerda ? margem : w / 2;
+    HBRUSH knob = CreateSolidBrush(cor_pino);
     HPEN kb = CreatePen(PS_SOLID, 1, RGB(220, 235, 255));
     ob2 = SelectObject(mem, knob);
     op = SelectObject(mem, kb);
@@ -489,14 +649,12 @@ static void desenha_chave(HDC hdc, RECT rc, bool corrida) {
                           OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
                           DEFAULT_PITCH, L"Segoe UI");
     HGDIOBJ of = SelectObject(mem, f);
-    const wchar_t* esq = L"Corrida";
-    const wchar_t* dir = L"Treino";
     RECT re = {0, 0, w / 2, h};
     RECT rd = {w / 2, 0, w, h};
-    SetTextColor(mem, corrida ? RGB(12, 26, 20) : RGB(150, 162, 180));
-    DrawTextW(mem, esq, -1, &re, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-    SetTextColor(mem, corrida ? RGB(150, 162, 180) : RGB(12, 20, 32));
-    DrawTextW(mem, dir, -1, &rd, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+    SetTextColor(mem, esquerda ? RGB(12, 20, 28) : RGB(150, 162, 180));
+    DrawTextW(mem, txt_esq, -1, &re, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+    SetTextColor(mem, esquerda ? RGB(150, 162, 180) : RGB(12, 20, 28));
+    DrawTextW(mem, txt_dir, -1, &rd, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
     SelectObject(mem, of);
     DeleteObject(f);
 
@@ -533,6 +691,7 @@ static void mostra_tela() {
     if (g_chk_abs) ShowWindow(g_chk_abs, corrida ? SW_SHOW : SW_HIDE);
     if (g_chk_tc) ShowWindow(g_chk_tc, corrida ? SW_SHOW : SW_HIDE);
     if (g_botao_chave) InvalidateRect(g_botao_chave, nullptr, TRUE);
+    if (g_botao_3d) InvalidateRect(g_botao_3d, nullptr, TRUE);
     if (g_edita_python) ShowWindow(g_edita_python, treino ? SW_SHOW : SW_HIDE);
     if (g_texto_metricas) ShowWindow(g_texto_metricas, treino ? SW_SHOW : SW_HIDE);
     if (g_texto_corrida) ShowWindow(g_texto_corrida, corrida ? SW_SHOW : SW_HIDE);
@@ -654,11 +813,18 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             botao(hwnd, ID_CORRIDA, P, 140, 120, 30, L"Corrida");
             botao(hwnd, ID_TREINO, P + 128, 140, 120, 30, L"Treinamento");
             // a chave: um switch desenhado à mão (clica em cima e alterna)
+            const int larg_chave = (W - 256) / 2 - 4;
             g_botao_chave = CreateWindowW(L"button", L"",
                                           WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_OWNERDRAW,
-                                          P + 256, 138, W - 256, 34, hwnd,
+                                          P + 256, 138, larg_chave, 34, hwnd,
                                           (HMENU)(intptr_t)ID_CHAVE_MODO,
                                           GetModuleHandle(nullptr), nullptr);
+            // segunda chave: visão 2D ou 3D (mesmo tipo de controle)
+            g_botao_3d = CreateWindowW(L"button", L"",
+                                       WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_OWNERDRAW,
+                                       P + 256 + larg_chave + 8, 138, larg_chave, 34, hwnd,
+                                       (HMENU)(intptr_t)ID_CHAVE_3D,
+                                       GetModuleHandle(nullptr), nullptr);
 
             // ---- treino: configuração
             int y = 180;
@@ -854,7 +1020,13 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         case WM_DRAWITEM: {
             const DRAWITEMSTRUCT* di = (const DRAWITEMSTRUCT*)lp;
             if (di->CtlID == ID_CHAVE_MODO) {
-                desenha_chave(di->hDC, di->rcItem, g_app.mode == Mode::Corrida);
+                desenha_chave(di->hDC, di->rcItem, g_app.mode == Mode::Corrida, L"Corrida",
+                              L"Treino", RGB(28, 62, 48), RGB(86, 214, 140));
+                return TRUE;
+            }
+            if (di->CtlID == ID_CHAVE_3D) {
+                desenha_chave(di->hDC, di->rcItem, !g_app.ui.modo3d, L"2D", L"3D",
+                              RGB(38, 44, 66), RGB(128, 176, 255));
                 return TRUE;
             }
             break;
@@ -872,6 +1044,10 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                 g_app.carregar_carro(i);
             } else if (id == ID_CHAVE_MODO) {
                 trocar_modo();
+            } else if (id == ID_CHAVE_3D) {
+                g_app.ui.modo3d = !g_app.ui.modo3d;
+                if (g_botao_3d) InvalidateRect(g_botao_3d, nullptr, TRUE);
+                InvalidateRect(hwnd, nullptr, TRUE);
             } else if (id == ID_CHK_ABS || id == ID_CHK_TC) {
                 g_app.controles.abs =
                     SendMessageW(g_chk_abs, BM_GETCHECK, 0, 0) == BST_CHECKED;
@@ -1018,6 +1194,10 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         case WM_KEYDOWN: {
             if (wp == VK_F2) {
                 trocar_modo();
+            } else if (wp == VK_F3) {
+                g_app.ui.modo3d = !g_app.ui.modo3d;
+                if (g_botao_3d) InvalidateRect(g_botao_3d, nullptr, TRUE);
+                InvalidateRect(hwnd, nullptr, TRUE);
             } else if (wp == VK_ESCAPE) {
                 g_app.mode = Mode::Menu;
                 mostra_tela();
