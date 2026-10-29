@@ -163,6 +163,36 @@ uint32_t a64_ldur(unsigned rt, unsigned rn, int off);
 uint32_t a64_stp_gstack_push(void);   /* STP X14, X15, [SP, #-16]! */
 uint32_t a64_ldp_gstack_pop(void);    /* LDP X14, X15, [SP], #16   */
 
+/* ---- 32-bit (W) forms ----------------------------------------------------
+ *
+ * Every one of these is the corresponding 64-bit encoding with bit 31 - the sf
+ * field - cleared, and they are generated from one shared derivation below so
+ * that the two cannot drift apart.
+ *
+ * They matter because x86-64 code is full of 32-bit register operations, and the
+ * semantics line up exactly: a 32-bit operation in x86-64 zero-extends its result
+ * into the full 64-bit register, and a W-form operation in AArch64 zero-extends
+ * into the X register too. So `mov eax, 5` is `MOVZ W0, #5` with no masking to
+ * emit and no upper-half hazard, and the flag mapping after a 32-bit SUBS is the
+ * same exact correspondence as after a 64-bit one.
+ *
+ * Getting this wrong is invisible in the encoding and wrong in the value: a
+ * translation that emitted the X form for a 32-bit guest operation would
+ * sign-extend or leave the upper half stale, and the function would return a
+ * number that is right in its low 32 bits and wrong as a 64-bit value.
+ */
+uint32_t a64_movz_w(unsigned rd, uint16_t imm16);
+uint32_t a64_movk_w(unsigned rd, uint16_t imm16, unsigned shift);
+uint32_t a64_mov_reg_w(unsigned rd, unsigned rm);
+uint32_t a64_add_reg_w(unsigned rd, unsigned rn, unsigned rm);
+uint32_t a64_sub_reg_w(unsigned rd, unsigned rn, unsigned rm);
+uint32_t a64_subs_reg_w(unsigned rd, unsigned rn, unsigned rm);
+uint32_t a64_ands_reg_w(unsigned rd, unsigned rn, unsigned rm);
+uint32_t a64_add_w_imm(unsigned rd, unsigned rn, uint16_t imm12);
+uint32_t a64_sub_w_imm(unsigned rd, unsigned rn, uint16_t imm12);
+uint32_t a64_subs_w_imm(unsigned rd, unsigned rn, uint16_t imm12);
+uint32_t a64_adds_w_imm(unsigned rd, unsigned rn, uint16_t imm12);
+
 /* Non-zero when words fits the branch's field, so the caller can refuse. */
 int a64_cond_range_ok(int32_t words);
 int a64_b_range_ok(int32_t words);

@@ -270,6 +270,11 @@ typedef struct {
     unsigned cond;         /* AArch64 condition code, for P_JCC */
     uint64_t target_va;    /* P_JCC and P_JMP */
     int      sets_flags;   /* leaves NZCV matching an x86 CMP */
+    /* Operand width: 0 for the 64-bit form, 1 for the 32-bit one. A 32-bit x86-64
+     * operation zero-extends its result into the full register, and an AArch64
+     * W-form zero-extends into the X register, so the two agree without any
+     * masking - but only if the W form is the one emitted. */
+    int      w32;
     uint32_t words;        /* emitted size, fixed before layout */
     uint32_t word_at;      /* assigned by layout */
 } plan;
@@ -323,14 +328,16 @@ static int jcc_cond(unsigned nibble, unsigned *cond)
     }
 }
 
-static uint32_t const_words(uint64_t v)
+static uint32_t const_words_w(uint64_t v, int w32)
 {
     uint32_t n = 1u;
-    unsigned sh;
-    for (sh = 16u; sh < 64u; sh += 16u)
+    unsigned sh, limit = w32 ? 32u : 64u;
+    for (sh = 16u; sh < limit; sh += 16u)
         if ((v >> sh) & 0xFFFFu) n++;
     return n;
 }
+
+static uint32_t const_words(uint64_t v) { return const_words_w(v, 0); }
 
 static int pushf(tr_func *o, uint32_t insn)
 {
@@ -343,16 +350,23 @@ static int pushf(tr_func *o, uint32_t insn)
     return 1;
 }
 
-static int emit_const_f(tr_func *o, unsigned rd, uint64_t v)
+static int emit_const_f_w(tr_func *o, unsigned rd, uint64_t v, int w32)
 {
-    unsigned sh;
-    if (!pushf(o, a64_movz_x(rd, (uint16_t)(v & 0xFFFFu)))) return 0;
-    for (sh = 16u; sh < 64u; sh += 16u) {
+    unsigned sh, limit = w32 ? 32u : 64u;
+    if (!pushf(o, w32 ? a64_movz_w(rd, (uint16_t)(v & 0xFFFFu))
+                      : a64_movz_x(rd, (uint16_t)(v & 0xFFFFu)))) return 0;
+    for (sh = 16u; sh < limit; sh += 16u) {
         uint16_t chunk = (uint16_t)((v >> sh) & 0xFFFFu);
-        if (chunk) { if (!pushf(o, a64_movk_x(rd, chunk, sh))) return 0; }
+        if (chunk) {
+            if (!pushf(o, w32 ? a64_movk_w(rd, chunk, sh)
+                              : a64_movk_x(rd, chunk, sh))) return 0;
+        }
     }
     return 1;
 }
+
+static int emit_const_f(tr_func *o, unsigned rd, uint64_t v)
+{ return emit_const_f_w(o, rd, v, 0); }
 
 /* Discovery marks, one BIT per guest byte rather than one byte per guest byte.
  *
@@ -565,25 +579,62 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
         p->words = const_words(host) + 1u;
         return TR_OK;
     }
-    if (in.op[0] == 0xC7 && in.rex_w && in.mod == 3 && in.reg == 0) {
+    /* mov r32, imm32 - the shortest and one of the commonest ways to load a
+     * constant. The result zero-extends into the full 64-bit register, so the W
+     * form of MOVZ is exactly right and nothing has to be masked afterwards.
+     *
+     * REX.W turns this opcode into mov r64, imm64, a ten-byte encoding with a
+     * 64-bit immediate that this subset does not model, so it is refused rather
+     * than truncated: materialising only the low 32 bits would be a plausible
+     * wrong constant. */
+    if ((in.op[0] & 0xF8u) == 0xB8u && !in.has_modrm) {
+        if (in.rex_w) {
+            out->reason = TRR_UNSUPPORTED_OP;
+            out->detail = "mov r64, imm64: a 64-bit immediate is outside the subset";
+            return TR_UNSUPPORTED;
+        }
+        if (in.rex_r || in.rex_x) {
+            out->reason = TRR_UNSUPPORTED_OP;
+            out->detail = "mov r32, imm32 carries a REX bit that has no meaning there";
+            return TR_UNSUPPORTED;
+        }
+        if (!map_guest_reg((unsigned)(in.op[0] & 7u), in.rex_b, &p->rd)) {
+            out->reason = TRR_REGISTER;
+            out->detail = "mov r32,imm32: register outside the mapped set";
+            return TR_UNSUPPORTED;
+        }
+        p->op = P_MOV_IMM;
+        p->w32 = 1;
+        p->const_val = (uint64_t)(uint32_t)in.imm;   /* zero-extends, not sign- */
+        p->words = const_words_w(p->const_val, 1);
+        return TR_OK;
+    }
+    /* mov r/m32, imm32 with mod=3 is the same operation through a different
+     * opcode; without REX.W it zero-extends, with REX.W it sign-extends. */
+    if (in.op[0] == 0xC7 && in.has_modrm && in.mod == 3 && in.reg == 0) {
         if (!map_guest_reg(in.rm, in.rex_b, &p->rd)) {
             out->reason = TRR_REGISTER; out->detail = "mov imm: register outside the mapped set";
             return TR_UNSUPPORTED;
         }
         p->op = P_MOV_IMM;
-        p->const_val = (uint64_t)(int64_t)(int32_t)in.imm;
-        p->words = const_words(p->const_val);
+        p->w32 = in.rex_w ? 0 : 1;
+        /* REX.W sign-extends the 32-bit immediate to 64; without it the write is
+         * 32-bit and zero-extends. Same opcode, opposite extension, and choosing
+         * the wrong one is a value that looks right in a debugger's 32-bit view. */
+        p->const_val = in.rex_w ? (uint64_t)(int64_t)(int32_t)in.imm
+                                : (uint64_t)(uint32_t)in.imm;
+        p->words = const_words_w(p->const_val, p->w32);
         return TR_OK;
     }
-    if (in.op[0] == 0x89 && in.rex_w && in.mod == 3) {
+    if (in.op[0] == 0x89 && in.has_modrm && in.mod == 3) {
         if (!map_guest_reg(in.rm, in.rex_b, &p->rd) ||
             !map_guest_reg(in.reg, in.rex_r, &p->rn)) {
             out->reason = TRR_REGISTER; out->detail = "mov reg: register outside the mapped set";
             return TR_UNSUPPORTED;
         }
-        p->op = P_MOV_REG; p->words = 1u; return TR_OK;
+        p->op = P_MOV_REG; p->w32 = !in.rex_w; p->words = 1u; return TR_OK;
     }
-    if (in.op[0] == 0x31 && in.rex_w && in.mod == 3) {
+    if (in.op[0] == 0x31 && in.has_modrm && in.mod == 3) {
         /* Only the zeroing idiom. A real two-operand xor needs the value AND the
          * flags it sets, and modelling half of it would be a guess. */
         unsigned a, b;
@@ -595,41 +646,41 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
             out->reason = TRR_REGISTER; out->detail = "xor: register outside the mapped set";
             return TR_UNSUPPORTED;
         }
-        p->op = P_ZERO; p->rd = a; p->words = 1u; return TR_OK;
+        p->op = P_ZERO; p->rd = a; p->w32 = !in.rex_w; p->words = 1u; return TR_OK;
     }
-    if (in.op[0] == 0x01 && in.rex_w && in.mod == 3) {
+    if (in.op[0] == 0x01 && in.has_modrm && in.mod == 3) {
         if (!map_guest_reg(in.rm, in.rex_b, &p->rd) ||
             !map_guest_reg(in.reg, in.rex_r, &p->rn)) {
             out->reason = TRR_REGISTER; out->detail = "add reg: register outside the mapped set";
             return TR_UNSUPPORTED;
         }
-        p->op = P_ADD_REG; p->words = 1u; return TR_OK;
+        p->op = P_ADD_REG; p->w32 = !in.rex_w; p->words = 1u; return TR_OK;
     }
-    if (in.op[0] == 0x29 && in.rex_w && in.mod == 3) {
+    if (in.op[0] == 0x29 && in.has_modrm && in.mod == 3) {
         if (!map_guest_reg(in.rm, in.rex_b, &p->rd) ||
             !map_guest_reg(in.reg, in.rex_r, &p->rn)) {
             out->reason = TRR_REGISTER; out->detail = "sub reg: register outside the mapped set";
             return TR_UNSUPPORTED;
         }
-        p->op = P_SUB_REG; p->words = 1u; return TR_OK;
+        p->op = P_SUB_REG; p->w32 = !in.rex_w; p->words = 1u; return TR_OK;
     }
-    if (in.op[0] == 0x39 && in.rex_w && in.mod == 3) {
+    if (in.op[0] == 0x39 && in.has_modrm && in.mod == 3) {
         if (!map_guest_reg(in.rm, in.rex_b, &p->rn) ||
             !map_guest_reg(in.reg, in.rex_r, &p->rm)) {
             out->reason = TRR_REGISTER; out->detail = "cmp reg: register outside the mapped set";
             return TR_UNSUPPORTED;
         }
-        p->op = P_CMP_REG; p->sets_flags = 1; p->words = 1u; return TR_OK;
+        p->op = P_CMP_REG; p->sets_flags = 1; p->w32 = !in.rex_w; p->words = 1u; return TR_OK;
     }
-    if (in.op[0] == 0x85 && in.rex_w && in.mod == 3) {
+    if (in.op[0] == 0x85 && in.has_modrm && in.mod == 3) {
         if (!map_guest_reg(in.rm, in.rex_b, &p->rn) ||
             !map_guest_reg(in.reg, in.rex_r, &p->rm)) {
             out->reason = TRR_REGISTER; out->detail = "test: register outside the mapped set";
             return TR_UNSUPPORTED;
         }
-        p->op = P_TEST_REG; p->sets_flags = 1; p->words = 1u; return TR_OK;
+        p->op = P_TEST_REG; p->sets_flags = 1; p->w32 = !in.rex_w; p->words = 1u; return TR_OK;
     }
-    if (is_grp1 && in.rex_w && in.mod == 3 &&
+    if (is_grp1 && in.has_modrm && in.mod == 3 &&
         (in.reg == 0 || in.reg == 5 || in.reg == 7)) {
         int64_t value = (in.op[0] == 0x83) ? (int64_t)(int8_t)in.imm
                                            : (int64_t)(int32_t)in.imm;
@@ -657,6 +708,7 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
                 return TR_UNSUPPORTED;
             }
         }
+        p->w32 = !in.rex_w;
         p->words = 1u;
         return TR_OK;
     }
@@ -991,47 +1043,57 @@ tr_status tr_translate_function_at(const uint8_t *code, size_t code_len,
 
         switch (p->op) {
         case P_MOV_IMM:
-            if (!emit_const_f(out, p->rd, p->const_val)) return TR_OVERFLOW;
+            if (!emit_const_f_w(out, p->rd, p->const_val, p->w32)) return TR_OVERFLOW;
             break;
         case P_MOV_REG:
-            if (!pushf(out, a64_mov_reg(p->rd, p->rn))) return TR_OVERFLOW;
+            if (!pushf(out, p->w32 ? a64_mov_reg_w(p->rd, p->rn)
+                                   : a64_mov_reg(p->rd, p->rn))) return TR_OVERFLOW;
             break;
         case P_ZERO:
-            if (!pushf(out, a64_movz_x(p->rd, 0))) return TR_OVERFLOW;
+            if (!pushf(out, p->w32 ? a64_movz_w(p->rd, 0)
+                                   : a64_movz_x(p->rd, 0))) return TR_OVERFLOW;
             break;
         case P_ADD_REG:
-            if (!pushf(out, a64_add_reg(p->rd, p->rd, p->rn))) return TR_OVERFLOW;
+            if (!pushf(out, p->w32 ? a64_add_reg_w(p->rd, p->rd, p->rn)
+                                   : a64_add_reg(p->rd, p->rd, p->rn))) return TR_OVERFLOW;
             break;
         case P_SUB_REG:
-            if (!pushf(out, a64_sub_reg(p->rd, p->rd, p->rn))) return TR_OVERFLOW;
+            if (!pushf(out, p->w32 ? a64_sub_reg_w(p->rd, p->rd, p->rn)
+                                   : a64_sub_reg(p->rd, p->rd, p->rn))) return TR_OVERFLOW;
             break;
         case P_ADD_IMM:
         case P_SUB_IMM:
             if (p->delta >= 0) {
-                if (!pushf(out, a64_add_x_imm(p->rd, p->rd, (uint16_t)p->delta)))
+                if (!pushf(out, p->w32 ? a64_add_w_imm(p->rd, p->rd, (uint16_t)p->delta)
+                                       : a64_add_x_imm(p->rd, p->rd, (uint16_t)p->delta)))
                     return TR_OVERFLOW;
             } else {
-                if (!pushf(out, a64_sub_x_imm(p->rd, p->rd, (uint16_t)(-p->delta))))
+                if (!pushf(out, p->w32 ? a64_sub_w_imm(p->rd, p->rd, (uint16_t)(-p->delta))
+                                       : a64_sub_x_imm(p->rd, p->rd, (uint16_t)(-p->delta))))
                     return TR_OVERFLOW;
             }
             break;
         case P_CMP_REG:
-            if (!pushf(out, a64_subs_reg(A64_XZR, p->rn, p->rm))) return TR_OVERFLOW;
+            if (!pushf(out, p->w32 ? a64_subs_reg_w(A64_XZR, p->rn, p->rm)
+                                   : a64_subs_reg(A64_XZR, p->rn, p->rm))) return TR_OVERFLOW;
             break;
         case P_CMP_IMM:
             /* cmp r, k is SUBS XZR, r, k. A negative k has no subtract-immediate
              * encoding, so it becomes CMN, which is ADDS XZR, r, -k: the same
              * comparison, and the flags come out identical. */
             if (p->delta >= 0) {
-                if (!pushf(out, a64_subs_imm(A64_XZR, p->rd, (uint16_t)p->delta)))
+                if (!pushf(out, p->w32 ? a64_subs_w_imm(A64_XZR, p->rd, (uint16_t)p->delta)
+                                       : a64_subs_imm(A64_XZR, p->rd, (uint16_t)p->delta)))
                     return TR_OVERFLOW;
             } else {
-                if (!pushf(out, a64_adds_imm(A64_XZR, p->rd, (uint16_t)(-p->delta))))
+                if (!pushf(out, p->w32 ? a64_adds_w_imm(A64_XZR, p->rd, (uint16_t)(-p->delta))
+                                       : a64_adds_imm(A64_XZR, p->rd, (uint16_t)(-p->delta))))
                     return TR_OVERFLOW;
             }
             break;
         case P_TEST_REG:
-            if (!pushf(out, a64_ands_reg(A64_XZR, p->rn, p->rm))) return TR_OVERFLOW;
+            if (!pushf(out, p->w32 ? a64_ands_reg_w(A64_XZR, p->rn, p->rm)
+                                   : a64_ands_reg(A64_XZR, p->rn, p->rm))) return TR_OVERFLOW;
             break;
         case P_JCC:
         case P_JMP: {

@@ -123,6 +123,14 @@ jobs:
             || die "the guest stack model never ran on this aarch64 runner"
           grep -q "contained by a guard page" /tmp/translate.log \
             || die "a runaway guest stack was not shown to fault at the guard page on this aarch64 runner"
+          # 32-bit operand forms get their own marker too: zero-extension into
+          # the upper half of a register is only observable by executing, and a
+          # translation that emitted the X form would still look correct in a
+          # 32-bit view of the result.
+          grep -q "EXECUTED ON aarch64: 32-bit forms" /tmp/translate.log \
+            || die "the 32-bit forms never ran on this aarch64 runner"
+          grep -q "zero-extension" /tmp/translate.log \
+            || die "zero-extension of a 32-bit write was not verified on this aarch64 runner"
           grep -q "entry -> 16" /tmp/translate.log \
             || die "the translated exe did not return 16 (SumTo(5)=15 from the DLL, then +1)"
           grep -q "EXECUTED FROM CACHE: 16" /tmp/translate.log \
@@ -291,6 +299,14 @@ jobs:
             || die "the guest stack model never ran under QEMU"
           grep -q "contained by a guard page" /tmp/translate.log \
             || die "a runaway guest stack was not shown to fault at the guard page under QEMU"
+          # 32-bit operand forms get their own marker too: zero-extension into
+          # the upper half of a register is only observable by executing, and a
+          # translation that emitted the X form would still look correct in a
+          # 32-bit view of the result.
+          grep -q "EXECUTED ON aarch64: 32-bit forms" /tmp/translate.log \
+            || die "the 32-bit forms never ran under QEMU"
+          grep -q "zero-extension" /tmp/translate.log \
+            || die "zero-extension of a 32-bit write was not verified under QEMU"
           grep -q "entry -> 16" /tmp/translate.log \
             || die "the translated exe did not return 16 under QEMU"
           grep -q "EXECUTED FROM CACHE: 16" /tmp/translate.log \

@@ -1,17 +1,42 @@
 #include "a64_emit.h"
 
-uint32_t a64_movz_x(unsigned rd, uint16_t imm16)
+/* sf selects the register width: 1 for X (64-bit), 0 for W (32-bit). Every pair
+ * of encoders below goes through one of these, so the 32-bit form is by
+ * construction the 64-bit form with sf cleared rather than a second constant that
+ * could disagree with the first. */
+#define SF(sf) ((sf) ? 0x80000000u : 0u)
+
+uint32_t a64_movz_x(unsigned rd, uint16_t imm16) { return a64_movz_w(rd, imm16) | SF(1); }
+
+uint32_t a64_movz_w(unsigned rd, uint16_t imm16)
 {
-    /* sf=1 opc=10 hw=00 -> 0xD2800000, imm16 at bits 20:5, Rd at 4:0 */
-    return 0xD2800000u | ((uint32_t)imm16 << 5) | (uint32_t)(rd & 31u);
+    /* sf=0 opc=10 hw=00 -> 0x52800000, imm16 at bits 20:5, Rd at 4:0 */
+    return 0x52800000u | ((uint32_t)imm16 << 5) | (uint32_t)(rd & 31u);
+}
+
+static uint32_t addsub_imm(uint32_t base, unsigned rd, unsigned rn, uint16_t imm12)
+{
+    return base | ((uint32_t)imm12 << 10) |
+           ((uint32_t)(rn & 31u) << 5) | (uint32_t)(rd & 31u);
 }
 
 uint32_t a64_add_x_imm(unsigned rd, unsigned rn, uint16_t imm12)
 {
     /* sf=1 op=0 S=0 shift=00 -> 0x91000000, imm12 at 21:10, Rn 9:5, Rd 4:0 */
-    return 0x91000000u | ((uint32_t)imm12 << 10) |
-           ((uint32_t)(rn & 31u) << 5) | (uint32_t)(rd & 31u);
+    return addsub_imm(0x91000000u, rd, rn, imm12);
 }
+
+uint32_t a64_add_w_imm(unsigned rd, unsigned rn, uint16_t imm12)
+{ return addsub_imm(0x11000000u, rd, rn, imm12); }
+
+uint32_t a64_sub_w_imm(unsigned rd, unsigned rn, uint16_t imm12)
+{ return addsub_imm(0x51000000u, rd, rn, imm12); }
+
+uint32_t a64_subs_w_imm(unsigned rd, unsigned rn, uint16_t imm12)
+{ return addsub_imm(0x71000000u, rd, rn, imm12); }
+
+uint32_t a64_adds_w_imm(unsigned rd, unsigned rn, uint16_t imm12)
+{ return addsub_imm(0x31000000u, rd, rn, imm12); }
 
 uint32_t a64_ret(void)
 {
@@ -20,25 +45,29 @@ uint32_t a64_ret(void)
 }
 
 uint32_t a64_movk_x(unsigned rd, uint16_t imm16, unsigned shift)
+{ return a64_movk_w(rd, imm16, shift) | SF(1); }
+
+uint32_t a64_movk_w(unsigned rd, uint16_t imm16, unsigned shift)
 {
-    /* sf=1 opc=11 -> 0xF2800000, hw (shift/16) at bits 22:21 */
+    /* sf=0 opc=11 -> 0x72800000, hw (shift/16) at bits 22:21 */
     unsigned hw = (shift / 16u) & 3u;
-    return 0xF2800000u | (hw << 21) | ((uint32_t)imm16 << 5) |
+    return 0x72800000u | (hw << 21) | ((uint32_t)imm16 << 5) |
            (uint32_t)(rd & 31u);
 }
 
-uint32_t a64_mov_reg(unsigned rd, unsigned rm)
+uint32_t a64_mov_reg(unsigned rd, unsigned rm) { return a64_mov_reg_w(rd, rm) | SF(1); }
+
+uint32_t a64_mov_reg_w(unsigned rd, unsigned rm)
 {
-    /* ORR (shifted register): sf=1 opc=010 shift=00 N=0 Rm imm6=0 Rn=ZR Rd,
-     * which is the canonical encoding of MOV Xd, Xm. */
-    return 0xAA0003E0u | ((uint32_t)(rm & 31u) << 16) | (uint32_t)(rd & 31u);
+    /* ORR (shifted register): sf=0 opc=010 shift=00 N=0 Rm imm6=0 Rn=ZR Rd,
+     * the canonical encoding of MOV Wd, Wm. */
+    return 0x2A0003E0u | ((uint32_t)(rm & 31u) << 16) | (uint32_t)(rd & 31u);
 }
 
 uint32_t a64_sub_x_imm(unsigned rd, unsigned rn, uint16_t imm12)
 {
     /* sf=1 op=1 S=0 shift=00 -> 0xD1000000 */
-    return 0xD1000000u | ((uint32_t)imm12 << 10) |
-           ((uint32_t)(rn & 31u) << 5) | (uint32_t)(rd & 31u);
+    return addsub_imm(0xD1000000u, rd, rn, imm12);
 }
 
 uint32_t a64_blr(unsigned rn)
@@ -156,18 +185,29 @@ uint32_t a64_subs_reg(unsigned rd, unsigned rn, unsigned rm)
 uint32_t a64_ands_reg(unsigned rd, unsigned rn, unsigned rm)
 { return dp_reg(0xEA000000u, rd, rn, rm); }
 
+/* The W forms of the same four, differing only in sf. */
+uint32_t a64_add_reg_w(unsigned rd, unsigned rn, unsigned rm)
+{ return dp_reg(0x0B000000u, rd, rn, rm); }
+
+uint32_t a64_sub_reg_w(unsigned rd, unsigned rn, unsigned rm)
+{ return dp_reg(0x4B000000u, rd, rn, rm); }
+
+uint32_t a64_subs_reg_w(unsigned rd, unsigned rn, unsigned rm)
+{ return dp_reg(0x6B000000u, rd, rn, rm); }
+
+uint32_t a64_ands_reg_w(unsigned rd, unsigned rn, unsigned rm)
+{ return dp_reg(0x6A000000u, rd, rn, rm); }
+
 uint32_t a64_subs_imm(unsigned rd, unsigned rn, uint16_t imm12)
 {
     /* sf=1 op=1 S=1 shift=00 -> 0xF1000000 */
-    return 0xF1000000u | ((uint32_t)imm12 << 10) |
-           ((uint32_t)(rn & 31u) << 5) | (uint32_t)(rd & 31u);
+    return addsub_imm(0xF1000000u, rd, rn, imm12);
 }
 
 uint32_t a64_adds_imm(unsigned rd, unsigned rn, uint16_t imm12)
 {
     /* sf=1 op=0 S=1 shift=00 -> 0xB1000000 */
-    return 0xB1000000u | ((uint32_t)imm12 << 10) |
-           ((uint32_t)(rn & 31u) << 5) | (uint32_t)(rd & 31u);
+    return addsub_imm(0xB1000000u, rd, rn, imm12);
 }
 
 int a64_cond_range_ok(int32_t words)

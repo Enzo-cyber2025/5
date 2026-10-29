@@ -1822,6 +1822,236 @@ static void test_buffer_cap_is_named(void)
 }
 
 
+/* ------------------------------------------------------- 32-bit operand forms
+ *
+ * x86-64 code is full of 32-bit register operations, and measured on a shipped
+ * bundle they were the cheapest large blocker: `B8` and `B9` - mov r32, imm32 -
+ * accounted for 9 of the 64 real code entry points, more than any stack form now
+ * does.
+ *
+ * The mapping is exact rather than approximated, and the reason is worth stating
+ * because it is what makes this cheap: a 32-bit operation in x86-64 zero-extends
+ * its result into the full 64-bit register, and a W-form operation in AArch64
+ * zero-extends into the X register. Same rule, both architectures, so there is no
+ * mask to emit and no upper half to clean up. What has to be right is emitting the
+ * W form at all - an X form would leave the upper half stale and produce a value
+ * that looks correct in a 32-bit view and is wrong as a 64-bit one.
+ */
+static void test_width32_translation(void)
+{
+    tr_func   f;
+    tr_status st;
+
+    printf("32-bit operations emit W forms, which zero-extend exactly as x86-64 does\n");
+    {
+        /* mov eax,5 ; ret -> MOVZ W0,#5 */
+        static const uint8_t g[] = { 0xB8,0x05,0x00,0x00,0x00, 0xC3 };
+        st = tr_translate_function(g, sizeof(g), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_OK, "mov eax,5 returned %s: %s", tr_status_name(st),
+              f.detail ? f.detail : "?");
+        CHECK(f.n == 2, "emitted %zu words, expected 2", f.n);
+        if (f.n == 2) {
+            CHECK(f.words[0] == a64_movz_w(0, 5),
+                  "mov eax,5 -> 0x%08X, expected MOVZ W0,#5 0x%08X",
+                  f.words[0], a64_movz_w(0, 5));
+            CHECK(f.words[0] == 0x528000A0u, "MOVZ W0,#5 encoding drifted: 0x%08X",
+                  f.words[0]);
+            CHECK((f.words[0] & 0x80000000u) == 0,
+                  "a 32-bit move emitted an X form: 0x%08X has sf set", f.words[0]);
+        }
+    }
+    {
+        /* mov eax,-1 zero-extends: two W words, and no third or fourth, because a
+         * 32-bit value has no bits above 31 to materialise. */
+        static const uint8_t g[] = { 0xB8,0xFF,0xFF,0xFF,0xFF, 0xC3 };
+        st = tr_translate_function(g, sizeof(g), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_OK, "mov eax,-1 returned %s", tr_status_name(st));
+        CHECK(f.n == 3, "emitted %zu words, expected 3 (MOVZ W, MOVK W, RET)", f.n);
+        if (f.n == 3) {
+            CHECK(f.words[0] == a64_movz_w(0, 0xFFFFu), "first word 0x%08X", f.words[0]);
+            CHECK(f.words[1] == a64_movk_w(0, 0xFFFFu, 16), "second word 0x%08X",
+                  f.words[1]);
+        }
+    }
+    {
+        /* The same immediate through the 64-bit opcode sign-extends instead, and
+         * needs four words to do it. Same source immediate, opposite extension:
+         * this is the pair that a width mistake gets wrong silently. */
+        static const uint8_t g[] = { 0x48,0xC7,0xC0,0xFF,0xFF,0xFF,0xFF, 0xC3 };
+        st = tr_translate_function(g, sizeof(g), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_OK, "mov rax,-1 returned %s", tr_status_name(st));
+        CHECK(f.n == 5, "emitted %zu words, expected 5 (MOVZ X + 3 MOVK X + RET)", f.n);
+        if (f.n == 5) {
+            CHECK(f.words[0] == a64_movz_x(0, 0xFFFFu), "first word 0x%08X", f.words[0]);
+            CHECK(f.words[3] == a64_movk_x(0, 0xFFFFu, 48),
+                  "the top chunk is missing: word 3 is 0x%08X", f.words[3]);
+        }
+    }
+    {
+        /* REX.B reaches the extended registers: mov r8d,5 -> MOVZ W6,#5, because
+         * guest R8 maps to host X6. */
+        static const uint8_t g[] = { 0x41,0xB8,0x05,0x00,0x00,0x00, 0xC3 };
+        st = tr_translate_function(g, sizeof(g), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_OK, "mov r8d,5 returned %s: %s", tr_status_name(st),
+              f.detail ? f.detail : "?");
+        CHECK(f.n == 2 && f.words[0] == a64_movz_w(6, 5),
+              "mov r8d,5 -> 0x%08X, expected MOVZ W6,#5 0x%08X",
+              f.n ? f.words[0] : 0u, a64_movz_w(6, 5));
+    }
+    {
+        /* REX.W turns B8+r into mov r64, imm64: ten bytes and a 64-bit immediate.
+         * Materialising only the low 32 bits would be a plausible wrong constant,
+         * so it is refused. */
+        static const uint8_t g[] = { 0x48,0xB8,0x05,0,0,0,0,0,0,0, 0xC3 };
+        st = tr_translate_function(g, sizeof(g), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_UNSUPPORTED, "mov rax,imm64 returned %s", tr_status_name(st));
+        CHECK(f.reason == TRR_UNSUPPORTED_OP, "reported as %s", tr_reason_name(f.reason));
+        CHECK(f.detail && strstr(f.detail, "imm64") != NULL,
+              "detail '%s' does not say which encoding was refused",
+              f.detail ? f.detail : "?");
+    }
+    {
+        /* The arithmetic and flag-setting forms, 32-bit. */
+        static const uint8_t a[] = { 0x89,0xC8, 0xC3 };            /* mov eax,ecx */
+        static const uint8_t b[] = { 0x01,0xC8, 0xC3 };            /* add eax,ecx */
+        static const uint8_t c[] = { 0x29,0xC8, 0xC3 };            /* sub eax,ecx */
+        static const uint8_t d[] = { 0x31,0xC0, 0xC3 };            /* xor eax,eax */
+        static const uint8_t e[] = { 0x39,0xC8, 0x74,0x00, 0xC3 }; /* cmp eax,ecx; jz */
+        static const uint8_t h[] = { 0x85,0xC0, 0x74,0x00, 0xC3 }; /* test eax,eax; jz */
+        static const uint8_t i[] = { 0x83,0xF8,0xFB, 0x74,0x00, 0xC3 }; /* cmp eax,-5 */
+        struct { const char *what; const uint8_t *g; size_t n; uint32_t want; } cases[] = {
+            { "mov eax,ecx",   a, sizeof a, a64_mov_reg_w(0, 1) },
+            { "add eax,ecx",   b, sizeof b, a64_add_reg_w(0, 0, 1) },
+            { "sub eax,ecx",   c, sizeof c, a64_sub_reg_w(0, 0, 1) },
+            { "xor eax,eax",   d, sizeof d, a64_movz_w(0, 0) },
+            { "cmp eax,ecx",   e, sizeof e, a64_subs_reg_w(A64_XZR, 0, 1) },
+            { "test eax,eax",  h, sizeof h, a64_ands_reg_w(A64_XZR, 0, 0) },
+            /* cmp against a negative constant still has to become CMN, in W form:
+             * a subtract-immediate field is unsigned at either width. */
+            { "cmp eax,-5",    i, sizeof i, a64_adds_w_imm(A64_XZR, 0, 5) },
+        };
+        size_t k;
+        for (k = 0; k < sizeof cases / sizeof cases[0]; k++) {
+            memset(&f, 0, sizeof f);
+            st = tr_translate_function(cases[k].g, cases[k].n, IMAGE_BASE, NULL, NULL, &f);
+            CHECK(st == TR_OK, "%s returned %s: %s", cases[k].what, tr_status_name(st),
+                  f.detail ? f.detail : "?");
+            CHECK(f.n >= 1 && f.words[0] == cases[k].want,
+                  "%s -> 0x%08X, expected 0x%08X", cases[k].what,
+                  f.n ? f.words[0] : 0u, cases[k].want);
+            CHECK(f.n >= 1 && (f.words[0] & 0x80000000u) == 0,
+                  "%s emitted an X form for a 32-bit operation: 0x%08X",
+                  cases[k].what, f.n ? f.words[0] : 0u);
+        }
+    }
+    {
+        /* Regression guard: the 64-bit forms must not have moved when the W forms
+         * were added, since both now come out of one shared derivation. */
+        static const uint8_t a[] = { 0x48,0x89,0xC8, 0xC3 };   /* mov rax,rcx */
+        static const uint8_t b[] = { 0x48,0x31,0xC0, 0xC3 };   /* xor rax,rax */
+        memset(&f, 0, sizeof f);
+        st = tr_translate_function(a, sizeof(a), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_OK && f.n == 2 && f.words[0] == 0xAA0103E0u,
+              "mov rax,rcx -> 0x%08X, expected 0xAA0103E0", f.n ? f.words[0] : 0u);
+        memset(&f, 0, sizeof f);
+        st = tr_translate_function(b, sizeof(b), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_OK && f.n == 2 && f.words[0] == 0xD2800000u,
+              "xor rax,rax -> 0x%08X, expected 0xD2800000", f.n ? f.words[0] : 0u);
+    }
+}
+
+#if defined(__aarch64__)
+static void test_width32_executes(void)
+{
+    gs_arena a;
+    uint64_t r = 0;
+    int      sig = 0;
+
+    printf("executing 32-bit forms on real ARM64, where zero-extension is observable\n");
+    if (!gs_alloc(4096, &a)) {
+        CHECK(0, "could not allocate a guest stack arena: %s", gs_last_error());
+        return;
+    }
+
+    /* The discriminating case. RAX is set to all ones by a 64-bit move, then EAX is
+     * written with 5. x86-64 zero-extends, so RAX must come back as 5. A
+     * translation that emitted the X form, or a W form that did not zero the upper
+     * half, returns 0xFFFFFFFF00000005 - correct in its low 32 bits, wrong as a
+     * 64-bit value, and invisible unless the upper half is deliberately dirtied
+     * first. */
+    {
+        static const uint8_t g[] = {
+            0x48,0xC7,0xC0,0xFF,0xFF,0xFF,0xFF,   /* mov rax,-1  */
+            0xB8,0x05,0x00,0x00,0x00,             /* mov eax,5   */
+            0xC3
+        };
+        if (run_guest("zero-extension", g, sizeof(g), &a, 0u, &r, &sig))
+            CHECK(r == 5u,
+                  "mov rax,-1 then mov eax,5 returned 0x%llX, expected 0x5 - the upper "
+                  "half was not zeroed by the 32-bit write",
+                  (unsigned long long)r);
+        else
+            CHECK(0, "zero-extension case did not run");
+    }
+    {
+        /* A 32-bit add that overflows 32 bits must wrap at 32 and zero-extend, not
+         * carry into the upper half. */
+        static const uint8_t g[] = {
+            0xB8,0xFF,0xFF,0xFF,0x7F,             /* mov eax,0x7FFFFFFF */
+            0x83,0xC0,0x01,                       /* add eax,1          */
+            0xC3
+        };
+        if (run_guest("32-bit wrap", g, sizeof(g), &a, 0u, &r, &sig))
+            CHECK(r == 0x80000000ull,
+                  "mov eax,0x7FFFFFFF; add eax,1 returned 0x%llX, expected 0x80000000",
+                  (unsigned long long)r);
+        else
+            CHECK(0, "32-bit wrap case did not run");
+    }
+    {
+        /* A 32-bit comparison driving a real branch, both ways. Equal takes the
+         * jump over the assignment and returns 5; unequal falls through and
+         * returns 99. One direction passing by luck would not pass both. */
+        static const uint8_t eq[] = {
+            0xB8,0x05,0x00,0x00,0x00,   /* mov eax,5   */
+            0x83,0xF8,0x05,             /* cmp eax,5   */
+            0x74,0x05,                  /* jz -> ret   */
+            0xB8,0x63,0x00,0x00,0x00,   /* mov eax,99  */
+            0xC3                        /* ret         */
+        };
+        static const uint8_t ne[] = {
+            0xB8,0x05,0x00,0x00,0x00,   /* mov eax,5   */
+            0x83,0xF8,0x06,             /* cmp eax,6   */
+            0x74,0x05,                  /* jz -> ret   */
+            0xB8,0x63,0x00,0x00,0x00,   /* mov eax,99  */
+            0xC3                        /* ret         */
+        };
+        if (run_guest("32-bit cmp equal", eq, sizeof(eq), &a, 0u, &r, &sig))
+            CHECK(r == 5u, "cmp eax,5 after mov eax,5 returned %llu, expected 5 "
+                           "(the 32-bit branch was not taken)", (unsigned long long)r);
+        else
+            CHECK(0, "32-bit cmp equal case did not run");
+        if (run_guest("32-bit cmp unequal", ne, sizeof(ne), &a, 0u, &r, &sig))
+            CHECK(r == 99u, "cmp eax,6 after mov eax,5 returned %llu, expected 99 "
+                            "(the 32-bit branch was wrongly taken)",
+                  (unsigned long long)r);
+        else
+            CHECK(0, "32-bit cmp unequal case did not run");
+    }
+
+    gs_free(&a);
+    printf("  EXECUTED ON aarch64: 32-bit forms - zero-extension into the upper half, "
+           "32-bit wrap, and a 32-bit comparison driving a branch both ways\n");
+}
+#else
+static void test_width32_executes(void)
+{
+    printf("executing 32-bit forms on real ARM64, where zero-extension is observable\n");
+    printf("  SKIP: host is not aarch64 - encodings and refusals were checked, "
+           "nothing generated was run\n");
+}
+#endif
+
 int main(void)
 {
     printf("=== exe + dll translation, end to end ===\n");
@@ -1833,6 +2063,8 @@ int main(void)
     test_guest_stack_translation();
     test_guest_stack_executes();
     test_buffer_cap_is_named();
+    test_width32_translation();
+    test_width32_executes();
     test_pipeline();
 #if defined(__aarch64__)
     printf("VERDICT arch=aarch64 exe_words=%zu const_ok=%d first=%s/%llu(to=%d,sig=%d) "
