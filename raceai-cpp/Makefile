@@ -34,6 +34,8 @@ else
 endif
 
 STUB     := $(BIN)/libstubpython.so
+# variante que devolve None em vez de nullptr (igual ao CPython de verdade)
+STUBNONE := $(BIN)/libstubpython_none.so
 
 all: $(BIN)/raceai_train$(EXE) $(BIN)/raceai_tests$(EXE) $(BIN)/raceai_tests_app$(EXE) \
      $(BIN)/raceai_integrado$(EXE) $(BIN)/raceai_pytest$(EXE) $(GAME)
@@ -71,16 +73,24 @@ $(STUB): tests/stub_python.cpp
 	@mkdir -p $(BIN)
 	$(CXX) -std=c++17 -O2 -fPIC -shared tests/stub_python.cpp -o $@
 
+$(STUBNONE): tests/stub_python.cpp
+	@mkdir -p $(BIN)
+	$(CXX) -std=c++17 -O2 -fPIC -shared -DSTUB_PYTHON_NONE tests/stub_python.cpp -o $@
+
 test: $(BIN)/raceai_tests$(EXE) $(BIN)/raceai_tests_app$(EXE) $(BIN)/raceai_integrado$(EXE)
 	./$(BIN)/raceai_tests$(EXE)
 	./$(BIN)/raceai_tests_app$(EXE)
 	./$(BIN)/raceai_integrado$(EXE)
 
 # mesmo que `test`, mas usando o stub do CPython para exercitar a ponte Python
-test-py: $(STUB)
+test-py: $(STUB) $(STUBNONE)
 	RACEAI_STUB_PYTHON=./$(STUB) ./$(BIN)/raceai_tests$(EXE)
 	RACEAI_STUB_PYTHON=./$(STUB) ./$(BIN)/raceai_tests_app$(EXE)
 	RACEAI_STUB_PYTHON=./$(STUB) ./$(BIN)/raceai_integrado$(EXE)
+	@echo "--- agora com o stub que devolve None (igual ao CPython) ---"
+	RACEAI_STUB_PYTHON=./$(STUBNONE) ./$(BIN)/raceai_tests$(EXE)
+	RACEAI_STUB_PYTHON=./$(STUBNONE) ./$(BIN)/raceai_tests_app$(EXE)
+	RACEAI_STUB_PYTHON=./$(STUBNONE) ./$(BIN)/raceai_integrado$(EXE)
 
 # prova que o CPython de verdade funciona (Windows: python/python311.dll)
 test-python-real: $(BIN)/raceai_pytest$(EXE)

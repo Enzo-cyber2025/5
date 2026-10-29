@@ -66,6 +66,15 @@ jobs:
           tail -60 test.log
           exit $st
 
+      - name: Testes com o interpretador falso (inclui o que devolve None)
+        shell: msys2 {0}
+        run: |
+          cd raceai-cpp
+          make test-py > testpy.log 2>&1
+          st=$?
+          tail -40 testpy.log
+          exit $st
+
       - name: "Python etapa 1: carregar a dll"
         continue-on-error: true
         shell: msys2 {0}

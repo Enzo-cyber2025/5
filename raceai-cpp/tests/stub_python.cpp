@@ -13,6 +13,20 @@
 #include <string>
 #include <vector>
 
+// Compilado com -DSTUB_PYTHON_NONE, este falso interpretador imita o CPython
+// de verdade: em vez de nullptr, as funções devolvem None nas falhas. É o que
+// pega bugs do tipo "só testei o ponteiro contra nulo".
+#ifdef STUB_PYTHON_NONE
+extern "C" {
+struct StubNone { int kind; };
+StubNone _Py_NoneStruct = {0};
+}
+static void* stub_none() { return (void*)&_Py_NoneStruct; }
+#define STUB_FALHA stub_none()
+#else
+#define STUB_FALHA nullptr
+#endif
+
 extern "C" {
 
 struct StubObj {
@@ -60,6 +74,9 @@ int stubpython_live_refs() { return g_refs_vivas; }
 // contagem do "GIL" falso: PyGILState_Ensure/Release precisam andar em pares
 static int g_gil = 0;
 int stubpython_gil_balance() { return g_gil; }
+#ifdef STUB_PYTHON_NONE
+int PyObject_IsTrue(void* o) { return o == stub_none() ? 0 : 1; }
+#endif
 int PyGILState_Ensure(void) { g_gil += 1; return g_gil; }
 void PyGILState_Release(int) { g_gil -= 1; }
 void* PyEval_SaveThread(void) { return nullptr; }
@@ -166,6 +183,9 @@ char* PyBytes_AsString(void* o) {
 void Py_DecRef(void* o) {
     StubObj* s = (StubObj*)o;
     if (!s || s == &g_main || s == &g_install || s == &g_call) return;
+#ifdef STUB_PYTHON_NONE
+    if (o == stub_none()) return;      // None é estático: nunca é liberado
+#endif
     delete s;
     g_refs_vivas -= 1;
 }
@@ -182,8 +202,8 @@ void* PyObject_CallFunctionObjArgs(void* fn, ...) {
     va_end(ap);
     if (fn == &g_install) {
         StubObj* src = (StubObj*)primeiro;
-        if (g_deve_falhar) return nullptr;
-        if (!src) return nullptr;
+        if (g_deve_falhar) return STUB_FALHA;
+        if (!src) return STUB_FALHA;
         // validação grosseira, mas suficiente para os testes: precisa existir
         // uma linha "def dirigir(...):" — sem os dois pontos é erro de sintaxe
         const std::string& t = src->texto;
@@ -191,14 +211,14 @@ void* PyObject_CallFunctionObjArgs(void* fn, ...) {
         if (p == std::string::npos) {                          // falta a função
             g_erro_instalacao =
                 "Traceback (falso)\n  NameError: defina dirigir(sensores) -> (esterco, acelerador)";
-            return nullptr;
+            return STUB_FALHA;
         }
         size_t eol = t.find('\n', p);
         std::string linha = t.substr(p, eol == std::string::npos ? std::string::npos : eol - p);
         if (linha.find(':') == std::string::npos) {            // sintaxe inválida
             g_erro_instalacao =
                 "Traceback (falso)\n  SyntaxError: expected ':' no fim do def";
-            return nullptr;
+            return STUB_FALHA;
         }
         g_erro_instalacao.clear();
         g_codigo_instalado = src->texto;
@@ -207,7 +227,7 @@ void* PyObject_CallFunctionObjArgs(void* fn, ...) {
     if (fn == &g_call) {
         StubObj* lista = (StubObj*)primeiro;
         g_chamadas += 1;
-        if (g_deve_falhar == 2) return nullptr;
+        if (g_deve_falhar == 2) return STUB_FALHA;
         if (!lista) return nullptr;
         g_ultimos_sensores = lista->itens;
         StubObj* t = new StubObj{7};

@@ -68,6 +68,7 @@ using FnFinalize    = int (*)(void);
 using FnGilEnsure   = int (*)(void);
 using FnGilRelease  = void (*)(int);
 using FnSaveThread  = void* (*)(void);
+using FnIsTrue      = int (*)(void*);
 
 struct PyApi {
     FnInit init = nullptr;
@@ -96,12 +97,23 @@ struct PyApi {
     FnGilRelease gil_release = nullptr;
     FnSaveThread save_thread = nullptr;
     void* main_thread_state = nullptr;      // devolvido por PyEval_SaveThread
+    FnIsTrue is_true = nullptr;
+    void* py_none = nullptr;                // endereço de _Py_NoneStruct
 };
 
 static PyApi& api();
 
 // Mantém o GIL durante uma chamada ao interpretador. Se a biblioteca não
 // expuser a C-API do GIL (ou o interpretador falso dos testes), vira um no-op.
+// nullptr ou None: os dois significam "deu errado" para as nossas funções.
+static bool resultado_vazio(void* res) {
+    PyApi& a = api();
+    if (!res) return true;
+    if (a.py_none) return res == a.py_none;
+    if (a.is_true) return a.is_true(res) == 0;
+    return false;
+}
+
 class GilGuard {
 public:
     GilGuard() {
@@ -210,6 +222,10 @@ bool PyDriver::load_runtime(const std::string& dll, std::string* err) {
     a.gil_ensure = (FnGilEnsure)lib_sym(lib_, "PyGILState_Ensure");
     a.gil_release = (FnGilRelease)lib_sym(lib_, "PyGILState_Release");
     a.save_thread = (FnSaveThread)lib_sym(lib_, "PyEval_SaveThread");
+    a.is_true = (FnIsTrue)lib_sym(lib_, "PyObject_IsTrue");
+    // Funções Python devolvem None em vez de nullptr quando algo dá errado:
+    // precisamos reconhecer esse caso (o endereço de Py_None nunca é nulo).
+    a.py_none = lib_sym(lib_, "_Py_NoneStruct");
 
     if (!a.init || !a.run || !a.import || !a.getattr || !a.call || !a.list_new ||
         !a.float_from || !a.uni_from) {
@@ -363,7 +379,7 @@ bool PyDriver::set_code(const std::string& code, std::string* err) {
         if (a.err_print) a.err_print();
         else if (a.err_clear) a.err_clear();
     }
-    bool ok = res != nullptr;
+    bool ok = !resultado_vazio(res);
     if (res && a.decref) a.decref(res);
     error_ = read_error_var();
     if (!ok) {
@@ -400,10 +416,11 @@ void PyDriver::act(const float* obs, int dim, float* out) {
     if (a.decref) a.decref(lista);
     calls_ += 1;
 
-    if (!res) {
+    if (resultado_vazio(res)) {
         errors_ += 1;
         error_ = read_error_var();
-        if (error_.empty()) error_ = "erro desconhecido ao chamar dirigir()";
+        if (error_.empty())
+            error_ = "dirigir() precisa devolver (esterço, acelerador)";
         if (a.err_occ && a.err_occ()) {
             if (a.err_print) a.err_print();
             else if (a.err_clear) a.err_clear();
