@@ -120,4 +120,21 @@ uint64_t ptc_hits(const ptc_cache *c);
 uint64_t ptc_misses(const ptc_cache *c);
 const ptc_module *ptc_module_at(const ptc_cache *c, size_t i);
 
+/* Walks everything the cache holds, rather than only what a caller can ask for by
+ * address. ptc_lookup needs module_id and guest_pc, which is fine for a runtime
+ * that already knows what it is about to execute and useless for one that wants to
+ * run everything it translated - so the slots are exposed directly.
+ *
+ * ptc_record_slots returns the number of slots INCLUDING dead ones, because a
+ * dropped record is not removed until compaction and the array is therefore not
+ * dense. ptc_record_at returns 0 for a dead or out-of-range slot and the caller
+ * skips it; that is cheaper than an index that has to be maintained.
+ *
+ * The host code pointer stays valid until the next insert or free, same contract
+ * as ptc_lookup. */
+size_t ptc_record_slots(const ptc_cache *c);
+int    ptc_record_at(const ptc_cache *c, size_t slot, uint64_t *module_id,
+                     uint64_t *guest_pc, const void **host_code,
+                     uint32_t *code_len);
+
 #endif /* PTC_H */

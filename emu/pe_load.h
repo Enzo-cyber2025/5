@@ -207,4 +207,23 @@ uint32_t pe_total_imports(const pe_image *im);
 /* Machine type as a readable string; "?" for one this parser does not name. */
 const char *pe_machine_name(uint16_t machine);
 
+/* Lays a parsed image out in memory the way a loader would, minus the relocation
+ * pass, and returns the base address - the place RVA 0 lives at. NULL on any
+ * failure, including a section whose raw data or virtual extent falls outside the
+ * file or outside size_of_image.
+ *
+ * Skipping the relocation pass is not a shortcut taken for convenience. Code emitted
+ * by translate.c addresses this image as `LDR Xt, [X19, X16]` with X16 holding an
+ * RVA, so every address is computed at run time from wherever this mapping landed.
+ * A translator that baked an absolute guest VA into its output would need
+ * relocations applied before its first instruction could run, and would be tied to
+ * one load address - which would also make its output uncacheable across processes.
+ *
+ * It never returns a partial mapping: a section that failed to copy would leave a
+ * hole, and reading a hole returns zeros that look like data.
+ *
+ * *out_sz receives the mapping's length, which munmap needs. */
+void *pe_map_image(const uint8_t *img, size_t len, const pe_image *pe,
+                   size_t *out_sz);
+
 #endif /* PE_LOAD_H */

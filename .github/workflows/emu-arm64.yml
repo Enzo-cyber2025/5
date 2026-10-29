@@ -601,6 +601,131 @@ jobs:
           git ls-files | grep -iE '\.zip$' || echo "  none"
           echo "ok: the sweep left the checkout untouched and no Windows binary is tracked"
 
+  game:
+    name: pre-translate a free Windows game and its DLLs, then execute what translated
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        working-directory: emu
+        run: make prewarm test_sweep
+
+      - name: Download the game bundle
+        run: |
+          set +e; set -uo pipefail
+          trap 'rc=$?; if [ "$rc" -ne 0 ]; then echo "::error title=game-download-step::exit=${rc} line=${LINENO}"; fi' EXIT
+          tag="5.17.0"
+          name="luanti-${tag}-win64.zip"
+          # Pinned from the release metadata: size and digest both, read once here
+          # so the job needs no API call at run time and a changed release fails
+          # loudly instead of quietly sweeping something else. Luanti is the engine
+          # Minetest became - free, open source, and shipped as a Windows exe plus
+          # its DLLs, which is the shape a real game has.
+          PINNED_SIZE="17539019"
+          PINNED_SHA256="3ce20c77f5c206a988d7a6b883439e2759e3cf67428c9dbcf99ecd2936da631c"
+          url="https://github.com/luanti-org/luanti/releases/download/${tag}/${name}"
+          curl -fsSL -o /tmp/game.zip "$url"
+          rc=$?
+          if [ "$rc" -ne 0 ]; then
+            echo "::error title=game-download-failed::curl exit ${rc} for ${url}"
+            exit 1
+          fi
+          actual=$(stat -c %s /tmp/game.zip)
+          digest=$(sha256sum /tmp/game.zip | awk '{print $1}')
+          echo "downloaded ${actual} bytes; pinned ${PINNED_SIZE}"
+          echo "sha256: ${digest}"
+          echo "::notice title=game-sha256::${digest} size=${actual}"
+          if [ "$actual" != "$PINNED_SIZE" ]; then
+            echo "::error title=game-size-mismatch::downloaded ${actual}, pinned ${PINNED_SIZE}; re-pin deliberately"
+            exit 1
+          fi
+          if [ "$digest" != "$PINNED_SHA256" ]; then
+            echo "::error title=game-digest-mismatch::downloaded ${digest}, pinned ${PINNED_SHA256}"
+            exit 1
+          fi
+          echo "verified: size and digest both match the pinned release"
+
+      - name: Enumerate the modules in the game bundle
+        run: |
+          set -euo pipefail
+          trap 'rc=$?; if [ "$rc" -ne 0 ]; then echo "::error title=game-enumerate::exit=${rc} line=${LINENO}"; fi' EXIT
+          mkdir -p /tmp/game
+          unzip -q -o /tmp/game.zip -d /tmp/game
+          find /tmp/game -type f \( -iname '*.exe' -o -iname '*.dll' \) | sort > /tmp/game-mods.list
+          echo "executables: $(find /tmp/game -type f -iname '*.exe' | wc -l)"
+          echo "dlls:        $(find /tmp/game -type f -iname '*.dll' | wc -l)"
+          echo "total bytes: $(du -sb /tmp/game | cut -f1)"
+          test -s /tmp/game-mods.list || { echo "::error title=no-modules::nothing to sweep"; exit 1; }
+          cat /tmp/game-mods.list
+
+      - name: Pre-translate the game, then execute what translated
+        run: |
+          set -uo pipefail
+          trap 'rc=$?; if [ "$rc" -ne 0 ]; then echo "::error title=game-prewarm-execute::exit=${rc} line=${LINENO}"; fi' EXIT
+          # --idle-ms 0 runs the sweep to completion in one pass: the screen-off
+          # window is modelled, not simulated, and this job is measuring coverage
+          # and then running the result rather than exercising the yield path.
+          # --execute maps each module's image and calls the ARM64 the sweep wrote,
+          # in a forked child with an alarm, because untrusted code that does not
+          # terminate has to cost one child and not the measurement.
+          xargs -a /tmp/game-mods.list -d '\n' \
+            ./emu/prewarm --idle-ms 0 --max-seconds 900 --execute \
+            --cache /tmp/game.ptc > /tmp/game.log 2>&1
+          rc=$?
+          tail -60 /tmp/game.log
+          if [ "$rc" -ne 0 ]; then
+            flat=$(tr '\n' ' ' < /tmp/game.log | tr -s ' ' | tail -c 900)
+            echo "::error title=game-prewarm-failed rc=${rc}::${flat}"
+          fi
+          exit $rc
+
+      - name: Assert the execution half actually happened
+        run: |
+          set -euo pipefail
+          die() { echo "::error title=game-assert::$1"; exit 1; }
+          grep -q -- "--- executing what was translated ---" /tmp/game.log \
+            || die "the --execute pass never ran, so nothing was executed"
+          grep -qE "records executed: [0-9]+" /tmp/game.log \
+            || die "the execution tally was never printed"
+          # The honest assertion: if the sweep translated anything, then something
+          # had to run. A non-zero coverage figure with zero executions means the
+          # execute path is broken, not that the code was unrunnable.
+          translated=$(grep -oE 'functions pre-translated: [0-9]+' /tmp/game.log | grep -oE '[0-9]+' | head -1)
+          ran=$(grep -oE 'records executed: [0-9]+' /tmp/game.log | grep -oE '[0-9]+' | head -1)
+          echo "translated=${translated:-?} executed=${ran:-?}"
+          if [ "${translated:-0}" -gt 0 ] && [ "${ran:-0}" -eq 0 ]; then
+            die "${translated} function(s) translated but none were executed"
+          fi
+          grep -q "EXECUTED" /tmp/game.log || die "no execution marker at all"
+          echo "execution marker:"
+          grep -E "EXECUTED" /tmp/game.log
+
+      - name: Report the measurement
+        if: always()
+        run: |
+          set +e; set -uo pipefail
+          if [ ! -f /tmp/game.log ]; then echo "no log"; exit 0; fi
+          {
+            echo "### pre-translation of a free Windows game, and execution of the result"
+            echo '```'
+            sed -n '/pre-translation summary/,/^cache records/p' /tmp/game.log
+            echo '```'
+            echo '```'
+            sed -n '/executing what was translated/,$p' /tmp/game.log | head -40
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          summary=$(sed -n '/pre-translation summary/,/^cache records/p' /tmp/game.log \
+                    | tr '\n' '|' | tr -s ' ' | head -c 2600)
+          echo "::notice title=game-measured::${summary}"
+          block=$(grep -E 'stopped at opcode|refused: ' /tmp/game.log \
+                  | head -16 | tr '\n' '|' | tr -d '%\r' | tr -s ' ' | cut -c1-1400)
+          cov=$(grep -E '^functions |^  refused |^  modules mapped|^  records executed' /tmp/game.log \
+                | tr '\n' '|' | tr -s ' ')
+          echo "::notice title=game-blocking::${cov} || BLOCKERS: ${block}"
+          exit 0
+
   api-surface:
     name: Vulkan vs Direct3D import surface on real applications
     runs-on: ubuntu-latest

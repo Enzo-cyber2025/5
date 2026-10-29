@@ -15,7 +15,7 @@ test: $(TARGETS)
 	@# catch shadowing, undeclared identifiers and format mismatches in them.
 	@if [ "$$(uname -m)" != aarch64 ]; then \
 	   echo "syntax-checking the aarch64-only paths on a $$(uname -m) host"; \
-	   $(CC) $(CFLAGS) -D__aarch64__ -fsyntax-only test_translate.c test_emit_exec.c; \
+	   $(CC) $(CFLAGS) -D__aarch64__ -fsyntax-only test_translate.c test_emit_exec.c prewarm.c; \
 	 else \
 	   echo "host is aarch64: the guarded paths are compiled by the build above"; \
 	 fi
@@ -43,6 +43,23 @@ test: $(TARGETS)
 	@grep -q 'stopped at opcode FF' $(FIXTURE_DLL).prewarm
 	@grep -q 'refused: unsupported-opcode' $(FIXTURE_DLL).prewarm
 	@grep -q 'functions pre-translated:  *2  (66.67% of attempted)' $(FIXTURE_DLL).prewarm
+	@# --execute is the other half of the claim. A coverage percentage says how much
+	@# of a module the translator accepts; running the emitted words says whether
+	@# what it accepted is code. On a host that is not aarch64 there is no
+	@# instruction set to run them on, so the honest output is an explicit skip
+	@# rather than a silently absent section.
+	@./prewarm --idle-ms 1 --max-seconds 30 --execute $(FIXTURE_DLL) > $(FIXTURE_DLL).exec
+	@grep -q -- '--- executing what was translated ---' $(FIXTURE_DLL).exec
+	@if [ "$$(uname -m)" = "aarch64" ]; then \
+	   echo "executing the fixture's translations on aarch64"; \
+	   grep -q 'modules mapped: 1 of 1' $(FIXTURE_DLL).exec; \
+	   grep -qE 'records executed: [1-9]' $(FIXTURE_DLL).exec; \
+	   grep -qE 'returned: [1-9]' $(FIXTURE_DLL).exec; \
+	   grep -q 'EXECUTED ON aarch64:' $(FIXTURE_DLL).exec; \
+	 else \
+	   grep -q 'SKIP: host is not aarch64' $(FIXTURE_DLL).exec; \
+	   echo "--execute reported an explicit skip on a $$(uname -m) host"; \
+	 fi
 	@# The entry-point diagnosis is what separates "not in code" into causes, so
 	@# it is asserted too: a fixture whose three entry points are all real code has
 	@# to report exactly that.
@@ -107,8 +124,8 @@ test_sweep: test_sweep.c sweep.c sweep.h $(CORE)
 
 # The pre-translation driver: sweeps real files and reports percentage plus
 # remaining time, modelling the screen-off window as a resumable time budget.
-prewarm: prewarm.c sweep.c $(CORE)
-	$(CC) $(CFLAGS) -o $@ prewarm.c sweep.c $(CORE)
+prewarm: prewarm.c sweep.c gstack.c $(CORE)
+	$(CC) $(CFLAGS) -o $@ prewarm.c sweep.c gstack.c $(CORE)
 
 # The end-to-end pipeline: PE exe and DLL in, decoded, translated, resolved,
 # emitted, executed on ARM64, persisted and reloaded from the cache.
@@ -140,6 +157,6 @@ test_emit_exec: test_emit_exec.c
 
 clean:
 	rm -f $(TARGETS) *.o *.ptc *.ptc.tmp.* $(FIXTURE) $(FIXTURE).report \
-	      $(FIXTURE_DLL) $(FIXTURE_DLL).prewarm $(FIXTURE_DLL).diag $(FIXTURE).api
+	      $(FIXTURE_DLL) $(FIXTURE_DLL).prewarm $(FIXTURE_DLL).diag $(FIXTURE_DLL).exec $(FIXTURE).api
 
 .PHONY: all test clean

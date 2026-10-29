@@ -1,3 +1,6 @@
+#ifndef _DEFAULT_SOURCE
+#define _DEFAULT_SOURCE   /* MAP_ANONYMOUS, which glibc hides without it */
+#endif
 /* PE image parser - see pe_load.h for the design rules.
  *
  * Little-endian only, which is not a limitation: PE is defined as
@@ -11,6 +14,7 @@
  */
 #include "pe_load.h"
 
+#include <sys/mman.h>
 #include <string.h>
 
 /* ---- bounded little-endian access -------------------------------------- */
@@ -631,4 +635,54 @@ pe_status pe_load(const void *img, size_t len, pe_image *out)
         out->detail = "ok";
     }
     return PE_OK;
+}
+
+/* Maps a PE image the way a loader would, minus the relocation pass.
+ *
+ * Omitting relocations is not a shortcut taken for convenience; it is the thing
+ * the emitted code makes unnecessary. Every image access the translator produces
+ * is `LDR Xt, [X19, X16]` with X16 holding an RVA, so the address is computed at
+ * run time from wherever this mapping landed. Baking an absolute guest VA into the
+ * code would have required applying relocations before a single instruction could
+ * run, and would have tied the translation to one load address.
+ *
+ * Returns NULL rather than a partial mapping if any section lies outside the file
+ * or outside size_of_image: a section that did not get copied leaves a hole, and
+ * reading that hole returns zeros that look like data. */
+void *pe_map_image(const uint8_t *img, size_t len, const pe_image *pe,
+                          size_t *out_sz)
+{
+    size_t   sz, hdr = 0;
+    uint8_t *base;
+    uint32_t i;
+
+    if (!img || !pe || pe->size_of_image == 0) return NULL;
+    sz = pe->size_of_image;
+    if (sz > (256u << 20)) return NULL;          /* the same ceiling as the translator */
+
+    base = mmap(NULL, sz, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (base == MAP_FAILED) return NULL;
+
+    /* The headers occupy everything before the first section's raw data. Some
+     * modules keep read-only tables there, so they get copied too. */
+    for (i = 0; i < pe->num_sections; i++) {
+        uint32_t rp = pe->sections[i].raw_ptr;
+        if (rp && (hdr == 0 || rp < hdr)) hdr = rp;   /* the SMALLEST non-zero */
+    }
+    if (hdr > len) hdr = len;
+    if (hdr > sz)  hdr = sz;
+    if (hdr) memcpy(base, img, hdr);
+
+    for (i = 0; i < pe->num_sections; i++) {
+        const pe_section *s = &pe->sections[i];
+        if (s->raw_size == 0) continue;
+        if ((uint64_t)s->raw_ptr + s->raw_size > (uint64_t)len) goto bad;
+        if ((uint64_t)s->virtual_addr + s->raw_size > (uint64_t)sz) goto bad;
+        memcpy(base + s->virtual_addr, img + s->raw_ptr, s->raw_size);
+    }
+    if (out_sz) *out_sz = sz;
+    return base;
+bad:
+    munmap(base, sz);
+    return NULL;
 }

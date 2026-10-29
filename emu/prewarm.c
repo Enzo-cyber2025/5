@@ -1,3 +1,9 @@
+#ifndef _DEFAULT_SOURCE
+#define _DEFAULT_SOURCE   /* MAP_ANONYMOUS: glibc hides it without this,
+                         * and it differs between glibc versions, so the
+                         * omission compiles on one host and not another */
+#endif
+
 /* prewarm - runs the pre-translation sweep and reports progress honestly.
  *
  *   prewarm [--cache <path>] [--idle-ms <n>] [--max-seconds <n>] <file> [<file>...]
@@ -281,6 +287,266 @@ static void diagnose_module(const char *path, const uint8_t *img, size_t img_len
            d.zero_bytes, im->num_exports, im->exports_truncated);
 }
 
+/* ========================================================================
+ * Executing what the sweep translated.
+ *
+ * A coverage percentage on its own is a claim about the translator, not evidence
+ * about the code it produced. This runs the ARM64 the sweep actually wrote, on the
+ * host it was written for, against the module it came from.
+ *
+ * What it is NOT: running the application. A function translated in isolation is
+ * called with an argument nobody chose, its imports are unresolved (any function
+ * that had one was refused, which is why this is safe to do at all), and the
+ * operating system around it does not exist. What it proves is narrower and still
+ * worth proving - that the emitted words are executable, terminate, and do not
+ * fault, with the module's own image mapped underneath them.
+ * ======================================================================== */
+#if defined(__aarch64__)
+#include "a64_emit.h"
+#include "gstack.h"
+#include <sys/mman.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+#define EXEC_MAX_RECORDS 2000u   /* a cap so a large cache cannot run for hours */
+
+/* One executable page holding a trampoline and the translated body. */
+static void *place_code(const uint32_t *prog, size_t n, size_t *out_len)
+{
+    long   ps = sysconf(_SC_PAGESIZE);
+    size_t bytes = (size_t)((n * 4u + (size_t)ps - 1u) / (size_t)ps) * (size_t)ps;
+    void  *p;
+    if (ps <= 0) ps = 4096;
+    if (bytes == 0) bytes = (size_t)ps;
+    p = mmap(NULL, bytes, PROT_READ | PROT_WRITE | PROT_EXEC,
+             MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (p == MAP_FAILED) return NULL;
+    memcpy(p, prog, n * 4u);
+    __builtin___clear_cache((char *)p, (char *)p + n * 4u);
+    if (out_len) *out_len = bytes;
+    return p;
+}
+
+typedef enum {
+    EXC_RETURNED = 0,   /* ran to its RET and handed back a value */
+    EXC_FAULTED,        /* killed by a signal other than the alarm */
+    EXC_TIMED_OUT,      /* killed by the alarm: it did not terminate */
+    EXC_COULD_NOT_RUN   /* never started: too large, or a mapping failed */
+} exec_outcome;
+
+typedef struct {
+    uint32_t ran, returned, faulted, timed_out, could_not_run;
+    int      last_signal;
+} exec_tally;
+
+static const char *outcome_name(exec_outcome o)
+{
+    switch (o) {
+    case EXC_RETURNED:      return "returned";
+    case EXC_FAULTED:       return "faulted";
+    case EXC_TIMED_OUT:     return "timed out";
+    case EXC_COULD_NOT_RUN: return "could not run";
+    }
+    return "?";
+}
+
+/* Runs one translated function in a forked child with an alarm.
+ *
+ * Forked because the code is untrusted in the ordinary sense: it was produced from
+ * someone else's binary and there is no proof it terminates. A fault or a hang has
+ * to cost one child and not the measurement. The alarm's default action kills the
+ * child, which the parent sees as SIGALRM and reports as a timeout rather than as
+ * a crash - the distinction matters because a runaway loop and a bad address are
+ * different bugs. */
+static exec_outcome exec_one(const void *code, uint32_t code_len, void *imgbase,
+                             uint64_t gtop, exec_tally *t, uint64_t *out_val)
+{
+    uint32_t  prog[128];
+    size_t    n = 0, bl, plen = 0;
+    void     *page;
+    int       fds[2];
+    pid_t     pid;
+    int       status = 0;
+    uint32_t  body_words = code_len / 4u;
+
+    t->ran++;
+    if (body_words == 0 || body_words + 16u > sizeof prog / sizeof prog[0]) {
+        t->could_not_run++;
+        return EXC_COULD_NOT_RUN;
+    }
+
+    /* The same frame discipline the translation itself uses, so X19 and X14 are
+     * set up before the body runs and restored after it. */
+    prog[n++] = a64_stp_frame_push();
+    prog[n++] = a64_stp_gstack_push();
+    prog[n++] = a64_stp_imgbase_push();
+    prog[n++] = a64_movz_x(0u, 0u);                       /* X0 = 0 argument */
+    prog[n++] = a64_movz_x(14u, (uint16_t)(gtop & 0xFFFFu));
+    if ((gtop >> 16) & 0xFFFFu) prog[n++] = a64_movk_x(14u, (uint16_t)((gtop >> 16) & 0xFFFFu), 16);
+    if ((gtop >> 32) & 0xFFFFu) prog[n++] = a64_movk_x(14u, (uint16_t)((gtop >> 32) & 0xFFFFu), 32);
+    if ((gtop >> 48) & 0xFFFFu) prog[n++] = a64_movk_x(14u, (uint16_t)((gtop >> 48) & 0xFFFFu), 48);
+    {
+        uint64_t ib = (uint64_t)(uintptr_t)imgbase;
+        prog[n++] = a64_movz_x(19u, (uint16_t)(ib & 0xFFFFu));
+        if ((ib >> 16) & 0xFFFFu) prog[n++] = a64_movk_x(19u, (uint16_t)((ib >> 16) & 0xFFFFu), 16);
+        if ((ib >> 32) & 0xFFFFu) prog[n++] = a64_movk_x(19u, (uint16_t)((ib >> 32) & 0xFFFFu), 32);
+        if ((ib >> 48) & 0xFFFFu) prog[n++] = a64_movk_x(19u, (uint16_t)((ib >> 48) & 0xFFFFu), 48);
+    }
+    bl = n;
+    prog[n++] = 0u;
+    prog[n++] = a64_ldp_imgbase_pop();
+    prog[n++] = a64_ldp_gstack_pop();
+    prog[n++] = a64_ldp_frame_pop();
+    prog[n++] = a64_ret();
+    prog[bl]  = a64_bl((int32_t)(n - bl));
+    if (n + body_words > sizeof prog / sizeof prog[0]) {
+        t->could_not_run++;
+        return EXC_COULD_NOT_RUN;
+    }
+    memcpy(prog + n, code, body_words * 4u);
+    n += body_words;
+
+    page = place_code(prog, n, &plen);
+    if (!page) { t->could_not_run++; return EXC_COULD_NOT_RUN; }
+
+    if (pipe(fds) != 0) { munmap(page, plen); t->could_not_run++; return EXC_COULD_NOT_RUN; }
+    pid = fork();
+    if (pid < 0) {
+        close(fds[0]); close(fds[1]); munmap(page, plen);
+        t->could_not_run++;
+        return EXC_COULD_NOT_RUN;
+    }
+    if (pid == 0) {
+        uint64_t r;
+        close(fds[0]);
+        /* Armed before the call, not after. The default SIGALRM action kills the
+         * child, which is the only thing that stops a translated loop that never
+         * ends - and an alarm set on the way out would leave that loop running
+         * forever with the parent blocked in waitpid. */
+        alarm(5);
+        r = ((uint64_t (*)(void))page)();
+        if (write(fds[1], &r, sizeof r) != (ssize_t)sizeof r) _exit(2);
+        close(fds[1]);
+        _exit(0);
+    }
+    close(fds[1]);
+    alarm(8);                       /* the parent's own escape if waitpid blocks */
+    {
+        ssize_t got = read(fds[0], out_val, sizeof *out_val);
+        if (got != (ssize_t)sizeof *out_val) *out_val = 0;
+    }
+    close(fds[0]);
+    if (waitpid(pid, &status, 0) < 0) status = 0;
+    alarm(0);
+    munmap(page, plen);
+
+    if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+        t->returned++;
+        return EXC_RETURNED;
+    }
+    if (WIFSIGNALED(status) && WTERMSIG(status) == SIGALRM) {
+        t->timed_out++;
+        return EXC_TIMED_OUT;
+    }
+    t->faulted++;
+    t->last_signal = WIFSIGNALED(status) ? WTERMSIG(status) : -1;
+    return EXC_FAULTED;
+}
+/* Walks every live cache record and runs the ones belonging to a module whose
+ * image could be mapped. Records whose module did not map are counted separately
+ * rather than skipped silently: "executed 0" and "had nothing executable" are
+ * different statements and the summary should not blur them. */
+static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids,
+                               uint8_t *const *imgs, const size_t *lens,
+                               const pe_image *pes, const char *const *paths)
+{
+    exec_tally t;
+    gs_arena   a;
+    size_t     slots, slot, mapped = 0, unmatched = 0, capped = 0;
+    int        i;
+
+    memset(&t, 0, sizeof t);
+    printf("\n--- executing what was translated ---\n");
+
+    if (!gs_alloc(64u * 1024u, &a)) {
+        printf("  could not allocate a guest stack arena: %s\n", gs_last_error());
+        printf("  EXECUTED NOTHING: no guest stack arena\n");
+        return;
+    }
+
+    slots = ptc_record_slots(cache);
+    for (i = 0; i < nmods; i++) {
+        size_t sz = 0;
+        void  *base = pe_map_image(imgs[i], lens[i], &pes[i], &sz);
+        if (!base) {
+            printf("  %s: image could not be mapped, its translations are not runnable\n",
+                   paths[i]);
+            continue;
+        }
+        mapped++;
+        printf("  %s: image mapped at %p, size %zu, base RVA 0 there\n",
+               paths[i], base, sz);
+
+        for (slot = 0; slot < slots; slot++) {
+            uint64_t    mid = 0, gpc = 0;
+            const void *code = NULL;
+            uint32_t    clen = 0;
+            uint64_t      val = 0;
+            exec_outcome  oc;
+            if (!ptc_record_at(cache, slot, &mid, &gpc, &code, &clen)) continue;
+            if (mid != mids[i]) continue;
+            if (t.ran >= EXEC_MAX_RECORDS) { capped++; continue; }
+            oc = exec_one(code, clen, base, a.top, &t, &val);
+            /* The returned value is printed because it is the only evidence that
+             * the code did something rather than merely not crashing. It is NOT
+             * checked against anything: the argument is arbitrary and the function
+             * was written for a caller that does not exist here. */
+            printf("    guest_pc=%08llX  %3u bytes of ARM64  ->  %-13s%s%llu\n",
+                   (unsigned long long)gpc, clen, outcome_name(oc),
+                   oc == EXC_RETURNED ? "value 0x" : "",
+                   (unsigned long long)(oc == EXC_RETURNED ? val : 0u));
+        }
+        munmap(base, sz);
+    }
+
+    /* records belonging to no module that was offered */
+    for (slot = 0; slot < slots; slot++) {
+        uint64_t mid = 0;
+        int found = 0;
+        if (!ptc_record_at(cache, slot, &mid, NULL, NULL, NULL)) continue;
+        for (i = 0; i < nmods; i++) if (mids[i] == mid) { found = 1; break; }
+        if (!found) unmatched++;
+    }
+
+    printf("  modules mapped: %zu of %d\n", mapped, nmods);
+    printf("  records executed: %u   returned: %u   faulted: %u   timed out: %u"
+           "   could not run: %u\n",
+           t.ran, t.returned, t.faulted, t.timed_out, t.could_not_run);
+    if (t.faulted) printf("  last fault signal: %d\n", t.last_signal);
+    if (unmatched) printf("  records belonging to no offered module: %zu\n", unmatched);
+    if (capped)    printf("  records skipped by the %u cap: %zu\n", EXEC_MAX_RECORDS, capped);
+    if (t.ran == 0)
+        printf("  EXECUTED NOTHING: no translated function was runnable here\n");
+    else
+        printf("  EXECUTED ON aarch64: %u translated function(s) from a real "
+               "shipped module ran on this host, %u returned\n",
+               t.ran, t.returned);
+    gs_free(&a);
+}
+#else
+static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids,
+                               uint8_t *const *imgs, const size_t *lens,
+                               const pe_image *pes, const char *const *paths)
+{
+    (void)cache; (void)nmods; (void)mids; (void)imgs; (void)lens; (void)pes;
+    (void)paths;
+    printf("\n--- executing what was translated ---\n");
+    printf("  SKIP: host is not aarch64, so there is no instruction set to run the\n"
+           "  emitted words on. Coverage was measured; nothing was executed.\n");
+    printf("  EXECUTED NOTHING: host is not aarch64\n");
+}
+#endif /* __aarch64__ */
+
 int main(int argc, char **argv)
 {
     const char *cache_path = NULL;
@@ -289,9 +555,10 @@ int main(int argc, char **argv)
     size_t      lens[MAX_MODULES];
     uint64_t    mtimes[MAX_MODULES];
     pe_image    pes[MAX_MODULES];
+    uint64_t    mids[MAX_MODULES];
     int         npaths = 0, nmods = 0, i;
     unsigned    idle_ms = 250u, max_seconds = 600u;
-    int         diagnose = 0;
+    int         diagnose = 0, execute = 0;
     ptc_cache  *cache = NULL;
     sweep_job  *job = NULL;
     sweep_progress prog;
@@ -304,6 +571,8 @@ int main(int argc, char **argv)
             cache_path = argv[++i];
         else if (strcmp(argv[i], "--idle-ms") == 0 && i + 1 < argc)
             idle_ms = (unsigned)strtoul(argv[++i], NULL, 10);
+        else if (strcmp(argv[i], "--execute") == 0)
+            execute = 1;
         else if (strcmp(argv[i], "--diagnose-entries") == 0)
             diagnose = 1;
         else if (strcmp(argv[i], "--max-seconds") == 0 && i + 1 < argc)
@@ -321,7 +590,10 @@ int main(int argc, char **argv)
     if (npaths == 0) {
         fprintf(stderr,
                 "usage: prewarm [--cache <path>] [--idle-ms <n>] "
-                "[--max-seconds <n>] [--diagnose-entries] <file> [<file>...]\n");
+                "[--max-seconds <n>] [--diagnose-entries] [--execute] "
+                "<file> [<file>...]\n"
+                "  --execute  map each module's image and run the ARM64 the sweep "
+                "wrote, in a forked child with an alarm\n");
         return 1;
     }
 
@@ -376,6 +648,7 @@ int main(int argc, char **argv)
             printf("  warning: could not register %s in the cache\n", paths[i]);
             continue;
         }
+        mids[i] = mid;
         queued = sweep_add_module(job, paths[i], mid, imgs[i], lens[i], &pes[i]);
         if (queued < 0) printf("  warning: %s has no sweepable code\n", paths[i]);
         else            printf("  queued %d entry point(s) from %s\n", queued,
@@ -419,6 +692,9 @@ int main(int argc, char **argv)
     } else if (cache_path) {
         printf("\nnothing was translated, so no cache file was written\n");
     }
+
+    if (execute)
+        execute_translated(cache, nmods, mids, imgs, lens, pes, paths);
 
     sweep_free(job);
     ptc_free(cache);

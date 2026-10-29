@@ -600,3 +600,23 @@ size_t ptc_record_count(const ptc_cache *c)
         if (!c->recs[i].dead) n++;
     return n;
 }
+
+size_t ptc_record_slots(const ptc_cache *c)
+{
+    return c ? c->n_recs : 0;
+}
+
+int ptc_record_at(const ptc_cache *c, size_t slot, uint64_t *module_id,
+                  uint64_t *guest_pc, const void **host_code, uint32_t *code_len)
+{
+    const ptc_rec *r;
+    if (!c || slot >= c->n_recs) return 0;
+    r = &c->recs[slot];
+    if (r->dead) return 0;
+    if (r->code_off + r->code_len > c->code_len) return 0;  /* corrupt: skip */
+    if (module_id) *module_id = r->module_id;
+    if (guest_pc)  *guest_pc  = r->guest_pc;
+    if (host_code) *host_code = c->code + r->code_off;
+    if (code_len)  *code_len  = r->code_len;
+    return 1;
+}

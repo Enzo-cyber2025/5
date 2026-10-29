@@ -20,6 +20,7 @@
  */
 #include "pe_load.h"
 
+#include <sys/mman.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -909,6 +910,75 @@ static void test_out_always_written(void)
     free(f.b);
 }
 
+/* The mapping a runtime hands to X19. The property under test is the one a naive
+ * loader gets wrong: sections go at their VIRTUAL address, not at their file
+ * offset, and this fixture is built so that the two differ. Copying to the file
+ * offset instead produces a mapping where every global is at the wrong address -
+ * and since the wrong address is still inside the mapping, reads return bytes
+ * rather than faulting. */
+static void test_map_image_lays_sections_at_their_rvas(void)
+{
+    fix s; buf f; pe_image im; void *base; size_t sz = 0; uint32_t i;
+
+    printf("mapping an image at its virtual addresses\n");
+    fix_default(&s);
+    f = build(&s);
+    if (!parsed(pe_load(f.b, f.len, &im), &im, "good image failed to parse")) {
+        free(f.b);
+        return;
+    }
+
+    base = pe_map_image(f.b, f.len, &im, &sz);
+    CHECK(base != NULL, "pe_map_image returned NULL for a valid image");
+    if (!base) { free(f.b); return; }
+
+    CHECK(sz == im.size_of_image, "mapping is %zu bytes, size_of_image says %u",
+          sz, im.size_of_image);
+    CHECK(((const uint8_t *)base)[0] == 'M' && ((const uint8_t *)base)[1] == 'Z',
+          "the headers were not copied to the start of the mapping");
+
+    for (i = 0; i < im.num_sections; i++) {
+        const pe_section *sc = &im.sections[i];
+        size_t cmp;
+        if (sc->raw_size == 0) continue;
+        cmp = sc->raw_size < 32u ? sc->raw_size : 32u;
+        CHECK(memcmp((const uint8_t *)base + sc->virtual_addr,
+                     f.b + sc->raw_ptr, cmp) == 0,
+              "section %s at RVA %08X does not hold its file contents from %08X",
+              sc->name, sc->virtual_addr, sc->raw_ptr);
+    }
+    /* The fixture is only exercising the interesting case if these differ. */
+    CHECK(im.sections[1].virtual_addr != im.sections[1].raw_ptr,
+          "the fixture no longer exercises RVA != file offset, so the checks above "
+          "would pass even for a loader that copies to the wrong place");
+
+    /* Refusals: a partial mapping is worse than none, because the missing part
+     * reads as zeros instead of failing. */
+    {
+        pe_image bad = im;
+        bad.size_of_image = 0;
+        CHECK(pe_map_image(f.b, f.len, &bad, &sz) == NULL,
+              "an image with size_of_image 0 was mapped instead of refused");
+    }
+    {
+        pe_image bad = im;
+        bad.sections[0].raw_size = (uint32_t)f.len + 4096u;
+        CHECK(pe_map_image(f.b, f.len, &bad, &sz) == NULL,
+              "a section claiming raw data past the end of the file was mapped "
+              "instead of refused");
+    }
+    {
+        pe_image bad = im;
+        bad.sections[0].virtual_addr = bad.size_of_image;
+        CHECK(pe_map_image(f.b, f.len, &bad, &sz) == NULL,
+              "a section placed past size_of_image was mapped instead of refused");
+    }
+    CHECK(pe_map_image(NULL, f.len, &im, &sz) == NULL, "a NULL image was mapped");
+
+    munmap(base, sz);
+    free(f.b);
+}
+
 int main(int argc, char **argv)
 {
     /* Writes the default fixture to a file so pe_info can be run over it. The
@@ -939,7 +1009,8 @@ int main(int argc, char **argv)
 
     printf("=== PE image parser ===\n");
     test_good_image();
-    test_rva_is_not_an_offset();
+
+
     test_imports();
     test_ordinal_only_dll();
     test_over_long_name();
@@ -951,6 +1022,9 @@ int main(int argc, char **argv)
     test_corruption();
     test_unterminated_name();
     test_out_always_written();
+    test_rva_is_not_an_offset();
+    test_map_image_lays_sections_at_their_rvas();
+
     printf("\n%d checks, %d failure(s)\n", checks, failures);
     return failures ? 1 : 0;
 }
