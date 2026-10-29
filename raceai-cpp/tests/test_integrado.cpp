@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "../src/app/app_state.hpp"
+#include "../src/core/policy.hpp"
 
 using namespace raceai;
 
@@ -371,6 +372,76 @@ int main(int argc, char** argv) {
         if (app.trainer && !app.trainer->shards.empty())
             CHECK(app.trainer->shards[0]->reward.crash == 2.5,
                   "a recompensa não chegou na simulação");
+    }
+    }
+
+    // ---------------- 9. topologias: rede grande funciona, absurdo é recusado
+    if (secao(9)) {
+    printf("9. outras topologias de rede\n");
+    {
+        const std::string grande = tmp_file("raceai_rede_grande.json");
+        const std::string absurda = tmp_file("raceai_rede_absurda.json");
+        const std::string estranha = tmp_file("raceai_rede_estranha.json");
+
+        // 24 -> 512 -> 512 -> 2 (10x maior que o padrão)
+        {
+            Json j = Json::object();
+            j.set("obs_dim", Json(24.0));
+            j.set("act_dim", Json(2.0));
+            Json h = Json::array();
+            h.push(Json(512.0));
+            h.push(Json(512.0));
+            j.set("hidden", h);
+            Json w = Json::array();
+            Rng rng(99);
+            for (size_t i = 0; i < 24 * 512 + 512 + 512 * 512 + 512 + 512 * 2 + 2; ++i)
+                w.push(Json(double(rng.range(-0.2, 0.2))));
+            j.set("weights", w);
+            CHECK(Json::save_file(grande, j), "não gravou a rede grande");
+            Model m;
+            CHECK(Model::load(grande, m, &err), "não carregou a rede grande: %s", err.c_str());
+            CHECK(m.weights.size() == 24 * 512 + 512 + 512 * 512 + 512 + 512 * 2 + 2,
+                  "tamanho errado: %zu", m.weights.size());
+            float obs[24], out[2] = {9, 9};
+            for (int i = 0; i < 24; ++i) obs[i] = 0.3f;
+            forward(m.spec, m.weights.data(), obs, out);
+            CHECK(std::isfinite(out[0]) && std::isfinite(out[1]),
+                  "a rede grande devolveu lixo: %.3f %.3f", out[0], out[1]);
+            CHECK(out[0] >= -1.0f && out[0] <= 1.0f && out[1] >= -1.0f && out[1] <= 1.0f,
+                  "ação fora de faixa: %.3f %.3f", out[0], out[1]);
+            printf("   rede 24->512->512->2 rodou (%.3f, %.3f)\n", out[0], out[1]);
+        }
+
+        // camada de 1 milhão de neurônios: recusada, com mensagem, sem travar
+        {
+            Json j = Json::object();
+            j.set("obs_dim", Json(24.0));
+            j.set("act_dim", Json(2.0));
+            Json h = Json::array();
+            h.push(Json(1000000.0));
+            j.set("hidden", h);
+            j.set("weights", Json::array());
+            CHECK(Json::save_file(absurda, j), "não gravou a rede absurda");
+            Model m;
+            CHECK(!Model::load(absurda, m, &err), "rede absurda foi aceita");
+            CHECK(!err.empty(), "deveria explicar por que recusou");
+            printf("   rede absurda recusada: %s\n", err.c_str());
+        }
+
+        // pesos não batendo com a topologia: recusada
+        {
+            Json j = Json::object();
+            j.set("obs_dim", Json(24.0));
+            j.set("act_dim", Json(2.0));
+            j.set("hidden", Json::array());
+            Json w = Json::array();
+            w.push(Json(0.5));
+            j.set("weights", w);
+            CHECK(Json::save_file(estranha, j), "não gravou a rede estranha");
+            Model m;
+            CHECK(!Model::load(estranha, m, &err), "peso sobrando foi aceito");
+            CHECK(!err.empty(), "deveria avisar que o número de pesos não bate");
+        }
     }
     }
 

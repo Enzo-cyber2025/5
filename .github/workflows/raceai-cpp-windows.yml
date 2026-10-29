@@ -164,6 +164,11 @@ jobs:
         shell: msys2 {0}
         run: cd raceai-cpp && ./build/raceai_integrado.exe --secao 8 python/python311.dll
 
+      - name: "Integração 9: outras topologias de rede"
+        if: always()
+        shell: msys2 {0}
+        run: cd raceai-cpp && ./build/raceai_integrado.exe --secao 9 python/python311.dll
+
       - name: "Treino rápido: a loss precisa cair"
         shell: msys2 {0}
         run: |

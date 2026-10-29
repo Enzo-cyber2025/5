@@ -68,8 +68,18 @@ std::vector<float> init_genome(const PolicySpec& spec, Rng& rng, double scale) {
 void forward(const PolicySpec& spec, const float* w, const float* obs, float* out) {
     std::vector<int> d = spec.dims();
     const int layers = int(d.size()) - 1;
-    // buffers: até 256 neurônios por camada (suficiente para estas MLPs)
-    float a[256], b[256];
+    // Buffers dinâmicos: a topologia vem do arquivo de modelo, então não dá
+    // para assumer tamanho fixo (estourar a pilha aqui seria feio).
+    // thread_local => cada thread do treino tem o seu, sem alocar a cada vez.
+    static thread_local std::vector<float> buf_a, buf_b;
+    size_t precisa = 0;
+    for (int v : d) precisa = std::max(precisa, size_t(v));
+    if (buf_a.size() < precisa) {
+        buf_a.resize(precisa);
+        buf_b.resize(precisa);
+    }
+    float* a = buf_a.data();
+    float* b = buf_b.data();
     int cur = d[0];
     for (int i = 0; i < cur; ++i) a[i] = obs[i];
     const float* p = w;
@@ -108,6 +118,34 @@ bool Model::load(const std::string& path, Model& out, std::string* err) {
     if (!Json::load_file(path, j, err)) return false;
     PolicySpec sp = PolicySpec::from_json(j);
     std::vector<float> w;
+    // limites defensivos: o arquivo pode vir de qualquer lugar
+    if (sp.hidden.size() > 32) {
+        if (err) *err = "modelo com camadas ocultas demais (máximo 32)";
+        return false;
+    }
+    for (int v : sp.dims()) {
+        if (v <= 0 || size_t(v) > kMaxNeuronios) {
+            if (err) {
+                char buf[160];
+                std::snprintf(buf, sizeof(buf),
+                              "camada com %d neurônios: o limite é %zu por camada",
+                              v, kMaxNeuronios);
+                *err = buf;
+            }
+            return false;
+        }
+    }
+    if (sp.n_params() > kMaxPesos) {
+        if (err) {
+            char buf[160];
+            std::snprintf(buf, sizeof(buf),
+                          "modelo com %zu pesos: o limite é %zu (%.0f MB)",
+                          sp.n_params(), kMaxPesos,
+                          double(kMaxPesos) * 4.0 / 1048576.0);
+            *err = buf;
+        }
+        return false;
+    }
     for (const Json& v : j.at("weights").items()) w.push_back(float(v.num()));
     if (w.size() != sp.n_params()) {
         if (err) {

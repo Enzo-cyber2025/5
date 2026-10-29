@@ -27,6 +27,7 @@ static void usage() {
         "  --laps N               voltas alvo (0 = contra o relógio)\n"
         "  --threads N            threads de simulação (padrão: automático)\n"
         "  --seed N               semente aleatória (padrão: 1)\n"
+        "  --hidden N            neurônios da 1a camada oculta (a 2a é a metade)\n"
         "  --out <arquivo>        salva o melhor modelo no fim\n"
         "  --load <arquivo>       continua o treino a partir de um modelo\n"
         "  --save-every N         salva o melhor a cada N gerações\n"
@@ -50,6 +51,7 @@ int main(int argc, char** argv) {
     std::string track_id = "kartodromo", car_id = "kart";
     std::string out_path, load_path;
     int generations = 50, individuals = 120, threads = 0, seed = 1, save_every = 0;
+    int hidden = 64;
     double seconds = 60.0;
     int laps = 0;
     bool eval_only = false, quiet = false, list_only = false;
@@ -69,7 +71,8 @@ int main(int argc, char** argv) {
         else if (a == "--seed") seed = int(num("--seed"));
         else if (a == "--out") out_path = arg(argc, argv, i, "--out");
         else if (a == "--load") load_path = arg(argc, argv, i, "--load");
-        else if (a == "--save-every") save_every = int(num("--save-every"));
+                else if (a == "--hidden") hidden = std::max(8, int(num("--hidden")));
+else if (a == "--save-every") save_every = int(num("--save-every"));
         else if (a == "--eval") eval_only = true;
         else if (a == "--quiet") quiet = true;
         else if (a == "--list") list_only = true;
@@ -120,6 +123,7 @@ int main(int argc, char** argv) {
     sim.max_seconds = seconds;
     sim.target_laps = laps;
     PolicySpec pol;
+    pol.hidden = {hidden, std::max(8, hidden / 2)};
     pol.obs_dim = sim.n_rays + 15;
     GAConfig ga;
     ga.population = std::max(2, individuals);

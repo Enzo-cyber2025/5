@@ -15,6 +15,11 @@
 
 namespace raceai {
 
+// limites de uma topologia vinda de arquivo (protegem memória e tempo de
+// inferência: nada impede redes maiores, elas é que não caberiam no jogo)
+constexpr size_t kMaxNeuronios = 8192;      // neurônios por camada
+constexpr size_t kMaxPesos     = 40000000;  // ~160 MB de floats
+
 struct PolicySpec {
     int obs_dim = 24;
     std::vector<int> hidden = {64, 64};

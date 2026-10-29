@@ -283,6 +283,36 @@ formato zip do torch (por isso precisa do torch inteiro — ~1 GB de DLLs —
 para ser lido). É esse 1 GB que você lembra, **e não o modelo**: a rede em si
 cabe em 23 KB se gravada em binário.
 
+### Dá para usar qualquer topologia?
+
+Sim — `obs_dim` tem que ser **24** (são os sensores) e `act_dim` **2**
+(esterço e acelerador); as camadas do meio você escolhe. Não precisa ser
+64-64: `24->512->256->2` funciona, `24->32->2` (uma camada só) também, e o
+arquivo aceita quantas camadas quiser.
+
+Dois limites, para o jogo não travar com arquivo de procedência duvidosa:
+**8.192 neurônios por camada** e **40 milhões de pesos** (~160 MB). Se passar,
+o modelo é recusado com uma mensagem em vez de estourar a memória.
+
+O limite real é o tempo de inferência. Medido em 1 núcleo:
+
+| rede | pesos | decisões/s | 1 carro a 30 Hz usa |
+| --- | --- | --- | --- |
+| 24→64→32→2 (padrão) | 3,7 mil | 307.000 | 0,01% |
+| 24→256→128→2 | 39 mil | 31.800 | 0,09% |
+| 24→512→256→2 | 144 mil | 9.278 | 0,32% |
+| 24→1024→512→2 | 551 mil | 2.451 | 1,22% |
+| 24→2048→1024→2 | 2,1 milhão | 641 | 4,68% |
+
+Na **corrida** (até 6 carros) dá para usar rede de milhões de parâmetros
+tranquilo. No **treino**, lembre que são 60 indivíduos decidindo ao mesmo
+tempo: multiplicando por 60, uma rede de 2,1 milhão de pesos já não caberia
+no Pentium N5030 em tempo real, enquanto a padrão (5.890) sobra.
+
+Um "quintilhão de parâmetros" (10¹⁸) seriam 4 exabytes de memória — não cabe
+em disco nenhum, quanto mais em RAM. O gargalo nunca foi o formato: é a
+quantidade de conta que o processador precisa fazer por decisão.
+
 ---
 
 ## Aproveitar um modelo da versão Python (.pt)
