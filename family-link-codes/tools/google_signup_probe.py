@@ -33,8 +33,9 @@ WALLS = [
                 r"unusual traffic|try again later|automated queries"),
     ("browser", r"couldn'?t sign you in|browser or app may not be secure|"
                 r"this browser or app may not be secure|cookies"),
-    ("blocked", r"couldn'?t create|não foi possível criar|can'?t be used to create|"
-                r"not available|too many accounts|disabled"),
+    ("blocked", r"could not create your google account|we could not create|"
+                r"couldn'?t create your google account|não foi possível criar sua conta|"
+                r"can'?t be used to create|too many accounts|has been disabled"),
     ("terms", r"privacy and terms|i agree|concordo"),
     ("done", r"welcome|you'?re all set|bem-vindo|add a profile picture|"
              r"personalize your google experience"),
@@ -201,6 +202,27 @@ def select_birthday(page, identity: dict) -> list:
     return done
 
 
+def type_username(page, identity: dict) -> bool:
+    """The username screen's field swallows a `fill()` in the Ask-as-you-type widget."""
+    lowered_heading = "sign in"
+    try:
+        for locator in (
+            lambda: page.get_by_label(re.compile("username|nome de usuário", re.I)).first,
+            lambda: page.locator('input[type="text"]:visible').first,
+            lambda: page.locator('input[name="Username"]:visible').first,
+        ):
+            element = locator()
+            if element.count() == 0:
+                continue
+            element.click(timeout=3000)
+            element.fill("", timeout=2000)
+            element.press_sequentially(identity["username"], delay=60, timeout=8000)
+            return True
+    except Exception:
+        return False
+    return False
+
+
 def handle_choices(page, text: str, identity: dict) -> list:
     """Screens with no text field: pick a suggested Gmail address, or make one.
 
@@ -209,6 +231,11 @@ def handle_choices(page, text: str, identity: dict) -> list:
     """
     actions = []
     lowered = text.lower()
+    if "sign in" in lowered and "username" in lowered:
+        # "How you'll sign in": type it, do not click a suggestion
+        if type_username(page, identity):
+            actions.append("gmail: typed the address")
+        return actions
     if "gmail address" in lowered or "endereço do gmail" in lowered:
         clicked = False
         for locator in (
@@ -304,6 +331,12 @@ def run(out_dir: pathlib.Path, headless: bool) -> int:
             # three identical rounds is enough to call it.
             stuck = stuck + 1 if text == previous else 0
             previous = text
+            if attempt > 2 and "enter your name" in text.lower() and any(
+                    "name" in (item["heading"] or "").lower() for item in steps[:-1]):
+                steps[-1]["verdict"] = "blocked"
+                steps[-1]["note"] = "the wizard restarted at the first screen: it rejected the attempt"
+                print("the wizard went back to the first screen: the attempt was refused")
+                break
             if stuck >= 2:
                 steps[-1]["verdict"] = "stuck-form"
                 print(f"step {attempt}: the same screen keeps asking "

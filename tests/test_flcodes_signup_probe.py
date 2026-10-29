@@ -139,3 +139,16 @@ def test_a_broken_probe_still_reports(tmp_path, monkeypatch):
     data = json.loads((out / "result.json").read_text())
     assert data["verdict"] == "probe-error"
     assert data["error"]
+
+
+def test_the_verbatim_refusal_is_recognised_as_the_wall():
+    """This is the exact string Google returned on run 40935535887."""
+    probe = load_probe()
+    assert probe.classify("Error\\nSorry, we could not create your Google Account.\\nNext") == "blocked"
+
+
+def test_the_refusal_beats_the_terms_line_on_the_same_page():
+    """The refusal page also carries 'Privacy / Terms'; the refusal must win."""
+    probe = load_probe()
+    page = "Error Sorry, we could not create your Google Account. Next Privacy Terms"
+    assert probe.classify(page) == "blocked"

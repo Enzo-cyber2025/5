@@ -16,7 +16,7 @@ MEANING = {
     "phone": "Google demanded a phone number — that is the wall the tool will not fake.",
     "captcha": "Google served an anti-bot check — solving it is out of scope, by design.",
     "browser": "Google refused the browser/session itself (not a credential problem).",
-    "blocked": "Google refused to create the account from this network.",
+    "blocked": "Google itself refused: 'Sorry, we could not create your Google Account.'",
     "terms": "The wizard stopped on the terms screen; the form never advanced.",
     "done": "An account was created.",
     "created": "An account was created.",
@@ -49,6 +49,11 @@ def main(argv: list[str]) -> int:
             lines.append(f"- probe error: `{data['error']}`")
         if data.get("email"):
             lines.append(f"- account: `{data['email']}` (password in the artifact, 0600)")
+        # the last screen's literal words are the evidence; keep them
+        for step in reversed(data.get("steps", [])):
+            if step.get("note"):
+                lines.append(f"- note: {step['note']}")
+                break
         lines.append("")
         lines.append("| step | what the page said | fields filled | advanced |")
         lines.append("|---|---|---|---|")
