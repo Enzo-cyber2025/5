@@ -3500,8 +3500,52 @@ jobs:
                 $vkIcdX64 = Get-ChildItem "C:\mesa3d\x64" -Filter "lvp_icd*.json" -ErrorAction SilentlyContinue | Select-Object -First 1
                 if ($vkIcdX64) { $env:VK_ICD_FILENAMES = $vkIcdX64.FullName }
                 Trace "hibrido: dlls no lugar; ICD=$env:VK_ICD_FILENAMES"
+                # v83: O QUE o d3d11-DXVK importa do dxgi.dll? Nosso dxgi exporta
+                # so CreateDXGIFactory{,1,2} (+forwarders p/ dxgi_real=dxgi-DXVK);
+                # se o d3d11-DXVK pedir MAIS algum export, o LoadLibrary dele
+                # falha ANTES de qualquer chamada (v82: game.log SEM lista [dxgi]
+                # + "Failed to create a Direct3D11 device at detection stage").
+                try {
+                  $imp = & dumpbin /imports "$bin64\d3d11.dll" 2>$null
+                  $nImp = 0
+                  foreach ($l in $imp) {
+                    if ($l -match 'DXGI') { Trace ("hib-dumpbin: " + $l.Trim()); $nImp++ }
+                  }
+                  Trace "hib-dumpbin: $nImp linhas DXGI nos imports do d3d11-DXVK"
+                } catch { Trace "hib-dumpbin: $($_.Exception.Message)" }
+                # v83: Documents LIMPOS — o boot SHIM-WARP anterior CRASHOU
+                # (fastfail do JIT) e o jogo marcou "did crash during last
+                # startup": o hibrido da v82 rodou em SAFE MODE. Boot VIRGEM:
+                # Documents antigo vira .boot1 e config.cfg windowed recriado.
+                try {
+                  if (Test-Path $docs) {
+                    Move-Item $docs "${docs}.boot1" -Force
+                    Trace "hibrido: Documents antigo em .boot1 — boot VIRGEM"
+                  }
+                  New-Item -ItemType Directory -Force $docs | Out-Null
+                  @('r_fullscreen "0"', 'uset r_fullscreen "0"') | Set-Content (Join-Path $docs "config.cfg") -Encoding ascii
+                  Trace "hibrido: config.cfg windowed recriado"
+                } catch { Trace "hibrido docs: $($_.Exception.Message)" }
                 $vivoH = Boot $exe $wdir "x64 dx11 HIBRIDO dxvk" @("-nointro") $null 120
                 Trace "hibrido: boot FIM vivo=$vivoH"
+                # v83: logs do hibrido com nome estavel — o Boot salva
+                # game-log-x64-dx11-HIBRIDO-dxvk.txt mas NAO copia o
+                # dxgishim.log (so d3d11shim/dxvk); game.log final vira
+                # game-log-HIBRIDO-final.txt. Linhas-chave vao pro trace.
+                try {
+                  $dxlH = Join-Path $wdir "dxgishim.log"
+                  if (Test-Path $dxlH) {
+                    @(Get-Content $dxlH -ErrorAction SilentlyContinue) | Select-Object -First 40 | ForEach-Object { Trace "dxgilog-hib: $_" }
+                    Copy-Item $dxlH "$PWD\dxgishim-hibrido.txt" -Force
+                    Trace "dxgishim-hibrido.txt salvo"
+                  } else { Trace "dxgilog-hib AUSENTE — d3d11-DXVK NAO carregou nosso dxgi.dll" }
+                  $glh = Join-Path $docs "game.log.txt"
+                  if (Test-Path $glh) {
+                    Copy-Item $glh "$PWD\game-log-HIBRIDO-final.txt" -Force
+                    Get-Content $glh -ErrorAction SilentlyContinue | Where-Object { $_ -match '\[dxgi\]|Direct3D|safe mode|crash|device' } | Select-Object -First 25 | ForEach-Object { Trace "hib-gamelog: $_" }
+                    Trace "game-log-HIBRIDO-final.txt salvo"
+                  } else { Trace "hib-gamelog AUSENTE — game.log nao nasceu no Documents novo" }
+                } catch { Trace "hib logs: $($_.Exception.Message)" }
                 if ($vivoH) { $vivo = $true }
               } else { Trace "hibrido: DXVK x64 ausente — pulando" }
             } catch { Trace "hibrido: FALHOU $($_.Exception.Message)" }
@@ -3794,7 +3838,7 @@ jobs:
           cp sobe-trace.log "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp dxvk-log-*.txt "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp "/c/Users/runneradmin/Documents/Euro Truck Simulator 2/game.log.txt" "ci-logs/${{ github.run_id }}-demo/documents-game.log.txt" 2>/dev/null || true
-          for f in d3d11shim-boot1.txt dxgishim-boot1.txt autoteste-real.json autoteste-real.log demo-mmf.json /c/steamcmd/fase1.log /c/steamcmd/fase2.log /c/dd/dd.log /c/dd/stage2.err mesa-load.log /c/dd/setup.err /c/dd/7z.log /c/dd/mesa-7z.log /c/ets2demo/game.log.txt /c/ets2demo/game-ets2ai-telemetry.log; do
+          for f in d3d11shim-boot1.txt dxgishim-boot1.txt dxgishim-hibrido.txt autoteste-real.json autoteste-real.log demo-mmf.json /c/steamcmd/fase1.log /c/steamcmd/fase2.log /c/dd/dd.log /c/dd/stage2.err mesa-load.log /c/dd/setup.err /c/dd/7z.log /c/dd/mesa-7z.log /c/ets2demo/game.log.txt /c/ets2demo/game-ets2ai-telemetry.log; do
             cp "$f" "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           done
           git config user.name "ci-diag"; git config user.email "ci-diag@users.noreply.github.com"
