@@ -177,8 +177,9 @@ app_launch:
 .slot:
         cmp r12d, MAX_APPS
         jae .noslot
-        lea rax, [app_slots]
         imul rax, r12, A_SIZEOF
+        lea rcx, [app_slots]
+        add rax, rcx
         cmp dword [rax + A_USED], 0
         je .slot_found
         inc r12
@@ -191,12 +192,12 @@ app_launch:
         mov rax, [img_ptr]
         mov [rbx + A_IMG], rax
         mov [rbx + A_SIZE], r13
-        mov edx, [rax + CE_ENTRY]
         mov dword [rbx + A_FMT], 1
         cmp dword [rax], 0x315A4E45         ; "ENZ1"?
         jne .not_enz
         call enz_build
 .not_enz:
+        mov edx, [rax + CE_ENTRY]           ; relê: enz_build clobbra edx
         add rax, rdx
         mov [rbx + A_ENTRY], rax
         ; nome do app (header +28)
@@ -328,14 +329,14 @@ app_launch:
 app_dispatch:
         push rbx
         push r12
+        mov rax, [cur_slot]
+        push rax                        ; salva abaixo do payload (sem shift!)
         sub rsp, 48
-        mov [rsp], rsi
-        mov [rsp+16], rdx
-        mov [rsp+24], rcx
+        mov [rsp], rsi                  ; tipo em +0
+        mov [rsp+16], rdx               ; a em +16
+        mov [rsp+24], rcx               ; b em +24
         mov [rsp+32], r8
         mov [rsp+40], r9
-        mov rax, [cur_slot]
-        push rax
         mov [cur_slot], edi
         imul rbx, rdi, A_SIZEOF
         lea rax, [app_slots]
@@ -349,10 +350,9 @@ app_dispatch:
         lea rdi, [api_table]
 .have_tbl:
         ; diag: eventos init/tecla despachados (tipo, param, slot)
-        ; (atencao: ha um push rax extra do cur_slot antigo => payload em rsp+8)
-        cmp qword [rsp+8], 1
+        cmp qword [rsp], 1
         je .dlog
-        cmp qword [rsp+8], 4
+        cmp qword [rsp], 4
         jne .dgo
 .dlog:
         push rdi
@@ -361,9 +361,9 @@ app_dispatch:
         push rax
         mov rdi, s_disp_diag
         call k_log
-        mov rdi, [rsp+40]          ; tipo (8 do push rax + 32 dos pushes)
+        mov rdi, [rsp+32]          ; tipo (payload em rsp+0 + 32 dos pushes)
         call k_log_hex
-        mov rdi, [rsp+56]          ; param a
+        mov rdi, [rsp+48]          ; param a
         call k_log_hex
         mov edi, [cur_slot]
         call k_log_hex
@@ -375,9 +375,9 @@ app_dispatch:
         mov rsi, rsp
         call r12
 .skip:
+        add rsp, 48
         pop rax
         mov [cur_slot], rax
-        add rsp, 48
         pop r12
         pop rbx
         ret
@@ -446,6 +446,7 @@ api_rect:                         ; edi=x, esi=y, edx=w, ecx=h, r8d=cor
         call api_use_win
         test rax, rax
         jz .done
+        push r14                      ; r14 é do chamador (app guarda APITBL etc.)
         add edi, 1
         add esi, TITLE_H
         ; clipe no conteúdo da janela
@@ -463,6 +464,7 @@ api_rect:                         ; edi=x, esi=y, edx=w, ecx=h, r8d=cor
 .h_ok:
         mov r14d, r8d
         call surf_fill
+        pop r14
 .done:
         ret
 
@@ -519,10 +521,12 @@ api_text:                         ; edi=x, esi=y, rdx=str, ecx=len, r8d=cor
         pop rsi
         pop rdi
 .hlen:
+        push r13                      ; r13 é do chamador
         add edi, 1
         add esi, TITLE_H
         mov r13d, r8d
         call surf_text
+        pop r13
 .done:
         ret
 
@@ -530,11 +534,15 @@ api_blit:                         ; edi=x, esi=y, edx=w, ecx=h, r8=src, r9d=stri
         call api_use_win
         test rax, rax
         jz .done
+        push r12                      ; r12/r14 sao do chamador (surf_blit os usa como args)
+        push r14
         add edi, 1
         add esi, TITLE_H
         mov r12, r8
         mov r14d, r9d
         call surf_blit
+        pop r14
+        pop r12
 .done:
         ret
 

@@ -89,6 +89,10 @@ enz_build:
         inc r12d
         jmp .imp
 .done:
+        ; rax = base da imagem (o app_launch soma o entry RVA em cima disso;
+        ; sem isto o rax residual era o endereco do ultimo import resolvido
+        ; e o A_ENTRY virava lixo -> app executava NOP slides -> panic 0x90)
+        mov rax, [img_ptr]
         pop r15
         pop r14
         pop r13

@@ -77,6 +77,7 @@ k_e1000_init:
         mov dword [rbx + 0x2808], E1000_NDESC * 16   ; RDLEN
         mov dword [rbx + 0x2810], 0        ; RDH (leitura)
         mov dword [rbx + 0x2818], E1000_NDESC - 1    ; RDT
+        mov dword [rbx + 0x2170], 0x820    ; PSRCTL: BSIZE0=1024, BSIZE1=16K (e1000e exige != 0)
         mov dword [rbx + 0x0100], 0x8002   ; RCTL: EN | BAM
         ; ---- TX ----
         lea rdi, [e1000_txdesc]
