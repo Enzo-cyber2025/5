@@ -13,6 +13,7 @@
 using namespace raceai;
 
 int main(int argc, char** argv) {
+    setvbuf(stdout, nullptr, _IONBF, 0);        // nada de buffer: queremos ver até onde chegou
     printf("RaceAI 2D — teste da IA em Python\n");
     const char* caminho = argc > 1 ? argv[1] : "";
     PyDriver py;

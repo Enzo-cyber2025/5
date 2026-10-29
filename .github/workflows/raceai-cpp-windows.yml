@@ -70,8 +70,12 @@ jobs:
         shell: msys2 {0}
         run: |
           cd raceai-cpp
-          ./build/raceai_pytest.exe python/python311.dll | tee python.log
-          exit ${PIPESTATUS[0]}
+          ls python/
+          ./build/raceai_pytest.exe python/python311.dll > python.log 2>&1
+          code=$?
+          body=$(sed -e 's/\r$//' -e 's/%/%25/g' python.log | awk '{printf "%s%0A", $0}')
+          echo "::error::codigo=${code} saida=${body}"
+          exit $code
 
       - name: "Treino rápido: a loss precisa cair"
         shell: msys2 {0}

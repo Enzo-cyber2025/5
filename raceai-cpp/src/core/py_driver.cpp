@@ -3,6 +3,8 @@
 #include <cstdio>
 #include <cstring>
 
+#include <cstdlib>
+
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -178,6 +180,20 @@ bool PyDriver::load_runtime(const std::string& dll, std::string* err) {
         lib_close(lib_);
         lib_ = nullptr;
         return false;
+    }
+    // O pacote "embutido" do CPython precisa saber onde está a biblioteca
+    // padrão: apontamos PYTHONHOME para a pasta do próprio interpretador.
+    if (!dll.empty()) {
+        std::string dir = dll;
+        size_t barra = dir.find_last_of("/\\");
+        if (barra != std::string::npos) dir = dir.substr(0, barra);
+        if (!dir.empty()) {
+#ifdef _WIN32
+            SetEnvironmentVariableA("PYTHONHOME", dir.c_str());
+#else
+            ::setenv("PYTHONHOME", dir.c_str(), 1);
+#endif
+        }
     }
     if (!a.is_init || !a.is_init()) a.init(0);
     initialized_ = true;
