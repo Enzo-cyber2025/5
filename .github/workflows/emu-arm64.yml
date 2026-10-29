@@ -683,7 +683,13 @@ jobs:
 
       - name: Assert the execution half actually happened
         run: |
-          set -euo pipefail
+          # No `set -e` here, and no `head -1` in a pipeline. Both were in the first
+          # version of this step and together they failed it: with pipefail, `head`
+          # exiting once it has its line sends SIGPIPE upstream, the pipeline's
+          # status becomes 141, and errexit turns a perfectly good measurement into
+          # a failed job. `sed -n 1p` reads the whole stream and cannot do that.
+          # Every check below states its own failure instead.
+          set -uo pipefail
           die() { echo "::error title=game-assert::$1"; exit 1; }
           grep -q -- "--- executing what was translated ---" /tmp/game.log \
             || die "the --execute pass never ran, so nothing was executed"
@@ -692,15 +698,19 @@ jobs:
           # The honest assertion: if the sweep translated anything, then something
           # had to run. A non-zero coverage figure with zero executions means the
           # execute path is broken, not that the code was unrunnable.
-          translated=$(grep -oE 'functions pre-translated: [0-9]+' /tmp/game.log | grep -oE '[0-9]+' | head -1)
-          ran=$(grep -oE 'records executed: [0-9]+' /tmp/game.log | grep -oE '[0-9]+' | head -1)
-          echo "translated=${translated:-?} executed=${ran:-?}"
+          translated=$(grep -oE 'functions pre-translated: [0-9]+' /tmp/game.log | grep -oE '[0-9]+' | sed -n '1p')
+          ran=$(grep -oE 'records executed: [0-9]+' /tmp/game.log | grep -oE '[0-9]+' | sed -n '1p')
+          ret=$(grep -oE 'returned: [0-9]+' /tmp/game.log | grep -oE '[0-9]+' | sed -n '1p')
+          echo "translated=${translated:-?} executed=${ran:-?} returned=${ret:-?}"
           if [ "${translated:-0}" -gt 0 ] && [ "${ran:-0}" -eq 0 ]; then
             die "${translated} function(s) translated but none were executed"
           fi
-          grep -q "EXECUTED" /tmp/game.log || die "no execution marker at all"
+          grep -q "EXECUTED ON aarch64:" /tmp/game.log \
+            || die "the aarch64 execution marker is missing from the log"
           echo "execution marker:"
-          grep -E "EXECUTED" /tmp/game.log
+          grep -E "EXECUTED ON aarch64:" /tmp/game.log
+          echo "tally:"
+          grep -E "records executed:|modules mapped:" /tmp/game.log
 
       - name: Report the measurement
         if: always()
