@@ -108,9 +108,34 @@ jobs:
           cat python.log
           exit 0
 
-      - name: "Integração: colar código, importar .py e a IA dirigir"
+      - name: "Integração 1: pistas, carros e mods"
+        if: always()
         shell: msys2 {0}
-        run: cd raceai-cpp && ./build/raceai_integrado.exe python/python311.dll
+        run: cd raceai-cpp && ./build/raceai_integrado.exe --secao 1 python/python311.dll
+      - name: "Integração 2: colar o código Python"
+        if: always()
+        shell: msys2 {0}
+        run: cd raceai-cpp && ./build/raceai_integrado.exe --secao 2 python/python311.dll
+      - name: "Integração 3: salvar e importar .py"
+        if: always()
+        shell: msys2 {0}
+        run: cd raceai-cpp && ./build/raceai_integrado.exe --secao 3 python/python311.dll
+      - name: "Integração 4: a IA colada dirige"
+        if: always()
+        shell: msys2 {0}
+        run: cd raceai-cpp && ./build/raceai_integrado.exe --secao 4 python/python311.dll
+      - name: "Integração 5: corrida com a IA no grid"
+        if: always()
+        shell: msys2 {0}
+        run: cd raceai-cpp && ./build/raceai_integrado.exe --secao 5 python/python311.dll
+      - name: "Integração 6: treino com a IA no carro de foco"
+        if: always()
+        shell: msys2 {0}
+        run: cd raceai-cpp && ./build/raceai_integrado.exe --secao 6 python/python311.dll
+      - name: "Integração 7: modelo e sliders de recompensa"
+        if: always()
+        shell: msys2 {0}
+        run: cd raceai-cpp && ./build/raceai_integrado.exe --secao 7 python/python311.dll
 
       - name: "Treino rápido: a loss precisa cair"
         shell: msys2 {0}

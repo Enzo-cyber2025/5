@@ -28,6 +28,14 @@
 using namespace raceai;
 
 static int ok = 0, falhas = 0;
+static int g_secao = 0;            // seção em execução
+static int g_foco = 0;             // 0 = roda tudo; N = roda só a seção N
+
+// O CI roda uma seção por vez: assim o passo que falhar já diz onde foi.
+static bool secao(int n) {
+    g_secao = n;
+    return g_foco == 0 || g_foco == n;
+}
 
 static std::string tmp_file(const char* nome) {
 #ifdef _WIN32
@@ -114,9 +122,15 @@ int main(int argc, char** argv) {
     printf("RaceAI 2D (C++) — teste de integração ponta a ponta\n\n");
 
     std::string runtime;
-    if (argc > 1) runtime = argv[1];
+    for (int i = 1; i < argc; ++i) {
+        std::string a = argv[i];
+        if (a == "--secao" && i + 1 < argc) g_foco = std::atoi(argv[++i]);
+        else if (a.rfind("--secao=", 0) == 0) g_foco = std::atoi(a.c_str() + 8);
+        else if (!a.empty() && a[0] != '-') runtime = a;   // caminho do interpretador
+    }
+    if (g_foco) printf("rodando só a seção %d\n\n", g_foco);
+
     const char* stub = std::getenv("RACEAI_STUB_PYTHON");
-    if (!stub) stub = std::getenv("RACEAI_STUB_PYTHON");
     const bool tem_python = !runtime.empty() || (stub && *stub);
     if (runtime.empty() && stub && *stub) runtime = stub;
 
@@ -124,7 +138,7 @@ int main(int argc, char** argv) {
     if (tem_python) app.python_runtime_path = runtime;
     std::string err;
 
-    // ---------------------------------------------------------- 1. assets
+    if (secao(1)) {
     printf("1. pistas, carros e mods\n");
     CHECK(!app.pistas.empty(), "nenhuma pista");
     CHECK(!app.carros.empty(), "nenhum carro");
@@ -137,7 +151,10 @@ int main(int argc, char** argv) {
     CHECK(app.carregar_pista(idx_oval), "não carregou a pista oval");
     CHECK(app.carregar_carro(0), "não voltou ao carro 0");
 
+    }
+
     // ------------------------------------------------- 2. colar o código
+    if (secao(2)) {
     printf("2. colar um código Python\n");
     if (tem_python) {
 #ifdef RACEAI_WITH_PYTHON
@@ -161,7 +178,10 @@ int main(int argc, char** argv) {
         printf("   (pulando: nenhum interpretador informado)\n");
     }
 
+    }
+
     // ------------------------------------------------ 3. salvar e importar .py
+    if (secao(3)) {
     printf("3. salvar e importar arquivo .py\n");
     if (tem_python) {
 #ifdef RACEAI_WITH_PYTHON
@@ -210,8 +230,12 @@ int main(int argc, char** argv) {
         printf("   (pulando: nenhum interpretador informado)\n");
     }
 
+    }
+
     // --------------------------------- 4. a IA colada dirige na simulação
+    if (secao(4)) {
     printf("4. a IA colada dirige de verdade\n");
+    if (tem_python) app.aplicar_codigo_python(kPilotoSimples);
     if (tem_python && app.py_driver) {
 #ifdef RACEAI_WITH_PYTHON
         if (stub && *stub) stub_responder(stub, 0.0, 0.9);
@@ -252,10 +276,13 @@ int main(int argc, char** argv) {
         printf("   (pulando: nenhum interpretador informado)\n");
     }
 
+    }
+
     // ------------------------------------------- 5. corrida com a IA no grid
+    if (secao(5)) {
     printf("5. corrida com a IA em Python no grid\n");
     {
-        if (tem_python && app.py_driver) {
+        if (tem_python) {
 #ifdef RACEAI_WITH_PYTHON
             if (stub && *stub) stub_responder(stub, 0.0, 0.9);
             app.aplicar_codigo_python(kPilotoSimples);
@@ -290,7 +317,10 @@ int main(int argc, char** argv) {
         CHECK(classificacao.find("m") != std::string::npos, "HUD sem distância");
     }
 
+    }
+
     // ------------------------------------------ 6. treino comandado pela IA
+    if (secao(6)) {
     printf("6. treino com a IA em Python no carro de foco\n");
     {
         app.train_cfg.individuals = 12;
@@ -316,9 +346,13 @@ int main(int argc, char** argv) {
         }
     }
 
+    }
+
     // ---------------------------------------------- 7. modelo e recompensa
+    if (secao(7)) {
     printf("7. salvar/carregar modelo e sliders de recompensa\n");
     {
+        if (!app.trainer) app.iniciar_treino(true);
         const std::string arq = tmp_file("raceai_integrado_modelo.json");
         CHECK(app.salvar_modelo(arq, &err), "não salvou o modelo: %s", err.c_str());
         CHECK(!ler(arq).empty(), "arquivo do modelo vazio");
@@ -332,6 +366,7 @@ int main(int argc, char** argv) {
         if (app.trainer && !app.trainer->shards.empty())
             CHECK(app.trainer->shards[0]->reward.crash == 2.5,
                   "a recompensa não chegou na simulação");
+    }
     }
 
     // o GIL (real ou falso) precisa estar equilibrado no fim: sem vazamento
