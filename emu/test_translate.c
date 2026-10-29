@@ -1914,18 +1914,8 @@ static void test_width32_translation(void)
               "mov r8d,5 -> 0x%08X, expected MOVZ W6,#5 0x%08X",
               f.n ? f.words[0] : 0u, a64_movz_w(6, 5));
     }
-    {
-        /* REX.W turns B8+r into mov r64, imm64: ten bytes and a 64-bit immediate.
-         * Materialising only the low 32 bits would be a plausible wrong constant,
-         * so it is refused. */
-        static const uint8_t g[] = { 0x48,0xB8,0x05,0,0,0,0,0,0,0, 0xC3 };
-        st = tr_translate_function(g, sizeof(g), IMAGE_BASE, NULL, NULL, &f);
-        CHECK(st == TR_UNSUPPORTED, "mov rax,imm64 returned %s", tr_status_name(st));
-        CHECK(f.reason == TRR_UNSUPPORTED_OP, "reported as %s", tr_reason_name(f.reason));
-        CHECK(f.detail && strstr(f.detail, "imm64") != NULL,
-              "detail '%s' does not say which encoding was refused",
-              f.detail ? f.detail : "?");
-    }
+    /* mov r64, imm64 moved from refused to translated, and is tested in
+     * test_lea_and_imm64_translation below. */
     {
         /* The arithmetic and flag-setting forms, 32-bit. */
         static const uint8_t a[] = { 0x89,0xC8, 0xC3 };            /* mov eax,ecx */
@@ -2210,6 +2200,144 @@ static void test_fail_opcode_is_map_aware(void)
     CHECK(tr_fail_opcode(NULL) == 0, "a NULL record did not report 0");
 }
 
+/* ---------------------------------------------------------------------------
+ * lea, and the 64-bit immediate that used to be refused.
+ *
+ * Both are exact rather than approximated, which is why they were worth doing
+ * before anything that needs a general guest memory model: lea reads no memory at
+ * all, it only forms an address, and MOVZ+MOVK materialises any 64-bit constant.
+ * ------------------------------------------------------------------------ */
+static void test_lea_and_imm64_translation(void)
+{
+    tr_func   f;
+    tr_status st;
+
+    printf("translating lea and the 64-bit immediate\n");
+
+    /* mov rax, imm64. The refusal this replaces said a 64-bit immediate was
+     * outside the subset; the decoder carries all eight bytes, so the refusal was
+     * turning away an exact translation. */
+    {   static const uint8_t g[] = { 0x48,0xB8,0x05,0,0,0,0,0,0,0, 0xC3 };
+        st = tr_translate_function(g, sizeof(g), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_OK, "mov rax,imm64 returned %s (%s)", tr_status_name(st),
+              f.detail ? f.detail : "?");
+        if (st == TR_OK)
+            CHECK(f.n == 2 && f.words[0] == a64_movz_x(0u, 5u),
+                  "mov rax,5(imm64) -> %zu words starting 0x%08X, expected one "
+                  "MOVZ X0,#5 0x%08X", f.n, f.n ? f.words[0] : 0u, a64_movz_x(0u,5u));
+    }
+    /* The discriminating value: all eight bytes non-zero, so a translation that
+     * materialised only the low 32 bits would differ in three of the four words. */
+    {   static const uint8_t g[] = { 0x48,0xB8,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08, 0xC3 };
+        st = tr_translate_function(g, sizeof(g), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_OK, "mov rax,0x0807060504030201 returned %s", tr_status_name(st));
+        if (st == TR_OK) {
+            CHECK(f.n == 5, "all eight immediate bytes took %zu words, expected 5", f.n);
+            if (f.n >= 4) {
+                CHECK(f.words[0] == a64_movz_x(0u, 0x0201u), "word 0 is 0x%08X, expected MOVZ X0,#0x0201 0x%08X", f.words[0], a64_movz_x(0u,0x0201u));
+                CHECK(f.words[1] == a64_movk_x(0u, 0x0403u, 16), "word 1 is 0x%08X, expected MOVK X0,#0x0403,16 0x%08X", f.words[1], a64_movk_x(0u,0x0403u,16));
+                CHECK(f.words[2] == a64_movk_x(0u, 0x0605u, 32), "word 2 is 0x%08X, expected MOVK X0,#0x0605,32 0x%08X", f.words[2], a64_movk_x(0u,0x0605u,32));
+                CHECK(f.words[3] == a64_movk_x(0u, 0x0807u, 48), "word 3 is 0x%08X, expected MOVK X0,#0x0807,48 0x%08X - the top half is where truncation would show", f.words[3], a64_movk_x(0u,0x0807u,48));
+            }
+        }
+    }
+    /* REX.B reaches the extended registers. */
+    {   static const uint8_t g[] = { 0x49,0xBA,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08, 0xC3 };
+        st = tr_translate_function(g, sizeof(g), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_OK, "mov r10,imm64 returned %s", tr_status_name(st));
+        if (st == TR_OK && f.n >= 1)
+            CHECK(f.words[0] == a64_movz_x(8u, 0x0201u),
+                  "mov r10,imm64 -> 0x%08X, expected MOVZ X8 (guest R10) 0x%08X",
+                  f.words[0], a64_movz_x(8u, 0x0201u));
+    }
+
+    /* lea rax,[rip+disp] forms the guest VA, which the encoding fixes, so it is a
+     * constant. Baking a guest VA in is not the mistake that baking a host address
+     * would be: the guest image is never relocated here, so its VAs are the ones in
+     * its PE header, and the cache keys on a hash of the guest bytes. */
+    {   static const uint8_t g[] = { 0x48,0x8D,0x05,0x10,0x00,0x00,0x00, 0xC3 };
+        uint64_t want = IMAGE_BASE + 7u + 0x10u;
+        st = tr_translate_function(g, sizeof(g), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_OK, "lea rax,[rip+0x10] returned %s (%s)", tr_status_name(st),
+              f.detail ? f.detail : "?");
+        if (st == TR_OK) {
+            CHECK(f.needs_gstack == 0 && f.needs_imgbase == 0,
+                  "lea touched no memory but asked for an arena or an image base");
+            CHECK(f.n == 4, "lea rax,[rip+0x10] took %zu words, expected 4", f.n);
+            if (f.n >= 1)
+                CHECK(f.words[0] == a64_movz_x(0u, (uint16_t)(want & 0xFFFFu)),
+                      "lea rax,[rip] starts 0x%08X, expected MOVZ X0,#0x%04llX 0x%08X",
+                      f.words[0], (unsigned long long)(want & 0xFFFFu),
+                      a64_movz_x(0u, (uint16_t)(want & 0xFFFFu)));
+        }
+    }
+    /* A 32-bit lea truncates the address and zero-extends, which the W form of MOVZ
+     * does by itself. */
+    {   static const uint8_t g[] = { 0x8D,0x05,0x10,0x00,0x00,0x00, 0xC3 };
+        st = tr_translate_function(g, sizeof(g), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_OK, "lea eax,[rip+0x10] returned %s", tr_status_name(st));
+        if (st == TR_OK && f.n >= 1)
+            CHECK((f.words[0] >> 31) == 0u,
+                  "lea eax,[rip] emitted 0x%08X, which is the 64-bit form - the "
+                  "upper half would not be zeroed", f.words[0]);
+    }
+    /* lea from the frame and stack pointers is an add or subtract against X15/X14,
+     * and it needs the guest stack arena because the base has to be live. */
+    {   static const uint8_t g[] = { 0x48,0x8D,0x45,0xF0, 0xC3 };
+        st = tr_translate_function(g, sizeof(g), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_OK, "lea rax,[rbp-0x10] returned %s", tr_status_name(st));
+        if (st == TR_OK) {
+            CHECK(f.needs_gstack == 1, "lea from rbp did not ask for the guest stack arena");
+            CHECK(f.words[1] == a64_sub_x_imm(0u, 15u, 16u),
+                  "lea rax,[rbp-0x10] -> 0x%08X, expected SUB X0,X15,#16 0x%08X",
+                  f.n > 1 ? f.words[1] : 0u, a64_sub_x_imm(0u,15u,16u));
+        }
+    }
+    {   static const uint8_t g[] = { 0x48,0x8D,0x4C,0x24,0x08, 0xC3 };
+        st = tr_translate_function(g, sizeof(g), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_OK, "lea rcx,[rsp+8] returned %s", tr_status_name(st));
+        if (st == TR_OK && f.n > 1)
+            CHECK(f.words[1] == a64_add_x_imm(1u, 14u, 8u),
+                  "lea rcx,[rsp+8] -> 0x%08X, expected ADD X1,X14,#8 0x%08X",
+                  f.words[1], a64_add_x_imm(1u,14u,8u));
+    }
+    /* Beyond the 12-bit immediate field: the magnitude goes into X16 and the
+     * register form does the arithmetic, which is exact rather than refused. */
+    {   static const uint8_t g[] = { 0x48,0x8D,0x85,0x00,0xF0,0xFF,0xFF, 0xC3 };
+        st = tr_translate_function(g, sizeof(g), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_OK, "lea rax,[rbp-0x1000] returned %s", tr_status_name(st));
+        if (st == TR_OK && f.n > 2) {
+            CHECK(f.words[1] == a64_movz_x(16u, 0x1000u),
+                  "lea rax,[rbp-0x1000] materialises 0x%08X, expected MOVZ X16,#0x1000 0x%08X",
+                  f.words[1], a64_movz_x(16u,0x1000u));
+            CHECK(f.words[2] == a64_sub_reg(0u, 15u, 16u),
+                  "lea rax,[rbp-0x1000] subtracts with 0x%08X, expected SUB X0,X15,X16 0x%08X",
+                  f.words[2], a64_sub_reg(0u,15u,16u));
+        }
+    }
+    /* Refusals, each with its own reason. An indexed absolute form is NOT the same
+     * gap as a plain absolute one: the first needs a general guest register too, so
+     * implementing absolute addressing alone would unblock nothing. */
+    {   static const uint8_t g[] = { 0x48,0x8D,0x04,0x25,0x00,0x10,0x00,0x00, 0xC3 };
+        st = tr_translate_function(g, sizeof(g), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_UNSUPPORTED && f.reason == TRR_ABS_ADDR,
+              "lea rax,[abs] was reported as %s, expected absolute-addressing",
+              tr_reason_name(f.reason));
+    }
+    {   static const uint8_t g[] = { 0x48,0x8D,0x04,0x45,0x00,0x00,0x00,0x00, 0xC3 };
+        st = tr_translate_function(g, sizeof(g), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_UNSUPPORTED && f.reason == TRR_GUEST_MEM,
+              "lea rax,[rax*2+disp] was reported as %s, expected "
+              "memory-not-on-guest-stack - a scaled index needs a general register, "
+              "not just an absolute address", tr_reason_name(f.reason));
+    }
+    {   static const uint8_t g[] = { 0x48,0x8D,0x01, 0xC3 };
+        st = tr_translate_function(g, sizeof(g), IMAGE_BASE, NULL, NULL, &f);
+        CHECK(st == TR_UNSUPPORTED && f.reason == TRR_GUEST_MEM,
+              "lea rax,[rcx] was reported as %s", tr_reason_name(f.reason));
+    }
+}
+
 static void test_image_relative_translation(void)
 {
     static const uint64_t img_va   = 0x140000000ULL;
@@ -2385,6 +2513,89 @@ static void test_image_relative_translation(void)
                   "0x%08X", f.words[1], a64_stur_w(0u,15u,-8));
     }
 }
+
+#if defined(__aarch64__)
+static void test_lea_and_imm64_executes(void)
+{
+    gs_arena a;
+    uint64_t r = 0;
+    int      sig = 0;
+
+    printf("executing lea and the 64-bit immediate on real ARM64\n");
+    if (!gs_alloc(4096, &a)) {
+        CHECK(0, "could not allocate a guest stack arena: %s", gs_last_error());
+        return;
+    }
+
+    /* All eight immediate bytes, and the top half is where truncation would show:
+     * a translation that materialised only the low 32 bits returns 0x04030201 and
+     * still looks like a plausible constant. */
+    {   static const uint8_t g[] = { 0x48,0xB8,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08, 0xC3 };
+        if (run_guest("mov rax,imm64", g, sizeof(g), &a, 0u, &r, &sig))
+            CHECK(r == 0x0807060504030201ULL,
+                  "mov rax,0x0807060504030201 returned %#llx - the upper half did "
+                  "not survive", (unsigned long long)r);
+        else
+            CHECK(0, "mov rax,imm64 did not run");
+    }
+
+    /* lea from the frame pointer, inside a real prologue and epilogue. push rbp
+     * puts the guest stack at top-8, mov rbp,rsp copies that into rbp, so
+     * lea rax,[rbp-8] has to be top-16 - and pop rbp must leave the stack balanced
+     * at top again, which the arena's own accounting checks. */
+    {   static const uint8_t g[] = { 0x55, 0x48,0x89,0xE5, 0x48,0x8D,0x45,0xF8,
+                                     0x5D, 0xC3 };
+        if (run_guest("lea rax,[rbp-8]", g, sizeof(g), &a, 0u, &r, &sig)) {
+            CHECK(r == (uint64_t)a.top - 16u,
+                  "lea rax,[rbp-8] returned %#llx, expected the arena top less 16 "
+                  "(%#llx)", (unsigned long long)r,
+                  (unsigned long long)((uint64_t)a.top - 16u));
+            /* No claim about the stack being balanced here: gs_used needs the
+             * guest RSP and run_guest does not return one. Push/pop balance is
+             * asserted where a guest RSP is available, in the guest stack test. */
+        } else {
+            CHECK(0, "lea rax,[rbp-8] did not run");
+        }
+    }
+
+    /* lea from rip has to produce the GUEST address the encoding names, not a host
+     * one: the value is what guest code will later pass around as a pointer. */
+    {   static const uint8_t g[] = { 0x48,0x8D,0x05,0x10,0x00,0x00,0x00, 0xC3 };
+        uint64_t want = IMAGE_BASE + 7u + 0x10u;
+        if (run_guest("lea rax,[rip+0x10]", g, sizeof(g), &a, 0u, &r, &sig))
+            CHECK(r == want, "lea rax,[rip+0x10] returned %#llx, expected the guest "
+                             "VA %#llx", (unsigned long long)r, (unsigned long long)want);
+        else
+            CHECK(0, "lea rax,[rip+0x10] did not run");
+    }
+
+    /* A displacement too large for the 12-bit immediate field takes the register
+     * form, and has to land on the same address the immediate form would. */
+    {   static const uint8_t g[] = { 0x55, 0x48,0x89,0xE5,
+                                     0x48,0x8D,0x85,0x00,0xF0,0xFF,0xFF,
+                                     0x5D, 0xC3 };
+        if (run_guest("lea rax,[rbp-0x1000]", g, sizeof(g), &a, 0u, &r, &sig))
+            CHECK(r == (uint64_t)a.top - 8u - 0x1000u,
+                  "lea rax,[rbp-0x1000] returned %#llx, expected %#llx",
+                  (unsigned long long)r,
+                  (unsigned long long)((uint64_t)a.top - 8u - 0x1000u));
+        else
+            CHECK(0, "lea rax,[rbp-0x1000] did not run");
+    }
+
+    gs_free(&a);
+    printf("  EXECUTED ON aarch64: lea and the 64-bit immediate - all eight "
+           "immediate bytes, an address formed from the frame pointer, and a guest "
+           "VA taken from a rip-relative operand\n");
+}
+#else
+static void test_lea_and_imm64_executes(void)
+{
+    printf("executing lea and the 64-bit immediate on real ARM64\n");
+    printf("  SKIP: host is not aarch64 - encodings and refusals were checked, "
+           "nothing generated was run\n");
+}
+#endif
 
 #if defined(__aarch64__)
 /* ---------------------------------------------------------------------------
@@ -2577,8 +2788,10 @@ int main(void)
     test_width32_executes();
     test_near_jcc_translation();
     test_fail_opcode_is_map_aware();
+    test_lea_and_imm64_translation();
     test_image_relative_translation();
     test_image_relative_executes();
+    test_lea_and_imm64_executes();
     test_pipeline();
 #if defined(__aarch64__)
     printf("VERDICT arch=aarch64 exe_words=%zu const_ok=%d first=%s/%llu(to=%d,sig=%d) "

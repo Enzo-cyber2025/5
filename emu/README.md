@@ -916,12 +916,72 @@ todas as ocorrências, sai 1 e diz por quê.
 
 Suite do projeto: **926**.
 
+### Duas traduções exatas que estavam sendo recusadas (`lea`, `mov r64,imm64`)
+
+O histograma de recusas do jogo apontou `8D`×266 e `B8`×142. Os dois foram
+implementados, e os dois eram **recusas erradas** — não aproximadas, não inseguras:
+erradas.
+
+**`mov r64, imm64` (REX.W + `B8+r`).** A recusa dizia que um imediato de 64 bits
+estava fora do subconjunto. Mas o decodificador já entregava os oito bytes: `imm` é
+`uint64_t` e `imm_len` reporta 8, e `emit_const_f` materializa qualquer valor de 64
+bits exatamente (MOVZ + até três MOVK). Ou seja, havia uma tradução exata disponível
+sendo recusada por uma regra escrita antes de o decodificador ser verificado. A lição
+é geral: **antes de recusar uma codificação, medir o que o decodificador realmente
+entrega.**
+
+**`lea` (`8D`).** `lea` não lê memória nenhuma — é aritmética de endereço pura, e é
+exatamente por isso que pode ser aceito onde `[rcx]` não pode. Novo operador de plano
+`P_LEA_IMM`, com um caso por forma de endereço:
+
+| forma | tradução |
+|---|---|
+| RIP-relativa | constante de VA do guest (MOVZ/MOVK) |
+| `[rbp±disp]`, `[rsp±disp]` | ADD/SUB imediato contra X15/X14, e marca `needs_gstack` |
+| disp além do imediato de 12 bits | magnitude em X16, depois a forma registrador |
+| SIB absoluta (`mod=00`, `base=101`) | recusada `TRR_ABS_ADDR` — precisaria de relocação |
+| base geral ou índice escalado | recusada `TRR_GUEST_MEM` — o mesmo motivo de `[rcx]` |
+
+A constante de VA do guest **não** viola o invariante de que nenhum endereço absoluto
+do *hospedeiro* é gravado no código emitido. O que mantém o cache portável é o código
+endereçar por RVA contra X19; um VA do *guest* é outra coisa, e é legítimo aqui porque
+a imagem nunca é relojada neste modelo e porque o `ptc` indexa por um hash dos bytes do
+guest — mudou a imagem, o registro invalida.
+
+Palavras emitidas, cada uma conferida contra uma expectativa calculada à parte:
+
+```
+mov rax,0x12345678        D28ACF00 F2A24680 + RET
+mov rax,0x7FFFFFFFFFFFF…  D29FFFE0 F2BFFFE0 F2DFFFE0 F2EFFFE0 + RET
+lea rax,[rip+0x10] @…1000 D28202E0 F2A80000 F2C00020 + RET   = 0x140001017
+lea eax,[rip+0x10]        528202C0 72A80000 + RET            (forma W: bit 31 limpo)
+lea rax,[rbp-0x10]        A9BF3FEE D10041E0 A8C13FEE RET     needs_gstack=1
+lea rax,[rbp-0x1000]      A9BF3FEE D2820010 CB1001E0 A8C13FEE RET
+lea rax,[disp32 abs]      recusada  absolute-addressing
+lea rax,[rax*2+disp]      recusada  memory-not-on-guest-stack
+```
+
+**Um rótulo de recusa errado custa uma implementação desperdiçada.** Para produzir a
+tabela acima foi preciso reordenar `classify_mem_base`: as verificações de índice e
+escala agora rodam **antes** do caso de base absoluta. `[rax*2+disp32]` tem
+`mod=00`/`base=101`, que parece endereçamento absoluto, mas ainda aplica o índice — e
+por isso era rotulado `absolute-addressing`. Implementar endereçamento absoluto não
+teria desbloqueado nada; o rótulo estava mandando a fila de trabalho atrás do recurso
+errado. Como os rótulos são o que gera a fila, **rotular mal é tão caro quanto recusar
+mal.**
+
+O teste que fixava a recusa antiga foi **substituído**, não mantido ao lado: um teste
+que afirma um comportamento que deixou de existir é pior do que nenhum.
+
+Suite do projeto: **950**.
+
 ### Não feito
 
 Operandos de memória **fora da pilha do guest e da própria imagem do módulo**: o
 acesso RIP-relativo a globais agora é traduzido por RVA contra X19, mas uma
-dereferência por registrador geral (`[rcx]`) segue sem modelo, e o endereçamento
-absoluto `disp32` segue recusado porque precisa de relocação. Também falta o
+dereferência por registrador geral (`[rcx]`) segue sem modelo — e com ela o `lea`
+de base geral ou índice escalado, que é recusado pelo mesmo motivo —, e o
+endereçamento absoluto `disp32` segue recusado porque precisa de relocação. Também falta o
 mapeamento real da imagem com relocações aplicadas — o teste mapeia um buffer e
 passa sua base, que é o que a emissão precisa, mas não é um loader. `call rel32`
 direto para outra

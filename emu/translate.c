@@ -275,7 +275,9 @@ typedef enum {
     /* guest stack */
     P_PUSH_REG, P_POP_REG, P_PUSH_IMM, P_LEAVE, P_ST_LOCAL, P_LD_LOCAL,
     /* the module's own image, reached by a RIP-relative operand */
-    P_LD_IMG, P_ST_IMG
+    P_LD_IMG, P_ST_IMG,
+    /* lea: rd = rn + delta, with no memory touched */
+    P_LEA_IMM
 } plan_op;
 
 typedef struct {
@@ -448,9 +450,16 @@ static mem_base_kind classify_mem_base(const x86_insn *in, unsigned *guest_base)
     unsigned b;
     if (!in->has_modrm || in->mod == 3) return MB_NONE;   /* register form */
     if (in->has_sib) {
+        /* The index is checked BEFORE the absolute-base case, and the order is not
+         * cosmetic. With SIB base=101 and mod=00 there is no base register, but an
+         * index still applies, so `[rax*2+disp32]` reaches here too. Reporting it as
+         * MB_ABS says the only thing missing is an absolute address, when what is
+         * actually missing is a general guest register as well - and a work queue
+         * that believes the first would implement absolute addressing and unblock
+         * nothing. */
+        if (in->sib_index != 4 || in->rex_x) return MB_OTHER;  /* an index register */
+        if (in->sib_scale != 0) return MB_OTHER;               /* or a scale on it  */
         if (in->mod == 0 && in->sib_base == 5) return MB_ABS;
-        if (in->sib_index != 4 || in->rex_x) return MB_OTHER;  /* scaled index */
-        if (in->sib_scale != 0) return MB_OTHER;
         b = (unsigned)in->sib_base | (in->rex_b ? 8u : 0u);
     } else {
         if (in->mod == 0 && in->rm == 5) return MB_RIP_REL;
@@ -646,15 +655,32 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
      * constant. The result zero-extends into the full 64-bit register, so the W
      * form of MOVZ is exactly right and nothing has to be masked afterwards.
      *
-     * REX.W turns this opcode into mov r64, imm64, a ten-byte encoding with a
-     * 64-bit immediate that this subset does not model, so it is refused rather
-     * than truncated: materialising only the low 32 bits would be a plausible
-     * wrong constant. */
+     * REX.W turns this opcode into mov r64, imm64, a ten-byte encoding. That used
+     * to be refused as outside the subset, and the refusal was wrong: the decoder
+     * carries all eight immediate bytes and MOVZ+MOVK materialises any 64-bit value
+     * exactly, so an exact translation was being turned away. What must still never
+     * happen is truncating to 32 bits - that is a plausible wrong constant. It
+     * blocked 142 functions in a real game bundle, more than any SSE instruction. */
     if ((in.op[0] & 0xF8u) == 0xB8u && !in.has_modrm) {
         if (in.rex_w) {
-            out->reason = TRR_UNSUPPORTED_OP;
-            out->detail = "mov r64, imm64: a 64-bit immediate is outside the subset";
-            return TR_UNSUPPORTED;
+            if (in.imm_len != 8) {
+                /* Not a refusal but an internal error: the encoding is ten bytes by
+                 * definition, so a different immediate length means the decoder and
+                 * this layer disagree about what was read. */
+                out->reason = TRR_INTERNAL;
+                out->detail = "mov r64,imm64: the decoder did not report 8 immediate bytes";
+                return TR_INVALID;
+            }
+            if (!map_guest_reg((unsigned)(in.op[0] & 7u), in.rex_b, &p->rd)) {
+                out->reason = TRR_REGISTER;
+                out->detail = "mov r64,imm64: register outside the mapped set";
+                return TR_UNSUPPORTED;
+            }
+            p->op = P_MOV_IMM;
+            p->w32 = 0;
+            p->const_val = in.imm;              /* all 64 bits, unmodified */
+            p->words = const_words_w(p->const_val, 0);
+            return TR_OK;
         }
         if (in.rex_r || in.rex_x) {
             out->reason = TRR_UNSUPPORTED_OP;
@@ -672,6 +698,76 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
         p->words = const_words_w(p->const_val, 1);
         return TR_OK;
     }
+    /* lea r64|r32, m - load the ADDRESS, not the contents. No memory is read, so
+     * this is arithmetic on an address the instruction already encodes, and it is
+     * exact in every form handled here. It blocked 266 functions in a real game
+     * bundle, which is what makes it worth doing before anything that needs a
+     * general guest memory model.
+     *
+     * Three cases, and they differ in where the address comes from:
+     *   RIP-relative  the address is a guest VA fixed by the encoding, so it is a
+     *                 constant. Baking a guest VA into the output is not the same
+     *                 mistake as baking a host address: the guest image is never
+     *                 relocated here, so its VAs are the ones in its PE header, and
+     *                 ptc keys on a hash of the guest bytes so a different image
+     *                 cannot reuse the translation.
+     *   RBP/RSP       the base is live in X15/X14, so this is an add or subtract
+     *                 against it - and it needs the guest stack arena, which the
+     *                 plan picks up because rn is X14 or X15.
+     *   absolute SIB  refused rather than guessed at: whether the 32-bit disp is
+     *                 sign- or zero-extended into the 64-bit address is exactly the
+     *                 kind of detail that produces a wrong pointer with no symptom.
+     */
+    if (in.op[0] == 0x8D && in.has_modrm && in.mod != 3) {
+        unsigned      gbase = 0, vreg;
+        mem_base_kind k = classify_mem_base(&in, &gbase);
+        int           w32 = !in.rex_w;
+        int64_t       d = in.disp;
+
+        if (!map_guest_reg(in.reg, in.rex_r, &vreg)) {
+            out->reason = TRR_REGISTER;
+            out->detail = "lea: destination register outside the mapped set";
+            return TR_UNSUPPORTED;
+        }
+        if (k == MB_RIP_REL) {
+            p->op = P_MOV_IMM;
+            p->rd = vreg;
+            p->w32 = w32;
+            /* A 32-bit lea truncates the address and zero-extends, which the W form
+             * of MOVZ does by itself. */
+            p->const_val = w32 ? (uint64_t)(uint32_t)in.rip_rel_target
+                               : in.rip_rel_target;
+            p->words = const_words_w(p->const_val, w32);
+            return TR_OK;
+        }
+        if (k == MB_ABS) {
+            out->reason = TRR_ABS_ADDR;
+            out->detail = "lea from an absolute disp32: extending it to 64 bits is "
+                          "not defined the same way by every reading of the "
+                          "encoding, so it is refused rather than guessed at";
+            return TR_UNSUPPORTED;
+        }
+        if (k != MB_STACK) {
+            out->reason = TRR_GUEST_MEM;
+            out->detail = "lea from a base this translator does not model, or with "
+                          "a scaled index";
+            return TR_UNSUPPORTED;
+        }
+        p->op = P_LEA_IMM;
+        p->rd = vreg;
+        p->rn = (gbase == 4u) ? HOST_RSP : HOST_RBP;
+        p->delta = d;
+        p->w32 = w32;
+        /* ADD/SUB immediate carry an unsigned 12-bit field. Outside it the
+         * displacement is materialised in X16 and the register form used, which is
+         * exact and only costs the words it needs. */
+        if ((d >= 0 && d <= 0xFFF) || (d < 0 && d >= -0xFFF))
+            p->words = 1u;
+        else
+            p->words = const_words_w((uint64_t)(d < 0 ? -d : d), 0) + 1u;
+        return TR_OK;
+    }
+
     /* mov r/m32, imm32 with mod=3 is the same operation through a different
      * opcode; without REX.W it zero-extends, with REX.W it sign-extends. */
     if (in.op[0] == 0xC7 && in.has_modrm && in.mod == 3 && in.reg == 0) {
@@ -1291,6 +1387,33 @@ tr_status tr_translate_function_img(const uint8_t *code, size_t code_len,
             if (!pushf(out, a64_mov_reg(HOST_RSP, HOST_RBP))) return TR_OVERFLOW;
             if (!pushf(out, a64_ldr_post(HOST_RBP, HOST_RSP, 8))) return TR_OVERFLOW;
             break;
+        case P_LEA_IMM: {
+            int64_t d = p->delta;
+            int neg = d < 0;
+            uint64_t mag = (uint64_t)(neg ? -d : d);
+            if (mag <= 0xFFFu) {
+                uint32_t w;
+                if (neg) w = p->w32 ? a64_sub_w_imm(p->rd, p->rn, (uint16_t)mag)
+                                    : a64_sub_x_imm(p->rd, p->rn, (uint16_t)mag);
+                else     w = p->w32 ? a64_add_w_imm(p->rd, p->rn, (uint16_t)mag)
+                                    : a64_add_x_imm(p->rd, p->rn, (uint16_t)mag);
+                if (!pushf(out, w)) return TR_OVERFLOW;
+                break;
+            }
+            /* Too large for the immediate field: put the magnitude in X16 and use
+             * the register form. X16 is safe here for the same reason it is safe at
+             * a push of an immediate - it is live only between being written and
+             * being consumed by the instruction right after it. */
+            if (!emit_const_f(out, HOST_SCRATCH, mag)) return TR_OVERFLOW;
+            if (!pushf(out, neg
+                    ? (p->w32 ? a64_sub_reg_w(p->rd, p->rn, HOST_SCRATCH)
+                              : a64_sub_reg(p->rd, p->rn, HOST_SCRATCH))
+                    : (p->w32 ? a64_add_reg_w(p->rd, p->rn, HOST_SCRATCH)
+                              : a64_add_reg(p->rd, p->rn, HOST_SCRATCH))))
+                return TR_OVERFLOW;
+            break;
+        }
+
         case P_LD_IMG:
         case P_ST_IMG: {
             /* X16 = the RVA, then X19 + X16 does the addressing. No absolute
