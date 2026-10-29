@@ -65,6 +65,7 @@ jobs:
           path: raceai-cpp/build.log
 
       - name: Guardar o log no repositório (depuração)
+        continue-on-error: true
         if: always()
         shell: msys2 {0}
         run: |

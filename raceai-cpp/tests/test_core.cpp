@@ -45,7 +45,7 @@ static void t_base() {
     CHECK(std::fabs(dot(a, b) - 3.0) < 1e-9, "produto interno errado");
     CHECK(std::fabs(cross(a, b) - (-4.0)) < 1e-9, "produto vetorial errado");
     CHECK(std::fabs(clamp(5.0, 0.0, 1.0) - 1.0) < 1e-9, "clamp errado");
-    CHECK(std::fabs(wrap_angle(3.0 * M_PI) - (-M_PI)) < 1e-6, "wrap_angle errado");
+    CHECK(std::fabs(wrap_angle(3.0 * kPi) - (-kPi)) < 1e-6, "wrap_angle errado");
     Rng r(42);
     Rng r2(42);
     CHECK(r.uniform01() == r2.uniform01(), "RNG não é determinístico");
@@ -89,19 +89,19 @@ static void t_track() {
 
     // raycast: um raio para a frente a partir do centro não pode "atravessar" o muro
     double rays[9];
-    t.cast_rays(t.center[10], t.heading[10], 10, 9, 70.0, 140.0 * M_PI / 180.0, rays);
+    t.cast_rays(t.center[10], t.heading[10], 10, 9, 70.0, 140.0 * kPi / 180.0, rays);
     for (int i = 0; i < 9; ++i) {
         CHECK(rays[i] > 0.5 && rays[i] <= 70.0, "raio %d fora de faixa: %.2f", i, rays[i]);
     }
     // os raios laterais (mais fechados) não podem ler mais que a meia largura / sen(70°)
-    double limite = t.half_widths[10] / std::sin(70.0 * M_PI / 180.0) + 1.0;
+    double limite = t.half_widths[10] / std::sin(70.0 * kPi / 180.0) + 1.0;
     CHECK(rays[0] <= limite, "raio lateral muito longo: %.2f (limite %.2f)", rays[0], limite);
     CHECK(rays[8] <= limite, "raio lateral muito longo: %.2f (limite %.2f)", rays[8], limite);
 
     // oval: os sensores laterais leem ~ meia_largura / sen(ângulo)
     Json pts = Json::array();
     for (int k = 0; k < 36; ++k) {
-        double a = k / 36.0 * 2 * M_PI;
+        double a = k / 36.0 * 2 * kPi;
         Json p2 = Json::array();
         p2.push(Json(160.0 * std::cos(a)));
         p2.push(Json(120.0 * std::sin(a)));
@@ -115,8 +115,8 @@ static void t_track() {
     double orays[9];
     int reto = 9;   // ponto do oval com curvatura mínima (mais "reto")
     for (int i = 0; i < o.n(); ++i) if (std::fabs(o.curvature[i]) < std::fabs(o.curvature[reto])) reto = i;
-    o.cast_rays(o.center[reto], o.heading[reto], reto, 9, 70.0, 140.0 * M_PI / 180.0, orays);
-    double esperado = o.half_widths[reto] / std::sin(70.0 * M_PI / 180.0);
+    o.cast_rays(o.center[reto], o.heading[reto], reto, 9, 70.0, 140.0 * kPi / 180.0, orays);
+    double esperado = o.half_widths[reto] / std::sin(70.0 * kPi / 180.0);
     CHECK(std::fabs(orays[0] - esperado) / esperado < 0.25,
           "raio lateral do oval: %.2f, esperado ~%.2f", orays[0], esperado);
 }

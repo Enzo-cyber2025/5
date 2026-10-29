@@ -33,7 +33,6 @@ struct EpisodeResult {
 
 class Trainer {
 public:
-    Trainer() = default;
     Trainer(const Track& track, const CarSpec& car, const SimConfig& sim,
             const GAConfig& ga, const PolicySpec& policy, const TrainerConfig& tcfg = {});
 

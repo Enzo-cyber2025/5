@@ -39,11 +39,16 @@ inline double clamp(double v, double lo, double hi) {
     return v < lo ? lo : (v > hi ? hi : v);
 }
 inline double lerp(double a, double b, double t) { return a + (b - a) * t; }
+// M_PI não existe em todo compilador (MinGW com -std=c++17 não define): usa os
+// nossos, para o núcleo compilar igual em qualquer lugar.
+constexpr double kPi = 3.14159265358979323846;
+constexpr double kTau = 6.28318530717958647692;
+
 inline double wrap_angle(double a) {
     const double k = 6.28318530717958647692;
-    a = std::fmod(a + M_PI, k);
+    a = std::fmod(a + kPi, k);
     if (a < 0.0) a += k;
-    return a - M_PI;
+    return a - kPi;
 }
 
 // ---------------------------------------------------------------- RNG (PCG32)
