@@ -3526,6 +3526,56 @@ jobs:
                   @('r_fullscreen "0"', 'uset r_fullscreen "0"') | Set-Content (Join-Path $docs "config.cfg") -Encoding ascii
                   Trace "hibrido: config.cfg windowed recriado"
                 } catch { Trace "hibrido docs: $($_.Exception.Message)" }
+                # v84: validar o Vulkan ANTES de gastar o boot — a bateria
+                # TestVk PULA quando warpOk (v52) e o lavapipe 26.2.4 NUNCA
+                # foi testado nesta imagem; a v83 provou que no jogo o
+                # vkCreateInstance falhou (CreateDXGIFactory1 real E_FAIL ->
+                # dx11 fail no detection). Testa a 26.2.4; se nao passar,
+                # baixa a Mesa 25.3.6 (vencedora historica v50-54) e testa;
+                # o PRIMEIRO que passar vira o ICD do boot hibrido.
+                function HibVk([string]$icdPath, [string]$tag) {
+                  if (-not (Test-Path "$PWD\vktest.exe")) { Trace "hib-vk $tag : vktest.exe ausente"; return $false }
+                  if ($icdPath) { $env:VK_ICD_FILENAMES = $icdPath } else { Remove-Item Env:\VK_ICD_FILENAMES -ErrorAction SilentlyContinue }
+                  Trace "hib-vk $tag inicio (ICD=$icdPath)"
+                  $t0 = Get-Date
+                  $p = Start-Process -FilePath "$PWD\vktest.exe" -RedirectStandardOutput "$PWD\vkhib-$tag.out" -RedirectStandardError "$PWD\vkhib-$tag.err" -PassThru
+                  while (-not $p.WaitForExit(15000)) {
+                    if (((Get-Date) - $t0).TotalSeconds -gt 240) {
+                      Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+                      Trace "hib-vk $tag TIMEOUT 240s (lavapipe travado — v51)"
+                      return $false
+                    }
+                  }
+                  @(Get-Content "$PWD\vkhib-$tag.out" -ErrorAction SilentlyContinue) + @(Get-Content "$PWD\vkhib-$tag.err" -ErrorAction SilentlyContinue) | ForEach-Object { Trace "hib-vk[$tag]: $_" }
+                  return ($p.ExitCode -eq 0)
+                }
+                $icdHib = $null
+                if ($vkIcdX64 -and (HibVk $vkIcdX64.FullName "lvp264")) { $icdHib = $vkIcdX64.FullName }
+                if (-not $icdHib) {
+                  if (-not (Test-Path "C:\mesa253\x64\lvp_icd.x86_64.json")) {
+                    Trace "hib-vk: baixando Mesa 25.3.6"
+                    curl.exe -sSL --retry 3 --max-time 240 -o C:\mesa253.7z "https://github.com/pal1000/mesa-dist-win/releases/download/25.3.6/mesa3d-25.3.6-release-msvc.7z"
+                    $sz7h = "C:\Program Files\7-Zip\7z.exe"
+                    if (-not (Test-Path $sz7h)) { $sz7h = "7z.exe" }
+                    & $sz7h x C:\mesa253.7z "-oC:\mesa253" -y *> "$PWD\mesa253-hib.log"
+                    Trace "hib-vk: 25.3.6 extraida exit=$LASTEXITCODE"
+                  }
+                  $icd253 = Get-ChildItem "C:\mesa253" -Recurse -Filter "lvp_icd*.json" -ErrorAction SilentlyContinue | Where-Object { $_.Name -match "x86_64|x64" } | Select-Object -First 1
+                  if ($icd253 -and (HibVk $icd253.FullName "lvp253")) { $icdHib = $icd253.FullName }
+                }
+                if ($icdHib) {
+                  $env:VK_ICD_FILENAMES = $icdHib
+                  Trace "hibrido: ICD VALIDADO para o boot: $icdHib"
+                } else {
+                  if ($vkIcdX64) { $env:VK_ICD_FILENAMES = $vkIcdX64.FullName }
+                  Trace "hibrido: NENHUM lavapipe passou no vktest — boot com 26.2.4 mesmo (o dxvk.log dira o motivo)"
+                }
+                # v84: log do DXVK — o E_FAIL da factory veio de vkCreateInstance
+                # falhando DENTRO do jogo; o dxvk.log do DXVK 2.x diz o motivo
+                # exato (ICD incompativel, apiVersion, loader). DXVK_LOG_PATH =
+                # DIRETORIO onde o dxvk.log nasce (o Boot ja o copia por tag).
+                $env:DXVK_LOG_PATH = $wdir
+                Trace "hibrido: DXVK_LOG_PATH=$env:DXVK_LOG_PATH"
                 $vivoH = Boot $exe $wdir "x64 dx11 HIBRIDO dxvk" @("-nointro") $null 120
                 Trace "hibrido: boot FIM vivo=$vivoH"
                 # v83: logs do hibrido com nome estavel — o Boot salva
@@ -3546,6 +3596,39 @@ jobs:
                     Trace "game-log-HIBRIDO-final.txt salvo"
                   } else { Trace "hib-gamelog AUSENTE — game.log nao nasceu no Documents novo" }
                 } catch { Trace "hib logs: $($_.Exception.Message)" }
+                # v84: dump + cdb do crash do HIBRIDO — o WER LocalDumps ja
+                # esta ativo (DumpCount=10), mas so o bloco do boot WARP o
+                # analisava: na v83 o dump do hibrido (0xC0000005 aos ~65 s)
+                # ficou em $PWD\dumps e se PERDEU. Agora: copia com prefixo
+                # estavel e o cdb imprime a stack do MAIS RECENTE (= hibrido,
+                # capturado ANTES dos fallbacks GL rodarem).
+                try {
+                  Start-Sleep -Seconds 3
+                  $dumpsH = Get-ChildItem "$PWD\dumps" -Filter "*.dmp" -ErrorAction SilentlyContinue
+                  if ($dumpsH) {
+                    foreach ($d in $dumpsH) {
+                      Trace ("dump-hib: " + $d.Name + " " + [math]::Round($d.Length/1MB,1) + " MB")
+                      Copy-Item $d.FullName ("$PWD\dump-hib-" + $d.Name) -Force
+                    }
+                    $cdbH = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+                    if (-not $cdbH) { $cdbH = Get-ChildItem "C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe" -ErrorAction SilentlyContinue | Select-Object -First 1 }
+                    if ($cdbH) {
+                      $dH = $dumpsH | Sort-Object LastWriteTime | Select-Object -Last 1
+                      $outH = & $cdbH.FullName -z $dH.FullName -c ".symfix; .reload; kv 40; q" 2>&1
+                      $outH | Select-Object -First 120 | ForEach-Object { Trace "cdb-hib: $_" }
+                    } else { Trace "cdb-hib: cdb AUSENTE no runner" }
+                  } else { Trace "dump-hib: nenhum dump no dir" }
+                } catch { Trace "dump-hib: $($_.Exception.Message)" }
+                # v84: logs do DXVK no wdir (DXVK 2.x pode dividir em
+                # d3d11.log/dxgi.log) + o dxvk.log padrao do LOCALAPPDATA
+                # (fallback quando DXVK_LOG_PATH nao pegou).
+                try {
+                  foreach ($dl in @("d3d11.log", "dxgi.log")) {
+                    $pl = Join-Path $wdir $dl
+                    if (Test-Path $pl) { Copy-Item $pl "$PWD\hib-$dl" -Force; Trace "hibrido: $dl copiado ($((Get-Item $pl).Length) bytes)" }
+                  }
+                  Copy-Item (Join-Path $env:LOCALAPPDATA "dxvk.log") "$PWD\dxvk-log-localappdata.txt" -Force -ErrorAction SilentlyContinue
+                } catch { Trace "hib dxvklogs: $($_.Exception.Message)" }
                 if ($vivoH) { $vivo = $true }
               } else { Trace "hibrido: DXVK x64 ausente — pulando" }
             } catch { Trace "hibrido: FALHOU $($_.Exception.Message)" }
@@ -3837,6 +3920,7 @@ jobs:
           cp game-log-*.txt "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp sobe-trace.log "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp dxvk-log-*.txt "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
+          cp vkhib-*.out vkhib-*.err hib-*.log mesa253-hib.log "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp "/c/Users/runneradmin/Documents/Euro Truck Simulator 2/game.log.txt" "ci-logs/${{ github.run_id }}-demo/documents-game.log.txt" 2>/dev/null || true
           for f in d3d11shim-boot1.txt dxgishim-boot1.txt dxgishim-hibrido.txt autoteste-real.json autoteste-real.log demo-mmf.json /c/steamcmd/fase1.log /c/steamcmd/fase2.log /c/dd/dd.log /c/dd/stage2.err mesa-load.log /c/dd/setup.err /c/dd/7z.log /c/dd/mesa-7z.log /c/ets2demo/game.log.txt /c/ets2demo/game-ets2ai-telemetry.log; do
             cp "$f" "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
