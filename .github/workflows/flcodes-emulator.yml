@@ -102,7 +102,9 @@ jobs:
           python3 family-link-codes/tools/signup_report.py --dir "$RUNNER_TEMP/signup" \
             | tee "$RUNNER_TEMP/signup/summary.txt" || true
       - name: Publish the verdict into the repo (artifacts are not reachable from here)
-        if: always()
+        # Push events only: a pull_request run would commit, which triggers the
+        # next pull_request run, which commits again — an endless ladder.
+        if: always() && github.event_name == 'push'
         continue-on-error: true
         run: |
           set +e
