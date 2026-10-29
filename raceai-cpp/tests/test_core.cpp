@@ -39,6 +39,18 @@ static std::string tmp_file(const char* nome) {
         }                                                                      \
     } while (0)
 
+#define REQUIRE(cond, ...)                                                     \
+    do {                                                                       \
+        if (!(cond)) {                                                         \
+            failed += 1;                                                       \
+            printf("  FALHOU [%s] %s:%d: ", current, __FILE__, __LINE__);       \
+            printf(__VA_ARGS__);                                               \
+            printf("\n");                                                      \
+            return;                                                            \
+        }                                                                      \
+        passed += 1;                                                           \
+    } while (0)
+
 static void test(const char* name, void (*fn)()) {
     current = name;
     int before = failed;
@@ -173,6 +185,176 @@ static void t_car() {
     CHECK(st3.vx < -0.2, "não entrou em ré: vx=%.2f", st3.vx);
 }
 
+// ------------------------------------------------------- física avançada
+static void t_fisica_avancada() {
+    CarSpec c = CarSpec::from_json(Json(), "fisica");
+
+    // câmbio: sobe marcha conforme ganha velocidade, respeitando o corte
+    CarState st;
+    st.throttle = 1.0;
+    int marchas_vistas = 1;
+    double rpm_max = 0.0;
+    for (int i = 0; i < 120 * 25; ++i) {
+        physics_step(c, st, 1.0, 1.0, 1.0 / 120.0);
+        marchas_vistas = std::max(marchas_vistas, st.gear);
+        rpm_max = std::max(rpm_max, st.rpm);
+    }
+    CHECK(marchas_vistas >= 2, "não trocou de marcha (ficou na %d)", marchas_vistas);
+    CHECK(st.gear >= 1 && st.gear <= int(c.gears.size()), "marcha fora da faixa: %d", st.gear);
+    CHECK(rpm_max <= c.rpm_limit * 1.05, "giro passou do corte: %.0f", rpm_max);
+    CHECK(st.speed > 8.0, "carro lento demais depois de 25 s: %.1f m/s", st.speed);
+    CHECK(st.speed <= c.max_speed * 1.1, "passou da velocidade máxima: %.1f", st.speed);
+
+    // pneus esquentam e desgastam quando o carro é exigido
+    CarState st2;
+    double temp0 = st2.tire_temp;
+    st2.throttle = 1.0;
+    st2.steer_cmd = 0.8;
+    for (int i = 0; i < 120 * 20; ++i) physics_step(c, st2, 1.0, 1.0, 1.0 / 120.0);
+    CHECK(st2.tire_temp > temp0, "pneu não esquentou: %.1f -> %.1f", temp0, st2.tire_temp);
+    CHECK(st2.tire_wear > 0.0, "pneu não desgastou");
+    CHECK(st2.tire_wear < 1.0, "pneu desgastou demais em 20 s: %.2f", st2.tire_wear);
+
+    // tanque: acelera gastando combustível; sem combustível não anda
+    CarState st3;
+    st3.throttle = 1.0;
+    for (int i = 0; i < 120 * 20; ++i) physics_step(c, st3, 1.0, 1.0, 1.0 / 120.0);
+    CHECK(st3.fuel < 1.0, "não consumiu combustível");
+    double v_cheio = st3.speed;
+    CarState st4;
+    st4.throttle = 1.0;
+    st4.fuel = 0.0;
+    for (int i = 0; i < 120 * 20; ++i) physics_step(c, st4, 1.0, 1.0, 1.0 / 120.0);
+    CHECK(st4.speed < v_cheio * 0.5, "tanque vazio não cortou a potência: %.1f vs %.1f",
+          st4.speed, v_cheio);
+
+    // dano: batida tira velocidade, reduz potência e não pode virar NaN
+    CarState st5;
+    st5.vx = 25.0;
+    double v_antes = std::fabs(st5.vx);
+    aplicar_impacto(c, st5, 25.0);
+    CHECK(st5.damage > 0.0, "batida não gerou dano");
+    CHECK(std::fabs(st5.vx) < v_antes, "batida não tirou velocidade");
+    CarState inteiro, batido;
+    inteiro.throttle = 1.0;
+    batido.throttle = 1.0;
+    batido.damage = 0.9;
+    for (int i = 0; i < 120 * 6; ++i) {
+        physics_step(c, inteiro, 1.0, 1.0, 1.0 / 120.0);
+        physics_step(c, batido, 1.0, 1.0, 1.0 / 120.0);
+    }
+    CHECK(batido.speed < inteiro.speed, "carro danificado não ficou mais lento");
+    CHECK(std::isfinite(batido.x) && std::isfinite(batido.speed), "dano gerou NaN");
+
+    // asfalto molhado/liso: menos aderência = menos velocidade em curva
+    CarState seco, liso;
+    seco.vx = 20.0; liso.vx = 20.0;
+    seco.throttle = 0.6; liso.throttle = 0.6;
+    seco.steer_cmd = 0.7; liso.steer_cmd = 0.7;
+    for (int i = 0; i < 120 * 3; ++i) {
+        physics_step(c, seco, 1.0, 1.0, 1.0 / 120.0);
+        physics_step(c, liso, 0.45, 1.0, 1.0 / 120.0);
+    }
+    CHECK(std::fabs(liso.r) < std::fabs(seco.r) || std::fabs(liso.slip_f) > std::fabs(seco.slip_f),
+          "pista escorregadia não mudou o comportamento");
+}
+
+// ------------------------------------------------------------- conteúdo
+// Piloto automático simples (persegue um ponto à frente na linha de centro e
+// dosa a velocidade pela curvatura). Serve para provar que toda pista e todo
+// carro que o jogo entrega são realmente dirigíveis.
+static int pilota(const Track& t, const CarSpec& c, double segundos, int* voltas = nullptr,
+                  double* tempo_volta = nullptr) {
+    SimConfig cfg;
+    cfg.max_seconds = segundos;
+    cfg.checkpoint_gating = true;
+    Simulation sim(t, c, cfg, 1, 7);
+    const int n = t.n();
+    const int passos = int(segundos / cfg.dt);
+    for (int s = 0; s < passos && !sim.all_dead(); ++s) {
+        if (sim.should_decide()) {
+            for (int row : sim.active()) {
+                const Agent& a = sim.agents[row];
+                // perseguição pura: olha mais longe quanto mais rápido vai
+                const int frente = std::max(3, int((6.0 + a.car.speed * 0.55) /
+                                                   std::max(t.spacing, 0.5)));
+                const Vec2 alvo = t.center[(a.idx + frente) % n];
+                double desejado = std::atan2(alvo.y - a.car.y, alvo.x - a.car.x);
+                double erro = desejado - a.car.heading;
+                while (erro > M_PI) erro -= 2 * M_PI;
+                while (erro < -M_PI) erro += 2 * M_PI;
+                // termo derivativo na taxa de guinada: sem isso os carros
+                // potentes (monoposto, GT) entram em oscilação e batem
+                double cs = (std::fabs(a.car.slip_r) > 0.30) ? 0.45 * a.car.slip_r
+                                                             : 0.06 * a.car.slip_r;
+                double steer = std::max(-1.0, std::min(1.0, 1.1 * erro - 0.40 * a.car.r - cs));
+
+                // curvatura à frente -> velocidade alvo
+                const int la = std::max(6, frente * 2);
+                const Vec2& tan_a = t.tangents[a.idx];
+                const Vec2& tan_b = t.tangents[(a.idx + la) % n];
+                double curv = std::fabs(std::atan2(tan_b.y, tan_b.x) - std::atan2(tan_a.y, tan_a.x));
+                if (curv > M_PI) curv = 2 * M_PI - curv;
+                double raio = std::max(8.0, la * t.spacing / std::max(curv, 0.05));
+                double mu = 0.55 * (c.grip_front + c.grip_rear) * 0.5;
+                double v_alvo = std::min(c.max_speed * 0.75, std::sqrt(mu * 9.81 * raio));
+                double drive = a.car.speed < v_alvo ? 1.0
+                             : (a.car.speed > v_alvo * 1.25 ? -0.9 : -0.35);
+                // rodou: reduz e contra-esterça até apontar de novo para frente
+                if (std::fabs(erro) > 2.0) {
+                    drive = a.car.speed > 4.0 ? -0.5 : 0.35;
+                    steer = erro > 0.0 ? 1.0 : -1.0;
+                }
+                sim.set_action(row, steer, drive);
+            }
+        }
+        sim.step();
+    }
+    int row = sim.best_row();
+    if (voltas) *voltas = sim.agents[row].laps;
+    if (tempo_volta) *tempo_volta = sim.agents[row].best_lap;
+    return row;
+}
+
+static void t_conteudo() {
+    auto pistas = list_tracks();
+    auto carros = list_cars();
+    CHECK(pistas.size() >= 12, "poucas pistas: %zu", pistas.size());
+    CHECK(carros.size() >= 10, "poucos carros: %zu", carros.size());
+
+    CarSpec sedan;
+    std::string err;
+    REQUIRE(load_car("sedan", sedan, &err), "carro sedan nao carregou: %s", err.c_str());
+
+    // toda pista entregue precisa ser completável
+    for (const auto& it : pistas) {
+        Track t;
+        CHECK(Track::load(it.path, t, &err), "pista %s nao carregou: %s", it.id.c_str(),
+              err.c_str());
+        if (t.n() < 30) continue;
+        int voltas = 0;
+        double tempo = 0.0;
+        pilota(t, sedan, 150.0, &voltas, &tempo);
+        CHECK(voltas >= 1, "pista %s: piloto automatico nao completou uma volta",
+              it.id.c_str());
+        CHECK(tempo > 5.0 && tempo < 400.0, "pista %s: volta de %.1f s fora do normal",
+              it.id.c_str(), tempo);
+    }
+
+    // todo carro entregue precisa completar uma volta no oval (a pista de
+    // referência: todo mundo consegue, do caminhão ao monoposto)
+    Track base;
+    REQUIRE(load_track("oval_iniciante", base, &err), "oval nao carregou: %s", err.c_str());
+    for (const auto& it : carros) {
+        CarSpec c;
+        CHECK(CarSpec::load(it.path, c, &err), "carro %s nao carregou: %s", it.id.c_str(),
+              err.c_str());
+        int voltas = 0;
+        pilota(base, c, 150.0, &voltas);
+        CHECK(voltas >= 1, "carro %s nao completou uma volta no oval", it.id.c_str());
+    }
+}
+
 // ------------------------------------------------------------------ sim
 static Track g_track;
 static CarSpec g_car;
@@ -260,8 +442,10 @@ static void t_metrics() {
     CHECK(m.smooth_score >= 0.0 && m.smooth_score <= 1.0, "suavidade fora de faixa");
 
     // pesos maiores em um erro precisam aumentar a loss
+    // esterço máximo: cedo ou tarde o carro sai da pista e bate (é isso que
+    // as penalidades precisam enxergar para a comparação abaixo fazer sentido)
     SimConfig cfg;
-    cfg.max_seconds = 20;
+    cfg.max_seconds = 35;
     RewardConfig leve, pesado;
     pesado.crash = 3.0;
     pesado.offtrack = 3.0;
@@ -269,12 +453,14 @@ static void t_metrics() {
     Simulation b(g_track, g_car, cfg, 4, 5);
     a.reward = leve;
     b.reward = pesado;
-    for (int s = 0; s < 20 * 120; ++s) {
-        if (a.should_decide()) for (int r : a.active()) a.set_action(r, 0.9, 1.0);
-        if (b.should_decide()) for (int r : b.active()) b.set_action(r, 0.9, 1.0);
+    for (int s = 0; s < 35 * 120; ++s) {
+        if (a.should_decide()) for (int r : a.active()) a.set_action(r, 1.0, 1.0);
+        if (b.should_decide()) for (int r : b.active()) b.set_action(r, 1.0, 1.0);
         a.step(); b.step();
     }
     Metrics ma = a.metrics(a.best_row()), mb = b.metrics(b.best_row());
+    CHECK(ma.offtrack_pct + ma.crash_score > 0.0,
+          "o cenário de teste não produziu nenhum erro para penalizar");
     CHECK(mb.loss > ma.loss, "penalidades maiores deveriam doer mais (%.3f vs %.3f)",
           ma.loss, mb.loss);
 
@@ -562,12 +748,14 @@ int main() {
     test("base: vetores, rng e json", t_base);
     test("pista: geometria e sensores", t_track);
     test("carro: especificação e física", t_car);
+    test("física avançada: câmbio, pneus, dano e tanque", t_fisica_avancada);
     test("simulação: passo e progressão", t_sim);
     test("métricas: loss, erro e pesos", t_metrics);
     test("política: rede e modelo", t_policy);
     test("evolução: população e mutação", t_ga);
     test("treino: gerações e determinismo", t_train);
     test("assets: pistas, carros e mods", t_assets);
+    test("conteúdo: toda pista e todo carro são dirigíveis", t_conteudo);
     test("ia em python (ponte com o interpretador)", t_python);
 
     printf("\n%d testes passaram, %d falharam\n", passed, failed);

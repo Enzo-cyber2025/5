@@ -93,6 +93,9 @@ public:
     int carro_idx = 0;
 
     Mode mode = Mode::Menu;
+    // chave entre os dois modos (mesmo app, sem voltar ao menu): o estado de
+    // cada um fica vivo, então dá para ir e voltar sem perder nada.
+    void alternar_modo();
     Track track_cache_;                 // pista atual (a simulação guarda referência)
     CarSpec car_cache_;                 // carro atual
     SimConfig sim_cfg;

@@ -183,3 +183,34 @@ inline COLORREF GetSysColor(int) { return 0; }
 static const UINT CP_UTF8 = 65001;
 #define MAKEINTRESOURCEW(i) ((LPWSTR)((ULONG_PTR)((WORD)(i))))
 #define IDC_ARROW MAKEINTRESOURCEW(32512)
+
+// --- usados pela checagem de sintaxe no Linux (API real no Windows) ---
+#ifndef FILE_ATTRIBUTE_DIRECTORY
+#define FILE_ATTRIBUTE_DIRECTORY 0x00000010
+#endif
+#ifndef INVALID_FILE_ATTRIBUTES
+#define INVALID_FILE_ATTRIBUTES ((DWORD)-1)
+#endif
+#ifndef ICC_STANDARD_CLASSES
+#define ICC_STANDARD_CLASSES 0x00004000
+#endif
+#ifndef SPI_GETWORKAREA
+#define SPI_GETWORKAREA 0x0030
+#endif
+#ifndef VK_F2
+#define VK_F2 0x71
+#endif
+#ifndef WM_GETMINMAXINFO
+#define WM_GETMINMAXINFO 0x0024
+#endif
+#ifndef FORMAT_MESSAGE_ALLOCATE_BUFFER
+#define FORMAT_MESSAGE_ALLOCATE_BUFFER 0x00000100
+#define FORMAT_MESSAGE_FROM_SYSTEM      0x00001000
+#define FORMAT_MESSAGE_IGNORE_INSERTS   0x00000200
+#endif
+struct MINMAXINFO { POINT ptReserved, ptMaxSize, ptMaxPosition, ptMinTrackSize, ptMaxTrackSize; };
+inline DWORD GetFileAttributesW(LPCWSTR) { return INVALID_FILE_ATTRIBUTES; }
+inline DWORD GetLastError() { return 0; }
+inline void* LocalFree(void* p) { return p; }
+inline DWORD FormatMessageW(DWORD, const void*, DWORD, DWORD, LPWSTR, DWORD, void*) { return 0; }
+inline BOOL SystemParametersInfoW(UINT, UINT, void*, UINT) { return 0; }

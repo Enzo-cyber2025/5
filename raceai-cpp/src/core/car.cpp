@@ -41,6 +41,78 @@ CarSpec CarSpec::from_json(const Json& data, const std::string& src) {
     s.drive_front = num_or(data, "drive_front", s.drive_front);
     s.brake_front = num_or(data, "brake_front", s.brake_front);
     s.yaw_inertia = num_or(data, "yaw_inertia", s.yaw_inertia);
+
+    // trem de força
+    if (data.has("gears") && data.at("gears").type() == Json::Arr) {
+        std::vector<double> g;
+        for (const Json& v : data.at("gears").items()) if (v.num(0.0) > 0.05) g.push_back(v.num(0.0));
+        if (!g.empty()) s.gears = g;
+    }
+    s.final_drive = num_or(data, "final_drive", s.final_drive);
+    s.wheel_radius = num_or(data, "wheel_radius", s.wheel_radius);
+    s.drivetrain_eff = num_or(data, "drivetrain_eff", s.drivetrain_eff);
+    s.peak_torque = num_or(data, "peak_torque", s.peak_torque);
+    s.rpm_idle = num_or(data, "rpm_idle", s.rpm_idle);
+    s.rpm_peak = num_or(data, "rpm_peak", s.rpm_peak);
+    s.rpm_limit = num_or(data, "rpm_limit", s.rpm_limit);
+    s.torque_shape = num_or(data, "torque_shape", s.torque_shape);
+    s.shift_up = num_or(data, "shift_up", s.shift_up);
+    s.shift_down = num_or(data, "shift_down", s.shift_down);
+    s.shift_time = num_or(data, "shift_time", s.shift_time);
+    // aero
+    s.cd_a = num_or(data, "cd_a", s.cd_a);
+    s.cl_a = num_or(data, "cl_a", s.cl_a);
+    s.downforce_front = num_or(data, "downforce_front", s.downforce_front);
+    // pneus
+    s.track_width = num_or(data, "track_width", s.track_width);
+    s.roll_front = num_or(data, "roll_front", s.roll_front);
+    s.load_sens = num_or(data, "load_sens", s.load_sens);
+    s.tire_opt_temp = num_or(data, "tire_opt_temp", s.tire_opt_temp);
+    s.tire_temp_rate = num_or(data, "tire_temp_rate", s.tire_temp_rate);
+    s.tire_cool_rate = num_or(data, "tire_cool_rate", s.tire_cool_rate);
+    s.tire_wear_rate = num_or(data, "tire_wear_rate", s.tire_wear_rate);
+    // sistemas
+    s.abs_level = num_or(data, "abs_level", s.abs_level);
+    s.traction_control = num_or(data, "traction_control", s.traction_control);
+    s.fuel_capacity = num_or(data, "fuel_capacity", s.fuel_capacity);
+    s.fuel_burn = num_or(data, "fuel_burn", s.fuel_burn);
+    s.damage_rate = num_or(data, "damage_rate", s.damage_rate);
+    // trem de força: limites que mantêm a simulação estável
+    if (s.gears.size() > 9) s.gears.resize(9);
+    for (double& g : s.gears) g = clamp(g, 0.25, 8.0);
+    s.final_drive = clamp(s.final_drive, 1.0, 8.0);
+    s.wheel_radius = clamp(s.wheel_radius, 0.15, 0.75);
+    s.drivetrain_eff = clamp(s.drivetrain_eff, 0.5, 1.0);
+    s.rpm_idle = clamp(s.rpm_idle, 500.0, 2000.0);
+    s.rpm_peak = clamp(s.rpm_peak, 1500.0, 14000.0);
+    s.rpm_limit = clamp(std::max(s.rpm_limit, s.rpm_peak * 1.1), 2000.0, 16000.0);
+    s.torque_shape = clamp(s.torque_shape, 0.4, 3.0);
+    s.shift_up = clamp(s.shift_up, 0.5, 0.999);
+    s.shift_down = clamp(s.shift_down, 0.15, 0.95);
+    s.shift_time = clamp(s.shift_time, 0.0, 1.0);
+    // torque de pico: se o mod não informou, deriva da força de tração
+    if (s.peak_torque <= 0.0) {
+        s.peak_torque = s.engine_force * s.wheel_radius /
+                        std::max(s.gears.front() * s.final_drive * s.drivetrain_eff, 0.1);
+    }
+    s.peak_torque = clamp(s.peak_torque, 40.0, 3000.0);
+    // aero / pneus / sistemas
+    s.cd_a = clamp(s.cd_a, 0.15, 4.0);
+    s.cl_a = clamp(s.cl_a, 0.0, 8.0);
+    s.downforce_front = clamp(s.downforce_front, 0.0, 1.0);
+    s.track_width = clamp(s.track_width, 0.8, 3.0);
+    s.roll_front = clamp(s.roll_front, 0.1, 0.9);
+    s.load_sens = clamp(s.load_sens, 0.0, 0.4);
+    s.tire_opt_temp = clamp(s.tire_opt_temp, 40.0, 160.0);
+    s.tire_temp_rate = clamp(s.tire_temp_rate, 0.0, 0.2);
+    s.tire_cool_rate = clamp(s.tire_cool_rate, 0.0, 0.2);
+    s.tire_wear_rate = clamp(s.tire_wear_rate, 0.0, 0.01);
+    s.abs_level = clamp(s.abs_level, 0.0, 1.0);
+    s.traction_control = clamp(s.traction_control, 0.0, 1.0);
+    s.fuel_capacity = clamp(s.fuel_capacity, 0.0, 400.0);
+    s.fuel_burn = clamp(s.fuel_burn, 0.0, 2.0);
+    s.damage_rate = clamp(s.damage_rate, 0.0, 1.0);
+
     s.body_color = data.has("body_color") ? data.at("body_color").str(s.body_color) : s.body_color;
     s.accent_color = data.has("accent_color") ? data.at("accent_color").str(s.accent_color) : s.accent_color;
     s.sprite = data.has("sprite") ? data.at("sprite").str() : "";
@@ -119,6 +191,37 @@ Json CarSpec::to_json() const {
     j.set("drive_front", Json(drive_front));
     j.set("brake_front", Json(brake_front));
     j.set("yaw_inertia", Json(yaw_inertia));
+    {
+        Json g = Json::array();
+        for (double v : gears) g.push(Json(v));
+        j.set("gears", g);
+    }
+    j.set("final_drive", Json(final_drive));
+    j.set("wheel_radius", Json(wheel_radius));
+    j.set("drivetrain_eff", Json(drivetrain_eff));
+    j.set("peak_torque", Json(peak_torque));
+    j.set("rpm_idle", Json(rpm_idle));
+    j.set("rpm_peak", Json(rpm_peak));
+    j.set("rpm_limit", Json(rpm_limit));
+    j.set("torque_shape", Json(torque_shape));
+    j.set("shift_up", Json(shift_up));
+    j.set("shift_down", Json(shift_down));
+    j.set("shift_time", Json(shift_time));
+    j.set("cd_a", Json(cd_a));
+    j.set("cl_a", Json(cl_a));
+    j.set("downforce_front", Json(downforce_front));
+    j.set("track_width", Json(track_width));
+    j.set("roll_front", Json(roll_front));
+    j.set("load_sens", Json(load_sens));
+    j.set("tire_opt_temp", Json(tire_opt_temp));
+    j.set("tire_temp_rate", Json(tire_temp_rate));
+    j.set("tire_cool_rate", Json(tire_cool_rate));
+    j.set("tire_wear_rate", Json(tire_wear_rate));
+    j.set("abs_level", Json(abs_level));
+    j.set("traction_control", Json(traction_control));
+    j.set("fuel_capacity", Json(fuel_capacity));
+    j.set("fuel_burn", Json(fuel_burn));
+    j.set("damage_rate", Json(damage_rate));
     j.set("body_color", Json(body_color));
     j.set("accent_color", Json(accent_color));
     if (!sprite.empty()) j.set("sprite", Json(sprite));
@@ -126,100 +229,282 @@ Json CarSpec::to_json() const {
 }
 
 // ---------------------------------------------------------------- física
+// Modelo dinâmico de bicicleta com:
+//   * motor com curva de torque, corte de giro e câmbio automático de 6 marchas
+//   * pneus Pacejka-lite por eixo, com temperatura, desgaste e sensibilidade
+//     à carga vertical (transferência longitudinal E lateral)
+//   * círculo de atrito por eixo: acelerar demais come a capacidade de curva
+//   * aerodinâmica com arrasto (Cd·A) e downforce (Cl·A) distribuída
+//   * dano por impacto e consumo de combustível (o carro fica mais leite...)
+// Integração semi-implícita a passo fixo: determinística, requisito do GA.
+namespace {
+
+inline double clampd(double v, double lo, double hi) {
+    return v < lo ? lo : (v > hi ? hi : v);
+}
+
+// Estimativa grosseira da força lateral (usada para a transferência de carga
+// lateral, que depende da aceleração lateral ANTES do cálculo completo).
+inline double fy_estimada(const CarSpec& sp, double slip_f, double slip_r,
+                          double fz_front, double fz_rear) {
+    double mu = 0.5 * (sp.grip_front + sp.grip_rear);
+    double ff = mu * fz_front * std::sin(sp.tire_shape * std::atan(sp.tire_stiffness * slip_f));
+    double fr = mu * fz_rear * std::sin(sp.tire_shape * std::atan(sp.tire_stiffness * slip_r));
+    return ff + fr;
+}
+
+// Curva de torque: sobe até rpm_peak e cai depois, cortada em rpm_limit.
+inline double torque_motor(const CarSpec& sp, double rpm) {
+    if (rpm < sp.rpm_idle) rpm = sp.rpm_idle;
+    if (rpm >= sp.rpm_limit) return 0.0;
+    const double u = rpm / std::max(sp.rpm_peak, 1.0);
+    const double d = u - 1.0;
+    // platô largo perto do pico de torque: cai pouco em baixa (embreagem
+    // patinando mantém o motor acima do marcha lenta) e mais depois do pico
+    const double q = (u < 1.0) ? 0.55 / std::max(sp.torque_shape, 0.2)
+                               : 1.35 * std::max(sp.torque_shape, 0.2);
+    const double t = 1.0 - q * d * d;
+    return sp.peak_torque * clampd(t, 0.30, 1.05);
+}
+
+}  // namespace
+
 void physics_step(const CarSpec& sp, CarState& st, double surface_grip,
                   double surface_roll, double dt) {
-    const double m = sp.mass;
+    const double m_total = sp.mass;
     const double a_ax = sp.cg_front;
     const double b_ax = sp.cg_rear();
-    const double l_wb = a_ax + b_ax;
+    const double l_wb = std::max(a_ax + b_ax, 0.5);
     const double iz = sp.iz();
     const double max_speed = std::max(sp.max_speed, 1e-6);
+    const double rho = 1.225;
 
     double vx = st.vx, vy = st.vy, yaw_rate = st.r;
     double speed = std::sqrt(vx * vx + vy * vy);
     double vx_ref = std::max(std::fabs(vx), 1.2);
 
-    // ---------------- direção (comando -> esterço real) -------------------
-    double falloff = 1.0 - sp.steer_falloff * clamp(speed / max_speed, 0.0, 1.0);
-    double steer_max = sp.max_steer * falloff;
-    double target = clamp(st.steer_cmd, -1.0, 1.0) * steer_max;
-    double max_delta = sp.steer_rate * dt;
-    double steer = st.steer + clamp(target - st.steer, -max_delta, max_delta);
+    const double dano = clampd(st.damage, 0.0, 1.0);
+    const double pot_disp = 1.0 - 0.45 * dano;      // dano tira potência
+    const bool sem_gasolina = sp.fuel_capacity > 0.0 && st.fuel <= 0.0;
 
-    // ---------------- ângulos de deriva ----------------------------------
+    // ---------------- esterço (comando -> ângulo real) ----------------------
+    double falloff = 1.0 - sp.steer_falloff * clampd(speed / max_speed, 0.0, 1.0);
+    double steer_max = sp.max_steer * falloff * (1.0 - 0.25 * dano);
+    double target = clampd(st.steer_cmd, -1.0, 1.0) * steer_max;
+    double max_delta = sp.steer_rate * dt;
+    double steer = st.steer + clampd(target - st.steer, -max_delta, max_delta);
+
+    // ---------------- ângulos de deriva ------------------------------------
     double slip_f = steer - std::atan2(vy + a_ax * yaw_rate, vx_ref);
     double slip_r = -std::atan2(vy - b_ax * yaw_rate, vx_ref);
 
-    // ---------------- cargas verticais -----------------------------------
-    double throttle = clamp(st.throttle, 0.0, 1.0);
-    double brake = clamp(st.brake, 0.0, 1.0);
-    double v_ref = std::max(speed, 5.0);
-    double traction = std::min(sp.engine_force, sp.max_power / v_ref);
-    double power_curve = clamp(1.0 - std::pow(speed / max_speed, 1.6), 0.0, 1.0);
-    double f_drive_demand = throttle * traction * power_curve;
+    // ---------------- câmbio e motor ---------------------------------------
+    const int n_marchas = std::max(1, int(sp.gears.size()));
+    if (st.gear < 1) st.gear = 1;
+    if (st.gear > n_marchas) st.gear = n_marchas;
+    const double ratio_atual = sp.gears[st.gear - 1] * sp.final_drive;
+    const double circ = 2.0 * kPi * std::max(sp.wheel_radius, 0.15);
 
-    double reverse = (brake > 0.0 && speed < 0.6 && st.reverse_cmd > 0.5) ? brake : 0.0;
-    double f_reverse = reverse * sp.engine_force * sp.reverse_ratio;
-    double f_drive = f_drive_demand - f_reverse;
+    // rotação do motor a partir da velocidade da roda (com patinação)
+    double rpm_roda = std::fabs(vx) / circ * 60.0 * ratio_atual;
+    double rpm = std::max(sp.rpm_idle, rpm_roda);
+    if (rpm > sp.rpm_limit * 1.02) rpm = sp.rpm_limit * 1.02;
+    st.rpm = rpm;
 
-    double f_brake_demand = (speed >= 0.6) ? brake * sp.brake_force : 0.0;
-    double drag_f = sp.drag * speed * speed;
+    if (st.shift_cd > 0.0) st.shift_cd = std::max(0.0, st.shift_cd - dt);
+
+    // trocas automáticas (e ré quando o carro está parado)
+    double throttle = clampd(st.throttle, 0.0, 1.0);
+    double brake = clampd(st.brake, 0.0, 1.0);
+    const bool parado_com_re = (brake > 0.05 && speed < 0.8 && st.reverse_cmd > 0.5);
+
+    // Trocas automáticas com histerese: só sobe se a marcha nova ainda ficar
+    // acima do ponto de redução (e só reduz se não estourar o corte). Sem
+    // isso o câmbio fica "caçando" marcha e o carro nunca acelera.
+    if (!parado_com_re && st.shift_cd <= 0.0) {
+        const bool pode_subir = st.gear < n_marchas && vx > 1.0;
+        if (pode_subir && rpm > sp.rpm_limit * sp.shift_up) {
+            double rpm_depois = rpm * sp.gears[st.gear] / std::max(sp.gears[st.gear - 1], 0.05);
+            if (rpm_depois > sp.rpm_limit * sp.shift_down * 1.18) {
+                st.gear += 1;
+                st.shift_cd = sp.shift_time;
+            }
+        } else if (st.gear > 1 && rpm < sp.rpm_limit * sp.shift_down) {
+            double rpm_depois = rpm * sp.gears[st.gear - 2] / std::max(sp.gears[st.gear - 1], 0.05);
+            if (rpm_depois < sp.rpm_limit * 0.97) {
+                st.gear -= 1;
+                st.shift_cd = sp.shift_time;
+            }
+        }
+    }
+
+    double torque = torque_motor(sp, rpm) * pot_disp;
+    if (sem_gasolina) torque = 0.0;
+    if (st.shift_cd > 0.0) torque = 0.0;                 // corte na troca
+    if (parado_com_re) torque = 0.0;
+
+    // força de tração nas rodas (com eficiência da transmissão)
+    double ratio = sp.gears[st.gear - 1] * sp.final_drive;
+    double f_tracao_demanda =
+        throttle * torque * ratio * sp.drivetrain_eff / std::max(sp.wheel_radius, 0.15);
+    // nunca mais do que a potência permite (evita força infinita em marcha baixa)
+    double f_potencia = sp.max_power * pot_disp / std::max(speed, 3.0);
+    double f_drive = std::min(f_tracao_demanda, f_potencia);
+
+    double f_reverse = 0.0;
+    if (parado_com_re) {
+        f_reverse = brake * sp.engine_force * sp.reverse_ratio * pot_disp;
+        f_reverse = std::min(f_reverse, sp.max_power * 0.25 / std::max(speed, 2.0));
+        f_drive = -f_reverse;
+    }
+
+    // ---------------- freios (com ABS opcional) -----------------------------
+    double f_brake_demanda = 0.0;
+    if (!parado_com_re && brake > 0.0 && vx > 0.3) {
+        f_brake_demanda = brake * sp.brake_force * (1.0 - 0.35 * dano);
+        // ABS: limita a desaceleração ao que o pneu aguenta
+        if (sp.abs_level > 0.0) {
+            double limite_abs = 1.32 * G * m_total;      // ~1.3 g bem calibrado
+            double com_abs = f_brake_demanda * (1.0 - sp.abs_level) +
+                             std::min(f_brake_demanda, limite_abs) * sp.abs_level;
+            f_brake_demanda = com_abs;
+        }
+    }
+
+    // ---------------- aerodinâmica e resistência ----------------------------
+    double v2 = speed * speed;
+    double drag_f = 0.5 * rho * sp.cd_a * v2 * (1.0 + 0.35 * dano);
     double roll_f = sp.rolling * surface_roll * speed;
+    double downforce = 0.5 * rho * sp.cl_a * v2;
     double resist = drag_f + roll_f;
 
-    double long_demand = f_drive - f_brake_demand - resist;
-    double ax_est = long_demand / m;
+    // ---------------- cargas verticais por eixo -----------------------------
+    double long_dem = f_drive - f_brake_demanda - resist;
+    double ax_est = long_dem / m_total;
+    double peso = m_total * G + downforce;
+    double fz_front = peso * (b_ax / l_wb) - m_total * ax_est * sp.cg_height / l_wb +
+                      downforce * sp.downforce_front - downforce * (b_ax / l_wb);
+    double fz_rear = peso - fz_front;
+    fz_front = std::max(fz_front, peso * 0.04);
+    fz_rear = std::max(fz_rear, peso * 0.04);
+    const double fz_ref_front = peso * (b_ax / l_wb);
+    const double fz_ref_rear = peso * (a_ax / l_wb);
 
-    double weight = m * G + sp.downforce * speed * speed;
-    double fz_front = weight * (b_ax / l_wb) - m * ax_est * sp.cg_height / l_wb;
-    double fz_rear = weight * (a_ax / l_wb) + m * ax_est * sp.cg_height / l_wb;
-    fz_front = std::max(fz_front, weight * 0.05);
-    fz_rear = std::max(fz_rear, weight * 0.05);
+    // transferência lateral: a roda de fora carrega, a de dentro alivia
+    double lat_dem = (fy_estimada(sp, slip_f, slip_r, fz_front, fz_rear) ) / m_total;
+    double transferencia_lat = clampd(lat_dem / (G * 1.4), -1.0, 1.0) *
+                               m_total * G * sp.cg_height / std::max(sp.track_width, 0.6) * 0.5;
 
-    // ---------------- forças longitudinais por eixo -----------------------
-    double fx_front = f_drive * sp.drive_front - f_brake_demand * sp.brake_front - resist * 0.5;
+    // ---------------- pneus: temperatura, desgaste, superfície --------------
+    double trabalho_pneu = (std::fabs(slip_f) + std::fabs(slip_r)) * speed * 0.5;
+    double alvo_temp = sp.tire_opt_temp * (0.55 + 0.45 * clampd(speed / max_speed, 0.0, 1.0));
+    st.tire_temp += (sp.tire_temp_rate * trabalho_pneu * (alvo_temp + 40.0 - st.tire_temp) -
+                     sp.tire_cool_rate * (st.tire_temp - 25.0)) * dt * 60.0;
+    st.tire_temp = clampd(st.tire_temp, 15.0, 190.0);
+    double desgaste_extra = 1.0 + 6.0 * st.wheelspin + 3.0 * st.lockup;
+    st.tire_wear = clampd(st.tire_wear + sp.tire_wear_rate * desgaste_extra *
+                          (0.25 + trabalho_pneu * 0.02) * dt * 60.0, 0.0, 1.0);
+
+    double fator_temp = 1.0 - 0.00042 * std::pow(st.tire_temp - sp.tire_opt_temp, 2.0);
+    fator_temp = clampd(fator_temp, 0.62, 1.03);
+    double fator_desgaste = 1.0 - 0.30 * st.tire_wear;
+
+    double grip = clampd(surface_grip, 0.12, 2.0);
+    double mu_f = sp.grip_front * grip * fator_temp * fator_desgaste;
+    double mu_r = sp.grip_rear * grip * fator_temp * fator_desgaste;
+
+    // ---------------- forças por eixo com sensibilidade à carga -------------
+    // μ cai quando a carga passa da nominal: é o que faz transferência de
+    // carga custar aderência (carro real).
+    auto mu_por_carga = [&](double mu0, double fz, double fz_ref) {
+        double razao = fz / std::max(fz_ref, 1.0);
+        return mu0 * (1.0 - sp.load_sens * (razao - 1.0));
+    };
+    double mu_f_eff = std::max(mu_por_carga(mu_f, fz_front, fz_ref_front), mu_f * 0.35);
+    double mu_r_eff = std::max(mu_por_carga(mu_r, fz_rear, fz_ref_rear), mu_r * 0.35);
+
+    // penalidade de aderência pela transferência lateral (dentro/fora desigual)
+    double pen_lat = 1.0 - sp.load_sens * 0.85 *
+                     std::fabs(transferencia_lat) / std::max(peso * 0.5, 1.0);
+    pen_lat = clampd(pen_lat, 0.55, 1.0);
+    mu_f_eff *= pen_lat;
+    mu_r_eff *= pen_lat;
+
+    double fy_front = tire_lateral_force(slip_f, fz_front, mu_f_eff, sp.tire_stiffness, sp.tire_shape);
+    double fy_rear = tire_lateral_force(slip_r, fz_rear, mu_r_eff, sp.tire_stiffness, sp.tire_shape);
+
+    // ---------------- forças longitudinais por eixo -------------------------
+    double fx_front = -f_brake_demanda * sp.brake_front - resist * 0.5;
     double fx_rear = f_drive * (1.0 - sp.drive_front) -
-                     f_brake_demand * (1.0 - sp.brake_front) - resist * 0.5;
+                     f_brake_demanda * (1.0 - sp.brake_front) - resist * 0.5;
+    fx_front += f_drive * sp.drive_front;
 
-    // ---------------- laterais + círculo de atrito ------------------------
-    double grip = clamp(surface_grip, 0.15, 2.0);
-    double mu_f = sp.grip_front * grip;
-    double mu_r = sp.grip_rear * grip;
-    double fy_front = tire_lateral_force(slip_f, fz_front, mu_f, sp.tire_stiffness, sp.tire_shape);
-    double fy_rear = tire_lateral_force(slip_r, fz_rear, mu_r, sp.tire_stiffness, sp.tire_shape);
+    // tração integral/eixo dianteiro: divide a tração conforme drive_front
+    // (já aplicado acima)
 
-    double cap_front = mu_f * fz_front;
-    double cap_rear = mu_r * fz_rear;
+    // ---------------- círculo de atrito por eixo ----------------------------
+    double cap_front = mu_f_eff * fz_front;
+    double cap_rear = mu_r_eff * fz_rear;
     double mag_front = std::sqrt(fx_front * fx_front + fy_front * fy_front);
     double mag_rear = std::sqrt(fx_rear * fx_rear + fy_rear * fy_rear);
     double scale_f = mag_front > cap_front ? cap_front / std::max(mag_front, 1e-6) : 1.0;
     double scale_r = mag_rear > cap_rear ? cap_rear / std::max(mag_rear, 1e-6) : 1.0;
+
+    // patinação: quando a tração pede mais do que o pneu dá
+    double demanda_tracao = std::fabs(f_drive * (1.0 - sp.drive_front)) +
+                            std::fabs(f_drive * sp.drive_front);
+    double cap_tracao = std::max(cap_front * sp.drive_front + cap_rear * (1.0 - sp.drive_front), 1.0);
+    st.wheelspin = clampd((demanda_tracao - cap_tracao * 0.92) / cap_tracao, 0.0, 1.0) *
+                   (throttle > 0.05 ? 1.0 : 0.0);
+    st.lockup = clampd((f_brake_demanda - cap_front - cap_rear) /
+                           std::max(cap_front + cap_rear, 1.0), 0.0, 1.0);
+
+    // limita patinação quando há controle de tração
+    if (sp.traction_control > 0.0 && st.wheelspin > 0.0) {
+        double corte = 1.0 - sp.traction_control * clampd(st.wheelspin * 3.0, 0.0, 1.0);
+        fx_front *= corte; fx_rear *= corte;
+        mag_front = std::sqrt(fx_front * fx_front + fy_front * fy_front);
+        scale_f = mag_front > cap_front ? cap_front / std::max(mag_front, 1e-6) : 1.0;
+    }
+
     fx_front *= scale_f; fy_front *= scale_f;
     fx_rear *= scale_r;  fy_rear *= scale_r;
 
-    // ---------------- dinâmica no referencial do carro --------------------
+    // ---------------- dinâmica no referencial do carro ----------------------
     double cos_d = std::cos(steer), sin_d = std::sin(steer);
     double fx_body = fx_front * cos_d - fy_front * sin_d + fx_rear;
     double fy_body = fy_front * cos_d + fx_front * sin_d + fy_rear;
     double mz = a_ax * (fy_front * cos_d + fx_front * sin_d) - b_ax * fy_rear;
 
-    double ax_body = fx_body / m + yaw_rate * vy;
-    double ay_body = fy_body / m - yaw_rate * vx;
+    double ax_body = fx_body / m_total + yaw_rate * vy;
+    double ay_body = fy_body / m_total - yaw_rate * vx;
     double dr = mz / iz;
+
+    // amortecimento natural de guinada (estabiliza a baixa velocidade)
+    dr -= yaw_rate * clampd(1.2 - speed * 0.05, 0.15, 1.2);
 
     double new_vx = vx + ax_body * dt;
     double new_vy = vy + ay_body * dt;
     double new_r = yaw_rate + dr * dt;
 
-    // ---------------- limites e estabilidade ------------------------------
+    // ---------------- limites e estabilidade --------------------------------
     bool idle = (throttle < 0.02) && (brake < 0.02) && (speed < 0.8);
     if (idle) { new_vx *= 0.85; new_vy *= 0.80; new_r *= 0.85; }
     bool stopped = idle && (speed < 0.25);
     if (stopped) { new_vx = 0.0; new_vy = 0.0; new_r = 0.0; }
 
-    new_vx = clamp(new_vx, -max_speed * 0.4, max_speed * 1.05);
-    new_vy = clamp(new_vy, -45.0, 45.0);
-    new_r = clamp(new_r, -6.0, 6.0);
+    new_vx = clampd(new_vx, -max_speed * 0.4, max_speed * 1.05);
+    new_vy = clampd(new_vy, -45.0, 45.0);
+    new_r = clampd(new_r, -6.0, 6.0);
+    if (!std::isfinite(new_vx) || !std::isfinite(new_vy) || !std::isfinite(new_r)) {
+        new_vx = 0.0; new_vy = 0.0; new_r = 0.0;
+    }
+
+    // ---------------- combustível -------------------------------------------
+    if (sp.fuel_capacity > 0.0) {
+        double consumo = sp.fuel_burn * (0.06 + 0.94 * throttle) * dt;
+        st.fuel = clampd(st.fuel - consumo / std::max(sp.fuel_capacity, 1.0), 0.0, 1.0);
+    }
 
     // integração da pose
     double cos_h = std::cos(st.heading), sin_h = std::sin(st.heading);
@@ -240,6 +525,15 @@ void physics_step(const CarSpec& sp, CarState& st, double surface_grip,
     st.ax = ax_body;
     st.ay = ay_body;
     st.speed = std::sqrt(st.vx * st.vx + st.vy * st.vy);
+}
+
+void aplicar_impacto(const CarSpec& sp, CarState& st, double vel_impacto) {
+    st.damage = clampd(st.damage + sp.damage_rate * clampd(vel_impacto, 0.0, 60.0) / 30.0, 0.0, 1.0);
+    // perda instantânea de velocidade proporcional à gravidade da batida
+    double fator = clampd(1.0 - 0.020 * vel_impacto, 0.55, 1.0);
+    st.vx *= fator;
+    st.vy *= fator;
+    st.r = clampd(st.r * 0.6, -3.0, 3.0);
 }
 
 }  // namespace raceai

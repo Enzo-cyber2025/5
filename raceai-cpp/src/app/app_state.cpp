@@ -244,6 +244,22 @@ void AppState::aplicar_treino_cfg(const TrainSettings& t) {
     }
 }
 
+// ------------------------------------------------------------- chave de modo
+void AppState::alternar_modo() {
+    if (mode == Mode::Corrida) {
+        if (!trainer) criar_trainer();
+        mode = Mode::Treinamento;
+        return;
+    }
+    // indo para a corrida: monta o grid só se ainda nao existir, assim a
+    // corrida continua de onde parou quando voce volta
+    if (!race.sim) {
+        iniciar_corrida({});
+        return;
+    }
+    mode = Mode::Corrida;
+}
+
 void AppState::criar_trainer() {
     TrainerConfig tc;
     tc.seed = 12345;

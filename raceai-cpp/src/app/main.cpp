@@ -20,6 +20,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -34,6 +35,7 @@ static const int kTimer = 1;
 
 static HWND g_hwnd = nullptr;
 static HWND g_edita_python = nullptr;
+static HWND g_botao_chave = nullptr;
 static HWND g_texto_metricas = nullptr;
 static HWND g_texto_corrida = nullptr;
 static HFONT g_fonte = nullptr;
@@ -120,7 +122,7 @@ enum {
     ID_SALVAR, ID_CARREGAR, ID_APLICAR_PY, ID_PISTA, ID_CARRO, ID_LIMPAR_PY,
     ID_EXEMPLO_PY, ID_NOVO, ID_ADD_MODELO, ID_AJUDA, ID_SAIR, ID_VOLTAR,
     ID_ABRIR_PY, ID_SALVAR_PY,
-    ID_RECOMPENSA_PADRAO, ID_ZOOM_MAIS, ID_ZOOM_MENOS
+    ID_RECOMPENSA_PADRAO, ID_ZOOM_MAIS, ID_ZOOM_MENOS, ID_CHAVE_MODO
 };
 
 // ------------------------------------------------------------------ canvas
@@ -328,6 +330,10 @@ static void pinta_canvas(HDC hdc, int x0, int y0, int w, int h) {
 
 // ------------------------------------------------------------------ WndProc
 static void mostra_tela() {
+    if (g_botao_chave) {
+        SetWindowTextW(g_botao_chave, g_app.mode == Mode::Corrida ? L"F2 \u25b8 Treino"
+                                                                  : L"F2 \u25b8 Corrida");
+    }
     const bool treino = g_app.mode == Mode::Treinamento;
     const bool corrida = g_app.mode == Mode::Corrida;
     // controles de treino
@@ -360,6 +366,12 @@ static void atualiza_textos() {
         for (const std::string& s : linhas) t += s + "\r\n";
         SetWindowTextW(g_texto_corrida, wide(t).c_str());
     }
+}
+
+static void trocar_modo() {
+    g_app.alternar_modo();
+    mostra_tela();
+    atualiza_textos();
 }
 
 static void le_teclado() {
@@ -416,6 +428,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
 
             botao(hwnd, ID_CORRIDA, P, 140, 120, 30, L"Corrida");
             botao(hwnd, ID_TREINO, P + 128, 140, 120, 30, L"Treinamento");
+            g_botao_chave = botao(hwnd, ID_CHAVE_MODO, P + 256, 140, W - 256, 30, L"F2 ▸ Treino");
 
             // ---- treino: configuração
             int y = 180;
@@ -506,7 +519,8 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             botao(hwnd, ID_MENU, P, 526, 180, 28, L"Voltar ao menu");
 
             rotulo(hwnd, P, 570, W, 130,
-                   L"Setas/WASD dirigem\nR reinicia a corrida\nC troca a câmera\n"
+                   L"Setas/WASD dirigem\nF2 alterna Corrida/Treino\n"
+                   L"R reinicia a corrida\nC troca a câmera\n"
                    L"+/- aproxima\nH mostra/esconde o HUD\nESC volta ao menu");
 
             mostra_tela();
@@ -555,6 +569,13 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             }
             return 0;
         }
+        case WM_GETMINMAXINFO: {
+            // nunca deixa a janela ficar pequena a ponto de cortar o painel
+            MINMAXINFO* mm = (MINMAXINFO*)lp;
+            mm->ptMinTrackSize.x = 900;
+            mm->ptMinTrackSize.y = 560;
+            return 0;
+        }
         case WM_COMMAND: {
             const int id = LOWORD(wp);
             if (id == ID_PISTA && HIWORD(wp) == CBN_SELCHANGE) {
@@ -566,6 +587,8 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             } else if (id == ID_CARRO && HIWORD(wp) == CBN_SELCHANGE) {
                 int i = int(SendMessageW((HWND)lp, CB_GETCURSEL, 0, 0));
                 g_app.carregar_carro(i);
+            } else if (id == ID_CHAVE_MODO) {
+                trocar_modo();
             } else if (id == ID_TREINO) {
                 g_app.mode = Mode::Treinamento;
                 mostra_tela();
@@ -689,7 +712,9 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             return 0;
         }
         case WM_KEYDOWN: {
-            if (wp == VK_ESCAPE) {
+            if (wp == VK_F2) {
+                trocar_modo();
+            } else if (wp == VK_ESCAPE) {
                 g_app.mode = Mode::Menu;
                 mostra_tela();
             } else if (wp == 'R') {
@@ -732,22 +757,62 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
 }
 
 // ------------------------------------------------------------------ main
-int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int cmd_show) {
-    // deixa o Python (se houver) achar a pasta dele
+// ------------------------------------------------------------------ log/erro
+// Um .exe de interface nao tem console: se algo estoura na inicializacao o
+// processo simplesmente some. Entao todo erro vai para raceai.log (ao lado do
+// .exe) e para uma mensagem na tela.
+static std::wstring g_dir_app = L".";
+
+static void log_linha(const std::wstring& txt) {
+    std::ofstream f(narrow(g_dir_app + L"\\raceai.log"), std::ios::app);
+    if (!f) return;
+    f << narrow(txt) << "\n";
+}
+static void log_erro(const std::wstring& onde, const std::wstring& det) {
+    log_linha(L"[ERRO] " + onde + L": " + det);
+    MessageBoxW(nullptr, (onde + L"\n\n" + det + L"\n\nDetalhes em raceai.log").c_str(),
+                L"RaceAI 2D", MB_OK | MB_ICONERROR);
+}
+
+static std::wstring mensagem_win32(DWORD cod) {
+    wchar_t* buf = nullptr;
+    DWORD n = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+                                 FORMAT_MESSAGE_IGNORE_INSERTS,
+                             nullptr, cod, 0, (LPWSTR)&buf, 0, nullptr);
+    std::wstring s = (n && buf) ? std::wstring(buf, n) : std::wstring(L"erro " + std::to_wstring(cod));
+    if (buf) LocalFree(buf);
+    while (!s.empty() && (s.back() == L'\n' || s.back() == L'\r')) s.pop_back();
+    return s;
+}
+
+static int rodar(HINSTANCE hInst, int cmd_show) {
     wchar_t modulo[MAX_PATH];
     GetModuleFileNameW(nullptr, modulo, MAX_PATH);
     std::wstring caminho = modulo;
     size_t barra = caminho.find_last_of(L"\\/");
-    std::wstring dir = (barra == std::wstring::npos) ? L"." : caminho.substr(0, barra);
-    std::wstring pyhome = dir + L"\\python";
-    SetEnvironmentVariableW(L"PYTHONHOME", pyhome.c_str());
-    std::wstring pycaminho = pyhome + L"\\python311.zip;" + pyhome + L";" + dir;
-    SetEnvironmentVariableW(L"PYTHONPATH", pycaminho.c_str());
-    SetCurrentDirectoryW(dir.c_str());
+    g_dir_app = (barra == std::wstring::npos) ? L"." : caminho.substr(0, barra);
+
+    // tudo (pistas, carros, saves) é resolvido a partir da pasta do .exe,
+    // não da pasta de onde ele foi chamado
+    SetCurrentDirectoryW(g_dir_app.c_str());
+
+    // Python (opcional): se a pasta python/ nao existir, o app segue em C++
+    std::wstring pyhome = g_dir_app + L"\\python";
+    DWORD py_attr = GetFileAttributesW(pyhome.c_str());
+    if (py_attr != INVALID_FILE_ATTRIBUTES && (py_attr & FILE_ATTRIBUTE_DIRECTORY)) {
+        SetEnvironmentVariableW(L"PYTHONHOME", pyhome.c_str());
+        std::wstring pycaminho = pyhome + L"\\python311.zip;" + pyhome + L";" + g_dir_app;
+        SetEnvironmentVariableW(L"PYTHONPATH", pycaminho.c_str());
+        log_linha(L"python: " + pyhome);
+    } else {
+        SetEnvironmentVariableW(L"PYTHONHOME", nullptr);
+        SetEnvironmentVariableW(L"PYTHONPATH", nullptr);
+        log_linha(L"python: ausente (modo C++ puro)");
+    }
 
     INITCOMMONCONTROLSEX icc;
     icc.dwSize = sizeof(icc);
-    icc.dwICC = ICC_BAR_CLASSES | ICC_WIN95_CLASSES;
+    icc.dwICC = ICC_BAR_CLASSES | ICC_WIN95_CLASSES | ICC_STANDARD_CLASSES;
     InitCommonControlsEx(&icc);
 
     WNDCLASSEXW wc;
@@ -759,14 +824,32 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int cmd_show) {
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
     wc.lpszClassName = kClasse;
-    RegisterClassExW(&wc);
+    if (!RegisterClassExW(&wc)) {
+        log_erro(L"RegisterClassExW", mensagem_win32(GetLastError()));
+        return 1;
+    }
+
+    // tamanho: cabe na tela do usuario (1366x768, 1024x600 etc.)
+    RECT area = {0, 0, 0, 0};
+    SystemParametersInfoW(SPI_GETWORKAREA, 0, &area, 0);
+    int disp_w = area.right - area.left, disp_h = area.bottom - area.top;
+    if (disp_w < 320 || disp_h < 240) { disp_w = 1360; disp_h = 768; }
+    int larg = std::min(1360, disp_w - 20);
+    int alt = std::min(900, disp_h - 20);
+    larg = std::max(larg, 900);
+    alt = std::max(alt, 560);
 
     g_hwnd = CreateWindowExW(0, kClasse, L"RaceAI 2D — treino de IA (C++)",
-                             WS_OVERLAPPEDWINDOW | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
-                             1360, 900, nullptr, nullptr, hInst, nullptr);
-    if (!g_hwnd) return 1;
+                             WS_OVERLAPPEDWINDOW, area.left + std::max(0, (disp_w - larg) / 2),
+                             area.top + std::max(0, (disp_h - alt) / 2), larg, alt, nullptr,
+                             nullptr, hInst, nullptr);
+    if (!g_hwnd) {
+        log_erro(L"CreateWindowExW", mensagem_win32(GetLastError()));
+        return 1;
+    }
     ShowWindow(g_hwnd, cmd_show);
     UpdateWindow(g_hwnd);
+    log_linha(L"[OK] janela criada " + std::to_wstring(larg) + L"x" + std::to_wstring(alt));
 
     MSG msg;
     while (GetMessageW(&msg, nullptr, 0, 0) > 0) {
@@ -774,4 +857,28 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int cmd_show) {
         DispatchMessageW(&msg);
     }
     return int(msg.wParam);
+}
+
+int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int cmd_show) {
+    // caminho do log ainda nao conhecido: usa o do proprio executavel
+    {
+        wchar_t modulo[MAX_PATH];
+        GetModuleFileNameW(nullptr, modulo, MAX_PATH);
+        std::wstring c = modulo;
+        size_t b = c.find_last_of(L"\\/");
+        g_dir_app = (b == std::wstring::npos) ? L"." : c.substr(0, b);
+    }
+    log_linha(L"=== RaceAI 2D iniciando ===");
+    int rc = 0;
+    try {
+        rc = rodar(hInst, cmd_show);
+    } catch (const std::exception& e) {
+        log_erro(L"excecao nao tratada", wide(e.what() ? e.what() : "?"));
+        rc = 2;
+    } catch (...) {
+        log_erro(L"excecao nao tratada", L"(tipo desconhecido)");
+        rc = 3;
+    }
+    log_linha(L"=== fim (rc=" + std::to_wstring(rc) + L") ===");
+    return rc;
 }
