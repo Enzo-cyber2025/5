@@ -30,10 +30,13 @@ using namespace raceai;
 static int ok = 0, falhas = 0;
 static int g_secao = 0;            // seção em execução
 static int g_foco = 0;             // 0 = roda tudo; N = roda só a seção N
+static int g_nesta_secao = 0;      // verificações já feitas na seção
+static int g_primeira_falha = 0;   // 1-based; 0 = nenhuma
 
 // O CI roda uma seção por vez: assim o passo que falhar já diz onde foi.
 static bool secao(int n) {
     g_secao = n;
+    g_nesta_secao = 0;
     return g_foco == 0 || g_foco == n;
 }
 
@@ -47,8 +50,10 @@ static std::string tmp_file(const char* nome) {
 
 #define CHECK(c, ...)                                                          \
     do {                                                                       \
+        g_nesta_secao += 1;                                                    \
         if (!(c)) {                                                            \
             falhas += 1;                                                       \
+            if (!g_primeira_falha) g_primeira_falha = g_nesta_secao;           \
             printf("  FALHOU %s:%d: ", __FILE__, __LINE__);                    \
             printf(__VA_ARGS__);                                               \
             printf("\n");                                                      \
@@ -378,5 +383,9 @@ int main(int argc, char** argv) {
     printf("\n%d verificações passaram, %d falharam\n", ok, falhas);
     if (!tem_python)
         printf("(parte de Python pulada: rode com RACEAI_STUB_PYTHON ou passe o caminho da dll)\n");
-    return falhas == 0 ? 0 : 1;
+    if (!falhas) return 0;
+    // Devolve qual verificação falhou: o CI mostra "exit code N" e, com
+    // --secao, N-200 é a contagem da verificação dentro daquela seção.
+    if (g_foco) return 200 + (g_primeira_falha > 50 ? 50 : g_primeira_falha);
+    return 1;
 }
