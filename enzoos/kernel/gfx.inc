@@ -880,6 +880,19 @@ k_panic:
         call k_log
         mov rdi, cr2
         call k_log_hex
+        ; estado do compositor (shadow/lfb/stride) para diagnostico
+        mov rdi, [shadow]
+        call k_log_hex
+        mov rdi, [lfb]
+        call k_log_hex
+        mov edi, [gsurf_ptr]
+        call k_log_hex
+        mov edi, [gsurf_stride]
+        call k_log_hex
+        mov edi, [screen_w]
+        call k_log_hex
+        mov edi, [screen_h]
+        call k_log_hex
         ; IDT[32] (timer) e primeiros descritores RX do e1000
         mov rsi, idt_table + 32*16
         mov rdi, [rsi]
