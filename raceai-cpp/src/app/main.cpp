@@ -16,7 +16,10 @@
 #include <commctrl.h>
 #include <commdlg.h>
 
+#include <algorithm>
 #include <cmath>
+#include <cstdint>
+#include <cstdio>
 #include <string>
 #include <vector>
 
@@ -67,6 +70,13 @@ static HWND rotulo(HWND pai, int x, int y, int w, int h, const wchar_t* txt,
     return hw;
 }
 
+// formata um "nome  1.23" sem depender de swprintf (que varia no MinGW)
+static std::wstring rotulo_valor(const std::wstring& nome, double v) {
+    char buf[64];
+    std::snprintf(buf, sizeof(buf), "%.2f", v);
+    return nome + L"  " + wide(std::string(buf));
+}
+
 static HWND botao(HWND pai, int id, int x, int y, int w, int h, const wchar_t* txt) {
     HWND hw = CreateWindowW(L"button", txt, WS_CHILD | WS_VISIBLE | WS_TABSTOP, x, y, w, h, pai,
                             (HMENU)(intptr_t)id, GetModuleHandle(nullptr), nullptr);
@@ -83,9 +93,7 @@ struct Slider {
     void atualiza() {
         if (!barra) return;
         SendMessageW(barra, TBM_SETPOS, TRUE, (LPARAM)int(std::lround(*valor * escala)));
-        wchar_t buf[128];
-        swprintf(buf, 128, L"%s  %.2f", nome.c_str(), *valor);
-        SetWindowTextW(texto, buf);
+        SetWindowTextW(texto, rotulo_valor(nome, *valor).c_str());
     }
 };
 static std::vector<Slider> g_sliders;
@@ -680,7 +688,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
 }
 
 // ------------------------------------------------------------------ main
-int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE, PWSTR, int cmd_show) {
+int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int cmd_show) {
     // deixa o Python (se houver) achar a pasta dele
     wchar_t modulo[MAX_PATH];
     GetModuleFileNameW(nullptr, modulo, MAX_PATH);
