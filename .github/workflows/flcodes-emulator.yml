@@ -74,6 +74,38 @@ jobs:
           python3 -m flcodes audit
           bash demo/run_demo.sh
 
+  signup-probe:
+    name: Can CI sign a Google account up at all? (one honest attempt)
+    runs-on: ubuntu-latest
+    needs: unit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install the browser
+        run: |
+          python3 -m pip install --quiet playwright
+          python3 -m playwright install --with-deps chromium
+      - name: One attempt, no captcha solving, no fake phone
+        run: |
+          set +e
+          python3 family-link-codes/tools/google_signup_probe.py \
+            --out-dir "$RUNNER_TEMP/signup" | tee "$RUNNER_TEMP/signup.log"
+          echo "${PIPESTATUS[0]}" > "$RUNNER_TEMP/signup-status.txt"
+          exit 0
+      - name: Report which wall it was
+        run: |
+          set -e
+          python3 family-link-codes/tools/signup_report.py --dir "$RUNNER_TEMP/signup"
+      - name: Publish the screenshots (and the account, if it exists)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: signup-account
+          path: ${{ runner.temp }}/signup
+          if-no-files-found: warn
+
   emulator:
     name: emulator (QEMU) - selftest app, no root
     runs-on: ubuntu-latest
