@@ -44,10 +44,9 @@ command -v gh >/dev/null 2>&1 || die "gh is not installed"
 gh auth status >/dev/null 2>&1 || die "gh is not authenticated (run: gh auth login)"
 [[ -n "$REPO" ]] || REPO="$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)"
 [[ -n "$REPO" ]] || die "cannot work out the repository; pass --repo owner/name"
-[[ -n "$REF" ]] || REF="$(cd "$HERE/.." && pwd | xargs -I{} git -C {} rev-parse --abbrev-ref HEAD 2>/dev/null)"
-[[ -n "$REF" && "$REF" != "HEAD" ]] || die "cannot work out the branch; pass --ref"
+# The branch is only needed to trigger, and a detached checkout (CI) has none;
+# resolve it there, not here, so --check works anywhere.
 say "repository: $REPO"
-say "branch:     $REF"
 
 # ---------------------------------------------------------------- 1. validate
 step "1. is the identity usable?"
@@ -80,6 +79,14 @@ say "published: FLCODES_GPLAY_EMAIL, FLCODES_GPLAY_PASSWORD (${#FLCODES_GPLAY_PA
 
 # ----------------------------------------------------------------- 3. trigger
 step "3. trigger the workflow"
+if [[ -z "$REF" ]]; then
+  REF="$(git -C "$HERE/.." rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
+fi
+if [[ -z "$REF" || "$REF" == "HEAD" ]]; then
+  REF="$(gh repo view --json defaultBranchRef -q .defaultBranchRef.name 2>/dev/null || true)"
+fi
+[[ -n "$REF" && "$REF" != "HEAD" ]] || die "cannot work out the branch; pass --ref"
+say "branch: $REF"
 BEFORE="$(gh run list --repo "$REPO" --branch "$REF" --limit 1 --json databaseId -q '.[0].databaseId' 2>/dev/null || true)"
 TRIGGERED=""
 if gh workflow run flcodes-emulator.yml --repo "$REPO" --ref "$REF" >/dev/null 2>&1; then
