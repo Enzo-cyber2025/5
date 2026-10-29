@@ -201,6 +201,47 @@ def select_birthday(page, identity: dict) -> list:
     return done
 
 
+def handle_choices(page, text: str, identity: dict) -> list:
+    """Screens with no text field: pick a suggested Gmail address, or make one.
+
+    The username screen offers two or three generated addresses as radios and a
+    "Create your own Gmail address" link. A person picks one; so do we.
+    """
+    actions = []
+    lowered = text.lower()
+    if "gmail address" in lowered or "endereço do gmail" in lowered:
+        clicked = False
+        for locator in (
+            lambda: page.get_by_role("radio").first,
+            lambda: page.locator('[role="radio"]').first,
+            lambda: page.get_by_role("option").first,
+        ):
+            try:
+                element = locator()
+                if element.count() and element.is_visible():
+                    element.click(timeout=3000)
+                    actions.append("gmail: picked the first suggestion")
+                    clicked = True
+                    break
+            except Exception:
+                continue
+        if not clicked:
+            for label in ("Create your own Gmail address", "Criar seu próprio endereço do Gmail"):
+                try:
+                    page.get_by_text(re.compile(label, re.I)).first.click(timeout=3000)
+                    page.wait_for_timeout(1200)
+                    field = page.locator('input[type="text"]:visible, input[type="email"]:visible').first
+                    field.fill(identity["username"], timeout=3000)
+                    actions.append("gmail: typed a custom address")
+                    clicked = True
+                    break
+                except Exception:
+                    continue
+        if not clicked:
+            actions.append("gmail: no suggestion could be clicked")
+    return actions
+
+
 def click_next(page) -> bool:
     for label in ("Next", "Avançar", "Próxima", "Próximo", "I agree", "Concordo",
                   "Create account", "Criar conta", "Save", "Continuar"):
@@ -240,8 +281,9 @@ def run(out_dir: pathlib.Path, headless: bool) -> int:
             text = page_text(page)
             (out_dir / f"step-{attempt:02d}.txt").write_text(text, encoding="utf-8", errors="replace")
             verdict = classify(text)
+            picked = handle_choices(page, text, identity)
             filled = fill_visible(page, identity)
-            picked = select_birthday(page, identity)
+            picked += select_birthday(page, identity)
             clicked = click_next(page)
             steps.append({
                 "step": attempt,
