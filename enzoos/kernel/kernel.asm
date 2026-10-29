@@ -169,6 +169,8 @@ evt_poll:
         mov r13d, [rbx+4]               ; sc
         mov r14d, [rbx+8]               ; mods
         inc dword [kq_head]
+        and dword [kq_head], 31         ; wrap: sem isto o head escapava do
+        ; buffer de 32 entradas e o consumidor lia lixo forever (flood de eventos)
         ; modal engole tudo (enter/esc fecham)
         cmp dword [modal_active], 0
         je .not_modal
@@ -237,8 +239,8 @@ evt_poll:
         jmp .kq
 .hk_menu:
         xor dword [menu_open], 1
-        mov dword [menu_sel], -1
-        call menu_redraw
+        mov dword [menu_sel], 0         ; 1º item pré-selecionado: N downs
+        call menu_redraw                ; selecionam o item N (índices 0-based)
         jmp .kq
 .hk_term:
         mov rdi, s_app1
@@ -561,7 +563,7 @@ mouse_dispatch:
         jmp .out
 .toggle_menu:
         xor dword [menu_open], 1
-        mov dword [menu_sel], -1
+        mov dword [menu_sel], 0         ; mesmo comportamento do atalho ctrl-alt-m
         call menu_redraw
         jmp .out
 .not_task:

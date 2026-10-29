@@ -225,8 +225,8 @@ sys_int80:
         mov rax, 0x5CE
         ret
 .time:
-        mov rax, [uptime_ms]
-        mov ecx, 1000
+        mov eax, [uptime_ms]     ; 32-bit: uptime_ms é dd; o dword vizinho
+        mov ecx, 1000            ; (foreign_active) não pode vazar para edx
         xor edx, edx
         div ecx
         ret

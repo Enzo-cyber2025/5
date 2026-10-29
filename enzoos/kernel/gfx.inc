@@ -796,6 +796,21 @@ copy_region_desktop:
 flush_damage:
         push rbx
         push r12
+        ; clamp defensivo: retângulo de dano sempre dentro da tela
+        mov eax, [screen_w]
+        sub eax, [dam_x]
+        jle .zero                      ; dam_x fora da tela
+        cmp dword [dam_w], eax
+        jbe .wok
+        mov dword [dam_w], eax         ; dam_w = screen_w - dam_x
+.wok:
+        mov eax, [screen_h]
+        sub eax, [dam_y]
+        jle .zero                      ; dam_y fora da tela
+        cmp dword [dam_h], eax
+        jbe .hok
+        mov dword [dam_h], eax         ; dam_h = screen_h - dam_y
+.hok:
         xor r10d, r10d
 .row:
         cmp r10d, [dam_h]
@@ -810,12 +825,16 @@ flush_damage:
         add rsi, rax
         mov rdi, [lfb]
         add rdi, rax
-        mov rdx, [dam_w]
-        shl rdx, 2
-        call k_memcpy
+        mov edx, [dam_w]               ; 32-bit: lê APENAS dam_w (mov rdx, [dam_w]
+        shl rdx, 2                     ; lia 8 bytes e dam_h virava o dword alto
+        call k_memcpy                  ; do count — estourava o LFB e gerava o panic)
         inc r10d
         jmp .row
 .done:
+        pop r12
+        pop rbx
+        ret
+.zero:
         pop r12
         pop rbx
         ret

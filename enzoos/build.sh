@@ -47,7 +47,8 @@ python3 tools/mkenz.py obj/sysmon.bin obj/SYSMON.ENZ --name SysMon --w 460 --h 3
 python3 tools/enzc.py apps/mandel.enz obj/mandel.asm
 nasm -f bin -o obj/mandel.bin obj/mandel.asm
 python3 tools/mkenz.py obj/mandel.bin obj/MANDEL.ENZ --name Mandelbrot \
-    --w 520 --h 420 --icon 0xB06FD8 --imports "$(cat obj/mandel.imports)"
+    --w 520 --h 420 --icon 0xB06FD8 --entry "$(cat obj/mandel.entry)" \
+    --imports "$(cat obj/mandel.imports)"
 
 # ---- demos estrangeiras ----
 nasm -f bin -o obj/pe_demo.bin  demos/pe_demo.asm

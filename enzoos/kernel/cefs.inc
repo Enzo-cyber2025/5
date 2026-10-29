@@ -329,8 +329,8 @@ app_launch:
 app_dispatch:
         push rbx
         push r12
-        mov rax, [cur_slot]
-        push rax                        ; salva abaixo do payload (sem shift!)
+        mov eax, [cur_slot]               ; 32-bit: cur_slot é dd (não ler 8 bytes
+        push rax                          ; e arrastar o dword baixo de img_ptr)
         sub rsp, 48
         mov [rsp], rsi                  ; tipo em +0
         mov [rsp+16], rdx               ; a em +16
@@ -377,8 +377,8 @@ app_dispatch:
 .skip:
         add rsp, 48
         pop rax
-        mov [cur_slot], rax
-        pop r12
+        mov [cur_slot], eax               ; 32-bit: store qword esmagava o dword
+        pop r12                           ; baixo de img_ptr (dq vizinho)
         pop rbx
         ret
 
@@ -386,8 +386,9 @@ app_dispatch:
 ; wm_menu_refresh: lista os .ce do CEFS no menu Iniciar
 ; -----------------------------------------------------------------------------
 wm_menu_refresh:
-        xor r9d, r9d                   ; índice fonte
-        xor edx, edx                   ; destino
+        push rbx                       ; rbx = índice destino: k_strcasecmp usa
+        xor r9d, r9d                   ; dl internamente e clobberava o antigo
+        xor ebx, ebx                   ; índice em edx (menu ficava caótico)
 .loop:
         cmp r9d, [ce_count]
         jae .done
@@ -405,6 +406,9 @@ wm_menu_refresh:
         call k_strcasecmp
         test rax, rax
         jz .isapp
+        ; reler o comprimento (k_strcasecmp clobber rax) para o teste ".enz"
+        lea rdi, [r8]
+        call k_strlen
         lea rdi, [r8]
         add rdi, rax
         sub rdi, 4
@@ -413,10 +417,10 @@ wm_menu_refresh:
         test rax, rax
         jnz .next
 .isapp:
-        cmp edx, 16
+        cmp ebx, 16
         jae .done
         lea rdi, [menu_names]
-        imul rax, rdx, 24
+        imul rax, rbx, 24
         add rdi, rax
         mov rsi, r8
         mov ecx, 23
@@ -431,12 +435,13 @@ wm_menu_refresh:
         jnz .cp
 .cpd:
         mov byte [rdi], 0
-        inc edx
+        inc ebx
 .next:
         inc r9d
         jmp .loop
 .done:
-        mov [menu_app_count], edx
+        mov [menu_app_count], ebx
+        pop rbx
         ret
 
 ; -----------------------------------------------------------------------------

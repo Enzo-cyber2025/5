@@ -407,6 +407,7 @@ class Gen:
         self.emitl("api_ptr: dq 0")
         self.emitl("win_w:   dd 480")
         self.emitl("win_h:   dd 320")
+        data_bytes = 16                      # api_ptr(8) + win_w(4) + win_h(4)
         for g in self.globs:
             name, size, init = g
             if name in ("win_w", "win_h", "api_ptr"):
@@ -414,10 +415,13 @@ class Gen:
             if size is not None:
                 self.glabels[name] = f"g_{name}"
                 self.emitl(f"g_{name}: times {size} dd 0")
+                data_bytes += size * 4
             else:
                 self.glabels[name] = f"g_{name}"
                 iv = init[1] if (init and init[0] == "num") else 0
                 self.emitl(f"g_{name}: dd {iv & 0xFFFFFFFF}")
+                data_bytes += 4
+        self.entry_rva = 64 + data_bytes     # RVA no arquivo .ENZ (header 64 B)
         self.emitl("")
         self.emitl("entry:")
         self.emit("push rbx")
@@ -862,6 +866,9 @@ def main():
     impfile = sys.argv[2].rsplit(".", 1)[0] + ".imports"
     with open(impfile, "w") as f:
         f.write(",".join(n for n in API_IMPORTS if n in g.used_api))
+    entfile = sys.argv[2].rsplit(".", 1)[0] + ".entry"
+    with open(entfile, "w") as f:
+        f.write(str(g.entry_rva))
     print(f"enzc: {sys.argv[2]} — {len(funcs)} funções, "
           f"{len(g.used_api)} imports, {len(g.strings)} strings")
 

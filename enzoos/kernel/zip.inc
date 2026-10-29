@@ -556,7 +556,7 @@ axml_scan_label:
         ret
 .ref:
         ; referência a recurso: @0xXXXXXXXX
-        mov rax, [axml_val_int]
+        mov eax, [axml_val_int]           ; 32-bit: axml_val_int é dd
         mov [ap_label_ref], eax
         mov dword [ap_label_isref], 1
 .done:

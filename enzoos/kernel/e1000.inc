@@ -44,7 +44,7 @@ k_e1000_init:
         ; pega o MAC (RAL/RAH)
         mov eax, [rbx + 0x5400]
         mov [net_mac], eax
-        mov eax, [rbx + 0x5408]
+        mov eax, [rbx + 0x5404]        ; RAH: MAC[4..5] (0x5408 seria RAL1=0)
         and eax, 0xFFFF
         mov [net_mac + 4], eax
         ; ---- RX ----
@@ -202,7 +202,10 @@ e1000_rx_poll:
         mov [rax + 0x2818], edx             ; RDT
         inc dword [net_pkts_rx]
         ; processa
-        cmp r13d, 64
+        ; mínimo 34 B (14 eth + 20 IP): replies ARP (42 B) e pings são
+        ; curtos — o filtro antigo (<64) os descartava e o ARP nunca
+        ; era cacheado ("ARP sem resposta")
+        cmp r13d, 34
         jb .loop
         mov edi, r14d
         mov esi, r13d

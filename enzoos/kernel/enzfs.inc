@@ -102,6 +102,7 @@ e_dirent_find:
         push r12
         push r13
         push r14
+        push r15
         mov r12, rsi               ; nome
         call e_inode
         test rax, rax
@@ -122,11 +123,12 @@ e_dirent_find:
         call ahci_read
         test eax, eax
         jnz .next
-        xor ecx, ecx
-.ent:
-        cmp ecx, 128
+        xor r15d, r15d             ; índice da entrada — rcx não sobrevive ao
+.ent:                              ; k_strcasecmp (clobbers rcx) nem ao shl
+        cmp r15d, 128
         jae .next
         mov rax, enz_dirbuf
+        mov ecx, r15d
         shl rcx, 5
         add rax, rcx               ; rax = entrada
         cmp byte [rax], 0
@@ -137,13 +139,14 @@ e_dirent_find:
         test rax, rax
         jz .found
 .ent_next:
-        inc ecx
+        inc r15d
         jmp .ent
 .next:
         inc r13d
         jmp .blk
 .found:
         mov rax, enz_dirbuf
+        mov ecx, r15d
         shl rcx, 5
         add rax, rcx
         mov eax, [rax + 24]        ; ino
@@ -151,6 +154,7 @@ e_dirent_find:
 .nf:
         mov rax, -1
 .done:
+        pop r15
         pop r14
         pop r13
         pop r12
@@ -906,11 +910,12 @@ e_dir_del:
         call ahci_read
         test eax, eax
         jnz .next
-        xor ecx, ecx
-.ent:
-        cmp ecx, 128
+        xor r15d, r15d             ; índice da entrada — rcx não sobrevive ao
+.ent:                              ; k_strcasecmp (clobbers rcx) nem ao shl
+        cmp r15d, 128
         jae .next
         mov rax, enz_dirbuf
+        mov ecx, r15d
         shl rcx, 5
         add rax, rcx
         cmp byte [rax], 0
@@ -922,6 +927,7 @@ e_dir_del:
         jnz .ent_next
         ; achou: zera a entrada
         mov rax, enz_dirbuf
+        mov ecx, r15d
         shl rcx, 5
         add rax, rcx
         mov dword [rax], 0

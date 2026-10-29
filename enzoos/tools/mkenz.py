@@ -56,7 +56,10 @@ def main():
         image = data[64:]
         isize = len(image)
     else:
-        entry = a.entry if a.entry is not None else 0
+        # .bin cru (org 0): a imagem começa logo após o cabeçalho .ENZ de 64
+        # bytes — o kernel soma o entry ao ENDEREÇO DO ARQUIVO INTEIRO, então
+        # entry=0 faria o app executar os bytes "ENZ1" do cabeçalho (panic)
+        entry = a.entry if a.entry is not None else 64
         image = data
         isize = len(image)
         w, h, icon, name = 480, 320, 0x2D9CDB, "App"

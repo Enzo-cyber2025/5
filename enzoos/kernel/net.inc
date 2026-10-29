@@ -729,11 +729,11 @@ tcp_input:
         mov r12d, esi
         movzx eax, word [rbx]
         rol ax, 8
-        cmp eax, [tcp_lport]
+        cmp ax, [tcp_rport]               ; 16 bits: dword lia tcp_lport junto
         jne .out
         movzx eax, word [rbx + 2]
         rol ax, 8
-        cmp eax, [tcp_rport]
+        cmp ax, [tcp_lport]               ; 16 bits: idem (variáveis são dw)
         jne .out
         movzx r13d, byte [rbx + 13]        ; flags
         movzx eax, byte [rbx + 12]

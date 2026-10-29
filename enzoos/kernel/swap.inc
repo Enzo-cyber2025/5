@@ -34,7 +34,7 @@ k_swap_init:
         mov rax, [enz_super + 32]  ; swap_lba
         test rax, rax
         jz .off
-        mov [sw_lba], rax
+        mov [sw_lba], eax            ; 32-bit: store qword esmagaria sw_slots (dd vizinho)
         ; lê o cabeçalho da área
         mov edi, eax
         mov esi, 1

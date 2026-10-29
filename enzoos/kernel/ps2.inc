@@ -195,10 +195,10 @@ kbd_irq:
         test eax, eax
         jz .done                      ; modificador (consumido)
         test r9d, r9d
-        jz .done                      ; break de tecla comum: ignora
-        call kbd_translate
-        test eax, eax
-        jz .done
+        jz .break_key                 ; break de tecla comum: ignora, mas
+        call kbd_translate            ; reseta o prefixo E0 pendente (sem isto
+        test eax, eax                 ; o enter seguinte era engolido pela
+        jz .done                      ; tabela estendida após qualquer seta)
         ; Ctrl+C mata processo estrangeiro
         cmp eax, 'c'
         jne .not_cc
@@ -211,6 +211,9 @@ kbd_irq:
 .not_cc:
         call kq_push
 .done:
+        ret
+.break_key:
+        mov dword [kbd_e0], 0
         ret
 
 kbd_modifiers:
@@ -320,6 +323,9 @@ kbd_translate:
         jz .noshift
         shr eax, 8
 .noshift:
+        movzx eax, al                 ; descarta o byte do par (normal,shift):
+        ; sem isto o char virava a palavra inteira (ex. 0x3D2B por '+')
+        ; e nenhum atalho cmp r12d,'x' casava jamais
         ; caps lock inverte letras
         test dword [kbd_mods], 8
         jz .nocaps

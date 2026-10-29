@@ -70,6 +70,7 @@
 %define A_WND        56              ; qword
 %define A_APITBL     64              ; qword — tabela de imports .ENZ
 %define A_APITBL_N   72              ; dword
+%define K_EXPORTS_N  36              ; nº de entradas em k_exports (cefs.inc)
 %define A_FMT        76              ; dword (1 = .ce, 2 = .enz)
 %define A_SIZEOF     128
 
