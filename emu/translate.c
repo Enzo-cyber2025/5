@@ -17,6 +17,16 @@
                           * IP0/IP1 (X16/X17) would not, which rules them out for
                           * a value that has to outlive every call. */
 
+uint8_t tr_fail_opcode(const tr_func *f)
+{
+    /* fail_map is 0 for a one-byte opcode, 1 for 0F xx, 2 for 0F 38 xx and 3 for
+     * 0F 3A xx, and op_len is 1, 2, 3, 3 to match - so the discriminating byte is
+     * always the last one the decoder recorded. */
+    if (!f || f->fail_from_plan || f->fail_op_len == 0 || f->fail_op_len > 3)
+        return 0;
+    return f->fail_op[f->fail_op_len - 1];
+}
+
 const char *tr_reason_name(tr_reason r)
 {
     switch (r) {

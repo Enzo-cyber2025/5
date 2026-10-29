@@ -2094,6 +2094,50 @@ static size_t put_rip_rel(uint8_t *b, size_t off, int store, int w32,
  * independent and so runs everywhere. What is NOT checked here is that the words
  * do what they say - that needs real ARM64 and is in the execution test below.
  * ------------------------------------------------------------------------ */
+/* The byte a histogram must be indexed by, per map. Indexing by fail_op[0]
+ * instead is a silent reporting bug: it collapses every two-byte opcode into the
+ * cell labelled "0F 0F", which is a real encoding and so looks like a finding. */
+static void test_fail_opcode_is_map_aware(void)
+{
+    tr_func f;
+
+    printf("choosing the opcode byte that identifies a refusal, per map\n");
+    memset(&f, 0, sizeof f);
+
+    f.fail_from_plan = 0; f.fail_map = 0; f.fail_op_len = 1;
+    f.fail_op[0] = 0x8B;
+    CHECK(tr_fail_opcode(&f) == 0x8B, "a one-byte opcode reported %#02x, expected 0x8B",
+          tr_fail_opcode(&f));
+
+    /* movaps xmm0,xmm1 is 0F 28 C8: the discriminator is the SECOND byte. */
+    f.fail_map = 1; f.fail_op_len = 2; f.fail_op[0] = 0x0F; f.fail_op[1] = 0x28;
+    CHECK(tr_fail_opcode(&f) == 0x28,
+          "a two-byte opcode 0F 28 reported %#02x, expected 0x28 - indexing by "
+          "fail_op[0] would say 0x0F and hide which SSE instruction it was",
+          tr_fail_opcode(&f));
+
+    f.fail_map = 2; f.fail_op_len = 3;
+    f.fail_op[0] = 0x0F; f.fail_op[1] = 0x38; f.fail_op[2] = 0xF6;
+    CHECK(tr_fail_opcode(&f) == 0xF6, "a 0F 38 opcode reported %#02x, expected 0xF6",
+          tr_fail_opcode(&f));
+
+    f.fail_map = 3; f.fail_op_len = 3;
+    f.fail_op[0] = 0x0F; f.fail_op[1] = 0x3A; f.fail_op[2] = 0x14;
+    CHECK(tr_fail_opcode(&f) == 0x14, "a 0F 3A opcode reported %#02x, expected 0x14",
+          tr_fail_opcode(&f));
+
+    /* A record blame() cleared holds no opcode and must not be counted at all. */
+    f.fail_from_plan = 1; f.fail_map = 1; f.fail_op_len = 0;
+    memset(f.fail_op, 0, sizeof f.fail_op);
+    CHECK(tr_fail_opcode(&f) == 0, "a blamed refusal reported %#02x, expected 0 "
+                                   "(no opcode to attribute)", tr_fail_opcode(&f));
+
+    f.fail_from_plan = 0; f.fail_op_len = 0; f.fail_op[0] = 0x8B;
+    CHECK(tr_fail_opcode(&f) == 0, "a zero-length record reported %#02x, expected 0",
+          tr_fail_opcode(&f));
+    CHECK(tr_fail_opcode(NULL) == 0, "a NULL record did not report 0");
+}
+
 static void test_image_relative_translation(void)
 {
     static const uint64_t img_va   = 0x140000000ULL;
@@ -2306,7 +2350,16 @@ static void test_image_relative_executes(void)
 
     printf("executing RIP-relative image access on real ARM64\n");
 
-    img = mmap(NULL, img_sz, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS,
+    /* MAP_SHARED, and not MAP_PRIVATE like every other mapping in this file.
+     *
+     * exec_generated runs the translated code in a FORKED child, so with
+     * MAP_PRIVATE the image is copy-on-write: the child's store lands in its own
+     * copy and the parent's buffer never changes. The round trip still returns the
+     * right value, because it happens entirely inside the child, and the only thing
+     * that fails is the parent looking at its own memory afterwards. That is easy
+     * to misread as the translator storing to the wrong RVA. A shared anonymous
+     * mapping is visible to both, so the assertion means what it says. */
+    img = mmap(NULL, img_sz, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS,
                -1, 0);
     if (img == MAP_FAILED) {
         CHECK(0, "could not map a guest image");
@@ -2450,6 +2503,7 @@ int main(void)
     test_buffer_cap_is_named();
     test_width32_translation();
     test_width32_executes();
+    test_fail_opcode_is_map_aware();
     test_image_relative_translation();
     test_image_relative_executes();
     test_pipeline();

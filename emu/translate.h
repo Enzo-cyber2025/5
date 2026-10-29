@@ -328,6 +328,21 @@ tr_status tr_translate_function_img(const uint8_t *code, size_t code_len,
                                     tr_resolve_fn resolve, void *user,
                                     tr_func *out);
 
+/* The byte that identifies which instruction was refused, chosen according to the
+ * map rather than always read from fail_op[0].
+ *
+ * That distinction is the whole function. For a two-byte opcode fail_op[0] is the
+ * 0x0F escape, so indexing a histogram by it collapses every SSE instruction in a
+ * binary into one cell labelled "0F 0F" - which is a real encoding (3DNow!) and so
+ * looks like a finding rather than a reporting bug. Measured on a shipped bundle
+ * that one cell claimed to be the largest blocker in the module, ahead of anything
+ * else, while actually naming 19 different instructions.
+ *
+ * Returns 0 when the record holds no opcode at all: either fail_from_plan is set,
+ * meaning the refusal came after planning and blame() cleared fail_op, or the
+ * length is zero. A caller must not count those. */
+uint8_t tr_fail_opcode(const tr_func *f);
+
 const char *tr_status_name(tr_status s);
 
 #endif /* TRANSLATE_H */

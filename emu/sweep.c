@@ -441,8 +441,16 @@ static int translate_entry(sweep_job *j, uint32_t mi, uint64_t va)
          * whatever was decoded last, which is how a histogram ends up naming an
          * opcode no function contained - and then sends the next change after the
          * wrong thing. */
-        if (!f.fail_from_plan && f.fail_map < 4u && f.fail_op_len > 0)
-            j->opcode_hist[f.fail_map][f.fail_op[0]]++;
+        if (!f.fail_from_plan && f.fail_map < 4u && f.fail_op_len > 0) {
+            /* Indexed by the byte that identifies the instruction within its map,
+             * not by fail_op[0]. For a two-byte opcode fail_op[0] is the 0x0F
+             * escape, so indexing by it put every SSE refusal in the module into a
+             * single cell that printed as "0F 0F" - a real encoding, so it read as
+             * a finding instead of a reporting bug, and it was the largest blocker
+             * reported for this binary. */
+            uint8_t which = tr_fail_opcode(&f);
+            if (which) j->opcode_hist[f.fail_map][which]++;
+        }
         if (f.fail_insns == 0) j->refused_at_first_insn++;
         else                   j->refused_deeper++;
         if (f.fail_insns > j->deepest_refusal) j->deepest_refusal = f.fail_insns;
