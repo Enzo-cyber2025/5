@@ -695,26 +695,44 @@ jobs:
           die() { echo "::error title=game-assert::$1"; exit 1; }
           # -a forces text mode, so a stray non-UTF-8 byte in a module path cannot
           # silently turn a match into no output.
-          # The LAST match, not the first. print_progress runs during the sweep as
-          # well as print_summary at the end, so an early progress line reports the
-          # count before it climbed - and taking the first match quietly produced
-          # translated=0 against a log whose summary says 151. That made the main
-          # assertion below vacuous: it is guarded on translated > 0, so with 0 it
-          # never ran at all and the step passed without checking anything. A
-          # silently-skipped assertion is worse than no assertion, because it looks
-          # like coverage.
-          lastnum() { grep -aoE "$1" /tmp/game.log | grep -aoE '[0-9]+' | sed -n '$p'; }
-
-          grep -aq -- "--- executing what was translated ---" /tmp/game.log \
-            || die "the --execute pass never ran, so nothing was executed"
-          grep -aqE "records executed: [0-9]+" /tmp/game.log \
-            || die "the execution tally was never printed"
-
-          translated=$(lastnum 'functions pre-translated: [0-9]+'); translated=${translated:-0}
-          ran=$(lastnum 'records executed: [0-9]+');                  ran=${ran:-0}
-          ret=$(lastnum 'returned: [0-9]+');                          ret=${ret:-0}
-          faulted=$(lastnum 'faulted: [0-9]+');                       faulted=${faulted:-0}
-          markers=$(grep -acE "EXECUTED ON aarch64:" /tmp/game.log);   markers=${markers:-0}
+          # Two separate traps here, and both had to be fixed before this step
+          # asserted anything at all.
+          #
+          # The LAST match, not the first: print_progress runs during the sweep as
+          # well as print_summary at the end, so early lines report the count before
+          # it climbed.
+          #
+          # Space-tolerant patterns: the summary pads its labels to a column, so the
+          # real line reads "functions pre-translated:  151" with TWO spaces. The
+          # annotations this sandbox reads squeeze runs of spaces, which is how a
+          # one-space pattern looked correct and matched nothing.
+          #
+          # An extraction that matches nothing is now a failure in its own right.
+          # It has to be: an empty result defaults to 0, and 0 is also the honest
+          # value when nothing translated, so the two are indistinguishable from the
+          # number alone. Every run before this one took the second branch of the
+          # main assertion without ever evaluating the first.
+          lastof() { grep -aoE "$1" /tmp/game.log | sed -n '$p'; }
+          # The diagnostic goes to stderr and the function returns non-zero rather
+          # than calling die. Inside a command substitution, die's echo would be
+          # captured into the variable instead of reaching the log, and its exit
+          # would end only the subshell - so the step would fail with the message
+          # swallowed, which is the same silence this step has now failed through
+          # three times.
+          need_num() {
+            raw=$(lastof "$1")
+            if [ -z "$raw" ]; then
+              echo "::error title=game-assert::the pattern '$1' matched nothing in the log, so nothing was being asserted" >&2
+              return 1
+            fi
+            printf '%s' "$raw" | grep -aoE '[0-9]+' | sed -n '$p'
+          }
+          translated=$(need_num 'functions pre-translated: *[0-9]+') || exit 1
+          ran=$(need_num 'records executed: *[0-9]+')                 || exit 1
+          ret=$(need_num 'returned: *[0-9]+')                         || exit 1
+          faulted=$(need_num 'faulted: *[0-9]+')                      || exit 1
+          markers=$(grep -acE "EXECUTED ON aarch64:" /tmp/game.log);  markers=${markers:-0}
+          translated=${translated:-0}; ran=${ran:-0}; ret=${ret:-0}; faulted=${faulted:-0}
 
           echo "translated=${translated} executed=${ran} returned=${ret} faulted=${faulted} markers=${markers}"
           # Published as a notice so a future failure here is diagnosable from the
