@@ -73,6 +73,23 @@ struct CarSpec {
     double tire_cool_rate = 0.012;
     double tire_wear_rate = 0.00018;
 
+    // ---- rodas, diferencial e freios (modelo de simulador) ----
+    double wheel_inertia = 3.2;     // kg*m^2 por eixo (duas rodas)
+    double engine_inertia = 0.22;   // kg*m^2 do virabrequim (refletido pela marcha)
+    double diff_lock = 0.25;        // 0 = diferencial aberto, 1 = travado (LSD)
+    double brake_heat = 0.20;       // graus C por kJ de trabalho de freio
+    double brake_cool = 0.020;      // resfriamento (1/s)
+    double brake_fade = 0.35;       // perda de força com o disco quente
+
+    // ---- suspensão, cambagem e atitude ----
+    double roll_grad = 0.055;       // rad de rolagem por g lateral
+    double pitch_grad = 0.025;      // rad de pitch por g longitudinal
+    double susp_tau = 0.12;         // s: a carroceria não responde na hora
+    double camber_static = -0.020;  // rad (negativo = cambagem negativa)
+    double camber_gain = 0.55;      // ganho de cambagem com a rolagem
+    double camber_loss = 0.55;      // perda de aderência por rad de cambagem
+    double aero_pitch = 0.35;       // quanto o pitch muda o downforce
+
     // ---- sistemas ----
     double abs_level = 0.0;         // 0 = sem ABS, 1 = ABS perfeito
     double traction_control = 0.0;
@@ -120,16 +137,23 @@ struct CarState {
     double shift_cd = 0.0;          // tempo restante de troca
     double wheelspin = 0.0;         // 0..1 (patinação do eixo de tração)
     double lockup = 0.0;            // 0..1 (roda travada no freio)
+    double omega_f = 0.0, omega_r = 0.0;  // rotação das rodas (rad/s) por eixo
+    double sr_f = 0.0, sr_r = 0.0;        // escorregamento longitudinal (+ = patina)
 
     // pneus e sistemas
     double tire_temp = 70.0;
     double tire_wear = 0.0;
     double damage = 0.0;            // 0..1
     double fuel = 1.0;              // fração do tanque
+    double brake_temp = 60.0;       // graus C do disco
+    double susp_roll = 0.0;         // rad (rolagem da carroceria)
+    double susp_pitch = 0.0;        // rad (pitch da carroceria)
 
     void reset_systems() {
         rpm = 0.0; gear = 1; shift_cd = 0.0; wheelspin = 0.0; lockup = 0.0;
+        omega_f = 0.0; omega_r = 0.0; sr_f = 0.0; sr_r = 0.0;
         tire_temp = 70.0; tire_wear = 0.0; damage = 0.0; fuel = 1.0;
+        brake_temp = 60.0; susp_roll = 0.0; susp_pitch = 0.0;
     }
 };
 
@@ -140,9 +164,32 @@ inline double tire_lateral_force(double slip, double fz, double mu,
     return mu * fz * std::sin(shape * std::atan(stiffness * slip));
 }
 
+// Pneu com escorregamento COMBINADO (elipse de atrito de verdade): pedir força
+// longitudinal come a aderência lateral, e vice-versa. É o que faz o carro
+// sair de frente numa freada forte ou de traseira ao acelerar em cima da zebra.
+struct Pneu {
+    double fx = 0.0, fy = 0.0, mag = 0.0;
+};
+
+inline Pneu pneu_combinado(double slip_x, double slip_y, double fz, double mu,
+                           double b_lat, double b_long, double shape) {
+    Pneu p;
+    if (fz <= 0.0 || mu <= 0.0) return p;
+    const double sx = b_long * slip_x;      // escorregamento longitudinal normalizado
+    const double sy = b_lat * slip_y;       // escorregamento lateral normalizado
+    const double s = std::sqrt(sx * sx + sy * sy);
+    if (s < 1e-6) return p;
+    p.mag = mu * fz * std::sin(shape * std::atan(s));
+    p.fx = p.mag * sx / s;
+    p.fy = p.mag * sy / s;
+    return p;
+}
+
 // Avança um passo de física (in-place).
+// `draft` (0..1) é o vácuo: quanto do ar do carro da frente você está
+// aproveitando — reduz arrasto e um pouco do downforce.
 void physics_step(const CarSpec& sp, CarState& st, double surface_grip,
-                  double surface_roll, double dt);
+                  double surface_roll, double dt, double draft = 0.0);
 
 // Registra uma batida: gera dano (perda de potência/aderência) e tira velocidade.
 void aplicar_impacto(const CarSpec& sp, CarState& st, double vel_impacto);

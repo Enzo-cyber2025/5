@@ -214,9 +214,39 @@ void Simulation::step() {
     const int m = std::max(1, int(track.checkpoints.size()));
 
     std::vector<int> rows = active_;   // cópia: kill() altera active_
+
+    // ---- vácuo (aspiração): quem vem colado no carro da frente sofre menos
+    // arrasto. Calculado antes da física, um passo atrás, de propósito: o ar
+    // também demora a "sentir" a mudança.
+    for (int row : rows) agents[row].draft = 0.0;
+    if (rows.size() > 1 && rows.size() <= 64) {
+        for (int i = 0; i < int(rows.size()); ++i) {
+            Agent& a = agents[rows[i]];
+            if (!a.car.alive) continue;
+            double melhor = 0.0;
+            for (int j = 0; j < int(rows.size()); ++j) {
+                if (i == j) continue;
+                const Agent& b = agents[rows[j]];
+                if (!b.car.alive) continue;
+                const double dx = b.car.x - a.car.x, dy = b.car.y - a.car.y;
+                const double dist = std::sqrt(dx * dx + dy * dy);
+                if (dist > 30.0) continue;
+                // só conta se o outro está na FRENTE (no sentido do meu nariz)
+                const double frente = dx * std::cos(a.car.heading) + dy * std::sin(a.car.heading);
+                const double lado = -dx * std::sin(a.car.heading) + dy * std::cos(a.car.heading);
+                if (frente < 1.0 || frente > 30.0) continue;
+                if (std::fabs(lado) > 2.2) continue;
+                const double v = clamp(1.0 - (frente - 1.0) / 24.0, 0.0, 1.0) *
+                                 clamp(1.0 - std::fabs(lado) / 2.2, 0.0, 1.0);
+                if (v > melhor) melhor = v;
+            }
+            a.draft = melhor;
+        }
+    }
+
     for (int row : rows) {
         Agent& a = agents[row];
-        physics_step(specs[row], a.car, a.surface_grip, a.surface_roll, dt);
+        physics_step(specs[row], a.car, a.surface_grip, a.surface_roll, dt, a.draft);
     }
     sync_track_state();
     handle_walls();

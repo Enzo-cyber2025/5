@@ -130,15 +130,45 @@ entra em cada passo:
 4. **Transferência de carga** longitudinal (eixo) e lateral (roda de dentro
    alivia, a de fora carrega) — a soma das duas é o que faz frear forte em cima
    da curva tirar a direção.
-5. **Círculo de atrito por eixo** — acelerar demais come a capacidade de curva;
-   passar do limite gera **patinação** (`wheelspin`), que por sua vez gasta pneu.
-6. **Aerodinâmica** — arrasto `0.5·ρ·Cd·A·v²` e downforce `0.5·ρ·Cl·A·v²`
-   distribuída entre os eixos (muda a transferência de carga em alta).
-7. **Freios com ABS opcional**, controle de tração opcional, **dano por
+5. **Aerodinâmica** — arrasto `0.5·ρ·Cd·A·v²` e downforce `0.5·ρ·Cl·A·v²`
+   distribuída entre os eixos (muda a transferência de carga em alta). O pitch
+   da carroceria altera o downforce, e o **vácuo** (aspiração) de quem vem
+   colado na frente reduz arrasto e downforce.
+6. **Freios com ABS opcional**, controle de tração opcional, **dano por
    impacto** (perde potência e direção) e **consumo de combustível** (o carro
    fica mais leve; sem gasolina, não anda).
-8. **Superfície** — cada pista pode ter zonas de grama/terra/gelo que mudam
+7. **Superfície** — cada pista pode ter zonas de grama/terra/gelo que mudam
    aderência e resistência ao rolamento.
+
+### O que há de "simulador" nela
+
+Além do modelo acima, cada eixo tem **roda com inércia própria** (a inércia do
+motor é refletida pela marcha, por isso a roda não muda de giro instantaneamente).
+Isso faz patinação e travamento **surgirem** da física em vez de serem
+"colados" depois — e permite o pneu trabalhar com **escorregamento combinado**:
+
+- o pneu gera uma força só, numa curva tipo Pacejka, a partir do escorregamento
+  longitudinal (κ) e do ângulo de deriva (α) somados — o **círculo de atrito é
+  consequência do modelo**, não um limitador aplicado no fim. Frear em cima da
+  curva solta a traseira; acelerar demais na saída abre a frente;
+- as rodas são integradas com **sub-passos e passo semi-implícito** (o declive
+  do pneu entra no denominador), então a patinação sai suave em vez de "bater";
+- **suspensão com atraso**: a carroceria rola e empina com constante de tempo
+  (`susp_tau`), então a transferência de carga não é instantânea — é o que dá
+  a sensação de carro vivo na entrada e na saída de curva;
+- **cambagem** muda com a rolagem e custa aderência na roda de fora;
+- **freio esquenta** com o trabalho da freada, esfria com o vento e
+  **perde eficiência (fading)** quando o disco passa de ~380 °C;
+- **freio de motor**: tirar o pé já desacelera (e ajuda a assentar o carro na
+  entrada da curva);
+- **diferencial com trava parcial (LSD)**: mais tração na saída e mais
+  estabilidade, ao custo de um pouco de subesterço;
+- **ABS e controle de tração** leem o escorregamento real da roda — o ABS alivia
+  o disco quando a roda passa de ~13 % de escorregamento, o TC corta o motor
+  quando ela patina.
+
+Tudo isso é determinístico (mesma entrada ⇒ mesmíssimo resultado) e roda a
+1/120 s em processador fraco, porque é só conta — nada de GPU.
 
 ---
 
@@ -465,3 +495,19 @@ aleatório que o jogo aceita — serve para testar o carregamento.
 Veja **MODS.md**: basta largar JSONs em `mods/tracks/` ou `mods/cars/` — eles
 aparecem nos menus. Os valores são sanitizados, então um mod errado não
 quebra a física.
+
+**Atalho para começar:** na primeira vez que você abre o `Abrir pasta de mods`,
+o jogo cria dois arquivos de exemplo — `meu_carro_exemplo.json` e
+`minha_pista_exemplo.json`. Copie, mude os números e clique em
+**Recarregar mods**: é só isso para fazer seu primeiro mod.
+
+Campos novos do carro (todos opcionais, todos sanitizados):
+
+| campo | o que faz |
+| --- | --- |
+| `wheel_inertia`, `engine_inertia` | inércia das rodas e do motor (patinação/travamento) |
+| `diff_lock` | 0 = diferencial aberto, 1 = travado (LSD) |
+| `brake_heat`, `brake_cool`, `brake_fade` | temperatura do disco e perda por fading |
+| `roll_grad`, `pitch_grad`, `susp_tau` | quanto e com que rapidez a carroceria rola/empina |
+| `camber_static`, `camber_gain`, `camber_loss` | cambagem e quanto ela custa de aderência |
+| `aero_pitch` | quanto o pitch muda o downforce |

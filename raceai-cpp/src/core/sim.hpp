@@ -78,6 +78,7 @@ struct Agent {
     std::string death_reason;
     double fitness = 0.0;
     double surface_grip = 1.0, surface_roll = 1.0;
+    double draft = 0.0;             // 0..1: vácuo (aspiração) do carro da frente
     double lateral = 0.0;
     double last_steer = 0.0, last_drive = 0.0;
 

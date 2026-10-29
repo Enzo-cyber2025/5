@@ -395,10 +395,17 @@ static int pilota(const Track& t, const CarSpec& c, double segundos, int* voltas
                 double curv = std::fabs(std::atan2(tan_b.y, tan_b.x) - std::atan2(tan_a.y, tan_a.x));
                 if (curv > kPi) curv = 2 * kPi - curv;
                 double raio = std::max(8.0, la * t.spacing / std::max(curv, 0.05));
-                double mu = 0.55 * (c.grip_front + c.grip_rear) * 0.5;
+                double mu = 0.45 * (c.grip_front + c.grip_rear) * 0.5;
                 double v_alvo = std::min(c.max_speed * 0.75, std::sqrt(mu * 9.81 * raio));
+                // frear com o volante virado derruba o carro: dosa o freio pelo esterço
+                const double ganho_freio = 1.0 - 0.55 * std::min(1.0, std::fabs(steer));
                 double drive = a.car.speed < v_alvo ? 1.0
-                             : (a.car.speed > v_alvo * 1.25 ? -0.9 : -0.35);
+                             : (a.car.speed > v_alvo * 1.25 ? -0.9 * ganho_freio
+                                                             : -0.35 * ganho_freio);
+                // traseira saindo: alivia o freio (antes de rodar de vez)
+                if (std::fabs(a.car.slip_r) > 0.45) drive = std::max(drive, -0.15);
+                // roda patinando: o pé levanta, igual a um piloto de verdade
+                if (drive > 0.0 && a.car.wheelspin > 0.10) drive = std::min(drive, 0.30);
                 // rodou: reduz e contra-esterça até apontar de novo para frente
                 if (std::fabs(erro) > 2.0) {
                     drive = a.car.speed > 4.0 ? -0.5 : 0.35;
@@ -451,6 +458,193 @@ static void t_conteudo() {
         int voltas = 0;
         pilota(base, c, 150.0, &voltas);
         CHECK(voltas >= 1, "carro %s nao completou uma volta no oval", it.id.c_str());
+    }
+}
+
+// -------------------------------------------------- física de simulador
+// Cada teste aqui olha um fenômeno que só aparece com o modelo novo: se
+// algum deles quebrar, a física voltou a ser "de brinquedo".
+static void roda_ate(CarState& st, const CarSpec& c, double segundos, double acel = 1.0,
+                     double esterco = 0.0) {
+    st.throttle = std::max(0.0, acel);
+    st.brake = std::max(0.0, -acel);
+    st.steer_cmd = esterco;
+    const int n = int(segundos * 120.0);
+    for (int i = 0; i < n; ++i) physics_step(c, st, 1.0, 1.0, 1.0 / 120.0);
+}
+
+static void t_fisica_simulador() {
+    CarSpec c;
+    std::string err;
+    REQUIRE(load_car("sedan", c, &err), "sedan nao carregou: %s", err.c_str());
+
+    // ---- 1. roda com inércia: na largada o pneu patina e depois agarra
+    {
+        CarState st;
+        double sr_max = 0.0;
+        st.throttle = 1.0;
+        for (int i = 0; i < 120; ++i) {
+            physics_step(c, st, 1.0, 1.0, 1.0 / 120.0);
+            sr_max = std::max(sr_max, std::max(std::fabs(st.sr_f), std::fabs(st.sr_r)));
+        }
+        const double sr_fim = std::max(std::fabs(st.sr_f), std::fabs(st.sr_r));
+        CHECK(sr_max > 0.02, "a roda de tracao nao patinou na largada (sr=%.3f)", sr_max);
+        CHECK(sr_fim <= sr_max + 1e-9, "a patinacao nao se acomodou: %.3f -> %.3f",
+              sr_max, sr_fim);
+        CHECK(st.speed > 2.0, "nao saiu do lugar: %.1f m/s", st.speed);
+        CHECK(std::max(st.omega_f, st.omega_r) > 1.0, "roda nao gira: %.2f/%.2f rad/s",
+              st.omega_f, st.omega_r);
+        // roda livre (sem torque) acompanha o chão: nada de roda "presa"
+        CHECK(std::fabs(std::min(st.omega_f, st.omega_r) * c.wheel_radius - st.vx) < 1.5,
+              "roda livre fora da velocidade do chao: %.2f vs %.2f",
+              std::min(st.omega_f, st.omega_r) * c.wheel_radius, st.vx);
+    }
+
+    // ---- 2. escorregamento combinado: frear enquanto faz curva come aderência
+    {
+        CarSpec esportivo = c;
+        esportivo.traction_control = 0.0;
+        esportivo.abs_level = 0.0;
+        CarState curva, curva_freando;
+        roda_ate(curva, esportivo, 6.0, 1.0);
+        roda_ate(curva_freando, esportivo, 6.0, 1.0);
+        // mesma velocidade, um só curvando e o outro curvando e freando
+        for (int i = 0; i < 90; ++i) {
+            curva.steer_cmd = 0.55; curva.throttle = 0.35; curva.brake = 0.0;
+            curva_freando.steer_cmd = 0.55; curva_freando.throttle = 0.0;
+            curva_freando.brake = 0.75;
+            physics_step(esportivo, curva, 1.0, 1.0, 1.0 / 120.0);
+            physics_step(esportivo, curva_freando, 1.0, 1.0, 1.0 / 120.0);
+        }
+        CHECK(std::fabs(curva.ay) > 1.0, "o carro nao fez curva: ay=%.2f", curva.ay);
+        // freando, a traseira fica leve e escorrega mais: é o "quadrilha solta"
+        // de todo carro real quando se freia em cima da curva
+        CHECK(std::fabs(curva_freando.slip_r) > std::fabs(curva.slip_r) + 0.01,
+              "frear na curva nao soltou a traseira: %.3f vs %.3f",
+              curva_freando.slip_r, curva.slip_r);
+        CHECK(curva_freando.ax < curva.ax, "freio nao desacelerou: %.2f vs %.2f",
+              curva_freando.ax, curva.ax);
+        CHECK(curva_freando.sr_f < -0.02 || curva_freando.sr_r < -0.02,
+              "roda nao escorregou na freada: %.3f/%.3f", curva_freando.sr_f,
+              curva_freando.sr_r);
+    }
+
+    // ---- 3. freio esquenta e perde eficiência (fading)
+    {
+        CarState st;
+        roda_ate(st, c, 12.0, 1.0);
+        const double t_fria = st.brake_temp;
+        for (int i = 0; i < 8; ++i) {                  // 8 freadas fortes
+            roda_ate(st, c, 1.4, -1.0);
+            roda_ate(st, c, 3.0, 1.0);
+        }
+        CHECK(st.brake_temp > t_fria + 50.0, "freio nao esquentou: %.0f -> %.0f",
+              t_fria, st.brake_temp);
+        // mesma freada com o disco quente: para mais longe
+        CarState frio, quente;
+        roda_ate(frio, c, 12.0, 1.0);
+        quente = frio;
+        quente.brake_temp = 780.0;
+        double d_frio = 0.0, d_quente = 0.0;
+        double x0 = frio.x;
+        for (int i = 0; i < 120 * 6 && frio.vx > 1.0; ++i) {
+            frio.throttle = 0.0; frio.brake = 1.0;
+            physics_step(c, frio, 1.0, 1.0, 1.0 / 120.0);
+        }
+        d_frio = frio.x - x0;
+        x0 = quente.x;
+        for (int i = 0; i < 120 * 6 && quente.vx > 1.0; ++i) {
+            quente.throttle = 0.0; quente.brake = 1.0;
+            physics_step(c, quente, 1.0, 1.0, 1.0 / 120.0);
+        }
+        d_quente = quente.x - x0;
+        CHECK(d_quente > d_frio * 1.02,
+              "freio quente nao aumentou a distancia: %.1f m vs %.1f m", d_quente, d_frio);
+    }
+
+    // ---- 4. vácuo (aspiração): colado no carro da frente, vai mais longe
+    {
+        CarState livre, vácuo;
+        roda_ate(livre, c, 40.0, 1.0);
+        for (int i = 0; i < 120 * 40; ++i) {
+            vácuo.throttle = 1.0;
+            physics_step(c, vácuo, 1.0, 1.0, 1.0 / 120.0, 1.0);
+        }
+        CHECK(vácuo.speed > livre.speed + 0.3,
+              "vácuo nao aumentou a velocidade final: %.2f vs %.2f", vácuo.speed, livre.speed);
+    }
+
+    // ---- 5. suspensão: a carroceria rola e isso leva tempo (não é instantâneo)
+    {
+        CarState st;
+        roda_ate(st, c, 8.0, 1.0);
+        CHECK(std::fabs(st.susp_roll) < 1e-6, "rolou sem fazer curva: %.4f", st.susp_roll);
+        const double rol = 0.30;
+        st.steer_cmd = rol; st.throttle = 0.6; st.brake = 0.0;
+        double meio = 0.0;
+        for (int i = 0; i < 120; ++i) {
+            physics_step(c, st, 1.0, 1.0, 1.0 / 120.0);
+            if (i == 6) meio = st.susp_roll;            // ~50 ms: ainda rolando
+        }
+        CHECK(std::fabs(st.susp_roll) > 0.004, "a carroceria nao rolou: %.4f rad",
+              st.susp_roll);
+        CHECK(std::fabs(meio) < std::fabs(st.susp_roll) * 0.9,
+              "rolagem instantânea (sem atraso): %.4f vs %.4f", meio, st.susp_roll);
+        CHECK(std::fabs(st.susp_roll) < 0.25, "rolagem exagerada: %.3f rad", st.susp_roll);
+    }
+
+    // ---- 6. freio de motor: tirar o pé já desacelera
+    {
+        CarState pe, cortado;
+        roda_ate(pe, c, 10.0, 1.0);
+        roda_ate(cortado, c, 10.0, 1.0);
+        for (int i = 0; i < 120; ++i) {                 // 1 s
+            pe.throttle = 1.0; pe.brake = 0.0;
+            cortado.throttle = 0.0; cortado.brake = 0.0;
+            physics_step(c, pe, 1.0, 1.0, 1.0 / 120.0);
+            physics_step(c, cortado, 1.0, 1.0, 1.0 / 120.0);
+        }
+        CHECK(cortado.speed < pe.speed - 0.4,
+              "tirar o pe nao desacelerou: %.2f vs %.2f", cortado.speed, pe.speed);
+        CHECK(cortado.ax < 0.0, "sem desaceleração: ax=%.2f", cortado.ax);
+    }
+
+    // ---- 7. ABS e controle de tração agem no escorregamento da roda
+    {
+        CarSpec sem_abs = c;
+        sem_abs.abs_level = 0.0;
+        CarSpec com_abs = c;
+        com_abs.abs_level = 1.0;
+        // freio exagerado: sem ABS a roda trava, com ABS o carro ainda freia
+        sem_abs.brake_force = 40000.0;
+        com_abs.brake_force = 40000.0;
+        CarState a, b;
+        roda_ate(a, sem_abs, 20.0, 1.0);
+        roda_ate(b, com_abs, 20.0, 1.0);
+        double pior_a = 0.0, pior_b = 0.0;
+        for (int i = 0; i < 60; ++i) {
+            a.throttle = 0.0; a.brake = 1.0;
+            b.throttle = 0.0; b.brake = 1.0;
+            physics_step(sem_abs, a, 1.0, 1.0, 1.0 / 120.0);
+            physics_step(com_abs, b, 1.0, 1.0, 1.0 / 120.0);
+            pior_a = std::min(pior_a, a.sr_f);
+            pior_b = std::min(pior_b, b.sr_f);
+        }
+        CHECK(pior_a < -0.15, "sem ABS a roda nao travou: %.3f", pior_a);
+        CHECK(pior_b > pior_a, "ABS nao evitou o travamento: %.3f vs %.3f", pior_b, pior_a);
+    }
+
+    // ---- 8. determinismo: a mesma entrada dá exatamente o mesmo resultado
+    {
+        CarState a, b;
+        for (int i = 0; i < 600; ++i) {
+            a.throttle = 1.0; a.steer_cmd = 0.2;
+            b.throttle = 1.0; b.steer_cmd = 0.2;
+            physics_step(c, a, 1.0, 1.0, 1.0 / 120.0);
+            physics_step(c, b, 1.0, 1.0, 1.0 / 120.0);
+        }
+        CHECK(a.x == b.x && a.y == b.y && a.omega_r == b.omega_r,
+              "a fisica deixou de ser deterministica: %.9f vs %.9f", a.x, b.x);
     }
 }
 
@@ -854,6 +1048,8 @@ int main() {
     test("evolução: população e mutação", t_ga);
     test("treino: gerações e determinismo", t_train);
     test("assets: pistas, carros e mods", t_assets);
+    test("física de simulador: rodas, pneu combinado, freio e suspensão",
+         t_fisica_simulador);
     test("conteúdo: toda pista e todo carro são dirigíveis", t_conteudo);
     test("renderizador 3D: projeção, recorte e ordem das faces", t_render3d);
     test("ia em python (ponte com o interpretador)", t_python);
