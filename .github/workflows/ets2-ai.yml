@@ -3536,6 +3536,7 @@ jobs:
                 function HibVk([string]$icdPath, [string]$tag) {
                   if (-not (Test-Path "$PWD\vktest.exe")) { Trace "hib-vk $tag : vktest.exe ausente"; return $false }
                   if ($icdPath) { $env:VK_ICD_FILENAMES = $icdPath } else { Remove-Item Env:\VK_ICD_FILENAMES -ErrorAction SilentlyContinue }
+                  $env:VK_LOADER_DEBUG = "all"
                   Trace "hib-vk $tag inicio (ICD=$icdPath)"
                   $t0 = Get-Date
                   $p = Start-Process -FilePath "$PWD\vktest.exe" -RedirectStandardOutput "$PWD\vkhib-$tag.out" -RedirectStandardError "$PWD\vkhib-$tag.err" -PassThru
@@ -3543,13 +3544,26 @@ jobs:
                     if (((Get-Date) - $t0).TotalSeconds -gt 240) {
                       Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
                       Trace "hib-vk $tag TIMEOUT 240s (lavapipe travado — v51)"
+                      Remove-Item Env:\VK_LOADER_DEBUG -ErrorAction SilentlyContinue
                       return $false
                     }
                   }
-                  @(Get-Content "$PWD\vkhib-$tag.out" -ErrorAction SilentlyContinue) + @(Get-Content "$PWD\vkhib-$tag.err" -ErrorAction SilentlyContinue) | ForEach-Object { Trace "hib-vk[$tag]: $_" }
+                  $vkOutH = @(Get-Content "$PWD\vkhib-$tag.out" -ErrorAction SilentlyContinue) + @(Get-Content "$PWD\vkhib-$tag.err" -ErrorAction SilentlyContinue)
+                  $vkOutH | Select-Object -First 150 | ForEach-Object { Trace "hib-vk[$tag]: $_" }
+                  Remove-Item Env:\VK_LOADER_DEBUG -ErrorAction SilentlyContinue
                   return ($p.ExitCode -eq 0)
                 }
                 $icdHib = $null
+                # v85: qual e o loader desta imagem? O vktest rc=-9 com AMBAS
+                # as lavapipe (v84) = INCOMPATIBLE_DRIVER; o setup so instala
+                # o VulkanRT quando o loader FALTA (v49) — aqui ele EXISTE
+                # (da imagem ou da demo) e pode ser VELHO demais pros manifests
+                # das ICDs novas. Logar a versao antes de tudo.
+                try {
+                  $vldH = Get-Item "C:\Windows\System32\vulkan-1.dll" -ErrorAction SilentlyContinue
+                  if ($vldH) { Trace ("hib-vk: loader da imagem " + $vldH.VersionInfo.FileVersion + " de " + $vldH.LastWriteTime.ToString("yyyy-MM-dd")) }
+                  else { Trace "hib-vk: sem loader no System32?" }
+                } catch { Trace "hib-vk verloader: $($_.Exception.Message)" }
                 if ($vkIcdX64 -and (HibVk $vkIcdX64.FullName "lvp264")) { $icdHib = $vkIcdX64.FullName }
                 if (-not $icdHib) {
                   if (-not (Test-Path "C:\mesa253\x64\lvp_icd.x86_64.json")) {
@@ -3562,6 +3576,53 @@ jobs:
                   }
                   $icd253 = Get-ChildItem "C:\mesa253" -Recurse -Filter "lvp_icd*.json" -ErrorAction SilentlyContinue | Where-Object { $_.Name -match "x86_64|x64" } | Select-Object -First 1
                   if ($icd253 -and (HibVk $icd253.FullName "lvp253")) { $icdHib = $icd253.FullName }
+                }
+                if (-not $icdHib) {
+                  # v85: UPGRADE FORCADO DO LOADER — instalar o VulkanRT 1.4.363
+                  # POR CIMA do velho (o installer da LunarG faz upgrade com /S);
+                  # re-testar as duas ICDs em seguida. Se o installer nao mudar
+                  # nada, extrair o loader do installer (SFX 7z) e por NA PASTA
+                  # DO JOGO: o carregamento por nome acha bin64 ANTES do
+                  # System32 (e uma copia no $PWD serve o vktest).
+                  try {
+                    $sz7h = "C:\Program Files\7-Zip\7z.exe"
+                    if (-not (Test-Path $sz7h)) { $sz7h = "7z.exe" }
+                    Trace "hib-vk: forcando upgrade do VulkanRT 1.4.363"
+                    curl.exe -sSL --retry 3 --max-time 240 -o C:\vulkanrt-hib.exe "https://sdk.lunarg.com/sdk/download/1.4.363.0/windows/VulkanRT-X64-1.4.363.0-Installer.exe"
+                    $tVh = (Get-Item C:\vulkanrt-hib.exe -ErrorAction SilentlyContinue).Length
+                    Trace "hib-vk: installer $tVh bytes"
+                    if ($tVh -and $tVh -gt 1MB) {
+                      $pVh = Start-Process -FilePath "C:\vulkanrt-hib.exe" -ArgumentList "/S" -PassThru
+                      if (-not $pVh.WaitForExit(300000)) {
+                        Stop-Process -Id $pVh.Id -Force -ErrorAction SilentlyContinue
+                        Trace "hib-vk: install TIMEOUT 300s"
+                      } else { Trace "hib-vk: install exit=$($pVh.ExitCode)" }
+                      $vldH2 = Get-Item "C:\Windows\System32\vulkan-1.dll" -ErrorAction SilentlyContinue
+                      if ($vldH2) { Trace ("hib-vk: loader apos upgrade " + $vldH2.VersionInfo.FileVersion + " de " + $vldH2.LastWriteTime.ToString("yyyy-MM-dd")) }
+                      if ($vkIcdX64 -and (HibVk $vkIcdX64.FullName "lvp264up")) { $icdHib = $vkIcdX64.FullName }
+                      if (-not $icdHib) {
+                        $icd253b = Get-ChildItem "C:\mesa253" -Recurse -Filter "lvp_icd*.json" -ErrorAction SilentlyContinue | Where-Object { $_.Name -match "x86_64|x64" } | Select-Object -First 1
+                        if ($icd253b -and (HibVk $icd253b.FullName "lvp253up")) { $icdHib = $icd253b.FullName }
+                      }
+                    } else { Trace "hib-vk: installer nao baixou ($tVh)" }
+                  } catch { Trace "hib-vk upgrade: $($_.Exception.Message)" }
+                }
+                if (-not $icdHib) {
+                  # v85 ultima carta: extrai o vulkan-1.dll do installer (SFX)
+                  # e poe na PASTA DO JOGO + $PWD (vktest) — carregamento local
+                  # vence o System32 sem tocar no sistema.
+                  try {
+                    $sz7h = "C:\Program Files\7-Zip\7z.exe"
+                    if (-not (Test-Path $sz7h)) { $sz7h = "7z.exe" }
+                    & $sz7h x C:\vulkanrt-hib.exe "-oC:\vulkanrt-x" -y *> "$PWD\vulkanrt-x.log"
+                    $vlN = Get-ChildItem "C:\vulkanrt-x" -Recurse -Filter "vulkan-1.dll" -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "x86\\|Win32|32" } | Select-Object -First 1
+                    if ($vlN) {
+                      Copy-Item $vlN.FullName "$wdir\vulkan-1.dll" -Force
+                      Copy-Item $vlN.FullName "$PWD\vulkan-1.dll" -Force
+                      Trace "hib-vk: loader extraido p/ bin64+PWD: $($vlN.FullName)"
+                      if ($vkIcdX64 -and (HibVk $vkIcdX64.FullName "lvp264bin")) { $icdHib = $vkIcdX64.FullName }
+                    } else { Trace "hib-vk: 7z nao extraiu vulkan-1.dll (ver vulkanrt-x.log)" }
+                  } catch { Trace "hib-vk sfx: $($_.Exception.Message)" }
                 }
                 if ($icdHib) {
                   $env:VK_ICD_FILENAMES = $icdHib
@@ -3920,7 +3981,7 @@ jobs:
           cp game-log-*.txt "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp sobe-trace.log "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp dxvk-log-*.txt "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
-          cp vkhib-*.out vkhib-*.err hib-*.log mesa253-hib.log "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
+          cp vkhib-*.out vkhib-*.err hib-*.log mesa253-hib.log vulkanrt-x.log "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp "/c/Users/runneradmin/Documents/Euro Truck Simulator 2/game.log.txt" "ci-logs/${{ github.run_id }}-demo/documents-game.log.txt" 2>/dev/null || true
           for f in d3d11shim-boot1.txt dxgishim-boot1.txt dxgishim-hibrido.txt autoteste-real.json autoteste-real.log demo-mmf.json /c/steamcmd/fase1.log /c/steamcmd/fase2.log /c/dd/dd.log /c/dd/stage2.err mesa-load.log /c/dd/setup.err /c/dd/7z.log /c/dd/mesa-7z.log /c/ets2demo/game.log.txt /c/ets2demo/game-ets2ai-telemetry.log; do
             cp "$f" "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
