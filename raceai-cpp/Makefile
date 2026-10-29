@@ -62,9 +62,10 @@ $(BIN)/raceai_pytest$(EXE): tools/py_selftest.cpp $(CORE) $(APP)
 	$(CXX) $(CXXFLAGS) tools/py_selftest.cpp $(CORE) $(APP) -o $@ $(LIBS)
 
 # jogo com interface (Win32 + GDI): nada de bibliotecas externas
+# (-Isrc: a interface inclui <core/...> pelo caminho completo)
 $(BIN)/raceai.exe: src/app/main.cpp $(CORE) $(APP)
 	@mkdir -p $(BIN)
-	$(CXX) $(CXXFLAGS) -mwindows src/app/main.cpp $(CORE) $(APP) -o $@ $(LIBS)
+	$(CXX) $(CXXFLAGS) -Isrc -mwindows src/app/main.cpp $(CORE) $(APP) -o $@ $(LIBS)
 
 game: $(GAME)
 
@@ -97,7 +98,7 @@ test-python-real: $(BIN)/raceai_pytest$(EXE)
 	./$(BIN)/raceai_pytest$(EXE)
 
 check-win:
-	$(CXX) -std=c++17 -fsyntax-only -Itests/winshim -Isrc src/app/main.cpp
+	$(CXX) -std=c++17 -fsyntax-only -Wall -Wextra -Itests/winshim -Isrc src/app/main.cpp
 	@echo "interface Win32: tipos e sintaxe ok"
 
 clean:
