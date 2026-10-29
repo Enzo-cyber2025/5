@@ -386,8 +386,12 @@ bool AppState::salvar_python(const std::string& path, std::string* err) const {
 }
 
 // ------------------------------------------------------------------ corrida
-void AppState::iniciar_corrida(const std::vector<std::string>& modelos) {
+void AppState::iniciar_corrida(const std::vector<std::string>& modelos_in) {
     if (pistas.empty() || carros.empty()) return;
+    // sem modelo escolhido, usamos os que estiverem prontos na pasta modelos/
+    std::vector<std::string> modelos = modelos_in;
+    if (modelos.empty()) modelos = list_models();
+    if (modelos.size() > 4) modelos.resize(4);      // deixa espaço no grid
     race.competidores.clear();
     race.laps = 3;
     race.time_limit = 300.0;

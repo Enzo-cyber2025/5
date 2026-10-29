@@ -226,6 +226,65 @@ assets/       pistas e carros em JSON
 
 ---
 
+## Modelos prontos (a pasta `modelos/`)
+
+O jogo já vem com **três modelos treinados** em `modelos/`. Eles entram
+sozinhos no grid quando você abre a **Corrida** — é só apertar Iniciar e ver
+as redes dirigindo. Quando você salvar o seu modelo, ele passa a valer também
+(como os da pasta, se houver). Para usar só os seus, apague os arquivos de
+`modelos/` ou escolha um em **Adicionar modelo**.
+
+Treinar os seus, pelo terminal (sem interface, bem mais rápido):
+
+```
+raceai_train --track speedway --car formula -g 120 -p 60 --seconds 45 \
+             --out modelos/meu_modelo.json
+```
+
+Cada modelo tem ~85 KB (5.890 números). Em 25-60 s de treino no seu
+Pentium N5030 você chega a perda ~0,05 e erro ~0,5% em pistas fáceis.
+
+---
+
+## O que é um modelo, afinal
+
+**Não tem nada de especial**: é um conjunto de matrizes de uma rede neural
+comum (MLP), sem metadados mágicos, sem otimizador, sem grafo de operações.
+
+Arquitetura: `24 entradas → 64 → 64 → 2 saídas`, `tanh` em todas as camadas.
+
+```json
+{
+  "obs_dim": 24,          // quantos sensores a rede lê
+  "hidden": [64, 64],     // neurônios por camada oculta
+  "act_dim": 2,           // saídas: esterço, acelerador
+  "weights": [ ... ],     // 5890 números, na ordem abaixo
+  "meta": { "track": "Kartódromo", "best_loss": 0.091, "best_error_pct": 0.74 }
+}
+```
+
+**Ordem dos pesos** (é só isso): para cada camada, primeiro a matriz de pesos
+`n_entradas × n_saídas` — uma linha por neurônio de saída (`W[saída][entrada]`)
+— e depois o bias de cada saída.
+
+```
+camada 0:  24×64 = 1536 pesos   +  64 biases   = 1600
+camada 1:  64×64 = 4096 pesos   +  64 biases   = 4160
+camada 2:  64×2  =  128 pesos   +   2 biases   =  130
+                                        total  = 5890
+```
+
+A inferência é literalmente `x = tanh(W·x + b)` três vezes — umas 12 mil
+multiplicações por decisão, a 30 decisões por segundo. Por isso roda de boas
+no Intel UHD 605 / Pentium N5030 sem GPU nenhuma.
+
+O `.pt` do PyTorch guarda exatamente os mesmos números, só que dentro do
+formato zip do torch (por isso precisa do torch inteiro — ~1 GB de DLLs —
+para ser lido). É esse 1 GB que você lembra, **e não o modelo**: a rede em si
+cabe em 23 KB se gravada em binário.
+
+---
+
 ## Aproveitar um modelo da versão Python (.pt)
 
 O executável em C++ não usa PyTorch (assim ele roda no Pentium N5030 sem CUDA),

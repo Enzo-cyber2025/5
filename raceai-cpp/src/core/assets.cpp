@@ -68,6 +68,16 @@ std::string assets_root() {
 std::string mods_tracks_dir() { return join(assets_root(), join("mods", "tracks")); }
 std::string mods_cars_dir() { return join(assets_root(), join("mods", "cars")); }
 
+std::vector<std::string> list_models() {
+    const char* candidates[] = {"modelos", "../modelos", "raceai-cpp/modelos",
+                                "../raceai-cpp/modelos"};
+    for (const char* c : candidates) {
+        std::vector<std::string> v = list_json(c);
+        if (!v.empty()) return v;
+    }
+    return {};
+}
+
 static void collect(std::vector<AssetItem>& out, const std::string& dir, bool is_track) {
     for (const std::string& p : list_json(dir)) {
         AssetItem it;

@@ -32,6 +32,8 @@ bool load_car(const std::string& id_or_path, CarSpec& out, std::string* err = nu
 
 // Diretórios de mods (o usuário pode largar JSONs lá).
 std::string mods_tracks_dir();
+// modelos .json já treinados na pasta modelos/ (a corrida usa como adversários)
+std::vector<std::string> list_models();
 std::string mods_cars_dir();
 
 }  // namespace raceai

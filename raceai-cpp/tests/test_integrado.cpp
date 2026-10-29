@@ -374,6 +374,33 @@ int main(int argc, char** argv) {
     }
     }
 
+    // ------------------------- 8. modelos prontos na pasta modelos/ entram no grid
+    if (secao(8)) {
+    printf("8. modelos prontos entram na corrida\n");
+    {
+        std::vector<std::string> prontos = list_models();
+        if (prontos.empty()) {
+            printf("   (pulando: nenhum modelo em modelos/ — rode o treinador)\n");
+        } else {
+            CHECK(prontos.size() <= 4, "mais de 4 modelos: %zu", prontos.size());
+            app.iniciar_corrida({});
+            int n_modelo = 0;
+            for (const Competitor& c : app.race.competidores)
+                if (c.origem == "modelo") n_modelo += 1;
+            CHECK(n_modelo > 0, "os modelos prontos não entraram no grid");
+            CHECK(size_t(n_modelo) == prontos.size(),
+                  "entraram %d modelos, a pasta tem %zu", n_modelo, prontos.size());
+            race_set_human(0.0, 0.0);
+            for (int i = 0; i < 1200; ++i) app.tick_corrida(4);
+            double melhor = 0.0;
+            for (const Competitor& c : app.race.competidores)
+                if (c.origem == "modelo") melhor = std::max(melhor, c.s_total);
+            CHECK(melhor > 30.0, "o modelo treinado andou pouco: %.1f m", melhor);
+            printf("   %d modelo(s) no grid, melhor %.1f m\n", n_modelo, melhor);
+        }
+    }
+    }
+
     // o GIL (real ou falso) precisa estar equilibrado no fim: sem vazamento
     if (stub && *stub) {
         int pendente = stub_gil(stub);
