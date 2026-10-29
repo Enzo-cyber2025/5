@@ -290,9 +290,8 @@ Sim — `obs_dim` tem que ser **24** (são os sensores) e `act_dim` **2**
 64-64: `24->512->256->2` funciona, `24->32->2` (uma camada só) também, e o
 arquivo aceita quantas camadas quiser.
 
-Dois limites, para o jogo não travar com arquivo de procedência duvidosa:
-**8.192 neurônios por camada** e **40 milhões de pesos** (~160 MB). Se passar,
-o modelo é recusado com uma mensagem em vez de estourar a memória.
+Não há limite de tamanho no arquivo: o único limite é a memória do computador
+(se não couber, o jogo avisa em vez de travar).
 
 O limite real é o tempo de inferência. Medido em 1 núcleo:
 
@@ -315,11 +314,44 @@ quantidade de conta que o processador precisa fazer por decisão.
 
 ---
 
+## Carregar rede de fora (`.pt`, `.pth`, `.npz`, `.safetensors`)
+
+O jogo lê **diretamente** os formatos de todo mundo — sem PyTorch, sem NumPy,
+sem instalar nada. É só escolher o arquivo em **Carregar modelo** (ou
+**Adicionar modelo**, na corrida):
+
+| formato | de onde vem |
+| --- | --- |
+| `.pt` / `.pth` | PyTorch (zip + pickle + storages) — o mais comum |
+| `.npz` | NumPy (`np.savez`) |
+| `.safetensors` | HuggingFace / safetensors |
+| `.json` | o formato do próprio jogo |
+
+Não há limite de tamanho nem de topologia: vale `24→32→2`, `24→4096→4096→2`,
+dez camadas, uma camada só, o que for. A rede é **adaptada** nas pontas:
+
+- entrada com mais de 24 colunas → usa as 24 primeiras
+- entrada com menos de 24 → completa com zero
+- saída com mais de 2 → usa as 2 primeiras
+- saída com 1 → a segunda fica em zero
+- sem bias na camada → bias zero
+
+Só é recusado o que **não for rede neural** (arquivo aleatório, texto, um
+modelo convolucional sem matriz nenhuma). Nesse caso aparece a mensagem
+explicando o motivo.
+
+Testes: o mesmo modelo gravado nos 5 formatos produz exatamente os mesmos
+290 pesos (`tests/modelos_teste/`).
+
+---
+
 ## Aproveitar um modelo da versão Python (.pt)
 
+*( continua válido, mas hoje é opcional — o jogo abre o `.pt` sozinho. )*
+
 O executável em C++ não usa PyTorch (assim ele roda no Pentium N5030 sem CUDA),
-então o formato dele é `.json`. Para reaproveitar um `.pt` treinado na versão
-Python, converta uma vez com o script que acompanha o jogo:
+então o formato dele é `.json`. Se quiser converter antes, use o script que
+acompanha o jogo:
 
 ```
 python converter-modelo.py modelo.pt            # gera modelo.raceai.json

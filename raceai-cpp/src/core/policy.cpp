@@ -3,6 +3,8 @@
 #include <cmath>
 #include <fstream>
 
+#include "formatos.hpp"
+
 namespace raceai {
 
 std::vector<int> PolicySpec::dims() const {
@@ -115,36 +117,30 @@ bool Model::save(const std::string& path, std::string* err) const {
 
 bool Model::load(const std::string& path, Model& out, std::string* err) {
     Json j;
-    if (!Json::load_file(path, j, err)) return false;
+    std::string e_json;
+    const bool json_ok = Json::load_file(path, j, &e_json);
+    // Não é o nosso JSON? Pode ser .pt (PyTorch), .npz (NumPy) ou safetensors.
+    if (!json_ok || j.type() != Json::Obj || !j.has("weights")) {
+        std::string e_outro;
+        if (carregar_modelo_qualquer_formato(path, out, &e_outro)) return true;
+        if (err) {
+            if (json_ok)
+                *err = e_outro.empty() ? std::string("o arquivo não traz pesos de rede neural")
+                                       : e_outro;
+            else
+                *err = e_outro.empty() ? e_json : e_outro;
+        }
+        return false;
+    }
     PolicySpec sp = PolicySpec::from_json(j);
     std::vector<float> w;
-    // limites defensivos: o arquivo pode vir de qualquer lugar
-    if (sp.hidden.size() > 32) {
-        if (err) *err = "modelo com camadas ocultas demais (máximo 32)";
-        return false;
-    }
+    // Sem limite de tamanho nem de topologia: se for rede neural, entra.
+    // (O único limite real é a memória — tratado em carregar_modelo_qualquer_formato.)
     for (int v : sp.dims()) {
-        if (v <= 0 || size_t(v) > kMaxNeuronios) {
-            if (err) {
-                char buf[160];
-                std::snprintf(buf, sizeof(buf),
-                              "camada com %d neurônios: o limite é %zu por camada",
-                              v, kMaxNeuronios);
-                *err = buf;
-            }
+        if (v <= 0) {
+            if (err) *err = "camada com dimensão zero";
             return false;
         }
-    }
-    if (sp.n_params() > kMaxPesos) {
-        if (err) {
-            char buf[160];
-            std::snprintf(buf, sizeof(buf),
-                          "modelo com %zu pesos: o limite é %zu (%.0f MB)",
-                          sp.n_params(), kMaxPesos,
-                          double(kMaxPesos) * 4.0 / 1048576.0);
-            *err = buf;
-        }
-        return false;
     }
     for (const Json& v : j.at("weights").items()) w.push_back(float(v.num()));
     if (w.size() != sp.n_params()) {

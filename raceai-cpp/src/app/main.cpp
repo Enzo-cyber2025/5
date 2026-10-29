@@ -654,7 +654,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                 ofn.hwndOwner = hwnd;
                 ofn.lpstrFile = arquivo;
                 ofn.nMaxFile = MAX_PATH;
-                ofn.lpstrFilter = L"Modelo RaceAI\0*.json\0Todos\0*.*\0";
+                ofn.lpstrFilter = L"Rede neural (qualquer formato)\0*.json;*.pt;*.pth;*.npz;*.safetensors\0Modelo do jogo\0*.json\0PyTorch\0*.pt;*.pth\0NumPy\0*.npz\0safetensors\0*.safetensors\0Todos\0*.*\0";
                 ofn.Flags = OFN_OVERWRITEPROMPT;
                 std::string err;
                 if (id == ID_SALVAR && GetSaveFileNameW(&ofn)) {
@@ -677,7 +677,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                 ofn.hwndOwner = hwnd;
                 ofn.lpstrFile = arquivo;
                 ofn.nMaxFile = MAX_PATH;
-                ofn.lpstrFilter = L"Modelo RaceAI\0*.json\0Todos\0*.*\0";
+                ofn.lpstrFilter = L"Rede neural (qualquer formato)\0*.json;*.pt;*.pth;*.npz;*.safetensors\0Modelo do jogo\0*.json\0PyTorch\0*.pt;*.pth\0NumPy\0*.npz\0safetensors\0*.safetensors\0Todos\0*.*\0";
                 ofn.Flags = OFN_FILEMUSTEXIST;
                 if (GetOpenFileNameW(&ofn)) {
                     g_app.iniciar_corrida({narrow(arquivo)});

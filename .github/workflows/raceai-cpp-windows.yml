@@ -169,6 +169,11 @@ jobs:
         shell: msys2 {0}
         run: cd raceai-cpp && ./build/raceai_integrado.exe --secao 9 python/python311.dll
 
+      - name: "Integração 10: .pt, .npz e safetensors de fora"
+        if: always()
+        shell: msys2 {0}
+        run: cd raceai-cpp && ./build/raceai_integrado.exe --secao 10 python/python311.dll
+
       - name: "Treino rápido: a loss precisa cair"
         shell: msys2 {0}
         run: |

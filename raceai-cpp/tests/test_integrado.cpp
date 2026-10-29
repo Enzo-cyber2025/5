@@ -472,6 +472,58 @@ int main(int argc, char** argv) {
     }
     }
 
+    // -------- 10. carrega rede de qualquer formato (.pt, .npz, safetensors, .json)
+    if (secao(10)) {
+    printf("10. modelos de outros formatos\n");
+    {
+        const std::string pasta = "tests/modelos_teste";
+        const char* arquivos[] = {"rede.pt", "rede_comprimida.pt", "rede.npz",
+                                  "rede.safetensors", "rede.json"};
+        Model primeiro;
+        bool ref_ok = Model::load(pasta + "/rede.json", primeiro, &err);
+        CHECK(ref_ok, "não carregou o .json de referência: %s", err.c_str());
+        for (const char* a : arquivos) {
+            Model m;
+            std::string caminho = pasta + std::string("/") + a;
+            CHECK(Model::load(caminho, m, &err), "%s não carregou: %s", a, err.c_str());
+            if (ref_ok) {
+                CHECK(m.weights.size() == primeiro.weights.size(),
+                      "%s: %zu pesos, o .json tem %zu", a, m.weights.size(),
+                      primeiro.weights.size());
+                CHECK(m.spec.obs_dim == primeiro.spec.obs_dim, "%s: obs_dim diferente", a);
+                CHECK(m.spec.act_dim == primeiro.spec.act_dim, "%s: act_dim diferente", a);
+                CHECK(m.spec.hidden == primeiro.spec.hidden, "%s: camadas diferentes", a);
+                int diferentes = 0;
+                size_t n = std::min(m.weights.size(), primeiro.weights.size());
+                for (size_t i = 0; i < n; ++i)
+                    if (m.weights[i] != primeiro.weights[i]) diferentes += 1;
+                CHECK(diferentes == 0, "%s: %d pesos diferentes do .json", a, diferentes);
+            }
+        }
+        // a rede carregada de um .pt tem que dirigir de verdade
+        {
+            Model m;
+            if (Model::load(pasta + "/rede.pt", m, &err)) {
+                float obs[24], out[2] = {9, 9};
+                for (int i = 0; i < 24; ++i) obs[i] = 0.4f;
+                forward(m.spec, m.weights.data(), obs, out);
+                CHECK(std::isfinite(out[0]) && std::isfinite(out[1]),
+                      "rede do .pt devolveu lixo: %.3f %.3f", out[0], out[1]);
+                CHECK(out[0] >= -1.0f && out[0] <= 1.0f && out[1] >= -1.0f && out[1] <= 1.0f,
+                      "ação fora de faixa: %.3f %.3f", out[0], out[1]);
+            }
+        }
+        // o que não é rede neural tem que ser recusado, com explicação
+        const char* ruins[] = {"nao_e_rede.bin", "nao_e_rede.txt"};
+        for (const char* a : ruins) {
+            Model m;
+            CHECK(!Model::load(pasta + std::string("/") + a, m, &err), "%s foi aceito", a);
+            CHECK(!err.empty(), "%s: sem explicação", a);
+            printf("   %s recusado: %s\n", a, err.c_str());
+        }
+    }
+    }
+
     // o GIL (real ou falso) precisa estar equilibrado no fim: sem vazamento
     if (stub && *stub) {
         int pendente = stub_gil(stub);
