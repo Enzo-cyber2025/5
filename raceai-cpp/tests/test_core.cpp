@@ -18,6 +18,15 @@ using namespace raceai;
 static int passed = 0, failed = 0;
 static const char* current = "";
 
+// pasta temporária portável (no Windows não existe /tmp)
+static std::string tmp_file(const char* nome) {
+#ifdef _WIN32
+    return std::string(".\\") + nome;
+#else
+    return std::string("/tmp/") + nome;
+#endif
+}
+
 #define CHECK(cond, ...)                                                       \
     do {                                                                       \
         if (!(cond)) {                                                         \
@@ -302,9 +311,9 @@ static void t_policy() {
     mm.weights = g;
     mm.meta.set("track", Json("teste"));
     std::string err;
-    CHECK(mm.save("/tmp/raceai_modelo_teste.json", &err), "não salvou: %s", err.c_str());
+    CHECK(mm.save(tmp_file("raceai_modelo_teste.json"), &err), "não salvou: %s", err.c_str());
     Model carregado;
-    CHECK(Model::load("/tmp/raceai_modelo_teste.json", carregado, &err), "não carregou: %s",
+    CHECK(Model::load(tmp_file("raceai_modelo_teste.json"), carregado, &err), "não carregou: %s",
           err.c_str());
     CHECK(carregado.weights.size() == g.size(), "tamanho diferente após carregar");
     bool igual = carregado.weights.size() == g.size();
@@ -315,7 +324,7 @@ static void t_policy() {
     CHECK(carregado.meta.at("track").str() == "teste", "meta perdida");
 
     Model quebrado;
-    CHECK(!Model::load("/tmp/raceai_nao_existe.json", quebrado, &err),
+    CHECK(!Model::load(tmp_file("raceai_nao_existe.json"), quebrado, &err),
           "deveria falhar em arquivo inexistente");
 }
 
@@ -417,10 +426,10 @@ static void t_train() {
 
     // salvar e recarregar o melhor modelo
     std::string err;
-    CHECK(tr3.save_best("/tmp/raceai_treino_teste.json", &err), "não salvou o modelo: %s",
+    CHECK(tr3.save_best(tmp_file("raceai_treino_teste.json"), &err), "não salvou o modelo: %s",
           err.c_str());
     Trainer tr4(g_track, g_car, sim, ga, pol, tc);
-    CHECK(tr4.load_model("/tmp/raceai_treino_teste.json", &err), "não carregou: %s", err.c_str());
+    CHECK(tr4.load_model(tmp_file("raceai_treino_teste.json"), &err), "não carregou: %s", err.c_str());
     tr4.start_episode();
     tr4.run_episode();
     GenHistory h4 = tr4.finish_episode(false);

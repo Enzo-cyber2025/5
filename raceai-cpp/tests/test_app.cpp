@@ -8,6 +8,15 @@
 using namespace raceai;
 
 static int ok = 0, falhas = 0;
+
+// pasta temporária portável (no Windows não existe /tmp)
+static std::string tmp_file(const char* nome) {
+#ifdef _WIN32
+    return std::string(".\\") + nome;
+#else
+    return std::string("/tmp/") + nome;
+#endif
+}
 #define CHECK(c, ...)                                                          \
     do {                                                                       \
         if (!(c)) {                                                            \
@@ -81,8 +90,8 @@ int main() {
 
     // ---------------------------------------------------------- modelo
     std::string err;
-    CHECK(app.salvar_modelo("/tmp/raceai_app_modelo.json", &err), "não salvou: %s", err.c_str());
-    CHECK(app.carregar_modelo("/tmp/raceai_app_modelo.json", &err), "não carregou: %s",
+    CHECK(app.salvar_modelo(tmp_file("raceai_app_modelo.json"), &err), "não salvou: %s", err.c_str());
+    CHECK(app.carregar_modelo(tmp_file("raceai_app_modelo.json"), &err), "não carregou: %s",
           err.c_str());
     CHECK(app.geracao == 0, "geração deveria zerar ao carregar modelo");
 

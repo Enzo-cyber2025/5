@@ -19,6 +19,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 jobs:
   build:
@@ -46,41 +47,24 @@ jobs:
           Get-ChildItem raceai-cpp/python | Select-Object -First 12 -ExpandProperty Name
 
       - name: Compilar
-        id: compilar
         shell: msys2 {0}
         run: |
           cd raceai-cpp
-          set +e
           make -j2 > build.log 2>&1
-          echo "make_exit=$?" | tee -a build.log
-          tail -100 build.log
-          ls -la build/ | tee -a build.log
+          st=$?
+          tail -80 build.log
+          ls -la build/ | tail -10
           test -f build/raceai.exe
-
-      - name: Subir o log de compilação
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-log
-          path: raceai-cpp/build.log
-
-      - name: Guardar o log no repositório (depuração)
-        continue-on-error: true
-        if: always()
-        shell: msys2 {0}
-        run: |
-          cp raceai-cpp/build.log ci-build.log
-          git config user.email "ci@example.com"
-          git config user.name "CI"
-          git add -f ci-build.log
-          git commit -m "CI: log de compilacao (automatico)" || echo "nada a commitar"
-          git push origin HEAD:$GITHUB_REF_NAME || echo "sem push"
+          exit $st
 
       - name: Testes do núcleo e da interface
         shell: msys2 {0}
         run: |
           cd raceai-cpp
-          make test 2>&1 | tail -40
+          make test > test.log 2>&1
+          st=$?
+          tail -60 test.log
+          exit $st
 
       - name: Teste do interpretador Python de verdade
         shell: msys2 {0}
@@ -93,6 +77,28 @@ jobs:
         run: |
           cd raceai-cpp
           ./build/raceai_train.exe -g 25 -p 30 --seconds 30 --seed 5 2>&1 | tail -12
+
+      - name: Abrir issue com o log (se algo falhou)
+        if: failure()
+        shell: msys2 {0}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          {
+            echo "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo
+            echo '### compilação'
+            echo '```'
+            tail -100 raceai-cpp/build.log 2>/dev/null
+            echo '```'
+            echo
+            echo '### testes'
+            echo '```'
+            tail -100 raceai-cpp/test.log 2>/dev/null
+            echo '```'
+          } > /tmp/issue.md
+          gh issue create --title "CI do C++ falhou (run $GITHUB_RUN_ID)" --body-file /tmp/issue.md || true
 
       - name: Empacotar
         shell: msys2 {0}
