@@ -22,6 +22,7 @@ MEANING = {
     "created": "An account was created.",
     "unknown": "The probe did not get a verdict (page never loaded?).",
     "probe-error": "The probe itself failed — the error is in the result.",
+    "stuck-form": "A form screen kept refusing the filled values (a widget the probe cannot drive yet).",
 }
 
 
@@ -53,7 +54,8 @@ def main(argv: list[str]) -> int:
         lines.append("|---|---|---|---|")
         for step in data.get("steps", []):
             lines.append(f"| {step['step']} | `{step['verdict'] or 'form filled'}` "
-                         f"| {len(step['filled'])} | {step['clicked_next']} |")
+                         f"| {len(step['filled'])} +{len(step.get('picked') or [])} "
+                         f"| {step['clicked_next']} |")
         if (directory / "credentials.json").exists():
             lines.append("")
             lines.append("**An account exists.** Download the `signup-account` artifact, then:")

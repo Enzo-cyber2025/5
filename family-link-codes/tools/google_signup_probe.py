@@ -26,6 +26,7 @@ FIRST = ["Marina", "Tomas", "Helena", "Rafael", "Clara", "Otavio", "Bianca", "Ig
 LAST = ["Almeida", "Ferreira", "Nogueira", "Barbosa", "Teixeira", "Moreira", "Prado"]
 
 WALLS = [
+    ("stuck-form", r"^$never^$"),
     ("phone", r"phone number|verify your phone|telefone|n[uú]mero de telefone|"
               r"we'?ll send a verification code|text message"),
     ("captcha", r"captcha|not a robot|recaptcha|prove you'?re not a robot|"
@@ -39,6 +40,10 @@ WALLS = [
              r"personalize your google experience"),
 ]
 
+OPTION_WORDS = {
+    "month": ["May", "Maio", "June", "Janeiro"],
+    "gender": ["Rather not say", "Prefiro não informar", "Female", "Feminino", "Male"],
+}
 STEP_INPUTS = {
     "given": r"first name|nome",
     "family": r"last name|sobrenome",
@@ -126,17 +131,74 @@ def fill_visible(page, identity: dict) -> list:
     return filled
 
 
-def select_birthday(page, identity: dict) -> None:
-    for selector, value in (
-        ('select#month, select[aria-label*="Month"], select[name="month"]', identity["birthday"]["month"]),
-        ('select#day, select[aria-label*="Day"], select[name="day"]', identity["birthday"]["day"]),
-        ('select#year, select[aria-label*="Year"], select[name="year"]', identity["birthday"]["year"]),
-        ('select#gender, select[aria-label*="Gender"], select[name="gender"]', identity["gender"]),
+def _pick_option(page, label_pattern: str, options: list) -> bool:
+    """The wizard's Month/Gender are Material comboboxes, not <select>.
+
+    Click the box (role=combobox or the labelled div), then the option in the
+    listbox that appears. Each strategy is tried because the markup changed
+    between wizard revisions.
+    """
+    opened = False
+    for locator in (
+        lambda: page.get_by_role("combobox", name=re.compile(label_pattern, re.I)).first,
+        lambda: page.locator(f'[aria-label*="{label_pattern}" i][role="combobox"], '
+                             f'[jsname][role="combobox"]').first,
+        lambda: page.get_by_label(re.compile(label_pattern, re.I)).first,
     ):
         try:
-            page.locator(selector).first.select_option(value, timeout=2000)
+            element = locator()
+            if element.count() == 0:
+                continue
+            element.click(timeout=3000)
+            opened = True
+            break
         except Exception:
-            pass
+            continue
+    if not opened:
+        return False
+    page.wait_for_timeout(700)
+    for name in options:
+        for locator in (
+            lambda: page.get_by_role("option", name=re.compile(f"^{name}$", re.I)).first,
+            lambda: page.get_by_role("menuitem", name=re.compile(f"^{name}$", re.I)).first,
+            lambda: page.locator(f'li:has-text("{name}")').first,
+            lambda: page.locator(f'[role="option"]:has-text("{name}")').first,
+        ):
+            try:
+                element = locator()
+                if element.count() and element.is_visible():
+                    element.click(timeout=3000)
+                    return True
+            except Exception:
+                continue
+    return False
+
+
+def select_birthday(page, identity: dict) -> list:
+    """Fill the birthday/gender screen; returns what actually got set."""
+    done = []
+    for label, value in (("Day", identity["birthday"]["day"]),
+                         ("Year", identity["birthday"]["year"])):
+        for locator in (
+            lambda: page.get_by_label(re.compile(f"^{label}$", re.I)).first,
+            lambda: page.get_by_placeholder(re.compile(f"^{label}$", re.I)).first,
+            lambda: page.get_by_role("textbox", name=re.compile(label, re.I)).nth(0),
+        ):
+            try:
+                element = locator()
+                if element.count() == 0:
+                    continue
+                element.click(timeout=2000)
+                element.fill(value, timeout=3000)
+                done.append(label.lower())
+                break
+            except Exception:
+                continue
+    if _pick_option(page, "Month", OPTION_WORDS["month"]):
+        done.append("month")
+    if _pick_option(page, "Gender", OPTION_WORDS["gender"]):
+        done.append("gender")
+    return done
 
 
 def click_next(page) -> bool:
@@ -171,18 +233,21 @@ def run(out_dir: pathlib.Path, headless: bool) -> int:
         )
         page.wait_for_timeout(4000)
 
-        for attempt in range(1, 9):
+        previous = ""
+        stuck = 0
+        for attempt in range(1, 11):
             page.screenshot(path=str(out_dir / f"step-{attempt:02d}.png"), full_page=True)
             text = page_text(page)
             (out_dir / f"step-{attempt:02d}.txt").write_text(text, encoding="utf-8", errors="replace")
             verdict = classify(text)
             filled = fill_visible(page, identity)
-            select_birthday(page, identity)
+            picked = select_birthday(page, identity)
             clicked = click_next(page)
             steps.append({
                 "step": attempt,
                 "verdict": verdict,
                 "filled": filled,
+                "picked": picked,
                 "clicked_next": clicked,
                 "heading": text.strip().splitlines()[0][:120] if text.strip() else "",
             })
@@ -193,7 +258,16 @@ def run(out_dir: pathlib.Path, headless: bool) -> int:
                 break
             if verdict in {"phone", "captcha", "browser", "blocked"}:
                 break
-            page.wait_for_timeout(5000)
+            # A screen that keeps asking the same thing is a form we cannot fill;
+            # three identical rounds is enough to call it.
+            stuck = stuck + 1 if text == previous else 0
+            previous = text
+            if stuck >= 2:
+                steps[-1]["verdict"] = "stuck-form"
+                print(f"step {attempt}: the same screen keeps asking "
+                      f"({steps[-1]['heading'][:60]!r}); stopping here")
+                break
+            page.wait_for_timeout(4000)
 
         page.screenshot(path=str(out_dir / "final.png"), full_page=True)
         (out_dir / "final.txt").write_text(page_text(page), encoding="utf-8", errors="replace")

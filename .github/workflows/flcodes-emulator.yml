@@ -109,7 +109,6 @@ jobs:
           mkdir -p "$DEST"
           cp -a "$RUNNER_TEMP/signup/." "$DEST/" 2>/dev/null
           rm -f "$DEST"/credentials.json          # never commit a credential
-          rm -f "$DEST"/step-0[4-9].png "$DEST"/step-*.png 2>/dev/null
           ls -la "$DEST" > "$DEST/listing.txt"
           git config user.name "flcodes ci"
           git config user.email "actions@users.noreply.github.com"
