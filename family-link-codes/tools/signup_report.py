@@ -21,6 +21,7 @@ MEANING = {
     "done": "An account was created.",
     "created": "An account was created.",
     "unknown": "The probe did not get a verdict (page never loaded?).",
+    "probe-error": "The probe itself failed — the error is in the result.",
 }
 
 
@@ -43,6 +44,8 @@ def main(argv: list[str]) -> int:
         verdict = data.get("verdict", "unknown")
         created = bool(data.get("created")) or verdict in {"done", "created"}
         lines.append(f"- verdict: **{verdict}** — {MEANING.get(verdict, 'see the screenshots')}")
+        if data.get("error"):
+            lines.append(f"- probe error: `{data['error']}`")
         if data.get("email"):
             lines.append(f"- account: `{data['email']}` (password in the artifact, 0600)")
         lines.append("")

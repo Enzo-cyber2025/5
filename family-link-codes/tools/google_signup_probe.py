@@ -225,10 +225,17 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--headful", action="store_true")
     args = parser.parse_args(argv)
     random.seed(time.time_ns())
+    out_dir = pathlib.Path(args.out_dir)
     try:
-        return run(pathlib.Path(args.out_dir), headless=not args.headful)
+        return run(out_dir, headless=not args.headful)
     except Exception as exc:  # pragma: no cover - network/browser failures
-        print(f"probe failed: {exc}", file=sys.stderr)
+        message = f"{type(exc).__name__}: {exc}"
+        print(f"probe failed: {message}", file=sys.stderr)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / "result.json").write_text(json.dumps({
+            "created": False, "verdict": "probe-error", "email": "",
+            "error": message[:2000], "steps": [],
+        }, indent=2))
         return 1
 
 

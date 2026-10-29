@@ -78,6 +78,8 @@ jobs:
     name: Can CI sign a Google account up at all? (one honest attempt)
     runs-on: ubuntu-latest
     needs: unit
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -97,7 +99,23 @@ jobs:
       - name: Report which wall it was
         run: |
           set -e
-          python3 family-link-codes/tools/signup_report.py --dir "$RUNNER_TEMP/signup"
+          python3 family-link-codes/tools/signup_report.py --dir "$RUNNER_TEMP/signup" \
+            | tee "$RUNNER_TEMP/signup/summary.txt" || true
+      - name: Publish the verdict into the repo (artifacts are not reachable from here)
+        if: always()
+        run: |
+          set +e
+          DEST="ci-results/signup-${{ github.run_id }}"
+          mkdir -p "$DEST"
+          cp -a "$RUNNER_TEMP/signup/." "$DEST/" 2>/dev/null
+          rm -f "$DEST"/credentials.json          # never commit a credential
+          rm -f "$DEST"/step-0[4-9].png "$DEST"/step-*.png 2>/dev/null
+          ls -la "$DEST" > "$DEST/listing.txt"
+          git config user.name "flcodes ci"
+          git config user.email "actions@users.noreply.github.com"
+          git add "$DEST"
+          git commit -q -m "ci: sign-up probe verdict for run ${{ github.run_id }}"
+          git push origin "HEAD:${{ github.head_ref || github.ref_name }}"
       - name: Publish the screenshots (and the account, if it exists)
         if: always()
         uses: actions/upload-artifact@v4

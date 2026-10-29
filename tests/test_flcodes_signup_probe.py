@@ -117,3 +117,25 @@ def test_a_missing_result_does_not_crash(tmp_path):
                           "--dir", str(tmp_path)], capture_output=True, text=True)
     assert out.returncode == 0
     assert "no result" in out.stdout
+
+
+def test_a_broken_probe_still_reports(tmp_path, monkeypatch):
+    """If playwright or the network dies, result.json must still exist."""
+    import subprocess
+    import sys
+
+    out = tmp_path / "signup"
+    env = dict(__import__("os").environ)
+    env["PYTHONPATH"] = str(TOOLS)
+    # force the import inside main() to fail without touching the network
+    result = subprocess.run(
+        [sys.executable, "-c",
+         "import sys, json;"
+         "sys.modules['playwright'] = None;"
+         f"sys.argv=['p','--out-dir','{out}'];"
+         f"exec(open('{TOOLS}/google_signup_probe.py').read())"],
+        capture_output=True, text=True, env=env)
+    assert result.returncode == 1
+    data = json.loads((out / "result.json").read_text())
+    assert data["verdict"] == "probe-error"
+    assert data["error"]
