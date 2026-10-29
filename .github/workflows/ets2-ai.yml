@@ -3554,17 +3554,35 @@ jobs:
                   return ($p.ExitCode -eq 0)
                 }
                 $icdHib = $null
-                # v85: qual e o loader desta imagem? O vktest rc=-9 com AMBAS
-                # as lavapipe (v84) = INCOMPATIBLE_DRIVER; o setup so instala
-                # o VulkanRT quando o loader FALTA (v49) — aqui ele EXISTE
-                # (da imagem ou da demo) e pode ser VELHO demais pros manifests
-                # das ICDs novas. Logar a versao antes de tudo.
+                # v86: A CAUSA RAIZ, no log do loader (v85): o runner roda
+                # ELEVADO e o loader Vulkan >= 1.3.2xx IGNORA a
+                # VK_ICD_FILENAMES em processo elevado ("Environment variable
+                # VK_ICD_FILENAMES will be ignored" -> "vkCreateInstance:
+                # Found no drivers!"). Nesse caso o loader so le ICDs do
+                # REGISTRO: HKLM\SOFTWARE\Khronos\Vulkan\Drivers (nome do
+                # valor = caminho do JSON, dado DWORD 0) — e isso vale para
+                # o vktest E para o JOGO (tambem elevado).
+                $vkReg = "HKLM:\SOFTWARE\Khronos\Vulkan\Drivers"
+                try {
+                  New-Item -Path $vkReg -Force | Out-Null
+                  Trace "hib-vk: chave Vulkan\Drivers garantida no registro"
+                } catch { Trace "hib-vk reg: $($_.Exception.Message)" }
+                function RegIcd([string]$jsonPath, [bool]$remover) {
+                  try {
+                    if ($remover) { Remove-ItemProperty -Path $vkReg -Name $jsonPath -ErrorAction SilentlyContinue }
+                    else { New-ItemProperty -Path $vkReg -Name $jsonPath -Value 0 -PropertyType DWord -Force | Out-Null }
+                  } catch { Trace "hib-vk regicd: $($_.Exception.Message)" }
+                }
+                # v85 mantido: versao do loader da imagem no trace
                 try {
                   $vldH = Get-Item "C:\Windows\System32\vulkan-1.dll" -ErrorAction SilentlyContinue
                   if ($vldH) { Trace ("hib-vk: loader da imagem " + $vldH.VersionInfo.FileVersion + " de " + $vldH.LastWriteTime.ToString("yyyy-MM-dd")) }
-                  else { Trace "hib-vk: sem loader no System32?" }
-                } catch { Trace "hib-vk verloader: $($_.Exception.Message)" }
-                if ($vkIcdX64 -and (HibVk $vkIcdX64.FullName "lvp264")) { $icdHib = $vkIcdX64.FullName }
+                } catch { }
+                if ($vkIcdX64) {
+                  RegIcd $vkIcdX64.FullName $false
+                  if (HibVk $vkIcdX64.FullName "lvp264reg") { $icdHib = $vkIcdX64.FullName }
+                  else { RegIcd $vkIcdX64.FullName $true }
+                }
                 if (-not $icdHib) {
                   if (-not (Test-Path "C:\mesa253\x64\lvp_icd.x86_64.json")) {
                     Trace "hib-vk: baixando Mesa 25.3.6"
@@ -3575,19 +3593,18 @@ jobs:
                     Trace "hib-vk: 25.3.6 extraida exit=$LASTEXITCODE"
                   }
                   $icd253 = Get-ChildItem "C:\mesa253" -Recurse -Filter "lvp_icd*.json" -ErrorAction SilentlyContinue | Where-Object { $_.Name -match "x86_64|x64" } | Select-Object -First 1
-                  if ($icd253 -and (HibVk $icd253.FullName "lvp253")) { $icdHib = $icd253.FullName }
+                  if ($icd253) {
+                    RegIcd $icd253.FullName $false
+                    if (HibVk $icd253.FullName "lvp253reg") { $icdHib = $icd253.FullName }
+                    else { RegIcd $icd253.FullName $true }
+                  }
                 }
                 if (-not $icdHib) {
-                  # v85: UPGRADE FORCADO DO LOADER — instalar o VulkanRT 1.4.363
-                  # POR CIMA do velho (o installer da LunarG faz upgrade com /S);
-                  # re-testar as duas ICDs em seguida. Se o installer nao mudar
-                  # nada, extrair o loader do installer (SFX 7z) e por NA PASTA
-                  # DO JOGO: o carregamento por nome acha bin64 ANTES do
-                  # System32 (e uma copia no $PWD serve o vktest).
+                  # v85: upgrade do VulkanRT 1.4.363 (instalou certo; so nao
+                  # resolvia por causa da politica de env elevado) — agora
+                  # re-testa as duas ICDs REGISTRADAS com o loader novo.
                   try {
-                    $sz7h = "C:\Program Files\7-Zip\7z.exe"
-                    if (-not (Test-Path $sz7h)) { $sz7h = "7z.exe" }
-                    Trace "hib-vk: forcando upgrade do VulkanRT 1.4.363"
+                    Trace "hib-vk: upgrade do VulkanRT 1.4.363 + retestes com registro"
                     curl.exe -sSL --retry 3 --max-time 240 -o C:\vulkanrt-hib.exe "https://sdk.lunarg.com/sdk/download/1.4.363.0/windows/VulkanRT-X64-1.4.363.0-Installer.exe"
                     $tVh = (Get-Item C:\vulkanrt-hib.exe -ErrorAction SilentlyContinue).Length
                     Trace "hib-vk: installer $tVh bytes"
@@ -3599,37 +3616,30 @@ jobs:
                       } else { Trace "hib-vk: install exit=$($pVh.ExitCode)" }
                       $vldH2 = Get-Item "C:\Windows\System32\vulkan-1.dll" -ErrorAction SilentlyContinue
                       if ($vldH2) { Trace ("hib-vk: loader apos upgrade " + $vldH2.VersionInfo.FileVersion + " de " + $vldH2.LastWriteTime.ToString("yyyy-MM-dd")) }
-                      if ($vkIcdX64 -and (HibVk $vkIcdX64.FullName "lvp264up")) { $icdHib = $vkIcdX64.FullName }
+                      if ($vkIcdX64) {
+                        RegIcd $vkIcdX64.FullName $false
+                        if (HibVk $vkIcdX64.FullName "lvp264up") { $icdHib = $vkIcdX64.FullName }
+                        else { RegIcd $vkIcdX64.FullName $true }
+                      }
                       if (-not $icdHib) {
                         $icd253b = Get-ChildItem "C:\mesa253" -Recurse -Filter "lvp_icd*.json" -ErrorAction SilentlyContinue | Where-Object { $_.Name -match "x86_64|x64" } | Select-Object -First 1
-                        if ($icd253b -and (HibVk $icd253b.FullName "lvp253up")) { $icdHib = $icd253b.FullName }
+                        if ($icd253b) {
+                          RegIcd $icd253b.FullName $false
+                          if (HibVk $icd253b.FullName "lvp253up") { $icdHib = $icd253b.FullName }
+                          else { RegIcd $icd253b.FullName $true }
+                        }
                       }
                     } else { Trace "hib-vk: installer nao baixou ($tVh)" }
                   } catch { Trace "hib-vk upgrade: $($_.Exception.Message)" }
                 }
-                if (-not $icdHib) {
-                  # v85 ultima carta: extrai o vulkan-1.dll do installer (SFX)
-                  # e poe na PASTA DO JOGO + $PWD (vktest) — carregamento local
-                  # vence o System32 sem tocar no sistema.
-                  try {
-                    $sz7h = "C:\Program Files\7-Zip\7z.exe"
-                    if (-not (Test-Path $sz7h)) { $sz7h = "7z.exe" }
-                    & $sz7h x C:\vulkanrt-hib.exe "-oC:\vulkanrt-x" -y *> "$PWD\vulkanrt-x.log"
-                    $vlN = Get-ChildItem "C:\vulkanrt-x" -Recurse -Filter "vulkan-1.dll" -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "x86\\|Win32|32" } | Select-Object -First 1
-                    if ($vlN) {
-                      Copy-Item $vlN.FullName "$wdir\vulkan-1.dll" -Force
-                      Copy-Item $vlN.FullName "$PWD\vulkan-1.dll" -Force
-                      Trace "hib-vk: loader extraido p/ bin64+PWD: $($vlN.FullName)"
-                      if ($vkIcdX64 -and (HibVk $vkIcdX64.FullName "lvp264bin")) { $icdHib = $vkIcdX64.FullName }
-                    } else { Trace "hib-vk: 7z nao extraiu vulkan-1.dll (ver vulkanrt-x.log)" }
-                  } catch { Trace "hib-vk sfx: $($_.Exception.Message)" }
                 }
                 if ($icdHib) {
                   $env:VK_ICD_FILENAMES = $icdHib
-                  Trace "hibrido: ICD VALIDADO para o boot: $icdHib"
+                  RegIcd $icdHib $false
+                  Trace "hibrido: ICD VALIDADA e REGISTRADA para o boot: $icdHib"
                 } else {
-                  if ($vkIcdX64) { $env:VK_ICD_FILENAMES = $vkIcdX64.FullName }
-                  Trace "hibrido: NENHUM lavapipe passou no vktest — boot com 26.2.4 mesmo (o dxvk.log dira o motivo)"
+                  if ($vkIcdX64) { $env:VK_ICD_FILENAMES = $vkIcdX64.FullName; RegIcd $vkIcdX64.FullName $false }
+                  Trace "hibrido: NENHUM lavapipe passou — boot com 26.2.4 REGISTRADA (o dxvk.log dira o resto)"
                 }
                 # v84: log do DXVK — o E_FAIL da factory veio de vkCreateInstance
                 # falhando DENTRO do jogo; o dxvk.log do DXVK 2.x diz o motivo
