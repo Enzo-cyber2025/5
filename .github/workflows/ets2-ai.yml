@@ -2224,7 +2224,7 @@ jobs:
               [UnmanagedFunctionPointer(CallingConvention.Winapi)] public delegate int CI(ref VkInstanceCreateInfo ci, IntPtr alloc, out IntPtr inst);
               [UnmanagedFunctionPointer(CallingConvention.Winapi)] public delegate int EPD(IntPtr inst, ref uint count, IntPtr[] devices);
               [UnmanagedFunctionPointer(CallingConvention.Winapi)] public delegate void GPD(IntPtr dev, IntPtr props);
-              [UnmanagedFunctionPointer(CallingConvention.Winapi)] public delegate void DI(IntPtr inst);
+              [UnmanagedFunctionPointer(CallingConvention.Winapi)] public delegate void DI(IntPtr inst, IntPtr alloc);
               [StructLayout(LayoutKind.Sequential)] public struct VkApplicationInfo { public int sType; public IntPtr pNext; public IntPtr pApplicationName; public uint applicationVersion; public IntPtr pEngineName; public uint engineVersion; public uint apiVersion; }
               [StructLayout(LayoutKind.Sequential)] public struct VkInstanceCreateInfo { public int sType; public IntPtr pNext; public int flags; public IntPtr pApplicationInfo; public uint enabledLayerCount; public IntPtr ppEnabledLayerNames; public uint enabledExtensionCount; public IntPtr ppEnabledExtensionNames; }
               public static int Main() {
@@ -2263,7 +2263,7 @@ jobs:
               }
               IntPtr pDI = gp(inst, "vkDestroyInstance");
               DI di = (DI)Marshal.GetDelegateForFunctionPointer(pDI, typeof(DI));
-              di(inst);
+              di(inst, IntPtr.Zero);
               Console.WriteLine("VULKAN OK - loader + ICD lavapipe funcionam");
               return 0;
               }
@@ -3659,6 +3659,7 @@ jobs:
                 try {
           @'
           #include <windows.h>
+          #pragma comment(lib, "user32.lib")
           static void tap(WORD sc, int ms) {
             INPUT in[2];
             ZeroMemory(in, sizeof(in));
