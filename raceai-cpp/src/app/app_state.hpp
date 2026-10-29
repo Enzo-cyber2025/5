@@ -140,6 +140,10 @@ public:
     // ---------------------------------------------------------------- python
     bool aplicar_codigo_python(const std::string& codigo);
     bool python_disponivel() const;
+    // importa um arquivo .py (lê do disco e já aplica)
+    bool importar_python(const std::string& path, std::string* err = nullptr);
+    // salva o código atual num arquivo .py
+    bool salvar_python(const std::string& path, std::string* err = nullptr) const;
 
     // ---------------------------------------------------------------- corrida
     void iniciar_corrida(const std::vector<std::string>& modelos = {});

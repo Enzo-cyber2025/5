@@ -36,7 +36,7 @@ endif
 STUB     := $(BIN)/libstubpython.so
 
 all: $(BIN)/raceai_train$(EXE) $(BIN)/raceai_tests$(EXE) $(BIN)/raceai_tests_app$(EXE) \
-     $(BIN)/raceai_pytest$(EXE) $(GAME)
+     $(BIN)/raceai_integrado$(EXE) $(BIN)/raceai_pytest$(EXE) $(GAME)
 
 # ------------------------------------------------------------------ binários
 $(BIN)/raceai_train$(EXE): tools/train_cli.cpp $(CORE)
@@ -50,6 +50,10 @@ $(BIN)/raceai_tests$(EXE): tests/test_core.cpp $(CORE)
 $(BIN)/raceai_tests_app$(EXE): tests/test_app.cpp $(CORE) $(APP)
 	@mkdir -p $(BIN)
 	$(CXX) $(CXXFLAGS) -DRACEAI_WITH_PYTHON tests/test_app.cpp $(CORE) $(APP) -o $@ $(TESTLIBS)
+
+$(BIN)/raceai_integrado$(EXE): tests/test_integrado.cpp $(CORE) $(APP)
+	@mkdir -p $(BIN)
+	$(CXX) $(CXXFLAGS) -DRACEAI_WITH_PYTHON tests/test_integrado.cpp $(CORE) $(APP) -o $@ $(TESTLIBS)
 
 $(BIN)/raceai_pytest$(EXE): tools/py_selftest.cpp $(CORE) $(APP)
 	@mkdir -p $(BIN)
@@ -67,14 +71,16 @@ $(STUB): tests/stub_python.cpp
 	@mkdir -p $(BIN)
 	$(CXX) -std=c++17 -O2 -fPIC -shared tests/stub_python.cpp -o $@
 
-test: $(BIN)/raceai_tests$(EXE) $(BIN)/raceai_tests_app$(EXE)
+test: $(BIN)/raceai_tests$(EXE) $(BIN)/raceai_tests_app$(EXE) $(BIN)/raceai_integrado$(EXE)
 	./$(BIN)/raceai_tests$(EXE)
 	./$(BIN)/raceai_tests_app$(EXE)
+	./$(BIN)/raceai_integrado$(EXE)
 
 # mesmo que `test`, mas usando o stub do CPython para exercitar a ponte Python
 test-py: $(STUB)
 	RACEAI_STUB_PYTHON=./$(STUB) ./$(BIN)/raceai_tests$(EXE)
 	RACEAI_STUB_PYTHON=./$(STUB) ./$(BIN)/raceai_tests_app$(EXE)
+	RACEAI_STUB_PYTHON=./$(STUB) ./$(BIN)/raceai_integrado$(EXE)
 
 # prova que o CPython de verdade funciona (Windows: python/python311.dll)
 test-python-real: $(BIN)/raceai_pytest$(EXE)

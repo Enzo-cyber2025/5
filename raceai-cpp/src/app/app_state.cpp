@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <fstream>
+#include <sstream>
 
 namespace raceai {
 
@@ -334,6 +336,52 @@ bool AppState::aplicar_codigo_python(const std::string& codigo) {
     python_status = "código aplicado (" + std::to_string(py_driver->call_count()) + " chamadas)";
     python_enabled = true;
     if (trainer) trainer->set_driver(py_driver);
+    return true;
+}
+
+// ----------------------------------------------------- importar/salvar .py
+bool AppState::importar_python(const std::string& path, std::string* err) {
+    std::ifstream in(path.c_str(), std::ios::binary);
+    if (!in) {
+        if (err) *err = "não foi possível abrir: " + path;
+        python_status = err ? *err : std::string("não foi possível abrir o arquivo");
+        return false;
+    }
+    std::ostringstream ss;
+    ss << in.rdbuf();
+    std::string codigo = ss.str();
+    if (codigo.empty()) {
+        if (err) *err = "o arquivo está vazio: " + path;
+        python_status = "o arquivo .py está vazio";
+        return false;
+    }
+    // aceita tanto \n quanto \r\n (arquivo feito no Bloco de Notas)
+    std::string limpo;
+    limpo.reserve(codigo.size());
+    for (char c : codigo) {
+        if (c == '\r') continue;
+        limpo.push_back(c);
+    }
+    python_code = limpo;
+    if (!aplicar_codigo_python(limpo)) {
+        if (err) *err = python_status;
+        return false;
+    }
+    return true;
+}
+
+bool AppState::salvar_python(const std::string& path, std::string* err) const {
+    std::ofstream out(path.c_str(), std::ios::binary);
+    if (!out) {
+        if (err) *err = "não foi possível gravar: " + path;
+        return false;
+    }
+    const std::string& c = python_code.empty() ? exemplo_python() : python_code;
+    out << c;
+    if (!out) {
+        if (err) *err = "falha ao gravar: " + path;
+        return false;
+    }
     return true;
 }
 

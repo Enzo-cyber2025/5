@@ -63,6 +63,11 @@ using FnErrPrint    = void (*)(void);
 using FnErrClear    = void (*)(void);
 using FnErrOcc      = void* (*)(void);
 using FnFinalize    = int (*)(void);
+// Controle do GIL: o treino roda em várias threads e o interpretador só pode
+// ser chamado por quem está com o GIL na mão.
+using FnGilEnsure   = int (*)(void);
+using FnGilRelease  = void (*)(int);
+using FnSaveThread  = void* (*)(void);
 
 struct PyApi {
     FnInit init = nullptr;
@@ -87,6 +92,34 @@ struct PyApi {
     FnErrClear err_clear = nullptr;
     FnErrOcc err_occ = nullptr;
     FnFinalize finalize = nullptr;
+    FnGilEnsure gil_ensure = nullptr;
+    FnGilRelease gil_release = nullptr;
+    FnSaveThread save_thread = nullptr;
+    void* main_thread_state = nullptr;      // devolvido por PyEval_SaveThread
+};
+
+static PyApi& api();
+
+// Mantém o GIL durante uma chamada ao interpretador. Se a biblioteca não
+// expuser a C-API do GIL (ou o interpretador falso dos testes), vira um no-op.
+class GilGuard {
+public:
+    GilGuard() {
+        PyApi& a = api();
+        if (a.gil_ensure) { estado_ = a.gil_ensure(); armado_ = true; }
+    }
+    ~GilGuard() {
+        if (armado_) {
+            PyApi& a = api();
+            if (a.gil_release) a.gil_release(estado_);
+        }
+    }
+    GilGuard(const GilGuard&) = delete;
+    GilGuard& operator=(const GilGuard&) = delete;
+
+private:
+    int estado_ = 0;
+    bool armado_ = false;
 };
 
 static PyApi& api() {
@@ -174,6 +207,9 @@ bool PyDriver::load_runtime(const std::string& dll, std::string* err) {
     a.err_clear = (FnErrClear)lib_sym(lib_, "PyErr_Clear");
     a.err_occ = (FnErrOcc)lib_sym(lib_, "PyErr_Occurred");
     a.finalize = (FnFinalize)lib_sym(lib_, "Py_FinalizeEx");
+    a.gil_ensure = (FnGilEnsure)lib_sym(lib_, "PyGILState_Ensure");
+    a.gil_release = (FnGilRelease)lib_sym(lib_, "PyGILState_Release");
+    a.save_thread = (FnSaveThread)lib_sym(lib_, "PyEval_SaveThread");
 
     if (!a.init || !a.run || !a.import || !a.getattr || !a.call || !a.list_new ||
         !a.float_from || !a.uni_from) {
@@ -199,22 +235,31 @@ bool PyDriver::load_runtime(const std::string& dll, std::string* err) {
     if (!a.is_init || !a.is_init()) a.init(0);
     initialized_ = true;
 
-    if (a.run(kBootstrap) != 0) {
-        if (a.err_print) a.err_print();
-        if (err) *err = "falha ao preparar o ambiente Python";
-        initialized_ = false;
-        return false;
+    // Depois de iniciar, a thread principal fica com o GIL. Soltamos aqui para
+    // que as threads do treino consigam chamar o interpretador (e voltamos a
+    // pegá-lo em cada chamada, ver GilGuard).
+    if (a.save_thread) a.main_thread_state = a.save_thread();
+    (void)a.main_thread_state;
+
+    {
+        GilGuard g;
+        if (a.run(kBootstrap) != 0) {
+            if (a.err_print) a.err_print();
+            if (err) *err = "falha ao preparar o ambiente Python";
+            initialized_ = false;
+            return false;
+        }
+        module_main_ = a.import("__main__");
+        if (!module_main_) {
+            if (err) *err = "não consegui abrir o módulo __main__";
+            return false;
+        }
+        fn_install_ = a.getattr(module_main_, "_raceai_install");
+        fn_call_ = a.getattr(module_main_, "_raceai_call");
+        bootstrap_ok_ = fn_install_ && fn_call_;
+        if (!bootstrap_ok_ && err) *err = "falha ao instalar as funções auxiliares";
+        return bootstrap_ok_;
     }
-    module_main_ = a.import("__main__");
-    if (!module_main_) {
-        if (err) *err = "não consegui abrir o módulo __main__";
-        return false;
-    }
-    fn_install_ = a.getattr(module_main_, "_raceai_install");
-    fn_call_ = a.getattr(module_main_, "_raceai_call");
-    bootstrap_ok_ = fn_install_ && fn_call_;
-    if (!bootstrap_ok_ && err) *err = "falha ao instalar as funções auxiliares";
-    return bootstrap_ok_;
 }
 
 void PyDriver::unload() {
@@ -304,6 +349,7 @@ bool PyDriver::set_code(const std::string& code, std::string* err) {
         if (err) *err = "interpretador Python indisponível";
         return false;
     }
+    GilGuard gil;
     void* src = a.uni_from(code.data(), (long long)code.size());
     if (!src) {
         if (err) *err = "não consegui converter o código";
@@ -336,6 +382,7 @@ void PyDriver::act(const float* obs, int dim, float* out) {
     out[1] = 0.0f;
     PyApi& a = api();
     if (!installed_ || !bootstrap_ok_ || !fn_call_) return;
+    GilGuard gil;               // o treino chama isto de várias threads
 
     void* lista = a.list_new(dim);
     if (!lista) return;

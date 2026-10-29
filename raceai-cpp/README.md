@@ -72,7 +72,19 @@ cada camada — por isso a evolução converge sem "esquecer" o que aprendeu.
 
 ## Sua IA em Python
 
-Na tela de treinamento há um campo de texto. O contrato é este:
+Na tela de treinamento há um campo de texto, com quatro botões:
+
+| botão | o que faz |
+| --- | --- |
+| **Aplicar código** | compila o que está escrito no campo |
+| **Exemplo** | traz de volta o piloto de exemplo |
+| **Abrir .py** | lê um arquivo `.py` do disco e já aplica |
+| **Salvar .py** | grava o código do campo num arquivo `.py` |
+
+Se o código tiver erro, ele é recusado com o traceback na tela e a IA fica
+neutra (o carro não sai do lugar) até você corrigir e aplicar de novo.
+
+O contrato é este:
 
 ```python
 def dirigir(sensores):

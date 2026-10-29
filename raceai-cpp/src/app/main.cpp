@@ -119,6 +119,7 @@ enum {
     ID_CORRIDA = 1001, ID_TREINO, ID_MENU, ID_INICIAR, ID_PAUSAR, ID_REINICIAR,
     ID_SALVAR, ID_CARREGAR, ID_APLICAR_PY, ID_PISTA, ID_CARRO, ID_LIMPAR_PY,
     ID_EXEMPLO_PY, ID_NOVO, ID_ADD_MODELO, ID_AJUDA, ID_SAIR, ID_VOLTAR,
+    ID_ABRIR_PY, ID_SALVAR_PY,
     ID_RECOMPENSA_PADRAO, ID_ZOOM_MAIS, ID_ZOOM_MENOS
 };
 
@@ -481,8 +482,10 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             SetWindowTextW(g_edita_python, wide(g_app.python_code).c_str());
             y += 196;
             botao(hwnd, ID_APLICAR_PY, P, y, 130, 26, L"Aplicar código");
-            botao(hwnd, ID_EXEMPLO_PY, P + 136, y, 130, 26, L"Exemplo");
-            botao(hwnd, ID_LIMPAR_PY, P + 272, y, 112, 26, L"Limpar");
+            botao(hwnd, ID_EXEMPLO_PY, P + 136, y, 112, 26, L"Exemplo");
+            botao(hwnd, ID_ABRIR_PY, P + 254, y, 118, 26, L"Abrir .py");
+            botao(hwnd, ID_SALVAR_PY, P + 378, y, 118, 26, L"Salvar .py");
+            botao(hwnd, ID_LIMPAR_PY, P + 502, y, 100, 26, L"Limpar");
 
             y += 32;
             g_texto_metricas = CreateWindowW(L"edit", L"",
@@ -592,6 +595,47 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                 } else {
                     MessageBoxW(hwnd, wide(g_app.python_status).c_str(), L"Erro no código",
                                 MB_OK | MB_ICONERROR);
+                }
+            } else if (id == ID_ABRIR_PY || id == ID_SALVAR_PY) {
+                wchar_t arquivo[MAX_PATH] = L"minha_ia.py";
+                OPENFILENAMEW ofn = {};
+                ofn.lStructSize = sizeof(ofn);
+                ofn.hwndOwner = hwnd;
+                ofn.lpstrFile = arquivo;
+                ofn.nMaxFile = MAX_PATH;
+                ofn.lpstrFilter = L"Python\0*.py\0Todos\0*.*\0";
+                ofn.nFilterIndex = 1;
+                ofn.Flags = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT;
+                ofn.lpstrDefExt = L"py";
+                if (id == ID_ABRIR_PY) {
+                    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
+                    if (GetOpenFileNameW(&ofn)) {
+                        std::string err;
+                        std::string caminho = narrow(arquivo);
+                        if (g_app.importar_python(caminho, &err)) {
+                            SetWindowTextW(g_edita_python, wide(g_app.python_code).c_str());
+                            MessageBoxW(hwnd,
+                                        wide("Arquivo carregado e aplicado:\n" + caminho).c_str(),
+                                        L"IA em Python", MB_OK | MB_ICONINFORMATION);
+                        } else {
+                            MessageBoxW(hwnd, wide(err).c_str(), L"Erro ao abrir .py",
+                                        MB_OK | MB_ICONERROR);
+                        }
+                    }
+                } else {
+                    if (GetSaveFileNameW(&ofn)) {
+                        wchar_t buf[65536];
+                        GetWindowTextW(g_edita_python, buf, 65535);
+                        g_app.aplicar_codigo_python(narrow(buf));   // guarda o que está na tela
+                        std::string err;
+                        if (g_app.salvar_python(narrow(arquivo), &err)) {
+                            MessageBoxW(hwnd, wide("Código salvo em:\n" + narrow(arquivo)).c_str(),
+                                        L"IA em Python", MB_OK | MB_ICONINFORMATION);
+                        } else {
+                            MessageBoxW(hwnd, wide(err).c_str(), L"Erro ao salvar .py",
+                                        MB_OK | MB_ICONERROR);
+                        }
+                    }
                 }
             } else if (id == ID_EXEMPLO_PY) {
                 SetWindowTextW(g_edita_python, wide(exemplo_python()).c_str());

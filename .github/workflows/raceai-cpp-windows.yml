@@ -108,6 +108,10 @@ jobs:
           cat python.log
           exit 0
 
+      - name: "Integração: colar código, importar .py e a IA dirigir"
+        shell: msys2 {0}
+        run: cd raceai-cpp && ./build/raceai_integrado.exe python/python311.dll
+
       - name: "Treino rápido: a loss precisa cair"
         shell: msys2 {0}
         run: |

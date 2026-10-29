@@ -30,6 +30,7 @@ static StubObj g_call{2};
 static int g_inicializado = 0;
 static std::string g_script;
 static std::string g_codigo_instalado;
+static std::string g_erro_instalacao;
 static std::vector<double> g_ultimos_sensores;
 static double g_resposta[2] = {0.0, 0.0};
 static int g_deve_falhar = 0;
@@ -39,6 +40,7 @@ static int g_refs_vivas = 0;
 // API usada pelos testes para inspecionar o que o driver fez
 void stubpython_reset() {
     g_codigo_instalado.clear();
+    g_erro_instalacao.clear();
     g_ultimos_sensores.clear();
     g_deve_falhar = 0;
     g_chamadas = 0;
@@ -54,6 +56,14 @@ double stubpython_last_sensor(int i) {
 const char* stubpython_script() { return g_script.c_str(); }
 int stubpython_calls() { return g_chamadas; }
 int stubpython_live_refs() { return g_refs_vivas; }
+
+// contagem do "GIL" falso: PyGILState_Ensure/Release precisam andar em pares
+static int g_gil = 0;
+int stubpython_gil_balance() { return g_gil; }
+int PyGILState_Ensure(void) { g_gil += 1; return g_gil; }
+void PyGILState_Release(int) { g_gil -= 1; }
+void* PyEval_SaveThread(void) { return nullptr; }
+void PyEval_RestoreThread(void*) {}
 
 // ------------------------------------------------------------ C-API "Python"
 void Py_InitializeEx(int) { g_inicializado = 1; }
@@ -78,7 +88,8 @@ void* PyObject_GetAttrString(void* obj, const char* name) {
     }
     if (obj == &g_main && name && std::strcmp(name, "_raceai_error") == 0) {
         StubObj* s = new StubObj{5};
-        s->texto = g_deve_falhar ? "Traceback (falso): erro de teste" : "";
+        s->texto = !g_erro_instalacao.empty() ? g_erro_instalacao
+                 : (g_deve_falhar ? "Traceback (falso): erro de teste" : "");
         g_refs_vivas += 1;
         return s;
     }
@@ -172,7 +183,24 @@ void* PyObject_CallFunctionObjArgs(void* fn, ...) {
     if (fn == &g_install) {
         StubObj* src = (StubObj*)primeiro;
         if (g_deve_falhar) return nullptr;
-        if (!src || src->texto.find("def dirigir") == std::string::npos) return nullptr;
+        if (!src) return nullptr;
+        // validação grosseira, mas suficiente para os testes: precisa existir
+        // uma linha "def dirigir(...):" — sem os dois pontos é erro de sintaxe
+        const std::string& t = src->texto;
+        size_t p = t.find("def dirigir");
+        if (p == std::string::npos) {                          // falta a função
+            g_erro_instalacao =
+                "Traceback (falso)\n  NameError: defina dirigir(sensores) -> (esterco, acelerador)";
+            return nullptr;
+        }
+        size_t eol = t.find('\n', p);
+        std::string linha = t.substr(p, eol == std::string::npos ? std::string::npos : eol - p);
+        if (linha.find(':') == std::string::npos) {            // sintaxe inválida
+            g_erro_instalacao =
+                "Traceback (falso)\n  SyntaxError: expected ':' no fim do def";
+            return nullptr;
+        }
+        g_erro_instalacao.clear();
         g_codigo_instalado = src->texto;
         return &g_install;
     }
