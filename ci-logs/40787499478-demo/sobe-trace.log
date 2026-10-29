@@ -1,0 +1,432 @@
+[23:44:55] SO build 26100 — v79 windows-latest p/ WARP novo (crash v78 = fastfail no JIT do D3D10Warp 20348 em CreatePixelShader)
+[23:44:55] SOBE inicio
+[23:44:55] sonda warp/dxgi inicio (system32 virgem)
+[23:44:57] warptest run inicio
+[23:44:57] warptest exit=0
+[23:44:57] warp: stage0: GetDC(NULL)=167839601 (desktop ok)
+[23:44:57] warp: stage1: CreateDXGIFactory1 hr=0x00000000 (dxgi NATIVO vivo)
+[23:44:57] warp: stage2: D3D11CreateDevice(WARP) hr=0x00000000 featureLevel=45056
+[23:44:57] warp: stage3: WARP OK - D3D11 por CPU FUNCIONA nativamente nesta VM
+[23:44:57] sonda warp fim warpOk=True
+[23:44:57] warpwin (janela+swapchain+present) inicio
+[23:44:57] warpwin cl: warpwin.c
+[23:45:03] warpwin exit=0 — SWAPCHAIN EM JANELA FUNCIONA (dx11 viavel E2E)
+[23:45:03] warpwin: stage1: CreateWindow hwnd=00000000000E01CE
+[23:45:03] warpwin: stage2: D3D11CreateDevice(WARP) hr=0x00000000 fl=45056
+[23:45:03] warpwin: stage3: CreateDXGIFactory1 hr=0x00000000
+[23:45:03] warpwin: stage4: CreateSwapChain hr=0x00000000
+[23:45:03] warpwin: stage5: Clear+Present hr=0x00000000 (dx11 EM JANELA ponta a ponta)
+[23:45:03] warpwin2 (bisect pos-device) inicio
+[23:45:03] warpwin2 cl: warpwin2.c
+[23:45:04] warpwin2 cl: D:\a\5\5\warpwin2.c(324): warning C4133: 'function': incompatible types - from 'ID3D11Query *' to 'ID3D11Asynchronous *'
+[23:45:04] warpwin2 cl: D:\a\5\5\warpwin2.c(324): warning C4133: 'function': incompatible types - from 'ID3D11Query *' to 'ID3D11Asynchronous *'
+[23:45:04] warpwin2 cl: D:\a\5\5\warpwin2.c(325): warning C4133: 'function': incompatible types - from 'ID3D11Query *' to 'ID3D11Asynchronous *'
+[23:45:05] warpwin2 exit=0
+[23:45:05] warpwin2: warpwin2: s0 inicio
+[23:45:05] warpwin2: warpwin2: s1 WARP FL10_0 device hr=0x00000000 got=0xa000
+[23:45:05] warpwin2: warpwin2: s2 CreateTexture2D RT 800x600...
+[23:45:05] warpwin2: warpwin2: s2 hr=0x00000000
+[23:45:05] warpwin2: warpwin2: s3 CreateRenderTargetView...
+[23:45:05] warpwin2: warpwin2: s3 hr=0x00000000
+[23:45:05] warpwin2: warpwin2: s4 CreateTexture2D D24S8...
+[23:45:05] warpwin2: warpwin2: s4 hr=0x00000000
+[23:45:05] warpwin2: warpwin2: s5 CreateDepthStencilView...
+[23:45:05] warpwin2: warpwin2: s5 hr=0x00000000
+[23:45:05] warpwin2: warpwin2: s6 OMSetRenderTargets+Clear...
+[23:45:05] warpwin2: warpwin2: s6 OK
+[23:45:05] warpwin2: warpwin2: s7 CreateTexture2D BC3 8192x8192...
+[23:45:05] warpwin2: warpwin2: s7 hr=0x00000000
+[23:45:05] warpwin2: warpwin2: s8 CreateTexture2D BC3 16384x16384 (FL10 max=8192)...
+[23:45:05] warpwin2: warpwin2: s8 hr=0x00000000 ? WARP ACEITA 16k em FL 10_0 (v75 provou)
+[23:45:05] warpwin2: warpwin2: s8b CreateShaderResourceView 16k + draw com ela bindada...
+[23:45:05] warpwin2: warpwin2: s8b srv hr=0x00000000
+[23:45:05] warpwin2: warpwin2: s8b Draw com SRV 16k OK (nao foi aqui)
+[23:45:05] warpwin2: warpwin2: s9 VB dynamic + Map...
+[23:45:05] warpwin2: warpwin2: s9a hr=0x80070057 (vb=0000000000000000)
+[23:45:05] warpwin2: warpwin2: s10 janela hwnd=0000000000090012
+[23:45:05] warpwin2: warpwin2: s11 swapchain DISCARD (via device factory)...
+[23:45:05] warpwin2: warpwin2: s11 hr=0x00000000
+[23:45:05] warpwin2: warpwin2: s12 Present DISCARD...
+[23:45:05] warpwin2: warpwin2: s12 hr=0x00000000
+[23:45:05] warpwin2: warpwin2: s13 swapchain FLIP_SEQUENTIAL...
+[23:45:05] warpwin2: warpwin2: s13 hr=0x00000000
+[23:45:05] warpwin2: warpwin2: s14 Present FLIP...
+[23:45:05] warpwin2: warpwin2: s14 hr=0x00000000
+[23:45:05] warpwin2: warpwin2: s15 D3DCompile CS 4.0...
+[23:45:05] warpwin2: warpwin2: s15 hr=0x00000000
+[23:45:05] warpwin2: warpwin2: s16a raw buffer hr=0x00000000
+[23:45:05] warpwin2: warpwin2: s16b CreateComputeShader (ComputeShaderTransformer?)...
+[23:45:05] warpwin2: warpwin2: s16b hr=0x00000000
+[23:45:05] warpwin2: warpwin2: s16c UAV raw hr=0x00000000
+[23:45:05] warpwin2: warpwin2: s16d CSSetShader+Dispatch...
+[23:45:05] warpwin2: warpwin2: s16d OK
+[23:45:05] warpwin2: warpwin2: s17 D3DCompile vs_4_0/ps_4_0...
+[23:45:05] warpwin2: warpwin2: s17a vs hr=0x00000000
+[23:45:05] warpwin2: warpwin2: s17b ps hr=0x00000000
+[23:45:05] warpwin2: warpwin2: s18 CreateInputLayout...
+[23:45:05] warpwin2: warpwin2: s18 hr=0x00000000
+[23:45:05] warpwin2: warpwin2: s19 CreateVertexShader+PixelShader+Draw...
+[23:45:05] warpwin2: warpwin2: s19 OK (draw completo no WARP FL 10_0)
+[23:45:05] warpwin2: warpwin2: s8c CreateTexture2D R32G32B32A32F 16384x16384 (4GB+16MB, overflow?)...
+[23:45:05] warpwin2: warpwin2: s8c hr=0x8007000e ft=0000000000000000
+[23:45:05] warpwin2: warpwin2: s21 mip-chain+GenerateMips...
+[23:45:05] warpwin2: warpwin2: s21a hr=0x00000000
+[23:45:05] warpwin2: warpwin2: s21b srv hr=0x00000000
+[23:45:05] warpwin2: warpwin2: s21c GenerateMips OK
+[23:45:05] warpwin2: warpwin2: s22 BC3 2048 com InitData (upload 4MB)...
+[23:45:05] warpwin2: warpwin2: s22 hr=0x00000000
+[23:45:05] warpwin2: warpwin2: s22b UpdateSubresource OK
+[23:45:05] warpwin2: warpwin2: s23a staging hr=0x00000000
+[23:45:05] warpwin2: warpwin2: s23b default hr=0x00000000
+[23:45:05] warpwin2: warpwin2: s23c CopyResource OK
+[23:45:05] warpwin2: warpwin2: s23d Map READ hr=0x887a0005
+[23:45:05] warpwin2: warpwin2: s24a CreateQuery hr=0x887a0005
+[23:45:05] warpwin2: warpwin2: s20 FIM (fails=0) ? todos os estagios do jogo cobertos
+[23:45:05] sonda dxgi-enum inicio
+[23:45:05] dxgienum exit=0
+[23:45:05] enum: stage1: factory ok
+[23:45:05] enum: adapter[0] = Microsoft Basic Render Driver | vendor=0x1414 device=0x8C vram=0 MB
+[23:45:05] enum: adapter[1] = Microsoft Basic Render Driver | vendor=0x1414 device=0x8C vram=0 MB
+[23:45:05] enum: total adapters: 2 (WARP visivel pro engine!)
+[23:45:05] sonda dxgi-enum fim
+[23:45:06] mesa 7z: 70257286 bytes
+[23:45:11] dxvk tar.gz: 10310666 bytes
+[23:45:11] tar dxvk inicio
+[23:45:12] tar dxvk fim rc=0
+[23:45:12] copias dxvk jogo inicio
+[23:45:12] copias dxvk jogo fim
+[23:45:12] dxvk system32 PULADO — WARP vivo, System32 INTACTO
+[23:45:12] vulkan loader antes: x64=True x86=True
+[23:45:12] vktest inicio
+[23:45:12] vktest lvp264 PULADO (WARP venceu)
+[23:45:12] vktest dzn264 PULADO (WARP venceu)
+[23:45:12] NENHUM ICD Vulkan passou — boots dx11 vao rodar com o ICD padrao (26.2.4)
+[23:45:12] wgl64 inicio
+[23:45:12] wgl64 csc inicio
+[23:45:12] wgl64 csc fim
+[23:45:12] wgl64 run inicio
+[23:45:13] wgl64 run fim exit=0
+[23:45:13] wgl-janela inicio
+[23:45:14] winwgl run inicio
+[23:45:14] winwgl exit=1
+[23:45:14] winwgl: stage1: janela criada hwnd=983502
+[23:45:14] winwgl: stage2: GetDC(janela) ok
+[23:45:14] winwgl: stage3: ChoosePixelFormat ok pf=63
+[23:45:14] winwgl: stage4a: SetPixelFormat(pfd=NULL) OK
+[23:45:14] winwgl: stage4: SetPixelFormat(pfd) ok
+[23:45:14] winwgl: stage5: wglCreateContext=NULL err=31
+[23:45:14] wgl-janela fim winWglOk=False
+[23:45:14] winwgl falhou na 26.2.4 — baixando Mesa 25.3.6
+[23:45:15] mesa 25.3.6: 66716214 bytes
+[23:45:19] 7z 25.3.6 exit=0
+[23:45:19] 253w: C:\Windows\System32\opengl32.dll
+[23:45:19] 253w: C:\Windows\System32\libgallium_wgl.dll
+[23:45:19] 253w: C:\Windows\System32\libEGL.dll
+[23:45:19] 253w: C:\Windows\System32\libGLESv1_CM.dll
+[23:45:19] 253w: C:\Windows\System32\libGLESv2.dll
+[23:45:19] 253w: C:\Windows\SysWOW64\opengl32.dll
+[23:45:19] 253w: C:\Windows\SysWOW64\libgallium_wgl.dll
+[23:45:19] 253w: C:\Windows\SysWOW64\libEGL.dll
+[23:45:19] 253w: C:\Windows\SysWOW64\libGLESv1_CM.dll
+[23:45:19] 253w: C:\Windows\SysWOW64\libGLESv2.dll
+[23:45:19] winwgl(25.3.6) run inicio
+[23:45:29] winwgl(25.3.6) exit=1
+[23:45:29] winwgl253: stage1: janela criada hwnd=1049038
+[23:45:29] winwgl253: stage2: GetDC(janela) ok
+[23:45:29] winwgl253: stage3: ChoosePixelFormat ok pf=43
+[23:45:29] winwgl253: stage4a: SetPixelFormat(pfd=NULL) OK
+[23:45:29] winwgl253: stage4: SetPixelFormat(pfd) ok
+[23:45:29] winwgl253: stage5: wglCreateContext=NULL err=31
+[23:45:30] pnp display: Microsoft Hyper-V Video [VMBUS\{DA0A7802-E377-4AAC-8E77-0558EB1073F8}\{5620E0C7-8062-4DCE-AEB7-520C7EF76171}]
+[23:45:30] desativando adapter de video: Microsoft Hyper-V Video
+[23:45:38] adapter desativado — desktop no Basic Render Driver agora?
+[23:45:38] pnp display pos: Microsoft Hyper-V Video [Error]
+[23:45:38] winwgl(pos-pnp) run inicio
+[23:45:39] winwgl(pos-pnp) exit=1
+[23:45:39] winwglpnp: stage1: janela criada hwnd=590120
+[23:45:39] winwglpnp: stage2: GetDC(janela) ok
+[23:45:39] winwglpnp: stage3: ChoosePixelFormat ok pf=43
+[23:45:39] winwglpnp: stage4a: SetPixelFormat(pfd=NULL) OK
+[23:45:39] winwglpnp: stage4: SetPixelFormat(pfd) ok
+[23:45:39] winwglpnp: stage5: wglCreateContext=NULL err=31
+[23:45:39] warppnp: stage0: GetDC(NULL)=234948593 (desktop ok)
+[23:45:39] warppnp: stage1: CreateDXGIFactory1 hr=0x00000000 (dxgi NATIVO vivo)
+[23:45:39] warppnp: stage2: D3D11CreateDevice(WARP) hr=0x00000000 featureLevel=45056
+[23:45:39] warppnp: stage3: WARP OK - D3D11 por CPU FUNCIONA nativamente nesta VM
+[23:45:39] enum-pos-pnp: stage1: factory ok
+[23:45:39] enum-pos-pnp: adapter[0] = Microsoft Basic Render Driver | vendor=0x1414 device=0x8C vram=0 MB
+[23:45:39] enum-pos-pnp: adapter[1] = Microsoft Basic Render Driver | vendor=0x1414 device=0x8C vram=0 MB
+[23:45:39] enum-pos-pnp: total adapters: 2 (WARP visivel pro engine!)
+[23:45:40] warpwinpnp: stage1: CreateWindow hwnd=00000000000A0128
+[23:45:40] warpwinpnp: stage2: D3D11CreateDevice(WARP) hr=0x00000000 fl=45056
+[23:45:40] warpwinpnp: stage3: CreateDXGIFactory1 hr=0x00000000
+[23:45:40] warpwinpnp: stage4: CreateSwapChain hr=0x00000000
+[23:45:40] warpwinpnp: stage5: Clear+Present hr=0x00000000 (dx11 EM JANELA ponta a ponta)
+[23:45:40] wgl32 csc inicio
+[23:45:40] wgl32 csc fim
+[23:45:40] wgl32 run inicio
+[23:45:42] wgl32 run fim exit=0
+[23:45:42] WARP vivo — restaurando d3d11/dxgi NATIVOS e bootando SEM DXVK
+[23:45:42] DXVK removido da pasta do jogo: d3d11.dll
+[23:45:42] DXVK removido da pasta do jogo: dxgi.dll
+[23:45:42] DXVK removido da pasta do jogo: d3d10core.dll
+[23:45:42] DXVK removido da pasta do jogo: d3d9.dll
+[23:45:42] shim: compilando d3d11.dll (x64) em C:\ets2demo\bin\win_x64
+[23:45:42] shim: d3d11_real do System32 atual
+[23:45:42] shim: exports do real (51): CreateDirect3D11DeviceFromDXGIDevice,CreateDirect3D11SurfaceFromDXGISurface,D3D11CoreCreateDevice,D3D11CoreCreateLayeredDevice,D3D11CoreGetLayeredDeviceSize,D3D11CoreRegisterLayers,D3D11CreateDevice,D3D11CreateDeviceAndSwapChain,D3D11CreateDeviceForD3D12,D3D11On12CreateDevice,D3DKMTCloseAdapter,D3DKMTCreateAllocation,D3DKMTCreateContext,D3DKMTCreateDevice,D3DKMTCreateSynchronizationObject,D3DKMTDestroyAllocation,D3DKMTDestroyContext,D3DKMTDestroyDevice,D3DKMTDestroySynchronizationObject,D3DKMTEscape,D3DKMTGetContextSchedulingPriority,D3DKMTGetDeviceState,D3DKMTGetDisplayModeList,D3DKMTGetMultisampleMethodList,D3DKMTGetRuntimeData,D3DKMTGetSharedPrimaryHandle,D3DKMTLock,D3DKMTOpenAdapterFromHdc,D3DKMTOpenResource,D3DKMTPresent,D3DKMTQueryAdapterInfo,D3DKMTQueryAllocationResidency,D3DKMTQueryResourceInfo,D3DKMTRender,D3DKMTSetAllocationPriority,D3DKMTSetContextSchedulingPriority,D3DKMTSetDisplayMode,D3DKMTSetDisplayPrivateDriverFormat,D3DKMTSetGammaRamp,D3DKMTSetVidPnSourceOwner,D3DKMTSignalSynchronizationObject,D3DKMTUnlock,D3DKMTWaitForSynchronizationObject,D3DKMTWaitForVerticalBlankEvent,D3DPerformance_BeginEvent,D3DPerformance_EndEvent,D3DPerformance_GetStatus,D3DPerformance_SetMarker,EnableFeatureLevelUpgrade,OpenAdapter10,OpenAdapter10_2
+[23:45:42] shim: imports estaticos do jogo em d3d11.dll (0): 
+[23:45:42] shim .def: LIBRARY d3d11 | EXPORTS | D3D11CreateDevice | D3D11CreateDeviceAndSwapChain | D3D11CoreCreateDevice
+[23:45:42] shim cl: d3d11shim.c
+[23:45:43] shim cl:    Creating library C:\ets2demo\bin\win_x64\d3d11.lib and object C:\ets2demo\bin\win_x64\d3d11.exp
+[23:45:43] shim: INSTALADO C:\ets2demo\bin\win_x64\d3d11.dll (+d3d11_real.dll) link exit=0
+[23:45:43] shim exp: Dump of file C:\ets2demo\bin\win_x64\d3d11.dll
+[23:45:43] shim exp: Section contains the following exports for d3d11.dll
+[23:45:43] shim exp: 1    0 00001000 D3D11CoreCreateDevice
+[23:45:43] shim exp: 2    1 00001270 D3D11CreateDevice
+[23:45:43] shim exp: 3    2 00001510 D3D11CreateDeviceAndSwapChain
+[23:45:43] dxgishim: dxgi_real.dll copiado do System32 atual
+[23:45:43] dxgishim: secao dxgi dos imports do d3d11.dll: 1801EDD20 Import Address Table | 18022E3E8 Import Name Table | 0 time date stamp | 0 Index of first forwarder reference | 5 CreateDXGIFactory2
+[23:45:43] dxgishim: d3d11.dll importa do dxgi alem dos meus 3: 
+[23:45:43] dxgishim cl: dxgishim.c
+[23:45:43] dxgishim cl: D:\a\5\5\dxgishim.c(64): warning C4996: 'wcscpy': This function or variable may be unsafe. Consider using wcscpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+[23:45:43] dxgishim cl:    Creating library C:\ets2demo\bin\win_x64\dxgi.lib and object C:\ets2demo\bin\win_x64\dxgi.exp
+[23:45:43] dxgishim: INSTALADO C:\ets2demo\bin\win_x64\dxgi.dll (+dxgi_real.dll) link exit=0
+[23:45:43] dxgishim exp: 1 ordinal base
+[23:45:43] dxgishim exp: ordinal hint RVA      name
+[23:45:43] dxgishim exp: 1    0 00001500 CreateDXGIFactory
+[23:45:43] dxgishim exp: 2    1 00001610 CreateDXGIFactory1
+[23:45:43] dxgishim exp: 3    2 00001700 CreateDXGIFactory2
+[23:45:43] WER LocalDumps ATIVO (minidump em D:\a\5\5\dumps)
+[23:45:43] boot x64 dx11 SHIM WARP inicio
+[23:45:46] boot x64 dx11 SHIM WARP: pid 2728
+[23:45:51] boot x64 dx11 SHIM WARP iter 1/120 vivo=False cpu=-1 thr=0
+[23:45:51] boot x64 dx11 SHIM WARP: processo SAIU na iter 1 — ExitCode=-1073740791 (0xC0000005=crash; 0=limpo)
+[23:45:51] boot x64 dx11 SHIM WARP FIM vivo=False
+[23:45:51] shimlog: init real=00007FFD0CD00000 D3D11CreateDevice=00007FFD0CD83AB0 AndSwapChain=00007FFD0CD82260 Core=00007FFD0CD0D6B0
+[23:45:51] shimlog: CreateDevice: adapter=0000000000000000 type=1 flags=0x0 nfl=1
+[23:45:51] shimlog: CreateDevice: HARDWARE sem adapter = BRD -> WARP direto
+[23:45:51] shimlog: CreateDevice: WARP-direto hr=0x00000001 flPedida=40960 flObtida=40960
+[23:45:51] shimlog: CreateDevice: S_FALSE -> S_OK (WARP de FL menor)
+[23:45:51] shimlog: CreateDevice: adapter=0000000000000000 type=1 flags=0x0 nfl=1
+[23:45:51] shimlog: CreateDevice: HARDWARE sem adapter = BRD -> WARP direto
+[23:45:51] shimlog: CreateDevice: WARP-direto hr=0x887a0004 flPedida=49408 flObtida=0
+[23:45:51] shimlog: CreateDevice: WARP falhou ? tentando o original
+[23:45:51] shimlog: CreateDevice: original hr=0x887a0004 (ppDevice=0000000000000000)
+[23:45:51] shimlog: CreateDevice: original insuficiente (hr=0x887a0004, probe ppDevice=pede device) ? RETRY WARP
+[23:45:51] shimlog: CreateDevice: WARP hr=0x887a0004 flPedida=49408 flObtida=0
+[23:45:51] shimlog: CreateDevice: adapter=0000000000000000 type=1 flags=0x0 nfl=1
+[23:45:51] shimlog: CreateDevice: HARDWARE sem adapter = BRD -> WARP direto
+[23:45:51] shimlog: CreateDevice: WARP-direto hr=0x887a0004 flPedida=49152 flObtida=0
+[23:45:51] shimlog: CreateDevice: WARP falhou ? tentando o original
+[23:45:51] shimlog: CreateDevice: original hr=0x887a0004 (ppDevice=0000000000000000)
+[23:45:51] shimlog: CreateDevice: original insuficiente (hr=0x887a0004, probe ppDevice=pede device) ? RETRY WARP
+[23:45:51] shimlog: CreateDevice: WARP hr=0x887a0004 flPedida=49152 flObtida=0
+[23:45:51] shimlog: CreateDevice: adapter=0000000000000000 type=1 flags=0x0 nfl=1
+[23:45:51] shimlog: CreateDevice: HARDWARE sem adapter = BRD -> WARP direto
+[23:45:51] shimlog: CreateDevice: WARP-direto hr=0x887a0004 flPedida=45312 flObtida=0
+[23:45:51] shimlog: CreateDevice: WARP falhou ? tentando o original
+[23:45:51] shimlog: CreateDevice: original hr=0x887a0004 (ppDevice=0000000000000000)
+[23:45:51] shimlog: CreateDevice: original insuficiente (hr=0x887a0004, probe ppDevice=pede device) ? RETRY WARP
+[23:45:51] shimlog: CreateDevice: WARP hr=0x887a0004 flPedida=45312 flObtida=0
+[23:45:51] shimlog: CreateDevice: adapter=0000000000000000 type=1 flags=0x0 nfl=1
+[23:45:51] shimlog: CreateDevice: HARDWARE sem adapter = BRD -> WARP direto
+[23:45:51] shimlog: CreateDevice: WARP-direto hr=0x887a0004 flPedida=45056 flObtida=0
+[23:45:51] shimlog: CreateDevice: WARP falhou ? tentando o original
+[23:45:51] shimlog: CreateDevice: original hr=0x887a0004 (ppDevice=0000000000000000)
+[23:45:51] shimlog: CreateDevice: original insuficiente (hr=0x887a0004, probe ppDevice=pede device) ? RETRY WARP
+[23:45:51] shimlog: CreateDevice: WARP hr=0x887a0004 flPedida=45056 flObtida=0
+[23:45:51] shimlog: CreateDevice: adapter=0000000000000000 type=1 flags=0x0 nfl=1
+[23:45:51] shimlog: CreateDevice: HARDWARE sem adapter = BRD -> WARP direto
+[23:45:51] shimlog: CreateDevice: WARP-direto hr=0x887a0004 flPedida=41216 flObtida=0
+[23:45:51] shimlog: CreateDevice: WARP falhou ? tentando o original
+[23:45:51] shimlog: CreateDevice: original hr=0x887a0004 (ppDevice=0000000000000000)
+[23:45:51] shimlog: CreateDevice: original insuficiente (hr=0x887a0004, probe ppDevice=pede device) ? RETRY WARP
+[23:45:51] shimlog: CreateDevice: WARP hr=0x887a0004 flPedida=41216 flObtida=0
+[23:45:51] SHIM VIVO: o jogo criou device pelo nosso d3d11
+[23:45:51] dxgilog: init real=00007FFD0D240000 f0=00007FFD0D28DE00 f1=00007FFD0D28DF30 f2=00007FFD0D292B50
+[23:45:51] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[23:45:51] dxgilog: CreateDXGIFactory2 -> WRAP (flags 0 ignoradas)
+[23:45:51] dxgilog: EnumAdapters1[0] -> WRAP (vram mentida)
+[23:45:51] dxgilog: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[23:45:51] dxgilog: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[23:45:51] dxgilog: EnumAdapters1[1] -> WRAP (vram mentida)
+[23:45:51] dxgilog: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[23:45:51] dxgilog: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[23:45:51] dxgilog: EnumAdapters1[2] hr=0x887a0002
+[23:45:51] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[23:45:51] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[23:45:51] dxgilog: EnumAdapters1[0] -> WRAP (vram mentida)
+[23:45:51] dxgilog: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[23:45:51] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[23:45:51] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[23:45:51] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[23:45:51] dxgilog: EnumAdapters1[0] -> WRAP (vram mentida)
+[23:45:51] dxgilog: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[23:45:51] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[23:45:51] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[23:45:51] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[23:45:51] dxgilog: EnumAdapters1[0] -> WRAP (vram mentida)
+[23:45:51] dxgilog: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[23:45:51] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[23:45:51] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[23:45:51] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[23:45:51] dxgilog: EnumAdapters1[0] -> WRAP (vram mentida)
+[23:45:51] dxgilog: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[23:45:51] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[23:45:51] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[23:45:51] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[23:45:51] dxgilog: EnumAdapters1[0] -> WRAP (vram mentida)
+[23:45:51] dxgilog: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[23:45:51] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[23:45:51] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[23:45:51] WER1000 x64: 23:45:47 Faulting application name: eurotrucks2.exe, version: 1.40.4.8, time stamp: 0x60ae81bd Faulting module name: D3D10Warp.dll, version: 26.2.4.0, time stamp: 0x6ac0962a Exception code: 0xc0000409 Fault offset: 0x00000000008bc329 Faulting process id: 0xAA8 Faulting application start time: 0x1DD673673D23B
+[23:45:54] dump: eurotrucks2.exe.2728.dmp 5.9 MB
+[23:45:54] cdb encontrado: C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe
+[23:45:58] cdb: 
+[23:45:58] cdb: ************* Preparing the environment for Debugger Extensions Gallery repositories **************
+[23:45:58] cdb:    ExtensionRepository : Implicit
+[23:45:58] cdb:    UseExperimentalFeatureForNugetShare : true
+[23:45:58] cdb:    AllowNugetExeUpdate : true
+[23:45:58] cdb:    NonInteractiveNuget : true
+[23:45:58] cdb:    AllowNugetMSCredentialProviderInstall : true
+[23:45:58] cdb:    AllowParallelInitializationOfLocalRepositories : true
+[23:45:58] cdb: 
+[23:45:58] cdb:    EnableRedirectToV8JsProvider : false
+[23:45:58] cdb: 
+[23:45:58] cdb:    -- Configuring repositories
+[23:45:58] cdb:       ----> Repository : LocalInstalled, Enabled: true
+[23:45:58] cdb:       ----> Repository : UserExtensions, Enabled: true
+[23:45:58] cdb: 
+[23:45:58] cdb: >>>>>>>>>>>>> Preparing the environment for Debugger Extensions Gallery repositories completed, duration 0.016 seconds
+[23:45:58] cdb: 
+[23:45:58] cdb: ************* Waiting for Debugger Extensions Gallery to Initialize **************
+[23:45:58] cdb: 
+[23:45:58] cdb: >>>>>>>>>>>>> Waiting for Debugger Extensions Gallery to Initialize completed, duration 0.203 seconds
+[23:45:58] cdb:    ----> Repository : UserExtensions, Enabled: true, Packages count: 0
+[23:45:58] cdb:    ----> Repository : LocalInstalled, Enabled: true, Packages count: 30
+[23:45:58] cdb: 
+[23:45:58] cdb: Microsoft (R) Windows Debugger Version 10.0.26100.9457 AMD64
+[23:45:58] cdb: Copyright (c) Microsoft Corporation. All rights reserved.
+[23:45:58] cdb: 
+[23:45:58] cdb: 
+[23:45:58] cdb: Loading Dump File [D:\a\5\5\dumps\eurotrucks2.exe.2728.dmp]
+[23:45:58] cdb: User Mini Dump File: Only registers, stack and portions of memory are available
+[23:45:58] cdb: 
+[23:45:58] cdb: Symbol search path is: srv*
+[23:45:58] cdb: Executable search path is: 
+[23:45:58] cdb: Windows 10 Version 26100 MP (4 procs) Free x64
+[23:45:58] cdb: Product: Server, suite: TerminalServer DataCenter SingleUserTS
+[23:45:58] cdb: Edition build lab: 26100.1.amd64fre.ge_release.240331-1435
+[23:45:58] cdb: Debug session time: Wed Oct 28 23:45:48.000 2026 (UTC + 0:00)
+[23:45:58] cdb: System Uptime: 0 days 0:09:14.900
+[23:45:58] cdb: Process Uptime: 0 days 0:00:02.000
+[23:45:58] cdb: ................................................................
+[23:45:58] cdb: ........
+[23:45:58] cdb: Loading unloaded module list
+[23:45:58] cdb: .
+[23:45:58] cdb: This dump file has an exception of interest stored in it.
+[23:45:58] cdb: The stored exception information can be accessed via .ecxr.
+[23:45:58] cdb: (aa8.df0): Security check failure or stack buffer overrun - code c0000409 (first/second chance not available)
+[23:45:58] cdb: Subcode: 0x7 FAST_FAIL_FATAL_APP_EXIT 
+[23:45:58] cdb: 
+[23:45:58] cdb: +------------------------------------------------------------------------+
+[23:45:58] cdb: | This target supports Hardware-enforced Stack Protection. A HW based    |
+[23:45:58] cdb: | "Shadow Stack" may be available to assist in debugging and analysis.   |
+[23:45:58] cdb: | See aka.ms/userhsp for more info.                                      |
+[23:45:58] cdb: |                                                                        |
+[23:45:58] cdb: | dps @ssp                                                               |
+[23:45:58] cdb: |                                                                        |
+[23:45:58] cdb: +------------------------------------------------------------------------+
+[23:45:58] cdb: 
+[23:45:58] cdb: For analysis of this file, run !analyze -v
+[23:45:58] cdb: D3D10Warp!_jit_debug_register_code+0x63b0e9:
+[23:45:58] cdb: 00007ffd`0860c329 cd29            int     29h
+[23:45:58] cdb: 0:000> cdb: Reading initial command '.symfix; .reload; kv 40; q'
+[23:45:58] cdb: ................................................................
+[23:45:58] cdb: ........
+[23:45:58] cdb: Loading unloaded module list
+[23:45:58] cdb: .
+[23:45:58] cdb: 
+[23:45:58] cdb: ************* Symbol Loading Error Summary **************
+[23:45:58] cdb: Module name            Error
+[23:45:58] cdb: D3D10Warp              The system cannot find the file specified
+[23:45:58] cdb: 
+[23:45:58] cdb: You can troubleshoot most symbol related issues by turning on symbol loading diagnostics (!sym noisy) and repeating the command that caused symbols to be loaded.
+[23:45:58] cdb: You should also verify that your symbol search path (.sympath) is correct.
+[23:45:58] cdb: Child-SP          RetAddr               : Args to Child                                                           : Call Site
+[23:45:58] cdb: 0000004c`e84fd030 00007ffd`08664880     : 00000000`00000000 00007ffd`09fab780 00007ffd`09df9f1c 00000000`39000005 : D3D10Warp!_jit_debug_register_code+0x63b0e9
+[23:45:58] cdb: 0000004c`e84fd060 00007ffd`086631f3     : 000001cf`494fd510 000001cf`494fd510 00000000`0000001d 000001cf`48790120 : D3D10Warp!_jit_debug_register_code+0x693640
+[23:45:58] cdb: 0000004c`e84fd120 00007ffd`086623aa     : 000001cf`49c4b000 00000000`00000000 000001cf`4a2529e8 00007ffd`08726e47 : D3D10Warp!_jit_debug_register_code+0x691fb3
+[23:45:58] cdb: 0000004c`e84fdd40 00007ffd`07f91c96     : 000001cf`4a250e20 000001cf`487a7a40 000001cf`49c4b218 00000000`00000248 : D3D10Warp!_jit_debug_register_code+0x69116a
+[23:45:58] cdb: 0000004c`e84fdd90 00007ffd`086363f6     : 000001cf`487a7a40 000001cf`49c4b218 000001cf`49c75340 00000000`00000001 : D3D10Warp!OpenAdapter10_2+0x18ff96
+[23:45:58] cdb: 0000004c`e84fddd0 00007ffd`08637b7c     : 000001cf`49c4b218 000001cf`486165b0 000001cf`487a7a40 00000000`00000000 : D3D10Warp!_jit_debug_register_code+0x6651b6
+[23:45:58] cdb: 0000004c`e84fde00 00007ffd`08638b4b     : 000001cf`49c75ed0 00007ff6`61b72800 000001cf`49718600 000001cf`49c4b208 : D3D10Warp!_jit_debug_register_code+0x66693c
+[23:45:58] cdb: 0000004c`e84fde30 00007ffd`07dfb2ca     : 000001cf`49c4b208 000001cf`487a7a40 000001cf`487a7a40 00000000`00000000 : D3D10Warp!_jit_debug_register_code+0x66790b
+[23:45:58] cdb: 0000004c`e84fde60 00007ffd`0cded932     : 00000000`00000000 0000004c`e84fdf90 0000004c`e84fe100 000001cf`49c4b1f8 : D3D10Warp!D3DKMTWaitForSynchronizationObject2+0x7d1a
+[23:45:58] cdb: 0000004c`e84fde90 00007ffd`0cd32bb8     : 000001cf`49c4b0f8 00007ffd`0cd32d14 00000000`00000000 000001cf`49c4b0f8 : d3d11_real!CPixelShader::CLS::FinalConstruct+0xb371e
+[23:45:58] cdb: 0000004c`e84fe000 00007ffd`0cd32b04     : 000001cf`49c4b0f8 00007ffd`0cef51a0 000001cf`49c4b0a0 0000004c`e84fe130 : d3d11_real!CLayeredObjectWithCLS<CPixelShader>::FinalConstruct+0x98
+[23:45:58] cdb: 0000004c`e84fe070 00007ffd`0cd22bf5     : 000001cf`49c4b0f0 0000004c`e84fe600 00000000`00000000 00000000`00000036 : d3d11_real!CLayeredObjectWithCLS<CPixelShader>::CreateInstance+0xa8
+[23:45:58] cdb: 0000004c`e84fe0c0 00007ffd`0cd1cf76     : 00000000`00000000 00007ffd`0cd7acd0 00000000`00000500 000001cf`487899e8 : d3d11_real!CDevice::CreateLayeredChild+0x8c5
+[23:45:58] cdb: 0000004c`e84fe440 00007ffd`0cd1d5f8     : 00007ffd`0cd7acd0 00000000`00000003 00007ff6`61b72894 000001cf`49c4b0a0 : d3d11_real!NDXGI::CDevice::CreateLayeredChild+0x366
+[23:45:58] cdb: 0000004c`e84fe540 00007ffd`0cd1d1f6     : 000001cf`49c4b0a0 000001cf`49c4b0a0 0000004c`e84fe600 000001cf`479fc9cc : d3d11_real!CUseCountedObject<NOutermost::CDeviceChild>::CUseCountedObject<NOutermost::CDeviceChild>+0x298
+[23:45:58] cdb: 0000004c`e84fe5d0 00007ffd`0cd7ed97     : 000001cf`48789990 00000000`00000009 00007ff6`61b72740 00000000`00000000 : d3d11_real!NOutermost::CDevice::CreateLayeredChild+0x166
+[23:45:58] cdb: 0000004c`e84fe6e0 00007ffd`0cd3c6b5     : 00007ff6`61b72740 00000000`e95ea000 0000004c`e84fe979 00000000`00000000 : d3d11_real!CDevice::CreateAndRecreateLayeredChild<SD3D11LayeredPixelShaderCreationArgs>+0x63
+[23:45:58] cdb: 0000004c`e84fe740 00007ffd`0cd829e8     : 000001cf`4878a1d0 00007ff6`61b72740 00000000`00000124 00000000`00000000 : d3d11_real!CDevice::CreatePixelShader_Worker+0x229
+[23:45:58] cdb: 0000004c`e84fe8d0 00007ff6`60acdfbf     : 000001cf`487f74c0 0000004c`e84fe979 00000000`00000320 000001cf`e8ad1040 : d3d11_real!CDevice::CreatePixelShader+0x28
+[23:45:58] cdb: 0000004c`e84fe920 00007ff6`60a82d11     : 00000000`00000000 00007ff6`61c1d400 00000000`00000000 00007ff6`61a38441 : eurotrucks2+0x17dfbf
+[23:45:58] cdb: 0000004c`e84fe9e0 00007ff6`61679488     : 00000000`00000000 00000000`00000000 00000000`00000000 00000000`00000000 : eurotrucks2+0x132d11
+[23:45:58] cdb: 0000004c`e84fea10 00007ff6`60c00b6e     : 000001cf`0cc2000b 00000000`00000001 00000000`00000001 00000000`00000000 : eurotrucks2+0xd29488
+[23:45:58] cdb: 0000004c`e84fea40 00007ff6`60bf8491     : 00000000`00000001 00000000`00000400 00000000`00000384 feeefeee`feeefeee : eurotrucks2+0x2b0b6e
+[23:45:58] cdb: 0000004c`e84fea70 00007ff6`60be71bf     : 00007ff6`61c1d430 00007ff6`00000008 00007ff6`00000400 00007ff6`00000300 : eurotrucks2+0x2a8491
+[23:45:58] cdb: 0000004c`e84ffcd0 00007ff6`60a758c3     : 00007ff6`620a6c90 000001cf`483548b0 00000000`00000000 00007ff6`61f98a10 : eurotrucks2+0x2971bf
+[23:45:58] cdb: 0000004c`e84ffd20 00007ff6`60a767b5     : 000001cf`4831b190 000001cf`483548b0 000001cf`4831b0b0 0000004c`00000012 : eurotrucks2+0x1258c3
+[23:45:58] cdb: 0000004c`e84ffd50 00007ff6`60a7766c     : 00000000`000031e6 00000000`00000001 00000000`00000000 00000000`00000000 : eurotrucks2+0x1267b5
+[23:45:58] cdb: 0000004c`e84ffdf0 00007ff6`61a1a75a     : 00000000`00000000 00007ff6`61c1cd88 00000000`00000000 00000000`00000000 : eurotrucks2+0x12766c
+[23:45:58] cdb: 0000004c`e84ffe40 00007ffd`4953dd37     : 00000000`00000000 00000000`00000000 00000000`00000000 00000000`00000000 : eurotrucks2+0x10ca75a
+[23:45:58] cdb: 0000004c`e84ffe80 00007ffd`49c7f2bc     : 00000000`00000000 00000000`00000000 000004f0`fffffb30 000004d0`fffffb30 : kernel32!BaseThreadInitThunk+0x17
+[23:45:58] cdb: 0000004c`e84ffeb0 00000000`00000000     : 00000000`00000000 00000000`00000000 00000000`00000000 00000000`00000000 : ntdll!RtlUserThreadStart+0x2c
+[23:45:58] cdb: quit:
+[23:45:58] cdb: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\atlmfc.natvis'
+[23:45:58] cdb: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\ObjectiveC.natvis'
+[23:45:58] cdb: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\concurrency.natvis'
+[23:45:58] cdb: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\cpp_rest.natvis'
+[23:45:58] cdb: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\stl.natvis'
+[23:45:58] cdb: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\Windows.Data.Json.natvis'
+[23:45:58] cdb: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\Windows.Devices.Geolocation.natvis'
+[23:45:58] cdb: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\Windows.Devices.Sensors.natvis'
+[23:45:58] cdb: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\Windows.Media.natvis'
+[23:45:58] cdb: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\windows.natvis'
+[23:45:58] cdb: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\winrt.natvis'
+[23:45:58] hibrido: montando d3d11-DXVK + dxgi-NOSSO->dxgi-DXVK
+[23:45:58] hibrido: DXVK x64 ausente — pulando
+[23:45:58] boot x64 rdevice gl inicio
+[23:46:00] boot x64 rdevice gl: pid 3976
+[23:46:05] boot x64 rdevice gl iter 1/120 vivo=False cpu=-1 thr=0
+[23:46:05] boot x64 rdevice gl: processo SAIU na iter 1 — ExitCode=-1073740791 (0xC0000005=crash; 0=limpo)
+[23:46:05] boot x64 rdevice gl FIM vivo=False
+[23:46:05] boot x86 gl llvmpipe inicio
+[23:46:07] boot x86 gl llvmpipe: pid 620
+[23:46:12] boot x86 gl llvmpipe iter 1/30 vivo=True cpu=1 thr=17
+[23:46:12] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[23:46:17] boot x86 gl llvmpipe iter 2/30 vivo=True cpu=1.2 thr=17
+[23:46:17] probe mmf (iter 2): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[23:46:22] boot x86 gl llvmpipe iter 3/30 vivo=False cpu=-1 thr=0
+[23:46:22] boot x86 gl llvmpipe: processo SAIU na iter 3 — ExitCode=-1073741819 (0xC0000005=crash; 0=limpo)
+[23:46:22] boot x86 gl llvmpipe FIM vivo=False
+[23:46:22] boot x86 gl zink inicio
+[23:46:24] boot x86 gl zink: pid 2536
+[23:46:29] boot x86 gl zink iter 1/30 vivo=False cpu=-1 thr=0
+[23:46:29] boot x86 gl zink: processo SAIU na iter 1 — ExitCode=-1073740791 (0xC0000005=crash; 0=limpo)
+[23:46:29] boot x86 gl zink FIM vivo=False
+[23:46:29] boot x86 gl safe llvmpipe inicio
+[23:46:31] boot x86 gl safe llvmpipe: pid 5192
+[23:46:36] boot x86 gl safe llvmpipe iter 1/30 vivo=True cpu=0.9 thr=17
+[23:46:36] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[23:46:41] boot x86 gl safe llvmpipe iter 2/30 vivo=False cpu=-1 thr=0
+[23:46:41] boot x86 gl safe llvmpipe: processo SAIU na iter 2 — ExitCode=-1073741819 (0xC0000005=crash; 0=limpo)
+[23:46:41] boot x86 gl safe llvmpipe FIM vivo=False
+[23:46:42] boot x64 rdevice gl nointro inicio
+[23:46:44] boot x64 rdevice gl nointro: pid 8484
+[23:46:49] boot x64 rdevice gl nointro iter 1/30 vivo=False cpu=-1 thr=0
+[23:46:49] boot x64 rdevice gl nointro: processo SAIU na iter 1 — ExitCode=-1073740791 (0xC0000005=crash; 0=limpo)
+[23:46:49] boot x64 rdevice gl nointro FIM vivo=False
