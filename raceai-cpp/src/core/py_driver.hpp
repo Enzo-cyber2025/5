@@ -45,6 +45,12 @@ public:
     int call_count() const { return calls_; }
     int error_count() const { return errors_; }
 
+    // Diagnóstico: executa uma etapa por vez (o CI usa para localizar falhas
+    // quando o processo morre sem imprimir nada).
+    //   1 carregar a dll | 2 inicializar | 3 script de preparo
+    //   4 importar __main__ | 5 compilar o código | 6 chamar dirigir()
+    int run_stage(int stage, const std::string& code = "", std::string* err = nullptr);
+
 private:
     void* lib_ = nullptr;
     bool initialized_ = false;
@@ -54,6 +60,7 @@ private:
     void* fn_call_ = nullptr;        // PyObject* _raceai_call
     void* fn_install_ = nullptr;     // PyObject* _raceai_install
     std::string error_;
+    std::string dll_path_;
     double last_ms_ = 0.0;
     int calls_ = 0, errors_ = 0;
 

@@ -1,7 +1,9 @@
 // py_selftest.cpp — prova que a ponte com o CPython funciona de verdade.
 //
 // Uso:  raceai_pytest [caminho/para/python3XX.dll]
-//       (no Windows, o normal é  python/python311.dll)
+//       raceai_pytest --stage N [caminho]     roda só uma etapa (diagnóstico)
+//
+// (no Windows, o normal é  python/python311.dll)
 //
 // Compila o exemplo de IA, chama dirigir(sensores) e mostra a ação devolvida;
 // depois provoca um erro de propósito para conferir que o traceback aparece.
@@ -12,17 +14,46 @@
 
 using namespace raceai;
 
+static const char* nome_etapa(int e) {
+    switch (e) {
+        case 1: return "carregar a dll";
+        case 2: return "inicializar o interpretador";
+        case 3: return "rodar o script de preparo";
+        case 4: return "importar __main__";
+        case 5: return "compilar o código do usuário";
+        case 6: return "chamar dirigir()";
+        default: return "?";
+    }
+}
+
 int main(int argc, char** argv) {
-    setvbuf(stdout, nullptr, _IONBF, 0);        // nada de buffer: queremos ver até onde chegou
+    setvbuf(stdout, nullptr, _IONBF, 0);        // sem buffer: vemos até onde chegou
+    std::string caminho;
+    int stage = 0;
+    for (int i = 1; i < argc; ++i) {
+        std::string a = argv[i];
+        if (a == "--stage" && i + 1 < argc) stage = std::atoi(argv[++i]);
+        else if (a.rfind("--stage=", 0) == 0) stage = std::atoi(a.c_str() + 8);
+        else caminho = a;
+    }
     printf("RaceAI 2D — teste da IA em Python\n");
-    const char* caminho = argc > 1 ? argv[1] : "";
+
+    if (stage > 0) {
+        PyDriver py;
+        std::string err;
+        printf("etapa %d: %s\n", stage, nome_etapa(stage));
+        int r = py.run_stage(stage, stage >= 5 ? exemplo_python() : "", &err);
+        printf("etapa %d: resultado %d %s\n", stage, r, err.empty() ? "" : err.c_str());
+        return r;
+    }
+
     PyDriver py;
     std::string err;
     if (!py.load_runtime(caminho, &err)) {
         printf("FALHOU ao carregar o interpretador: %s\n", err.c_str());
         return 2;
     }
-    printf("interpretador carregado (%s)\n", caminho[0] ? caminho : "padrão do sistema");
+    printf("interpretador carregado (%s)\n", caminho.empty() ? "padrão do sistema" : caminho.c_str());
 
     if (!py.set_code(exemplo_python(), &err)) {
         printf("FALHOU ao compilar o exemplo: %s\n%s\n", err.c_str(), py.traceback().c_str());

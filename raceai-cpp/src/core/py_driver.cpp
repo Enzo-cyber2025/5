@@ -131,6 +131,7 @@ static const char* kBootstrap =
 // ------------------------------------------------------------------ runtime
 bool PyDriver::load_runtime(const std::string& dll, std::string* err) {
     if (lib_) return true;
+    dll_path_ = dll;
     const char* nomes[] = {
         dll.empty() ? nullptr : dll.c_str(),
 #ifdef _WIN32
@@ -234,6 +235,49 @@ void PyDriver::unload() {
 }
 
 PyDriver::~PyDriver() { unload(); }
+
+// ------------------------------------------------------------------ etapas
+int PyDriver::run_stage(int stage, const std::string& code, std::string* err) {
+    PyApi& a = api();
+    switch (stage) {
+        case 1:
+            return load_runtime(dll_path_, err) ? 0 : 1;
+        case 2:
+            if (!a.is_init || !a.is_init()) {
+                if (!a.init) { if (err) *err = "sem Py_InitializeEx"; return 1; }
+                a.init(0);
+            }
+            initialized_ = true;
+            return 0;
+        case 3:
+            if (!a.run) { if (err) *err = "sem PyRun_SimpleString"; return 1; }
+            return a.run(kBootstrap) == 0 ? 0 : 1;
+        case 4: {
+            module_main_ = a.import("__main__");
+            if (!module_main_) { if (err) *err = "sem __main__"; return 1; }
+            fn_install_ = a.getattr(module_main_, "_raceai_install");
+            fn_call_ = a.getattr(module_main_, "_raceai_call");
+            bootstrap_ok_ = fn_install_ && fn_call_;
+            return bootstrap_ok_ ? 0 : 1;
+        }
+        case 5:
+            return set_code(code, err) ? 0 : 1;
+        case 6: {
+            float obs[24];
+            for (int i = 0; i < 24; ++i) obs[i] = 0.1f;
+            float out[2] = {9, 9};
+            act(obs, 24, out);
+            if (!installed_) {
+                if (err) *err = "chamada falhou: " + error_;
+                return 1;
+            }
+            return 0;
+        }
+        default:
+            if (err) *err = "etapa desconhecida";
+            return 2;
+    }
+}
 
 // ------------------------------------------------------------------ código
 std::string PyDriver::read_error_var() {
