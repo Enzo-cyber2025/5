@@ -776,6 +776,45 @@ código e ainda assim devolveria um número.
 
 Suite do projeto: **900**.
 
+#### `0F 0F` não era uma instrução: era dezanove
+
+Com o histograma corrigido, o maior bloqueio do binário real deixou de ser
+`0F 0F ×19` e se separou em:
+
+| opcode | funções | o que é |
+|---|---|---|
+| `0F 84` | 8 | **`je rel32`** — salto condicional longo |
+| `0F 29` | 6 | `movaps [mem], xmm` — SSE |
+| `0F 97` | 2 | `setnbe r/m8` |
+| `0F 88` | 1 | **`js rel32`** |
+
+Ou seja: **9 das 19** eram saltos condicionais de dois bytes, a mesma semântica dos
+de um byte que o tradutor já tinha — só outra codificação, com deslocamento de 32
+bits em vez de 8.
+
+E havia um caso para eles no tradutor. Estava **morto desde o dia em que foi
+escrito**: testava `in.op[0] >= 0x80 && <= 0x8F`, e para qualquer opcode de dois
+bytes o decoder guarda `op[0] = 0x0F` — o escape — com o byte discriminante em
+`op[1]`. A condição nunca era verdadeira, e todo salto condicional longo caía na
+recusa genérica logo abaixo.
+
+Nada pegou, porque aquela recusa **também é correta** para os opcodes de dois bytes
+que realmente estão fora do subconjunto — que são quase todos. Os testes passavam e
+o comportamento parecia intencional. Só apareceu como custo.
+
+É exatamente o mesmo erro do histograma, nos dois lugares, vindo da mesma
+suposição: a de que `op[0]` identifica a instrução. Ele identifica o **mapa**; quem
+identifica a instrução é o último byte que o decoder registrou. As duas formas de
+`jcc` agora passam por um único `plan_jcc()`, para que a curta e a longa não possam
+divergir sobre quais flags leem.
+
+Um terceiro caso, e o teste é que estava errado: `js rel32` foi recusado depois de
+`sub rax,1`, porque o `SUB` deste tradutor não escreve flags e a regra existente
+exige um `CMP`/`TEST` modelado imediatamente antes. A regra fez o seu trabalho; o
+rascunho do teste é que assumiu o contrário.
+
+Suite do projeto: **913**.
+
 ### Não feito
 
 Operandos de memória **fora da pilha do guest e da própria imagem do módulo**: o

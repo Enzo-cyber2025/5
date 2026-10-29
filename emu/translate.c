@@ -490,6 +490,24 @@ static int plan_uses_imgbase(const plan *p)
     return p->op == P_LD_IMG || p->op == P_ST_IMG;
 }
 
+/* Plans a conditional jump from its condition nibble. Both encodings call this,
+ * so the short and near forms cannot drift apart in which flags they read: the
+ * only difference between them is where the nibble lives and how wide the
+ * displacement is, and the decoder has already resolved the second. */
+static tr_status plan_jcc(unsigned nibble, uint64_t va, const x86_insn *in,
+                          plan *p, tr_func *out)
+{
+    if (!jcc_cond(nibble, &p->cond)) {
+        out->reason = TRR_PARITY;
+        out->detail = "JP/JNP: AArch64 has no parity flag";
+        return TR_UNSUPPORTED;
+    }
+    p->op = P_JCC;
+    p->target_va = va + in->len + (uint64_t)(int64_t)in->imm;
+    p->words = 1u;
+    return TR_OK;
+}
+
 /* Plans one guest instruction: decides the operation, the registers, and how many
  * ARM64 words it will emit. No emission happens here, so the layout pass has sizes
  * before any displacement is needed. */
@@ -549,18 +567,28 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
         return TR_UNSUPPORTED;
     }
 
-    /* ---- two-byte map: 0F 8x is the rel32 form of Jcc ---- */
+    /* ---- two-byte map: 0F 8x is the rel32 form of Jcc ----
+     *
+     * The condition nibble is in op[1], NOT op[0]. For every two-byte opcode the
+     * decoder stores op[0] = 0x0F, the escape, and op[1] = the byte that says
+     * which instruction it is. Testing op[0] against 0x80..0x8F therefore can
+     * never be true, and this case was dead from the day it was written: every
+     * near conditional jump fell through to the refusal below it.
+     *
+     * Nothing caught it, because the fall-through refusal is also correct for the
+     * two-byte opcodes that really are outside the subset - which is nearly all of
+     * them - so the tests passed and the behaviour looked intentional. It only
+     * became visible as a cost: measured on a shipped bundle, 0F 84 alone was
+     * blocking 8 functions and 0F 88 one more, ahead of every SSE instruction.
+     *
+     * This is the same mistake the refusal histogram made, indexing two-byte
+     * opcodes by their escape byte and reporting 19 different instructions as
+     * "0F 0F". Both come from assuming op[0] identifies the instruction. It
+     * identifies the map; the last byte the decoder recorded identifies the
+     * instruction, which is what tr_fail_opcode() exists to say. */
     if (in.map == 1) {
-        if (in.op[0] >= 0x80u && in.op[0] <= 0x8Fu) {
-            if (!jcc_cond(in.op[0] & 0xFu, &p->cond)) {
-                out->reason = TRR_PARITY; out->detail = "JP/JNP: AArch64 has no parity flag";
-                return TR_UNSUPPORTED;
-            }
-            p->op = P_JCC;
-            p->target_va = va + in.len + (uint64_t)(int64_t)in.imm;
-            p->words = 1u;
-            return TR_OK;
-        }
+        if (in.op[1] >= 0x80u && in.op[1] <= 0x8Fu)
+            return plan_jcc(in.op[1] & 0xFu, va, &in, p, out);
         out->reason = TRR_UNSUPPORTED_OP; out->detail = "two-byte opcode outside the subset";
         return TR_UNSUPPORTED;
     }
@@ -588,16 +616,10 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
         p->words = 1u;
         return TR_OK;
     }
-    if (in.op[0] >= 0x70u && in.op[0] <= 0x7Fu) {
-        if (!jcc_cond(in.op[0] & 0xFu, &p->cond)) {
-            out->reason = TRR_PARITY; out->detail = "JP/JNP: AArch64 has no parity flag";
-            return TR_UNSUPPORTED;
-        }
-        p->op = P_JCC;
-        p->target_va = va + in.len + (uint64_t)(int64_t)in.imm;
-        p->words = 1u;
-        return TR_OK;
-    }
+    /* jcc rel8, the short form: 70-7F, nibble in the low four bits of op[0]. */
+    if (in.op[0] >= 0x70u && in.op[0] <= 0x7Fu)
+        return plan_jcc(in.op[0] & 0xFu, va, &in, p, out);
+
     if (in.op[0] == 0xFF && in.reg == 2 && (in.flags & X86F_CALL)) {
         uint64_t iat_va = va + in.len + (uint64_t)(int64_t)in.disp;
         uint64_t host;

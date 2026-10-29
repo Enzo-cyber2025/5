@@ -2097,6 +2097,78 @@ static size_t put_rip_rel(uint8_t *b, size_t off, int store, int w32,
 /* The byte a histogram must be indexed by, per map. Indexing by fail_op[0]
  * instead is a silent reporting bug: it collapses every two-byte opcode into the
  * cell labelled "0F 0F", which is a real encoding and so looks like a finding. */
+/* jcc rel32, the near form. Same branch as jcc rel8 with a wider displacement,
+ * and the condition nibble is in the same place, so the two must not disagree.
+ * A compiler emits this form as soon as the target is more than 127 bytes away,
+ * which in a real function is most of them: measured on a shipped bundle, 0F 84
+ * alone blocked 8 functions and 0F 88 one more. */
+static void test_near_jcc_translation(void)
+{
+    tr_func   f;
+    tr_status st;
+    uint8_t   g[64];
+
+    printf("translating near conditional jumps (0F 80-0F 8F)\n");
+
+    /* cmp eax,ecx ; je rel32 forward ; mov rax,5 ; ret ; (target) mov rax,9 ; ret */
+    memset(g, 0, sizeof g);
+    g[0]=0x39; g[1]=0xC8;                                  /* cmp eax,ecx      */
+    g[2]=0x0F; g[3]=0x84; g[4]=0x0A; g[5]=0x00; g[6]=0x00; g[7]=0x00;  /* je +10 */
+    g[8]=0xB8; g[9]=0x05; g[10]=0x00; g[11]=0x00; g[12]=0x00;          /* mov eax,5 */
+    g[13]=0xC3;
+    g[14]=0xB8; g[15]=0x09; g[16]=0x00; g[17]=0x00; g[18]=0x00;        /* mov eax,9 */
+    g[19]=0xC3;
+    /* je at offset 2, length 6, so it targets 8 + 10 = 18... the target is 14 */
+    g[4]=0x06;                                             /* je +6 -> offset 14 */
+    st = tr_translate_function(g, 20, 0x1000, NULL, NULL, &f);
+    CHECK(st == TR_OK, "cmp eax,ecx / je rel32 returned %s (%s)",
+          tr_status_name(st), f.detail ? f.detail : "?");
+    if (st == TR_OK)
+        CHECK(f.branches == 1, "a near jcc reported %u branches, expected 1",
+              f.branches);
+
+    /* A backward near jump: the loop shape a real counter uses. */
+    memset(g, 0, sizeof g);
+    g[0]=0x48; g[1]=0x83; g[2]=0xE8; g[3]=0x01;            /* sub rax,1        */
+    g[4]=0x48; g[5]=0x85; g[6]=0xC0;                       /* test rax,rax     */
+    g[7]=0x0F; g[8]=0x85;                                  /* jne rel32        */
+    g[9]=0xF3; g[10]=0xFF; g[11]=0xFF; g[12]=0xFF;         /*   -13 -> offset 0 */
+    g[13]=0xC3;
+    st = tr_translate_function(g, 14, 0x1000, NULL, NULL, &f);
+    CHECK(st == TR_OK, "a backward near jne returned %s (%s)", tr_status_name(st),
+          f.detail ? f.detail : "?");
+    if (st == TR_OK)
+        CHECK(f.backwards == 1, "a backward near jump was not counted backwards "
+                                "(%u)", f.backwards);
+
+    /* js rel32, which reads the sign flag - the second largest of these in the
+     * measurement, and a different condition from every one already tested.
+     *
+     * It has to follow a modelled TEST, not the `sub rax,1` a real loop would
+     * use. That is the existing rule doing its job rather than a limitation of the
+     * near form: this translator's SUB does not write flags, so a branch after it
+     * would read whatever the last flag-setting instruction left behind. The first
+     * draft of this test used `sub` and was refused for exactly that reason. */
+    memset(g, 0, sizeof g);
+    g[0]=0x48; g[1]=0x85; g[2]=0xC0;                       /* test rax,rax     */
+    g[3]=0x0F; g[4]=0x88; g[5]=0x01; g[6]=0x00; g[7]=0x00; g[8]=0x00;  /* js +1  */
+    g[9]=0xC3;
+    g[10]=0xC3;
+    st = tr_translate_function(g, 11, 0x1000, NULL, NULL, &f);
+    CHECK(st == TR_OK, "js rel32 returned %s (%s)", tr_status_name(st),
+          f.detail ? f.detail : "?");
+
+    /* JP rel32 must still be refused: AArch64 has no parity flag, and the near
+     * form is no closer to having one than the short form is. */
+    memset(g, 0, sizeof g);
+    g[0]=0x0F; g[1]=0x8A; g[2]=0x00; g[3]=0x00; g[4]=0x00; g[5]=0x00;
+    g[6]=0xC3;
+    st = tr_translate_function(g, 7, 0x1000, NULL, NULL, &f);
+    CHECK(st == TR_UNSUPPORTED && f.reason == TRR_PARITY,
+          "jp rel32 was reported as %s, expected parity-flag",
+          tr_reason_name(f.reason));
+}
+
 static void test_fail_opcode_is_map_aware(void)
 {
     tr_func f;
@@ -2503,6 +2575,7 @@ int main(void)
     test_buffer_cap_is_named();
     test_width32_translation();
     test_width32_executes();
+    test_near_jcc_translation();
     test_fail_opcode_is_map_aware();
     test_image_relative_translation();
     test_image_relative_executes();
