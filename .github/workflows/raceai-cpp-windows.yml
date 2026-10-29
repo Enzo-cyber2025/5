@@ -114,17 +114,6 @@ jobs:
           cd raceai-cpp
           ./build/raceai_train.exe -g 25 -p 30 --seconds 30 --seed 5 2>&1 | tail -12
 
-      - name: Publicar logs no branch ci-logs
-        if: always()
-        shell: msys2 {0}
-        run: |
-          cd "$GITHUB_WORKSPACE"
-          git config user.email "ci@example.com"
-          git config user.name "CI"
-          git checkout -B ci-logs
-          git add -f raceai-cpp/build.log raceai-cpp/test.log raceai-cpp/python.log || true
-          git commit -m "CI logs do run $GITHUB_RUN_ID" || true
-          git push -f origin ci-logs || true
 
       - name: Empacotar
         shell: msys2 {0}
