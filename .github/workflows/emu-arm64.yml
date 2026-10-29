@@ -683,34 +683,50 @@ jobs:
 
       - name: Assert the execution half actually happened
         run: |
-          # No `set -e` here, and no `head -1` in a pipeline. Both were in the first
-          # version of this step and together they failed it: with pipefail, `head`
-          # exiting once it has its line sends SIGPIPE upstream, the pipeline's
-          # status becomes 141, and errexit turns a perfectly good measurement into
-          # a failed job. `sed -n 1p` reads the whole stream and cannot do that.
-          # Every check below states its own failure instead.
+          # `set +e` first. The runner invokes this as `bash -e {0}`, and writing
+          # `set -uo pipefail` does NOT turn errexit off - so any command that
+          # returns non-zero ends the step with a bare exit code and no message,
+          # which is exactly how the previous two runs of this step failed while
+          # every check in it was passing. Three specific hazards are handled here:
+          # errexit, `head -1` sending SIGPIPE upstream under pipefail, and grep
+          # deciding a log is binary and printing nothing while still exiting 0.
+          set +e
           set -uo pipefail
           die() { echo "::error title=game-assert::$1"; exit 1; }
-          grep -q -- "--- executing what was translated ---" /tmp/game.log \
+          # -a forces text mode, so a stray non-UTF-8 byte in a module path cannot
+          # silently turn a match into no output.
+          firstnum() { grep -aoE "$1" /tmp/game.log | grep -aoE '[0-9]+' | sed -n '1p'; }
+
+          grep -aq -- "--- executing what was translated ---" /tmp/game.log \
             || die "the --execute pass never ran, so nothing was executed"
-          grep -qE "records executed: [0-9]+" /tmp/game.log \
+          grep -aqE "records executed: [0-9]+" /tmp/game.log \
             || die "the execution tally was never printed"
-          # The honest assertion: if the sweep translated anything, then something
-          # had to run. A non-zero coverage figure with zero executions means the
-          # execute path is broken, not that the code was unrunnable.
-          translated=$(grep -oE 'functions pre-translated: [0-9]+' /tmp/game.log | grep -oE '[0-9]+' | sed -n '1p')
-          ran=$(grep -oE 'records executed: [0-9]+' /tmp/game.log | grep -oE '[0-9]+' | sed -n '1p')
-          ret=$(grep -oE 'returned: [0-9]+' /tmp/game.log | grep -oE '[0-9]+' | sed -n '1p')
-          echo "translated=${translated:-?} executed=${ran:-?} returned=${ret:-?}"
-          if [ "${translated:-0}" -gt 0 ] && [ "${ran:-0}" -eq 0 ]; then
+
+          translated=$(firstnum 'functions pre-translated: [0-9]+'); translated=${translated:-0}
+          ran=$(firstnum 'records executed: [0-9]+');                  ran=${ran:-0}
+          ret=$(firstnum 'returned: [0-9]+');                          ret=${ret:-0}
+          faulted=$(firstnum 'faulted: [0-9]+');                       faulted=${faulted:-0}
+          markers=$(grep -acE "EXECUTED ON aarch64:" /tmp/game.log);   markers=${markers:-0}
+
+          echo "translated=${translated} executed=${ran} returned=${ret} faulted=${faulted} markers=${markers}"
+          # Published as a notice so a future failure here is diagnosable from the
+          # annotations alone, without needing the job log this sandbox cannot reach.
+          echo "::notice title=game-assert-input::translated=${translated} executed=${ran} returned=${ret} faulted=${faulted} markers=${markers} || tail: $(tail -c 500 /tmp/game.log | tr '\n' '|' | tr -s ' ')"
+
+          if [ "${translated}" -gt 0 ] && [ "${ran}" -eq 0 ]; then
             die "${translated} function(s) translated but none were executed"
           fi
-          grep -q "EXECUTED ON aarch64:" /tmp/game.log \
-            || die "the aarch64 execution marker is missing from the log"
+          if [ "${markers}" -eq 0 ]; then
+            die "the aarch64 execution marker is missing from the log"
+          fi
+          if [ "${ran}" -gt 0 ] && [ "${ret}" -eq 0 ]; then
+            die "${ran} function(s) ran but none returned - every one faulted or hung"
+          fi
           echo "execution marker:"
-          grep -E "EXECUTED ON aarch64:" /tmp/game.log
+          grep -aE "EXECUTED ON aarch64:" /tmp/game.log
           echo "tally:"
-          grep -E "records executed:|modules mapped:" /tmp/game.log
+          grep -aE "records executed:|modules mapped:" /tmp/game.log
+          exit 0
 
       - name: Report the measurement
         if: always()
