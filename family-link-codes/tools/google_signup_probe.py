@@ -282,7 +282,16 @@ def click_next(page) -> bool:
     return False
 
 
-def run(out_dir: pathlib.Path, headless: bool) -> int:
+def run(out_dir: pathlib.Path, headless: bool, channel: str = "", profile: str = "",
+        pause_on_wall: bool = False) -> int:
+    """Drive one sign-up.
+
+    ``channel="chrome"`` uses the real Chrome install instead of the bundled
+    Chromium: same browser a person has, which is the honest choice when the
+    question is "does this wizard work", not "can I look like a person".
+    ``pause_on_wall`` is for a human at the keyboard: it waits instead of
+    giving up, so the person can answer a phone prompt themselves.
+    """
     from playwright.sync_api import sync_playwright
 
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -291,9 +300,20 @@ def run(out_dir: pathlib.Path, headless: bool) -> int:
     created = False
 
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(headless=headless, args=["--no-sandbox"])
-        context = browser.new_context(locale="en-US", viewport={"width": 1280, "height": 900})
-        page = context.new_page()
+        launch_args = ["--no-sandbox"]
+        if profile:
+            context = playwright.chromium.launch_persistent_context(
+                profile, headless=headless, channel=channel or None,
+                args=launch_args, locale="en-US",
+                viewport={"width": 1280, "height": 900},
+            )
+            browser = None
+            page = context.pages[0] if context.pages else context.new_page()
+        else:
+            browser = playwright.chromium.launch(headless=headless, args=launch_args,
+                                                 channel=channel or None)
+            context = browser.new_context(locale="en-US", viewport={"width": 1280, "height": 900})
+            page = context.new_page()
         page.goto(
             "https://accounts.google.com/signup/v2/createaccount"
             "?flowName=GlifWebSignIn&flowEntry=SignUp&hl=en",
@@ -326,6 +346,22 @@ def run(out_dir: pathlib.Path, headless: bool) -> int:
                 created = True
                 break
             if verdict in {"phone", "captcha", "browser", "blocked"}:
+                if pause_on_wall:
+                    print(f"\n=== the wizard asked for {verdict.upper()} ===")
+                    print("Finish it in the browser window (enter your own phone/SMS code),")
+                    print("then press Enter here. Nothing is bypassed; a person is answering.")
+                    try:
+                        input()
+                    except EOFError:
+                        pass
+                    page.wait_for_timeout(2000)
+                    text = page_text(page)
+                    if classify(text) == "done":
+                        created = True
+                        steps.append({"step": attempt + 1, "verdict": "done",
+                                      "filled": [], "picked": [], "clicked_next": False,
+                                      "heading": "finished by hand"})
+                    break
                 break
             # A screen that keeps asking the same thing is a form we cannot fill;
             # three identical rounds is enough to call it.
@@ -347,7 +383,8 @@ def run(out_dir: pathlib.Path, headless: bool) -> int:
         page.screenshot(path=str(out_dir / "final.png"), full_page=True)
         (out_dir / "final.txt").write_text(page_text(page), encoding="utf-8", errors="replace")
         context.close()
-        browser.close()
+        if browser is not None:
+            browser.close()
 
     last = steps[-1]["verdict"] if steps else ""
     result = {
@@ -372,11 +409,16 @@ def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out-dir", default="out/signup")
     parser.add_argument("--headful", action="store_true")
+    parser.add_argument("--channel", default="", help='e.g. "chrome" for the real browser')
+    parser.add_argument("--profile", default="", help="persistent profile directory")
+    parser.add_argument("--pause-on-wall", action="store_true",
+                        help="wait for a human instead of giving up (local use)")
     args = parser.parse_args(argv)
     random.seed(time.time_ns())
     out_dir = pathlib.Path(args.out_dir)
     try:
-        return run(out_dir, headless=not args.headful)
+        return run(out_dir, headless=not args.headful, channel=args.channel,
+                   profile=args.profile, pause_on_wall=args.pause_on_wall)
     except Exception as exc:  # pragma: no cover - network/browser failures
         message = f"{type(exc).__name__}: {exc}"
         print(f"probe failed: {message}", file=sys.stderr)

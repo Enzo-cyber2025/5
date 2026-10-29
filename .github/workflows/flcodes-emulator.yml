@@ -85,14 +85,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install the browser
+      - name: Install the browser (real Chrome, not the bundled Chromium)
         run: |
           python3 -m pip install --quiet playwright
-          python3 -m playwright install --with-deps chromium
+          python3 -m playwright install --with-deps chromium chrome
       - name: One attempt, no captcha solving, no fake phone
         run: |
           set +e
           python3 family-link-codes/tools/google_signup_probe.py \
+            --channel chrome --profile "$RUNNER_TEMP/chrome-profile" \
             --out-dir "$RUNNER_TEMP/signup" | tee "$RUNNER_TEMP/signup.log"
           echo "${PIPESTATUS[0]}" > "$RUNNER_TEMP/signup-status.txt"
           exit 0
