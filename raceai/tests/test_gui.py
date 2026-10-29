@@ -46,7 +46,8 @@ def run_gui_smoke() -> int:
     assert app.trainer.pop.history, "sem histórico de fitness"
 
     # todas as telas precisam desenhar sem erro
-    for name in ("main", "tracks", "cars", "models", "settings", "mods", "help"):
+    for name in ("main", "corrida", "treino", "tracks", "cars", "models", "settings",
+                 "mods", "help"):
         app.goto(name)
         app.render()
 
@@ -78,6 +79,52 @@ def run_gui_smoke() -> int:
     app.settings["show_hud"] = True
     app.settings["draw_rays"] = True
     app.render()
+
+    # ---- modo corrida: vários carros e modelos correndo ao mesmo tempo
+    app.screen_name = "none"
+    app.screens = {}
+    app.settings["race_laps"] = 1
+    app.settings["speed"] = 5                     # 32x
+    assert app.start_race(), "não conseguiu montar a corrida"
+    assert app.race is not None and len(app.race.entries) >= 2, "grid vazio"
+    kinds = sorted({e.kind for e in app.race.entries})
+    print(f"  corrida: {len(app.race.entries)} competidores ({'/'.join(kinds)})")
+    for frame in range(3000):
+        app.update(1.0 / 60.0)
+        if frame % 150 == 0:
+            app.render()
+        if app.race.state == "finished":
+            break
+    assert app.race.state == "finished", "a corrida não terminou"
+    st = app.race.standings()
+    assert len(st) == len(app.race.entries) and st[0]["pos"] == 1, "classificação quebrada"
+    app.render()
+    print(f"  corrida: {len(st)} classificados · líder {st[0]['nome']} "
+          f"({st[0]['voltas']} volta(s))")
+
+    # ---- treinamento por épocas, salvando .pt no fim
+    modelo = os.path.join("modelos", "teste_treino.pt")
+    app.settings["model"] = modelo
+    app.settings["max_seconds"] = 6.0
+    app.start_training(individuals=8, epochs=2)
+    assert app.train_session and app.train_session["target"] == 2, "sessão não criada"
+    for frame in range(4000):
+        app.update(1.0 / 60.0)
+        if frame % 150 == 0:
+            app.render()
+        if app.train_session["done"]:
+            break
+    assert app.train_session["done"], "o treino não terminou"
+    resumo = app.train_summary or {}
+    assert resumo.get("épocas", 0) >= 2, "épocas insuficientes"
+    assert resumo.get("arquivo") and os.path.isfile(resumo["arquivo"]), "modelo não salvo"
+    app.render()                                  # tela de resultado
+    print(f"  treino: {resumo['épocas']} épocas · melhor {resumo['melhor']:.0f} · "
+          f"{os.path.basename(resumo['arquivo'])}")
+    try:
+        os.remove(resumo["arquivo"])
+    except OSError:
+        pass
 
     # troca de pista/carro por índice
     for i in range(len(app.tracks)):

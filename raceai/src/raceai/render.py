@@ -228,7 +228,9 @@ class Renderer:
             sx, sy = camera.to_screen(wx, wy)
             if not (-80 < sx < camera.width + 80 and -80 < sy < camera.height + 80):
                 continue
-            surf, off = self.sprites.get(spec, fleet.heading[i], camera.zoom)
+            # `spec` pode ser um carro só (treino) ou uma lista (corrida mista)
+            sp = spec[i] if isinstance(spec, (list, tuple)) else spec
+            surf, off = self.sprites.get(sp, fleet.heading[i], camera.zoom)
             if not is_focus and alpha_ghosts:
                 surf = surf.copy()
                 surf.set_alpha(150)

@@ -82,8 +82,10 @@ def parse_args(argv=None):
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--track", default="kartodromo", help="nome do arquivo em assets/tracks")
     p.add_argument("--car", default="gt", help="nome do arquivo em assets/cars")
-    p.add_argument("--generations", type=int, default=100)
-    p.add_argument("--pop", type=int, default=120, help="tamanho da população")
+    p.add_argument("--generations", "--epochs", dest="generations", type=int, default=100,
+                   help="épocas (gerações) de treino")
+    p.add_argument("--pop", "--individuals", dest="pop", type=int, default=120,
+                   help="indivíduos por geração")
     p.add_argument("--device", default="auto", help="auto | cpu | torch-cpu | dml | cuda")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--out", default=os.path.join("modelos", "modelo.pt"))

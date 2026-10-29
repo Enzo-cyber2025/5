@@ -76,7 +76,7 @@ class Trainer:
 
     def set_car(self, car: CarSpec):
         self.car = car
-        self.sim.spec = car
+        self.sim.set_car(car)
         if self.autopilot is not None:
             self.autopilot.update(car=car)
         self.sim.reset()

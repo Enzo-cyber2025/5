@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from .car import CarSpec, physics_step
+from .car import CarBatch, CarSpec, physics_step
 from .track import Track
 
 OBS_RAYS_DEFAULT = 9
@@ -101,9 +101,15 @@ class Simulation:
     """Avança a frota inteira em passos fixos e calcula fitness."""
 
     def __init__(self, track: Track, spec: CarSpec, config: SimConfig | None = None,
-                 n_agents: int = 1, seed: int = 0):
+                 n_agents: int = 1, seed: int = 0, specs: list | None = None):
         self.track = track
-        self.spec = spec
+        # `specs` permite um carro por linha (corrida com carros diferentes);
+        # sem ele, a frota inteira usa o mesmo carro (treino/padrão).
+        self.specs: list = [spec] * max(1, int(n_agents)) if not specs else list(specs)
+        if len(self.specs) < n_agents:
+            self.specs = (self.specs * (n_agents // max(1, len(self.specs)) + 1))[:n_agents]
+        self.specs = self.specs[:max(1, int(n_agents))]
+        self.batch = CarBatch(self.specs)
         self.cfg = config or SimConfig()
         self.rng = np.random.default_rng(seed)
         self.fleet = Fleet(n_agents)
@@ -117,6 +123,23 @@ class Simulation:
         self._history = []
 
     # ------------------------------------------------------------------ #
+    @property
+    def spec(self) -> CarSpec:
+        """Carro da primeira linha (compatibilidade: HUD, sensores)."""
+        return self.specs[0]
+
+    def set_car(self, spec: CarSpec):
+        """Troca o carro de toda a frota (modo treino: todos iguais)."""
+        self.set_specs([spec] * self.fleet.n)
+
+    def set_specs(self, specs: list):
+        """Define um carro por linha da frota."""
+        n = self.fleet.n
+        self.specs = list(specs)[:n]
+        if len(self.specs) < n:
+            self.specs = (self.specs * (n // max(1, len(self.specs)) + 1))[:n]
+        self.batch = CarBatch(self.specs)
+
     @property
     def n(self) -> int:
         return self.fleet.n
@@ -144,12 +167,14 @@ class Simulation:
             return
         perm = np.concatenate([idx, np.setdiff1d(np.arange(self.fleet.n), idx, assume_unique=False)])
         self.fleet.permute(perm)
+        self.batch.permute(perm)          # cada linha leva o seu carro junto
         self.n_active = len(idx)
 
     def reset(self, n_agents: int | None = None, rotation: int = 0):
         if n_agents is not None and n_agents != self.fleet.n:
             self.fleet = Fleet(n_agents)
             self.pending_actions = np.zeros((n_agents, 2), dtype=np.float32)
+            self.set_specs(self.specs) if self.specs else None
         f = self.fleet
         trk = self.track
         n = f.n
@@ -204,7 +229,8 @@ class Simulation:
                              max_range=cfg.ray_range, fov=math.radians(cfg.fov_deg))
         rays_n = np.clip(rays / cfg.ray_range, 0.0, 1.0)
 
-        max_speed = max(self.spec.max_speed, 1e-6)
+        max_speed = np.maximum(self.batch.max_speed[indices], 1e-6)
+        steer_norm = np.maximum(self.batch.max_steer[indices], 1e-6)
         half = np.maximum(trk.half_widths[idx], 1e-6)
         heading_err = ((heading - trk.heading[idx] + np.pi) % (2 * np.pi) - np.pi) / np.pi
 
@@ -218,7 +244,7 @@ class Simulation:
             (f.vx[indices] / max_speed)[:, None],
             (f.vy[indices] / 12.0)[:, None],
             (f.r[indices] / 3.0)[:, None],
-            (f.steer[indices] / max(self.spec.max_steer, 1e-6))[:, None],
+            (f.steer[indices] / steer_norm)[:, None],
             np.clip(f.lateral[indices] / half, -1.5, 1.5)[:, None] / 1.5,
             heading_err[:, None],
             la_n,
@@ -271,7 +297,7 @@ class Simulation:
         dt = cfg.dt
         n = self.n_active
 
-        physics_step(self.spec, f, f.surface_grip, f.surface_roll, dt, n)
+        physics_step(self.batch, f, f.surface_grip, f.surface_roll, dt, n)
         self._sync_track_state(n)
         self._handle_walls(n)
 

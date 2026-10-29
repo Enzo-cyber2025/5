@@ -24,6 +24,8 @@ treino         ->  algoritmo genético (elitismo + torneio + mutação gaussiana
 - [Como usar](#como-usar)
 - [Controles](#controles)
 - [Modos de jogo](#modos-de-jogo)
+  - [Corrida](#corrida)
+  - [Treinamento](#treinamento)
 - [Treinar (gerações)](#treinar-gerações)
 - [Modelos .pt / .npz / .onnx](#modelos-pt--npz--onnx)
 - [GPU: DirectML na Intel UHD 605](#gpu-directml-na-intel-uhd-605)
@@ -74,24 +76,66 @@ python main.py --headless-train 100       :: treina 100 gerações sem janela
 | `←`/`→` ou `A`/`D` | esterçar |
 | `G` | **liga/desliga as gerações** (evolução) |
 | `F` | velocidade da simulação: 1x, 2x, 4x, 8x, 16x, 32x |
-| `C` | troca o carro focado pela câmera |
-| `R` | reinicia a geração |
+| `C` | troca o carro focado pela câmera (na corrida, troca de competidor) |
+| `R` | reinicia a geração (na corrida, recomeça a prova) |
+| `M` | abre a tela de grid da corrida |
+| `T` | abre a tela de treinamento (durante o treino) |
 | `P` / `Espaço` | pausa |
 | `TAB` | mostra os raios dos sensores |
 | `H` | mostra/esconde o HUD |
 | `+` / `-` | zoom da câmera |
 | `L` | abrir tela de modelos |
 | `CTRL+S` | salvar o melhor modelo |
-| `1` / `2` / `3` | manual / IA / treino |
+| `1` / `2` / `3` / `4` | corrida / treinamento / manual / IA |
 | `ESC` | menu |
 | `F1` | ajuda |
 
 ## Modos de jogo
 
+O menu tem dois modos principais (e dois atalhos para brincar rápido):
+
+### Corrida
+
+Vários carros **e vários modelos** correndo ao mesmo tempo, cada um com o seu
+próprio carro. Monte o grid em **M** (ou no menu *Corrida*):
+
+| campo | opções |
+| --- | --- |
+| carro | qualquer um dos carros (inclusive de mods) — cada competidor pode usar um diferente |
+| piloto | **Você** (humano, 1 por corrida), **Piloto automático** ou **Modelo .pt/.npz** |
+
+- Todos largam juntos (contagem de 3 s) e a classificação é por tempo de prova;
+  quem não aguenta todas as voltas aparece como "fora".
+- O painel mostra posição, volta, melhor volta e velocidade de cada competidor;
+  `C` muda a câmera de carro e `R` recomeça a prova.
+- Dá para colocar o mesmo modelo em carros diferentes, ou modelos diferentes no
+  mesmo grid (é a forma mais honesta de comparar quem evoluiu melhor).
+- Voltas configuráveis de 1 a 30 (padrão: 3).
+
+### Treinamento
+
+Você define **quantos indivíduos** e **quantas épocas** e o jogo evolui sozinho:
+
+1. Menu *Treinamento* (`T` durante o treino): arraste **indivíduos** (2 a 1000) e
+   **épocas** (1 a 5000), ajuste mutação/elitismo se quiser e aperte
+   **INICIAR TREINO**.
+2. O HUD mostra `época 12/50`, o melhor fitness e o tempo restante estimado.
+   `F` acelera até 32x e `G` pausa a evolução sem parar a simulação.
+3. Ao completar as épocas, o jogo **salva o modelo** (`.pt`, ou `.npz` sem
+   PyTorch) e abre a tela de resultado com o botão **Testar na corrida**, que
+   já coloca esse modelo num grid contra você e os pilotos automáticos.
+
+Também dá para treinar sem janela (bem mais rápido):
+
+```bat
+RaceAI2D-console.exe --headless-train 200 --pop 120 --track kartodromo
+```
+
+Além disso:
+
 - **Manual** — um carro, você no volante. Voltas e melhor volta são cronometradas.
 - **IA** — um modelo carregado dirige. Se você não carregou nenhum modelo, entra
   o **piloto automático clássico** (perseguição pura), que serve de referência.
-- **Treino** — população inteira corre ao mesmo tempo e evolui.
 
 ## Treinar (gerações)
 

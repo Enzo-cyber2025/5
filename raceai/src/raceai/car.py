@@ -160,6 +160,72 @@ class CarSpec:
                 f"{'dianteira' if self.drive_front > 0.8 else 'traseira' if self.drive_front < 0.2 else 'integral'}")
 
 
+# parâmetros numéricos que viram arrays no cálculo em lote
+CAR_PARAM_KEYS = (
+    "mass", "length", "width", "wheelbase", "cg_front", "cg_height",
+    "engine_force", "max_power", "brake_force", "max_speed", "reverse_ratio",
+    "max_steer", "steer_rate", "steer_falloff", "grip_front", "grip_rear",
+    "tire_stiffness", "tire_shape", "drag", "rolling", "downforce",
+    "drive_front", "brake_front", "yaw_inertia",
+)
+
+
+class CarBatch:
+    """Parâmetros de física de vários carros, um por linha da frota.
+
+    Permite correr com carros diferentes ao mesmo tempo (cada linha da
+    simulação usa o seu). Todos os atributos são arrays (n,) de float64.
+    """
+
+    __slots__ = ("specs", "n") + CAR_PARAM_KEYS
+
+    def __init__(self, specs: list):
+        if not specs:
+            raise ValueError("CarBatch precisa de pelo menos um CarSpec")
+        self.specs = list(specs)
+        self.n = len(self.specs)
+        for key in CAR_PARAM_KEYS:
+            object.__setattr__(self, key,
+                               np.array([float(getattr(sp, key)) for sp in self.specs],
+                                        dtype=np.float64))
+
+    # ---------------------------------------------------------------- #
+    @classmethod
+    def uniform(cls, spec, n: int) -> "CarBatch":
+        """Frota inteira com o mesmo carro (modo treino/padrão)."""
+        return cls([spec] * max(1, int(n)))
+
+    @property
+    def cg_rear(self) -> np.ndarray:
+        return np.maximum(0.4, self.wheelbase - self.cg_front)
+
+    @property
+    def iz(self) -> np.ndarray:
+        return self.mass * (self.length ** 2 + self.width ** 2) / 12.0 * self.yaw_inertia
+
+    @property
+    def power_to_weight(self) -> np.ndarray:
+        return self.max_power / np.maximum(self.mass, 1.0)
+
+    def __len__(self) -> int:
+        return self.n
+
+    def permute(self, perm: np.ndarray):
+        """Reordena as linhas (compactação dos vivos na simulação)."""
+        self.specs = [self.specs[i] for i in perm]
+        for key in CAR_PARAM_KEYS:
+            object.__setattr__(self, key, getattr(self, key)[perm])
+
+    def resize(self, n: int):
+        """Ajusta a quantidade de linhas repetindo/truncando a lista."""
+        n = max(1, int(n))
+        if n == self.n:
+            return
+        specs = (self.specs * (n // max(1, self.n) + 1))[:n] if self.specs else []
+        self.specs = specs
+        self.__init__(specs) if specs else None
+
+
 def tire_lateral_force(slip: np.ndarray, fz: np.ndarray, mu: float,
                        stiffness: float, shape: float) -> np.ndarray:
     """Pneus Pacejka-lite: satura suavemente e permite derrapagem controlada."""
@@ -168,7 +234,7 @@ def tire_lateral_force(slip: np.ndarray, fz: np.ndarray, mu: float,
     return f_max * np.sin(shape * np.arctan(stiffness * slip))
 
 
-def physics_step(spec: CarSpec, st, surface_grip: np.ndarray, surface_roll: np.ndarray,
+def physics_step(spec: CarBatch, st, surface_grip: np.ndarray, surface_roll: np.ndarray,
                  dt: float, n: int | None = None) -> None:
     """Avança um passo de física para a frota (arrays numpy, in-place).
 
@@ -176,15 +242,36 @@ def physics_step(spec: CarSpec, st, surface_grip: np.ndarray, surface_roll: np.n
     throttle, brake, alive. Escreve também slip_f, slip_r, grip_use, ax, ay
     (usados por sensores e HUD).
 
+    `spec` é um `CarBatch`: um carro por linha (permite grid misto).
+
     `n` limita o cálculo às primeiras n linhas (otimização: agentes mortos
     são removidos do laço por compactação).
     """
     sl = slice(0, n) if n is not None else slice(None)
-    m = spec.mass
-    a_ax = spec.cg_front
-    b_ax = spec.cg_rear
+    # cada linha pode ser um carro diferente: tudo abaixo é array (A,)
+    m = spec.mass[sl]
+    a_ax = spec.cg_front[sl]
+    b_ax = spec.cg_rear[sl]
     l_wb = a_ax + b_ax
-    iz = spec.iz
+    iz = spec.iz[sl]
+    max_speed = np.maximum(spec.max_speed[sl], 1e-6)
+    steer_limit = spec.max_steer[sl]
+    steer_rate = spec.steer_rate[sl]
+    steer_falloff = spec.steer_falloff[sl]
+    engine_force = spec.engine_force[sl]
+    max_power = spec.max_power[sl]
+    reverse_ratio = spec.reverse_ratio[sl]
+    brake_force = spec.brake_force[sl]
+    drag_c = spec.drag[sl]
+    roll_c = spec.rolling[sl]
+    down_c = spec.downforce[sl]
+    cg_h = spec.cg_height[sl]
+    drive_split = spec.drive_front[sl]
+    brake_split = spec.brake_front[sl]
+    grip_f = spec.grip_front[sl]
+    grip_r = spec.grip_rear[sl]
+    tire_b = spec.tire_stiffness[sl]
+    tire_c = spec.tire_shape[sl]
 
     alive = st.alive[sl]
     vx = st.vx[sl]
@@ -195,10 +282,10 @@ def physics_step(spec: CarSpec, st, surface_grip: np.ndarray, surface_roll: np.n
     vx_ref = np.maximum(np.abs(vx), 1.2)
 
     # ---------------- direção (comando -> esterço real) -------------------
-    falloff = 1.0 - spec.steer_falloff * np.clip(speed / max(spec.max_speed, 1e-6), 0.0, 1.0)
-    steer_max = spec.max_steer * falloff
+    falloff = 1.0 - steer_falloff * np.clip(speed / max_speed, 0.0, 1.0)
+    steer_max = steer_limit * falloff
     target = np.clip(st.steer_cmd[sl], -1.0, 1.0) * steer_max
-    max_delta = spec.steer_rate * dt
+    max_delta = steer_rate * dt
     steer = st.steer[sl] + np.clip(target - st.steer[sl], -max_delta, max_delta)
 
     # ---------------- ângulos de deriva ----------------------------------
@@ -211,44 +298,44 @@ def physics_step(spec: CarSpec, st, surface_grip: np.ndarray, surface_roll: np.n
     brake = np.clip(st.brake[0:None if n is None else n], 0.0, 1.0)
     # força de tração: limitada pela força em baixa e pela potência em alta
     v_ref = np.maximum(speed, 5.0)
-    traction = np.minimum(spec.engine_force, spec.max_power / v_ref)
-    power_curve = np.clip(1.0 - (speed / max(spec.max_speed, 1e-6)) ** 1.6, 0.0, 1.0)
+    traction = np.minimum(engine_force, max_power / v_ref)
+    power_curve = np.clip(1.0 - (speed / max_speed) ** 1.6, 0.0, 1.0)
     f_drive_demand = throttle * traction * power_curve
 
     # ré: freio com o carro praticamente parado
     reverse = brake * (speed < 0.6) * (st.reverse_cmd[sl] > 0.5
                                        if hasattr(st, "reverse_cmd") else 1.0)
-    f_reverse = reverse * spec.engine_force * spec.reverse_ratio
+    f_reverse = reverse * engine_force * reverse_ratio
     f_drive = f_drive_demand - f_reverse
 
-    f_brake_demand = brake * spec.brake_force * (speed >= 0.6)
-    drag_f = spec.drag * speed * speed
-    roll_f = spec.rolling * surface_roll[sl] * speed
+    f_brake_demand = brake * brake_force * (speed >= 0.6)
+    drag_f = drag_c * speed * speed
+    roll_f = roll_c * surface_roll[sl] * speed
     resist = drag_f + roll_f
 
     long_demand = f_drive - f_brake_demand - resist
     ax_est = long_demand / m
 
-    downforce_f = spec.downforce * speed * speed
+    downforce_f = down_c * speed * speed
     weight = m * G + downforce_f
-    fz_front = weight * (b_ax / l_wb) - m * ax_est * spec.cg_height / l_wb
-    fz_rear = weight * (a_ax / l_wb) + m * ax_est * spec.cg_height / l_wb
+    fz_front = weight * (b_ax / l_wb) - m * ax_est * cg_h / l_wb
+    fz_rear = weight * (a_ax / l_wb) + m * ax_est * cg_h / l_wb
     fz_front = np.maximum(fz_front, weight * 0.05)
     fz_rear = np.maximum(fz_rear, weight * 0.05)
 
     # ---------------- forças longitudinais por eixo -----------------------
-    f_front_split = spec.drive_front
-    f_brake_split = spec.brake_front
+    f_front_split = drive_split
+    f_brake_split = brake_split
     fx_front = (f_drive * f_front_split) - (f_brake_demand * f_brake_split) - resist * 0.5
     fx_rear = (f_drive * (1.0 - f_front_split)) - (f_brake_demand * (1.0 - f_brake_split)) - resist * 0.5
 
     # ---------------- forças laterais + círculo de atrito -----------------
     grip = np.clip(surface_grip[sl], 0.15, 2.0)
-    mu_f = spec.grip_front * grip
-    mu_r = spec.grip_rear * grip
+    mu_f = grip_f * grip
+    mu_r = grip_r * grip
 
-    fy_front = tire_lateral_force(slip_f, fz_front, mu_f, spec.tire_stiffness, spec.tire_shape)
-    fy_rear = tire_lateral_force(slip_r, fz_rear, mu_r, spec.tire_stiffness, spec.tire_shape)
+    fy_front = tire_lateral_force(slip_f, fz_front, mu_f, tire_b, tire_c)
+    fy_rear = tire_lateral_force(slip_r, fz_rear, mu_r, tire_b, tire_c)
 
     cap_front = mu_f * fz_front
     cap_rear = mu_r * fz_rear
@@ -287,7 +374,7 @@ def physics_step(spec: CarSpec, st, surface_grip: np.ndarray, surface_roll: np.n
     new_vy = np.where(stopped, 0.0, new_vy)
     new_r = np.where(stopped, 0.0, new_r)
 
-    new_vx = np.clip(new_vx, -spec.max_speed * 0.4, spec.max_speed * 1.05)
+    new_vx = np.clip(new_vx, -max_speed * 0.4, max_speed * 1.05)
     new_vy = np.clip(new_vy, -45.0, 45.0)
     new_r = np.clip(new_r, -6.0, 6.0)
 

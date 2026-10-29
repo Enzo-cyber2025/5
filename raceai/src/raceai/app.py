@@ -23,6 +23,7 @@ from .ai.model_io import ModelError, describe, load_model, save_model
 from .ai.policy import PolicySpec, flatten, unflatten
 from .car import CarSpec
 from .mods import ModItem
+from .race import AUTO, HUMANO, MODELO, Competitor, Race
 from .render import (ACCENT, BAD, GOOD, TEXT, TEXT_DIM, WARN, Camera, Renderer)
 from .sim import SimConfig
 from .trainer import Trainer
@@ -45,6 +46,9 @@ DEFAULT_SETTINGS = {
     "crossover": "blend",
     "fresh_blood": 0.04,
     "generations": True,
+    "epochs": 50,             # épocas (gerações) do modo treinamento
+    "race_laps": 3,           # voltas da corrida
+    "race_time_limit": 0.0,   # 0 = só conta voltas
     "device": "auto",
     "seed": 0,
     "speed": 1,
@@ -91,6 +95,12 @@ class App:
         self.focus_index = 0
         self.last_autosave_gen = -1
         self._needs_rebuild = False
+        # modo corrida (vários carros/modelos ao mesmo tempo)
+        self.race: Race | None = None
+        self.race_sel = {"car": 0, "kind": 0, "model": 0}
+        # modo treinamento por épocas
+        self.train_session: dict | None = None
+        self.train_summary: dict | None = None
 
         self.reload_mods()
         self.build_trainer()
@@ -177,6 +187,11 @@ class App:
     def apply_mode(self, reset: bool = True):
         s = self.settings
         t = self.trainer
+        if self.mode == "race":
+            # só remonta se ainda não há corrida ou se a pista mudou
+            if self.race is None or self.race.track is not self.track:
+                self.start_race()
+            return
         if self.mode == "manual":
             t.set_population_size(1)
             t.generations_enabled = False
@@ -262,6 +277,9 @@ class App:
         pygame.quit()
 
     def update(self, dt: float):
+        if self.mode == "race":
+            self.update_race(dt)
+            return
         t = self.trainer
         sim_dt = t.sim.cfg.dt
         speed = SPEEDS[min(len(SPEEDS) - 1, int(self.settings["speed"]))]
@@ -269,12 +287,30 @@ class App:
         steps = int(self.step_accum)
         self.step_accum -= steps
         steps = min(steps, 600)
+        # orçamento por frame: com populações enormes, mais passos do que isso
+        # deixaria a janela travada (a simulação apenas anda mais devagar)
+        budget = max(1, 80_000 // max(1, t.sim.n))
+        steps = min(steps, budget)
         if steps > 0:
             if self.mode == "manual":
                 t.manual_action = self.read_manual_input()
             t.step(steps)
         if t.generation_done():
             self.on_generation_end()
+
+    def update_race(self, dt: float):
+        race = self.race
+        if race is None or race.sim is None:
+            return
+        sim_dt = race.sim.cfg.dt
+        speed = SPEEDS[min(len(SPEEDS) - 1, int(self.settings["speed"]))]
+        self.step_accum += dt * speed / sim_dt
+        steps = int(self.step_accum)
+        self.step_accum -= steps
+        steps = min(steps, 600)
+        if steps > 0:
+            race.set_human_action(self.read_manual_input())
+            race.step(steps)
 
     def on_generation_end(self):
         t = self.trainer
@@ -287,6 +323,10 @@ class App:
             t.state.steps = 0
             return
         stats = t.finish_generation(evolve=bool(self.settings["generations"]))
+        sess = self.train_session
+        if sess and not sess["done"] and t.pop.generation >= int(sess["target"]):
+            self.finish_training()
+            return
         every = int(self.settings["autosave_every"])
         if every and t.pop.generation % every == 0 and t.pop.generation != self.last_autosave_gen:
             self.last_autosave_gen = t.pop.generation
@@ -342,14 +382,19 @@ class App:
         elif event.key == pygame.K_F1:
             self.screen_name = "help"
         elif event.key in (pygame.K_1, pygame.K_KP_1):
-            self.start_mode("manual")
+            self.start_mode("race")
         elif event.key in (pygame.K_2, pygame.K_KP_2):
-            self.start_mode("ia")
-        elif event.key in (pygame.K_3, pygame.K_KP_3):
             self.start_mode("train")
+        elif event.key in (pygame.K_3, pygame.K_KP_3):
+            self.start_mode("manual")
+        elif event.key in (pygame.K_4, pygame.K_KP_4):
+            self.start_mode("ia")
 
     def handle_game_key(self, event):
         s = self.settings
+        if self.mode == "race":
+            self.handle_race_key(event)
+            return
         if event.key == pygame.K_ESCAPE:
             self.screen_name = "main"
             self.screens = {}
@@ -385,11 +430,15 @@ class App:
         elif event.key == pygame.K_F1:
             self.screen_name = "help"
         elif event.key == pygame.K_1:
-            self.set_mode("manual")
+            self.set_mode("race")
         elif event.key == pygame.K_2:
-            self.set_mode("ia")
-        elif event.key == pygame.K_3:
             self.set_mode("train")
+        elif event.key == pygame.K_3:
+            self.set_mode("manual")
+        elif event.key == pygame.K_4:
+            self.set_mode("ia")
+        elif event.key == pygame.K_t and self.mode == "train":
+            self.goto("treino")
         elif event.key == pygame.K_SPACE:
             self.paused = not self.paused
 
@@ -414,6 +463,34 @@ class App:
     def render(self):
         r = self.renderer
         r.draw_background()
+        if self.mode == "race" and self.race is not None and self.race.sim is not None:
+            self.draw_race_world()
+        else:
+            self.draw_sim_world()
+        if self.screen_name != "none":
+            screen = self.screens.get(self.screen_name)
+            if screen is None:
+                screen = self.build_screen(self.screen_name)
+                self.screens[self.screen_name] = screen
+            screen.draw(r)
+            self.draw_extra()
+        self.draw_messages()
+        t = self.trainer
+        self.caption()
+
+    def caption(self):
+        t = self.trainer
+        if self.mode == "race" and self.race is not None:
+            pygame.display.set_caption(
+                f"RaceAI 2D — corrida · {self.race.track.name} · "
+                f"{len(self.race.entries)} competidores · {self.clock.get_fps():.0f} fps")
+            return
+        pygame.display.set_caption(
+            f"RaceAI 2D — {t.track.name} · {t.car.name} · "
+            f"{self.mode_label()} · {self.clock.get_fps():.0f} fps")
+
+    def draw_sim_world(self):
+        r = self.renderer
         t = self.trainer
         fleet = t.sim.fleet
         n = max(1, t.sim.n_active)
@@ -441,20 +518,9 @@ class App:
         if self.settings["show_hud"]:
             self.draw_hud(fi)
 
-        if self.screen_name != "none":
-            screen = self.screens.get(self.screen_name)
-            if screen is None:
-                screen = self.build_screen(self.screen_name)
-                self.screens[self.screen_name] = screen
-            screen.draw(r)
-            self.draw_extra()
-        self.draw_messages()
-        pygame.display.set_caption(
-            f"RaceAI 2D — {t.track.name} · {t.car.name} · "
-            f"{self.mode_label()} · {self.clock.get_fps():.0f} fps")
-
     def mode_label(self) -> str:
-        return {"manual": "MANUAL", "ia": "IA", "train": "TREINO"}.get(self.mode, self.mode)
+        return {"manual": "MANUAL", "ia": "IA", "train": "TREINO",
+                "race": "CORRIDA"}.get(self.mode, self.mode)
 
     def draw_hud(self, focus: int):
         r = self.renderer
@@ -472,7 +538,12 @@ class App:
                14, TEXT_DIM, anchor="topright")
         y = panel.y + 34
         if self.mode == "train":
-            r.text(self.screen, f"geração {t.pop.generation}", (panel.x + 10, y), 17)
+            sess = self.train_session
+            if sess and not sess["done"]:
+                r.text(self.screen, f"época {t.pop.generation}/{int(sess['target'])}",
+                       (panel.x + 10, y), 17, ACCENT)
+            else:
+                r.text(self.screen, f"geração {t.pop.generation}", (panel.x + 10, y), 17)
             r.text(self.screen, f"vivos {int(f.alive[:t.sim.n_active].sum())}/{t.sim.n}",
                    (panel.x + 150, y), 17, TEXT)
             y += 20
@@ -567,6 +638,12 @@ class App:
         cx = w // 2
         if name == "main":
             return self.build_main(cx, h)
+        if name == "corrida":
+            return self.build_race(cx, h)
+        if name == "treino":
+            return self.build_train(cx, h)
+        if name == "resultado":
+            return self.build_resultado(cx, h)
         if name == "tracks":
             return self.build_tracks(cx, h)
         if name == "cars":
@@ -584,17 +661,20 @@ class App:
     def build_main(self, cx, h) -> Screen:
         s = Screen("RaceAI 2D", "corrida 2D para treinar IA: pilote você mesmo, "
                                 "carregue um .pt ou evolua por gerações")
-        bw, bh = 300, 44
-        y = 120
-        s.add(Button(pygame.Rect(cx - bw // 2, y, bw, bh), "1 · Dirigir (manual)",
-                     lambda: self.start_mode("manual"), "primary"))
+        bw, bh = 320, 46
+        y = 112
+        s.add(Button(pygame.Rect(cx - bw // 2, y, bw, bh), "1 · CORRIDA",
+                     lambda: self.start_mode("race"), "primary"))
         y += bh + 8
-        s.add(Button(pygame.Rect(cx - bw // 2, y, bw, bh), "2 · Assistir IA",
-                     lambda: self.start_mode("ia"), "primary"))
-        y += bh + 8
-        s.add(Button(pygame.Rect(cx - bw // 2, y, bw, bh), "3 · Treinar (gerações)",
+        s.add(Button(pygame.Rect(cx - bw // 2, y, bw, bh), "2 · TREINAMENTO",
                      lambda: self.start_mode("train"), "primary"))
-        y += bh + 18
+        y += bh + 16
+        half = (bw - 10) // 2
+        s.add(Button(pygame.Rect(cx - bw // 2, y, half, 38), "3 · Dirigir (manual)",
+                     lambda: self.start_mode("manual")))
+        s.add(Button(pygame.Rect(cx + 5, y, half, 38), "4 · Assistir IA",
+                     lambda: self.start_mode("ia")))
+        y += 54
         half = (bw - 10) // 2
         s.add(Button(pygame.Rect(cx - bw // 2, y, half, 38), "Modelo .pt",
                      lambda: self.goto("models")))
@@ -957,12 +1037,17 @@ class App:
     def build_help(self, cx, h) -> Screen:
         s = Screen("Ajuda", "teclas e conceitos básicos")
         lines = [
-            "MANUAL: setas ou WASD dirigem · espaço/p = pausa · R reinicia",
-            "TREINO: G liga/desliga as gerações · F muda a velocidade (1x..32x)",
-            "        C troca o carro focado · TAB mostra os raios do sensor",
-            "        CTRL+S salva o melhor modelo · L abre a tela de modelos",
+            "CORRIDA (1): grid com vários carros e modelos ao mesmo tempo.",
+            "      M monta o grid (cada competidor escolhe carro e piloto:",
+            "      você, piloto automático ou um modelo .pt/.npz).",
+            "      setas/WASD dirigem · R recomeça · C troca a câmera · F acelera.",
+            "TREINAMENTO (2): defina indivíduos e épocas, aperte INICIAR TREINO e",
+            "      o jogo evolui sozinho — no fim salva o .pt e oferece testar",
+            "      o modelo numa corrida. T abre esta tela durante o treino.",
+            "      G liga/desliga a evolução · F velocidade (1x..32x)",
+            "      CTRL+S salva o melhor modelo · L abre a tela de modelos",
             "+/- aproxima/afasta a câmera · H esconde o HUD · ESC abre o menu",
-            "1/2/3 alternam manual / IA / treino",
+            "1 corrida · 2 treinamento · 3 dirigir (manual) · 4 assistir IA",
             "",
             "O modelo é uma MLP pequena (sensores -> tanh -> [esterço, acelerador]).",
             "A evolução mantém os melhores intactos (elitismo), cruza os pais por",
@@ -1055,3 +1140,495 @@ class App:
         drive = ("dianteira" if car.drive_front > 0.8 else
                  "traseira" if car.drive_front < 0.2 else "integral")
         r.text(self.screen, f"tração {drive}", (rect.x + 14, rect.bottom - 24), 14, TEXT)
+
+    # ------------------------------------------------------------------ #
+    # Modo CORRIDA — vários carros e modelos ao mesmo tempo
+    # ------------------------------------------------------------------ #
+    def ensure_race(self) -> Race:
+        """Garante uma corrida montada (usada pela tela de grid)."""
+        if self.race is None or self.race.track is not self.track:
+            self.build_race_object()
+        return self.race
+
+    def build_race_object(self, entries: list | None = None) -> Race:
+        s = self.settings
+        cars = [c.obj for c in self.cars if not c.error]
+        if not cars:
+            self.notify("nenhum carro disponível", BAD)
+            return None
+        models = [p for _label, p in self.list_model_files()]
+        race = Race(self.track, self.trainer.policy, device=str(s["device"]),
+                    seed=int(s["seed"]))
+        if entries is not None:
+            race.entries = list(entries)
+        else:
+            race.default_grid(cars, models[:6])
+        if not race.entries:
+            race.default_grid(cars, [])
+        self.race = race
+        return race
+
+    def start_race(self, entries: list | None = None) -> bool:
+        """Monta o grid e larga."""
+        race = self.build_race_object(entries)
+        if race is None:
+            return False
+        ok = race.build(laps=int(self.settings["race_laps"]),
+                        time_limit=float(self.settings["race_time_limit"]))
+        if not ok:
+            self.notify("grid vazio: adicione competidores", BAD)
+            return False
+        self.mode = "race"
+        self.camera.set_zoom(float(self.settings["zoom_manual"]))
+        self.notify(f"corrida: {len(race.entries)} competidores · "
+                    f"{int(self.settings['race_laps'])} voltas", GOOD)
+        return True
+
+    def draw_race_world(self):
+        r = self.renderer
+        race = self.race
+        sim = race.sim
+        fleet = sim.fleet
+        n = max(1, sim.n_active)
+        fi = min(race.focus, fleet.n - 1)
+        if not self.paused:
+            self.camera.follow(fleet.x[fi], fleet.y[fi], smoothing=0.15)
+        r.draw_track(sim.track, self.camera)
+        r.draw_cars(sim.specs, fleet, n, self.camera, focus=fi,
+                    max_draw=max(8, int(self.settings["max_draw"])),
+                    draw_rays=bool(self.settings["draw_rays"]), track=sim.track,
+                    ray_count=int(self.settings["rays"]), ray_range=sim.cfg.ray_range)
+        if self.settings["show_hud"]:
+            self.draw_race_hud(fi)
+        if race.state == "finished":
+            self.draw_race_results()
+
+    def draw_race_hud(self, focus: int):
+        r = self.renderer
+        race = self.race
+        f = race.sim.fleet
+        w, h = self.screen.get_size()
+        entry = race.entries[focus] if focus < len(race.entries) else None
+
+        # ---- classificação
+        st = race.standings()
+        alt = 22 * min(len(st), 8) + 66
+        panel = pygame.Rect(w - 330, 10, 320, alt)
+        r.panel(panel)
+        r.text(self.screen, "CORRIDA", (panel.x + 10, panel.y + 8), 20, ACCENT, bold=True)
+        r.text(self.screen, f"{race.track.name} · {int(race.laps_target)} voltas",
+               (panel.right - 10, panel.y + 12), 14, TEXT_DIM, anchor="topright")
+        y = panel.y + 36
+        if race.state == "countdown":
+            r.text(self.screen, f"largada em {max(0.0, race.countdown):.1f}s",
+                   (panel.x + 10, y), 18, WARN, bold=True)
+        elif race.state == "finished":
+            r.text(self.screen, "CORRIDA ENCERRADA", (panel.x + 10, y), 18, GOOD, bold=True)
+        else:
+            r.text(self.screen, f"tempo {race.elapsed:6.1f}s", (panel.x + 10, y), 18)
+        y += 24
+        for row in st[:8]:
+            cor = GOOD if row["pos"] == 1 else (ACCENT if row.get("foi_humano") else TEXT)
+            if row["abandonou"]:
+                cor = BAD
+            r.text(self.screen, f"{row['pos']:2d}º", (panel.x + 10, y), 15, TEXT_DIM)
+            r.text(self.screen, row["nome"][:14], (panel.x + 46, y), 15, cor)
+            r.text(self.screen, row["carro"][:11], (panel.x + 160, y), 13, TEXT_DIM)
+            if row["tempo"]:
+                r.text(self.screen, f"{row['tempo']:.1f}s", (panel.right - 10, y), 14,
+                       GOOD, anchor="topright")
+            elif row["abandonou"]:
+                r.text(self.screen, "fora", (panel.right - 10, y), 13, BAD, anchor="topright")
+            else:
+                r.text(self.screen, f"{row['voltas']}/{int(race.laps_target)}v",
+                       (panel.right - 10, y), 14, TEXT_DIM, anchor="topright")
+            y += 22
+
+        # ---- painel do carro focado
+        tp = pygame.Rect(10, 10, 300, 150)
+        r.panel(tp)
+        nome = entry.name if entry else "-"
+        r.text(self.screen, nome[:22], (tp.x + 10, tp.y + 8), 18, ACCENT)
+        r.text(self.screen, f"{f.speed[focus] * 3.6:4.0f} km/h", (tp.right - 10, tp.y + 8),
+               18, anchor="topright")
+        y = tp.y + 36
+        r.bar(pygame.Rect(tp.x + 10, y, tp.width - 20, 8),
+              abs(f.speed[focus]) / max(entry.car.max_speed, 1e-6) if entry else 0.0,
+              (90, 190, 240))
+        y += 18
+        r.text(self.screen, "acel", (tp.x + 10, y), 13, TEXT_DIM)
+        r.bar(pygame.Rect(tp.x + 50, y + 1, 90, 8), f.throttle[focus], GOOD)
+        r.text(self.screen, "freio", (tp.x + 160, y), 13, TEXT_DIM)
+        r.bar(pygame.Rect(tp.x + 205, y + 1, 80, 8), f.brake[focus], BAD)
+        y += 22
+        melhor = f.best_lap[focus] if np.isfinite(f.best_lap[focus]) else None
+        r.text(self.screen, f"voltas {int(f.lap_count[focus])}/{int(race.laps_target)}",
+               (tp.x + 10, y), 15)
+        r.text(self.screen, f"melhor volta {melhor:.2f}s" if melhor else "melhor volta —",
+               (tp.right - 10, y), 15, GOOD if melhor else TEXT_DIM, anchor="topright")
+        y += 20
+        r.text(self.screen, f"piloto: {entry.driver[:26] if entry else '-'}",
+               (tp.x + 10, y), 14, TEXT_DIM)
+        y += 18
+        r.text(self.screen, f"batidas {int(f.crashes[focus])} · câmera: C",
+               (tp.x + 10, y), 13, WARN if f.crashes[focus] else TEXT_DIM)
+
+        # ---- minimapa
+        r.draw_minimap(race.track, f, race.sim.n_active, focus,
+                       pygame.Rect(10, h - 210, 240, 200))
+
+        # ---- dicas
+        if self.paused:
+            r.text(self.screen, "PAUSADO — P ou ESPAÇO volta", (w // 2, h - 26), 20, WARN,
+                   anchor="center")
+        else:
+            r.text(self.screen, "setas/WASD dirigem · R reinicia · C câmera · F velocidade "
+                                "· M grid · ESC menu", (w // 2, h - 26), 15, TEXT_DIM,
+                   anchor="center")
+
+    def draw_race_results(self):
+        """Pódio quando a corrida acaba."""
+        r = self.renderer
+        w, h = self.screen.get_size()
+        st = self.race.standings()
+        box = pygame.Rect(w // 2 - 260, h // 2 - 40 - 22 * min(5, len(st)), 520,
+                          90 + 24 * min(5, len(st)))
+        r.panel(box, alpha=235)
+        r.text(self.screen, "RESULTADO", (box.centerx, box.y + 12), 24, ACCENT, bold=True,
+               anchor="center")
+        y = box.y + 46
+        medal = ("1º", "2º", "3º")
+        for k, row in enumerate(st[:5]):
+            cor = GOOD if k == 0 else TEXT
+            r.text(self.screen, medal[k] if k < 3 else f"{k + 1}º", (box.x + 20, y), 17, cor)
+            r.text(self.screen, row["nome"][:16], (box.x + 70, y), 17, cor)
+            r.text(self.screen, row["carro"][:14], (box.x + 220, y), 14, TEXT_DIM)
+            if row["tempo"]:
+                r.text(self.screen, f"{row['tempo']:.1f}s", (box.right - 20, y), 16, GOOD,
+                       anchor="topright")
+            else:
+                r.text(self.screen, f"{row['voltas']}v", (box.right - 20, y), 15, TEXT_DIM,
+                       anchor="topright")
+            if row["melhor_volta"]:
+                r.text(self.screen, f"volta {row['melhor_volta']:.2f}s", (box.right - 110, y),
+                       14, TEXT_DIM, anchor="topright")
+            y += 24
+        r.text(self.screen, "R corre de novo · M muda o grid · ESC menu",
+               (box.centerx, box.bottom - 24), 15, TEXT_DIM, anchor="center")
+
+    def handle_race_key(self, event):
+        s = self.settings
+        if event.key == pygame.K_ESCAPE:
+            self.screen_name = "main"
+            self.screens = {}
+        elif event.key == pygame.K_r:
+            self.start_race(entries=self.race.entries if self.race else None)
+        elif event.key == pygame.K_c:
+            if self.race:
+                self.race.cycle_focus()
+                self.notify(f"câmera: {self.race.focus_name()}")
+        elif event.key in (pygame.K_p, pygame.K_SPACE):
+            self.paused = not self.paused
+        elif event.key == pygame.K_f:
+            s["speed"] = (int(s["speed"]) + 1) % len(SPEEDS)
+            self.notify(f"velocidade {SPEEDS[int(s['speed'])]}x")
+        elif event.key == pygame.K_h:
+            s["show_hud"] = not s["show_hud"]
+        elif event.key == pygame.K_m:
+            self.goto("corrida")
+        elif event.key == pygame.K_l:
+            self.goto("models")
+        elif event.key == pygame.K_F1:
+            self.goto("help")
+        elif event.key in (pygame.K_PLUS, pygame.K_EQUALS, pygame.K_KP_PLUS):
+            self.camera.set_zoom(self.camera.zoom * 1.25)
+        elif event.key in (pygame.K_MINUS, pygame.K_KP_MINUS):
+            self.camera.set_zoom(self.camera.zoom / 1.25)
+
+    # ------------------------------------------------------------------ #
+    # Modo TREINAMENTO — indivíduos e épocas, com .pt no fim
+    # ------------------------------------------------------------------ #
+    def start_training(self, individuals: int | None = None, epochs: int | None = None):
+        s = self.settings
+        if individuals:
+            s["population"] = int(individuals)
+        if epochs is not None:
+            s["epochs"] = int(epochs)
+        s["generations"] = True
+        self._needs_rebuild = False
+        t = self.trainer
+        t.set_population_size(int(s["population"]))
+        t.generations_enabled = True
+        t.manual_control = False
+        t.enable_autopilot(False)
+        t.excluded = np.zeros(t.sim.n, dtype=bool)
+        t.reset_training()
+        self.train_summary = None
+        self.train_session = {"target": max(1, int(s["epochs"])), "t0": time.time(),
+                              "done": False, "file": None}
+        self.camera.set_zoom(float(s["zoom_train"]))
+        self.set_mode("train")
+        self.screen_name = "none"
+        self.screens = {}
+        self.save_settings()
+        self.notify(f"treino: {int(s['population'])} indivíduos · "
+                    f"{int(s['epochs'])} épocas", GOOD)
+
+    def finish_training(self):
+        t = self.trainer
+        if not self.train_session or self.train_session["done"]:
+            return
+        self.train_session["done"] = True
+        elapsed = time.time() - self.train_session["t0"]
+        t.generations_enabled = False
+        path = self.settings.get("model") or os.path.join("modelos", "modelo.pt")
+        root, ext = os.path.splitext(path)
+        if ext.lower() not in (".pt", ".npz"):
+            path = root + ".pt"
+        saved = None
+        try:
+            saved = t.save_best(path)
+        except Exception as exc:
+            self.notify(f"falha ao salvar: {exc}", BAD)
+        self.train_summary = {
+            "épocas": int(t.pop.generation),
+            "indivíduos": int(self.settings["population"]),
+            "melhor": float(t.pop.best_fitness),
+            "tempo": elapsed,
+            "arquivo": saved or "",
+            "pista": t.track.name,
+            "carro": t.car.name,
+        }
+        if saved:
+            self.settings["model"] = saved
+            self.save_settings()
+        self.screen_name = "resultado"
+        self.screens = {}
+
+    def test_trained_model(self):
+        """Leva o modelo recém-treinado para a corrida."""
+        path = (self.train_summary or {}).get("arquivo") or self.settings.get("model")
+        if not path or not os.path.isfile(path):
+            self.notify("nenhum modelo salvo para testar", BAD)
+            return
+        cars = [c.obj for c in self.cars if not c.error]
+        if not cars:
+            return
+        s = self.settings
+        race = Race(self.track, self.trainer.policy, device=str(s["device"]),
+                    seed=int(s["seed"]))
+        race.add_human(cars[0])
+        race.add_model(cars[min(1, len(cars) - 1)], path, name="treinado")
+        for k in range(2):
+            race.add_autopilot(cars[min(k + 1, len(cars) - 1)])
+        if race.build(laps=int(s["race_laps"])):
+            self.race = race
+            self.mode = "race"
+            self.camera.set_zoom(float(s["zoom_manual"]))
+            self.screen_name = "none"
+            self.screens = {}
+            self.notify("corrida com o modelo treinado", GOOD)
+
+    # ------------------------------------------------------------------ #
+    # Telas novas: grid da corrida, treinamento por épocas, resultado
+    # ------------------------------------------------------------------ #
+    def close_menu(self):
+        self.screen_name = "none"
+        self.screens = {}
+
+    def build_race(self, cx, h) -> Screen:
+        s = Screen("Corrida", "monte o grid: cada competidor tem o seu carro e o seu piloto")
+        race = self.ensure_race()
+        cars = [c for c in self.cars if not c.error]
+        car_names = [c.name for c in cars] or ["(sem carros)"]
+        models = self.list_model_files()
+        model_names = [m[0] for m in models] or ["(nenhum modelo)"]
+        kinds = ["Piloto automático", "Modelo .pt/.npz", "Você (humano)"]
+        sel = self.race_sel
+
+        def refresh(msg: str | None = None, cor=GOOD):
+            self.screens = {}
+            if msg:
+                self.notify(msg, cor)
+
+        box = ListBox(pygame.Rect(cx - 400, 120, 380, min(340, max(160, h - 250))),
+                      [f"{i + 1}. {e.describe()}" for i, e in enumerate(race.entries)]
+                      or ["(grid vazio — adicione competidores)"], 0)
+        s.add(box)
+
+        y = 120
+        s.add(OptionCycle(pygame.Rect(cx + 20, y, 360, 30), "carro", car_names,
+                          min(sel["car"], len(car_names) - 1),
+                          on_change=lambda v, i: sel.__setitem__("car", i)))
+        y += 44
+        s.add(OptionCycle(pygame.Rect(cx + 20, y, 360, 30), "piloto", kinds,
+                          min(sel["kind"], len(kinds) - 1),
+                          on_change=lambda v, i: sel.__setitem__("kind", i)))
+        y += 44
+        s.add(OptionCycle(pygame.Rect(cx + 20, y, 360, 30), "modelo", model_names,
+                          min(sel["model"], len(model_names) - 1),
+                          on_change=lambda v, i: sel.__setitem__("model", i)))
+        y += 52
+
+        def add_entry():
+            if not cars:
+                refresh("nenhum carro disponível", BAD)
+                return
+            car = cars[min(sel["car"], len(cars) - 1)].obj
+            if sel["kind"] == 0:
+                race.add_autopilot(car)
+                refresh(f"{race.entries[-1].name}: piloto automático")
+            elif sel["kind"] == 1:
+                if not models:
+                    refresh("nenhum modelo em modelos/", BAD)
+                    return
+                path = models[min(sel["model"], len(models) - 1)][1]
+                if not race.add_model(car, path):
+                    refresh(f"falha ao carregar {os.path.basename(path)}", BAD)
+                    return
+                refresh(f"modelo {os.path.basename(path)} no grid")
+            else:
+                if not race.add_human(car):
+                    refresh("já existe um humano no grid", BAD)
+                    return
+                refresh("você entrou no grid")
+
+        def remove_entry():
+            if not race.entries:
+                return
+            i = min(box.selected, len(race.entries) - 1)
+            nome = race.entries[i].name
+            race.remove(i)
+            refresh(f"{nome} removido")
+
+        s.add(Button(pygame.Rect(cx + 20, y, 175, 36), "Adicionar", add_entry, "primary"))
+        s.add(Button(pygame.Rect(cx + 205, y, 175, 36), "Remover", remove_entry))
+        y += 46
+        s.add(Button(pygame.Rect(cx + 20, y, 175, 36), "Limpar grid",
+                     lambda: (race.clear(), refresh("grid limpo"))))
+        s.add(Button(pygame.Rect(cx + 205, y, 175, 36), "Grid padrão",
+                     lambda: (self.build_race_object(), refresh("grid padrão"))))
+        y += 52
+        s.add(Slider(pygame.Rect(cx + 20, y, 360, 24), "voltas da corrida",
+                     int(self.settings["race_laps"]), 1, 30, 1,
+                     on_change=lambda v: self.settings.__setitem__("race_laps", int(v))))
+        y += 50
+        s.add(Button(pygame.Rect(cx + 20, y, 360, 44), "LARGAR",
+                     lambda: (self.start_race(entries=race.entries), self.close_menu()),
+                     "primary"))
+        y += 52
+        s.add(Label(pygame.Rect(cx + 20, y, 0, 0), "na corrida: setas/WASD dirigem · "
+                                                   "R reinicia · C câmera · F velocidade",
+                    14, TEXT_DIM))
+        return s
+
+    def build_train(self, cx, h) -> Screen:
+        st = self.settings
+        t = self.trainer
+        sess = self.train_session
+        s = Screen("Treinamento", "evolua por épocas e exporte um .pt para testar na corrida")
+
+        # ---- resumo à esquerda
+        if sess and not sess["done"]:
+            feitas = int(t.pop.generation)
+            alvo = int(sess["target"])
+            decorrido = max(1e-6, time.time() - sess["t0"])
+            eta = (alvo - feitas) * (decorrido / max(1, feitas)) if feitas else 0.0
+            status = [f"época {feitas}/{alvo}",
+                      f"melhor {t.pop.best_fitness:,.0f}",
+                      f"já rodando há {decorrido / 60:.1f} min",
+                      f"falta ~{eta / 60:.1f} min" if eta > 1 else "calculando..."]
+        elif self.train_summary:
+            r2 = self.train_summary
+            status = [f"último treino: {r2['épocas']} épocas",
+                      f"melhor {r2['melhor']:,.0f}",
+                      f"arquivo {os.path.basename(r2['arquivo'])}" if r2["arquivo"] else "—",
+                      f"durou {r2['tempo'] / 60:.1f} min"]
+        else:
+            status = [f"pista {t.track.name} · carro {t.car.name}",
+                      f"população atual {t.sim.n}",
+                      f"rede {self.trainer.policy.obs_dim}->"
+                      f"{list(self.trainer.policy.hidden)}->2",
+                      "defina indivíduos e épocas e aperte Iniciar"]
+        box = ListBox(pygame.Rect(cx - 400, 120, 380, min(300, max(160, h - 250))), status, 0)
+        s.add(box)
+
+        # ---- controles à direita
+        y = 120
+        s.add(Slider(pygame.Rect(cx + 20, y, 360, 24), "indivíduos (população)",
+                     float(st["population"]), 2, 1000, 2,
+                     on_change=lambda v: st.__setitem__("population", int(v)),
+                     fmt="{:.0f}"))
+        y += 46
+        s.add(Slider(pygame.Rect(cx + 20, y, 360, 24), "épocas (gerações)",
+                     float(st["epochs"]), 1, 5000, 1,
+                     on_change=lambda v: st.__setitem__("epochs", int(v)),
+                     fmt="{:.0f}"))
+        y += 46
+        s.add(Slider(pygame.Rect(cx + 20, y, 360, 24), "duração da época (s)",
+                     float(st["max_seconds"]), 10, 180, 5,
+                     on_change=lambda v: (st.__setitem__("max_seconds", float(v)),
+                                          self.trainer.set_sim_params(max_seconds=float(v)))))
+        y += 46
+        s.add(Slider(pygame.Rect(cx + 20, y, 360, 24), "chance de mutação",
+                     float(st["mutation_rate"]), 0.0, 0.5, 0.005, "{:.3f}",
+                     on_change=lambda v: (st.__setitem__("mutation_rate", float(v)),
+                                          self.trainer.set_ga_params(mutation_rate=float(v)))))
+        y += 46
+        s.add(Slider(pygame.Rect(cx + 20, y, 360, 24), "intensidade (sigma)",
+                     float(st["mutation_sigma"]), 0.01, 0.8, 0.01, "{:.2f}",
+                     on_change=lambda v: (st.__setitem__("mutation_sigma", float(v)),
+                                          self.trainer.set_ga_params(mutation_sigma=float(v)))))
+        y += 46
+        s.add(Toggle(pygame.Rect(cx + 20, y, 360, 24), "gerações ativadas (G)",
+                     bool(st["generations"]),
+                     lambda v: (st.__setitem__("generations", v),
+                                setattr(self.trainer, "generations_enabled", v))))
+        y += 30
+        s.add(Label(pygame.Rect(cx + 20, y, 0, 0),
+                    "populações acima de ~300 deixam a simulação mais lenta "
+                    "(use F para acelerar)", 13, WARN))
+        y += 24
+        s.add(Button(pygame.Rect(cx + 20, y, 360, 44), "INICIAR TREINO",
+                     lambda: (self.start_training(int(st["population"]), int(st["epochs"])),
+                              self.close_menu()), "primary"))
+        y += 52
+        s.add(Button(pygame.Rect(cx + 20, y, 175, 36), "Parar e salvar .pt",
+                     lambda: (self.finish_training(), self.close_menu())))
+        s.add(Button(pygame.Rect(cx + 205, y, 175, 36), "Salvar agora (CTRL+S)",
+                     lambda: self.save_best()))
+        y += 46
+        s.add(Button(pygame.Rect(cx + 20, y, 175, 36), "Ver evolução",
+                     lambda: self.close_menu()))
+        s.add(Button(pygame.Rect(cx + 205, y, 175, 36), "Voltar",
+                     lambda: self.goto("main")))
+        y += 46
+        s.add(Label(pygame.Rect(cx + 20, y, 0, 0),
+                    "dica: F acelera a simulação (até 32x) · G liga/desliga a evolução",
+                    14, TEXT_DIM))
+        return s
+
+    def build_resultado(self, cx, h) -> Screen:
+        res = self.train_summary or {}
+        s = Screen("Treino concluído", "o modelo foi salvo — teste na corrida")
+        linhas = [
+            f"épocas: {res.get('épocas', 0)}",
+            f"indivíduos por época: {res.get('indivíduos', 0)}",
+            f"pista: {res.get('pista', '-')} · carro: {res.get('carro', '-')}",
+            f"melhor fitness: {res.get('melhor', 0):,.0f}",
+            f"tempo total: {res.get('tempo', 0) / 60:.1f} min",
+            f"arquivo: {res.get('arquivo', '-')}",
+        ]
+        s.add(ListBox(pygame.Rect(cx - 300, 120, 600, 220), linhas, 0))
+        y = 370
+        s.add(Button(pygame.Rect(cx - 300, y, 290, 44), "Testar na corrida",
+                     self.test_trained_model, "primary"))
+        s.add(Button(pygame.Rect(cx + 10, y, 290, 44), "Treinar mais épocas",
+                     lambda: self.start_training(int(self.settings["population"]),
+                                                 int(self.settings["epochs"]))))
+        y += 54
+        s.add(Button(pygame.Rect(cx - 300, y, 290, 38), "Abrir pasta de modelos",
+                     lambda: mods.open_folder(mods.models_dir())))
+        s.add(Button(pygame.Rect(cx + 10, y, 290, 38), "Menu principal",
+                     lambda: self.goto("main")))
+        return s

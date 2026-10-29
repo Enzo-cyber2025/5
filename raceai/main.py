@@ -139,7 +139,12 @@ def handle_hidden_flags(argv) -> int | None:
 
 def parse_args(argv=None):
     p = argparse.ArgumentParser(description="RaceAI 2D", add_help=True)
-    p.add_argument("--mode", default="menu", choices=["menu", "manual", "ia", "train"])
+    p.add_argument("--mode", default="menu",
+                   choices=["menu", "manual", "ia", "train", "race"],
+                   help="race = corrida com vários carros/modelos; train = treinamento")
+    p.add_argument("--laps", type=int, default=0, help="voltas da corrida (modo race)")
+    p.add_argument("--epochs", type=int, default=0,
+                   help="épocas do treinamento (0 = livre, usa a tecla G)")
     p.add_argument("--model", default="", help="modelo .pt/.npz para carregar ao iniciar")
     p.add_argument("--track", default="", help="pista inicial")
     p.add_argument("--car", default="", help="carro inicial")
@@ -427,6 +432,12 @@ def main(argv=None) -> int:
         app.settings["population"] = args.pop
     if args.device:
         app.settings["device"] = args.device
+    if args.laps:
+        app.settings["race_laps"] = args.laps
+    if args.mode == "race":
+        app.start_race()
+    if args.mode == "train" and args.epochs:
+        app.start_training(int(args.pop) or int(app.settings["population"]), args.epochs)
     if any([args.track, args.car, args.pop, args.device]):
         app.reload_mods()
         app.build_trainer()

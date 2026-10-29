@@ -32,12 +32,17 @@ Requisitos: Windows 10/11 64-bit. Não é necessário instalar Python.
 
 ## Primeiros passos
 
-1. No menu, **3 · Treinar (gerações)** → tecle `F` algumas vezes para acelerar
-   (8x/16x) e veja a população evoluir.
-2. `G` liga/desliga a evolução. `ESC` volta ao menu.
-3. **Modelo .pt** → *Salvar melhor (.pt)* para guardar o que evoluiu.
-4. **1 · Dirigir (manual)** para pilotar você mesmo (setas/WASD).
-5. **Modelo .pt** → *Carregar e dirigir* para ver o modelo pilotando.
+1. **1 · CORRIDA** — monte um grid com vários carros e modelos (tecla `M`) e
+   corra contra eles. `C` troca a câmera, `R` recomeça.
+2. **2 · TREINAMENTO** — defina **indivíduos** e **épocas**, aperte
+   *INICIAR TREINO* e espere: no fim o jogo salva o `.pt` e pergunta se você
+   quer **testar na corrida**.
+3. `F` acelera a simulação (até 32x) e `G` liga/desliga a evolução.
+   `ESC` volta ao menu.
+4. **3 · Dirigir (manual)** para pilotar você mesmo (setas/WASD) e
+   **4 · Assistir IA** para ver um modelo pilotando.
+5. Tela **Modelo .pt** → *Salvar melhor (.pt)* guarda o que evoluiu;
+   *Carregar* coloca qualquer `.pt`/`.npz` no carro ou no grid da corrida.
 
 ## Problemas
 
