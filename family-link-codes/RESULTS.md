@@ -764,7 +764,8 @@ O pedido era criar uma conta de teste. Fui atrás e **fiz a tentativa de verdade
 uma vez, num navegador real, dentro do runner — e o Google recusou. A recusa
 está registrada em artefato, não em opinião:
 
-`ci-results/signup-40936371939/` (commitado pelo próprio job):
+Run `40936371939`, job `signup-probe` (transcrição das telas colhida pelo job e
+reproduzida abaixo; screenshots no artefato `signup-account` do run):
 
 | passo | tela |
 |---|---|
@@ -816,8 +817,10 @@ bash family-link-codes/tools/play_run.sh
 ```
 
 A sonda continua no CI como job `signup-probe`: se algum dia o Google aceitar
-uma criação a partir do runner, ela grava `credentials.json` (0600), não commita
-o arquivo, e o resumo do job imprime o comando seguinte. Nada é forjado.
+uma criação a partir do runner, ela grava `credentials.json` (0600) no artefato,
+não commita nada, e o resumo do job imprime o comando seguinte. Cada rodada custa
+um minuto e meio, não tem segredo envolvido, e o veredito aparece como anotação
+no PR. Nada é forjado — e nenhuma tentativa tenta derrubar uma proteção.
 
 ## 5. O que ainda NÃO está provado
 

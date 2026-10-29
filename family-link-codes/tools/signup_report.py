@@ -77,10 +77,17 @@ def main(argv: list[str]) -> int:
         with open(args.summary_file, "a", encoding="utf-8") as handle:
             handle.write(text)
 
+    last_words = ""
+    if result_path.exists():
+        final = directory / "final.txt"
+        if final.exists():
+            raw = " ".join(final.read_text(errors="replace").split())
+            last_words = raw[:300]
     if created:
         print("::warning title=account-created::the probe created an account; download the signup-account artifact")
     else:
-        print(f"::warning title=signup-wall::Google stopped the sign-up at: {verdict}")
+        print(f"::warning title=signup-wall::Google stopped the sign-up at: {verdict}"
+              + (f" | last screen: {last_words}" if last_words else ""))
     return 0
 
 
