@@ -82,6 +82,24 @@ struct TrainSettings {
     double seconds = 60.0;
     double laps = 0;
     double hidden = 64;
+    double genes_mutados = 0;     // 0 = todos os pesos entram no sorteio
+};
+
+// Controles do jogador (para dirigir na mão): sensibilidade, zona morta,
+// curva do acelerador e assistências. Vale para o teclado.
+struct ControlSettings {
+    double sensibilidade = 1.0;   // ganho do esterço (0,2 – 2,5)
+    double zona_morta = 0.02;     // ignora toques mínimos (0 – 0,3)
+    double gamma = 1.0;           // curva do acelerador/freio (0,5 – 2,5)
+    double retorno = 1.0;         // velocidade com que o volante volta ao centro
+    bool suavizar = true;         // filtra o movimento brusco do teclado
+    bool abs = false;             // freio assistido (não deixa travar a roda)
+    bool controle_tracao = false; // corta a patinação na saída de curva
+
+    Json to_json() const;
+    static ControlSettings from_json(const Json& j);
+    bool save(const std::string& path, std::string* err = nullptr) const;
+    static bool load(const std::string& path, ControlSettings& out, std::string* err = nullptr);
 };
 
 struct UiSettings {
@@ -105,6 +123,16 @@ public:
     int carro_idx = 0;
 
     Mode mode = Mode::Menu;
+
+    // estimativa de tempo para terminar todas as gerações
+    std::vector<double> tempos_geracao;
+    double t0_geracao = 0.0;
+    void aplicar_assistencias();        // ABS/controle de tração no carro do jogador
+    bool salvar_controles() const;
+    bool carregar_controles();
+    void marca_geracao();
+    double eta_segundos() const;          // -1 = ainda não dá para estimar
+    static double agora_segundos();
     // chave entre os dois modos (mesmo app, sem voltar ao menu): o estado de
     // cada um fica vivo, então dá para ir e voltar sem perder nada.
     void alternar_modo();
@@ -115,6 +143,8 @@ public:
     GAConfig ga_cfg;
     PolicySpec policy;
     TrainSettings train_cfg;
+    ControlSettings controles;             // sensibilidade, zona morta etc.
+    std::string controles_path;            // onde salvar (perto do .exe)
     UiSettings ui;
 
     std::unique_ptr<Trainer> trainer;

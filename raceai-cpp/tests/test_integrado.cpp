@@ -110,6 +110,22 @@ static void stub_responder(const char* stub, double steer, double drive) {
 #endif
     if (f) f(steer, drive);
 }
+
+// faz o stub emular o piloto de exemplo (em vez de devolver ação fixa)
+static void stub_modo_piloto(const char* stub, int ligado) {
+#if defined(_WIN32)
+    HMODULE h = LoadLibraryA(stub);
+    if (!h) return;
+    typedef void (*Fn)(int);
+    Fn f = (Fn)GetProcAddress(h, "stubpython_modo_piloto");
+#else
+    void* h = dlopen(stub, RTLD_NOW);
+    if (!h) return;
+    typedef void (*Fn)(int);
+    Fn f = (Fn)dlsym(h, "stubpython_modo_piloto");
+#endif
+    if (f) f(ligado);
+}
 #endif
 
 // um piloto simples, usado para provar que o código colado realmente dirige
@@ -121,7 +137,7 @@ static const char* kPilotoSimples =
     "    frente = min(sensores[3], sensores[4], sensores[5])\n"
     "    acelerador = 0.35 + 0.65 * frente\n"
     "    if frente < 0.15:\n"
-    "        acelerador = -0.4\n"
+    "        acelerador = 0.2\n"
     "    return esterco, acelerador\n";
 
 int main(int argc, char** argv) {
@@ -293,10 +309,9 @@ int main(int argc, char** argv) {
     {
         if (tem_python) {
 #ifdef RACEAI_WITH_PYTHON
-            // o stub devolve uma ação fixa: acelerador moderado, porque um carro
-        // mais potente (física nova) a fundo gruda no muro e as batidas viram
-        // ruído em vez de sinal
-        if (stub && *stub) stub_responder(stub, 0.0, 0.55);
+            // com o stub, emula o piloto de exemplo (mesma conta do Python);
+            // com o Python de verdade, o proprio codigo colado faz isso
+            if (stub && *stub) stub_modo_piloto(stub, 1);
             app.aplicar_codigo_python(kPilotoSimples);
 #endif
         }
@@ -316,6 +331,11 @@ int main(int argc, char** argv) {
         (void)antes;
         for (int i = 0; i < 1500; ++i) app.tick_corrida(4);
         if (ia >= 0) {
+            const Agent& ag = app.race.sim->agents[size_t(ia)];
+            printf("   IA: dist=%.1f m vivo=%d motivo=%s errado=%.1f s parado=%.1f s "
+                   "batidas=%d v=%.1f\n",
+                   ag.max_s, int(ag.car.alive), ag.death_reason.c_str(),
+                   ag.wrong_way_time, ag.idle_time, ag.crashes, ag.car.speed);
             CHECK(app.race.competidores[size_t(ia)].s_total > 3.0,
                   "a IA não saiu do lugar: %.1f m", app.race.competidores[size_t(ia)].s_total);
             CHECK(app.py_driver->call_count() > 10,

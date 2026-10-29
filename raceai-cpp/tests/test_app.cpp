@@ -4,6 +4,7 @@
 #include <string>
 
 #include "../src/app/app_state.hpp"
+#include "../src/core/ga.hpp"
 
 using namespace raceai;
 
@@ -146,6 +147,80 @@ int main() {
     app.race.restart();
     CHECK(app.race.competidores[0].voltas == 0, "voltas não zeraram");
     CHECK(!app.race.finished, "corrida deveria estar ativa após reiniciar");
+
+    // ------------------------------------------- controles do jogador
+    {
+        ControlSettings c;
+        c.sensibilidade = 1.7;
+        c.zona_morta = 0.12;
+        c.gamma = 1.8;
+        c.retorno = 2.2;
+        c.abs = true;
+        c.controle_tracao = true;
+        const std::string arq = tmp_file("raceai_controles.json");
+        std::string err;
+        CHECK(c.save(arq, &err), "não gravou os controles: %s", err.c_str());
+        ControlSettings lido;
+        CHECK(ControlSettings::load(arq, lido, &err), "não leu os controles: %s", err.c_str());
+        CHECK(std::fabs(lido.sensibilidade - 1.7) < 1e-9, "sensibilidade perdida");
+        CHECK(std::fabs(lido.zona_morta - 0.12) < 1e-9, "zona morta perdida");
+        CHECK(std::fabs(lido.gamma - 1.8) < 1e-9, "gamma perdido");
+        CHECK(std::fabs(lido.retorno - 2.2) < 1e-9, "retorno perdido");
+        CHECK(lido.abs && lido.controle_tracao, "assistências perdidas");
+        // saneamento: valores absurdos são limitados, não quebram o jogo
+        Json ruim = Json::object();
+        ruim.set("sensibilidade", Json(99.0));
+        ruim.set("zona_morta", Json(-5.0));
+        ControlSettings san = ControlSettings::from_json(ruim);
+        CHECK(san.sensibilidade <= 2.5, "sensibilidade não foi limitada");
+        CHECK(san.zona_morta >= 0.0, "zona morta negativa");
+    }
+
+    // ------------------------------------------- mutação por contagem
+    {
+        GAConfig g;
+        g.mutation_rate = 1.0;              // todos os genes sorteados
+        g.mutation_sigma = 0.5;
+        g.reset_mutation_chance = 0.0;      // sem reset, para contar direito
+        // uma "rede" de 500 pesos em uma única fatia, para contar os genes
+        PolicySpec sp;
+        sp.obs_dim = 500;
+        sp.act_dim = 2;
+        sp.hidden = {};
+        Population pop(sp, g, 12345);
+        std::vector<float> base(size_t(sp.n_params()), 0.5f);
+        g.genes_mutados = 4;
+        pop.cfg = g;
+        std::vector<float> m4 = pop.mutate(base, 1.0);
+        int diferentes = 0;
+        for (size_t i = 0; i < base.size(); ++i)
+            if (m4[i] != base[i]) diferentes += 1;
+        CHECK(diferentes > 0 && diferentes <= 4,
+              "mutação de 4 parâmetros alterou %d", diferentes);
+
+        pop.cfg.genes_mutados = 0;          // 0 = todos entram no sorteio
+        std::vector<float> mt = pop.mutate(base, 1.0);
+        int dif_todos = 0;
+        for (size_t i = 0; i < base.size(); ++i)
+            if (mt[i] != base[i]) dif_todos += 1;
+        CHECK(dif_todos > 50, "mutação geral alterou pouco: %d", dif_todos);
+    }
+
+    // ------------------------------------------- ETA do treino
+    {
+        AppState t;
+        CHECK(t.eta_segundos() < 0.0, "ETA deveria ser desconhecido antes de treinar");
+        t.iniciar_treino(true);
+        for (int i = 0; i < 60 && t.treinando; ++i) {
+            t.tick_treino(8);
+            if (t.geracao >= 3) break;
+        }
+        if (t.geracao >= 3) {
+            const double eta = t.eta_segundos();
+            CHECK(eta >= 0.0, "ETA ficou negativo depois de 3 gerações: %.1f", eta);
+            CHECK(eta < 1e6, "ETA absurdo: %.1f", eta);
+        }
+    }
 
     printf("\n%d testes passaram, %d falharam\n", ok, falhas);
     return falhas ? 1 : 0;

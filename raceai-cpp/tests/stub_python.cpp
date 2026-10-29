@@ -47,6 +47,9 @@ static std::string g_codigo_instalado;
 static std::string g_erro_instalacao;
 static std::vector<double> g_ultimos_sensores;
 static double g_resposta[2] = {0.0, 0.0};
+// 1 = emula o piloto de exemplo (mesma conta do kPilotoSimples) em vez de
+// devolver uma ação fixa: deixa o teste local bem parecido com o CI real
+static int g_modo_piloto = 0;
 static int g_deve_falhar = 0;
 static int g_chamadas = 0;
 static int g_refs_vivas = 0;
@@ -61,6 +64,7 @@ void stubpython_reset() {
     g_resposta[0] = g_resposta[1] = 0.0;
 }
 void stubpython_set_response(double steer, double drive) { g_resposta[0] = steer; g_resposta[1] = drive; }
+void stubpython_modo_piloto(int ligado) { g_modo_piloto = ligado; }
 void stubpython_set_failure(int f) { g_deve_falhar = f; }
 const char* stubpython_installed_code() { return g_codigo_instalado.c_str(); }
 int stubpython_last_sensor_count() { return int(g_ultimos_sensores.size()); }
@@ -230,9 +234,23 @@ void* PyObject_CallFunctionObjArgs(void* fn, ...) {
         if (g_deve_falhar == 2) return STUB_FALHA;
         if (!lista) return nullptr;
         g_ultimos_sensores = lista->itens;
+        double resp[2] = {g_resposta[0], g_resposta[1]};
+        if (g_modo_piloto && lista->itens.size() >= 16) {
+            const double lateral = lista->itens[14];
+            const double erro = lista->itens[15];
+            double esterco = -(lateral * 0.9 + erro * 1.6);
+            if (esterco > 1.0) esterco = 1.0;
+            if (esterco < -1.0) esterco = -1.0;
+            double frente = lista->itens[3];
+            for (int k = 4; k <= 5; ++k) frente = std::min(frente, lista->itens[size_t(k)]);
+            double acel = 0.35 + 0.65 * frente;
+            if (frente < 0.15) acel = 0.2;
+            resp[0] = esterco;
+            resp[1] = acel;
+        }
         StubObj* t = new StubObj{7};
-        t->itens.push_back(g_resposta[0]);
-        t->itens.push_back(g_resposta[1]);
+        t->itens.push_back(resp[0]);
+        t->itens.push_back(resp[1]);
         g_refs_vivas += 1;
         return t;
     }

@@ -14,6 +14,7 @@ Json GAConfig::to_json() const {
     j.set("crossover_rate", Json(crossover_rate));
     j.set("mutation_rate", Json(mutation_rate));
     j.set("mutation_sigma", Json(mutation_sigma));
+    j.set("genes_mutados", Json(double(genes_mutados)));
     j.set("sigma_decay", Json(sigma_decay));
     j.set("sigma_min", Json(sigma_min));
     j.set("fresh_blood", Json(fresh_blood));
@@ -32,6 +33,8 @@ GAConfig GAConfig::from_json(const Json& j) {
     c.crossover_rate = clamp(j.at("crossover_rate").num(c.crossover_rate), 0.0, 1.0);
     c.mutation_rate = clamp(j.at("mutation_rate").num(c.mutation_rate), 0.0, 1.0);
     c.mutation_sigma = clamp(j.at("mutation_sigma").num(c.mutation_sigma), 0.001, 2.0);
+    if (j.has("genes_mutados"))
+        c.genes_mutados = int(clamp(j.at("genes_mutados").num(0.0), 0.0, 1e9));
     c.sigma_decay = clamp(j.at("sigma_decay").num(c.sigma_decay), 0.5, 1.0);
     c.sigma_min = clamp(j.at("sigma_min").num(c.sigma_min), 0.001, 1.0);
     c.fresh_blood = clamp(j.at("fresh_blood").num(c.fresh_blood), 0.0, 0.5);
@@ -182,6 +185,17 @@ std::vector<float> Population::mutate(const std::vector<float>& genome, double b
     for (float v : g) gvar += (double(v) - gm) * (double(v) - gm);
     double global_std = std::max(std::sqrt(gvar / double(std::max<size_t>(1, g.size()))), 1e-3);
 
+    // modo "N parâmetros": escolhe exatamente N posições do genoma inteiro e
+    // muta só elas (N <= 0 ou >= total => comportamento antigo, por gene)
+    const int n_alvo = cfg.genes_mutados;
+    const bool modo_contagem = n_alvo > 0 && size_t(n_alvo) < g.size();
+    std::vector<size_t> escolhidos;
+    if (modo_contagem) {
+        escolhidos.resize(size_t(n_alvo));
+        for (size_t k = 0; k < escolhidos.size(); ++k)
+            escolhidos[k] = size_t(rng.uniform01() * double(g.size())) % g.size();
+    }
+
     for (const auto& sl : slices_) {
         const size_t i0 = sl.first, i1 = std::min(sl.second, g.size());
         if (i1 <= i0) continue;
@@ -192,8 +206,13 @@ std::vector<float> Population::mutate(const std::vector<float>& genome, double b
         for (size_t i = i0; i < i1; ++i) v += (double(g[i]) - m) * (double(g[i]) - m);
         double layer_std = std::sqrt(v / double(i1 - i0));
         double scale = sigma * boost * (layer_std + 0.15 * global_std);
-        for (size_t i = i0; i < i1; ++i) {
-            if (rng.uniform01() < rate) g[i] += float(rng.normal(0.0, scale));
+        if (modo_contagem) {
+            for (size_t idx : escolhidos)
+                if (idx >= i0 && idx < i1) g[idx] += float(rng.normal(0.0, scale));
+        } else {
+            for (size_t i = i0; i < i1; ++i) {
+                if (rng.uniform01() < rate) g[i] += float(rng.normal(0.0, scale));
+            }
         }
     }
     if (cfg.reset_mutation_chance > 0.0) {

@@ -91,8 +91,14 @@ void Simulation::reset(int rotation) {
         double half = track.half_widths[i];
         double lat = 0.0;
         if (per_row > 1) {
-            double span = std::max(0.0, half - 1.6);
-            lat = -span + 2.0 * span * double(col) / double(per_row - 1);
+            // grid mais junto do meio (0,65 da faixa): deixar um carro largar
+            // colado no muro faz qualquer piloto simples frear e dar ré
+            double span = std::max(0.0, half - 1.6) * 0.65;
+            // fileiras desencontradas: cada fila desloca meia vaga, como num
+            // grid de verdade, e ninguém fica atrás do vácuo do outro
+            double meia = (row % 2) ? (span / double(per_row - 1)) * 0.5 : 0.0;
+            lat = -span + 2.0 * span * double(col) / double(per_row - 1) + meia;
+            if (lat > span) lat -= 2.0 * span / double(per_row - 1);
         }
         Agent& a = agents[k];
         a.car.x = track.center[i].x + track.normals[i].x * lat;

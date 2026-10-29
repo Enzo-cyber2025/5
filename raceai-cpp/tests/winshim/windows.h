@@ -218,3 +218,33 @@ inline DWORD GetLastError() { return 0; }
 inline void* LocalFree(void* p) { return p; }
 inline DWORD FormatMessageW(DWORD, const void*, DWORD, DWORD, LPWSTR, DWORD, void*) { return 0; }
 inline BOOL SystemParametersInfoW(UINT, UINT, void*, UINT) { return 0; }
+
+// --- desenho da chave (owner-drawn) e controles novos ---
+#ifndef BS_OWNERDRAW
+#define BS_OWNERDRAW     0x0000000B
+#define BS_AUTOCHECKBOX  0x00000003
+#define BM_SETCHECK      0x00F1
+#define BM_GETCHECK      0x00F0
+#define BST_CHECKED      1
+#define BST_UNCHECKED    0
+#define WM_DRAWITEM      0x002B
+#endif
+#ifndef CB_RESETCONTENT
+#define CB_RESETCONTENT 0x014B
+#endif
+#ifndef DT_CENTER
+#define DT_CENTER   0x00000001
+#define DT_VCENTER  0x00000004
+#define DT_SINGLELINE 0x00000020
+#endif
+#ifndef SRCCOPY
+#define SRCCOPY ((DWORD)0x00CC0020)
+#endif
+struct DRAWITEMSTRUCT { UINT CtlType, CtlID, itemID, itemAction, itemState;
+                        HWND hwndItem; HDC hDC; RECT rcItem; ULONG_PTR itemData; };
+inline HDC CreateCompatibleDC(HDC) { return nullptr; }
+inline HBITMAP CreateCompatibleBitmap(HDC, int, int) { return nullptr; }
+inline BOOL DeleteDC(HDC) { return 1; }
+inline BOOL BitBlt(HDC, int, int, int, int, HDC, int, int, DWORD) { return 1; }
+inline BOOL RoundRect(HDC, int, int, int, int, int, int) { return 1; }
+inline int DrawTextW(HDC, LPCWSTR, int, RECT*, UINT) { return 0; }

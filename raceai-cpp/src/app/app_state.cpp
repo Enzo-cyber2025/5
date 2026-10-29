@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <fstream>
+#include <chrono>
 #include <sstream>
 
 namespace raceai {
@@ -46,9 +47,9 @@ std::string exemplo_python() {
         "    # reduz onde a pista fecha (pouca distância à frente)\n"
         "    acelerador = 0.35 + 0.65 * frente\n"
         "    if frente < 0.12:\n"
-        "        acelerador = -0.6          # freia forte\n"
+        "        acelerador = 0.18          # só reduz: dar ré mata a volta\n"
         "    if sensores[14] > 0.85 or sensores[14] < -0.85:\n"
-        "        acelerador *= 0.7          # está no limite da pista\n"
+        "        acelerador *= 0.8          # está no limite da pista\n"
         "    return esterco, acelerador\n";
 }
 
@@ -287,6 +288,9 @@ AppState::AppState() {
     policy.obs_dim = sim_cfg.n_rays + 15;
     policy.hidden = {64, 64};
     python_code = exemplo_python();
+    // preferências do jogador ficam num JSON ao lado do executável
+    controles_path = assets_root() + "/controles.json";
+    carregar_controles();
 }
 
 bool AppState::carregar_pista(int idx) {
@@ -319,6 +323,7 @@ void AppState::aplicar_treino_cfg(const TrainSettings& t) {
     sim_cfg.target_laps = t.laps;
     int h1 = std::max(8, int(t.hidden));
     policy.hidden = {h1, std::max(8, h1 / 2)};
+    ga_cfg.genes_mutados = std::max(0, int(t.genes_mutados));
     if (trainer) {
         trainer->sim_cfg = sim_cfg;
         trainer->policy = policy;
@@ -329,6 +334,84 @@ void AppState::aplicar_treino_cfg(const TrainSettings& t) {
         }
         if (trainer->pop.n() != int(t.individuals)) trainer->set_population(int(t.individuals));
     }
+}
+
+// ------------------------------------------------------------- controles
+// As assistências são uma escolha do jogador, não do carro: o que vale é o
+// que está marcado na interface (e fica salvo).
+void AppState::aplicar_assistencias() {
+    if (!race.sim) return;
+    const int fi = race.indice_foco();
+    if (fi < 0 || fi >= race.sim->n()) return;
+    CarSpec& sp = race.sim->specs[size_t(fi)];
+    sp.abs_level = controles.abs ? 0.9 : 0.0;
+    sp.traction_control = controles.controle_tracao ? 0.6 : 0.0;
+}
+
+bool AppState::salvar_controles() const {
+    if (controles_path.empty()) return false;
+    std::string err;
+    if (!controles.save(controles_path, &err)) {
+        fprintf(stderr, "controles: %s\n", err.c_str());
+        return false;
+    }
+    return true;
+}
+
+bool AppState::carregar_controles() {
+    if (controles_path.empty()) return false;
+    std::string err;
+    ControlSettings c;
+    if (!ControlSettings::load(controles_path, c, &err)) return false;
+    controles = c;
+    return true;
+}
+
+// ------------------------------------------------------------- relógio/ETA
+double AppState::agora_segundos() {
+    return double(std::chrono::steady_clock::now().time_since_epoch().count()) *
+           double(std::chrono::steady_clock::period::num) /
+           double(std::chrono::steady_clock::period::den);
+}
+
+// ------------------------------------------------------------- controles
+Json ControlSettings::to_json() const {
+    Json j = Json::object();
+    j.set("sensibilidade", Json(sensibilidade));
+    j.set("zona_morta", Json(zona_morta));
+    j.set("gamma", Json(gamma));
+    j.set("retorno", Json(retorno));
+    j.set("suavizar", Json(suavizar ? 1.0 : 0.0));
+    j.set("abs", Json(abs ? 1.0 : 0.0));
+    j.set("controle_tracao", Json(controle_tracao ? 1.0 : 0.0));
+    return j;
+}
+
+ControlSettings ControlSettings::from_json(const Json& j) {
+    ControlSettings c;
+    if (j.has("sensibilidade")) c.sensibilidade = clamp(j.at("sensibilidade").num(1.0), 0.2, 2.5);
+    if (j.has("zona_morta")) c.zona_morta = clamp(j.at("zona_morta").num(0.02), 0.0, 0.3);
+    if (j.has("gamma")) c.gamma = clamp(j.at("gamma").num(1.0), 0.5, 2.5);
+    if (j.has("retorno")) c.retorno = clamp(j.at("retorno").num(1.0), 0.3, 3.0);
+    if (j.has("suavizar")) c.suavizar = j.at("suavizar").num(1.0) > 0.5;
+    if (j.has("abs")) c.abs = j.at("abs").num(0.0) > 0.5;
+    if (j.has("controle_tracao")) c.controle_tracao = j.at("controle_tracao").num(0.0) > 0.5;
+    return c;
+}
+
+bool ControlSettings::save(const std::string& path, std::string* err) const {
+    if (!Json::save_file(path, to_json())) {
+        if (err) *err = "não foi possível gravar: " + path;
+        return false;
+    }
+    return true;
+}
+
+bool ControlSettings::load(const std::string& path, ControlSettings& out, std::string* err) {
+    Json j;
+    if (!Json::load_file(path, j, err)) return false;
+    out = from_json(j);
+    return true;
 }
 
 // ------------------------------------------------------------- chave de modo
@@ -360,6 +443,28 @@ void AppState::criar_trainer() {
     geracao = 0;
 }
 
+// Tempo estimado para terminar todas as gerações: média do que já rodou.
+void AppState::marca_geracao() {
+    const double agora = agora_segundos();
+    if (t0_geracao > 0.0) {
+        const double dt = agora - t0_geracao;
+        if (dt > 0.0 && dt < 600.0) {
+            tempos_geracao.push_back(dt);
+            if (tempos_geracao.size() > 30) tempos_geracao.erase(tempos_geracao.begin());
+        }
+    }
+    t0_geracao = agora;
+}
+
+double AppState::eta_segundos() const {
+    if (!treinando || geracao <= 0 || tempos_geracao.empty()) return -1.0;
+    double soma = 0.0;
+    for (double t : tempos_geracao) soma += t;
+    const double media = soma / double(tempos_geracao.size());
+    const int faltam = std::max(0, int(train_cfg.generations) - geracao);
+    return media * double(faltam);
+}
+
 void AppState::iniciar_treino(bool novo) {
     if (pistas.empty() || carros.empty()) return;
     if (!trainer || novo) criar_trainer();
@@ -389,6 +494,7 @@ void AppState::tick_treino(int passos) {
             GenHistory h = trainer->finish_episode(true);
             ultima = h;
             geracao = h.generation + 1;
+            marca_geracao();
             loss_history.push_back(h.best_loss);
             erro_history.push_back(h.best_error_pct);
             dist_history.push_back(h.best_distance);
@@ -549,6 +655,7 @@ void AppState::iniciar_corrida(const std::vector<std::string>& modelos_in) {
         specs.push_back(sp);
     }
     race.setup(track_cache_, specs, sim_cfg, reward, 4242);
+    aplicar_assistencias();          // ABS/controle de tração escolhidos pelo jogador
     race.restart();
     mode = Mode::Corrida;
 }
@@ -586,6 +693,17 @@ std::vector<std::string> AppState::treino_lines() const {
     std::snprintf(buf, sizeof(buf), "geração %d / %d   vivos %d/%d", geracao,
                   int(train_cfg.generations), vivos, total);
     out.push_back(buf);
+    {
+        const double eta = eta_segundos();
+        if (eta >= 0.0) {
+            int m = int(eta) / 60, s2 = int(eta) % 60;
+            std::snprintf(buf, sizeof(buf), "ETA %dm %02ds  (faltam %d gerações)", m, s2,
+                          std::max(0, int(train_cfg.generations) - geracao));
+        } else {
+            std::snprintf(buf, sizeof(buf), "ETA -- (ainda sem histórico)");
+        }
+        out.push_back(buf);
+    }
     out.push_back("--- métricas do melhor (agora) ---");
     int best_row = -1;
     double best_fit = -1e18;

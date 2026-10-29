@@ -15,6 +15,7 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <commdlg.h>
+#include <shellapi.h>
 
 #include <algorithm>
 #include <cmath>
@@ -99,6 +100,11 @@ struct Slider {
     }
 };
 static std::vector<Slider> g_sliders;
+static std::vector<Slider> g_sliders_corrida;   // controles do jogador (só na corrida)
+static std::vector<HWND> g_ctrls_corrida;       // botões/mostrados só na corrida
+static HWND g_slider_mut = nullptr;
+static HWND g_chk_abs = nullptr, g_chk_tc = nullptr;
+
 
 static HWND cria_slider(HWND pai, int x, int y, int w, const wchar_t* nome, double* valor,
                         double min, double max, double escala) {
@@ -116,13 +122,32 @@ static HWND cria_slider(HWND pai, int x, int y, int w, const wchar_t* nome, doub
     return s.barra;
 }
 
+// Slider que aparece só no modo corrida (e é salvo quando mexe)
+static HWND cria_slider_corrida(HWND pai, int x, int y, int w, const wchar_t* nome,
+                                double* valor, double min, double max, double escala) {
+    HWND h = cria_slider(pai, x, y, w, nome, valor, min, max, escala);
+    // o último slider criado é este: move para a lista da corrida
+    if (!g_sliders.empty()) {
+        g_sliders_corrida.push_back(g_sliders.back());
+        g_sliders.pop_back();
+    }
+    return h;
+}
+
+static HWND botao_corrida(HWND pai, int id, int x, int y, int w, int h, const wchar_t* texto) {
+    HWND b = botao(pai, id, x, y, w, h, texto);
+    g_ctrls_corrida.push_back(b);
+    return b;
+}
+
 // ------------------------------------------------------------------ ids
 enum {
     ID_CORRIDA = 1001, ID_TREINO, ID_MENU, ID_INICIAR, ID_PAUSAR, ID_REINICIAR,
     ID_SALVAR, ID_CARREGAR, ID_APLICAR_PY, ID_PISTA, ID_CARRO, ID_LIMPAR_PY,
     ID_EXEMPLO_PY, ID_NOVO, ID_ADD_MODELO, ID_AJUDA, ID_SAIR, ID_VOLTAR,
     ID_ABRIR_PY, ID_SALVAR_PY,
-    ID_RECOMPENSA_PADRAO, ID_ZOOM_MAIS, ID_ZOOM_MENOS, ID_CHAVE_MODO
+    ID_RECOMPENSA_PADRAO, ID_ZOOM_MAIS, ID_ZOOM_MENOS, ID_CHAVE_MODO,
+    ID_CHK_ABS, ID_CHK_TC, ID_ABRIR_MODS, ID_RECARR_MODS
 };
 
 // ------------------------------------------------------------------ canvas
@@ -423,6 +448,64 @@ static void pinta_canvas(HDC hdc, int x0, int y0, int w, int h) {
     }
 }
 
+// ------------------------------------------------------------------ a chave
+// Um switch de verdade: duas metades ("Corrida" | "Treino") e um pino que
+// desliza para o lado ativo. Clicar em qualquer ponto alterna o modo.
+static void desenha_chave(HDC hdc, RECT rc, bool corrida) {
+    const int w = rc.right - rc.left, h = rc.bottom - rc.top;
+    HDC mem = CreateCompatibleDC(hdc);
+    HBITMAP bmp = CreateCompatibleBitmap(hdc, w, h);
+    HGDIOBJ ob = SelectObject(mem, bmp);
+
+    // fundo arredondado
+    HBRUSH fundo = CreateSolidBrush(corrida ? RGB(28, 62, 48) : RGB(30, 44, 66));
+    HPEN borda = CreatePen(PS_SOLID, 1, RGB(90, 104, 124));
+    HGDIOBJ ob2 = SelectObject(mem, fundo);
+    HGDIOBJ op = SelectObject(mem, borda);
+    RoundRect(mem, 0, 0, w, h, h / 2, h / 2);
+    SelectObject(mem, ob2);
+    SelectObject(mem, op);
+    DeleteObject(fundo);
+    DeleteObject(borda);
+
+    // pino
+    const int margem = 3;
+    const int knob_w = w / 2 - margem;
+    const int kx = corrida ? margem : w / 2;
+    HBRUSH knob = CreateSolidBrush(corrida ? RGB(86, 214, 140) : RGB(96, 168, 255));
+    HPEN kb = CreatePen(PS_SOLID, 1, RGB(220, 235, 255));
+    ob2 = SelectObject(mem, knob);
+    op = SelectObject(mem, kb);
+    RoundRect(mem, kx, margem, kx + knob_w, h - margem, (h - 2 * margem) / 2,
+              (h - 2 * margem) / 2);
+    SelectObject(mem, ob2);
+    SelectObject(mem, op);
+    DeleteObject(knob);
+    DeleteObject(kb);
+
+    // rótulos
+    SetBkMode(mem, TRANSPARENT);
+    HFONT f = CreateFontW(15, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+                          OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
+                          DEFAULT_PITCH, L"Segoe UI");
+    HGDIOBJ of = SelectObject(mem, f);
+    const wchar_t* esq = L"Corrida";
+    const wchar_t* dir = L"Treino";
+    RECT re = {0, 0, w / 2, h};
+    RECT rd = {w / 2, 0, w, h};
+    SetTextColor(mem, corrida ? RGB(12, 26, 20) : RGB(150, 162, 180));
+    DrawTextW(mem, esq, -1, &re, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+    SetTextColor(mem, corrida ? RGB(150, 162, 180) : RGB(12, 20, 32));
+    DrawTextW(mem, dir, -1, &rd, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+    SelectObject(mem, of);
+    DeleteObject(f);
+
+    BitBlt(hdc, rc.left, rc.top, w, h, mem, 0, 0, SRCCOPY);
+    SelectObject(mem, ob);
+    DeleteObject(bmp);
+    DeleteDC(mem);
+}
+
 // ------------------------------------------------------------------ WndProc
 static void mostra_tela() {
     if (g_botao_chave) {
@@ -442,6 +525,14 @@ static void mostra_tela() {
         if (s.barra) ShowWindow(s.barra, treino ? SW_SHOW : SW_HIDE);
         if (s.texto) ShowWindow(s.texto, treino ? SW_SHOW : SW_HIDE);
     }
+    for (Slider& s : g_sliders_corrida) {
+        if (s.barra) ShowWindow(s.barra, corrida ? SW_SHOW : SW_HIDE);
+        if (s.texto) ShowWindow(s.texto, corrida ? SW_SHOW : SW_HIDE);
+    }
+    for (HWND h : g_ctrls_corrida) if (h) ShowWindow(h, corrida ? SW_SHOW : SW_HIDE);
+    if (g_chk_abs) ShowWindow(g_chk_abs, corrida ? SW_SHOW : SW_HIDE);
+    if (g_chk_tc) ShowWindow(g_chk_tc, corrida ? SW_SHOW : SW_HIDE);
+    if (g_botao_chave) InvalidateRect(g_botao_chave, nullptr, TRUE);
     if (g_edita_python) ShowWindow(g_edita_python, treino ? SW_SHOW : SW_HIDE);
     if (g_texto_metricas) ShowWindow(g_texto_metricas, treino ? SW_SHOW : SW_HIDE);
     if (g_texto_corrida) ShowWindow(g_texto_corrida, corrida ? SW_SHOW : SW_HIDE);
@@ -463,11 +554,37 @@ static void atualiza_textos() {
     }
 }
 
+// Recarrega pistas e carros (inclui os mods que o usuário acabou de copiar).
+static void recarregar_mods() {
+    g_app.pistas = raceai::list_tracks();
+    g_app.carros = raceai::list_cars();
+    if (g_app.pista_idx >= int(g_app.pistas.size()))
+        g_app.pista_idx = int(g_app.pistas.size()) - 1;
+    if (g_app.carro_idx >= int(g_app.carros.size()))
+        g_app.carro_idx = int(g_app.carros.size()) - 1;
+    if (g_app.pista_idx < 0) g_app.pista_idx = 0;
+    if (g_app.carro_idx < 0) g_app.carro_idx = 0;
+
+    auto preenche = [](HWND cb, const std::vector<raceai::AssetItem>& itens, int escolhido) {
+        if (!cb) return;
+        SendMessageW(cb, CB_RESETCONTENT, 0, 0);
+        for (const auto& it : itens)
+            SendMessageW(cb, CB_ADDSTRING, 0, (LPARAM)wide(it.name).c_str());
+        SendMessageW(cb, CB_SETCURSEL, (WPARAM)escolhido, 0);
+    };
+    preenche(GetDlgItem(g_hwnd, ID_PISTA), g_app.pistas, g_app.pista_idx);
+    preenche(GetDlgItem(g_hwnd, ID_CARRO), g_app.carros, g_app.carro_idx);
+}
+
 static void trocar_modo() {
     g_app.alternar_modo();
     mostra_tela();
     atualiza_textos();
 }
+
+// Estado do "volante" virtual: o teclado é tudo-ou-nada, então o comando é
+// filtrado antes de chegar no carro (é o que dá sensação de direção).
+static double g_steer_suave = 0.0, g_drive_suave = 0.0;
 
 static void le_teclado() {
     if (g_app.mode != Mode::Corrida) return;
@@ -480,7 +597,20 @@ static void le_teclado() {
     if (GetAsyncKeyState('W') & 0x8000) drive += 1.0;
     if (GetAsyncKeyState(VK_DOWN) & 0x8000) drive -= 1.0;
     if (GetAsyncKeyState('S') & 0x8000) drive -= 1.0;
-    race_set_human(steer, drive);
+
+    const ControlSettings& c = g_app.controles;
+    // zona morta: ignora toque mínimo
+    if (std::fabs(steer) < c.zona_morta) steer = 0.0;
+    if (std::fabs(drive) < c.zona_morta) drive = 0.0;
+    // ganho da direção e curva do acelerador/freio
+    steer = std::max(-1.0, std::min(1.0, steer * c.sensibilidade));
+    const double sinal = drive < 0.0 ? -1.0 : 1.0;
+    drive = sinal * std::pow(std::fabs(drive), c.gamma);
+    // suavização: taxa depende do "retorno do volante" escolhido
+    const double taxa = c.suavizar ? std::min(1.0, 0.12 * c.retorno) : 1.0;
+    g_steer_suave += (steer - g_steer_suave) * taxa;
+    g_drive_suave += (drive - g_drive_suave) * taxa;
+    race_set_human(g_steer_suave, g_drive_suave);
 }
 
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
@@ -523,7 +653,12 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
 
             botao(hwnd, ID_CORRIDA, P, 140, 120, 30, L"Corrida");
             botao(hwnd, ID_TREINO, P + 128, 140, 120, 30, L"Treinamento");
-            g_botao_chave = botao(hwnd, ID_CHAVE_MODO, P + 256, 140, W - 256, 30, L"F2 ▸ Treino");
+            // a chave: um switch desenhado à mão (clica em cima e alterna)
+            g_botao_chave = CreateWindowW(L"button", L"",
+                                          WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_OWNERDRAW,
+                                          P + 256, 138, W - 256, 34, hwnd,
+                                          (HMENU)(intptr_t)ID_CHAVE_MODO,
+                                          GetModuleHandle(nullptr), nullptr);
 
             // ---- treino: configuração
             int y = 180;
@@ -541,6 +676,12 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                         &g_app.ui.velocidade_sim, 1, 16, 1);
             cria_slider(hwnd, P + 196, y, 180, L"neurônios",
                         &g_app.train_cfg.hidden, 16, 128, 1);
+            y += 46;
+            // 0 = todos os pesos entram no sorteio; N = exatamente N pesos mudam
+            g_slider_mut = cria_slider(hwnd, P, y, 180, L"parâmetros mutados (0=todos)",
+                                       &g_app.train_cfg.genes_mutados, 0, 2000, 1);
+            cria_slider(hwnd, P + 196, y, 180, L"taxa de mutação",
+                        &g_app.ga_cfg.mutation_rate, 0.0, 0.6, 1000);
 
             // ---- recompensa (os sliders pedidos)
             y += 52;
@@ -603,17 +744,43 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                                              GetModuleHandle(nullptr), nullptr);
             SendMessageW(g_texto_metricas, WM_SETFONT, (WPARAM)g_fonte_mono, TRUE);
 
-            // ---- corrida
+            // ---- corrida: controles do jogador
+            rotulo(hwnd, P, 180, W, 18, L"controles do jogador", g_fonte);
+            cria_slider_corrida(hwnd, P, 200, 180, L"sensibilidade",
+                                &g_app.controles.sensibilidade, 0.2, 2.5, 100);
+            cria_slider_corrida(hwnd, P + 196, 200, 180, L"zona morta",
+                                &g_app.controles.zona_morta, 0.0, 0.30, 1000);
+            cria_slider_corrida(hwnd, P, 246, 180, L"curva acel./freio",
+                                &g_app.controles.gamma, 0.5, 2.5, 100);
+            cria_slider_corrida(hwnd, P + 196, 246, 180, L"retorno do volante",
+                                &g_app.controles.retorno, 0.3, 3.0, 100);
+            g_chk_abs = CreateWindowW(L"button", L"ABS",
+                                      WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
+                                      P, 292, 110, 22, hwnd, (HMENU)(intptr_t)ID_CHK_ABS,
+                                      GetModuleHandle(nullptr), nullptr);
+            g_chk_tc = CreateWindowW(L"button", L"controle de tração",
+                                     WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
+                                     P + 120, 292, 170, 22, hwnd, (HMENU)(intptr_t)ID_CHK_TC,
+                                     GetModuleHandle(nullptr), nullptr);
+            SendMessageW(g_chk_abs, WM_SETFONT, (WPARAM)g_fonte, TRUE);
+            SendMessageW(g_chk_tc, WM_SETFONT, (WPARAM)g_fonte, TRUE);
+            SendMessageW(g_chk_abs, BM_SETCHECK,
+                         g_app.controles.abs ? BST_CHECKED : BST_UNCHECKED, 0);
+            SendMessageW(g_chk_tc, BM_SETCHECK,
+                         g_app.controles.controle_tracao ? BST_CHECKED : BST_UNCHECKED, 0);
+
             g_texto_corrida = CreateWindowW(L"edit", L"",
                                             WS_CHILD | ES_MULTILINE | ES_READONLY | WS_VSCROLL,
-                                            P, 180, W, 300, hwnd, nullptr,
+                                            P, 320, W, 160, hwnd, nullptr,
                                             GetModuleHandle(nullptr), nullptr);
             SendMessageW(g_texto_corrida, WM_SETFONT, (WPARAM)g_fonte_mono, TRUE);
-            botao(hwnd, ID_REINICIAR, P, 490, 130, 28, L"Reiniciar");
-            botao(hwnd, ID_ADD_MODELO, P + 138, 490, 150, 28, L"Adicionar modelo");
-            botao(hwnd, ID_MENU, P, 526, 180, 28, L"Voltar ao menu");
+            botao_corrida(hwnd, ID_REINICIAR, P, 490, 130, 28, L"Reiniciar");
+            botao_corrida(hwnd, ID_ADD_MODELO, P + 138, 490, 150, 28, L"Adicionar modelo");
+            botao_corrida(hwnd, ID_MENU, P + 296, 490, 130, 28, L"Menu");
+            botao_corrida(hwnd, ID_ABRIR_MODS, P, 526, 196, 28, L"Abrir pasta de mods");
+            botao_corrida(hwnd, ID_RECARR_MODS, P + 204, 526, 222, 28, L"Recarregar mods");
 
-            rotulo(hwnd, P, 570, W, 130,
+            rotulo(hwnd, P, 562, W, 150,
                    L"Setas/WASD dirigem\nF2 alterna Corrida/Treino\n"
                    L"R reinicia a corrida\nC troca a câmera\n"
                    L"+/- aproxima\nH mostra/esconde o HUD\nESC volta ao menu");
@@ -652,6 +819,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             return 0;
         }
         case WM_HSCROLL: {
+            bool achou = false;
             for (Slider& s : g_sliders) {
                 if (s.barra == (HWND)lp && s.valor) {
                     int pos = int(SendMessageW(s.barra, TBM_GETPOS, 0, 0));
@@ -659,9 +827,21 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                     s.atualiza();
                     g_app.aplicar_recompensa(g_app.reward);
                     g_app.aplicar_treino_cfg(g_app.train_cfg);
+                    achou = true;
                     break;
                 }
             }
+            for (Slider& s : g_sliders_corrida) {
+                if (s.barra == (HWND)lp && s.valor) {
+                    int pos = int(SendMessageW(s.barra, TBM_GETPOS, 0, 0));
+                    *s.valor = double(pos) / s.escala;
+                    s.atualiza();
+                    g_app.salvar_controles();
+                    achou = true;
+                    break;
+                }
+            }
+            (void)achou;
             return 0;
         }
         case WM_GETMINMAXINFO: {
@@ -670,6 +850,14 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             mm->ptMinTrackSize.x = 900;
             mm->ptMinTrackSize.y = 560;
             return 0;
+        }
+        case WM_DRAWITEM: {
+            const DRAWITEMSTRUCT* di = (const DRAWITEMSTRUCT*)lp;
+            if (di->CtlID == ID_CHAVE_MODO) {
+                desenha_chave(di->hDC, di->rcItem, g_app.mode == Mode::Corrida);
+                return TRUE;
+            }
+            break;
         }
         case WM_COMMAND: {
             const int id = LOWORD(wp);
@@ -684,6 +872,27 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                 g_app.carregar_carro(i);
             } else if (id == ID_CHAVE_MODO) {
                 trocar_modo();
+            } else if (id == ID_CHK_ABS || id == ID_CHK_TC) {
+                g_app.controles.abs =
+                    SendMessageW(g_chk_abs, BM_GETCHECK, 0, 0) == BST_CHECKED;
+                g_app.controles.controle_tracao =
+                    SendMessageW(g_chk_tc, BM_GETCHECK, 0, 0) == BST_CHECKED;
+                g_app.aplicar_assistencias();
+                g_app.salvar_controles();
+            } else if (id == ID_ABRIR_MODS) {
+                const std::wstring dir = wide(mods_tracks_dir());
+                ShellExecuteW(nullptr, L"explore", dir.c_str(), nullptr, nullptr,
+                              SW_SHOWNORMAL);
+            } else if (id == ID_RECARR_MODS) {
+                recarregar_mods();
+                MessageBoxW(hwnd,
+                            wide(std::to_string(g_app.pistas.size()) + " pistas e " +
+                                 std::to_string(g_app.carros.size()) +
+                                 " carros carregados (incluindo os seus mods).\n\n"
+                                 "Solte os JSONs em mods/tracks e mods/cars e clique aqui "
+                                 "de novo.")
+                                .c_str(),
+                            L"Mods recarregados", MB_OK | MB_ICONINFORMATION);
             } else if (id == ID_TREINO) {
                 g_app.mode = Mode::Treinamento;
                 mostra_tela();

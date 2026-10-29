@@ -24,6 +24,10 @@ struct GAConfig {
     std::string crossover = "blend";  // blend | uniform
     double crossover_rate = 0.90;
     double mutation_rate = 0.08;    // probabilidade por gene
+    // quantos pesos são alterados por mutação. 0 (ou maior que o total) =
+    // todos os genes passam pelo sorteio de `mutation_rate`; N = exatamente N
+    // posições sorteadas são mutadas (ignorando a probabilidade).
+    int genes_mutados = 0;
     double mutation_sigma = 0.25;
     double sigma_decay = 0.995;
     double sigma_min = 0.03;
