@@ -70,11 +70,11 @@ jobs:
         shell: msys2 {0}
         run: |
           cd raceai-cpp
-          ls python/
-          ./build/raceai_pytest.exe python/python311.dll > python.log 2>&1
+          ls -la python/ > python.log 2>&1
+          ./build/raceai_pytest.exe python/python311.dll >> python.log 2>&1
           code=$?
-          body=$(sed -e 's/\r$//' -e 's/%/%25/g' python.log | awk '{printf "%s%0A", $0}')
-          echo "::error::codigo=${code} saida=${body}"
+          echo "exit=$code" >> python.log
+          cat python.log
           exit $code
 
       - name: "Treino rápido: a loss precisa cair"
@@ -83,49 +83,17 @@ jobs:
           cd raceai-cpp
           ./build/raceai_train.exe -g 25 -p 30 --seconds 30 --seed 5 2>&1 | tail -12
 
-      - name: Guardar saída dos passos
+      - name: Publicar logs no branch ci-logs
         if: always()
         shell: msys2 {0}
         run: |
-          cd raceai-cpp
-          {
-            echo "run: $GITHUB_RUN_ID"
-            echo '## python'
-            echo '```'
-            ./build/raceai_pytest.exe python/python311.dll 2>&1 | tail -40
-            echo "exit_python=$?"
-            echo '```'
-            ls -la python/ | head -20
-          } > python.log 2>&1
-          tail -60 python.log
-
-      - name: Publicar logs para depuração
-        if: failure()
-        shell: msys2 {0}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        run: |
-          {
-            echo "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-            echo
-            echo '### compilacao'
-            echo '```'
-            tail -60 raceai-cpp/build.log 2>/dev/null
-            echo '```'
-            echo
-            echo '### testes'
-            echo '```'
-            tail -60 raceai-cpp/test.log 2>/dev/null
-            echo '```'
-            echo
-            echo '### python'
-            echo '```'
-            cat raceai-cpp/python.log 2>/dev/null
-            echo '```'
-          } > /tmp/logs.md
-          gh release delete ci-logs --yes 2>/dev/null || true
-          gh release create ci-logs --title "CI logs (depuracao)" --notes-file /tmp/logs.md || true
+          cd "$GITHUB_WORKSPACE"
+          git config user.email "ci@example.com"
+          git config user.name "CI"
+          git checkout -B ci-logs
+          git add -f raceai-cpp/build.log raceai-cpp/test.log raceai-cpp/python.log || true
+          git commit -m "CI logs do run $GITHUB_RUN_ID" || true
+          git push -f origin ci-logs || true
 
       - name: Empacotar
         shell: msys2 {0}

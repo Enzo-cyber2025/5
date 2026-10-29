@@ -219,12 +219,13 @@ bool PyDriver::load_runtime(const std::string& dll, std::string* err) {
 void PyDriver::unload() {
     PyApi& a = api();
     if (lib_ && initialized_) {
-        if (module_main_ && a.decref) a.decref(module_main_);
-        if (fn_call_ && a.decref) a.decref(fn_call_);
-        if (fn_install_ && a.decref) a.decref(fn_install_);
-        if (a.finalize) a.finalize();
+        // Não chamamos Py_FinalizeEx(): vazar os objetos do interpretador é
+        // infinitamente melhor do que travar o processo na saída (o sistema
+        // operacional recolhe tudo de qualquer forma).
+        (void)a;
     }
-    lib_close(lib_);
+    // Também não descarregamos a DLL: encerrar o CPython junto com o processo
+    // evita ordem de destruição problemática entre o nosso código e o runtime.
     lib_ = nullptr;
     initialized_ = false;
     installed_ = false;
