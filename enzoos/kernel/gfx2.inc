@@ -185,12 +185,12 @@ g2_grad:
         mov ebx, r9d                ; c1
         test r15d, r15d
         jle .done
-        xor ecx, ecx                ; linha
+        xor r11d, r11d              ; linha (ecx é parâmetro h do surf_fill)
 .row:
-        cmp ecx, r15d
+        cmp r11d, r15d
         jae .done
         ; t = linha * 256 / h
-        mov eax, ecx
+        mov eax, r11d
         shl eax, 8
         xor edx, edx
         div r15d
@@ -234,14 +234,14 @@ g2_grad:
         ; desenha a linha
         mov edi, r12d
         mov esi, r13d
-        add esi, ecx
+        add esi, r11d
         mov edx, r14d
         mov ecx, 1
         push r14
         mov r14d, r8d
         call surf_fill
         pop r14
-        inc ecx
+        inc r11d
         jmp .row
 .done:
         pop r15
@@ -272,26 +272,26 @@ g2_round_blend:
         jbe .rok
         mov ebx, 16
 .rok:
-        xor ecx, ecx                ; linha
+        xor r11d, r11d              ; linha (ecx é parâmetro h do g2_blend_fill)
 .row:
-        cmp ecx, r15d
+        cmp r11d, r15d
         jae .done
         ; recuo nas linhas dos cantos
         xor edx, edx
-        cmp ecx, ebx
+        cmp r11d, ebx
         jae .bot
-        mov eax, ecx
+        mov eax, r11d
         call g2_inset
         mov edx, eax
         jmp .have
 .bot:
         mov eax, r15d
         sub eax, ebx
-        cmp ecx, eax
+        cmp r11d, eax
         jb .have
         mov eax, r15d
         dec eax
-        sub eax, ecx
+        sub eax, r11d
         call g2_inset
         mov edx, eax
 .have:
@@ -300,7 +300,7 @@ g2_round_blend:
         mov edi, r12d
         add edi, edx
         mov esi, r13d
-        add esi, ecx
+        add esi, r11d
         mov eax, r14d
         sub eax, edx
         sub eax, edx
@@ -312,13 +312,13 @@ g2_round_blend:
 .full:
         mov edi, r12d
         mov esi, r13d
-        add esi, ecx
+        add esi, r11d
         mov edx, r14d
         mov ecx, 1
         mov r8d, ebp
         call g2_blend_fill
 .row_end:
-        inc ecx
+        inc r11d
         jmp .row
 .done:
         pop r15

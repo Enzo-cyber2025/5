@@ -32,7 +32,6 @@ k_cefs_init:
         add r8, rdx
         mov [cefs_data], r8
         xor r9d, r9d                   ; índice
-        lea r10, [ce_files]
 .conv:
         cmp r9d, ecx
         jae .done
@@ -41,6 +40,10 @@ k_cefs_init:
         mov edx, r9d
         imul edx, CEFS_ENT
         add r11, rdx                   ; r11 = entrada CEFS
+        mov edx, r9d
+        imul edx, 40
+        lea r10, [ce_files]
+        add r10, rdx                   ; r10 = slot destino (stride fixo de 40)
         ; nome (20 bytes, maiúsculas)
         mov rsi, r11
         mov edx, 19
@@ -61,7 +64,12 @@ k_cefs_init:
         jnz .ncpy
 .nz:
         mov byte [r10], 0
-        add r10, 4                     ; pula o resto do campo nome
+        ; recarrega a base do slot e posiciona no campo ptr (+24)
+        mov edx, r9d
+        imul edx, 40
+        lea r10, [ce_files]
+        add r10, rdx
+        add r10, 24
         ; ptr = cefs_data + offset
         mov edx, [r11 + CEN_OFF]
         mov rbx, [cefs_data]
@@ -73,7 +81,6 @@ k_cefs_init:
         mov [r10], edx
         mov edx, [r11 + CEN_FLAGS]
         mov [r10 + 4], edx
-        add r10, 8
         inc r9d
         jmp .conv
 .done:
@@ -91,25 +98,28 @@ k_cefs_init:
 ; -----------------------------------------------------------------------------
 cefs_find:
         push rbx
-        xor ecx, ecx
+        push r12
+        xor r12d, r12d                 ; índice (rcx é clobberado pelo k_strcasecmp)
 .loop:
-        cmp ecx, [ce_count]
+        cmp r12d, [ce_count]
         jae .no
-        imul rax, rcx, 40
+        imul rax, r12, 40
         lea rbx, [ce_files]
         add rbx, rax
         mov rsi, rbx
         call k_strcasecmp
         test rax, rax
         jz .found
-        inc ecx
+        inc r12d
         jmp .loop
 .found:
-        mov rax, rcx
+        mov rax, r12
+        pop r12
         pop rbx
         ret
 .no:
         mov rax, -1
+        pop r12
         pop rbx
         ret
 
