@@ -815,6 +815,107 @@ rascunho do teste é que assumiu o contrário.
 
 Suite do projeto: **913**.
 
+### Pré-traduzir um jogo de verdade, e executar o resultado
+
+Até aqui a medição era sobre o HandBrake: 1 função traduzida em 515. Cobertura é uma
+afirmação sobre o tradutor; não diz nada sobre se as palavras que ele escreveu **são
+código**. `prewarm --execute` é a outra metade: mapeia a imagem de cada módulo e
+chama o ARM64 que a varredura produziu, num filho forkado com alarme, e reporta
+retornou / falhou / expirou por registro.
+
+Forkado porque o código não é confiável no sentido comum — veio do binário de outra
+pessoa e não há prova de que termine. O alarme é armado **antes** da chamada; o
+primeiro rascunho o armava na saída, o que deixaria um loop sem fim rodando para
+sempre com o pai bloqueado em `waitpid`.
+
+**Luanti 5.17.0 win64** — o motor que o Minetest se tornou: gratuito, código aberto,
+um `.exe` mais suas DLLs, tamanho e sha256 fixados contra o release.
+
+```
+módulos registrados:            19 de 19 mapeados
+pontos de entrada:              3341
+blocos descobertos:             178360
+bytes de guest decodificados:   4429556
+chamadas ao decoder:            1074631
+funções pré-traduzidas:         151  (4,52% das tentadas)
+código ARM64 escrito:           1868 bytes   registros no cache: 118
+decorrido:                      44ms
+
+registros executados:           118
+  retornaram:                   118
+  falharam:                     0
+  expiraram:                    0
+  não puderam rodar:            0
+```
+
+**Tudo que foi traduzido e coube no harness rodou em ARM64 real e retornou** — sem
+fault, sem hang — com a imagem do próprio módulo mapeada por baixo. Cobertura de
+4,52% aqui contra 0,19% no HandBrake, e isso é propriedade dos binários, não de uma
+mudança: as exportações do Luanti incluem muitos acessores pequenos cujo corpo inteiro
+cabe no subconjunto.
+
+Bloqueios ranqueados: `8B` ×690, `FF` ×559, `83` ×266, `8D` ×266, `E8` ×225, `C7`
+×185, `B8` ×142, `0F B6` ×105, `0F 97`/`0F 94` ×102, `89` ×74, `0F 29` ×65, `81` ×54.
+
+#### O que isto não é
+
+**Isto não é o jogo rodando.** Uma função traduzida isoladamente é chamada com um
+argumento que ninguém escolheu, seus imports estão não resolvidos (qualquer função
+que tivesse um foi recusada — e é exatamente isso que torna seguro executá-las), e o
+sistema operacional em volta dela não existe. 95,48% dos pontos de entrada seguem
+recusados. Um jogo precisa de Win32, de OpenGL ou D3D, de Lua, de threads, de
+exceções/SEH e de um loader com relocações.
+
+O que está provado é mais estreito e ainda assim vale: as palavras emitidas executam,
+terminam e não falham, com a imagem do módulo mapeada por baixo delas.
+
+#### `pe_map_image`, e por que ela não está no prewarm
+
+O mapeador vive em `pe_load`, não no `prewarm`, porque é independente de arquitetura
+e o harness de execução não é. Dentro do bloco aarch64 do prewarm ele nunca seria
+compilado nem testado num host x86-64 — e sua lógica é justamente do tipo que falha
+em silêncio: copiar uma seção para o seu deslocamento no arquivo em vez do seu
+endereço virtual põe todo global no lugar errado, ainda dentro do mapeamento, ainda
+devolvendo bytes. `test_pe_load` fixa isso contra um fixture construído para que
+RVA ≠ deslocamento, mais as três recusas; 160 checks ali, eram 147.
+
+Não há passe de relocações, e não é atalho: o acesso à imagem é `LDR Xt, [X19, X16]`
+com X16 carregando um RVA, então todo endereço é calculado em tempo de execução a
+partir de onde o mapeamento caiu. Um tradutor que gravasse um VA absoluto precisaria
+de relocações aplicadas antes da primeira instrução rodar, e ficaria amarrado a um
+endereço de carga — o que também tornaria sua saída não cacheável entre processos.
+Ele nunca devolve um mapeamento parcial: uma seção que falhou em copiar deixa um
+buraco, e um buraco lê como zeros que parecem dados.
+
+#### Quatro corridas de CI para um passo de asserção
+
+O passo que confere a execução falhou três vezes **enquanto a medição dentro do log
+estava correta nas três**. Cada causa é um modo de um teste mentir:
+
+1. O runner invoca `run:` como `bash -e {0}`; escrever `set -uo pipefail` **não**
+   desliga o errexit, e `head -1` num pipeline manda SIGPIPE para o grep anterior —
+   sob pipefail isso vira status 141 e o errexit transforma um resultado bom em
+   saída 1, sem mensagem.
+2. `grep` decide que um log com um byte não-UTF8 (vindo de um caminho dentro do zip)
+   é binário, não imprime nada e ainda sai 0 com `-q`. `-a` força modo texto.
+3. O rótulo do sumário é alinhado em coluna — `printf` escreve
+   `"functions pre-translated:  %u"` com **dois** espaços. As anotações que este
+   sandbox consegue ler comprimem espaços com `tr -s`, então o padrão com um espaço
+   parecia certo e não casava com nada.
+4. E o pior: uma extração que não casa nada virava `0`, e `0` é também o valor
+   honesto quando nada traduziu — indistinguíveis pelo número. Como a asserção
+   principal é condicionada a `translated > 0`, **todas as corridas anteriores
+   passaram sem nunca avaliá-la**. Uma asserção pulada em silêncio lê como cobertura.
+
+Agora o diagnóstico vai para stderr e o helper retorna não-zero em vez de chamar
+`die`: dentro de uma substituição de comando, o `echo` do `die` seria capturado para
+a variável e o `exit` encerraria só a subshell — o passo falharia com a mensagem
+engolida. Verificado nos dois sentidos: com o rótulo preenchido e duas linhas de
+progresso anteriores reportando 0, a extração devolve 151 e o passo sai 0; removendo
+todas as ocorrências, sai 1 e diz por quê.
+
+Suite do projeto: **926**.
+
 ### Não feito
 
 Operandos de memória **fora da pilha do guest e da própria imagem do módulo**: o
