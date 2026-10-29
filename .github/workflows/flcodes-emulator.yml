@@ -103,8 +103,10 @@ jobs:
             | tee "$RUNNER_TEMP/signup/summary.txt" || true
       - name: Publish the verdict into the repo (artifacts are not reachable from here)
         if: always()
+        continue-on-error: true
         run: |
           set +e
+          BRANCH="${{ github.head_ref || github.ref_name }}"
           DEST="ci-results/signup-${{ github.run_id }}"
           mkdir -p "$DEST"
           cp -a "$RUNNER_TEMP/signup/." "$DEST/" 2>/dev/null
@@ -114,7 +116,18 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           git add "$DEST"
           git commit -q -m "ci: sign-up probe verdict for run ${{ github.run_id }}"
-          git push origin "HEAD:${{ github.head_ref || github.ref_name }}"
+          # The branch may have moved (a person pushes while this runs): rebase
+          # and retry rather than failing the job over a push race.
+          for attempt in 1 2 3 4; do
+            git fetch -q origin "$BRANCH"
+            git rebase -q "origin/$BRANCH" || { git rebase --abort 2>/dev/null; true; }
+            if git push -q origin "HEAD:$BRANCH"; then
+              echo "verdict committed on attempt $attempt"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::warning title=verdict-not-committed::the push raced four times; the job summary and the artifact still have it"
       - name: Publish the screenshots (and the account, if it exists)
         if: always()
         uses: actions/upload-artifact@v4
