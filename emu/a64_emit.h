@@ -154,6 +154,10 @@ uint32_t a64_ldr_post(unsigned rt, unsigned rn, int off);
  * [rbp-8], [rbp-16], ... so the signed unscaled form is the one that works. */
 uint32_t a64_stur(unsigned rt, unsigned rn, int off);
 uint32_t a64_ldur(unsigned rt, unsigned rn, int off);
+/* The 32-bit forms. A W-form load zero-extends into the X register, which is what
+ * a 32-bit x86-64 load does, so the width is the only thing to get right. */
+uint32_t a64_stur_w(unsigned rt, unsigned rn, int off);
+uint32_t a64_ldur_w(unsigned rt, unsigned rn, int off);
 
 /* The guest stack frame record: saves the caller's X14 (guest RSP) and X15
  * (guest RBP). Saving them is what makes the guest stack pointer balanced at
@@ -192,6 +196,39 @@ uint32_t a64_add_w_imm(unsigned rd, unsigned rn, uint16_t imm12);
 uint32_t a64_sub_w_imm(unsigned rd, unsigned rn, uint16_t imm12);
 uint32_t a64_subs_w_imm(unsigned rd, unsigned rn, uint16_t imm12);
 uint32_t a64_adds_w_imm(unsigned rd, unsigned rn, uint16_t imm12);
+
+/* ---- access relative to a base register ----------------------------------
+ *
+ * LDR/STR with a register offset, unsigned (option=011, S=0). This is how a
+ * RIP-relative access to the module's own image is emitted once the displacement
+ * is known: the RVA is materialised in a scratch register and added by the load
+ * itself, so no absolute address ever enters the code.
+ *
+ * The base is X19, which holds the host address the guest module's image is
+ * mapped at - the address RVA 0 lives at - and which the caller supplies on entry
+ * exactly as it supplies the guest stack pointer in X14. Like X14 it is
+ * callee-saved, so a host callee preserves it, and like X14 keeping it out of the
+ * emitted words is what lets a translation be cached across processes.
+ *
+ * Derivation, checked against four independently known words:
+ *   size[31:30] 111[29:27] V=0[26] 00[25:24] opc[23:22] 1[21] Rm[20:16]
+ *   option[15:13] S[12] 10[11:10] Rn[9:5] Rt[4:0]
+ *   STR opc=00, LDR opc=01; size=11 for X, 10 for W.
+ *   ldr x0,[x1,x2] = 0xF8626820   str x0,[x1,x2] = 0xF8226820
+ *   ldr w0,[x1,x2] = 0xB8626820   str w0,[x1,x2] = 0xB8226820
+ * The W forms zero-extend into the X register, which is what a 32-bit x86-64 load
+ * does too, so the width choice is the only thing that has to be right.
+ */
+uint32_t a64_ldr_reg(unsigned rt, unsigned rn, unsigned rm);
+uint32_t a64_str_reg(unsigned rt, unsigned rn, unsigned rm);
+uint32_t a64_ldr_reg_w(unsigned rt, unsigned rn, unsigned rm);
+uint32_t a64_str_reg_w(unsigned rt, unsigned rn, unsigned rm);
+
+/* The image-base frame record. X19 holds the mapped image base; X20 is saved only
+ * because STP and LDP move two registers, and reserving it keeps the pair from
+ * having to borrow a register that a later revision needs. */
+uint32_t a64_stp_imgbase_push(void);   /* STP X19, X20, [SP, #-16]! */
+uint32_t a64_ldp_imgbase_pop(void);    /* LDP X19, X20, [SP], #16   */
 
 /* Non-zero when words fits the branch's field, so the caller can refuse. */
 int a64_cond_range_ok(int32_t words);

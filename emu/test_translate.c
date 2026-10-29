@@ -65,6 +65,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 #include <sys/mman.h>
 #include <sys/wait.h>
@@ -1428,9 +1429,15 @@ static void test_guest_stack_translation(void)
         static const uint8_t g[] = { 0x48,0x8B,0x05,0x10,0x00,0x00,0x00, 0xC3 };
         st = tr_translate_function(g, sizeof(g), IMAGE_BASE, NULL, NULL, &f);
         CHECK(st == TR_UNSUPPORTED, "mov rax,[rip+0x10] returned %s", tr_status_name(st));
-        CHECK(f.reason == TRR_GUEST_MEM,
-              "a RIP-relative load was reported as %s, expected memory-not-on-guest-stack",
-              tr_reason_name(f.reason));
+        /* This used to assert memory-not-on-guest-stack, the one bucket every
+         * unmodelled addressing form shared. It now has its own reason, because a
+         * RIP-relative operand is translatable and the other two are not: a caller
+         * can fix this one by supplying an image base, and no amount of image base
+         * fixes an absolute disp32 or a general-register dereference. A histogram
+         * that cannot tell those apart cannot say which is worth doing next. */
+        CHECK(f.reason == TRR_IMG_BASE,
+              "a RIP-relative load with no image base was reported as %s, "
+              "expected image-base-unknown", tr_reason_name(f.reason));
     }
     {
         /* mod=00 with SIB base=101 is an absolute disp32 with NO base register.
@@ -1438,8 +1445,9 @@ static void test_guest_stack_translation(void)
         static const uint8_t g[] = { 0x48,0x8B,0x04,0x25,0x10,0x00,0x00,0x00, 0xC3 };
         st = tr_translate_function(g, sizeof(g), IMAGE_BASE, NULL, NULL, &f);
         CHECK(st == TR_UNSUPPORTED, "mov rax,[abs] returned %s", tr_status_name(st));
-        CHECK(f.reason == TRR_GUEST_MEM,
-              "an absolute-address load was reported as %s", tr_reason_name(f.reason));
+        CHECK(f.reason == TRR_ABS_ADDR,
+              "an absolute-address load was reported as %s, expected "
+              "absolute-addressing", tr_reason_name(f.reason));
     }
     {
         /* A dereference through a general register: no guest memory model. */
@@ -1564,17 +1572,25 @@ static size_t append_const(uint32_t *prog, size_t n, unsigned rd, uint64_t v)
  * wrapper that then executed RET without restoring it would jump to its own
  * epilogue forever. That is the same class of bug the frame record was added for
  * in an earlier milestone, one level up. */
+/* imgbase is the host address the guest image is mapped at, loaded into X19 for
+ * the body's RIP-relative accesses; 0 when the body has none. X19/X20 are saved
+ * and restored unconditionally, which costs two words and means a translated
+ * function cannot leak a register its caller expects preserved. */
 static size_t build_trampoline(uint32_t *prog, uint64_t arg, uint64_t gtop,
+                               uint64_t imgbase,
                                const uint32_t *body, size_t body_n)
 {
     size_t n = 0, bl;
 
     prog[n++] = a64_stp_frame_push();
     prog[n++] = a64_stp_gstack_push();
+    prog[n++] = a64_stp_imgbase_push();
     n = append_const(prog, n, 0u, arg);
     n = append_const(prog, n, 14u, gtop);
+    n = append_const(prog, n, 19u, imgbase);
     bl = n;
     prog[n++] = 0u;                          /* BL, patched once the body is placed */
+    prog[n++] = a64_ldp_imgbase_pop();
     prog[n++] = a64_ldp_gstack_pop();
     prog[n++] = a64_ldp_frame_pop();
     prog[n++] = a64_ret();
@@ -1606,7 +1622,7 @@ static int run_guest(const char *what, const uint8_t *g, size_t glen,
         CHECK(0, "%s: body of %zu words does not fit the trampoline", what, f.n);
         return 0;
     }
-    n = build_trampoline(prog, arg, a->top, f.words, f.n);
+    n = build_trampoline(prog, arg, a->top, 0, f.words, f.n);
     page = code_page(prog, n, &plen);
     if (!page) { CHECK(0, "%s: could not map an executable page", what); return 0; }
     ok = exec_generated((uint64_t (*)(void))page, result, &to, &s);
@@ -2052,6 +2068,375 @@ static void test_width32_executes(void)
 }
 #endif
 
+/* Assembles one RIP-relative mov at body offset `off` reaching `target`, which is
+ * expressed relative to the body's own start so the displacements here are
+ * computed rather than hand-worked. Returns the instruction length, which differs
+ * by width: REX.W makes it 7 bytes, the 32-bit form has no REX and is 6. Getting
+ * that wrong shifts every following displacement by one. */
+static size_t put_rip_rel(uint8_t *b, size_t off, int store, int w32,
+                          uint64_t target)
+{
+    size_t  len = w32 ? 6u : 7u;
+    int64_t d = (int64_t)target - (int64_t)(off + len);
+    size_t  k = 0;
+    if (!w32) b[off + k++] = 0x48u;                 /* REX.W */
+    b[off + k++] = store ? 0x89u : 0x8Bu;           /* mov r/m,r or mov r,r/m */
+    b[off + k++] = 0x05u;                           /* mod=00 reg=000 rm=101  */
+    b[off + k++] = (uint8_t)(d & 0xFF);
+    b[off + k++] = (uint8_t)((d >> 8) & 0xFF);
+    b[off + k++] = (uint8_t)((d >> 16) & 0xFF);
+    b[off + k++] = (uint8_t)((d >> 24) & 0xFF);
+    return len;
+}
+
+/* ---------------------------------------------------------------------------
+ * RIP-relative image access: the translation side, which is architecture
+ * independent and so runs everywhere. What is NOT checked here is that the words
+ * do what they say - that needs real ARM64 and is in the execution test below.
+ * ------------------------------------------------------------------------ */
+static void test_image_relative_translation(void)
+{
+    static const uint64_t img_va   = 0x140000000ULL;
+    static const uint64_t img_sz   = 0x2000ULL;
+    static const uint64_t code_rva = 0x100ULL;
+    static const uint64_t d64_rva  = 0x1008ULL;
+    static const uint64_t d32_rva  = 0x1000ULL;
+    uint8_t   g[32], body[24];
+    size_t    k, gn;
+    tr_func   f;
+    tr_status st;
+
+    printf("translating RIP-relative access to the module's own image\n");
+
+    /* The emitted form, word for word. The RVA goes into X16 as a 64-bit
+     * constant and X19 + X16 does the addressing, so no absolute host address
+     * appears anywhere - which is what lets this translation be cached and reused
+     * by a process that maps the same image somewhere else. */
+    memset(body, 0, sizeof body);
+    k = put_rip_rel(body, 0, 0, 0, d64_rva - code_rva);
+    body[k++] = 0xC3;
+    memcpy(g, body, k); gn = k;
+    st = tr_translate_function_img(g, gn, img_va + code_rva, 0, img_va, img_sz,
+                                   NULL, NULL, &f);
+    CHECK(st == TR_OK, "mov rax,[rip] returned %s (%s)", tr_status_name(st),
+          f.detail ? f.detail : "?");
+    if (st == TR_OK) {
+        CHECK(f.needs_imgbase == 1,
+              "a RIP-relative load did not request the image-base frame record");
+        CHECK(f.needs_gstack == 0,
+              "a RIP-relative load asked for the guest stack arena too");
+        CHECK(f.n == 5, "mov rax,[rip] emitted %zu words, expected 5 "
+                        "(STP, MOVZ, LDR, LDP, RET)", f.n);
+        if (f.n >= 5) {
+            CHECK(f.words[0] == a64_stp_imgbase_push(),
+                  "word 0 is 0x%08X, expected STP X19,X20 0x%08X",
+                  f.words[0], a64_stp_imgbase_push());
+            /* The immediate is the RVA from the image base, 0x1008, and NOT the
+             * 0xF08 displacement from the code buffer's own start. Those differ by
+             * code_rva, so this one assertion is what pins the RVA to the image
+             * base: derive it from the wrong origin and every global this function
+             * touches is off by a constant, silently, while the code still runs. */
+            CHECK(f.words[1] == a64_movz_x(16u, (uint16_t)d64_rva),
+                  "word 1 is 0x%08X, expected MOVZ X16,#%#llx (the RVA from the "
+                  "image base) 0x%08X", f.words[1], (unsigned long long)d64_rva,
+                  a64_movz_x(16u, (uint16_t)d64_rva));
+            CHECK(f.words[2] == a64_ldr_reg(0u, 19u, 16u),
+                  "word 2 is 0x%08X, expected LDR X0,[X19,X16] 0x%08X",
+                  f.words[2], a64_ldr_reg(0u, 19u, 16u));
+            CHECK(f.words[3] == a64_ldp_imgbase_pop(),
+                  "word 3 is 0x%08X, expected LDP X19,X20 0x%08X",
+                  f.words[3], a64_ldp_imgbase_pop());
+        }
+    }
+
+    /* 32-bit and store forms must pick the W encoders, not the X ones. */
+    memset(body, 0, sizeof body);
+    k = put_rip_rel(body, 0, 0, 1, d32_rva - code_rva);
+    body[k++] = 0xC3;
+    memcpy(g, body, k);
+    st = tr_translate_function_img(g, k, img_va + code_rva, 0, img_va, img_sz,
+                                   NULL, NULL, &f);
+    CHECK(st == TR_OK, "mov eax,[rip] returned %s", tr_status_name(st));
+    if (st == TR_OK && f.n >= 3)
+        CHECK(f.words[2] == a64_ldr_reg_w(0u, 19u, 16u),
+              "mov eax,[rip] emitted 0x%08X, expected LDR W0,[X19,X16] 0x%08X",
+              f.words[2], a64_ldr_reg_w(0u, 19u, 16u));
+
+    memset(body, 0, sizeof body);
+    k = put_rip_rel(body, 0, 1, 0, d64_rva - code_rva);
+    body[k++] = 0xC3;
+    memcpy(g, body, k);
+    st = tr_translate_function_img(g, k, img_va + code_rva, 0, img_va, img_sz,
+                                   NULL, NULL, &f);
+    CHECK(st == TR_OK, "mov [rip],rax returned %s", tr_status_name(st));
+    if (st == TR_OK && f.n >= 3)
+        CHECK(f.words[2] == a64_str_reg(0u, 19u, 16u),
+              "mov [rip],rax emitted 0x%08X, expected STR X0,[X19,X16] 0x%08X",
+              f.words[2], a64_str_reg(0u, 19u, 16u));
+
+    /* An RVA too large for one MOVZ takes a MOVK as well. */
+    memset(body, 0, sizeof body);
+    k = put_rip_rel(body, 0, 0, 0, 0x123400ULL - code_rva);
+    body[k++] = 0xC3;
+    memcpy(g, body, k);
+    st = tr_translate_function_img(g, k, img_va + code_rva, 0, img_va, 0x200000ULL,
+                                   NULL, NULL, &f);
+    CHECK(st == TR_OK, "a large-RVA load returned %s", tr_status_name(st));
+    if (st == TR_OK)
+        CHECK(f.n == 6, "a two-part RVA emitted %zu words, expected 6", f.n);
+
+    /* No image base: refused with its own reason, not folded into the general
+     * "memory not on the guest stack" bucket. A caller can fix this one by
+     * supplying a base, and could not fix the others, so telling them apart is
+     * what makes the histogram actionable. */
+    memset(body, 0, sizeof body);
+    k = put_rip_rel(body, 0, 0, 0, d64_rva - code_rva);
+    body[k++] = 0xC3;
+    memcpy(g, body, k); gn = k;
+    st = tr_translate_function(g, gn, img_va + code_rva, NULL, NULL, &f);
+    CHECK(st == TR_UNSUPPORTED && f.reason == TRR_IMG_BASE,
+          "without an image base the load was reported as %s, expected "
+          "image-base-unknown", tr_reason_name(f.reason));
+    st = tr_translate_function_img(g, gn, img_va + code_rva, 0, img_va, 0,
+                                   NULL, NULL, &f);
+    CHECK(st == TR_UNSUPPORTED && f.reason == TRR_IMG_BASE,
+          "an image base with no size was reported as %s, expected "
+          "image-base-unknown", tr_reason_name(f.reason));
+
+    /* Out of the image. A RIP-relative displacement can reach anywhere, and one
+     * landing past the mapping reads host memory and returns a plausible value,
+     * so it is bounded at translation time rather than at run time. */
+    st = tr_translate_function_img(g, gn, img_va + code_rva, 0, img_va, 0x10ULL,
+                                   NULL, NULL, &f);
+    CHECK(st == TR_UNSUPPORTED && f.reason == TRR_IMG_BASE,
+          "a target outside the image was reported as %s, expected "
+          "image-base-unknown", tr_reason_name(f.reason));
+    st = tr_translate_function_img(g, gn, img_va - 0x1000ULL, 0, img_va, img_sz,
+                                   NULL, NULL, &f);
+    CHECK(st == TR_UNSUPPORTED && f.reason == TRR_IMG_BASE,
+          "a target below the image base was reported as %s, expected "
+          "image-base-unknown", tr_reason_name(f.reason));
+
+    /* The other two addressing kinds keep their own reasons. */
+    {   static const uint8_t rcx[] = { 0x48, 0x8B, 0x01, 0xC3 };
+        st = tr_translate_function_img(rcx, sizeof rcx, img_va + code_rva, 0,
+                                       img_va, img_sz, NULL, NULL, &f);
+        CHECK(st == TR_UNSUPPORTED && f.reason == TRR_GUEST_MEM,
+              "mov rax,[rcx] was reported as %s, expected "
+              "memory-not-on-guest-stack", tr_reason_name(f.reason));
+    }
+    {   static const uint8_t ab[] = { 0x48,0x8B,0x04,0x25,0x10,0x00,0x00,0x00,0xC3 };
+        st = tr_translate_function_img(ab, sizeof ab, img_va + code_rva, 0,
+                                       img_va, img_sz, NULL, NULL, &f);
+        CHECK(st == TR_UNSUPPORTED && f.reason == TRR_ABS_ADDR,
+              "mov rax,[abs] was reported as %s, expected absolute-addressing",
+              tr_reason_name(f.reason));
+    }
+
+    /* A function with no image access must not get the X19 record. plan_uses_imgbase
+     * is deliberately not shaped like plan_uses_gstack: that one falls through to a
+     * register-field test, and the same fall-through here would make a plain
+     * `push rax` demand the record, because its rd is the guest stack pointer. */
+    {   static const uint8_t pu[] = { 0x50, 0x58, 0xC3 };
+        st = tr_translate_function(pu, sizeof pu, img_va + code_rva, NULL, NULL, &f);
+        CHECK(st == TR_OK, "push rax/pop rax returned %s", tr_status_name(st));
+        if (st == TR_OK)
+            CHECK(f.needs_imgbase == 0,
+                  "push/pop asked for the image-base record without using X19");
+    }
+
+    /* Stack locals now come in both widths, and the load/store sense has to be
+     * right: 0x89 is a store, 0x8B is a load. Swapping them is silent - the words
+     * are both valid and the function still returns. */
+    {   static const uint8_t loc[] = { 0x48,0x89,0x45,0xF8, 0x48,0x8B,0x45,0xF8, 0xC3 };
+        st = tr_translate_function(loc, sizeof loc, img_va + code_rva, NULL, NULL, &f);
+        CHECK(st == TR_OK, "mov [rbp-8],rax returned %s", tr_status_name(st));
+        if (st == TR_OK && f.n >= 3) {
+            CHECK(f.words[1] == a64_stur(0u, 15u, -8),
+                  "mov [rbp-8],rax emitted 0x%08X, expected STUR X0,[X15,#-8] "
+                  "0x%08X - a store, not a load", f.words[1], a64_stur(0u,15u,-8));
+            CHECK(f.words[2] == a64_ldur(0u, 15u, -8),
+                  "mov rax,[rbp-8] emitted 0x%08X, expected LDUR X0,[X15,#-8] "
+                  "0x%08X", f.words[2], a64_ldur(0u,15u,-8));
+        }
+    }
+    {   static const uint8_t l32[] = { 0x89,0x45,0xF8, 0x8B,0x45,0xF8, 0xC3 };
+        st = tr_translate_function(l32, sizeof l32, img_va + code_rva, NULL, NULL, &f);
+        CHECK(st == TR_OK, "mov [rbp-8],eax returned %s", tr_status_name(st));
+        if (st == TR_OK && f.n >= 3)
+            CHECK(f.words[1] == a64_stur_w(0u, 15u, -8),
+                  "mov [rbp-8],eax emitted 0x%08X, expected STUR W0,[X15,#-8] "
+                  "0x%08X", f.words[1], a64_stur_w(0u,15u,-8));
+    }
+}
+
+#if defined(__aarch64__)
+/* ---------------------------------------------------------------------------
+ * RIP-relative access to the module's own image, executed on real ARM64.
+ *
+ * The emitted form is MOVZ/MOVK of the RVA into X16 followed by LDR Xt,[X19,X16].
+ * Two things have to be true for that to be correct, and neither is visible from
+ * the words alone:
+ *
+ *   - X19 has to hold the address RVA 0 actually lives at, supplied by the caller
+ *     and preserved across calls. The trampoline sets it; the frame record saves
+ *     and restores it so a translated function cannot leak it to its caller.
+ *   - the RVA has to come from the image base, not from the address the code sits
+ *     at. Those are two different buffers here on purpose: confuse them and the
+ *     load reads the code page, which still returns a number and still looks like
+ *     a pass.
+ * ------------------------------------------------------------------------ */
+
+static void test_image_relative_executes(void)
+{
+    static const uint64_t img_va   = 0x140000000ULL; /* guest VA of RVA 0      */
+    static const uint64_t img_sz   = 0x2000ULL;      /* mapped image size      */
+    static const uint64_t code_rva = 0x100ULL;       /* where the body sits    */
+    static const uint64_t d32_rva  = 0x1000ULL;      /* a dword global         */
+    static const uint64_t d64_rva  = 0x1008ULL;      /* a qword global         */
+    uint8_t   g[32], body[24];
+    uint32_t  prog[TRAMP_MAX];
+    uint64_t  r = 0;
+    size_t    gn = 0, k = 0, pn = 0, plen = 0;
+    void     *img = NULL, *page = NULL;
+    gs_arena  a;
+    int       sig = 0, to = 0, ok;
+    tr_func   f;
+    tr_status st;
+
+    printf("executing RIP-relative image access on real ARM64\n");
+
+    img = mmap(NULL, img_sz, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS,
+               -1, 0);
+    if (img == MAP_FAILED) {
+        CHECK(0, "could not map a guest image");
+        return;
+    }
+    if (!gs_alloc(4096, &a)) {
+        CHECK(0, "no guest stack arena: %s", gs_last_error());
+        munmap(img, img_sz);
+        return;
+    }
+    *(uint32_t *)((uint8_t *)img + d32_rva) = 0xDEADBEEFu;
+    *(uint64_t *)((uint8_t *)img + d64_rva) = 0x1122334455667788ULL;
+
+    /* ---- 1. a 64-bit load reads its global through X19 + RVA ---- */
+    memset(body, 0, sizeof body);
+    k  = put_rip_rel(body, 0, 0, 0, d64_rva - code_rva);
+    body[k++] = 0xC3;
+    memcpy(g, body, k); gn = k;
+    st = tr_translate_function_img(g, gn, img_va + code_rva, 0, img_va, img_sz,
+                                   NULL, NULL, &f);
+    CHECK(st == TR_OK, "64-bit RIP-relative load: translation returned %s (%s)",
+          tr_status_name(st), f.detail ? f.detail : "?");
+    if (st == TR_OK) {
+        CHECK(f.needs_imgbase == 1,
+              "a RIP-relative load did not request the image-base frame record");
+        pn = build_trampoline(prog, 0, a.top, (uint64_t)img, f.words, f.n);
+        page = code_page(prog, pn, &plen);
+        CHECK(page != NULL, "could not map an executable page");
+        if (page) {
+            ok = exec_generated((uint64_t (*)(void))page, &r, &to, &sig);
+            CHECK(ok && !to && !sig,
+                  "64-bit RIP-relative load did not run cleanly (to=%d sig=%d)",
+                  to, sig);
+            CHECK(r == 0x1122334455667788ULL,
+                  "loaded %#llx, expected the qword global 0x1122334455667788",
+                  (unsigned long long)r);
+            munmap(page, plen); page = NULL;
+        }
+    }
+
+    /* ---- 2. a 32-bit load must zero-extend, not sign-extend ---- */
+    memset(body, 0, sizeof body);
+    k = 0;
+    /* mov rax,-1 first: dirties the upper half, so a translation that wrote only
+     * 32 bits and left the rest stale cannot pass by luck. Sign extension would
+     * give 0xFFFFFFFFDEADBEEF, a stale upper half the same, and only the W-form
+     * load gives 0xDEADBEEF. */
+    body[k++] = 0x48; body[k++] = 0xC7; body[k++] = 0xC0;
+    body[k++] = 0xFF; body[k++] = 0xFF; body[k++] = 0xFF; body[k++] = 0xFF;
+    k += put_rip_rel(body, k, 0, 1, d32_rva - code_rva);
+    body[k++] = 0xC3;
+    memcpy(g, body, k); gn = k;
+    st = tr_translate_function_img(g, gn, img_va + code_rva, 0, img_va, img_sz,
+                                   NULL, NULL, &f);
+    CHECK(st == TR_OK, "32-bit RIP-relative load: %s (%s)", tr_status_name(st),
+          f.detail ? f.detail : "?");
+    if (st == TR_OK) {
+        pn = build_trampoline(prog, 0, a.top, (uint64_t)img, f.words, f.n);
+        page = code_page(prog, pn, &plen);
+        if (page) {
+            ok = exec_generated((uint64_t (*)(void))page, &r, &to, &sig);
+            CHECK(ok && !to && !sig,
+                  "32-bit load did not run cleanly (to=%d sig=%d)", to, sig);
+            CHECK(r == 0xDEADBEEFu,
+                  "a 32-bit load of 0xDEADBEEF returned %#llx: zero-extension "
+                  "did not happen", (unsigned long long)r);
+            munmap(page, plen); page = NULL;
+        }
+    }
+
+    /* ---- 3. a store then a load round-trips through the image ---- */
+    memset(body, 0, sizeof body);
+    k = 0;
+    k += put_rip_rel(body, k, 1, 0, d32_rva - code_rva);   /* mov [rip+d],rax */
+    body[k++] = 0x48; body[k++] = 0xC7; body[k++] = 0xC0;  /* mov rax,-1      */
+    body[k++] = 0xFF; body[k++] = 0xFF; body[k++] = 0xFF; body[k++] = 0xFF;
+    k += put_rip_rel(body, k, 0, 0, d32_rva - code_rva);   /* mov rax,[rip+d] */
+    body[k++] = 0xC3;
+    memcpy(g, body, k); gn = k;
+    /* the global is clobbered first: if the store silently did not happen, the
+     * load would return the old 0xDEADBEEF and the round trip would look broken
+     * rather than look passed, so the assertion below is the sharper one */
+    *(uint64_t *)((uint8_t *)img + d32_rva) = 0ULL;
+    st = tr_translate_function_img(g, gn, img_va + code_rva, 0, img_va, img_sz,
+                                   NULL, NULL, &f);
+    CHECK(st == TR_OK, "RIP-relative store/load pair: %s (%s)", tr_status_name(st),
+          f.detail ? f.detail : "?");
+    if (st == TR_OK) {
+        pn = build_trampoline(prog, 0xA5A5ULL, a.top, (uint64_t)img, f.words, f.n);
+        page = code_page(prog, pn, &plen);
+        if (page) {
+            ok = exec_generated((uint64_t (*)(void))page, &r, &to, &sig);
+            CHECK(ok && !to && !sig,
+                  "store/load pair did not run cleanly (to=%d sig=%d)", to, sig);
+            CHECK(r == 0xA5A5ULL,
+                  "round trip returned %#llx, expected the argument 0xA5A5",
+                  (unsigned long long)r);
+            CHECK(*(uint32_t *)((uint8_t *)img + d32_rva) == 0xA5A5u,
+                  "the store did not land in the guest image at its RVA");
+            munmap(page, plen); page = NULL;
+        }
+    }
+
+    /* ---- 4. no image base: refused, never guessed at ---- */
+    st = tr_translate_function(g, gn, img_va + code_rva, NULL, NULL, &f);
+    CHECK(st == TR_UNSUPPORTED && f.reason == TRR_IMG_BASE,
+          "without an image base the load was reported as %s, expected "
+          "image-base-unknown", tr_reason_name(f.reason));
+
+    /* ---- 5. an out-of-image target is refused at translation time ---- */
+    st = tr_translate_function_img(g, gn, img_va + code_rva, 0, img_va, 0x10ULL,
+                                   NULL, NULL, &f);
+    CHECK(st == TR_UNSUPPORTED && f.reason == TRR_IMG_BASE,
+          "a target outside the image was reported as %s, expected "
+          "image-base-unknown", tr_reason_name(f.reason));
+
+    gs_free(&a);
+    munmap(img, img_sz);
+    printf("  EXECUTED ON aarch64: RIP-relative image access - a 64-bit load, a "
+           "32-bit load that zero-extends, and a store that lands at its RVA\n");
+}
+#else
+static void test_image_relative_executes(void)
+{
+    printf("executing RIP-relative image access on real ARM64, where X19 is observable\n");
+    printf("  SKIP: host is not aarch64 - encodings, RVA bounds and refusals were "
+           "checked, nothing generated was run\n");
+}
+#endif
+
 int main(void)
 {
     printf("=== exe + dll translation, end to end ===\n");
@@ -2065,6 +2450,8 @@ int main(void)
     test_buffer_cap_is_named();
     test_width32_translation();
     test_width32_executes();
+    test_image_relative_translation();
+    test_image_relative_executes();
     test_pipeline();
 #if defined(__aarch64__)
     printf("VERDICT arch=aarch64 exe_words=%zu const_ok=%d first=%s/%llu(to=%d,sig=%d) "

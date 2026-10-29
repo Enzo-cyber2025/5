@@ -18,6 +18,14 @@
  *   call [rip+disp32]      (an indirect call through an import table)
  *   ret
  *
+ * Every form above also exists at 32-bit width - mov, add, sub, cmp, test, the
+ * xor zeroing idiom, and GRP1 against an immediate - and the mapping is exact
+ * rather than approximated. A 32-bit x86-64 operation zero-extends its result
+ * into the full 64-bit register, and an AArch64 W-form zero-extends into the X
+ * register: the same rule on both sides, so no mask is emitted and no upper half
+ * has to be cleaned up. REX.W turns B8+r into `mov r64, imm64`, which is refused
+ * rather than truncated to a plausible wrong constant.
+ *
  * Supported by tr_translate_function, guest stack model (see gstack.h):
  *   push r64 | imm32 | imm8      (STR with pre-indexed writeback on X14)
  *   pop  r64                     (LDR with post-indexed writeback)
@@ -29,12 +37,37 @@
  *   mov  [rsp+disp], r64         (and the load form)
  *   mov  r64, [rsp+disp]
  *
+ * Supported by tr_translate_function_img, the module's own image:
+ *   mov  r64|r32, [rip+disp32]   (a load of one of the module's globals)
+ *   mov  [rip+disp32], r64|r32   (and the store form)
+ *
+ * These reach a module's data, which is where almost every non-stack memory
+ * operand in real code points. The emitted form materialises the RVA into X16 and
+ * lets the access itself add it - `LDR Xt, [X19, X16]` - with X19 holding the host
+ * address the image is mapped at, supplied by the caller on entry exactly as X14
+ * holds the guest stack pointer.
+ *
+ * Resolving to an absolute host address at translation time instead would be
+ * simpler and is deliberately not done: it would tie the translation to one
+ * process's layout, break the persistent cache, and need a relocation. An RVA plus
+ * a base register needs neither, so the same translated words stay valid wherever
+ * the image is mapped.
+ *
+ * The target is bounded against image_size at translation time. A RIP-relative
+ * displacement can reach anywhere in the address space, and one landing past the
+ * mapping reads host memory and returns a plausible looking value that nothing at
+ * run time would notice. tr_translate_function and tr_translate_function_at have no
+ * image base to bound against, so they refuse these with TRR_IMG_BASE instead.
+ *
  * tr_translate_run is the earlier straight-line form and is kept because the sweep
  * uses it: it stops at the first RET and refuses any branch.
  *
- * Not supported, and refused: any memory operand whose base is not the guest
- * stack pointer or frame pointer - there is still no general guest memory model,
- * so a dereference through RAX or RCX has nowhere to point. Also refused: a
+ * Not supported, and refused: a memory operand whose base is a general register -
+ * there is still no general guest memory model, so a dereference through RAX or
+ * RCX has nowhere to point. Absolute disp32 addressing is refused separately,
+ * because it needs a relocation and no image base would fix it; the two used to
+ * share one bucket, and a histogram that cannot tell them apart cannot say which
+ * is worth doing next. Also refused: a
  * non-negative RBP displacement, because that addresses the caller's frame
  * (return address, incoming stack arguments) which this model does not lay out;
  * a negative RSP displacement, which is the SysV red zone and is unmapped below
@@ -176,6 +209,12 @@ typedef enum {
                            * end. Kept separate because it says the function was
                            * never examined, which is not a statement about its
                            * instructions and must not be counted as one. */
+    TRR_IMG_BASE,         /* a RIP-relative access, which is translatable, but the
+                           * module's image base and size were not supplied so the
+                           * RVA cannot be computed or bounded */
+    TRR_ABS_ADDR,         /* absolute disp32 addressing: the target is a guest
+                           * virtual address baked into the instruction, so it
+                           * needs a relocation, not a base register */
     TRR_COUNT
 } tr_reason;
 
@@ -205,6 +244,12 @@ typedef struct {
      * part of the emitted code, so a translation stays a pure function of the
      * guest bytes and remains valid in a cache that outlives the process. */
     int         needs_gstack;
+    /* Reads or writes the module's own image through a RIP-relative operand, so
+     * the caller must have X19 holding the host address the image is mapped at.
+     * The RVA is materialised at run time relative to X19 rather than resolved to
+     * an absolute address at translation time, which is what keeps the result
+     * cacheable and needs no relocation. */
+    int         needs_imgbase;
     uint64_t    iat_va;            /* set with TR_NEEDS_TARGET */
     const char *detail;
 
@@ -264,6 +309,24 @@ tr_status tr_translate_function_at(const uint8_t *code, size_t code_len,
                                    uint64_t base_va, size_t start_off,
                                    tr_resolve_fn resolve, void *user,
                                    tr_func *out);
+
+/* Same as tr_translate_function_at, with the module's image base and size so that
+ * RIP-relative operands can be resolved to an RVA at translation time and bounded
+ * against the image.
+ *
+ * image_base_va is the guest virtual address that RVA 0 maps to, and image_size
+ * covers the whole mapped image. Both are checked: a RIP-relative displacement can
+ * point anywhere, and one that lands outside the image would read whatever the host
+ * has past the mapping - a value that looks plausible and is not. Refusing at
+ * translation time is cheaper than discovering that at run time.
+ *
+ * Passing 0 for either means "not known", and RIP-relative data access is then
+ * refused with TRR_IMG_BASE rather than guessed at. */
+tr_status tr_translate_function_img(const uint8_t *code, size_t code_len,
+                                    uint64_t base_va, size_t start_off,
+                                    uint64_t image_base_va, uint64_t image_size,
+                                    tr_resolve_fn resolve, void *user,
+                                    tr_func *out);
 
 const char *tr_status_name(tr_status s);
 

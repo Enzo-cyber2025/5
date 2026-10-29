@@ -131,6 +131,12 @@ jobs:
             || die "the 32-bit forms never ran on this aarch64 runner"
           grep -q "zero-extension" /tmp/translate.log \
             || die "zero-extension of a 32-bit write was not verified on this aarch64 runner"
+          # RIP-relative access to the module's own image is the other half of the
+          # memory model: X19 carries the mapped image base and the emitted code
+          # reaches a global by RVA, so no absolute address enters the translation
+          # and the result stays valid in a process that maps the image elsewhere.
+          grep -q "EXECUTED ON aarch64: RIP-relative image access" /tmp/translate.log \
+            || die "a RIP-relative load of a module global never ran on this aarch64 runner"
           grep -q "entry -> 16" /tmp/translate.log \
             || die "the translated exe did not return 16 (SumTo(5)=15 from the DLL, then +1)"
           grep -q "EXECUTED FROM CACHE: 16" /tmp/translate.log \
@@ -307,6 +313,12 @@ jobs:
             || die "the 32-bit forms never ran under QEMU"
           grep -q "zero-extension" /tmp/translate.log \
             || die "zero-extension of a 32-bit write was not verified under QEMU"
+          # RIP-relative access to the module's own image is the other half of the
+          # memory model: X19 carries the mapped image base and the emitted code
+          # reaches a global by RVA, so no absolute address enters the translation
+          # and the result stays valid in a process that maps the image elsewhere.
+          grep -q "EXECUTED ON aarch64: RIP-relative image access" /tmp/translate.log \
+            || die "a RIP-relative load of a module global never ran under QEMU"
           grep -q "entry -> 16" /tmp/translate.log \
             || die "the translated exe did not return 16 under QEMU"
           grep -q "EXECUTED FROM CACHE: 16" /tmp/translate.log \

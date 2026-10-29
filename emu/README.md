@@ -672,10 +672,119 @@ que ainda consiste de palavras válidas**.
 
 Suite do projeto: **832**.
 
+#### As formas de 32 bits, e por que elas saem baratas
+
+Ranqueando os bloqueios num bundle real depois que o teto do buffer foi levantado,
+`B8` e `B9` — `mov r32, imm32` — apareciam em **9 dos 64** pontos de entrada de
+código genuínos, mais que qualquer forma de pilha remanescente.
+
+O mapeamento é exato, e não aproximado, e o motivo é justamente o que torna isto
+barato: uma operação de 32 bits em x86-64 **estende com zeros** o resultado para o
+registrador de 64 bits inteiro, e uma forma W em AArch64 estende com zeros para o
+registrador X. É a mesma regra dos dois lados, então não há máscara a emitir e
+nenhuma metade superior a limpar depois.
+
+Passaram a ser traduzidas na largura de 32 bits: `mov r32,imm32` (`B8+r` e `C7 /0`
+com `mod=3`), `mov`, `add`, `sub`, `cmp`, `test` e o idioma de zerar com `xor` com
+`mod=3`, e `add`/`sub`/`cmp` do GRP1 contra imediato. `REX.B` alcança os
+registradores estendidos.
+
+Recusado: `REX.W` transforma `B8+r` em `mov r64, imm64` — dez bytes com um
+imediato de 64 bits que este subconjunto não modela. Materializar só os 32 bits
+baixos produziria uma constante errada **plausível**, então é recusado com um
+detalhe que nomeia a codificação.
+
+As formas W são geradas de **uma única derivação compartilhada** com suas gêmeas X
+— o bit 31, o campo `sf`, é a única diferença — de modo que as duas não podem
+divergir. Todas as 19 codificações fixadas são assertivas, incluindo as quatro
+palavras X já executadas em hardware e quatro palavras W contra valores
+independentemente conhecidos.
+
+*Mesmo opcode, extensão oposta* é a armadilha aqui: `C7 /0` estende com **sinal**
+com `REX.W` e com **zeros** sem ela. As duas são testadas lado a lado, e o caso de
+execução que discrimina suja a metade superior primeiro — `mov rax,-1` seguido de
+`mov eax,5` tem de devolver **5**, e uma tradução que deixasse a metade superior
+stale devolveria `0xFFFFFFFF00000005`, que está correta nos seus 32 bits baixos e
+errada como valor.
+
+#### O modelo de memória: alcançar a própria imagem por RVA
+
+`8B` e `89` eram o maior bloqueio ranqueado — **29 dos 64**. A forma que importa
+entre eles é a RIP-relativa: é assim que um módulo alcança seus próprios globais, e
+ela **é** traduzível.
+
+O caminho tem duas partes:
+
+- **X19** guarda o endereço hospedeiro onde a imagem do módulo está mapeada — o
+  endereço onde o RVA 0 vive — e quem chama o fornece na entrada, exatamente como
+  fornece o ponteiro de pilha do guest em X14. É *callee-saved* na AAPCS, e isso não
+  é coincidência mas o motivo da escolha: um callee hospedeiro alcançado por um
+  import resolvido o preserva sem que nada seja emitido. IP0/IP1 (X16/X17) não
+  preservam, o que os descarta para um valor que precisa sobreviver a toda chamada.
+- O RVA é materializado em X16 **em tempo de execução** e somado pelo próprio load
+  — `LDR Xt, [X19, X16]`.
+
+A distinção que importa: nenhum endereço absoluto entra no código. Um endereço
+absoluto amarraria a tradução ao layout de um processo específico e quebraria o
+cache persistente — o requisito 2 — além de exigir uma relocação. RVA mais
+registrador-base não exige nenhum dos dois, e é por isso que a tradução continua
+válida em qualquer processo que mapeie a mesma imagem, onde quer que a mapeie.
+
+**Quatro espécies de endereçamento, quatro respostas.** Antes, três delas
+compartilhavam um único balde `memory-not-on-guest-stack`, e um histograma que não
+as separa não consegue dizer qual vale a pena fazer em seguida:
+
+| espécie | forma | razão |
+|---|---|---|
+| RIP-relativa | `mod=00 rm=101`, sem SIB | **traduzível**; `image-base-unknown` sem a base da imagem |
+| absoluta | `mod=00` com SIB `base=101` | `absolute-addressing` — precisa de relocação |
+| pilha do guest | relativa a RSP/RBP | traduzível pela arena |
+| outra base | `[rcx]` e semelhantes | `memory-not-on-guest-stack` |
+
+Um limite é checado **na tradução**: o alvo RIP-relativo precisa cair dentro da
+imagem, e a base da imagem precisa ter sido fornecida. Um deslocamento pode
+alcançar qualquer lugar do espaço de endereços, e um que caia depois do mapeamento
+lê memória do hospedeiro e devolve um valor com cara de legítimo — nada em tempo de
+execução notaria, que é exatamente o que torna barato recusar aqui.
+
+Os locais de pilha também passaram a existir nas duas larguras, e o sentido
+load/store tem de estar certo: `0x89` é store, `0x8B` é load. Trocá-los é
+silencioso — as duas palavras são válidas e a função ainda retorna.
+
+Três defeitos que os testes pegaram, os três meus e os três da classe "as palavras
+são válidas, o significado não":
+
+- **load e store invertidos** nos locais de pilha, ao escrever `load ? P_ST_LOCAL :
+  P_LD_LOCAL`. Só a asserção sobre a palavra exata pegou: um teste que checasse
+  apenas o status teria passado.
+- **`plan_uses_imgbase` herdando a cauda de `plan_uses_gstack`.** Aquela cai numa
+  verificação de campos de registrador, o que é certo para ela porque qualquer
+  operação que toque X14 ou X15 precisa do registro. A mesma cauda aqui faria um
+  simples `push rax` exigir o registro de base da imagem — seu `rd` é o ponteiro de
+  pilha do guest — e a função empurraria e restauraria um registrador que quem
+  chamou nunca preparou.
+- **a constante de RVA esperada no teste.** Eu havia escrito `0xF08`, o
+  deslocamento a partir do início do próprio buffer de código, quando o correto é
+  `0x1008`, o RVA a partir da base da imagem. Os dois diferem por `code_rva`, então
+  essa asserção é justamente a que fixa o RVA à base certa: derivá-lo da origem
+  errada desloca **todos** os globais por uma constante, em silêncio, enquanto o
+  código continua rodando.
+
+O teste de execução mapeia a imagem e o código em **dois buffers diferentes**, de
+propósito. Se o tradutor confundisse as duas origens, o load leria a página de
+código e ainda assim devolveria um número.
+
+Suite do projeto: **900**.
+
 ### Não feito
 
-Operandos de memória **fora da pilha do guest** (o slot de import RIP-relativo e
-os locais em `[rbp-]`/`[rsp+]` são os únicos), `call rel32` direto para outra
+Operandos de memória **fora da pilha do guest e da própria imagem do módulo**: o
+acesso RIP-relativo a globais agora é traduzido por RVA contra X19, mas uma
+dereferência por registrador geral (`[rcx]`) segue sem modelo, e o endereçamento
+absoluto `disp32` segue recusado porque precisa de relocação. Também falta o
+mapeamento real da imagem com relocações aplicadas — o teste mapeia um buffer e
+passa sua base, que é o que a emissão precisa, mas não é um loader. `call rel32`
+direto para outra
 função do guest, desenrolar de exceções/SEH, SIMD, as flags que o subconjunto não
 produz (paridade, ajuste, e flags de `mul`/`div`/rotação/shift), a **ponte de
 convenção de chamada guest→hospedeiro** descrita acima, relocações aplicadas,

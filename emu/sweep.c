@@ -425,9 +425,14 @@ static int translate_entry(sweep_job *j, uint32_t mi, uint64_t va)
     /* The whole section is the buffer and the entry point is where discovery
      * starts. Bounding the buffer to the entry instead refuses any function that
      * branches backwards into shared code, which is most of them. */
-    st = tr_translate_function_at(m->image + sec->raw_ptr, (size_t)sec->raw_size,
-                                  m->base + sec->virtual_addr, within,
-                                  NULL, NULL, &f);
+    /* The image base and size are passed so that RIP-relative operands - how a
+     * module reaches its own globals - resolve to an RVA at translation time and
+     * get bounded against the image. size_of_image of 0, from a malformed header,
+     * leaves them refused rather than unbounded. */
+    st = tr_translate_function_img(m->image + sec->raw_ptr, (size_t)sec->raw_size,
+                                   m->base + sec->virtual_addr, within,
+                                   m->base, m->pe ? m->pe->size_of_image : 0u,
+                                   NULL, NULL, &f);
     if (st != TR_OK) {
         tr_reason r = (f.reason < TRR_COUNT) ? f.reason : TRR_INTERNAL;
         j->reason_hist[r]++;

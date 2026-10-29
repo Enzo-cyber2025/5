@@ -11,6 +11,11 @@
 #define HOST_SCRATCH 16u /* X16 / IP0: free for a translator to clobber */
 #define HOST_RSP     14u /* guest RSP -> X14, callee-saved in the AAPCS */
 #define HOST_RBP     15u /* guest RBP -> X15, likewise */
+#define HOST_IMGBASE 19u /* X19: host address the guest module image is mapped at.
+                          * RVA 0 lives here. Callee-saved in the AAPCS, so a host
+                          * callee reached through a resolved import preserves it -
+                          * IP0/IP1 (X16/X17) would not, which rules them out for
+                          * a value that has to outlive every call. */
 
 const char *tr_reason_name(tr_reason r)
 {
@@ -33,6 +38,8 @@ const char *tr_reason_name(tr_reason r)
     case TRR_STACK:         return "guest-stack-form";
     case TRR_GUEST_MEM:     return "memory-not-on-guest-stack";
     case TRR_BUFFER:        return "code-buffer-rejected";
+    case TRR_IMG_BASE:      return "image-base-unknown";
+    case TRR_ABS_ADDR:      return "absolute-addressing";
     default:                return "?";
     }
 }
@@ -256,7 +263,9 @@ typedef enum {
     P_MOV_IMM, P_MOV_REG, P_ZERO, P_ADD_REG, P_SUB_REG, P_ADD_IMM, P_SUB_IMM,
     P_CMP_REG, P_CMP_IMM, P_TEST_REG, P_JCC, P_JMP, P_CALL_IAT, P_RET,
     /* guest stack */
-    P_PUSH_REG, P_POP_REG, P_PUSH_IMM, P_LEAVE, P_ST_LOCAL, P_LD_LOCAL
+    P_PUSH_REG, P_POP_REG, P_PUSH_IMM, P_LEAVE, P_ST_LOCAL, P_LD_LOCAL,
+    /* the module's own image, reached by a RIP-relative operand */
+    P_LD_IMG, P_ST_IMG
 } plan_op;
 
 typedef struct {
@@ -402,37 +411,44 @@ static void blame(tr_func *out, const plan *p, uint32_t depth)
     memset(out->fail_op, 0, sizeof(out->fail_op));
 }
 
-/* Resolves a memory operand's base register, or returns 0 when the addressing
- * form is not one this translator models. Only the guest stack pointer and frame
- * pointer are accepted: there is no general guest memory model, so a dereference
- * through RAX or RCX has nowhere to point and must be refused rather than aimed
- * at a host address that happens to be in the register.
+/* What kind of addressing a memory operand uses. Four kinds, and they need four
+ * different answers, so they are told apart here rather than collapsed into a
+ * single "not modelled" refusal:
  *
- * Two encodings look exactly like a base register and are not, and treating
- * either as one would read the wrong memory with no visible symptom:
- *   - mod=00 rm=101 is RIP-relative in 64-bit mode, not [RBP]. The decoder
- *     reports it with has_sib == 0 and disp_len == 4, which is indistinguishable
- *     from a real base at a glance, so it is checked explicitly.
- *   - mod=00 with SIB base=101 is an absolute disp32 with NO base register. It
- *     arrives with sib_base == 5, the same value RBP has.
- * REX.B also has to be honoured before comparing: rm=100 with REX.B is R12, not
- * RSP, and rm=101 with REX.B is R13, not RBP. */
-static int mem_base_guest(const x86_insn *in, unsigned *guest_base)
+ *   MB_RIP_REL  mod=00 rm=101 with no SIB. In 64-bit mode this is RIP-relative,
+ *               NOT [RBP]. The decoder reports it with has_sib == 0 and
+ *               disp_len == 4, which at a glance is indistinguishable from a real
+ *               base register, so it is checked explicitly. This is the form that
+ *               reaches a module's globals, and it IS translatable: the target
+ *               guest VA is known from the encoding, so the RVA follows.
+ *   MB_ABS      mod=00 with SIB base=101: an absolute disp32 with NO base
+ *               register. It arrives with sib_base == 5, the same value RBP has.
+ *               Needs a relocation, so it is refused for a different reason than
+ *               a general register base - a caller cannot fix one by supplying
+ *               an image base.
+ *   MB_STACK    RSP or RBP relative. Modelled by the guest stack arena.
+ *   MB_OTHER    a base in some other register: a guest pointer with nowhere to
+ *               point. REX.B must be applied before comparing, because rm=100
+ *               with REX.B is R12, not RSP, and rm=101 with REX.B is R13.
+ */
+typedef enum { MB_NONE = 0, MB_RIP_REL, MB_ABS, MB_STACK, MB_OTHER } mem_base_kind;
+
+static mem_base_kind classify_mem_base(const x86_insn *in, unsigned *guest_base)
 {
     unsigned b;
-    if (!in->has_modrm || in->mod == 3) return 0;      /* register form */
+    if (!in->has_modrm || in->mod == 3) return MB_NONE;   /* register form */
     if (in->has_sib) {
-        if (in->mod == 0 && in->sib_base == 5) return 0;   /* absolute disp32 */
-        if (in->sib_index != 4 || in->rex_x) return 0;     /* scaled index: not modelled */
-        if (in->sib_scale != 0) return 0;
+        if (in->mod == 0 && in->sib_base == 5) return MB_ABS;
+        if (in->sib_index != 4 || in->rex_x) return MB_OTHER;  /* scaled index */
+        if (in->sib_scale != 0) return MB_OTHER;
         b = (unsigned)in->sib_base | (in->rex_b ? 8u : 0u);
     } else {
-        if (in->mod == 0 && in->rm == 5) return 0;         /* RIP-relative */
+        if (in->mod == 0 && in->rm == 5) return MB_RIP_REL;
         b = (unsigned)in->rm | (in->rex_b ? 8u : 0u);
     }
-    if (b != 4u && b != 5u) return 0;      /* not RSP and not RBP */
+    if (b != 4u && b != 5u) return MB_OTHER;      /* not RSP and not RBP */
     *guest_base = b;
-    return 1;
+    return MB_STACK;
 }
 
 /* Whether a plan uses the guest stack at all, which decides if the X14/X15 frame
@@ -451,11 +467,26 @@ static int plan_uses_gstack(const plan *p)
            p->rm == HOST_RSP || p->rm == HOST_RBP;
 }
 
+/* Whether the X19/X20 image-base frame record has to be emitted.
+ *
+ * Deliberately NOT the shape of plan_uses_gstack above. That one falls through to
+ * a register-field test, which is right for it because any operation touching X14
+ * or X15 needs the record. Here the same fall-through would be a bug: a plain
+ * `push rax` has rd == HOST_RSP, so it would demand the image-base record without
+ * ever using X19, and the function would push and pop a register the caller never
+ * set up. Only the two image accesses read X19, so only they count. */
+static int plan_uses_imgbase(const plan *p)
+{
+    return p->op == P_LD_IMG || p->op == P_ST_IMG;
+}
+
 /* Plans one guest instruction: decides the operation, the registers, and how many
  * ARM64 words it will emit. No emission happens here, so the layout pass has sizes
  * before any displacement is needed. */
 static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
-                          uint64_t base_va, tr_resolve_fn resolve, void *user,
+                          uint64_t base_va, uint64_t image_base_va,
+                          uint64_t image_size,
+                          tr_resolve_fn resolve, void *user,
                           plan *p, tr_func *out)
 {
     x86_insn   in;
@@ -770,25 +801,82 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
         p->op = P_LEAVE; p->words = 2u; return TR_OK;
     }
 
-    /* mov [rbp-disp], r64 / mov r64, [rbp-disp] and the RSP-relative forms.
-     * These are the local variable accesses; a real function's frame is made of
-     * almost nothing else. */
-    if ((in.op[0] == 0x89 || in.op[0] == 0x8B) && in.rex_w && in.has_modrm &&
-        in.mod != 3) {
-        unsigned gbase, vreg;
-        int64_t  d = in.disp;
+    /* mov with a memory operand: the local-variable accesses of a real frame, and
+     * the RIP-relative accesses to the module's own globals.
+     *
+     * Both widths are accepted. `mov eax,[rbp-8]` is as much a local as
+     * `mov rax,[rbp-8]` is, and refusing the 32-bit one would leave a hole in
+     * exactly the code the 32-bit operand forms were added to reach. */
+    if ((in.op[0] == 0x89 || in.op[0] == 0x8B) && in.has_modrm && in.mod != 3) {
+        unsigned       gbase = 0, vreg;
+        int64_t        d = in.disp;
+        mem_base_kind  k = classify_mem_base(&in, &gbase);
+        int            w32 = !in.rex_w;
+        int            load = (in.op[0] == 0x8B);
 
-        if (!mem_base_guest(&in, &gbase)) {
-            out->reason = TRR_GUEST_MEM;
-            out->detail = "memory operand whose base is not the guest stack: "
-                          "there is no general guest memory model yet";
-            return TR_UNSUPPORTED;
-        }
         if (!map_guest_reg(in.reg, in.rex_r, &vreg)) {
             out->reason = TRR_REGISTER;
-            out->detail = "stack local: register outside the mapped set";
+            out->detail = "memory operand: register outside the mapped set";
             return TR_UNSUPPORTED;
         }
+
+        /* RIP-relative: the one form of "not on the guest stack" that is
+         * translatable. The displacement is relative to the instruction after
+         * this one, so the decoder has already computed the target guest VA, and
+         * subtracting the image base turns it into an RVA.
+         *
+         * The RVA is materialised into X16 at run time and added by the load
+         * itself - `LDR Xt, [X19, X16]` - rather than being resolved to an
+         * absolute host address during translation. That distinction is the whole
+         * point: an absolute address in the code would tie the translation to one
+         * process's layout and break the persistent cache, and it would also need
+         * a relocation. An RVA plus a base register needs neither. */
+        if (k == MB_RIP_REL) {
+            uint64_t tgt = in.rip_rel_target;
+            if (image_base_va == 0 || image_size == 0) {
+                out->reason = TRR_IMG_BASE;
+                out->detail = "a RIP-relative operand is translatable, but the "
+                              "module's image base was not supplied";
+                return TR_UNSUPPORTED;
+            }
+            /* Bound it at translation time. A RIP-relative displacement can point
+             * anywhere in the address space, and one landing outside the image
+             * would read whatever the host has past the mapping - a plausible
+             * looking value that is not the guest's. Nothing at run time would
+             * notice, which is what makes this worth refusing. */
+            if (tgt < image_base_va || tgt - image_base_va >= image_size) {
+                out->reason = TRR_IMG_BASE;
+                out->detail = "a RIP-relative operand points outside the module "
+                              "image, so it is not a global this module owns";
+                return TR_UNSUPPORTED;
+            }
+            p->op = load ? P_LD_IMG : P_ST_IMG;
+            p->rd = vreg;
+            p->const_val = tgt - image_base_va;   /* the RVA */
+            p->w32 = w32;
+            /* MOVZ/MOVK of the RVA into X16, then the register-offset access.
+             * The RVA always goes into a 64-bit register because X16 supplies a
+             * byte offset, and truncating it would silently reach a different
+             * global once an image exceeds 4 GiB. */
+            p->words = const_words_w(p->const_val, 0) + 1u;
+            return TR_OK;
+        }
+
+        if (k == MB_ABS) {
+            out->reason = TRR_ABS_ADDR;
+            out->detail = "absolute disp32 addressing: the target is a guest "
+                          "virtual address in the encoding, so it needs a "
+                          "relocation rather than a base register";
+            return TR_UNSUPPORTED;
+        }
+        if (k != MB_STACK) {
+            out->reason = TRR_GUEST_MEM;
+            out->detail = "memory operand whose base is a general register: a "
+                          "guest pointer, and there is no general guest memory "
+                          "model yet";
+            return TR_UNSUPPORTED;
+        }
+
         /* Which displacements are legitimate depends on the base, and getting
          * this wrong is silent:
          *   - [rbp + non-negative] addresses the CALLER's frame: the saved frame
@@ -821,7 +909,9 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
         p->rd = vreg;
         p->rn = (gbase == 4u) ? HOST_RSP : HOST_RBP;
         p->delta = d;
-        p->op = (in.op[0] == 0x89) ? P_ST_LOCAL : P_LD_LOCAL;
+        p->w32 = w32;
+        /* 0x89 is `mov r/m, r`, a store; 0x8B is `mov r, r/m`, a load. */
+        p->op = load ? P_LD_LOCAL : P_ST_LOCAL;
         p->words = 1u;
         return TR_OK;
     }
@@ -842,6 +932,19 @@ tr_status tr_translate_function_at(const uint8_t *code, size_t code_len,
                                    uint64_t base_va, size_t start_off,
                                    tr_resolve_fn resolve, void *user,
                                    tr_func *out)
+{
+    /* No image base, so RIP-relative data access is refused with TRR_IMG_BASE
+     * rather than guessed at. Callers that have loaded a module should use
+     * tr_translate_function_img and get it. */
+    return tr_translate_function_img(code, code_len, base_va, start_off, 0, 0,
+                                     resolve, user, out);
+}
+
+tr_status tr_translate_function_img(const uint8_t *code, size_t code_len,
+                                    uint64_t base_va, size_t start_off,
+                                    uint64_t image_base_va, uint64_t image_size,
+                                    tr_resolve_fn resolve, void *user,
+                                    tr_func *out)
 {
     uint64_t guest_va = base_va;   /* address of code[0]; entry is start_off in */
     plan     plans[TRF_MAX_INSN];
@@ -887,8 +990,8 @@ tr_status tr_translate_function_at(const uint8_t *code, size_t code_len,
     while (sp) {
         uint32_t off = stack[--sp];
         plan p;
-        tr_status st = plan_one(code, code_len, off, guest_va, resolve, user,
-                                &p, out);
+        tr_status st = plan_one(code, code_len, off, guest_va, image_base_va,
+                                image_size, resolve, user, &p, out);
         if (st != TR_OK) {
             /* nplans is how many instructions made it through, so it is exactly the
              * depth at which this one failed. Zero means the entry point's first
@@ -1005,7 +1108,8 @@ tr_status tr_translate_function_at(const uint8_t *code, size_t code_len,
     for (i = 0; i < nplans; i++) {
         uint32_t end = plans[i].off + plans[i].guest_len;
         if (plans[i].op == P_CALL_IAT) out->needs_frame = 1;
-        if (plan_uses_gstack(&plans[i])) out->needs_gstack = 1;
+        if (plan_uses_gstack(&plans[i]))  out->needs_gstack = 1;
+        if (plan_uses_imgbase(&plans[i])) out->needs_imgbase = 1;
         if (end > out->extent) out->extent = end;
         if (plans[i].off < out->lo_off) out->lo_off = plans[i].off;
         if (end > out->hi_off) out->hi_off = end;
@@ -1015,7 +1119,12 @@ tr_status tr_translate_function_at(const uint8_t *code, size_t code_len,
     /* Two independent frame records may be needed, and both are one word: the
      * X29/X30 pair for a translation that calls something, and the X14/X15 pair
      * for one that uses the guest stack. Each RET has to undo both. */
-    entry_words = (out->needs_frame ? 1u : 0u) + (out->needs_gstack ? 1u : 0u);
+    /* Push order is frame, guest stack, image base; each RET pops them in the
+     * reverse. The order has to match at both ends or a return restores a
+     * register from the wrong slot, which is not caught by anything except the
+     * value it produces. */
+    entry_words = (out->needs_frame ? 1u : 0u) + (out->needs_gstack ? 1u : 0u) +
+                  (out->needs_imgbase ? 1u : 0u);
     cursor = entry_words;
     for (i = 0; i < nplans; i++) {
         plans[i].word_at = cursor;
@@ -1035,6 +1144,7 @@ tr_status tr_translate_function_at(const uint8_t *code, size_t code_len,
      * off the guest stack - a jump somewhere plausible and wrong. */
     if (out->needs_frame && !pushf(out, a64_stp_frame_push())) return TR_OVERFLOW;
     if (out->needs_gstack && !pushf(out, a64_stp_gstack_push())) return TR_OVERFLOW;
+    if (out->needs_imgbase && !pushf(out, a64_stp_imgbase_push())) return TR_OVERFLOW;
 
     for (i = 0; i < nplans; i++) {
         const plan *p = &plans[i];
@@ -1149,11 +1259,33 @@ tr_status tr_translate_function_at(const uint8_t *code, size_t code_len,
             if (!pushf(out, a64_mov_reg(HOST_RSP, HOST_RBP))) return TR_OVERFLOW;
             if (!pushf(out, a64_ldr_post(HOST_RBP, HOST_RSP, 8))) return TR_OVERFLOW;
             break;
+        case P_LD_IMG:
+        case P_ST_IMG: {
+            /* X16 = the RVA, then X19 + X16 does the addressing. No absolute
+             * address is written into the code, so this translation is valid in
+             * any process that maps the same image, wherever it maps it - which
+             * is what keeps it in the persistent cache. */
+            uint32_t acc = (p->op == P_LD_IMG)
+                ? (p->w32 ? a64_ldr_reg_w(p->rd, HOST_IMGBASE, HOST_SCRATCH)
+                          : a64_ldr_reg(p->rd, HOST_IMGBASE, HOST_SCRATCH))
+                : (p->w32 ? a64_str_reg_w(p->rd, HOST_IMGBASE, HOST_SCRATCH)
+                          : a64_str_reg(p->rd, HOST_IMGBASE, HOST_SCRATCH));
+            if (!emit_const_f(out, HOST_SCRATCH, p->const_val)) return TR_OVERFLOW;
+            if (!pushf(out, acc)) return TR_OVERFLOW;
+            break;
+        }
+
         case P_ST_LOCAL:
-            if (!pushf(out, a64_stur(p->rd, p->rn, (int)p->delta))) return TR_OVERFLOW;
+            /* The W form writes 4 bytes and leaves the upper half of the register
+             * alone, which is exactly what a 32-bit x86-64 store does. */
+            if (!pushf(out, p->w32 ? a64_stur_w(p->rd, p->rn, (int)p->delta)
+                                   : a64_stur(p->rd, p->rn, (int)p->delta)))
+                return TR_OVERFLOW;
             break;
         case P_LD_LOCAL:
-            if (!pushf(out, a64_ldur(p->rd, p->rn, (int)p->delta))) return TR_OVERFLOW;
+            if (!pushf(out, p->w32 ? a64_ldur_w(p->rd, p->rn, (int)p->delta)
+                                   : a64_ldur(p->rd, p->rn, (int)p->delta)))
+                return TR_OVERFLOW;
             break;
         case P_CALL_IAT:
             if (!emit_const_f(out, HOST_SCRATCH, p->const_val)) return TR_OVERFLOW;
@@ -1165,6 +1297,7 @@ tr_status tr_translate_function_at(const uint8_t *code, size_t code_len,
              * makes the guest stack pointer balanced at return regardless of how
              * the guest code left it, so an early return cannot hand the caller a
              * skewed stack pointer. */
+            if (out->needs_imgbase && !pushf(out, a64_ldp_imgbase_pop())) return TR_OVERFLOW;
             if (out->needs_gstack && !pushf(out, a64_ldp_gstack_pop())) return TR_OVERFLOW;
             if (out->needs_frame && !pushf(out, a64_ldp_frame_pop())) return TR_OVERFLOW;
             if (!pushf(out, a64_ret())) return TR_OVERFLOW;

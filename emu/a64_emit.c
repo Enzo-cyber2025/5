@@ -159,8 +159,46 @@ uint32_t a64_ldur(unsigned rt, unsigned rn, int off)
          | (imm9 << 12) | ((uint32_t)(rn & 31u) << 5) | (uint32_t)(rt & 31u);
 }
 
+/* size=10 for the 32-bit forms: the only field that differs. */
+uint32_t a64_stur_w(unsigned rt, unsigned rn, int off)
+{
+    uint32_t imm9 = (uint32_t)(off & 0x1FF);
+    return 0xB8000000u
+         | (imm9 << 12) | ((uint32_t)(rn & 31u) << 5) | (uint32_t)(rt & 31u);
+}
+
+uint32_t a64_ldur_w(unsigned rt, unsigned rn, int off)
+{
+    uint32_t imm9 = (uint32_t)(off & 0x1FF);
+    return 0xB8400000u
+         | (imm9 << 12) | ((uint32_t)(rn & 31u) << 5) | (uint32_t)(rt & 31u);
+}
+
 uint32_t a64_stp_gstack_push(void) { return a64_stp_pre(14u, 15u, 31u, -16); }
 uint32_t a64_ldp_gstack_pop(void)  { return a64_ldp_post(14u, 15u, 31u, 16); }
+
+uint32_t a64_stp_imgbase_push(void) { return a64_stp_pre(19u, 20u, 31u, -16); }
+uint32_t a64_ldp_imgbase_pop(void)  { return a64_ldp_post(19u, 20u, 31u, 16); }
+
+/* One derivation for all four, differing only in the size and opc fields, so a
+ * 32-bit access cannot silently use a 64-bit encoding. */
+static uint32_t ls_reg(uint32_t base, unsigned rt, unsigned rn, unsigned rm)
+{
+    return base | ((uint32_t)(rm & 31u) << 16) | ((uint32_t)(rn & 31u) << 5) |
+           (uint32_t)(rt & 31u);
+}
+
+uint32_t a64_ldr_reg(unsigned rt, unsigned rn, unsigned rm)
+{ return ls_reg(0xF8606800u, rt, rn, rm); }
+
+uint32_t a64_str_reg(unsigned rt, unsigned rn, unsigned rm)
+{ return ls_reg(0xF8206800u, rt, rn, rm); }
+
+uint32_t a64_ldr_reg_w(unsigned rt, unsigned rn, unsigned rm)
+{ return ls_reg(0xB8606800u, rt, rn, rm); }
+
+uint32_t a64_str_reg_w(unsigned rt, unsigned rn, unsigned rm)
+{ return ls_reg(0xB8206800u, rt, rn, rm); }
 
 /* Shifted-register data processing: sf=1, then opc, then 01011 for ADD/SUB or
  * 01010 for the logical group, shift=00, N, Rm, imm6=0, Rn, Rd.
