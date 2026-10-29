@@ -58,23 +58,26 @@ jobs:
           test -f build/raceai.exe
           exit $st
 
-      - name: Diagnóstico (copia o erro do build para um check-run)
+      - name: Diagnóstico (copia o erro do build para um status do commit)
         if: failure()
         shell: msys2 {0}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cd raceai-cpp
-          { grep -nE "error:|Error [0-9]|undefined reference|collect2" build.log 2>/dev/null | head -40;
-            echo '--- fim do build.log ---';
-            tail -15 build.log 2>/dev/null; } > diag.txt
-          { printf '{"title":"erro de compilacao","summary":"';
-            sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/\t/ /g' diag.txt | awk '{printf "%s\\n", $0}';
-            printf '"}'; } > payload.json
-          gh api "repos/$GITHUB_REPOSITORY/check-runs" -X POST \
-            -F "name=diagnostico-build" -F "head_sha=$GITHUB_SHA" \
-            -F "status=completed" -F "conclusion=failure" \
-            -F "output=@payload.json" > /dev/null || true
+          { grep -nE "error:|Error [0-9]|undefined reference|collect2|No such file" build.log 2>/dev/null | head -8;
+            echo "--- fim ---";
+            tail -4 build.log 2>/dev/null; } > diag.txt
+          i=0
+          while IFS= read -r linha; do
+            txt=$(printf '%s' "$linha" | tr -d '\r' | cut -c1-135)
+            [ -z "$txt" ] && continue
+            i=$((i+1))
+            gh api "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
+              -f "state=error" -f "context=diag$i" -f "description=$txt" || true
+            [ "$i" -ge 12 ] && break
+          done < diag.txt
+          echo "linhas de diagnostico: $i"
 
       - name: Treinar os modelos de demonstração
         shell: msys2 {0}
@@ -237,14 +240,16 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cd raceai-cpp
-          { grep -nE "falharam|FAILED|error:|Assertion" test.log 2>/dev/null | head -40; } > diagt.txt
-          { printf '{"title":"falha nos testes","summary":"';
-            sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/\t/ /g' diagt.txt | awk '{printf "%s\\n", $0}';
-            printf '"}'; } > payloadt.json
-          gh api "repos/$GITHUB_REPOSITORY/check-runs" -X POST \
-            -F "name=diagnostico-testes" -F "head_sha=$GITHUB_SHA" \
-            -F "status=completed" -F "conclusion=failure" \
-            -F "output=@payloadt.json" > /dev/null || true
+          { grep -nE "falharam|FAILED|error:|Assertion" test.log 2>/dev/null | head -8; } > diagt.txt
+          i=0
+          while IFS= read -r linha; do
+            txt=$(printf '%s' "$linha" | tr -d '\r' | cut -c1-135)
+            [ -z "$txt" ] && continue
+            i=$((i+1))
+            gh api "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
+              -f "state=error" -f "context=testdiag$i" -f "description=$txt" || true
+            [ "$i" -ge 8 ] && break
+          done < diagt.txt
 
       - name: Publicar na release exe-cpp-windows
         if: ${{ github.event.inputs.publish != 'false' }}
