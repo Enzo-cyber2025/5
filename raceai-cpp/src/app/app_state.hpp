@@ -129,6 +129,9 @@ public:
     std::vector<double> tempos_geracao;
     double t0_geracao = 0.0;
     void aplicar_assistencias();        // ABS/controle de tração no carro do jogador
+    // cria exemplos (modelos) de carro e pista nas pastas de mods, na primeira
+    // vez: é só copiar, editar e recarregar para fazer o seu próprio mod
+    void garantir_modelos_mod();
     bool salvar_controles() const;
     bool carregar_controles();
     void marca_geracao();

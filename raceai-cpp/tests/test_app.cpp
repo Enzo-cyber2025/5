@@ -1,5 +1,6 @@
 // test_app.cpp — testes da camada de interface (sem abrir janela).
 #include <cmath>
+#include <fstream>
 #include <cstdio>
 #include <string>
 
@@ -220,6 +221,39 @@ int main() {
             CHECK(eta >= 0.0, "ETA ficou negativo depois de 3 gerações: %.1f", eta);
             CHECK(eta < 1e6, "ETA absurdo: %.1f", eta);
         }
+    }
+
+    // ------------------------------------------- mods fáceis
+    {
+        // os exemplos precisam existir (é o que o usuário copia e edita)
+        AppState m;
+        m.garantir_modelos_mod();
+        const std::string dir_c = mods_cars_dir();
+        const std::string dir_t = mods_tracks_dir();
+        if (!dir_c.empty() && !dir_t.empty()) {
+            std::ifstream fc(dir_c + "/meu_carro_exemplo.json");
+            std::ifstream ft(dir_t + "/minha_pista_exemplo.json");
+            if (fc.good() && ft.good()) {
+                CarSpec c;
+                std::string err;
+                CHECK(CarSpec::load(dir_c + "/meu_carro_exemplo.json", c, &err),
+                      "exemplo de carro inválido: %s", err.c_str());
+                Track t;
+                CHECK(Track::load(dir_t + "/minha_pista_exemplo.json", t, &err),
+                      "exemplo de pista inválido: %s", err.c_str());
+                CHECK(t.valid() && t.length > 200.0, "pista de exemplo curta: %.0f",
+                      t.length);
+            }
+        }
+        // recarregar não pode quebrar nada
+        size_t antes = m.pistas.size();
+        m.pistas = list_tracks();
+        m.carros = list_cars();
+        CHECK(m.pistas.size() >= antes, "recarregar perdeu pistas");
+        for (const auto& it : m.pistas) CHECK(it.error.empty(), "pista %s: %s", it.id.c_str(),
+                                              it.error.c_str());
+        for (const auto& it : m.carros) CHECK(it.error.empty(), "carro %s: %s", it.id.c_str(),
+                                              it.error.c_str());
     }
 
     printf("\n%d testes passaram, %d falharam\n", ok, falhas);

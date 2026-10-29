@@ -293,17 +293,17 @@ static void pinta_cena3d(HDC hdc, int x0, int y0, int w, int h, const Track& trk
     // ---- velocímetro simples no canto (em 3D o HUD de cima faz menos sentido)
     if (g_app.ui.mostrar_hud) {
         char buf[64];
-        std::snprintf(buf, sizeof(buf), "%3.0f km/h", foco->car.speed * 3.6);
         SetTextColor(hdc, RGB(235, 240, 248));
         SetBkMode(hdc, TRANSPARENT);
         HGDIOBJ of = SelectObject(hdc, g_fonte_titulo);
-        TextOutW(hdc, x0 + w - 190, y0 + h - 46, wide(buf).c_str(),
-                 int(std::string(buf).size()));
-        std::snprintf(buf, sizeof(buf), "%dª  %4.0f rpm",
+        std::snprintf(buf, sizeof(buf), "%3.0f km/h", foco->car.speed * 3.6);
+        std::wstring wt = wide(buf);
+        TextOutW(hdc, x0 + w - 190, y0 + h - 46, wt.c_str(), int(wt.size()));
+        std::snprintf(buf, sizeof(buf), "%da  %4.0f rpm",
                       foco->car.gear, foco->car.rpm);
+        wt = wide(buf);
         SelectObject(hdc, g_fonte);
-        TextOutW(hdc, x0 + w - 190, y0 + h - 22, wide(buf).c_str(),
-                 int(std::string(buf).size()));
+        TextOutW(hdc, x0 + w - 190, y0 + h - 22, wt.c_str(), int(wt.size()));
         SelectObject(hdc, of);
     }
 }

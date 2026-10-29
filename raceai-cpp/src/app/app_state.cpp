@@ -291,6 +291,7 @@ AppState::AppState() {
     // preferências do jogador ficam num JSON ao lado do executável
     controles_path = assets_root() + "/controles.json";
     carregar_controles();
+    garantir_modelos_mod();
 }
 
 bool AppState::carregar_pista(int idx) {
@@ -346,6 +347,50 @@ void AppState::aplicar_assistencias() {
     CarSpec& sp = race.sim->specs[size_t(fi)];
     sp.abs_level = controles.abs ? 0.9 : 0.0;
     sp.traction_control = controles.controle_tracao ? 0.6 : 0.0;
+}
+
+// ------------------------------------------------------------- mods fáceis
+// Um dos pedidos recorrentes: "deixa mais fácil fazer mods". A receita aqui é
+// dar o arquivo pronto — o usuário copia, mexe nos números e recarrega.
+static bool existe(const std::string& p) {
+    std::ifstream f(p.c_str());
+    return f.good();
+}
+
+void AppState::garantir_modelos_mod() {
+    const std::string dc = mods_cars_dir();
+    const std::string dt = mods_tracks_dir();
+    if (!dc.empty() && !existe(dc + "/meu_carro_exemplo.json")) {
+        CarSpec base = car_cache_;
+        base.id = "meu_carro";
+        base.name = "Meu Carro (exemplo)";
+        Json j = base.to_json();
+        j.set("__comentario", Json("copie este arquivo, mude o id/name e os numeros. "
+                                  "Depois clique em Recarregar mods na aba Corrida."));
+        Json::save_file(dc + "/meu_carro_exemplo.json", j);
+    }
+    if (!dt.empty() && !existe(dt + "/minha_pista_exemplo.json")) {
+        Json j = Json::object();
+        j.set("name", Json("Minha Pista (exemplo)"));
+        j.set("description", Json("copie, troque os pontos e recarregue"));
+        j.set("difficulty", Json("livre"));
+        j.set("closed", Json(1.0));
+        j.set("width", Json(12.0));
+        j.set("spacing", Json(3.0));
+        // umoval simples: 16 pontos em circulo, ~750 m
+        Json pts = Json::array();
+        for (int i = 0; i < 16; ++i) {
+            const double a = 2.0 * kPi * double(i) / 16.0;
+            Json p = Json::array();
+            p.push(Json(std::cos(a) * 120.0));
+            p.push(Json(std::sin(a) * 75.0));
+            pts.push(p);
+        }
+        j.set("points", pts);
+        Json z = Json::array();
+        j.set("zones", z);
+        Json::save_file(dt + "/minha_pista_exemplo.json", j);
+    }
 }
 
 bool AppState::salvar_controles() const {
