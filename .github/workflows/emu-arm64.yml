@@ -695,17 +695,25 @@ jobs:
           die() { echo "::error title=game-assert::$1"; exit 1; }
           # -a forces text mode, so a stray non-UTF-8 byte in a module path cannot
           # silently turn a match into no output.
-          firstnum() { grep -aoE "$1" /tmp/game.log | grep -aoE '[0-9]+' | sed -n '1p'; }
+          # The LAST match, not the first. print_progress runs during the sweep as
+          # well as print_summary at the end, so an early progress line reports the
+          # count before it climbed - and taking the first match quietly produced
+          # translated=0 against a log whose summary says 151. That made the main
+          # assertion below vacuous: it is guarded on translated > 0, so with 0 it
+          # never ran at all and the step passed without checking anything. A
+          # silently-skipped assertion is worse than no assertion, because it looks
+          # like coverage.
+          lastnum() { grep -aoE "$1" /tmp/game.log | grep -aoE '[0-9]+' | sed -n '$p'; }
 
           grep -aq -- "--- executing what was translated ---" /tmp/game.log \
             || die "the --execute pass never ran, so nothing was executed"
           grep -aqE "records executed: [0-9]+" /tmp/game.log \
             || die "the execution tally was never printed"
 
-          translated=$(firstnum 'functions pre-translated: [0-9]+'); translated=${translated:-0}
-          ran=$(firstnum 'records executed: [0-9]+');                  ran=${ran:-0}
-          ret=$(firstnum 'returned: [0-9]+');                          ret=${ret:-0}
-          faulted=$(firstnum 'faulted: [0-9]+');                       faulted=${faulted:-0}
+          translated=$(lastnum 'functions pre-translated: [0-9]+'); translated=${translated:-0}
+          ran=$(lastnum 'records executed: [0-9]+');                  ran=${ran:-0}
+          ret=$(lastnum 'returned: [0-9]+');                          ret=${ret:-0}
+          faulted=$(lastnum 'faulted: [0-9]+');                       faulted=${faulted:-0}
           markers=$(grep -acE "EXECUTED ON aarch64:" /tmp/game.log);   markers=${markers:-0}
 
           echo "translated=${translated} executed=${ran} returned=${ret} faulted=${faulted} markers=${markers}"
