@@ -283,7 +283,7 @@ recusa para usuários secundários). Por isso a leitura por perfil usa o própri
 app (uid no log) e o `adb backup` fica como caminho de extração do perfil
 principal — ambos sem root.
 
-## 4e. Play Store dentro do emulador (pronto, gated em credenciais)
+## 4e. Play Store no emulador: o que falta é *uma identidade de teste*
 
 `tools/play_store_reap.sh` sobe a imagem `google_apis_playstore`, entra na conta
 por uiautomator, instala o Family Link e — sem root — extrai o APK com
@@ -294,12 +294,68 @@ FLCODES_GPLAY_EMAIL=... FLCODES_GPLAY_PASSWORD=... \
   tools/play_store_reap.sh --work /tmp/store --api 30
 ```
 
-No CI isso é o job `play-store`, que só roda quando os secrets
-`FLCODES_GPLAY_EMAIL` e `FLCODES_GPLAY_PASSWORD` existem. **Não rodei com conta
-real**: não tenho uma, e criar contas Google por automação não é possível
-(verificação por telefone, bloqueio anti-bot) — além de violar os termos do
-Google. O job, quando há credenciais, faz tudo e publica o resultado no PR; sem
-credenciais ele reporta isso explicitamente, sem fingir sucesso.
+### Por que a ferramenta não cria a conta
+
+Criar conta Google por automação não é "difícil", é **impossível de fazer
+direito**: o cadastro pede número de telefone verificado, passa por anti-bot e
+o próprio ToS do Google proíbe. Uma conta criada assim é derrubada no meio do
+experimento e o resultado não vale nada. Então essa parte é sua, e o resto
+virou ferramenta:
+
+```bash
+flcodes account howto     # os caminhos legítimos, em ordem de esforço
+flcodes account check     # os secrets servem para entrar na loja? (sem boot)
+```
+
+`account check` roda **antes** do emulador e responde em 20 segundos, com o
+conserto em cada linha:
+
+```
+[FAIL] FLCODES_GPLAY_EMAIL is not set         -> bash tools/setup_play_secrets.sh
+[FAIL] FLCODES_GPLAY_PASSWORD is not set
+[warn] 2-step verification blocks the emulator sign-in
+[warn] a brand-new account is often challenged by device check
+verdict: the Play Store job would fail. Nothing was booted.
+```
+
+A parte útil são os dois `warn`, que são o motivo real de contas válidas
+falharem no CI: **2SV** derruba o login por uiautomator, e conta recém-criada
+cai em *"Verificar é você"* quando o login vem de emulador. Conta que já entrou
+uma vez num celular real passa.
+
+### Como publicar as credenciais sem passar por chat nem por log
+
+```bash
+read -r  FLCODES_GPLAY_EMAIL;    export FLCODES_GPLAY_EMAIL
+read -rs FLCODES_GPLAY_PASSWORD; export FLCODES_GPLAY_PASSWORD
+bash family-link-codes/tools/setup_play_secrets.sh --dry-run   # confere
+bash family-link-codes/tools/setup_play_secrets.sh             # publica
+```
+
+O script confere a forma do email e da senha, avisa quando a senha tem `$`,
+`` ` `` ou `\` (a causa nº 1 de "a conta funciona no navegador e falha no CI",
+porque o shell come antes do `gh`), grava com `gh secret set` e **nunca imprime
+a senha**. Testado com um `gh` simulado: 4 testes.
+
+### Ordens de esforço (de `account howto`)
+
+1. **Conta descartável sua**, 3 minutos: criar em janela anônima, desligar 2SV,
+   entrar uma vez na Play Store num celular de verdade, esperar ~1 dia.
+2. **Conta antiga que você não usa** — melhor que a 1, já passou pelo device
+   check. Só não use a principal.
+3. **Cloud Identity Free / Workspace** — o único jeito legítimo de criar
+   identidade Google por API (`users.insert`), mas exige domínio verificado seu.
+4. **Nenhuma delas**: o teste segue sem a Play Store. O APK real 2.105 é o mesmo
+   build publicado, já baixado e conferido por assinatura (`sha256 ee2e1349…`)
+   sem credencial nenhuma; só o job `play-store` fica de fora, e ele **diz isso**
+   no PR em vez de fingir sucesso.
+
+### Limite do meu lado
+
+O token que eu tenho aqui não tem permissão de escrita em secrets
+(`gh secret list` → `403 Resource not accessible by integration`), e pedir a
+senha no chat seria exatamente o que não se faz. A conta é o único passo desta
+cadeia que precisa das suas mãos — e são 3 minutos.
 
 ## 4f. APKs reais de terceiros, sem root (executado, verde)
 
@@ -719,10 +775,10 @@ depois dela está provado, e o TTL da resposta é respeitado em vez de assumido.
 3. No aparelho supervisionado **offline**, digite o código atual em
    "Acesso dos pais" — esse é o teste de aceitação final.
 
-## 7. Cobertura de testes (159)
+## 7. Cobertura de testes (180)
 
 ```bash
-pytest -q tests/test_flcodes_*.py    # 159 passed
+pytest -q tests/test_flcodes_*.py    # 180 passed
 ```
 
 (`pytest -q` na raiz do repositório também coleta os testes de outro projeto
@@ -740,4 +796,5 @@ daquele repo, que exigem `jdk4py`; não têm relação com esta ferramenta.)
 | `test_flcodes_proto.py` | varint/zigue-zague, `FileDescriptorProto` (numeração real dos campos), `scan_descriptors` ancorado em `.proto`, `mask`, `tree`, `find_secret_fields` |
 | `test_flcodes_dart_snapshot.py` | ELF `.so`, strings do snapshot, `--keys`/`--strings-only`, ruído vs conceito |
 | `test_flcodes_response_chain.py` | a cadeia inteira: resposta sintética → segredo → cofre → código; mascaramento por padrão; `--base64`; TTL vindo da resposta; resposta sem segredo reprova |
+| `test_flcodes_account.py` | preflight da identidade de teste: email/senha vazios ou placeholder, `$` na senha, 2SV e device check sempre avisados, `--json`, e o `setup_play_secrets.sh` com `gh` simulado (recusa senha curta, dry-run não grava, não imprime a senha) |
 | `test_flcodes_device.py` | `adb` simulado: info, pull dos splits, `adb backup` real, varredura + `keys`/`gen` com TTL, e prova de que nenhum comando usa root |

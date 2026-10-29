@@ -15,6 +15,7 @@ from pathlib import Path
 from . import (
     __version__,
     abe as abe_mod,
+    account as account_mod,
     apk as apk_mod,
     codes as codes_mod,
     proto as proto_mod,
@@ -619,6 +620,20 @@ def cmd_proto(args) -> int:
     return EXIT_USAGE
 
 
+def cmd_account(args) -> int:
+    """Judge the Play Store credentials, or explain how to get a test identity."""
+    if args.action == "howto":
+        _print(account_mod.howto().rstrip())
+        return EXIT_OK
+
+    findings = account_mod.check()
+    if args.json:
+        _print(account_mod.as_json(findings))
+    else:
+        _print(account_mod.render(findings))
+    return 1 if account_mod.blocked(findings) else EXIT_OK
+
+
 def cmd_device(args) -> int:
     """No-root device workflow: inspect, pull the APK, take an adb backup."""
     try:
@@ -1143,6 +1158,16 @@ def build_parser() -> argparse.ArgumentParser:
             child.add_argument("--password")
             child.add_argument("--out-dir")
 
+    account_parser = sub.add_parser(
+        "account", help="is the Play Store test identity usable? how to get one"
+    )
+    account_sub = account_parser.add_subparsers(dest="action", required=True)
+    account_check = account_sub.add_parser(
+        "check", help="validate FLCODES_GPLAY_EMAIL / FLCODES_GPLAY_PASSWORD"
+    )
+    account_check.add_argument("--json", action="store_true")
+    account_sub.add_parser("howto", help="how to get a throwaway identity legitimately")
+
     sub.add_parser("audit", help="run the built-in self checks")
     return parser
 
@@ -1162,6 +1187,7 @@ def main(argv: list | None = None) -> int:
         "abe": cmd_abe,
         "apk": cmd_apk,
         "proto": cmd_proto,
+        "account": cmd_account,
         "device": cmd_device,
         "serve": cmd_serve,
         "audit": cmd_audit,
