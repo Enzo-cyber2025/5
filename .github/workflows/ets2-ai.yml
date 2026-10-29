@@ -3632,7 +3632,6 @@ jobs:
                     } else { Trace "hib-vk: installer nao baixou ($tVh)" }
                   } catch { Trace "hib-vk upgrade: $($_.Exception.Message)" }
                 }
-                }
                 if ($icdHib) {
                   $env:VK_ICD_FILENAMES = $icdHib
                   RegIcd $icdHib $false
