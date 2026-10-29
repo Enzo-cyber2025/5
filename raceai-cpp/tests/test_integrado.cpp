@@ -12,7 +12,10 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
-#ifndef _WIN32
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#else
 #include <dlfcn.h>
 #endif
 #include <fstream>
@@ -305,7 +308,7 @@ int main(int argc, char** argv) {
         std::string hud;
         for (const std::string& l : app.treino_lines()) hud += l + "\n";
         CHECK(hud.find("loss") != std::string::npos, "HUD do treino sem loss");
-        CHECK(hud.find("erro") != std::string::npos, "HUD do treino sem erro %");
+        CHECK(hud.find("erro") != std::string::npos, "HUD do treino sem erro %%");
         // a IA em Python continuou sendo chamada durante o treino?
         if (tem_python && app.py_driver) {
             CHECK(app.py_driver->call_count() > 10,
