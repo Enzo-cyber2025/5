@@ -138,6 +138,7 @@ void Race::step(int n) {
         c.loss = m.loss;
         c.erro_pct = m.error_pct;
     }
+    grava_fantasma();
     update_standings();
     bool todos_terminaram = true;
     for (const Competitor& c : competidores) {
@@ -160,18 +161,104 @@ void Race::update_standings() {
     });
 }
 
+// Telemetria da corrida: setores, delta e "fantasma" (traçado da melhor volta).
+// O fantasma é gravado só do carro em foco, a 30 Hz — custo irrelevante e
+// permite comparar a volta atual com a melhor desenhada na pista.
+int Race::indice_foco() const {
+    if (competidores.empty()) return 0;
+    for (size_t i = 0; i < competidores.size(); ++i)
+        if (competidores[i].manual) return int(i);
+    return ordem.empty() ? 0 : ordem.front();
+}
+
+void Race::grava_fantasma() {
+    if (!sim) return;
+    foco = indice_foco();
+    if (foco < 0 || foco >= int(competidores.size()) || foco >= sim->n()) return;
+    const Agent& a = sim->agents[foco];
+    if (!a.car.alive) return;
+    if (melhor_setor.size() != size_t(setores)) melhor_setor.assign(size_t(setores), 1e18);
+
+    // amostra a 30 Hz (a simulação roda a 120 Hz)
+    gravando.emplace_back(float(a.car.x), float(a.car.y));
+
+    if (a.laps > volta_gravada) {
+        // fechou a volta: se foi a melhor, vira o fantasma
+        if (a.last_lap < melhor_volta_geral && gravando.size() > 30) {
+            melhor_volta_geral = a.last_lap;
+            fantasma.swap(gravando);
+            fantasma_valido = true;
+        }
+        gravando.clear();
+        volta_gravada = a.laps;
+        for (size_t k = 0; k < melhor_setor.size() && k < a.melhor_setor.size(); ++k)
+            melhor_setor[k] = std::min(melhor_setor[k], a.melhor_setor[k]);
+    }
+    if (gravando.size() > 20000) gravando.clear();   // segurança
+}
+
+static std::string fmt_tempo(double t) {
+    if (t >= 1e17) return "--.--";
+    char b[32];
+    std::snprintf(b, sizeof(b), "%.2f", t);
+    return b;
+}
+
 std::vector<std::string> Race::hud_lines() const {
     std::vector<std::string> out;
     char buf[160];
+    const int fi = indice_foco();
+
     out.push_back("VOLTA " + std::to_string(laps > 0 ? laps : 0) +
                   (laps > 0 ? "" : "  (tempo livre)"));
-    std::snprintf(buf, sizeof(buf), "tempo %.1f s", elapsed);
+    std::snprintf(buf, sizeof(buf), "tempo %6.1f s", elapsed);
     out.push_back(buf);
+
+    if (sim && fi < sim->n() && fi < int(competidores.size())) {
+        const Agent& a = sim->agents[fi];
+        std::snprintf(buf, sizeof(buf), "volta %d  parcial %s s", a.laps + 1,
+                      fmt_tempo(a.time - a.lap_start).c_str());
+        out.push_back(buf);
+
+        std::string linha = "setores ";
+        for (int k = 0; k < setores; ++k) {
+            double ms = (size_t(k) < melhor_setor.size()) ? melhor_setor[size_t(k)] : 1e18;
+            linha += (k == a.setor ? ">" : " ") + fmt_tempo(ms) + " ";
+        }
+        out.push_back(linha);
+        std::snprintf(buf, sizeof(buf), "última %s  melhor %s", fmt_tempo(a.last_lap).c_str(),
+                      fmt_tempo(a.best_lap).c_str());
+        out.push_back(buf);
+        std::snprintf(buf, sizeof(buf), "delta %+.2f s   setor %d", a.delta, a.setor + 1);
+        out.push_back(buf);
+
+        out.push_back("--- carro ---");
+        std::snprintf(buf, sizeof(buf), "marcha %d    %5.0f rpm", a.car.gear, a.car.rpm);
+        out.push_back(buf);
+        std::snprintf(buf, sizeof(buf), "%5.1f m/s  (%3.0f km/h)", a.car.speed,
+                      a.car.speed * 3.6);
+        out.push_back(buf);
+        std::snprintf(buf, sizeof(buf), "pneu %3.0f C  desgaste %2.0f%%", a.car.tire_temp,
+                      a.car.tire_wear * 100.0);
+        out.push_back(buf);
+        std::snprintf(buf, sizeof(buf), "dano %2.0f%%  tanque %3.0f%%", a.car.damage * 100.0,
+                      a.car.fuel * 100.0);
+        out.push_back(buf);
+        std::snprintf(buf, sizeof(buf), "aderência %3.0f%%  patina %2.0f%%",
+                      std::min(a.car.grip_use, 2.0) * 100.0, a.car.wheelspin * 100.0);
+        out.push_back(buf);
+        if (fantasma_valido) {
+            std::snprintf(buf, sizeof(buf), "fantasma %s s (%zu pts)",
+                          fmt_tempo(melhor_volta_geral).c_str(), fantasma.size());
+            out.push_back(buf);
+        }
+    }
+
     out.push_back("--- classificação ---");
     for (size_t k = 0; k < ordem.size() && k < 8; ++k) {
         const Competitor& c = competidores[ordem[k]];
-        std::snprintf(buf, sizeof(buf), "%zu. %-16s %2d v  %5.1f m/s  %4.1f%%",
-                      k + 1, c.nome.c_str(), c.voltas, c.velocidade, c.erro_pct);
+        std::snprintf(buf, sizeof(buf), "%zu. %-15s %2d v %5.1f m/s %4.1f%%", k + 1,
+                      c.nome.c_str(), c.voltas, c.velocidade, c.erro_pct);
         out.push_back(buf);
     }
     return out;

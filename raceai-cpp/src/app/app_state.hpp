@@ -56,6 +56,18 @@ public:
     std::vector<int> ordem;            // classificação (índices em competidores)
     void update_standings();
     std::vector<std::string> hud_lines() const;
+
+    // ---- telemetria de corrida: setores, delta e "fantasma" ----
+    int foco = 0;                      // competidor em foco (HUD e câmera)
+    int setores = 3;
+    double melhor_volta_geral = 1e18;  // melhor volta já cravada
+    std::vector<double> melhor_setor;  // melhor setor já cravado
+    std::vector<std::pair<float, float>> fantasma;   // traçado da melhor volta
+    bool fantasma_valido = false;
+    std::vector<std::pair<float, float>> gravando;   // volta em gravação
+    int volta_gravada = 0;             // última volta contabilizada no fantasma
+    void grava_fantasma();             // chamada a cada passo
+    int indice_foco() const;
 };
 
 // controle do carro humano (a camada de janela escreve aqui a cada frame)

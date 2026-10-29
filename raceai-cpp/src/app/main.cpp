@@ -202,6 +202,20 @@ static void pinta_canvas(HDC hdc, int x0, int y0, int w, int h) {
     SelectObject(hdc, old_p);
     DeleteObject(largada);
 
+    // ------------------------------------------------------- fantasma
+    // traçado da melhor volta já cravada: dá para perseguir a própria marca
+    if (g_app.mode == Mode::Corrida && g_app.race.fantasma_valido &&
+        g_app.race.fantasma.size() > 2) {
+        HPEN fan = CreatePen(PS_DASH, 1, RGB(120, 230, 210));
+        HGDIOBJ op2 = SelectObject(hdc, fan);
+        const auto& f = g_app.race.fantasma;
+        MoveToEx(hdc, sx(f[0].first), sy(f[0].second), nullptr);
+        for (size_t i = 1; i < f.size(); ++i)
+            LineTo(hdc, sx(f[i].first), sy(f[i].second));
+        SelectObject(hdc, op2);
+        DeleteObject(fan);
+    }
+
     // ------------------------------------------------------- carros
     std::vector<const Agent*> agentes;
     std::vector<const CarSpec*> specs;
@@ -308,6 +322,87 @@ static void pinta_canvas(HDC hdc, int x0, int y0, int w, int h) {
         HGDIOBJ of = SelectObject(hdc, g_fonte);
         TextOutW(hdc, gx + 6, gy + 4, L"loss por geração", 16);
         SelectObject(hdc, of);
+    }
+
+    // ------------------------------------------------------- minimapa
+    {
+        const int mw = 210, mh = 150;
+        int mx = x0 + w - mw - 16, my = y0 + h - mh - 16;
+        if (mw < w - 40 && mh < h - 40) {
+            double minx = 1e18, maxx = -1e18, miny = 1e18, maxy = -1e18;
+            for (int i = 0; i < trk->n(); ++i) {
+                minx = std::min(minx, std::min(trk->edge_l[i].x, trk->edge_r[i].x));
+                maxx = std::max(maxx, std::max(trk->edge_l[i].x, trk->edge_r[i].x));
+                miny = std::min(miny, std::min(trk->edge_l[i].y, trk->edge_r[i].y));
+                maxy = std::max(maxy, std::max(trk->edge_l[i].y, trk->edge_r[i].y));
+            }
+            const double dx = std::max(maxx - minx, 1.0), dy = std::max(maxy - miny, 1.0);
+            const double esc = std::min((mw - 20) / dx, (mh - 20) / dy);
+            auto mxp = [&](double wx) {
+                return mx + 10 + int((wx - minx) * esc + (mw - 20 - dx * esc) * 0.5);
+            };
+            auto myp = [&](double wy) {
+                return my + mh - 10 - int((wy - miny) * esc + (mh - 20 - dy * esc) * 0.5);
+            };
+            HBRUSH bf = CreateSolidBrush(RGB(18, 22, 30));
+            RECT mr = {mx, my, mx + mw, my + mh};
+            FillRect(hdc, &mr, bf);
+            DeleteObject(bf);
+            HPEN mol = CreatePen(PS_SOLID, 1, RGB(70, 78, 92));
+            HGDIOBJ op3 = SelectObject(hdc, mol);
+            Rectangle(hdc, mx, my, mx + mw, my + mh);
+            SelectObject(hdc, op3);
+            DeleteObject(mol);
+
+            // asfalto (linha de centro grossa)
+            HPEN pista = CreatePen(PS_SOLID, 4, RGB(78, 84, 96));
+            HGDIOBJ op4 = SelectObject(hdc, pista);
+            MoveToEx(hdc, mxp(trk->center[0].x), myp(trk->center[0].y), nullptr);
+            for (int i = 1; i < trk->n(); ++i)
+                LineTo(hdc, mxp(trk->center[i].x), myp(trk->center[i].y));
+            if (trk->closed) LineTo(hdc, mxp(trk->center[0].x), myp(trk->center[0].y));
+            SelectObject(hdc, op4);
+            DeleteObject(pista);
+
+            // largada
+            int si2 = trk->start_index % trk->n();
+            HPEN lg = CreatePen(PS_SOLID, 2, RGB(240, 240, 240));
+            HGDIOBJ op5 = SelectObject(hdc, lg);
+            MoveToEx(hdc, mxp(trk->edge_l[si2].x), myp(trk->edge_l[si2].y), nullptr);
+            LineTo(hdc, mxp(trk->edge_r[si2].x), myp(trk->edge_r[si2].y));
+            SelectObject(hdc, op5);
+            DeleteObject(lg);
+
+            // fantasma no minimapa
+            if (g_app.mode == Mode::Corrida && g_app.race.fantasma_valido &&
+                g_app.race.fantasma.size() > 2) {
+                HPEN f2 = CreatePen(PS_SOLID, 1, RGB(120, 230, 210));
+                HGDIOBJ op6 = SelectObject(hdc, f2);
+                const auto& f = g_app.race.fantasma;
+                MoveToEx(hdc, mxp(f[0].first), myp(f[0].second), nullptr);
+                for (size_t i = 1; i < f.size(); ++i)
+                    LineTo(hdc, mxp(f[i].first), myp(f[i].second));
+                SelectObject(hdc, op6);
+                DeleteObject(f2);
+            }
+
+            // carros
+            for (size_t k = 0; k < agentes.size(); ++k) {
+                const Agent* a = agentes[k];
+                int px = mxp(a->car.x), py = myp(a->car.y);
+                COLORREF cor = a->car.alive ? RGB(224, 72, 58) : RGB(90, 90, 96);
+                if (a == foco) cor = RGB(86, 214, 140);
+                HBRUSH b = CreateSolidBrush(cor);
+                RECT pr = {px - 2, py - 2, px + 3, py + 3};
+                FillRect(hdc, &pr, b);
+                DeleteObject(b);
+            }
+            SetTextColor(hdc, RGB(150, 160, 176));
+            SetBkMode(hdc, TRANSPARENT);
+            HGDIOBJ of2 = SelectObject(hdc, g_fonte);
+            TextOutW(hdc, mx + 8, my + 4, L"minimapa", 8);
+            SelectObject(hdc, of2);
+        }
     }
 
     // ------------------------------------------------------- HUD

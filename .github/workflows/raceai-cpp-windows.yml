@@ -174,6 +174,11 @@ jobs:
         shell: msys2 {0}
         run: cd raceai-cpp && ./build/raceai_integrado.exe --secao 10 python/python311.dll
 
+      - name: "Integração 11: chave de modo, setores, fantasma e HUD"
+        if: always()
+        shell: msys2 {0}
+        run: cd raceai-cpp && ./build/raceai_integrado.exe --secao 11 python/python311.dll
+
       - name: "Treino rápido: a loss precisa cair"
         shell: msys2 {0}
         run: |
@@ -194,6 +199,7 @@ jobs:
           cp README.md package/RaceAI2D-C++/LEIA-ME.txt
           cp MODS.md package/RaceAI2D-C++/
           cp tools/pt_para_json.py package/RaceAI2D-C++/converter-modelo.py
+          cp tools/gerar_conteudo.py package/RaceAI2D-C++/gerar-conteudo.py
           cp -r modelos package/RaceAI2D-C++/
           du -sh package/RaceAI2D-C++
           cd package && zip -qr RaceAI2D-C++-windows.zip RaceAI2D-C++
@@ -214,8 +220,21 @@ jobs:
         run: |
           $ErrorActionPreference = 'Continue'
           $notas = @(
-            'Jogo em C++ puro (Win32 + GDI): IA em Python embutida, recompensa'
-            'ajustavel por sliders e HUD com loss e porcentagem de erro.',
+            'RaceAI 2D (C++ puro, Win32 + GDI). Um unico executavel com os dois'
+            'modos: F2 alterna Corrida e Treinamento na hora, sem voltar ao menu.',
+            '',
+            'Novidades desta versao:',
+            ' - fisica nova: motor com curva de torque, cambio automatico de ate 9 marchas,',
+            '   pneus com temperatura e desgaste, aerodinamica (arrasto e downforce),',
+            '   transferencia de carga lateral, dano por batida e tanque de combustivel;',
+            ' - telemetria de corrida: setores, melhor volta, delta e fantasma (o tracado',
+            '   da sua melhor volta desenhado na pista) alem do minimapa;',
+            ' - 16 pistas e 14 carros (de kart a caminhao, de eletrico a monoposto);',
+            ' - abre sem erro: a janela se ajusta a tela e qualquer falha aparece em',
+            '   uma janela de mensagem e fica gravada em raceai.log.',
+            '',
+            'Se algo nao abrir: abra o arquivo raceai.log (na pasta do .exe) e mande o',
+            'conteudo - ele diz exatamente onde parou.',
             '',
             "Gerado por .github/workflows/raceai-cpp-windows.yml (branch $env:GITHUB_REF_NAME, commit $env:GITHUB_SHA)."
           ) -join "`n"

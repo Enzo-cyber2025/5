@@ -34,12 +34,14 @@ RaceAI2D-C++/
   mods/cars/          seus carros (opcional)
   python/             interpretador Python (só para a IA em Python)
   modelos/            onde os modelos treinados são salvos
+  raceai.log          nasce sozinho: gravar o que o jogo fez (ver abaixo)
 ```
 
 ### Teclas
 
 | Tecla | Função |
 |-------|--------|
+| **`F2`** | **chave: alterna Corrida ↔ Treinamento** (mesmo app, sem voltar ao menu) |
 | Setas / WASD | dirigir (corrida) |
 | `R` | reinicia a corrida / zera o treino |
 | `C` | câmera livre ou seguindo o carro em foco |
@@ -49,6 +51,75 @@ RaceAI2D-C++/
 | `O` | mostra/esconde os sensores |
 | `+` / `-` ou roda do mouse | aproxima/afasta |
 | `ESC` | volta ao menu |
+
+---
+
+## Os dois modos no mesmo app
+
+O jogo tem **Corrida** e **Treinamento** no mesmo executável. Aperte **`F2`**
+(ou clique no botão `F2 ▸ Treino` / `F2 ▸ Corrida`) para trocar de modo na
+hora — nada é perdido: a corrida continua de onde parou e o treino continua
+evoluindo enquanto você está na corrida.
+
+| | Corrida | Treinamento |
+|---|---|---|
+| O que faz | você (ou uma rede) guia contra adversários | evolução genética treina uma rede |
+| Mostra | classificação, setores, delta, fantasma, minimapa | loss, erro %, geração, gráfico |
+| Controles | setas/WASD | sliders de recompensa e de população |
+
+### Erros ao abrir
+
+Se alguma coisa falhar na abertura, o jogo **mostra uma janela com o erro** e
+grava tudo em **`raceai.log`**, na mesma pasta do `.exe`. Abra esse arquivo:
+ele lista o passo a passo da inicialização (se o Python foi achado, o tamanho
+da janela que coube na sua tela etc.) e a última linha antes do problema.
+
+O tamanho da janela é calculado pela área útil da tela — em telas de
+1366×768 ou menores a janela abre menor em vez de ficar cortada.
+
+---
+
+## Telemetria de corrida
+
+- **Setores**: a volta é dividida em 3 setores; o HUD mostra o melhor tempo de
+  cada um e marca com `>` o setor atual.
+- **Delta**: diferença (±) contra a sua própria melhor volta, igual telemetria
+  de jogo de corrida de verdade.
+- **Fantasma**: o traçado da sua melhor volta fica desenhado na pista (linha
+  tracejada ciano) e no minimapa, para você perseguir a própria marca.
+- **Minimapa**: a pista inteira no canto inferior direito, com todos os carros.
+- **Sistemas do carro**: marcha, giro do motor, temperatura e desgaste dos
+  pneus, dano, combustível, aderência usada e patinação.
+
+---
+
+## A física
+
+O modelo é uma bicicleta dinâmica com pneus Pacejka-lite, integrada a passo
+fixo (1/120 s) — determinístico, porque comparar gerações exige isso. O que
+entra em cada passo:
+
+1. **Motor com curva de torque** — torque varia com o giro (platô perto do pico
+   de torque, queda depois) e é cortado no limitador. Se o mod não informar
+   `peak_torque`, ele é derivado da força de tração.
+2. **Câmbio automático** — até 9 marchas, com histerese: só sobe se a marcha
+   nova ainda ficar acima do ponto de redução e só reduz se não estourar o
+   corte (sem isso o câmbio fica "caçando" marcha e o carro não acelera).
+3. **Pneus** — força lateral por curva de deriva, com **temperatura** (janela
+   ótima de aderência), **desgaste** progressivo e **sensibilidade à carga**
+   (transferência de carga custa aderência, como na vida real).
+4. **Transferência de carga** longitudinal (eixo) e lateral (roda de dentro
+   alivia, a de fora carrega) — a soma das duas é o que faz frear forte em cima
+   da curva tirar a direção.
+5. **Círculo de atrito por eixo** — acelerar demais come a capacidade de curva;
+   passar do limite gera **patinação** (`wheelspin`), que por sua vez gasta pneu.
+6. **Aerodinâmica** — arrasto `0.5·ρ·Cd·A·v²` e downforce `0.5·ρ·Cl·A·v²`
+   distribuída entre os eixos (muda a transferência de carga em alta).
+7. **Freios com ABS opcional**, controle de tração opcional, **dano por
+   impacto** (perde potência e direção) e **consumo de combustível** (o carro
+   fica mais leve; sem gasolina, não anda).
+8. **Superfície** — cada pista pode ter zonas de grama/terra/gelo que mudam
+   aderência e resistência ao rolamento.
 
 ---
 

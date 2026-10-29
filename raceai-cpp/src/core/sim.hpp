@@ -36,6 +36,7 @@ struct SimConfig {
     int max_crashes = 40;
     int spawn_rows = 0;             // 0 = automático
     bool checkpoint_gating = true;  // volta só vale se passar por todos os postos
+    int sectors = 3;                 // setores por volta (HUD/telemetria)
 };
 
 // Pesos da recompensa — **cada campo vira um slider na interface**.
@@ -88,6 +89,15 @@ struct Agent {
 
     // checkpoints em ordem (fecha o atalho "cortar o infield")
     int cp_next = 0, cp_passed = 0;
+
+    // ---- setores, melhor volta e delta (HUD estilo telemetria) ----
+    int setor = 0;                    // setor atual (0..setores-1)
+    double setor_inicio = 0.0;        // tempo em que o setor atual começou
+    std::vector<double> melhor_setor;      // melhor tempo de cada setor
+    std::vector<double> parcial_volta;     // parciais da volta em andamento
+    std::vector<double> melhor_parcial;    // parciais da melhor volta
+    double delta = 0.0;               // +/- contra a própria melhor volta
+    double ultimo_setor = 0.0;        // tempo do setor que acabou de fechar
 };
 
 // Métricas de um agente — tudo em [0,1] (exceto os campos em metros/segundos).

@@ -244,7 +244,10 @@ int main(int argc, char** argv) {
     if (tem_python) app.aplicar_codigo_python(kPilotoSimples);
     if (tem_python && app.py_driver) {
 #ifdef RACEAI_WITH_PYTHON
-        if (stub && *stub) stub_responder(stub, 0.0, 0.9);
+        // o stub devolve uma ação fixa: acelerador moderado, porque um carro
+        // mais potente (física nova) a fundo gruda no muro e as batidas viram
+        // ruído em vez de sinal
+        if (stub && *stub) stub_responder(stub, 0.0, 0.55);
         SimConfig cfg = app.sim_cfg;
         cfg.max_seconds = 40.0;
         Simulation sim(app.track_cache_, app.car_cache_, cfg, 1, 7u);
@@ -290,7 +293,10 @@ int main(int argc, char** argv) {
     {
         if (tem_python) {
 #ifdef RACEAI_WITH_PYTHON
-            if (stub && *stub) stub_responder(stub, 0.0, 0.9);
+            // o stub devolve uma ação fixa: acelerador moderado, porque um carro
+        // mais potente (física nova) a fundo gruda no muro e as batidas viram
+        // ruído em vez de sinal
+        if (stub && *stub) stub_responder(stub, 0.0, 0.55);
             app.aplicar_codigo_python(kPilotoSimples);
 #endif
         }
@@ -521,6 +527,126 @@ int main(int argc, char** argv) {
             CHECK(!err.empty(), "%s: sem explicação", a);
             printf("   %s recusado: %s\n", a, err.c_str());
         }
+    }
+    }
+
+    if (secao(11)) {
+    printf("11. chave de modo, setores, fantasma e HUD\n");
+    {
+        AppState app;
+        // ---- a chave: treino e corrida no mesmo app, sem voltar ao menu
+        app.iniciar_corrida({});
+        CHECK(app.race.sim != nullptr, "não montou a corrida");
+        CHECK(app.mode == Mode::Corrida, "não entrou no modo corrida");
+        app.alternar_modo();
+        CHECK(app.mode == Mode::Treinamento, "a chave não foi para o treino");
+        CHECK(app.trainer != nullptr, "o treino não foi preparado");
+        app.alternar_modo();
+        CHECK(app.mode == Mode::Corrida, "a chave não voltou para a corrida");
+        CHECK(app.race.sim != nullptr, "a corrida foi perdida ao trocar de modo");
+
+        // ---- roda a corrida e confere os sistemas de telemetria
+        const int agentes = app.race.sim ? app.race.sim->n() : 0;
+        CHECK(agentes > 0, "corrida sem competidores");
+
+        // o carro "Você" é pilotado aqui pelo mesmo piloto automático dos
+        // testes de conteúdo (perseguição pura): assim a volta é completada e
+        // o fantasma/telemetria podem ser conferidos de verdade
+        const Track& trk = app.race.sim->track;
+        const CarSpec& carro = app.car_cache_;
+        auto dirigir = [&](const Agent& a) {
+            const int n = trk.n();
+            const int frente = std::max(3, int((6.0 + a.car.speed * 0.55) /
+                                               std::max(trk.spacing, 0.5)));
+            Vec2 alvo = trk.center[(a.idx + frente) % n];
+            double desejado = std::atan2(alvo.y - a.car.y, alvo.x - a.car.x);
+            double erro = desejado - a.car.heading;
+            while (erro > M_PI) erro -= 2 * M_PI;
+            while (erro < -M_PI) erro += 2 * M_PI;
+            double cs = (std::fabs(a.car.slip_r) > 0.30) ? 0.45 * a.car.slip_r
+                                                         : 0.06 * a.car.slip_r;
+            double steer = std::max(-1.0, std::min(1.0, 1.1 * erro - 0.40 * a.car.r - cs));
+            const int la = std::max(6, frente * 2);
+            const Vec2& ta = trk.tangents[a.idx];
+            const Vec2& tb = trk.tangents[(a.idx + la) % n];
+            double curv = std::fabs(std::atan2(tb.y, tb.x) - std::atan2(ta.y, ta.x));
+            if (curv > M_PI) curv = 2 * M_PI - curv;
+            double raio = std::max(8.0, la * trk.spacing / std::max(curv, 0.05));
+            double mu = 0.55 * (carro.grip_front + carro.grip_rear) * 0.5;
+            double v_alvo = std::min(carro.max_speed * 0.75, std::sqrt(mu * 9.81 * raio));
+            double drive = a.car.speed < v_alvo ? 1.0
+                         : (a.car.speed > v_alvo * 1.25 ? -0.9 : -0.35);
+            if (std::fabs(erro) > 2.0) {
+                drive = a.car.speed > 4.0 ? -0.5 : 0.35;
+                steer = erro > 0.0 ? 1.0 : -1.0;
+            }
+            race_set_human(steer, drive);
+        };
+        for (int k = 0; k < 60 * 120 && app.race.sim && !app.race.finished; ++k) {
+            dirigir(app.race.sim->agents[app.race.indice_foco()]);
+            app.race.step(2);
+        }
+        race_set_human(0.0, 0.0);
+
+        const int fi = app.race.indice_foco();
+        CHECK(fi >= 0 && fi < agentes, "foco fora da faixa");
+        const Agent& a = app.race.sim->agents[fi];
+        CHECK(a.setor >= 0 && a.setor < app.race.setores, "setor inválido: %d", a.setor);
+        CHECK(std::isfinite(a.delta), "delta virou NaN");
+        CHECK(a.melhor_setor.size() == size_t(app.race.setores),
+              "vetor de setores com tamanho errado");
+        CHECK(a.melhor_parcial.size() == size_t(app.race.setores),
+              "vetor de parciais com tamanho errado");
+
+        // sistemas do carro em funcionamento
+        CHECK(a.car.rpm >= 0.0 && a.car.rpm <= 20000.0, "giro fora de faixa: %.0f", a.car.rpm);
+        CHECK(a.car.gear >= 1, "marcha inválida: %d", a.car.gear);
+        CHECK(a.car.tire_temp > 0.0 && a.car.tire_temp < 200.0,
+              "temperatura de pneu fora de faixa: %.1f", a.car.tire_temp);
+        CHECK(a.car.tire_wear >= 0.0 && a.car.tire_wear <= 1.0, "desgaste fora de faixa");
+        CHECK(a.car.damage >= 0.0 && a.car.damage <= 1.0, "dano fora de faixa");
+        CHECK(a.car.fuel >= 0.0 && a.car.fuel <= 1.0, "combustível fora de faixa");
+
+        // HUD: mostra a telemetria nova
+        std::vector<std::string> hud = app.race.hud_lines();
+        std::string tudo;
+        for (const std::string& l : hud) tudo += l + "\n";
+        CHECK(tudo.find("marcha") != std::string::npos, "HUD sem a marcha");
+        CHECK(tudo.find("rpm") != std::string::npos, "HUD sem o giro do motor");
+        CHECK(tudo.find("delta") != std::string::npos, "HUD sem o delta");
+        CHECK(tudo.find("setores") != std::string::npos, "HUD sem os setores");
+        CHECK(tudo.find("tanque") != std::string::npos, "HUD sem o tanque");
+        CHECK(hud.size() >= 10, "HUD pobre: %zu linhas", hud.size());
+
+        // se alguém completou uma volta, o fantasma tem que ter sido gravado
+        bool alguem_completou = false;
+        for (int i = 0; i < agentes; ++i)
+            if (app.race.sim->agents[i].laps > 0) alguem_completou = true;
+        if (alguem_completou) {
+            CHECK(app.race.melhor_volta_geral < 1e17, "completou volta mas não gravou o tempo");
+        }
+        CHECK(app.race.fantasma_valido, "o piloto automático completou volta mas o "
+                                        "fantasma não foi gravado");
+        if (app.race.fantasma_valido) {
+            CHECK(app.race.fantasma.size() > 30, "fantasma com poucos pontos: %zu",
+                  app.race.fantasma.size());
+            CHECK(app.race.melhor_volta_geral > 1.0 && app.race.melhor_volta_geral < 1e17,
+                  "melhor volta do fantasma fora de faixa: %.2f", app.race.melhor_volta_geral);
+            CHECK(app.race.melhor_setor.size() == size_t(app.race.setores),
+                  "melhores setores não foram registrados");
+            printf("   fantasma gravado: %.2f s, %zu pontos\n", app.race.melhor_volta_geral,
+                   app.race.fantasma.size());
+        }
+
+        // treino e corrida convivem: dá para treinar e voltar para a corrida
+        app.alternar_modo();
+        CHECK(app.mode == Mode::Treinamento, "não voltou para o treino");
+        app.iniciar_treino(true);
+        for (int k = 0; k < 20; ++k) app.tick_treino(4);
+        CHECK(!app.treino_lines().empty(), "treino sem métricas");
+        app.alternar_modo();
+        CHECK(app.mode == Mode::Corrida, "não voltou para a corrida depois de treinar");
+        CHECK(app.race.sim != nullptr, "corrida perdida depois de treinar");
     }
     }
 

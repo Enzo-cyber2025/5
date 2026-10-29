@@ -197,6 +197,10 @@ static const UINT CP_UTF8 = 65001;
 #ifndef SPI_GETWORKAREA
 #define SPI_GETWORKAREA 0x0030
 #endif
+#ifndef PS_DASH
+#define PS_DASH 1
+#define PS_DOT 2
+#endif
 #ifndef VK_F2
 #define VK_F2 0x71
 #endif

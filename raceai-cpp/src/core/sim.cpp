@@ -104,6 +104,13 @@ void Simulation::reset(int rotation) {
         a.s_prev = 0.0;
         a.cp_next = 0;
         a.cp_passed = 0;
+        a.setor = 0;
+        a.setor_inicio = 0.0;
+        a.delta = 0.0;
+        a.ultimo_setor = 0.0;
+        a.melhor_setor.assign(size_t(std::max(1, cfg.sectors)), 1e18);
+        a.parcial_volta.assign(size_t(std::max(1, cfg.sectors)), 0.0);
+        a.melhor_parcial.assign(size_t(std::max(1, cfg.sectors)), 1e18);
         active_.push_back(k);
     }
     sync_track_state();
@@ -238,12 +245,43 @@ void Simulation::step() {
             if (cp_index == a.cp_next || cp_index == (a.cp_next + 1) % m) {
                 a.cp_next = (a.cp_next + 1) % m;
                 a.cp_passed += 1;
+
+                // ---- setores: fecha o tempo do setor e compara com o melhor
+                const int ns = std::max(1, cfg.sectors);
+                if (a.melhor_setor.size() != size_t(ns)) {
+                    a.melhor_setor.assign(size_t(ns), 1e18);
+                    a.parcial_volta.assign(size_t(ns), 0.0);
+                    a.melhor_parcial.assign(size_t(ns), 1e18);
+                }
+                int setor_novo = std::min(ns - 1, cp_index * ns / std::max(1, m));
+                if (setor_novo != a.setor) {
+                    double t_setor = a.time - a.setor_inicio;
+                    a.ultimo_setor = t_setor;
+                    if (a.setor >= 0 && a.setor < ns) {
+                        a.melhor_setor[size_t(a.setor)] =
+                            std::min(a.melhor_setor[size_t(a.setor)], t_setor);
+                        a.parcial_volta[size_t(a.setor)] = a.time - a.lap_start;
+                    }
+                    a.setor = setor_novo;
+                    a.setor_inicio = a.time;
+                    // delta: o quanto está à frente/atrás da própria melhor volta
+                    double ref = a.melhor_parcial[size_t(setor_novo)];
+                    a.delta = ref < 1e17 ? (a.time - a.lap_start) - ref : 0.0;
+                }
+
                 if (a.cp_next == 0) {
                     a.laps += 1;
                     double lt = a.time - a.lap_start;
                     a.last_lap = lt;
-                    a.best_lap = std::min(a.best_lap, lt);
+                    if (lt < a.best_lap) {
+                        a.best_lap = lt;
+                        a.melhor_parcial = a.parcial_volta;   // novas parciais de referência
+                    }
                     a.lap_start = a.time;
+                    a.setor = 0;
+                    a.setor_inicio = a.time;
+                    a.parcial_volta.assign(size_t(ns), 0.0);
+                    a.delta = 0.0;
                 }
             }
         } else {

@@ -103,7 +103,58 @@ Dicas:
 | `brake_front` | distribuição de frenagem | 0,2 – 0,85 |
 | `yaw_inertia` | multiplicador da inércia em guinada | 0,5 – 2,5 |
 
-O `id` do carro é o nome do arquivo sem extensão.
+### Trem de força (câmbio e motor)
+
+| Campo | Significado | Faixa aceita |
+|-------|-------------|--------------|
+| `gears` | lista de relações de marcha (1ª primeiro) | até 9 marchas, 0,25 – 8 |
+| `final_drive` | relação do diferencial | 1 – 8 |
+| `wheel_radius` | raio da roda (m) | 0,15 – 0,75 |
+| `drivetrain_eff` | eficiência da transmissão | 0,5 – 1,0 |
+| `peak_torque` | torque máximo (N·m). **0 = derivado** de `engine_force` | 40 – 3000 |
+| `rpm_idle` | marcha lenta | 500 – 2000 |
+| `rpm_peak` | giro do torque máximo | 1500 – 14000 |
+| `rpm_limit` | corte de giro | 2000 – 16000 |
+| `torque_shape` | largura da curva de torque | 0,4 – 3,0 |
+| `shift_up` | sobe a marcha nesta fração do corte | 0,5 – 0,999 |
+| `shift_down` | reduz a marcha nesta fração do corte | 0,15 – 0,95 |
+| `shift_time` | tempo sem tração na troca (s) | 0 – 1 |
+
+Dica: para um elétrico use `"gears": [1.0]` com `final_drive` alto e
+`rpm_limit` lá em cima — torque imediato, sem trocas.
+
+### Aerodinâmica, pneus e sistemas
+
+| Campo | Significado | Faixa aceita |
+|-------|-------------|--------------|
+| `cd_a` | Cd × área frontal (arrasto `0,5·ρ·Cd·A·v²`) | 0,15 – 4,0 |
+| `cl_a` | Cl × área (downforce `0,5·ρ·Cl·A·v²`) | 0 – 8 |
+| `downforce_front` | fração do downforce na dianteira | 0 – 1 |
+| `track_width` | bitola (m) — transferência lateral de carga | 0,8 – 3,0 |
+| `roll_front` | rigidez anti-rolagem dianteira | 0,1 – 0,9 |
+| `load_sens` | perda de μ por carga extra | 0 – 0,4 |
+| `tire_opt_temp` | temperatura de aderência máxima (°C) | 40 – 160 |
+| `tire_temp_rate` | quanto o pneu esquenta | 0 – 0,2 |
+| `tire_cool_rate` | quanto o pneu resfria | 0 – 0,2 |
+| `tire_wear_rate` | desgaste por trabalho do pneu | 0 – 0,01 |
+| `abs_level` | 0 = sem ABS, 1 = ABS perfeito | 0 – 1 |
+| `traction_control` | 0 = sem controle, 1 = corta toda patinação | 0 – 1 |
+| `fuel_capacity` | tanque em litros (**0 = sem combustível**) | 0 – 400 |
+| `fuel_burn` | litros por segundo em aceleração plena | 0 – 2 |
+| `damage_rate` | dano por impacto | 0 – 1 |
+
+O `id` do carro é o nome do arquivo sem extensão. Todos os campos novos são
+opcionais: um carro antigo continua funcionando com os valores padrão.
+
+### Gerar conteúdo novo
+
+`tools/gerar_conteudo.py` cria pistas (por pontos de controle + Catmull-Rom) e
+carros a partir de uma tabela legível, e `--check` só valida sem gravar nada:
+
+```
+python3 tools/gerar_conteudo.py           # grava em assets/
+python3 tools/gerar_conteudo.py --check   # só imprime o resumo
+```
 
 ---
 
