@@ -2223,7 +2223,7 @@ jobs:
               [UnmanagedFunctionPointer(CallingConvention.Winapi)] public delegate IntPtr GP(IntPtr instance, [MarshalAs(UnmanagedType.LPStr)] string name);
               [UnmanagedFunctionPointer(CallingConvention.Winapi)] public delegate int CI(ref VkInstanceCreateInfo ci, IntPtr alloc, out IntPtr inst);
               [UnmanagedFunctionPointer(CallingConvention.Winapi)] public delegate int EPD(IntPtr inst, ref uint count, IntPtr[] devices);
-              [UnmanagedFunctionPointer(CallingConvention.Winapi)] public delegate void GPD(IntPtr inst, uint dev, IntPtr props);
+              [UnmanagedFunctionPointer(CallingConvention.Winapi)] public delegate void GPD(IntPtr dev, IntPtr props);
               [UnmanagedFunctionPointer(CallingConvention.Winapi)] public delegate void DI(IntPtr inst);
               [StructLayout(LayoutKind.Sequential)] public struct VkApplicationInfo { public int sType; public IntPtr pNext; public IntPtr pApplicationName; public uint applicationVersion; public IntPtr pEngineName; public uint engineVersion; public uint apiVersion; }
               [StructLayout(LayoutKind.Sequential)] public struct VkInstanceCreateInfo { public int sType; public IntPtr pNext; public int flags; public IntPtr pApplicationInfo; public uint enabledLayerCount; public IntPtr ppEnabledLayerNames; public uint enabledExtensionCount; public IntPtr ppEnabledExtensionNames; }
@@ -2256,7 +2256,7 @@ jobs:
               IntPtr pGPD = gp(inst, "vkGetPhysicalDeviceProperties");
               GPD gpd = (GPD)Marshal.GetDelegateForFunctionPointer(pGPD, typeof(GPD));
               IntPtr buf = Marshal.AllocHGlobal(8192);
-              gpd(inst, 0, buf);
+              gpd(devs[0], buf);
               string name = Marshal.PtrToStringAnsi(new IntPtr(buf.ToInt64() + 20));
               Console.WriteLine("GPU[0]: " + name);
               Marshal.FreeHGlobal(buf);
@@ -2792,14 +2792,16 @@ jobs:
             Copy-Item (Join-Path $wdir2 "d3d11shim.log") ("$PWD\d3d11shim-" + ($tag -replace "[^a-zA-Z0-9]", "-") + ".txt") -Force -ErrorAction SilentlyContinue
             Write-Host "vivo no fim da janela ($tag): $(-not $g.HasExited) — $tagFile salvo"
             Trace "boot $tag FIM vivo=$(-not $g.HasExited)"
-            # v39: MATA o jogo ao sair do Boot — antes cada boot deixava o
-            # processo vivo e os jogos se ACUMULAVAM (v38: 6 h de SOBE e
-            # timeout com 'runner lost communication')
+            # v88: capturar VIVO ANTES do kill — o return antigo calculava
+            # -not HasExited DEPOIS do Stop-Process e devolvia False sempre
+            # que o jogo SOBREVIVEU a janela inteira (v87: hibrido 10 min
+            # vivo reportado como morto -> fallbacks inuteis rodaram depois)
+            $vivoFim = -not $g.HasExited
             if (-not $g.HasExited) {
               try { Stop-Process -Id $g.Id -Force -ErrorAction SilentlyContinue } catch { }
               try { $g.WaitForExit(15000) | Out-Null } catch { }
             }
-            return (-not $g.HasExited)
+            return $vivoFim
           }
           $mmfOk = { Test-Path "$PWD\demo-mmf-viva.json" }
           $x86exe = "C:\ets2demo\bin\win_x86\eurotrucks2.exe"
@@ -3646,7 +3648,58 @@ jobs:
                 # DIRETORIO onde o dxvk.log nasce (o Boot ja o copia por tag).
                 $env:DXVK_LOG_PATH = $wdir
                 Trace "hibrido: DXVK_LOG_PATH=$env:DXVK_LOG_PATH"
-                $vivoH = Boot $exe $wdir "x64 dx11 HIBRIDO dxvk" @("-nointro") $null 120
+                # v88: MENU-WALK — a v87 provou o device dx11 NO AR (SM5X,
+                # adapter RTX3070 16378MB, display, fisica bullet, 10 min
+                # estaveis) mas a MMF nunca nasceu: o jogo so carrega a DLL
+                # de telemetria AO ENTRAR NO GAMWORLD e sem profile ele fica
+                # parado no menu para sempre. Exe C minimo (SendInput com
+                # scancode — o mesmo canal do bridge) que cria o profile
+                # "ai" (Enters + teclas) e ACELERA (W) quando estiver na
+                # cabine. Lancado ASSINCRONO: tecla enquanto o Boot observa.
+                try {
+          @'
+          #include <windows.h>
+          static void tap(WORD sc, int ms) {
+            INPUT in[2];
+            ZeroMemory(in, sizeof(in));
+            in[0].type = INPUT_KEYBOARD; in[0].ki.wScan = sc; in[0].ki.dwFlags = KEYEVENTF_SCANCODE;
+            in[1].type = INPUT_KEYBOARD; in[1].ki.wScan = sc; in[1].ki.dwFlags = KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP;
+            SendInput(2, in, sizeof(INPUT));
+            Sleep(ms);
+          }
+          static void foca(void) {
+            HWND w = FindWindowW(NULL, L"Euro Truck Simulator 2");
+            if (w) { SetForegroundWindow(w); SetFocus(w); }
+          }
+          int main(void) {
+            int i;
+            Sleep(25000);
+            foca();
+            tap(0x1C, 3000);
+            tap(0x1E, 250);
+            tap(0x17, 500);
+            Sleep(800);
+            tap(0x1C, 8000);
+            tap(0x1C, 15000);
+            tap(0x1C, 15000);
+            tap(0x50, 1500);
+            tap(0x1C, 20000);
+            tap(0x1C, 15000);
+            foca();
+            for (i = 0; i < 240; i++) tap(0x11, 500);
+            Sleep(15000);
+            return 0;
+          }
+          '@ | Set-Content "$PWD\menuwalk.c" -Encoding ASCII
+                  & cl /nologo /O2 /W3 "$PWD\menuwalk.c" "/Fe:$PWD\menuwalk.exe" /link 2>&1 | ForEach-Object { Trace "menuwalk cl: $_" }
+                  if (Test-Path "$PWD\menuwalk.exe") {
+                    Start-Process -FilePath "$PWD\menuwalk.exe" -WorkingDirectory $PWD
+                    Trace "hibrido: menuwalk lancado (profile 'ai' + W em ~25 s)"
+                  } else { Trace "hibrido: menuwalk.exe NAO compilou — boot sem navegacao de menu" }
+                } catch { Trace "hibrido menuwalk: $($_.Exception.Message)" }
+                # v88: janela 240 iters (20 min) — o load do mundo 3D no
+                # lavapipe (1 thread) pode levar minutos apos o profile.
+                $vivoH = Boot $exe $wdir "x64 dx11 HIBRIDO dxvk" @("-nointro") $null 240
                 Trace "hibrido: boot FIM vivo=$vivoH"
                 # v83: logs do hibrido com nome estavel — o Boot salva
                 # game-log-x64-dx11-HIBRIDO-dxvk.txt mas NAO copia o
@@ -3914,6 +3967,13 @@ jobs:
           $g = Start-Process -FilePath $gexe -WorkingDirectory $wdir -ArgumentList "-nointro" -PassThru
           try { $g.PriorityClass = "BelowNormal" } catch { }
           try { $g.ProcessorAffinity = [IntPtr]2 } catch { }
+          # v88: menu-walk tambem aqui — o jogo reaberto cai no menu de novo
+          # (profile criado no SOBE) e a DLL/telemetria so vive no gameworld;
+          # o menuwalk (compilado no SOBE, mesmo workspace) navega e acelera.
+          if (Test-Path "$PWD\menuwalk.exe") {
+            Start-Process -FilePath "$PWD\menuwalk.exe" -WorkingDirectory $PWD
+            Write-Host "menuwalk lancado (navegacao automatica de menus)"
+          }
           Start-Sleep -Seconds 10
           # o exe C++ PURO (o MESMO da release): espera a MMF real (ate 15 min),
           # le a telemetria, decide e INJETA teclas reais — gravando cada
