@@ -1,0 +1,45 @@
+INFO:              Using Vulkan Loader C:\Windows\SYSTEM32\vulkan-1.dll
+INFO:              Vulkan Loader Version 1.3.301
+INFO:              Loader is running with elevated permissions. Environment variable VK_LOADER_LAYERS_ENABLE will be ignored
+INFO:              Loader is running with elevated permissions. Environment variable VK_LOADER_LAYERS_DISABLE will be ignored
+INFO:              Loader is running with elevated permissions. Environment variable VK_LOADER_LAYERS_ALLOW will be ignored
+INFO:              Loader is running with elevated permissions. Environment variable VK_IMPLICIT_LAYER_PATH will be ignored
+INFO:              Loader is running with elevated permissions. Environment variable VK_ADD_IMPLICIT_LAYER_PATH will be ignored
+INFO:              windows_get_app_package_manifest_path: Failed to find mapping layers packages by family name
+LAYER:             Checking for Layer Manifest files in Registry at HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\Vulkan\ImplicitLayers
+INFO | LAYER:      windows_get_device_registry_files: opening device VMBUS\{da0a7802-e377-4aac-8e77-0558eb1073f8}\{5620e0c7-8062-4dce-aeb7-520c7ef76171}
+INFO | DRIVER:     windows_get_device_registry_entry: Device ID(1) Does not contain a value for "VulkanImplicitLayers"
+INFO | LAYER:      windows_get_device_registry_files: unable to open child-device error:13
+LAYER:             windows_get_device_registry_files: found no registry files
+LAYER:             Found no registry files in HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\Vulkan\ImplicitLayers
+INFO:              Loader is running with elevated permissions. Environment variable VK_LAYER_PATH will be ignored
+INFO:              Loader is running with elevated permissions. Environment variable VK_ADD_LAYER_PATH will be ignored
+LAYER:             Checking for Layer Manifest files in Registry at HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\Vulkan\ExplicitLayers
+INFO | LAYER:      windows_get_device_registry_files: opening device VMBUS\{da0a7802-e377-4aac-8e77-0558eb1073f8}\{5620e0c7-8062-4dce-aeb7-520c7ef76171}
+INFO | DRIVER:     windows_get_device_registry_entry: Device ID(1) Does not contain a value for "VulkanExplicitLayers"
+INFO | LAYER:      windows_get_device_registry_files: unable to open child-device error:13
+LAYER:             windows_get_device_registry_files: found no registry files
+LAYER:             Found no registry files in HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\Vulkan\ExplicitLayers
+WARNING | LAYER:   windows_read_data_files_in_registry: Registry lookup failed to get layer manifest files.
+INFO:              Loader is running with elevated permissions. Environment variable VK_LOADER_DRIVERS_SELECT will be ignored
+INFO:              Loader is running with elevated permissions. Environment variable VK_LOADER_DRIVERS_DISABLE will be ignored
+INFO:              Loader is running with elevated permissions. Environment variable VK_DRIVER_FILES will be ignored
+INFO:              Loader is running with elevated permissions. Environment variable VK_ICD_FILENAMES will be ignored
+INFO:              Loader is running with elevated permissions. Environment variable VK_ADD_DRIVER_FILES will be ignored
+INFO:              windows_get_app_package_manifest_path: Failed to find mapping layers packages by family name
+DRIVER:            Checking for Driver Manifest files in Registry at HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\Vulkan\Drivers
+INFO | DRIVER:     windows_get_device_registry_files: opening device VMBUS\{da0a7802-e377-4aac-8e77-0558eb1073f8}\{5620e0c7-8062-4dce-aeb7-520c7ef76171}
+INFO | DRIVER:     windows_get_device_registry_entry: Device ID(1) Does not contain a value for "VulkanDriverName"
+INFO | DRIVER:     windows_get_device_registry_files: unable to open child-device error:13
+DRIVER:            windows_get_device_registry_files: found no registry files
+INFO | DRIVER:     Located json file "C:\mesa253\x64\lvp_icd.x86_64.json" from registry "HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\Vulkan\Drivers"
+INFO | DRIVER:     Driver C:\mesa253\x64\lvp_icd.x86_64.json is not recognized as a known driver. It will be assumed to be active
+DRIVER:            Found ICD manifest file C:\mesa253\x64\lvp_icd.x86_64.json, version 1.0.1
+DEBUG | DRIVER:    Searching for ICD drivers named .\vulkan_lvp.dll
+LAYER:             vkCreateInstance layer callstack setup to:
+LAYER:                <Application>
+LAYER:                  ||
+LAYER:                <Loader>
+LAYER:                  ||
+LAYER:                <Drivers>
+ERROR:             vkGetPhysicalDeviceProperties: Invalid physicalDevice [VUID-vkGetPhysicalDeviceProperties-physicalDevice-parameter]
