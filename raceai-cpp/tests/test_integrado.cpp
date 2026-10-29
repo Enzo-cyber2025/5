@@ -561,8 +561,8 @@ int main(int argc, char** argv) {
             Vec2 alvo = trk.center[(a.idx + frente) % n];
             double desejado = std::atan2(alvo.y - a.car.y, alvo.x - a.car.x);
             double erro = desejado - a.car.heading;
-            while (erro > M_PI) erro -= 2 * M_PI;
-            while (erro < -M_PI) erro += 2 * M_PI;
+            while (erro > kPi) erro -= 2 * kPi;
+            while (erro < -kPi) erro += 2 * kPi;
             double cs = (std::fabs(a.car.slip_r) > 0.30) ? 0.45 * a.car.slip_r
                                                          : 0.06 * a.car.slip_r;
             double steer = std::max(-1.0, std::min(1.0, 1.1 * erro - 0.40 * a.car.r - cs));
@@ -570,7 +570,7 @@ int main(int argc, char** argv) {
             const Vec2& ta = trk.tangents[a.idx];
             const Vec2& tb = trk.tangents[(a.idx + la) % n];
             double curv = std::fabs(std::atan2(tb.y, tb.x) - std::atan2(ta.y, ta.x));
-            if (curv > M_PI) curv = 2 * M_PI - curv;
+            if (curv > kPi) curv = 2 * kPi - curv;
             double raio = std::max(8.0, la * trk.spacing / std::max(curv, 0.05));
             double mu = 0.55 * (carro.grip_front + carro.grip_rear) * 0.5;
             double v_alvo = std::min(carro.max_speed * 0.75, std::sqrt(mu * 9.81 * raio));

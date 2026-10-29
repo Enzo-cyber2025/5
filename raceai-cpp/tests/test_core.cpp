@@ -281,8 +281,8 @@ static int pilota(const Track& t, const CarSpec& c, double segundos, int* voltas
                 const Vec2 alvo = t.center[(a.idx + frente) % n];
                 double desejado = std::atan2(alvo.y - a.car.y, alvo.x - a.car.x);
                 double erro = desejado - a.car.heading;
-                while (erro > M_PI) erro -= 2 * M_PI;
-                while (erro < -M_PI) erro += 2 * M_PI;
+                while (erro > kPi) erro -= 2 * kPi;
+                while (erro < -kPi) erro += 2 * kPi;
                 // termo derivativo na taxa de guinada: sem isso os carros
                 // potentes (monoposto, GT) entram em oscilação e batem
                 double cs = (std::fabs(a.car.slip_r) > 0.30) ? 0.45 * a.car.slip_r
@@ -294,7 +294,7 @@ static int pilota(const Track& t, const CarSpec& c, double segundos, int* voltas
                 const Vec2& tan_a = t.tangents[a.idx];
                 const Vec2& tan_b = t.tangents[(a.idx + la) % n];
                 double curv = std::fabs(std::atan2(tan_b.y, tan_b.x) - std::atan2(tan_a.y, tan_a.x));
-                if (curv > M_PI) curv = 2 * M_PI - curv;
+                if (curv > kPi) curv = 2 * kPi - curv;
                 double raio = std::max(8.0, la * t.spacing / std::max(curv, 0.05));
                 double mu = 0.55 * (c.grip_front + c.grip_rear) * 0.5;
                 double v_alvo = std::min(c.max_speed * 0.75, std::sqrt(mu * 9.81 * raio));
