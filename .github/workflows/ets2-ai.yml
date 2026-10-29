@@ -3659,49 +3659,88 @@ jobs:
                 try {
           @'
           #include <windows.h>
+          #include <stdio.h>
           #pragma comment(lib, "user32.lib")
-          static void tap(WORD sc, int ms) {
+          static FILE *lg;
+          static void tap(WORD sc, int ms, const char *what) {
             INPUT in[2];
             ZeroMemory(in, sizeof(in));
             in[0].type = INPUT_KEYBOARD; in[0].ki.wScan = sc; in[0].ki.dwFlags = KEYEVENTF_SCANCODE;
             in[1].type = INPUT_KEYBOARD; in[1].ki.wScan = sc; in[1].ki.dwFlags = KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP;
-            SendInput(2, in, sizeof(INPUT));
+            if (SendInput(2, in, sizeof(INPUT)) != 2 && lg) { fprintf(lg, "[%u] ERRO SendInput (%s) gle=%u\n", GetTickCount(), what, GetLastError()); fflush(lg); }
+            else if (lg) { fprintf(lg, "[%u] tap %s\n", GetTickCount(), what); fflush(lg); }
             Sleep(ms);
           }
           static void foca(void) {
             HWND w = FindWindowW(NULL, L"Euro Truck Simulator 2");
-            if (w) { SetForegroundWindow(w); SetFocus(w); }
+            if (w) {
+              SetForegroundWindow(w); SetFocus(w);
+              if (lg) { fprintf(lg, "[%u] foco OK hwnd=%p\n", GetTickCount(), (void*)w); fflush(lg); }
+            } else if (lg) { fprintf(lg, "[%u] janela NAO achada\n", GetTickCount()); fflush(lg); }
           }
           int main(void) {
             int i;
-            Sleep(25000);
+            lg = fopen("menuwalk.log", "w");
+            if (lg) { fprintf(lg, "[%u] inicio\n", GetTickCount()); fflush(lg); }
+            Sleep(30000);
             foca();
-            tap(0x1C, 3000);
-            tap(0x1E, 250);
-            tap(0x17, 500);
-            Sleep(800);
-            tap(0x1C, 8000);
-            tap(0x1C, 15000);
-            tap(0x1C, 15000);
-            tap(0x50, 1500);
-            tap(0x1C, 20000);
-            tap(0x1C, 15000);
+            tap(0x1C, 4000, "Enter-1 (tela inicial)");
+            tap(0x1E, 300, "A");
+            tap(0x17, 600, "I");
+            Sleep(1000);
+            tap(0x1C, 15000, "Enter-2 (submeter nome)");
+            tap(0x1C, 20000, "Enter-3 (confirmar)");
+            tap(0x1C, 20000, "Enter-4 (controle/tutorial)");
+            tap(0x50, 2000, "Down");
+            tap(0x1C, 25000, "Enter-5");
+            tap(0x1C, 20000, "Enter-6");
             foca();
-            for (i = 0; i < 240; i++) tap(0x11, 500);
+            for (i = 0; i < 240; i++) tap(0x11, 500, "W");
             Sleep(15000);
+            if (lg) { fprintf(lg, "[%u] fim\n", GetTickCount()); fflush(lg); fclose(lg); }
             return 0;
           }
           '@ | Set-Content "$PWD\menuwalk.c" -Encoding ASCII
                   & cl /nologo /O2 /W3 "$PWD\menuwalk.c" "/Fe:$PWD\menuwalk.exe" /link 2>&1 | ForEach-Object { Trace "menuwalk cl: $_" }
                   if (Test-Path "$PWD\menuwalk.exe") {
                     Start-Process -FilePath "$PWD\menuwalk.exe" -WorkingDirectory $PWD
-                    Trace "hibrido: menuwalk lancado (profile 'ai' + W em ~25 s)"
+                    Trace "hibrido: menuwalk lancado (profile 'ai' + W em ~30 s)"
                   } else { Trace "hibrido: menuwalk.exe NAO compilou — boot sem navegacao de menu" }
+                  # v90: OLHOS — screenshots periodicos (JPEG) durante o boot
+                  # hibrido: o game.log e MUDO no menu; sem ver a tela nao da
+                  # para calibrar o menu-walk. Job async, 1 shot/30 s (40 no
+                  # total = 20 min); para sozinho.
+                  $shotJobH = $null
+                  try {
+                    $shotJobH = Start-Job -ScriptBlock {
+                      param($dir)
+                      try { Add-Type -AssemblyName System.Windows.Forms, System.Drawing } catch { return }
+                      $n = 0
+                      while ($n -lt 40) {
+                        $n++
+                        try {
+                          $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+                          $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
+                          $g = [System.Drawing.Graphics]::FromImage($bmp)
+                          $g.CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+                          $bmp.Save("$dir\shot-hib-$('{0:d2}' -f $n).jpg", [System.Drawing.Imaging.ImageFormat]::Jpeg)
+                          $g.Dispose(); $bmp.Dispose()
+                        } catch { }
+                        Start-Sleep -Seconds 30
+                      }
+                    } -ArgumentList "$PWD"
+                    Trace "hibrido: job de screenshots lancado (1 JPEG/30 s)"
+                  } catch { Trace "hibrido shots: $($_.Exception.Message)" }
                 } catch { Trace "hibrido menuwalk: $($_.Exception.Message)" }
                 # v88: janela 240 iters (20 min) — o load do mundo 3D no
                 # lavapipe (1 thread) pode levar minutos apos o profile.
                 $vivoH = Boot $exe $wdir "x64 dx11 HIBRIDO dxvk" @("-nointro") $null 240
                 Trace "hibrido: boot FIM vivo=$vivoH"
+                if ($shotJobH) {
+                  try { Stop-Job -Job $shotJobH -ErrorAction SilentlyContinue; Remove-Job -Job $shotJobH -Force -ErrorAction SilentlyContinue } catch { }
+                  $shotsH = @(Get-ChildItem "$PWD\shot-hib-*.jpg" -ErrorAction SilentlyContinue)
+                  Trace "hibrido: job de screenshots encerrado — $($shotsH.Count) JPEGs"
+                }
                 # v83: logs do hibrido com nome estavel — o Boot salva
                 # game-log-x64-dx11-HIBRIDO-dxvk.txt mas NAO copia o
                 # dxgishim.log (so d3d11shim/dxvk); game.log final vira
@@ -4051,7 +4090,8 @@ jobs:
           cp game-log-*.txt "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp sobe-trace.log "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp dxvk-log-*.txt "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
-          cp vkhib-*.out vkhib-*.err hib-*.log mesa253-hib.log vulkanrt-x.log "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
+          cp vkhib-*.out vkhib-*.err hib-*.log mesa253-hib.log vulkanrt-x.log menuwalk.log "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
+          cp shot-hib-*.jpg "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp "/c/Users/runneradmin/Documents/Euro Truck Simulator 2/game.log.txt" "ci-logs/${{ github.run_id }}-demo/documents-game.log.txt" 2>/dev/null || true
           for f in d3d11shim-boot1.txt dxgishim-boot1.txt dxgishim-hibrido.txt autoteste-real.json autoteste-real.log demo-mmf.json /c/steamcmd/fase1.log /c/steamcmd/fase2.log /c/dd/dd.log /c/dd/stage2.err mesa-load.log /c/dd/setup.err /c/dd/7z.log /c/dd/mesa-7z.log /c/ets2demo/game.log.txt /c/ets2demo/game-ets2ai-telemetry.log; do
             cp "$f" "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
