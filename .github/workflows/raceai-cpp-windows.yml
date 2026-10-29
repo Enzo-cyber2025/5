@@ -64,6 +64,17 @@ jobs:
           name: build-log
           path: raceai-cpp/build.log
 
+      - name: Guardar o log no repositório (depuração)
+        if: always()
+        shell: msys2 {0}
+        run: |
+          cp raceai-cpp/build.log ci-build.log
+          git config user.email "ci@example.com"
+          git config user.name "CI"
+          git add -f ci-build.log
+          git commit -m "CI: log de compilacao (automatico)" || echo "nada a commitar"
+          git push origin HEAD:$GITHUB_REF_NAME || echo "sem push"
+
       - name: Testes do núcleo e da interface
         shell: msys2 {0}
         run: |

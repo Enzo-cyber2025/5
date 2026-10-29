@@ -11,10 +11,18 @@ CORE     := src/core/*.cpp
 APP      := src/app/app_state.cpp
 BIN      := build
 
-ifeq ($(OS),Windows_NT)
+# Detecção da plataforma por `uname` (mais confiável que $(OS) no MSYS2).
+UNAME_S := $(shell uname -s 2>/dev/null)
+ifneq (,$(findstring MINGW,$(UNAME_S)))
   PLAT    := windows
   EXE     := .exe
-  LIBS    := -lgdi32 -luser32 -lcomctl32 -lcomdlg32 -lole32
+  LIBS    := -lgdi32 -luser32 -lcomctl32 -lcomdlg32
+  GAME    := $(BIN)/raceai.exe
+  TESTLIBS:= $(LIBS)
+else ifneq (,$(findstring MSYS,$(UNAME_S)))
+  PLAT    := windows
+  EXE     := .exe
+  LIBS    := -lgdi32 -luser32 -lcomctl32 -lcomdlg32
   GAME    := $(BIN)/raceai.exe
   TESTLIBS:= $(LIBS)
 else
