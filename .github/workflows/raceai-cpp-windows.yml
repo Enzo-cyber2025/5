@@ -58,32 +58,24 @@ jobs:
           test -f build/raceai.exe
           exit $st
 
-      - name: Diagnóstico (erro do build no status e no nome do artefato)
+      - name: Diagnóstico do erro de build
         if: failure()
         shell: msys2 {0}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cd raceai-cpp
-          { grep -nE "error:|Error [0-9]|undefined reference|collect2|No such file" build.log 2>/dev/null | head -6;
+          { grep -nE "error:|Error [0-9]|undefined reference|collect2|No such file" build.log 2>/dev/null | head -10;
             echo "=== fim do log ===";
             tail -3 build.log 2>/dev/null; } > diag.txt
           cat diag.txt
-          ERRO=$(head -3 diag.txt | tr -d '\r' | tr -c 'A-Za-z0-9 ._:-' ' ' | cut -c1-88)
-          echo "ERRO=$ERRO" >> "$GITHUB_ENV"
-          # tenta gravar como status do commit (curl: o gh nao esta no PATH do msys2)
           i=0
           while IFS= read -r linha; do
-            txt=$(printf '%s' "$linha" | tr -d '\r"' | cut -c1-130)
+            txt=$(printf '%s' "$linha" | tr -d '\r' | tr -cd '[:print:]' | cut -c1-190)
             [ -z "$txt" ] && continue
             i=$((i+1))
-            body=$(printf '{"state":"error","context":"diag%d","description":"%s"}' "$i" "$txt")
-            curl -s -o /dev/null -X POST \
-              -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
-              "https://api.github.com/repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
-              -d "$body"
-            [ "$i" -ge 10 ] && break
+            echo "::error file=build.log::$txt"
           done < diag.txt
+          ERRO=$(head -2 diag.txt | tr -d '\r' | tr -c 'A-Za-z0-9 ._-' ' ' | cut -c1-80)
+          echo "ERRO=$ERRO" >> "$GITHUB_ENV"
           echo "linhas de diagnostico: $i"
 
       - name: Log de build como artefato
