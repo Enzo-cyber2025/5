@@ -214,6 +214,29 @@ assets/       pistas e carros em JSON
 
 ---
 
+## Aproveitar um modelo da versão Python (.pt)
+
+O executável em C++ não usa PyTorch (assim ele roda no Pentium N5030 sem CUDA),
+então o formato dele é `.json`. Para reaproveitar um `.pt` treinado na versão
+Python, converta uma vez com o script que acompanha o jogo:
+
+```
+python converter-modelo.py modelo.pt            # gera modelo.raceai.json
+python converter-modelo.py modelo.pt saida.json # ou escolha o nome
+python converter-modelo.py modelo.npz           # também aceita o fallback .npz
+```
+
+O script precisa do PyTorch instalado só para ler `.pt` (é o caso de quem
+treinou na versão Python). O `.json` gerado já pode ser copiado para a pasta
+do jogo e carregado em **Treinamento > Carregar modelo**. A topologia
+(`obs_dim`, camadas ocultas, `act_dim`) é lida do próprio arquivo.
+
+Para conferir a instalação sem nenhum modelo, rode
+`python converter-modelo.py --self-test`: ele grava um `modelo.raceai.json`
+aleatório que o jogo aceita — serve para testar o carregamento.
+
+---
+
 ## Mods
 
 Veja **MODS.md**: basta largar JSONs em `mods/tracks/` ou `mods/cars/` — eles

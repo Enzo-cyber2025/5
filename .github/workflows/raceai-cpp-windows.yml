@@ -127,6 +127,7 @@ jobs:
           cp -r python package/RaceAI2D-C++/
           cp README.md package/RaceAI2D-C++/LEIA-ME.txt
           cp MODS.md package/RaceAI2D-C++/
+          cp tools/pt_para_json.py package/RaceAI2D-C++/converter-modelo.py
           du -sh package/RaceAI2D-C++
           cd package && zip -qr RaceAI2D-C++-windows.zip RaceAI2D-C++
           ls -la

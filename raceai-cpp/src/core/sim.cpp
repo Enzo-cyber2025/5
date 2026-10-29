@@ -5,9 +5,6 @@
 
 namespace raceai {
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
 
 // ------------------------------------------------------------------ reward
 Json RewardConfig::to_json() const {
@@ -419,7 +416,7 @@ void Simulation::observe(int row, float* out) const {
     const int nr = std::max(1, cfg.n_rays);
     std::vector<double> rays(nr);
     track.cast_rays(Vec2(a.car.x, a.car.y), a.car.heading, a.idx, nr, cfg.ray_range,
-                    cfg.fov_deg * M_PI / 180.0, rays.data());
+                    cfg.fov_deg * kPi / 180.0, rays.data());
     int o = 0;
     for (int i = 0; i < nr; ++i) out[o++] = float(clamp(rays[i] / cfg.ray_range, 0.0, 1.0));
 
@@ -432,7 +429,7 @@ void Simulation::observe(int row, float* out) const {
     out[o++] = float(a.car.r / 3.0);
     out[o++] = float(a.car.steer / steer_norm);
     out[o++] = float(clamp(a.lateral / half, -1.5, 1.5) / 1.5);
-    out[o++] = float(wrap_angle(a.car.heading - track.heading[a.idx]) / M_PI);
+    out[o++] = float(wrap_angle(a.car.heading - track.heading[a.idx]) / kPi);
 
     const double dists[4] = {15.0, 30.0, 50.0, 80.0};
     double dh[4], kk[4];
