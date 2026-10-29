@@ -70,7 +70,8 @@ jobs:
         shell: msys2 {0}
         run: |
           cd raceai-cpp
-          ./build/raceai_pytest.exe python/python311.dll
+          ./build/raceai_pytest.exe python/python311.dll | tee python.log
+          exit ${PIPESTATUS[0]}
 
       - name: "Treino rápido: a loss precisa cair"
         shell: msys2 {0}
@@ -78,7 +79,23 @@ jobs:
           cd raceai-cpp
           ./build/raceai_train.exe -g 25 -p 30 --seconds 30 --seed 5 2>&1 | tail -12
 
-      - name: Abrir issue com o log (se algo falhou)
+      - name: Guardar saída dos passos
+        if: always()
+        shell: msys2 {0}
+        run: |
+          cd raceai-cpp
+          {
+            echo "run: $GITHUB_RUN_ID"
+            echo '## python'
+            echo '```'
+            ./build/raceai_pytest.exe python/python311.dll 2>&1 | tail -40
+            echo "exit_python=$?"
+            echo '```'
+            ls -la python/ | head -20
+          } > python.log 2>&1
+          tail -60 python.log
+
+      - name: Publicar logs para depuração
         if: failure()
         shell: msys2 {0}
         env:
@@ -88,17 +105,23 @@ jobs:
           {
             echo "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
             echo
-            echo '### compilação'
+            echo '### compilacao'
             echo '```'
-            tail -100 raceai-cpp/build.log 2>/dev/null
+            tail -60 raceai-cpp/build.log 2>/dev/null
             echo '```'
             echo
             echo '### testes'
             echo '```'
-            tail -100 raceai-cpp/test.log 2>/dev/null
+            tail -60 raceai-cpp/test.log 2>/dev/null
             echo '```'
-          } > /tmp/issue.md
-          gh issue create --title "CI do C++ falhou (run $GITHUB_RUN_ID)" --body-file /tmp/issue.md || true
+            echo
+            echo '### python'
+            echo '```'
+            cat raceai-cpp/python.log 2>/dev/null
+            echo '```'
+          } > /tmp/logs.md
+          gh release delete ci-logs --yes 2>/dev/null || true
+          gh release create ci-logs --title "CI logs (depuracao)" --notes-file /tmp/logs.md || true
 
       - name: Empacotar
         shell: msys2 {0}
