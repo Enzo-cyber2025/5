@@ -255,7 +255,7 @@ jobs:
           done < diagt.txt
           echo "linhas: $i"
 
-      - name: Publicar na release exe-cpp-windows      - name: Publicar na release exe-cpp-windows
+      - name: Publicar na release exe-cpp-windows
         if: ${{ github.event.inputs.publish != 'false' }}
         shell: pwsh
         env:
