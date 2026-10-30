@@ -1,0 +1,172 @@
+name: EnzoOS CI
+
+on:
+  push:
+    branches: ["**"]
+    paths: ["enzoos/**", ".github/workflows/enzoos-ci.yml"]
+  pull_request:
+    paths: ["enzoos/**", ".github/workflows/enzoos-ci.yml"]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: enzoos
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar ferramentas
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y --no-install-recommends nasm qemu-system-x86
+
+      - name: Build (kernel, apps, demos, ISO)
+        run: |
+          if bash build.sh > /tmp/build.log 2>&1; then
+            tail -5 /tmp/build.log
+          else
+            grep -nE "error|Error|ERRO|Traceback|AssertionError|FATAL|failed" -B2 -A3 /tmp/build.log | head -60 | while IFS= read -r l; do
+              echo "::error::$l"
+            done
+            exit 1
+          fi
+
+      - name: Fingerprint do build (annotations)
+        run: |
+          echo "::notice::kernel_md5=$(md5sum obj/kernel.bin | cut -d' ' -f1)"
+          echo "::notice::iso_md5=$(md5sum release/enzos.iso | cut -d' ' -f1)"
+          echo "::notice::nasm_v=$(nasm -v | head -1)"
+          strings -a obj/kernel.bin | grep -m1 "nao achado" || echo "::notice::SEM_STRING_app_diag"
+          strings -a obj/kernel.bin | grep -m1 "janela" || echo "::notice::SEM_STRING_janela"
+          python3 -c "d=open('release/enzos.iso','rb').read(); print('::notice::iso_tem_janela=%s iso_tem_diagapp=%s iso_sz=%d' % (b'+janela' in d, b'nao achado' in d, len(d)))"
+
+      - name: Autoteste estático (formatos PE/ELF/ZIP/AXML/CEFS/ENZ)
+        run: python3 tools/selftest.py release/enzos.iso
+
+      - name: Teste no QEMU (q35/AHCI/e1000) + capturas de tela
+        run: |
+          if python3 tools/qmp_test.py release/enzos.iso screenshots/ release/disk.img > /tmp/qemu.log 2>&1; then
+            tail -5 /tmp/qemu.log
+          else
+            grep -E "FALHOU|excecao no teste" /tmp/qemu.log | while IFS= read -r l; do
+              echo "::error::${l:0:220}"
+            done
+            grep -E "\[net\]|\[hda\]|panic|^0x" screenshots/serial.log 2>/dev/null | tail -30 | while IFS= read -r l; do
+              echo "::notice::${l:0:220}"
+            done
+            exit 1
+          fi
+
+      - name: Canarios de rede (annotations)
+        if: always()
+        run: |
+          grep -E "wnd|kern|HTTP|TCP|ARP|conectado|FALHOU|excecao" /tmp/qemu.log 2>/dev/null | head -10 | while IFS= read -r l; do
+            echo "::notice::${l:0:220}"
+          done || true
+
+      - name: Eventos wm (annotations)
+        if: always()
+        run: |
+          S=screenshots/serial.log
+          C1=$(grep -c "wm] disp" $S 2>/dev/null || echo 0)
+          C3=$(grep -c "HTTP GET iniciado" $S 2>/dev/null || echo 0)
+          C5=$(grep -c "janela" $S 2>/dev/null || echo 0)
+          echo "::notice::wm_disp=$C1"
+          echo "::notice::http_go=$C3"
+          echo "::notice::janelas_log=$C5"
+          echo "::notice::serial_linhas=$(wc -l < $S 2>/dev/null || echo 0)"
+          grep -E "janela|wm] disp|\[app\]" $S 2>/dev/null | tail -8 | while IFS= read -r l; do
+            echo "::notice::${l:0:220}"
+          done || true
+
+      - name: Resumo do serial
+        if: always()
+        run: |
+          echo "=== serial.log ==="
+          cat screenshots/serial.log || true
+
+      - name: Postar serial no PR
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          if [ -f screenshots/serial.log ]; then
+            {
+              echo "### serial.log — run ${{ github.run_id }}"
+              echo '```'
+              tail -c 20000 screenshots/serial.log
+              echo '```'
+              if [ -f screenshots/traffic.txt ]; then
+                echo "### trafego de rede (filter-dump)"
+                echo '```'
+                cat screenshots/traffic.txt
+                echo '```'
+              fi
+              if [ -f screenshots/qtrace.log ]; then
+                echo "### excecoes do QEMU (-d int)"
+                echo '```'
+                grep -E " v=0[0-9a-f]" screenshots/qtrace.log | tail -8 || true
+                echo '```'
+              fi
+              if [ -f screenshots/qtrace.log ]; then
+                echo "### trace e1000 (ultimas 14)"
+                echo '```'
+                grep -i "e1000" screenshots/qtrace.log | tail -14 || true
+                echo '```'
+              fi
+            } > /tmp/prc.md
+            cat /tmp/prc.md >> "$GITHUB_STEP_SUMMARY" || true
+            PRN=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$BRANCH" --json number --jq ".[0].number" 2>/dev/null || true)
+            if [ -n "$PRN" ]; then
+              for i in 1 2 3 4 5; do
+                if gh pr comment "$PRN" --repo "$GITHUB_REPOSITORY" --body-file /tmp/prc.md; then
+                  break
+                fi
+                echo "comentario falhou (tentativa $i; rate limit?) — espera 90 s"
+                sleep 90
+              done
+            else
+              echo "sem PR aberto para o branch; serial abaixo:"
+              cat /tmp/prc.md
+            fi
+          fi
+
+      - name: Upload da ISO + disco ENZFS
+        uses: actions/upload-artifact@v4
+        with:
+          name: enzos-iso
+          path: |
+            enzoos/release/enzos.iso
+            enzoos/release/disk.img
+
+      - name: Upload das capturas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: |
+            enzoos/screenshots/*.png
+            enzoos/screenshots/qtrace.log
+
+      - name: Arquivar serial no branch (leitura externa)
+        if: always()
+        run: |
+          mkdir -p ci-logs
+          cp screenshots/serial.log ci-logs/serial-latest.txt 2>/dev/null || true
+          cp /tmp/qemu.log ci-logs/qemu-latest.log 2>/dev/null || true
+          git config user.name "ci-bot" && git config user.email "ci-bot@users.noreply.github.com"
+          git add ci-logs || true
+          git diff --cached --quiet || git commit -q -m "ci: serial do run ${{ github.run_id }} [skip ci]"
+          git push origin HEAD:${{ github.head_ref || github.ref_name }} 2>&1 | tail -1 || true
+
+      - name: Upload do log serial
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: serial-log
+          path: enzoos/screenshots/serial.log
