@@ -271,8 +271,13 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $comMingw = if ($env:PATH -like '*mingw*') { 'SIM' } else { 'NAO' }
-          Write-Host "MinGW no PATH deste shell: $comMingw"
+          # tira do PATH tudo que venha do compilador: se o .exe precisar de
+          # qualquer DLL do MinGW, aqui ele nao acha de jeito nenhum
+          $env:PATH = ($env:PATH -split ';' |
+            Where-Object { $_ -and ($_ -notmatch 'mingw|msys|clang|gcc') }) -join ';'
+          $comMingw = if ($env:PATH -match 'mingw|msys|clang') { 'SIM' } else { 'NAO' }
+          Write-Host "MinGW no PATH depois de limpar: $comMingw"
+          Write-Host "PATH de teste: $env:PATH"
           $dir = Join-Path $env:TEMP 'raceai-limpo'
           New-Item -ItemType Directory -Force -Path $dir | Out-Null
           Copy-Item raceai-cpp\package\RaceAI2D.exe "$dir\RaceAI2D.exe"
@@ -283,6 +288,7 @@ jobs:
           $p = Start-Process -FilePath "$dir\RaceAI2D.exe" -ArgumentList '--help' `
                -NoNewWindow -Wait -PassThru `
                -RedirectStandardOutput "$dir\saida.txt" -RedirectStandardError "$dir\erro.txt"
+          Write-Host "stderr: $((Get-Content "$dir\erro.txt" -TotalCount 3) -join ' | ')"
           $saida = (Get-Content "$dir\saida.txt" -TotalCount 2) -join ' | '
           Write-Host "exit code: $($p.ExitCode)"
           Write-Host "saida: $saida"
@@ -333,7 +339,11 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             gh release create exe-cpp-windows --title "RaceAI 2D (C++) - executavel Windows" --notes $notas
           }
-          gh release upload exe-cpp-windows raceai-cpp/package/RaceAI2D.exe --clobber
+          $exe = Get-Item raceai-cpp\package\RaceAI2D.exe
+          $sha = (Get-FileHash $exe -Algorithm SHA256).Hash
+          Write-Host "::notice ::release: $($exe.Length) bytes sha256=$sha"
+          $notas = $notas + "`n`nArquivo: RaceAI2D.exe — $($exe.Length) bytes`nSHA256: $sha"
+          gh release upload exe-cpp-windows $exe --clobber
           # o zip antigo sai de cena (se ele ja nao existir, nao e erro)
           gh release delete-asset exe-cpp-windows RaceAI2D-C++-windows.zip -y 2>$null
           $LASTEXITCODE = 0
