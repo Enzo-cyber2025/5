@@ -1,6 +1,33 @@
 # Memória da sessão (atualizada em 2026-10-30 20:10)
 
-Branch: `arena/5d450bd0-5`. Último commit: `96e0b09` (CI 41119888517 success).
+Branch: `arena/5d450bd0-5`. Último commit: `0ed860a` (CI 41123179124 success).
+
+## CORREÇÃO CRÍTICA: DLL do MinGW
+
+O usuário mandou um print com `RaceAI2D.exe - System Error: The code execution
+cannot proceed because libgcc_s_seh-1.dll was not found`. Causa: o executável
+era ligado dinamicamente às DLLs do compilador (libgcc_s_seh-1.dll,
+libstdc++-6.dll, libwinpthread-1.dll), que não existem no PC dele — **o bug
+também afetava o zip antigo**.
+
+Correção: `STATIC := -static -static-libgcc -static-libstdc++` na regra do
+`raceai.exe` no Makefile. O .exe passou de 22,8 MB para 25,5 MB.
+Passo novo no CI lista as DLLs importadas e falha se aparecer
+libgcc/libstdc++/libwinpthread.
+
+**Sempre distribuir binário MinGW com ligação estática.**
+
+## Como ler imagem enviada pelo usuário (sem visão)
+
+O tool não mostra a imagem, mas dá para fazer OCR:
+```
+cp /tmp/arena-coding-uploads/image-N.png /home/user/5/.arena_uploads/
+pip install --break-system-packages rapidocr-onnxruntime
+pip install --break-system-packages --force-reinstall opencv-python-headless
+convert image.png -resize 300% -colorspace Gray -sharpen 0x1 grande.png
+python3 -c "from rapidocr_onnxruntime import RapidOCR; print(RapidOCR()('grande.png')[0])"
+```
+(rapidocr precisa do opencv-headless: o normal exige libGL.so.1, ausente.)
 
 ## Entrega: UM arquivo só
 
