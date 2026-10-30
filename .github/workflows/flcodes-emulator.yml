@@ -110,6 +110,76 @@ jobs:
           path: ${{ runner.temp }}/signup
           if-no-files-found: warn
 
+  parent-session:
+    name: Parent session - config -> shared secret -> code
+    runs-on: ubuntu-latest
+    needs: unit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install
+        run: |
+          python3 -m pip install --quiet cryptography
+      - name: Is there a parent session?
+        id: session
+        env:
+          SAPISID: ${{ secrets.FLCODES_SAPISID }}
+        run: |
+          if [ -n "$SAPISID" ]; then
+            echo "have=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "have=no" >> "$GITHUB_OUTPUT"
+            echo "::warning title=no-parent-session::set FLCODES_SAPISID (the parent's SAPISID cookie) with tools/set_parent_session.sh; the secret never appears here"
+          fi
+      - name: Harvest, store and generate
+        id: chain
+        if: steps.session.outputs.have == 'yes'
+        env:
+          SAPISID: ${{ secrets.FLCODES_SAPISID }}
+          PYTHONPATH: ${{ github.workspace }}/family-link-codes
+          FLCODES_HOME: ${{ runner.temp }}/home
+          FLCODES_PASSPHRASE: ${{ secrets.FLCODES_VAULT_PASSPHRASE }}
+        run: |
+          set +e
+          export FLCODES_PASSPHRASE="${FLCODES_PASSPHRASE:-ci-vault}"
+          {
+            echo "== rea api (parent session) =="
+            python3 -m flcodes rea api --sapisid "$SAPISID" --save --label ci-parent --no-report
+            echo "rea-status=$?"
+            echo
+            echo "== the code this session yields =="
+            python3 -m flcodes gen
+            echo "gen-status=$?"
+          } | tee "$RUNNER_TEMP/chain.txt"
+          exit 0
+      - name: Which link of the chain did it reach?
+        if: steps.session.outputs.have == 'yes'
+        run: |
+          set -e
+          {
+            echo "### Parent session: config -> secret -> code"
+            echo '```'
+            sed -n '1,60p' "$RUNNER_TEMP/chain.txt"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if grep -q "no shared secret found" "$RUNNER_TEMP/chain.txt"; then
+            echo "::warning title=no-secret::the config call answered but carried no sharedSecret (wrong account, a child session, or Google stopped serving it)"
+          elif grep -q "gen-status=0" "$RUNNER_TEMP/chain.txt"; then
+            echo "::notice title=chain-closed::a parent session produced a secret and a code"
+          else
+            echo "::warning title=chain-broken::see the summary"
+          fi
+      - name: Publish the capture
+        if: always() && steps.session.outputs.have == 'yes'
+        uses: actions/upload-artifact@v4
+        with:
+          name: parent-session-chain
+          path: ${{ runner.temp }}/chain.txt
+          if-no-files-found: warn
+
+
   emulator:
     name: emulator (QEMU) - selftest app, no root
     runs-on: ubuntu-latest

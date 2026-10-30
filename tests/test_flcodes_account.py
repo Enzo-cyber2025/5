@@ -210,3 +210,63 @@ def test_the_reap_script_names_the_signin_wall():
     for needle in ("2-step verification", "wrong", "unusual", "disabled",
                    "certified", "sign-in stopped at"):
         assert needle in text
+
+
+PARENT = (pathlib.Path(__file__).resolve().parents[1] / "family-link-codes"
+          / "tools" / "set_parent_session.sh")
+
+
+def test_the_session_script_refuses_a_too_short_value(tmp_path):
+    import os
+    import subprocess
+
+    fake = tmp_path / "bin"
+    fake.mkdir()
+    (fake / "gh").write_text(
+        "#!/usr/bin/env bash\n"
+        'case "$1 $2" in\n'
+        '  "auth status") exit 0 ;;\n'
+        '  "repo view") echo "owner/repo" ;;\n'
+        'esac\nexit 0\n')
+    (fake / "gh").chmod(0o755)
+    env = dict(os.environ, PATH=f"{fake}:{os.environ['PATH']}", FLCODES_SAPISID="abc")
+    out = subprocess.run(["bash", str(PARENT), "--no-trigger"], env=env,
+                         capture_output=True, text=True, input="")
+    assert out.returncode == 1
+    assert "does not look like a SAPISID" in out.stderr
+
+
+def test_the_session_script_never_prints_the_value(tmp_path):
+    import os
+    import subprocess
+
+    fake = tmp_path / "bin"
+    fake.mkdir()
+    calls = tmp_path / "calls.log"
+    (fake / "gh").write_text(
+        "#!/usr/bin/env bash\n"
+        f'echo "gh $*" >> {calls}\n'
+        'case "$1 $2" in\n'
+        '  "auth status") exit 0 ;;\n'
+        '  "repo view") echo "owner/repo" ;;\n'
+        '  "secret set") cat > /dev/null ;;\n'
+        'esac\nexit 0\n')
+    (fake / "gh").chmod(0o755)
+    value = "AbCdEfGhIjKlMnOpQrStUvWxYz0123456789abcd"
+    env = dict(os.environ, PATH=f"{fake}:{os.environ['PATH']}", FLCODES_SAPISID=value)
+    out = subprocess.run(["bash", str(PARENT), "--no-trigger"], env=env,
+                         capture_output=True, text=True, input="")
+    assert out.returncode == 0
+    assert value not in out.stdout + out.stderr
+    assert "gh secret set FLCODES_SAPISID --repo owner/repo" in calls.read_text()
+
+
+def test_the_workflow_never_echoes_the_session_secret():
+    workflow = (pathlib.Path(__file__).resolve().parents[1]
+                / ".github" / "workflows" / "flcodes-emulator.yml").read_text()
+    assert "secrets.FLCODES_SAPISID" in workflow
+    for line in workflow.splitlines():
+        if "FLCODES_SAPISID" in line and "secrets." not in line and "env:" not in line:
+            assert "SAPISID:" in line or "title=no-parent-session" in line
+    assert "echo \"$SAPISID\"" not in workflow
+    assert "echo $SAPISID" not in workflow
