@@ -1,0 +1,1130 @@
+name: flcodes emulator
+
+# Device-side proof for flcodes. The development sandbox has no QEMU, no Android
+# image and no KVM, so the emulator (which is QEMU) runs here.
+#
+# Two device jobs:
+#   * emulator          - the pipeline against an app we build here, so the
+#                         secret actually appears and the whole chain can pass:
+#                         build -> install -> apk scan -> adb backup -> abe scan
+#                         -> keys -> gen.
+#   * real-family-link  - the same pipeline against the newest published Family
+#                         Link APK (no self-built copy). Without a signed-in
+#                         account the app never writes its config, so this job
+#                         reports what it found instead of pretending.
+#
+# Set the repository secret FLCODES_APK_URL to a URL that serves the real APK
+# (your own copy) and the real job uses it before trying the mirrors.
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+on:
+  push:
+    paths:
+      - 'family-link-codes/**'
+      - 'tests/test_flcodes_*.py'
+      - '.github/workflows/flcodes-emulator.yml'
+  pull_request:
+    paths:
+      - 'family-link-codes/**'
+      - 'tests/test_flcodes_*.py'
+      - '.github/workflows/flcodes-emulator.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: flcodes-emulator-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit:
+    name: unit tests (no device)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install test tools
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install --quiet --upgrade pip
+          .venv/bin/pip install --quiet pytest cryptography
+      - name: Algorithm, cipher, containers, extraction
+        run: .venv/bin/python -m pytest -q tests/test_flcodes_codes.py tests/test_flcodes_crypto.py tests/test_flcodes_rea.py tests/test_flcodes_abe.py tests/test_flcodes_endpoints.py tests/test_flcodes_verify.py
+      - name: CLI, web UI and the device workflow (stubbed adb)
+        run: .venv/bin/python -m pytest -q tests/test_flcodes_cli.py tests/test_flcodes_device.py
+      - name: Protobuf, the Dart snapshot and the response chain
+        run: .venv/bin/python -m pytest -q tests/test_flcodes_proto.py tests/test_flcodes_dart_snapshot.py tests/test_flcodes_response_chain.py
+      - name: The Play Store identity preflight
+        run: .venv/bin/python -m pytest -q tests/test_flcodes_account.py
+      - name: 'The last leg on its own: response -> secret -> code'
+        run: |
+          set -e
+          export PYTHONPATH="$GITHUB_WORKSPACE/family-link-codes"
+          export FLCODES_HOME="$RUNNER_TEMP/chain-home"
+          export FLCODES_PASSPHRASE=chain
+          python3 family-link-codes/tools/response_to_code.py --synthetic
+      - name: Self check and demo
+        run: |
+          cd family-link-codes
+          export PYTHONPATH="$PWD" FLCODES_HOME="$RUNNER_TEMP/flhome" FLCODES_PASSPHRASE=demo
+          python3 -m flcodes audit
+          bash demo/run_demo.sh
+
+  signup-probe:
+    name: Can CI sign a Google account up at all? (one honest attempt)
+    runs-on: ubuntu-latest
+    needs: unit
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install the browser (real Chrome, not the bundled Chromium)
+        run: |
+          python3 -m pip install --quiet playwright
+          python3 -m playwright install --with-deps chromium chrome
+      - name: One attempt, no captcha solving, no fake phone
+        run: |
+          set +e
+          python3 family-link-codes/tools/google_signup_probe.py \
+            --channel chrome --profile "$RUNNER_TEMP/chrome-profile" \
+            --out-dir "$RUNNER_TEMP/signup" | tee "$RUNNER_TEMP/signup.log"
+          echo "${PIPESTATUS[0]}" > "$RUNNER_TEMP/signup-status.txt"
+          exit 0
+      - name: Report which wall it was
+        run: |
+          set -e
+          python3 family-link-codes/tools/signup_report.py --dir "$RUNNER_TEMP/signup" \
+            | tee "$RUNNER_TEMP/signup/summary.txt" || true
+      - name: Publish the screenshots (and the account, if it exists)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: signup-account
+          path: ${{ runner.temp }}/signup
+          if-no-files-found: warn
+
+  parent-session:
+    name: Parent session - config -> shared secret -> code
+    runs-on: ubuntu-latest
+    needs: unit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install
+        run: |
+          python3 -m pip install --quiet cryptography
+      - name: Is there a parent session?
+        id: session
+        env:
+          SAPISID: ${{ secrets.FLCODES_SAPISID }}
+        run: |
+          if [ -n "$SAPISID" ]; then
+            echo "have=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "have=no" >> "$GITHUB_OUTPUT"
+            echo "::warning title=no-parent-session::set FLCODES_SAPISID (the parent's SAPISID cookie) with tools/set_parent_session.sh; the secret never appears here"
+          fi
+      - name: Harvest, store and generate
+        id: chain
+        if: steps.session.outputs.have == 'yes'
+        env:
+          SAPISID: ${{ secrets.FLCODES_SAPISID }}
+          PYTHONPATH: ${{ github.workspace }}/family-link-codes
+          FLCODES_HOME: ${{ runner.temp }}/home
+          FLCODES_PASSPHRASE: ${{ secrets.FLCODES_VAULT_PASSPHRASE }}
+        run: |
+          set +e
+          export FLCODES_PASSPHRASE="${FLCODES_PASSPHRASE:-ci-vault}"
+          {
+            echo "== rea api (parent session) =="
+            python3 -m flcodes rea api --sapisid "$SAPISID" --save --label ci-parent --no-report
+            echo "rea-status=$?"
+            echo
+            echo "== the code this session yields =="
+            python3 -m flcodes gen
+            echo "gen-status=$?"
+          } | tee "$RUNNER_TEMP/chain.txt"
+          exit 0
+      - name: Which link of the chain did it reach?
+        if: steps.session.outputs.have == 'yes'
+        run: |
+          set -e
+          {
+            echo "### Parent session: config -> secret -> code"
+            echo '```'
+            sed -n '1,60p' "$RUNNER_TEMP/chain.txt"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if grep -q "no shared secret found" "$RUNNER_TEMP/chain.txt"; then
+            echo "::warning title=no-secret::the config call answered but carried no sharedSecret (wrong account, a child session, or Google stopped serving it)"
+          elif grep -q "gen-status=0" "$RUNNER_TEMP/chain.txt"; then
+            echo "::notice title=chain-closed::a parent session produced a secret and a code"
+          else
+            echo "::warning title=chain-broken::see the summary"
+          fi
+      - name: Publish the capture
+        if: always() && steps.session.outputs.have == 'yes'
+        uses: actions/upload-artifact@v4
+        with:
+          name: parent-session-chain
+          path: ${{ runner.temp }}/chain.txt
+          if-no-files-found: warn
+
+
+  emulator:
+    name: emulator (QEMU) - selftest app, no root
+    runs-on: ubuntu-latest
+    needs: unit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Enable KVM (falls back to software emulation)
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          ls -l /dev/kvm || echo "no /dev/kvm: TCG, slow"
+      - name: Boot, install, back up and extract without root
+        env:
+          FLCODES_PASSPHRASE: emulator
+        run: |
+          set +e
+          bash family-link-codes/tools/android_emulator_ci.sh \
+            --work "$RUNNER_TEMP/emulator" --api 30
+          status=$?
+          echo "$status" > "$RUNNER_TEMP/emulator-status.txt"
+          exit "$status"
+      - name: Two accounts (parent and child profiles on the same device)
+        env:
+          FLCODES_PASSPHRASE: two
+        run: |
+          set +e
+          export PATH="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/platform-tools:$PATH"
+          adb devices
+          export ANDROID_SERIAL="$(adb devices | awk 'NR>1 && $2=="device" {print $1; exit}')"
+          echo "serial: ${ANDROID_SERIAL:-none}"
+          mkdir -p "$RUNNER_TEMP/two"
+          bash family-link-codes/tools/two_users_test.sh \
+            --work "$RUNNER_TEMP/two" --apk "$RUNNER_TEMP/emulator/selftest.apk" \
+            --package com.flcodes.selftest > "$RUNNER_TEMP/two/stdout.txt" 2>&1
+          echo "$?" > "$RUNNER_TEMP/two-status.txt"
+          tail -40 "$RUNNER_TEMP/two/stdout.txt"
+          exit 0
+
+      - name: Report on the PR
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e +o pipefail
+          pr="${{ github.event.pull_request.number }}"
+          [ -n "$pr" ] || pr="$(gh pr list --head "$GITHUB_REF_NAME" --json number -q '.[0].number' 2>/dev/null)"
+          [ -n "$pr" ] || exit 0
+          W="$RUNNER_TEMP/emulator"
+          T="$RUNNER_TEMP/two"
+          R="$RUNNER_TEMP/realapps"
+          {
+            echo "### Emulador Android (QEMU): selftest, sem root"
+            echo
+            echo "exit: $(cat "$RUNNER_TEMP/emulator-status.txt" 2>/dev/null || echo '?')"
+            echo
+            for f in abe-info.txt tree.txt abe-scan.txt backup-size.txt private-dir.txt shared-prefs.txt code.json; do
+              [ -s "$W/$f" ] && { echo "**$f**"; echo '```'; head -25 "$W/$f"; echo '```'; }
+            done
+            echo "**apk scan**"
+            echo '```'
+            head -30 "$W/apk-scan.txt" 2>/dev/null || echo "(no scan)"
+            echo '```'
+            echo "**run.log (tail)**"
+            echo '```'
+            tail -40 "$W/run.log" 2>/dev/null || echo "(no log)"
+            echo '```'
+            echo "### Duas contas (perfis parent/child no mesmo aparelho)"
+            echo
+            echo "exit: $(cat "$RUNNER_TEMP/two-status.txt" 2>/dev/null || echo '?')"
+            echo
+            for f in users.txt installed-parent.txt installed-child.txt process-parent.txt process-child.txt log-parent.txt log-child.txt prefs-parent.xml scan-parent.txt isolation.txt; do
+              [ -s "$T/$f" ] && { echo "**$f**"; echo '```'; head -20 "$T/$f"; echo '```'; }
+            done
+            echo "**stdout.txt**"
+            echo '```'
+            head -80 "$T/stdout.txt" 2>/dev/null || echo "(no output)"
+            echo '```' 
+            echo "**two.log (tail)**"
+            echo '```'
+            tail -40 "$T/two.log" 2>/dev/null || echo "(no log)"
+            echo '```'
+          } > "$RUNNER_TEMP/comment.md"
+          gh pr comment "$pr" --body-file "$RUNNER_TEMP/comment.md"
+      - name: Store the evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flcodes-emulator
+          path: |
+            ${{ runner.temp }}/emulator/
+            ${{ runner.temp }}/two/
+            ${{ runner.temp }}/realapps/
+            ${{ runner.temp }}/emulator/emulator.log
+          if-no-files-found: warn
+
+  real-family-link:
+    name: real Family Link APK - unpack and extract without root
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: unit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Which credentials are available (booleans only)
+        env:
+          APK_URL: ${{ secrets.FLCODES_APK_URL }}
+          GPLAY_EMAIL: ${{ secrets.FLCODES_GPLAY_EMAIL }}
+          GPLAY_PASSWORD: ${{ secrets.FLCODES_GPLAY_PASSWORD }}
+        run: |
+          set -e
+          {
+            echo "FLCODES_APK_URL set: $([ -n "${APK_URL:-}" ] && echo yes || echo no)"
+            echo "FLCODES_GPLAY_EMAIL set: $([ -n "${GPLAY_EMAIL:-}" ] && echo yes || echo no)"
+            echo "FLCODES_GPLAY_PASSWORD set: $([ -n "${GPLAY_PASSWORD:-}" ] && echo yes || echo no)"
+          } | tee "$RUNNER_TEMP/credentials.txt"
+
+      - name: Probe which public sources serve the APK
+        continue-on-error: true
+        env:
+          APK_URL: ${{ secrets.FLCODES_APK_URL }}
+        run: |
+          set +e
+          if [ -n "${APK_URL:-}" ]; then
+            echo "FLCODES_APK_URL is set: the mirror probe is not needed" \
+              | tee "$RUNNER_TEMP/probe.txt"
+            exit 0
+          fi
+          bash family-link-codes/tools/probe_apk_sources.sh > "$RUNNER_TEMP/probe.txt" 2>&1
+          cat "$RUNNER_TEMP/probe.txt"
+
+      - name: Fetch the newest published Family Link APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FLCODES_APK_URL: ${{ secrets.FLCODES_APK_URL }}
+        run: |
+          set +e
+          bash family-link-codes/tools/fetch_familylink_apk.sh \
+            --out "$RUNNER_TEMP/familylink" > "$RUNNER_TEMP/fetch.txt" 2>&1
+          cat "$RUNNER_TEMP/fetch.txt"
+          ls -la "$RUNNER_TEMP/familylink"
+          if [ ! -s "$RUNNER_TEMP/familylink/base.apk" ]; then
+            echo "::warning title=no-apk::no public source served the APK; set FLCODES_APK_URL to your own copy"
+            echo "missing" > "$RUNNER_TEMP/apk-missing.txt"
+          fi
+          exit 0
+
+      - name: Unpack and locate the secret's home (REA, static)
+        if: ${{ !cancelled() }}
+        run: |
+          set +e
+          cd family-link-codes
+          export PYTHONPATH="$PWD"
+          APK="$(cat "$RUNNER_TEMP/familylink/apk-path.txt" 2>/dev/null | tail -1)"
+          [ -s "$APK" ] || APK="$RUNNER_TEMP/familylink/base.apk"
+          echo "base apk: $APK"
+          python3 -m flcodes apk scan "$APK" --json > "$RUNNER_TEMP/scan.json" 2>&1
+          python3 -m flcodes apk scan "$APK" > "$RUNNER_TEMP/scan.txt" 2>&1
+          SDK="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}"
+          AAPT="$(find "$SDK/build-tools" -name aapt2 | sort -V | tail -1)"
+          "$AAPT" dump packagename "$APK" > "$RUNNER_TEMP/package.txt" 2>&1
+          "$AAPT" dump badging "$APK" 2>/dev/null | head -6 > "$RUNNER_TEMP/badging.txt"
+          "$AAPT" dump xmltree --file AndroidManifest.xml "$APK" 2>/dev/null \
+            | grep -iE "allowBackup|fullBackupContent|dataExtractionRules" \
+            > "$RUNNER_TEMP/backup-flags.txt"
+          sha256sum "$APK" > "$RUNNER_TEMP/sha256.txt"
+          cat "$RUNNER_TEMP/package.txt" "$RUNNER_TEMP/backup-flags.txt" "$RUNNER_TEMP/sha256.txt"
+          exit 0
+
+      - name: Signer of the downloaded APK (provenance)
+        run: |
+          set +e
+          SDK="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}"
+          APKSIGNER="$(find "$SDK/build-tools" -name apksigner | sort -V | tail -1)"
+          "$APKSIGNER" verify --print-certs "$RUNNER_TEMP/familylink/base.apk" \
+            > "$RUNNER_TEMP/certs.txt" 2>&1
+          head -12 "$RUNNER_TEMP/certs.txt"
+
+      - name: Try to fetch an x86_64 build (so it can actually run here)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FLCODES_APK_URL: ${{ secrets.FLCODES_APK_URL }}
+          FLCODES_ARCH: x86_64;x86
+        run: |
+          set +e
+          bash family-link-codes/tools/fetch_familylink_apk.sh \
+            --out "$RUNNER_TEMP/familylink-x86" > "$RUNNER_TEMP/fetch-x86.txt" 2>&1
+          status=$?
+          cat "$RUNNER_TEMP/fetch-x86.txt"
+          echo "status: $status" | tee -a "$RUNNER_TEMP/fetch-x86.txt"
+          if [ -s "$RUNNER_TEMP/familylink-x86/apk-path.txt" ]; then
+            echo "x86 build available: $(tail -1 "$RUNNER_TEMP/familylink-x86/apk-path.txt")"
+            while read -r piece; do
+              printf '  %s\n' "$(basename "$piece")"
+            done < "$RUNNER_TEMP/familylink-x86/splits.txt"
+            echo
+            echo "== is it really a different build? =="
+            sha256sum "$(tail -1 "$RUNNER_TEMP/familylink-x86/apk-path.txt")" \
+                      "$(tail -1 "$RUNNER_TEMP/familylink/apk-path.txt")" 2>/dev/null
+            if cmp -s "$(tail -1 "$RUNNER_TEMP/familylink-x86/apk-path.txt")" \
+                      "$(tail -1 "$RUNNER_TEMP/familylink/apk-path.txt")"; then
+              echo "SAME file: the mirror has no x86 variant, it serves the ARM bundle"
+            fi
+            echo "abi splits in the x86 request:"
+            grep -cE 'config\.(x86|x86_64|arm64_v8a|armeabi_v7a)\.apk' \
+              "$RUNNER_TEMP/familylink-x86/splits.txt" || true
+            grep -E 'config\.(x86|x86_64|arm64_v8a|armeabi_v7a)\.apk' \
+              "$RUNNER_TEMP/familylink-x86/splits.txt" ||               echo "  (none: no ABI split at all in this bundle)"
+          fi
+          exit 0
+
+      - name: Dart/Flutter hunt inside libapp.so (the code the dex does not hold)
+        run: |
+          set +e
+          APK="$(cat "$RUNNER_TEMP/familylink/apk-path.txt" 2>/dev/null | tail -1)"
+          [ -s "$APK" ] || APK="$RUNNER_TEMP/familylink/base.apk"
+          ABI_SPLIT="$(grep -E 'config\.(arm64_v8a|armeabi_v7a)\.apk' \
+            "$RUNNER_TEMP/familylink/splits.txt" 2>/dev/null | head -1)"
+          echo "base: $APK"
+          echo "abi split: ${ABI_SPLIT:-(none)}"
+          python3 family-link-codes/tools/dart_snapshot_hunt.py "$APK" $ABI_SPLIT \
+            | tee "$RUNNER_TEMP/dart.txt"
+          python3 family-link-codes/tools/dart_snapshot_hunt.py "$APK" $ABI_SPLIT \
+            --strings-only > "$RUNNER_TEMP/dart-strings.txt" 2>&1
+          python3 family-link-codes/tools/dart_snapshot_hunt.py "$APK" $ABI_SPLIT \
+            --keys > "$RUNNER_TEMP/dart-keys.txt" 2>&1
+          echo "--- candidate keys ($(wc -l < "$RUNNER_TEMP/dart-keys.txt") tokens) ---"
+          grep -iE "secret|ttl|drift|valid|clock|acc" "$RUNNER_TEMP/dart-keys.txt" | head -40
+          echo "--- concept strings ---"
+          cat "$RUNNER_TEMP/dart-strings.txt"
+          echo
+          echo
+          echo "== every native blob in the bundle =="
+          for f in "$APK" $ABI_SPLIT; do
+            [ -s "$f" ] || continue
+            echo "-- $(basename "$f")"
+            unzip -l "$f" 2>/dev/null \
+              | grep -E "lib/.*\.so|kernel_blob|snapshot|\.bin$" \
+              | awk '{print $1, $4}' | head -15
+          done
+          echo
+          echo "== flutter assets in the base apk =="
+          unzip -l "$APK" 2>/dev/null | grep -E "flutter_assets|assets/" \
+            | awk '{print $1, $4}' | head -12
+
+      - name: Recover the protobuf schema from the real binary
+        run: |
+          set +e
+          cd family-link-codes
+          export PYTHONPATH="$PWD"
+          APK="$(cat "$RUNNER_TEMP/familylink/apk-path.txt" 2>/dev/null | tail -1)"
+          [ -s "$APK" ] || APK="$RUNNER_TEMP/familylink/base.apk"
+          ABI_SPLIT="$(grep -E 'config\.(arm64_v8a|armeabi_v7a)\.apk' \
+            "$RUNNER_TEMP/familylink/splits.txt" 2>/dev/null | head -1)"
+          echo "base: $APK"
+          echo "split: ${ABI_SPLIT:-(none)}"
+          python3 -m flcodes proto apk "$APK" $ABI_SPLIT \
+            > "$RUNNER_TEMP/proto.txt" 2>&1
+          status=$?
+          echo "status: $status"
+          head -60 "$RUNNER_TEMP/proto.txt"
+          if [ "$status" != "0" ]; then
+            echo "no descriptor recovered; falling back to the raw string hunt"
+            python3 tools/dart_snapshot_hunt.py "$APK" $ABI_SPLIT --strings-only | head -40
+          fi
+
+      - name: Inventory of the real bundle (ABIs, pieces, size)
+        run: |
+          set +e
+          SDK="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}"
+          AAPT="$(find "$SDK/build-tools" -name aapt2 | sort -V | tail -1)"
+          OUT="$RUNNER_TEMP/inventory.txt"
+          {
+            echo "== pieces =="
+            while read -r piece; do
+              printf '%10s  %s  %s\n' "$(stat -c %s "$piece" 2>/dev/null)" \
+                "$(basename "$piece")" \
+                "$("$AAPT" dump badging "$piece" 2>/dev/null \
+                   | sed -n "s/.*native-code: '\([^']*\)'.*/abi=\1/p" | head -1)"
+            done < "$RUNNER_TEMP/familylink/splits.txt"
+            echo
+            echo "== base native code =="
+            "$AAPT" dump badging "$RUNNER_TEMP/familylink/base.apk" 2>/dev/null \
+              | grep -E "native-code|sdkVersion|targetSdk"
+            echo
+            echo "== native libraries inside the base apk =="
+            unzip -l "$RUNNER_TEMP/familylink/base.apk" 2>/dev/null \
+              | grep -E "lib/" | awk '{print $1, $4}' | head -20
+            echo "count: $(unzip -l "$RUNNER_TEMP/familylink/base.apk" 2>/dev/null | grep -c 'lib/')"
+            echo
+            echo "== native libraries in the ABI split =="
+            ABI_SPLIT="$(grep -E 'config\.(arm64_v8a|armeabi_v7a)\.apk' \
+              "$RUNNER_TEMP/familylink/splits.txt" | head -1)"
+            echo "split: $(basename "$ABI_SPLIT" 2>/dev/null)"
+            [ -n "$ABI_SPLIT" ] && unzip -l "$ABI_SPLIT" 2>/dev/null \
+              | grep -E "lib/" | awk '{print $1, $4}' | head -20
+            echo
+            if [ -s "$RUNNER_TEMP/familylink-x86/splits.txt" ]; then
+              echo
+              echo "== x86 build pieces =="
+              while read -r piece; do
+                printf '%10s  %s\n' "$(stat -c %s "$piece" 2>/dev/null)" "$(basename "$piece")"
+              done < "$RUNNER_TEMP/familylink-x86/splits.txt"
+            fi
+            echo
+            echo "== device =="
+            adb shell getprop ro.product.cpu.abi 2>/dev/null
+            adb shell getprop ro.build.version.sdk 2>/dev/null
+          } | tee "$OUT"
+
+      - name: Strings hunt inside the real APK (is the config obfuscated?)
+        run: |
+          set +e
+          python3 family-link-codes/tools/dex_hunt.py "$RUNNER_TEMP/familylink/base.apk" \
+            | tee "$RUNNER_TEMP/strings.txt"
+
+
+      - name: Enable KVM (falls back to software emulation)
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          ls -l /dev/kvm || echo "no /dev/kvm: TCG, slow"
+
+      - name: Boot the emulator (x86_64, API 30, with Google Play services)
+        run: |
+          set -e
+          export PATH="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/platform-tools:$PATH"
+          bash family-link-codes/tools/emulator_boot.sh \
+            --work "$RUNNER_TEMP/emu-real" --api 30 --tag google_apis 2>&1 | tail -20
+
+      - name: Does this image translate ARM code? (native bridge)
+        run: |
+          set +e
+          {
+            echo "abi: $(adb shell getprop ro.product.cpu.abi | tr -d '\r')"
+            echo "native.bridge: '$(adb shell getprop ro.dalvik.vm.native.bridge | tr -d '\r')'"
+            echo "native.bridge.exec: '$(adb shell getprop ro.enable.native.bridge.exec | tr -d '\r')'"
+            echo
+            echo "libhoudini / libnb on the device:"
+            adb shell 'ls /system/lib*/libhoudini.so /system/lib*/libnb.so /system/lib*/arm 2>/dev/null' \
+              | head -10
+            echo "(empty above means no ARM translation on this image)"
+          } | tee "$RUNNER_TEMP/nativebridge.txt"
+
+      - name: Two profiles on the emulator, with the real APK
+        timeout-minutes: 20
+        env:
+          FLCODES_PASSPHRASE: real
+        run: |
+          set +e
+          export PATH="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/platform-tools:$PATH"
+          export ANDROID_SERIAL="$(adb devices | awk 'NR>1 && $2=="device" {print $1; exit}')"
+          echo "serial: ${ANDROID_SERIAL:-none}"; adb devices
+          # prefer the x86 build: that is the one this emulator can execute
+          DIR=""
+          if [ -s "$RUNNER_TEMP/familylink-x86/apk-path.txt" ]; then
+            DIR="$RUNNER_TEMP/familylink-x86"
+            echo "using the x86 build"
+          elif [ -s "$RUNNER_TEMP/familylink/apk-path.txt" ]; then
+            DIR="$RUNNER_TEMP/familylink"
+            echo "only the ARM build is available"
+          fi
+          if [ -z "$DIR" ]; then
+            echo "no-apk" > "$RUNNER_TEMP/real-status.txt"
+            echo "no APK available: skipping the device run"
+            exit 0
+          fi
+          APK="$(tail -1 "$DIR/apk-path.txt")"
+          PKG="$(cat "$RUNNER_TEMP/package.txt" 2>/dev/null | tr -d '\r' | head -1)"
+          [ -n "$PKG" ] || PKG=com.google.android.apps.kids.familylink
+          echo "apk: $APK"
+          echo "package: $PKG"
+          mkdir -p "$RUNNER_TEMP/real"
+          bash family-link-codes/tools/real_two_profiles.sh \
+            --work "$RUNNER_TEMP/real" --apk "$APK" \
+            --splits "$DIR/splits.txt" --package "$PKG" \
+            > "$RUNNER_TEMP/real/stdout.txt" 2>&1
+          status=$?
+          # The app is Java/Kotlin: only the native split is ARM. Drop it and the
+          # rest of the bundle can install on x86, where the code actually runs.
+          if [ "$status" = "10" ] && [ -s "$DIR/splits-nolib.txt" ]; then
+            echo
+            echo "retrying without the ARM native split:" \
+                 "$(wc -l < "$DIR/splits-nolib.txt") pieces"
+            mv "$RUNNER_TEMP/real/stdout.txt" "$RUNNER_TEMP/real/stdout-abi.txt"
+            rm -rf "$RUNNER_TEMP/real"; mkdir -p "$RUNNER_TEMP/real"
+            bash family-link-codes/tools/real_two_profiles.sh \
+              --work "$RUNNER_TEMP/real" --apk "$APK" \
+              --splits "$DIR/splits-nolib.txt" --package "$PKG" \
+              > "$RUNNER_TEMP/real/stdout.txt" 2>&1
+            status=$?
+            echo "second attempt status: $status"
+            cp "$RUNNER_TEMP/real-abi.txt" "$RUNNER_TEMP/real/abi-first-attempt.txt" 2>/dev/null || true
+          fi
+          tail -45 "$RUNNER_TEMP/real/stdout.txt"
+          echo "$status" > "$RUNNER_TEMP/real-status.txt"
+          if [ "$status" = "10" ]; then
+            echo "abi-incompatible" > "$RUNNER_TEMP/real-abi.txt"
+            adb shell getprop ro.product.cpu.abi >> "$RUNNER_TEMP/real-abi.txt" 2>/dev/null
+          fi
+          exit 0
+
+      - name: Gate - the real APK was actually analysed
+        run: |
+          set -e
+          exec > >(tee "$RUNNER_TEMP/gate.txt") 2>&1
+          echo "static evidence:"
+          test -s "$RUNNER_TEMP/package.txt" || { echo "no package name"; exit 1; }
+          grep -q '^com.google.android.apps' "$RUNNER_TEMP/package.txt" \
+            || { echo "unexpected package: $(cat "$RUNNER_TEMP/package.txt")"; exit 1; }
+          grep -q "O=Google Inc." "$RUNNER_TEMP/certs.txt" \
+            || { echo "the APK is not signed by Google"; exit 1; }
+          test -s "$RUNNER_TEMP/scan.txt" || { echo "apk scan produced nothing"; exit 1; }
+          cat "$RUNNER_TEMP/package.txt" "$RUNNER_TEMP/sha256.txt"
+          echo
+          status="$(cat "$RUNNER_TEMP/real-status.txt" 2>/dev/null || echo missing)"
+          echo "device run status: $status"
+          if [ "$status" = "0" ]; then
+            echo "the device run completed: the app ran in two profiles without root"
+            for label in parent child; do
+              if grep -q "focused:.*familylink" "$RUNNER_TEMP/real/focuscheck-$label.txt" 2>/dev/null; then
+                echo "$label: the real app was the focused window on screen"
+              else
+                echo "$label: installed, but did not come to the front"
+              fi
+            done
+            exit 0
+          fi
+          if [ -s "$RUNNER_TEMP/real-abi.txt" ]; then
+            echo "the device run stopped at a documented wall:"
+            cat "$RUNNER_TEMP/real-abi.txt"
+            echo "the published bundle ships only armeabi-v7a; the CI emulator is x86_64,"
+            echo "and the Android emulator does not run ARM images on x86 hosts."
+            echo "use an ARM device (or an ARM runner) for the dynamic half."
+            exit 0
+          fi
+          echo "the device run failed for another reason; that is a real failure"
+          tail -40 "$RUNNER_TEMP/real/stdout.txt" 2>/dev/null || true
+          exit 1
+
+      - name: Summarise on the PR
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e +o pipefail
+          pr="${{ github.event.pull_request.number }}"
+          [ -n "$pr" ] || pr="$(gh pr list --head "$GITHUB_REF_NAME" --json number -q '.[0].number' 2>/dev/null)"
+          [ -n "$pr" ] || exit 0
+          W="$RUNNER_TEMP/real"
+          {
+            echo "### Family Link real (APK publicado): REA sem root"
+            echo
+            echo "exit: $(cat "$RUNNER_TEMP/real-status.txt" 2>/dev/null || echo '?')"
+            if [ -s "$RUNNER_TEMP/real-abi.txt" ] && [ ! -s "$RUNNER_TEMP/real/stdout-abi.txt" ]; then
+              echo
+              echo "**limite de ABI**: $(tr '\n' ' ' < "$RUNNER_TEMP/real-abi.txt")"
+              echo "— o bundle publicado é armeabi-v7a e o emulador do CI é x86_64;"
+              echo "o emulador Android não roda imagem ARM em host x86."
+            fi
+            echo
+            echo "**credentials.txt**"
+            echo '```'
+            cat "$RUNNER_TEMP/credentials.txt" 2>/dev/null || echo "(not reported)"
+            echo '```'
+            echo "**probe.txt**"
+            echo '```'
+            cat "$RUNNER_TEMP/probe.txt" 2>/dev/null || echo "(no probe)"
+            echo '```'
+            if [ -s "$RUNNER_TEMP/dart-keys.txt" ]; then
+              echo "**dart-keys.txt** (chaves candidatas do protobuf/JSON)"
+              echo '```'
+              cat "$RUNNER_TEMP/dart-keys.txt"
+              echo '```'
+            fi
+            if [ -s "$RUNNER_TEMP/dart-strings.txt" ]; then
+              echo "**dart-strings.txt** (as strings do snapshot Dart)"
+              echo '```'
+              cat "$RUNNER_TEMP/dart-strings.txt"
+              echo '```'
+            fi
+            if [ -s "$RUNNER_TEMP/proto.txt" ]; then
+              echo "**proto.txt** (o esquema, recuperado do binário)"
+              echo '```'
+              head -80 "$RUNNER_TEMP/proto.txt"
+              echo '```'
+            fi
+            for f in dart.txt inventory.txt fetch-x86.txt fetch.txt package.txt badging.txt backup-flags.txt certs.txt sha256.txt; do
+              [ -s "$RUNNER_TEMP/$f" ] && { echo "**$f**"; echo '```'; head -20 "$RUNNER_TEMP/$f"; echo '```'; }
+            done
+            if [ -s "$RUNNER_TEMP/strings.txt" ]; then
+              echo "**strings.txt**"
+              echo '```'
+              head -90 "$RUNNER_TEMP/strings.txt"
+              echo '```'
+            fi
+            echo "**apk scan**"
+            echo '```'
+            head -45 "$RUNNER_TEMP/scan.txt" 2>/dev/null || echo "(no scan)"
+            echo '```'
+            for f in abe-info.txt tree.txt private-dir.txt shared-prefs.txt backup-size.txt abe-scan.txt; do
+              [ -s "$W/$f" ] && { echo "**$f**"; echo '```'; head -25 "$W/$f"; echo '```'; }
+            done
+            if [ -s "$RUNNER_TEMP/nativebridge.txt" ]; then
+              echo "**native bridge (ARM translation)**"
+              echo '```'
+              cat "$RUNNER_TEMP/nativebridge.txt"
+              echo '```'
+            fi
+            if [ -s "$W/stdout-abi.txt" ]; then
+              echo "**first attempt with the ARM native split (tail)**"
+              echo '```'
+              tail -12 "$W/stdout-abi.txt"
+              echo '```'
+            fi
+            echo "**gate.txt**"
+            echo '```'
+            cat "$RUNNER_TEMP/gate.txt" 2>/dev/null || echo "(no verdict)"
+            echo '```'
+            echo "**two profiles (head)**"
+            echo '```'
+            head -60 "$W/stdout.txt" 2>/dev/null || echo "(no output)"
+            echo '```'
+            echo "**two profiles (tail)**"
+            echo '```'
+            tail -70 "$W/stdout.txt" 2>/dev/null || echo "(no output)"
+            echo '```'
+            for f in screen-owner.txt screen-parent.txt screen-child.txt; do
+              [ -s "$W/$f" ] && { echo "**$f** (a tela do app, em texto)"; echo '```'; cat "$W/$f"; echo '```'; }
+            done
+            for f in users.txt install-parent.txt install-child.txt install-owner.txt \
+                     launch-parent.txt launch-owner.txt activity-parent.txt \
+                     focus-parent.txt focuscheck-parent.txt focuscheck-owner.txt \
+                     uitext-parent.txt uitext-child.txt logcat-parent.txt \
+                     package-parent.txt privatedir-parent.txt prefs-parent.txt \
+                     backup-size.txt abe-scan.txt; do
+              [ -s "$W/$f" ] && { echo "**$f**"; echo '```'; head -20 "$W/$f"; echo '```'; }
+            done
+          } > "$RUNNER_TEMP/summary.md"
+          gh pr comment "$pr" --body-file "$RUNNER_TEMP/summary.md"
+
+      - name: Store the evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flcodes-real-family-link
+          path: |
+            ${{ runner.temp }}/familylink/
+            ${{ runner.temp }}/real/
+            ${{ runner.temp }}/real/*.png
+            ${{ runner.temp }}/real/*.xml
+            ${{ runner.temp }}/scan.json
+            ${{ runner.temp }}/scan.txt
+          if-no-files-found: warn
+
+  play-store:
+    name: Play Store (QEMU) - download, extract without root, two accounts
+    runs-on: ubuntu-latest
+    needs: unit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Is the test identity usable? (checked before booting anything)
+        id: creds
+        env:
+          FLCODES_GPLAY_EMAIL: ${{ secrets.FLCODES_GPLAY_EMAIL }}
+          FLCODES_GPLAY_PASSWORD: ${{ secrets.FLCODES_GPLAY_PASSWORD }}
+        run: |
+          set +e
+          export PYTHONPATH="$GITHUB_WORKSPACE/family-link-codes"
+          python3 -m flcodes account check | tee "$RUNNER_TEMP/account.txt"
+          status=${PIPESTATUS[0]}
+          echo "$status" > "$RUNNER_TEMP/account-status.txt"
+          if [ "$status" -eq 0 ]; then
+            echo "have=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "have=no" >> "$GITHUB_OUTPUT"
+            echo "::warning title=no-usable-credentials::no throwaway Google identity: run 'flcodes account howto' and publish the pair with tools/setup_play_secrets.sh. Google blocks anonymous Play Store sessions, so the APK cannot come from the store without one"
+          fi
+
+      - name: Enable KVM (falls back to software emulation)
+        if: steps.creds.outputs.have == 'yes'
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          ls -l /dev/kvm || true
+
+      - name: Sign in, install Family Link, extract the APK without root
+        if: steps.creds.outputs.have == 'yes'
+        env:
+          FLCODES_GPLAY_EMAIL: ${{ secrets.FLCODES_GPLAY_EMAIL }}
+          FLCODES_GPLAY_PASSWORD: ${{ secrets.FLCODES_GPLAY_PASSWORD }}
+          FLCODES_PASSPHRASE: store
+        run: |
+          set +e
+          bash family-link-codes/tools/play_store_reap.sh --work "$RUNNER_TEMP/store" --api 30
+          echo "$?" > "$RUNNER_TEMP/store-status.txt"
+          exit 0
+
+      - name: Two accounts on the device (parent / child profiles)
+        if: steps.creds.outputs.have == 'yes'
+        run: |
+          set +e
+          export PATH="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/platform-tools:$PATH"
+          mkdir -p "$RUNNER_TEMP/two"
+          adb devices
+          export ANDROID_SERIAL="$(adb devices | awk 'NR>1 && $2=="device" {print $1; exit}')"
+          APK="$(cat "$RUNNER_TEMP/store/apk-path.txt" 2>/dev/null)"
+          if [ -n "$APK" ] && [ -s "$APK" ]; then
+            bash family-link-codes/tools/two_users_test.sh \
+              --work "$RUNNER_TEMP/two" --apk "$APK" \
+              --package com.google.android.apps.familylink
+            echo "$?" > "$RUNNER_TEMP/two-status.txt"
+          else
+            echo "no store APK: skipping the two-account run" > "$RUNNER_TEMP/two-status.txt"
+          fi
+          exit 0
+
+      - name: Summarise on the PR
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e +o pipefail
+          pr="${{ github.event.pull_request.number }}"
+          [ -n "$pr" ] || pr="$(gh pr list --head "$GITHUB_REF_NAME" --json number -q '.[0].number' 2>/dev/null)"
+          [ -n "$pr" ] || exit 0
+          S="$RUNNER_TEMP/store"
+          T="$RUNNER_TEMP/two"
+          {
+            echo "### Play Store (QEMU): APK real, sem root, duas contas"
+            echo
+            if [ "${{ steps.creds.outputs.have }}" != "yes" ]; then
+              echo "Sem credenciais: \`FLCODES_GPLAY_EMAIL\` e \`FLCODES_GPLAY_PASSWORD\` não configurados."
+              echo
+              echo "O Google bloqueia sessão anônima na Play Store, então o download não é"
+              echo "possível sem uma conta. Configure os dois secrets (conta descartável) e"
+              echo "rode \`gh workflow run flcodes-emulator.yml\`."
+            else
+              echo "exit: $(cat "$RUNNER_TEMP/store-status.txt" 2>/dev/null || echo '?')"
+              echo
+              for f in version.txt pm-path.txt backup-size.txt abe-info.txt apk-sha256.txt apk-scan.txt; do
+                [ -s "$S/$f" ] && { echo "**$f**"; echo '```'; head -30 "$S/$f"; echo '```'; }
+              done
+              echo "**store.log (tail)**"
+              echo '```'
+              tail -40 "$S/store.log" 2>/dev/null || echo "(no log)"
+              echo '```'
+              echo "### Duas contas (parent / child)"
+              echo
+              echo "exit: $(cat "$RUNNER_TEMP/two-status.txt" 2>/dev/null || echo '?')"
+              echo
+              for f in users.txt scan-parent.txt scan-child.txt isolation.txt; do
+                [ -s "$T/$f" ] && { echo "**$f**"; echo '```'; head -25 "$T/$f"; echo '```'; }
+              done
+              echo "**two.log (tail)**"
+              echo '```'
+              tail -40 "$T/two.log" 2>/dev/null || echo "(no log)"
+              echo '```'
+            fi
+          } > "$RUNNER_TEMP/comment.md"
+          gh pr comment "$pr" --body-file "$RUNNER_TEMP/comment.md"
+
+      - name: Store the evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flcodes-play-store
+          path: |
+            ${{ runner.temp }}/store/
+            ${{ runner.temp }}/two/
+          if-no-files-found: warn
+
+  real-apps:
+    name: real vendor APKs (Google-signed + store), no root
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Dependencies
+        run: |
+          set -e
+          python3 -m pip install --quiet pytest cryptography
+      - name: Enable KVM
+        run: |
+          set -e
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Boot the emulator (Google APIs image)
+        run: |
+          set -e
+          export PATH="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/platform-tools:$PATH"
+          bash family-link-codes/tools/emulator_boot.sh \
+            --work "$RUNNER_TEMP/emu" --tag google_apis 2>&1 | tail -40
+      - name: Run the REA pipeline on the real APKs
+        env:
+          FLCODES_PASSPHRASE: real
+        run: |
+          set +e
+          export PATH="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/platform-tools:$PATH"
+          export ANDROID_SERIAL="$(adb devices | awk 'NR>1 && $2=="device" {print $1; exit}')"
+          mkdir -p "$RUNNER_TEMP/realapps"
+          PYTHONPATH="$GITHUB_WORKSPACE/family-link-codes" \
+          FLCODES_HOME="$RUNNER_TEMP/realapps/home" \
+            bash family-link-codes/tools/real_apps_test.sh \
+              --work "$RUNNER_TEMP/realapps" --third-party "$GITHUB_WORKSPACE/appteste.apk" \
+              2>&1 | tee "$RUNNER_TEMP/realapps/stdout.txt"
+          echo "${PIPESTATUS[0]}" > "$RUNNER_TEMP/realapps-status.txt"
+      - name: Fail when the pipeline could not process a real APK
+        run: |
+          set -e
+          status="$(cat "$RUNNER_TEMP/realapps-status.txt" 2>/dev/null || echo missing)"
+          echo "exit: $status"
+          echo "--- files ---"
+          ls -la "$RUNNER_TEMP/realapps" || true
+          echo "--- stdout (tail) ---"
+          tail -40 "$RUNNER_TEMP/realapps/stdout.txt" || true
+          test "$status" = "0" || { echo "the pipeline reported failure"; exit 1; }
+          shopt -s nullglob
+          apks=("$RUNNER_TEMP"/realapps/*.apk "$RUNNER_TEMP"/realapps/pulled/*.apk)
+          shopt -u nullglob
+          [ "${#apks[@]}" -gt 0 ] || { echo "no real APK was processed"; exit 1; }
+          printf '%s\n' "${apks[@]}"
+          echo "real APKs were unpacked without root"
+      - name: Report on the PR
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e +o pipefail
+          pr="${{ github.event.pull_request.number }}"
+          [ -n "$pr" ] || pr="$(gh pr list --head "$GITHUB_REF_NAME" --json number -q '.[0].number' 2>/dev/null)"
+          [ -n "$pr" ] || exit 0
+          R="$RUNNER_TEMP/realapps"
+          {
+            echo "### APKs reais (Google assinado + app de loja), sem root"
+            echo
+            echo "exit: $(cat "$RUNNER_TEMP/realapps-status.txt" 2>/dev/null || echo '?')"
+            echo
+            for f in scan-google.txt certs-google.txt scan-third-party.txt \
+                     certs-third-party.txt abe-info-*.txt tree-*.txt scan-app.*.txt; do
+              [ -s "$R/$f" ] || continue
+              echo "**$(basename "$f")**"
+              echo '```'
+              head -30 "$R/$f"
+              echo '```'
+            done
+            echo "**stdout.txt (tail)**"
+            echo '```'
+            { tail -80 "$R/stdout.txt" 2>/dev/null || echo "(no output)"; }
+            echo '```'
+          } > "$RUNNER_TEMP/comment.md"
+          gh pr comment "$pr" --body-file "$RUNNER_TEMP/comment.md"
+      - name: Upload the artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flcodes-real-apps
+          path: ${{ runner.temp }}/realapps/
+
+  real-arm:
+    # The published bundle is ARM-only (no x86 split exists on the mirror), so
+    # running it needs an ARM guest. This job brings its own Android SDK: the
+    # ARM runner does not ship one.
+    name: capability probe - can CI run an ARM-only Android app?
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 150
+    needs: unit
+    env:
+      ANDROID_SDK_ROOT: ${{ github.workspace }}/../sdk
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Dependencies
+        run: |
+          set -e
+          python3 -m pip install --quiet pytest cryptography
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq unzip libpulse0 libx11-6 libxcb1 \
+            libxdamage1 libxext6 libxfixes3 libxrender1 libxtst6 libnss3 \
+            libxkbfile1 2>/dev/null || true
+      - name: Bring an Android SDK to this ARM host
+        id: sdk
+        run: |
+          set +e
+          {
+          echo "host: $(uname -m), $(nproc) cores"
+          ls -l /dev/kvm 2>/dev/null || echo "no /dev/kvm (TCG only)"
+          SDK="$ANDROID_SDK_ROOT"
+          mkdir -p "$SDK/cmdline-tools"
+          if [ ! -x "$SDK/cmdline-tools/latest/bin/sdkmanager" ]; then
+            curl -fsSL -o /tmp/cmdline-tools.zip \
+              https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip \
+              || { echo "could not download cmdline-tools"; exit 0; }
+            unzip -q /tmp/cmdline-tools.zip -d /tmp/cmdline-tools
+            mv /tmp/cmdline-tools/cmdline-tools "$SDK/cmdline-tools/latest"
+          fi
+          echo "sdkmanager: $("$SDK/cmdline-tools/latest/bin/sdkmanager" --version 2>&1 | tail -1)"
+          echo
+          echo "== is there an emulator build for linux-aarch64? =="
+          curl -fsSL https://dl.google.com/android/repository/repository2-3.xml -o /tmp/repo.xml \
+            && grep -o 'emulator-linux[^<"]*' /tmp/repo.xml | sort -u | head -10 \
+            || echo "(could not read the repository index)"
+          echo
+          echo "== arm64 system images offered to this host =="
+          yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1
+          "$SDK/cmdline-tools/latest/bin/sdkmanager" --list 2>/dev/null \
+            | grep -E "system-images;android-(30|31|33|34);(google_apis|default);arm64-v8a" | head -8
+          } 2>&1 | tee "$RUNNER_TEMP/availability.txt"
+          if grep -q "emulator-linux_aarch64\|emulator-linux-aarch64" "$RUNNER_TEMP/availability.txt"; then
+            echo "emulator=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "emulator=no" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Install the SDK pieces (platform-tools, build-tools, emulator, image)
+        run: |
+          set +e
+          SDK="$ANDROID_SDK_ROOT"
+          SM="$SDK/cmdline-tools/latest/bin/sdkmanager"
+          [ -x "$SM" ] || { echo "no sdkmanager; nothing to install"; exit 0; }
+          yes | "$SM" --licenses >/dev/null 2>&1
+          "$SM" --install "platform-tools" "build-tools;34.0.0" 2>&1 | tail -3
+          "$SM" --install "emulator" 2>&1 | tail -5
+          echo "emulator binary: $(ls "$SDK/emulator/emulator" 2>/dev/null || echo missing)"
+          "$SM" --install "system-images;android-30;google_apis;arm64-v8a" 2>&1 | tail -4
+          ls "$SDK/system-images/android-30/google_apis/arm64-v8a" 2>/dev/null | head -5
+      - name: Fetch the real APK (ARM bundle)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FLCODES_APK_URL: ${{ secrets.FLCODES_APK_URL }}
+        run: |
+          set +e
+          bash family-link-codes/tools/fetch_familylink_apk.sh \
+            --out "$RUNNER_TEMP/familylink" > "$RUNNER_TEMP/fetch.txt" 2>&1
+          tail -20 "$RUNNER_TEMP/fetch.txt"
+          tail -1 "$RUNNER_TEMP/familylink/apk-path.txt" 2>/dev/null
+          echo "---"
+          echo "this step is evidence, not a gate: the gate is the static analysis job"
+          exit 0
+      - name: Boot the ARM64 emulator
+        id: boot
+        run: |
+          set +e
+          SDK="$ANDROID_SDK_ROOT"
+          export PATH="$SDK/platform-tools:$SDK/emulator:$PATH"
+          [ -x "$SDK/emulator/emulator" ] || { echo "boot=skip" >> "$GITHUB_OUTPUT"; \
+            echo "no emulator binary for linux-aarch64"; exit 0; }
+          BOOT_TIMEOUT=2400 bash family-link-codes/tools/emulator_boot.sh \
+            --work "$RUNNER_TEMP/emu-arm" --api 30 --tag google_apis \
+            --abi arm64-v8a --timeout 2400 > "$RUNNER_TEMP/boot.txt" 2>&1
+          status=$?
+          tail -20 "$RUNNER_TEMP/boot.txt"
+          echo "boot=$status" >> "$GITHUB_OUTPUT"
+      - name: Two profiles with the real APK on ARM
+        if: steps.boot.outputs.boot == '0'
+        run: |
+          set +e
+          SDK="$ANDROID_SDK_ROOT"
+          export PATH="$SDK/platform-tools:$PATH"
+          export ANDROID_SERIAL="$(adb devices | awk 'NR>1 && $2=="device" {print $1; exit}')"
+          mkdir -p "$RUNNER_TEMP/realarm"
+          APK="$(tail -1 "$RUNNER_TEMP/familylink/apk-path.txt")"
+          bash family-link-codes/tools/real_two_profiles.sh \
+            --work "$RUNNER_TEMP/realarm" --apk "$APK" \
+            --splits "$RUNNER_TEMP/familylink/splits.txt" \
+            --package com.google.android.apps.kids.familylink \
+            > "$RUNNER_TEMP/realarm/stdout.txt" 2>&1
+          echo "$?" > "$RUNNER_TEMP/realarm-status.txt"
+          tail -40 "$RUNNER_TEMP/realarm/stdout.txt"
+      - name: Report on the PR
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e +o pipefail
+          pr="${{ github.event.pull_request.number }}"
+          [ -n "$pr" ] || pr="$(gh pr list --head "$GITHUB_REF_NAME" --json number -q '.[0].number' 2>/dev/null)"
+          [ -n "$pr" ] || exit 0
+          W="$RUNNER_TEMP/realarm"
+          {
+            echo "### Sondagem: o CI consegue executar um app só-ARM?"
+            echo
+            echo "boot: ${{ steps.boot.outputs.boot }} · exit do teste: $(cat "$RUNNER_TEMP/realarm-status.txt" 2>/dev/null || echo 'n/a')"
+            if [ -s "$RUNNER_TEMP/availability.txt" ]; then
+              echo
+              echo "**availability.txt**"
+              echo '```'
+              tail -22 "$RUNNER_TEMP/availability.txt"
+              echo '```'
+            fi
+            if [ -s "$RUNNER_TEMP/fetch.txt" ]; then
+              echo
+              echo "**fetch.txt (tail)**"
+              echo '```'
+              tail -12 "$RUNNER_TEMP/fetch.txt"
+              echo '```'
+            fi
+            for f in users.txt install-parent.txt install-child.txt process-parent.txt \
+                     process-child.txt package-parent.txt privatedir-parent.txt prefs-parent.txt \
+                     backup-size.txt abe-scan.txt; do
+              [ -s "$W/$f" ] && { echo "**$f**"; echo '```'; head -20 "$W/$f"; echo '```'; }
+            done
+            if [ -s "$W/stdout.txt" ]; then
+              echo "**stdout.txt (tail)**"
+              echo '```'
+              tail -60 "$W/stdout.txt"
+              echo '```'
+            fi
+          } > "$RUNNER_TEMP/summary-arm.md"
+          gh pr comment "$pr" --body-file "$RUNNER_TEMP/summary-arm.md"
+      - name: Upload the ARM evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flcodes-real-arm
+          path: |
+            ${{ runner.temp }}/realarm/
+            ${{ runner.temp }}/boot.txt
+            ${{ runner.temp }}/fetch.txt
+            ${{ runner.temp }}/availability.txt
+          if-no-files-found: warn
