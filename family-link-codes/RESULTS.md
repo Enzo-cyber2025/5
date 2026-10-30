@@ -856,6 +856,35 @@ não commita nada, e o resumo do job imprime o comando seguinte. Cada rodada cus
 um minuto e meio, não tem segredo envolvido, e o veredito aparece como anotação
 no PR. Nada é forjado — e nenhuma tentativa tenta derrubar uma proteção.
 
+## 4m. "E se eu te der credenciais?": sim, mas por um canal que não é o chat
+
+Colar senha ou cookie numa conversa é o pior canal possível: fica em histórico,
+em log de servidor e no contexto do modelo. O caminho certo já está pronto e
+usa apenas secrets do repositório:
+
+```bash
+bash family-link-codes/tools/set_parent_session.sh
+# cola o SAPISID do responsável (input oculto) -> gh secret set -> dispara o job
+```
+
+O que é o SAPISID: o cookie da sessão do responsável, não a senha. **Nenhuma
+conta é criada** — é a conta que já existe. Expira ao sair, e pode ser revogado
+em `myaccount.google.com/deviceactivity`.
+
+O job `parent-session` então faz, sozinho:
+
+1. `flcodes rea api --sapisid $FLCODES_SAPISID --save` → colhe a config;
+2. grava o `sharedSecret` no cofre (AES, `0600`);
+3. `flcodes gen` → imprime o código da janela atual;
+4. publica a transcrição no resumo do job.
+
+Os ramos são honestos, um por parede: sem segredo → `no-parent-session`; a RPC
+respondeu sem segredo → `no-secret` (conta errada, sessão de filho, ou o Google
+parou de servir); deu certo → `chain-closed`.
+
+Para conferir a forma sem publicar nada: `flcodes paths check --sapisid ...`.
+Um teste falha de propósito se o workflow um dia ecoar o valor.
+
 ## 5. O que ainda NÃO está provado
 
 * **A chave do app publicado (2.104)** — o APK real foi obtido e autenticado
