@@ -64,6 +64,48 @@ def synthetic_response(secret: str = TEST_SECRET, ttl: int = 600) -> bytes:
     return _field(1, app_config)
 
 
+def body_from_har(path: str) -> tuple:
+    """Pull the familyLinkAppConfig response out of a browser HAR.
+
+    No account is created and no session is reused: the HAR is a recording the
+    person already has from their own browser. Returns (bytes, label).
+    """
+    import base64 as _b64
+    import json as _json
+
+    document = _json.loads(pathlib.Path(path).read_text(encoding="utf-8", errors="replace"))
+    entries = document.get("log", {}).get("entries", [])
+    wanted = ("familylinkappconfig", "family_link_app_config", "parentaccesscode")
+    best = None
+    for index, entry in enumerate(entries):
+        request = entry.get("request", {})
+        url = (request.get("url") or "").lower()
+        content = (entry.get("response") or {}).get("content") or {}
+        text = content.get("text") or ""
+        if not text:
+            continue
+        hit = any(word in url for word in wanted) or any(
+            word in text.lower() for word in ("familylinkappconfig", "parentaccesscode"))
+        if not hit:
+            continue
+        encoding = (content.get("encoding") or "").lower()
+        if encoding == "base64":
+            try:
+                raw = _b64.b64decode(text)
+            except Exception:
+                continue
+        else:
+            raw = text.encode("utf-8", errors="replace")
+        label = f"{pathlib.Path(path).name}#{index} {request.get('url', '')[:80]}"
+        if proto_mod.find_secret_fields(raw):
+            return raw, label
+        best = best or (raw, label)
+    if best:
+        return best
+    raise SystemExit("no familyLinkAppConfig response in this HAR "
+                     "(open the Family Link web app with the network tab recording)")
+
+
 def _find_ttl(blob: bytes, depth: int = 0) -> int:
     """The validity sits next to the secret; walk until one looks plausible."""
     if depth > 6:
@@ -84,6 +126,7 @@ def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--response", help="file with the response body")
+    parser.add_argument("--har", help="a browser HAR capture; the response is found inside")
     parser.add_argument("--base64", action="store_true", help="the body is base64")
     parser.add_argument("--synthetic", action="store_true", help="self-test without an account")
     parser.add_argument("--print-secret", action="store_true")
@@ -93,6 +136,10 @@ def main(argv: list[str]) -> int:
     if args.synthetic:
         blob = synthetic_response()
         print(f"synthetic response: {len(blob)} bytes (shape recovered from the 2.105 APK)")
+    elif args.har:
+        blob, label = body_from_har(args.har)
+        print(f"har entry: {label}")
+        print(f"response: {len(blob)} bytes")
     elif args.response:
         blob = pathlib.Path(args.response).read_bytes()
         if args.base64:

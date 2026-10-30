@@ -739,6 +739,7 @@ caminho (`field 1.field 1.field 1`), não só o primeiro.
 `tools/response_to_code.py` liga as duas pontas:
 
 ```bash
+python3 family-link-codes/tools/response_to_code.py --har capture.har    # direto do HAR
 python3 family-link-codes/tools/response_to_code.py --response capture.bin
 python3 family-link-codes/tools/response_to_code.py --response capture.b64 --base64
 python3 family-link-codes/tools/response_to_code.py --synthetic   # sem captura

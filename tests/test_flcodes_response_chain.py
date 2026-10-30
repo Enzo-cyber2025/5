@@ -113,3 +113,45 @@ def test_the_ttl_comes_from_the_response(tmp_path, monkeypatch, capsys, ttl):
 
     tool.main(["response_to_code", "--response", str(body)])
     assert f"validity from the response: {ttl}s" in capsys.readouterr().out
+
+
+def test_a_browser_har_is_enough_no_account_needed(tmp_path, monkeypatch, capsys):
+    """The user's own browser recording is the input; nothing is created."""
+    import base64
+    import json
+
+    tool = load_tool()
+    monkeypatch.setenv("FLCODES_HOME", str(tmp_path))
+    monkeypatch.setenv("FLCODES_PASSPHRASE", "test")
+
+    body = tool.synthetic_response()
+    har = {
+        "log": {"entries": [
+            {"request": {"url": "https://kidsmanagement-pa.googleapis.com/v1/noise"},
+             "response": {"content": {"text": "<html>irrelevant</html>"}}},
+            {"request": {"url": "https://kidsmanagement-pa.googleapis.com/v1/familyLinkAppConfig"},
+             "response": {"content": {"encoding": "base64",
+                                       "text": base64.b64encode(body).decode()}}},
+        ]}
+    }
+    path = tmp_path / "capture.har"
+    path.write_text(json.dumps(har))
+
+    assert tool.main(["response_to_code", "--har", str(path)]) == 0
+    out = capsys.readouterr().out
+    assert "familyLinkAppConfig" in out
+    assert "PASS: a captured response yields a secret" in out
+
+
+def test_a_har_without_the_call_says_what_to_record(tmp_path, monkeypatch):
+    import json
+
+    tool = load_tool()
+    monkeypatch.setenv("FLCODES_HOME", str(tmp_path))
+    monkeypatch.setenv("FLCODES_PASSPHRASE", "test")
+    path = tmp_path / "empty.har"
+    path.write_text(json.dumps({"log": {"entries": []}}))
+
+    with pytest.raises(SystemExit) as exc:
+        tool.main(["response_to_code", "--har", str(path)])
+    assert "no familyLinkAppConfig response" in str(exc.value)
