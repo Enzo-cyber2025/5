@@ -219,6 +219,8 @@ jobs:
           cd raceai-cpp
           echo "--- DLLs importadas (só pode ter DLL do Windows) ---"
           objdump -p build/raceai.exe | grep -i "DLL Name" | sort -u
+          objdump -p build/raceai.exe | grep -i "DLL Name" | sort -u |
+            sed 's/^[[:space:]]*/::notice ::DLL importada: /'
           echo "--- conferindo ---"
           if objdump -p build/raceai.exe | grep -iE "libgcc|libstdc\+\+|libwinpthread"; then
             echo "ERRO: o executável ainda depende de DLL do MinGW"
@@ -264,6 +266,36 @@ jobs:
             echo "::error file=test.log::$txt"
           done < diagt.txt
           echo "linhas: $i"
+
+      - name: "Máquina limpa: roda o .exe sem nada do lado e sem MinGW no PATH"
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $comMingw = if ($env:PATH -like '*mingw*') { 'SIM' } else { 'NAO' }
+          Write-Host "MinGW no PATH deste shell: $comMingw"
+          $dir = Join-Path $env:TEMP 'raceai-limpo'
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          Copy-Item raceai-cpp\package\RaceAI2D.exe "$dir\RaceAI2D.exe"
+          $f = Get-Item "$dir\RaceAI2D.exe"
+          $hash = (Get-FileHash $f -Algorithm SHA256).Hash
+          Write-Host "arquivo: $($f.Length) bytes, sha256=$hash"
+          Get-ChildItem $dir | Select-Object -ExpandProperty Name
+          $p = Start-Process -FilePath "$dir\RaceAI2D.exe" -ArgumentList '--help' `
+               -NoNewWindow -Wait -PassThru `
+               -RedirectStandardOutput "$dir\saida.txt" -RedirectStandardError "$dir\erro.txt"
+          $saida = (Get-Content "$dir\saida.txt" -TotalCount 2) -join ' | '
+          Write-Host "exit code: $($p.ExitCode)"
+          Write-Host "saida: $saida"
+          Write-Host "::notice ::maquina limpa: mingw_no_path=$comMingw tamanho=$($f.Length) sha256=$hash exit=$($p.ExitCode) saida=$saida"
+          if ($p.ExitCode -ne 0) {
+            Write-Host "::error::o executavel nao rodou na maquina limpa (exit $($p.ExitCode))"
+            exit 1
+          }
+          if ($comMingw -eq 'SIM') {
+            Write-Host "::error::o shell de teste ainda tem o MinGW no PATH: teste invalido"
+            exit 1
+          }
+          Write-Host "OK: abriu e rodou numa pasta vazia, sem nenhuma DLL do lado"
 
       - name: Publicar na release exe-cpp-windows
         if: ${{ github.event.inputs.publish != 'false' }}
