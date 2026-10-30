@@ -37,6 +37,14 @@ struct SimConfig {
     int spawn_rows = 0;             // 0 = automático
     bool checkpoint_gating = true;  // volta só vale se passar por todos os postos
     int sectors = 3;                 // setores por volta (HUD/telemetria)
+
+    // ---- corrida de verdade: contato entre carros e boxe (pitstop)
+    bool colisoes = false;           // carro bate em carro (e gera dano)
+    bool pit_ligado = false;         // liga a faixa de boxe e o serviço
+    double pit_tempo = 4.0;          // s parado recebendo o serviço
+    double pit_limite = 22.0;        // m/s: limite de velocidade no boxe
+    double pit_largura = 4.5;        // m de largura da faixa de boxe
+    double pit_zona = 90.0;          // m de extensão da zona de boxe
 };
 
 // Pesos da recompensa — **cada campo vira um slider na interface**.
@@ -79,6 +87,13 @@ struct Agent {
     double fitness = 0.0;
     double surface_grip = 1.0, surface_roll = 1.0;
     double draft = 0.0;             // 0..1: vácuo (aspiração) do carro da frente
+    // ---- pitstop
+    bool pit_pedido = false;        // a IA (ou o jogador) pediu boxe
+    bool no_pit = false;            // está dentro da faixa de boxe agora
+    bool pit_servido = false;       // já foi atendido nesta passagem
+    double pit_acumulado = 0.0;     // s dentro do boxe nesta passagem
+    int paradas = 0;                // quantas vezes parou
+    int batidas_carros = 0;         // contato com outros carros
     double lateral = 0.0;
     double last_steer = 0.0, last_drive = 0.0;
 
@@ -145,6 +160,8 @@ public:
     void set_specs(const std::vector<CarSpec>& specs);  // um carro por linha
 
     void set_action(int agent_row, double steer, double drive);
+    // com estratégia: `pit` > 0 = pedir boxe (vale só com pitstop ligado)
+    void set_action(int agent_row, double steer, double drive, double pit);
     void step();
 
     // observação (tamanho obs_dim) para uma linha da frota
@@ -172,6 +189,11 @@ private:
     std::vector<int> active_;
     void sync_track_state();
     void handle_walls();
+    void handle_pit();              // faixa de boxe, serviço e limite de velocidade
+    void guiar_pit();               // encosta no boxe e respeita o limite de velocidade
+    void handle_colisoes();         // carro contra carro, com dano
+    bool em_zona_pit(int idx) const;// o ponto está na zona de boxe?
+    double alvo_pit(const Agent& a) const;   // deslocamento lateral do boxe
     void kill(int row, const std::string& reason);
     double target_distance(const CarSpec& sp) const;
     double ref_speed(const CarSpec& sp) const;

@@ -334,29 +334,39 @@ int main() {
         AppState m;
         PolicySpec p = m.spec_da_ia();
         CHECK(p.hidden.size() == 2 && p.hidden[0] == 64, "padrao deveria ser 64x2");
+        CHECK(m.ai_gen.texto() == "64, 64", "texto do gerador: %s", m.ai_gen.texto().c_str());
         CHECK(p.activation == "tanh", "ativacao padrao deveria ser tanh");
         CHECK(m.resumo_da_ia().find("par") != std::string::npos,
               "resumo sem a contagem de parametros: %s", m.resumo_da_ia().c_str());
 
-        m.ai_gen.camadas = 3;
-        m.ai_gen.formato = 1;                     // funil: 64 -> 32 -> 16
-        m.ai_gen.neuronios = 64;
+        // campo livre: quantas camadas quiser, do tamanho que quiser
+        CHECK(m.ai_gen.de_texto("256, 128, 64"), "nao aceitou 3 camadas");
         p = m.spec_da_ia();
-        CHECK(p.hidden.size() == 3 && p.hidden[0] == 64 && p.hidden[1] == 32 &&
-                  p.hidden[2] == 16,
-              "funil errado: %zu camadas", p.hidden.size());
-
-        m.ai_gen.formato = 2;                     // ampulheta: 32 -> 64 -> 32
-        p = m.spec_da_ia();
-        CHECK(p.hidden[0] == 32 && p.hidden[1] == 64 && p.hidden[2] == 32,
-              "ampulheta errada: %d/%d/%d", p.hidden[0], p.hidden[1], p.hidden[2]);
-
-        m.ai_gen.camadas = 1;
-        m.ai_gen.formato = 0;
-        m.ai_gen.neuronios = 16;
+        CHECK(p.hidden.size() == 3 && p.hidden[0] == 256 && p.hidden[1] == 128 &&
+                  p.hidden[2] == 64,
+              "camadas livres erradas: %zu", p.hidden.size());
+        CHECK(m.ai_gen.de_texto("8"), "nao aceitou uma camada");
+        CHECK(m.spec_da_ia().hidden == std::vector<int>({8}), "uma camada so");
+        // a chave "tipo de IA": Estrategia liga o boxe (mais entradas e 3 saidas)
+        m.ai_gen.tipo = TipoIA::Corrida;
+        CHECK(m.spec_da_ia().act_dim == 2, "piloto puro deveria ter 2 saidas");
+        const int obs_corrida = m.spec_da_ia().obs_dim;
+        m.ai_gen.tipo = TipoIA::Estrategia;
+        CHECK(m.spec_da_ia().act_dim == 3, "estrategista deveria ter 3 saidas");
+        CHECK(m.spec_da_ia().obs_dim == obs_corrida + 5,
+              "estrategista deveria enxergar 5 coisas a mais");
+        m.aplicar_ia_gerada();
+        CHECK(m.trainer->policy.act_dim == 3, "o treino nao virou estrategista");
+        m.ai_gen.tipo = TipoIA::Corrida;
+        m.aplicar_ia_gerada();
+        CHECK(m.trainer->policy.act_dim == 2, "o treino nao voltou a ser piloto");
+        CHECK(!m.ai_gen.de_texto("abc"), "deveria recusar texto sem numero");
+        CHECK(m.ai_gen.de_texto("1,2,3,4,5,6,7,8,9,10"), "10 camadas deveria ser aceito");
+        CHECK(m.spec_da_ia().hidden.size() == 8, "limite de 8 camadas nao aplicado");
+        CHECK(m.ai_gen.de_texto("64"), "reset para 64");
         m.ai_gen.ativacao = "relu";
         p = m.spec_da_ia();
-        CHECK(p.hidden.size() == 1 && p.hidden[0] == 16 && p.activation == "relu",
+        CHECK(p.hidden.size() == 1 && p.hidden[0] == 64 && p.activation == "relu",
               "rede simples errada: %zu camadas, %s", p.hidden.size(),
               p.activation.c_str());
         // aplicar: o treino passa a usar a rede escolhida

@@ -47,7 +47,7 @@ Simulation::Simulation(const Track& t, const CarSpec& car, const SimConfig& c,
     : track(t), cfg(c), rng(seed) {
     agents.assign(std::max(1, n_agents), Agent());
     specs.assign(agents.size(), car);
-    obs_dim = cfg.n_rays + 15;
+    obs_dim = cfg.n_rays + 15 + (cfg.pit_ligado ? 5 : 0);  // +5 = estratégia
     max_steps = int(cfg.max_seconds / cfg.dt);
     reset(0);
 }
@@ -146,7 +146,9 @@ void Simulation::handle_walls() {
     for (int row : active_) {
         Agent& a = agents[row];
         const double half = track.half_widths[a.idx];
-        const double limit = half + cfg.runoff;
+        // na zona de boxe o muro fica mais longe: a faixa de boxe é transitável
+        const double limit = half + cfg.runoff +
+                             (em_zona_pit(a.idx) ? cfg.pit_largura : 0.0);
         if (std::fabs(a.lateral) <= limit) continue;
         const double sign = a.lateral >= 0.0 ? 1.0 : -1.0;
         const Vec2& c = track.center[a.idx];
@@ -191,7 +193,8 @@ void Simulation::kill(int row, const std::string& reason) {
     }
 }
 
-void Simulation::set_action(int row, double steer, double drive) {
+void Simulation::set_action(int agent_row, double steer, double drive) {
+    const int row = agent_row;
     if (row < 0 || row >= int(agents.size())) return;
     Agent& a = agents[row];
     double s = clamp(steer, -1.0, 1.0);
@@ -204,6 +207,148 @@ void Simulation::set_action(int row, double steer, double drive) {
     a.car.steer_cmd = s;
     a.car.throttle = clamp(d, 0.0, 1.0);
     a.car.brake = clamp(-d, 0.0, 1.0);
+}
+
+void Simulation::set_action(int agent_row, double steer, double drive, double pit) {
+    set_action(agent_row, steer, drive);
+    if (agent_row < 0 || agent_row >= int(agents.size())) return;
+    agents[agent_row].pit_pedido = (pit > 0.0);
+}
+
+// ------------------------------------------------------------- pitstop
+bool Simulation::em_zona_pit(int idx) const {
+    if (!cfg.pit_ligado || track.arc.empty()) return false;
+    const double s = track.arc[idx % int(track.arc.size())];
+    return s < cfg.pit_zona;
+}
+
+double Simulation::alvo_pit(const Agent& a) const {
+    // o boxe fica do lado direito da pista (lateral positiva)
+    return track.half_widths[a.idx] + cfg.pit_largura * 0.5;
+}
+
+void Simulation::guiar_pit() {
+    if (!cfg.pit_ligado) return;
+    for (int row : active_) {
+        Agent& a = agents[row];
+        if (!a.car.alive) continue;
+        const bool dentro = em_zona_pit(a.idx);
+        const bool na_faixa = dentro && a.lateral > track.half_widths[a.idx] + 0.5;
+        const double falta = (dentro ? 0.0 : std::max(track.length, 1e-6) - track.arc[a.idx]);
+        const bool perto = dentro || falta < 140.0;
+        if (!na_faixa && !(a.pit_pedido && perto)) continue;
+        if (na_faixa || a.pit_pedido) {
+            // limita a velocidade na entrada e dentro do boxe
+            const double excesso = a.car.speed - cfg.pit_limite;
+            if (excesso > 0.0) {
+                a.car.throttle = 0.0;
+                a.car.brake = clamp(excesso / 12.0, 0.0, 1.0);
+            }
+        }
+        if (dentro && !a.pit_servido) {
+            // mira o meio da faixa de boxe (lado direito da pista)
+            const double meio = track.half_widths[a.idx] + cfg.pit_largura * 0.5;
+            const double erro = clamp(meio - a.lateral, -8.0, 8.0);
+            a.car.steer_cmd = clamp(a.car.steer_cmd + erro * 0.10, -1.0, 1.0);
+        }
+    }
+}
+
+void Simulation::handle_pit() {
+    if (!cfg.pit_ligado) return;
+    const double dt = cfg.dt;
+    for (int row : active_) {
+        Agent& a = agents[row];
+        const double half = track.half_widths[a.idx];
+        const bool na_faixa = em_zona_pit(a.idx) && a.lateral > half + 0.5;
+        a.no_pit = na_faixa;
+        if (!na_faixa) {
+            a.pit_acumulado = 0.0;
+            a.pit_servido = false;
+            continue;
+        }
+        a.pit_acumulado += dt;
+        if (a.pit_acumulado >= cfg.pit_tempo && !a.pit_servido) {
+            // serviço: pneus novos, tanque cheio, lataria batida e freio frio
+            a.car.tire_wear = 0.0;
+            a.car.tire_temp = std::min(a.car.tire_temp, 80.0);
+            a.car.fuel = 1.0;
+            a.car.damage *= 0.25;
+            a.car.aero_deg = 0.0;
+            a.car.brake_temp = std::min(a.car.brake_temp, 120.0);
+            a.paradas += 1;
+            a.pit_servido = true;
+            a.pit_pedido = false;
+        }
+    }
+}
+
+// ------------------------------------------------ colisão carro x carro
+// raio aproximado do carro (mistura de comprimento e largura)
+static double raio_carro(const CarSpec& sp) {
+    return 0.5 * std::sqrt(std::pow(sp.length * 0.45, 2.0) + std::pow(sp.width * 0.5, 2.0));
+}
+
+void Simulation::handle_colisoes() {
+    if (!cfg.colisoes || active_.size() < 2) return;
+    const int n = int(active_.size());
+    for (int i = 0; i < n; ++i) {
+        Agent& a = agents[active_[i]];
+        if (!a.car.alive) continue;
+        const double ra = raio_carro(specs[active_[i]]);
+        for (int j = i + 1; j < n; ++j) {
+            Agent& b = agents[active_[j]];
+            if (!b.car.alive) continue;
+            const double rb = raio_carro(specs[active_[j]]);
+            const double dx = b.car.x - a.car.x, dy = b.car.y - a.car.y;
+            const double dist = std::sqrt(dx * dx + dy * dy);
+            const double soma = ra + rb;
+            if (dist >= soma || dist < 1e-6) continue;
+
+            const double nx = dx / dist, ny = dy / dist;      // normal de a -> b
+            const double overlap = soma - dist;
+            // separa os dois (metade cada um) para não ficarem grudados
+            a.car.x -= nx * overlap * 0.5;
+            a.car.y -= ny * overlap * 0.5;
+            b.car.x += nx * overlap * 0.5;
+            b.car.y += ny * overlap * 0.5;
+
+            // velocidades no mundo
+            auto vel = [](const CarState& c) {
+                const double ch = std::cos(c.heading), sh = std::sin(c.heading);
+                return std::pair<double, double>(c.vx * ch - c.vy * sh,
+                                                 c.vx * sh + c.vy * ch);
+            };
+            std::pair<double, double> va = vel(a.car), vb = vel(b.car);
+            const double rel = (vb.first - va.first) * nx + (vb.second - va.second) * ny;
+            if (rel > 0.0) continue;                          // já estão se afastando
+            const double ma = std::max(1.0, specs[active_[i]].mass);
+            const double mb = std::max(1.0, specs[active_[j]].mass);
+            const double e = 0.25;                            // restituição (lataria)
+            const double jimp = -(1.0 + e) * rel / (1.0 / ma + 1.0 / mb);
+            va.first -= jimp * nx / ma;
+            va.second -= jimp * ny / ma;
+            vb.first += jimp * nx / mb;
+            vb.second += jimp * ny / mb;
+            auto para_carro = [](CarState& c, double wx, double wy) {
+                const double ch = std::cos(c.heading), sh = std::sin(c.heading);
+                c.vx = wx * ch + wy * sh;
+                c.vy = -wx * sh + wy * ch;
+            };
+            para_carro(a.car, va.first, va.second);
+            para_carro(b.car, vb.first, vb.second);
+            // dano e um pouco de rotação para cada um
+            const double impacto = std::fabs(rel);
+            aplicar_impacto(specs[active_[i]], a.car, impacto);
+            aplicar_impacto(specs[active_[j]], b.car, impacto);
+            a.car.r = clamp(a.car.r - ny * impacto * 0.06, -3.0, 3.0);
+            b.car.r = clamp(b.car.r + ny * impacto * 0.06, -3.0, 3.0);
+            if (impacto > 2.0) {
+                if (a.crash_cd <= 0.0) { a.crashes += 1; a.batidas_carros += 1; a.crash_cd = 0.5; }
+                if (b.crash_cd <= 0.0) { b.crashes += 1; b.batidas_carros += 1; b.crash_cd = 0.5; }
+            }
+        }
+    }
 }
 
 // ------------------------------------------------------------------ passo
@@ -244,12 +389,15 @@ void Simulation::step() {
         }
     }
 
+    guiar_pit();
     for (int row : rows) {
         Agent& a = agents[row];
         physics_step(specs[row], a.car, a.surface_grip, a.surface_roll, dt, a.draft);
     }
     sync_track_state();
     handle_walls();
+    handle_pit();
+    if (cfg.colisoes) handle_colisoes();
 
     for (int row : rows) {
         Agent& a = agents[row];
@@ -514,6 +662,14 @@ void Simulation::observe(int row, float* out) const {
     out[o++] = float(clamp(a.car.grip_use, 0.0, 1.5));
     out[o++] = float(a.last_steer);
     out[o++] = float(a.last_drive);
+    // entradas de estratégia (só quando o pitstop está ligado)
+    if (cfg.pit_ligado) {
+        out[o++] = float(clamp(a.car.tire_wear, 0.0, 1.0));   // pneu gasto
+        out[o++] = float(clamp(a.car.fuel, 0.0, 1.0));        // combustível
+        out[o++] = float(clamp(a.car.damage, 0.0, 1.0));      // lataria
+        out[o++] = float(clamp(a.car.aero_deg, 0.0, 1.0));    // aerodinâmica suja
+        out[o++] = float(clamp(double(a.paradas) / 5.0, 0.0, 1.0));  // paradas feitas
+    }
     // zera o resto (configurações com menos raios usam obs_dim menor)
     for (; o < obs_dim; ++o) out[o] = 0.0f;
 }

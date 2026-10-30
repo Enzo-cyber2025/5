@@ -145,6 +145,7 @@ struct CarState {
     double tire_temp = 70.0;
     double tire_wear = 0.0;
     double damage = 0.0;            // 0..1
+    double aero_deg = 0.0;          // 0..1 degradação aerodinâmica (asa suja/amassada)
     double fuel = 1.0;              // fração do tanque
     double brake_temp = 60.0;       // graus C do disco
     double susp_roll = 0.0;         // rad (rolagem da carroceria)

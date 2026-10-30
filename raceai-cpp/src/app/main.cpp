@@ -105,7 +105,7 @@ static std::vector<Slider> g_sliders;
 static std::vector<Slider> g_sliders_corrida;   // controles do jogador (só na corrida)
 static std::vector<HWND> g_ctrls_corrida;       // botões/mostrados só na corrida
 static HWND g_slider_mut = nullptr;
-static HWND g_chk_abs = nullptr, g_chk_tc = nullptr;
+static HWND g_chk_abs = nullptr, g_chk_tc = nullptr, g_chk_colisao = nullptr;
 
 
 static HWND cria_slider(HWND pai, int x, int y, int w, const wchar_t* nome, double* valor,
@@ -153,6 +153,8 @@ static HWND combo(HWND pai, int id, int x, int y, int w,
 }
 
 static HWND g_texto_ia = nullptr;
+static HWND g_edita_camadas = nullptr;
+static HWND g_botao_tipo_ia = nullptr;
 
 static void atualiza_resumo_ia() {
     if (!g_texto_ia) return;
@@ -173,8 +175,8 @@ enum {
     ID_EXEMPLO_PY, ID_NOVO, ID_ADD_MODELO, ID_AJUDA, ID_SAIR, ID_VOLTAR,
     ID_ABRIR_PY, ID_SALVAR_PY,
     ID_RECOMPENSA_PADRAO, ID_ZOOM_MAIS, ID_ZOOM_MENOS, ID_CHAVE_MODO,
-    ID_CHK_ABS, ID_CHK_TC, ID_ABRIR_MODS, ID_RECARR_MODS, ID_CHAVE_3D,
-    ID_GER_CAMADAS, ID_GER_NEUROS, ID_GER_ATIV, ID_GER_FORMATO, ID_GERAR_IA
+    ID_CHK_ABS, ID_CHK_TC, ID_CHK_COLISAO, ID_ABRIR_MODS, ID_RECARR_MODS, ID_CHAVE_3D,
+    ID_GER_CAMADAS, ID_GER_ATIV, ID_GER_FORMATO, ID_GERAR_IA, ID_CHAVE_TIPO_IA
 };
 
 // ------------------------------------------------------------------ canvas
@@ -708,7 +710,7 @@ static void mostra_tela() {
     const bool treino = g_app.mode == Mode::Treinamento;
     const bool corrida = g_app.mode == Mode::Corrida;
     // controles de treino
-    for (int id : {ID_GER_CAMADAS, ID_GER_NEUROS, ID_GER_ATIV, ID_GER_FORMATO,
+    for (int id : {ID_GER_CAMADAS, ID_GER_ATIV, ID_GER_FORMATO, ID_CHAVE_TIPO_IA,
                    ID_GERAR_IA, ID_INICIAR, ID_PAUSAR, ID_REINICIAR, ID_SALVAR, ID_CARREGAR,
                    ID_APLICAR_PY, ID_LIMPAR_PY, ID_EXEMPLO_PY, ID_NOVO,
                    ID_RECOMPENSA_PADRAO}) {
@@ -890,28 +892,35 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             rotulo(hwnd, P, y, W, 18, L"gerador de IA (estrutura da rede)", g_fonte);
             y += 20;
             {
-                int sel_n = 2;
-                for (int i = 0; i < 5; ++i)
-                    if (g_app.ai_gen.neuronios == kNeuroniosOpcoes[i]) sel_n = i;
                 int sel_a = 0;
                 for (int i = 0; i < 4; ++i)
                     if (g_app.ai_gen.ativacao == kAtivacoesOpcoes[i]) sel_a = i;
-                combo(hwnd, ID_GER_CAMADAS, P, y, 180,
-                      {L"1 camada", L"2 camadas", L"3 camadas"},
-                      g_app.ai_gen.camadas - 1);
-                combo(hwnd, ID_GER_NEUROS, P + 196, y, 180,
-                      {L"16 neurônios", L"32 neurônios", L"64 neurônios",
-                       L"128 neurônios", L"256 neurônios"}, sel_n);
-                y += 46;
-                combo(hwnd, ID_GER_ATIV, P, y, 180,
-                      {L"ativação: tanh", L"ativação: relu", L"ativação: sigmoid",
-                       L"ativação: leaky"}, sel_a);
-                combo(hwnd, ID_GER_FORMATO, P + 196, y, 180,
-                      {L"formato: constante", L"formato: funil", L"formato: ampulheta"},
-                      g_app.ai_gen.formato);
+                // campo livre: digite quantas camadas quiser, do tamanho que quiser
+                rotulo(hwnd, P, y, 180, 18, L"camadas (ex.: 256,128,64)");
+                g_edita_camadas = CreateWindowExW(WS_EX_CLIENTEDGE, L"edit", L"",
+                                                  WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL,
+                                                  P, y + 20, 180, 24, hwnd,
+                                                  (HMENU)(intptr_t)ID_GER_CAMADAS,
+                                                  GetModuleHandle(nullptr), nullptr);
+                SendMessageW(g_edita_camadas, WM_SETFONT, (WPARAM)g_fonte, TRUE);
+                SetWindowTextW(g_edita_camadas, wide(g_app.ai_gen.texto()).c_str());
+                rotulo(hwnd, P + 196, y, 180, 18, L"ativação");
+                combo(hwnd, ID_GER_ATIV, P + 196, y + 20, 180,
+                      {L"tanh", L"relu", L"sigmoid", L"leaky"}, sel_a);
+                y += 30;
+                combo(hwnd, ID_GER_FORMATO, P, y + 16, 180,
+                      {L"atalhos: constante 64x2", L"atalho: funil 128,64,32",
+                       L"atalho: ampulheta 32,64,32"}, 0);
             }
             y += 46;
             botao(hwnd, ID_GERAR_IA, P, y, 180, 26, L"Gerar e treinar");
+            // chave "tipo de IA": Corrida (só piloto) | Estratégia (piloto + boxe)
+            rotulo(hwnd, P + 196, y - 18, 180, 18, L"tipo de IA");
+            g_botao_tipo_ia = CreateWindowW(L"button", L"",
+                                            WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_OWNERDRAW,
+                                            P + 196, y, 180, 26, hwnd,
+                                            (HMENU)(intptr_t)ID_CHAVE_TIPO_IA,
+                                            GetModuleHandle(nullptr), nullptr);
             y += 34;
             g_texto_ia = rotulo(hwnd, P, y, W, 20, L"", g_fonte);
             atualiza_resumo_ia();
@@ -997,6 +1006,14 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                                      GetModuleHandle(nullptr), nullptr);
             SendMessageW(g_chk_abs, WM_SETFONT, (WPARAM)g_fonte, TRUE);
             SendMessageW(g_chk_tc, WM_SETFONT, (WPARAM)g_fonte, TRUE);
+            g_chk_colisao = CreateWindowW(L"button", L"colisões entre carros",
+                                          WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
+                                          P + 300, 292, 170, 22, hwnd,
+                                          (HMENU)(intptr_t)ID_CHK_COLISAO,
+                                          GetModuleHandle(nullptr), nullptr);
+            SendMessageW(g_chk_colisao, WM_SETFONT, (WPARAM)g_fonte, TRUE);
+            SendMessageW(g_chk_colisao, BM_SETCHECK,
+                         g_app.sim_cfg.colisoes ? BST_CHECKED : BST_UNCHECKED, 0);
             SendMessageW(g_chk_abs, BM_SETCHECK,
                          g_app.controles.abs ? BST_CHECKED : BST_UNCHECKED, 0);
             SendMessageW(g_chk_tc, BM_SETCHECK,
@@ -1091,6 +1108,12 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                               L"Treino", RGB(28, 62, 48), RGB(86, 214, 140));
                 return TRUE;
             }
+            if (di->CtlID == ID_CHAVE_TIPO_IA) {
+                const bool piloto = g_app.ai_gen.tipo == TipoIA::Corrida;
+                desenha_chave(di->hDC, di->rcItem, piloto, L"Corrida", L"Estratégia",
+                              RGB(46, 40, 30), RGB(255, 198, 92));
+                return TRUE;
+            }
             if (di->CtlID == ID_CHAVE_3D) {
                 desenha_chave(di->hDC, di->rcItem, !g_app.ui.modo3d, L"2D", L"3D",
                               RGB(38, 44, 66), RGB(128, 176, 255));
@@ -1104,12 +1127,18 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             if (HIWORD(wp) == CBN_SELCHANGE) {
                 const int sel = int(SendMessageW((HWND)lp, CB_GETCURSEL, 0, 0));
                 if (sel >= 0) {
-                    if (id == ID_GER_CAMADAS) g_app.ai_gen.camadas = std::min(3, sel + 1);
-                    else if (id == ID_GER_NEUROS && sel < 5)
-                        g_app.ai_gen.neuronios = kNeuroniosOpcoes[sel];
-                    else if (id == ID_GER_ATIV && sel < 4)
+                    if (id == ID_GER_ATIV && sel < 4)
                         g_app.ai_gen.ativacao = kAtivacoesOpcoes[sel];
-                    else if (id == ID_GER_FORMATO) g_app.ai_gen.formato = std::min(2, sel);
+                    else if (id == ID_GER_FORMATO) {
+                        // atalhos: escrevem o campo e já mostram a rede nova
+                        const char* atalhos[] = {"64, 64", "128, 64, 32", "32, 64, 32"};
+                        if (sel >= 0 && sel < 3) {
+                            g_app.ai_gen.de_texto(atalhos[sel]);
+                            if (g_edita_camadas)
+                                SetWindowTextW(g_edita_camadas,
+                                               wide(g_app.ai_gen.texto()).c_str());
+                        }
+                    }
                     atualiza_resumo_ia();
                 }
                 return 0;
@@ -1125,10 +1154,21 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                 g_app.carregar_carro(i);
             } else if (id == ID_CHAVE_MODO) {
                 trocar_modo();
+            } else if (id == ID_CHAVE_TIPO_IA) {
+                g_app.ai_gen.tipo = (g_app.ai_gen.tipo == TipoIA::Corrida)
+                                        ? TipoIA::Estrategia
+                                        : TipoIA::Corrida;
+                atualiza_resumo_ia();
+                if (g_botao_tipo_ia) InvalidateRect(g_botao_tipo_ia, nullptr, TRUE);
+                InvalidateRect(hwnd, nullptr, TRUE);
             } else if (id == ID_CHAVE_3D) {
                 g_app.ui.modo3d = !g_app.ui.modo3d;
                 if (g_botao_3d) InvalidateRect(g_botao_3d, nullptr, TRUE);
                 InvalidateRect(hwnd, nullptr, TRUE);
+            } else if (id == ID_CHK_COLISAO) {
+                g_app.sim_cfg.colisoes =
+                    SendMessageW(g_chk_colisao, BM_GETCHECK, 0, 0) == BST_CHECKED;
+                if (g_app.race.sim) g_app.race.sim->cfg.colisoes = g_app.sim_cfg.colisoes;
             } else if (id == ID_CHK_ABS || id == ID_CHK_TC) {
                 g_app.controles.abs =
                     SendMessageW(g_chk_abs, BM_GETCHECK, 0, 0) == BST_CHECKED;
@@ -1222,6 +1262,17 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                     }
                 }
             } else if (id == ID_GERAR_IA) {
+                if (g_edita_camadas) {
+                    wchar_t buf[256];
+                    GetWindowTextW(g_edita_camadas, buf, 255);
+                    const std::string txt = narrow(buf);
+                    if (!txt.empty() && !g_app.ai_gen.de_texto(txt)) {
+                        MessageBoxW(hwnd, L"Escreva as camadas como números, por exemplo:\n256, 128, 64",
+                                    L"Gerador de IA", MB_OK | MB_ICONINFORMATION);
+                        return 0;
+                    }
+                    SetWindowTextW(g_edita_camadas, wide(g_app.ai_gen.texto()).c_str());
+                }
                 g_app.aplicar_ia_gerada();
                 atualiza_resumo_ia();
                 InvalidateRect(hwnd, nullptr, TRUE);

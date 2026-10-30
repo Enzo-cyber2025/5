@@ -21,6 +21,8 @@ public:
     virtual std::string name() const { return "driver"; }
     virtual bool valid() const { return true; }
     virtual std::string error() const { return ""; }
+    // quantas saídas o piloto produz: 3 = esterço, acelerador e pedido de boxe
+    virtual int out_dim() const { return 2; }
 };
 
 // Rede neural (pesos = genoma da evolução ou modelo carregado).
@@ -39,6 +41,7 @@ public:
         }
         forward(spec_, w_.data(), obs, out);
     }
+    int out_dim() const override { return spec_.act_dim; }
     std::string name() const override { return "rede neural"; }
 
 private:

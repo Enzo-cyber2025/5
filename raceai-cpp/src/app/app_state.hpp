@@ -114,13 +114,20 @@ struct UiSettings {
 
 // Gerador de IA: escolhe a estrutura da rede e os parâmetros do treino sem
 // escrever uma linha de código (é só o que os controles da interface mexem).
+// O que a IA é: só piloto, ou piloto + estrategista (boxe, pneus, tanque).
+enum class TipoIA { Corrida = 0, Estrategia = 1 };
+
 struct AiGen {
-    int camadas = 2;              // 1 a 3 camadas escondidas
-    int neuronios = 64;           // 16 a 256 por camada
+    // tamanho de CADA camada escondida: quantas quiser, do tamanho que quiser
+    // (ex.: {64, 64}, {256, 128, 64} ou {8}). É o genome todo.
+    std::vector<int> camadas = {64, 64};
     std::string ativacao = "tanh";// tanh | relu | sigmoid | leaky
-    int formato = 0;              // 0 = constante, 1 = funil, 2 = ampulheta
+    TipoIA tipo = TipoIA::Corrida;  // Corrida = 2 saídas; Estratégia = 3 (a 3ª pede boxe)
     double sigma = 0.25;          // tamanho do passo da mutação
     int elitismo_pct = 10;        // % da população preservada
+
+    std::string texto() const;                 // "64, 64"
+    bool de_texto(const std::string& s);       // aceita "256,128,64"
 };
 
 // ------------------------------------------------------------------ app

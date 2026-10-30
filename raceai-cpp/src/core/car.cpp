@@ -474,11 +474,15 @@ void physics_step(const CarSpec& sp, CarState& st, double surface_grip,
     // ---------------- aerodinâmica e resistência ----------------------------
     const double v2 = speed * speed;
     const double fator_pitch = 1.0 + sp.aero_pitch * st.susp_pitch;
-    const double drag_f = 0.5 * rho * sp.cd_a * v2 * (1.0 + 0.35 * dano) *
+    // degradação aerodinâmica: lataria amassada e asa suja perdem eficiência
+    const double sujeira = clampd(st.aero_deg, 0.0, 1.0);
+    const double ef_aero = clampd(1.0 - 0.50 * dano - 0.40 * sujeira, 0.40, 1.0);
+    const double drag_f = 0.5 * rho * sp.cd_a * v2 *
+                          (1.0 + 0.35 * dano + 0.45 * sujeira) *
                           (1.0 - 0.30 * vacuo);
     const double roll_f = sp.rolling * surface_roll * speed;
     const double downforce = std::max(0.0, 0.5 * rho * sp.cl_a * v2 * fator_pitch *
-                                      (1.0 - 0.5 * vacuo));
+                                      ef_aero * (1.0 - 0.5 * vacuo));
     const double resist = drag_f + roll_f;
 
     // ---------------- cargas verticais por eixo -----------------------------
@@ -631,6 +635,15 @@ void physics_step(const CarSpec& sp, CarState& st, double surface_grip,
         new_vx = 0.0; new_vy = 0.0; new_r = 0.0;
     }
 
+    // ---------------- degradação aerodinâmica -------------------------------
+    // rodar na grama/sujeira entope a asa; em pista limpa a perda é bem lenta
+    {
+        const bool sujo = surface_grip < 0.985 || surface_roll > 1.03;
+        const double uso = clampd(std::fabs(speed) / 12.0, 0.0, 1.0);
+        const double taxa = (sujo ? 0.22 * uso : 0.0) + 0.006 * std::fabs(speed) / 30.0;
+        st.aero_deg = clampd(st.aero_deg + taxa * dt, 0.0, 1.0);
+    }
+
     // ---------------- combustível -------------------------------------------
     if (sp.fuel_capacity > 0.0) {
         double consumo = sp.fuel_burn * (0.06 + 0.94 * throttle) * dt;
@@ -665,6 +678,8 @@ void physics_step(const CarSpec& sp, CarState& st, double surface_grip,
 
 void aplicar_impacto(const CarSpec& sp, CarState& st, double vel_impacto) {
     st.damage = clampd(st.damage + sp.damage_rate * clampd(vel_impacto, 0.0, 60.0) / 30.0, 0.0, 1.0);
+    // a lataria amassada estraga o fluxo de ar: perde downforce e ganha arrasto
+    st.aero_deg = clampd(st.aero_deg + clampd(vel_impacto, 0.0, 60.0) * 0.012, 0.0, 1.0);
     // perda instantânea de velocidade proporcional à gravidade da batida
     double fator = clampd(1.0 - 0.020 * vel_impacto, 0.55, 1.0);
     st.vx *= fator;

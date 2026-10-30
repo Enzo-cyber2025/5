@@ -199,6 +199,41 @@ Tudo isso é determinístico (mesma entrada ⇒ mesmíssimo resultado) e roda a
 
 ---
 
+## Colisão com danos, aerodinâmica que degrada e pitstop
+
+Três sistemas que mudam a corrida (e dão o que aprender para uma IA de
+estratégia):
+
+**1. Colisão com danos.** Bater no muro já custava caro; agora a lataria
+amassada tem consequência aerodinâmica (abaixo) e a **colisão entre carros**
+existe de verdade — na aba Corrida há a caixa **“colisões entre carros”**
+(desligada por padrão). O contato é resolvido por impulso com conservação de
+momento (massa contra massa), separação dos carros e rotação proporcional ao
+impacto; cada batida soma dano nos dois e conta como batida.
+
+**2. Degradação aerodinâmica.** A asa perde eficiência com o tempo e com a
+sujeira: `eficiência = 1 − 0,5·dano − 0,4·sujeira` (nunca abaixo de 40 %), e o
+arrasto cresce junto (`+ 0,45·sujeira`). Resultado: **menos downforce na curva
+e mais arrasto na reta**. Rodar na grama/terra entope a asa rápido; no
+asfalto a perda é quase nada. O HUD mostra `aero -12%`.
+
+**3. Pitstop.** Com a chave **tipo de IA** em *Estratégia*, a zona de boxe
+aparece no início da pista: uma faixa extra de 4,5 m do lado direito, com
+**limite de velocidade** (22 m/s). Entrando nela e ficando o tempo do serviço
+(4 s), o carro recebe:
+
+- pneus novos (desgaste zerado e temperatura assentada),
+- tanque cheio,
+- lataria batida (o dano cai para 1/4) e asa lavada (aerodinâmica 100 %),
+- freio resfriado.
+
+A IA *pede* o boxe pela terceira saída da rede; a partir daí o carro encosta
+na faixa e obedece o limite sozinho. Contar paradas é o que faz a rede
+aprender **estratégia**: vale a pena parar? Quando? O HUD mostra
+`boxe 1  no boxe` / `pediu boxe` / `na pista`.
+
+---
+
 ## Gerador de IA (sem programar)
 
 Não precisa escrever código para montar a rede: no painel do Treinamento há o
@@ -206,16 +241,27 @@ bloco **“gerador de IA”**, com quatro escolhas e um botão.
 
 | controle | o que faz |
 | --- | --- |
-| **camadas** | 1, 2 ou 3 camadas escondidas |
-| **neurônios** | 16, 32, 64, 128 ou 256 por camada |
+| **camadas** | campo livre: digite quantas quiser, do tamanho que quiser — `256, 128, 64`, `8`, `1024,512,256,128` (limite de segurança: 8 camadas de até 4096) |
+| **atalhos** | escrevem o campo para você: constante `64, 64`, funil `128, 64, 32`, ampulheta `32, 64, 32` |
 | **ativação** | `tanh` (padrão), `relu`, `sigmoid` ou `leaky` |
 | **formato** | constante (64→64), funil (64→32) ou ampulheta (32→64→32) |
 | **passo da mutação** | o “sigma”: quanto cada peso muda por geração |
+| **tipo de IA** | chave: **Corrida** (só piloto) ou **Estratégia** (piloto + boxe) |
 | **Gerar e treinar** | aplica a rede e recomeça o treino do zero |
 
 Embaixo aparece a rede escolhida por extenso, por exemplo
 `24 → 64 → 32 → 2  (4.7k parâmetros)`. A saída é sempre `tanh`, porque esterço
 e acelerador vivem em [-1, 1]; a ativação vale para as camadas escondidas.
+
+### A chave “tipo de IA”
+
+| posição | rede | o que muda |
+| --- | --- | --- |
+| **Corrida** | `24 → ... → 2` | só esterço e acelerador: o piloto de sempre |
+| **Estratégia** | `29 → ... → 3` | +5 entradas (pneu, tanque, dano, aerodinâmica, paradas) e +1 saída: **pedir boxe** |
+
+Com a chave em **Estratégia** a rede passa a *sentir* o estado do carro e a
+decidir **quando parar**: a terceira saída acima de zero é o pedido de boxe.
 
 Também dá para treinar pelo terminal (mesmas opções):
 
@@ -288,6 +334,7 @@ quanto na corrida). Os botões **Exemplo** e **Limpar** ajudam a começar.
 | 21 | uso dos pneus (1 = no limite) |
 | 22 | último esterço aplicado |
 | 23 | último acelerador aplicado |
+| 24–28 | **só com a chave em Estratégia**: desgaste do pneu, combustível, dano, aerodinâmica degradada e paradas/5 |
 
 Exemplo que já vem no campo de texto:
 

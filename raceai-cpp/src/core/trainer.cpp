@@ -30,7 +30,9 @@ void Trainer::build(int n_agents) {
         int count = base + (extra > 0 ? 1 : 0);
         if (extra > 0) --extra;
         if (count <= 0) continue;
-        auto sim = std::make_unique<Simulation>(track, car, sim_cfg, count,
+        SimConfig sc = sim_cfg;
+        if (policy.act_dim >= 3) sc.pit_ligado = true;   // rede de estratégia = boxe
+        auto sim = std::make_unique<Simulation>(track, car, sc, count,
                                                 uint32_t(tcfg.seed + 7919u * size_t(t + 1)));
         sim->id_offset = start;          // reset() numera os agentes a partir daqui
         sim->reset(0);
@@ -136,7 +138,7 @@ void Trainer::worker(int shard) {
     Simulation& sim = *shards[shard];
     const int dim = policy.obs_dim;
     std::vector<float> obs(size_t(std::max(1, dim)));
-    float act[2] = {0.0f, 0.0f};
+    float act[4] = {0.0f, 0.0f, 0.0f, 0.0f};
     const bool use_driver = external_driver_ != nullptr;
     while (!sim.all_dead() && sim.step_count < sim.max_steps) {
         if (sim.should_decide()) {
@@ -150,7 +152,7 @@ void Trainer::worker(int shard) {
                 } else {
                     act[0] = 0.0f; act[1] = 0.0f;
                 }
-                sim.set_action(row, act[0], act[1]);
+                sim.set_action(row, act[0], act[1], policy.act_dim >= 3 ? double(act[2]) : 0.0);
             }
         }
         sim.step();
@@ -169,7 +171,7 @@ void Trainer::step(int n) {
     for (auto& s : shards) {
         const int dim = policy.obs_dim;
         std::vector<float> obs(size_t(std::max(1, dim)));
-        float act[2] = {0.0f, 0.0f};
+        float act[4] = {0.0f, 0.0f, 0.0f, 0.0f};
         for (int k = 0; k < n; ++k) {
             if (s->should_decide()) {
                 for (int row : s->active()) {
@@ -178,7 +180,7 @@ void Trainer::step(int n) {
                     if (external_driver_ && id == 0) external_driver_->act(obs.data(), dim, act);
                     else if (id < int(pop.genomes.size()))
                         forward(policy, pop.genomes[id].data(), obs.data(), act);
-                    s->set_action(row, act[0], act[1]);
+                    s->set_action(row, act[0], act[1], policy.act_dim >= 3 ? double(act[2]) : 0.0);
                 }
             }
             s->step();

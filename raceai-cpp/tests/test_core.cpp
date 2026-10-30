@@ -1030,6 +1030,128 @@ static void t_python() {
 #endif
 }
 
+// ------------------------------------------------ colisão, boxe e aerodinâmica
+static void t_estrategia() {
+    // com o boxe ligado a rede recebe 5 entradas a mais (pneu, tanque, dano...)
+    {
+        SimConfig cfg;
+        Simulation s1(g_track, g_car, cfg, 1, 5);
+        CHECK(s1.obs_dim == cfg.n_rays + 15, "observação sem boxe");
+        SimConfig cfg2 = cfg;
+        cfg2.pit_ligado = true;
+        Simulation s2(g_track, g_car, cfg2, 1, 5);
+        CHECK(s2.obs_dim == cfg.n_rays + 20, "observação com boxe");
+        s2.reset(0);
+        std::vector<float> obs(size_t(s2.obs_dim), 0.0f);
+        s2.observe(0, obs.data());
+        bool finito = true;
+        for (float v : obs) if (!std::isfinite(v)) finito = false;
+        CHECK(finito, "observação com nan/inf");
+    }
+    // entrar no boxe troca pneu, enche o tanque e lava a asa
+    {
+        SimConfig cfg;
+        cfg.pit_ligado = true;
+        cfg.pit_tempo = 1.0;
+        cfg.max_seconds = 40.0;
+        Simulation sim(g_track, g_car, cfg, 1, 7);
+        sim.reset(0);
+        Agent& a = sim.agents[0];
+        const Vec2& c0 = sim.track.center[0];
+        const Vec2& t0 = sim.track.tangents[0];
+        const Vec2 n(-t0.y, t0.x);
+        const double off = sim.track.half_widths[0] + cfg.pit_largura * 0.5;
+        a.car.heading = std::atan2(t0.y, t0.x);
+        for (int sinal : {1, -1}) {
+            a.car.x = c0.x + n.x * off * sinal;
+            a.car.y = c0.y + n.y * off * sinal;
+            a.car.vx = 0.0; a.car.vy = 0.0; a.car.r = 0.0;
+            a.car.steer_cmd = 0.0; a.car.throttle = 0.0; a.car.brake = 0.0;
+            sim.step();
+            if (a.lateral > sim.track.half_widths[a.idx]) break;
+        }
+        CHECK(a.no_pit, "o carro não entrou na faixa de boxe");
+        a.car.tire_wear = 0.6;
+        a.car.fuel = 0.3;
+        a.car.aero_deg = 0.4;
+        a.car.damage = 0.2;
+        const int passos = int(3.0 / cfg.dt) + 2;
+        for (int i = 0; i < passos && a.paradas < 1; ++i) {
+            a.car.throttle = 0.0;
+            a.car.brake = 0.0;
+            sim.step();
+        }
+        CHECK(a.paradas == 1, "o boxe não atendeu o carro");
+        CHECK(a.car.tire_wear < 1e-6, "o pneu não foi trocado");
+        CHECK(a.car.fuel > 0.99, "o tanque não foi enchido");
+        CHECK(a.car.aero_deg < 1e-6, "a asa não foi limpa");
+        CHECK(a.car.damage < 0.2, "a lataria não foi consertada");
+    }
+    // aerodinâmica degradada: mais arrasto e menos downforce = carro mais lento
+    {
+        CarState limpo, sujo;
+        limpo.vx = 40.0;
+        sujo = limpo;
+        sujo.damage = 0.5;
+        sujo.aero_deg = 0.8;
+        for (int i = 0; i < 90; ++i) {
+            limpo.throttle = 1.0;
+            sujo.throttle = 1.0;
+            physics_step(g_car, limpo, 1.0, 1.0, 1.0 / 60.0, 0.0);
+            physics_step(g_car, sujo, 1.0, 1.0, 1.0 / 60.0, 0.0);
+        }
+        CHECK(std::isfinite(limpo.speed) && std::isfinite(sujo.speed), "física com nan");
+        CHECK(sujo.speed < limpo.speed, "carro sujo devia ser mais lento");
+        CarState batido;
+        aplicar_impacto(g_car, batido, 25.0);
+        CHECK(batido.damage > 0.0, "a batida não gerou dano");
+        CHECK(batido.aero_deg > 0.0, "a batida não degradou a aerodinâmica");
+    }
+    // treinar uma rede de estratégia (3 saídas) funciona e mantém o boxe ligado
+    {
+        SimConfig cfg;
+        cfg.max_seconds = 12.0;
+        PolicySpec pol;
+        pol.obs_dim = cfg.n_rays + 20;   // 5 entradas de estratégia
+        pol.act_dim = 3;                 // a terceira pede boxe
+        pol.hidden = {16, 16};
+        GAConfig ga;
+        ga.population = 8;
+        TrainerConfig tc;
+        tc.threads = 2;
+        tc.seed = 77;
+        Trainer tr(g_track, g_car, cfg, ga, pol, tc);
+        CHECK(!tr.shards.empty() && tr.shards[0]->cfg.pit_ligado,
+              "treino de estratégia deveria ligar o boxe");
+        CHECK(tr.shards[0]->obs_dim == pol.obs_dim, "dimensão da observação divergente");
+        tr.start_episode();
+        tr.run_episode();
+        CHECK(tr.episode_done(), "episódio de estratégia não terminou");
+        GenHistory h = tr.finish_episode(true);
+        CHECK(std::isfinite(h.best_loss) && h.best_loss > 0.0, "loss de estratégia estranha");
+    }
+    // colisão entre carros gera dano nos dois
+    {
+        SimConfig cfg;
+        cfg.colisoes = true;
+        cfg.max_seconds = 20.0;
+        Simulation sim(g_track, g_car, cfg, 2, 11);
+        sim.reset(0);
+        Agent& a = sim.agents[0];
+        Agent& b = sim.agents[1];
+        const double dx = std::cos(a.car.heading), dy = std::sin(a.car.heading);
+        b.car.x = a.car.x + dx * 0.9;      // b na frente de a, encostado
+        b.car.y = a.car.y + dy * 0.9;
+        b.car.heading = a.car.heading;
+        b.car.vx = 0.0;
+        a.car.vx = 12.0;                   // a chega batendo
+        const double d0 = a.car.damage, d1 = b.car.damage;
+        for (int i = 0; i < 8; ++i) sim.step();
+        CHECK(a.car.damage > d0, "a colisão não danificou o carro da frente");
+        CHECK(b.car.damage > d1, "a colisão não danificou o carro de trás");
+    }
+}
+
 // ------------------------------------------------------------------ main
 int main() {
     printf("RaceAI 2D (C++) — testes do núcleo\n\n");
@@ -1053,6 +1175,7 @@ int main() {
     test("conteúdo: toda pista e todo carro são dirigíveis", t_conteudo);
     test("renderizador 3D: projeção, recorte e ordem das faces", t_render3d);
     test("ia em python (ponte com o interpretador)", t_python);
+    test("estratégia: colisão com dano, boxe e aerodinâmica", t_estrategia);
 
     printf("\n%d testes passaram, %d falharam\n", passed, failed);
     return failed ? 1 : 0;

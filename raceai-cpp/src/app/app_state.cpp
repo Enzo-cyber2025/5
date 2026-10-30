@@ -104,7 +104,7 @@ void Race::step(int n) {
     if (!sim || finished) return;
     const int dim = sim->obs_dim;
     std::vector<float> obs(size_t(std::max(1, dim)));
-    float act[2] = {0.0f, 0.0f};
+    float act[4] = {0.0f, 0.0f, 0.0f, 0.0f};
     for (int k = 0; k < n; ++k) {
         if (sim->should_decide()) {
             for (int row : sim->active()) {
@@ -117,7 +117,9 @@ void Race::step(int n) {
                 } else if (c.driver) {
                     c.driver->act(obs.data(), dim, act);
                 }
-                sim->set_action(row, act[0], act[1]);
+                // saída 3 (se existir) = pedido de boxe
+                const bool estratega = c.driver && c.driver->out_dim() >= 3;
+                sim->set_action(row, act[0], act[1], estratega ? double(act[2]) : 0.0);
             }
         }
         sim->step();
@@ -245,6 +247,13 @@ std::vector<std::string> Race::hud_lines() const {
         std::snprintf(buf, sizeof(buf), "dano %2.0f%%  tanque %3.0f%%", a.car.damage * 100.0,
                       a.car.fuel * 100.0);
         out.push_back(buf);
+        if ((sim && sim->cfg.pit_ligado) || a.paradas > 0) {
+            std::snprintf(buf, sizeof(buf), "aero -%2.0f%%  boxe %d  %s",
+                          a.car.aero_deg * 100.0, a.paradas,
+                          a.no_pit ? (a.pit_servido ? "servido" : "no boxe") :
+                                     (a.pit_pedido ? "pediu boxe" : "na pista"));
+            out.push_back(buf);
+        }
         std::snprintf(buf, sizeof(buf), "aderência %3.0f%%  patina %2.0f%%",
                       std::min(a.car.grip_use, 2.0) * 100.0, a.car.wheelspin * 100.0);
         out.push_back(buf);
@@ -286,7 +295,6 @@ AppState::AppState() {
     if (!pistas.empty()) load_track(pistas[pista_idx].id, track_cache_, &err);
     if (!carros.empty()) load_car(carros[carro_idx].id, car_cache_, &err);
     policy = spec_da_ia();                 // o gerador de IA é quem manda
-    policy.obs_dim = sim_cfg.n_rays + 15;
     python_code = exemplo_python();
     // preferências do jogador ficam num JSON ao lado do executável
     controles_path = assets_root() + "/controles.json";
@@ -474,26 +482,47 @@ void AppState::alternar_modo() {
 }
 
 // ------------------------------------------------------------ gerador de IA
+std::string AiGen::texto() const {
+    std::string t;
+    for (size_t i = 0; i < camadas.size(); ++i) {
+        if (i) t += ", ";
+        t += std::to_string(camadas[i]);
+    }
+    return t;
+}
+
+bool AiGen::de_texto(const std::string& s) {
+    std::vector<int> v;
+    int atual = 0;
+    bool algum = false;
+    for (char ch : s) {
+        if (ch >= '0' && ch <= '9') {
+            atual = atual * 10 + (ch - '0');
+            algum = true;
+        } else if (algum) {
+            v.push_back(atual);
+            atual = 0;
+            algum = false;
+        }
+    }
+    if (algum) v.push_back(atual);
+    if (v.empty()) return false;
+    // limites só de segurança: 8 camadas, 4096 neurônios cada
+    if (v.size() > 8) v.resize(8);
+    for (int& n : v) n = std::max(1, std::min(4096, n));
+    camadas = v;
+    return true;
+}
+
 PolicySpec AppState::spec_da_ia() const {
     PolicySpec sp;
-    sp.obs_dim = 24;
-    sp.act_dim = 2;
+    // a IA de estratégia enxerga pneu/tanque/dano/aerodinâmica e decide o boxe
+    const bool estrategia = (ai_gen.tipo == TipoIA::Estrategia);
+    sp.obs_dim = std::max(1, sim_cfg.n_rays + 15 + (estrategia ? 5 : 0));
+    sp.act_dim = estrategia ? 3 : 2;
     sp.activation = ai_gen.ativacao;
-    const int n = std::max(8, ai_gen.neuronios);
-    const int c = std::max(1, std::min(3, ai_gen.camadas));
-    std::vector<int> h;
-    if (ai_gen.formato == 1) {                       // funil: 64 -> 32 -> 16
-        for (int i = 0; i < c; ++i) h.push_back(std::max(8, n >> i));
-    } else if (ai_gen.formato == 2) {                // ampulheta: 32 -> 64 -> 32
-        for (int i = 0; i < c; ++i) {
-            const int meio = (c > 1 && i == c / 2) ? n : std::max(8, n / 2);
-            h.push_back(meio);
-        }
-        if (c == 1) h[0] = n;
-    } else {
-        for (int i = 0; i < c; ++i) h.push_back(n);   // constante
-    }
-    sp.hidden = h;
+    sp.hidden = ai_gen.camadas;
+    if (sp.hidden.empty()) sp.hidden = {64};
     return sp;
 }
 
@@ -757,7 +786,12 @@ void AppState::iniciar_corrida(const std::vector<std::string>& modelos_in) {
         }
         specs.push_back(sp);
     }
-    race.setup(track_cache_, specs, sim_cfg, reward, 4242);
+    // se algum piloto tiver saída de estratégia, a corrida ganha área de boxe
+    SimConfig cfg_corrida = sim_cfg;
+    for (const Competitor& c : race.competidores) {
+        if (c.driver && c.driver->out_dim() >= 3) cfg_corrida.pit_ligado = true;
+    }
+    race.setup(track_cache_, specs, cfg_corrida, reward, 4242);
     aplicar_assistencias();          // ABS/controle de tração escolhidos pelo jogador
     race.restart();
     mode = Mode::Corrida;
