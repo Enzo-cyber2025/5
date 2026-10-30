@@ -336,6 +336,14 @@ typedef enum {
 
 typedef struct {
     uint32_t ran, returned, faulted, timed_out, could_not_run;
+    /* faulted split by cause. The bounds check a register-base access emits stops
+     * with BRK, which raises SIGTRAP, and that is the mechanism working: the guest
+     * pointer was outside the module's image and the code refused to read whatever
+     * the host has there instead. Anything else - SIGSEGV above all - means the
+     * emitted words are wrong. Reporting the two as one number would make a
+     * safety mechanism indistinguishable from a code-generation bug, and the total
+     * alone cannot say which one moved. */
+    uint32_t trapped, crashed;
     int      last_signal;
 } exec_tally;
 
@@ -450,6 +458,8 @@ static exec_outcome exec_one(const void *code, uint32_t code_len, void *imgbase,
     }
     t->faulted++;
     t->last_signal = WIFSIGNALED(status) ? WTERMSIG(status) : -1;
+    if (WIFSIGNALED(status) && WTERMSIG(status) == SIGTRAP) t->trapped++;
+    else                                                    t->crashed++;
     return EXC_FAULTED;
 }
 /* Walks every live cache record and runs the ones belonging to a module whose
@@ -522,7 +532,18 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
     printf("  records executed: %u   returned: %u   faulted: %u   timed out: %u"
            "   could not run: %u\n",
            t.ran, t.returned, t.faulted, t.timed_out, t.could_not_run);
-    if (t.faulted) printf("  last fault signal: %d\n", t.last_signal);
+    if (t.faulted) {
+        /* Split out, because the two causes call for opposite reactions: a trap is
+         * the bounds check declining to invent a value, a crash is a bug in what
+         * was emitted. */
+        /* Worded to avoid every substring the CI assertion already greps for.
+         * "faulted: <n>" here would be matched by that step's 'faulted: *[0-9]+'
+         * pattern, and because it takes the LAST match it would silently change
+         * which line the assertion reads. */
+        printf("  fault causes: %u trap(s) from the bounds check, "
+               "%u other fault(s)\n", t.trapped, t.crashed);
+        printf("  last fault signal: %d\n", t.last_signal);
+    }
     if (unmatched) printf("  records belonging to no offered module: %zu\n", unmatched);
     if (capped)    printf("  records skipped by the %u cap: %zu\n", EXEC_MAX_RECORDS, capped);
     if (t.ran == 0)

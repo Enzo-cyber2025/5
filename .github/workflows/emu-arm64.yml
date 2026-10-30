@@ -203,7 +203,7 @@ jobs:
             build /tmp/t_pe   test_pe_load.c pe_load.c &&
             build /tmp/t_sw   test_sweep.c sweep.c pe_load.c ptc.c x86_decode.c a64_emit.c translate.c &&
             build /tmp/t_tr   test_translate.c translate.c pe_load.c ptc.c x86_decode.c a64_emit.c gstack.c &&
-            build /tmp/t_emit test_emit_exec.c
+            build /tmp/t_emit test_emit_exec.c a64_emit.c
           } > /tmp/build.log 2>&1
           rc=$?
           cat /tmp/build.log
@@ -731,14 +731,39 @@ jobs:
           ran=$(need_num 'records executed: *[0-9]+')                 || exit 1
           ret=$(need_num 'returned: *[0-9]+')                         || exit 1
           faulted=$(need_num 'faulted: *[0-9]+')                      || exit 1
+          # The fault breakdown is extracted tolerantly, and that is a deliberate
+          # exception to need_num's hard failure. prewarm prints this line only when
+          # something faulted, so an empty extraction here means "nothing faulted" -
+          # the good case - where an empty 'functions pre-translated' means the
+          # assertion was never evaluated. The two look identical as strings and are
+          # opposite in meaning, so the difference is closed off below by requiring
+          # the parts to sum to the whole whenever the whole is non-zero.
+          trapped=$(lastof 'fault causes: *[0-9]+' | grep -aoE '[0-9]+' | sed -n '$p')
+          crashed=$(lastof 'bounds check, *[0-9]+' | grep -aoE '[0-9]+' | sed -n '$p')
+          trapped=${trapped:-0}; crashed=${crashed:-0}
+          # Only used to make a crash message say which signal arrived. Tolerant for
+          # the same reason: the line is printed only when something faulted.
+          faulted_signal=$(lastof 'last fault signal: *-?[0-9]+' | grep -aoE '\-?[0-9]+' | sed -n '$p')
           markers=$(grep -acE "EXECUTED ON aarch64:" /tmp/game.log);  markers=${markers:-0}
           translated=${translated:-0}; ran=${ran:-0}; ret=${ret:-0}; faulted=${faulted:-0}
 
-          echo "translated=${translated} executed=${ran} returned=${ret} faulted=${faulted} markers=${markers}"
+          echo "translated=${translated} executed=${ran} returned=${ret} faulted=${faulted} trapped=${trapped} crashed=${crashed} markers=${markers}"
           # Published as a notice so a future failure here is diagnosable from the
           # annotations alone, without needing the job log this sandbox cannot reach.
-          echo "::notice title=game-assert-input::translated=${translated} executed=${ran} returned=${ret} faulted=${faulted} markers=${markers} || tail: $(tail -c 500 /tmp/game.log | tr '\n' '|' | tr -s ' ')"
+          echo "::notice title=game-assert-input::translated=${translated} executed=${ran} returned=${ret} faulted=${faulted} trapped=${trapped} crashed=${crashed} markers=${markers} || tail: $(tail -c 500 /tmp/game.log | tr '\n' '|' | tr -s ' ')"
 
+          if [ "${faulted}" -gt 0 ] && [ $((trapped + crashed)) -ne "${faulted}" ]; then
+            die "the fault breakdown does not add up: ${trapped} traps + ${crashed} other faults != ${faulted} faulted, so the line was missing or changed shape and nothing below can be trusted"
+          fi
+          # The distinction this guards is the whole reason the split exists. A
+          # bounds-check trap is the emitted code declining to read outside the
+          # module's image - the safety mechanism working. A record dying of any
+          # other signal means the emitted words are wrong. Reporting both as
+          # "faulted" would let a code-generation bug hide inside a number that is
+          # supposed to grow as coverage grows.
+          if [ "${crashed}" -gt 0 ]; then
+            die "${crashed} record(s) died of something other than the bounds-check trap (last signal ${faulted_signal:-unknown}) - that is emitted code going wrong, not a guest pointer being out of range"
+          fi
           if [ "${translated}" -gt 0 ] && [ "${ran}" -eq 0 ]; then
             die "${translated} function(s) translated but none were executed"
           fi

@@ -1042,6 +1042,43 @@ seção 7 faz o contrário: um ponteiro uma página além do fim **tem que parar
 assertiva é "parou" (`sig != 0`), não "chegou SIGTRAP" — qual sinal chega não é
 portável, um sanitizer intercepta alguns.
 
+**O que a corrida seguinte mediu no jogo** (Luanti 5.17.0 win64, runner ARM64 real):
+
+| | antes | depois |
+|---|---|---|
+| funções pré-traduzidas | 171 (5,12%) | **286 (8,56%)** |
+| `8B` na lista de bloqueadores | 704 (**o maior**) | **sumiu da lista** |
+| código ARM64 escrito | 2188 B | **12136 B** |
+| registros no cache | 138 | **253** |
+| recusadas na 1ª instrução | 586 | **427** |
+| executados / retornaram | 138 / 138 | 253 / **169** |
+| com falha | 0 | **84** |
+
+Os 84 são o ponto que precisa de leitura cuidadosa, porque à primeira vista parece
+regressão e não é. **`last fault signal: 5` — SIGTRAP, o `BRK` da checagem de
+limite.** São funções que antes eram *recusadas* e portanto nunca executavam; agora
+traduzem, rodam, e param no primeiro ponteiro que aponta para fora da imagem do
+módulo — que é o que se espera quando o argumento de chamada é `0`, um valor que
+ninguém escolheu. O mecanismo de segurança disparando, não código errado.
+
+Mas "o último sinal foi 5" prova que **um** dos 84 foi SIGTRAP, não que os 84 foram.
+Por isso a contagem foi separada em `trap(s) from the bounds check` contra
+`other fault(s)`, e o passo de asserção da CI agora **exige** que o segundo seja
+zero. Sem isso, um bug de geração de código se esconderia dentro de um número que é
+*esperado* crescer junto com a cobertura — que é exatamente o tipo de asserção que
+este projeto já viu mentir quatro vezes.
+
+A linha nova foi escrita para não colidir com nenhum padrão que a CI já procura:
+`faulted: <n>` ali seria casado pelo padrão `'faulted: *[0-9]+'`, e como ele pega a
+**última** ocorrência, a asserção passaria a ler outra linha em silêncio. Verificado
+empiricamente contra os cinco padrões existentes. E a extração dos dois números é
+tolerante a vazio — diferente de `need_num`, que falha duro — porque aqui vazio
+significa "nada falhou", o caso bom; o buraco que isso abriria (a linha sumir e
+`crashed` ler 0 indevidamente) é fechado exigindo que as partes somem o total
+sempre que o total for diferente de zero. Os quatro cenários foram rodados contra
+logs sintéticos: o real passa, um crash de verdade falha, um breakdown que não fecha
+falha, e zero falhas sem a linha passa.
+
 Suite do projeto: **962**.
 
 ### Não feito
