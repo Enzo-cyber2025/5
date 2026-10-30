@@ -399,6 +399,13 @@ static exec_outcome exec_one(const void *code, uint32_t code_len, void *imgbase,
     if ((gtop >> 16) & 0xFFFFu) prog[n++] = a64_movk_x(14u, (uint16_t)((gtop >> 16) & 0xFFFFu), 16);
     if ((gtop >> 32) & 0xFFFFu) prog[n++] = a64_movk_x(14u, (uint16_t)((gtop >> 32) & 0xFFFFu), 32);
     if ((gtop >> 48) & 0xFFFFu) prog[n++] = a64_movk_x(14u, (uint16_t)((gtop >> 48) & 0xFFFFu), 48);
+    /* Guest RBP, same value as guest RSP - see build_trampoline in test_translate.c.
+     * A function that reads [rbp-8] without establishing a frame would otherwise
+     * dereference whatever this process left in X15. */
+    prog[n++] = a64_movz_x(15u, (uint16_t)(gtop & 0xFFFFu));
+    if ((gtop >> 16) & 0xFFFFu) prog[n++] = a64_movk_x(15u, (uint16_t)((gtop >> 16) & 0xFFFFu), 16);
+    if ((gtop >> 32) & 0xFFFFu) prog[n++] = a64_movk_x(15u, (uint16_t)((gtop >> 32) & 0xFFFFu), 32);
+    if ((gtop >> 48) & 0xFFFFu) prog[n++] = a64_movk_x(15u, (uint16_t)((gtop >> 48) & 0xFFFFu), 48);
     {
         uint64_t ib = (uint64_t)(uintptr_t)imgbase;
         prog[n++] = a64_movz_x(19u, (uint16_t)(ib & 0xFFFFu));

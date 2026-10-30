@@ -1742,10 +1742,42 @@ static void test_guest_stack_executes(void)
               "SIGSEGV at the arena's guard page", sig);
     }
 
+    /* A frame-pointer-relative read in a function that never establishes a frame.
+     *
+     * This is the case the 19 SIGSEGVs were. Every other test here either builds a
+     * frame first (`push rbp; mov rbp,rsp`) or uses `lea`, which computes an address
+     * without dereferencing it and so returns a garbage *value* from a garbage X15
+     * instead of faulting. Only a bare load through RBP distinguishes an
+     * uninitialised frame pointer from an initialised one.
+     *
+     * The slot is pre-filled so the assertion is about more than survival: a
+     * trampoline that set X15 to any other in-arena address would still return
+     * cleanly and load the wrong slot. */
+    {
+        static const uint8_t g[] = { 0x48,0x8B,0x45,0xF8, 0xC3 };  /* mov rax,[rbp-8] */
+        const uint64_t want = 0x0BADF00DDEADBEEFULL;
+        tr_func f;
+        *(uint64_t *)(uintptr_t)(a.top - 8u) = want;
+        CHECK(tr_translate_function(g, sizeof(g), IMAGE_BASE, NULL, NULL, &f) == TR_OK,
+              "mov rax,[rbp-8] did not translate");
+        fflush(stdout);
+        if (run_guest("bare [rbp-8] load", g, sizeof(g), &a, 0u, &r, &sig)) {
+            CHECK(sig == 0,
+                  "reading [rbp-8] with no frame established ended with signal %d: "
+                  "guest RBP was not initialised, so the load went to whatever the "
+                  "process left in X15", sig);
+            CHECK(r == want,
+                  "loaded %#llx, expected the qword placed at the arena top - a "
+                  "frame pointer set to any other in-arena address passes the "
+                  "signal check and still reads the wrong slot",
+                  (unsigned long long)r);
+        }
+    }
+
     gs_free(&a);
     printf("  EXECUTED ON aarch64: guest stack model - locals, exact stack "
-           "arithmetic, push/pop agreement, and a runaway contained by a guard "
-           "page\n");
+           "arithmetic, push/pop agreement, a runaway contained by a guard "
+           "page, and a frame-pointer read with no frame established\n");
 }
 #else
 static void test_guest_stack_executes(void)
