@@ -152,8 +152,8 @@ api_report: api_report.c api_map.c pe_load.c api_map.h
 pe_info: pe_info.c pe_load.c pe_load.h
 	$(CC) $(CFLAGS) -o $@ pe_info.c pe_load.c
 
-test_emit_exec: test_emit_exec.c
-	$(CC) $(CFLAGS) -o $@ test_emit_exec.c
+test_emit_exec: test_emit_exec.c a64_emit.c
+	$(CC) $(CFLAGS) -o $@ test_emit_exec.c a64_emit.c
 
 clean:
 	rm -f $(TARGETS) *.o *.ptc *.ptc.tmp.* $(FIXTURE) $(FIXTURE).report \

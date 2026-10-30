@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include "a64_emit.h"
 #include <stdlib.h>
 
 #if defined(__aarch64__)
@@ -72,6 +73,16 @@ static void test_encodings_are_what_the_manual_says(void)
     CHECK(enc_add_x_imm(2, 1, 0x10) == 0x91004022u,
           "add x2,x1,#0x10 = 0x%08X, expected 0x91004022", enc_add_x_imm(2, 1, 0x10));
     CHECK(enc_ret() == 0xD65F03C0u, "ret = 0x%08X", enc_ret());
+
+    /* BRK #imm16 is 1101_0100_001 | imm16<<5 | 00000, so BRK #0 is 0xD4200000 and
+     * the guest-out-of-bounds tag 0x9F1E shifts to 0x13E3C0, giving 0xD433E3C0.
+     * Pinned against those literals rather than against a local enc_brk(): the
+     * emitter is the thing under test here, and a helper that shares its expression
+     * would only prove the function agrees with itself. */
+    CHECK(a64_brk(0) == 0xD4200000u, "brk #0 = 0x%08X, expected 0xD4200000",
+          a64_brk(0));
+    CHECK(a64_brk(A64_BRK_GUEST_OOB) == 0xD433E3C0u,
+          "brk #0x9F1E = 0x%08X, expected 0xD433E3C0", a64_brk(A64_BRK_GUEST_OOB));
 }
 
 #if defined(__aarch64__)

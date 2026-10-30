@@ -76,6 +76,9 @@ uint32_t a64_blr(unsigned rn)
     return 0xD63F0000u | ((uint32_t)(rn & 31u) << 5);
 }
 
+uint32_t a64_brk(uint16_t imm16)
+{ return 0xD4200000u | ((uint32_t)(imm16 & 0xFFFFu) << 5); }
+
 /* Derived from the STP/LDP pre- and post-indexed forms, then decomposed field by
  * field to check: opc=10 (64-bit), 101, V=0, L, imm7 as a signed multiple of 8,
  * Rt2, Rn, Rt.

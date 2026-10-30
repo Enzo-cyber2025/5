@@ -1450,11 +1450,18 @@ static void test_guest_stack_translation(void)
               "absolute-addressing", tr_reason_name(f.reason));
     }
     {
-        /* A dereference through a general register: no guest memory model. */
+        /* A dereference through a general register IS translatable now, but this
+         * entry point supplies an image base and no image *size*, and a bound with
+         * no extent to check against is not a bound. So the refusal here is about the
+         * missing size, not about a missing memory model - a different reason with a
+         * different fix, which is the whole point of giving it one. */
         static const uint8_t g[] = { 0x48,0x8B,0x01, 0xC3 };
         st = tr_translate_function(g, sizeof(g), IMAGE_BASE, NULL, NULL, &f);
         CHECK(st == TR_UNSUPPORTED, "mov rax,[rcx] returned %s", tr_status_name(st));
-        CHECK(f.reason == TRR_GUEST_MEM, "reported as %s", tr_reason_name(f.reason));
+        CHECK(f.reason == TRR_IMG_BASE,
+              "reported as %s, expected image-base-unknown: a register-base access "
+              "needs the image extent, which this entry point does not take",
+              tr_reason_name(f.reason));
     }
     {
         /* An index register makes it scaled addressing: mov rax,[rsp+rax]. */
@@ -2461,12 +2468,75 @@ static void test_image_relative_translation(void)
           "a target below the image base was reported as %s, expected "
           "image-base-unknown", tr_reason_name(f.reason));
 
-    /* The other two addressing kinds keep their own reasons. */
+    /* A dereference through a general register now translates, because this entry
+     * point supplies both the base and the extent.
+     *
+     * The words worth pinning are the ones that do not depend on the constants: the
+     * compare, the two branch displacements, the host-base add, the access and the
+     * trap. Both displacements are literals in the emitter and are only correct for
+     * that exact sequence, so a refactor that inserts or reorders a word breaks them
+     * silently - both words stay valid encodings and the function still returns.
+     *
+     * The trap is located by scanning rather than by an offset from the end, because
+     * the guest `ret` and the epilogue are emitted after it. */
     {   static const uint8_t rcx[] = { 0x48, 0x8B, 0x01, 0xC3 };
         st = tr_translate_function_img(rcx, sizeof rcx, img_va + code_rva, 0,
                                        img_va, img_sz, NULL, NULL, &f);
+        CHECK(st == TR_OK, "mov rax,[rcx] returned %s (%s)", tr_status_name(st),
+              f.detail ? f.detail : "?");
+        if (st == TR_OK) {
+            size_t brk_found = 0, brk_at = 0;
+            CHECK(f.needs_imgbase == 1,
+                  "a register-base access reads X19 but did not ask for the record, "
+                  "so the prologue would never load it");
+            /* Word 0 is not the access: needs_imgbase earned an X19/X20 record, so
+             * the prologue comes first. Asserting that ties the flag to code that is
+             * actually emitted, which the flag on its own does not prove. */
+            CHECK(f.words[0] == a64_stp_imgbase_push(),
+                  "word 0 is 0x%08X, expected the image-base record STP X19,X20 "
+                  "0x%08X", f.words[0], a64_stp_imgbase_push());
+            /* The guest VA is formed with a MOV because the displacement is zero. */
+            {   size_t mov_seen = 0;
+                for (size_t i = 0; i < f.n; i++)
+                    if (f.words[i] == a64_mov_reg(16u, 1u)) mov_seen = 1;
+                CHECK(mov_seen == 1,
+                      "no MOV X16,X1 (0x%08X) anywhere: a zero displacement should "
+                      "copy the base register, not add an immediate to it",
+                      a64_mov_reg(16u, 1u));
+            }
+            for (size_t i = 0; i < f.n; i++)
+                if (f.words[i] == a64_brk(A64_BRK_GUEST_OOB)) { brk_at = i; brk_found = 1; }
+            CHECK(brk_found == 1, "no bounds-check trap anywhere in the %zu emitted words",
+                  f.n);
+            if (brk_found == 1 && brk_at >= 5) {
+                CHECK(f.words[brk_at-5] == a64_subs_reg(A64_XZR, 17u, 16u),
+                      "the compare is 0x%08X, expected CMP X17,X16 0x%08X",
+                      f.words[brk_at-5], a64_subs_reg(A64_XZR, 17u, 16u));
+                CHECK(f.words[brk_at-4] == a64_b_cond(A64_HS, 4),
+                      "the bounds branch is 0x%08X, expected B.HS +4 0x%08X: from "
+                      "here +4 is the BRK, past the ADD, the access and the skip",
+                      f.words[brk_at-4], a64_b_cond(A64_HS, 4));
+                CHECK(f.words[brk_at-3] == a64_add_reg(17u, 19u, 17u),
+                      "the host address is 0x%08X, expected ADD X17,X19,X17 0x%08X",
+                      f.words[brk_at-3], a64_add_reg(17u, 19u, 17u));
+                CHECK(f.words[brk_at-2] == a64_ldur(0u, 17u, 0),
+                      "the access is 0x%08X, expected LDUR X0,[X17] 0x%08X",
+                      f.words[brk_at-2], a64_ldur(0u, 17u, 0));
+                CHECK(f.words[brk_at-1] == a64_b(2),
+                      "the skip is 0x%08X, expected B +2 0x%08X, which must land on "
+                      "the instruction after the BRK", f.words[brk_at-1], a64_b(2));
+            }
+        }
+    }
+    /* A scaled index is still refused, and on its own wording: what it lacks is a
+     * shift and a second guest register live across the access, not a place for the
+     * pointer to point. Sharing the base-register wording would send the work queue
+     * after a problem that is already solved. */
+    {   static const uint8_t ix[] = { 0x48, 0x8B, 0x04, 0x04, 0xC3 };
+        st = tr_translate_function_img(ix, sizeof ix, img_va + code_rva, 0,
+                                       img_va, img_sz, NULL, NULL, &f);
         CHECK(st == TR_UNSUPPORTED && f.reason == TRR_GUEST_MEM,
-              "mov rax,[rcx] was reported as %s, expected "
+              "mov rax,[rsp+rax] was reported as %s, expected "
               "memory-not-on-guest-stack", tr_reason_name(f.reason));
     }
     {   static const uint8_t ab[] = { 0x48,0x8B,0x04,0x25,0x10,0x00,0x00,0x00,0xC3 };
@@ -2759,10 +2829,72 @@ static void test_image_relative_executes(void)
           "a target outside the image was reported as %s, expected "
           "image-base-unknown", tr_reason_name(f.reason));
 
+    /* ---- 6. a guest pointer in a register, pointing INTO the image ----
+     *
+     * This is the test that validates the two branch displacements, and word-level
+     * assertions cannot do it: a wrong B.HS offset is still a perfectly valid
+     * encoding, and so is a wrong B. If B.HS did not land on the BRK, or if the
+     * skip did not land past it, an in-image pointer would either trap or execute
+     * the trap on the way out. Loading the right value proves both at once. */
+    memset(body, 0, sizeof body);
+    k = 0;
+    body[k++] = 0x48; body[k++] = 0x8B; body[k++] = 0x00;   /* mov rax,[rax] */
+    body[k++] = 0xC3;
+    memcpy(g, body, k); gn = k;
+    st = tr_translate_function_img(g, gn, img_va + code_rva, 0, img_va, img_sz,
+                                   NULL, NULL, &f);
+    CHECK(st == TR_OK, "register-base load returned %s (%s)", tr_status_name(st),
+          f.detail ? f.detail : "?");
+    if (st == TR_OK) {
+        /* arg arrives in X0, which is guest RAX, so the pointer is the argument. */
+        pn = build_trampoline(prog, img_va + d64_rva, a.top, (uint64_t)img,
+                              f.words, f.n);
+        page = code_page(prog, pn, &plen);
+        CHECK(page != NULL, "could not map an executable page");
+        if (page) {
+            ok = exec_generated((uint64_t (*)(void))page, &r, &to, &sig);
+            CHECK(ok && !to && sig == 0,
+                  "an in-image pointer did not run cleanly (ok=%d to=%d sig=%d): a "
+                  "bounds branch landing in the wrong place would stop it here",
+                  ok, to, sig);
+            CHECK(r == 0x1122334455667788ULL,
+                  "loaded %#llx through the bounds check, expected 0x1122334455667788",
+                  (unsigned long long)r);
+            munmap(page, plen); page = NULL;
+        }
+    }
+
+    /* ---- 7. the same instruction with a pointer OUTSIDE the image ----
+     *
+     * The claim is deliberately "it stopped", not "it raised SIGTRAP". Which signal
+     * arrives is not portable - a sanitizer intercepts some of them - and the
+     * property that matters is that an out-of-range guest pointer is stopped instead
+     * of quietly reading whatever the host happens to have at that address and
+     * handing back a plausible looking value. */
+    st = tr_translate_function_img(g, gn, img_va + code_rva, 0, img_va, img_sz,
+                                   NULL, NULL, &f);
+    if (st == TR_OK) {
+        pn = build_trampoline(prog, img_va + img_sz + 0x1000ULL, a.top,
+                              (uint64_t)img, f.words, f.n);
+        page = code_page(prog, pn, &plen);
+        CHECK(page != NULL, "could not map an executable page");
+        if (page) {
+            ok = exec_generated((uint64_t (*)(void))page, &r, &to, &sig);
+            CHECK(!to && sig != 0,
+                  "a pointer one page past the image was NOT stopped (ok=%d to=%d "
+                  "sig=%d) - the bounds check let an out-of-range guest address "
+                  "through", ok, to, sig);
+            munmap(page, plen); page = NULL;
+        }
+    }
+
     gs_free(&a);
     munmap(img, img_sz);
     printf("  EXECUTED ON aarch64: RIP-relative image access - a 64-bit load, a "
            "32-bit load that zero-extends, and a store that lands at its RVA\n");
+    printf("  EXECUTED ON aarch64: a guest pointer in a register - an in-image "
+           "address loads exactly, an out-of-image address is stopped by the "
+           "bounds check\n");
 }
 #else
 static void test_image_relative_executes(void)

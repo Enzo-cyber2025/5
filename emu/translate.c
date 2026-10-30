@@ -9,6 +9,10 @@
 #define HOST_RAX 0u      /* guest RAX -> X0 */
 #define HOST_RCX 1u      /* guest RCX -> X1 */
 #define HOST_SCRATCH 16u /* X16 / IP0: free for a translator to clobber */
+#define HOST_TMP2    17u /* X17 / IP1: a second short-lived scratch. Like X16 it is
+                          * caller-clobbered, so it may hold a value only between
+                          * being written and being consumed inside one guest
+                          * instruction's emission - never across a call. */
 #define HOST_RSP     14u /* guest RSP -> X14, callee-saved in the AAPCS */
 #define HOST_RBP     15u /* guest RBP -> X15, likewise */
 #define HOST_IMGBASE 19u /* X19: host address the guest module image is mapped at.
@@ -276,6 +280,8 @@ typedef enum {
     P_PUSH_REG, P_POP_REG, P_PUSH_IMM, P_LEAVE, P_ST_LOCAL, P_LD_LOCAL,
     /* the module's own image, reached by a RIP-relative operand */
     P_LD_IMG, P_ST_IMG,
+    /* a guest pointer held in a general register, bounds-checked at run time */
+    P_LD_GUEST, P_ST_GUEST,
     /* lea: rd = rn + delta, with no memory touched */
     P_LEA_IMM
 } plan_op;
@@ -287,6 +293,7 @@ typedef struct {
     uint32_t guest_len;
     unsigned rd, rn, rm;   /* host registers */
     uint64_t const_val;    /* MOV_IMM value, or the resolved host call target */
+    uint64_t img_size;     /* P_LD_GUEST/P_ST_GUEST: extent the RVA is checked against */
     int64_t  delta;        /* effective signed immediate for ADD/SUB/CMP imm */
     unsigned cond;         /* AArch64 condition code, for P_JCC */
     uint64_t target_va;    /* P_JCC and P_JMP */
@@ -359,6 +366,32 @@ static uint32_t const_words_w(uint64_t v, int w32)
 }
 
 static uint32_t const_words(uint64_t v) { return const_words_w(v, 0); }
+
+/* How many words a bounds-checked register-base access emits. It has to agree
+ * exactly with the emission below, because layout reserves the space before any
+ * word is written and a mismatch surfaces as TRR_INTERNAL rather than as silently
+ * truncated code.
+ *
+ * The shape is: guest VA into X16; subtract the image base into X17; one unsigned
+ * compare against the image size; branch to a trap; add the host base; access;
+ * branch over the trap; the trap itself.
+ *
+ * That the compare is unsigned and single is the point of the design. Subtracting
+ * the image base from a guest VA *below* the base wraps to a value near 2^64, which
+ * is certainly >= any real image size, so one CMP + one B.HS rejects both ends of
+ * the range. Written the obvious way it would need two compares and two branches. */
+static uint32_t guest_mem_words(int64_t d, uint64_t base_va, uint64_t size)
+{
+    uint64_t mag = (d < 0) ? (uint64_t)(-(d + 1)) + 1u : (uint64_t)d;
+    uint32_t va  = (d == 0 || mag <= 0xFFFu) ? 1u : const_words(mag) + 1u;
+    return va + const_words(base_va) + 1u   /* SUB X17, X16, X17 */
+              + const_words(size)    + 1u   /* CMP X17, X16      */
+              + 1u                          /* B.HS -> trap      */
+              + 1u                          /* ADD X17, X19, X17 */
+              + 1u                          /* the access        */
+              + 1u                          /* B -> past trap    */
+              + 1u;                         /* BRK               */
+}
 
 static int pushf(tr_func *o, uint32_t insn)
 {
@@ -443,7 +476,7 @@ static void blame(tr_func *out, const plan *p, uint32_t depth)
  *               point. REX.B must be applied before comparing, because rm=100
  *               with REX.B is R12, not RSP, and rm=101 with REX.B is R13.
  */
-typedef enum { MB_NONE = 0, MB_RIP_REL, MB_ABS, MB_STACK, MB_OTHER } mem_base_kind;
+typedef enum { MB_NONE = 0, MB_RIP_REL, MB_ABS, MB_STACK, MB_OTHER, MB_INDEX } mem_base_kind;
 
 static mem_base_kind classify_mem_base(const x86_insn *in, unsigned *guest_base)
 {
@@ -457,16 +490,19 @@ static mem_base_kind classify_mem_base(const x86_insn *in, unsigned *guest_base)
          * actually missing is a general guest register as well - and a work queue
          * that believes the first would implement absolute addressing and unblock
          * nothing. */
-        if (in->sib_index != 4 || in->rex_x) return MB_OTHER;  /* an index register */
-        if (in->sib_scale != 0) return MB_OTHER;               /* or a scale on it  */
+        if (in->sib_index != 4 || in->rex_x) return MB_INDEX;  /* an index register */
+        if (in->sib_scale != 0) return MB_INDEX;               /* or a scale on it  */
         if (in->mod == 0 && in->sib_base == 5) return MB_ABS;
         b = (unsigned)in->sib_base | (in->rex_b ? 8u : 0u);
     } else {
         if (in->mod == 0 && in->rm == 5) return MB_RIP_REL;
         b = (unsigned)in->rm | (in->rex_b ? 8u : 0u);
     }
+    *guest_base = b;                       /* set for MB_OTHER too: the register-base
+                                            * access needs to know which guest register
+                                            * holds the pointer, and REX.B is already
+                                            * folded into b above. */
     if (b != 4u && b != 5u) return MB_OTHER;      /* not RSP and not RBP */
-    *guest_base = b;
     return MB_STACK;
 }
 
@@ -496,7 +532,8 @@ static int plan_uses_gstack(const plan *p)
  * set up. Only the two image accesses read X19, so only they count. */
 static int plan_uses_imgbase(const plan *p)
 {
-    return p->op == P_LD_IMG || p->op == P_ST_IMG;
+    return p->op == P_LD_IMG || p->op == P_ST_IMG
+        || p->op == P_LD_GUEST || p->op == P_ST_GUEST;
 }
 
 /* Plans a conditional jump from its condition nibble. Both encodings call this,
@@ -747,10 +784,15 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
                           "encoding, so it is refused rather than guessed at";
             return TR_UNSUPPORTED;
         }
+        if (k == MB_INDEX) {
+            out->reason = TRR_GUEST_MEM;
+            out->detail = "lea with a scaled index register: needs a shift and a "
+                          "second guest register";
+            return TR_UNSUPPORTED;
+        }
         if (k != MB_STACK) {
             out->reason = TRR_GUEST_MEM;
-            out->detail = "lea from a base this translator does not model, or with "
-                          "a scaled index";
+            out->detail = "lea from a base this translator does not model";
             return TR_UNSUPPORTED;
         }
         p->op = P_LEA_IMM;
@@ -997,12 +1039,52 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
                           "relocation rather than a base register";
             return TR_UNSUPPORTED;
         }
-        if (k != MB_STACK) {
+        /* A scaled index is refused on its own reason, and the wording matters: it
+         * is not "a guest pointer with nowhere to point", which the base-register
+         * case below now solves. It needs a shift and a second guest register held
+         * live across the access, which is a different increment. Labelling the two
+         * alike puts the wrong item on the work queue. */
+        if (k == MB_INDEX) {
             out->reason = TRR_GUEST_MEM;
-            out->detail = "memory operand whose base is a general register: a "
-                          "guest pointer, and there is no general guest memory "
-                          "model yet";
+            out->detail = "a scaled index register: needs a shift and a second "
+                          "guest register live across the access";
             return TR_UNSUPPORTED;
+        }
+
+        /* A guest pointer in a general register. Unlike the RIP-relative case above,
+         * the address is not knowable during translation, so the bound cannot be
+         * settled here - it has to be checked in the emitted code on every access.
+         *
+         * The check is against the one region this model actually maps: the module's
+         * own image. A pointer into a heap, another module, or the guest stack fails
+         * it and takes the trap, which is the honest outcome - there is no general
+         * guest address space yet, and inventing a plausible value for one would be
+         * worse than stopping. What this buys today is that an in-image pointer (a
+         * global reached indirectly, a jump-table entry, a string constant passed in
+         * a register) is translated exactly instead of refused. */
+        if (k == MB_OTHER) {
+            unsigned bhost;
+            if (image_base_va == 0 || image_size == 0) {
+                out->reason = TRR_IMG_BASE;
+                out->detail = "a register-base operand is translatable, but the "
+                              "module's image base and size were not supplied";
+                return TR_UNSUPPORTED;
+            }
+            /* gbase already has REX.B folded in by classify_mem_base. */
+            if (!map_guest_reg(gbase, 0, &bhost)) {
+                out->reason = TRR_REGISTER;
+                out->detail = "memory operand: base register outside the mapped set";
+                return TR_UNSUPPORTED;
+            }
+            p->op        = load ? P_LD_GUEST : P_ST_GUEST;
+            p->rd        = vreg;
+            p->rn        = bhost;
+            p->delta     = d;
+            p->const_val = image_base_va;
+            p->img_size  = image_size;
+            p->w32       = w32;
+            p->words     = guest_mem_words(d, image_base_va, image_size);
+            return TR_OK;
         }
 
         /* Which displacements are legitimate depends on the base, and getting
@@ -1427,6 +1509,72 @@ tr_status tr_translate_function_img(const uint8_t *code, size_t code_len,
                           : a64_str_reg(p->rd, HOST_IMGBASE, HOST_SCRATCH));
             if (!emit_const_f(out, HOST_SCRATCH, p->const_val)) return TR_OVERFLOW;
             if (!pushf(out, acc)) return TR_OVERFLOW;
+            break;
+        }
+
+        case P_LD_GUEST:
+        case P_ST_GUEST: {
+            /* A guest pointer in a general register, dereferenced against the one
+             * region this model maps. Word for word this must match
+             * guest_mem_words(); the branch displacements below are literals that
+             * are only correct for that exact sequence, so the two are deliberately
+             * written next to each other in shape.
+             *
+             * No absolute host address appears anywhere in it. The image base and
+             * size are *guest* constants - the same kind of value the RIP-relative
+             * case already bakes in - and the host base arrives in X19 at run time,
+             * so the emitted words stay valid in any process that maps the image
+             * anywhere. That is what keeps this in the persistent cache. */
+            uint64_t mag = (p->delta < 0) ? (uint64_t)(-(p->delta + 1)) + 1u
+                                          : (uint64_t)p->delta;
+            uint32_t access;
+
+            /* 1. the guest virtual address into X16. */
+            if (p->delta == 0) {
+                if (!pushf(out, a64_mov_reg(HOST_SCRATCH, p->rn))) return TR_OVERFLOW;
+            } else if (mag <= 0xFFFu) {
+                if (!pushf(out, (p->delta < 0)
+                        ? a64_sub_x_imm(HOST_SCRATCH, p->rn, (uint16_t)mag)
+                        : a64_add_x_imm(HOST_SCRATCH, p->rn, (uint16_t)mag)))
+                    return TR_OVERFLOW;
+            } else {
+                /* Beyond the 12-bit immediate field: materialise the magnitude and
+                 * use the register form. Truncating it instead would address a
+                 * different guest location that still looks valid. */
+                if (!emit_const_f(out, HOST_SCRATCH, mag)) return TR_OVERFLOW;
+                if (!pushf(out, (p->delta < 0)
+                        ? a64_sub_reg(HOST_SCRATCH, p->rn, HOST_SCRATCH)
+                        : a64_add_reg(HOST_SCRATCH, p->rn, HOST_SCRATCH)))
+                    return TR_OVERFLOW;
+            }
+
+            /* 2. X17 = guest VA - image base. A VA below the base wraps. */
+            if (!emit_const_f(out, HOST_TMP2, p->const_val)) return TR_OVERFLOW;
+            if (!pushf(out, a64_sub_reg(HOST_TMP2, HOST_SCRATCH, HOST_TMP2)))
+                return TR_OVERFLOW;
+
+            /* 3. one unsigned compare rejects both ends, because the wrapped value
+             *    from a VA below the base is >= any real image size. */
+            if (!emit_const_f(out, HOST_SCRATCH, p->img_size)) return TR_OVERFLOW;
+            if (!pushf(out, a64_subs_reg(A64_XZR, HOST_TMP2, HOST_SCRATCH)))
+                return TR_OVERFLOW;
+            /* -> the BRK, which sits 4 words ahead: ADD, access, B, BRK. */
+            if (!pushf(out, a64_b_cond(A64_HS, 4))) return TR_OVERFLOW;
+
+            /* 4. host address, then the access itself. */
+            if (!pushf(out, a64_add_reg(HOST_TMP2, HOST_IMGBASE, HOST_TMP2)))
+                return TR_OVERFLOW;
+            access = (p->op == P_LD_GUEST)
+                ? (p->w32 ? a64_ldur_w(p->rd, HOST_TMP2, 0)
+                          : a64_ldur  (p->rd, HOST_TMP2, 0))
+                : (p->w32 ? a64_stur_w(p->rd, HOST_TMP2, 0)
+                          : a64_stur  (p->rd, HOST_TMP2, 0));
+            if (!pushf(out, access)) return TR_OVERFLOW;
+
+            /* 5. step over the trap: BRK is 1 word ahead, the next guest
+             *    instruction is 2. */
+            if (!pushf(out, a64_b(2))) return TR_OVERFLOW;
+            if (!pushf(out, a64_brk(A64_BRK_GUEST_OOB))) return TR_OVERFLOW;
             break;
         }
 

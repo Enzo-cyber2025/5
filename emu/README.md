@@ -975,13 +975,84 @@ que afirma um comportamento que deixou de existir é pior do que nenhum.
 
 Suite do projeto: **950**.
 
+### Dereferência por registrador geral, com checagem de limite (`8B`×704)
+
+O maior bloqueador medido no jogo era `8B` — `mov r, r/m` com operando de memória
+cuja base é um registrador geral. A recusa dizia "um ponteiro do guest, e ainda não
+há modelo geral de memória do guest". Agora há um, com um escopo declarado.
+
+**Por que checar o limite, e não apenas emitir o acesso.** Um `LDR` do hospedeiro
+sobre um valor do guest sem checagem não falha de modo visível: ele lê o que o
+hospedeiro por acaso tem naquele endereço e devolve um número de aparência plausível
+que **não é o do guest**. Nada depois percebe. É o mesmo motivo pelo qual o acesso
+RIP-relativo já era limitado contra `image_size` durante a tradução — a diferença é
+que ali o endereço é conhecido na tradução, e aqui só existe em tempo de execução,
+então a checagem tem que estar no código emitido, em cada acesso.
+
+**Uma comparação sem sinal cobre as duas pontas.** Subtrair a base da imagem de um VA
+do guest *abaixo* da base produz um valor que dá a volta para perto de 2^64, que é
+certamente `>=` qualquer tamanho real de imagem. Então um `CMP` + um `B.HS` rejeita
+tanto "abaixo da base" quanto "além do fim". Escrito do jeito óbvio seriam duas
+comparações e dois desvios.
+
+```
+X16 = Xrn + disp            ; o VA do guest
+X17 = X16 - base_da_imagem  ; dá a volta se estiver abaixo
+X16 = tamanho_da_imagem
+CMP X17, X16 ; B.HS -> BRK   ; uma checagem, duas pontas
+X17 = X19 + X17             ; endereço do hospedeiro
+LDUR/STUR rd, [X17]
+B -> depois do BRK
+BRK #0x9F1E                 ; parada controlada, com etiqueta
+```
+
+Nenhum endereço absoluto do hospedeiro aparece aí. Base e tamanho da imagem são
+constantes do **guest** — o mesmo tipo de valor que o caso RIP-relativo já embute —
+e a base do hospedeiro chega em X19 em tempo de execução, então as palavras emitidas
+continuam válidas em qualquer processo que mapeie a imagem em qualquer lugar. É o que
+mantém isso no cache persistente.
+
+**O que isto não é.** A única região mapeada neste modelo é a imagem do próprio
+módulo. Um ponteiro para o heap, para outro módulo ou para a pilha do guest falha a
+checagem e cai no `BRK`. Isso não é "memória geral funcionando": é *ponteiros dentro
+da imagem* traduzidos exatamente (um global alcançado indiretamente, uma entrada de
+tabela de saltos, uma constante de string passada em registrador), e todo o resto
+parando em voz alta em vez de ler lixo em silêncio.
+
+**Custo, declarado.** São ~12 palavras por acesso no caso típico, até ~20 no pior.
+Fixar a base e o tamanho em registradores callee-saved (X21/X22, carregados uma vez
+no prólogo) amortizaria isso a quase zero por acesso; ficou como trabalho futuro
+porque muda o prólogo e o orçamento de registradores, e a versão correta vem antes da
+versão rápida.
+
+**`MB_INDEX` separado de `MB_OTHER`.** Um índice escalado (`[rsp+rax]`, `[rax*2+d]`)
+continua recusado, mas agora com motivo próprio: o que lhe falta é um deslocamento de
+bits e um segundo registrador do guest vivo durante o acesso — não um lugar para o
+ponteiro apontar, que é o problema que o caso acima acabou de resolver. Rotular os
+dois igual mandaria a fila de trabalho atrás de um problema já resolvido. É a mesma
+lição do `lea`, aplicada antes de errar de novo.
+
+**Os testes que importam aqui.** As duas constantes de desvio (`B.HS +4` e `B +2`)
+são literais no emissor e só valem para aquela sequência exata. Um desvio errado
+**continua sendo uma codificação perfeitamente válida**, então assertivas de palavra
+não pegam isso: a função ainda retorna. O que pega é executar — se o `B.HS` não cair
+no `BRK`, ou se o pulo não passar dele, um ponteiro dentro da imagem vai parar ou
+executar a armadilha na saída. Carregar o valor certo prova os dois de uma vez. A
+seção 7 faz o contrário: um ponteiro uma página além do fim **tem que parar**, e a
+assertiva é "parou" (`sig != 0`), não "chegou SIGTRAP" — qual sinal chega não é
+portável, um sanitizer intercepta alguns.
+
+Suite do projeto: **962**.
+
 ### Não feito
 
 Operandos de memória **fora da pilha do guest e da própria imagem do módulo**: o
 acesso RIP-relativo a globais agora é traduzido por RVA contra X19, mas uma
-dereferência por registrador geral (`[rcx]`) segue sem modelo — e com ela o `lea`
-de base geral ou índice escalado, que é recusado pelo mesmo motivo —, e o
-endereçamento absoluto `disp32` segue recusado porque precisa de relocação. Também falta o
+a dereferência por registrador geral (`[rcx]`) só alcança a imagem do próprio
+módulo: um ponteiro para heap, outro módulo ou a pilha do guest cai numa parada
+controlada, porque não existe um espaço de endereços geral do guest. `lea` de base
+geral ou índice escalado segue recusado, e o endereçamento absoluto `disp32` segue
+recusado porque precisa de relocação. Também falta o
 mapeamento real da imagem com relocações aplicadas — o teste mapeia um buffer e
 passa sua base, que é o que a emissão precisa, mas não é um loader. `call rel32`
 direto para outra

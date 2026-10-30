@@ -44,6 +44,16 @@ uint32_t a64_sub_x_imm(unsigned rd, unsigned rn, uint16_t imm12);
  * an import table takes once the address is resolved. */
 uint32_t a64_blr(unsigned rn);
 
+/* BRK #imm16 - the software breakpoint, raising SIGTRAP. This is the controlled
+ * trap for a guest pointer that fails its bounds check. The alternative is not
+ * "skip the check": an unchecked host dereference of a guest value reads whatever
+ * the host happens to have at that address and returns a plausible looking number
+ * that is not the guest's, and nothing downstream would ever notice. A trap is
+ * loud, and its immediate is a tag so a runtime can tell one kind of stop from
+ * another. */
+#define A64_BRK_GUEST_OOB 0x9F1Eu
+uint32_t a64_brk(uint16_t imm16);
+
 /* STP X29, X30, [SP, #-16]! and LDP X29, X30, [SP], #16 - the standard frame
  * record push and pop.
  *
