@@ -1081,6 +1081,61 @@ falha, e zero falhas sem a linha passa.
 
 Suite do projeto: **962**.
 
+### A ponte de ABI: chamar uma função hospedeira de verdade (`TR_ABI_HOST`)
+
+Até aqui todo `call [rip+IAT]` emitia `BLR` passando o estado de registradores do
+guest **inalterado**. Isso é correto quando o destino é código do guest traduzido,
+que espera a convenção x86-64. Não é correto para uma função hospedeira real, que
+espera seus argumentos em X0..X3 pela AAPCS enquanto o guest os deixou em
+RCX,RDX,R8,R9.
+
+O resolver agora pode marcar o endereço com `TR_ABI_HOST` (bit 0 — endereços de
+código são alinhados a 4 bytes, então o bit está sempre livre). Sem a marca, o
+comportamento é exatamente o de antes: nenhum resolver existente muda de
+significado, e um destino que precisa da ponte não pode ser registrado por acidente
+no caminho antigo.
+
+Com a marca, o ponto de chamada emite:
+
+```
+5× STP  X3,X4 / X5,X15 / X10,X11 / X12,X13 / X14,X14, [SP,#-16]!
+MOV X16,X1 ; MOV X17,X2 ; MOV X0,X16 ; MOV X1,X17 ; MOV X2,X6 ; MOV X3,X7
+MOVZ/MOVK X16, destino ; BLR X16
+5× LDP  na ordem inversa
+```
+
+**Os nove registradores salvos são uma correção, não um refinamento.** `translate.h`
+e `a64_emit.h` afirmavam que X14 e X15 são *callee-saved* na AAPCS, e que portanto
+uma função hospedeira preservaria o ponteiro de pilha do guest de graça. **Está
+errado**: a AAPCS64 torna callee-saved apenas X19–X28; X0–X18 são temporários do
+chamador. Uma função hospedeira destrói o RSP do guest (X14), o RBP (X15) e todos
+os callee-saved do x86-64 que mapeiam abaixo de X19 — RBX, RSI, RDI, R12–R15.
+
+A afirmação errada sobreviveu porque era **portante para um recurso que ainda não
+existia**: nenhuma chamada de ABI hospedeira tinha sido emitida, então nada nunca
+observou o ponteiro de pilha do guest voltando como lixo. É o mesmo formato de bug
+que este projeto já encontrou três vezes — um ramo de aceitação morto esconde um
+erro logo abaixo dele, e só medir o que é recusado (ou, aqui, executar o que nunca
+foi chamado) revela.
+
+O valor de retorno não precisa de ponte no sentido inverso: a AAPCS devolve em X0,
+que é RAX.
+
+**Não ponteado:** o quinto argumento em diante, que o x86-64 passa na pilha do
+guest. Um shim que precise deles toma quatro ou menos e fornece o resto por conta
+própria — que é para que serve um wrapper, e é como o Wine faz.
+
+**Por que os testes separam as duas propriedades.** Ordem de argumentos e valor de
+retorno são verificados **executando**: um shuffle errado dá uma soma errada, e não
+há como uma ponte quebrada acertar por sorte. Preservação de registradores é
+verificada **pelos words**, porque se um callee hospedeiro por acaso não tocar em
+RBX, um teste só de execução passaria com o save/restore ausente. O alvo do teste
+chama uma função opaca com oito argumentos, o que força o compilador a carregar
+X0..X7 — e RBX é X3 — tornando a destruição tão certa quanto C portável permite;
+mesmo assim a garantia vem dos words, não da sorte.
+
+Suite do projeto: **981**.
+
 ### Não feito
 
 Operandos de memória **fora da pilha do guest e da própria imagem do módulo**: o

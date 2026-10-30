@@ -100,24 +100,31 @@
  * holds a resolved call target, or an immediate being pushed, and is free for a
  * translator to clobber between materialising it and using it.
  *
- * X14 and X15 are callee-saved in the AAPCS, so a translation that uses the
- * guest stack saves and restores them as a frame record and a host callee
- * preserves them across a resolved import for free. The record also makes the
+ * A translation that uses the guest stack saves and restores X14 and X15 as a
+ * frame record. The record also makes the
  * guest stack pointer balanced at return unconditionally: whatever adjustment
  * the guest made, the epilogue puts X14 and X15 back to their entry values, so
  * an early return cannot hand a skewed stack pointer to the caller.
  *
- * ---- what a resolved call does NOT do ----
+ * ---- the two kinds of resolved call ----
  *
- * `call [rip+disp32]` emits BLR to the resolved host address, passing the
- * guest's register state unchanged. That is correct when the callee is itself
- * translated guest code sharing this mapping, which is what the pipeline test
- * exercises. It is NOT correct for a real host function, which expects its
- * arguments in X0..X7 by the AAPCS while the guest left them in RCX,RDX,R8,R9.
- * Bridging that - moving guest argument registers into host ones, and marshalling
- * guest stack arguments - is a separate piece of work and is not done here. It is
- * stated rather than left to be discovered, because a call that runs and returns
- * a plausible wrong value is the failure mode least likely to be traced back.
+ * An untagged `call [rip+disp32]` emits BLR to the resolved address passing the
+ * guest's register state unchanged, which is correct only when the callee is itself
+ * translated guest code sharing this mapping.
+ *
+ * For a real host function the resolver tags the address with TR_ABI_HOST and the
+ * call site emits the bridge: RCX,RDX,R8,R9 shuffled into the AAPCS positions
+ * X0..X3, and the nine registers a host callee destroys but x86-64 requires
+ * preserved saved and restored around the call.
+ *
+ * Those nine are the correction. This header used to claim X14 and X15 were
+ * callee-saved in the AAPCS, so a host callee would preserve the guest stack and
+ * frame pointers for free. AAPCS64 makes only X19-X28 callee-saved; X0-X18 are
+ * caller-saved temporaries. So a host function destroys guest RSP (X14), RBP (X15)
+ * and every x86-64 callee-saved register mapping below X19 - RBX, RSI, RDI,
+ * R12-R15. The claim was load-bearing for a feature that did not exist yet, which
+ * is the only reason it survived: nothing ever called a host function, so nothing
+ * ever observed the guest stack pointer coming back as garbage.
  */
 #ifndef TRANSLATE_H
 #define TRANSLATE_H
@@ -139,6 +146,21 @@ typedef enum {
  * is not known yet. The loader supplies this: imports are resolved before code
  * runs, which is what makes the target a constant at translation time. */
 typedef uint64_t (*tr_resolve_fn)(uint64_t guest_iat_va, void *user);
+
+/* Tag the resolver ORs into a returned address to say the target is a real host
+ * function following the AAPCS, not translated guest code following the x86-64
+ * convention. Code addresses are at least 4-byte aligned so bit 0 is always free;
+ * the translator masks it off before emitting and uses it to decide whether to
+ * bridge.
+ *
+ * Why a tag rather than a second callback: an untagged return keeps its exact
+ * present meaning, so every existing resolver and test is unaffected, and a target
+ * needing the bridge cannot be registered by accident through the old path.
+ *
+ * Not bridged: the fifth and later arguments, which x86-64 passes on the guest
+ * stack. A shim needing them takes four or fewer parameters and supplies the rest
+ * itself, which is what a wrapper is for. */
+#define TR_ABI_HOST 1u
 
 typedef struct {
     uint32_t    words[TR_MAX_WORDS];

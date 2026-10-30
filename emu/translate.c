@@ -9,6 +9,11 @@
 #define HOST_RAX 0u      /* guest RAX -> X0 */
 #define HOST_RCX 1u      /* guest RCX -> X1 */
 #define HOST_SCRATCH 16u /* X16 / IP0: free for a translator to clobber */
+/* The bridge's fixed cost in words: five STP pre-index pushes, six argument MOVs,
+ * five LDP post-index pops. It must agree exactly with the emission, because layout
+ * reserves the space before any word is written and a mismatch surfaces as
+ * TRR_INTERNAL rather than as silently truncated code. */
+#define ABI_BRIDGE_WORDS 16u
 #define HOST_TMP2    17u /* X17 / IP1: a second short-lived scratch. Like X16 it is
                           * caller-clobbered, so it may hold a value only between
                           * being written and being consumed inside one guest
@@ -298,6 +303,8 @@ typedef struct {
     unsigned cond;         /* AArch64 condition code, for P_JCC */
     uint64_t target_va;    /* P_JCC and P_JMP */
     int      sets_flags;   /* leaves NZCV matching an x86 CMP */
+    int      host_abi;     /* P_CALL_IAT: target is a real host function, so the
+                            * call site emits the AAPCS bridge */
     /* Operand width: 0 for the 64-bit form, 1 for the 32-bit one. A 32-bit x86-64
      * operation zero-extends its result into the full register, and an AArch64
      * W-form zero-extends into the X register, so the two agree without any
@@ -683,9 +690,11 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
             out->reason = TRR_NEEDS_TARGET; out->detail = "no host address known for this import slot yet";
             return TR_NEEDS_TARGET;
         }
+        p->host_abi  = (host & TR_ABI_HOST) != 0u;
+        host        &= ~(uint64_t)TR_ABI_HOST;
         p->op = P_CALL_IAT;
         p->const_val = host;
-        p->words = const_words(host) + 1u;
+        p->words = const_words(host) + 1u + (p->host_abi ? ABI_BRIDGE_WORDS : 0u);
         return TR_OK;
     }
     /* mov r32, imm32 - the shortest and one of the commonest ways to load a
@@ -1591,6 +1600,38 @@ tr_status tr_translate_function_img(const uint8_t *code, size_t code_len,
                 return TR_OVERFLOW;
             break;
         case P_CALL_IAT:
+            if (p->host_abi) {
+                /* Nine registers a host callee destroys and x86-64 requires
+                 * preserved: RBX=X3, RSI=X4, RDI=X5, R12=X10, R13=X11, R14=X12,
+                 * R15=X13, RBP=X15 and RSP=X14. Five pairs of 16 bytes keeps the
+                 * host SP 16-byte aligned at the call, which AAPCS64 requires. The
+                 * last pair stores X14 twice instead of inventing a single-register
+                 * form: both slots hold the same value, the pop restores it, and it
+                 * costs one redundant store rather than a new emitter. */
+                static const unsigned sv[5][2] = {
+                    { 3u, 4u }, { 5u, 15u }, { 10u, 11u }, { 12u, 13u }, { 14u, 14u }
+                };
+                for (unsigned k = 0; k < 5u; k++)
+                    if (!pushf(out, a64_stp_pre(sv[k][0], sv[k][1], 31u, -16)))
+                        return TR_OVERFLOW;
+                /* Guest RCX,RDX,R8,R9 are X1,X2,X6,X7; the AAPCS wants X0..X3. Two
+                 * temporaries are needed because X1 and X2 are each both a source
+                 * and a destination. Both are dead before the target is loaded. */
+                if (!pushf(out, a64_mov_reg(HOST_SCRATCH, 1u))) return TR_OVERFLOW;
+                if (!pushf(out, a64_mov_reg(HOST_TMP2, 2u)))    return TR_OVERFLOW;
+                if (!pushf(out, a64_mov_reg(0u, HOST_SCRATCH))) return TR_OVERFLOW;
+                if (!pushf(out, a64_mov_reg(1u, HOST_TMP2)))    return TR_OVERFLOW;
+                if (!pushf(out, a64_mov_reg(2u, 6u)))           return TR_OVERFLOW;
+                if (!pushf(out, a64_mov_reg(3u, 7u)))           return TR_OVERFLOW;
+                if (!emit_const_f(out, HOST_SCRATCH, p->const_val)) return TR_OVERFLOW;
+                if (!pushf(out, a64_blr(HOST_SCRATCH))) return TR_OVERFLOW;
+                /* The host returns in X0, which is guest RAX, so the result needs no
+                 * shuffling back. Pop in reverse order of the pushes. */
+                for (unsigned k = 5u; k-- > 0u;)
+                    if (!pushf(out, a64_ldp_post(sv[k][0], sv[k][1], 31u, 16)))
+                        return TR_OVERFLOW;
+                break;
+            }
             if (!emit_const_f(out, HOST_SCRATCH, p->const_val)) return TR_OVERFLOW;
             if (!pushf(out, a64_blr(HOST_SCRATCH))) return TR_OVERFLOW;
             break;

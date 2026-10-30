@@ -2943,6 +2943,215 @@ static void test_image_relative_executes(void)
 }
 #endif
 
+/* ---------------------------------------------------------------------------
+ * The AAPCS bridge: calling a real host function from translated guest code.
+ *
+ * Two things are checked, and they are checked differently because only one of
+ * them can be made deterministic by execution.
+ *
+ * Argument order and the return value ARE checked by running it: a wrong shuffle
+ * gives a wrong sum, and there is no way for a broken bridge to produce the right
+ * one by luck.
+ *
+ * Register preservation is checked structurally, by the words. Whether a host
+ * callee actually destroys guest RBX depends on what the compiler happened to emit
+ * for it, so an execution test alone can pass with the save/restore missing.
+ * abi_sink below makes the destruction as close to certain as portable C allows - a
+ * call with eight arguments forces X0..X7 to be loaded, and guest RBX is X3 - and
+ * the execution check still runs, but the word-level check is the one that cannot be
+ * satisfied by luck.
+ * ------------------------------------------------------------------------- */
+static volatile uint64_t abi_seen[4];
+
+__attribute__((noinline))
+static uint64_t abi_sink(uint64_t a, uint64_t b, uint64_t c, uint64_t d,
+                         uint64_t e, uint64_t f, uint64_t g, uint64_t h)
+{ return (a ^ b) + (c ^ d) + (e ^ f) + (g ^ h); }
+
+/* Stands in for a Win32 function the shim layer provides. It records the arguments
+ * it actually received, so the test asserts on what arrived rather than on what the
+ * guest intended to send. */
+__attribute__((noinline))
+static uint64_t abi_target(uint64_t a, uint64_t b, uint64_t c, uint64_t d)
+{
+    uint64_t s;
+    abi_seen[0] = a; abi_seen[1] = b; abi_seen[2] = c; abi_seen[3] = d;
+    s = abi_sink(1u, 2u, 3u, 4u, 5u, 6u, 7u, 8u);
+    return a + b + c + d + (s - s);
+}
+
+static uint64_t abi_resolve_tagged(uint64_t iat_va, void *user)
+{
+    (void)iat_va;
+    return (uint64_t)(uintptr_t)*(void **)user | TR_ABI_HOST;
+}
+
+/* The control: the same address with no tag. */
+static uint64_t abi_resolve_untagged(uint64_t iat_va, void *user)
+{
+    (void)iat_va;
+    return (uint64_t)(uintptr_t)*(void **)user;
+}
+
+static void test_host_abi_bridge(void)
+{
+    /* mov rcx,1 ; mov rdx,2 ; mov r8,3 ; mov r9,4 ; call [rip+0] ; ret */
+    static const uint8_t call4[] = {
+        0x48,0xC7,0xC1, 0x01,0,0,0,
+        0x48,0xC7,0xC2, 0x02,0,0,0,
+        0x49,0xC7,0xC0, 0x03,0,0,0,
+        0x49,0xC7,0xC1, 0x04,0,0,0,
+        0xFF,0x15, 0,0,0,0,
+        0xC3
+    };
+    /* keepbx lives inside the aarch64 block: only execution can observe whether
+     * a callee-saved register survived, so on another host it would be unused. */
+    void *target = (void *)(uintptr_t)&abi_target;
+    tr_func f;
+    tr_status st;
+
+    printf("translating and running a call across the host ABI bridge\n");
+
+    st = tr_translate_function(call4, sizeof(call4), IMAGE_BASE,
+                               abi_resolve_tagged, &target, &f);
+    CHECK(st == TR_OK, "a tagged host call returned %s (%s)", tr_status_name(st),
+          f.detail ? f.detail : "?");
+    if (st == TR_OK) {
+        /* The five save pairs, in order, then the six shuffle MOVs. Checked by word
+         * because a host callee that happens not to touch RBX would let a missing
+         * save pass an execution test. */
+        static const unsigned sv[5][2] = {
+            { 3u, 4u }, { 5u, 15u }, { 10u, 11u }, { 12u, 13u }, { 14u, 14u }
+        };
+        size_t base = 0, found = 0;
+        for (size_t i = 0; i + 4 < f.n && !found; i++)
+            if (f.words[i] == a64_stp_pre(sv[0][0], sv[0][1], 31u, -16)) {
+                base = i; found = 1;
+            }
+        CHECK(found == 1, "the bridge's first STP is not in the %zu emitted words",
+              f.n);
+        if (found) {
+            for (unsigned k = 1; k < 5u; k++)
+                CHECK(f.words[base+k] == a64_stp_pre(sv[k][0], sv[k][1], 31u, -16),
+                      "save pair %u is 0x%08X, expected STP X%u,X%u,[SP,#-16]! "
+                      "0x%08X", k, f.words[base+k], sv[k][0], sv[k][1],
+                      a64_stp_pre(sv[k][0], sv[k][1], 31u, -16));
+            CHECK(f.words[base+5]  == a64_mov_reg(16u, 1u),
+                  "the shuffle must save guest RCX before X1 is overwritten");
+            CHECK(f.words[base+6]  == a64_mov_reg(17u, 2u),
+                  "the shuffle must save guest RDX before X2 is overwritten");
+            CHECK(f.words[base+7]  == a64_mov_reg(0u, 16u), "host arg0 = guest RCX");
+            CHECK(f.words[base+8]  == a64_mov_reg(1u, 17u), "host arg1 = guest RDX");
+            CHECK(f.words[base+9]  == a64_mov_reg(2u, 6u),  "host arg2 = guest R8");
+            CHECK(f.words[base+10] == a64_mov_reg(3u, 7u),  "host arg3 = guest R9");
+            /* Every pop present. Located by scan rather than by an offset from the
+             * BLR, because the target constant between them is a variable number of
+             * words. */
+            for (unsigned k = 0; k < 5u; k++) {
+                size_t seen = 0;
+                for (size_t i = base + 11; i < f.n; i++)
+                    if (f.words[i] ==
+                        a64_ldp_post(sv[4u-k][0], sv[4u-k][1], 31u, 16)) { seen = 1; break; }
+                CHECK(seen == 1, "the pop restoring save pair %u (X%u,X%u) is missing",
+                      4u-k, sv[4u-k][0], sv[4u-k][1]);
+            }
+        }
+    }
+
+    /* An untagged resolve must keep today's behaviour exactly: BLR with the guest
+     * register state passed through, because the callee is translated guest code
+     * expecting the x86-64 convention. Bridging it would break the pipeline test,
+     * and the two paths must not drift into each other. */
+    st = tr_translate_function(call4, sizeof(call4), IMAGE_BASE,
+                               abi_resolve_untagged, &target, &f);
+    CHECK(st == TR_OK, "an untagged call returned %s", tr_status_name(st));
+    if (st == TR_OK) {
+        size_t stp = 0;
+        for (size_t i = 0; i < f.n; i++)
+            if (f.words[i] == a64_stp_pre(3u, 4u, 31u, -16)) stp = 1;
+        CHECK(stp == 0,
+              "an untagged call emitted the bridge: a guest-to-guest call would have "
+              "its arguments shuffled into the wrong registers");
+    }
+
+#if defined(__aarch64__)
+    {
+        /* mov rbx,0x1111 ; call [rip+0] ; mov rax,rbx ; ret */
+        static const uint8_t keepbx[] = {
+            0x48,0xC7,0xC3, 0x11,0x11,0,0,
+            0xFF,0x15, 0,0,0,0,
+            0x48,0x89,0xD8,
+            0xC3
+        };
+        gs_arena a;
+        uint64_t r = 0;
+        int      sig = 0, to = 0, ok;
+        uint32_t prog[TRAMP_MAX];
+        size_t   n, plen = 0;
+        void    *page;
+
+        if (!gs_alloc(4096, &a)) {
+            CHECK(0, "could not allocate an arena: %s", gs_last_error());
+            return;
+        }
+        abi_seen[0] = abi_seen[1] = abi_seen[2] = abi_seen[3] = 0;
+
+        st = tr_translate_function(call4, sizeof(call4), IMAGE_BASE,
+                                   abi_resolve_tagged, &target, &f);
+        if (st == TR_OK) {
+            n = build_trampoline(prog, 0u, a.top, 0u, f.words, f.n);
+            page = code_page(prog, n, &plen);
+            CHECK(page != NULL, "could not map an executable page");
+            if (page) {
+                fflush(stdout);
+                ok = exec_generated((uint64_t (*)(void))page, &r, &to, &sig);
+                CHECK(ok && !to && sig == 0,
+                      "the bridged call did not run cleanly (ok=%d to=%d sig=%d)",
+                      ok, to, sig);
+                CHECK(abi_seen[0] == 1 && abi_seen[1] == 2 &&
+                      abi_seen[2] == 3 && abi_seen[3] == 4,
+                      "the host received %llu,%llu,%llu,%llu and expected 1,2,3,4 "
+                      "from guest RCX,RDX,R8,R9: the shuffle put an argument in the "
+                      "wrong AAPCS register",
+                      (unsigned long long)abi_seen[0], (unsigned long long)abi_seen[1],
+                      (unsigned long long)abi_seen[2], (unsigned long long)abi_seen[3]);
+                CHECK(r == 10,
+                      "the call returned %llu, expected 1+2+3+4=10: a host return "
+                      "value arrives in X0, which is guest RAX, so it needs no "
+                      "shuffling back", (unsigned long long)r);
+                munmap(page, plen); page = NULL;
+            }
+        }
+
+        st = tr_translate_function(keepbx, sizeof(keepbx), IMAGE_BASE,
+                                   abi_resolve_tagged, &target, &f);
+        if (st == TR_OK) {
+            n = build_trampoline(prog, 0u, a.top, 0u, f.words, f.n);
+            page = code_page(prog, n, &plen);
+            if (page) {
+                fflush(stdout);
+                ok = exec_generated((uint64_t (*)(void))page, &r, &to, &sig);
+                CHECK(ok && !to && sig == 0,
+                      "the RBX-survival call did not run cleanly (sig=%d)", sig);
+                CHECK(r == 0x1111,
+                      "guest RBX came back as %#llx, expected 0x1111: the host callee "
+                      "called through X0..X7 and RBX maps to X3, which the AAPCS "
+                      "makes caller-saved, so only the bridge's save and restore "
+                      "keeps it", (unsigned long long)r);
+                munmap(page, plen); page = NULL;
+            }
+        }
+        gs_free(&a);
+        printf("  EXECUTED ON aarch64: the host ABI bridge - guest RCX,RDX,R8,R9 "
+               "arrive as AAPCS X0..X3, the return value comes back in RAX, and "
+               "guest RBX survives a callee that clobbers X3\n");
+    }
+#else
+    printf("  SKIP: host is not aarch64 - the bridge's words were checked, the call "
+           "was not made\n");
+#endif
+}
+
 int main(void)
 {
     printf("=== exe + dll translation, end to end ===\n");
@@ -2962,6 +3171,7 @@ int main(void)
     test_image_relative_translation();
     test_image_relative_executes();
     test_lea_and_imm64_executes();
+    test_host_abi_bridge();
     test_pipeline();
 #if defined(__aarch64__)
     printf("VERDICT arch=aarch64 exe_words=%zu const_ok=%d first=%s/%llu(to=%d,sig=%d) "

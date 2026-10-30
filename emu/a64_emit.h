@@ -138,9 +138,10 @@ uint32_t a64_bl(int32_t words);
  *   - AArch64 requires SP to be 16-byte aligned at every public interface, while
  *     x86-64 only ever guarantees 8. Putting the guest RSP in the host SP would
  *     make every odd-sized guest adjustment an alignment fault.
- *   - X14 and X15 are callee-saved in the AAPCS, so a host function reached
- *     through a resolved import preserves the guest stack pointer for free.
- *     A translator-scratch register like X16/X17 would not survive the call.
+ *   - X14 and X15 are NOT callee-saved in the AAPCS - only X19-X28 are - so a host
+ *     function reached through a resolved import destroys the guest stack pointer.
+ *     The ABI bridge in translate.c saves and restores it around such a call. A
+ *     translator-scratch register like X16/X17 would not survive it either.
  */
 
 /* STP/LDP with a signed offset scaled by 8. mode: pre-index (writeback before
