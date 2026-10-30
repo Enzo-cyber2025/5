@@ -342,9 +342,6 @@ inline int DrawTextW(HDC, LPCWSTR, int, RECT*, UINT) { return 0; }
 #ifndef ODS_CHECKED
 #define ODS_CHECKED    0x0008
 #endif
-#ifndef GET_X_LPARAM
-#define GET_X_LPARAM(lp) ((int)(short)LOWORD(lp))
-#endif
 #ifndef VK_HOME
 #define VK_HOME 0x24
 #define VK_END  0x23

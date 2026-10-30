@@ -368,12 +368,12 @@ static LRESULT CALLBACK SliderProc(HWND hw, UINT msg, WPARAM wp, LPARAM lp) {
             SetFocus(hw);
             SetCapture(hw);
             d->arrastando = true;
-            slider_pos_do_mouse(hw, d, GET_X_LPARAM(lp));
+            slider_pos_do_mouse(hw, d, int(short(LOWORD(lp))));   // x do mouse (sem windowsx.h)
             SendMessageW(GetParent(hw), WM_HSCROLL, (WPARAM)1, (LPARAM)hw);
             return 0;
         case WM_MOUSEMOVE:
             if (d && d->arrastando) {
-                slider_pos_do_mouse(hw, d, GET_X_LPARAM(lp));
+                slider_pos_do_mouse(hw, d, int(short(LOWORD(lp))));   // x do mouse (sem windowsx.h)
                 // wp=1 = ainda arrastando: o pai atualiza o valor mas nao
                 // fica gravando arquivo a cada pixel
                 SendMessageW(GetParent(hw), WM_HSCROLL, (WPARAM)1, (LPARAM)hw);
