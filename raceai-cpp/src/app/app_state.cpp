@@ -285,8 +285,8 @@ AppState::AppState() {
     std::string err;
     if (!pistas.empty()) load_track(pistas[pista_idx].id, track_cache_, &err);
     if (!carros.empty()) load_car(carros[carro_idx].id, car_cache_, &err);
+    policy = spec_da_ia();                 // o gerador de IA é quem manda
     policy.obs_dim = sim_cfg.n_rays + 15;
-    policy.hidden = {64, 64};
     python_code = exemplo_python();
     // preferências do jogador ficam num JSON ao lado do executável
     controles_path = assets_root() + "/controles.json";
@@ -322,8 +322,6 @@ void AppState::aplicar_treino_cfg(const TrainSettings& t) {
     ga_cfg.population = std::max(2, int(t.individuals));
     sim_cfg.max_seconds = t.seconds;
     sim_cfg.target_laps = t.laps;
-    int h1 = std::max(8, int(t.hidden));
-    policy.hidden = {h1, std::max(8, h1 / 2)};
     ga_cfg.genes_mutados = std::max(0, int(t.genes_mutados));
     if (trainer) {
         trainer->sim_cfg = sim_cfg;
@@ -475,11 +473,61 @@ void AppState::alternar_modo() {
     mode = Mode::Corrida;
 }
 
+// ------------------------------------------------------------ gerador de IA
+PolicySpec AppState::spec_da_ia() const {
+    PolicySpec sp;
+    sp.obs_dim = 24;
+    sp.act_dim = 2;
+    sp.activation = ai_gen.ativacao;
+    const int n = std::max(8, ai_gen.neuronios);
+    const int c = std::max(1, std::min(3, ai_gen.camadas));
+    std::vector<int> h;
+    if (ai_gen.formato == 1) {                       // funil: 64 -> 32 -> 16
+        for (int i = 0; i < c; ++i) h.push_back(std::max(8, n >> i));
+    } else if (ai_gen.formato == 2) {                // ampulheta: 32 -> 64 -> 32
+        for (int i = 0; i < c; ++i) {
+            const int meio = (c > 1 && i == c / 2) ? n : std::max(8, n / 2);
+            h.push_back(meio);
+        }
+        if (c == 1) h[0] = n;
+    } else {
+        for (int i = 0; i < c; ++i) h.push_back(n);   // constante
+    }
+    sp.hidden = h;
+    return sp;
+}
+
+std::string AppState::resumo_da_ia() const {
+    const PolicySpec sp = spec_da_ia();
+    std::string t = std::to_string(sp.obs_dim);
+    for (int v : sp.hidden) t += " → " + std::to_string(v);
+    t += " → " + std::to_string(sp.act_dim);
+    char buf[64];
+    const size_t p = sp.n_params();
+    if (p >= 1000) std::snprintf(buf, sizeof(buf), "  (%.1fk parâmetros)", double(p) / 1000.0);
+    else std::snprintf(buf, sizeof(buf), "  (%zu parâmetros)", p);
+    return t + buf;
+}
+
+void AppState::aplicar_ia_gerada() {
+    policy = spec_da_ia();
+    ga_cfg.mutation_sigma = std::max(0.01, ai_gen.sigma);
+    ga_cfg.elitism = std::max(0.0, std::min(0.5, ai_gen.elitismo_pct / 100.0));
+    criar_trainer();
+    loss_history.clear();
+    erro_history.clear();
+    dist_history.clear();
+    geracao = 0;
+    treinando = false;
+}
+
 void AppState::criar_trainer() {
     TrainerConfig tc;
     tc.seed = 12345;
     tc.threads = 0;
     ga_cfg.population = std::max(2, int(train_cfg.individuals));
+    ga_cfg.mutation_sigma = std::max(0.01, ai_gen.sigma);
+    ga_cfg.elitism = std::max(0.0, std::min(0.5, ai_gen.elitismo_pct / 100.0));
     sim_cfg.max_seconds = train_cfg.seconds;
     sim_cfg.target_laps = int(train_cfg.laps);
     trainer = std::make_unique<Trainer>(track_cache_, car_cache_, sim_cfg, ga_cfg, policy, tc);
@@ -667,7 +715,17 @@ void AppState::iniciar_corrida(const std::vector<std::string>& modelos_in) {
         std::string err;
         if (Model::load(modelos[i], m, &err)) {
             d = std::make_shared<PolicyDriver>(m.spec, m.weights);
-            c.nome = m.meta.has("car") ? m.meta.at("car").str() : c.nome;
+            const std::string nome_carro = m.meta.has("car") ? m.meta.at("car").str() : "";
+            const std::string nome_pista = m.meta.has("track") ? m.meta.at("track").str() : "";
+            // o modelo corre com o CARRO em que foi treinado (se ele existir):
+            // os pesos foram ajustados para aquele conjunto de pneus/potência
+            if (!nome_carro.empty()) {
+                for (size_t k = 0; k < carros.size(); ++k) {
+                    if (carros[k].name == nome_carro) { c.carro = int(k); break; }
+                }
+            }
+            c.nome = nome_carro.empty() ? base_name(modelos[i]) : nome_carro;
+            c.origem = nome_pista.empty() ? "modelo" : ("modelo · " + nome_pista);
         }
         c.driver = d;
         race.add(c);

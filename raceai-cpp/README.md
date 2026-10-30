@@ -86,6 +86,33 @@ modo). O 3D é um renderizador próprio, por software:
 Pistas podem ter **elevação**: basta que `points` tenha três números por ponto
 `[x, y, z]` (com dois, o jogo assume terreno plano).
 
+### Carros pré-modelados
+
+No 3D cada carro é uma **carroceria modelada**, não uma caixa: chassi, cabine,
+capô, aerofólio, gaiola, baú, bico, asas — montados com as medidas reais do
+JSON (comprimento, largura, altura, entre-eixos e raio de roda). As **rodas
+esterçam** com o volante e **giram** na velocidade certa, e o carro projeta
+sombra no chão.
+
+São 10 estilos, escolhidos sozinhos pelo `id` do carro (ou pelo campo
+`body_style` do JSON, se você quiser mandar):
+
+| estilo | entra quando |
+| --- | --- |
+| `formula` | formula, monoposto, prototipo |
+| `kart` | kart |
+| `caminhao` | caminhao, truck, van |
+| `buggy` | buggy |
+| `picape` | pickup, picape |
+| `classico` | classico |
+| `drift` | drift, tuner |
+| `esportivo` | gt, super, esportivo, muscle |
+| `hatch` | hatch |
+| `sedan` | qualquer outro (padrão) |
+
+Exemplo de mod: `"body_style": "formula"` faz seu carro virar um monoposto no
+3D sem mexer em nada mais.
+
 ### Erros ao abrir
 
 Se alguma coisa falhar na abertura, o jogo **mostra uma janela com o erro** e
@@ -171,6 +198,30 @@ Tudo isso é determinístico (mesma entrada ⇒ mesmíssimo resultado) e roda a
 1/120 s em processador fraco, porque é só conta — nada de GPU.
 
 ---
+
+## Gerador de IA (sem programar)
+
+Não precisa escrever código para montar a rede: no painel do Treinamento há o
+bloco **“gerador de IA”**, com quatro escolhas e um botão.
+
+| controle | o que faz |
+| --- | --- |
+| **camadas** | 1, 2 ou 3 camadas escondidas |
+| **neurônios** | 16, 32, 64, 128 ou 256 por camada |
+| **ativação** | `tanh` (padrão), `relu`, `sigmoid` ou `leaky` |
+| **formato** | constante (64→64), funil (64→32) ou ampulheta (32→64→32) |
+| **passo da mutação** | o “sigma”: quanto cada peso muda por geração |
+| **Gerar e treinar** | aplica a rede e recomeça o treino do zero |
+
+Embaixo aparece a rede escolhida por extenso, por exemplo
+`24 → 64 → 32 → 2  (4.7k parâmetros)`. A saída é sempre `tanh`, porque esterço
+e acelerador vivem em [-1, 1]; a ativação vale para as camadas escondidas.
+
+Também dá para treinar pelo terminal (mesmas opções):
+
+```
+raceai_train --track oval_iniciante --car sedan --hidden 128 -g 80 -p 60 --out meu.json
+```
 
 ## Treinamento
 
@@ -348,18 +399,24 @@ assets/       pistas e carros em JSON
 
 ## Modelos prontos (a pasta `modelos/`)
 
-O jogo já vem com **três modelos treinados** em `modelos/`. Eles entram
-sozinhos no grid quando você abre a **Corrida** — é só apertar Iniciar e ver
-as redes dirigindo. Quando você salvar o seu modelo, ele passa a valer também
-(como os da pasta, se houver). Para usar só os seus, apague os arquivos de
-`modelos/` ou escolha um em **Adicionar modelo**.
+O jogo já vem com **um modelo de demonstração** treinado em `modelos/`
+(`demo_oval_iniciante_sedan.json`: sedã no Oval Iniciante, 60 gerações, erro
+~1,3%). Ele entra sozinho no grid quando você abre a **Corrida** — com o carro
+em que foi treinado — e serve como adversário e como exemplo do formato.
+Quando você salvar o seu modelo, ele passa a valer também.
 
-Treinar os seus, pelo terminal (sem interface, bem mais rápido):
+Quer mais? Tem um script com uma lista de combinações prontas (pista, carro,
+tamanho da rede e gerações) — a primeira é justamente o modelo de demonstração:
 
 ```
+./tools/treinar_modelos.sh        # 1 modelo (o de demonstração)
+./tools/treinar_modelos.sh 12     # os 12 da lista (~10 min)
 raceai_train --track speedway --car formula -g 120 -p 60 --seconds 45 \
-             --out modelos/meu_modelo.json
+             --out modelos/meu_modelo.json     # ou na mão, do seu jeito
 ```
+
+Cada modelo guarda nos metadados em qual pista e com qual carro foi treinado
+(é daí que a interface escolhe o carro dele no grid).
 
 Cada modelo tem ~85 KB (5.890 números). Em 25-60 s de treino no seu
 Pentium N5030 você chega a perda ~0,05 e erro ~0,5% em pistas fáceis.

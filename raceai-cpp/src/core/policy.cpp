@@ -35,6 +35,7 @@ Json PolicySpec::to_json() const {
     Json j = Json::object();
     j.set("obs_dim", Json(double(obs_dim)));
     j.set("act_dim", Json(double(act_dim)));
+    j.set("activation", Json(activation));
     Json h = Json::array();
     for (int v : hidden) h.push(Json(double(v)));
     j.set("hidden", h);
@@ -46,6 +47,9 @@ PolicySpec PolicySpec::from_json(const Json& j) {
     if (j.is_null()) return s;
     s.obs_dim = std::max(1, int(j.at("obs_dim").num(24)));
     s.act_dim = std::max(1, int(j.at("act_dim").num(2)));
+    s.activation = j.has("activation") ? j.at("activation").str("tanh") : "tanh";
+    if (s.activation != "relu" && s.activation != "sigmoid" && s.activation != "leaky")
+        s.activation = "tanh";
     std::vector<int> h;
     for (const Json& v : j.at("hidden").items()) h.push_back(std::max(1, int(v.num(64))));
     if (!h.empty()) s.hidden = h;
@@ -92,7 +96,9 @@ void forward(const PolicySpec& spec, const float* w, const float* obs, float* ou
             const float* row = p + size_t(o) * size_t(n_in);
             float acc = p[nw + size_t(o)];            // bias
             for (int i = 0; i < n_in; ++i) acc += row[i] * a[i];
-            b[o] = std::tanh(acc);
+            // a saída é sempre tanh (faixa [-1, 1]); a ativação escolhida
+            // vale para as camadas escondidas
+            b[o] = (l == layers - 1) ? std::tanh(acc) : ativar(spec.activation, acc);
         }
         p += nw + size_t(n_out);
         cur = n_out;

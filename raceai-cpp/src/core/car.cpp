@@ -141,6 +141,7 @@ CarSpec CarSpec::from_json(const Json& data, const std::string& src) {
     s.camber_loss = clamp(num_or(data, "camber_loss", s.camber_loss), 0.0, 3.0);
     s.aero_pitch = clamp(num_or(data, "aero_pitch", s.aero_pitch), -3.0, 3.0);
 
+    s.body_style = data.has("body_style") ? data.at("body_style").str() : "";
     s.body_color = data.has("body_color") ? data.at("body_color").str(s.body_color) : s.body_color;
     s.accent_color = data.has("accent_color") ? data.at("accent_color").str(s.accent_color) : s.accent_color;
     s.sprite = data.has("sprite") ? data.at("sprite").str() : "";
@@ -263,6 +264,7 @@ Json CarSpec::to_json() const {
     j.set("camber_gain", Json(camber_gain));
     j.set("camber_loss", Json(camber_loss));
     j.set("aero_pitch", Json(aero_pitch));
+    j.set("body_style", Json(body_style));
     j.set("body_color", Json(body_color));
     j.set("accent_color", Json(accent_color));
     if (!sprite.empty()) j.set("sprite", Json(sprite));

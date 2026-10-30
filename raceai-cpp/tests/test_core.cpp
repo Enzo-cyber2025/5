@@ -357,6 +357,39 @@ static void t_render3d() {
     c2.begin(800, 600);
     montar_cena_pista(c2, t, 0, 40, &ele);
     CHECK(!c2.resolve().empty(), "cena com elevação ficou vazia");
+
+    // ---- carrocerias pré-modeladas (cada estilo é uma malha de verdade)
+    {
+        const EstiloCarro estilos[] = {
+            EstiloCarro::Sedan, EstiloCarro::Hatch, EstiloCarro::Esportivo,
+            EstiloCarro::Formula, EstiloCarro::Kart, EstiloCarro::Caminhao,
+            EstiloCarro::Buggy, EstiloCarro::Picape, EstiloCarro::Drift,
+            EstiloCarro::Classico};
+        for (EstiloCarro e : estilos) {
+            Render3D r3;
+            Camera3D c3;
+            c3.x = -12.0; c3.y = 0.0; c3.z = 3.0; c3.yaw = 0.0; c3.pitch = -0.15;
+            c3.fov = 70.0; c3.perto = 0.35; c3.longe = 400.0;
+            r3.set_camera(c3);
+            r3.begin(320, 240);
+            montar_carro(r3, e, 0.0, 0.0, 0.0, 0.0, 4.4, 1.9, 1.4, 2.6, 0.33,
+                         0xE0483A, 0xF5F5F5, 0.2, 1.0);
+            std::vector<Face3D> fs = r3.resolve();
+            CHECK(fs.size() > 30, "estilo %d pobre: %zu faces", int(e), fs.size());
+            bool finito = true;
+            for (const Face3D& f : fs)
+                for (size_t q = 0; q < f.xs.size(); ++q)
+                    if (!std::isfinite(f.xs[q]) || !std::isfinite(f.ys[q])) finito = false;
+            CHECK(finito, "estilo %d gerou coordenada invalida", int(e));
+        }
+        CHECK(estilo_carro("", "kart") == EstiloCarro::Kart, "kart nao reconhecido");
+        CHECK(estilo_carro("", "monoposto") == EstiloCarro::Formula, "formula nao reconhecida");
+        CHECK(estilo_carro("", "caminhao") == EstiloCarro::Caminhao, "caminhao nao reconhecido");
+        CHECK(estilo_carro("formula", "sedan") == EstiloCarro::Formula,
+              "body_style deve ter prioridade");
+        CHECK(estilo_carro("", "sedan") == EstiloCarro::Sedan, "padrao deveria ser sedan");
+    }
+
 }
 
 // ------------------------------------------------------------- conteúdo

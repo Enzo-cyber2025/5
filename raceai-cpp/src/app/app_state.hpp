@@ -112,6 +112,17 @@ struct UiSettings {
     double velocidade_sim = 4;    // multiplicador de passos por frame
 };
 
+// Gerador de IA: escolhe a estrutura da rede e os parâmetros do treino sem
+// escrever uma linha de código (é só o que os controles da interface mexem).
+struct AiGen {
+    int camadas = 2;              // 1 a 3 camadas escondidas
+    int neuronios = 64;           // 16 a 256 por camada
+    std::string ativacao = "tanh";// tanh | relu | sigmoid | leaky
+    int formato = 0;              // 0 = constante, 1 = funil, 2 = ampulheta
+    double sigma = 0.25;          // tamanho do passo da mutação
+    int elitismo_pct = 10;        // % da população preservada
+};
+
 // ------------------------------------------------------------------ app
 class AppState {
 public:
@@ -147,6 +158,7 @@ public:
     GAConfig ga_cfg;
     PolicySpec policy;
     TrainSettings train_cfg;
+    AiGen ai_gen;                 // gerador de IA (sem programar)
     ControlSettings controles;             // sensibilidade, zona morta etc.
     std::string controles_path;            // onde salvar (perto do .exe)
     UiSettings ui;
@@ -181,6 +193,10 @@ public:
     void aplicar_treino_cfg(const TrainSettings& t);
 
     // ---------------------------------------------------------------- treino
+    // gerador de IA: monta a rede a partir de `ai_gen`
+    PolicySpec spec_da_ia() const;
+    std::string resumo_da_ia() const;
+    void aplicar_ia_gerada();
     void iniciar_treino(bool novo = true);
     void parar_treino();
     void tick_treino(int passos);        // chamado a cada frame

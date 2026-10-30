@@ -484,7 +484,7 @@ int main(int argc, char** argv) {
             app.iniciar_corrida({});
             int n_modelo = 0;
             for (const Competitor& c : app.race.competidores)
-                if (c.origem == "modelo") n_modelo += 1;
+                if (c.origem.compare(0, 6, "modelo") == 0) n_modelo += 1;
             CHECK(n_modelo > 0, "os modelos prontos não entraram no grid");
             CHECK(size_t(n_modelo) == prontos.size(),
                   "entraram %d modelos, a pasta tem %zu", n_modelo, prontos.size());
@@ -492,7 +492,7 @@ int main(int argc, char** argv) {
             for (int i = 0; i < 1200; ++i) app.tick_corrida(4);
             double melhor = 0.0;
             for (const Competitor& c : app.race.competidores)
-                if (c.origem == "modelo") melhor = std::max(melhor, c.s_total);
+                if (c.origem.compare(0, 6, "modelo") == 0) melhor = std::max(melhor, c.s_total);
             CHECK(melhor > 30.0, "o modelo treinado andou pouco: %.1f m", melhor);
             printf("   %d modelo(s) no grid, melhor %.1f m\n", n_modelo, melhor);
         }

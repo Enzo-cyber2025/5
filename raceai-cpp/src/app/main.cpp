@@ -136,6 +136,30 @@ static HWND cria_slider_corrida(HWND pai, int x, int y, int w, const wchar_t* no
     return h;
 }
 
+// opções do gerador de IA (iguais na interface e no resumo)
+static const int kNeuroniosOpcoes[] = {16, 32, 64, 128, 256};
+static const char* kAtivacoesOpcoes[] = {"tanh", "relu", "sigmoid", "leaky"};
+
+static HWND combo(HWND pai, int id, int x, int y, int w,
+                  const std::vector<std::wstring>& itens, int selecionado) {
+    HWND cb = CreateWindowW(L"combobox", L"",
+                            WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST | WS_VSCROLL,
+                            x, y, w, 180, pai, (HMENU)(intptr_t)id,
+                            GetModuleHandle(nullptr), nullptr);
+    SendMessageW(cb, WM_SETFONT, (WPARAM)g_fonte, TRUE);
+    for (const std::wstring& it : itens) SendMessageW(cb, CB_ADDSTRING, 0, (LPARAM)it.c_str());
+    SendMessageW(cb, CB_SETCURSEL, (WPARAM)selecionado, 0);
+    return cb;
+}
+
+static HWND g_texto_ia = nullptr;
+
+static void atualiza_resumo_ia() {
+    if (!g_texto_ia) return;
+    const std::wstring t = wide(g_app.resumo_da_ia());
+    SetWindowTextW(g_texto_ia, t.c_str());
+}
+
 static HWND botao_corrida(HWND pai, int id, int x, int y, int w, int h, const wchar_t* texto) {
     HWND b = botao(pai, id, x, y, w, h, texto);
     g_ctrls_corrida.push_back(b);
@@ -149,7 +173,8 @@ enum {
     ID_EXEMPLO_PY, ID_NOVO, ID_ADD_MODELO, ID_AJUDA, ID_SAIR, ID_VOLTAR,
     ID_ABRIR_PY, ID_SALVAR_PY,
     ID_RECOMPENSA_PADRAO, ID_ZOOM_MAIS, ID_ZOOM_MENOS, ID_CHAVE_MODO,
-    ID_CHK_ABS, ID_CHK_TC, ID_ABRIR_MODS, ID_RECARR_MODS, ID_CHAVE_3D
+    ID_CHK_ABS, ID_CHK_TC, ID_ABRIR_MODS, ID_RECARR_MODS, ID_CHAVE_3D,
+    ID_GER_CAMADAS, ID_GER_NEUROS, ID_GER_ATIV, ID_GER_FORMATO, ID_GERAR_IA
 };
 
 // ------------------------------------------------------------------ canvas
@@ -247,9 +272,19 @@ static void pinta_cena3d(HDC hdc, int x0, int y0, int w, int h, const Track& trk
         uint32_t cor = sp ? cor_hex(sp->body_color, 0xE0483A) : uint32_t(0xE0483A);
         if (eh_foco) cor = 0x56D68C;
         else if (!a->car.alive) cor = 0x5A5A60;
-        r.add_box(Vec3{a->car.x, a->car.y, 0.0},
-                  sp ? sp->length : 4.2, sp ? sp->width : 1.9, sp ? 1.25 : 1.25,
-                  a->car.heading, cor);
+        // carroceria pré-modelada (sedan, fórmula, kart, caminhão...), com as
+        // rodas esterçando e girando de verdade
+        uint32_t cor_det = sp ? cor_hex(sp->accent_color, 0xF5F5F5) : uint32_t(0xF5F5F5);
+        if (eh_foco) cor_det = 0xD8FFF0;
+        montar_carro(r,
+                     estilo_carro(sp ? sp->body_style : "", sp ? sp->id : ""),
+                     a->car.x, a->car.y, 0.0, a->car.heading,
+                     sp ? sp->length : 4.2, sp ? sp->width : 1.9,
+                     sp ? std::max(1.0, sp->cg_height * 2.2) : 1.25,
+                     sp ? sp->wheelbase : 2.6, sp ? sp->wheel_radius : 0.33,
+                     cor, cor_det,
+                     a->car.steer,                       // esterço das rodas da frente
+                     a->car.omega_f * 3.0);              // giro (animação da roda)
     }
 
     // ---- fundo: céu (faixas) e chão
@@ -673,7 +708,8 @@ static void mostra_tela() {
     const bool treino = g_app.mode == Mode::Treinamento;
     const bool corrida = g_app.mode == Mode::Corrida;
     // controles de treino
-    for (int id : {ID_INICIAR, ID_PAUSAR, ID_REINICIAR, ID_SALVAR, ID_CARREGAR,
+    for (int id : {ID_GER_CAMADAS, ID_GER_NEUROS, ID_GER_ATIV, ID_GER_FORMATO,
+                   ID_GERAR_IA, ID_INICIAR, ID_PAUSAR, ID_REINICIAR, ID_SALVAR, ID_CARREGAR,
                    ID_APLICAR_PY, ID_LIMPAR_PY, ID_EXEMPLO_PY, ID_NOVO,
                    ID_RECOMPENSA_PADRAO}) {
         HWND h = GetDlgItem(g_hwnd, id);
@@ -840,14 +876,45 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             y += 46;
             cria_slider(hwnd, P, y, 180, L"velocidade da sim",
                         &g_app.ui.velocidade_sim, 1, 16, 1);
-            cria_slider(hwnd, P + 196, y, 180, L"neurônios",
-                        &g_app.train_cfg.hidden, 16, 128, 1);
+            cria_slider(hwnd, P + 196, y, 180, L"passo da mutação (sigma)",
+                        &g_app.ai_gen.sigma, 0.02, 1.0, 1000);
             y += 46;
             // 0 = todos os pesos entram no sorteio; N = exatamente N pesos mudam
             g_slider_mut = cria_slider(hwnd, P, y, 180, L"parâmetros mutados (0=todos)",
                                        &g_app.train_cfg.genes_mutados, 0, 2000, 1);
             cria_slider(hwnd, P + 196, y, 180, L"taxa de mutação",
                         &g_app.ga_cfg.mutation_rate, 0.0, 0.6, 1000);
+
+            // ---- gerador de IA: monta a rede sem escrever código
+            y += 52;
+            rotulo(hwnd, P, y, W, 18, L"gerador de IA (estrutura da rede)", g_fonte);
+            y += 20;
+            {
+                int sel_n = 2;
+                for (int i = 0; i < 5; ++i)
+                    if (g_app.ai_gen.neuronios == kNeuroniosOpcoes[i]) sel_n = i;
+                int sel_a = 0;
+                for (int i = 0; i < 4; ++i)
+                    if (g_app.ai_gen.ativacao == kAtivacoesOpcoes[i]) sel_a = i;
+                combo(hwnd, ID_GER_CAMADAS, P, y, 180,
+                      {L"1 camada", L"2 camadas", L"3 camadas"},
+                      g_app.ai_gen.camadas - 1);
+                combo(hwnd, ID_GER_NEUROS, P + 196, y, 180,
+                      {L"16 neurônios", L"32 neurônios", L"64 neurônios",
+                       L"128 neurônios", L"256 neurônios"}, sel_n);
+                y += 46;
+                combo(hwnd, ID_GER_ATIV, P, y, 180,
+                      {L"ativação: tanh", L"ativação: relu", L"ativação: sigmoid",
+                       L"ativação: leaky"}, sel_a);
+                combo(hwnd, ID_GER_FORMATO, P + 196, y, 180,
+                      {L"formato: constante", L"formato: funil", L"formato: ampulheta"},
+                      g_app.ai_gen.formato);
+            }
+            y += 46;
+            botao(hwnd, ID_GERAR_IA, P, y, 180, 26, L"Gerar e treinar");
+            y += 34;
+            g_texto_ia = rotulo(hwnd, P, y, W, 20, L"", g_fonte);
+            atualiza_resumo_ia();
 
             // ---- recompensa (os sliders pedidos)
             y += 52;
@@ -1033,6 +1100,20 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         }
         case WM_COMMAND: {
             const int id = LOWORD(wp);
+            // combos do gerador de IA: mudou a seleção, já mostra a rede nova
+            if (HIWORD(wp) == CBN_SELCHANGE) {
+                const int sel = int(SendMessageW((HWND)lp, CB_GETCURSEL, 0, 0));
+                if (sel >= 0) {
+                    if (id == ID_GER_CAMADAS) g_app.ai_gen.camadas = std::min(3, sel + 1);
+                    else if (id == ID_GER_NEUROS && sel < 5)
+                        g_app.ai_gen.neuronios = kNeuroniosOpcoes[sel];
+                    else if (id == ID_GER_ATIV && sel < 4)
+                        g_app.ai_gen.ativacao = kAtivacoesOpcoes[sel];
+                    else if (id == ID_GER_FORMATO) g_app.ai_gen.formato = std::min(2, sel);
+                    atualiza_resumo_ia();
+                }
+                return 0;
+            }
             if (id == ID_PISTA && HIWORD(wp) == CBN_SELCHANGE) {
                 int i = int(SendMessageW((HWND)lp, CB_GETCURSEL, 0, 0));
                 if (g_app.carregar_pista(i) && g_app.trainer) {
@@ -1140,6 +1221,10 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                         }
                     }
                 }
+            } else if (id == ID_GERAR_IA) {
+                g_app.aplicar_ia_gerada();
+                atualiza_resumo_ia();
+                InvalidateRect(hwnd, nullptr, TRUE);
             } else if (id == ID_EXEMPLO_PY) {
                 SetWindowTextW(g_edita_python, wide(exemplo_python()).c_str());
             } else if (id == ID_LIMPAR_PY) {

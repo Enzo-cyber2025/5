@@ -97,6 +97,7 @@ struct CarSpec {
     double fuel_burn = 0.055;       // litros/s em aceleração plena
     double damage_rate = 0.045;     // dano por impacto (por m/s de choque)
 
+    std::string body_style;           // sedan/hatch/esportivo/formula/kart/...
     std::string body_color = "#e0483a";
     std::string accent_color = "#f5f5f5";
     std::string sprite;

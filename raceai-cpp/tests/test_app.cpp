@@ -256,6 +256,148 @@ int main() {
                                               it.error.c_str());
     }
 
+    // ------------------------------------- modelos pré-definidos (modelos/)
+    {
+        const std::vector<std::string> prontos = list_models();
+        if (prontos.empty()) {
+            printf("  (sem modelos em modelos/: nada para verificar)\n");
+        } else {
+            const std::vector<AssetItem> pistas = list_tracks();
+            const std::vector<AssetItem> carros = list_cars();
+            printf("  %zu modelo(s) pronto(s)\n", prontos.size());
+            for (const std::string& caminho : prontos) {
+                const std::string curto = base_name(caminho);
+                Model m;
+                std::string err;
+                if (!Model::load(caminho, m, &err)) {
+                    CHECK(false, "modelo %s nao carregou: %s", curto.c_str(), err.c_str());
+                    continue;
+                }
+                CHECK(int(m.weights.size()) == m.spec.n_params(),
+                      "modelo %s: %zu pesos para %d parametros", curto.c_str(),
+                      m.weights.size(), m.spec.n_params());
+                // a interface usa os metadados para escolher carro e pista
+                const std::string nome_pista =
+                    m.meta.has("track") ? m.meta.at("track").str() : "";
+                const std::string nome_carro = m.meta.has("car") ? m.meta.at("car").str() : "";
+                CHECK(!nome_pista.empty() && !nome_carro.empty(),
+                      "modelo %s sem metadados (pista/carro)", curto.c_str());
+                int ip = -1, ic = -1;
+                for (size_t k = 0; k < pistas.size(); ++k)
+                    if (pistas[k].name == nome_pista) ip = int(k);
+                for (size_t k = 0; k < carros.size(); ++k)
+                    if (carros[k].name == nome_carro) ic = int(k);
+                CHECK(ip >= 0, "modelo %s: pista '%s' nao existe mais", curto.c_str(),
+                      nome_pista.c_str());
+                CHECK(ic >= 0, "modelo %s: carro '%s' nao existe mais", curto.c_str(),
+                      nome_carro.c_str());
+                if (ip < 0 || ic < 0) continue;
+
+                Track t;
+                CarSpec c;
+                CHECK(Track::load(pistas[ip].path, t, &err), "pista %s: %s",
+                      nome_pista.c_str(), err.c_str());
+                CHECK(CarSpec::load(carros[ic].path, c, &err), "carro %s: %s",
+                      nome_carro.c_str(), err.c_str());
+
+                // e o modelo tem de DIRIGIR na pista em que foi treinado
+                SimConfig cfg;
+                cfg.max_seconds = 90.0;
+                cfg.checkpoint_gating = true;
+                Simulation sim(t, c, cfg, 1, 3);
+                PolicyDriver drv(m.spec, m.weights);
+                const int passos = int(90.0 / cfg.dt);
+                std::vector<float> obs(sim.obs_dim, 0.0f);
+                float saida[2] = {0.0f, 0.0f};
+                for (int k = 0; k < passos && !sim.all_dead(); ++k) {
+                    if (sim.should_decide()) {
+                        sim.observe(0, obs.data());
+                        drv.act(obs.data(), sim.obs_dim, saida);
+                        sim.set_action(0, saida[0], saida[1]);
+                    }
+                    sim.step();
+                }
+                const Agent& a = sim.agents[0];
+                CHECK(a.max_s > 120.0, "modelo %s andou pouco: %.0f m", curto.c_str(),
+                      a.max_s);
+                CHECK(a.laps >= 1, "modelo %s nao completou uma volta em %s (%.0f m)",
+                      curto.c_str(), nome_pista.c_str(), a.max_s);
+                printf("     %-34s %-22s %5.0f m  %d volta(s)  %.1f s\n", curto.c_str(),
+                       nome_carro.c_str(), a.max_s, a.laps,
+                       a.best_lap < 1e17 ? a.best_lap : 0.0);
+            }
+        }
+    }
+
+    // ------------------------------------------ gerador de IA (sem programar)
+    {
+        AppState m;
+        PolicySpec p = m.spec_da_ia();
+        CHECK(p.hidden.size() == 2 && p.hidden[0] == 64, "padrao deveria ser 64x2");
+        CHECK(p.activation == "tanh", "ativacao padrao deveria ser tanh");
+        CHECK(m.resumo_da_ia().find("par") != std::string::npos,
+              "resumo sem a contagem de parametros: %s", m.resumo_da_ia().c_str());
+
+        m.ai_gen.camadas = 3;
+        m.ai_gen.formato = 1;                     // funil: 64 -> 32 -> 16
+        m.ai_gen.neuronios = 64;
+        p = m.spec_da_ia();
+        CHECK(p.hidden.size() == 3 && p.hidden[0] == 64 && p.hidden[1] == 32 &&
+                  p.hidden[2] == 16,
+              "funil errado: %zu camadas", p.hidden.size());
+
+        m.ai_gen.formato = 2;                     // ampulheta: 32 -> 64 -> 32
+        p = m.spec_da_ia();
+        CHECK(p.hidden[0] == 32 && p.hidden[1] == 64 && p.hidden[2] == 32,
+              "ampulheta errada: %d/%d/%d", p.hidden[0], p.hidden[1], p.hidden[2]);
+
+        m.ai_gen.camadas = 1;
+        m.ai_gen.formato = 0;
+        m.ai_gen.neuronios = 16;
+        m.ai_gen.ativacao = "relu";
+        p = m.spec_da_ia();
+        CHECK(p.hidden.size() == 1 && p.hidden[0] == 16 && p.activation == "relu",
+              "rede simples errada: %zu camadas, %s", p.hidden.size(),
+              p.activation.c_str());
+        // aplicar: o treino passa a usar a rede escolhida
+        m.aplicar_ia_gerada();
+        CHECK(m.trainer != nullptr, "o gerador nao criou o treino");
+        CHECK(m.trainer->policy.hidden == p.hidden, "o treino nao pegou a rede nova");
+        CHECK(m.trainer->policy.activation == "relu", "o treino nao pegou a ativacao");
+        CHECK(m.trainer->policy.n_params() == p.n_params(), "parametros divergentes");
+        CHECK(m.trainer->pop.spec.n_params() == p.n_params(),
+              "a populacao ficou com a rede antiga");
+
+        // a ativação muda mesmo a resposta da rede (e a saída continua em [-1,1])
+        PolicySpec s1;
+        s1.obs_dim = 4;
+        s1.hidden = {8};
+        s1.act_dim = 2;
+        PolicySpec s2 = s1;
+        s2.activation = "relu";
+        std::vector<float> w(s1.n_params(), 0.0f);
+        Rng rng(7);
+        for (size_t i = 0; i < w.size(); ++i) w[i] = float(rng.uniform01() * 2.0 - 1.0);
+        float obs[4] = {0.3f, -0.2f, 0.5f, 0.1f};
+        float o1[2] = {0, 0}, o2[2] = {0, 0};
+        forward(s1, w.data(), obs, o1);
+        forward(s2, w.data(), obs, o2);
+        CHECK(std::fabs(o1[0] - o2[0]) > 1e-6, "relu e tanh deram a mesma resposta");
+        CHECK(std::fabs(o2[0]) <= 1.0001 && std::fabs(o2[1]) <= 1.0001,
+              "saida fora de [-1,1]: %.3f/%.3f", o2[0], o2[1]);
+        // modelo salvo guarda a ativação (para não virar tanh ao recarregar)
+        Model mo;
+        mo.spec = s2;
+        mo.weights = w;
+        std::string err;
+        CHECK(mo.save(tmp_file("modelo_relu.json").c_str(), &err), "salvar: %s", err.c_str());
+        Model mo2;
+        CHECK(Model::load(tmp_file("modelo_relu.json").c_str(), mo2, &err), "ler: %s",
+              err.c_str());
+        CHECK(mo2.spec.activation == "relu", "ativacao nao voltou do arquivo: %s",
+              mo2.spec.activation.c_str());
+    }
+
     printf("\n%d testes passaram, %d falharam\n", ok, falhas);
     return falhas ? 1 : 0;
 }

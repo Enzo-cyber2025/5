@@ -89,13 +89,12 @@ jobs:
         shell: msys2 {0}
         run: |
           cd raceai-cpp
-          mkdir -p modelos
-          ./build/raceai_train.exe --track kartodromo --car kart -g 60 -p 60 \
-            --seconds 45 --seed 21 --out modelos/demo_kartodromo_kart.json | tail -4
-          ./build/raceai_train.exe --track oval_iniciante --car sedan -g 60 -p 60 \
-            --seconds 45 --seed 7 --out modelos/demo_oval_iniciante_sedan.json | tail -4
-          ./build/raceai_train.exe --track speedway --car formula -g 120 -p 60 \
-            --seconds 45 --seed 5 --out modelos/demo_speedway_formula.json | tail -4
+          bash tools/treinar_modelos.sh
+
+      - name: Conferir os modelos prontos
+        shell: msys2 {0}
+        run: |
+          cd raceai-cpp
           ls -la modelos/
 
       - name: Testes do núcleo e da interface
@@ -228,6 +227,7 @@ jobs:
           cp MODS.md package/RaceAI2D-C++/
           cp tools/pt_para_json.py package/RaceAI2D-C++/converter-modelo.py
           cp tools/gerar_conteudo.py package/RaceAI2D-C++/gerar-conteudo.py
+          cp tools/treinar_modelos.sh package/RaceAI2D-C++/treinar-modelos.sh
           cp -r modelos package/RaceAI2D-C++/
           du -sh package/RaceAI2D-C++
           cd package && zip -qr RaceAI2D-C++-windows.zip RaceAI2D-C++

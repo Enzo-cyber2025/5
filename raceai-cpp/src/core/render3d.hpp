@@ -89,6 +89,26 @@ private:
     std::vector<FaceBruta> faces_;
 };
 
+// Estilos de carroceria pré-modelados (a malha é montada por código, com as
+// proporções do carro: nada de caixa genérica).
+enum class EstiloCarro {
+    Sedan, Hatch, Esportivo, Formula, Kart, Caminhao, Buggy, Picape, Drift, Classico
+};
+
+// Descobre o estilo pelo id/nome do carro (e permite `body_style` no JSON).
+EstiloCarro estilo_carro(const std::string& body_style, const std::string& id);
+
+// Prisma de n lados (usado nas rodas): `eixo` é a direção da largura.
+void add_cilindro(Render3D& r, const Vec3& centro, double raio, double comprimento,
+                  const Vec3& eixo, const Vec3& frente, uint32_t cor, int lados = 10);
+
+// Monta um carro 3D completo (chassi, cabine, asas, rodas...) já no mundo.
+// `esterco` vira as rodas da frente e `giro` é o quanto elas giraram (rad).
+void montar_carro(Render3D& r, EstiloCarro estilo, double x, double y, double z,
+                  double heading, double comprimento, double largura, double altura,
+                  double entre_eixos, double raio_roda, uint32_t cor,
+                  uint32_t cor_detalhe, double esterco = 0.0, double giro = 0.0);
+
 // Monta a pista em 3D: asfalto, zebradas, muros e o cenário em volta.
 // `elev` é opcional (altura de cada ponto da linha de centro).
 void montar_cena_pista(Render3D& r, const Track& t, int centro, int alcance,
