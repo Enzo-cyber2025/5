@@ -76,6 +76,60 @@ static HFONT criar_fonte(int tam, bool negrito, bool mono) {
                        mono ? L"Consolas" : L"Segoe UI");
 }
 
+// Caixa de marcação desenhada à mão: a do Windows é branca e não combina.
+static void desenha_check(const DRAWITEMSTRUCT* di) {
+    const int w = di->rcItem.right - di->rcItem.left;
+    const int h = di->rcItem.bottom - di->rcItem.top;
+    if (w <= 2 || h <= 2) return;
+    wchar_t txt[160] = {0};
+    GetWindowTextW(di->hwndItem, txt, 159);
+    const bool marcado = (di->itemState & ODS_CHECKED) != 0 ||
+                         SendMessageW(di->hwndItem, BM_GETCHECK, 0, 0) == BST_CHECKED;
+    const int lado = 15, cy = (h - lado) / 2;
+
+    HDC mem = CreateCompatibleDC(di->hDC);
+    HBITMAP bmp = CreateCompatibleBitmap(di->hDC, w, h);
+    HGDIOBJ ob = SelectObject(mem, bmp);
+    {
+        RECT rf = {0, 0, w, h};
+        HBRUSH b = CreateSolidBrush(kCorPainel);
+        FillRect(mem, &rf, b);
+        DeleteObject(b);
+    }
+    {   // quadradinho: preenchido na cor de destaque quando marcado
+        HBRUSH b = CreateSolidBrush(marcado ? kCorDestaque : RGB(30, 35, 46));
+        HPEN p = CreatePen(PS_SOLID, 1, marcado ? kCorDestaque : RGB(98, 112, 138));
+        HGDIOBJ obb = SelectObject(mem, b);
+        HGDIOBJ obp = SelectObject(mem, p);
+        RoundRect(mem, 0, cy, lado, cy + lado, 4, 4);
+        SelectObject(mem, obb);
+        SelectObject(mem, obp);
+        DeleteObject(b);
+        DeleteObject(p);
+    }
+    if (marcado) {   // visto dentro do quadradinho
+        HPEN p = CreatePen(PS_SOLID, 2, RGB(14, 26, 20));
+        HGDIOBJ obp = SelectObject(mem, p);
+        MoveToEx(mem, 4, cy + 8, nullptr);
+        LineTo(mem, 6, cy + 11);
+        LineTo(mem, 11, cy + 4);
+        SelectObject(mem, obp);
+        DeleteObject(p);
+    }
+    if (txt[0]) {
+        HGDIOBJ of = SelectObject(mem, g_fonte);
+        SetBkMode(mem, TRANSPARENT);
+        SetTextColor(mem, (di->itemState & ODS_DISABLED) ? RGB(120, 128, 142) : kCorTexto);
+        RECT rt = {lado + 7, 0, w, h};
+        DrawTextW(mem, txt, -1, &rt, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+        SelectObject(mem, of);
+    }
+    BitBlt(di->hDC, di->rcItem.left, di->rcItem.top, w, h, mem, 0, 0, SRCCOPY);
+    SelectObject(mem, ob);
+    DeleteObject(bmp);
+    DeleteDC(mem);
+}
+
 // Botão moderno: pílula com borda, brilho em cima e texto centralizado.
 static void desenha_botao(HDC hdc, RECT rc, const wchar_t* txt, bool pressionado,
                           bool desabilitado) {
@@ -191,6 +245,183 @@ static HWND botao(HWND pai, int id, int x, int y, int w, int h, const wchar_t* t
     return hw;
 }
 
+// ------------------------------------------------------------- slider próprio
+// O trackbar do Windows é cinza claro e não há como redesenhá-lo por dentro
+// (é por isso que os sliders destoavam do painel). Este é desenhado à mão:
+// canal fino, parte preenchida na cor de destaque e pino clarinho.
+static const wchar_t* kClasseSlider = L"RaceAISlider";
+
+// mensagens do slider (WM_USER para não colidir com as do Windows)
+enum { kSlSetPos = WM_USER + 1, kSlGetPos = WM_USER + 2, kSlSetRange = WM_USER + 3 };
+
+struct DadosSlider {
+    int min = 0, max = 1000;      // faixa já em unidades da escala
+    int pos = 0;
+    bool arrastando = false;
+};
+
+static void slider_poe_pos(HWND hw, DadosSlider* d, int pos) {
+    const int p = std::max(d->min, std::min(d->max, pos));
+    if (p == d->pos) return;
+    d->pos = p;
+    InvalidateRect(hw, nullptr, FALSE);
+}
+
+static void slider_pos_do_mouse(HWND hw, DadosSlider* d, int x) {
+    RECT rc;
+    GetClientRect(hw, &rc);
+    const int margem = 9;
+    const int util = std::max(1, int(rc.right - rc.left) - margem * 2);
+    const double f = std::max(0.0, std::min(1.0, double(x - margem) / double(util)));
+    slider_poe_pos(hw, d, d->min + int(std::lround(f * double(d->max - d->min))));
+}
+
+static void slider_pinta(HWND hw, DadosSlider* d) {
+    PAINTSTRUCT ps;
+    HDC hdc = BeginPaint(hw, &ps);
+    RECT rc;
+    GetClientRect(hw, &rc);
+    const int w = std::max(1, int(rc.right - rc.left));
+    const int h = std::max(1, int(rc.bottom - rc.top));
+    HDC mem = CreateCompatibleDC(hdc);
+    HBITMAP bmp = CreateCompatibleBitmap(hdc, w, h);
+    HGDIOBJ ob = SelectObject(mem, bmp);
+    {
+        RECT rf = {0, 0, w, h};
+        HBRUSH b = CreateSolidBrush(kCorPainel);
+        FillRect(mem, &rf, b);
+        DeleteObject(b);
+    }
+    const int margem = 9, cy = h / 2;
+    const int util = std::max(1, w - margem * 2);
+    const double f = (d && d->max > d->min)
+                         ? double(d->pos - d->min) / double(d->max - d->min)
+                         : 0.0;
+    const int x = margem + int(std::lround(f * double(util)));
+    // canal inteiro
+    {
+        HBRUSH b = CreateSolidBrush(RGB(42, 48, 62));
+        HPEN p = CreatePen(PS_SOLID, 1, RGB(42, 48, 62));
+        HGDIOBJ obb = SelectObject(mem, b);
+        HGDIOBJ obp = SelectObject(mem, p);
+        RoundRect(mem, margem, cy - 3, w - margem, cy + 3, 3, 3);
+        SelectObject(mem, obb);
+        SelectObject(mem, obp);
+        DeleteObject(b);
+        DeleteObject(p);
+    }
+    // parte já preenchida
+    if (x > margem + 2) {
+        HBRUSH b = CreateSolidBrush(kCorDestaque);
+        HPEN p = CreatePen(PS_SOLID, 1, kCorDestaque);
+        HGDIOBJ obb = SelectObject(mem, b);
+        HGDIOBJ obp = SelectObject(mem, p);
+        RoundRect(mem, margem, cy - 3, x, cy + 3, 3, 3);
+        SelectObject(mem, obb);
+        SelectObject(mem, obp);
+        DeleteObject(b);
+        DeleteObject(p);
+    }
+    // pino
+    {
+        const int r = 7;
+        HBRUSH b = CreateSolidBrush(RGB(233, 240, 252));
+        HPEN p = CreatePen(PS_SOLID, 1, RGB(120, 200, 160));
+        HGDIOBJ obb = SelectObject(mem, b);
+        HGDIOBJ obp = SelectObject(mem, p);
+        Ellipse(mem, x - r, cy - r, x + r, cy + r);
+        SelectObject(mem, obb);
+        SelectObject(mem, obp);
+        DeleteObject(b);
+        DeleteObject(p);
+    }
+    BitBlt(hdc, 0, 0, w, h, mem, 0, 0, SRCCOPY);
+    SelectObject(mem, ob);
+    DeleteObject(bmp);
+    DeleteDC(mem);
+    EndPaint(hw, &ps);
+}
+
+static LRESULT CALLBACK SliderProc(HWND hw, UINT msg, WPARAM wp, LPARAM lp) {
+    DadosSlider* d = (DadosSlider*)GetWindowLongPtrW(hw, GWLP_USERDATA);
+    switch (msg) {
+        case WM_CREATE:
+            SetWindowLongPtrW(hw, GWLP_USERDATA, (LONG_PTR) new DadosSlider());
+            return 0;
+        case WM_NCDESTROY:
+            delete d;
+            SetWindowLongPtrW(hw, GWLP_USERDATA, 0);
+            return 0;
+        case WM_ERASEBKGND:
+            return 1;                       // o duplo-buffer já pinta tudo
+        case WM_PAINT:
+            if (d) {
+                slider_pinta(hw, d);
+            } else {
+                PAINTSTRUCT ps;
+                BeginPaint(hw, &ps);
+                EndPaint(hw, &ps);
+            }
+            return 0;
+        case WM_LBUTTONDOWN:
+            if (!d) break;
+            SetFocus(hw);
+            SetCapture(hw);
+            d->arrastando = true;
+            slider_pos_do_mouse(hw, d, GET_X_LPARAM(lp));
+            SendMessageW(GetParent(hw), WM_HSCROLL, (WPARAM)1, (LPARAM)hw);
+            return 0;
+        case WM_MOUSEMOVE:
+            if (d && d->arrastando) {
+                slider_pos_do_mouse(hw, d, GET_X_LPARAM(lp));
+                // wp=1 = ainda arrastando: o pai atualiza o valor mas nao
+                // fica gravando arquivo a cada pixel
+                SendMessageW(GetParent(hw), WM_HSCROLL, (WPARAM)1, (LPARAM)hw);
+            }
+            return 0;
+        case WM_LBUTTONUP:
+        case WM_CAPTURECHANGED: {
+            const bool estava = d && d->arrastando;
+            if (d) d->arrastando = false;
+            ReleaseCapture();
+            if (estava) SendMessageW(GetParent(hw), WM_HSCROLL, 0, (LPARAM)hw);
+            return 0;
+        }
+        case WM_KEYDOWN: {
+            if (!d) break;
+            const int passo = std::max(1, (d->max - d->min) / 50);
+            int nova = d->pos;
+            if (wp == VK_LEFT || wp == VK_DOWN) nova = d->pos - passo;
+            else if (wp == VK_RIGHT || wp == VK_UP) nova = d->pos + passo;
+            else if (wp == VK_HOME) nova = d->min;
+            else if (wp == VK_END) nova = d->max;
+            else break;
+            slider_poe_pos(hw, d, nova);
+            SendMessageW(GetParent(hw), WM_HSCROLL, 0, (LPARAM)hw);
+            return 0;
+        }
+        case kSlSetPos:
+            if (d) {
+                d->pos = std::max(d->min, std::min(d->max, int(lp)));
+                InvalidateRect(hw, nullptr, FALSE);
+            }
+            return 0;
+        case kSlGetPos:
+            return d ? d->pos : 0;
+        case kSlSetRange:
+            if (d) {
+                d->min = int(LOWORD(lp));
+                d->max = int(HIWORD(lp));
+                d->pos = std::max(d->min, std::min(d->max, d->pos));
+                InvalidateRect(hw, nullptr, FALSE);
+            }
+            return 0;
+        default:
+            break;
+    }
+    return DefWindowProcW(hw, msg, wp, lp);
+}
+
 struct Slider {
     HWND barra = nullptr;
     HWND texto = nullptr;
@@ -199,7 +430,7 @@ struct Slider {
     std::wstring nome;
     void atualiza() {
         if (!barra) return;
-        SendMessageW(barra, TBM_SETPOS, TRUE, (LPARAM)int(std::lround(*valor * escala)));
+        SendMessageW(barra, kSlSetPos, 0, (LPARAM)int(std::lround(*valor * escala)));
         SetWindowTextW(texto, rotulo_valor(nome, *valor).c_str());
     }
 };
@@ -218,10 +449,11 @@ static HWND cria_slider(HWND pai, int x, int y, int w, const wchar_t* nome, doub
     s.escala = escala;
     s.nome = nome;
     s.texto = rotulo(pai, x, y, w, 18, nome);
-    s.barra = CreateWindowW(TRACKBAR_CLASSW, L"", WS_CHILD | WS_VISIBLE | TBS_AUTOTICKS,
-                            x, y + 18, w, 22, pai, nullptr, GetModuleHandle(nullptr), nullptr);
-    SendMessageW(s.barra, TBM_SETRANGE, TRUE, MAKELONG(int(min * escala), int(max * escala)));
-    SendMessageW(s.barra, TBM_SETPOS, TRUE, (LPARAM)int(std::lround(*valor * escala)));
+    s.barra = CreateWindowW(kClasseSlider, L"", WS_CHILD | WS_VISIBLE | WS_TABSTOP, x, y + 18,
+                            w, 22, pai, nullptr, GetModuleHandle(nullptr), nullptr);
+    SendMessageW(s.barra, kSlSetRange, 0,
+                 (LPARAM)MAKELONG(int(min * escala), int(max * escala)));
+    SendMessageW(s.barra, kSlSetPos, 0, (LPARAM)int(std::lround(*valor * escala)));
     g_sliders.push_back(s);
     g_sliders.back().atualiza();
     return s.barra;
@@ -1204,17 +1436,20 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             cria_slider_corrida(hwnd, P + 196, 246, 180, L"retorno do volante",
                                 &g_app.controles.retorno, 0.3, 3.0, 100);
             g_chk_abs = CreateWindowW(L"button", L"ABS",
-                                      WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
+                                      WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX |
+                                          BS_OWNERDRAW,
                                       P, 292, 110, 22, hwnd, (HMENU)(intptr_t)ID_CHK_ABS,
                                       GetModuleHandle(nullptr), nullptr);
             g_chk_tc = CreateWindowW(L"button", L"controle de tração",
-                                     WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
+                                     WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX |
+                                         BS_OWNERDRAW,
                                      P + 120, 292, 170, 22, hwnd, (HMENU)(intptr_t)ID_CHK_TC,
                                      GetModuleHandle(nullptr), nullptr);
             SendMessageW(g_chk_abs, WM_SETFONT, (WPARAM)g_fonte, TRUE);
             SendMessageW(g_chk_tc, WM_SETFONT, (WPARAM)g_fonte, TRUE);
             g_chk_colisao = CreateWindowW(L"button", L"colisões",
-                                          WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
+                                          WS_CHILD | WS_VISIBLE | WS_TABSTOP |
+                                              BS_AUTOCHECKBOX | BS_OWNERDRAW,
                                           P + 300, 292, 96, 22, hwnd,
                                           (HMENU)(intptr_t)ID_CHK_COLISAO,
                                           GetModuleHandle(nullptr), nullptr);
@@ -1223,7 +1458,8 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                          g_app.sim_cfg.colisoes ? BST_CHECKED : BST_UNCHECKED, 0);
             // ---- pitstop: o jogador também pode parar (tecla B)
             g_chk_boxe = CreateWindowW(L"button", L"boxe (B pede parada)",
-                                       WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
+                                       WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX |
+                                           BS_OWNERDRAW,
                                        P, 316, 250, 22, hwnd,
                                        (HMENU)(intptr_t)ID_CHK_BOXE,
                                        GetModuleHandle(nullptr), nullptr);
@@ -1325,10 +1561,11 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             return 0;
         }
         case WM_HSCROLL: {
+            const bool arrastando = (wp != 0);   // 1 = arrastando (ver SliderProc)
             bool achou = false;
             for (Slider& s : g_sliders) {
                 if (s.barra == (HWND)lp && s.valor) {
-                    int pos = int(SendMessageW(s.barra, TBM_GETPOS, 0, 0));
+                    int pos = int(SendMessageW(s.barra, kSlGetPos, 0, 0));
                     *s.valor = double(pos) / s.escala;
                     s.atualiza();
                     g_app.aplicar_recompensa(g_app.reward);
@@ -1339,10 +1576,10 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             }
             for (Slider& s : g_sliders_corrida) {
                 if (s.barra == (HWND)lp && s.valor) {
-                    int pos = int(SendMessageW(s.barra, TBM_GETPOS, 0, 0));
+                    int pos = int(SendMessageW(s.barra, kSlGetPos, 0, 0));
                     *s.valor = double(pos) / s.escala;
                     s.atualiza();
-                    g_app.salvar_controles();
+                    if (!arrastando) g_app.salvar_controles();
                     g_app.aplicar_cfg_boxe();
                     achou = true;
                     break;
@@ -1386,6 +1623,11 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                 return TRUE;
             }
             if (di->CtlType == ODT_BUTTON) {
+                const LONG_PTR est = GetWindowLongPtrW(di->hwndItem, GWL_STYLE);
+                if (est & (BS_CHECKBOX | BS_3STATE)) {   // caixa de marcação
+                    desenha_check(di);
+                    return TRUE;
+                }
                 wchar_t txt[160] = {0};
                 GetWindowTextW(di->hwndItem, txt, 159);
                 desenha_botao(di->hDC, di->rcItem, txt,
@@ -1795,6 +2037,22 @@ static int rodar(HINSTANCE hInst, int cmd_show) {
     icc.dwSize = sizeof(icc);
     icc.dwICC = ICC_BAR_CLASSES | ICC_WIN95_CLASSES | ICC_STANDARD_CLASSES;
     InitCommonControlsEx(&icc);
+
+    // slider próprio (desenhado à mão): registrado antes da janela principal
+    {
+        WNDCLASSEXW ws;
+        ZeroMemory(&ws, sizeof(ws));
+        ws.cbSize = sizeof(ws);
+        ws.style = CS_HREDRAW | CS_VREDRAW;
+        ws.lpfnWndProc = SliderProc;
+        ws.hInstance = hInst;
+        ws.hbrBackground = nullptr;
+        ws.lpszClassName = kClasseSlider;
+        if (!RegisterClassExW(&ws)) {
+            log_erro(L"RegisterClassExW (slider)", mensagem_win32(GetLastError()));
+            return 1;
+        }
+    }
 
     WNDCLASSEXW wc;
     ZeroMemory(&wc, sizeof(wc));

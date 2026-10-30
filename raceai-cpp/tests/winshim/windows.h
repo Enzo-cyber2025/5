@@ -33,6 +33,7 @@ typedef unsigned long DWORD;
 typedef int BOOL;
 typedef long LONG;
 typedef unsigned long long ULONG_PTR;
+typedef long long LONG_PTR;
 typedef ULONG_PTR UINT_PTR;
 typedef ULONG_PTR WPARAM;
 typedef long long LPARAM;
@@ -317,3 +318,43 @@ inline BOOL DeleteDC(HDC) { return 1; }
 inline BOOL BitBlt(HDC, int, int, int, int, HDC, int, int, DWORD) { return 1; }
 inline BOOL RoundRect(HDC, int, int, int, int, int, int) { return 1; }
 inline int DrawTextW(HDC, LPCWSTR, int, RECT*, UINT) { return 0; }
+
+// ---- extras usados pelo slider próprio e pelas caixas de marcação ----
+#ifndef WM_USER
+#define WM_USER 0x0400
+#endif
+#ifndef WM_NCDESTROY
+#define WM_NCDESTROY   0x0082
+#define WM_LBUTTONDOWN 0x0201
+#define WM_LBUTTONUP   0x0202
+#define WM_MOUSEMOVE   0x0200
+#define WM_CAPTURECHANGED 0x0215
+#endif
+#ifndef GWL_STYLE
+#define GWL_STYLE      (-16)
+#define GWLP_USERDATA  (-21)
+#endif
+#ifndef BS_CHECKBOX
+#define BS_CHECKBOX    0x0002
+#define BS_3STATE      0x0005
+#define BS_AUTO3STATE  0x0006
+#endif
+#ifndef ODS_CHECKED
+#define ODS_CHECKED    0x0008
+#endif
+#ifndef GET_X_LPARAM
+#define GET_X_LPARAM(lp) ((int)(short)LOWORD(lp))
+#endif
+#ifndef VK_HOME
+#define VK_HOME 0x24
+#define VK_END  0x23
+#define VK_LEFT 0x25
+#define VK_RIGHT 0x27
+#endif
+inline LONG_PTR GetWindowLongPtrW(HWND, int) { return 0; }
+inline LONG_PTR SetWindowLongPtrW(HWND, int, LONG_PTR) { return 0; }
+inline HWND SetCapture(HWND) { return nullptr; }
+inline HWND SetFocus(HWND) { return nullptr; }
+inline HWND GetParent(HWND) { return nullptr; }
+inline BOOL ReleaseCapture() { return 1; }
+inline BOOL Ellipse(HDC, int, int, int, int) { return 1; }

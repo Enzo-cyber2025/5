@@ -158,3 +158,22 @@ src/core/*.cpp src/app/app_state.cpp` (já limpo).
 - **Guarda no CI**: o job `verificar` (windows-2022, máquina limpa) agora
   roda `RaceAI2D.exe --conteudo`; o flag imprime `conteudo: pistas=N
   carros=N` e sai com 1 se vier 0. Assim "lista vazia" nunca mais passa.
+
+## Slider e caixas de marcação próprios (2026-10-30)
+
+- O **trackbar do Windows não dá para redesenhar por dentro** (sempre fica
+  cinza claro, destoando do painel escuro). Troquei por um controle próprio:
+  classe `RaceAISlider` (`SliderProc`), registrada em `rodar()` antes da
+  janela principal. Mensagens próprias `kSlSetPos/kSlGetPos/kSlSetRange`
+  (WM_USER+1..3) no lugar de `TBM_SETPOS/TBM_GETPOS/TBM_SETRANGE`.
+- O slider avisa o pai com `WM_HSCROLL` e `wp=1` enquanto o usuário arrasta:
+  o pai atualiza o valor, mas **só salva em disco quando o arrasto termina**
+  (`wp=0`), senão gravaria o JSON a cada pixel.
+- Caixas de marcação (ABS, tração, colisões, boxe) viraram `BS_AUTOCHECKBOX |
+  BS_OWNERDRAW` + `desenha_check()`. No `WM_DRAWITEM`, o ramo `ODT_BUTTON`
+  olha `GetWindowLongPtrW(GWL_STYLE) & (BS_CHECKBOX | BS_3STATE)` para
+  decidir entre `desenha_check` e `desenha_botao`.
+- Shim: `HANDLE`, `LONG_PTR`, `GetWindowLongPtrW/SetWindowLongPtrW`,
+  `SetCapture/ReleaseCapture/SetFocus/GetParent`, `Ellipse`,
+  `WM_NCDESTROY/WM_LBUTTON*/WM_MOUSEMOVE/WM_CAPTURECHANGED`, `ODS_CHECKED`,
+  `GWL_STYLE/GWLP_USERDATA`, `BS_CHECKBOX/BS_3STATE`, `GET_X_LPARAM`.
