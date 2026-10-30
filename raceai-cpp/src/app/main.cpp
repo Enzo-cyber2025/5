@@ -58,16 +58,76 @@ static HBITMAP g_mem_bmp = nullptr;
 static HBITMAP g_mem_antigo = nullptr;
 static int g_mem_w = 0, g_mem_h = 0;
 
-// ------------------------------------------------------------------ tema
-// Paleta única para tudo (painel, controles e HUD): fundo azulado escuro,
-// texto claro e um verde-água de destaque.
-static const COLORREF kCorPainel     = RGB(26, 30, 40);
-static const COLORREF kCorFundo      = RGB(14, 17, 22);
-static const COLORREF kCorTexto      = RGB(222, 228, 240);
-static const COLORREF kCorDestaque   = RGB(86, 214, 140);
-static const COLORREF kCorBotao      = RGB(46, 55, 72);
-static const COLORREF kCorBotaoTopo  = RGB(98, 114, 142);
-static const COLORREF kCorEdit       = RGB(16, 19, 26);
+// ------------------------------------------------------------------ temas
+// Três visuais completos. O usuário troca pelo botão "tema" no topo do painel
+// e a escolha fica salva. Cada tema define as cores do painel, dos controles,
+// da pista e do HUD — nada mais fica com cor fixa espalhada no código.
+// (As cores do CENÁRIO 3D — céu, grama — continuam fixas: são o mundo, não a
+// interface.)
+struct Tema {
+    const wchar_t* nome;
+    COLORREF painel, fundo, texto, destaque;
+    COLORREF botao, botao_press, botao_borda, botao_desab, texto_botao, texto_desab;
+    COLORREF edit, texto_edit;
+    COLORREF cartao, cartao_borda;
+    COLORREF grade, asfalto, borda_pista, centro, divisor, titulo_faixa;
+    COLORREF canal, pino, pino_borda, combo_realce;
+    COLORREF mini_fundo, mini_moldura, mini_pista, mini_texto;
+};
+
+static const Tema kTemas[] = {
+    // 0 — Escuro: painel azulado, verde-água de destaque
+    {L"escuro", RGB(26, 30, 40), RGB(14, 17, 22), RGB(222, 228, 240), RGB(86, 214, 140),
+     RGB(46, 55, 72), RGB(70, 92, 120), RGB(82, 98, 124), RGB(32, 36, 45), RGB(234, 240, 250),
+     RGB(112, 120, 134), RGB(16, 19, 26), RGB(228, 235, 247), RGB(15, 19, 26), RGB(58, 70, 90),
+     RGB(20, 24, 32), RGB(46, 50, 58), RGB(228, 232, 240), RGB(90, 96, 108), RGB(46, 54, 70),
+     RGB(32, 37, 50), RGB(42, 48, 62), RGB(233, 240, 252), RGB(120, 200, 160), RGB(52, 68, 96),
+     RGB(20, 24, 32), RGB(70, 78, 92), RGB(78, 84, 96), RGB(190, 200, 214)},
+    // 1 — Claro: cara de aplicativo comum, texto escuro
+    {L"claro", RGB(240, 242, 246), RGB(252, 253, 255), RGB(28, 32, 42), RGB(16, 132, 88),
+     RGB(255, 255, 255), RGB(212, 226, 240), RGB(196, 205, 218), RGB(232, 235, 240),
+     RGB(26, 32, 44), RGB(150, 158, 170), RGB(255, 255, 255), RGB(24, 28, 36), RGB(255, 255, 255),
+     RGB(204, 213, 226), RGB(226, 232, 240), RGB(122, 130, 142), RGB(56, 62, 74),
+     RGB(168, 176, 188), RGB(202, 210, 222), RGB(228, 233, 241), RGB(212, 219, 230),
+     RGB(255, 255, 255), RGB(16, 132, 88), RGB(196, 224, 210), RGB(240, 243, 248),
+     RGB(186, 195, 208), RGB(150, 158, 170), RGB(70, 80, 94)},
+    // 2 — Azul: azul-marinho com destaque em azul claro
+    {L"azul", RGB(18, 32, 58), RGB(9, 17, 33), RGB(226, 236, 255), RGB(86, 180, 255),
+     RGB(30, 52, 88), RGB(46, 84, 138), RGB(62, 100, 158), RGB(22, 36, 60), RGB(236, 244, 255),
+     RGB(120, 140, 170), RGB(11, 22, 41), RGB(228, 238, 255), RGB(13, 26, 48), RGB(48, 84, 140),
+     RGB(20, 36, 62), RGB(40, 58, 90), RGB(214, 232, 255), RGB(110, 142, 182), RGB(34, 58, 96),
+     RGB(24, 42, 74), RGB(34, 58, 96), RGB(236, 246, 255), RGB(86, 180, 255), RGB(40, 80, 132),
+     RGB(16, 30, 54), RGB(62, 96, 146), RGB(96, 128, 168), RGB(186, 204, 230)},
+};
+static const int kNTemas = int(sizeof(kTemas) / sizeof(kTemas[0]));
+static int g_tema_idx = 0;
+static Tema g_t = kTemas[0];        // tema em uso (cópia para não escrever const)
+static std::wstring g_dir_dados;    // pasta onde as preferências são salvas
+static HWND g_botao_tema = nullptr;
+
+static void salvar_tema();   // definida mais abaixo (precisa de narrow())
+
+// Troca o visual inteiro (painel, controles, pista e HUD) de uma vez.
+static void aplicar_tema(int idx) {
+    g_tema_idx = ((idx % kNTemas) + kNTemas) % kNTemas;
+    g_t = kTemas[g_tema_idx];
+    // pincéis usados pelo WM_CTLCOLOR* (pai pinta o fundo dos controles)
+    if (g_pincel_painel) DeleteObject(g_pincel_painel);
+    if (g_pincel_edit) DeleteObject(g_pincel_edit);
+    if (g_pincel_titulo) DeleteObject(g_pincel_titulo);
+    if (g_pincel_destaque) DeleteObject(g_pincel_destaque);
+    g_pincel_painel = CreateSolidBrush(g_t.painel);
+    g_pincel_edit = CreateSolidBrush(g_t.edit);
+    g_pincel_titulo = CreateSolidBrush(g_t.titulo_faixa);
+    g_pincel_destaque = CreateSolidBrush(g_t.destaque);
+    if (g_botao_tema)
+        SetWindowTextW(g_botao_tema, (std::wstring(L"tema: ") + g_t.nome).c_str());
+    salvar_tema();
+    // repinta a janela e TODOS os controles com as cores novas
+    if (g_hwnd)
+        RedrawWindow(g_hwnd, nullptr, nullptr,
+                     RDW_INVALIDATE | RDW_ALLCHILDREN | RDW_UPDATENOW);
+}
 
 static HFONT criar_fonte(int tam, bool negrito, bool mono) {
     return CreateFontW(tam, 0, 0, 0, negrito ? FW_SEMIBOLD : FW_NORMAL, FALSE, FALSE, FALSE,
@@ -92,13 +152,13 @@ static void desenha_check(const DRAWITEMSTRUCT* di) {
     HGDIOBJ ob = SelectObject(mem, bmp);
     {
         RECT rf = {0, 0, w, h};
-        HBRUSH b = CreateSolidBrush(kCorPainel);
+        HBRUSH b = CreateSolidBrush(g_t.painel);
         FillRect(mem, &rf, b);
         DeleteObject(b);
     }
     {   // quadradinho: preenchido na cor de destaque quando marcado
-        HBRUSH b = CreateSolidBrush(marcado ? kCorDestaque : RGB(30, 35, 46));
-        HPEN p = CreatePen(PS_SOLID, 1, marcado ? kCorDestaque : RGB(98, 112, 138));
+        HBRUSH b = CreateSolidBrush(marcado ? g_t.destaque : g_t.edit);
+        HPEN p = CreatePen(PS_SOLID, 1, marcado ? g_t.destaque : g_t.botao_borda);
         HGDIOBJ obb = SelectObject(mem, b);
         HGDIOBJ obp = SelectObject(mem, p);
         RoundRect(mem, 0, cy, lado, cy + lado, 4, 4);
@@ -108,7 +168,7 @@ static void desenha_check(const DRAWITEMSTRUCT* di) {
         DeleteObject(p);
     }
     if (marcado) {   // visto dentro do quadradinho
-        HPEN p = CreatePen(PS_SOLID, 2, RGB(14, 26, 20));
+        HPEN p = CreatePen(PS_SOLID, 2, g_t.fundo);
         HGDIOBJ obp = SelectObject(mem, p);
         MoveToEx(mem, 4, cy + 8, nullptr);
         LineTo(mem, 6, cy + 11);
@@ -119,7 +179,7 @@ static void desenha_check(const DRAWITEMSTRUCT* di) {
     if (txt[0]) {
         HGDIOBJ of = SelectObject(mem, g_fonte);
         SetBkMode(mem, TRANSPARENT);
-        SetTextColor(mem, (di->itemState & ODS_DISABLED) ? RGB(120, 128, 142) : kCorTexto);
+        SetTextColor(mem, (di->itemState & ODS_DISABLED) ? g_t.texto_desab : g_t.texto);
         RECT rt = {lado + 7, 0, w, h};
         DrawTextW(mem, txt, -1, &rt, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
         SelectObject(mem, of);
@@ -139,10 +199,10 @@ static void desenha_botao(HDC hdc, RECT rc, const wchar_t* txt, bool pressionado
     HBITMAP bmp = CreateCompatibleBitmap(hdc, w, h);
     HGDIOBJ ob = SelectObject(mem, bmp);
 
-    const COLORREF fundo = desabilitado ? RGB(32, 36, 45)
-                                        : (pressionado ? RGB(70, 92, 120) : kCorBotao);
+    const COLORREF fundo = desabilitado ? g_t.botao_desab
+                                        : (pressionado ? g_t.botao_press : g_t.botao);
     HBRUSH b = CreateSolidBrush(fundo);
-    HPEN p = CreatePen(PS_SOLID, 1, desabilitado ? RGB(42, 48, 58) : RGB(82, 98, 124));
+    HPEN p = CreatePen(PS_SOLID, 1, desabilitado ? g_t.botao_desab : g_t.botao_borda);
     HGDIOBJ obb = SelectObject(mem, b);
     HGDIOBJ obp = SelectObject(mem, p);
     RoundRect(mem, 0, 0, w, h, h / 2, h / 2);
@@ -153,7 +213,7 @@ static void desenha_botao(HDC hdc, RECT rc, const wchar_t* txt, bool pressionado
 
     // filete de luz no topo (só quando está ativo)
     if (!desabilitado) {
-        HPEN luz = CreatePen(PS_SOLID, 1, kCorBotaoTopo);
+        HPEN luz = CreatePen(PS_SOLID, 1, g_t.botao_borda);
         HGDIOBJ obl = SelectObject(mem, luz);
         MoveToEx(mem, h / 3, 1, nullptr);
         LineTo(mem, std::max(h / 3 + 1, w - h / 3), 1);
@@ -164,7 +224,7 @@ static void desenha_botao(HDC hdc, RECT rc, const wchar_t* txt, bool pressionado
     if (txt && *txt) {
         SetBkMode(mem, TRANSPARENT);
         HGDIOBJ of = SelectObject(mem, g_fonte_botao ? g_fonte_botao : g_fonte);
-        SetTextColor(mem, desabilitado ? RGB(112, 120, 134) : RGB(234, 240, 250));
+        SetTextColor(mem, desabilitado ? g_t.texto_desab : g_t.texto_botao);
         RECT rt = {0, 0, w, h};
         DrawTextW(mem, txt, -1, &rt, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
         SelectObject(mem, of);
@@ -288,7 +348,7 @@ static void slider_pinta(HWND hw, DadosSlider* d) {
     HGDIOBJ ob = SelectObject(mem, bmp);
     {
         RECT rf = {0, 0, w, h};
-        HBRUSH b = CreateSolidBrush(kCorPainel);
+        HBRUSH b = CreateSolidBrush(g_t.painel);
         FillRect(mem, &rf, b);
         DeleteObject(b);
     }
@@ -300,8 +360,8 @@ static void slider_pinta(HWND hw, DadosSlider* d) {
     const int x = margem + int(std::lround(f * double(util)));
     // canal inteiro
     {
-        HBRUSH b = CreateSolidBrush(RGB(42, 48, 62));
-        HPEN p = CreatePen(PS_SOLID, 1, RGB(42, 48, 62));
+        HBRUSH b = CreateSolidBrush(g_t.canal);
+        HPEN p = CreatePen(PS_SOLID, 1, g_t.canal);
         HGDIOBJ obb = SelectObject(mem, b);
         HGDIOBJ obp = SelectObject(mem, p);
         RoundRect(mem, margem, cy - 3, w - margem, cy + 3, 3, 3);
@@ -312,8 +372,8 @@ static void slider_pinta(HWND hw, DadosSlider* d) {
     }
     // parte já preenchida
     if (x > margem + 2) {
-        HBRUSH b = CreateSolidBrush(kCorDestaque);
-        HPEN p = CreatePen(PS_SOLID, 1, kCorDestaque);
+        HBRUSH b = CreateSolidBrush(g_t.destaque);
+        HPEN p = CreatePen(PS_SOLID, 1, g_t.destaque);
         HGDIOBJ obb = SelectObject(mem, b);
         HGDIOBJ obp = SelectObject(mem, p);
         RoundRect(mem, margem, cy - 3, x, cy + 3, 3, 3);
@@ -325,8 +385,8 @@ static void slider_pinta(HWND hw, DadosSlider* d) {
     // pino
     {
         const int r = 7;
-        HBRUSH b = CreateSolidBrush(RGB(233, 240, 252));
-        HPEN p = CreatePen(PS_SOLID, 1, RGB(120, 200, 160));
+        HBRUSH b = CreateSolidBrush(g_t.pino);
+        HPEN p = CreatePen(PS_SOLID, 1, g_t.pino_borda);
         HGDIOBJ obb = SelectObject(mem, b);
         HGDIOBJ obp = SelectObject(mem, p);
         Ellipse(mem, x - r, cy - r, x + r, cy + r);
@@ -496,14 +556,14 @@ static void desenha_combo(const DRAWITEMSTRUCT* di) {
     HGDIOBJ ob = SelectObject(mem, bmp);
     {
         RECT rf = {0, 0, w, h};
-        HBRUSH b = CreateSolidBrush(fechada ? kCorEdit
-                                            : (realce ? RGB(52, 68, 96) : RGB(22, 26, 34)));
+        HBRUSH b = CreateSolidBrush(fechada ? g_t.edit
+                                            : (realce ? g_t.combo_realce : g_t.edit));
         FillRect(mem, &rf, b);
         DeleteObject(b);
     }
     if (fechada) {   // borda + cantos arredondados só na caixa fechada
-        HBRUSH b = CreateSolidBrush(kCorEdit);
-        HPEN p = CreatePen(PS_SOLID, 1, RGB(72, 86, 112));
+        HBRUSH b = CreateSolidBrush(g_t.edit);
+        HPEN p = CreatePen(PS_SOLID, 1, g_t.botao_borda);
         HGDIOBJ obb = SelectObject(mem, b);
         HGDIOBJ obp = SelectObject(mem, p);
         RoundRect(mem, 0, 0, w, h, 8, 8);
@@ -524,8 +584,8 @@ static void desenha_combo(const DRAWITEMSTRUCT* di) {
     if (fechada) {   // setinha
         const int cx = w - 14, cy = h / 2;
         POINT pts[3] = {{cx - 5, cy - 2}, {cx + 5, cy - 2}, {cx, cy + 3}};
-        HBRUSH bs = CreateSolidBrush(RGB(150, 165, 190));
-        HPEN ps = CreatePen(PS_SOLID, 1, RGB(150, 165, 190));
+        HBRUSH bs = CreateSolidBrush(g_t.texto_desab);
+        HPEN ps = CreatePen(PS_SOLID, 1, g_t.texto_desab);
         HGDIOBJ obs = SelectObject(mem, bs);
         HGDIOBJ ops = SelectObject(mem, ps);
         Polygon(mem, pts, 3);
@@ -551,6 +611,20 @@ static HWND combo(HWND pai, int id, int x, int y, int w,
     for (const std::wstring& it : itens) SendMessageW(cb, CB_ADDSTRING, 0, (LPARAM)it.c_str());
     SendMessageW(cb, CB_SETCURSEL, (WPARAM)selecionado, 0);
     return cb;
+}
+
+// tema escolhido fica num arquivinho na pasta de dados (depois de narrow())
+static void salvar_tema() {
+    if (g_dir_dados.empty()) return;
+    std::ofstream f(narrow(g_dir_dados + L"\\tema.txt"));
+    if (f) f << g_tema_idx << "\n";
+}
+
+static void carregar_tema() {
+    if (g_dir_dados.empty()) return;
+    std::ifstream f(narrow(g_dir_dados + L"\\tema.txt"));
+    int v = -1;
+    if (f && (f >> v) && v >= 0 && v < kNTemas) g_tema_idx = v;
 }
 
 static HWND g_texto_ia = nullptr;
@@ -592,7 +666,8 @@ enum {
     ID_RECOMPENSA_PADRAO, ID_ZOOM_MAIS, ID_ZOOM_MENOS, ID_CHAVE_MODO,
     ID_CHK_ABS, ID_CHK_TC, ID_CHK_COLISAO, ID_CHK_BOXE, ID_ABRIR_MODS, ID_RECARR_MODS,
     ID_CHAVE_3D,
-    ID_GER_CAMADAS, ID_GER_ATIV, ID_GER_FORMATO, ID_GERAR_IA, ID_CHAVE_TIPO_IA
+    ID_GER_CAMADAS, ID_GER_ATIV, ID_GER_FORMATO, ID_GERAR_IA, ID_CHAVE_TIPO_IA,
+    ID_TEMA
 };
 
 // ------------------------------------------------------------------ canvas
@@ -763,14 +838,14 @@ static void pinta_cena3d(HDC hdc, int x0, int y0, int w, int h, const Track& trk
 
 static void pinta_canvas(HDC hdc, int x0, int y0, int w, int h) {
     // fundo
-    HBRUSH fundo = CreateSolidBrush(kCorFundo);
+    HBRUSH fundo = CreateSolidBrush(g_t.fundo);
     RECT r = {x0, y0, x0 + w, y0 + h};
     FillRect(hdc, &r, fundo);
     DeleteObject(fundo);
 
     // grade discreta: dá o ar de telemetria sem poluir
     {
-        HPEN grade = CreatePen(PS_SOLID, 1, RGB(20, 24, 32));
+        HPEN grade = CreatePen(PS_SOLID, 1, g_t.grade);
         HGDIOBJ og = SelectObject(hdc, grade);
         for (int gx = x0; gx < x0 + w; gx += 40) {
             MoveToEx(hdc, gx, y0, nullptr);
@@ -815,7 +890,7 @@ static void pinta_canvas(HDC hdc, int x0, int y0, int w, int h) {
         p.y = sy(trk->edge_r[i].y);
         poly.push_back(p);
     }
-    HBRUSH asfalto = CreateSolidBrush(RGB(46, 50, 58));
+    HBRUSH asfalto = CreateSolidBrush(g_t.asfalto);
     HPEN sem_pena = CreatePen(PS_NULL, 0, RGB(0, 0, 0));
     HGDIOBJ old_b = SelectObject(hdc, asfalto);
     HGDIOBJ old_p = SelectObject(hdc, sem_pena);
@@ -826,7 +901,7 @@ static void pinta_canvas(HDC hdc, int x0, int y0, int w, int h) {
     DeleteObject(sem_pena);
 
     // ------------------------------------------------------- bordas
-    HPEN borda = CreatePen(PS_SOLID, 2, RGB(228, 232, 240));
+    HPEN borda = CreatePen(PS_SOLID, 2, g_t.borda_pista);
     old_p = SelectObject(hdc, borda);
     for (int lado = 0; lado < 2; ++lado) {
         const std::vector<Vec2>& e = lado == 0 ? trk->edge_l : trk->edge_r;
@@ -838,7 +913,7 @@ static void pinta_canvas(HDC hdc, int x0, int y0, int w, int h) {
     DeleteObject(borda);
 
     // ------------------------------------------------------- linha de centro
-    HPEN centro = CreatePen(PS_DOT, 1, RGB(90, 96, 108));
+    HPEN centro = CreatePen(PS_DOT, 1, g_t.centro);
     old_p = SelectObject(hdc, centro);
     MoveToEx(hdc, sx(trk->center[0].x), sy(trk->center[0].y), nullptr);
     for (int i = 1; i < trk->n(); ++i) LineTo(hdc, sx(trk->center[i].x), sy(trk->center[i].y));
@@ -848,7 +923,7 @@ static void pinta_canvas(HDC hdc, int x0, int y0, int w, int h) {
 
     // ------------------------------------------------------- largada
     int si = trk->start_index % trk->n();
-    HPEN largada = CreatePen(PS_SOLID, 3, RGB(240, 240, 240));
+    HPEN largada = CreatePen(PS_SOLID, 3, g_t.borda_pista);
     old_p = SelectObject(hdc, largada);
     MoveToEx(hdc, sx(trk->edge_l[si].x), sy(trk->edge_l[si].y), nullptr);
     LineTo(hdc, sx(trk->edge_r[si].x), sy(trk->edge_r[si].y));
@@ -948,11 +1023,11 @@ static void pinta_canvas(HDC hdc, int x0, int y0, int w, int h) {
     if (g_app.loss_history.size() >= 2) {
         const int gw = 190, gh = 90;
         int gx = x0 + w - gw - 16, gy = y0 + 16;
-        HBRUSH bf = CreateSolidBrush(RGB(20, 24, 32));
+        HBRUSH bf = CreateSolidBrush(g_t.mini_fundo);
         RECT gr = {gx, gy, gx + gw, gy + gh};
         FillRect(hdc, &gr, bf);
         DeleteObject(bf);
-        HPEN moldura = CreatePen(PS_SOLID, 1, RGB(70, 78, 92));
+        HPEN moldura = CreatePen(PS_SOLID, 1, g_t.mini_moldura);
         old_p = SelectObject(hdc, moldura);
         Rectangle(hdc, gx, gy, gx + gw, gy + gh);
         double vmax = 0.0;
@@ -970,7 +1045,7 @@ static void pinta_canvas(HDC hdc, int x0, int y0, int w, int h) {
         SelectObject(hdc, old_p);
         DeleteObject(moldura);
         DeleteObject(linha);
-        SetTextColor(hdc, RGB(190, 200, 214));
+        SetTextColor(hdc, g_t.mini_texto);
         SetBkMode(hdc, TRANSPARENT);
         HGDIOBJ of = SelectObject(hdc, g_fonte);
         TextOutW(hdc, gx + 6, gy + 4, L"loss por geração", 16);
@@ -997,18 +1072,18 @@ static void pinta_canvas(HDC hdc, int x0, int y0, int w, int h) {
             auto myp = [&](double wy) {
                 return my + mh - 10 - int((wy - miny) * esc + (mh - 20 - dy * esc) * 0.5);
             };
-            HBRUSH bf = CreateSolidBrush(RGB(18, 22, 30));
+            HBRUSH bf = CreateSolidBrush(g_t.mini_fundo);
             RECT mr = {mx, my, mx + mw, my + mh};
             FillRect(hdc, &mr, bf);
             DeleteObject(bf);
-            HPEN mol = CreatePen(PS_SOLID, 1, RGB(70, 78, 92));
+            HPEN mol = CreatePen(PS_SOLID, 1, g_t.mini_moldura);
             HGDIOBJ op3 = SelectObject(hdc, mol);
             Rectangle(hdc, mx, my, mx + mw, my + mh);
             SelectObject(hdc, op3);
             DeleteObject(mol);
 
             // asfalto (linha de centro grossa)
-            HPEN pista = CreatePen(PS_SOLID, 4, RGB(78, 84, 96));
+            HPEN pista = CreatePen(PS_SOLID, 4, g_t.mini_pista);
             HGDIOBJ op4 = SelectObject(hdc, pista);
             MoveToEx(hdc, mxp(trk->center[0].x), myp(trk->center[0].y), nullptr);
             for (int i = 1; i < trk->n(); ++i)
@@ -1019,7 +1094,7 @@ static void pinta_canvas(HDC hdc, int x0, int y0, int w, int h) {
 
             // largada
             int si2 = trk->start_index % trk->n();
-            HPEN lg = CreatePen(PS_SOLID, 2, RGB(240, 240, 240));
+            HPEN lg = CreatePen(PS_SOLID, 2, g_t.borda_pista);
             HGDIOBJ op5 = SelectObject(hdc, lg);
             MoveToEx(hdc, mxp(trk->edge_l[si2].x), myp(trk->edge_l[si2].y), nullptr);
             LineTo(hdc, mxp(trk->edge_r[si2].x), myp(trk->edge_r[si2].y));
@@ -1050,7 +1125,7 @@ static void pinta_canvas(HDC hdc, int x0, int y0, int w, int h) {
                 FillRect(hdc, &pr, b);
                 DeleteObject(b);
             }
-            SetTextColor(hdc, RGB(150, 160, 176));
+            SetTextColor(hdc, g_t.mini_texto);
             SetBkMode(hdc, TRANSPARENT);
             HGDIOBJ of2 = SelectObject(hdc, g_fonte);
             TextOutW(hdc, mx + 8, my + 4, L"minimapa", 8);
@@ -1070,8 +1145,8 @@ static void pinta_canvas(HDC hdc, int x0, int y0, int w, int h) {
         const int cw = std::min(w - 24, maior * 8 + 22);
         const int ch = int(linhas.size()) * 18 + 14;
         // cartão: fundo escuro, borda suave e canto arredondado
-        HBRUSH bf = CreateSolidBrush(RGB(15, 19, 26));
-        HPEN bp = CreatePen(PS_SOLID, 1, RGB(58, 70, 90));
+        HBRUSH bf = CreateSolidBrush(g_t.cartao);
+        HPEN bp = CreatePen(PS_SOLID, 1, g_t.cartao_borda);
         HGDIOBJ obb = SelectObject(hdc, bf);
         HGDIOBJ obp = SelectObject(hdc, bp);
         RoundRect(hdc, cx0, cy0, cx0 + cw, cy0 + ch, 12, 12);
@@ -1080,7 +1155,7 @@ static void pinta_canvas(HDC hdc, int x0, int y0, int w, int h) {
         DeleteObject(bf);
         DeleteObject(bp);
         // barrinha de destaque na lateral do cartão
-        HPEN barra = CreatePen(PS_SOLID, 3, kCorDestaque);
+        HPEN barra = CreatePen(PS_SOLID, 3, g_t.destaque);
         HGDIOBJ obr = SelectObject(hdc, barra);
         MoveToEx(hdc, cx0 + 2, cy0 + 12, nullptr);
         LineTo(hdc, cx0 + 2, cy0 + ch - 12);
@@ -1092,7 +1167,7 @@ static void pinta_canvas(HDC hdc, int x0, int y0, int w, int h) {
         for (const std::string& s : linhas) {
             // linhas "--- algo ---" são títulos: ficam na cor de destaque
             const bool titulo = s.size() > 4 && s.compare(0, 4, "--- ") == 0;
-            SetTextColor(hdc, titulo ? kCorDestaque : RGB(226, 232, 244));
+            SetTextColor(hdc, titulo ? g_t.destaque : g_t.texto);
             std::wstring t = wide(s);
             TextOutW(hdc, cx0 + 12, ty, t.c_str(), int(t.size()));
             ty += 18;
@@ -1113,7 +1188,7 @@ static void desenha_chave(HDC hdc, RECT rc, bool esquerda, const wchar_t* txt_es
 
     // fundo arredondado
     HBRUSH fundo = CreateSolidBrush(cor_fundo);
-    HPEN borda = CreatePen(PS_SOLID, 1, RGB(90, 104, 124));
+    HPEN borda = CreatePen(PS_SOLID, 1, g_t.botao_borda);
     HGDIOBJ ob2 = SelectObject(mem, fundo);
     HGDIOBJ op = SelectObject(mem, borda);
     RoundRect(mem, 0, 0, w, h, h / 2, h / 2);
@@ -1277,13 +1352,11 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             g_fonte_titulo = criar_fonte(23, true, false);
             g_fonte_mono = criar_fonte(14, false, true);
             g_fonte_botao = criar_fonte(14, true, false);
-            g_pincel_painel = CreateSolidBrush(kCorPainel);
-            g_pincel_edit = CreateSolidBrush(kCorEdit);
-            g_pincel_titulo = CreateSolidBrush(RGB(32, 37, 50));
-            g_pincel_destaque = CreateSolidBrush(kCorDestaque);
             const int P = 12;
             const int W = kPainelW - 24;
             g_hwnd_titulo = rotulo(hwnd, P, 8, W, 30, L"RaceAI 2D — C++", g_fonte_titulo);
+            g_botao_tema = botao(hwnd, ID_TEMA, P + W - 132, 8, 132, 28, L"tema: escuro");
+            aplicar_tema(g_tema_idx);   // cria os pincéis e pinta tudo
             rotulo(hwnd, P, 44, W, 18, L"pista");
             std::vector<std::wstring> nomes_pista;
             for (const AssetItem& it : g_app.pistas) nomes_pista.push_back(wide(it.name));
@@ -1534,16 +1607,16 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             }
             HDC mem = g_mem_dc;
             // painel
-            HBRUSH pincel = CreateSolidBrush(kCorPainel);
+            HBRUSH pincel = CreateSolidBrush(g_t.painel);
             RECT pr = {0, 0, kPainelW, h};
             FillRect(mem, &pr, pincel);
             DeleteObject(pincel);
             // costura entre painel e pista (linha + sombra)
-            HPEN linha = CreatePen(PS_SOLID, 1, RGB(46, 54, 70));
+            HPEN linha = CreatePen(PS_SOLID, 1, g_t.divisor);
             HGDIOBJ op = SelectObject(mem, linha);
             MoveToEx(mem, kPainelW, 0, nullptr);
             LineTo(mem, kPainelW, h);
-            HPEN sombra = CreatePen(PS_SOLID, 1, RGB(18, 21, 28));
+            HPEN sombra = CreatePen(PS_SOLID, 1, g_t.fundo);
             HGDIOBJ os = SelectObject(mem, sombra);
             MoveToEx(mem, kPainelW + 1, 0, nullptr);
             LineTo(mem, kPainelW + 1, h);
@@ -1663,6 +1736,9 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             } else if (id == ID_CARRO && HIWORD(wp) == CBN_SELCHANGE) {
                 int i = int(SendMessageW((HWND)lp, CB_GETCURSEL, 0, 0));
                 g_app.carregar_carro(i);
+            } else if (id == ID_TEMA) {
+                aplicar_tema(g_tema_idx + 1);
+                return 0;
             } else if (id == ID_CHAVE_MODO) {
                 trocar_modo();
             } else if (id == ID_CHAVE_TIPO_IA) {
@@ -1912,21 +1988,21 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             }
             if (g_hwnd_titulo && (HWND)lp == g_hwnd_titulo) {
                 // título em verde-água sobre uma faixa um pouco mais clara
-                SetTextColor(hdcC, kCorDestaque);
-                SetBkColor(hdcC, RGB(32, 37, 50));
+                SetTextColor(hdcC, g_t.destaque);
+                SetBkColor(hdcC, g_t.titulo_faixa);
                 SetBkMode(hdcC, OPAQUE);
                 return (LRESULT)g_pincel_titulo;
             }
-            SetTextColor(hdcC, kCorTexto);
-            SetBkColor(hdcC, kCorPainel);
+            SetTextColor(hdcC, g_t.texto);
+            SetBkColor(hdcC, g_t.painel);
             SetBkMode(hdcC, OPAQUE);
             if (g_pincel_painel) return (LRESULT)g_pincel_painel;
             break;
         }
         case WM_CTLCOLOREDIT: {             // caixas de texto: fundo escuro
             HDC hdcC = (HDC)wp;
-            SetTextColor(hdcC, RGB(228, 235, 247));
-            SetBkColor(hdcC, kCorEdit);
+            SetTextColor(hdcC, g_t.texto_edit);
+            SetBkColor(hdcC, g_t.edit);
             if (g_pincel_edit) return (LRESULT)g_pincel_edit;
             break;
         }
@@ -1935,8 +2011,8 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             break;
         case WM_CTLCOLORLISTBOX: {          // lista suspensa das combos
             HDC hdcC = (HDC)wp;
-            SetTextColor(hdcC, RGB(228, 235, 247));
-            SetBkColor(hdcC, kCorEdit);
+            SetTextColor(hdcC, g_t.texto_edit);
+            SetBkColor(hdcC, g_t.edit);
             if (g_pincel_edit) return (LRESULT)g_pincel_edit;
             break;
         }
@@ -2015,8 +2091,12 @@ static int rodar(HINSTANCE hInst, int cmd_show) {
         }
     }
 
+    // preferências (como o tema escolhido) ficam na pasta de dados
+    g_dir_dados = base_dados;
+    carregar_tema();
+
     // As listas de pistas/carros são lidas de novo AGORA: na primeira vez o
-    // conteúdo vem de dentro do .exe e só existe depois da extração acima.
+    // conteúdo vêm de dentro do .exe e só existe depois da extração acima.
     g_app.reler_ativos();
 
     // Python (opcional): se a pasta python/ nao existir, o app segue em C++

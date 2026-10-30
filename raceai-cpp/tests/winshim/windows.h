@@ -25,6 +25,7 @@ typedef void* HBRUSH;
 typedef void* HPEN;
 typedef void* HGDIOBJ;
 typedef void* HBITMAP;
+typedef void* HRGN;
 typedef void* HANDLE;
 typedef void* HICON;
 typedef void* HCURSOR;
@@ -350,6 +351,12 @@ inline int DrawTextW(HDC, LPCWSTR, int, RECT*, UINT) { return 0; }
 #endif
 inline LONG_PTR GetWindowLongPtrW(HWND, int) { return 0; }
 inline LONG_PTR SetWindowLongPtrW(HWND, int, LONG_PTR) { return 0; }
+#ifndef RDW_INVALIDATE
+#define RDW_INVALIDATE   0x0001
+#define RDW_UPDATENOW    0x0100
+#define RDW_ALLCHILDREN  0x0080
+#endif
+inline BOOL RedrawWindow(HWND, const RECT*, HRGN, UINT) { return 1; }
 inline HWND SetCapture(HWND) { return nullptr; }
 inline HWND SetFocus(HWND) { return nullptr; }
 inline HWND GetParent(HWND) { return nullptr; }

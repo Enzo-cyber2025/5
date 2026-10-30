@@ -177,3 +177,24 @@ src/core/*.cpp src/app/app_state.cpp` (já limpo).
   `SetCapture/ReleaseCapture/SetFocus/GetParent`, `Ellipse`,
   `WM_NCDESTROY/WM_LBUTTON*/WM_MOUSEMOVE/WM_CAPTURECHANGED`, `ODS_CHECKED`,
   `GWL_STYLE/GWLP_USERDATA`, `BS_CHECKBOX/BS_3STATE`, `GET_X_LPARAM`.
+
+## Três temas trocáveis dentro do app (2026-10-30)
+
+- O usuário disse que "tudo" estava horrível e eu não vejo a tela. Em vez de
+  chutar, o app agora tem **3 temas** e um botão `tema: <nome>` no topo do
+  painel que cicla entre eles (ID_TEMA → `aplicar_tema(g_tema_idx + 1)`),
+  com a escolha salva em `<pasta de dados>\tema.txt`.
+- Tema 0 "escuro" (verde-água), 1 "claro" (cara de app comum, texto escuro),
+  2 "azul" (azul-marinho com destaque azul claro).
+- **Regra**: nenhuma cor de interface fica mais fixa no código. Todas vêm da
+  `struct Tema` (painel, fundo, texto, destaque, botão, edit, cartão do HUD,
+  grade, asfalto, borda da pista, divisor, slider, minimapa...). As cores do
+  **cenário 3D** (céu, grama) e as cores dos carros continuam fixas: são o
+  mundo, não a interface.
+- `aplicar_tema()` recria os 4 pincéis (`g_pincel_painel/edit/titulo/
+  destaque`) e chama `RedrawWindow(..., RDW_ALLCHILDREN|RDW_INVALIDATE|
+  RDW_UPDATENOW)` — sem o ALLCHILDREN os controles ficam com a cor antiga.
+- Armadilha: `std::wofstream(caminho_largo)` não compila no Linux (só no
+  MinGW/MSVC) → use `std::ofstream(narrow(caminho))`. E `salvar_tema()`
+  precisou de declaração adianta porque fica depois de `narrow()`.
+- Shim: `HRGN`, `RedrawWindow`, `RDW_INVALIDATE/RDW_UPDATENOW/RDW_ALLCHILDREN`.
