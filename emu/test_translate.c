@@ -2961,23 +2961,28 @@ static void test_image_relative_executes(void)
  * the execution check still runs, but the word-level check is the one that cannot be
  * satisfied by luck.
  * ------------------------------------------------------------------------- */
-static volatile uint64_t abi_seen[4];
-
 __attribute__((noinline))
 static uint64_t abi_sink(uint64_t a, uint64_t b, uint64_t c, uint64_t d,
                          uint64_t e, uint64_t f, uint64_t g, uint64_t h)
 { return (a ^ b) + (c ^ d) + (e ^ f) + (g ^ h); }
 
-/* Stands in for a Win32 function the shim layer provides. It records the arguments
- * it actually received, so the test asserts on what arrived rather than on what the
- * guest intended to send. */
+/* Stands in for a Win32 function the shim layer provides.
+ *
+ * It reports what it received through the RETURN VALUE, positionally weighted, and
+ * not through a global. The generated code runs in a forked child, so a global it
+ * writes is written in the child's address space and the parent reads back zeros -
+ * which is what the first version of this test did, and it reported "the host
+ * received 0,0,0,0" while the same run proved the call returned correctly. Only
+ * what crosses back through the child's exit path is observable.
+ *
+ * Weighting the positions also makes the check stronger than a sum: a+b+c+d cannot
+ * tell an argument that landed in the wrong register from one that landed in the
+ * right one, and 1234 can. */
 __attribute__((noinline))
 static uint64_t abi_target(uint64_t a, uint64_t b, uint64_t c, uint64_t d)
 {
-    uint64_t s;
-    abi_seen[0] = a; abi_seen[1] = b; abi_seen[2] = c; abi_seen[3] = d;
-    s = abi_sink(1u, 2u, 3u, 4u, 5u, 6u, 7u, 8u);
-    return a + b + c + d + (s - s);
+    uint64_t s = abi_sink(1u, 2u, 3u, 4u, 5u, 6u, 7u, 8u);
+    return a * 1000u + b * 100u + c * 10u + d + (s - s);
 }
 
 static uint64_t abi_resolve_tagged(uint64_t iat_va, void *user)
@@ -3122,8 +3127,6 @@ static void test_host_abi_bridge(void)
             CHECK(0, "could not allocate an arena: %s", gs_last_error());
             return;
         }
-        abi_seen[0] = abi_seen[1] = abi_seen[2] = abi_seen[3] = 0;
-
         st = tr_translate_function(call4, sizeof(call4), IMAGE_BASE,
                                    abi_resolve_tagged, &target, &f);
         if (st == TR_OK) {
@@ -3136,17 +3139,15 @@ static void test_host_abi_bridge(void)
                 CHECK(ok && !to && sig == 0,
                       "the bridged call did not run cleanly (ok=%d to=%d sig=%d)",
                       ok, to, sig);
-                CHECK(abi_seen[0] == 1 && abi_seen[1] == 2 &&
-                      abi_seen[2] == 3 && abi_seen[3] == 4,
-                      "the host received %llu,%llu,%llu,%llu and expected 1,2,3,4 "
-                      "from guest RCX,RDX,R8,R9: the shuffle put an argument in the "
-                      "wrong AAPCS register",
-                      (unsigned long long)abi_seen[0], (unsigned long long)abi_seen[1],
-                      (unsigned long long)abi_seen[2], (unsigned long long)abi_seen[3]);
-                CHECK(r == 10,
-                      "the call returned %llu, expected 1+2+3+4=10: a host return "
-                      "value arrives in X0, which is guest RAX, so it needs no "
-                      "shuffling back", (unsigned long long)r);
+                /* 1234 means guest RCX,RDX,R8,R9 = 1,2,3,4 arrived as AAPCS
+                 * X0,X1,X2,X3 in that order, and that the host's return value in X0
+                 * came back as guest RAX needing no shuffling of its own. Any other
+                 * number names the permutation that went wrong. */
+                CHECK(r == 1234,
+                      "the bridged call returned %llu, expected 1234 - guest "
+                      "RCX,RDX,R8,R9 holding 1,2,3,4 must arrive as AAPCS X0..X3 in "
+                      "that order, and the host's X0 return must come back as guest "
+                      "RAX", (unsigned long long)r);
                 munmap(page, plen); page = NULL;
             }
         }
