@@ -1603,17 +1603,24 @@ tr_status tr_translate_function_img(const uint8_t *code, size_t code_len,
             if (p->host_abi) {
                 /* Nine registers a host callee destroys and x86-64 requires
                  * preserved: RBX=X3, RSI=X4, RDI=X5, R12=X10, R13=X11, R14=X12,
-                 * R15=X13, RBP=X15 and RSP=X14. Five pairs of 16 bytes keeps the
-                 * host SP 16-byte aligned at the call, which AAPCS64 requires. The
-                 * last pair stores X14 twice instead of inventing a single-register
-                 * form: both slots hold the same value, the pop restores it, and it
-                 * costs one redundant store rather than a new emitter. */
-                static const unsigned sv[5][2] = {
-                    { 3u, 4u }, { 5u, 15u }, { 10u, 11u }, { 12u, 13u }, { 14u, 14u }
+                 * R15=X13, RBP=X15 and RSP=X14. Four pairs plus one single, 80
+                 * bytes total, which keeps the host SP 16-byte aligned at the call
+                 * as AAPCS64 requires.
+                 *
+                 * X14 gets a single-register STR/LDR and NOT a pair with itself.
+                 * STP with Rt == Rt2 is fine, but LDP with Rt == Rt2 is CONSTRAINED
+                 * UNPREDICTABLE, and UNDEFINED is one of the permitted resolutions -
+                 * so pairing X14 with X14 emitted an instruction that both real
+                 * aarch64 hardware and QEMU took as illegal. It reached CI because
+                 * the word-level test asserted exactly the sequence intended, and
+                 * intended was wrong; only executing it showed that. */
+                static const unsigned sv[4][2] = {
+                    { 3u, 4u }, { 5u, 15u }, { 10u, 11u }, { 12u, 13u }
                 };
-                for (unsigned k = 0; k < 5u; k++)
+                for (unsigned k = 0; k < 4u; k++)
                     if (!pushf(out, a64_stp_pre(sv[k][0], sv[k][1], 31u, -16)))
                         return TR_OVERFLOW;
+                if (!pushf(out, a64_str_pre(14u, 31u, -16))) return TR_OVERFLOW;
                 /* Guest RCX,RDX,R8,R9 are X1,X2,X6,X7; the AAPCS wants X0..X3. Two
                  * temporaries are needed because X1 and X2 are each both a source
                  * and a destination. Both are dead before the target is loaded. */
@@ -1626,8 +1633,10 @@ tr_status tr_translate_function_img(const uint8_t *code, size_t code_len,
                 if (!emit_const_f(out, HOST_SCRATCH, p->const_val)) return TR_OVERFLOW;
                 if (!pushf(out, a64_blr(HOST_SCRATCH))) return TR_OVERFLOW;
                 /* The host returns in X0, which is guest RAX, so the result needs no
-                 * shuffling back. Pop in reverse order of the pushes. */
-                for (unsigned k = 5u; k-- > 0u;)
+                 * shuffling back. Pop in reverse order of the pushes: the single X14
+                 * first, then the four pairs. */
+                if (!pushf(out, a64_ldr_post(14u, 31u, 16))) return TR_OVERFLOW;
+                for (unsigned k = 4u; k-- > 0u;)
                     if (!pushf(out, a64_ldp_post(sv[k][0], sv[k][1], 31u, 16)))
                         return TR_OVERFLOW;
                 break;

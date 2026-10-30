@@ -3017,11 +3017,18 @@ static void test_host_abi_bridge(void)
     CHECK(st == TR_OK, "a tagged host call returned %s (%s)", tr_status_name(st),
           f.detail ? f.detail : "?");
     if (st == TR_OK) {
-        /* The five save pairs, in order, then the six shuffle MOVs. Checked by word
-         * because a host callee that happens not to touch RBX would let a missing
-         * save pass an execution test. */
-        static const unsigned sv[5][2] = {
-            { 3u, 4u }, { 5u, 15u }, { 10u, 11u }, { 12u, 13u }, { 14u, 14u }
+        /* Four save pairs, a single STR for guest RSP, then the six shuffle MOVs.
+         * Checked by word because a host callee that happens not to touch RBX would
+         * let a missing save pass an execution test.
+         *
+         * X14 is a single STR and not a pair with itself, and the last check below
+         * pins that for every register. LDP with Rt == Rt2 is CONSTRAINED
+         * UNPREDICTABLE and UNDEFINED is a permitted resolution, so pairing X14 with
+         * X14 emitted an instruction that real aarch64 hardware and QEMU both took
+         * as illegal. The word-level assertions passed at the time, because they
+         * asserted the sequence that was intended and the intention was the bug. */
+        static const unsigned sv[4][2] = {
+            { 3u, 4u }, { 5u, 15u }, { 10u, 11u }, { 12u, 13u }
         };
         size_t base = 0, found = 0;
         for (size_t i = 0; i + 4 < f.n && !found; i++)
@@ -3031,11 +3038,27 @@ static void test_host_abi_bridge(void)
         CHECK(found == 1, "the bridge's first STP is not in the %zu emitted words",
               f.n);
         if (found) {
-            for (unsigned k = 1; k < 5u; k++)
+            for (unsigned k = 1; k < 4u; k++)
                 CHECK(f.words[base+k] == a64_stp_pre(sv[k][0], sv[k][1], 31u, -16),
                       "save pair %u is 0x%08X, expected STP X%u,X%u,[SP,#-16]! "
                       "0x%08X", k, f.words[base+k], sv[k][0], sv[k][1],
                       a64_stp_pre(sv[k][0], sv[k][1], 31u, -16));
+            CHECK(f.words[base+4] == a64_str_pre(14u, 31u, -16),
+                  "guest RSP is saved as 0x%08X, expected STR X14,[SP,#-16]! "
+                  "0x%08X - a single register, never a pair with itself",
+                  f.words[base+4], a64_str_pre(14u, 31u, -16));
+            /* Exhaustive: no load-pair anywhere in the function may name the same
+             * register twice. This is the assertion that would have caught the
+             * SIGILL before it reached a runner. */
+            {   size_t bad = 0;
+                for (size_t i = 0; i < f.n; i++)
+                    for (unsigned rg = 0; rg < 31u; rg++)
+                        if (f.words[i] == a64_ldp_post(rg, rg, 31u, 16)) bad = 1;
+                CHECK(bad == 0,
+                      "an LDP with Rt == Rt2 was emitted: CONSTRAINED UNPREDICTABLE, "
+                      "and UNDEFINED is a permitted resolution, so hardware is "
+                      "entitled to take it as an illegal instruction");
+            }
             CHECK(f.words[base+5]  == a64_mov_reg(16u, 1u),
                   "the shuffle must save guest RCX before X1 is overwritten");
             CHECK(f.words[base+6]  == a64_mov_reg(17u, 2u),
@@ -3047,13 +3070,18 @@ static void test_host_abi_bridge(void)
             /* Every pop present. Located by scan rather than by an offset from the
              * BLR, because the target constant between them is a variable number of
              * words. */
-            for (unsigned k = 0; k < 5u; k++) {
+            {   size_t seen = 0;
+                for (size_t i = base + 11; i < f.n; i++)
+                    if (f.words[i] == a64_ldr_post(14u, 31u, 16)) { seen = 1; break; }
+                CHECK(seen == 1, "the LDR restoring guest RSP (X14) is missing");
+            }
+            for (unsigned k = 0; k < 4u; k++) {
                 size_t seen = 0;
                 for (size_t i = base + 11; i < f.n; i++)
                     if (f.words[i] ==
-                        a64_ldp_post(sv[4u-k][0], sv[4u-k][1], 31u, 16)) { seen = 1; break; }
+                        a64_ldp_post(sv[3u-k][0], sv[3u-k][1], 31u, 16)) { seen = 1; break; }
                 CHECK(seen == 1, "the pop restoring save pair %u (X%u,X%u) is missing",
-                      4u-k, sv[4u-k][0], sv[4u-k][1]);
+                      3u-k, sv[3u-k][0], sv[3u-k][1]);
             }
         }
     }

@@ -1098,11 +1098,24 @@ no caminho antigo.
 Com a marca, o ponto de chamada emite:
 
 ```
-5× STP  X3,X4 / X5,X15 / X10,X11 / X12,X13 / X14,X14, [SP,#-16]!
+4× STP  X3,X4 / X5,X15 / X10,X11 / X12,X13, [SP,#-16]!
+STR X14, [SP,#-16]!
 MOV X16,X1 ; MOV X17,X2 ; MOV X0,X16 ; MOV X1,X17 ; MOV X2,X6 ; MOV X3,X7
 MOVZ/MOVK X16, destino ; BLR X16
-5× LDP  na ordem inversa
+LDR X14, [SP],#16
+4× LDP  na ordem inversa
 ```
+
+O RSP do guest vai num `STR`/`LDR` de registrador único, **nunca** num par consigo
+mesmo. `STP` com `Rt == Rt2` é permitido; `LDP` com `Rt == Rt2` é *CONSTRAINED
+UNPREDICTABLE*, e `UNDEFINED` é uma das resoluções permitidas — então a primeira
+versão emitiu `LDP X14,X14` e **tanto o hardware aarch64 real quanto o QEMU a
+trataram como instrução ilegal** (SIGILL, sinal 4). O detalhe que vale registrar:
+as assertivas de palavra **passaram** na hora, porque conferiam exatamente a
+sequência que eu tinha pretendido emitir — e a intenção é que era o bug. Só executar
+revelou. Desde então há uma verificação exaustiva de que nenhum `LDP` em toda a
+função nomeia o mesmo registrador duas vezes, que é a assertiva que pegaria isso
+antes de chegar a um runner.
 
 **Os nove registradores salvos são uma correção, não um refinamento.** `translate.h`
 e `a64_emit.h` afirmavam que X14 e X15 são *callee-saved* na AAPCS, e que portanto
@@ -1134,7 +1147,7 @@ chama uma função opaca com oito argumentos, o que força o compilador a carreg
 X0..X7 — e RBX é X3 — tornando a destruição tão certa quanto C portável permite;
 mesmo assim a garantia vem dos words, não da sorte.
 
-Suite do projeto: **981**.
+Suite do projeto: **982**.
 
 ### Não feito
 
