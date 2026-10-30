@@ -5,6 +5,7 @@
 #include <string>
 
 #include "../src/app/app_state.hpp"
+#include "../src/app/conteudo.hpp"
 #include "../src/core/ga.hpp"
 
 using namespace raceai;
@@ -19,6 +20,13 @@ static std::string tmp_file(const char* nome) {
     return std::string("/tmp/") + nome;
 #endif
 }
+// tamanho de um arquivo (-1 se não existir)
+static long tamanho_arquivo(const std::string& p) {
+    std::ifstream f(p, std::ios::binary | std::ios::ate);
+    if (!f) return -1;
+    return long(f.tellg());
+}
+
 #define CHECK(c, ...)                                                          \
     do {                                                                       \
         if (!(c)) {                                                            \
@@ -122,6 +130,60 @@ int main() {
         CHECK(!app.python_status.empty(), "deveria explicar o erro");
     } else {
         printf("  (pulando testes do python: stub não informado)\n");
+    }
+
+    // ------------------------------- um executável só: pacote embutido
+    {
+        // cria um "exe" de mentira e grava as pistas/carros dentro dele
+        const std::string exe = tmp_file("raceai_falso.exe");
+        {
+            std::ofstream f(exe, std::ios::binary);
+            f << "MZ\x90\x00 falso executavel de teste";
+        }
+        std::string err;
+        CHECK(criar_pacote(exe, {"assets", "modelos"}, &err), "não empacotou: %s",
+              err.c_str());
+        const long com_pacote = tamanho_arquivo(exe);
+        CHECK(com_pacote > 1000, "pacote pequeno demais: %ld bytes", com_pacote);
+        // empacotar de novo não pode inflar o arquivo (troca o pacote antigo)
+        CHECK(criar_pacote(exe, {"assets", "modelos"}, &err), "reempacotar falhou");
+        CHECK(std::labs(tamanho_arquivo(exe) - com_pacote) < 64,
+              "reempacotar inflou o arquivo: %ld -> %ld", com_pacote,
+              tamanho_arquivo(exe));
+
+        // extrai e confere que o conteúdo voltou igual
+        const std::string destino = tmp_file("raceai_extraido");
+        CHECK(extrair_pacote(exe, destino, &err), "não extraiu: %s", err.c_str());
+        bool achou_pista = false, igual = true;
+        std::vector<std::string> originais;
+        for (const AssetItem& it : list_tracks()) originais.push_back(it.path);
+        for (const AssetItem& it : list_cars()) originais.push_back(it.path);
+        for (const std::string& p : originais) {
+            const std::string copia = destino + "/" + p;
+            std::ifstream a(p, std::ios::binary);
+            std::ifstream b(copia, std::ios::binary);
+            if (!a || !b) { igual = false; continue; }
+            std::string sa((std::istreambuf_iterator<char>(a)),
+                           std::istreambuf_iterator<char>());
+            std::string sb((std::istreambuf_iterator<char>(b)),
+                           std::istreambuf_iterator<char>());
+            if (sa != sb) igual = false;
+            achou_pista = true;
+        }
+        CHECK(achou_pista, "nenhuma pista no pacote");
+        CHECK(igual, "o conteúdo extraído não é igual ao original");
+
+        // arquivo sem pacote: extrair devolve falso, sem quebrar
+        const std::string liso = tmp_file("raceai_liso.bin");
+        {
+            std::ofstream f(liso, std::ios::binary);
+            f << "arquivo comum, sem pacote nenhum";
+        }
+        err.clear();
+        CHECK(!extrair_pacote(liso, destino, &err), "deveria negar arquivo sem pacote");
+        CHECK(!err.empty(), "deveria explicar por quê");
+        std::remove(exe.c_str());
+        std::remove(liso.c_str());
     }
 
     // ---------------------------------------------------------- corrida

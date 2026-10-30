@@ -26,6 +26,8 @@
 #include <vector>
 
 #include "app_state.hpp"
+#include "conteudo.hpp"
+#include "core/cli.hpp"
 #include "core/render3d.hpp"
 
 using namespace raceai;
@@ -1447,8 +1449,24 @@ static int rodar(HINSTANCE hInst, int cmd_show) {
     // não da pasta de onde ele foi chamado
     SetCurrentDirectoryW(g_dir_app.c_str());
 
+    // UM ARQUIVO SÓ: o conteúdo (pistas, carros, modelos e o Python opcional)
+    // vem dentro do próprio .exe. Na primeira vez ele é extraído para a pasta
+    // de dados; depois o app usa essa pasta (e é lá que ficam os mods).
+    std::wstring base_dados = g_dir_app;
+    {
+        std::string erro;
+        const std::string destino = raceai::garantir_conteudo(&erro);
+        if (!destino.empty()) {
+            raceai::definir_raiz_dados(destino);
+            base_dados = wide(destino);
+            log_linha(L"dados: " + base_dados);
+        } else if (!erro.empty()) {
+            log_erro(L"conteudo", wide(erro));
+        }
+    }
+
     // Python (opcional): se a pasta python/ nao existir, o app segue em C++
-    std::wstring pyhome = g_dir_app + L"\\python";
+    std::wstring pyhome = base_dados + L"\\python";
     DWORD py_attr = GetFileAttributesW(pyhome.c_str());
     if (py_attr != INVALID_FILE_ATTRIBUTES && (py_attr & FILE_ATTRIBUTE_DIRECTORY)) {
         SetEnvironmentVariableW(L"PYTHONHOME", pyhome.c_str());
@@ -1511,6 +1529,17 @@ static int rodar(HINSTANCE hInst, int cmd_show) {
 }
 
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int cmd_show) {
+    // modo terminal: "RaceAI2D.exe -g 50 -p 60" treina sem abrir janela
+    if (__argc > 1) {
+        AttachConsole(ATTACH_PARENT_PROCESS);
+        std::freopen("CONOUT$", "w", stdout);
+        std::freopen("CONOUT$", "w", stderr);
+        std::freopen("CONIN$", "r", stdin);
+        std::string erro;
+        const std::string destino = raceai::garantir_conteudo(&erro);
+        if (!destino.empty()) raceai::definir_raiz_dados(destino);
+        return raceai::rodar_cli(__argc, __argv);
+    }
     // caminho do log ainda nao conhecido: usa o do proprio executavel
     {
         wchar_t modulo[MAX_PATH];

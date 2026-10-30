@@ -8,7 +8,8 @@
 CXX      ?= g++
 CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra -pthread
 CORE     := src/core/*.cpp
-APP      := src/app/app_state.cpp
+APP      := src/app/app_state.cpp src/app/conteudo.cpp
+CLI      := tools/train_cli.cpp
 BIN      := build
 
 # Detecção da plataforma por `uname` (mais confiável que $(OS) no MSYS2).
@@ -61,11 +62,19 @@ $(BIN)/raceai_pytest$(EXE): tools/py_selftest.cpp $(CORE) $(APP)
 	@mkdir -p $(BIN)
 	$(CXX) $(CXXFLAGS) tools/py_selftest.cpp $(CORE) $(APP) -o $@ $(LIBS)
 
+# empacotador: grava pistas/carros/modelos/python dentro do próprio .exe
+$(BIN)/empacotar$(EXE): tools/empacotar.cpp src/app/conteudo.cpp
+	@mkdir -p $(BIN)
+	$(CXX) $(CXXFLAGS) -Isrc tools/empacotar.cpp src/app/conteudo.cpp -o $@
+
 # jogo com interface (Win32 + GDI): nada de bibliotecas externas
 # (-Isrc: a interface inclui <core/...> pelo caminho completo)
-$(BIN)/raceai.exe: src/app/main.cpp $(CORE) $(APP)
+# O -DRACEAI_SEM_MAIN tira o main() do treinador: o jogo chama o mesmo código
+# quando é iniciado com argumentos (um executável só, dois modos).
+$(BIN)/raceai.exe: src/app/main.cpp $(CORE) $(APP) $(CLI) $(BIN)/empacotar$(EXE)
 	@mkdir -p $(BIN)
-	$(CXX) $(CXXFLAGS) -Isrc -mwindows src/app/main.cpp $(CORE) $(APP) -o $@ $(LIBS)
+	$(CXX) $(CXXFLAGS) -Isrc -mwindows -DRACEAI_SEM_MAIN src/app/main.cpp $(CORE) $(APP) $(CLI) -o $@ $(LIBS)
+	@./$(BIN)/empacotar$(EXE) $@ assets modelos python || echo "aviso: sem conteudo para embutir" 
 
 game: $(GAME)
 

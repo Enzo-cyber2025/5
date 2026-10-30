@@ -10,6 +10,7 @@
 
 #include "../src/core/assets.hpp"
 #include "../src/core/trainer.hpp"
+#include "../src/core/cli.hpp"
 
 using namespace raceai;
 
@@ -47,7 +48,10 @@ static std::string arg(int argc, char** argv, int& i, const char* flag) {
     exit(2);
 }
 
-int main(int argc, char** argv) {
+// A mesma função é usada por dois executáveis: o raceai_train (só terminal) e
+// o jogo (RaceAI2D.exe), que entra em modo terminal quando recebe argumentos.
+namespace raceai {
+int rodar_cli(int argc, char** argv) {
     std::string track_id = "kartodromo", car_id = "kart";
     std::string out_path, load_path;
     int generations = 50, individuals = 120, threads = 0, seed = 1, save_every = 0;
@@ -209,3 +213,8 @@ else if (a == "--save-every") save_every = int(num("--save-every"));
            ever_dist / std::max(1.0, track.length));
     return 0;
 }
+}  // namespace raceai
+
+#ifndef RACEAI_SEM_MAIN
+int main(int argc, char** argv) { return raceai::rodar_cli(argc, argv); }
+#endif

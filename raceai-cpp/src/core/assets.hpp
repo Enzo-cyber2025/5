@@ -24,6 +24,11 @@ struct AssetItem {
 // Diretório base (assets/) — tenta algumas localizações conhecidas.
 std::string assets_root();
 
+// Pasta de dados usada pelo executável quando ele extrai o conteúdo embutido
+// (um .exe só). Vazia = usa a pasta atual, como antes.
+void definir_raiz_dados(const std::string& dir);
+std::string raiz_dados();
+
 std::vector<AssetItem> list_tracks();
 std::vector<AssetItem> list_cars();
 

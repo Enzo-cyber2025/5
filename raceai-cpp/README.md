@@ -22,20 +22,40 @@ E uma garantia de projeto: **a recompensa não deixa brecha para a IA "roubar"**
 
 ## Como rodar
 
-Descompacte o ZIP e abra **raceai.exe**. Estrutura da pasta:
+**É um arquivo só: baixe `RaceAI2D.exe`, clique duas vezes e jogue.** Não tem
+que descompactar zip nem instalar nada: as pistas, os carros, os modelos e o
+Python opcional viajam **dentro do próprio executável** e são copiados para a
+pasta de dados na primeira vez que ele abre.
+
+O mesmo `.exe` tem os dois modos:
+
+| como abrir | o que acontece |
+| --- | --- |
+| duplo clique (sem argumentos) | abre a janela do jogo |
+| `RaceAI2D.exe -g 50 -p 60 --seconds 45` | treina no terminal, sem abrir janela (igual ao `raceai_train`) |
+
+### Onde ficam os arquivos
+
+Na primeira vez o jogo cria a pasta de dados e descompacta o conteúdo nela:
 
 ```
-RaceAI2D-C++/
-  raceai.exe          o jogo
-  raceai_train.exe    treinador de linha de comando (opcional)
-  assets/tracks/      pistas em JSON
+%LOCALAPPDATA%\RaceAI2D\      (ex.: C:\Users\você\AppData\Local\RaceAI2D)
+  assets/tracks/      pistas em JSON  →  você pode editar e criar as suas
   assets/cars/        carros em JSON
   mods/tracks/        suas pistas (opcional)
   mods/cars/          seus carros (opcional)
   python/             interpretador Python (só para a IA em Python)
   modelos/            onde os modelos treinados são salvos
-  raceai.log          nasce sozinho: gravar o que o jogo fez (ver abaixo)
 ```
+
+Na aba Corrida, o botão **“Abrir pasta de mods”** leva direto até lá.
+
+Se você preferir a versão “portátil” (tudo do lado do `.exe`, numa pasta que
+você controla), é só colocar uma pasta `assets/` com `tracks/` e `cars/` ao
+lado do executável: o jogo detecta e passa a usar ela, sem extrair nada.
+
+O `raceai.log` nasce **ao lado do .exe** (não na pasta de dados) para você
+achar fácil — se algo não abrir, é ele que diz onde parou.
 
 ### Teclas
 
@@ -281,7 +301,7 @@ decidir **quando parar**: a terceira saída acima de zero é o pedido de boxe.
 Também dá para treinar pelo terminal (mesmas opções):
 
 ```
-raceai_train --track oval_iniciante --car sedan --hidden 128 -g 80 -p 60 --out meu.json
+RaceAI2D.exe --track oval_iniciante --car sedan --hidden 128 -g 80 -p 60 --out meu.json
 ```
 
 Cada linha do treino mostra a **estimativa para terminar todas as épocas**:
@@ -402,10 +422,13 @@ percurso) multiplicadas pelos pesos dos sliders. A loss é a soma deles
 
 ## Treinador de linha de comando
 
+É o **mesmo arquivo**: chame o `RaceAI2D.exe` com argumentos e ele treina no
+terminal em vez de abrir a janela (não precisa de um segundo executável).
+
 Para treinar sem janela (bem mais rápido, usa todos os núcleos):
 
 ```bat
-raceai_train.exe --track kartodromo --car kart -g 200 -p 120 --seconds 60 ^
+RaceAI2D.exe --track kartodromo --car kart -g 200 -p 120 --seconds 60 ^
                  --out modelos\meu_modelo.json
 ```
 
@@ -439,6 +462,20 @@ Saída (uma linha por geração):
 ```
 
 ---
+
+## Como o “um arquivo só” é feito
+
+Nada de instalador: o próprio `make` grava o conteúdo **dentro** do executável.
+
+1. `tools/empacotar.cpp` junta `assets/`, `modelos/` e `python/` num pacote
+   binário simples (`RACEAIPAK`: nome, tamanho e dados de cada arquivo) e
+   anexa esse pacote ao **fim** do `.exe`, seguido de um trailer de 24 bytes
+   com o tamanho. O Windows ignora o que vem depois da imagem PE, então o
+   executável continua funcionando normalmente.
+2. `src/app/conteudo.cpp` lê esse trailer, acha o pacote e extrai para a pasta
+   de dados — só o que ainda não existe, para nunca sobrescrever um mod seu.
+3. Se não houver pacote (ou já existir `assets/` do lado do `.exe`), nada muda:
+   o jogo roda em modo portátil, como antes.
 
 ## Compilar do zero
 
@@ -480,7 +517,7 @@ tamanho da rede e gerações) — a primeira é justamente o modelo de demonstra
 ```
 ./tools/treinar_modelos.sh        # 1 modelo (o de demonstração)
 ./tools/treinar_modelos.sh 12     # os 12 da lista (~10 min)
-raceai_train --track speedway --car formula -g 120 -p 60 --seconds 45 \
+RaceAI2D.exe --track speedway --car formula -g 120 -p 60 --seconds 45 \
              --out modelos/meu_modelo.json     # ou na mão, do seu jeito
 ```
 

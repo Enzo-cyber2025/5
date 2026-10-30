@@ -213,31 +213,28 @@ jobs:
           ./build/raceai_train.exe -g 25 -p 30 --seconds 30 --seed 5 2>&1 | tail -12
 
 
-      - name: Empacotar
+      - name: Empacotar (UM executável só)
         shell: msys2 {0}
         run: |
           cd raceai-cpp
           rm -rf package
-          mkdir -p package/RaceAI2D-C++/mods/tracks package/RaceAI2D-C++/mods/cars
-          mkdir -p package/RaceAI2D-C++/modelos
-          cp build/raceai.exe build/raceai_train.exe package/RaceAI2D-C++/
-          cp -r assets package/RaceAI2D-C++/
-          cp -r python package/RaceAI2D-C++/
-          cp README.md package/RaceAI2D-C++/LEIA-ME.txt
-          cp MODS.md package/RaceAI2D-C++/
-          cp tools/pt_para_json.py package/RaceAI2D-C++/converter-modelo.py
-          cp tools/gerar_conteudo.py package/RaceAI2D-C++/gerar-conteudo.py
-          cp tools/treinar_modelos.sh package/RaceAI2D-C++/treinar-modelos.sh
-          cp -r modelos package/RaceAI2D-C++/
-          du -sh package/RaceAI2D-C++
-          cd package && zip -qr RaceAI2D-C++-windows.zip RaceAI2D-C++
-          ls -la
+          mkdir -p package
+          cp build/raceai.exe package/RaceAI2D.exe
+          ls -la package/
+          du -h package/RaceAI2D.exe
+
+      - name: "O .exe sozinho funciona (modo terminal)"
+        shell: msys2 {0}
+        run: |
+          cd raceai-cpp
+          ./build/raceai.exe --help 2>&1 | head -4
+          ./build/raceai.exe -g 2 -p 8 --seconds 6 --seed 3 2>&1 | tail -6
 
       - name: Artefato
         uses: actions/upload-artifact@v4
         with:
-          name: RaceAI2D-C++-windows
-          path: raceai-cpp/package/RaceAI2D-C++-windows.zip
+          name: RaceAI2D-windows
+          path: raceai-cpp/package/RaceAI2D.exe
 
       - name: Diagnóstico dos testes
         if: failure()
@@ -264,18 +261,23 @@ jobs:
         run: |
           $ErrorActionPreference = 'Continue'
           $notas = @(
-            'RaceAI 2D (C++ puro, Win32 + GDI). Um unico executavel com os dois'
-            'modos: F2 alterna Corrida e Treinamento na hora, sem voltar ao menu.',
+            'RaceAI 2D (C++ puro, Win32 + GDI) em UM ARQUIVO SO: baixe o RaceAI2D.exe,',
+            'clique duas vezes e jogue. Nao precisa descompactar zip nem instalar nada',
+            '(na primeira vez ele copia pistas, carros e o Python opcional para a pasta',
+            'de dados do Windows; e la que ficam os seus mods).',
             '',
-            'Novidades desta versao:',
-            ' - fisica nova: motor com curva de torque, cambio automatico de ate 9 marchas,',
-            '   pneus com temperatura e desgaste, aerodinamica (arrasto e downforce),',
-            '   transferencia de carga lateral, dano por batida e tanque de combustivel;',
-            ' - telemetria de corrida: setores, melhor volta, delta e fantasma (o tracado',
-            '   da sua melhor volta desenhado na pista) alem do minimapa;',
-            ' - 16 pistas e 14 carros (de kart a caminhao, de eletrico a monoposto);',
-            ' - abre sem erro: a janela se ajusta a tela e qualquer falha aparece em',
-            '   uma janela de mensagem e fica gravada em raceai.log.',
+            'Os dois modos moram no mesmo .exe:',
+            ' - sem argumentos: abre a janela (F2 alterna Corrida e Treinamento);',
+            ' - com argumentos: treina no terminal, igual ao raceai_train',
+            '   (ex.: RaceAI2D.exe -g 50 -p 60 --seconds 45).',
+            '',
+            'Destaques:',
+            ' - 24 pistas e 20 carros, 10 modelos 3D de carroceria e sistema de mods;',
+            ' - gerador de IA sem programar: digite as camadas (ex.: 256, 128, 64);',
+            ' - chave "tipo de IA": Corrida (so piloto) ou Estrategia (piloto + boxe);',
+            ' - fisica de colisao com danos, aerodinamica que degrada e pitstop (tecla B);',
+            ' - aceita qualquer rede neural (.pt, .pth, .npz, .safetensors, .json);',
+            ' - ETA de todas as epocas, loss e erro %% na tela.',
             '',
             'Se algo nao abrir: abra o arquivo raceai.log (na pasta do .exe) e mande o',
             'conteudo - ele diz exatamente onde parou.',
@@ -286,4 +288,6 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             gh release create exe-cpp-windows --title "RaceAI 2D (C++) - executavel Windows" --notes $notas
           }
-          gh release upload exe-cpp-windows (Get-ChildItem raceai-cpp/package/*.zip) --clobber
+          gh release upload exe-cpp-windows raceai-cpp/package/RaceAI2D.exe --clobber
+          gh release delete-asset exe-cpp-windows RaceAI2D-C++-windows.zip -y 2>$null
+          if ($LASTEXITCODE -ne 0) { Write-Host "zip antigo: nada para remover" }

@@ -180,6 +180,16 @@ inline int MultiByteToWideChar(UINT, DWORD, LPCSTR, int, LPWSTR, int) { return 0
 inline int WideCharToMultiByte(UINT, DWORD, LPCWSTR, int, LPSTR, int, LPCSTR, BOOL*) { return 0; }
 inline COLORREF GetSysColor(int) { return 0; }
 
+// modo terminal do jogo (RaceAI2D.exe com argumentos)
+static const DWORD ATTACH_PARENT_PROCESS = ((DWORD)-1);
+inline int AttachConsole(DWORD) { return 1; }
+inline int GetEnvironmentVariableW(LPCWSTR, LPWSTR, DWORD) { return 0; }
+inline int CreateDirectoryW(LPCWSTR, void*) { return 1; }
+static int __argc_shim = 1;
+static char* __argv_shim[1] = {nullptr};
+#define __argc __argc_shim
+#define __argv __argv_shim
+
 static const UINT CP_UTF8 = 65001;
 #define MAKEINTRESOURCEW(i) ((LPWSTR)((ULONG_PTR)((WORD)(i))))
 #define IDC_ARROW MAKEINTRESOURCEW(32512)

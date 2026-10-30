@@ -57,7 +57,18 @@ static std::string join(const std::string& a, const std::string& b) {
     return a + "/" + b;
 }
 
+// Quando o executável carrega o conteúdo embutido, ele diz aqui onde os dados
+// foram extraídos (ex.: %LOCALAPPDATA%\RaceAI2D). Vazio = modo antigo.
+static std::string g_raiz_dados;
+
+void definir_raiz_dados(const std::string& dir) { g_raiz_dados = dir; }
+std::string raiz_dados() { return g_raiz_dados; }
+
 std::string assets_root() {
+    if (!g_raiz_dados.empty()) {
+        const std::string r = join(g_raiz_dados, "assets");
+        if (path_exists(join(r, "tracks")) || path_exists(join(r, "cars"))) return r;
+    }
     const char* candidates[] = {"assets", "../assets", "raceai-cpp/assets", "../raceai-cpp/assets"};
     for (const char* c : candidates) {
         if (path_exists(join(c, "tracks")) || path_exists(join(c, "cars"))) return std::string(c);
@@ -69,6 +80,10 @@ std::string mods_tracks_dir() { return join(assets_root(), join("mods", "tracks"
 std::string mods_cars_dir() { return join(assets_root(), join("mods", "cars")); }
 
 std::vector<std::string> list_models() {
+    if (!g_raiz_dados.empty()) {
+        std::vector<std::string> v = list_json(join(g_raiz_dados, "modelos"));
+        if (!v.empty()) return v;
+    }
     const char* candidates[] = {"modelos", "../modelos", "raceai-cpp/modelos",
                                 "../raceai-cpp/modelos"};
     for (const char* c : candidates) {
