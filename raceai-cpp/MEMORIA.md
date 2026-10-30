@@ -1,6 +1,8 @@
 # Memória da sessão (atualizada em 2026-10-30 20:10)
 
-Branch: `arena/5d450bd0-5`. Último commit: `0ed860a` (CI 41123179124 success).
+Branch: `arena/5d450bd0-5`. Último commit: `31d91a9` (CI 41127078994 success).
+Release: só `RaceAI2D.exe`, 25.501.452 bytes, exe estático verificado em
+máquina limpa (PATH sem MinGW).
 
 ## CORREÇÃO CRÍTICA: DLL do MinGW
 
@@ -16,6 +18,22 @@ Passo novo no CI lista as DLLs importadas e falha se aparecer
 libgcc/libstdc++/libwinpthread.
 
 **Sempre distribuir binário MinGW com ligação estática.**
+
+O teste antigo (`make test` no shell msys2) NÃO provava nada: o MSYS2 tem
+`/mingw64/bin` no PATH, então um .exe dinâmico rodaria lá mesmo assim. Teste
+de verdade = passo **pwsh** que limpa o PATH (`mingw|msys|clang|gcc`), copia o
+.exe para uma pasta vazia em $env:TEMP e roda com `Start-Process -PassThru`
+conferindo `$p.ExitCode`. Resultado atual: `mingw_no_path=NAO exit=0`, e o
+`objdump -p | grep "DLL Name"` só lista USER32/SHELL32/msvcrt/KERNEL32/GDI32/
+comdlg32/COMCTL32.
+
+**Como ler a saída do CI sem baixar o log** (host results-receiver bloqueado):
+emita `Write-Host "::notice ::..."` e leia com
+`gh api repos/Enzo-cyber2025/5/check-runs/<id>/annotations`.
+O `<id>` vem de `gh api repos/.../commits/<sha>/check-runs`.
+
+`gh release create` só roda na 1ª vez: para atualizar as notas em todo build é
+preciso `gh release edit exe-cpp-windows --notes $notas` depois do upload.
 
 ## Como ler imagem enviada pelo usuário (sem visão)
 

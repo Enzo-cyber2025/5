@@ -313,14 +313,16 @@ jobs:
           $ErrorActionPreference = 'Continue'
           $notas = @(
             'RaceAI 2D (C++ puro, Win32 + GDI) em UM ARQUIVO SO: baixe o RaceAI2D.exe,',
-            'clique duas vezes e jogue. Nao precisa descompactar zip nem instalar nada',
-            '(na primeira vez ele copia pistas, carros e o Python opcional para a pasta',
-            'de dados do Windows; e la que ficam os seus mods).',
+            'clique duas vezes e jogue. Nao precisa descompactar zip nem instalar nada -',
+            'na primeira vez ele copia pistas, carros e o Python opcional para a pasta de',
+            'dados do Windows (e la que ficam os seus mods).',
+            '',
+            'NAO DEPENDE DE NENHUMA DLL EXTERNA: so usa DLLs do proprio Windows',
+            '(KERNEL32, USER32, GDI32, COMCTL32, COMDLG32, SHELL32, msvcrt).',
             '',
             'Os dois modos moram no mesmo .exe:',
             ' - sem argumentos: abre a janela (F2 alterna Corrida e Treinamento);',
-            ' - com argumentos: treina no terminal, igual ao raceai_train',
-            '   (ex.: RaceAI2D.exe -g 50 -p 60 --seconds 45).',
+            ' - com argumentos: treina no terminal (ex.: RaceAI2D.exe -g 50 -p 60).',
             '',
             'Destaques:',
             ' - 24 pistas e 20 carros, 10 modelos 3D de carroceria e sistema de mods;',
@@ -328,13 +330,13 @@ jobs:
             ' - chave "tipo de IA": Corrida (so piloto) ou Estrategia (piloto + boxe);',
             ' - fisica de colisao com danos, aerodinamica que degrada e pitstop (tecla B);',
             ' - aceita qualquer rede neural (.pt, .pth, .npz, .safetensors, .json);',
-            ' - ETA de todas as epocas, loss e erro %% na tela.',
+            ' - ETA de todas as epocas, loss e erro % na tela.',
             '',
-            'Se algo nao abrir: abra o arquivo raceai.log (na pasta do .exe) e mande o',
+            'Se algo nao abrir: abra o raceai.log (nasce ao lado do .exe) e mande o',
             'conteudo - ele diz exatamente onde parou.',
-            '',
-            "Gerado por .github/workflows/raceai-cpp-windows.yml (branch $env:GITHUB_REF_NAME, commit $env:GITHUB_SHA)."
+            ''
           ) -join "`n"
+
           gh release view exe-cpp-windows | Out-Null
           if ($LASTEXITCODE -ne 0) {
             gh release create exe-cpp-windows --title "RaceAI 2D (C++) - executavel Windows" --notes $notas
@@ -344,6 +346,7 @@ jobs:
           Write-Host "::notice ::release: $($exe.Length) bytes sha256=$sha"
           $notas = $notas + "`n`nArquivo: RaceAI2D.exe — $($exe.Length) bytes`nSHA256: $sha"
           gh release upload exe-cpp-windows $exe --clobber
+          gh release edit exe-cpp-windows --notes $notas
           # o zip antigo sai de cena (se ele ja nao existir, nao e erro)
           gh release delete-asset exe-cpp-windows RaceAI2D-C++-windows.zip -y 2>$null
           $LASTEXITCODE = 0
