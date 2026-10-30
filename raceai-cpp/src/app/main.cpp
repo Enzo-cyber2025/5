@@ -1843,10 +1843,25 @@ static int rodar(HINSTANCE hInst, int cmd_show) {
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int cmd_show) {
     // modo terminal: "RaceAI2D.exe -g 50 -p 60" treina sem abrir janela
     if (__argc > 1) {
-        AttachConsole(ATTACH_PARENT_PROCESS);
-        std::freopen("CONOUT$", "w", stdout);
-        std::freopen("CONOUT$", "w", stderr);
-        std::freopen("CONIN$", "r", stdin);
+        // caminho do exe: o modo terminal também escreve o raceai.log aí
+        {
+            wchar_t modulo[MAX_PATH];
+            GetModuleFileNameW(nullptr, modulo, MAX_PATH);
+            std::wstring c = modulo;
+            size_t b = c.find_last_of(L"\\/");
+            g_dir_app = (b == std::wstring::npos) ? L"." : c.substr(0, b);
+        }
+        // se a saída foi redirecionada para arquivo/pipe (é o que o CI faz
+        // para conferir o resultado), escreve nela; se não, prende no console
+        const DWORD tipo_saida = GetFileType(GetStdHandle(STD_OUTPUT_HANDLE));
+        const bool redirecionado =
+            (tipo_saida == FILE_TYPE_DISK || tipo_saida == FILE_TYPE_PIPE);
+        if (!redirecionado) {
+            AttachConsole(ATTACH_PARENT_PROCESS);
+            std::freopen("CONOUT$", "w", stdout);
+            std::freopen("CONOUT$", "w", stderr);
+            std::freopen("CONIN$", "r", stdin);
+        }
         std::string erro;
         const std::string destino = raceai::garantir_conteudo(&erro);
         if (!destino.empty()) raceai::definir_raiz_dados(destino);

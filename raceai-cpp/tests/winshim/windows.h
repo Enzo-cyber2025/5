@@ -25,6 +25,7 @@ typedef void* HBRUSH;
 typedef void* HPEN;
 typedef void* HGDIOBJ;
 typedef void* HBITMAP;
+typedef void* HANDLE;
 typedef void* HICON;
 typedef void* HCURSOR;
 typedef unsigned int UINT;
@@ -302,6 +303,16 @@ struct DRAWITEMSTRUCT { UINT CtlType, CtlID, itemID, itemAction, itemState;
                         HWND hwndItem; HDC hDC; RECT rcItem; ULONG_PTR itemData; };
 inline HDC CreateCompatibleDC(HDC) { return nullptr; }
 inline HBITMAP CreateCompatibleBitmap(HDC, int, int) { return nullptr; }
+#ifndef FILE_TYPE_CHAR
+#define FILE_TYPE_CHAR 0x0002
+#define FILE_TYPE_DISK 0x0001
+#define FILE_TYPE_PIPE 0x0003
+#endif
+#ifndef STD_OUTPUT_HANDLE
+#define STD_OUTPUT_HANDLE ((DWORD)-11)
+#endif
+inline DWORD GetFileType(HANDLE) { return FILE_TYPE_CHAR; }
+inline HANDLE GetStdHandle(DWORD) { return nullptr; }
 inline BOOL DeleteDC(HDC) { return 1; }
 inline BOOL BitBlt(HDC, int, int, int, int, HDC, int, int, DWORD) { return 1; }
 inline BOOL RoundRect(HDC, int, int, int, int, int, int) { return 1; }
