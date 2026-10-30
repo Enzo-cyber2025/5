@@ -1594,6 +1594,12 @@ static size_t build_trampoline(uint32_t *prog, uint64_t arg, uint64_t gtop,
     prog[n++] = a64_stp_imgbase_push();
     n = append_const(prog, n, 0u, arg);
     n = append_const(prog, n, 14u, gtop);
+    /* Guest RBP gets the same value as guest RSP: the state a real callee sees on
+     * entry, before its own `push rbp; mov rbp,rsp`. Without it X15 holds whatever
+     * the calling process left there, and a function that reads [rbp-8] without
+     * establishing a frame dereferences that. Not detectable by inspection -
+     * LDUR X0,[X15,#-8] is a correct rendering whatever X15 contains. */
+    n = append_const(prog, n, 15u, gtop);
     n = append_const(prog, n, 19u, imgbase);
     bl = n;
     prog[n++] = 0u;                          /* BL, patched once the body is placed */
@@ -1625,7 +1631,7 @@ static int run_guest(const char *what, const uint8_t *g, size_t glen,
               f.detail ? f.detail : "?");
         return 0;
     }
-    if (f.n + 16u > TRAMP_MAX) {
+    if (f.n + 24u > TRAMP_MAX) {
         CHECK(0, "%s: body of %zu words does not fit the trampoline", what, f.n);
         return 0;
     }

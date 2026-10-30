@@ -497,7 +497,16 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
     memset(&t, 0, sizeof t);
     printf("\n--- executing what was translated ---\n");
 
-    if (!gs_alloc(64u * 1024u, &a)) {
+    /* 8 MiB, not the 64 KiB this used to be. Each translated function is called in
+     * isolation with guest RSP at the top of this arena, so its whole frame has to
+     * fit: a C++ function that opens a large frame with `sub rsp, N` and then writes
+     * a local walks straight off the bottom into the PROT_NONE guard page and takes
+     * a SIGSEGV. That is containment working, not a wild write, but it is
+     * indistinguishable in the tally from emitted code being wrong - and 19 records
+     * on a real game module died that way with no explanation. Enlarging the arena
+     * is the cheap experiment that separates the two: if the count falls, frame size
+     * was the cause. */
+    if (!gs_alloc(8u * 1024u * 1024u, &a)) {
         printf("  could not allocate a guest stack arena: %s\n", gs_last_error());
         printf("  EXECUTED NOTHING: no guest stack arena\n");
         return;
