@@ -242,22 +242,20 @@ jobs:
       - name: Diagnóstico dos testes
         if: failure()
         shell: msys2 {0}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cd raceai-cpp
-          { grep -nE "falharam|FAILED|error:|Assertion" test.log 2>/dev/null | head -8; } > diagt.txt
+          { grep -nE "FALHOU|falhou|Assertion|verifica..es passaram|testes passaram" test.log 2>/dev/null | head -12; } > diagt.txt
+          cat diagt.txt
           i=0
           while IFS= read -r linha; do
-            txt=$(printf '%s' "$linha" | tr -d '\r' | cut -c1-135)
+            txt=$(printf '%s' "$linha" | tr -d '\r' | tr -cd '[:print:]' | cut -c1-190)
             [ -z "$txt" ] && continue
             i=$((i+1))
-            gh api "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
-              -f "state=error" -f "context=testdiag$i" -f "description=$txt" || true
-            [ "$i" -ge 8 ] && break
+            echo "::error file=test.log::$txt"
           done < diagt.txt
+          echo "linhas: $i"
 
-      - name: Publicar na release exe-cpp-windows
+      - name: Publicar na release exe-cpp-windows      - name: Publicar na release exe-cpp-windows
         if: ${{ github.event.inputs.publish != 'false' }}
         shell: pwsh
         env:
