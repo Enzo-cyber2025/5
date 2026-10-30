@@ -48,6 +48,7 @@ RaceAI2D-C++/
 | `C` | câmera livre ou seguindo o carro em foco |
 | `TAB` | troca o carro em foco |
 | `P` | pausa |
+| **`B`** | **pede boxe (pitstop)** para o seu carro na corrida |
 | `H` | mostra/esconde o HUD |
 | `O` | mostra/esconde os sensores |
 | `+` / `-` ou roda do mouse | aproxima/afasta |
@@ -232,6 +233,20 @@ na faixa e obedece o limite sozinho. Contar paradas é o que faz a rede
 aprender **estratégia**: vale a pena parar? Quando? O HUD mostra
 `boxe 1  no boxe` / `pediu boxe` / `na pista`.
 
+**Você também pode parar.** Na aba Corrida há a caixa **“boxe (B pede
+parada)”** e a **tecla B**: aperte B na volta em que quiser parar, encoste na
+faixa e fique o tempo do serviço — pneus novos, tanque cheio, lataria batida.
+Apertar B de novo cancela o pedido.
+
+Os parâmetros do boxe ficam em sliders na aba Corrida (e valem para o treino
+da IA de estratégia também):
+
+| slider | faixa | padrão |
+| --- | --- | --- |
+| **tempo de boxe** | 1 a 15 s | 4 s |
+| **limite do boxe** | 8 a 40 m/s | 22 m/s |
+| **largura da faixa** | 3 a 9 m | 4,5 m |
+
 ---
 
 ## Gerador de IA (sem programar)
@@ -267,6 +282,13 @@ Também dá para treinar pelo terminal (mesmas opções):
 
 ```
 raceai_train --track oval_iniciante --car sedan --hidden 128 -g 80 -p 60 --out meu.json
+```
+
+Cada linha do treino mostra a **estimativa para terminar todas as épocas**:
+
+```
+  10    12.480    0.120     1.2%      1050     2.0     30.1      0.1   0.180
+      ETA 1m 12s para as 39 épocas restantes (1.85s por época • 0m 18s rodados)
 ```
 
 ## Treinamento

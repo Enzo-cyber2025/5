@@ -105,7 +105,8 @@ static std::vector<Slider> g_sliders;
 static std::vector<Slider> g_sliders_corrida;   // controles do jogador (só na corrida)
 static std::vector<HWND> g_ctrls_corrida;       // botões/mostrados só na corrida
 static HWND g_slider_mut = nullptr;
-static HWND g_chk_abs = nullptr, g_chk_tc = nullptr, g_chk_colisao = nullptr;
+static HWND g_chk_abs = nullptr, g_chk_tc = nullptr, g_chk_colisao = nullptr,
+            g_chk_boxe = nullptr;
 
 
 static HWND cria_slider(HWND pai, int x, int y, int w, const wchar_t* nome, double* valor,
@@ -175,7 +176,8 @@ enum {
     ID_EXEMPLO_PY, ID_NOVO, ID_ADD_MODELO, ID_AJUDA, ID_SAIR, ID_VOLTAR,
     ID_ABRIR_PY, ID_SALVAR_PY,
     ID_RECOMPENSA_PADRAO, ID_ZOOM_MAIS, ID_ZOOM_MENOS, ID_CHAVE_MODO,
-    ID_CHK_ABS, ID_CHK_TC, ID_CHK_COLISAO, ID_ABRIR_MODS, ID_RECARR_MODS, ID_CHAVE_3D,
+    ID_CHK_ABS, ID_CHK_TC, ID_CHK_COLISAO, ID_CHK_BOXE, ID_ABRIR_MODS, ID_RECARR_MODS,
+    ID_CHAVE_3D,
     ID_GER_CAMADAS, ID_GER_ATIV, ID_GER_FORMATO, ID_GERAR_IA, ID_CHAVE_TIPO_IA
 };
 
@@ -1006,14 +1008,29 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                                      GetModuleHandle(nullptr), nullptr);
             SendMessageW(g_chk_abs, WM_SETFONT, (WPARAM)g_fonte, TRUE);
             SendMessageW(g_chk_tc, WM_SETFONT, (WPARAM)g_fonte, TRUE);
-            g_chk_colisao = CreateWindowW(L"button", L"colisões entre carros",
+            g_chk_colisao = CreateWindowW(L"button", L"colisões",
                                           WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
-                                          P + 300, 292, 170, 22, hwnd,
+                                          P + 300, 292, 96, 22, hwnd,
                                           (HMENU)(intptr_t)ID_CHK_COLISAO,
                                           GetModuleHandle(nullptr), nullptr);
             SendMessageW(g_chk_colisao, WM_SETFONT, (WPARAM)g_fonte, TRUE);
             SendMessageW(g_chk_colisao, BM_SETCHECK,
                          g_app.sim_cfg.colisoes ? BST_CHECKED : BST_UNCHECKED, 0);
+            // ---- pitstop: o jogador também pode parar (tecla B)
+            g_chk_boxe = CreateWindowW(L"button", L"boxe (B pede parada)",
+                                       WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
+                                       P, 316, 250, 22, hwnd,
+                                       (HMENU)(intptr_t)ID_CHK_BOXE,
+                                       GetModuleHandle(nullptr), nullptr);
+            SendMessageW(g_chk_boxe, WM_SETFONT, (WPARAM)g_fonte, TRUE);
+            SendMessageW(g_chk_boxe, BM_SETCHECK,
+                         g_app.sim_cfg.pit_ligado ? BST_CHECKED : BST_UNCHECKED, 0);
+            cria_slider_corrida(hwnd, P, 344, 180, L"tempo de boxe (s)",
+                                &g_app.sim_cfg.pit_tempo, 1.0, 15.0, 10);
+            cria_slider_corrida(hwnd, P + 196, 344, 180, L"limite do boxe (m/s)",
+                                &g_app.sim_cfg.pit_limite, 8.0, 40.0, 10);
+            cria_slider_corrida(hwnd, P, 390, 180, L"largura da faixa (m)",
+                                &g_app.sim_cfg.pit_largura, 3.0, 9.0, 10);
             SendMessageW(g_chk_abs, BM_SETCHECK,
                          g_app.controles.abs ? BST_CHECKED : BST_UNCHECKED, 0);
             SendMessageW(g_chk_tc, BM_SETCHECK,
@@ -1021,19 +1038,20 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
 
             g_texto_corrida = CreateWindowW(L"edit", L"",
                                             WS_CHILD | ES_MULTILINE | ES_READONLY | WS_VSCROLL,
-                                            P, 320, W, 160, hwnd, nullptr,
+                                            P, 436, W, 140, hwnd, nullptr,
                                             GetModuleHandle(nullptr), nullptr);
             SendMessageW(g_texto_corrida, WM_SETFONT, (WPARAM)g_fonte_mono, TRUE);
-            botao_corrida(hwnd, ID_REINICIAR, P, 490, 130, 28, L"Reiniciar");
-            botao_corrida(hwnd, ID_ADD_MODELO, P + 138, 490, 150, 28, L"Adicionar modelo");
-            botao_corrida(hwnd, ID_MENU, P + 296, 490, 130, 28, L"Menu");
-            botao_corrida(hwnd, ID_ABRIR_MODS, P, 526, 196, 28, L"Abrir pasta de mods");
-            botao_corrida(hwnd, ID_RECARR_MODS, P + 204, 526, 222, 28, L"Recarregar mods");
+            botao_corrida(hwnd, ID_REINICIAR, P, 590, 130, 28, L"Reiniciar");
+            botao_corrida(hwnd, ID_ADD_MODELO, P + 138, 590, 150, 28, L"Adicionar modelo");
+            botao_corrida(hwnd, ID_MENU, P + 296, 590, 130, 28, L"Menu");
+            botao_corrida(hwnd, ID_ABRIR_MODS, P, 626, 196, 28, L"Abrir pasta de mods");
+            botao_corrida(hwnd, ID_RECARR_MODS, P + 204, 626, 222, 28, L"Recarregar mods");
 
-            rotulo(hwnd, P, 562, W, 150,
+            rotulo(hwnd, P, 662, W, 150,
                    L"Setas/WASD dirigem\nF2 alterna Corrida/Treino\n"
                    L"R reinicia a corrida\nC troca a câmera\n"
-                   L"+/- aproxima\nH mostra/esconde o HUD\nESC volta ao menu");
+                   L"+/- aproxima\nH mostra/esconde o HUD\nESC volta ao menu\n"
+                   L"B pede boxe (pitstop)");
 
             mostra_tela();
             SetTimer(hwnd, kTimer, 16, nullptr);
@@ -1087,6 +1105,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                     *s.valor = double(pos) / s.escala;
                     s.atualiza();
                     g_app.salvar_controles();
+                    g_app.aplicar_cfg_boxe();
                     achou = true;
                     break;
                 }
@@ -1168,7 +1187,11 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             } else if (id == ID_CHK_COLISAO) {
                 g_app.sim_cfg.colisoes =
                     SendMessageW(g_chk_colisao, BM_GETCHECK, 0, 0) == BST_CHECKED;
-                if (g_app.race.sim) g_app.race.sim->cfg.colisoes = g_app.sim_cfg.colisoes;
+                g_app.aplicar_cfg_boxe();
+            } else if (id == ID_CHK_BOXE) {
+                g_app.sim_cfg.pit_ligado =
+                    SendMessageW(g_chk_boxe, BM_GETCHECK, 0, 0) == BST_CHECKED;
+                g_app.aplicar_cfg_boxe();
             } else if (id == ID_CHK_ABS || id == ID_CHK_TC) {
                 g_app.controles.abs =
                     SendMessageW(g_chk_abs, BM_GETCHECK, 0, 0) == BST_CHECKED;
@@ -1356,6 +1379,14 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                 g_foco += 1;
             } else if (wp == 'P') {
                 g_app.ui.pausado = !g_app.ui.pausado;
+            } else if (wp == 'B') {
+                if (g_app.mode == Mode::Corrida) {
+                    g_app.pedir_boxe();
+                    if (g_chk_boxe)
+                        SendMessageW(g_chk_boxe, BM_SETCHECK,
+                                     g_app.sim_cfg.pit_ligado ? BST_CHECKED : BST_UNCHECKED, 0);
+                    InvalidateRect(hwnd, nullptr, TRUE);
+                }
             }
             return 0;
         }

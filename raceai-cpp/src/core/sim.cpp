@@ -662,8 +662,10 @@ void Simulation::observe(int row, float* out) const {
     out[o++] = float(clamp(a.car.grip_use, 0.0, 1.5));
     out[o++] = float(a.last_steer);
     out[o++] = float(a.last_drive);
-    // entradas de estratégia (só quando o pitstop está ligado)
-    if (cfg.pit_ligado) {
+    // entradas de estratégia: só se foram reservadas na criação da simulação
+    // (o boxe pode ser ligado depois, e aí a rede continua com as entradas
+    // que já tinha — nunca escreve além do buffer)
+    if (cfg.pit_ligado && obs_dim >= cfg.n_rays + 20) {
         out[o++] = float(clamp(a.car.tire_wear, 0.0, 1.0));   // pneu gasto
         out[o++] = float(clamp(a.car.fuel, 0.0, 1.0));        // combustível
         out[o++] = float(clamp(a.car.damage, 0.0, 1.0));      // lataria

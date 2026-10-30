@@ -135,6 +135,21 @@ int main() {
     race_get_human(&s, &d);
     CHECK(std::fabs(d - 1.0) < 1e-9, "controle manual não foi registrado");
 
+    // pedir boxe: liga a área de boxe e marca o pedido no carro do jogador
+    {
+        const int fi = app.race.indice_foco();
+        CHECK(!app.race.sim->cfg.pit_ligado, "boxe não deveria estar ligado");
+        app.pedir_boxe();
+        CHECK(app.race.sim->cfg.pit_ligado, "pedir boxe deveria ligar a área de boxe");
+        CHECK(app.race.sim->agents[fi].pit_pedido, "o pedido não chegou no carro");
+        app.pedir_boxe();
+        CHECK(!app.race.sim->agents[fi].pit_pedido, "o segundo pedido deveria cancelar");
+        app.sim_cfg.pit_tempo = 7.0;
+        app.aplicar_cfg_boxe();
+        CHECK(std::fabs(app.race.sim->cfg.pit_tempo - 7.0) < 1e-9,
+              "o tempo de boxe não chegou na corrida");
+    }
+
     double antes = app.race.elapsed;
     for (int i = 0; i < 600; ++i) app.tick_corrida(4);
     CHECK(app.race.elapsed > antes, "o tempo da corrida não avançou");

@@ -35,7 +35,9 @@ public:
     void set_weights(const std::vector<float>& w) { w_ = w; }
     const PolicySpec& spec() const { return spec_; }
     void act(const float* obs, int obs_dim, float* out) override {
-        if (w_.size() != spec_.n_params() || obs_dim != spec_.obs_dim) {
+        // tolera observação maior que a da rede (ex.: boxe ligado numa rede
+        // treinada sem boxe): usa os primeiros spec_.obs_dim valores
+        if (w_.size() != spec_.n_params() || obs_dim < spec_.obs_dim) {
             out[0] = 0.0f; out[1] = 0.0f;
             return;
         }

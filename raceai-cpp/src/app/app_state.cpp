@@ -573,18 +573,60 @@ void AppState::marca_geracao() {
         if (dt > 0.0 && dt < 600.0) {
             tempos_geracao.push_back(dt);
             if (tempos_geracao.size() > 30) tempos_geracao.erase(tempos_geracao.begin());
+            media_geracao = media_por_geracao();
         }
     }
     t0_geracao = agora;
 }
 
+double AppState::media_por_geracao() const {
+    if (!tempos_geracao.empty()) {
+        double soma = 0.0;
+        for (double t : tempos_geracao) soma += t;
+        return soma / double(tempos_geracao.size());
+    }
+    return media_geracao;                 // histórico de uma sessão anterior
+}
+
 double AppState::eta_segundos() const {
-    if (!treinando || geracao <= 0 || tempos_geracao.empty()) return -1.0;
-    double soma = 0.0;
-    for (double t : tempos_geracao) soma += t;
-    const double media = soma / double(tempos_geracao.size());
+    const double media = media_por_geracao();
+    if (media <= 0.0) return -1.0;
     const int faltam = std::max(0, int(train_cfg.generations) - geracao);
     return media * double(faltam);
+}
+
+// ------------------------------------------------------------------ boxe
+void AppState::pedir_boxe() {
+    if (!race.sim) return;
+    if (!race.sim->cfg.pit_ligado) {     // pedir boxe liga a área de boxe
+        sim_cfg.pit_ligado = true;
+        aplicar_cfg_boxe();
+    }
+    const int i = race.indice_foco();
+    if (i < 0 || i >= race.sim->n()) return;
+    Agent& a = race.sim->agents[i];
+    a.pit_pedido = !a.pit_pedido;
+}
+
+void AppState::aplicar_cfg_boxe() {
+    if (trainer) {
+        for (auto& s : trainer->shards) {
+            s->cfg.pit_ligado = sim_cfg.pit_ligado;
+            s->cfg.pit_tempo = sim_cfg.pit_tempo;
+            s->cfg.pit_limite = sim_cfg.pit_limite;
+            s->cfg.pit_largura = sim_cfg.pit_largura;
+            s->cfg.pit_zona = sim_cfg.pit_zona;
+            s->cfg.colisoes = sim_cfg.colisoes;
+        }
+    }
+    if (race.sim) {
+        race.sim->cfg.pit_ligado = sim_cfg.pit_ligado;
+        race.sim->cfg.pit_tempo = sim_cfg.pit_tempo;
+        race.sim->cfg.pit_limite = sim_cfg.pit_limite;
+        race.sim->cfg.pit_largura = sim_cfg.pit_largura;
+        race.sim->cfg.pit_zona = sim_cfg.pit_zona;
+        race.sim->cfg.colisoes = sim_cfg.colisoes;
+    }
 }
 
 void AppState::iniciar_treino(bool novo) {
@@ -831,14 +873,33 @@ std::vector<std::string> AppState::treino_lines() const {
                   int(train_cfg.generations), vivos, total);
     out.push_back(buf);
     {
+        const int faltam = std::max(0, int(train_cfg.generations) - geracao);
         const double eta = eta_segundos();
         if (eta >= 0.0) {
-            int m = int(eta) / 60, s2 = int(eta) % 60;
-            std::snprintf(buf, sizeof(buf), "ETA %dm %02ds  (faltam %d gerações)", m, s2,
-                          std::max(0, int(train_cfg.generations) - geracao));
+            const int m = int(eta) / 60, s2 = int(eta) % 60;
+            const double medio = media_por_geracao();
+            char hora[16] = "--:--";
+            if (eta < 24.0 * 3600.0) {
+                time_t fim = time(nullptr) + time_t(eta);
+                struct tm tmv;
+#ifdef _WIN32
+                localtime_s(&tmv, &fim);
+#else
+                localtime_r(&fim, &tmv);
+#endif
+                std::snprintf(hora, sizeof(hora), "%02d:%02d", tmv.tm_hour, tmv.tm_min);
+            }
+            std::snprintf(buf, sizeof(buf),
+                          "ETA %dm %02ds  (faltam %d gerações · %.2fs cada · término %s)",
+                          m, s2, faltam, medio, hora);
         } else {
-            std::snprintf(buf, sizeof(buf), "ETA -- (ainda sem histórico)");
+            std::snprintf(buf, sizeof(buf), "ETA -- (roda uma geração para estimar)");
         }
+        out.push_back(buf);
+        const int td = int(tempo_treino);
+        std::snprintf(buf, sizeof(buf), "treinando há %02d:%02d  (%d geração%s avaliada%s)",
+                      td / 60, td % 60, geracao, geracao == 1 ? "" : "s",
+                      geracao == 1 ? "" : "s");
         out.push_back(buf);
     }
     out.push_back("--- métricas do melhor (agora) ---");

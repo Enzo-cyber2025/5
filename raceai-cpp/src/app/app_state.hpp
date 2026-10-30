@@ -146,6 +146,8 @@ public:
     // estimativa de tempo para terminar todas as gerações
     std::vector<double> tempos_geracao;
     double t0_geracao = 0.0;
+    double media_geracao = 0.0;      // último tempo médio por geração (s)
+    double tempo_decorrido = 0.0;    // s de treino acumulados na sessão
     void aplicar_assistencias();        // ABS/controle de tração no carro do jogador
     // cria exemplos (modelos) de carro e pista nas pastas de mods, na primeira
     // vez: é só copiar, editar e recarregar para fazer o seu próprio mod
@@ -154,6 +156,10 @@ public:
     bool carregar_controles();
     void marca_geracao();
     double eta_segundos() const;          // -1 = ainda não dá para estimar
+    double media_por_geracao() const;     // s por geração (0 = sem histórico)
+    // boxe: o jogador também pode parar (tecla B) e mexer nos parâmetros
+    void pedir_boxe();
+    void aplicar_cfg_boxe();
     static double agora_segundos();
     // chave entre os dois modos (mesmo app, sem voltar ao menu): o estado de
     // cada um fica vivo, então dá para ir e voltar sem perder nada.

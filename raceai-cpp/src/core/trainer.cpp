@@ -137,7 +137,9 @@ void Trainer::start_episode() {
 void Trainer::worker(int shard) {
     Simulation& sim = *shards[shard];
     const int dim = policy.obs_dim;
-    std::vector<float> obs(size_t(std::max(1, dim)));
+    // o buffer acompanha o maior dos dois: a simulação pode ter mais entradas
+    // (boxe ligado) do que a rede treinada, e a rede usa só as primeiras
+    std::vector<float> obs(size_t(std::max(1, std::max(dim, sim.obs_dim))));
     float act[4] = {0.0f, 0.0f, 0.0f, 0.0f};
     const bool use_driver = external_driver_ != nullptr;
     while (!sim.all_dead() && sim.step_count < sim.max_steps) {
@@ -170,7 +172,7 @@ void Trainer::step(int n) {
     // modo interface: um (ou poucos) passos por frame, sem threads
     for (auto& s : shards) {
         const int dim = policy.obs_dim;
-        std::vector<float> obs(size_t(std::max(1, dim)));
+        std::vector<float> obs(size_t(std::max(1, std::max(dim, s->obs_dim))));
         float act[4] = {0.0f, 0.0f, 0.0f, 0.0f};
         for (int k = 0; k < n; ++k) {
             if (s->should_decide()) {

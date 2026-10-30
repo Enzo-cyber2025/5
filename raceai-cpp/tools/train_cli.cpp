@@ -172,6 +172,22 @@ else if (a == "--save-every") save_every = int(num("--save-every"));
         ever_error = std::min(ever_error, last.best_error_pct);
         ever_dist = std::max(ever_dist, last.best_distance);
         ever_fit = std::max(ever_fit, last.best);
+        // estimativa: quanto falta para terminar todas as épocas
+        if (!quiet || g == generations - 1 || (g + 1) % 10 == 0) {
+            const double decorrido = double(clock()) / CLOCKS_PER_SEC - t0;
+            const double media = decorrido / double(g + 1);
+            const int faltam = generations - (g + 1);
+            const double eta = media * double(faltam);
+            if (faltam > 0) {
+                const int em = int(eta) / 60, es = int(eta) % 60;
+                const int dm = int(decorrido) / 60, ds = int(decorrido) % 60;
+                printf("      ETA %dm %02ds para %s %d época%s restante%s "
+                       "(%.2fs por época • %dm %02ds rodados)\n",
+                       em, es, faltam > 1 ? "as" : "a", faltam,
+                       faltam > 1 ? "s" : "", faltam > 1 ? "s" : "", media, dm, ds);
+                fflush(stdout);
+            }
+        }
         if (save_every && !out_path.empty() && (last.generation % save_every == 0)) {
             std::string e2;
             trainer.save_best(out_path, &e2);
