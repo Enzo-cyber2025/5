@@ -274,6 +274,28 @@ std::vector<std::string> Race::hud_lines() const {
     return out;
 }
 
+void AppState::reler_ativos() {
+    pistas = list_tracks();
+    carros = list_cars();
+    if (pista_idx >= int(pistas.size())) pista_idx = int(pistas.size()) - 1;
+    if (carro_idx >= int(carros.size())) carro_idx = int(carros.size()) - 1;
+    if (pista_idx < 0) pista_idx = 0;
+    if (carro_idx < 0) carro_idx = 0;
+    // exemplos de mod: criados na pasta de dados na primeira vez
+    garantir_modelos_mod();
+    pistas = list_tracks();
+    carros = list_cars();
+    if (pista_idx >= int(pistas.size())) pista_idx = int(pistas.size()) - 1;
+    if (carro_idx >= int(carros.size())) carro_idx = int(carros.size()) - 1;
+    if (pista_idx < 0) pista_idx = 0;
+    if (carro_idx < 0) carro_idx = 0;
+    std::string err;
+    if (!pistas.empty()) load_track(pistas[pista_idx].id, track_cache_, &err);
+    if (!carros.empty()) load_car(carros[carro_idx].id, car_cache_, &err);
+    // as preferências ficam na pasta de dados, não mais na pasta do .exe
+    controles_path = assets_root() + "/controles.json";
+}
+
 // expõe o controle manual para a camada de janela
 void race_set_human(double steer, double drive) {
     humano_steer = steer;

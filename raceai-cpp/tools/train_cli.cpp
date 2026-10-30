@@ -34,6 +34,7 @@ static void usage() {
         "  --save-every N         salva o melhor a cada N gerações\n"
         "  --eval                 apenas avalia (não evolui)\n"
         "  --list                 lista pistas e carros disponíveis\n"
+        "  --conteudo             mostra quantas pistas/carros o .exe trouxe\n"
         "  --quiet                só imprime o resumo final\n"
         "\n"
         "Recompensa (os mesmos sliders da interface):\n"
@@ -80,6 +81,18 @@ else if (a == "--save-every") save_every = int(num("--save-every"));
         else if (a == "--eval") eval_only = true;
         else if (a == "--quiet") quiet = true;
         else if (a == "--list") list_only = true;
+        else if (a == "--conteudo") {
+            // o .exe sozinho tem que trazer o conteúdo embutido; se não
+            // trouxer, as listas da interface ficam vazias
+            const std::vector<AssetItem> ps = list_tracks();
+            const std::vector<AssetItem> cs = list_cars();
+            printf("conteudo: pistas=%d carros=%d\n", int(ps.size()), int(cs.size()));
+            if (ps.empty() || cs.empty()) {
+                fprintf(stderr, "ERRO: sem pistas ou carros (conteudo embutido ausente)\n");
+                return 1;
+            }
+            return 0;
+        }
         else if (a == "--reward-progress") reward.progress = num("--reward-progress");
         else if (a == "--reward-speed") reward.speed = num("--reward-speed");
         else if (a == "--reward-precision") reward.precision = num("--reward-precision");

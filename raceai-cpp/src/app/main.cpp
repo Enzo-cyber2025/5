@@ -50,6 +50,7 @@ static HFONT g_fonte_botao = nullptr;
 static HBRUSH g_pincel_painel = nullptr;
 static HBRUSH g_pincel_edit = nullptr;
 static HBRUSH g_pincel_titulo = nullptr;
+static HBRUSH g_pincel_destaque = nullptr;
 // back-buffer do duplo-buffer: criado uma vez e reaproveitado (num PC fraco,
 // alocar um bitmap do tamanho da tela 60 vezes por segundo pesa muito)
 static HDC g_mem_dc = nullptr;
@@ -160,6 +161,28 @@ static std::wstring rotulo_valor(const std::wstring& nome, double v) {
     return nome + L"  " + wide(std::string(buf));
 }
 
+// Título de seção: rótulo + um filete colorido embaixo (o filete é um
+// "static" vazio pintado com a cor de destaque em WM_CTLCOLORSTATIC).
+static std::vector<HWND> g_barras_secao;
+
+static HWND secao(HWND pai, int x, int y, int w, const wchar_t* txt) {
+    rotulo(pai, x, y, w, 18, txt, g_fonte_botao);
+    HWND barra = CreateWindowW(L"static", L"", WS_CHILD | WS_VISIBLE | SS_LEFT, x, y + 18, w, 2,
+                               pai, nullptr, GetModuleHandle(nullptr), nullptr);
+    g_barras_secao.push_back(barra);
+    return barra;
+}
+
+// caixa de texto padrão (fundo escuro, fonte do painel)
+static HWND cria_edit(HWND pai, int id, int x, int y, int w, int h, const wchar_t* txt) {
+    HWND hw = CreateWindowExW(WS_EX_CLIENTEDGE, L"edit", L"",
+                              WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, x, y, w, h, pai,
+                              (HMENU)(intptr_t)id, GetModuleHandle(nullptr), nullptr);
+    SendMessageW(hw, WM_SETFONT, (WPARAM)g_fonte, TRUE);
+    if (txt) SetWindowTextW(hw, txt);
+    return hw;
+}
+
 static HWND botao(HWND pai, int id, int x, int y, int w, int h, const wchar_t* txt) {
     HWND hw = CreateWindowW(L"button", txt,
                             WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_OWNERDRAW, x, y, w, h, pai,
@@ -220,10 +243,76 @@ static HWND cria_slider_corrida(HWND pai, int x, int y, int w, const wchar_t* no
 static const int kNeuroniosOpcoes[] = {16, 32, 64, 128, 256};
 static const char* kAtivacoesOpcoes[] = {"tanh", "relu", "sigmoid", "leaky"};
 
+// Combo desenhado à mão: caixa escura com setinha e itens com realce.
+// (Sem isso o Windows desenha a caixa branca/clara por cima do painel escuro.)
+static void desenha_combo(const DRAWITEMSTRUCT* di) {
+    const int w = di->rcItem.right - di->rcItem.left;
+    const int h = di->rcItem.bottom - di->rcItem.top;
+    if (w <= 2 || h <= 2) return;
+    const bool fechada = (di->itemID == (UINT)-1);
+    wchar_t txt[256] = {0};
+    if (fechada) {
+        const int sel = int(SendMessageW(di->hwndItem, CB_GETCURSEL, 0, 0));
+        if (sel >= 0) SendMessageW(di->hwndItem, CB_GETLBTEXT, (WPARAM)sel, (LPARAM)txt);
+    } else {
+        SendMessageW(di->hwndItem, CB_GETLBTEXT, (WPARAM)di->itemID, (LPARAM)txt);
+    }
+    const bool realce = !fechada && (di->itemState & ODS_SELECTED) != 0;
+
+    HDC mem = CreateCompatibleDC(di->hDC);
+    HBITMAP bmp = CreateCompatibleBitmap(di->hDC, w, h);
+    HGDIOBJ ob = SelectObject(mem, bmp);
+    {
+        RECT rf = {0, 0, w, h};
+        HBRUSH b = CreateSolidBrush(fechada ? kCorEdit
+                                            : (realce ? RGB(52, 68, 96) : RGB(22, 26, 34)));
+        FillRect(mem, &rf, b);
+        DeleteObject(b);
+    }
+    if (fechada) {   // borda + cantos arredondados só na caixa fechada
+        HBRUSH b = CreateSolidBrush(kCorEdit);
+        HPEN p = CreatePen(PS_SOLID, 1, RGB(72, 86, 112));
+        HGDIOBJ obb = SelectObject(mem, b);
+        HGDIOBJ obp = SelectObject(mem, p);
+        RoundRect(mem, 0, 0, w, h, 8, 8);
+        SelectObject(mem, obb);
+        SelectObject(mem, obp);
+        DeleteObject(b);
+        DeleteObject(p);
+    }
+    if (txt[0]) {
+        HGDIOBJ of = SelectObject(mem, g_fonte);
+        SetBkMode(mem, TRANSPARENT);
+        SetTextColor(mem, (di->itemState & ODS_DISABLED) ? RGB(120, 128, 142)
+                                                        : RGB(226, 232, 244));
+        RECT rt = {9, 0, fechada ? w - 22 : w - 6, h};
+        DrawTextW(mem, txt, -1, &rt, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+        SelectObject(mem, of);
+    }
+    if (fechada) {   // setinha
+        const int cx = w - 14, cy = h / 2;
+        POINT pts[3] = {{cx - 5, cy - 2}, {cx + 5, cy - 2}, {cx, cy + 3}};
+        HBRUSH bs = CreateSolidBrush(RGB(150, 165, 190));
+        HPEN ps = CreatePen(PS_SOLID, 1, RGB(150, 165, 190));
+        HGDIOBJ obs = SelectObject(mem, bs);
+        HGDIOBJ ops = SelectObject(mem, ps);
+        Polygon(mem, pts, 3);
+        SelectObject(mem, obs);
+        SelectObject(mem, ops);
+        DeleteObject(bs);
+        DeleteObject(ps);
+    }
+    BitBlt(di->hDC, di->rcItem.left, di->rcItem.top, w, h, mem, 0, 0, SRCCOPY);
+    SelectObject(mem, ob);
+    DeleteObject(bmp);
+    DeleteDC(mem);
+}
+
 static HWND combo(HWND pai, int id, int x, int y, int w,
                   const std::vector<std::wstring>& itens, int selecionado) {
     HWND cb = CreateWindowW(L"combobox", L"",
-                            WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST | WS_VSCROLL,
+                            WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST | CBS_OWNERDRAWFIXED |
+                                WS_VSCROLL,
                             x, y, w, 180, pai, (HMENU)(intptr_t)id,
                             GetModuleHandle(nullptr), nullptr);
     SendMessageW(cb, WM_SETFONT, (WPARAM)g_fonte, TRUE);
@@ -234,6 +323,20 @@ static HWND combo(HWND pai, int id, int x, int y, int w,
 
 static HWND g_texto_ia = nullptr;
 static HWND g_edita_camadas = nullptr;
+static HWND g_edita_ativ = nullptr;
+
+// aceita o que o usuário digitar (com espaço, maiúscula ou apelido) e devolve
+// uma das ativações que o núcleo entende; "" se não reconheceu
+static std::string ativacao_digitada(const std::string& txt) {
+    std::string v;
+    for (char c : txt) {
+        if (c == ' ' || c == '\t' || c == '-') continue;
+        v.push_back(char(std::tolower((unsigned char)c)));
+    }
+    if (v == "leakyrelu" || v == "leaky_relu") v = "leaky";
+    if (v == "tanh" || v == "relu" || v == "sigmoid" || v == "leaky") return v;
+    return "";
+}
 static HWND g_botao_tipo_ia = nullptr;
 
 static void atualiza_resumo_ia() {
@@ -885,14 +988,7 @@ static void atualiza_textos() {
 
 // Recarrega pistas e carros (inclui os mods que o usuário acabou de copiar).
 static void recarregar_mods() {
-    g_app.pistas = raceai::list_tracks();
-    g_app.carros = raceai::list_cars();
-    if (g_app.pista_idx >= int(g_app.pistas.size()))
-        g_app.pista_idx = int(g_app.pistas.size()) - 1;
-    if (g_app.carro_idx >= int(g_app.carros.size()))
-        g_app.carro_idx = int(g_app.carros.size()) - 1;
-    if (g_app.pista_idx < 0) g_app.pista_idx = 0;
-    if (g_app.carro_idx < 0) g_app.carro_idx = 0;
+    g_app.reler_ativos();
 
     auto preenche = [](HWND cb, const std::vector<raceai::AssetItem>& itens, int escolhido) {
         if (!cb) return;
@@ -952,30 +1048,21 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             g_pincel_painel = CreateSolidBrush(kCorPainel);
             g_pincel_edit = CreateSolidBrush(kCorEdit);
             g_pincel_titulo = CreateSolidBrush(RGB(32, 37, 50));
+            g_pincel_destaque = CreateSolidBrush(kCorDestaque);
             const int P = 12;
             const int W = kPainelW - 24;
             g_hwnd_titulo = rotulo(hwnd, P, 8, W, 30, L"RaceAI 2D — C++", g_fonte_titulo);
             rotulo(hwnd, P, 44, W, 18, L"pista");
-            HWND cb_pista = CreateWindowW(L"combobox", L"",
-                                          WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST | WS_VSCROLL,
-                                          P, 62, W, 200, hwnd, (HMENU)(intptr_t)ID_PISTA,
-                                          GetModuleHandle(nullptr), nullptr);
-            SendMessageW(cb_pista, WM_SETFONT, (WPARAM)g_fonte, TRUE);
-            for (const AssetItem& it : g_app.pistas) {
-                SendMessageW(cb_pista, CB_ADDSTRING, 0, (LPARAM)wide(it.name).c_str());
-            }
-            SendMessageW(cb_pista, CB_SETCURSEL, (WPARAM)g_app.pista_idx, 0);
+            std::vector<std::wstring> nomes_pista;
+            for (const AssetItem& it : g_app.pistas) nomes_pista.push_back(wide(it.name));
+            if (nomes_pista.empty()) nomes_pista.push_back(L"(nenhuma pista encontrada)");
+            combo(hwnd, ID_PISTA, P, 62, W, nomes_pista, g_app.pista_idx);
 
             rotulo(hwnd, P, 90, W, 18, L"carro");
-            HWND cb_carro = CreateWindowW(L"combobox", L"",
-                                          WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST | WS_VSCROLL,
-                                          P, 108, W, 200, hwnd, (HMENU)(intptr_t)ID_CARRO,
-                                          GetModuleHandle(nullptr), nullptr);
-            SendMessageW(cb_carro, WM_SETFONT, (WPARAM)g_fonte, TRUE);
-            for (const AssetItem& it : g_app.carros) {
-                SendMessageW(cb_carro, CB_ADDSTRING, 0, (LPARAM)wide(it.name).c_str());
-            }
-            SendMessageW(cb_carro, CB_SETCURSEL, (WPARAM)g_app.carro_idx, 0);
+            std::vector<std::wstring> nomes_carro;
+            for (const AssetItem& it : g_app.carros) nomes_carro.push_back(wide(it.name));
+            if (nomes_carro.empty()) nomes_carro.push_back(L"(nenhum carro encontrado)");
+            combo(hwnd, ID_CARRO, P, 108, W, nomes_carro, g_app.carro_idx);
 
             botao(hwnd, ID_CORRIDA, P, 140, 120, 30, L"Corrida");
             botao(hwnd, ID_TREINO, P + 128, 140, 120, 30, L"Treinamento");
@@ -1018,30 +1105,21 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
 
             // ---- gerador de IA: monta a rede sem escrever código
             y += 52;
-            rotulo(hwnd, P, y, W, 18, L"gerador de IA (estrutura da rede)", g_fonte);
+            secao(hwnd, P, y, W, L"gerador de IA (estrutura da rede)");
             y += 20;
             {
-                int sel_a = 0;
-                for (int i = 0; i < 4; ++i)
-                    if (g_app.ai_gen.ativacao == kAtivacoesOpcoes[i]) sel_a = i;
-                // campo livre: digite quantas camadas quiser, do tamanho que quiser
+                // tudo é digitado: é só escrever as camadas e a ativação
                 rotulo(hwnd, P, y, 180, 18, L"camadas (ex.: 256,128,64)");
-                g_edita_camadas = CreateWindowExW(WS_EX_CLIENTEDGE, L"edit", L"",
-                                                  WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL,
-                                                  P, y + 20, 180, 24, hwnd,
-                                                  (HMENU)(intptr_t)ID_GER_CAMADAS,
-                                                  GetModuleHandle(nullptr), nullptr);
-                SendMessageW(g_edita_camadas, WM_SETFONT, (WPARAM)g_fonte, TRUE);
-                SetWindowTextW(g_edita_camadas, wide(g_app.ai_gen.texto()).c_str());
-                rotulo(hwnd, P + 196, y, 180, 18, L"ativação");
-                combo(hwnd, ID_GER_ATIV, P + 196, y + 20, 180,
-                      {L"tanh", L"relu", L"sigmoid", L"leaky"}, sel_a);
-                y += 30;
-                combo(hwnd, ID_GER_FORMATO, P, y + 16, 180,
-                      {L"atalhos: constante 64x2", L"atalho: funil 128,64,32",
-                       L"atalho: ampulheta 32,64,32"}, 0);
+                g_edita_camadas = cria_edit(hwnd, ID_GER_CAMADAS, P, y + 20, 180, 24,
+                                            wide(g_app.ai_gen.texto()).c_str());
+                rotulo(hwnd, P + 196, y, 180, 18, L"ativação (ex.: relu)");
+                g_edita_ativ = cria_edit(hwnd, ID_GER_ATIV, P + 196, y + 20, 180, 24,
+                                         wide(g_app.ai_gen.ativacao).c_str());
+                y += 48;
+                rotulo(hwnd, P, y, W, 18,
+                       L"dica: 256,128,64 · relu, tanh, sigmoid ou leaky");
             }
-            y += 46;
+            y += 26;
             botao(hwnd, ID_GERAR_IA, P, y, 180, 26, L"Gerar e treinar");
             // chave "tipo de IA": Corrida (só piloto) | Estratégia (piloto + boxe)
             rotulo(hwnd, P + 196, y - 18, 180, 18, L"tipo de IA");
@@ -1056,7 +1134,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
 
             // ---- recompensa (os sliders pedidos)
             y += 52;
-            rotulo(hwnd, P, y, W, 18, L"recompensa (o que a IA ganha)", g_fonte);
+            secao(hwnd, P, y, W, L"recompensa (o que a IA ganha)");
             y += 20;
             cria_slider(hwnd, P, y, 180, L"progresso", &g_app.reward.progress, 0, 3, 100);
             cria_slider(hwnd, P + 196, y, 180, L"velocidade", &g_app.reward.speed, 0, 3, 100);
@@ -1064,7 +1142,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             cria_slider(hwnd, P, y, 180, L"precisão", &g_app.reward.precision, 0, 3, 100);
             cria_slider(hwnd, P + 196, y, 180, L"suavidade", &g_app.reward.smooth, 0, 3, 100);
             y += 46;
-            rotulo(hwnd, P, y, W, 18, L"penalidades (o que a IA perde)", g_fonte);
+            secao(hwnd, P, y, W, L"penalidades (o que a IA perde)");
             y += 20;
             cria_slider(hwnd, P, y, 180, L"fora da pista", &g_app.reward.offtrack, 0, 3, 100);
             cria_slider(hwnd, P + 196, y, 180, L"batida", &g_app.reward.crash, 0, 3, 100);
@@ -1090,7 +1168,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
 
             // ---- IA em Python
             y += 36;
-            rotulo(hwnd, P, y, W, 18, L"sua IA em Python: dirigir(sensores)", g_fonte);
+            secao(hwnd, P, y, W, L"sua IA em Python: dirigir(sensores)");
             y += 20;
             g_edita_python = CreateWindowExW(WS_EX_CLIENTEDGE, L"edit", L"",
                                              WS_CHILD | WS_VISIBLE | ES_MULTILINE |
@@ -1280,8 +1358,17 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             mm->ptMinTrackSize.y = 560;
             return 0;
         }
+        case WM_MEASUREITEM: {         // altura das linhas dos combos
+            LPMEASUREITEMSTRUCT mi = (LPMEASUREITEMSTRUCT)lp;
+            if (mi->CtlType == ODT_COMBOBOX) mi->itemHeight = 20;
+            return TRUE;
+        }
         case WM_DRAWITEM: {
             const DRAWITEMSTRUCT* di = (const DRAWITEMSTRUCT*)lp;
+            if (di->CtlType == ODT_COMBOBOX) {
+                desenha_combo(di);
+                return TRUE;
+            }
             if (di->CtlID == ID_CHAVE_MODO) {
                 desenha_chave(di->hDC, di->rcItem, g_app.mode == Mode::Corrida, L"Corrida",
                               L"Treino", RGB(28, 62, 48), RGB(86, 214, 140));
@@ -1310,24 +1397,19 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         }
         case WM_COMMAND: {
             const int id = LOWORD(wp);
-            // combos do gerador de IA: mudou a seleção, já mostra a rede nova
-            if (HIWORD(wp) == CBN_SELCHANGE) {
-                const int sel = int(SendMessageW((HWND)lp, CB_GETCURSEL, 0, 0));
-                if (sel >= 0) {
-                    if (id == ID_GER_ATIV && sel < 4)
-                        g_app.ai_gen.ativacao = kAtivacoesOpcoes[sel];
-                    else if (id == ID_GER_FORMATO) {
-                        // atalhos: escrevem o campo e já mostram a rede nova
-                        const char* atalhos[] = {"64, 64", "128, 64, 32", "32, 64, 32"};
-                        if (sel >= 0 && sel < 3) {
-                            g_app.ai_gen.de_texto(atalhos[sel]);
-                            if (g_edita_camadas)
-                                SetWindowTextW(g_edita_camadas,
-                                               wide(g_app.ai_gen.texto()).c_str());
-                        }
-                    }
-                    atualiza_resumo_ia();
+            // campos digitados do gerador: mostra a rede nova enquanto digita
+            if (HIWORD(wp) == EN_CHANGE && (id == ID_GER_CAMADAS || id == ID_GER_ATIV)) {
+                wchar_t buf[256] = {0};
+                GetWindowTextW((HWND)lp, buf, 255);
+                const std::string txt = narrow(buf);
+                if (id == ID_GER_CAMADAS) {
+                    AiGen copia = g_app.ai_gen;
+                    if (!txt.empty() && copia.de_texto(txt)) g_app.ai_gen = copia;
+                } else {
+                    const std::string a = ativacao_digitada(txt);
+                    if (!a.empty()) g_app.ai_gen.ativacao = a;
                 }
+                atualiza_resumo_ia();
                 return 0;
             }
             if (id == ID_PISTA && HIWORD(wp) == CBN_SELCHANGE) {
@@ -1464,6 +1546,19 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                     }
                     SetWindowTextW(g_edita_camadas, wide(g_app.ai_gen.texto()).c_str());
                 }
+                if (g_edita_ativ) {
+                    wchar_t buf[256];
+                    GetWindowTextW(g_edita_ativ, buf, 255);
+                    const std::string a = ativacao_digitada(narrow(buf));
+                    if (a.empty()) {
+                        MessageBoxW(hwnd,
+                                    L"Ativação não reconhecida.\nUse: relu, tanh, sigmoid ou leaky",
+                                    L"Gerador de IA", MB_OK | MB_ICONINFORMATION);
+                        return 0;
+                    }
+                    g_app.ai_gen.ativacao = a;
+                    SetWindowTextW(g_edita_ativ, wide(a).c_str());
+                }
                 g_app.aplicar_ia_gerada();
                 atualiza_resumo_ia();
                 InvalidateRect(hwnd, nullptr, TRUE);
@@ -1569,6 +1664,10 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             return 1;                       // nunca apaga: o duplo-buffer já pinta tudo
         case WM_CTLCOLORSTATIC: {           // rótulos: texto claro sobre o painel
             HDC hdcC = (HDC)wp;
+            if (std::find(g_barras_secao.begin(), g_barras_secao.end(), (HWND)lp) !=
+                g_barras_secao.end()) {
+                return (LRESULT)g_pincel_destaque;     // filete da seção
+            }
             if (g_hwnd_titulo && (HWND)lp == g_hwnd_titulo) {
                 // título em verde-água sobre uma faixa um pouco mais clara
                 SetTextColor(hdcC, kCorDestaque);
@@ -1669,9 +1768,14 @@ static int rodar(HINSTANCE hInst, int cmd_show) {
             base_dados = wide(destino);
             log_linha(L"dados: " + base_dados);
         } else if (!erro.empty()) {
+            // (só para o else não ficar vazio)
             log_erro(L"conteudo", wide(erro));
         }
     }
+
+    // As listas de pistas/carros são lidas de novo AGORA: na primeira vez o
+    // conteúdo vem de dentro do .exe e só existe depois da extração acima.
+    g_app.reler_ativos();
 
     // Python (opcional): se a pasta python/ nao existir, o app segue em C++
     std::wstring pyhome = base_dados + L"\\python";

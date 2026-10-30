@@ -134,3 +134,27 @@ src/core/*.cpp src/app/app_state.cpp` (já limpo).
   (`ID_CHAVE_MODO`, `ID_CHAVE_TIPO_IA`, `ID_CHAVE_3D`) vêm **antes** do ramo
   genérico `di->CtlType == ODT_BUTTON`. Se o genérico vier primeiro, as
   chaves são desenhadas como botão comum e deixam de ser chave.
+
+## Listas de pista/carro vazias + gerador por digitação (2026-10-30)
+
+- **Bug grave (e a causa do "escolher pista está vazio")**: `g_app` é um
+  **global**, então `AppState()` roda antes do `WinMain`. Ele chamava
+  `list_tracks()`/`list_cars()` quando a pasta de dados ainda não era
+  conhecida (`definir_raiz_dados()` só acontece depois de extrair o pacote
+  embutido) → as listas nasciam vazias e os combos ficavam em branco.
+  Consertado com `AppState::reler_ativos()`, chamada em `rodar()` logo
+  depois de `definir_raiz_dados()` (e reaproveitada por `recarregar_mods()`).
+- **Segundo bug**: em `WM_COMMAND` existia um `if (HIWORD(wp) ==
+  CBN_SELCHANGE) { ... return 0; }` genérico, que engolia a seleção de
+  pista/carro (os `if (id == ID_PISTA ...)` abaixo nunca rodavam). Escolher
+  pista/carro não fazia nada. O bloco foi removido.
+- **Gerador de IA agora é tudo digitado**: `camadas` e `ativação` são caixas
+  de texto (helper `cria_edit`, `ativacao_digitada()` aceita maiúscula,
+  espaço e apelidos). Os menus suspensos `ID_GER_ATIV`/`ID_GER_FORMATO`
+  saíram. `EN_CHANGE` atualiza o resumo enquanto o usuário digita.
+- **Combos escuros**: `combo()` agora usa `CBS_OWNERDRAWFIXED` e
+  `desenha_combo()` desenha a caixa e os itens (precisa de `WM_MEASUREITEM`
+  com `itemHeight`, senão as linhas ficam com altura 0).
+- **Guarda no CI**: o job `verificar` (windows-2022, máquina limpa) agora
+  roda `RaceAI2D.exe --conteudo`; o flag imprime `conteudo: pistas=N
+  carros=N` e sai com 1 se vier 0. Assim "lista vazia" nunca mais passa.

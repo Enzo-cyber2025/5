@@ -157,6 +157,11 @@ public:
     void marca_geracao();
     double eta_segundos() const;          // -1 = ainda não dá para estimar
     double media_por_geracao() const;     // s por geração (0 = sem histórico)
+    // Relê pistas, carros e o caminho das preferências. Precisa ser chamado
+    // DEPOIS que a pasta de dados é conhecida (o conteúdo embutido no .exe é
+    // extraído na primeira vez; antes disso as listas saem vazias).
+    void reler_ativos();
+
     // boxe: o jogador também pode parar (tecla B) e mexer nos parâmetros
     void pedir_boxe();
     void aplicar_cfg_boxe();

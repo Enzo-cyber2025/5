@@ -95,6 +95,7 @@ static const DWORD WS_CHILD = 0x40000000L, WS_VISIBLE = 0x10000000L, WS_TABSTOP 
                    WS_VSCROLL = 0x00200000L, WS_HSCROLL = 0x00100000L,
                    WS_OVERLAPPEDWINDOW = 0x00CF0000L, WS_EX_CLIENTEDGE = 0x00000200L;
 static const DWORD SS_LEFT = 0x0000L, CBS_DROPDOWNLIST = 0x0003L,
+                   CBS_OWNERDRAWFIXED = 0x0010L,
                    ES_AUTOHSCROLL = 0x0080, ES_MULTILINE = 0x0004L, ES_WANTRETURN = 0x1000L, ES_AUTOVSCROLL = 0x0040L,
                    ES_READONLY = 0x0800L, CS_HREDRAW = 0x0002, CS_VREDRAW = 0x0001,
                    TBS_AUTOTICKS = 0x0001;
@@ -245,6 +246,7 @@ inline BOOL SystemParametersInfoW(UINT, UINT, void*, UINT) { return 0; }
 #define CB_RESETCONTENT 0x014B
 #endif
 #ifndef DT_CENTER
+#define DT_LEFT     0x00000000
 #define DT_CENTER   0x00000001
 #define DT_VCENTER  0x00000004
 #define DT_SINGLELINE 0x00000020
@@ -252,11 +254,27 @@ inline BOOL SystemParametersInfoW(UINT, UINT, void*, UINT) { return 0; }
 #ifndef SRCCOPY
 #define SRCCOPY ((DWORD)0x00CC0020)
 #endif
+#ifndef WM_MEASUREITEM
+#define WM_MEASUREITEM 0x002C
+#endif
+#ifndef DT_END_ELLIPSIS
+#define DT_END_ELLIPSIS 0x8000
+#endif
+#ifndef CB_GETLBTEXT
+#define CB_GETLBTEXT   0x0148
+#define CB_ERR         (-1)
+#endif
+#ifndef EN_CHANGE
+#define EN_CHANGE     0x0300
+#endif
 #ifndef WM_CTLCOLORSTATIC
 #define WM_CTLCOLORSTATIC 0x0138
 #define WM_CTLCOLOREDIT   0x0133
 #define WM_CTLCOLORLISTBOX 0x0134
 #define WM_CTLCOLORBTN    0x0135
+#endif
+#ifndef ODT_COMBOBOX
+#define ODT_COMBOBOX   3
 #endif
 #ifndef ODT_BUTTON
 #define ODT_BUTTON     4
@@ -277,6 +295,9 @@ inline BOOL SystemParametersInfoW(UINT, UINT, void*, UINT) { return 0; }
 #ifndef OPAQUE
 #define OPAQUE 2
 #endif
+struct MEASUREITEMSTRUCT { UINT CtlType, CtlID, itemID, itemWidth, itemHeight;
+                           ULONG_PTR itemData; };
+typedef MEASUREITEMSTRUCT* LPMEASUREITEMSTRUCT;
 struct DRAWITEMSTRUCT { UINT CtlType, CtlID, itemID, itemAction, itemState;
                         HWND hwndItem; HDC hDC; RECT rcItem; ULONG_PTR itemData; };
 inline HDC CreateCompatibleDC(HDC) { return nullptr; }

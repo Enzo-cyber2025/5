@@ -315,6 +315,32 @@ jobs:
                   Write-Host "OK: abriu e rodou numa pasta vazia, sem nenhuma DLL do lado"
 
 
+      - name: "O .exe sozinho traz as pistas e os carros"
+        shell: pwsh
+        run: |
+                  $ErrorActionPreference = 'Stop'
+                  $env:PATH = ($env:PATH -split ';' |
+                    Where-Object { $_ -and ($_ -notmatch 'mingw|msys|clang|gcc') }) -join ';'
+                  $dir = Join-Path $env:TEMP 'raceai-conteudo'
+                  New-Item -ItemType Directory -Force -Path $dir | Out-Null
+                  Copy-Item recebido\RaceAI2D.exe "$dir\RaceAI2D.exe"
+                  # modo terminal: extrai o conteudo embutido e conta pistas/carros.
+                  # Se vier 0, as listas da interface aparecem vazias.
+                  $p = Start-Process -FilePath "$dir\RaceAI2D.exe" -ArgumentList '--conteudo' `
+                       -NoNewWindow -Wait -PassThru `
+                       -RedirectStandardOutput "$dir\saida.txt" -RedirectStandardError "$dir\erro.txt"
+                  $saida = ((Get-Content "$dir\saida.txt") -join ' | ')
+                  $erro = ((Get-Content "$dir\erro.txt" -TotalCount 3) -join ' | ')
+                  Write-Host "saida: $saida"
+                  Write-Host "erro: $erro"
+                  Write-Host "::notice ::conteudo embutido: $saida exit=$($p.ExitCode)"
+                  if ($p.ExitCode -ne 0) {
+                    Write-Host "::error::o .exe nao trouxe pistas/carros: as listas ficariam vazias"
+                    exit 1
+                  }
+                  Write-Host "OK: pistas e carros sairam de dentro do proprio .exe"
+
+
   publicar:
     name: Publicar na release exe-cpp-windows
     needs: [build, verificar]
