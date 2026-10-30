@@ -344,6 +344,12 @@ typedef struct {
      * safety mechanism indistinguishable from a code-generation bug, and the total
      * alone cannot say which one moved. */
     uint32_t trapped, crashed;
+    /* Per-signal, because "the last one was SIGTRAP" is not an answer. The split
+     * above found 19 records dying of something other than the bounds-check trap
+     * while the last signal still read 5, which is exactly how a real bug hides
+     * behind an aggregate that is expected to grow. A histogram cannot hide it. */
+    uint32_t sig_hist[32];
+    uint32_t exit_nonzero;
     int      last_signal;
 } exec_tally;
 
@@ -460,6 +466,12 @@ static exec_outcome exec_one(const void *code, uint32_t code_len, void *imgbase,
     t->last_signal = WIFSIGNALED(status) ? WTERMSIG(status) : -1;
     if (WIFSIGNALED(status) && WTERMSIG(status) == SIGTRAP) t->trapped++;
     else                                                    t->crashed++;
+    if (WIFSIGNALED(status)) {
+        int sg = WTERMSIG(status);
+        if (sg >= 0 && sg < 32) t->sig_hist[sg]++;
+    } else {
+        t->exit_nonzero++;
+    }
     return EXC_FAULTED;
 }
 /* Walks every live cache record and runs the ones belonging to a module whose
@@ -542,6 +554,19 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
          * which line the assertion reads. */
         printf("  fault causes: %u trap(s) from the bounds check, "
                "%u other fault(s)\n", t.trapped, t.crashed);
+        /* Every distinct cause, not just the last. Named where the name is
+         * unambiguous on Linux, because "signal 11" reads as noise in a log. */
+        for (int sg = 1; sg < 32; sg++) {
+            if (!t.sig_hist[sg]) continue;
+            printf("  fault signal %2d (%s): %u record(s)\n", sg,
+                   sg == SIGSEGV ? "SIGSEGV" : sg == SIGTRAP ? "SIGTRAP" :
+                   sg == SIGBUS  ? "SIGBUS"  : sg == SIGILL  ? "SIGILL"  :
+                   sg == SIGFPE  ? "SIGFPE"  : sg == SIGABRT ? "SIGABRT" : "other",
+                   t.sig_hist[sg]);
+        }
+        if (t.exit_nonzero)
+            printf("  exited non-zero without a signal: %u record(s)\n",
+                   t.exit_nonzero);
         printf("  last fault signal: %d\n", t.last_signal);
     }
     if (unmatched) printf("  records belonging to no offered module: %zu\n", unmatched);
