@@ -267,87 +267,109 @@ jobs:
           done < diagt.txt
           echo "linhas: $i"
 
-      - name: "Máquina limpa: roda o .exe sem nada do lado e sem MinGW no PATH"
+
+  verificar:
+    name: "Máquina diferente: roda o .exe sem MinGW no PATH"
+    needs: build
+    runs-on: windows-2022
+    steps:
+      - name: Baixar o executável compilado na outra máquina
+        uses: actions/download-artifact@v4
+        with:
+          name: RaceAI2D-windows
+          path: recebido
+      - name: "Roda numa pasta vazia, com o PATH limpo"
         shell: pwsh
         run: |
-          $ErrorActionPreference = 'Stop'
-          # tira do PATH tudo que venha do compilador: se o .exe precisar de
-          # qualquer DLL do MinGW, aqui ele nao acha de jeito nenhum
-          $env:PATH = ($env:PATH -split ';' |
-            Where-Object { $_ -and ($_ -notmatch 'mingw|msys|clang|gcc') }) -join ';'
-          $comMingw = if ($env:PATH -match 'mingw|msys|clang') { 'SIM' } else { 'NAO' }
-          Write-Host "MinGW no PATH depois de limpar: $comMingw"
-          Write-Host "PATH de teste: $env:PATH"
-          $dir = Join-Path $env:TEMP 'raceai-limpo'
-          New-Item -ItemType Directory -Force -Path $dir | Out-Null
-          Copy-Item raceai-cpp\package\RaceAI2D.exe "$dir\RaceAI2D.exe"
-          $f = Get-Item "$dir\RaceAI2D.exe"
-          $hash = (Get-FileHash $f -Algorithm SHA256).Hash
-          Write-Host "arquivo: $($f.Length) bytes, sha256=$hash"
-          Get-ChildItem $dir | Select-Object -ExpandProperty Name
-          $p = Start-Process -FilePath "$dir\RaceAI2D.exe" -ArgumentList '--help' `
-               -NoNewWindow -Wait -PassThru `
-               -RedirectStandardOutput "$dir\saida.txt" -RedirectStandardError "$dir\erro.txt"
-          Write-Host "stderr: $((Get-Content "$dir\erro.txt" -TotalCount 3) -join ' | ')"
-          $saida = (Get-Content "$dir\saida.txt" -TotalCount 2) -join ' | '
-          Write-Host "exit code: $($p.ExitCode)"
-          Write-Host "saida: $saida"
-          Write-Host "::notice ::maquina limpa: mingw_no_path=$comMingw tamanho=$($f.Length) sha256=$hash exit=$($p.ExitCode) saida=$saida"
-          if ($p.ExitCode -ne 0) {
-            Write-Host "::error::o executavel nao rodou na maquina limpa (exit $($p.ExitCode))"
-            exit 1
-          }
-          if ($comMingw -eq 'SIM') {
-            Write-Host "::error::o shell de teste ainda tem o MinGW no PATH: teste invalido"
-            exit 1
-          }
-          Write-Host "OK: abriu e rodou numa pasta vazia, sem nenhuma DLL do lado"
+                  $ErrorActionPreference = 'Stop'
+                  # tira do PATH tudo que venha do compilador: se o .exe precisar de
+                  # qualquer DLL do MinGW, aqui ele nao acha de jeito nenhum
+                  $env:PATH = ($env:PATH -split ';' |
+                    Where-Object { $_ -and ($_ -notmatch 'mingw|msys|clang|gcc') }) -join ';'
+                  $comMingw = if ($env:PATH -match 'mingw|msys|clang') { 'SIM' } else { 'NAO' }
+                  Write-Host "MinGW no PATH depois de limpar: $comMingw"
+                  Write-Host "PATH de teste: $env:PATH"
+                  $dir = Join-Path $env:TEMP 'raceai-limpo'
+                  New-Item -ItemType Directory -Force -Path $dir | Out-Null
+                  Copy-Item recebido\RaceAI2D.exe "$dir\RaceAI2D.exe"
+                  $f = Get-Item "$dir\RaceAI2D.exe"
+                  $hash = (Get-FileHash $f -Algorithm SHA256).Hash
+                  Write-Host "arquivo: $($f.Length) bytes, sha256=$hash"
+                  Get-ChildItem $dir | Select-Object -ExpandProperty Name
+                  $p = Start-Process -FilePath "$dir\RaceAI2D.exe" -ArgumentList '--help' `
+                       -NoNewWindow -Wait -PassThru `
+                       -RedirectStandardOutput "$dir\saida.txt" -RedirectStandardError "$dir\erro.txt"
+                  Write-Host "stderr: $((Get-Content "$dir\erro.txt" -TotalCount 3) -join ' | ')"
+                  $saida = (Get-Content "$dir\saida.txt" -TotalCount 2) -join ' | '
+                  Write-Host "exit code: $($p.ExitCode)"
+                  Write-Host "saida: $saida"
+                  Write-Host "::notice ::maquina limpa: mingw_no_path=$comMingw tamanho=$($f.Length) sha256=$hash exit=$($p.ExitCode) saida=$saida"
+                  if ($p.ExitCode -ne 0) {
+                    Write-Host "::error::o executavel nao rodou na maquina limpa (exit $($p.ExitCode))"
+                    exit 1
+                  }
+                  if ($comMingw -eq 'SIM') {
+                    Write-Host "::error::o shell de teste ainda tem o MinGW no PATH: teste invalido"
+                    exit 1
+                  }
+                  Write-Host "OK: abriu e rodou numa pasta vazia, sem nenhuma DLL do lado"
 
-      - name: Publicar na release exe-cpp-windows
-        if: ${{ github.event.inputs.publish != 'false' }}
+
+  publicar:
+    name: Publicar na release exe-cpp-windows
+    needs: [build, verificar]
+    if: ${{ github.event.inputs.publish != 'false' }}
+    runs-on: windows-latest
+    steps:
+      - name: Baixar o executável verificado
+        uses: actions/download-artifact@v4
+        with:
+          name: RaceAI2D-windows
+          path: recebido
+      - name: Enviar para a release
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          $ErrorActionPreference = 'Continue'
-          $notas = @(
-            'RaceAI 2D (C++ puro, Win32 + GDI) em UM ARQUIVO SO: baixe o RaceAI2D.exe,',
-            'clique duas vezes e jogue. Nao precisa descompactar zip nem instalar nada -',
-            'na primeira vez ele copia pistas, carros e o Python opcional para a pasta de',
-            'dados do Windows (e la que ficam os seus mods).',
-            '',
-            'NAO DEPENDE DE NENHUMA DLL EXTERNA: so usa DLLs do proprio Windows',
-            '(KERNEL32, USER32, GDI32, COMCTL32, COMDLG32, SHELL32, msvcrt).',
-            '',
-            'Os dois modos moram no mesmo .exe:',
-            ' - sem argumentos: abre a janela (F2 alterna Corrida e Treinamento);',
-            ' - com argumentos: treina no terminal (ex.: RaceAI2D.exe -g 50 -p 60).',
-            '',
-            'Destaques:',
-            ' - 24 pistas e 20 carros, 10 modelos 3D de carroceria e sistema de mods;',
-            ' - gerador de IA sem programar: digite as camadas (ex.: 256, 128, 64);',
-            ' - chave "tipo de IA": Corrida (so piloto) ou Estrategia (piloto + boxe);',
-            ' - fisica de colisao com danos, aerodinamica que degrada e pitstop (tecla B);',
-            ' - aceita qualquer rede neural (.pt, .pth, .npz, .safetensors, .json);',
-            ' - ETA de todas as epocas, loss e erro % na tela.',
-            '',
-            'Se algo nao abrir: abra o raceai.log (nasce ao lado do .exe) e mande o',
-            'conteudo - ele diz exatamente onde parou.',
-            ''
-          ) -join "`n"
+                  $ErrorActionPreference = 'Continue'
+                  $notas = @(
+                    'RaceAI 2D (C++ puro, Win32 + GDI) em UM ARQUIVO SO: baixe o RaceAI2D.exe,',
+                    'clique duas vezes e jogue. Nao precisa descompactar zip nem instalar nada -',
+                    'na primeira vez ele copia pistas, carros e o Python opcional para a pasta de',
+                    'dados do Windows (e la que ficam os seus mods).',
+                    '',
+                    'NAO DEPENDE DE NENHUMA DLL EXTERNA: so usa DLLs do proprio Windows',
+                    '(KERNEL32, USER32, GDI32, COMCTL32, COMDLG32, SHELL32, msvcrt).',
+                    '',
+                    'Os dois modos moram no mesmo .exe:',
+                    ' - sem argumentos: abre a janela (F2 alterna Corrida e Treinamento);',
+                    ' - com argumentos: treina no terminal (ex.: RaceAI2D.exe -g 50 -p 60).',
+                    '',
+                    'Destaques:',
+                    ' - 24 pistas e 20 carros, 10 modelos 3D de carroceria e sistema de mods;',
+                    ' - gerador de IA sem programar: digite as camadas (ex.: 256, 128, 64);',
+                    ' - chave "tipo de IA": Corrida (so piloto) ou Estrategia (piloto + boxe);',
+                    ' - fisica de colisao com danos, aerodinamica que degrada e pitstop (tecla B);',
+                    ' - aceita qualquer rede neural (.pt, .pth, .npz, .safetensors, .json);',
+                    ' - ETA de todas as epocas, loss e erro % na tela.',
+                    '',
+                    'Se algo nao abrir: abra o raceai.log (nasce ao lado do .exe) e mande o',
+                    'conteudo - ele diz exatamente onde parou.',
+                    ''
+                  ) -join "`n"
 
-          gh release view exe-cpp-windows | Out-Null
-          if ($LASTEXITCODE -ne 0) {
-            gh release create exe-cpp-windows --title "RaceAI 2D (C++) - executavel Windows" --notes $notas
-          }
-          $exe = Get-Item raceai-cpp\package\RaceAI2D.exe
-          $sha = (Get-FileHash $exe -Algorithm SHA256).Hash
-          Write-Host "::notice ::release: $($exe.Length) bytes sha256=$sha"
-          $notas = $notas + "`n`nArquivo: RaceAI2D.exe — $($exe.Length) bytes`nSHA256: $sha"
-          gh release upload exe-cpp-windows $exe --clobber
-          gh release edit exe-cpp-windows --notes $notas
-          # o zip antigo sai de cena (se ele ja nao existir, nao e erro)
-          gh release delete-asset exe-cpp-windows RaceAI2D-C++-windows.zip -y 2>$null
-          $LASTEXITCODE = 0
-          Write-Host "release atualizada: so o RaceAI2D.exe" 
+                  gh release view exe-cpp-windows | Out-Null
+                  if ($LASTEXITCODE -ne 0) {
+                    gh release create exe-cpp-windows --title "RaceAI 2D (C++) - executavel Windows" --notes $notas
+                  }
+                  $exe = Get-Item recebido\RaceAI2D.exe
+                  $sha = (Get-FileHash $exe -Algorithm SHA256).Hash
+                  Write-Host "::notice ::release: $($exe.Length) bytes sha256=$sha"
+                  $notas = $notas + "`n`nArquivo: RaceAI2D.exe — $($exe.Length) bytes`nSHA256: $sha"
+                  gh release upload exe-cpp-windows $exe --clobber
+                  gh release edit exe-cpp-windows --notes $notas
+                  # o zip antigo sai de cena (se ele ja nao existir, nao e erro)
+                  gh release delete-asset exe-cpp-windows RaceAI2D-C++-windows.zip -y 2>$null
+                  $LASTEXITCODE = 0
+                  Write-Host "release atualizada: so o RaceAI2D.exe" 
