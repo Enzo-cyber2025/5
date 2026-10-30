@@ -477,6 +477,13 @@ Nada de instalador: o próprio `make` grava o conteúdo **dentro** do executáve
 3. Se não houver pacote (ou já existir `assets/` do lado do `.exe`), nada muda:
    o jogo roda em modo portátil, como antes.
 
+E tem um detalhe que faz diferença no mundo real: o executável é ligado
+**estaticamente** (`-static -static-libgcc -static-libstdc++`). Sem isso ele
+dependeria de `libgcc_s_seh-1.dll`, `libstdc++-6.dll` e `libwinpthread-1.dll` —
+DLLs do compilador que não existem no seu computador, e aí o Windows mostraria
+“The code execution cannot proceed because libgcc_s_seh-1.dll was not found”.
+Assim o `.exe` só depende de DLLs do próprio Windows.
+
 ## Compilar do zero
 
 Só precisa de um g++ com C++17 (MinGW no Windows).

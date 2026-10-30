@@ -34,6 +34,11 @@ else
   TESTLIBS:= -ldl
 endif
 
+# O .exe precisa abrir em qualquer Windows: nada de depender de DLL do MinGW
+# (libgcc_s_seh-1.dll, libstdc++-6.dll, libwinpthread-1.dll). Ligando tudo
+# estaticamente o executável fica autossuficiente de verdade.
+STATIC   := -static -static-libgcc -static-libstdc++
+
 STUB     := $(BIN)/libstubpython.so
 # variante que devolve None em vez de nullptr (igual ao CPython de verdade)
 STUBNONE := $(BIN)/libstubpython_none.so
@@ -73,7 +78,7 @@ $(BIN)/empacotar$(EXE): tools/empacotar.cpp src/app/conteudo.cpp
 # quando é iniciado com argumentos (um executável só, dois modos).
 $(BIN)/raceai.exe: src/app/main.cpp $(CORE) $(APP) $(CLI) $(BIN)/empacotar$(EXE)
 	@mkdir -p $(BIN)
-	$(CXX) $(CXXFLAGS) -Isrc -mwindows -DRACEAI_SEM_MAIN src/app/main.cpp $(CORE) $(APP) $(CLI) -o $@ $(LIBS)
+	$(CXX) $(CXXFLAGS) -Isrc -mwindows -DRACEAI_SEM_MAIN $(STATIC) src/app/main.cpp $(CORE) $(APP) $(CLI) -o $@ $(LIBS)
 	@./$(BIN)/empacotar$(EXE) $@ assets modelos python || echo "aviso: sem conteudo para embutir" 
 
 game: $(GAME)

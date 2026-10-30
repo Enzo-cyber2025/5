@@ -213,6 +213,19 @@ jobs:
           ./build/raceai_train.exe -g 25 -p 30 --seconds 30 --seed 5 2>&1 | tail -12
 
 
+      - name: "O .exe não pode depender de DLL do MinGW"
+        shell: msys2 {0}
+        run: |
+          cd raceai-cpp
+          echo "--- DLLs importadas (só pode ter DLL do Windows) ---"
+          objdump -p build/raceai.exe | grep -i "DLL Name" | sort -u
+          echo "--- conferindo ---"
+          if objdump -p build/raceai.exe | grep -iE "libgcc|libstdc\+\+|libwinpthread"; then
+            echo "ERRO: o executável ainda depende de DLL do MinGW"
+            exit 1
+          fi
+          echo "OK: executável autossuficiente"
+
       - name: Empacotar (UM executável só)
         shell: msys2 {0}
         run: |
