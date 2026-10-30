@@ -3661,6 +3661,8 @@ jobs:
           #include <windows.h>
           #include <stdio.h>
           #pragma comment(lib, "user32.lib")
+          #pragma comment(lib, "gdi32.lib")
+          #include <stdlib.h>
           static FILE *lg;
           static void tap(WORD sc, int ms, const char *what) {
             INPUT in[2];
@@ -3678,26 +3680,125 @@ jobs:
               if (lg) { fprintf(lg, "[%u] foco OK hwnd=%p\n", GetTickCount(), (void*)w); fflush(lg); }
             } else if (lg) { fprintf(lg, "[%u] janela NAO achada\n", GetTickCount()); fflush(lg); }
           }
+          /* v92: clique de mouse REAL (SendInput) — coords em tela 1024x768
+           * calibradas pelas shots da v90: o jogo abre na tela de ATIVACAO
+           * (titulo A-C-T-I-V-A-T-I-O-N lido pixel a pixel) e o botao
+           * "Run in Demo Mode" fica no rodape direito do painel
+           * (texto em x 594-688, y 518-527 -> centro ~641,521). */
+          static void clica(int x, int y, int ms, const char *what) {
+            INPUT in[2];
+            SetCursorPos(x, y);
+            Sleep(150);
+            ZeroMemory(in, sizeof(in));
+            in[0].type = INPUT_MOUSE; in[0].mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
+            in[1].type = INPUT_MOUSE; in[1].mi.dwFlags = MOUSEEVENTF_LEFTUP;
+            if (SendInput(2, in, sizeof(INPUT)) != 2 && lg) {
+              fprintf(lg, "[%u] ERRO click (%s) gle=%u\n", GetTickCount(), what, GetLastError()); fflush(lg);
+            } else if (lg) { fprintf(lg, "[%u] click %s @(%d,%d)\n", GetTickCount(), what, x, y); fflush(lg); }
+            Sleep(ms);
+          }
+          /* v92: screenshot BMP (GDI) apos CADA acao — o SOBE converte p/ JPEG
+           * no fim do boot. 1024x768x24bpp. */
+          static int shotn = 0;
+          static const char *shotpre = "shot-mw-";
+          static void shot(const char *tag) {
+            char nm[96];
+            HDC sc, dc; HBITMAP bm, old; BITMAPINFO bi; BITMAPFILEHEADER fh;
+            void *bits; DWORD sz; FILE *f;
+            sprintf(nm, "%s%02d-%s.bmp", shotpre, shotn++, tag);
+            sc = GetDC(NULL); dc = CreateCompatibleDC(sc);
+            bm = CreateCompatibleBitmap(sc, 1024, 768);
+            old = (HBITMAP)SelectObject(dc, bm);
+            BitBlt(dc, 0, 0, 1024, 768, sc, 0, 0, SRCCOPY);
+            SelectObject(dc, old);
+            ZeroMemory(&bi, sizeof(bi));
+            bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+            bi.bmiHeader.biWidth = 1024; bi.bmiHeader.biHeight = 768;
+            if (GetDIBits(sc, bm, 0, 768, NULL, &bi, DIB_RGB_COLORS) && bi.bmiHeader.biSizeImage) {
+              bi.bmiHeader.biBitCount = 24; bi.bmiHeader.biCompression = BI_RGB;
+              bi.bmiHeader.biSizeImage = 0;
+              bits = malloc(1024 * 768 * 4);
+              if (bits && GetDIBits(sc, bm, 0, 768, bits, &bi, DIB_RGB_COLORS) && bi.bmiHeader.biSizeImage) {
+                sz = bi.bmiHeader.biSizeImage;
+                f = fopen(nm, "wb");
+                if (f) {
+                  ZeroMemory(&fh, sizeof(fh));
+                  fh.bfType = 0x4D42;
+                  fh.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+                  fh.bfSize = fh.bfOffBits + sz;
+                  fwrite(&fh, sizeof(fh), 1, f);
+                  fwrite(&bi.bmiHeader, sizeof(BITMAPINFOHEADER), 1, f);
+                  fwrite(bits, sz, 1, f);
+                  fclose(f);
+                  if (lg) { fprintf(lg, "[%u] shot %s\n", GetTickCount(), nm); fflush(lg); }
+                }
+              }
+              free(bits);
+            }
+            DeleteObject(bm); DeleteDC(dc); ReleaseDC(NULL, sc);
+          }
           int main(void) {
-            int i;
+            int i, segunda;
+            FILE *fl;
             lg = fopen("menuwalk.log", "w");
-            if (lg) { fprintf(lg, "[%u] inicio\n", GetTickCount()); fflush(lg); }
-            Sleep(30000);
+            if (lg) { fprintf(lg, "[%u] inicio v92\n", GetTickCount()); fflush(lg); }
+            /* 2a execucao (step IA DIRIGINDO): profile ja criado -> direto ao
+             * menu/DRIVE. 1a: walk completo a partir da tela de ATIVACAO. */
+            segunda = (GetFileAttributesA("mw-feito.flag") != INVALID_FILE_ATTRIBUTES);
+            if (segunda) shotpre = "shot-mw2-";
+            if (lg) { fprintf(lg, "[%u] modo %s\n", GetTickCount(), segunda ? "DRIVE (2a vez)" : "FULL-WALK (1a vez)"); fflush(lg); }
+            /* painel de ativacao visivel ~40-60 s apos o launch (shots v90) */
+            Sleep(60000);
             foca();
-            tap(0x1C, 4000, "Enter-1 (tela inicial)");
+            if (segunda) {
+              /* jogo reaberto com profile: menu principal -> DRIVE -> acelerar */
+              shot("menu2");
+              tap(0x1C, 8000, "Enter (DRIVE)");
+              shot("drive1");
+              tap(0x1C, 8000, "Enter (confirma)");
+              shot("drive2");
+              foca();
+              for (i = 0; i < 240; i++) {
+                tap(0x11, 500, "W");
+                if (i == 10 || i == 30 || i == 60 || i == 120 || i == 180) shot("dirigindo");
+              }
+              Sleep(15000);
+              if (lg) { fprintf(lg, "[%u] fim (2a)\n", GetTickCount()); fflush(lg); fclose(lg); }
+              return 0;
+            }
+            /* -------- 1a execucao: tela de ATIVACAO -> Run in Demo Mode -------- */
+            shot("ativacao");
+            clica(641, 521, 5000, "Run in Demo Mode (botao rodape direito)");
+            shot("demo-clicado");
+            tap(0x1C, 5000, "Enter (confirmar modo demo, se dialogo)");
+            shot("demo-confirm");
+            /* wizard de criacao de profile: nickname "AI" */
+            foca();
             tap(0x1E, 300, "A");
-            tap(0x17, 600, "I");
-            Sleep(1000);
-            tap(0x1C, 15000, "Enter-2 (submeter nome)");
-            tap(0x1C, 20000, "Enter-3 (confirmar)");
-            tap(0x1C, 20000, "Enter-4 (controle/tutorial)");
+            tap(0x17, 800, "I");
+            shot("nickname-AI");
+            tap(0x1C, 10000, "Enter-2 (submeter nome)");
+            shot("pos-nome");
+            tap(0x1C, 10000, "Enter-3 (confirmar)");
+            shot("pos-confirm");
+            tap(0x1C, 10000, "Enter-4 (controle/tutorial)");
+            shot("pos-controle");
             tap(0x50, 2000, "Down");
-            tap(0x1C, 25000, "Enter-5");
-            tap(0x1C, 20000, "Enter-6");
+            tap(0x1C, 10000, "Enter-5");
+            shot("pos-enter5");
+            tap(0x1C, 10000, "Enter-6");
+            shot("pos-enter6");
+            tap(0x1C, 10000, "Enter-7 (menu principal?)");
+            shot("pos-enter7");
             foca();
-            for (i = 0; i < 240; i++) tap(0x11, 500, "W");
+            for (i = 0; i < 240; i++) {
+              tap(0x11, 500, "W");
+              if (i == 10 || i == 30 || i == 60 || i == 120 || i == 180) shot("dirigindo");
+            }
             Sleep(15000);
-            if (lg) { fprintf(lg, "[%u] fim\n", GetTickCount()); fflush(lg); fclose(lg); }
+            fl = fopen("mw-feito.flag", "w");
+            if (fl) { fputs("walk v92 completo\n", fl); fclose(fl); }
+            if (lg) { fprintf(lg, "[%u] fim (1a)\n", GetTickCount()); fflush(lg); fclose(lg); }
             return 0;
           }
           '@ | Set-Content "$PWD\menuwalk.c" -Encoding ASCII
@@ -3716,7 +3817,7 @@ jobs:
                       param($dir)
                       try { Add-Type -AssemblyName System.Windows.Forms, System.Drawing } catch { return }
                       $n = 0
-                      while ($n -lt 40) {
+                      while ($n -lt 55) {
                         $n++
                         try {
                           $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
@@ -3726,6 +3827,29 @@ jobs:
                           $bmp.Save("$dir\shot-hib-$('{0:d2}' -f $n).jpg", [System.Drawing.Imaging.ImageFormat]::Jpeg)
                           $g.Dispose(); $bmp.Dispose()
                         } catch { }
+                        # v92: ASCII (100x38) de CADA shot — o menu/mundo vira
+                        # texto legivel direto no artefato, sem baixar JPEGs
+                        try {
+                          $jp = "$dir\shot-hib-$('{0:d2}' -f $n).jpg"
+                          $srcA = [System.Drawing.Image]::FromFile($jp)
+                          $smA = New-Object System.Drawing.Bitmap 100, 38
+                          $gA = [System.Drawing.Graphics]::FromImage($smA)
+                          $gA.DrawImage($srcA, 0, 0, 100, 38); $gA.Dispose()
+                          $ramp = " .:-=+*#%@"
+                          $sbA = New-Object System.Text.StringBuilder
+                          for ($y = 0; $y -lt 38; $y++) {
+                            $ln = ""
+                            for ($x = 0; $x -lt 100; $x++) {
+                              $c = $smA.GetPixel($x, $y)
+                              $lum = [int](($c.R * 0.3 + $c.G * 0.59 + $c.B * 0.11) / 25.6)
+                              if ($lum -gt 9) { $lum = 9 }
+                              $ln += $ramp[$lum]
+                            }
+                            [void]$sbA.AppendLine($ln)
+                          }
+                          $smA.Dispose(); $srcA.Dispose()
+                          [IO.File]::WriteAllText("$dir\shot-ascii-$('{0:d2}' -f $n).txt", $sbA.ToString())
+                        } catch { }
                         Start-Sleep -Seconds 30
                       }
                     } -ArgumentList "$PWD"
@@ -3734,13 +3858,28 @@ jobs:
                 } catch { Trace "hibrido menuwalk: $($_.Exception.Message)" }
                 # v88: janela 240 iters (20 min) — o load do mundo 3D no
                 # lavapipe (1 thread) pode levar minutos apos o profile.
-                $vivoH = Boot $exe $wdir "x64 dx11 HIBRIDO dxvk" @("-nointro") $null 240
+                $vivoH = Boot $exe $wdir "x64 dx11 HIBRIDO dxvk" @("-nointro") $null 300
                 Trace "hibrido: boot FIM vivo=$vivoH"
                 if ($shotJobH) {
                   try { Stop-Job -Job $shotJobH -ErrorAction SilentlyContinue; Remove-Job -Job $shotJobH -Force -ErrorAction SilentlyContinue } catch { }
                   $shotsH = @(Get-ChildItem "$PWD\shot-hib-*.jpg" -ErrorAction SilentlyContinue)
                   Trace "hibrido: job de screenshots encerrado — $($shotsH.Count) JPEGs"
                 }
+                # v92: BMPs do menuwalk (2,3 MB cada) -> JPEG leve p/ o diag
+                try {
+                  Add-Type -AssemblyName System.Drawing
+                  $mwBmps = @(Get-ChildItem "$PWD\shot-mw*.bmp" -ErrorAction SilentlyContinue)
+                  foreach ($mb in $mwBmps) {
+                    try {
+                      $imB = [System.Drawing.Image]::FromFile($mb.FullName)
+                      $njB = $mb.FullName -replace "\.bmp$", ".jpg"
+                      $imB.Save($njB, [System.Drawing.Imaging.ImageFormat]::Jpeg)
+                      $imB.Dispose()
+                      Remove-Item $mb.FullName -Force -ErrorAction SilentlyContinue
+                    } catch { }
+                  }
+                  Trace ("v92: menuwalk BMP->JPG — " + @(Get-ChildItem "$PWD\shot-mw*.jpg" -ErrorAction SilentlyContinue).Count + " shots de acao")
+                } catch { Trace "v92 bmp2jpg: $($_.Exception.Message)" }
                 # v83: logs do hibrido com nome estavel — o Boot salva
                 # game-log-x64-dx11-HIBRIDO-dxvk.txt mas NAO copia o
                 # dxgishim.log (so d3d11shim/dxvk); game.log final vira
@@ -4014,6 +4153,49 @@ jobs:
             Start-Process -FilePath "$PWD\menuwalk.exe" -WorkingDirectory $PWD
             Write-Host "menuwalk lancado (navegacao automatica de menus)"
           }
+          # v92: OLHOS no DRIVE — shots JPEG + ASCII enquanto a IA dirige
+          $drvJob = $null
+          try {
+            $drvJob = Start-Job -ScriptBlock {
+              param($dir)
+              try { Add-Type -AssemblyName System.Windows.Forms, System.Drawing } catch { return }
+              $n = 0
+              while ($n -lt 60) {
+                $n++
+                try {
+                  $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+                  $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
+                  $g = [System.Drawing.Graphics]::FromImage($bmp)
+                  $g.CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+                  $bmp.Save("$dir\shot-drv-$('{0:d2}' -f $n).jpg", [System.Drawing.Imaging.ImageFormat]::Jpeg)
+                  $g.Dispose(); $bmp.Dispose()
+                } catch { }
+                try {
+                  $jp = "$dir\shot-drv-$('{0:d2}' -f $n).jpg"
+                  $srcA = [System.Drawing.Image]::FromFile($jp)
+                  $smA = New-Object System.Drawing.Bitmap 100, 38
+                  $gA = [System.Drawing.Graphics]::FromImage($smA)
+                  $gA.DrawImage($srcA, 0, 0, 100, 38); $gA.Dispose()
+                  $ramp = " .:-=+*#%@"
+                  $sbA = New-Object System.Text.StringBuilder
+                  for ($y = 0; $y -lt 38; $y++) {
+                    $ln = ""
+                    for ($x = 0; $x -lt 100; $x++) {
+                      $c = $smA.GetPixel($x, $y)
+                      $lum = [int](($c.R * 0.3 + $c.G * 0.59 + $c.B * 0.11) / 25.6)
+                      if ($lum -gt 9) { $lum = 9 }
+                      $ln += $ramp[$lum]
+                    }
+                    [void]$sbA.AppendLine($ln)
+                  }
+                  $smA.Dispose(); $srcA.Dispose()
+                  [IO.File]::WriteAllText("$dir\shot-ascii-drv-$('{0:d2}' -f $n).txt", $sbA.ToString())
+                } catch { }
+                Start-Sleep -Seconds 30
+              }
+            } -ArgumentList "$PWD"
+            Write-Host "job de shots do DRIVE lancado (JPEG+ASCII 1x/30s)"
+          } catch { }
           Start-Sleep -Seconds 10
           # o exe C++ PURO (o MESMO da release): espera a MMF real (ate 15 min),
           # le a telemetria, decide e INJETA teclas reais — gravando cada
@@ -4029,6 +4211,10 @@ jobs:
           $null = $p.WaitForExit(7320000)
           if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue }
           if (-not $g.HasExited) { Stop-Process -Id $g.Id -Force -ErrorAction SilentlyContinue }
+          if ($drvJob) {
+            try { Stop-Job -Job $drvJob -ErrorAction SilentlyContinue; Remove-Job -Job $drvJob -Force -ErrorAction SilentlyContinue } catch { }
+            Write-Host ("shots do DRIVE: " + @(Get-ChildItem "$PWD\shot-drv-*.jpg" -ErrorAction SilentlyContinue).Count + " JPEGs")
+          }
           Start-Sleep -Seconds 3
           Get-Content "C:\ets2demo\bridge-cpp.log" -Tail 25 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $_" }
           Get-Content "C:\ets2demo\bridge-cpp.err" -Tail 8 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  [err] $_" }
@@ -4092,6 +4278,9 @@ jobs:
           cp dxvk-log-*.txt "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp vkhib-*.out vkhib-*.err hib-*.log mesa253-hib.log vulkanrt-x.log menuwalk.log "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp shot-hib-*.jpg "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
+          cp shot-mw*.jpg "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
+          cp shot-drv-*.jpg "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
+          cp shot-ascii-*.txt "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp "/c/Users/runneradmin/Documents/Euro Truck Simulator 2/game.log.txt" "ci-logs/${{ github.run_id }}-demo/documents-game.log.txt" 2>/dev/null || true
           for f in d3d11shim-boot1.txt dxgishim-boot1.txt dxgishim-hibrido.txt autoteste-real.json autoteste-real.log demo-mmf.json /c/steamcmd/fase1.log /c/steamcmd/fase2.log /c/dd/dd.log /c/dd/stage2.err mesa-load.log /c/dd/setup.err /c/dd/7z.log /c/dd/mesa-7z.log /c/ets2demo/game.log.txt /c/ets2demo/game-ets2ai-telemetry.log; do
             cp "$f" "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
