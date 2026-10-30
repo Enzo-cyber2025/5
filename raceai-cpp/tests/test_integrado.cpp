@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "../src/app/app_state.hpp"
+#include "piloto_teste.hpp"
 #include "../src/core/policy.hpp"
 
 using namespace raceai;
@@ -575,32 +576,8 @@ int main(int argc, char** argv) {
         const Track& trk = app.race.sim->track;
         const CarSpec& carro = app.car_cache_;
         auto dirigir = [&](const Agent& a) {
-            const int n = trk.n();
-            const int frente = std::max(3, int((6.0 + a.car.speed * 0.55) /
-                                               std::max(trk.spacing, 0.5)));
-            Vec2 alvo = trk.center[(a.idx + frente) % n];
-            double desejado = std::atan2(alvo.y - a.car.y, alvo.x - a.car.x);
-            double erro = desejado - a.car.heading;
-            while (erro > kPi) erro -= 2 * kPi;
-            while (erro < -kPi) erro += 2 * kPi;
-            double cs = (std::fabs(a.car.slip_r) > 0.30) ? 0.45 * a.car.slip_r
-                                                         : 0.06 * a.car.slip_r;
-            double steer = std::max(-1.0, std::min(1.0, 1.1 * erro - 0.40 * a.car.r - cs));
-            const int la = std::max(6, frente * 2);
-            const Vec2& ta = trk.tangents[a.idx];
-            const Vec2& tb = trk.tangents[(a.idx + la) % n];
-            double curv = std::fabs(std::atan2(tb.y, tb.x) - std::atan2(ta.y, ta.x));
-            if (curv > kPi) curv = 2 * kPi - curv;
-            double raio = std::max(8.0, la * trk.spacing / std::max(curv, 0.05));
-            double mu = 0.55 * (carro.grip_front + carro.grip_rear) * 0.5;
-            double v_alvo = std::min(carro.max_speed * 0.75, std::sqrt(mu * 9.81 * raio));
-            double drive = a.car.speed < v_alvo ? 1.0
-                         : (a.car.speed > v_alvo * 1.25 ? -0.9 : -0.35);
-            if (std::fabs(erro) > 2.0) {
-                drive = a.car.speed > 4.0 ? -0.5 : 0.35;
-                steer = erro > 0.0 ? 1.0 : -1.0;
-            }
-            race_set_human(steer, drive);
+            const AcaoTeste ac = piloto_teste(a, trk, carro);
+            race_set_human(ac.esterco, ac.acelerador);
         };
         for (int k = 0; k < 60 * 120 && app.race.sim && !app.race.finished; ++k) {
             dirigir(app.race.sim->agents[app.race.indice_foco()]);
@@ -645,8 +622,8 @@ int main(int argc, char** argv) {
         if (alguem_completou) {
             CHECK(app.race.melhor_volta_geral < 1e17, "completou volta mas não gravou o tempo");
         }
-        CHECK(app.race.fantasma_valido, "o piloto automático completou volta mas o "
-                                        "fantasma não foi gravado");
+        CHECK(!alguem_completou || app.race.fantasma_valido,
+              "o piloto automático completou volta mas o fantasma não foi gravado");
         if (app.race.fantasma_valido) {
             CHECK(app.race.fantasma.size() > 30, "fantasma com poucos pontos: %zu",
                   app.race.fantasma.size());

@@ -7,6 +7,7 @@
 
 #include "../src/core/assets.hpp"
 #include "../src/core/render3d.hpp"
+#include "piloto_teste.hpp"
 #include "../src/core/py_driver.hpp"
 #include "../src/core/trainer.hpp"
 
@@ -374,43 +375,9 @@ static int pilota(const Track& t, const CarSpec& c, double segundos, int* voltas
         if (sim.should_decide()) {
             for (int row : sim.active()) {
                 const Agent& a = sim.agents[row];
-                // perseguição pura: olha mais longe quanto mais rápido vai
-                const int frente = std::max(3, int((6.0 + a.car.speed * 0.55) /
-                                                   std::max(t.spacing, 0.5)));
-                const Vec2 alvo = t.center[(a.idx + frente) % n];
-                double desejado = std::atan2(alvo.y - a.car.y, alvo.x - a.car.x);
-                double erro = desejado - a.car.heading;
-                while (erro > kPi) erro -= 2 * kPi;
-                while (erro < -kPi) erro += 2 * kPi;
-                // termo derivativo na taxa de guinada: sem isso os carros
-                // potentes (monoposto, GT) entram em oscilação e batem
-                double cs = (std::fabs(a.car.slip_r) > 0.30) ? 0.45 * a.car.slip_r
-                                                             : 0.06 * a.car.slip_r;
-                double steer = std::max(-1.0, std::min(1.0, 1.1 * erro - 0.40 * a.car.r - cs));
-
-                // curvatura à frente -> velocidade alvo
-                const int la = std::max(6, frente * 2);
-                const Vec2& tan_a = t.tangents[a.idx];
-                const Vec2& tan_b = t.tangents[(a.idx + la) % n];
-                double curv = std::fabs(std::atan2(tan_b.y, tan_b.x) - std::atan2(tan_a.y, tan_a.x));
-                if (curv > kPi) curv = 2 * kPi - curv;
-                double raio = std::max(8.0, la * t.spacing / std::max(curv, 0.05));
-                double mu = 0.45 * (c.grip_front + c.grip_rear) * 0.5;
-                double v_alvo = std::min(c.max_speed * 0.75, std::sqrt(mu * 9.81 * raio));
-                // frear com o volante virado derruba o carro: dosa o freio pelo esterço
-                const double ganho_freio = 1.0 - 0.55 * std::min(1.0, std::fabs(steer));
-                double drive = a.car.speed < v_alvo ? 1.0
-                             : (a.car.speed > v_alvo * 1.25 ? -0.9 * ganho_freio
-                                                             : -0.35 * ganho_freio);
-                // traseira saindo: alivia o freio (antes de rodar de vez)
-                if (std::fabs(a.car.slip_r) > 0.45) drive = std::max(drive, -0.15);
-                // roda patinando: o pé levanta, igual a um piloto de verdade
-                if (drive > 0.0 && a.car.wheelspin > 0.10) drive = std::min(drive, 0.30);
-                // rodou: reduz e contra-esterça até apontar de novo para frente
-                if (std::fabs(erro) > 2.0) {
-                    drive = a.car.speed > 4.0 ? -0.5 : 0.35;
-                    steer = erro > 0.0 ? 1.0 : -1.0;
-                }
+                const AcaoTeste ac = piloto_teste(a, t, c);
+                double steer = ac.esterco;
+                double drive = ac.acelerador;
                 sim.set_action(row, steer, drive);
             }
         }
