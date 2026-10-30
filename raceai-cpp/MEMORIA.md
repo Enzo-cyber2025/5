@@ -1,0 +1,63 @@
+# Memória da sessão (atualizada em 2026-10-30 20:10)
+
+Branch: `arena/5d450bd0-5`. Último commit: `96e0b09` (CI 41119888517 success).
+
+## Entrega: UM arquivo só
+
+- Release `exe-cpp-windows` agora tem **um único asset**: `RaceAI2D.exe`
+  (22.806.065 B). URL: https://github.com/Enzo-cyber2025/5/releases/download/exe-cpp-windows/RaceAI2D.exe
+- O zip antigo (`RaceAI2D-C++-windows.zip`) foi removido da release pelo próprio
+  workflow (`gh release delete-asset ... -y`).
+- `raceai_train.exe` **não é mais distribuído** (continua sendo compilado para os
+  testes de CI). O mesmo `RaceAI2D.exe` treina no terminal quando recebe
+  argumentos.
+
+## Como o "um .exe" funciona
+
+- `tools/empacotar.cpp` (wrapper fino) → `raceai::criar_pacote()` em
+  `src/app/conteudo.cpp`: anexa `assets/`, `modelos/` e `python/` ao FIM do .exe
+  + trailer de 24 bytes (`RACEAIPAKEND` + u64 tamanho). Windows ignora dados
+  depois da imagem PE.
+- `src/app/conteudo.cpp` → `extrair_pacote()` / `garantir_conteudo()`: lê o
+  trailer, extrai só o que não existe (nunca sobrescreve mod) para
+  `%LOCALAPPDATA%\RaceAI2D` (fallback `USERPROFILE\AppData\Local`).
+- Modo portátil: se existir `assets/` ao lado do .exe, usa ele e não extrai nada.
+- `assets.cpp`: `definir_raiz_dados()` faz `assets_root()` e `list_models()`
+  preferirem a pasta de dados.
+- Makefile: `$(BIN)/empacotar` é pré-requisito de `raceai.exe`; a regra compila
+  com `-DRACEAI_SEM_MAIN` (tira o `main` do train_cli) e roda o empacotador
+  depois de linkar. `APP` inclui `src/app/conteudo.cpp`.
+- `tools/train_cli.cpp`: `main` → `raceai::rodar_cli()` (declarado em
+  `src/core/cli.hpp`); `#ifndef RACEAI_SEM_MAIN` mantém o executável CLI.
+- `WinMain`: se `__argc > 1` → `AttachConsole(ATTACH_PARENT_PROCESS)` +
+  `freopen("CONOUT$")` → `rodar_cli(__argc, __argv)`.
+- Shim Win32 (`tests/winshim/windows.h`): adicionados `AttachConsole`,
+  `ATTACH_PARENT_PROCESS`, `GetEnvironmentVariableW`, `CreateDirectoryW` e
+  `#define __argc/__argv` para o `make check-win` continuar valendo.
+
+## Estado dos testes (local, Linux)
+
+`raceai_tests` 2017/0 · `raceai_tests_app` 179/0 · `raceai_integrado` 121/0
+(era 125 antes; o número varia conforme os modelos/seções disponíveis) ·
+`make check-win` ok. Rodar ASan: `g++ -fsanitize=address -Isrc tests/test_app.cpp
+src/core/*.cpp src/app/app_state.cpp` (já limpo).
+
+## Armadilhas desta sessão
+
+- **O repo local volta para o commit base sozinho** (HEAD = `cdf1151`, tudo
+  untracked). Consertar com:
+  `git fetch origin arena/5d450bd0-5 && git reset --mixed origin/arena/5d450bd0-5`
+  (o trabalho em disco fica intacto), conferir `git status --short | grep '^D'`
+  e só então `git add -A raceai-cpp .github/workflows/raceai-cpp-windows.yml`.
+- `unsigned char(x)` é inválido como cast funcional → usar
+  `static_cast<unsigned char>(x)`.
+- `std::vector<unsigned char> v(size_t(n));` = most vexing parse → declarar
+  `const size_t n = ...` antes.
+- `criar_dirs_()` precisa criar o ÚLTIMO componente depois do loop.
+- `le_trailer`: o limite certo é `tam_pacote + 24 > tam_total` (com `-32` um
+  .exe pequeno era rejeitado).
+- `raceai::rodar_cli` precisa ser definido dentro de `namespace raceai {}`.
+- O Makefile novo: a regra do empacotar precisa compilar
+  `tools/empacotar.cpp src/app/conteudo.cpp -Isrc` (senão link quebra).
+- Não há mais zig no sandbox: não dá para compilar para Windows localmente;
+  a validação é o CI + `make check-win`.
