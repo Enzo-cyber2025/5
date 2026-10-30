@@ -3697,6 +3697,41 @@ jobs:
             } else if (lg) { fprintf(lg, "[%u] click %s @(%d,%d)\n", GetTickCount(), what, x, y); fflush(lg); }
             Sleep(ms);
           }
+          /* v93: sonda de tela — conta pixels claros numa regiao (live,
+           * sem JPEG). Usada para ESPERAR a tela de ativacao nascer (a v92
+           * clicou ~5 s antes do painel aparecer e perdeu o botao) e para
+           * VERIFICAR se o clique mudou a tela. */
+          static int tem_bright(int x0, int y0, int x1, int y1, int thr, int min_n) {
+            HDC sc = GetDC(NULL);
+            int n = 0, x, y;
+            COLORREF c;
+            for (y = y0; y <= y1; y += 2) {
+              for (x = x0; x <= x1; x += 2) {
+                c = GetPixel(sc, x, y);
+                if (c != CLR_INVALID) {
+                  if (((c & 0xFF) * 30 + ((c >> 8) & 0xFF) * 59 + ((c >> 16) & 0xFF) * 11) / 100 >= thr) n++;
+                }
+              }
+            }
+            ReleaseDC(NULL, sc);
+            return n >= min_n;
+          }
+          /* v93: idem mas retorna a CONTAGEM (para comparar antes/depois) */
+          static int conta_bright(int x0, int y0, int x1, int y1, int thr) {
+            HDC sc = GetDC(NULL);
+            int n = 0, x, y;
+            COLORREF c;
+            for (y = y0; y <= y1; y += 2) {
+              for (x = x0; x <= x1; x += 2) {
+                c = GetPixel(sc, x, y);
+                if (c != CLR_INVALID) {
+                  if (((c & 0xFF) * 30 + ((c >> 8) & 0xFF) * 59 + ((c >> 16) & 0xFF) * 11) / 100 >= thr) n++;
+                }
+              }
+            }
+            ReleaseDC(NULL, sc);
+            return n;
+          }
           /* v92: screenshot BMP (GDI) apos CADA acao — o SOBE converte p/ JPEG
            * no fim do boot. 1024x768x24bpp. */
           static int shotn = 0;
@@ -3738,21 +3773,28 @@ jobs:
             DeleteObject(bm); DeleteDC(dc); ReleaseDC(NULL, sc);
           }
           int main(void) {
-            int i, segunda;
+            int i, segunda, nantes, ndepois, nb;
             FILE *fl;
             lg = fopen("menuwalk.log", "w");
-            if (lg) { fprintf(lg, "[%u] inicio v92\n", GetTickCount()); fflush(lg); }
-            /* 2a execucao (step IA DIRIGINDO): profile ja criado -> direto ao
-             * menu/DRIVE. 1a: walk completo a partir da tela de ATIVACAO. */
-            segunda = (GetFileAttributesA("mw-feito.flag") != INVALID_FILE_ATTRIBUTES);
+            if (lg) { fprintf(lg, "[%u] inicio v93\n", GetTickCount()); fflush(lg); }
+            /* flag = clique no demo CONFIRMADO na 1a execucao (a v92 criava a
+             * flag incondicionalmente e a 2a vez pulava o clique a toa). */
+            segunda = (GetFileAttributesA("mw-demo-ok.flag") != INVALID_FILE_ATTRIBUTES);
             if (segunda) shotpre = "shot-mw2-";
             if (lg) { fprintf(lg, "[%u] modo %s\n", GetTickCount(), segunda ? "DRIVE (2a vez)" : "FULL-WALK (1a vez)"); fflush(lg); }
-            /* painel de ativacao visivel ~40-60 s apos o launch (shots v90) */
-            Sleep(60000);
+            /* espera a JANELA do jogo existir (ate 60 s) */
+            for (i = 0; i < 30 && !FindWindowW(NULL, L"Euro Truck Simulator 2"); i++) Sleep(2000);
+            if (lg) { fprintf(lg, "[%u] janela %s\n", GetTickCount(), FindWindowW(NULL, L"Euro Truck Simulator 2") ? "OK" : "AUSENTE"); fflush(lg); }
             foca();
             if (segunda) {
-              /* jogo reaberto com profile: menu principal -> DRIVE -> acelerar */
+              /* jogo reaberto com profile: menu principal -> DRIVE -> acelerar.
+               * Espera CONTEUDO na tela (a v92 clicava no escuro). */
+              for (i = 0; i < 75; i++) {
+                if (tem_bright(300, 200, 700, 500, 120, 40)) break;
+                Sleep(2000);
+              }
               shot("menu2");
+              foca();
               tap(0x1C, 8000, "Enter (DRIVE)");
               shot("drive1");
               tap(0x1C, 8000, "Enter (confirma)");
@@ -3766,14 +3808,47 @@ jobs:
               if (lg) { fprintf(lg, "[%u] fim (2a)\n", GetTickCount()); fflush(lg); fclose(lg); }
               return 0;
             }
-            /* -------- 1a execucao: tela de ATIVACAO -> Run in Demo Mode -------- */
+            /* -------- 1a execucao: ESPERA a tela de ATIVACAO e clica no demo --------
+             * v92 falhou porque o painel nasce em t=55-70 s (varia por run) e o
+             * clique fixo em t=61 s foi antes da hora. Agora: poll de pixel
+             * brilhante na regiao do botao "Run in Demo Mode" (594-688, 514-530)
+             * a cada 2 s, ate 150 s. */
+            for (i = 0; i < 75; i++) {
+              if (tem_bright(594, 514, 688, 530, 170, 6)) break;
+              Sleep(2000);
+            }
+            if (lg) { fprintf(lg, "[%u] tela ativacao %s (poll %d)\n", GetTickCount(), i < 75 ? "DETECTADA" : "TIMEOUT", i); fflush(lg); }
+            foca();
             shot("ativacao");
-            clica(641, 521, 5000, "Run in Demo Mode (botao rodape direito)");
+            nantes = conta_bright(470, 178, 580, 188, 150);
+            nb = conta_bright(594, 514, 688, 530, 170);
+            if (lg) { fprintf(lg, "[%u] ativacao: titulo=%d px, botao demo=%d px\n", GetTickCount(), nantes, nb); fflush(lg); }
+            clica(641, 521, 6000, "Run in Demo Mode (botao rodape direito)");
             shot("demo-clicado");
+            /* verificacao: o clique MUDOU a tela? (titulo ACTIVATION ou o
+             * proprio botao perderam mais da metade dos pixels claros) */
+            ndepois = conta_bright(470, 178, 580, 188, 150);
+            if (lg) { fprintf(lg, "[%u] titulo antes=%d depois=%d\n", GetTickCount(), nantes, ndepois); fflush(lg); }
+            if (nantes > 4 && ndepois >= nantes / 2) {
+              /* tela nao mudou: reclica (ate 2x) */
+              clica(641, 521, 6000, "re-click demo (tela nao mudou)");
+              shot("demo-reclick");
+              ndepois = conta_bright(470, 178, 580, 188, 150);
+              if (lg) { fprintf(lg, "[%u] titulo apos reclick=%d\n", GetTickCount(), ndepois); fflush(lg); }
+            }
+            if (lg) { fprintf(lg, "[%u] botao demo apos clique=%d px (antes %d)\n", GetTickCount(), conta_bright(594, 514, 688, 530, 170), nb); fflush(lg); }
             tap(0x1C, 5000, "Enter (confirmar modo demo, se dialogo)");
             shot("demo-confirm");
+            /* flag so se o clique aparentemente funcionou (titulo sumiu) */
+            if (nantes > 4 && ndepois < nantes / 2) {
+              fl = fopen("mw-demo-ok.flag", "w");
+              if (fl) { fputs("demo ok\n", fl); fclose(fl); }
+              if (lg) { fprintf(lg, "[%u] DEMO PARECE ATIVO — flag criada\n", GetTickCount()); fflush(lg); }
+            }
             /* wizard de criacao de profile: nickname "AI" */
             foca();
+            tap(0x1C, 8000, "Enter-1 (tela inicial pos-demo)");
+            shot("pos-enter1");
             tap(0x1E, 300, "A");
             tap(0x17, 800, "I");
             shot("nickname-AI");
@@ -3796,8 +3871,6 @@ jobs:
               if (i == 10 || i == 30 || i == 60 || i == 120 || i == 180) shot("dirigindo");
             }
             Sleep(15000);
-            fl = fopen("mw-feito.flag", "w");
-            if (fl) { fputs("walk v92 completo\n", fl); fclose(fl); }
             if (lg) { fprintf(lg, "[%u] fim (1a)\n", GetTickCount()); fflush(lg); fclose(lg); }
             return 0;
           }
