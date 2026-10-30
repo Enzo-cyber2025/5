@@ -302,5 +302,7 @@ jobs:
             gh release create exe-cpp-windows --title "RaceAI 2D (C++) - executavel Windows" --notes $notas
           }
           gh release upload exe-cpp-windows raceai-cpp/package/RaceAI2D.exe --clobber
+          # o zip antigo sai de cena (se ele ja nao existir, nao e erro)
           gh release delete-asset exe-cpp-windows RaceAI2D-C++-windows.zip -y 2>$null
-          if ($LASTEXITCODE -ne 0) { Write-Host "zip antigo: nada para remover" }
+          $LASTEXITCODE = 0
+          Write-Host "release atualizada: so o RaceAI2D.exe" 
