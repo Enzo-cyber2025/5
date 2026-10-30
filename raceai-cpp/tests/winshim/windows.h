@@ -155,6 +155,7 @@ inline int MoveToEx(HDC, int, int, POINT*) { return 0; }
 inline int LineTo(HDC, int, int) { return 0; }
 inline int SetTextColor(HDC, COLORREF) { return 0; }
 inline int SetBkMode(HDC, int) { return 0; }
+inline COLORREF SetBkColor(HDC, COLORREF) { return 0; }
 inline int TextOutW(HDC, int, int, LPCWSTR, int) { return 0; }
 inline LRESULT SendMessageW(HWND, UINT, WPARAM, LPARAM) { return 0; }
 inline int SetWindowTextW(HWND, LPCWSTR) { return 0; }
@@ -250,6 +251,31 @@ inline BOOL SystemParametersInfoW(UINT, UINT, void*, UINT) { return 0; }
 #endif
 #ifndef SRCCOPY
 #define SRCCOPY ((DWORD)0x00CC0020)
+#endif
+#ifndef WM_CTLCOLORSTATIC
+#define WM_CTLCOLORSTATIC 0x0138
+#define WM_CTLCOLOREDIT   0x0133
+#define WM_CTLCOLORLISTBOX 0x0134
+#define WM_CTLCOLORBTN    0x0135
+#endif
+#ifndef ODT_BUTTON
+#define ODT_BUTTON     4
+#define ODS_SELECTED   0x0001
+#define ODS_GRAYED     0x0002
+#define ODS_DISABLED   0x0004
+#define ODS_FOCUS      0x0010
+#endif
+#ifndef WS_CLIPCHILDREN
+#define WS_CLIPCHILDREN 0x02000000
+#endif
+#ifndef CLEARTYPE_QUALITY
+#define CLEARTYPE_QUALITY 5
+#endif
+#ifndef FW_SEMIBOLD
+#define FW_SEMIBOLD 600
+#endif
+#ifndef OPAQUE
+#define OPAQUE 2
 #endif
 struct DRAWITEMSTRUCT { UINT CtlType, CtlID, itemID, itemAction, itemState;
                         HWND hwndItem; HDC hDC; RECT rcItem; ULONG_PTR itemData; };

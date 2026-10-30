@@ -106,3 +106,31 @@ src/core/*.cpp src/app/app_state.cpp` (já limpo).
   `tools/empacotar.cpp src/app/conteudo.cpp -Isrc` (senão link quebra).
 - Não há mais zig no sandbox: não dá para compilar para Windows localmente;
   a validação é o CI + `make check-win`.
+
+## Interface: fim do pisca-pisca + cara nova (2026-10-30)
+
+- **Causa do pisca**: `WM_PAINT` desenhava direto no HDC da janela e o
+  `WM_TIMER` chamava `InvalidateRect(hwnd, nullptr)` a cada ~15 ms → cada
+  quadro aparecia sendo "riscado" na tela. Só devolver 1 no `WM_ERASEBKGND`
+  não resolve.
+- **Consertado com 4 coisas** (todas em `src/app/main.cpp`):
+  1. **duplo-buffer**: `WM_PAINT` desenha num bitmap e dá um único `BitBlt`.
+     O bitmap é **cacheado** (`g_mem_dc/g_mem_bmp`) e só recriado quando o
+     tamanho muda — alocar um bitmap do tamanho da tela 60×/s pesa muito no
+     Pentium N5030. Liberado no `WM_DESTROY`.
+  2. `WM_TIMER` invalida **só a área da pista** (`x >= kPainelW + 2`), o
+     painel inteiro parou de repintar.
+  3. `atualiza_textos()` só chama `SetWindowTextW` quando o texto **mudou**
+     de verdade (cache em `g_txt_metricas/g_txt_corrida`).
+  4. `WS_CLIPCHILDREN` na janela: nada pinta por cima dos controles.
+- **Cara nova**: paleta única (`kCorPainel/kCorFundo/kCorDestaque/...`),
+  botões `BS_OWNERDRAW` desenhados como pílula (`desenha_botao`, com estado
+  pressionado/desabilitado), fontes com `CLEARTYPE_QUALITY` (`criar_fonte`),
+  `WM_CTLCOLORSTATIC/EDIT/BTN/LISTBOX` para os controles nativos ficarem
+  escuros, HUD dentro de um cartão arredondado com títulos `--- x ---` em
+  verde, grade discreta no fundo da pista e faixa do título na cor de
+  destaque (`g_hwnd_titulo` + `g_pincel_titulo`).
+- **Ordem obrigatória no `WM_DRAWITEM`**: os `if` das chaves
+  (`ID_CHAVE_MODO`, `ID_CHAVE_TIPO_IA`, `ID_CHAVE_3D`) vêm **antes** do ramo
+  genérico `di->CtlType == ODT_BUTTON`. Se o genérico vier primeiro, as
+  chaves são desenhadas como botão comum e deixam de ser chave.

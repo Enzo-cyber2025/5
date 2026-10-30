@@ -46,6 +46,80 @@ static HWND g_texto_corrida = nullptr;
 static HFONT g_fonte = nullptr;
 static HFONT g_fonte_titulo = nullptr;
 static HFONT g_fonte_mono = nullptr;
+static HFONT g_fonte_botao = nullptr;
+static HBRUSH g_pincel_painel = nullptr;
+static HBRUSH g_pincel_edit = nullptr;
+static HBRUSH g_pincel_titulo = nullptr;
+// back-buffer do duplo-buffer: criado uma vez e reaproveitado (num PC fraco,
+// alocar um bitmap do tamanho da tela 60 vezes por segundo pesa muito)
+static HDC g_mem_dc = nullptr;
+static HBITMAP g_mem_bmp = nullptr;
+static HBITMAP g_mem_antigo = nullptr;
+static int g_mem_w = 0, g_mem_h = 0;
+
+// ------------------------------------------------------------------ tema
+// Paleta única para tudo (painel, controles e HUD): fundo azulado escuro,
+// texto claro e um verde-água de destaque.
+static const COLORREF kCorPainel     = RGB(26, 30, 40);
+static const COLORREF kCorFundo      = RGB(14, 17, 22);
+static const COLORREF kCorTexto      = RGB(222, 228, 240);
+static const COLORREF kCorDestaque   = RGB(86, 214, 140);
+static const COLORREF kCorBotao      = RGB(46, 55, 72);
+static const COLORREF kCorBotaoTopo  = RGB(98, 114, 142);
+static const COLORREF kCorEdit       = RGB(16, 19, 26);
+
+static HFONT criar_fonte(int tam, bool negrito, bool mono) {
+    return CreateFontW(tam, 0, 0, 0, negrito ? FW_SEMIBOLD : FW_NORMAL, FALSE, FALSE, FALSE,
+                       DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                       CLEARTYPE_QUALITY, mono ? FIXED_PITCH : DEFAULT_PITCH,
+                       mono ? L"Consolas" : L"Segoe UI");
+}
+
+// Botão moderno: pílula com borda, brilho em cima e texto centralizado.
+static void desenha_botao(HDC hdc, RECT rc, const wchar_t* txt, bool pressionado,
+                          bool desabilitado) {
+    const int w = rc.right - rc.left, h = rc.bottom - rc.top;
+    if (w <= 2 || h <= 2) return;
+    HDC mem = CreateCompatibleDC(hdc);
+    HBITMAP bmp = CreateCompatibleBitmap(hdc, w, h);
+    HGDIOBJ ob = SelectObject(mem, bmp);
+
+    const COLORREF fundo = desabilitado ? RGB(32, 36, 45)
+                                        : (pressionado ? RGB(70, 92, 120) : kCorBotao);
+    HBRUSH b = CreateSolidBrush(fundo);
+    HPEN p = CreatePen(PS_SOLID, 1, desabilitado ? RGB(42, 48, 58) : RGB(82, 98, 124));
+    HGDIOBJ obb = SelectObject(mem, b);
+    HGDIOBJ obp = SelectObject(mem, p);
+    RoundRect(mem, 0, 0, w, h, h / 2, h / 2);
+    SelectObject(mem, obb);
+    SelectObject(mem, obp);
+    DeleteObject(b);
+    DeleteObject(p);
+
+    // filete de luz no topo (só quando está ativo)
+    if (!desabilitado) {
+        HPEN luz = CreatePen(PS_SOLID, 1, kCorBotaoTopo);
+        HGDIOBJ obl = SelectObject(mem, luz);
+        MoveToEx(mem, h / 3, 1, nullptr);
+        LineTo(mem, std::max(h / 3 + 1, w - h / 3), 1);
+        SelectObject(mem, obl);
+        DeleteObject(luz);
+    }
+
+    if (txt && *txt) {
+        SetBkMode(mem, TRANSPARENT);
+        HGDIOBJ of = SelectObject(mem, g_fonte_botao ? g_fonte_botao : g_fonte);
+        SetTextColor(mem, desabilitado ? RGB(112, 120, 134) : RGB(234, 240, 250));
+        RECT rt = {0, 0, w, h};
+        DrawTextW(mem, txt, -1, &rt, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+        SelectObject(mem, of);
+    }
+
+    BitBlt(hdc, rc.left, rc.top, w, h, mem, 0, 0, SRCCOPY);
+    SelectObject(mem, ob);
+    DeleteObject(bmp);
+    DeleteDC(mem);
+}
 static AppState g_app;
 static double g_zoom = 6.0;
 static bool g_seguir = true;
@@ -68,6 +142,8 @@ static std::string narrow(const std::wstring& s) {
     return out;
 }
 
+static HWND g_hwnd_titulo = nullptr;    // título: ganha cor própria no painel
+
 static HWND rotulo(HWND pai, int x, int y, int w, int h, const wchar_t* txt,
                    HFONT f = nullptr, COLORREF cor = RGB(220, 226, 235)) {
     HWND hw = CreateWindowW(L"static", txt, WS_CHILD | WS_VISIBLE | SS_LEFT, x, y, w, h, pai,
@@ -85,7 +161,8 @@ static std::wstring rotulo_valor(const std::wstring& nome, double v) {
 }
 
 static HWND botao(HWND pai, int id, int x, int y, int w, int h, const wchar_t* txt) {
-    HWND hw = CreateWindowW(L"button", txt, WS_CHILD | WS_VISIBLE | WS_TABSTOP, x, y, w, h, pai,
+    HWND hw = CreateWindowW(L"button", txt,
+                            WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_OWNERDRAW, x, y, w, h, pai,
                             (HMENU)(intptr_t)id, GetModuleHandle(nullptr), nullptr);
     SendMessageW(hw, WM_SETFONT, (WPARAM)g_fonte, TRUE);
     return hw;
@@ -351,10 +428,26 @@ static void pinta_cena3d(HDC hdc, int x0, int y0, int w, int h, const Track& trk
 
 static void pinta_canvas(HDC hdc, int x0, int y0, int w, int h) {
     // fundo
-    HBRUSH fundo = CreateSolidBrush(RGB(14, 17, 22));
+    HBRUSH fundo = CreateSolidBrush(kCorFundo);
     RECT r = {x0, y0, x0 + w, y0 + h};
     FillRect(hdc, &r, fundo);
     DeleteObject(fundo);
+
+    // grade discreta: dá o ar de telemetria sem poluir
+    {
+        HPEN grade = CreatePen(PS_SOLID, 1, RGB(20, 24, 32));
+        HGDIOBJ og = SelectObject(hdc, grade);
+        for (int gx = x0; gx < x0 + w; gx += 40) {
+            MoveToEx(hdc, gx, y0, nullptr);
+            LineTo(hdc, gx, y0 + h);
+        }
+        for (int gy = y0; gy < y0 + h; gy += 40) {
+            MoveToEx(hdc, x0, gy, nullptr);
+            LineTo(hdc, x0 + w, gy);
+        }
+        SelectObject(hdc, og);
+        DeleteObject(grade);
+    }
 
     const Track* trk = nullptr;
     if (g_app.mode == Mode::Corrida && g_app.race.sim) trk = &g_app.race.sim->track;
@@ -635,13 +728,38 @@ static void pinta_canvas(HDC hdc, int x0, int y0, int w, int h) {
     if (g_app.mode == Mode::Corrida) linhas = g_app.race.hud_lines();
     else linhas = g_app.treino_lines();
     if (g_app.ui.mostrar_hud && !linhas.empty()) {
-        SetTextColor(hdc, RGB(232, 236, 244));
-        SetBkMode(hdc, TRANSPARENT);
         HGDIOBJ of = SelectObject(hdc, g_fonte_mono);
-        int ty = y0 + 16;
+        int maior = 0;
+        for (const std::string& s : linhas) maior = std::max(maior, int(s.size()));
+        const int cx0 = x0 + 12, cy0 = y0 + 12;
+        const int cw = std::min(w - 24, maior * 8 + 22);
+        const int ch = int(linhas.size()) * 18 + 14;
+        // cartão: fundo escuro, borda suave e canto arredondado
+        HBRUSH bf = CreateSolidBrush(RGB(15, 19, 26));
+        HPEN bp = CreatePen(PS_SOLID, 1, RGB(58, 70, 90));
+        HGDIOBJ obb = SelectObject(hdc, bf);
+        HGDIOBJ obp = SelectObject(hdc, bp);
+        RoundRect(hdc, cx0, cy0, cx0 + cw, cy0 + ch, 12, 12);
+        SelectObject(hdc, obb);
+        SelectObject(hdc, obp);
+        DeleteObject(bf);
+        DeleteObject(bp);
+        // barrinha de destaque na lateral do cartão
+        HPEN barra = CreatePen(PS_SOLID, 3, kCorDestaque);
+        HGDIOBJ obr = SelectObject(hdc, barra);
+        MoveToEx(hdc, cx0 + 2, cy0 + 12, nullptr);
+        LineTo(hdc, cx0 + 2, cy0 + ch - 12);
+        SelectObject(hdc, obr);
+        DeleteObject(barra);
+
+        SetBkMode(hdc, TRANSPARENT);
+        int ty = cy0 + 10;
         for (const std::string& s : linhas) {
+            // linhas "--- algo ---" são títulos: ficam na cor de destaque
+            const bool titulo = s.size() > 4 && s.compare(0, 4, "--- ") == 0;
+            SetTextColor(hdc, titulo ? kCorDestaque : RGB(226, 232, 244));
             std::wstring t = wide(s);
-            TextOutW(hdc, x0 + 16, ty, t.c_str(), int(t.size()));
+            TextOutW(hdc, cx0 + 12, ty, t.c_str(), int(t.size()));
             ty += 18;
         }
         SelectObject(hdc, of);
@@ -740,18 +858,28 @@ static void mostra_tela() {
     InvalidateRect(g_hwnd, nullptr, TRUE);
 }
 
+// Só reescreve o texto quando ele mudou: assim as caixas não repintam 60
+// vezes por segundo (era o que fazia o painel piscar).
+static std::string g_txt_metricas, g_txt_corrida;
+
 static void atualiza_textos() {
     if (g_texto_metricas && g_app.mode == Mode::Treinamento) {
         std::vector<std::string> linhas = g_app.treino_lines();
         std::string t;
         for (const std::string& s : linhas) t += s + "\r\n";
-        SetWindowTextW(g_texto_metricas, wide(t).c_str());
+        if (t != g_txt_metricas) {
+            g_txt_metricas = t;
+            SetWindowTextW(g_texto_metricas, wide(t).c_str());
+        }
     }
     if (g_texto_corrida && g_app.mode == Mode::Corrida) {
         std::vector<std::string> linhas = g_app.race.hud_lines();
         std::string t;
         for (const std::string& s : linhas) t += s + "\r\n";
-        SetWindowTextW(g_texto_corrida, wide(t).c_str());
+        if (t != g_txt_corrida) {
+            g_txt_corrida = t;
+            SetWindowTextW(g_texto_corrida, wide(t).c_str());
+        }
     }
 }
 
@@ -817,19 +945,16 @@ static void le_teclado() {
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     switch (msg) {
         case WM_CREATE: {
-            g_fonte = CreateFontW(16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
-                                  DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                                  DEFAULT_QUALITY, DEFAULT_PITCH, L"Segoe UI");
-            g_fonte_titulo = CreateFontW(24, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
-                                         DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
-                                         CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH,
-                                         L"Segoe UI");
-            g_fonte_mono = CreateFontW(15, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
-                                       DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                                       DEFAULT_QUALITY, FIXED_PITCH, L"Consolas");
+            g_fonte = criar_fonte(15, false, false);
+            g_fonte_titulo = criar_fonte(23, true, false);
+            g_fonte_mono = criar_fonte(14, false, true);
+            g_fonte_botao = criar_fonte(14, true, false);
+            g_pincel_painel = CreateSolidBrush(kCorPainel);
+            g_pincel_edit = CreateSolidBrush(kCorEdit);
+            g_pincel_titulo = CreateSolidBrush(RGB(32, 37, 50));
             const int P = 12;
             const int W = kPainelW - 24;
-            rotulo(hwnd, P, 10, W, 26, L"RaceAI 2D — C++", g_fonte_titulo);
+            g_hwnd_titulo = rotulo(hwnd, P, 8, W, 30, L"RaceAI 2D — C++", g_fonte_titulo);
             rotulo(hwnd, P, 44, W, 18, L"pista");
             HWND cb_pista = CreateWindowW(L"combobox", L"",
                                           WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST | WS_VSCROLL,
@@ -1065,7 +1190,12 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             if (g_app.mode == Mode::Treinamento) g_app.tick_treino(passos);
             else if (g_app.mode == Mode::Corrida) g_app.tick_corrida(passos);
             atualiza_textos();
-            InvalidateRect(hwnd, nullptr, FALSE);
+            // só a área da pista muda a cada quadro: o painel fica quieto
+            // (menos repintura = nada de piscar e menos CPU)
+            RECT rc;
+            GetClientRect(hwnd, &rc);
+            RECT rp = {kPainelW + 2, 0, rc.right, rc.bottom};
+            InvalidateRect(hwnd, &rp, FALSE);
             return 0;
         }
         case WM_PAINT: {
@@ -1073,18 +1203,46 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             HDC hdc = BeginPaint(hwnd, &ps);
             RECT rc;
             GetClientRect(hwnd, &rc);
+            const int w = std::max(1, int(rc.right - rc.left));
+            const int h = std::max(1, int(rc.bottom - rc.top));
+            // duplo-buffer: desenha tudo num bitmap e copia de uma vez.
+            // É isso que acaba com o pisca-pisca (nada é apagado na tela).
+            if (!g_mem_dc) g_mem_dc = CreateCompatibleDC(hdc);
+            if (g_mem_w != w || g_mem_h != h) {
+                if (g_mem_bmp) {
+                    SelectObject(g_mem_dc, g_mem_antigo);
+                    DeleteObject(g_mem_bmp);
+                }
+                g_mem_bmp = CreateCompatibleBitmap(hdc, w, h);
+                g_mem_antigo = (HBITMAP)SelectObject(g_mem_dc, g_mem_bmp);
+                g_mem_w = w;
+                g_mem_h = h;
+            }
+            HDC mem = g_mem_dc;
             // painel
-            HBRUSH pincel = CreateSolidBrush(RGB(24, 28, 36));
-            RECT pr = {0, 0, kPainelW, rc.bottom};
-            FillRect(hdc, &pr, pincel);
+            HBRUSH pincel = CreateSolidBrush(kCorPainel);
+            RECT pr = {0, 0, kPainelW, h};
+            FillRect(mem, &pr, pincel);
             DeleteObject(pincel);
-            HPEN linha = CreatePen(PS_SOLID, 1, RGB(48, 54, 66));
-            HGDIOBJ op = SelectObject(hdc, linha);
-            MoveToEx(hdc, kPainelW, 0, nullptr);
-            LineTo(hdc, kPainelW, rc.bottom);
-            SelectObject(hdc, op);
+            // costura entre painel e pista (linha + sombra)
+            HPEN linha = CreatePen(PS_SOLID, 1, RGB(46, 54, 70));
+            HGDIOBJ op = SelectObject(mem, linha);
+            MoveToEx(mem, kPainelW, 0, nullptr);
+            LineTo(mem, kPainelW, h);
+            HPEN sombra = CreatePen(PS_SOLID, 1, RGB(18, 21, 28));
+            HGDIOBJ os = SelectObject(mem, sombra);
+            MoveToEx(mem, kPainelW + 1, 0, nullptr);
+            LineTo(mem, kPainelW + 1, h);
+            SelectObject(mem, os);
+            DeleteObject(sombra);
+            SelectObject(mem, op);
             DeleteObject(linha);
-            pinta_canvas(hdc, kPainelW + 1, 0, std::max(1, int(rc.right) - kPainelW - 1), int(rc.bottom));
+            pinta_canvas(mem, kPainelW + 2, 0, std::max(1, w - kPainelW - 2), h);
+            // copia só a área suja
+            const int px = ps.rcPaint.left, py = ps.rcPaint.top;
+            const int pw = std::max(0, int(ps.rcPaint.right) - px);
+            const int ph = std::max(0, int(ps.rcPaint.bottom) - py);
+            if (pw > 0 && ph > 0) BitBlt(hdc, px, py, pw, ph, mem, px, py, SRCCOPY);
             EndPaint(hwnd, &ps);
             return 0;
         }
@@ -1138,6 +1296,14 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             if (di->CtlID == ID_CHAVE_3D) {
                 desenha_chave(di->hDC, di->rcItem, !g_app.ui.modo3d, L"2D", L"3D",
                               RGB(38, 44, 66), RGB(128, 176, 255));
+                return TRUE;
+            }
+            if (di->CtlType == ODT_BUTTON) {
+                wchar_t txt[160] = {0};
+                GetWindowTextW(di->hwndItem, txt, 159);
+                desenha_botao(di->hDC, di->rcItem, txt,
+                              (di->itemState & ODS_SELECTED) != 0,
+                              (di->itemState & ODS_DISABLED) != 0);
                 return TRUE;
             }
             break;
@@ -1400,9 +1566,51 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             return 0;
         }
         case WM_ERASEBKGND:
-            return 1;
+            return 1;                       // nunca apaga: o duplo-buffer já pinta tudo
+        case WM_CTLCOLORSTATIC: {           // rótulos: texto claro sobre o painel
+            HDC hdcC = (HDC)wp;
+            if (g_hwnd_titulo && (HWND)lp == g_hwnd_titulo) {
+                // título em verde-água sobre uma faixa um pouco mais clara
+                SetTextColor(hdcC, kCorDestaque);
+                SetBkColor(hdcC, RGB(32, 37, 50));
+                SetBkMode(hdcC, OPAQUE);
+                return (LRESULT)g_pincel_titulo;
+            }
+            SetTextColor(hdcC, kCorTexto);
+            SetBkColor(hdcC, kCorPainel);
+            SetBkMode(hdcC, OPAQUE);
+            if (g_pincel_painel) return (LRESULT)g_pincel_painel;
+            break;
+        }
+        case WM_CTLCOLOREDIT: {             // caixas de texto: fundo escuro
+            HDC hdcC = (HDC)wp;
+            SetTextColor(hdcC, RGB(228, 235, 247));
+            SetBkColor(hdcC, kCorEdit);
+            if (g_pincel_edit) return (LRESULT)g_pincel_edit;
+            break;
+        }
+        case WM_CTLCOLORBTN:
+            if (g_pincel_painel) return (LRESULT)g_pincel_painel;
+            break;
+        case WM_CTLCOLORLISTBOX: {          // lista suspensa das combos
+            HDC hdcC = (HDC)wp;
+            SetTextColor(hdcC, RGB(228, 235, 247));
+            SetBkColor(hdcC, kCorEdit);
+            if (g_pincel_edit) return (LRESULT)g_pincel_edit;
+            break;
+        }
         case WM_DESTROY:
             KillTimer(hwnd, kTimer);
+            if (g_mem_dc) {
+                if (g_mem_bmp) {
+                    SelectObject(g_mem_dc, g_mem_antigo);
+                    DeleteObject(g_mem_bmp);
+                }
+                DeleteDC(g_mem_dc);
+                g_mem_dc = nullptr;
+                g_mem_bmp = nullptr;
+                g_mem_w = g_mem_h = 0;
+            }
             PostQuitMessage(0);
             return 0;
     }
@@ -1509,7 +1717,7 @@ static int rodar(HINSTANCE hInst, int cmd_show) {
     alt = std::max(alt, 560);
 
     g_hwnd = CreateWindowExW(0, kClasse, L"RaceAI 2D — treino de IA (C++)",
-                             WS_OVERLAPPEDWINDOW, area.left + std::max(0, (disp_w - larg) / 2),
+                             WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, area.left + std::max(0, (disp_w - larg) / 2),
                              area.top + std::max(0, (disp_h - alt) / 2), larg, alt, nullptr,
                              nullptr, hInst, nullptr);
     if (!g_hwnd) {
