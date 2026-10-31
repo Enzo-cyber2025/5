@@ -1,3 +1,14 @@
+# Próxima versão: GGUFTX (em andamento)
+
+A camada-fonte de pesquisa web está sendo reforçada para trazer resultados e
+citações reais e falhar de forma segura quando a rede não responder. A nova logo
+GGUFTX também entra no build, nas cinco densidades Android. **Ainda não há APK
+GGUFTX compilado/validado.** Termux embutido, execução irrestrita, contexto ou
+tokens infinitos e aceleração garantida de 50% não são alegados nem incluídos:
+veja [escopo e limites](docs/GGUFTX.md).
+
+---
+
 # Entrega atual nesta sessão: ganhos consistentes observados
 
 **[APK assinado — GGUF-Chat-acelerado.apk](entrega/GGUF-Chat-acelerado.apk)** · 51.128.050 bytes · sem ZIP.

@@ -23,6 +23,13 @@ from patch_smali import apply
 
 ROOT=Path(__file__).resolve().parents[1]
 WORK=ROOT/'.cache/mobile'
+LAUNCHER_ICONS={
+    'res/mipmap-mdpi/ic_launcher.png':ROOT/'apk-fix/assets/gguftx-logo-mdpi.png',
+    'res/mipmap-hdpi/ic_launcher.png':ROOT/'apk-fix/assets/gguftx-logo-hdpi.png',
+    'res/mipmap-xhdpi/ic_launcher.png':ROOT/'apk-fix/assets/gguftx-logo-xhdpi.png',
+    'res/mipmap-xxhdpi/ic_launcher.png':ROOT/'apk-fix/assets/gguftx-logo-xxhdpi.png',
+    'res/mipmap-xxxhdpi/ic_launcher.png':ROOT/'apk-fix/assets/gguftx-logo-xxxhdpi.png',
+}
 SOURCE_SHA='b29c606e28a01b1bc8c1351026a0fa6e616bf6c4'
 
 def run(*args): subprocess.run([str(a) for a in args],check=True)
@@ -211,6 +218,7 @@ def main():
         for n in a.namelist():
             if signature_entry(n) or n.startswith('lib/'):continue
             data=c.read('classes.dex') if n=='classes.dex' else a.read(n)
+            if n in LAUNCHER_ICONS:data=LAUNCHER_ICONS[n].read_bytes()
             if n=='AndroidManifest.xml':data=attachment_manifest(data)
             info=copy.copy(a.getinfo(n));info.extra=b''
             if info.compress_type==zipfile.ZIP_STORED:
@@ -229,7 +237,8 @@ def main():
     verify_alignment(out)
     with zipfile.ZipFile(original) as a,zipfile.ZipFile(out) as b:
         for n in a.namelist():
-            if n not in ('classes.dex','AndroidManifest.xml') and not signature_entry(n) and not n.startswith('lib/'):assert a.read(n)==b.read(n)
+            if n not in ('classes.dex','AndroidManifest.xml') and n not in LAUNCHER_ICONS and not signature_entry(n) and not n.startswith('lib/'):assert a.read(n)==b.read(n)
+        for name,path in LAUNCHER_ICONS.items():assert b.read(name)==path.read_bytes()
         assert b.read('AndroidManifest.xml')==attachment_manifest(a.read('AndroidManifest.xml'))
         assert {n for n in b.namelist() if n.startswith('lib/')}==set(libs)
     metadata={'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'llama_commit':SOURCE_SHA,'min_sdk':28,'native_source_commit':native_origin or subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'sha256':hashlib.sha256(out.read_bytes()).hexdigest(),'status':'UNSIGNED_NOT_APPROVED','native':{n:hashlib.sha256(v).hexdigest() for n,v in libs.items()}}
