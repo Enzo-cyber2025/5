@@ -1424,11 +1424,21 @@ jobs:
           # oficial + snapshot de registro/documentos ANTES do boot; o passo
           # DEPOIS (coleta final) faz o diff. Se a varredura da v99 nao
           # destravar, a v100 pre-escreve o estado descoberto aqui.
+          # v99b: a run 41220300768 morreu NESTE passo (jogo nem subiu, as
+          # fases A/B do menuwalk nao rodaram): com o $ErrorActionPreference
+          # 'Stop' PADRAO do Actions, qualquer erro de pipe/registro vira
+          # terminante. Agora: EAP Continue + try/catch POR FASE + trace em
+          # arquivo commitado no diag (se morrer de novo, sei onde).
+          $ErrorActionPreference = 'Continue'
+          try { $PSNativeCommandUseErrorActionPreference = $false } catch {}
           $rea = "rea-ativ"
           New-Item -ItemType Directory -Force -Path $rea | Out-Null
+          function LogR($m) { Write-Host $m; Add-Content -Path "$rea\trace-antes.txt" -Value $m -Encoding utf8 }
+          LogR "inicio rea-ativ"
           try {
             $exe = "C:\ets2demo\bin\win_x64\eurotrucks2.exe"
             $bytes = [IO.File]::ReadAllBytes($exe)
+            LogR ("exe: " + $bytes.Length + " bytes")
             $txt = [Text.Encoding]::GetEncoding("ISO-8859-1").GetString($bytes)
             $u16 = [Text.Encoding]::Unicode.GetString($bytes)
             $hits = New-Object System.Collections.Generic.HashSet[string]
@@ -1436,23 +1446,30 @@ jobs:
               $s = $m.Value
               if ($s -match '(?i)activ|demo|licen|registr|scs software|software\\|product|serial|\.sii|cdkey|keyfile|hardware|fingerprint') { [void]$hits.Add($s) }
             }
+            LogR ("hits ascii: " + $hits.Count)
             foreach ($m in [regex]::Matches($u16, '[\x20-\x7E]{6,}')) {
               $s = $m.Value
               if ($s -match '(?i)activ|demo|licen|registr|scs software|software\\|product|serial|\.sii|cdkey|keyfile|hardware|fingerprint') { [void]$hits.Add("U16: " + $s) }
             }
+            LogR ("hits total: " + $hits.Count)
             $hits | Sort-Object | Select-Object -First 4000 | Out-File "$rea\strings-ativacao.txt" -Encoding utf8
-            Write-Host ("REA ativacao: " + $hits.Count + " strings unicas")
-          } catch { Write-Host "REA strings: $($_.Exception.Message)" }
-          reg query "HKCU\Software\SCS Software" /s 2>$null | Out-File "$rea\reg-hkcu-antes.txt" -Encoding utf8
-          reg query "HKLM\SOFTWARE\SCS Software" /s 2>$null | Out-File "$rea\reg-hklm-antes.txt" -Encoding utf8
-          reg query "HKCU\Software" /s /k /f "SCS" 2>$null | Select-Object -First 80 | Out-File "$rea\reg-hkcu-keys-antes.txt" -Encoding utf8
-          $docs = Join-Path $env:USERPROFILE "Documents\Euro Truck Simulator 2"
-          if (Test-Path $docs) {
-            Get-ChildItem $docs -Recurse -Force -ErrorAction SilentlyContinue |
-              ForEach-Object { "$($_.FullName)|$($_.Length)|$($_.LastWriteTime.ToString('s'))" } |
-              Out-File "$rea\docs-antes.txt" -Encoding utf8
-          }
-          Write-Host "REA ativacao: snapshot ANTES pronto"
+          } catch { LogR ("strings ERRO: " + $_.Exception.Message) }
+          try {
+            & reg.exe query "HKCU\Software\SCS Software" /s 2>$null | Out-File "$rea\reg-hkcu-antes.txt" -Encoding utf8
+            & reg.exe query "HKLM\SOFTWARE\SCS Software" /s 2>$null | Out-File "$rea\reg-hklm-antes.txt" -Encoding utf8
+            & reg.exe query "HKCU\Software" /s /k /f "SCS" 2>$null | Select-Object -First 80 | Out-File "$rea\reg-hkcu-keys-antes.txt" -Encoding utf8
+            LogR "registro antes ok"
+          } catch { LogR ("registro ERRO: " + $_.Exception.Message) }
+          try {
+            $docs = Join-Path $env:USERPROFILE "Documents\Euro Truck Simulator 2"
+            if (Test-Path $docs) {
+              Get-ChildItem $docs -Recurse -Force -ErrorAction SilentlyContinue |
+                ForEach-Object { try { "$($_.FullName)|$($_.Length)|$($_.LastWriteTime.ToString('s'))" } catch { "$($_.FullName)|?" } } |
+                Out-File "$rea\docs-antes.txt" -Encoding utf8
+              LogR "docs antes ok"
+            } else { LogR "docs ausente" }
+          } catch { LogR ("docs ERRO: " + $_.Exception.Message) }
+          LogR "fim rea-ativ (sempre sucesso)"
       - name: SOBE o ETS2 REAL (demo oficial) — a DLL no processo de verdade
         shell: pwsh
         # v45: timeout de STEP (imposto pelo RUNNER, nao pelo pwsh) — as runs
@@ -4706,26 +4723,33 @@ jobs:
           # tentou guardar) o estado de ativacao/demo durante o boot
           $rea = "rea-ativ"
           if (Test-Path $rea) {
-            reg query "HKCU\Software\SCS Software" /s 2>$null | Out-File "$rea\reg-hkcu-depois.txt" -Encoding utf8
-            reg query "HKLM\SOFTWARE\SCS Software" /s 2>$null | Out-File "$rea\reg-hklm-depois.txt" -Encoding utf8
-            reg query "HKCU\Software" /s /k /f "SCS" 2>$null | Select-Object -First 80 | Out-File "$rea\reg-hkcu-keys-depois.txt" -Encoding utf8
-            $docs2 = Join-Path $env:USERPROFILE "Documents\Euro Truck Simulator 2"
-            if (Test-Path $docs2) {
-              Get-ChildItem $docs2 -Recurse -Force -ErrorAction SilentlyContinue |
-                ForEach-Object { "$($_.FullName)|$($_.Length)|$($_.LastWriteTime.ToString('s'))" } |
-                Out-File "$rea\docs-depois.txt" -Encoding utf8
-            }
-            foreach ($p in @("reg-hkcu", "reg-hklm", "reg-hkcu-keys", "docs")) {
-              $a = "$rea\$p-antes.txt"; $b = "$rea\$p-depois.txt"
-              if ((Test-Path $a) -and (Test-Path $b)) {
-                $da = Get-Content $a -ErrorAction SilentlyContinue
-                $db = Get-Content $b -ErrorAction SilentlyContinue
-                $d = Compare-Object $da $db -ErrorAction SilentlyContinue
-                if ($d) { Write-Host "=== REA $p MUDOU ===" ; $d | Select-Object -First 30 | ForEach-Object { Write-Host ($_.SideIndicator + " " + $_.InputObject) } }
-                $d | Out-File "$rea\$p-diff.txt" -Encoding utf8
+            $ErrorActionPreference = 'Continue'
+            try { $PSNativeCommandUseErrorActionPreference = $false } catch {}
+            try {
+              & reg.exe query "HKCU\Software\SCS Software" /s 2>$null | Out-File "$rea\reg-hkcu-depois.txt" -Encoding utf8
+              & reg.exe query "HKLM\SOFTWARE\SCS Software" /s 2>$null | Out-File "$rea\reg-hklm-depois.txt" -Encoding utf8
+              & reg.exe query "HKCU\Software" /s /k /f "SCS" 2>$null | Select-Object -First 80 | Out-File "$rea\reg-hkcu-keys-depois.txt" -Encoding utf8
+              $docs2 = Join-Path $env:USERPROFILE "Documents\Euro Truck Simulator 2"
+              if (Test-Path $docs2) {
+                Get-ChildItem $docs2 -Recurse -Force -ErrorAction SilentlyContinue |
+                  ForEach-Object { try { "$($_.FullName)|$($_.Length)|$($_.LastWriteTime.ToString('s'))" } catch { "$($_.FullName)|?" } } |
+                  Out-File "$rea\docs-depois.txt" -Encoding utf8
               }
-            }
-            Write-Host "REA ativacao: snapshot DEPOIS + diffs prontos"
+              foreach ($p in @("reg-hkcu", "reg-hklm", "reg-hkcu-keys", "docs")) {
+                $a = "$rea\$p-antes.txt"; $b = "$rea\$p-depois.txt"
+                if ((Test-Path $a) -and (Test-Path $b)) {
+                  $da = Get-Content $a -ErrorAction SilentlyContinue
+                  $db = Get-Content $b -ErrorAction SilentlyContinue
+                  $d = Compare-Object $da $db -ErrorAction SilentlyContinue
+                  if ($d) {
+                    Write-Host "=== REA $p MUDOU ==="
+                    $d | Select-Object -First 30 | ForEach-Object { Write-Host ($_.SideIndicator + " " + $_.InputObject) }
+                  }
+                  $d | Out-File "$rea\$p-diff.txt" -Encoding utf8
+                }
+              }
+              Write-Host "REA ativacao: snapshot DEPOIS + diffs prontos"
+            } catch { Write-Host ("REA depois ERRO: " + $_.Exception.Message) }
           }
       - name: Diagnostico (commita logs da demo real no repo)
         if: always()
@@ -4749,6 +4773,7 @@ jobs:
           cp shot-drv-*.jpg "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp shot-ascii-*.txt "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp "/c/Users/runneradmin/Documents/Euro Truck Simulator 2/game.log.txt" "ci-logs/${{ github.run_id }}-demo/documents-game.log.txt" 2>/dev/null || true
+          cp "/c/Users/runneradmin/Documents/Euro Truck Simulator 2/game.crash.txt" "ci-logs/${{ github.run_id }}-demo/documents-game.crash.txt" 2>/dev/null || true
           for f in d3d11shim-boot1.txt dxgishim-boot1.txt dxgishim-hibrido.txt autoteste-real.json autoteste-real.log demo-mmf.json /c/steamcmd/fase1.log /c/steamcmd/fase2.log /c/dd/dd.log /c/dd/stage2.err mesa-load.log /c/dd/setup.err /c/dd/7z.log /c/dd/mesa-7z.log /c/ets2demo/game.log.txt /c/ets2demo/game-ets2ai-telemetry.log; do
             cp "$f" "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           done
