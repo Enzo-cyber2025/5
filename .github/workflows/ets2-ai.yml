@@ -1417,6 +1417,42 @@ jobs:
           $r.steps | ForEach-Object { Write-Host ("  " + $_.status + ": " + $_.step + " — " + $_.detail) }
           if (-not $r.pass) { throw "autoteste falhou contra a demo real" }
       - uses: ilammy/msvc-dev-cmd@v1        # v57: cl/dumpbin no PATH p/ shim d3d11 + probe warpwin
+      - name: REA ativacao — strings do exe + snapshot ANTES (v99)
+        shell: pwsh
+        run: |
+          # Como o jogo guarda o estado de ativacao/demo? Strings do exe
+          # oficial + snapshot de registro/documentos ANTES do boot; o passo
+          # DEPOIS (coleta final) faz o diff. Se a varredura da v99 nao
+          # destravar, a v100 pre-escreve o estado descoberto aqui.
+          $rea = "rea-ativ"
+          New-Item -ItemType Directory -Force -Path $rea | Out-Null
+          try {
+            $exe = "C:\ets2demo\bin\win_x64\eurotrucks2.exe"
+            $bytes = [IO.File]::ReadAllBytes($exe)
+            $txt = [Text.Encoding]::GetEncoding("ISO-8859-1").GetString($bytes)
+            $u16 = [Text.Encoding]::Unicode.GetString($bytes)
+            $hits = New-Object System.Collections.Generic.HashSet[string]
+            foreach ($m in [regex]::Matches($txt, '[\x20-\x7E]{6,}')) {
+              $s = $m.Value
+              if ($s -match '(?i)activ|demo|licen|registr|scs software|software\\|product|serial|\.sii|cdkey|keyfile|hardware|fingerprint') { [void]$hits.Add($s) }
+            }
+            foreach ($m in [regex]::Matches($u16, '[\x20-\x7E]{6,}')) {
+              $s = $m.Value
+              if ($s -match '(?i)activ|demo|licen|registr|scs software|software\\|product|serial|\.sii|cdkey|keyfile|hardware|fingerprint') { [void]$hits.Add("U16: " + $s) }
+            }
+            $hits | Sort-Object | Select-Object -First 4000 | Out-File "$rea\strings-ativacao.txt" -Encoding utf8
+            Write-Host ("REA ativacao: " + $hits.Count + " strings unicas")
+          } catch { Write-Host "REA strings: $($_.Exception.Message)" }
+          reg query "HKCU\Software\SCS Software" /s 2>$null | Out-File "$rea\reg-hkcu-antes.txt" -Encoding utf8
+          reg query "HKLM\SOFTWARE\SCS Software" /s 2>$null | Out-File "$rea\reg-hklm-antes.txt" -Encoding utf8
+          reg query "HKCU\Software" /s /k /f "SCS" 2>$null | Select-Object -First 80 | Out-File "$rea\reg-hkcu-keys-antes.txt" -Encoding utf8
+          $docs = Join-Path $env:USERPROFILE "Documents\Euro Truck Simulator 2"
+          if (Test-Path $docs) {
+            Get-ChildItem $docs -Recurse -Force -ErrorAction SilentlyContinue |
+              ForEach-Object { "$($_.FullName)|$($_.Length)|$($_.LastWriteTime.ToString('s'))" } |
+              Out-File "$rea\docs-antes.txt" -Encoding utf8
+          }
+          Write-Host "REA ativacao: snapshot ANTES pronto"
       - name: SOBE o ETS2 REAL (demo oficial) — a DLL no processo de verdade
         shell: pwsh
         # v45: timeout de STEP (imposto pelo RUNNER, nao pelo pwsh) — as runs
@@ -3729,6 +3765,118 @@ jobs:
             r2 = PostMessageW(w, WM_LBUTTONUP, 0, lp);
             if (lg) { fprintf(lg, "[%u] post %s client=(%d,%d) down=%d up=%d\n", GetTickCount(), what, pt.x, pt.y, r1, r2); fflush(lg); }
           }
+          /* v99: o jogo usa DirectInput8 p/ mouse (log: [di8] '@@i_mouse@@').
+           * DI8-mouse = so DELTAS de raw input; SetCursorPos NAO gera raw
+           * input -> o cursor INTERNO do jogo nunca andou -> hit-test errado
+           * (v96-v98 clicaram CERTINHO e nada). SendInput com MOVE|ABSOLUTE
+           * ENTRA no pipeline de raw input: o jogo VE o cursor andar. */
+          static void move_abs(int x, int y) {
+            INPUT in;
+            int sw = GetSystemMetrics(SM_CXSCREEN), sh = GetSystemMetrics(SM_CYSCREEN);
+            ZeroMemory(&in, sizeof(in));
+            in.type = INPUT_MOUSE;
+            in.mi.dx = (LONG)((double)x * 65535.0 / (sw - 1));
+            in.mi.dy = (LONG)((double)y * 65535.0 / (sh - 1));
+            in.mi.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_VIRTUALDESK;
+            SendInput(1, &in, sizeof(INPUT));
+          }
+          static void clica_abs(int x, int y, int ms, const char *what) {
+            INPUT in;
+            POINT pt;
+            move_abs(x, y);
+            Sleep(140);
+            ZeroMemory(&in, sizeof(in));
+            in.type = INPUT_MOUSE; in.mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
+            SendInput(1, &in, sizeof(INPUT));
+            Sleep(80);
+            ZeroMemory(&in, sizeof(in));
+            in.type = INPUT_MOUSE; in.mi.dwFlags = MOUSEEVENTF_LEFTUP;
+            SendInput(1, &in, sizeof(INPUT));
+            GetCursorPos(&pt);
+            if (lg && what) { fprintf(lg, "[%u] clica_abs %s @(%d,%d) cursor=(%d,%d)\n", GetTickCount(), what, x, y, pt.x, pt.y); fflush(lg); }
+            Sleep(ms);
+          }
+          /* v99: detector 'caixa sumiu' — interior do dialogo de ativacao
+           * medido nos shots v98: presente = 0.44-0.73 de pixels escuros;
+           * fundo 3D animado = 0.13-0.35. Calibrado com Pillow no diag. */
+          static double caixa_frac(void) {
+            HDC sc = GetDC(NULL);
+            HDC dc = CreateCompatibleDC(sc);
+            int x0 = 240, y0 = 210, x1 = 790, y1 = 550, w = x1 - x0 + 1, h = y1 - y0 + 1;
+            int stride, n = 0, t = 0, x, y;
+            HBITMAP bm = CreateCompatibleBitmap(sc, w, h);
+            HBITMAP old = (HBITMAP)SelectObject(dc, bm);
+            BITMAPINFO bi;
+            unsigned char *bits;
+            ZeroMemory(&bi, sizeof(bi));
+            bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+            bi.bmiHeader.biWidth = w; bi.bmiHeader.biHeight = h;
+            bi.bmiHeader.biBitCount = 24; bi.bmiHeader.biCompression = BI_RGB;
+            stride = (w * 3 + 3) & ~3;
+            bits = (unsigned char *)malloc(stride * h);
+            if (bits) {
+              BitBlt(dc, 0, 0, w, h, sc, x0, y0, SRCCOPY);
+              if (GetDIBits(sc, bm, 0, h, bits, &bi, DIB_RGB_COLORS)) {
+                for (y = 0; y < h; y += 3) {
+                  unsigned char *row = bits + (h - 1 - y) * stride;
+                  for (x = 0; x < w; x += 3) {
+                    unsigned char *px = row + x * 3;
+                    if ((px[2] * 30 + px[1] * 59 + px[0] * 11) / 100 < 22) n++;
+                    t++;
+                  }
+                }
+              }
+              free(bits);
+            }
+            SelectObject(dc, old);
+            DeleteObject(bm); DeleteDC(dc); ReleaseDC(NULL, sc);
+            return t ? (double)n / (double)t : -1.0;
+          }
+          /* v99: mini-ASCII do dialogo DIRETO no log — da pra LER o estado
+           * da tela no proximo diag sem depender de Pillow. */
+          static void ascii_dump(const char *tag) {
+            HDC sc = GetDC(NULL);
+            HDC dc = CreateCompatibleDC(sc);
+            int x0 = 190, y0 = 140, x1 = 840, y1 = 600, w = x1 - x0 + 1, h = y1 - y0 + 1;
+            int cols = 78, rows = 24, stride, gx, gy, x, y, som, cnt;
+            HBITMAP bm = CreateCompatibleBitmap(sc, w, h);
+            HBITMAP old = (HBITMAP)SelectObject(dc, bm);
+            BITMAPINFO bi;
+            unsigned char *bits;
+            static const char ramp[11] = " .:-=+*#%@";
+            char line[80];
+            ZeroMemory(&bi, sizeof(bi));
+            bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+            bi.bmiHeader.biWidth = w; bi.bmiHeader.biHeight = h;
+            bi.bmiHeader.biBitCount = 24; bi.bmiHeader.biCompression = BI_RGB;
+            stride = (w * 3 + 3) & ~3;
+            bits = (unsigned char *)malloc(stride * h);
+            if (lg) { fprintf(lg, "---- ascii %s ----\n", tag); fflush(lg); }
+            if (bits) {
+              BitBlt(dc, 0, 0, w, h, sc, x0, y0, SRCCOPY);
+              if (GetDIBits(sc, bm, 0, h, bits, &bi, DIB_RGB_COLORS)) {
+                for (gy = 0; gy < rows; gy++) {
+                  for (gx = 0; gx < cols; gx++) {
+                    som = 0; cnt = 0;
+                    for (y = gy * h / rows; y < (gy + 1) * h / rows; y += 3) {
+                      unsigned char *rowb = bits + (h - 1 - y) * stride;
+                      for (x = gx * w / cols; x < (gx + 1) * w / cols; x += 3) {
+                        unsigned char *px = rowb + x * 3;
+                        som += (px[2] * 30 + px[1] * 59 + px[0] * 11) / 100; cnt++;
+                      }
+                    }
+                    line[gx] = ramp[(cnt ? som / cnt : 0) * 10 / 256];
+                  }
+                  line[cols] = 0;
+                  if (lg) { fprintf(lg, "%s\n", line); fflush(lg); }
+                }
+              }
+              free(bits);
+            }
+            SelectObject(dc, old);
+            DeleteObject(bm); DeleteDC(dc); ReleaseDC(NULL, sc);
+            if (lg) { fprintf(lg, "---- fim ascii %s ----\n", tag); fflush(lg); }
+          }
           static int conta_bright(int x0, int y0, int x1, int y1, int thr) {
             HDC sc = GetDC(NULL);
             HDC dc = CreateCompatibleDC(sc);
@@ -3894,6 +4042,7 @@ jobs:
           static BOOL CALLBACK enum_child(HWND w, LPARAM lp) { (void)lp; log_janela(w, "FILHO"); return TRUE; }
           int main(void) {
             int i, segunda, dif, destravou;
+            double fr = 0.0, fr2 = 0.0, caixa_base = 0.60;
             FILE *fl;
             HWND jogo, bw;
             RECT rb;
@@ -3907,7 +4056,7 @@ jobs:
             lg = fopen(segunda ? "menuwalk2.log" : "menuwalk.log", "w");
             if (segunda) shotpre = "shot-mw2-";
             dcchk = GetDC(NULL);
-            if (lg) { fprintf(lg, "[%u] inicio v98 | tela=%dx%d dpi=%d | modo %s\n", GetTickCount(), GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN), GetDeviceCaps(dcchk, LOGPIXELSX), segunda ? "DRIVE (2a)" : "FORENSE (1a)"); fflush(lg); }
+            if (lg) { fprintf(lg, "[%u] inicio v99 | tela=%dx%d dpi=%d | modo %s\n", GetTickCount(), GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN), GetDeviceCaps(dcchk, LOGPIXELSX), segunda ? "DRIVE (2a)" : "FORENSE (1a)"); fflush(lg); }
             ReleaseDC(NULL, dcchk);
             for (i = 0; i < 30 && !FindWindowW(NULL, L"Euro Truck Simulator 2"); i++) Sleep(2000);
             if (lg) { fprintf(lg, "[%u] janela %s\n", GetTickCount(), FindWindowW(NULL, L"Euro Truck Simulator 2") ? "OK" : "AUSENTE"); fflush(lg); }
@@ -3940,7 +4089,9 @@ jobs:
             EnumWindows(enum_top, 0);
             if (jogo) EnumChildWindows(jogo, enum_child, 0);
             dif = painel_dif();
-            if (lg) { fprintf(lg, "[%u] baseline dif=%d%% chave@40=%d\n", GetTickCount(), dif, linha_chave_n()); fflush(lg); }
+            caixa_base = caixa_frac();
+            if (lg) { fprintf(lg, "[%u] baseline dif=%d%% chave@40=%d caixa=%.2f\n", GetTickCount(), dif, linha_chave_n(), caixa_base); fflush(lg); }
+            ascii_dump("baseline");
             destravou = 0;
             bw = g_demo_btn;
             if (bw) {
@@ -3964,34 +4115,99 @@ jobs:
               if (lg) { fprintf(lg, "[%u] botao post: dif=%d%%\n", GetTickCount(), dif); fflush(lg); }
               if (dif >= 30 || !IsWindow(bw)) { destravou = 3; goto pronto; }
             } else if (lg) { fprintf(lg, "[%u] NENHUM botao 'demo' nas janelas - arsenal fisico\n", GetTickCount()); fflush(lg); }
-            /* arsenal compacto (agora DPI-aware) */
-            foca_forte();
-            clica(641, 521, 90000, "demo");
-            shot("arm01"); dif = painel_dif();
-            if (lg) { fprintf(lg, "[%u] arma 1 (click demo): dif=%d%%\n", GetTickCount(), dif); fflush(lg); }
-            if (dif >= 30) { destravou = 4; goto pronto; }
-            foca_forte();
-            post_click(jogo, 641, 521, "demo post main");
-            Sleep(45000);
-            shot("arm02"); dif = painel_dif();
-            if (lg) { fprintf(lg, "[%u] arma 2 (post main): dif=%d%%\n", GetTickCount(), dif); fflush(lg); }
-            if (dif >= 30) { destravou = 5; goto pronto; }
-            foca_forte();
-            clica(384, 521, 20000, "Activate Game");
-            tap(0x1C, 45000, "Enter (fecha erro)");
-            shot("arm03"); dif = painel_dif();
-            if (lg) { fprintf(lg, "[%u] arma 3 (activate+enter): dif=%d%%\n", GetTickCount(), dif); fflush(lg); }
-            if (dif >= 30) { destravou = 6; goto pronto; }
-            foca_forte();
-            tap(0x01, 45000, "ESC");
-            shot("arm04"); dif = painel_dif();
-            if (lg) { fprintf(lg, "[%u] arma 4 (esc): dif=%d%%\n", GetTickCount(), dif); fflush(lg); }
-            if (dif >= 30) { destravou = 7; goto pronto; }
+            /* v99 FASE A — matriz TECLADO: v92 provou que o teclado CHEGA
+             * ao dialogo (o foco move entre as caixas); v97 so tentou
+             * TABxN+SPACE — ENTER nunca foi tentado. A ordem de TAB e
+             * [caixa1..caixa5, Activate, Run in Demo]: um dos k foca o botao
+             * certo e ENTER ativa. */
+            {
+              int k, kk;
+              for (k = 0; k <= 12 && !destravou; k++) {
+                for (kk = 0; kk < k; kk++) tap(0x0F, 200, "TAB");
+                tap(0x1C, 6000, "Enter");
+                fr = caixa_frac(); dif = painel_dif();
+                if (lg) { fprintf(lg, "[%u] faseA k=%d frac=%.2f dif=%d%%\n", GetTickCount(), k, fr, dif); fflush(lg); }
+                if ((fr < 0.34 && caixa_base - fr > 0.18) || dif >= 30) destravou = 10;
+              }
+              if (!destravou) {
+                tap(0x50, 500, "Down"); tap(0x50, 500, "Down"); tap(0x1C, 6000, "Enter");
+                fr = caixa_frac(); dif = painel_dif();
+                if (lg) { fprintf(lg, "[%u] faseA down2+enter frac=%.2f dif=%d%%\n", GetTickCount(), fr, dif); fflush(lg); }
+                if ((fr < 0.34 && caixa_base - fr > 0.18) || dif >= 30) destravou = 11;
+              }
+            }
+            /* v99 FASE B — varredura com SendInput ABSOLUTO: gera raw input
+             * (o DirectInput8 do jogo enxerga o cursor ANDAR), e a grade
+             * cobre o desvio inicial do cursor interno e o letterbox do UI
+             * de referencia 1440x900 numa tela 1024x768. Botao 'Run in Demo
+             * Mode' medido no shot v98: x 529-739, y 505-530 (centro
+             * (634,517)); 'Activate Game' x 313-421 (evitado na varredura
+             * para nao gerar dialogo de erro). */
+            if (!destravou) {
+              int ys[5]; int yy, xx, ci;
+              ys[0] = 478; ys[1] = 498; ys[2] = 517; ys[3] = 537; ys[4] = 557;
+              ci = 0;
+              foca_forte();
+              move_abs(420, 400);
+              Sleep(1500);
+              for (yy = 0; yy < 5 && !destravou; yy++) {
+                for (xx = 440; xx <= 832 && !destravou; xx += 22) {
+                  clica_abs(xx, ys[yy], 220, NULL);
+                  ci++;
+                  if ((ci % 8) == 0) {
+                    fr = caixa_frac();
+                    if (fr < 0.34 && caixa_base - fr > 0.18) destravou = 20;
+                  }
+                }
+                Sleep(5000);
+                fr = caixa_frac(); dif = painel_dif();
+                if (lg) { fprintf(lg, "[%u] faseB linha y=%d concluida frac=%.2f dif=%d%% cliques=%d\n", GetTickCount(), ys[yy], fr, dif, ci); fflush(lg); }
+                shot("faseB");
+                if ((fr < 0.34 && caixa_base - fr > 0.18) || dif >= 30) destravou = 20;
+              }
+              if (destravou && lg) { fprintf(lg, "[%u] faseB DESTRANOU (raw input + grade)\n", GetTickCount()); fflush(lg); }
+            }
+            /* FASE C — arsenal classico, agora com clica_abs (SendInput
+             * ABSOLUTO que o DirectInput do jogo enxerga) */
+            if (!destravou) {
+              foca_forte();
+              clica_abs(634, 517, 60000, "demo-abs");
+              shot("arm01"); dif = painel_dif(); fr = caixa_frac();
+              if (lg) { fprintf(lg, "[%u] arma 1 (clica_abs demo): dif=%d%% frac=%.2f\n", GetTickCount(), dif, fr); fflush(lg); }
+              if ((fr < 0.34 && caixa_base - fr > 0.18) || dif >= 30) { destravou = 4; goto pronto; }
+              foca_forte();
+              post_click(jogo, 641, 521, "demo post main");
+              Sleep(45000);
+              shot("arm02"); dif = painel_dif(); fr = caixa_frac();
+              if (lg) { fprintf(lg, "[%u] arma 2 (post main): dif=%d%% frac=%.2f\n", GetTickCount(), dif, fr); fflush(lg); }
+              if ((fr < 0.34 && caixa_base - fr > 0.18) || dif >= 30) { destravou = 5; goto pronto; }
+              foca_forte();
+              clica_abs(367, 517, 20000, "Activate-abs");
+              tap(0x1C, 45000, "Enter (fecha erro)");
+              shot("arm03"); dif = painel_dif(); fr = caixa_frac();
+              if (lg) { fprintf(lg, "[%u] arma 3 (activate+enter): dif=%d%% frac=%.2f\n", GetTickCount(), dif, fr); fflush(lg); }
+              if ((fr < 0.34 && caixa_base - fr > 0.18) || dif >= 30) { destravou = 6; goto pronto; }
+              foca_forte();
+              tap(0x01, 45000, "ESC");
+              shot("arm04"); dif = painel_dif(); fr = caixa_frac();
+              if (lg) { fprintf(lg, "[%u] arma 4 (esc): dif=%d%% frac=%.2f\n", GetTickCount(), dif, fr); fflush(lg); }
+              if ((fr < 0.34 && caixa_base - fr > 0.18) || dif >= 30) { destravou = 7; goto pronto; }
+            }
           pronto:
             if (destravou) {
               if (lg) { fprintf(lg, "[%u] DESTRAVADO (%d) dif=%d%% - esperando transicao\n", GetTickCount(), destravou, dif); fflush(lg); }
               Sleep(120000);
               shot("pos-destravar");
+              ascii_dump("pos-destravar");
+              fr = caixa_frac();
+              Sleep(5000);
+              fr2 = caixa_frac();
+              if (fr >= 0.40 || fr2 >= 0.40) {
+                if (lg) { fprintf(lg, "[%u] FALSO POSITIVO (%d): frac %.2f/%.2f - NAO grava flag\n", GetTickCount(), destravou, fr, fr2); fflush(lg); }
+                destravou = 0;
+              }
+            }
+            if (destravou) {
               fl = fopen("mw-demo-ok.flag", "w");
               if (fl) { fputs("demo ok\n", fl); fclose(fl); }
             } else if (lg) { fprintf(lg, "[%u] ativacao RESISTIU - wizard best-effort\n", GetTickCount()); fflush(lg); }
@@ -4021,6 +4237,7 @@ jobs:
               if (i == 10 || i == 30 || i == 60 || i == 120 || i == 180) shot("dirigindo");
             }
             Sleep(15000);
+            ascii_dump("fim");
             if (lg) { fprintf(lg, "[%u] fim (1a)\n", GetTickCount()); fflush(lg); fclose(lg); }
             return 0;
           }
@@ -4028,7 +4245,7 @@ jobs:
                   & cl /nologo /O2 /W3 "$PWD\menuwalk.c" "/Fe:$PWD\menuwalk.exe" /link 2>&1 | ForEach-Object { Trace "menuwalk cl: $_" }
                   if (Test-Path "$PWD\menuwalk.exe") {
                     Start-Process -FilePath "$PWD\menuwalk.exe" -WorkingDirectory $PWD
-                    Trace "hibrido: menuwalk v98 lancado (forense de janelas + DPI-aware + botao real)"
+                    Trace "hibrido: menuwalk v99 lancado (SendInput ABSOLUTO/raw + TABxK+ENTER + grade + detector caixa)"
                   } else { Trace "hibrido: menuwalk.exe NAO compilou — boot sem navegacao de menu" }
                   # v90: OLHOS — screenshots periodicos (JPEG) durante o boot
                   # hibrido: o game.log e MUDO no menu; sem ver a tela nao da
@@ -4485,6 +4702,31 @@ jobs:
           Get-Content "C:\ets2demo\game-ets2ai-telemetry.log" -Tail 25 -ErrorAction SilentlyContinue
           Copy-Item "C:\ets2demo\steam.inf" "$PWD\demo-steam.inf" -Force -ErrorAction SilentlyContinue
           Copy-Item "$docs\game.log.txt" "$PWD\game-log-final.txt" -Force -ErrorAction SilentlyContinue
+          # v99: snapshot DEPOIS + diffs — revela onde o jogo guardou (ou
+          # tentou guardar) o estado de ativacao/demo durante o boot
+          $rea = "rea-ativ"
+          if (Test-Path $rea) {
+            reg query "HKCU\Software\SCS Software" /s 2>$null | Out-File "$rea\reg-hkcu-depois.txt" -Encoding utf8
+            reg query "HKLM\SOFTWARE\SCS Software" /s 2>$null | Out-File "$rea\reg-hklm-depois.txt" -Encoding utf8
+            reg query "HKCU\Software" /s /k /f "SCS" 2>$null | Select-Object -First 80 | Out-File "$rea\reg-hkcu-keys-depois.txt" -Encoding utf8
+            $docs2 = Join-Path $env:USERPROFILE "Documents\Euro Truck Simulator 2"
+            if (Test-Path $docs2) {
+              Get-ChildItem $docs2 -Recurse -Force -ErrorAction SilentlyContinue |
+                ForEach-Object { "$($_.FullName)|$($_.Length)|$($_.LastWriteTime.ToString('s'))" } |
+                Out-File "$rea\docs-depois.txt" -Encoding utf8
+            }
+            foreach ($p in @("reg-hkcu", "reg-hklm", "reg-hkcu-keys", "docs")) {
+              $a = "$rea\$p-antes.txt"; $b = "$rea\$p-depois.txt"
+              if ((Test-Path $a) -and (Test-Path $b)) {
+                $da = Get-Content $a -ErrorAction SilentlyContinue
+                $db = Get-Content $b -ErrorAction SilentlyContinue
+                $d = Compare-Object $da $db -ErrorAction SilentlyContinue
+                if ($d) { Write-Host "=== REA $p MUDOU ===" ; $d | Select-Object -First 30 | ForEach-Object { Write-Host ($_.SideIndicator + " " + $_.InputObject) } }
+                $d | Out-File "$rea\$p-diff.txt" -Encoding utf8
+              }
+            }
+            Write-Host "REA ativacao: snapshot DEPOIS + diffs prontos"
+          }
       - name: Diagnostico (commita logs da demo real no repo)
         if: always()
         shell: bash
@@ -4501,6 +4743,7 @@ jobs:
           cp dxvk-log-*.txt "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp vkhib-*.out vkhib-*.err hib-*.log mesa253-hib.log vulkanrt-x.log menuwalk.log "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp menuwalk2.log "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
+          cp -r rea-ativ "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp shot-hib-*.jpg "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp shot-mw*.jpg "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp shot-drv-*.jpg "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
