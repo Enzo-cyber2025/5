@@ -164,9 +164,23 @@ size_t shim_fill_iat(const pe_image *im, uint8_t *image, size_t image_len,
 
     if (out_known)    *out_known = 0;
     if (out_unknown)  *out_unknown = 0;
-    if (im == NULL || image == NULL || image_len == 0 || base_va == 0) return 0;
+    if (im == NULL || base_va == 0) return 0;
 
-    {   shim_map *m = shim_map_for(base_va);
+    /* image may be NULL, and that is not an error. An RVA is an offset from the base
+     * only in a MAPPED image, where the loader has laid the sections out at their
+     * virtual addresses. In the raw file buffer the same RVA sits at
+     * PointerToRawData, which is file-aligned rather than 0x1000-aligned, so indexing
+     * a file buffer by RVA reads the wrong bytes and bounding an RVA by the file's
+     * length rejects slots that are perfectly reachable once mapped.
+     *
+     * The first run of this validated iat_rva 0x3040 against the length of hello.exe
+     * and filled nothing, while every input it needed was correct - pe_load had
+     * parsed one DLL with two functions named GetStdHandle and WriteFile. With a NULL
+     * image this records which slots a resolver may answer for and writes nowhere,
+     * which is all a sweep needs: only the RVA goes into the emitted code. The write
+     * happens later, against the mapping, where RVA and offset agree. */
+    if (image != NULL) {
+        shim_map *m = shim_map_for(base_va);
         if (m == NULL) return 0;
         m->image = image;
         m->len   = image_len;
@@ -190,14 +204,17 @@ size_t shim_fill_iat(const pe_image *im, uint8_t *image, size_t image_len,
             if (e == NULL) { unknown++; continue; }
             known++;
 
-            /* PE32+ thunks are 8 bytes. The slot has to be inside the mapping, or
-             * writing it would be writing past the image this function was given. */
+            /* PE32+ thunks are 8 bytes. */
             slot_rva = (uint64_t)dll->iat_rva + 8u * (uint64_t)k;
-            if (slot_rva + 8u > (uint64_t)image_len) { unknown++; known--; continue; }
-            slot = image + slot_rva;
 
-            addr = (uint64_t)(uintptr_t)e->fn;
-            memcpy(slot, &addr, sizeof addr);
+            if (image != NULL) {
+                /* Bound the write against the mapping, which is the only thing whose
+                 * length an RVA can be compared to. */
+                if (slot_rva + 8u > (uint64_t)image_len) { unknown++; known--; continue; }
+                slot = image + slot_rva;
+                addr = (uint64_t)(uintptr_t)e->fn;
+                memcpy(slot, &addr, sizeof addr);
+            }
 
             if (shim_slot_n < SHIM_MAX_SLOTS) {
                 shim_slot_va[shim_slot_n++] = base_va + slot_rva;

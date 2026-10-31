@@ -762,8 +762,12 @@ int main(int argc, char **argv)
                     printf("  %s: PE did not parse to PE_OK, its imports may be "
                            "incomplete\n", paths[i]);
             }
-            got = shim_fill_iat(&pes[i], (uint8_t *)imgs[i], lens[i],
-                                pes[i].image_base, &known, &unknown);
+            /* NULL image on purpose: this is the raw file buffer, where an RVA is not
+             * an offset. Only the slot RVAs are wanted here, so the resolver can
+             * answer during the sweep; the addresses get written into the mapping in
+             * the execute phase, where RVA and offset agree. */
+            got = shim_fill_iat(&pes[i], NULL, 0u, pes[i].image_base, &known,
+                                &unknown);
             printf("  %s: IAT slots filled %zu, imported functions recognised %zu, "
                    "not implemented %zu\n", paths[i], got, known, unknown);
             /* The names the file actually asks for, so a table that does not match is
