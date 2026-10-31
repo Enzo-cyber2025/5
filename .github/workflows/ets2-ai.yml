@@ -3697,39 +3697,43 @@ jobs:
             } else if (lg) { fprintf(lg, "[%u] click %s @(%d,%d)\n", GetTickCount(), what, x, y); fflush(lg); }
             Sleep(ms);
           }
-          /* v93: sonda de tela — conta pixels claros numa regiao (live,
-           * sem JPEG). Usada para ESPERAR a tela de ativacao nascer (a v92
-           * clicou ~5 s antes do painel aparecer e perdeu o botao) e para
-           * VERIFICAR se o clique mudou a tela. */
-          static int tem_bright(int x0, int y0, int x1, int y1, int thr, int min_n) {
-            HDC sc = GetDC(NULL);
-            int n = 0, x, y;
-            COLORREF c;
-            for (y = y0; y <= y1; y += 2) {
-              for (x = x0; x <= x1; x += 2) {
-                c = GetPixel(sc, x, y);
-                if (c != CLR_INVALID) {
-                  if (((c & 0xFF) * 30 + ((c >> 8) & 0xFF) * 59 + ((c >> 16) & 0xFF) * 11) / 100 >= thr) n++;
-                }
-              }
-            }
-            ReleaseDC(NULL, sc);
-            return n >= min_n;
-          }
-          /* v93: idem mas retorna a CONTAGEM (para comparar antes/depois) */
+          /* v95: sonda de tela via BitBlt — a v94 usava GetPixel e CADA
+           * chamada custava dezenas de ms com o jogo carregando (GDI
+           * congestionado): 1302 GetPixels/poll = ~40 s por poll e o walk
+           * passou os 25 min do boot inteiro DENTRO do poll (0 cliques,
+           * 0 shots). Agora: UM BitBlt da regiao pra um DIB em memoria e
+           * scan direto nos bytes (o mesmo caminho do shot(), que sempre
+           * foi rapido). DIB 24bpp = BGR: lum = (R*30 + G*59 + B*11)/100
+           * com p[2]=R, p[1]=G, p[0]=B. */
           static int conta_bright(int x0, int y0, int x1, int y1, int thr) {
             HDC sc = GetDC(NULL);
-            int n = 0, x, y;
-            COLORREF c;
-            for (y = y0; y <= y1; y += 2) {
-              for (x = x0; x <= x1; x += 2) {
-                c = GetPixel(sc, x, y);
-                if (c != CLR_INVALID) {
-                  if (((c & 0xFF) * 30 + ((c >> 8) & 0xFF) * 59 + ((c >> 16) & 0xFF) * 11) / 100 >= thr) n++;
+            HDC dc = CreateCompatibleDC(sc);
+            int w = x1 - x0 + 1, h = y1 - y0 + 1, n = 0, x, y, stride;
+            HBITMAP bm = CreateCompatibleBitmap(sc, w, h);
+            HBITMAP old = (HBITMAP)SelectObject(dc, bm);
+            BITMAPINFO bi;
+            unsigned char *bits;
+            ZeroMemory(&bi, sizeof(bi));
+            bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+            bi.bmiHeader.biWidth = w; bi.bmiHeader.biHeight = h;
+            bi.bmiHeader.biBitCount = 24; bi.bmiHeader.biCompression = BI_RGB;
+            stride = (w * 3 + 3) & ~3;
+            bits = (unsigned char *)malloc(stride * h);
+            if (bits) {
+              BitBlt(dc, 0, 0, w, h, sc, x0, y0, SRCCOPY);
+              if (GetDIBits(sc, bm, 0, h, bits, &bi, DIB_RGB_COLORS)) {
+                for (y = 0; y < h; y += 2) {
+                  unsigned char *row = bits + (h - 1 - y) * stride;
+                  for (x = 0; x < w; x += 2) {
+                    unsigned char *px = row + x * 3;
+                    if ((px[2] * 30 + px[1] * 59 + px[0] * 11) / 100 >= thr) n++;
+                  }
                 }
               }
+              free(bits);
             }
-            ReleaseDC(NULL, sc);
+            SelectObject(dc, old);
+            DeleteObject(bm); DeleteDC(dc); ReleaseDC(NULL, sc);
             return n;
           }
           /* v94: ASSINATURA da tela de ativacao — a linha das 5 caixas
@@ -3786,7 +3790,7 @@ jobs:
             int i, segunda, nantes, ndepois;
             FILE *fl;
             lg = fopen("menuwalk.log", "w");
-            if (lg) { fprintf(lg, "[%u] inicio v93\n", GetTickCount()); fflush(lg); }
+            if (lg) { fprintf(lg, "[%u] inicio v95\n", GetTickCount()); fflush(lg); }
             /* flag = clique no demo CONFIRMADO na 1a execucao (a v92 criava a
              * flag incondicionalmente e a 2a vez pulava o clique a toa). */
             segunda = (GetFileAttributesA("mw-demo-ok.flag") != INVALID_FILE_ATTRIBUTES);
