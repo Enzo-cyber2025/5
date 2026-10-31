@@ -736,6 +736,16 @@ int main(int argc, char **argv)
          * the point: only the RVAs are used during the sweep. The execute phase calls
          * this again against the real mapping, and that call is the one that matters. */
         {   size_t known = 0, unknown = 0, got;
+            /* pe_load has to run HERE. pes[i] is otherwise first filled by
+             * pe_map_image, which happens in the execute phase - after this sweep -
+             * so at this point the struct is still zeroed and num_dlls is 0. The
+             * first run of this filled no slots at all and every import stayed
+             * unresolved, which looks exactly like the resolver being broken rather
+             * than like a header nobody parsed. Calling pe_load again later is
+             * harmless: it fills the same struct from the same bytes. */
+            if (pe_load(imgs[i], lens[i], &pes[i]) != PE_OK)
+                printf("  %s: PE headers did not parse, its imports stay unresolved\n",
+                       paths[i]);
             got = shim_fill_iat(&pes[i], (uint8_t *)imgs[i], lens[i],
                                 pes[i].image_base, &known, &unknown);
             printf("  %s: IAT slots filled %zu, imported functions recognised %zu, "
