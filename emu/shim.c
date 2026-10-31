@@ -36,8 +36,14 @@ static shim_map *shim_map_for(uint64_t base_va)
     return NULL;
 }
 
-/* Slots shim_fill_iat wrote, so shim_resolve can answer for exactly those. */
+/* Slots shim_fill_iat recorded, so shim_resolve can answer for exactly those. The
+ * base is stored per slot rather than looked up in the mapping table: a sweep records
+ * slots without a mapping - it has the file, not an image - and a resolver that only
+ * answers for bases it has already seen a mapping for would answer for none of them.
+ * That is precisely the failure this replaces: the slot list was correct and complete
+ * and the resolver still returned 0 for every slot in it. */
 static uint64_t shim_slot_va[SHIM_MAX_SLOTS];
+static uint64_t shim_slot_base[SHIM_MAX_SLOTS];
 static size_t   shim_slot_n;
 
 /* Recorded rather than acted on. A real ExitProcess does not return, and honouring
@@ -217,7 +223,9 @@ size_t shim_fill_iat(const pe_image *im, uint8_t *image, size_t image_len,
             }
 
             if (shim_slot_n < SHIM_MAX_SLOTS) {
-                shim_slot_va[shim_slot_n++] = base_va + slot_rva;
+                shim_slot_va[shim_slot_n]   = base_va + slot_rva;
+                shim_slot_base[shim_slot_n] = base_va;
+                shim_slot_n++;
                 filled++;
             }
         }
@@ -230,16 +238,11 @@ size_t shim_fill_iat(const pe_image *im, uint8_t *image, size_t image_len,
 
 uint64_t shim_resolve(uint64_t guest_iat_va, void *user)
 {
-    size_t i;
+    size_t k;
 
     (void)user;
-    for (i = 0; i < shim_nmaps; i++) {
-        const shim_map *m = &shim_maps[i];
-        size_t          k;
-        if (m->base_va == 0 || guest_iat_va < m->base_va) continue;
-        for (k = 0; k < shim_slot_n; k++)
-            if (shim_slot_va[k] == guest_iat_va)
-                return (guest_iat_va - m->base_va) | TR_ABI_HOST | TR_ABI_INDIRECT;
-    }
+    for (k = 0; k < shim_slot_n; k++)
+        if (shim_slot_va[k] == guest_iat_va)
+            return (guest_iat_va - shim_slot_base[k]) | TR_ABI_HOST | TR_ABI_INDIRECT;
     return 0;
 }
