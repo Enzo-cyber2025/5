@@ -981,3 +981,91 @@ jobs:
             echo "a Windows binary is tracked"; exit 1
           fi
           echo "ok: checkout untouched, no Windows binary tracked"
+
+  # A real open-source Windows executable, built by a real compiler rather than
+  # assembled by hand, taken through the whole pre-translation path: map the PE,
+  # sweep it, persist the cache, reload the cache, execute what came back.
+  #
+  # This is a DIAGNOSTIC job and exits 0 on purpose. Its output is the measured list
+  # of what stands between the translator and a real downloaded executable running,
+  # which is what decides what gets implemented next. A permanently red job would say
+  # the same thing once and then say nothing; the assertion that this PE ran gets
+  # added in the commit that makes it true.
+  build-guest-pe:
+    name: build a real open-source Windows PE with mingw-w64
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install the mingw-w64 cross compiler
+        run: |
+          set -eux
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq gcc-mingw-w64-x86-64-win32
+          x86_64-w64-mingw32-gcc --version | head -1
+      - name: Compile emu/guest/hello.c into a real PE
+        run: |
+          set -eux
+          # -nostartfiles plus --entry makes the image entry point the function this
+          # file defines, so the translator is pointed at compiler-generated code and
+          # not at a CRT startup full of call rel32. -fcf-protection=none keeps
+          # endbr64 out of the entry, which is a 0F-map instruction the subset refuses.
+          x86_64-w64-mingw32-gcc -O1 -fcf-protection=none -fno-stack-protector \
+            -fno-asynchronous-unwind-tables -nostartfiles \
+            -Wl,--entry=guest_main -Wl,-Map=hello.map \
+            -o hello.exe emu/guest/hello.c -lkernel32
+          ls -l hello.exe
+          sha256sum hello.exe
+      - name: Show what the compiler actually generated
+        if: always()
+        run: |
+          set +e
+          echo "--- entry symbol in the map ---"
+          grep -iE "guest_main|\.text|__imp_(GetStdHandle|WriteFile)" hello.map | head -20
+          echo "--- disassembly of the entry point ---"
+          x86_64-w64-mingw32-objdump -d --no-show-raw-insn hello.exe 2>/dev/null \
+            | sed -n '/<guest_main>:/,/ret/p' | head -40
+      - uses: actions/upload-artifact@v4
+        with:
+          name: guest-pe
+          path: hello.exe
+
+  real-exe:
+    name: pre-translate a real open-source PE and execute it from the cache
+    runs-on: ubuntu-24.04-arm
+    needs: build-guest-pe
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: guest-pe
+          path: /tmp/guest
+      - name: Build the translator natively on aarch64
+        working-directory: emu
+        run: make prewarm pe_info
+      - name: Report the PE as loaded
+        if: always()
+        working-directory: emu
+        run: |
+          set +e
+          ./pe_info /tmp/guest/hello.exe
+      - name: Pre-translate, persist, reload and execute
+        if: always()
+        working-directory: emu
+        run: |
+          set +e
+          # --idle-ms 0 skips the modelled screen-off wait; the point of this job is
+          # the cache round trip and the execution, not the scheduling window.
+          ./prewarm --cache /tmp/guest.cache --idle-ms 0 --diagnose-entries \
+                    --execute /tmp/guest/hello.exe 2>&1 | tee /tmp/real.log
+          echo "--- the marker a real run would produce ---"
+          grep -c "REAL PE RAN" /tmp/real.log
+      - name: Report
+        if: always()
+        run: |
+          set +e
+          echo "::notice title=real-exe-summary::$(grep -aE 'functions pre-translated|records executed|BLOCKER|refused' /tmp/real.log | head -6 | tr '\n' '|')"
+          echo "--- why the entry point does not run yet ---"
+          grep -aE "ENTRIES|unsupported-opcode|needs-target|BLOCKER" /tmp/real.log | head -12
+          exit 0
