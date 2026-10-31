@@ -40,10 +40,19 @@ int guest_main(void)
 {
     HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
 
-    /* lpOverlapped and lpNumberOfBytesWritten are both NULL, so the fourth argument
-     * is a zeroed register (xor r9d,r9d, the idiom the translator already models)
-     * rather than the address of a local. */
-    WriteFile(h, msg, (DWORD)(sizeof msg - 1u), NULL);
+    /* WriteFile takes FIVE parameters, and that is a measurement rather than a
+     * detail: the bridge marshals guest RCX, RDX, R8 and R9 into AAPCS X0..X3 and
+     * stops there, because x86-64 passes the fifth argument onward on the guest
+     * stack and nothing reads it yet. So lpNumberOfBytesWritten arrives as the
+     * fourth argument and lpOverlapped - the fifth - does not arrive at all.
+     *
+     * The shim is therefore declared with four parameters and supplies the fifth
+     * itself, which is the documented contract for a wrapper. Both are NULL here so
+     * the omission is harmless for this program, but the first real API this
+     * pipeline met is one the bridge cannot fully call, and that is worth knowing
+     * before claiming an import layer works. Most Win32 functions that matter take
+     * more than four arguments. */
+    WriteFile(h, msg, (DWORD)(sizeof msg - 1u), NULL, NULL);
 
     /* Returns rather than calling ExitProcess. A real entry point would not return -
      * the CRT would call ExitProcess - but the harness that runs the translated code
