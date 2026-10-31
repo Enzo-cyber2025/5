@@ -3576,6 +3576,93 @@ static void test_guest_program_loops(void)
 #endif
 }
 
+/* C7 with a memory destination: the store half of the immediate mov.
+ *
+ * This is the instruction that stood between the first real PE this pipeline was
+ * pointed at and translating past its first call. mingw-w64 compiled an entry point
+ * that opened `sub $0x38,%rsp` and then passed WriteFile's fifth argument with
+ * `movq $0x0,0x20(%rsp)`. AArch64 has no store-immediate, so the constant is
+ * materialised in the scratch register and a STUR follows it. */
+static void test_mov_imm_to_stack(void)
+{
+    /* mov qword [rsp+0x10], 0x1234 ; ret */
+    static const uint8_t sto[] = {
+        0x48,0xC7,0x44,0x24,0x10, 0x34,0x12,0x00,0x00, 0xC3 };
+    /* mov dword [rsp+0x10], -1 ; ret - no REX.W, so a 32-bit store */
+    static const uint8_t sto32[] = {
+        0xC7,0x44,0x24,0x10, 0xFF,0xFF,0xFF,0xFF, 0xC3 };
+    /* mov qword [rsp-8], 1 ; ret - the red zone, unmapped below the arena */
+    static const uint8_t red[] = {
+        0x48,0xC7,0x44,0x24,0xF8, 0x01,0,0,0, 0xC3 };
+    /* mov qword [rbp+8], 1 ; ret - the caller's frame, not laid out here */
+    static const uint8_t caller[] = {
+        0x48,0xC7,0x45,0x08, 0x01,0,0,0, 0xC3 };
+    tr_func   f;
+    tr_status st;
+
+    printf("mov imm32 to a memory destination\n");
+
+    st = tr_translate_function(sto, sizeof(sto), IMAGE_BASE, NULL, NULL, &f);
+    CHECK(st == TR_OK, "mov qword [rsp+0x10],imm was refused: %s (%s)",
+          tr_status_name(st), f.detail ? f.detail : "?");
+    if (st == TR_OK)
+        CHECK(f.n >= 2u, "a constant plus a store needs at least two words, got %zu", f.n);
+
+    st = tr_translate_function(sto32, sizeof(sto32), IMAGE_BASE, NULL, NULL, &f);
+    CHECK(st == TR_OK, "mov dword [rsp+0x10],imm was refused: %s (%s)",
+          tr_status_name(st), f.detail ? f.detail : "?");
+
+    st = tr_translate_function(red, sizeof(red), IMAGE_BASE, NULL, NULL, &f);
+    CHECK(st == TR_UNSUPPORTED && f.reason == TRR_STACK,
+          "a negative RSP displacement was not refused as the red zone: %s (%s)",
+          tr_status_name(st), tr_reason_name(f.reason));
+
+    st = tr_translate_function(caller, sizeof(caller), IMAGE_BASE, NULL, NULL, &f);
+    CHECK(st == TR_UNSUPPORTED && f.reason == TRR_STACK,
+          "a non-negative RBP displacement was not refused as the caller's frame: "
+          "%s (%s)", tr_status_name(st), tr_reason_name(f.reason));
+
+#if defined(__aarch64__)
+    {
+        /* sub rsp,0x20 ; mov qword [rsp+0x10],0x1234 ; mov rax,[rsp+0x10] ;
+         * add rsp,0x20 ; ret
+         *
+         * The SUB is not decoration. The arena grows downward from its top, which is
+         * the guest's entry RSP, so a positive displacement from an unadjusted RSP
+         * addresses memory ABOVE the arena. The real compiler-generated code does the
+         * same thing for the same reason: sub $0x38,%rsp, then movq $0,0x20(%rsp),
+         * which lands 0x18 below the entry value and inside the frame it just made.
+         * Reading the slot back with the register-source load proves the store wrote
+         * where the load reads, not merely that neither faulted. */
+        static const uint8_t g[] = {
+            0x48,0x83,0xEC,0x20,
+            0x48,0xC7,0x44,0x24,0x10, 0x34,0x12,0x00,0x00,
+            0x48,0x8B,0x44,0x24,0x10,
+            0x48,0x83,0xC4,0x20,
+            0xC3
+        };
+        gs_arena a;
+        uint64_t r = 0;
+        int      sig = 0;
+
+        if (!gs_alloc(64u * 1024u, &a)) {
+            CHECK(0, "could not allocate an arena: %s", gs_last_error());
+        } else {
+            if (run_guest("an immediate stored to a stack slot and read back",
+                          g, sizeof(g), &a, 0u, &r, &sig))
+                CHECK(sig == 0 && r == 0x1234u,
+                      "the immediate store round trip gave 0x%llx with sig=%d, "
+                      "expected 0x1234 and no fault",
+                      (unsigned long long)r, sig);
+            gs_free(&a);
+            printf("  EXECUTED ON aarch64: an immediate stored to a guest stack slot "
+                   "and read back through the register-source load - the instruction a "
+                   "real compiler uses to pass a stack argument\n");
+        }
+    }
+#endif
+}
+
 int main(void)
 {
     printf("=== exe + dll translation, end to end ===\n");
@@ -3598,6 +3685,7 @@ int main(void)
     test_host_abi_bridge();
     test_guest_program_runs();
     test_guest_program_loops();
+    test_mov_imm_to_stack();
     test_pipeline();
 #if defined(__aarch64__)
     printf("VERDICT arch=aarch64 exe_words=%zu const_ok=%d first=%s/%llu(to=%d,sig=%d) "

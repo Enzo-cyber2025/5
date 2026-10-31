@@ -283,6 +283,7 @@ typedef enum {
     P_CMP_REG, P_CMP_IMM, P_TEST_REG, P_JCC, P_JMP, P_CALL_IAT, P_RET,
     /* guest stack */
     P_PUSH_REG, P_POP_REG, P_PUSH_IMM, P_LEAVE, P_ST_LOCAL, P_LD_LOCAL,
+    P_ST_LOCAL_IMM,
     /* the module's own image, reached by a RIP-relative operand */
     P_LD_IMG, P_ST_IMG,
     /* a guest pointer held in a general register, bounds-checked at run time */
@@ -520,7 +521,7 @@ static int plan_uses_gstack(const plan *p)
 {
     switch (p->op) {
     case P_PUSH_REG: case P_POP_REG: case P_PUSH_IMM:
-    case P_LEAVE: case P_ST_LOCAL: case P_LD_LOCAL:
+    case P_LEAVE: case P_ST_LOCAL: case P_LD_LOCAL: case P_ST_LOCAL_IMM:
         return 1;
     default: break;
     }
@@ -1006,6 +1007,63 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
      * Both widths are accepted. `mov eax,[rbp-8]` is as much a local as
      * `mov rax,[rbp-8]` is, and refusing the 32-bit one would leave a hole in
      * exactly the code the 32-bit operand forms were added to reach. */
+    /* mov r/m, imm32 with a MEMORY destination - C7 /0, the store half of the
+     * immediate mov. This is how a real compiler puts a stack argument or a spill in
+     * place: the first real PE this pipeline was pointed at, built by mingw-w64,
+     * opened its entry point with `sub $0x38,%rsp` and then emitted
+     * `movq $0x0,0x20(%rsp)` to pass WriteFile's fifth argument on the stack. It was
+     * the instruction standing between that PE and translating past its first call.
+     *
+     * Only a guest-stack base is accepted. An image or register-base destination
+     * needs the bounds-checked path the register-source store uses, and adding it
+     * here as well would be a second copy of that logic for no immediate gain.
+     *
+     * AArch64 has no store-immediate, so the constant is materialised in the scratch
+     * register first and the STUR follows: this costs the constant plus one word
+     * where a register-source store costs one.
+     *
+     * The same two refusals as the register-source store apply, for the same reasons:
+     * [rbp + non-negative] reaches into the caller's frame, which this model does not
+     * lay out, and [rsp - n] is unmapped below the guest stack arena. */
+    if (in.op[0] == 0xC7 && in.has_modrm && in.mod != 3 && in.reg == 0) {
+        unsigned      gbase = 0;
+        int64_t       d = in.disp;
+        mem_base_kind k = classify_mem_base(&in, &gbase);
+
+        if (k != MB_STACK) {
+            out->reason = TRR_UNSUPPORTED_OP;
+            out->detail = "mov imm to memory: only a guest-stack destination is modelled";
+            return TR_UNSUPPORTED;
+        }
+        if (gbase == 5u && d >= 0) {
+            out->reason = TRR_STACK;
+            out->detail = "a non-negative RBP displacement reaches into the caller's "
+                          "frame, which this model does not lay out";
+            return TR_UNSUPPORTED;
+        }
+        if (gbase == 4u && d < 0) {
+            out->reason = TRR_STACK;
+            out->detail = "a negative RSP displacement is the red zone, which is "
+                          "unmapped below the guest stack arena";
+            return TR_UNSUPPORTED;
+        }
+        if (!a64_imm9_range_ok((int)d)) {
+            out->reason = TRR_IMM_RANGE;
+            out->detail = "stack displacement does not fit a signed 9-bit offset";
+            return TR_UNSUPPORTED;
+        }
+        p->op = P_ST_LOCAL_IMM;
+        p->rn = (gbase == 4u) ? HOST_RSP : HOST_RBP;
+        p->delta = d;
+        /* REX.W sign-extends the 32-bit immediate to 64 bits; without it the store is
+         * 32-bit and writes only the low half, leaving the upper half of the
+         * destination untouched - which a 64-bit read of the same slot then sees. */
+        p->w32 = !in.rex_w;
+        p->const_val = in.rex_w ? (uint64_t)(int64_t)(int32_t)in.imm
+                                : (uint64_t)(uint32_t)in.imm;
+        p->words = const_words_w(p->const_val, p->w32) + 1u;
+        return TR_OK;
+    }
     if ((in.op[0] == 0x89 || in.op[0] == 0x8B) && in.has_modrm && in.mod != 3) {
         unsigned       gbase = 0, vreg;
         int64_t        d = in.disp;
@@ -1617,6 +1675,15 @@ tr_status tr_translate_function_img(const uint8_t *code, size_t code_len,
         case P_LD_LOCAL:
             if (!pushf(out, p->w32 ? a64_ldur_w(p->rd, p->rn, (int)p->delta)
                                    : a64_ldur(p->rd, p->rn, (int)p->delta)))
+                return TR_OVERFLOW;
+            break;
+        case P_ST_LOCAL_IMM:
+            /* The scratch register is X16, reserved as IP0 by the register mapping,
+             * and no other plan in a stack-store holds it across these two words. */
+            if (!emit_const_f_w(out, HOST_SCRATCH, p->const_val, p->w32))
+                return TR_OVERFLOW;
+            if (!pushf(out, p->w32 ? a64_stur_w(HOST_SCRATCH, p->rn, (int)p->delta)
+                                   : a64_stur(HOST_SCRATCH, p->rn, (int)p->delta)))
                 return TR_OVERFLOW;
             break;
         case P_CALL_IAT:
