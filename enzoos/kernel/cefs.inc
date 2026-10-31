@@ -9,6 +9,7 @@
 ; =============================================================================
 %ifndef CEFS_INC
 %define CEFS_INC
+%define API_PTRS 64                ; ponteiros api_alloc registrados por app
 
 section .ktext
 
@@ -150,6 +151,9 @@ app_launch:
         call cefs_get                   ; rax=ptr, rdx=size
         mov r14, rax
         mov r13, rdx
+        ; hardening: cabeçalho completo (64 bytes) antes de ler campos
+        cmp r13, 64
+        jb .badce
         cmp dword [r14], CE_MAGIC
         je .ce_ok
         cmp dword [r14], 0x315A4E45         ; "ENZ1"
@@ -196,8 +200,15 @@ app_launch:
         cmp dword [rax], 0x315A4E45         ; "ENZ1"?
         jne .not_enz
         call enz_build
+        test rax, rax
+        jz .badimp                           ; import não resolvido: aborta
 .not_enz:
         mov edx, [rax + CE_ENTRY]           ; relê: enz_build clobbra edx
+        ; hardening: entry precisa cair dentro da imagem carregada
+        cmp edx, 64
+        jb .badentry
+        cmp edx, r13d
+        jae .badentry
         add rax, rdx
         mov [rbx + A_ENTRY], rax
         ; nome do app (header +28)
@@ -296,6 +307,36 @@ app_launch:
         mov rdi, s_al_nm
         call k_log
         mov rax, -3
+        jmp .done
+.badentry:
+        push r15
+        mov rdi, s_al_be
+        call k_log
+        mov rdi, r15
+        call k_log
+        pop r15
+        mov dword [rbx + A_USED], 0
+        mov rdi, [img_ptr]
+        mov rsi, r13
+        add rsi, 4095
+        and rsi, -4096
+        call k_free_bytes
+        mov rax, -6
+        jmp .done
+.badimp:
+        push r15
+        mov rdi, s_al_bi
+        call k_log
+        mov rdi, r15
+        call k_log
+        pop r15
+        mov dword [rbx + A_USED], 0
+        mov rdi, [img_ptr]
+        mov rsi, r13
+        add rsi, 4095
+        and rsi, -4096
+        call k_free_bytes
+        mov rax, -7
         jmp .done
 .noslot:
         mov rdi, [img_ptr]
@@ -475,6 +516,16 @@ api_rect:                         ; edi=x, esi=y, edx=w, ecx=h, r8d=cor
 
 api_use_win:
         ; rax = janela do app atual; prepara gsurf e api_cw/api_ch
+        ; preserva os registrados de argumento das api_* (rdi..r11):
+        ; o corpo abaixo reescreve rdi/rsi/edx/ecx ao preparar a superfície
+        push rdi
+        push rsi
+        push rdx
+        push rcx
+        push r8
+        push r9
+        push r10
+        push r11
         push rbx
         mov eax, [cur_slot]
         cmp eax, 0
@@ -503,13 +554,31 @@ api_use_win:
         mov [api_ch], eax
         mov rax, rbx
         pop rbx
+        pop r11
+        pop r10
+        pop r9
+        pop r8
+        pop rcx
+        pop rdx
+        pop rsi
+        pop rdi
         ret
 .none:
         xor rax, rax
         pop rbx
+        pop r11
+        pop r10
+        pop r9
+        pop r8
+        pop rcx
+        pop rdx
+        pop rsi
+        pop rdi
         ret
 
 api_text:                         ; edi=x, esi=y, rdx=str, ecx=len, r8d=cor
+        test rdx, rdx               ; str NULL: ignora
+        jz .done
         call api_use_win
         test rax, rax
         jz .done
@@ -568,6 +637,7 @@ api_title:                        ; rdi=str
         jmp .cp
 .cd:
         mov byte [rbx + W_TITLE + 31], 0
+        mov edi, 1                     ; só o chrome: não apaga o conteúdo
         call wnd_render_chrome
         call wnd_damage
 .done:
@@ -638,10 +708,82 @@ api_invalidate:
         ret
 
 api_alloc:                        ; rdi=bytes -> rax=ptr
-        jmp k_alloc
+        ; validação básica de tamanho
+        test rdi, rdi
+        jz .zero
+        cmp rdi, 0x0FFFFFFF         ; >255 MB: recusa (nunca há contiguidade)
+        ja .zero
+        push rdi
+        push rsi
+        push rdx
+        push rcx
+        push r8
+        push r9
+        push r10
+        push r11
+        call k_alloc
+        test rax, rax
+        jz .out
+        ; registra a posse no slot atual (anéis de API_PTRS por app)
+        mov edx, [cur_slot]
+        cmp edx, 0
+        jl .out
+        cmp edx, MAX_APPS
+        jge .out
+        imul r8d, edx, API_PTRS
+        lea r9, [api_ptrs]
+        lea r9, [r9 + r8*8]
+        xor ecx, ecx
+.find:
+        cmp ecx, API_PTRS
+        jae .out                    ; anel cheio: ptr válido, sem registro
+        cmp qword [r9 + rcx*8], 0
+        je .reg
+        inc ecx
+        jmp .find
+.reg:
+        mov [r9 + rcx*8], rax
+.out:
+        pop r11
+        pop r10
+        pop r9
+        pop r8
+        pop rcx
+        pop rdx
+        pop rsi
+        pop rdi
+        ret
+.zero:
+        xor eax, eax
+        ret
 
 api_free:                         ; rdi=ptr, rsi=bytes
+        ; hardening: um app só libera o que alocou (registro por slot)
+        test rdi, rdi
+        jz .ok                     ; free(NULL): no-op
+        mov eax, [cur_slot]
+        cmp eax, 0
+        jl .go                     ; contexto do kernel: range-check no k_free_n
+        cmp eax, MAX_APPS
+        jge .rej
+        imul r8d, eax, API_PTRS
+        lea r9, [api_ptrs]
+        lea r9, [r9 + r8*8]
+        xor ecx, ecx
+.find:
+        cmp ecx, API_PTRS
+        jae .rej                   ; não é nosso: recusa
+        cmp [r9 + rcx*8], rdi
+        je .found
+        inc ecx
+        jmp .find
+.found:
+        mov qword [r9 + rcx*8], 0  ; remove do registro (anti double-free)
+.go:
         jmp k_free_bytes
+.rej:
+.ok:
+        ret
 
 api_sysinfo:                      ; rdi=buf (preenche 128 bytes)
         push rbx
@@ -821,6 +963,8 @@ api_round:                        ; edi=x, esi=y, edx=w, ecx=h, r8d=raio, r9d=co
         ret
 
 api_blend:                        ; edi=x, esi=y, edx=w, ecx=h, r8=src ARGB, r9d=passo
+        test r8, r8                 ; src NULL: ignora (hardening)
+        jz .d
         call api_use_win
         test rax, rax
         jz .d
@@ -947,6 +1091,7 @@ api_self:
 section .kdata
 cefs_base: dq 0
 cefs_data: dq 0
+s_al_bi: db "[app] import nao resolvido: ", 0
 ce_count:  dd 0
 ce_files:  times MAX_FILES * 40 db 0
 cur_slot:  dd -1
@@ -964,7 +1109,9 @@ s_al_nf:  db "[app] nao achado: ", 0
 s_al_bc:  db "[app] formato invalido: ", 0
 s_al_nm:  db "[app] sem memoria", 10, 0
 s_al_nw:  db "[app] janela nao criada", 10, 0
+s_al_be: db "[app] entry fora da imagem: ", 0
 s_disp_diag: db "[wm] disp tipo/param/slot:", 0
+s_zero: db "0", 0
 s_ext_ce:   db ".CE", 0
 s_ext_enz: db ".enz", 0
 tmp_w:    dd 480
@@ -1088,5 +1235,8 @@ n_swinfo: db "swap_info", 0
 n_swforce: db "swap_force", 0
 n_hpet:   db "hpet_ns", 0
 n_tone:   db "tone", 0
+
+; registro de posse dos api_alloc por app (hardening anti free-inválido)
+api_ptrs: times MAX_APPS*API_PTRS dq 0
 
 %endif

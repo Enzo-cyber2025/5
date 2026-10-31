@@ -301,6 +301,8 @@ k_exec:
         mov eax, [r12]
         cmp eax, CE_MAGIC
         je .do_ce
+        cmp eax, 0x315A4E45             ; "ENZ1" — app nativo: loader com
+        je .do_ce                       ; validacao de header/entry/imports
         cmp eax, 0x00905A4D             ; "MZ" + padding
         jne .chk_pe2
         jmp .do_pe

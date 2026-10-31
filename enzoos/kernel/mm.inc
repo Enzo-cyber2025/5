@@ -17,6 +17,8 @@ mark_used:
         push rcx
         push r8
         push r9
+        cmp rax, [heap_pages]         ; índice fora do heap -> ignora
+        jae mark_used_out
         mov r8, rax
         shr r8, 3
         mov r9, HEAP_START
@@ -26,6 +28,7 @@ mark_used:
         mov r8, 1
         shl r8, cl
         or [r9], r8b
+mark_used_out:
         pop r9
         pop r8
         pop rcx
@@ -35,6 +38,8 @@ mark_free:
         push rcx
         push r8
         push r9
+        cmp rax, [heap_pages]         ; índice fora do heap -> ignora
+        jae mark_free_out
         mov r8, rax
         shr r8, 3
         mov r9, HEAP_START
@@ -45,6 +50,7 @@ mark_free:
         shl r8, cl
         not r8
         and [r9], r8b
+mark_free_out:
         pop r9
         pop r8
         pop rcx
@@ -54,6 +60,8 @@ page_is_free:
         push rcx
         push r8
         push r9
+        cmp rax, [heap_pages]         ; fora do heap = "livre" (não toca)
+        jae page_is_free_yes
         mov r8, rax
         shr r8, 3
         mov r9, HEAP_START
@@ -65,6 +73,12 @@ page_is_free:
         test [r9], r8b
         setz al
         movzx rax, al
+        pop r9
+        pop r8
+        pop rcx
+        ret
+page_is_free_yes:
+        mov eax, 1
         pop r9
         pop r8
         pop rcx
@@ -210,6 +224,10 @@ k_alloc:
 .mark:
         mov rax, r15
         call mark_used
+        mov rdi, r15
+        shl rdi, 12
+        add rdi, HEAP_START
+        call sw_remap_page              ; PTE presente ao (re)alocar a página
         inc r15
         dec rbx
         jnz .mark
@@ -260,6 +278,9 @@ k_free_n:
         push r13
         cmp rdi, HEAP_START
         jb .done
+        mov rax, [heap_top]
+        cmp rdi, rax
+        jae .done                    ; ponteiro fora do heap: ignora
         mov r13, rdi
         add r13, 4095
         and r13, -4096               ; primeira página
@@ -267,6 +288,14 @@ k_free_n:
 .loop:
         test rbx, rbx
         jz .done
+        mov rax, r13
+        add rax, 4096
+        jc .done                     ; wraparound: para
+        cmp rax, HEAP_START
+        jb .done
+        mov rax, r13
+        cmp rax, [heap_top]
+        jae .done                    ; além do heap: para (não toca o resto)
         mov rdi, r13
         call sw_free_frame           ; desmapeia e devolve o frame da PTE
         add r13, 4096

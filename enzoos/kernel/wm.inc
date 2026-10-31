@@ -135,6 +135,7 @@ wnd_create:
         pop rsi
         pop rdi
         pop rax
+        xor edi, edi                   ; 0 = criação: pinta o fundo também
         call wnd_render_chrome
         mov edi, [rbx + W_X]
         mov esi, [rbx + W_Y]
@@ -198,10 +199,12 @@ wnd_focus:
         mov rbx, r12
         test rbx, rbx
         jz .no_old
+        mov edi, 1                     ; só o chrome: não apaga o conteúdo
         call wnd_render_chrome
         call wnd_damage
 .no_old:
         pop rbx
+        mov edi, 1                     ; só o chrome: não apaga o conteúdo
         call wnd_render_chrome
         call wnd_damage
 .already:
@@ -254,6 +257,9 @@ wnd_destroy:
 
 ; -----------------------------------------------------------------------------
 ; wnd_render_chrome: rbx = janela — pinta estrutura na própria janela
+; edi = 0: pinta também o fundo do conteúdo (janela recém-criada).
+; edi != 0: só o chrome (moldura/título) — preserva o que o app desenhou
+; (re-render em foco/api_title apagava o conteúdo da janela).
 ; -----------------------------------------------------------------------------
 wnd_render_chrome:
         push rbx
@@ -261,6 +267,7 @@ wnd_render_chrome:
         push r13
         push r14
         push r15
+        mov r15d, edi                   ; 0 = pintar fundo do conteúdo
         ; superfície = buffer da janela
         mov rdi, [rbx + W_BUF]
         mov esi, [rbx + W_W]
@@ -268,7 +275,9 @@ wnd_render_chrome:
         mov ecx, [rbx + W_W]
         shl ecx, 2
         call surf_set
-        ; fundo do conteúdo
+        ; fundo do conteúdo (apenas na criação da janela)
+        test r15d, r15d
+        jnz .nofill
         xor edi, edi
         mov esi, TITLE_H
         mov edx, [rbx + W_W]
@@ -276,6 +285,7 @@ wnd_render_chrome:
         sub ecx, TITLE_H
         mov r14d, COL_PANEL
         call surf_fill
+.nofill:
         ; barra de título em gradiente (nova renderização)
         xor edi, edi
         xor esi, esi
@@ -563,7 +573,7 @@ draw_taskbar:
 .tcol:
         call surf_text
         inc r12d
-        mov rbx, [rbx + W_NEXT]
+        mov rbx, [rbx + W_PREV]
         jmp .wloop
 .wdone:
         ; relógio

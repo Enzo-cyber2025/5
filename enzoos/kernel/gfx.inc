@@ -644,7 +644,7 @@ compose_if_dirty:
         call copy_region_desktop
         ; 1.5 ícones da área de trabalho
         call draw_icons
-        ; 2. janelas (de baixo para cima)
+        ; 2. janelas (de baixo para cima: wnd_bottom -> W_PREV -> ... -> wnd_top)
         mov rbx, [wnd_bottom]
 .win_loop:
         test rbx, rbx
@@ -679,7 +679,7 @@ compose_if_dirty:
         mov r9d, r14d
         call g2_win_blit
 .win_next:
-        mov rbx, [rbx + W_NEXT]
+        mov rbx, [rbx + W_PREV]
         jmp .win_loop
 .win_done:
         ; 3. modal

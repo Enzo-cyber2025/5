@@ -192,6 +192,32 @@ sw_pte:
         ret
 
 ; -----------------------------------------------------------------------------
+; sw_remap_page: rdi = endereço da página — garante PTE presente (identidade).
+; Chamado pelo k_alloc ao (re)alocar: uma página cuja PTE foi zerada por um
+; free antigo (ou por um swap-out descartado) ficava SEM mapeamento e a
+; primeira escrita gerava #PF fatal (sw_fault sem slot nao recupera).
+; -----------------------------------------------------------------------------
+sw_remap_page:
+        push rax
+        push rdx
+        push rcx
+        mov rax, rdi
+        call sw_pte
+        test rax, rax
+        jz .out
+        test byte [rax], 1
+        jnz .out                        ; já presente
+        mov rdx, rdi
+        or rdx, 3                       ; identidade RW|P
+        mov [rax], rdx
+        invlpg [rdi]
+.out:
+        pop rcx
+        pop rdx
+        pop rax
+        ret
+
+; -----------------------------------------------------------------------------
 ; sw_track: rdi = início, rsi = bytes, edx = dono (slot do app)
 ;           marca as páginas como candidatas à remoção
 ; -----------------------------------------------------------------------------
@@ -487,20 +513,32 @@ sw_reclaim:
 ; -----------------------------------------------------------------------------
 ; sw_free_frame: rdi = endereço virtual da página — libera o frame pela PTE
 ;               (chamado pelo k_free quando o swap está ativo)
+; FIX: (1) página já livre no bitmap = double-free -> ignora (um free
+;          espúrio/duplicado desmapeava página viva e o próximo acesso
+;          à sombra gerava #PF fatal — panic com layout dependente);
+;      (2) página presente NÃO é mais desmapeada: o frame é devolvido
+;          pelo bitmap; o mapeamento identidade fica (k_alloc remapeia
+;          na realocação via sw_remap_page).
 ; -----------------------------------------------------------------------------
 sw_free_frame:
         push rbx
         mov rbx, rdi
-        mov rax, rdi
+        ; double-free? página já livre no bitmap -> nada a fazer
+        mov rax, rbx
+        sub rax, HEAP_START
+        shr rax, 12
+        call page_is_free
+        test rax, rax
+        jnz .out
+        mov rax, rbx
         call sw_pte
         test rax, rax
         jz .plain
         mov rdx, [rax]
         test rdx, 1
         jz .swapped                         ; não-presente: frame já devolvido
+        ; frame presente: devolve pelo bitmap, MANTÉM o mapeamento
         and rdx, -4096
-        mov qword [rax], 0
-        invlpg [rbx]
         mov rax, rdx
         sub rax, HEAP_START
         shr rax, 12
