@@ -1147,7 +1147,60 @@ chama uma função opaca com oito argumentos, o que força o compilador a carreg
 X0..X7 — e RBX é X3 — tornando a destruição tão certa quanto C portável permite;
 mesmo assim a garantia vem dos words, não da sorte.
 
-Suite do projeto: **982**.
+Suite do projeto: **984**.
+
+### Um programa guest inteiro
+
+Cada teste de execução até aqui exercitava **uma forma de instrução isolada**. O
+teste seguinte monta a sequência que o ponto de entrada de um pequeno programa de
+console do Windows realmente executa, traduz e roda:
+
+```
+h  = GetStdHandle(STD_OUTPUT_HANDLE);
+ok = WriteFile(h, msg, len, NULL);
+ExitProcess(0);
+return ok;
+```
+
+Nove instruções guest, três chamadas de importação, cada uma atravessando a ponte
+de ABI até um shim em C. Exercita as camadas **juntas**: o decodificador, o
+tradutor, o embaralhamento de argumentos da ponte, a conversão de um ponteiro guest
+em ponteiro host dentro do shim e a preservação de RBX — que o programa usa para
+carregar o resultado de `WriteFile` através da chamada a `ExitProcess`, então uma
+ponte que perdesse RBX devolveria 0 em vez de 1.
+
+**A mensagem que ele escreve é a asserção.** O shim de `WriteFile` emite um texto
+que sai de um buffer que o **guest** endereçou com um `lea` RIP-relativo, e o shim
+roda no processo filho do fork — nenhum código C do processo pai produz aquela
+string. Ela só pode aparecer se o código traduzido tiver rodado. Os dois jobs
+aarch64 agora fazem `grep` nela, então um job verde significa que um programa x86-64
+inteiro foi traduzido para AArch64 e chamou três APIs do Windows através da ponte.
+
+Duas coisas da convenção só apareceram **escrevendo os shims**, não foram
+antecipadas:
+
+1. **Uma escrita de 32 bits em ECX zera a metade alta de RCX.** Então
+   `STD_OUTPUT_HANDLE` (`-11`) chega como `0x00000000FFFFFFF5`, e um shim que leia o
+   parâmetro como inteiro de 64 bits com sinal vê `4294967285` e recusa o pedido.
+   **Todo constante negativo quebra do mesmo jeito** — o shim precisa ler o
+   parâmetro como `(int32_t)(uint32_t)` quando a convenção do Windows o declara de
+   32 bits.
+2. **Um ponteiro guest entregue a um shim é um VA guest.** Passá-lo direto ao
+   `fwrite` entregaria ao host um endereço do espaço do guest, o que ou falha ou,
+   pior, acerta uma página do host. O shim faz o mesmo que o código emitido faz para
+   um acesso de memória: confere contra o tamanho da imagem e soma a base mapeada. É
+   assim que se descobre o que a convenção exige na prática — escrevendo uma função
+   que a obedeça.
+
+`ExitProcess` é registrado e **retorna**, em vez de encerrar. O real nunca retorna,
+e honrar isso de dentro de código gerado exigiria um `longjmp` para fora dele ou um
+processo de verdade a terminar, enquanto o harness ainda precisa coletar o valor de
+retorno. Está dito no shim em vez de deixado parecendo fiel.
+
+`TR_MAX_WORDS` foi de 64 para 256 (e `TRAMP_MAX` de 96 para 256): a ponte custa 16
+palavras por chamada, então três chamadas de importação precisam de ~80 palavras
+para um corpo de nove instruções. **64 não comportava um programa que fizesse
+qualquer coisa.** Nenhum teste dependia de `TR_OVERFLOW`.
 
 ### Não feito
 
