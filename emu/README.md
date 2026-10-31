@@ -1147,7 +1147,7 @@ chama uma função opaca com oito argumentos, o que força o compilador a carreg
 X0..X7 — e RBX é X3 — tornando a destruição tão certa quanto C portável permite;
 mesmo assim a garantia vem dos words, não da sorte.
 
-Suite do projeto: **989**.
+Suite do projeto: **994**.
 
 ### Um programa guest inteiro
 
@@ -1256,6 +1256,86 @@ de `abi_target` mudou quando o código cresceu, e um endereço que antes era par
 passou a ser ímpar. **O teste de controle só estava passando por sorte de
 alinhamento.** Um teste que depende de um valor que o linkador escolhe não está
 testando o que descreve.
+
+### Um executável Windows real roda pela pré-tradução
+
+Um `.exe` de código aberto — `emu/guest/hello.c`, compilado no CI pelo mingw-w64 num
+runner x86-64, com cabeçalhos PE reais, seções reais e uma tabela de importação real
+para `kernel32` — passou pelo caminho inteiro num runner ARM64: mapeado, varrido,
+pré-traduzido, persistido, recarregado, executado.
+
+```
+functions pre-translated:  1  (100.00% of attempted)
+functions refused:         0
+IAT slots filled:          2      (GetStdHandle, WriteFile)
+REAL PE RAN marker count:  1
+```
+
+O ponto de entrada que o compilador gerou:
+
+```
+sub    $0x38,%rsp
+mov    $0xfffffff5,%ecx          STD_OUTPUT_HANDLE
+call   *0x2031(%rip)             __imp_GetStdHandle
+mov    %rax,%rcx
+movq   $0x0,0x20(%rsp)           o 5º argumento, na pilha
+mov    $0x0,%r9d
+mov    $0xdf,%r8d                223 bytes
+lea    0xfd2(%rip),%rdx          a mensagem, em .rdata
+call   *0x2014(%rip)             __imp_WriteFile
+mov    $0x0,%eax
+add    $0x38,%rsp
+ret
+```
+
+Tudo isso traduz. A mensagem no log é escrita pelo shim de `WriteFile` a partir de um
+buffer que o **guest** endereçou, dentro do processo filho do fork — nada no processo
+pai produz aquela string.
+
+Chegar até aqui exigiu quatro coisas, e três foram bugs que só a medição mostrou.
+
+**A célula de indireção.** Resolver uma importação gravando o endereço do shim no
+código emitido quebraria o invariante em que o cache persistente se apoia: um endereço
+absoluto do host amarra a tradução ao layout de um processo, e recarregar as mesmas
+palavras em outro processo faria o `BLR` saltar para um lugar que não é mais o shim.
+Então `TR_ABI_INDIRECT` (bit 62; `TR_ABI_HOST` é o 63) faz o resolvedor devolver o
+**RVA do slot do IAT**, e o código emitido materializa o RVA, soma X19, carrega os 8
+bytes que o loader colocou lá e salta. **Nenhum endereço absoluto do host entra em
+nenhuma palavra.** É como o próprio Windows resolve: o IAT é uma célula que o loader
+preenche.
+
+**`mov imm32` com destino em memória.** O `movq $0x0,0x20(%rsp)` é como um compilador
+real passa um argumento de pilha. AArch64 não tem store-immediate, então a constante é
+materializada em X16 e um `STUR` segue. É o blocker `C7`×239 do histograma do Luanti.
+
+**Um RVA só é um deslocamento numa imagem mapeada.** Duas execuções preencheram zero
+slots com todas as entradas corretas. `shim_fill_iat` indexava o buffer pelo `iat_rva`
+e limitava esse RVA pelo tamanho do buffer — certo para uma imagem mapeada, onde o
+loader coloca cada seção no seu endereço virtual, e **errado para o buffer do
+arquivo**, onde o mesmo RVA mora em `PointerToRawData`. A verificação comparava
+`0x3040` com o tamanho do `hello.exe` e rejeitava um slot alcançável depois de mapeado.
+
+**Um resolvedor não pode depender de um mapeamento que o sweep não tem.** Com o buffer
+opcional, o registro do mapeamento ficou dentro do ramo que exige imagem — e um sweep
+registra slots a partir do arquivo, sem imagem nenhuma. `shim_nmaps` era zero, o laço
+externo nunca rodava, e cada slot de uma lista correta e completa resolvia para 0. A
+base agora é guardada **por slot**. E antes disso tudo, `pe_load` nunca era chamado no
+caminho do sweep, então o struct estava zerado e `num_dlls` era 0.
+
+O que separou as três falhas foi imprimir as **entradas** em vez do resultado:
+`num_dlls`, o `iat_rva`, os dois nomes. Sem isso, "zero slots" é consistente com um
+cabeçalho não parsado, uma caminhada de importação incompleta, uma tabela de shims que
+não casa os nomes e um `ImageBase` zero — quatro causas, quatro correções diferentes, a
+mesma linha de saída.
+
+Limitações, medidas: o shim de `WriteFile` toma `lpOverlapped` como NULL, porque
+x86-64 passa o 5º argumento em diante na pilha do guest e a ponte marshala só quatro.
+`GetStdHandle` lê o parâmetro como `(int32_t)(uint32_t)`, porque uma escrita de 32 bits
+zera a metade alta e `-11` chega como `0x00000000FFFFFFF5`. `ExitProcess` é registrado
+e retorna. **Três** funções do Win32 existem; um aplicativo real precisa de centenas. E
+este PE tem **uma** função, que só chama importações — `call rel32` continua recusado,
+então qualquer função que chame outra do mesmo módulo ainda não traduz. É por isso que
+o Luanti está em 8,56% e não em 100%.
 
 ### Não feito
 

@@ -1110,6 +1110,24 @@ jobs:
           echo "--- refusal reasons ---"
           grep -aE "refused:|reason_hist|import-unresolved|unsupported-opcode" /tmp/real.log | head -8
           exit 0
+      - name: Assert the real PE ran through the pre-translation path
+        if: always()
+        run: |
+          set +e
+          # The marker is written by the WriteFile shim out of a buffer the guest
+          # addressed with a RIP-relative lea, and the shim runs in the forked child,
+          # so nothing in the parent process produces that string. It can only appear
+          # if a real compiler-produced Windows executable was mapped, swept,
+          # pre-translated, persisted, reloaded and executed, reaching a Win32 API
+          # through the host ABI bridge. This job was a diagnostic that exited 0 while
+          # that was unknown; now that it is known, a zero is a regression.
+          n=$(grep -ac "REAL PE RAN" /tmp/real.log)
+          t=$(grep -aoE "functions pre-translated: +[0-9]+" /tmp/real.log | head -1)
+          if [ "${n:-0}" -lt 1 ]; then
+            echo "::error title=real-exe-did-not-run::marker count ${n:-0}; ${t:-no count}; $(grep -aE 'IAT slots filled|refused:|resolver installed' /tmp/real.log | head -4 | tr '\n' '|')"
+            exit 1
+          fi
+          echo "the real open-source PE ran: marker count $n, $t"
       - name: Report
         if: always()
         run: |
