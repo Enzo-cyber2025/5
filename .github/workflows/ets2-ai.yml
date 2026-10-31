@@ -3673,12 +3673,42 @@ jobs:
             else if (lg) { fprintf(lg, "[%u] tap %s\n", GetTickCount(), what); fflush(lg); }
             Sleep(ms);
           }
-          static void foca(void) {
+          /* v96: foco FORCADO e VERIFICADO — desde v88 o log dizia "foco
+           * OK" so porque FindWindow achou a janela, mas SetForegroundWindow
+           * de processo background FALHA silenciosamente no Windows: se o
+           * jogo nunca foi foreground, DirectInput perde a aquisicao e TODO
+           * o input (teclado E mouse) foi pro vazio. AttachThreadInput e o
+           * contorno classico; e o foreground e CONFERIDO com
+           * GetForegroundWindow(). */
+          static int foca_forte(void) {
             HWND w = FindWindowW(NULL, L"Euro Truck Simulator 2");
-            if (w) {
-              SetForegroundWindow(w); SetFocus(w);
-              if (lg) { fprintf(lg, "[%u] foco OK hwnd=%p\n", GetTickCount(), (void*)w); fflush(lg); }
-            } else if (lg) { fprintf(lg, "[%u] janela NAO achada\n", GetTickCount()); fflush(lg); }
+            HWND fg;
+            DWORD wtid, mtid, ftid;
+            int i;
+            if (!w) { if (lg) { fprintf(lg, "[%u] foco: janela AUSENTE\n", GetTickCount()); fflush(lg); } return 0; }
+            for (i = 0; i < 6; i++) {
+              fg = GetForegroundWindow();
+              if (fg == w) { if (lg) { fprintf(lg, "[%u] foco CONFIRMADO fg==%p\n", GetTickCount(), (void*)w); fflush(lg); } return 1; }
+              wtid = GetWindowThreadProcessId(w, NULL);
+              mtid = GetCurrentThreadId();
+              AttachThreadInput(mtid, wtid, TRUE);
+              if (fg) {
+                ftid = GetWindowThreadProcessId(fg, NULL);
+                if (ftid != mtid) AttachThreadInput(mtid, ftid, TRUE);
+              }
+              BringWindowToTop(w);
+              SetForegroundWindow(w);
+              SetFocus(w);
+              if (fg) {
+                ftid = GetWindowThreadProcessId(fg, NULL);
+                if (ftid != mtid) AttachThreadInput(mtid, ftid, FALSE);
+              }
+              AttachThreadInput(mtid, wtid, FALSE);
+              Sleep(800);
+            }
+            fg = GetForegroundWindow();
+            if (lg) { fprintf(lg, "[%u] foco FINAL fg=%p alvo=%p -> %s\n", GetTickCount(), (void*)fg, (void*)w, fg == w ? "OK" : "FALHOU"); fflush(lg); }
+            return fg == w;
           }
           /* v92: clique de mouse REAL (SendInput) — coords em tela 1024x768
            * calibradas pelas shots da v90: o jogo abre na tela de ATIVACAO
@@ -3789,30 +3819,28 @@ jobs:
           int main(void) {
             int i, segunda, nantes, ndepois;
             FILE *fl;
-            lg = fopen("menuwalk.log", "w");
-            if (lg) { fprintf(lg, "[%u] inicio v95\n", GetTickCount()); fflush(lg); }
-            /* flag = clique no demo CONFIRMADO na 1a execucao (a v92 criava a
-             * flag incondicionalmente e a 2a vez pulava o clique a toa). */
             segunda = (GetFileAttributesA("mw-demo-ok.flag") != INVALID_FILE_ATTRIBUTES);
+            lg = fopen(segunda ? "menuwalk2.log" : "menuwalk.log", "w");
+            if (lg) { fprintf(lg, "[%u] inicio v96\n", GetTickCount()); fflush(lg); }
             if (segunda) shotpre = "shot-mw2-";
             if (lg) { fprintf(lg, "[%u] modo %s\n", GetTickCount(), segunda ? "DRIVE (2a vez)" : "FULL-WALK (1a vez)"); fflush(lg); }
             /* espera a JANELA do jogo existir (ate 60 s) */
             for (i = 0; i < 30 && !FindWindowW(NULL, L"Euro Truck Simulator 2"); i++) Sleep(2000);
             if (lg) { fprintf(lg, "[%u] janela %s\n", GetTickCount(), FindWindowW(NULL, L"Euro Truck Simulator 2") ? "OK" : "AUSENTE"); fflush(lg); }
-            foca();
+            foca_forte();
             if (segunda) {
               /* jogo reaberto com profile: menu principal -> DRIVE -> acelerar.
                * v94: espera fixa 90 s (o load demora ~60 s e o poll generico
                * confundia com o splash). */
               Sleep(90000);
-              foca();
+              foca_forte();
               shot("menu2");
-              foca();
+              foca_forte();
               tap(0x1C, 8000, "Enter (DRIVE)");
               shot("drive1");
               tap(0x1C, 8000, "Enter (confirma)");
               shot("drive2");
-              foca();
+              foca_forte();
               for (i = 0; i < 240; i++) {
                 tap(0x11, 500, "W");
                 if (i == 10 || i == 30 || i == 60 || i == 120 || i == 180) shot("dirigindo");
@@ -3821,62 +3849,79 @@ jobs:
               if (lg) { fprintf(lg, "[%u] fim (2a)\n", GetTickCount()); fflush(lg); fclose(lg); }
               return 0;
             }
-            /* -------- 1a execucao: ESPERA a tela de ATIVACAO e clica no demo --------
-             * v92: clique fixo t=61 s, painel nasce t=55-70 s -> errou.
-             * v93: poll na regiao do botao — mas o SPLASH tambem tem arte
-             * brilhante ali (e no titulo!) e o poll disparou em t=9 s.
-             * v94: assinatura = LINHA DAS CAIXAS DA CHAVE (123 px @170 na
-             * ativacao, 0 no splash), estavel em 2 polls seguidos (3 s). */
-            for (i = 0; i < 50; i++) {
-              if (pronto_ativacao()) {
-                Sleep(3000);
-                if (pronto_ativacao()) break;
-              }
-              Sleep(2000);
+            /* -------- 1a execucao: ESPERA o fade-in COMPLETO e clica no demo --------
+             * v95 revelou: a UI do jogo (a ~0,2 fps no lavapipe) FADE-IN das
+             * caixas da chave durante 3-4 MINUTOS (0 em t=60 s, 123 em
+             * t~180-240 s). O clique da v95 em t~107 s pegou a tela pela
+             * metade — e a verificacao "caixas<60" deu falso-positivo porque
+             * as caixas AINDA NAO EXISTIAM. Agora: espera caixas >= 100
+             * (render completo = UI processando frames) antes de tocar em
+             * qualquer coisa. */
+            for (i = 0; i < 100; i++) {
+              if (linha_chave_n() >= 100) break;
+              Sleep(5000);
             }
-            if (lg) { fprintf(lg, "[%u] tela ativacao %s (poll %d, linha chave=%d)\n", GetTickCount(), i < 50 ? "DETECTADA" : "TIMEOUT", i, linha_chave_n()); fflush(lg); }
-            foca();
+            if (lg) { fprintf(lg, "[%u] fade-in caixas %s (poll %d, n=%d)\n", GetTickCount(), i < 100 ? "COMPLETO" : "INCOMPLETO/TIMEOUT", i, linha_chave_n()); fflush(lg); }
+            /* v96: foco real + VERIFICADO antes de qualquer input */
+            foca_forte();
             shot("ativacao");
+            /* v96: WIGGLE do cursor — 2 shots que provam (ou nao) que o mouse
+             * chega ao jogo: o cursor RENDERIZADO pelo jogo tem que seguir. */
+            SetCursorPos(420, 330);
+            Sleep(1500);
+            shot("cursor-a");
+            SetCursorPos(641, 521);
+            Sleep(1500);
+            shot("cursor-b");
             nantes = linha_chave_n();
             if (lg) { fprintf(lg, "[%u] ativacao: linha chave=%d px\n", GetTickCount(), nantes); fflush(lg); }
-            /* clique + verificacao: reclica enquanto a linha das caixas
-             * persistir (ate 3 cliques). Tela que mudou = caixas sumiram. */
-            for (i = 0; i < 3; i++) {
-              clica(641, 521, 8000, "Run in Demo Mode (botao rodape direito)");
-              shot(i ? "demo-reclick" : "demo-clicado");
+            /* clique + verificacao CORRETA: so ha "mudanca" se as caixas
+             * EXISTIAM antes (v95 criou flag com caixas 0->0). Tela que
+             * mudou = caixas ou titulo somem. */
+            if (nantes >= 100) {
+              for (i = 0; i < 3; i++) {
+                foca_forte();
+                clica(641, 521, 10000, "Run in Demo Mode (botao rodape direito)");
+                shot(i ? "demo-reclick" : "demo-clicado");
+                ndepois = linha_chave_n();
+                if (lg) { fprintf(lg, "[%u] clique %d: linha chave %d -> %d\n", GetTickCount(), i + 1, nantes, ndepois); fflush(lg); }
+                if (ndepois < 60) break;
+              }
+            } else if (lg) { fprintf(lg, "[%u] caixas nunca completaram (%d) — clique best-effort unico\n", GetTickCount(), nantes); fflush(lg); }
+            if (nantes < 100) {
+              clica(641, 521, 10000, "best-effort demo");
+              shot("demo-besteffort");
               ndepois = linha_chave_n();
-              if (lg) { fprintf(lg, "[%u] clique %d: linha chave %d -> %d\n", GetTickCount(), i + 1, nantes, ndepois); fflush(lg); }
-              if (ndepois < 60) break;
             }
             tap(0x1C, 5000, "Enter (confirmar modo demo, se dialogo)");
             shot("demo-confirm");
             /* flag so se a tela de ativacao realmente sumiu */
-            if (ndepois < 60) {
+            if (nantes >= 100 && ndepois < 60) {
               fl = fopen("mw-demo-ok.flag", "w");
               if (fl) { fputs("demo ok\n", fl); fclose(fl); }
               if (lg) { fprintf(lg, "[%u] DEMO PARECE ATIVO — flag criada\n", GetTickCount()); fflush(lg); }
-            } else if (lg) { fprintf(lg, "[%u] demo NAO mudou a tela apos 3 cliques\n", GetTickCount()); fflush(lg); }
+            } else if (lg) { fprintf(lg, "[%u] demo NAO mudou a tela (nantes=%d ndepois=%d)\n", GetTickCount(), nantes, ndepois); fflush(lg); }
             /* wizard de criacao de profile: nickname "AI" */
-            foca();
+            foca_forte();
             tap(0x1C, 8000, "Enter-1 (tela inicial pos-demo)");
             shot("pos-enter1");
             tap(0x1E, 300, "A");
             tap(0x17, 800, "I");
             shot("nickname-AI");
-            tap(0x1C, 10000, "Enter-2 (submeter nome)");
+            tap(0x1C, 15000, "Enter-2 (submeter nome)");
             shot("pos-nome");
-            tap(0x1C, 10000, "Enter-3 (confirmar)");
+            tap(0x1C, 15000, "Enter-3 (confirmar)");
             shot("pos-confirm");
-            tap(0x1C, 10000, "Enter-4 (controle/tutorial)");
+            tap(0x1C, 15000, "Enter-4 (controle/tutorial)");
             shot("pos-controle");
             tap(0x50, 2000, "Down");
             tap(0x1C, 10000, "Enter-5");
             shot("pos-enter5");
             tap(0x1C, 10000, "Enter-6");
             shot("pos-enter6");
-            tap(0x1C, 10000, "Enter-7 (menu principal?)");
+            tap(0x1C, 15000, "Enter-7 (menu principal?)");
             shot("pos-enter7");
-            foca();
+            foca_forte();
             for (i = 0; i < 240; i++) {
               tap(0x11, 500, "W");
               if (i == 10 || i == 30 || i == 60 || i == 120 || i == 180) shot("dirigindo");
@@ -4361,6 +4406,7 @@ jobs:
           cp sobe-trace.log "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp dxvk-log-*.txt "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp vkhib-*.out vkhib-*.err hib-*.log mesa253-hib.log vulkanrt-x.log menuwalk.log "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
+          cp menuwalk2.log "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp shot-hib-*.jpg "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp shot-mw*.jpg "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp shot-drv-*.jpg "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
