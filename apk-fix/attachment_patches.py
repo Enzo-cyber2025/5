@@ -1,4 +1,5 @@
 """Hooks into the original activity, preserving its native generation lifecycle."""
+import re
 from unified_mobile import replace_method
 
 
@@ -35,6 +36,25 @@ def patch_attachments(app):
     start=s.index('.method protected onResume()V');end=s.index('.end method',start)
     part=s[start:end].replace('    return-void','    invoke-static {p0}, Lcom/ggufchat/app/Attachments;->resume(Landroid/app/Activity;)V\n    return-void')
     p.write_text(s[:start]+part+s[end:])
+    permission_signature='(I[Ljava/lang/String;[I)V'
+    methods=re.findall(r'(?ms)^\.method [^\n]*onRequestPermissionsResult'+re.escape(permission_signature)+r'\n.*?^\.end method',s)
+    if methods:
+        assert len(methods)==1
+        block=methods[0]
+        assert 'TermuxBridge;->permissionResult' not in block
+        patched=block.replace('    return-void','    invoke-static {p0, p1, p2, p3}, Lcom/ggufchat/app/TermuxBridge;->permissionResult(Landroid/app/Activity;I[Ljava/lang/String;[I)V\n    return-void')
+        assert patched!=block
+        s=s.replace(block,patched)
+    else:
+        s+='''
+.method public onRequestPermissionsResult(I[Ljava/lang/String;[I)V
+    .locals 0
+    invoke-super {p0, p1, p2, p3}, Landroid/app/Activity;->onRequestPermissionsResult(I[Ljava/lang/String;[I)V
+    invoke-static {p0, p1, p2, p3}, Lcom/ggufchat/app/TermuxBridge;->permissionResult(Landroid/app/Activity;I[Ljava/lang/String;[I)V
+    return-void
+.end method
+'''
+    p.write_text(s)
     p=app/'ChatStore.smali';s=p.read_text()
     start=s.index('.method public static delete(');end=s.index('.end method',start)
     part=s[start:end];marker='    .line 88\n    return-void'

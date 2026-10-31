@@ -33,8 +33,9 @@ def test_private_provider_and_honest_foreground_compute_manifest():
     generation=app.find('service');original_generation=before.find('application/service')
     assert generation.get(ns+'foregroundServiceType') in ('0x40000000','1073741824')
     generation.set(ns+'foregroundServiceType',original_generation.get(ns+'foregroundServiceType'));generation.remove(generation.find('property'))
-    permission=next(x for x in after.findall('uses-permission') if x.get(ns+'name')=='android.permission.FOREGROUND_SERVICE_SPECIAL_USE')
-    after.remove(permission)
+    for permission_name in ('android.permission.FOREGROUND_SERVICE_SPECIAL_USE','com.termux.permission.RUN_COMMAND'):
+        permission=next(x for x in after.findall('uses-permission') if x.get(ns+'name')==permission_name)
+        after.remove(permission)
     assert etree.tostring(before)==etree.tostring(after)
     with pytest.raises(ValueError,match='already present'):attachment_manifest(attachment_manifest(original))
 

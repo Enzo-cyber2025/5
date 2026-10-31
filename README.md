@@ -2,9 +2,9 @@
 
 A camada-fonte de pesquisa web está sendo reforçada para trazer resultados e
 citações reais e falhar de forma segura quando a rede não responder. A nova logo
-GGUFTX também entra no build, nas cinco densidades Android. **Ainda não há APK
-GGUFTX compilado/validado.** Termux embutido, execução irrestrita, contexto ou
-tokens infinitos e aceleração garantida de 50% não são alegados nem incluídos:
+GGUFTX também entra no build, nas cinco densidades Android. **Ainda não há APK GGUFTX compilado/validado.** Há hand-off opt-in para Termux
+externo; o runtime Termux não é embutido. Execução irrestrita, contexto ou tokens
+infinitos e aceleração garantida de 50% não são alegados nem incluídos:
 veja [escopo e limites](docs/GGUFTX.md).
 
 ---

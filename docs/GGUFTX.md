@@ -37,12 +37,14 @@ uma prova de aceitação para essa mudança.
 
 ## Limites e segurança
 
-- **Termux não foi embutido.** Termux é um ambiente/aplicativo separado; incluí-lo
-  exige revisar licenças, distribuição, integração de intents e permissões. Dar à
-  IA execução irrestrita de comandos no aparelho também pode apagar dados, expor
-  credenciais ou instalar software. Uma integração futura deve ser opt-in, mostrar
-  o comando e pedir confirmação humana antes de executar; não se habilita execução
-  arbitrária silenciosa.
+- **Termux não foi embutido como runtime.** Há agora um hand-off opcional para o
+  aplicativo Termux instalado separadamente: o botão lê um bloco `bash`/`sh` da
+  última resposta, mostra o comando completo e só o envia ao Termux após confirmação
+  explícita. Requer Termux com `RUN_COMMAND`/“Allow external apps” habilitado; a
+  saída fica no próprio Termux e não é devolvida automaticamente à IA. O hand-off
+  ainda precisa de teste em Android com Termux instalado e a permissão concedida.
+  A execução arbitrária silenciosa continua desativada: comandos podem apagar
+  dados, expor credenciais ou instalar software.
 - **Contexto e tokens não podem ser ilimitados.** São limitados pela arquitetura
   do modelo, pelo arquivo GGUF, pela memória/VRAM e pelo próprio Android. Remover
   as verificações pode causar OOM, travamentos ou perda de dados. Os limites

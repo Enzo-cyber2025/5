@@ -40,6 +40,7 @@ public final class CompactUi {
         LinearLayout row = (LinearLayout)tools.getChildAt(0);
         ArrayList<Button> buttons = new ArrayList<>();
         buttons.add(SystemPrompts.chatButton(activity));
+        buttons.add(TermuxBridge.chatButton(activity));
         buttons.add(thinking); buttons.add(search);
         for (int i=0; i<row.getChildCount(); i++)
             if (row.getChildAt(i) instanceof Button) buttons.add((Button)row.getChildAt(i));
