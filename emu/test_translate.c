@@ -1612,7 +1612,7 @@ static size_t build_trampoline(uint32_t *prog, uint64_t arg, uint64_t gtop,
     return n + body_n;
 }
 
-#define TRAMP_MAX 96u
+#define TRAMP_MAX 256u   /* three bridged import calls plus the wrapper do not fit in 96 */
 
 static int run_guest(const char *what, const uint8_t *g, size_t glen,
                      const gs_arena *a, uint64_t arg, uint64_t *result,
@@ -3181,6 +3181,228 @@ static void test_host_abi_bridge(void)
 #endif
 }
 
+/* ---------------------------------------------------------------------------
+ * A complete guest program, translated and run.
+ *
+ * This is not a unit test of one instruction. It is the sequence a small Windows
+ * console program's entry point actually performs:
+ *
+ *     h = GetStdHandle(STD_OUTPUT_HANDLE);
+ *     ok = WriteFile(h, msg, len, NULL);
+ *     ExitProcess(0);
+ *     return ok;
+ *
+ * assembled here as x86-64, translated to AArch64, and executed. The three calls
+ * cross the host ABI bridge into C shims, so the message below reaches stdout only
+ * if every layer held: the decoder, the translator, the bridge's argument shuffle,
+ * the shim's guest-pointer translation, and the bridge's preservation of RBX, which
+ * this program uses to carry WriteFile's result across the ExitProcess call.
+ *
+ * That is why the message is the assertion. No C code in the parent process writes
+ * it. It can only appear if the translated guest code ran.
+ * ------------------------------------------------------------------------- */
+#define GP_IMG_VA     0x140000000ULL
+#define GP_CODE_RVA   0x1000u
+#define GP_IAT_RVA    0x2000u
+#define GP_MSG_RVA    0x2100u
+#define GP_IMG_SZ     0x3000u
+#define GP_STD_HANDLE 7u          /* an opaque token, not a real descriptor */
+
+static uint8_t  gp_img[GP_IMG_SZ];
+static int32_t  gp_last_std = 0;
+static uint32_t gp_wrote    = 0;
+static uint32_t gp_exit     = 0;
+static int      gp_exited   = 0;
+
+/* A guest pointer is a guest VA. The shim has to do what the emitted bounds check
+ * does for a load: prove it falls inside the image, then add the host base. Passing
+ * it straight to fwrite would hand the host an address from the guest's space. */
+static const uint8_t *gp_guest_ptr(uint64_t va, uint64_t need)
+{
+    if (need == 0 || need > GP_IMG_SZ) return NULL;
+    if (va < GP_IMG_VA || va - GP_IMG_VA > GP_IMG_SZ - need) return NULL;
+    return gp_img + (va - GP_IMG_VA);
+}
+
+static uint64_t shim_GetStdHandle(uint64_t nStdHandle)
+{
+    /* The guest wrote ECX, and x86-64 zero-extends a 32-bit write into the full
+     * register, so -11 arrives as 0x00000000FFFFFFF5. Reading it as a 64-bit
+     * signed value would see 4294967285 and refuse the request. The real API takes
+     * a DWORD, so this reads it as one - a detail of the convention that is easy to
+     * miss and silently breaks every negative constant. */
+    gp_last_std = (int32_t)(uint32_t)nStdHandle;
+    return (gp_last_std == -11) ? GP_STD_HANDLE : 0u;
+}
+
+static uint64_t shim_WriteFile(uint64_t hFile, uint64_t lpBuffer,
+                               uint64_t nBytes, uint64_t lpWritten)
+{
+    const uint8_t *p = gp_guest_ptr(lpBuffer, nBytes);
+    if (hFile != GP_STD_HANDLE || !p) return 0;            /* FALSE */
+    fwrite(p, 1, (size_t)nBytes, stdout);
+    fflush(stdout);
+    if (lpWritten) {
+        uint8_t *w = (uint8_t *)gp_guest_ptr(lpWritten, 4u);
+        if (!w) return 0;
+        w[0] = (uint8_t)(nBytes);       w[1] = (uint8_t)(nBytes >> 8);
+        w[2] = (uint8_t)(nBytes >> 16); w[3] = (uint8_t)(nBytes >> 24);
+    }
+    gp_wrote = (uint32_t)nBytes;
+    return 1;                                              /* TRUE */
+}
+
+static uint64_t shim_ExitProcess(uint64_t code)
+{
+    gp_exit = (uint32_t)code;
+    gp_exited = 1;
+    /* Deliberately does NOT terminate. A real ExitProcess never returns, and
+     * honouring that from inside generated code needs either a longjmp out of it or
+     * an actual process to end - the harness still has to collect the return value.
+     * Recorded and returned, and stated here rather than left to look faithful. */
+    return 0;
+}
+
+static uint64_t gp_resolve(uint64_t iat_va, void *user)
+{
+    (void)user;
+    if (iat_va == GP_IMG_VA + GP_IAT_RVA + 0u)
+        return (uint64_t)(uintptr_t)&shim_GetStdHandle | TR_ABI_HOST;
+    if (iat_va == GP_IMG_VA + GP_IAT_RVA + 8u)
+        return (uint64_t)(uintptr_t)&shim_WriteFile    | TR_ABI_HOST;
+    if (iat_va == GP_IMG_VA + GP_IAT_RVA + 16u)
+        return (uint64_t)(uintptr_t)&shim_ExitProcess  | TR_ABI_HOST;
+    return 0;
+}
+
+static void gp_put32(uint8_t *p, int32_t d)
+{
+    uint32_t u = (uint32_t)d;
+    p[0] = (uint8_t)u; p[1] = (uint8_t)(u >> 8);
+    p[2] = (uint8_t)(u >> 16); p[3] = (uint8_t)(u >> 24);
+}
+
+static size_t gp_build(const char *msg, uint32_t msg_len)
+{
+    uint8_t *c = gp_img + GP_CODE_RVA;
+    size_t   n = 0, at_call[3], at_lea, k;
+
+    memset(gp_img, 0, sizeof gp_img);
+    memcpy(gp_img + GP_MSG_RVA, msg, msg_len);
+
+    /* mov ecx, -11                      STD_OUTPUT_HANDLE */
+    c[n++] = 0xB9; c[n++] = 0xF5; c[n++] = 0xFF; c[n++] = 0xFF; c[n++] = 0xFF;
+    /* call [rip -> IAT[0]]              GetStdHandle */
+    at_call[0] = n; c[n++] = 0xFF; c[n++] = 0x15; n += 4;
+    /* mov rcx, rax                      handle becomes arg0 */
+    c[n++] = 0x48; c[n++] = 0x89; c[n++] = 0xC1;
+    /* lea rdx, [rip -> msg]             buffer, an image-relative guest VA */
+    at_lea = n; c[n++] = 0x48; c[n++] = 0x8D; c[n++] = 0x15; n += 4;
+    /* mov r8d, msg_len */
+    c[n++] = 0x41; c[n++] = 0xC7; c[n++] = 0xC0;
+    c[n++] = (uint8_t)msg_len; c[n++] = 0; c[n++] = 0; c[n++] = 0;
+    /* mov r9d, 0                        lpOverlapped = NULL */
+    c[n++] = 0x41; c[n++] = 0xC7; c[n++] = 0xC1; c[n++] = 0; c[n++] = 0; c[n++] = 0; c[n++] = 0;
+    /* call [rip -> IAT[1]]              WriteFile */
+    at_call[1] = n; c[n++] = 0xFF; c[n++] = 0x15; n += 4;
+    /* mov rbx, rax                      carry TRUE across the next call; RBX is
+     * callee-saved in x86-64 but maps to X3, which the AAPCS makes caller-saved, so
+     * only the bridge's save and restore keeps it. */
+    c[n++] = 0x48; c[n++] = 0x89; c[n++] = 0xC3;
+    /* mov ecx, 0 */
+    c[n++] = 0xB9; c[n++] = 0; c[n++] = 0; c[n++] = 0; c[n++] = 0;
+    /* call [rip -> IAT[2]]              ExitProcess */
+    at_call[2] = n; c[n++] = 0xFF; c[n++] = 0x15; n += 4;
+    /* mov rax, rbx                      return WriteFile's result */
+    c[n++] = 0x48; c[n++] = 0x89; c[n++] = 0xD8;
+    /* ret */
+    c[n++] = 0xC3;
+
+    /* RIP-relative displacements are relative to the END of each instruction, so
+     * they cannot be filled in until the lengths are known. Written byte by byte
+     * rather than by memcpy of an int32_t, so nothing here assumes the host's
+     * byte order matches the guest's. */
+    for (k = 0; k < 3u; k++)
+        gp_put32(c + at_call[k] + 2,
+                 (int32_t)((GP_IMG_VA + GP_IAT_RVA + 8u * (uint32_t)k)
+                           - (GP_IMG_VA + GP_CODE_RVA + at_call[k] + 6u)));
+    gp_put32(c + at_lea + 3,
+             (int32_t)((GP_IMG_VA + GP_MSG_RVA)
+                       - (GP_IMG_VA + GP_CODE_RVA + at_lea + 7u)));
+    return n;
+}
+
+static void test_guest_program_runs(void)
+{
+    static const char msg[] =
+        "GUEST PROGRAM RAN: x86-64 code, translated to AArch64, called "
+        "GetStdHandle and WriteFile through the host ABI bridge\r\n";
+    const uint32_t msg_len = (uint32_t)(sizeof msg - 1u);
+    size_t   gn;
+    tr_func  f;
+    tr_status st;
+
+    printf("running a whole guest program through the shims\n");
+    gn = gp_build(msg, msg_len);
+
+    st = tr_translate_function(gp_img + GP_CODE_RVA, gn, GP_IMG_VA + GP_CODE_RVA,
+                               gp_resolve, NULL, &f);
+    CHECK(st == TR_OK, "the guest program did not translate: %s (%s)",
+          tr_status_name(st), f.detail ? f.detail : "?");
+    if (st != TR_OK) return;
+    CHECK(f.needs_frame == 1,
+          "three import calls did not request the X29/X30 record");
+
+#if defined(__aarch64__)
+    {
+        gs_arena a;
+        uint64_t r = 0;
+        int      sig = 0, to = 0, ok;
+        uint32_t prog[TRAMP_MAX];
+        size_t   n, plen = 0;
+        void    *page;
+
+        if (!gs_alloc(64u * 1024u, &a)) {
+            CHECK(0, "could not allocate an arena: %s", gs_last_error());
+            return;
+        }
+        gp_last_std = 0; gp_wrote = 0; gp_exit = 0; gp_exited = 0;
+
+        /* X19 is the host address the guest image is mapped at, which is what makes
+         * the RIP-relative and register-base accesses land in gp_img. */
+        n = build_trampoline(prog, 0u, a.top, (uint64_t)(uintptr_t)gp_img,
+                             f.words, f.n);
+        page = code_page(prog, n, &plen);
+        CHECK(page != NULL, "could not map an executable page");
+        if (page) {
+            fflush(stdout);
+            ok = exec_generated((uint64_t (*)(void))page, &r, &to, &sig);
+            /* The message above was written by the CHILD, so the parent cannot read
+             * the shim globals back - a forked child's writes stay in its own
+             * address space. What crosses back is the return value, which is
+             * WriteFile's TRUE, so it is only 1 if GetStdHandle returned a usable
+             * handle AND the buffer bounds check accepted the guest VA AND the write
+             * happened. The message in the log is the other half of the evidence, and
+             * no C code in the parent writes it. */
+            CHECK(ok && !to && sig == 0,
+                  "the guest program did not run cleanly (ok=%d to=%d sig=%d)",
+                  ok, to, sig);
+            CHECK(r == 1,
+                  "the guest program returned %llu, expected WriteFile's TRUE: a "
+                  "shim that got a bad handle, a bad buffer pointer or a wrong "
+                  "argument order returns FALSE", (unsigned long long)r);
+            munmap(page, plen); page = NULL;
+        }
+        gs_free(&a);
+        printf("  EXECUTED ON aarch64: a whole guest program - GetStdHandle, "
+               "WriteFile and ExitProcess through the bridge, carrying a result in "
+               "RBX across the last call\n");
+    }
+#else
+    printf("  SKIP: host is not aarch64 - the program translated but was not run\n");
+#endif
+}
+
 int main(void)
 {
     printf("=== exe + dll translation, end to end ===\n");
@@ -3201,6 +3423,7 @@ int main(void)
     test_image_relative_executes();
     test_lea_and_imm64_executes();
     test_host_abi_bridge();
+    test_guest_program_runs();
     test_pipeline();
 #if defined(__aarch64__)
     printf("VERDICT arch=aarch64 exe_words=%zu const_ok=%d first=%s/%llu(to=%d,sig=%d) "

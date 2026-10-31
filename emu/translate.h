@@ -140,7 +140,11 @@ typedef enum {
     TR_OVERFLOW         /* output buffer too small for the translation */
 } tr_status;
 
-#define TR_MAX_WORDS 64
+/* 256, not the 64 this used to be. The host ABI bridge costs 16 words at every
+ * call site, so a program making three import calls needs ~80 words for a body that
+ * is only nine guest instructions. 64 could not hold a program that did anything,
+ * and the limit is only an output buffer size. */
+#define TR_MAX_WORDS 256
 
 /* Returns the host address to call for a guest import-table slot, or 0 when it
  * is not known yet. The loader supplies this: imports are resolved before code

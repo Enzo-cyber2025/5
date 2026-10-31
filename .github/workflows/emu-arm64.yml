@@ -137,6 +137,15 @@ jobs:
           # and the result stays valid in a process that maps the image elsewhere.
           grep -q "EXECUTED ON aarch64: RIP-relative image access" /tmp/translate.log \
             || die "a RIP-relative load of a module global never ran on this aarch64 runner"
+          # A whole guest program rather than one instruction: GetStdHandle,
+          # WriteFile and ExitProcess, each called through the host ABI bridge. The
+          # marker below is written by the WriteFile shim out of a buffer the GUEST
+          # addressed with a RIP-relative lea, and the shim runs in the forked child,
+          # so nothing in the parent process produces that string. It can only appear
+          # if the translated code ran, which is what makes it worth asserting
+          # separately from the suite's own pass count.
+          grep -q "GUEST PROGRAM RAN" /tmp/translate.log \
+            || die "the guest program never ran on this aarch64 runner: no GetStdHandle/WriteFile call reached a shim"
           grep -q "entry -> 16" /tmp/translate.log \
             || die "the translated exe did not return 16 (SumTo(5)=15 from the DLL, then +1)"
           grep -q "EXECUTED FROM CACHE: 16" /tmp/translate.log \
@@ -319,6 +328,15 @@ jobs:
           # and the result stays valid in a process that maps the image elsewhere.
           grep -q "EXECUTED ON aarch64: RIP-relative image access" /tmp/translate.log \
             || die "a RIP-relative load of a module global never ran under QEMU"
+          # A whole guest program rather than one instruction: GetStdHandle,
+          # WriteFile and ExitProcess, each called through the host ABI bridge. The
+          # marker below is written by the WriteFile shim out of a buffer the GUEST
+          # addressed with a RIP-relative lea, and the shim runs in the forked child,
+          # so nothing in the parent process produces that string. It can only appear
+          # if the translated code ran, which is what makes it worth asserting
+          # separately from the suite's own pass count.
+          grep -q "GUEST PROGRAM RAN" /tmp/translate.log \
+            || die "the guest program never ran under QEMU: no GetStdHandle/WriteFile call reached a shim"
           grep -q "entry -> 16" /tmp/translate.log \
             || die "the translated exe did not return 16 under QEMU"
           grep -q "EXECUTED FROM CACHE: 16" /tmp/translate.log \
