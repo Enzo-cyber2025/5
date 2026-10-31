@@ -743,13 +743,43 @@ int main(int argc, char **argv)
              * unresolved, which looks exactly like the resolver being broken rather
              * than like a header nobody parsed. Calling pe_load again later is
              * harmless: it fills the same struct from the same bytes. */
-            if (pe_load(imgs[i], lens[i], &pes[i]) != PE_OK)
-                printf("  %s: PE headers did not parse, its imports stay unresolved\n",
-                       paths[i]);
+            {   pe_status ps = pe_load(imgs[i], lens[i], &pes[i]);
+                /* One line, one marker, everything that decides whether a slot can be
+                 * filled. "IAT slots filled 0" is consistent with a header nobody
+                 * parsed, an import directory the walk did not finish, a DLL count of
+                 * zero, a name that does not match the shim table and an ImageBase of
+                 * zero, and those have different fixes. The job log is not reachable
+                 * from everywhere, so this goes to stdout where the workflow can lift
+                 * it into an annotation. */
+                printf("  SHIMDIAG %s pe_load=%d detail=%s image_base=0x%llx "
+                       "has_imports=%d num_dlls=%u total_imports=%u truncated=%d\n",
+                       paths[i], (int)ps, pes[i].detail ? pes[i].detail : "-",
+                       (unsigned long long)pes[i].image_base, (int)pes[i].has_imports,
+                       (unsigned)pes[i].num_dlls,
+                       (unsigned)pe_total_imports(&pes[i]),
+                       (int)pes[i].imports_truncated);
+                if (ps != PE_OK)
+                    printf("  %s: PE did not parse to PE_OK, its imports may be "
+                           "incomplete\n", paths[i]);
+            }
             got = shim_fill_iat(&pes[i], (uint8_t *)imgs[i], lens[i],
                                 pes[i].image_base, &known, &unknown);
             printf("  %s: IAT slots filled %zu, imported functions recognised %zu, "
                    "not implemented %zu\n", paths[i], got, known, unknown);
+            /* The names the file actually asks for, so a table that does not match is
+             * visible as a mismatch rather than inferred from a zero. */
+            for (uint32_t d = 0; d < pes[i].num_dlls && d < 8u; d++) {
+                const pe_import_dll *dl = &pes[i].dlls[d];
+                printf("  SHIMDLL %s iat_rva=0x%x funcs=%u\n",
+                       dl->dll_name ? dl->dll_name : "-", (unsigned)dl->iat_rva,
+                       (unsigned)dl->func_count);
+                for (uint32_t k = 0; k < dl->func_count && k < 12u; k++) {
+                    const pe_import_func *fn = &pes[i].funcs[dl->first_func + k];
+                    printf("  SHIMFUNC %s ordinal=%u by_ordinal=%d\n",
+                           fn->name ? fn->name : "(null)", (unsigned)fn->ordinal,
+                           (int)fn->by_ordinal);
+                }
+            }
         }
     }
 

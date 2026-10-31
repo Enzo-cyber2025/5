@@ -1117,6 +1117,7 @@ jobs:
           # The marker count is the verdict: it is written by the WriteFile shim out of
           # a buffer the guest addressed, in the child, so a non-zero count means a real
           # compiler-produced Windows executable ran through the pre-translation path.
+          echo "::notice title=real-exe-shimdiag::$(grep -aE 'SHIMDIAG|SHIMDLL|SHIMFUNC|import resolver installed' /tmp/real.log | head -12 | tr '\n' '|')"
           echo "::notice title=real-exe-verdict::RAN=$(grep -ac 'REAL PE RAN' /tmp/real.log) SLOTS=$(grep -aoE 'IAT slots filled [0-9]+' /tmp/real.log | head -1) $(grep -aE 'functions pre-translated|records executed' /tmp/real.log | head -2 | tr '\n' '|')"
           echo "::notice title=real-exe-summary::$(grep -aE 'functions pre-translated|records executed|refused' /tmp/real.log | head -6 | tr '\n' '|')"
           echo "--- why the entry point does not run yet ---"
