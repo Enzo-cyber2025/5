@@ -19,6 +19,10 @@
 
 .field private progressBar:Landroid/widget/ProgressBar;
 
+.field private execBtn:Landroid/widget/Button;
+
+.field private execLabel:Landroid/widget/TextView;
+
 .field private handler:Landroid/os/Handler;
 
 .field private tickRunning:Z
@@ -196,6 +200,88 @@
     invoke-virtual {v2}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
     move-result-object v0
+
+    invoke-virtual {v1, v0}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
+
+    invoke-direct {p0}, Lcom/exepretranslator/app/MainActivity;->prefs()Landroid/content/SharedPreferences;
+
+    move-result-object v0
+
+    const-string v1, "exec_status"
+
+    const-string v2, "-"
+
+    invoke-interface {v0, v1, v2}, Landroid/content/SharedPreferences;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object v1
+
+    const-string v2, "exec_result"
+
+    const/4 v3, 0x0
+
+    invoke-interface {v0, v2, v3}, Landroid/content/SharedPreferences;->getInt(Ljava/lang/String;I)I
+
+    move-result v2
+
+    const-string v3, "exec_message"
+
+    const-string v4, ""
+
+    invoke-interface {v0, v3, v4}, Landroid/content/SharedPreferences;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object v0
+
+    new-instance v3, Ljava/lang/StringBuilder;
+
+    invoke-direct {v3}, Ljava/lang/StringBuilder;-><init>()V
+
+    const-string v4, "Execucao: "
+
+    invoke-virtual {v3, v4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    invoke-virtual {v3, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    const-string v4, "concluido"
+
+    invoke-virtual {v4, v1}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+
+    move-result v4
+
+    if-eqz v4, :cond_exec_novalue
+
+    const-string v4, " (resultado="
+
+    invoke-virtual {v3, v4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    invoke-virtual {v3, v2}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+
+    const-string v4, ")"
+
+    invoke-virtual {v3, v4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    goto :cond_exec_done
+
+    :cond_exec_novalue
+    const-string v4, "erro"
+
+    invoke-virtual {v4, v1}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+
+    move-result v4
+
+    if-eqz v4, :cond_exec_done
+
+    const-string v4, " - "
+
+    invoke-virtual {v3, v4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    invoke-virtual {v3, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    :cond_exec_done
+    invoke-virtual {v3}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+
+    move-result-object v0
+
+    iget-object v1, p0, Lcom/exepretranslator/app/MainActivity;->execLabel:Landroid/widget/TextView;
 
     invoke-virtual {v1, v0}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
 
@@ -401,6 +487,15 @@
     goto :goto_2
 
     :cond_1
+    iget-object v0, p0, Lcom/exepretranslator/app/MainActivity;->execBtn:Landroid/widget/Button;
+
+    if-ne p1, v0, :cond_4
+
+    invoke-direct {p0}, Lcom/exepretranslator/app/MainActivity;->startExampleExec()V
+
+    goto :goto_2
+
+    :cond_4
     iget-object v0, p0, Lcom/exepretranslator/app/MainActivity;->stopBtn:Landroid/widget/Button;
 
     if-ne p1, v0, :cond_2
@@ -563,6 +658,44 @@
 
     invoke-direct {v2, p0}, Landroid/widget/TextView;-><init>(Landroid/content/Context;)V
 
+    const-string v3, "Modo experimental: executa de verdade um programinha de teste minusculo embutido (soma 1+2+3+4+5). NAO funciona com programas reais do Windows."
+
+    invoke-virtual {v2, v3}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
+
+    invoke-virtual {v0, v2}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
+
+    new-instance v2, Landroid/widget/Button;
+
+    invoke-direct {v2, p0}, Landroid/widget/Button;-><init>(Landroid/content/Context;)V
+
+    const-string v3, "Executar exemplo embutido (experimental)"
+
+    invoke-virtual {v2, v3}, Landroid/widget/Button;->setText(Ljava/lang/CharSequence;)V
+
+    invoke-virtual {v2, p0}, Landroid/view/View;->setOnClickListener(Landroid/view/View$OnClickListener;)V
+
+    iput-object v2, p0, Lcom/exepretranslator/app/MainActivity;->execBtn:Landroid/widget/Button;
+
+    invoke-virtual {v0, v2}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
+
+    new-instance v2, Landroid/widget/TextView;
+
+    invoke-direct {v2, p0}, Landroid/widget/TextView;-><init>(Landroid/content/Context;)V
+
+    const-string v3, "Execucao: -"
+
+    invoke-virtual {v2, v3}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
+
+    iput-object v2, p0, Lcom/exepretranslator/app/MainActivity;->execLabel:Landroid/widget/TextView;
+
+    invoke-virtual {v0, v2}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
+
+    invoke-direct {p0, v0}, Lcom/exepretranslator/app/MainActivity;->addSpacer(Landroid/widget/LinearLayout;)V
+
+    new-instance v2, Landroid/widget/TextView;
+
+    invoke-direct {v2, p0}, Landroid/widget/TextView;-><init>(Landroid/content/Context;)V
+
     const-string v3, "Aviso: isto NAO e um emulador do Windows e NAO executa o programa. E uma leitura heuristica das instrucoes x86 do arquivo selecionado, que grava um rascunho de traducao de instrucoes em texto, por partes, no armazenamento do app, continuando mesmo com a tela bloqueada. Cobertura de opcodes e aproximada."
 
     invoke-virtual {v2, v3}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
@@ -639,6 +772,106 @@
     const-wide/16 v1, 0x3e8
 
     invoke-virtual {v0, p0, v1, v2}, Landroid/os/Handler;->postDelayed(Ljava/lang/Runnable;J)Z
+
+    return-void
+.end method
+
+.method private startExampleExec()V
+    .locals 6
+
+    :try_start_0
+    invoke-virtual {p0}, Landroid/app/Activity;->getAssets()Landroid/content/res/AssetManager;
+
+    move-result-object v0
+
+    const-string v1, "teste.exe"
+
+    invoke-virtual {v0, v1}, Landroid/content/res/AssetManager;->open(Ljava/lang/String;)Ljava/io/InputStream;
+
+    move-result-object v0
+
+    invoke-virtual {p0}, Landroid/app/Activity;->getFilesDir()Ljava/io/File;
+
+    move-result-object v1
+
+    const-string v2, "teste.exe"
+
+    new-instance v3, Ljava/io/File;
+
+    invoke-direct {v3, v1, v2}, Ljava/io/File;-><init>(Ljava/io/File;Ljava/lang/String;)V
+
+    new-instance v1, Ljava/io/FileOutputStream;
+
+    invoke-direct {v1, v3}, Ljava/io/FileOutputStream;-><init>(Ljava/io/File;)V
+
+    const/16 v2, 0x1000
+
+    new-array v2, v2, [B
+
+    :copy_loop
+    invoke-virtual {v0, v2}, Ljava/io/InputStream;->read([B)I
+
+    move-result v4
+
+    if-ltz v4, :copy_done
+
+    const/4 v5, 0x0
+
+    invoke-virtual {v1, v2, v5, v4}, Ljava/io/FileOutputStream;->write([BII)V
+
+    goto :copy_loop
+
+    :copy_done
+    invoke-virtual {v1}, Ljava/io/FileOutputStream;->close()V
+
+    invoke-virtual {v0}, Ljava/io/InputStream;->close()V
+
+    new-instance v0, Ljava/lang/StringBuilder;
+
+    invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
+
+    const-string v1, "file://"
+
+    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    invoke-virtual {v3}, Ljava/io/File;->getAbsolutePath()Ljava/lang/String;
+
+    move-result-object v1
+
+    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+
+    move-result-object v0
+
+    new-instance v1, Landroid/content/Intent;
+
+    const-class v2, Lcom/exepretranslator/app/ExecuteService;
+
+    invoke-direct {v1, p0, v2}, Landroid/content/Intent;-><init>(Landroid/content/Context;Ljava/lang/Class;)V
+
+    const-string v2, "uri"
+
+    invoke-virtual {v1, v2, v0}, Landroid/content/Intent;->putExtra(Ljava/lang/String;Ljava/lang/String;)Landroid/content/Intent;
+
+    invoke-virtual {p0, v1}, Landroid/content/Context;->startService(Landroid/content/Intent;)Landroid/content/ComponentName;
+    :try_end_0
+    .catch Ljava/lang/Exception; {:try_start_0 .. :try_end_0} :catch_0
+
+    return-void
+
+    :catch_0
+    move-exception v0
+
+    const-string v0, "Erro ao preparar o exemplo embutido"
+
+    const/4 v1, 0x1
+
+    invoke-static {p0, v0, v1}, Landroid/widget/Toast;->makeText(Landroid/content/Context;Ljava/lang/CharSequence;I)Landroid/widget/Toast;
+
+    move-result-object v0
+
+    invoke-virtual {v0}, Landroid/widget/Toast;->show()V
 
     return-void
 .end method

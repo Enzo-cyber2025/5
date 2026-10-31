@@ -30,6 +30,45 @@ separado, criado a pedido específico de um "app de pré-tradução de .exe".
    sistema matar o processo, o próximo "Iniciar / continuar" retoma do byte
    onde parou (não refaz do zero).
 
+## Novo: modo experimental que **de fato executa** um `.exe`
+
+Além da pré-tradução/anotação acima (que funciona com qualquer `.exe` real,
+mas só lê e anota, nunca executa), o app agora tem um segundo recurso, bem
+mais limitado e explícito: um **interpretador x86 real** (`ExecuteService`)
+que de fato decodifica, a partir da pré-tradução, e **executa** instruções
+x86 de 32 bits (mov, add, sub, cmp, push/pop, jmp, jg, ret) sobre um arquivo
+PE32 carregado na memória do app, usando registradores e pilha simulados de
+verdade — e mostra o resultado calculado na tela.
+
+Toque **"Executar exemplo embutido (experimental)"**: o app roda um
+programa de teste minúsculo, embutido no APK (`assets/teste.exe`, 8 KB, um
+PE32 feito à mão por mim para este fim), que soma 1+2+3+4+5 num laço com
+comparação e desvio condicional reais. Se tudo correr bem, o resultado
+mostrado é **15**. A lógica de decodificação/execução foi validada
+separadamente (réplica fiel em Python do mesmo algoritmo, rodando contra os
+mesmos bytes) antes de ser escrita em smali, porque não há como rodar o APK
+de verdade nesta sandbox — mas, de novo, **isso não substitui testar no
+celular**.
+
+**Isto não é o mesmo que "rodar programas reais do Windows":**
+- Só entende um subconjunto pequeno de instruções x86 de 32 bits (PE32, não
+  PE32+/64-bit) — exatamente o necessário para funções simples com
+  variáveis locais, aritmética, comparação e laços. Instruções fora desse
+  subconjunto (a enorme maioria do que um programa real usa, incluindo
+  **qualquer chamada a uma API do Windows** como abrir uma janela, desenhar
+  algo na tela, ler um arquivo, etc.) fazem a execução **parar
+  imediatamente** no ponto não suportado, informando o endereço — não
+  trava, não finge, apenas avisa claramente que chegou ao limite.
+- Não existe nenhuma implementação de `kernel32`/`user32`/`gdi32`/etc., nem
+  carregamento de DLLs, nem suporte a interface gráfica.
+- Por isso, um `.exe` real do Windows (que depende de centenas dessas
+  chamadas desde a primeira instrução gerada pelo compilador/CRT) **vai
+  parar quase imediatamente** se você tentar "executar" ele neste modo —
+  ele serve para pequenas rotinas de cálculo próprias, não para rodar
+  programas de terceiros.
+- Seção de código limitada a 64 KB e imagem total a 16 MB nesse modo
+  (limites de segurança para não estourar a memória do app).
+
 ## O que ele **não** é (para não criar expectativa errada)
 
 - **Não é um emulador do Windows.** Não executa o `.exe`, não roda o
@@ -67,6 +106,10 @@ separado, criado a pedido específico de um "app de pré-tradução de .exe".
 5. O rascunho da tradução fica em texto simples dentro da pasta privada do
    app (acessível via um gerenciador de arquivos com acesso a
    `Android/data`, em aparelhos que ainda permitem isso, ou via `adb pull`).
+6. Para testar o modo de execução experimental, toque **"Executar exemplo
+   embutido (experimental)"** e veja o campo "Execucao:" mudar para
+   `concluido (resultado=15)`. Se aparecer `erro`, a mensagem explica onde
+   a execução parou.
 
 ## Por que o pacote de ferramentas é diferente do resto do repositório
 
@@ -84,7 +127,7 @@ SDK oficial (`dl.google.com` não está liberado), então o build usa:
   usado só para compilar o manifesto/recursos.
 
 Tudo isso vem de `registry.npmjs.org` e `pypi.org`, hosts já liberados neste
-ambiente. Veja `build/build.sh` para reproduzir o build inteiro do zero.
+ambiente. Veja `scripts/build.sh` para reproduzir o build inteiro do zero.
 
 ## Código-fonte
 
@@ -94,6 +137,12 @@ ambiente. Veja `build/build.sh` para reproduzir o build inteiro do zero.
 - `src/smali/.../TranslateService.smali` — parsing do cabeçalho PE,
   mecanismo de leitura de comprimento de instrução x86, geração das linhas
   de saída, notificação em primeiro plano, retomada de progresso.
+- `src/smali/.../ExecuteService.smali` — parser PE32 completo (seções,
+  ponto de entrada, base de imagem), decodificador/cache de instruções
+  x86 de 32 bits e o interpretador que de fato executa essas instruções
+  (registradores, pilha e memória virtual simulados).
+- `src/assets/teste.exe` — PE32 de 8 KB, montado byte a byte à mão para
+  este projeto, usado pelo botão "Executar exemplo embutido".
 
 Este app foi escrito diretamente em smali (bytecode Dalvik textual) porque
 não há, nesta sandbox, um compilador Java→dex oficial (`d8`/`dx`) — apenas o

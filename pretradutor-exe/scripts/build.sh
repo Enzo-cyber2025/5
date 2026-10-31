@@ -44,6 +44,10 @@ rm -rf "$PROJECT"
 mkdir -p "$PROJECT/smali"
 cp src/AndroidManifest.xml "$PROJECT/"
 cp -r src/smali/* "$PROJECT/smali/"
+if [ -d src/assets ]; then
+  mkdir -p "$PROJECT/assets"
+  cp -r src/assets/* "$PROJECT/assets/"
+fi
 cat > "$PROJECT/apktool.yml" <<'EOF'
 !!brut.androlib.meta.MetaInfo
 version: 2.9.3
