@@ -999,32 +999,69 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install the mingw-w64 cross compiler
         run: |
-          set -eux
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq gcc-mingw-w64-x86-64-win32
-          x86_64-w64-mingw32-gcc --version | head -1
+          # Every step in this job republishes its own output as an annotation on
+          # failure. The Azure blob that holds a job log is not reachable from
+          # everywhere, and an annotation is, so a failure that only lives in the log
+          # is a failure nobody can read.
+          set +e
+          {
+            set -x
+            sudo apt-get update -qq
+            for pkg in gcc-mingw-w64-x86-64-win32 gcc-mingw-w64-x86-64-posix gcc-mingw-w64-x86-64; do
+              sudo apt-get install -y -qq "$pkg" && break
+            done
+            which x86_64-w64-mingw32-gcc
+            x86_64-w64-mingw32-gcc --version | head -1
+          } > /tmp/apt.log 2>&1
+          rc=$?
+          cat /tmp/apt.log
+          if [ $rc -ne 0 ] || ! command -v x86_64-w64-mingw32-gcc >/dev/null; then
+            echo "::error title=mingw-install-failed::$(tail -c 3000 /tmp/apt.log | tr '\n' '|')"
+            exit 1
+          fi
       - name: Compile emu/guest/hello.c into a real PE
         run: |
-          set -eux
-          # -nostartfiles plus --entry makes the image entry point the function this
-          # file defines, so the translator is pointed at compiler-generated code and
-          # not at a CRT startup full of call rel32. -fcf-protection=none keeps
-          # endbr64 out of the entry, which is a 0F-map instruction the subset refuses.
-          x86_64-w64-mingw32-gcc -O1 -fcf-protection=none -fno-stack-protector \
-            -fno-asynchronous-unwind-tables -nostartfiles \
-            -Wl,--entry=guest_main -Wl,-Map=hello.map \
-            -o hello.exe emu/guest/hello.c -lkernel32
+          set +e
+          {
+            set -x
+            # -nostartfiles plus --entry makes the image entry point the function this
+            # file defines, so the translator is pointed at compiler-generated code and
+            # not at a CRT startup. -fcf-protection=none keeps endbr64 out of the entry:
+            # it is a 0F-map instruction the subset refuses, and a real Ubuntu toolchain
+            # emits it by default.
+            x86_64-w64-mingw32-gcc -O1 -fcf-protection=none -fno-stack-protector \
+              -fno-asynchronous-unwind-tables -nostartfiles \
+              -Wl,--entry=guest_main -Wl,-Map=hello.map \
+              -o hello.exe emu/guest/hello.c -lkernel32
+          } > /tmp/build.log 2>&1
+          rc=$?
+          cat /tmp/build.log
+          if [ $rc -ne 0 ]; then
+            # Fall back to an ordinary link. An entry point inside a CRT startup is far
+            # less useful - it is full of call rel32 - but a real PE that maps and
+            # sweeps is still worth measuring, and silently producing nothing is not.
+            echo "::warning title=mingw-entry-link-failed::falling back to a normal link; $(tail -c 800 /tmp/build.log | tr '\n' '|')"
+            x86_64-w64-mingw32-gcc -O1 -fcf-protection=none -fno-stack-protector \
+              -o hello.exe emu/guest/hello.c -lkernel32 > /tmp/build2.log 2>&1 \
+              || { echo "::error title=mingw-build-failed::$(tail -c 3000 /tmp/build.log /tmp/build2.log | tr '\n' '|')"; exit 1; }
+          fi
           ls -l hello.exe
           sha256sum hello.exe
       - name: Show what the compiler actually generated
         if: always()
         run: |
           set +e
-          echo "--- entry symbol in the map ---"
-          grep -iE "guest_main|\.text|__imp_(GetStdHandle|WriteFile)" hello.map | head -20
-          echo "--- disassembly of the entry point ---"
-          x86_64-w64-mingw32-objdump -d --no-show-raw-insn hello.exe 2>/dev/null \
-            | sed -n '/<guest_main>:/,/ret/p' | head -40
+          {
+            echo "--- entry symbol in the map ---"
+            grep -iE "guest_main|\.text|__imp_(GetStdHandle|WriteFile)" hello.map 2>/dev/null | head -20
+            echo "--- disassembly of the entry point ---"
+            x86_64-w64-mingw32-objdump -d hello.exe 2>/dev/null \
+              | sed -n '/<guest_main>:/,/^$/p' | head -40
+          } > /tmp/dis.log 2>&1
+          cat /tmp/dis.log
+          # The disassembly is the whole reason this job exists: it is the ground truth
+          # about what a real compiler emits, which is what the subset has to cover.
+          echo "::notice title=guest-entry-disassembly::$(head -c 3000 /tmp/dis.log | tr '\n' '|')"
       - uses: actions/upload-artifact@v4
         with:
           name: guest-pe
