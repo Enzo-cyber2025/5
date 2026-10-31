@@ -35,7 +35,8 @@ public final class WebSearchParserTest {
             "<a class=\"result__snippet\" href=\"#\">Fact&nbsp;with &#x1F512;</a>" +
             "<a class=\"result__a\" href=\"javascript:alert(1)\">unsafe</a>" +
             "<a class=\"result__snippet\" href=\"#\">ignore</a>";
-        List<?> results = (List<?>) parse.invoke(null, html, 8);
+        @SuppressWarnings("unchecked")
+        List<WebSearch.Result> results = (List<WebSearch.Result>) parse.invoke(null, html, 8);
         assert results.size() == 1 : results.size();
         Object row = results.get(0);
         java.lang.reflect.Field title = row.getClass().getField("title");
