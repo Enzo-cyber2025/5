@@ -3450,6 +3450,13 @@ static size_t gp_build_loop(const uint8_t *mark, uint32_t mark_len)
     c[n++] = 0xB9; c[n++] = 0xF5; c[n++] = 0xFF; c[n++] = 0xFF; c[n++] = 0xFF; /* mov ecx,-11 */
     at_call[0] = n; c[n++] = 0xFF; c[n++] = 0x15; n += 4;                     /* call GetStdHandle */
     c[n++] = 0x48; c[n++] = 0x89; c[n++] = 0xC3;                               /* mov rbx,rax */
+    /* xor edi,edi - the iteration counter zeroes ITSELF. The trampoline sets X0, X14,
+     * X15 and X19 and leaves every other host register at whatever the caller had,
+     * so RDI (X5) on entry is garbage. The first run of this test on a real aarch64
+     * runner reported "the loop ran 11 times, expected 10": the accumulator started
+     * at 1. A real program initialises its own locals and so does this one, which is
+     * also the only way the count it returns means anything. */
+    c[n++] = 0x31; c[n++] = 0xFF;                                              /* xor edi,edi */
     c[n++] = 0xBE; c[n++] = 0x0A; c[n++] = 0; c[n++] = 0; c[n++] = 0;          /* mov esi,10 */
 
     at_top = n;
