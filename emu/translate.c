@@ -844,6 +844,26 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
         }
         p->op = P_MOV_REG; p->w32 = !in.rex_w; p->words = 1u; return TR_OK;
     }
+    if (in.op[0] == 0x8B && in.has_modrm && in.mod == 3) {
+        /* mov r, r/m where the source is a register too. This is the same operation
+         * as 0x89 above with the two operands swapped: 0x89 carries the source in
+         * the reg field and the destination in rm, 0x8B carries the destination in
+         * reg and the source in rm. Both are one MOV, and both are mod=3, so neither
+         * touches memory.
+         *
+         * The register form of 0x89 was supported while this one was refused, which
+         * no design decision produced - it was an omission. Compilers emit the two
+         * freely and pick between them by which operand is already in the reg field,
+         * so accepting one and refusing the other loses a large fraction of real
+         * code for no reason at all. The memory form of 0x8B is handled separately
+         * below and is unaffected: it requires mod != 3. */
+        if (!map_guest_reg(in.reg, in.rex_r, &p->rd) ||
+            !map_guest_reg(in.rm, in.rex_b, &p->rn)) {
+            out->reason = TRR_REGISTER; out->detail = "mov reg: register outside the mapped set";
+            return TR_UNSUPPORTED;
+        }
+        p->op = P_MOV_REG; p->w32 = !in.rex_w; p->words = 1u; return TR_OK;
+    }
     if (in.op[0] == 0x31 && in.has_modrm && in.mod == 3) {
         /* Only the zeroing idiom. A real two-operand xor needs the value AND the
          * flags it sets, and modelling half of it would be a guess. */

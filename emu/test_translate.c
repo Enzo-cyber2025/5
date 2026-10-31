@@ -3107,6 +3107,28 @@ static void test_host_abi_bridge(void)
               "its arguments shuffled into the wrong registers");
     }
 
+    /* The regression that moved the tag out of bit 0. On x86-64 instructions are
+     * variable length and a function may legitimately start at an odd address -
+     * measured on this host, &abi_target came back 0x55ec35b5a435. A resolver
+     * returning an odd address therefore still means "untagged", and with the tag in
+     * bit 0 this exact call emitted the bridge: the translator would have shuffled
+     * the arguments of a guest-to-guest call into AAPCS positions on the strength of
+     * nothing but where the linker happened to place a function. */
+    {
+        void *odd = (void *)((uintptr_t)target + 1u);
+        st = tr_translate_function(call4, sizeof(call4), IMAGE_BASE,
+                                   abi_resolve_untagged, &odd, &f);
+        CHECK(st == TR_OK, "an odd untagged target returned %s", tr_status_name(st));
+        if (st == TR_OK) {
+            size_t stp = 0;
+            for (size_t i = 0; i < f.n; i++)
+                if (f.words[i] == a64_stp_pre(3u, 4u, 31u, -16)) stp = 1;
+            CHECK(stp == 0,
+                  "an odd host address was read as the ABI tag: on x86-64 a function "
+                  "need not be aligned, so bit 0 of a real address is not free");
+        }
+    }
+
 #if defined(__aarch64__)
     {
         /* mov rbx,0x1111 ; call [rip+0] ; mov rax,rbx ; ret */
@@ -3403,6 +3425,150 @@ static void test_guest_program_runs(void)
 #endif
 }
 
+#define GP_BUF_RVA    0x2200u   /* the line buffer the countdown writes into */
+
+/* Builds a guest program with a LOOP in it. The countdown is 9 down to 0, and
+ * every line is its own WriteFile call through the host ABI bridge, so the loop
+ * exercises the backward branch, the bounds-checked store into the image and ten
+ * bridged calls in one body.
+ *
+ * The counter is decremented BEFORE the digit is printed, which is not the obvious
+ * shape and is deliberate: GRP1 with mod=3 is emitted as a 64-bit op, so a counter
+ * that ran past zero would wrap to 0xFFFFFFFFFFFFFFFF, `cmp esi,0` would never see
+ * zero and the loop would not terminate. Decrementing first makes the last value
+ * exactly zero and the loop ends on its own condition. */
+static size_t gp_build_loop(const uint8_t *mark, uint32_t mark_len)
+{
+    uint8_t *c = gp_img + GP_CODE_RVA;
+    size_t   n = 0;
+    size_t   at_call[4], at_lea_buf, at_lea_mark, at_movlen, at_top, at_jnz;
+    size_t   k;
+
+    memset(gp_img, 0, sizeof gp_img);
+    memcpy(gp_img + GP_MSG_RVA, mark, mark_len);
+
+    c[n++] = 0xB9; c[n++] = 0xF5; c[n++] = 0xFF; c[n++] = 0xFF; c[n++] = 0xFF; /* mov ecx,-11 */
+    at_call[0] = n; c[n++] = 0xFF; c[n++] = 0x15; n += 4;                     /* call GetStdHandle */
+    c[n++] = 0x48; c[n++] = 0x89; c[n++] = 0xC3;                               /* mov rbx,rax */
+    c[n++] = 0xBE; c[n++] = 0x0A; c[n++] = 0; c[n++] = 0; c[n++] = 0;          /* mov esi,10 */
+
+    at_top = n;
+    c[n++] = 0x83; c[n++] = 0xEE; c[n++] = 0x01;                               /* sub esi,1 */
+    c[n++] = 0x44; c[n++] = 0x8B; c[n++] = 0xC6;                               /* mov r8d,esi */
+    c[n++] = 0x41; c[n++] = 0x83; c[n++] = 0xC0; c[n++] = 0x30;                /* add r8d,'0' */
+    at_lea_buf = n; c[n++] = 0x48; c[n++] = 0x8D; c[n++] = 0x15; n += 4;       /* lea rdx,[rip->buf] */
+    c[n++] = 0x44; c[n++] = 0x89; c[n++] = 0x02;                               /* mov [rdx],r8d */
+    c[n++] = 0x41; c[n++] = 0xB9; c[n++] = 0x0A; c[n++] = 0; c[n++] = 0; c[n++] = 0; /* mov r9d,10 */
+    c[n++] = 0x44; c[n++] = 0x89; c[n++] = 0x4A; c[n++] = 0x01;                /* mov [rdx+1],r9d */
+    c[n++] = 0x48; c[n++] = 0x89; c[n++] = 0xD9;                               /* mov rcx,rbx */
+    c[n++] = 0x41; c[n++] = 0xB8; c[n++] = 0x02; c[n++] = 0; c[n++] = 0; c[n++] = 0; /* mov r8d,2 */
+    c[n++] = 0x41; c[n++] = 0xB9; c[n++] = 0; c[n++] = 0; c[n++] = 0; c[n++] = 0;    /* mov r9d,0 */
+    at_call[1] = n; c[n++] = 0xFF; c[n++] = 0x15; n += 4;                      /* call WriteFile */
+    c[n++] = 0x83; c[n++] = 0xC7; c[n++] = 0x01;                               /* add edi,1 */
+    c[n++] = 0x83; c[n++] = 0xFE; c[n++] = 0x00;                               /* cmp esi,0 */
+    at_jnz = n; c[n++] = 0x75; c[n++] = 0x00;                                  /* jnz top */
+
+    at_lea_mark = n; c[n++] = 0x48; c[n++] = 0x8D; c[n++] = 0x15; n += 4;      /* lea rdx,[rip->mark] */
+    c[n++] = 0x48; c[n++] = 0x89; c[n++] = 0xD9;                               /* mov rcx,rbx */
+    at_movlen = n; c[n++] = 0x41; c[n++] = 0xB8; n += 4;                       /* mov r8d,mark_len */
+    c[n++] = 0x41; c[n++] = 0xB9; c[n++] = 0; c[n++] = 0; c[n++] = 0; c[n++] = 0;    /* mov r9d,0 */
+    at_call[2] = n; c[n++] = 0xFF; c[n++] = 0x15; n += 4;                      /* call WriteFile */
+    c[n++] = 0xB9; c[n++] = 0; c[n++] = 0; c[n++] = 0; c[n++] = 0;             /* mov ecx,0 */
+    at_call[3] = n; c[n++] = 0xFF; c[n++] = 0x15; n += 4;       /* call ExitProcess */
+    c[n++] = 0x48; c[n++] = 0x89; c[n++] = 0xF8;                               /* mov rax,rdi */
+    c[n++] = 0xC3;                                                             /* ret */
+
+    /* RIP-relative displacements are relative to the END of their own instruction. */
+    for (k = 0; k < 4u; k++)
+        gp_put32(c + at_call[k] + 2u,
+                 (int32_t)((GP_IMG_VA + GP_IAT_RVA + ((k == 3u) ? 16u : (k == 0u ? 0u : 8u)))
+                           - (GP_IMG_VA + GP_CODE_RVA + at_call[k] + 6u)));
+    gp_put32(c + at_lea_buf  + 3u, (int32_t)((GP_IMG_VA + GP_BUF_RVA) - (GP_IMG_VA + GP_CODE_RVA + at_lea_buf  + 7u)));
+    gp_put32(c + at_lea_mark + 3u, (int32_t)((GP_IMG_VA + GP_MSG_RVA) - (GP_IMG_VA + GP_CODE_RVA + at_lea_mark + 7u)));
+    gp_put32(c + at_movlen   + 2u, (int32_t)mark_len);
+    c[at_jnz + 1u] = (uint8_t)(uint32_t)(int32_t)((int64_t)at_top - (int64_t)(at_jnz + 2u));
+    return n;
+}
+
+static void test_guest_program_loops(void)
+{
+    static const char mark[] =
+        "GUEST LOOP RAN: ten iterations of a backward branch, each one a WriteFile "
+        "through the host ABI bridge\r\n";
+    const uint32_t mark_len = (uint32_t)(sizeof mark - 1u);
+    size_t   gn;
+    tr_func  f;
+    tr_status st;
+
+    printf("running a guest program with a loop through the shims\n");
+    gn = gp_build_loop((const uint8_t *)mark, mark_len);
+
+    /* The _img variant, not the plain one: the countdown stores its digit through a
+     * register-base pointer, and that access is only bounds-checkable when the
+     * module's size is known. Without it the store is refused rather than guessed. */
+    st = tr_translate_function_img(gp_img + GP_CODE_RVA, gn, GP_IMG_VA + GP_CODE_RVA,
+                                   0, GP_IMG_VA, GP_IMG_SZ, gp_resolve, NULL, &f);
+    CHECK(st == TR_OK, "the looping guest program did not translate: %s (%s)",
+          tr_status_name(st), f.detail ? f.detail : "?");
+    if (st != TR_OK) return;
+    CHECK(f.needs_frame == 1, "the looping program did not request the X29/X30 record");
+    /* A loop is a branch whose target comes before it. The translator already counts
+     * those, and asserting the count here is what separates "a backward branch was
+     * emitted" from "the jnz was silently dropped", which would also translate fine
+     * and would simply not loop. */
+    CHECK(f.backwards >= 1,
+          "the countdown's backward branch was not emitted (backwards=%u)",
+          (unsigned)f.backwards);
+
+#if defined(__aarch64__)
+    {
+        gs_arena a;
+        uint64_t r = 0;
+        int      sig = 0, to = 0, ok;
+        uint32_t prog[TRAMP_MAX];
+        size_t   n, plen = 0;
+        void    *page;
+
+        if (!gs_alloc(64u * 1024u, &a)) {
+            CHECK(0, "could not allocate an arena: %s", gs_last_error());
+            return;
+        }
+        gp_last_std = 0; gp_wrote = 0; gp_exit = 0; gp_exited = 0;
+
+        n = build_trampoline(prog, 0u, a.top, (uint64_t)(uintptr_t)gp_img,
+                             f.words, f.n);
+        page = code_page(prog, n, &plen);
+        CHECK(page != NULL, "could not map an executable page");
+        if (page) {
+            fflush(stdout);
+            ok = exec_generated((uint64_t (*)(void))page, &r, &to, &sig);
+            /* Ten is the iteration count accumulated in RDI, which the bridge saves
+             * and restores around every one of the ten calls. A bridge that clobbered
+             * RDI, or a loop that ran the wrong number of times, gives a different
+             * number - and a loop that never terminated is caught as a timeout
+             * instead of passing quietly. */
+            CHECK(ok && !to && sig == 0,
+                  "the looping guest program did not run cleanly (ok=%d to=%d sig=%d)"
+                  " - a timeout here means the countdown did not terminate",
+                  ok, to, sig);
+            CHECK(r == 10,
+                  "the loop ran %llu times, expected 10: RDI is the accumulator and "
+                  "the bridge must preserve it across every WriteFile call",
+                  (unsigned long long)r);
+            munmap(page, plen); page = NULL;
+        }
+        gs_free(&a);
+        printf("  EXECUTED ON aarch64: a guest program with a loop - a backward "
+               "branch taken ten times, ten WriteFile calls through the host ABI "
+               "bridge, and an accumulator in RDI that survived all ten\n");
+    }
+#else
+    printf("  SKIP: host is not aarch64, the looping guest program was translated "
+           "but not executed (%u words, %u branches, %u backwards)\n",
+           (unsigned)f.n, (unsigned)f.branches, (unsigned)f.backwards);
+#endif
+}
+
 int main(void)
 {
     printf("=== exe + dll translation, end to end ===\n");
@@ -3424,6 +3590,7 @@ int main(void)
     test_lea_and_imm64_executes();
     test_host_abi_bridge();
     test_guest_program_runs();
+    test_guest_program_loops();
     test_pipeline();
 #if defined(__aarch64__)
     printf("VERDICT arch=aarch64 exe_words=%zu const_ok=%d first=%s/%llu(to=%d,sig=%d) "

@@ -153,9 +153,24 @@ typedef uint64_t (*tr_resolve_fn)(uint64_t guest_iat_va, void *user);
 
 /* Tag the resolver ORs into a returned address to say the target is a real host
  * function following the AAPCS, not translated guest code following the x86-64
- * convention. Code addresses are at least 4-byte aligned so bit 0 is always free;
- * the translator masks it off before emitting and uses it to decide whether to
- * bridge.
+ * convention. The translator masks it off before emitting and uses it to decide
+ * whether to bridge.
+ *
+ * The tag is bit 63, and it was bit 0 until a test caught the reason that is wrong.
+ * Bit 0 rests on code addresses being at least 4-byte aligned, which is true on
+ * AArch64 - every instruction is four bytes - and FALSE on x86-64, where
+ * instructions are variable length and a function may legitimately start at an odd
+ * address. Measured on this host: `&abi_target` came back 0x55ec35b5a435, odd, for
+ * an ordinary noinline static C function. A resolver returning that would be read
+ * as "bridge this call" when the caller asked for the opposite, so the tag could
+ * flip on a real address with no bug in the resolver at all.
+ *
+ * Bit 63 is free on both: user-space addresses are canonical and below 2^47 on
+ * x86-64 and below 2^48 on AArch64 with 48-bit VA, so no function address this
+ * translator can be handed ever sets it. Using a bit that is free on every host
+ * rather than one that is free only on the host that happens to run the emitted
+ * code is what makes the tag a property of the interface instead of an accident of
+ * where the tests were compiled.
  *
  * Why a tag rather than a second callback: an untagged return keeps its exact
  * present meaning, so every existing resolver and test is unaffected, and a target
@@ -164,7 +179,7 @@ typedef uint64_t (*tr_resolve_fn)(uint64_t guest_iat_va, void *user);
  * Not bridged: the fifth and later arguments, which x86-64 passes on the guest
  * stack. A shim needing them takes four or fewer parameters and supplies the rest
  * itself, which is what a wrapper is for. */
-#define TR_ABI_HOST 1u
+#define TR_ABI_HOST (1ULL << 63)
 
 typedef struct {
     uint32_t    words[TR_MAX_WORDS];

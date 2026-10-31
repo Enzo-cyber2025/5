@@ -1147,7 +1147,7 @@ chama uma função opaca com oito argumentos, o que força o compilador a carreg
 X0..X7 — e RBX é X3 — tornando a destruição tão certa quanto C portável permite;
 mesmo assim a garantia vem dos words, não da sorte.
 
-Suite do projeto: **984**.
+Suite do projeto: **989**.
 
 ### Um programa guest inteiro
 
@@ -1201,6 +1201,61 @@ retorno. Está dito no shim em vez de deixado parecendo fiel.
 palavras por chamada, então três chamadas de importação precisam de ~80 palavras
 para um corpo de nove instruções. **64 não comportava um programa que fizesse
 qualquer coisa.** Nenhum teste dependia de `TR_OVERFLOW`.
+
+### Um laço — e duas coisas que ele encontrou
+
+O programa seguinte tem um **laço**: uma contagem regressiva de 9 a 0 em que cada
+linha é uma chamada própria a `WriteFile` através da ponte. Um ramo para trás dez
+vezes, dez chamadas ponteadas, dois stores com verificação de limites dentro da
+imagem e um acumulador em RDI que tem de sobreviver às dez — porque a ponte salva e
+restaura RDI, e um laço que não terminasse seria pego como *timeout* em vez de
+passar em silêncio.
+
+O contador é decrementado **antes** de imprimir o dígito, o que não é a forma óbvia
+e é deliberado: GRP1 com `mod=3` é emitido como operação de 64 bits, então um
+contador que passasse de zero viraria `0xFFFFFFFFFFFFFFFF`, o `cmp esi,0` nunca
+veria zero e o laço não terminaria. Decrementar primeiro faz o último valor ser
+exatamente zero.
+
+Escrever esse programa encontrou duas coisas que os testes anteriores não podiam
+encontrar.
+
+**1. `8B` com `mod=3` era recusado.** `mov r8d,esi` (`44 8B C6`) não traduzia,
+enquanto `mov esi,r8d` (`89`) traduzia. São a mesma operação com os operandos
+trocados — `89` leva a origem no campo `reg`, `8B` leva o destino — e ambas compilam
+para um único MOV. Nenhuma decisão de projeto produziu isso; foi omissão.
+Compiladores emitem as duas formas livremente e escolhem entre elas conforme qual
+operando já está no campo `reg`, então aceitar uma e recusar a outra descarta uma
+fração grande de código real sem motivo. A forma de memória de `8B` é tratada à
+parte e não mudou: ela exige `mod != 3`.
+
+**2. A tag de ABI estava no bit errado, e isso é um bug de projeto, não de teste.**
+O caso de controle da ponte — "um endereço sem tag não deve emitir a ponte" — passou
+a falhar depois que o laço entrou, sem que nenhuma instrução do controle mudasse. O
+endereço resolvido era `&abi_target`, e medido neste hospedeiro ele voltou
+**`0x55ec35b5a435` — ímpar**.
+
+A tag estava no bit 0, justificada por "endereços de código são alinhados a pelo
+menos 4 bytes, então o bit 0 está sempre livre". Isso é verdade em **AArch64**, onde
+toda instrução tem quatro bytes, e é **falso em x86-64**, onde as instruções têm
+tamanho variável e uma função pode legitimamente começar num endereço ímpar. Um
+resolvedor devolvendo aquele endereço seria lido como "pontee esta chamada" quando o
+chamador pediu o oposto — a tag virava sozinha, sem nenhum erro no resolvedor, só
+por causa do lugar onde o linkador colocou uma função.
+
+A tag foi para o **bit 63**, que é livre nos dois: endereços de espaço de usuário
+são canônicos e ficam abaixo de `2^47` em x86-64 e abaixo de `2^48` em AArch64 com
+VA de 48 bits, então nenhum endereço de função que este tradutor possa receber
+algum dia o liga. Usar um bit livre em **todo** hospedeiro, em vez de um livre só
+naquele que por acaso executa o código emitido, é o que torna a tag uma propriedade
+da interface e não um acidente do lugar onde os testes foram compilados. Há um teste
+que fixa isso: um alvo ímpar sem tag **não** pode emitir a ponte.
+
+Vale registrar como o bug apareceu. Nenhum teste da ponte estava errado; o endereço
+de `abi_target` mudou quando o código cresceu, e um endereço que antes era par
+passou a ser ímpar. **O teste de controle só estava passando por sorte de
+alinhamento.** Um teste que depende de um valor que o linkador escolhe não está
+testando o que descreve.
 
 ### Não feito
 
