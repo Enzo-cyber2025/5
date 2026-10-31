@@ -1470,6 +1470,11 @@ jobs:
             } else { LogR "docs ausente" }
           } catch { LogR ("docs ERRO: " + $_.Exception.Message) }
           LogR "fim rea-ativ (sempre sucesso)"
+          # v99c: pwsh -Command herda o $LASTEXITCODE do ultimo comando
+          # NATIVO (reg.exe "0 match(es)" = exit 1) mesmo com cmdlets
+          # depois — o trace chegava ao "fim" e o passo "falhava". Exit
+          # explicito: este passo nunca pode derrubar o boot do jogo.
+          exit 0
       - name: SOBE o ETS2 REAL (demo oficial) — a DLL no processo de verdade
         shell: pwsh
         # v45: timeout de STEP (imposto pelo RUNNER, nao pelo pwsh) — as runs
@@ -4750,6 +4755,8 @@ jobs:
               }
               Write-Host "REA ativacao: snapshot DEPOIS + diffs prontos"
             } catch { Write-Host ("REA depois ERRO: " + $_.Exception.Message) }
+            # v99c: limpa o exit code stale do reg.exe p/ nao "falhar" o step
+            $global:LASTEXITCODE = 0
           }
       - name: Diagnostico (commita logs da demo real no repo)
         if: always()
