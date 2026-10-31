@@ -278,8 +278,10 @@ static std::wstring rotulo_valor(const std::wstring& nome, double v) {
 // Título de seção: rótulo + um filete colorido embaixo (o filete é um
 // "static" vazio pintado com a cor de destaque em WM_CTLCOLORSTATIC).
 static std::vector<HWND> g_barras_secao;
+static std::vector<int> g_secoes_y;         // y de cada título de seção
 
 static HWND secao(HWND pai, int x, int y, int w, const wchar_t* txt) {
+    g_secoes_y.push_back(y);
     rotulo(pai, x, y, w, 18, txt, g_fonte_botao);
     HWND barra = CreateWindowW(L"static", L"", WS_CHILD | WS_VISIBLE | SS_LEFT, x, y + 18, w, 2,
                                pai, nullptr, GetModuleHandle(nullptr), nullptr);
@@ -303,6 +305,74 @@ static HWND botao(HWND pai, int id, int x, int y, int w, int h, const wchar_t* t
                             (HMENU)(intptr_t)id, GetModuleHandle(nullptr), nullptr);
     SendMessageW(hw, WM_SETFONT, (WPARAM)g_fonte, TRUE);
     return hw;
+}
+
+// ------------------------------------------------------------------ rolagem
+// O conteúdo do painel (treino) tem mais de 1300 px e a janela cabe ~700:
+// sem rolagem metade dos controles fica fora da tela. Os controles são criados
+// numa altura "virtual" e este tanto é descontado na hora de posicionar.
+static int g_rolagem = 0;           // px já rolados
+static int g_altura_conteudo = 0;   // altura total do conteúdo do painel
+static int g_altura_visivel = 0;    // altura da área visível da janela
+struct PosCtl { HWND h; int x0, y0; };
+static std::vector<PosCtl> g_pos_painel;   // posição original de cada controle
+static std::vector<RECT> g_cartoes;        // molduras das seções
+static const std::vector<RECT> g_vazio_cartoes;   // (nada, fora do treino)
+
+static BOOL CALLBACK coleta_pos(HWND h, LPARAM) {
+    RECT r;
+    if (!GetWindowRect(h, &r)) return TRUE;
+    POINT p = {r.left, r.top};
+    ScreenToClient(g_hwnd, &p);
+    g_pos_painel.push_back({h, p.x, p.y});
+    return TRUE;
+}
+
+static void aplicar_rolagem() {
+    for (const PosCtl& pc : g_pos_painel) {
+        if (!pc.h) continue;
+        SetWindowPos(pc.h, nullptr, pc.x0, pc.y0 - g_rolagem, 0, 0,
+                     SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+    }
+}
+
+static int rolagem_max() { return std::max(0, g_altura_conteudo - g_altura_visivel); }
+
+static void recalcular_rolagem() {
+    if (!g_hwnd) return;
+    RECT rc;
+    GetClientRect(g_hwnd, &rc);
+    g_altura_visivel = int(rc.bottom);
+    if (g_pos_painel.empty()) EnumChildWindows(g_hwnd, coleta_pos, 0);
+    int fim = 0;
+    for (const PosCtl& pc : g_pos_painel) {
+        if (!pc.h || !IsWindowVisible(pc.h)) continue;   // só o modo atual
+        RECT r;
+        if (!GetWindowRect(pc.h, &r)) continue;
+        fim = std::max(fim, pc.y0 + int(r.bottom - r.top));
+    }
+    g_altura_conteudo = fim + 14;
+    if (g_rolagem > rolagem_max()) g_rolagem = rolagem_max();
+    if (g_rolagem < 0) g_rolagem = 0;
+    aplicar_rolagem();
+    // moldura de cada seção: do título até a próxima (dá o agrupamento visual)
+    g_cartoes.clear();
+    for (size_t i = 0; i < g_secoes_y.size(); ++i) {
+        const int topo = g_secoes_y[i] - 8;
+        const int base = (i + 1 < g_secoes_y.size()) ? (g_secoes_y[i + 1] - 14)
+                                                     : (g_altura_conteudo - 8);
+        if (base - topo < 40) continue;
+        RECT r = {8, topo, kPainelW - 8, base};
+        g_cartoes.push_back(r);
+    }
+}
+
+static void rolar(int delta) {
+    const int nova = std::max(0, std::min(rolagem_max(), g_rolagem + delta));
+    if (nova == g_rolagem) return;
+    g_rolagem = nova;
+    aplicar_rolagem();
+    InvalidateRect(g_hwnd, nullptr, FALSE);
 }
 
 // ------------------------------------------------------------- slider próprio
@@ -1266,6 +1336,7 @@ static void mostra_tela() {
     if (g_texto_metricas) ShowWindow(g_texto_metricas, treino ? SW_SHOW : SW_HIDE);
     if (g_texto_corrida) ShowWindow(g_texto_corrida, corrida ? SW_SHOW : SW_HIDE);
     InvalidateRect(g_hwnd, nullptr, TRUE);
+    recalcular_rolagem();       // cada modo tem uma altura de conteúdo
 }
 
 // Só reescreve o texto quando ele mudou: assim as caixas não repintam 60
@@ -1484,11 +1555,14 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             SendMessageW(g_edita_python, WM_SETFONT, (WPARAM)g_fonte_mono, TRUE);
             SetWindowTextW(g_edita_python, wide(g_app.python_code).c_str());
             y += 196;
-            botao(hwnd, ID_APLICAR_PY, P, y, 130, 26, L"Aplicar código");
-            botao(hwnd, ID_EXEMPLO_PY, P + 136, y, 112, 26, L"Exemplo");
-            botao(hwnd, ID_ABRIR_PY, P + 254, y, 118, 26, L"Abrir .py");
-            botao(hwnd, ID_SALVAR_PY, P + 378, y, 118, 26, L"Salvar .py");
-            botao(hwnd, ID_LIMPAR_PY, P + 502, y, 100, 26, L"Limpar");
+            // duas fileiras que cabem no painel (antes a ultima linha ia ate
+            // 614 px e os botoes ficavam em cima da pista)
+            botao(hwnd, ID_APLICAR_PY, P, y, 110, 26, L"Aplicar");
+            botao(hwnd, ID_EXEMPLO_PY, P + 116, y, 86, 26, L"Exemplo");
+            botao(hwnd, ID_ABRIR_PY, P + 208, y, 84, 26, L"Abrir .py");
+            botao(hwnd, ID_SALVAR_PY, P + 298, y, 98, 26, L"Salvar .py");
+            y += 32;
+            botao(hwnd, ID_LIMPAR_PY, P, y, 110, 26, L"Limpar");
 
             y += 32;
             g_texto_metricas = CreateWindowW(L"edit", L"",
@@ -1555,11 +1629,11 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                                             P, 436, W, 140, hwnd, nullptr,
                                             GetModuleHandle(nullptr), nullptr);
             SendMessageW(g_texto_corrida, WM_SETFONT, (WPARAM)g_fonte_mono, TRUE);
-            botao_corrida(hwnd, ID_REINICIAR, P, 590, 130, 28, L"Reiniciar");
-            botao_corrida(hwnd, ID_ADD_MODELO, P + 138, 590, 150, 28, L"Adicionar modelo");
-            botao_corrida(hwnd, ID_MENU, P + 296, 590, 130, 28, L"Menu");
-            botao_corrida(hwnd, ID_ABRIR_MODS, P, 626, 196, 28, L"Abrir pasta de mods");
-            botao_corrida(hwnd, ID_RECARR_MODS, P + 204, 626, 222, 28, L"Recarregar mods");
+            botao_corrida(hwnd, ID_REINICIAR, P, 590, 128, 28, L"Reiniciar");
+            botao_corrida(hwnd, ID_ADD_MODELO, P + 132, 590, 140, 28, L"Adicionar modelo");
+            botao_corrida(hwnd, ID_MENU, P + 276, 590, 120, 28, L"Menu");
+            botao_corrida(hwnd, ID_ABRIR_MODS, P, 626, 190, 28, L"Abrir pasta de mods");
+            botao_corrida(hwnd, ID_RECARR_MODS, P + 198, 626, 198, 28, L"Recarregar mods");
 
             rotulo(hwnd, P, 662, W, 150,
                    L"Setas/WASD dirigem\nF2 alterna Corrida/Treino\n"
@@ -1624,6 +1698,32 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             DeleteObject(sombra);
             SelectObject(mem, op);
             DeleteObject(linha);
+            // moldura de cada seção (só o contorno: o fundo é o próprio painel)
+            // — apenas no treino, que é onde as seções existem
+            for (const RECT& rc0 : (g_app.mode == Mode::Treinamento ? g_cartoes
+                                                                   : g_vazio_cartoes)) {
+                const int t = rc0.top - g_rolagem, b = rc0.bottom - g_rolagem;
+                if (b < 0 || t > h) continue;
+                HPEN pc = CreatePen(PS_SOLID, 1, g_t.cartao_borda);
+                HBRUSH bc = (HBRUSH)GetStockObject(NULL_BRUSH);
+                HGDIOBJ obc = SelectObject(mem, bc);
+                HGDIOBJ opc = SelectObject(mem, pc);
+                RoundRect(mem, rc0.left, t, rc0.right, b, 14, 14);
+                SelectObject(mem, obc);
+                SelectObject(mem, opc);
+                DeleteObject(pc);
+            }
+            // barra de rolagem do painel (só aparece quando o conteúdo não cabe)
+            if (rolagem_max() > 0 && h > 60) {
+                const int faixa = std::max(28, int(double(g_altura_visivel) /
+                                                   double(g_altura_conteudo) * double(h)));
+                const int topo = int(double(g_rolagem) / double(rolagem_max()) *
+                                     double(h - faixa));
+                RECT rb = {kPainelW - 9, topo, kPainelW - 4, topo + faixa};
+                HBRUSH bsb = CreateSolidBrush(g_t.divisor);
+                FillRect(mem, &rb, bsb);
+                DeleteObject(bsb);
+            }
             pinta_canvas(mem, kPainelW + 2, 0, std::max(1, w - kPainelW - 2), h);
             // copia só a área suja
             const int px = ps.rcPaint.left, py = ps.rcPaint.top;
@@ -1972,12 +2072,23 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             return 0;
         }
         case WM_MOUSEWHEEL: {
-            double delta = GET_WHEEL_DELTA_WPARAM(wp) > 0 ? 1.2 : 1.0 / 1.2;
+            const int giro = GET_WHEEL_DELTA_WPARAM(wp);
+            POINT pt = {int(short(LOWORD(lp))), int(short(HIWORD(lp)))};
+            ScreenToClient(hwnd, &pt);
+            // em cima do painel a rodinha rola o painel; na pista ela dá zoom
+            if (pt.x < kPainelW && rolagem_max() > 0) {
+                rolar((giro > 0 ? -1 : 1) * 70);
+                return 0;
+            }
+            double delta = giro > 0 ? 1.2 : 1.0 / 1.2;
             g_zoom = std::max(1.0, std::min(40.0, g_zoom * delta));
             g_cam.z = g_zoom;
             InvalidateRect(hwnd, nullptr, FALSE);
             return 0;
         }
+        case WM_SIZE:
+            recalcular_rolagem();
+            break;
         case WM_ERASEBKGND:
             return 1;                       // nunca apaga: o duplo-buffer já pinta tudo
         case WM_CTLCOLORSTATIC: {           // rótulos: texto claro sobre o painel
@@ -2166,6 +2277,8 @@ static int rodar(HINSTANCE hInst, int cmd_show) {
         log_erro(L"CreateWindowExW", mensagem_win32(GetLastError()));
         return 1;
     }
+    // mede o conteúdo do painel e prepara a rolagem (a janela já existe)
+    recalcular_rolagem();
     ShowWindow(g_hwnd, cmd_show);
     UpdateWindow(g_hwnd);
     log_linha(L"[OK] janela criada " + std::to_wstring(larg) + L"x" + std::to_wstring(alt));

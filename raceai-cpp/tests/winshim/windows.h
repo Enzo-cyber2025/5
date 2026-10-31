@@ -324,6 +324,9 @@ inline int DrawTextW(HDC, LPCWSTR, int, RECT*, UINT) { return 0; }
 #ifndef WM_USER
 #define WM_USER 0x0400
 #endif
+#ifndef WM_SIZE
+#define WM_SIZE 0x0005
+#endif
 #ifndef WM_NCDESTROY
 #define WM_NCDESTROY   0x0082
 #define WM_LBUTTONDOWN 0x0201
@@ -362,3 +365,23 @@ inline HWND SetFocus(HWND) { return nullptr; }
 inline HWND GetParent(HWND) { return nullptr; }
 inline BOOL ReleaseCapture() { return 1; }
 inline BOOL Ellipse(HDC, int, int, int, int) { return 1; }
+
+// ---- rolagem do painel e cartoes de secao ----
+#ifndef SWP_NOSIZE
+#define SWP_NOSIZE     0x0001
+#define SWP_NOZORDER   0x0004
+#define SWP_NOACTIVATE 0x0010
+#endif
+#ifndef NULL_BRUSH
+#define NULL_BRUSH 5
+#endif
+#ifndef WHEEL_DELTA
+#define WHEEL_DELTA 120
+#endif
+typedef BOOL (*WNDENUMPROC)(HWND, LPARAM);
+inline BOOL EnumChildWindows(HWND, WNDENUMPROC, LPARAM) { return 1; }
+inline BOOL ScreenToClient(HWND, POINT*) { return 1; }
+inline BOOL GetWindowRect(HWND, RECT*) { return 1; }
+inline BOOL IsWindowVisible(HWND) { return 1; }
+inline BOOL SetWindowPos(HWND, HWND, int, int, int, int, UINT) { return 1; }
+inline HGDIOBJ GetStockObject(int) { return nullptr; }

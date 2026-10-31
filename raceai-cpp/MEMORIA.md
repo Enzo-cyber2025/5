@@ -198,3 +198,25 @@ src/core/*.cpp src/app/app_state.cpp` (já limpo).
   MinGW/MSVC) → use `std::ofstream(narrow(caminho))`. E `salvar_tema()`
   precisou de declaração adianta porque fica depois de `narrow()`.
 - Shim: `HRGN`, `RedrawWindow`, `RDW_INVALIDATE/RDW_UPDATENOW/RDW_ALLCHILDREN`.
+
+## Layout: controles sobrepostos e fora da tela (2026-10-30)
+
+- **Bug 1 (sobrepostos de verdade)**: vários botões tinham `x + largura`
+  maior que o painel (420 px) e ficavam desenhados **em cima da pista**:
+  `ID_SALVAR_PY` ia até 614 px, `ID_MENU` até 438, `ID_RECARR_MODS` até 438.
+  Agora uma auditoria automática confere todos: x + w ≤ 420.
+- **Bug 2 (metade da tela inalcançável)**: o conteúdo do treino tem ~1360 px
+  e a janela cabe ~700 → recompensa, penalidades, Python e métricas ficavam
+  fora da janela, sem volta. Resolvido com **rolagem do painel**:
+  `g_rolagem` + `g_pos_painel` (posição original de cada controle via
+  `EnumChildWindows`) + `SetWindowPos` em `aplicar_rolagem()`.
+  - A roda do mouse rola o painel quando o cursor está em cima dele
+    (`x < kPainelW`) e dá zoom na câmera quando está sobre a pista.
+  - A altura do conteúdo é medida **só dos controles visíveis** (cada modo
+    tem a sua), e `mostra_tela()` chama `recalcular_rolagem()`.
+  - Barra de rolagem desenhada à mão no WM_PAINT (só aparece se não couber).
+- **Agrupamento**: moldura arredondada em volta de cada seção (`g_cartoes`,
+  calculada pelos y dos títulos em `g_secoes_y`), só no modo treino.
+- Shim: `EnumChildWindows`, `ScreenToClient`, `GetWindowRect`,
+  `IsWindowVisible`, `SetWindowPos`, `SWP_*`, `GetStockObject`, `NULL_BRUSH`,
+  `WM_SIZE`, `WHEEL_DELTA`.
