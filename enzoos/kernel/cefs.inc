@@ -196,6 +196,17 @@ app_launch:
         mov rax, [img_ptr]
         mov [rbx + A_IMG], rax
         mov [rbx + A_SIZE], r13
+        ; cópia imutável p/ o encerramento: app_slots é CPL0-writável e um
+        ; app bugado/hostil corrompia A_IMG/A_SIZE — o free posterior
+        ; liberava páginas vivas de outros donos (shadow, buffers) e o
+        ; kernel pânico no composite. O close usa ESTA cópia.
+        lea rdi, [launch_img]
+        mov [rdi + r12*8], rax
+        mov edx, r13d
+        add edx, 4095
+        shr edx, 12
+        lea rdi, [launch_npg]
+        mov [rdi + r12*4], edx
         mov dword [rbx + A_FMT], 1
         cmp dword [rax], 0x315A4E45         ; "ENZ1"?
         jne .not_enz
@@ -413,13 +424,133 @@ app_dispatch:
         pop rsi
         pop rdi
 .dgo:
+        ; hardening: entry precisa continuar dentro da imagem do slot —
+        ; um heap corrompido/app hostil mata só o app, não o kernel
+        mov rax, [rbx + A_IMG]
+        test rax, rax
+        jz .kill
+        mov rdx, [rbx + A_ENTRY]
+        cmp rdx, rax
+        jb .kill
+        mov rcx, [rbx + A_SIZE]
+        add rcx, rax
+        cmp rdx, rcx
+        jae .kill
         mov rsi, rsp
+        ; — pilha isolada p/ o app: um app hostil/bugado que estoure a pilha
+        ; não corrompe mais a pilha do kernel (0x8F000). Suporta dispatch
+        ; aninhado (app chama exec que abre outro app): cada nível tem sua
+        ; própria pilha física e seu rsp salvo.
+        mov eax, [app_rsp_depth]
+        cmp eax, APP_NEST_MAX
+        jae .toodeep
+        inc dword [app_rsp_depth]
+        mov [app_rsp_stack + rax*8], rsp
+        mov ecx, eax
+        imul ecx, APP_STACK_SZ
+        mov rsp, APP_STACK_TOP
+        sub rsp, rcx
+        inc dword [app_dispatching]   ; contador: dispatch aninhado (exec)
         call r12
+        dec dword [app_dispatching]
+        mov eax, [app_rsp_depth]
+        dec eax
+        mov [app_rsp_depth], eax
+        mov rsp, [app_rsp_stack + rax*8]
+        jmp .skip
+.toodeep:
+        mov rdi, s_toodeep
+        call k_log
+.kill:
+        mov edi, [cur_slot]
+        mov esi, s_killed
+        call app_diag_kill
 .skip:
         add rsp, 48
         pop rax
         mov [cur_slot], eax               ; 32-bit: store qword esmagava o dword
         pop r12                           ; baixo de img_ptr (dq vizinho)
+        pop rbx
+        ret
+
+; app_after_call: ponto de retomada do ISR de exceção — o app hostil foi
+; morto; devolve a pilha do kernel e sai como um dispatch normal
+app_after_call:
+        sti                              ; exc entrou com IF=0 (gate)
+        dec dword [app_dispatching]   ; nao zera: pode haver dispatch pai
+        mov eax, [app_rsp_depth]
+        test eax, eax
+        jz .none
+        dec eax
+        mov [app_rsp_depth], eax
+        mov rsp, [app_rsp_stack + rax*8]
+.none:
+        add rsp, 48
+        pop rax
+        mov [cur_slot], eax
+        pop r12
+        pop rbx
+        ret
+
+; app_diag_kill: edi=slot, rsi=msg — loga motivo e encerra o app hostil.
+; Usa fechamento FORÇADO: nunca despacha EV_QUIT de volta para um app que
+; acabou de gerar exceção (recursão kill -> dispatch -> crash -> kill).
+app_diag_kill:
+        push rdi
+        push rsi
+        mov rdi, rsi
+        call k_log
+        pop rsi
+        pop rdi
+        jmp app_close_force
+
+; app_free_image: edi=slot — libera a imagem pelo REGISTRO DO LAUNCH
+; (cópia imutável; A_IMG/A_SIZE em app_slots podem ter sido corrompidos)
+app_free_image:
+        push rbx
+        push r12
+        mov r12d, edi
+        lea rax, [launch_img]
+        mov rdi, [rax + r12*8]
+        mov qword [rax + r12*8], 0
+        test rdi, rdi
+        jz .out
+        lea rax, [launch_npg]
+        mov esi, [rax + r12*4]
+        mov dword [rax + r12*4], 0
+        test esi, esi
+        jz .out
+        mov rsi, rsi
+        shl rsi, 12                    ; npages -> bytes
+        call k_free_bytes
+.out:
+        pop r12
+        pop rbx
+        ret
+
+; app_close_force: edi=slot — encerra sem despachar EV_QUIT (app já morto)
+app_close_force:
+        push rbx
+        push rdi                       ; slot p/ app_free_image
+        imul rbx, rdi, A_SIZEOF
+        lea rax, [app_slots]
+        add rbx, rax                   ; rbx = &app_slots[slot]
+        mov rax, [rbx + A_WND]
+        test rax, rax
+        jz .nownd
+        push rbx
+        mov rbx, rax
+        call wnd_destroy
+        pop rbx
+.nownd:
+        mov dword [rbx + A_USED], 0
+        mov qword [rbx + A_WND], 0
+        mov qword [rbx + A_ENTRY], 0
+        mov qword [rbx + A_IMG], 0
+        mov edi, [rsp]                 ; slot (salvo no prólogo)
+        call app_free_image
+.nofree:
+        pop rdi
         pop rbx
         ret
 
@@ -539,6 +670,12 @@ api_use_win:
         test rax, rax
         jz .none
         mov rbx, rax
+        ; hardening: struct coerente com o buffer registrado? um app
+        ; bugado/hostil corrompe W_X/Y/W/H/BUF e as APIs de desenho
+        ; escreviam fora do buffer (em cima de estruturas do kernel)
+        call wnd_sane
+        test eax, eax
+        jz .none
         mov rdi, [rbx + W_BUF]
         mov esi, [rbx + W_W]
         mov edx, [rbx + W_H]
@@ -588,6 +725,7 @@ api_text:                         ; edi=x, esi=y, rdx=str, ecx=len, r8d=cor
         push rsi
         push rdx
         push r8
+        mov rdi, rdx
         call k_strlen
         mov ecx, eax
         pop r8
@@ -721,28 +859,35 @@ api_alloc:                        ; rdi=bytes -> rax=ptr
         push r9
         push r10
         push r11
+        mov r10, rdi                ; bytes pedidos (p/ registro)
         call k_alloc
         test rax, rax
         jz .out
-        ; registra a posse no slot atual (anéis de API_PTRS por app)
+        ; registra a posse no slot atual (pares ptr/bytes por app): o free
+        ; usa o tamanho REGISTRADO, nunca o que o app alega em rsi — um
+        ; free(ptr, bytes gigante) desmapeava páginas vizinhas do kernel
+        ; (shadow/desktop) e matava o sistema (use-after-free em massa).
         mov edx, [cur_slot]
         cmp edx, 0
         jl .out
         cmp edx, MAX_APPS
         jge .out
-        imul r8d, edx, API_PTRS
+        imul r8d, edx, API_PTRS*2
         lea r9, [api_ptrs]
         lea r9, [r9 + r8*8]
         xor ecx, ecx
 .find:
         cmp ecx, API_PTRS
         jae .out                    ; anel cheio: ptr válido, sem registro
-        cmp qword [r9 + rcx*8], 0
+        lea rdx, [rcx + rcx]        ; rdx*8 = i*16 (par ptr/bytes)
+        cmp qword [r9 + rdx*8], 0
         je .reg
         inc ecx
         jmp .find
 .reg:
-        mov [r9 + rcx*8], rax
+        lea rdx, [rcx + rcx]
+        mov [r9 + rdx*8], rax
+        mov [r9 + rdx*8 + 8], r10
 .out:
         pop r11
         pop r10
@@ -757,8 +902,10 @@ api_alloc:                        ; rdi=bytes -> rax=ptr
         xor eax, eax
         ret
 
-api_free:                         ; rdi=ptr, rsi=bytes
-        ; hardening: um app só libera o que alocou (registro por slot)
+api_free:                         ; rdi=ptr (rsi ignorado: usa o registro)
+        ; hardening: um app só libera o que alocou (registro por slot) e
+        ; SOMENTE com o tamanho que alocou — o tamanho alegado pelo app em
+        ; rsi não é confiável (pen-test t14: free com bytes gigantes)
         test rdi, rdi
         jz .ok                     ; free(NULL): no-op
         mov eax, [cur_slot]
@@ -766,19 +913,21 @@ api_free:                         ; rdi=ptr, rsi=bytes
         jl .go                     ; contexto do kernel: range-check no k_free_n
         cmp eax, MAX_APPS
         jge .rej
-        imul r8d, eax, API_PTRS
+        imul r8d, eax, API_PTRS*2
         lea r9, [api_ptrs]
         lea r9, [r9 + r8*8]
         xor ecx, ecx
 .find:
         cmp ecx, API_PTRS
         jae .rej                   ; não é nosso: recusa
-        cmp [r9 + rcx*8], rdi
+        lea rdx, [rcx + rcx]       ; rdx*8 = i*16 (par ptr/bytes)
+        cmp [r9 + rdx*8], rdi
         je .found
         inc ecx
         jmp .find
 .found:
-        mov qword [r9 + rcx*8], 0  ; remove do registro (anti double-free)
+        mov rsi, [r9 + rdx*8 + 8]  ; tamanho REGISTRADO no alloc
+        mov qword [r9 + rdx*8], 0  ; remove do registro (anti double-free)
 .go:
         jmp k_free_bytes
 .rej:
@@ -882,28 +1031,37 @@ api_exit:
         call app_dispatch
         call wnd_destroy
 .noclose:
-        lea rax, [app_slots]
-        imul eax, [tmp_slot], A_SIZEOF   ; dword!
+        movsxd rax, dword [tmp_slot]
+        imul rax, rax, A_SIZEOF
+        lea rcx, [app_slots]
+        add rax, rcx
         mov dword [rax + A_USED], 0
         mov qword [rax + A_WND], 0
         mov qword [rax + A_ENTRY], 0
         mov rdi, [rax + A_APITBL]
         test rdi, rdi
         jz .noapitbl
-        mov esi, [rax + A_APITBL_N]
-        inc esi
-        shl esi, 3
-        call k_free_bytes
+        ; ptr precisa estar no heap (a tabela estática do kernel NÃO é
+        ; liberada; um valor forjado liberava páginas vivas do kernel)
+        cmp rdi, HEAP_START
+        jb .noapitbl
+        mov rsi, HEAP_START + SWAP_SPAN
+        cmp rdi, rsi
+        jae .noapitbl
+        mov esi, (K_EXPORTS_N + 1) * 8     ; tamanho FIXO do alloc (o
+        call k_free_bytes                  ; A_APITBL_N é corrompível)
+        ; k_free_bytes CLOBBA rax (retorna o índice da última página
+        ; liberada) — o zero abaixo ia pra um endereço qualquer da
+        ; memória baixa. Recalcula o slot.
+        movsxd rax, dword [tmp_slot]
+        imul rax, rax, A_SIZEOF
+        lea rcx, [app_slots]
+        add rax, rcx
         mov qword [rax + A_APITBL], 0
 .noapitbl:
-        mov rdi, [rax + A_IMG]
-        mov rsi, [rax + A_SIZE]
         mov qword [rax + A_IMG], 0
-        test rdi, rdi
-        jz .nofree
-        add rsi, 4095
-        and rsi, -4096
-        call k_free_bytes
+        mov edi, [tmp_slot]
+        call app_free_image            ; registro imutável do launch
 .nofree:
         pop rbx
         ret
@@ -984,6 +1142,7 @@ api_fs_list:                      ; edi=ino, esi=índice, rdx=buf -> tipo/0/-1
 api_fs_read:                      ; edi=ino, rsi=dst, rdx=max -> bytes
         push rdx
         xor rdx, rdx
+        mov rcx, [rsp]             ; restante = max (e_read espera rcx)
         call e_read
         pop rdx
         cmp rax, rdx
@@ -1095,6 +1254,22 @@ s_al_bi: db "[app] import nao resolvido: ", 0
 ce_count:  dd 0
 ce_files:  times MAX_FILES * 40 db 0
 cur_slot:  dd -1
+APP_STACK_TOP equ 0x8E000                  ; topo da pilha de apps (nível 0)
+APP_STACK_SZ  equ 0x2000                   ; 8 KB por nível de aninhamento
+APP_NEST_MAX  equ 4                        ; app -> exec -> app -> exec
+                                             ; (níveis até 0x86000; emergência abaixo)
+app_rsp_depth:  dd 0
+app_rsp_stack:  times APP_NEST_MAX dq 0
+app_dispatching: dd 0                      ; >0 = dentro de call r12 (excecao = kill do app)
+
+align 8
+; registro imutável de launch: (img, npages) por slot — usado no
+; encerramento; app_slots pode ser corrompido pelo próprio app
+launch_img:  times MAX_APPS dq 0
+launch_npg:  times MAX_APPS dd 0
+s_toodeep: db "[app] aninhamento demais: dispatch negado", 10, 0
+s_killed:  db "[app] entry corrompida: app encerrado por seguranca", 10, 0
+s_app_crash: db "[app] excecao no app: encerrado por seguranca (kernel intacto)", 10, 0
 img_ptr:   dq 0
 tmp_slot:  dd 0
 api_cw:    dd 0
@@ -1237,6 +1412,6 @@ n_hpet:   db "hpet_ns", 0
 n_tone:   db "tone", 0
 
 ; registro de posse dos api_alloc por app (hardening anti free-inválido)
-api_ptrs: times MAX_APPS*API_PTRS dq 0
+api_ptrs: times MAX_APPS*API_PTRS*2 dq 0   ; pares (ptr, bytes) por app
 
 %endif

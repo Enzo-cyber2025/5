@@ -79,7 +79,8 @@ ev_key:
         jae .done
         lea rdi, [url]
         call slen
-        lea rdi, [url + rax]
+        lea rdi, [url]
+        add rdi, rax
         mov [rdi], al
         mov byte [rdi + 1], 0
         jmp .done
@@ -90,7 +91,9 @@ ev_key:
         jz .done
         lea rdi, [url]
         call slen
-        lea rdi, [url + rax - 1]
+        lea rdi, [url]
+        add rdi, rax
+        dec rdi
         mov byte [rdi], 0
 .done:
         call render
@@ -189,9 +192,11 @@ copy_str:                       ; rdi=dst rsi=src
 .d:
         ret
 
-slen:                           ; rdi=str -> eax
+slen:                           ; rdi=str -> eax (máx 4096: hardening)
         xor eax, eax
 .l:
+        cmp eax, 4096
+        jae .d
         cmp byte [rdi + rax], 0
         je .d
         inc eax
@@ -204,6 +209,7 @@ text_at:                        ; edi=x esi=y rdx=str r8d=cor
         push rsi
         push rdx
         push r8
+        mov rdi, rdx
         call slen
         mov ecx, eax
         pop r8

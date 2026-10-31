@@ -144,6 +144,8 @@ k_main:
         ; laço principal
 .mainloop:
         call evt_poll
+        call freeq_drain             ; frees adiados ANTES do composite
+        call pt_watchdog             ; integridade das PTs a cada volta
         call compose_if_dirty
         hlt
         jmp .mainloop
@@ -317,8 +319,9 @@ evt_poll:
 .tkloop:
         cmp ebx, MAX_APPS
         jae .tkdone
-        lea rax, [app_slots]
         imul rax, rbx, A_SIZEOF
+        lea rcx, [app_slots]
+        add rax, rcx
         cmp dword [rax + A_USED], 0
         je .tknext
         mov edi, ebx
@@ -998,9 +1001,9 @@ wm_update_hovers:
 app_close:
         push rbx
         mov [tmp_slot], edi
+        imul rbx, rdi, A_SIZEOF
         lea rax, [app_slots]
-        imul rax, rdi, A_SIZEOF
-        mov rbx, rax
+        add rbx, rax
         mov edi, [tmp_slot]
         mov esi, EV_QUIT
         xor edx, edx
@@ -1019,14 +1022,9 @@ app_close:
         mov dword [rbx + A_USED], 0
         mov qword [rbx + A_WND], 0
         mov qword [rbx + A_ENTRY], 0
-        mov rdi, [rbx + A_IMG]
-        mov rsi, [rbx + A_SIZE]
         mov qword [rbx + A_IMG], 0
-        test rdi, rdi
-        jz .nofree
-        add rsi, 4095
-        and rsi, -4096
-        call k_free_bytes
+        mov edi, [tmp_slot]
+        call app_free_image            ; registro imutável do launch
 .nofree:
         pop rbx
         ret

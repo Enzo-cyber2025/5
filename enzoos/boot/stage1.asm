@@ -223,12 +223,15 @@ section .s2 vstart=0x10200 follows=.text
         call serial_print
 
         ; ----------------------------------------------------------------
-        ; Mapa de memória E820 -> 0x600 (entradas de 24 bytes), count em 0x5F0
+        ; Mapa de memória E820 -> 0x9A000 (entradas de 24 bytes), count em
+        ; 0x9A400. HARDENING: a página 0 fica desmapeada em long mode
+        ; (deref de null vira #PF), então a tabela não pode mais ficar em
+        ; 0x600 — usa ES=0x9000:0xA000 (linear 0x9A000, área livre do boot).
         ; ----------------------------------------------------------------
-        xor ax, ax
+        mov ax, 0x9000
         mov es, ax
         xor ebp, ebp
-        mov di, 0x600
+        mov di, 0xA000
         xor ebx, ebx
 .e820_loop:
         mov eax, 0xE820
@@ -250,15 +253,15 @@ section .s2 vstart=0x10200 follows=.text
 .e820_endchk:
         test ebp, ebp
         jnz .e820_done
-        mov dword [es:0x600], 0      ; fallback: 0..64 MB tipo 1
-        mov dword [es:0x604], 0
-        mov dword [es:0x608], 0
-        mov dword [es:0x60C], 0x04000000
-        mov dword [es:0x610], 1
-        mov dword [es:0x614], 1
+        mov dword [es:0xA000], 0     ; fallback: 0..64 MB tipo 1
+        mov dword [es:0xA004], 0
+        mov dword [es:0xA008], 0
+        mov dword [es:0xA00C], 0x04000000
+        mov dword [es:0xA010], 1
+        mov dword [es:0xA014], 1
         mov ebp, 1
 .e820_done:
-        mov [es:0x5F0], bp
+        mov [es:0xA400], bp
         mov si, sM
         call serial_print
 
@@ -372,17 +375,19 @@ section .s2 vstart=0x10200 follows=.text
         mov [BP+0x1C], eax
         mov dword [BP+0x20], IMG_BASE
         mov dword [BP+0x24], CEFS_OFF
-        ; count e820 e tamanho da imagem vivem na RAM baixa (linear 0x5F0 e
-        ; 0x101E4): com DS=0x1000, usar ES=0 para endereçar lineares < 64 KB
+        ; count e820 em 0x9A400 (ES=0x9000); tamanho da imagem em linear
+        ; 0x101E4 (ES=0, IMG_BASE+0x1E4 — DS=0x1000 não alcança)
         push es
+        mov ax, 0x9000
+        mov es, ax
+        movzx eax, word [es:0xA400]
+        mov [BP+0x2C], eax
         xor ax, ax
         mov es, ax
-        movzx eax, word [es:0x5F0]
-        mov [BP+0x2C], eax
         mov eax, [es:dword 0x101E4]           ; linear IMG_BASE+0x1E4
         mov [BP+0x28], eax
         pop es
-        mov dword [BP+0x30], 0x600            ; ponteiro e820 (dword!)
+        mov dword [BP+0x30], 0x9A000          ; ponteiro e820 (dword!)
         movzx eax, word [vesa_mode]
         mov [BP+0x34], eax
 
@@ -701,6 +706,28 @@ pm_entry:
         stosd
         add ebx, 0x200000
         loop .fillpd
+        ; HARDENING (pen-test): página 0 (0..4KB) DESMAPEADA — deref de null
+        ; vira #PF em vez de corromper memória em silêncio. PD[0] passa a
+        ; apontar para PT@0x99000: 0x1000..0x1FFFFF em páginas de 4KB,
+        ; PTE[0] (página 0) fica ausente. (0x99000 só é usado por LFB>=4GB
+        ; em 0x98000; 0x9A000..0x9EFFF permanece livre.)
+        mov edi, 0x99000
+        xor eax, eax
+        mov ecx, 1024
+.zpt:
+        stosd
+        loop .zpt
+        mov edi, 0x99000 + 8            ; PTE[1..511]
+        mov eax, 0x1003                 ; 0x1000 | RW|P
+        mov ecx, 511
+.fillpt:
+        mov [edi], eax
+        mov dword [edi+4], 0
+        add eax, 0x1000
+        add edi, 8
+        loop .fillpt
+        mov dword [0x92000], 0x99003    ; PD[0] -> PT@0x99000 (bit PS=0)
+        mov dword [0x92000+4], 0
         ; janela MMIO 64-bit (BARs acima de 4GB — ex.: ahci PCI do QEMU):
         ; PDPT[4] -> PD@0x96000 (4..5GB), PDPT[5] -> PD@0x97000 (5..6GB)
         mov dword [0x91000 + 4*8], 0x96003
@@ -741,8 +768,8 @@ pm_entry:
         mov esi, [vesa_lfb]
         test esi, esi
         jz .lfb_extra
-        movzx ecx, word [0x5F0]
-        mov edi, 0x600
+        movzx ecx, word [0x9A400]
+        mov edi, 0x9A000
 .e820_scan:
         test ecx, ecx
         jz .lfb_wc

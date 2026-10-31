@@ -81,6 +81,12 @@ enz_build:
         mov dword [rbx + A_FMT], 2
         ; resolve os imports (cada um no SEU slot canônico)
         mov eax, [r14 + 48]         ; imp_off
+        ; hardening: imp_off vem do cabeçalho (mutável em fuzz/pen-test) e
+        ; precisa cair DENTRO da imagem — um offset arbitrário fazia o
+        ; resolvedor caminhar memória fora do arquivo
+        mov rcx, [rbx + A_SIZE]
+        cmp rax, rcx
+        jae .badimp
         add r14, rax                ; r14 = primeira string
         xor r12d, r12d
 .imp:
@@ -95,6 +101,11 @@ enz_build:
 .skipz:
         cmp byte [r14], 0
         je .adv
+        ; hardening: a string precisa terminar dentro da imagem
+        mov rax, [img_ptr]
+        add rax, [rbx + A_SIZE]
+        cmp r14, rax
+        jae .badimp
         inc r14
         jmp .skipz
 .adv:

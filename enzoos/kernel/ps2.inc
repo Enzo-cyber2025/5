@@ -461,6 +461,8 @@ kq_buf:  times 32*16 db 0
 
 mouse_state: dd 0
 mouse_pkt:   dd 0, 0, 0
+align 4                            ; ps2_magic+mouse_x/y contiguos p/ o scan do qmp_test
+ps2_magic:   dd 0x2468ACE0               ; assinatura p/ achar mouse_x por scan
 mouse_x:     dd 0
 mouse_y:     dd 0
 mouse_btns:  dd 0

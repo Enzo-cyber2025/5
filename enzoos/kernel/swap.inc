@@ -153,6 +153,17 @@ k_swap_init:
         cmp ecx, 32
         jb .inv
         mov dword [sw_armed], 1
+        ; ---- watchpoints de hardware sobre entradas das PTs ----
+        ; DR0 = PT#1 + 0 (a primeira corrupção observada no boot) e
+        ; DR1 = PT#0 + PTE[0x12F] (a página da cauda da sombra que pânicou
+        ; o compositor). Qualquer escrita dispara #DB -> dump no serial.
+        mov rax, [sw_pts + 8]
+        mov dr0, rax
+        mov rax, [sw_pts]
+        add rax, 0x12F*8
+        mov dr1, rax
+        mov eax, 0xDD0003              ; L0|L1, RW=escrita, LEN=8
+        mov dr7, rax
         mov rdi, s_swap_on
         call k_log
         jmp .done
@@ -414,6 +425,132 @@ sw_page_out:
         ret
 
 ; -----------------------------------------------------------------------------
+; pt_watchdog: verifica a integridade das 32 tabelas de página do heap
+; (mapeamento identidade P|RW). Uma escrita selvagem — de app ou do próprio
+; kernel — em cima de uma PT transforma PTEs vivas em não-presente e o
+; sistema pânico muito depois, sem contexto. Aqui a primeira corrupção é
+; capturada NO ATO: loga PT/valor achado/valor esperado e chama o k_panic
+; (que imprime o registro de janelas/apps vivos).
+; -----------------------------------------------------------------------------
+pt_watchdog:
+        push rax
+        push rcx
+        push rdx
+        push rbx
+        push r12
+        push r13
+        push r14
+        push r15
+        xor r12d, r12d
+.pt:
+        cmp r12d, 32
+        jae .ok
+        mov rbx, [sw_pts + r12*8]
+        test rbx, rbx
+        jz .nextpt
+        xor r13d, r13d
+.ent:
+        cmp r13d, 512
+        jae .nextpt
+        mov rax, [rbx + r13*8]
+        test al, 1                       ; presente?
+        jz .bad
+        and rax, -4096                   ; frame
+        mov rcx, r12                     ; esperado (identidade):
+        shl rcx, 21                      ; PT#i cobre HEAP_START+i*2MB
+        mov rdx, r13
+        shl rdx, 12
+        add rcx, rdx
+        add rcx, HEAP_START
+        cmp rax, rcx
+        jne .bad
+        inc r13d
+        jmp .ent
+.nextpt:
+        inc r12d
+        jmp .pt
+.ok:
+        pop r15
+        pop r14
+        pop r13
+        pop r12
+        pop rbx
+        pop rdx
+        pop rcx
+        pop rax
+        ret
+.bad:
+        ; rax = frame encontrado, rcx = esperado — loga e morre com contexto
+        mov r14, rax
+        mov r15, rcx
+        mov rdi, s_ptwd
+        call k_log
+        mov rdi, rbx
+        call k_log_hex
+        mov rdi, r14
+        call k_log_hex
+        mov rdi, r15
+        call k_log_hex
+        mov edi, [cur_slot]
+        call k_log_hex
+        ; dump completo da PT corrompida (512 entradas) — a forma do spray
+        ; identifica a superfície de origem (stride)
+        xor r13d, r13d
+.dmp:
+        cmp r13d, 512
+        jae .dmp_done
+        mov rdi, [rbx + r13*8]
+        call k_log_hex
+        inc r13d
+        jmp .dmp
+.dmp_done:
+        ; contagem de entradas ruins em cada PT (só cabeças: pt/contagem)
+        xor r12d, r12d
+.cnt:
+        cmp r12d, 32
+        jae .cnt_done
+        mov rbx, [sw_pts + r12*8]
+        test rbx, rbx
+        jz .cnt_next
+        xor r13d, r13d
+.cnt_e:
+        cmp r13d, 512
+        jae .cnt_next
+        mov rax, [rbx + r13*8]
+        test al, 1
+        jz .cnt_bad
+        and rax, -4096
+        mov rcx, r12
+        shl rcx, 21
+        mov rdx, r13
+        shl rdx, 12
+        add rcx, rdx
+        add rcx, HEAP_START
+        cmp rax, rcx
+        je .cnt_ok2
+.cnt_bad:
+        ; imprime (pt, indice, valor) de CADA entrada ruim
+        mov rdi, rbx
+        call k_log_hex
+        mov rdi, r13
+        call k_log_hex
+        mov rdi, [rbx + r13*8]
+        call k_log_hex
+.cnt_ok2:
+        inc r13d
+        jmp .cnt_e
+.cnt_next:
+        inc r12d
+        jmp .cnt
+.cnt_done:
+        mov edi, 0xDB                    ; vec marcador: watchdog
+        mov rsi, r15
+        call k_panic
+.hang:
+        hlt
+        jmp .hang
+
+; -----------------------------------------------------------------------------
 ; sw_fault: rax = endereço que gerou #PF -> eax = 1 se paginou de volta
 ; -----------------------------------------------------------------------------
 sw_fault:
@@ -436,12 +573,11 @@ sw_fault:
         shr r13, 12                         ; índice
         cmp byte [sw_state + r13], 2
         jne .no
-        ; lê de volta: aloca um frame
-        mov edi, 4096
-        call k_alloc
-        test rax, rax
-        jz .no
-        mov r14, rax                        ; frame novo
+        ; lê de volta DIRETO NA PRÓPRIA PÁGINA (mapeamento é identidade em
+        ; todo o heap): NÃO aloca frame com k_alloc — com o bitmap
+        ; inconsistente (app hostil libera demais) o k_alloc devolvia uma
+        ; página VIVA e o DMA do AHCI escrevia 4 KB em cima dela
+        mov r14, r12                        ; dst = a própria página
         movzx edi, word [sw_slot + r13*2]
         imul edi, edi, 8
         mov eax, [sw_lba]
@@ -452,15 +588,9 @@ sw_fault:
         call ahci_read
         test eax, eax
         jnz .no
-        ; remapeia
-        mov rax, r12
-        call sw_pte
-        test rax, rax
-        jz .no
-        mov rdx, r14
-        or rdx, 3
-        mov [rax], rdx
-        invlpg [r12]
+        ; garante a PTE presente (identidade RW|P)
+        mov rdi, r12
+        call sw_remap_page
         ; estado
         mov byte [sw_state + r13], 1
         mov eax, [sw_lru_ctr]
@@ -530,6 +660,42 @@ sw_free_frame:
         call page_is_free
         test rax, rax
         jnz .out
+        ; ---- blindagem: páginas vitais nunca voltam ao alocador ----
+        ; PTs do swap, PD novo, sombra e desktop: um free com (ptr,npages)
+        ; errado (app hostil/bugado ou heap corrompido) devolvia a página
+        ; ao bitmap; o k_alloc a entregava a uma imagem/janela e os dados
+        ; do app eram escritos por cima das PTEs/pixels (pânico no
+        ; compositor). Recusa e loga a tentativa (página + retornos).
+        mov rax, rbx
+        sub rax, HEAP_START
+        shr rax, 12
+        call k_page_pinned
+        test eax, eax
+        jz .notpin
+        cmp dword [pinfree_log], 16
+        jae .out
+        inc dword [pinfree_log]
+        push r12
+        push r13
+        push r14
+        mov r12, [rsp+32]           ; retorno dentro do k_free_n
+        mov r13, [rsp+56]           ; retorno do chamador do k_free_n
+        mov r14, [rsp+64]           ; (via k_free_bytes: +8)
+        mov rdi, s_pinfree
+        call k_log
+        mov rdi, rbx
+        call k_log_hex
+        mov rdi, r12
+        call k_log_hex
+        mov rdi, r13
+        call k_log_hex
+        mov rdi, r14
+        call k_log_hex
+        pop r14
+        pop r13
+        pop r12
+        jmp .out
+.notpin:
         mov rax, rbx
         call sw_pte
         test rax, rax
@@ -568,6 +734,9 @@ sw_out_ctr: dd 0
 sw_in_ctr:  dd 0
 sw_fault_ctr: dd 0
 sw_lru_ctr: dd 0
+pinfree_log: dd 0
+s_pinfree:  db "[mm] PIN-FREE: tentativa de liberar pagina vital (PT/shadow/desktop); pag/ret1/ret2/ret3:", 0
+s_ptwd:     db "[mm] PT-WATCHDOG: PTE corrompida! pt/achado/esperado/cur_slot:", 0
 sw_pts:     times 32 dq 0
 align 16
 sw_state:   times 16384 db 0

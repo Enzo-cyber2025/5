@@ -55,7 +55,28 @@ def main():
     # NOTENZ: lixo sem magic
     w("NOTENZ.ENZ", b"GARBAGEGARBAGE" * 20)
 
-    print("genfuzz: 6 arquivos malformados em %s" % out)
+    # FUZZ mutacional: 16 mutantes de CABEÇALHO (seeds fixas — determinístico).
+    # Só o header é mutado, e APENAS em campos que não quebram a coerência
+    # execução/imports: flags, w/h, cor, nome e padding. Magic, hdrsz, entry,
+    # isize, nimports, imp_off e sdk NUNCA são mutados — um entry deslocado
+    # executa código desalinhado e um imp_off errado resolve imports com
+    # lixo de memória adjacente; ambos corrompem o kernel em runtime.
+    import random
+    rng = random.Random(0xE405)
+    campos = ([6] + list(range(20, 28)) + list(range(28, 48)) +
+              list(range(56, 64)))
+    for k in range(1, 17):
+        m = bytearray(base)
+        nmut = rng.randint(1, 6)
+        for _ in range(nmut):
+            off = rng.choice(campos)
+            m[off] = rng.randint(0, 255)
+        # às vezes: trunca o arquivo no meio da imagem (loader rejeita)
+        if k % 3 == 0:
+            m = m[: rng.randint(70, len(m) - 1)]
+        w("FZ%02d.ENZ" % k, bytes(m))
+
+    print("genfuzz: 22 arquivos malformados em %s" % out)
 
 if __name__ == "__main__":
     main()

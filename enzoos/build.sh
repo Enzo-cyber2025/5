@@ -54,6 +54,11 @@ python3 tools/mkenz.py obj/mandel.bin obj/MANDEL.ENZ --name Mandelbrot \
 nasm -f bin -I apps/ -o obj/attack.bin apps/attack.asm
 python3 tools/mkenz.py obj/attack.bin obj/ATTACK.ENZ --name PenTest \
     --w 460 --h 240 --icon 0xE05555
+
+# app de teste do kill-app (crasha de propósito em qualquer tecla)
+nasm -f bin -I apps/ -o obj/crasher.bin apps/crasher.asm
+python3 tools/mkenz.py obj/crasher.bin obj/CRASHER.ENZ --name Crasher \
+    --w 420 --h 200 --icon 0xFFA500
 python3 tools/genfuzz.py obj/CALC.ENZ obj
 
 # ---- demos estrangeiras ----
@@ -80,9 +85,13 @@ python3 tools/mkiso.py obj/mbr.bin obj/stage1.bin release/enzos.iso \
     obj/kernel.bin \
     obj/TERMINAL.ENZ obj/INFO.ENZ obj/PAINT.ENZ obj/CALC.ENZ \
     obj/NOTAS.ENZ obj/PLASMA.ENZ obj/FILES.ENZ obj/FOX.ENZ \
-    obj/SYSMON.ENZ obj/MANDEL.ENZ obj/ATTACK.ENZ \
+    obj/SYSMON.ENZ obj/MANDEL.ENZ obj/ATTACK.ENZ obj/CRASHER.ENZ \
     obj/TRUNC.ENZ obj/BADENT.ENZ obj/BADIMP.ENZ obj/HUGE.ENZ \
     obj/ZERO.ENZ obj/NOTENZ.ENZ \
+    obj/FZ01.ENZ obj/FZ02.ENZ obj/FZ03.ENZ obj/FZ04.ENZ \
+    obj/FZ05.ENZ obj/FZ06.ENZ obj/FZ07.ENZ obj/FZ08.ENZ \
+    obj/FZ09.ENZ obj/FZ10.ENZ obj/FZ11.ENZ obj/FZ12.ENZ \
+    obj/FZ13.ENZ obj/FZ14.ENZ obj/FZ15.ENZ obj/FZ16.ENZ \
     obj/DEMO.EXE obj/CALC.RUN obj/DEMO.APK obj/LIBDEMO.DLL \
     obj/libdemo.so obj/SCRIPT.RUN obj/LEIA.TXT
 

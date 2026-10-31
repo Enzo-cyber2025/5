@@ -684,6 +684,32 @@ g2_win_blit:
         jle .done
         test r15d, r15d
         jle .done
+        ; clip de x negativo: dobra na largura e avança a FONTE igual
+        ; (antes: x<0 passava pelo teste abaixo e o blit escrevia ABAIXO
+        ; da base da superfície — em cima do bitmap/PTs do heap)
+        cmp r12d, 0
+        jge .xneg_ok
+        mov eax, r12d
+        neg eax
+        cmp eax, r14d
+        jge .done                     ; janela toda à esquerda
+        sub r14d, eax
+        shl eax, 2
+        add rbx, rax                  ; src += (-x)*4
+        xor r12d, r12d
+.xneg_ok:
+        ; clip de y negativo: análogo, por linhas
+        cmp r13d, 0
+        jge .yneg_ok
+        mov eax, r13d
+        neg eax
+        cmp eax, r15d
+        jge .done                     ; janela toda acima
+        sub r15d, eax
+        imul eax, ebp                 ; src += (-y)*passo
+        add rbx, rax
+        xor r13d, r13d
+.yneg_ok:
         cmp r12d, [gsurf_w]
         jge .done
         cmp r13d, [gsurf_h]

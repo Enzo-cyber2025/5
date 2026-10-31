@@ -194,7 +194,10 @@ curline_put:
         mov edi, [nlines]
         dec edi
         imul edi, LINESZ
-        lea rdi, [line_buf + rdi]
+        push rax
+        lea rax, [line_buf]
+        add rdi, rax
+        pop rax
         ; fim da linha
         xor ecx, ecx
 .find:
@@ -220,7 +223,10 @@ curline_bs:
         mov edi, [nlines]
         dec edi
         imul edi, LINESZ
-        lea rdi, [line_buf + rdi]
+        push rax
+        lea rax, [line_buf]
+        add rdi, rax
+        pop rax
         xor ecx, ecx
 .find:
         cmp ecx, LINESZ-1
@@ -258,7 +264,8 @@ line_break:
         mov eax, LINES_MAX - 1
 .space:
         imul eax, LINESZ
-        lea rdi, [line_buf + rax]
+        lea rdi, [line_buf]
+        add rdi, rax
         mov byte [rdi], 0
         inc dword [nlines]
         ret
@@ -272,7 +279,8 @@ line_add:
         mov eax, [nlines]
         dec eax
         imul eax, LINESZ
-        lea rdi, [line_buf + rax]
+        lea rdi, [line_buf]
+        add rdi, rax
         mov rsi, [rsp + 16]             ; rdi original
         xor ecx, ecx
 .cp:
@@ -318,7 +326,8 @@ render:
         ; texto
         mov eax, ebx
         imul eax, LINESZ
-        lea rdx, [line_buf + rax]
+        lea rdx, [line_buf]
+        add rdx, rax
         ; len
         push rbx
         xor ecx, ecx

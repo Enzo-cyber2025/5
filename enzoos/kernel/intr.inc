@@ -134,16 +134,85 @@ int80_stub:
 isr_ignore:
         iretq
 
+; -----------------------------------------------------------------------------
+; db_stub — interrupção 1 (#DB): watchpoint de hardware nas PTEs (DR0/DR1).
+; Armado pelo k_swap_init sobre entradas das tabelas de página: qualquer
+; escrita (legítima ou selvagem) para ali e o sistema congela AQUI com o
+; RIP do autor + registradores + DR6 no serial. Diagnóstico de corrupção
+; de PT: quem escreve por cima das tabelas de página do heap.
+; frame na entrada: [rsp]=rip [rsp+8]=cs [rsp+16]=rflags ... (sem err code)
+; -----------------------------------------------------------------------------
+db_stub:
+        mov [db_save_rsp], rsp
+        mov rsp, 0x85000               ; pilha de emergência
+        push rax
+        push rbx
+        push rcx
+        push rdx
+        push rsi
+        push rdi
+        push r8
+        push r9
+        push r10
+        push r11
+        cld
+        mov rdi, s_db_hit
+        call k_log
+        mov rdi, [db_save_rsp]
+        call k_log_hex                 ; rip do autor da escrita
+        mov rax, dr6
+        mov rdi, rax
+        call k_log_hex
+        mov rax, dr0
+        mov rdi, rax
+        call k_log_hex
+        mov rax, dr1
+        mov rdi, rax
+        call k_log_hex
+        mov edi, [cur_slot]
+        call k_log_hex
+        ; registradores no momento da escrita
+        mov rdi, [rsp+9*8]             ; r11
+        call k_log_hex
+        mov rdi, [rsp+8*8]             ; r10
+        call k_log_hex
+        mov rdi, [rsp+7*8]             ; r9
+        call k_log_hex
+        mov rdi, [rsp+6*8]             ; r8
+        call k_log_hex
+        mov rdi, [rsp+5*8]             ; rdi
+        call k_log_hex
+        mov rdi, [rsp+4*8]             ; rsi
+        call k_log_hex
+        mov rdi, [rsp+3*8]             ; rdx
+        call k_log_hex
+        mov rdi, [rsp+2*8]             ; rcx
+        call k_log_hex
+        mov rdi, [rsp+1*8]             ; rbx
+        call k_log_hex
+        mov rdi, [rsp+0*8]             ; rax
+        call k_log_hex
+        ; desarma: não queremos re-trigger em loop
+        xor eax, eax
+        mov dr7, rax
+        mov rsp, [db_save_rsp]
+        iretq                          ; a instrução culpada já completou
+
+section .kdata
+db_save_rsp: dq 0
+s_db_hit:    db "[db] WATCHPOINT PTE! rip/dr6/dr0/dr1/cur_slot/r11/r10/r9/r8/rdi/rsi/rdx/rcx/rbx/rax:", 0
+section .ktext
+
 ; frame: [14 regs][vec][err][rip][cs][rflags][rsp][ss]
 exc_common:
         mov [exc_rsp0], rsp          ; rsp do momento da excecao
-        mov rsp, 0x8C000             ; pilha de emergencia (dump/panic)
+        mov rsp, 0x86000             ; pilha de emergencia (dump/panic; abaixo das pilhas de app)
         PUSHAQ
         ; replica o cabecalho (vec, err, rip) no frame novo
-        ; pilha antiga: [exc_rsp0]=err [exc_rsp0+8]=vec [exc_rsp0+16]=rip
-        mov rax, [exc_rsp0 + 8]
-        mov [rsp + 14*8], rax        ; vec verdadeiro
+        ; pilha antiga (uniforme nas macros): [exc_rsp0]=vec [+8]=err [+16]=rip
         mov rax, [exc_rsp0]
+        mov [rsp + 14*8], rax        ; vec verdadeiro
+        mov rax, [exc_rsp0 + 8]
         mov [rsp + 15*8], rax        ; err
         mov rax, [exc_rsp0 + 16]
         mov [rsp + 16*8], rax        ; rip verdadeiro
@@ -246,6 +315,20 @@ exc_handler:
         jz .no_pf
         ret                            ; página restaurada — retoma
 .no_pf:
+        ; app .ENZ em dispatch gerou exceção (entry hostil, bug do app,
+        ; heap corrompido): mata só o app e retoma o kernel logo após o
+        ; call r12 — como se o app tivesse retornado normalmente
+        cmp dword [app_dispatching], 0
+        je .not_app
+        mov edi, [cur_slot]
+        mov esi, s_app_crash
+        call app_diag_kill
+        ; retoma em app_after_call: jmp direto (sem iretq forjado — o QEMU
+        ; dava #GP no iretq de mesmo privilégio). app_after_call restaura
+        ; o rsp de app_rsp_stack e o sti devolve IF=1 (o gate de interrupção
+        ; entrou com IF=0).
+        jmp app_after_call
+.not_app:
         mov rdx, [rdi + 16*8]         ; rip verdadeiro
         mov rbx, [rdi + 14*8]         ; vec
         cmp dword [foreign_active], 0
@@ -288,6 +371,11 @@ k_intr_init:
         mov rax, isr_ignore
         cmp rcx, 32
         jae .maybe_irq
+        cmp rcx, 1
+        jne .not_db
+        mov rax, db_stub               ; #DB: watchpoint de PTE (diagnóstico)
+        jmp .set
+.not_db:
         lea rdx, [exc_table]
         mov rax, [rdx + rcx*8]
         jmp .set
