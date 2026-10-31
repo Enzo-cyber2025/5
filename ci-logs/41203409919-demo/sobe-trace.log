@@ -1,0 +1,1225 @@
+[13:24:47] SO build 26100 — v79 windows-latest p/ WARP novo (crash v78 = fastfail no JIT do D3D10Warp 20348 em CreatePixelShader)
+[13:24:47] SOBE inicio
+[13:24:47] sonda warp/dxgi inicio (system32 virgem)
+[13:24:50] warptest run inicio
+[13:24:50] warptest exit=0
+[13:24:50] warp: stage0: GetDC(NULL)=570491219 (desktop ok)
+[13:24:50] warp: stage1: CreateDXGIFactory1 hr=0x00000000 (dxgi NATIVO vivo)
+[13:24:50] warp: stage2: D3D11CreateDevice(WARP) hr=0x00000000 featureLevel=45056
+[13:24:50] warp: stage3: WARP OK - D3D11 por CPU FUNCIONA nativamente nesta VM
+[13:24:50] sonda warp fim warpOk=True
+[13:24:50] warpwin (janela+swapchain+present) inicio
+[13:24:50] warpwin cl: warpwin.c
+[13:24:57] warpwin exit=0 — SWAPCHAIN EM JANELA FUNCIONA (dx11 viavel E2E)
+[13:24:57] warpwin: stage1: CreateWindow hwnd=0000000000050206
+[13:24:57] warpwin: stage2: D3D11CreateDevice(WARP) hr=0x00000000 fl=45056
+[13:24:57] warpwin: stage3: CreateDXGIFactory1 hr=0x00000000
+[13:24:57] warpwin: stage4: CreateSwapChain hr=0x00000000
+[13:24:57] warpwin: stage5: Clear+Present hr=0x00000000 (dx11 EM JANELA ponta a ponta)
+[13:24:57] warpwin2 (bisect pos-device) inicio
+[13:24:57] warpwin2 cl: warpwin2.c
+[13:24:57] warpwin2 cl: D:\a\5\5\warpwin2.c(324): warning C4133: 'function': incompatible types - from 'ID3D11Query *' to 'ID3D11Asynchronous *'
+[13:24:57] warpwin2 cl: D:\a\5\5\warpwin2.c(324): warning C4133: 'function': incompatible types - from 'ID3D11Query *' to 'ID3D11Asynchronous *'
+[13:24:57] warpwin2 cl: D:\a\5\5\warpwin2.c(325): warning C4133: 'function': incompatible types - from 'ID3D11Query *' to 'ID3D11Asynchronous *'
+[13:24:57] warpwin2 exit=0
+[13:24:57] warpwin2: warpwin2: s0 inicio
+[13:24:57] warpwin2: warpwin2: s1 WARP FL10_0 device hr=0x00000000 got=0xa000
+[13:24:57] warpwin2: warpwin2: s2 CreateTexture2D RT 800x600...
+[13:24:57] warpwin2: warpwin2: s2 hr=0x00000000
+[13:24:57] warpwin2: warpwin2: s3 CreateRenderTargetView...
+[13:24:57] warpwin2: warpwin2: s3 hr=0x00000000
+[13:24:57] warpwin2: warpwin2: s4 CreateTexture2D D24S8...
+[13:24:57] warpwin2: warpwin2: s4 hr=0x00000000
+[13:24:57] warpwin2: warpwin2: s5 CreateDepthStencilView...
+[13:24:57] warpwin2: warpwin2: s5 hr=0x00000000
+[13:24:57] warpwin2: warpwin2: s6 OMSetRenderTargets+Clear...
+[13:24:57] warpwin2: warpwin2: s6 OK
+[13:24:57] warpwin2: warpwin2: s7 CreateTexture2D BC3 8192x8192...
+[13:24:57] warpwin2: warpwin2: s7 hr=0x00000000
+[13:24:57] warpwin2: warpwin2: s8 CreateTexture2D BC3 16384x16384 (FL10 max=8192)...
+[13:24:57] warpwin2: warpwin2: s8 hr=0x00000000 ? WARP ACEITA 16k em FL 10_0 (v75 provou)
+[13:24:57] warpwin2: warpwin2: s8b CreateShaderResourceView 16k + draw com ela bindada...
+[13:24:57] warpwin2: warpwin2: s8b srv hr=0x00000000
+[13:24:57] warpwin2: warpwin2: s8b Draw com SRV 16k OK (nao foi aqui)
+[13:24:57] warpwin2: warpwin2: s9 VB dynamic + Map...
+[13:24:57] warpwin2: warpwin2: s9a hr=0x80070057 (vb=0000000000000000)
+[13:24:57] warpwin2: warpwin2: s10 janela hwnd=0000000000080070
+[13:24:57] warpwin2: warpwin2: s11 swapchain DISCARD (via device factory)...
+[13:24:57] warpwin2: warpwin2: s11 hr=0x00000000
+[13:24:57] warpwin2: warpwin2: s12 Present DISCARD...
+[13:24:57] warpwin2: warpwin2: s12 hr=0x00000000
+[13:24:57] warpwin2: warpwin2: s13 swapchain FLIP_SEQUENTIAL...
+[13:24:57] warpwin2: warpwin2: s13 hr=0x00000000
+[13:24:57] warpwin2: warpwin2: s14 Present FLIP...
+[13:24:57] warpwin2: warpwin2: s14 hr=0x00000000
+[13:24:57] warpwin2: warpwin2: s15 D3DCompile CS 4.0...
+[13:24:57] warpwin2: warpwin2: s15 hr=0x00000000
+[13:24:57] warpwin2: warpwin2: s16a raw buffer hr=0x00000000
+[13:24:57] warpwin2: warpwin2: s16b CreateComputeShader (ComputeShaderTransformer?)...
+[13:24:57] warpwin2: warpwin2: s16b hr=0x00000000
+[13:24:57] warpwin2: warpwin2: s16c UAV raw hr=0x00000000
+[13:24:57] warpwin2: warpwin2: s16d CSSetShader+Dispatch...
+[13:24:57] warpwin2: warpwin2: s16d OK
+[13:24:57] warpwin2: warpwin2: s17 D3DCompile vs_4_0/ps_4_0...
+[13:24:57] warpwin2: warpwin2: s17a vs hr=0x00000000
+[13:24:57] warpwin2: warpwin2: s17b ps hr=0x00000000
+[13:24:57] warpwin2: warpwin2: s18 CreateInputLayout...
+[13:24:57] warpwin2: warpwin2: s18 hr=0x00000000
+[13:24:57] warpwin2: warpwin2: s19 CreateVertexShader+PixelShader+Draw...
+[13:24:57] warpwin2: warpwin2: s19 OK (draw completo no WARP FL 10_0)
+[13:24:57] warpwin2: warpwin2: s8c CreateTexture2D R32G32B32A32F 16384x16384 (4GB+16MB, overflow?)...
+[13:24:57] warpwin2: warpwin2: s8c hr=0x8007000e ft=0000000000000000
+[13:24:57] warpwin2: warpwin2: s21 mip-chain+GenerateMips...
+[13:24:57] warpwin2: warpwin2: s21a hr=0x00000000
+[13:24:57] warpwin2: warpwin2: s21b srv hr=0x00000000
+[13:24:57] warpwin2: warpwin2: s21c GenerateMips OK
+[13:24:57] warpwin2: warpwin2: s22 BC3 2048 com InitData (upload 4MB)...
+[13:24:57] warpwin2: warpwin2: s22 hr=0x00000000
+[13:24:57] warpwin2: warpwin2: s22b UpdateSubresource OK
+[13:24:57] warpwin2: warpwin2: s23a staging hr=0x00000000
+[13:24:57] warpwin2: warpwin2: s23b default hr=0x00000000
+[13:24:57] warpwin2: warpwin2: s23c CopyResource OK
+[13:24:57] warpwin2: warpwin2: s23d Map READ hr=0x887a0005
+[13:24:57] warpwin2: warpwin2: s24a CreateQuery hr=0x887a0005
+[13:24:57] warpwin2: warpwin2: s20 FIM (fails=0) ? todos os estagios do jogo cobertos
+[13:24:57] sonda dxgi-enum inicio
+[13:24:58] dxgienum exit=0
+[13:24:58] enum: stage1: factory ok
+[13:24:58] enum: adapter[0] = Microsoft Basic Render Driver | vendor=0x1414 device=0x8C vram=0 MB
+[13:24:58] enum: adapter[1] = Microsoft Basic Render Driver | vendor=0x1414 device=0x8C vram=0 MB
+[13:24:58] enum: total adapters: 2 (WARP visivel pro engine!)
+[13:24:58] sonda dxgi-enum fim
+[13:24:58] mesa 7z: 70257286 bytes
+[13:25:05] dxvk tar.gz: 10310666 bytes
+[13:25:05] tar dxvk inicio
+[13:25:08] tar dxvk fim rc=0
+[13:25:08] copias dxvk jogo inicio
+[13:25:08] copias dxvk jogo fim
+[13:25:08] dxvk system32 PULADO — WARP vivo, System32 INTACTO
+[13:25:08] vulkan loader antes: x64=True x86=True
+[13:25:08] vktest inicio
+[13:25:08] vktest lvp264 PULADO (WARP venceu)
+[13:25:08] vktest dzn264 PULADO (WARP venceu)
+[13:25:08] NENHUM ICD Vulkan passou — boots dx11 vao rodar com o ICD padrao (26.2.4)
+[13:25:08] wgl64 inicio
+[13:25:08] wgl64 csc inicio
+[13:25:09] wgl64 csc fim
+[13:25:09] wgl64 run inicio
+[13:25:10] wgl64 run fim exit=0
+[13:25:10] wgl-janela inicio
+[13:25:10] winwgl run inicio
+[13:25:11] winwgl exit=1
+[13:25:11] winwgl: stage1: janela criada hwnd=196680
+[13:25:11] winwgl: stage2: GetDC(janela) ok
+[13:25:11] winwgl: stage3: ChoosePixelFormat ok pf=63
+[13:25:11] winwgl: stage4a: SetPixelFormat(pfd=NULL) OK
+[13:25:11] winwgl: stage4: SetPixelFormat(pfd) ok
+[13:25:11] winwgl: stage5: wglCreateContext=NULL err=31
+[13:25:11] wgl-janela fim winWglOk=False
+[13:25:11] winwgl falhou na 26.2.4 — baixando Mesa 25.3.6
+[13:25:12] mesa 25.3.6: 66716214 bytes
+[13:25:16] 7z 25.3.6 exit=0
+[13:25:16] 253w: C:\Windows\System32\opengl32.dll
+[13:25:16] 253w: C:\Windows\System32\libgallium_wgl.dll
+[13:25:16] 253w: C:\Windows\System32\libEGL.dll
+[13:25:16] 253w: C:\Windows\System32\libGLESv1_CM.dll
+[13:25:16] 253w: C:\Windows\System32\libGLESv2.dll
+[13:25:16] 253w: C:\Windows\SysWOW64\opengl32.dll
+[13:25:16] 253w: C:\Windows\SysWOW64\libgallium_wgl.dll
+[13:25:16] 253w: C:\Windows\SysWOW64\libEGL.dll
+[13:25:16] 253w: C:\Windows\SysWOW64\libGLESv1_CM.dll
+[13:25:16] 253w: C:\Windows\SysWOW64\libGLESv2.dll
+[13:25:16] winwgl(25.3.6) run inicio
+[13:25:19] winwgl(25.3.6) exit=1
+[13:25:19] winwgl253: stage1: janela criada hwnd=262216
+[13:25:19] winwgl253: stage2: GetDC(janela) ok
+[13:25:19] winwgl253: stage3: ChoosePixelFormat ok pf=43
+[13:25:19] winwgl253: stage4a: SetPixelFormat(pfd=NULL) OK
+[13:25:19] winwgl253: stage4: SetPixelFormat(pfd) ok
+[13:25:19] winwgl253: stage5: wglCreateContext=NULL err=31
+[13:25:21] pnp display: Microsoft Hyper-V Video [VMBUS\{DA0A7802-E377-4AAC-8E77-0558EB1073F8}\{5620E0C7-8062-4DCE-AEB7-520C7EF76171}]
+[13:25:21] desativando adapter de video: Microsoft Hyper-V Video
+[13:25:29] adapter desativado — desktop no Basic Render Driver agora?
+[13:25:29] pnp display pos: Microsoft Hyper-V Video [Error]
+[13:25:29] winwgl(pos-pnp) run inicio
+[13:25:30] winwgl(pos-pnp) exit=1
+[13:25:30] winwglpnp: stage1: janela criada hwnd=524458
+[13:25:30] winwglpnp: stage2: GetDC(janela) ok
+[13:25:30] winwglpnp: stage3: ChoosePixelFormat ok pf=43
+[13:25:30] winwglpnp: stage4a: SetPixelFormat(pfd=NULL) OK
+[13:25:30] winwglpnp: stage4: SetPixelFormat(pfd) ok
+[13:25:30] winwglpnp: stage5: wglCreateContext=NULL err=31
+[13:25:30] warppnp: stage0: GetDC(NULL)=151060873 (desktop ok)
+[13:25:30] warppnp: stage1: CreateDXGIFactory1 hr=0x00000000 (dxgi NATIVO vivo)
+[13:25:30] warppnp: stage2: D3D11CreateDevice(WARP) hr=0x00000000 featureLevel=45056
+[13:25:30] warppnp: stage3: WARP OK - D3D11 por CPU FUNCIONA nativamente nesta VM
+[13:25:30] enum-pos-pnp: stage1: factory ok
+[13:25:30] enum-pos-pnp: adapter[0] = Microsoft Basic Render Driver | vendor=0x1414 device=0x8C vram=0 MB
+[13:25:30] enum-pos-pnp: adapter[1] = Microsoft Basic Render Driver | vendor=0x1414 device=0x8C vram=0 MB
+[13:25:30] enum-pos-pnp: total adapters: 2 (WARP visivel pro engine!)
+[13:25:31] warpwinpnp: stage1: CreateWindow hwnd=00000000000900AA
+[13:25:31] warpwinpnp: stage2: D3D11CreateDevice(WARP) hr=0x00000000 fl=45056
+[13:25:31] warpwinpnp: stage3: CreateDXGIFactory1 hr=0x00000000
+[13:25:31] warpwinpnp: stage4: CreateSwapChain hr=0x00000000
+[13:25:31] warpwinpnp: stage5: Clear+Present hr=0x00000000 (dx11 EM JANELA ponta a ponta)
+[13:25:31] wgl32 csc inicio
+[13:25:31] wgl32 csc fim
+[13:25:31] wgl32 run inicio
+[13:25:56] wgl32 run fim exit=0
+[13:25:56] WARP vivo — restaurando d3d11/dxgi NATIVOS e bootando SEM DXVK
+[13:25:56] DXVK removido da pasta do jogo: d3d11.dll
+[13:25:56] DXVK removido da pasta do jogo: dxgi.dll
+[13:25:56] DXVK removido da pasta do jogo: d3d10core.dll
+[13:25:56] DXVK removido da pasta do jogo: d3d9.dll
+[13:25:56] shim: compilando d3d11.dll (x64) em C:\ets2demo\bin\win_x64
+[13:25:56] shim: d3d11_real do System32 atual
+[13:25:56] shim: exports do real (51): CreateDirect3D11DeviceFromDXGIDevice,CreateDirect3D11SurfaceFromDXGISurface,D3D11CoreCreateDevice,D3D11CoreCreateLayeredDevice,D3D11CoreGetLayeredDeviceSize,D3D11CoreRegisterLayers,D3D11CreateDevice,D3D11CreateDeviceAndSwapChain,D3D11CreateDeviceForD3D12,D3D11On12CreateDevice,D3DKMTCloseAdapter,D3DKMTCreateAllocation,D3DKMTCreateContext,D3DKMTCreateDevice,D3DKMTCreateSynchronizationObject,D3DKMTDestroyAllocation,D3DKMTDestroyContext,D3DKMTDestroyDevice,D3DKMTDestroySynchronizationObject,D3DKMTEscape,D3DKMTGetContextSchedulingPriority,D3DKMTGetDeviceState,D3DKMTGetDisplayModeList,D3DKMTGetMultisampleMethodList,D3DKMTGetRuntimeData,D3DKMTGetSharedPrimaryHandle,D3DKMTLock,D3DKMTOpenAdapterFromHdc,D3DKMTOpenResource,D3DKMTPresent,D3DKMTQueryAdapterInfo,D3DKMTQueryAllocationResidency,D3DKMTQueryResourceInfo,D3DKMTRender,D3DKMTSetAllocationPriority,D3DKMTSetContextSchedulingPriority,D3DKMTSetDisplayMode,D3DKMTSetDisplayPrivateDriverFormat,D3DKMTSetGammaRamp,D3DKMTSetVidPnSourceOwner,D3DKMTSignalSynchronizationObject,D3DKMTUnlock,D3DKMTWaitForSynchronizationObject,D3DKMTWaitForVerticalBlankEvent,D3DPerformance_BeginEvent,D3DPerformance_EndEvent,D3DPerformance_GetStatus,D3DPerformance_SetMarker,EnableFeatureLevelUpgrade,OpenAdapter10,OpenAdapter10_2
+[13:25:56] shim: imports estaticos do jogo em d3d11.dll (0): 
+[13:25:56] shim .def: LIBRARY d3d11 | EXPORTS | D3D11CreateDevice | D3D11CreateDeviceAndSwapChain | D3D11CoreCreateDevice
+[13:25:56] shim cl: d3d11shim.c
+[13:25:57] shim cl:    Creating library C:\ets2demo\bin\win_x64\d3d11.lib and object C:\ets2demo\bin\win_x64\d3d11.exp
+[13:25:57] shim: INSTALADO C:\ets2demo\bin\win_x64\d3d11.dll (+d3d11_real.dll) link exit=0
+[13:25:57] shim exp: Dump of file C:\ets2demo\bin\win_x64\d3d11.dll
+[13:25:57] shim exp: Section contains the following exports for d3d11.dll
+[13:25:57] shim exp: 1    0 00001000 D3D11CoreCreateDevice
+[13:25:57] shim exp: 2    1 00001270 D3D11CreateDevice
+[13:25:57] shim exp: 3    2 00001510 D3D11CreateDeviceAndSwapChain
+[13:25:57] dxgishim: dxgi_real.dll copiado do System32 atual
+[13:25:57] dxgishim: secao dxgi dos imports do d3d11.dll: 1801EDD20 Import Address Table | 18022E3E8 Import Name Table | 0 time date stamp | 0 Index of first forwarder reference | 5 CreateDXGIFactory2
+[13:25:57] dxgishim: d3d11.dll importa do dxgi alem dos meus 3: 
+[13:25:57] dxgishim cl: dxgishim.c
+[13:25:58] dxgishim cl: D:\a\5\5\dxgishim.c(64): warning C4996: 'wcscpy': This function or variable may be unsafe. Consider using wcscpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+[13:25:58] dxgishim cl:    Creating library C:\ets2demo\bin\win_x64\dxgi.lib and object C:\ets2demo\bin\win_x64\dxgi.exp
+[13:25:58] dxgishim: INSTALADO C:\ets2demo\bin\win_x64\dxgi.dll (+dxgi_real.dll) link exit=0
+[13:25:58] dxgishim exp: 1 ordinal base
+[13:25:58] dxgishim exp: ordinal hint RVA      name
+[13:25:58] dxgishim exp: 1    0 00001500 CreateDXGIFactory
+[13:25:58] dxgishim exp: 2    1 00001610 CreateDXGIFactory1
+[13:25:58] dxgishim exp: 3    2 00001700 CreateDXGIFactory2
+[13:25:58] WER LocalDumps ATIVO (minidump em D:\a\5\5\dumps)
+[13:25:58] boot x64 dx11 SHIM WARP inicio
+[13:26:00] boot x64 dx11 SHIM WARP: pid 1220
+[13:26:05] boot x64 dx11 SHIM WARP iter 1/120 vivo=False cpu=-1 thr=0
+[13:26:05] boot x64 dx11 SHIM WARP: processo SAIU na iter 1 — ExitCode=-1073740791 (0xC0000005=crash; 0=limpo)
+[13:26:05] boot x64 dx11 SHIM WARP FIM vivo=False
+[13:26:06] shimlog: init real=00007FF8BA8B0000 D3D11CreateDevice=00007FF8BA933AB0 AndSwapChain=00007FF8BA932260 Core=00007FF8BA8BD6B0
+[13:26:06] shimlog: CreateDevice: adapter=0000000000000000 type=1 flags=0x0 nfl=1
+[13:26:06] shimlog: CreateDevice: HARDWARE sem adapter = BRD -> WARP direto
+[13:26:06] shimlog: CreateDevice: WARP-direto hr=0x00000001 flPedida=40960 flObtida=40960
+[13:26:06] shimlog: CreateDevice: S_FALSE -> S_OK (WARP de FL menor)
+[13:26:06] shimlog: CreateDevice: adapter=0000000000000000 type=1 flags=0x0 nfl=1
+[13:26:06] shimlog: CreateDevice: HARDWARE sem adapter = BRD -> WARP direto
+[13:26:06] shimlog: CreateDevice: WARP-direto hr=0x887a0004 flPedida=49408 flObtida=0
+[13:26:06] shimlog: CreateDevice: WARP falhou ? tentando o original
+[13:26:06] shimlog: CreateDevice: original hr=0x887a0004 (ppDevice=0000000000000000)
+[13:26:06] shimlog: CreateDevice: original insuficiente (hr=0x887a0004, probe ppDevice=pede device) ? RETRY WARP
+[13:26:06] shimlog: CreateDevice: WARP hr=0x887a0004 flPedida=49408 flObtida=0
+[13:26:06] shimlog: CreateDevice: adapter=0000000000000000 type=1 flags=0x0 nfl=1
+[13:26:06] shimlog: CreateDevice: HARDWARE sem adapter = BRD -> WARP direto
+[13:26:06] shimlog: CreateDevice: WARP-direto hr=0x887a0004 flPedida=49152 flObtida=0
+[13:26:06] shimlog: CreateDevice: WARP falhou ? tentando o original
+[13:26:06] shimlog: CreateDevice: original hr=0x887a0004 (ppDevice=0000000000000000)
+[13:26:06] shimlog: CreateDevice: original insuficiente (hr=0x887a0004, probe ppDevice=pede device) ? RETRY WARP
+[13:26:06] shimlog: CreateDevice: WARP hr=0x887a0004 flPedida=49152 flObtida=0
+[13:26:06] shimlog: CreateDevice: adapter=0000000000000000 type=1 flags=0x0 nfl=1
+[13:26:06] shimlog: CreateDevice: HARDWARE sem adapter = BRD -> WARP direto
+[13:26:06] shimlog: CreateDevice: WARP-direto hr=0x887a0004 flPedida=45312 flObtida=0
+[13:26:06] shimlog: CreateDevice: WARP falhou ? tentando o original
+[13:26:06] shimlog: CreateDevice: original hr=0x887a0004 (ppDevice=0000000000000000)
+[13:26:06] shimlog: CreateDevice: original insuficiente (hr=0x887a0004, probe ppDevice=pede device) ? RETRY WARP
+[13:26:06] shimlog: CreateDevice: WARP hr=0x887a0004 flPedida=45312 flObtida=0
+[13:26:06] shimlog: CreateDevice: adapter=0000000000000000 type=1 flags=0x0 nfl=1
+[13:26:06] shimlog: CreateDevice: HARDWARE sem adapter = BRD -> WARP direto
+[13:26:06] shimlog: CreateDevice: WARP-direto hr=0x887a0004 flPedida=45056 flObtida=0
+[13:26:06] shimlog: CreateDevice: WARP falhou ? tentando o original
+[13:26:06] shimlog: CreateDevice: original hr=0x887a0004 (ppDevice=0000000000000000)
+[13:26:06] shimlog: CreateDevice: original insuficiente (hr=0x887a0004, probe ppDevice=pede device) ? RETRY WARP
+[13:26:06] shimlog: CreateDevice: WARP hr=0x887a0004 flPedida=45056 flObtida=0
+[13:26:06] shimlog: CreateDevice: adapter=0000000000000000 type=1 flags=0x0 nfl=1
+[13:26:06] shimlog: CreateDevice: HARDWARE sem adapter = BRD -> WARP direto
+[13:26:06] shimlog: CreateDevice: WARP-direto hr=0x887a0004 flPedida=41216 flObtida=0
+[13:26:06] shimlog: CreateDevice: WARP falhou ? tentando o original
+[13:26:06] shimlog: CreateDevice: original hr=0x887a0004 (ppDevice=0000000000000000)
+[13:26:06] shimlog: CreateDevice: original insuficiente (hr=0x887a0004, probe ppDevice=pede device) ? RETRY WARP
+[13:26:06] shimlog: CreateDevice: WARP hr=0x887a0004 flPedida=41216 flObtida=0
+[13:26:06] SHIM VIVO: o jogo criou device pelo nosso d3d11
+[13:26:06] dxgilog: init real=00007FF8C5770000 f0=00007FF8C57BDE00 f1=00007FF8C57BDF30 f2=00007FF8C57C2B50
+[13:26:06] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:26:06] dxgilog: CreateDXGIFactory2 -> WRAP (flags 0 ignoradas)
+[13:26:06] dxgilog: EnumAdapters1[0] -> WRAP (vram mentida)
+[13:26:06] dxgilog: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[13:26:06] dxgilog: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[13:26:06] dxgilog: EnumAdapters1[1] -> WRAP (vram mentida)
+[13:26:06] dxgilog: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[13:26:06] dxgilog: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[13:26:06] dxgilog: EnumAdapters1[2] hr=0x887a0002
+[13:26:06] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:26:06] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:26:06] dxgilog: EnumAdapters1[0] -> WRAP (vram mentida)
+[13:26:06] dxgilog: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[13:26:06] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:26:06] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:26:06] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:26:06] dxgilog: EnumAdapters1[0] -> WRAP (vram mentida)
+[13:26:06] dxgilog: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[13:26:06] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:26:06] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:26:06] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:26:06] dxgilog: EnumAdapters1[0] -> WRAP (vram mentida)
+[13:26:06] dxgilog: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[13:26:06] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:26:06] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:26:06] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:26:06] dxgilog: EnumAdapters1[0] -> WRAP (vram mentida)
+[13:26:06] dxgilog: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[13:26:06] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:26:06] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:26:06] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:26:06] dxgilog: EnumAdapters1[0] -> WRAP (vram mentida)
+[13:26:06] dxgilog: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[13:26:06] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:26:06] dxgilog: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:26:10] WER1000 x64: 13:26:03 Faulting application name: eurotrucks2.exe, version: 1.40.4.8, time stamp: 0x60ae81bd Faulting module name: D3D10Warp.dll, version: 26.2.4.0, time stamp: 0x6ac0962a Exception code: 0xc0000409 Fault offset: 0x00000000008bc329 Faulting process id: 0x4C4 Faulting application start time: 0x1DD693B5EF3EE
+[13:26:13] dump: eurotrucks2.exe.1220.dmp 6 MB
+[13:26:13] cdb encontrado: C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe
+[13:26:21] cdb: 
+[13:26:21] cdb: ************* Preparing the environment for Debugger Extensions Gallery repositories **************
+[13:26:21] cdb:    ExtensionRepository : Implicit
+[13:26:21] cdb:    UseExperimentalFeatureForNugetShare : true
+[13:26:21] cdb:    AllowNugetExeUpdate : true
+[13:26:21] cdb:    NonInteractiveNuget : true
+[13:26:21] cdb:    AllowNugetMSCredentialProviderInstall : true
+[13:26:21] cdb:    AllowParallelInitializationOfLocalRepositories : true
+[13:26:21] cdb: 
+[13:26:21] cdb:    EnableRedirectToV8JsProvider : false
+[13:26:21] cdb: 
+[13:26:21] cdb:    -- Configuring repositories
+[13:26:21] cdb:       ----> Repository : LocalInstalled, Enabled: true
+[13:26:21] cdb:       ----> Repository : UserExtensions, Enabled: true
+[13:26:21] cdb: 
+[13:26:21] cdb: >>>>>>>>>>>>> Preparing the environment for Debugger Extensions Gallery repositories completed, duration 0.015 seconds
+[13:26:21] cdb: 
+[13:26:21] cdb: ************* Waiting for Debugger Extensions Gallery to Initialize **************
+[13:26:21] cdb: 
+[13:26:21] cdb: >>>>>>>>>>>>> Waiting for Debugger Extensions Gallery to Initialize completed, duration 0.641 seconds
+[13:26:21] cdb:    ----> Repository : UserExtensions, Enabled: true, Packages count: 0
+[13:26:21] cdb:    ----> Repository : LocalInstalled, Enabled: true, Packages count: 30
+[13:26:21] cdb: 
+[13:26:21] cdb: Microsoft (R) Windows Debugger Version 10.0.26100.9457 AMD64
+[13:26:21] cdb: Copyright (c) Microsoft Corporation. All rights reserved.
+[13:26:21] cdb: 
+[13:26:21] cdb: 
+[13:26:21] cdb: Loading Dump File [D:\a\5\5\dumps\eurotrucks2.exe.1220.dmp]
+[13:26:21] cdb: User Mini Dump File: Only registers, stack and portions of memory are available
+[13:26:21] cdb: 
+[13:26:21] cdb: Symbol search path is: srv*
+[13:26:21] cdb: Executable search path is: 
+[13:26:21] cdb: Windows 10 Version 26100 MP (4 procs) Free x64
+[13:26:21] cdb: Product: Server, suite: TerminalServer DataCenter SingleUserTS
+[13:26:21] cdb: Edition build lab: 26100.1.amd64fre.ge_release.240331-1435
+[13:26:21] cdb: Debug session time: Sat Oct 31 13:26:04.000 2026 (UTC + 0:00)
+[13:26:21] cdb: System Uptime: 0 days 0:11:35.859
+[13:26:21] cdb: Process Uptime: 0 days 0:00:04.000
+[13:26:21] cdb: ................................................................
+[13:26:21] cdb: ........
+[13:26:21] cdb: Loading unloaded module list
+[13:26:21] cdb: .
+[13:26:21] cdb: This dump file has an exception of interest stored in it.
+[13:26:21] cdb: The stored exception information can be accessed via .ecxr.
+[13:26:21] cdb: (4c4.2248): Security check failure or stack buffer overrun - code c0000409 (first/second chance not available)
+[13:26:21] cdb: Subcode: 0x7 FAST_FAIL_FATAL_APP_EXIT 
+[13:26:21] cdb: 
+[13:26:21] cdb: +------------------------------------------------------------------------+
+[13:26:21] cdb: | This target supports Hardware-enforced Stack Protection. A HW based    |
+[13:26:21] cdb: | "Shadow Stack" may be available to assist in debugging and analysis.   |
+[13:26:21] cdb: | See aka.ms/userhsp for more info.                                      |
+[13:26:21] cdb: |                                                                        |
+[13:26:21] cdb: | dps @ssp                                                               |
+[13:26:21] cdb: |                                                                        |
+[13:26:21] cdb: +------------------------------------------------------------------------+
+[13:26:21] cdb: 
+[13:26:21] cdb: For analysis of this file, run !analyze -v
+[13:26:21] cdb: D3D10Warp!_jit_debug_register_code+0x63b0e9:
+[13:26:21] cdb: 00007ff8`b70ec329 cd29            int     29h
+[13:26:21] cdb: 0:000> cdb: Reading initial command '.symfix; .reload; kv 40; q'
+[13:26:21] cdb: ................................................................
+[13:26:21] cdb: ........
+[13:26:21] cdb: Loading unloaded module list
+[13:26:21] cdb: .
+[13:26:21] cdb: 
+[13:26:21] cdb: ************* Symbol Loading Error Summary **************
+[13:26:21] cdb: Module name            Error
+[13:26:21] cdb: D3D10Warp              The system cannot find the file specified
+[13:26:21] cdb: 
+[13:26:21] cdb: You can troubleshoot most symbol related issues by turning on symbol loading diagnostics (!sym noisy) and repeating the command that caused symbols to be loaded.
+[13:26:21] cdb: You should also verify that your symbol search path (.sympath) is correct.
+[13:26:21] cdb: Child-SP          RetAddr               : Args to Child                                                           : Call Site
+[13:26:21] cdb: 00000059`0e9dcc40 00007ff8`b7144880     : 00000000`00000000 00007ff8`b8a8b780 00007ff8`b88d9f1c 00000000`39000005 : D3D10Warp!_jit_debug_register_code+0x63b0e9
+[13:26:21] cdb: 00000059`0e9dcc70 00007ff8`b71431f3     : 00000230`bfc65bc0 00000230`bfc65bc0 00000000`0000001d 00000230`bee60b40 : D3D10Warp!_jit_debug_register_code+0x693640
+[13:26:21] cdb: 00000059`0e9dcd30 00007ff8`b71423aa     : 00000230`bef90500 00000000`00000000 00000230`bfbf4968 00007ff8`b7206e47 : D3D10Warp!_jit_debug_register_code+0x691fb3
+[13:26:21] cdb: 00000059`0e9dd950 00007ff8`b6a71c96     : 00000230`bfbf2da0 00000230`bee08a60 00000230`bef90698 00000000`00000248 : D3D10Warp!_jit_debug_register_code+0x69116a
+[13:26:21] cdb: 00000059`0e9dd9a0 00007ff8`b71163f6     : 00000230`bee08a60 00000230`bef90698 00000230`c0621e10 00000000`00000001 : D3D10Warp!OpenAdapter10_2+0x18ff96
+[13:26:21] cdb: 00000059`0e9dd9e0 00007ff8`b7117b7c     : 00000230`bef90698 00000230`bec84f70 00000230`bee08a60 00000000`00000000 : D3D10Warp!_jit_debug_register_code+0x6651b6
+[13:26:21] cdb: 00000059`0e9dda10 00007ff8`b7118b4b     : 00000230`c0622bf0 00007ff7`6f0b2800 00000230`bfc69610 00000230`bef90688 : D3D10Warp!_jit_debug_register_code+0x66693c
+[13:26:21] cdb: 00000059`0e9dda40 00007ff8`b68db2ca     : 00000230`bef90688 00000230`bee08a60 00000230`bee08a60 00000000`00000000 : D3D10Warp!_jit_debug_register_code+0x66790b
+[13:26:21] cdb: 00000059`0e9dda70 00007ff8`ba99d932     : 00000000`00000000 00000059`0e9ddba0 00000059`0e9ddd10 00000230`bef90678 : D3D10Warp!D3DKMTWaitForSynchronizationObject2+0x7d1a
+[13:26:21] cdb: 00000059`0e9ddaa0 00007ff8`ba8e2bb8     : 00000230`bef90578 00007ff8`ba8e2d14 00000000`00000000 00000230`bef90578 : d3d11_real!CPixelShader::CLS::FinalConstruct+0xb371e
+[13:26:21] cdb: 00000059`0e9ddc10 00007ff8`ba8e2b04     : 00000230`bef90578 00007ff8`baaa51a0 00000230`bef90530 00000059`0e9ddd40 : d3d11_real!CLayeredObjectWithCLS<CPixelShader>::FinalConstruct+0x98
+[13:26:21] cdb: 00000059`0e9ddc80 00007ff8`ba8d2bf5     : 00000230`bef90570 00000059`0e9de210 00000000`00000000 00000000`00000036 : d3d11_real!CLayeredObjectWithCLS<CPixelShader>::CreateInstance+0xa8
+[13:26:21] cdb: 00000059`0e9ddcd0 00007ff8`ba8ccf76     : 00000000`00000000 00007ff8`ba92acd0 00000000`00000500 00000230`bedee688 : d3d11_real!CDevice::CreateLayeredChild+0x8c5
+[13:26:21] cdb: 00000059`0e9de050 00007ff8`ba8cd5f8     : 00007ff8`ba92acd0 00000000`00000003 00007ff7`6f0b2894 00000230`bef90530 : d3d11_real!NDXGI::CDevice::CreateLayeredChild+0x366
+[13:26:21] cdb: 00000059`0e9de150 00007ff8`ba8cd1f6     : 00000230`bef90530 00000230`bef90530 00000059`0e9de210 00000230`be060320 : d3d11_real!CUseCountedObject<NOutermost::CDeviceChild>::CUseCountedObject<NOutermost::CDeviceChild>+0x298
+[13:26:21] cdb: 00000059`0e9de1e0 00007ff8`ba92ed97     : 00000230`bedee630 00000000`00000009 00007ff7`6f0b2740 00000000`00000000 : d3d11_real!NOutermost::CDevice::CreateLayeredChild+0x166
+[13:26:21] cdb: 00000059`0e9de2f0 00007ff8`ba8ec6b5     : 00007ff7`6f0b2740 00000000`5f973000 00000059`0e9de589 00000000`00000000 : d3d11_real!CDevice::CreateAndRecreateLayeredChild<SD3D11LayeredPixelShaderCreationArgs>+0x63
+[13:26:21] cdb: 00000059`0e9de350 00007ff8`ba9329e8     : 00000230`bedeee70 00007ff7`6f0b2740 00000000`00000124 00000000`00000000 : d3d11_real!CDevice::CreatePixelShader_Worker+0x229
+[13:26:21] cdb: 00000059`0e9de4e0 00007ff7`6e00dfbf     : 00000230`c0338610 00000059`0e9de589 00000000`00000320 00000231`5ee5a040 : d3d11_real!CDevice::CreatePixelShader+0x28
+[13:26:21] cdb: 00000059`0e9de530 00007ff7`6dfc2d11     : 00000000`00000000 00007ff7`6f15d400 00000000`00000000 00007ff7`6ef78441 : eurotrucks2+0x17dfbf
+[13:26:21] cdb: 00000059`0e9de5f0 00007ff7`6ebb9488     : 00000000`00000000 00000000`00000000 00000000`00000000 00000000`00000000 : eurotrucks2+0x132d11
+[13:26:21] cdb: 00000059`0e9de620 00007ff7`6e140b6e     : 00000230`0cc2000b 00000000`00000001 00000000`00000001 00000000`00000000 : eurotrucks2+0xd29488
+[13:26:21] cdb: 00000059`0e9de650 00007ff7`6e138491     : 00000000`00000001 00000000`00000400 00000000`00000384 00000230`beddd9c0 : eurotrucks2+0x2b0b6e
+[13:26:21] cdb: 00000059`0e9de680 00007ff7`6e1271bf     : 00007ff7`6f15d430 00007ff7`00000008 00007ff7`00000400 00007ff7`00000300 : eurotrucks2+0x2a8491
+[13:26:21] cdb: 00000059`0e9df8e0 00007ff7`6dfb58c3     : 00007ff7`6f5e6c90 00000230`be9c45c0 00000000`00000000 00007ff7`6f4d8a10 : eurotrucks2+0x2971bf
+[13:26:21] cdb: 00000059`0e9df930 00007ff7`6dfb67b5     : 00000230`be98b240 00000230`be9c45c0 00000230`be98b160 00000059`00000012 : eurotrucks2+0x1258c3
+[13:26:21] cdb: 00000059`0e9df960 00007ff7`6dfb766c     : 00000000`00002819 00000000`00000001 00000000`00000000 00000000`00000000 : eurotrucks2+0x1267b5
+[13:26:21] cdb: 00000059`0e9dfa00 00007ff7`6ef5a75a     : 00000000`00000000 00007ff7`6f15cd88 00000000`00000000 00000000`00000000 : eurotrucks2+0x12766c
+[13:26:21] cdb: 00000059`0e9dfa50 00007ff8`faf5dd37     : 00000000`00000000 00000000`00000000 00000000`00000000 00000000`00000000 : eurotrucks2+0x10ca75a
+[13:26:21] cdb: 00000059`0e9dfa90 00007ff8`fb07f2bc     : 00000000`00000000 00000000`00000000 000004f0`fffffb30 000004d0`fffffb30 : kernel32!BaseThreadInitThunk+0x17
+[13:26:21] cdb: 00000059`0e9dfac0 00000000`00000000     : 00000000`00000000 00000000`00000000 00000000`00000000 00000000`00000000 : ntdll!RtlUserThreadStart+0x2c
+[13:26:21] cdb: quit:
+[13:26:21] cdb: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\atlmfc.natvis'
+[13:26:21] cdb: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\ObjectiveC.natvis'
+[13:26:21] cdb: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\concurrency.natvis'
+[13:26:21] cdb: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\cpp_rest.natvis'
+[13:26:21] cdb: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\stl.natvis'
+[13:26:21] cdb: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\Windows.Data.Json.natvis'
+[13:26:21] cdb: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\Windows.Devices.Geolocation.natvis'
+[13:26:21] cdb: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\Windows.Devices.Sensors.natvis'
+[13:26:21] cdb: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\Windows.Media.natvis'
+[13:26:21] cdb: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\windows.natvis'
+[13:26:21] cdb: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\winrt.natvis'
+[13:26:21] hibrido: montando d3d11-DXVK + dxgi-NOSSO->dxgi-DXVK
+[13:26:21] hibrido: dxvk x64 em C:\dxvk\dxvk-2.7.1\x64
+[13:26:21] hibrido: dlls no lugar; ICD=C:\mesa3d\x64\lvp_icd.x86_64.json
+[13:26:21] hib-dumpbin: dxgi.dll
+[13:26:21] hib-dumpbin: 4 CreateDXGIFactory1
+[13:26:21] hib-dumpbin: 2 linhas DXGI nos imports do d3d11-DXVK
+[13:26:21] hibrido: Documents antigo em .boot1 — boot VIRGEM
+[13:26:21] hibrido: config.cfg windowed recriado
+[13:26:21] hib-vk: chave Vulkan\Drivers garantida no registro
+[13:26:21] hib-vk: loader da imagem 1.3.300.0 de 2026-10-13
+[13:26:21] hib-vk lvp264reg inicio (ICD=C:\mesa3d\x64\lvp_icd.x86_64.json)
+[13:26:22] hib-vk[lvp264reg]: vkCreateInstance rc=0 OK
+[13:26:22] hib-vk[lvp264reg]: vkEnumeratePhysicalDevices(count) rc=0 n=1
+[13:26:22] hib-vk[lvp264reg]: GPU[0]: llvmpipe (LLVM 23.1.2, 256 bits)
+[13:26:22] hib-vk[lvp264reg]: VULKAN OK - loader + ICD lavapipe funcionam
+[13:26:22] hib-vk[lvp264reg]: INFO:              Using Vulkan Loader C:\Windows\SYSTEM32\vulkan-1.dll
+[13:26:22] hib-vk[lvp264reg]: INFO:              Vulkan Loader Version 1.3.301
+[13:26:22] hib-vk[lvp264reg]: INFO:              Loader is running with elevated permissions. Environment variable VK_LOADER_LAYERS_ENABLE will be ignored
+[13:26:22] hib-vk[lvp264reg]: INFO:              Loader is running with elevated permissions. Environment variable VK_LOADER_LAYERS_DISABLE will be ignored
+[13:26:22] hib-vk[lvp264reg]: INFO:              Loader is running with elevated permissions. Environment variable VK_LOADER_LAYERS_ALLOW will be ignored
+[13:26:22] hib-vk[lvp264reg]: INFO:              Loader is running with elevated permissions. Environment variable VK_IMPLICIT_LAYER_PATH will be ignored
+[13:26:22] hib-vk[lvp264reg]: INFO:              Loader is running with elevated permissions. Environment variable VK_ADD_IMPLICIT_LAYER_PATH will be ignored
+[13:26:22] hib-vk[lvp264reg]: INFO:              windows_get_app_package_manifest_path: Failed to find mapping layers packages by family name
+[13:26:22] hib-vk[lvp264reg]: LAYER:             Checking for Layer Manifest files in Registry at HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\Vulkan\ImplicitLayers
+[13:26:22] hib-vk[lvp264reg]: INFO | LAYER:      windows_get_device_registry_files: opening device VMBUS\{da0a7802-e377-4aac-8e77-0558eb1073f8}\{5620e0c7-8062-4dce-aeb7-520c7ef76171}
+[13:26:22] hib-vk[lvp264reg]: INFO | DRIVER:     windows_get_device_registry_entry: Device ID(1) Does not contain a value for "VulkanImplicitLayers"
+[13:26:22] hib-vk[lvp264reg]: INFO | LAYER:      windows_get_device_registry_files: unable to open child-device error:13
+[13:26:22] hib-vk[lvp264reg]: LAYER:             windows_get_device_registry_files: found no registry files
+[13:26:22] hib-vk[lvp264reg]: LAYER:             Found no registry files in HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\Vulkan\ImplicitLayers
+[13:26:22] hib-vk[lvp264reg]: INFO:              Loader is running with elevated permissions. Environment variable VK_LAYER_PATH will be ignored
+[13:26:22] hib-vk[lvp264reg]: INFO:              Loader is running with elevated permissions. Environment variable VK_ADD_LAYER_PATH will be ignored
+[13:26:22] hib-vk[lvp264reg]: LAYER:             Checking for Layer Manifest files in Registry at HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\Vulkan\ExplicitLayers
+[13:26:22] hib-vk[lvp264reg]: INFO | LAYER:      windows_get_device_registry_files: opening device VMBUS\{da0a7802-e377-4aac-8e77-0558eb1073f8}\{5620e0c7-8062-4dce-aeb7-520c7ef76171}
+[13:26:22] hib-vk[lvp264reg]: INFO | DRIVER:     windows_get_device_registry_entry: Device ID(1) Does not contain a value for "VulkanExplicitLayers"
+[13:26:22] hib-vk[lvp264reg]: INFO | LAYER:      windows_get_device_registry_files: unable to open child-device error:13
+[13:26:22] hib-vk[lvp264reg]: LAYER:             windows_get_device_registry_files: found no registry files
+[13:26:22] hib-vk[lvp264reg]: LAYER:             Found no registry files in HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\Vulkan\ExplicitLayers
+[13:26:22] hib-vk[lvp264reg]: WARNING | LAYER:   windows_read_data_files_in_registry: Registry lookup failed to get layer manifest files.
+[13:26:22] hib-vk[lvp264reg]: INFO:              Loader is running with elevated permissions. Environment variable VK_LOADER_DRIVERS_SELECT will be ignored
+[13:26:22] hib-vk[lvp264reg]: INFO:              Loader is running with elevated permissions. Environment variable VK_LOADER_DRIVERS_DISABLE will be ignored
+[13:26:22] hib-vk[lvp264reg]: INFO:              Loader is running with elevated permissions. Environment variable VK_DRIVER_FILES will be ignored
+[13:26:22] hib-vk[lvp264reg]: INFO:              Loader is running with elevated permissions. Environment variable VK_ICD_FILENAMES will be ignored
+[13:26:22] hib-vk[lvp264reg]: INFO:              Loader is running with elevated permissions. Environment variable VK_ADD_DRIVER_FILES will be ignored
+[13:26:22] hib-vk[lvp264reg]: INFO:              windows_get_app_package_manifest_path: Failed to find mapping layers packages by family name
+[13:26:22] hib-vk[lvp264reg]: DRIVER:            Checking for Driver Manifest files in Registry at HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\Vulkan\Drivers
+[13:26:22] hib-vk[lvp264reg]: INFO | DRIVER:     windows_get_device_registry_files: opening device VMBUS\{da0a7802-e377-4aac-8e77-0558eb1073f8}\{5620e0c7-8062-4dce-aeb7-520c7ef76171}
+[13:26:22] hib-vk[lvp264reg]: INFO | DRIVER:     windows_get_device_registry_entry: Device ID(1) Does not contain a value for "VulkanDriverName"
+[13:26:22] hib-vk[lvp264reg]: INFO | DRIVER:     windows_get_device_registry_files: unable to open child-device error:13
+[13:26:22] hib-vk[lvp264reg]: DRIVER:            windows_get_device_registry_files: found no registry files
+[13:26:22] hib-vk[lvp264reg]: INFO | DRIVER:     Located json file "C:\mesa3d\x64\lvp_icd.x86_64.json" from registry "HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\Vulkan\Drivers"
+[13:26:22] hib-vk[lvp264reg]: INFO | DRIVER:     Driver C:\mesa3d\x64\lvp_icd.x86_64.json is not recognized as a known driver. It will be assumed to be active
+[13:26:22] hib-vk[lvp264reg]: DRIVER:            Found ICD manifest file C:\mesa3d\x64\lvp_icd.x86_64.json, version 1.0.1
+[13:26:22] hib-vk[lvp264reg]: DEBUG | DRIVER:    Searching for ICD drivers named .\vulkan_lvp.dll
+[13:26:22] hib-vk[lvp264reg]: LAYER:             vkCreateInstance layer callstack setup to:
+[13:26:22] hib-vk[lvp264reg]: LAYER:                <Application>
+[13:26:22] hib-vk[lvp264reg]: LAYER:                  ||
+[13:26:22] hib-vk[lvp264reg]: LAYER:                <Loader>
+[13:26:22] hib-vk[lvp264reg]: LAYER:                  ||
+[13:26:22] hib-vk[lvp264reg]: LAYER:                <Drivers>
+[13:26:22] hibrido: ICD VALIDADA e REGISTRADA para o boot: C:\mesa3d\x64\lvp_icd.x86_64.json
+[13:26:22] hibrido: DXVK_LOG_PATH=C:\ets2demo\bin\win_x64
+[13:26:22] menuwalk cl: menuwalk.c
+[13:26:22] menuwalk cl: D:\a\5\5\menuwalk.c(191): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+[13:26:22] menuwalk cl: D:\a\5\5\menuwalk.c(206): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+[13:26:22] menuwalk cl: D:\a\5\5\menuwalk.c(227): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+[13:26:22] menuwalk cl: D:\a\5\5\menuwalk.c(325): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+[13:26:23] hibrido: menuwalk v97 lancado (arsenal de 10 armas contra a ativacao)
+[13:26:23] hibrido: job de screenshots lancado (1 JPEG/30 s)
+[13:26:23] boot x64 dx11 HIBRIDO dxvk inicio
+[13:26:25] boot x64 dx11 HIBRIDO dxvk: pid 6616
+[13:26:30] boot x64 dx11 HIBRIDO dxvk iter 1/300 vivo=True cpu=4 thr=41
+[13:26:30] probe mmf (iter 1): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:26:35] boot x64 dx11 HIBRIDO dxvk iter 2/300 vivo=True cpu=9 thr=41
+[13:26:35] probe mmf (iter 2): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:26:40] boot x64 dx11 HIBRIDO dxvk iter 3/300 vivo=True cpu=14 thr=41
+[13:26:40] probe mmf (iter 3): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:26:45] boot x64 dx11 HIBRIDO dxvk iter 4/300 vivo=True cpu=19 thr=41
+[13:26:45] probe mmf (iter 4): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:26:50] boot x64 dx11 HIBRIDO dxvk iter 5/300 vivo=True cpu=24 thr=41
+[13:26:50] probe mmf (iter 5): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:26:55] boot x64 dx11 HIBRIDO dxvk iter 6/300 vivo=True cpu=29 thr=41
+[13:26:55] probe mmf (iter 6): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:27:00] boot x64 dx11 HIBRIDO dxvk iter 7/300 vivo=True cpu=33.8 thr=40
+[13:27:00] probe mmf (iter 7): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:27:05] boot x64 dx11 HIBRIDO dxvk iter 8/300 vivo=True cpu=38.8 thr=40
+[13:27:05] probe mmf (iter 8): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:27:10] boot x64 dx11 HIBRIDO dxvk iter 9/300 vivo=True cpu=43.8 thr=40
+[13:27:10] probe mmf (iter 9): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:27:15] boot x64 dx11 HIBRIDO dxvk iter 10/300 vivo=True cpu=48.8 thr=40
+[13:27:15] probe mmf (iter 10): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:27:20] boot x64 dx11 HIBRIDO dxvk iter 11/300 vivo=True cpu=53.8 thr=40
+[13:27:20] probe mmf (iter 11): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:27:25] boot x64 dx11 HIBRIDO dxvk iter 12/300 vivo=True cpu=58.8 thr=38
+[13:27:25] probe mmf (iter 12): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:27:30] boot x64 dx11 HIBRIDO dxvk iter 13/300 vivo=True cpu=63.8 thr=38
+[13:27:30] probe mmf (iter 13): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:27:35] boot x64 dx11 HIBRIDO dxvk iter 14/300 vivo=True cpu=68.8 thr=38
+[13:27:35] probe mmf (iter 14): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:27:40] boot x64 dx11 HIBRIDO dxvk iter 15/300 vivo=True cpu=73.8 thr=38
+[13:27:40] probe mmf (iter 15): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:27:45] boot x64 dx11 HIBRIDO dxvk iter 16/300 vivo=True cpu=78.8 thr=38
+[13:27:45] probe mmf (iter 16): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:27:50] boot x64 dx11 HIBRIDO dxvk iter 17/300 vivo=True cpu=83.8 thr=38
+[13:27:50] probe mmf (iter 17): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:27:55] boot x64 dx11 HIBRIDO dxvk iter 18/300 vivo=True cpu=88.8 thr=38
+[13:27:55] probe mmf (iter 18): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:28:00] boot x64 dx11 HIBRIDO dxvk iter 19/300 vivo=True cpu=93.8 thr=38
+[13:28:00] probe mmf (iter 19): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:28:05] boot x64 dx11 HIBRIDO dxvk iter 20/300 vivo=True cpu=98.8 thr=38
+[13:28:05] probe mmf (iter 20): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:28:10] boot x64 dx11 HIBRIDO dxvk iter 21/300 vivo=True cpu=103.8 thr=38
+[13:28:10] probe mmf (iter 21): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:28:15] boot x64 dx11 HIBRIDO dxvk iter 22/300 vivo=True cpu=108.8 thr=38
+[13:28:15] probe mmf (iter 22): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:28:20] boot x64 dx11 HIBRIDO dxvk iter 23/300 vivo=True cpu=113.8 thr=38
+[13:28:20] probe mmf (iter 23): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:28:25] boot x64 dx11 HIBRIDO dxvk iter 24/300 vivo=True cpu=118.8 thr=38
+[13:28:25] probe mmf (iter 24): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:28:30] boot x64 dx11 HIBRIDO dxvk iter 25/300 vivo=True cpu=123.8 thr=38
+[13:28:30] probe mmf (iter 25): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:28:35] boot x64 dx11 HIBRIDO dxvk iter 26/300 vivo=True cpu=128.8 thr=38
+[13:28:35] probe mmf (iter 26): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:28:40] boot x64 dx11 HIBRIDO dxvk iter 27/300 vivo=True cpu=133.8 thr=36
+[13:28:40] probe mmf (iter 27): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:28:45] boot x64 dx11 HIBRIDO dxvk iter 28/300 vivo=True cpu=138.7 thr=36
+[13:28:45] probe mmf (iter 28): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:28:50] boot x64 dx11 HIBRIDO dxvk iter 29/300 vivo=True cpu=143.7 thr=36
+[13:28:50] probe mmf (iter 29): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:28:55] boot x64 dx11 HIBRIDO dxvk iter 30/300 vivo=True cpu=148.7 thr=36
+[13:28:55] probe mmf (iter 30): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:29:00] boot x64 dx11 HIBRIDO dxvk iter 31/300 vivo=True cpu=153.7 thr=36
+[13:29:00] probe mmf (iter 31): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:29:05] boot x64 dx11 HIBRIDO dxvk iter 32/300 vivo=True cpu=158.7 thr=36
+[13:29:05] probe mmf (iter 32): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:29:10] boot x64 dx11 HIBRIDO dxvk iter 33/300 vivo=True cpu=163.7 thr=36
+[13:29:10] probe mmf (iter 33): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:29:15] boot x64 dx11 HIBRIDO dxvk iter 34/300 vivo=True cpu=168.7 thr=36
+[13:29:15] probe mmf (iter 34): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:29:20] boot x64 dx11 HIBRIDO dxvk iter 35/300 vivo=True cpu=173.7 thr=36
+[13:29:20] probe mmf (iter 35): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:29:25] boot x64 dx11 HIBRIDO dxvk iter 36/300 vivo=True cpu=178.7 thr=37
+[13:29:25] probe mmf (iter 36): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:29:30] boot x64 dx11 HIBRIDO dxvk iter 37/300 vivo=True cpu=183.7 thr=37
+[13:29:30] probe mmf (iter 37): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:29:35] boot x64 dx11 HIBRIDO dxvk iter 38/300 vivo=True cpu=188.7 thr=37
+[13:29:35] probe mmf (iter 38): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:29:40] boot x64 dx11 HIBRIDO dxvk iter 39/300 vivo=True cpu=193.7 thr=37
+[13:29:40] probe mmf (iter 39): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:29:45] boot x64 dx11 HIBRIDO dxvk iter 40/300 vivo=True cpu=198.7 thr=37
+[13:29:45] probe mmf (iter 40): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:29:50] boot x64 dx11 HIBRIDO dxvk iter 41/300 vivo=True cpu=203.7 thr=37
+[13:29:50] probe mmf (iter 41): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:29:55] boot x64 dx11 HIBRIDO dxvk iter 42/300 vivo=True cpu=208.7 thr=37
+[13:29:55] probe mmf (iter 42): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:30:00] boot x64 dx11 HIBRIDO dxvk iter 43/300 vivo=True cpu=213.6 thr=37
+[13:30:00] probe mmf (iter 43): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:30:05] boot x64 dx11 HIBRIDO dxvk iter 44/300 vivo=True cpu=218.6 thr=37
+[13:30:05] probe mmf (iter 44): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:30:10] boot x64 dx11 HIBRIDO dxvk iter 45/300 vivo=True cpu=223.6 thr=37
+[13:30:10] probe mmf (iter 45): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:30:15] boot x64 dx11 HIBRIDO dxvk iter 46/300 vivo=True cpu=228.6 thr=37
+[13:30:15] probe mmf (iter 46): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:30:20] boot x64 dx11 HIBRIDO dxvk iter 47/300 vivo=True cpu=233.6 thr=37
+[13:30:20] probe mmf (iter 47): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:30:25] boot x64 dx11 HIBRIDO dxvk iter 48/300 vivo=True cpu=238.4 thr=37
+[13:30:25] probe mmf (iter 48): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:30:30] boot x64 dx11 HIBRIDO dxvk iter 49/300 vivo=True cpu=243.4 thr=37
+[13:30:30] probe mmf (iter 49): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:30:35] boot x64 dx11 HIBRIDO dxvk iter 50/300 vivo=True cpu=248.4 thr=37
+[13:30:35] probe mmf (iter 50): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:30:40] boot x64 dx11 HIBRIDO dxvk iter 51/300 vivo=True cpu=253.4 thr=37
+[13:30:40] probe mmf (iter 51): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:30:45] boot x64 dx11 HIBRIDO dxvk iter 52/300 vivo=True cpu=258.4 thr=37
+[13:30:45] probe mmf (iter 52): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:30:50] boot x64 dx11 HIBRIDO dxvk iter 53/300 vivo=True cpu=263.4 thr=37
+[13:30:50] probe mmf (iter 53): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:30:55] boot x64 dx11 HIBRIDO dxvk iter 54/300 vivo=True cpu=268.4 thr=35
+[13:30:55] probe mmf (iter 54): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:31:00] boot x64 dx11 HIBRIDO dxvk iter 55/300 vivo=True cpu=273.4 thr=35
+[13:31:00] probe mmf (iter 55): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:31:05] boot x64 dx11 HIBRIDO dxvk iter 56/300 vivo=True cpu=278.4 thr=35
+[13:31:05] probe mmf (iter 56): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:31:10] boot x64 dx11 HIBRIDO dxvk iter 57/300 vivo=True cpu=283.4 thr=35
+[13:31:10] probe mmf (iter 57): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:31:15] boot x64 dx11 HIBRIDO dxvk iter 58/300 vivo=True cpu=288.3 thr=35
+[13:31:15] probe mmf (iter 58): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:31:20] boot x64 dx11 HIBRIDO dxvk iter 59/300 vivo=True cpu=293.4 thr=35
+[13:31:20] probe mmf (iter 59): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:31:25] boot x64 dx11 HIBRIDO dxvk iter 60/300 vivo=True cpu=298.4 thr=38
+[13:31:25] probe mmf (iter 60): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:31:30] boot x64 dx11 HIBRIDO dxvk iter 61/300 vivo=True cpu=303.2 thr=38
+[13:31:30] probe mmf (iter 61): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:31:35] boot x64 dx11 HIBRIDO dxvk iter 62/300 vivo=True cpu=308.2 thr=38
+[13:31:35] probe mmf (iter 62): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:31:40] boot x64 dx11 HIBRIDO dxvk iter 63/300 vivo=True cpu=313.1 thr=38
+[13:31:40] probe mmf (iter 63): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:31:45] boot x64 dx11 HIBRIDO dxvk iter 64/300 vivo=True cpu=318.1 thr=38
+[13:31:45] probe mmf (iter 64): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:31:50] boot x64 dx11 HIBRIDO dxvk iter 65/300 vivo=True cpu=323.1 thr=38
+[13:31:50] probe mmf (iter 65): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:31:55] boot x64 dx11 HIBRIDO dxvk iter 66/300 vivo=True cpu=328.1 thr=38
+[13:31:55] probe mmf (iter 66): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:32:00] boot x64 dx11 HIBRIDO dxvk iter 67/300 vivo=True cpu=333.1 thr=38
+[13:32:00] probe mmf (iter 67): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:32:05] boot x64 dx11 HIBRIDO dxvk iter 68/300 vivo=True cpu=338.1 thr=38
+[13:32:05] probe mmf (iter 68): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:32:10] boot x64 dx11 HIBRIDO dxvk iter 69/300 vivo=True cpu=343.1 thr=38
+[13:32:10] probe mmf (iter 69): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:32:15] boot x64 dx11 HIBRIDO dxvk iter 70/300 vivo=True cpu=348.1 thr=38
+[13:32:15] probe mmf (iter 70): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:32:20] boot x64 dx11 HIBRIDO dxvk iter 71/300 vivo=True cpu=353.1 thr=38
+[13:32:20] probe mmf (iter 71): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:32:25] boot x64 dx11 HIBRIDO dxvk iter 72/300 vivo=True cpu=358.1 thr=38
+[13:32:25] probe mmf (iter 72): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:32:30] boot x64 dx11 HIBRIDO dxvk iter 73/300 vivo=True cpu=363.1 thr=38
+[13:32:30] probe mmf (iter 73): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:32:35] boot x64 dx11 HIBRIDO dxvk iter 74/300 vivo=True cpu=368.1 thr=38
+[13:32:35] probe mmf (iter 74): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:32:40] boot x64 dx11 HIBRIDO dxvk iter 75/300 vivo=True cpu=373.1 thr=38
+[13:32:40] probe mmf (iter 75): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:32:45] boot x64 dx11 HIBRIDO dxvk iter 76/300 vivo=True cpu=378.1 thr=38
+[13:32:45] probe mmf (iter 76): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:32:50] boot x64 dx11 HIBRIDO dxvk iter 77/300 vivo=True cpu=383.1 thr=38
+[13:32:50] probe mmf (iter 77): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:32:55] boot x64 dx11 HIBRIDO dxvk iter 78/300 vivo=True cpu=388.1 thr=38
+[13:32:55] probe mmf (iter 78): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:33:00] boot x64 dx11 HIBRIDO dxvk iter 79/300 vivo=True cpu=393.1 thr=38
+[13:33:00] probe mmf (iter 79): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:33:05] boot x64 dx11 HIBRIDO dxvk iter 80/300 vivo=True cpu=398.1 thr=38
+[13:33:05] probe mmf (iter 80): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:33:10] boot x64 dx11 HIBRIDO dxvk iter 81/300 vivo=True cpu=403.1 thr=35
+[13:33:10] probe mmf (iter 81): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:33:15] boot x64 dx11 HIBRIDO dxvk iter 82/300 vivo=True cpu=408 thr=35
+[13:33:15] probe mmf (iter 82): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:33:20] boot x64 dx11 HIBRIDO dxvk iter 83/300 vivo=True cpu=413 thr=35
+[13:33:20] probe mmf (iter 83): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:33:25] boot x64 dx11 HIBRIDO dxvk iter 84/300 vivo=True cpu=418 thr=35
+[13:33:25] probe mmf (iter 84): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:33:30] boot x64 dx11 HIBRIDO dxvk iter 85/300 vivo=True cpu=423 thr=35
+[13:33:30] probe mmf (iter 85): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:33:35] boot x64 dx11 HIBRIDO dxvk iter 86/300 vivo=True cpu=428 thr=35
+[13:33:35] probe mmf (iter 86): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:33:40] boot x64 dx11 HIBRIDO dxvk iter 87/300 vivo=True cpu=433 thr=35
+[13:33:40] probe mmf (iter 87): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:33:45] boot x64 dx11 HIBRIDO dxvk iter 88/300 vivo=True cpu=438 thr=35
+[13:33:45] probe mmf (iter 88): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:33:50] boot x64 dx11 HIBRIDO dxvk iter 89/300 vivo=True cpu=443 thr=35
+[13:33:50] probe mmf (iter 89): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:33:55] boot x64 dx11 HIBRIDO dxvk iter 90/300 vivo=True cpu=448 thr=35
+[13:33:55] probe mmf (iter 90): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:34:00] boot x64 dx11 HIBRIDO dxvk iter 91/300 vivo=True cpu=452.9 thr=35
+[13:34:00] probe mmf (iter 91): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:34:05] boot x64 dx11 HIBRIDO dxvk iter 92/300 vivo=True cpu=457.9 thr=35
+[13:34:05] probe mmf (iter 92): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:34:10] boot x64 dx11 HIBRIDO dxvk iter 93/300 vivo=True cpu=462.9 thr=35
+[13:34:10] probe mmf (iter 93): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:34:15] boot x64 dx11 HIBRIDO dxvk iter 94/300 vivo=True cpu=467.9 thr=35
+[13:34:15] probe mmf (iter 94): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:34:20] boot x64 dx11 HIBRIDO dxvk iter 95/300 vivo=True cpu=472.9 thr=35
+[13:34:20] probe mmf (iter 95): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:34:25] boot x64 dx11 HIBRIDO dxvk iter 96/300 vivo=True cpu=477.8 thr=35
+[13:34:25] probe mmf (iter 96): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:34:30] boot x64 dx11 HIBRIDO dxvk iter 97/300 vivo=True cpu=482.8 thr=35
+[13:34:30] probe mmf (iter 97): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:34:35] boot x64 dx11 HIBRIDO dxvk iter 98/300 vivo=True cpu=487.8 thr=35
+[13:34:35] probe mmf (iter 98): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:34:40] boot x64 dx11 HIBRIDO dxvk iter 99/300 vivo=True cpu=492.8 thr=35
+[13:34:40] probe mmf (iter 99): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:34:45] boot x64 dx11 HIBRIDO dxvk iter 100/300 vivo=True cpu=497.8 thr=35
+[13:34:45] probe mmf (iter 100): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:34:50] boot x64 dx11 HIBRIDO dxvk iter 101/300 vivo=True cpu=502.8 thr=35
+[13:34:50] probe mmf (iter 101): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:34:55] boot x64 dx11 HIBRIDO dxvk iter 102/300 vivo=True cpu=507.8 thr=35
+[13:34:55] probe mmf (iter 102): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:35:00] boot x64 dx11 HIBRIDO dxvk iter 103/300 vivo=True cpu=512.8 thr=35
+[13:35:00] probe mmf (iter 103): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:35:05] boot x64 dx11 HIBRIDO dxvk iter 104/300 vivo=True cpu=517.8 thr=35
+[13:35:05] probe mmf (iter 104): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:35:10] boot x64 dx11 HIBRIDO dxvk iter 105/300 vivo=True cpu=522.8 thr=35
+[13:35:10] probe mmf (iter 105): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:35:15] boot x64 dx11 HIBRIDO dxvk iter 106/300 vivo=True cpu=527.8 thr=35
+[13:35:15] probe mmf (iter 106): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:35:20] boot x64 dx11 HIBRIDO dxvk iter 107/300 vivo=True cpu=532.8 thr=35
+[13:35:20] probe mmf (iter 107): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:35:25] boot x64 dx11 HIBRIDO dxvk iter 108/300 vivo=True cpu=537.8 thr=35
+[13:35:25] probe mmf (iter 108): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:35:30] boot x64 dx11 HIBRIDO dxvk iter 109/300 vivo=True cpu=542.7 thr=35
+[13:35:30] probe mmf (iter 109): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:35:35] boot x64 dx11 HIBRIDO dxvk iter 110/300 vivo=True cpu=547.7 thr=35
+[13:35:35] probe mmf (iter 110): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:35:40] boot x64 dx11 HIBRIDO dxvk iter 111/300 vivo=True cpu=552.7 thr=35
+[13:35:40] probe mmf (iter 111): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:35:45] boot x64 dx11 HIBRIDO dxvk iter 112/300 vivo=True cpu=557.7 thr=35
+[13:35:45] probe mmf (iter 112): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:35:50] boot x64 dx11 HIBRIDO dxvk iter 113/300 vivo=True cpu=562.7 thr=35
+[13:35:50] probe mmf (iter 113): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:35:55] boot x64 dx11 HIBRIDO dxvk iter 114/300 vivo=True cpu=567.6 thr=35
+[13:35:56] probe mmf (iter 114): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:36:01] boot x64 dx11 HIBRIDO dxvk iter 115/300 vivo=True cpu=572.7 thr=35
+[13:36:01] probe mmf (iter 115): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:36:06] boot x64 dx11 HIBRIDO dxvk iter 116/300 vivo=True cpu=577.7 thr=35
+[13:36:06] probe mmf (iter 116): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:36:11] boot x64 dx11 HIBRIDO dxvk iter 117/300 vivo=True cpu=582.7 thr=35
+[13:36:11] probe mmf (iter 117): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:36:16] boot x64 dx11 HIBRIDO dxvk iter 118/300 vivo=True cpu=587.7 thr=35
+[13:36:16] probe mmf (iter 118): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:36:21] boot x64 dx11 HIBRIDO dxvk iter 119/300 vivo=True cpu=592.7 thr=35
+[13:36:21] probe mmf (iter 119): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:36:26] boot x64 dx11 HIBRIDO dxvk iter 120/300 vivo=True cpu=597.7 thr=37
+[13:36:26] probe mmf (iter 120): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:36:31] boot x64 dx11 HIBRIDO dxvk iter 121/300 vivo=True cpu=602.7 thr=37
+[13:36:31] probe mmf (iter 121): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:36:36] boot x64 dx11 HIBRIDO dxvk iter 122/300 vivo=True cpu=607.7 thr=37
+[13:36:36] probe mmf (iter 122): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:36:41] boot x64 dx11 HIBRIDO dxvk iter 123/300 vivo=True cpu=612.7 thr=37
+[13:36:41] probe mmf (iter 123): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:36:46] boot x64 dx11 HIBRIDO dxvk iter 124/300 vivo=True cpu=617.7 thr=37
+[13:36:46] probe mmf (iter 124): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:36:51] boot x64 dx11 HIBRIDO dxvk iter 125/300 vivo=True cpu=622.7 thr=37
+[13:36:51] probe mmf (iter 125): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:36:56] boot x64 dx11 HIBRIDO dxvk iter 126/300 vivo=True cpu=627.7 thr=37
+[13:36:56] probe mmf (iter 126): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:37:01] boot x64 dx11 HIBRIDO dxvk iter 127/300 vivo=True cpu=632.7 thr=37
+[13:37:01] probe mmf (iter 127): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:37:06] boot x64 dx11 HIBRIDO dxvk iter 128/300 vivo=True cpu=637.7 thr=37
+[13:37:06] probe mmf (iter 128): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:37:11] boot x64 dx11 HIBRIDO dxvk iter 129/300 vivo=True cpu=642.7 thr=37
+[13:37:11] probe mmf (iter 129): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:37:16] boot x64 dx11 HIBRIDO dxvk iter 130/300 vivo=True cpu=647.7 thr=37
+[13:37:16] probe mmf (iter 130): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:37:21] boot x64 dx11 HIBRIDO dxvk iter 131/300 vivo=True cpu=652.7 thr=37
+[13:37:21] probe mmf (iter 131): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:37:26] boot x64 dx11 HIBRIDO dxvk iter 132/300 vivo=True cpu=657.6 thr=37
+[13:37:26] probe mmf (iter 132): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:37:31] boot x64 dx11 HIBRIDO dxvk iter 133/300 vivo=True cpu=662.6 thr=37
+[13:37:31] probe mmf (iter 133): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:37:36] boot x64 dx11 HIBRIDO dxvk iter 134/300 vivo=True cpu=667.6 thr=36
+[13:37:36] probe mmf (iter 134): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:37:41] boot x64 dx11 HIBRIDO dxvk iter 135/300 vivo=True cpu=672.6 thr=36
+[13:37:41] probe mmf (iter 135): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:37:46] boot x64 dx11 HIBRIDO dxvk iter 136/300 vivo=True cpu=677.6 thr=36
+[13:37:46] probe mmf (iter 136): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:37:51] boot x64 dx11 HIBRIDO dxvk iter 137/300 vivo=True cpu=682.6 thr=36
+[13:37:51] probe mmf (iter 137): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:37:56] boot x64 dx11 HIBRIDO dxvk iter 138/300 vivo=True cpu=687.6 thr=36
+[13:37:56] probe mmf (iter 138): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:38:01] boot x64 dx11 HIBRIDO dxvk iter 139/300 vivo=True cpu=692.6 thr=36
+[13:38:01] probe mmf (iter 139): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:38:06] boot x64 dx11 HIBRIDO dxvk iter 140/300 vivo=True cpu=697.6 thr=36
+[13:38:06] probe mmf (iter 140): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:38:11] boot x64 dx11 HIBRIDO dxvk iter 141/300 vivo=True cpu=702.6 thr=36
+[13:38:11] probe mmf (iter 141): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:38:16] boot x64 dx11 HIBRIDO dxvk iter 142/300 vivo=True cpu=707.6 thr=36
+[13:38:16] probe mmf (iter 142): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:38:21] boot x64 dx11 HIBRIDO dxvk iter 143/300 vivo=True cpu=712.6 thr=36
+[13:38:21] probe mmf (iter 143): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:38:26] boot x64 dx11 HIBRIDO dxvk iter 144/300 vivo=True cpu=717.5 thr=36
+[13:38:26] probe mmf (iter 144): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:38:31] boot x64 dx11 HIBRIDO dxvk iter 145/300 vivo=True cpu=722.5 thr=36
+[13:38:31] probe mmf (iter 145): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:38:36] boot x64 dx11 HIBRIDO dxvk iter 146/300 vivo=True cpu=727.5 thr=36
+[13:38:36] probe mmf (iter 146): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:38:41] boot x64 dx11 HIBRIDO dxvk iter 147/300 vivo=True cpu=732.5 thr=36
+[13:38:41] probe mmf (iter 147): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:38:46] boot x64 dx11 HIBRIDO dxvk iter 148/300 vivo=True cpu=737.5 thr=35
+[13:38:46] probe mmf (iter 148): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:38:51] boot x64 dx11 HIBRIDO dxvk iter 149/300 vivo=True cpu=742.5 thr=35
+[13:38:51] probe mmf (iter 149): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:38:56] boot x64 dx11 HIBRIDO dxvk iter 150/300 vivo=True cpu=747.5 thr=35
+[13:38:56] probe mmf (iter 150): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:39:01] boot x64 dx11 HIBRIDO dxvk iter 151/300 vivo=True cpu=752.4 thr=35
+[13:39:01] probe mmf (iter 151): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:39:06] boot x64 dx11 HIBRIDO dxvk iter 152/300 vivo=True cpu=757.4 thr=35
+[13:39:06] probe mmf (iter 152): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:39:11] boot x64 dx11 HIBRIDO dxvk iter 153/300 vivo=True cpu=762.4 thr=35
+[13:39:11] probe mmf (iter 153): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:39:16] boot x64 dx11 HIBRIDO dxvk iter 154/300 vivo=True cpu=767.4 thr=35
+[13:39:16] probe mmf (iter 154): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:39:21] boot x64 dx11 HIBRIDO dxvk iter 155/300 vivo=True cpu=772.4 thr=36
+[13:39:21] probe mmf (iter 155): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:39:26] boot x64 dx11 HIBRIDO dxvk iter 156/300 vivo=True cpu=777.3 thr=36
+[13:39:26] probe mmf (iter 156): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:39:31] boot x64 dx11 HIBRIDO dxvk iter 157/300 vivo=True cpu=782.4 thr=36
+[13:39:31] probe mmf (iter 157): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:39:36] boot x64 dx11 HIBRIDO dxvk iter 158/300 vivo=True cpu=787.3 thr=36
+[13:39:36] probe mmf (iter 158): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:39:41] boot x64 dx11 HIBRIDO dxvk iter 159/300 vivo=True cpu=792.3 thr=36
+[13:39:41] probe mmf (iter 159): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:39:46] boot x64 dx11 HIBRIDO dxvk iter 160/300 vivo=True cpu=797.3 thr=36
+[13:39:46] probe mmf (iter 160): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:39:51] boot x64 dx11 HIBRIDO dxvk iter 161/300 vivo=True cpu=802.3 thr=36
+[13:39:51] probe mmf (iter 161): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:39:56] boot x64 dx11 HIBRIDO dxvk iter 162/300 vivo=True cpu=807.3 thr=36
+[13:39:56] probe mmf (iter 162): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:40:01] boot x64 dx11 HIBRIDO dxvk iter 163/300 vivo=True cpu=812.3 thr=36
+[13:40:01] probe mmf (iter 163): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:40:06] boot x64 dx11 HIBRIDO dxvk iter 164/300 vivo=True cpu=817.2 thr=36
+[13:40:06] probe mmf (iter 164): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:40:11] boot x64 dx11 HIBRIDO dxvk iter 165/300 vivo=True cpu=822.2 thr=36
+[13:40:11] probe mmf (iter 165): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:40:16] boot x64 dx11 HIBRIDO dxvk iter 166/300 vivo=True cpu=827.2 thr=36
+[13:40:16] probe mmf (iter 166): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:40:21] boot x64 dx11 HIBRIDO dxvk iter 167/300 vivo=True cpu=832.2 thr=36
+[13:40:21] probe mmf (iter 167): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:40:26] boot x64 dx11 HIBRIDO dxvk iter 168/300 vivo=True cpu=837.2 thr=36
+[13:40:26] probe mmf (iter 168): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:40:31] boot x64 dx11 HIBRIDO dxvk iter 169/300 vivo=True cpu=842.2 thr=36
+[13:40:31] probe mmf (iter 169): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:40:36] boot x64 dx11 HIBRIDO dxvk iter 170/300 vivo=True cpu=847.2 thr=36
+[13:40:36] probe mmf (iter 170): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:40:41] boot x64 dx11 HIBRIDO dxvk iter 171/300 vivo=True cpu=852.1 thr=36
+[13:40:41] probe mmf (iter 171): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:40:46] boot x64 dx11 HIBRIDO dxvk iter 172/300 vivo=True cpu=857.1 thr=36
+[13:40:46] probe mmf (iter 172): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:40:51] boot x64 dx11 HIBRIDO dxvk iter 173/300 vivo=True cpu=862.1 thr=36
+[13:40:51] probe mmf (iter 173): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:40:56] boot x64 dx11 HIBRIDO dxvk iter 174/300 vivo=True cpu=867.1 thr=36
+[13:40:56] probe mmf (iter 174): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:41:01] boot x64 dx11 HIBRIDO dxvk iter 175/300 vivo=True cpu=872.1 thr=35
+[13:41:01] probe mmf (iter 175): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:41:06] boot x64 dx11 HIBRIDO dxvk iter 176/300 vivo=True cpu=877.1 thr=35
+[13:41:06] probe mmf (iter 176): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:41:11] boot x64 dx11 HIBRIDO dxvk iter 177/300 vivo=True cpu=882.1 thr=35
+[13:41:11] probe mmf (iter 177): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:41:16] boot x64 dx11 HIBRIDO dxvk iter 178/300 vivo=True cpu=887.1 thr=35
+[13:41:16] probe mmf (iter 178): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:41:21] boot x64 dx11 HIBRIDO dxvk iter 179/300 vivo=True cpu=892 thr=35
+[13:41:21] probe mmf (iter 179): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:41:26] boot x64 dx11 HIBRIDO dxvk iter 180/300 vivo=True cpu=897.1 thr=35
+[13:41:26] probe mmf (iter 180): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:41:31] boot x64 dx11 HIBRIDO dxvk iter 181/300 vivo=True cpu=902.1 thr=35
+[13:41:31] probe mmf (iter 181): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:41:36] boot x64 dx11 HIBRIDO dxvk iter 182/300 vivo=True cpu=907.1 thr=35
+[13:41:36] probe mmf (iter 182): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:41:41] boot x64 dx11 HIBRIDO dxvk iter 183/300 vivo=True cpu=912.1 thr=35
+[13:41:41] probe mmf (iter 183): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:41:46] boot x64 dx11 HIBRIDO dxvk iter 184/300 vivo=True cpu=917.1 thr=35
+[13:41:46] probe mmf (iter 184): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:41:51] boot x64 dx11 HIBRIDO dxvk iter 185/300 vivo=True cpu=922 thr=35
+[13:41:51] probe mmf (iter 185): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:41:56] boot x64 dx11 HIBRIDO dxvk iter 186/300 vivo=True cpu=927 thr=35
+[13:41:56] probe mmf (iter 186): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:42:01] boot x64 dx11 HIBRIDO dxvk iter 187/300 vivo=True cpu=932 thr=35
+[13:42:01] probe mmf (iter 187): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:42:06] boot x64 dx11 HIBRIDO dxvk iter 188/300 vivo=True cpu=937 thr=35
+[13:42:06] probe mmf (iter 188): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:42:11] boot x64 dx11 HIBRIDO dxvk iter 189/300 vivo=True cpu=942 thr=35
+[13:42:11] probe mmf (iter 189): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:42:16] boot x64 dx11 HIBRIDO dxvk iter 190/300 vivo=True cpu=947 thr=35
+[13:42:16] probe mmf (iter 190): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:42:21] boot x64 dx11 HIBRIDO dxvk iter 191/300 vivo=True cpu=952 thr=35
+[13:42:21] probe mmf (iter 191): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:42:26] boot x64 dx11 HIBRIDO dxvk iter 192/300 vivo=True cpu=957 thr=35
+[13:42:26] probe mmf (iter 192): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:42:31] boot x64 dx11 HIBRIDO dxvk iter 193/300 vivo=True cpu=962 thr=35
+[13:42:31] probe mmf (iter 193): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:42:36] boot x64 dx11 HIBRIDO dxvk iter 194/300 vivo=True cpu=967 thr=35
+[13:42:36] probe mmf (iter 194): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:42:41] boot x64 dx11 HIBRIDO dxvk iter 195/300 vivo=True cpu=972 thr=35
+[13:42:41] probe mmf (iter 195): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:42:46] boot x64 dx11 HIBRIDO dxvk iter 196/300 vivo=True cpu=977 thr=35
+[13:42:46] probe mmf (iter 196): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:42:51] boot x64 dx11 HIBRIDO dxvk iter 197/300 vivo=True cpu=982 thr=36
+[13:42:51] probe mmf (iter 197): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:42:56] boot x64 dx11 HIBRIDO dxvk iter 198/300 vivo=True cpu=987 thr=36
+[13:42:56] probe mmf (iter 198): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:43:01] boot x64 dx11 HIBRIDO dxvk iter 199/300 vivo=True cpu=992 thr=36
+[13:43:01] probe mmf (iter 199): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:43:06] boot x64 dx11 HIBRIDO dxvk iter 200/300 vivo=True cpu=996.9 thr=36
+[13:43:06] probe mmf (iter 200): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:43:11] boot x64 dx11 HIBRIDO dxvk iter 201/300 vivo=True cpu=1002 thr=36
+[13:43:11] probe mmf (iter 201): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:43:16] boot x64 dx11 HIBRIDO dxvk iter 202/300 vivo=True cpu=1006.9 thr=36
+[13:43:16] probe mmf (iter 202): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:43:21] boot x64 dx11 HIBRIDO dxvk iter 203/300 vivo=True cpu=1011.9 thr=36
+[13:43:21] probe mmf (iter 203): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:43:26] boot x64 dx11 HIBRIDO dxvk iter 204/300 vivo=True cpu=1016.9 thr=36
+[13:43:26] probe mmf (iter 204): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:43:31] boot x64 dx11 HIBRIDO dxvk iter 205/300 vivo=True cpu=1021.9 thr=36
+[13:43:31] probe mmf (iter 205): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:43:36] boot x64 dx11 HIBRIDO dxvk iter 206/300 vivo=True cpu=1026.9 thr=36
+[13:43:36] probe mmf (iter 206): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:43:41] boot x64 dx11 HIBRIDO dxvk iter 207/300 vivo=True cpu=1031.9 thr=36
+[13:43:41] probe mmf (iter 207): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:43:46] boot x64 dx11 HIBRIDO dxvk iter 208/300 vivo=True cpu=1036.9 thr=36
+[13:43:46] probe mmf (iter 208): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:43:51] boot x64 dx11 HIBRIDO dxvk iter 209/300 vivo=True cpu=1041.9 thr=36
+[13:43:51] probe mmf (iter 209): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:43:56] boot x64 dx11 HIBRIDO dxvk iter 210/300 vivo=True cpu=1046.9 thr=36
+[13:43:56] probe mmf (iter 210): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:44:01] boot x64 dx11 HIBRIDO dxvk iter 211/300 vivo=True cpu=1051.8 thr=36
+[13:44:01] probe mmf (iter 211): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:44:06] boot x64 dx11 HIBRIDO dxvk iter 212/300 vivo=True cpu=1056.8 thr=36
+[13:44:06] probe mmf (iter 212): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:44:11] boot x64 dx11 HIBRIDO dxvk iter 213/300 vivo=True cpu=1061.7 thr=36
+[13:44:11] probe mmf (iter 213): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:44:16] boot x64 dx11 HIBRIDO dxvk iter 214/300 vivo=True cpu=1066.7 thr=36
+[13:44:16] probe mmf (iter 214): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:44:21] boot x64 dx11 HIBRIDO dxvk iter 215/300 vivo=True cpu=1071.7 thr=35
+[13:44:21] probe mmf (iter 215): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:44:26] boot x64 dx11 HIBRIDO dxvk iter 216/300 vivo=True cpu=1076.7 thr=35
+[13:44:26] probe mmf (iter 216): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:44:31] boot x64 dx11 HIBRIDO dxvk iter 217/300 vivo=True cpu=1081.7 thr=35
+[13:44:31] probe mmf (iter 217): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:44:36] boot x64 dx11 HIBRIDO dxvk iter 218/300 vivo=True cpu=1086.6 thr=35
+[13:44:36] probe mmf (iter 218): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:44:41] boot x64 dx11 HIBRIDO dxvk iter 219/300 vivo=True cpu=1091.6 thr=35
+[13:44:41] probe mmf (iter 219): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:44:46] boot x64 dx11 HIBRIDO dxvk iter 220/300 vivo=True cpu=1096.6 thr=35
+[13:44:46] probe mmf (iter 220): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:44:51] boot x64 dx11 HIBRIDO dxvk iter 221/300 vivo=True cpu=1101.6 thr=35
+[13:44:51] probe mmf (iter 221): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:44:56] boot x64 dx11 HIBRIDO dxvk iter 222/300 vivo=True cpu=1106.6 thr=35
+[13:44:56] probe mmf (iter 222): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:45:01] boot x64 dx11 HIBRIDO dxvk iter 223/300 vivo=True cpu=1111.6 thr=35
+[13:45:01] probe mmf (iter 223): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:45:06] boot x64 dx11 HIBRIDO dxvk iter 224/300 vivo=True cpu=1116.6 thr=35
+[13:45:06] probe mmf (iter 224): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:45:11] boot x64 dx11 HIBRIDO dxvk iter 225/300 vivo=True cpu=1121.6 thr=35
+[13:45:11] probe mmf (iter 225): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:45:16] boot x64 dx11 HIBRIDO dxvk iter 226/300 vivo=True cpu=1126.6 thr=35
+[13:45:16] probe mmf (iter 226): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:45:21] boot x64 dx11 HIBRIDO dxvk iter 227/300 vivo=True cpu=1131.6 thr=35
+[13:45:21] probe mmf (iter 227): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:45:26] boot x64 dx11 HIBRIDO dxvk iter 228/300 vivo=True cpu=1136.6 thr=35
+[13:45:26] probe mmf (iter 228): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:45:31] boot x64 dx11 HIBRIDO dxvk iter 229/300 vivo=True cpu=1141.6 thr=35
+[13:45:31] probe mmf (iter 229): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:45:36] boot x64 dx11 HIBRIDO dxvk iter 230/300 vivo=True cpu=1146.6 thr=35
+[13:45:36] probe mmf (iter 230): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:45:41] boot x64 dx11 HIBRIDO dxvk iter 231/300 vivo=True cpu=1151.6 thr=35
+[13:45:41] probe mmf (iter 231): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:45:46] boot x64 dx11 HIBRIDO dxvk iter 232/300 vivo=True cpu=1156.6 thr=35
+[13:45:46] probe mmf (iter 232): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:45:51] boot x64 dx11 HIBRIDO dxvk iter 233/300 vivo=True cpu=1161.6 thr=35
+[13:45:51] probe mmf (iter 233): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:45:56] boot x64 dx11 HIBRIDO dxvk iter 234/300 vivo=True cpu=1166.6 thr=35
+[13:45:56] probe mmf (iter 234): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:46:01] boot x64 dx11 HIBRIDO dxvk iter 235/300 vivo=True cpu=1171.5 thr=35
+[13:46:01] probe mmf (iter 235): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:46:06] boot x64 dx11 HIBRIDO dxvk iter 236/300 vivo=True cpu=1176.5 thr=35
+[13:46:06] probe mmf (iter 236): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:46:11] boot x64 dx11 HIBRIDO dxvk iter 237/300 vivo=True cpu=1181.5 thr=35
+[13:46:11] probe mmf (iter 237): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:46:16] boot x64 dx11 HIBRIDO dxvk iter 238/300 vivo=True cpu=1186.5 thr=35
+[13:46:16] probe mmf (iter 238): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:46:21] boot x64 dx11 HIBRIDO dxvk iter 239/300 vivo=True cpu=1191.5 thr=35
+[13:46:21] probe mmf (iter 239): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:46:26] boot x64 dx11 HIBRIDO dxvk iter 240/300 vivo=True cpu=1196.5 thr=35
+[13:46:26] probe mmf (iter 240): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:46:31] boot x64 dx11 HIBRIDO dxvk iter 241/300 vivo=True cpu=1201.4 thr=35
+[13:46:31] probe mmf (iter 241): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:46:36] boot x64 dx11 HIBRIDO dxvk iter 242/300 vivo=True cpu=1206.4 thr=35
+[13:46:36] probe mmf (iter 242): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:46:41] boot x64 dx11 HIBRIDO dxvk iter 243/300 vivo=True cpu=1211.4 thr=35
+[13:46:41] probe mmf (iter 243): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:46:46] boot x64 dx11 HIBRIDO dxvk iter 244/300 vivo=True cpu=1216.4 thr=35
+[13:46:46] probe mmf (iter 244): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:46:51] boot x64 dx11 HIBRIDO dxvk iter 245/300 vivo=True cpu=1221.3 thr=35
+[13:46:51] probe mmf (iter 245): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:46:56] boot x64 dx11 HIBRIDO dxvk iter 246/300 vivo=True cpu=1226.3 thr=35
+[13:46:56] probe mmf (iter 246): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:47:01] boot x64 dx11 HIBRIDO dxvk iter 247/300 vivo=True cpu=1231.3 thr=35
+[13:47:01] probe mmf (iter 247): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:47:06] boot x64 dx11 HIBRIDO dxvk iter 248/300 vivo=True cpu=1236.3 thr=35
+[13:47:06] probe mmf (iter 248): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:47:11] boot x64 dx11 HIBRIDO dxvk iter 249/300 vivo=True cpu=1241.3 thr=35
+[13:47:11] probe mmf (iter 249): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:47:16] boot x64 dx11 HIBRIDO dxvk iter 250/300 vivo=True cpu=1246.2 thr=35
+[13:47:16] probe mmf (iter 250): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:47:21] boot x64 dx11 HIBRIDO dxvk iter 251/300 vivo=True cpu=1251.2 thr=35
+[13:47:21] probe mmf (iter 251): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:47:26] boot x64 dx11 HIBRIDO dxvk iter 252/300 vivo=True cpu=1256.2 thr=35
+[13:47:26] probe mmf (iter 252): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:47:31] boot x64 dx11 HIBRIDO dxvk iter 253/300 vivo=True cpu=1261.2 thr=35
+[13:47:31] probe mmf (iter 253): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:47:36] boot x64 dx11 HIBRIDO dxvk iter 254/300 vivo=True cpu=1266.2 thr=35
+[13:47:36] probe mmf (iter 254): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:47:41] boot x64 dx11 HIBRIDO dxvk iter 255/300 vivo=True cpu=1271.2 thr=35
+[13:47:41] probe mmf (iter 255): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:47:46] boot x64 dx11 HIBRIDO dxvk iter 256/300 vivo=True cpu=1276.2 thr=35
+[13:47:46] probe mmf (iter 256): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:47:51] boot x64 dx11 HIBRIDO dxvk iter 257/300 vivo=True cpu=1281.1 thr=35
+[13:47:51] probe mmf (iter 257): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:47:56] boot x64 dx11 HIBRIDO dxvk iter 258/300 vivo=True cpu=1286.1 thr=35
+[13:47:56] probe mmf (iter 258): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:48:01] boot x64 dx11 HIBRIDO dxvk iter 259/300 vivo=True cpu=1291.1 thr=35
+[13:48:01] probe mmf (iter 259): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:48:06] boot x64 dx11 HIBRIDO dxvk iter 260/300 vivo=True cpu=1296.1 thr=35
+[13:48:06] probe mmf (iter 260): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:48:11] boot x64 dx11 HIBRIDO dxvk iter 261/300 vivo=True cpu=1301.1 thr=35
+[13:48:11] probe mmf (iter 261): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:48:16] boot x64 dx11 HIBRIDO dxvk iter 262/300 vivo=True cpu=1306.1 thr=35
+[13:48:16] probe mmf (iter 262): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:48:21] boot x64 dx11 HIBRIDO dxvk iter 263/300 vivo=True cpu=1311 thr=35
+[13:48:21] probe mmf (iter 263): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:48:26] boot x64 dx11 HIBRIDO dxvk iter 264/300 vivo=True cpu=1316 thr=35
+[13:48:26] probe mmf (iter 264): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:48:31] boot x64 dx11 HIBRIDO dxvk iter 265/300 vivo=True cpu=1321 thr=35
+[13:48:31] probe mmf (iter 265): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:48:36] boot x64 dx11 HIBRIDO dxvk iter 266/300 vivo=True cpu=1326 thr=35
+[13:48:36] probe mmf (iter 266): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:48:41] boot x64 dx11 HIBRIDO dxvk iter 267/300 vivo=True cpu=1331 thr=35
+[13:48:41] probe mmf (iter 267): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:48:46] boot x64 dx11 HIBRIDO dxvk iter 268/300 vivo=True cpu=1336 thr=35
+[13:48:46] probe mmf (iter 268): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:48:51] boot x64 dx11 HIBRIDO dxvk iter 269/300 vivo=True cpu=1341 thr=35
+[13:48:51] probe mmf (iter 269): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:48:56] boot x64 dx11 HIBRIDO dxvk iter 270/300 vivo=True cpu=1346 thr=35
+[13:48:56] probe mmf (iter 270): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:49:01] boot x64 dx11 HIBRIDO dxvk iter 271/300 vivo=True cpu=1350.9 thr=35
+[13:49:01] probe mmf (iter 271): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:49:06] boot x64 dx11 HIBRIDO dxvk iter 272/300 vivo=True cpu=1355.9 thr=35
+[13:49:06] probe mmf (iter 272): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:49:11] boot x64 dx11 HIBRIDO dxvk iter 273/300 vivo=True cpu=1360.9 thr=35
+[13:49:11] probe mmf (iter 273): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:49:16] boot x64 dx11 HIBRIDO dxvk iter 274/300 vivo=True cpu=1365.9 thr=35
+[13:49:16] probe mmf (iter 274): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:49:21] boot x64 dx11 HIBRIDO dxvk iter 275/300 vivo=True cpu=1370.9 thr=35
+[13:49:21] probe mmf (iter 275): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:49:26] boot x64 dx11 HIBRIDO dxvk iter 276/300 vivo=True cpu=1375.9 thr=35
+[13:49:26] probe mmf (iter 276): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:49:31] boot x64 dx11 HIBRIDO dxvk iter 277/300 vivo=True cpu=1380.9 thr=35
+[13:49:31] probe mmf (iter 277): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:49:36] boot x64 dx11 HIBRIDO dxvk iter 278/300 vivo=True cpu=1385.9 thr=35
+[13:49:36] probe mmf (iter 278): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:49:41] boot x64 dx11 HIBRIDO dxvk iter 279/300 vivo=True cpu=1390.9 thr=35
+[13:49:41] probe mmf (iter 279): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:49:46] boot x64 dx11 HIBRIDO dxvk iter 280/300 vivo=True cpu=1395.8 thr=35
+[13:49:46] probe mmf (iter 280): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:49:51] boot x64 dx11 HIBRIDO dxvk iter 281/300 vivo=True cpu=1400.8 thr=35
+[13:49:51] probe mmf (iter 281): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:49:56] boot x64 dx11 HIBRIDO dxvk iter 282/300 vivo=True cpu=1405.8 thr=35
+[13:49:56] probe mmf (iter 282): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:50:01] boot x64 dx11 HIBRIDO dxvk iter 283/300 vivo=True cpu=1410.8 thr=35
+[13:50:01] probe mmf (iter 283): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:50:06] boot x64 dx11 HIBRIDO dxvk iter 284/300 vivo=True cpu=1415.8 thr=35
+[13:50:06] probe mmf (iter 284): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:50:11] boot x64 dx11 HIBRIDO dxvk iter 285/300 vivo=True cpu=1420.8 thr=35
+[13:50:11] probe mmf (iter 285): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:50:16] boot x64 dx11 HIBRIDO dxvk iter 286/300 vivo=True cpu=1425.8 thr=35
+[13:50:16] probe mmf (iter 286): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:50:21] boot x64 dx11 HIBRIDO dxvk iter 287/300 vivo=True cpu=1430.8 thr=35
+[13:50:21] probe mmf (iter 287): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:50:26] boot x64 dx11 HIBRIDO dxvk iter 288/300 vivo=True cpu=1435.8 thr=35
+[13:50:26] probe mmf (iter 288): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:50:31] boot x64 dx11 HIBRIDO dxvk iter 289/300 vivo=True cpu=1440.7 thr=35
+[13:50:31] probe mmf (iter 289): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:50:36] boot x64 dx11 HIBRIDO dxvk iter 290/300 vivo=True cpu=1445.8 thr=35
+[13:50:36] probe mmf (iter 290): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:50:41] boot x64 dx11 HIBRIDO dxvk iter 291/300 vivo=True cpu=1450.7 thr=35
+[13:50:41] probe mmf (iter 291): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:50:46] boot x64 dx11 HIBRIDO dxvk iter 292/300 vivo=True cpu=1455.7 thr=35
+[13:50:46] probe mmf (iter 292): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:50:51] boot x64 dx11 HIBRIDO dxvk iter 293/300 vivo=True cpu=1460.7 thr=35
+[13:50:51] probe mmf (iter 293): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:50:56] boot x64 dx11 HIBRIDO dxvk iter 294/300 vivo=True cpu=1465.7 thr=35
+[13:50:56] probe mmf (iter 294): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:51:01] boot x64 dx11 HIBRIDO dxvk iter 295/300 vivo=True cpu=1470.7 thr=35
+[13:51:01] probe mmf (iter 295): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:51:06] boot x64 dx11 HIBRIDO dxvk iter 296/300 vivo=True cpu=1475.7 thr=35
+[13:51:06] probe mmf (iter 296): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:51:11] boot x64 dx11 HIBRIDO dxvk iter 297/300 vivo=True cpu=1480.6 thr=35
+[13:51:11] probe mmf (iter 297): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:51:16] boot x64 dx11 HIBRIDO dxvk iter 298/300 vivo=True cpu=1485.7 thr=35
+[13:51:16] probe mmf (iter 298): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:51:21] boot x64 dx11 HIBRIDO dxvk iter 299/300 vivo=True cpu=1490.7 thr=35
+[13:51:21] probe mmf (iter 299): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:51:26] boot x64 dx11 HIBRIDO dxvk iter 300/300 vivo=True cpu=1495.6 thr=35
+[13:51:26] probe mmf (iter 300): Exception calling "OpenExisting" with "1" argument(s): "Unable to find the specified file."
+[13:51:26] boot x64 dx11 HIBRIDO dxvk FIM vivo=True
+[13:51:26] hibrido: boot FIM vivo=True
+[13:51:26] hibrido: job de screenshots encerrado — 50 JPEGs
+[13:51:27] v92: menuwalk BMP->JPG — 25 shots de acao
+[13:51:27] dxgilog-hib: init real=00007FF8C5770000 f0=00007FF8C57BDE00 f1=00007FF8C57BDF30 f2=00007FF8C57C2B50
+[13:51:27] dxgilog-hib: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:51:27] dxgilog-hib: CreateDXGIFactory2 -> WRAP (flags 0 ignoradas)
+[13:51:27] dxgilog-hib: EnumAdapters1[0] -> WRAP (vram mentida)
+[13:51:27] dxgilog-hib: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[13:51:27] dxgilog-hib: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[13:51:27] dxgilog-hib: EnumAdapters1[1] -> WRAP (vram mentida)
+[13:51:27] dxgilog-hib: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[13:51:27] dxgilog-hib: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[13:51:27] dxgilog-hib: EnumAdapters1[2] hr=0x887a0002
+[13:51:27] dxgilog-hib: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:51:27] dxgilog-hib: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:51:27] dxgilog-hib: EnumAdapters1[0] -> WRAP (vram mentida)
+[13:51:27] dxgilog-hib: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[13:51:27] dxgilog-hib: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:51:27] dxgilog-hib: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:51:27] dxgilog-hib: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:51:27] dxgilog-hib: EnumAdapters1[0] -> WRAP (vram mentida)
+[13:51:27] dxgilog-hib: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[13:51:27] dxgilog-hib: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:51:27] dxgilog-hib: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:51:27] dxgilog-hib: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:51:27] dxgilog-hib: EnumAdapters1[0] -> WRAP (vram mentida)
+[13:51:27] dxgilog-hib: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[13:51:27] dxgilog-hib: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:51:27] dxgilog-hib: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:51:27] dxgilog-hib: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:51:27] dxgilog-hib: EnumAdapters1[0] -> WRAP (vram mentida)
+[13:51:27] dxgilog-hib: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[13:51:27] dxgilog-hib: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:51:27] dxgilog-hib: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:51:27] dxgilog-hib: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:51:27] dxgilog-hib: EnumAdapters1[0] -> WRAP (vram mentida)
+[13:51:27] dxgilog-hib: GetDesc1 'Microsoft Basic Render Driver' vendor=0x1414 vram=0 -> RTX3070/3GB
+[13:51:27] dxgilog-hib: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:51:27] dxgilog-hib: CreateDXGIFactory2 -> WRAP (flags 2147483648 ignoradas)
+[13:51:27] dxgilog-hib: init real=00007FF8BA610000 f0=00007FF8BA61A470 f1=00007FF8BA61A380 f2=00007FF8BA61A2A0
+[13:51:27] dxgilog-hib: CreateDXGIFactory1 -> WRAP
+[13:51:27] dxgilog-hib: EnumAdapters[0] -> WRAP (vram mentida)
+[13:51:27] dxgilog-hib: CreateDXGIFactory2 -> WRAP (flags 0 ignoradas)
+[13:51:27] dxgishim-hibrido.txt salvo
+[13:51:27] hib-gamelog: 00:00:00.074 : [fs] device effect.scs mounted.
+[13:51:27] hib-gamelog: 00:00:00.127 : [fs] device base.scs mounted.
+[13:51:27] hib-gamelog: 00:00:00.128 : [fs] device core.scs mounted.
+[13:51:27] hib-gamelog: 00:00:00.256 : [fs] device def.scs mounted.
+[13:51:27] hib-gamelog: 00:00:00.377 : [fs] device locale.scs mounted.
+[13:51:27] hib-gamelog: 00:00:00.377 : [fs] device base_cfg.scs mounted.
+[13:51:27] hib-gamelog: 00:00:00.377 : [fs] device C:/Users/runneradmin/Documents/Euro Truck Simulator 2 mounted.
+[13:51:27] hib-gamelog: 00:00:00.767 : [gfx] Selected rendering device: dx11
+[13:51:27] hib-gamelog: 00:00:00.957 : [dxgi] Detected following adapters:
+[13:51:27] hib-gamelog: 00:00:00.957 : [dxgi] 0 - NVIDIA GeForce RTX 3070 (32.0.65535.65535) [16378 MB]
+[13:51:27] hib-gamelog: 00:00:01.018 : [dxgi] Using adapter: NVIDIA GeForce RTX 3070 (32.0.65535.65535) [16378 MB]
+[13:51:27] hib-gamelog: 00:00:01.025 : [dxgi] quirk - disabled exclusive fullscreen mode
+[13:51:27] hib-gamelog: 00:00:01.577 : [di8] Initializing device '@@keyboard@@' as 'keyboard'
+[13:51:27] hib-gamelog: 00:00:01.580 : [di8] Initializing device '@@i_mouse@@' as 'mouse'
+[13:51:27] game-log-HIBRIDO-final.txt salvo
+[13:51:30] dump-hib: eurotrucks2.exe.1220.dmp 6 MB
+[13:51:31] cdb-hib: 
+[13:51:31] cdb-hib: ************* Preparing the environment for Debugger Extensions Gallery repositories **************
+[13:51:31] cdb-hib:    ExtensionRepository : Implicit
+[13:51:31] cdb-hib:    UseExperimentalFeatureForNugetShare : true
+[13:51:31] cdb-hib:    AllowNugetExeUpdate : true
+[13:51:31] cdb-hib:    NonInteractiveNuget : true
+[13:51:31] cdb-hib:    AllowNugetMSCredentialProviderInstall : true
+[13:51:31] cdb-hib:    AllowParallelInitializationOfLocalRepositories : true
+[13:51:31] cdb-hib: 
+[13:51:31] cdb-hib:    EnableRedirectToV8JsProvider : false
+[13:51:31] cdb-hib: 
+[13:51:31] cdb-hib:    -- Configuring repositories
+[13:51:31] cdb-hib:       ----> Repository : LocalInstalled, Enabled: true
+[13:51:31] cdb-hib:       ----> Repository : UserExtensions, Enabled: true
+[13:51:31] cdb-hib: 
+[13:51:31] cdb-hib: >>>>>>>>>>>>> Preparing the environment for Debugger Extensions Gallery repositories completed, duration 0.000 seconds
+[13:51:31] cdb-hib: 
+[13:51:31] cdb-hib: ************* Waiting for Debugger Extensions Gallery to Initialize **************
+[13:51:31] cdb-hib: 
+[13:51:31] cdb-hib: >>>>>>>>>>>>> Waiting for Debugger Extensions Gallery to Initialize completed, duration 0.016 seconds
+[13:51:31] cdb-hib:    ----> Repository : UserExtensions, Enabled: true, Packages count: 0
+[13:51:31] cdb-hib:    ----> Repository : LocalInstalled, Enabled: true, Packages count: 30
+[13:51:31] cdb-hib: 
+[13:51:31] cdb-hib: Microsoft (R) Windows Debugger Version 10.0.26100.9457 AMD64
+[13:51:31] cdb-hib: Copyright (c) Microsoft Corporation. All rights reserved.
+[13:51:31] cdb-hib: 
+[13:51:31] cdb-hib: 
+[13:51:31] cdb-hib: Loading Dump File [D:\a\5\5\dumps\eurotrucks2.exe.1220.dmp]
+[13:51:31] cdb-hib: User Mini Dump File: Only registers, stack and portions of memory are available
+[13:51:31] cdb-hib: 
+[13:51:31] cdb-hib: Symbol search path is: srv*
+[13:51:31] cdb-hib: Executable search path is: 
+[13:51:31] cdb-hib: Windows 10 Version 26100 MP (4 procs) Free x64
+[13:51:31] cdb-hib: Product: Server, suite: TerminalServer DataCenter SingleUserTS
+[13:51:31] cdb-hib: Edition build lab: 26100.1.amd64fre.ge_release.240331-1435
+[13:51:31] cdb-hib: Debug session time: Sat Oct 31 13:26:04.000 2026 (UTC + 0:00)
+[13:51:31] cdb-hib: System Uptime: 0 days 0:11:35.859
+[13:51:31] cdb-hib: Process Uptime: 0 days 0:00:04.000
+[13:51:31] cdb-hib: ................................................................
+[13:51:31] cdb-hib: ........
+[13:51:31] cdb-hib: Loading unloaded module list
+[13:51:31] cdb-hib: .
+[13:51:31] cdb-hib: This dump file has an exception of interest stored in it.
+[13:51:31] cdb-hib: The stored exception information can be accessed via .ecxr.
+[13:51:31] cdb-hib: (4c4.2248): Security check failure or stack buffer overrun - code c0000409 (first/second chance not available)
+[13:51:31] cdb-hib: Subcode: 0x7 FAST_FAIL_FATAL_APP_EXIT 
+[13:51:31] cdb-hib: 
+[13:51:31] cdb-hib: +------------------------------------------------------------------------+
+[13:51:31] cdb-hib: | This target supports Hardware-enforced Stack Protection. A HW based    |
+[13:51:31] cdb-hib: | "Shadow Stack" may be available to assist in debugging and analysis.   |
+[13:51:31] cdb-hib: | See aka.ms/userhsp for more info.                                      |
+[13:51:31] cdb-hib: |                                                                        |
+[13:51:31] cdb-hib: | dps @ssp                                                               |
+[13:51:31] cdb-hib: |                                                                        |
+[13:51:31] cdb-hib: +------------------------------------------------------------------------+
+[13:51:31] cdb-hib: 
+[13:51:31] cdb-hib: For analysis of this file, run !analyze -v
+[13:51:31] cdb-hib: D3D10Warp!_jit_debug_register_code+0x63b0e9:
+[13:51:31] cdb-hib: 00007ff8`b70ec329 cd29            int     29h
+[13:51:31] cdb-hib: 0:000> cdb: Reading initial command '.symfix; .reload; kv 40; q'
+[13:51:31] cdb-hib: ................................................................
+[13:51:31] cdb-hib: ........
+[13:51:31] cdb-hib: Loading unloaded module list
+[13:51:31] cdb-hib: .
+[13:51:31] cdb-hib: 
+[13:51:31] cdb-hib: ************* Symbol Loading Error Summary **************
+[13:51:31] cdb-hib: Module name            Error
+[13:51:31] cdb-hib: D3D10Warp              The system cannot find the file specified
+[13:51:31] cdb-hib: 
+[13:51:31] cdb-hib: You can troubleshoot most symbol related issues by turning on symbol loading diagnostics (!sym noisy) and repeating the command that caused symbols to be loaded.
+[13:51:31] cdb-hib: You should also verify that your symbol search path (.sympath) is correct.
+[13:51:31] cdb-hib: Child-SP          RetAddr               : Args to Child                                                           : Call Site
+[13:51:31] cdb-hib: 00000059`0e9dcc40 00007ff8`b7144880     : 00000000`00000000 00007ff8`b8a8b780 00007ff8`b88d9f1c 00000000`39000005 : D3D10Warp!_jit_debug_register_code+0x63b0e9
+[13:51:31] cdb-hib: 00000059`0e9dcc70 00007ff8`b71431f3     : 00000230`bfc65bc0 00000230`bfc65bc0 00000000`0000001d 00000230`bee60b40 : D3D10Warp!_jit_debug_register_code+0x693640
+[13:51:31] cdb-hib: 00000059`0e9dcd30 00007ff8`b71423aa     : 00000230`bef90500 00000000`00000000 00000230`bfbf4968 00007ff8`b7206e47 : D3D10Warp!_jit_debug_register_code+0x691fb3
+[13:51:31] cdb-hib: 00000059`0e9dd950 00007ff8`b6a71c96     : 00000230`bfbf2da0 00000230`bee08a60 00000230`bef90698 00000000`00000248 : D3D10Warp!_jit_debug_register_code+0x69116a
+[13:51:31] cdb-hib: 00000059`0e9dd9a0 00007ff8`b71163f6     : 00000230`bee08a60 00000230`bef90698 00000230`c0621e10 00000000`00000001 : D3D10Warp!OpenAdapter10_2+0x18ff96
+[13:51:31] cdb-hib: 00000059`0e9dd9e0 00007ff8`b7117b7c     : 00000230`bef90698 00000230`bec84f70 00000230`bee08a60 00000000`00000000 : D3D10Warp!_jit_debug_register_code+0x6651b6
+[13:51:31] cdb-hib: 00000059`0e9dda10 00007ff8`b7118b4b     : 00000230`c0622bf0 00007ff7`6f0b2800 00000230`bfc69610 00000230`bef90688 : D3D10Warp!_jit_debug_register_code+0x66693c
+[13:51:31] cdb-hib: 00000059`0e9dda40 00007ff8`b68db2ca     : 00000230`bef90688 00000230`bee08a60 00000230`bee08a60 00000000`00000000 : D3D10Warp!_jit_debug_register_code+0x66790b
+[13:51:31] cdb-hib: *** WARNING: Unable to verify timestamp for d3d11_real.dll
+[13:51:31] cdb-hib: 00000059`0e9dda70 00007ff8`ba99d932     : 00000000`00000000 00000059`0e9ddba0 00000059`0e9ddd10 00000230`bef90678 : D3D10Warp!D3DKMTWaitForSynchronizationObject2+0x7d1a
+[13:51:31] cdb-hib: 00000059`0e9ddaa0 00000000`00000000     : 00000000`00000000 00000000`00000000 00000000`00000000 00000000`00000000 : d3d11_real!CPixelShader::CLS::FinalConstruct+0xb371e
+[13:51:31] cdb-hib: quit:
+[13:51:31] cdb-hib: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\atlmfc.natvis'
+[13:51:31] cdb-hib: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\ObjectiveC.natvis'
+[13:51:31] cdb-hib: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\concurrency.natvis'
+[13:51:31] cdb-hib: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\cpp_rest.natvis'
+[13:51:31] cdb-hib: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\stl.natvis'
+[13:51:31] cdb-hib: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\Windows.Data.Json.natvis'
+[13:51:31] cdb-hib: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\Windows.Devices.Geolocation.natvis'
+[13:51:31] cdb-hib: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\Windows.Devices.Sensors.natvis'
+[13:51:31] cdb-hib: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\Windows.Media.natvis'
+[13:51:31] cdb-hib: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\windows.natvis'
+[13:51:31] cdb-hib: NatVis script unloaded from 'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\Visualizers\winrt.natvis'
