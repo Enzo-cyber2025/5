@@ -2,7 +2,8 @@
 # Bounded retry ONLY for concurrent fast-forward races. Never force a push,
 # change branches, retry credentials failures, or resolve conflicts silently.
 set -euo pipefail
-BRANCH=arena/01a09b42-5
+BRANCH=${GITHUB_REF_NAME:?GITHUB_REF_NAME is required}
+[[ "$BRANCH" =~ ^arena/[A-Za-z0-9._/-]+$ ]]
 [[ "${GITHUB_REF:-}" == "refs/heads/$BRANCH" ]]
 [[ "$(git branch --show-current)" == "$BRANCH" ]]
 log=$(mktemp)

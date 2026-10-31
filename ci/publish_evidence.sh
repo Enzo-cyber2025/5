@@ -2,7 +2,8 @@
 # Publish only bounded reports/screenshots to THIS session branch. No other branch,
 # no model, APK, private key or token. This runs only on a disposable CI emulator.
 set -euo pipefail
-BRANCH=arena/01a09b42-5
+BRANCH=${GITHUB_REF_NAME:?GITHUB_REF_NAME is required}
+[[ "$BRANCH" =~ ^arena/[A-Za-z0-9._/-]+$ ]]
 [[ "${GITHUB_REF:-}" == "refs/heads/$BRANCH" ]]
 [[ "$(git branch --show-current)" == "$BRANCH" ]]
 DEST="ci-results/${GITHUB_RUN_ID:?}-${GITHUB_RUN_ATTEMPT:?}"
