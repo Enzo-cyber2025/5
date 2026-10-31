@@ -676,6 +676,32 @@ g2_win_blit:
         mov r15d, ecx               ; h
         mov rbx, r8                 ; fonte
         mov ebp, r9d                ; passo
+        ; hardening: clipa destino contra a superfície (evita blit além do
+        ; buffer com w/h gigantes vindos de apps)
+        test rbx, rbx
+        jz .done
+        test r14d, r14d
+        jle .done
+        test r15d, r15d
+        jle .done
+        cmp r12d, [gsurf_w]
+        jge .done
+        cmp r13d, [gsurf_h]
+        jge .done
+        mov eax, r12d
+        add eax, r14d
+        cmp eax, [gsurf_w]
+        jbe .wok
+        mov r14d, [gsurf_w]
+        sub r14d, r12d
+.wok:
+        mov eax, r13d
+        add eax, r15d
+        cmp eax, [gsurf_h]
+        jbe .hok
+        mov r15d, [gsurf_h]
+        sub r15d, r13d
+.hok:
         xor ecx, ecx
 .row:
         cmp ecx, r15d

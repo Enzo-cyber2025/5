@@ -50,6 +50,12 @@ python3 tools/mkenz.py obj/mandel.bin obj/MANDEL.ENZ --name Mandelbrot \
     --w 520 --h 420 --icon 0xB06FD8 --entry "$(cat obj/mandel.entry)" \
     --imports "$(cat obj/mandel.imports)"
 
+# ---- app de pen-test + binários malformados (hardening) ----
+nasm -f bin -I apps/ -o obj/attack.bin apps/attack.asm
+python3 tools/mkenz.py obj/attack.bin obj/ATTACK.ENZ --name PenTest \
+    --w 460 --h 240 --icon 0xE05555
+python3 tools/genfuzz.py obj/CALC.ENZ obj
+
 # ---- demos estrangeiras ----
 nasm -f bin -o obj/pe_demo.bin  demos/pe_demo.asm
 nasm -f bin -o obj/pe_dll.bin   demos/pe_dll.asm
@@ -74,7 +80,9 @@ python3 tools/mkiso.py obj/mbr.bin obj/stage1.bin release/enzos.iso \
     obj/kernel.bin \
     obj/TERMINAL.ENZ obj/INFO.ENZ obj/PAINT.ENZ obj/CALC.ENZ \
     obj/NOTAS.ENZ obj/PLASMA.ENZ obj/FILES.ENZ obj/FOX.ENZ \
-    obj/SYSMON.ENZ obj/MANDEL.ENZ \
+    obj/SYSMON.ENZ obj/MANDEL.ENZ obj/ATTACK.ENZ \
+    obj/TRUNC.ENZ obj/BADENT.ENZ obj/BADIMP.ENZ obj/HUGE.ENZ \
+    obj/ZERO.ENZ obj/NOTENZ.ENZ \
     obj/DEMO.EXE obj/CALC.RUN obj/DEMO.APK obj/LIBDEMO.DLL \
     obj/libdemo.so obj/SCRIPT.RUN obj/LEIA.TXT
 

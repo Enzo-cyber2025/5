@@ -747,7 +747,7 @@ taskbar_btn_at:
 .ok:
         ret
 
-; taskbar_wnd_by_idx: edi=índice -> rax=janela
+; taskbar_wnd_by_idx: edi=índice -> rax=janela (ordem = taskbar: fundo -> topo via W_PREV)
 taskbar_wnd_by_idx:
         mov rbx, [wnd_bottom]
         xor esi, esi
@@ -757,7 +757,7 @@ taskbar_wnd_by_idx:
         cmp esi, edi
         je .found
         inc esi
-        mov rbx, [rbx + W_NEXT]
+        mov rbx, [rbx + W_PREV]
         jmp .loop
 .found:
         mov rax, rbx

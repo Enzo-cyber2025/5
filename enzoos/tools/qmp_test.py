@@ -35,6 +35,30 @@ def ppm_to_png(src, dst):
     open(dst, 'wb').write(png)
     return w, h
 
+def lfb_to_png(data, w, h, pitch, bpp, dst):
+    """converte um dump do framebuffer linear (bpp 24/32, pixel
+    0x00BBGGRR little-endian) em PNG — mesmo formato do ppm_to_png"""
+    if bpp == 32:
+        def px(off): return (data[off], data[off+1], data[off+2])
+        step = 4
+    elif bpp == 24:
+        def px(off): return (data[off], data[off+1], data[off+2])
+        step = 3
+    else:
+        raise RuntimeError("bpp nao suportado no dump LFB: %d" % bpp)
+    rows = b''.join(b'\x00' + b''.join(bytes(px(y*pitch + x*step))
+                                       for x in range(w))
+                    for y in range(h))
+    def chunk(tag, payload):
+        c = struct.pack('>I', len(payload)) + tag + payload
+        return c + struct.pack('>I', zlib.crc32(tag + payload) & 0xFFFFFFFF)
+    png = b'\x89PNG\r\n\x1a\n'
+    png += chunk(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 2, 0, 0, 0))
+    png += chunk(b'IDAT', zlib.compress(rows, 6))
+    png += chunk(b'IEND', b'')
+    open(dst, 'wb').write(png)
+    return w, h
+
 # ---------------------------------------------------------------------------
 class Qmp:
     def __init__(self, iso, serial_path, disk=None):
@@ -107,8 +131,55 @@ class Qmp:
         self.cmd("screendump", filename=ppm)
         w, h = ppm_to_png(ppm, png)
         os.remove(ppm)
+        # QEMUs antigos (3.1) podem renderizar o console em modo texto
+        # mesmo com VBE/LFB ativo: se o screendump nao bate com o modo do
+        # boot params, captura o framebuffer linear direto da memoria
+        # fisica (pmemsave) — o que o EnzoOS realmente desenhou.
+        fb = self.boot_fb()
+        if fb and (w, h) != (fb["w"], fb["h"]):
+            try:
+                w2, h2 = self.lfb_shot(png, fb)
+                print("captura: %s.png (%dx%d) [LFB dump]" % (name, w2, h2))
+                return w2, h2
+            except Exception as e:
+                print("aviso: dump LFB falhou (%s); mantendo screendump" % e)
         print("captura: %s.png (%dx%d)" % (name, w, h))
         return w, h
+
+    def boot_fb(self):
+        """le os boot params do stage1 (magic 'E5BP' em 0x10E00) e devolve
+        o modo grafico: lfb, w, h, bpp, pitch — ou None se indisponivel"""
+        import re as _re
+        try:
+            r = self.hmp("xp /6xw 0x10E08").get("return", "")
+            v = [int(t, 16) for t in _re.findall(r"0x([0-9a-f]{8})", r)]
+            if len(v) < 6:
+                return None
+            lfb_lo, lfb_hi, w, h, bpp, pitch = v[:6]
+            m = self.hmp("xp /1xw 0x10E00").get("return", "")
+            magic = _re.search(r"0x([0-9a-f]{8})", m)
+            if not magic or magic.group(1).upper() != "50423545":
+                return None            # nao eh 'E5BP'
+            if lfb_hi != 0 or w == 0 or h == 0 or w > 4096 or h > 4096:
+                return None
+            return {"lfb": lfb_lo, "w": w, "h": h, "bpp": bpp, "pitch": pitch}
+        except Exception:
+            return None
+
+    def lfb_shot(self, png, fb):
+        """copia o LFB do guest via HMP pmemsave e grava o PNG.
+        Nota: pmemsave confunde '/' do caminho com operador de divisao —
+        usar nome de arquivo sem barras (cai no cwd do QEMU)."""
+        size = fb["pitch"] * fb["h"]
+        tmp = "lfbshot.tmp"
+        r = self.hmp("pmemsave 0x%X 0x%X %s" % (fb["lfb"], size, tmp))
+        if "return" not in r:
+            raise RuntimeError("pmemsave: %s" % r)
+        data = open(tmp, "rb").read()
+        os.remove(tmp)
+        if len(data) != size:
+            raise RuntimeError("pmemsave curto: %d != %d" % (len(data), size))
+        return lfb_to_png(data, fb["w"], fb["h"], fb["pitch"], fb["bpp"], png)
 
     def kread32(self, addr):
         """le um dword da memoria do guest (kernel @ 0x100000)"""
@@ -305,6 +376,13 @@ def main():
         launch_menu_app(9)                 # MANDEL.ENZ
         q.sleep(4)
         print("::notice::passo 16-mandel ok"); q.shot("16-mandel", outdir)
+
+        # 17. Pen-test: ATTACK.ENZ — bateria hostil contra as APIs do kernel
+        #     (31 testes: alloc/free inválidos, coords negativas, paths
+        #     maliciosos, binários malformados). O kernel deve sobreviver.
+        launch_menu_app(10)                # ATTACK.ENZ (11º app da ISO)
+        q.sleep(12)                        # bateria completa
+        print("::notice::passo 17-pentest ok"); q.shot("17-pentest", outdir)
     except Exception as e:
         print("::error::excecao no teste: %s" % repr(e)[:200])
         print("--- QEMU morreu no meio do teste: %s ---" % repr(e))
