@@ -3663,6 +3663,7 @@ jobs:
           #pragma comment(lib, "user32.lib")
           #pragma comment(lib, "gdi32.lib")
           #include <stdlib.h>
+          #include <string.h>
           static FILE *lg;
           static void tap(WORD sc, int ms, const char *what) {
             INPUT in[2];
@@ -3673,13 +3674,9 @@ jobs:
             else if (lg) { fprintf(lg, "[%u] tap %s\n", GetTickCount(), what); fflush(lg); }
             Sleep(ms);
           }
-          /* v96: foco FORCADO e VERIFICADO — desde v88 o log dizia "foco
-           * OK" so porque FindWindow achou a janela, mas SetForegroundWindow
-           * de processo background FALHA silenciosamente no Windows: se o
-           * jogo nunca foi foreground, DirectInput perde a aquisicao e TODO
-           * o input (teclado E mouse) foi pro vazio. AttachThreadInput e o
-           * contorno classico; e o foreground e CONFERIDO com
-           * GetForegroundWindow(). */
+          /* v96: foco FORCADO e VERIFICADO - SetForegroundWindow de processo
+           * background falha silenciosamente; AttachThreadInput e o contorno
+           * classico e o foreground e CONFERIDO com GetForegroundWindow(). */
           static int foca_forte(void) {
             HWND w = FindWindowW(NULL, L"Euro Truck Simulator 2");
             HWND fg;
@@ -3710,31 +3707,56 @@ jobs:
             if (lg) { fprintf(lg, "[%u] foco FINAL fg=%p alvo=%p -> %s\n", GetTickCount(), (void*)fg, (void*)w, fg == w ? "OK" : "FALHOU"); fflush(lg); }
             return fg == w;
           }
-          /* v92: clique de mouse REAL (SendInput) — coords em tela 1024x768
-           * calibradas pelas shots da v90: o jogo abre na tela de ATIVACAO
-           * (titulo A-C-T-I-V-A-T-I-O-N lido pixel a pixel) e o botao
-           * "Run in Demo Mode" fica no rodape direito do painel
-           * (texto em x 594-688, y 518-527 -> centro ~641,521). */
+          /* v92: clique de mouse REAL (SendInput) - botao "Run in Demo Mode"
+           * calibrado nas shots da v90: centro ~(641,521) em tela 1024x768.
+           * v97: VERIFICA o cursor - se o jogo clippa/move o cursor de volta,
+           * o clique cai em outro lugar e o log PROVA. */
           static void clica(int x, int y, int ms, const char *what) {
-            INPUT in[2];
-            SetCursorPos(x, y);
-            Sleep(150);
+            INPUT in[2]; POINT pt;
+            if (!SetCursorPos(x, y) && lg) { fprintf(lg, "[%u] SetCursorPos FALHOU (%s) gle=%u\n", GetTickCount(), what, GetLastError()); fflush(lg); }
+            Sleep(200);
+            GetCursorPos(&pt);
+            if (lg && (pt.x != x || pt.y != y)) { fprintf(lg, "[%u] CURSOR DESVIADO: (%d,%d) != (%d,%d) (%s)\n", GetTickCount(), pt.x, pt.y, x, y, what); fflush(lg); }
             ZeroMemory(in, sizeof(in));
             in[0].type = INPUT_MOUSE; in[0].mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
             in[1].type = INPUT_MOUSE; in[1].mi.dwFlags = MOUSEEVENTF_LEFTUP;
             if (SendInput(2, in, sizeof(INPUT)) != 2 && lg) {
               fprintf(lg, "[%u] ERRO click (%s) gle=%u\n", GetTickCount(), what, GetLastError()); fflush(lg);
-            } else if (lg) { fprintf(lg, "[%u] click %s @(%d,%d)\n", GetTickCount(), what, x, y); fflush(lg); }
+            } else if (lg) { fprintf(lg, "[%u] click %s @(%d,%d) cursor=(%d,%d)\n", GetTickCount(), what, x, y, pt.x, pt.y); fflush(lg); }
             Sleep(ms);
           }
-          /* v95: sonda de tela via BitBlt — a v94 usava GetPixel e CADA
-           * chamada custava dezenas de ms com o jogo carregando (GDI
-           * congestionado): 1302 GetPixels/poll = ~40 s por poll e o walk
-           * passou os 25 min do boot inteiro DENTRO do poll (0 cliques,
-           * 0 shots). Agora: UM BitBlt da regiao pra um DIB em memoria e
-           * scan direto nos bytes (o mesmo caminho do shot(), que sempre
-           * foi rapido). DIB 24bpp = BGR: lum = (R*30 + G*59 + B*11)/100
-           * com p[2]=R, p[1]=G, p[0]=B. */
+          /* v97: clique LONGO - UI a 0,2 fps pode exigir down > 1 frame. */
+          static void clica_longo(int x, int y, int ms, const char *what) {
+            INPUT in[2]; POINT pt;
+            SetCursorPos(x, y);
+            Sleep(300);
+            ZeroMemory(in, sizeof(in));
+            in[0].type = INPUT_MOUSE; in[0].mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
+            if (SendInput(1, in, sizeof(INPUT)) != 1 && lg) { fprintf(lg, "[%u] ERRO down longo gle=%u\n", GetTickCount(), GetLastError()); fflush(lg); }
+            Sleep(900);
+            in[0].mi.dwFlags = MOUSEEVENTF_LEFTUP;
+            if (SendInput(1, in, sizeof(INPUT)) != 1 && lg) { fprintf(lg, "[%u] ERRO up longo gle=%u\n", GetTickCount(), GetLastError()); fflush(lg); }
+            GetCursorPos(&pt);
+            if (lg) { fprintf(lg, "[%u] click longo %s cursor=(%d,%d)\n", GetTickCount(), what, pt.x, pt.y); fflush(lg); }
+            Sleep(ms);
+          }
+          /* v97: clique via PostMessage - entrega WM_LBUTTONDOWN/UP direto
+           * na fila da janela, contornando a pilha de input inteira (o
+           * SendInput da v96 chegou ao alvo e o botao nao disparou). */
+          static void post_click(HWND w, int sx, int sy, const char *what) {
+            POINT pt; LPARAM lp; BOOL r1, r2;
+            if (!w) { if (lg) { fprintf(lg, "[%u] post %s: janela AUSENTE\n", GetTickCount(), what); fflush(lg); } return; }
+            pt.x = sx; pt.y = sy;
+            ScreenToClient(w, &pt);
+            lp = MAKELPARAM(pt.x, pt.y);
+            r1 = PostMessageW(w, WM_LBUTTONDOWN, MK_LBUTTON, lp);
+            Sleep(200);
+            r2 = PostMessageW(w, WM_LBUTTONUP, 0, lp);
+            if (lg) { fprintf(lg, "[%u] post %s client=(%d,%d) down=%d up=%d\n", GetTickCount(), what, pt.x, pt.y, r1, r2); fflush(lg); }
+          }
+          /* v95: conta_bright via BitBlt - um Blt da regiao pra DIB em
+           * memoria e scan direto nos bytes (GetPixel e ordens de magnitude
+           * mais lento com o jogo carregando). DIB 24bpp = BGR. */
           static int conta_bright(int x0, int y0, int x1, int y1, int thr) {
             HDC sc = GetDC(NULL);
             HDC dc = CreateCompatibleDC(sc);
@@ -3766,18 +3788,60 @@ jobs:
             DeleteObject(bm); DeleteDC(dc); ReleaseDC(NULL, sc);
             return n;
           }
-          /* v94: ASSINATURA da tela de ativacao — a linha das 5 caixas
-           * da chave de produto (330-700, 470-498) tem ~123 px claros @170
-           * na ativacao e 0 no splash/carregando (calibrado nas runs v90/v93:
-           * titulo e botao tem arte do splash por cima e NAO separam). */
+          /* v97: linha das caixas com threshold 90 - o 170 da v94/v95 media
+           * 123 numa run e 0 na outra COM A MESMA TELA (so os pixels finos
+           * de antialiasing passam de 170); 90 pega as bordas das caixas. */
           static int linha_chave_n(void) {
-            return conta_bright(330, 470, 700, 498, 170);
+            return conta_bright(330, 455, 700, 500, 90);
           }
-          static int pronto_ativacao(void) {
-            return linha_chave_n() >= 60 && conta_bright(594, 514, 688, 530, 170) >= 8;
+          /* v97: DIFF DO PAINEL - o detector de mudanca definitivo. Captura
+           * o retangulo das caixas+botoes (310,430)-(714,544), reduz a
+           * 40x11 celulas de luminancia e compara com a captura ANTERIOR.
+           * Devolve % de celulas que mudaram > 25. Primeira chamada = 0.
+           * Painel sumindo (ativacao cedeu) = dif altissimo; foco/cursor
+           * piscando = dif baixo; animacao de fundo fica FORA da regiao. */
+          #define PGX 40
+          #define PGY 11
+          static int painel_dif(void) {
+            static unsigned char prev[PGX * PGY];
+            static int tem_prev = 0;
+            unsigned char cur[PGX * PGY];
+            HDC sc = GetDC(NULL);
+            HDC dc = CreateCompatibleDC(sc);
+            int w = 405, h = 115, gx, gy, dif = 0, stride;
+            HBITMAP bm = CreateCompatibleBitmap(sc, w, h);
+            HBITMAP old = (HBITMAP)SelectObject(dc, bm);
+            BITMAPINFO bi;
+            unsigned char *bits;
+            ZeroMemory(&bi, sizeof(bi));
+            bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+            bi.bmiHeader.biWidth = w; bi.bmiHeader.biHeight = h;
+            bi.bmiHeader.biBitCount = 24; bi.bmiHeader.biCompression = BI_RGB;
+            stride = (w * 3 + 3) & ~3;
+            bits = (unsigned char *)malloc(stride * h);
+            if (bits) {
+              BitBlt(dc, 0, 0, w, h, sc, 310, 430, SRCCOPY);
+              if (GetDIBits(sc, bm, 0, h, bits, &bi, DIB_RGB_COLORS)) {
+                for (gy = 0; gy < PGY; gy++) {
+                  for (gx = 0; gx < PGX; gx++) {
+                    int sx = (gx * w) / PGX, sy = (gy * h) / PGY;
+                    unsigned char *px = bits + (h - 1 - sy) * stride + sx * 3;
+                    cur[gy * PGX + gx] = (unsigned char)((px[2] * 30 + px[1] * 59 + px[0] * 11) / 100);
+                  }
+                }
+                if (tem_prev) {
+                  for (gx = 0; gx < PGX * PGY; gx++) if (abs(cur[gx] - prev[gx]) > 25) dif++;
+                }
+                memcpy(prev, cur, sizeof(prev)); tem_prev = 1;
+              }
+              free(bits);
+            }
+            SelectObject(dc, old);
+            DeleteObject(bm); DeleteDC(dc); ReleaseDC(NULL, sc);
+            return dif * 100 / (PGX * PGY);
           }
-          /* v92: screenshot BMP (GDI) apos CADA acao — o SOBE converte p/ JPEG
-           * no fim do boot. 1024x768x24bpp. */
+          /* v92: screenshot BMP (GDI) apos CADA acao - o SOBE converte p/
+           * JPEG no fim do boot. 1024x768x24bpp. */
           static int shotn = 0;
           static const char *shotpre = "shot-mw-";
           static void shot(const char *tag) {
@@ -3817,21 +3881,19 @@ jobs:
             DeleteObject(bm); DeleteDC(dc); ReleaseDC(NULL, sc);
           }
           int main(void) {
-            int i, segunda, nantes, ndepois;
+            int i, k, segunda, dif, destravou;
             FILE *fl;
             segunda = (GetFileAttributesA("mw-demo-ok.flag") != INVALID_FILE_ATTRIBUTES);
             lg = fopen(segunda ? "menuwalk2.log" : "menuwalk.log", "w");
-            if (lg) { fprintf(lg, "[%u] inicio v96\n", GetTickCount()); fflush(lg); }
+            if (lg) { fprintf(lg, "[%u] inicio v97\n", GetTickCount()); fflush(lg); }
             if (segunda) shotpre = "shot-mw2-";
-            if (lg) { fprintf(lg, "[%u] modo %s\n", GetTickCount(), segunda ? "DRIVE (2a vez)" : "FULL-WALK (1a vez)"); fflush(lg); }
+            if (lg) { fprintf(lg, "[%u] modo %s\n", GetTickCount(), segunda ? "DRIVE (2a vez)" : "ARSENAL (1a vez)"); fflush(lg); }
             /* espera a JANELA do jogo existir (ate 60 s) */
             for (i = 0; i < 30 && !FindWindowW(NULL, L"Euro Truck Simulator 2"); i++) Sleep(2000);
             if (lg) { fprintf(lg, "[%u] janela %s\n", GetTickCount(), FindWindowW(NULL, L"Euro Truck Simulator 2") ? "OK" : "AUSENTE"); fflush(lg); }
             foca_forte();
             if (segunda) {
-              /* jogo reaberto com profile: menu principal -> DRIVE -> acelerar.
-               * v94: espera fixa 90 s (o load demora ~60 s e o poll generico
-               * confundia com o splash). */
+              /* jogo reaberto com profile: menu principal -> DRIVE -> acelerar */
               Sleep(90000);
               foca_forte();
               shot("menu2");
@@ -3849,59 +3911,81 @@ jobs:
               if (lg) { fprintf(lg, "[%u] fim (2a)\n", GetTickCount()); fflush(lg); fclose(lg); }
               return 0;
             }
-            /* -------- 1a execucao: ESPERA o fade-in COMPLETO e clica no demo --------
-             * v95 revelou: a UI do jogo (a ~0,2 fps no lavapipe) FADE-IN das
-             * caixas da chave durante 3-4 MINUTOS (0 em t=60 s, 123 em
-             * t~180-240 s). O clique da v95 em t~107 s pegou a tela pela
-             * metade — e a verificacao "caixas<60" deu falso-positivo porque
-             * as caixas AINDA NAO EXISTIAM. Agora: espera caixas >= 100
-             * (render completo = UI processando frames) antes de tocar em
-             * qualquer coisa. */
-            for (i = 0; i < 100; i++) {
-              if (linha_chave_n() >= 100) break;
-              Sleep(5000);
-            }
-            if (lg) { fprintf(lg, "[%u] fade-in caixas %s (poll %d, n=%d)\n", GetTickCount(), i < 100 ? "COMPLETO" : "INCOMPLETO/TIMEOUT", i, linha_chave_n()); fflush(lg); }
-            /* v96: foco real + VERIFICADO antes de qualquer input */
+            /* -------- 1a execucao: ARSENAL contra a tela de ATIVACAO --------
+             * v96 provou: clique SendInput no alvo certo com foco confirmado
+             * NAO disparou o "Run in Demo Mode" (painel identico por 40 min).
+             * v92 provou: teclado CHEGA ao dialogo (Enter/Down movem o foco
+             * entre as caixas). Entao: settle fixo (fade-in ~3-4 min a 0,2
+             * fps, sondas de brilho nao-confiaveis entre runs) e DEZ armas,
+             * cada uma verificada pelo DIFF DO PAINEL (>=30% = cedeu) com
+             * espera de 45-90 s (uma transicao pode levar varios frames). */
+            Sleep(240000);
             foca_forte();
             shot("ativacao");
-            /* v96: WIGGLE do cursor — 2 shots que provam (ou nao) que o mouse
-             * chega ao jogo: o cursor RENDERIZADO pelo jogo tem que seguir. */
-            SetCursorPos(420, 330);
-            Sleep(1500);
-            shot("cursor-a");
             SetCursorPos(641, 521);
             Sleep(1500);
             shot("cursor-b");
-            nantes = linha_chave_n();
-            if (lg) { fprintf(lg, "[%u] ativacao: linha chave=%d px\n", GetTickCount(), nantes); fflush(lg); }
-            /* clique + verificacao CORRETA: so ha "mudanca" se as caixas
-             * EXISTIAM antes (v95 criou flag com caixas 0->0). Tela que
-             * mudou = caixas ou titulo somem. */
-            if (nantes >= 100) {
-              for (i = 0; i < 3; i++) {
-                foca_forte();
-                clica(641, 521, 10000, "Run in Demo Mode (botao rodape direito)");
-                shot(i ? "demo-reclick" : "demo-clicado");
-                ndepois = linha_chave_n();
-                if (lg) { fprintf(lg, "[%u] clique %d: linha chave %d -> %d\n", GetTickCount(), i + 1, nantes, ndepois); fflush(lg); }
-                if (ndepois < 60) break;
-              }
-            } else if (lg) { fprintf(lg, "[%u] caixas nunca completaram (%d) — clique best-effort unico\n", GetTickCount(), nantes); fflush(lg); }
-            if (nantes < 100) {
-              clica(641, 521, 10000, "best-effort demo");
-              shot("demo-besteffort");
-              ndepois = linha_chave_n();
+            dif = painel_dif();
+            if (lg) { fprintf(lg, "[%u] baseline dif=%d%% chave@90=%d chave@170=%d\n", GetTickCount(), dif, linha_chave_n(), conta_bright(330, 455, 700, 500, 170)); fflush(lg); }
+            destravou = 0;
+            /* arma 1: clique no demo (espera 90 s - pode estar devagar) */
+            foca_forte();
+            clica(641, 521, 90000, "demo");
+            shot("arm01"); dif = painel_dif();
+            if (lg) { fprintf(lg, "[%u] arma 1 (click demo): dif=%d%%\n", GetTickCount(), dif); fflush(lg); }
+            if (dif >= 30) { destravou = 1; goto pronto; }
+            /* arma 2: clique de novo */
+            foca_forte();
+            clica(641, 521, 45000, "demo 2x");
+            shot("arm02"); dif = painel_dif();
+            if (lg) { fprintf(lg, "[%u] arma 2 (click demo 2x): dif=%d%%\n", GetTickCount(), dif); fflush(lg); }
+            if (dif >= 30) { destravou = 2; goto pronto; }
+            /* arma 3: clique LONGO */
+            foca_forte();
+            clica_longo(641, 521, 45000, "demo longo");
+            shot("arm03"); dif = painel_dif();
+            if (lg) { fprintf(lg, "[%u] arma 3 (click longo): dif=%d%%\n", GetTickCount(), dif); fflush(lg); }
+            if (dif >= 30) { destravou = 3; goto pronto; }
+            /* arma 4: PostMessage direto na janela */
+            foca_forte();
+            post_click(FindWindowW(NULL, L"Euro Truck Simulator 2"), 641, 521, "demo post");
+            Sleep(45000);
+            shot("arm04"); dif = painel_dif();
+            if (lg) { fprintf(lg, "[%u] arma 4 (postmessage): dif=%d%%\n", GetTickCount(), dif); fflush(lg); }
+            if (dif >= 30) { destravou = 4; goto pronto; }
+            /* armas 5-8: TAB x k + SPACE - se o teclado move o foco, TAB
+             * cicla caixas E botoes; SPACE dispara o botao focalizado. */
+            for (k = 2; k <= 8; k += 2) {
+              foca_forte();
+              for (i = 0; i < k; i++) tap(0x0F, 700, "TAB");
+              tap(0x39, 45000, "SPACE");
+              shot(k == 2 ? "arm05" : k == 4 ? "arm06" : k == 6 ? "arm07" : "arm08");
+              dif = painel_dif();
+              if (lg) { fprintf(lg, "[%u] arma %d (tab x%d + space): dif=%d%%\n", GetTickCount(), 3 + k / 2, k, dif); fflush(lg); }
+              if (dif >= 30) { destravou = 3 + k / 2; goto pronto; }
             }
-            tap(0x1C, 5000, "Enter (confirmar modo demo, se dialogo)");
-            shot("demo-confirm");
-            /* flag so se a tela de ativacao realmente sumiu */
-            if (nantes >= 100 && ndepois < 60) {
+            /* arma 9: botao Activate Game (esquerda) -> erro -> Enter */
+            foca_forte();
+            clica(384, 521, 20000, "Activate Game");
+            tap(0x1C, 45000, "Enter (fecha erro)");
+            shot("arm09"); dif = painel_dif();
+            if (lg) { fprintf(lg, "[%u] arma 9 (activate+enter): dif=%d%%\n", GetTickCount(), dif); fflush(lg); }
+            if (dif >= 30) { destravou = 9; goto pronto; }
+            /* arma 10: ESC */
+            foca_forte();
+            tap(0x01, 45000, "ESC");
+            shot("arm10"); dif = painel_dif();
+            if (lg) { fprintf(lg, "[%u] arma 10 (esc): dif=%d%%\n", GetTickCount(), dif); fflush(lg); }
+            if (dif >= 30) { destravou = 10; goto pronto; }
+          pronto:
+            if (destravou) {
+              if (lg) { fprintf(lg, "[%u] DESTRAVADO pela arma %d (dif=%d%%) - esperando transicao\n", GetTickCount(), destravou, dif); fflush(lg); }
+              Sleep(120000);
+              shot("pos-destravar");
               fl = fopen("mw-demo-ok.flag", "w");
               if (fl) { fputs("demo ok\n", fl); fclose(fl); }
-              if (lg) { fprintf(lg, "[%u] DEMO PARECE ATIVO — flag criada\n", GetTickCount()); fflush(lg); }
-            } else if (lg) { fprintf(lg, "[%u] demo NAO mudou a tela (nantes=%d ndepois=%d)\n", GetTickCount(), nantes, ndepois); fflush(lg); }
-            /* wizard de criacao de profile: nickname "AI" */
+            } else if (lg) { fprintf(lg, "[%u] ativacao RESISTIU as 10 armas - wizard best-effort\n", GetTickCount()); fflush(lg); }
+            /* wizard de criacao de profile: nickname "AI" (v96) */
             foca_forte();
             tap(0x1C, 8000, "Enter-1 (tela inicial pos-demo)");
             shot("pos-enter1");
@@ -3934,7 +4018,7 @@ jobs:
                   & cl /nologo /O2 /W3 "$PWD\menuwalk.c" "/Fe:$PWD\menuwalk.exe" /link 2>&1 | ForEach-Object { Trace "menuwalk cl: $_" }
                   if (Test-Path "$PWD\menuwalk.exe") {
                     Start-Process -FilePath "$PWD\menuwalk.exe" -WorkingDirectory $PWD
-                    Trace "hibrido: menuwalk lancado (profile 'ai' + W em ~30 s)"
+                    Trace "hibrido: menuwalk v97 lancado (arsenal de 10 armas contra a ativacao)"
                   } else { Trace "hibrido: menuwalk.exe NAO compilou — boot sem navegacao de menu" }
                   # v90: OLHOS — screenshots periodicos (JPEG) durante o boot
                   # hibrido: o game.log e MUDO no menu; sem ver a tela nao da
