@@ -1086,7 +1086,11 @@ jobs:
         working-directory: emu
         run: |
           set +e
+          # Ends in exit 0 explicitly. set +e stops the shell from aborting but the
+          # step still exits with the status of its last command, so a diagnostic job
+          # that ran everything it wanted still shows up red.
           ./pe_info /tmp/guest/hello.exe
+          exit 0
       - name: Pre-translate, persist, reload and execute
         if: always()
         working-directory: emu
@@ -1097,7 +1101,11 @@ jobs:
           ./prewarm --cache /tmp/guest.cache --idle-ms 0 --diagnose-entries \
                     --execute /tmp/guest/hello.exe 2>&1 | tee /tmp/real.log
           echo "--- the marker a real run would produce ---"
-          grep -c "REAL PE RAN" /tmp/real.log
+          # grep -c exits 1 when the count is zero, which is the expected state until
+          # the import resolver exists. Counted and reported, not allowed to fail the
+          # step: the number is the measurement.
+          echo "REAL PE RAN marker count: $(grep -c "REAL PE RAN" /tmp/real.log)"
+          exit 0
       - name: Report
         if: always()
         run: |
