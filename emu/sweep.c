@@ -387,13 +387,32 @@ static void discover_one(sweep_job *j, uint32_t mi, uint64_t va)
  * which measured the size of the shortcut rather than the state of the translator.
  * A function is the smallest unit that is actually callable and cacheable.
  *
- * Imports are deliberately not resolved here. A pre-translation sweep runs before
- * anything is loaded, so no host address exists for an imported function yet; a
- * function that calls one is recorded as refused with TRR_NEEDS_TARGET rather than
- * translated against a guess. Fixing that needs an indirection cell patched at
- * load time, which is a runtime feature and not something a cache-warming pass can
- * invent on its own.
+ * Imports are resolved only if a resolver was installed with sweep_set_resolver, and
+ * by default none is. That default is the old behaviour and the reason for it still
+ * holds: a pre-translation sweep runs before anything is loaded, so no host address
+ * exists for an imported function yet, and a function that calls one is recorded as
+ * refused with TRR_NEEDS_TARGET rather than translated against a guess.
+ *
+ * What changed is that the indirection cell the comment used to call a runtime
+ * feature now exists. A resolver may answer with an RVA of the module's own IAT slot
+ * tagged TR_ABI_INDIRECT, and the emitted call loads its target out of that slot at
+ * run time. So a sweep CAN translate a function that calls an import without knowing
+ * any host address, provided something fills the slot before the code runs - which is
+ * what shim_fill_iat does. The sweep still invents nothing on its own.
  */
+
+/* Installed by sweep_set_resolver. File scope because the sweep is driven one module
+ * graph at a time and every translation inside it needs the same resolver; threading
+ * it through every internal signature would be a larger change than the state it
+ * carries. NULL means "resolve nothing", which is the historical behaviour. */
+static tr_resolve_fn sweep_resolve;
+static void         *sweep_resolve_user;
+
+void sweep_set_resolver(tr_resolve_fn resolve, void *user)
+{
+    sweep_resolve      = resolve;
+    sweep_resolve_user = user;
+}
 static int translate_entry(sweep_job *j, uint32_t mi, uint64_t va)
 {
     smod    *m = &j->mods[mi];
@@ -432,7 +451,7 @@ static int translate_entry(sweep_job *j, uint32_t mi, uint64_t va)
     st = tr_translate_function_img(m->image + sec->raw_ptr, (size_t)sec->raw_size,
                                    m->base + sec->virtual_addr, within,
                                    m->base, m->pe ? m->pe->size_of_image : 0u,
-                                   NULL, NULL, &f);
+                                   sweep_resolve, sweep_resolve_user, &f);
     if (st != TR_OK) {
         tr_reason r = (f.reason < TRR_COUNT) ? f.reason : TRR_INTERNAL;
         j->reason_hist[r]++;

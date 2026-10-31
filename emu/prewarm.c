@@ -29,6 +29,7 @@
 #define _POSIX_C_SOURCE 200809L
 
 #include "sweep.h"
+#include "shim.h"
 
 #include "translate.h"
 
@@ -525,6 +526,16 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
         printf("  %s: image mapped at %p, size %zu, base RVA 0 there\n",
                paths[i], base, sz);
 
+        /* Rebind this module's slots to the real mapping and write the shim addresses
+         * into it. The cached code loads its call target out of the slot at run time,
+         * so the slot has to hold a host address by the time the body executes - and
+         * nothing in the cached words changed, which is the whole reason the target
+         * lives in the image instead of in the code. */
+        {   size_t known = 0, unknown = 0;
+            shim_fill_iat(&pes[i], (uint8_t *)base, sz, pes[i].image_base,
+                          &known, &unknown);
+        }
+
         for (slot = 0; slot < slots; slot++) {
             uint64_t    mid = 0, gpc = 0;
             const void *code = NULL;
@@ -715,6 +726,30 @@ int main(int argc, char **argv)
         if (queued < 0) printf("  warning: %s has no sweepable code\n", paths[i]);
         else            printf("  queued %d entry point(s) from %s\n", queued,
                                paths[i]);
+
+        /* Fill this module's IAT slots for the Win32 functions shim.c implements and
+         * let the sweep resolve through them. The guest base is the PE's declared
+         * ImageBase, which is what the sweep translates against, so the RVA a resolver
+         * answers with is the same one the execute phase will reach through X19.
+         *
+         * This writes host addresses into the file buffer, which is harmless and not
+         * the point: only the RVAs are used during the sweep. The execute phase calls
+         * this again against the real mapping, and that call is the one that matters. */
+        {   size_t known = 0, unknown = 0, got;
+            got = shim_fill_iat(&pes[i], (uint8_t *)imgs[i], lens[i],
+                                pes[i].image_base, &known, &unknown);
+            printf("  %s: IAT slots filled %zu, imported functions recognised %zu, "
+                   "not implemented %zu\n", paths[i], got, known, unknown);
+        }
+    }
+
+    /* Installed only if at least one slot was filled. With no resolver the sweep keeps
+     * its historical behaviour and refuses every function that calls an import, which
+     * is the honest state for a bundle whose APIs are not implemented. */
+    if (shim_count() > 0) {
+        sweep_set_resolver(shim_resolve, NULL);
+        printf("  import resolver installed: %zu Win32 function(s) implemented\n",
+               shim_count());
     }
 
     printf("\n--- sweep (idle window %u ms) ---\n", idle_ms);

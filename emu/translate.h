@@ -181,6 +181,24 @@ typedef uint64_t (*tr_resolve_fn)(uint64_t guest_iat_va, void *user);
  * itself, which is what a wrapper is for. */
 #define TR_ABI_HOST (1ULL << 63)
 
+/* Tag the resolver ORs in ALONGSIDE TR_ABI_HOST to say the value it returned is not
+ * a host address at all but an RVA of an indirection cell inside the module's own
+ * image - a slot the loader fills in, which is what a Windows IAT is.
+ *
+ * This exists because baking a shim's host address into emitted code would break the
+ * invariant the persistent cache rests on. An absolute host address ties a translation
+ * to one process's layout: reload the same cached words in another process, or after
+ * the library moved, and the BLR jumps somewhere that is no longer the shim. An RVA
+ * plus the image base in X19 needs neither a relocation nor a re-translation, and it
+ * is how the operating system this is imitating already solves the problem.
+ *
+ * Emitted as: materialise the RVA, add X19, load 8 bytes, branch to what came back.
+ * The loader's job is to have put the host address in those 8 bytes.
+ *
+ * Bit 62 for the same reason TR_ABI_HOST is bit 63: an RVA is far below 2^47, so no
+ * legitimate value ever sets either. */
+#define TR_ABI_INDIRECT (1ULL << 62)
+
 typedef struct {
     uint32_t    words[TR_MAX_WORDS];
     size_t      n;

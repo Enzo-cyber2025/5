@@ -118,7 +118,7 @@ test_pe: test_pe_load.c pe_load.c pe_load.h
 # The sweep links the decoder, the PE parser, the cache and the encoder seed:
 # it is the first component that uses all of them together.
 # The sweep drives the function translator, so it links the whole native core.
-CORE = pe_load.c ptc.c x86_decode.c a64_emit.c translate.c
+CORE = pe_load.c ptc.c x86_decode.c a64_emit.c translate.c shim.c
 test_sweep: test_sweep.c sweep.c sweep.h $(CORE)
 	$(CC) $(CFLAGS) -o $@ test_sweep.c sweep.c $(CORE)
 

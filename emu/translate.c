@@ -306,6 +306,9 @@ typedef struct {
     int      sets_flags;   /* leaves NZCV matching an x86 CMP */
     int      host_abi;     /* P_CALL_IAT: target is a real host function, so the
                             * call site emits the AAPCS bridge */
+    int      indirect;     /* P_CALL_IAT: const_val is an RVA of a cell the loader
+                            * fills, not a host address, so the target is loaded from
+                            * the image at run time instead of materialised */
     /* Operand width: 0 for the 64-bit form, 1 for the 32-bit one. A 32-bit x86-64
      * operation zero-extends its result into the full register, and an AArch64
      * W-form zero-extends into the X register, so the two agree without any
@@ -541,7 +544,10 @@ static int plan_uses_gstack(const plan *p)
 static int plan_uses_imgbase(const plan *p)
 {
     return p->op == P_LD_IMG || p->op == P_ST_IMG
-        || p->op == P_LD_GUEST || p->op == P_ST_GUEST;
+        || p->op == P_LD_GUEST || p->op == P_ST_GUEST
+        /* An indirect call reads its target from a cell in the image, so it needs
+         * the base register exactly as the image-relative loads and stores do. */
+        || (p->op == P_CALL_IAT && p->indirect);
 }
 
 /* Plans a conditional jump from its condition nibble. Both encodings call this,
@@ -692,10 +698,30 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
             return TR_NEEDS_TARGET;
         }
         p->host_abi  = (host & TR_ABI_HOST) != 0u;
-        host        &= ~(uint64_t)TR_ABI_HOST;
+        p->indirect  = (host & TR_ABI_INDIRECT) != 0u;
+        host        &= ~((uint64_t)TR_ABI_HOST | (uint64_t)TR_ABI_INDIRECT);
+        if (p->indirect && !p->host_abi) {
+            /* An indirect cell only makes sense for a host call. A guest-to-guest
+             * call through a cell would need the guest's own translated code to be
+             * findable by address, which is the runtime dispatcher's job and not
+             * built yet; refusing says that instead of emitting a half-meaning. */
+            out->reason = TRR_NEEDS_TARGET;
+            out->detail = "an indirect call cell needs TR_ABI_HOST as well";
+            return TR_UNSUPPORTED;
+        }
+        if (p->indirect && image_base_va == 0) {
+            out->reason = TRR_IMG_BASE;
+            out->detail = "an indirect call reaches its cell through the image base, "
+                          "which was not supplied";
+            return TR_UNSUPPORTED;
+        }
         p->op = P_CALL_IAT;
         p->const_val = host;
-        p->words = const_words(host) + 1u + (p->host_abi ? ABI_BRIDGE_WORDS : 0u);
+        /* Indirect costs three words after the constant - add the base, load the
+         * cell, branch - where a direct target costs one. The count has to match what
+         * the emitter pushes or the layout cross-check reports TRR_INTERNAL. */
+        p->words = const_words(host) + (p->indirect ? 3u : 1u)
+                 + (p->host_abi ? ABI_BRIDGE_WORDS : 0u);
         return TR_OK;
     }
     /* mov r32, imm32 - the shortest and one of the commonest ways to load a
@@ -1717,7 +1743,19 @@ tr_status tr_translate_function_img(const uint8_t *code, size_t code_len,
                 if (!pushf(out, a64_mov_reg(1u, HOST_TMP2)))    return TR_OVERFLOW;
                 if (!pushf(out, a64_mov_reg(2u, 6u)))           return TR_OVERFLOW;
                 if (!pushf(out, a64_mov_reg(3u, 7u)))           return TR_OVERFLOW;
-                if (!emit_const_f(out, HOST_SCRATCH, p->const_val)) return TR_OVERFLOW;
+                if (p->indirect) {
+                    /* RVA into X17, add the image base, load the 8 bytes the loader
+                     * put there, branch to what came back. No absolute host address is
+                     * in any of these words, so the same cached code is valid in any
+                     * process that maps this image and fills the same slots. */
+                    if (!emit_const_f(out, HOST_TMP2, p->const_val)) return TR_OVERFLOW;
+                    if (!pushf(out, a64_add_reg(HOST_TMP2, HOST_IMGBASE, HOST_TMP2)))
+                        return TR_OVERFLOW;
+                    if (!pushf(out, a64_ldur(HOST_SCRATCH, HOST_TMP2, 0)))
+                        return TR_OVERFLOW;
+                } else if (!emit_const_f(out, HOST_SCRATCH, p->const_val)) {
+                    return TR_OVERFLOW;
+                }
                 if (!pushf(out, a64_blr(HOST_SCRATCH))) return TR_OVERFLOW;
                 /* The host returns in X0, which is guest RAX, so the result needs no
                  * shuffling back. Pop in reverse order of the pushes: the single X14

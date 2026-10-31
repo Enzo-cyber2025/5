@@ -1105,12 +1105,20 @@ jobs:
           # the import resolver exists. Counted and reported, not allowed to fail the
           # step: the number is the measurement.
           echo "REAL PE RAN marker count: $(grep -c "REAL PE RAN" /tmp/real.log)"
+          echo "--- IAT slots filled and the resolver ---"
+          grep -aE "IAT slots filled|import resolver installed" /tmp/real.log | head -4
+          echo "--- refusal reasons ---"
+          grep -aE "refused:|reason_hist|import-unresolved|unsupported-opcode" /tmp/real.log | head -8
           exit 0
       - name: Report
         if: always()
         run: |
           set +e
-          echo "::notice title=real-exe-summary::$(grep -aE 'functions pre-translated|records executed|BLOCKER|refused' /tmp/real.log | head -6 | tr '\n' '|')"
+          # The marker count is the verdict: it is written by the WriteFile shim out of
+          # a buffer the guest addressed, in the child, so a non-zero count means a real
+          # compiler-produced Windows executable ran through the pre-translation path.
+          echo "::notice title=real-exe-verdict::RAN=$(grep -ac 'REAL PE RAN' /tmp/real.log) SLOTS=$(grep -aoE 'IAT slots filled [0-9]+' /tmp/real.log | head -1) $(grep -aE 'functions pre-translated|records executed' /tmp/real.log | head -2 | tr '\n' '|')"
+          echo "::notice title=real-exe-summary::$(grep -aE 'functions pre-translated|records executed|refused' /tmp/real.log | head -6 | tr '\n' '|')"
           echo "--- why the entry point does not run yet ---"
           grep -aE "ENTRIES|unsupported-opcode|needs-target|BLOCKER" /tmp/real.log | head -12
           exit 0

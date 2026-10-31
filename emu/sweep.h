@@ -158,3 +158,10 @@ const char *sweep_phase_name(sweep_phase p);
 const char *sweep_block_kind_name(block_kind k);
 
 #endif /* SWEEP_H */
+
+/* Installs the resolver every translation in the next sweep will use, or clears it
+ * when both arguments are NULL. A resolver that answers with an IAT slot's RVA tagged
+ * TR_ABI_HOST | TR_ABI_INDIRECT lets the sweep translate a function that calls an
+ * import without any host address being known at sweep time; the slot is filled in
+ * later, before the code runs. See shim.h. */
+void sweep_set_resolver(tr_resolve_fn resolve, void *user);
