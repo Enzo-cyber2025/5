@@ -3674,9 +3674,6 @@ jobs:
             else if (lg) { fprintf(lg, "[%u] tap %s\n", GetTickCount(), what); fflush(lg); }
             Sleep(ms);
           }
-          /* v96: foco FORCADO e VERIFICADO - SetForegroundWindow de processo
-           * background falha silenciosamente; AttachThreadInput e o contorno
-           * classico e o foreground e CONFERIDO com GetForegroundWindow(). */
           static int foca_forte(void) {
             HWND w = FindWindowW(NULL, L"Euro Truck Simulator 2");
             HWND fg;
@@ -3707,10 +3704,6 @@ jobs:
             if (lg) { fprintf(lg, "[%u] foco FINAL fg=%p alvo=%p -> %s\n", GetTickCount(), (void*)fg, (void*)w, fg == w ? "OK" : "FALHOU"); fflush(lg); }
             return fg == w;
           }
-          /* v92: clique de mouse REAL (SendInput) - botao "Run in Demo Mode"
-           * calibrado nas shots da v90: centro ~(641,521) em tela 1024x768.
-           * v97: VERIFICA o cursor - se o jogo clippa/move o cursor de volta,
-           * o clique cai em outro lugar e o log PROVA. */
           static void clica(int x, int y, int ms, const char *what) {
             INPUT in[2]; POINT pt;
             if (!SetCursorPos(x, y) && lg) { fprintf(lg, "[%u] SetCursorPos FALHOU (%s) gle=%u\n", GetTickCount(), what, GetLastError()); fflush(lg); }
@@ -3725,24 +3718,6 @@ jobs:
             } else if (lg) { fprintf(lg, "[%u] click %s @(%d,%d) cursor=(%d,%d)\n", GetTickCount(), what, x, y, pt.x, pt.y); fflush(lg); }
             Sleep(ms);
           }
-          /* v97: clique LONGO - UI a 0,2 fps pode exigir down > 1 frame. */
-          static void clica_longo(int x, int y, int ms, const char *what) {
-            INPUT in[2]; POINT pt;
-            SetCursorPos(x, y);
-            Sleep(300);
-            ZeroMemory(in, sizeof(in));
-            in[0].type = INPUT_MOUSE; in[0].mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
-            if (SendInput(1, in, sizeof(INPUT)) != 1 && lg) { fprintf(lg, "[%u] ERRO down longo gle=%u\n", GetTickCount(), GetLastError()); fflush(lg); }
-            Sleep(900);
-            in[0].mi.dwFlags = MOUSEEVENTF_LEFTUP;
-            if (SendInput(1, in, sizeof(INPUT)) != 1 && lg) { fprintf(lg, "[%u] ERRO up longo gle=%u\n", GetTickCount(), GetLastError()); fflush(lg); }
-            GetCursorPos(&pt);
-            if (lg) { fprintf(lg, "[%u] click longo %s cursor=(%d,%d)\n", GetTickCount(), what, pt.x, pt.y); fflush(lg); }
-            Sleep(ms);
-          }
-          /* v97: clique via PostMessage - entrega WM_LBUTTONDOWN/UP direto
-           * na fila da janela, contornando a pilha de input inteira (o
-           * SendInput da v96 chegou ao alvo e o botao nao disparou). */
           static void post_click(HWND w, int sx, int sy, const char *what) {
             POINT pt; LPARAM lp; BOOL r1, r2;
             if (!w) { if (lg) { fprintf(lg, "[%u] post %s: janela AUSENTE\n", GetTickCount(), what); fflush(lg); } return; }
@@ -3754,9 +3729,6 @@ jobs:
             r2 = PostMessageW(w, WM_LBUTTONUP, 0, lp);
             if (lg) { fprintf(lg, "[%u] post %s client=(%d,%d) down=%d up=%d\n", GetTickCount(), what, pt.x, pt.y, r1, r2); fflush(lg); }
           }
-          /* v95: conta_bright via BitBlt - um Blt da regiao pra DIB em
-           * memoria e scan direto nos bytes (GetPixel e ordens de magnitude
-           * mais lento com o jogo carregando). DIB 24bpp = BGR. */
           static int conta_bright(int x0, int y0, int x1, int y1, int thr) {
             HDC sc = GetDC(NULL);
             HDC dc = CreateCompatibleDC(sc);
@@ -3788,18 +3760,11 @@ jobs:
             DeleteObject(bm); DeleteDC(dc); ReleaseDC(NULL, sc);
             return n;
           }
-          /* v97: linha das caixas com threshold 90 - o 170 da v94/v95 media
-           * 123 numa run e 0 na outra COM A MESMA TELA (so os pixels finos
-           * de antialiasing passam de 170); 90 pega as bordas das caixas. */
+          /* v98: threshold 40 - as bordas das caixas tem lum ~56-85 no
+           * ASCII (v97 mediu 0 @90 e @170 com as caixas NA TELA). */
           static int linha_chave_n(void) {
-            return conta_bright(330, 455, 700, 500, 90);
+            return conta_bright(330, 455, 700, 500, 40);
           }
-          /* v97: DIFF DO PAINEL - o detector de mudanca definitivo. Captura
-           * o retangulo das caixas+botoes (310,430)-(714,544), reduz a
-           * 40x11 celulas de luminancia e compara com a captura ANTERIOR.
-           * Devolve % de celulas que mudaram > 25. Primeira chamada = 0.
-           * Painel sumindo (ativacao cedeu) = dif altissimo; foco/cursor
-           * piscando = dif baixo; animacao de fundo fica FORA da regiao. */
           #define PGX 40
           #define PGY 11
           static int painel_dif(void) {
@@ -3840,8 +3805,6 @@ jobs:
             DeleteObject(bm); DeleteDC(dc); ReleaseDC(NULL, sc);
             return dif * 100 / (PGX * PGY);
           }
-          /* v92: screenshot BMP (GDI) apos CADA acao - o SOBE converte p/
-           * JPEG no fim do boot. 1024x768x24bpp. */
           static int shotn = 0;
           static const char *shotpre = "shot-mw-";
           static void shot(const char *tag) {
@@ -3880,20 +3843,76 @@ jobs:
             }
             DeleteObject(bm); DeleteDC(dc); ReleaseDC(NULL, sc);
           }
+          /* v98: FORENSE DE JANELAS - EnumWindows + EnumChildWindows com
+           * classe, texto, rect e processo de CADA janela visivel. Se a
+           * ativacao for um dialogo nativo (#32770) ou de OUTRO processo,
+           * aparece aqui. E se houver um botao com "demo" no caption,
+           * clicamos o RETANGULO REAL dele (BM_CLICK + clique fisico). */
+          static int ci_tem(const char *a, const char *b) {
+            size_t la = strlen(a), lb = strlen(b);
+            size_t i, j;
+            if (lb > la) return 0;
+            for (i = 0; i + lb <= la; i++) {
+              for (j = 0; j < lb; j++) {
+                char ca = a[i + j], cb = b[j];
+                if (ca >= 'A' && ca <= 'Z') ca += 32;
+                if (cb >= 'A' && cb <= 'Z') cb += 32;
+                if (ca != cb) break;
+              }
+              if (j == lb) return 1;
+            }
+            return 0;
+          }
+          static HWND g_demo_btn;
+          static void log_janela(HWND w, const char *tag) {
+            char cls[64], txt[160], exe[300];
+            DWORD pid = 0;
+            RECT r;
+            if (!IsWindow(w)) return;
+            GetWindowThreadProcessId(w, &pid);
+            GetClassNameA(w, cls, sizeof(cls)); cls[sizeof(cls) - 1] = 0;
+            GetWindowTextA(w, txt, sizeof(txt)); txt[sizeof(txt) - 1] = 0;
+            GetWindowRect(w, &r);
+            exe[0] = 0;
+            if (pid) {
+              HANDLE h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+              if (h) {
+                DWORD n = sizeof(exe);
+                if (!QueryFullProcessImageNameA(h, 0, exe, &n)) exe[0] = 0;
+                CloseHandle(h);
+              }
+            }
+            if (lg) {
+              fprintf(lg, "[%u] %s hwnd=%p cls='%s' pid=%lu exe='%s' rect=(%d,%d)-(%d,%d) txt='%s'\n",
+                      GetTickCount(), tag, (void*)w, cls, pid, exe,
+                      r.left, r.top, r.right, r.bottom, txt);
+              fflush(lg);
+            }
+            if (!g_demo_btn && IsWindowVisible(w) && ci_tem(txt, "demo")) g_demo_btn = w;
+          }
+          static BOOL CALLBACK enum_top(HWND w, LPARAM lp) { (void)lp; if (IsWindowVisible(w)) log_janela(w, "TOP"); return TRUE; }
+          static BOOL CALLBACK enum_child(HWND w, LPARAM lp) { (void)lp; log_janela(w, "FILHO"); return TRUE; }
           int main(void) {
-            int i, k, segunda, dif, destravou;
+            int i, segunda, dif, destravou;
             FILE *fl;
+            HWND jogo, bw;
+            RECT rb;
+            HDC dcchk;
             segunda = (GetFileAttributesA("mw-demo-ok.flag") != INVALID_FILE_ATTRIBUTES);
+            /* v98: DPI-AWARE - se o desktop tiver escala != 100%, um
+             * processo DPI-unaware recebe coordenadas VIRTUALIZADAS e
+             * SetCursorPos(641,521) cairia em OUTRO pixel fisico (o
+             * GetCursorPos devolveria (641,521) igual - mentindo). */
+            SetProcessDPIAware();
             lg = fopen(segunda ? "menuwalk2.log" : "menuwalk.log", "w");
-            if (lg) { fprintf(lg, "[%u] inicio v97\n", GetTickCount()); fflush(lg); }
             if (segunda) shotpre = "shot-mw2-";
-            if (lg) { fprintf(lg, "[%u] modo %s\n", GetTickCount(), segunda ? "DRIVE (2a vez)" : "ARSENAL (1a vez)"); fflush(lg); }
-            /* espera a JANELA do jogo existir (ate 60 s) */
+            dcchk = GetDC(NULL);
+            if (lg) { fprintf(lg, "[%u] inicio v98 | tela=%dx%d dpi=%d | modo %s\n", GetTickCount(), GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN), GetDeviceCaps(dcchk, LOGPIXELSX), segunda ? "DRIVE (2a)" : "FORENSE (1a)"); fflush(lg); }
+            ReleaseDC(NULL, dcchk);
             for (i = 0; i < 30 && !FindWindowW(NULL, L"Euro Truck Simulator 2"); i++) Sleep(2000);
             if (lg) { fprintf(lg, "[%u] janela %s\n", GetTickCount(), FindWindowW(NULL, L"Euro Truck Simulator 2") ? "OK" : "AUSENTE"); fflush(lg); }
             foca_forte();
             if (segunda) {
-              /* jogo reaberto com profile: menu principal -> DRIVE -> acelerar */
               Sleep(90000);
               foca_forte();
               shot("menu2");
@@ -3911,81 +3930,72 @@ jobs:
               if (lg) { fprintf(lg, "[%u] fim (2a)\n", GetTickCount()); fflush(lg); fclose(lg); }
               return 0;
             }
-            /* -------- 1a execucao: ARSENAL contra a tela de ATIVACAO --------
-             * v96 provou: clique SendInput no alvo certo com foco confirmado
-             * NAO disparou o "Run in Demo Mode" (painel identico por 40 min).
-             * v92 provou: teclado CHEGA ao dialogo (Enter/Down movem o foco
-             * entre as caixas). Entao: settle fixo (fade-in ~3-4 min a 0,2
-             * fps, sondas de brilho nao-confiaveis entre runs) e DEZ armas,
-             * cada uma verificada pelo DIFF DO PAINEL (>=30% = cedeu) com
-             * espera de 45-90 s (uma transicao pode levar varios frames). */
+            /* settle: fade-in ~3-4 min a ~0,2 fps */
             Sleep(240000);
             foca_forte();
             shot("ativacao");
-            SetCursorPos(641, 521);
-            Sleep(1500);
-            shot("cursor-b");
+            jogo = FindWindowW(NULL, L"Euro Truck Simulator 2");
+            log_janela(jogo ? jogo : GetForegroundWindow(), "JOGO");
+            g_demo_btn = NULL;
+            EnumWindows(enum_top, 0);
+            if (jogo) EnumChildWindows(jogo, enum_child, 0);
             dif = painel_dif();
-            if (lg) { fprintf(lg, "[%u] baseline dif=%d%% chave@90=%d chave@170=%d\n", GetTickCount(), dif, linha_chave_n(), conta_bright(330, 455, 700, 500, 170)); fflush(lg); }
+            if (lg) { fprintf(lg, "[%u] baseline dif=%d%% chave@40=%d\n", GetTickCount(), dif, linha_chave_n()); fflush(lg); }
             destravou = 0;
-            /* arma 1: clique no demo (espera 90 s - pode estar devagar) */
+            bw = g_demo_btn;
+            if (bw) {
+              GetWindowRect(bw, &rb);
+              if (lg) { fprintf(lg, "[%u] BOTAO DEMO ACHADO hwnd=%p rect=(%d,%d)-(%d,%d) -> BM_CLICK\n", GetTickCount(), (void*)bw, rb.left, rb.top, rb.right, rb.bottom); fflush(lg); }
+              SendMessageW(bw, BM_CLICK, 0, 0);
+              Sleep(90000);
+              shot("botao-bmclick");
+              dif = painel_dif();
+              if (lg) { fprintf(lg, "[%u] BM_CLICK: dif=%d%% janelaviva=%d\n", GetTickCount(), dif, IsWindow(bw)); fflush(lg); }
+              if (dif >= 30 || !IsWindow(bw)) { destravou = 1; goto pronto; }
+              clica((rb.left + rb.right) / 2, (rb.top + rb.bottom) / 2, 90000, "botao demo fisico");
+              shot("botao-fisico");
+              dif = painel_dif();
+              if (lg) { fprintf(lg, "[%u] botao fisico: dif=%d%%\n", GetTickCount(), dif); fflush(lg); }
+              if (dif >= 30 || !IsWindow(bw)) { destravou = 2; goto pronto; }
+              post_click(bw, (rb.left + rb.right) / 2, (rb.top + rb.bottom) / 2, "botao demo post");
+              Sleep(90000);
+              shot("botao-post");
+              dif = painel_dif();
+              if (lg) { fprintf(lg, "[%u] botao post: dif=%d%%\n", GetTickCount(), dif); fflush(lg); }
+              if (dif >= 30 || !IsWindow(bw)) { destravou = 3; goto pronto; }
+            } else if (lg) { fprintf(lg, "[%u] NENHUM botao 'demo' nas janelas - arsenal fisico\n", GetTickCount()); fflush(lg); }
+            /* arsenal compacto (agora DPI-aware) */
             foca_forte();
             clica(641, 521, 90000, "demo");
             shot("arm01"); dif = painel_dif();
             if (lg) { fprintf(lg, "[%u] arma 1 (click demo): dif=%d%%\n", GetTickCount(), dif); fflush(lg); }
-            if (dif >= 30) { destravou = 1; goto pronto; }
-            /* arma 2: clique de novo */
-            foca_forte();
-            clica(641, 521, 45000, "demo 2x");
-            shot("arm02"); dif = painel_dif();
-            if (lg) { fprintf(lg, "[%u] arma 2 (click demo 2x): dif=%d%%\n", GetTickCount(), dif); fflush(lg); }
-            if (dif >= 30) { destravou = 2; goto pronto; }
-            /* arma 3: clique LONGO */
-            foca_forte();
-            clica_longo(641, 521, 45000, "demo longo");
-            shot("arm03"); dif = painel_dif();
-            if (lg) { fprintf(lg, "[%u] arma 3 (click longo): dif=%d%%\n", GetTickCount(), dif); fflush(lg); }
-            if (dif >= 30) { destravou = 3; goto pronto; }
-            /* arma 4: PostMessage direto na janela */
-            foca_forte();
-            post_click(FindWindowW(NULL, L"Euro Truck Simulator 2"), 641, 521, "demo post");
-            Sleep(45000);
-            shot("arm04"); dif = painel_dif();
-            if (lg) { fprintf(lg, "[%u] arma 4 (postmessage): dif=%d%%\n", GetTickCount(), dif); fflush(lg); }
             if (dif >= 30) { destravou = 4; goto pronto; }
-            /* armas 5-8: TAB x k + SPACE - se o teclado move o foco, TAB
-             * cicla caixas E botoes; SPACE dispara o botao focalizado. */
-            for (k = 2; k <= 8; k += 2) {
-              foca_forte();
-              for (i = 0; i < k; i++) tap(0x0F, 700, "TAB");
-              tap(0x39, 45000, "SPACE");
-              shot(k == 2 ? "arm05" : k == 4 ? "arm06" : k == 6 ? "arm07" : "arm08");
-              dif = painel_dif();
-              if (lg) { fprintf(lg, "[%u] arma %d (tab x%d + space): dif=%d%%\n", GetTickCount(), 3 + k / 2, k, dif); fflush(lg); }
-              if (dif >= 30) { destravou = 3 + k / 2; goto pronto; }
-            }
-            /* arma 9: botao Activate Game (esquerda) -> erro -> Enter */
+            foca_forte();
+            post_click(jogo, 641, 521, "demo post main");
+            Sleep(45000);
+            shot("arm02"); dif = painel_dif();
+            if (lg) { fprintf(lg, "[%u] arma 2 (post main): dif=%d%%\n", GetTickCount(), dif); fflush(lg); }
+            if (dif >= 30) { destravou = 5; goto pronto; }
             foca_forte();
             clica(384, 521, 20000, "Activate Game");
             tap(0x1C, 45000, "Enter (fecha erro)");
-            shot("arm09"); dif = painel_dif();
-            if (lg) { fprintf(lg, "[%u] arma 9 (activate+enter): dif=%d%%\n", GetTickCount(), dif); fflush(lg); }
-            if (dif >= 30) { destravou = 9; goto pronto; }
-            /* arma 10: ESC */
+            shot("arm03"); dif = painel_dif();
+            if (lg) { fprintf(lg, "[%u] arma 3 (activate+enter): dif=%d%%\n", GetTickCount(), dif); fflush(lg); }
+            if (dif >= 30) { destravou = 6; goto pronto; }
             foca_forte();
             tap(0x01, 45000, "ESC");
-            shot("arm10"); dif = painel_dif();
-            if (lg) { fprintf(lg, "[%u] arma 10 (esc): dif=%d%%\n", GetTickCount(), dif); fflush(lg); }
-            if (dif >= 30) { destravou = 10; goto pronto; }
+            shot("arm04"); dif = painel_dif();
+            if (lg) { fprintf(lg, "[%u] arma 4 (esc): dif=%d%%\n", GetTickCount(), dif); fflush(lg); }
+            if (dif >= 30) { destravou = 7; goto pronto; }
           pronto:
             if (destravou) {
-              if (lg) { fprintf(lg, "[%u] DESTRAVADO pela arma %d (dif=%d%%) - esperando transicao\n", GetTickCount(), destravou, dif); fflush(lg); }
+              if (lg) { fprintf(lg, "[%u] DESTRAVADO (%d) dif=%d%% - esperando transicao\n", GetTickCount(), destravou, dif); fflush(lg); }
               Sleep(120000);
               shot("pos-destravar");
               fl = fopen("mw-demo-ok.flag", "w");
               if (fl) { fputs("demo ok\n", fl); fclose(fl); }
-            } else if (lg) { fprintf(lg, "[%u] ativacao RESISTIU as 10 armas - wizard best-effort\n", GetTickCount()); fflush(lg); }
-            /* wizard de criacao de profile: nickname "AI" (v96) */
+            } else if (lg) { fprintf(lg, "[%u] ativacao RESISTIU - wizard best-effort\n", GetTickCount()); fflush(lg); }
+            /* wizard (v96) */
             foca_forte();
             tap(0x1C, 8000, "Enter-1 (tela inicial pos-demo)");
             shot("pos-enter1");
@@ -4018,7 +4028,7 @@ jobs:
                   & cl /nologo /O2 /W3 "$PWD\menuwalk.c" "/Fe:$PWD\menuwalk.exe" /link 2>&1 | ForEach-Object { Trace "menuwalk cl: $_" }
                   if (Test-Path "$PWD\menuwalk.exe") {
                     Start-Process -FilePath "$PWD\menuwalk.exe" -WorkingDirectory $PWD
-                    Trace "hibrido: menuwalk v97 lancado (arsenal de 10 armas contra a ativacao)"
+                    Trace "hibrido: menuwalk v98 lancado (forense de janelas + DPI-aware + botao real)"
                   } else { Trace "hibrido: menuwalk.exe NAO compilou — boot sem navegacao de menu" }
                   # v90: OLHOS — screenshots periodicos (JPEG) durante o boot
                   # hibrido: o game.log e MUDO no menu; sem ver a tela nao da
