@@ -156,7 +156,7 @@ def main():
         d.adb("root", check=False); d.adb("wait-for-device", timeout=60)
         assert d.shell("id -u") == "0", "Root de teste do emulador indisponível"
         d.shell("wm size 720x1280"); d.shell("wm density 240")
-        set_termux_external_apps(d)
+        # Exercise the app before Termux's first-run bootstrap stresses the launcher.
         d.adb("install", "-r", "-g", APK, timeout=180)
         assert d.shell("pm clear " + PACKAGE) == "Success"
         d.grant_test_notifications(); d.launch()
@@ -181,6 +181,11 @@ def main():
             "meaning": "maximum finite model context, not infinity",
         }
 
+        # Install/bootstrap Termux only after the web and zero-sentinel checks,
+        # so a launcher issue cannot erase evidence for checks already completed.
+        summary["checks"]["termux_official_apk_bootstrapped"] = {
+            "status": "PASS", "package": TERMUX_PACKAGE, "uid": set_termux_external_apps(d)
+        }
         # Fresh text-only chat; model must author the harmless shell command.
         d.shell("pm revoke " + PACKAGE + " com.termux.permission.RUN_COMMAND", check=False)
         termux = run_termux_handoff(d, model)

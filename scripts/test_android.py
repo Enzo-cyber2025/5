@@ -127,7 +127,21 @@ class Android:
         out = self.shell(f"am start -W -S -f 0x10008000 -n {PACKAGE}/.MainActivity")
         if "Status: ok" not in out:
             raise AssertionError(f"Activity não iniciou: {out}")
-        self.wait(lambda: has_package(self.ui(), {PACKAGE}), "MainActivity em primeiro plano")
+
+        def foreground_or_dismiss_launcher_anr():
+            xml = self.ui()
+            if has_package(xml, {PACKAGE}):
+                return True
+            # First-run Termux bootstrap can temporarily stall Pixel Launcher.
+            # Dismiss only the explicit Android ANR prompt; do not close the app
+            # under test or turn a crashed launch into a pass.
+            if "isn't responding" in xml.lower() or "not responding" in xml.lower():
+                wait = position(xml, text="Wait", contains=True, package=None)
+                if wait:
+                    self.shell(f"input tap {wait[0]} {wait[1]}")
+            return None
+
+        self.wait(foreground_or_dismiss_launcher_anr, "MainActivity em primeiro plano")
         self.alive()
 
     def read_json(self, name, optional=False):

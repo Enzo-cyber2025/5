@@ -20,3 +20,14 @@ def test_termux_handoff_is_explicit_user_confirmed_and_scoped_to_shell_blocks():
     assert "startService(intent)" in bridge
     # This bridge delegates to a separately installed Termux and exposes code
     # only after the user reviews and confirms it; it is not an embedded shell.
+
+
+def test_android_harness_runs_app_before_termux_bootstrap_and_recovers_launcher_anr():
+    script = (ROOT / "scripts/test_tool_integrations_android.py").read_text()
+    main = script[script.index("def main():"):]
+    assert main.index('d.adb("install", "-r", "-g", APK') < main.index("d.launch()")
+    assert main.index("d.launch()") < main.index("set_termux_external_apps(d)")
+    android = (ROOT / "scripts/test_android.py").read_text()
+    assert "foreground_or_dismiss_launcher_anr" in android
+    assert 'position(xml, text="Wait", contains=True, package=None)' in android
+    assert "MainActivity em primeiro plano" in android
