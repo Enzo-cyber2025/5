@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/home/runner/work/5/5/scripts/test_tool_integrations_android.py", line 197, in main
+    termux = run_termux_handoff(d, model)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_tool_integrations_android.py", line 140, in run_termux_handoff
+    request_permission_and_confirm(d)
+  File "/home/runner/work/5/5/scripts/test_tool_integrations_android.py", line 103, in request_permission_and_confirm
+    assert EXPECTED_COMMAND in xml, "Comando aprovado pelo modelo não foi exibido integralmente para revisão"
+           ^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Comando aprovado pelo modelo não foi exibido integralmente para revisão
