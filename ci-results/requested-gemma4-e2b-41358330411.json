@@ -1,0 +1,185 @@
+{
+  "status": "FAIL",
+  "scope": "requested-Gemma-folder-Termux-Box64-APK-and-zero-limits",
+  "variant": "gemma4-e2b",
+  "apk": {
+    "sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc",
+    "expected_sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc"
+  },
+  "checks": {
+    "signed_apk_and_real_gguf_provisioning": {
+      "status": "PASS",
+      "method": "ADB provisioning into app-private models directory",
+      "SAF_import_in_this_task": false,
+      "note": "Text-only Gemma 4 task; prior release acceptance covers SAF pair merge."
+    },
+    "official_termux_bootstrap": "PASS",
+    "app_mediated_termux_handoff": {
+      "status": "NOT_VALIDATED",
+      "reason": "The pinned APK's Termux tool-row handoff was not available in the emulator flow; model commands are run by the harness as the Termux UID.",
+      "human_confirmation": false,
+      "stdout_automatically_returned_to_model": false
+    },
+    "folder_termux_access": {
+      "prompt": "Use Termux to inspect the folder. Return only a fenced bash block with exactly this command:\\ncat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt",
+      "assistant_reply": "```bash\ncat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt\n```",
+      "selected_command": "cat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt",
+      "expected_command": "cat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt",
+      "chat_id": "1a19948cfc354b4f4",
+      "chat_title": "GGUF regression 1a19948cfc354b4f4",
+      "executed": true,
+      "status": "TERMUX_COMMAND_COMPLETED",
+      "execution_method": "CI test harness via run-as into official Termux bash",
+      "in_app_termux_review_dialog": false,
+      "human_confirmation": false,
+      "termux_output_returned_to_model_automatically": false,
+      "termux_uid": "10210",
+      "execution_invoked": true,
+      "harness_stdout": "",
+      "completion_file": "/data/data/com.termux/files/home/model-audit-output.txt",
+      "shell_output": "Arquivo unico da pasta de teste. Identificador: BLUE-LANTERN-5831."
+    }
+  },
+  "limitations": [
+    "Android emulator x86_64, not a physical handset"
+  ],
+  "model": {
+    "name": "Gemma 4 E2B",
+    "quantization": "Q3_K_S text weights; mmproj omitted for text-only task",
+    "weights_sha256": "80d155f647d3a896669b1d1605b494b97ee9dbd1dcafd27957394134c280d270",
+    "projector_sha256": "140be8d7849741f88c50757d529b84373ee8e27052cc2236855b537f4a8215fa",
+    "projector_used_in_this_task": false,
+    "apk_signed_sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc",
+    "app_name": "gemma-4-E2B-it-Q3_K_S",
+    "architecture": null,
+    "capability": null,
+    "size": 2445652064
+  },
+  "settings_ui": {
+    "visible_settings_labels": [
+      "‹",
+      "Ajustes",
+      "Tamanho de contexto (tokens)",
+      "1024",
+      "Threads de CPU (0 = automático)",
+      "0",
+      "Camadas na GPU Vulkan (-1 = todas, 0 = só CPU)",
+      "99",
+      "Máximo de tokens por resposta",
+      "Temperatura",
+      "0.8",
+      "Top-P",
+      "0.95",
+      "Top-K",
+      "40.0",
+      "Min-P",
+      "0.05",
+      "Penalidade de repetição",
+      "1.1",
+      "Ferramentas (padrão para novas conversas):",
+      "Thinking",
+      "Busca",
+      "Salvar ajustes",
+      "Descarregar modelo da memória",
+      "GGUF Chat\nInferência local via llama.cpp (llamarn) com backend Vulkan.\nBackend atual: —\n\nDicas:\n• Para gerar com a tela bloqueada, basta enviar a mensagem e bloquear: a geração continua em segundo plano.\n• Use “Thinking” para raciocínio estendido e “Busca” para respostas embasadas na web.\n• Modelos multimodais: importe o GGUF de texto e o mmproj juntos."
+    ],
+    "storage_backed_context_option_found": false,
+    "context_related_labels": [
+      "Tamanho de contexto (tokens)",
+      "Descarregar modelo da memória"
+    ]
+  },
+  "folder_fixture": {
+    "path": "/data/data/com.termux/files/home/model-audit",
+    "files": [
+      "only-note.txt"
+    ],
+    "file_content": "Arquivo unico da pasta de teste. Identificador: BLUE-LANTERN-5831.",
+    "sha256": "ca381c3fba7b0a9c158d0d6a9622f3c725d78d3c6bf770e68fa0ced966348fd6"
+  },
+  "error": "Timeout: resposta baseada no conteúdo real: gemma4-e2b-describe-folder-output",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/runner/work/5/5/scripts/test_requested_model_tasks_android.py\", line 303, in main\n    description = reply(device, chat, folder_prompt + \" Actual Termux output: \" + output,\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/5/5/scripts/test_inference_android.py\", line 91, in reply\n    text=d.wait(check,'resposta baseada no conteúdo real: '+stage,timeout=timeout)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/5/5/scripts/test_android.py\", line 74, in wait\n    raise AssertionError(f\"Timeout: {description}\")\nAssertionError: Timeout: resposta baseada no conteúdo real: gemma4-e2b-describe-folder-output\n",
+  "logcat_tail": "tail=0 logMask=99 pid=5450 start=0ns deadline=0ns\n11-01 22:55:28.104  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:28.104  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:28.167  5450  5463 D EGL_emulation: app_time_stats: avg=500.17ms min=499.22ms max=501.21ms count=3\n11-01 22:55:28.567   913  1042 D EGL_emulation: app_time_stats: avg=200.06ms min=198.99ms max=200.79ms count=6\n11-01 22:55:28.606  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:28.606  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:28.615   558   833 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:55:28.616   558   833 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:55:28.616   558   833 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:55:28.616   558   833 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:55:28.616   558   833 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:55:28.617  3532  3589 I BugleRcsEngine: handleMessage processing message:[NOTIFY_UPTIME_IGNORE_STATE_CHANGED] with [non-null]:RcsEngineImpl reference [CONTEXT log_prefix=\"RcsEngineImpl[DUAL_REG]:[23e31a2b-faee]>Handler\" thread_id=66 ]\n11-01 22:55:28.618  1169  2341 I ChimeraSrvcProxy: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl\n11-01 22:55:28.618  1169  2341 W .gms.persistent: Large reply transaction of 1056768 bytes, interface descriptor , code 1\n11-01 22:55:28.618  3532  3575 I BugleRcsEngine: Connected state: [1], networkType: [WIFI] [CONTEXT thread_id=62 ]\n11-01 22:55:28.620  3532  3589 I BugleRcsEngine: No RCS Configuration was found in Bugle for simID: redacted-pii:sim_id[chars:20,last3:897] [CONTEXT log_prefix=\"ProvisioningEngineDataRetriever\" thread_id=66 ]\n11-01 22:55:28.815     0     0 I logd    : logdr: UID=0 GID=0 PID=11428 n tail=0 logMask=99 pid=5450 start=0ns deadline=0ns\n11-01 22:55:29.107  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:29.107  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:29.608  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:29.609  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:29.666  5450  5463 D EGL_emulation: app_time_stats: avg=499.53ms min=498.09ms max=501.36ms count=3\n11-01 22:55:29.877     0     0 I logd    : logdr: UID=0 GID=0 PID=11438 n tail=0 logMask=99 pid=5450 start=0ns deadline=0ns\n11-01 22:55:29.766   913  1042 D EGL_emulation: app_time_stats: avg=199.94ms min=199.51ms max=200.34ms count=6\n11-01 22:55:30.110  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:30.111  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:30.393     0     0 W healthd : battery l=100 v=5000 t=25.0 h=2 st=2 c=900000 fc=3000000 cc=10 chg=a\n11-01 22:55:30.611  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:30.612  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:30.922     0     0 I logd    : logdr: UID=0 GID=0 PID=11448 n tail=0 logMask=99 pid=5450 start=0ns deadline=0ns\n11-01 22:55:30.966   913  1042 D EGL_emulation: app_time_stats: avg=199.95ms min=199.32ms max=200.65ms count=6\n11-01 22:55:31.113  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:31.113  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:31.167  5450  5463 D EGL_emulation: app_time_stats: avg=500.15ms min=498.56ms max=501.06ms count=3\n11-01 22:55:31.614  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:31.614  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:31.976     0     0 I logd    : logdr: UID=0 GID=0 PID=11458 n tail=0 logMask=99 pid=5450 start=0ns deadline=0ns\n11-01 22:55:31.966   913  1042 D EGL_emulation: app_time_stats: avg=200.05ms min=197.59ms max=202.49ms count=5\n11-01 22:55:32.116  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:32.116  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:32.167  5450  5463 D EGL_emulation: app_time_stats: avg=500.25ms min=499.17ms max=501.33ms count=2\n11-01 22:55:32.617  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:32.618  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:33.026     0     0 I logd    : logdr: UID=0 GID=0 PID=11468 n tail=0 logMask=99 pid=5450 start=0ns deadline=0ns\n11-01 22:55:33.119  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:33.119  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:33.169  5450  5463 D EGL_emulation: app_time_stats: avg=501.11ms min=498.58ms max=503.63ms count=2\n11-01 22:55:33.170   913  1042 D EGL_emulation: app_time_stats: avg=200.50ms min=197.64ms max=203.26ms count=6\n11-01 22:55:33.620  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:33.620  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:34.072     0     0 I logd    : logdr: UID=0 GID=0 PID=11478 n tail=0 logMask=99 pid=5450 start=0ns deadline=0ns\n11-01 22:55:34.121  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:34.122  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:34.366   913  1042 D EGL_emulation: app_time_stats: avg=199.40ms min=196.55ms max=200.32ms count=6\n11-01 22:55:34.622  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:34.622  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:34.666  5450  5463 D EGL_emulation: app_time_stats: avg=498.78ms min=496.51ms max=500.68ms count=3\n11-01 22:55:35.119     0     0 I logd    : logdr: UID=0 GID=0 PID=11488 n tail=0 logMask=99 pid=5450 start=0ns deadline=0ns\n11-01 22:55:35.124  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:35.124  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:35.366   913  1042 D EGL_emulation: app_time_stats: avg=200.03ms min=198.88ms max=200.87ms count=5\n11-01 22:55:35.625  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:35.625  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:35.666  5450  5463 D EGL_emulation: app_time_stats: avg=500.04ms min=498.73ms max=501.35ms count=2\n11-01 22:55:36.177     0     0 I logd    : logdr: UID=0 GID=0 PID=11498 n tail=0 logMask=99 pid=5450 start=0ns deadline=0ns\n11-01 22:55:36.127  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:36.127  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:36.566   913  1042 D EGL_emulation: app_time_stats: avg=199.98ms min=199.74ms max=200.19ms count=6\n11-01 22:55:36.628  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:36.628  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:36.682  5450  5463 D EGL_emulation: app_time_stats: avg=508.20ms min=495.45ms max=520.95ms count=2\n11-01 22:55:37.227     0     0 I logd    : logdr: UID=0 GID=0 PID=11508 n tail=0 logMask=99 pid=5450 start=0ns deadline=0ns\n11-01 22:55:37.129  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:37.130  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:37.630  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:37.630  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:37.766   913  1042 D EGL_emulation: app_time_stats: avg=199.99ms min=199.49ms max=200.56ms count=6\n11-01 22:55:38.277     0     0 I logd    : logdr: UID=0 GID=0 PID=11518 n tail=0 logMask=99 pid=5450 start=0ns deadline=0ns\n11-01 22:55:38.131  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:38.131  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:38.191  5450  5463 D EGL_emulation: app_time_stats: avg=502.88ms min=494.17ms max=508.84ms count=3\n11-01 22:55:38.632  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:38.633  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:38.932   558  1804 D TelephonyManager: requestModemActivityInfo: Sending result to app: ModemActivityInfo{ mTimestamp=798481 mSleepTimeMs=0 mIdleTimeMs=798478 mActivityStatsTechSpecificInfo=[{mRat=UNKNOWN,mFrequencyRange=UNKNOWN,mTxTimeMs[]=[0, 0, 0, 0, 0],mRxTimeMs=0}]}\n11-01 22:55:38.946   363   363 I netd    : tetherGetStats() -> {[]} <0.35ms>\n11-01 22:55:38.966   913  1042 D EGL_emulation: app_time_stats: avg=199.96ms min=199.42ms max=200.54ms count=6\n11-01 22:55:39.133  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:39.133  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:39.325     0     0 I logd    : logdr: UID=0 GID=0 PID=11528 n tail=0 logMask=99 pid=5450 start=0ns deadline=0ns\n11-01 22:55:39.194  5450  5463 D EGL_emulation: app_time_stats: avg=501.56ms min=492.86ms max=510.25ms count=2\n11-01 22:55:39.634  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:39.634  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:40.136  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:40.136  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:40.166   913  1042 D EGL_emulation: app_time_stats: avg=199.95ms min=198.93ms max=200.92ms count=6\n11-01 22:55:40.394     0     0 I logd    : logdr: UID=0 GID=0 PID=11538 n tail=0 logMask=99 pid=5450 start=0ns deadline=0ns\n11-01 22:55:40.637  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:40.637  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:40.682  5450  5463 D EGL_emulation: app_time_stats: avg=495.96ms min=487.78ms max=511.34ms count=3\n11-01 22:55:41.138  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:41.138  1090  1090 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:55:41.171   913  1042 D EGL_emulation: app_time_stats: avg=200.85ms min=199.49ms max=204.20ms count=5\n11-01 22:55:41.433     0     0 I logd    : logdr: UID=0 GID=0 PID=11546 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns",
+  "last_ui_summary": [
+    {
+      "text": "‹",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[24,54][64,108]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "GGUF regression 1a19948cfc354b4f4",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[82,61][696,100]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "gemma-4-E2B-it-Q3_K_S",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[24,108][696,133]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "Use Termux to inspect the folder. Return only a fenced bash block with exactly this command:\\ncat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[77,142][696,281]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "```bash\ncat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt\n```",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[24,296][643,461]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "",
+      "content-desc": "Câmera",
+      "resource-id": "",
+      "bounds": "[24,665][78,719]",
+      "enabled": "false",
+      "selected": "false"
+    },
+    {
+      "text": "",
+      "content-desc": "Anexar arquivos",
+      "resource-id": "",
+      "bounds": "[88,665][142,719]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "Inspect the output from your Termux folder command and describe what is inside the folder. Name the only text file and repeat its identifier exactly. Output: the folder listing shows only-note.txt; its contents are: Arquivo unico da pasta de teste. Identificador: BLUE-LANTERN-5831. Actual Termux output: Arquivo unico da past",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[152,621][541,764]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "🔧",
+      "content-desc": "Alternar ferramentas",
+      "resource-id": "",
+      "bounds": "[551,665][605,719]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "Enviar",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[615,665][696,719]",
+      "enabled": "true",
+      "selected": "false"
+    }
+  ]
+}
