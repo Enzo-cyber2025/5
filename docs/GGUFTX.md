@@ -1,8 +1,9 @@
 # GGUFTX — trabalho em andamento
 
-**GGUFTX** é o nome pedido para a próxima identidade do GGUF Chat. Esta alteração
-melhora a camada-fonte da pesquisa web existente; não é um APK compilado, assinado
-ou validado em aparelho.
+**GGUFTX** é o nome pedido para a próxima identidade do GGUF Chat. O CI já compilou
+candidatos unsigned, mas a aceitação física ainda falha na resposta visual
+`CERO EMIOFSELLA.` (run 41243844107); não é release validada. Os checks de
+persistência e inferência com o mesmo GGUF passaram nesse run.
 
 ## Logo
 
@@ -31,9 +32,11 @@ confirmar fatos atuais.
 
 A pesquisa precisa de internet e pode sofrer bloqueios, mudanças de HTML,
 limitação de tráfego ou indisponibilidade do provedor. Os snippets não substituem
-a leitura das fontes originais. O código ainda precisa ser compilado e testado no
-APK real com conectividade ativa; esta checkout não contém o toolchain Android nem
-uma prova de aceitação para essa mudança.
+a leitura das fontes originais. A inspeção do DEX do último candidato confirmou que
+`GenerationService` chama `WebSearch.search()` quando `chat.webSearch=true` e inclui
+`toPromptText()` no fluxo do modelo. Porém, a execução 41243844107 deixou essa opção
+em `false`; portanto não é prova de uma consulta real. O novo teste de emulador
+verifica a busca ao vivo em português e inglês, mas ainda aguarda CI.
 
 ## Limites e segurança
 
@@ -42,13 +45,17 @@ uma prova de aceitação para essa mudança.
   última resposta, mostra o comando completo e só o envia ao Termux após confirmação
   explícita. Requer Termux com `RUN_COMMAND`/“Allow external apps” habilitado; a
   saída fica no próprio Termux e não é devolvida automaticamente à IA. O hand-off
-  ainda precisa de teste em Android com Termux instalado e a permissão concedida.
-  A execução arbitrária silenciosa continua desativada: comandos podem apagar
+  foi acrescentado ao CI um teste de emulador com o APK oficial do Termux, que
+  exige confirmação, concessão runtime da permissão e verificação de um arquivo
+  marcador; o resultado ainda está pendente. A execução silenciosa irrestrita
+  continua desativada: comandos podem apagar
   dados, expor credenciais ou instalar software.
-- **Contexto e tokens não podem ser ilimitados.** São limitados pela arquitetura
-  do modelo, pelo arquivo GGUF, pela memória/VRAM e pelo próprio Android. Remover
-  as verificações pode causar OOM, travamentos ou perda de dados. Os limites
-  existentes continuam explícitos e configuráveis quando o motor/modelo permite.
+- **`contextSize=0` e `nPredict=0` agora significam “usar o máximo finito disponível”**:
+  o contexto 0 pede ao llama.cpp o contexto de treino declarado no GGUF; saída 0
+  consome o espaço restante desse contexto até EOS, cancelamento ou esgotamento.
+  Não são infinitos: arquitetura/modelo definem o teto, e pedir o contexto máximo
+  pode causar falta de memória. Em conversas antigas, valores salvos continuam
+  valendo até serem alterados; novos chats usam os defaults zero.
 - **Não há alegação de +50% de velocidade.** Pesquisa de rede não acelera a
   inferência local. Um ganho desse tamanho só pode ser afirmado após benchmark
   pareado, no mesmo dispositivo, modelo, prompt, contexto e backend; nenhuma medição

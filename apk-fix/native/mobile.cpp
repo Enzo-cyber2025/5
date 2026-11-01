@@ -221,6 +221,8 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
                 (long long)std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now()-repack_started).count());
         } else LOG("GGUF_REPACKED_WEIGHTS enabled=0");
 #endif
+        // 0 means use the model's advertised training context (llama.cpp default),
+        // not an infinite KV cache. The device may still reject it for memory.
         auto cp=llama_context_default_params(); cp.n_ctx=context; cp.n_batch=128; cp.n_ubatch=32;
         // This JNI emits one sequence and requests logits ONLY for its final
         // token. Reserve one output row, not n_batch unused vocabulary rows.
@@ -628,9 +630,15 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
         // footer never charges prompt GPU work to response-token throughput.
         llama_synchronize(e->ctx);
         decode_started=Clock::now();decoding=true;
-        int limit=std::min<int>(predict,llama_n_ctx(e->ctx)-input_size);
+        const size_t available=llama_n_ctx(e->ctx)>input_size
+            ? static_cast<size_t>(llama_n_ctx(e->ctx))-input_size : 0;
+        if(available==0)throw std::runtime_error("O prompt já ocupa todo o contexto disponível; reduza o prompt ou aumente o contexto suportado pelo modelo.");
+        // A zero output budget means use the remainder of the finite model context
+        // until EOS, cancellation, or context exhaustion. It is not infinite generation.
+        const size_t limit=predict<=0?available:std::min<size_t>(static_cast<size_t>(predict),available);
+        LOG("GGUF_OUTPUT_BUDGET requested=%d effective=%zu available_context=%zu",predict,limit,available);
         const char *reason="length";
-        for(int i=0;i<limit;i++) {
+        for(size_t i=0;i<limit;i++) {
             if(e->cancel) throw std::runtime_error("Geração cancelada");
             // Upstream sample() fetches token, probs, logits and candidates via
             // four synchronizing getters even when the token is already selected.

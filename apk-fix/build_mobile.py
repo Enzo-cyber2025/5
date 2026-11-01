@@ -69,9 +69,12 @@ def ui_patches(app):
         s=re.sub(r'(    invoke-virtual \{([vp]\d+), [vp]\d+\}, Landroid/widget/Button;->setLayoutParams\(Landroid/view/ViewGroup\$LayoutParams;\)V)',r'\1\n    invoke-static {\2}, Lcom/ggufchat/app/CompactUi;->style(Landroid/widget/Button;)V',s)
         p.write_text(s)
     p=app/'MainActivity$25.smali';s=p.read_text().replace('if-nez v1, :cond_0','if-eqz v1, :cond_0').replace('if-nez v2, :cond_0','if-eqz v2, :cond_0');p.write_text(s)
-    # Safer defaults for a mobile memory budget; user can deliberately change them.
+    # Zero is a sentinel: llama.cpp chooses the model's trained context, and the
+    # native generator uses the remaining finite context when output tokens are 0.
+    # This is not infinite memory/output; large model defaults may still OOM.
     p=app/'Settings.smali';s=p.read_text();a=s.index('.method public static gpuLayers(');b=s.index('.end method',a);s=s[:a]+s[a:b].replace('const/4 v2, -0x1','const/4 v2, 0x0')+s[b:]
-    a=s.index('.method public static contextSize(');b=s.index('.end method',a);s=s[:a]+s[a:b].replace('const/16 v2, 0x1000','const/16 v2, 0x400')+s[b:];p.write_text(s)
+    a=s.index('.method public static contextSize(');b=s.index('.end method',a);s=s[:a]+s[a:b].replace('const/16 v2, 0x1000','const/4 v2, 0x0')+s[b:]
+    a=s.index('.method public static nPredict(');b=s.index('.end method',a);s=s[:a]+s[a:b].replace('const/16 v2, 0x400','const/4 v2, 0x0')+s[b:];p.write_text(s)
     # Surface the actual native create error rather than labelling every failure corrupt GGUF.
     p=app/'EngineManager.smali';s=p.read_text();marker='    const-string v1, "N\\u00e3o foi poss\\u00edvel carregar o modelo. Verifique se o arquivo GGUF est\\u00e1 \\u00edntegro."'
     assert marker in s

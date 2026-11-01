@@ -269,7 +269,7 @@ class Android:
                 return None
         return self.wait(completed, f"importação persistida de {source.name}", timeout=300)
 
-    def new_chat(self, model, gpu_layers, context_size=1024, threads=2):
+    def new_chat(self, model, gpu_layers, context_size=1024, threads=2, n_predict=128):
         self.shell(f"am force-stop {PACKAGE}")
         prefs = ET.Element("map")
         for name, value in (("selectedModelId", model["id"]), ("selectedModelName", model["name"]),
@@ -296,7 +296,7 @@ class Android:
         chats = self.read_json("chats.json")
         for c in chats:
             if c["id"] == chat["id"]:
-                c.update(nPredict=128, temperature=0.0, contextSize=context_size,
+                c.update(nPredict=n_predict, temperature=0.0, contextSize=context_size,
                          gpuLayers=gpu_layers, webSearch=False, thinking=False)
                 c["title"] = "GGUF regression " + chat["id"]
                 chat = c

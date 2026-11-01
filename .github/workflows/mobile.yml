@@ -11,6 +11,8 @@ on:
       - 'scripts/test_attachment_android.py'
       - 'scripts/test_inference_android.py'
       - 'scripts/test_physical_android.py'
+      - 'scripts/test_tool_integrations_android.py'
+      - 'tests/test_unbounded_request_semantics.py'
       - 'tests/test_physical_gguf.py'
       - 'tests/test_vulkan_pipeline.py'
       - 'tests/test_strict_vulkan.py'
@@ -101,7 +103,7 @@ jobs:
             .cache/mobile/x86_64
           key: native-v041-ndk28-v2-${{ runner.os }}-${{ hashFiles('apk-fix/native/**', 'apk-fix/*.py', 'ci/mobile-models.sh') }}-${{ github.run_id }}
       - name: Existing regressions
-        run: bash ci/log_step.sh tooling .venv/bin/python -m pytest -q tests/test_tooling.py tests/test_mobile_build.py tests/test_gguftx_branding.py tests/test_web_search_contract.py tests/test_web_search_parser.py tests/test_termux_bridge_contract.py tests/test_evidence_push.py tests/test_unified.py tests/test_attachments.py tests/test_inference.py tests/test_physical_gguf.py tests/test_import_progress.py tests/test_compute.py tests/test_single_import_ui.py tests/test_generation_stats.py tests/test_latency.py tests/test_reply_notifications.py tests/test_performance_code.py tests/test_image_import.py tests/test_vulkan_pipeline.py tests/test_strict_vulkan.py
+        run: bash ci/log_step.sh tooling .venv/bin/python -m pytest -q tests/test_tooling.py tests/test_mobile_build.py tests/test_gguftx_branding.py tests/test_web_search_contract.py tests/test_web_search_parser.py tests/test_termux_bridge_contract.py tests/test_unbounded_request_semantics.py tests/test_evidence_push.py tests/test_unified.py tests/test_attachments.py tests/test_inference.py tests/test_physical_gguf.py tests/test_import_progress.py tests/test_compute.py tests/test_single_import_ui.py tests/test_generation_stats.py tests/test_latency.py tests/test_reply_notifications.py tests/test_performance_code.py tests/test_image_import.py tests/test_vulkan_pipeline.py tests/test_strict_vulkan.py
       - name: Real ggml CPU tensor dispatch blocked before math
         run: bash ci/log_step.sh strict-vulkan-host bash scripts/test_strict_vulkan_host.sh
       - name: Real APK serialization and GGUF reader through DEX to JVM
@@ -140,6 +142,18 @@ jobs:
           keytool -genkeypair -keystore "$RUNNER_TEMP/emulator-only.p12" -storetype PKCS12 -storepass android -keypass android -alias test -keyalg RSA -keysize 2048 -validity 2 -dname 'CN=Disposable emulator test, O=NOT FOR RELEASE'
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$RUNNER_TEMP/emulator-only.p12" --ks-pass pass:android --key-pass pass:android --out .cache/physical-emulator.apk .delivery/GGUF-Chat-mobile-unsigned.apk
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify .cache/physical-emulator.apk
+      - name: Download pinned official Termux x86_64 APK and verify release checksum
+        run: |
+          set -euo pipefail
+          mkdir -p .cache
+          version=v0.118.3
+          asset="termux-app_${version}+github-debug_x86_64.apk"
+          base="https://github.com/termux/termux-app/releases/download/${version}"
+          curl --fail --location --retry 3 --max-time 300 "${base}/${asset//+/%2B}" -o .cache/termux-app-x86_64.apk
+          curl --fail --location --retry 3 --max-time 60 "${base}/termux-app_${version}%2Bgithub-debug_sha256sums" -o .cache/termux-sha256sums
+          expected="$(grep -F "$asset" .cache/termux-sha256sums | head -1 | awk '{print $1}')"
+          test "${#expected}" -eq 64
+          printf '%s  %s\n' "$expected" .cache/termux-app-x86_64.apk | sha256sum --check -
       - name: KVM for actual Android acceptance
         run: sudo chmod a+rw /dev/kvm
       - name: Software Vulkan for physical unified GGUF
@@ -149,6 +163,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GGUF_MOBILE_VULKAN: '1'
           GGUF_TEST_APK: .cache/physical-emulator.apk
+          GGUF_TERMUX_TEST_APK: .cache/termux-app-x86_64.apk
         with:
           api-level: 35
           arch: x86_64
@@ -159,7 +174,7 @@ jobs:
           disk-size: 8192M
           disable-animations: true
           emulator-options: -no-window -no-snapshot -gpu host -feature Vulkan -noaudio -no-boot-anim -camera-back emulated -camera-front emulated
-          script: .venv/bin/python scripts/test_physical_android.py && .venv/bin/python scripts/test_attachment_android.py && .venv/bin/python scripts/test_inference_android.py
+          script: .venv/bin/python scripts/test_tool_integrations_android.py && .venv/bin/python scripts/test_physical_android.py && .venv/bin/python scripts/test_attachment_android.py && .venv/bin/python scripts/test_inference_android.py
       - name: Report physical GGUF acceptance
         if: always()
         run: python3 ci/report_android.py evidence

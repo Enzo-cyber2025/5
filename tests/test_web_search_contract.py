@@ -30,7 +30,9 @@ def test_results_are_cited_and_marked_untrusted_and_network_fails_open():
     source = SOURCE.read_text()
     assert "URL: " in source
     assert "dados externos não confiáveis" in source
-    assert "continuing with local model" in source
+    assert 'GGUF_WEB_SEARCH status=error type=' in source
+    assert 'GGUF_WEB_SEARCH status=' in source
+    assert 'GGUF_WEB_SEARCH_PROMPT citations=' in source
     assert "não retornou resultados verificáveis" in source
     # Links must be web URLs, never javascript:, file:, or arbitrary schemes.
     assert 'scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https")' in source

@@ -1,11 +1,14 @@
 # Próxima versão: GGUFTX (em andamento)
 
-A camada-fonte de pesquisa web está sendo reforçada para trazer resultados e
-citações reais e falhar de forma segura quando a rede não responder. A nova logo
-GGUFTX também entra no build, nas cinco densidades Android. **Ainda não há APK GGUFTX compilado/validado.** Há hand-off opt-in para Termux
-externo; o runtime Termux não é embutido. Execução irrestrita, contexto ou tokens
-infinitos e aceleração garantida de 50% não são alegados nem incluídos:
-veja [escopo e limites](docs/GGUFTX.md).
+O candidato GGUFTX já compila no CI, mas a aceitação física ainda falha no
+reconhecimento semântico de uma imagem; não é release validada. A pesquisa web
+está ligada ao fluxo explícito de busca; a próxima execução verifica consultas
+reais e citações no emulador. O hand-off para Termux continua opcional e exige
+revisão/confirmação humana; o CI agora prepara um teste com o app oficial, ainda
+pendente. `contextSize=0` usa o teto de contexto declarado pelo modelo e
+`nPredict=0` usa o espaço restante até EOS/cancelamento — valores máximos finitos,
+não infinitos. O histórico mede +9,49% mediano em texto, não +50%; veja
+[escopo e limites](docs/GGUFTX.md).
 
 ---
 

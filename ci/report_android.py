@@ -18,6 +18,10 @@ def main():
     root = Path(sys.argv[1] if len(sys.argv) > 1 else 'evidence')
     summary = root / 'summary.json'
     emit('Android summary', summary.read_text() if summary.exists() else 'No Android summary produced')
+    integrations = root / 'tool-integrations-summary.json'
+    emit('Termux and web-search verification', integrations.read_text() if integrations.exists() else 'No tool-integration summary produced')
+    termux = root / 'termux-ai-command.json'
+    if termux.exists(): emit('AI-proposed Termux command', termux.read_text()[:2800])
     dumps = sorted(root.glob('ui-*.xml'))
     if dumps:
         nodes = ET.parse(dumps[-1]).iter('node')
