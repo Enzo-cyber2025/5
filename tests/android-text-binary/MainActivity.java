@@ -2,6 +2,7 @@ package com.example.textbinary;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
@@ -40,7 +41,12 @@ public final class MainActivity extends Activity {
         resultParams.topMargin = 24;
         layout.addView(result, resultParams);
 
-        convert.setOnClickListener(view -> result.setText(toBinary(input.getText().toString())));
+        convert.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                result.setText(toBinary(input.getText().toString()));
+            }
+        });
         setContentView(layout, new ViewGroup.LayoutParams(-1, -1));
     }
 

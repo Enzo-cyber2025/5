@@ -203,17 +203,27 @@ def prepare_termux_folder(device):
 def check_zero_limits(device, model, summary):
     chat = device.new_chat(model, 0, context_size=0, threads=2, n_predict=0)
     prompt_text = "Reply with only: OK"
-    pid = device.alive()
+    device.alive()
     device.send(prompt_text)
     def native_budget_observed():
-        log = device.adb("logcat", "-d", f"--pid={pid}")
+        # These native diagnostics can be emitted by the model worker process,
+        # not the Activity PID; inspect all logcat buffers, as the prior zero
+        # sentinel acceptance did.
+        log = device.adb("logcat", "-d")
         budget = re.search(r"GGUF_OUTPUT_BUDGET requested=0 effective=([1-9][0-9]*) available_context=([1-9][0-9]*)", log)
         prompt = re.search(r"GGUF_PROMPT_CACHE input_tokens=([1-9][0-9]*)", log)
         if budget and prompt:
             return log, budget, prompt
         return None
-    log, budget, prompt = device.wait(native_budget_observed,
-        "orçamento nativo finito dos dois valores zero", timeout=900)
+    try:
+        log, budget, prompt = device.wait(native_budget_observed,
+            "orçamento nativo finito dos dois valores zero", timeout=900)
+    except AssertionError:
+        summary["checks"]["zero_context_and_zero_response_limits"] = {
+            "status": "FAIL", "error": "budget diagnostics not observed",
+            "logcat_tail": device.adb("logcat", "-d")[-10000:],
+            "last_ui_summary": device.last_ui_summary}
+        raise
     chats = device.read_json("chats.json")
     saved = next(c for c in chats if c["id"] == chat["id"])
     assert saved.get("contextSize") == 0 and saved.get("nPredict") == 0, saved
