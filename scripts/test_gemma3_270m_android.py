@@ -29,7 +29,10 @@ def import_model_via_saf(device, source):
     device.adb("push", source, f"/sdcard/Download/{source.name}", timeout=300)
     device.shell("am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d "
                  f"file:///storage/emulated/0/Download/{source.name}", check=False)
-    device.tap(text="Importar", package={PACKAGE}, contains=True)
+    # On this signed release, the importer is a bottom tab labelled with an
+    # icon; the similarly named header is not the navigation control.
+    if position(device.ui(), text="📁 Importar", package={PACKAGE}):
+        device.tap(text="📁 Importar", package={PACKAGE})
 
     def destination():
         xml = device.ui()
@@ -37,11 +40,16 @@ def import_model_via_saf(device, source):
             return "picker"
         if position(xml, text="Importar GGUF", package={PACKAGE}):
             return "import-sheet"
+        if position(xml, text="Importar .gguf", package={PACKAGE}):
+            return "import-action"
         return None
 
-    state = device.wait(destination, "tela de seleção de GGUF ou seletor SAF", timeout=30)
+    state = device.wait(destination, "ação de importação GGUF ou seletor SAF", timeout=30)
     if state == "import-sheet":
         device.tap(text="Importar GGUF", package={PACKAGE})
+        device.wait(lambda: has_package(device.ui(), PICKERS), "seletor SAF")
+    elif state == "import-action":
+        device.tap(text="Importar .gguf", package={PACKAGE})
         device.wait(lambda: has_package(device.ui(), PICKERS), "seletor SAF")
     device.choose_file(source.name)
 
