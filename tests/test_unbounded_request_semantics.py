@@ -15,3 +15,7 @@ def test_zero_selects_model_context_and_remaining_context_output_not_infinity():
     assert "GGUF_OUTPUT_BUDGET requested=%d effective=%zu available_context=%zu" in native
     assert "not an infinite KV cache" in native
     assert "not infinite generation" in native
+    integration = (ROOT / "scripts/test_tool_integrations_android.py").read_text()
+    assert "GGUF_PROMPT_CACHE input_tokens=" in integration
+    assert "model_context = int(prompt.group(1)) + int(budget.group(2))" in integration
+    assert "available_context" in integration

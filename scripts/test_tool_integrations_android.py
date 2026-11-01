@@ -174,14 +174,16 @@ def main():
         saved = next(c for c in chats if c["id"] == zero_chat["id"])
         log = d.adb("logcat", "-d")
         budget = re.search(r"GGUF_OUTPUT_BUDGET requested=0 effective=([1-9][0-9]*) available_context=([1-9][0-9]*)", log)
-        loaded = re.search(r"model loaded: n_ctx=([1-9][0-9]*)", log)
+        prompt = re.search(r"GGUF_PROMPT_CACHE input_tokens=([1-9][0-9]*)", log)
         assert saved.get("contextSize") == 0 and saved.get("nPredict") == 0
-        assert budget and loaded, "Native zero-sentinel values not observed in a loaded real model"
+        assert budget and prompt, "Native zero-sentinel values not observed in a loaded real model"
+        model_context = int(prompt.group(1)) + int(budget.group(2))
+        assert int(budget.group(1)) == int(budget.group(2)), "Zero output did not use all remaining model context"
         summary["checks"]["zero_uses_model_context_and_remaining_output_budget"] = {
             "status": "PASS", "context_setting": 0, "output_setting": 0,
-            "model_context_loaded": int(loaded.group(1)), "output_budget": int(budget.group(1)),
-            "available_context": int(budget.group(2)), "answer": answer,
-            "meaning": "maximum finite model context, not infinity",
+            "model_context_loaded": model_context, "prompt_tokens": int(prompt.group(1)),
+            "output_budget": int(budget.group(1)), "available_context": int(budget.group(2)),
+            "answer": answer, "meaning": "maximum finite model context, not infinity",
         }
 
         # Install/bootstrap Termux only after the web and zero-sentinel checks,
