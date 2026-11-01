@@ -71,8 +71,10 @@ def set_termux_external_apps(d):
 def test_web_search(d, model, chat):
     d.tap(desc="Alternar ferramentas", package={PACKAGE})
     tap_tool(d, "Busca")
-    saved = next(c for c in d.read_json("chats.json") if c["id"] == chat["id"])
-    assert saved.get("webSearch") is True, "Alternância de pesquisa web não persistiu no chat"
+    def saved_search_setting():
+        saved = next(c for c in d.read_json("chats.json") if c["id"] == chat["id"])
+        return saved if saved.get("webSearch") is True else None
+    saved = d.wait(saved_search_setting, "alternância de pesquisa web persistida no chat", timeout=15)
     d.tap(desc="Alternar ferramentas", package={PACKAGE})
     stages = []
     for stage, prompt in (
