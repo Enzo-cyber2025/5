@@ -237,6 +237,13 @@ class Android:
                 time.sleep(2)
                 continue
             point = position(xml, text=filename, package=PICKERS)
+            if point is None and position(xml, desc="Show roots", package=PICKERS):
+                # Recent may be empty even when the pushed file is present under
+                # Downloads. Navigate explicitly instead of spinning on No items.
+                self.tap(desc="Show roots", package=PICKERS)
+                self.select_downloads()
+                time.sleep(1)
+                continue
             if point:
                 self.shell(f"input tap {point[0]} {point[1]}")
                 if getattr(self,'progress_observer',None):self.progress_observer.poll()

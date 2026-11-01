@@ -67,9 +67,21 @@ def ask_for_command(device, model, prompt, expected, stage, summary):
 
     # Return to the exact conversation after the native worker may have closed its pane.
     device.launch()
-    device.open_existing_chat(chat["title"])
+    def active_chat():
+        xml = device.ui()
+        return (position(xml, desc="Alternar ferramentas", package={PACKAGE})
+                and position(xml, desc="Anexar arquivos", package={PACKAGE})
+                and position(xml, text="Enviar", contains=True, package={PACKAGE}))
+    if not active_chat():
+        device.tap(text=chat["title"], package={PACKAGE})
+    device.wait(active_chat, "conversa exata reaberta com ferramentas e compositor visíveis", timeout=30)
     # Verify the app presents the exact model-generated code for human review.
     device.tap(desc="Alternar ferramentas", package={PACKAGE})
+    def tools_open():
+        import xml.etree.ElementTree as ET
+        return any(n.get("content-desc") == "Ferramentas da conversa"
+                   for n in ET.fromstring(device.ui()).iter("node"))
+    device.wait(tools_open, "linha de ferramentas da conversa", timeout=15)
     tap_tool(device, "Termux")
     device.wait(lambda: position(device.ui(), text="Revisar comando do Termux",
                                  contains=True, package={PACKAGE}),
