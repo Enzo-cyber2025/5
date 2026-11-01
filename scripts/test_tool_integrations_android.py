@@ -124,35 +124,10 @@ def request_permission_and_confirm(d):
 
     point = d.wait(permission_dialog, "permissão Android RUN_COMMAND solicitada em runtime", timeout=25)
     d.shell(f"input tap {point[0]} {point[1]}")
-    permission = "com.termux.permission.RUN_COMMAND"
-
-    def permission_status():
-        result = d.adb("shell", "pm", "check-permission", permission, PACKAGE,
-                       check=False, with_status=True)
-        return (result.stdout + result.stderr).decode(errors="replace").strip().lower()
-
-    try:
-        granted = d.wait(lambda: permission_status() == "granted" or None,
-                         "permissão RUN_COMMAND confirmada", timeout=8)
-    except AssertionError:
-        granted = False
-    if granted:
-        return "Android confirmation dialog"
-
-    # The CI emulator occasionally dismisses the Android permission UI without
-    # persisting this custom Termux permission. Keep the real app-level review
-    # and confirmation mandatory, then grant only in this disposable rooted
-    # emulator and repeat that review so the actual Termux service path is tested.
-    grant = d.adb("shell", "pm", "grant", PACKAGE, permission, check=False, with_status=True)
-    grant_output = (grant.stdout + grant.stderr).decode(errors="replace").strip()
-    status = permission_status()
-    print("GGUF_TERMUX_TEST_PERMISSION_GRANT=" + json.dumps({
-        "grant_exit_code": grant.returncode, "grant_output": grant_output,
-        "permission_status": status, "scope": "disposable_rooted_ci_emulator_only",
-    }), flush=True)
-    assert status == "granted", "Não foi possível conceder RUN_COMMAND no emulador descartável: " + grant_output
-    review_and_confirm_termux_command(d)
-    return "rooted disposable-emulator grant after Android confirmation dialog"
+    # Do not grant the permission with adb or bypass the bridge: the following
+    # marker check proves that this Android confirmation authorized the app's
+    # real RUN_COMMAND intent to the separately installed Termux service.
+    return "Android RUN_COMMAND confirmation dialog accepted"
 
 
 def run_termux_handoff(d, model):
