@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/home/runner/work/5/5/scripts/test_tool_integrations_android.py", line 181, in main
+    summary["checks"]["live_web_search_en_and_pt"] = test_web_search(d, model, chat)
+                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_tool_integrations_android.py", line 93, in test_web_search
+    assert found and citations and int(found[-1]) > 0 and int(citations[-1]) > 0, \
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Pesquisa real sem resultados/citações: tool-search-pt; veja logcat
