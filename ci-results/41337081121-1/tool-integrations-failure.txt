@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/home/runner/work/5/5/scripts/test_tool_integrations_android.py", line 204, in main
+    summary["checks"]["live_web_search_en_and_pt"] = test_web_search(d, model, chat)
+                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_tool_integrations_android.py", line 75, in test_web_search
+    assert saved.get("webSearch") is True, "Alternância de pesquisa web não persistiu no chat"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Alternância de pesquisa web não persistiu no chat
