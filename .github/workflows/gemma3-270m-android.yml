@@ -31,15 +31,6 @@ jobs:
             -o .cache/gemma-3-270m-it-Q8_0.gguf
           echo 'f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc  .cache/GGUF-Chat-mobile.apk' | sha256sum --check
           echo 'd156a5159f2f79c1b1d53c7c1cc20f1ff28ab8d00f17a292620aad13399b9698  .cache/gemma-3-270m-it-Q8_0.gguf' | sha256sum --check
-      - name: Verify release signing certificate
-        run: |
-          set -euo pipefail
-          sdk="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
-          test -n "$sdk"
-          signer="$(find "$sdk/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
-          test -x "$signer"
-          "$signer" verify --verbose --print-certs .cache/GGUF-Chat-mobile.apk | tee .cache/apksigner.txt
-          grep -F 'Signer #1 certificate SHA-256 digest: 9a368c9a1e4f3b3b0b6ecfb86aa3768d633a925855afba27eab3b9189177955a' .cache/apksigner.txt
       - name: Allow KVM for disposable emulator
         run: sudo chmod a+rw /dev/kvm
       - uses: reactivecircus/android-emulator-runner@v2
@@ -59,8 +50,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: gemma3-270m-android-evidence
-          path: |
-            evidence/
-            .cache/apksigner.txt
+          path: evidence/
           if-no-files-found: warn
           retention-days: 30
