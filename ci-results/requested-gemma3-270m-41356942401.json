@@ -1,0 +1,120 @@
+{
+  "status": "FAIL",
+  "scope": "requested-Gemma-folder-Termux-Box64-APK-and-zero-limits",
+  "variant": "gemma3-270m",
+  "apk": {
+    "sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc",
+    "expected_sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc"
+  },
+  "checks": {},
+  "limitations": [
+    "Android emulator x86_64, not a physical handset"
+  ],
+  "model": {
+    "name": "Gemma 3 270M IT",
+    "quantization": "Q8_0",
+    "weights_sha256": "d156a5159f2f79c1b1d53c7c1cc20f1ff28ab8d00f17a292620aad13399b9698",
+    "apk_signed_sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc"
+  },
+  "error": "ADB falhou (137): ('shell', 'uiautomator dump /sdcard/gguf-test-ui.xml')\nUI hierchary dumped to: /sdcard/gguf-test-ui.xml\n",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/runner/work/5/5/scripts/test_requested_model_tasks_android.py\", line 264, in main\n    model = load_model(device)\n            ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/5/5/scripts/test_requested_model_tasks_android.py\", line 162, in load_model\n    return import_model_via_saf(device, source)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/5/5/scripts/test_gemma3_270m_android.py\", line 54, in import_model_via_saf\n    device.choose_file(source.name)\n  File \"/home/runner/work/5/5/scripts/test_android.py\", line 230, in choose_file\n    xml = self.ui()\n          ^^^^^^^^^\n  File \"/home/runner/work/5/5/scripts/test_mobile.py\", line 24, in ui\n    try:return super().ui()\n               ^^^^^^^^^^^^\n  File \"/home/runner/work/5/5/scripts/test_android.py\", line 52, in ui\n    self.shell(\"uiautomator dump /sdcard/gguf-test-ui.xml\")\n  File \"/home/runner/work/5/5/scripts/test_android.py\", line 47, in shell\n    return self.adb(\"shell\", command, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/5/5/scripts/test_android.py\", line 41, in adb\n    raise RuntimeError(f\"ADB falhou ({result.returncode}): {args}\\n{detail}\")\nRuntimeError: ADB falhou (137): ('shell', 'uiautomator dump /sdcard/gguf-test-ui.xml')\nUI hierchary dumped to: /sdcard/gguf-test-ui.xml\n\n",
+  "logcat_tail": "d %s\n11-01 22:26:25.401  1228  1791 E czvx    : Phenotype API error. Event: # fozr@6e927335, EventCode: COMMIT_CONFIG [CONTEXT service_id=51 ]\n11-01 22:26:25.401  1228  1791 E czvx    : czue: 29501: Stale snapshot for com.google.android.googlequicksearchbox(change count changed - expected 4  but was 3)\n11-01 22:26:25.401  1228  1791 E czvx    : \tat czwc.b(:com.google.android.gms@242335041@24.23.35 (190800-646585959):507)\n11-01 22:26:25.401  1228  1791 E czvx    : \tat czwb.i(:com.google.android.gms@242335041@24.23.35 (190800-646585959):3)\n11-01 22:26:25.401  1228  1791 E czvx    : \tat czvx.h(:com.google.android.gms@242335041@24.23.35 (190800-646585959):18)\n11-01 22:26:25.401  1228  1791 E czvx    : \tat czvx.f(:com.google.android.gms@242335041@24.23.35 (190800-646585959):11)\n11-01 22:26:25.401  1228  1791 E czvx    : \tat boey.hj(:com.google.android.gms@242335041@24.23.35 (190800-646585959):1)\n11-01 22:26:25.401  1228  1791 E czvx    : \tat bofh.run(:com.google.android.gms@242335041@24.23.35 (190800-646585959):97)\n11-01 22:26:25.401  1228  1791 E czvx    : \tat emsz.run(:com.google.android.gms@242335041@24.23.35 (190800-646585959):21)\n11-01 22:26:25.401  1228  1791 E czvx    : \tat angs.c(:com.google.android.gms@242335041@24.23.35 (190800-646585959):50)\n11-01 22:26:25.401  1228  1791 E czvx    : \tat angs.run(:com.google.android.gms@242335041@24.23.35 (190800-646585959):76)\n11-01 22:26:25.401  1228  1791 E czvx    : \tat java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)\n11-01 22:26:25.401  1228  1791 E czvx    : \tat java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)\n11-01 22:26:25.401  1228  1791 E czvx    : \tat anmg.run(:com.google.android.gms@242335041@24.23.35 (190800-646585959):8)\n11-01 22:26:25.401  1228  1791 E czvx    : \tat java.lang.Thread.run(Thread.java:1012)\n11-01 22:26:25.402  1228  1791 W AsyncOperation: operation=CommitToConfigurationOperationCall, opStatusCode=29501 [CONTEXT service_id=51 ]\n11-01 22:26:25.402  1228  1791 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.googlequicksearchbox(change count changed - expected 4  but was 3), resolution=null}]\n11-01 22:26:25.402  1228  1791 W AsyncOperation: \tat czvx.h(:com.google.android.gms@242335041@24.23.35 (190800-646585959):48)\n11-01 22:26:25.402  1228  1791 W AsyncOperation: \tat czvx.f(:com.google.android.gms@242335041@24.23.35 (190800-646585959):11)\n11-01 22:26:25.402  1228  1791 W AsyncOperation: \tat boey.hj(:com.google.android.gms@242335041@24.23.35 (190800-646585959):1)\n11-01 22:26:25.402  1228  1791 W AsyncOperation: \tat bofh.run(:com.google.android.gms@242335041@24.23.35 (190800-646585959):97)\n11-01 22:26:25.402  1228  1791 W AsyncOperation: \tat emsz.run(:com.google.android.gms@242335041@24.23.35 (190800-646585959):21)\n11-01 22:26:25.402  1228  1791 W AsyncOperation: \tat angs.c(:com.google.android.gms@242335041@24.23.35 (190800-646585959):50)\n11-01 22:26:25.402  1228  1791 W AsyncOperation: \tat angs.run(:com.google.android.gms@242335041@24.23.35 (190800-646585959):76)\n11-01 22:26:25.402  1228  1791 W AsyncOperation: \tat java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)\n11-01 22:26:25.402  1228  1791 W AsyncOperation: \tat java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)\n11-01 22:26:25.402  1228  1791 W AsyncOperation: \tat anmg.run(:com.google.android.gms@242335041@24.23.35 (190800-646585959):8)\n11-01 22:26:25.402  1228  1791 W AsyncOperation: \tat java.lang.Thread.run(Thread.java:1012)\n11-01 22:26:25.406  1480  1703 E A       : (REDACTED) Failed to commit flags to Phenotype. %s (%s)\n11-01 22:26:25.408   554   566 I system_server: Background concurrent mark compact GC freed 26MB AllocSpace bytes, 29(1020KB) LOS objects, 45% free, 28MB/52MB, paused 669us,4.513ms total 426.990ms\n11-01 22:26:25.410  1447  1720 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b\n11-01 22:26:25.416  2522  2522 D Documents: Content updated.\n11-01 22:26:25.416  2522  2522 D ContentLock: run when unlock, is locked : false\n11-01 22:26:25.418   354  4014 I resolv  : GetAddrInfoHandler::run: {101 983141 101 983141 10095 0}\n11-01 22:26:25.418   354  4015 I resolv  : res_nmkquery: (QUERY, IN, AAAA)\n11-01 22:26:25.418   354  4015 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x769bda622b50\n11-01 22:26:25.418   354  4015 I resolv  : doQuery: rcode=0, ancount=1, return value=61\n11-01 22:26:25.418  3333  3481 I BugleNetwork: Creating gRPC Managed channel with Cronet: instantmessaging-pa.googleapis.com:443\n11-01 22:26:25.419   354  4016 I resolv  : res_nmkquery: (QUERY, IN, A)\n11-01 22:26:25.419   354  4016 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x769bda623ed0\n11-01 22:26:25.419   354  4016 I resolv  : doQuery: rcode=0, ancount=1, return value=49\n11-01 22:26:25.419  2522  3550 D MultiRootDocsLoader: Found 2 of 2 queries done\n11-01 22:26:25.419  2522  2522 D AbstractActionHandler: Loader has finished for: content:/document/null\n11-01 22:26:25.419  2522  2522 I Model   : Updating model with new result set.\n11-01 22:26:25.419  2522  2522 D DirectoryFragment: Received model update. Loading=false\n11-01 22:26:25.420  2522  2522 D DefaultSelectionTracker: Ignoring onDataSetChange. No active selection.\n11-01 22:26:25.420  2522  3550 D MultiRootDocsLoader: Found 2 of 2 queries done\n11-01 22:26:25.422   354  4017 I resolv  : GetAddrInfoHandler::run: {101 786533 101 983141 10136 0}\n11-01 22:26:25.422   354  4018 I resolv  : res_nmkquery: (QUERY, IN, AAAA)\n11-01 22:26:25.423   354  4019 I resolv  : res_nmkquery: (QUERY, IN, A)\n11-01 22:26:25.423  1659  4007 D TrafficStats: tagSocket(83) with statsTag=0xffffff01, statsUid=10135\n11-01 22:26:25.436   354  4018 I resolv  : res_nsend: used send_dg 276 terrno: 0\n11-01 22:26:25.436   354  4018 I resolv  : doQuery: rcode=0, ancount=8, return value=276\n11-01 22:26:25.440   354  4019 I resolv  : res_nsend: used send_dg 180 terrno: 0\n11-01 22:26:25.440   354  4019 I resolv  : doQuery: rcode=0, ancount=8, return value=180\n11-01 22:26:25.441  2522  2522 D AbstractActionHandler: Loader has finished for: content:/document/null\n11-01 22:26:25.441  2522  2522 I Model   : Updating model with new result set.\n11-01 22:26:25.441  2522  2522 D DirectoryFragment: Received model update. Loading=false\n11-01 22:26:25.442  2522  2522 D DefaultSelectionTracker: Ignoring onDataSetChange. No active selection.\n11-01 22:26:25.442  3333  3441 W TimedProcessReaper: Scheduling killing of process to refresh configuration\n11-01 22:26:25.447  1097  1097 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:26:25.447  3333  3991 D TrafficStats: tagSocket(156) with statsTag=0x1, statsUid=-1\n11-01 22:26:25.451  3333  3991 D TrafficStats: tagSocket(157) with statsTag=0x1, statsUid=-1\n11-01 22:26:25.462  1614  2008 I GmsDebugLogger: [78] \n11-01 22:26:25.475  1480  2170 W A       : (REDACTED) %s task was not run. Callback from Service received after client was disposed.\n11-01 22:26:25.476  1097  1097 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:26:25.484  1480  2825 I PBSessionCacheImpl: (REDACTED) Deleted sessionId[%d] from persistence.\n11-01 22:26:25.491  1659  4021 D DownloadManager: [2] Starting\n11-01 22:26:25.497  3333  3991 D TrafficStats: tagSocket(157) with statsTag=0x1, statsUid=-1\n11-01 22:26:25.499  1480  2170 W SearchServiceCore: Abort, client detached.\n11-01 22:26:25.499  1480  2170 W SearchServiceCore: Abort, client detached.\n11-01 22:26:25.499  1480  2170 W SearchServiceCore: Abort, client detached.\n11-01 22:26:25.500  1480  2170 W SearchServiceCore: Abort, client detached.\n11-01 22:26:25.509  3333  3991 D TrafficStats: tagSocket(157) with statsTag=0x1, statsUid=-1\n11-01 22:26:25.513  1480  2170 W SearchServiceCore: Abort, client detached.\n11-01 22:26:25.513  1480  2170 W SearchServiceCore: Abort, client detached.\n11-01 22:26:25.515  3333  3991 D TrafficStats: tagSocket(158) with statsTag=0x1, statsUid=-1\n11-01 22:26:25.518  3333  3991 D TrafficStats: tagSocket(157) with statsTag=0x1, statsUid=-1\n11-01 22:26:25.521  3333  3991 D TrafficStats: tagSocket(157) with statsTag=0x1, statsUid=-1\n11-01 22:26:25.525  3333  3991 D TrafficStats: tagSocket(157) with statsTag=0x1, statsUid=-1\n11-01 22:26:25.529  1447  1720 I NgaEntryPointEventSendr: (REDACTED) State changed: %s => %s (%s)\n11-01 22:26:25.529  3333  3991 D TrafficStats: tagSocket(157) with statsTag=0x1, statsUid=-1\n11-01 22:26:25.536  3333  3991 D TrafficStats: tagSocket(157) with statsTag=0x1, statsUid=-1\n11-01 22:26:25.552   554   568 W system_server: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/PrebuiltGmail/PrebuiltGmail.apk' with 1 weak references\n11-01 22:26:25.553   554   568 W system_server: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/Drive/Drive.apk' with 1 weak references\n11-01 22:26:25.553   554   568 W system_server: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/CalendarGooglePrebuilt/CalendarGooglePrebuilt.apk' with 1 weak references\n11-01 22:26:25.553   554   568 W system_server: ApkAssets: Deleting an ApkAssets object '<empty> and /product/priv-app/PrebuiltGmsCore/PrebuiltGmsCore.apk' with 1 weak references\n11-01 22:26:25.561  1614  2008 I ChimeraConfigurator: Detected pending changes for urgent request: [maps_core]. Pending module sets: container:2423359190800+maps_core\n11-01 22:26:25.563   554   568 W system_server: ApkAssets: Deleting an ApkAssets object '<empty> and /system_ext/app/AccessibilityMenu/AccessibilityMenu.apk' with 1 weak references\n11-01 22:26:25.567   554   568 W system_server: ApkAssets: Deleting an ApkAssets object '/product/overlay/AccessibilityMenu__sdk_gphone64_x86_64__auto_generated_rro_product.apk' with 1 weak references\n11-01 22:26:25.567   554   568 W system_server: ApkAssets: Deleting an ApkAssets object '<empty> and /product/app/talkback/talkback.apk' with 1 weak references\n11-01 22:26:25.567   554   568 W system_server: ApkAssets: Deleting an ApkAssets object '/vendor/overlay/EmulatorTalkBackOverlay/EmulatorTalkBackOverlay.apk' with 1 weak references\n11-01 22:26:25.567  2522  2522 D Documents: Content updated.\n11-01 22:26:25.567  2522  2522 D ContentLock: run when unlock, is locked : false\n11-01 22:26:25.568  2522  2522 D AbstractActionHandler: Creating new loader recents.\n11-01 22:26:25.571  2522  3550 D ProvidersAccess: Matched roots: [Root{userId=0, authority=null, rootId=null, title=Recent, isUsb=false, isSd=false, isMtp=false} @ content:/root/null, Root{userId=0, authority=com.android.externalstorage.documents, rootId=primary, title=sdk_gphone64_x86_64, isUsb=false, isSd=false, isMtp=false} @ content://com.android.externalstorage.documents/root/primary, Root{userId=0, authority=com.android.providers.downloads.documents, rootId=downloads, title=Downloads, isUsb=false, isSd=false, isMtp=false} @ content://com.android.providers.downloads.documents/root/downloads, Root{userId=0, authority=com.android.providers.media.documents, rootId=documents_root, title=Documents, isUsb=false, isSd=false, isMtp=false} @ content://com.android.providers.media.documents/root/documents_root]\n11-01 22:26:25.577  1480  2433 I BgTaskExecutorImpl: (REDACTED) Starting %s background task %s.\n11-01 22:26:25.607  2522  3550 D MultiRootDocsLoader: Found 2 of 2 queries done\n11-01 22:26:25.607  2522  2522 D AbstractActionHandler: Loader has finished for: content:/document/null\n11-01 22:26:25.607  2522  2522 I Model   : Updating model with new result set.\n11-01 22:26:25.607  2522  2522 D DirectoryFragment: Received model update. Loading=false\n11-01 22:26:25.613  2522  2522 D DefaultSelectionTracker: Ignoring onDataSetChange. No active selection.\n11-01 22:26:25.617  1659  4021 D TrafficStats: tagSocket(97) with statsTag=0xffffff01, statsUid=10135\n11-01 22:26:25.651   354   354 I netd    : tetherGetStats() -> {[]} <2.50ms>",
+  "last_ui_summary": [
+    {
+      "text": "Images",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[36,108][183,180]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "Audio",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[195,108][328,180]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "Videos",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[340,108][483,180]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "Documents",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[495,108][681,180]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "Large files",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[693,108][720,180]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "Recent files",
+      "content-desc": "",
+      "resource-id": "com.google.android.documentsui:id/header_title",
+      "bounds": "[36,180][612,270]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "",
+      "content-desc": "Grid view",
+      "resource-id": "com.google.android.documentsui:id/sub_menu_grid",
+      "bounds": "[612,189][684,261]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "",
+      "content-desc": "Show roots",
+      "resource-id": "",
+      "bounds": "[0,36][84,108]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "Recent",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[108,51][202,92]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "",
+      "content-desc": "Search",
+      "resource-id": "com.google.android.documentsui:id/option_menu_search",
+      "bounds": "[576,36][648,108]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "",
+      "content-desc": "More options",
+      "resource-id": "",
+      "bounds": "[648,36][720,108]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "No items",
+      "content-desc": "",
+      "resource-id": "com.google.android.documentsui:id/message",
+      "bounds": "[0,721][720,754]",
+      "enabled": "true",
+      "selected": "false"
+    }
+  ]
+}
