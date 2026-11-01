@@ -3864,6 +3864,7 @@ jobs:
             ZeroMemory(&bi, sizeof(bi));
             bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
             bi.bmiHeader.biWidth = w; bi.bmiHeader.biHeight = h;
+            bi.bmiHeader.biPlanes = 1; /* v102: com lpvBits!=NULL o GetDIBits EXIGE biPlanes valido (0 do ZeroMemory = falha silenciosa; o shot() funcionava porque a 1a chamada-query com NULL preenchia) */
             bi.bmiHeader.biBitCount = 24; bi.bmiHeader.biCompression = BI_RGB;
             stride = (w * 3 + 3) & ~3;
             bits = (unsigned char *)malloc(stride * h);
@@ -3902,6 +3903,7 @@ jobs:
             ZeroMemory(&bi, sizeof(bi));
             bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
             bi.bmiHeader.biWidth = w; bi.bmiHeader.biHeight = h;
+            bi.bmiHeader.biPlanes = 1; /* v102: com lpvBits!=NULL o GetDIBits EXIGE biPlanes valido (0 do ZeroMemory = falha silenciosa; o shot() funcionava porque a 1a chamada-query com NULL preenchia) */
             bi.bmiHeader.biBitCount = 24; bi.bmiHeader.biCompression = BI_RGB;
             stride = (w * 3 + 3) & ~3;
             bits = (unsigned char *)malloc(stride * h);
@@ -3943,6 +3945,7 @@ jobs:
             ZeroMemory(&bi, sizeof(bi));
             bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
             bi.bmiHeader.biWidth = w; bi.bmiHeader.biHeight = h;
+            bi.bmiHeader.biPlanes = 1; /* v102: com lpvBits!=NULL o GetDIBits EXIGE biPlanes valido (0 do ZeroMemory = falha silenciosa; o shot() funcionava porque a 1a chamada-query com NULL preenchia) */
             bi.bmiHeader.biBitCount = 24; bi.bmiHeader.biCompression = BI_RGB;
             stride = (w * 3 + 3) & ~3;
             bits = (unsigned char *)malloc(stride * h);
@@ -3984,6 +3987,7 @@ jobs:
             ZeroMemory(&bi, sizeof(bi));
             bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
             bi.bmiHeader.biWidth = w; bi.bmiHeader.biHeight = h;
+            bi.bmiHeader.biPlanes = 1; /* v102: com lpvBits!=NULL o GetDIBits EXIGE biPlanes valido (0 do ZeroMemory = falha silenciosa; o shot() funcionava porque a 1a chamada-query com NULL preenchia) */
             bi.bmiHeader.biBitCount = 24; bi.bmiHeader.biCompression = BI_RGB;
             stride = (w * 3 + 3) & ~3;
             bits = (unsigned char *)malloc(stride * h);
