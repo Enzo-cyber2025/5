@@ -1,0 +1,36 @@
+--------- beginning of main
+11-01 19:37:02.951  5705  5705 I ImeTracker: com.ggufchat.app:c89dd861: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser true
+11-01 19:37:02.952  5705  5705 D InputMethodManager: showSoftInput() view=android.widget.EditText{9b795bf VFED..CL. .F.P..ID 128,0-493,67 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+11-01 19:37:02.966  5705  5705 I AssistStructure: Flattened final assist data: 1964 bytes, containing 1 windows, 13 views
+11-01 19:37:02.968  5705  5717 D EGL_emulation: app_time_stats: avg=210.21ms min=5.02ms max=2985.82ms count=15
+11-01 19:37:03.124  5705  5705 D InsetsController: show(ime(), fromIme=true)
+11-01 19:37:03.128  5705  5841 W InteractionJankMonitor: Initializing without READ_DEVICE_CONFIG permission. enabled=true, interval=1, missedFrameThreshold=3, frameTimeThreshold=64, package=com.ggufchat.app
+11-01 19:37:03.181  5705  5705 I ImeTracker: com.ggufchat.app:c89dd861: onShown
+11-01 19:37:04.310  5705  5717 D EGL_emulation: app_time_stats: avg=63.73ms min=7.13ms max=377.71ms count=20
+11-01 19:37:05.311  5705  5717 D EGL_emulation: app_time_stats: avg=500.41ms min=500.32ms max=500.50ms count=2
+11-01 19:37:06.081  5705  5705 I ImeTracker: com.ggufchat.app:161255af: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+11-01 19:37:06.088  5705  5705 D InsetsController: hide(ime(), fromIme=true)
+11-01 19:37:06.148  5705  5705 I ImeTracker: com.ggufchat.app:273fd436: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_ON_ANIMATION_STATE_CHANGED fromUser false
+11-01 19:37:06.150  5705  5705 I ImeTracker: com.ggufchat.app:161255af: onHidden
+11-01 19:37:06.169  5705  5874 I GGUFSystem: GGUF_SYSTEM_PROMPT_APPLIED scope=global chars=107 sha256=dde45e87ea07db0b49bcddd022d4f41a452610560d9af636571c26d16a4bcd04
+11-01 19:37:06.170  5705  5874 I GGUFInference: GGUF_CONTENT_PREPARED files=0 images=0 text_chars=0
+11-01 19:37:06.172  5705  5874 I GGUFChatNative: GGUF_GPU_SAMPLING requested=0 attached=0
+11-01 19:37:06.223  5705  5705 W FrameTracker: Missed App frame:UNKNOWN: 74, 18676, 0, CUJ=J<IME_INSETS_SHOW_ANIMATION::0@0@com.ggufchat.app>
+11-01 19:37:06.223  5705  5705 W FrameTracker: Missed SF frame:UNKNOWN: 74, 18676, 0, CUJ=J<IME_INSETS_SHOW_ANIMATION::0@0@com.ggufchat.app>
+11-01 19:37:06.596  5705  5717 D EGL_emulation: app_time_stats: avg=214.09ms min=37.57ms max=499.40ms count=6
+11-01 19:37:07.753  5705  5874 I GGUFChatNative: GGUF_PROMPT_CACHE input_tokens=62 reused_tokens=0 evaluated_tokens=62 media=0
+11-01 19:37:07.754  5705  5874 I GGUFChatNative: GGUF_OUTPUT_BUDGET requested=0 effective=8130 available_context=8130
+11-01 19:37:07.755  5705  5705 I GGUFUiTiming: GGUF_UI_FIRST_TEXT send_to_first_ui_ns=1704555643
+11-01 19:37:07.780  5705  5717 D EGL_emulation: app_time_stats: avg=394.50ms min=183.94ms max=500.36ms count=3
+11-01 19:37:08.798  5705  5717 D EGL_emulation: app_time_stats: avg=59.90ms min=29.94ms max=85.27ms count=17
+11-01 19:37:09.029  5705  5874 I GGUFChatNative: GGUF_NATIVE_COMPLETE tokens=22 reason=eog projector=0
+11-01 19:37:09.030  5705  5874 I GGUFChatNative: GGUF_HOST_WORKER_CPU available=1 thread_cpu_ns=2290527715
+11-01 19:37:09.030  5705  5874 I GGUFChatNative: GGUF_STRICT_VULKAN_RESULT enabled=0 submitted_graphs=0 submitted_math_nodes=0 blocked=0 host_orchestration=CPU
+11-01 19:37:09.030  5705  5874 I GGUFChatNative: GGUF_GPU_SAMPLING_RESULT backend_selected=0 emitted=22
+11-01 19:37:09.030  5705  5874 I GGUFChatNative: GGUF_VULKAN_DELIVERY token_only_export=1 overlap_submissions=0 first_text_immediate=1
+11-01 19:37:09.030  5705  5874 I GGUFChatNative: GGUF_RESPONSE_LATENCY first_token_ns=1585057265 prompt_tokens=62 reused_tokens=0
+11-01 19:37:09.030  5705  5874 I GGUFChatNative: GGUF_GENERATION_STATS tokens=22 decode_ns=1276054673 prefill_ns=1582038720 callbacks=19 success=1
+11-01 19:37:09.030  5705  5874 I System.out: GGUF_REPAIR_GENERATION_OK
+11-01 19:37:09.033  5705  5874 I GGUFReplyNotice: GGUF_NOTICE_STATS progress_updates=2 skipped_screen_off=0
+11-01 19:37:09.034  5705  5874 I GGUFReplyNotice: GGUF_REPLY_NOTICE suppressed=screen_active
+11-01 19:37:09.064  5705  5705 I GGUFReplyNotice: GGUF_REPLY_SERVICE_DESTROYED
