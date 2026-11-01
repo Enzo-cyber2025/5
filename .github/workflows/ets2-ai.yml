@@ -1423,6 +1423,18 @@ jobs:
             Select-Object FullName, Length | Format-Table -AutoSize | Out-String |
             Out-File "dll-plugins-list.txt" -Encoding utf8
           Write-Host "v104: DLL em 4 diretorios candidatos + ctypes/diagnostico gravados"
+          # v105: METODO 2 OFICIAL de load (readme do SDK SCS, citado no forum):
+          # "By processing all string values stored in registry key
+          #  HKLM\SOFTWARE\SCS Software\<game>\Plugins" — cada valor string e o
+          # caminho de uma DLL que o jogo carrega no boot. O metodo 1 (dir
+          # plugins) nunca disparou em nenhuma run; registramos o metodo 2.
+          try {
+            New-Item -Path "HKLM:\SOFTWARE\SCS Software\Euro Truck Simulator 2\Plugins" -Force | Out-Null
+            New-ItemProperty -Path "HKLM:\SOFTWARE\SCS Software\Euro Truck Simulator 2\Plugins" -Name "ets2ai" -Value "C:\ets2demo\bin\win_x64\plugins\scs-telemetry.dll" -PropertyType String -Force | Out-Null
+            Write-Host "v105: DLL registrada em HKLM\SOFTWARE\SCS Software\Euro Truck Simulator 2\Plugins (metodo 2 do SDK)"
+          } catch { Write-Host "v105 reg: $($_.Exception.Message)" }
+          reg query "HKLM\SOFTWARE\SCS Software" 2>&1 | Out-File "reg-scs.txt" -Encoding utf8
+          reg query "HKLM\SOFTWARE\SCS Software\Euro Truck Simulator 2" /s 2>&1 | Out-File "reg-scs-ets2.txt" -Encoding utf8
           Set-Content "C:\ets2demo\bin\win_x64\steam_appid.txt" "231120" -Encoding ascii
           Write-Host "DLL universal na pasta de plugins do jogo REAL + steam_appid.txt"
       - name: AUTOTESTE contra o jogo REAL (descoberta, analise de versao, DLL ideal, hash)
@@ -4409,6 +4421,41 @@ jobs:
                       }
                     } -ArgumentList "$PWD"
                     Trace "hibrido: job de screenshots lancado (1 JPEG/30 s)"
+                    # v105: SONDA PARALELA — o jogo do gameworld morre minutos
+                    # apos o menuwalk sair (o runner/passo consome o processo);
+                    # a prova do plugin/MMF nao pode esperar o bloco v103. Este
+                    # job vigia DESDE AGORA o mark do DllMain (game-ets2ai-
+                    # telemetry.log) e a MMF Local\SCSTelemetry e salva TUDO no
+                    # momento em que aparecer: mark + 8 dumps crus do mapa
+                    # (mmf-raw-NN.bin) para o parser offline.
+                    $mmfJob = $null
+                    try {
+                      $mmfJob = Start-Job -ScriptBlock {
+                        param($dir)
+                        for ($i = 0; $i -lt 70; $i++) {
+                          if (Test-Path "C:\ets2demo\game-ets2ai-telemetry.log") {
+                            Copy-Item "C:\ets2demo\game-ets2ai-telemetry.log" "$dir\plugin-load-mark.txt" -Force
+                          }
+                          try {
+                            $m = [System.IO.MemoryMappedFiles.MemoryMappedFile]::OpenExisting("Local\SCSTelemetry")
+                            for ($s = 0; $s -lt 8; $s++) {
+                              try {
+                                $st = $m.CreateViewStream(0, 65536)
+                                $buf = New-Object byte[] 65536
+                                $null = $st.Read($buf, 0, 65536)
+                                [IO.File]::WriteAllBytes("$dir\mmf-raw-$('{0:d2}' -f $s).bin", $buf)
+                                $st.Dispose()
+                              } catch { }
+                              Start-Sleep -Seconds 6
+                            }
+                            "MMF Local\SCSTelemetry VIVA — dumps salvos" | Out-File "$dir\mmf-mark.txt" -Encoding utf8
+                            break
+                          } catch { }
+                          Start-Sleep -Seconds 12
+                        }
+                      } -ArgumentList "$PWD"
+                      Trace "v105: job sonda MMF/plugin lancado (mark+dumps ao vivo, 1x/12s)"
+                    } catch { Trace "v105 sonda: $($_.Exception.Message)" }
                   } catch { Trace "hibrido shots: $($_.Exception.Message)" }
                 } catch { Trace "hibrido menuwalk: $($_.Exception.Message)" }
                 # v88: janela 240 iters (20 min) — o load do mundo 3D no
@@ -4447,6 +4494,10 @@ jobs:
             if ($mwProc -and -not $mwProc.HasExited) {
               Trace "v103: esperando o menuwalk encerrar (jogo entrando no gameworld)..."
               $null = $mwProc.WaitForExit(780000)
+            }
+            if ($mmfJob) {
+              try { Stop-Job -Job $mmfJob -ErrorAction SilentlyContinue } catch { }
+              Trace "v105: sonda encerrada — plugin-mark=$([int]([bool](Test-Path "$PWD\plugin-load-mark.txt"))) mmf-mark=$([int]([bool](Test-Path "$PWD\mmf-mark.txt")))"
             }
             try {
               Copy-Item (Join-Path $docs "game.log.txt") "game-log-GAMEWORLD.txt" -Force -ErrorAction SilentlyContinue
@@ -4956,7 +5007,7 @@ jobs:
           cp shot-ascii-*.txt "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp "/c/Users/runneradmin/Documents/Euro Truck Simulator 2/game.log.txt" "ci-logs/${{ github.run_id }}-demo/documents-game.log.txt" 2>/dev/null || true
           cp "/c/Users/runneradmin/Documents/Euro Truck Simulator 2/game.crash.txt" "ci-logs/${{ github.run_id }}-demo/documents-game.crash.txt" 2>/dev/null || true
-          for f in d3d11shim-boot1.txt dxgishim-boot1.txt dxgishim-hibrido.txt autoteste-real.json autoteste-real.log demo-mmf.json game-log-GAMEWORLD.txt game-ets2ai-telemetry-GAMEWORLD.log bridge-cpp-v103.log bridge-cpp-v103.err amostras-reais.csv probe_mmf3.py dll-ctypes-load.txt dll-plugins-list.txt /c/steamcmd/fase1.log /c/steamcmd/fase2.log /c/dd/dd.log /c/dd/stage2.err mesa-load.log /c/dd/setup.err /c/dd/7z.log /c/dd/mesa-7z.log /c/ets2demo/game.log.txt /c/ets2demo/game-ets2ai-telemetry.log; do
+          for f in d3d11shim-boot1.txt dxgishim-boot1.txt dxgishim-hibrido.txt autoteste-real.json autoteste-real.log demo-mmf.json game-log-GAMEWORLD.txt game-ets2ai-telemetry-GAMEWORLD.log bridge-cpp-v103.log bridge-cpp-v103.err amostras-reais.csv probe_mmf3.py dll-ctypes-load.txt dll-plugins-list.txt reg-scs.txt reg-scs-ets2.txt plugin-load-mark.txt mmf-mark.txt mmf-raw-01.bin mmf-raw-02.bin mmf-raw-03.bin mmf-raw-04.bin mmf-raw-05.bin mmf-raw-06.bin mmf-raw-07.bin mmf-raw-08.bin /c/steamcmd/fase1.log /c/steamcmd/fase2.log /c/dd/dd.log /c/dd/stage2.err mesa-load.log /c/dd/setup.err /c/dd/7z.log /c/dd/mesa-7z.log /c/ets2demo/game.log.txt /c/ets2demo/game-ets2ai-telemetry.log; do
             cp "$f" "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           done
           git config user.name "ci-diag"; git config user.email "ci-diag@users.noreply.github.com"
