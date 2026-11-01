@@ -69,7 +69,8 @@ def footer(d,record,stage):
 
 def main():
     E.mkdir(exist_ok=True);d=MobileAndroid('emulator-5554',E)
-    c=json.load(open('ci/speed-candidate.json'));s=dict(status='FAIL',apk_sha256=digest(APK),checks={},benchmark={})
+    candidate_path=Path(os.environ.get('GGUF_SPEED_CANDIDATE_FILE','ci/speed-candidate.json'))
+    c=json.loads(candidate_path.read_text());s=dict(status='FAIL',apk_sha256=digest(APK),checks={},benchmark={})
     checks=s['checks']
     try:
         assert s['apk_sha256']==c['apk_sha256'];assert d.shell('getprop ro.kernel.qemu')=='1'
@@ -83,7 +84,10 @@ def main():
         for phase,runs in [('before',baseline_runs),('after',new_runs)]:
             if phase=='after':
                 old_models=d.read_json('models.json');old_chats=d.read_json('chats.json')
-                d.adb('install','-r','-g',APK,timeout=180)
+                # The benchmark baseline can have a newer versionCode than this branch.
+                # Both APKs are signed with the same disposable emulator key; -d allows
+                # a safe downgrade on the disposable emulator while preserving its data.
+                d.adb('install','-r','-d','-g',APK,timeout=180)
                 assert d.read_json('models.json')==old_models and d.read_json('chats.json')==old_chats
                 assert d.shell('cat /data/user/0/'+PACKAGE+'/files/speed-update-probe')=='preserve'
                 checks['same_certificate_update_preserves_models_chats']='PASS'
@@ -100,7 +104,10 @@ def main():
         assert len({r['response'] for r in baseline_runs+new_runs})==1,'Optimization changed deterministic output'
         before=statistics.median(r['prefill_and_generation_tokens_s'] for r in baseline_runs)
         after=statistics.median(r['prefill_and_generation_tokens_s'] for r in new_runs)
-        s['benchmark']=dict(model=TEXT.name,backend='CPU',threads=2,context=1024,warmup_excluded=1,repetitions=3,before=baseline_runs,after=new_runs,median_before=before,median_after=after,relative_change_percent=(after/before-1)*100,scope='Native interval from content-ready to native completion, includes prefill; not the decode-only footer. Same disposable x86_64 emulator, not physical phone performance.')
+        gain=(after/before-1)*100
+        target_met=gain>=50.0
+        s['benchmark']=dict(model=TEXT.name,backend='CPU',threads=2,context=1024,warmup_excluded=1,repetitions=3,before=baseline_runs,after=new_runs,median_before=before,median_after=after,relative_change_percent=gain,target_gain_percent=50.0,target_met=target_met,baseline_apk_sha256=c['baseline_sha256'],candidate_apk_sha256=c['apk_sha256'],scope='Native interval from content-ready to native completion, includes prefill; not the decode-only footer. Same disposable x86_64 emulator, not physical phone performance.')
+        checks['measured_speed_gain_at_least_50_percent']='PASS' if target_met else 'FAIL'
         assert sum(r['callbacks'] for r in new_runs)<sum(r['tokens'] for r in new_runs),'No reduction in token delivery callbacks'
         checks['real_before_after_benchmark_identical_outputs']='PASS'
         checks['native_counters_persistence_footer_geometry']='PASS'
@@ -144,11 +151,14 @@ def main():
         assert msg['generationMetrics']['tokens']>0 and msg['generationMetrics']['decodeNs']>0
         d.capture('physical-speed-vision-footer.png');checks['real_image_inference_metrics']='PASS'
         d.wait(lambda:'GGUFChat:LocalCompute' not in active_wake_locks(d.shell('dumpsys power')),'CPU lease released')
-        s['status']='PASS'
+        s['functional_status']='PASS'
+        s['status']='PASS' if s['benchmark'].get('target_met') else 'FAIL'
+        if not s['benchmark'].get('target_met'):
+            s['error']='Measured speed gain is below the requested 50% threshold.'
     except Exception as ex:
         s['error']=str(ex);(E/'physical-speed-failure.txt').write_text(traceback.format_exc());traceback.print_exc()
     finally:
-        (E/'summary.json').write_text(json.dumps(s,indent=2,ensure_ascii=False))
+        (E/'speed-summary.json').write_text(json.dumps(s,indent=2,ensure_ascii=False))
         try:d.capture('physical-speed-final.png');(E/'physical-speed-final-log.txt').write_text(d.adb('logcat','-d')[-150000:])
         except Exception:pass
         print(json.dumps(s,indent=2,ensure_ascii=False))

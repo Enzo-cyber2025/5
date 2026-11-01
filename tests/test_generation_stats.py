@@ -27,6 +27,18 @@ def test_metric_is_per_message_and_footer_outside_bubble():
     assert 'import android' not in s
 
 
+def test_requested_50_percent_gain_requires_a_real_paired_benchmark():
+    source=(ROOT/'scripts/test_generation_stats_android.py').read_text()
+    assert "target_met=gain>=50.0" in source
+    assert "target_gain_percent=50.0" in source
+    assert "measured_speed_gain_at_least_50_percent" in source
+    assert "speed-summary.json" in source
+    assert "baseline_apk_sha256=c['baseline_sha256']" in source
+    workflow=(ROOT/'.github/workflows/mobile.yml').read_text()
+    assert "323fd5a33667c6cab278699e97c89fe253e1bb7acead45b869729bf022eb9f5c" in workflow
+    assert "scripts/test_generation_stats_android.py" in workflow
+
+
 def test_rate_arithmetic_in_real_java(tmp_path):
     import shutil,subprocess,re,pytest
     if not shutil.which('javac'):pytest.skip('JDK supplied in CI')

@@ -143,6 +143,26 @@ jobs:
           keytool -genkeypair -keystore "$RUNNER_TEMP/emulator-only.p12" -storetype PKCS12 -storepass android -keypass android -alias test -keyalg RSA -keysize 2048 -validity 2 -dname 'CN=Disposable emulator test, O=NOT FOR RELEASE'
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$RUNNER_TEMP/emulator-only.p12" --ks-pass pass:android --key-pass pass:android --out .cache/physical-emulator.apk .delivery/GGUF-Chat-mobile-unsigned.apk
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify .cache/physical-emulator.apk
+      - name: Prepare paired before-after speed benchmark
+        run: |
+          set -euo pipefail
+          baseline=.delivery/GGUF-Chat-mobile.apk
+          echo '323fd5a33667c6cab278699e97c89fe253e1bb7acead45b869729bf022eb9f5c  .delivery/GGUF-Chat-mobile.apk' | sha256sum --check -
+          signer="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          "$signer" sign --ks "$RUNNER_TEMP/emulator-only.p12" --ks-pass pass:android --key-pass pass:android --out .cache/speed-baseline.apk "$baseline"
+          "$signer" verify --verbose --print-certs .cache/speed-baseline.apk > evidence/speed-baseline-signature.txt
+          "$signer" verify .cache/physical-emulator.apk
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          digest=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+          Path('.cache/speed-candidate-active.json').write_text(json.dumps({
+              'apk_sha256':digest('.cache/physical-emulator.apk'),
+              'baseline_sha256':digest('.cache/speed-baseline.apk'),
+              'baseline_source_sha256':'323fd5a33667c6cab278699e97c89fe253e1bb7acead45b869729bf022eb9f5c',
+              'target_gain_percent':50.0,
+          },indent=2))
+          PY
       - name: Download pinned official Termux x86_64 APK and verify release checksum
         run: |
           set -euo pipefail
@@ -175,7 +195,7 @@ jobs:
           disk-size: 8192M
           disable-animations: true
           emulator-options: -no-window -no-snapshot -gpu host -feature Vulkan -noaudio -no-boot-anim -camera-back emulated -camera-front emulated
-          script: .venv/bin/python scripts/test_tool_integrations_android.py && .venv/bin/python scripts/test_physical_android.py && .venv/bin/python scripts/test_attachment_android.py && .venv/bin/python scripts/test_inference_android.py
+          script: .venv/bin/python scripts/test_tool_integrations_android.py && .venv/bin/python scripts/test_physical_android.py && .venv/bin/python scripts/test_attachment_android.py && .venv/bin/python scripts/test_inference_android.py && GGUF_SPEED_CANDIDATE_FILE=.cache/speed-candidate-active.json .venv/bin/python scripts/test_generation_stats_android.py
       - name: Report physical GGUF acceptance
         if: always()
         run: python3 ci/report_android.py evidence

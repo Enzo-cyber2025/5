@@ -20,6 +20,8 @@ def main():
     emit('Android summary', summary.read_text() if summary.exists() else 'No Android summary produced')
     integrations = root / 'tool-integrations-summary.json'
     emit('Termux and web-search verification', integrations.read_text() if integrations.exists() else 'No tool-integration summary produced')
+    speed = root / 'speed-summary.json'
+    emit('Paired 50-percent speed benchmark', speed.read_text() if speed.exists() else 'No paired speed benchmark produced')
     termux = root / 'termux-ai-command.json'
     if termux.exists(): emit('AI-proposed Termux command', termux.read_text()[:2800])
     dumps = sorted(root.glob('ui-*.xml'))
