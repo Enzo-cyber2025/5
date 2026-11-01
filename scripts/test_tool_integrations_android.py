@@ -83,15 +83,23 @@ def test_web_search(d, model, chat):
         ("tool-search-pt", "Pesquise na web: qual a capital do Brasil? Traga uma fonte."),
         ("tool-search-en", "Search the web for the capital of Brazil and cite a source."),
     ):
-        reply(d, chat, prompt, stage, timeout=240)
-        log = d.adb("logcat", "-d")
-        found = re.findall(r"GGUF_WEB_SEARCH status=ok results=([1-8])", log)
-        citations = re.findall(r"GGUF_WEB_SEARCH_PROMPT citations=([1-8])", log)
-        item = {"stage": stage, "prompt": prompt, "web_search_enabled": saved.get("webSearch"),
-                "results": [int(x) for x in found], "prompt_citations": [int(x) for x in citations]}
-        (EVIDENCE / f"{stage}-verification.json").write_text(json.dumps(item, ensure_ascii=False, indent=2))
-        assert found and citations and int(found[-1]) > 0 and int(citations[-1]) > 0, \
-            f"Pesquisa real sem resultados/citações: {stage}; veja logcat"
+        item = None
+        for attempt in range(1, 4):
+            d.adb("logcat", "-c")
+            reply(d, chat, prompt, stage, timeout=240)
+            log = d.adb("logcat", "-d")
+            found = re.findall(r"GGUF_WEB_SEARCH status=ok results=([1-8])", log)
+            citations = re.findall(r"GGUF_WEB_SEARCH_PROMPT citations=([1-8])", log)
+            item = {"stage": stage, "attempt": attempt, "prompt": prompt,
+                    "web_search_enabled": saved.get("webSearch"),
+                    "results": [int(x) for x in found], "prompt_citations": [int(x) for x in citations]}
+            (EVIDENCE / f"{stage}-verification.json").write_text(json.dumps(item, ensure_ascii=False, indent=2))
+            if found and citations and int(found[-1]) > 0 and int(citations[-1]) > 0:
+                break
+            if attempt < 3:
+                time.sleep(2)
+        assert item and item["results"] and item["prompt_citations"], \
+            f"Pesquisa real sem resultados/citações após 3 tentativas: {stage}; veja logcat"
         stages.append(item)
     return stages
 
@@ -159,6 +167,12 @@ def run_termux_handoff(d, model):
             "user_review_and_confirmation": True, "termux_package": TERMUX_PACKAGE, "output": MARKER}
 
 
+def record_stage_failure(summary, key, error):
+    summary["checks"][key] = {"status": "FAIL", "error": str(error)}
+    (EVIDENCE / f"{key}-failure.txt").write_text(traceback.format_exc())
+    traceback.print_exc()
+
+
 def main():
     EVIDENCE.mkdir(exist_ok=True)
     summary = {"status": "FAIL", "scope": "live-web-search-model-proposed-termux-command-zero-context-and-output",
@@ -178,37 +192,47 @@ def main():
         d.grant_test_notifications(); d.launch()
         model = d.provision_model(TEXT_MODEL)
         chat = d.new_chat(model, 0, context_size=1024, threads=2)
-        summary["checks"]["live_web_search_en_and_pt"] = test_web_search(d, model, chat)
+        try:
+            summary["checks"]["live_web_search_en_and_pt"] = {
+                "status": "PASS", "stages": test_web_search(d, model, chat)
+            }
+        except Exception as ex:
+            record_stage_failure(summary, "live_web_search_en_and_pt", ex)
 
-        # Exercise the literal zero values through the real preference/chat/JNI/native path.
-        zero_chat = d.new_chat(model, 0, context_size=0, threads=2, n_predict=0)
-        answer = reply(d, zero_chat, "Reply with only: OK", "zero-context-zero-output", timeout=240)
-        chats = d.read_json("chats.json")
-        saved = next(c for c in chats if c["id"] == zero_chat["id"])
-        log = d.adb("logcat", "-d")
-        budget = re.search(r"GGUF_OUTPUT_BUDGET requested=0 effective=([1-9][0-9]*) available_context=([1-9][0-9]*)", log)
-        prompt = re.search(r"GGUF_PROMPT_CACHE input_tokens=([1-9][0-9]*)", log)
-        assert saved.get("contextSize") == 0 and saved.get("nPredict") == 0
-        assert budget and prompt, "Native zero-sentinel values not observed in a loaded real model"
-        model_context = int(prompt.group(1)) + int(budget.group(2))
-        assert int(budget.group(1)) == int(budget.group(2)), "Zero output did not use all remaining model context"
-        summary["checks"]["zero_uses_model_context_and_remaining_output_budget"] = {
-            "status": "PASS", "context_setting": 0, "output_setting": 0,
-            "model_context_loaded": model_context, "prompt_tokens": int(prompt.group(1)),
-            "output_budget": int(budget.group(1)), "available_context": int(budget.group(2)),
-            "answer": answer, "meaning": "maximum finite model context, not infinity",
-        }
+        # Keep independent evidence even when an optional web provider is flaky.
+        try:
+            zero_chat = d.new_chat(model, 0, context_size=0, threads=2, n_predict=0)
+            answer = reply(d, zero_chat, "Reply with only: OK", "zero-context-zero-output", timeout=240)
+            chats = d.read_json("chats.json")
+            saved = next(c for c in chats if c["id"] == zero_chat["id"])
+            log = d.adb("logcat", "-d")
+            budget = re.search(r"GGUF_OUTPUT_BUDGET requested=0 effective=([1-9][0-9]*) available_context=([1-9][0-9]*)", log)
+            prompt = re.search(r"GGUF_PROMPT_CACHE input_tokens=([1-9][0-9]*)", log)
+            assert saved.get("contextSize") == 0 and saved.get("nPredict") == 0
+            assert budget and prompt, "Native zero-sentinel values not observed in a loaded real model"
+            model_context = int(prompt.group(1)) + int(budget.group(2))
+            assert int(budget.group(1)) == int(budget.group(2)), "Zero output did not use all remaining model context"
+            summary["checks"]["zero_uses_model_context_and_remaining_output_budget"] = {
+                "status": "PASS", "context_setting": 0, "output_setting": 0,
+                "model_context_loaded": model_context, "prompt_tokens": int(prompt.group(1)),
+                "output_budget": int(budget.group(1)), "available_context": int(budget.group(2)),
+                "answer": answer, "meaning": "maximum finite model context, not infinity",
+            }
+        except Exception as ex:
+            record_stage_failure(summary, "zero_uses_model_context_and_remaining_output_budget", ex)
 
-        # Install/bootstrap Termux only after the web and zero-sentinel checks,
-        # so a launcher issue cannot erase evidence for checks already completed.
-        summary["checks"]["termux_official_apk_bootstrapped"] = {
-            "status": "PASS", "package": TERMUX_PACKAGE, "uid": set_termux_external_apps(d)
-        }
-        # Fresh text-only chat; model must author the harmless shell command.
-        d.shell("pm revoke " + PACKAGE + " com.termux.permission.RUN_COMMAND", check=False)
-        termux = run_termux_handoff(d, model)
-        summary["checks"]["model_proposed_command_confirmed_and_executed_in_official_termux"] = termux
-        summary["status"] = "PASS"
+        # Bootstrap and exercise Termux regardless of unrelated web/zero failures.
+        try:
+            summary["checks"]["termux_official_apk_bootstrapped"] = {
+                "status": "PASS", "package": TERMUX_PACKAGE, "uid": set_termux_external_apps(d)
+            }
+            d.shell("pm revoke " + PACKAGE + " com.termux.permission.RUN_COMMAND", check=False)
+            summary["checks"]["model_proposed_command_confirmed_and_executed_in_official_termux"] = run_termux_handoff(d, model)
+        except Exception as ex:
+            record_stage_failure(summary, "model_proposed_command_confirmed_and_executed_in_official_termux", ex)
+        checks_passed = all(isinstance(item, dict) and item.get("status") == "PASS"
+                            for item in summary["checks"].values())
+        summary["status"] = "PASS" if checks_passed else "FAIL"
     except Exception as ex:
         summary["error"] = str(ex)
         (EVIDENCE / "tool-integrations-failure.txt").write_text(traceback.format_exc())
