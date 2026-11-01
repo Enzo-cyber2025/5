@@ -7,7 +7,7 @@ import traceback
 from pathlib import Path
 
 from test_android import Android
-from android_checks import PACKAGE
+from android_checks import PACKAGE, PICKERS, has_package, imported, position
 
 EVIDENCE = Path("evidence")
 APK = Path(".cache/GGUF-Chat-mobile.apk")
@@ -21,6 +21,38 @@ MODEL_BYTES = 291546144
 def sha256(path):
     with path.open("rb") as stream:
         return hashlib.file_digest(stream, "sha256").hexdigest()
+
+
+def import_model_via_saf(device, source):
+    """Handle either supported UI path: direct picker or an Import GGUF sheet."""
+    device.launch()
+    device.adb("push", source, f"/sdcard/Download/{source.name}", timeout=300)
+    device.shell("am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d "
+                 f"file:///storage/emulated/0/Download/{source.name}", check=False)
+    device.tap(text="Importar", package={PACKAGE}, contains=True)
+
+    def destination():
+        xml = device.ui()
+        if has_package(xml, PICKERS):
+            return "picker"
+        if position(xml, text="Importar GGUF", package={PACKAGE}):
+            return "import-sheet"
+        return None
+
+    state = device.wait(destination, "tela de seleção de GGUF ou seletor SAF", timeout=30)
+    if state == "import-sheet":
+        device.tap(text="Importar GGUF", package={PACKAGE})
+        device.wait(lambda: has_package(device.ui(), PICKERS), "seletor SAF")
+    device.choose_file(source.name)
+
+    def imported_model():
+        device.alive()
+        try:
+            return imported(device.read_json("models.json", optional=True), source.name)
+        except AssertionError:
+            return None
+
+    return device.wait(imported_model, "importação SAF persistida", timeout=300)
 
 
 def main():
@@ -60,7 +92,7 @@ def main():
         device.launch()
         summary["checks"]["signed_apk_installed_and_launched"] = "PASS"
 
-        model = device.import_model(MODEL)
+        model = import_model_via_saf(device, MODEL)
         assert model["size"] == MODEL_BYTES, model
         assert model.get("architecture", "").lower() == "gemma3", model
         assert not model.get("mmprojPath") and not model.get("multimodal"), model
@@ -88,6 +120,7 @@ def main():
     except Exception as exc:
         summary["error"] = str(exc)
         summary["traceback"] = traceback.format_exc()
+        summary["last_ui_summary"] = device.last_ui_summary
         (EVIDENCE / "gemma3-270m-failure.txt").write_text(summary["traceback"])
         traceback.print_exc()
     finally:
