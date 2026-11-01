@@ -348,7 +348,7 @@ static jboolean generate(JNIEnv *env,jlong h,jstring prompt,jint predict,jfloat 
         if(first_token_ns<0) first_token_ns=std::chrono::duration_cast<std::chrono::nanoseconds>(last_flush-started).count();
     };
     try {
-        if(!callback || predict<=0) throw std::runtime_error("Callback ou limite de tokens inválido");
+        if(!callback || predict<0) throw std::runtime_error("Callback ou limite de tokens inválido");
         clazz=env->GetObjectClass(callback);on_token=env->GetMethodID(clazz,"onToken","(Ljava/lang/String;)V");on_done=env->GetMethodID(clazz,"onDone","(Z)V");
         if(!on_token || !on_done || env->ExceptionCheck()) throw std::runtime_error("Callback inválido");
         auto vocab=llama_model_get_vocab(e->model);
