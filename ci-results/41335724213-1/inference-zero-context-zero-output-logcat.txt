@@ -1,0 +1,35 @@
+--------- beginning of main
+11-01 18:29:36.833  5462  5462 I ImeTracker: com.ggufchat.app:cf8f94b3: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser true
+11-01 18:29:36.835  5462  5462 D InputMethodManager: showSoftInput() view=android.widget.EditText{7159674 VFED..CL. .F.P..ID 128,0-493,67 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+11-01 18:29:36.854  5462  5462 I AssistStructure: Flattened final assist data: 1964 bytes, containing 1 windows, 13 views
+11-01 18:29:36.855  5462  5475 D EGL_emulation: app_time_stats: avg=171.92ms min=14.07ms max=2655.80ms count=17
+11-01 18:29:36.936  5462  5462 D InsetsController: show(ime(), fromIme=true)
+11-01 18:29:36.953  5462  5593 W InteractionJankMonitor: Initializing without READ_DEVICE_CONFIG permission. enabled=true, interval=1, missedFrameThreshold=3, frameTimeThreshold=64, package=com.ggufchat.app
+11-01 18:29:36.993  5462  5462 I ImeTracker: com.ggufchat.app:cf8f94b3: onShown
+11-01 18:29:37.943  5462  5475 D EGL_emulation: app_time_stats: avg=53.18ms min=3.85ms max=465.05ms count=19
+11-01 18:29:38.943  5462  5475 D EGL_emulation: app_time_stats: avg=499.92ms min=498.78ms max=501.05ms count=2
+11-01 18:29:39.501  5462  5462 I ImeTracker: com.ggufchat.app:9f082612: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+11-01 18:29:39.516  5462  5462 D InsetsController: hide(ime(), fromIme=true)
+11-01 18:29:39.544  5462  5625 I GGUFSystem: GGUF_SYSTEM_PROMPT_APPLIED scope=global chars=107 sha256=dde45e87ea07db0b49bcddd022d4f41a452610560d9af636571c26d16a4bcd04
+11-01 18:29:39.545  5462  5625 I GGUFInference: GGUF_CONTENT_PREPARED files=0 images=0 text_chars=0
+11-01 18:29:39.545  5462  5625 I GGUFChatNative: GGUF_GPU_SAMPLING requested=0 attached=0
+11-01 18:29:39.570  5462  5462 I ImeTracker: com.ggufchat.app:d4965e97: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_ON_ANIMATION_STATE_CHANGED fromUser false
+11-01 18:29:39.571  5462  5462 I ImeTracker: com.ggufchat.app:9f082612: onHidden
+11-01 18:29:39.639  5462  5462 W FrameTracker: Missed App frame:UNKNOWN: 88, 15049, 0, CUJ=J<IME_INSETS_SHOW_ANIMATION::0@0@com.ggufchat.app>
+11-01 18:29:39.639  5462  5462 W FrameTracker: Missed SF frame:UNKNOWN: 88, 15049, 0, CUJ=J<IME_INSETS_SHOW_ANIMATION::0@0@com.ggufchat.app>
+11-01 18:29:40.013  5462  5475 D EGL_emulation: app_time_stats: avg=177.44ms min=10.77ms max=499.94ms count=6
+11-01 18:29:40.596  5462  5625 I GGUFChatNative: GGUF_PROMPT_CACHE input_tokens=62 reused_tokens=0 evaluated_tokens=62 media=0
+11-01 18:29:40.596  5462  5625 I GGUFChatNative: GGUF_OUTPUT_BUDGET requested=0 effective=8130 available_context=8130
+11-01 18:29:40.597  5462  5462 I GGUFUiTiming: GGUF_UI_FIRST_TEXT send_to_first_ui_ns=1103905346
+11-01 18:29:41.022  5462  5475 D EGL_emulation: app_time_stats: avg=111.80ms min=28.59ms max=494.01ms count=9
+11-01 18:29:41.340  5462  5625 I GGUFChatNative: GGUF_NATIVE_COMPLETE tokens=22 reason=eog projector=0
+11-01 18:29:41.341  5462  5625 I GGUFChatNative: GGUF_HOST_WORKER_CPU available=1 thread_cpu_ns=1383422932
+11-01 18:29:41.341  5462  5625 I GGUFChatNative: GGUF_STRICT_VULKAN_RESULT enabled=0 submitted_graphs=0 submitted_math_nodes=0 blocked=0 host_orchestration=CPU
+11-01 18:29:41.341  5462  5625 I GGUFChatNative: GGUF_GPU_SAMPLING_RESULT backend_selected=0 emitted=22
+11-01 18:29:41.341  5462  5625 I GGUFChatNative: GGUF_VULKAN_DELIVERY token_only_export=1 overlap_submissions=0 first_text_immediate=1
+11-01 18:29:41.341  5462  5625 I GGUFChatNative: GGUF_RESPONSE_LATENCY first_token_ns=1053853443 prompt_tokens=62 reused_tokens=0
+11-01 18:29:41.341  5462  5625 I GGUFChatNative: GGUF_GENERATION_STATS tokens=22 decode_ns=744383537 prefill_ns=1051364320 callbacks=13 success=1
+11-01 18:29:41.341  5462  5625 I System.out: GGUF_REPAIR_GENERATION_OK
+11-01 18:29:41.343  5462  5625 I GGUFReplyNotice: GGUF_NOTICE_STATS progress_updates=1 skipped_screen_off=0
+11-01 18:29:41.343  5462  5625 I GGUFReplyNotice: GGUF_REPLY_NOTICE suppressed=screen_active
+11-01 18:29:41.381  5462  5462 I GGUFReplyNotice: GGUF_REPLY_SERVICE_DESTROYED
