@@ -109,7 +109,9 @@ def request_permission_and_confirm(d):
         xml = d.ui()
         if "com.android.permissioncontroller" in xml or "permission" in xml.lower():
             for label in ("Allow", "While using the app", "Allow only while using the app", "Permitir"):
-                point = position(xml, text=label, package=None, contains=True)
+                # Exact matching matters: substring search for "Allow" hits the
+                # dialog question instead of the confirmation button.
+                point = position(xml, text=label, package=None)
                 if point:
                     return point
         return None
