@@ -1,0 +1,108 @@
+{
+  "status": "FAIL",
+  "scope": "signed-APK-real-SAF-import-and-Gemma-3-270M-native-text-inference",
+  "environment": "Android API 35 x86_64 emulator; CPU inference; not physical-device acceptance",
+  "apk": {
+    "sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc",
+    "expected_sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc",
+    "certificate_sha256": "9a368c9a1e4f3b3b0b6ecfb86aa3768d633a925855afba27eab3b9189177955a",
+    "certificate_evidence": "previous signed-publication acceptance, run 34909764328; exact APK hash pinned above"
+  },
+  "model": {
+    "repository": "cdracars/gemma-3-270m-it-gguf-mirror",
+    "release_tag": "upstream-d156a5159f2f79c1b1d53c7c1cc20f1ff28ab8d00f17a292620aad13399b9698",
+    "asset": "gemma-3-270m-it-Q8_0.gguf",
+    "quantization": "Q8_0",
+    "bytes": 291546144,
+    "sha256": "d156a5159f2f79c1b1d53c7c1cc20f1ff28ab8d00f17a292620aad13399b9698",
+    "expected_sha256": "d156a5159f2f79c1b1d53c7c1cc20f1ff28ab8d00f17a292620aad13399b9698"
+  },
+  "checks": {
+    "signed_apk_installed_and_launched": "PASS"
+  },
+  "response_quality": {},
+  "error": "Timeout: tela de seleção de GGUF ou seletor SAF",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/runner/work/5/5/scripts/test_gemma3_270m_android.py\", line 95, in main\n    model = import_model_via_saf(device, MODEL)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/5/5/scripts/test_gemma3_270m_android.py\", line 42, in import_model_via_saf\n    state = device.wait(destination, \"tela de seleção de GGUF ou seletor SAF\", timeout=30)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/5/5/scripts/test_android.py\", line 74, in wait\n    raise AssertionError(f\"Timeout: {description}\")\nAssertionError: Timeout: tela de seleção de GGUF ou seletor SAF\n",
+  "last_ui_summary": [
+    {
+      "text": "Prompt de sistema global",
+      "content-desc": "Prompt de sistema global",
+      "resource-id": "",
+      "bounds": "[24,104][260,158]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "GGUF Chat",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[24,160][605,209]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "Ajustes",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[605,158][696,212]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "Importar .gguf",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[24,224][696,278]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "Selecione um ou mais arquivos .gguf. Selecione linguagem + projetor para criar um GGUF físico único, ou importe um GGUF completo. Visão identificada por metadados e tensores; tokens de imagem não bastam.",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[24,302][696,369]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "Downloads",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[24,399][696,432]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "Nenhum modelo baixado ainda.",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[24,444][696,473]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "💬 Chat",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[24,1166][248,1220]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "📁 Importar",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[248,1166][472,1220]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "AI Modelos",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[472,1166][696,1220]",
+      "enabled": "true",
+      "selected": "false"
+    }
+  ]
+}
