@@ -37,6 +37,7 @@ def test_requested_50_percent_gain_requires_a_real_paired_benchmark():
     workflow=(ROOT/'.github/workflows/mobile.yml').read_text()
     assert "323fd5a33667c6cab278699e97c89fe253e1bb7acead45b869729bf022eb9f5c" in workflow
     assert "scripts/test_generation_stats_android.py" in workflow
+    assert "mkdir -p .cache evidence" in workflow
 
 
 def test_rate_arithmetic_in_real_java(tmp_path):
