@@ -156,6 +156,9 @@ def main():
         d.adb("root", check=False); d.adb("wait-for-device", timeout=60)
         assert d.shell("id -u") == "0", "Root de teste do emulador indisponível"
         d.shell("wm size 720x1280"); d.shell("wm density 240")
+        # The emulator's Pixel Launcher becomes unresponsive under native model
+        # setup; every other physical-flow harness disables it before app launch.
+        d.shell("pm disable-user --user 0 com.google.android.apps.nexuslauncher", check=False)
         # Exercise the app before Termux's first-run bootstrap stresses the launcher.
         d.adb("install", "-r", "-g", APK, timeout=180)
         assert d.shell("pm clear " + PACKAGE) == "Success"

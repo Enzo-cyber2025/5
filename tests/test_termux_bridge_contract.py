@@ -26,6 +26,7 @@ def test_android_harness_runs_app_before_termux_bootstrap_and_recovers_launcher_
     script = (ROOT / "scripts/test_tool_integrations_android.py").read_text()
     main = script[script.index("def main():"):]
     assert main.index('d.adb("install", "-r", "-g", APK') < main.index("d.launch()")
+    assert "pm disable-user --user 0 com.google.android.apps.nexuslauncher" in main
     assert main.index("d.launch()") < main.index("set_termux_external_apps(d)")
     android = (ROOT / "scripts/test_android.py").read_text()
     assert "foreground_or_dismiss_launcher_anr" in android
