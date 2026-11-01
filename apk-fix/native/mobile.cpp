@@ -159,7 +159,8 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_ggufchat_app_Native_create(JNIEnv *e
             }
         }
 
-        if(context<256 || context>8192) throw std::runtime_error("Contexto deve ficar entre 256 e 8192 para limitar memória");
+        if(context<0 || (context!=0 && context<256) || context>8192)
+            throw std::runtime_error("Contexto explícito deve ficar entre 256 e 8192; zero usa o limite do modelo");
         uint64_t size=bytes(model_path)+(projector_path.empty()||projector_path==model_path?0:bytes(projector_path));
         // File-backed mmap pages are reclaimable and GGUF bytes are not an RSS
         // prediction. KV/cache sizes depend on architecture, not a fixed token
