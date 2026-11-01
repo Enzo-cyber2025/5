@@ -91,6 +91,7 @@ def main():
         assert device.shell("getprop ro.kernel.qemu") == "1", "Runner is not the declared emulator"
         device.adb("root", check=False)
         device.adb("wait-for-device", timeout=90)
+        device.shell("pm disable-user --user 0 com.google.android.apps.nexuslauncher", check=False)
         device.shell("wm size 720x1280")
         device.shell("wm density 240")
         device.adb("logcat", "-G", "16M", check=False)
@@ -129,6 +130,10 @@ def main():
         summary["error"] = str(exc)
         summary["traceback"] = traceback.format_exc()
         summary["last_ui_summary"] = device.last_ui_summary
+        try:
+            summary["logcat_tail"] = device.adb("logcat", "-d", check=False)[-12000:]
+        except Exception:
+            pass
         (EVIDENCE / "gemma3-270m-failure.txt").write_text(summary["traceback"])
         traceback.print_exc()
     finally:
