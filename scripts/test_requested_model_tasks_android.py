@@ -24,11 +24,8 @@ TERMUX_HOME = "/data/data/com.termux/files/home"
 FOLDER = TERMUX_HOME + "/model-audit"
 
 FOLDER_COMMAND = f"cat {FOLDER}/only-note.txt > {TERMUX_HOME}/model-audit-output.txt"
-BOX64_COMMAND = (
-    "pkg install -y box64 > " + TERMUX_HOME + "/box64-install.log 2>&1; "
-    "echo $? > " + TERMUX_HOME + "/box64-install.status"
-)
-BUILD_COMMAND = "bash " + TERMUX_HOME + "/text-binary/run-build.sh"
+BOX64_COMMAND = "bash ~/install-box64.sh"
+BUILD_COMMAND = "bash ~/text-binary/run-build.sh"
 
 
 def sha256(path):
@@ -73,11 +70,17 @@ def ask_for_command(device, model, prompt, expected, stage, summary):
               "chat_id": chat["id"], "chat_title": chat["title"], "executed": False,
               "status": "AWAITING_REVIEW"}
     summary["checks"][stage] = record
-    if selected != expected:
-        record["status"] = "MODEL_DID_NOT_RETURN_THE_EXACT_REVIEWABLE_COMMAND"
+    accepted = {expected}
+    if stage == "termux_compile_text_to_binary_apk":
+        # The staged script is also executable; accept its exact path as the
+        # equivalent of `bash <path>`, but nothing else.
+        accepted.add(TERMUX_HOME + "/text-binary/run-build.sh")
+    if selected not in accepted:
+        record["status"] = "MODEL_DID_NOT_RETURN_AN_ALLOWED_COMMAND"
         summary["checks"][stage] = record
         return None
 
+    record["execution_command"] = selected
     # The pinned signed release does not expose a reliable Termux tool-row handoff.
     # Execute only the exact model-generated command, through run-as into the
     # official Termux app's unprivileged UID; the harness does not pass its stdout
@@ -199,26 +202,40 @@ def prepare_termux_folder(device):
 
 def check_zero_limits(device, model, summary):
     chat = device.new_chat(model, 0, context_size=0, threads=2, n_predict=0)
-    answer = reply(device, chat, "Reply with only: OK", VARIANT + "-zero-context-zero-response", timeout=900)
-    log = device.adb("logcat", "-d")
-    budget = re.search(r"GGUF_OUTPUT_BUDGET requested=0 effective=([1-9][0-9]*) available_context=([1-9][0-9]*)", log)
-    prompt = re.search(r"GGUF_PROMPT_CACHE input_tokens=([1-9][0-9]*)", log)
+    prompt_text = "Reply with only: OK"
+    pid = device.alive()
+    device.send(prompt_text)
+    def native_budget_observed():
+        log = device.adb("logcat", "-d", f"--pid={pid}")
+        budget = re.search(r"GGUF_OUTPUT_BUDGET requested=0 effective=([1-9][0-9]*) available_context=([1-9][0-9]*)", log)
+        prompt = re.search(r"GGUF_PROMPT_CACHE input_tokens=([1-9][0-9]*)", log)
+        if budget and prompt:
+            return log, budget, prompt
+        return None
+    log, budget, prompt = device.wait(native_budget_observed,
+        "orçamento nativo finito dos dois valores zero", timeout=900)
     chats = device.read_json("chats.json")
     saved = next(c for c in chats if c["id"] == chat["id"])
     assert saved.get("contextSize") == 0 and saved.get("nPredict") == 0, saved
-    assert budget and prompt, "Valores zero não chegaram ao orçamento nativo"
+    assert any(m.get("role") == "user" and prompt_text in m.get("content", "")
+               for m in saved.get("messages", [])), "Prompt/contexto não persistiu antes do reinício"
     assert int(budget.group(1)) == int(budget.group(2)), "Zero de resposta não usou o contexto restante"
     context = int(prompt.group(1)) + int(budget.group(2))
+    # Stop the potentially very long generation only after native token-budget
+    # evidence has been recorded; zero is a large finite budget, not infinity.
     device.launch()
     persisted = next(c for c in device.read_json("chats.json") if c["id"] == chat["id"])
     assert persisted.get("contextSize") == 0 and persisted.get("nPredict") == 0
-    assert any(m.get("role") == "assistant" and m.get("content", "").strip()
-               for m in persisted.get("messages", [])), "Histórico não persistiu no armazenamento interno"
+    assert any(m.get("role") == "user" and prompt_text in m.get("content", "")
+               for m in persisted.get("messages", [])), "Chat não persistiu em armazenamento privado"
+    partial = next((m.get("content", "") for m in reversed(persisted.get("messages", []))
+                    if m.get("role") == "assistant"), "")
     result = {"status": "PASS", "context_setting": 0, "response_limit_setting": 0,
               "model_context_tokens_observed": context,
               "prompt_tokens": int(prompt.group(1)), "remaining_response_budget": int(budget.group(1)),
-              "effective_context_is_finite": True, "assistant_reply": answer,
-              "chat_history_persisted_after_restart": True,
+              "effective_context_is_finite": True, "assistant_partial_before_stop": partial[:1000],
+              "full_generation_completed": False,
+              "chat_settings_and_user_message_persisted_after_restart": True,
               "history_path": "/data/user/0/" + PACKAGE + "/files/chats.json",
               "explicit_context_on_disk_setting": "not found in Settings UI"}
     summary["checks"]["zero_context_and_zero_response_limits"] = result
@@ -298,14 +315,15 @@ def main():
         # output back as a user message, since this app deliberately does not
         # pipe Termux output back into the model automatically.
         record = safe_ask_for_command(device, model,
-            "Use Termux to inspect the folder. Return only a fenced bash block with exactly this command:\\n" + FOLDER_COMMAND,
+            "Use Termux to inspect the folder. Return only a fenced bash block with exactly this command:\n" + FOLDER_COMMAND,
             FOLDER_COMMAND, "folder_termux_access", summary)
         if record:
             output = device.shell("cat " + shlex.quote(TERMUX_HOME + "/model-audit-output.txt")).strip()
             assert output == folder["file_content"], {"expected": folder["file_content"], "actual": output}
             record["shell_output"] = output
-            description_prompt = ("Termux printed: " + output + ". The folder contains only "
-                                  "only-note.txt. State that filename and repeat the identifier exactly.")
+            description_prompt = ("Termux output, file contents: " + output + "\n"
+                                  "There is exactly one file named only-note.txt. Reply as: "
+                                  "file=<filename>; id=<identifier>.")
             description_chat = device.new_chat(model, 0, context_size=1024, threads=2, n_predict=32)
             try:
                 description = reply(device, description_chat, description_prompt,
@@ -343,13 +361,24 @@ def main():
             device.adb("push", source_dir / filename, project + "/" + filename, timeout=120)
         device.adb("push", android_jar, project + "/android.jar", timeout=300)
         device.shell(f"chown -R {uid}:{uid} {shlex.quote(project)} && chmod 700 {shlex.quote(project)} "
-                     f"&& chmod 700 {shlex.quote(project + '/build-termux.sh')} && restorecon -R {shlex.quote(project)}")
+                     f"&& chmod 700 {shlex.quote(project + '/build-termux.sh')} "
+                     f"&& chmod 700 {shlex.quote(project + '/run-build.sh')} && restorecon -R {shlex.quote(project)}")
         summary["checks"]["text_to_binary_project_staged_in_termux_home"] = "PASS"
+        box_script = TERMUX_HOME + "/install-box64.sh"
+        box_script_body = ("#!/data/data/com.termux/files/usr/bin/bash\n"
+                           "pkg install -y box64 > \"$HOME/box64-install.log\" 2>&1\n"
+                           "status=$?\n"
+                           "printf '%s\\n' \"$status\" > \"$HOME/box64-install.status\"\n"
+                           "exit $status\n")
+        device.shell("printf %s " + shlex.quote(box_script_body) + " > " + shlex.quote(box_script))
+        device.shell(f"chown {uid}:{uid} {shlex.quote(box_script)} && chmod 700 {shlex.quote(box_script)} && restorecon {shlex.quote(box_script)}")
+        summary["checks"]["box64_install_script_staged"] = {"status": "PASS", "path": box_script,
+                                                              "script": box_script_body}
 
         # Execute only the exact model-proposed command in Termux's unprivileged
         # UID. This is harness execution, not app-mediated or human-approved.
         # Box64 is architecture-specific; no fallback binary is substituted.
-        box_prompt = ("Install Box64 in Termux now. Return only a fenced bash block whose single command is exactly:\\n"
+        box_prompt = ("Copy this exact Termux command. Do not rewrite it or add explanation; return one fenced bash block:\n"
                       + BOX64_COMMAND)
         box = safe_ask_for_command(device, model, box_prompt, BOX64_COMMAND, "box64_install_attempt", summary)
         if box:
@@ -365,8 +394,8 @@ def main():
             if box["status"] != "INSTALLED":
                 summary["limitations"].append("Box64 package was attempted in the x86_64 Termux emulator; installation did not produce a box64 executable.")
 
-        build_prompt = ("Compile the staged Text to Binary Android project into an APK from Termux. "
-                        "Return only one fenced bash block whose exact command is:\n" + BUILD_COMMAND)
+        build_prompt = ("Copy this exact Termux build command without explanation; return one fenced bash block:\n"
+                        + BUILD_COMMAND)
         build = safe_ask_for_command(device, model, build_prompt, BUILD_COMMAND, "termux_compile_text_to_binary_apk", summary)
         if build:
             build_log = device.shell("cat " + shlex.quote(project + "/build.log"), check=False)
@@ -399,7 +428,8 @@ def main():
                 (EVIDENCE / "TextToBinary.apk").write_bytes(termux_apk.read_bytes())
 
         summary["internal_context_storage"] = {
-            "conversation_history_saved_in_private_app_files": bool(zero and zero.get("chat_history_persisted_after_restart")),
+            "chat_settings_and_user_message_saved_in_private_app_files": bool(
+                zero and zero.get("chat_settings_and_user_message_persisted_after_restart")),
             "explicit_context_storage_toggle_in_settings": summary["settings_ui"]["storage_backed_context_option_found"],
             "native_KV_cache_persistence": "not claimed or tested; chat transcript persistence is separate"
         }
