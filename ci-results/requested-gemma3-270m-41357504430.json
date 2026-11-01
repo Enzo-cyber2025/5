@@ -1,0 +1,171 @@
+{
+  "status": "FAIL",
+  "scope": "requested-Gemma-folder-Termux-Box64-APK-and-zero-limits",
+  "variant": "gemma3-270m",
+  "apk": {
+    "sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc",
+    "expected_sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc"
+  },
+  "checks": {
+    "signed_apk_and_real_gguf_import": "PASS",
+    "official_termux_bootstrap": "PASS",
+    "folder_termux_access": {
+      "prompt": "Use Termux to inspect the folder. Return only a fenced bash block with exactly this command:\\ncat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt",
+      "assistant_reply": "```bash\ncat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt\n```\n",
+      "selected_command": "cat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt",
+      "expected_command": "cat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt",
+      "chat_id": "1a199402f6cfcbc5f",
+      "chat_title": "GGUF regression 1a199402f6cfcbc5f",
+      "executed": false,
+      "status": "AWAITING_REVIEW"
+    }
+  },
+  "limitations": [
+    "Android emulator x86_64, not a physical handset"
+  ],
+  "model": {
+    "name": "Gemma 3 270M IT",
+    "quantization": "Q8_0",
+    "weights_sha256": "d156a5159f2f79c1b1d53c7c1cc20f1ff28ab8d00f17a292620aad13399b9698",
+    "apk_signed_sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc",
+    "app_name": "Gemma-3-270M-It",
+    "architecture": "gemma3",
+    "capability": "IMAGE_TOKENS_ONLY",
+    "size": 291546144
+  },
+  "settings_ui": {
+    "visible_settings_labels": [
+      "‹",
+      "Ajustes",
+      "Tamanho de contexto (tokens)",
+      "1024",
+      "Threads de CPU (0 = automático)",
+      "0",
+      "Camadas na GPU Vulkan (-1 = todas, 0 = só CPU)",
+      "99",
+      "Máximo de tokens por resposta",
+      "Temperatura",
+      "0.8",
+      "Top-P",
+      "0.95",
+      "Top-K",
+      "40.0",
+      "Min-P",
+      "0.05",
+      "Penalidade de repetição",
+      "1.1",
+      "Ferramentas (padrão para novas conversas):",
+      "Thinking",
+      "Busca",
+      "Salvar ajustes",
+      "Descarregar modelo da memória",
+      "GGUF Chat\nInferência local via llama.cpp (llamarn) com backend Vulkan.\nBackend atual: —\n\nDicas:\n• Para gerar com a tela bloqueada, basta enviar a mensagem e bloquear: a geração continua em segundo plano.\n• Use “Thinking” para raciocínio estendido e “Busca” para respostas embasadas na web.\n• Modelos multimodais: importe o GGUF de texto e o mmproj juntos."
+    ],
+    "storage_backed_context_option_found": false,
+    "context_related_labels": [
+      "Tamanho de contexto (tokens)",
+      "Descarregar modelo da memória"
+    ]
+  },
+  "folder_fixture": {
+    "path": "/data/data/com.termux/files/home/model-audit",
+    "files": [
+      "only-note.txt"
+    ],
+    "file_content": "Arquivo unico da pasta de teste. Identificador: BLUE-LANTERN-5831.",
+    "sha256": "ca381c3fba7b0a9c158d0d6a9622f3c725d78d3c6bf770e68fa0ced966348fd6"
+  },
+  "error": "Linha de ferramentas não está aberta",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/runner/work/5/5/scripts/test_requested_model_tasks_android.py\", line 314, in main\n    record = ask_for_command(device, model,\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/5/5/scripts/test_requested_model_tasks_android.py\", line 85, in ask_for_command\n    tap_tool(device, \"Termux\")\n  File \"/home/runner/work/5/5/scripts/test_tool_integrations_android.py\", line 42, in tap_tool\n    raise AssertionError(\"Linha de ferramentas não está aberta\")\nAssertionError: Linha de ferramentas não está aberta\n",
+  "logcat_tail": "34  1568  1825 I A       : (REDACTED) isTngActive=%s\n11-01 22:35:37.235   561   561 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:37.235   561   561 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:37.235   561   561 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:37.235   561   561 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:37.236   561   561 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:37.236   561   561 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:37.236   561   561 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:37.236   561   561 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:37.236   561   561 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:37.236   561   561 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:37.238   561   561 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:37.239  1489  1731 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b\n11-01 22:35:37.239  1489  1731 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b\n11-01 22:35:37.239  1489  1731 I A       : Unsubscribed to apa or classic variant change.\n11-01 22:35:37.240   561   561 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:37.242  1464  1472 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled\n11-01 22:35:37.244  1464  1681 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]\n11-01 22:35:37.244  1464  1681 I AiAiEcho: EchoTargets: \n11-01 22:35:37.244  1464  1681 I AiAiEcho: Filtered by AiAi flag check: \n11-01 22:35:37.244  1464  1681 I AiAiEcho: [CONTEXT ratelimit_period=\"10 SECONDS\" ]\n11-01 22:35:37.244  1464  1681 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period=\"10 SECONDS\" ]\n11-01 22:35:37.244  1464  1681 I AiAiEcho: #remoteViewsTwiddler: feature disabled.\n11-01 22:35:37.244  1464  1681 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])\n11-01 22:35:37.245   924   924 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.\n11-01 22:35:37.272   561   592 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:37.646  1096  1096 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:35:37.647  1096  1096 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:35:38.071   561  2770 E TaskPersister: File error accessing recents directory (directory doesn't exist?).\n11-01 22:35:38.148  1096  1096 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:35:38.148  1096  1096 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:35:38.238  5881  5881 W AccessibilityNodeInfoDumper: Fetch time: 3ms\n11-01 22:35:38.239  1464  1472 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled\n11-01 22:35:38.239   561  1487 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED\n11-01 22:35:38.239   561  1487 D AccessibilityManagerService: restoreCurrentUserForTestAutomationIfNeededLocked(): ignoring because device doesn't support visible background users\n11-01 22:35:38.240  5881  5881 D AndroidRuntime: Shutting down VM\n11-01 22:35:38.240  1464  1681 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]\n11-01 22:35:38.240  1464  1681 I AiAiEcho: EchoTargets: \n11-01 22:35:38.240  1464  1681 I AiAiEcho: Filtered by AiAi flag check: \n11-01 22:35:38.240  1464  1681 I AiAiEcho: [CONTEXT ratelimit_period=\"10 SECONDS\" ]\n11-01 22:35:38.240  1464  1681 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period=\"10 SECONDS\" ]\n11-01 22:35:38.240  1464  1681 I AiAiEcho: #remoteViewsTwiddler: feature disabled.\n11-01 22:35:38.240   561   561 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:38.240   561   561 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:38.240   561   561 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:38.240   561   561 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:38.240  1464  1681 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])\n11-01 22:35:38.240   561   561 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:38.241   561   561 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:38.242   561   561 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:38.242   561   561 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:38.242   561   561 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:38.242   561   561 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:38.242   561   561 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:38.242   561   561 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:38.243   561   561 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:38.243   561   561 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:38.243   561   561 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:38.243   561   561 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:38.243   561   561 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:38.243   561   561 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:38.243   561   561 D BatterySaverPolicy: accessibility changed to false, updating policy.\n11-01 22:35:38.245   924   924 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.\n11-01 22:35:38.246  1568  1826 I A       : NGA enabled in interactor.\n11-01 22:35:38.246  1568  1826 I A       : (REDACTED) Nga state changed to %s\n11-01 22:35:38.246  1568  1826 I A       : (REDACTED) isTngActive=%s\n11-01 22:35:38.247  1489  2610 I A       : Initializing all components\n11-01 22:35:38.248  1489  1733 I A       : (REDACTED) onIsEnabledChanged, isEnabled: %s\n11-01 22:35:38.248  1489  1733 W A       : Disposing empty manager. Did you forgot to subscribe observables?\n11-01 22:35:38.248  1489  1733 W A       : Disposing empty manager. Did you forgot to subscribe observables?\n11-01 22:35:38.248  1489  1733 W A       : Disposing empty manager. Did you forgot to subscribe observables?\n11-01 22:35:38.248  1489  1733 W A       : Disposing empty manager. Did you forgot to subscribe observables?\n11-01 22:35:38.248  1489  1731 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b\n11-01 22:35:38.248  1489  1731 I A       : (REDACTED) State changed: %s => %s by %s and %s with %s\n11-01 22:35:38.248  1489  1731 I A       : (REDACTED) Recognizer choice: (recognizer_type: %s, recognizer_mode: %s, choice_reason: %s)\n11-01 22:35:38.249  1489  1731 I A       : (REDACTED) onActiveStateChangeEvent: %s => %s\n11-01 22:35:38.249  1489  1731 I A       : (REDACTED) #onActiveStateChangeEvent, newState: %s, previousState: %s.\n11-01 22:35:38.250  1489  1731 I A       : (REDACTED) on opa visibility changed %s\n11-01 22:35:38.250  1489  1731 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b\n11-01 22:35:38.251  1489  1733 W A       : Disposing empty manager. Did you forgot to subscribe observables?\n11-01 22:35:38.251  1489  1733 W A       : Disposing empty manager. Did you forgot to subscribe observables?\n11-01 22:35:38.251  1489  1733 W A       : Disposing empty manager. Did you forgot to subscribe observables?\n11-01 22:35:38.251  1489  1733 W A       : Disposing empty manager. Did you forgot to subscribe observables?\n11-01 22:35:38.251  1489  1733 W A       : Disposing empty manager. Did you forgot to subscribe observables?\n11-01 22:35:38.251  1489  1733 W A       : Disposing empty manager. Did you forgot to subscribe observables?\n11-01 22:35:38.251  1489  1733 W A       : Disposing empty manager. Did you forgot to subscribe observables?\n11-01 22:35:38.251  1489  1733 I A       : (REDACTED) Setting session to type: %s\n11-01 22:35:38.251  1489  1733 W A       : Disposing empty manager. Did you forgot to subscribe observables?\n11-01 22:35:38.251  1489  1733 W A       : Disposing empty manager. Did you forgot to subscribe observables?\n11-01 22:35:38.251  1489  1733 W A       : Disposing empty manager. Did you forgot to subscribe observables?\n11-01 22:35:38.251  1489  1733 W A       : Disposing empty manager. Did you forgot to subscribe observables?\n11-01 22:35:38.251  1489  1733 W A       : Disposing empty manager. Did you forgot to subscribe observables?\n11-01 22:35:38.251  1489  1733 W A       : Disposing empty manager. Did you forgot to subscribe observables?\n11-01 22:35:38.251  1489  1733 I A       : (REDACTED) setNavBarVisible: %s\n11-01 22:35:38.252  1489  1733 W A       : Disposing empty manager. Did you forgot to subscribe observables?\n11-01 22:35:38.252  1489  1733 W A       : Disposing empty manager. Did you forgot to subscribe observables?\n11-01 22:35:38.252  1489  1733 W A       : Disposing empty manager. Did you forgot to subscribe observables?\n11-01 22:35:38.252  1489  1733 W A       : Disposing empty manager. Did you forgot to subscribe observables?\n11-01 22:35:38.252  1489  1733 W A       : Disposing empty manager. Did you forgot to subscribe observables?\n11-01 22:35:38.252  1489  1731 I A       : Initialize\n11-01 22:35:38.252  1489  1733 W A       : Disposing empty manager. Did you forgot to subscribe observables?\n11-01 22:35:38.253  1489  1731 I A       : (REDACTED) stopListening(%s, %s)\n11-01 22:35:38.253  1489  1731 I A       : (REDACTED) on opa visibility changed %s\n11-01 22:35:38.253  1489  1733 I NgaEntryPointEventSendr: setupConnection\n11-01 22:35:38.255  1489  1733 I NgaEntryPointEventSendr: (REDACTED) State changed: %s => %s\n11-01 22:35:38.256  1489  1733 I NgaEntryPointEventSendr: onServiceConnected\n11-01 22:35:38.256  1568  1615 I A       : Calling beginBinderSession().\n11-01 22:35:38.256  1568  1615 I A       : beginBinderSession(): calling binder\n11-01 22:35:38.256  1489  1733 I NgaEntryPointEventSendr: (REDACTED) State changed: %s => %s\n11-01 22:35:38.257  1489  1733 I A       : (REDACTED) Nga on-device enabled based on TNG:MA active state: %b\n11-01 22:35:38.257  1489  1733 I INV.SystemUI: showGestureNav\n11-01 22:35:38.257  1489  1733 I INV.SystemUI: (REDACTED) setUiHints(hints = %s)\n11-01 22:35:38.259   561  1575 W ActivityManager: Unable to start service Intent { cmp=com.google.android.apps.tachyon/.clientapi.ClientApiService } U=0: not found\n11-01 22:35:38.260  1489  1733 I A       : Successfully initialized all components\n11-01 22:35:38.260  1489  1733 I INV.SystemUI: setUiHints: finished successfully\n11-01 22:35:38.267  1568  2267 W A       : (REDACTED) %s task was not run. Callback from Service received after client was disposed.\n11-01 22:35:38.268  1568  2956 I PBSessionCacheImpl: (REDACTED) Deleted sessionId[%d] from persistence.\n11-01 22:35:38.269  1489  1731 I NgaEntryPointEventSendr: (REDACTED) State changed: %s => %s (%s)\n11-01 22:35:38.269  1568  2267 W SearchServiceCore: Abort, client detached.\n11-01 22:35:38.421   561   592 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:38.433   561   592 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:35:38.650  1096  1096 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:35:38.650  1096  1096 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:35:39.254     0     0 I logd    : logdr: UID=0 GID=0 PID=5897 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns",
+  "last_ui_summary": [
+    {
+      "text": "Prompt de sistema global",
+      "content-desc": "Prompt de sistema global",
+      "resource-id": "",
+      "bounds": "[24,66][260,120]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "GGUF Chat",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[24,122][605,171]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "Ajustes",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[605,120][696,174]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "1 modelo(s) importado(s) • 1 conversa(s)",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[24,186][696,213]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "+ Nova conversa",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[24,231][696,285]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "GGUF regression 1a199402f6cfcbc5f",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[45,303][675,336]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "```bash cat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-ou…",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[45,342][675,392]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "Gemma-3-270M-It",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[45,392][675,417]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "💬 Chat",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[24,1202][248,1256]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "📁 Importar",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[248,1202][472,1256]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "AI Modelos",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[472,1202][696,1256]",
+      "enabled": "true",
+      "selected": "false"
+    }
+  ]
+}
