@@ -1,0 +1,7 @@
+{
+  "status": "FAIL",
+  "scope": "live-web-search-model-proposed-termux-command-zero-context-and-output",
+  "checks": {},
+  "environment": "Android emulator API 35; official Termux APK v0.118.3 x86_64",
+  "error": "ADB falhou (255): ('shell', \"input text 'Pesquise%sna%sweb:%squal%sé%sa%scapital%sdo%sBrasil?%sTraga%suma%sfonte.'\")\n\nException occurred while executing 'text':\njava.lang.NullPointerException: Attempt to get length of null array\n\tat com.android.server.input.InputShellCommand.sendText(InputShellCommand.java:390)\n\tat com.android.server.input.InputShellCommand.runText(InputShellCommand.java:362)\n\tat com.android.server.input.InputShellCommand.onCommand(InputShellCommand.java:287)\n\tat com.android.modules.utils.BasicShellCommandHandler.exec(BasicShellCommandHandler.java:97)\n\tat android.os.ShellCommand.exec(ShellCommand.java:38)\n\tat com.android.server.input.InputManagerService.onShellCommand(InputManagerService.java:3193)\n\tat android.os.Binder.shellCommand(Binder.java:1230)\n\tat android.os.Binder.onTransact(Binder.java:1043)\n\tat android.hardware.input.IInputManager$Stub.onTransact(IInputManager.java:1306)\n\tat android.os.Binder.execTransactInternal(Binder.java:1505)\n\tat android.os.Binder.execTransact(Binder.java:1444)\n"
+}

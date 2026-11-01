@@ -1,0 +1,32 @@
+Traceback (most recent call last):
+  File "/home/runner/work/5/5/scripts/test_tool_integrations_android.py", line 163, in main
+    summary["checks"]["live_web_search_en_and_pt"] = test_web_search(d, model, chat)
+                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_tool_integrations_android.py", line 82, in test_web_search
+    reply(d, chat, prompt, stage, timeout=240)
+  File "/home/runner/work/5/5/scripts/test_inference_android.py", line 72, in reply
+    d.send(prompt);pid=d.alive()
+    ^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_android.py", line 334, in send
+    self.shell("input text " + shlex.quote(prompt.replace(" ", "%s")))
+  File "/home/runner/work/5/5/scripts/test_android.py", line 47, in shell
+    return self.adb("shell", command, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_android.py", line 41, in adb
+    raise RuntimeError(f"ADB falhou ({result.returncode}): {args}\n{detail}")
+RuntimeError: ADB falhou (255): ('shell', "input text 'Pesquise%sna%sweb:%squal%sé%sa%scapital%sdo%sBrasil?%sTraga%suma%sfonte.'")
+
+Exception occurred while executing 'text':
+java.lang.NullPointerException: Attempt to get length of null array
+	at com.android.server.input.InputShellCommand.sendText(InputShellCommand.java:390)
+	at com.android.server.input.InputShellCommand.runText(InputShellCommand.java:362)
+	at com.android.server.input.InputShellCommand.onCommand(InputShellCommand.java:287)
+	at com.android.modules.utils.BasicShellCommandHandler.exec(BasicShellCommandHandler.java:97)
+	at android.os.ShellCommand.exec(ShellCommand.java:38)
+	at com.android.server.input.InputManagerService.onShellCommand(InputManagerService.java:3193)
+	at android.os.Binder.shellCommand(Binder.java:1230)
+	at android.os.Binder.onTransact(Binder.java:1043)
+	at android.hardware.input.IInputManager$Stub.onTransact(IInputManager.java:1306)
+	at android.os.Binder.execTransactInternal(Binder.java:1505)
+	at android.os.Binder.execTransact(Binder.java:1444)
+
