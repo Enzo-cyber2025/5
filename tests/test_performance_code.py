@@ -90,7 +90,7 @@ def test_gpu_sampler_lifetime_and_original_parameters():
 
 def test_gpu_prefill_is_completed_before_decode_clock_starts():
     s=(ROOT/'apk-fix/native/mobile.cpp').read_text()
-    boundary=s[s.index('prompt_tokens=input_size;'):s.index('int limit=std::min<int>')]
+    boundary=s[s.index('prompt_tokens=input_size;'):s.index('const size_t limit=predict<=0?available:std::min<size_t>') ]
     assert boundary.index('llama_synchronize(e->ctx)')<boundary.index('decode_started=Clock::now()')
     j=(ROOT/'apk-fix/java/com/ggufchat/app/GenerationStats.java').read_text()
     assert 'prefill_synchronized_before_decode' in j and 'j.put("version",3)' in j
