@@ -45,7 +45,9 @@ jobs:
         with:
           python-version: '3.11'
       - name: Dependencias
-        run: pip install --retries 5 --timeout 90 numpy==2.2.6 kaggle
+        # v100: o CLI do kaggle no runner quebrou (ModuleNotFoundError: six) —
+        # instalar six explicitamente junto (a nova wheel do kaggle nao puxa).
+        run: pip install --retries 5 --timeout 90 numpy==2.2.6 kaggle six
       - name: Colhe a sessao anterior (se completa)
         id: harvest
         env:
