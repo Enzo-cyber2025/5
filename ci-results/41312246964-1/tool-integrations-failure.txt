@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/home/runner/work/5/5/scripts/test_tool_integrations_android.py", line 196, in main
+    termux = run_termux_handoff(d, model)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/5/5/scripts/test_tool_integrations_android.py", line 128, in run_termux_handoff
+    assert blocks, "O modelo não produziu um bloco bash/sh utilizável pelo botão Termux: " + answer
+           ^^^^^^
+AssertionError: O modelo não produziu um bloco bash/sh utilizável pelo botão Termux: echo GGUF_TERMUX_HANDOFF_OK > /data/data/com.termux/files/home/gguftx-proof.txt
