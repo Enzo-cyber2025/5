@@ -17,6 +17,8 @@ def test_termux_handoff_is_explicit_user_confirmed_and_scoped_to_shell_blocks():
     assert "TermuxBridge;->permissionResult" in (ROOT / "apk-fix/attachment_patches.py").read_text()
     assert "MAX_COMMAND_CHARS = 6000" in bridge
     assert "assistantCommand(activity)" in bridge
+    assert "BARE_COMMAND" in bridge and "bare.indexOf('`') < 0" in bridge
+    assert 'setTitle("Revisar comando do Termux")' in bridge
     assert "startService(intent)" in bridge
     # This bridge delegates to a separately installed Termux and exposes code
     # only after the user reviews and confirms it; it is not an embedded shell.

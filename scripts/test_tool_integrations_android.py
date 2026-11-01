@@ -125,8 +125,9 @@ def run_termux_handoff(d, model):
               + EXPECTED_COMMAND)
     answer = reply(d, chat, prompt, "termux-ai-proposed-command", timeout=240)
     blocks = re.findall(r"```(?:bash|sh|shell)\s*\n(.*?)```", answer, flags=re.I | re.S)
-    assert blocks, "O modelo não produziu um bloco bash/sh utilizável pelo botão Termux: " + answer
-    selected = blocks[-1].strip()
+    # The production bridge also supports one exact bare command from a compact
+    # model, but never prose or multiline un-fenced text.
+    selected = blocks[-1].strip() if blocks else answer.strip()
     assert selected == EXPECTED_COMMAND, "Comando do modelo diferente do sentinel inofensivo: " + repr(selected)
     latest = next(c for c in d.read_json("chats.json") if c["id"] == chat["id"])
     assert latest["messages"][-1]["role"] == "assistant" and latest["messages"][-1]["content"] == answer

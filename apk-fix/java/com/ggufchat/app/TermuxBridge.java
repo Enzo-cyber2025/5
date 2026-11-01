@@ -24,6 +24,11 @@ import java.util.regex.Pattern;
 public final class TermuxBridge {
     private static final int MAX_COMMAND_CHARS = 6000;
     private static final Pattern FENCE = Pattern.compile("(?s)```([^\\r\\n`]*)\\r?\\n(.*?)```");
+    // Small local models sometimes omit Markdown fences. Accept a single-line
+    // command only for familiar Termux utilities; the existing review dialog and
+    // explicit confirmation still apply before anything reaches the shell.
+    private static final Pattern BARE_COMMAND = Pattern.compile(
+        "(?i)^(?:echo|printf|pwd|ls|cat|grep|find|mkdir|touch|date|whoami|uname|python3?|pip3?|pkg|apt|git|curl|wget|termux-[A-Za-z0-9_-]+)(?:\\s+[^\\r\\n]*)?$");
     private static final String PERMISSION = "com.termux.permission.RUN_COMMAND";
     private static final int PERMISSION_REQUEST = 7431;
     private static final String ACTION = "com.termux.RUN_COMMAND";
@@ -66,7 +71,9 @@ public final class TermuxBridge {
                     selected = matcher.group(2).trim();
                 }
             }
-            return selected;
+            if (selected != null) return selected;
+            String bare = ((String) content).trim();
+            return bare.indexOf('`') < 0 && BARE_COMMAND.matcher(bare).matches() ? bare : null;
         }
         return null;
     }
@@ -75,7 +82,7 @@ public final class TermuxBridge {
         try {
             String command = assistantCommand(activity);
             if (command == null || command.trim().isEmpty()) {
-                Toast.makeText(activity, "A última resposta não contém um bloco de shell bash/sh.", Toast.LENGTH_LONG).show();
+                Toast.makeText(activity, "A última resposta não contém um bloco bash/sh ou comando simples reconhecido.", Toast.LENGTH_LONG).show();
                 return;
             }
             if (command.length() > MAX_COMMAND_CHARS) {
