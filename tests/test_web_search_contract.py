@@ -26,6 +26,12 @@ def test_search_has_bounded_network_and_parse_work():
     assert "readBounded(connection.getInputStream())" in source
 
 
+def test_emulator_web_search_probes_are_ascii_for_adb_input_text():
+    source = (ROOT / "scripts/test_tool_integrations_android.py").read_text()
+    assert "Pesquise na web: qual a capital do Brasil? Traga uma fonte." in source
+    assert "qual é a capital" not in source
+
+
 def test_results_are_cited_and_marked_untrusted_and_network_fails_open():
     source = SOURCE.read_text()
     assert "URL: " in source

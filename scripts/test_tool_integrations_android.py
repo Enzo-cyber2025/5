@@ -76,7 +76,9 @@ def test_web_search(d, model, chat):
     d.tap(desc="Alternar ferramentas", package={PACKAGE})
     stages = []
     for stage, prompt in (
-        ("tool-search-pt", "Pesquise na web: qual é a capital do Brasil? Traga uma fonte."),
+        # Android's `input text` shell command crashes on some non-ASCII characters.
+        # Keep this Portuguese probe ASCII so the emulator tests search, not IME encoding.
+        ("tool-search-pt", "Pesquise na web: qual a capital do Brasil? Traga uma fonte."),
         ("tool-search-en", "Search the web for the capital of Brazil and cite a source."),
     ):
         reply(d, chat, prompt, stage, timeout=240)
