@@ -48,12 +48,17 @@ def ask_for_command(device, model, prompt, expected, stage, summary):
     selected = assistant_code(answer)
     record = {"prompt": prompt, "assistant_reply": answer[:6000],
               "selected_command": selected, "expected_command": expected,
-              "chat_id": chat["id"], "executed": False}
+              "chat_id": chat["id"], "chat_title": chat["title"], "executed": False,
+              "status": "AWAITING_REVIEW"}
+    summary["checks"][stage] = record
     if selected != expected:
         record["status"] = "MODEL_DID_NOT_RETURN_THE_EXACT_REVIEWABLE_COMMAND"
         summary["checks"][stage] = record
         return None
 
+    # Return to the exact conversation after the native worker may have closed its pane.
+    device.launch()
+    device.open_existing_chat(chat["title"])
     # Verify the app presents the exact model-generated code for human review.
     device.tap(desc="Alternar ferramentas", package={PACKAGE})
     tap_tool(device, "Termux")
@@ -68,6 +73,10 @@ def ask_for_command(device, model, prompt, expected, stage, summary):
         record["status"] = "REVIEW_DIALOG_DID_NOT_SHOW_EXACT_COMMAND"
         summary["checks"][stage] = record
         return None
+    record["review_dialog_exact_match"] = True
+    record["confirmation"] = "automation tapped the app's explicit approval button in a disposable emulator; no human reviewed this CI prompt"
+    record["human_confirmation"] = False
+    record["termux_output_returned_to_model_automatically"] = False
     device.capture(stage + "-review.png")
     device.tap(text="Abrir no Termux", package={PACKAGE})
 
@@ -115,7 +124,24 @@ def load_model(device):
             device.adb("push", source, "/sdcard/Download/" + source.name, timeout=900)
             device.shell("am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d "
                          + shlex.quote("file:///sdcard/Download/" + source.name), check=False)
-        mobile.select_pair(device)
+        if position(device.ui(), text="📁 Importar", package={PACKAGE}):
+            device.tap(text="📁 Importar", package={PACKAGE})
+        device.wait(lambda: position(device.ui(), text="Importar .gguf", package={PACKAGE}),
+                    "tela de importação GGUF")
+        device.tap(text="Importar .gguf", package={PACKAGE})
+        device.wait(lambda: has_package(device.ui(), PICKERS), "seletor SAF para o par Gemma 4")
+        for _ in range(5):
+            xml = device.ui()
+            if position(xml, text=mobile.MODEL.name, package=PICKERS):
+                break
+            if not any(position(xml, text=t, package=PICKERS) for t in ("Open from", "Abrir de")):
+                device.tap(desc="Show roots", package=PICKERS, optional=True)
+            device.select_downloads()
+        from android_checks import select_exact_documents
+        device.tap(desc="List view", package=PICKERS, optional=True)
+        select_exact_documents(device, [mobile.MODEL.name, mobile.PROJ.name])
+        device.tap(text="Select", package=PICKERS)
+        device.wait(lambda: not has_package(device.ui(), PICKERS), "retorno do seletor SAF")
         def imported_pair():
             rows = device.read_json("models.json", optional=True)
             try:
@@ -314,9 +340,11 @@ def main():
         build = ask_for_command(device, model, build_prompt, BUILD_COMMAND, "termux_compile_text_to_binary_apk", summary)
         if build:
             build_log = device.shell("cat " + shlex.quote(project + "/build.log"), check=False)
+            tools_log = device.shell("cat " + shlex.quote(project + "/build-tools-install.log"), check=False)
             build_exit = device.shell("cat " + shlex.quote(project + "/build.exit"), check=False).strip()
             build["exit_code"] = build_exit
             build["build_log_tail"] = build_log[-12000:]
+            build["tool_install_log_tail"] = tools_log[-6000:]
             summary["checks"]["termux_apk_build_result"] = "PASS" if build_exit == "0" else "FAIL"
             if build_exit == "0":
                 termux_apk = Path(".cache/TextToBinary.apk")
