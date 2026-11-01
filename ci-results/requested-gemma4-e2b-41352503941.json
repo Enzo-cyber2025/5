@@ -1,0 +1,97 @@
+{
+  "status": "FAIL",
+  "scope": "requested-Gemma-folder-Termux-Box64-APK-and-zero-limits",
+  "variant": "gemma4-e2b",
+  "apk": {
+    "sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc",
+    "expected_sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc"
+  },
+  "checks": {},
+  "limitations": [
+    "Android emulator x86_64, not a physical handset"
+  ],
+  "model": {
+    "name": "Gemma 4 E2B",
+    "quantization": "Q3_K_S + mmproj F16",
+    "weights_sha256": "80d155f647d3a896669b1d1605b494b97ee9dbd1dcafd27957394134c280d270",
+    "projector_sha256": "140be8d7849741f88c50757d529b84373ee8e27052cc2236855b537f4a8215fa",
+    "apk_signed_sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc"
+  },
+  "error": "Controle não encontrado: {'text': 'Importar', 'package': {'com.ggufchat.app'}}",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/runner/work/5/5/scripts/test_requested_model_tasks_android.py\", line 228, in main\n    model = load_model(device)\n            ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/5/5/scripts/test_requested_model_tasks_android.py\", line 118, in load_model\n    mobile.select_pair(device)\n  File \"/home/runner/work/5/5/scripts/test_mobile.py\", line 47, in select_pair\n    d.tap(text='Importar',package={PACKAGE})\n  File \"/home/runner/work/5/5/scripts/test_android.py\", line 81, in tap\n    raise AssertionError(f\"Controle não encontrado: {selector}\")\nAssertionError: Controle não encontrado: {'text': 'Importar', 'package': {'com.ggufchat.app'}}\n",
+  "logcat_tail": " 549  2083 I ExplicitHealthCheckController: Explicit health check requested packages []\n11-01 21:35:15.747   549  2083 I ExplicitHealthCheckController: No more health check requests, unbinding...\n11-01 21:35:15.750   549   549 W JobScheduler: Job didn't exist in JobStore: 9b28a3 #u0a131/2 com.google.android.partnersetup/.PhenotypeJobService\n11-01 21:35:15.750   549  2083 I ExplicitHealthCheckController: Explicit health check service is unbound\n11-01 21:35:15.758  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.android.settings.security.SecurityAdvancedSettingsController\n11-01 21:35:15.759  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.android.settings.development.featureflags.FeatureFlagsPreferenceController\n11-01 21:35:15.763  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.android.settings.fuelgauge.batteryusage.BatteryChartPreferenceController\n11-01 21:35:15.763  1101  1110 W PrefCtrlListHelper: Cannot instantiate controller from reflection: com.android.settings.fuelgauge.batteryusage.BatteryChartPreferenceController\n11-01 21:35:15.763  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.android.settings.fuelgauge.batteryusage.BatteryUsageBreakdownController\n11-01 21:35:15.763  1101  1110 W PrefCtrlListHelper: Cannot instantiate controller from reflection: com.android.settings.fuelgauge.batteryusage.BatteryUsageBreakdownController\n11-01 21:35:15.763  1101  1110 W PrefCtrlListHelper: battery_tips_category already has a controller\n11-01 21:35:15.763  1101  1110 W PrefCtrlListHelper: screen_on_time_category already has a controller\n11-01 21:35:15.764  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.android.settings.accessibility.CaptioningLocalePreferenceController\n11-01 21:35:15.764  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.android.settings.accessibility.CaptioningFooterPreferenceController\n11-01 21:35:15.767   352   352 I netd    : tetherGetStats() -> {[]} <0.94ms>\n11-01 21:35:15.771  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.android.settings.applications.credentials.CredentialManagerPreferenceController\n11-01 21:35:15.771  1101  1110 W PrefCtrlListHelper: Cannot instantiate controller from reflection: com.android.settings.applications.credentials.CredentialManagerPreferenceController\n11-01 21:35:15.771  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.android.settings.network.NetworkMobileProviderController\n11-01 21:35:15.771  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.android.settings.nfc.NfcForegroundPreferenceController\n11-01 21:35:15.773  1091  1091 E CellBroadcastUtils: getDefaultCellBroadcastReceiverPackageName: no package found\n11-01 21:35:15.774   549  1012 W AppOpService: Ignored setUidMode call for runtime permission app op: uid = 1001, code = READ_SMS, mode = allow, callingUid = 1001, oldMode = allow\n11-01 21:35:15.775  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.android.settings.regionalpreferences.TemperatureUnitController\n11-01 21:35:15.776  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.android.settings.regionalpreferences.FirstDayOfWeekController\n11-01 21:35:15.776  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.android.settings.regionalpreferences.NumberingSystemController\n11-01 21:35:15.776  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.android.settings.regionalpreferences.RegionalFooterPreferenceController\n11-01 21:35:15.777   549   585 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED\n11-01 21:35:15.777   549  1012 W AppOpService: Ignored setUidMode call for runtime permission app op: uid = 1001, code = RECEIVE_SMS, mode = allow, callingUid = 1001, oldMode = allow\n11-01 21:35:15.778   549   549 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 21:35:15.778   549   549 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 21:35:15.778   549  1017 W AppOpService: Ignored setUidMode call for runtime permission app op: uid = 1001, code = RECEIVE_WAP_PUSH, mode = allow, callingUid = 1001, oldMode = allow\n11-01 21:35:15.778   549  1017 W AppOpService: Ignored setUidMode call for runtime permission app op: uid = 1001, code = SEND_SMS, mode = allow, callingUid = 1001, oldMode = allow\n11-01 21:35:15.779  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.google.android.settings.gestures.ButtonNavigationSettingsGoogleAssistController\n11-01 21:35:15.779  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.google.android.settings.gestures.ButtonNavigationSettingsGoogleAssistController\n11-01 21:35:15.779  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.android.settings.deviceinfo.hardwareinfo.DeviceModelPreferenceController\n11-01 21:35:15.779  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.android.settings.deviceinfo.hardwareinfo.SerialNumberPreferenceController\n11-01 21:35:15.779  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.android.settings.deviceinfo.hardwareinfo.HardwareRevisionPreferenceController\n11-01 21:35:15.779  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.android.settings.deviceinfo.hardwareinfo.ManufacturedYearPreferenceController\n11-01 21:35:15.779   549  1012 W AppOpService: Ignored setUidMode call for runtime permission app op: uid = 1001, code = READ_CELL_BROADCASTS, mode = allow, callingUid = 1001, oldMode = allow\n11-01 21:35:15.780  1101  1110 E HardwareInfoFeatureProviderImpl: Could not parse manufactured year from serial.\n11-01 21:35:15.780  1101  1110 E HardwareInfoFeatureProviderImpl: java.lang.NumberFormatException: For input string: \"E\"\n11-01 21:35:15.780  1101  1110 E HardwareInfoFeatureProviderImpl: \tat java.lang.Integer.parseInt(Integer.java:790)\n11-01 21:35:15.780  1101  1110 E HardwareInfoFeatureProviderImpl: \tat java.lang.Integer.valueOf(Integer.java:1121)\n11-01 21:35:15.780  1101  1110 E HardwareInfoFeatureProviderImpl: \tat com.google.android.settings.hardwareinfo.HardwareInfoFeatureProviderGoogleImpl.getManufacturedYear(HardwareInfoFeatureProviderGoogleImpl.kt:24)\n11-01 21:35:15.780  1101  1110 E HardwareInfoFeatureProviderImpl: \tat com.android.settings.deviceinfo.hardwareinfo.ManufacturedYearPreferenceController.<init>(ManufacturedYearPreferenceController.kt:26)\n11-01 21:35:15.780  1101  1110 E HardwareInfoFeatureProviderImpl: \tat java.lang.reflect.Constructor.newInstance0(Native Method)\n11-01 21:35:15.780  1101  1110 E HardwareInfoFeatureProviderImpl: \tat java.lang.reflect.Constructor.newInstance(Constructor.java:343)\n11-01 21:35:15.780  1101  1110 E HardwareInfoFeatureProviderImpl: \tat com.android.settings.core.BasePreferenceController.createInstance(BasePreferenceController.java:187)\n11-01 21:35:15.780  1101  1110 E HardwareInfoFeatureProviderImpl: \tat com.android.settings.core.PreferenceControllerListHelper.getPreferenceControllersFromXml(PreferenceControllerListHelper.java:86)\n11-01 21:35:15.780  1101  1110 E HardwareInfoFeatureProviderImpl: \tat com.android.settings.search.BaseSearchIndexProvider.getPreferenceControllers(BaseSearchIndexProvider.java:169)\n11-01 21:35:15.780  1101  1110 E HardwareInfoFeatureProviderImpl: \tat com.android.settings.search.BaseSearchIndexProvider.getRawDataToIndex(BaseSearchIndexProvider.java:78)\n11-01 21:35:15.780  1101  1110 E HardwareInfoFeatureProviderImpl: \tat com.android.settings.search.SettingsSearchIndexablesProvider.getSearchIndexableRawFromProvider(SettingsSearchIndexablesProvider.java:357)\n11-01 21:35:15.780  1101  1110 E HardwareInfoFeatureProviderImpl: \tat com.android.settings.search.SettingsSearchIndexablesProvider.queryRawData(SettingsSearchIndexablesProvider.java:141)\n11-01 21:35:15.780  1101  1110 E HardwareInfoFeatureProviderImpl: \tat android.provider.SearchIndexablesProvider.query(SearchIndexablesProvider.java:125)\n11-01 21:35:15.780  1101  1110 E HardwareInfoFeatureProviderImpl: \tat android.content.ContentProvider.query(ContentProvider.java:1620)\n11-01 21:35:15.780  1101  1110 E HardwareInfoFeatureProviderImpl: \tat android.content.ContentProvider.query(ContentProvider.java:1716)\n11-01 21:35:15.780  1101  1110 E HardwareInfoFeatureProviderImpl: \tat android.content.ContentProvider$Transport.query(ContentProvider.java:295)\n11-01 21:35:15.780  1101  1110 E HardwareInfoFeatureProviderImpl: \tat android.content.ContentProviderNative.onTransact(ContentProviderNative.java:107)\n11-01 21:35:15.780  1101  1110 E HardwareInfoFeatureProviderImpl: \tat android.os.Binder.execTransactInternal(Binder.java:1500)\n11-01 21:35:15.780  1101  1110 E HardwareInfoFeatureProviderImpl: \tat android.os.Binder.execTransact(Binder.java:1444)\n11-01 21:35:15.781  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.android.settings.applications.DefaultAppsPreferenceController\n11-01 21:35:15.781  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.android.settings.applications.ClonedAppsPreferenceController\n11-01 21:35:15.781  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.android.settings.applications.HibernatedAppsPreferenceController\n11-01 21:35:15.781  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.android.settings.applications.AppBatteryUsagePreferenceController\n11-01 21:35:15.781  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.android.settings.applications.appcompat.UserAspectRatioAppsPreferenceController\n11-01 21:35:15.781  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.android.settings.datetime.timezone.TimeZoneInfoPreferenceController\n11-01 21:35:15.782  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.android.settings.gestures.SwipeToNotificationPreferenceController\n11-01 21:35:15.782  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.android.settings.development.AdbDeviceNamePreferenceController\n11-01 21:35:15.782  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.android.settings.development.AdbQrCodePreferenceController\n11-01 21:35:15.783  1101  3131 D VolumeSliceHelper: Unregistering uri broadcast relay: content://com.android.settings.slices/action/separate_ring_volume\n11-01 21:35:15.783  1101  3131 D VolumeSliceHelper: Unregistering uri broadcast relay: content://com.android.settings.slices/action/notification_volume\n11-01 21:35:15.784  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.android.settings.network.AdaptiveConnectivityTogglePreferenceController\n11-01 21:35:15.784  1101  3131 D VolumeSliceHelper: Unregistering uri broadcast relay: content://com.android.settings.slices/action/alarm_volume\n11-01 21:35:15.784  1101  3131 D SliceBroadcastRelay: Unregistering uri broadcast relay: content://com.android.settings.slices/action/volume_slices\n11-01 21:35:15.784   549   880 W BroadcastLoopers: Found previously unknown looper Thread[SliceManagerService,5,main]\n11-01 21:35:15.785  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.android.settings.applications.specialaccess.deviceadmin.DeviceAdminListPreferenceController\n11-01 21:35:15.791  1101  1110 D PrefCtrlListHelper: Could not find Context-only controller for pref: com.android.settings.display.AutoBrightnessPreferenceController",
+  "last_ui_summary": [
+    {
+      "text": "Prompt de sistema global",
+      "content-desc": "Prompt de sistema global",
+      "resource-id": "",
+      "bounds": "[24,66][260,120]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "GGUF Chat",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[24,122][605,171]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "Ajustes",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[605,120][696,174]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "0 modelo(s) importado(s) • 0 conversa(s)",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[24,186][696,213]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "+ Nova conversa",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[24,231][696,285]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "Nenhuma conversa ainda.\nToque em “+ Nova conversa” para começar.",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[24,285][696,398]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "💬 Chat",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[24,1202][248,1256]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "📁 Importar",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[248,1202][472,1256]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "AI Modelos",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[472,1202][696,1256]",
+      "enabled": "true",
+      "selected": "false"
+    }
+  ]
+}
