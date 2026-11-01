@@ -9,7 +9,7 @@ on:
       - 'scripts/android_checks.py'
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   android-inference:
     runs-on: ubuntu-latest
@@ -66,6 +66,24 @@ jobs:
               echo 'No test summary was produced; inspect the failed emulator step.'
             fi
           } >> "$GITHUB_STEP_SUMMARY"
+      - name: Persist concise result for API-readable audit
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p ci-results
+          if ! test -f evidence/summary.json; then
+            printf '{"status":"NO_TEST_SUMMARY","run_id":"%s","note":"Android runner ended before the test script wrote its report."}\n' "$GITHUB_RUN_ID" > evidence-summary.json
+            report=evidence-summary.json
+          else
+            report=evidence/summary.json
+          fi
+          encoded="$(base64 -w 0 "$report")"
+          gh api --method PUT "repos/$GITHUB_REPOSITORY/contents/ci-results/gemma3-270m-${GITHUB_RUN_ID}.json" \
+            -f message="Record Gemma 3 270M Android run ${GITHUB_RUN_ID}" \
+            -f content="$encoded" \
+            -f branch="$GITHUB_REF_NAME"
       - name: Upload complete Android evidence
         if: always()
         uses: actions/upload-artifact@v4

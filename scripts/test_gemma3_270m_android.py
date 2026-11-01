@@ -87,7 +87,8 @@ def main():
         summary["status"] = "PASS"
     except Exception as exc:
         summary["error"] = str(exc)
-        (EVIDENCE / "gemma3-270m-failure.txt").write_text(traceback.format_exc())
+        summary["traceback"] = traceback.format_exc()
+        (EVIDENCE / "gemma3-270m-failure.txt").write_text(summary["traceback"])
         traceback.print_exc()
     finally:
         try:
