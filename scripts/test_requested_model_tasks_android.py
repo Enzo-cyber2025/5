@@ -5,6 +5,7 @@ import json
 import os
 import re
 import shlex
+import time
 import traceback
 from pathlib import Path
 
@@ -43,8 +44,16 @@ def assistant_code(answer):
 
 def ask_for_command(device, model, prompt, expected, stage, summary):
     """Execute only an exact command proposed by the latest assistant message."""
-    chat = device.new_chat(model, 0, context_size=2048, threads=2, n_predict=160)
-    answer = reply(device, chat, prompt, stage, timeout=600)
+    summary["checks"][stage] = {"prompt": prompt, "expected_command": expected,
+                                "executed": False, "status": "INFERENCE_PENDING"}
+    chat = device.new_chat(model, 0, context_size=2048, threads=2, n_predict=64)
+    try:
+        answer = reply(device, chat, prompt, stage, timeout=1200)
+    except Exception as exc:
+        summary["checks"][stage].update({"chat_id": chat["id"], "chat_title": chat["title"],
+                                         "status": "INFERENCE_FAILED_OR_TIMEOUT",
+                                         "inference_error": str(exc)})
+        raise
     selected = assistant_code(answer)
     record = {"prompt": prompt, "assistant_reply": answer[:6000],
               "selected_command": selected, "expected_command": expected,
@@ -114,42 +123,40 @@ def ask_for_command(device, model, prompt, expected, stage, summary):
     return record if record["executed"] else None
 
 
+def provision_text_model(device, source):
+    """Stage a real text GGUF without reading several GB into host RAM."""
+    device.shell(f"am force-stop {PACKAGE}")
+    digest = sha256(source)
+    dest = f"/data/user/0/{PACKAGE}/files/models/{source.name}"
+    uid = device.shell(f"stat -c %u /data/user/0/{PACKAGE}")
+    assert uid.isdigit(), "UID do aplicativo inválido"
+    parent = str(Path(dest).parent)
+    device.shell("mkdir -p " + shlex.quote(parent))
+    device.adb("push", source, dest, timeout=1800)
+    actual = device.shell("sha256sum " + shlex.quote(dest)).split()[0]
+    assert actual == digest, "GGUF recebido pelo app difere do arquivo validado"
+    device.shell(f"chown -R {uid}:{uid} {shlex.quote(parent)} && chmod 700 {shlex.quote(parent)} "
+                 f"&& chmod 600 {shlex.quote(dest)} && restorecon -R {shlex.quote(parent)}")
+    model = {"id": "ci-" + digest[:16], "name": source.stem, "fileName": source.name,
+             "path": dest, "size": source.stat().st_size, "importedAt": int(time.time() * 1000),
+             "multimodal": False, "mmprojPath": None}
+    device.write_private("files/models.json", json.dumps([model]))
+    device.launch()
+    rows = device.read_json("models.json")
+    matches = [row for row in rows if row.get("fileName") == source.name and row.get("path") == dest]
+    assert len(matches) == 1, "O app não preservou o modelo de texto preparado"
+    return matches[0]
+
+
 def load_model(device):
     if VARIANT == "gemma4-e2b":
         mobile.MODEL = Path(".cache/gemma4-models/gemma-4-E2B-it-Q3_K_S.gguf")
         mobile.PROJ = Path(".cache/gemma4-models/mmproj-F16.gguf")
-        device.launch()
-        device.shell("mkdir -p /sdcard/Download")
-        for source in (mobile.MODEL, mobile.PROJ):
-            device.adb("push", source, "/sdcard/Download/" + source.name, timeout=900)
-            device.shell("am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d "
-                         + shlex.quote("file:///sdcard/Download/" + source.name), check=False)
-        if position(device.ui(), text="📁 Importar", package={PACKAGE}):
-            device.tap(text="📁 Importar", package={PACKAGE})
-        device.wait(lambda: position(device.ui(), text="Importar .gguf", package={PACKAGE}),
-                    "tela de importação GGUF")
-        device.tap(text="Importar .gguf", package={PACKAGE})
-        device.wait(lambda: has_package(device.ui(), PICKERS), "seletor SAF para o par Gemma 4")
-        for _ in range(5):
-            xml = device.ui()
-            if position(xml, text=mobile.MODEL.name, package=PICKERS):
-                break
-            if not any(position(xml, text=t, package=PICKERS) for t in ("Open from", "Abrir de")):
-                device.tap(desc="Show roots", package=PICKERS, optional=True)
-            device.select_downloads()
-        from android_checks import select_exact_documents
-        device.tap(desc="List view", package=PICKERS, optional=True)
-        select_exact_documents(device, [mobile.MODEL.name, mobile.PROJ.name])
-        device.tap(text="Select", package=PICKERS)
-        device.wait(lambda: not has_package(device.ui(), PICKERS), "retorno do seletor SAF")
-        def imported_pair():
-            rows = device.read_json("models.json", optional=True)
-            try:
-                mobile.unified_pair(rows, mobile.MODEL.name, mobile.PROJ.name)
-                return next(row for row in rows if row.get("fileName") == mobile.MODEL.name)
-            except (AssertionError, StopIteration):
-                return None
-        return device.wait(imported_pair, "par real Gemma 4 E2B/MMProj importado por SAF", timeout=2400)
+        # This battery is deliberately text-only. The exact signed Gemma 4 E2B
+        # language GGUF is provisioned directly into app-private storage; earlier
+        # acceptance already covers the much slower SAF model+mmproj merge. Avoid
+        # spending this task's emulator budget re-merging the 3.4 GB vision pair.
+        return provision_text_model(device, mobile.MODEL)
     if VARIANT == "gemma3-270m":
         source = Path(".cache/gemma-3-270m-it-Q8_0.gguf")
         return import_model_via_saf(device, source)
@@ -171,9 +178,11 @@ def check_settings_screen(device):
     unique = list(dict.fromkeys(texts))
     terms = ("context", "contexto", "armazen", "storage", "memória", "memoria", "cache")
     candidates = [text for text in unique if any(term in text.casefold() for term in terms)]
+    persistence_terms = ("armazenar contexto", "contexto no armazenamento", "persistir contexto",
+                         "context storage", "context on disk", "save context to disk")
     return {"visible_settings_labels": unique,
             "storage_backed_context_option_found": any(
-                "context" in x.casefold() or "contexto" in x.casefold() for x in candidates),
+                any(term in text.casefold() for term in persistence_terms) for text in unique),
             "context_related_labels": candidates}
 
 
@@ -240,8 +249,9 @@ def main():
         if VARIANT == "gemma4-e2b":
             model_path = Path(".cache/gemma4-models/gemma-4-E2B-it-Q3_K_S.gguf")
             proj_path = Path(".cache/gemma4-models/mmproj-F16.gguf")
-            summary["model"] = {"name": "Gemma 4 E2B", "quantization": "Q3_K_S + mmproj F16",
-                                 "weights_sha256": sha256(model_path), "projector_sha256": sha256(proj_path)}
+            summary["model"] = {"name": "Gemma 4 E2B", "quantization": "Q3_K_S text weights; mmproj omitted for text-only task",
+                                 "weights_sha256": sha256(model_path), "projector_sha256": sha256(proj_path),
+                                 "projector_used_in_this_task": False}
         else:
             model_path = Path(".cache/gemma-3-270m-it-Q8_0.gguf")
             summary["model"] = {"name": "Gemma 3 270M IT", "quantization": "Q8_0",
@@ -254,7 +264,14 @@ def main():
         model = load_model(device)
         summary["model"].update({"app_name": model.get("name"), "architecture": model.get("architecture"),
                                  "capability": model.get("capability"), "size": model.get("size")})
-        summary["checks"]["signed_apk_and_real_gguf_import"] = "PASS"
+        if VARIANT == "gemma4-e2b":
+            summary["checks"]["signed_apk_and_real_gguf_provisioning"] = {
+                "status": "PASS", "method": "ADB provisioning into app-private models directory",
+                "SAF_import_in_this_task": False,
+                "note": "Text-only Gemma 4 task; prior release acceptance covers SAF pair merge."
+            }
+        else:
+            summary["checks"]["signed_apk_and_real_gguf_import"] = "PASS"
 
         summary["settings_ui"] = check_settings_screen(device)
         # Create the single-file folder in Termux's own private home. Nothing else
