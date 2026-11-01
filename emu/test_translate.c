@@ -3776,11 +3776,24 @@ static void test_guest_to_guest_call(void)
             CHECK(ok && !to && sig == 0,
                   "the guest-to-guest call did not run cleanly (ok=%d to=%d sig=%d)",
                   ok, to, sig);
+            /* UNRESOLVED, and left failing on purpose. On a real aarch64 runner this
+             * returns 7 - the callee's value - instead of 8, so the caller's
+             * `add eax,1` after the call did not execute. The emitted words were
+             * hand-decoded and are correct: STP frame, MOVZ X17,#0, ADD X17,X21,X17,
+             * LDUR X16,[X17], BLR X16, ADD W0,W0,#1, LDP frame, RET. The callee
+             * returning its own value proves the slot was filled and the BLR reached
+             * it; 7 rather than 8 means the callee's RET did not land on the caller's
+             * next instruction, i.e. X30 at that RET was the trampoline's return
+             * address and not the one the caller's BLR set. What puts it there is not
+             * established.
+             *
+             * Not weakened to 7 and not deleted: a call that reaches a callee and does
+             * not come back to the caller is not a working call, and this is the
+             * feature 46% of a real binary's refusals depend on. */
             CHECK(r == 8u,
                   "the call chain returned %llu, expected 8 (the callee's 7 plus the "
-                  "caller's 1): a slot pointing at the wrong body, a callee whose RET "
-                  "did not find the BLR's X30, or a caller that lost its own return "
-                  "address each give something else",
+                  "caller's 1): the callee was reached, so the slot and the BLR are "
+                  "right, but the caller's instruction after the call did not run",
                   (unsigned long long)r);
             munmap(page, plen); page = NULL;
         }
