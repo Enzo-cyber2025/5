@@ -1,0 +1,168 @@
+{
+  "status": "PARTIAL",
+  "scope": "requested-Gemma-folder-Termux-Box64-APK-and-zero-limits",
+  "variant": "gemma4-e2b",
+  "apk": {
+    "sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc",
+    "expected_sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc"
+  },
+  "checks": {
+    "signed_apk_and_real_gguf_provisioning": {
+      "status": "PASS",
+      "method": "ADB provisioning into app-private models directory",
+      "SAF_import_in_this_task": false,
+      "note": "Text-only Gemma 4 task; prior release acceptance covers SAF pair merge."
+    },
+    "official_termux_bootstrap": "PASS",
+    "app_mediated_termux_handoff": {
+      "status": "NOT_VALIDATED",
+      "reason": "The pinned APK's Termux tool-row handoff was not available in the emulator flow; model commands are run by the harness as the Termux UID.",
+      "human_confirmation": false,
+      "stdout_automatically_returned_to_model": false
+    },
+    "folder_termux_access": {
+      "prompt": "Use Termux to inspect the folder. Return only a fenced bash block with exactly this command:\ncat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt",
+      "assistant_reply": "```bash\ncat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt\n```",
+      "selected_command": "cat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt",
+      "expected_command": "cat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt",
+      "chat_id": "1a19972802db2a59b",
+      "chat_title": "GGUF regression 1a19972802db2a59b",
+      "executed": true,
+      "status": "TERMUX_COMMAND_COMPLETED",
+      "execution_command": "cat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt",
+      "execution_method": "CI test harness via run-as into official Termux bash",
+      "in_app_termux_review_dialog": false,
+      "human_confirmation": false,
+      "termux_output_returned_to_model_automatically": false,
+      "termux_uid": "10210",
+      "execution_invoked": true,
+      "harness_stdout": "",
+      "completion_file": "/data/data/com.termux/files/home/model-audit-output.txt",
+      "shell_output": "Arquivo unico da pasta de teste. Identificador: BLUE-LANTERN-5831.",
+      "description_prompt": "Termux output, file contents: Arquivo unico da pasta de teste. Identificador: BLUE-LANTERN-5831.\nThere is exactly one file named only-note.txt. Reply as: file=<filename>; id=<identifier>.",
+      "description_chat_id": "1a199748ad432f5ad",
+      "description_reply": "file=only-note.txt; id=BLUE-LANTERN-5831",
+      "description_status": "PASS"
+    },
+    "model_describes_actual_folder_contents": "PASS",
+    "zero_context_and_zero_response_limits": {
+      "status": "FAIL",
+      "error": "Timeout: orçamento nativo finito dos dois valores zero"
+    },
+    "text_to_binary_project_staged_in_termux_home": "PASS",
+    "box64_install_script_staged": {
+      "status": "PASS",
+      "path": "/data/data/com.termux/files/home/install-box64.sh",
+      "script": "#!/data/data/com.termux/files/usr/bin/bash\npkg install -y box64 > \"$HOME/box64-install.log\" 2>&1\nstatus=$?\nprintf '%s\\n' \"$status\" > \"$HOME/box64-install.status\"\nexit $status\n"
+    },
+    "box64_install_attempt": {
+      "prompt": "Copy this exact Termux command. Do not rewrite it or add explanation; return one fenced bash block:\nbash ~/install-box64.sh",
+      "assistant_reply": "```bash\nbash ~/install-box64.sh\n```",
+      "selected_command": "bash ~/install-box64.sh",
+      "expected_command": "bash ~/install-box64.sh",
+      "chat_id": "1a1998407896a6ee8",
+      "chat_title": "GGUF regression 1a1998407896a6ee8",
+      "executed": true,
+      "status": "PACKAGE_UNAVAILABLE_OR_FAILED",
+      "execution_command": "bash ~/install-box64.sh",
+      "execution_method": "CI test harness via run-as into official Termux bash",
+      "in_app_termux_review_dialog": false,
+      "human_confirmation": false,
+      "termux_output_returned_to_model_automatically": false,
+      "termux_uid": "10210",
+      "execution_invoked": true,
+      "harness_stdout": "",
+      "completion_file": "/data/data/com.termux/files/home/box64-install.status",
+      "exit_code": "100",
+      "log_tail": "No mirror or mirror group selected. You might want to select one by running 'termux-change-repo'\nTesting the available mirrors:\n[*] (10) https://packages-cf.termux.dev/apt/termux-main: ok\n[*] (1) https://linux.domainesia.com/applications/termux/termux-main: ok\n[*] (1) https://termux.niranjan.co/termux-main: ok\n[*] (1) https://mirror.bardia.tech/termux/termux-main: bad\n[*] (1) https://mirrors.saswata.cc/termux/termux-main: bad\n[*] (1) https://mirrors.ravidwivedi.in/termux/termux-main: ok\n[*] (1) https://mirror.textcord.xyz/termux/termux-main: ok\n[*] (1) https://mirrors.krnk.org/apt/termux/termux-main: ok\n[*] (1) https://mirror.rinarin.dev/termux/termux-main: ok\n[*] (1) https://mirror.jeonnam.school/termux/termux-main: ok\n[*] (1) https://mirrors.nguyenhoang.cloud/termux/termux-main: ok\n[*] (1) https://mirrors.cbrx.io/apt/termux/termux-main: ok\n[*] (1) https://tmx.xvx.my.id/apt/termux-main: ok\n[*] (1) https://mirror.albony.in/termux/termux-main: ok\n[*] (1) https://mirror.twds.com.tw/termux/termux-main: ok\n[*] (1) https://mirror.nevacloud.com/applications/termux/termux-main: ok\n[*] (1) https://mirror.meowsmp.net/termux/termux-main: bad\n[*] (1) https://mirror.freedif.org/termux/termux-main: ok\n[*] (1) https://mirrors.in.sahilister.net/termux/termux-main/: ok\n[*] (1) https://mirror.iscas.ac.cn/termux/apt/termux-main: ok\n[*] (1) https://mirrors.sau.edu.cn/termux/apt/termux-main: ok\n[*] (1) https://mirrors.sdu.edu.cn/termux/termux-main: bad\n[*] (1) https://mirrors.aliyun.com/termux/termux-main: ok\n[*] (1) https://mirrors.cernet.edu.cn/termux/apt/termux-main: ok\n[*] (1) https://mirrors.cqupt.edu.cn/termux/termux-main: ok\n[*] (1) https://mirrors.sustech.edu.cn/termux/apt/termux-main: ok\n[*] (1) https://mirrors.bfsu.edu.cn/termux/apt/termux-main: ok\n[*] (1) https://mirrors.pku.edu.cn/termux/termux-main/: ok\n[*] (1) https://mirrors.hust.edu.cn/termux/apt/termux-main: ok\n[*] (1) https://mirrors.tuna.tsinghua.edu.cn/termux/apt/termux-main: ok\n[*] (1) https://mirror.sjtu.edu.cn/termux/termux-main/: ok\n[*] (1) https://mirror.nyist.edu.cn/termux/apt/termux-main: ok\n[*] (1) https://mirrors.ustc.edu.cn/termux/termux-main: ok\n[*] (1) https://mirrors.zju.edu.cn/termux/apt/termux-main: ok\n[*] (1) https://mirrors.nju.edu.cn/termux/apt/termux-main: ok\n[*] (4) https://grimler.se/termux/termux-main: ok\n[*] (1) https://mirror.polido.pt/termux/termux-main: bad\n[*] (1) https://termux.3san.dev/termux/termux-main: ok\n[*] (1) https://mirrors.medzik.dev/termux/termux-main: bad\n[*] (1) https://mirror.accum.se/mirror/termux.dev/termux-main: ok\n[*] (1) https://mirror.mwt.me/termux/main: ok\n[*] (1) https://ro.mirror.flokinet.net/termux/termux-main: ok\n[*] (1) https://md.mirrors.hacktegic.com/termux/termux-main: bad\n[*] (1) https://is.mirror.flokinet.net/termux/termux-main: ok\n[*] (1) https://mirror.termux.dev/termux-main: bad\n[*] (1) https://termux.mentality.rip/termux-main: bad\n[*] (1) https://nl.mirror.flokinet.net/termux/termux-main: ok\n[*] (1) https://termux.cdn.lumito.net/termux-main: bad\n[*] (1) https://mirror.leitecastro.com/termux/termux-main: ok\n[*] (1) https://mirror.bouwhuis.network/termux/termux-main: ok\n[*] (1) https://termux.librehat.com/apt/termux-main: ok\n[*] (1) https://mirror.autkin.net/termux/termux-main: ok\n[*] (1) https://mirror.sunred.org/termux/termux-main: ok\n[*] (1) https://packages.termux.dev/apt/termux-main: ok\n[*] (1) https://ftp.agdsn.de/termux/termux-main: ok\n[*] (1) https://ftp.fau.de/termux/termux-main: ok\n[*] (1) https://mirrors.cfe.re/termux/termux-main: bad\n[*] (1) https://mirrors.de.sahilister.net/termux/termux-main: ok\n[*] (1) https://gnlug.org/pub/termux/termux-main: ok\n[*] (1) https://mirror.mwt.me/termux/main: ok\n[*] (1) https://mirror.quantum5.ca/termux/termux-main: ok\n[*] (1) https://mirrors.utermux.dev/termux/termux-main: bad\n[*] (1) https://plug-mirror.rcac.purdue.edu/termux/termux-main: ok\n[*] (1) https://mirror.vern.cc/termux/termux-main: bad\n[*] (1) https://dl.kcubeterm.com/termux-main: bad\n[*] (1) https://termux.danyael.xyz/termux/termux-main: ok\n[*] (1) https://mirror.csclub.uwaterloo.ca/termux/termux-main: ok\n[*] (1) https://mirror.fcix.net/termux/termux-main: ok\n[*] (1) https://mirrors.middlendian.com/termux/termux-main: ok\n[*] (1) https://repository.su/termux/termux-main/: ok\n[*] (1) http://mirror.mephi.ru/termux/termux-main: ok\nPicking mirror: (7) /data/data/com.termux/files/usr/etc/termux/mirrors/default\n\nWARNING: apt does not have a stable CLI interface. Use with caution in scripts.\n\nGet:1 https://packages-cf.termux.dev/apt/termux-main stable InRelease [14.0 kB]\nGet:2 https://packages-cf.termux.dev/apt/termux-main stable/main x86_64 Packages [591 kB]\nFetched 605 kB in 2s (284 kB/s)\nReading package lists...\nBuilding dependency tree...\n74 packages can be upgraded. Run 'apt list --upgradable' to see them.\n\nWARNING: apt does not have a stable CLI interface. Use with caution in scripts.\n\nReading package lists...\nBuilding dependency tree...\nE: Unable to locate package box64",
+      "box64_executable": ""
+    },
+    "box64_install_result": "PACKAGE_UNAVAILABLE_OR_FAILED",
+    "termux_compile_text_to_binary_apk": {
+      "prompt": "Copy this exact Termux build command without explanation; return one fenced bash block:\nbash ~/text-binary/run-build.sh",
+      "assistant_reply": "```bash\nbash ~/text-binary/run-build.sh\n```",
+      "selected_command": "bash ~/text-binary/run-build.sh",
+      "expected_command": "bash ~/text-binary/run-build.sh",
+      "chat_id": "1a199858eb2ebfad",
+      "chat_title": "GGUF regression 1a199858eb2ebfad",
+      "executed": true,
+      "status": "TERMUX_COMMAND_COMPLETED",
+      "execution_command": "bash ~/text-binary/run-build.sh",
+      "execution_method": "CI test harness via run-as into official Termux bash",
+      "in_app_termux_review_dialog": false,
+      "human_confirmation": false,
+      "termux_output_returned_to_model_automatically": false,
+      "termux_uid": "10210",
+      "execution_invoked": true,
+      "harness_stdout": "",
+      "completion_file": "/data/data/com.termux/files/home/text-binary/build.exit",
+      "exit_code": "3",
+      "build_log_tail": "warning: [options] source value 8 is obsolete and will be removed in a future release\nwarning: [options] target value 8 is obsolete and will be removed in a future release\nwarning: [options] To suppress warnings about obsolete options, use -Xlint:-options.\nMainActivity.java:43: error: cannot find symbol\n        convert.setOnClickListener(view -> result.setText(toBinary(input.getText().toString())));\n                                   ^\n  symbol:   method metafactory(Lookup,String,MethodType,MethodType,MethodHandle,MethodType)\n  location: interface LambdaMetafactory\n1 error\n3 warnings\nFatal Error: Unable to find method metafactory",
+      "tool_install_log_tail": "k .../20-libogg_1.3.6-1_x86%5f64.deb ...\r\nUnpacking libogg (1.3.6-1) ...\r\nSelecting previously unselected package libflac.\r\nPreparing to unpack .../21-libflac_1.5.0-1_x86%5f64.deb ...\r\nUnpacking libflac (1.5.0-1) ...\r\nSelecting previously unselected package libmpg123.\r\nPreparing to unpack .../22-libmpg123_1.33.7_x86%5f64.deb ...\r\nUnpacking libmpg123 (1.33.7) ...\r\nSelecting previously unselected package libmp3lame.\r\nPreparing to unpack .../23-libmp3lame_4.0-1_x86%5f64.deb ...\r\nUnpacking libmp3lame (4.0-1) ...\r\nSelecting previously unselected package libopus.\r\nPreparing to unpack .../24-libopus_1.6.1_x86%5f64.deb ...\r\nUnpacking libopus (1.6.1) ...\r\nSelecting previously unselected package libvorbis.\r\nPreparing to unpack .../25-libvorbis_1.3.7-4_x86%5f64.deb ...\r\nUnpacking libvorbis (1.3.7-4) ...\r\nSelecting previously unselected package libsndfile.\r\nPreparing to unpack .../26-libsndfile_1.2.2-3_x86%5f64.deb ...\r\nUnpacking libsndfile (1.2.2-3) ...\r\nSelecting previously unselected package libsoxr.\r\nPreparing to unpack .../27-libsoxr_0.1.3-8_x86%5f64.deb ...\r\nUnpacking libsoxr (0.1.3-8) ...\r\nSelecting previously unselected package libwebrtc-audio-processing.\r\nPreparing to unpack .../28-libwebrtc-audio-processing_2.1_x86%5f64.deb ...\r\nUnpacking libwebrtc-audio-processing (2.1) ...\r\nSelecting previously unselected package speexdsp.\r\nPreparing to unpack .../29-speexdsp_1.2.1-1_x86%5f64.deb ...\r\nUnpacking speexdsp (1.2.1-1) ...\r\nSelecting previously unselected package pulseaudio.\r\nPreparing to unpack .../30-pulseaudio_17.0-5_x86%5f64.deb ...\r\nUnpacking pulseaudio (17.0-5) ...\r\nSelecting previously unselected package alsa-plugins.\r\nPreparing to unpack .../31-alsa-plugins_1.2.12-1_x86%5f64.deb ...\r\nUnpacking alsa-plugins (1.2.12-1) ...\r\nSelecting previously unselected package libandroid-spawn.\r\nPreparing to unpack .../32-libandroid-spawn_0.3_x86%5f64.deb ...\r\nUnpacking libandroid-spawn (0.3) ...\r\nSelecting previously unselected package libjpeg-turbo.\r\nPreparing to unpack .../33-libjpeg-turbo_3.2.1_x86%5f64.deb ...\r\nUnpacking libjpeg-turbo (3.2.1) ...\r\nSelecting previously unselected package littlecms.\r\nPreparing to unpack .../34-littlecms_2.19.1_x86%5f64.deb ...\r\nUnpacking littlecms (2.19.1) ...\r\nSelecting previously unselected package openjdk-21.\r\nPreparing to unpack .../35-openjdk-21_21.0.13-1_x86%5f64.deb ...\r\nUnpacking openjdk-21 (21.0.13-1) ...\r\nSelecting previously unselected package apksigner.\r\nPreparing to unpack .../36-apksigner_37.0.0_all.deb ...\r\nUnpacking apksigner (37.0.0) ...\r\nSelecting previously unselected package brotli.\r\nPreparing to unpack .../37-brotli_1.2.1_x86%5f64.deb ...\r\nUnpacking brotli (1.2.1) ...\r\nSelecting previously unselected package ca-certificates-java.\r\nPreparing to unpack .../38-ca-certificates-java_1%3a2026.10.20-1_all.deb ...\r\nUnpacking ca-certificates-java (1:2026.10.20-1) ...\r\nSelecting previously unselected package d8.\r\nPreparing to unpack .../39-d8_37.0.0_all.deb ...\r\nUnpacking d8 (37.0.0) ...\r\nSelecting previously unselected package freetype.\r\nPreparing to unpack .../40-freetype_2.15.0_x86%5f64.deb ...\r\nUnpacking freetype (2.15.0) ...\r\nSelecting previously unselected package giflib.\r\nPreparing to unpack .../41-giflib_6.1.3_x86%5f64.deb ...\r\nUnpacking giflib (6.1.3) ...\r\nSelecting previously unselected package libxext.\r\nPreparing to unpack .../42-libxext_1.3.7_x86%5f64.deb ...\r\nUnpacking libxext (1.3.7) ...\r\nSelecting previously unselected package libxi.\r\nPreparing to unpack .../43-libxi_1.8.4_x86%5f64.deb ...\r\nUnpacking libxi (1.8.4) ...\r\nSelecting previously unselected package libxrender.\r\nPreparing to unpack .../44-libxrender_0.9.13_x86%5f64.deb ...\r\nUnpacking libxrender (0.9.13) ...\r\nSelecting previously unselected package libxtst.\r\nPreparing to unpack .../45-libxtst_1.2.6_x86%5f64.deb ...\r\nUnpacking libxtst (1.2.6) ...\r\nSelecting previously unselected package openjdk-21-x.\r\nPreparing to unpack .../46-openjdk-21-x_21.0.13-1_x86%5f64.deb ...\r\nUnpacking openjdk-21-x (21.0.13-1) ...\r\nSetting up libopus (1.6.1) ...\r\nSetting up libpng (1.6.59) ...\r\nSetting up littlecms (2.19.1) ...\r\nSetting up libxdmcp (1.1.5-2) ...\r\nSetting up libsoxr (0.1.3-8) ...\r\nSetting up libandroid-shmem (0.7) ...\r\nSetting up libogg (1.3.6-1) ...\r\nSetting up speexdsp (1.2.1-1) ...\r\nSetting up fmt (1:12.2.0) ...\r\nSetting up libexpat (2.9.0) ...\r\nSetting up libmpg123 (1.33.7) ...\r\nSetting up libvorbis (1.3.7-4) ...\r\nSetting up libandroid-spawn (0.3) ...\r\nSetting up libandroid-execinfo (0.1-3) ...\r\nSetting up xorg-util-macros (1.20.2) ...\r\nSetting up libltdl (2.6.2) ...\r\nSetting up libxau (1.0.12-2) ...\r\nSetting up libzopfli (1.0.3-5) ...\r\nSetting up libandroid-sysv-semaphore (0.1-1) ...\r\nSetting up libjpeg-turbo (3.2.1) ...\r\nSetting up libmp3lame (4.0-1) ...\r\nSetting up giflib (6.1.3) ...\r\nSetting up xorgproto (2026.1) ...\r\nSetting up libxcb (1.17.0-1) ...\r\nSetting up libandroid-stub (30-3) ...\r\nSetting up ca-certificates-java (1:2026.10.20-1) ...\r\nSetting up libflac (1.5.0-1) ...\r\nSetting up abseil-cpp (20260817.0) ...\r\nSetting up brotli (1.2.1) ...\r\nSetting up alsa-lib (1.2.16.1) ...\r\nSetting up libprotobuf (2:36.2-1) ...\r\nSetting up libx11 (1.8.14) ...\r\nSetting up freetype (2.15.0) ...\r\nSetting up dbus (1.16.2-3) ...\r\nSetting up libsndfile (1.2.2-3) ...\r\nSetting up libwebrtc-audio-processing (2.1) ...\r\nSetting up libxext (1.3.7) ...\r\nSetting up libxi (1.8.4) ...\r\nSetting up aapt2 (16.0.0.4-4) ...\r\nSetting up libxrender (0.9.13) ...\r\nSetting up pulseaudio (17.0-5) ...\r\nIf audio does not work on Android 8+, please try this workaround:\r\n    sed -i 's/module-sles-sink/module-aaudio-sink/g' $PREFIX/etc/pulse/default.pa\r\nSetting up alsa-plugins (1.2.12-1) ...\r\nSetting up libxtst (1.2.6) ...\r\nSetting up openjdk-21 (21.0.13-1) ...\r\nupdate-alternatives: using /data/data/com.termux/files/usr/lib/jvm/java-21-openjdk/bin/java to provide /data/data/com.termux/files/usr/bin/java (java) in auto mode\r\nSetting up d8 (37.0.0) ...\r\nSetting up openjdk-21-x (21.0.13-1) ...\r\nSetting up apksigner (37.0.0) ..."
+    },
+    "termux_apk_build_result": "FAIL"
+  },
+  "limitations": [
+    "Android emulator x86_64, not a physical handset",
+    "Box64 package was attempted in the x86_64 Termux emulator; installation did not produce a box64 executable."
+  ],
+  "model": {
+    "name": "Gemma 4 E2B",
+    "quantization": "Q3_K_S text weights; mmproj omitted for text-only task",
+    "weights_sha256": "80d155f647d3a896669b1d1605b494b97ee9dbd1dcafd27957394134c280d270",
+    "projector_sha256": "140be8d7849741f88c50757d529b84373ee8e27052cc2236855b537f4a8215fa",
+    "projector_used_in_this_task": false,
+    "apk_signed_sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc",
+    "app_name": "gemma-4-E2B-it-Q3_K_S",
+    "architecture": null,
+    "capability": null,
+    "size": 2445652064
+  },
+  "settings_ui": {
+    "visible_settings_labels": [
+      "‹",
+      "Ajustes",
+      "Tamanho de contexto (tokens)",
+      "1024",
+      "Threads de CPU (0 = automático)",
+      "0",
+      "Camadas na GPU Vulkan (-1 = todas, 0 = só CPU)",
+      "99",
+      "Máximo de tokens por resposta",
+      "Temperatura",
+      "0.8",
+      "Top-P",
+      "0.95",
+      "Top-K",
+      "40.0",
+      "Min-P",
+      "0.05",
+      "Penalidade de repetição",
+      "1.1",
+      "Ferramentas (padrão para novas conversas):",
+      "Thinking",
+      "Busca",
+      "Salvar ajustes",
+      "Descarregar modelo da memória",
+      "GGUF Chat\nInferência local via llama.cpp (llamarn) com backend Vulkan.\nBackend atual: —\n\nDicas:\n• Para gerar com a tela bloqueada, basta enviar a mensagem e bloquear: a geração continua em segundo plano.\n• Use “Thinking” para raciocínio estendido e “Busca” para respostas embasadas na web.\n• Modelos multimodais: importe o GGUF de texto e o mmproj juntos."
+    ],
+    "storage_backed_context_option_found": false,
+    "context_related_labels": [
+      "Tamanho de contexto (tokens)",
+      "Descarregar modelo da memória"
+    ]
+  },
+  "folder_fixture": {
+    "path": "/data/data/com.termux/files/home/model-audit",
+    "files": [
+      "only-note.txt"
+    ],
+    "file_content": "Arquivo unico da pasta de teste. Identificador: BLUE-LANTERN-5831.",
+    "sha256": "ca381c3fba7b0a9c158d0d6a9622f3c725d78d3c6bf770e68fa0ced966348fd6"
+  },
+  "internal_context_storage": {
+    "chat_settings_and_user_message_saved_in_private_app_files": false,
+    "explicit_context_storage_toggle_in_settings": false,
+    "native_KV_cache_persistence": "not claimed or tested; chat transcript persistence is separate"
+  }
+}
