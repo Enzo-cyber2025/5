@@ -3869,6 +3869,7 @@ jobs:
             bits = (unsigned char *)malloc(stride * h);
             if (bits) {
               BitBlt(dc, 0, 0, w, h, sc, x0, y0, SRCCOPY);
+              SelectObject(dc, old); /* v101: GetDIBits EXIGE o bm fora do DC — desde a v94 os detectores eram CEGOS (frac=-1, dif=0, ascii vazio) */
               if (GetDIBits(sc, bm, 0, h, bits, &bi, DIB_RGB_COLORS)) {
                 for (y = 0; y < h; y += 3) {
                   unsigned char *row = bits + (h - 1 - y) * stride;
@@ -3907,6 +3908,7 @@ jobs:
             if (lg) { fprintf(lg, "---- ascii %s ----\n", tag); fflush(lg); }
             if (bits) {
               BitBlt(dc, 0, 0, w, h, sc, x0, y0, SRCCOPY);
+              SelectObject(dc, old); /* v101: idem caixa_frac */
               if (GetDIBits(sc, bm, 0, h, bits, &bi, DIB_RGB_COLORS)) {
                 for (gy = 0; gy < rows; gy++) {
                   for (gx = 0; gx < cols; gx++) {
@@ -3987,6 +3989,7 @@ jobs:
             bits = (unsigned char *)malloc(stride * h);
             if (bits) {
               BitBlt(dc, 0, 0, w, h, sc, 310, 430, SRCCOPY);
+              SelectObject(dc, old); /* v101: idem caixa_frac */
               if (GetDIBits(sc, bm, 0, h, bits, &bi, DIB_RGB_COLORS)) {
                 for (gy = 0; gy < PGY; gy++) {
                   for (gx = 0; gx < PGX; gx++) {
@@ -4109,7 +4112,7 @@ jobs:
             lg = fopen(segunda ? "menuwalk2.log" : "menuwalk.log", "w");
             if (segunda) shotpre = "shot-mw2-";
             dcchk = GetDC(NULL);
-            if (lg) { fprintf(lg, "[%u] inicio v99 | tela=%dx%d dpi=%d | modo %s\n", GetTickCount(), GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN), GetDeviceCaps(dcchk, LOGPIXELSX), segunda ? "DRIVE (2a)" : "FORENSE (1a)"); fflush(lg); }
+            if (lg) { fprintf(lg, "[%u] inicio v101 | tela=%dx%d dpi=%d | modo %s\n", GetTickCount(), GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN), GetDeviceCaps(dcchk, LOGPIXELSX), segunda ? "DRIVE (2a)" : "FORENSE (1a)"); fflush(lg); }
             ReleaseDC(NULL, dcchk);
             for (i = 0; i < 30 && !FindWindowW(NULL, L"Euro Truck Simulator 2"); i++) Sleep(2000);
             if (lg) { fprintf(lg, "[%u] janela %s\n", GetTickCount(), FindWindowW(NULL, L"Euro Truck Simulator 2") ? "OK" : "AUSENTE"); fflush(lg); }
@@ -4238,45 +4241,45 @@ jobs:
               foca_forte();
               clica_longo(614, 456, 8000, "retangulo-escuro LONGO 8s");
               Sleep(45000);
-              shot("arm01"); dif = painel_dif(); fr = caixa_frac();
+              ascii_dump("arm01"); shot("arm01"); dif = painel_dif(); fr = caixa_frac();
               if (lg) { fprintf(lg, "[%u] arma 1 (clique longo retangulo): dif=%d%% frac=%.2f\n", GetTickCount(), dif, fr); fflush(lg); }
               if ((fr < 0.34 && caixa_base - fr > 0.18) || dif >= 30) { destravou = 4; goto pronto; }
               foca_forte();
               clica_longo(545, 395, 8000, "faixa-cinza LONGO 8s");
               Sleep(45000);
-              shot("arm02"); dif = painel_dif(); fr = caixa_frac();
+              ascii_dump("arm02"); shot("arm02"); dif = painel_dif(); fr = caixa_frac();
               if (lg) { fprintf(lg, "[%u] arma 2 (clique longo faixa): dif=%d%% frac=%.2f\n", GetTickCount(), dif, fr); fflush(lg); }
               if ((fr < 0.34 && caixa_base - fr > 0.18) || dif >= 30) { destravou = 5; goto pronto; }
               foca_forte();
               post_click(jogo, 614, 456, "retangulo post main");
               post_click(jogo, 545, 395, "faixa post main");
               Sleep(45000);
-              shot("arm03"); dif = painel_dif(); fr = caixa_frac();
+              ascii_dump("arm03"); shot("arm03"); dif = painel_dif(); fr = caixa_frac();
               if (lg) { fprintf(lg, "[%u] arma 3 (post main x2): dif=%d%% frac=%.2f\n", GetTickCount(), dif, fr); fflush(lg); }
               if ((fr < 0.34 && caixa_base - fr > 0.18) || dif >= 30) { destravou = 6; goto pronto; }
               foca_forte();
               for (i = 0; i < 6; i++) tap(0x0F, 200, "TAB");
               tap_longo(0x39, 4000, "SPACE sustentado 4s");
               Sleep(45000);
-              shot("arm04"); dif = painel_dif(); fr = caixa_frac();
+              ascii_dump("arm04"); shot("arm04"); dif = painel_dif(); fr = caixa_frac();
               if (lg) { fprintf(lg, "[%u] arma 4 (TABx6+SPACE longo): dif=%d%% frac=%.2f\n", GetTickCount(), dif, fr); fflush(lg); }
               if ((fr < 0.34 && caixa_base - fr > 0.18) || dif >= 30) { destravou = 7; goto pronto; }
               foca_forte();
               clica_longo(614, 520, 6000, "texto-link LONGO 6s");
               Sleep(45000);
-              shot("arm05"); dif = painel_dif(); fr = caixa_frac();
+              ascii_dump("arm05"); shot("arm05"); dif = painel_dif(); fr = caixa_frac();
               if (lg) { fprintf(lg, "[%u] arma 5 (clique longo link): dif=%d%% frac=%.2f\n", GetTickCount(), dif, fr); fflush(lg); }
               if ((fr < 0.34 && caixa_base - fr > 0.18) || dif >= 30) { destravou = 8; goto pronto; }
               foca_forte();
               clica_abs(367, 517, 20000, "Activate-abs");
               tap(0x1C, 45000, "Enter (fecha erro)");
-              shot("arm06"); dif = painel_dif(); fr = caixa_frac();
+              ascii_dump("arm06"); shot("arm06"); dif = painel_dif(); fr = caixa_frac();
               if (lg) { fprintf(lg, "[%u] arma 6 (activate+enter): dif=%d%% frac=%.2f\n", GetTickCount(), dif, fr); fflush(lg); }
               if ((fr < 0.34 && caixa_base - fr > 0.18) || dif >= 30) { destravou = 9; goto pronto; }
               foca_forte();
               tap_longo(0x01, 3000, "ESC sustentado 3s");
               Sleep(45000);
-              shot("arm07"); dif = painel_dif(); fr = caixa_frac();
+              ascii_dump("arm07"); shot("arm07"); dif = painel_dif(); fr = caixa_frac();
               if (lg) { fprintf(lg, "[%u] arma 7 (esc longo): dif=%d%% frac=%.2f\n", GetTickCount(), dif, fr); fflush(lg); }
               if ((fr < 0.34 && caixa_base - fr > 0.18) || dif >= 30) { destravou = 12; goto pronto; }
             }
