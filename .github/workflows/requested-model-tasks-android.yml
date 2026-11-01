@@ -1,0 +1,135 @@
+name: Gemma folder, Termux, Box64, APK and token-limit tests
+on:
+  push:
+    branches: [arena/10b3367a-5]
+    paths:
+      - '.github/workflows/requested-model-tasks-android.yml'
+      - 'scripts/test_requested_model_tasks_android.py'
+      - 'scripts/test_gemma3_270m_android.py'
+      - 'scripts/test_tool_integrations_android.py'
+      - 'scripts/test_android.py'
+      - 'scripts/test_mobile.py'
+      - 'scripts/test_inference_android.py'
+      - 'scripts/android_checks.py'
+      - 'ci/gemma4-models.sh'
+      - 'tests/android-text-binary/**'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  model-tasks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: gemma4-e2b
+            ram: 12288M
+            disk: 16384M
+          - variant: gemma3-270m
+            ram: 6144M
+            disk: 8192M
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Fetch exact signed APK, real model and official Termux
+        env:
+          MODEL_VARIANT: ${{ matrix.variant }}
+        run: |
+          set -euo pipefail
+          mkdir -p .cache
+          curl --fail --location --retry 3 --max-time 300 \
+            'https://github.com/Enzo-cyber2025/5/releases/download/gguf-gemma4-ca7d8f1/GGUF-Chat-mobile.apk' \
+            -o .cache/GGUF-Chat-mobile.apk
+          echo 'f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc  .cache/GGUF-Chat-mobile.apk' | sha256sum --check
+          if [ "$MODEL_VARIANT" = gemma4-e2b ]; then
+            bash ci/gemma4-models.sh
+          else
+            curl --fail --location --retry 3 --max-time 900 \
+              'https://github.com/cdracars/gemma-3-270m-it-gguf-mirror/releases/download/upstream-d156a5159f2f79c1b1d53c7c1cc20f1ff28ab8d00f17a292620aad13399b9698/gemma-3-270m-it-Q8_0.gguf' \
+              -o .cache/gemma-3-270m-it-Q8_0.gguf
+            echo 'd156a5159f2f79c1b1d53c7c1cc20f1ff28ab8d00f17a292620aad13399b9698  .cache/gemma-3-270m-it-Q8_0.gguf' | sha256sum --check
+          fi
+          version=v0.118.3
+          asset="termux-app_${version}+github-debug_x86_64.apk"
+          base="https://github.com/termux/termux-app/releases/download/${version}"
+          curl --fail --location --retry 3 --max-time 300 "${base}/${asset//+/%2B}" -o .cache/termux-app-x86_64.apk
+          curl --fail --location --retry 3 --max-time 60 "${base}/termux-app_${version}%2Bgithub-debug_sha256sums" -o .cache/termux-sha256sums
+          expected="$(grep -F "$asset" .cache/termux-sha256sums | head -1 | awk '{print $1}')"
+          test "${#expected}" -eq 64
+          printf '%s  %s\n' "$expected" .cache/termux-app-x86_64.apk | sha256sum --check -
+          test -s "$ANDROID_HOME/platforms/android-35/android.jar"
+      - name: Disposable host swap for Gemma 4 E2B
+        if: matrix.variant == 'gemma4-e2b'
+        run: |
+          sudo fallocate -l 8G /mnt/gemma-request-swap
+          sudo chmod 600 /mnt/gemma-request-swap
+          sudo mkswap /mnt/gemma-request-swap
+          sudo swapon /mnt/gemma-request-swap
+          free -h
+      - name: Allow KVM
+        run: sudo chmod a+rw /dev/kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        env:
+          MODEL_VARIANT: ${{ matrix.variant }}
+          GGUF_TEST_APK: .cache/GGUF-Chat-mobile.apk
+          GGUF_TERMUX_TEST_APK: .cache/termux-app-x86_64.apk
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_5
+          ram-size: ${{ matrix.ram }}
+          heap-size: 1024M
+          disk-size: ${{ matrix.disk }}
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back emulated -camera-front emulated
+          script: python3 scripts/test_requested_model_tasks_android.py
+      - name: Publish concise test result
+        if: always()
+        run: |
+          {
+            echo "## ${MODEL_VARIANT:-${{ matrix.variant }}} requested Android tasks"
+            if test -f evidence/summary.json; then
+              cat evidence/summary.json
+            else
+              echo 'No test summary was produced.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Persist machine-readable result
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MODEL_VARIANT: ${{ matrix.variant }}
+        run: |
+          set -euo pipefail
+          if test -f evidence/summary.json; then
+            report=evidence/summary.json
+          else
+            mkdir -p evidence
+            printf '{"status":"NO_TEST_SUMMARY","variant":"%s","run_id":"%s"}\n' "$MODEL_VARIANT" "$GITHUB_RUN_ID" > evidence/summary.json
+            report=evidence/summary.json
+          fi
+          encoded="$(base64 -w 0 "$report")"
+          for attempt in 1 2 3; do
+            if gh api --method PUT "repos/$GITHUB_REPOSITORY/contents/ci-results/requested-${MODEL_VARIANT}-${GITHUB_RUN_ID}.json" \
+              -f message="Record ${MODEL_VARIANT} requested Android tests ${GITHUB_RUN_ID}" \
+              -f content="$encoded" \
+              -f branch="$GITHUB_REF_NAME"; then
+              exit 0
+            fi
+            sleep $((attempt * 3))
+          done
+          exit 1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: requested-${{ matrix.variant }}-android-evidence
+          path: |
+            evidence/
+            .cache/TextToBinary.apk
+          if-no-files-found: warn
+          retention-days: 30
