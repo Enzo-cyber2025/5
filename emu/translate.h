@@ -199,6 +199,26 @@ typedef uint64_t (*tr_resolve_fn)(uint64_t guest_iat_va, void *user);
  * legitimate value ever sets either. */
 #define TR_ABI_INDIRECT (1ULL << 62)
 
+/* Tag the resolver ORs into a returned value to say it is the byte offset of a slot in
+ * the CALL TABLE - the table of host addresses of other translated guest functions -
+ * and that the call is guest to guest rather than guest to host.
+ *
+ * This is what makes `call rel32` translatable. A direct call's target is a guest
+ * address, and the host address of that guest's translated code is not known when the
+ * caller is translated: functions are discovered and translated in whatever order the
+ * sweep reaches them, and a callee may not exist yet. So the caller emits a load from a
+ * slot the loader fills in afterwards - the same trick as TR_ABI_INDIRECT, applied to
+ * the translator's own table instead of the module's IAT.
+ *
+ * No host ABI bridge is emitted for this one, and that is the whole difference from
+ * TR_ABI_HOST: the callee is translated guest code, so it already expects the x86-64
+ * register state in the host registers this mapping puts it in. Bridging would shuffle
+ * the arguments into the wrong positions.
+ *
+ * Bit 61 for the same reason as the other two: an offset into a table is small, so no
+ * legitimate value sets it. */
+#define TR_GUEST_CALL (1ULL << 61)
+
 typedef struct {
     uint32_t    words[TR_MAX_WORDS];
     size_t      n;

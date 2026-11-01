@@ -20,7 +20,12 @@
                           * instruction's emission - never across a call. */
 #define HOST_RSP     14u /* guest RSP -> X14, callee-saved in the AAPCS */
 #define HOST_RBP     15u /* guest RBP -> X15, likewise */
-#define HOST_IMGBASE 19u /* X19: host address the guest module image is mapped at.
+#define HOST_IMGBASE 19u
+/* Base of the call table: the array of host addresses of translated guest functions,
+ * filled in after translation. X21 is outside the guest register mapping and is
+ * AAPCS callee-saved, so a host call preserves it and the emitted code only ever reads
+ * it - which is why it needs no frame record of its own. */
+#define HOST_CALLTAB 21u /* X19: host address the guest module image is mapped at.
                           * RVA 0 lives here. Callee-saved in the AAPCS, so a host
                           * callee reached through a resolved import preserves it -
                           * IP0/IP1 (X16/X17) would not, which rules them out for
@@ -283,7 +288,7 @@ typedef enum {
     P_CMP_REG, P_CMP_IMM, P_TEST_REG, P_JCC, P_JMP, P_CALL_IAT, P_RET,
     /* guest stack */
     P_PUSH_REG, P_POP_REG, P_PUSH_IMM, P_LEAVE, P_ST_LOCAL, P_LD_LOCAL,
-    P_ST_LOCAL_IMM,
+    P_ST_LOCAL_IMM, P_CALL_TABLE,
     /* the module's own image, reached by a RIP-relative operand */
     P_LD_IMG, P_ST_IMG,
     /* a guest pointer held in a general register, bounds-checked at run time */
@@ -669,6 +674,27 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
         out->reason = TRR_STACK;
         out->detail = "ret imm16 pops arguments, which changes the caller's stack pointer";
         return TR_UNSUPPORTED;
+    }
+    /* call rel32. The target is a guest address and the host address of its
+     * translated code is not knowable here, so the resolver is asked for a slot in the
+     * call table and the emitted code loads the target out of that slot at run time.
+     * With no resolver, or one that does not know this target, the refusal is the same
+     * as it always was: nothing is guessed at. */
+    if (in.op[0] == 0xE8) {
+        uint64_t tgt = va + in.len + (uint64_t)(int64_t)in.imm;
+        uint64_t ans = resolve ? resolve(tgt, user) : 0;
+
+        if ((ans & TR_GUEST_CALL) == 0u) {
+            out->reason = TRR_NEEDS_TARGET;
+            out->detail = "call rel32: no call-table slot is known for this target";
+            return TR_UNSUPPORTED;
+        }
+        ans &= ~(uint64_t)TR_GUEST_CALL;
+        p->op = P_CALL_TABLE;
+        p->const_val = ans;
+        /* Constant, add the table base, load the slot, branch. */
+        p->words = const_words(ans) + 3u;
+        return TR_OK;
     }
     if (in.op[0] == 0xEB || in.op[0] == 0xE9) {
         p->op = P_JMP;
@@ -1430,7 +1456,8 @@ tr_status tr_translate_function_img(const uint8_t *code, size_t code_len,
     out->hi_off = plans[0].off + plans[0].guest_len;
     for (i = 0; i < nplans; i++) {
         uint32_t end = plans[i].off + plans[i].guest_len;
-        if (plans[i].op == P_CALL_IAT) out->needs_frame = 1;
+        if (plans[i].op == P_CALL_IAT || plans[i].op == P_CALL_TABLE)
+            out->needs_frame = 1;
         if (plan_uses_gstack(&plans[i]))  out->needs_gstack = 1;
         if (plan_uses_imgbase(&plans[i])) out->needs_imgbase = 1;
         if (end > out->extent) out->extent = end;
@@ -1711,6 +1738,19 @@ tr_status tr_translate_function_img(const uint8_t *code, size_t code_len,
             if (!pushf(out, p->w32 ? a64_stur_w(HOST_SCRATCH, p->rn, (int)p->delta)
                                    : a64_stur(HOST_SCRATCH, p->rn, (int)p->delta)))
                 return TR_OVERFLOW;
+            break;
+        case P_CALL_TABLE:
+            /* Guest to guest: the callee is translated code expecting the x86-64
+             * register state in exactly the host registers this mapping already puts it
+             * in, so there is no bridge and no save/restore - only the indirection that
+             * keeps an absolute host address out of the emitted words. BLR sets X30, and
+             * the callee's RET returns through it, which is why needs_frame counts this
+             * op: the caller has to have saved its own X30 first. */
+            if (!emit_const_f(out, HOST_TMP2, p->const_val)) return TR_OVERFLOW;
+            if (!pushf(out, a64_add_reg(HOST_TMP2, HOST_CALLTAB, HOST_TMP2)))
+                return TR_OVERFLOW;
+            if (!pushf(out, a64_ldur(HOST_SCRATCH, HOST_TMP2, 0))) return TR_OVERFLOW;
+            if (!pushf(out, a64_blr(HOST_SCRATCH))) return TR_OVERFLOW;
             break;
         case P_CALL_IAT:
             if (p->host_abi) {

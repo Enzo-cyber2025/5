@@ -1583,6 +1583,13 @@ static size_t append_const(uint32_t *prog, size_t n, unsigned rd, uint64_t v)
  * the body's RIP-relative accesses; 0 when the body has none. X19/X20 are saved
  * and restored unconditionally, which costs two words and means a translated
  * function cannot leak a register its caller expects preserved. */
+/* The call table X21 points at. Declared here rather than next to the test that uses
+ * it because build_trampoline has to load it into X21, and it sits inside the same
+ * aarch64 guard for the same reason: on a non-aarch64 host nothing reads either
+ * variable and -Werror=unused-variable is right to say so. */
+static uint64_t test_calltab;
+static uint64_t calltab_slots[4];
+
 static size_t build_trampoline(uint32_t *prog, uint64_t arg, uint64_t gtop,
                                uint64_t imgbase,
                                const uint32_t *body, size_t body_n)
@@ -1601,6 +1608,10 @@ static size_t build_trampoline(uint32_t *prog, uint64_t arg, uint64_t gtop,
      * LDUR X0,[X15,#-8] is a correct rendering whatever X15 contains. */
     n = append_const(prog, n, 15u, gtop);
     n = append_const(prog, n, 19u, imgbase);
+    /* X21: the call table a guest-to-guest call loads its target from. Set from a file
+     * scope variable rather than a new parameter so the dozen existing callers of this
+     * helper are untouched; they never emit P_CALL_TABLE, so zero is inert for them. */
+    n = append_const(prog, n, 21u, test_calltab);
     bl = n;
     prog[n++] = 0u;                          /* BL, patched once the body is placed */
     prog[n++] = a64_ldp_imgbase_pop();
@@ -3663,6 +3674,126 @@ static void test_mov_imm_to_stack(void)
 #endif
 }
 
+/* Answers for exactly one target: the callee's guest VA, as slot 0 of the table. */
+static uint64_t ct_resolve(uint64_t tgt, void *user)
+{
+    if (tgt == *(const uint64_t *)user)
+        return (uint64_t)(0u * 8u) | TR_GUEST_CALL;
+    return 0;
+}
+
+/* A guest function calling another guest function.
+ *
+ * This is the shape 609 refused Luanti functions stop at and, with indirect calls,
+ * 46% of every refusal in a real downloaded binary. A direct call's target is a guest
+ * address, and the host address of that guest's translated code cannot be known when
+ * the caller is translated - the callee may not have been discovered yet. So the caller
+ * emits a load from a slot the loader fills in afterwards, which is the same trick the
+ * IAT indirection uses and for the same reason: no absolute host address in the words,
+ * so the cached caller stays valid whatever order things were translated in and
+ * wherever the callee's code ends up.
+ *
+ * The callee returns 7 and the caller adds 1, so 8 comes back only if the call reached
+ * the callee, the callee's RET found the address the caller's BLR put in X30, and the
+ * caller's own X30 survived being clobbered by that BLR - which is what needs_frame is
+ * for and why the assertion below checks it separately. */
+static void test_guest_to_guest_call(void)
+{
+    /* call rel32 +4 ; add eax,1 ; ret */
+    static const uint8_t caller[] = { 0xE8, 0x04,0x00,0x00,0x00, 0x83,0xC0,0x01, 0xC3 };
+    /* mov eax,7 ; ret */
+    static const uint8_t callee[] = { 0xB8, 0x07,0x00,0x00,0x00, 0xC3 };
+    uint64_t   callee_va = IMAGE_BASE + (uint64_t)sizeof(caller);
+    tr_func    fc, fg;
+    tr_status  st;
+
+    printf("a guest function calling another guest function\n");
+
+    st = tr_translate_function(callee, sizeof(callee), callee_va, NULL, NULL, &fg);
+    CHECK(st == TR_OK, "the callee did not translate: %s (%s)",
+          tr_status_name(st), fg.detail ? fg.detail : "?");
+    if (st != TR_OK) return;
+
+    st = tr_translate_function(caller, sizeof(caller), IMAGE_BASE,
+                               ct_resolve, &callee_va, &fc);
+    CHECK(st == TR_OK, "call rel32 did not translate given a call-table slot: %s (%s)",
+          tr_status_name(st), fc.detail ? fc.detail : "?");
+    if (st != TR_OK) return;
+    /* BLR clobbers X30, so a function containing one must save it or it cannot return
+     * to its own caller. Asserted on its own because getting it wrong still runs: the
+     * callee returns correctly and only the caller's return to the harness is lost. */
+    CHECK(fc.needs_frame == 1,
+          "a guest-to-guest call did not request the X29/X30 record, so the caller "
+          "would lose its own return address to the BLR");
+
+    /* With no resolver at all the refusal has to be exactly what it always was. A
+     * feature that quietly starts accepting calls it cannot honour is worse than no
+     * feature. */
+    st = tr_translate_function(caller, sizeof(caller), IMAGE_BASE, NULL, NULL, &fc);
+    CHECK(st == TR_UNSUPPORTED,
+          "call rel32 translated with no resolver: a target nobody resolved must stay "
+          "refused, not be guessed at");
+
+#if defined(__aarch64__)
+    {
+        gs_arena a;
+        uint64_t r = 0;
+        int      sig = 0, to = 0, ok;
+        uint32_t prog[TRAMP_MAX];
+        size_t   n, callee_at, plen = 0;
+        void    *page;
+
+        if (!gs_alloc(64u * 1024u, &a)) {
+            CHECK(0, "could not allocate an arena: %s", gs_last_error());
+            return;
+        }
+        test_calltab   = (uint64_t)(uintptr_t)calltab_slots;
+        calltab_slots[0] = 0;
+
+        /* Caller body first, then the callee body appended after it, so both live in
+         * one executable page and the slot can be filled once the page's address is
+         * known. That ordering is the point: the caller's words were produced before
+         * the callee's address existed. */
+        n = build_trampoline(prog, 0u, a.top, 0u, fc.words, fc.n);
+        callee_at = n;
+        if (callee_at + fg.n > TRAMP_MAX) {
+            CHECK(0, "the two bodies do not fit the trampoline window");
+            gs_free(&a);
+            return;
+        }
+        memcpy(prog + callee_at, fg.words, fg.n * sizeof fg.words[0]);
+        n = callee_at + fg.n;
+
+        page = code_page(prog, n, &plen);
+        CHECK(page != NULL, "could not map an executable page");
+        if (page) {
+            /* Fill the slot now - after translation, after mapping - exactly as a
+             * loader fills an IAT. */
+            calltab_slots[0] = (uint64_t)(uintptr_t)
+                ((uint8_t *)page + callee_at * sizeof(uint32_t));
+            fflush(stdout);
+            ok = exec_generated((uint64_t (*)(void))page, &r, &to, &sig);
+            CHECK(ok && !to && sig == 0,
+                  "the guest-to-guest call did not run cleanly (ok=%d to=%d sig=%d)",
+                  ok, to, sig);
+            CHECK(r == 8u,
+                  "the call chain returned %llu, expected 8 (the callee's 7 plus the "
+                  "caller's 1): a slot pointing at the wrong body, a callee whose RET "
+                  "did not find the BLR's X30, or a caller that lost its own return "
+                  "address each give something else",
+                  (unsigned long long)r);
+            munmap(page, plen); page = NULL;
+        }
+        gs_free(&a);
+        printf("  EXECUTED ON aarch64: a guest function called another guest function "
+               "through a slot in the call table, filled in after both were translated\n");
+    }
+#else
+    printf("  SKIP: host is not aarch64, the call chain was translated but not run "
+           "(caller %u words, callee %u words)\n", (unsigned)fc.n, (unsigned)fg.n);
+#endif
+}
+
 int main(void)
 {
     printf("=== exe + dll translation, end to end ===\n");
@@ -3686,6 +3817,7 @@ int main(void)
     test_guest_program_runs();
     test_guest_program_loops();
     test_mov_imm_to_stack();
+    test_guest_to_guest_call();
     test_pipeline();
 #if defined(__aarch64__)
     printf("VERDICT arch=aarch64 exe_words=%zu const_ok=%d first=%s/%llu(to=%d,sig=%d) "
