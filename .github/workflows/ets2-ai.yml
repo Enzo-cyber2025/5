@@ -3818,6 +3818,37 @@ jobs:
             if (lg && what) { fprintf(lg, "[%u] clica_abs %s @(%d,%d) cursor=(%d,%d)\n", GetTickCount(), what, x, y, pt.x, pt.y); fflush(lg); }
             Sleep(ms);
           }
+          /* v100: CLIQUE LONGO — o jogo roda a ~0,2 fps (lavapipe 1 thread):
+           * um down-up de 80 ms cai ENTRE dois polls do input e se perde.
+           * Segura o botao por ms milissegundos para o loop do jogo VER o
+           * estado pressionado no proximo frame. */
+          static void clica_longo(int x, int y, int ms, const char *what) {
+            INPUT in;
+            POINT pt;
+            move_abs(x, y);
+            Sleep(140);
+            ZeroMemory(&in, sizeof(in));
+            in.type = INPUT_MOUSE; in.mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
+            SendInput(1, &in, sizeof(INPUT));
+            Sleep(ms);
+            ZeroMemory(&in, sizeof(in));
+            in.type = INPUT_MOUSE; in.mi.dwFlags = MOUSEEVENTF_LEFTUP;
+            SendInput(1, &in, sizeof(INPUT));
+            GetCursorPos(&pt);
+            if (lg) { fprintf(lg, "[%u] clica_longo %s @(%d,%d) segura=%dms cursor=(%d,%d)\n", GetTickCount(), what, x, y, ms, pt.x, pt.y); fflush(lg); }
+          }
+          /* v100: TECLA SUSTENTADA — mesmo raciocinio do clica_longo. */
+          static void tap_longo(WORD sc, int ms, const char *what) {
+            INPUT in;
+            ZeroMemory(&in, sizeof(in));
+            in.type = INPUT_KEYBOARD; in.ki.wScan = sc; in.ki.dwFlags = KEYEVENTF_SCANCODE;
+            SendInput(1, &in, sizeof(INPUT));
+            Sleep(ms);
+            ZeroMemory(&in, sizeof(in));
+            in.type = INPUT_KEYBOARD; in.ki.wScan = sc; in.ki.dwFlags = KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP;
+            SendInput(1, &in, sizeof(INPUT));
+            if (lg) { fprintf(lg, "[%u] tap_longo %s segura=%dms\n", GetTickCount(), what, ms); fflush(lg); }
+          }
           /* v99: detector 'caixa sumiu' — interior do dialogo de ativacao
            * medido nos shots v98: presente = 0.44-0.73 de pixels escuros;
            * fundo 3D animado = 0.13-0.35. Calibrado com Pillow no diag. */
@@ -4166,14 +4197,21 @@ jobs:
              * (634,517)); 'Activate Game' x 313-421 (evitado na varredura
              * para nao gerar dialogo de erro). */
             if (!destravou) {
-              int ys[5]; int yy, xx, ci;
-              ys[0] = 478; ys[1] = 498; ys[2] = 517; ys[3] = 537; ys[4] = 557;
+              /* v100: ASCIIs da v99c mostram TRES faixas de controles no
+               * painel que a grade antiga (y 478-557) nao tocava:
+               * y~374-415 (faixa cinza), y~436-477 (retangulo escuro) e
+               * y~500-540 (texto/link). Varredura agora de y=384 a y=546;
+               * abaixo de y=495 continua evitando x<440 (Activate). */
+              int ys[10]; int yy, xx, ci;
+              ys[0] = 384; ys[1] = 402; ys[2] = 420; ys[3] = 438; ys[4] = 456;
+              ys[5] = 474; ys[6] = 492; ys[7] = 510; ys[8] = 528; ys[9] = 546;
               ci = 0;
               foca_forte();
-              move_abs(420, 400);
+              move_abs(420, 380);
               Sleep(1500);
-              for (yy = 0; yy < 5 && !destravou; yy++) {
-                for (xx = 440; xx <= 832 && !destravou; xx += 22) {
+              for (yy = 0; yy < 10 && !destravou; yy++) {
+                int x0 = (ys[yy] >= 495) ? 440 : 296;
+                for (xx = x0; xx <= 784 && !destravou; xx += 24) {
                   clica_abs(xx, ys[yy], 220, NULL);
                   ci++;
                   if ((ci % 8) == 0) {
@@ -4192,28 +4230,55 @@ jobs:
             /* FASE C — arsenal classico, agora com clica_abs (SendInput
              * ABSOLUTO que o DirectInput do jogo enxerga) */
             if (!destravou) {
+              /* v100: coords recalibradas pelos ASCIIs da v99c (100x38 do
+               * fullscreen 1024x768): retangulo escuro y~436-477 x~471-758
+               * -> centro (614,456); faixa cinza y~374-415 -> (545,395);
+               * texto/link y~500-540 -> (614,520). Cliques LONGOS: o jogo
+               * a 0,2 fps precisa ver o botao PRESSONADO por segundos. */
               foca_forte();
-              clica_abs(634, 517, 60000, "demo-abs");
+              clica_longo(614, 456, 8000, "retangulo-escuro LONGO 8s");
+              Sleep(45000);
               shot("arm01"); dif = painel_dif(); fr = caixa_frac();
-              if (lg) { fprintf(lg, "[%u] arma 1 (clica_abs demo): dif=%d%% frac=%.2f\n", GetTickCount(), dif, fr); fflush(lg); }
+              if (lg) { fprintf(lg, "[%u] arma 1 (clique longo retangulo): dif=%d%% frac=%.2f\n", GetTickCount(), dif, fr); fflush(lg); }
               if ((fr < 0.34 && caixa_base - fr > 0.18) || dif >= 30) { destravou = 4; goto pronto; }
               foca_forte();
-              post_click(jogo, 641, 521, "demo post main");
+              clica_longo(545, 395, 8000, "faixa-cinza LONGO 8s");
               Sleep(45000);
               shot("arm02"); dif = painel_dif(); fr = caixa_frac();
-              if (lg) { fprintf(lg, "[%u] arma 2 (post main): dif=%d%% frac=%.2f\n", GetTickCount(), dif, fr); fflush(lg); }
+              if (lg) { fprintf(lg, "[%u] arma 2 (clique longo faixa): dif=%d%% frac=%.2f\n", GetTickCount(), dif, fr); fflush(lg); }
               if ((fr < 0.34 && caixa_base - fr > 0.18) || dif >= 30) { destravou = 5; goto pronto; }
+              foca_forte();
+              post_click(jogo, 614, 456, "retangulo post main");
+              post_click(jogo, 545, 395, "faixa post main");
+              Sleep(45000);
+              shot("arm03"); dif = painel_dif(); fr = caixa_frac();
+              if (lg) { fprintf(lg, "[%u] arma 3 (post main x2): dif=%d%% frac=%.2f\n", GetTickCount(), dif, fr); fflush(lg); }
+              if ((fr < 0.34 && caixa_base - fr > 0.18) || dif >= 30) { destravou = 6; goto pronto; }
+              foca_forte();
+              for (i = 0; i < 6; i++) tap(0x0F, 200, "TAB");
+              tap_longo(0x39, 4000, "SPACE sustentado 4s");
+              Sleep(45000);
+              shot("arm04"); dif = painel_dif(); fr = caixa_frac();
+              if (lg) { fprintf(lg, "[%u] arma 4 (TABx6+SPACE longo): dif=%d%% frac=%.2f\n", GetTickCount(), dif, fr); fflush(lg); }
+              if ((fr < 0.34 && caixa_base - fr > 0.18) || dif >= 30) { destravou = 7; goto pronto; }
+              foca_forte();
+              clica_longo(614, 520, 6000, "texto-link LONGO 6s");
+              Sleep(45000);
+              shot("arm05"); dif = painel_dif(); fr = caixa_frac();
+              if (lg) { fprintf(lg, "[%u] arma 5 (clique longo link): dif=%d%% frac=%.2f\n", GetTickCount(), dif, fr); fflush(lg); }
+              if ((fr < 0.34 && caixa_base - fr > 0.18) || dif >= 30) { destravou = 8; goto pronto; }
               foca_forte();
               clica_abs(367, 517, 20000, "Activate-abs");
               tap(0x1C, 45000, "Enter (fecha erro)");
-              shot("arm03"); dif = painel_dif(); fr = caixa_frac();
-              if (lg) { fprintf(lg, "[%u] arma 3 (activate+enter): dif=%d%% frac=%.2f\n", GetTickCount(), dif, fr); fflush(lg); }
-              if ((fr < 0.34 && caixa_base - fr > 0.18) || dif >= 30) { destravou = 6; goto pronto; }
+              shot("arm06"); dif = painel_dif(); fr = caixa_frac();
+              if (lg) { fprintf(lg, "[%u] arma 6 (activate+enter): dif=%d%% frac=%.2f\n", GetTickCount(), dif, fr); fflush(lg); }
+              if ((fr < 0.34 && caixa_base - fr > 0.18) || dif >= 30) { destravou = 9; goto pronto; }
               foca_forte();
-              tap(0x01, 45000, "ESC");
-              shot("arm04"); dif = painel_dif(); fr = caixa_frac();
-              if (lg) { fprintf(lg, "[%u] arma 4 (esc): dif=%d%% frac=%.2f\n", GetTickCount(), dif, fr); fflush(lg); }
-              if ((fr < 0.34 && caixa_base - fr > 0.18) || dif >= 30) { destravou = 7; goto pronto; }
+              tap_longo(0x01, 3000, "ESC sustentado 3s");
+              Sleep(45000);
+              shot("arm07"); dif = painel_dif(); fr = caixa_frac();
+              if (lg) { fprintf(lg, "[%u] arma 7 (esc longo): dif=%d%% frac=%.2f\n", GetTickCount(), dif, fr); fflush(lg); }
+              if ((fr < 0.34 && caixa_base - fr > 0.18) || dif >= 30) { destravou = 12; goto pronto; }
             }
           pronto:
             if (destravou) {
