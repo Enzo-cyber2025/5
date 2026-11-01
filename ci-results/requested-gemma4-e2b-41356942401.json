@@ -1,0 +1,178 @@
+{
+  "status": "FAIL",
+  "scope": "requested-Gemma-folder-Termux-Box64-APK-and-zero-limits",
+  "variant": "gemma4-e2b",
+  "apk": {
+    "sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc",
+    "expected_sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc"
+  },
+  "checks": {
+    "signed_apk_and_real_gguf_provisioning": {
+      "status": "PASS",
+      "method": "ADB provisioning into app-private models directory",
+      "SAF_import_in_this_task": false,
+      "note": "Text-only Gemma 4 task; prior release acceptance covers SAF pair merge."
+    },
+    "official_termux_bootstrap": "PASS",
+    "folder_termux_access": {
+      "prompt": "Use Termux to inspect the folder. Return only a fenced bash block with exactly this command:\\ncat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt",
+      "assistant_reply": "```bash\ncat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt\n```",
+      "selected_command": "cat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt",
+      "expected_command": "cat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt",
+      "chat_id": "1a1993a1ae1a7476b",
+      "chat_title": "GGUF regression 1a1993a1ae1a7476b",
+      "executed": false,
+      "status": "AWAITING_REVIEW"
+    }
+  },
+  "limitations": [
+    "Android emulator x86_64, not a physical handset"
+  ],
+  "model": {
+    "name": "Gemma 4 E2B",
+    "quantization": "Q3_K_S text weights; mmproj omitted for text-only task",
+    "weights_sha256": "80d155f647d3a896669b1d1605b494b97ee9dbd1dcafd27957394134c280d270",
+    "projector_sha256": "140be8d7849741f88c50757d529b84373ee8e27052cc2236855b537f4a8215fa",
+    "projector_used_in_this_task": false,
+    "apk_signed_sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc",
+    "app_name": "gemma-4-E2B-it-Q3_K_S",
+    "architecture": null,
+    "capability": null,
+    "size": 2445652064
+  },
+  "settings_ui": {
+    "visible_settings_labels": [
+      "‹",
+      "Ajustes",
+      "Tamanho de contexto (tokens)",
+      "1024",
+      "Threads de CPU (0 = automático)",
+      "0",
+      "Camadas na GPU Vulkan (-1 = todas, 0 = só CPU)",
+      "99",
+      "Máximo de tokens por resposta",
+      "Temperatura",
+      "0.8",
+      "Top-P",
+      "0.95",
+      "Top-K",
+      "40.0",
+      "Min-P",
+      "0.05",
+      "Penalidade de repetição",
+      "1.1",
+      "Ferramentas (padrão para novas conversas):",
+      "Thinking",
+      "Busca",
+      "Salvar ajustes",
+      "Descarregar modelo da memória",
+      "GGUF Chat\nInferência local via llama.cpp (llamarn) com backend Vulkan.\nBackend atual: —\n\nDicas:\n• Para gerar com a tela bloqueada, basta enviar a mensagem e bloquear: a geração continua em segundo plano.\n• Use “Thinking” para raciocínio estendido e “Busca” para respostas embasadas na web.\n• Modelos multimodais: importe o GGUF de texto e o mmproj juntos."
+    ],
+    "storage_backed_context_option_found": false,
+    "context_related_labels": [
+      "Tamanho de contexto (tokens)",
+      "Descarregar modelo da memória"
+    ]
+  },
+  "folder_fixture": {
+    "path": "/data/data/com.termux/files/home/model-audit",
+    "files": [
+      "only-note.txt"
+    ],
+    "file_content": "Arquivo unico da pasta de teste. Identificador: BLUE-LANTERN-5831.",
+    "sha256": "ca381c3fba7b0a9c158d0d6a9622f3c725d78d3c6bf770e68fa0ced966348fd6"
+  },
+  "error": "Linha de ferramentas não está aberta",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/runner/work/5/5/scripts/test_requested_model_tasks_android.py\", line 302, in main\n    record = ask_for_command(device, model,\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/5/5/scripts/test_requested_model_tasks_android.py\", line 73, in ask_for_command\n    tap_tool(device, \"Termux\")\n  File \"/home/runner/work/5/5/scripts/test_tool_integrations_android.py\", line 42, in tap_tool\n    raise AssertionError(\"Linha de ferramentas não está aberta\")\nAssertionError: Linha de ferramentas não está aberta\n",
+  "logcat_tail": "42.485  5823  5823 W app_process: ClassLoaderContext shared library size mismatch. Expected=2, found=0 (PCL[]{PCL[/system/framework/android.test.base.jar*724373495]#PCL[/system/framework/android.test.mock.jar*1452759902]} | PCL[])\n11-01 22:29:42.485  5823  5823 W app_process: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[]{PCL[/system/framework/android.test.runner.jar*2496447986]#PCL[/system/framework/android.test.base.jar*724373495]} | PCL[/system/framework/android.test.runner.jar*2496447986])\n11-01 22:29:42.498  5823  5823 D nativeloader: Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok\n11-01 22:29:42.498  5823  5823 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher\n11-01 22:29:42.499  5823  5823 D UiAutomationConnection: Created on user UserHandle{0}\n11-01 22:29:42.500  5823  5823 I UiAutomation: Initialized for user 0 on display 0\n11-01 22:29:42.500  5823  5823 W UiAutomation: Created with deprecatead constructor, assumes DEFAULT_DISPLAY\n11-01 22:29:42.500   559  1006 D AccessibilityManagerService: changeCurrentUserForTestAutomationIfNeededLocked(0): ignoring because device doesn't support visible background users\n11-01 22:29:42.500   559  1006 I UiAutomationManager: Registering UiTestAutomationService (id=com.android.server.accessibility/UiAutomation, flags=0x0) when called by user 0\n11-01 22:29:42.501   559  1006 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED\n11-01 22:29:42.502   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.502  1436  2005 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled\n11-01 22:29:42.502   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.502   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.502   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.502  1436  1681 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]\n11-01 22:29:42.502   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.502  1436  1681 I AiAiEcho: EchoTargets: \n11-01 22:29:42.502  1436  1681 I AiAiEcho: Filtered by AiAi flag check: \n11-01 22:29:42.502  1436  1681 I AiAiEcho: [CONTEXT ratelimit_period=\"10 SECONDS\" ]\n11-01 22:29:42.502   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.502   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.502   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.502  5823  5835 V UiAutomation: Init UiAutomation@8000ff5[id=26, displayId=0, flags=0]\n11-01 22:29:42.502   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.502   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.502   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.502   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.502   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.502   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.502   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.502   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.502   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.502   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.503   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.503   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.503   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.503   559   559 D BatterySaverPolicy: accessibility changed to true, updating policy.\n11-01 22:29:42.503   559  1002 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED\n11-01 22:29:42.504   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.504   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.504   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.504   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.504   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.504   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.504   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.504   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.504   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.504   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.504   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.504   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.504   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.504   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.506  1436  1681 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period=\"10 SECONDS\" ]\n11-01 22:29:42.510  1436  2005 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled\n11-01 22:29:42.510  1436  1681 I AiAiEcho: #remoteViewsTwiddler: feature disabled.\n11-01 22:29:42.510  1436  1681 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]\n11-01 22:29:42.511  1436  1681 I AiAiEcho: EchoTargets: \n11-01 22:29:42.511  1436  1681 I AiAiEcho: Filtered by AiAi flag check: \n11-01 22:29:42.511  1436  1681 I AiAiEcho: [CONTEXT ratelimit_period=\"10 SECONDS\" ]\n11-01 22:29:42.511  1436  1681 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period=\"10 SECONDS\" ]\n11-01 22:29:42.511  1436  1681 I AiAiEcho: #remoteViewsTwiddler: feature disabled.\n11-01 22:29:42.512  1436  1681 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])\n11-01 22:29:42.513  1436  1681 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])\n11-01 22:29:42.514   911   911 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.\n11-01 22:29:42.514   911   911 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.\n11-01 22:29:42.605  1098  1098 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:29:42.766   559   588 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:42.837  1098  1098 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:29:42.858  1098  1098 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:29:43.106  1098  1098 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:29:43.338  1098  1098 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:29:43.354   559  2829 E TaskPersister: File error accessing recents directory (directory doesn't exist?).\n11-01 22:29:43.358  1098  1098 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:29:43.509  5823  5823 W AccessibilityNodeInfoDumper: Fetch time: 3ms\n11-01 22:29:43.510   559  1702 W MagnificationConnectionManager: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED\n11-01 22:29:43.510   559  1702 D AccessibilityManagerService: restoreCurrentUserForTestAutomationIfNeededLocked(): ignoring because device doesn't support visible background users\n11-01 22:29:43.510   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:43.510   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:43.511   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:43.511   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:43.511   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:43.511   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:43.511   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:43.511   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:43.511   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:43.511   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:43.511   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:43.511   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:43.511   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:43.511   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:43.511   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:43.511   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:43.511   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:43.511   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:43.511   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:43.511   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:43.511   559   559 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:43.511   559   559 D BatterySaverPolicy: accessibility changed to false, updating policy.\n11-01 22:29:43.511  1436  2005 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled\n11-01 22:29:43.513  1436  1681 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]\n11-01 22:29:43.513  1436  1681 I AiAiEcho: EchoTargets: \n11-01 22:29:43.513  1436  1681 I AiAiEcho: Filtered by AiAi flag check: \n11-01 22:29:43.513  1436  1681 I AiAiEcho: [CONTEXT ratelimit_period=\"10 SECONDS\" ]\n11-01 22:29:43.513  5823  5823 D AndroidRuntime: Shutting down VM\n11-01 22:29:43.514  1436  1681 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata:  [CONTEXT ratelimit_period=\"10 SECONDS\" ]\n11-01 22:29:43.514  1436  1681 I AiAiEcho: #remoteViewsTwiddler: feature disabled.\n11-01 22:29:43.514  1436  1681 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])\n11-01 22:29:43.518   911   911 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.\n11-01 22:29:43.607  1098  1098 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:29:43.749   559   588 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:43.754   559   588 W IPCThreadState: Sending oneway calls to frozen process.\n11-01 22:29:43.839  1098  1098 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:29:43.858  1098  1098 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:29:44.108  1098  1098 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:29:44.340  1098  1098 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:29:44.358  1098  1098 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 22:29:44.552     0     0 I logd    : logdr: UID=0 GID=0 PID=5839 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns",
+  "last_ui_summary": [
+    {
+      "text": "Prompt de sistema global",
+      "content-desc": "Prompt de sistema global",
+      "resource-id": "",
+      "bounds": "[24,104][260,158]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "GGUF Chat",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[24,160][605,209]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "Ajustes",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[605,158][696,212]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "1 modelo(s) importado(s) • 1 conversa(s)",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[24,224][696,251]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "+ Nova conversa",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[24,269][696,323]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "GGUF regression 1a1993a1ae1a7476b",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[45,341][675,374]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "```bash cat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-ou…",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[45,380][675,430]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "gemma-4-E2B-it-Q3_K_S",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[45,430][675,455]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "💬 Chat",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[24,1202][248,1256]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "📁 Importar",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[248,1202][472,1256]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "AI Modelos",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[472,1202][696,1256]",
+      "enabled": "true",
+      "selected": "false"
+    }
+  ]
+}
