@@ -100,7 +100,8 @@ def request_permission_and_confirm(d):
     d.wait(lambda: position(d.ui(), text="Revisar comando do Termux", contains=True, package={PACKAGE}),
            "diálogo de revisão antes da execução")
     xml = d.ui()
-    assert EXPECTED_COMMAND in xml, "Comando aprovado pelo modelo não foi exibido integralmente para revisão"
+    displayed_text = [node.get("text", "") for node in ET.fromstring(xml).iter("node")]
+    assert EXPECTED_COMMAND in displayed_text, "Comando aprovado pelo modelo não foi exibido integralmente para revisão"
     d.capture("termux-command-review.png")
     d.tap(text="Abrir no Termux", package={PACKAGE})
 
