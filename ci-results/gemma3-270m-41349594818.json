@@ -1,0 +1,26 @@
+{
+  "status": "FAIL",
+  "scope": "signed-APK-real-SAF-import-and-Gemma-3-270M-native-text-inference",
+  "environment": "Android API 35 x86_64 emulator; CPU inference; not physical-device acceptance",
+  "apk": {
+    "sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc",
+    "expected_sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc",
+    "certificate_sha256": "9a368c9a1e4f3b3b0b6ecfb86aa3768d633a925855afba27eab3b9189177955a",
+    "certificate_evidence": "previous signed-publication acceptance, run 34909764328; exact APK hash pinned above"
+  },
+  "model": {
+    "repository": "cdracars/gemma-3-270m-it-gguf-mirror",
+    "release_tag": "upstream-d156a5159f2f79c1b1d53c7c1cc20f1ff28ab8d00f17a292620aad13399b9698",
+    "asset": "gemma-3-270m-it-Q8_0.gguf",
+    "quantization": "Q8_0",
+    "bytes": 291546144,
+    "sha256": "d156a5159f2f79c1b1d53c7c1cc20f1ff28ab8d00f17a292620aad13399b9698",
+    "expected_sha256": "d156a5159f2f79c1b1d53c7c1cc20f1ff28ab8d00f17a292620aad13399b9698"
+  },
+  "checks": {
+    "signed_apk_installed_and_launched": "PASS"
+  },
+  "response_quality": {},
+  "error": "Controle não encontrado: {'text': 'Importar GGUF', 'package': {'com.ggufchat.app'}, 'contains': True}",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/runner/work/5/5/scripts/test_gemma3_270m_android.py\", line 63, in main\n    model = device.import_model(MODEL)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/5/5/scripts/test_android.py\", line 272, in import_model\n    self.tap(text=\"Importar GGUF\", package={PACKAGE}, contains=True)\n  File \"/home/runner/work/5/5/scripts/test_android.py\", line 81, in tap\n    raise AssertionError(f\"Controle não encontrado: {selector}\")\nAssertionError: Controle não encontrado: {'text': 'Importar GGUF', 'package': {'com.ggufchat.app'}, 'contains': True}\n"
+}
