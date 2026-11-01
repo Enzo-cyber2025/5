@@ -45,6 +45,27 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -no-snapshot -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back emulated -camera-front emulated
           script: python3 scripts/test_gemma3_270m_android.py
+      - name: Publish concise result in the job summary
+        if: always()
+        run: |
+          {
+            echo '## Gemma 3 270M Android inference'
+            if test -f evidence/summary.json; then
+              python3 - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('evidence/summary.json').read_text())
+          print(f"- **Status:** {report.get('status')}")
+          print(f"- **Model:** {report.get('model', {}).get('asset')} ({report.get('model', {}).get('quantization')})")
+          print(f"- **Architecture:** {report.get('model', {}).get('architecture')}")
+          print(f"- **Reply:** {report.get('response_quality', {}).get('arithmetic_2_plus_2', {}).get('response', 'not available')}")
+          print(f"- **Error:** {report.get('error', 'none')}")
+          PY
+              cat evidence/summary.json
+            else
+              echo 'No test summary was produced; inspect the failed emulator step.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Upload complete Android evidence
         if: always()
         uses: actions/upload-artifact@v4
