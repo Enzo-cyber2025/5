@@ -1,0 +1,137 @@
+{
+  "status": "FAIL",
+  "scope": "requested-Gemma-folder-Termux-Box64-APK-and-zero-limits",
+  "variant": "gemma3-270m",
+  "apk": {
+    "sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc",
+    "expected_sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc"
+  },
+  "checks": {
+    "signed_apk_and_real_gguf_import": "PASS",
+    "official_termux_bootstrap": "PASS"
+  },
+  "limitations": [
+    "Android emulator x86_64, not a physical handset"
+  ],
+  "model": {
+    "name": "Gemma 3 270M IT",
+    "quantization": "Q8_0",
+    "weights_sha256": "d156a5159f2f79c1b1d53c7c1cc20f1ff28ab8d00f17a292620aad13399b9698",
+    "apk_signed_sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc",
+    "app_name": "Gemma-3-270M-It",
+    "architecture": "gemma3",
+    "capability": "IMAGE_TOKENS_ONLY",
+    "size": 291546144
+  },
+  "settings_ui": {
+    "visible_settings_labels": [
+      "‹",
+      "Ajustes",
+      "Tamanho de contexto (tokens)",
+      "1024",
+      "Threads de CPU (0 = automático)",
+      "0",
+      "Camadas na GPU Vulkan (-1 = todas, 0 = só CPU)",
+      "99",
+      "Máximo de tokens por resposta",
+      "Temperatura",
+      "0.8",
+      "Top-P",
+      "0.95",
+      "Top-K",
+      "40.0",
+      "Min-P",
+      "0.05",
+      "Penalidade de repetição",
+      "1.1",
+      "Ferramentas (padrão para novas conversas):",
+      "Thinking",
+      "Busca",
+      "Salvar ajustes",
+      "Descarregar modelo da memória",
+      "GGUF Chat\nInferência local via llama.cpp (llamarn) com backend Vulkan.\nBackend atual: —\n\nDicas:\n• Para gerar com a tela bloqueada, basta enviar a mensagem e bloquear: a geração continua em segundo plano.\n• Use “Thinking” para raciocínio estendido e “Busca” para respostas embasadas na web.\n• Modelos multimodais: importe o GGUF de texto e o mmproj juntos."
+    ],
+    "storage_backed_context_option_found": true,
+    "context_related_labels": [
+      "Tamanho de contexto (tokens)",
+      "Descarregar modelo da memória"
+    ]
+  },
+  "folder_fixture": {
+    "path": "/data/data/com.termux/files/home/model-audit",
+    "files": [
+      "only-note.txt"
+    ],
+    "file_content": "Arquivo unico da pasta de teste. Identificador: BLUE-LANTERN-5831.",
+    "sha256": "ca381c3fba7b0a9c158d0d6a9622f3c725d78d3c6bf770e68fa0ced966348fd6"
+  },
+  "error": "Timeout: resposta baseada no conteúdo real: folder_termux_access",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/runner/work/5/5/scripts/test_requested_model_tasks_android.py\", line 285, in main\n    record = ask_for_command(device, model,\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/5/5/scripts/test_requested_model_tasks_android.py\", line 47, in ask_for_command\n    answer = reply(device, chat, prompt, stage, timeout=600)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/5/5/scripts/test_inference_android.py\", line 91, in reply\n    text=d.wait(check,'resposta baseada no conteúdo real: '+stage,timeout=timeout)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/5/5/scripts/test_android.py\", line 74, in wait\n    raise AssertionError(f\"Timeout: {description}\")\nAssertionError: Timeout: resposta baseada no conteúdo real: folder_termux_access\n",
+  "logcat_tail": "EGL_emulation: app_time_stats: avg=499.82ms min=499.61ms max=500.19ms count=3\n11-01 21:52:26.194  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:26.195  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:26.345   919  1032 D EGL_emulation: app_time_stats: avg=200.00ms min=199.75ms max=200.17ms count=5\n11-01 21:52:26.697  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:26.697  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:26.883     0     0 I logd    : logdr: UID=0 GID=0 PID=11299 n tail=0 logMask=99 pid=5267 start=0ns deadline=0ns\n11-01 21:52:27.095  5267  5280 D EGL_emulation: app_time_stats: avg=500.08ms min=499.77ms max=500.39ms count=2\n11-01 21:52:27.199  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:27.199  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:27.345   919  1032 D EGL_emulation: app_time_stats: avg=200.01ms min=199.58ms max=200.47ms count=5\n11-01 21:52:27.700  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:27.701  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:27.971     0     0 I logd    : logdr: UID=0 GID=0 PID=11309 n tail=0 logMask=99 pid=5267 start=0ns deadline=0ns\n11-01 21:52:28.203  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:28.203  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:28.546   919  1032 D EGL_emulation: app_time_stats: avg=171.48ms min=75.83ms max=200.53ms count=7\n11-01 21:52:28.594  5267  5280 D EGL_emulation: app_time_stats: avg=499.81ms min=498.68ms max=501.03ms count=3\n11-01 21:52:28.704  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:28.705  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:29.043     0     0 I logd    : logdr: UID=0 GID=0 PID=11319 n tail=0 logMask=99 pid=5267 start=0ns deadline=0ns\n11-01 21:52:29.207  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:29.207  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:29.708  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:29.709  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:29.745   919  1032 D EGL_emulation: app_time_stats: avg=199.82ms min=199.46ms max=200.28ms count=6\n11-01 21:52:30.114     0     0 I logd    : logdr: UID=0 GID=0 PID=11329 n tail=0 logMask=99 pid=5267 start=0ns deadline=0ns\n11-01 21:52:30.094  5267  5280 D EGL_emulation: app_time_stats: avg=499.96ms min=499.83ms max=500.06ms count=3\n11-01 21:52:30.210  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:30.211  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:30.570   361   361 I netd    : tetherGetStats() -> {[]} <3.13ms>\n11-01 21:52:30.712  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:30.713  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:30.745   919  1032 D EGL_emulation: app_time_stats: avg=199.98ms min=197.57ms max=202.42ms count=5\n11-01 21:52:31.197     0     0 I logd    : logdr: UID=0 GID=0 PID=11339 n tail=0 logMask=99 pid=5267 start=0ns deadline=0ns\n11-01 21:52:31.215  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:31.215  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:31.594  5267  5280 D EGL_emulation: app_time_stats: avg=499.98ms min=499.54ms max=500.32ms count=3\n11-01 21:52:31.717  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:31.717  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:31.945   919  1032 D EGL_emulation: app_time_stats: avg=199.99ms min=199.60ms max=200.24ms count=6\n11-01 21:52:32.266     0     0 I logd    : logdr: UID=0 GID=0 PID=11349 n tail=0 logMask=99 pid=5267 start=0ns deadline=0ns\n11-01 21:52:32.219  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:32.219  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:32.611  5267  5280 D EGL_emulation: app_time_stats: avg=508.21ms min=498.29ms max=518.14ms count=2\n11-01 21:52:32.720  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:32.720  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:32.945   919  1032 D EGL_emulation: app_time_stats: avg=200.03ms min=192.77ms max=207.06ms count=5\n11-01 21:52:33.363     0     0 I logd    : logdr: UID=0 GID=0 PID=11359 n tail=0 logMask=99 pid=5267 start=0ns deadline=0ns\n11-01 21:52:33.221  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:33.221  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:33.723  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:33.723  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:33.945   919  1032 D EGL_emulation: app_time_stats: avg=200.01ms min=199.32ms max=200.95ms count=5\n11-01 21:52:34.112  5267  5280 D EGL_emulation: app_time_stats: avg=500.16ms min=496.64ms max=503.27ms count=3\n11-01 21:52:34.224  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:34.225  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:34.434     0     0 I logd    : logdr: UID=0 GID=0 PID=11369 n tail=0 logMask=99 pid=5267 start=0ns deadline=0ns\n11-01 21:52:34.726  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:34.727  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:35.145   919  1032 D EGL_emulation: app_time_stats: avg=199.89ms min=199.66ms max=200.38ms count=6\n11-01 21:52:35.229  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:35.229  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:35.506     0     0 I logd    : logdr: UID=0 GID=0 PID=11379 n tail=0 logMask=99 pid=5267 start=0ns deadline=0ns\n11-01 21:52:35.612  5267  5280 D EGL_emulation: app_time_stats: avg=499.99ms min=499.23ms max=500.43ms count=3\n11-01 21:52:35.731  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:35.732  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:36.145   919  1032 D EGL_emulation: app_time_stats: avg=200.09ms min=199.60ms max=200.59ms count=5\n11-01 21:52:36.232  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:36.233  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:36.588     0     0 I logd    : logdr: UID=0 GID=0 PID=11389 n tail=0 logMask=99 pid=5267 start=0ns deadline=0ns\n11-01 21:52:36.612  5267  5280 D EGL_emulation: app_time_stats: avg=500.07ms min=499.35ms max=500.79ms count=2\n11-01 21:52:36.733  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:36.734  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:37.236  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:37.236  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:37.345   919  1032 D EGL_emulation: app_time_stats: avg=199.97ms min=199.45ms max=200.62ms count=6\n11-01 21:52:37.659     0     0 I logd    : logdr: UID=0 GID=0 PID=11399 n tail=0 logMask=99 pid=5267 start=0ns deadline=0ns\n11-01 21:52:37.738  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:37.738  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:38.111  5267  5280 D EGL_emulation: app_time_stats: avg=499.74ms min=499.21ms max=500.26ms count=3\n11-01 21:52:38.240  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:38.240  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:38.346   919  1032 D EGL_emulation: app_time_stats: avg=200.17ms min=198.86ms max=202.31ms count=5\n11-01 21:52:38.740     0     0 I logd    : logdr: UID=0 GID=0 PID=11409 n tail=0 logMask=99 pid=5267 start=0ns deadline=0ns\n11-01 21:52:38.741  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:38.742  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:39.114  5267  5280 D EGL_emulation: app_time_stats: avg=501.03ms min=500.27ms max=501.79ms count=2\n11-01 21:52:39.244  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:39.244  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:39.545   919  1032 D EGL_emulation: app_time_stats: avg=199.72ms min=198.55ms max=200.77ms count=6\n11-01 21:52:39.833     0     0 I logd    : logdr: UID=0 GID=0 PID=11419 n tail=0 logMask=99 pid=5267 start=0ns deadline=0ns\n11-01 21:52:39.746  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:39.746  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:40.248  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:40.248  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:40.611  5267  5280 D EGL_emulation: app_time_stats: avg=499.11ms min=497.60ms max=500.86ms count=3\n11-01 21:52:40.746   919  1032 D EGL_emulation: app_time_stats: avg=200.05ms min=196.72ms max=203.00ms count=6\n11-01 21:52:40.750  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:40.904     0     0 I logd    : logdr: UID=0 GID=0 PID=11429 n tail=0 logMask=99 pid=5267 start=0ns deadline=0ns\n11-01 21:52:40.750  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:41.251  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:41.252  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:41.628  5267  5280 D EGL_emulation: app_time_stats: avg=508.59ms min=500.31ms max=516.87ms count=2\n11-01 21:52:41.753  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:41.754  1099  1099 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-01 21:52:42.017     0     0 I logd    : logdr: UID=0 GID=0 PID=11437 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns",
+  "last_ui_summary": [
+    {
+      "text": "‹",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[24,92][64,146]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "GGUF regression 1a199102bb363e51f",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[82,99][696,138]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "Gemma-3-270M-It",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[24,146][696,171]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "",
+      "content-desc": "Câmera",
+      "resource-id": "",
+      "bounds": "[24,665][78,719]",
+      "enabled": "false",
+      "selected": "false"
+    },
+    {
+      "text": "",
+      "content-desc": "Anexar arquivos",
+      "resource-id": "",
+      "bounds": "[88,665][142,719]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "Use Termux to inspect the folder. Return only a fenced bash block with exactly this command:\\ncat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termu",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[152,621][541,764]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "🔧",
+      "content-desc": "Alternar ferramentas",
+      "resource-id": "",
+      "bounds": "[551,665][605,719]",
+      "enabled": "true",
+      "selected": "false"
+    },
+    {
+      "text": "Enviar",
+      "content-desc": "",
+      "resource-id": "",
+      "bounds": "[615,665][696,719]",
+      "enabled": "true",
+      "selected": "false"
+    }
+  ]
+}
