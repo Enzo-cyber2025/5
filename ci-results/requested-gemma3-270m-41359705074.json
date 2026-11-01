@@ -1,0 +1,128 @@
+{
+  "status": "PARTIAL",
+  "scope": "requested-Gemma-folder-Termux-Box64-APK-and-zero-limits",
+  "variant": "gemma3-270m",
+  "apk": {
+    "sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc",
+    "expected_sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc"
+  },
+  "checks": {
+    "signed_apk_and_real_gguf_import": "PASS",
+    "official_termux_bootstrap": "PASS",
+    "app_mediated_termux_handoff": {
+      "status": "NOT_VALIDATED",
+      "reason": "The pinned APK's Termux tool-row handoff was not available in the emulator flow; model commands are run by the harness as the Termux UID.",
+      "human_confirmation": false,
+      "stdout_automatically_returned_to_model": false
+    },
+    "folder_termux_access": {
+      "prompt": "Use Termux to inspect the folder. Return only a fenced bash block with exactly this command:\\ncat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt",
+      "assistant_reply": "```bash\ncat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt\n```\n",
+      "selected_command": "cat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt",
+      "expected_command": "cat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt",
+      "chat_id": "1a19958242029f9ac",
+      "chat_title": "GGUF regression 1a19958242029f9ac",
+      "executed": true,
+      "status": "TERMUX_COMMAND_COMPLETED",
+      "execution_method": "CI test harness via run-as into official Termux bash",
+      "in_app_termux_review_dialog": false,
+      "human_confirmation": false,
+      "termux_output_returned_to_model_automatically": false,
+      "termux_uid": "10210",
+      "execution_invoked": true,
+      "harness_stdout": "",
+      "completion_file": "/data/data/com.termux/files/home/model-audit-output.txt",
+      "shell_output": "Arquivo unico da pasta de teste. Identificador: BLUE-LANTERN-5831.",
+      "description_prompt": "Termux printed: Arquivo unico da pasta de teste. Identificador: BLUE-LANTERN-5831.. The folder contains only only-note.txt. State that filename and repeat the identifier exactly.",
+      "description_chat_id": "1a19958a3939053ac",
+      "description_reply": "O arquivo único da pasta de teste, BLUE-LANTERN-5831.. é o nome do arquivo.\n",
+      "description_status": "NOT_PASS"
+    },
+    "model_describes_actual_folder_contents": "NOT_PASS",
+    "zero_context_and_zero_response_limits": {
+      "status": "FAIL",
+      "error": "Timeout: resposta baseada no conteúdo real: gemma3-270m-zero-context-zero-response"
+    },
+    "text_to_binary_project_staged_in_termux_home": "PASS",
+    "box64_install_attempt": {
+      "prompt": "Install Box64 in Termux now. Return only a fenced bash block whose single command is exactly:\\npkg install -y box64 > /data/data/com.termux/files/home/box64-install.log 2>&1; echo $? > /data/data/com.termux/files/home/box64-install.status",
+      "assistant_reply": "Ok, entendi. Você quer instalar o Box64 em Termux. Para fazer isso, você precisa:\n\n1.  **Instalar o Box64:**  Verifique se o Box64 está instalado e configurado corretamente no seu sistema.\n2.  **Criar um arquivo de log",
+      "selected_command": "Ok, entendi. Você quer instalar o Box64 em Termux. Para fazer isso, você precisa:\n\n1.  **Instalar o Box64:**  Verifique se o Box64 está instalado e configurado corretamente no seu sistema.\n2.  **Criar um arquivo de log",
+      "expected_command": "pkg install -y box64 > /data/data/com.termux/files/home/box64-install.log 2>&1; echo $? > /data/data/com.termux/files/home/box64-install.status",
+      "chat_id": "1a199672f9a4f9e0b",
+      "chat_title": "GGUF regression 1a199672f9a4f9e0b",
+      "executed": false,
+      "status": "MODEL_DID_NOT_RETURN_THE_EXACT_REVIEWABLE_COMMAND"
+    },
+    "termux_compile_text_to_binary_apk": {
+      "prompt": "Compile the staged Text to Binary Android project into an APK from Termux. Return only one fenced bash block whose exact command is:\nbash /data/data/com.termux/files/home/text-binary/run-build.sh",
+      "assistant_reply": "```bash\n#!/bin> undefined\n```\n",
+      "selected_command": "#!/bin> undefined",
+      "expected_command": "bash /data/data/com.termux/files/home/text-binary/run-build.sh",
+      "chat_id": "1a19967afdc18ad79",
+      "chat_title": "GGUF regression 1a19967afdc18ad79",
+      "executed": false,
+      "status": "MODEL_DID_NOT_RETURN_THE_EXACT_REVIEWABLE_COMMAND"
+    }
+  },
+  "limitations": [
+    "Android emulator x86_64, not a physical handset"
+  ],
+  "model": {
+    "name": "Gemma 3 270M IT",
+    "quantization": "Q8_0",
+    "weights_sha256": "d156a5159f2f79c1b1d53c7c1cc20f1ff28ab8d00f17a292620aad13399b9698",
+    "apk_signed_sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc",
+    "app_name": "Gemma-3-270M-It",
+    "architecture": "gemma3",
+    "capability": "IMAGE_TOKENS_ONLY",
+    "size": 291546144
+  },
+  "settings_ui": {
+    "visible_settings_labels": [
+      "‹",
+      "Ajustes",
+      "Tamanho de contexto (tokens)",
+      "1024",
+      "Threads de CPU (0 = automático)",
+      "0",
+      "Camadas na GPU Vulkan (-1 = todas, 0 = só CPU)",
+      "99",
+      "Máximo de tokens por resposta",
+      "Temperatura",
+      "0.8",
+      "Top-P",
+      "0.95",
+      "Top-K",
+      "40.0",
+      "Min-P",
+      "0.05",
+      "Penalidade de repetição",
+      "1.1",
+      "Ferramentas (padrão para novas conversas):",
+      "Thinking",
+      "Busca",
+      "Salvar ajustes",
+      "Descarregar modelo da memória",
+      "GGUF Chat\nInferência local via llama.cpp (llamarn) com backend Vulkan.\nBackend atual: —\n\nDicas:\n• Para gerar com a tela bloqueada, basta enviar a mensagem e bloquear: a geração continua em segundo plano.\n• Use “Thinking” para raciocínio estendido e “Busca” para respostas embasadas na web.\n• Modelos multimodais: importe o GGUF de texto e o mmproj juntos."
+    ],
+    "storage_backed_context_option_found": false,
+    "context_related_labels": [
+      "Tamanho de contexto (tokens)",
+      "Descarregar modelo da memória"
+    ]
+  },
+  "folder_fixture": {
+    "path": "/data/data/com.termux/files/home/model-audit",
+    "files": [
+      "only-note.txt"
+    ],
+    "file_content": "Arquivo unico da pasta de teste. Identificador: BLUE-LANTERN-5831.",
+    "sha256": "ca381c3fba7b0a9c158d0d6a9622f3c725d78d3c6bf770e68fa0ced966348fd6"
+  },
+  "internal_context_storage": {
+    "conversation_history_saved_in_private_app_files": false,
+    "explicit_context_storage_toggle_in_settings": false,
+    "native_KV_cache_persistence": "not claimed or tested; chat transcript persistence is separate"
+  }
+}
