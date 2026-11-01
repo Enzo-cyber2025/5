@@ -1,0 +1,66 @@
+name: Signed APK Gemma 3 270M Android acceptance
+on:
+  push:
+    branches: [arena/10b3367a-5]
+    paths:
+      - '.github/workflows/gemma3-270m-android.yml'
+      - 'scripts/test_gemma3_270m_android.py'
+      - 'scripts/test_android.py'
+      - 'scripts/android_checks.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  android-inference:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Fetch exact signed APK and pinned real GGUF
+        run: |
+          set -euo pipefail
+          mkdir -p .cache
+          curl --fail --location --retry 3 --max-time 300 \
+            'https://github.com/Enzo-cyber2025/5/releases/download/gguf-gemma4-ca7d8f1/GGUF-Chat-mobile.apk' \
+            -o .cache/GGUF-Chat-mobile.apk
+          curl --fail --location --retry 3 --max-time 900 \
+            'https://github.com/cdracars/gemma-3-270m-it-gguf-mirror/releases/download/upstream-d156a5159f2f79c1b1d53c7c1cc20f1ff28ab8d00f17a292620aad13399b9698/gemma-3-270m-it-Q8_0.gguf' \
+            -o .cache/gemma-3-270m-it-Q8_0.gguf
+          echo 'f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc  .cache/GGUF-Chat-mobile.apk' | sha256sum --check
+          echo 'd156a5159f2f79c1b1d53c7c1cc20f1ff28ab8d00f17a292620aad13399b9698  .cache/gemma-3-270m-it-Q8_0.gguf' | sha256sum --check
+      - name: Verify release signing certificate
+        run: |
+          set -euo pipefail
+          sdk="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          test -n "$sdk"
+          signer="$(find "$sdk/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          test -x "$signer"
+          "$signer" verify --verbose --print-certs .cache/GGUF-Chat-mobile.apk | tee .cache/apksigner.txt
+          grep -F 'Signer #1 certificate SHA-256 digest: 9a368c9a1e4f3b3b0b6ecfb86aa3768d633a925855afba27eab3b9189177955a' .cache/apksigner.txt
+      - name: Allow KVM for disposable emulator
+        run: sudo chmod a+rw /dev/kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_5
+          ram-size: 6144M
+          heap-size: 1024M
+          disk-size: 8192M
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back emulated -camera-front emulated
+          script: python3 scripts/test_gemma3_270m_android.py
+      - name: Upload complete Android evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gemma3-270m-android-evidence
+          path: |
+            evidence/
+            .cache/apksigner.txt
+          if-no-files-found: warn
+          retention-days: 30
