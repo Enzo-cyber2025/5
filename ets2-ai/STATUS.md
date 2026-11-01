@@ -7,6 +7,6 @@
 | amostras acumuladas (ultima colheita) | sem colheita |
 | meta | 500.000.000.000 amostras (~1,25 bilhao de km simulados) |
 | janelas | seg, qui e sab, 08:00 UTC — colhe, promove e empurra sozinho |
-| atualizado | 2026-11-01 14:14 UTC |
+| atualizado | 2026-11-01 14:15 UTC |
 
 Fonte: API do Kaggle consultada pelo workflow da cadeia em cada janela.
