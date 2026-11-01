@@ -1,0 +1,37 @@
+{
+  "status": "PASS",
+  "scope": "signed-APK-real-SAF-import-and-Gemma-3-270M-native-text-inference",
+  "environment": "Android API 35 x86_64 emulator; CPU inference; not physical-device acceptance",
+  "apk": {
+    "sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc",
+    "expected_sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc",
+    "certificate_sha256": "9a368c9a1e4f3b3b0b6ecfb86aa3768d633a925855afba27eab3b9189177955a",
+    "certificate_evidence": "previous signed-publication acceptance, run 34909764328; exact APK hash pinned above"
+  },
+  "model": {
+    "repository": "cdracars/gemma-3-270m-it-gguf-mirror",
+    "release_tag": "upstream-d156a5159f2f79c1b1d53c7c1cc20f1ff28ab8d00f17a292620aad13399b9698",
+    "asset": "gemma-3-270m-it-Q8_0.gguf",
+    "quantization": "Q8_0",
+    "bytes": 291546144,
+    "sha256": "d156a5159f2f79c1b1d53c7c1cc20f1ff28ab8d00f17a292620aad13399b9698",
+    "expected_sha256": "d156a5159f2f79c1b1d53c7c1cc20f1ff28ab8d00f17a292620aad13399b9698",
+    "imported_name": "Gemma-3-270M-It",
+    "architecture": "gemma3",
+    "capability": "IMAGE_TOKENS_ONLY",
+    "app_reported_size": 291546144
+  },
+  "checks": {
+    "signed_apk_installed_and_launched": "PASS",
+    "real_SAF_GGUF_import_architecture_and_size": "PASS",
+    "native_text_generation_and_persisted_reply": "PASS"
+  },
+  "response_quality": {
+    "arithmetic_2_plus_2": {
+      "status": "NOT_PASS",
+      "expected": "4",
+      "response": "2"
+    }
+  },
+  "chat_count": 1
+}
