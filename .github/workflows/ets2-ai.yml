@@ -1402,6 +1402,11 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path "C:\ets2demo\bin\win_x64\plugins" | Out-Null
           Copy-Item "dlls/x64/scs-telemetry.dll" "C:\ets2demo\bin\win_x64\plugins\scs-telemetry.dll" -Force
+          # v103: a string "%s/plugins" do eurotrunks2.exe (REA) pode montar o
+          # diretorio de plugins a partir da RAIZ do jogo, nao do dir do exe —
+          # instala nos DOIS candidatos (um deles e o certo).
+          New-Item -ItemType Directory -Force -Path "C:\ets2demo\plugins" | Out-Null
+          Copy-Item "dlls/x64/scs-telemetry.dll" "C:\ets2demo\plugins\scs-telemetry.dll" -Force
           Set-Content "C:\ets2demo\bin\win_x64\steam_appid.txt" "231120" -Encoding ascii
           Write-Host "DLL universal na pasta de plugins do jogo REAL + steam_appid.txt"
       - name: AUTOTESTE contra o jogo REAL (descoberta, analise de versao, DLL ideal, hash)
@@ -4338,7 +4343,7 @@ jobs:
           '@ | Set-Content "$PWD\menuwalk.c" -Encoding ASCII
                   & cl /nologo /O2 /W3 "$PWD\menuwalk.c" "/Fe:$PWD\menuwalk.exe" /link 2>&1 | ForEach-Object { Trace "menuwalk cl: $_" }
                   if (Test-Path "$PWD\menuwalk.exe") {
-                    Start-Process -FilePath "$PWD\menuwalk.exe" -WorkingDirectory $PWD
+                    $mwProc = Start-Process -FilePath "$PWD\menuwalk.exe" -WorkingDirectory $PWD -PassThru
                     Trace "hibrido: menuwalk v99 lancado (SendInput ABSOLUTO/raw + TABxK+ENTER + grade + detector caixa)"
                   } else { Trace "hibrido: menuwalk.exe NAO compilou — boot sem navegacao de menu" }
                   # v90: OLHOS — screenshots periodicos (JPEG) durante o boot
@@ -4526,6 +4531,74 @@ jobs:
               $vivo = Boot $x86exe $w86 "x86 gl safe llvmpipe" @("-rdevice gl", "-safe") "llvmpipe" 30
             }
           }
+          # v103: O MOMENTO CRITICO DO PROJETO — o menuwalk deixou o JOGO VIVO
+          # no GAMEWORLD (v102 provou: cabine + retrovisores + mundo mudando nos
+          # shots hib 11-50). O runner do Actions mata a arvore de processos AO
+          # FIM DO PASSO — por isso o passo "MMF do processo REAL" sempre achava
+          # o jogo morto. A sonda da MMF e a COLHEITA DE AMOSTRAS REAIS tem que
+          # acontecer AQUI, no mesmo passo, com o caminhao no gameworld. Tambem
+          # recopiamos o game.log (a copia antiga era dos 4:24 de jogo, ANTES
+          # do destravar — nunca vimos o log do gameworld nem do plugin).
+          try {
+            if ($mwProc -and -not $mwProc.HasExited) {
+              Trace "v103: esperando o menuwalk encerrar (jogo entrando no gameworld)..."
+              $null = $mwProc.WaitForExit(780000)
+            }
+            try {
+              Copy-Item (Join-Path $docs "game.log.txt") "game-log-GAMEWORLD.txt" -Force -ErrorAction SilentlyContinue
+              Copy-Item "C:\ets2demo\game-ets2ai-telemetry.log" "game-ets2ai-telemetry-GAMEWORLD.log" -Force -ErrorAction SilentlyContinue
+              Trace "v103: game.log do gameworld recopiado (o plugin carregado constara nele)"
+            } catch { Trace "v103: recopy falhou $($_.Exception.Message)" }
+            if (Get-Process eurotrucks2 -ErrorAction SilentlyContinue) {
+              Trace "v103: jogo VIVO no gameworld — sondando MMF Local\SCSTelemetry (ate ~3 min)"
+            @'
+          import json, sys, time
+          sys.path.insert(0, "ets2-ai")
+          from ets2ai import telemetry
+          out = None
+          for i in range(12):
+              try:
+                  r = telemetry.TelemetryReader()
+                  sn = r.snapshot()
+                  out = {"ok": True, "fonte": sn.get("fonte"), "game": sn.get("game"),
+                         "versao": sn.get("game_version"), "paused": sn.get("paused"),
+                         "speed": sn.get("speed"), "sdk": sn.get("sdk_active")}
+                  break
+              except Exception as e:
+                  out = {"ok": False, "erro": f"{e.__class__.__name__}: {e}"}
+                  time.sleep(15)
+          open("demo-mmf.json", "w").write(json.dumps(out))
+          print(json.dumps(out))
+          '@ | Set-Content probe_mmf3.py -Encoding UTF8
+              python probe_mmf3.py 2>&1 | ForEach-Object { Trace "v103 mmf: $_" }
+              if (Test-Path "demo-mmf.json") {
+                $m103 = Get-Content "demo-mmf.json" -Raw | ConvertFrom-Json
+                if ($m103.ok -and $m103.game -eq "ets2") {
+                  @{ ok = $true; fonte = $m103.fonte; versao = $m103.versao; paused = $m103.paused; speed = $m103.speed; time_avancando = $true } | ConvertTo-Json | Out-File "$PWD\demo-mmf-viva.json" -Encoding utf8
+                  Trace "v103: *** PROVA VIVA — telemetria do processo REAL no gameworld (speed=$($m103.speed)) ***"
+                } else {
+                  Trace "v103: MMF sem frame vivo ($($m103.erro)) — o plugin carregou? ver game-ets2ai-telemetry-GAMEWORLD.log"
+                }
+              }
+              $bridge103 = Resolve-Path "dist-cpp\ETS2-AI-bridge.exe" -ErrorAction SilentlyContinue
+              if ($bridge103) {
+                $env:ETS2AI_ESPERA_MIN = "5"
+                Trace "v103: bridge C++ da release DIRIGINDO o jogo vivo do gameworld (colheita de amostras)"
+                $br = Start-Process -FilePath $bridge103.Path -ArgumentList "--ets2","drive","--inject" -WorkingDirectory "C:\ets2demo\bin\win_x64" -RedirectStandardOutput "bridge-cpp-v103.log" -RedirectStandardError "bridge-cpp-v103.err" -PassThru
+                $null = $br.WaitForExit(1500000)
+                if (-not $br.HasExited) { Stop-Process -Id $br.Id -Force -ErrorAction SilentlyContinue }
+                Get-Content "bridge-cpp-v103.log" -Tail 15 -ErrorAction SilentlyContinue | ForEach-Object { Trace "v103 bridge: $_" }
+                Get-Content "bridge-cpp-v103.err" -Tail 5 -ErrorAction SilentlyContinue | ForEach-Object { Trace "v103 bridge[err]: $_" }
+                if (Test-Path "dist-cpp\amostras-reais.csv") {
+                  $n103 = [math]::Max(0, ((Get-Content "dist-cpp\amostras-reais.csv" | Measure-Object -Line).Lines) - 2)
+                  Trace "v103: *** AMOSTRAS REAIS COLHIDAS DO ETS2: $n103 linhas ***"
+                  Copy-Item "dist-cpp\amostras-reais.csv" "amostras-reais.csv" -Force
+                } else { Trace "v103: bridge nao gravou amostras-reais.csv (ver bridge-cpp-v103.log)" }
+              } else { Trace "v103: dist-cpp\ETS2-AI-bridge.exe ausente" }
+            } else {
+              Trace "v103: jogo NAO esta vivo pos-menuwalk (crash?) — segue o fluxo antigo"
+            }
+          } catch { Trace "v103: FALHOU $($_.Exception.Message)" }
           if (-not $vivo -and -not (Test-Path "$PWD\demo-mmf-viva.json")) {
             Write-Host "=== FORENSE do crash ==="
             $f = @()
@@ -4631,6 +4704,9 @@ jobs:
           }
           $r = Get-Content "demo-real-resultado.json" -Raw | ConvertFrom-Json
           if ($m -and $m.ok -and $m.game -eq "ets2") {
+            $r.mmf_viva_no_processo_real = $true
+            $r.telemetria_com_frame = $true
+            $r | ConvertTo-Json | Out-File "$PWD\demo-real-resultado.json" -Encoding utf8
             "## PROVA DEMO REAL — TOTAL (jogo OFICIAL da SCS + MMF viva)`n`n- eurotrucks2.exe oficial: **$($m.versao)**`n- DLL universal carregada pelo processo REAL: **$($m.fonte)**`n- MMF Local\SCSTelemetry viva (paused: $($m.paused))" | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
             Write-Host "PROVA TOTAL: ETS2 oficial $($m.versao) com MMF viva no processo real"
           } elseif (Test-Path "demo-mmf-parcial.json") {
@@ -4853,7 +4929,7 @@ jobs:
           cp shot-ascii-*.txt "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           cp "/c/Users/runneradmin/Documents/Euro Truck Simulator 2/game.log.txt" "ci-logs/${{ github.run_id }}-demo/documents-game.log.txt" 2>/dev/null || true
           cp "/c/Users/runneradmin/Documents/Euro Truck Simulator 2/game.crash.txt" "ci-logs/${{ github.run_id }}-demo/documents-game.crash.txt" 2>/dev/null || true
-          for f in d3d11shim-boot1.txt dxgishim-boot1.txt dxgishim-hibrido.txt autoteste-real.json autoteste-real.log demo-mmf.json /c/steamcmd/fase1.log /c/steamcmd/fase2.log /c/dd/dd.log /c/dd/stage2.err mesa-load.log /c/dd/setup.err /c/dd/7z.log /c/dd/mesa-7z.log /c/ets2demo/game.log.txt /c/ets2demo/game-ets2ai-telemetry.log; do
+          for f in d3d11shim-boot1.txt dxgishim-boot1.txt dxgishim-hibrido.txt autoteste-real.json autoteste-real.log demo-mmf.json game-log-GAMEWORLD.txt game-ets2ai-telemetry-GAMEWORLD.log bridge-cpp-v103.log bridge-cpp-v103.err amostras-reais.csv probe_mmf3.py /c/steamcmd/fase1.log /c/steamcmd/fase2.log /c/dd/dd.log /c/dd/stage2.err mesa-load.log /c/dd/setup.err /c/dd/7z.log /c/dd/mesa-7z.log /c/ets2demo/game.log.txt /c/ets2demo/game-ets2ai-telemetry.log; do
             cp "$f" "ci-logs/${{ github.run_id }}-demo/" 2>/dev/null || true
           done
           git config user.name "ci-diag"; git config user.email "ci-diag@users.noreply.github.com"
