@@ -29,6 +29,18 @@ def test_termux_handoff_is_explicit_user_confirmed_and_scoped_to_shell_blocks():
     # only after the user reviews and confirms it; it is not an embedded shell.
 
 
+def test_requested_models_use_the_real_reviewed_bridge_not_a_run_as_shell_bypass():
+    task = (ROOT / "scripts/test_requested_model_tasks_android.py").read_text()
+    workflow = (ROOT / ".github/workflows/requested-model-tasks-android.yml").read_text()
+    assert "confirm_in_app_termux_command(device, selected, stage)" in task
+    assert "run_in_termux_uid" not in task and '"run-as com.termux' not in task
+    assert 'setTitle("Revisar comando do Termux")' in (ROOT / "apk-fix/java/com/ggufchat/app/TermuxBridge.java").read_text()
+    assert 'pm revoke {PACKAGE} com.termux.permission.RUN_COMMAND' in task
+    assert '"stdout_automatically_returned_to_model": False' in task
+    assert ".delivery/GGUF-Chat-mobile-unsigned.apk" in workflow
+    assert "emulator-only.p12" in workflow and "NOT FOR RELEASE" in workflow
+
+
 def test_android_harness_runs_app_before_termux_bootstrap_and_recovers_launcher_anr():
     script = (ROOT / "scripts/test_tool_integrations_android.py").read_text()
     main = script[script.index("def main():"):]

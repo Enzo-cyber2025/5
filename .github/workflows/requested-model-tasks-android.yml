@@ -1,4 +1,4 @@
-name: Gemma folder, Termux, Box64, APK and token-limit tests
+name: Gemma confirmed Termux hand-off, Box64, APK and token-limit tests
 on:
   push:
     branches: [arena/10b3367a-5]
@@ -35,16 +35,44 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Fetch exact signed APK, real model and official Termux
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Verify current unsigned candidate and sign only for emulator
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          set +o pipefail
+          yes | "$SDKMANAGER" --licenses > /tmp/android-licenses.log
+          set -o pipefail
+          "$SDKMANAGER" 'platforms;android-35' 'build-tools;35.0.0'
+          test -s .delivery/GGUF-Chat-mobile-unsigned.apk
+          test -s .delivery/mobile-build.json
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          meta=json.loads(Path('.delivery/mobile-build.json').read_text())
+          digest=hashlib.sha256(Path('.delivery/GGUF-Chat-mobile-unsigned.apk').read_bytes()).hexdigest()
+          assert meta['status']=='UNSIGNED_NOT_APPROVED'
+          assert meta['sha256']==digest
+          print('Unsigned candidate SHA-256:', digest)
+          PY
+          mkdir -p .cache
+          keytool -genkeypair -keystore "$RUNNER_TEMP/emulator-only.p12" -storetype PKCS12 \
+            -storepass android -keypass android -alias test -keyalg RSA -keysize 2048 \
+            -validity 2 -dname 'CN=Disposable emulator test, O=NOT FOR RELEASE'
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign \
+            --ks "$RUNNER_TEMP/emulator-only.p12" --ks-pass pass:android --key-pass pass:android \
+            --out .cache/GGUF-Chat-mobile.apk .delivery/GGUF-Chat-mobile-unsigned.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify .cache/GGUF-Chat-mobile.apk
+      - name: Fetch real model and official Termux
         env:
           MODEL_VARIANT: ${{ matrix.variant }}
         run: |
           set -euo pipefail
           mkdir -p .cache
-          curl --fail --location --retry 3 --max-time 300 \
-            'https://github.com/Enzo-cyber2025/5/releases/download/gguf-gemma4-ca7d8f1/GGUF-Chat-mobile.apk' \
-            -o .cache/GGUF-Chat-mobile.apk
-          echo 'f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc  .cache/GGUF-Chat-mobile.apk' | sha256sum --check
           if [ "$MODEL_VARIANT" = gemma4-e2b ]; then
             bash ci/gemma4-models.sh
           else
@@ -76,6 +104,8 @@ jobs:
         env:
           MODEL_VARIANT: ${{ matrix.variant }}
           GGUF_TEST_APK: .cache/GGUF-Chat-mobile.apk
+          GGUF_UNSIGNED_APK: .delivery/GGUF-Chat-mobile-unsigned.apk
+          GGUF_BUILD_METADATA: .delivery/mobile-build.json
           GGUF_TERMUX_TEST_APK: .cache/termux-app-x86_64.apk
         with:
           api-level: 35

@@ -7,6 +7,7 @@ import re
 import shlex
 import time
 import traceback
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import test_mobile as mobile
@@ -17,6 +18,8 @@ from android_checks import PACKAGE, position
 
 EVIDENCE = Path("evidence")
 APK = Path(os.environ.get("GGUF_TEST_APK", ".cache/GGUF-Chat-mobile.apk"))
+UNSIGNED_APK = Path(os.environ.get("GGUF_UNSIGNED_APK", ".delivery/GGUF-Chat-mobile-unsigned.apk"))
+BUILD_METADATA = Path(os.environ.get("GGUF_BUILD_METADATA", ".delivery/mobile-build.json"))
 TERMUX_APK = Path(os.environ.get("GGUF_TERMUX_TEST_APK", ".cache/termux-app-x86_64.apk"))
 VARIANT = os.environ.get("MODEL_VARIANT", "gemma3-270m")
 MARKER = "BLUE-LANTERN-5831"
@@ -38,18 +41,63 @@ def assistant_code(answer):
     return blocks[-1].strip() if blocks else answer.strip()
 
 
-def run_in_termux_uid(device, command, timeout=300):
-    """Run a validated model command inside Termux's own UID and shell environment."""
-    uid = device.shell("run-as com.termux /system/bin/id -u").strip()
-    assert uid.isdigit() and uid != "0", "run-as did not enter the unprivileged Termux UID"
-    wrapper = (f"export HOME={shlex.quote(TERMUX_HOME)}; "
-               "export PREFIX=/data/data/com.termux/files/usr; "
-               f"export TMPDIR=$PREFIX/tmp; export PATH=$PREFIX/bin:/system/bin; "
-               f"cd {shlex.quote(TERMUX_HOME)}; "
-               f"exec $PREFIX/bin/bash -lc {shlex.quote(command)}")
-    shell_command = "run-as com.termux /system/bin/sh -c " + shlex.quote(wrapper)
-    return {"termux_uid": uid,
-            "stdout": device.shell(shell_command, timeout=timeout, check=False)}
+def tap_termux_tool(device):
+    """Open the Termux tool from the real chat toolbar, scrolling if needed."""
+    point = position(device.ui(), text="Termux", package={PACKAGE})
+    if not point:
+        device.tap(desc="Alternar ferramentas", package={PACKAGE})
+    for _ in range(8):
+        xml = device.ui()
+        point = position(xml, text="Termux", package={PACKAGE})
+        if point:
+            device.shell(f"input tap {point[0]} {point[1]}")
+            return
+        root = ET.fromstring(xml)
+        row = next((node for node in root.iter("node")
+                    if node.get("content-desc") == "Ferramentas da conversa"), None)
+        if row is None:
+            raise AssertionError("A linha de ferramentas do chat não está visível")
+        match = re.fullmatch(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", row.get("bounds", ""))
+        if not match:
+            raise AssertionError("Bounds da linha de ferramentas ausentes")
+        left, top, right, bottom = map(int, match.groups())
+        y = (top + bottom) // 2
+        device.shell(f"input touchscreen swipe {right-12} {y} {left+12} {y} 350")
+    raise AssertionError("Botão Termux não ficou visível na linha de ferramentas")
+
+
+def confirm_in_app_termux_command(device, command, stage):
+    """Use the app bridge and require review plus Android permission confirmation."""
+    tap_termux_tool(device)
+    device.wait(lambda: position(device.ui(), text="Revisar comando do Termux",
+                                 contains=True, package={PACKAGE}),
+                "diálogo de revisão do Termux")
+    shown = [node.get("text", "") for node in ET.fromstring(device.ui()).iter("node")]
+    assert command in shown, "O comando completo não apareceu no diálogo de revisão"
+    device.capture(stage + "-termux-review.png")
+    device.tap(text="Abrir no Termux", package={PACKAGE})
+
+    def permission_button():
+        xml = device.ui()
+        if "com.android.permissioncontroller" not in xml and "permission" not in xml.lower():
+            return None
+        for label in ("Allow", "While using the app", "Allow only while using the app", "Permitir"):
+            point = position(xml, text=label, package=None)
+            if point:
+                return point
+        return None
+
+    # Install uses -g for other app permissions. Revoke RUN_COMMAND before the
+    # first hand-off so this path proves the Android runtime confirmation dialog.
+    if device.shell(f"pm check-permission com.termux.permission.RUN_COMMAND {PACKAGE}").strip() != "granted":
+        point = device.wait(permission_button, "permissão Android RUN_COMMAND em runtime", timeout=25)
+        device.shell(f"input tap {point[0]} {point[1]}")
+        device.wait(lambda: device.shell(
+            f"pm check-permission com.termux.permission.RUN_COMMAND {PACKAGE}").strip() == "granted",
+            "permissão RUN_COMMAND concedida pelo diálogo Android", timeout=15)
+    return {"review_dialog": True, "runtime_permission": "granted",
+            "confirmation_path": "in-app review followed by Android permission dialog when needed",
+            "confirmation_driver": "CI tapped the explicit confirmation controls"}
 
 
 def ask_for_command(device, model, prompt, expected, stage, summary):
@@ -81,27 +129,26 @@ def ask_for_command(device, model, prompt, expected, stage, summary):
         return None
 
     record["execution_command"] = selected
-    # The pinned signed release does not expose a reliable Termux tool-row handoff.
-    # Execute only the exact model-generated command, through run-as into the
-    # official Termux app's unprivileged UID; the harness does not pass its stdout
-    # back into the model unless a later prompt explicitly includes it.
-    record["execution_method"] = "CI test harness via run-as into official Termux bash"
-    record["in_app_termux_review_dialog"] = False
-    record["human_confirmation"] = False
+    record["execution_method"] = "GGUF Chat TermuxBridge to official RUN_COMMAND service"
     record["termux_output_returned_to_model_automatically"] = False
-    timeout = 2400 if stage == "termux_compile_text_to_binary_apk" else 600
-    execution = run_in_termux_uid(device, expected, timeout=timeout)
-    record["termux_uid"] = execution["termux_uid"]
+    record["output_handling"] = "test driver inspects Termux files/logs; only explicit later prompts include selected content"
+    record["confirmation"] = confirm_in_app_termux_command(device, selected, stage)
+    record["in_app_termux_review_dialog"] = True
     record["execution_invoked"] = True
-    record["harness_stdout"] = execution["stdout"][-4000:]
+    bridge = summary["checks"].setdefault("app_mediated_termux_handoff", {
+        "status": "PASS", "review_and_confirmation_required": True,
+        "stdout_automatically_returned_to_model": False, "validated_stages": []})
+    bridge["status"] = "PASS"
+    bridge["validated_stages"].append(stage)
 
     completion = (TERMUX_HOME + "/model-audit-output.txt" if stage == "folder_termux_access"
                   else TERMUX_HOME + "/box64-install.status" if stage == "box64_install_attempt"
                   else TERMUX_HOME + "/text-binary/build.exit")
     record["completion_file"] = completion
     try:
+        completion_timeout = 2400 if stage == "termux_compile_text_to_binary_apk" else 900
         device.wait(lambda: device.shell("test -f " + shlex.quote(completion) + " && echo done", check=False) == "done",
-                    "resultado do comando no Termux: " + stage, timeout=900)
+                    "resultado do comando no Termux: " + stage, timeout=completion_timeout)
         record["executed"] = True
         record["status"] = "TERMUX_COMMAND_COMPLETED"
     except AssertionError as exc:
@@ -262,10 +309,16 @@ def main():
     device = MobileAndroid("emulator-5554", EVIDENCE)
     summary = {"status": "FAIL", "scope": "requested-Gemma-folder-Termux-Box64-APK-and-zero-limits",
                "variant": VARIANT,
-               "apk": {"sha256": sha256(APK), "expected_sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc"},
+               "apk": {"test_install_sha256": sha256(APK),
+                       "unsigned_candidate_sha256": sha256(UNSIGNED_APK),
+                       "signature_scope": "ephemeral emulator-only signing; not a release/update signature"},
                "checks": {}, "limitations": ["Android emulator x86_64, not a physical handset"]}
     try:
-        assert sha256(APK) == summary["apk"]["expected_sha256"]
+        build_meta = json.loads(BUILD_METADATA.read_text())
+        assert build_meta.get("status") == "UNSIGNED_NOT_APPROVED"
+        assert build_meta.get("sha256") == summary["apk"]["unsigned_candidate_sha256"]
+        summary["apk"]["candidate_source_commit"] = build_meta.get("source_commit")
+        assert APK.is_file() and UNSIGNED_APK.is_file()
         assert device.shell("getprop ro.kernel.qemu") == "1"
         device.adb("root", check=False); device.adb("wait-for-device", timeout=90)
         assert device.shell("id -u") == "0"
@@ -283,7 +336,7 @@ def main():
             model_path = Path(".cache/gemma-3-270m-it-Q8_0.gguf")
             summary["model"] = {"name": "Gemma 3 270M IT", "quantization": "Q8_0",
                                  "weights_sha256": sha256(model_path)}
-        summary["model"]["apk_signed_sha256"] = sha256(APK)
+        summary["model"]["apk_test_install_sha256"] = sha256(APK)
 
         device.adb("install", "-r", "-g", APK, timeout=300)
         assert device.shell("pm clear " + PACKAGE) == "Success"
@@ -292,17 +345,18 @@ def main():
         summary["model"].update({"app_name": model.get("name"), "architecture": model.get("architecture"),
                                  "capability": model.get("capability"), "size": model.get("size")})
         if VARIANT == "gemma4-e2b":
-            summary["checks"]["signed_apk_and_real_gguf_provisioning"] = {
+            summary["checks"]["test_apk_and_real_gguf_provisioning"] = {
                 "status": "PASS", "method": "ADB provisioning into app-private models directory",
                 "SAF_import_in_this_task": False,
-                "note": "Text-only Gemma 4 task; prior release acceptance covers SAF pair merge."
+                "note": "Text-only Gemma 4 task; prior release acceptance covers SAF pair merge. The test APK uses an ephemeral emulator-only signature."
             }
         else:
-            summary["checks"]["signed_apk_and_real_gguf_import"] = "PASS"
+            summary["checks"]["test_apk_and_real_gguf_import"] = "PASS"
 
         summary["settings_ui"] = check_settings_screen(device)
         # Create the single-file folder in Termux's own private home. Nothing else
-        # is placed in it; shell output is copied back to the model by the harness.
+        # is placed there; the UI bridge runs the model command after review. The
+        # test driver reads its result and supplies it only in a later user prompt.
         device.adb("install", "-r", TERMUX_APK, timeout=180)
         device.shell("monkey -p com.termux 1", check=False)
         device.wait(lambda: device.shell("test -x /data/data/com.termux/files/usr/bin/bash && echo ready", check=False) == "ready",
@@ -317,11 +371,13 @@ def main():
         device.wait(lambda: device.shell("test -x /data/data/com.termux/files/usr/bin/bash && echo ready", check=False) == "ready",
                     "Termux com allow-external-apps", timeout=90)
         summary["checks"]["official_termux_bootstrap"] = "PASS"
+        # All model commands below go through the app's review dialog and official
+        # Termux RUN_COMMAND service. The workflow explicitly revokes the Android
+        # permission first so the runtime grant is exercised rather than assumed.
+        device.shell(f"pm revoke {PACKAGE} com.termux.permission.RUN_COMMAND", check=False)
         summary["checks"]["app_mediated_termux_handoff"] = {
-            "status": "NOT_VALIDATED",
-            "reason": "The pinned APK's Termux tool-row handoff was not available in the emulator flow; model commands are run by the harness as the Termux UID.",
-            "human_confirmation": False,
-            "stdout_automatically_returned_to_model": False
+            "status": "PENDING", "review_and_confirmation_required": True,
+            "stdout_automatically_returned_to_model": False, "validated_stages": []
         }
 
         folder = prepare_termux_folder(device)
@@ -389,9 +445,8 @@ def main():
         summary["checks"]["box64_install_script_staged"] = {"status": "PASS", "path": box_script,
                                                               "script": box_script_body}
 
-        # Execute only the exact model-proposed command in Termux's unprivileged
-        # UID. This is harness execution, not app-mediated or human-approved.
-        # Box64 is architecture-specific; no fallback binary is substituted.
+        # The exact model-proposed Box64 command is reviewed and confirmed through
+        # the app bridge. Box64 is architecture-specific; no fallback binary is substituted.
         box_prompt = ("Copy this exact Termux command. Do not rewrite it or add explanation; return one fenced bash block:\n"
                       + BOX64_COMMAND)
         box = safe_ask_for_command(device, model, box_prompt, BOX64_COMMAND, "box64_install_attempt", summary)
@@ -447,10 +502,11 @@ def main():
             "explicit_context_storage_toggle_in_settings": summary["settings_ui"]["storage_backed_context_option_found"],
             "native_KV_cache_persistence": "not claimed or tested; chat transcript persistence is separate"
         }
-        model_setup = (summary["checks"].get("signed_apk_and_real_gguf_import") == "PASS"
-                       or summary["checks"].get("signed_apk_and_real_gguf_provisioning", {}).get("status") == "PASS")
+        model_setup = (summary["checks"].get("test_apk_and_real_gguf_import") == "PASS"
+                       or summary["checks"].get("test_apk_and_real_gguf_provisioning", {}).get("status") == "PASS")
         core = (model_setup
                 and summary["checks"].get("official_termux_bootstrap") == "PASS"
+                and summary["checks"].get("app_mediated_termux_handoff", {}).get("status") == "PASS"
                 and summary["checks"].get("folder_termux_access", {}).get("executed") is True
                 and summary["checks"].get("model_describes_actual_folder_contents") == "PASS"
                 and summary["checks"].get("zero_context_and_zero_response_limits", {}).get("status") == "PASS"
