@@ -1,0 +1,228 @@
+{
+  "status": "PARTIAL",
+  "scope": "requested-Gemma-folder-Termux-Box64-APK-and-zero-limits",
+  "variant": "gemma3-270m",
+  "apk": {
+    "sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc",
+    "expected_sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc"
+  },
+  "checks": {
+    "signed_apk_and_real_gguf_import": "PASS",
+    "official_termux_bootstrap": "PASS",
+    "app_mediated_termux_handoff": {
+      "status": "NOT_VALIDATED",
+      "reason": "The pinned APK's Termux tool-row handoff was not available in the emulator flow; model commands are run by the harness as the Termux UID.",
+      "human_confirmation": false,
+      "stdout_automatically_returned_to_model": false
+    },
+    "folder_termux_access": {
+      "prompt": "Use Termux to inspect the folder. Return only a fenced bash block with exactly this command:\ncat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt",
+      "assistant_reply": "```bash\ncat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt\n```",
+      "selected_command": "cat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt",
+      "expected_command": "cat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt",
+      "chat_id": "1a19c4ce8aa4b0ef0",
+      "chat_title": "GGUF regression 1a19c4ce8aa4b0ef0",
+      "executed": true,
+      "status": "TERMUX_COMMAND_COMPLETED",
+      "execution_command": "cat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt",
+      "execution_method": "CI test harness via run-as into official Termux bash",
+      "in_app_termux_review_dialog": false,
+      "human_confirmation": false,
+      "termux_output_returned_to_model_automatically": false,
+      "termux_uid": "10210",
+      "execution_invoked": true,
+      "harness_stdout": "",
+      "completion_file": "/data/data/com.termux/files/home/model-audit-output.txt",
+      "shell_output": "Arquivo unico da pasta de teste. Identificador: BLUE-LANTERN-5831.",
+      "description_prompt": "This folder has only one file, only-note.txt. Exact file text: Arquivo unico da pasta de teste. Identificador: BLUE-LANTERN-5831.. Describe what is inside, include the filename, and copy the identifier exactly.",
+      "description_chat_id": "1a19c4d7de21732a0",
+      "description_reply": "Ok, entendi.\n",
+      "description_status": "NOT_PASS"
+    },
+    "model_describes_actual_folder_contents": "NOT_PASS",
+    "zero_context_and_zero_response_limits": {
+      "status": "FAIL",
+      "error": "Timeout: orçamento nativo finito dos dois valores zero",
+      "logcat_tail": "0  1100 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-02 12:51:50.632   558  2556 W AppOps  : Noting op not finished: uid 10143 pkg com.google.android.gms code 113 startTime of in progress event=1793623595930\n11-02 12:51:50.635   558   644 W AppOps  : Noting op not finished: uid 10143 pkg com.google.android.gms code 79 startTime of in progress event=1793623621513\n11-02 12:51:50.637   558   592 D ActivityManager: sync unfroze 2246 com.google.android.gms.unstable for 10\n11-02 12:51:50.639   558   592 D ActivityManager: sync unfroze 1568 com.google.android.gms for 10\n11-02 12:51:50.639   558   592 D ActivityManager: sync unfroze 4957 com.google.android.gms.ui for 10\n11-02 12:51:50.640   558   644 W AppOps  : Noting op not finished: uid 10143 pkg com.google.android.gms code 113 startTime of in progress event=1793623595930\n11-02 12:51:50.645  1237  2239 I ActivityScheduler: nextTriggerTime: 638647, in 235300ms, detectorType: 39, FULL_TYPE alarmWindowMillis: 30000\n11-02 12:51:50.660  1568  1568 D BoundBrokerSvc: onUnbind: Intent { act=com.google.android.gms.common.BIND_SHARED_PREFS pkg=com.google.android.gms }\n11-02 12:51:50.685   360  6546 I resolv  : GetAddrInfoHandler::run: {100 786532 100 983140 10143 0}\n11-02 12:51:50.686   360  6548 I resolv  : res_nmkquery: (QUERY, IN, A)\n11-02 12:51:50.686   360  6547 I resolv  : res_nmkquery: (QUERY, IN, AAAA)\n11-02 12:51:50.686   360  6549 I resolv  : GetAddrInfoHandler::run: {100 786532 100 983140 10143 0}\n11-02 12:51:50.686   360  6551 I resolv  : res_nmkquery: (QUERY, IN, AAAA)\n11-02 12:51:50.687   360  6552 I resolv  : res_nmkquery: (QUERY, IN, A)\n11-02 12:51:50.687   360  6550 I resolv  : GetAddrInfoHandler::run: {100 786532 100 983140 10143 0}\n11-02 12:51:50.687   360  6553 I resolv  : res_nmkquery: (QUERY, IN, AAAA)\n11-02 12:51:50.687   360  6553 I resolv  : resolv_cache_lookup: Waiting for previous request\n11-02 12:51:50.687   360  6554 I resolv  : res_nmkquery: (QUERY, IN, A)\n11-02 12:51:50.687   360  6554 I resolv  : resolv_cache_lookup: Waiting for previous request\n11-02 12:51:50.689   360  6555 I resolv  : GetAddrInfoHandler::run: {100 786532 100 983140 10143 0}\n11-02 12:51:50.690   360  6557 I resolv  : res_nmkquery: (QUERY, IN, A)\n11-02 12:51:50.690   360  6557 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x79d157b1a630\n11-02 12:51:50.690   360  6557 I resolv  : doQuery: rcode=0, ancount=8, return value=176\n11-02 12:51:50.690   360  6556 I resolv  : res_nmkquery: (QUERY, IN, AAAA)\n11-02 12:51:50.690   360  6556 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x79d1a7b12c50\n11-02 12:51:50.690   360  6556 I resolv  : doQuery: rcode=0, ancount=8, return value=272\n11-02 12:51:50.703   360  6552 I resolv  : res_nsend: used send_dg 178 terrno: 0\n11-02 12:51:50.704   360  6552 I resolv  : doQuery: rcode=0, ancount=8, return value=178\n11-02 12:51:50.704   360  6547 I resolv  : res_nsend: used send_dg 274 terrno: 0\n11-02 12:51:50.704   360  6547 I resolv  : doQuery: rcode=0, ancount=8, return value=274\n11-02 12:51:50.704   360  6551 I resolv  : res_nsend: used send_dg 274 terrno: 0\n11-02 12:51:50.704   360  6551 I resolv  : resolv_cache_add: ALREADY IN CACHE (0x79d1a7b13890) ? IGNORING ADD\n11-02 12:51:50.704   360  6551 I resolv  : doQuery: rcode=0, ancount=8, return value=274\n11-02 12:51:50.705   360  6548 I resolv  : res_nsend: used send_dg 178 terrno: 0\n11-02 12:51:50.705   360  6548 I resolv  : resolv_cache_add: ALREADY IN CACHE (0x79d157b16dd0) ? IGNORING ADD\n11-02 12:51:50.705   360  6548 I resolv  : doQuery: rcode=0, ancount=8, return value=178\n11-02 12:51:50.705   360  6554 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x79d157b16dd0\n11-02 12:51:50.705   360  6554 I resolv  : doQuery: rcode=0, ancount=8, return value=178\n11-02 12:51:50.705   360  6553 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x79d1a7b13890\n11-02 12:51:50.705   360  6553 I resolv  : doQuery: rcode=0, ancount=8, return value=274\n11-02 12:51:51.085  1100  1100 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-02 12:51:51.087  1100  1100 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-02 12:51:51.448   919  1056 D EGL_emulation: app_time_stats: avg=199.97ms min=194.94ms max=204.83ms count=6\n11-02 12:51:51.587  1100  1100 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-02 12:51:51.587  1100  1100 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-02 12:51:51.806     0     0 I logd    : logdr: UID=0 GID=0 PID=6558 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns\n11-02 12:51:51.669  5796  5809 D EGL_emulation: app_time_stats: avg=500.93ms min=484.63ms max=512.90ms count=3\n11-02 12:51:52.087  1100  1100 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-02 12:51:52.088  1100  1100 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-02 12:51:52.431  1237  1247 I ChimeraSrvcProxy: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl\n11-02 12:51:52.431  1237  1247 W .gms.persistent: Large reply transaction of 1056768 bytes, interface descriptor , code 1\n11-02 12:51:52.432   558   838 W IPCThreadState: Sending oneway calls to frozen process.\n11-02 12:51:52.432   558   838 W IPCThreadState: Sending oneway calls to frozen process.\n11-02 12:51:52.432   558   838 W IPCThreadState: Sending oneway calls to frozen process.\n11-02 12:51:52.449   919  1056 D EGL_emulation: app_time_stats: avg=200.00ms min=199.38ms max=200.46ms count=5\n11-02 12:51:52.589  1100  1100 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-02 12:51:52.589  1100  1100 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-02 12:51:52.835     0     0 I logd    : logdr: UID=0 GID=0 PID=6561 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns\n11-02 12:51:52.673  5796  5809 D EGL_emulation: app_time_stats: avg=501.72ms min=494.93ms max=508.52ms count=2\n11-02 12:51:53.089  1100  1100 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-02 12:51:53.090  1100  1100 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-02 12:51:53.591  1100  1100 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-02 12:51:53.591  1100  1100 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-02 12:51:53.648   919  1056 D EGL_emulation: app_time_stats: avg=199.92ms min=198.80ms max=201.25ms count=6\n11-02 12:51:53.678  5796  5809 D EGL_emulation: app_time_stats: avg=502.57ms min=491.16ms max=513.98ms count=2\n11-02 12:51:53.873     0     0 I logd    : logdr: UID=0 GID=0 PID=6564 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns\n11-02 12:51:54.093  1100  1100 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-02 12:51:54.093  1100  1100 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-02 12:51:54.594  1100  1100 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-02 12:51:54.595  1100  1100 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-02 12:51:54.649   919  1056 D EGL_emulation: app_time_stats: avg=200.05ms min=199.24ms max=200.91ms count=5\n11-02 12:51:54.680  5796  5809 D EGL_emulation: app_time_stats: avg=501.23ms min=499.79ms max=502.66ms count=2\n11-02 12:51:54.915     0     0 I logd    : logdr: UID=0 GID=0 PID=6567 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns\n11-02 12:51:55.096  1100  1100 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-02 12:51:55.096  1100  1100 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-02 12:51:55.596  1100  1100 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-02 12:51:55.597  1100  1100 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-02 12:51:55.662   437   456 W TransactionTracing: Could not find layer id 167\n11-02 12:51:55.681  5796  5809 D EGL_emulation: app_time_stats: avg=500.10ms min=499.83ms max=500.36ms count=2\n11-02 12:51:55.942     0     0 I logd    : logdr: UID=0 GID=0 PID=6570 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns\n11-02 12:51:55.849   919  1056 D EGL_emulation: app_time_stats: avg=200.00ms min=198.50ms max=201.62ms count=6\n11-02 12:51:56.097  1100  1100 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-02 12:51:56.098  1100  1100 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-02 12:51:56.599  1100  1100 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-02 12:51:56.600  1100  1100 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-02 12:51:56.972     0     0 I logd    : logdr: UID=0 GID=0 PID=6573 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns\n11-02 12:51:57.048   919  1056 D EGL_emulation: app_time_stats: avg=199.88ms min=199.47ms max=200.43ms count=6\n11-02 12:51:57.101  1100  1100 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-02 12:51:57.101  1100  1100 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-02 12:51:57.183  5796  5809 D EGL_emulation: app_time_stats: avg=500.85ms min=499.87ms max=502.68ms count=3\n11-02 12:51:57.601  1100  1100 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-02 12:51:57.602  1100  1100 D FallbackHome: User unlocked but no home; let's hope someone enables one soon?\n11-02 12:51:57.671   558  1018 D OomAdjuster: Not killing cached processes\n11-02 12:51:58.003     0     0 I logd    : logdr: UID=0 GID=0 PID=6576 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns",
+      "last_ui_summary": [
+        {
+          "text": "‹",
+          "content-desc": "",
+          "resource-id": "",
+          "bounds": "[24,54][64,108]",
+          "enabled": "true",
+          "selected": "false"
+        },
+        {
+          "text": "GGUF regression 1a19c4e084a7fcc98",
+          "content-desc": "",
+          "resource-id": "",
+          "bounds": "[82,61][696,100]",
+          "enabled": "true",
+          "selected": "false"
+        },
+        {
+          "text": "Gemma-3-270M-It",
+          "content-desc": "",
+          "resource-id": "",
+          "bounds": "[24,108][696,133]",
+          "enabled": "true",
+          "selected": "false"
+        },
+        {
+          "text": "",
+          "content-desc": "Câmera",
+          "resource-id": "",
+          "bounds": "[24,703][78,757]",
+          "enabled": "false",
+          "selected": "false"
+        },
+        {
+          "text": "",
+          "content-desc": "Anexar arquivos",
+          "resource-id": "",
+          "bounds": "[88,703][142,757]",
+          "enabled": "true",
+          "selected": "false"
+        },
+        {
+          "text": "Reply with only: OK",
+          "content-desc": "",
+          "resource-id": "",
+          "bounds": "[152,697][541,764]",
+          "enabled": "true",
+          "selected": "false"
+        },
+        {
+          "text": "🔧",
+          "content-desc": "Alternar ferramentas",
+          "resource-id": "",
+          "bounds": "[551,703][605,757]",
+          "enabled": "true",
+          "selected": "false"
+        },
+        {
+          "text": "Enviar",
+          "content-desc": "",
+          "resource-id": "",
+          "bounds": "[615,703][696,757]",
+          "enabled": "true",
+          "selected": "false"
+        }
+      ]
+    },
+    "text_to_binary_project_staged_in_termux_home": "PASS",
+    "box64_install_script_staged": {
+      "status": "PASS",
+      "path": "/data/data/com.termux/files/home/install-box64.sh",
+      "script": "#!/data/data/com.termux/files/usr/bin/bash\npkg install -y box64 > \"$HOME/box64-install.log\" 2>&1\nstatus=$?\nprintf '%s\\n' \"$status\" > \"$HOME/box64-install.status\"\nexit $status\n"
+    },
+    "box64_install_attempt": {
+      "prompt": "Copy this exact Termux command. Do not rewrite it or add explanation; return one fenced bash block:\nbash ~/install-box64.sh",
+      "assistant_reply": "```bash\nbash ~/install-box64.sh\n```",
+      "selected_command": "bash ~/install-box64.sh",
+      "expected_command": "bash ~/install-box64.sh",
+      "chat_id": "1a19c512d3f93192d",
+      "chat_title": "GGUF regression 1a19c512d3f93192d",
+      "executed": true,
+      "status": "PACKAGE_UNAVAILABLE_OR_FAILED",
+      "execution_command": "bash ~/install-box64.sh",
+      "execution_method": "CI test harness via run-as into official Termux bash",
+      "in_app_termux_review_dialog": false,
+      "human_confirmation": false,
+      "termux_output_returned_to_model_automatically": false,
+      "termux_uid": "10210",
+      "execution_invoked": true,
+      "harness_stdout": "",
+      "completion_file": "/data/data/com.termux/files/home/box64-install.status",
+      "exit_code": "100",
+      "log_tail": "No mirror or mirror group selected. You might want to select one by running 'termux-change-repo'\nTesting the available mirrors:\n[*] (10) https://packages-cf.termux.dev/apt/termux-main: ok\n[*] (1) https://linux.domainesia.com/applications/termux/termux-main: ok\n[*] (1) https://termux.niranjan.co/termux-main: ok\n[*] (1) https://mirror.bardia.tech/termux/termux-main: bad\n[*] (1) https://mirrors.saswata.cc/termux/termux-main: bad\n[*] (1) https://mirrors.ravidwivedi.in/termux/termux-main: ok\n[*] (1) https://mirror.textcord.xyz/termux/termux-main: ok\n[*] (1) https://mirrors.krnk.org/apt/termux/termux-main: ok\n[*] (1) https://mirror.rinarin.dev/termux/termux-main: ok\n[*] (1) https://mirror.jeonnam.school/termux/termux-main: ok\n[*] (1) https://mirrors.nguyenhoang.cloud/termux/termux-main: ok\n[*] (1) https://mirrors.cbrx.io/apt/termux/termux-main: ok\n[*] (1) https://tmx.xvx.my.id/apt/termux-main: ok\n[*] (1) https://mirror.albony.in/termux/termux-main: ok\n[*] (1) https://mirror.twds.com.tw/termux/termux-main: ok\n[*] (1) https://mirror.nevacloud.com/applications/termux/termux-main: ok\n[*] (1) https://mirror.meowsmp.net/termux/termux-main: bad\n[*] (1) https://mirror.freedif.org/termux/termux-main: ok\n[*] (1) https://mirrors.in.sahilister.net/termux/termux-main/: ok\n[*] (1) https://mirror.iscas.ac.cn/termux/apt/termux-main: ok\n[*] (1) https://mirrors.sau.edu.cn/termux/apt/termux-main: ok\n[*] (1) https://mirrors.sdu.edu.cn/termux/termux-main: ok\n[*] (1) https://mirrors.aliyun.com/termux/termux-main: ok\n[*] (1) https://mirrors.cernet.edu.cn/termux/apt/termux-main: ok\n[*] (1) https://mirrors.cqupt.edu.cn/termux/termux-main: ok\n[*] (1) https://mirrors.sustech.edu.cn/termux/apt/termux-main: ok\n[*] (1) https://mirrors.bfsu.edu.cn/termux/apt/termux-main: ok\n[*] (1) https://mirrors.pku.edu.cn/termux/termux-main/: ok\n[*] (1) https://mirrors.hust.edu.cn/termux/apt/termux-main: ok\n[*] (1) https://mirrors.tuna.tsinghua.edu.cn/termux/apt/termux-main: ok\n[*] (1) https://mirror.sjtu.edu.cn/termux/termux-main/: ok\n[*] (1) https://mirror.nyist.edu.cn/termux/apt/termux-main: ok\n[*] (1) https://mirrors.ustc.edu.cn/termux/termux-main: ok\n[*] (1) https://mirrors.zju.edu.cn/termux/apt/termux-main: ok\n[*] (1) https://mirrors.nju.edu.cn/termux/apt/termux-main: ok\n[*] (4) https://grimler.se/termux/termux-main: ok\n[*] (1) https://mirror.polido.pt/termux/termux-main: bad\n[*] (1) https://termux.3san.dev/termux/termux-main: ok\n[*] (1) https://mirrors.medzik.dev/termux/termux-main: bad\n[*] (1) https://mirror.accum.se/mirror/termux.dev/termux-main: ok\n[*] (1) https://mirror.mwt.me/termux/main: ok\n[*] (1) https://ro.mirror.flokinet.net/termux/termux-main: ok\n[*] (1) https://md.mirrors.hacktegic.com/termux/termux-main: bad\n[*] (1) https://is.mirror.flokinet.net/termux/termux-main: ok\n[*] (1) https://mirror.termux.dev/termux-main: bad\n[*] (1) https://termux.mentality.rip/termux-main: bad\n[*] (1) https://nl.mirror.flokinet.net/termux/termux-main: ok\n[*] (1) https://termux.cdn.lumito.net/termux-main: bad\n[*] (1) https://mirror.leitecastro.com/termux/termux-main: ok\n[*] (1) https://mirror.bouwhuis.network/termux/termux-main: ok\n[*] (1) https://termux.librehat.com/apt/termux-main: ok\n[*] (1) https://mirror.autkin.net/termux/termux-main: ok\n[*] (1) https://mirror.sunred.org/termux/termux-main: ok\n[*] (1) https://packages.termux.dev/apt/termux-main: ok\n[*] (1) https://ftp.agdsn.de/termux/termux-main: ok\n[*] (1) https://ftp.fau.de/termux/termux-main: ok\n[*] (1) https://mirrors.cfe.re/termux/termux-main: bad\n[*] (1) https://mirrors.de.sahilister.net/termux/termux-main: ok\n[*] (1) https://gnlug.org/pub/termux/termux-main: ok\n[*] (1) https://mirror.mwt.me/termux/main: ok\n[*] (1) https://mirror.quantum5.ca/termux/termux-main: ok\n[*] (1) https://mirrors.utermux.dev/termux/termux-main: bad\n[*] (1) https://plug-mirror.rcac.purdue.edu/termux/termux-main: ok\n[*] (1) https://mirror.vern.cc/termux/termux-main: bad\n[*] (1) https://dl.kcubeterm.com/termux-main: bad\n[*] (1) https://termux.danyael.xyz/termux/termux-main: ok\n[*] (1) https://mirror.csclub.uwaterloo.ca/termux/termux-main: ok\n[*] (1) https://mirror.fcix.net/termux/termux-main: ok\n[*] (1) https://mirrors.middlendian.com/termux/termux-main: ok\n[*] (1) https://repository.su/termux/termux-main/: ok\n[*] (1) http://mirror.mephi.ru/termux/termux-main: ok\nPicking mirror: (26) /data/data/com.termux/files/usr/etc/termux/mirrors/chinese_mainland/mirrors.sau.edu.cn\n\nWARNING: apt does not have a stable CLI interface. Use with caution in scripts.\n\nGet:1 https://mirrors.sau.edu.cn/termux/apt/termux-main stable InRelease [14.0 kB]\nGet:2 https://mirrors.sau.edu.cn/termux/apt/termux-main stable/main x86_64 Packages [538 kB]\nFetched 552 kB in 3s (185 kB/s)\nReading package lists...\nBuilding dependency tree...\n73 packages can be upgraded. Run 'apt list --upgradable' to see them.\n\nWARNING: apt does not have a stable CLI interface. Use with caution in scripts.\n\nReading package lists...\nBuilding dependency tree...\nE: Unable to locate package box64",
+      "box64_executable": ""
+    },
+    "box64_install_result": "PACKAGE_UNAVAILABLE_OR_FAILED",
+    "termux_compile_text_to_binary_apk": {
+      "prompt": "Copy this exact Termux build command without explanation; return one fenced bash block:\nbash ~/text-binary/run-build.sh",
+      "assistant_reply": "```bash\nbash ~/text-binary/run-build.sh\n```",
+      "selected_command": "bash ~/text-binary/run-build.sh",
+      "expected_command": "bash ~/text-binary/run-build.sh",
+      "chat_id": "1a19c520bde12a77f",
+      "chat_title": "GGUF regression 1a19c520bde12a77f",
+      "executed": true,
+      "status": "TERMUX_COMMAND_COMPLETED",
+      "execution_command": "bash ~/text-binary/run-build.sh",
+      "execution_method": "CI test harness via run-as into official Termux bash",
+      "in_app_termux_review_dialog": false,
+      "human_confirmation": false,
+      "termux_output_returned_to_model_automatically": false,
+      "termux_uid": "10210",
+      "execution_invoked": true,
+      "harness_stdout": "",
+      "completion_file": "/data/data/com.termux/files/home/text-binary/build.exit",
+      "exit_code": "1",
+      "build_log_tail": "warning: [options] source value 8 is obsolete and will be removed in a future release\nwarning: [options] target value 8 is obsolete and will be removed in a future release\nwarning: [options] To suppress warnings about obsolete options, use -Xlint:-options.\n3 warnings\nerror: failed to load include path /data/data/com.termux/files/home/text-binary/android.jar.",
+      "tool_install_log_tail": "g previously unselected package libandroid-execinfo.\r\nPreparing to unpack .../16-libandroid-execinfo_0.1-3_x86%5f64.deb ...\r\nUnpacking libandroid-execinfo (0.1-3) ...\r\nSelecting previously unselected package libltdl.\r\nPreparing to unpack .../17-libltdl_2.5.4-2_x86%5f64.deb ...\r\nUnpacking libltdl (2.5.4-2) ...\r\nSelecting previously unselected package libogg.\r\nPreparing to unpack .../18-libogg_1.3.6-1_x86%5f64.deb ...\r\nUnpacking libogg (1.3.6-1) ...\r\nSelecting previously unselected package libflac.\r\nPreparing to unpack .../19-libflac_1.5.0-1_x86%5f64.deb ...\r\nUnpacking libflac (1.5.0-1) ...\r\nSelecting previously unselected package libmp3lame.\r\nPreparing to unpack .../20-libmp3lame_3.100-7_x86%5f64.deb ...\r\nUnpacking libmp3lame (3.100-7) ...\r\nSelecting previously unselected package libopus.\r\nPreparing to unpack .../21-libopus_1.6.1_x86%5f64.deb ...\r\nUnpacking libopus (1.6.1) ...\r\nSelecting previously unselected package libvorbis.\r\nPreparing to unpack .../22-libvorbis_1.3.7-4_x86%5f64.deb ...\r\nUnpacking libvorbis (1.3.7-4) ...\r\nSelecting previously unselected package libsndfile.\r\nPreparing to unpack .../23-libsndfile_1.2.2-2_x86%5f64.deb ...\r\nUnpacking libsndfile (1.2.2-2) ...\r\nSelecting previously unselected package libsoxr.\r\nPreparing to unpack .../24-libsoxr_0.1.3-8_x86%5f64.deb ...\r\nUnpacking libsoxr (0.1.3-8) ...\r\nSelecting previously unselected package libwebrtc-audio-processing.\r\nPreparing to unpack .../25-libwebrtc-audio-processing_1.3-4_x86%5f64.deb ...\r\nUnpacking libwebrtc-audio-processing (1.3-4) ...\r\nSelecting previously unselected package speexdsp.\r\nPreparing to unpack .../26-speexdsp_1.2.1-1_x86%5f64.deb ...\r\nUnpacking speexdsp (1.2.1-1) ...\r\nSelecting previously unselected package pulseaudio.\r\nPreparing to unpack .../27-pulseaudio_17.0-1_x86%5f64.deb ...\r\nUnpacking pulseaudio (17.0-1) ...\r\nSelecting previously unselected package alsa-plugins.\r\nPreparing to unpack .../28-alsa-plugins_1.2.12-1_x86%5f64.deb ...\r\nUnpacking alsa-plugins (1.2.12-1) ...\r\nSelecting previously unselected package libandroid-spawn.\r\nPreparing to unpack .../29-libandroid-spawn_0.3_x86%5f64.deb ...\r\nUnpacking libandroid-spawn (0.3) ...\r\nSelecting previously unselected package libjpeg-turbo.\r\nPreparing to unpack .../30-libjpeg-turbo_3.1.3_x86%5f64.deb ...\r\nUnpacking libjpeg-turbo (3.1.3) ...\r\nSelecting previously unselected package littlecms.\r\nPreparing to unpack .../31-littlecms_2.18_x86%5f64.deb ...\r\nUnpacking littlecms (2.18) ...\r\nSelecting previously unselected package openjdk-21.\r\nPreparing to unpack .../32-openjdk-21_21.0.10_x86%5f64.deb ...\r\nUnpacking openjdk-21 (21.0.10) ...\r\nSelecting previously unselected package apksigner.\r\nPreparing to unpack .../33-apksigner_33.0.1-1_all.deb ...\r\nUnpacking apksigner (33.0.1-1) ...\r\nSelecting previously unselected package brotli.\r\nPreparing to unpack .../34-brotli_1.2.0_x86%5f64.deb ...\r\nUnpacking brotli (1.2.0) ...\r\nSelecting previously unselected package ca-certificates-java.\r\nPreparing to unpack .../35-ca-certificates-java_1%3a2025.12.02_all.deb ...\r\nUnpacking ca-certificates-java (1:2025.12.02) ...\r\nSelecting previously unselected package d8.\r\nPreparing to unpack .../36-d8_33.0.1-1_all.deb ...\r\nUnpacking d8 (33.0.1-1) ...\r\nSelecting previously unselected package freetype.\r\nPreparing to unpack .../37-freetype_2.14.1_x86%5f64.deb ...\r\nUnpacking freetype (2.14.1) ...\r\nSelecting previously unselected package giflib.\r\nPreparing to unpack .../38-giflib_5.2.2-1_x86%5f64.deb ...\r\nUnpacking giflib (5.2.2-1) ...\r\nSelecting previously unselected package libxext.\r\nPreparing to unpack .../39-libxext_1.3.6-1_x86%5f64.deb ...\r\nUnpacking libxext (1.3.6-1) ...\r\nSelecting previously unselected package libxi.\r\nPreparing to unpack .../40-libxi_1.8.2-1_x86%5f64.deb ...\r\nUnpacking libxi (1.8.2-1) ...\r\nSelecting previously unselected package libxrender.\r\nPreparing to unpack .../41-libxrender_0.9.12-1_x86%5f64.deb ...\r\nUnpacking libxrender (0.9.12-1) ...\r\nSelecting previously unselected package libxtst.\r\nPreparing to unpack .../42-libxtst_1.2.5-1_x86%5f64.deb ...\r\nUnpacking libxtst (1.2.5-1) ...\r\nSelecting previously unselected package openjdk-21-x.\r\nPreparing to unpack .../43-openjdk-21-x_21.0.10_x86%5f64.deb ...\r\nUnpacking openjdk-21-x (21.0.10) ...\r\nSetting up libopus (1.6.1) ...\r\nSetting up libpng (1.6.54) ...\r\nSetting up littlecms (2.18) ...\r\nSetting up libxdmcp (1.1.5-2) ...\r\nSetting up libsoxr (0.1.3-8) ...\r\nSetting up libandroid-shmem (0.7) ...\r\nSetting up libogg (1.3.6-1) ...\r\nSetting up speexdsp (1.2.1-1) ...\r\nSetting up fmt (1:11.2.0) ...\r\nSetting up libexpat (2.7.3) ...\r\nSetting up libvorbis (1.3.7-4) ...\r\nSetting up libandroid-spawn (0.3) ...\r\nSetting up libandroid-execinfo (0.1-3) ...\r\nSetting up libltdl (2.5.4-2) ...\r\nSetting up libxau (1.0.12-2) ...\r\nSetting up libzopfli (1.0.3-5) ...\r\nSetting up libandroid-sysv-semaphore (0.1-1) ...\r\nSetting up libjpeg-turbo (3.1.3) ...\r\nSetting up libmp3lame (3.100-7) ...\r\nSetting up giflib (5.2.2-1) ...\r\nSetting up libxcb (1.17.0-1) ...\r\nSetting up ca-certificates-java (1:2025.12.02) ...\r\nSetting up libflac (1.5.0-1) ...\r\nSetting up abseil-cpp (20250814.1) ...\r\nSetting up aapt (13.0.0.6-23) ...\r\nSetting up brotli (1.2.0) ...\r\nSetting up alsa-lib (1.2.15.3) ...\r\nSetting up libprotobuf (2:33.1-1) ...\r\nSetting up libx11 (1.8.12-1) ...\r\nSetting up freetype (2.14.1) ...\r\nSetting up dbus (1.16.2-2) ...\r\nSetting up libsndfile (1.2.2-2) ...\r\nSetting up libwebrtc-audio-processing (1.3-4) ...\r\nSetting up libxext (1.3.6-1) ...\r\nSetting up libxi (1.8.2-1) ...\r\nSetting up aapt2 (13.0.0.6-23) ...\r\nSetting up libxrender (0.9.12-1) ...\r\nSetting up pulseaudio (17.0-1) ...\r\nSetting up alsa-plugins (1.2.12-1) ...\r\nSetting up libxtst (1.2.5-1) ...\r\nSetting up openjdk-21 (21.0.10) ...\r\nupdate-alternatives: using /data/data/com.termux/files/usr/lib/jvm/java-21-openjdk/bin/java to provide /data/data/com.termux/files/usr/bin/java (java) in auto mode\r\nSetting up d8 (33.0.1-1) ...\r\nSetting up openjdk-21-x (21.0.10) ...\r\nSetting up apksigner (33.0.1-1) ..."
+    },
+    "termux_apk_build_result": "FAIL"
+  },
+  "limitations": [
+    "Android emulator x86_64, not a physical handset",
+    "Box64 package was attempted in the x86_64 Termux emulator; installation did not produce a box64 executable."
+  ],
+  "model": {
+    "name": "Gemma 3 270M IT",
+    "quantization": "Q8_0",
+    "weights_sha256": "d156a5159f2f79c1b1d53c7c1cc20f1ff28ab8d00f17a292620aad13399b9698",
+    "apk_signed_sha256": "f228a5d150348da37b365de541c99021b06fcb4eaa2713712cae816f0c10dbbc",
+    "app_name": "Gemma-3-270M-It",
+    "architecture": "gemma3",
+    "capability": "IMAGE_TOKENS_ONLY",
+    "size": 291546144
+  },
+  "settings_ui": {
+    "visible_settings_labels": [
+      "‹",
+      "Ajustes",
+      "Tamanho de contexto (tokens)",
+      "1024",
+      "Threads de CPU (0 = automático)",
+      "0",
+      "Camadas na GPU Vulkan (-1 = todas, 0 = só CPU)",
+      "99",
+      "Máximo de tokens por resposta",
+      "Temperatura",
+      "0.8",
+      "Top-P",
+      "0.95",
+      "Top-K",
+      "40.0",
+      "Min-P",
+      "0.05",
+      "Penalidade de repetição",
+      "1.1",
+      "Ferramentas (padrão para novas conversas):",
+      "Thinking",
+      "Busca",
+      "Salvar ajustes",
+      "Descarregar modelo da memória",
+      "GGUF Chat\nInferência local via llama.cpp (llamarn) com backend Vulkan.\nBackend atual: —\n\nDicas:\n• Para gerar com a tela bloqueada, basta enviar a mensagem e bloquear: a geração continua em segundo plano.\n• Use “Thinking” para raciocínio estendido e “Busca” para respostas embasadas na web.\n• Modelos multimodais: importe o GGUF de texto e o mmproj juntos."
+    ],
+    "storage_backed_context_option_found": false,
+    "context_related_labels": [
+      "Tamanho de contexto (tokens)",
+      "Descarregar modelo da memória"
+    ]
+  },
+  "folder_fixture": {
+    "path": "/data/data/com.termux/files/home/model-audit",
+    "files": [
+      "only-note.txt"
+    ],
+    "file_content": "Arquivo unico da pasta de teste. Identificador: BLUE-LANTERN-5831.",
+    "sha256": "ca381c3fba7b0a9c158d0d6a9622f3c725d78d3c6bf770e68fa0ced966348fd6"
+  },
+  "internal_context_storage": {
+    "chat_settings_and_user_message_saved_in_private_app_files": false,
+    "explicit_context_storage_toggle_in_settings": false,
+    "native_KV_cache_persistence": "not claimed or tested; chat transcript persistence is separate"
+  }
+}
