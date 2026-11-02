@@ -1,0 +1,41 @@
+// KALE04 — gerado por tools/genapps.py (categoria VISUAL)
+
+int segm[16];
+int vals[6];
+int linha[34];
+
+int t;
+
+void init() {
+    title("Caleido 4");
+}
+
+void tick() {
+    t = t + 4;
+    invalidate();
+}
+
+int pal(int v) {
+    v = v & 255;
+    return 0xFF000000 | (v << 16) | ((v * 1) & 255 << 8) | ((v * 3) & 255);
+}
+
+void paint() {
+    int y = 0;
+    while (y < win_h) {
+        int x = 0;
+        while (x < win_w) {
+            int dx = x - win_w / 2;
+            if (dx < 0) { dx = -dx; }
+            int dy = y - win_h / 2;
+            if (dy < 0) { dy = -dy; }
+            int v = ((dx * 6 + dy * 8) ^ (dx * dy / 115)) + t;
+            // espelha em 5 fatias
+            if ((v / 16) % 2 == 0) { v = 255 - v; }
+            px(x, y, pal(v));
+            x = x + 1;
+        }
+        y = y + 1;
+    }
+    text(8, 8, "CALEIDOSCOPIO 4", 0xFFFFFFFF);
+}

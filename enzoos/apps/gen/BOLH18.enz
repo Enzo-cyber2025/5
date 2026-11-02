@@ -1,0 +1,111 @@
+// BOLH18 — gerado por tools/genapps.py (categoria JOGO)
+
+int segm[16];
+int vals[6];
+int linha[34];
+
+int v[32];
+int i;
+int j;
+int trocas;
+int semente;
+int ordenado;
+
+void init() {
+    seg_init();
+    title("Bolha 18");
+    semente = uptime() | 1;
+    embaralha();
+}
+
+void embaralha() {
+    int k = 0;
+    while (k < 32) {
+        v[k] = 10 + rnd(160);
+        k = k + 1;
+    }
+    i = 0;
+    j = 0;
+    trocas = 0;
+    ordenado = 0;
+}
+
+int rnd(int m) {
+    semente = semente * 1664525 + 1013904223;
+    if (semente < 0) { semente = 0 - semente; }
+    return (semente / 65536) % m;
+}
+
+void mouse(int x, int y, int b, int pr) {
+    if (pr == 1) { embaralha(); invalidate(); }
+}
+
+void tick() {
+    if (ordenado == 1) { return; }
+    if (j >= 32 - 1 - i) {
+        j = 0;
+        i = i + 1;
+        if (i >= 32 - 1) { ordenado = 1; return; }
+    }
+    if (v[j] > v[j + 1]) {
+        int t = v[j];
+        v[j] = v[j + 1];
+        v[j + 1] = t;
+        trocas = trocas + 1;
+    }
+    j = j + 1;
+    invalidate();
+}
+
+void paint() {
+    rect(0, 0, win_w, win_h, 1053727);
+    text(12, 10, "BUBBLE SORT ANIMADO — clique embaralha", 15265012);
+    int k = 0;
+    while (k < 32) {
+        int cor = 10865745;
+        if (k == j && ordenado == 0) { cor = 16777215; }
+        int bh = v[k];
+        rect(16 + k * 32, 250 - bh, 13 - 2, bh, cor);
+        k = k + 1;
+    }
+    line(12, 252, win_w - 12, 252, 3752794);
+    text(12, 262, "trocas:", 15265012);
+    segnum(80, 270, trocas, 4, 15265012, 0);
+    if (ordenado == 1) { text(160, 262, "ORDENADO!", 7331978); }
+}
+
+// ---- máscaras 7-seg: bit0 topo,1 sup-dir,2 inf-dir,3 base,4 inf-esq,
+// ---- 5 sup-esq,6 meio (hexa completo)
+void seg_init() {
+    segm[0] = 0x3F;  segm[1] = 0x06;  segm[2] = 0x5B;  segm[3] = 0x4F;
+    segm[4] = 0x66;  segm[5] = 0x6D;  segm[6] = 0x7D;  segm[7] = 0x07;
+    segm[8] = 0x7F;  segm[9] = 0x6F;  segm[10] = 0x77; segm[11] = 0x7C;
+    segm[12] = 0x39; segm[13] = 0x5E; segm[14] = 0x79; segm[15] = 0x71;
+}
+
+void seg1(int x, int y, int d, int cor) {
+    int m = segm[d & 15];
+    int W = 14;
+    int H = 24;
+    if ((m & 1) != 0) { rect(x + 2, y, W, 3, cor); }
+    if ((m & 2) != 0) { rect(x + W, y + 2, 3, H / 2, cor); }
+    if ((m & 4) != 0) { rect(x + W, y + H, 3, H / 2, cor); }
+    if ((m & 8) != 0) { rect(x + 2, y + H + H, W, 3, cor); }
+    if ((m & 16) != 0) { rect(x, y + H, 3, H / 2, cor); }
+    if ((m & 32) != 0) { rect(x, y + 2, 3, H / 2, cor); }
+    if ((m & 64) != 0) { rect(x + 2, y + H, W, 3, cor); }
+}
+
+// desenha v com nd dígitos (sem sinal; se v<0 mostra '-')
+void segnum(int x, int y, int v, int nd, int cor, int apag) {
+    int i = nd - 1;
+    int neg = 0;
+    if (v < 0) { neg = 1; v = -v; }
+    while (i >= 0) {
+        int d = v % 10;
+        v = v / 10;
+        seg1(x + i * 22, y, d, cor);
+        i = i - 1;
+    }
+    if (neg == 1) { rect(x - 6, y + 20, 4, 4, cor); }
+}

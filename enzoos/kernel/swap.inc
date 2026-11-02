@@ -739,11 +739,7 @@ s_pinfree:  db "[mm] PIN-FREE: tentativa de liberar pagina vital (PT/shadow/desk
 s_ptwd:     db "[mm] PT-WATCHDOG: PTE corrompida! pt/achado/esperado/cur_slot:", 0
 sw_pts:     times 32 dq 0
 align 16
-sw_state:   times 16384 db 0
-sw_owner:   times 16384 db 0
-sw_slot:    times 16384*2 db 0
 align 16
-sw_lru:     times 16384 dd 0
 align 16
 sw_slotbm:  times 1024 db 0                ; 8192 slots
 

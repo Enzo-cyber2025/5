@@ -569,7 +569,6 @@ k_rtc_read:
 
 section .kdata
 align 16
-idt_table: times 256*16 db 0
 idtr: dw 256*16-1
       dq idt_table
 

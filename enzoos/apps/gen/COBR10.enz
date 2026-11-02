@@ -1,0 +1,145 @@
+// COBR10 — gerado por tools/genapps.py (categoria JOGO)
+
+int segm[16];
+int vals[6];
+int linha[34];
+
+int cx[200];
+int cy[200];
+int tam;
+int dx; int dy;
+int fx; int fy;
+int pontos;
+int vivo;
+int t0;
+int semente;
+int passo;
+
+void init() {
+    seg_init();
+    title("Cobra 10");
+    semente = uptime() | 1;
+    reinicia();
+}
+
+void reinicia() {
+    tam = 4;
+    int i = 0;
+    while (i < 200) {
+        cx[i] = 10 - i;
+        cy[i] = 8;
+        i = i + 1;
+    }
+    dx = 1; dy = 0;
+    fx = 25; fy = 8;
+    pontos = 0;
+    vivo = 1;
+    passo = 0;
+    t0 = uptime();
+}
+
+int rnd(int m) {
+    semente = semente * 1664525 + 1013904223;
+    if (semente < 0) { semente = 0 - semente; }
+    return (semente / 65536) % m;
+}
+
+void key(int k) {
+    if (k == 119 || k == 87) { if (dy == 0) { dx = 0; dy = -1; } }
+    if (k == 115 || k == 83) { if (dy == 0) { dx = 0; dy = 1; } }
+    if (k == 97 || k == 65) { if (dx == 0) { dx = -1; dy = 0; } }
+    if (k == 100 || k == 68) { if (dx == 0) { dx = 1; dy = 0; } }
+    if (k == 114) { reinicia(); invalidate(); }
+}
+
+void tick() {
+    if (vivo == 0) { return; }
+    passo = passo + 1;
+    if (passo < 3) { return; }
+    passo = 0;
+    // anda
+    int i = tam - 1;
+    while (i > 0) {
+        cx[i] = cx[i - 1];
+        cy[i] = cy[i - 1];
+        i = i - 1;
+    }
+    cx[0] = cx[0] + dx;
+    cy[0] = cy[0] + dy;
+    // colisoes
+    if (cx[0] < 0 || cy[0] < 0 || cx[0] >= 40 || cy[0] >= 27) { vivo = 0; beep(220, 120); }
+    i = 1;
+    while (i < tam) {
+        if (cx[i] == cx[0] && cy[i] == cy[0]) { vivo = 0; }
+        i = i + 1;
+    }
+    // comida
+    if (cx[0] == fx && cy[0] == fy) {
+        if (tam < 199) { tam = tam + 1; }
+        pontos = pontos + 1;
+        beep(740, 30);
+        fx = 1 + rnd(38);
+        fy = 1 + rnd(25);
+    }
+    invalidate();
+}
+
+void mouse(int x, int y, int b, int pr) {
+    if (pr == 1 && vivo == 0) { reinicia(); invalidate(); }
+}
+
+void paint() {
+    rect(0, 0, win_w, win_h, 1053727);
+    text(10, 8, "COBRA — WASD move, R reinicia", 15265012);
+    // comida
+    rect(20 + fx * 9, 34 + fy * 9, 8, 8, 16743001);
+    // cobra
+    int i = 0;
+    while (i < tam) {
+        int c = 12962897;
+        if (i == 0) { c = 16777215; }
+        rect(20 + cx[i] * 9, 34 + cy[i] * 9, 8, 8, c);
+        i = i + 1;
+    }
+    text(10, 300, "pontos:", 15265012);
+    segnum(80, 292, pontos, 3, 15528569, 0);
+    if (vivo == 0) {
+        text(150, 300, "MORREU — clique reinicia", 16743001);
+    }
+}
+
+// ---- máscaras 7-seg: bit0 topo,1 sup-dir,2 inf-dir,3 base,4 inf-esq,
+// ---- 5 sup-esq,6 meio (hexa completo)
+void seg_init() {
+    segm[0] = 0x3F;  segm[1] = 0x06;  segm[2] = 0x5B;  segm[3] = 0x4F;
+    segm[4] = 0x66;  segm[5] = 0x6D;  segm[6] = 0x7D;  segm[7] = 0x07;
+    segm[8] = 0x7F;  segm[9] = 0x6F;  segm[10] = 0x77; segm[11] = 0x7C;
+    segm[12] = 0x39; segm[13] = 0x5E; segm[14] = 0x79; segm[15] = 0x71;
+}
+
+void seg1(int x, int y, int d, int cor) {
+    int m = segm[d & 15];
+    int W = 14;
+    int H = 24;
+    if ((m & 1) != 0) { rect(x + 2, y, W, 3, cor); }
+    if ((m & 2) != 0) { rect(x + W, y + 2, 3, H / 2, cor); }
+    if ((m & 4) != 0) { rect(x + W, y + H, 3, H / 2, cor); }
+    if ((m & 8) != 0) { rect(x + 2, y + H + H, W, 3, cor); }
+    if ((m & 16) != 0) { rect(x, y + H, 3, H / 2, cor); }
+    if ((m & 32) != 0) { rect(x, y + 2, 3, H / 2, cor); }
+    if ((m & 64) != 0) { rect(x + 2, y + H, W, 3, cor); }
+}
+
+// desenha v com nd dígitos (sem sinal; se v<0 mostra '-')
+void segnum(int x, int y, int v, int nd, int cor, int apag) {
+    int i = nd - 1;
+    int neg = 0;
+    if (v < 0) { neg = 1; v = -v; }
+    while (i >= 0) {
+        int d = v % 10;
+        v = v / 10;
+        seg1(x + i * 22, y, d, cor);
+        i = i - 1;
+    }
+    if (neg == 1) { rect(x - 6, y + 20, 4, 4, cor); }
+}

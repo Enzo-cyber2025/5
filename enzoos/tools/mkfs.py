@@ -5,7 +5,7 @@
 #  Superbloco (setor 0):
 #    +0  "ENZFS1.0"  +8 dd block_size(4096)  +12 dd nblocks
 #    +16 dd bitmap_blk(1)  +20 dd inode_blk(2)  +24 dd data_blk(6)
-#    +28 dd n_inodes(256)  +32 dq swap_lba  +40 dd swap_slots
+#    +28 dd n_inodes(2048)  +32 dq swap_lba  +40 dd swap_slots
 #  Inode (64 B): flags(1=arq,2=dir), size, blocks[13], ctime
 #  Entrada de diretório (32 B): name[24], ino, rsv
 #  Área de troca (swap_lba): "SWP\0" + dd rsv + dd slots + slots*4 KB
@@ -20,11 +20,11 @@ import time
 
 BLOCK = 4096
 SECT = 512
-NINODES = 256
-INODE_TBL_BLOCKS = 4          # 256 * 64 B = 16 KB
+NINODES = 2048
+INODE_TBL_BLOCKS = 32         # 2048 * 64 B = 128 KB
 BITMAP_BLK = 1
 INODE_BLK = 2
-DATA_BLK = 6
+DATA_BLK = 34
 DIRENTS_PER_BLOCK = 128
 
 INO_ROOT = 0
@@ -101,10 +101,10 @@ class Fs:
 
     # ---- serialização ----
     def build(self):
-        # inodes -> blocos 2..5
+        # inodes -> blocos 2..33 (2048 * 64 B = 128 KB)
         for i, ino in enumerate(self.inodes):
             off = i * 64
-            for bi in range(4):
+            for bi in range(INODE_TBL_BLOCKS):
                 b = INODE_BLK + bi
                 o2 = off - bi * BLOCK
                 if 0 <= o2 < BLOCK:

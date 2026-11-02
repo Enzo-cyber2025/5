@@ -1,0 +1,41 @@
+// TUNL14 — gerado por tools/genapps.py (categoria VISUAL)
+
+int segm[16];
+int vals[6];
+int linha[34];
+
+int t;
+
+void init() {
+    title("Tunel 14");
+}
+
+void tick() {
+    t = t + 2;
+    invalidate();
+}
+
+void paint() {
+    int y = 0;
+    while (y < win_h) {
+        int x = 0;
+        while (x < win_w) {
+            int dx = x - win_w / 2;
+            int dy = y - win_h / 2;
+            int d2 = (dx * dx + dy * dy) / 479;
+            int tw = (dx * dy) / 193;
+            int v = (d2 + tw + t) & 127;
+            v = v * 2;
+            int r = 43 + v / 3;
+            int g = 47 + v / 2;
+            int b = 99 + v;
+            if (r > 255) { r = 255; }
+            if (g > 255) { g = 255; }
+            if (b > 255) { b = 255; }
+            px(x, y, 0xFF000000 | (r << 16) | (g << 8) | b);
+            x = x + 1;
+        }
+        y = y + 1;
+    }
+    text(8, 8, "TUNEL 14", 0xFFFFFFFF);
+}

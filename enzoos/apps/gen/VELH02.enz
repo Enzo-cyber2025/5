@@ -1,0 +1,148 @@
+// VELH02 — gerado por tools/genapps.py (categoria JOGO)
+
+int segm[16];
+int vals[6];
+int linha[34];
+
+int tab[9];
+int vez;      // 1 humano, 2 cpu
+int pl; int cp;
+int fim;
+int semente;
+
+void init() {
+    seg_init();
+    title("Velha 2");
+    semente = uptime() | 1;
+}
+
+int rnd(int m) {
+    semente = semente * 1664525 + 1013904223;
+    if (semente < 0) { semente = 0 - semente; }
+    return (semente / 65536) % m;
+}
+
+void zera() {
+    int i = 0;
+    while (i < 9) { tab[i] = 0; i = i + 1; }
+    vez = 1;
+    fim = 0;
+}
+
+int vence(int q) {
+    if (tab[0] == q && tab[1] == q && tab[2] == q) { return 1; }
+    if (tab[3] == q && tab[4] == q && tab[5] == q) { return 1; }
+    if (tab[6] == q && tab[7] == q && tab[8] == q) { return 1; }
+    if (tab[0] == q && tab[3] == q && tab[6] == q) { return 1; }
+    if (tab[1] == q && tab[4] == q && tab[7] == q) { return 1; }
+    if (tab[2] == q && tab[5] == q && tab[8] == q) { return 1; }
+    if (tab[0] == q && tab[4] == q && tab[8] == q) { return 1; }
+    if (tab[2] == q && tab[4] == q && tab[6] == q) { return 1; }
+    return 0;
+}
+
+void cpu_joga() {
+    if (fim != 0) { return; }
+    int i = 0;
+    int livres = 0;
+    while (i < 9) { if (tab[i] == 0) { livres = livres + 1; } i = i + 1; }
+    if (livres == 0) { fim = 3; return; }
+    int alvo = rnd(livres);
+    i = 0;
+    int n = 0;
+    while (i < 9) {
+        if (tab[i] == 0) {
+            if (n == alvo) {
+                tab[i] = 2;
+                if (vence(2) == 1) { fim = 2; cp = cp + 1; }
+                else { vez = 1; }
+                return;
+            }
+            n = n + 1;
+        }
+        i = i + 1;
+    }
+}
+
+void mouse(int x, int y, int b, int pr) {
+    if (pr != 1) { return; }
+    if (fim != 0) { zera(); invalidate(); return; }
+    if (vez != 1) { return; }
+    int c = (x - 30) / 100;
+    int l = (y - 40) / 100;
+    if (c < 0 || c > 2 || l < 0 || l > 2) { return; }
+    int idx = l * 3 + c;
+    if (tab[idx] != 0) { return; }
+    tab[idx] = 1;
+    if (vence(1) == 1) { fim = 1; pl = pl + 1; beep(880, 60); }
+    else { vez = 2; cpu_joga(); if (fim == 0 && vence(2) == 0) { } }
+    invalidate();
+}
+
+void marca(int x, int y, int q) {
+    if (q == 1) {
+        line(x + 22, y + 22, x + 78, y + 78, 7330047);
+        line(x + 78, y + 22, x + 22, y + 78, 2989275);
+    } else if (q == 2) {
+        rect(x + 50 - 28, y + 50 - 28, 56, 56, 16758861);
+        rect(x + 50 - 16, y + 50 - 16, 32, 32, 14715424);
+    }
+}
+
+void paint() {
+    rect(0, 0, win_w, win_h, 1053727);
+    text(16, 10, "JOGO DA VELHA — voce e o X", 15265012);
+    // grade
+    line(30, 140, 330, 140, 3752794);
+    line(30, 240, 330, 240, 3752794);
+    line(130, 40, 130, 340, 3752794);
+    line(230, 40, 230, 340, 3752794);
+    int i = 0;
+    while (i < 9) {
+        marca(30 + (i % 3) * 100, 40 + (i / 3) * 100, tab[i]);
+        i = i + 1;
+    }
+    text(16, 356, "voce:", 15265012);
+    segnum(70, 348, pl, 2, 15265012, 0);
+    text(130, 356, "cpu:", 15265012);
+    segnum(180, 348, cp, 2, 15265012, 0);
+    if (fim == 1) { text(220, 356, "VOCE GANHOU!", 7331978); }
+    if (fim == 2) { text(220, 356, "CPU GANHOU", 16743001); }
+    if (fim == 3) { text(220, 356, "EMPATE — clique reinicia", 9081765); }
+}
+
+// ---- máscaras 7-seg: bit0 topo,1 sup-dir,2 inf-dir,3 base,4 inf-esq,
+// ---- 5 sup-esq,6 meio (hexa completo)
+void seg_init() {
+    segm[0] = 0x3F;  segm[1] = 0x06;  segm[2] = 0x5B;  segm[3] = 0x4F;
+    segm[4] = 0x66;  segm[5] = 0x6D;  segm[6] = 0x7D;  segm[7] = 0x07;
+    segm[8] = 0x7F;  segm[9] = 0x6F;  segm[10] = 0x77; segm[11] = 0x7C;
+    segm[12] = 0x39; segm[13] = 0x5E; segm[14] = 0x79; segm[15] = 0x71;
+}
+
+void seg1(int x, int y, int d, int cor) {
+    int m = segm[d & 15];
+    int W = 14;
+    int H = 24;
+    if ((m & 1) != 0) { rect(x + 2, y, W, 3, cor); }
+    if ((m & 2) != 0) { rect(x + W, y + 2, 3, H / 2, cor); }
+    if ((m & 4) != 0) { rect(x + W, y + H, 3, H / 2, cor); }
+    if ((m & 8) != 0) { rect(x + 2, y + H + H, W, 3, cor); }
+    if ((m & 16) != 0) { rect(x, y + H, 3, H / 2, cor); }
+    if ((m & 32) != 0) { rect(x, y + 2, 3, H / 2, cor); }
+    if ((m & 64) != 0) { rect(x + 2, y + H, W, 3, cor); }
+}
+
+// desenha v com nd dígitos (sem sinal; se v<0 mostra '-')
+void segnum(int x, int y, int v, int nd, int cor, int apag) {
+    int i = nd - 1;
+    int neg = 0;
+    if (v < 0) { neg = 1; v = -v; }
+    while (i >= 0) {
+        int d = v % 10;
+        v = v / 10;
+        seg1(x + i * 22, y, d, cor);
+        i = i - 1;
+    }
+    if (neg == 1) { rect(x - 6, y + 20, 4, 4, cor); }
+}

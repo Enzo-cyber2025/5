@@ -1245,7 +1245,6 @@ tcp_rtail: dd 0
 http_port: dd 80
 
 align 16
-tcp_rbuf:   times 32768 db 0
 net_txbuf:  times 1600 db 0
 net_iphdr:  times 1600 db 0
 net_udphdr: times 1600 db 0

@@ -1,0 +1,120 @@
+// ESPI12 — gerado por tools/genapps.py (categoria VISUAL)
+
+int segm[16];
+int vals[6];
+int linha[34];
+
+int a1x; int a1y;
+int a2x; int a2y;
+int t;
+
+void init() {
+    fillsin();
+    title("Espiro 12");
+    a1x = 4096; a1y = 0;
+    a2x = 4096; a2y = 0;
+}
+
+void tick() {
+    int i = 0;
+    while (i < 3) {
+        int nx = a1x - (a1y * 8) / 4096 / 90;
+        int ny = a1y + (a1x * 8) / 4096 / 90;
+        a1x = nx; a1y = ny;
+        int mx = a2x - (a2y * 15) / 4096 / 90;
+        int my = a2y + (a2x * 15) / 4096 / 90;
+        a2x = mx; a2y = my;
+        t = t + 1;
+        i = i + 1;
+    }
+    invalidate();
+}
+
+void paint() {
+    rect(0, 0, win_w, win_h, 856343);
+    int i = 0;
+    int px0 = 0; int py0 = 0;
+    while (i < 160) {
+        int X = win_w / 2 + (a1x * (win_w / 2 - 15)) / 4096 + (a2x * 47) / 4096;
+        int Y = win_h / 2 + (a1y * (win_h / 2 - 15)) / 4096 + (a2y * 47) / 4096;
+        if (i > 0) { line(px0, py0, X, Y, 11618546); }
+        px0 = X; py0 = Y;
+        int nx = a1x - (a1y * 8) / 4096 / 90;
+        int ny = a1y + (a1x * 8) / 4096 / 90;
+        a1x = nx; a1y = ny;
+        int mx = a2x - (a2y * 15) / 4096 / 90;
+        int my = a2y + (a2x * 15) / 4096 / 90;
+        a2x = mx; a2y = my;
+        i = i + 1;
+    }
+    text(8, 8, "ESPIROGRAFO 12", 0xFFFFFFFF);
+}
+
+int sins[32];
+int coss[32];
+void fillsin() {
+        sins[0] = 0;
+        sins[1] = 799;
+        sins[2] = 1567;
+        sins[3] = 2276;
+        sins[4] = 2896;
+        sins[5] = 3406;
+        sins[6] = 3784;
+        sins[7] = 4017;
+        sins[8] = 4096;
+        sins[9] = 4017;
+        sins[10] = 3784;
+        sins[11] = 3406;
+        sins[12] = 2896;
+        sins[13] = 2276;
+        sins[14] = 1567;
+        sins[15] = 799;
+        sins[16] = 0;
+        sins[17] = -799;
+        sins[18] = -1567;
+        sins[19] = -2276;
+        sins[20] = -2896;
+        sins[21] = -3406;
+        sins[22] = -3784;
+        sins[23] = -4017;
+        sins[24] = -4096;
+        sins[25] = -4017;
+        sins[26] = -3784;
+        sins[27] = -3406;
+        sins[28] = -2896;
+        sins[29] = -2276;
+        sins[30] = -1567;
+        sins[31] = -799;
+        coss[0] = 4096;
+        coss[1] = 4017;
+        coss[2] = 3784;
+        coss[3] = 3406;
+        coss[4] = 2896;
+        coss[5] = 2276;
+        coss[6] = 1567;
+        coss[7] = 799;
+        coss[8] = 0;
+        coss[9] = -799;
+        coss[10] = -1567;
+        coss[11] = -2276;
+        coss[12] = -2896;
+        coss[13] = -3406;
+        coss[14] = -3784;
+        coss[15] = -4017;
+        coss[16] = -4096;
+        coss[17] = -4017;
+        coss[18] = -3784;
+        coss[19] = -3406;
+        coss[20] = -2896;
+        coss[21] = -2276;
+        coss[22] = -1567;
+        coss[23] = -799;
+        coss[24] = 0;
+        coss[25] = 799;
+        coss[26] = 1567;
+        coss[27] = 2276;
+        coss[28] = 2896;
+        coss[29] = 3406;
+        coss[30] = 3784;
+        coss[31] = 4017;
+}

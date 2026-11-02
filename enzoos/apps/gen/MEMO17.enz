@@ -1,0 +1,145 @@
+// MEMO17 — gerado por tools/genapps.py (categoria JOGO)
+
+int segm[16];
+int vals[6];
+int linha[34];
+
+int cartas[16];
+int estado[16];  // 0 fechada, 1 aberta, 2 feita
+int sel1; int sel2;
+int achadas;
+int cliques;
+int semente;
+int t0;
+
+void init() {
+    seg_init();
+    title("Memoria 17");
+    semente = uptime() | 1;
+    distribui();
+}
+
+void distribui() {
+    int i = 0;
+    while (i < 16) { cartas[i] = 0; estado[i] = 0; i = i + 1; }
+    int par = 0;
+    while (par < 8) {
+        int colocados = 0;
+        while (colocados < 2) {
+            int pos = rnd(16);
+            if (cartas[pos] == 0) {
+                cartas[pos] = par + 1;
+                colocados = colocados + 1;
+            }
+        }
+        par = par + 1;
+    }
+    sel1 = -1; sel2 = -1;
+    achadas = 0;
+    cliques = 0;
+}
+
+int rnd(int m) {
+    semente = semente * 1664525 + 1013904223;
+    if (semente < 0) { semente = 0 - semente; }
+    return (semente / 65536) % m;
+}
+
+void mouse(int x, int y, int b, int pr) {
+    if (pr != 1) { return; }
+    if (achadas >= 8) { distribui(); invalidate(); return; }
+    if (sel2 >= 0) { return; }
+    int c = (x - 20) / 90;
+    int l = (y - 40) / 90;
+    if (c < 0 || c > 3 || l < 0 || l > 3) { return; }
+    int idx = l * 4 + c;
+    if (estado[idx] != 0) { return; }
+    cliques = cliques + 1;
+    if (sel1 < 0) { sel1 = idx; estado[idx] = 1; }
+    else { sel2 = idx; estado[idx] = 1; t0 = uptime(); }
+    invalidate();
+}
+
+void tick() {
+    if (sel2 >= 0) {
+        if (uptime() - t0 > 700) {
+            if (cartas[sel1] == cartas[sel2]) {
+                estado[sel1] = 2;
+                estado[sel2] = 2;
+                achadas = achadas + 1;
+                if (achadas >= 8) { beep(880, 90); }
+            } else {
+                estado[sel1] = 0;
+                estado[sel2] = 0;
+            }
+            sel1 = -1;
+            sel2 = -1;
+            invalidate();
+        }
+    }
+}
+
+void paint() {
+    rect(0, 0, win_w, win_h, 1053727);
+    text(12, 10, "MEMORIA — ache os 8 pares", 15265012);
+    int i = 0;
+    while (i < 16) {
+        int x = 20 + (i % 4) * 90;
+        int y = 40 + (i / 4) * 80;
+        if (estado[i] == 0) {
+            rect(x, y, 80, 70, 4995622);
+            rect(x + 8, y + 8, 64, 54, 6705725);
+        } else {
+            rect(x, y, 80, 70, 2239294);
+            // simbolo do par: pilulas coloridas
+            int v = cartas[i];
+            int j = 0;
+            while (j < v) {
+                rect(x + 12 + j * 9, y + 30, 7, 12, 4757490);
+                j = j + 1;
+            }
+        }
+        i = i + 1;
+    }
+    text(12, 356, "cliques:", 15265012);
+    segnum(90, 348, cliques, 3, 15265012, 0);
+    text(170, 356, "pares:", 15265012);
+    segnum(240, 348, achadas, 2, 15265012, 0);
+    if (achadas >= 8) { text(290, 356, "FIM!", 7331978); }
+}
+
+// ---- máscaras 7-seg: bit0 topo,1 sup-dir,2 inf-dir,3 base,4 inf-esq,
+// ---- 5 sup-esq,6 meio (hexa completo)
+void seg_init() {
+    segm[0] = 0x3F;  segm[1] = 0x06;  segm[2] = 0x5B;  segm[3] = 0x4F;
+    segm[4] = 0x66;  segm[5] = 0x6D;  segm[6] = 0x7D;  segm[7] = 0x07;
+    segm[8] = 0x7F;  segm[9] = 0x6F;  segm[10] = 0x77; segm[11] = 0x7C;
+    segm[12] = 0x39; segm[13] = 0x5E; segm[14] = 0x79; segm[15] = 0x71;
+}
+
+void seg1(int x, int y, int d, int cor) {
+    int m = segm[d & 15];
+    int W = 14;
+    int H = 24;
+    if ((m & 1) != 0) { rect(x + 2, y, W, 3, cor); }
+    if ((m & 2) != 0) { rect(x + W, y + 2, 3, H / 2, cor); }
+    if ((m & 4) != 0) { rect(x + W, y + H, 3, H / 2, cor); }
+    if ((m & 8) != 0) { rect(x + 2, y + H + H, W, 3, cor); }
+    if ((m & 16) != 0) { rect(x, y + H, 3, H / 2, cor); }
+    if ((m & 32) != 0) { rect(x, y + 2, 3, H / 2, cor); }
+    if ((m & 64) != 0) { rect(x + 2, y + H, W, 3, cor); }
+}
+
+// desenha v com nd dígitos (sem sinal; se v<0 mostra '-')
+void segnum(int x, int y, int v, int nd, int cor, int apag) {
+    int i = nd - 1;
+    int neg = 0;
+    if (v < 0) { neg = 1; v = -v; }
+    while (i >= 0) {
+        int d = v % 10;
+        v = v / 10;
+        seg1(x + i * 22, y, d, cor);
+        i = i - 1;
+    }
+    if (neg == 1) { rect(x - 6, y + 20, 4, 4, cor); }
+}

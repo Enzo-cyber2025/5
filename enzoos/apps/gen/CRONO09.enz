@@ -1,0 +1,91 @@
+// CRONO09 — gerado por tools/genapps.py (categoria UTIL)
+
+int segm[16];
+int vals[6];
+int linha[34];
+
+int run;
+int t0;
+int best;
+
+void init() {
+    seg_init();
+    title("Cronometro 9");
+}
+
+void mouse(int x, int y, int b, int pr) {
+    if (pr != 1) { return; }
+    if (run == 0) {
+        run = 1;
+        t0 = uptime();
+    } else {
+        run = 0;
+        int d = uptime() - t0;
+        if (d < best || best == 0) { best = d; }
+    }
+    invalidate();
+}
+
+void key(int k) {
+    if (k == 114) { run = 0; t0 = uptime(); best = 0; invalidate(); }
+}
+
+void paint() {
+    rect(0, 0, win_w, win_h, 1053727);
+    text(16, 12, "CRONOMETRO — clique liga/para, R zera", 15265012);
+    int d = 0;
+    if (run == 1) { d = uptime() - t0; }
+    int cs = (d / 10) % 100;
+    int s = (d / 1000) % 60;
+    int m = (d / 60000) % 60;
+    segnum(30, 70, m, 2, 15887756, 0);
+    seg1(86, 70, 10, 15887756);
+    segnum(120, 70, s, 2, 15887756, 0);
+    seg1(176, 70, 10, 15887756);
+    segnum(210, 70, cs, 2, 15887756, 0);
+    text(16, 170, "melhor volta:", 15265012);
+    segnum(200, 160, best / 10, 4, 15887756, 0);
+    if (run == 1) {
+        rect(16, 200, 60, 8, 16727916);
+    }
+}
+
+void tick() {
+    if (run == 1) { invalidate(); }
+}
+
+// ---- máscaras 7-seg: bit0 topo,1 sup-dir,2 inf-dir,3 base,4 inf-esq,
+// ---- 5 sup-esq,6 meio (hexa completo)
+void seg_init() {
+    segm[0] = 0x3F;  segm[1] = 0x06;  segm[2] = 0x5B;  segm[3] = 0x4F;
+    segm[4] = 0x66;  segm[5] = 0x6D;  segm[6] = 0x7D;  segm[7] = 0x07;
+    segm[8] = 0x7F;  segm[9] = 0x6F;  segm[10] = 0x77; segm[11] = 0x7C;
+    segm[12] = 0x39; segm[13] = 0x5E; segm[14] = 0x79; segm[15] = 0x71;
+}
+
+void seg1(int x, int y, int d, int cor) {
+    int m = segm[d & 15];
+    int W = 14;
+    int H = 24;
+    if ((m & 1) != 0) { rect(x + 2, y, W, 3, cor); }
+    if ((m & 2) != 0) { rect(x + W, y + 2, 3, H / 2, cor); }
+    if ((m & 4) != 0) { rect(x + W, y + H, 3, H / 2, cor); }
+    if ((m & 8) != 0) { rect(x + 2, y + H + H, W, 3, cor); }
+    if ((m & 16) != 0) { rect(x, y + H, 3, H / 2, cor); }
+    if ((m & 32) != 0) { rect(x, y + 2, 3, H / 2, cor); }
+    if ((m & 64) != 0) { rect(x + 2, y + H, W, 3, cor); }
+}
+
+// desenha v com nd dígitos (sem sinal; se v<0 mostra '-')
+void segnum(int x, int y, int v, int nd, int cor, int apag) {
+    int i = nd - 1;
+    int neg = 0;
+    if (v < 0) { neg = 1; v = -v; }
+    while (i >= 0) {
+        int d = v % 10;
+        v = v / 10;
+        seg1(x + i * 22, y, d, cor);
+        i = i - 1;
+    }
+    if (neg == 1) { rect(x - 6, y + 20, 4, 4, cor); }
+}

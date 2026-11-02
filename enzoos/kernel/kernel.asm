@@ -60,6 +60,11 @@ k_main:
         cld
         mov rsp, 0x8F000
         xor ebp, ebp
+        ; zera o .kbss (buffers grandes fora do arquivo — imagem menor)
+        mov rdi, __kdata_bss_start
+        mov rcx, (__kdata_bss_end - __kdata_bss_start + 7) / 8
+        xor eax, eax
+        rep stosq
         call k_serial_init
         mov rdi, s_banner
         call k_log
@@ -1052,6 +1057,13 @@ menu_item_activate:
         jmp .done
 .sys_item:
         cmp ebx, [menu_app_count]
+        jne .maybe_reboot
+        ; LOJA de apps: abre o diretório APPS do ENZFS (via k_exec)
+        mov rdi, s_menu_loja
+        call k_exec
+        jmp .done
+.maybe_reboot:
+        cmp ebx, [menu_app_count]
         jne .maybe_shutdown
         call sys_reboot
 .maybe_shutdown:
@@ -1086,6 +1098,7 @@ sys_shutdown:
 ; =============================================================================
 section .kdata
 ; =============================================================================
+s_menu_loja: db "LOJA.ENZ", 0
 s_banner:  db "EnzoOS 1.0 — kernel em Assembly x86-64", 0
 s_b_cpu:   db "[boot] cpu ok", 0
 s_b_cpu2:  db "[boot] cpu ok 2", 0
@@ -1118,3 +1131,36 @@ m_release: dd 0
 
 s_shutdown_title: db "Desligar", 0
 s_shutdown_msg: db "Nao foi possivel desligar por software. Desligue o computador no botao.", 0
+
+; =============================================================================
+; "bss" do kernel: buffers grandes SEMPRE-ZERO no FIM do .kdata.
+; O build.sh TRUNCA os zeros finais do kernel.bin (a imagem de boot não pode
+; passar de ~576 KB: janela 64..640 KB do stage1) e o k_main zera esta área
+; no boot. Este bloco TEM que ser a última coisa do arquivo.
+; =============================================================================
+; =============================================================================
+section .kbss align=16
+; =============================================================================
+; "bss" do kernel: seção PRÓPRIA (a última do arquivo) com os buffers
+; grandes sempre-zero. O build.sh trunca os zeros finais do kernel.bin
+; (a janela de carga do stage1, 64..640 KB, limita a imagem em ~576 KB)
+; e o k_main zera esta área no boot.
+; =============================================================================
+__kdata_bss_start:
+enz_bm:     times 4096          db 0; bitmap de blocos (32k blocos)
+enz_inodes: times 2048*64       db 0; cache de inodes (128 KB)
+enz_dirbuf: times 4096          db 0; bloco de trabalho
+alignb 16
+ce_files:  times MAX_FILES*40 db 0
+alignb 16
+idt_table: times 256*16 db 0
+alignb 16
+co_buf:    times 8192 db 0
+alignb 16
+tcp_rbuf:  times 32768 db 0
+alignb 16
+sw_state:  times 16384 db 0
+sw_owner:  times 16384 db 0
+sw_slot:   times 16384*2 db 0
+sw_lru:    times 16384 dd 0
+__kdata_bss_end:

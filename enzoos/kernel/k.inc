@@ -43,8 +43,9 @@
 %define TITLE_H      28
 %define TASKBAR_H    44
 %define MAX_WND      16
-%define MAX_APPS     16
-%define MAX_FILES    32              ; arquivos no CEFS
+%define MAX_APPS     32
+%define MENU_APPS_MAX 12             ; itens de app no menu Iniciar (480px)
+%define MAX_FILES    1024            ; arquivos no CEFS
 
 ; ---- estrutura Window (96 bytes) -------------------------------------------
 %define W_NEXT       0               ; qword

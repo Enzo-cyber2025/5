@@ -449,13 +449,22 @@ class Gen:
                 self.emit("mov eax, [rsi+24]")
                 self.emit("mov [win_h], eax")
             if ev == "mouse":
-                self.emit("mov edi, [rsi+16]")
-                self.emit("mov esi, [rsi+24]")
-                self.emit("mov edx, [rsi+32]")
-                self.emit("mov ecx, [rsi+40]")
+                self.emit("mov eax, [rsi+40]")
+                self.emit("push rax")
+                self.emit("mov eax, [rsi+32]")
+                self.emit("push rax")
+                self.emit("mov eax, [rsi+24]")
+                self.emit("push rax")
+                self.emit("mov eax, [rsi+16]")
+                self.emit("push rax")
             if ev == "key":
-                self.emit("mov edi, [rsi+16]")
+                self.emit("mov eax, [rsi+16]")
+                self.emit("push rax")
             self.emit(f"call f_{ev}")
+            if ev == "mouse":
+                self.emit("add rsp, 32")
+            if ev == "key":
+                self.emit("add rsp, 8")
             self.emit("jmp .out")
         self.emitl(".out:")
         self.emit("pop r15")
@@ -819,14 +828,19 @@ class Gen:
         if len(args) > 6:
             err(line, "máximo de 6 argumentos")
         if name in self.funcs:
+            # convenção cdecl: args empilhados em ordem REVERSA (arg1 por
+            # último, no endereço mais baixo) e LÁ FICAM através do call —
+            # o callee lê argN em [rbp+8+8N]. O esquema antigo (push direto
+            # + pop para registradores) deixava as cópias na ordem invertida
+            # e o endereço de retorno do call sobrescrevia a cópia do arg1:
+            # todo parâmetro de função do app era lido do slot errado.
             self.emit("; args")
-            for a in args:
+            for a in reversed(args):
                 self.gen_expr(a)
                 self.emit("push rax")
-            regs = ["rdi", "rsi", "rdx", "rcx", "r8", "r9"]
-            for r in reversed(regs[:len(args)]):
-                self.emit(f"pop {r}")
             self.emit(f"call {self.fname(name)}")
+            if args:
+                self.emit(f"add rsp, {8 * len(args)}")
             return
         if name == "len" and len(args) == 1 and args[0][0] == "str":
             self.emit(f"mov eax, {len(args[0][1])}")

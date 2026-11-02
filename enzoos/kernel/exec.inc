@@ -363,6 +363,61 @@ k_exec:
         mov rax, -9
         jmp .done
 .notfound:
+        ; ---- fallback ENZFS: procura no disco montado (APPS/...) ----
+        cmp dword [enzfs_ok], 0
+        je .nf_ret
+        mov rdi, r15
+        call e_path
+        cmp rax, -1
+        je .nf_ret
+        mov rbx, rax                    ; rbx = ino
+        mov edi, ebx
+        call e_size
+        cmp rax, 64
+        jb .nf_ret
+        cmp rax, 0x400000
+        ja .nf_ret
+        mov r13, rax                    ; tamanho
+        mov edi, ebx
+        call e_inode
+        test rax, rax
+        jz .nf_ret
+        mov rax, [rax]                  ; flags
+        cmp eax, 1                      ; arquivo?
+        jne .nf_ret
+        mov rdi, r13
+        add rdi, 4095
+        and rdi, -4096
+        call k_alloc
+        test rax, rax
+        jz .nf_ret
+        mov r12, rax                    ; buffer
+        mov edi, ebx
+        mov rsi, r12
+        xor edx, edx
+        mov rcx, r13
+        call e_read
+        cmp rax, r13
+        jb .nf_free
+        ; magic CE/ENZ1? (mesma validação do app_launch)
+        cmp dword [r12], CE_MAGIC
+        je .nf_launch
+        cmp dword [r12], 0x315A4E45
+        jne .nf_free
+.nf_launch:
+        mov rdi, r12
+        mov rsi, r13
+        mov rdx, r15
+        call enzfs_stage
+        mov r14, rax
+        mov rdi, r12
+        call k_free
+        mov rax, r14
+        jmp .done
+.nf_free:
+        mov rdi, r12
+        call k_free
+.nf_ret:
         mov rax, -1
         jmp .done
 .report:
@@ -405,7 +460,6 @@ exec_report_hex:
 section .kdata
 co_head:  dd 0
 co_tail:  dd 0
-co_buf:  times 8192 db 0
 co_ch:   db 0, 0
 
 fdepth:  dd 0

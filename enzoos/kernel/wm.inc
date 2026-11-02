@@ -620,9 +620,9 @@ draw_taskbar:
 ; menu Iniciar
 ; -----------------------------------------------------------------------------
 menu_count:
-        ; nº de apps .ce + 2 (Reiniciar, Desligar)
+        ; nº de apps .ce + 3 (LOJA de apps, Reiniciar, Desligar)
         mov eax, [menu_app_count]
-        add eax, 2
+        add eax, 3
         ret
 
 menu_height:
@@ -735,6 +735,19 @@ draw_menu:
         add edi, 14
         mov esi, [tmp_y]
         add esi, 9
+        cmp r12d, [menu_app_count]
+        jne .sys_icon
+        mov ecx, 0x25A6                 ; ▦ — LOJA de apps (ENZFS)
+        mov r13d, COL_ACCENT
+        call surf_char
+        mov edi, [tmp_x]
+        add edi, 34
+        mov esi, [tmp_y]
+        add esi, 9
+        lea rdx, [s_loja]
+        mov ecx, s_loja_len
+        jmp .systext
+.sys_icon:
         mov ecx, 0x25AA                 ; ■
         mov r13d, COL_YELLOW
         call surf_char
@@ -1239,6 +1252,8 @@ s_inicio: db "Início"
 s_inicio_len equ $ - s_inicio
 s_menufoot: db "EnzoOS 1.0 — Assembly puro"
 s_menufoot_len equ $ - s_menufoot
+s_loja: db "LOJA DE APPS"
+s_loja_len equ $ - s_loja
 s_reboot: db "Reiniciar"
 s_reboot_len equ $ - s_reboot
 s_shutdown: db "Desligar"

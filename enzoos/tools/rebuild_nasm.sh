@@ -2,7 +2,7 @@
 # Reconstroi o NASM 3.02 do zero sem autotools (sandbox limpo).
 # Uso: bash tools/rebuild_nasm.sh   (instala em ~/bin/nasm)
 set -e
-mkdir -p "$HOME/bin" /tmp/nb && cd /tmp/nb
+mkdir -p /home/user/5/enzoos/tools/toolchain/bin /tmp/nb && cd /tmp/nb
 rm -rf nasm.tar.gz nasm-nasm-3.02
 curl -sL https://codeload.github.com/netwide-assembler/nasm/tar.gz/refs/tags/nasm-3.02 -o nasm.tar.gz
 tar xzf nasm.tar.gz && cd nasm-nasm-3.02
@@ -100,5 +100,5 @@ sed -i 's/@ZLIBINC@//g' Makefile
 sed -i 's|^ZLIB\t\t= @ZLIB@|ZLIB\t\t= $(ZLIBOBJ)|' Makefile
 sed -i 's|^ZLIBINC\t\t= $|ZLIBINC\t\t= -I./zlib|' Makefile
 make nasm -j"$(nproc)"
-install -m 755 nasm "$HOME/bin/nasm"
-"$HOME/bin/nasm" -v
+install -m 755 nasm /home/user/5/enzoos/tools/toolchain/bin/nasm
+/home/user/5/enzoos/tools/toolchain/bin/nasm -v

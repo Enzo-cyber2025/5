@@ -145,12 +145,37 @@ app_launch:
         mov r15, rdi                    ; nome
         call cefs_find
         cmp rax, -1
-        je .notfound
+        jne .found
+        pop r15
+        pop r14
+        pop r13
+        pop r12
+        pop rbx
+        mov rax, -1
+        ret
+.found:
         mov rbx, rax
         mov rax, rbx
         call cefs_get                   ; rax=ptr, rdx=size
         mov r14, rax
         mov r13, rdx
+        jmp enz_stage_common
+
+; -----------------------------------------------------------------------------
+; enzfs_stage: rdi=ptr da imagem, rsi=tamanho, rdx=nome -> rax=slot/erro
+; (mesmo estágio do app_launch, para imagens vindas do ENZFS — usado pelo
+;  fallback do k_exec e pela LOJA de apps)
+; -----------------------------------------------------------------------------
+enzfs_stage:
+        push rbx
+        push r12
+        push r13
+        push r14
+        push r15
+        mov r14, rdi                    ; ptr
+        mov r13, rsi                    ; tamanho
+        mov r15, rdx                    ; nome
+enz_stage_common:
         ; hardening: cabeçalho completo (64 bytes) antes de ler campos
         cmp r13, 64
         jb .badce
@@ -589,8 +614,14 @@ wm_menu_refresh:
         test rax, rax
         jnz .next
 .isapp:
-        cmp ebx, 16
+        cmp ebx, MENU_APPS_MAX
         jae .done
+        ; a LOJA tem item próprio no menu — não duplicar
+        lea rdi, [r8]
+        lea rsi, [s_menu_loja_name]
+        call k_strcasecmp
+        test rax, rax
+        jz .next
         lea rdi, [menu_names]
         imul rax, rbx, 24
         add rdi, rax
@@ -1252,7 +1283,7 @@ cefs_base: dq 0
 cefs_data: dq 0
 s_al_bi: db "[app] import nao resolvido: ", 0
 ce_count:  dd 0
-ce_files:  times MAX_FILES * 40 db 0
+s_menu_loja_name: db "LOJA.ENZ", 0
 cur_slot:  dd -1
 APP_STACK_TOP equ 0x8E000                  ; topo da pilha de apps (nível 0)
 APP_STACK_SZ  equ 0x2000                   ; 8 KB por nível de aninhamento
